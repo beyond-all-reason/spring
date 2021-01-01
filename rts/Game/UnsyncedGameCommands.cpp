@@ -2734,6 +2734,64 @@ public:
 	}
 };
 
+class IconScaleActionExecutor : public IUnsyncedActionExecutor {
+public:
+	IconScaleActionExecutor() : IUnsyncedActionExecutor("IconScale",
+			"Set the multiplier for the size of the unit icons") {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		if (!action.GetArgs().empty()) {
+			const float iconScale = (float) atof(action.GetArgs().c_str());
+			unitDrawer->SetUnitIconScale(iconScale);
+			configHandler->Set("UnitIconScale", iconScale);
+			LOG("Set UnitIconScale to %f", iconScale);
+		} else {
+			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+		}
+
+		return true;
+	}
+};
+
+class IconFadeStartActionExecutor : public IUnsyncedActionExecutor {
+public:
+	IconFadeStartActionExecutor() : IUnsyncedActionExecutor("IconFadeStart",
+			"Set the distance where unit icons became completely opaque at") {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		if (!action.GetArgs().empty()) {
+			const float iconFadeStart = (float) atof(action.GetArgs().c_str());
+			unitDrawer->SetUnitIconFadeStart(iconFadeStart);
+			configHandler->Set("UnitIconFadeStart", iconFadeStart);
+			LOG("Set UnitIconFadeStart to %f", iconFadeStart);
+		} else {
+			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+		}
+
+		return true;
+	}
+};
+
+class IconFadeVanishActionExecutor : public IUnsyncedActionExecutor {
+public:
+	IconFadeVanishActionExecutor() : IUnsyncedActionExecutor("IconFadeVanish",
+			"Set the distance where unit icons fade out at") {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		if (!action.GetArgs().empty()) {
+			const float iconFadeVanish = (float) atof(action.GetArgs().c_str());
+			unitDrawer->SetUnitIconFadeVanish(iconFadeVanish);
+			configHandler->Set("UnitIconFadeVanish", iconFadeVanish);
+			LOG("Set UnitIconFadeVanish to %f", iconFadeVanish);
+		} else {
+			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+		}
+
+		return true;
+	}
+};
+
+
 class DistDrawActionExecutor : public IUnsyncedActionExecutor {
 public:
 	DistDrawActionExecutor() : IUnsyncedActionExecutor("DistDraw",
@@ -3496,6 +3554,9 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<BufferTextActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<InputTextGeoActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DistIconActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<IconScaleActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<IconFadeStartActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<IconFadeVanishActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DistDrawActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<LODScaleActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AirMeshActionExecutor>());
