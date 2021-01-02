@@ -205,7 +205,8 @@ public:
 
 private:
 	/// Returns true if the given unit should be drawn as icon in the current frame.
-	bool DrawAsIcon(CUnit* unit, const float sqUnitCamDist) const;
+	//bool DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const;
+	bool DrawAsIcon(CUnit* unit) const;
 
 	bool CanDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	bool CanDrawOpaqueUnitShadow(const CUnit* unit) const;
