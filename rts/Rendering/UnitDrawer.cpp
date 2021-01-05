@@ -52,10 +52,11 @@
 
 CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
 CONFIG(int, UnitIconDist).defaultValue(200).headlessValue(0);
-CONFIG(float, UnitIconScale).defaultValue(1.0f).minimumValue(0.5f).maximumValue(2.0f);
+CONFIG(float, UnitIconScaleUI).defaultValue(1.0f).minimumValue(0.5f).maximumValue(2.0f);
 CONFIG(float, UnitIconFadeStart).defaultValue(3000.0f).minimumValue(1.0f).maximumValue(10000.0f);
 CONFIG(float, UnitIconFadeVanish).defaultValue(1000.0f).minimumValue(1.0f).maximumValue(10000.0f);
 CONFIG(float, UnitTransparency).defaultValue(0.7f);
+CONFIG(bool, UnitIconsAsUI).defaultValue(false).description("Draw unit icons like it is an UI element and not like unit's LOD.");
 
 CONFIG(int, MaxDynamicModelLights)
 	.defaultValue(1)
@@ -278,9 +279,10 @@ void CUnitDrawer::Init() {
 	LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 	SetUnitDrawDist((float)configHandler->GetInt("UnitLodDist"));
 	SetUnitIconDist((float)configHandler->GetInt("UnitIconDist"));
-	iconScale = (float)configHandler->GetFloat("UnitIconScale");
-	iconFadeStart = (float)configHandler->GetFloat("UnitIconFadeStart");
-	iconFadeVanish = (float)configHandler->GetFloat("UnitIconFadeVanish");
+	iconScale = configHandler->GetFloat("UnitIconScaleUI");
+	iconFadeStart = configHandler->GetFloat("UnitIconFadeStart");
+	iconFadeVanish = configHandler->GetFloat("UnitIconFadeVanish");
+	useScreenIcons = configHandler->GetBool("UnitIconsAsUI");
 
 	alphaValues.x = std::max(0.11f, std::min(1.0f, 1.0f - configHandler->GetFloat("UnitTransparency")));
 	alphaValues.y = std::min(1.0f, alphaValues.x + 0.1f);
@@ -396,8 +398,13 @@ void CUnitDrawer::Update()
 		UpdateTempDrawUnits(tempAlphaUnits[modelType]);
 	}
 
+	iconUnits.clear();
+
 	for (CUnit* unit: unsortedUnits) {
-		UpdateUnitIconState(unit);
+		if (useScreenIcons)
+			UpdateUnitIconStateScreen(unit);
+		else
+			UpdateUnitIconState(unit);
 		UpdateUnitDrawPos(unit);
 	}
 
@@ -524,7 +531,7 @@ void CUnitDrawer::DrawOpaqueAIUnit(const TempDrawUnit& unit)
 
 
 
-/*void CUnitDrawer::DrawUnitIcons()
+void CUnitDrawer::DrawUnitIcons()
 {
 	// draw unit icons and radar blips
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
@@ -546,9 +553,9 @@ void CUnitDrawer::DrawOpaqueAIUnit(const TempDrawUnit& unit)
 	}
 
 	glPopAttrib();
-}*/
+}
 
-void CUnitDrawer::DrawUnitIconsScreenArray()
+void CUnitDrawer::DrawUnitIconsScreen()
 {
 	// draw unit icons and radar blips
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
@@ -776,7 +783,7 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, bool useDefaultIcon, CV
 	iconData->DrawArray(va, x0, y0, x1, y1, color);
 }
 
-/*void CUnitDrawer::DrawIcon(CUnit* unit, bool useDefaultIcon)
+void CUnitDrawer::DrawIcon(CUnit* unit, bool useDefaultIcon)
 {
 	// iconUnits should not never contain void-space units, see UpdateUnitIconState
 	assert(!unit->IsInVoid());
@@ -832,7 +839,7 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, bool useDefaultIcon, CV
 
 	// Draw the icon.
 	iconData->Draw(vnn, vpn, vnp, vpp);
-}*/
+}
 
 
 
@@ -1740,10 +1747,9 @@ inline void CUnitDrawer::UpdateUnitIconState(CUnit* unit) {
 	unit->isIcon = losStatus & LOS_INRADAR;
 
 	if ((losStatus & LOS_INLOS) || gu->spectatingFullView)
-		//unit->isIcon = DrawAsIcon(unit, (unit->pos - camera->GetPos()).SqLength());
-		unit->isIcon = DrawAsIcon(unit);
+		unit->isIcon = DrawAsIcon(unit, (unit->pos - camera->GetPos()).SqLength());
 
-	/*if (!unit->isIcon)
+	if (!unit->isIcon)
 		return;
 	if (unit->noDraw)
 		return;
@@ -1753,7 +1759,33 @@ inline void CUnitDrawer::UpdateUnitIconState(CUnit* unit) {
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return;
 
-	iconUnits.push_back(unit);*/
+	iconUnits.push_back(unit);
+}
+
+inline void CUnitDrawer::UpdateUnitIconStateScreen(CUnit* unit)
+{
+	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
+
+	// reset
+	unit->isIcon = losStatus & LOS_INRADAR;
+
+	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView)
+		return;
+	
+	// calculate unit's radius in screen space
+	float3 pos = unit->pos;
+	float3 radiusPos = pos + camera->right * unit->radius;
+
+	pos = camera->CalcWindowCoordinates(pos);
+	radiusPos = camera->CalcWindowCoordinates(radiusPos);
+
+	// and compare with the size of the icon
+	float limit = iconSizeBase/2 * ( (unit->radius / 25 - 1)/2 + 1);
+
+	unit->iconRadius = unit->radius * ( (limit * 0.9) / std::abs(pos.x-radiusPos.x) ); // used for selection of iconified units
+
+	// don't render unit's model if it is smaller than icon by 10% in screen space
+	unit->isIcon = std::abs(pos.x-radiusPos.x) < limit * 0.9;
 }
 
 inline void CUnitDrawer::UpdateUnitDrawPos(CUnit* u) {
@@ -1770,7 +1802,7 @@ inline void CUnitDrawer::UpdateUnitDrawPos(CUnit* u) {
 
 
 
-/*bool CUnitDrawer::DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const {
+bool CUnitDrawer::DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const {
 
 	const float sqIconDistMult = unit->unitDef->iconType->GetDistanceSqr();
 	const float realIconLength = iconLength * sqIconDistMult;
@@ -1779,20 +1811,6 @@ inline void CUnitDrawer::UpdateUnitDrawPos(CUnit* u) {
 		return (sqCamDistToGroundForIcons > realIconLength);
 	else
 		return (sqUnitCamDist > realIconLength);
-}*/
-
-bool CUnitDrawer::DrawAsIcon(CUnit* unit) const
-{
-	float3 poso = unit->pos;
-	float3 radiusPoso = poso + camera->right * unit->radius;
-
-	float3 pos = camera->CalcWindowCoordinates(poso);
-	float3 radiusPos = camera->CalcWindowCoordinates(radiusPoso);
-
-	float limit = iconSizeBase/2 * ( (unit->radius / 25 - 1)/2 + 1);
-
-	unit->iconRadius = unit->radius * ( (limit * 0.9) / std::abs(pos.x-radiusPos.x) ); // used for selection of iconified units
-	return std::abs(pos.x-radiusPos.x) < limit * 0.9;
 }
 
 

@@ -2734,20 +2734,34 @@ public:
 	}
 };
 
-class IconScaleActionExecutor : public IUnsyncedActionExecutor {
+class IconsAsUIActionExecutor : public IUnsyncedActionExecutor {
 public:
-	IconScaleActionExecutor() : IUnsyncedActionExecutor("IconScale",
-			"Set the multiplier for the size of the unit icons") {}
+	IconsAsUIActionExecutor() : IUnsyncedActionExecutor("IconsAsUI", "Set whether unit icons are drawn as an UI element (true) or old LOD-like style (false, default).") {
+	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(unitDrawer->useScreenIcons, action.GetArgs());
+		configHandler->Set("UnitIconsAsUI", unitDrawer->useScreenIcons ? 1 : 0);
+		LogSystemStatus("Draw unit icons as UI: ", unitDrawer->useScreenIcons);
+		return true;
+	}
+};
+
+class IconScaleActionExecutor : public IUnsyncedActionExecutor {
+public:
+	IconScaleActionExecutor() : IUnsyncedActionExecutor("IconScaleUI",
+			"Set the multiplier for the size of the UI unit icons") {}
+
+	bool Execute(const UnsyncedAction& action) const final
+	{
 		if (!action.GetArgs().empty()) {
 			const float iconScale = (float) atof(action.GetArgs().c_str());
-			unitDrawer->SetUnitIconScale(iconScale);
-			configHandler->Set("UnitIconScale", iconScale);
-			LOG("Set UnitIconScale to %f", iconScale);
-		} else {
-			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+			unitDrawer->SetUnitIconScaleUI(iconScale);
+			configHandler->Set("UnitIconScaleUI", iconScale);
+			LOG("Set UnitIconScaleUI to %f", iconScale);
 		}
+		else
+			LOG("UnitIconScaleUI is %f", unitDrawer->GetUnitIconScaleUI());
 
 		return true;
 	}
@@ -2758,15 +2772,17 @@ public:
 	IconFadeStartActionExecutor() : IUnsyncedActionExecutor("IconFadeStart",
 			"Set the distance where unit icons became completely opaque at") {}
 
-	bool Execute(const UnsyncedAction& action) const final {
-		if (!action.GetArgs().empty()) {
+	bool Execute(const UnsyncedAction& action) const final
+	{
+		if (!action.GetArgs().empty())
+		{
 			const float iconFadeStart = (float) atof(action.GetArgs().c_str());
 			unitDrawer->SetUnitIconFadeStart(iconFadeStart);
 			configHandler->Set("UnitIconFadeStart", iconFadeStart);
 			LOG("Set UnitIconFadeStart to %f", iconFadeStart);
-		} else {
-			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
 		}
+		else
+			LOG("UnitIconFadeStart is %f", unitDrawer->GetUnitIconFadeStart());
 
 		return true;
 	}
@@ -2777,15 +2793,17 @@ public:
 	IconFadeVanishActionExecutor() : IUnsyncedActionExecutor("IconFadeVanish",
 			"Set the distance where unit icons fade out at") {}
 
-	bool Execute(const UnsyncedAction& action) const final {
-		if (!action.GetArgs().empty()) {
+	bool Execute(const UnsyncedAction& action) const final
+	{
+		if (!action.GetArgs().empty())
+		{
 			const float iconFadeVanish = (float) atof(action.GetArgs().c_str());
 			unitDrawer->SetUnitIconFadeVanish(iconFadeVanish);
 			configHandler->Set("UnitIconFadeVanish", iconFadeVanish);
 			LOG("Set UnitIconFadeVanish to %f", iconFadeVanish);
-		} else {
-			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
 		}
+		else
+			LOG("UnitIconFadeVanish is %f", unitDrawer->GetUnitIconFadeVanish());
 
 		return true;
 	}
@@ -3554,6 +3572,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<BufferTextActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<InputTextGeoActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DistIconActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<IconsAsUIActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<IconScaleActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<IconFadeStartActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<IconFadeVanishActionExecutor>());
