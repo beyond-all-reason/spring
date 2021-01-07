@@ -530,7 +530,6 @@ void CUnitDrawer::DrawOpaqueAIUnit(const TempDrawUnit& unit)
 }
 
 
-
 void CUnitDrawer::DrawUnitIcons()
 {
 	// draw unit icons and radar blips
@@ -561,13 +560,10 @@ void CUnitDrawer::DrawUnitIconsScreen()
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.05f);
-
-	// A2C effectiveness is limited below four samples
-	if (globalRendering->msaaLevel >= 4)
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
 
 	CVertexArray* va = GetVertexArray();
 	iconSizeBase = std::max(16.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
@@ -760,7 +756,11 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, bool useDefaultIcon, CV
 	const uint8_t* srcColor = unit->isSelected? color4::white: teamHandler.Team(unit->team)->color;
 	uint8_t color[4] = { srcColor[0], srcColor[1], srcColor[2], 255 };
 
-	const float unitRadiusMult = ( (unit->radius / 25 - 1)/2 + 1);
+	float unitRadiusMult = iconData->GetSize();
+	if (iconData->GetRadiusAdjust() && !useDefaultIcon)
+		unitRadiusMult *= (unit->radius / iconData->GetRadiusScale());
+	unitRadiusMult = (unitRadiusMult - 1) / 2 + 1;
+
 	// fade icons away in high zoom in levels
 	if (!unit->isIcon)
 		if (dist / unitRadiusMult < iconFadeVanish)
@@ -1764,25 +1764,34 @@ inline void CUnitDrawer::UpdateUnitIconState(CUnit* unit) {
 
 inline void CUnitDrawer::UpdateUnitIconStateScreen(CUnit* unit)
 {
+	// If the icon is to be drawn as a radar blip, we want to get the default icon.
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
+	const unsigned short plosBits = (losStatus & (LOS_PREVLOS | LOS_CONTRADAR));
+	bool useDefaultIcon = !gu->spectatingFullView && !(losStatus & (LOS_INLOS)) && plosBits != (LOS_PREVLOS | LOS_CONTRADAR);
 
-	// reset
-	unit->isIcon = losStatus & LOS_INRADAR;
+	const icon::CIconData* iconData = useDefaultIcon ? icon::iconHandler.GetDefaultIconData() : unit->unitDef->iconType.GetIconData();
 
-	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView)
-		return;
-	
-	// calculate unit's radius in screen space
+	float iconSizeMult = iconData->GetSize();
+	if (iconData->GetRadiusAdjust() && !useDefaultIcon)
+		iconSizeMult *= (unit->radius / iconData->GetRadiusScale());
+	iconSizeMult = (iconSizeMult - 1) / 2 + 1;
+
+	float limit = iconSizeBase/2 * iconSizeMult;
+
+	// calculate unit's radius in screen space and compare with the size of the icon
 	float3 pos = unit->pos;
 	float3 radiusPos = pos + camera->right * unit->radius;
 
 	pos = camera->CalcWindowCoordinates(pos);
 	radiusPos = camera->CalcWindowCoordinates(radiusPos);
 
-	// and compare with the size of the icon
-	float limit = iconSizeBase/2 * ( (unit->radius / 25 - 1)/2 + 1);
+	unit->iconRadius = unit->radius * ( (limit * 0.9) / std::abs(pos.x-radiusPos.x) ); // used for clicking on iconified units (world space!!!)
 
-	unit->iconRadius = unit->radius * ( (limit * 0.9) / std::abs(pos.x-radiusPos.x) ); // used for selection of iconified units
+	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView)
+	{
+		unit->isIcon = losStatus & LOS_INRADAR;
+		return;
+	}
 
 	// don't render unit's model if it is smaller than icon by 10% in screen space
 	unit->isIcon = std::abs(pos.x-radiusPos.x) < limit * 0.9;
