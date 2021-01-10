@@ -588,6 +588,8 @@ void CUnitDrawer::DrawUnitIconsScreen()
 				continue;
 			if (unit->IsInVoid())
 				continue;
+			if (unit->health <= 0 || unit->beingBuilt)
+				continue;
 			
 			const unsigned short closBits = (unit->losStatus[gu->myAllyTeam] & (LOS_INLOS                  ));
 			const unsigned short plosBits = (unit->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
@@ -751,6 +753,8 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, bool useDefaultIcon, CV
 	const float dist = fastmath::sqrt_builtin(camera->GetPos().SqDistance(pos));
 
 	pos = camera->CalcWindowCoordinates(pos);
+	if (pos.z < 0)
+		return;
 	
 	// use white for selected units
 	const uint8_t* srcColor = unit->isSelected? color4::white: teamHandler.Team(unit->team)->color;
