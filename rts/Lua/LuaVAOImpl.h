@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 
 #include "lib/sol2/forward.hpp"
 
@@ -15,27 +16,9 @@ struct VAO;
 struct VBO;
 struct LuaVBOImpl;
 
-// Workaround to continue using lib/sol2/forward.hpp
-namespace sol {
-	using this_state_container = char[8]; //enough room to hold 64 bit pointer
-}
-
-struct VAOAttrib {
-	int divisor;
-	GLint size; // in number of elements
-	GLenum type;
-	GLboolean normalized;
-	GLsizei stride;
-	GLsizei pointer;
-	//AUX
-	int typeSizeInBytes;
-	std::string name;
-};
-
 class LuaVAOImpl {
 public:
-	LuaVAOImpl() = delete;
-	LuaVAOImpl(sol::this_state L_);
+	LuaVAOImpl();
 
 	LuaVAOImpl(const LuaVAOImpl& lva) = delete; //no copy cons
 	LuaVAOImpl(LuaVAOImpl&& lva) = default; //move cons
@@ -45,9 +28,9 @@ public:
 public:
 	static bool Supported();
 public:
-	void AttachVertexBuffer(LuaVBOImpl& luaVBO);
-	void AttachInstanceBuffer(LuaVBOImpl& luaVBO);
-	void AttachIndexBuffer(LuaVBOImpl& luaVBO);
+	void AttachVertexBuffer(const std::shared_ptr<LuaVBOImpl>& luaVBO);
+	void AttachInstanceBuffer(const std::shared_ptr<LuaVBOImpl>& luaVBO);
+	void AttachIndexBuffer(const std::shared_ptr<LuaVBOImpl>& luaVBO);
 
 	void DrawArrays(const GLenum mode, const sol::optional<GLsizei> vertCountOpt, const sol::optional<GLint> firstOpt, const sol::optional<int> instanceCountOpt);
 	void DrawElements(const GLenum mode, const sol::optional<GLsizei> indCountOpt, const sol::optional<int> indElemOffsetOpt, const sol::optional<int> instanceCountOpt, const sol::optional<int> baseVertexOpt);
@@ -55,20 +38,16 @@ private:
 	std::pair<GLsizei, GLsizei> DrawCheck(const GLenum mode, const sol::optional<GLsizei> drawCountOpt, const sol::optional<int> instanceCountOpt, const bool indexed);
 	void CondInitVAO();
 	void CheckDrawPrimitiveType(GLenum mode);
-	void AttachBufferImpl(LuaVBOImpl& luaVBO, LuaVBOImpl*& thisLuaVBO, GLenum reqTarget);
+	void AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std::shared_ptr<LuaVBOImpl>& thisLuaVBO, GLenum reqTarget);
 private:
 	template <typename... Args>
 	void LuaError(std::string format, Args... args);
 private:
-	sol::this_state_container L;
-private:
 	VAO* vao = nullptr;
 
-	LuaVBOImpl* vertLuaVBO = nullptr;
-	LuaVBOImpl* instLuaVBO = nullptr;
-	LuaVBOImpl* indxLuaVBO = nullptr;
-
-	std::map<int, VAOAttrib> vaoAttribs;
+	std::shared_ptr<LuaVBOImpl> vertLuaVBO;
+	std::shared_ptr<LuaVBOImpl> instLuaVBO;
+	std::shared_ptr<LuaVBOImpl> indxLuaVBO;
 };
 
 #endif //LUA_VAO_IMPL_H

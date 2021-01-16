@@ -189,6 +189,7 @@ GLAPI GLint APIENTRY glGetAttribLocationARB(GLhandleARB programObj, const GLchar
 
 GLAPI void APIENTRY glVertexAttribPointerARB(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer) {}
 GLAPI void APIENTRY glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {}
+GLAPI void APIENTRY glVertexAttribIPointer(GLuint index, GLint size, GLenum type, GLsizei stride, const void* pointer) {}
 GLAPI void APIENTRY glVertexAttribDivisor(GLuint index, GLuint divisor) {}
 GLAPI void APIENTRY glEnableVertexAttribArrayARB(GLuint index) {}
 GLAPI void APIENTRY glEnableVertexAttribArray(GLuint index) {}
@@ -249,6 +250,9 @@ GLAPI GLvoid* APIENTRY glMapBuffer(GLenum target, GLenum access) {
 GLAPI GLboolean APIENTRY glUnmapBuffer(GLenum target) {
 	return GL_FALSE;
 }
+
+GLAPI void APIENTRY glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z) {};
+GLAPI void APIENTRY glMemoryBarrier(GLbitfield barriers) {};
 
 GLAPI void APIENTRY glMultiTexCoord2i(GLenum target, GLint s, GLint t) {}
 GLAPI void APIENTRY glMultiTexCoord2iv(GLenum target, const GLint *v) {}
@@ -460,6 +464,8 @@ GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level,
 
 GLAPI void APIENTRY glTexImage2DMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) {}
 
+GLAPI void APIENTRY glBindImageTexture(GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format) {};
+
 GLAPI void APIENTRY glClear(GLbitfield mask) {}
 GLAPI void APIENTRY glTexCoord2i(GLint s, GLint t ){}
 GLAPI void APIENTRY glVertex2f(GLfloat x, GLfloat y ) {}
@@ -470,6 +476,7 @@ GLAPI void APIENTRY glEnd() {}
 GLAPI void APIENTRY glDeleteTextures(GLsizei n, const GLuint *textures) {}
 
 GLAPI void APIENTRY glGetIntegerv(GLenum pname, GLint *params) {}
+GLAPI void APIENTRY glGetIntegeri_v(GLenum target, GLuint index, GLint* data) {};
 GLAPI void APIENTRY glDepthFunc(GLenum func) {}
 GLAPI void APIENTRY glShadeModel(GLenum mode) {}
 
