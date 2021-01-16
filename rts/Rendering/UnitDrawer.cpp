@@ -573,7 +573,7 @@ void CUnitDrawer::DrawUnitIconsScreen()
 
 	CVertexArray* va = GetVertexArray();
 	iconSizeBase = std::max(12.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
-	const float3 camPos = (camHandler->GetCurrentController()).GetPos(); // TODO Move up the call stack!!!!!!!
+	const float3 camPos = (camHandler->GetCurrentController()).GetPos();
 	const float3 camDir = (camHandler->GetCurrentController()).GetDir();
 	float dist = CGround::LineGroundCol(camPos, camDir * 150000.0f, false);
 	if (dist < 0)
