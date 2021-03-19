@@ -27,7 +27,6 @@
 #include "Rendering/Models/IModelParser.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/ColorMap.h"
-#include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/HeightMapTexture.h"
@@ -57,7 +56,6 @@ void CWorldDrawer::InitPre() const
 	modelLoader.Init();
 
 	loadscreen->SetLoadMessage("Creating Unit Textures");
-	textureHandler3DO.Init();
 	textureHandlerS3O.Init();
 
 	CFeatureDrawer::InitStatic();
@@ -148,7 +146,6 @@ void CWorldDrawer::Kill()
 	spring::SafeDelete(farTextureHandler);
 	spring::SafeDelete(heightMapTexture);
 
-	textureHandler3DO.Kill();
 	textureHandlerS3O.Kill();
 
 	readMap->KillGroundDrawer();

@@ -21,7 +21,6 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
-#include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/UnitDrawer.h"
 #include "Rendering/UnitDrawerState.hpp"
 #include "Sim/Features/Feature.h"
@@ -161,7 +160,6 @@ void CFeatureDrawer::Init()
 
 	for (RdrContProxy& p: modelRenderers) {
 		p.SetLastDrawFrame(0);
-		(p.GetRenderer(MODELTYPE_3DO)).Init();
 		(p.GetRenderer(MODELTYPE_S3O)).Init();
 		(p.GetRenderer(MODELTYPE_ASS)).Init();
 	}
@@ -181,7 +179,6 @@ void CFeatureDrawer::Kill()
 	// reuse inner containers when reloading
 	// modelRenderers.clear();
 	for (RdrContProxy& p: modelRenderers) {
-		(p.GetRenderer(MODELTYPE_3DO)).Kill();
 		(p.GetRenderer(MODELTYPE_S3O)).Kill();
 		(p.GetRenderer(MODELTYPE_ASS)).Kill();
 	}
@@ -318,7 +315,7 @@ void CFeatureDrawer::DrawOpaquePass(bool deferredPass, bool, bool)
 {
 	unitDrawer->SetupOpaqueDrawing(deferredPass);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 		unitDrawer->PushModelRenderState(modelType);
 		DrawOpaqueFeatures(modelType);
 		unitDrawer->PopModelRenderState(modelType);
@@ -485,7 +482,7 @@ void CFeatureDrawer::DrawAlphaPass()
 		// needed for now; not always called directly after Draw()
 		GetVisibleFeatures(CCameraHandler::GetActiveCamera(), 0, true);
 
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			unitDrawer->PushModelRenderState(modelType);
 			DrawAlphaFeatures(modelType);
 			unitDrawer->PopModelRenderState(modelType);
@@ -571,19 +568,11 @@ void CFeatureDrawer::DrawShadowPass()
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0.5f);
 
-		// needed for 3do models (else they will use any currently bound texture)
 		// note: texture0 is by default a 1x1 texture with rgba(0,0,0,255)
 		// (we are just interested in the 255 alpha here)
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		// 3DO's have clockwise-wound faces and
-		// (usually) holes, so disable backface
-		// culling for them
-		glDisable(GL_CULL_FACE);
-		DrawOpaqueFeatures(MODELTYPE_3DO);
-		glEnable(GL_CULL_FACE);
-
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			DrawOpaqueFeatures(modelType);
 		}
 
@@ -645,7 +634,7 @@ void CFeatureDrawer::FlagVisibleFeatures(
 	for (int quad: quads) {
 		auto& mdlRenderProxy = featureDrawer->modelRenderers[quad];
 
-		for (int i = 0; i < MODELTYPE_OTHER; ++i) {
+		for (int i = 0; i < MODELTYPE_CNT; ++i) {
 			const auto& mdlRenderer = mdlRenderProxy.GetRenderer(i);
 			// const auto& featureBinKeys = mdlRenderer.GetObjectBinKeys();
 

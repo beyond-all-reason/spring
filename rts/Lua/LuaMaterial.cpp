@@ -122,17 +122,15 @@ int LuaMatShader::Compare(const LuaMatShader& a, const LuaMatShader& b)
 
 void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 {
-	static_assert(int(LUASHADER_3DO) == int(MODELTYPE_3DO  ), "");
 	static_assert(int(LUASHADER_S3O) == int(MODELTYPE_S3O  ), "");
 	static_assert(int(LUASHADER_ASS) == int(MODELTYPE_ASS  ), "");
-	static_assert(int(LUASHADER_GL ) == int(MODELTYPE_OTHER), "");
+	static_assert(int(LUASHADER_GL ) == int(MODELTYPE_CNT), "");
 
 	if (type != prev.type) {
 		switch (prev.type) {
 			case LUASHADER_GL: {
 				glUseProgram(0);
 			} break;
-			case LUASHADER_3DO:
 			case LUASHADER_S3O:
 			case LUASHADER_ASS: {
 				if (luaMatHandler.resetDrawStateFuncs[prev.type]) {
@@ -148,7 +146,6 @@ void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 				// custom shader
 				glUseProgram(openglID);
 			} break;
-			case LUASHADER_3DO:
 			case LUASHADER_S3O:
 			case LUASHADER_ASS: {
 				if (luaMatHandler.setupDrawStateFuncs[type]) {
@@ -174,7 +171,6 @@ void LuaMatShader::Print(const string& indent, bool isDeferred) const
 	switch (type) {
 		case LUASHADER_NONE: { typeName = "LUASHADER_NONE"; } break;
 		case LUASHADER_GL  : { typeName = "LUASHADER_GL"  ; } break;
-		case LUASHADER_3DO : { typeName = "LUASHADER_3DO" ; } break;
 		case LUASHADER_S3O : { typeName = "LUASHADER_S3O" ; } break;
 		case LUASHADER_ASS : { typeName = "LUASHADER_ASS" ; } break;
 		default            : {               assert(false); } break;

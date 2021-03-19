@@ -29,7 +29,6 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 
 #include "Sim/Features/Feature.h"
@@ -115,13 +114,6 @@ static const void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex1);
 }
-
-static const void BindOpaqueTexAtlas(const CS3OTextureHandler::S3OTexMat*) {
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex1ID());
-}
 static const void BindOpaqueTexDummy(const CS3OTextureHandler::S3OTexMat*) {}
 
 static const void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) {
@@ -136,26 +128,10 @@ static const void KillShadowTex(const CS3OTextureHandler::S3OTexMat*) {
 	glActiveTexture(GL_TEXTURE0);
 }
 
-
-static const void BindShadowTexAtlas(const CS3OTextureHandler::S3OTexMat*) {
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
-}
-
 static const void KillShadowTexAtlas(const CS3OTextureHandler::S3OTexMat*) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
-}
-
-
-
-static const void PushRenderState3DO() {
-	BindOpaqueTexAtlas(nullptr);
-
-	glPushAttrib(GL_POLYGON_BIT);
-	glDisable(GL_CULL_FACE);
 }
 
 static const void PushRenderStateS3O() {
@@ -165,10 +141,8 @@ static const void PushRenderStateS3O() {
 }
 
 static const void PushRenderStateASS() { /* no-op */ }
-
-static const void PopRenderState3DO() { glPopAttrib(); }
-static const void PopRenderStateS3O() {    /* no-op */ }
-static const void PopRenderStateASS() {    /* no-op */ }
+static const void PopRenderStateS3O()  { /* no-op */ }
+static const void PopRenderStateASS()  { /* no-op */ }
 
 
 static const void SetTeamColorDummy(const IUnitDrawerState* state, int team, const float2 alpha) {}
@@ -188,14 +162,12 @@ typedef const void (*PopRenderStateFunc)();
 
 typedef const void (*SetTeamColorFunc)(const IUnitDrawerState*, int team, const float2 alpha);
 
-static const BindTexFunc opaqueTexBindFuncs[MODELTYPE_OTHER] = {
-	BindOpaqueTexDummy, // 3DO (no-op, done by PushRenderState3DO)
+static const BindTexFunc opaqueTexBindFuncs[MODELTYPE_CNT] = {
 	BindOpaqueTex,      // S3O
 	BindOpaqueTex,      // ASS
 };
 
-static const BindTexFunc shadowTexBindFuncs[MODELTYPE_OTHER] = {
-	BindShadowTexAtlas, // 3DO
+static const BindTexFunc shadowTexBindFuncs[MODELTYPE_CNT] = {
 	BindShadowTex,      // S3O
 	BindShadowTex,      // ASS
 };
@@ -205,21 +177,18 @@ static const BindTexFunc* bindModelTexFuncs[] = {
 	&shadowTexBindFuncs[0], // shadow
 };
 
-static const KillTexFunc shadowTexKillFuncs[MODELTYPE_OTHER] = {
-	KillShadowTexAtlas, // 3DO
+static const KillTexFunc shadowTexKillFuncs[MODELTYPE_CNT] = {
 	KillShadowTex,      // S3O
 	KillShadowTex,      // ASS
 };
 
 
-static const PushRenderStateFunc renderStatePushFuncs[MODELTYPE_OTHER] = {
-	PushRenderState3DO,
+static const PushRenderStateFunc renderStatePushFuncs[MODELTYPE_CNT] = {
 	PushRenderStateS3O,
 	PushRenderStateASS,
 };
 
-static const PopRenderStateFunc renderStatePopFuncs[MODELTYPE_OTHER] = {
-	PopRenderState3DO,
+static const PopRenderStateFunc renderStatePopFuncs[MODELTYPE_CNT] = {
 	PopRenderStateS3O,
 	PopRenderStateASS,
 };
@@ -295,7 +264,7 @@ void CUnitDrawer::Init() {
 
 	LoadUnitExplosionGenerators();
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 		opaqueModelRenderers[modelType].Init();
 		alphaModelRenderers[modelType].Init();
 	}
@@ -357,7 +326,7 @@ void CUnitDrawer::Kill()
 	}
 
 	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			auto& lgb = liveGhostBuildings[allyTeam][modelType];
 			auto& dgb = deadGhostBuildings[allyTeam][modelType];
 
@@ -382,7 +351,7 @@ void CUnitDrawer::Kill()
 	// liveGhostBuildings.clear();
 
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 		opaqueModelRenderers[modelType].Kill();
 		alphaModelRenderers[modelType].Kill();
 	}
@@ -397,7 +366,7 @@ void CUnitDrawer::Kill()
 
 void CUnitDrawer::Update()
 {
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 		UpdateTempDrawUnits(tempOpaqueUnits[modelType]);
 		UpdateTempDrawUnits(tempAlphaUnits[modelType]);
 	}
@@ -460,7 +429,7 @@ void CUnitDrawer::DrawOpaquePass(bool deferredPass, bool drawReflection, bool dr
 {
 	SetupOpaqueDrawing(deferredPass);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 		PushModelRenderState(modelType);
 		DrawOpaqueUnits(modelType, drawReflection, drawRefraction);
 		DrawOpaqueAIUnits(modelType);
@@ -569,7 +538,7 @@ void CUnitDrawer::DrawUnitIconsScreen()
 {
 	if (game->hideInterface && iconHideWithUI)
 		return;
-	
+
 	// draw unit icons and radar blips
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
 	glEnable(GL_TEXTURE_2D);
@@ -604,7 +573,7 @@ void CUnitDrawer::DrawUnitIconsScreen()
 				continue;
 			if (unit->health <= 0 || unit->beingBuilt)
 				continue;
-			
+
 			const unsigned short closBits = (unit->losStatus[gu->myAllyTeam] & (LOS_INLOS                  ));
 			const unsigned short plosBits = (unit->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
 
@@ -690,8 +659,6 @@ void CUnitDrawer::DrawOpaqueUnitsShadow(int modelType) {
 	// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		// only need to bind the atlas once for 3DO's, but KISS
-		assert((modelType != MODELTYPE_3DO) || (mdlRenderer.GetObjectBinKey(i) == 0));
 		shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 
 		for (CUnit* unit: mdlRenderer.GetObjectBin(i)) {
@@ -719,14 +686,7 @@ void CUnitDrawer::DrawShadowPass()
 	{
 		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
 
-		// 3DO's have clockwise-wound faces and
-		// (usually) holes, so disable backface
-		// culling for them
-		glDisable(GL_CULL_FACE);
-		DrawOpaqueUnitsShadow(MODELTYPE_3DO);
-		glEnable(GL_CULL_FACE);
-
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			// note: just use DrawOpaqueUnits()? would
 			// save texture switches needed anyway for
 			// UNIT_SHADOW_ALPHA_MASKING
@@ -755,7 +715,7 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, const icon::CIconData* 
 	float3 pos = (!gu->spectatingFullView) ?
 		unit->GetObjDrawErrorPos(gu->myAllyTeam) :
 		unit->GetObjDrawMidPos();
-	
+
 	pos = camera->CalcWindowCoordinates(pos);
 	if (pos.z < 0)
 		return;
@@ -888,7 +848,7 @@ void CUnitDrawer::DrawAlphaPass()
 		if (UseAdvShading())
 			glDisable(GL_ALPHA_TEST);
 
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			PushModelRenderState(modelType);
 			DrawAlphaUnits(modelType);
 			DrawAlphaAIUnits(modelType);
@@ -1046,7 +1006,7 @@ void CUnitDrawer::DrawAlphaAIUnitBorder(const TempDrawUnit& unit)
 void CUnitDrawer::UpdateGhostedBuildings()
 {
 	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			auto& dgb = deadGhostBuildings[allyTeam][modelType];
 
 			for (int i = 0; i < dgb.size(); /*no-op*/) {
@@ -1584,7 +1544,7 @@ void CUnitDrawer::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCal
 {
 	const float3 stageBounds = {0.0f, unit->model->CalcDrawHeight(), unit->buildProgress};
 
-	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
+	// draw-height defaults to maxs.y - mins.y, but can be overridden for models
 	// the default value derives from the model vertices and makes more sense to use here
 	//
 	// Both clip planes move up. Clip plane 0 is the upper bound of the model,
@@ -1647,7 +1607,7 @@ void CUnitDrawer::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCal
 	const float3 stageColors[2] = {frameColors[globalRendering->teamNanospray], frameColors[globalRendering->teamNanospray]};
 	const float3 stageBounds    = {0.0f, model->CalcDrawHeight(), unit->buildProgress};
 
-	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
+	// draw-height defaults to maxs.y - mins.y, but can be overridden for models
 	// the default value derives from the model vertices and makes more sense to use here
 	//
 	// Both clip planes move up. Clip plane 0 is the upper bound of the model,

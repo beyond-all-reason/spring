@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IModelParser.h"
-#include "3DOParser.h"
 #include "S3OParser.h"
 #include "AssParser.h"
 #include "Game/GlobalUnsynced.h"
@@ -21,7 +20,6 @@
 
 CModelLoader modelLoader;
 
-static C3DOParser g3DOParser;
 static CS3OParser gS3OParser;
 static CAssParser gAssParser;
 
@@ -43,7 +41,6 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 
 static void RegisterModelFormats(CModelLoader::FormatMap& formats) {
 	// file-extension should be lowercase
-	formats.insert("3do", MODELTYPE_3DO);
 	formats.insert("s3o", MODELTYPE_S3O);
 
 	std::string extension;
@@ -84,10 +81,10 @@ static S3DModel CreateDummyModel(unsigned int id)
 	// create a crash-dummy
 	S3DModel model;
 	model.id = id;
-	model.type = MODELTYPE_3DO;
+	model.type = MODELTYPE_S3O;
 	model.numPieces = 1;
 	// give it one empty piece
-	model.AddPiece(g3DOParser.AllocPiece());
+	model.AddPiece(gS3OParser.AllocPiece());
 	model.GetRootPiece()->SetCollisionVolume(CollisionVolume('b', 'z', -UpVector, ZeroVector));
 	return model;
 }
@@ -135,7 +132,6 @@ void CModelLoader::Init()
 
 void CModelLoader::InitParsers()
 {
-	parsers[MODELTYPE_3DO] = &g3DOParser;
 	parsers[MODELTYPE_S3O] = &gS3OParser;
 	parsers[MODELTYPE_ASS] = &gAssParser;
 
@@ -167,7 +163,6 @@ void CModelLoader::KillParsers()
 		p->Kill();
 	}
 
-	parsers[MODELTYPE_3DO] = nullptr;
 	parsers[MODELTYPE_S3O] = nullptr;
 	parsers[MODELTYPE_ASS] = nullptr;
 }
@@ -395,14 +390,10 @@ void CModelLoader::CreateLists(S3DModel* model) {
 		p->CreateDispList();
 	}
 
-	if (model->type == MODELTYPE_3DO)
-		return;
-
 	// make sure textures (already preloaded) are fully loaded
 	textureHandlerS3O.LoadTexture(model);
 
 	// warn about models with bad normals (they break lighting)
-	// skip for 3DO's since those have auto-calculated normals
 	CheckPieceNormals(model, rootPiece);
 }
 

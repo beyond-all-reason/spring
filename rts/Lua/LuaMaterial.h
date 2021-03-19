@@ -49,12 +49,11 @@ class CSolidObject;
 class LuaMatShader {
 	public:
 		enum Type {
-			LUASHADER_3DO    = 0, // engine default; *must* equal MODELTYPE_3DO!
-			LUASHADER_S3O    = 1, // engine default; *must* equal MODELTYPE_S3O!
-			LUASHADER_ASS    = 2, // engine default; *must* equal MODELTYPE_ASS!
-			LUASHADER_GL     = 3, // custom Lua
-			LUASHADER_NONE   = 4,
-			LUASHADER_LAST   = 5,
+			LUASHADER_S3O    = 0, // engine default; *must* equal MODELTYPE_S3O!
+			LUASHADER_ASS    = 1, // engine default; *must* equal MODELTYPE_ASS!
+			LUASHADER_GL     = 2, // custom Lua
+			LUASHADER_NONE   = 3,
+			LUASHADER_LAST   = 4,
 		};
 		enum Pass {
 			LUASHADER_PASS_FWD = 0, // forward pass
@@ -78,7 +77,6 @@ class LuaMatShader {
 		// only accepts engine programs
 		void SetEngineTypeFromKey(const char* key) {
 			switch (hashStringLower(key)) {
-				case hashStringLower("3DO"): { type = LUASHADER_3DO ; } break;
 				case hashStringLower("S3O"): { type = LUASHADER_S3O ; } break;
 				case hashStringLower("ASS"): { type = LUASHADER_ASS ; } break;
 				default                    : { type = LUASHADER_NONE; } break;
@@ -95,7 +93,7 @@ class LuaMatShader {
 		bool ValidForPass(Pass pass) const { return (pass != LUASHADER_PASS_DFR || type != LUASHADER_NONE); }
 
 		bool IsCustomType() const { return (type == LUASHADER_GL); }
-		bool IsEngineType() const { return (type >= LUASHADER_3DO && type <= LUASHADER_ASS); }
+		bool IsEngineType() const { return (type >= LUASHADER_S3O && type <= LUASHADER_ASS); }
 
 	public:
 		Type type = LUASHADER_NONE;

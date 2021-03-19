@@ -78,7 +78,7 @@ public:
 	SolidObjectDecalDef decalDef;
 
 	std::string name;      // eg. "arm_flash"
-	std::string modelName; // eg. "arm_flash.3do" (no path prefix)
+	std::string modelName; // eg. "arm_flash.s3o" (no path prefix)
 
 	spring::unordered_map<std::string, std::string> customParams;
 };

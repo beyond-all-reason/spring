@@ -116,7 +116,7 @@ unsigned int CS3OTextureHandler::LoadAndCacheTexture(
 		bitmap = &(bitmapIt->second);
 	} else {
 		// bitmap was not yet preloaded, meaning we are the
-		// first to (all non-3DO model textures are always
+		// first to (all model textures are always
 		// preloaded)
 		assert(preloadCall);
 
