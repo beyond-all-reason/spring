@@ -279,8 +279,8 @@ void CUnitDrawer::Init() {
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
 
 	unitDrawerStates.fill(nullptr);
-	unitDrawerStates[DRAWER_STATE_SSP] = IUnitDrawerState::GetInstance(globalRendering->haveARB, globalRendering->haveGLSL);
-	unitDrawerStates[DRAWER_STATE_FFP] = IUnitDrawerState::GetInstance(                   false,                     false);
+	unitDrawerStates[DRAWER_STATE_SSP] = IUnitDrawerState::GetInstance(globalRendering->haveGLSL);
+	unitDrawerStates[DRAWER_STATE_FFP] = IUnitDrawerState::GetInstance(                    false);
 
 	drawModelFuncs[0] = &CUnitDrawer::DrawUnitModelBeingBuiltOpaque;
 	drawModelFuncs[1] = &CUnitDrawer::DrawUnitModelBeingBuiltShadow;

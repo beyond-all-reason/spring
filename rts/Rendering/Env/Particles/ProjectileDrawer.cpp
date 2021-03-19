@@ -269,7 +269,7 @@ void CProjectileDrawer::Init() {
 
 	if (CheckSoftenExt()) {
 		{
-			fxShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader", false);
+			fxShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader");
 			fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXVertProg.glsl", "", GL_VERTEX_SHADER));
 			fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXFragProg.glsl", "", GL_FRAGMENT_SHADER));
 			fxShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);

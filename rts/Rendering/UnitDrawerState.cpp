@@ -51,20 +51,11 @@ float4 IUnitDrawerState::GetTeamColor(int team, float alpha) {
 
 
 
-IUnitDrawerState* IUnitDrawerState::GetInstance(bool haveARB, bool haveGLSL) {
-	IUnitDrawerState* instance = nullptr;
+IUnitDrawerState* IUnitDrawerState::GetInstance(bool haveGLSL) {
+	if (haveGLSL)
+		return new UnitDrawerStateGLSL();
 
-	if (!haveARB && !haveGLSL) {
-		instance = new UnitDrawerStateFFP();
-	} else {
-		if (!haveGLSL) {
-			instance = new UnitDrawerStateARB();
-		} else {
-			instance = new UnitDrawerStateGLSL();
-		}
-	}
-
-	return instance;
+	return new UnitDrawerStateFFP();
 }
 
 
@@ -203,103 +194,6 @@ void UnitDrawerStateFFP::SetNanoColor(const float4& color) const {
 	}
 }
 
-
-
-
-bool UnitDrawerStateARB::Init(const CUnitDrawer* ud) {
-	if (!globalRendering->haveARB) {
-		// not possible to do (ARB) shader-based model rendering
-		return false;
-	}
-	if (!configHandler->GetBool("AdvUnitShading")) {
-		// not allowed to do (ARB) shader-based model rendering
-		return false;
-	}
-
-	// if GLEW_NV_vertex_program2 is supported, transparent objects are clipped against GL_CLIP_PLANE3
-	const char* vertProgNamesARB[2] = {"ARB/units3o.vp", "ARB/units3o2.vp"};
-	const char* fragProgNamesARB[2] = {"ARB/units3o.fp", "ARB/units3o_shadow.fp"};
-
-	#define sh shaderHandler
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD] = sh->CreateProgramObject("[UnitDrawer]", "S3OShaderDefARB", true);
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[0], "", GL_FRAGMENT_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->Link();
-
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD] = sh->CreateProgramObject("[UnitDrawer]", "S3OShaderAdvARB", true);
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[1], "", GL_FRAGMENT_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->Link();
-
-	// make the active shader non-NULL
-	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
-
-	#undef sh
-	return true;
-}
-
-void UnitDrawerStateARB::Kill() {
-	modelShaders.fill(nullptr);
-	shaderHandler->ReleaseProgramObjects("[UnitDrawer]");
-}
-
-bool UnitDrawerStateARB::CanEnable(const CUnitDrawer* ud) const {
-	// ARB shaders should support vertex program + clipplanes
-	// (used for water ref**ction passes) but only with option
-	// ARB_position_invariant; this is present so skip the RHS
-	return (ud->UseAdvShading() /*&& (!water->DrawReflectionPass() && !water->DrawRefractionPass())*/);
-}
-
-void UnitDrawerStateARB::Enable(const CUnitDrawer* ud, bool deferredPass, bool alphaPass) {
-	EnableCommon(ud, deferredPass && false);
-
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformTarget(GL_VERTEX_PROGRAM_ARB);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(10, &sky->GetLight()->GetLightDir().x);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4f(11, sunLighting->modelDiffuseColor.x, sunLighting->modelDiffuseColor.y, sunLighting->modelDiffuseColor.z, 0.0f);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4f(12, sunLighting->modelAmbientColor.x, sunLighting->modelAmbientColor.y, sunLighting->modelAmbientColor.z, 1.0f); //!
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4f(13, camera->GetPos().x, camera->GetPos().y, camera->GetPos().z, 0.0f);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4f(10, 0.0f, 0.0f, 0.0f, sunLighting->modelShadowDensity);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4f(11, sunLighting->modelAmbientColor.x, sunLighting->modelAmbientColor.y, sunLighting->modelAmbientColor.z, 1.0f);
-
-	glMatrixMode(GL_MATRIX0_ARB);
-	glLoadMatrixf(shadowHandler.GetShadowMatrixRaw());
-	glMatrixMode(GL_MODELVIEW);
-}
-
-void UnitDrawerStateARB::Disable(const CUnitDrawer* ud, bool) {
-	DisableCommon(ud, false);
-}
-
-
-void UnitDrawerStateARB::EnableTextures() const { EnableTexturesCommon(); }
-void UnitDrawerStateARB::DisableTextures() const { DisableTexturesCommon(); }
-
-void UnitDrawerStateARB::EnableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Enable(); }
-void UnitDrawerStateARB::DisableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Disable(); }
-
-
-void UnitDrawerStateARB::SetTeamColor(int team, const float2 alpha) const {
-	// NOTE:
-	//   both UnitDrawer::DrawAlphaPass and FeatureDrawer::DrawAlphaPass
-	//   disable advShading in case of ARB, so in that case we should end
-	//   up in StateFFP::SetTeamColor
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
-
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(14, std::move(GetTeamColor(team, alpha.x)));
-}
-
-void UnitDrawerStateARB::SetNanoColor(const float4& color) const {
-	if (color.a > 0.0f) {
-		glColorf4(color);
-	} else {
-		glColorf3(OnesVector);
-	}
-}
-
-
-
 bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
 	if (!globalRendering->haveGLSL) {
 		// not possible to do (GLSL) shader-based model rendering
@@ -324,7 +218,7 @@ bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
 		("#define MAX_DYNAMIC_MODEL_LIGHTS " + IntToString(lightHandler->GetMaxLights()) + "\n");
 
 	for (unsigned int n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
-		modelShaders[n] = sh->CreateProgramObject("[UnitDrawer]", shaderNames[n], false);
+		modelShaders[n] = sh->CreateProgramObject("[UnitDrawer]", shaderNames[n]);
 		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProg.glsl", extraDefs, GL_VERTEX_SHADER));
 		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProg.glsl", extraDefs, GL_FRAGMENT_SHADER));
 
@@ -432,7 +326,6 @@ void UnitDrawerStateGLSL::UpdateCurrentShaderSky(const CUnitDrawer* ud, const IS
 
 
 void UnitDrawerStateGLSL::SetTeamColor(int team, const float2 alpha) const {
-	// NOTE: see UnitDrawerStateARB::SetTeamColor
 	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
 
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(9, std::move(GetTeamColor(team, alpha.x)));
@@ -441,6 +334,7 @@ void UnitDrawerStateGLSL::SetTeamColor(int team, const float2 alpha) const {
 
 void UnitDrawerStateGLSL::SetNanoColor(const float4& color) const {
 	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(10, color);
 }
 

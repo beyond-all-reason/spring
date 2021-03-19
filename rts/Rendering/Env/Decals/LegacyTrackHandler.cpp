@@ -72,16 +72,12 @@ void LegacyTrackHandler::LoadDecalShaders()
 
 	// SM3 maps have no baked lighting, so decals blend differently
 	const bool haveShadingTexture = (readMap->GetShadingTexture() != 0);
-	const char* fragmentProgramNameARB = haveShadingTexture?
-		"ARB/GroundDecalsSMF.fp":
-		"ARB/GroundDecalsSM3.fp";
 	const std::string extraDef = haveShadingTexture?
 		"#define HAVE_SHADING_TEX 1\n":
 		"#define HAVE_SHADING_TEX 0\n";
 
-	decalShaders[DECAL_SHADER_ARB ] = sh->CreateProgramObject("[LegacyTrackHandler]", "DecalShaderARB",  true);
-	decalShaders[DECAL_SHADER_GLSL] = sh->CreateProgramObject("[LegacyTrackHandler]", "DecalShaderGLSL", false);
-	decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_ARB];
+	decalShaders[DECAL_SHADER_GLSL] = sh->CreateProgramObject("[LegacyTrackHandler]", "DecalShaderGLSL");
+	decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_GLSL];
 
 	if (globalRendering->haveGLSL) {
 		decalShaders[DECAL_SHADER_GLSL]->AttachShaderObject(sh->CreateShaderObject("GLSL/GroundDecalsVertProg.glsl", "",       GL_VERTEX_SHADER));
@@ -107,10 +103,6 @@ void LegacyTrackHandler::LoadDecalShaders()
 		decalShaders[DECAL_SHADER_GLSL]->Validate();
 
 		decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_GLSL];
-	} else if (globalRendering->haveARB) {
-		decalShaders[DECAL_SHADER_ARB]->AttachShaderObject(sh->CreateShaderObject("ARB/GroundDecals.vp", "", GL_VERTEX_PROGRAM_ARB));
-		decalShaders[DECAL_SHADER_ARB]->AttachShaderObject(sh->CreateShaderObject(fragmentProgramNameARB, "", GL_FRAGMENT_PROGRAM_ARB));
-		decalShaders[DECAL_SHADER_ARB]->Link();
 	}
 
 	#undef sh
@@ -376,21 +368,9 @@ void LegacyTrackHandler::BindShader(const float3& ambientColor)
 {
 	decalShaders[DECAL_SHADER_CURR]->Enable();
 
-	if (decalShaders[DECAL_SHADER_CURR] == decalShaders[DECAL_SHADER_ARB]) {
-		decalShaders[DECAL_SHADER_CURR]->SetUniformTarget(GL_VERTEX_PROGRAM_ARB);
-		decalShaders[DECAL_SHADER_CURR]->SetUniform4f(10, 1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), 0.0f, 1.0f);
-		decalShaders[DECAL_SHADER_CURR]->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-		decalShaders[DECAL_SHADER_CURR]->SetUniform4f(10, ambientColor.x, ambientColor.y, ambientColor.z, 1.0f);
-		decalShaders[DECAL_SHADER_CURR]->SetUniform4f(11, 0.0f, 0.0f, 0.0f, sunLighting->groundShadowDensity);
-
-		glMatrixMode(GL_MATRIX0_ARB);
-		glLoadMatrixf(shadowHandler.GetShadowMatrixRaw());
-		glMatrixMode(GL_MODELVIEW);
-	} else {
-		decalShaders[DECAL_SHADER_CURR]->SetUniform4f(4, ambientColor.x, ambientColor.y, ambientColor.z, 1.0f);
-		decalShaders[DECAL_SHADER_CURR]->SetUniformMatrix4fv(5, false, shadowHandler.GetShadowMatrixRaw());
-		decalShaders[DECAL_SHADER_CURR]->SetUniform4fv(6, &(shadowHandler.GetShadowParams().x));
-	}
+	decalShaders[DECAL_SHADER_CURR]->SetUniform4f(4, ambientColor.x, ambientColor.y, ambientColor.z, 1.0f);
+	decalShaders[DECAL_SHADER_CURR]->SetUniformMatrix4fv(5, false, shadowHandler.GetShadowMatrixRaw());
+	decalShaders[DECAL_SHADER_CURR]->SetUniform4fv(6, &(shadowHandler.GetShadowParams().x));
 }
 
 

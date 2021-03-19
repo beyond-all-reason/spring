@@ -48,7 +48,7 @@ CAdvTreeDrawer::CAdvTreeDrawer(): ITreeDrawer()
 	if (!FBO::IsSupported())
 		throw content_error("[AdvTreeDrawer] missing FBO support");
 
-	if (!globalRendering->haveARB && !globalRendering->haveGLSL)
+	if (!globalRendering->haveGLSL)
 		throw content_error("[AdvTreeDrawer] missing shader support");
 
 	LoadTreeShaders();
@@ -113,14 +113,14 @@ void CAdvTreeDrawer::LoadTreeShaders() {
 
 	if (globalRendering->haveGLSL) {
 		treeShaders[TREE_PROGRAM_NEAR_BASIC] =
-			shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_BASIC] + "GLSL", false);
+			shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_BASIC] + "GLSL");
 		treeShaders[TREE_PROGRAM_NEAR_BASIC]->AttachShaderObject(
 			shaderHandler->CreateShaderObject("GLSL/TreeVertProg.glsl", shaderDefines[TREE_PROGRAM_NEAR_BASIC], GL_VERTEX_SHADER)
 		);
 		treeShaders[TREE_PROGRAM_NEAR_BASIC]->Link();
 
-		treeShaders[TREE_PROGRAM_NEAR_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_SHADOW] + "GLSL", false);
-		treeShaders[TREE_PROGRAM_DIST_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_DIST_SHADOW] + "GLSL", false);
+		treeShaders[TREE_PROGRAM_NEAR_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_SHADOW] + "GLSL");
+		treeShaders[TREE_PROGRAM_DIST_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_DIST_SHADOW] + "GLSL");
 
 		if (CShadowHandler::ShadowsSupported()) {
 			treeShaders[TREE_PROGRAM_NEAR_SHADOW]->AttachShaderObject(
@@ -183,21 +183,6 @@ void CAdvTreeDrawer::LoadTreeShaders() {
 		treeShaders[TREE_PROGRAM_DIST_SHADOW]->SetUniform1i(11, 1);
 		treeShaders[TREE_PROGRAM_DIST_SHADOW]->Disable();
 		treeShaders[TREE_PROGRAM_DIST_SHADOW]->Validate();
-	} else {
-		treeShaders[TREE_PROGRAM_NEAR_BASIC] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_BASIC] + "ARB", true);
-		treeShaders[TREE_PROGRAM_NEAR_BASIC]->AttachShaderObject(shaderHandler->CreateShaderObject("ARB/treeNS.vp", "", GL_VERTEX_PROGRAM_ARB));
-		treeShaders[TREE_PROGRAM_NEAR_BASIC]->Link();
-
-		if (CShadowHandler::ShadowsSupported()) {
-			treeShaders[TREE_PROGRAM_NEAR_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_NEAR_SHADOW] + "ARB", true);
-			treeShaders[TREE_PROGRAM_NEAR_SHADOW]->AttachShaderObject(shaderHandler->CreateShaderObject("ARB/tree.vp", "", GL_VERTEX_PROGRAM_ARB));
-			treeShaders[TREE_PROGRAM_NEAR_SHADOW]->AttachShaderObject(shaderHandler->CreateShaderObject("ARB/treeFPshadow.fp", "", GL_FRAGMENT_PROGRAM_ARB));
-			treeShaders[TREE_PROGRAM_NEAR_SHADOW]->Link();
-			treeShaders[TREE_PROGRAM_DIST_SHADOW] = shaderHandler->CreateProgramObject("[TreeDrawer]", shaderNames[TREE_PROGRAM_DIST_SHADOW] + "ARB", true);
-			treeShaders[TREE_PROGRAM_DIST_SHADOW]->AttachShaderObject(shaderHandler->CreateShaderObject("ARB/treeFar.vp", "", GL_VERTEX_PROGRAM_ARB));
-			treeShaders[TREE_PROGRAM_DIST_SHADOW]->AttachShaderObject(shaderHandler->CreateShaderObject("ARB/treeFPshadow.fp", "", GL_FRAGMENT_PROGRAM_ARB));
-			treeShaders[TREE_PROGRAM_DIST_SHADOW]->Link();
-		}
 	}
 }
 
@@ -481,15 +466,6 @@ void CAdvTreeDrawer::Draw(float treeDistance)
 		if (globalRendering->haveGLSL) {
 			treeShader->SetUniformMatrix4fv(7, false, shadowHandler.GetShadowMatrixRaw());
 			treeShader->SetUniform4fv(8, &(shadowHandler.GetShadowParams().x));
-		} else {
-			treeShader->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-			treeShader->SetUniform4f(10, sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, 1.0f);
-			treeShader->SetUniform4f(11, 0.0f, 0.0f, 0.0f, 1.0f - (sunLighting->groundShadowDensity * 0.5f));
-			treeShader->SetUniformTarget(GL_VERTEX_PROGRAM_ARB);
-
-			glMatrixMode(GL_MATRIX0_ARB);
-			glLoadMatrixf(shadowHandler.GetShadowMatrixRaw());
-			glMatrixMode(GL_MODELVIEW);
 		}
 	} else {
 		glBindTexture(GL_TEXTURE_2D, activeFarTex);

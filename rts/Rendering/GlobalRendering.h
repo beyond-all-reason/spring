@@ -266,7 +266,6 @@ public:
 	/**
 	 * Shader capabilities
 	 */
-	bool haveARB;
 	bool haveGLSL;
 
 	/**
