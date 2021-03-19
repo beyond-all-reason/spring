@@ -27,7 +27,7 @@ CRadarTexture::CRadarTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glSpringTexStorage2D(GL_TEXTURE_2D, -1, GL_RG8, texSize.x, texSize.y);
+	GL::TexStorage2D(GL_TEXTURE_2D, -1, GL_RG8, texSize.x, texSize.y);
 
 	infoTexPBO.Bind();
 	infoTexPBO.New(texSize.x * texSize.y * texChannels * sizeof(unsigned short), GL_STREAM_DRAW);
@@ -95,7 +95,7 @@ CRadarTexture::CRadarTexture()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
+		GL::TexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
 
 		glGenTextures(1, &uploadTexJammer);
 		glBindTexture(GL_TEXTURE_2D, uploadTexJammer);
@@ -103,7 +103,7 @@ CRadarTexture::CRadarTexture()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
+		GL::TexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
 	}
 
 	if (!fbo.IsValid() || !shader->IsValid()) {

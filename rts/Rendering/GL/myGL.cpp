@@ -271,49 +271,6 @@ void glSaveTexture(const GLuint textureID, const char* filename)
 	bmp.Save(filename, false);
 }
 
-
-void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
-{
-#ifdef GLEW_ARB_multi_bind
-	if (GLEW_ARB_multi_bind) {
-		glBindTextures(first, count, textures);
-	} else
-#endif
-	{
-		for (int i = 0; i < count; ++i) {
-			const GLuint texture = (textures == nullptr) ? 0 : textures[i];
-			glActiveTexture(GL_TEXTURE0 + first + i);
-			glBindTexture(GL_TEXTURE_2D, texture);
-		}
-		glActiveTexture(GL_TEXTURE0);
-
-	}
-}
-
-
-void glSpringTexStorage2D(const GLenum target, GLint levels, const GLint internalFormat, const GLsizei width, const GLsizei height)
-{
-#ifdef GLEW_ARB_texture_storage
-	if (levels < 0)
-		levels = std::ceil(std::log((float)(std::max(width, height) + 1)));
-
-	if (GLEW_ARB_texture_storage) {
-		glTexStorage2D(target, levels, internalFormat, width, height);
-	} else
-#endif
-	{
-		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
-		switch (internalFormat) {
-			case GL_RGBA8: format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
-			case GL_RGB8:  format = GL_RGB;  type = GL_UNSIGNED_BYTE; break;
-			default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
-			break;
-		}
-		glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, nullptr);
-	}
-}
-
-
 void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data)
 {
 	if (globalRendering->compressTextures) {

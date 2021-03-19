@@ -507,7 +507,7 @@ void CDecalsDrawerGL4::GenerateAtlasTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0f);
-	glSpringTexStorage2D(GL_TEXTURE_2D, atlas.GetMaxMipMaps(), GL_RGBA8, atlas.GetAtlasSize().x, atlas.GetAtlasSize().y);
+	GL::TexStorage2D(GL_TEXTURE_2D, atlas.GetMaxMipMaps(), GL_RGBA8, atlas.GetAtlasSize().x, atlas.GetAtlasSize().y);
 
 	FBO fb;
 	if (!fb.IsValid()) {
@@ -791,7 +791,7 @@ void CDecalsDrawerGL4::Draw()
 		infoTextureHandler->GetCurrentInfoTexture(),
 		depthTex
 	};
-	glSpringBindTextures(0, textures.size(), &textures[0]);
+	GL::BindTextures(0, textures.size(), &textures[0]);
 
 	if (shadowHandler.ShadowsLoaded()) {
 		CMatrix44f sm = shadowHandler.GetShadowMatrix();
