@@ -52,7 +52,10 @@ public:
 	bool DrawForward() const { return drawForward; }
 	bool DrawDeferred() const { return drawDeferred; }
 
+	bool UseAdvShading() const { return advShading; }
 	bool WireFrameMode() const { return wireframe; }
+
+	bool& UseAdvShadingRef() { return advShading; }
 	bool& WireFrameModeRef() { return wireframe; }
 
 	CBaseGroundTextures* GetGroundTextures() { return groundTextures; }
@@ -82,6 +85,7 @@ protected:
 	bool postDeferredEvents;
 
 	bool wireframe;
+	bool advShading;
 };
 
 #endif // _BASE_GROUND_DRAWER_H

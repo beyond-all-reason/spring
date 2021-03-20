@@ -79,36 +79,38 @@ void LegacyTrackHandler::LoadDecalShaders()
 	decalShaders[DECAL_SHADER_GLSL] = sh->CreateProgramObject("[LegacyTrackHandler]", "DecalShaderGLSL");
 	decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_GLSL];
 
-	decalShaders[DECAL_SHADER_GLSL]->AttachShaderObject(sh->CreateShaderObject("GLSL/GroundDecalsVertProg.glsl", "",       GL_VERTEX_SHADER));
-	decalShaders[DECAL_SHADER_GLSL]->AttachShaderObject(sh->CreateShaderObject("GLSL/GroundDecalsFragProg.glsl", extraDef, GL_FRAGMENT_SHADER));
-	decalShaders[DECAL_SHADER_GLSL]->Link();
+	if (globalRendering->haveGLSL) {
+		decalShaders[DECAL_SHADER_GLSL]->AttachShaderObject(sh->CreateShaderObject("GLSL/GroundDecalsVertProg.glsl", "",       GL_VERTEX_SHADER));
+		decalShaders[DECAL_SHADER_GLSL]->AttachShaderObject(sh->CreateShaderObject("GLSL/GroundDecalsFragProg.glsl", extraDef, GL_FRAGMENT_SHADER));
+		decalShaders[DECAL_SHADER_GLSL]->Link();
 
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("decalTex");           // idx 0
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadeTex");           // idx 1
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowTex");          // idx 2
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("mapSizePO2");         // idx 3
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("groundAmbientColor"); // idx 4
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowMatrix");       // idx 5
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowParams");       // idx 6
-	decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowDensity");      // idx 7
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("decalTex");           // idx 0
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadeTex");           // idx 1
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowTex");          // idx 2
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("mapSizePO2");         // idx 3
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("groundAmbientColor"); // idx 4
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowMatrix");       // idx 5
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowParams");       // idx 6
+		decalShaders[DECAL_SHADER_GLSL]->SetUniformLocation("shadowDensity");      // idx 7
 
-	decalShaders[DECAL_SHADER_GLSL]->Enable();
-	decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(0, 0); // decalTex  (idx 0, texunit 0)
-	decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(1, 1); // shadeTex  (idx 1, texunit 1)
-	decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(2, 2); // shadowTex (idx 2, texunit 2)
-	decalShaders[DECAL_SHADER_GLSL]->SetUniform2f(3, 1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE));
-	decalShaders[DECAL_SHADER_GLSL]->SetUniform1f(7, sunLighting->groundShadowDensity);
-	decalShaders[DECAL_SHADER_GLSL]->Disable();
-	decalShaders[DECAL_SHADER_GLSL]->Validate();
+		decalShaders[DECAL_SHADER_GLSL]->Enable();
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(0, 0); // decalTex  (idx 0, texunit 0)
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(1, 1); // shadeTex  (idx 1, texunit 1)
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform1i(2, 2); // shadowTex (idx 2, texunit 2)
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform2f(3, 1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE));
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform1f(7, sunLighting->groundShadowDensity);
+		decalShaders[DECAL_SHADER_GLSL]->Disable();
+		decalShaders[DECAL_SHADER_GLSL]->Validate();
 
-	decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_GLSL];
+		decalShaders[DECAL_SHADER_CURR] = decalShaders[DECAL_SHADER_GLSL];
+	}
 
 	#undef sh
 }
 
 void LegacyTrackHandler::SunChanged()
 {
-	if (decalShaders.size() > DECAL_SHADER_GLSL) {
+	if (globalRendering->haveGLSL && decalShaders.size() > DECAL_SHADER_GLSL) {
 		decalShaders[DECAL_SHADER_GLSL]->Enable();
 		decalShaders[DECAL_SHADER_GLSL]->SetUniform1f(7, sunLighting->groundShadowDensity);
 		decalShaders[DECAL_SHADER_GLSL]->Disable();

@@ -154,7 +154,7 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_DEPTH_CLAMP_NV);
 
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
@@ -176,7 +176,7 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 
 	drawFunc(data);   // draw
 
-	glDisable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_CLAMP_NV);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);

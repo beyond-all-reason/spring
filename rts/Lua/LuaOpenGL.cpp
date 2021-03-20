@@ -76,6 +76,7 @@
 #include "System/Log/ILog.h"
 #include "System/Matrix44f.h"
 
+CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
 
 static constexpr int MAX_TEXTURE_UNITS = 32;
@@ -91,6 +92,7 @@ LuaOpenGL::DrawMode LuaOpenGL::drawMode = LuaOpenGL::DRAW_NONE;
 LuaOpenGL::DrawMode LuaOpenGL::prevDrawMode = LuaOpenGL::DRAW_NONE;
 
 bool  LuaOpenGL::safeMode = true;
+bool  LuaOpenGL::canUseShaders = false;
 int  LuaOpenGL::deprecatedGLWarnLevel = 0;
 
 std::unordered_set<std::string> LuaOpenGL::deprecatedGLWarned = {};
@@ -251,6 +253,8 @@ void LuaOpenGL::Init()
 
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
+	canUseShaders = (globalRendering->haveGLSL && configHandler->GetBool("LuaShaders"));
+
 	deprecatedGLWarnLevel = configHandler->GetInt("DeprecatedGLWarnLevel");
 	if (deprecatedGLWarnLevel == 1)
 		deprecatedGLWarned.reserve(64); // only deprecated calls are logged
@@ -262,6 +266,9 @@ void LuaOpenGL::Free()
 {
 	glDeleteLists(resetStateList, 1);
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+
+	if (!globalRendering->haveGLSL)
+		return;
 
 	for (const OcclusionQuery* q: occlusionQueries) {
 		glDeleteQueries(1, &q->id);
@@ -300,20 +307,23 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ColorMask);
 	REGISTER_LUA_CFUNC(DepthMask);
 	REGISTER_LUA_CFUNC(DepthTest);
-	if (GLEW_ARB_depth_clamp)
+	if (GLEW_NV_depth_clamp)
 		REGISTER_LUA_CFUNC(DepthClamp);
 
 	REGISTER_LUA_CFUNC(Culling);
 	REGISTER_LUA_CFUNC(LogicOp);
 	REGISTER_LUA_CFUNC(Fog);
 	REGISTER_LUA_CFUNC(AlphaTest);
-	REGISTER_LUA_CFUNC(AlphaToCoverage);
+	if (GLEW_ARB_multisample)
+		REGISTER_LUA_CFUNC(AlphaToCoverage);
 	REGISTER_LUA_CFUNC(LineStipple);
 	REGISTER_LUA_CFUNC(Blending);
 	REGISTER_LUA_CFUNC(BlendEquation);
 	REGISTER_LUA_CFUNC(BlendFunc);
-	REGISTER_LUA_CFUNC(BlendEquationSeparate);
-	REGISTER_LUA_CFUNC(BlendFuncSeparate);
+	if (GLEW_EXT_blend_equation_separate)
+		REGISTER_LUA_CFUNC(BlendEquationSeparate);
+	if (GLEW_EXT_blend_func_separate)
+		REGISTER_LUA_CFUNC(BlendFuncSeparate);
 
 	REGISTER_LUA_CFUNC(Material);
 	REGISTER_LUA_CFUNC(Color);
@@ -325,16 +335,18 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(StencilMask);
 	REGISTER_LUA_CFUNC(StencilFunc);
 	REGISTER_LUA_CFUNC(StencilOp);
-
-	REGISTER_LUA_CFUNC(StencilMaskSeparate);
-	REGISTER_LUA_CFUNC(StencilFuncSeparate);
-	REGISTER_LUA_CFUNC(StencilOpSeparate);
+	if (GLEW_EXT_stencil_two_side) {
+		REGISTER_LUA_CFUNC(StencilMaskSeparate);
+		REGISTER_LUA_CFUNC(StencilFuncSeparate);
+		REGISTER_LUA_CFUNC(StencilOpSeparate);
+	}
 
 	REGISTER_LUA_CFUNC(LineWidth);
 	REGISTER_LUA_CFUNC(PointSize);
-
-	REGISTER_LUA_CFUNC(PointSprite);
-	REGISTER_LUA_CFUNC(PointParameter);
+	if (globalRendering->haveGLSL) {
+		REGISTER_LUA_CFUNC(PointSprite);
+		REGISTER_LUA_CFUNC(PointParameter);
+	}
 
 	REGISTER_LUA_CFUNC(Texture);
 	REGISTER_LUA_CFUNC(CreateTexture);
@@ -342,12 +354,13 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(DeleteTexture);
 	REGISTER_LUA_CFUNC(TextureInfo);
 	REGISTER_LUA_CFUNC(CopyToTexture);
-
-	// FIXME: obsolete
-	REGISTER_LUA_CFUNC(DeleteTextureFBO);
-	REGISTER_LUA_CFUNC(RenderToTexture);
-
-	REGISTER_LUA_CFUNC(GenerateMipmap);
+	if (FBO::IsSupported()) {
+		// FIXME: obsolete
+		REGISTER_LUA_CFUNC(DeleteTextureFBO);
+		REGISTER_LUA_CFUNC(RenderToTexture);
+	}
+	if (IS_GL_FUNCTION_AVAILABLE(glGenerateMipmapEXT))
+		REGISTER_LUA_CFUNC(GenerateMipmap);
 
 	REGISTER_LUA_CFUNC(ActiveTexture);
 	REGISTER_LUA_CFUNC(TexEnv);
@@ -446,10 +459,12 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ReadPixels);
 	REGISTER_LUA_CFUNC(SaveImage);
 
-	REGISTER_LUA_CFUNC(CreateQuery);
-	REGISTER_LUA_CFUNC(DeleteQuery);
-	REGISTER_LUA_CFUNC(RunQuery);
-	REGISTER_LUA_CFUNC(GetQuery);
+	if (GLEW_ARB_occlusion_query) {
+		REGISTER_LUA_CFUNC(CreateQuery);
+		REGISTER_LUA_CFUNC(DeleteQuery);
+		REGISTER_LUA_CFUNC(RunQuery);
+		REGISTER_LUA_CFUNC(GetQuery);
+	}
 
 	REGISTER_LUA_CFUNC(GetShadowMapParams);
 
@@ -458,10 +473,13 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
 
-	LuaShaders::PushEntries(L);
+	if (canUseShaders)
+		LuaShaders::PushEntries(L);
 
- 	LuaFBOs::PushEntries(L);
- 	LuaRBOs::PushEntries(L);
+	if (FBO::IsSupported()) {
+	 	LuaFBOs::PushEntries(L);
+	 	LuaRBOs::PushEntries(L);
+	}
 
 	LuaMatrix::PushEntries(L);
 	LuaVAO::PushEntries(L);
@@ -480,13 +498,14 @@ void LuaOpenGL::ResetGLState()
 	glDisable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
-	if (GLEW_ARB_depth_clamp)
-		glDisable(GL_DEPTH_CLAMP);
+	if (GLEW_NV_depth_clamp)
+		glDisable(GL_DEPTH_CLAMP_NV);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
+	if (IS_GL_FUNCTION_AVAILABLE(glBlendEquation))
+		glBlendEquation(GL_FUNC_ADD);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -535,9 +554,10 @@ void LuaOpenGL::ResetGLState()
 	glLineWidth(1.0f);
 	glPointSize(1.0f);
 
-	glDisable(GL_POINT_SPRITE);
+	if (globalRendering->haveGLSL)
+		glDisable(GL_POINT_SPRITE);
 
-	{
+	if (globalRendering->haveGLSL) {
 		GLfloat atten[3] = { 1.0f, 0.0f, 0.0f };
 		glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, atten);
 		glPointParameterf(GL_POINT_SIZE_MIN, 0.0f);
@@ -555,7 +575,9 @@ void LuaOpenGL::ResetGLState()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, black);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.0f);
 
-	glUseProgram(0);
+	if (IS_GL_FUNCTION_AVAILABLE(glUseProgram)) {
+		glUseProgram(0);
+	}
 }
 
 
@@ -599,7 +621,9 @@ void LuaOpenGL::DisableCommon(DrawMode mode)
 	if (safeMode) {
 		glPopAttrib();
 	}
-	glUseProgram(0);
+	if (IS_GL_FUNCTION_AVAILABLE(glUseProgram)) {
+		glUseProgram(0);
+	}
 }
 
 
@@ -2723,9 +2747,9 @@ int LuaOpenGL::DepthClamp(lua_State* L)
 	CheckDrawingEnabled(L, __func__);
 	luaL_checktype(L, 1, LUA_TBOOLEAN);
 	if (lua_toboolean(L, 1)) {
-		glEnable(GL_DEPTH_CLAMP);
+		glEnable(GL_DEPTH_CLAMP_NV);
 	} else {
-		glDisable(GL_DEPTH_CLAMP);
+		glDisable(GL_DEPTH_CLAMP_NV);
 	}
 	return 0;
 }

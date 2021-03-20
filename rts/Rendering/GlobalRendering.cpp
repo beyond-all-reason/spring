@@ -37,6 +37,7 @@ CONFIG(int, MSAALevel).defaultValue(0).minimumValue(0).maximumValue(32).descript
 
 CONFIG(int, ForceDisablePersistentMapping).defaultValue(0).minimumValue(0).maximumValue(1);
 CONFIG(int, ForceDisableClipCtrl).defaultValue(0).minimumValue(0).maximumValue(1);
+CONFIG(int, ForceDisableShaders).defaultValue(0).minimumValue(0).maximumValue(1);
 
 CONFIG(int, ForceCoreContext).defaultValue(0).minimumValue(0).maximumValue(1);
 CONFIG(int, ForceSwapBuffers).defaultValue(1).minimumValue(0).maximumValue(1);
@@ -116,6 +117,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(maxViewRange),
 	CR_IGNORED(aspectRatio),
 
+	CR_IGNORED(forceDisableShaders),
 	CR_IGNORED(forceCoreContext),
 	CR_IGNORED(forceSwapBuffers),
 
@@ -143,6 +145,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(supportClipSpaceControl),
 	CR_IGNORED(supportSeamlessCubeMaps),
 	CR_IGNORED(supportFragDepthLayout),
+	CR_IGNORED(haveGLSL),
 	CR_IGNORED(glslMaxVaryings),
 	CR_IGNORED(glslMaxAttributes),
 	CR_IGNORED(glslMaxDrawBuffers),
@@ -202,6 +205,7 @@ CGlobalRendering::CGlobalRendering()
 	, maxViewRange(MAX_VIEW_RANGE * 0.5f)
 	, aspectRatio(1.0f)
 
+	, forceDisableShaders(configHandler->GetInt("ForceDisableShaders"))
 	, forceCoreContext(configHandler->GetInt("ForceCoreContext"))
 	, forceSwapBuffers(configHandler->GetInt("ForceSwapBuffers"))
 
@@ -243,6 +247,7 @@ CGlobalRendering::CGlobalRendering()
 	, supportClipSpaceControl(false)
 	, supportSeamlessCubeMaps(false)
 	, supportFragDepthLayout(false)
+	, haveGLSL(false)
 
 	, glslMaxVaryings(0)
 	, glslMaxAttributes(0)
@@ -587,101 +592,44 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 
 void CGlobalRendering::CheckGLExtensions() const
 {
-	#ifndef HEADLESS
-	const auto CheckExt = [](const char* extName, bool haveExt, bool needExt) {
-		if (haveExt)
-			return;
-		if (needExt) {
-			char buf[512];
-			memset(buf, 0, sizeof(buf));
-			snprintf(buf, sizeof(buf), "OpenGL extension \"%s\" not supported, aborting", extName);
-			throw (unsupported_error(buf));
-		}
+	char extMsg[ 128] = {0};
+	char errMsg[2048] = {0};
+	char* ptr = &extMsg[0];
 
-		LOG("[GR::CheckGLExtensions] OpenGL extension \"%s\" not supported, ignoring", extName);
-	};
+	if (!GLEW_ARB_multitexture       ) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " multitexture ");
+	if (!GLEW_ARB_texture_env_combine) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_env_combine ");
+	if (!GLEW_ARB_texture_compression) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_compression ");
 
-	#define CHECK_REQ_EXT(ext) CheckExt(#ext, ext,  true)
-	#define CHECK_OPT_EXT(ext) CheckExt(#ext, ext, false)
+	if (extMsg[0] == 0)
+		return;
 
-	CHECK_REQ_EXT(GLEW_ARB_multisample); // 1.3 (MSAA)
+	SNPRINTF(errMsg, sizeof(errMsg),
+		"OpenGL extension(s) GL_ARB_{%s} not found; update your GPU drivers!\n"
+		"  GL renderer: %s\n"
+		"  GL  version: %s\n",
+		extMsg,
+		globalRenderingInfo.glRenderer,
+		globalRenderingInfo.glVersion);
 
-	CHECK_REQ_EXT(GLEW_ARB_vertex_buffer_object); // 1.5 (VBO)
-	CHECK_REQ_EXT(GLEW_ARB_pixel_buffer_object); // 2.1 (PBO)
-	CHECK_REQ_EXT(GLEW_ARB_framebuffer_object); // 3.0 (FBO)
-	CHECK_REQ_EXT(GLEW_ARB_vertex_array_object); // 3.0 (VAO; core in 4.x)
-	CHECK_REQ_EXT(GLEW_ARB_uniform_buffer_object); // 3.1 (UBO)
-
-	#ifdef GLEW_ARB_buffer_storage
-		CHECK_REQ_EXT(GLEW_ARB_buffer_storage); // 4.4 (immutable storage)
-	#endif
-	CHECK_REQ_EXT(GLEW_ARB_draw_buffers); // 2.0 (MRT)
-	CHECK_REQ_EXT(GLEW_ARB_copy_buffer); // 3.1 (glCopyBufferSubData)
-	CHECK_REQ_EXT(GLEW_ARB_map_buffer_range); // 3.0 (glMapBufferRange[ARB])
-	CHECK_REQ_EXT(GLEW_EXT_framebuffer_multisample); // 3.0 (multi-sampled FB's)
-	CHECK_REQ_EXT(GLEW_EXT_framebuffer_blit); // 3.0 (glBlitFramebuffer[EXT])
-
-	// not yet mandatory
-	#ifdef GLEW_ARB_multi_bind
-		CHECK_OPT_EXT(GLEW_ARB_multi_bind); // 4.4
-	#endif
-	CHECK_OPT_EXT(GLEW_ARB_texture_storage); // 4.2
-	CHECK_OPT_EXT(GLEW_ARB_program_interface_query); // 4.3
-	CHECK_OPT_EXT(GLEW_EXT_direct_state_access); // 3.3 (core in 4.5)
-	CHECK_OPT_EXT(GLEW_ARB_invalidate_subdata); // 4.3 (glInvalidateBufferData)
-
-	CHECK_REQ_EXT(GLEW_ARB_shader_storage_buffer_object); // 4.3 (glShaderStorageBlockBinding)
-	//CHECK_REQ_EXT(GLEW_ARB_get_program_binary); // 4.1 (gl{Get}ProgramBinary)
-	//CHECK_REQ_EXT(GLEW_ARB_separate_shader_objects); // 4.1 (glProgramParameteri)
-
-	CHECK_REQ_EXT(GLEW_ARB_texture_compression);
-	CHECK_REQ_EXT(GLEW_EXT_texture_compression_s3tc);
-	CHECK_OPT_EXT(GLEW_EXT_texture_compression_dxt1); // for some reason AMD doesn't list this as supported even though it does
-	CHECK_REQ_EXT(GLEW_ARB_texture_float); // 3.0 (FP{16,32} textures)
-	CHECK_REQ_EXT(GLEW_ARB_texture_non_power_of_two); // 2.0 (NPOT textures)
-
-	//TODO remove them all
-	CHECK_OPT_EXT(GLEW_ARB_texture_rectangle); // 3.0 (rectangular textures)
-
-	CHECK_REQ_EXT(GLEW_EXT_texture_filter_anisotropic); // 3.3 (AF; core in 4.6!)
-	//CHECK_REQ_EXT(GLEW_ARB_imaging); // 1.2 (imaging subset; texture_*_clamp [GL_CLAMP_TO_EDGE] etc)
-	CHECK_OPT_EXT(GLEW_EXT_texture_edge_clamp); // 1.2
-	CHECK_OPT_EXT(GLEW_ARB_texture_border_clamp); // 1.3
-
-	CHECK_REQ_EXT(GLEW_EXT_blend_func_separate); // 1.4
-	CHECK_REQ_EXT(GLEW_EXT_blend_equation_separate); // 2.0
-	CHECK_OPT_EXT(GLEW_EXT_stencil_two_side); // 2.0 (may also be an issue on AMD)
-
-	CHECK_REQ_EXT(GLEW_ARB_occlusion_query); // 1.5
-	CHECK_REQ_EXT(GLEW_ARB_occlusion_query2); // 3.3 (glBeginConditionalRender)
-	CHECK_REQ_EXT(GLEW_ARB_timer_query); // 3.3
-
-	CHECK_REQ_EXT(GLEW_ARB_depth_clamp); // 3.2
-
-	CHECK_REQ_EXT(GLEW_NV_primitive_restart); // 3.1
-	//CHECK_REQ_EXT(GLEW_ARB_transform_feedback3); // 4.0 (VTF v3)
-	CHECK_REQ_EXT(GLEW_ARB_explicit_attrib_location); // 3.3
-
-	CHECK_REQ_EXT(GLEW_ARB_vertex_program); // VS-ARB
-	CHECK_OPT_EXT(GLEW_ARB_fragment_program); // FS-ARB
-
-	CHECK_OPT_EXT(GLEW_ARB_shading_language_420pack); // 4.2
-
-	CHECK_REQ_EXT(GLEW_ARB_vertex_shader); // 1.5 (VS-GLSL; core in 2.0)
-	CHECK_REQ_EXT(GLEW_ARB_fragment_shader); // 1.5 (FS-GLSL; core in 2.0)
-	CHECK_REQ_EXT(GLEW_ARB_geometry_shader4); // GS v4 (GL3.2)
-
-	#undef CHECK_OPT_EXT
-	#undef CHECK_REQ_EXT
-	#else
-	// for HL builds, all used GL functions are stubs
-	#endif
+	throw unsupported_error(errMsg);
 }
 
 void CGlobalRendering::SetGLSupportFlags()
 {
 	const std::string& glVendor = StringToLower(globalRenderingInfo.glVendor);
 	const std::string& glRenderer = StringToLower(globalRenderingInfo.glRenderer);
+
+	haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
+	haveGLSL &= (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
+	haveGLSL &= GLEW_VERSION_2_0; // we want OpenGL 2.0 core functions
+
+	#ifndef HEADLESS
+	if (!haveGLSL)
+		throw unsupported_error("OpenGL shaders not supported, aborting");
+	#endif
+
+	// useful if a GPU claims to support GL4 and shaders but crashes (Intels...)
+	haveGLSL &= !forceDisableShaders;
 
 	haveAMD    = (  glVendor.find(   "ati ") != std::string::npos) || (  glVendor.find("amd ") != std::string::npos) ||
 				 (glRenderer.find("radeon ") != std::string::npos) || (glRenderer.find("amd ") != std::string::npos); //it's amazing how inconsistent AMD detection can be
@@ -879,6 +827,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tSDL swap-int: %d", SDL_GL_GetSwapInterval());
 	LOG("\t");
 	LOG("\tInitialized OpenGL Context: %i.%i (%s)", globalRenderingInfo.glContextVersion.x, globalRenderingInfo.glContextVersion.y, globalRenderingInfo.glContextIsCore ? "Core" : "Compat");
+	LOG("\tGLSL shader support       : %i", haveGLSL);
 	LOG("\tFBO extension support     : %i", FBO::IsSupported());
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));
 	LOG("\tATI GPU mem-info support  : %i", glewIsExtensionSupported("GL_ATI_meminfo"));

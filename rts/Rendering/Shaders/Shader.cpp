@@ -154,7 +154,9 @@ namespace Shader {
 		const std::string& shSrcFile,
 		const std::string& shSrcDefs
 	): IShaderObject(shType, shSrcFile, shSrcDefs)
-	{}
+	{
+		assert(globalRendering->haveGLSL); // non-debug check is done in ShaderHandler
+	}
 
 	GLSLShaderObject::CompiledShaderObjectUniquePtr GLSLShaderObject::CompileShaderObject()
 	{

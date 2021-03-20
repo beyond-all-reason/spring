@@ -17,6 +17,7 @@ public:
 
 	void DrawAll() const;
 	void DrawInMiniMap();
+	void UpdateExtraTexture(int, int, int, int, unsigned char*) const;
 
 	enum BuildSquareStatus {
 		NOLOS          = 0,

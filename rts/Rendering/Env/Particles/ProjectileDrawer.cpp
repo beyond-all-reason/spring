@@ -391,7 +391,11 @@ void CProjectileDrawer::ViewResize()
 
 bool CProjectileDrawer::CheckSoftenExt()
 {
-	static bool result = true;
+	static bool result =
+		FBO::IsSupported() &&
+		GLEW_EXT_framebuffer_blit &&
+		globalRendering->haveGLSL; //eval once
+	return result;
 }
 
 void CProjectileDrawer::CopyDepthBufferToTexture()
