@@ -128,9 +128,6 @@ void CubeMapHandler::Free() {
 
 void CubeMapHandler::UpdateReflectionTexture()
 {
-	if (!unitDrawer->UseAdvShading())
-		return;
-
 	// NOTE:
 	//   we unbind later in WorldDrawer::GenerateIBLTextures() to save render
 	//   context switches (which are one of the slowest OpenGL operations!)
@@ -241,9 +238,6 @@ void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 
 void CubeMapHandler::UpdateSpecularTexture()
 {
-	if (!unitDrawer->UseAdvShading())
-		return;
-
 	glBindTexture(GL_TEXTURE_CUBE_MAP, specularTexID);
 
 	int specularTexRow = specularTexIter / 3; //FIXME WTF

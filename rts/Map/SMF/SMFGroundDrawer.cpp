@@ -3,7 +3,6 @@
 #include "SMFReadMap.h"
 #include "SMFGroundDrawer.h"
 #include "SMFGroundTextures.h"
-#include "SMFRenderState.h"
 #include "Game/Camera.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
@@ -41,7 +40,6 @@ CONFIG(int, MaxDynamicMapLights)
 	.defaultValue(1)
 	.minimumValue(0);
 
-CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
 CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false);
 CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(true);
 
@@ -65,10 +63,8 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	groundTextures = new CSMFGroundTextures(smfMap);
 	meshDrawer = SwitchMeshDrawer(drawerMode);
 
-	smfRenderStates.resize(RENDER_STATE_CNT, nullptr);
-	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false);
-	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false);
-	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true);
+	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(false);
+	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance( true);
 
 	// LH must be initialized before render-state is initialized
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicMapLights"));
@@ -84,7 +80,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	//   (see AdvMapShadingActionExecutor), so we will always use
 	//   states[FFP] (in ::Draw) in that special case and it does
 	//   not matter whether states[SSP] is initialized
-	if ((advShading = smfRenderStates[RENDER_STATE_SSP]->Init(this)))
+	if (smfRenderStates[RENDER_STATE_SSP]->Init(this))
 		smfRenderStates[RENDER_STATE_SSP]->Update(this, nullptr);
 
 	// always initialize this state; defer Update (allows re-use)
@@ -119,10 +115,8 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	// remember which ROAM-mode was enabled (if any)
 	configHandler->Set("ROAM", (dynamic_cast<CRoamMeshDrawer*>(meshDrawer) != nullptr)? Patch::GetRenderMode(): 0);
 
-	smfRenderStates[RENDER_STATE_FFP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_FFP]);
 	smfRenderStates[RENDER_STATE_SSP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_SSP]);
 	smfRenderStates[RENDER_STATE_LUA]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_LUA]);
-	smfRenderStates.clear();
 
 	spring::SafeDelete(groundTextures);
 	spring::SafeDelete(meshDrawer);
@@ -247,16 +241,14 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 	for (unsigned int n = 0; n < 2; n++) {
 		ISMFRenderState* state = smfRenderStates[ stateEnums[n] ];
 
-		if (!state->CanEnable(this))
-			continue;
 		if (!state->HasValidShader(drawPass))
 			continue;
 
 		return (smfRenderStates[RENDER_STATE_SEL] = state);
 	}
 
-	// fallback
-	return (smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP]);
+	// no fallback
+	return (smfRenderStates[RENDER_STATE_SEL] = nullptr);
 }
 
 bool CSMFGroundDrawer::HaveLuaRenderState() const
@@ -401,11 +393,6 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	ISMFRenderState* prvState = smfRenderStates[RENDER_STATE_SEL];
-
-	smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP];
-	// smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
-
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -462,9 +449,6 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 
 	glActiveTexture(GL_TEXTURE0);
 	glDisable(GL_TEXTURE_2D);
-
-	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-	smfRenderStates[RENDER_STATE_SEL] = prvState;
 
 	glDisable(GL_CULL_FACE);
 }

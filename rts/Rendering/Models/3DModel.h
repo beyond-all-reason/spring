@@ -250,15 +250,15 @@ struct S3DModel
 
 		, type(MODELTYPE_CNT)
 
+		, vertVBO(nullptr)
+		, indxVBO(nullptr)
+
 		, radius(0.0f)
 		, height(0.0f)
 
 		, mins(DEF_MIN_SIZE)
 		, maxs(DEF_MAX_SIZE)
 		, relMidPos(ZeroVector)
-
-		, vertVBO(nullptr)
-		, indxVBO(nullptr)
 
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)

@@ -15,8 +15,6 @@ public:
 	virtual void DrawAll() const {}
 	virtual void DrawInMiniMap() {}
 
-	virtual void UpdateExtraTexture(int, int, int, int, unsigned char*) const {}
-
 	// CEventClient interface
 	bool WantsEvent(const std::string& eventName) {
 		return (eventName == "DrawInMiniMap");

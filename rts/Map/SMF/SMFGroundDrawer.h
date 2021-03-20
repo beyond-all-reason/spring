@@ -3,6 +3,9 @@
 #ifndef _SMF_GROUND_DRAWER_H_
 #define _SMF_GROUND_DRAWER_H_
 
+#include <array>
+
+#include "SMFRenderState.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/LightHandler.h"
@@ -89,7 +92,7 @@ protected:
 	// [1] := default shader-driven rendering path
 	// [2] := custom shader-driven rendering path (via Lua)
 	// [3] := currently selected state (shared by deferred pass)
-	std::vector<ISMFRenderState*> smfRenderStates;
+	std::array<ISMFRenderState*, RENDER_STATE_CNT> smfRenderStates;
 
 	GL::LightHandler lightHandler;
 	GL::GeometryBuffer geomBuffer;

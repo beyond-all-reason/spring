@@ -15,17 +15,16 @@ namespace Shader {
 }
 
 enum {
-	RENDER_STATE_FFP = 0, // fixed-function path
-	RENDER_STATE_SSP = 1, // standard-shader path (ARB/GLSL)
-	RENDER_STATE_LUA = 2, // Lua-shader path
-	RENDER_STATE_SEL = 3, // selected path
-	RENDER_STATE_CNT = 4,
+	RENDER_STATE_SSP = 0, // standard-shader path (ARB/GLSL)
+	RENDER_STATE_LUA = 1, // Lua-shader path
+	RENDER_STATE_SEL = 2, // selected path
+	RENDER_STATE_CNT = 3,
 };
 
 
 struct ISMFRenderState {
 public:
-	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader);
+	static ISMFRenderState* GetInstance(bool luaShader);
 	static void FreeInstance(ISMFRenderState* state) { delete state; }
 
 	virtual ~ISMFRenderState() {}
@@ -37,7 +36,6 @@ public:
 	) = 0;
 
 	virtual bool HasValidShader(const DrawPass::e& drawPass) const = 0;
-	virtual bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
 	virtual bool CanDrawForward() const = 0;
 	virtual bool CanDrawDeferred() const = 0;
 
@@ -49,30 +47,6 @@ public:
 	virtual void UpdateCurrentShaderSky(const ISkyLight* skyLight) const = 0;
 };
 
-
-
-
-struct SMFRenderStateFFP: public ISMFRenderState {
-public:
-	bool Init(const CSMFGroundDrawer* smfGroundDrawer) { return false; }
-	void Kill() {}
-	void Update(
-		const CSMFGroundDrawer* smfGroundDrawer,
-		const LuaMapShaderData* luaMapShaderData
-	) {}
-
-	bool HasValidShader(const DrawPass::e& drawPass) const { return false; }
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const;
-	bool CanDrawForward() const { return true; }
-	bool CanDrawDeferred() const { return false; }
-
-	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
-	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
-
-	void SetSquareTexGen(const int sqx, const int sqy) const;
-	void SetCurrentShader(const DrawPass::e& drawPass) {}
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const {};
-};
 
 struct SMFRenderStateGLSL: public ISMFRenderState {
 public:
@@ -87,7 +61,6 @@ public:
 	);
 
 	bool HasValidShader(const DrawPass::e& drawPass) const;
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const;
 	bool CanDrawForward() const { return true; }
 	bool CanDrawDeferred() const { return true; }
 

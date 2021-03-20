@@ -25,24 +25,11 @@
 
 
 
-ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders) {
-	if (haveGLSL)
-		return new SMFRenderStateGLSL(luaShaders);
-
-	return new SMFRenderStateFFP();
+ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders) {
+	return new SMFRenderStateGLSL(luaShaders);
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
-	if (!globalRendering->haveGLSL) {
-		// not possible to do (GLSL) shader-based map rendering
-		return false;
-	}
-	if (!configHandler->GetBool("AdvMapShading")) {
-		// not allowed to do (GLSL) shader-based map rendering
-		return false;
-	}
-
-
 	const std::string names[GLSL_SHADER_COUNT - 1] = {
 		"SMFShaderGLSL-Standard",
 		"SMFShaderGLSL-Deferred",
@@ -203,148 +190,6 @@ bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
 	return (shader != nullptr && shader->IsValid());
 }
 
-
-
-bool SMFRenderStateFFP::CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const {
-	return (!smfGroundDrawer->UseAdvShading());
-}
-
-bool SMFRenderStateGLSL::CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const {
-	return (smfGroundDrawer->UseAdvShading());
-}
-
-
-void SMFRenderStateFFP::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
-	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
-	static const GLfloat planeX[] = {0.02f, 0.0f, 0.00f, 0.0f};
-	static const GLfloat planeZ[] = {0.00f, 0.0f, 0.02f, 0.0f};
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	if (infoTextureHandler->IsEnabled()) {
-		glActiveTexture(GL_TEXTURE1);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());
-		glMultiTexCoord4f(GL_TEXTURE1_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-		SetTexGen(1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), 0, 0);
-
-
-		glActiveTexture(GL_TEXTURE2);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, smfMap->GetShadingTexture());
-		glMultiTexCoord4f(GL_TEXTURE2_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-
-		if (infoTextureHandler->InMetalMode()) {
-			// increase brightness for metal spots
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-		}
-
-		SetTexGen(1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), 0, 0);
-
-
-		glActiveTexture(GL_TEXTURE3);
-		if (smfMap->GetDetailTexture() != 0) {
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
-			glMultiTexCoord4f(GL_TEXTURE3_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_S, GL_OBJECT_PLANE, planeX);
-			glEnable(GL_TEXTURE_GEN_S);
-
-			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_T, GL_OBJECT_PLANE, planeZ);
-			glEnable(GL_TEXTURE_GEN_T);
-		} else {
-			glDisable(GL_TEXTURE_2D);
-		}
-	} else {
-		if (smfMap->GetDetailTexture()) {
-			glActiveTexture(GL_TEXTURE1);
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
-			glMultiTexCoord4f(GL_TEXTURE1_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_S, GL_OBJECT_PLANE, planeX);
-			glEnable(GL_TEXTURE_GEN_S);
-
-			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_T, GL_OBJECT_PLANE, planeZ);
-			glEnable(GL_TEXTURE_GEN_T);
-		} else {
-			glActiveTexture(GL_TEXTURE1);
-			glDisable(GL_TEXTURE_2D);
-		}
-
-
-		glActiveTexture(GL_TEXTURE2);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, smfMap->GetShadingTexture());
-		glMultiTexCoord4f(GL_TEXTURE2_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-		SetTexGen(1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), -0.5f / mapDims.pwr2mapx, -0.5f / mapDims.pwr2mapy);
-
-
-		// bind the detail texture a 2nd time to increase the details (-> GL_ADD_SIGNED_ARB is limited -0.5 to +0.5)
-		// (also do this after the shading texture cause of color clamping issues)
-		if (smfMap->GetDetailTexture()) {
-			glActiveTexture(GL_TEXTURE3);
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
-			glMultiTexCoord4f(GL_TEXTURE3_ARB, 1.0f, 1.0f, 1.0f, 1.0f); // fix nvidia bug with gltexgen
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_S, GL_OBJECT_PLANE, planeX);
-			glEnable(GL_TEXTURE_GEN_S);
-
-			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGenfv(GL_T, GL_OBJECT_PLANE, planeZ);
-			glEnable(GL_TEXTURE_GEN_T);
-		} else {
-			glActiveTexture(GL_TEXTURE3);
-			glDisable(GL_TEXTURE_2D);
-		}
-	}
-
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-}
-
-void SMFRenderStateFFP::Disable(const CSMFGroundDrawer*, const DrawPass::e&) {
-	glActiveTexture(GL_TEXTURE3);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	glActiveTexture(GL_TEXTURE2);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	glActiveTexture(GL_TEXTURE0);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glDisable(GL_TEXTURE_2D);
-
-}
-
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
@@ -411,18 +256,6 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer*, const DrawPass::e&) {
 
 	glActiveTexture(GL_TEXTURE0);
 	glslShaders[GLSL_SHADER_CURRENT]->Disable();
-}
-
-
-
-
-
-
-void SMFRenderStateFFP::SetSquareTexGen(const int sqx, const int sqy) const {
-	// const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
-	// const float smfTexSquareSizeInv = 1.0f / smfMap->bigTexSize;
-
-	SetTexGen(1.0f / SMF_TEXSQUARE_SIZE, 1.0f / SMF_TEXSQUARE_SIZE, -sqx, -sqy);
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {

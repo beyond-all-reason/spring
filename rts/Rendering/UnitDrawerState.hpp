@@ -15,17 +15,9 @@ namespace Shader {
 	struct IProgramObject;
 }
 
-enum {
-	DRAWER_STATE_FFP = 0, // fixed-function path
-	DRAWER_STATE_SSP = 1, // standard-shader path (ARB/GLSL)
-	DRAWER_STATE_SEL = 2, // selected path
-	DRAWER_STATE_CNT = 3,
-};
-
-
 struct IUnitDrawerState {
 public:
-	static IUnitDrawerState* GetInstance(bool haveGLSL);
+	static IUnitDrawerState* GetInstance();
 	static void FreeInstance(IUnitDrawerState* state) { delete state; }
 
 	static void PushTransform(const CCamera* cam);
@@ -38,7 +30,6 @@ public:
 	virtual bool Init(const CUnitDrawer*) { return false; }
 	virtual void Kill() {}
 
-	virtual bool CanEnable(const CUnitDrawer*) const { return false; }
 	virtual bool CanDrawAlpha() const { return false; }
 	virtual bool CanDrawDeferred() const { return false; }
 
@@ -81,29 +72,11 @@ protected:
 	std::array<Shader::IProgramObject*, MODEL_SHADER_COUNT> modelShaders;
 };
 
-
-
-
-struct UnitDrawerStateFFP: public IUnitDrawerState {
-public:
-	bool CanEnable(const CUnitDrawer*) const override;
-
-	void Enable(const CUnitDrawer*, bool, bool) override;
-	void Disable(const CUnitDrawer*, bool) override;
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-
-	void SetTeamColor(int team, const float2 alpha) const override;
-	void SetNanoColor(const float4& color) const override;
-};
-
 struct UnitDrawerStateGLSL: public IUnitDrawerState {
 public:
 	bool Init(const CUnitDrawer*) override;
 	void Kill() override;
 
-	bool CanEnable(const CUnitDrawer*) const override;
 	bool CanDrawAlpha() const override { return true; }
 	bool CanDrawDeferred() const  override { return true; }
 

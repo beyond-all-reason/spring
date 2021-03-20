@@ -170,7 +170,7 @@ public:
 	      GL::GeometryBuffer* GetGeometryBuffer()       { return geomBuffer; }
 
 	const IUnitDrawerState* GetWantedDrawerState(bool alphaPass) const;
-	      IUnitDrawerState* GetDrawerState(unsigned int idx) { return unitDrawerStates[idx]; }
+	      IUnitDrawerState* GetDrawerState() { return unitDrawerState; }
 
 	void SetUnitDefImage(const UnitDef* unitDef, const std::string& texName);
 	void SetUnitDefImage(const UnitDef* unitDef, unsigned int texID, int xsize, int ysize);
@@ -179,8 +179,6 @@ public:
 	bool DrawForward() const { return drawForward; }
 	bool DrawDeferred() const { return drawDeferred; }
 
-	bool UseAdvShading() const { return advShading; }
-	bool& UseAdvShadingRef() { return advShading; }
 	bool& WireFrameModeRef() { return wireFrameMode; }
 
 public:
@@ -286,8 +284,6 @@ private:
 	bool drawDeferred;
 	bool wireFrameMode;
 
-	bool advShading;
-
 	bool useDistToGroundForIcons;
 
 	// "icons as UI" fields
@@ -334,7 +330,7 @@ private:
 	// [0] := no-op path
 	// [1] := default shader-path
 	// [2] := currently selected state
-	std::array<IUnitDrawerState*, DRAWER_STATE_CNT> unitDrawerStates;
+	IUnitDrawerState* unitDrawerState;
 	std::array<DrawModelFunc, 3> drawModelFuncs;
 
 private:

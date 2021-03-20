@@ -28,8 +28,6 @@ public:
 	QTPFSPathDrawer();
 
 	void DrawAll() const;
-	void UpdateExtraTexture(int, int, int, int, unsigned char*) const;
-
 private:
 	enum {
 		COLOR_BIT_R = 1,
