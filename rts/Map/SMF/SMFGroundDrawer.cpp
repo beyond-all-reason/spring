@@ -41,7 +41,7 @@ CONFIG(int, MaxDynamicMapLights)
 	.defaultValue(1)
 	.minimumValue(0);
 
-CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
+CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(true).description("Enable shaders for terrain rendering. (NO-OP)");
 CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false);
 CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(true);
 

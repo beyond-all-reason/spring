@@ -481,13 +481,6 @@ void LuaObjectDrawer::DrawDeferredPass(LuaObjType objType)
 	if (!geomBuffer->Valid())
 		return;
 
-	// deferred pass must be executed with GLSL base shaders so
-	// bail early if the FFP state *is going to be* selected by
-	// SetupOpaqueDrawing, and also if our shader-path happens
-	// to be ARB instead (saves an FBO bind)
-	if (!(unitDrawer->GetWantedDrawerState(false))->CanDrawDeferred())
-		return;
-
 	// note: should also set this during the map pass (in SMFGD)
 	game->SetDrawMode(CGame::gameDeferredDraw);
 	geomBuffer->Bind();

@@ -63,10 +63,7 @@ CONFIG(int, MaxDynamicModelLights)
 	.defaultValue(1)
 	.minimumValue(0);
 
-CONFIG(bool, AdvUnitShading).defaultValue(true).headlessValue(false).safemodeValue(false).description("Determines whether specular highlights and other lighting effects are rendered for units.");
-
-
-
+CONFIG(bool, AdvUnitShading).defaultValue(true).headlessValue(false).safemodeValue(true).description("Determines whether specular highlights and other lighting effects are rendered for units. (NO-OP)");
 
 CUnitDrawer* unitDrawer = nullptr;
 float CUnitDrawer::iconSizeBase = 32;
@@ -278,9 +275,7 @@ void CUnitDrawer::Init() {
 	// LH must be initialized before drawer-state is initialized
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
 
-	unitDrawerStates.fill(nullptr);
-	unitDrawerStates[DRAWER_STATE_SSP] = IUnitDrawerState::GetInstance(globalRendering->haveGLSL);
-	unitDrawerStates[DRAWER_STATE_FFP] = IUnitDrawerState::GetInstance(                    false);
+	unitDrawerState = IUnitDrawerState::GetInstance();
 
 	drawModelFuncs[0] = &CUnitDrawer::DrawUnitModelBeingBuiltOpaque;
 	drawModelFuncs[1] = &CUnitDrawer::DrawUnitModelBeingBuiltShadow;
@@ -299,11 +294,10 @@ void CUnitDrawer::Init() {
 	//   FFP renderer-state (in ::Draw) in that special case and it
 	//   does not matter whether SSP renderer-state is initialized
 	//   *** except for DrawAlphaUnits
-	advShading = (unitDrawerStates[DRAWER_STATE_SSP]->Init(this) && cubeMapHandler.Init());
+	unitDrawerState->Init(this); cubeMapHandler.Init();
 
 	// note: state must be pre-selected before the first drawn frame
 	// Sun*Changed can be called first, e.g. if DynamicSun is enabled
-	unitDrawerStates[DRAWER_STATE_SEL] = const_cast<IUnitDrawerState*>(GetWantedDrawerState(false));
 	iconSizeBase = std::max(16.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 }
 
@@ -312,8 +306,7 @@ void CUnitDrawer::Kill()
 	eventHandler.RemoveClient(this);
 	autoLinkedEvents.clear();
 
-	unitDrawerStates[DRAWER_STATE_SSP]->Kill(); IUnitDrawerState::FreeInstance(unitDrawerStates[DRAWER_STATE_SSP]);
-	unitDrawerStates[DRAWER_STATE_FFP]->Kill(); IUnitDrawerState::FreeInstance(unitDrawerStates[DRAWER_STATE_FFP]);
+	unitDrawerState->Kill(); IUnitDrawerState::FreeInstance(unitDrawerState);
 
 	cubeMapHandler.Free();
 
@@ -820,8 +813,7 @@ void CUnitDrawer::SetupAlphaDrawing(bool deferredPass)
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
 
-	unitDrawerStates[DRAWER_STATE_SEL] = const_cast<IUnitDrawerState*>(GetWantedDrawerState(true));
-	unitDrawerStates[DRAWER_STATE_SEL]->Enable(this, /*deferredPass*/ false, true);
+	unitDrawerState->Enable(this, /*deferredPass*/ false, true);
 
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -833,7 +825,7 @@ void CUnitDrawer::SetupAlphaDrawing(bool deferredPass)
 
 void CUnitDrawer::ResetAlphaDrawing(bool deferredPass)
 {
-	unitDrawerStates[DRAWER_STATE_SEL]->Disable(this, /*deferredPass*/ false);
+	unitDrawerState->Disable(this, /*deferredPass*/ false);
 
 	glPopAttrib();
 }
@@ -845,8 +837,7 @@ void CUnitDrawer::DrawAlphaPass()
 	{
 		SetupAlphaDrawing(false);
 
-		if (UseAdvShading())
-			glDisable(GL_ALPHA_TEST);
+		glDisable(GL_ALPHA_TEST);
 
 		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			PushModelRenderState(modelType);
@@ -855,8 +846,7 @@ void CUnitDrawer::DrawAlphaPass()
 			PopModelRenderState(modelType);
 		}
 
-		if (UseAdvShading())
-			glEnable(GL_ALPHA_TEST);
+		glEnable(GL_ALPHA_TEST);
 
 		ResetAlphaDrawing(false);
 	}
@@ -1077,35 +1067,21 @@ void CUnitDrawer::SetupOpaqueDrawing(bool deferredPass)
 	glEnable(GL_ALPHA_TEST);
 
 	// pick base shaders (ARB/GLSL) or FFP; not used by custom-material models
-	unitDrawerStates[DRAWER_STATE_SEL] = const_cast<IUnitDrawerState*>(GetWantedDrawerState(false));
-	unitDrawerStates[DRAWER_STATE_SEL]->Enable(this, deferredPass, false);
+	unitDrawerState = const_cast<IUnitDrawerState*>(GetDrawerState());
+	unitDrawerState->Enable(this, deferredPass, false);
 
 	// NOTE:
 	//   when deferredPass is true we MUST be able to use the SSP render-state
 	//   all calling code (reached from DrawOpaquePass(deferred=true)) should
 	//   ensure this is the case
-	assert(!deferredPass || advShading);
-	assert(!deferredPass || unitDrawerStates[DRAWER_STATE_SEL]->CanDrawDeferred());
+	assert(!deferredPass || unitDrawerState->CanDrawDeferred());
 }
 
 void CUnitDrawer::ResetOpaqueDrawing(bool deferredPass)
 {
-	unitDrawerStates[DRAWER_STATE_SEL]->Disable(this, deferredPass);
-
+	unitDrawerState->Disable(this, deferredPass);
 	glPopAttrib();
 }
-
-const IUnitDrawerState* CUnitDrawer::GetWantedDrawerState(bool alphaPass) const
-{
-	// proper alpha-rendering is only enabled with GLSL state
-	// (ARB shaders could technically also be used, but KISS)
-	const bool enableShaders =               unitDrawerStates[DRAWER_STATE_SSP]->CanEnable(this);
-	const bool permitShaders = !alphaPass || unitDrawerStates[DRAWER_STATE_SSP]->CanDrawAlpha();
-
-	return unitDrawerStates[enableShaders && permitShaders];
-}
-
-
 
 void CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
 {
@@ -1114,7 +1090,7 @@ void CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
 	// should be an assert, but projectiles (+FlyingPiece) would trigger it
 	const int b1 = !shadowHandler.InShadowPass();
 
-	setTeamColorFuncs[b0 * b1](unitDrawerStates[DRAWER_STATE_SEL], team, alpha);
+	setTeamColorFuncs[b0 * b1](unitDrawerState, team, alpha);
 }
 
 /**
@@ -1629,7 +1605,7 @@ void CUnitDrawer::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCal
 
 	// note: draw-func for stage i is at index i+1 (noop-func is at 0)
 	DrawModelBuildStageFunc stageFunc = nullptr;
-	IUnitDrawerState* selState = unitDrawer->GetDrawerState(DRAWER_STATE_SEL);
+	IUnitDrawerState* selState = unitDrawer->GetDrawerState();
 
 	glPushAttrib(GL_CURRENT_BIT);
 	glEnable(GL_CLIP_PLANE0);
@@ -2204,7 +2180,7 @@ void CUnitDrawer::PlayerChanged(int playerNum) {
 }
 
 void CUnitDrawer::SunChanged() {
-	unitDrawerStates[DRAWER_STATE_SEL]->UpdateCurrentShaderSky(this, sky->GetLight());
+	unitDrawerState->UpdateCurrentShaderSky(this, sky->GetLight());
 }
 
 

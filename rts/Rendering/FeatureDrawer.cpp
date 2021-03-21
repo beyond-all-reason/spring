@@ -95,27 +95,6 @@ static bool SetFeatureDrawAlpha(
 
 
 static const void SetFeatureAlphaMatSSP(const CFeature* f) { glAlphaFunc(GL_GREATER, f->drawAlpha * 0.5f); }
-static const void SetFeatureAlphaMatFFP(const CFeature* f)
-{
-	const float cols[] = {1.0f, 1.0f, 1.0f, f->drawAlpha};
-
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, cols);
-	glColor4fv(cols);
-
-	// hack, sorting objects by distance would look better
-	glAlphaFunc(GL_GREATER, f->drawAlpha * 0.5f);
-}
-
-
-typedef const void (*SetFeatureAlphaMatFunc)(const CFeature*);
-
-static const SetFeatureAlphaMatFunc setFeatureAlphaMatFuncs[] = {
-	SetFeatureAlphaMatSSP,
-	SetFeatureAlphaMatFFP,
-};
-
-
-
 
 void CFeatureDrawer::InitStatic() {
 	if (featureDrawer == nullptr)
@@ -148,7 +127,6 @@ void CFeatureDrawer::Init()
 
 	inAlphaPass = false;
 	inShadowPass = false;
-	ffpAlphaMat = false;
 
 	drawQuadsX = mapDims.mapx / DRAW_QUAD_SIZE;
 	drawQuadsY = mapDims.mapy / DRAW_QUAD_SIZE;
@@ -469,8 +447,6 @@ void CFeatureDrawer::DrawIndividualNoTrans(const CFeature* feature, bool noLuaCa
 void CFeatureDrawer::DrawAlphaPass()
 {
 	inAlphaPass = true;
-	ffpAlphaMat = !(unitDrawer->GetWantedDrawerState(true))->CanDrawAlpha();
-
 	{
 		unitDrawer->SetupAlphaDrawing(false);
 
@@ -534,7 +510,7 @@ void CFeatureDrawer::DrawAlphaFeatures(int modelType)
 
 				unitDrawer->SetTeamColour(f->team, float2(f->drawAlpha, 1.0f));
 
-				setFeatureAlphaMatFuncs[ffpAlphaMat](f);
+				SetFeatureAlphaMatSSP(f);
 				DrawFeatureTrans(f, 0, 0, false, false);
 			}
 		}

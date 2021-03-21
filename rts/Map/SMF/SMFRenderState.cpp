@@ -34,11 +34,6 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 		// not possible to do (GLSL) shader-based map rendering
 		return false;
 	}
-	if (!configHandler->GetBool("AdvMapShading")) {
-		// not allowed to do (GLSL) shader-based map rendering
-		return false;
-	}
-
 
 	const std::string names[GLSL_SHADER_COUNT - 1] = {
 		"SMFShaderGLSL-Standard",
