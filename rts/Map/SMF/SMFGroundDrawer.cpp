@@ -67,7 +67,6 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 
 	smfRenderStates.resize(RENDER_STATE_CNT, nullptr);
 	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false);
-	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false);
 	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true);
 
 	// LH must be initialized before render-state is initialized
@@ -119,7 +118,6 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	// remember which ROAM-mode was enabled (if any)
 	configHandler->Set("ROAM", (dynamic_cast<CRoamMeshDrawer*>(meshDrawer) != nullptr)? Patch::GetRenderMode(): 0);
 
-	smfRenderStates[RENDER_STATE_FFP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_FFP]);
 	smfRenderStates[RENDER_STATE_SSP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_SSP]);
 	smfRenderStates[RENDER_STATE_LUA]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_LUA]);
 	smfRenderStates.clear();
@@ -247,8 +245,6 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 	for (unsigned int n = 0; n < 2; n++) {
 		ISMFRenderState* state = smfRenderStates[ stateEnums[n] ];
 
-		if (!state->CanEnable(this))
-			continue;
 		if (!state->HasValidShader(drawPass))
 			continue;
 
@@ -256,7 +252,7 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 	}
 
 	// fallback
-	return (smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP]);
+	throw std::runtime_error("CSMFGroundDrawer::SelectRenderState() invalid RENDER_STATE");
 }
 
 bool CSMFGroundDrawer::HaveLuaRenderState() const
@@ -401,11 +397,6 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	ISMFRenderState* prvState = smfRenderStates[RENDER_STATE_SEL];
-
-	smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP];
-	// smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
-
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -462,9 +453,6 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 
 	glActiveTexture(GL_TEXTURE0);
 	glDisable(GL_TEXTURE_2D);
-
-	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-	smfRenderStates[RENDER_STATE_SEL] = prvState;
 
 	glDisable(GL_CULL_FACE);
 }

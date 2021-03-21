@@ -381,29 +381,6 @@ public:
 	}
 };
 
-
-
-class AdvMapShadingActionExecutor : public IUnsyncedActionExecutor {
-public:
-	AdvMapShadingActionExecutor() : IUnsyncedActionExecutor("AdvMapShading",
-			"Set or toggle advanced map shading mode") {}
-
-	bool Execute(const UnsyncedAction& action) const {
-
-		CBaseGroundDrawer* gd = readMap->GetGroundDrawer();
-		static bool canUseShaders = gd->UseAdvShading();
-
-		if (!canUseShaders)
-			return false;
-
-		InverseOrSetBool(gd->UseAdvShadingRef(), action.GetArgs());
-		LogSystemStatus("map shaders", gd->UseAdvShading());
-		return true;
-	}
-};
-
-
-
 class SayActionExecutor : public IUnsyncedActionExecutor {
 public:
 	SayActionExecutor() : IUnsyncedActionExecutor("Say",
@@ -3439,7 +3416,6 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<MapBorderActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<WaterActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AdvModelShadingActionExecutor>()); // [maint]
-	AddActionExecutor(AllocActionExecutor<AdvMapShadingActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<SayActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());
