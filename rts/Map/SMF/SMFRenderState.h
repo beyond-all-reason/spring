@@ -24,7 +24,7 @@ enum {
 
 struct ISMFRenderState {
 public:
-	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader);
+	static ISMFRenderState* GetInstance(bool luaShader);
 	static void FreeInstance(ISMFRenderState* state) { delete state; }
 
 	virtual ~ISMFRenderState() {}

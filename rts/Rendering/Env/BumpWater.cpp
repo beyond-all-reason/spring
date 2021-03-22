@@ -181,14 +181,8 @@ CBumpWater::CBumpWater()
 	dynWaves     = (configHandler->GetBool("BumpWaterDynamicWaves")) && (waterRendering->numTiles > 1);
 	useUniforms  = (configHandler->GetBool("BumpWaterUseUniforms"));
 
-	// CHECK HARDWARE
-	if (!globalRendering->haveGLSL) {
-		throw content_error("[" LOG_SECTION_BUMP_WATER "] your hardware/driver setup does not support GLSL");
-	}
-
 	shoreWaves = shoreWaves && (FBO::IsSupported());
 	dynWaves   = dynWaves && (FBO::IsSupported() && GLEW_ARB_imaging);
-
 
 	// LOAD TEXTURES
 	foamTexture   = LoadTexture(waterRendering->foamTexture);

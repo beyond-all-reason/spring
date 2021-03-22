@@ -266,11 +266,6 @@ public:
 	/**
 	 * Shader capabilities
 	 */
-	bool haveGLSL;
-
-	/**
-	 * Shader capabilities
-	 */
 	int glslMaxVaryings;
 	int glslMaxAttributes;
 	int glslMaxDrawBuffers;

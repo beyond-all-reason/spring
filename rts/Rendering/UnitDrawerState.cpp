@@ -115,11 +115,6 @@ void IUnitDrawerState::DisableTexturesCommon() const {
 }
 
 bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
-	if (!globalRendering->haveGLSL) {
-		// not possible to do (GLSL) shader-based model rendering
-		return false;
-	}
-
 	#define sh shaderHandler
 
 	const GL::LightHandler* lightHandler = ud->GetLightHandler();

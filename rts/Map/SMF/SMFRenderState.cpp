@@ -25,20 +25,16 @@
 
 
 
-ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders) {
+ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders) {
 	return new SMFRenderStateGLSL(luaShaders);
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
-	if (!globalRendering->haveGLSL) {
-		// not possible to do (GLSL) shader-based map rendering
-		return false;
-	}
-
 	const std::string names[GLSL_SHADER_COUNT - 1] = {
 		"SMFShaderGLSL-Standard",
 		"SMFShaderGLSL-Deferred",
 	};
+
 	const std::string defs =
 		("#define SMF_TEXSQUARE_SIZE " + FloatToString(                  SMF_TEXSQUARE_SIZE) + "\n") +
 		("#define SMF_INTENSITY_MULT " + FloatToString(CGlobalRendering::SMF_INTENSITY_MULT) + "\n");
