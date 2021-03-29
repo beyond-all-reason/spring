@@ -7,14 +7,17 @@
 
 #include <string>
 #include <ctime>
+#include <functional>
 
-std::string CTimeUtil::GetCurrentTimeStr()
+std::string CTimeUtil::GetCurrentTimeStr(bool utc)
 {
 	struct tm* lt;
 	// Get time as long integer
 	__time64_t long_time = GetCurrentTime();
-	// Convert to local time
-	lt = _localtime64(&long_time);
+
+	static decltype(_localtime64)* convFunc[] = { &_localtime64, &_gmtime64 };
+	// Convert to UTC or local time
+	lt = convFunc[utc](&long_time);
 
 	// Don't see how this can happen (according to docs _localtime64 only returns
 	// nullptr if long_time is before 1/1/1970...) but a user's stacktrace indicated
