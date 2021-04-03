@@ -10,6 +10,7 @@
 
 #include "Lua/LuaObjectMaterial.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/VAO.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
@@ -35,7 +36,33 @@ struct S3DModel;
 struct S3DModelPiece;
 struct LocalModel;
 struct LocalModelPiece;
+struct SVertexData;
 
+class S3DModelVAO {
+public:
+	static S3DModelVAO& GetInstance() {
+		static S3DModelVAO instance;
+		return instance;
+	};
+public:
+	S3DModelVAO() = default;
+	void UpdateVertData(std::vector<SVertexData>& modelVertData);
+	void UpdateIndxData(std::vector<uint32_t>   & modelIndxData);
+	void CreateVAO();
+	void BindVAO();
+	void UnbindVAO();
+private:
+	void EnableAttribs() const;
+	void DisableAttribs() const;
+private:
+	std::unique_ptr<VBO> vertVBO;
+	std::unique_ptr<VBO> indxVBO;
+
+	std::unique_ptr<VAO> vao;
+
+	std::vector<SVertexData> vertData;
+	std::vector<uint32_t>    indxData;
+};
 
 struct SVertexData {
 	SVertexData() = default;
