@@ -202,6 +202,8 @@ void SS3OPiece::DrawForList() const
 			#endif
 		} break;
 		case S3O_PRIMTYPE_QUADS: {
+			assert(false);
+			LOG_L(L_ERROR, "[SS3OPiece::%s] Detected S3O_PRIMTYPE_QUADS primitive type in model %s, piece %s", __func__, model->name.c_str(), name.c_str());
 			DrawElements(GL_QUADS);
 		} break;
 	}

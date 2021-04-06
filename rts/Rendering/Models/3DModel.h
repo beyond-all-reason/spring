@@ -155,10 +155,10 @@ struct S3DModelPiece {
 	virtual const float3& GetVertexPos(const int) const = 0;
 	virtual const float3& GetNormal(const int) const = 0;
 
-	virtual void PostProcessGeometry();
-	void UploadToVBO();
-
+	void PostProcessGeometry();
 	void MeshOptimize();
+
+	void UploadToVBO();
 
 	void BindVertexAttribVBOs() const;
 	void UnbindVertexAttribVBOs() const;

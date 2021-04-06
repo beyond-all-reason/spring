@@ -249,9 +249,12 @@ void S3DModelPiece::MeshOptimize()
 	if (!HasGeometryData())
 		return;
 
+#if 0
+	return;
+#endif
+
 	decltype(indices)  optIndices = indices;
 	decltype(vertices) optVertices = vertices;
-
 	{
 		// First, generate a remap table from your existing vertex (and, optionally, index) data:
 		std::vector<uint32_t> remap(vertices.size()); // allocate temporary memory for the remap table
@@ -269,7 +272,6 @@ void S3DModelPiece::MeshOptimize()
 
 	// Vertex fetch optimization
 	optVertices.resize(meshopt_optimizeVertexFetch(optVertices.data(), optIndices.data(), optIndices.size(), optVertices.data(), optVertices.size(), sizeof(SVertexData)));
-
 #if 0 //uncomment when Lod system will need to be implemented
 	{
 		const float2 optTarget{ 0.7f, 0.05f };
@@ -299,6 +301,14 @@ void S3DModelPiece::MeshOptimize()
 #endif
 
 	if (optIndices.size() < indices.size() || optVertices.size() < vertices.size()) {
+#if 0 //uncomment to get reports
+		LOG("[%s %s] (deltaVertices, deltaIndices) = (%u, %u)",
+			model->name.c_str(),
+			this->name.c_str(),
+			static_cast<uint32_t>(vertices.size() - optVertices.size()),
+			static_cast<uint32_t>(indices.size()  - optIndices.size())
+		);
+#endif
 		indices  = optIndices;
 		vertices = optVertices;
 	}

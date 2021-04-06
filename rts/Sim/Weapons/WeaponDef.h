@@ -22,6 +22,7 @@ public:
 
 	S3DModel* LoadModel();
 	S3DModel* LoadModel() const;
+	void PreloadModel() const;
 
 	bool IsAircraftWeapon() const {
 		switch (projectileType) {

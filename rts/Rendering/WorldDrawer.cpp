@@ -28,6 +28,7 @@
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "Rendering/ModelPreloader.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
@@ -69,6 +70,11 @@ void CWorldDrawer::InitPost() const
 {
 	char buf[512] = {0};
 
+	{
+		loadscreen->SetLoadMessage("Reading Models and Textures");
+		ModelPreloader::Load();
+		//std::this_thread::sleep_for(std::chrono::seconds(60));
+	}
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
 		shadowHandler.Init();

@@ -75,6 +75,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/InMapDrawView.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LineDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaObjectDrawer.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/ModelPreloader.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/SmoothHeightMeshDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Map/InfoTexture/InfoTexture.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Map/InfoTexture/IInfoTextureHandler.cpp"
