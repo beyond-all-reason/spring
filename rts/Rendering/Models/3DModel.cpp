@@ -5,8 +5,10 @@
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Rendering/MatrixUploader.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
+#include "Sim/Units/Unit.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 #include "lib/meshoptimizer/src/meshoptimizer.h"
@@ -728,27 +730,30 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 /******************************************************************************/
 /******************************************************************************/
 
-void S3DModelVAO::EnableAttribs() const
+void S3DModelVAO::EnableAttribs(bool inst) const
 {
-	for (int i = 0; i <= 6; ++i) {
-		glEnableVertexAttribArray(i);
-		glVertexAttribDivisor(i, 0);
+	if (!inst) {
+		for (int i = 0; i <= 6; ++i) {
+			glEnableVertexAttribArray(i);
+			glVertexAttribDivisor(i, 0);
+		}
+
+		glVertexAttribPointer (0, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, pos         ));
+		glVertexAttribPointer (1, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal      ));
+		glVertexAttribPointer (2, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent    ));
+		glVertexAttribPointer (3, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent    ));
+		glVertexAttribPointer (4, 2, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
+		glVertexAttribPointer (5, 2, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[1]));
+		glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, pieceIndex  ));
 	}
+	else {
+		for (int i = 7; i <= 7; ++i) {
+			glEnableVertexAttribArray(i);
+			glVertexAttribDivisor(i, 1);
+		}
 
-	for (int i = 7; i <= 7; ++i) {
-		glEnableVertexAttribArray(i);
-		glVertexAttribDivisor(i, 1);
+		glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(SInstanceData),      (const void*)offsetof(SInstanceData, ssboOffset));
 	}
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, pos));
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal));
-	glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent));
-	glVertexAttribPointer(3, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent));
-	glVertexAttribPointer(4, 2, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
-	glVertexAttribPointer(5, 2, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[1]));
-	glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT, sizeof(SVertexData), (const void*)offsetof(SVertexData, pieceIndex));
-
-	glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(SInstanceData), (const void*)offsetof(SInstanceData, ssboOffset));
 }
 
 void S3DModelVAO::DisableAttribs() const
@@ -762,7 +767,6 @@ void S3DModelVAO::DisableAttribs() const
 void S3DModelVAO::Init()
 {
 	submInstanceCount = 0u;
-	currSubmission = 0u;
 	indexOffset = 0u;
 
 	std::vector<SVertexData> vertData; vertData.reserve(2 << 21);
@@ -818,10 +822,9 @@ void S3DModelVAO::Init()
 		indxVBO->New(indxData);
 		indxVBO->Unbind();
 	}
-	for (int s = 0; s < NUM_SUBMISSIONS; ++s)
 	{
-		vaos[s] = std::make_unique<VAO>();
-		vaos[s]->Bind();
+		vao = std::make_unique<VAO>();
+		vao->Bind();
 
 		vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
 		vertVBO->Bind();
@@ -830,40 +833,74 @@ void S3DModelVAO::Init()
 		indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
 		indxVBO->Bind();
 		indxVBO->New(indxData);
+		EnableAttribs(false);
 
 		vertVBO->Unbind();
 
-		instVBOs[s] = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
-		instVBOs[s]->Bind();
-		instVBOs[s]->New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
+		instVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
+		instVBO->Bind();
+		instVBO->New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
+		EnableAttribs(true);
 
-		EnableAttribs();
-		vaos[s]->Unbind();
+		vao->Unbind();
 		DisableAttribs();
 
 		indxVBO->Unbind();
-		instVBOs[s]->Unbind();
+		instVBO->Unbind();
 	}
 }
 
 void S3DModelVAO::Bind()
 {
-	assert(vaos[currSubmission]);
-	vaos[currSubmission]->Bind();
+	assert(vao);
+	vao->Bind();
 }
 
 void S3DModelVAO::Unbind()
 {
-	assert(vaos[currSubmission]);
-	vaos[currSubmission]->Unbind();
+	assert(vao);
+	vao->Unbind();
 }
 
-void S3DModelVAO::DrawElementsInstanced(GLenum primType, GLsizei firstIndex, GLsizei indexCount)
+void S3DModelVAO::AddToSubmission(const CUnit* unit)
 {
-	const void* firstIndexPtr = (void*)static_cast<intptr_t>(firstIndex * sizeof(uint32_t));
+	const auto ssboIndex = MatrixUploader::GetInstance().GetUnitElemOffset(unit->id);
+	LOG("AddToSubmission ssboIndex = %u", ssboIndex);
+	auto& renderModelData = renderData[unit->model];
+	renderModelData.emplace_back(SInstanceData(ssboIndex, unit->team));
+}
 
-	glDrawElementsInstanced(primType, indexCount, GL_UNSIGNED_INT, firstIndexPtr, submInstanceCount);
+void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
+{
+	static std::vector<SDrawElementsIndirectCommand> submitCmds;
+	submitCmds.clear();
 
-	currSubmission = (currSubmission + 1) % NUM_SUBMISSIONS;
-	submInstanceCount = 0u;
+	uint32_t baseInstance = 0u;
+	for (const auto& [model, renderModelData] : renderData) {
+		//model
+		SDrawElementsIndirectCommand scmd{
+			model->indxCount,
+			static_cast<uint32_t>(renderModelData.size()),
+			model->indxStart,
+			0u, //todo use?
+			baseInstance
+		};
+		submitCmds.emplace_back(scmd);
+
+		instVBO->Bind();
+		instVBO->SetBufferSubData(renderModelData, baseInstance);
+		instVBO->Unbind();
+
+		baseInstance += renderModelData.size();
+	};
+
+	if (bindUnbind)
+		Bind();
+
+	glMultiDrawElementsIndirect(mode, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
+
+	if (bindUnbind)
+		Unbind();
+
+	renderData.clear();
 }

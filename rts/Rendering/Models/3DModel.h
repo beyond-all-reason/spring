@@ -37,6 +37,7 @@ struct S3DModelPiece;
 struct LocalModel;
 struct LocalModelPiece;
 struct SVertexData;
+struct SInstanceData;
 
 // singleton
 class S3DModelVAO {
@@ -46,7 +47,7 @@ public:
 		return instance;
 	};
 public:
-	static constexpr size_t NUM_SUBMISSIONS = 10;
+	//static constexpr size_t NUM_SUBMISSIONS = 10;
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = 2 << 15;
 public:
 	S3DModelVAO() = default;
@@ -56,7 +57,8 @@ public:
 	void Bind();
 	void Unbind();
 
-	void DrawElementsInstanced(GLenum primType, GLsizei firstIndex, GLsizei indexCount);
+	void AddToSubmission(const CUnit* unit);
+	void Submit(const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
 
 	const VBO* GetVertVBO() const {
 		return vertVBO.get();
@@ -75,18 +77,36 @@ public:
 	}
 
 private:
-	void EnableAttribs() const;
+	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
 	size_t submInstanceCount = 0u;
-	uint32_t currSubmission = 0u;
 	uint32_t indexOffset = 0u;
 
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
 
-	std::array<std::unique_ptr<VBO>, NUM_SUBMISSIONS> instVBOs;
-	std::array<std::unique_ptr<VAO>, NUM_SUBMISSIONS> vaos;
+	std::unique_ptr<VBO> instVBO;
+	std::unique_ptr<VAO> vao;
+
+	std::unordered_map<const S3DModel*, std::vector<SInstanceData>> renderData;
+	//std::vector<SDrawElementsIndirectCommand> indirectCmds;
+};
+
+struct SDrawElementsIndirectCommand {
+	SDrawElementsIndirectCommand(uint32_t indexCount_, uint32_t instanceCount_, uint32_t firstIndex_, uint32_t baseVertex_, uint32_t baseInstance_)
+		: indexCount { indexCount_ }
+		, instanceCount{ instanceCount_ }
+		, firstIndex{ firstIndex_ }
+		, baseVertex{ baseVertex_ }
+		, baseInstance{ baseInstance_ }
+	{};
+
+	uint32_t  indexCount;
+	uint32_t  instanceCount;
+	uint32_t  firstIndex;
+	uint32_t  baseVertex;
+	uint32_t  baseInstance;
 };
 
 struct SInstanceData {

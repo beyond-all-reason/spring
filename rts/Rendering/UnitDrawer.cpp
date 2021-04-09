@@ -30,6 +30,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "Rendering/MatrixUploader.h"
 
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/LosHandler.h"
@@ -47,6 +48,9 @@
 #include "System/EventHandler.h"
 #include "System/MemPoolTypes.h"
 #include "System/SpringMath.h"
+
+///// killmeh
+#include "Rendering/Shaders/ShaderHandler.h"
 
 #define UNIT_SHADOW_ALPHA_MASKING
 
@@ -441,28 +445,49 @@ void CUnitDrawer::DrawOpaquePass(bool deferredPass, bool drawReflection, bool dr
 void CUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
 {
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];
-	// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
+
+	const auto& getShader = []() {
+		Shader::IProgramObject* shader = shaderHandler->CreateProgramObject("[UnitDrawer]", "GL4");
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModelVertProgGL4.glsl", "", GL_VERTEX_SHADER));
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
+		shader->Link();
+		shader->Validate();
+		shader->Enable();
+		shader->SetUniform("tex1", 0);
+		shader->SetUniform("tex2", 1);
+		shader->Disable();
+
+		return shader;
+	};
+
+	static Shader::IProgramObject* shader = getShader();
+
+	auto& mvi = S3DModelVAO::GetInstance();
+
+	//mvi.Bind();
+	shader->Enable();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
 		for (CUnit* unit: mdlRenderer.GetObjectBin(i)) {
-			DrawOpaqueUnit(unit, drawReflection, drawRefraction);
+			if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+				continue;
+
+			//DrawOpaqueUnit(unit, drawReflection, drawRefraction);
+			mvi.AddToSubmission(unit);
 		}
+
+		mvi.Submit(GL_TRIANGLES, true);
 	}
+
+	shader->Disable();
+	//mvi.Unbind();
 }
 
 inline void CUnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
 {
-	if (!CanDrawOpaqueUnit(unit, drawReflection, drawRefraction))
-		return;
-
-	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * unitDrawDistSqr)) {
-		farTextureHandler->Queue(unit);
-		return;
-	}
-
-	if (LuaObjectDrawer::AddOpaqueMaterialObject(unit, LUAOBJ_UNIT))
+	if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
 		return;
 
 	// draw the unit with the default (non-Lua) material
@@ -631,6 +656,22 @@ bool CUnitDrawer::CanDrawOpaqueUnitShadow(const CUnit* unit) const
 	const bool unitInView = cam->InView(unit->drawMidPos, unit->GetDrawRadius());
 
 	return (unitInLOS && unitInView);
+}
+
+bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) const
+{
+	if (!CanDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+		return false;
+
+	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * unitDrawDistSqr)) {
+		farTextureHandler->Queue(unit);
+		return false;
+	}
+
+	if (LuaObjectDrawer::AddOpaqueMaterialObject(unit, LUAOBJ_UNIT))
+		return false;
+
+	return true;
 }
 
 

@@ -76,7 +76,7 @@ public:
 	}
 
 	template<typename TData>
-	void SetBufferSubData(std::vector<TData> data, GLintptr offset = 0) { SetBufferSubData(offset, sizeof(TData) * data.size(), data.data()); }
+	void SetBufferSubData(std::vector<TData> data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
 	void SetBufferSubData(GLintptr offset, GLsizeiptr size, void* data);
 
 
