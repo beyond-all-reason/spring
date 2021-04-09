@@ -38,6 +38,7 @@ struct LocalModel;
 struct LocalModelPiece;
 struct SVertexData;
 
+// singleton
 class S3DModelVAO {
 public:
 	static S3DModelVAO& GetInstance() {
@@ -45,23 +46,62 @@ public:
 		return instance;
 	};
 public:
+	static constexpr size_t NUM_SUBMISSIONS = 10;
+	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = 2 << 15;
+public:
 	S3DModelVAO() = default;
-	void UpdateVertData(std::vector<SVertexData>& modelVertData);
-	void UpdateIndxData(std::vector<uint32_t>   & modelIndxData);
-	void CreateVAO();
-	void BindVAO();
-	void UnbindVAO();
+
+	void Init();
+
+	void Bind();
+	void Unbind();
+
+	void DrawElementsInstanced(GLenum primType, GLsizei firstIndex, GLsizei indexCount);
+
+	const VBO* GetVertVBO() const {
+		return vertVBO.get();
+	}
+
+	const VBO* GetIndxVBO() const {
+		return indxVBO.get();
+	}
+
+	VBO* GetVertVBO() {
+		return vertVBO.get();
+	}
+
+	VBO* GetIndxVBO() {
+		return indxVBO.get();
+	}
+
 private:
 	void EnableAttribs() const;
 	void DisableAttribs() const;
 private:
+	size_t submInstanceCount = 0u;
+	uint32_t currSubmission = 0u;
+	uint32_t indexOffset = 0u;
+
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
 
-	std::unique_ptr<VAO> vao;
+	std::array<std::unique_ptr<VBO>, NUM_SUBMISSIONS> instVBOs;
+	std::array<std::unique_ptr<VAO>, NUM_SUBMISSIONS> vaos;
+};
 
-	std::vector<SVertexData> vertData;
-	std::vector<uint32_t>    indxData;
+struct SInstanceData {
+	SInstanceData() = default;
+	SInstanceData(const uint32_t ssboOffset_, const uint32_t teamIndex_, const uint32_t r0 = 0u, const uint32_t r1 = 0u)
+		: ssboOffset{ ssboOffset_ }
+		, teamIndex{ teamIndex_ }
+		, reserved0{ r0 }
+		, reserved1{ r1 }
+	{}
+
+	uint32_t ssboOffset;
+	uint32_t teamIndex;
+	uint32_t reserved0;
+	uint32_t reserved1;
 };
 
 struct SVertexData {
@@ -226,6 +266,9 @@ public:
 	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
 	void SetParentModel(S3DModel* model_) { model = model_; }
 
+	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; };
+	const std::vector<uint32_t>& GetIndicesVec() const { return indices; };
+
 private:
 	void CreateShatterPiecesVariation(const int num);
 
@@ -247,6 +290,8 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
+	uint32_t indxStart = 0u;
+	uint32_t indxCount = 0u;
 protected:
 	uint32_t vboIndxStart = 0u;
 	uint32_t vboVertStart = 0u;
@@ -289,6 +334,9 @@ struct S3DModel
 
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
+
+		, indxStart(0u)
+		, indxCount(0u)
 	{
 
 	}
@@ -320,6 +368,9 @@ struct S3DModel
 
 		curVertStartIndx = m.curVertStartIndx;
 		curIndxStartIndx = m.curIndxStartIndx;
+
+		indxStart = m.indxStart;
+		indxCount = m.indxCount;
 
 		pieceObjects = std::move(m.pieceObjects);
 		for_each(pieceObjects.begin(), pieceObjects.end(), [this](S3DModelPiece* p) { p->SetParentModel(this); });
@@ -399,6 +450,9 @@ public:
 	int id;                     /// unsynced ID, starting with 1
 	int numPieces;
 	int textureType;            /// FIXME: MAKE S3O ONLY (0 = 3DO, otherwise S3O or ASSIMP)
+
+	uint32_t indxStart;
+	uint32_t indxCount;
 
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;

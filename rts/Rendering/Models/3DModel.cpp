@@ -4,6 +4,7 @@
 
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/Models/IModelParser.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "System/Exceptions.h"
@@ -727,71 +728,142 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 /******************************************************************************/
 /******************************************************************************/
 
-void S3DModelVAO::UpdateVertData(std::vector<SVertexData>& modelVertData)
-{
-	vertData.insert(vertData.end(), modelVertData.begin(), modelVertData.end());
-}
-
-void S3DModelVAO::UpdateIndxData(std::vector<uint32_t>& modelIndxData)
-{
-	auto numVertices = vertData.size();
-	auto firstNewElem = indxData.end();
-	indxData.insert(firstNewElem, modelIndxData.begin(), modelIndxData.end());
-	std::for_each(firstNewElem, modelIndxData.end(), [numVertices](uint32_t& v) { v += numVertices; }); //add base vertex
-}
-
 void S3DModelVAO::EnableAttribs() const
 {
 	for (int i = 0; i <= 6; ++i) {
 		glEnableVertexAttribArray(i);
-		//glVertexAttribDivisor(i, 0);
+		glVertexAttribDivisor(i, 0);
 	}
 
-	glVertexAttribPointer (0,  3, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, pos         ));
-	glVertexAttribPointer (1,  3, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, normal      ));
-	glVertexAttribPointer (2,  3, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, sTangent    ));
-	glVertexAttribPointer (3,  3, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, tTangent    ));
-	glVertexAttribPointer (4,  2, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, texCoords[0]));
-	glVertexAttribPointer (5,  2, GL_FLOAT       , false,  sizeof(SVertexData), (const void*) offsetof(SVertexData, texCoords[1]));
-	glVertexAttribIPointer(6,  1, GL_UNSIGNED_INT,         sizeof(SVertexData), (const void*) offsetof(SVertexData, pieceIndex  ));
+	for (int i = 7; i <= 7; ++i) {
+		glEnableVertexAttribArray(i);
+		glVertexAttribDivisor(i, 1);
+	}
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, pos));
+	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal));
+	glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent));
+	glVertexAttribPointer(3, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent));
+	glVertexAttribPointer(4, 2, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
+	glVertexAttribPointer(5, 2, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[1]));
+	glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT, sizeof(SVertexData), (const void*)offsetof(SVertexData, pieceIndex));
+
+	glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(SInstanceData), (const void*)offsetof(SInstanceData, ssboOffset));
 }
 
 void S3DModelVAO::DisableAttribs() const
 {
-	for (int i = 0; i <= 6; ++i) {
+	for (int i = 0; i <= 7; ++i) {
 		glDisableVertexAttribArray(i);
+		glVertexAttribDivisor(i, 0);
 	}
 }
 
-void S3DModelVAO::CreateVAO()
+void S3DModelVAO::Init()
 {
-	vao = std::make_unique<VAO>();
-	vao->Bind();
+	submInstanceCount = 0u;
+	currSubmission = 0u;
+	indexOffset = 0u;
 
-	vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
-	vertVBO->Bind();
-	vertVBO->New(vertData.size() * sizeof(SVertexData), GL_STATIC_DRAW, nullptr);
+	std::vector<SVertexData> vertData; vertData.reserve(2 << 21);
+	std::vector<uint32_t   > indxData; indxData.reserve(2 << 22);
 
-	indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
-	indxVBO->Bind();
-	indxVBO->New(indxData.size() * sizeof(uint32_t), GL_STATIC_DRAW, nullptr);
+	//populate content of the common buffers
+	{
+		auto& allModels = modelLoader.GetModelsVec();
+		for (auto& model : allModels) {
 
-	EnableAttribs();
-	vao->Unbind();
-	DisableAttribs();
+			//models should know their index offset
+			model.indxStart = std::distance(indxData.cbegin(), indxData.cend());
 
-	indxVBO->Unbind();
-	vertVBO->Unbind();
+			for (auto modelPiece : model.pieceObjects) { //vec of pointers
+				if (!modelPiece->HasGeometryData())
+					continue;
+
+				const auto& modelPieceVerts = modelPiece->GetVerticesVec();
+				const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
+
+				vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); //append
+				indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
+
+				const auto endIdx = indxData.end();
+				const auto begIdx = endIdx - modelPieceIndcs.size();
+
+				std::for_each(begIdx, endIdx, [this](uint32_t& indx) { indx += indexOffset; }); // add per piece vertex offset to indices
+
+				//model pieces should know their index offset
+				modelPiece->indxStart = std::distance(indxData.begin(), begIdx);;
+
+				//model pieces should know their index count
+				modelPiece->indxCount = modelPieceVerts.size();
+				indexOffset += modelPiece->indxCount;
+			}
+
+			//models should know their index count
+			model.indxCount = std::distance(indxData.cbegin(), indxData.cend());
+		}
+	}
+
+	//LOG("S3DModelVAO::Init() indxData.size() %u vertData.size() %u", static_cast<uint32_t>(indxData.size()), static_cast<uint32_t>(vertData.size()));
+
+	//OpenGL stuff
+	{
+		vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
+		vertVBO->Bind();
+		vertVBO->New(vertData);
+		vertVBO->Unbind();
+
+		indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
+		indxVBO->Bind();
+		indxVBO->New(indxData);
+		indxVBO->Unbind();
+	}
+	for (int s = 0; s < NUM_SUBMISSIONS; ++s)
+	{
+		vaos[s] = std::make_unique<VAO>();
+		vaos[s]->Bind();
+
+		vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
+		vertVBO->Bind();
+		vertVBO->New(vertData);
+
+		indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
+		indxVBO->Bind();
+		indxVBO->New(indxData);
+
+		vertVBO->Unbind();
+
+		instVBOs[s] = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
+		instVBOs[s]->Bind();
+		instVBOs[s]->New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
+
+		EnableAttribs();
+		vaos[s]->Unbind();
+		DisableAttribs();
+
+		indxVBO->Unbind();
+		instVBOs[s]->Unbind();
+	}
 }
 
-void S3DModelVAO::BindVAO()
+void S3DModelVAO::Bind()
 {
-	assert(vao);
-	vao->Bind();
+	assert(vaos[currSubmission]);
+	vaos[currSubmission]->Bind();
 }
 
-void S3DModelVAO::UnbindVAO()
+void S3DModelVAO::Unbind()
 {
-	assert(vao);
-	vao->Unbind();
+	assert(vaos[currSubmission]);
+	vaos[currSubmission]->Unbind();
+}
+
+void S3DModelVAO::DrawElementsInstanced(GLenum primType, GLsizei firstIndex, GLsizei indexCount)
+{
+	const void* firstIndexPtr = (void*)static_cast<intptr_t>(firstIndex * sizeof(uint32_t));
+
+	glDrawElementsInstanced(primType, indexCount, GL_UNSIGNED_INT, firstIndexPtr, submInstanceCount);
+
+	currSubmission = (currSubmission + 1) % NUM_SUBMISSIONS;
+	submInstanceCount = 0u;
 }
