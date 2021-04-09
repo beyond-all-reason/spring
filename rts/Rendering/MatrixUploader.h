@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <map>
 
+#include "System/UnorderedMap.hpp"
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "Rendering/GL/myGL.h"
@@ -41,7 +42,7 @@ private:
 	bool IsInView(const TObj* obj);
 
 	template<typename TObj>
-	void GetVisibleObjects(std::map<int, const TObj*>& visibleObjects);
+	void GetVisibleObjects(spring::unordered_map<int, const TObj*>& visibleObjects);
 private:
 	void KillVBO();
 	void InitVBO(const uint32_t newElemCount);
@@ -58,13 +59,13 @@ private:
 private:
 	uint32_t elemUpdateOffset = 0u; // a index offset separating constant part of the buffer from varying part
 
-	std::unordered_map<int32_t, std::string> unitDefToModel;
-	std::unordered_map<int32_t, std::string> featureDefToModel;
-	std::unordered_map<std::string, uint32_t> modelToOffsetMap;
+	spring::unordered_map<int32_t, std::string> unitDefToModel;
+	spring::unordered_map<int32_t, std::string> featureDefToModel;
+	spring::unordered_map<std::string, uint32_t> modelToOffsetMap;
 
-	std::unordered_map<int32_t, uint32_t> unitIDToOffsetMap;
-	std::unordered_map<int32_t, uint32_t> featureIDToOffsetMap;
-	std::unordered_map<int32_t, uint32_t> weaponIDToOffsetMap;
+	spring::unordered_map<int32_t, uint32_t> unitIDToOffsetMap;
+	spring::unordered_map<int32_t, uint32_t> featureIDToOffsetMap;
+	spring::unordered_map<int32_t, uint32_t> weaponIDToOffsetMap;
 
 	std::vector<CMatrix44f> matrices;
 

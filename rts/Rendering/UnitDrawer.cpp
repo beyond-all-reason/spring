@@ -50,6 +50,7 @@
 #include "System/SpringMath.h"
 
 ///// killmeh
+#include "System/Threading/ThreadPool.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 
 #define UNIT_SHADOW_ALPHA_MASKING
@@ -470,8 +471,17 @@ void CUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawR
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (CUnit* unit: mdlRenderer.GetObjectBin(i)) {
-			if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+		const auto& binUnits = mdlRenderer.GetObjectBin(i);
+		static vector<CUnit*> renderUnits;
+
+		renderUnits.resize(binUnits.size());
+
+		for_mt(0, binUnits.size(), [&binUnits, this, drawReflection, drawRefraction](const int i) {
+			renderUnits[i] = ShouldDrawOpaqueUnit(binUnits[i], drawReflection, drawRefraction) ? binUnits[i] : nullptr;
+		});
+
+		for (CUnit* unit: renderUnits) {
+			if (!unit)
 				continue;
 
 			//DrawOpaqueUnit(unit, drawReflection, drawRefraction);

@@ -101,7 +101,7 @@ bool MatrixUploader::IsInView(const TObj* obj)
 
 
 template<typename TObj>
-void MatrixUploader::GetVisibleObjects(std::map<int, const TObj*>& visibleObjects)
+void MatrixUploader::GetVisibleObjects(spring::unordered_map<int, const TObj*>& visibleObjects)
 {
 	visibleObjects.clear();
 
@@ -178,7 +178,7 @@ bool MatrixUploader::UpdateObjectDefs()
 
 			objDefToModel[objDef.id] = model->name;
 
-			if (this->modelToOffsetMap.find(model->name) != this->modelToOffsetMap.cend())  //already handled
+			if (this->modelToOffsetMap.find(model->name) != this->modelToOffsetMap.end())  //already handled
 				continue;
 
 			const int elemBeginIndex = std::distance(matrices.cbegin(), matrices.cend());
@@ -207,7 +207,7 @@ bool MatrixUploader::UpdateObjectDefs()
 template<typename TObj>
 void MatrixUploader::UpdateVisibleObjects()
 {
-	std::map<int, const TObj*> visibleObjects;
+	static spring::unordered_map<int, const TObj*> visibleObjects;
 	GetVisibleObjects<TObj>(visibleObjects);
 
 	if constexpr (std::is_same<TObj, CUnit>::value || std::is_same<TObj, CFeature>::value) {
@@ -301,13 +301,13 @@ void MatrixUploader::Update()
 uint32_t MatrixUploader::GetUnitDefElemOffset(int32_t unitDefID)
 {
 	const auto modelIter = unitDefToModel.find(unitDefID);
-	if (modelIter == unitDefToModel.cend()) {
+	if (modelIter == unitDefToModel.end()) {
 		LOG_L(L_ERROR, "MatrixUploader::%s Supplied invalid %s %d", __func__, "UnitDefID", unitDefID);
 		return ~0u;
 	}
 
 	const auto offsetIter = modelToOffsetMap.find(modelIter->second);
-	if (offsetIter == modelToOffsetMap.cend()) { //should never happen, TODO test and remove
+	if (offsetIter == modelToOffsetMap.end()) { //should never happen, TODO test and remove
 		LOG_L(L_ERROR, "MatrixUploader::%s Failed to find an offset corresponding to model %s of %s %d", __func__, modelIter->second.c_str(), "UnitDefID", unitDefID);
 		return ~0u;
 	}
@@ -319,13 +319,13 @@ uint32_t MatrixUploader::GetUnitDefElemOffset(int32_t unitDefID)
 uint32_t MatrixUploader::GetFeatureDefElemOffset(int32_t featureDefID)
 {
 	const auto& modelIter = featureDefToModel.find(featureDefID);
-	if (modelIter == featureDefToModel.cend()) {
+	if (modelIter == featureDefToModel.end()) {
 		LOG_L(L_ERROR, "MatrixUploader::%s Supplied invalid %s %d", __func__, "featureDefID", featureDefID);
 		return ~0u;
 	}
 
 	const auto& offsetIter = modelToOffsetMap.find(modelIter->second);
-	if (offsetIter == modelToOffsetMap.cend()) { //should never happen, TODO test and remove
+	if (offsetIter == modelToOffsetMap.end()) { //should never happen, TODO test and remove
 		LOG_L(L_ERROR, "MatrixUploader::%s Failed to find an offset corresponding to model %s of %s %d", __func__, modelIter->second.c_str(), "featureDefID", featureDefID);
 		return ~0u;
 	}
@@ -336,7 +336,7 @@ uint32_t MatrixUploader::GetFeatureDefElemOffset(int32_t featureDefID)
 uint32_t MatrixUploader::GetUnitElemOffset(int32_t unitID)
 {
 	const auto& unitIDIter = unitIDToOffsetMap.find(unitID);
-	if (unitIDIter == unitIDToOffsetMap.cend()) {
+	if (unitIDIter == unitIDToOffsetMap.end()) {
 		LOG_L(L_ERROR, "MatrixUploader::%s Supplied invalid %s %d", __func__, "UnitID", unitID);
 		return ~0u;
 	}
@@ -348,7 +348,7 @@ uint32_t MatrixUploader::GetUnitElemOffset(int32_t unitID)
 uint32_t MatrixUploader::GetFeatureElemOffset(int32_t featureID)
 {
 	const auto& featureIDIter = featureIDToOffsetMap.find(featureID);
-	if (featureIDIter == featureIDToOffsetMap.cend()) {
+	if (featureIDIter == featureIDToOffsetMap.end()) {
 		LOG_L(L_ERROR, "MatrixUploader::%s Supplied invalid %s %d", __func__, "FeatureID", featureID);
 		return ~0u;
 	}
