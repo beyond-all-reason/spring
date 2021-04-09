@@ -80,9 +80,6 @@ private:
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
-	size_t submInstanceCount = 0u;
-	uint32_t indexOffset = 0u;
-
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
 

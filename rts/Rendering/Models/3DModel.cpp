@@ -742,23 +742,22 @@ void S3DModelVAO::EnableAttribs(bool inst) const
 		glVertexAttribPointer (1, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal      ));
 		glVertexAttribPointer (2, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent    ));
 		glVertexAttribPointer (3, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent    ));
-		glVertexAttribPointer (4, 2, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
-		glVertexAttribPointer (5, 2, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[1]));
-		glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, pieceIndex  ));
+		glVertexAttribPointer (4, 4, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
+		glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, pieceIndex  ));
 	}
 	else {
-		for (int i = 7; i <= 7; ++i) {
+		for (int i = 6; i <= 6; ++i) {
 			glEnableVertexAttribArray(i);
 			glVertexAttribDivisor(i, 1);
 		}
 
-		glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(SInstanceData),      (const void*)offsetof(SInstanceData, ssboOffset));
+		glVertexAttribIPointer(6, 4, GL_UNSIGNED_INT, sizeof(SInstanceData),      (const void*)offsetof(SInstanceData, ssboOffset));
 	}
 }
 
 void S3DModelVAO::DisableAttribs() const
 {
-	for (int i = 0; i <= 7; ++i) {
+	for (int i = 0; i <= 6; ++i) {
 		glDisableVertexAttribArray(i);
 		glVertexAttribDivisor(i, 0);
 	}
@@ -766,9 +765,6 @@ void S3DModelVAO::DisableAttribs() const
 
 void S3DModelVAO::Init()
 {
-	submInstanceCount = 0u;
-	indexOffset = 0u;
-
 	std::vector<SVertexData> vertData; vertData.reserve(2 << 21);
 	std::vector<uint32_t   > indxData; indxData.reserve(2 << 22);
 
@@ -787,24 +783,25 @@ void S3DModelVAO::Init()
 				const auto& modelPieceVerts = modelPiece->GetVerticesVec();
 				const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
 
+				const uint32_t indexOffsetVertNum = vertData.size();
+
 				vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); //append
 				indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
 
 				const auto endIdx = indxData.end();
 				const auto begIdx = endIdx - modelPieceIndcs.size();
 
-				std::for_each(begIdx, endIdx, [this](uint32_t& indx) { indx += indexOffset; }); // add per piece vertex offset to indices
+				std::for_each(begIdx, endIdx, [indexOffsetVertNum](uint32_t& indx) { indx += indexOffsetVertNum; }); // add per piece vertex offset to indices
 
 				//model pieces should know their index offset
-				modelPiece->indxStart = std::distance(indxData.begin(), begIdx);;
+				modelPiece->indxStart = std::distance(indxData.begin(), begIdx);
 
 				//model pieces should know their index count
-				modelPiece->indxCount = modelPieceVerts.size();
-				indexOffset += modelPiece->indxCount;
+				modelPiece->indxCount = modelPieceIndcs.size();
 			}
 
 			//models should know their index count
-			model.indxCount = std::distance(indxData.cbegin(), indxData.cend());
+			model.indxCount = indxData.size() - model.indxStart;
 		}
 	}
 
@@ -865,7 +862,7 @@ void S3DModelVAO::Unbind()
 void S3DModelVAO::AddToSubmission(const CUnit* unit)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetUnitElemOffset(unit->id);
-	LOG("AddToSubmission ssboIndex = %u", ssboIndex);
+	//LOG("AddToSubmission ssboIndex = %u", ssboIndex);
 	auto& renderModelData = renderData[unit->model];
 	renderModelData.emplace_back(SInstanceData(ssboIndex, unit->team));
 }
@@ -885,6 +882,7 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 			0u, //todo use?
 			baseInstance
 		};
+		//LOG("S3DModelVAO::Submit model->name %s instCnt %u", model->name.c_str(), static_cast<uint32_t>(renderModelData.size()));
 		submitCmds.emplace_back(scmd);
 
 		instVBO->Bind();
