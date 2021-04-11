@@ -62,7 +62,9 @@ public:
 	/**
 	 * @see http://www.opengl.org/sdk/docs/man/xhtml/glMapBufferRange.xml
 	 */
-	GLubyte* MapBuffer(GLbitfield access = GL_WRITE_ONLY);
+	template<typename TData>
+	GLubyte* MapBuffer(std::vector<TData> data, GLintptr elemOffset = 0, GLbitfield access = GL_WRITE_ONLY) { return MapBuffer(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), access); };
+	GLubyte* MapBuffer(GLbitfield access = GL_WRITE_ONLY) { return MapBuffer(0, bufSize, access); };
 	GLubyte* MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access = GL_WRITE_ONLY);
 
 	void UnmapBuffer();
@@ -78,9 +80,6 @@ public:
 	template<typename TData>
 	void SetBufferSubData(std::vector<TData> data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
 	void SetBufferSubData(GLintptr offset, GLsizeiptr size, void* data);
-
-
-
 
 	GLuint GetId() const {
 		if (vboId == 0)
