@@ -131,12 +131,6 @@ static const void KillShadowTex(const CS3OTextureHandler::S3OTexMat*) {
 	glActiveTexture(GL_TEXTURE0);
 }
 
-static const void KillShadowTexAtlas(const CS3OTextureHandler::S3OTexMat*) {
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0);
-}
-
 static const void PushRenderStateS3O() {
 	if (globalRendering->supportRestartPrimitive) {
 		glPrimitiveRestartIndexNV(-1U);
@@ -2214,7 +2208,7 @@ void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 	auto& mvi = S3DModelVAO::GetInstance();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
+		shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
 
@@ -2254,7 +2248,7 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 	auto& mvi = S3DModelVAO::GetInstance();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+		opaqueTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
 
@@ -2283,5 +2277,8 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 #endif
 
 		mvi.Submit(GL_TRIANGLES, false);
+
+		//don't remove textures?
+		//opaqueTexKillFuncs[modelType](nullptr);
 	}
 }
