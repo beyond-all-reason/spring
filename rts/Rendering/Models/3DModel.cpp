@@ -873,6 +873,11 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 	submitCmds.clear();
 
 	uint32_t baseInstance = 0u;
+
+	static std::vector<SInstanceData> allRenderModelData;
+	allRenderModelData.reserve(INSTANCE_BUFFER_NUM_ELEMS);
+	allRenderModelData.clear();
+
 	for (const auto& [model, renderModelData] : renderData) {
 		//model
 		SDrawElementsIndirectCommand scmd{
@@ -882,15 +887,17 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 			0u, //todo use?
 			baseInstance
 		};
-		//LOG("S3DModelVAO::Submit model->name %s instCnt %u", model->name.c_str(), static_cast<uint32_t>(renderModelData.size()));
+
 		submitCmds.emplace_back(scmd);
 
-		instVBO->Bind();
-		instVBO->SetBufferSubData(renderModelData, baseInstance);
-		instVBO->Unbind();
+		allRenderModelData.insert(allRenderModelData.end(), renderModelData.cbegin(), renderModelData.cend());
 
 		baseInstance += renderModelData.size();
 	};
+
+	instVBO->Bind();
+	instVBO->SetBufferSubData(allRenderModelData);
+	instVBO->Unbind();
 
 	if (bindUnbind)
 		Bind();
