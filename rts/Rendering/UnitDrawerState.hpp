@@ -4,7 +4,12 @@
 #define UNITDRAWER_STATE_H
 
 #include <array>
+
 #include "System/type2.h"
+#include "Game/Game.h"
+#include "Rendering/ShadowHandler.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Shaders/Shader.h"
 
 struct float4;
 class CUnitDrawer;
@@ -17,9 +22,6 @@ namespace Shader {
 
 struct IUnitDrawerState {
 public:
-	static IUnitDrawerState* GetInstance();
-	static void FreeInstance(IUnitDrawerState* state) { delete state; }
-
 	static void PushTransform(const CCamera* cam);
 	static void PopTransform();
 	static float4 GetTeamColor(int team, float alpha);
@@ -27,27 +29,30 @@ public:
 	IUnitDrawerState() { modelShaders.fill(nullptr); }
 	virtual ~IUnitDrawerState() {}
 
-	virtual bool Init(const CUnitDrawer*) { return false; }
+	virtual bool Init(const CUnitDrawer* ud) { return false; }
 	virtual void Kill() {}
 
-	virtual bool CanDrawAlpha() const { return false; }
-	virtual bool CanDrawDeferred() const { return false; }
+	virtual bool CanDrawAlpha() const { return true; }
+	virtual bool CanDrawDeferred() const { return true; }
 
-	virtual void Enable(const CUnitDrawer*, bool, bool) = 0;
-	virtual void Disable(const CUnitDrawer*, bool) = 0;
+	virtual void Enable(const CUnitDrawer* ud, bool alphaPass) { EnableCommon(ud, alphaPass); };
+	virtual void Disable(const CUnitDrawer* ud) { DisableCommon(ud); };
 
-	virtual void EnableTextures() const = 0;
-	virtual void DisableTextures() const = 0;
-	virtual void EnableShaders(const CUnitDrawer*) {}
-	virtual void DisableShaders(const CUnitDrawer*) {}
+	virtual void EnableTextures() const { EnableTexturesCommon(); };
+	virtual void DisableTextures() const { DisableTexturesCommon(); };
+	virtual void EnableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Enable(); }
+	virtual void DisableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Disable(); }
 
-	virtual void UpdateCurrentShaderSky(const CUnitDrawer*, const ISkyLight*) const {}
+	virtual void UpdateCurrentShaderSky(const CUnitDrawer* ud, const ISkyLight* skyLight) const {}
 	virtual void SetTeamColor(int team, const float2 alpha) const = 0;
 	virtual void SetNanoColor(const float4& color) const {}
 
-	void SetActiveShader(unsigned int shadowed, unsigned int deferred) {
+	void SetActiveShader() {
 		// shadowed=1 --> shader 1 (deferred=0) or 3 (deferred=1)
 		// shadowed=0 --> shader 0 (deferred=0) or 2 (deferred=1)
+		const bool shadowed = shadowHandler.ShadowsLoaded();
+		const bool deferred = game->GetDrawMode() == CGame::GameDrawMode::gameDeferredDraw;
+
 		modelShaders[MODEL_SHADER_ACTIVE] = modelShaders[shadowed + deferred * 2];
 	}
 
@@ -63,8 +68,14 @@ public:
 
 protected:
 	// shared ARB and GLSL state managers
-	void EnableCommon(const CUnitDrawer*, bool);
-	void DisableCommon(const CUnitDrawer*, bool);
+	virtual void EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass) {};
+	virtual void DisableCustomFFPState(const CUnitDrawer* ud) {};
+
+	virtual void EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass) {};
+	virtual void DisableCustomShaderState(const CUnitDrawer* ud) {};
+
+	void EnableCommon(const CUnitDrawer* ud, bool alphaPass);
+	void DisableCommon(const CUnitDrawer* ud);
 	void EnableTexturesCommon() const;
 	void DisableTexturesCommon() const;
 
@@ -74,23 +85,31 @@ protected:
 
 struct UnitDrawerStateGLSL: public IUnitDrawerState {
 public:
-	bool Init(const CUnitDrawer*) override;
-	void Kill() override;
+	virtual bool Init(const CUnitDrawer* ud) override;
+	virtual void Kill() override;
 
-	bool CanDrawAlpha() const override { return true; }
-	bool CanDrawDeferred() const  override { return true; }
+	virtual void UpdateCurrentShaderSky(const CUnitDrawer* ud, const ISkyLight* skyLight) const override;
+	virtual void SetTeamColor(int team, const float2 alpha) const override;
+	virtual void SetNanoColor(const float4& color) const override;
+protected:
+	virtual void EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass) override;
+	virtual void DisableCustomFFPState(const CUnitDrawer* ud) override;
 
-	void Enable(const CUnitDrawer*, bool, bool) override;
-	void Disable(const CUnitDrawer*, bool) override;
+	virtual void EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass) override;
+};
 
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-	void EnableShaders(const CUnitDrawer*) override;
-	void DisableShaders(const CUnitDrawer*) override;
+struct UnitDrawerStateGLSL4 : public IUnitDrawerState {
+public:
+	virtual bool Init(const CUnitDrawer* ud) override;
+	virtual void Kill() override;
 
-	void UpdateCurrentShaderSky(const CUnitDrawer*, const ISkyLight*) const override;
-	void SetTeamColor(int team, const float2 alpha) const override;
-	void SetNanoColor(const float4& color) const override;
+	virtual void SetTeamColor(int team, const float2 alpha) const override {}; //info exists in the shader
+	virtual void SetNanoColor(const float4& color) const override;
+protected:
+	virtual void EnableCustomFFPState(const CUnitDrawer* ud,bool alphaPass) override;
+	virtual void DisableCustomFFPState(const CUnitDrawer* ud) override;
+	virtual void EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass) override;
+	virtual void DisableCustomShaderState(const CUnitDrawer* ud) override;
 };
 
 #endif

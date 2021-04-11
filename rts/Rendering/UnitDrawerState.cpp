@@ -4,7 +4,6 @@
 #include "UnitDrawer.h"
 #include "Game/Camera.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/ShadowHandler.h"
 #include "Rendering/Env/SunLighting.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
@@ -12,12 +11,11 @@
 #include "Rendering/Env/SkyLight.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/Shaders/ShaderHandler.h"
-#include "Rendering/Shaders/Shader.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
+#include "System/Log/ILog.h"
 
 
 
@@ -49,29 +47,42 @@ float4 IUnitDrawerState::GetTeamColor(int team, float alpha) {
 	return (float4(c[0] / 255.0f, c[1] / 255.0f, c[2] / 255.0f, alpha));
 }
 
+void IUnitDrawerState::EnableCommon(const CUnitDrawer* ud, bool alphaPass) {
+	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
 
+	glEnable(GL_TEXTURE_2D);
 
-IUnitDrawerState* IUnitDrawerState::GetInstance() {
-	return new UnitDrawerStateGLSL();
-}
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 
+	if (alphaPass) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDepthMask(GL_FALSE);
+	}
 
-void IUnitDrawerState::EnableCommon(const CUnitDrawer* ud, bool deferredPass) {
+	EnableCustomFFPState(ud, alphaPass);
+
 	PushTransform(camera);
 	EnableTexturesCommon();
 
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
+	SetActiveShader();
 	assert(modelShaders[MODEL_SHADER_ACTIVE] != nullptr);
 	modelShaders[MODEL_SHADER_ACTIVE]->Enable();
+	EnableCustomShaderState(ud, alphaPass);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void IUnitDrawerState::DisableCommon(const CUnitDrawer* ud, bool deferredPass) {
+void IUnitDrawerState::DisableCommon(const CUnitDrawer* ud) {
 	assert(modelShaders[MODEL_SHADER_ACTIVE] != nullptr);
 
+	DisableCustomShaderState(ud);
 	modelShaders[MODEL_SHADER_ACTIVE]->Disable();
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
+
+	DisableCustomFFPState(ud);
+
+	glPopAttrib();
 
 	DisableTexturesCommon();
 	PopTransform();
@@ -81,6 +92,9 @@ void IUnitDrawerState::DisableCommon(const CUnitDrawer* ud, bool deferredPass) {
 void IUnitDrawerState::EnableTexturesCommon() const {
 	glActiveTexture(GL_TEXTURE1);
 	glEnable(GL_TEXTURE_2D);
+
+	if (game->GetDrawMode() == CGame::GameDrawMode::gameShadowDraw) //shadow pass
+		return;
 
 	if (shadowHandler.ShadowsLoaded())
 		shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
@@ -100,6 +114,9 @@ void IUnitDrawerState::EnableTexturesCommon() const {
 void IUnitDrawerState::DisableTexturesCommon() const {
 	glActiveTexture(GL_TEXTURE1);
 	glDisable(GL_TEXTURE_2D);
+
+	if (game->GetDrawMode() == CGame::GameDrawMode::gameShadowDraw) //shadow pass
+		return;
 
 	if (shadowHandler.ShadowsLoaded())
 		shadowHandler.ResetShadowTexSampler(GL_TEXTURE2, true);
@@ -184,10 +201,11 @@ bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
 	}
 
 	// make the active shader non-NULL
-	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
+	SetActiveShader();
 
-	#undef sh
 	return true;
+
+#undef sh
 }
 
 void UnitDrawerStateGLSL::Kill() {
@@ -195,9 +213,7 @@ void UnitDrawerStateGLSL::Kill() {
 	shaderHandler->ReleaseProgramObjects("[UnitDrawer]");
 }
 
-void UnitDrawerStateGLSL::Enable(const CUnitDrawer* ud, bool deferredPass, bool alphaPass) {
-	EnableCommon(ud, deferredPass);
-
+void UnitDrawerStateGLSL::EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass) {
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform3fv(6, &camera->GetPos()[0]);
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformMatrix4fv(7, false, camera->GetViewMatrix());
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformMatrix4fv(8, false, camera->GetViewMatrixInverse());
@@ -207,17 +223,20 @@ void UnitDrawerStateGLSL::Enable(const CUnitDrawer* ud, bool deferredPass, bool 
 	const_cast<GL::LightHandler*>(ud->GetLightHandler())->Update(modelShaders[MODEL_SHADER_ACTIVE]);
 }
 
-void UnitDrawerStateGLSL::Disable(const CUnitDrawer* ud, bool deferredPass) {
-	DisableCommon(ud, deferredPass);
+void UnitDrawerStateGLSL::EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass)
+{
+	glEnable(GL_ALPHA_TEST);
+
+	if (alphaPass)
+		glAlphaFunc(GL_GREATER, 0.1f);
+	else
+		glAlphaFunc(GL_GREATER, 0.5f);
 }
 
-
-void UnitDrawerStateGLSL::EnableTextures() const { EnableTexturesCommon(); }
-void UnitDrawerStateGLSL::DisableTextures() const { DisableTexturesCommon(); }
-
-void UnitDrawerStateGLSL::EnableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Enable(); }
-void UnitDrawerStateGLSL::DisableShaders(const CUnitDrawer*) { modelShaders[MODEL_SHADER_ACTIVE]->Disable(); }
-
+void UnitDrawerStateGLSL::DisableCustomFFPState(const CUnitDrawer* ud)
+{
+	glDisable(GL_ALPHA_TEST);
+}
 
 void UnitDrawerStateGLSL::UpdateCurrentShaderSky(const CUnitDrawer* ud, const ISkyLight* skyLight) const {
 	// note: the NOSHADOW shaders do not care about shadow-density
@@ -245,3 +264,93 @@ void UnitDrawerStateGLSL::SetNanoColor(const float4& color) const {
 	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(10, color);
 }
 
+bool UnitDrawerStateGLSL4::Init(const CUnitDrawer* ud)
+{
+#define sh shaderHandler
+
+	const std::string shaderNames[MODEL_SHADER_COUNT - 1] = {
+		"ModelShaderGLSL4-NoShadowStandard",
+		"ModelShaderGLSL4-ShadowedStandard",
+		"ModelShaderGLSL4-NoShadowDeferred",
+		"ModelShaderGLSL4-ShadowedDeferred",
+	};
+
+	for (unsigned int n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
+		modelShaders[n] = sh->CreateProgramObject("[UnitDrawer-GL4]", shaderNames[n]);
+		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProgGL4.glsl", "", GL_VERTEX_SHADER));
+		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
+
+		modelShaders[n]->SetFlag("USE_SHADOWS", int((n & 1) == 1));
+		modelShaders[n]->SetFlag("DEFERRED_MODE", int(n >= MODEL_SHADER_NOSHADOW_DEFERRED));
+		modelShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
+		modelShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
+		modelShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
+		modelShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
+		modelShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
+		modelShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
+
+		modelShaders[n]->Link();
+
+		modelShaders[n]->Enable();
+		modelShaders[n]->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); // alphaCtrl, default, always pass
+		modelShaders[n]->Disable();
+
+		modelShaders[n]->Validate();
+	}
+
+	// make the active shader non-NULL
+	SetActiveShader();
+
+	return true;
+
+#undef sh
+}
+
+void UnitDrawerStateGLSL4::Kill() {
+	modelShaders.fill(nullptr);
+	shaderHandler->ReleaseProgramObjects("[UnitDrawer-GL4]");
+}
+
+void UnitDrawerStateGLSL4::SetNanoColor(const float4& color) const
+{
+	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("nanoColor", color.x, color.y, color.z, color.w);
+}
+
+void UnitDrawerStateGLSL4::EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass)
+{
+	S3DModelVAO::GetInstance().Bind();
+}
+
+void UnitDrawerStateGLSL4::DisableCustomFFPState(const CUnitDrawer* ud)
+{
+	S3DModelVAO::GetInstance().Unbind();
+}
+
+void UnitDrawerStateGLSL4::EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass)
+{
+	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+
+	int camMode = 0;
+	switch (game->GetDrawMode()) {
+		case CGame::GameDrawMode::gameShadowDraw: { camMode = 1; }
+		case CGame::GameDrawMode::gameReflectionDraw: { camMode = 2; }
+		default: { camMode = 0; } break;
+	}
+
+	LOG("[UnitDrawerStateGLSL4::EnableCustomShaderState] camMode = %d", camMode);
+	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("cameraMode", camMode);
+
+	if (alphaPass)
+		modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.1f, 1.0f, 0.0f, 0.0f); // test > 0.1
+	else
+		modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
+}
+
+void UnitDrawerStateGLSL4::DisableCustomShaderState(const CUnitDrawer* ud)
+{
+	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+
+	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("cameraMode", 0);
+	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); //default, always pass
+}

@@ -178,6 +178,8 @@ public:
 	bool DrawForward() const { return drawForward; }
 	bool DrawDeferred() const { return drawDeferred; }
 
+	const GLenum GetPolygonMode() const { return GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode); }
+
 	bool& WireFrameModeRef() { return wireFrameMode; }
 
 public:
@@ -197,32 +199,31 @@ public:
 
 	void AddTempDrawUnit(const TempDrawUnit& tempDrawUnit);
 	void UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUnits);
-
-private:
+protected:
 	/// Returns true if the given unit should be drawn as icon in the current frame.
 	bool DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const;
-	bool DrawAsIconScreen(CUnit* unit) const;
 
 	bool CanDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	bool CanDrawOpaqueUnitShadow(const CUnit* unit) const;
 
 	bool ShouldDrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) const;
+	bool ShouldDrawOpaqueUnitShadow(CUnit* unit) const;
 
-	void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction);
-	void DrawOpaqueUnitShadow(CUnit* unit);
-	void DrawOpaqueUnitsShadow(int modelType);
-	void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction);
+	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) = 0;
+	virtual void DrawOpaqueUnitShadow(CUnit* unit) = 0;
+	virtual void DrawOpaqueUnitsShadow(int modelType) = 0;
+	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) = 0;
 
-	void DrawAlphaUnits(int modelType);
-	void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass);
+	virtual void DrawAlphaUnits(int modelType) = 0;
+	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) = 0;
 
-	void DrawOpaqueAIUnits(int modelType);
-	void DrawOpaqueAIUnit(const TempDrawUnit& unit);
-	void DrawAlphaAIUnits(int modelType);
-	void DrawAlphaAIUnit(const TempDrawUnit& unit);
-	void DrawAlphaAIUnitBorder(const TempDrawUnit& unit);
+	virtual void DrawOpaqueAIUnits(int modelType) = 0;
+	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) = 0;
+	virtual void DrawAlphaAIUnits(int modelType) = 0;
+	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) = 0;
+	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) = 0;
 
-	void DrawGhostedBuildings(int modelType);
+	virtual void DrawGhostedBuildings(int modelType) = 0;
 
 public:
 	void DrawUnitIcons();
@@ -295,24 +296,24 @@ private:
 	static float iconFadeVanish;
 	static float iconZoomDist;
 
-private:
-	typedef void (*DrawModelFunc)(const CUnit*, bool);
-
-	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> opaqueModelRenderers;
-	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> alphaModelRenderers;
-
-	/// units being rendered (note that this is a completely
-	/// unsorted set of S3O, opaque, and cloaked models!)
-	std::vector<CUnit*> unsortedUnits;
-
+protected:
 	/// AI unit ghosts
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempAlphaUnits;
+
+	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> opaqueModelRenderers;
+	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> alphaModelRenderers;
 
 	/// buildings that were in LOS_PREVLOS when they died and not in LOS since
 	std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
 	/// buildings that left LOS but are still alive
 	std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
+private:
+	typedef void (*DrawModelFunc)(const CUnit*, bool);
+
+	/// units being rendered (note that this is a completely
+	/// unsorted set of S3O, opaque, and cloaked models!)
+	std::vector<CUnit*> unsortedUnits;
 
 	/// units that are only rendered as icons this frame
 	std::vector<CUnit*> iconUnits;
@@ -333,6 +334,48 @@ private:
 private:
 	GL::LightHandler lightHandler;
 	GL::GeometryBuffer* geomBuffer;
+};
+
+class CGLUnitDrawer : public CUnitDrawer {
+public:
+	CGLUnitDrawer() : CUnitDrawer() {};
+protected:
+	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
+	virtual void DrawOpaqueUnitShadow(CUnit* unit) override;
+	virtual void DrawOpaqueUnitsShadow(int modelType) override;
+	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) override;
+
+	virtual void DrawAlphaUnits(int modelType) override;
+	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) override;
+
+	virtual void DrawOpaqueAIUnits(int modelType) override;
+	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) override;
+	virtual void DrawAlphaAIUnits(int modelType) override;
+	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) override;
+	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override;
+
+	virtual void DrawGhostedBuildings(int modelType) override;
+};
+
+class CGL4UnitDrawer : public CUnitDrawer {
+public:
+	CGL4UnitDrawer() : CUnitDrawer() {};
+protected:
+	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
+	virtual void DrawOpaqueUnitShadow(CUnit* unit) override {};
+	virtual void DrawOpaqueUnitsShadow(int modelType) override;
+	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) override;
+
+	virtual void DrawAlphaUnits(int modelType) override {};
+	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) override {};
+
+	virtual void DrawOpaqueAIUnits(int modelType) override {};
+	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) override {};
+	virtual void DrawAlphaAIUnits(int modelType) override {};
+	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) override {};
+	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override {};
+
+	virtual void DrawGhostedBuildings(int modelType) override {};
 };
 
 extern CUnitDrawer* unitDrawer;

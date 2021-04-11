@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <algorithm>
+
 #include "UnitDrawer.h"
 #include "UnitDrawerState.hpp"
 
@@ -80,7 +82,8 @@ float CUnitDrawer::iconZoomDist;
 // can not be a CUnitDrawer; destruction in global
 // scope might happen after ~EventHandler which is
 // referenced by ~EventClient
-static uint8_t unitDrawerMem[sizeof(CUnitDrawer)];
+static constexpr size_t unitDrawerMemSize = std::max(sizeof(CUnitDrawer), std::max(sizeof(CGLUnitDrawer), sizeof(CGL4UnitDrawer)));
+static uint8_t unitDrawerMem[unitDrawerMemSize];
 
 static FixedDynMemPool<sizeof(GhostSolidObject), MAX_UNITS / 1000, MAX_UNITS / 32> ghostMemPool;
 
@@ -232,9 +235,17 @@ void CUnitDrawer::PopModelRenderState(const CSolidObject* o) { PopModelRenderSta
 
 
 void CUnitDrawer::InitStatic() {
-	if (unitDrawer == nullptr)
-		unitDrawer = new (unitDrawerMem) CUnitDrawer();
+	if (unitDrawer)
+		return;
 
+
+#if 1
+	unitDrawer = new (unitDrawerMem) CGL4UnitDrawer();
+#else
+	unitDrawer = new (unitDrawerMem) CGLUnitDrawer();
+#endif
+
+	assert(unitDrawer);
 	unitDrawer->Init();
 }
 void CUnitDrawer::KillStatic(bool reload) {
@@ -244,7 +255,7 @@ void CUnitDrawer::KillStatic(bool reload) {
 		return;
 
 	spring::SafeDestruct(unitDrawer);
-	memset(unitDrawerMem, 0, sizeof(unitDrawerMem));
+	memset(unitDrawerMem, 0, unitDrawerMemSize);
 }
 
 void CUnitDrawer::Init() {
@@ -280,7 +291,11 @@ void CUnitDrawer::Init() {
 	// LH must be initialized before drawer-state is initialized
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
 
-	unitDrawerState = IUnitDrawerState::GetInstance();
+	if (dynamic_cast<CGL4UnitDrawer*>(this))
+		unitDrawerState = new UnitDrawerStateGLSL4();
+
+	if (unitDrawerState == nullptr)
+		unitDrawerState = new UnitDrawerStateGLSL();
 
 	drawModelFuncs[0] = &CUnitDrawer::DrawUnitModelBeingBuiltOpaque;
 	drawModelFuncs[1] = &CUnitDrawer::DrawUnitModelBeingBuiltShadow;
@@ -311,7 +326,7 @@ void CUnitDrawer::Kill()
 	eventHandler.RemoveClient(this);
 	autoLinkedEvents.clear();
 
-	unitDrawerState->Kill(); IUnitDrawerState::FreeInstance(unitDrawerState);
+	unitDrawerState->Kill(); spring::SafeDelete(unitDrawerState);
 
 	cubeMapHandler.Free();
 
@@ -399,8 +414,6 @@ void CUnitDrawer::Update()
 }
 
 
-
-
 void CUnitDrawer::Draw(bool drawReflection, bool drawRefraction)
 {
 	sky->SetupFog();
@@ -439,102 +452,6 @@ void CUnitDrawer::DrawOpaquePass(bool deferredPass, bool drawReflection, bool dr
 	// draw all custom'ed units that were bypassed in the loop above
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
 	LuaObjectDrawer::DrawOpaqueMaterialObjects(LUAOBJ_UNIT, deferredPass);
-}
-
-
-
-void CUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
-{
-	const auto& mdlRenderer = opaqueModelRenderers[modelType];
-
-	const auto& getShader = []() {
-		Shader::IProgramObject* shader = shaderHandler->CreateProgramObject("[UnitDrawer]", "GL4");
-		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModelVertProgGL4.glsl", "", GL_VERTEX_SHADER));
-		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
-		shader->Link();
-		shader->Validate();
-		shader->Enable();
-		shader->SetUniform("tex1", 0);
-		shader->SetUniform("tex2", 1);
-		shader->Disable();
-
-		return shader;
-	};
-
-	static Shader::IProgramObject* shader = getShader();
-
-	auto& mvi = S3DModelVAO::GetInstance();
-
-	//mvi.Bind();
-	shader->Enable();
-
-	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
-
-		const auto& binUnits = mdlRenderer.GetObjectBin(i);
-		static vector<CUnit*> renderUnits;
-
-		renderUnits.resize(binUnits.size());
-
-		for_mt(0, binUnits.size(), [&binUnits, this, drawReflection, drawRefraction](const int i) {
-			renderUnits[i] = ShouldDrawOpaqueUnit(binUnits[i], drawReflection, drawRefraction) ? binUnits[i] : nullptr;
-		});
-
-		for (CUnit* unit: renderUnits) {
-			if (!unit)
-				continue;
-
-			//DrawOpaqueUnit(unit, drawReflection, drawRefraction);
-			mvi.AddToSubmission(unit);
-		}
-
-		mvi.Submit(GL_TRIANGLES, true);
-	}
-
-	shader->Disable();
-	//mvi.Unbind();
-}
-
-inline void CUnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
-{
-	if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
-		return;
-
-	// draw the unit with the default (non-Lua) material
-	SetTeamColour(unit->team);
-	DrawUnitTrans(unit, 0, 0, false, false);
-}
-
-
-void CUnitDrawer::DrawOpaqueAIUnits(int modelType)
-{
-	const std::vector<TempDrawUnit>& tmpOpaqueUnits = tempOpaqueUnits[modelType];
-
-	// NOTE: not type-sorted
-	for (const TempDrawUnit& unit: tmpOpaqueUnits) {
-		if (!camera->InView(unit.pos, 100.0f))
-			continue;
-
-		DrawOpaqueAIUnit(unit);
-	}
-}
-
-void CUnitDrawer::DrawOpaqueAIUnit(const TempDrawUnit& unit)
-{
-	glPushMatrix();
-	glTranslatef3(unit.pos);
-	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
-
-	const UnitDef* def = unit.unitDef;
-	const S3DModel* mdl = def->model;
-
-	assert(mdl != nullptr);
-
-	BindModelTypeTexture(mdl->type, mdl->textureType);
-	SetTeamColour(unit.team);
-	mdl->DrawStatic();
-
-	glPopMatrix();
 }
 
 
@@ -684,33 +601,15 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* unit, bool drawReflection, bool dr
 	return true;
 }
 
-
-
-
-void CUnitDrawer::DrawOpaqueUnitShadow(CUnit* unit) {
+bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
+{
 	if (!CanDrawOpaqueUnitShadow(unit))
-		return;
+		return false;
 
 	if (LuaObjectDrawer::AddShadowMaterialObject(unit, LUAOBJ_UNIT))
-		return;
+		return false;
 
-	DrawUnitTrans(unit, 0, 0, false, false);
-}
-
-
-void CUnitDrawer::DrawOpaqueUnitsShadow(int modelType) {
-	const auto& mdlRenderer = opaqueModelRenderers[modelType];
-	// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
-
-	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
-
-		for (CUnit* unit: mdlRenderer.GetObjectBin(i)) {
-			DrawOpaqueUnitShadow(unit);
-		}
-
-		shadowTexKillFuncs[modelType](nullptr);
-	}
+	return true;
 }
 
 void CUnitDrawer::DrawShadowPass()
@@ -856,32 +755,19 @@ void CUnitDrawer::DrawIcon(CUnit* unit, bool useDefaultIcon)
 
 
 
-
-
-
 void CUnitDrawer::SetupAlphaDrawing(bool deferredPass)
 {
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
 
-	unitDrawerState->Enable(this, /*deferredPass*/ false, true);
-
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.1f);
-	glDepthMask(GL_FALSE);
+	unitDrawerState->Enable(this, true);
 }
 
 void CUnitDrawer::ResetAlphaDrawing(bool deferredPass)
 {
-	unitDrawerState->Disable(this, /*deferredPass*/ false);
+	unitDrawerState->Disable(this);
 
 	glPopAttrib();
 }
-
-
 
 void CUnitDrawer::DrawAlphaPass()
 {
@@ -904,144 +790,6 @@ void CUnitDrawer::DrawAlphaPass()
 
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
 	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_UNIT, false);
-}
-
-void CUnitDrawer::DrawAlphaUnits(int modelType)
-{
-	{
-		const auto& mdlRenderer = alphaModelRenderers[modelType];
-		// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
-
-		for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-			BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
-
-			for (CUnit* unit: mdlRenderer.GetObjectBin(i)) {
-				DrawAlphaUnit(unit, modelType, false);
-			}
-		}
-	}
-
-	// living and dead ghosted buildings
-	if (!gu->spectatingFullView)
-		DrawGhostedBuildings(modelType);
-}
-
-inline void CUnitDrawer::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) {
-	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
-		return;
-
-	if (LuaObjectDrawer::AddAlphaMaterialObject(unit, LUAOBJ_UNIT))
-		return;
-
-	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
-
-	if (drawGhostBuildingsPass) {
-		// check for decoy models
-		const UnitDef* decoyDef = unit->unitDef->decoyDef;
-		const S3DModel* model = nullptr;
-
-		if (decoyDef == nullptr) {
-			model = unit->model;
-		} else {
-			model = decoyDef->LoadModel();
-		}
-
-		// FIXME: needs a second pass
-		if (model->type != modelType)
-			return;
-
-		// ghosted enemy units
-		if (losStatus & LOS_CONTRADAR) {
-			glColor4f(0.9f, 0.9f, 0.9f, alphaValues.z);
-		} else {
-			glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
-		}
-
-		glPushMatrix();
-		glTranslatef3(unit->drawPos);
-		glRotatef(unit->buildFacing * 90.0f, 0, 1, 0);
-
-		// the units in liveGhostedBuildings[modelType] are not
-		// sorted by textureType, but we cannot merge them with
-		// alphaModelRenderers[modelType] either since they are
-		// not actually cloaked
-		BindModelTypeTexture(modelType, model->textureType);
-
-		SetTeamColour(unit->team, float2((losStatus & LOS_CONTRADAR)? alphaValues.z: alphaValues.y, 1.0f));
-		model->DrawStatic();
-		glPopMatrix();
-
-		glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
-		return;
-	}
-
-	if (unit->isIcon)
-		return;
-
-	if ((losStatus & LOS_INLOS) || gu->spectatingFullView) {
-		SetTeamColour(unit->team, float2(alphaValues.x, 1.0f));
-		DrawUnitTrans(unit, 0, 0, false, false);
-	}
-}
-
-
-
-void CUnitDrawer::DrawAlphaAIUnits(int modelType)
-{
-	std::vector<TempDrawUnit>& tmpAlphaUnits = tempAlphaUnits[modelType];
-
-	// NOTE: not type-sorted
-	for (const TempDrawUnit& unit: tmpAlphaUnits) {
-		if (!camera->InView(unit.pos, 100.0f))
-			continue;
-
-		DrawAlphaAIUnit(unit);
-		DrawAlphaAIUnitBorder(unit);
-	}
-}
-
-void CUnitDrawer::DrawAlphaAIUnit(const TempDrawUnit& unit)
-{
-	glPushMatrix();
-	glTranslatef3(unit.pos);
-	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
-
-	const UnitDef* def = unit.unitDef;
-	const S3DModel* mdl = def->model;
-
-	assert(mdl != nullptr);
-
-	BindModelTypeTexture(mdl->type, mdl->textureType);
-	SetTeamColour(unit.team, float2(alphaValues.x, 1.0f));
-	mdl->DrawStatic();
-
-	glPopMatrix();
-}
-
-void CUnitDrawer::DrawAlphaAIUnitBorder(const TempDrawUnit& unit)
-{
-	if (!unit.drawBorder)
-		return;
-
-	SetTeamColour(unit.team, float2(alphaValues.w, 1.0f));
-
-	const BuildInfo buildInfo(unit.unitDef, unit.pos, unit.facing);
-	const float3 buildPos = CGameHelper::Pos2BuildPos(buildInfo, false);
-
-	const float xsize = buildInfo.GetXSize() * (SQUARE_SIZE >> 1);
-	const float zsize = buildInfo.GetZSize() * (SQUARE_SIZE >> 1);
-
-	glColor4f(0.2f, 1, 0.2f, alphaValues.w);
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_LINE_STRIP);
-		glVertexf3(buildPos + float3( xsize, 1.0f,  zsize));
-		glVertexf3(buildPos + float3(-xsize, 1.0f,  zsize));
-		glVertexf3(buildPos + float3(-xsize, 1.0f, -zsize));
-		glVertexf3(buildPos + float3( xsize, 1.0f, -zsize));
-		glVertexf3(buildPos + float3( xsize, 1.0f,  zsize));
-	glEnd();
-	glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
-	glEnable(GL_TEXTURE_2D);
 }
 
 void CUnitDrawer::UpdateGhostedBuildings()
@@ -1071,67 +819,21 @@ void CUnitDrawer::UpdateGhostedBuildings()
 	}
 }
 
-void CUnitDrawer::DrawGhostedBuildings(int modelType)
-{
-	assert((unsigned) gu->myAllyTeam < deadGhostBuildings.size());
-
-	std::vector<GhostSolidObject*>& deadGhostedBuildings = deadGhostBuildings[gu->myAllyTeam][modelType];
-	std::vector<CUnit*>& liveGhostedBuildings = liveGhostBuildings[gu->myAllyTeam][modelType];
-
-	glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
-
-	// buildings that died while ghosted
-	for (auto it = deadGhostedBuildings.begin(); it != deadGhostedBuildings.end(); ++it) {
-		if (camera->InView((*it)->pos, (*it)->model->GetDrawRadius())) {
-			glPushMatrix();
-			glTranslatef3((*it)->pos);
-			glRotatef((*it)->facing * 90.0f, 0, 1, 0);
-
-			BindModelTypeTexture(modelType, (*it)->model->textureType);
-			SetTeamColour((*it)->team, float2(alphaValues.y, 1.0f));
-
-			(*it)->model->DrawStatic();
-			glPopMatrix();
-			(*it)->lastDrawFrame = globalRendering->drawFrame;
-		}
-	}
-
-	for (CUnit* u: liveGhostedBuildings) {
-		DrawAlphaUnit(u, modelType, true);
-	}
-}
-
-
-
-
 
 
 void CUnitDrawer::SetupOpaqueDrawing(bool deferredPass)
 {
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
 
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
+	// pick base shaders (GLSL/GLSL4); not used by custom-material models
+	unitDrawerState->Enable(this, false);
 
-	glAlphaFunc(GL_GREATER, 0.5f);
-	glEnable(GL_ALPHA_TEST);
-
-	// pick base shaders (ARB/GLSL) or FFP; not used by custom-material models
-	unitDrawerState = const_cast<IUnitDrawerState*>(GetDrawerState());
-	unitDrawerState->Enable(this, deferredPass, false);
-
-	// NOTE:
-	//   when deferredPass is true we MUST be able to use the SSP render-state
-	//   all calling code (reached from DrawOpaquePass(deferred=true)) should
-	//   ensure this is the case
 	assert(!deferredPass || unitDrawerState->CanDrawDeferred());
 }
 
 void CUnitDrawer::ResetOpaqueDrawing(bool deferredPass)
 {
-	unitDrawerState->Disable(this, deferredPass);
-	glPopAttrib();
+	unitDrawerState->Disable(this);
 }
 
 void CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
@@ -2344,3 +2046,320 @@ unsigned int CUnitDrawer::GetUnitDefImage(const UnitDef* unitDef)
 	return (unitDef->buildPic->textureID);
 }
 
+/******************************************************************************/
+/******************************************************************************/
+
+void CGLUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
+{
+	const auto& mdlRenderer = opaqueModelRenderers[modelType];
+	// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
+
+	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+		for (CUnit* unit : mdlRenderer.GetObjectBin(i)) {
+			DrawOpaqueUnit(unit, drawReflection, drawRefraction);
+		}
+	}
+}
+
+inline void CGLUnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
+{
+	if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+		return;
+
+	// draw the unit with the default (non-Lua) material
+	SetTeamColour(unit->team);
+	DrawUnitTrans(unit, 0, 0, false, false);
+}
+
+
+void CGLUnitDrawer::DrawOpaqueAIUnits(int modelType)
+{
+	const std::vector<TempDrawUnit>& tmpOpaqueUnits = tempOpaqueUnits[modelType];
+
+	// NOTE: not type-sorted
+	for (const TempDrawUnit& unit : tmpOpaqueUnits) {
+		if (!camera->InView(unit.pos, 100.0f))
+			continue;
+
+		DrawOpaqueAIUnit(unit);
+	}
+}
+
+void CGLUnitDrawer::DrawOpaqueAIUnit(const TempDrawUnit& unit)
+{
+	glPushMatrix();
+	glTranslatef3(unit.pos);
+	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
+
+	const UnitDef* def = unit.unitDef;
+	const S3DModel* mdl = def->model;
+
+	assert(mdl != nullptr);
+
+	BindModelTypeTexture(mdl->type, mdl->textureType);
+	SetTeamColour(unit.team);
+	mdl->DrawStatic();
+
+	glPopMatrix();
+}
+
+void CGLUnitDrawer::DrawOpaqueUnitShadow(CUnit* unit) {
+
+	if (ShouldDrawOpaqueUnitShadow(unit))
+		DrawUnitTrans(unit, 0, 0, false, false);
+}
+
+void CGLUnitDrawer::DrawOpaqueUnitsShadow(int modelType) {
+	const auto& mdlRenderer = opaqueModelRenderers[modelType];
+	// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
+
+	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
+
+		for (CUnit* unit : mdlRenderer.GetObjectBin(i)) {
+			DrawOpaqueUnitShadow(unit);
+		}
+
+		shadowTexKillFuncs[modelType](nullptr);
+	}
+}
+
+void CGLUnitDrawer::DrawAlphaUnits(int modelType)
+{
+	{
+		const auto& mdlRenderer = alphaModelRenderers[modelType];
+		// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
+
+		for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+			BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+			for (CUnit* unit : mdlRenderer.GetObjectBin(i)) {
+				DrawAlphaUnit(unit, modelType, false);
+			}
+		}
+	}
+
+	// living and dead ghosted buildings
+	if (!gu->spectatingFullView)
+		DrawGhostedBuildings(modelType);
+}
+
+inline void CGLUnitDrawer::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) {
+	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
+		return;
+
+	if (LuaObjectDrawer::AddAlphaMaterialObject(unit, LUAOBJ_UNIT))
+		return;
+
+	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
+
+	if (drawGhostBuildingsPass) {
+		// check for decoy models
+		const UnitDef* decoyDef = unit->unitDef->decoyDef;
+		const S3DModel* model = nullptr;
+
+		if (decoyDef == nullptr) {
+			model = unit->model;
+		}
+		else {
+			model = decoyDef->LoadModel();
+		}
+
+		// FIXME: needs a second pass
+		if (model->type != modelType)
+			return;
+
+		// ghosted enemy units
+		if (losStatus & LOS_CONTRADAR) {
+			glColor4f(0.9f, 0.9f, 0.9f, alphaValues.z);
+		}
+		else {
+			glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
+		}
+
+		glPushMatrix();
+		glTranslatef3(unit->drawPos);
+		glRotatef(unit->buildFacing * 90.0f, 0, 1, 0);
+
+		// the units in liveGhostedBuildings[modelType] are not
+		// sorted by textureType, but we cannot merge them with
+		// alphaModelRenderers[modelType] either since they are
+		// not actually cloaked
+		BindModelTypeTexture(modelType, model->textureType);
+
+		SetTeamColour(unit->team, float2((losStatus & LOS_CONTRADAR) ? alphaValues.z : alphaValues.y, 1.0f));
+		model->DrawStatic();
+		glPopMatrix();
+
+		glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
+		return;
+	}
+
+	if (unit->isIcon)
+		return;
+
+	if ((losStatus & LOS_INLOS) || gu->spectatingFullView) {
+		SetTeamColour(unit->team, float2(alphaValues.x, 1.0f));
+		DrawUnitTrans(unit, 0, 0, false, false);
+	}
+}
+
+
+
+void CGLUnitDrawer::DrawAlphaAIUnits(int modelType)
+{
+	std::vector<TempDrawUnit>& tmpAlphaUnits = tempAlphaUnits[modelType];
+
+	// NOTE: not type-sorted
+	for (const TempDrawUnit& unit : tmpAlphaUnits) {
+		if (!camera->InView(unit.pos, 100.0f))
+			continue;
+
+		DrawAlphaAIUnit(unit);
+		DrawAlphaAIUnitBorder(unit);
+	}
+}
+
+void CGLUnitDrawer::DrawAlphaAIUnit(const TempDrawUnit& unit)
+{
+	glPushMatrix();
+	glTranslatef3(unit.pos);
+	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
+
+	const UnitDef* def = unit.unitDef;
+	const S3DModel* mdl = def->model;
+
+	assert(mdl != nullptr);
+
+	BindModelTypeTexture(mdl->type, mdl->textureType);
+	SetTeamColour(unit.team, float2(alphaValues.x, 1.0f));
+	mdl->DrawStatic();
+
+	glPopMatrix();
+}
+
+void CGLUnitDrawer::DrawAlphaAIUnitBorder(const TempDrawUnit& unit)
+{
+	if (!unit.drawBorder)
+		return;
+
+	SetTeamColour(unit.team, float2(alphaValues.w, 1.0f));
+
+	const BuildInfo buildInfo(unit.unitDef, unit.pos, unit.facing);
+	const float3 buildPos = CGameHelper::Pos2BuildPos(buildInfo, false);
+
+	const float xsize = buildInfo.GetXSize() * (SQUARE_SIZE >> 1);
+	const float zsize = buildInfo.GetZSize() * (SQUARE_SIZE >> 1);
+
+	glColor4f(0.2f, 1, 0.2f, alphaValues.w);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_LINE_STRIP);
+	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
+	glVertexf3(buildPos + float3(-xsize, 1.0f, zsize));
+	glVertexf3(buildPos + float3(-xsize, 1.0f, -zsize));
+	glVertexf3(buildPos + float3(xsize, 1.0f, -zsize));
+	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
+	glEnd();
+	glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
+	glEnable(GL_TEXTURE_2D);
+}
+
+void CGLUnitDrawer::DrawGhostedBuildings(int modelType)
+{
+	assert((unsigned)gu->myAllyTeam < deadGhostBuildings.size());
+
+	std::vector<GhostSolidObject*>& deadGhostedBuildings = deadGhostBuildings[gu->myAllyTeam][modelType];
+	std::vector<CUnit*>& liveGhostedBuildings = liveGhostBuildings[gu->myAllyTeam][modelType];
+
+	glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
+
+	// buildings that died while ghosted
+	for (auto it = deadGhostedBuildings.begin(); it != deadGhostedBuildings.end(); ++it) {
+		if (camera->InView((*it)->pos, (*it)->model->GetDrawRadius())) {
+			glPushMatrix();
+			glTranslatef3((*it)->pos);
+			glRotatef((*it)->facing * 90.0f, 0, 1, 0);
+
+			BindModelTypeTexture(modelType, (*it)->model->textureType);
+			SetTeamColour((*it)->team, float2(alphaValues.y, 1.0f));
+
+			(*it)->model->DrawStatic();
+			glPopMatrix();
+			(*it)->lastDrawFrame = globalRendering->drawFrame;
+		}
+	}
+
+	for (CUnit* u : liveGhostedBuildings) {
+		DrawAlphaUnit(u, modelType, true);
+	}
+}
+
+
+/******************************************************************************/
+/******************************************************************************/
+
+
+void CGL4UnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
+{
+	LOG("CGL4UnitDrawer::DrawOpaqueUnit");
+}
+
+void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
+{
+	const auto& mdlRenderer = opaqueModelRenderers[modelType];
+
+	auto& mvi = S3DModelVAO::GetInstance();
+
+	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+		const auto& binUnits = mdlRenderer.GetObjectBin(i);
+		static vector<CUnit*> renderUnits;
+
+		renderUnits.resize(binUnits.size());
+
+		for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
+			renderUnits[i] = ShouldDrawOpaqueUnitShadow(binUnits[i]) ? binUnits[i] : nullptr;
+		});
+
+		for (CUnit* unit : renderUnits) {
+			if (!unit)
+				continue;
+
+			mvi.AddToSubmission(unit);
+		}
+
+		mvi.Submit(GL_TRIANGLES, false);
+	}
+}
+
+void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
+{
+	const auto& mdlRenderer = opaqueModelRenderers[modelType];
+
+	auto& mvi = S3DModelVAO::GetInstance();
+
+	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+		const auto& binUnits = mdlRenderer.GetObjectBin(i);
+		static vector<CUnit*> renderUnits;
+
+		renderUnits.resize(binUnits.size());
+
+		for_mt(0, binUnits.size(), [&binUnits, this, drawReflection, drawRefraction](const int i) {
+			renderUnits[i] = ShouldDrawOpaqueUnit(binUnits[i], drawReflection, drawRefraction) ? binUnits[i] : nullptr;
+		});
+
+		for (CUnit* unit : renderUnits) {
+			if (!unit)
+				continue;
+
+			mvi.AddToSubmission(unit);
+		}
+
+		mvi.Submit(GL_TRIANGLES, false);
+	}
+}
