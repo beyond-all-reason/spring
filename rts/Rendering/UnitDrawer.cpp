@@ -2277,3 +2277,25 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 		//opaqueTexKillFuncs[modelType](nullptr);
 	}
 }
+
+void CGL4UnitDrawer::DrawAlphaUnits(int modelType)
+{
+	/*
+	{
+		const auto& mdlRenderer = alphaModelRenderers[modelType];
+		// const auto& unitBinKeys = mdlRenderer.GetObjectBinKeys();
+
+		for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+			BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+			for (CUnit* unit : mdlRenderer.GetObjectBin(i)) {
+				DrawAlphaUnit(unit, modelType, false);
+			}
+		}
+	}
+	*/
+
+	// living and dead ghosted buildings
+	if (!gu->spectatingFullView)
+		DrawGhostedBuildings(modelType);
+}

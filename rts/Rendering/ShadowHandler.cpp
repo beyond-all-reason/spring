@@ -601,7 +601,7 @@ void CShadowHandler::CreateShadows()
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	//flickers without it. Why?
+	//flickers without it. Why? TODO: figure out
 	SetShadowCamera(CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW));
 
 	CCamera* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_SHADOW);

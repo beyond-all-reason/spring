@@ -8,14 +8,14 @@ in Data {
 	vec4 teamCol;
 };
 
-uniform vec4 alphaCtrl;
+uniform vec4 alphaCtrl = vec4(0.0, 0.0, 0.0, 1.0); //always pass
+uniform vec4 colorMult = vec4(1.0);
 
-void AlphaDiscard(float a) {
+bool AlphaDiscard(float a) {
 	float alphaTestGT = float(a > alphaCtrl.x) * alphaCtrl.y;
 	float alphaTestLT = float(a < alphaCtrl.x) * alphaCtrl.z;
 
-	if ((alphaTestGT + alphaTestLT + alphaCtrl.w) == 0.0)
-		discard;
+	return ((alphaTestGT + alphaTestLT + alphaCtrl.w) == 0.0);
 }
 
 out vec4 fragColor;
@@ -26,6 +26,8 @@ void main(void)
 
 
 	modelColor.rgb = mix(modelColor.rgb, teamCol.rgb, modelColor.a);
-	fragColor = vec4(modelColor.rgb, modelProp.a);
-	AlphaDiscard(modelProp.a);
+	fragColor = colorMult * vec4(modelColor.rgb, modelProp.a);
+
+	if (AlphaDiscard(modelProp.a))
+		discard;
 }

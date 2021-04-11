@@ -55,7 +55,7 @@ protected:
 	virtual void SetActiveShader() = 0;
 protected:
 	std::array<Shader::IProgramObject*, MODEL_SHADER_COUNT> modelShaders;
-	Shader::IProgramObject* activeShader;
+	Shader::IProgramObject* activeShader = nullptr;
 };
 
 struct UnitDrawerStateGLSL: public IUnitDrawerState {

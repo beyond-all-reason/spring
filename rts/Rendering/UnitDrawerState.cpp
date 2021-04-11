@@ -311,11 +311,6 @@ bool UnitDrawerStateGLSL4::Init(const CUnitDrawer* ud)
 		modelShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
 
 		modelShaders[n]->Link();
-
-		modelShaders[n]->Enable();
-		modelShaders[n]->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); // alphaCtrl, default, always pass
-		modelShaders[n]->Disable();
-
 		modelShaders[n]->Validate();
 	}
 
@@ -386,8 +381,7 @@ void UnitDrawerStateGLSL4::DisableCommon(const CUnitDrawer* ud, bool alphaPass)
 {
 	assert(activeShader->IsBound());
 
-	activeShader->SetUniform("cameraMode", 0);
-	activeShader->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); //default, always pass
+	activeShader->SetUniform("colorMult", 1.0f, 1.0f, 1.0f, 1.0f); // might have changed in alpha pass
 	activeShader->Disable();
 
 	S3DModelVAO::GetInstance().Unbind();

@@ -360,7 +360,7 @@ protected:
 	virtual void DrawOpaqueUnitsShadow(int modelType) override;
 	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) override;
 
-	virtual void DrawAlphaUnits(int modelType) override {};
+	virtual void DrawAlphaUnits(int modelType) override;
 
 	virtual void DrawOpaqueAIUnits(int modelType) override {};
 	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) override {};
