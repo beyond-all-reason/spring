@@ -2196,11 +2196,6 @@ void CGL4UnitDrawer::InitDrawerState()
 	unitDrawerState = new UnitDrawerStateGLSL4();
 }
 
-void CGL4UnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
-{
-	LOG("CGL4UnitDrawer::DrawOpaqueUnit");
-}
-
 void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 {
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];

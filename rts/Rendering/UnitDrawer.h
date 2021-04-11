@@ -210,13 +210,10 @@ protected:
 	bool ShouldDrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	bool ShouldDrawOpaqueUnitShadow(CUnit* unit) const;
 
-	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) = 0;
-	virtual void DrawOpaqueUnitShadow(CUnit* unit) = 0;
 	virtual void DrawOpaqueUnitsShadow(int modelType) = 0;
 	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) = 0;
 
 	virtual void DrawAlphaUnits(int modelType) = 0;
-	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) = 0;
 
 	virtual void DrawOpaqueAIUnits(int modelType) = 0;
 	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) = 0;
@@ -225,7 +222,6 @@ protected:
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) = 0;
 
 	virtual void DrawGhostedBuildings(int modelType) = 0;
-
 public:
 	void DrawUnitIcons();
 	void DrawUnitIconsScreen();
@@ -336,13 +332,11 @@ public:
 protected:
 	virtual void InitDrawerState() override;
 
-	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
-	virtual void DrawOpaqueUnitShadow(CUnit* unit) override;
+
 	virtual void DrawOpaqueUnitsShadow(int modelType) override;
 	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) override;
 
 	virtual void DrawAlphaUnits(int modelType) override;
-	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) override;
 
 	virtual void DrawOpaqueAIUnits(int modelType) override;
 	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) override;
@@ -351,6 +345,10 @@ protected:
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override;
 
 	virtual void DrawGhostedBuildings(int modelType) override;
+private:
+	void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction);
+	void DrawOpaqueUnitShadow(CUnit* unit);
+	void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass);
 };
 
 class CGL4UnitDrawer : public CUnitDrawer {
@@ -359,13 +357,10 @@ public:
 protected:
 	virtual void InitDrawerState() override;
 
-	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
-	virtual void DrawOpaqueUnitShadow(CUnit* unit) override {};
 	virtual void DrawOpaqueUnitsShadow(int modelType) override;
 	virtual void DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction) override;
 
 	virtual void DrawAlphaUnits(int modelType) override {};
-	virtual void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) override {};
 
 	virtual void DrawOpaqueAIUnits(int modelType) override {};
 	virtual void DrawOpaqueAIUnit(const TempDrawUnit& unit) override {};
