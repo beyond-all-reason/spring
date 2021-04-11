@@ -1254,7 +1254,9 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	//TODO figure out the right order of operations
 	if (unitTracker.Enabled())
 		unitTracker.SetCam();
+
 	camera->Update();
+	shadowHandler.Update();
 
 	//Update per-drawFrame UBO
 	UniformConstants::GetInstance().Update();

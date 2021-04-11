@@ -448,6 +448,23 @@ void CUnitDrawer::DrawOpaquePass(bool deferredPass, bool drawReflection, bool dr
 	LuaObjectDrawer::DrawOpaqueMaterialObjects(LUAOBJ_UNIT, deferredPass);
 }
 
+void CUnitDrawer::DrawShadowPass()
+{
+	unitDrawerState->EnableShadow(this);
+	{
+		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
+
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
+			DrawOpaqueUnitsShadow(modelType);
+		}
+	}
+
+	unitDrawerState->DisableShadow(this);
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
+	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
+}
+
 
 void CUnitDrawer::DrawUnitIcons()
 {
@@ -798,84 +815,6 @@ void CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
 
 	setTeamColorFuncs[b0 * b1](unitDrawerState, team, alpha);
 }
-
-/**
- * Set up the texture environment in texture unit 0
- * to give an S3O texture its team-colour.
- *
- * Also:
- * - call SetBasicTeamColour to set the team colour to transform to.
- * - Replace the output alpha channel. If not, only the team-coloured bits will show, if that. Or something.
- */
-void CUnitDrawer::SetupBasicS3OTexture0()
-{
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-
-	// RGB = Texture * (1 - Alpha) + Teamcolor * Alpha
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_INTERPOLATE_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_CONSTANT_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB_ARB, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-	// ALPHA = Ignore
-}
-
-/**
- * This sets the first texture unit to GL_MODULATE the colours from the
- * first texture unit with the current glColor.
- *
- * Normal S3O drawing sets the color to full white; translucencies
- * use this setup to 'tint' the drawn model.
- *
- * - Leaves glActivateTextureARB at the first unit.
- * - This doesn't tinker with the output alpha, either.
- */
-void CUnitDrawer::SetupBasicS3OTexture1()
-{
-	glActiveTexture(GL_TEXTURE1);
-	glEnable(GL_TEXTURE_2D);
-
-	// RGB = Primary Color * Previous
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_PRIMARY_COLOR_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-
-	// ALPHA = Current alpha * Alpha mask
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA_ARB, GL_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_PRIMARY_COLOR_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_ALPHA_ARB, GL_SRC_ALPHA);
-}
-
-
-void CUnitDrawer::CleanupBasicS3OTexture1()
-{
-	// reset texture1 state
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
-	glTexEnvi(GL_TEXTURE_ENV,GL_SOURCE1_ALPHA_ARB, GL_PREVIOUS_ARB);
-	glTexEnvi(GL_TEXTURE_ENV,GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-}
-
-void CUnitDrawer::CleanupBasicS3OTexture0()
-{
-	// reset texture0 state
-	glActiveTexture(GL_TEXTURE0);
-	glTexEnvi(GL_TEXTURE_ENV,GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-	glTexEnvi(GL_TEXTURE_ENV,GL_SOURCE2_RGB_ARB, GL_CONSTANT_ARB);
-	glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND2_RGB_ARB, GL_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-}
-
-
-
 
 void CUnitDrawer::PushIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass)
 {
@@ -2016,23 +1955,6 @@ void CGLUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dra
 	}
 }
 
-void CGLUnitDrawer::DrawShadowPass()
-{
-	unitDrawerState->EnableShadow(this);
-	{
-		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
-			DrawOpaqueUnitsShadow(modelType);
-		}
-	}
-
-	unitDrawerState->DisableShadow(this);
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
-	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
-}
-
 void CGLUnitDrawer::InitDrawerState()
 {
 	unitDrawerState = new UnitDrawerStateGLSL();
@@ -2275,28 +2197,6 @@ void CGLUnitDrawer::DrawGhostedBuildings(int modelType)
 /******************************************************************************/
 /******************************************************************************/
 
-
-void CGL4UnitDrawer::DrawShadowPass()
-{
-	return;
-	SetupOpaqueDrawing(false);
-	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4);
-	po->Enable();
-
-	{
-		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
-			DrawOpaqueUnitsShadow(modelType);
-		}
-	}
-
-	po->Disable();
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
-	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
-}
-
 void CGL4UnitDrawer::InitDrawerState()
 {
 	unitDrawerState = new UnitDrawerStateGLSL4();
@@ -2309,18 +2209,17 @@ void CGL4UnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawR
 
 void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 {
-	return;
-	//LOG("CGL4UnitDrawer::DrawOpaqueUnitsShadow");
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];
 
 	auto& mvi = S3DModelVAO::GetInstance();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
-		static vector<CUnit*> renderUnits;
 
+#if 1
+		static vector<CUnit*> renderUnits;
 		renderUnits.resize(binUnits.size());
 
 		for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
@@ -2333,14 +2232,23 @@ void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 
 			mvi.AddToSubmission(unit);
 		}
+#else
+		for (auto* unit : binUnits) {
+			if (!ShouldDrawOpaqueUnitShadow(unit))
+				continue;
+
+			mvi.AddToSubmission(unit);
+		}
+#endif
 
 		mvi.Submit(GL_TRIANGLES, false);
+
+		shadowTexKillFuncs[modelType](nullptr);
 	}
 }
 
 void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
 {
-	return;
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];
 
 	auto& mvi = S3DModelVAO::GetInstance();
@@ -2349,6 +2257,8 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 		BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
+
+#if 1
 		static vector<CUnit*> renderUnits;
 
 		renderUnits.resize(binUnits.size());
@@ -2363,6 +2273,14 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 
 			mvi.AddToSubmission(unit);
 		}
+#else
+		for (auto* unit : binUnits) {
+			if (!ShouldDrawOpaqueUnit(unit))
+				continue;
+
+			mvi.AddToSubmission(unit);
+		}
+#endif
 
 		mvi.Submit(GL_TRIANGLES, false);
 	}

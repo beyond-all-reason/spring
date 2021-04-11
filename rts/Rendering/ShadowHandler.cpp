@@ -131,6 +131,16 @@ void CShadowHandler::Kill()
 	shadowGenProgs.fill(nullptr);
 }
 
+void CShadowHandler::Update()
+{
+	CCamera* playCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	SetShadowMapSizeFactors();
+	SetShadowMatrix(playCam, shadCam);
+	SetShadowCamera(shadCam);
+}
+
 void CShadowHandler::FreeTextures() {
 	if (shadowMapFBO.IsValid()) {
 		shadowMapFBO.Bind();
@@ -591,14 +601,10 @@ void CShadowHandler::CreateShadows()
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	//flickers without it. Why?
+	SetShadowCamera(CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW));
 
 	CCamera* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_SHADOW);
-	CCamera* curCam = CCameraHandler::GetActiveCamera();
-
-
-	SetShadowMapSizeFactors();
-	SetShadowMatrix(prvCam, curCam);
-	SetShadowCamera(curCam);
 
 	for (int i = 0; i < SHADOWGEN_PROGRAM_LAST; i++) {
 		if (i == SHADOWGEN_PROGRAM_MODEL_GL4)

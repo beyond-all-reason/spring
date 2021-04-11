@@ -397,12 +397,14 @@ void UnitDrawerStateGLSL4::DisableCommon(const CUnitDrawer* ud, bool alphaPass)
 
 void UnitDrawerStateGLSL4::EnableShadow(const CUnitDrawer* ud)
 {
-	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
+	// pushed in CShadowHandler::DrawShadowPasses()
+	//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
 
-	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
+	//glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
 
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
+	// set in CShadowHandler::DrawShadowPasses()
+	//glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
 
 	S3DModelVAO::GetInstance().Bind();
 
@@ -421,5 +423,6 @@ void UnitDrawerStateGLSL4::DisableShadow(const CUnitDrawer* ud)
 
 	S3DModelVAO::GetInstance().Unbind();
 
-	glPopAttrib();
+	// popped in CShadowHandler::DrawShadowPasses()
+	//glPopAttrib();
 }

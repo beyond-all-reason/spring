@@ -1,4 +1,4 @@
-#version 430 compatibility
+#version 430 core
 
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec3 normal;
@@ -60,7 +60,6 @@ out Data {
 
 void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
 	vec4 lightVertexPos = shadowView * worldPos;
-	/*
 	vec3 lightVertexNormal = normalize(mat3(shadowView) * worldNormal);
 
 	float NdotL = clamp(dot(lightVertexNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
@@ -69,12 +68,11 @@ void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
 	const float cb = 5e-5;
 	float bias = cb * tan(acos(NdotL));
 	bias = clamp(bias, 0.0, 5.0 * cb);
-	*/
+
 	lightVertexPos.xy += vec2(0.5);
-	//lightVertexPos.z += bias;
+	lightVertexPos.z += bias;
 
 	gl_Position = shadowProj * lightVertexPos;
-	gl_Position = shadowViewProj * worldPos;
 }
 
 void TransformPlayerCam(vec4 worldPos) {

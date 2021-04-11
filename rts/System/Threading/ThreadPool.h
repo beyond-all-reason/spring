@@ -714,6 +714,16 @@ static inline void for_mt(int start, int end, int step, F&& f)
 
 }
 
+template <typename T, typename F>
+static inline void for_mt(std::vector<T> vec, F&& fVec)
+{
+	const auto f = [&vec, fVec](const int i) {
+		fVec(vec[i]);
+	};
+
+	for_mt(0, vec.size(), f);
+}
+
 template <typename F>
 static inline void for_mt(int start, int end, F&& f)
 {
