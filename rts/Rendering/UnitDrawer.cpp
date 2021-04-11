@@ -55,8 +55,6 @@
 #include "System/Threading/ThreadPool.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 
-#define UNIT_SHADOW_ALPHA_MASKING
-
 CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
 CONFIG(int, UnitIconDist).defaultValue(200).headlessValue(0);
 CONFIG(float, UnitIconScaleUI).defaultValue(1.0f).minimumValue(0.5f).maximumValue(2.0f);
@@ -291,11 +289,7 @@ void CUnitDrawer::Init() {
 	// LH must be initialized before drawer-state is initialized
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
 
-	if (dynamic_cast<CGL4UnitDrawer*>(this))
-		unitDrawerState = new UnitDrawerStateGLSL4();
-
-	if (unitDrawerState == nullptr)
-		unitDrawerState = new UnitDrawerStateGLSL();
+	InitDrawerState();
 
 	drawModelFuncs[0] = &CUnitDrawer::DrawUnitModelBeingBuiltOpaque;
 	drawModelFuncs[1] = &CUnitDrawer::DrawUnitModelBeingBuiltShadow;
@@ -612,43 +606,6 @@ bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
 	return true;
 }
 
-void CUnitDrawer::DrawShadowPass()
-{
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glPolygonOffset(1.0f, 1.0f);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-
-	#ifdef UNIT_SHADOW_ALPHA_MASKING
-	glAlphaFunc(GL_GREATER, 0.5f);
-	glEnable(GL_ALPHA_TEST);
-	#endif
-
-	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_MODEL);
-	po->Enable();
-
-	{
-		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
-			// note: just use DrawOpaqueUnits()? would
-			// save texture switches needed anyway for
-			// UNIT_SHADOW_ALPHA_MASKING
-			DrawOpaqueUnitsShadow(modelType);
-		}
-	}
-
-	po->Disable();
-
-	#ifdef UNIT_SHADOW_ALPHA_MASKING
-	glDisable(GL_ALPHA_TEST);
-	#endif
-
-	glDisable(GL_POLYGON_OFFSET_FILL);
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
-	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
-}
-
 void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, const icon::CIconData* icon, bool useDefaultIcon, const float dist, CVertexArray* va)
 {
 	// iconUnits should not never contain void-space units, see UpdateUnitIconState
@@ -757,14 +714,12 @@ void CUnitDrawer::DrawIcon(CUnit* unit, bool useDefaultIcon)
 
 void CUnitDrawer::SetupAlphaDrawing(bool deferredPass)
 {
-	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
-
-	unitDrawerState->Enable(this, true);
+	unitDrawerState->EnableCommon(this, true);
 }
 
 void CUnitDrawer::ResetAlphaDrawing(bool deferredPass)
 {
-	unitDrawerState->Disable(this);
+	unitDrawerState->DisableCommon(this, true);
 
 	glPopAttrib();
 }
@@ -826,14 +781,12 @@ void CUnitDrawer::SetupOpaqueDrawing(bool deferredPass)
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
 
 	// pick base shaders (GLSL/GLSL4); not used by custom-material models
-	unitDrawerState->Enable(this, false);
-
-	assert(!deferredPass || unitDrawerState->CanDrawDeferred());
+	unitDrawerState->EnableCommon(this, false);
 }
 
 void CUnitDrawer::ResetOpaqueDrawing(bool deferredPass)
 {
-	unitDrawerState->Disable(this);
+	unitDrawerState->DisableCommon(this, false);
 }
 
 void CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
@@ -2063,6 +2016,28 @@ void CGLUnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dra
 	}
 }
 
+void CGLUnitDrawer::DrawShadowPass()
+{
+	unitDrawerState->EnableShadow(this);
+	{
+		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
+
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
+			DrawOpaqueUnitsShadow(modelType);
+		}
+	}
+
+	unitDrawerState->DisableShadow(this);
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
+	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
+}
+
+void CGLUnitDrawer::InitDrawerState()
+{
+	unitDrawerState = new UnitDrawerStateGLSL();
+}
+
 inline void CGLUnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
 {
 	if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
@@ -2301,6 +2276,32 @@ void CGLUnitDrawer::DrawGhostedBuildings(int modelType)
 /******************************************************************************/
 
 
+void CGL4UnitDrawer::DrawShadowPass()
+{
+	return;
+	SetupOpaqueDrawing(false);
+	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4);
+	po->Enable();
+
+	{
+		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
+
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
+			DrawOpaqueUnitsShadow(modelType);
+		}
+	}
+
+	po->Disable();
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
+	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
+}
+
+void CGL4UnitDrawer::InitDrawerState()
+{
+	unitDrawerState = new UnitDrawerStateGLSL4();
+}
+
 void CGL4UnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction)
 {
 	LOG("CGL4UnitDrawer::DrawOpaqueUnit");
@@ -2308,6 +2309,8 @@ void CGL4UnitDrawer::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawR
 
 void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 {
+	return;
+	//LOG("CGL4UnitDrawer::DrawOpaqueUnitsShadow");
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];
 
 	auto& mvi = S3DModelVAO::GetInstance();
@@ -2337,6 +2340,7 @@ void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 
 void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool drawRefraction)
 {
+	return;
 	const auto& mdlRenderer = opaqueModelRenderers[modelType];
 
 	auto& mvi = S3DModelVAO::GetInstance();

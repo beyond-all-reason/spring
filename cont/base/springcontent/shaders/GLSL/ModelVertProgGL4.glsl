@@ -58,6 +58,35 @@ out Data {
 	vec4 teamCol;
 };
 
+void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
+	vec4 lightVertexPos = shadowView * worldPos;
+	/*
+	vec3 lightVertexNormal = normalize(mat3(shadowView) * worldNormal);
+
+	float NdotL = clamp(dot(lightVertexNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
+
+	//use old bias formula from GetShadowPCFRandom(), but this time to write down shadow depth map values
+	const float cb = 5e-5;
+	float bias = cb * tan(acos(NdotL));
+	bias = clamp(bias, 0.0, 5.0 * cb);
+	*/
+	lightVertexPos.xy += vec2(0.5);
+	//lightVertexPos.z += bias;
+
+	gl_Position = shadowProj * lightVertexPos;
+	gl_Position = shadowViewProj * worldPos;
+}
+
+void TransformPlayerCam(vec4 worldPos) {
+	gl_Position = cameraViewProj * worldPos;
+}
+
+void TransformPlayerReflCam(vec4 worldPos) {
+	gl_Position = cameraViewProj * worldPos;
+}
+
+#line 1086
+
 void main(void)
 {
 	uint baseIndex = instData.x; //ssbo offset
@@ -65,20 +94,19 @@ void main(void)
 
 	mat4 pieceMatrix = mat4mix(mat4(1.0), mat[baseIndex + pieceIndex + 1u], modelMatrix[3][3]);
 
-	vec4 worldPos = modelMatrix * pieceMatrix * vec4(pos, 1.0);
+	mat4 worldMatrix = modelMatrix * pieceMatrix;
+	mat3 normalMatrix = mat3(transpose(inverse(modelMatrix * pieceMatrix)));
+
+
+	vec4 worldPos = worldMatrix * vec4(pos, 1.0);
+	vec3 worldNormal = normalMatrix * normal;
 
 	teamCol = teamColor[instData.y]; // team index
 	uvCoord = uv;
 
-	mat4 VP;
-
 	switch(cameraMode) {
-		case 1:  VP = shadowViewProj; break; //shadow
-		case 2:  VP = mat4(1.0f);     break; //underwater
-		case 0:
-		default: VP = cameraViewProj; break; //player
+		case 1:  TransformShadowCam(worldPos, worldNormal); break; //shadow
+		case 2:  TransformPlayerReflCam(worldPos);          break; //underwater reflection
+		default: TransformPlayerCam(worldPos);              break; //player
 	};
-
-
-	gl_Position = VP * worldPos;
 }

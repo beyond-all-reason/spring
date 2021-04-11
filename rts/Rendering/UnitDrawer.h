@@ -101,7 +101,7 @@ public:
 
 	void Draw(bool drawReflection, bool drawRefraction = false);
 	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction);
-	void DrawShadowPass();
+	virtual void DrawShadowPass() = 0;
 	void DrawAlphaPass();
 
 	void SetDrawForwardPass(bool b) { drawForward = b; }
@@ -181,7 +181,8 @@ public:
 	const GLenum GetPolygonMode() const { return GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode); }
 
 	bool& WireFrameModeRef() { return wireFrameMode; }
-
+protected:
+	virtual void InitDrawerState() = 0;
 public:
 	struct TempDrawUnit {
 		const UnitDef* unitDef;
@@ -308,6 +309,8 @@ protected:
 	std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
 	/// buildings that left LOS but are still alive
 	std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
+
+	IUnitDrawerState* unitDrawerState;
 private:
 	typedef void (*DrawModelFunc)(const CUnit*, bool);
 
@@ -322,15 +325,12 @@ private:
 
 	std::vector<UnitDefImage> unitDefImages;
 
-
 	// caches for ShowUnitBuildSquare
 	std::vector<float3> buildableSquares;
 	std::vector<float3> featureSquares;
 	std::vector<float3> illegalSquares;
 
-	IUnitDrawerState* unitDrawerState;
 	std::array<DrawModelFunc, 3> drawModelFuncs;
-
 private:
 	GL::LightHandler lightHandler;
 	GL::GeometryBuffer* geomBuffer;
@@ -339,7 +339,10 @@ private:
 class CGLUnitDrawer : public CUnitDrawer {
 public:
 	CGLUnitDrawer() : CUnitDrawer() {};
+	virtual void DrawShadowPass() override;
 protected:
+	virtual void InitDrawerState() override;
+
 	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
 	virtual void DrawOpaqueUnitShadow(CUnit* unit) override;
 	virtual void DrawOpaqueUnitsShadow(int modelType) override;
@@ -360,7 +363,10 @@ protected:
 class CGL4UnitDrawer : public CUnitDrawer {
 public:
 	CGL4UnitDrawer() : CUnitDrawer() {};
+	virtual void DrawShadowPass() override;
 protected:
+	virtual void InitDrawerState() override;
+
 	virtual void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) override;
 	virtual void DrawOpaqueUnitShadow(CUnit* unit) override {};
 	virtual void DrawOpaqueUnitsShadow(int modelType) override;

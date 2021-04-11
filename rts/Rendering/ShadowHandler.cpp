@@ -167,15 +167,10 @@ void CShadowHandler::LoadProjectionMatrix(const CCamera* shadowCam)
 void CShadowHandler::LoadShadowGenShaders()
 {
 	#define sh shaderHandler
-	static const std::string shadowGenProgNames[SHADOWGEN_PROGRAM_LAST] = {
-		"ARB/unit_genshadow.vp",
-		"ARB/groundshadow.vp",
-		"ARB/treeShadow.vp",
-		"ARB/treeFarShadow.vp",
-		"ARB/projectileshadow.vp",
-	};
+
 	static const std::string shadowGenProgHandles[SHADOWGEN_PROGRAM_LAST] = {
 		"ShadowGenShaderProgModel",
+		"ShadowGenShaderProgModelGL4",
 		"ShadowGenshaderProgMap",
 		"ShadowGenshaderProgTreeNear",
 		"ShadowGenshaderProgTreeDist",
@@ -183,6 +178,7 @@ void CShadowHandler::LoadShadowGenShaders()
 	};
 	static const std::string shadowGenProgDefines[SHADOWGEN_PROGRAM_LAST] = {
 		"#define SHADOWGEN_PROGRAM_MODEL\n",
+		"#define SHADOWGEN_PROGRAM_MODEL_GL4\n",
 		"#define SHADOWGEN_PROGRAM_MAP\n",
 		"#define SHADOWGEN_PROGRAM_TREE_NEAR\n",
 		"#define SHADOWGEN_PROGRAM_TREE_DIST\n",
@@ -200,8 +196,10 @@ void CShadowHandler::LoadShadowGenShaders()
 		("#define SUPPORT_CLIP_CONTROL " + IntToString(globalRendering->supportClipSpaceControl) + "\n") +
 		("#define SUPPORT_DEPTH_LAYOUT " + IntToString(globalRendering->supportFragDepthLayout) + "\n");
 
-
 	for (int i = 0; i < SHADOWGEN_PROGRAM_LAST; i++) {
+		if (i == SHADOWGEN_PROGRAM_MODEL_GL4)
+			continue;
+
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[i] + "GLSL");
 
 		if (i == SHADOWGEN_PROGRAM_MAP) {
@@ -225,6 +223,20 @@ void CShadowHandler::LoadShadowGenShaders()
 		po->Validate();
 
 		shadowGenProgs[i] = po;
+	}
+	{
+		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MODEL_GL4] + "GLSL");
+
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProgGL4.glsl"    , shadowGenProgDefines[SHADOWGEN_PROGRAM_MODEL_GL4] + extraDefs, GL_VERTEX_SHADER));
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProgGL4.glsl", shadowGenProgDefines[SHADOWGEN_PROGRAM_MODEL_GL4] + extraDefs, GL_FRAGMENT_SHADER));
+		po->Link();
+		po->Enable();
+		po->SetUniform("cameraMode", 1);
+		//po->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
+		po->Disable();
+		po->Validate();
+
+		shadowGenProgs[SHADOWGEN_PROGRAM_MODEL_GL4] = po;
 	}
 
 	shadowsLoaded = true;
@@ -589,6 +601,9 @@ void CShadowHandler::CreateShadows()
 	SetShadowCamera(curCam);
 
 	for (int i = 0; i < SHADOWGEN_PROGRAM_LAST; i++) {
+		if (i == SHADOWGEN_PROGRAM_MODEL_GL4)
+			continue;
+
 		shadowGenProgs[i]->Enable();
 		shadowGenProgs[i]->SetUniform4fv(0, &shadowTexProjCenter.x);
 		shadowGenProgs[i]->Disable();

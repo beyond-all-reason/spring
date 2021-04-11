@@ -47,95 +47,29 @@ float4 IUnitDrawerState::GetTeamColor(int team, float alpha) {
 	return (float4(c[0] / 255.0f, c[1] / 255.0f, c[2] / 255.0f, alpha));
 }
 
-void IUnitDrawerState::EnableCommon(const CUnitDrawer* ud, bool alphaPass) {
-	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
-
-	glEnable(GL_TEXTURE_2D);
-
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-
-	if (alphaPass) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDepthMask(GL_FALSE);
+void IUnitDrawerState::SetActiveShader(Shader::IProgramObject* shadowShader)
+{
+	// shadowed=1 --> shader 1 (deferred=0) or 3 (deferred=1)
+	// shadowed=0 --> shader 0 (deferred=0) or 2 (deferred=1)
+	if (shadowHandler.InShadowPass()) {
+		activeShader = shadowShader;
+		assert(activeShader != nullptr);
+		return;
 	}
 
-	EnableCustomFFPState(ud, alphaPass);
+	const bool shadowed = shadowHandler.ShadowsLoaded();
+	const bool deferred = game->GetDrawMode() == CGame::GameDrawMode::gameDeferredDraw;
 
-	PushTransform(camera);
-	EnableTexturesCommon();
+	activeShader = modelShaders[shadowed + deferred * 2];
 
-	SetActiveShader();
-	assert(modelShaders[MODEL_SHADER_ACTIVE] != nullptr);
-	modelShaders[MODEL_SHADER_ACTIVE]->Enable();
-	EnableCustomShaderState(ud, alphaPass);
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-void IUnitDrawerState::DisableCommon(const CUnitDrawer* ud) {
-	assert(modelShaders[MODEL_SHADER_ACTIVE] != nullptr);
-
-	DisableCustomShaderState(ud);
-	modelShaders[MODEL_SHADER_ACTIVE]->Disable();
-
-	DisableCustomFFPState(ud);
-
-	glPopAttrib();
-
-	DisableTexturesCommon();
-	PopTransform();
-}
-
-
-void IUnitDrawerState::EnableTexturesCommon() const {
-	glActiveTexture(GL_TEXTURE1);
-	glEnable(GL_TEXTURE_2D);
-
-	if (game->GetDrawMode() == CGame::GameDrawMode::gameShadowDraw) //shadow pass
-		return;
-
-	if (shadowHandler.ShadowsLoaded())
-		shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
-
-	glActiveTexture(GL_TEXTURE3);
-	glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-	glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, cubeMapHandler.GetEnvReflectionTextureID());
-
-	glActiveTexture(GL_TEXTURE4);
-	glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-	glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, cubeMapHandler.GetSpecularTextureID());
-
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-}
-
-void IUnitDrawerState::DisableTexturesCommon() const {
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
-
-	if (game->GetDrawMode() == CGame::GameDrawMode::gameShadowDraw) //shadow pass
-		return;
-
-	if (shadowHandler.ShadowsLoaded())
-		shadowHandler.ResetShadowTexSampler(GL_TEXTURE2, true);
-
-	glActiveTexture(GL_TEXTURE3);
-	glDisable(GL_TEXTURE_CUBE_MAP_ARB);
-
-	glActiveTexture(GL_TEXTURE4);
-	glDisable(GL_TEXTURE_CUBE_MAP_ARB);
-
-	glActiveTexture(GL_TEXTURE0);
-	glDisable(GL_TEXTURE_2D);
+	assert(activeShader != nullptr);
 }
 
 bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
 	#define sh shaderHandler
 
 	const GL::LightHandler* lightHandler = ud->GetLightHandler();
-	const std::string shaderNames[MODEL_SHADER_COUNT - 1] = {
+	const std::string shaderNames[MODEL_SHADER_COUNT] = {
 		"ModelShaderGLSL-NoShadowStandard",
 		"ModelShaderGLSL-ShadowedStandard",
 		"ModelShaderGLSL-NoShadowDeferred",
@@ -213,30 +147,6 @@ void UnitDrawerStateGLSL::Kill() {
 	shaderHandler->ReleaseProgramObjects("[UnitDrawer]");
 }
 
-void UnitDrawerStateGLSL::EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass) {
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform3fv(6, &camera->GetPos()[0]);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformMatrix4fv(7, false, camera->GetViewMatrix());
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformMatrix4fv(8, false, camera->GetViewMatrixInverse());
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniformMatrix4fv(14, false, shadowHandler.GetShadowMatrixRaw());
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(15, &(shadowHandler.GetShadowParams().x));
-
-	const_cast<GL::LightHandler*>(ud->GetLightHandler())->Update(modelShaders[MODEL_SHADER_ACTIVE]);
-}
-
-void UnitDrawerStateGLSL::EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass)
-{
-	glEnable(GL_ALPHA_TEST);
-
-	if (alphaPass)
-		glAlphaFunc(GL_GREATER, 0.1f);
-	else
-		glAlphaFunc(GL_GREATER, 0.5f);
-}
-
-void UnitDrawerStateGLSL::DisableCustomFFPState(const CUnitDrawer* ud)
-{
-	glDisable(GL_ALPHA_TEST);
-}
 
 void UnitDrawerStateGLSL::UpdateCurrentShaderSky(const CUnitDrawer* ud, const ISkyLight* skyLight) const {
 	// note: the NOSHADOW shaders do not care about shadow-density
@@ -252,23 +162,134 @@ void UnitDrawerStateGLSL::UpdateCurrentShaderSky(const CUnitDrawer* ud, const IS
 
 
 void UnitDrawerStateGLSL::SetTeamColor(int team, const float2 alpha) const {
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+	assert(activeShader->IsBound());
 
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(9, std::move(GetTeamColor(team, alpha.x)));
-	// modelShaders[MODEL_SHADER_ACTIVE]->SetUniform1f(16, alpha.y);
+	activeShader->SetUniform4fv(9, std::move(GetTeamColor(team, alpha.x)));
+	// activeShader->SetUniform1f(16, alpha.y);
 }
 
 void UnitDrawerStateGLSL::SetNanoColor(const float4& color) const {
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+	assert(activeShader->IsBound());
 
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform4fv(10, color);
+	activeShader->SetUniform4fv(10, color);
+}
+
+void UnitDrawerStateGLSL::EnableCommon(const CUnitDrawer* ud, bool alphaPass)
+{
+	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
+
+	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
+
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+
+	glActiveTexture(GL_TEXTURE1);
+	glEnable(GL_TEXTURE_2D);
+
+	if (shadowHandler.ShadowsLoaded())
+		shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
+
+	glActiveTexture(GL_TEXTURE3);
+	glEnable(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetEnvReflectionTextureID());
+
+	glActiveTexture(GL_TEXTURE4);
+	glEnable(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetSpecularTextureID());
+
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+
+	glEnable(GL_ALPHA_TEST);
+	if (alphaPass) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDepthMask(GL_FALSE);
+		glAlphaFunc(GL_GREATER, 0.1f);
+	}
+	else {
+		glDisable(GL_BLEND);
+		glAlphaFunc(GL_GREATER, 0.5f);
+	}
+
+	PushTransform(camera);
+
+	SetActiveShader();
+	activeShader->Enable();
+	activeShader->SetUniform3fv(6, &camera->GetPos()[0]);
+	activeShader->SetUniformMatrix4fv(7, false, camera->GetViewMatrix());
+	activeShader->SetUniformMatrix4fv(8, false, camera->GetViewMatrixInverse());
+	activeShader->SetUniformMatrix4fv(14, false, shadowHandler.GetShadowMatrixRaw());
+	activeShader->SetUniform4fv(15, &(shadowHandler.GetShadowParams().x));
+
+	const_cast<GL::LightHandler*>(ud->GetLightHandler())->Update(activeShader);
+}
+
+void UnitDrawerStateGLSL::DisableCommon(const CUnitDrawer* ud, bool alphaPass)
+{
+	assert(activeShader->IsBound());
+	activeShader->Disable();
+
+	glActiveTexture(GL_TEXTURE1);
+	glDisable(GL_TEXTURE_2D);
+
+	if (shadowHandler.ShadowsLoaded())
+		shadowHandler.ResetShadowTexSampler(GL_TEXTURE2, true);
+
+	glActiveTexture(GL_TEXTURE3);
+	glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+
+	glActiveTexture(GL_TEXTURE4);
+	glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+
+	glActiveTexture(GL_TEXTURE0);
+	glDisable(GL_TEXTURE_2D);
+
+	glDisable(GL_ALPHA_TEST);
+	glPopAttrib();
+
+	PopTransform();
+}
+
+void UnitDrawerStateGLSL::EnableShadow(const CUnitDrawer* ud)
+{
+	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
+
+	glPolygonOffset(1.0f, 1.0f);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+
+	glAlphaFunc(GL_GREATER, 0.5f);
+	glEnable(GL_ALPHA_TEST);
+
+	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
+
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+
+	glColor3f(1.0f, 1.0f, 1.0f);
+
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+
+	SetActiveShader();
+	activeShader->Enable();
+}
+
+void UnitDrawerStateGLSL::DisableShadow(const CUnitDrawer* ud)
+{
+	activeShader->Disable();
+
+	glActiveTexture(GL_TEXTURE0);
+	glDisable(GL_TEXTURE_2D);
+
+	glPopAttrib();
 }
 
 bool UnitDrawerStateGLSL4::Init(const CUnitDrawer* ud)
 {
 #define sh shaderHandler
 
-	const std::string shaderNames[MODEL_SHADER_COUNT - 1] = {
+	const std::string shaderNames[MODEL_SHADER_COUNT] = {
 		"ModelShaderGLSL4-NoShadowStandard",
 		"ModelShaderGLSL4-ShadowedStandard",
 		"ModelShaderGLSL4-NoShadowDeferred",
@@ -313,44 +334,92 @@ void UnitDrawerStateGLSL4::Kill() {
 
 void UnitDrawerStateGLSL4::SetNanoColor(const float4& color) const
 {
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("nanoColor", color.x, color.y, color.z, color.w);
+	assert(activeShader->IsBound());
+	activeShader->SetUniform("nanoColor", color.x, color.y, color.z, color.w);
 }
 
-void UnitDrawerStateGLSL4::EnableCustomFFPState(const CUnitDrawer* ud, bool alphaPass)
+void UnitDrawerStateGLSL4::EnableCommon(const CUnitDrawer* ud, bool alphaPass)
 {
-	S3DModelVAO::GetInstance().Bind();
-}
+	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
 
-void UnitDrawerStateGLSL4::DisableCustomFFPState(const CUnitDrawer* ud)
-{
-	S3DModelVAO::GetInstance().Unbind();
-}
+	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
 
-void UnitDrawerStateGLSL4::EnableCustomShaderState(const CUnitDrawer* ud, bool alphaPass)
-{
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 
-	int camMode = 0;
-	switch (game->GetDrawMode()) {
-		case CGame::GameDrawMode::gameShadowDraw: { camMode = 1; }
-		case CGame::GameDrawMode::gameReflectionDraw: { camMode = 2; }
-		default: { camMode = 0; } break;
+
+	if (shadowHandler.ShadowsLoaded())
+		shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetEnvReflectionTextureID());
+
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetSpecularTextureID());
+
+	glActiveTexture(GL_TEXTURE0);
+
+	if (alphaPass) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDepthMask(GL_FALSE);
+	}
+	else {
+		glDisable(GL_BLEND);
 	}
 
-	LOG("[UnitDrawerStateGLSL4::EnableCustomShaderState] camMode = %d", camMode);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("cameraMode", camMode);
+	S3DModelVAO::GetInstance().Bind();
+
+	const int camMode = (game->GetDrawMode() == CGame::GameDrawMode::gameReflectionDraw) ? 2 : 0;
+
+	SetActiveShader();
+	activeShader->Enable();
+	activeShader->SetUniform("cameraMode", camMode);
 
 	if (alphaPass)
-		modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.1f, 1.0f, 0.0f, 0.0f); // test > 0.1
+		activeShader->SetUniform("alphaCtrl", 0.1f, 1.0f, 0.0f, 0.0f); // test > 0.1
 	else
-		modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
+		activeShader->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
 }
 
-void UnitDrawerStateGLSL4::DisableCustomShaderState(const CUnitDrawer* ud)
+void UnitDrawerStateGLSL4::DisableCommon(const CUnitDrawer* ud, bool alphaPass)
 {
-	assert(modelShaders[MODEL_SHADER_ACTIVE]->IsBound());
+	assert(activeShader->IsBound());
 
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("cameraMode", 0);
-	modelShaders[MODEL_SHADER_ACTIVE]->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); //default, always pass
+	activeShader->SetUniform("cameraMode", 0);
+	activeShader->SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f); //default, always pass
+	activeShader->Disable();
+
+	S3DModelVAO::GetInstance().Unbind();
+
+	glPopAttrib();
+}
+
+void UnitDrawerStateGLSL4::EnableShadow(const CUnitDrawer* ud)
+{
+	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
+
+	glPolygonMode(GL_FRONT_AND_BACK, ud->GetPolygonMode());
+
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+
+	S3DModelVAO::GetInstance().Bind();
+
+	SetActiveShader();
+	activeShader->Enable();
+	activeShader->SetUniform("cameraMode", 1); //shadow
+	activeShader->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
+}
+
+void UnitDrawerStateGLSL4::DisableShadow(const CUnitDrawer* ud)
+{
+	assert(activeShader->IsBound());
+
+	//don't reset shadow shader uniforms
+	activeShader->Disable();
+
+	S3DModelVAO::GetInstance().Unbind();
+
+	glPopAttrib();
 }
