@@ -9,6 +9,7 @@
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 #include "lib/meshoptimizer/src/meshoptimizer.h"
@@ -730,6 +731,24 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 /******************************************************************************/
 /******************************************************************************/
 
+void S3DModelVAO::SubmitImmediatelyImpl(const SDrawElementsIndirectCommand* scmd, const uint32_t ssboOffset, const uint32_t teamID, const GLenum mode, const bool bindUnbind)
+{
+	// do not increment base instance
+	SInstanceData instanceData{ssboOffset, teamID};
+
+	instVBO->Bind();
+	instVBO->SetBufferSubData(baseInstance * sizeof(SInstanceData), sizeof(SInstanceData), &instanceData);
+	instVBO->Unbind();
+
+	if (bindUnbind)
+		Bind();
+
+	glDrawElementsIndirect(mode, GL_UNSIGNED_INT, scmd);
+
+	if (bindUnbind)
+		Unbind();
+}
+
 void S3DModelVAO::EnableAttribs(bool inst) const
 {
 	if (!inst) {
@@ -861,10 +880,32 @@ void S3DModelVAO::Unbind()
 
 void S3DModelVAO::AddToSubmission(const CUnit* unit)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetUnitElemOffset(unit->id);
-	//LOG("AddToSubmission ssboIndex = %u", ssboIndex);
-	auto& renderModelData = renderData[unit->model];
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
+	if (ssboIndex == ~0u)
+		return;
+
+	auto& renderModelData = renderDataModels[unit->model];
 	renderModelData.emplace_back(SInstanceData(ssboIndex, unit->team));
+}
+
+void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
+{
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
+	if (ssboIndex == ~0u)
+		return;
+
+	auto& renderModelData = renderDataModels[unitDef->model];
+	renderModelData.emplace_back(SInstanceData(ssboIndex, teamID));
+}
+
+void S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
+{
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
+	if (ssboIndex == ~0u)
+		return;
+
+	auto& renderModelData = renderDataModels[model];
+	renderModelData.emplace_back(SInstanceData(ssboIndex, teamID));
 }
 
 void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
@@ -872,31 +913,57 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 	static std::vector<SDrawElementsIndirectCommand> submitCmds;
 	submitCmds.clear();
 
-	uint32_t baseInstance = 0u;
+	baseInstance = 0u;
 
-	static std::vector<SInstanceData> allRenderModelData;
-	allRenderModelData.reserve(INSTANCE_BUFFER_NUM_ELEMS);
-	allRenderModelData.clear();
+	static std::vector<SInstanceData> allRenderData;
+	allRenderData.reserve(INSTANCE_BUFFER_NUM_ELEMS);
+	allRenderData.clear();
 
-	for (const auto& [model, renderModelData] : renderData) {
+	//models
+	for (const auto& [model, renderModelData] : renderDataModels) {
 		//model
 		SDrawElementsIndirectCommand scmd{
 			model->indxCount,
 			static_cast<uint32_t>(renderModelData.size()),
 			model->indxStart,
-			0u, //todo use?
+			0u,
 			baseInstance
 		};
 
 		submitCmds.emplace_back(scmd);
 
-		allRenderModelData.insert(allRenderModelData.end(), renderModelData.cbegin(), renderModelData.cend());
+		allRenderData.insert(allRenderData.end(), renderModelData.cbegin(), renderModelData.cend());
 
 		baseInstance += renderModelData.size();
 	};
 
+	//modelPieces
+	for (const auto& [modelPiece, renderModelPieceData] : renderDataModelPieces) {
+		//model
+		SDrawElementsIndirectCommand scmd{
+			modelPiece->indxCount,
+			static_cast<uint32_t>(renderModelPieceData.size()),
+			modelPiece->indxStart,
+			0u,
+			baseInstance
+		};
+
+		submitCmds.emplace_back(scmd);
+
+		allRenderData.insert(allRenderData.end(), renderModelPieceData.cbegin(), renderModelPieceData.cend());
+
+		baseInstance += renderModelPieceData.size();
+	};
+	//TODO modelPieceParts?
+
+	renderDataModels.clear();
+	renderDataModelPieces.clear();
+
+	if (submitCmds.empty())
+		return;
+
 	instVBO->Bind();
-	instVBO->SetBufferSubData(allRenderModelData);
+	instVBO->SetBufferSubData(allRenderData);
 	instVBO->Unbind();
 
 	if (bindUnbind)
@@ -906,6 +973,59 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 
 	if (bindUnbind)
 		Unbind();
+}
 
-	renderData.clear();
+void S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, const bool bindUnbind)
+{
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
+	if (ssboIndex == ~0u)
+		return;
+
+	const auto* model = unit->model;
+
+	SDrawElementsIndirectCommand scmd {
+		model->indxCount,
+		1,
+		model->indxStart,
+		0u,
+		baseInstance
+	};
+
+	SubmitImmediatelyImpl(&scmd, ssboIndex, unit->team, mode, bindUnbind);
+}
+
+void S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode, const bool bindUnbind)
+{
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
+	if (ssboIndex == ~0u)
+		return;
+
+	const auto* model = unitDef->model;
+
+	SDrawElementsIndirectCommand scmd{
+		model->indxCount,
+		1,
+		model->indxStart,
+		0u,
+		baseInstance
+	};
+
+	SubmitImmediatelyImpl(&scmd, ssboIndex, teamID, mode, bindUnbind);
+}
+
+void S3DModelVAO::SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode, const bool bindUnbind)
+{
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
+	if (ssboIndex == ~0u)
+		return;
+
+	SDrawElementsIndirectCommand scmd{
+		model->indxCount,
+		1,
+		model->indxStart,
+		0u,
+		baseInstance
+	};
+
+	SubmitImmediatelyImpl(&scmd, ssboIndex, teamID, mode, bindUnbind);
 }

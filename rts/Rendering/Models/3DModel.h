@@ -39,6 +39,11 @@ struct LocalModelPiece;
 struct SVertexData;
 struct SInstanceData;
 
+struct CUnit;
+struct UnitDef;
+
+struct SDrawElementsIndirectCommand;
+
 // singleton
 class S3DModelVAO {
 public:
@@ -58,7 +63,13 @@ public:
 	void Unbind();
 
 	void AddToSubmission(const CUnit* unit);
+	void AddToSubmission(const UnitDef* unitDef, const int teamID);
+	void AddToSubmission(const S3DModel* model, const int teamID);
 	void Submit(const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
+
+	void SubmitImmediately(const CUnit* unit, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
+	void SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
+	void SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
 
 	const VBO* GetVertVBO() const {
 		return vertVBO.get();
@@ -75,19 +86,27 @@ public:
 	VBO* GetIndxVBO() {
 		return indxVBO.get();
 	}
-
 private:
+	void SubmitImmediatelyImpl(
+		const SDrawElementsIndirectCommand* scmd,
+		const uint32_t ssboOffset,
+		const uint32_t teamID,
+		const GLenum mode = GL_TRIANGLES,
+		const bool bindUnbind = false
+	);
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
+	uint32_t baseInstance;
+
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
 
 	std::unique_ptr<VBO> instVBO;
 	std::unique_ptr<VAO> vao;
 
-	std::unordered_map<const S3DModel*, std::vector<SInstanceData>> renderData;
-	//std::vector<SDrawElementsIndirectCommand> indirectCmds;
+	std::unordered_map<const S3DModel*, std::vector<SInstanceData>> renderDataModels;
+	std::unordered_map<const S3DModelPiece*, std::vector<SInstanceData>> renderDataModelPieces;
 };
 
 struct SDrawElementsIndirectCommand {
