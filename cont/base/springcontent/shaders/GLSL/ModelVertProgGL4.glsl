@@ -40,6 +40,9 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 
 	vec4 fogColor; //fog color
 	vec4 fogParams; //fog {start, end, 0.0, scale}
+
+	vec4 pad[7];
+
 	vec4 teamColor[255];
 };
 

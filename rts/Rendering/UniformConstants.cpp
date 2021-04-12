@@ -6,6 +6,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Env/ISky.h"
+#include "Rendering/Env/SunLighting.h"
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/GlobalUnsynced.h"
@@ -13,6 +14,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Misc/Wind.h"
 #include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
@@ -121,6 +123,17 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	float4 fogParams = (sky != nullptr) ? float4{sky->fogStart * camPlayer->GetFarPlaneDist(), sky->fogEnd * camPlayer->GetFarPlaneDist(), 0.0f, 0.0f} : float4{0.1f * CGlobalRendering::MAX_VIEW_RANGE, 1.0f * CGlobalRendering::MAX_VIEW_RANGE, 0.0f, 0.0f};
 	fogParams.w = 1.0f / (fogParams.y - fogParams.x);
 	updateBuffer->fogParams = fogParams;
+
+	updateBuffer->sunAmbientModel = sunLighting->modelAmbientColor;
+	updateBuffer->sunAmbientMap = sunLighting->groundAmbientColor;
+
+	updateBuffer->sunDiffuseModel = sunLighting->modelDiffuseColor;
+	updateBuffer->sunDiffuseMap = sunLighting->groundDiffuseColor;
+
+	updateBuffer->sunSpecularModel = sunLighting->modelSpecularColor;
+	updateBuffer->sunSpecularMap = sunLighting->groundSpecularColor;
+
+	updateBuffer->windInfo = float4{ envResHandler.GetCurrentWindVec(), envResHandler.GetCurrentWindStrength() };
 
 	for (int teamID = 0; teamID < teamHandler.ActiveTeams(); ++teamID) {
 		const CTeam* team = teamHandler.Team(teamID);

@@ -49,12 +49,21 @@ struct UniformParamsBuffer {
 	float3 rndVec3; //new every draw frame.
 	uint32_t renderCaps; //various render booleans
 
-	float4 timeInfo; //gameFrame, gameSeconds, drawFrame, frameTimeOffset
+	float4 timeInfo;     //gameFrame, gameSeconds, drawFrame, frameTimeOffset
 	float4 viewGeometry; //vsx, vsy, vpx, vpy
-	float4 mapSize; //xz, xzPO2
+	float4 mapSize;      //xz, xzPO2
 
-	float4 fogColor; //fog color
+	float4 fogColor;  //fog color
 	float4 fogParams; //fog {start, end, 0.0, scale}
+
+	float4 sunAmbientModel;
+	float4 sunAmbientMap;
+	float4 sunDiffuseModel;
+	float4 sunDiffuseMap;
+	float4 sunSpecularModel;
+	float4 sunSpecularMap;
+
+	float4 windInfo; // windx, windy, windz, windStrength
 
 	float4 teamColor[MAX_TEAMS]; //all team colors
 };
