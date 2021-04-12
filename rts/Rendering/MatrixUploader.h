@@ -13,6 +13,12 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
 
+struct S3DModel;
+struct UnitDef;
+struct FeatureDef;
+struct CUnit;
+struct CFeature;
+
 class MatrixUploader {
 public:
 	static constexpr bool enabled = true;
@@ -30,10 +36,17 @@ public:
 	void Kill();
 	void Update();
 public:
-	uint32_t GetUnitDefElemOffset(int32_t unitDefID);
-	uint32_t GetFeatureDefElemOffset(int32_t featureDefID);
-	uint32_t GetUnitElemOffset(int32_t unitID);
-	uint32_t GetFeatureElemOffset(int32_t featureID);
+	uint32_t GetModelElemOffset(const int32_t model);
+	uint32_t GetUnitDefElemOffset(const int32_t unitDef);
+	uint32_t GetFeatureDefElemOffset(const int32_t featureDef);
+	uint32_t GetUnitElemOffset(const int32_t unit);
+	uint32_t GetFeatureElemOffset(const int32_t feature);
+
+	uint32_t GetElemOffset(const S3DModel* model);
+	uint32_t GetElemOffset(const UnitDef* unitDef);
+	uint32_t GetElemOffset(const FeatureDef* featureDef);
+	uint32_t GetElemOffset(const CUnit* unit);
+	uint32_t GetElemOffset(const CFeature* feature);
 private:
 	template<typename TObj>
 	bool IsObjectVisible(const TObj* obj);
@@ -59,9 +72,9 @@ private:
 private:
 	uint32_t elemUpdateOffset = 0u; // a index offset separating constant part of the buffer from varying part
 
-	spring::unordered_map<int32_t, std::string> unitDefToModel;
-	spring::unordered_map<int32_t, std::string> featureDefToModel;
-	spring::unordered_map<std::string, uint32_t> modelToOffsetMap;
+	spring::unordered_map<int32_t, int32_t> unitDefToModel;
+	spring::unordered_map<int32_t, int32_t> featureDefToModel;
+	spring::unordered_map<int32_t, uint32_t> modelToOffsetMap;
 
 	spring::unordered_map<int32_t, uint32_t> unitIDToOffsetMap;
 	spring::unordered_map<int32_t, uint32_t> featureIDToOffsetMap;

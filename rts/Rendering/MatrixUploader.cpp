@@ -172,13 +172,13 @@ bool MatrixUploader::UpdateObjectDefs()
 	const auto updateObjectDefFunc = [this](auto& objDefToModel, const auto& objDefsVec, const std::string& defName) {
 		objDefToModel.clear();
 		for (const auto& objDef : objDefsVec) {
-			const auto* model = objDef.LoadModel();
+			const S3DModel* model = objDef.LoadModel();
 			if (model == nullptr)
 				continue;
 
-			objDefToModel[objDef.id] = model->name;
+			objDefToModel[objDef.id] = model->id;
 
-			if (this->modelToOffsetMap.find(model->name) != this->modelToOffsetMap.end())  //already handled
+			if (this->modelToOffsetMap.find(model->id) != this->modelToOffsetMap.end())  //already handled
 				continue;
 
 			const int elemBeginIndex = std::distance(matrices.cbegin(), matrices.cend());
@@ -187,7 +187,7 @@ bool MatrixUploader::UpdateObjectDefs()
 			}
 			const int elemEndIndex = std::distance(matrices.cbegin(), matrices.cend());
 
-			this->modelToOffsetMap[model->name] = elemBeginIndex;
+			this->modelToOffsetMap[model->id] = elemBeginIndex;
 			this->elemUpdateOffset = elemEndIndex;
 
 			//LOG_L(L_INFO, "MatrixUploader::%s Updated %s name %s with model %s, elemBeginIndex = %d, elemEndIndex = %d", "UpdateObjectDefs", defName.c_str(), objDef.name.c_str(), model->name.c_str(), elemBeginIndex, elemEndIndex);
@@ -298,7 +298,18 @@ void MatrixUploader::Update()
 		matrixSSBO->Unbind();
 }
 
-uint32_t MatrixUploader::GetUnitDefElemOffset(int32_t unitDefID)
+uint32_t MatrixUploader::GetModelElemOffset(const int32_t modelID)
+{
+	const auto offsetIter = modelToOffsetMap.find(modelID);
+	if (offsetIter == modelToOffsetMap.end()) { //should never happen, TODO test and remove
+		LOG_L(L_ERROR, "MatrixUploader::%s Failed to find an offset corresponding to modelID %d", __func__, modelID);
+		return ~0u;
+	}
+
+	return offsetIter->second;
+}
+
+uint32_t MatrixUploader::GetUnitDefElemOffset(const int32_t unitDefID)
 {
 	const auto modelIter = unitDefToModel.find(unitDefID);
 	if (modelIter == unitDefToModel.end()) {
@@ -306,17 +317,11 @@ uint32_t MatrixUploader::GetUnitDefElemOffset(int32_t unitDefID)
 		return ~0u;
 	}
 
-	const auto offsetIter = modelToOffsetMap.find(modelIter->second);
-	if (offsetIter == modelToOffsetMap.end()) { //should never happen, TODO test and remove
-		LOG_L(L_ERROR, "MatrixUploader::%s Failed to find an offset corresponding to model %s of %s %d", __func__, modelIter->second.c_str(), "UnitDefID", unitDefID);
-		return ~0u;
-	}
-
-	return offsetIter->second;
+	return GetModelElemOffset(modelIter->second);
 }
 
 //TODO: DO DRY
-uint32_t MatrixUploader::GetFeatureDefElemOffset(int32_t featureDefID)
+uint32_t MatrixUploader::GetFeatureDefElemOffset(const int32_t featureDefID)
 {
 	const auto& modelIter = featureDefToModel.find(featureDefID);
 	if (modelIter == featureDefToModel.end()) {
@@ -324,16 +329,10 @@ uint32_t MatrixUploader::GetFeatureDefElemOffset(int32_t featureDefID)
 		return ~0u;
 	}
 
-	const auto& offsetIter = modelToOffsetMap.find(modelIter->second);
-	if (offsetIter == modelToOffsetMap.end()) { //should never happen, TODO test and remove
-		LOG_L(L_ERROR, "MatrixUploader::%s Failed to find an offset corresponding to model %s of %s %d", __func__, modelIter->second.c_str(), "featureDefID", featureDefID);
-		return ~0u;
-	}
-
-	return offsetIter->second;
+	return GetModelElemOffset(modelIter->second);
 }
 
-uint32_t MatrixUploader::GetUnitElemOffset(int32_t unitID)
+uint32_t MatrixUploader::GetUnitElemOffset(const int32_t unitID)
 {
 	const auto& unitIDIter = unitIDToOffsetMap.find(unitID);
 	if (unitIDIter == unitIDToOffsetMap.end()) {
@@ -345,7 +344,7 @@ uint32_t MatrixUploader::GetUnitElemOffset(int32_t unitID)
 }
 
 //TODO: DO DRY
-uint32_t MatrixUploader::GetFeatureElemOffset(int32_t featureID)
+uint32_t MatrixUploader::GetFeatureElemOffset(const int32_t featureID)
 {
 	const auto& featureIDIter = featureIDToOffsetMap.find(featureID);
 	if (featureIDIter == featureIDToOffsetMap.end()) {
@@ -354,4 +353,29 @@ uint32_t MatrixUploader::GetFeatureElemOffset(int32_t featureID)
 	}
 
 	return featureIDIter->second;
+}
+
+uint32_t MatrixUploader::GetElemOffset(const S3DModel* model)
+{
+	return GetModelElemOffset(model->id);
+}
+
+uint32_t MatrixUploader::GetElemOffset(const UnitDef* unitDef)
+{
+	return GetUnitDefElemOffset(unitDef->id);
+}
+
+uint32_t MatrixUploader::GetElemOffset(const FeatureDef* featureDef)
+{
+	return GetFeatureDefElemOffset(featureDef->id);
+}
+
+uint32_t MatrixUploader::GetElemOffset(const CUnit* unit)
+{
+	return GetUnitElemOffset(unit->id);
+}
+
+uint32_t MatrixUploader::GetElemOffset(const CFeature* feature)
+{
+	return GetFeatureElemOffset(feature->id);
 }
