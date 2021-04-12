@@ -65,7 +65,10 @@ void IUnitDrawerState::SetActiveShader(Shader::IProgramObject* shadowShader)
 	assert(activeShader != nullptr);
 }
 
-bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud) {
+bool UnitDrawerStateGLSL::Init(const CUnitDrawer* ud)
+{
+	IUnitDrawerState::Init(ud);
+
 	#define sh shaderHandler
 
 	const GL::LightHandler* lightHandler = ud->GetLightHandler();
@@ -287,7 +290,9 @@ void UnitDrawerStateGLSL::DisableShadow(const CUnitDrawer* ud)
 
 bool UnitDrawerStateGLSL4::Init(const CUnitDrawer* ud)
 {
-#define sh shaderHandler
+	IUnitDrawerState::Init(ud);
+
+	#define sh shaderHandler
 
 	const std::string shaderNames[MODEL_SHADER_COUNT] = {
 		"ModelShaderGLSL4-NoShadowStandard",
@@ -319,7 +324,7 @@ bool UnitDrawerStateGLSL4::Init(const CUnitDrawer* ud)
 
 	return true;
 
-#undef sh
+	#undef sh
 }
 
 void UnitDrawerStateGLSL4::Kill() {
@@ -331,6 +336,24 @@ void UnitDrawerStateGLSL4::SetNanoColor(const float4& color) const
 {
 	assert(activeShader->IsBound());
 	activeShader->SetUniform("nanoColor", color.x, color.y, color.z, color.w);
+}
+
+void UnitDrawerStateGLSL4::SetColorMultiplier(float r, float g, float b, float a)
+{
+	assert(activeShader->IsBound());
+	activeShader->SetUniform("colorMult", r, g, b, a);
+}
+
+void UnitDrawerStateGLSL4::SetDrawingMode(const SHADER_DRAWING_MODES_GL4 drawMode)
+{
+	assert(activeShader->IsBound());
+	activeShader->SetUniform("drawMode", static_cast<int>(drawMode));
+}
+
+void UnitDrawerStateGLSL4::SetStaticModelMatrix(const CMatrix44f& mat)
+{
+	assert(activeShader->IsBound());
+	activeShader->SetUniformMatrix4x4("staticModelMatrix", false, &mat.m[0]);
 }
 
 void UnitDrawerStateGLSL4::EnableCommon(const CUnitDrawer* ud, bool alphaPass)
@@ -365,11 +388,12 @@ void UnitDrawerStateGLSL4::EnableCommon(const CUnitDrawer* ud, bool alphaPass)
 
 	S3DModelVAO::GetInstance().Bind();
 
-	const int camMode = (game->GetDrawMode() == CGame::GameDrawMode::gameReflectionDraw) ? 2 : 0;
+	const auto drawMode = (game->GetDrawMode() == CGame::GameDrawMode::gameReflectionDraw) ?
+		SHADER_DRAWING_MODES_GL4::LM_REFLECTION : SHADER_DRAWING_MODES_GL4::LM_PLAYER;
 
 	SetActiveShader();
 	activeShader->Enable();
-	activeShader->SetUniform("cameraMode", camMode);
+	SetDrawingMode(drawMode);
 
 	if (alphaPass)
 		activeShader->SetUniform("alphaCtrl", 0.1f, 1.0f, 0.0f, 0.0f); // test > 0.1
@@ -381,7 +405,7 @@ void UnitDrawerStateGLSL4::DisableCommon(const CUnitDrawer* ud, bool alphaPass)
 {
 	assert(activeShader->IsBound());
 
-	activeShader->SetUniform("colorMult", 1.0f, 1.0f, 1.0f, 1.0f); // might have changed in alpha pass
+	SetColorMultiplier(1.0f); // might have changed in alpha pass
 	activeShader->Disable();
 
 	S3DModelVAO::GetInstance().Unbind();
@@ -404,7 +428,7 @@ void UnitDrawerStateGLSL4::EnableShadow(const CUnitDrawer* ud)
 
 	SetActiveShader();
 	activeShader->Enable();
-	activeShader->SetUniform("cameraMode", 1); //shadow
+	SetDrawingMode(SHADER_DRAWING_MODES_GL4::LM_SHADOW); //shadow
 	activeShader->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
 }
 

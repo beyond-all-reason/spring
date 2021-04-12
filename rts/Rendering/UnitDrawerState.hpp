@@ -29,8 +29,8 @@ public:
 	IUnitDrawerState() { modelShaders.fill(nullptr); }
 	virtual ~IUnitDrawerState() {}
 
-	virtual bool Init(const CUnitDrawer* ud) { return false; }
-	virtual void Kill() {}
+	virtual bool Init(const CUnitDrawer* ud) { this->ud = ud; return true; };
+	virtual void Kill() = 0;
 
 	virtual void EnableCommon(const CUnitDrawer* ud, bool alphaPass) = 0;
 	virtual void DisableCommon(const CUnitDrawer* ud, bool alphaPass) = 0;
@@ -54,6 +54,7 @@ protected:
 	void SetActiveShader(Shader::IProgramObject* shadowShader);
 	virtual void SetActiveShader() = 0;
 protected:
+	const CUnitDrawer* ud;
 	std::array<Shader::IProgramObject*, MODEL_SHADER_COUNT> modelShaders;
 	Shader::IProgramObject* activeShader = nullptr;
 };
@@ -83,9 +84,18 @@ public:
 
 	virtual void SetTeamColor(int team, const float2 alpha) const override {}; //info exists in the shader
 	virtual void SetNanoColor(const float4& color) const override;
+public:
+	enum class SHADER_DRAWING_MODES_GL4 {
+		MODEL_PLAYER = -1,
+		LM_PLAYER = 0,
+		LM_SHADOW = 1,
+		LM_REFLECTION = 2,
+	};
+	void SetColorMultiplier(float a = 1.0f) { SetColorMultiplier(1.0f, 1.0f, 1.0f, a); };
+	void SetColorMultiplier(float r, float g, float b, float a);
+	void SetDrawingMode(const SHADER_DRAWING_MODES_GL4 drawMode);
+	void SetStaticModelMatrix(const CMatrix44f& mat);
 protected:
-
-
 	// Inherited via IUnitDrawerState
 	virtual void EnableCommon(const CUnitDrawer* ud, bool alphaPass) override;
 	virtual void DisableCommon(const CUnitDrawer* ud, bool alphaPass) override;

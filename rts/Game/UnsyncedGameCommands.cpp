@@ -237,6 +237,25 @@ public:
 	}
 };
 
+class UnitDrawerActionExecutor : public IUnsyncedActionExecutor {
+public:
+	UnitDrawerActionExecutor() : IUnsyncedActionExecutor("unitdrawer", "Switch unit rendering modes: 0: old GL, 1: GL4") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+
+		if (action.GetArgs().empty())
+			return false;
+
+		int unitDrawerType = 0;
+		if (sscanf((action.GetArgs()).c_str(), "%i", &unitDrawerType) > 0) {
+			CUnitDrawer::SwitchDrawer(unitDrawerType);
+			return true;
+		}
+
+		return false;
+	}
+};
 
 
 class MapMeshDrawerActionExecutor : public IUnsyncedActionExecutor {
@@ -3392,6 +3411,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<SelectCycleActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DeselectActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ShadowsActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<UnitDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapShadowPolyOffsetActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapMeshDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapBorderActionExecutor>());

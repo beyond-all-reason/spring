@@ -91,6 +91,7 @@ public:
 
 	static void InitStatic();
 	static void KillStatic(bool reload);
+	static void SwitchDrawer(int unitDrawerType);
 
 	void Init();
 	void Kill();
@@ -132,8 +133,8 @@ public:
 
 	void SetupOpaqueDrawing(bool deferredPass);
 	void ResetOpaqueDrawing(bool deferredPass);
-	void SetupAlphaDrawing(bool deferredPass);
-	void ResetAlphaDrawing(bool deferredPass);
+	void SetupAlphaDrawing();
+	void ResetAlphaDrawing();
 
 
 	void SetUnitDrawDist(float dist) {
@@ -200,6 +201,52 @@ public:
 
 	void AddTempDrawUnit(const TempDrawUnit& tempDrawUnit);
 	void UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUnits);
+public:
+	struct CUnitDrawerReloadState {
+		std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
+		std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempAlphaUnits;
+		std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> opaqueModelRenderers;
+		std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> alphaModelRenderers;
+		std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
+		std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
+		std::vector<CUnit*> unsortedUnits;
+		std::vector<CUnit*> iconUnits;
+		spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> > unitsByIcon;
+		std::vector<UnitDefImage> unitDefImages;
+		std::vector<float3> buildableSquares;
+		std::vector<float3> featureSquares;
+		std::vector<float3> illegalSquares;
+	};
+	void SaveState(CUnitDrawerReloadState& s) {
+		s.tempOpaqueUnits = tempOpaqueUnits;
+		s.tempAlphaUnits = tempAlphaUnits;
+		s.opaqueModelRenderers = opaqueModelRenderers;
+		s.alphaModelRenderers = alphaModelRenderers;
+		s.deadGhostBuildings = deadGhostBuildings;
+		s.liveGhostBuildings = liveGhostBuildings;
+		s.unsortedUnits = unsortedUnits;
+		s.iconUnits = iconUnits;
+		s.unitsByIcon = unitsByIcon;
+		s.unitDefImages = unitDefImages;
+		s.buildableSquares = buildableSquares;
+		s.featureSquares = featureSquares;
+		s.illegalSquares = illegalSquares;
+	};
+	void LoadState(const CUnitDrawerReloadState& s) {
+		tempOpaqueUnits = s.tempOpaqueUnits;
+		tempAlphaUnits = s.tempAlphaUnits;
+		opaqueModelRenderers = s.opaqueModelRenderers;
+		alphaModelRenderers = s.alphaModelRenderers;
+		deadGhostBuildings = s.deadGhostBuildings;
+		liveGhostBuildings = s.liveGhostBuildings;
+		unsortedUnits = s.unsortedUnits;
+		iconUnits = s.iconUnits;
+		unitsByIcon = s.unitsByIcon;
+		unitDefImages = s.unitDefImages;
+		buildableSquares = s.buildableSquares;
+		featureSquares = s.featureSquares;
+		illegalSquares = s.illegalSquares;
+	};
 protected:
 	/// Returns true if the given unit should be drawn as icon in the current frame.
 	bool DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const;
@@ -220,8 +267,6 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) = 0;
 	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) = 0;
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) = 0;
-
-	virtual void DrawGhostedBuildings(int modelType) = 0;
 public:
 	void DrawUnitIcons();
 	void DrawUnitIconsScreen();
@@ -343,12 +388,11 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) override;
 	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) override;
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override;
-
-	virtual void DrawGhostedBuildings(int modelType) override;
 private:
 	void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction);
 	void DrawOpaqueUnitShadow(CUnit* unit);
 	void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass);
+	void DrawGhostedBuildings(int modelType);
 };
 
 class CGL4UnitDrawer : public CUnitDrawer {
@@ -367,8 +411,8 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) override {};
 	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) override {};
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override {};
-
-	virtual void DrawGhostedBuildings(int modelType) override {};
+private:
+	bool ShouldDrawAlphaUnit(CUnit* unit, bool drawGhostBuildingsPass);
 };
 
 extern CUnitDrawer* unitDrawer;

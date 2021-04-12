@@ -50,16 +50,17 @@ layout(std140, binding=0) readonly buffer MatrixBuffer {
 	mat4 mat[];
 };
 
-uniform int cameraMode = 0;
-
-mat4 mat4mix(mat4 a, mat4 b, float alpha) {
-	return (a * (1.0 - alpha) + b * alpha);
-}
+uniform int drawMode = 0;
+uniform mat4 staticModelMatrix = mat4(1.0);
 
 out Data {
 	vec4 uvCoord;
 	vec4 teamCol;
 };
+
+mat4 mat4mix(mat4 a, mat4 b, float alpha) {
+	return (a * (1.0 - alpha) + b * alpha);
+}
 
 void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
 	vec4 lightVertexPos = shadowView * worldPos;
@@ -78,25 +79,49 @@ void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
 	gl_Position = shadowProj * lightVertexPos;
 }
 
+
 void TransformPlayerCam(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
 }
 
+//TODO figure out?
 void TransformPlayerReflCam(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
+}
+
+void TransformPlayerCamStaticMat(vec4 worldPos) {
+	gl_Position = cameraViewProj * worldPos;
+}
+
+
+//unit, feature, projectile
+mat4 GetWorldMatrixLocalModel() {
+	uint baseIndex = instData.x; //ssbo offset
+	mat4 modelMatrix = mat[baseIndex];
+
+	mat4 pieceMatrix = mat4mix(mat4(1.0), mat[baseIndex + pieceIndex + 1u], modelMatrix[3][3]); //TODO: figure out why mat4mix() is needed
+	return modelMatrix * pieceMatrix;
+}
+
+//static model
+mat4 GetWorldMatrixModel() {
+	uint baseIndex = instData.x; //ssbo offset
+
+	mat4 pieceMatrix = mat[baseIndex + pieceIndex];
+	return staticModelMatrix * pieceMatrix;
 }
 
 #line 1086
 
 void main(void)
 {
-	uint baseIndex = instData.x; //ssbo offset
-	mat4 modelMatrix = mat[baseIndex];
+	mat4 worldMatrix = (drawMode >= 0) ? GetWorldMatrixLocalModel() : GetWorldMatrixModel();
 
-	mat4 pieceMatrix = mat4mix(mat4(1.0), mat[baseIndex + pieceIndex + 1u], modelMatrix[3][3]);
-
-	mat4 worldMatrix = modelMatrix * pieceMatrix;
-	mat3 normalMatrix = mat3(transpose(inverse(modelMatrix * pieceMatrix)));
+	#if 0
+		mat3 normalMatrix = mat3(transpose(inverse(worldMatrix)));
+	#else
+		mat3 normalMatrix = mat3(worldMatrix);
+	#endif
 
 
 	vec4 worldPos = worldMatrix * vec4(pos, 1.0);
@@ -105,9 +130,9 @@ void main(void)
 	teamCol = teamColor[instData.y]; // team index
 	uvCoord = uv;
 
-	switch(cameraMode) {
+	switch(drawMode) {
 		case 1:  TransformShadowCam(worldPos, worldNormal); break; //shadow
 		case 2:  TransformPlayerReflCam(worldPos);          break; //underwater reflection
-		default: TransformPlayerCam(worldPos);              break; //player
+		default: TransformPlayerCam(worldPos);              break; //player, corresponds to 0 and -1 modes
 	};
 }

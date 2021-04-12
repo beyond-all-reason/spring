@@ -448,7 +448,7 @@ void CFeatureDrawer::DrawAlphaPass()
 {
 	inAlphaPass = true;
 	{
-		unitDrawer->SetupAlphaDrawing(false);
+		unitDrawer->SetupAlphaDrawing();
 
 		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDepthMask(GL_TRUE);
@@ -467,7 +467,7 @@ void CFeatureDrawer::DrawAlphaPass()
 		glDisable(GL_FOG);
 		glPopAttrib();
 
-		unitDrawer->ResetAlphaDrawing(false);
+		unitDrawer->ResetAlphaDrawing();
 	}
 
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
