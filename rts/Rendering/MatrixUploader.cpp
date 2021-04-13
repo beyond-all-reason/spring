@@ -210,7 +210,7 @@ void MatrixUploader::UpdateVisibleObjects()
 	static spring::unordered_map<int, const TObj*> visibleObjects;
 	GetVisibleObjects<TObj>(visibleObjects);
 
-	if constexpr (std::is_same<TObj, CUnit>::value || std::is_same<TObj, CFeature>::value) {
+	if constexpr (std::is_base_of<CSolidObject, TObj>()) {
 		for (const auto& kv : visibleObjects) {
 			const int elemBeginIndex = elemUpdateOffset + std::distance(matrices.cbegin(), matrices.cend());
 

@@ -18,9 +18,9 @@
 #include "System/creg/creg_cond.h"
 
 
-#define MAX_MODEL_OBJECTS  2048
-#define NUM_MODEL_TEXTURES    2
-#define NUM_MODEL_UVCHANNS    2
+constexpr int MAX_MODEL_OBJECTS  = 2048;
+constexpr int NUM_MODEL_TEXTURES = 2;
+constexpr int NUM_MODEL_UVCHANNS = 2;
 
 static constexpr float3 DEF_MIN_SIZE( 10000.0f,  10000.0f,  10000.0f);
 static constexpr float3 DEF_MAX_SIZE(-10000.0f, -10000.0f, -10000.0f);
@@ -97,7 +97,7 @@ private:
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
-	uint32_t baseInstance;
+	uint32_t baseInstance = 0u;
 
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;

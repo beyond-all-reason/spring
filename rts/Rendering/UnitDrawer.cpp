@@ -2211,6 +2211,7 @@ void CGLUnitDrawer::DrawGhostedBuildings(int modelType)
 
 /******************************************************************************/
 /******************************************************************************/
+//#define MT_RENDER_PREP
 
 void CGL4UnitDrawer::InitDrawerState()
 {
@@ -2228,7 +2229,7 @@ void CGL4UnitDrawer::DrawOpaqueUnitsShadow(int modelType)
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
 
-#if 1
+#ifdef MT_RENDER_PREP
 		static vector<CUnit*> renderUnits;
 		renderUnits.resize(binUnits.size());
 
@@ -2268,7 +2269,7 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
 
-#if 1
+#ifdef MT_RENDER_PREP
 		static vector<CUnit*> renderUnits;
 
 		renderUnits.resize(binUnits.size());
@@ -2285,7 +2286,7 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 		}
 #else
 		for (auto* unit : binUnits) {
-			if (!ShouldDrawOpaqueUnit(unit))
+			if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
 				continue;
 
 			mvi.AddToSubmission(unit);
@@ -2300,16 +2301,13 @@ void CGL4UnitDrawer::DrawOpaqueUnits(int modelType, bool drawReflection, bool dr
 }
 
 
-bool CGL4UnitDrawer::ShouldDrawAlphaUnit(CUnit* unit, bool drawGhostBuildingsPass)
+bool CGL4UnitDrawer::ShouldDrawAlphaUnit(CUnit* unit)
 {
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return false;
 
 	if (LuaObjectDrawer::AddAlphaMaterialObject(unit, LUAOBJ_UNIT))
 		return false;
-
-	if (drawGhostBuildingsPass)
-		return true;
 
 	if (unit->isIcon)
 		return false;
@@ -2335,12 +2333,29 @@ void CGL4UnitDrawer::DrawAlphaUnits(int modelType)
 
 		const auto& binUnits = mdlRenderer.GetObjectBin(i);
 
-		for (auto* unit : binUnits) {
-			if (!ShouldDrawAlphaUnit(unit, false))
+#ifdef MT_RENDER_PREP
+		static vector<CUnit*> renderUnits;
+
+		renderUnits.resize(binUnits.size());
+
+		for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
+			renderUnits[i] = ShouldDrawAlphaUnit(binUnits[i]) ? binUnits[i] : nullptr;
+			});
+
+		for (CUnit* unit : renderUnits) {
+			if (!unit)
 				continue;
 
 			mvi.AddToSubmission(unit);
 		}
+#else
+		for (auto* unit : binUnits) {
+			if (!ShouldDrawAlphaUnit(unit))
+				continue;
+
+			mvi.AddToSubmission(unit);
+		}
+#endif
 
 		mvi.Submit(GL_TRIANGLES, false);
 

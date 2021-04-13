@@ -412,7 +412,7 @@ protected:
 	virtual void DrawAlphaAIUnit(const TempDrawUnit& unit) override {};
 	virtual void DrawAlphaAIUnitBorder(const TempDrawUnit& unit) override {};
 private:
-	bool ShouldDrawAlphaUnit(CUnit* unit, bool drawGhostBuildingsPass);
+	bool ShouldDrawAlphaUnit(CUnit* unit);
 };
 
 extern CUnitDrawer* unitDrawer;
