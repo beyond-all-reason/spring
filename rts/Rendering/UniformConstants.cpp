@@ -79,7 +79,10 @@ void UniformConstants::UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer)
 	updateBuffer->cameraView = camPlayer->GetViewMatrix();
 	updateBuffer->cameraProj = camPlayer->GetProjectionMatrix();
 	updateBuffer->cameraViewProj = camPlayer->GetViewProjectionMatrix();
-	updateBuffer->cameraBillboardProj = updateBuffer->cameraView * camPlayer->GetBillBoardMatrix(); //GetBillBoardMatrix() is supposed to be multiplied by the view Matrix
+
+	// pretty useless as billboarding should be applied to modelView matrix and not viewMatrix
+	// much easier way is to assign identity matrix to top-left 3x3 submatrix in the shader
+	updateBuffer->cameraBillboardView = updateBuffer->cameraView * camPlayer->GetBillBoardMatrix(); //GetBillBoardMatrix() is supposed to be multiplied by the view Matrix
 
 	updateBuffer->cameraViewInv = camPlayer->GetViewMatrixInverse();
 	updateBuffer->cameraProjInv = camPlayer->GetProjectionMatrixInverse();
