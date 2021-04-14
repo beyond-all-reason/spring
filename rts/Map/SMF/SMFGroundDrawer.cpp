@@ -397,6 +397,8 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
+	smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
+
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -453,6 +455,8 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 
 	glActiveTexture(GL_TEXTURE0);
 	glDisable(GL_TEXTURE_2D);
+
+	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
 
 	glDisable(GL_CULL_FACE);
 }
