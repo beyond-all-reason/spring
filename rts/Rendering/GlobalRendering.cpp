@@ -10,6 +10,7 @@
 #include "Rendering/VerticalSync.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/FixedPipelineState.h"
 #include "Rendering/UniformConstants.h"
 #include "System/bitops.h"
 #include "System/EventHandler.h"
@@ -161,7 +162,9 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(borderless),
 
 	CR_IGNORED(sdlWindows),
-	CR_IGNORED(glContexts)
+	CR_IGNORED(glContexts),
+
+	CR_IGNORED(defaultPipelineState)
 ))
 
 
@@ -288,6 +291,7 @@ CGlobalRendering::~CGlobalRendering()
 
 void CGlobalRendering::PreKill()
 {
+	defaultPipelineState->Unbind(); defaultPipelineState = nullptr;
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 }
 
@@ -1141,6 +1145,9 @@ void CGlobalRendering::InitGLState()
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	defaultPipelineState = std::make_unique<GL::FixedPipelineState>();
+	defaultPipelineState->Bind();
 
 	glViewport(viewPosX, viewPosY, viewSizeX, viewSizeY);
 	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);

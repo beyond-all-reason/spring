@@ -15,6 +15,7 @@ struct SDL_Window;
 typedef void* SDL_GLContext;
 
 class CMatrix44f;
+namespace GL { class FixedPipelineState; }
 
 /**
  * @brief Globally accessible unsynced, rendering related data
@@ -296,6 +297,7 @@ public:
 	bool fullScreen;
 	bool borderless;
 
+	std::unique_ptr<GL::FixedPipelineState> defaultPipelineState;
 public:
 	// [0] := primary, [1] := secondary (hidden)
 	SDL_Window* sdlWindows[2];

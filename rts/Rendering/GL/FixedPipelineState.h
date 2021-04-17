@@ -41,6 +41,7 @@ namespace GL {
 		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
 	};
 
+	#define DEBUG_PIPELINE_STATE 1
 	class FixedPipelineState {
 	private:
 		//template <typename Result, typename ...Args> using vararg_function = std::function< Result(Args...) >;
@@ -108,6 +109,8 @@ namespace GL {
 		FixedPipelineState& OnBind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(true, func)); return *this; };
 		/// applied in the beginning
 		FixedPipelineState& OnUnbind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(false, func)); return *this; };
+
+		FixedPipelineState& InferState();
 	public:
 		FixedPipelineState& operator=(const FixedPipelineState& other) = default; //copy
 		FixedPipelineState& operator=(FixedPipelineState&& other) = default; //move
@@ -116,67 +119,91 @@ namespace GL {
 		void Unbind() const { BindUnbind(false); }
 	private:
 		void BindUnbind(const bool bind) const;
+
+		template <typename... T>
+		void DumpState(std::tuple<T...> tuple);
 	private:
 		static void BindTextureProxy(GLenum texUnit, GLenum texType, GLuint texID) { glActiveTexture(texUnit); glBindTexture(texType, texID); }
 	private:
 		FixedPipelineState& CommonBinaryState(const GLenum state, bool b) {
+			const auto argsTuple = std::make_tuple(state, static_cast<GLboolean>(b));
+			DumpState(std::tuple_cat(std::make_tuple("EnableDisable"), argsTuple));
 			binaryStates[state] = b;
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glB1Func&& f, bool b) {
-			b1States[hashString(func)] = std::make_pair(f, std::make_tuple(static_cast<GLboolean>(b)));
+			const auto argsTuple = std::make_tuple(static_cast<GLboolean>(b));
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			b1States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glB4Func&& f, bool b1, bool b2, bool b3, bool b4) {
-			b4States[hashString(func)] = std::make_pair(f, std::make_tuple(
+			const auto argsTuple = std::make_tuple(
 				static_cast<GLboolean>(b1),
 				static_cast<GLboolean>(b2),
 				static_cast<GLboolean>(b3),
 				static_cast<GLboolean>(b4)
-			));
-
+			);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			b4States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glE1Func&& f, GLenum v) {
-			e1States[hashString(func)] = std::make_pair(f, std::make_tuple(v));
+			const auto argsTuple = std::make_tuple(v);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			e1States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glE2Func&& f, GLenum v1, GLenum v2) {
-			e2States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			const auto argsTuple = std::make_tuple(v1, v2);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			e2States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glE3Func&& f, GLenum v1, GLenum v2, GLenum v3) {
-			e3States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v3));
+			const auto argsTuple = std::make_tuple(v1, v2, v3);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			e3States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glI4Func&& f, GLint v1, GLint v2, GLint v3, GLint v4) {
-			i4States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v2, v4));
+			const auto argsTuple = std::make_tuple(v1, v2, v3, v4);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			i4States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glE1F1Func&& f, GLenum v1, GLfloat v2) {
-			e1f1States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			const auto argsTuple = std::make_tuple(v1, v2);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			e1f1States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glF1Func&& f, GLfloat v) {
-			f1States[hashString(func)] = std::make_pair(f, std::make_tuple(v));
+			const auto argsTuple = std::make_tuple(v);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			f1States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glF2Func&& f, GLfloat v1, GLfloat v2) {
-			f2States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			const auto argsTuple = std::make_tuple(v1, v2);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			f2States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
 		FixedPipelineState& CommonNamedState(const char* func, glF4Func&& f, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4) {
-			f4States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v3, v4));
+			const auto argsTuple = std::make_tuple(v1, v2, v3, v4);
+			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
+			f4States[hashString(func)] = std::make_pair(f, argsTuple);
 			return *this;
 		}
 
@@ -198,13 +225,12 @@ namespace GL {
 		std::unordered_map<uint32_t, std::pair<glF2Func, std::tuple<GLfloat, GLfloat>>> f2States;
 		std::unordered_map<uint32_t, std::pair<glF4Func, std::tuple<GLfloat, GLfloat, GLfloat, GLfloat>>> f4States;
 
-		GLuint lastActiveTexture = ~0u;
-
 		std::vector<std::pair<bool, onBindUnbindFunc>> customOnBindUnbind;
+
+		GLuint lastActiveTexture = ~0u;
 	private:
 		static std::stack<FixedPipelineState> statesChain;
 	};
-	std::stack<FixedPipelineState> FixedPipelineState::statesChain = {};
 
 	class ScopedState {
 	public:
