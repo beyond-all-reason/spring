@@ -79,8 +79,6 @@
 CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
 
-static constexpr int MAX_TEXTURE_UNITS = 32;
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -2219,7 +2217,7 @@ int LuaOpenGL::MultiTexCoord(lua_State* L)
 	CondWarnDeprecatedGL(L, __func__);
 
 	const int texNum = luaL_checkint(L, 1);
-	if ((texNum < 0) || (texNum >= MAX_TEXTURE_UNITS)) {
+	if ((texNum < 0) || (texNum >= CGlobalRendering::MAX_TEXTURE_UNITS)) {
 		luaL_error(L, "Bad texture unit passed to gl.MultiTexCoord()");
 	}
 	const GLenum texUnit = GL_TEXTURE0 + texNum;
@@ -3222,7 +3220,7 @@ int LuaOpenGL::Texture(lua_State* L)
 		nextArg = 2;
 		const int texNum = (GLenum)luaL_checknumber(L, 1);
 
-		if ((texNum < 0) || (texNum >= MAX_TEXTURE_UNITS))
+		if ((texNum < 0) || (texNum >= CGlobalRendering::MAX_TEXTURE_UNITS))
 			luaL_error(L, "Bad texture unit given to gl.Texture()");
 
 		texUnit += texNum;
@@ -3569,7 +3567,7 @@ int LuaOpenGL::ActiveTexture(lua_State* L)
 		luaL_error(L, "Incorrect arguments to gl.ActiveTexture(number, func, ...)");
 	}
 	const int texNum = lua_toint(L, 1);
-	if ((texNum < 0) || (texNum >= MAX_TEXTURE_UNITS)) {
+	if ((texNum < 0) || (texNum >= CGlobalRendering::MAX_TEXTURE_UNITS)) {
 		luaL_error(L, "Bad texture unit passed to gl.ActiveTexture()");
 		return 0;
 	}
@@ -3626,7 +3624,7 @@ int LuaOpenGL::MultiTexEnv(lua_State* L)
 	const GLenum target = (GLenum)luaL_checknumber(L, 2);
 	const GLenum pname  = (GLenum)luaL_checknumber(L, 3);
 
-	if ((texNum < 0) || (texNum >= MAX_TEXTURE_UNITS)) {
+	if ((texNum < 0) || (texNum >= CGlobalRendering::MAX_TEXTURE_UNITS)) {
 		luaL_error(L, "Bad texture unit passed to gl.MultiTexEnv()");
 	}
 
@@ -3712,7 +3710,7 @@ int LuaOpenGL::MultiTexGen(lua_State* L)
 	CondWarnDeprecatedGL(L, __func__);
 
 	const int texNum = luaL_checkint(L, 1);
-	if ((texNum < 0) || (texNum >= MAX_TEXTURE_UNITS)) {
+	if ((texNum < 0) || (texNum >= CGlobalRendering::MAX_TEXTURE_UNITS)) {
 		luaL_error(L, "Bad texture unit passed to gl.MultiTexGen()");
 	}
 
