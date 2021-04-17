@@ -76,7 +76,7 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 	if (!bind)
 		statesChain.pop();
 
-#define APPLY_STATES(states) \
+	#define APPLY_STATES(states) \
 	do { \
 		for (const auto [strhash, funcArgs] : states) { \
 			if (statesChain.empty()) { /*default state*/ \
@@ -97,7 +97,7 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 		} \
 	} while (false)
 
-#define REVERT_STATES(states) \
+	#define REVERT_STATES(states) \
 	do { \
 		for (const auto [strhash, funcArgs] : states) { \
 			if (statesChain.empty()) { /*default state*/ \
