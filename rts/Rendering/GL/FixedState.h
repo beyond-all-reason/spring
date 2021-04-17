@@ -6,86 +6,187 @@
 #include <unordered_map>
 #include <stack>
 #include <tuple>
+#include <cstring>
 
 #include "Rendering/GL/myGL.h"
+#include "System/StringHash.h"
 
-class FixedPipelineState {
-private:
-    template <typename Result, typename ...Args> using vararg_function = std::function< Result(Args...) >;
-    using glEnum1Func = vararg_function<void, GLenum>;
-    using glEnum2Func = vararg_function<void, GLenum, GLenum>;
-    using glFloat1Func = vararg_function<void, GLfloat>;
-    using glFloat2Func = vararg_function<void, GLfloat, GLfloat>;
-public:
-    FixedPipelineState();
+namespace GL {
+	template<typename GLgetFunc, typename GLparamType, typename ReturnType>
+	static ReturnType glGetT(GLgetFunc glGetFunc, GLenum param) {
+		ReturnType ret;
+		constexpr size_t arrSize = sizeof(ret);
+		GLparamType* arr = static_cast<GLparamType*>(malloc(arrSize));
 
-    FixedPipelineState& PolygonMode(const GLenum mode) { return CommonNamedState(__func__, glPolygonMode, GL_FRONT_AND_BACK, mode); }
+		memset(arr, 0, arrSize);
+		glGetError();
+		glGetFunc(param, &arr[0]);
+		assert(glGetError() == GL_NO_ERROR);
+		memcpy(reinterpret_cast<GLparamType*>(&ret), &arr[0], arrSize);
 
-    FixedPipelineState& DepthMask(const bool b) { return CommonNamedState(__func__, glDepthMask, b); }
-    FixedPipelineState& DepthRange(const GLfloat n, const GLfloat f) { return CommonNamedState(__func__, glDepthRangef, n, f); }
-    FixedPipelineState& DepthTest(const bool b) { return CommonBinaryState(GL_DEPTH_TEST, b); }
-    FixedPipelineState& DepthFunc(const GLenum func) { return CommonNamedState(__func__, glDepthFunc, func); }
+		free(arr);
 
-    FixedPipelineState& Blending(const bool b) { return CommonBinaryState(GL_BLEND, b); }
-    FixedPipelineState& BlendFunc(const GLenum sfactor, const GLenum dfactor) { return CommonNamedState(__func__, glBlendFunc, sfactor, dfactor); }
+		return ret;
+	}
 
-    FixedPipelineState& Multisampling(const bool b) { return CommonBinaryState(GL_MULTISAMPLE, b); }
-    /// TODO
-public:
-    void Bind() const;
-    void Unbind() const;
-private:
-    FixedPipelineState& CommonBinaryState(const GLenum state, bool b) {
-        binaryStates[state] = b;
-        return *this;
-    }
+	template<typename ReturnType = int>
+	static ReturnType glGetIntT(GLenum param) {
+		return (glGetT<decltype(&glGetIntegerv), GLint, ReturnType>(glGetIntegerv, param));
+	}
 
-    FixedPipelineState& CommonNamedState(const char* name, glEnum1Func&& f, bool b) {
-        named1EnumStates[std::string(name)] = std::make_tuple(f, (b ? GL_TRUE : GL_FALSE));
-        return *this;
-    }
+	template<typename ReturnType = float, size_t numFloats = 1>
+	static ReturnType glGetFloatT(GLenum param) {
+		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
+	};
 
-    FixedPipelineState& CommonNamedState(const char* name, glEnum1Func&& f, GLenum v) {
-        named1EnumStates[std::string(name)] = std::make_tuple(f, v);
-        return *this;
-    }
+	class FixedPipelineState {
+	private:
+		//template <typename Result, typename ...Args> using vararg_function = std::function< Result(Args...) >;
+		using glB1Func = std::function<void(GLboolean)>;
+		using glB4Func = std::function<void(GLboolean, GLboolean, GLboolean, GLboolean)>;
+		using glE1Func = std::function<void(GLenum)>;
+		using glE2Func = std::function<void(GLenum, GLenum)>;
+		using glI4Func = std::function<void(GLint, GLint, GLint, GLint)>;
+		using glE1F1Func  = std::function<void(GLenum, GLfloat)>;
+		using glF1Func = std::function<void(GLfloat)>;
+		using glF2Func = std::function<void(GLfloat, GLfloat)>;
+		using glF4Func = std::function<void(GLfloat, GLfloat, GLfloat, GLfloat)>;
+	public:
+		FixedPipelineState();
+		FixedPipelineState(FixedPipelineState&& rh) = default; //move
+		FixedPipelineState(const FixedPipelineState& rh) = default; //copy
 
-    FixedPipelineState& CommonNamedState(const char* name, glEnum2Func&& f, GLenum v1, GLenum v2) {
-        named2EnumStates[std::string(name)] = std::make_tuple(f, v1, v2);
-        return *this;
-    }
+		FixedPipelineState& PolygonMode(const GLenum mode) { return CommonNamedState(__func__, glPolygonMode, GL_FRONT_AND_BACK, mode); }
 
-    FixedPipelineState& CommonNamedState(const char* name, glFloat1Func&& f, GLfloat v) {
-        named1FloatStates[std::string(name)] = std::make_tuple(f, v);
-        return *this;
-    }
+		FixedPipelineState& PolygonOffset(const GLfloat factor, const GLfloat units) { return CommonNamedState(__func__, glPolygonOffset, factor, units); }
+		FixedPipelineState& PolygonOffsetFill(const bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_FILL , b); }
+		FixedPipelineState& PolygonOffsetLine(const bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_LINE , b); }
+		FixedPipelineState& PolygonOffsetPoint(const bool b) { return CommonBinaryState(GL_POLYGON_OFFSET_POINT, b); }
 
-    FixedPipelineState& CommonNamedState(const char* name, glFloat2Func&& f, GLfloat v1, GLfloat v2) {
-        named2FloatStates[std::string(name)] = std::make_tuple(f, v1, v2);
-        return *this;
-    }
+		FixedPipelineState& FrontFace(const GLenum mode) { return CommonNamedState(__func__, glFrontFace, mode); }
+		FixedPipelineState& Culling(const bool b) { return CommonBinaryState(GL_CULL_FACE_MODE, b); }
+		FixedPipelineState& CullFace(const GLenum mode) { return CommonNamedState(__func__, glCullFace, mode); }
 
-private:
-    std::unordered_map<GLenum, bool> binaryStates;
+		FixedPipelineState& DepthMask(const bool b) { return CommonNamedState(__func__, glDepthMask, b); }
+		FixedPipelineState& DepthRange(const GLfloat n, const GLfloat f) { return CommonNamedState(__func__, glDepthRangef, n, f); }
+		FixedPipelineState& DepthClamp(const bool b) { return CommonBinaryState(GL_DEPTH_CLAMP, b); }
+		FixedPipelineState& DepthTest(const bool b) { return CommonBinaryState(GL_DEPTH_TEST, b); }
+		FixedPipelineState& DepthFunc(const GLenum func) { return CommonNamedState(__func__, glDepthFunc, func); }
 
-    std::unordered_map<std::string, std::tuple<glEnum1Func, GLenum>> named1EnumStates;
-    std::unordered_map<std::string, std::tuple<glEnum2Func, GLenum, GLenum>> named2EnumStates;
+		// compat profile only
+		FixedPipelineState& AlphaTest(const bool b) { return CommonBinaryState(GL_ALPHA_TEST, b); }
+		FixedPipelineState& AlphaFunc(const GLenum func, const GLfloat ref) { return CommonNamedState(__func__, glAlphaFunc, func, ref); }
 
-    std::unordered_map<std::string, std::tuple<glEnum1Func, GLfloat>> named1FloatStates;
-    std::unordered_map<std::string, std::tuple<glEnum2Func, GLfloat, GLfloat>> named2FloatStates;
-private:
-    static std::stack<FixedPipelineState> statesChain;
-};
-std::stack<FixedPipelineState> FixedPipelineState::statesChain = {};
+		// TODO : expand
+		FixedPipelineState& Blending(const bool b) { return CommonBinaryState(GL_BLEND, b); }
+		FixedPipelineState& BlendFunc(const GLenum sfactor, const GLenum dfactor) { return CommonNamedState(__func__, glBlendFunc, sfactor, dfactor); }
+		FixedPipelineState& BlendColor(const GLfloat r, const GLfloat g, const GLfloat b, const GLfloat a) { return CommonNamedState(__func__, glBlendColor, r, g, b, a); }
 
-/*
-class ScopedState {
-public:
-    ScopedState(const FixedPipelineState& state) : s{ state } { s.Bind(); }
-    ~ScopedState() { s.Unbind(); }
-private:
-    const FixedPipelineState& s;
-};
-*/
+		FixedPipelineState& StencilTest(const bool b) { return CommonBinaryState(GL_STENCIL_TEST, b); }
+
+		FixedPipelineState& ColorMask(const bool r, const bool g, const bool b, const bool a) { return CommonNamedState(__func__, glColorMask, r, g, b, a); }
+
+		//FixedPipelineState& Multisampling(const bool b) { return CommonBinaryState(GL_MULTISAMPLE, b); }
+		/// TODO
+
+		FixedPipelineState& ScissorTest(const bool b) { return CommonBinaryState(GL_SCISSOR_TEST, b); }
+		FixedPipelineState& ScissorRect(const GLint x, const GLint y, const GLint w, const GLint h) { return CommonNamedState(__func__, glScissor, x, y, w, h); }
+
+		FixedPipelineState& Viewport(const GLint x, const GLint y, const GLint w, const GLint h) { return CommonNamedState(__func__, glViewport, x, y, w, h); }
+
+	public:
+		FixedPipelineState& operator=(const FixedPipelineState& other) = default; //copy
+		FixedPipelineState& operator=(FixedPipelineState&& other) = default; //move
+	public:
+		void Bind() const { BindUnbind(true); }
+		void Unbind() const { BindUnbind(false); }
+	private:
+		void BindUnbind(const bool bind) const;
+	private:
+		FixedPipelineState& CommonBinaryState(const GLenum state, bool b) {
+			binaryStates[state] = b;
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glB1Func&& f, bool b) {
+			b1States[hashString(func)] = std::make_pair(f, std::make_tuple(static_cast<GLboolean>(b)));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glB4Func&& f, bool b1, bool b2, bool b3, bool b4) {
+			b4States[hashString(func)] = std::make_pair(f, std::make_tuple(
+				static_cast<GLboolean>(b1),
+				static_cast<GLboolean>(b2),
+				static_cast<GLboolean>(b3),
+				static_cast<GLboolean>(b4)
+			));
+
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glE1Func&& f, GLenum v) {
+			e1States[hashString(func)] = std::make_pair(f, std::make_tuple(v));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glE2Func&& f, GLenum v1, GLenum v2) {
+			e2States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glI4Func&& f, GLint v1, GLint v2, GLint v3, GLint v4) {
+			i4States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v2, v4));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glE1F1Func&& f, GLenum v1, GLfloat v2) {
+			e1f1States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glF1Func&& f, GLfloat v) {
+			f1States[hashString(func)] = std::make_pair(f, std::make_tuple(v));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glF2Func&& f, GLfloat v1, GLfloat v2) {
+			f2States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glF4Func&& f, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4) {
+			f4States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v3, v4));
+			return *this;
+		}
+
+	private:
+		std::unordered_map<GLenum, bool> binaryStates;
+
+		std::unordered_map<uint32_t, std::pair<glB1Func, std::tuple<GLboolean>>> b1States;
+		std::unordered_map<uint32_t, std::pair<glB4Func, std::tuple<GLboolean, GLboolean, GLboolean, GLboolean>>> b4States;
+
+		std::unordered_map<uint32_t, std::pair<glE1Func, std::tuple<GLenum>>> e1States;
+		std::unordered_map<uint32_t, std::pair<glE2Func, std::tuple<GLenum, GLenum>>> e2States;
+
+		std::unordered_map<uint32_t, std::pair<glI4Func, std::tuple<GLint, GLint, GLint, GLint>>> i4States;
+
+		std::unordered_map<uint32_t, std::pair<glE2Func, std::tuple<GLenum, GLenum>>> e1f1States;
+
+		std::unordered_map<uint32_t, std::pair<glF1Func, std::tuple<GLfloat>>> f1States;
+		std::unordered_map<uint32_t, std::pair<glF2Func, std::tuple<GLfloat, GLfloat>>> f2States;
+		std::unordered_map<uint32_t, std::pair<glF4Func, std::tuple<GLfloat, GLfloat, GLfloat, GLfloat>>> f4States;
+	private:
+		static std::stack<FixedPipelineState> statesChain;
+	};
+	std::stack<FixedPipelineState> FixedPipelineState::statesChain = {};
+
+	class ScopedState {
+	public:
+		ScopedState(const FixedPipelineState& state) : s{ state } { s.Bind(); }
+		~ScopedState() { s.Unbind(); }
+	private:
+		const FixedPipelineState s;
+	};
+}
 
 #endif
