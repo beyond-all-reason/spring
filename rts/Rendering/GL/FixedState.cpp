@@ -72,19 +72,21 @@ FixedPipelineState::FixedPipelineState()
 		for (int texRelUnit = 0; texRelUnit < CGlobalRendering::MAX_TEXTURE_UNITS; ++texRelUnit)
 		{
 			// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTextures.xhtml
+			#define MAKE_TEX_QUERY_BIND_PAIR(type) std::make_pair(GL_TEXTURE_BINDING_##type, GL_TEXTURE_##type)
 			constexpr static std::array<std::pair<GLenum, GLenum>, 11> texTypes = {
-				std::make_pair(GL_TEXTURE_BINDING_1D, GL_TEXTURE_1D),
-				std::make_pair(GL_TEXTURE_BINDING_2D, GL_TEXTURE_2D),
-				std::make_pair(GL_TEXTURE_BINDING_3D, GL_TEXTURE_3D),
-				std::make_pair(GL_TEXTURE_BINDING_1D_ARRAY, GL_TEXTURE_1D_ARRAY),
-				std::make_pair(GL_TEXTURE_BINDING_2D_ARRAY, GL_TEXTURE_2D_ARRAY),
-				std::make_pair(GL_TEXTURE_BINDING_RECTANGLE, GL_TEXTURE_RECTANGLE),
-				std::make_pair(GL_TEXTURE_BINDING_BUFFER, GL_TEXTURE_BUFFER),
-				std::make_pair(GL_TEXTURE_BINDING_CUBE_MAP, GL_TEXTURE_CUBE_MAP),
-				std::make_pair(GL_TEXTURE_BINDING_CUBE_MAP_ARRAY, GL_TEXTURE_CUBE_MAP_ARRAY),
-				std::make_pair(GL_TEXTURE_BINDING_2D_MULTISAMPLE, GL_TEXTURE_2D_MULTISAMPLE),
-				std::make_pair(GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY)
+				MAKE_TEX_QUERY_BIND_PAIR(1D),
+				MAKE_TEX_QUERY_BIND_PAIR(2D),
+				MAKE_TEX_QUERY_BIND_PAIR(3D),
+				MAKE_TEX_QUERY_BIND_PAIR(1D_ARRAY),
+				MAKE_TEX_QUERY_BIND_PAIR(2D_ARRAY),
+				MAKE_TEX_QUERY_BIND_PAIR(RECTANGLE),
+				MAKE_TEX_QUERY_BIND_PAIR(BUFFER),
+				MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP),
+				MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP_ARRAY),
+				MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE),
+				MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE_ARRAY)
 			};
+			#undef MAKE_TEX_QUERY_BIND_PAIR
 
 			bool found = false;
 			for (const auto [queryType, bindType] : texTypes) {
