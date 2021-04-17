@@ -5,10 +5,12 @@
 #include <string>
 #include <unordered_map>
 #include <stack>
+#include <vector>
 #include <tuple>
 #include <cstring>
 
 #include "Rendering/GL/myGL.h"
+#include "Rendering/Shaders/Shader.h"
 #include "System/StringHash.h"
 
 namespace GL {
@@ -46,54 +48,66 @@ namespace GL {
 		using glB4Func = std::function<void(GLboolean, GLboolean, GLboolean, GLboolean)>;
 		using glE1Func = std::function<void(GLenum)>;
 		using glE2Func = std::function<void(GLenum, GLenum)>;
+		using glE3Func = std::function<void(GLenum, GLenum, GLenum)>;
 		using glI4Func = std::function<void(GLint, GLint, GLint, GLint)>;
 		using glE1F1Func  = std::function<void(GLenum, GLfloat)>;
 		using glF1Func = std::function<void(GLfloat)>;
 		using glF2Func = std::function<void(GLfloat, GLfloat)>;
 		using glF4Func = std::function<void(GLfloat, GLfloat, GLfloat, GLfloat)>;
+
+		using onBindUnbindFunc = std::function<void()>;
 	public:
 		FixedPipelineState();
 		FixedPipelineState(FixedPipelineState&& rh) = default; //move
 		FixedPipelineState(const FixedPipelineState& rh) = default; //copy
 
-		FixedPipelineState& PolygonMode(const GLenum mode) { return CommonNamedState(__func__, glPolygonMode, GL_FRONT_AND_BACK, mode); }
+		FixedPipelineState& PolygonMode(GLenum mode) { return CommonNamedState(__func__, glPolygonMode, GL_FRONT_AND_BACK, mode); }
 
-		FixedPipelineState& PolygonOffset(const GLfloat factor, const GLfloat units) { return CommonNamedState(__func__, glPolygonOffset, factor, units); }
-		FixedPipelineState& PolygonOffsetFill(const bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_FILL , b); }
-		FixedPipelineState& PolygonOffsetLine(const bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_LINE , b); }
-		FixedPipelineState& PolygonOffsetPoint(const bool b) { return CommonBinaryState(GL_POLYGON_OFFSET_POINT, b); }
+		FixedPipelineState& PolygonOffset(GLfloat factor, GLfloat units) { return CommonNamedState(__func__, glPolygonOffset, factor, units); }
+		FixedPipelineState& PolygonOffsetFill(bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_FILL , b); }
+		FixedPipelineState& PolygonOffsetLine(bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_LINE , b); }
+		FixedPipelineState& PolygonOffsetPoint(bool b) { return CommonBinaryState(GL_POLYGON_OFFSET_POINT, b); }
 
-		FixedPipelineState& FrontFace(const GLenum mode) { return CommonNamedState(__func__, glFrontFace, mode); }
-		FixedPipelineState& Culling(const bool b) { return CommonBinaryState(GL_CULL_FACE_MODE, b); }
-		FixedPipelineState& CullFace(const GLenum mode) { return CommonNamedState(__func__, glCullFace, mode); }
+		FixedPipelineState& FrontFace(GLenum mode) { return CommonNamedState(__func__, glFrontFace, mode); }
+		FixedPipelineState& Culling(bool b) { return CommonBinaryState(GL_CULL_FACE_MODE, b); }
+		FixedPipelineState& CullFace(GLenum mode) { return CommonNamedState(__func__, glCullFace, mode); }
 
-		FixedPipelineState& DepthMask(const bool b) { return CommonNamedState(__func__, glDepthMask, b); }
-		FixedPipelineState& DepthRange(const GLfloat n, const GLfloat f) { return CommonNamedState(__func__, glDepthRangef, n, f); }
-		FixedPipelineState& DepthClamp(const bool b) { return CommonBinaryState(GL_DEPTH_CLAMP, b); }
-		FixedPipelineState& DepthTest(const bool b) { return CommonBinaryState(GL_DEPTH_TEST, b); }
-		FixedPipelineState& DepthFunc(const GLenum func) { return CommonNamedState(__func__, glDepthFunc, func); }
+		FixedPipelineState& DepthMask(bool b) { return CommonNamedState(__func__, glDepthMask, b); }
+		FixedPipelineState& DepthRange(GLfloat n, GLfloat f) { return CommonNamedState(__func__, glDepthRangef, n, f); }
+		FixedPipelineState& DepthClamp(bool b) { return CommonBinaryState(GL_DEPTH_CLAMP, b); }
+		FixedPipelineState& DepthTest(bool b) { return CommonBinaryState(GL_DEPTH_TEST, b); }
+		FixedPipelineState& DepthFunc(GLenum func) { return CommonNamedState(__func__, glDepthFunc, func); }
 
 		// compat profile only
-		FixedPipelineState& AlphaTest(const bool b) { return CommonBinaryState(GL_ALPHA_TEST, b); }
-		FixedPipelineState& AlphaFunc(const GLenum func, const GLfloat ref) { return CommonNamedState(__func__, glAlphaFunc, func, ref); }
+		FixedPipelineState& AlphaTest(bool b) { return CommonBinaryState(GL_ALPHA_TEST, b); }
+		FixedPipelineState& AlphaFunc(GLenum func, GLfloat ref) { return CommonNamedState(__func__, glAlphaFunc, func, ref); }
 
 		// TODO : expand
-		FixedPipelineState& Blending(const bool b) { return CommonBinaryState(GL_BLEND, b); }
-		FixedPipelineState& BlendFunc(const GLenum sfactor, const GLenum dfactor) { return CommonNamedState(__func__, glBlendFunc, sfactor, dfactor); }
-		FixedPipelineState& BlendColor(const GLfloat r, const GLfloat g, const GLfloat b, const GLfloat a) { return CommonNamedState(__func__, glBlendColor, r, g, b, a); }
+		FixedPipelineState& Blending(bool b) { return CommonBinaryState(GL_BLEND, b); }
+		FixedPipelineState& BlendFunc(GLenum sfactor, GLenum dfactor) { return CommonNamedState(__func__, glBlendFunc, sfactor, dfactor); }
+		FixedPipelineState& BlendColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) { return CommonNamedState(__func__, glBlendColor, r, g, b, a); }
 
-		FixedPipelineState& StencilTest(const bool b) { return CommonBinaryState(GL_STENCIL_TEST, b); }
+		FixedPipelineState& StencilTest(bool b) { return CommonBinaryState(GL_STENCIL_TEST, b); }
 
-		FixedPipelineState& ColorMask(const bool r, const bool g, const bool b, const bool a) { return CommonNamedState(__func__, glColorMask, r, g, b, a); }
+		FixedPipelineState& ColorMask(bool r, bool g, bool b, bool a) { return CommonNamedState(__func__, glColorMask, r, g, b, a); }
 
-		//FixedPipelineState& Multisampling(const bool b) { return CommonBinaryState(GL_MULTISAMPLE, b); }
+		//FixedPipelineState& Multisampling(bool b) { return CommonBinaryState(GL_MULTISAMPLE, b); }
 		/// TODO
 
-		FixedPipelineState& ScissorTest(const bool b) { return CommonBinaryState(GL_SCISSOR_TEST, b); }
-		FixedPipelineState& ScissorRect(const GLint x, const GLint y, const GLint w, const GLint h) { return CommonNamedState(__func__, glScissor, x, y, w, h); }
+		FixedPipelineState& ScissorTest(bool b) { return CommonBinaryState(GL_SCISSOR_TEST, b); }
+		FixedPipelineState& ScissorRect(GLint x, GLint y, GLint w, GLint h) { return CommonNamedState(__func__, glScissor, x, y, w, h); }
 
-		FixedPipelineState& Viewport(const GLint x, const GLint y, const GLint w, const GLint h) { return CommonNamedState(__func__, glViewport, x, y, w, h); }
+		FixedPipelineState& Viewport(GLint x, GLint y, GLint w, GLint h) { return CommonNamedState(__func__, glViewport, x, y, w, h); }
 
+		FixedPipelineState& BindTexture(GLenum texRelUnit, GLenum texType, GLuint texID) { return CommonNamedState(__func__, BindTextureProxy, texRelUnit + GL_TEXTURE0, texType, texID); };
+		FixedPipelineState& LastActiveTexture(GLenum texRelUnit) { lastActiveTexture = texRelUnit + GL_TEXTURE0; return *this; }
+
+		//FixedPipelineState& BindShader(Shader::IProgramObject* po) {  }
+
+		/// applied in the end
+		FixedPipelineState& OnBind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(true, func)); return *this; };
+		/// applied in the beginning
+		FixedPipelineState& OnUnbind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(false, func)); return *this; };
 	public:
 		FixedPipelineState& operator=(const FixedPipelineState& other) = default; //copy
 		FixedPipelineState& operator=(FixedPipelineState&& other) = default; //move
@@ -102,6 +116,8 @@ namespace GL {
 		void Unbind() const { BindUnbind(false); }
 	private:
 		void BindUnbind(const bool bind) const;
+	private:
+		static void BindTextureProxy(GLenum texUnit, GLenum texType, GLuint texID) { glActiveTexture(texUnit); glBindTexture(texType, texID); }
 	private:
 		FixedPipelineState& CommonBinaryState(const GLenum state, bool b) {
 			binaryStates[state] = b;
@@ -131,6 +147,11 @@ namespace GL {
 
 		FixedPipelineState& CommonNamedState(const char* func, glE2Func&& f, GLenum v1, GLenum v2) {
 			e2States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2));
+			return *this;
+		}
+
+		FixedPipelineState& CommonNamedState(const char* func, glE3Func&& f, GLenum v1, GLenum v2, GLenum v3) {
+			e3States[hashString(func)] = std::make_pair(f, std::make_tuple(v1, v2, v3));
 			return *this;
 		}
 
@@ -167,14 +188,19 @@ namespace GL {
 
 		std::unordered_map<uint32_t, std::pair<glE1Func, std::tuple<GLenum>>> e1States;
 		std::unordered_map<uint32_t, std::pair<glE2Func, std::tuple<GLenum, GLenum>>> e2States;
+		std::unordered_map<uint32_t, std::pair<glE3Func, std::tuple<GLenum, GLenum, GLenum>>> e3States;
 
 		std::unordered_map<uint32_t, std::pair<glI4Func, std::tuple<GLint, GLint, GLint, GLint>>> i4States;
 
-		std::unordered_map<uint32_t, std::pair<glE2Func, std::tuple<GLenum, GLenum>>> e1f1States;
+		std::unordered_map<uint32_t, std::pair<glE1F1Func, std::tuple<GLenum, GLenum>>> e1f1States;
 
 		std::unordered_map<uint32_t, std::pair<glF1Func, std::tuple<GLfloat>>> f1States;
 		std::unordered_map<uint32_t, std::pair<glF2Func, std::tuple<GLfloat, GLfloat>>> f2States;
 		std::unordered_map<uint32_t, std::pair<glF4Func, std::tuple<GLfloat, GLfloat, GLfloat, GLfloat>>> f4States;
+
+		GLuint lastActiveTexture = ~0u;
+
+		std::vector<std::pair<bool, onBindUnbindFunc>> customOnBindUnbind;
 	private:
 		static std::stack<FixedPipelineState> statesChain;
 	};

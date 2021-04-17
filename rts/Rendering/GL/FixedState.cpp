@@ -5,6 +5,7 @@
 
 #include "System/type2.h"
 #include "System/float4.h"
+#include "Rendering/GlobalRendering.h"
 
 using namespace GL;
 FixedPipelineState::FixedPipelineState()
@@ -65,6 +66,43 @@ FixedPipelineState::FixedPipelineState()
 			auto viewPort = glGetIntT<std::array<int32_t, 4>>(GL_VIEWPORT);
 			Viewport(viewPort[0], viewPort[1], viewPort[2], viewPort[3]);
 		}
+		{
+			lastActiveTexture = glGetIntT(GL_ACTIVE_TEXTURE) - GL_TEXTURE0;
+		}
+		for (int texRelUnit = 0; texRelUnit < CGlobalRendering::MAX_TEXTURE_UNITS; ++texRelUnit)
+		{
+			// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTextures.xhtml
+			constexpr static std::array<std::pair<GLenum, GLenum>, 11> texTypes = {
+				std::make_pair(GL_TEXTURE_BINDING_1D, GL_TEXTURE_1D),
+				std::make_pair(GL_TEXTURE_BINDING_2D, GL_TEXTURE_2D),
+				std::make_pair(GL_TEXTURE_BINDING_3D, GL_TEXTURE_3D),
+				std::make_pair(GL_TEXTURE_BINDING_1D_ARRAY, GL_TEXTURE_1D_ARRAY),
+				std::make_pair(GL_TEXTURE_BINDING_2D_ARRAY, GL_TEXTURE_2D_ARRAY),
+				std::make_pair(GL_TEXTURE_BINDING_RECTANGLE, GL_TEXTURE_RECTANGLE),
+				std::make_pair(GL_TEXTURE_BINDING_BUFFER, GL_TEXTURE_BUFFER),
+				std::make_pair(GL_TEXTURE_BINDING_CUBE_MAP, GL_TEXTURE_CUBE_MAP),
+				std::make_pair(GL_TEXTURE_BINDING_CUBE_MAP_ARRAY, GL_TEXTURE_CUBE_MAP_ARRAY),
+				std::make_pair(GL_TEXTURE_BINDING_2D_MULTISAMPLE, GL_TEXTURE_2D_MULTISAMPLE),
+				std::make_pair(GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_2D_MULTISAMPLE_ARRAY)
+			};
+
+			bool found = false;
+			for (const auto [queryType, bindType] : texTypes) {
+				glActiveTexture(GL_TEXTURE0 + texRelUnit);
+				GLint texID = glGetIntT(queryType);
+				if (texID > 0) {
+					BindTexture(texRelUnit, bindType, texID);
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
+			BindTexture(texRelUnit, GL_TEXTURE_2D, 0u);
+		}
+		glActiveTexture(lastActiveTexture + GL_TEXTURE0); //revert just in case
 	}
 	else {
 		*this = statesChain.top(); //copy&paste previous state
@@ -73,9 +111,6 @@ FixedPipelineState::FixedPipelineState()
 
 void FixedPipelineState::BindUnbind(const bool bind) const
 {
-	if (!bind)
-		statesChain.pop();
-
 	#define APPLY_STATES(states) \
 	do { \
 		for (const auto [strhash, funcArgs] : states) { \
@@ -116,7 +151,15 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 		} \
 	} while (false)
 
+	//////////////////////////////////////////////////////////////////////////////////////////////
 
+	if (!bind)
+		statesChain.pop();
+
+	for (const auto& [onbind, func] : customOnBindUnbind) {
+		if (bind == onbind)
+			func();
+	}
 
 	if (bind) {
 		APPLY_STATES(b1States);
@@ -150,6 +193,7 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 		REVERT_STATES(f4States);
 	}
 
+
 	//now enable/disable states
 	for (const auto [state, status] : binaryStates) {
 		/*
@@ -166,6 +210,22 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 			glDisable(state);
 	}
 
-	if (bind)
+	if (lastActiveTexture < CGlobalRendering::MAX_TEXTURE_UNITS)
+		glActiveTexture(lastActiveTexture + GL_TEXTURE0);
+	else {
+		if (!bind && !statesChain.empty()) {
+			const auto prevLastActiveTexture = statesChain.top().lastActiveTexture;
+			if (prevLastActiveTexture < CGlobalRendering::MAX_TEXTURE_UNITS)
+				glActiveTexture(prevLastActiveTexture + GL_TEXTURE0);
+		}
+	}
+
+	for (const auto& [onbind, func] : customOnBindUnbind) {
+		if (bind == onbind)
+			func();
+	}
+
+	if (bind) {
 		statesChain.push(*this);
+	}
 }
