@@ -1,5 +1,5 @@
-#ifndef FIXED_STATE_H
-#define FIXED_STATE_H
+#ifndef FIXED_PIPELINE_STATE_H
+#define FIXED_PIPELINE_STATE_H
 
 #include <functional>
 #include <string>
