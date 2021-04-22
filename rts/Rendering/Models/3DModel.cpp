@@ -47,6 +47,9 @@ CR_BIND(LocalModel, )
 CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
 
+	CR_IGNORED(localModelMatIndex),
+	CR_IGNORED(transformMatSynced),
+
 	CR_IGNORED(boundingVolume),
 	CR_IGNORED(luaMaterialData)
 ))

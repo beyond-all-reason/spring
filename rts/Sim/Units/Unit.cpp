@@ -31,6 +31,7 @@
 #include "Map/ReadMap.h"
 
 #include "Rendering/GroundFlash.h"
+#include "Rendering/GlobalRendering.h"
 
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
@@ -387,6 +388,7 @@ void CUnit::PostInit(const CUnit* builder)
 
 void CUnit::PostLoad()
 {
+	lastUpdateFrame = ~0u;
 	eventHandler.RenderUnitCreated(this, isCloaked);
 }
 
@@ -1336,12 +1338,20 @@ void CUnit::ApplyImpulse(const float3& impulse) {
 
 CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 {
-	float3 interPos = synced ? pos : drawPos;
+	if (synced)
+		return ComposeMatrix(pos);
 
-	if (!synced && !fullread && !gu->spectatingFullView)
-		interPos += GetErrorVector(gu->myAllyTeam);
+	if (lastUpdateFrame < globalRendering->drawFrame || lastUpdateFrame == ~0u) {
+		float3 unsyncedPos = drawPos;
 
-	return (ComposeMatrix(interPos));
+		if (!fullread && !gu->spectatingFullView)
+			unsyncedPos += GetErrorVector(gu->myAllyTeam);
+
+		cachedUnsyncedMatrix = ComposeMatrix(unsyncedPos);
+		lastUpdateFrame = globalRendering->drawFrame;
+	}
+
+	return cachedUnsyncedMatrix;
 }
 
 /******************************************************************************/
@@ -2930,6 +2940,9 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER_UN(isSelected),
 	CR_MEMBER_UN(isIcon),
 	CR_MEMBER(iconRadius),
+
+	CR_IGNORED(lastUpdateFrame),
+	CR_IGNORED(cachedUnsyncedMatrix),
 
 	CR_MEMBER(stunned),
 
