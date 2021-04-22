@@ -373,6 +373,11 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 }
 
 
+LocalModel::LocalModel()
+{
+	CondReallocateMatMemStorage();
+}
+
 LocalModel::~LocalModel()
 {
 	if (localModelMatIndex < ~0u)
@@ -391,13 +396,11 @@ const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
 
 const CMatrix44f& LocalModel::GetUnsyncedTransformMatrix() const
 {
-	CondReallocateMatMemStorage();
 	return matricesMemStorage[localModelMatIndex];
 }
 
 CMatrix44f& LocalModel::GetUnsyncedTransformMatrix()
 {
-	CondReallocateMatMemStorage();
 	return matricesMemStorage[localModelMatIndex];
 }
 

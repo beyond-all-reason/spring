@@ -502,7 +502,7 @@ struct LocalModel
 {
 	CR_DECLARE_STRUCT(LocalModel)
 
-	LocalModel() {}
+	LocalModel();
 	~LocalModel();
 
 
