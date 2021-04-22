@@ -1,6 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "3DModel.h"
+#include "MatricesMemStorage.h"
+//#include "System/SpringMem.h"
 
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/myGL.h"
@@ -34,7 +36,8 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_IGNORED(original),
 
 	CR_IGNORED(dirty),
-	CR_IGNORED(modelSpaceMat),
+	//CR_IGNORED(modelSpaceMat),
+	CR_IGNORED(modelSpaceMatIndex),
 	CR_IGNORED(pieceSpaceMat),
 
 	CR_IGNORED(lodDispLists) //FIXME GL idx!
@@ -366,6 +369,30 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 }
 
 
+LocalModel::~LocalModel()
+{
+	if (localModelMatIndex < ~0u)
+		matricesMemStorage.Free(localModelMatIndex, 1u + pieces.size());
+
+	pieces.clear();
+}
+
+const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
+{
+	if (synced)
+		return transformMatSynced;
+	else
+		return matricesMemStorage[localModelMatIndex];
+}
+
+CMatrix44f& LocalModel::GetTransformMatrix(bool synced)
+{
+	if (synced)
+		return transformMatSynced;
+	else
+		return matricesMemStorage[localModelMatIndex];
+}
+
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
 	// make sure we do not get called for trees, etc
@@ -376,11 +403,11 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 		assert(pieces.size() == model->numPieces);
 
 		// PostLoad; only update the pieces
-		for (size_t n = 0; n < pieces.size(); n++) {
-			S3DModelPiece* omp = model->GetPiece(n);
+		for (size_t i = 0; i < pieces.size(); ++i) {
+			S3DModelPiece* omp = model->GetPiece(i);
 
-			pieces[n].original = omp;
-			pieces[n].dispListID = omp->GetDisplayListID();
+			pieces[i].original = omp;
+			pieces[i].dispListID = omp->GetDisplayListID();
 		}
 
 		pieces[0].UpdateChildMatricesRec(true);
@@ -394,6 +421,12 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	pieces.reserve(model->numPieces);
 
 	CreateLocalModelPieces(model->GetRootPiece());
+
+	localModelMatIndex = matricesMemStorage.Allocate(1u + model->numPieces);
+	LOG("localModelMatIndex = %u, size = %u", static_cast<uint32_t>(localModelMatIndex), static_cast<uint32_t>(1u + model->numPieces));
+	for (size_t i = 0; i < pieces.size(); i++) {
+		pieces[i].SetModelSpaceMatIndex(1u + localModelMatIndex + i);
+	}
 
 	// must recursively update matrices here too: for features
 	// LocalModel::Update is never called, but they might have
@@ -630,6 +663,21 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	dst = src;
 }
 
+const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
+{
+	if (dirty)
+		UpdateParentMatricesRec();
+
+	return GetModelSpaceMatrixRaw();
+}
+
+CMatrix44f& LocalModelPiece::GetModelSpaceMatrixRaw() const
+{
+	assert(modelSpaceMatIndex < ~0u);
+	//LOG("GetModelSpaceMatrixRaw %u", (uint32_t)modelSpaceMatIndex);
+	return matricesMemStorage[modelSpaceMatIndex];
+}
+
 
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 {
@@ -641,10 +689,10 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 	}
 
 	if (updateChildMatrices) {
-		modelSpaceMat = pieceSpaceMat;
+		GetModelSpaceMatrixRaw() = pieceSpaceMat;
 
 		if (parent != nullptr) {
-			modelSpaceMat >>= parent->modelSpaceMat;
+			GetModelSpaceMatrixRaw() >>= parent->GetModelSpaceMatrixRaw();
 		}
 	}
 
@@ -661,10 +709,10 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	dirty = false;
 
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
-	modelSpaceMat = pieceSpaceMat;
+	GetModelSpaceMatrixRaw() = pieceSpaceMat;
 
 	if (parent != nullptr)
-		modelSpaceMat >>= parent->modelSpaceMat;
+		GetModelSpaceMatrixRaw() >>= parent->GetModelSpaceMatrixRaw();
 }
 
 

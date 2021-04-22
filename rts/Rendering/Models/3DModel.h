@@ -459,8 +459,12 @@ struct LocalModelPiece
 	const float3& GetRotation() const { return rot; }
 	const float3& GetDirection() const { return dir; }
 
+	const size_t GetModelSpaceMatIndex() const { return modelSpaceMatIndex; }
+	void SetModelSpaceMatIndex(const size_t index) const { modelSpaceMatIndex = index; }
+
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
-	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	const CMatrix44f& GetModelSpaceMatrix() const;
+	CMatrix44f& GetModelSpaceMatrixRaw() const;
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -471,7 +475,8 @@ private:
 	float3 dir; // cached copy of original->GetEmitDir()
 
 	mutable CMatrix44f pieceSpaceMat; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
-	mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	//mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	mutable size_t modelSpaceMatIndex = ~0u;
 
 	CollisionVolume colvol;
 
@@ -498,7 +503,7 @@ struct LocalModel
 	CR_DECLARE_STRUCT(LocalModel)
 
 	LocalModel() {}
-	~LocalModel() { pieces.clear(); }
+	~LocalModel();
 
 
 	bool HasPiece(unsigned int i) const { return (i < pieces.size()); }
@@ -518,6 +523,8 @@ struct LocalModel
 	// raw forms, the piece-index must be valid
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
 	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
+	const CMatrix44f& GetTransformMatrix(bool synced) const;
+	      CMatrix44f& GetTransformMatrix(bool synced);
 
 	// used by all SolidObject's; accounts for piece movement
 	float GetDrawRadius() const { return (boundingVolume.GetBoundingRadius()); }
@@ -570,6 +577,9 @@ public:
 	std::vector<LocalModelPiece> pieces;
 
 private:
+	size_t localModelMatIndex = ~0u;
+	CMatrix44f transformMatSynced; // synced
+
 	// object-oriented box; accounts for piece movement
 	CollisionVolume boundingVolume;
 
