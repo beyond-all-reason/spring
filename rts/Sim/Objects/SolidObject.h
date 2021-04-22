@@ -367,7 +367,7 @@ public:
 	///< mobility information about this object (if NULL, object is either static or aircraft)
 	MoveDef* moveDef = nullptr;
 
-	LocalModel localModel;
+	mutable LocalModel localModel;
 	CollisionVolume collisionVolume;
 	CollisionVolume selectionVolume;
 

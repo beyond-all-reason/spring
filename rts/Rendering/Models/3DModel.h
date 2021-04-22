@@ -524,7 +524,7 @@ struct LocalModel
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
 	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
 	const CMatrix44f& GetTransformMatrix(bool synced) const;
-	      CMatrix44f& GetTransformMatrix(bool synced);
+	void SetTransformMatrix(bool synced, const CMatrix44f& mat);
 
 	// used by all SolidObject's; accounts for piece movement
 	float GetDrawRadius() const { return (boundingVolume.GetBoundingRadius()); }

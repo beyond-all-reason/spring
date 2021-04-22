@@ -388,7 +388,8 @@ void CUnit::PostInit(const CUnit* builder)
 
 void CUnit::PostLoad()
 {
-	lastUpdateFrame = ~0u;
+	lastUpdateFrame[false] = ~0u;
+	lastUpdateFrame[ true] = ~0u;
 	eventHandler.RenderUnitCreated(this, isCloaked);
 }
 
@@ -1338,20 +1339,28 @@ void CUnit::ApplyImpulse(const float3& impulse) {
 
 CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 {
-	if (synced)
-		return ComposeMatrix(pos);
 
-	if (lastUpdateFrame < globalRendering->drawFrame || lastUpdateFrame == ~0u) {
+	if (synced) {
+		uint32_t frameNumCl = std::max(gs->frameNum, 0);
+		if (lastUpdateFrame[true] < frameNumCl || lastUpdateFrame[true] == ~0u) {
+			CMatrix44f tmpMat = ComposeMatrix(pos);
+			localModel.SetTransformMatrix(true, tmpMat);
+			lastUpdateFrame[true] = frameNumCl;
+		}
+		return localModel.GetTransformMatrix(true);
+	}
+
+	if (lastUpdateFrame[false] < globalRendering->drawFrame || lastUpdateFrame[false] == ~0u) {
 		float3 unsyncedPos = drawPos;
 
 		if (!fullread && !gu->spectatingFullView)
 			unsyncedPos += GetErrorVector(gu->myAllyTeam);
 
-		cachedUnsyncedMatrix = ComposeMatrix(unsyncedPos);
-		lastUpdateFrame = globalRendering->drawFrame;
+		CMatrix44f tmpMat = ComposeMatrix(unsyncedPos);
+		localModel.SetTransformMatrix(false, tmpMat);
+		lastUpdateFrame[false] = globalRendering->drawFrame;
 	}
-
-	return cachedUnsyncedMatrix;
+	return localModel.GetTransformMatrix(false);
 }
 
 /******************************************************************************/
@@ -2942,7 +2951,6 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(iconRadius),
 
 	CR_IGNORED(lastUpdateFrame),
-	CR_IGNORED(cachedUnsyncedMatrix),
 
 	CR_MEMBER(stunned),
 

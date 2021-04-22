@@ -388,12 +388,12 @@ const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
 		return matricesMemStorage[localModelMatIndex];
 }
 
-CMatrix44f& LocalModel::GetTransformMatrix(bool synced)
+void LocalModel::SetTransformMatrix(bool synced, const CMatrix44f& mat)
 {
 	if (synced)
-		return transformMatSynced;
+		transformMatSynced = mat;
 	else
-		return matricesMemStorage[localModelMatIndex];
+		matricesMemStorage[localModelMatIndex] = mat;
 }
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)

@@ -543,8 +543,7 @@ public:
 	UnitTrackStruct* myTrack = nullptr;
 	icon::CIconData* myIcon = nullptr;
 private:
-	mutable uint32_t lastUpdateFrame = ~0u;
-	mutable CMatrix44f cachedUnsyncedMatrix;
+	mutable uint32_t lastUpdateFrame[2] = { ~0u, ~0u }; //unsynced, synced
 private:
 	// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)
 	bool stunned = false;
