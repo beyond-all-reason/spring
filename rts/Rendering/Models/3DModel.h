@@ -524,6 +524,7 @@ struct LocalModel
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
 	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
 	const CMatrix44f& GetTransformMatrix(bool synced) const;
+
 	void SetTransformMatrix(bool synced, const CMatrix44f& mat);
 
 	// used by all SolidObject's; accounts for piece movement
@@ -570,6 +571,11 @@ struct LocalModel
 private:
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);
 
+	void CondReallocateMatMemStorage() const;
+
+	const CMatrix44f& GetUnsyncedTransformMatrix() const;
+	      CMatrix44f& GetUnsyncedTransformMatrix();
+
 	void DrawPieces() const;
 	void DrawPiecesLOD(unsigned int lod) const;
 
@@ -577,7 +583,8 @@ public:
 	std::vector<LocalModelPiece> pieces;
 
 private:
-	size_t localModelMatIndex = ~0u;
+	mutable size_t localModelMatIndex = ~0u;
+	mutable size_t localModelMatCount =  0u;
 	CMatrix44f transformMatSynced; // synced
 
 	// object-oriented box; accounts for piece movement

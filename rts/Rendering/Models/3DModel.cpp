@@ -48,6 +48,7 @@ CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
 
 	CR_IGNORED(localModelMatIndex),
+	CR_IGNORED(localModelMatCount),
 	CR_IGNORED(transformMatSynced),
 
 	CR_IGNORED(boundingVolume),
@@ -375,7 +376,7 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 LocalModel::~LocalModel()
 {
 	if (localModelMatIndex < ~0u)
-		matricesMemStorage.Free(localModelMatIndex, 1u + pieces.size());
+		matricesMemStorage.Free(localModelMatIndex, localModelMatCount);
 
 	pieces.clear();
 }
@@ -385,7 +386,19 @@ const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
 	if (synced)
 		return transformMatSynced;
 	else
-		return matricesMemStorage[localModelMatIndex];
+		return GetUnsyncedTransformMatrix();
+}
+
+const CMatrix44f& LocalModel::GetUnsyncedTransformMatrix() const
+{
+	CondReallocateMatMemStorage();
+	return matricesMemStorage[localModelMatIndex];
+}
+
+CMatrix44f& LocalModel::GetUnsyncedTransformMatrix()
+{
+	CondReallocateMatMemStorage();
+	return matricesMemStorage[localModelMatIndex];
 }
 
 void LocalModel::SetTransformMatrix(bool synced, const CMatrix44f& mat)
@@ -393,7 +406,7 @@ void LocalModel::SetTransformMatrix(bool synced, const CMatrix44f& mat)
 	if (synced)
 		transformMatSynced = mat;
 	else
-		matricesMemStorage[localModelMatIndex] = mat;
+		GetUnsyncedTransformMatrix() = mat;
 }
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
@@ -425,11 +438,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 
 	CreateLocalModelPieces(model->GetRootPiece());
 
-	localModelMatIndex = matricesMemStorage.Allocate(1u + model->numPieces);
-	LOG("localModelMatIndex = %u, size = %u", static_cast<uint32_t>(localModelMatIndex), static_cast<uint32_t>(1u + model->numPieces));
-	for (size_t i = 0; i < pieces.size(); i++) {
-		pieces[i].SetModelSpaceMatIndex(1u + localModelMatIndex + i);
-	}
+	CondReallocateMatMemStorage();
 
 	// must recursively update matrices here too: for features
 	// LocalModel::Update is never called, but they might have
@@ -462,6 +471,22 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 	}
 
 	return lmpParent;
+}
+
+void LocalModel::CondReallocateMatMemStorage() const
+{
+	if (localModelMatCount == 1u + pieces.size())
+		return;
+
+	if (localModelMatIndex < ~0u)
+		matricesMemStorage.Free(localModelMatIndex, localModelMatCount);
+
+	localModelMatCount = 1u + pieces.size();
+	localModelMatIndex = matricesMemStorage.Allocate(localModelMatCount);
+	LOG("localModelMatIndex = %u, size = %u", static_cast<uint32_t>(localModelMatIndex), static_cast<uint32_t>(localModelMatCount));
+	for (size_t i = 0; i < pieces.size(); i++) {
+		pieces[i].SetModelSpaceMatIndex(1u + localModelMatIndex + i);
+	}
 }
 
 

@@ -9,7 +9,7 @@
 #include "System/Matrix44f.h"
 #include "Sim/Misc/Resource.h"
 
-#define TREE_RADIUS 20
+constexpr float TREE_RADIUS = 20.0f;
 
 struct SolidObjectDef;
 struct FeatureDef;
@@ -90,8 +90,8 @@ public:
 	bool UpdatePosition();
 	bool UpdateVelocity(const float3& dragAccel, const float3& gravAccel, const float3& movMask, const float3& velMask);
 
-	void SetTransform(const CMatrix44f& m, bool synced) { transMatrix[synced] = m; }
-	void UpdateTransform(const float3& p, bool synced) { transMatrix[synced] = std::move(ComposeMatrix(p)); }
+	//void SetTransform(const CMatrix44f& m, bool synced) { localModel.SetTransformMatrix(synced, m); }
+	void UpdateTransform(const float3& p, bool synced) { localModel.SetTransformMatrix(synced, std::move(ComposeMatrix(p))); }
 	void UpdateTransformAndPhysState();
 	void UpdateQuadFieldPosition(const float3& moveVec);
 
@@ -108,8 +108,8 @@ public:
 	// NOTE:
 	//   unlike CUnit which recalculates the matrix on each call
 	//   (and uses the synced and error args) CFeature caches it
-	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const final { return transMatrix[synced]; }
-	const CMatrix44f& GetTransformMatrixRef(bool synced = false) const { return transMatrix[synced]; }
+	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const final { return localModel.GetTransformMatrix(synced); }
+	const CMatrix44f& GetTransformMatrixRef(bool synced = false) const { return localModel.GetTransformMatrix(synced); }
 
 private:
 	void PostLoad();
@@ -155,7 +155,7 @@ public:
 
 private:
 	// [0] := unsynced, [1] := synced
-	CMatrix44f transMatrix[2];
+	//CMatrix44f transMatrix[2];
 };
 
 #endif // _FEATURE_H
