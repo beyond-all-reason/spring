@@ -30,7 +30,7 @@ namespace spring {
         }
 
         size_t Allocate(size_t numElems, bool withMutex = false);
-        void Free(size_t firstElem, size_t numElems);
+        void Free(size_t& firstElem, size_t numElems);
         const size_t GetSize() const { return data.size(); }
         std::vector<T>& GetData() { return data; }
 
@@ -94,7 +94,7 @@ namespace spring {
     }
 
     template<typename T>
-    inline void StablePosAllocator<T>::Free(size_t firstElem, size_t numElems)
+    inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
     {
         assert(firstElem + numElems <= data.size());
         assert(numElems > 0);
@@ -102,6 +102,8 @@ namespace spring {
         //lucky us
         if (firstElem + numElems == data.size()) {
             data.resize(firstElem);
+
+            firstElem = ~0u;
             return;
         }
 
@@ -133,6 +135,7 @@ namespace spring {
                 //emplace new sizeToPositions
                 sizeToPositions.emplace(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
 
+                firstElem = ~0u;
                 return;
             }
         }
@@ -153,6 +156,7 @@ namespace spring {
                     //erase old positionToSize
                     positionToSize.erase(positionToSizeAfterIt);
 
+                    firstElem = ~0u;
                     return;
                 }
             }
@@ -161,6 +165,9 @@ namespace spring {
         //no adjacent gaps found
         positionToSize.emplace(firstElem, numElems);
         sizeToPositions.emplace(numElems, firstElem);
+
+        firstElem = ~0u;
+        return;
     }
 }
 

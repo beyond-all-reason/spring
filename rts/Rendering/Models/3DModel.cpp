@@ -37,7 +37,7 @@ CR_REG_METADATA(LocalModelPiece, (
 
 	CR_IGNORED(dirty),
 	//CR_IGNORED(modelSpaceMat),
-	CR_IGNORED(modelSpaceMatIndex),
+	CR_IGNORED(allocatorIndex),
 	CR_IGNORED(pieceSpaceMat),
 
 	CR_IGNORED(lodDispLists) //FIXME GL idx!
@@ -47,8 +47,8 @@ CR_BIND(LocalModel, )
 CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
 
-	CR_IGNORED(localModelMatIndex),
-	CR_IGNORED(localModelMatCount),
+	CR_IGNORED(allocatorIndex),
+	CR_IGNORED(allocatorCount),
 	CR_IGNORED(transformMatSynced),
 
 	CR_IGNORED(boundingVolume),
@@ -392,8 +392,8 @@ LocalModel::LocalModel()
 
 LocalModel::~LocalModel()
 {
-	if (localModelMatIndex < ~0u)
-		matricesMemStorage.Free(localModelMatIndex, localModelMatCount);
+	if (allocatorIndex < ~0u)
+		matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
 	pieces.clear();
 }
@@ -408,12 +408,12 @@ const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
 
 const CMatrix44f& LocalModel::GetUnsyncedTransformMatrix() const
 {
-	return matricesMemStorage[localModelMatIndex];
+	return matricesMemStorage[allocatorIndex];
 }
 
 CMatrix44f& LocalModel::GetUnsyncedTransformMatrix()
 {
-	return matricesMemStorage[localModelMatIndex];
+	return matricesMemStorage[allocatorIndex];
 }
 
 void LocalModel::SetTransformMatrix(bool synced, const CMatrix44f& mat)
@@ -490,17 +490,17 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 
 void LocalModel::CondReallocateMatMemStorage() const
 {
-	if (localModelMatCount == 1u + pieces.size())
+	if (allocatorCount == 1u + pieces.size())
 		return;
 
-	if (localModelMatIndex < ~0u)
-		matricesMemStorage.Free(localModelMatIndex, localModelMatCount);
+	if (allocatorIndex < ~0u)
+		matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
-	localModelMatCount = 1u + pieces.size();
-	localModelMatIndex = matricesMemStorage.Allocate(localModelMatCount);
-	LOG("localModelMatIndex = %u, size = %u", static_cast<uint32_t>(localModelMatIndex), static_cast<uint32_t>(localModelMatCount));
+	allocatorCount = 1u + pieces.size();
+	allocatorIndex = matricesMemStorage.Allocate(allocatorCount);
+	LOG("allocatorIndex = %u, size = %u", static_cast<uint32_t>(allocatorIndex), static_cast<uint32_t>(allocatorCount));
 	for (size_t i = 0; i < pieces.size(); i++) {
-		pieces[i].SetModelSpaceMatIndex(1u + localModelMatIndex + i);
+		pieces[i].SetModelSpaceMatIndex(1u + allocatorIndex + i);
 	}
 }
 
@@ -664,6 +664,9 @@ void S3DModel::DeletePieces()
 
 	matricesMemStorage.Free(allocatorIndex, numPieces);
 
+	for (auto pieceObject : pieceObjects)
+		pieceObject->SetAllocatorIndex(~0u);
+
 	// NOTE: actual piece memory is owned by parser pools
 	pieceObjects.clear();
 }
@@ -732,9 +735,9 @@ const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
 
 CMatrix44f& LocalModelPiece::GetModelSpaceMatrixRaw() const
 {
-	assert(modelSpaceMatIndex < ~0u);
-	//LOG("GetModelSpaceMatrixRaw %u", (uint32_t)modelSpaceMatIndex);
-	return matricesMemStorage[modelSpaceMatIndex];
+	assert(allocatorIndex < ~0u);
+	//LOG("GetModelSpaceMatrixRaw %u", (uint32_t)allocatorIndex);
+	return matricesMemStorage[allocatorIndex];
 }
 
 

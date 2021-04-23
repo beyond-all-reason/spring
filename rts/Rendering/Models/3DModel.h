@@ -104,7 +104,9 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		BPoseMatrix().LoadIdentity();
+		if (allocatorIndex < ~0u) //kludge
+			BPoseMatrix().LoadIdentity();
+
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -469,8 +471,8 @@ struct LocalModelPiece
 	const float3& GetRotation() const { return rot; }
 	const float3& GetDirection() const { return dir; }
 
-	const size_t GetModelSpaceMatIndex() const { return modelSpaceMatIndex; }
-	void SetModelSpaceMatIndex(const size_t index) const { modelSpaceMatIndex = index; }
+	const size_t GetModelSpaceMatIndex() const { return allocatorIndex; }
+	void SetModelSpaceMatIndex(const size_t index) const { allocatorIndex = index; }
 
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
 	const CMatrix44f& GetModelSpaceMatrix() const;
@@ -486,7 +488,7 @@ private:
 
 	mutable CMatrix44f pieceSpaceMat; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
 	//mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
-	mutable size_t modelSpaceMatIndex = ~0u;
+	mutable size_t allocatorIndex = ~0u;
 
 	CollisionVolume colvol;
 
@@ -593,8 +595,8 @@ public:
 	std::vector<LocalModelPiece> pieces;
 
 private:
-	mutable size_t localModelMatIndex = ~0u;
-	mutable size_t localModelMatCount =  0u;
+	mutable size_t allocatorIndex = ~0u;
+	mutable size_t allocatorCount =  0u;
 	CMatrix44f transformMatSynced; // synced
 
 	// object-oriented box; accounts for piece movement
