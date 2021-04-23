@@ -79,7 +79,7 @@ void S3DModelPiece::DrawStatic() const
 		return;
 
 	glPushMatrix();
-	glMultMatrixf(bposeMatrix);
+	glMultMatrixf(BPoseMatrix());
 	glCallList(dispListID);
 	glPopMatrix();
 }
@@ -119,6 +119,18 @@ void S3DModelPiece::CreateShatterPieces()
 	vboShatterIndices.Unbind();
 }
 
+
+const CMatrix44f& S3DModelPiece::BPoseMatrix() const
+{
+	assert(allocatorIndex < ~0u);
+	return matricesMemStorage[allocatorIndex];
+}
+
+CMatrix44f& S3DModelPiece::BPoseMatrix()
+{
+	assert(allocatorIndex < ~0u);
+	return matricesMemStorage[allocatorIndex];
+}
 
 void S3DModelPiece::CreateShatterPiecesVariation(const int num)
 {
@@ -644,6 +656,22 @@ void S3DModel::UploadToVBO(const std::vector<SVertexData>& vertices, const std::
 		indxVBO->Unbind();
 	}
 
+}
+
+void S3DModel::DeletePieces()
+{
+	assert(!pieceObjects.empty());
+
+	matricesMemStorage.Free(allocatorIndex, numPieces);
+
+	// NOTE: actual piece memory is owned by parser pools
+	pieceObjects.clear();
+}
+
+void S3DModel::AllocateMatrices()
+{
+	// this one needs lock, because the call is called from thread pool
+	allocatorIndex = matricesMemStorage.Allocate(numPieces, true);
 }
 
 /** ****************************************************************************************************

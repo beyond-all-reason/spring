@@ -8,6 +8,8 @@
 
 #include <cassert>
 
+#include "System/Threading/SpringThreading.h"
+
 namespace spring {
 	void* AllocateAlignedMemory(size_t size, size_t alignment);
 	void FreeAlignedMemory(void* ptr);
@@ -27,22 +29,36 @@ namespace spring {
             positionToSize.clear();
         }
 
-        size_t Allocate(size_t numElems);
+        size_t Allocate(size_t numElems, bool withMutex = false);
         void Free(size_t firstElem, size_t numElems);
         const size_t GetSize() const { return data.size(); }
         std::vector<T>& GetData() { return data; }
 
         T& operator[](std::size_t idx) { return data[idx]; }
         const T& operator[](std::size_t idx) const { return data[idx]; }
-
     private:
+        size_t AllocateImpl(size_t numElems);
+    private:
+        spring::mutex mut;
         std::vector<T> data;
         std::multimap<size_t, size_t> sizeToPositions;
         std::map<size_t, size_t> positionToSize;
     };
 
+
     template<typename T>
-    inline size_t StablePosAllocator<T>::Allocate(size_t numElems)
+    inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool withMutex)
+    {
+        if (withMutex) {
+            std::lock_guard<spring::mutex> lck(mutex);
+            return AllocateImpl(numElems);
+        }
+        else
+            return AllocateImpl(numElems);
+    }
+
+    template<typename T>
+    inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
     {
         assert(numElems > 0);
 

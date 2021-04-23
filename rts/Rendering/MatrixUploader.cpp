@@ -184,7 +184,7 @@ bool MatrixUploader::UpdateObjectDefs()
 
 			const int elemBeginIndex = std::distance(matrices.cbegin(), matrices.cend());
 			for (const auto* piece : model->pieceObjects) {
-				matrices.emplace_back(piece->bposeMatrix);
+				matrices.emplace_back(piece->BPoseMatrix());
 			}
 			const int elemEndIndex = std::distance(matrices.cbegin(), matrices.cend());
 

@@ -104,7 +104,7 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		bposeMatrix.LoadIdentity();
+		BPoseMatrix().LoadIdentity();
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -163,10 +163,10 @@ public:
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
 
 	void SetPieceMatrix(const CMatrix44f& m) {
-		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
+		BPoseMatrix() = m * ComposeTransform(offset, ZeroVector, scales);
 
 		for (S3DModelPiece* c: children) {
-			c->SetPieceMatrix(bposeMatrix);
+			c->SetPieceMatrix(BPoseMatrix());
 		}
 	}
 	void SetBakedMatrix(const CMatrix44f& m) {
@@ -193,6 +193,11 @@ public:
 		return m;
 	}
 
+	void SetAllocatorIndex(const size_t allocatorIndex_) { allocatorIndex = allocatorIndex_; }
+
+	const CMatrix44f& BPoseMatrix() const;
+	      CMatrix44f& BPoseMatrix();
+
 	void SetCollisionVolume(const CollisionVolume& cv) { colvol = cv; }
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -211,7 +216,8 @@ public:
 	S3DModelPiece* parent = nullptr;
 	CollisionVolume colvol;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
+	size_t allocatorIndex = ~0u;
+	//CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
 	CMatrix44f bakedMatrix;      /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
@@ -263,6 +269,8 @@ struct S3DModel
 
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
+
+		, allocatorIndex(~0u)
 	{
 
 	}
@@ -294,6 +302,8 @@ struct S3DModel
 
 		curVertStartIndx = m.curVertStartIndx;
 		curIndxStartIndx = m.curIndxStartIndx;
+
+		allocatorIndex = m.allocatorIndex;
 
 		pieceObjects = std::move(m.pieceObjects);
 		for_each(pieceObjects.begin(), pieceObjects.end(), [this](S3DModelPiece* p) { p->SetParentModel(this); });
@@ -327,17 +337,14 @@ struct S3DModel
 	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
 	void SetPieceMatrices() { pieceObjects[0]->SetPieceMatrix(CMatrix44f()); }
-	void DeletePieces() {
-		assert(!pieceObjects.empty());
-
-		// NOTE: actual piece memory is owned by parser pools
-		pieceObjects.clear();
-	}
+	void DeletePieces();
+	void AllocateMatrices();
 	void FlattenPieceTree(S3DModelPiece* root) {
 		assert(root != nullptr);
 
 		pieceObjects.clear();
 		pieceObjects.reserve(numPieces);
+		AllocateMatrices();
 
 		std::vector<S3DModelPiece*> stack = {root};
 
@@ -346,6 +353,7 @@ struct S3DModel
 
 			stack.pop_back();
 			pieceObjects.push_back(p);
+			pieceObjects.back()->SetAllocatorIndex(allocatorIndex + pieceObjects.size());
 
 			// add children in reverse for the correct DF traversal order
 			for (size_t n = 0; n < p->children.size(); n++) {
@@ -388,6 +396,8 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+private:
+	size_t allocatorIndex; //numPieces will serve as counter
 };
 
 
