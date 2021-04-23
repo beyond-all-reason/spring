@@ -341,28 +341,7 @@ struct S3DModel
 	void SetPieceMatrices() { pieceObjects[0]->SetPieceMatrix(CMatrix44f()); }
 	void DeletePieces();
 	void AllocateMatrices();
-	void FlattenPieceTree(S3DModelPiece* root) {
-		assert(root != nullptr);
-
-		pieceObjects.clear();
-		pieceObjects.reserve(numPieces);
-		AllocateMatrices();
-
-		std::vector<S3DModelPiece*> stack = {root};
-
-		while (!stack.empty()) {
-			S3DModelPiece* p = stack.back();
-
-			stack.pop_back();
-			pieceObjects.push_back(p);
-			pieceObjects.back()->SetAllocatorIndex(allocatorIndex + pieceObjects.size());
-
-			// add children in reverse for the correct DF traversal order
-			for (size_t n = 0; n < p->children.size(); n++) {
-				stack.push_back(p->children[p->children.size() - n - 1]);
-			}
-		}
-	}
+	void FlattenPieceTree(S3DModelPiece* root);
 
 	// default values set by parsers; radius is also cached in WorldObject::drawRadius (used by projectiles)
 	float CalcDrawRadius() const { return ((maxs - mins).Length() * 0.5f); }
@@ -536,8 +515,7 @@ struct LocalModel
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
 	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
 	const CMatrix44f& GetTransformMatrix(bool synced) const;
-
-	void SetTransformMatrix(bool synced, const CMatrix44f& mat);
+	      CMatrix44f& GetTransformMatrix(bool synced);
 
 	// used by all SolidObject's; accounts for piece movement
 	float GetDrawRadius() const { return (boundingVolume.GetBoundingRadius()); }

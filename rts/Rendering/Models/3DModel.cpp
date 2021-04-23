@@ -393,12 +393,20 @@ LocalModel::LocalModel()
 LocalModel::~LocalModel()
 {
 	if (allocatorIndex < ~0u)
-		matricesMemStorage.Free(allocatorIndex, allocatorCount);
+		allocatorIndex = matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
 	pieces.clear();
 }
 
 const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
+{
+	if (synced)
+		return transformMatSynced;
+	else
+		return GetUnsyncedTransformMatrix();
+}
+
+CMatrix44f& LocalModel::GetTransformMatrix(bool synced)
 {
 	if (synced)
 		return transformMatSynced;
@@ -416,13 +424,6 @@ CMatrix44f& LocalModel::GetUnsyncedTransformMatrix()
 	return matricesMemStorage[allocatorIndex];
 }
 
-void LocalModel::SetTransformMatrix(bool synced, const CMatrix44f& mat)
-{
-	if (synced)
-		transformMatSynced = mat;
-	else
-		GetUnsyncedTransformMatrix() = mat;
-}
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
@@ -494,7 +495,7 @@ void LocalModel::CondReallocateMatMemStorage() const
 		return;
 
 	if (allocatorIndex < ~0u)
-		matricesMemStorage.Free(allocatorIndex, allocatorCount);
+		allocatorIndex = matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
 	allocatorCount = 1u + pieces.size();
 	allocatorIndex = matricesMemStorage.Allocate(allocatorCount);
@@ -662,7 +663,7 @@ void S3DModel::DeletePieces()
 {
 	assert(!pieceObjects.empty());
 
-	matricesMemStorage.Free(allocatorIndex, numPieces);
+	allocatorIndex = matricesMemStorage.Free(allocatorIndex, numPieces);
 
 	for (auto pieceObject : pieceObjects)
 		pieceObject->SetAllocatorIndex(~0u);
@@ -675,6 +676,30 @@ void S3DModel::AllocateMatrices()
 {
 	// this one needs lock, because the call is called from thread pool
 	allocatorIndex = matricesMemStorage.Allocate(numPieces, true);
+}
+
+void S3DModel::FlattenPieceTree(S3DModelPiece* root)
+{
+	assert(root != nullptr);
+
+	pieceObjects.clear();
+	pieceObjects.reserve(numPieces);
+	AllocateMatrices();
+
+	std::vector<S3DModelPiece*> stack = { root };
+
+	while (!stack.empty()) {
+		S3DModelPiece* p = stack.back();
+
+		stack.pop_back();
+		pieceObjects.push_back(p);
+		pieceObjects.back()->SetAllocatorIndex(allocatorIndex + pieceObjects.size());
+
+		// add children in reverse for the correct DF traversal order
+		for (size_t n = 0; n < p->children.size(); n++) {
+			stack.push_back(p->children[p->children.size() - n - 1]);
+		}
+	}
 }
 
 /** ****************************************************************************************************

@@ -388,8 +388,6 @@ void CUnit::PostInit(const CUnit* builder)
 
 void CUnit::PostLoad()
 {
-	lastUpdateFrame[false] = ~0u;
-	lastUpdateFrame[ true] = ~0u;
 	eventHandler.RenderUnitCreated(this, isCloaked);
 }
 
@@ -1341,24 +1339,17 @@ CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 {
 
 	if (synced) {
-		uint32_t frameNumCl = std::max(gs->frameNum, 0);
-		if (lastUpdateFrame[true] < frameNumCl || lastUpdateFrame[true] == ~0u) {
-			CMatrix44f tmpMat = ComposeMatrix(pos);
-			localModel.SetTransformMatrix(true, tmpMat);
-			lastUpdateFrame[true] = frameNumCl;
-		}
+		localModel.GetTransformMatrix(true) = ComposeMatrix(pos);
 		return localModel.GetTransformMatrix(true);
 	}
 
-	if (lastUpdateFrame[false] < globalRendering->drawFrame || lastUpdateFrame[false] == ~0u) {
+	{
 		float3 unsyncedPos = drawPos;
 
 		if (!fullread && !gu->spectatingFullView)
 			unsyncedPos += GetErrorVector(gu->myAllyTeam);
 
-		CMatrix44f tmpMat = ComposeMatrix(unsyncedPos);
-		localModel.SetTransformMatrix(false, tmpMat);
-		lastUpdateFrame[false] = globalRendering->drawFrame;
+		localModel.GetTransformMatrix(false) = ComposeMatrix(unsyncedPos);
 	}
 	return localModel.GetTransformMatrix(false);
 }
@@ -2949,8 +2940,6 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER_UN(isSelected),
 	CR_MEMBER_UN(isIcon),
 	CR_MEMBER(iconRadius),
-
-	CR_IGNORED(lastUpdateFrame),
 
 	CR_MEMBER(stunned),
 

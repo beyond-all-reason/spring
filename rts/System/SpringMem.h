@@ -9,6 +9,7 @@
 #include <cassert>
 
 #include "System/Threading/SpringThreading.h"
+#include "System/Log/ILog.h"
 
 namespace spring {
 	void* AllocateAlignedMemory(size_t size, size_t alignment);
@@ -30,7 +31,7 @@ namespace spring {
         }
 
         size_t Allocate(size_t numElems, bool withMutex = false);
-        void Free(size_t& firstElem, size_t numElems);
+        size_t Free(size_t firstElem, size_t numElems);
         const size_t GetSize() const { return data.size(); }
         std::vector<T>& GetData() { return data; }
 
@@ -74,6 +75,9 @@ namespace spring {
             if (it->first < numElems)
                 continue;
 
+            size_t returnPos = it->second;
+            positionToSize.erase(it->second);
+
             if (it->first > numElems) {
                 size_t gapSize = it->first - numElems;
                 size_t gapPos = it->second + numElems;
@@ -81,8 +85,6 @@ namespace spring {
                 positionToSize.emplace(gapPos, gapSize);
             }
 
-            size_t returnPos = it->second;
-            positionToSize.erase(it->second);
             sizeToPositions.erase(it);
             return returnPos;
         }
@@ -94,7 +96,7 @@ namespace spring {
     }
 
     template<typename T>
-    inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
+    inline size_t StablePosAllocator<T>::Free(size_t firstElem, size_t numElems)
     {
         assert(firstElem + numElems <= data.size());
         assert(numElems > 0);
@@ -103,8 +105,7 @@ namespace spring {
         if (firstElem + numElems == data.size()) {
             data.resize(firstElem);
 
-            firstElem = ~0u;
-            return;
+            return ~0u;
         }
 
         const auto eraseSizeToPositionsKV = [this](size_t size, size_t pos) {
@@ -135,8 +136,7 @@ namespace spring {
                 //emplace new sizeToPositions
                 sizeToPositions.emplace(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
 
-                firstElem = ~0u;
-                return;
+                return ~0u;
             }
         }
 
@@ -156,8 +156,7 @@ namespace spring {
                     //erase old positionToSize
                     positionToSize.erase(positionToSizeAfterIt);
 
-                    firstElem = ~0u;
-                    return;
+                    return ~0u;
                 }
             }
         }
@@ -166,8 +165,7 @@ namespace spring {
         positionToSize.emplace(firstElem, numElems);
         sizeToPositions.emplace(numElems, firstElem);
 
-        firstElem = ~0u;
-        return;
+        return ~0u;
     }
 }
 

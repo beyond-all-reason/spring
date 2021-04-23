@@ -90,8 +90,7 @@ public:
 	bool UpdatePosition();
 	bool UpdateVelocity(const float3& dragAccel, const float3& gravAccel, const float3& movMask, const float3& velMask);
 
-	//void SetTransform(const CMatrix44f& m, bool synced) { localModel.SetTransformMatrix(synced, m); }
-	void UpdateTransform(const float3& p, bool synced) { localModel.SetTransformMatrix(synced, std::move(ComposeMatrix(p))); }
+	void UpdateTransform(const float3& p, bool synced) { localModel.GetTransformMatrix(synced) = ComposeMatrix(p); }
 	void UpdateTransformAndPhysState();
 	void UpdateQuadFieldPosition(const float3& moveVec);
 
