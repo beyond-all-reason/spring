@@ -20,6 +20,14 @@ namespace spring {
     template <typename T>
     class StablePosAllocator {
     public:
+        static constexpr bool reportWork = false;
+        template<typename ...Args>
+        static void myLog(Args&&... args) {
+            if (!reportWork)
+                return;
+            LOG(std::forward<Args>(args)...);
+        }
+    public:
         StablePosAllocator() = default;
         StablePosAllocator(size_t initialSize) :StablePosAllocator() {
             data.reserve(initialSize);
@@ -31,7 +39,7 @@ namespace spring {
         }
 
         size_t Allocate(size_t numElems, bool withMutex = false);
-        size_t Free(size_t firstElem, size_t numElems);
+        void Free(size_t& firstElem, size_t numElems);
         const size_t GetSize() const { return data.size(); }
         std::vector<T>& GetData() { return data; }
 
@@ -67,6 +75,7 @@ namespace spring {
         if (positionToSize.empty()) {
             size_t returnPos = data.size();
             data.resize(data.size() + numElems);
+            myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
             return returnPos;
         }
 
@@ -86,17 +95,19 @@ namespace spring {
             }
 
             sizeToPositions.erase(it);
+            myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
             return returnPos;
         }
 
         //all gaps are too small
         size_t returnPos = data.size();
         data.resize(data.size() + numElems);
+        myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
         return returnPos;
     }
 
     template<typename T>
-    inline size_t StablePosAllocator<T>::Free(size_t firstElem, size_t numElems)
+    inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
     {
         assert(firstElem + numElems <= data.size());
         assert(numElems > 0);
@@ -105,7 +116,9 @@ namespace spring {
         if (firstElem + numElems == data.size()) {
             data.resize(firstElem);
 
-            return ~0u;
+            myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+            firstElem = ~0u;
+            return;
         }
 
         const auto eraseSizeToPositionsKV = [this](size_t size, size_t pos) {
@@ -136,7 +149,9 @@ namespace spring {
                 //emplace new sizeToPositions
                 sizeToPositions.emplace(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
 
-                return ~0u;
+                myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+                firstElem = ~0u;
+                return;
             }
         }
 
@@ -156,7 +171,9 @@ namespace spring {
                     //erase old positionToSize
                     positionToSize.erase(positionToSizeAfterIt);
 
-                    return ~0u;
+                    myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+                    firstElem = ~0u;
+                    return;
                 }
             }
         }
@@ -165,7 +182,9 @@ namespace spring {
         positionToSize.emplace(firstElem, numElems);
         sizeToPositions.emplace(numElems, firstElem);
 
-        return ~0u;
+        myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+        firstElem = ~0u;
+        return;
     }
 }
 

@@ -169,7 +169,7 @@ void GL::LightHandler::Update(Shader::IProgramObject* shader) {
 					const CProjectile* po = static_cast<const CProjectile*>(light.GetTrackObject());
 
 					if (light.LocalSpace()) {
-						const CMatrix44f m = po->GetTransformMatrix(false);
+						const CMatrix44f m = po->GetTransformMatrix();
 
 						lightPos = m * lightPos;
 						lightDir = m * lightDir;

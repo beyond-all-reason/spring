@@ -16,12 +16,12 @@ public:
 public:
 	void Reset() { spa->Reset(); };
 	size_t Allocate(size_t numElems, bool withMutex = false) { return spa->Allocate(numElems, withMutex); };
-	size_t Free(size_t firstElem, size_t numElems) { return spa->Free(firstElem, numElems); };
+	void Free(size_t& firstElem, size_t numElems) { spa->Free(firstElem, numElems); };
     const size_t GetSize() const { return spa->GetSize(); }
     std::vector<CMatrix44f>& GetData() { return spa->GetData(); }
 
-	      CMatrix44f& operator[](std::size_t idx)       { return (*spa)[idx]; }
-	const CMatrix44f& operator[](std::size_t idx) const { return (*spa)[idx]; }
+	const CMatrix44f& operator[](std::size_t idx) const { return spa->operator[](idx); }
+	      CMatrix44f& operator[](std::size_t idx)       { return spa->operator[](idx); }
 public:
 	static constexpr int INIT_NUM_ELEMS = 1 << 16u;
 private:

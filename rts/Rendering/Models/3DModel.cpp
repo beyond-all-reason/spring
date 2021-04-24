@@ -393,7 +393,7 @@ LocalModel::LocalModel()
 LocalModel::~LocalModel()
 {
 	if (allocatorIndex < ~0u)
-		allocatorIndex = matricesMemStorage.Free(allocatorIndex, allocatorCount);
+		matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
 	pieces.clear();
 }
@@ -495,11 +495,10 @@ void LocalModel::CondReallocateMatMemStorage() const
 		return;
 
 	if (allocatorIndex < ~0u)
-		allocatorIndex = matricesMemStorage.Free(allocatorIndex, allocatorCount);
+		matricesMemStorage.Free(allocatorIndex, allocatorCount);
 
 	allocatorCount = 1u + pieces.size();
 	allocatorIndex = matricesMemStorage.Allocate(allocatorCount);
-	LOG("allocatorIndex = %u, size = %u", static_cast<uint32_t>(allocatorIndex), static_cast<uint32_t>(allocatorCount));
 	for (size_t i = 0; i < pieces.size(); i++) {
 		pieces[i].SetModelSpaceMatIndex(1u + allocatorIndex + i);
 	}
@@ -663,7 +662,8 @@ void S3DModel::DeletePieces()
 {
 	assert(!pieceObjects.empty());
 
-	allocatorIndex = matricesMemStorage.Free(allocatorIndex, numPieces);
+	if (allocatorIndex < ~0u)
+		matricesMemStorage.Free(allocatorIndex, numPieces);
 
 	for (auto pieceObject : pieceObjects)
 		pieceObject->SetAllocatorIndex(~0u);

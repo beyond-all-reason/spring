@@ -196,6 +196,7 @@ public:
 	}
 
 	void SetAllocatorIndex(const size_t allocatorIndex_) { allocatorIndex = allocatorIndex_; }
+	size_t GetAllocatorIndex() const { return allocatorIndex; }
 
 	const CMatrix44f& BPoseMatrix() const;
 	      CMatrix44f& BPoseMatrix();
@@ -218,7 +219,6 @@ public:
 	S3DModelPiece* parent = nullptr;
 	CollisionVolume colvol;
 
-	size_t allocatorIndex = ~0u;
 	//CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
 	CMatrix44f bakedMatrix;      /// baked local-space rotations
 
@@ -236,6 +236,8 @@ protected:
 	std::vector<SVertexData> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
+
+	size_t allocatorIndex = ~0u;
 
 	VBO vboShatterIndices;
 
@@ -352,6 +354,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
+	size_t GetAllocatorIndex() const { return allocatorIndex; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];

@@ -1,8 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Projectile.h"
+#include "PieceProjectile.h"
+#include "WeaponProjectiles/WeaponProjectileTypes.h"
+
 #include "Map/MapInfo.h"
 #include "Rendering/Colors.h"
+#include "Rendering/Models/MatricesMemStorage.h"
 #include "Rendering/GL/VertexArray.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -51,6 +55,8 @@ CR_REG_METADATA(CProjectile,
 	CR_MEMBER(collisionFlags),
 	CR_IGNORED(renderIndex),
 
+	CR_IGNORED(allocatorIndex),
+
 	CR_MEMBER(quads)
 ))
 
@@ -81,16 +87,25 @@ CProjectile::CProjectile(
 	, mygravity((mapInfo != nullptr)? mapInfo->map.gravity: 0.0f)
 {
 	SetRadiusAndHeight(1.7f, 0.0f);
+
+	if (synced) //TODO: remove?
+		allocatorIndex = matricesMemStorage.Allocate(1u, false);
+
 	Init(owner, ZeroVector);
 }
 
 
 CProjectile::~CProjectile()
 {
-	if (!synced)
-		return;
+	if (allocatorIndex < ~0u)
+		matricesMemStorage.Free(allocatorIndex, 1u);
 
-	quadField.RemoveProjectile(this);
+	if (synced) {
+		quadField.RemoveProjectile(this);
+#ifdef TRACE_SYNC
+		tracefile << "Projectile died id: " << id << ", pos: <" << pos.x << ", " << pos.y << ", " << pos.z << ">\n";
+#endif
+	}
 }
 
 void CProjectile::Init(const CUnit* owner, const float3& offset)
@@ -151,22 +166,46 @@ CUnit* CProjectile::owner() const {
 }
 
 
-CMatrix44f CProjectile::GetTransformMatrix(bool offsetPos) const {
-	float3 xdir;
-	float3 ydir;
 
-	if (math::fabs(dir.y) < 0.95f) {
-		xdir = dir.cross(UpVector);
-		xdir.SafeANormalize();
-	} else {
-		xdir.x = 1.0f;
+
+
+
+
+
+// GetTransformMatrix() is called stateless, ad-hoc. TODO: make stateful with luaMoveCtrl in mind?
+// only called for weapon == true
+const CMatrix44f& CProjectile::GetTransformMatrix() const
+{
+	assert(allocatorIndex < ~0u);
+
+	if (piece) {
+		const CPieceProjectile* pp = static_cast<const CPieceProjectile*>(this);
+
+		matricesMemStorage[allocatorIndex] = CMatrix44f(drawPos).Rotate(pp->GetDrawAngle(), pp->spinVec);
+	}
+	else
+	{
+		assert(weapon == true);
+		const bool offsetPos = (projectileType == WEAPON_MISSILE_PROJECTILE);
+
+		float3 xdir;
+		float3 ydir;
+
+		if (math::fabs(dir.y) < 0.95f) {
+			xdir = dir.cross(UpVector);
+			xdir.SafeANormalize();
+		}
+		else {
+			xdir.x = 1.0f;
+		}
+
+		ydir = xdir.cross(dir);
+
+		matricesMemStorage[allocatorIndex] = CMatrix44f(drawPos + (dir * radius * 0.9f * offsetPos), -xdir, ydir, dir);
 	}
 
-	ydir = xdir.cross(dir);
-
-	return (CMatrix44f(drawPos + (dir * radius * 0.9f * offsetPos), -xdir, ydir, dir));
+	return matricesMemStorage[allocatorIndex];
 }
-
 
 bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
