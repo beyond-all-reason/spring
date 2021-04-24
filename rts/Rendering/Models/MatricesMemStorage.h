@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "System/Matrix44f.h"
-#include "System/SpringMem.h"
+#include "System/MemPoolTypes.h"
 
 class MatricesMemStorage {
 public:
@@ -25,7 +25,34 @@ public:
 public:
 	static constexpr int INIT_NUM_ELEMS = 1 << 16u;
 private:
-	std::unique_ptr<spring::StablePosAllocator<CMatrix44f>> spa;
+	std::unique_ptr<StablePosAllocator<CMatrix44f>> spa;
 };
 
 #define matricesMemStorage MatricesMemStorage::GetInstance()
+
+class ScopedMatricesMemAlloc {
+public:
+	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(1u) {};
+	ScopedMatricesMemAlloc(size_t numElems_) : numElems{numElems_} {
+		firstElem = MatricesMemStorage::GetInstance().Allocate(numElems);
+	}
+	~ScopedMatricesMemAlloc() {
+		if (firstElem < ~0u && numElems > 0)
+			MatricesMemStorage::GetInstance().Free(firstElem, numElems);
+	}
+	ScopedMatricesMemAlloc& operator= (ScopedMatricesMemAlloc&&) = default;
+	ScopedMatricesMemAlloc& operator= (const ScopedMatricesMemAlloc&) = delete;
+
+	void operator()(const CMatrix44f& in, size_t offset = 0u) {
+		MatricesMemStorage::GetInstance()[firstElem + offset] = in;
+	}
+	const size_t operator()() const {
+		return firstElem;
+	}
+	const CMatrix44f& operator[](size_t offset) const {
+		return MatricesMemStorage::GetInstance()[firstElem + offset];
+	}
+private:
+	size_t firstElem = ~0u;
+	size_t numElems  =  0u;
+};
