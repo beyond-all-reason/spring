@@ -11,11 +11,11 @@
 #include "System/SpringMath.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
+#include "System/EventClient.h"
 
-class MatrixUploader {
+class MatrixUploader : public CEventClient {
 public:
 	static constexpr bool enabled = true;
-	static constexpr bool checkInView = false;
 	static MatrixUploader& GetInstance() {
 		static MatrixUploader instance;
 		return instance;
@@ -24,6 +24,29 @@ public:
 		static bool supported = enabled && VBO::IsSupported(GL_SHADER_STORAGE_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
 		return supported;
 	}
+public:
+	MatrixUploader() : CEventClient("[MatrixUploader]", 313374, false) {}
+	// CEventClient interface
+	virtual bool WantsEvent(const std::string& eventName) override {
+		return (
+			   eventName == "RenderUnitCreated"
+			|| eventName == "RenderUnitDestroyed"
+			|| eventName == "RenderFeatureCreated"
+			|| eventName == "RenderFeatureDestroyed"
+			|| eventName == "RenderProjectileCreated"
+			|| eventName == "RenderProjectileDestroyed"
+		);
+
+	}
+	virtual bool GetFullRead() const override { return true; }
+	virtual int GetReadAllyTeam() const override { return AllAccessTeam; }
+
+	virtual void RenderUnitCreated(const CUnit* unit, int cloaked) override {};
+	virtual void RenderUnitDestroyed(const CUnit* unit) override {};
+	virtual void RenderFeatureCreated(const CFeature* feature) override {};
+	virtual void RenderFeatureDestroyed(const CFeature* feature) override {};
+	virtual void RenderProjectileCreated(const CProjectile* projectile) override {};
+	virtual void RenderProjectileDestroyed(const CProjectile* projectile) override {};
 public:
 	void Init();
 	void Kill();
@@ -36,9 +59,6 @@ public:
 private:
 	template<typename TObj>
 	bool IsObjectVisible(const TObj* obj);
-
-	template<typename TObj>
-	bool IsInView(const TObj* obj);
 
 	template<typename TObj>
 	void GetVisibleObjects(std::map<int, const TObj*>& visibleObjects);
@@ -68,7 +88,7 @@ private:
 
 	std::vector<CMatrix44f> matrices;
 
-	VBO* matrixSSBO;
+	VBO* matrixSSBO = nullptr;
 };
 
 #endif //MATRIX_UPLOADER_H

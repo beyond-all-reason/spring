@@ -8,6 +8,7 @@
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 #include "System/SpringMath.h"
+#include "System/EventHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -44,6 +45,7 @@ void MatrixUploader::InitVBO(const uint32_t newElemCount)
 
 void MatrixUploader::Init()
 {
+	eventHandler.AddClient(this);
 	//LOG("MatrixUploader::Init()");
 	elemUpdateOffset = 0u;
 
@@ -68,7 +70,8 @@ void MatrixUploader::KillVBO()
 
 void MatrixUploader::Kill()
 {
-	//LOG("MatrixUploader::Kill()");
+	eventHandler.RemoveClient(this);
+
 	if (!MatrixUploader::Supported())
 		return;
 
@@ -87,19 +90,6 @@ bool MatrixUploader::IsObjectVisible(const TObj* obj)
 		return obj->IsInLosForAllyTeam(gu->myAllyTeam);
 }
 
-template<typename TObj>
-bool MatrixUploader::IsInView(const TObj* obj)
-{
-	if constexpr(!checkInView)
-		return true;
-
-	constexpr float leewayRadius = 16.0f;
-	if constexpr (std::is_same<TObj, CProjectile>::value)
-		return camera->InView(obj->drawPos   , leewayRadius + obj->GetDrawRadius());
-	else
-		return camera->InView(obj->drawMidPos, leewayRadius + obj->GetDrawRadius());
-}
-
 
 template<typename TObj>
 void MatrixUploader::GetVisibleObjects(std::map<int, const TObj*>& visibleObjects)
@@ -111,9 +101,6 @@ void MatrixUploader::GetVisibleObjects(std::map<int, const TObj*>& visibleObject
 			if (!IsObjectVisible(obj))
 				continue;
 
-			if (!IsInView(obj))
-				continue;
-
 			visibleObjects[obj->id] = obj;
 		}
 		return;
@@ -123,9 +110,6 @@ void MatrixUploader::GetVisibleObjects(std::map<int, const TObj*>& visibleObject
 		for (const int fID : featureHandler.GetActiveFeatureIDs()) {
 			const auto* obj = featureHandler.GetFeature(fID);
 			if (!IsObjectVisible(obj))
-				continue;
-
-			if (!IsInView(obj))
 				continue;
 
 			visibleObjects[fID] = obj;
@@ -147,9 +131,6 @@ void MatrixUploader::GetVisibleObjects(std::map<int, const TObj*>& visibleObject
 			//if (obj)
 
 			if (!IsObjectVisible(obj))
-				continue;
-
-			if (!IsInView(obj))
 				continue;
 
 			visibleObjects[iter++] = obj; //TODO: use projID instead of iter
