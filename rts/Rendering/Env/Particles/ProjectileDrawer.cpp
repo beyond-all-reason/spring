@@ -632,12 +632,12 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
+		if (!p->castShadow)
+			return;
+
 		// if this returns false, then projectile is
 		// neither weapon nor piece, or has no model
 		if (DrawProjectileModel(p))
-			return;
-
-		if (!p->castShadow)
 			return;
 
 		// don't need to z-sort in the shadow pass

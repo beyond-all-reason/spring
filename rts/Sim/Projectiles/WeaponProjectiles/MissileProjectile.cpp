@@ -20,8 +20,6 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
-#include "System/Log/ILog.h"
-
 const float CMissileProjectile::SMOKE_TIME = 60.0f;
 
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
@@ -94,7 +92,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	}
 
 	drawRadius = radius + maxSpeed * 8.0f;
-	castShadow = true;
+	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
 
 	CUnit* u = dynamic_cast<CUnit*>(target);
 	if (u == nullptr)
@@ -214,8 +212,6 @@ void CMissileProjectile::Update()
 			oldSmoke = pos;
 			oldDir = dir;
 		}
-
-		LOG("HELLO, v.smokePeriod = %d", weaponDef->visuals.smokePeriod);
 
 		if ((age % weaponDef->visuals.smokePeriod) == 0) {
 			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(

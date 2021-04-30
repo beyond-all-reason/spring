@@ -265,7 +265,7 @@ static int DamagesArray(lua_State* L, const void* data)
 static int VisualsTable(lua_State* L, const void* data)
 {
 	const struct WeaponDef::Visuals& v = *static_cast<const struct WeaponDef::Visuals*>(data);
-	lua_createtable(L, 0, 23);
+	lua_createtable(L, 0, 24);
 	HSTR_PUSH_STRING(L, "modelName",      modelLoader.FindModelPath(v.modelName));
 	HSTR_PUSH_NUMBER(L, "colorR",         v.color.x);
 	HSTR_PUSH_NUMBER(L, "colorG",         v.color.y);
@@ -286,6 +286,7 @@ static int VisualsTable(lua_State* L, const void* data)
 	HSTR_PUSH_NUMBER(L, "sizeDecay",      v.sizeDecay);
 	HSTR_PUSH_NUMBER(L, "alphaDecay",     v.alphaDecay);
 	HSTR_PUSH_NUMBER(L, "separation",     v.separation);
+	HSTR_PUSH_BOOL  (L, "castShadow",     v.castShadow);
 	HSTR_PUSH_BOOL  (L, "noGap",          v.noGap);
 	HSTR_PUSH_BOOL  (L, "alwaysVisible",  v.alwaysVisible);
 	HSTR_PUSH_BOOL  (L, "beamWeapon",     false); // DEPRECATED

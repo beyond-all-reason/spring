@@ -206,6 +206,7 @@ WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).
 // Missile
 WEAPONTAG(bool, smokeTrail, visuals.smokeTrail).defaultValue(false);
 WEAPONTAG(int, smokePeriod, visuals.smokePeriod).defaultValue(8);
+WEAPONTAG(bool, castShadow, visuals.castShadow).defaultValue(false); //TODO move out of missle block?
 
 // Cannon
 WEAPONTAG(float, sizeDecay, visuals.sizeDecay).defaultValue(0.0f);
