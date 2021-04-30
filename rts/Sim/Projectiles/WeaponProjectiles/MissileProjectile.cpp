@@ -20,6 +20,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include "System/Log/ILog.h"
+
 const float CMissileProjectile::SMOKE_TIME = 60.0f;
 
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
@@ -213,14 +215,16 @@ void CMissileProjectile::Update()
 			oldDir = dir;
 		}
 
-		if ((age % 8) == 0) {
+		LOG("HELLO, v.smokePeriod = %d", weaponDef->visuals.smokePeriod);
+
+		if ((age % weaponDef->visuals.smokePeriod) == 0) {
 			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(
 				own,
 				pos, oldSmoke,
 				dir, oldDir,
-				age == 8,
+				age == weaponDef->visuals.smokePeriod,
 				false,
-				7,
+				weaponDef->visuals.smokePeriod - 1,
 				SMOKE_TIME,
 				0.6f,
 				weaponDef->visuals.texture2

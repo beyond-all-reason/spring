@@ -241,6 +241,7 @@ public:
 
 		int lodDistance = 0;
 		int stages = 0;
+		int smokePeriod = 8;
 
 		float tilelength = 0.0f;
 		float scrollspeed = 0.0f;
