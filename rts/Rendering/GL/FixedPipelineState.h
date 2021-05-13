@@ -41,6 +41,59 @@ namespace GL {
 		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
 	};
 
+	class NamedSingleState {
+	public:
+		template<typename F, typename Args> NamedSingleState(F&& func, const Args& args) :
+			object(std::make_shared<ObjectModel<F, Args>>(func, args)) {
+		}
+
+		NamedSingleState() = default;
+		NamedSingleState(const NamedSingleState& rhs) = default;
+
+		bool operator !=(const NamedSingleState& rhs) const {
+			return !object->isSame(*rhs.object);
+		}
+		bool operator ==(const NamedSingleState& rhs) const {
+			return object->isSame(*rhs.object);
+		}
+
+		void apply() const {
+			object->apply();
+		}
+
+	private:
+		struct ObjectConcept {
+			virtual ~ObjectConcept() = default;
+			virtual void apply() const = 0;
+			virtual const std::type_info& typeInfo() const = 0;
+			virtual bool isSame(const ObjectConcept& rhs) const = 0;
+		};
+
+		template<typename F, typename T> struct ObjectModel : ObjectConcept {
+			ObjectModel(F&& func_, const T& args_)
+				: func{ func_ }, args{ args_ }
+			{}
+
+			void apply() const override {
+				std::apply(func, args);
+			}
+			const std::type_info& typeInfo() const override {
+				return typeid(args);
+			}
+			bool isSame(const ObjectConcept& rhs) const override {
+				if (typeInfo() != rhs.typeInfo())
+					return false;
+
+				return args == static_cast<const ObjectModel&>(rhs).args;
+			}
+		private:
+			F func;
+			T args;
+		};
+
+		std::shared_ptr<ObjectConcept> object;
+	};
+
 	#define DEBUG_PIPELINE_STATE 1
 	class FixedPipelineState {
 	private:
@@ -132,98 +185,17 @@ namespace GL {
 			return *this;
 		}
 
-		FixedPipelineState& CommonNamedState(const char* func, glB1Func&& f, bool b) {
-			const auto argsTuple = std::make_tuple(static_cast<GLboolean>(b));
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			b1States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glB4Func&& f, bool b1, bool b2, bool b3, bool b4) {
-			const auto argsTuple = std::make_tuple(
-				static_cast<GLboolean>(b1),
-				static_cast<GLboolean>(b2),
-				static_cast<GLboolean>(b3),
-				static_cast<GLboolean>(b4)
-			);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			b4States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glE1Func&& f, GLenum v) {
-			const auto argsTuple = std::make_tuple(v);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			e1States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glE2Func&& f, GLenum v1, GLenum v2) {
-			const auto argsTuple = std::make_tuple(v1, v2);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			e2States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glE3Func&& f, GLenum v1, GLenum v2, GLenum v3) {
-			const auto argsTuple = std::make_tuple(v1, v2, v3);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			e3States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glI4Func&& f, GLint v1, GLint v2, GLint v3, GLint v4) {
-			const auto argsTuple = std::make_tuple(v1, v2, v3, v4);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			i4States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glE1F1Func&& f, GLenum v1, GLfloat v2) {
-			const auto argsTuple = std::make_tuple(v1, v2);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			e1f1States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glF1Func&& f, GLfloat v) {
-			const auto argsTuple = std::make_tuple(v);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			f1States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glF2Func&& f, GLfloat v1, GLfloat v2) {
-			const auto argsTuple = std::make_tuple(v1, v2);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			f2States[hashString(func)] = std::make_pair(f, argsTuple);
-			return *this;
-		}
-
-		FixedPipelineState& CommonNamedState(const char* func, glF4Func&& f, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4) {
-			const auto argsTuple = std::make_tuple(v1, v2, v3, v4);
-			DumpState(std::tuple_cat(std::make_tuple(func), argsTuple));
-			f4States[hashString(func)] = std::make_pair(f, argsTuple);
+		template <class F, class ...Args>
+		FixedPipelineState& CommonNamedState(const char* funcName, F func, Args... args) {
+			auto argsTuple = std::make_tuple(args...);
+			DumpState(std::tuple_cat(std::make_tuple(funcName), argsTuple));
+			namedStates[funcName] = NamedSingleState(func, argsTuple);
 			return *this;
 		}
 
 	private:
 		std::unordered_map<GLenum, bool> binaryStates;
-
-		std::unordered_map<uint32_t, std::pair<glB1Func, std::tuple<GLboolean>>> b1States;
-		std::unordered_map<uint32_t, std::pair<glB4Func, std::tuple<GLboolean, GLboolean, GLboolean, GLboolean>>> b4States;
-
-		std::unordered_map<uint32_t, std::pair<glE1Func, std::tuple<GLenum>>> e1States;
-		std::unordered_map<uint32_t, std::pair<glE2Func, std::tuple<GLenum, GLenum>>> e2States;
-		std::unordered_map<uint32_t, std::pair<glE3Func, std::tuple<GLenum, GLenum, GLenum>>> e3States;
-
-		std::unordered_map<uint32_t, std::pair<glI4Func, std::tuple<GLint, GLint, GLint, GLint>>> i4States;
-
-		std::unordered_map<uint32_t, std::pair<glE1F1Func, std::tuple<GLenum, GLenum>>> e1f1States;
-
-		std::unordered_map<uint32_t, std::pair<glF1Func, std::tuple<GLfloat>>> f1States;
-		std::unordered_map<uint32_t, std::pair<glF2Func, std::tuple<GLfloat, GLfloat>>> f2States;
-		std::unordered_map<uint32_t, std::pair<glF4Func, std::tuple<GLfloat, GLfloat, GLfloat, GLfloat>>> f4States;
+		std::unordered_map<std::string, NamedSingleState> namedStates;
 
 		std::vector<std::pair<bool, onBindUnbindFunc>> customOnBindUnbind;
 

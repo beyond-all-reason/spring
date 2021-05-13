@@ -139,46 +139,46 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 
 void FixedPipelineState::BindUnbind(const bool bind) const
 {
-	#define APPLY_STATES(states) \
-	do { \
-		for (const auto [strhash, funcArgs] : states) { \
-			if (statesChain.empty()) { /*default state*/ \
-				std::apply(funcArgs.first, funcArgs.second); \
-				continue; \
-			} \
-			const auto prev = statesChain.top().states; \
-			const auto prevStateIt = prev.find(strhash); \
-			if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
-				/* TODO: do something to save revert state */ \
-				std::apply(funcArgs.first, funcArgs.second); \
-				continue; \
-			} \
-			if (prevStateIt->second.second != funcArgs.second) { /*previous state's args are different to this state args*/ \
-				std::apply(funcArgs.first, funcArgs.second); \
-				continue; \
-			} \
-		} \
-	} while (false)
+	//////////////////////////////////////////////////////////////////////////////////////////////
+    #define APPLY_STATES(states) \
+    do { \
+        for (const auto [funcName, namedState] : states) { \
+            if (statesChain.empty()) { /*default state*/ \
+                namedState.apply(); \
+                continue; \
+            } \
+            const auto prev = statesChain.top().states; \
+            const auto prevStateIt = prev.find(funcName); \
+            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
+                /* TODO: do something to save revert state */ \
+                namedState.apply(); \
+                continue; \
+            } \
+            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/ \
+                namedState.apply(); \
+                continue; \
+            } \
+        } \
+    } while (false)
 
-	#define REVERT_STATES(states) \
-	do { \
-		for (const auto [strhash, funcArgs] : states) { \
-			if (statesChain.empty()) { /*default state*/ \
-				continue; \
-			} \
-			const auto prev = statesChain.top().states; \
-			const auto prevStateIt = prev.find(strhash); \
-			if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
-				/* TODO: do something to save revert state */ \
-				throw std::runtime_error("[FixedPipelineState::BindUnbind] Cannot revert state that has no default value"); \
-			} \
-			if (prevStateIt->second.second != funcArgs.second) { /*previous state's args are different to this state args*/ \
-				std::apply(prevStateIt->second.first, prevStateIt->second.second); \
-				continue; \
-			} \
-		} \
-	} while (false)
-
+    #define REVERT_STATES(states) \
+    do { \
+        for (const auto [funcName, namedState] : states) { \
+            if (statesChain.empty()) { /*default state*/ \
+                continue; \
+            } \
+            const auto prev = statesChain.top().states; \
+            const auto prevStateIt = prev.find(funcName); \
+            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
+                /* TODO: do something to save revert state */ \
+                throw std::runtime_error("[FixedPipelineState::BindUnbind] Cannot revert state that has no default value"); \
+            } \
+            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/ \
+                prevStateIt->second.apply(); \
+                continue; \
+            } \
+        } \
+    } while (false)
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	if (!bind)
@@ -190,37 +190,15 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 	}
 
 	if (bind) {
-		APPLY_STATES(b1States);
-		APPLY_STATES(b4States);
-
-		APPLY_STATES(e1States);
-		APPLY_STATES(e2States);
-
-		APPLY_STATES(i4States);
-
-		APPLY_STATES(e1f1States);
-
-		APPLY_STATES(f1States);
-		APPLY_STATES(f2States);
-		APPLY_STATES(f4States);
+		APPLY_STATES(namedStates);
 	}
 	else
 	{
-		REVERT_STATES(b1States);
-		REVERT_STATES(b4States);
-
-		REVERT_STATES(e1States);
-		REVERT_STATES(e2States);
-
-		REVERT_STATES(i4States);
-
-		REVERT_STATES(e1f1States);
-
-		REVERT_STATES(f1States);
-		REVERT_STATES(f2States);
-		REVERT_STATES(f4States);
+		//REVERT_STATES(namedStates);
 	}
 
+	#undef APPLY_STATES
+	#undef REVERT_STATES
 
 	//now enable/disable states
 	for (const auto [state, status] : binaryStates) {
