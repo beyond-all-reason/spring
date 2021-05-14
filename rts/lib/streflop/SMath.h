@@ -291,7 +291,7 @@ enum
 	// Constants user may set
 	#define StreflopSimplePositiveInfinity 0x7F800000
 	#define StreflopSimpleNegativeInfinity 0xFF800000
-	#define StreflopSimpleNaN 0x7FC00000 // note: quiet NaN
+	#define StreflopSimpleNaN 0x7F800001 // note: signalling NaN
 
 	/** Generic C99 "macros" for unordered comparison
 		Defined as inlined for each type, thanks to C++ overloading
