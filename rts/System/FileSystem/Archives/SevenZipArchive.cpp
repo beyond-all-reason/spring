@@ -162,17 +162,12 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name): CBufferedArchive(na
 
 	// in 7zip, "folders" are pack-units (solid blocks)
 	// which have no relation to file-system folders
-	std::array<UInt64, 16384> folderUnpackSizesArr;
 	std::vector<UInt64> folderUnpackSizesVec;
 
 	UInt64* folderUnpackSizesPtr = nullptr;
 
-	if (db.db.NumFolders > folderUnpackSizesArr.size()) {
-		folderUnpackSizesVec.resize(db.db.NumFolders);
-		folderUnpackSizesPtr = folderUnpackSizesVec.data();
-	} else {
-		folderUnpackSizesPtr = folderUnpackSizesArr.data();
-	}
+	folderUnpackSizesVec.resize(db.db.NumFolders);
+	folderUnpackSizesPtr = folderUnpackSizesVec.data();
 
 	for (unsigned int fi = 0; fi < db.db.NumFolders; fi++) {
 		folderUnpackSizesPtr[fi] = SzFolder_GetUnpackSize(db.db.Folders + fi);
