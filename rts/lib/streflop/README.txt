@@ -49,7 +49,7 @@ More points to consider:
 
 Proposed solution:
 
-- Provide Simple, Double and Extended types that match the native types (float, double, long double), but that additionally take care of the FPU internal precision and denormal handling. These types may be simple aliases or C++ wrappers, depending on the FPU and configuration. Note: Extended is the 80-bit type defined by x87.
+- Provide StreflopSimple, StreflopDouble and Extended types that match the native types (float, double, long double), but that additionally take care of the FPU internal precision and denormal handling. These types may be simple aliases or C++ wrappers, depending on the FPU and configuration. Note: Extended is the 80-bit type defined by x87.
 
 - Reimplement the libm as a standalone code that uses these types. Note: For extended support, see below.
 
@@ -63,9 +63,9 @@ Usage (programming):
 
 - Include "streflop.h" in place of <math.h>, and link with streflop.a instead of libm. All streflop functions are protected by a namespace, so if another part of your program uses libm there is no risk of confusion at link time. However, including the correct file matters.
 
-- Use the streflop namespace, and the Simple, Double and Extended types as needed, instead of float, double, long double. The streflop types may actually be aliases to the C++ types, or wrapper classes that redefine the operators transparently.
+- Use the streflop namespace, and the StreflopSimple, StreflopDouble and Extended types as needed, instead of float, double, long double. The streflop types may actually be aliases to the C++ types, or wrapper classes that redefine the operators transparently.
 
-- You should also call streflop_init<FloatType> with FloatType=Simple,Double,Extended before using that type. You should use only this type (ex: Simple) until the next call to streflop_init. That is, separate your code in blocks using one type at a time. In the simplest case, use streflop_init for your chosen type at the beginning of your program and stick to that type later on. These init functions are necessary to set the correct FPU flags. See also the notes below.
+- You should also call streflop_init<FloatType> with FloatType=StreflopSimple,StreflopDouble,Extended before using that type. You should use only this type (ex: StreflopSimple) until the next call to streflop_init. That is, separate your code in blocks using one type at a time. In the simplest case, use streflop_init for your chosen type at the beginning of your program and stick to that type later on. These init functions are necessary to set the correct FPU flags. See also the notes below.
 
 - You may have a look at arithmeticTest.cpp and randomTest.cpp for examples.
 
@@ -97,12 +97,12 @@ Configurations grid:
 
             |   SSE   |   x87     |   Soft   |
 ------------+---------+-----------+----------+
-denormals   | Simple *| Simple   *| Simple   |
-            | Double *| Double   *| Double   |
+denormals   | StreflopSimple *| StreflopSimple   *| StreflopSimple   |
+            | StreflopDouble *| StreflopDouble   *| StreflopDouble   |
             |         | Extended *| Extended |
 ------------+---------+-----------+----------+
-no denormal | Simple *| Simple    |
-            | Double *| Double    |
+no denormal | StreflopSimple *| StreflopSimple    |
+            | StreflopDouble *| StreflopDouble    |
             |         | Extended  |
 ------------+---------+-----------+
 
@@ -147,21 +147,21 @@ Notes:
 * in particular, reports have been made that the x87 FPU denormal trap sometimes fails.
 
 - Really beware of aggressive optimization! Separate your code into INDEPENDENT BLOCKS. I mean it. This code is wrong:
-    streflop_init<Simple>();
-    Simple s = (1.0/4294967295.0);
+    streflop_init<StreflopSimple>();
+    StreflopSimple s = (1.0/4294967295.0);
     displayHex(cout, s) << endl;
-    streflop_init<Double>();
-    Double d = (1.0/4294967295.0);
+    streflop_init<StreflopDouble>();
+    StreflopDouble d = (1.0/4294967295.0);
     displayHex(cout, d) << endl;
 THIS NOT WORK CORRECTLY in -O3, but will do fine in -O0. This is because the compiler "optimizes" the constant computation only once for both lines in -O3, which is plain wrong since the precision is different. The only way to ensure this does not happen is to separate your code in logical units:
 void func1() {
-    streflop_init<Simple>();
-    Simple s = (1.0/4294967295.0);
+    streflop_init<StreflopSimple>();
+    StreflopSimple s = (1.0/4294967295.0);
     displayHex(cout, s) << endl;
 }
 void func2() {
-    streflop_init<Double>();
-    Double d = (1.0/4294967295.0);
+    streflop_init<StreflopDouble>();
+    StreflopDouble d = (1.0/4294967295.0);
     displayHex(cout, d) << endl;
 }
 Even then, you'd better be careful with interprocedural optimization options. If possible, put func1 and func2 in 2 separate compilation units.
@@ -174,7 +174,7 @@ BUGS and discrepancies:
 
 - There is the possibility of unknown bugs. And this is based on GNU libm 2.4, so any potential bug in that version are almost surely present in streflop too.
 
-- Extended support is INCOMPLETE. Proper functions are missing, in particular the trigonometric functions. The ldbl-96 implementation of the libm does not contain a generic implementation for these files. Since strelop enforces strict separation of Extended and Double functions, these functions were instead implemented by temporarily switching to Double using streflop_init<Double>, calling the function and storing the result on the stack, switching back to streflop_init<Extended>, then converting the result to an Extended number.
+- Extended support is INCOMPLETE. Proper functions are missing, in particular the trigonometric functions. The ldbl-96 implementation of the libm does not contain a generic implementation for these files. Since strelop enforces strict separation of Extended and StreflopDouble functions, these functions were instead implemented by temporarily switching to StreflopDouble using streflop_init<StreflopDouble>, calling the function and storing the result on the stack, switching back to streflop_init<Extended>, then converting the result to an Extended number.
 
 
 

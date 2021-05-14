@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_cosf.c -- Simple version of s_cos.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_cosf.c -- StreflopSimple version of s_cos.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,19 +23,19 @@ static char rcsid[] = "$NetBSD: s_cosf.c,v 1.4f 1995/05/10 20:47:03 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple one=1.0f;
+static const StreflopSimple one=1.0f;
 #else
-static Simple one=1.0f;
+static StreflopSimple one=1.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __cosf(Simple x)
+	StreflopSimple __cosf(StreflopSimple x)
 #else
-	Simple __cosf(x)
-	Simple x;
+	StreflopSimple __cosf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple y[2],z=0.0f;
+	StreflopSimple y[2],z=0.0f;
 	int32_t n,ix;
 
 	GET_FLOAT_WORD(ix,x);

@@ -6,6 +6,7 @@
 #include <string>
 #include <array>
 #include <vector>
+#include <memory>
 
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"

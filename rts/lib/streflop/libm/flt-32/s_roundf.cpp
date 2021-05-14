@@ -1,5 +1,5 @@
 /* See the import.pl script for potential modifications */
-/* Round Simple to integer away from zero.
+/* Round StreflopSimple to integer away from zero.
    Copyright (C) 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
@@ -24,12 +24,12 @@
 #include "math_private.h"
 
 
-static const Simple huge = 1.0e30f;
+static const StreflopSimple huge = 1.0e30f;
 
 
 namespace streflop_libm {
-Simple
-__roundf (Simple x)
+StreflopSimple
+__roundf (StreflopSimple x)
 {
   int32_t i0, j0;
 

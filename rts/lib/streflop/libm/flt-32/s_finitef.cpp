@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_finitef.c -- Simple version of s_finite.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_finitef.c -- StreflopSimple version of s_finite.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -28,10 +28,10 @@ static char rcsid[] = "$NetBSD: s_finitef.c,v 1.4f 1995/05/10 20:47:18 jtc Exp $
 
 namespace streflop_libm {
 #ifdef __STDC__
-	int __finitef(Simple x)
+	int __finitef(StreflopSimple x)
 #else
 	int __finitef(x)
-	Simple x;
+	StreflopSimple x;
 #endif
 {
 	int32_t ix;

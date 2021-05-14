@@ -24,12 +24,12 @@
 #include "math_private.h"
 
 
-static const Simple zero = 0.0f;
+static const StreflopSimple zero = 0.0f;
 
 
 namespace streflop_libm {
-Simple
-__remquof (Simple x, Simple y, int *quo)
+StreflopSimple
+__remquof (StreflopSimple x, StreflopSimple y, int *quo)
 {
   int32_t hx,hy;
   u_int32_t sx;
@@ -88,7 +88,7 @@ __remquof (Simple x, Simple y, int *quo)
     }
   else
     {
-      Simple y_half = 0.5f * y;
+      StreflopSimple y_half = 0.5f * y;
       if (x > y_half)
 	{
 	  x -= y;

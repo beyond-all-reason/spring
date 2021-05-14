@@ -1,5 +1,5 @@
 /* See the import.pl script for potential modifications */
-/* Round Simple value to long long int.
+/* Round StreflopSimple value to long long int.
    Copyright (C) 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
@@ -23,9 +23,10 @@
 
 #include "math_private.h"
 
+namespace streflop_libm {
 
 long long int
-__llroundf (Simple x)
+__llroundf (StreflopSimple x)
 {
   int32_t j0;
   u_int32_t i;
@@ -61,4 +62,5 @@ __llroundf (Simple x)
   return sign * result;
 }
 
+}
 weak_alias (__llroundf, llroundf)

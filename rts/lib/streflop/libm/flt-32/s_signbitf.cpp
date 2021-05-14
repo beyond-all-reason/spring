@@ -25,7 +25,7 @@
 
 namespace streflop_libm {
 int
-__signbitf (Simple x)
+__signbitf (StreflopSimple x)
 {
   int32_t hx;
 

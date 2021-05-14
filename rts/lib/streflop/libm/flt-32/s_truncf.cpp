@@ -25,8 +25,8 @@
 
 
 namespace streflop_libm {
-Simple
-__truncf (Simple x)
+StreflopSimple
+__truncf (StreflopSimple x)
 {
   int32_t i0, j0;
   int sx;

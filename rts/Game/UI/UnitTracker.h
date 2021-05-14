@@ -3,6 +3,8 @@
 #ifndef UNIT_TRACKER_H
 #define UNIT_TRACKER_H
 
+#include <vector>
+
 #include "System/float3.h"
 #include "System/UnorderedSet.hpp"
 

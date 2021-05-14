@@ -485,7 +485,7 @@ void CBasicSky::CreateTransformVectors()
 	unsigned char *tt=thicknessTransform;
 	for(int a=0;a<1024;++a){
 		float f=(1023.0f-(a+cloudDensity*1024-512))/1023.0f;
-		float alpha=std::pow(f*2,3);
+		float alpha= (f*2) * (f*2) * (f*2);
 		if(alpha>1)
 			alpha=1;
 		*at=(unsigned char)(alpha*255);

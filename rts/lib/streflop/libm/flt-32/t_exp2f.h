@@ -26,7 +26,7 @@
    for integer t so that abs(t) <= 43447 * 2^0.  */
 
 #define W30 (9.31322575e-10f)
-static const Simple __exp2f_deltatable[256] = {
+static const StreflopSimple __exp2f_deltatable[256] = {
       -810*W30,       283*W30,     -1514*W30,      1304*W30,
      -1148*W30,       -98*W30,      -744*W30,      -156*W30,
       -419*W30,      -155*W30,       474*W30,       167*W30,
@@ -94,7 +94,7 @@ static const Simple __exp2f_deltatable[256] = {
 };
 
 namespace streflop_libm {
-static const Simple __exp2f_atable[256] /* __attribute__((mode(SF))) */ = {
+static const StreflopSimple __exp2f_atable[256] /* __attribute__((mode(SF))) */ = {
  0.707106411447f, /* 0x0.b504ecfff */
  0.709024071690f, /* 0x0.b58299fff */
  0.710945606239f, /* 0x0.b60088000 */

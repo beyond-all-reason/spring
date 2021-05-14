@@ -235,7 +235,7 @@ __FORCE_ALIGN_STACK__
 void CPathEstimator::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barrier* pathBarrier)
 {
 	// reset FPU state for synced computations
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	if (threadNum > 0) {
 		Threading::SetAffinity(~0);

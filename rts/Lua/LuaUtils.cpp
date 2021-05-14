@@ -1241,7 +1241,7 @@ static void LogMsg(lua_State* L, const char* logSection, int logLevel, int argIn
 		for (int i = argIndex; i <= numArgs; i++) {
 			lua_pushvalue(L, -1);     // function to be called
 			lua_pushvalue(L, i);      // value to print
-			lua_pcall(L, 1, 1, 0);
+			wrapped_lua_pcall(L, 1, 1, 0);
 
 			const char* s = lua_tostring(L, -1);  // get result
 
@@ -1262,7 +1262,7 @@ static void LogMsg(lua_State* L, const char* logSection, int logLevel, int argIn
 
 			lua_pushvalue(L, -3);    // function to be called
 			lua_pushvalue(L, -2);    // value to print
-			lua_pcall(L, 1, 1, 0);
+			wrapped_lua_pcall(L, 1, 1, 0);
 
 			const char* s = lua_tostring(L, -1);  // get result
 

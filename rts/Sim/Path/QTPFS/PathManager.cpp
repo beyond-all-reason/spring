@@ -288,7 +288,7 @@ void QTPFS::PathManager::SpawnSpringThreads(MemberFunc f, const SRectangle& r) {
 
 
 void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	char loadMsg[512] = {'\0'};
 	const char* fmtString = "[PathManager::%s] using %u threads for %u node-layers (%s)";
@@ -337,7 +337,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	}
 	#endif
 
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 }
 
 __FORCE_ALIGN_STACK__
@@ -389,7 +389,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 
 
 void QTPFS::PathManager::UpdateNodeLayersThreaded(const SRectangle& rect) {
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	#ifdef QTPFS_OPENMP_ENABLED
 	{
@@ -403,7 +403,7 @@ void QTPFS::PathManager::UpdateNodeLayersThreaded(const SRectangle& rect) {
 	}
 	#endif
 
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 }
 
 __FORCE_ALIGN_STACK__
@@ -667,7 +667,7 @@ void QTPFS::PathManager::Update() {
 	SCOPED_TIMER("Sim::Path");
 
 	#ifdef QTPFS_ENABLE_THREADED_UPDATE
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
 
@@ -677,7 +677,7 @@ void QTPFS::PathManager::Update() {
 	// wait for the ThreadUpdate iteration to finish
 	condThreadUpdated.wait(lock);
 
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	#else
 	ThreadUpdate();
 	#endif

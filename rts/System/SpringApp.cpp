@@ -344,7 +344,7 @@ bool SpringApp::InitFileSystem()
 
 	ThreadPool::SetDefaultThreadCount();
 	// see InputHandler::PushEvents
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	return ret;
 }
 
@@ -365,7 +365,7 @@ bool SpringApp::InitWindow(const char* title)
 
 	// Something in SDL_SetVideoMode (OpenGL drivers?) messes with the FPU control word.
 	// Set single precision floating point math.
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	// any other thread spawned from the main-process should be `unknown`
 	Threading::SetThreadName("unknown");

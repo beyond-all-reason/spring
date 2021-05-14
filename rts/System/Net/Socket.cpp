@@ -64,7 +64,7 @@ asio::ip::address WrapIP(const std::string& ip,
 	// (date of note: 08/05/10)
 	// something in from_string() is invalidating the FPU flags
 	// tested on win2k and linux (not happening there)
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	return addr;
 }
 
@@ -83,7 +83,7 @@ asio::ip::udp::resolver::iterator WrapResolve(
 
 	// (date of note: 08/22/10)
 	// something in resolve() is invalidating the FPU flags
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	return resolveIt;
 }
 

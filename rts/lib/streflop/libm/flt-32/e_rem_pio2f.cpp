@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_rem_pio2f.c -- Simple version of e_rem_pio2.c
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_rem_pio2f.c -- StreflopSimple version of e_rem_pio2.c
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -86,9 +86,9 @@ static int32_t npio2_hw[] = {
  */
 
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 zero =  0.0000000000e+00f, /* 0x00000000 */
 half =  5.0000000000e-01f, /* 0x3f000000 */
@@ -102,14 +102,14 @@ pio2_3  =  6.0770943833e-11f, /* 0x2e85a300 */
 pio2_3t =  6.1232342629e-17f; /* 0x248d3132 */
 
 #ifdef __STDC__
-	int32_t __ieee754_rem_pio2f(Simple x, Simple *y)
+	int32_t __ieee754_rem_pio2f(StreflopSimple x, StreflopSimple *y)
 #else
 	int32_t __ieee754_rem_pio2f(x,y)
-	Simple x,y[];
+	StreflopSimple x,y[];
 #endif
 {
-	Simple z,w,t,r,fn;
-	Simple tx[3];
+	StreflopSimple z,w,t,r,fn;
+	StreflopSimple tx[3];
 	int32_t e0,i,j,nx,n,ix,hx;
 
 	GET_FLOAT_WORD(hx,x);
@@ -144,7 +144,7 @@ pio2_3t =  6.1232342629e-17f; /* 0x248d3132 */
 	if(ix<=0x43490f80) { /* |x| ~<= 2^7*(pi/2), medium size */
 	    t  = fabsf(x);
 	    n  = (int32_t) (t*invpio2+half);
-	    fn = (Simple)n;
+	    fn = (StreflopSimple)n;
 	    r  = t-fn*pio2_1;
 	    w  = fn*pio2_1t;	/* 1st round good to 40 bit */
 	    if(n<32&&(int32_t)(ix&0xffffff00)!=npio2_hw[n-1]) {
@@ -186,7 +186,7 @@ pio2_3t =  6.1232342629e-17f; /* 0x248d3132 */
 	e0 	= (ix>>23)-134;		/* e0 = ilogb(z)-7; */
 	SET_FLOAT_WORD(z, ix - ((int32_t)(e0<<23)));
 	for(i=0;i<2;i++) {
-		tx[i] = (Simple)((int32_t)(z));
+		tx[i] = (StreflopSimple)((int32_t)(z));
 		z     = (z-tx[i])*two8;
 	}
 	tx[2] = z;

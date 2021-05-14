@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_sqrtf.c -- Simple version of e_sqrt.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_sqrtf.c -- StreflopSimple version of e_sqrt.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,19 +23,19 @@ static char rcsid[] = "$NetBSD: e_sqrtf.c,v 1.4f 1995/05/10 20:46:19 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static	const Simple	one	= 1.0f, tiny=1.0e-30f;
+static	const StreflopSimple	one	= 1.0f, tiny=1.0e-30f;
 #else
-static	Simple	one	= 1.0f, tiny=1.0e-30f;
+static	StreflopSimple	one	= 1.0f, tiny=1.0e-30f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_sqrtf(Simple x)
+	StreflopSimple __ieee754_sqrtf(StreflopSimple x)
 #else
-	Simple __ieee754_sqrtf(x)
-	Simple x;
+	StreflopSimple __ieee754_sqrtf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple z;
+	StreflopSimple z;
 	int32_t sign = (int)0x80000000; 
 	int32_t ix,s,q,m,t,i;
 	u_int32_t r;
@@ -61,7 +61,7 @@ static	Simple	one	= 1.0f, tiny=1.0e-30f;
 	}
 	m -= 127;	/* unbias exponent */
 	ix = (ix&0x007fffff)|0x00800000;
-	if(m&1)	/* odd m, Double x to make it even */
+	if(m&1)	/* odd m, StreflopDouble x to make it even */
 	    ix += ix;
 	m >>= 1;	/* m = [m/2] */
 

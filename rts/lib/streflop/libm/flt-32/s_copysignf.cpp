@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_copysignf.c -- Simple version of s_copysign.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_copysignf.c -- StreflopSimple version of s_copysign.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -19,7 +19,7 @@ static char rcsid[] = "$NetBSD: s_copysignf.c,v 1.4f 1995/05/10 20:46:59 jtc Exp
 #endif
 
 /*
- * copysignf(Simple x, Simple y)
+ * copysignf(StreflopSimple x, StreflopSimple y)
  * copysignf(x,y) returns a value with the magnitude of x and
  * with the sign bit of y.
  */
@@ -29,10 +29,10 @@ static char rcsid[] = "$NetBSD: s_copysignf.c,v 1.4f 1995/05/10 20:46:59 jtc Exp
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __copysignf(Simple x, Simple y)
+	StreflopSimple __copysignf(StreflopSimple x, StreflopSimple y)
 #else
-	Simple __copysignf(x,y)
-	Simple x,y;
+	StreflopSimple __copysignf(x,y)
+	StreflopSimple x,y;
 #endif
 {
 	u_int32_t ix,iy;

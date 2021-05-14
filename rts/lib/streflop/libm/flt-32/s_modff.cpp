@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_modff.c -- Simple version of s_modf.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_modff.c -- StreflopSimple version of s_modf.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,16 +23,16 @@ static char rcsid[] = "$NetBSD: s_modff.c,v 1.4f 1995/05/10 20:47:56 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple one = 1.0f;
+static const StreflopSimple one = 1.0f;
 #else
-static Simple one = 1.0f;
+static StreflopSimple one = 1.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __modff(Simple x, Simple *iptr)
+	StreflopSimple __modff(StreflopSimple x, StreflopSimple *iptr)
 #else
-	Simple __modff(x, iptr)
-	Simple x,*iptr;
+	StreflopSimple __modff(x, iptr)
+	StreflopSimple x,*iptr;
 #endif
 {
 	int32_t i0,j0;

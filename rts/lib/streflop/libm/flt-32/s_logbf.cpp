@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_logbf.c -- Simple version of s_logb.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_logbf.c -- StreflopSimple version of s_logb.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,21 +23,21 @@ static char rcsid[] = "$NetBSD: s_logbf.c,v 1.4f 1995/05/10 20:47:51 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __logbf(Simple x)
+	StreflopSimple __logbf(StreflopSimple x)
 #else
-	Simple __logbf(x)
-	Simple x;
+	StreflopSimple __logbf(x)
+	StreflopSimple x;
 #endif
 {
 	int32_t ix;
 	GET_FLOAT_WORD(ix,x);
 	ix &= 0x7fffffff;			/* high |x| */
-	if(ix==0) return (Simple)-1.0f/fabsf(x);
+	if(ix==0) return (StreflopSimple)-1.0f/fabsf(x);
 	if(ix>=0x7f800000) return x*x;
 	if((ix>>=23)==0) 			/* IEEE 754 logb */
 		return -126.0f; 
 	else
-		return (Simple) (ix-127); 
+		return (StreflopSimple) (ix-127); 
 }
 weak_alias (__logbf, logbf)
 }

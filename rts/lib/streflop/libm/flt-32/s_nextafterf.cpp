@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_nextafterf.c -- Simple version of s_nextafter.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_nextafterf.c -- StreflopSimple version of s_nextafter.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -24,10 +24,10 @@ static char rcsid[] = "$NetBSD: s_nextafterf.c,v 1.4f 1995/05/10 20:48:01 jtc Ex
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __nextafterf(Simple x, Simple y)
+	StreflopSimple __nextafterf(StreflopSimple x, StreflopSimple y)
 #else
-	Simple __nextafterf(x,y)
-	Simple x,y;
+	StreflopSimple __nextafterf(x,y)
+	StreflopSimple x,y;
 #endif
 {
 	int32_t hx,hy,ix,iy;

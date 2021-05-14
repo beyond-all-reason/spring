@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_floorf.c -- Simple version of s_floor.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_floorf.c -- StreflopSimple version of s_floor.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -32,16 +32,16 @@ static char rcsid[] = "$NetBSD: s_floorf.c,v 1.4f 1995/05/10 20:47:22 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple huge = 1.0e30f;
+static const StreflopSimple huge = 1.0e30f;
 #else
-static Simple huge = 1.0e30f;
+static StreflopSimple huge = 1.0e30f;
 #endif
 
 #ifdef __STDC__
-	Simple __floorf(Simple x)
+	StreflopSimple __floorf(StreflopSimple x)
 #else
-	Simple __floorf(x)
-	Simple x;
+	StreflopSimple __floorf(x)
+	StreflopSimple x;
 #endif
 {
 	int32_t i0,j0;
@@ -50,7 +50,7 @@ static Simple huge = 1.0e30f;
 	j0 = ((i0>>23)&0xff)-0x7f;
 	if(j0<23) {
 	    if(j0<0) { 	/* raise inexact if x != 0 */
-		if(huge+x>(Simple)0.0f) {/* return 0*sign(x) if |x|<1 */
+		if(huge+x>(StreflopSimple)0.0f) {/* return 0*sign(x) if |x|<1 */
 		    if(i0>=0) {i0=0;} 
 		    else if((i0&0x7fffffff)!=0)
 			{ i0=0xbf800000;}
@@ -58,7 +58,7 @@ static Simple huge = 1.0e30f;
 	    } else {
 		i = (0x007fffff)>>j0;
 		if((i0&i)==0) return x; /* x is integral */
-		if(huge+x>(Simple)0.0f) {	/* raise inexact flag */
+		if(huge+x>(StreflopSimple)0.0f) {	/* raise inexact flag */
 		    if(i0<0) i0 += (0x00800000)>>j0;
 		    i0 &= (~i);
 		}

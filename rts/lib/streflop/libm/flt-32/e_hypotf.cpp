@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_hypotf.c -- Simple version of e_hypot.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_hypotf.c -- StreflopSimple version of e_hypot.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,13 +23,13 @@ static char rcsid[] = "$NetBSD: e_hypotf.c,v 1.5f 1995/05/12 04:57:30 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __ieee754_hypotf(Simple x, Simple y)
+	StreflopSimple __ieee754_hypotf(StreflopSimple x, StreflopSimple y)
 #else
-	Simple __ieee754_hypotf(x,y)
-	Simple x, y;
+	StreflopSimple __ieee754_hypotf(x,y)
+	StreflopSimple x, y;
 #endif
 {
-	Simple a,b,t1,t2,y1,y2,w;
+	StreflopSimple a,b,t1,t2,y1,y2,w;
 	int32_t j,k,ha,hb;
 
 	GET_FLOAT_WORD(ha,x);

@@ -3,20 +3,6 @@
 
 namespace streflop {
 
-    // Constants
-
-    const Simple SimpleZero(0.0f);
-    const Simple SimplePositiveInfinity = Simple(1.0f) / SimpleZero;
-    const Simple SimpleNegativeInfinity = Simple(-1.0f) / SimpleZero;
-    // TODO: non-signaling version
-    const Simple SimpleNaN = SimplePositiveInfinity + SimpleNegativeInfinity;
-
-    const Double DoubleZero(0.0f);
-    const Double DoublePositiveInfinity = Double(1.0f) / DoubleZero;
-    const Double DoubleNegativeInfinity = Double(-1.0f) / DoubleZero;
-    // TODO: non-signaling version
-    const Double DoubleNaN = DoublePositiveInfinity + DoubleNegativeInfinity;
-
 // Extended are not always available
 #ifdef Extended
 

@@ -20,7 +20,7 @@ void InputHandler::PushEvents()
 
 	while (SDL_PollEvent(&event)) {
 		// SDL_PollEvent may modify FPU flags
-		streflop::streflop_init<streflop::Simple>();
+		streflop::streflop_init<StreflopSimple>();
 		PushEvent(event);
 	}
 }

@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_logf.c -- Simple version of e_log.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_logf.c -- StreflopSimple version of e_log.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: e_logf.c,v 1.4f 1995/05/10 20:45:54 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 ln2_hi =   6.9313812256e-01f,	/* 0x3f317180 */
 ln2_lo =   9.0580006145e-06f,	/* 0x3717f7d1 */
@@ -39,19 +39,19 @@ Lg6 = 1.5313838422e-01f, /* 3E1CD04F */
 Lg7 = 1.4798198640e-01f; /* 3E178897 */
 
 #ifdef __STDC__
-static const Simple zero   =  0.0f;
+static const StreflopSimple zero   =  0.0f;
 #else
-static Simple zero   =  0.0f;
+static StreflopSimple zero   =  0.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_logf(Simple x)
+	StreflopSimple __ieee754_logf(StreflopSimple x)
 #else
-	Simple __ieee754_logf(x)
-	Simple x;
+	StreflopSimple __ieee754_logf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple hfsq,f,s,z,R,w,t1,t2,dk;
+	StreflopSimple hfsq,f,s,z,R,w,t1,t2,dk;
 	int32_t k,ix,i,j;
 
 	GET_FLOAT_WORD(ix,x);
@@ -70,18 +70,18 @@ static Simple zero   =  0.0f;
 	i = (ix+(0x95f64<<3))&0x800000;
 	SET_FLOAT_WORD(x,ix|(i^0x3f800000));	/* normalize x or x/2 */
 	k += (i>>23);
-	f = x-(Simple)1.0f;
+	f = x-(StreflopSimple)1.0f;
 	if((0x007fffff&(15+ix))<16) {	/* |f| < 2**-20 */
 	    if(f==zero) {
-	      if(k==0) return zero;  else {dk=(Simple)k;
+	      if(k==0) return zero;  else {dk=(StreflopSimple)k;
 					   return dk*ln2_hi+dk*ln2_lo;}
 	    }
-	    R = f*f*((Simple)0.5f-(Simple)0.33333333333333333f*f);
-	    if(k==0) return f-R; else {dk=(Simple)k;
+	    R = f*f*((StreflopSimple)0.5f-(StreflopSimple)0.33333333333333333f*f);
+	    if(k==0) return f-R; else {dk=(StreflopSimple)k;
 	    	     return dk*ln2_hi-((R-dk*ln2_lo)-f);}
 	}
- 	s = f/((Simple)2.0f+f);
-	dk = (Simple)k;
+ 	s = f/((StreflopSimple)2.0f+f);
+	dk = (StreflopSimple)k;
 	z = s*s;
 	i = ix-(0x6147a<<3);
 	w = z*z;
@@ -91,7 +91,7 @@ static Simple zero   =  0.0f;
 	i |= j;
 	R = t2+t1;
 	if(i>0) {
-	    hfsq=(Simple)0.5f*f*f;
+	    hfsq=(StreflopSimple)0.5f*f*f;
 	    if(k==0) return f-(hfsq-s*(hfsq+R)); else
 		     return dk*ln2_hi-((hfsq-(s*(hfsq+R)+dk*ln2_lo))-f);
 	} else {

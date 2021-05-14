@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_ilogbf.c -- Simple version of s_ilogb.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_ilogbf.c -- StreflopSimple version of s_ilogb.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -24,10 +24,10 @@ static char rcsid[] = "$NetBSD: s_ilogbf.c,v 1.4f 1995/05/10 20:47:31 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-	int __ilogbf(Simple x)
+	int __ilogbf(StreflopSimple x)
 #else
 	int __ilogbf(x)
-	Simple x;
+	StreflopSimple x;
 #endif
 {
 	int32_t hx,ix;

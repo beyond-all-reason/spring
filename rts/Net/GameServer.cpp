@@ -265,7 +265,7 @@ void CGameServer::Initialize()
 	// Something in CGameServer::CGameServer borks the FPU control word
 	// maybe the threading, or something in CNet::InitServer() ??
 	// Set single precision floating point math.
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	if (!demoReader) {
 		GenerateAndSendGameID();

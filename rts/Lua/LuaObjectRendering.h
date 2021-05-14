@@ -12,8 +12,7 @@ template<LuaObjType T> class LuaObjectRendering;
 
 class LuaObjectRenderingImpl {
 private:
-	friend class LuaObjectRendering<LUAOBJ_UNIT>;
-	friend class LuaObjectRendering<LUAOBJ_FEATURE>;
+	template<LuaObjType> friend class LuaObjectRendering;
 
 	static void CreateMatRefMetatable(lua_State* L);
 	static void PushFunction(lua_State* L, int (*fnPntr)(lua_State*), const char* fnName);

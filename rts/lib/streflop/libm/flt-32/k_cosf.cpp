@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* k_cosf.c -- Simple version of k_cos.c
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* k_cosf.c -- StreflopSimple version of k_cos.c
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: k_cosf.c,v 1.4f 1995/05/10 20:46:23 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple 
+static const StreflopSimple 
 #else
-static Simple 
+static StreflopSimple 
 #endif
 one =  1.0000000000e+00f, /* 0x3f800000 */
 C1  =  4.1666667908e-02f, /* 0x3d2aaaab */
@@ -36,13 +36,13 @@ C5  =  2.0875723372e-09f, /* 0x310f74f6 */
 C6  = -1.1359647598e-11f; /* 0xad47d74e */
 
 #ifdef __STDC__
-	Simple __kernel_cosf(Simple x, Simple y)
+	StreflopSimple __kernel_cosf(StreflopSimple x, StreflopSimple y)
 #else
-	Simple __kernel_cosf(x, y)
-	Simple x,y;
+	StreflopSimple __kernel_cosf(x, y)
+	StreflopSimple x,y;
 #endif
 {
-	Simple a,hz,z,r,qx;
+	StreflopSimple a,hz,z,r,qx;
 	int32_t ix;
 	GET_FLOAT_WORD(ix,x);
 	ix &= 0x7fffffff;			/* ix = |x|'s high word*/
@@ -52,14 +52,14 @@ C6  = -1.1359647598e-11f; /* 0xad47d74e */
 	z  = x*x;
 	r  = z*(C1+z*(C2+z*(C3+z*(C4+z*(C5+z*C6)))));
 	if(ix < 0x3e99999a) 			/* if |x| < 0.3f */ 
-	    return one - ((Simple)0.5f*z - (z*r - x*y));
+	    return one - ((StreflopSimple)0.5f*z - (z*r - x*y));
 	else {
 	    if(ix > 0x3f480000) {		/* x > 0.78125f */
-		qx = (Simple)0.28125f;
+		qx = (StreflopSimple)0.28125f;
 	    } else {
 	        SET_FLOAT_WORD(qx,ix-0x01000000);	/* x/4 */
 	    }
-	    hz = (Simple)0.5f*z-qx;
+	    hz = (StreflopSimple)0.5f*z-qx;
 	    a  = one-qx;
 	    return a - (hz - (z*r-x*y));
 	}

@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_erff.c -- Simple version of s_erf.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_erff.c -- StreflopSimple version of s_erf.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: s_erff.c,v 1.4f 1995/05/10 20:47:07 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 tiny	    = 1e-30f,
 half=  5.0000000000e-01f, /* 0x3F000000 */
@@ -102,26 +102,26 @@ sb6  =  4.7452853394e+02f, /* 0x43ed43a7 */
 sb7  = -2.2440952301e+01f; /* 0xc1b38712 */
 
 #ifdef __STDC__
-	Simple __erff(Simple x)
+	StreflopSimple __erff(StreflopSimple x)
 #else
-	Simple __erff(x)
-	Simple x;
+	StreflopSimple __erff(x)
+	StreflopSimple x;
 #endif
 {
 	int32_t hx,ix,i;
-	Simple R,S,P,Q,s,y,z,r;
+	StreflopSimple R,S,P,Q,s,y,z,r;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7f800000) {		/* erf(nan)=nan */
 	    i = ((u_int32_t)hx>>31)<<1;
-	    return (Simple)(1-i)+one/x;	/* erf(+-inf)=+-1 */
+	    return (StreflopSimple)(1-i)+one/x;	/* erf(+-inf)=+-1 */
 	}
 
 	if(ix < 0x3f580000) {		/* |x|<0.84375f */
 	    if(ix < 0x31800000) { 	/* |x|<2**-28 */
 	        if (ix < 0x04000000) 
 		    /*avoid underflow */
-		    return (Simple)0.125f*((Simple)8.0f*x+efx8*x);
+		    return (StreflopSimple)0.125f*((StreflopSimple)8.0f*x+efx8*x);
 		return x + efx*x;
 	    }
 	    z = x*x;
@@ -154,25 +154,25 @@ sb7  = -2.2440952301e+01f; /* 0xc1b38712 */
 	}
 	GET_FLOAT_WORD(ix,x);
 	SET_FLOAT_WORD(z,ix&0xfffff000);
-	r  =  __ieee754_expf(-z*z-(Simple)0.5625f)*__ieee754_expf((z-x)*(z+x)+R/S);
+	r  =  __ieee754_expf(-z*z-(StreflopSimple)0.5625f)*__ieee754_expf((z-x)*(z+x)+R/S);
 	if(hx>=0) return one-r/x; else return  r/x-one;
 }
 weak_alias (__erff, erff)
 
 #ifdef __STDC__
-	Simple __erfcf(Simple x)
+	StreflopSimple __erfcf(StreflopSimple x)
 #else
-	Simple __erfcf(x)
-	Simple x;
+	StreflopSimple __erfcf(x)
+	StreflopSimple x;
 #endif
 {
 	int32_t hx,ix;
-	Simple R,S,P,Q,s,y,z,r;
+	StreflopSimple R,S,P,Q,s,y,z,r;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
 	if(ix>=0x7f800000) {			/* erfc(nan)=nan */
 						/* erfc(+-inf)=0,2 */
-	    return (Simple)(((u_int32_t)hx>>31)<<1)+one/x;
+	    return (StreflopSimple)(((u_int32_t)hx>>31)<<1)+one/x;
 	}
 
 	if(ix < 0x3f580000) {		/* |x|<0.84375f */
@@ -217,7 +217,7 @@ weak_alias (__erff, erff)
 	    }
 	    GET_FLOAT_WORD(ix,x);
 	    SET_FLOAT_WORD(z,ix&0xfffff000);
-	    r  =  __ieee754_expf(-z*z-(Simple)0.5625f)*
+	    r  =  __ieee754_expf(-z*z-(StreflopSimple)0.5625f)*
 			__ieee754_expf((z-x)*(z+x)+R/S);
 	    if(hx>0) return r/x; else return two-r/x;
 	} else {

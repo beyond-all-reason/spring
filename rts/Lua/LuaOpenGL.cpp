@@ -1774,7 +1774,7 @@ int LuaOpenGL::DrawFuncAtUnit(lua_State* L)
 	// call the function
 	glPushMatrix();
 	glTranslatef(drawPos.x, drawPos.y, drawPos.z);
-	const int error = lua_pcall(L, (lua_gettop(L) - 3), 0, 0);
+	const int error = wrapped_lua_pcall(L, (lua_gettop(L) - 3), 0, 0);
 	glPopMatrix();
 
 	if (error != 0) {
@@ -2048,7 +2048,7 @@ int LuaOpenGL::BeginEnd(lua_State* L)
 
 	// call the function
 	glBegin(primMode);
-	const int error = lua_pcall(L, (args - 2), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 2), 0, 0);
 	glEnd();
 
 	if (error != 0) {
@@ -3537,7 +3537,7 @@ int LuaOpenGL::RenderToTexture(lua_State* L)
 	glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
 
-	const int error = lua_pcall(L, lua_gettop(L) - 2, 0, 0);
+	const int error = wrapped_lua_pcall(L, lua_gettop(L) - 2, 0, 0);
 
 	glMatrixMode(GL_PROJECTION); glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);  glPopMatrix();
@@ -3594,7 +3594,7 @@ int LuaOpenGL::ActiveTexture(lua_State* L)
 
 	// call the function
 	glActiveTexture(GL_TEXTURE0 + texNum);
-	const int error = lua_pcall(L, (args - 2), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 2), 0, 0);
 	glActiveTexture(GL_TEXTURE0);
 
 	if (error != 0) {
@@ -4391,7 +4391,7 @@ int LuaOpenGL::PushPopMatrix(lua_State* L)
 	}
 
 	const int args = lua_gettop(L); // number of arguments
-	const int error = lua_pcall(L, (args - arg), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - arg), 0, 0);
 
 	if (arg == 1) {
 		glPopMatrix();
@@ -4510,7 +4510,7 @@ int LuaOpenGL::UnsafeState(lua_State* L)
 	}
 
 	reverse ? glDisable(state) : glEnable(state);
-	const int error = lua_pcall(L, lua_gettop(L) - funcLoc, 0, 0);
+	const int error = wrapped_lua_pcall(L, lua_gettop(L) - funcLoc, 0, 0);
 	reverse ? glEnable(state) : glDisable(state);
 
 	if (error != 0) {
@@ -4814,7 +4814,7 @@ int LuaOpenGL::CreateList(lua_State* L)
 	// build the list with the specified lua call/args
 	glNewList(list, GL_COMPILE);
 	SMatrixStateData prevMSD = GetLuaContextData(L)->glMatrixTracker.PushMatrixState(true);
-	const int error = lua_pcall(L, (args - 1), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 1), 0, 0);
 	SMatrixStateData matData = GetLuaContextData(L)->glMatrixTracker.GetMatrixState();
 	GetLuaContextData(L)->glMatrixTracker.PopMatrixState(prevMSD, false);
 	glEndList();
@@ -5152,7 +5152,7 @@ int LuaOpenGL::RunQuery(lua_State* L)
 
 	running = true;
 	glBeginQuery(GL_SAMPLES_PASSED, qry->id);
-	const int error = lua_pcall(L, (args - 2), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 2), 0, 0);
 	glEndQuery(GL_SAMPLES_PASSED);
 	running = false;
 

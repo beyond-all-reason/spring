@@ -66,7 +66,90 @@ SET(libm_flt32_source
 	"libm/flt-32/s_tanhf.cpp"
 	"libm/flt-32/s_truncf.cpp"
 	"libm/flt-32/w_expf.cpp"
-	)
+)
+
+set(libm_dbl64_source
+	"libm/dbl-64/branred.cpp"
+	"libm/dbl-64/doasin.cpp"
+	"libm/dbl-64/dosincos.cpp"
+	"libm/dbl-64/e_acos.cpp"
+	"libm/dbl-64/e_acosh.cpp"
+	"libm/dbl-64/e_asin.cpp"
+	"libm/dbl-64/e_atan2.cpp"
+	"libm/dbl-64/e_atanh.cpp"
+	"libm/dbl-64/e_cosh.cpp"
+	"libm/dbl-64/e_exp.cpp"
+	"libm/dbl-64/e_exp2.cpp"
+	"libm/dbl-64/e_fmod.cpp"
+	"libm/dbl-64/e_gamma_r.cpp"
+	"libm/dbl-64/e_hypot.cpp"
+	"libm/dbl-64/e_j0.cpp"
+	"libm/dbl-64/e_j1.cpp"
+	"libm/dbl-64/e_jn.cpp"
+	"libm/dbl-64/e_lgamma_r.cpp"
+	"libm/dbl-64/e_log.cpp"
+	"libm/dbl-64/e_log10.cpp"
+	"libm/dbl-64/e_log2.cpp"
+	"libm/dbl-64/e_pow.cpp"
+	"libm/dbl-64/e_remainder.cpp"
+	"libm/dbl-64/e_rem_pio2.cpp"
+	"libm/dbl-64/e_sinh.cpp"
+	"libm/dbl-64/e_sqrt.cpp"
+	"libm/dbl-64/halfulp.cpp"
+	"libm/dbl-64/k_cos.cpp"
+	"libm/dbl-64/k_rem_pio2.cpp"
+	"libm/dbl-64/k_sin.cpp"
+	"libm/dbl-64/k_tan.cpp"
+	"libm/dbl-64/mpa.cpp"
+	"libm/dbl-64/mpatan.cpp"
+	"libm/dbl-64/mpatan2.cpp"
+	"libm/dbl-64/mpexp.cpp"
+	"libm/dbl-64/mplog.cpp"
+	"libm/dbl-64/mpsqrt.cpp"
+	"libm/dbl-64/mptan.cpp"
+	"libm/dbl-64/sincos32.cpp"
+	"libm/dbl-64/slowexp.cpp"
+	"libm/dbl-64/slowpow.cpp"
+	"libm/dbl-64/s_asinh.cpp"
+	"libm/dbl-64/s_atan.cpp"
+	"libm/dbl-64/s_cbrt.cpp"
+	"libm/dbl-64/s_ceil.cpp"
+	"libm/dbl-64/s_copysign.cpp"
+	"libm/dbl-64/s_cos.cpp"
+	"libm/dbl-64/s_erf.cpp"
+	"libm/dbl-64/s_expm1.cpp"
+	"libm/dbl-64/s_fabs.cpp"
+	"libm/dbl-64/s_finite.cpp"
+	"libm/dbl-64/s_floor.cpp"
+	"libm/dbl-64/s_fpclassify.cpp"
+	"libm/dbl-64/s_frexp.cpp"
+	"libm/dbl-64/s_ilogb.cpp"
+	"libm/dbl-64/s_isinf.cpp"
+	"libm/dbl-64/s_isnan.cpp"
+	"libm/dbl-64/s_ldexp.cpp"
+	"libm/dbl-64/s_llrint.cpp"
+	"libm/dbl-64/s_llround.cpp"
+	"libm/dbl-64/s_log1p.cpp"
+	"libm/dbl-64/s_logb.cpp"
+	"libm/dbl-64/s_lrint.cpp"
+	"libm/dbl-64/s_lround.cpp"
+	"libm/dbl-64/s_modf.cpp"
+	"libm/dbl-64/s_nearbyint.cpp"
+	"libm/dbl-64/s_nextafter.cpp"
+	"libm/dbl-64/s_nexttoward.cpp"
+	"libm/dbl-64/s_remquo.cpp"
+	"libm/dbl-64/s_rint.cpp"
+	"libm/dbl-64/s_round.cpp"
+	"libm/dbl-64/s_scalbln.cpp"
+	"libm/dbl-64/s_scalbn.cpp"
+	"libm/dbl-64/s_signbit.cpp"
+	"libm/dbl-64/s_sin.cpp"
+	"libm/dbl-64/s_sincos.cpp"
+	"libm/dbl-64/s_tan.cpp"
+	"libm/dbl-64/s_tanh.cpp"
+	"libm/dbl-64/s_trunc.cpp"
+	"libm/dbl-64/w_exp.cpp"
+)
 
 SET(cxxflags "-I\"${CMAKE_CURRENT_SOURCE_DIR}/libm/headers\"")
 if   (NOT MSVC)
@@ -76,12 +159,15 @@ if   (NOT MSVC)
 	endif (NOT $ENV{CXX} MATCHES "icpc")
 endif(NOT MSVC)
 SET_SOURCE_FILES_PROPERTIES(${libm_flt32_source} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_FLT32 ${cxxflags}")
+SET_SOURCE_FILES_PROPERTIES(${libm_dbl64_source} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_DBL64 ${cxxflags}")
 
 ADD_LIBRARY(streflop STATIC EXCLUDE_FROM_ALL
 	SMath.cpp
 	Random.cpp
 	streflopC.cpp
 	${libm_flt32_source}
-	)
+	${libm_dbl64_source}
+)
+
 set_target_properties(streflop PROPERTIES COMPILE_FLAGS "${PIC_FLAG}")
 #TODO do not use -fPIC for streflop (decreases performance)

@@ -6,7 +6,11 @@
 #include <algorithm>
 #include <string>
 
-#include "LuaInclude.h"
+#ifdef ENABLE_LUAJIT
+#include "lib/ljSpring/include/LuaInclude.h"
+#else
+#include "lib/lua/include/LuaInclude.h"
+#endif
 #include "System/StringHash.h"
 
 

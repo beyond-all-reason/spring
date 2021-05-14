@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_tanhf.c -- Simple version of s_tanh.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_tanhf.c -- StreflopSimple version of s_tanh.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,19 +23,19 @@ static char rcsid[] = "$NetBSD: s_tanhf.c,v 1.4f 1995/05/10 20:48:24 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple one=1.0f, two=2.0f, tiny = 1.0e-30f;
+static const StreflopSimple one=1.0f, two=2.0f, tiny = 1.0e-30f;
 #else
-static Simple one=1.0f, two=2.0f, tiny = 1.0e-30f;
+static StreflopSimple one=1.0f, two=2.0f, tiny = 1.0e-30f;
 #endif
 
 #ifdef __STDC__
-	Simple __tanhf(Simple x)
+	StreflopSimple __tanhf(StreflopSimple x)
 #else
-	Simple __tanhf(x)
-	Simple x;
+	StreflopSimple __tanhf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple t,z;
+	StreflopSimple t,z;
 	int32_t jx,ix;
 
 	GET_FLOAT_WORD(jx,x);

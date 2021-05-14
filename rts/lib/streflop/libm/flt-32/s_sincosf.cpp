@@ -26,7 +26,7 @@
 
 namespace streflop_libm {
 void
-__sincosf (Simple x, Simple *sinx, Simple *cosx)
+__sincosf (StreflopSimple x, StreflopSimple *sinx, StreflopSimple *cosx)
 {
   int32_t ix;
 
@@ -48,7 +48,7 @@ __sincosf (Simple x, Simple *sinx, Simple *cosx)
   else
     {
       /* Argument reduction needed.  */
-      Simple y[2];
+      StreflopSimple y[2];
       int n;
 
       n = __ieee754_rem_pio2f (x, y);

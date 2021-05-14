@@ -467,7 +467,7 @@ EXPERIMENTAL:
 
 
 #define SPECIALIZE_RANDOM_FOR_SIMPLE_ULP(X,Y) \
-Simple ULP_Random ## X ## Y(Simple min, Simple max) { \
+StreflopSimple ULP_Random ## X ## Y(StreflopSimple min, StreflopSimple max) { \
  \
     // Convert to signed integer for quick test of bit sign \
     SizedInteger<32>::Type imin = *reinterpret_cast<SizedUnsignedInteger<32>::Type*>(&min); \
@@ -477,8 +477,8 @@ Simple ULP_Random ## X ## Y(Simple min, Simple max) { \
     // This makes sense if excluding bounds: RandomEE(-inf,+inf) returns a possible float at random \
  \
     // Rule out NaNs \
-    if (imin&0x7fffffff > 0x7f800000) return SimpleNaN; \
-    if (imax&0x7fffffff > 0x7f800000) return SimpleNaN; \
+    if (imin&0x7fffffff > 0x7f800000) return StreflopSimpleNaN; \
+    if (imax&0x7fffffff > 0x7f800000) return StreflopSimpleNaN; \
  \
     // Convert to 2-complement representation \
     if (imin<0) imin = 0x80000000 - imin; \
@@ -493,7 +493,7 @@ Simple ULP_Random ## X ## Y(Simple min, Simple max) { \
     if (iret<0) iret = 0x80000000 - iret; \
  \
     // cast to float \
-    return *reinterpret_cast<Simple*>(&iret); \
+    return *reinterpret_cast<StreflopSimple*>(&iret); \
 }
 SPECIALIZE_RANDOM_FOR_SIMPLE_ULP(E,I)
 SPECIALIZE_RANDOM_FOR_SIMPLE_ULP(E,E)
@@ -503,7 +503,7 @@ SPECIALIZE_RANDOM_FOR_SIMPLE_ULP(I,I)
 
 
 // Return a random float
-template<> Simple Random<Simple>(RandomState& state) {
+template<> StreflopSimple Random<StreflopSimple>(RandomState& state) {
     // Generate bits
     SizedUnsignedInteger<32>::Type ret = Accessor<32>::getRandomInt(state);
 
@@ -511,35 +511,35 @@ template<> Simple Random<Simple>(RandomState& state) {
     while ((ret & 0x7fffffff) >= 0x7f800000) ret = Accessor<32>::getRandomInt(state);
 
     // cast to float
-    return *reinterpret_cast<Simple*>(&ret);
+    return *reinterpret_cast<StreflopSimple*>(&ret);
 }
 
 // Random in 1..2 - ideal IE case
-template<> Simple Random12<true,false,Simple>(RandomState& state) {
+template<> StreflopSimple Random12<true,false,StreflopSimple>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
     // Generate bits
     SizedUnsignedInteger<32>::Type r12 = Accessor<32>::getRandomInt(state);
 
-    // Simple precision keeps only 23 bits
+    // StreflopSimple precision keeps only 23 bits
     r12 &= 0x007FFFFF;
 
     // Insert exponent so it's in the [1.0-2.0) range
     r12 |= 0x3F800000;
 
-    return *reinterpret_cast<Simple*>(&r12);
+    return *reinterpret_cast<StreflopSimple*>(&r12);
 }
 
 // Random in 1..2 - near ideal EI case
-template<> Simple Random12<false,true,Simple>(RandomState& state) {
+template<> StreflopSimple Random12<false,true,StreflopSimple>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
     // Generate bits
     SizedUnsignedInteger<32>::Type r12 = Accessor<32>::getRandomInt(state);
 
-    // Simple precision keeps only 23 bits
+    // StreflopSimple precision keeps only 23 bits
     r12 &= 0x007FFFFF;
 
     // Insert exponent so it's in the [1.0-2.0) range
@@ -548,11 +548,11 @@ template<> Simple Random12<false,true,Simple>(RandomState& state) {
     // Bitwise add 1 so it's in the (1.0-2.0] range
     r12 += 1;
 
-    return *reinterpret_cast<Simple*>(&r12);
+    return *reinterpret_cast<StreflopSimple*>(&r12);
 }
 
 // Random in 1..2 - need to include both bounds
-template<> Simple Random12<true,true,Simple>(RandomState& state) {
+template<> StreflopSimple Random12<true,true,StreflopSimple>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
@@ -576,11 +576,11 @@ SHR    EDX, 23
     // bitwise add exponent so it's in the [1.0-2.0] range
     r12 += 0x3F800000;
 
-    return *reinterpret_cast<Simple*>(&r12);
+    return *reinterpret_cast<StreflopSimple*>(&r12);
 }
 
 // Random in 1..2 - need to exclude both bounds
-template<> Simple Random12<false,false,Simple>(RandomState& state) {
+template<> StreflopSimple Random12<false,false,StreflopSimple>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
@@ -596,52 +596,52 @@ template<> Simple Random12<false,false,Simple>(RandomState& state) {
     // bitwise add exponent so it's in the (1.0-2.0) range
     r12 += 0x3F800001;
 
-    return *reinterpret_cast<Simple*>(&r12);
+    return *reinterpret_cast<StreflopSimple*>(&r12);
 }
 
 
-///////// Double versions  ///////////
+///////// StreflopDouble versions  ///////////
 
 // Return a random float
-template<> Double Random<Double>(RandomState& state) {
+template<> StreflopDouble Random<StreflopDouble>(RandomState& state) {
     // Generate bits
     SizedUnsignedInteger<64>::Type ret = Accessor<64>::getRandomInt(state);
 
     // Discard NaNs and Inf, ignore sign
     while ((ret & 0x7fffffffffffffffULL) >= 0x7ff0000000000000ULL) ret = Accessor<64>::getRandomInt(state);
 
-    // cast to Double
-    return *reinterpret_cast<Double*>(&ret);
+    // cast to StreflopDouble
+    return *reinterpret_cast<StreflopDouble*>(&ret);
 }
 
 
 // Random in a 1..2 - ideal IE case
-template<> Double Random12<true,false,Double>(RandomState& state) {
+template<> StreflopDouble Random12<true,false,StreflopDouble>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
     // Generate bits
     SizedUnsignedInteger<64>::Type r12 = Accessor<64>::getRandomInt(state);
 
-    // Double precision keeps only 52 bits
+    // StreflopDouble precision keeps only 52 bits
     r12 &= 0x000FFFFFFFFFFFFFULL;
 
     // Insert exponent so it's in the [1.0-2.0) range
     r12 |= 0x3FF0000000000000ULL;
 
     // scale from 1-2 interval to the desired interval
-    return *reinterpret_cast<Double*>(&r12);
+    return *reinterpret_cast<StreflopDouble*>(&r12);
 }
 
 // Random in a 1..2 - near ideal EI case
-template<> Double Random12<false,true,Double>(RandomState& state) {
+template<> StreflopDouble Random12<false,true,StreflopDouble>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
     // Generate bits
     SizedUnsignedInteger<64>::Type r12 = Accessor<64>::getRandomInt(state);
 
-    // Double precision keeps only 52 bits
+    // StreflopDouble precision keeps only 52 bits
     r12 &= 0x000FFFFFFFFFFFFFULL;
 
     // Insert exponent so it's in the [1.0-2.0) range
@@ -651,11 +651,11 @@ template<> Double Random12<false,true,Double>(RandomState& state) {
     r12 += 1;
 
     // scale from 1-2 interval to the desired interval
-    return *reinterpret_cast<Double*>(&r12);
+    return *reinterpret_cast<StreflopDouble*>(&r12);
 }
 
 // Random in a 1..2 - need to include both bounds
-template<> Double Random12<true,true,Double>(RandomState& state) {
+template<> StreflopDouble Random12<true,true,StreflopDouble>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
@@ -663,7 +663,7 @@ template<> Double Random12<true,true,Double>(RandomState& state) {
     SizedUnsignedInteger<64>::Type r12 = Accessor<64>::getRandomInt(state);
 
     // Keep 2^52 + 1 possibilities
-    // See comment in Simple version
+    // See comment in StreflopSimple version
     // allow %= only for 64-bit register machines
 #if STREFLOP_RANDOM_GEN_SIZE == 64
     r12 %= 0x0010000000000001ULL;
@@ -675,11 +675,11 @@ template<> Double Random12<true,true,Double>(RandomState& state) {
     // bitwise add exponent so it's in the [1.0-2.0] range
     r12 += 0x3FF0000000000000ULL;
 
-    return *reinterpret_cast<Double*>(&r12);
+    return *reinterpret_cast<StreflopDouble*>(&r12);
 }
 
 // Random in a 1..2 - need to exclude both bounds
-template<> Double Random12<false,false,Double>(RandomState& state) {
+template<> StreflopDouble Random12<false,false,StreflopDouble>(RandomState& state) {
 
     // Get uniform number between 1 and 2 at max precision
 
@@ -687,7 +687,7 @@ template<> Double Random12<false,false,Double>(RandomState& state) {
     SizedUnsignedInteger<64>::Type r12 = Accessor<64>::getRandomInt(state);
 
     // Keep 2^52 - 1 possibilities
-    // See comment in Simple version
+    // See comment in StreflopSimple version
     // r12 %= 0x000FFFFFFFFFFFFFULL;
     // Choose to avoid % operator by having very small chance of rejection
     while ((r12 &= 0x000FFFFFFFFFFFFFULL) == 0x000FFFFFFFFFFFFFULL) r12 = Accessor<64>::getRandomInt(state);
@@ -695,7 +695,7 @@ template<> Double Random12<false,false,Double>(RandomState& state) {
     // bitwise add exponent so it's in the (1.0-2.0) range
     r12 += 0x3FF0000000000001ULL;
 
-    return *reinterpret_cast<Double*>(&r12);
+    return *reinterpret_cast<StreflopDouble*>(&r12);
 }
 
 
@@ -913,13 +913,13 @@ template<typename FloatType> static inline FloatType NRandom_Generic(FloatType *
 }
 
 // Specialize for the Float types declared in the header
-template<> Simple NRandom(Simple *secondary, RandomState& state) {
-    return NRandom_Generic<Simple>(secondary,state);
+template<> StreflopSimple NRandom(StreflopSimple *secondary, RandomState& state) {
+    return NRandom_Generic<StreflopSimple>(secondary,state);
 }
 
 /*
-template<> Double NRandom(Double *secondary, RandomState& state) {
-    return NRandom_Generic<Double>(secondary,state);
+template<> StreflopDouble NRandom(StreflopDouble *secondary, RandomState& state) {
+    return NRandom_Generic<StreflopDouble>(secondary,state);
 }
 #if defined(Extended)
 template<> Extended NRandom(Extended *secondary, RandomState& state) {
@@ -949,13 +949,13 @@ template<typename FloatType> static inline FloatType NRandom_Generic(FloatType m
 }
 
 // Specialize for the Float types declared in the header
-template<> Simple NRandom(Simple mean, Simple std_dev, Simple *secondary, RandomState& state) {
-    return NRandom_Generic<Simple>(mean, std_dev, secondary,state);
+template<> StreflopSimple NRandom(StreflopSimple mean, StreflopSimple std_dev, StreflopSimple *secondary, RandomState& state) {
+    return NRandom_Generic<StreflopSimple>(mean, std_dev, secondary,state);
 }
 
 /*
-template<> Double NRandom(Double mean, Double std_dev, Double *secondary, RandomState& state) {
-    return NRandom_Generic<Double>(mean, std_dev, secondary,state);
+template<> StreflopDouble NRandom(StreflopDouble mean, StreflopDouble std_dev, StreflopDouble *secondary, RandomState& state) {
+    return NRandom_Generic<StreflopDouble>(mean, std_dev, secondary,state);
 }
 #if defined(Extended)
 template<> Extended NRandom(Extended mean, Extended std_dev, Extended *secondary, RandomState& state) {

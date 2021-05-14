@@ -64,14 +64,14 @@ SizedUnsignedInteger<32>::Type RandomSeed(RandomState& state = DefaultRandomStat
 
 /** Returns a random number from a uniform distribution.
 
-    All integer types are supported, as well as Simple, Double, and Extended
+    All integer types are supported, as well as StreflopSimple, StreflopDouble, and Extended
 
     The Random(min, max) template takes as argument:
     - bool: whether or not including the min bound
     - bool: whether or not including the max bound
     - type: to generate a number from that type, and decide on min/max bounds
-    Example: Double x = Random<true, false, Double>(7.0, 18.0)
-             This will return a Double number between 7.0 (included) and 18.0 (excluded)
+    Example: StreflopDouble x = Random<true, false, StreflopDouble>(7.0, 18.0)
+             This will return a StreflopDouble number between 7.0 (included) and 18.0 (excluded)
     This works for both float and integer types.
 
     Aliases are named like RandomXY with X,Y = E,I for bounds Excluded,Included.
@@ -190,8 +190,8 @@ template<> inline a_type Random<false, false, a_type>(a_type min, a_type max, Ra
 }
 
 
-STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Simple)
-STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Double)
+STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(StreflopSimple)
+STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(StreflopDouble)
 
 #if defined(Extended)
 STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Extended)
@@ -226,15 +226,15 @@ STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Extended)
     are thrown away)
 */
 template<typename a_type> a_type NRandom(a_type mean, a_type std_dev, a_type *secondary = 0, RandomState& state = DefaultRandomState);
-template<> Simple NRandom(Simple mean, Simple std_dev, Simple *secondary, RandomState& state);
-template<> Double NRandom(Double mean, Double std_dev, Double *secondary, RandomState& state);
+template<> StreflopSimple NRandom(StreflopSimple mean, StreflopSimple std_dev, StreflopSimple *secondary, RandomState& state);
+template<> StreflopDouble NRandom(StreflopDouble mean, StreflopDouble std_dev, StreflopDouble *secondary, RandomState& state);
 #if defined(Extended)
 template<> Extended NRandom(Extended mean, Extended std_dev, Extended *secondary, RandomState& state);
 #endif
 /// Simplified versions
 template<typename a_type> a_type NRandom(a_type *secondary = 0, RandomState& state = DefaultRandomState);
-template<> Simple NRandom(Simple *secondary, RandomState& state);
-template<> Double NRandom(Double *secondary, RandomState& state);
+template<> StreflopSimple NRandom(StreflopSimple *secondary, RandomState& state);
+template<> StreflopDouble NRandom(StreflopDouble *secondary, RandomState& state);
 #if defined(Extended)
 template<> Extended NRandom(Extended *secondary, RandomState& state);
 #endif

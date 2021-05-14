@@ -5,13 +5,13 @@
 
 #include "creg_cond.h"
 
-#ifdef USING_CREG
-
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Rendering/Textures/ColorMap.h"
+
+#ifdef USING_CREG
 
 namespace creg
 {

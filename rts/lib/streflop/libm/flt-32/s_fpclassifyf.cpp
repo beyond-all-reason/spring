@@ -26,7 +26,7 @@
 
 namespace streflop_libm {
 int
-__fpclassifyf (Simple x)
+__fpclassifyf (StreflopSimple x)
 {
   u_int32_t wx;
   int retval = FP_NORMAL;

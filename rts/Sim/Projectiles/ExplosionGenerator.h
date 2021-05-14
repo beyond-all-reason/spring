@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "Rendering/GroundFlashInfo.h"
 #include "System/UnorderedMap.hpp"

@@ -8,8 +8,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_MODULES_SPRING}")
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_MODULES_SPRING}/OverrideFlags.cmake")
 
 project(Spring)
-
 add_definitions(-DFMT_HEADER_ONLY) #for fmt lib
+
+
+
+# languages, needed so gcc processes the assembly for LuaJIT
+enable_language(C)
+enable_language(CXX)
+enable_language(ASM) # NEEDS to be last!
 
 # dummy so that qtcreator shows all files (even those of windows)
 if(CMAKE_VERSION VERSION_GREATER 3.1.2)
@@ -173,6 +179,8 @@ endif (UNIX AND NOT MINGW)
 set(AI_LIBS_DIR "${DATADIR}"     CACHE STRING "Where to install Skirmish AI libraries")
 set(AI_DATA_DIR "${AI_LIBS_DIR}" CACHE STRING "Where to install Skirmish AI additional files (eg. configuration)")
 set(AI_TYPES    "ALL"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
+
+set(ENABLE_LUAJIT TRUE			 CACHE BOOL   "Whether to use Lua 5.1 or LuaJIT")
 
 ## DataDirs
 set(BUILTIN_DATADIRS "")

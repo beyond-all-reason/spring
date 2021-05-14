@@ -36,9 +36,12 @@ namespace math {
 #else
 #include <cmath>
 
+#define StreflopSimple float
+#define StreflopDouble double
+
 namespace streflop {
-	typedef float Simple;
-	typedef double Double;
+	//typedef float StreflopSimple;
+	//typedef double StreflopDouble;
 	template<typename T> void streflop_init() {}
 };
 

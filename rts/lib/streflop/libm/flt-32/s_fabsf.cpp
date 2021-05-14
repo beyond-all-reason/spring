@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_fabsf.c -- Simple version of s_fabs.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_fabsf.c -- StreflopSimple version of s_fabs.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -27,10 +27,10 @@ static char rcsid[] = "$NetBSD: s_fabsf.c,v 1.4f 1995/05/10 20:47:15 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __fabsf(Simple x)
+	StreflopSimple __fabsf(StreflopSimple x)
 #else
-	Simple __fabsf(x)
-	Simple x;
+	StreflopSimple __fabsf(x)
+	StreflopSimple x;
 #endif
 {
 	u_int32_t ix;

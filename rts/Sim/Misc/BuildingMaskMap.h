@@ -4,6 +4,7 @@
 #define BUILDINGMASKMAP_H
 
 #include <vector>
+#include <cstdint>
 
 #include "System/creg/creg_cond.h"
 

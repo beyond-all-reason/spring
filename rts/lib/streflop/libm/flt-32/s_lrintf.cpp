@@ -24,20 +24,21 @@
 
 #include "math_private.h"
 
-static const Simple two23[2] =
+static const StreflopSimple two23[2] =
 {
   8.3886080000e+06f, /* 0x4B000000 */
  -8.3886080000e+06f, /* 0xCB000000 */
 };
 
+namespace streflop_libm {
 
 long int
-__lrintf (Simple x)
+__lrintf (StreflopSimple x)
 {
   int32_t j0;
   u_int32_t i0;
-  Simple w;
-  Simple t;
+  StreflopSimple w;
+  StreflopSimple t;
   long int result;
   int sx;
 
@@ -74,6 +75,8 @@ __lrintf (Simple x)
     }
 
   return sx ? -result : result;
+}
+
 }
 
 weak_alias (__lrintf, lrintf)

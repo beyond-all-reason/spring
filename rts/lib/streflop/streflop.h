@@ -30,8 +30,10 @@ namespace streflop {
 #if defined(STREFLOP_SSE)
 
     // SSE always uses native types, denormals are handled by FPU flags
-    typedef float Simple;
-    typedef double Double;
+    //typedef float StreflopSimple;
+    //typedef double StreflopDouble;
+    #define StreflopSimple float
+    #define StreflopDouble double
     #undef Extended
 
 #elif defined(STREFLOP_X87)
@@ -39,15 +41,15 @@ namespace streflop {
     // X87 uses a wrapper for no denormals case
 #if defined(STREFLOP_NO_DENORMALS)
 #include "X87DenormalSquasher.h"
-    typedef X87DenormalSquasher<float> Simple;
-    typedef X87DenormalSquasher<double> Double;
+    typedef X87DenormalSquasher<float> StreflopSimple;
+    typedef X87DenormalSquasher<double> StreflopDouble;
     typedef X87DenormalSquasher<long double> Extended;
     #define Extended Extended
 
 #else
     // Use FPU flags for x87 with denormals
-    typedef float Simple;
-    typedef double Double;
+    typedef float StreflopSimple;
+    typedef double StreflopDouble;
     typedef long double Extended;
     #define Extended Extended
 #endif
@@ -55,8 +57,8 @@ namespace streflop {
 #elif defined(STREFLOP_SOFT) && !defined(STREFLOP_NO_DENORMALS)
     // Use SoftFloat wrapper
 #include "SoftFloatWrapper.h"
-    typedef SoftFloatWrapper<32> Simple;
-    typedef SoftFloatWrapper<64> Double;
+    typedef SoftFloatWrapper<32> StreflopSimple;
+    typedef SoftFloatWrapper<64> StreflopDouble;
     typedef SoftFloatWrapper<96> Extended;
     #define Extended Extended
 

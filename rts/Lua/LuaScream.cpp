@@ -35,7 +35,7 @@ int LuaScream::meta_gc(lua_State* L)
 	int* refPtr = (int*)luaL_checkudata(L, 1, "Scream");
 	lua_rawgeti(L, LUA_REGISTRYINDEX, *refPtr);
 	if (lua_isfunction(L, -1)) {
-		const int error = lua_pcall(L, 0, 0, 0);
+		const int error = wrapped_lua_pcall(L, 0, 0, 0);
 		if (error != 0) {
 			LOG_L(L_ERROR, "Scream: error(%i) = %s",
 					error, lua_tostring(L, -1));

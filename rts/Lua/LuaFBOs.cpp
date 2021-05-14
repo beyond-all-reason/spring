@@ -506,7 +506,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 	glGetIntegerv(bindTarget, &currentFBO);
 	glBindFramebufferEXT(target, fbo->id);
 
-	const int error = lua_pcall(L, (lua_gettop(L) - funcIndex), 0, 0);
+	const int error = wrapped_lua_pcall(L, (lua_gettop(L) - funcIndex), 0, 0);
 
 	glBindFramebufferEXT(target, currentFBO);
 	if (identities) {

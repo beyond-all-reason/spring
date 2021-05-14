@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_atanf.c -- Simple version of s_atan.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_atanf.c -- StreflopSimple version of s_atan.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: s_atanf.c,v 1.4f 1995/05/10 20:46:47 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple atanhi[] = {
+static const StreflopSimple atanhi[] = {
 #else
-static Simple atanhi[] = {
+static StreflopSimple atanhi[] = {
 #endif
   4.6364760399e-01f, /* atan(0.5f)hi 0x3eed6338 */
   7.8539812565e-01f, /* atan(1.0f)hi 0x3f490fda */
@@ -34,9 +34,9 @@ static Simple atanhi[] = {
 };
 
 #ifdef __STDC__
-static const Simple atanlo[] = {
+static const StreflopSimple atanlo[] = {
 #else
-static Simple atanlo[] = {
+static StreflopSimple atanlo[] = {
 #endif
   5.0121582440e-09f, /* atan(0.5f)lo 0x31ac3769 */
   3.7748947079e-08f, /* atan(1.0f)lo 0x33222168 */
@@ -45,9 +45,9 @@ static Simple atanlo[] = {
 };
 
 #ifdef __STDC__
-static const Simple aT[] = {
+static const StreflopSimple aT[] = {
 #else
-static Simple aT[] = {
+static StreflopSimple aT[] = {
 #endif
   3.3333334327e-01f, /* 0x3eaaaaaa */
  -2.0000000298e-01f, /* 0xbe4ccccd */
@@ -63,21 +63,21 @@ static Simple aT[] = {
 };
 
 #ifdef __STDC__
-	static const Simple 
+	static const StreflopSimple 
 #else
-	static Simple 
+	static StreflopSimple 
 #endif
 one   = 1.0f,
 huge   = 1.0e30f;
 
 #ifdef __STDC__
-	Simple __atanf(Simple x)
+	StreflopSimple __atanf(StreflopSimple x)
 #else
-	Simple __atanf(x)
-	Simple x;
+	StreflopSimple __atanf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple w,s1,s2,z;
+	StreflopSimple w,s1,s2,z;
 	int32_t ix,hx,id;
 
 	GET_FLOAT_WORD(hx,x);
@@ -96,15 +96,15 @@ huge   = 1.0e30f;
 	x = fabsf(x);
 	if (ix < 0x3f980000) {		/* |x| < 1.1875f */
 	    if (ix < 0x3f300000) {	/* 7/16 <=|x|<11/16 */
-		id = 0; x = ((Simple)2.0f*x-one)/((Simple)2.0f+x); 
+		id = 0; x = ((StreflopSimple)2.0f*x-one)/((StreflopSimple)2.0f+x); 
 	    } else {			/* 11/16<=|x|< 19/16 */
 		id = 1; x  = (x-one)/(x+one); 
 	    }
 	} else {
 	    if (ix < 0x401c0000) {	/* |x| < 2.4375f */
-		id = 2; x  = (x-(Simple)1.5f)/(one+(Simple)1.5f*x);
+		id = 2; x  = (x-(StreflopSimple)1.5f)/(one+(StreflopSimple)1.5f*x);
 	    } else {			/* 2.4375f <= |x| < 2^66 */
-		id = 3; x  = -(Simple)1.0f/x;
+		id = 3; x  = -(StreflopSimple)1.0f/x;
 	    }
 	}}
     /* end of argument reduction */

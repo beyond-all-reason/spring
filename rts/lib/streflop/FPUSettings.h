@@ -223,7 +223,7 @@ template<typename T> inline void streflop_init() {
 /// Initialize the FPU for the different types
 /// this may also be called to switch between code sections using
 /// different precisions
-template<> inline void streflop_init<Simple>() {
+template<> inline void streflop_init<StreflopSimple>() {
     unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xFCFF; // 32 bits internal operations
@@ -235,7 +235,7 @@ template<> inline void streflop_init<Simple>() {
 #endif
 }
 
-template<> inline void streflop_init<Double>() {
+template<> inline void streflop_init<StreflopDouble>() {
     unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xFCFF;
@@ -364,7 +364,7 @@ template<typename T> inline void streflop_init() {
 /// Initialize the FPU for the different types
 /// this may also be called to switch between code sections using
 /// different precisions
-template<> inline void streflop_init<Simple>() {
+template<> inline void streflop_init<StreflopSimple>() {
     // Just in case the compiler would store a value on the st(x) registers
     unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
@@ -381,7 +381,7 @@ template<> inline void streflop_init<Simple>() {
     STREFLOP_LDMXCSR(sse_mode);
 }
 
-template<> inline void streflop_init<Double>() {
+template<> inline void streflop_init<StreflopDouble>() {
     // Just in case the compiler would store a value on the st(x) registers
     unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
@@ -517,9 +517,9 @@ template<typename T> inline void streflop_init() {
 /// Initialize the FPU for the different types
 /// this may also be called to switch between code sections using
 /// different precisions
-template<> inline void streflop_init<Simple>() {
+template<> inline void streflop_init<StreflopSimple>() {
 }
-template<> inline void streflop_init<Double>() {
+template<> inline void streflop_init<StreflopDouble>() {
 }
 template<> inline void streflop_init<Extended>() {
 }

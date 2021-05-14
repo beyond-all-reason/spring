@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* k_sinf.c -- Simple version of k_sin.c
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* k_sinf.c -- StreflopSimple version of k_sin.c
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: k_sinf.c,v 1.4f 1995/05/10 20:46:33 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple 
+static const StreflopSimple 
 #else
-static Simple 
+static StreflopSimple 
 #endif
 half =  5.0000000000e-01f,/* 0x3f000000 */
 S1  = -1.6666667163e-01f, /* 0xbe2aaaab */
@@ -36,13 +36,13 @@ S5  = -2.5050759689e-08f, /* 0xb2d72f34 */
 S6  =  1.5896910177e-10f; /* 0x2f2ec9d3 */
 
 #ifdef __STDC__
-	Simple __kernel_sinf(Simple x, Simple y, int iy)
+	StreflopSimple __kernel_sinf(StreflopSimple x, StreflopSimple y, int iy)
 #else
-	Simple __kernel_sinf(x, y, iy)
-	Simple x,y; int iy;		/* iy=0 if y is zero */
+	StreflopSimple __kernel_sinf(x, y, iy)
+	StreflopSimple x,y; int iy;		/* iy=0 if y is zero */
 #endif
 {
-	Simple z,r,v;
+	StreflopSimple z,r,v;
 	int32_t ix;
 	GET_FLOAT_WORD(ix,x);
 	ix &= 0x7fffffff;			/* high word of x */

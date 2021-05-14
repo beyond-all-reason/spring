@@ -1118,7 +1118,7 @@ int CLuaUnitScript::CallAsUnit(lua_State* L)
 	activeUnit = unit;
 	activeScript = unit->script;
 
-	const int error = lua_pcall(L, lua_gettop(L) - funcIndex, LUA_MULTRET, 0);
+	const int error = wrapped_lua_pcall(L, lua_gettop(L) - funcIndex, LUA_MULTRET, 0);
 
 	activeUnit = oldActiveUnit;
 	activeScript = oldActiveScript;

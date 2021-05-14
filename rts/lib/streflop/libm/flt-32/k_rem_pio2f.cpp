@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* k_rem_pio2f.c -- Simple version of k_rem_pio2.c
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* k_rem_pio2f.c -- StreflopSimple version of k_rem_pio2.c
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -21,7 +21,7 @@ static char rcsid[] = "$NetBSD: k_rem_pio2f.c,v 1.4f 1995/05/10 20:46:28 jtc Exp
 #include "SMath.h"
 #include "math_private.h"
 
-/* In the Simple version, the input parameter x contains 8 bit
+/* In the StreflopSimple version, the input parameter x contains 8 bit
    integers, not 24 bit integers.  113 bit precision is not supported.  */
 
 namespace streflop_libm {
@@ -32,9 +32,9 @@ static int init_jk[] = {4,7,9};
 #endif
 
 #ifdef __STDC__
-static const Simple PIo2[] = {
+static const StreflopSimple PIo2[] = {
 #else
-static Simple PIo2[] = {
+static StreflopSimple PIo2[] = {
 #endif
   1.5703125000e+00f, /* 0x3fc90000 */
   4.5776367188e-04f, /* 0x39f00000 */
@@ -50,9 +50,9 @@ static Simple PIo2[] = {
 };
 
 #ifdef __STDC__
-static const Simple			
+static const StreflopSimple			
 #else
-static Simple			
+static StreflopSimple			
 #endif
 zero   = 0.0f,
 one    = 1.0f,
@@ -60,14 +60,14 @@ two8   =  2.5600000000e+02f, /* 0x43800000 */
 twon8  =  3.9062500000e-03f; /* 0x3b800000 */
 
 #ifdef __STDC__
-	int __kernel_rem_pio2f(Simple *x, Simple *y, int e0, int nx, int prec, const int32_t *ipio2) 
+	int __kernel_rem_pio2f(StreflopSimple *x, StreflopSimple *y, int e0, int nx, int prec, const int32_t *ipio2) 
 #else
 	int __kernel_rem_pio2f(x,y,e0,nx,prec,ipio2) 	
-	Simple x[], y[]; int e0,nx,prec; int32_t ipio2[];
+	StreflopSimple x[], y[]; int e0,nx,prec; int32_t ipio2[];
 #endif
 {
 	int32_t jz,jx,jv,jp,jk,carry,n,iq[20],i,j,k,m,q0,ih;
-	Simple z,fw,f[20],fq[20],q[20];
+	StreflopSimple z,fw,f[20],fq[20],q[20];
 
     /* initialize jk*/
 	jk = init_jk[prec];
@@ -80,7 +80,7 @@ twon8  =  3.9062500000e-03f; /* 0x3b800000 */
 
     /* set up f[0] to f[jx+jk] where f[jx+jk] = ipio2[jv+jk] */
 	j = jv-jx; m = jx+jk;
-	for(i=0;i<=m;i++,j++) f[i] = (j<0)? zero : (Simple) ipio2[j];
+	for(i=0;i<=m;i++,j++) f[i] = (j<0)? zero : (StreflopSimple) ipio2[j];
 
     /* compute q[0],q[1],...q[jk] */
 	for (i=0;i<=jk;i++) {
@@ -91,16 +91,16 @@ twon8  =  3.9062500000e-03f; /* 0x3b800000 */
 recompute:
     /* distill q[] into iq[] reversingly */
 	for(i=0,j=jz,z=q[jz];j>0;i++,j--) {
-	    fw    =  (Simple)((int32_t)(twon8* z));
+	    fw    =  (StreflopSimple)((int32_t)(twon8* z));
 	    iq[i] =  (int32_t)(z-two8*fw);
 	    z     =  q[j-1]+fw;
 	}
 
     /* compute n */
 	z  = __scalbnf(z,q0);		/* actual value of z */
-	z -= (Simple)8.0f*__floorf(z*(Simple)0.125f);	/* trim off integer >= 8 */
+	z -= (StreflopSimple)8.0f*__floorf(z*(StreflopSimple)0.125f);	/* trim off integer >= 8 */
 	n  = (int32_t) z;
-	z -= (Simple)n;
+	z -= (StreflopSimple)n;
 	ih = 0;
 	if(q0>0) {	/* need iq[jz-1] to determine n */
 	    i  = (iq[jz-1]>>(8-q0)); n += i;
@@ -108,7 +108,7 @@ recompute:
 	    ih = iq[jz-1]>>(7-q0);
 	} 
 	else if(q0==0) ih = iq[jz-1]>>8;
-	else if(z>=(Simple)0.5f) ih=2;
+	else if(z>=(StreflopSimple)0.5f) ih=2;
 
 	if(ih>0) {	/* q > 0.5f */
 	    n += 1; carry = 0;
@@ -142,7 +142,7 @@ recompute:
 		for(k=1;iq[jk-k]==0;k++);   /* k = no. of terms needed */
 
 		for(i=jz+1;i<=jz+k;i++) {   /* add q[jz+1] to q[jz+k] */
-		    f[jx+i] = (Simple) ipio2[jv+i];
+		    f[jx+i] = (StreflopSimple) ipio2[jv+i];
 		    for(j=0,fw=0.0f;j<=jx;j++) fw += x[j]*f[jx+i-j];
 		    q[i] = fw;
 		}
@@ -152,13 +152,13 @@ recompute:
 	}
 
     /* chop off zero terms */
-	if(z==(Simple)0.0f) {
+	if(z==(StreflopSimple)0.0f) {
 	    jz -= 1; q0 -= 8;
 	    while(iq[jz]==0) { jz--; q0-=8;}
 	} else { /* break z into 8-bit if necessary */
 	    z = __scalbnf(z,-q0);
 	    if(z>=two8) { 
-		fw = (Simple)((int32_t)(twon8*z));
+		fw = (StreflopSimple)((int32_t)(twon8*z));
 		iq[jz] = (int32_t)(z-two8*fw);
 		jz += 1; q0 += 8;
 		iq[jz] = (int32_t) fw;
@@ -168,7 +168,7 @@ recompute:
     /* convert integer "bit" chunk to floating-point value */
 	fw = __scalbnf(one,q0);
 	for(i=jz;i>=0;i--) {
-	    q[i] = fw*(Simple)iq[i]; fw*=twon8;
+	    q[i] = fw*(StreflopSimple)iq[i]; fw*=twon8;
 	}
 
     /* compute PIo2[0,...,jp]*q[jz,...,0] */

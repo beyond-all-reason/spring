@@ -181,7 +181,7 @@ int LuaVFS::Include(lua_State* L, bool synced)
 
 	const int paramTop = lua_gettop(L) - 1;
 
-	if ((luaError = lua_pcall(L, 0, LUA_MULTRET, 0)) != 0) {
+	if ((luaError = wrapped_lua_pcall(L, 0, LUA_MULTRET, 0)) != 0) {
 		char buf[1024];
 		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][pcall] file=%s error=%i (%s) ptop=%d cenv=%d", __func__, synced, fileName.c_str(), luaError, lua_tostring(L, -1), paramTop, hasCustomEnv);
 		lua_pushstring(L, buf);
@@ -386,7 +386,7 @@ int LuaVFS::UseArchive(lua_State* L)
 	// could be mod,map,etc
 	vfsHandler->AddArchive(archiveName, false);
 
-	const int callError = lua_pcall(L, lua_gettop(L) - funcIndex, LUA_MULTRET, 0);
+	const int callError = wrapped_lua_pcall(L, lua_gettop(L) - funcIndex, LUA_MULTRET, 0);
 
 	vfsHandler->RemoveArchive(archiveName);
 	vfsHandler->ReMapArchives(false);

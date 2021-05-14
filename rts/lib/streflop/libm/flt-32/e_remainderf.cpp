@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_remainderf.c -- Simple version of e_remainder.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_remainderf.c -- StreflopSimple version of e_remainder.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,22 +23,22 @@ static char rcsid[] = "$NetBSD: e_remainderf.c,v 1.4f 1995/05/10 20:46:08 jtc Ex
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple zero = 0.0f;
+static const StreflopSimple zero = 0.0f;
 #else
-static Simple zero = 0.0f;
+static StreflopSimple zero = 0.0f;
 #endif
 
 
 #ifdef __STDC__
-	Simple __ieee754_remainderf(Simple x, Simple p)
+	StreflopSimple __ieee754_remainderf(StreflopSimple x, StreflopSimple p)
 #else
-	Simple __ieee754_remainderf(x,p)
-	Simple x,p;
+	StreflopSimple __ieee754_remainderf(x,p)
+	StreflopSimple x,p;
 #endif
 {
 	int32_t hx,hp;
 	u_int32_t sx;
-	Simple p_half;
+	StreflopSimple p_half;
 
 	GET_FLOAT_WORD(hx,x);
 	GET_FLOAT_WORD(hp,p);
@@ -63,7 +63,7 @@ static Simple zero = 0.0f;
 		if(x+x>=p) x -= p;
 	    }
 	} else {
-	    p_half = (Simple)0.5f*p;
+	    p_half = (StreflopSimple)0.5f*p;
 	    if(x>p_half) {
 		x-=p;
 		if(x>=p_half) x -= p;

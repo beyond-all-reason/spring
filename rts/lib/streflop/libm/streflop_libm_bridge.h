@@ -83,8 +83,8 @@ typedef streflop::uint32_t u_int32_t;
 #define DBL_MANT_DIG 53
 #define LDBL_MANT_DIG 64
 
-#define HUGE_VALF SimplePositiveInfinity
-#define HUGE_VAL DoublePositiveInfinity
+#define HUGE_VALF StreflopSimplePositiveInfinity
+#define HUGE_VAL StreflopDoublePositiveInfinity
 #define HUGE_VALL ExtendedPositiveInfinity
 
 #define INT_MAX ((-1)>>1)
@@ -92,6 +92,14 @@ typedef streflop::uint32_t u_int32_t;
 // Stolen from bits/mathdef.h
 #define FP_ILOGB0      (-2147483647)
 #define FP_ILOGBNAN    2147483647
+
+#define StreflopSimplePositiveInfinity 0x7F800000
+#define StreflopSimpleNegativeInfinity 0xFF800000
+#define StreflopSimpleNaN 0x7FC00000 // note: quiet NaN
+
+#define StreflopDoublePositiveInfinity 0x7FF0000000000000
+#define StreflopDoubleNegativeInfinity 0xFFF0000000000000
+#define StreflopDoubleNaN 0x7FF8000000000000 // note: quiet positive NaN
 
 namespace streflop_libm {
 
@@ -120,67 +128,61 @@ enum
 };
 
 #ifdef LIBM_COMPILING_FLT32
-    extern int __fpclassifyf(Simple x);
-    extern int __isnanf(Simple x);
-    extern int __isinff(Simple x);
-    inline int fpclassify(Simple x) {return streflop_libm::__fpclassifyf(x);}
-    inline int isnan(Simple x) {return streflop_libm::__isnanf(x);}
-    inline int isinf(Simple x) {return streflop_libm::__isinff(x);}
-    inline int isfinite(Simple x) {return !(isnan(x) || isinf(x));}
-    inline int isnormal(Simple x) {return fpclassify(x) == FP_NORMAL;}
-    inline bool isunordered(Simple x, Simple y) {
+    extern int __fpclassifyf(StreflopSimple x);
+    extern int __isnanf(StreflopSimple x);
+    extern int __isinff(StreflopSimple x);
+    inline int fpclassify(StreflopSimple x) {return streflop_libm::__fpclassifyf(x);}
+    inline int isnan(StreflopSimple x) {return streflop_libm::__isnanf(x);}
+    inline int isinf(StreflopSimple x) {return streflop_libm::__isinff(x);}
+    inline int isfinite(StreflopSimple x) {return !(isnan(x) || isinf(x));}
+    inline int isnormal(StreflopSimple x) {return fpclassify(x) == FP_NORMAL;}
+    inline bool isunordered(StreflopSimple x, StreflopSimple y) {
         return (fpclassify(x) == FP_NAN) || (fpclassify (y) == FP_NAN);
     }
-    inline bool isgreater(Simple x, Simple y) {
+    inline bool isgreater(StreflopSimple x, StreflopSimple y) {
         return (!isunordered(x,y)) && (x > y);
     }
-    inline bool isgreaterequal(Simple x, Simple y) {
+    inline bool isgreaterequal(StreflopSimple x, StreflopSimple y) {
         return (!isunordered(x,y)) && (x >= y);
     }
-    inline bool isless(Simple x, Simple y) {
+    inline bool isless(StreflopSimple x, StreflopSimple y) {
         return (!isunordered(x,y)) && (x < y);
     }
-    inline bool islessequal(Simple x, Simple y) {
+    inline bool islessequal(StreflopSimple x, StreflopSimple y) {
         return (!isunordered(x,y)) && (x <= y);
     }
-    inline bool islessgreater(Simple x, Simple y) {
+    inline bool islessgreater(StreflopSimple x, StreflopSimple y) {
         return (!isunordered(x,y)) && ((x < y) || (x > y));
     }
-    extern const Simple SimplePositiveInfinity;
-    extern const Simple SimpleNegativeInfinity;
-    extern const Simple SimpleNaN;
 #endif
 
 #ifdef LIBM_COMPILING_DBL64
-    extern int __fpclassify(Double x);
-    extern int __isnanl(Double x);
-    extern int __isinf(Double x);
-    inline int fpclassify(Double x) {return streflop_libm::__fpclassify(x);}
-    inline int isnan(Double x) {return streflop_libm::__isnanl(x);}
-    inline int isinf(Double x) {return streflop_libm::__isinf(x);}
-    inline int isfinite(Double x) {return !(isnan(x) || isinf(x));}
-    inline int isnormal(Double x) {return fpclassify(x) == FP_NORMAL;}
-    inline bool isunordered(Double x, Double y) {
+    extern int __fpclassify(StreflopDouble x);
+    extern int __isinf(StreflopDouble x);
+    extern int __isnan(StreflopDouble x);
+    inline int fpclassify(StreflopDouble x) {return streflop_libm::__fpclassify(x);}
+    inline int isnan(StreflopDouble x) {return streflop_libm::__isnan(x);}
+    inline int isinf(StreflopDouble x) {return streflop_libm::__isinf(x);}
+    inline int isfinite(StreflopDouble x) {return !(isnan(x) || isinf(x));}
+    inline int isnormal(StreflopDouble x) {return fpclassify(x) == FP_NORMAL;}
+    inline bool isunordered(StreflopDouble x, StreflopDouble y) {
         return (fpclassify(x) == FP_NAN) || (fpclassify (y) == FP_NAN);
     }
-    inline bool isgreater(Double x, Double y) {
+    inline bool isgreater(StreflopDouble x, StreflopDouble y) {
         return (!isunordered(x,y)) && (x > y);
     }
-    inline bool isgreaterequal(Double x, Double y) {
+    inline bool isgreaterequal(StreflopDouble x, StreflopDouble y) {
         return (!isunordered(x,y)) && (x >= y);
     }
-    inline bool isless(Double x, Double y) {
+    inline bool isless(StreflopDouble x, StreflopDouble y) {
         return (!isunordered(x,y)) && (x < y);
     }
-    inline bool islessequal(Double x, Double y) {
+    inline bool islessequal(StreflopDouble x, StreflopDouble y) {
         return (!isunordered(x,y)) && (x <= y);
     }
-    inline bool islessgreater(Double x, Double y) {
+    inline bool islessgreater(StreflopDouble x, StreflopDouble y) {
         return (!isunordered(x,y)) && ((x < y) || (x > y));
     }
-    extern const Double DoublePositiveInfinity;
-    extern const Double DoubleNegativeInfinity;
-    extern const Double DoubleNaN;
 #endif
 
 #ifdef LIBM_COMPILING_LDBL96
@@ -299,20 +301,20 @@ template<> struct ExtendedConverter<16> {
 #endif
 
 
-// Simple
+// StreflopSimple
 #ifdef LIBM_COMPILING_FLT32
 
 // SSE is best case, always plain types
 // X87 uses a wrapper for no denormals case
 // First member of struct guaranted aligned at mem location => OK
 // Idem for SoftFloat wrapper, though endianity has to be checked explicitly
-#define SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<Simple*>(x)
-#define CONST_SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<const Simple*>(x)
+#define SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<StreflopSimple*>(x)
+#define CONST_SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<const StreflopSimple*>(x)
 
 
 #define GET_FLOAT_WORD(i,d)                                     \
 do {                                                            \
-  Simple f = (d);                                               \
+  StreflopSimple f = (d);                                               \
   (i) = *reinterpret_cast<streflop::uint32_t*>(&f);                            \
 } while (0)
 
@@ -321,40 +323,40 @@ do {                                                            \
 #define SET_FLOAT_WORD(d,i)                                     \
 do {                                                            \
     int ii = (i);                                               \
-    (d) = *reinterpret_cast<Simple*>(&ii);                      \
+    (d) = *reinterpret_cast<StreflopSimple*>(&ii);                      \
 } while (0)
 
 #endif
 
-// Double
+// StreflopDouble
 
 #ifdef LIBM_COMPILING_DBL64
 
-#define DOUBLE_FROM_INT_PTR(x) *reinterpret_cast<Double*>(x)
-#define CONST_DOUBLE_FROM_INT_PTR(x) *reinterpret_cast<const Double*>(x)
+#define DOUBLE_FROM_INT_PTR(x) *reinterpret_cast<StreflopDouble*>(x)
+#define CONST_DOUBLE_FROM_INT_PTR(x) *reinterpret_cast<const StreflopDouble*>(x)
 
 #define EXTRACT_WORDS(ix0,ix1,d)            \
 do {                                        \
-  Double f = (d);                           \
+  StreflopDouble f = (d);                           \
   (ix0) = reinterpret_cast<streflop::uint32_t*>(&f)[HIGH_WORD_IDX];  \
   (ix1) = reinterpret_cast<streflop::uint32_t*>(&f)[LOW_WORD_IDX];      \
 } while (0)
 
 #define GET_HIGH_WORD(i,d)          \
 do {                                \
-  Double f = (d);                           \
+  StreflopDouble f = (d);                           \
   (i) = reinterpret_cast<streflop::uint32_t*>(&f)[HIGH_WORD_IDX];  \
 } while (0)
 
 #define GET_LOW_WORD(i,d)           \
 do {                                \
-  Double f = (d);                           \
+  StreflopDouble f = (d);                           \
   (i) = reinterpret_cast<streflop::uint32_t*>(&f)[LOW_WORD_IDX];      \
 } while (0)
 
 #define INSERT_WORDS(d,ix0,ix1)     \
 do {                                \
-  Double f;                         \
+  StreflopDouble f;                         \
   reinterpret_cast<streflop::uint32_t*>(&f)[HIGH_WORD_IDX] = (ix0);  \
   reinterpret_cast<streflop::uint32_t*>(&f)[LOW_WORD_IDX] = (ix1);      \
   (d) = f; \
@@ -362,14 +364,14 @@ do {                                \
 
 #define SET_HIGH_WORD(d,v)          \
 do {                                \
-  Double f = (d);                   \
+  StreflopDouble f = (d);                   \
   reinterpret_cast<streflop::uint32_t*>(&f)[HIGH_WORD_IDX] = (v);  \
   (d) = f; \
 } while (0)
 
 #define SET_LOW_WORD(d,v)           \
 do {                                \
-  Double f = (d);                   \
+  StreflopDouble f = (d);                   \
   reinterpret_cast<streflop::uint32_t*>(&f)[LOW_WORD_IDX] = (v);  \
   (d) = f; \
 } while (0)

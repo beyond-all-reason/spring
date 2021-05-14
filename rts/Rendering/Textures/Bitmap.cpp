@@ -506,7 +506,7 @@ bool CBitmap::Load(std::string const& filename, uint8_t defaultAlpha)
 			noAlpha = (isValid && (ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL) != 4));
 
 			// FPU control word has to be restored as well
-			streflop::streflop_init<streflop::Simple>();
+			streflop::streflop_init<StreflopSimple>();
 		}
 
 		if (isValid) {

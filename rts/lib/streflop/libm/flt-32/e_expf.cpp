@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_expf.c -- Simple version of e_exp.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_expf.c -- StreflopSimple version of e_exp.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -21,13 +21,13 @@ static char rcsid[] = "$NetBSD: e_expf.c,v 1.6f 1996/04/08 15:43:43 phil Exp $";
 #include "SMath.h"
 #include "math_private.h"
 
-static const Simple huge = 1.0e+30f;
+static const StreflopSimple huge = 1.0e+30f;
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 one	= 1.0f,
 halF[2]	= {0.5f,-0.5f,},
@@ -46,13 +46,13 @@ P4   = -1.6533901999e-06f, /* 0xb5ddea0e */
 P5   =  4.1381369442e-08f; /* 0x3331bb4c */
 
 #ifdef __STDC__
-	Simple __ieee754_expf(Simple x)	/* default IEEE Double exp */
+	StreflopSimple __ieee754_expf(StreflopSimple x)	/* default IEEE StreflopDouble exp */
 #else
-	Simple __ieee754_expf(x)	/* default IEEE Double exp */
-	Simple x;
+	StreflopSimple __ieee754_expf(x)	/* default IEEE StreflopDouble exp */
+	StreflopSimple x;
 #endif
 {
-	Simple y,hi,lo,c,t;
+	StreflopSimple y,hi,lo,c,t;
 	int32_t k,xsb;
 	u_int32_t hx;
 
@@ -65,7 +65,7 @@ P5   =  4.1381369442e-08f; /* 0x3331bb4c */
 	    if(hx>0x7f800000)
 		 return x+x;	 		/* NaN */
             if(hx==0x7f800000)
-		return (xsb==0)? x:Simple(0.0f);		/* exp(+-inf)={inf,0} */
+		return (xsb==0)? x:StreflopSimple(0.0f);		/* exp(+-inf)={inf,0} */
 	    if(x > o_threshold) return huge*huge; /* overflow */
 	    if(x < u_threshold) return twom100*twom100; /* underflow */
 	}
@@ -90,8 +90,8 @@ P5   =  4.1381369442e-08f; /* 0x3331bb4c */
     /* x is now in primary range */
 	t  = x*x;
 	c  = x - t*(P1+t*(P2+t*(P3+t*(P4+t*P5))));
-	if(k==0) 	return one-((x*c)/(c-(Simple)2.0f)-x);
-	else 		y = one-((lo-(x*c)/((Simple)2.0f-c))-hi);
+	if(k==0) 	return one-((x*c)/(c-(StreflopSimple)2.0f)-x);
+	else 		y = one-((lo-(x*c)/((StreflopSimple)2.0f-c))-hi);
 	if(k >= -125) {
 	    u_int32_t hy;
 	    GET_FLOAT_WORD(hy,y);

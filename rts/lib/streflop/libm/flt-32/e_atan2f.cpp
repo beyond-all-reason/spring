@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_atan2f.c -- Simple version of e_atan2.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_atan2f.c -- StreflopSimple version of e_atan2.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: e_atan2f.c,v 1.4f 1995/05/10 20:44:53 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 tiny  = 1.0e-30f,
 zero  = 0.0f,
@@ -35,13 +35,13 @@ pi      = 3.1415927410e+00f,  /* 0x40490fdb */
 pi_lo   = -8.7422776573e-08f; /* 0xb3bbbd2e */
 
 #ifdef __STDC__
-	Simple __ieee754_atan2f(Simple y, Simple x)
+	StreflopSimple __ieee754_atan2f(StreflopSimple y, StreflopSimple x)
 #else
-	Simple __ieee754_atan2f(y,x)
-	Simple  y,x;
+	StreflopSimple __ieee754_atan2f(y,x)
+	StreflopSimple  y,x;
 #endif
 {
-	Simple z;
+	StreflopSimple z;
 	int32_t k,m,hx,hy,ix,iy;
 
 	GET_FLOAT_WORD(hx,x);
@@ -72,8 +72,8 @@ pi_lo   = -8.7422776573e-08f; /* 0xb3bbbd2e */
 		switch(m) {
 		    case 0: return  pi_o_4+tiny;/* atan(+INF,+INF) */
 		    case 1: return -pi_o_4-tiny;/* atan(-INF,+INF) */
-		    case 2: return  (Simple)3.0f*pi_o_4+tiny;/*atan(+INF,-INF)*/
-		    case 3: return (Simple)-3.0f*pi_o_4-tiny;/*atan(-INF,-INF)*/
+		    case 2: return  (StreflopSimple)3.0f*pi_o_4+tiny;/*atan(+INF,-INF)*/
+		    case 3: return (StreflopSimple)-3.0f*pi_o_4-tiny;/*atan(-INF,-INF)*/
 		}
 	    } else {
 		switch(m) {
@@ -89,7 +89,7 @@ pi_lo   = -8.7422776573e-08f; /* 0xb3bbbd2e */
 
     /* compute y/x */
 	k = (iy-ix)>>23;
-	if(k > 60) z=pi_o_2+(Simple)0.5f*pi_lo; 	/* |y/x| >  2**60 */
+	if(k > 60) z=pi_o_2+(StreflopSimple)0.5f*pi_lo; 	/* |y/x| >  2**60 */
 	else if(hx<0&&k<-60) z=0.0f; 	/* |y|/x < -2**60 */
 	else z=__atanf(fabsf(y/x));	/* safe to do y/x */
 	switch (m) {

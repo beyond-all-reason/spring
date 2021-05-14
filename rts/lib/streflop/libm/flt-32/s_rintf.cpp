@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_rintf.c -- Simple version of s_rint.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_rintf.c -- StreflopSimple version of s_rint.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: s_rintf.c,v 1.4f 1995/05/10 20:48:06 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple 
+static StreflopSimple 
 #endif
 TWO23[2]={
   8.3886080000e+06f, /* 0x4b000000 */
@@ -33,15 +33,15 @@ TWO23[2]={
 };
 
 #ifdef __STDC__
-	Simple __rintf(Simple x)
+	StreflopSimple __rintf(StreflopSimple x)
 #else
-	Simple __rintf(x)
-	Simple x;
+	StreflopSimple __rintf(x)
+	StreflopSimple x;
 #endif
 {
 	int32_t i0,j0,sx;
 	u_int32_t i,i1;
-	Simple w,t;
+	StreflopSimple w,t;
 	GET_FLOAT_WORD(i0,x);
 	sx = (i0>>31)&1;
 	j0 = ((i0>>23)&0xff)-0x7f;

@@ -18,7 +18,7 @@ static char rcsid[] = "$NetBSD: s_isinff.c,v 1.3f 1995/05/11 23:20:21 jtc Exp $"
 
 namespace streflop_libm {
 int
-__isinff (Simple x)
+__isinff (StreflopSimple x)
 {
 	int32_t ix,t;
 	GET_FLOAT_WORD(ix,x);

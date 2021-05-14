@@ -81,7 +81,7 @@ static const std::vector<std::pair<float, const char*>> testNumbers = {
 
 TEST_CASE("SpringFormat")
 {
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	// printf & spring output should be equal when a precision is specified
 

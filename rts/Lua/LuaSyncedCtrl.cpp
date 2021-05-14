@@ -2548,7 +2548,7 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 	unit->nextPosErrorUpdate = luaL_optint(L, 8, unit->nextPosErrorUpdate);
 
 	if (lua_isnumber(L, 9) && lua_isboolean(L, 10))
-		unit->SetPosErrorBit(Clamp(lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
+		unit->SetPosErrorBit(Clamp((int)lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
 
 	return 0;
 }
@@ -3030,8 +3030,8 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
 	feature->defResources.metal  = std::max(0.0f, luaL_optfloat(L, 6, feature->defResources.metal));
 	feature->defResources.energy = std::max(0.0f, luaL_optfloat(L, 7, feature->defResources.energy));
 
-	feature->resources.metal  = Clamp(luaL_checknumber(L, 2), 0.0f, feature->defResources.metal );
-	feature->resources.energy = Clamp(luaL_checknumber(L, 3), 0.0f, feature->defResources.energy);
+	feature->resources.metal  = Clamp((float)luaL_checknumber(L, 2), 0.0f, feature->defResources.metal );
+	feature->resources.energy = Clamp((float)luaL_checknumber(L, 3), 0.0f, feature->defResources.energy);
 
 	feature->reclaimTime = Clamp(luaL_optnumber(L, 4, feature->reclaimTime), 1.0f, 1000000.0f);
 	feature->reclaimLeft = Clamp(luaL_optnumber(L, 5, feature->reclaimLeft), 0.0f,       1.0f);
@@ -3969,7 +3969,7 @@ int LuaSyncedCtrl::SetHeightMapFunc(lua_State* L)
 	heightMapAmountChanged = 0.0f;
 
 	inHeightMap = true;
-	const int error = lua_pcall(L, (args - 1), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 1), 0, 0);
 	inHeightMap = false;
 
 	if (error != 0) {
@@ -4146,7 +4146,7 @@ int LuaSyncedCtrl::SetSmoothMeshFunc(lua_State* L)
 	heightMapAmountChanged = 0.0f;
 
 	inSmoothMesh = true;
-	const int error = lua_pcall(L, (args - 1), 0, 0);
+	const int error = wrapped_lua_pcall(L, (args - 1), 0, 0);
 	inSmoothMesh = false;
 
 	if (error != 0) {

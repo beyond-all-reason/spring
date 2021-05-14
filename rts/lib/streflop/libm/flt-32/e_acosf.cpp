@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_acosf.c -- Simple version of e_acos.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_acosf.c -- StreflopSimple version of e_acos.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: e_acosf.c,v 1.5f 1995/05/12 04:57:16 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple 
+static const StreflopSimple 
 #else
-static Simple 
+static StreflopSimple 
 #endif
 one =  1.0000000000e+00f, /* 0x3F800000 */
 pi =  3.1415925026e+00f, /* 0x40490fda */
@@ -43,19 +43,19 @@ qS3 = -6.8828397989e-01f, /* 0xbf303361 */
 qS4 =  7.7038154006e-02f; /* 0x3d9dc62e */
 
 #ifdef __STDC__
-	Simple __ieee754_acosf(Simple x)
+	StreflopSimple __ieee754_acosf(StreflopSimple x)
 #else
-	Simple __ieee754_acosf(x)
-	Simple x;
+	StreflopSimple __ieee754_acosf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple z,p,q,r,w,s,c,df;
+	StreflopSimple z,p,q,r,w,s,c,df;
 	int32_t hx,ix;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
 	if(ix==0x3f800000) {		/* |x|==1 */
 	    if(hx>0) return 0.0f;	/* acos(1) = 0  */
-	    else return pi+(Simple)2.0f*pio2_lo;	/* acos(-1)= pi */
+	    else return pi+(StreflopSimple)2.0f*pio2_lo;	/* acos(-1)= pi */
 	} else if(ix>0x3f800000) {	/* |x| >= 1 */
 	    return (x-x)/(x-x);		/* acos(|x|>1) is NaN */
 	}
@@ -67,16 +67,16 @@ qS4 =  7.7038154006e-02f; /* 0x3d9dc62e */
 	    r = p/q;
 	    return pio2_hi - (x - (pio2_lo-x*r));
 	} else  if (hx<0) {		/* x < -0.5f */
-	    z = (one+x)*(Simple)0.5f;
+	    z = (one+x)*(StreflopSimple)0.5f;
 	    p = z*(pS0+z*(pS1+z*(pS2+z*(pS3+z*(pS4+z*pS5)))));
 	    q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
 	    s = __ieee754_sqrtf(z);
 	    r = p/q;
 	    w = r*s-pio2_lo;
-	    return pi - (Simple)2.0f*(s+w);
+	    return pi - (StreflopSimple)2.0f*(s+w);
 	} else {			/* x > 0.5f */
 	    int32_t idf;
-	    z = (one-x)*(Simple)0.5f;
+	    z = (one-x)*(StreflopSimple)0.5f;
 	    s = __ieee754_sqrtf(z);
 	    df = s;
 	    GET_FLOAT_WORD(idf,df);
@@ -86,7 +86,7 @@ qS4 =  7.7038154006e-02f; /* 0x3d9dc62e */
 	    q = one+z*(qS1+z*(qS2+z*(qS3+z*qS4)));
 	    r = p/q;
 	    w = r*s+c;
-	    return (Simple)2.0f*(df+w);
+	    return (StreflopSimple)2.0f*(df+w);
 	}
 }
 }

@@ -147,14 +147,14 @@ foreach $f ("ldbl-96/e_lgammal_r.cpp", "ldbl-96/s_cbrtl.cpp", "ldbl-96/s_logbl.c
 # BaseType is either the same as FloatType for plain old float/double, or it is
 # the float/double type when FloatType is an Object wrapper
 $xdaccessor=
- "inline Double& d() {return DOUBLE_FROM_INT_PTR(&i[0]);}\n"
-."inline Double& x() {return DOUBLE_FROM_INT_PTR(&i[0]);}\n"
-."inline Double& d(int idx) {return DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
-."inline Double& x(int idx) {return DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
-."inline const Double& d() const {return CONST_DOUBLE_FROM_INT_PTR(&i[0]);}\n"
-."inline const Double& x() const {return CONST_DOUBLE_FROM_INT_PTR(&i[0]);}\n"
-."inline const Double& d(int idx) const {return CONST_DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
-."inline const Double& x(int idx) const {return CONST_DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
+ "inline StreflopDouble& d() {return DOUBLE_FROM_INT_PTR(&i[0]);}\n"
+."inline StreflopDouble& x() {return DOUBLE_FROM_INT_PTR(&i[0]);}\n"
+."inline StreflopDouble& d(int idx) {return DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
+."inline StreflopDouble& x(int idx) {return DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
+."inline const StreflopDouble& d() const {return CONST_DOUBLE_FROM_INT_PTR(&i[0]);}\n"
+."inline const StreflopDouble& x() const {return CONST_DOUBLE_FROM_INT_PTR(&i[0]);}\n"
+."inline const StreflopDouble& d(int idx) const {return CONST_DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
+."inline const StreflopDouble& x(int idx) const {return CONST_DOUBLE_FROM_INT_PTR(&i[idx*(sizeof(double)/sizeof(i))]);}\n"
 ;
 
 @filelist = glob("flt-32/* dbl-64/* ldbl-96/*");
@@ -196,10 +196,10 @@ foreach $f (@filelist) {
         s/{ *?.i *?= *?{/{{/g;
         # volatile declaration of static const global variables poses problem with the wrapper types
         s/volatile //g;
-        # Now substitute the base types by their Simple/Double/Extended aliases or wrapper
+        # Now substitute the base types by their StreflopSimple/StreflopDouble/Extended aliases or wrapper
         s/long double/Extended/g; # before double
-        s/\bdouble\b/Double/g;
-        s/\bfloat\b/Simple/g;
+        s/\bdouble\b/StreflopDouble/g;
+        s/\bfloat\b/StreflopSimple/g;
         # Replace problematic int += double
         s/E(X|Y|Z)(.*?=.*?)ONE/E${1}${2}1/g;
         # problematic ?: operator with different types. This simple check catches all problematic occurences
@@ -208,25 +208,25 @@ foreach $f (@filelist) {
 #        }
         if (/\?(.*?):(.*?)\b(0\.0|10\.0|1\.0)\b/) {
             my $type = "";
-            if ($f =~ /flt-32/) {$type = "Simple";}
-            if ($f =~ /dbl-64/) {$type = "Double";}
+            if ($f =~ /flt-32/) {$type = "StreflopSimple";}
+            if ($f =~ /dbl-64/) {$type = "StreflopDouble";}
             if ($f =~ /ldbl-96/) {$type = "Extended";}
             s/\?(.*?):(.*?)\b(0\.0|10\.0|1\.0)\b/?$1:$2$type($3)/g;
         }
         my $type = "";
         my $flit = "";
-        if ($f =~ /flt-32/) {$type = "Simple"; $flit = "f";}
-        if ($f =~ /dbl-64/) {$type = "Double"; $flit = "";}
+        if ($f =~ /flt-32/) {$type = "StreflopSimple"; $flit = "f";}
+        if ($f =~ /dbl-64/) {$type = "StreflopDouble"; $flit = "";}
         if ($f =~ /ldbl-96/) {$type = "Extended"; $flit = "l";}
         # replace problematic mixed-type ?: operators where an int and a float are used as arguments, incompatible with wrappers
         if (/\?(.*?)\b(0\.0|1\.0)\b(.*?):(.*?)/) {
             s/\?(.*?)\b(0\.0|1\.0)\b(.*?):(.*?)/?$1$type($2)$3:$4/g;
         }
         # These special cases are OK because no other ?: pattern use them in the 3 subdirs
-        s/\?0:/?Double(0.0):/;
-        s/:0;/:Double(0.0);/;
+        s/\?0:/?StreflopDouble(0.0):/;
+        s/:0;/:StreflopDouble(0.0);/;
         # protect the new symbol names by namespace to avoid any conflict with system libm
-        if (((/#ifdef __STDC__/) || (/.*? (__|mcr|ss32)[a-z,A-Z,_,0-9]*?\(.*?{$/) || (/Double (atan2Mp|atanMp|slow|tanMp|__exp1|__ieee754_remainder|__ieee754_sqrt)/) || (/^(Simple|Double|Extended|void|int)$/) || ((/^#ifdef BIG_ENDI$/) && ($f =~ /(uatan|mpa2|mpexp|atnat|sincos32)/)) || (/^#define MM 5$/) || (/^void __mp(log|sqrt|exp|atan)\(/) || (/^int __(b|mp)ranred\(/)) && ($opened_namespace == 0)) {
+        if (((/#ifdef __STDC__/) || (/.*? (__|mcr|ss32)[a-z,A-Z,_,0-9]*?\(.*?{$/) || (/StreflopDouble (atan2Mp|atanMp|slow|tanMp|__exp1|__ieee754_remainder|__ieee754_sqrt)/) || (/^(StreflopSimple|StreflopDouble|Extended|void|int)$/) || ((/^#ifdef BIG_ENDI$/) && ($f =~ /(uatan|mpa2|mpexp|atnat|sincos32)/)) || (/^#define MM 5$/) || (/^void __mp(log|sqrt|exp|atan)\(/) || (/^int __(b|mp)ranred\(/)) && ($opened_namespace == 0)) {
             $_ = "namespace streflop_libm {\n".$_;
             $opened_namespace = 1;
         }
@@ -246,7 +246,7 @@ foreach $f (@filelist) {
     }
     close FILE;
     # multi-line spanning regexp
-    $content =~ s/union ?{(.*?);.*?Double.*?}/struct {\n$xdaccessor$1;}/sg;
+    $content =~ s/union ?{(.*?);.*?StreflopDouble.*?}/struct {\n$xdaccessor$1;}/sg;
     # close opened namespace
     if ($opened_namespace==1) {
         $content .= "}\n";
@@ -270,14 +270,14 @@ while(<FILE>) {
     if (/^#define _IEEE754_H.*/) {
         $_.="#include \"../streflop_libm_bridge.h\"\n\n";
     }
-    # Protect the Simple section by a #define
+    # Protect the StreflopSimple section by a #define
     if (/.*?ieee754_float.*?/) {
         $_ = "#if defined(LIBM_COMPILING_FLT32)\n".$_;
     }
     if (/.*?IEEE754_FLOAT_BIAS.*?/) {
         $_ = $_."\n#endif\n";
     }
-    # Protect the Double section by a #define
+    # Protect the StreflopDouble section by a #define
     if (/.*?ieee754_double.*?/) {
         $_ = "#if defined(LIBM_COMPILING_DBL64)\n".$_;
     }
@@ -295,20 +295,20 @@ while(<FILE>) {
     }
     $content.=$_;
 }
-$ieeeAccessorSimple=
- "inline Simple& f() {return SIMPLE_FROM_INT_PTR(&storage[0]);}\n"
-."inline const Simple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}\n";
-$ieeeAccessorDouble=
- "inline Double& d() {return DOUBLE_FROM_INT_PTR(&storage[0]);}\n"
-."inline const Double& d() const {return CONST_DOUBLE_FROM_INT_PTR(&storage[0]);}\n";
+$ieeeAccessorStreflopSimple=
+ "inline StreflopSimple& f() {return SIMPLE_FROM_INT_PTR(&storage[0]);}\n"
+."inline const StreflopSimple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}\n";
+$ieeeAccessorStreflopDouble=
+ "inline StreflopDouble& d() {return DOUBLE_FROM_INT_PTR(&storage[0]);}\n"
+."inline const StreflopDouble& d() const {return CONST_DOUBLE_FROM_INT_PTR(&storage[0]);}\n";
 $ieeeAccessorExtended=
  "inline Extended& d() {return EXTENDED_FROM_INT_PTR(&storage[0]);}\n"
 ."inline const Extended& d() const {return CONST_EXTENDED_FROM_INT_PTR(&storage[0]);}\n";
 
 # multi-line spanning regexp
 $content =~ s/union(.*?ieee854_long_double.*?){.*?;/union$1\{\nint storage[sizeof(long double)\/sizeof(int)];\n$ieeeAccessorExtended/sg;
-$content =~ s/union(.*?ieee754_double.*?){.*?;/union$1\{\nint storage[sizeof(double)\/sizeof(int)];\n$ieeeAccessorDouble/sg;
-$content =~ s/union(.*?ieee754_float.*?){.*?;/union$1\{\nint storage[sizeof(float)\/sizeof(int)];\n$ieeeAccessorSimple/sg;
+$content =~ s/union(.*?ieee754_double.*?){.*?;/union$1\{\nint storage[sizeof(double)\/sizeof(int)];\n$ieeeAccessorStreflopDouble/sg;
+$content =~ s/union(.*?ieee754_float.*?){.*?;/union$1\{\nint storage[sizeof(float)\/sizeof(int)];\n$ieeeAccessorStreflopSimple/sg;
 close FILE;
 open(FILE,">headers/ieee754.h");
 print FILE $importNotice;
@@ -334,37 +334,37 @@ MPRIV_LOOP: while(<FILE>) {
         push @convert,"#define fabsf __fabsf\n";
         push @convert,"#define copysignf __copysignf\n";
         # add missing defines
-        push @convert,"extern Simple __log1pf(Simple x);\n";
-        push @convert,"extern Simple __fabsf(Simple x);\n";
-        push @convert,"extern Simple __atanf(Simple x);\n";
-        push @convert,"extern Simple __expm1f(Simple x);\n";
-        push @convert,"extern int __isinff(Simple x);\n";
-        push @convert,"extern Simple __rintf(Simple x);\n";
-        push @convert,"extern Simple __cosf(Simple x);\n";
-        push @convert,"extern void __sincosf (Simple x, Simple *sinx, Simple *cosx);\n";
-        push @convert,"extern Simple __floorf(Simple x);\n";
-        push @convert,"extern Simple __scalbnf (Simple x, int n);\n";
-        push @convert,"extern Simple __frexpf(Simple x, int *eptr);\n";
-        push @convert,"extern Simple __ldexpf(Simple value, int exp);\n";
-        push @convert,"extern int __finitef(Simple x);\n";
+        push @convert,"extern StreflopSimple __log1pf(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __fabsf(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __atanf(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __expm1f(StreflopSimple x);\n";
+        push @convert,"extern int __isinff(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __rintf(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __cosf(StreflopSimple x);\n";
+        push @convert,"extern void __sincosf (StreflopSimple x, StreflopSimple *sinx, StreflopSimple *cosx);\n";
+        push @convert,"extern StreflopSimple __floorf(StreflopSimple x);\n";
+        push @convert,"extern StreflopSimple __scalbnf (StreflopSimple x, int n);\n";
+        push @convert,"extern StreflopSimple __frexpf(StreflopSimple x, int *eptr);\n";
+        push @convert,"extern StreflopSimple __ldexpf(StreflopSimple value, int exp);\n";
+        push @convert,"extern int __finitef(StreflopSimple x);\n";
         push @convert,"#endif\n\n";
         push @convert,"#ifdef LIBM_COMPILING_DBL64\n";
         push @convert,"#define __sqrt __ieee754_sqrt\n";
         push @convert,"#define fabs __fabs\n";
         push @convert,"#define copysign __copysign\n";
-        push @convert,"extern Double __log1p(Double x);\n";
-        push @convert,"extern Double __fabs(Double x);\n";
-        push @convert,"extern Double atan(Double x);\n";
-        push @convert,"extern Double __expm1(Double x);\n";
-        push @convert,"extern int __isinf(Double x);\n";
-        push @convert,"extern Double __rint(Double x);\n";
-        push @convert,"extern Double __cos(Double x);\n";
-        push @convert,"extern void __sincos (Double x, Double *sinx, Double *cosx);\n";
-        push @convert,"extern Double __floor(Double x);\n";
-        push @convert,"extern Double __scalbn(Double x, int n);\n";
-        push @convert,"extern Double __frexp(Double x, int *eptr);\n";
-        push @convert,"extern Double __ldexp(Double value, int exp);\n";
-        push @convert,"extern int __finite(Double x);\n";
+        push @convert,"extern StreflopDouble __log1p(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble __fabs(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble atan(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble __expm1(StreflopDouble x);\n";
+        push @convert,"extern int __isinf(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble __rint(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble __cos(StreflopDouble x);\n";
+        push @convert,"extern void __sincos (StreflopDouble x, StreflopDouble *sinx, StreflopDouble *cosx);\n";
+        push @convert,"extern StreflopDouble __floor(StreflopDouble x);\n";
+        push @convert,"extern StreflopDouble __scalbn(StreflopDouble x, int n);\n";
+        push @convert,"extern StreflopDouble __frexp(StreflopDouble x, int *eptr);\n";
+        push @convert,"extern StreflopDouble __ldexp(StreflopDouble value, int exp);\n";
+        push @convert,"extern int __finite(StreflopDouble x);\n";
         push @convert,"#endif\n\n";
         push @convert,"#ifdef LIBM_COMPILING_LDBL96\n";
         push @convert,"#if defined(Extended)\n";
@@ -384,10 +384,10 @@ MPRIV_LOOP: while(<FILE>) {
 
 
     
-    # Now substitute the base types by their Simple/Double/Extended aliases or wrapper
+    # Now substitute the base types by their StreflopSimple/StreflopDouble/Extended aliases or wrapper
     s/\blong double\b/Extended/g; # before double
-    s/\bdouble\b/Double/g;
-    s/\bfloat\b/Simple/g;
+    s/\bdouble\b/StreflopDouble/g;
+    s/\bfloat\b/StreflopSimple/g;
     # Protect the Extended section by a #define
     if (/.*?elementary Extended functions.*?/) {
         $_ = "#if defined(Extended)\n".$_;
@@ -412,18 +412,18 @@ MPRIV_LOOP: while(<FILE>) {
                 $precisionMode = "Extended";
             }
         }
-        elsif ($remline =~ /Double/) {
-            if ($precisionMode ne "Double") {
+        elsif ($remline =~ /StreflopDouble/) {
+            if ($precisionMode ne "StreflopDouble") {
                 if ($precisionMode ne "none") {$_ = "#endif\n".$_;}
                 $_ = "#ifdef LIBM_COMPILING_DBL64\n".$_;
-                $precisionMode = "Double";
+                $precisionMode = "StreflopDouble";
             }
         }
-        elsif ($remline =~ /Simple/) {
-            if ($precisionMode ne "Simple") {
+        elsif ($remline =~ /StreflopSimple/) {
+            if ($precisionMode ne "StreflopSimple") {
                 if ($precisionMode ne "none") {$_ = "#endif\n".$_;}
                 $_ = "#ifdef LIBM_COMPILING_FLT32\n".$_;
-                $precisionMode = "Simple";
+                $precisionMode = "StreflopSimple";
             }
         }
     } else {
@@ -494,10 +494,10 @@ while(<FILE>) {
 }
 close FILE;
 $mpAccessor=
- "inline Double& d(int idx) {return mantissa[idx];}\n"
-."inline const Double& d(int idx) const {return mantissa[idx];}\n";
+ "inline StreflopDouble& d(int idx) {return mantissa[idx];}\n"
+."inline const StreflopDouble& d(int idx) const {return mantissa[idx];}\n";
 # multi-line spanning regexp
-$content =~ s/Double d\[(.*?)\].*?} mp_no/Double mantissa[$1];\n$mpAccessor} mp_no/sg;
+$content =~ s/StreflopDouble d\[(.*?)\].*?} mp_no/StreflopDouble mantissa[$1];\n$mpAccessor} mp_no/sg;
 open(FILE,">dbl-64/mpa.h");
 print FILE $content."}\n"; # also close namespace
 close FILE;

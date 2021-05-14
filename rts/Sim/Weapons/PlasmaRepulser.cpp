@@ -85,7 +85,9 @@ static ShieldSegmentCollectionPool sscPool;
 
 void CPlasmaRepulser::SerializeShieldSegmentCollectionPool(creg::ISerializer* s)
 {
+	#ifdef USING_CREG
 	s->SerializeObjectInstance(&sscPool, sscPool.GetClass());
+	#endif
 }
 
 

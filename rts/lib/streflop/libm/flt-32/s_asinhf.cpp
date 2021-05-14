@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_asinhf.c -- Simple version of s_asinh.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_asinhf.c -- StreflopSimple version of s_asinh.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,22 +23,22 @@ static char rcsid[] = "$NetBSD: s_asinhf.c,v 1.5f 1995/05/12 04:57:39 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 one =  1.0000000000e+00f, /* 0x3F800000 */
 ln2 =  6.9314718246e-01f, /* 0x3f317218 */
 huge=  1.0000000000e+30f;
 
 #ifdef __STDC__
-	Simple __asinhf(Simple x)
+	StreflopSimple __asinhf(StreflopSimple x)
 #else
-	Simple __asinhf(x)
-	Simple x;
+	StreflopSimple __asinhf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple t,w;
+	StreflopSimple t,w;
 	int32_t hx,ix;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
@@ -50,7 +50,7 @@ huge=  1.0000000000e+30f;
 	    w = __ieee754_logf(fabsf(x))+ln2;
 	} else if (ix>0x40000000) {	/* 2**14 > |x| > 2.0f */
 	    t = fabsf(x);
-	    w = __ieee754_logf((Simple)2.0f*t+one/(__ieee754_sqrtf(x*x+one)+t));
+	    w = __ieee754_logf((StreflopSimple)2.0f*t+one/(__ieee754_sqrtf(x*x+one)+t));
 	} else {		/* 2.0f > |x| > 2**-14 */
 	    t = x*x;
 	    w =__log1pf(fabsf(x)+t/(one+__ieee754_sqrtf(one+t)));

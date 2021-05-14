@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_jnf.c -- Simple version of e_jn.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_jnf.c -- StreflopSimple version of e_jn.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,29 +23,29 @@ static char rcsid[] = "$NetBSD: e_jnf.c,v 1.5f 1995/05/10 20:45:37 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 two   =  2.0000000000e+00f, /* 0x40000000 */
 one   =  1.0000000000e+00f; /* 0x3F800000 */
 
 #ifdef __STDC__
-static const Simple zero  =  0.0000000000e+00f;
+static const StreflopSimple zero  =  0.0000000000e+00f;
 #else
-static Simple zero  =  0.0000000000e+00f;
+static StreflopSimple zero  =  0.0000000000e+00f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_jnf(int n, Simple x)
+	StreflopSimple __ieee754_jnf(int n, StreflopSimple x)
 #else
-	Simple __ieee754_jnf(n,x)
-	int n; Simple x;
+	StreflopSimple __ieee754_jnf(n,x)
+	int n; StreflopSimple x;
 #endif
 {
 	int32_t i,hx,ix, sgn;
-	Simple a, b, temp, di;
-	Simple z, w;
+	StreflopSimple a, b, temp, di;
+	StreflopSimple z, w;
 
     /* J(-n,x) = (-1)^n * J(n, x), J(n, -x) = (-1)^n * J(n, x)
      * Thus, J(-n,x) = J(n,-x)
@@ -65,13 +65,13 @@ static Simple zero  =  0.0000000000e+00f;
 	x = fabsf(x);
 	if(ix==0||ix>=0x7f800000)	/* if x is 0 or inf */
 	    b = zero;
-	else if((Simple)n<=x) {
+	else if((StreflopSimple)n<=x) {
 		/* Safe to use J(n+1,x)=2n/x *J(n,x)-J(n-1,x) */
 	    a = __ieee754_j0f(x);
 	    b = __ieee754_j1f(x);
 	    for(i=1;i<n;i++){
 		temp = b;
-		b = b*((Simple)(i+i)/x) - a; /* avoid underflow */
+		b = b*((StreflopSimple)(i+i)/x) - a; /* avoid underflow */
 		a = temp;
 	    }
 	} else {
@@ -82,9 +82,9 @@ static Simple zero  =  0.0000000000e+00f;
 		if(n>33)	/* underflow */
 		    b = zero;
 		else {
-		    temp = x*(Simple)0.5f; b = temp;
+		    temp = x*(StreflopSimple)0.5f; b = temp;
 		    for (a=one,i=2;i<=n;i++) {
-			a *= (Simple)i;		/* a = n! */
+			a *= (StreflopSimple)i;		/* a = n! */
 			b *= temp;		/* b = (x/2)^n */
 		    }
 		    b = b/a;
@@ -115,15 +115,15 @@ static Simple zero  =  0.0000000000e+00f;
 		 * Q(0) = w, Q(1) = w(w+h) - 1,
 		 * Q(k) = (w+k*h)*Q(k-1) - Q(k-2),
 		 * When Q(k) > 1e4	good for single
-		 * When Q(k) > 1e9	good for Double
+		 * When Q(k) > 1e9	good for StreflopDouble
 		 * When Q(k) > 1e17	good for quadruple
 		 */
 	    /* determine k */
-		Simple t,v;
-		Simple q0,q1,h,tmp; int32_t k,m;
-		w  = (n+n)/(Simple)x; h = (Simple)2.0f/(Simple)x;
-		q0 = w;  z = w+h; q1 = w*z - (Simple)1.0f; k=1;
-		while(q1<(Simple)1.0e9f) {
+		StreflopSimple t,v;
+		StreflopSimple q0,q1,h,tmp; int32_t k,m;
+		w  = (n+n)/(StreflopSimple)x; h = (StreflopSimple)2.0f/(StreflopSimple)x;
+		q0 = w;  z = w+h; q1 = w*z - (StreflopSimple)1.0f; k=1;
+		while(q1<(StreflopSimple)1.0e9f) {
 			k += 1; z += h;
 			tmp = z*q1 - q0;
 			q0 = q1;
@@ -136,7 +136,7 @@ static Simple zero  =  0.0000000000e+00f;
 		/*  estimate log((2/x)^n*n!) = n*log(2/x)+n*ln(n)
 		 *  Hence, if n*(log(2n/x)) > ...
 		 *  single 8.8722839355e+01f
-		 *  Double 7.09782712893383973096e+02f
+		 *  StreflopDouble 7.09782712893383973096e+02f
 		 *  Extended 1.1356523406294143949491931077970765006170e+04f
 		 *  then recurrent value may overflow and the result is
 		 *  likely underflow to zero
@@ -144,8 +144,8 @@ static Simple zero  =  0.0000000000e+00f;
 		tmp = n;
 		v = two/x;
 		tmp = tmp*__ieee754_logf(fabsf(v*tmp));
-		if(tmp<(Simple)8.8721679688e+01f) {
-		    for(i=n-1,di=(Simple)(i+i);i>0;i--){
+		if(tmp<(StreflopSimple)8.8721679688e+01f) {
+		    for(i=n-1,di=(StreflopSimple)(i+i);i>0;i--){
 		        temp = b;
 			b *= di;
 			b  = b/x - a;
@@ -153,14 +153,14 @@ static Simple zero  =  0.0000000000e+00f;
 			di -= two;
 		    }
 		} else {
-		    for(i=n-1,di=(Simple)(i+i);i>0;i--){
+		    for(i=n-1,di=(StreflopSimple)(i+i);i>0;i--){
 		        temp = b;
 			b *= di;
 			b  = b/x - a;
 		        a = temp;
 			di -= two;
 		    /* scale b to avoid spurious overflow */
-			if(b>(Simple)1e10f) {
+			if(b>(StreflopSimple)1e10f) {
 			    a /= b;
 			    t /= b;
 			    b  = one;
@@ -174,16 +174,16 @@ static Simple zero  =  0.0000000000e+00f;
 }
 
 #ifdef __STDC__
-	Simple __ieee754_ynf(int n, Simple x)
+	StreflopSimple __ieee754_ynf(int n, StreflopSimple x)
 #else
-	Simple __ieee754_ynf(n,x)
-	int n; Simple x;
+	StreflopSimple __ieee754_ynf(n,x)
+	int n; StreflopSimple x;
 #endif
 {
 	int32_t i,hx,ix;
 	u_int32_t ib;
 	int32_t sign;
-	Simple a, b, temp;
+	StreflopSimple a, b, temp;
 
 	GET_FLOAT_WORD(hx,x);
 	ix = 0x7fffffff&hx;
@@ -206,7 +206,7 @@ static Simple zero  =  0.0000000000e+00f;
 	GET_FLOAT_WORD(ib,b);
 	for(i=1;i<n&&ib!=0xff800000;i++){
 	    temp = b;
-	    b = ((Simple)(i+i)/x)*b - a;
+	    b = ((StreflopSimple)(i+i)/x)*b - a;
 	    GET_FLOAT_WORD(ib,b);
 	    a = temp;
 	}

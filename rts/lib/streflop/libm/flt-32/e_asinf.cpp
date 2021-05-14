@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_asinf.c -- Simple version of e_asin.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_asinf.c -- StreflopSimple version of e_asin.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -45,9 +45,9 @@ static char rcsid[] = "$NetBSD: e_asinf.c,v 1.5f 1995/05/12 04:57:25 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 one =  1.0000000000e+00f, /* 0x3F800000 */
 huge =  1.000e+30f,
@@ -66,13 +66,13 @@ p3 = 2.417951451e-2f,
 p4 = 4.216630880e-2f;
 
 #ifdef __STDC__
-	Simple __ieee754_asinf(Simple x)
+	StreflopSimple __ieee754_asinf(StreflopSimple x)
 #else
-	Simple __ieee754_asinf(x)
-	Simple x;
+	StreflopSimple __ieee754_asinf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple t,w,p,q,c,r,s;
+	StreflopSimple t,w,p,q,c,r,s;
 	int32_t hx,ix;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;

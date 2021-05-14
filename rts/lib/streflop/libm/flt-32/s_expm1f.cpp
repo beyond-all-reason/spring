@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_expm1f.c -- Simple version of s_expm1.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_expm1f.c -- StreflopSimple version of s_expm1.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -21,14 +21,14 @@ static char rcsid[] = "$NetBSD: s_expm1f.c,v 1.5f 1995/05/10 20:47:11 jtc Exp $"
 #include "SMath.h"
 #include "math_private.h"
 
-static const Simple huge = 1.0e+30f;
-static const Simple tiny = 1.0e-30f;
+static const StreflopSimple huge = 1.0e+30f;
+static const StreflopSimple tiny = 1.0e-30f;
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 one		= 1.0f,
 o_threshold	= 8.8721679688e+01f,/* 0x42b17180 */
@@ -43,13 +43,13 @@ Q4  =   4.0082177293e-06f, /* 0x36867e54 */
 Q5  =  -2.0109921195e-07f; /* 0xb457edbb */
 
 #ifdef __STDC__
-	Simple __expm1f(Simple x)
+	StreflopSimple __expm1f(StreflopSimple x)
 #else
-	Simple __expm1f(x)
-	Simple x;
+	StreflopSimple __expm1f(x)
+	StreflopSimple x;
 #endif
 {
-	Simple y,hi,lo,c,t,e,hxs,hfx,r1;
+	StreflopSimple y,hi,lo,c,t,e,hxs,hfx,r1;
 	int32_t k,xsb;
 	u_int32_t hx;
 
@@ -64,11 +64,11 @@ Q5  =  -2.0109921195e-07f; /* 0xb457edbb */
                 if(hx>0x7f800000)
 		    return x+x; 	 /* NaN */
 		if(hx==0x7f800000)
-		    return (xsb==0)? x:-Simple(1.0f);/* exp(+-inf)={inf,-1} */
+		    return (xsb==0)? x:-StreflopSimple(1.0f);/* exp(+-inf)={inf,-1} */
 	        if(x > o_threshold) return huge*huge; /* overflow */
 	    }
 	    if(xsb!=0) { /* x < -27*ln2, return -1.0f with inexact */
-		if(x+tiny<(Simple)0.0f)	/* raise inexact */
+		if(x+tiny<(StreflopSimple)0.0f)	/* raise inexact */
 		return tiny-one;	/* return -1 */
 	    }
 	}
@@ -81,7 +81,7 @@ Q5  =  -2.0109921195e-07f; /* 0xb457edbb */
 		else
 		    {hi = x + ln2_hi; lo = -ln2_lo;  k = -1;}
 	    } else {
-		k  = invln2*x+((xsb==0)?(Simple)0.5f:(Simple)-0.5f);
+		k  = invln2*x+((xsb==0)?(StreflopSimple)0.5f:(StreflopSimple)-0.5f);
 		t  = k;
 		hi = x - t*ln2_hi;	/* t*ln2_hi is exact here */
 		lo = t*ln2_lo;
@@ -96,19 +96,19 @@ Q5  =  -2.0109921195e-07f; /* 0xb457edbb */
 	else k = 0;
 
     /* x is now in primary range */
-	hfx = (Simple)0.5f*x;
+	hfx = (StreflopSimple)0.5f*x;
 	hxs = x*hfx;
 	r1 = one+hxs*(Q1+hxs*(Q2+hxs*(Q3+hxs*(Q4+hxs*Q5))));
-	t  = (Simple)3.0f-r1*hfx;
-	e  = hxs*((r1-t)/((Simple)6.0f - x*t));
+	t  = (StreflopSimple)3.0f-r1*hfx;
+	e  = hxs*((r1-t)/((StreflopSimple)6.0f - x*t));
 	if(k==0) return x - (x*e-hxs);		/* c is 0 */
 	else {
 	    e  = (x*(e-c)-c);
 	    e -= hxs;
-	    if(k== -1) return (Simple)0.5f*(x-e)-(Simple)0.5f;
+	    if(k== -1) return (StreflopSimple)0.5f*(x-e)-(StreflopSimple)0.5f;
 	    if(k==1) {
-	       	if(x < (Simple)-0.25f) return -(Simple)2.0f*(e-(x+(Simple)0.5f));
-	       	else 	      return  one+(Simple)2.0f*(x-e);
+	       	if(x < (StreflopSimple)-0.25f) return -(StreflopSimple)2.0f*(e-(x+(StreflopSimple)0.5f));
+	       	else 	      return  one+(StreflopSimple)2.0f*(x-e);
 	    }
 	    if (k <= -2 || k>56) {   /* suffice to return exp(x)-1 */
 	        int32_t i;

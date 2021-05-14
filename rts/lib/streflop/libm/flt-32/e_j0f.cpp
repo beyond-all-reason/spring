@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_j0f.c -- Simple version of e_j0.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_j0f.c -- StreflopSimple version of e_j0.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,15 +23,15 @@ static char rcsid[] = "$NetBSD: e_j0f.c,v 1.4f 1995/05/10 20:45:25 jtc Exp $";
 
 namespace streflop_libm {
 #ifdef __STDC__
-static Simple pzerof(Simple), qzerof(Simple);
+static StreflopSimple pzerof(StreflopSimple), qzerof(StreflopSimple);
 #else
-static Simple pzerof(), qzerof();
+static StreflopSimple pzerof(), qzerof();
 #endif
 
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 huge 	= 1e30f,
 one	= 1.0f,
@@ -48,19 +48,19 @@ S03  =  5.1354652442e-07f, /* 0x3509daa6 */
 S04  =  1.1661400734e-09f; /* 0x30a045e8 */
 
 #ifdef __STDC__
-static const Simple zero = 0.0f;
+static const StreflopSimple zero = 0.0f;
 #else
-static Simple zero = 0.0f;
+static StreflopSimple zero = 0.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_j0f(Simple x)
+	StreflopSimple __ieee754_j0f(StreflopSimple x)
 #else
-	Simple __ieee754_j0f(x)
-	Simple x;
+	StreflopSimple __ieee754_j0f(x)
+	StreflopSimple x;
 #endif
 {
-	Simple z, s,c,ss,cc,r,u,v;
+	StreflopSimple z, s,c,ss,cc,r,u,v;
 	int32_t hx,ix;
 
 	GET_FLOAT_WORD(hx,x);
@@ -90,24 +90,24 @@ static Simple zero = 0.0f;
 	if(ix<0x39000000) {	/* |x| < 2**-13 */
 	    if(huge+x>one) {	/* raise inexact if x != 0 */
 	        if(ix<0x32000000) return one;	/* |x|<2**-27 */
-	        else 	      return one - (Simple)0.25f*x*x;
+	        else 	      return one - (StreflopSimple)0.25f*x*x;
 	    }
 	}
 	z = x*x;
 	r =  z*(R02+z*(R03+z*(R04+z*R05)));
 	s =  one+z*(S01+z*(S02+z*(S03+z*S04)));
 	if(ix < 0x3F800000) {	/* |x| < 1.00f */
-	    return one + z*((Simple)-0.25f+(r/s));
+	    return one + z*((StreflopSimple)-0.25f+(r/s));
 	} else {
-	    u = (Simple)0.5f*x;
+	    u = (StreflopSimple)0.5f*x;
 	    return((one+u)*(one-u)+z*(r/s));
 	}
 }
 
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 u00  = -7.3804296553e-02f, /* 0xbd9726b5 */
 u01  =  1.7666645348e-01f, /* 0x3e34e80d */
@@ -122,13 +122,13 @@ v03  =  2.5915085189e-07f, /* 0x348b216c */
 v04  =  4.4111031494e-10f; /* 0x2ff280c2 */
 
 #ifdef __STDC__
-	Simple __ieee754_y0f(Simple x)
+	StreflopSimple __ieee754_y0f(StreflopSimple x)
 #else
-	Simple __ieee754_y0f(x)
-	Simple x;
+	StreflopSimple __ieee754_y0f(x)
+	StreflopSimple x;
 #endif
 {
-	Simple z, s,c,ss,cc,u,v;
+	StreflopSimple z, s,c,ss,cc,u,v;
 	int32_t hx,ix;
 
 	GET_FLOAT_WORD(hx,x);
@@ -187,9 +187,9 @@ v04  =  4.4111031494e-10f; /* 0x2ff280c2 */
  *	| pzero(x)-1-R/S | <= 2  ** ( -60.26f)
  */
 #ifdef __STDC__
-static const Simple pR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
+static const StreflopSimple pR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
 #else
-static Simple pR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
+static StreflopSimple pR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
 #endif
   0.0000000000e+00f, /* 0x00000000 */
  -7.0312500000e-02f, /* 0xbd900000 */
@@ -199,9 +199,9 @@ static Simple pR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
  -5.2530439453e+03f, /* 0xc5a4285a */
 };
 #ifdef __STDC__
-static const Simple pS8[5] = {
+static const StreflopSimple pS8[5] = {
 #else
-static Simple pS8[5] = {
+static StreflopSimple pS8[5] = {
 #endif
   1.1653436279e+02f, /* 0x42e91198 */
   3.8337448730e+03f, /* 0x456f9beb */
@@ -210,9 +210,9 @@ static Simple pS8[5] = {
   4.7627726562e+04f, /* 0x473a0bba */
 };
 #ifdef __STDC__
-static const Simple pR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
+static const StreflopSimple pR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
 #else
-static Simple pR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
+static StreflopSimple pR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
 #endif
  -1.1412546255e-11f, /* 0xad48c58a */
  -7.0312492549e-02f, /* 0xbd8fffff */
@@ -222,9 +222,9 @@ static Simple pR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
  -3.4643338013e+02f, /* 0xc3ad3779 */
 };
 #ifdef __STDC__
-static const Simple pS5[5] = {
+static const StreflopSimple pS5[5] = {
 #else
-static Simple pS5[5] = {
+static StreflopSimple pS5[5] = {
 #endif
   6.0753936768e+01f, /* 0x42730408 */
   1.0512523193e+03f, /* 0x44836813 */
@@ -234,9 +234,9 @@ static Simple pS5[5] = {
 };
 
 #ifdef __STDC__
-static const Simple pR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
+static const StreflopSimple pR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
 #else
-static Simple pR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
+static StreflopSimple pR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
 #endif
  -2.5470459075e-09f, /* 0xb12f081b */
  -7.0311963558e-02f, /* 0xbd8fffb8 */
@@ -246,9 +246,9 @@ static Simple pR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
  -3.1447946548e+01f, /* 0xc1fb9565 */
 };
 #ifdef __STDC__
-static const Simple pS3[5] = {
+static const StreflopSimple pS3[5] = {
 #else
-static Simple pS3[5] = {
+static StreflopSimple pS3[5] = {
 #endif
   3.5856033325e+01f, /* 0x420f6c94 */
   3.6151397705e+02f, /* 0x43b4c1ca */
@@ -258,9 +258,9 @@ static Simple pS3[5] = {
 };
 
 #ifdef __STDC__
-static const Simple pR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
+static const StreflopSimple pR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
 #else
-static Simple pR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
+static StreflopSimple pR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
 #endif
  -8.8753431271e-08f, /* 0xb3be98b7 */
  -7.0303097367e-02f, /* 0xbd8ffb12 */
@@ -270,9 +270,9 @@ static Simple pR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
  -3.2336456776e+00f, /* 0xc04ef40d */
 };
 #ifdef __STDC__
-static const Simple pS2[5] = {
+static const StreflopSimple pS2[5] = {
 #else
-static Simple pS2[5] = {
+static StreflopSimple pS2[5] = {
 #endif
   2.2220300674e+01f, /* 0x41b1c32d */
   1.3620678711e+02f, /* 0x430834f0 */
@@ -282,18 +282,18 @@ static Simple pS2[5] = {
 };
 
 #ifdef __STDC__
-	static Simple pzerof(Simple x)
+	static StreflopSimple pzerof(StreflopSimple x)
 #else
-	static Simple pzerof(x)
-	Simple x;
+	static StreflopSimple pzerof(x)
+	StreflopSimple x;
 #endif
 {
 #ifdef __STDC__
-	const Simple *p,*q;
+	const StreflopSimple *p,*q;
 #else
-	Simple *p,*q;
+	StreflopSimple *p,*q;
 #endif
-	Simple z,r,s;
+	StreflopSimple z,r,s;
 	int32_t ix;
 	GET_FLOAT_WORD(ix,x);
 	ix &= 0x7fffffff;
@@ -318,9 +318,9 @@ static Simple pS2[5] = {
  *	| qzero(x)/s +1.25f-R/S | <= 2  ** ( -61.22f)
  */
 #ifdef __STDC__
-static const Simple qR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
+static const StreflopSimple qR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
 #else
-static Simple qR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
+static StreflopSimple qR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
 #endif
   0.0000000000e+00f, /* 0x00000000 */
   7.3242187500e-02f, /* 0x3d960000 */
@@ -330,9 +330,9 @@ static Simple qR8[6] = { /* for x in [inf, 8]=1/[0,0.125f] */
   3.7014625000e+04f, /* 0x471096a0 */
 };
 #ifdef __STDC__
-static const Simple qS8[6] = {
+static const StreflopSimple qS8[6] = {
 #else
-static Simple qS8[6] = {
+static StreflopSimple qS8[6] = {
 #endif
   1.6377603149e+02f, /* 0x4323c6aa */
   8.0983447266e+03f, /* 0x45fd12c2 */
@@ -343,9 +343,9 @@ static Simple qS8[6] = {
 };
 
 #ifdef __STDC__
-static const Simple qR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
+static const StreflopSimple qR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
 #else
-static Simple qR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
+static StreflopSimple qR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
 #endif
   1.8408595828e-11f, /* 0x2da1ec79 */
   7.3242180049e-02f, /* 0x3d95ffff */
@@ -355,9 +355,9 @@ static Simple qR5[6] = { /* for x in [8,4.5454f]=1/[0.125f,0.22001f] */
   1.9899779053e+03f, /* 0x44f8bf4b */
 };
 #ifdef __STDC__
-static const Simple qS5[6] = {
+static const StreflopSimple qS5[6] = {
 #else
-static Simple qS5[6] = {
+static StreflopSimple qS5[6] = {
 #endif
   8.2776611328e+01f, /* 0x42a58da0 */
   2.0778142090e+03f, /* 0x4501dd07 */
@@ -368,9 +368,9 @@ static Simple qS5[6] = {
 };
 
 #ifdef __STDC__
-static const Simple qR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
+static const StreflopSimple qR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
 #else
-static Simple qR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
+static StreflopSimple qR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
 #endif
   4.3774099900e-09f, /* 0x3196681b */
   7.3241114616e-02f, /* 0x3d95ff70 */
@@ -380,9 +380,9 @@ static Simple qR3[6] = {/* for x in [4.547f,2.8571f]=1/[0.2199f,0.35001f] */
   1.6673394775e+02f, /* 0x4326bbe4 */
 };
 #ifdef __STDC__
-static const Simple qS3[6] = {
+static const StreflopSimple qS3[6] = {
 #else
-static Simple qS3[6] = {
+static StreflopSimple qS3[6] = {
 #endif
   4.8758872986e+01f, /* 0x42430916 */
   7.0968920898e+02f, /* 0x44316c1c */
@@ -393,9 +393,9 @@ static Simple qS3[6] = {
 };
 
 #ifdef __STDC__
-static const Simple qR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
+static const StreflopSimple qR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
 #else
-static Simple qR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
+static StreflopSimple qR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
 #endif
   1.5044444979e-07f, /* 0x342189db */
   7.3223426938e-02f, /* 0x3d95f62a */
@@ -405,9 +405,9 @@ static Simple qR2[6] = {/* for x in [2.8570f,2]=1/[0.3499f,0.5f] */
   1.6252708435e+01f, /* 0x4182058c */
 };
 #ifdef __STDC__
-static const Simple qS2[6] = {
+static const StreflopSimple qS2[6] = {
 #else
-static Simple qS2[6] = {
+static StreflopSimple qS2[6] = {
 #endif
   3.0365585327e+01f, /* 0x41f2ecb8 */
   2.6934811401e+02f, /* 0x4386ac8f */
@@ -418,18 +418,18 @@ static Simple qS2[6] = {
 };
 
 #ifdef __STDC__
-	static Simple qzerof(Simple x)
+	static StreflopSimple qzerof(StreflopSimple x)
 #else
-	static Simple qzerof(x)
-	Simple x;
+	static StreflopSimple qzerof(x)
+	StreflopSimple x;
 #endif
 {
 #ifdef __STDC__
-	const Simple *p,*q;
+	const StreflopSimple *p,*q;
 #else
-	Simple *p,*q;
+	StreflopSimple *p,*q;
 #endif
-	Simple s,r,z;
+	StreflopSimple s,r,z;
 	int32_t ix;
 	GET_FLOAT_WORD(ix,x);
 	ix &= 0x7fffffff;
@@ -440,6 +440,6 @@ static Simple qS2[6] = {
 	z = one/(x*x);
 	r = p[0]+z*(p[1]+z*(p[2]+z*(p[3]+z*(p[4]+z*p[5]))));
 	s = one+z*(q[0]+z*(q[1]+z*(q[2]+z*(q[3]+z*(q[4]+z*q[5])))));
-	return (-(Simple).125f + r/s)/x;
+	return (-(StreflopSimple).125f + r/s)/x;
 }
 }

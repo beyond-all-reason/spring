@@ -32,8 +32,8 @@
 union ieee754_float
   {
 int storage[sizeof(float)/sizeof(int)];
-inline Simple& f() {return SIMPLE_FROM_INT_PTR(&storage[0]);}
-inline const Simple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}
+inline StreflopSimple& f() {return SIMPLE_FROM_INT_PTR(&storage[0]);}
+inline const StreflopSimple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}
 
 
     /* This is the IEEE 754 single-precision format.  */
@@ -78,8 +78,8 @@ inline const Simple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}
 union ieee754_double
   {
 int storage[sizeof(double)/sizeof(int)];
-inline Double& d() {return DOUBLE_FROM_INT_PTR(&storage[0]);}
-inline const Double& d() const {return CONST_DOUBLE_FROM_INT_PTR(&storage[0]);}
+inline StreflopDouble& d() {return DOUBLE_FROM_INT_PTR(&storage[0]);}
+inline const StreflopDouble& d() const {return CONST_DOUBLE_FROM_INT_PTR(&storage[0]);}
 
 
     /* This is the IEEE 754 double-precision format.  */

@@ -706,7 +706,7 @@ int LuaShaders::ActiveShader(lua_State* L)
 
 	glUseProgram(progName);
 	activeShaderDepth++;
-	const int error = lua_pcall(L, lua_gettop(L) - 2, 0, 0);
+	const int error = wrapped_lua_pcall(L, lua_gettop(L) - 2, 0, 0);
 	activeShaderDepth--;
 	glUseProgram(currentProgram);
 

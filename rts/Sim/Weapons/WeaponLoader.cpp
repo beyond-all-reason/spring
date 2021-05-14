@@ -19,6 +19,9 @@
 #include "StarburstLauncher.h"
 #include "TorpedoLauncher.h"
 
+#include <limits>
+#include <algorithm>
+
 #include "Game/TraceRay.h" // Collision::*
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GlobalConstants.h"

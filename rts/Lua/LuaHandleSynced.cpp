@@ -463,7 +463,9 @@ bool CSyncedLuaHandle::Init(const std::string& code, const std::string& file)
 	}
 
 	lua_settop(L, 0);
+	#ifdef USING_CREG
 	creg::AutoRegisterCFunctions(GetName(), L);
+	#endif
 
 	if (!LoadCode(L, code, file)) {
 		KillLua();
@@ -1870,7 +1872,7 @@ int CSplitLuaHandle::CallAsTeam(lua_State* L)
 	const int funcArgs = lua_gettop(L) - 2;
 
 	// protected call so that the permissions are always reverted
-	const int error = lua_pcall(L, funcArgs, LUA_MULTRET, 0);
+	const int error = wrapped_lua_pcall(L, funcArgs, LUA_MULTRET, 0);
 
 	// revert the permissions
 	CLuaHandle::SetHandleFullCtrl(L, prevFullCtrl);

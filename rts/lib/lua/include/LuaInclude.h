@@ -238,6 +238,10 @@ static inline void LUA_UNLOAD_LIB(lua_State* L, std::string libname) {
 	lua_pushnil(L); lua_setglobal(L, libname.c_str());
 }
 
+static inline int wrapped_lua_pcall(lua_State* L, int nargs, int nresults, int errfunc)
+{
+	return lua_pcall(L, nargs, nresults, errfunc);
+}
 
 #if (LUA_VERSION_NUM < 500)
 #  define LUA_OPEN_LIB(L, lib) lib(L)

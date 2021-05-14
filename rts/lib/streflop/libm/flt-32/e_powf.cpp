@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_powf.c -- Simple version of e_pow.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_powf.c -- StreflopSimple version of e_pow.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -21,13 +21,13 @@ static char rcsid[] = "$NetBSD: e_powf.c,v 1.7f 1996/04/08 15:43:44 phil Exp $";
 #include "SMath.h"
 #include "math_private.h"
 
-static const Simple huge = 1.0e+30f, tiny = 1.0e-30f;
+static const StreflopSimple huge = 1.0e+30f, tiny = 1.0e-30f;
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 bp[] = {1.0f, 1.5f,},
 dp_h[] = { 0.0f, 5.84960938e-01f,}, /* 0x3f15c000 */
@@ -60,14 +60,14 @@ ivln2_h  =  1.4426879883e+00f, /* 0x3fb8aa00 =16b 1/ln2*/
 ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 
 #ifdef __STDC__
-	Simple __ieee754_powf(Simple x, Simple y)
+	StreflopSimple __ieee754_powf(StreflopSimple x, StreflopSimple y)
 #else
-	Simple __ieee754_powf(x,y)
-	Simple x, y;
+	StreflopSimple __ieee754_powf(x,y)
+	StreflopSimple x, y;
 #endif
 {
-	Simple z,ax,z_h,z_l,p_h,p_l;
-	Simple y1,t1,t2,r,s,t,u,v,w;
+	StreflopSimple z,ax,z_h,z_l,p_h,p_l;
+	StreflopSimple y1,t1,t2,r,s,t,u,v,w;
 	int32_t i,j,k,yisint,n;
 	int32_t hx,hy,ix,iy,is;
 
@@ -145,7 +145,7 @@ ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 	/* now |1-x| is tiny <= 2**-20, suffice to compute
 	   log(x) by x-x^2/2+x^3/3-x^4/4 */
 	    t = x-1;		/* t has 20 trailing zeros */
-	    w = (t*t)*((Simple)0.5f-t*((Simple)0.333333333333f-t*(Simple)0.25f));
+	    w = (t*t)*((StreflopSimple)0.5f-t*((StreflopSimple)0.333333333333f-t*(StreflopSimple)0.25f));
 	    u = ivln2_h*t;	/* ivln2_h has 16 sig. bits */
 	    v = t*ivln2_l-w*ivln2;
 	    t1 = u+v;
@@ -153,7 +153,7 @@ ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 	    SET_FLOAT_WORD(t1,is&0xfffff000);
 	    t2 = v-(t1-u);
 	} else {
-	    Simple s2,s_h,s_l,t_h,t_l;
+	    StreflopSimple s2,s_h,s_l,t_h,t_l;
 	    n = 0;
 	/* take care subnormal number */
 	    if(ix<0x00800000)
@@ -183,10 +183,10 @@ ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 	    r = s2*s2*(L1+s2*(L2+s2*(L3+s2*(L4+s2*(L5+s2*L6)))));
 	    r += s_l*(s_h+s);
 	    s2  = s_h*s_h;
-	    t_h = (Simple)3.0f+s2+r;
+	    t_h = (StreflopSimple)3.0f+s2+r;
 	    GET_FLOAT_WORD(is,t_h);
 	    SET_FLOAT_WORD(t_h,is&0xfffff000);
-	    t_l = r-((t_h-(Simple)3.0f)-s2);
+	    t_l = r-((t_h-(StreflopSimple)3.0f)-s2);
 	/* u+v = s*(1+...) */
 	    u = s_h*t_h;
 	    v = s_l*t_h+t_l*s;
@@ -198,7 +198,7 @@ ivln2_l  =  7.0526075433e-06f; /* 0x36eca570 =1/ln2 tail*/
 	    z_h = cp_h*p_h;		/* cp_h+cp_l = 2/(3*log2) */
 	    z_l = cp_l*p_h+p_l*cp+dp_l[k];
 	/* log2(ax) = (s+..)*2/(3*log2) = n + dp_h + z_h + z_l */
-	    t = (Simple)n;
+	    t = (StreflopSimple)n;
 	    t1 = (((z_h+z_l)+dp_h[k])+t);
 	    GET_FLOAT_WORD(is,t1);
 	    SET_FLOAT_WORD(t1,is&0xfffff000);

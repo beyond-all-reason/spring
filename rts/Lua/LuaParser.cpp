@@ -248,7 +248,7 @@ bool LuaParser::Execute()
 		// do not signal floating point exceptions in user Lua code
 		ScopedDisableFpuExceptions fe;
 
-		if ((errorNum = lua_pcall(L, 0, 1, 0)) != 0) {
+		if ((errorNum = wrapped_lua_pcall(L, 0, 1, 0)) != 0) {
 			SNPRINTF(errorBuf, sizeof(errorBuf), "[pcall] error %d (\"%s\") in %s", errorNum, lua_tostring(L, -1), fileName.c_str());
 			LUA_CLOSE(&L);
 
@@ -499,7 +499,7 @@ int LuaParser::TimeCheck(lua_State* L)
 
 		lua_remove(L, 1);
 
-		if (lua_pcall(L, lua_gettop(L) - 1, LUA_MULTRET, 0) != 0) {
+		if (wrapped_lua_pcall(L, lua_gettop(L) - 1, LUA_MULTRET, 0) != 0) {
 			const std::string errmsg = lua_tostring(L, -1);
 
 			lua_pop(L, 1);
@@ -619,7 +619,7 @@ int LuaParser::Include(lua_State* L)
 
 	const int paramTop = lua_gettop(L) - 1;
 
-	error = lua_pcall(L, 0, LUA_MULTRET, 0);
+	error = wrapped_lua_pcall(L, 0, LUA_MULTRET, 0);
 
 	if (error != 0) {
 		char buf[1024];

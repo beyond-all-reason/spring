@@ -3,6 +3,8 @@
 #ifndef SKIRMISH_AI_WRAPPER_H
 #define SKIRMISH_AI_WRAPPER_H
 
+#include <vector>
+
 #include "SkirmishAIKey.h"
 
 class CSkirmishAILibrary;

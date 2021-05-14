@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* s_log1pf.c -- Simple version of s_log1p.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* s_log1pf.c -- StreflopSimple version of s_log1p.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: s_log1pf.c,v 1.4f 1995/05/10 20:47:48 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 ln2_hi =   6.9313812256e-01f,	/* 0x3f317180 */
 ln2_lo =   9.0580006145e-06f,	/* 0x3717f7d1 */
@@ -39,19 +39,19 @@ Lp6 = 1.5313838422e-01f, /* 3E1CD04F */
 Lp7 = 1.4798198640e-01f; /* 3E178897 */
 
 #ifdef __STDC__
-static const Simple zero = 0.0f;
+static const StreflopSimple zero = 0.0f;
 #else
-static Simple zero = 0.0f;
+static StreflopSimple zero = 0.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __log1pf(Simple x)
+	StreflopSimple __log1pf(StreflopSimple x)
 #else
-	Simple __log1pf(x)
-	Simple x;
+	StreflopSimple __log1pf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple hfsq,f,c,s,z,R,u;
+	StreflopSimple hfsq,f,c,s,z,R,u;
 	int32_t k,hx,hu,ax;
 
 	GET_FLOAT_WORD(hx,x);
@@ -60,7 +60,7 @@ static Simple zero = 0.0f;
 	k = 1;
 	if (hx < 0x3ed413d7) {			/* x < 0.41422f  */
 	    if(ax>=0x3f800000) {		/* x <= -1.0f */
-		if(x==(Simple)-1.0f) return -two25/(x-x); /* log1p(-1)=+inf */
+		if(x==(StreflopSimple)-1.0f) return -two25/(x-x); /* log1p(-1)=+inf */
 		else return (x-x)/(x-x);	/* log1p(x<-1)=NaN */
 	    }
 	    if(ax<0x31000000) {			/* |x| < 2**-29 */
@@ -68,7 +68,7 @@ static Simple zero = 0.0f;
 	            &&ax<0x24800000) 		/* |x| < 2**-54 */
 		    return x;
 		else
-		    return x - x*x*(Simple)0.5f;
+		    return x - x*x*(StreflopSimple)0.5f;
 	    }
 	    if(hx>0||hx<=((int32_t)0xbe95f61f)) {
 		k=0;f=x;hu=1;}	/* -0.2929f<x<0.41422f */
@@ -76,11 +76,11 @@ static Simple zero = 0.0f;
 	if (hx >= 0x7f800000) return x+x;
 	if(k!=0) {
 	    if(hx<0x5a000000) {
-		u  = (Simple)1.0f+x;
+		u  = (StreflopSimple)1.0f+x;
 		GET_FLOAT_WORD(hu,u);
 	        k  = (hu>>23)-127;
 		/* correction term */
-	        c  = (k>0)? (Simple)Simple(1.0f)-(u-x):x-(u-(Simple)Simple(1.0f));
+	        c  = (k>0)? (StreflopSimple)StreflopSimple(1.0f)-(u-x):x-(u-(StreflopSimple)StreflopSimple(1.0f));
 		c /= u;
 	    } else {
 		u  = x;
@@ -96,19 +96,19 @@ static Simple zero = 0.0f;
 		SET_FLOAT_WORD(u,hu|0x3f000000);	/* normalize u/2 */
 	        hu = (0x00800000-hu)>>2;
 	    }
-	    f = u-(Simple)1.0f;
+	    f = u-(StreflopSimple)1.0f;
 	}
-	hfsq=(Simple)0.5f*f*f;
+	hfsq=(StreflopSimple)0.5f*f*f;
 	if(hu==0) {	/* |f| < 2**-20 */
 	    if(f==zero) {
 	    	if(k==0) return zero;
 		else {c += k*ln2_lo; return k*ln2_hi+c;}
 	    }
-	    R = hfsq*((Simple)1.0f-(Simple)0.66666666666666666f*f);
+	    R = hfsq*((StreflopSimple)1.0f-(StreflopSimple)0.66666666666666666f*f);
 	    if(k==0) return f-R; else
 	    	     return k*ln2_hi-((R-(k*ln2_lo+c))-f);
 	}
- 	s = f/((Simple)2.0f+f);
+ 	s = f/((StreflopSimple)2.0f+f);
 	z = s*s;
 	R = z*(Lp1+z*(Lp2+z*(Lp3+z*(Lp4+z*(Lp5+z*(Lp6+z*Lp7))))));
 	if(k==0) return f-(hfsq-s*(hfsq+R)); else

@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_atanhf.c -- Simple version of e_atanh.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_atanhf.c -- StreflopSimple version of e_atanh.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,25 +23,25 @@ static char rcsid[] = "$NetBSD: e_atanhf.c,v 1.4f 1995/05/10 20:44:56 jtc Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple one = 1.0f, huge = 1e30f;
+static const StreflopSimple one = 1.0f, huge = 1e30f;
 #else
-static Simple one = 1.0f, huge = 1e30f;
+static StreflopSimple one = 1.0f, huge = 1e30f;
 #endif
 
 #ifdef __STDC__
-static const Simple zero = 0.0f;
+static const StreflopSimple zero = 0.0f;
 #else
-static Simple zero = 0.0f;
+static StreflopSimple zero = 0.0f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_atanhf(Simple x)
+	StreflopSimple __ieee754_atanhf(StreflopSimple x)
 #else
-	Simple __ieee754_atanhf(x)
-	Simple x;
+	StreflopSimple __ieee754_atanhf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple t;
+	StreflopSimple t;
 	int32_t hx,ix;
 	GET_FLOAT_WORD(hx,x);
 	ix = hx&0x7fffffff;
@@ -53,9 +53,9 @@ static Simple zero = 0.0f;
 	SET_FLOAT_WORD(x,ix);
 	if(ix<0x3f000000) {		/* x < 0.5f */
 	    t = x+x;
-	    t = (Simple)0.5f*__log1pf(t+t*x/(one-x));
+	    t = (StreflopSimple)0.5f*__log1pf(t+t*x/(one-x));
 	} else 
-	    t = (Simple)0.5f*__log1pf((x+x)/(one-x));
+	    t = (StreflopSimple)0.5f*__log1pf((x+x)/(one-x));
 	if(hx>=0) return t; else return -t;
 }
 }

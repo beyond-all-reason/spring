@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_coshf.c -- Simple version of e_cosh.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_coshf.c -- StreflopSimple version of e_cosh.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,20 +23,20 @@ static char rcsid[] = "$NetBSD: e_coshf.c,v 1.6f 1996/04/08 15:43:41 phil Exp $"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple huge = 1.0e30f;
-static const Simple one = 1.0f, half=0.5f;
+static const StreflopSimple huge = 1.0e30f;
+static const StreflopSimple one = 1.0f, half=0.5f;
 #else
-static Simple one = 1.0f, half=0.5f, huge = 1.0e30f;
+static StreflopSimple one = 1.0f, half=0.5f, huge = 1.0e30f;
 #endif
 
 #ifdef __STDC__
-	Simple __ieee754_coshf(Simple x)
+	StreflopSimple __ieee754_coshf(StreflopSimple x)
 #else
-	Simple __ieee754_coshf(x)
-	Simple x;
+	StreflopSimple __ieee754_coshf(x)
+	StreflopSimple x;
 #endif
 {
-	Simple t,w;
+	StreflopSimple t,w;
 	int32_t ix;
 
 	GET_FLOAT_WORD(ix,x);

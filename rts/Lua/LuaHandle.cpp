@@ -323,7 +323,7 @@ int CLuaHandle::RunCallInTraceback(
 			// note1: disable GC outside of this scope to prevent sync errors and similar
 			// note2: we collect garbage now in its own callin "CollectGarbage"
 			// lua_gc(L, LUA_GCRESTART, 0);
-			error = lua_pcall(state, nInArgs, nOutArgs, errFuncIdx);
+			error = wrapped_lua_pcall(state, nInArgs, nOutArgs, errFuncIdx);
 			// only run GC inside of "SetHandleRunning(L, true) ... SetHandleRunning(L, false)"!
 			lua_gc(state, LUA_GCSTOP, 0);
 

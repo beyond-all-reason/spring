@@ -1,5 +1,5 @@
 /* See the import.pl script for potential modifications */
-/* Compute cubic root of Simple value.
+/* Compute cubic root of StreflopSimple value.
    Copyright (C) 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Dirk Alboth <dirka@uni-paderborn.de> and
@@ -27,7 +27,7 @@
 #define CBRT2 1.2599210498948731648f		/* 2^(1/3) */
 #define SQR_CBRT2 1.5874010519681994748f		/* 2^(2/3) */
 
-static const Simple factor[5] =
+static const StreflopSimple factor[5] =
 {
   1.0f / SQR_CBRT2,
   1.0f / CBRT2,
@@ -38,10 +38,10 @@ static const Simple factor[5] =
 
 
 namespace streflop_libm {
-Simple
-__cbrtf (Simple x)
+StreflopSimple
+__cbrtf (StreflopSimple x)
 {
-  Simple xm, ym, u, t2;
+  StreflopSimple xm, ym, u, t2;
   int xe;
 
   /* Reduce X.  XM now is an range 1.0f to 0.5f.  */

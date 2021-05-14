@@ -41,7 +41,7 @@ void COffscreenGLThread::WrapFunc(std::function<void()> f)
 	// init streflop
 	// not needed to maintain sync (precision flags are
 	// per-process) but fpu exceptions are per-thread
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 
 	try {
 		f();

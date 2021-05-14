@@ -108,7 +108,7 @@ void good_fpu_control_registers(const char* text)
 		LOG_L(L_WARNING, "[%s] Sync warning: (env.x87_mode) FPUCW 0x%04X instead of 0x%04X or 0x%04X (\"%s\")", __func__, x87_flag, x87_a, x87_b, text);
 
 		// Set single precision floating point math.
-		streflop::streflop_init<streflop::Simple>();
+		streflop::streflop_init<StreflopSimple>();
 		#if defined(__SUPPORT_SNAN__)
 		streflop::feraiseexcept(streflop::FPU_Exceptions(streflop::FE_INVALID | streflop::FE_DIVBYZERO | streflop::FE_OVERFLOW));
 		#endif
@@ -121,7 +121,7 @@ void good_fpu_control_registers(const char* text)
 	LOG_L(L_WARNING, "[%s] Sync warning: FPUCW 0x%04X instead of 0x%04X or 0x%04X (\"%s\")", __func__, fenv, x87_a, x87_b, text);
 
 	// Set single precision floating point math.
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	#if defined(__SUPPORT_SNAN__)
 	streflop::feraiseexcept(streflop::FPU_Exceptions(streflop::FE_INVALID | streflop::FE_DIVBYZERO | streflop::FE_OVERFLOW));
 	#endif
@@ -162,7 +162,7 @@ void good_fpu_init()
 	#endif
 
 	// Set single precision floating point math.
-	streflop::streflop_init<streflop::Simple>();
+	streflop::streflop_init<StreflopSimple>();
 	#if defined(__SUPPORT_SNAN__)
 		streflop::feraiseexcept(streflop::FPU_Exceptions(streflop::FE_INVALID | streflop::FE_DIVBYZERO | streflop::FE_OVERFLOW));
 	#endif

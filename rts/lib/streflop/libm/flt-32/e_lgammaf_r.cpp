@@ -1,6 +1,6 @@
 /* See the import.pl script for potential modifications */
-/* e_lgammaf_r.c -- Simple version of e_lgamma_r.c.
- * Conversion to Simple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+/* e_lgammaf_r.c -- StreflopSimple version of e_lgamma_r.c.
+ * Conversion to StreflopSimple by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
  */
 
 /*
@@ -23,9 +23,9 @@ static char rcsid[] = "$NetBSD: e_lgammaf_r.c,v 1.3f 1995/05/10 20:45:47 jtc Exp
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple
+static const StreflopSimple
 #else
-static Simple
+static StreflopSimple
 #endif
 two23=  8.3886080000e+06f, /* 0x4b000000 */
 half=  5.0000000000e-01f, /* 0x3f000000 */
@@ -95,19 +95,19 @@ w5  =  8.3633989561e-04f, /* 0x3a5b3dd2 */
 w6  = -1.6309292987e-03f; /* 0xbad5c4e8 */
 
 #ifdef __STDC__
-static const Simple zero=  0.0000000000e+00f;
+static const StreflopSimple zero=  0.0000000000e+00f;
 #else
-static Simple zero=  0.0000000000e+00f;
+static StreflopSimple zero=  0.0000000000e+00f;
 #endif
 
 #ifdef __STDC__
-	static Simple sin_pif(Simple x)
+	static StreflopSimple sin_pif(StreflopSimple x)
 #else
-	static Simple sin_pif(x)
-	Simple x;
+	static StreflopSimple sin_pif(x)
+	StreflopSimple x;
 #endif
 {
-	Simple y,z;
+	StreflopSimple y,z;
 	int n,ix;
 
 	GET_FLOAT_WORD(ix,x);
@@ -122,9 +122,9 @@ static Simple zero=  0.0000000000e+00f;
      */
 	z = __floorf(y);
 	if(z!=y) {				/* inexact anyway */
-	    y  *= (Simple)0.5f;
-	    y   = (Simple)2.0f*(y - __floorf(y));	/* y = |x| mod 2.0f */
-	    n   = (int) (y*(Simple)4.0f);
+	    y  *= (StreflopSimple)0.5f;
+	    y   = (StreflopSimple)2.0f*(y - __floorf(y));	/* y = |x| mod 2.0f */
+	    n   = (int) (y*(StreflopSimple)4.0f);
 	} else {
             if(ix>=0x4b800000) {
                 y = zero; n = 0;                 /* y must be even */
@@ -139,25 +139,25 @@ static Simple zero=  0.0000000000e+00f;
 	switch (n) {
 	    case 0:   y =  __kernel_sinf(pi*y,zero,0); break;
 	    case 1:
-	    case 2:   y =  __kernel_cosf(pi*((Simple)0.5f-y),zero); break;
+	    case 2:   y =  __kernel_cosf(pi*((StreflopSimple)0.5f-y),zero); break;
 	    case 3:
 	    case 4:   y =  __kernel_sinf(pi*(one-y),zero,0); break;
 	    case 5:
-	    case 6:   y = -__kernel_cosf(pi*(y-(Simple)1.5f),zero); break;
-	    default:  y =  __kernel_sinf(pi*(y-(Simple)2.0f),zero,0); break;
+	    case 6:   y = -__kernel_cosf(pi*(y-(StreflopSimple)1.5f),zero); break;
+	    default:  y =  __kernel_sinf(pi*(y-(StreflopSimple)2.0f),zero,0); break;
 	    }
 	return -y;
 }
 
 
 #ifdef __STDC__
-	Simple __ieee754_lgammaf_r(Simple x, int *signgamp)
+	StreflopSimple __ieee754_lgammaf_r(StreflopSimple x, int *signgamp)
 #else
-	Simple __ieee754_lgammaf_r(x,signgamp)
-	Simple x; int *signgamp;
+	StreflopSimple __ieee754_lgammaf_r(x,signgamp)
+	StreflopSimple x; int *signgamp;
 #endif
 {
-	Simple t,y,z,nadj,p,p1,p2,p3,q,r,w;
+	StreflopSimple t,y,z,nadj,p,p1,p2,p3,q,r,w;
 	int i,hx,ix;
 
 	GET_FLOAT_WORD(hx,x);
@@ -194,7 +194,7 @@ static Simple zero=  0.0000000000e+00f;
 	  	else {y = x; i=2;}
 	    } else {
 	  	r = zero;
-	        if(ix>=0x3fdda618) {y=(Simple)2.0f-x;i=0;} /* [1.7316f,2] */
+	        if(ix>=0x3fdda618) {y=(StreflopSimple)2.0f-x;i=0;} /* [1.7316f,2] */
 	        else if(ix>=0x3F9da620) {y=x-tc;i=1;} /* [1.23f,1.73f] */
 		else {y=x-one;i=2;}
 	    }
@@ -204,7 +204,7 @@ static Simple zero=  0.0000000000e+00f;
 		p1 = a0+z*(a2+z*(a4+z*(a6+z*(a8+z*a10))));
 		p2 = z*(a1+z*(a3+z*(a5+z*(a7+z*(a9+z*a11)))));
 		p  = y*p1+p2;
-		r  += (p-(Simple)0.5f*y); break;
+		r  += (p-(StreflopSimple)0.5f*y); break;
 	      case 1:
 		z = y*y;
 		w = z*y;
@@ -216,23 +216,23 @@ static Simple zero=  0.0000000000e+00f;
 	      case 2:
 		p1 = y*(u0+y*(u1+y*(u2+y*(u3+y*(u4+y*u5)))));
 		p2 = one+y*(v1+y*(v2+y*(v3+y*(v4+y*v5))));
-		r += (-(Simple)0.5f*y + p1/p2);
+		r += (-(StreflopSimple)0.5f*y + p1/p2);
 	    }
 	}
 	else if(ix<0x41000000) { 			/* x < 8.0f */
 	    i = (int)x;
 	    t = zero;
-	    y = x-(Simple)i;
+	    y = x-(StreflopSimple)i;
 	    p = y*(s0+y*(s1+y*(s2+y*(s3+y*(s4+y*(s5+y*s6))))));
 	    q = one+y*(r1+y*(r2+y*(r3+y*(r4+y*(r5+y*r6)))));
 	    r = half*y+p/q;
 	    z = one;	/* lgamma(1+s) = log(s) + lgamma(s) */
 	    switch(i) {
-	    case 7: z *= (y+(Simple)6.0f);	/* FALLTHRU */
-	    case 6: z *= (y+(Simple)5.0f);	/* FALLTHRU */
-	    case 5: z *= (y+(Simple)4.0f);	/* FALLTHRU */
-	    case 4: z *= (y+(Simple)3.0f);	/* FALLTHRU */
-	    case 3: z *= (y+(Simple)2.0f);	/* FALLTHRU */
+	    case 7: z *= (y+(StreflopSimple)6.0f);	/* FALLTHRU */
+	    case 6: z *= (y+(StreflopSimple)5.0f);	/* FALLTHRU */
+	    case 5: z *= (y+(StreflopSimple)4.0f);	/* FALLTHRU */
+	    case 4: z *= (y+(StreflopSimple)3.0f);	/* FALLTHRU */
+	    case 3: z *= (y+(StreflopSimple)2.0f);	/* FALLTHRU */
 		    r += __ieee754_logf(z); break;
 	    }
     /* 8.0f <= x < 2**58 */

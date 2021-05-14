@@ -39,22 +39,22 @@
 
 #include "t_exp2f.h"
 
-static const Simple TWOM100 = 7.88860905e-31f;
-static const Simple TWO127 = 1.7014118346e+38f;
+static const StreflopSimple TWOM100 = 7.88860905e-31f;
+static const StreflopSimple TWO127 = 1.7014118346e+38f;
 
 namespace streflop_libm {
-Simple
-__ieee754_exp2f (Simple x)
+StreflopSimple
+__ieee754_exp2f (StreflopSimple x)
 {
-  static const Simple himark = (Simple) FLT_MAX_EXP;
-  static const Simple lomark = (Simple) (FLT_MIN_EXP - FLT_MANT_DIG - 1);
+  static const StreflopSimple himark = (StreflopSimple) FLT_MAX_EXP;
+  static const StreflopSimple lomark = (StreflopSimple) (FLT_MIN_EXP - FLT_MANT_DIG - 1);
 
   /* Check for usual case.  */
   if (isless (x, himark) && isgreaterequal (x, lomark))
     {
-      static const Simple THREEp14 = 49152.0f;
+      static const StreflopSimple THREEp14 = 49152.0f;
       int tval, unsafe;
-      Simple rx, x22, result;
+      StreflopSimple rx, x22, result;
       union ieee754_float ex2_u, scale_u;
       fpenv_t oldenv;
 
@@ -82,7 +82,7 @@ __ieee754_exp2f (Simple x)
 	 Find e so that
 	 x = ex + t/256 + e + x2
 	 where -7e-4 < e < 7e-4, and
-	 (Simple)(2^(t/256+e))
+	 (StreflopSimple)(2^(t/256+e))
 	 is accurate to one part in 2^-64.  */
 
       /* 'tval & 255' is the same as 'tval%256' except that it's always

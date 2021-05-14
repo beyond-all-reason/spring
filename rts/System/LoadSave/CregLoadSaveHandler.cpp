@@ -129,36 +129,6 @@ void CLuaStateCollector::Serialize(creg::ISerializer* s) {
 	creg::SerializeLuaThread(s, &L_GC);
 }
 
-static void WriteString(std::ostream& s, const std::string& str)
-{
-	if (str.length() > MAX_STRING_SIZE)
-		throw content_error("[creg::WriteString] string \"" + str + "\" too long");
-
-	s.write(str.c_str(), str.length() + 1);
-}
-
-static void PrintSize(const char* txt, int size)
-{
-	if (size > (1024 * 1024 * 1024)) {
-		LOG("%s %.1f GB", txt, size / (1024.0f * 1024 * 1024));
-	} else if (size >  (1024 * 1024)) {
-		LOG("%s %.1f MB", txt, size / (1024.0f * 1024));
-	} else if (size > 1024) {
-		LOG("%s %.1f KB", txt, size / (1024.0f));
-	} else {
-		LOG("%s %u B",    txt, size);
-	}
-}
-#endif //USING_CREG
-
-static void ReadString(std::istream& s, std::string& str)
-{
-	char cstr[MAX_STRING_SIZE + 1];
-	s.getline(cstr, sizeof(cstr) - 1, 0);
-	str.clear();
-	str.append(cstr);
-}
-
 
 static void SaveLuaState(CSplitLuaHandle* handle, creg::COutputStreamSerializer& os, std::stringstream& oss)
 {
@@ -192,7 +162,37 @@ static void LoadLuaState(CSplitLuaHandle* handle, creg::CInputStreamSerializer& 
 	return;
 
 }
+#endif //USING_CREG
 
+static void WriteString(std::ostream& s, const std::string& str)
+{
+	if (str.length() > MAX_STRING_SIZE)
+		throw content_error("[creg::WriteString] string \"" + str + "\" too long");
+
+	s.write(str.c_str(), str.length() + 1);
+}
+
+static void PrintSize(const char* txt, int size)
+{
+	if (size > (1024 * 1024 * 1024)) {
+		LOG("%s %.1f GB", txt, size / (1024.0f * 1024 * 1024));
+	} else if (size >  (1024 * 1024)) {
+		LOG("%s %.1f MB", txt, size / (1024.0f * 1024));
+	} else if (size > 1024) {
+		LOG("%s %.1f KB", txt, size / (1024.0f));
+	} else {
+		LOG("%s %u B",    txt, size);
+	}
+}
+
+
+static void ReadString(std::istream& s, std::string& str)
+{
+	char cstr[MAX_STRING_SIZE + 1];
+	s.getline(cstr, sizeof(cstr) - 1, 0);
+	str.clear();
+	str.append(cstr);
+}
 
 void CCregLoadSaveHandler::SaveGame(const std::string& path)
 {

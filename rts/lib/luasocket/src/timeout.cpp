@@ -6,8 +6,7 @@
 \*=========================================================================*/
 #include <stdio.h>
 
-#include "lua.h"
-#include "lauxlib.h"
+#include "LuaInclude.h"
 
 #include "auxiliar.h"
 #include "timeout.h"
