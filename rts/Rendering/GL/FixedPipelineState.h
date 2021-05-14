@@ -43,11 +43,11 @@ namespace GL {
 
 	class NamedSingleState {
 	public:
-		template<typename F, typename Args> NamedSingleState(F&& func, const Args& args) :
-			object(std::make_shared<ObjectModel<F, Args>>(func, args)) {
+		template<typename F, typename Args> NamedSingleState(F func, const Args& args) :
+			object ( new ObjectModel(func, args) ) {
 		}
 
-		NamedSingleState() = default;
+		NamedSingleState() = delete;
 		NamedSingleState(const NamedSingleState& rhs) = default;
 
 		bool operator !=(const NamedSingleState& rhs) const {
@@ -70,8 +70,9 @@ namespace GL {
 		};
 
 		template<typename F, typename T> struct ObjectModel : ObjectConcept {
-			ObjectModel(F&& func_, const T& args_)
-				: func{ func_ }, args{ args_ }
+			ObjectModel(F func_, const T& args_) :
+				func( func_ ), args( args_ )
+
 			{}
 
 			void apply() const override {
@@ -98,17 +99,6 @@ namespace GL {
 	class FixedPipelineState {
 	private:
 		//template <typename Result, typename ...Args> using vararg_function = std::function< Result(Args...) >;
-		using glB1Func = std::function<void(GLboolean)>;
-		using glB4Func = std::function<void(GLboolean, GLboolean, GLboolean, GLboolean)>;
-		using glE1Func = std::function<void(GLenum)>;
-		using glE2Func = std::function<void(GLenum, GLenum)>;
-		using glE3Func = std::function<void(GLenum, GLenum, GLenum)>;
-		using glI4Func = std::function<void(GLint, GLint, GLint, GLint)>;
-		using glE1F1Func  = std::function<void(GLenum, GLfloat)>;
-		using glF1Func = std::function<void(GLfloat)>;
-		using glF2Func = std::function<void(GLfloat, GLfloat)>;
-		using glF4Func = std::function<void(GLfloat, GLfloat, GLfloat, GLfloat)>;
-
 		using onBindUnbindFunc = std::function<void()>;
 	public:
 		FixedPipelineState();
@@ -189,7 +179,7 @@ namespace GL {
 		FixedPipelineState& CommonNamedState(const char* funcName, F func, Args... args) {
 			auto argsTuple = std::make_tuple(args...);
 			DumpState(std::tuple_cat(std::make_tuple(funcName), argsTuple));
-			namedStates[funcName] = NamedSingleState(func, argsTuple);
+			namedStates.emplace(std::string(funcName), NamedSingleState(func, argsTuple));
 			return *this;
 		}
 

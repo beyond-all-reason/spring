@@ -139,48 +139,6 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 
 void FixedPipelineState::BindUnbind(const bool bind) const
 {
-	//////////////////////////////////////////////////////////////////////////////////////////////
-    #define APPLY_STATES(states) \
-    do { \
-        for (const auto [funcName, namedState] : states) { \
-            if (statesChain.empty()) { /*default state*/ \
-                namedState.apply(); \
-                continue; \
-            } \
-            const auto prev = statesChain.top().states; \
-            const auto prevStateIt = prev.find(funcName); \
-            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
-                /* TODO: do something to save revert state */ \
-                namedState.apply(); \
-                continue; \
-            } \
-            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/ \
-                namedState.apply(); \
-                continue; \
-            } \
-        } \
-    } while (false)
-
-    #define REVERT_STATES(states) \
-    do { \
-        for (const auto [funcName, namedState] : states) { \
-            if (statesChain.empty()) { /*default state*/ \
-                continue; \
-            } \
-            const auto prev = statesChain.top().states; \
-            const auto prevStateIt = prev.find(funcName); \
-            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/ \
-                /* TODO: do something to save revert state */ \
-                throw std::runtime_error("[FixedPipelineState::BindUnbind] Cannot revert state that has no default value"); \
-            } \
-            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/ \
-                prevStateIt->second.apply(); \
-                continue; \
-            } \
-        } \
-    } while (false)
-	//////////////////////////////////////////////////////////////////////////////////////////////
-
 	if (!bind)
 		statesChain.pop();
 
@@ -190,11 +148,41 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 	}
 
 	if (bind) {
-		APPLY_STATES(namedStates);
+		for (const auto& [funcName, namedState] : namedStates) {
+            if (statesChain.empty()) { /*default state*/
+                namedState.apply();
+                continue;
+            }
+            const auto& prev = statesChain.top().namedStates;
+            const auto& prevStateIt = prev.find(funcName);
+            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/
+                /* TODO: do something to save revert state */
+                namedState.apply();
+                continue;
+            }
+            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/
+                namedState.apply();
+                continue;
+            }
+        }
 	}
 	else
 	{
-		//REVERT_STATES(namedStates);
+        for (const auto& [funcName, namedState] : namedStates) {
+            if (statesChain.empty()) { /*default state*/
+                continue;
+            }
+            const auto& prev = statesChain.top().namedStates;
+            const auto& prevStateIt = prev.find(funcName);
+            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/
+                /* TODO: do something to save revert state */
+                throw std::runtime_error("[FixedPipelineState::BindUnbind] Cannot revert state that has no default value");
+            }
+            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/
+                prevStateIt->second.apply();
+                continue;
+            }
+        }
 	}
 
 	#undef APPLY_STATES
