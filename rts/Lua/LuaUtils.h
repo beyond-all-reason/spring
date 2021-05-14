@@ -228,10 +228,16 @@ static inline void LuaPushRawNamedCFunc(lua_State* L, const char* key, lua_CFunc
 	lua_rawset(L, -3);
 }
 
-#define REGISTER_LUA_CFUNC(func)                LuaPushRawNamedCFunc(L, #func,        func)
-#define REGISTER_NAMED_LUA_CFUNC(name, func)    LuaPushRawNamedCFunc(L,  name,        func)
-#define REGISTER_SCOPED_LUA_CFUNC(scope, func)  LuaPushRawNamedCFunc(L, #func, scope::func)
-
+#ifdef ENABLE_LUAJIT
+#define WRAP_CFUNC(func) [](lua_State* L) { streflop::streflop_init<StreflopSimple>(); int stat = func(L); streflop::streflop_init<StreflopDouble>(); return stat; }
+#define WRAP_SCOPED_CFUNC(func) [](lua_State* L) { streflop::streflop_init<StreflopSimple>(); int stat = func(L); streflop::streflop_init<StreflopDouble>(); return stat; }
+#else
+#define WRAP_CFUNC(func) func
+#define WRAP_SCOPED_CFUNC(func) func
+#endif
+#define REGISTER_LUA_CFUNC(func)                LuaPushRawNamedCFunc(L, #func,        WRAP_CFUNC(func))
+#define REGISTER_NAMED_LUA_CFUNC(name, func)    LuaPushRawNamedCFunc(L,  name,        WRAP_CFUNC(func))
+#define REGISTER_SCOPED_LUA_CFUNC(scope, func)  LuaPushRawNamedCFunc(L, #func, 		  WRAP_SCOPED_CFUNC(scope::func))
 
 static inline void LuaInsertDualMapPair(lua_State* L, const string& name, int number)
 {
