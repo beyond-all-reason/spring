@@ -17,3 +17,6 @@
 	path = AI/Skirmish/BARb
 	url = https://github.com/rlcevg/CircuitAI.git
 	branch = barbarian
+[submodule "rts/lib/ljSpring"]
+	path = rts/lib/ljSpring
+	url = https://github.com/pts1667/ljSpring.git
