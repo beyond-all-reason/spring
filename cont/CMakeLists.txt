@@ -54,7 +54,7 @@ else()
 endif()
 
 ### Install dependencies (windows, mingwlibs DLLs)
-if    (MINGW)
+if    (MINGW AND NOT STATIC_LINK_WINDOWS)
 	install (DIRECTORY ${MINGWLIBS}/dll/ DESTINATION ${BINDIR} PATTERN "*.dll")
 
 	#execute_process(COMMAND ${CMAKE_CXX_COMPILER} "-print-file-name=libstdc++-6.dll" OUTPUT_VARIABLE STDCXX_LIBRARY OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -69,6 +69,7 @@ progress.make
 # MINGWLIBS=<your-path-here>/mingwlibs
 /mingwlibs
 /mingwlibs64
+/buildmingw
 
 # Windows libraries used by spring when compiling with Visual Studio
 /vclibs
