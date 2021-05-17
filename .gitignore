@@ -81,6 +81,12 @@ progress.make
 /installer/downloads
 /installer/custom_defines.nsi
 
+# Weird files
+/cont/base/bitmaps/nul
+/cont/base/cursors/nul
+/cont/base/maphelper/nul
+/cont/base/springcontent/nul
+
 # AI files
 /AI/Skirmish/*/build
 /AI/Wrappers/JavaOO/target
