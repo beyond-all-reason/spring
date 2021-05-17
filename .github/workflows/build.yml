@@ -276,7 +276,7 @@ jobs:
 
           cmake \
           -DCMAKE_TOOLCHAIN_FILE=./my.cmake \
-          -DMARCH_FLAG="${MYARCHTUNE}" \
+          -DSPRING_MARCH_FLAG="${MYARCHTUNE}" \
           -DCMAKE_CXX_FLAGS="${MYCFLAGS}" \
           -DCMAKE_C_FLAGS="${MYCFLAGS}" \
           -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="${MYRWDIFLAGS}" \
@@ -301,7 +301,7 @@ jobs:
 
           cmake \
           -DCMAKE_TOOLCHAIN_FILE=./my.cmake \
-          -DMARCH_FLAG="${MYARCHTUNE}" \
+          -DSPRING_MARCH_FLAG="${MYARCHTUNE}" \
           -DCMAKE_CXX_FLAGS="${MYCFLAGS}" \
           -DCMAKE_C_FLAGS="${MYCFLAGS}" \
           -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="${MYRWDIFLAGS}" \
