@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 
+#include "MatricesMemStorage.h"
 #include "Lua/LuaObjectMaterial.h"
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -15,7 +16,6 @@
 #include "System/type2.h"
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
-
 
 #define MAX_MODEL_OBJECTS  2048
 #define NUM_MODEL_TEXTURES    2
@@ -86,7 +86,6 @@ public:
  * A 3D model definition. Holds geometry (vertices/normals) and texture data as well as the piece tree.
  * The S3DModel is static and shouldn't change once created, instead a LocalModel is used by each agent.
  */
-
 struct S3DModelPiece {
 	S3DModelPiece() = default;
 
@@ -104,9 +103,8 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		if (allocatorIndex < ~0u) //kludge
-			BPoseMatrix().LoadIdentity();
-
+		//BPoseMatrix().LoadIdentity(); //this one is deallocated already
+		weakMatAllocElem = nullptr;
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -195,11 +193,10 @@ public:
 		return m;
 	}
 
-	void SetAllocatorIndex(const size_t allocatorIndex_) { allocatorIndex = allocatorIndex_; }
-	size_t GetAllocatorIndex() const { return allocatorIndex; }
+	void SetWeakMatricesMemAllocElem(WeakMatricesMemAllocElem& wmma) { weakMatAllocElem = &wmma; }
 
-	const CMatrix44f& BPoseMatrix() const;
-	      CMatrix44f& BPoseMatrix();
+	const CMatrix44f& BPoseMatrix() const { return (*weakMatAllocElem)(); }
+	      CMatrix44f& BPoseMatrix()       { return (*weakMatAllocElem)(); }
 
 	void SetCollisionVolume(const CollisionVolume& cv) { colvol = cv; }
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
@@ -237,7 +234,7 @@ protected:
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
 
-	size_t allocatorIndex = ~0u;
+	WeakMatricesMemAllocElem* weakMatAllocElem = nullptr;
 
 	VBO vboShatterIndices;
 
@@ -274,16 +271,16 @@ struct S3DModel
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
 
-		, allocatorIndex(~0u)
+		, matAlloc(ScopedMatricesMemAlloc(0u))
 	{
 
 	}
 
 	S3DModel(const S3DModel& m) = delete;
-	S3DModel(S3DModel&& m) { *this = std::move(m); }
+	S3DModel(S3DModel&& m) noexcept { *this = std::move(m); }
 
 	S3DModel& operator = (const S3DModel& m) = delete;
-	S3DModel& operator = (S3DModel&& m) {
+	S3DModel& operator = (S3DModel&& m) noexcept {
 		name    = std::move(m.name   );
 		texs[0] = std::move(m.texs[0]);
 		texs[1] = std::move(m.texs[1]);
@@ -307,7 +304,7 @@ struct S3DModel
 		curVertStartIndx = m.curVertStartIndx;
 		curIndxStartIndx = m.curIndxStartIndx;
 
-		allocatorIndex = m.allocatorIndex;
+		matAlloc = std::move(m.matAlloc);
 
 		pieceObjects = std::move(m.pieceObjects);
 		for_each(pieceObjects.begin(), pieceObjects.end(), [this](S3DModelPiece* p) { p->SetParentModel(this); });
@@ -353,8 +350,6 @@ struct S3DModel
 
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
-
-	size_t GetAllocatorIndex() const { return allocatorIndex; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];
@@ -381,7 +376,7 @@ public:
 	float3 maxs;
 	float3 relMidPos;
 private:
-	size_t allocatorIndex; //numPieces will serve as counter
+	ScopedMatricesMemAlloc matAlloc;
 };
 
 

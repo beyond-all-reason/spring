@@ -16,6 +16,7 @@
 #include "System/UnorderedMap.hpp"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
+#include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/Log/ILog.h"
 
@@ -347,8 +348,9 @@ private:
 
 
 template<typename T>
-inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool withMutex)
+inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool forceMutex)
 {
+	const bool withMutex = forceMutex || !Threading::IsMainThread();
 	if (withMutex) {
 		std::lock_guard<spring::mutex> lck(mut);
 		return AllocateImpl(numElems);
@@ -360,7 +362,8 @@ inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool withMutex)
 template<typename T>
 inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
 {
-	assert(numElems > 0);
+	if (numElems == 0)
+		return ~0u;
 
 	//no gaps
 	if (positionToSize.empty()) {
@@ -401,7 +404,9 @@ template<typename T>
 inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 {
 	assert(firstElem + numElems <= data.size());
-	assert(numElems > 0);
+
+	if (numElems == 0)
+		return;
 
 	//lucky us
 	if (firstElem + numElems == data.size()) {

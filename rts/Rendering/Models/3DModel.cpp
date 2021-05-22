@@ -1,8 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "3DModel.h"
-#include "MatricesMemStorage.h"
-//#include "System/SpringMem.h"
 
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/myGL.h"
@@ -119,18 +117,6 @@ void S3DModelPiece::CreateShatterPieces()
 	vboShatterIndices.Unbind();
 }
 
-
-const CMatrix44f& S3DModelPiece::BPoseMatrix() const
-{
-	assert(allocatorIndex < ~0u);
-	return matricesMemStorage[allocatorIndex];
-}
-
-CMatrix44f& S3DModelPiece::BPoseMatrix()
-{
-	assert(allocatorIndex < ~0u);
-	return matricesMemStorage[allocatorIndex];
-}
 
 void S3DModelPiece::CreateShatterPiecesVariation(const int num)
 {
@@ -662,11 +648,7 @@ void S3DModel::DeletePieces()
 {
 	assert(!pieceObjects.empty());
 
-	if (allocatorIndex < ~0u)
-		matricesMemStorage.Free(allocatorIndex, numPieces);
-
-	for (auto pieceObject : pieceObjects)
-		pieceObject->SetAllocatorIndex(~0u);
+	matAlloc = {};
 
 	// NOTE: actual piece memory is owned by parser pools
 	pieceObjects.clear();
@@ -674,8 +656,8 @@ void S3DModel::DeletePieces()
 
 void S3DModel::AllocateMatrices()
 {
-	// this one needs lock, because the call is called from thread pool
-	allocatorIndex = matricesMemStorage.Allocate(numPieces, true);
+	// this one needs lock, because the call is called from thread pool???
+	matAlloc = std::move(ScopedMatricesMemAlloc(numPieces));
 }
 
 void S3DModel::FlattenPieceTree(S3DModelPiece* root)
@@ -692,8 +674,8 @@ void S3DModel::FlattenPieceTree(S3DModelPiece* root)
 		S3DModelPiece* p = stack.back();
 
 		stack.pop_back();
+		p->SetWeakMatricesMemAllocElem(matAlloc[pieceObjects.size()]);
 		pieceObjects.push_back(p);
-		pieceObjects.back()->SetAllocatorIndex(allocatorIndex + pieceObjects.size());
 
 		// add children in reverse for the correct DF traversal order
 		for (size_t n = 0; n < p->children.size(); n++) {
