@@ -648,16 +648,15 @@ void S3DModel::DeletePieces()
 {
 	assert(!pieceObjects.empty());
 
-	matAlloc = {};
-
 	// NOTE: actual piece memory is owned by parser pools
 	pieceObjects.clear();
 }
 
 void S3DModel::AllocateMatrices()
 {
-	// this one needs lock, because the call is called from thread pool???
-	matAlloc = std::move(ScopedMatricesMemAlloc(numPieces));
+	// force mutex just in case this is called from modelLoader.PreloadModel()
+	// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+	matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
 }
 
 void S3DModel::FlattenPieceTree(S3DModelPiece* root)

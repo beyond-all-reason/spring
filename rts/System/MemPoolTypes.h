@@ -348,9 +348,8 @@ private:
 
 
 template<typename T>
-inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool forceMutex)
+inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool withMutex)
 {
-	const bool withMutex = forceMutex || !Threading::IsMainThread();
 	if (withMutex) {
 		std::lock_guard<spring::mutex> lck(mut);
 		return AllocateImpl(numElems);
@@ -369,7 +368,7 @@ inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
 	if (positionToSize.empty()) {
 		size_t returnPos = data.size();
 		data.resize(data.size() + numElems);
-		myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
+		myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u [thread_id = %u]", uint32_t(numElems), uint32_t(returnPos), static_cast<uint32_t>(Threading::GetCurrentThreadId()));
 		return returnPos;
 	}
 
@@ -408,15 +407,7 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 	if (numElems == 0)
 		return;
 
-	//lucky us
-	if (firstElem + numElems == data.size()) {
-		data.resize(firstElem);
-
-		myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
-		firstElem = ~0u;
-		return;
-	}
-
+	//helper to erase {size, pos} pair from sizeToPositions multimap
 	const auto eraseSizeToPositionsKV = [this](size_t size, size_t pos) {
 		auto [beg, end] = sizeToPositions.equal_range(size);
 		for (auto it = beg; it != end; /*noop*/)
@@ -425,6 +416,49 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 			else
 				++it;
 	};
+
+	//check if last element is adjacent to the end of the data() so we can trim data vector
+	//nice to do in case of massive deallocation to accelerate gaps search
+	const auto checkForTrimOpportunity = [this, &eraseSizeToPositionsKV]() {
+		while (!positionToSize.empty()) {
+			// rbegin cannot be used because .erase() doesn't accept it :|
+			auto positionToSizeLastIt = positionToSize.end(); std::advance(positionToSizeLastIt, -1);
+			// pos + size == data.size();
+			if (positionToSizeLastIt->first + positionToSizeLastIt->second == data.size()) {
+				//trim data vector
+				data.resize(positionToSizeLastIt->first);
+				//erase old sizeToPositions
+				eraseSizeToPositionsKV(positionToSizeLastIt->second, positionToSizeLastIt->first);
+				//erase old positionToSize
+				positionToSize.erase(positionToSizeLastIt);
+			}
+			else {
+				break;
+			}
+		}
+	};
+
+	//lucky us, freeing up the very last allocation
+	if (firstElem + numElems == data.size()) {
+		//trim data vector
+		data.resize(firstElem);
+
+		auto positionToSizeIt = positionToSize.empty() ? positionToSize.end() : positionToSize.find(firstElem);
+		if (positionToSizeIt != positionToSize.end()) {
+			//erase old sizeToPositions
+			eraseSizeToPositionsKV(positionToSizeIt->second, positionToSizeIt->first);
+			//erase old positionToSize
+			positionToSize.erase(positionToSizeIt);
+		}
+
+		checkForTrimOpportunity();
+
+		myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+		firstElem = ~0u;
+		return;
+	}
+
+
 
 	//check for merge opportunity before firstElem positionToSize
 	if (!positionToSize.empty()) {
@@ -444,6 +478,8 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 			positionToSizeBeforeIt->second += numElems;
 			//emplace new sizeToPositions
 			sizeToPositions.emplace(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
+
+			checkForTrimOpportunity();
 
 			myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 			firstElem = ~0u;
@@ -467,6 +503,8 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 				//erase old positionToSize
 				positionToSize.erase(positionToSizeAfterIt);
 
+				checkForTrimOpportunity();
+
 				myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 				firstElem = ~0u;
 				return;
@@ -480,7 +518,6 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 
 	myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 	firstElem = ~0u;
-	return;
 }
 
 #endif

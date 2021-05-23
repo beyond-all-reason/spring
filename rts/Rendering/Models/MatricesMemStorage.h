@@ -15,7 +15,7 @@ public:
 	MatricesMemStorage();
 public:
 	void Reset() { spa->Reset(); };
-	size_t Allocate(size_t numElems, bool forceMutex = false) { return spa->Allocate(numElems, forceMutex); };
+	size_t Allocate(size_t numElems, bool withMutex = false) { return spa->Allocate(numElems, withMutex); };
 	void Free(size_t& firstElem, size_t numElems) { spa->Free(firstElem, numElems); };
     const size_t GetSize() const { return spa->GetSize(); }
     std::vector<CMatrix44f>& GetData() { return spa->GetData(); }
@@ -66,8 +66,8 @@ private:
 class ScopedMatricesMemAlloc {
 public:
 	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(0u) {};
-	ScopedMatricesMemAlloc(size_t numElems_, bool forceMutex = false) : numElems{numElems_} {
-		firstElem = matricesMemStorage.Allocate(numElems, forceMutex);
+	ScopedMatricesMemAlloc(size_t numElems_, bool withMutex = false) : numElems{numElems_} {
+		firstElem = matricesMemStorage.Allocate(numElems, withMutex);
 
 		for (size_t i = 0; i < numElems; ++i)
 			weakMatricesMemAllocs.emplace_back(WeakMatricesMemAllocElem(firstElem + i));
@@ -89,14 +89,10 @@ public:
 
 	ScopedMatricesMemAlloc& operator= (const ScopedMatricesMemAlloc&) = delete;
 	ScopedMatricesMemAlloc& operator= (ScopedMatricesMemAlloc&& smma) noexcept {
-		firstElem = smma.firstElem;
-		numElems = smma.numElems;
-
-		weakMatricesMemAllocs = std::move(smma.weakMatricesMemAllocs);
-
-		//prevent dealloc on dying object
-		smma.firstElem = MatricesMemStorage::INVALID_INDEX;
-		smma.numElems  = 0u;
+		//swap to prevent dealloc on dying object, yet enable destructor to do its thing on valid object
+		std::swap(firstElem, smma.firstElem);
+		std::swap(numElems , smma.numElems );
+		std::swap(weakMatricesMemAllocs, smma.weakMatricesMemAllocs);
 
 		return *this;
 	}
