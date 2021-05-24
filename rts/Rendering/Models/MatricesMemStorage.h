@@ -56,7 +56,7 @@ public:
 		return matricesMemStorage[elem];
 	}
 	CMatrix44f& operator()() {
-		assert(elem != ~0u);
+		assert(elem != MatricesMemStorage::INVALID_INDEX);
 		return matricesMemStorage[elem];
 	}
 private:

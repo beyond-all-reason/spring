@@ -10,7 +10,6 @@
 #include <deque>
 #include <vector>
 #include <map>
-
 #include <memory>
 
 #include "System/UnorderedMap.hpp"
@@ -325,9 +324,11 @@ public:
 		data.reserve(initialSize);
 	}
 	void Reset() {
-		data.clear();
-		sizeToPositions.clear();
-		positionToSize.clear();
+		CompactGaps();
+		//upon compaction all allocations should go away
+		assert(data.empty());
+		assert(sizeToPositions.empty());
+		assert(positionToSize.empty());
 	}
 
 	size_t Allocate(size_t numElems, bool withMutex = false);
@@ -338,6 +339,7 @@ public:
 	T& operator[](std::size_t idx) { return data[idx]; }
 	const T& operator[](std::size_t idx) const { return data[idx]; }
 private:
+	void CompactGaps();
 	size_t AllocateImpl(size_t numElems);
 private:
 	spring::mutex mut;
@@ -399,122 +401,91 @@ inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
 	return returnPos;
 }
 
+//merge adjacent gaps and trim data vec
+template<typename T>
+inline void StablePosAllocator<T>::CompactGaps()
+{
+	//helper to erase {size, pos} pair from sizeToPositions multimap
+	const auto eraseSizeToPositionsKVFunc = [this](size_t size, size_t pos) {
+		auto [beg, end] = sizeToPositions.equal_range(size);
+		for (auto it = beg; it != end; /*noop*/)
+			if (it->second == pos) {
+				it = sizeToPositions.erase(it);
+				break;
+			}
+			else {
+				++it;
+			}
+	};
+
+	bool found;
+	std::size_t posStartFrom = 0u;
+	do {
+		found = false;
+
+		std::map<size_t, size_t>::iterator posSizeBeg = positionToSize.lower_bound(posStartFrom);
+		std::map<size_t, size_t>::iterator posSizeFin = positionToSize.end(); std::advance(posSizeFin, -1);
+
+		for (auto posSizeThis = posSizeBeg; posSizeThis != posSizeFin; ++posSizeThis) {
+			posStartFrom = posSizeThis->first;
+			auto posSizeNext = posSizeThis; std::advance(posSizeNext, 1);
+
+			if (posSizeThis->first + posSizeThis->second == posSizeNext->first) {
+				std::size_t newPos = posSizeThis->first;
+				std::size_t newSize = posSizeThis->second + posSizeNext->second;
+
+				eraseSizeToPositionsKVFunc(posSizeThis->second, posSizeThis->first);
+				eraseSizeToPositionsKVFunc(posSizeNext->second, posSizeNext->first);
+
+				positionToSize.erase(posSizeThis);
+				positionToSize.erase(posSizeNext); //this iterator is guaranteed to stay valid after 1st erase
+
+				positionToSize.emplace(newPos, newSize);
+				sizeToPositions.emplace(newSize, newPos);
+
+				found = true;
+
+				break;
+			}
+		}
+	} while (found);
+
+	std::map<size_t, size_t>::iterator posSizeFin = positionToSize.end(); std::advance(posSizeFin, -1);
+	if (posSizeFin->first + posSizeFin->second == data.size()) {
+		//trim data vector
+		data.resize(posSizeFin->first);
+		//erase old sizeToPositions
+		eraseSizeToPositionsKVFunc(posSizeFin->second, posSizeFin->first);
+		//erase old positionToSize
+		positionToSize.erase(posSizeFin);
+	}
+}
+
 template<typename T>
 inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 {
 	assert(firstElem + numElems <= data.size());
 
-	if (numElems == 0)
-		return;
-
-	//helper to erase {size, pos} pair from sizeToPositions multimap
-	const auto eraseSizeToPositionsKV = [this](size_t size, size_t pos) {
-		auto [beg, end] = sizeToPositions.equal_range(size);
-		for (auto it = beg; it != end; /*noop*/)
-			if (it->second == pos)
-				it = sizeToPositions.erase(it);
-			else
-				++it;
-	};
-
-	//check if last element is adjacent to the end of the data() so we can trim data vector
-	//nice to do in case of massive deallocation to accelerate gaps search
-	const auto checkForTrimOpportunity = [this, &eraseSizeToPositionsKV]() {
-		while (!positionToSize.empty()) {
-			// rbegin cannot be used because .erase() doesn't accept it :|
-			auto positionToSizeLastIt = positionToSize.end(); std::advance(positionToSizeLastIt, -1);
-			// pos + size == data.size();
-			if (positionToSizeLastIt->first + positionToSizeLastIt->second == data.size()) {
-				//trim data vector
-				data.resize(positionToSizeLastIt->first);
-				//erase old sizeToPositions
-				eraseSizeToPositionsKV(positionToSizeLastIt->second, positionToSizeLastIt->first);
-				//erase old positionToSize
-				positionToSize.erase(positionToSizeLastIt);
-			}
-			else {
-				break;
-			}
-		}
-	};
-
-	//lucky us, freeing up the very last allocation
-	if (firstElem + numElems == data.size()) {
-		//trim data vector
-		data.resize(firstElem);
-
-		auto positionToSizeIt = positionToSize.empty() ? positionToSize.end() : positionToSize.find(firstElem);
-		if (positionToSizeIt != positionToSize.end()) {
-			//erase old sizeToPositions
-			eraseSizeToPositionsKV(positionToSizeIt->second, positionToSizeIt->first);
-			//erase old positionToSize
-			positionToSize.erase(positionToSizeIt);
-		}
-
-		checkForTrimOpportunity();
-
+	if (numElems == 0) {
 		myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 		firstElem = ~0u;
 		return;
 	}
 
-
-
-	//check for merge opportunity before firstElem positionToSize
-	if (!positionToSize.empty()) {
-		auto positionToSizeBeforeIt = positionToSize.lower_bound(firstElem);
-		if (positionToSizeBeforeIt == positionToSize.end())
-			positionToSizeBeforeIt = positionToSize.begin();
-
-		if (positionToSizeBeforeIt != positionToSize.begin())
-			--positionToSizeBeforeIt;
-
-		if (positionToSizeBeforeIt->first + positionToSizeBeforeIt->second == firstElem) {
-			// [gapBefore][thisGap] ==> [newBiggerGap]
-
-			//erase old sizeToPositions
-			eraseSizeToPositionsKV(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
-			//patch up positionToSize
-			positionToSizeBeforeIt->second += numElems;
-			//emplace new sizeToPositions
-			sizeToPositions.emplace(positionToSizeBeforeIt->second, positionToSizeBeforeIt->first);
-
-			checkForTrimOpportunity();
-
-			myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
-			firstElem = ~0u;
-			return;
-		}
+	//lucky us, just remove trim the vector size
+	if (firstElem + numElems == data.size()) {
+		myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
+		data.resize(firstElem);
+		firstElem = ~0u;
+		return;
 	}
 
-	//check for merge opportunity after firstElem positionToSize
-	if (!positionToSize.empty()) {
-		auto positionToSizeAfterIt = positionToSize.upper_bound(firstElem + numElems); //guaranteed to be after firstElem
-		if (positionToSizeAfterIt != positionToSize.end()) {
-			if (firstElem + numElems == positionToSizeAfterIt->first) {
-				// [thisGap][gapAfter] ==> [newBiggerGap]
-
-				//erase old sizeToPositions
-				eraseSizeToPositionsKV(positionToSizeAfterIt->second, positionToSizeAfterIt->first);
-				//emplace new positionToSize
-				positionToSize.emplace(firstElem, numElems + positionToSizeAfterIt->second);
-				//emplace new sizeToPositions
-				sizeToPositions.emplace(numElems + positionToSizeAfterIt->second, firstElem);
-				//erase old positionToSize
-				positionToSize.erase(positionToSizeAfterIt);
-
-				checkForTrimOpportunity();
-
-				myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
-				firstElem = ~0u;
-				return;
-			}
-		}
-	}
-
-	//no adjacent gaps found
 	positionToSize.emplace(firstElem, numElems);
 	sizeToPositions.emplace(numElems, firstElem);
+
+	static constexpr float compactionTriggerFraction = 0.025f;
+	if (positionToSize.size() >= std::ceil(compactionTriggerFraction * data.size()))
+		CompactGaps();
 
 	myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 	firstElem = ~0u;

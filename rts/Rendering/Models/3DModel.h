@@ -271,7 +271,9 @@ struct S3DModel
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
 
-		, matAlloc(ScopedMatricesMemAlloc(0u))
+		// Model has at least once piece matrix.
+		// This unfortunately costs extra perf on reallocation, but this is the way (c)
+		, matAlloc(ScopedMatricesMemAlloc(1u))
 	{
 
 	}
