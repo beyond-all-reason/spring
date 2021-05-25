@@ -34,23 +34,27 @@ private:
 
 ////////////////////////////////////////////////////////////////////
 
-class WeakMatricesMemAllocElem {
+class MatAllocElem {
 public:
-	WeakMatricesMemAllocElem() { Reset(); };
-	WeakMatricesMemAllocElem(const WeakMatricesMemAllocElem&) = delete;
-	WeakMatricesMemAllocElem(WeakMatricesMemAllocElem&& wmma) noexcept { *this = std::move(wmma); }
+	MatAllocElem() { Reset(); };
+	MatAllocElem(const MatAllocElem&) = delete;
+	MatAllocElem(MatAllocElem&& wmma) noexcept { *this = std::move(wmma); }
 public:
 	friend class ScopedMatricesMemAlloc;
 private:
-	WeakMatricesMemAllocElem(size_t elem_)
+	MatAllocElem(size_t elem_)
 		: elem{ elem_ }
 	{ }
 	void Reset() {
 		elem = MatricesMemStorage::INVALID_INDEX;
 	}
 public:
-	WeakMatricesMemAllocElem& operator= (const WeakMatricesMemAllocElem&) = delete;
-	WeakMatricesMemAllocElem& operator= (WeakMatricesMemAllocElem&&) = default;
+	MatAllocElem& operator= (const MatAllocElem&) = delete;
+	MatAllocElem& operator= (MatAllocElem&& mae) noexcept {
+		std::swap(elem, mae.elem);
+
+		return *this;
+	}
 	const CMatrix44f& operator()() const {
 		assert(elem != MatricesMemStorage::INVALID_INDEX);
 		return matricesMemStorage[elem];
@@ -70,7 +74,7 @@ public:
 		firstElem = matricesMemStorage.Allocate(numElems, withMutex);
 
 		for (size_t i = 0; i < numElems; ++i)
-			weakMatricesMemAllocs.emplace_back(WeakMatricesMemAllocElem(firstElem + i));
+			matAllocElem.emplace_back(MatAllocElem(firstElem + i));
 	}
 
 	ScopedMatricesMemAlloc(const ScopedMatricesMemAlloc&) = delete;
@@ -81,8 +85,8 @@ public:
 		if (firstElem == MatricesMemStorage::INVALID_INDEX)
 			return;
 
-		for (auto& wmma : weakMatricesMemAllocs)
-			wmma.Reset();
+		for (auto& mae : matAllocElem)
+			mae.Reset();
 
 		matricesMemStorage.Free(firstElem, numElems);
 	}
@@ -92,21 +96,21 @@ public:
 		//swap to prevent dealloc on dying object, yet enable destructor to do its thing on valid object
 		std::swap(firstElem, smma.firstElem);
 		std::swap(numElems , smma.numElems );
-		std::swap(weakMatricesMemAllocs, smma.weakMatricesMemAllocs);
+		std::swap(matAllocElem, smma.matAllocElem);
 
 		return *this;
 	}
 
-	const WeakMatricesMemAllocElem& operator[](size_t offset) const {
+	const MatAllocElem& operator[](size_t offset) const {
 		assert(offset >= 0 && offset < numElems);
-		return weakMatricesMemAllocs[offset];
+		return matAllocElem[offset];
 	}
-	WeakMatricesMemAllocElem& operator[](size_t offset) {
+	MatAllocElem& operator[](size_t offset) {
 		assert(offset >= 0 && offset < numElems);
-		return weakMatricesMemAllocs[offset];
+		return matAllocElem[offset];
 	}
 private:
-	std::vector<WeakMatricesMemAllocElem> weakMatricesMemAllocs;
+	std::vector<MatAllocElem> matAllocElem;
 	size_t firstElem = MatricesMemStorage::INVALID_INDEX;
 	size_t numElems  = 0u;
 };

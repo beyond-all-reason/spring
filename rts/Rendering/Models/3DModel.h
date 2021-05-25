@@ -104,7 +104,7 @@ struct S3DModelPiece {
 		colvol = {};
 
 		//BPoseMatrix().LoadIdentity(); //this one is deallocated already
-		weakMatAllocElem = nullptr;
+		bPosMat = nullptr;
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -193,10 +193,10 @@ public:
 		return m;
 	}
 
-	void SetWeakMatricesMemAllocElem(WeakMatricesMemAllocElem& wmma) { weakMatAllocElem = &wmma; }
+	void SetBPosAllocElem(MatAllocElem& mae) { bPosMat = &mae; }
 
-	const CMatrix44f& BPoseMatrix() const { return (*weakMatAllocElem)(); }
-	      CMatrix44f& BPoseMatrix()       { return (*weakMatAllocElem)(); }
+	const CMatrix44f& BPoseMatrix() const { assert(bPosMat); return (*bPosMat)(); }
+	      CMatrix44f& BPoseMatrix()       { assert(bPosMat); return (*bPosMat)(); }
 
 	void SetCollisionVolume(const CollisionVolume& cv) { colvol = cv; }
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
@@ -234,7 +234,7 @@ protected:
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
 
-	WeakMatricesMemAllocElem* weakMatAllocElem = nullptr;
+	MatAllocElem* bPosMat = nullptr;
 
 	VBO vboShatterIndices;
 
@@ -309,7 +309,10 @@ struct S3DModel
 		matAlloc = std::move(m.matAlloc);
 
 		pieceObjects = std::move(m.pieceObjects);
-		for_each(pieceObjects.begin(), pieceObjects.end(), [this](S3DModelPiece* p) { p->SetParentModel(this); });
+
+		for (auto po : pieceObjects)
+			po->SetParentModel(this);
+
 		return *this;
 	}
 
@@ -398,6 +401,7 @@ struct LocalModelPiece
 	void AddChild(LocalModelPiece* c) { children.push_back(c); }
 	void RemoveChild(LocalModelPiece* c) { children.erase(std::find(children.begin(), children.end(), c)); }
 	void SetParent(LocalModelPiece* p) { parent = p; }
+	void SetLocalModel(LocalModel* lm) { localModel = lm; }
 
 	void SetLModelPieceIndex(unsigned int idx) { lmodelPieceIndex = idx; }
 	void SetScriptPieceIndex(unsigned int idx) { scriptPieceIndex = idx; }
@@ -450,12 +454,11 @@ struct LocalModelPiece
 	const float3& GetRotation() const { return rot; }
 	const float3& GetDirection() const { return dir; }
 
-	const size_t GetModelSpaceMatIndex() const { return allocatorIndex; }
-	void SetModelSpaceMatIndex(const size_t index) const { allocatorIndex = index; }
+	void SetModelSpaceAllocElem(MatAllocElem& mae) { modelSpaceMat = &mae; }
 
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
 	const CMatrix44f& GetModelSpaceMatrix() const;
-	CMatrix44f& GetModelSpaceMatrixRaw() const;
+	CMatrix44f& GetModelSpaceMatrixRaw() const { assert(modelSpaceMat); return (*modelSpaceMat)(); };
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -466,8 +469,10 @@ private:
 	float3 dir; // cached copy of original->GetEmitDir()
 
 	mutable CMatrix44f pieceSpaceMat; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
-	//mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
-	mutable size_t allocatorIndex = ~0u;
+
+	// transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	//mutable CMatrix44f modelSpaceMat;
+	mutable MatAllocElem* modelSpaceMat = nullptr;
 
 	CollisionVolume colvol;
 
@@ -483,6 +488,7 @@ public:
 
 	const S3DModelPiece* original;
 	LocalModelPiece* parent;
+	LocalModel* localModel;
 
 	std::vector<LocalModelPiece*> children;
 	std::vector<unsigned int> lodDispLists;
@@ -493,8 +499,11 @@ struct LocalModel
 {
 	CR_DECLARE_STRUCT(LocalModel)
 
-	LocalModel();
-	~LocalModel();
+	LocalModel()
+		: matAlloc{1u} //at least one matrix to hold UnsyncedTransformMatrix
+		, unsyncedTransformMatrix{ &matAlloc[0] }
+	{};
+	~LocalModel() { pieces.clear(); };
 
 
 	bool HasPiece(unsigned int i) const { return (i < pieces.size()); }
@@ -559,12 +568,11 @@ struct LocalModel
 
 
 private:
+	LocalModelPiece* CreateLocalModelPieces(const S3DModel* model);
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);
 
-	void CondReallocateMatMemStorage() const;
-
-	const CMatrix44f& GetUnsyncedTransformMatrix() const;
-	      CMatrix44f& GetUnsyncedTransformMatrix();
+	const CMatrix44f& GetUnsyncedTransformMatrix() const { return (*unsyncedTransformMatrix)(); }
+	CMatrix44f& GetUnsyncedTransformMatrix() { return (*unsyncedTransformMatrix)(); }
 
 	void DrawPieces() const;
 	void DrawPiecesLOD(unsigned int lod) const;
@@ -573,8 +581,9 @@ public:
 	std::vector<LocalModelPiece> pieces;
 
 private:
-	mutable size_t allocatorIndex = ~0u;
-	mutable size_t allocatorCount =  0u;
+	ScopedMatricesMemAlloc matAlloc;
+	MatAllocElem* unsyncedTransformMatrix;
+
 	CMatrix44f transformMatSynced; // synced
 
 	// object-oriented box; accounts for piece movement

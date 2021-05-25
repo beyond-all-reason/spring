@@ -35,7 +35,7 @@ CR_REG_METADATA(LocalModelPiece, (
 
 	CR_IGNORED(dirty),
 	//CR_IGNORED(modelSpaceMat),
-	CR_IGNORED(allocatorIndex),
+	CR_IGNORED(modelSpaceMat),
 	CR_IGNORED(pieceSpaceMat),
 
 	CR_IGNORED(lodDispLists) //FIXME GL idx!
@@ -45,8 +45,8 @@ CR_BIND(LocalModel, )
 CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
 
-	CR_IGNORED(allocatorIndex),
-	CR_IGNORED(allocatorCount),
+	CR_IGNORED(matAlloc),
+	CR_IGNORED(unsyncedTransformMatrix),
 	CR_IGNORED(transformMatSynced),
 
 	CR_IGNORED(boundingVolume),
@@ -371,19 +371,6 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 }
 
 
-LocalModel::LocalModel()
-{
-	CondReallocateMatMemStorage();
-}
-
-LocalModel::~LocalModel()
-{
-	if (allocatorIndex < ~0u)
-		matricesMemStorage.Free(allocatorIndex, allocatorCount);
-
-	pieces.clear();
-}
-
 const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
 {
 	if (synced)
@@ -399,17 +386,6 @@ CMatrix44f& LocalModel::GetTransformMatrix(bool synced)
 	else
 		return GetUnsyncedTransformMatrix();
 }
-
-const CMatrix44f& LocalModel::GetUnsyncedTransformMatrix() const
-{
-	return matricesMemStorage[allocatorIndex];
-}
-
-CMatrix44f& LocalModel::GetUnsyncedTransformMatrix()
-{
-	return matricesMemStorage[allocatorIndex];
-}
-
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
@@ -438,9 +414,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	pieces.clear();
 	pieces.reserve(model->numPieces);
 
-	CreateLocalModelPieces(model->GetRootPiece());
-
-	CondReallocateMatMemStorage();
+	CreateLocalModelPieces(model);
 
 	// must recursively update matrices here too: for features
 	// LocalModel::Update is never called, but they might have
@@ -451,6 +425,13 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	assert(pieces.size() == model->numPieces);
 }
 
+LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModel* model)
+{
+	matAlloc = std::move(ScopedMatricesMemAlloc(model->numPieces + 1u));
+	unsyncedTransformMatrix = &matAlloc[0];
+	return CreateLocalModelPieces(model->GetRootPiece());
+}
+
 LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParent)
 {
 	LocalModelPiece* lmpChild = nullptr;
@@ -458,9 +439,12 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 	// construct an LMP(mp) in-place
 	pieces.emplace_back(mpParent);
 	LocalModelPiece* lmpParent = &pieces.back();
+	lmpParent->SetLocalModel(this);
 
-	lmpParent->SetLModelPieceIndex(pieces.size() - 1);
-	lmpParent->SetScriptPieceIndex(pieces.size() - 1);
+	const size_t lastElemIdx = pieces.size() - 1;
+	lmpParent->SetModelSpaceAllocElem(matAlloc[lastElemIdx + 1u]); // +1u because first position is ocupied by unsyncedTransformMatrix
+	lmpParent->SetLModelPieceIndex(lastElemIdx);
+	lmpParent->SetScriptPieceIndex(lastElemIdx);
 
 	// the mapping is 1:1 for Lua scripts, but not necessarily for COB
 	// CobInstance::MapScriptToModelPieces does the remapping (if any)
@@ -474,22 +458,6 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 
 	return lmpParent;
 }
-
-void LocalModel::CondReallocateMatMemStorage() const
-{
-	if (allocatorCount == 1u + pieces.size())
-		return;
-
-	if (allocatorIndex < ~0u)
-		matricesMemStorage.Free(allocatorIndex, allocatorCount);
-
-	allocatorCount = 1u + pieces.size();
-	allocatorIndex = matricesMemStorage.Allocate(allocatorCount);
-	for (size_t i = 0; i < pieces.size(); i++) {
-		pieces[i].SetModelSpaceMatIndex(1u + allocatorIndex + i);
-	}
-}
-
 
 void LocalModel::UpdateBoundingVolume()
 {
@@ -673,7 +641,7 @@ void S3DModel::FlattenPieceTree(S3DModelPiece* root)
 		S3DModelPiece* p = stack.back();
 
 		stack.pop_back();
-		p->SetWeakMatricesMemAllocElem(matAlloc[pieceObjects.size()]);
+		p->SetBPosAllocElem(matAlloc[pieceObjects.size()]);
 		pieceObjects.push_back(p);
 
 		// add children in reverse for the correct DF traversal order
@@ -738,14 +706,6 @@ const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
 
 	return GetModelSpaceMatrixRaw();
 }
-
-CMatrix44f& LocalModelPiece::GetModelSpaceMatrixRaw() const
-{
-	assert(allocatorIndex < ~0u);
-	//LOG("GetModelSpaceMatrixRaw %u", (uint32_t)allocatorIndex);
-	return matricesMemStorage[allocatorIndex];
-}
-
 
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 {
