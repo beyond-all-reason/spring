@@ -428,7 +428,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModel* model)
 {
 	matAlloc = std::move(ScopedMatricesMemAlloc(model->numPieces + 1u));
-	unsyncedTransformMatrix = &matAlloc[0];
+	unsyncedTransformMatrix = matAlloc[0];
 	return CreateLocalModelPieces(model->GetRootPiece());
 }
 
@@ -697,14 +697,6 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 		SetDirty();
 
 	dst = src;
-}
-
-const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
-{
-	if (dirty)
-		UpdateParentMatricesRec();
-
-	return GetModelSpaceMatrixRaw();
 }
 
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const

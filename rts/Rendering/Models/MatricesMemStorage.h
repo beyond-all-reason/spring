@@ -34,47 +34,42 @@ private:
 
 ////////////////////////////////////////////////////////////////////
 
+class ScopedMatricesMemAlloc;
 class MatAllocElem {
 public:
-	MatAllocElem() { Reset(); };
-	MatAllocElem(const MatAllocElem&) = delete;
-	MatAllocElem(MatAllocElem&& wmma) noexcept { *this = std::move(wmma); }
+	MatAllocElem() : MatAllocElem(MatricesMemStorage::INVALID_INDEX, nullptr) {};
+	MatAllocElem(const MatAllocElem& wmma) = default;
+	MatAllocElem(MatAllocElem&& wmma) = default;
 public:
 	friend class ScopedMatricesMemAlloc;
 private:
-	MatAllocElem(size_t elem_)
+	MatAllocElem(std::size_t elem_, const ScopedMatricesMemAlloc* smma_)
 		: elem{ elem_ }
+		, smma{ smma_ }
 	{ }
-	void Reset() {
-		elem = MatricesMemStorage::INVALID_INDEX;
-	}
 public:
-	MatAllocElem& operator= (const MatAllocElem&) = delete;
-	MatAllocElem& operator= (MatAllocElem&& mae) noexcept {
-		std::swap(elem, mae.elem);
-
-		return *this;
-	}
+	MatAllocElem& operator= (const MatAllocElem& mae) = default;
+	MatAllocElem& operator= (MatAllocElem&& mae) = default;
 	const CMatrix44f& operator()() const {
 		assert(elem != MatricesMemStorage::INVALID_INDEX);
+		assert(smma != nullptr);
 		return matricesMemStorage[elem];
 	}
 	CMatrix44f& operator()() {
 		assert(elem != MatricesMemStorage::INVALID_INDEX);
+		assert(smma != nullptr);
 		return matricesMemStorage[elem];
 	}
 private:
-	size_t elem = MatricesMemStorage::INVALID_INDEX;
+	std::size_t elem = MatricesMemStorage::INVALID_INDEX;
+	const ScopedMatricesMemAlloc* smma;
 };
 
 class ScopedMatricesMemAlloc {
 public:
 	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(0u) {};
-	ScopedMatricesMemAlloc(size_t numElems_, bool withMutex = false) : numElems{numElems_} {
+	ScopedMatricesMemAlloc(std::size_t numElems_, bool withMutex = false) : numElems{numElems_} {
 		firstElem = matricesMemStorage.Allocate(numElems, withMutex);
-
-		for (size_t i = 0; i < numElems; ++i)
-			matAllocElem.emplace_back(MatAllocElem(firstElem + i));
 	}
 
 	ScopedMatricesMemAlloc(const ScopedMatricesMemAlloc&) = delete;
@@ -85,9 +80,6 @@ public:
 		if (firstElem == MatricesMemStorage::INVALID_INDEX)
 			return;
 
-		for (auto& mae : matAllocElem)
-			mae.Reset();
-
 		matricesMemStorage.Free(firstElem, numElems);
 	}
 
@@ -96,21 +88,19 @@ public:
 		//swap to prevent dealloc on dying object, yet enable destructor to do its thing on valid object
 		std::swap(firstElem, smma.firstElem);
 		std::swap(numElems , smma.numElems );
-		std::swap(matAllocElem, smma.matAllocElem);
 
 		return *this;
 	}
 
-	const MatAllocElem& operator[](size_t offset) const {
+	const MatAllocElem operator[](std::size_t offset) const {
 		assert(offset >= 0 && offset < numElems);
-		return matAllocElem[offset];
+		return MatAllocElem(firstElem + offset, this);
 	}
-	MatAllocElem& operator[](size_t offset) {
+	MatAllocElem operator[](std::size_t offset) {
 		assert(offset >= 0 && offset < numElems);
-		return matAllocElem[offset];
+		return MatAllocElem(firstElem + offset, this);
 	}
 private:
-	std::vector<MatAllocElem> matAllocElem;
-	size_t firstElem = MatricesMemStorage::INVALID_INDEX;
-	size_t numElems  = 0u;
+	std::size_t firstElem = MatricesMemStorage::INVALID_INDEX;
+	std::size_t numElems  = 0u;
 };
