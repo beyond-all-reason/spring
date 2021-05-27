@@ -48,6 +48,8 @@ private:
 		, smma{ smma_ }
 	{ }
 public:
+	bool Valid() const { return elem != MatricesMemStorage::INVALID_INDEX; }
+
 	MatAllocElem& operator= (const MatAllocElem& mae) = default;
 	MatAllocElem& operator= (MatAllocElem&& mae) = default;
 	const CMatrix44f& operator()() const {
@@ -61,7 +63,7 @@ public:
 		return matricesMemStorage[elem];
 	}
 private:
-	std::size_t elem = MatricesMemStorage::INVALID_INDEX;
+	std::size_t elem;
 	const ScopedMatricesMemAlloc* smma;
 };
 
@@ -82,6 +84,9 @@ public:
 
 		matricesMemStorage.Free(firstElem, numElems);
 	}
+
+	bool Valid() const { return firstElem != MatricesMemStorage::INVALID_INDEX;	}
+	std::size_t GetOffset() const { assert(Valid()); return firstElem; }
 
 	ScopedMatricesMemAlloc& operator= (const ScopedMatricesMemAlloc&) = delete;
 	ScopedMatricesMemAlloc& operator= (ScopedMatricesMemAlloc&& smma) noexcept {

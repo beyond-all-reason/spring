@@ -12,6 +12,7 @@
 #include "ExpGenSpawnable.h"
 #include "System/float3.h"
 #include "System/type2.h"
+#include "Rendering/Models/MatricesMemStorage.h"
 
 class CUnit;
 class CFeature;
@@ -118,7 +119,9 @@ public:
 	float sortDistOffset = 0.0f;   // an offset used for z-sorting
 
 protected:
-	size_t allocatorIndex = ~0u; //separate index is needed because projectile might have no model
+	ScopedMatricesMemAlloc matAlloc;
+	mutable MatAllocElem transformMatrix;
+	mutable std::uint32_t lastUpdateFrame;
 
 	unsigned int ownerID = -1u;
 	unsigned int teamID = -1u;
