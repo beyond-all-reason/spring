@@ -41,8 +41,10 @@ public:
 	void Bind(GLenum target) const;
 	void Unbind() const;
 
+	bool BindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, 0u, bufSize); }
 	bool BindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, offset, size); }
 	bool BindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, vboId, offset, size); };
+	bool UnbindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, 0u, bufSize); };
 	bool UnbindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, offset, size); };
 	bool UnbindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, 0u, offset, size); };
 
@@ -79,7 +81,7 @@ public:
 
 	template<typename TData>
 	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
-	void SetBufferSubData(GLintptr offset, GLsizeiptr size, void* data);
+	void SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
 
 	GLuint GetId() const {
 		if (vboId == 0)

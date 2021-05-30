@@ -355,6 +355,8 @@ struct S3DModel
 
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
+
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];
@@ -566,7 +568,7 @@ struct LocalModel
 		verts[9] = bbMaxs;
 	}
 
-
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 private:
 	LocalModelPiece* CreateLocalModelPieces(const S3DModel* model);
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);

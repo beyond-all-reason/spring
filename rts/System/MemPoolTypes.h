@@ -334,7 +334,7 @@ public:
 	size_t Allocate(size_t numElems, bool withMutex = false);
 	void Free(size_t& firstElem, size_t numElems);
 	const size_t GetSize() const { return data.size(); }
-	std::vector<T>& GetData() { return data; }
+	const std::vector<T>& GetData() const { return data; }
 
 	T& operator[](std::size_t idx) { return data[idx]; }
 	const T& operator[](std::size_t idx) const { return data[idx]; }
