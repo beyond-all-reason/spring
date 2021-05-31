@@ -34,6 +34,8 @@ public:
 	void PreloadModel(const std::string& name);
 	void LogErrors();
 
+	const std::vector<S3DModel>& GetModelsVec() const { return models; }
+	      std::vector<S3DModel>& GetModelsVec()       { return models; }
 public:
 	typedef spring::unordered_map<std::string, unsigned int> ModelMap; // "armflash.3do" --> id
 	typedef spring::unordered_map<std::string, unsigned int> FormatMap; // "3do" --> MODELTYPE_3DO

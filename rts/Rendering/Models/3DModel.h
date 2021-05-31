@@ -17,9 +17,9 @@
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
-#define MAX_MODEL_OBJECTS  2048
-#define NUM_MODEL_TEXTURES    2
-#define NUM_MODEL_UVCHANNS    2
+constexpr int MAX_MODEL_OBJECTS = 2048;
+constexpr int NUM_MODEL_TEXTURES = 2;
+constexpr int NUM_MODEL_UVCHANNS = 2;
 
 static constexpr float3 DEF_MIN_SIZE( 10000.0f,  10000.0f,  10000.0f);
 static constexpr float3 DEF_MAX_SIZE(-10000.0f, -10000.0f, -10000.0f);
@@ -205,6 +205,8 @@ public:
 	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
 	void SetParentModel(S3DModel* model_) { model = model_; }
 
+	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; };
+	const std::vector<uint32_t>& GetIndicesVec() const { return indices; };
 private:
 	void CreateShatterPiecesVariation(const int num);
 
@@ -226,8 +228,10 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
+	uint32_t indxStart = 0u; //global VBO offset, size data
+	uint32_t indxCount = 0u;
 protected:
-	uint32_t vboIndxStart = 0u;
+	uint32_t vboIndxStart = 0u; // offset in per-model VBO array.
 	uint32_t vboVertStart = 0u;
 
 	std::vector<SVertexData> vertices;
@@ -268,6 +272,9 @@ struct S3DModel
 		, vertVBO(nullptr)
 		, indxVBO(nullptr)
 
+		, indxStart(0u)
+		, indxCount(0u)
+
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
 
@@ -302,6 +309,9 @@ struct S3DModel
 
 		vertVBO = std::move(m.vertVBO);
 		indxVBO = std::move(m.indxVBO);
+
+		indxStart = m.indxStart;
+		indxCount = m.indxCount;
 
 		curVertStartIndx = m.curVertStartIndx;
 		curIndxStartIndx = m.curIndxStartIndx;
@@ -380,7 +390,10 @@ public:
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
 
-	uint32_t curVertStartIndx;
+	uint32_t indxStart; //global VBO offset, size data
+	uint32_t indxCount;
+
+	uint32_t curVertStartIndx; // offset in per-model VBO array. Incremented after each piece is processed
 	uint32_t curIndxStartIndx;
 private:
 	ScopedMatricesMemAlloc matAlloc;

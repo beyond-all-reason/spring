@@ -29,6 +29,7 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "Rendering/Models/ModelPreloader.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
@@ -71,6 +72,10 @@ void CWorldDrawer::InitPost() const
 {
 	char buf[512] = {0};
 
+	{
+		loadscreen->SetLoadMessage("Loading Models and Textures");
+		ModelPreloader::Load();
+	}
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
 		shadowHandler.Init();

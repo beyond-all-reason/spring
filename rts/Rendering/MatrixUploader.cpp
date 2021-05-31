@@ -112,6 +112,16 @@ bool MatrixUploader::IsObjectVisible(const TObj* obj)
 		return obj->IsInLosForAllyTeam(gu->myAllyTeam);
 }
 
+std::size_t MatrixUploader::GetDefElemOffsetImpl(int32_t defID, const S3DModel* model, const char* defType) const
+{
+	if (model == nullptr) {
+		LOG_L(L_ERROR, "[MatrixUploader::%s] Failed to load model for %s %d", __func__, defType, defID);
+		return MatricesMemStorage::INVALID_INDEX;
+	}
+
+	return model->GetMatAlloc().GetOffset();
+}
+
 std::size_t MatrixUploader::GetDefElemOffsetImpl(int32_t defID, const SolidObjectDef* def, const char* defType)  const
 {
 	if (def == nullptr) {
@@ -120,12 +130,17 @@ std::size_t MatrixUploader::GetDefElemOffsetImpl(int32_t defID, const SolidObjec
 	}
 
 	const S3DModel* mdl = def->LoadModel();
-	if (mdl == nullptr) {
-		LOG_L(L_ERROR, "[MatrixUploader::%s] Failed to load model for %s %d", __func__, defType, defID);
-		return MatricesMemStorage::INVALID_INDEX;
-	}
+	return GetDefElemOffsetImpl(defID, mdl, defType);
+}
 
-	return mdl->GetMatAlloc().GetOffset();
+std::size_t MatrixUploader::GetElemOffset(const SolidObjectDef* def) const
+{
+	return GetDefElemOffsetImpl(-1, def, "SolidObjectDef");
+}
+
+std::size_t MatrixUploader::GetElemOffset(const S3DModel* model) const
+{
+	return std::size_t();
 }
 
 std::size_t MatrixUploader::GetUnitDefElemOffset(int32_t unitDefID)  const
@@ -137,7 +152,6 @@ std::size_t MatrixUploader::GetFeatureDefElemOffset(int32_t featureDefID)  const
 {
 	return GetDefElemOffsetImpl(featureDefID, featureDefHandler->GetFeatureDefByID(featureDefID), "FeatureDefID");
 }
-
 
 std::size_t MatrixUploader::GetElemOffsetImpl(uint32_t id, const CSolidObject* so, const char* objType)  const
 {
@@ -154,9 +168,8 @@ std::size_t MatrixUploader::GetElemOffsetImpl(uint32_t id, const CSolidObject* s
 	return MatricesMemStorage::INVALID_INDEX;
 }
 
-std::size_t MatrixUploader::GetElemOffsetImpl(uint32_t id, const CProjectile* p) const
+std::size_t MatrixUploader::GetElemOffsetImpl(uint32_t id, const CProjectile* p, const char* objType) const
 {
-	constexpr char* objType = "SyncedProjectileID";
 	if (p == nullptr) {
 		LOG_L(L_ERROR, "[MatrixUploader::%s] Supplied invalid %s %d", __func__, objType, id);
 		return MatricesMemStorage::INVALID_INDEX;
@@ -180,11 +193,20 @@ std::size_t MatrixUploader::GetElemOffsetImpl(uint32_t id, const CProjectile* p)
 	return MatricesMemStorage::INVALID_INDEX;
 }
 
+std::size_t MatrixUploader::GetElemOffset(const CSolidObject* so) const
+{
+	return GetElemOffsetImpl(-1, so, "CSolidObject");
+}
+
+std::size_t MatrixUploader::GetElemOffset(const CProjectile* p) const
+{
+	return GetElemOffsetImpl(-1, p, "CProjectile");
+}
+
 std::size_t MatrixUploader::GetUnitElemOffset(int32_t unitID)  const
 {
 	return GetElemOffsetImpl(unitID, unitHandler.GetUnit(unitID), "UnitID");
 }
-
 
 std::size_t MatrixUploader::GetFeatureElemOffset(int32_t featureID)  const
 {
@@ -193,5 +215,5 @@ std::size_t MatrixUploader::GetFeatureElemOffset(int32_t featureID)  const
 
 std::size_t MatrixUploader::GetProjectileElemOffset(int32_t syncedProjectileID) const
 {
-	return GetElemOffsetImpl(syncedProjectileID, projectileHandler.GetProjectileBySyncedID(syncedProjectileID));
+	return GetElemOffsetImpl(syncedProjectileID, projectileHandler.GetProjectileBySyncedID(syncedProjectileID), "SyncedProjectileID");
 }

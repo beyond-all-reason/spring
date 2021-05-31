@@ -14,6 +14,7 @@
 class CSolidObject;
 class CProjectile;
 struct SolidObjectDef;
+struct S3DModel;
 
 class MatrixUploader {
 public:
@@ -31,9 +32,13 @@ public:
 	void Kill();
 	void Update();
 public:
+	std::size_t GetElemOffset(const SolidObjectDef* so) const;
+	std::size_t GetElemOffset(const S3DModel* model) const;
 	std::size_t GetUnitDefElemOffset(int32_t unitDefID) const;
 	std::size_t GetFeatureDefElemOffset(int32_t featureDefID) const;
 
+	std::size_t GetElemOffset(const CSolidObject* so) const;
+	std::size_t GetElemOffset(const CProjectile* p) const;
 	std::size_t GetUnitElemOffset(int32_t unitID) const;
 	std::size_t GetFeatureElemOffset(int32_t featureID) const;
 	std::size_t GetProjectileElemOffset(int32_t syncedProjectileID) const;
@@ -41,9 +46,10 @@ private:
 	template<typename TObj>
 	static bool IsObjectVisible(const TObj* obj);
 private:
+	std::size_t GetDefElemOffsetImpl(int32_t defID, const S3DModel* model, const char* defType) const;
 	std::size_t GetDefElemOffsetImpl(int32_t defID, const SolidObjectDef* def, const char* defType) const;
 	std::size_t GetElemOffsetImpl(uint32_t id, const CSolidObject* so, const char* objType) const;
-	std::size_t GetElemOffsetImpl(uint32_t id, const CProjectile* p) const;
+	std::size_t GetElemOffsetImpl(uint32_t id, const CProjectile* p, const char* objType) const;
 private:
 	void KillVBO();
 	void InitVBO(const uint32_t newElemCount);
