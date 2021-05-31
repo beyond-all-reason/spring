@@ -88,6 +88,7 @@ public:
 
 	// UNSYNCED ONLY
 	const CMatrix44f& GetTransformMatrix() const;
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 
 	float GetSortDist() const { return sortDist; }
 	void SetSortDist(float d) { sortDist = d + sortDistOffset; }
