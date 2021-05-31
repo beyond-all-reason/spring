@@ -303,6 +303,7 @@ S3DModel* CModelLoader::CreateModel(
 	S3DModel* pmodel = &models[0];
 
 	{
+		assert(model.numPieces <= MAX_MODEL_PIECES);
 		assert(model.numPieces != 0);
 		assert(model.GetRootPiece() != nullptr);
 
