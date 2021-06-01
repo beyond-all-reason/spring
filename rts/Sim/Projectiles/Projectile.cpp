@@ -108,9 +108,6 @@ CProjectile::~CProjectile()
 {
 	if (synced) {
 		quadField.RemoveProjectile(this);
-#ifdef TRACE_SYNC
-		tracefile << "Projectile died id: " << id << ", pos: <" << pos.x << ", " << pos.y << ", " << pos.z << ">\n";
-#endif
 	}
 }
 

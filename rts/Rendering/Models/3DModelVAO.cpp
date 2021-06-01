@@ -148,13 +148,13 @@ void S3DModelVAO::Init()
 	}
 }
 
-void S3DModelVAO::Bind()
+void S3DModelVAO::Bind() const
 {
 	assert(vao);
 	vao->Bind();
 }
 
-void S3DModelVAO::Unbind()
+void S3DModelVAO::Unbind() const
 {
 	assert(vao);
 	vao->Unbind();
@@ -163,7 +163,7 @@ void S3DModelVAO::Unbind()
 void S3DModelVAO::AddToSubmission(const CUnit* unit)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	auto& renderModelData = renderDataModels[unit->model];
@@ -173,7 +173,7 @@ void S3DModelVAO::AddToSubmission(const CUnit* unit)
 void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	auto& renderModelData = renderDataModels[unitDef->model];
@@ -183,7 +183,7 @@ void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
 void S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	auto& renderModelData = renderDataModels[model];
@@ -260,7 +260,7 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 void S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, const bool bindUnbind)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	const auto* model = unit->model;
@@ -279,7 +279,7 @@ void S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, const 
 void S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode, const bool bindUnbind)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	const auto* model = unitDef->model;
@@ -298,7 +298,7 @@ void S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, const int teamID, co
 void S3DModelVAO::SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode, const bool bindUnbind)
 {
 	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
-	if (ssboIndex == ~0u)
+	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
 	SDrawElementsIndirectCommand scmd{

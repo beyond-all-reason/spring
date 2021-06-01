@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <utility>
 
-struct VAO {
+class VAO {
 public:
 	static bool IsSupported();
 public:

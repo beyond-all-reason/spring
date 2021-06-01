@@ -30,8 +30,8 @@ public:
 
 	void Init();
 
-	void Bind();
-	void Unbind();
+	void Bind() const;
+	void Unbind() const;
 
 	void AddToSubmission(const CUnit* unit);
 	void AddToSubmission(const UnitDef* unitDef, const int teamID);
@@ -42,21 +42,10 @@ public:
 	void SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
 	void SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
 
-	const VBO* GetVertVBO() const {
-		return vertVBO.get();
-	}
-
-	const VBO* GetIndxVBO() const {
-		return indxVBO.get();
-	}
-
-	VBO* GetVertVBO() {
-		return vertVBO.get();
-	}
-
-	VBO* GetIndxVBO() {
-		return indxVBO.get();
-	}
+	const VBO* GetVertVBO() const { return vertVBO.get(); }
+	      VBO* GetVertVBO()       { return vertVBO.get(); }
+	const VBO* GetIndxVBO() const { return indxVBO.get(); }
+	      VBO* GetIndxVBO()       { return indxVBO.get(); }
 private:
 	void SubmitImmediatelyImpl(
 		const SDrawElementsIndirectCommand* scmd,
@@ -68,7 +57,7 @@ private:
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
-	uint32_t baseInstance;
+	uint32_t baseInstance = 0u;
 
 	std::unique_ptr<VBO> vertVBO;
 	std::unique_ptr<VBO> indxVBO;
@@ -98,15 +87,13 @@ struct SDrawElementsIndirectCommand {
 
 struct SInstanceData {
 	SInstanceData() = default;
-	SInstanceData(const uint32_t ssboOffset_, const uint32_t teamIndex_, const uint64_t piecesMask = uint64_t(-1))
+	SInstanceData(uint32_t ssboOffset_, uint32_t teamIndex_, uint64_t piecesMask_ = uint64_t(-1))
 		: ssboOffset{ ssboOffset_ }
 		, teamIndex{ teamIndex_ }
-		, piecesMaskL{ (uint32_t)(piecesMask >> 32) }
-		, piecesMaskH{ (uint32_t)(piecesMask      ) }
+		, piecesMask{ piecesMask_ }
 	{}
 
 	uint32_t ssboOffset;
-	uint32_t teamIndex; // if next two integers are not enough, change type to uint8_t
-	uint32_t piecesMaskL;
-	uint32_t piecesMaskH;
+	uint32_t teamIndex;
+	uint64_t piecesMask; //support up to 64 pieces
 };

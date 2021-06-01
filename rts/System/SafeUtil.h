@@ -45,7 +45,7 @@ namespace spring {
 		return (a / b);
 	}
 
-
+	// TODO fix me somehow
 	template<typename TIn, typename TOut>
 	TOut SafeCast(const TIn input)
 	{
@@ -57,8 +57,8 @@ namespace spring {
 		constexpr TIn  minIn  = std::numeric_limits<TIn >::lowest();
 		constexpr TIn  maxIn  = std::numeric_limits<TIn >::max();
 
-		const TIn realMinIn = minOut <= minIn ? minIn : static_cast<TIn>(minOut);
-		const TIn realMaxIn = maxOut >= maxIn ? maxIn : static_cast<TIn>(maxOut);
+		constexpr TIn realMinIn = (minOut <= minIn) ? minIn : static_cast<TIn>(minOut);
+		constexpr TIn realMaxIn = (maxOut >= maxIn) ? maxIn : static_cast<TIn>(maxOut);
 
 		if (input < realMinIn) return realMinIn; // underflow
 		if (input > realMaxIn) return realMaxIn; // overflow

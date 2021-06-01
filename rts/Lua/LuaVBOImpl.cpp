@@ -22,6 +22,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
+#include "Game/GlobalUnsynced.h"
 
 #include "LuaUtils.h"
 
@@ -598,8 +599,7 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(const sol::optiona
 
 	uint32_t pieceIndex = 0;
 */
-template<typename TObj>
-size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
+size_t LuaVBOImpl::EngineVBOImpl()
 {
 	const auto engineVertAttribDefFunc = [this]() {
 		// float3 pos
@@ -693,33 +693,13 @@ size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
 		this->primitiveRestartIndex = 0xffffff;
 	};
 
-	const SolidObjectDef* objDef;
-	if constexpr (std::is_same<TObj, UnitDef>::value)
-		objDef = unitDefHandler->GetUnitDefByID(defID);
-
-	if constexpr (std::is_same<TObj, FeatureDef>::value)
-		objDef = featureDefHandler->GetFeatureDefByID(defID);
-
-	if (objDef == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid objectDefID [%u]", __func__, defID);
-
-	const S3DModel* model = objDef->LoadModel();
-	if (model == nullptr)
-		LuaError("[LuaVBOImpl::%s] failed to load model for objectDefID [%u]", __func__, defID);
-
 	switch (defTarget) {
 	case GL_ARRAY_BUFFER: {
-		vbo = model->vertVBO.get(); //hack but should be fine
-		if (vbo == nullptr)
-			LuaError("[LuaVBOImpl::%s] Vertex VBO for objectDefID [%u] is unexpectedly nullptr", __func__, defID);
-
+		vbo = S3DModelVAO::GetInstance().GetVertVBO();
 		engineVertAttribDefFunc();
 	} break;
 	case GL_ELEMENT_ARRAY_BUFFER: {
-		vbo = model->indxVBO.get(); //hack but should be fine
-		if (vbo == nullptr)
-			LuaError("[LuaVBOImpl::%s] Index VBO for objectDefID [%u] is unexpectedly nullptr", __func__, defID);
-
+		vbo = S3DModelVAO::GetInstance().GetIndxVBO();
 		engineIndxAttribDefFunc();
 	} break;
 	default:
@@ -733,49 +713,125 @@ size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
 	return bufferSizeInBytes;
 }
 
-template<typename TObj>
-size_t LuaVBOImpl::OffsetFromImpl(const int id, const int attrID)
+void LuaVBOImpl::InstanceDataFromDataCheck(int attrID, const char* func)
 {
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Invalid instance VBO. Did you call :Define() succesfully?", __func__);
+		LuaError("[LuaVBOImpl::%s] Invalid instance VBO. Did you call :Define() succesfully?", func);
 	}
 
 	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
-		LuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", __func__, attrID);
+		LuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
 	}
 
 	const BufferAttribDef& bad = bufferAttribDefs[attrID];
 	if (bad.type != GL_UNSIGNED_INT) {
-		LuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", __func__, attrID);
+		LuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
 	}
+	if (bad.size != 4) {
+		LuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
+	}
+}
 
-	uint32_t ssboElemOffset;
+template<typename TObj>
+uint64_t LuaVBOImpl::InstanceDataFromGetPiecesVis(const TObj* obj)
+{
+	return uint64_t(-1); //stub for now
+}
+
+template<typename TObj>
+SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID)
+{
+	uint32_t ssboOffset;
+	uint32_t teamID = defTeamID;
+	uint64_t piecesMask = uint64_t(-1);
+
 	if constexpr (std::is_same<TObj, CUnit>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetUnitElemOffset(id);
+		const TObj* unit = unitHandler.GetUnit(id);
+		ssboOffset = MatrixUploader::GetInstance().GetElemOffset(unit);
+		if (unit == nullptr) {
+			LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+		}
+		teamID = unit->team;
+		piecesMask = InstanceDataFromGetPiecesVis(unit);
 	}
 
 	if constexpr (std::is_same<TObj, CFeature>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetFeatureElemOffset(id);
+		const TObj* feature = featureHandler.GetFeature(id);
+		ssboOffset = MatrixUploader::GetInstance().GetElemOffset(feature);
+		if (feature == nullptr) {
+			LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+		}
+		teamID = feature->team;
+		piecesMask = InstanceDataFromGetPiecesVis(feature);
 	}
 
 	if constexpr (std::is_same<TObj, UnitDef>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetUnitDefElemOffset(id);
+		const TObj* unitDef = unitDefHandler->GetUnitDefByID(id);
+		ssboOffset = MatrixUploader::GetInstance().GetElemOffset(unitDef);
+		if (unitDef == nullptr) {
+			LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+		}
+		//don't touch teamID
+		//don't touch piecesMask
 	}
 
 	if constexpr (std::is_same<TObj, FeatureDef>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetFeatureDefElemOffset(id);
+		const TObj* featureDef = featureDefHandler->GetFeatureDefByID(id);
+		ssboOffset = MatrixUploader::GetInstance().GetElemOffset(featureDef);
+		if (featureDef == nullptr) {
+			LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+		}
+		//don't touch teamID
+		//don't touch piecesMask
 	}
 
-	if (ssboElemOffset == ~0u) {
+	if (ssboOffset == ~0u) {
 		LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
 	}
+	return SInstanceData(ssboOffset, teamID, piecesMask);
+}
 
-	std::vector<uint32_t> elemOffsets;
-	elemOffsets.resize(elementsCount);
-	std::fill(elemOffsets.begin(), elemOffsets.end(), ssboElemOffset);
+template<typename TObj>
+size_t LuaVBOImpl::InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID)
+{
+	InstanceDataFromDataCheck(attrID, __func__);
+
+	const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID);
+
+	std::vector<uint32_t> instanceDataVec;
+	instanceDataVec.resize(4 * elementsCount);
+
+	// pretty useless (no use case) to fill it up to elementsCount, but trust users know what they ask for
+	for (int i = 0; i < elementsCount; ++i) {
+		memcpy(&instanceDataVec[4 * i], &instanceData, sizeof(SInstanceData));
+	}
 
 	size_t bytesWritten = 0u;
-	return UploadImpl<uint32_t>(elemOffsets, 0u, attrID);
+	return UploadImpl<uint32_t>(instanceDataVec, 0u, attrID);
+}
+
+template<typename TObj>
+size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint32_t defTeamID)
+{
+	InstanceDataFromDataCheck(attrID, __func__);
+
+	std::size_t idsSize = ids.size();
+	if (idsSize > elementsCount)
+		LuaError("[LuaVBOImpl::%s] Too many elements in Lua table", __func__);
+
+	std::vector<uint32_t> instanceDataVec;
+	instanceDataVec.resize(4 * idsSize);
+
+	constexpr auto defaultValue = static_cast<lua_Number>(0);
+	for (int i = 0; i < idsSize; ++i) {
+		lua_Number idLua = ids.raw_get_or<lua_Number>(i + 1, defaultValue);
+		int id = spring::SafeCast<lua_Number, int>(idLua);
+		const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID);
+		memcpy(&instanceDataVec[4 * i], &instanceData, sizeof(SInstanceData));
+	}
+
+	size_t bytesWritten = 0u;
+	return UploadImpl<uint32_t>(instanceDataVec, 0u, attrID);
 }
 
 template<typename TIn>
@@ -862,52 +918,54 @@ size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, const uint32_t el
 }
 
 
-size_t LuaVBOImpl::ShapeFromUnitDefID(const int id)
+size_t LuaVBOImpl::EngineVBO()
 {
-	return ShapeFromDefIDImpl<UnitDef>(id);
+	return EngineVBOImpl();
 }
 
-size_t LuaVBOImpl::ShapeFromFeatureDefID(const int id)
+
+size_t LuaVBOImpl::InstanceDataFromUnitDefID(int id, int attrID, sol::optional<int> teamIdOpt)
 {
-	return ShapeFromDefIDImpl<FeatureDef>(id);
+	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<UnitDef>(id, attrID, defTeamID);
 }
 
-size_t LuaVBOImpl::ShapeFromUnitID(const int id)
+size_t LuaVBOImpl::InstanceDataFromUnitDefID(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt)
 {
-	const CUnit* obj = unitHandler.GetUnit(id);
-	if (obj == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid unitID %d", __func__, id);
-
-	return ShapeFromUnitDefID(obj->unitDef->id);
+	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<UnitDef>(ids, attrID, defTeamID);
 }
 
-size_t LuaVBOImpl::ShapeFromFeatureID(const int id)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefID(int id, int attrID, sol::optional<int> teamIdOpt)
 {
-	const CFeature* obj = featureHandler.GetFeature(id);
-	if (obj == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid featureID %d", __func__, id);
-
-	return ShapeFromFeatureDefID(obj->def->id);
+	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<FeatureDef>(id, attrID, defTeamID);
 }
 
-size_t LuaVBOImpl::OffsetFromUnitDefID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefID(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt)
 {
-	return OffsetFromImpl<UnitDef>(id, attrID);
+	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<FeatureDef>(ids, attrID, defTeamID);
 }
 
-size_t LuaVBOImpl::OffsetFromFeatureDefID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitID(const int id, const int attrID)
 {
-	return OffsetFromImpl<FeatureDef>(id, attrID);
+	return InstanceDataFromImpl<CUnit>(id, attrID, /*noop*/ 0u);
 }
 
-size_t LuaVBOImpl::OffsetFromUnitID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitID(const sol::stack_table& ids, int attrID)
 {
-	return OffsetFromImpl<CUnit>(id, attrID);
+	return InstanceDataFromImpl<CUnit>(ids, attrID, /*noop*/ 0u);
 }
 
-size_t LuaVBOImpl::OffsetFromFeatureID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureID(const int id, const int attrID)
 {
-	return OffsetFromImpl<CFeature>(id, attrID);
+	return InstanceDataFromImpl<CFeature>(id, attrID, /*noop*/ 0u);
+}
+
+size_t LuaVBOImpl::InstanceDataFromFeatureID(const sol::stack_table& ids, int attrID)
+{
+	return InstanceDataFromImpl<CFeature>(ids, attrID, /*noop*/ 0u);
 }
 
 int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt, const bool bind)
