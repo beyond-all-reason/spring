@@ -29,10 +29,40 @@ void GL::BindTextures(GLuint texUnitIdxStart, GLsizei count, const GLenum* targe
 	BindTexturesCommon(texUnitIdxStart, count, getTargetFunc, textures);
 }
 
+void GL::BindTextures(GLuint texUnitIdxStart, GLsizei count, const GLuint* textures)
+{
+	BindTextures(texUnitIdxStart, GL_TEXTURE_2D, textures);
+}
+
+void GL::UnbindTexture()
+{
+	BindTexture(0u, 0u);
+}
+
+void GL::UnbindTexture(GLuint texUnitIdx)
+{
+	BindTexture(texUnitIdx, 0u);
+}
+
+void GL::UnbindTexture(GLuint texUnitIdx, GLenum target)
+{
+	BindTexture(texUnitIdx, target, 0u);
+}
+
 void GL::UnbindTextures(GLuint texUnitIdxStart, GLsizei count, GLenum target)
 {
 	const auto getTargetFunc = [target](const GLuint i) { return target; };
 	BindTexturesCommon(texUnitIdxStart, count, getTargetFunc, nullptr);
+}
+
+void GL::BindTexture(GLuint texture)
+{
+	BindTexture(0u, texture);
+}
+
+void GL::BindTexture(GLuint texUnitIdx, GLuint texture)
+{
+	BindTexture(texUnitIdx, GL_TEXTURE_2D, texture);
 }
 
 void GL::TexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
