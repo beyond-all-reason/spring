@@ -26,23 +26,23 @@ bool LuaVBO::PushEntries(lua_State* L)
 		"Upload", &LuaVBOImpl::Upload,
 		"Download", &LuaVBOImpl::Download,
 
-		"EngineVBO", &LuaVBOImpl::EngineVBO,
+		"ModelsVBO", &LuaVBOImpl::ModelsVBO,
 
-		"InstanceDataFromUnitDefID", sol::overload(
-			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefID),
-			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefID)
+		"InstanceDataFromUnitDefIDs", sol::overload(
+			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs)
 		),
-		"InstanceDataFromFeatureDefID", sol::overload(
-			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefID),
-			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefID)
+		"InstanceDataFromFeatureDefIDs", sol::overload(
+			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs)
 		),
-		"InstanceDataFromUnitID", sol::overload(
-			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromUnitID),
-			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromUnitID)
+		"InstanceDataFromUnitIDs", sol::overload(
+			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromUnitIDs),
+			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromUnitIDs)
 		),
-		"InstanceDataFromFeatureID", sol::overload(
-			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromFeatureID),
-			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromFeatureID)
+		"InstanceDataFromFeatureIDs", sol::overload(
+			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromFeatureIDs),
+			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromFeatureIDs)
 		),
 
 		"BindBufferRange", &LuaVBOImpl::BindBufferRange,

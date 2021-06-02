@@ -25,7 +25,12 @@ bool LuaVAO::PushEntries(lua_State* L)
 		"AttachIndexBuffer", &LuaVAOImpl::AttachIndexBuffer,
 
 		"DrawArrays", &LuaVAOImpl::DrawArrays,
-		"DrawElements", &LuaVAOImpl::DrawElements
+		"DrawElements", &LuaVAOImpl::DrawElements,
+
+		"DrawUnits", sol::overload(
+			sol::resolve<void(int)>(&LuaVAOImpl::DrawUnits),
+			sol::resolve<void(const sol::stack_table&)>(&LuaVAOImpl::DrawUnits)
+		)
 	);
 
 	gl.set("VAO", sol::lua_nil); //because :)

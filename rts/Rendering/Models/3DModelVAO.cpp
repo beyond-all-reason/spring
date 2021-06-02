@@ -166,8 +166,9 @@ void S3DModelVAO::AddToSubmission(const CUnit* unit)
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
-	auto& renderModelData = renderDataModels[unit->model];
-	renderModelData.emplace_back(SInstanceData(ssboIndex, unit->team));
+	const auto indxCount = IndexCount(unit->model->indxStart, unit->model->indxCount);
+	auto& modelInstanceData = modelDataToInstance[indxCount];
+	modelInstanceData.emplace_back(SInstanceData(ssboIndex, unit->team));
 }
 
 void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
@@ -176,8 +177,9 @@ void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
-	auto& renderModelData = renderDataModels[unitDef->model];
-	renderModelData.emplace_back(SInstanceData(ssboIndex, teamID));
+	const auto indxCount = IndexCount(unitDef->model->indxStart, unitDef->model->indxCount);
+	auto& modelInstanceData = modelDataToInstance[indxCount];
+	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID));
 }
 
 void S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
@@ -186,8 +188,9 @@ void S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return;
 
-	auto& renderModelData = renderDataModels[model];
-	renderModelData.emplace_back(SInstanceData(ssboIndex, teamID));
+	const auto indxCount = IndexCount(model->indxStart, model->indxCount);
+	auto& modelInstanceData = modelDataToInstance[indxCount];
+	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID));
 }
 
 void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
@@ -197,55 +200,31 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 
 	baseInstance = 0u;
 
-	static std::vector<SInstanceData> allRenderData;
-	allRenderData.reserve(INSTANCE_BUFFER_NUM_ELEMS);
-	allRenderData.clear();
+	static std::vector<SInstanceData> allRenderModelData;
+	allRenderModelData.reserve(INSTANCE_BUFFER_NUM_ELEMS);
+	allRenderModelData.clear();
 
-	//models
-	for (const auto& [model, renderModelData] : renderDataModels) {
+	for (const auto& [indxCount, renderModelData] : modelDataToInstance) {
 		//model
 		SDrawElementsIndirectCommand scmd{
-			model->indxCount,
+			indxCount.count,
 			static_cast<uint32_t>(renderModelData.size()),
-			model->indxStart,
+			indxCount.index,
 			0u,
 			baseInstance
 		};
 
 		submitCmds.emplace_back(scmd);
 
-		allRenderData.insert(allRenderData.end(), renderModelData.cbegin(), renderModelData.cend());
-
+		allRenderModelData.insert(allRenderModelData.end(), renderModelData.cbegin(), renderModelData.cend());
 		baseInstance += renderModelData.size();
-	};
-
-	//modelPieces
-	for (const auto& [modelPiece, renderModelPieceData] : renderDataModelPieces) {
-		//model
-		SDrawElementsIndirectCommand scmd{
-			modelPiece->indxCount,
-			static_cast<uint32_t>(renderModelPieceData.size()),
-			modelPiece->indxStart,
-			0u,
-			baseInstance
-		};
-
-		submitCmds.emplace_back(scmd);
-
-		allRenderData.insert(allRenderData.end(), renderModelPieceData.cbegin(), renderModelPieceData.cend());
-
-		baseInstance += renderModelPieceData.size();
-	};
-	//TODO modelPieceParts?
-
-	renderDataModels.clear();
-	renderDataModelPieces.clear();
+	}
 
 	if (submitCmds.empty())
 		return;
 
 	instVBO->Bind();
-	instVBO->SetBufferSubData(allRenderData);
+	instVBO->SetBufferSubData(allRenderModelData);
 	instVBO->Unbind();
 
 	if (bindUnbind)

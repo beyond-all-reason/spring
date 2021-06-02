@@ -32,16 +32,16 @@ public:
 	size_t Upload(const sol::stack_table& luaTblData, const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> luaStartIndexOpt, const sol::optional<int> luaFinishIndexOpt);
 	sol::as_table_t<std::vector<lua_Number>> Download(const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt);
 
-	size_t EngineVBO();
+	size_t ModelsVBO();
 
-	size_t InstanceDataFromUnitDefID(int id, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromUnitDefID(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromFeatureDefID(int id, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromFeatureDefID(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromUnitID(int id, int attrID);
-	size_t InstanceDataFromUnitID(const sol::stack_table& ids, int attrID);
-	size_t InstanceDataFromFeatureID(int id, int attrID);
-	size_t InstanceDataFromFeatureID(const sol::stack_table& ids, int attrID);
+	size_t InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt);
+	size_t InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
+	size_t InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt);
+	size_t InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
+	size_t InstanceDataFromUnitIDs(int id, int attrID);
+	size_t InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID);
+	size_t InstanceDataFromFeatureIDs(int id, int attrID);
+	size_t InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID);
 
 	int BindBufferRange  (const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt);
 	int UnbindBufferRange(const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt);
@@ -63,15 +63,9 @@ private:
 	bool FillAttribsNumberImpl(const int numVec4Attribs);
 	bool DefineElementArray(const sol::optional<sol::object> attribDefArgOpt);
 private:
-	template<typename... Args>
-	void LuaError(const std::string& format, Args... args);
-
-	size_t EngineVBOImpl();
+	size_t ModelsVBOImpl();
 
 	void InstanceDataFromDataCheck(int attrID, const char* func);
-
-	template<typename TObj>
-	uint64_t InstanceDataFromGetPiecesVis(const TObj* obj);
 
 	template<typename TObj>
 	SInstanceData InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID);

@@ -65,35 +65,21 @@ private:
 	std::unique_ptr<VBO> instVBO;
 	std::unique_ptr<VAO> vao;
 
-	std::unordered_map<const S3DModel*, std::vector<SInstanceData>> renderDataModels;
-	std::unordered_map<const S3DModelPiece*, std::vector<SInstanceData>> renderDataModelPieces;
-};
+	struct IndexCount {
+		IndexCount(uint32_t index_, uint32_t count_)
+			: index{ index_ }
+			, count{ count_ }
+		{}
+		bool operator==(const IndexCount& o) const { return index == o.index && count == o.count; }
+		uint32_t index;
+		uint32_t count;
+	};
 
-struct SDrawElementsIndirectCommand {
-	SDrawElementsIndirectCommand(uint32_t indexCount_, uint32_t instanceCount_, uint32_t firstIndex_, uint32_t baseVertex_, uint32_t baseInstance_)
-		: indexCount{ indexCount_ }
-		, instanceCount{ instanceCount_ }
-		, firstIndex{ firstIndex_ }
-		, baseVertex{ baseVertex_ }
-		, baseInstance{ baseInstance_ }
-	{};
+	struct IndexCountHash {
+		size_t operator()(const IndexCount& p) const {
+			return (uint64_t)p.index << 32 | p.count;
+		}
+	};
 
-	uint32_t indexCount;
-	uint32_t instanceCount;
-	uint32_t firstIndex;
-	uint32_t baseVertex;
-	uint32_t baseInstance;
-};
-
-struct SInstanceData {
-	SInstanceData() = default;
-	SInstanceData(uint32_t ssboOffset_, uint32_t teamIndex_, uint64_t piecesMask_ = uint64_t(-1))
-		: ssboOffset{ ssboOffset_ }
-		, teamIndex{ teamIndex_ }
-		, piecesMask{ piecesMask_ }
-	{}
-
-	uint32_t ssboOffset;
-	uint32_t teamIndex;
-	uint64_t piecesMask; //support up to 64 pieces
+	std::unordered_map<IndexCount, std::vector<SInstanceData>, IndexCountHash> modelDataToInstance;
 };

@@ -27,7 +27,7 @@ LuaVAOImpl::LuaVAOImpl()
 	, instLuaVBO{nullptr}
 	, indxLuaVBO{nullptr}
 {
-
+	submitCmds.clear();
 }
 
 void LuaVAOImpl::Delete()
@@ -63,15 +63,15 @@ bool LuaVAOImpl::Supported()
 void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std::shared_ptr<LuaVBOImpl>& thisLuaVBO, GLenum reqTarget)
 {
 	if (thisLuaVBO) {
-		LuaError("[LuaVAOImpl::%s] LuaVBO already attached", __func__);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s] LuaVBO already attached", __func__);
 	}
 
 	if (luaVBO->defTarget != reqTarget) {
-		LuaError("[LuaVAOImpl::%s] LuaVBO should have been created with [%u] target, got [%u] target instead", __func__, reqTarget, luaVBO->defTarget);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s] LuaVBO should have been created with [%u] target, got [%u] target instead", __func__, reqTarget, luaVBO->defTarget);
 	}
 
 	if (!luaVBO->vbo) {
-		LuaError("[LuaVAOImpl::%s] LuaVBO is invalid. Did you sucessfully call vbo:Define()?", __func__);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s] LuaVBO is invalid. Did you sucessfully call vbo:Define()?", __func__);
 	}
 
 	thisLuaVBO = luaVBO;
@@ -80,7 +80,7 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 		for (const auto& v : vertLuaVBO->bufferAttribDefs) {
 			for (const auto& i : instLuaVBO->bufferAttribDefs) {
 				if (v.first == i.first) {
-					LuaError("[LuaVAOImpl::%s] Vertex and Instance LuaVBO have defined a duplicate attribute [%d]", __func__, v.first);
+					LuaUtils::SolLuaError("[LuaVAOImpl::%s] Vertex and Instance LuaVBO have defined a duplicate attribute [%d]", __func__, v.first);
 				}
 			}
 		}
@@ -102,11 +102,37 @@ void LuaVAOImpl::AttachIndexBuffer(const LuaVBOImplSP& luaVBO)
 	AttachBufferImpl(luaVBO, indxLuaVBO, GL_ELEMENT_ARRAY_BUFFER);
 }
 
-template<typename ...Args>
-void LuaVAOImpl::LuaError(std::string format, Args ...args)
+template<typename TObj>
+const std::pair<uint32_t, uint32_t> LuaVAOImpl::DrawIndicesImpl(int id)
 {
-	std::string what = fmt::sprintf(format, args...);
-	throw std::runtime_error(what.c_str());
+	const TObj* obj = LuaUtils::SolIdToObject<TObj>(id, __func__);
+	return DrawIndicesImpl<TObj>(obj);
+}
+
+template<typename TObj>
+const std::pair<uint32_t, uint32_t> LuaVAOImpl::DrawIndicesImpl(const TObj* obj)
+{
+	if constexpr (std::is_same<TObj, CUnit>::value) {
+		S3DModel* model = obj->model;
+		assert(model);
+		return std::make_pair(model->indxStart, model->indxCount);
+	}
+
+	assert(false);
+}
+
+template<typename TObj>
+SDrawElementsIndirectCommand LuaVAOImpl::DrawObjectGetCmdImpl(int id, uint32_t& baseInstance)
+{
+	auto& [indxStart, indxCount] = LuaVAOImpl::DrawIndicesImpl<TObj>(id);
+
+	return std::move(SDrawElementsIndirectCommand{
+		indxCount,
+		1u,
+		indxStart,
+		0u,
+		baseInstance++
+	});
 }
 
 void LuaVAOImpl::CheckDrawPrimitiveType(GLenum mode)
@@ -126,7 +152,7 @@ void LuaVAOImpl::CheckDrawPrimitiveType(GLenum mode)
 	case GL_PATCHES:
 		break;
 	default:
-		LuaError("[LuaVAOImpl::%s]: Using deprecated or incorrect primitive type (%d)", __func__, mode);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Using deprecated or incorrect primitive type (%d)", __func__, mode);
 	}
 }
 
@@ -202,13 +228,13 @@ void LuaVAOImpl::CondInitVAO()
 	}
 }
 
-std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(const GLenum mode, const sol::optional<GLsizei> drawCountOpt, const sol::optional<int> instanceCountOpt, const bool indexed)
+std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(GLenum mode, sol::optional<GLsizei> drawCountOpt, sol::optional<int> instanceCountOpt, bool indexed)
 {
 	GLsizei drawCount;
 
 	if (indexed) {
 		if (!indxLuaVBO)
-			LuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you succesfully call vao:AttachIndexBuffer()?", __func__);
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you succesfully call vao:AttachIndexBuffer()?", __func__);
 
 		drawCount = drawCountOpt.value_or(indxLuaVBO->elementsCount);
 		if (drawCount <= 0)
@@ -217,7 +243,7 @@ std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(const GLenum mode, const sol::
 		const GLsizei drawCountDef = vertLuaVBO ? vertLuaVBO->elementsCount : 1;
 
 		if (!vertLuaVBO && !drawCountOpt.has_value())
-			LuaError("[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set explicitly", __func__);
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set explicitly", __func__);
 
 		drawCount = drawCountOpt.value_or(drawCountDef);
 		if (drawCount <= 0)
@@ -226,7 +252,7 @@ std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(const GLenum mode, const sol::
 
 	const auto instanceCount = std::max(instanceCountOpt.value_or(0), 0); // 0 - forces ordinary version, while 1 - calls *Instanced()
 	if (instanceCount > 0 && !instLuaVBO)
-		LuaError("[LuaVAOImpl::%s]: Requested rendering of [%d] instances, but no instance buffer is attached. Did you succesfully call vao:AttachInstanceBuffer()?", __func__, instanceCount);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested rendering of [%d] instances, but no instance buffer is attached. Did you succesfully call vao:AttachInstanceBuffer()?", __func__, instanceCount);
 
 	CheckDrawPrimitiveType(mode);
 	CondInitVAO();
@@ -234,7 +260,7 @@ std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(const GLenum mode, const sol::
 	return std::make_pair(drawCount, instanceCount);
 }
 
-void LuaVAOImpl::DrawArrays(const GLenum mode, const sol::optional<GLsizei> vertCountOpt, const sol::optional<GLint> vertexFirstOpt, const sol::optional<int> instanceCountOpt, const sol::optional<int> instanceFirstOpt)
+void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
 {
 	const auto [vertCount, instCount] = DrawCheck(mode, vertCountOpt, instanceCountOpt, false); //pair<vertCount,instCount>
 
@@ -255,7 +281,7 @@ void LuaVAOImpl::DrawArrays(const GLenum mode, const sol::optional<GLsizei> vert
 	vao->Unbind();
 }
 
-void LuaVAOImpl::DrawElements(const GLenum mode, const sol::optional<GLsizei> indCountOpt, const sol::optional<int> indElemOffsetOpt, const sol::optional<int> instanceCountOpt, const sol::optional<int> baseVertexOpt)
+void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt)
 {
 	const auto [indxCount, instCount] = DrawCheck(mode, indCountOpt, instanceCountOpt, true); //pair<indxCount,instCount>
 
@@ -284,6 +310,54 @@ void LuaVAOImpl::DrawElements(const GLenum mode, const sol::optional<GLsizei> in
 	}
 #undef INT2PTR
 
+	vao->Unbind();
+
+	glDisable(GL_PRIMITIVE_RESTART);
+}
+
+void LuaVAOImpl::DrawUnits(int id)
+{
+	DrawCheck(GL_TRIANGLES, 0, 1, true); //pair<indxCount,instCount>
+
+	static std::vector<SDrawElementsIndirectCommand> submitCmds;
+	submitCmds.clear();
+	uint32_t baseInstance = 0u;
+
+	submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id, baseInstance));
+
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
+
+	vao->Bind();
+	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
+	vao->Unbind();
+
+	glDisable(GL_PRIMITIVE_RESTART);
+}
+
+void LuaVAOImpl::DrawUnits(const sol::stack_table& ids)
+{
+	DrawCheck(GL_TRIANGLES, 0, 1, true); //pair<indxCount,instCount>
+
+	static std::vector<SDrawElementsIndirectCommand> submitCmds;
+	submitCmds.clear();
+	uint32_t baseInstance = 0u;
+
+	std::size_t idsSize = ids.size();
+
+	constexpr auto defaultValue = static_cast<lua_Number>(0);
+	for (std::size_t i = 0u; i < idsSize; ++i) {
+		lua_Number idLua = ids.raw_get_or<lua_Number>(i + 1, defaultValue);
+		int id = spring::SafeCast<lua_Number, int>(idLua);
+
+		submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id, baseInstance));
+	}
+
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
+
+	vao->Bind();
+	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
 	vao->Unbind();
 
 	glDisable(GL_PRIMITIVE_RESTART);
