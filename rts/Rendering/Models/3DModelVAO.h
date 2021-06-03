@@ -33,37 +33,46 @@ public:
 	void Bind() const;
 	void Unbind() const;
 
-	void AddToSubmission(const CUnit* unit);
-	void AddToSubmission(const UnitDef* unitDef, const int teamID);
-	void AddToSubmission(const S3DModel* model, const int teamID);
-	void Submit(const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
+	bool AddToSubmission(const S3DModel* model, int teamID);
+	bool AddToSubmission(const CUnit* unit);
+	bool AddToSubmission(const UnitDef* unitDef, int teamID);
+	void Submit(GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 
-	void SubmitImmediately(const CUnit* unit, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
-	void SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
-	void SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode = GL_TRIANGLES, const bool bindUnbind = false);
+	bool SubmitImmediately(const S3DModel* model, int teamID, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
+	bool SubmitImmediately(const CUnit* unit, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
+	bool SubmitImmediately(const UnitDef* unitDef, int teamID, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 
-	const VBO* GetVertVBO() const { return vertVBO.get(); }
-	      VBO* GetVertVBO()       { return vertVBO.get(); }
-	const VBO* GetIndxVBO() const { return indxVBO.get(); }
-	      VBO* GetIndxVBO()       { return indxVBO.get(); }
+	const VBO* GetVertVBO() const { return &vertVBO; }
+	      VBO* GetVertVBO()       { return &vertVBO; }
+	const VBO* GetIndxVBO() const { return &indxVBO; }
+	      VBO* GetIndxVBO()       { return &indxVBO; }
 private:
-	void SubmitImmediatelyImpl(
-		const SDrawElementsIndirectCommand* scmd,
-		const uint32_t ssboOffset,
-		const uint32_t teamID,
-		const GLenum mode = GL_TRIANGLES,
-		const bool bindUnbind = false
+	template<typename TObj>
+	bool SubmitImmediatelyImpl(
+		const TObj* obj,
+		uint32_t indexStart,
+		uint32_t indexCount,
+		uint32_t teamID,
+		GLenum mode = GL_TRIANGLES,
+		bool bindUnbind = false
+	);
+	template<typename TObj>
+	bool AddToSubmissionImpl(
+		const TObj* obj,
+		uint32_t indexStart,
+		uint32_t indexCount,
+		uint32_t teamID
 	);
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
 	uint32_t baseInstance = 0u;
 
-	std::unique_ptr<VBO> vertVBO;
-	std::unique_ptr<VBO> indxVBO;
+	VBO vertVBO;
+	VBO indxVBO;
 
-	std::unique_ptr<VBO> instVBO;
-	std::unique_ptr<VAO> vao;
+	VBO instVBO;
+	VAO vao;
 
 	struct IndexCount {
 		IndexCount(uint32_t index_, uint32_t count_)

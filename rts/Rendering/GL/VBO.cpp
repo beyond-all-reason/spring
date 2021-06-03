@@ -421,7 +421,7 @@ void VBO::UnmapBuffer()
 	mapped = false;
 }
 
-void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
+void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data) const
 {
 	assert(!mapped);
 	assert((offset + size) <= bufSize);

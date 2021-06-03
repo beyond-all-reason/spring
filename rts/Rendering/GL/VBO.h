@@ -80,8 +80,8 @@ public:
 	}
 
 	template<typename TData>
-	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
-	void SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
+	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) const { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
+	void SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data) const;
 
 	GLuint GetId() const {
 		if (vboId == 0)

@@ -139,15 +139,15 @@ struct SDrawElementsIndirectCommand {
 
 struct SInstanceData {
 	SInstanceData() = default;
-	SInstanceData(uint32_t ssboOffset_, uint32_t teamIndex_, uint64_t piecesMask_ = uint64_t(-1))
+	SInstanceData(uint32_t ssboOffset_, uint32_t teamIndex_)
 		: ssboOffset{ ssboOffset_ }
 		, teamIndex{ teamIndex_ }
-		, piecesMask{ piecesMask_ }
+		, reserved { 0 }
 	{}
 
 	uint32_t ssboOffset;
 	uint32_t teamIndex;
-	uint64_t piecesMask; //support up to 64 pieces
+	uint64_t reserved;
 };
 
 

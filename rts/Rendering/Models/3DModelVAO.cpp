@@ -11,23 +11,6 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 
-void S3DModelVAO::SubmitImmediatelyImpl(const SDrawElementsIndirectCommand* scmd, const uint32_t ssboOffset, const uint32_t teamID, const GLenum mode, const bool bindUnbind)
-{
-	// do not increment base instance
-	SInstanceData instanceData{ ssboOffset, teamID };
-
-	instVBO->Bind();
-	instVBO->SetBufferSubData(baseInstance * sizeof(SInstanceData), sizeof(SInstanceData), &instanceData);
-	instVBO->Unbind();
-
-	if (bindUnbind)
-		Bind();
-
-	glDrawElementsIndirect(mode, GL_UNSIGNED_INT, scmd);
-
-	if (bindUnbind)
-		Unbind();
-}
 
 void S3DModelVAO::EnableAttribs(bool inst) const
 {
@@ -106,92 +89,90 @@ void S3DModelVAO::Init()
 		}
 	}
 
-	//LOG("S3DModelVAO::Init() indxData.size() %u vertData.size() %u", static_cast<uint32_t>(indxData.size()), static_cast<uint32_t>(vertData.size()));
-
 	//OpenGL stuff
 	{
-		vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
-		vertVBO->Bind();
-		vertVBO->New(vertData);
-		vertVBO->Unbind();
+		vertVBO = VBO{ GL_ARRAY_BUFFER, false };
+		vertVBO.Bind();
+		vertVBO.New(vertData);
+		vertVBO.Unbind();
 
-		indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
-		indxVBO->Bind();
-		indxVBO->New(indxData);
-		indxVBO->Unbind();
+		indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
+		indxVBO.Bind();
+		indxVBO.New(indxData);
+		indxVBO.Unbind();
 	}
 	{
-		vao = std::make_unique<VAO>();
-		vao->Bind();
+		vao = VAO{};
+		vao.Bind();
 
-		vertVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
-		vertVBO->Bind();
-		vertVBO->New(vertData);
+		vertVBO = VBO{ GL_ARRAY_BUFFER, false };
+		vertVBO.Bind();
+		vertVBO.New(vertData);
 
-		indxVBO = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER, false);
-		indxVBO->Bind();
-		indxVBO->New(indxData);
+		indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
+		indxVBO.Bind();
+		indxVBO.New(indxData);
 		EnableAttribs(false);
 
-		vertVBO->Unbind();
+		vertVBO.Unbind();
 
-		instVBO = std::make_unique<VBO>(GL_ARRAY_BUFFER, false);
-		instVBO->Bind();
-		instVBO->New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
+		instVBO = VBO{ GL_ARRAY_BUFFER, false };
+		instVBO.Bind();
+		instVBO.New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
 		EnableAttribs(true);
 
-		vao->Unbind();
+		vao.Unbind();
 		DisableAttribs();
 
-		indxVBO->Unbind();
-		instVBO->Unbind();
+		indxVBO.Unbind();
+		instVBO.Unbind();
 	}
 }
 
 void S3DModelVAO::Bind() const
 {
 	assert(vao);
-	vao->Bind();
+	vao.Bind();
 }
 
 void S3DModelVAO::Unbind() const
 {
 	assert(vao);
-	vao->Unbind();
+	vao.Unbind();
 }
 
-void S3DModelVAO::AddToSubmission(const CUnit* unit)
+
+template<typename TObj>
+bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint32_t teamID)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
+	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(obj);
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
+		return false;
 
-	const auto indxCount = IndexCount(unit->model->indxStart, unit->model->indxCount);
-	auto& modelInstanceData = modelDataToInstance[indxCount];
-	modelInstanceData.emplace_back(SInstanceData(ssboIndex, unit->team));
-}
-
-void S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
-{
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
-	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
-
-	const auto indxCount = IndexCount(unitDef->model->indxStart, unitDef->model->indxCount);
-	auto& modelInstanceData = modelDataToInstance[indxCount];
+	auto& modelInstanceData = modelDataToInstance[IndexCount{ indexStart, indexCount }];
 	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID));
+
+	return true;
 }
 
-void S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
+bool S3DModelVAO::AddToSubmission(const S3DModel* model, const int teamID)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
-	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
-
-	const auto indxCount = IndexCount(model->indxStart, model->indxCount);
-	auto& modelInstanceData = modelDataToInstance[indxCount];
-	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID));
+	assert(model);
+	return AddToSubmissionImpl(model, model->indxStart, model->indxCount, teamID);
 }
+
+bool S3DModelVAO::AddToSubmission(const CUnit* unit)
+{
+	assert(unit);
+	return AddToSubmission(unit->model, unit->team);
+}
+
+bool S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID)
+{
+	assert(unitDef);
+	return AddToSubmission(unitDef->model, teamID);
+}
+
 
 void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 {
@@ -205,7 +186,9 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 	allRenderModelData.clear();
 
 	for (const auto& [indxCount, renderModelData] : modelDataToInstance) {
-		//model
+		if (allRenderModelData.size() + renderModelData.size() >= INSTANCE_BUFFER_NUM_ELEMS)
+			continue;
+
 		SDrawElementsIndirectCommand scmd{
 			indxCount.count,
 			static_cast<uint32_t>(renderModelData.size()),
@@ -223,9 +206,9 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 	if (submitCmds.empty())
 		return;
 
-	instVBO->Bind();
-	instVBO->SetBufferSubData(allRenderModelData);
-	instVBO->Unbind();
+	instVBO.Bind();
+	instVBO.SetBufferSubData(allRenderModelData);
+	instVBO.Unbind();
 
 	if (bindUnbind)
 		Bind();
@@ -236,57 +219,51 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 		Unbind();
 }
 
-void S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, const bool bindUnbind)
+template<typename TObj>
+bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint32_t teamID, GLenum mode, bool bindUnbind)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unit);
+	std::size_t ssboIndex = MatrixUploader::GetInstance().GetElemOffset(obj);
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
+		return false;
 
-	const auto* model = unit->model;
-
+	// do not increment base instance for now.
+	// TODO: dedicate some circular space (~1024 items) for immediate submissions closer to the end of instVBO
+	SInstanceData instanceData{ ssboIndex, teamID };
 	SDrawElementsIndirectCommand scmd{
-		model->indxCount,
+		indexCount,
 		1,
-		model->indxStart,
+		indexStart,
 		0u,
 		baseInstance
 	};
 
-	SubmitImmediatelyImpl(&scmd, ssboIndex, unit->team, mode, bindUnbind);
+	instVBO.Bind();
+	instVBO.SetBufferSubData(baseInstance * sizeof(SInstanceData), sizeof(SInstanceData), &instanceData);
+	instVBO.Unbind();
+
+	if (bindUnbind)
+		Bind();
+
+	glDrawElementsIndirect(mode, GL_UNSIGNED_INT, &scmd);
+
+	if (bindUnbind)
+		Unbind();
 }
 
-void S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode, const bool bindUnbind)
+bool S3DModelVAO::SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode, const bool bindUnbind)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(unitDef);
-	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
-
-	const auto* model = unitDef->model;
-
-	SDrawElementsIndirectCommand scmd{
-		model->indxCount,
-		1,
-		model->indxStart,
-		0u,
-		baseInstance
-	};
-
-	SubmitImmediatelyImpl(&scmd, ssboIndex, teamID, mode, bindUnbind);
+	assert(model);
+	return SubmitImmediatelyImpl(model, model->indxStart, model->indxCount, teamID, mode, bindUnbind);
 }
 
-void S3DModelVAO::SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode, const bool bindUnbind)
+bool S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, const bool bindUnbind)
 {
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(model);
-	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
-		return;
+	assert(unit);
+	return SubmitImmediately(unit->model, unit->team, mode, bindUnbind);
+}
 
-	SDrawElementsIndirectCommand scmd{
-		model->indxCount,
-		1,
-		model->indxStart,
-		0u,
-		baseInstance
-	};
-
-	SubmitImmediatelyImpl(&scmd, ssboIndex, teamID, mode, bindUnbind);
+bool S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, const int teamID, const GLenum mode, const bool bindUnbind)
+{
+	assert(unitDef);
+	return SubmitImmediately(unitDef->model, teamID, mode, bindUnbind);
 }
