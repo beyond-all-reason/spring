@@ -131,13 +131,13 @@ void S3DModelVAO::Init()
 
 void S3DModelVAO::Bind() const
 {
-	assert(vao);
+	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
 }
 
 void S3DModelVAO::Unbind() const
 {
-	assert(vao);
+	assert(vao.GetIdRaw() > 0);
 	vao.Unbind();
 }
 

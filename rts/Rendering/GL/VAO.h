@@ -18,7 +18,8 @@ public:
 	VAO& operator = (const VAO& v) = delete;
 	VAO& operator = (VAO&& v) noexcept { id = v.id; v.id = 0; return *this; }
 
-	uint32_t GetId() const { Generate(); return id; }
+	uint32_t GetId() const { Generate(); return GetIdRaw(); }
+	uint32_t GetIdRaw() const { return id; }
 
 	void Generate() const;
 
