@@ -88,7 +88,5 @@ private:
 	VBO instVBO;
 	VAO vao;
 
-
-
 	std::unordered_map<SIndexAndCount, std::vector<SInstanceData>, SIndexAndCount> modelDataToInstance;
 };

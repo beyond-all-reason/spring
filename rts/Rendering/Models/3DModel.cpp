@@ -3,6 +3,7 @@
 #include "3DModel.h"
 
 #include "Game/GlobalUnsynced.h"
+#include "Sim/Misc/GlobalSynced.h"
 #include "Rendering/GL/myGL.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -682,6 +683,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 
 void LocalModelPiece::SetDirty() {
 	dirty = true;
+	LOG("LocalModelPiece::SetDirty %u %u %u", (uint32_t)gs->frameNum, (uint32_t)this->localModel->pieces.size(), (uint32_t)this->lmodelPieceIndex);
 
 	for (LocalModelPiece* child: children) {
 		if (child->dirty)

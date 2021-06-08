@@ -18,7 +18,6 @@
 #include "System/creg/creg_cond.h"
 
 constexpr int MAX_MODEL_OBJECTS  = 2048;
-constexpr int MAX_MODEL_PIECES   = 64; // 2 x uint32 dedicated in SInstanceData
 constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
