@@ -29,20 +29,20 @@ bool LuaVBO::PushEntries(lua_State* L)
 		"ModelsVBO", &LuaVBOImpl::ModelsVBO,
 
 		"InstanceDataFromUnitDefIDs", sol::overload(
-			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs),
-			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs)
+			sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs)
 		),
 		"InstanceDataFromFeatureDefIDs", sol::overload(
-			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs),
-			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs)
+			sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs)
 		),
 		"InstanceDataFromUnitIDs", sol::overload(
-			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromUnitIDs),
-			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromUnitIDs)
+			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitIDs)
 		),
 		"InstanceDataFromFeatureIDs", sol::overload(
-			sol::resolve<size_t(int, int)>(&LuaVBOImpl::InstanceDataFromFeatureIDs),
-			sol::resolve<size_t(const sol::stack_table&, int)>(&LuaVBOImpl::InstanceDataFromFeatureIDs)
+			sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureIDs)
 		),
 
 		"BindBufferRange", &LuaVBOImpl::BindBufferRange,

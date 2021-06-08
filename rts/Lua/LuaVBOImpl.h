@@ -34,14 +34,14 @@ public:
 
 	size_t ModelsVBO();
 
-	size_t InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt);
-	size_t InstanceDataFromUnitIDs(int id, int attrID);
-	size_t InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID);
-	size_t InstanceDataFromFeatureIDs(int id, int attrID);
-	size_t InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID);
+	size_t InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromUnitIDs(int id, int attrID, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromFeatureIDs(int id, int attrID, sol::optional<int> elemOffsetOpt);
+	size_t InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt);
 
 	int BindBufferRange  (const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt);
 	int UnbindBufferRange(const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt);
@@ -68,16 +68,16 @@ private:
 	void InstanceDataFromDataCheck(int attrID, const char* func);
 
 	template<typename TObj>
-	SInstanceData InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID);
+	static SInstanceData InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID, uint32_t drawID = 0u);
 
 	template<typename TObj>
-	size_t InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID);
+	size_t InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID, const sol::optional<int>& elemOffsetOpt);
 
 	template<typename TObj>
-	size_t InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint32_t defTeamID);
+	size_t InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint32_t defTeamID, const sol::optional<int>& elemOffsetOpt);
 
 	template<typename TIn>
-	size_t UploadImpl(const std::vector<TIn>& dataVec, const uint32_t elemOffset, const int attribIdx);
+	size_t UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffset, int attribIdx);
 
 	template<typename T>
 	static T MaybeFunc(const sol::table& tbl, const std::string& key, T defValue);

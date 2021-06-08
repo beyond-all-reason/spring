@@ -9,6 +9,7 @@
 
 #include "lib/sol2/forward.hpp"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/Models/3DModelVAO.h"
 
 class VAO;
 class VBO;
@@ -35,8 +36,10 @@ public:
 	void DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt);
 	void DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt);
 
-	void DrawUnits(int id);
-	void DrawUnits(const sol::stack_table& ids);
+	void ClearSubmission();
+	void AddUnitsToSubmission(int id);
+	void AddUnitsToSubmission(const sol::stack_table& ids);
+	void Submit();
 private:
 	std::pair<GLsizei, GLsizei> DrawCheck(GLenum mode, sol::optional<GLsizei> drawCountOpt, sol::optional<int> instanceCountOpt, bool indexed);
 	void CondInitVAO();
@@ -44,11 +47,11 @@ private:
 	void AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std::shared_ptr<LuaVBOImpl>& thisLuaVBO, GLenum reqTarget);
 private:
 	template <typename TObj>
-	static SDrawElementsIndirectCommand DrawObjectGetCmdImpl(int id, uint32_t& baseInstance);
+	SDrawElementsIndirectCommand DrawObjectGetCmdImpl(int id);
 	template <typename TObj>
-	static const std::pair<uint32_t, uint32_t> DrawIndicesImpl(int id);
+	static const SIndexAndCount GetDrawIndicesImpl(int id);
 	template <typename TObj>
-	static const std::pair<uint32_t, uint32_t> DrawIndicesImpl(const TObj* obj);
+	static const SIndexAndCount GetDrawIndicesImpl(const TObj* obj);
 private:
 	VAO* vao = nullptr;
 
@@ -56,6 +59,7 @@ private:
 	std::shared_ptr<LuaVBOImpl> instLuaVBO;
 	std::shared_ptr<LuaVBOImpl> indxLuaVBO;
 
+	uint32_t baseInstance;
 	std::vector<SDrawElementsIndirectCommand> submitCmds;
 };
 

@@ -733,7 +733,7 @@ void LuaVBOImpl::InstanceDataFromDataCheck(int attrID, const char* func)
 }
 
 template<typename TObj>
-SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID)
+SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint32_t defTeamID, uint32_t drawID)
 {
 	uint32_t ssboOffset;
 	uint32_t teamID = defTeamID;
@@ -751,15 +751,16 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint32_t d
 	if (ssboOffset == ~0u) {
 		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
 	}
-	return SInstanceData(ssboOffset, teamID);
+	return SInstanceData(ssboOffset, teamID, drawID);
 }
 
 template<typename TObj>
-size_t LuaVBOImpl::InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID)
+size_t LuaVBOImpl::InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID, const sol::optional<int>& elemOffsetOpt)
 {
 	InstanceDataFromDataCheck(attrID, __func__);
 
-	const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID);
+	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
+	const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID, elemOffset);
 
 	std::vector<uint32_t> instanceDataVec;
 	instanceDataVec.resize(4 * elementsCount);
@@ -770,14 +771,15 @@ size_t LuaVBOImpl::InstanceDataFromImpl(int id, int attrID, uint32_t defTeamID)
 	}
 
 	size_t bytesWritten = 0u;
-	return UploadImpl<uint32_t>(instanceDataVec, 0u, attrID);
+	return UploadImpl<uint32_t>(instanceDataVec, elemOffset, attrID);
 }
 
 template<typename TObj>
-size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint32_t defTeamID)
+size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint32_t defTeamID, const sol::optional<int>& elemOffsetOpt)
 {
 	InstanceDataFromDataCheck(attrID, __func__);
 
+	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
 	std::size_t idsSize = ids.size();
 	if (idsSize > elementsCount)
 		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Too many elements in Lua table", __func__);
@@ -789,16 +791,16 @@ size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID,
 	for (std::size_t i = 0u; i < idsSize; ++i) {
 		lua_Number idLua = ids.raw_get_or<lua_Number>(i + 1, defaultValue);
 		int id = spring::SafeCast<lua_Number, int>(idLua);
-		const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID);
+		const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID, elemOffset + static_cast<uint32_t>(i));
 		memcpy(&instanceDataVec[4 * i], &instanceData, sizeof(SInstanceData));
 	}
 
 	size_t bytesWritten = 0u;
-	return UploadImpl<uint32_t>(instanceDataVec, 0u, attrID);
+	return UploadImpl<uint32_t>(instanceDataVec, elemOffset, attrID);
 }
 
 template<typename TIn>
-size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, const uint32_t elemOffset, const int attribIdx)
+size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffset, int attribIdx)
 {
 	const uint32_t bufferOffsetInBytes = elemOffset * elemSizeInBytes;
 	const int mappedBufferSizeInBytes = bufferSizeInBytes - bufferOffsetInBytes;
@@ -887,48 +889,48 @@ size_t LuaVBOImpl::ModelsVBO()
 }
 
 
-size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt)
+size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
 	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
-	return InstanceDataFromImpl<UnitDef>(id, attrID, defTeamID);
+	return InstanceDataFromImpl<UnitDef>(id, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt)
+size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
 	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
-	return InstanceDataFromImpl<UnitDef>(ids, attrID, defTeamID);
+	return InstanceDataFromImpl<UnitDef>(ids, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
 	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
-	return InstanceDataFromImpl<FeatureDef>(id, attrID, defTeamID);
+	return InstanceDataFromImpl<FeatureDef>(id, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
 	uint32_t defTeamID = teamIdOpt.value_or(gu->myTeam);
-	return InstanceDataFromImpl<FeatureDef>(ids, attrID, defTeamID);
+	return InstanceDataFromImpl<FeatureDef>(ids, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromUnitIDs(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitIDs(const int id, const int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return InstanceDataFromImpl<CUnit>(id, attrID, /*noop*/ 0u);
+	return InstanceDataFromImpl<CUnit>(id, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return InstanceDataFromImpl<CUnit>(ids, attrID, /*noop*/ 0u);
+	return InstanceDataFromImpl<CUnit>(ids, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const int id, const int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return InstanceDataFromImpl<CFeature>(id, attrID, /*noop*/ 0u);
+	return InstanceDataFromImpl<CFeature>(id, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return InstanceDataFromImpl<CFeature>(ids, attrID, /*noop*/ 0u);
+	return InstanceDataFromImpl<CFeature>(ids, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
 int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt, const bool bind)

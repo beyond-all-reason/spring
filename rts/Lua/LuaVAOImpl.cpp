@@ -23,11 +23,15 @@
 #include "LuaUtils.h"
 
 LuaVAOImpl::LuaVAOImpl()
-	: vertLuaVBO{nullptr}
+	: vao{nullptr}
+
+	, vertLuaVBO{nullptr}
 	, instLuaVBO{nullptr}
 	, indxLuaVBO{nullptr}
+
+	, baseInstance{0u}
 {
-	submitCmds.clear();
+
 }
 
 void LuaVAOImpl::Delete()
@@ -55,7 +59,7 @@ LuaVAOImpl::~LuaVAOImpl()
 
 bool LuaVAOImpl::Supported()
 {
-	static bool supported = VBO::IsSupported(GL_ARRAY_BUFFER) && VAO::IsSupported() && GLEW_ARB_instanced_arrays && GLEW_ARB_draw_elements_base_vertex;
+	static bool supported = VBO::IsSupported(GL_ARRAY_BUFFER) && VAO::IsSupported() && GLEW_ARB_instanced_arrays && GLEW_ARB_draw_elements_base_vertex && GLEW_ARB_multi_draw_indirect;
 	return supported;
 }
 
@@ -103,33 +107,33 @@ void LuaVAOImpl::AttachIndexBuffer(const LuaVBOImplSP& luaVBO)
 }
 
 template<typename TObj>
-const std::pair<uint32_t, uint32_t> LuaVAOImpl::DrawIndicesImpl(int id)
+const SIndexAndCount LuaVAOImpl::GetDrawIndicesImpl(int id)
 {
 	const TObj* obj = LuaUtils::SolIdToObject<TObj>(id, __func__);
-	return DrawIndicesImpl<TObj>(obj);
+	return GetDrawIndicesImpl<TObj>(obj);
 }
 
 template<typename TObj>
-const std::pair<uint32_t, uint32_t> LuaVAOImpl::DrawIndicesImpl(const TObj* obj)
+const SIndexAndCount LuaVAOImpl::GetDrawIndicesImpl(const TObj* obj)
 {
 	if constexpr (std::is_same<TObj, CUnit>::value) {
 		S3DModel* model = obj->model;
 		assert(model);
-		return std::make_pair(model->indxStart, model->indxCount);
+		return SIndexAndCount(model->indxStart, model->indxCount);
 	}
 
 	assert(false);
 }
 
 template<typename TObj>
-SDrawElementsIndirectCommand LuaVAOImpl::DrawObjectGetCmdImpl(int id, uint32_t& baseInstance)
+SDrawElementsIndirectCommand LuaVAOImpl::DrawObjectGetCmdImpl(int id)
 {
-	auto& [indxStart, indxCount] = LuaVAOImpl::DrawIndicesImpl<TObj>(id);
+	const auto& indexAndCount = LuaVAOImpl::GetDrawIndicesImpl<TObj>(id);
 
 	return std::move(SDrawElementsIndirectCommand{
-		indxCount,
+		indexAndCount.count,
 		1u,
-		indxStart,
+		indexAndCount.index,
 		0u,
 		baseInstance++
 	});
@@ -315,44 +319,34 @@ void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, s
 	glDisable(GL_PRIMITIVE_RESTART);
 }
 
-void LuaVAOImpl::DrawUnits(int id)
+void LuaVAOImpl::ClearSubmission()
 {
-	DrawCheck(GL_TRIANGLES, 0, 1, true); //pair<indxCount,instCount>
-
-	static std::vector<SDrawElementsIndirectCommand> submitCmds;
+	baseInstance = 0u;
 	submitCmds.clear();
-	uint32_t baseInstance = 0u;
-
-	submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id, baseInstance));
-
-	glEnable(GL_PRIMITIVE_RESTART);
-	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
-
-	vao->Bind();
-	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
-	vao->Unbind();
-
-	glDisable(GL_PRIMITIVE_RESTART);
 }
 
-void LuaVAOImpl::DrawUnits(const sol::stack_table& ids)
+void LuaVAOImpl::AddUnitsToSubmission(int id)
 {
-	DrawCheck(GL_TRIANGLES, 0, 1, true); //pair<indxCount,instCount>
+	DrawCheck(GL_TRIANGLES, 0, submitCmds.size() +       1, true); //pair<indxCount,instCount>
+	submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id));
+}
 
-	static std::vector<SDrawElementsIndirectCommand> submitCmds;
-	submitCmds.clear();
-	uint32_t baseInstance = 0u;
-
-	std::size_t idsSize = ids.size();
+void LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids)
+{
+	const std::size_t idsSize = ids.size(); //size() is very costly to do in the loop
+	DrawCheck(GL_TRIANGLES, 0, submitCmds.size() + idsSize, true); //pair<indxCount,instCount>
 
 	constexpr auto defaultValue = static_cast<lua_Number>(0);
 	for (std::size_t i = 0u; i < idsSize; ++i) {
 		lua_Number idLua = ids.raw_get_or<lua_Number>(i + 1, defaultValue);
 		int id = spring::SafeCast<lua_Number, int>(idLua);
 
-		submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id, baseInstance));
+		submitCmds.emplace_back(DrawObjectGetCmdImpl<CUnit>(id));
 	}
+}
 
+void LuaVAOImpl::Submit()
+{
 	glEnable(GL_PRIMITIVE_RESTART);
 	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
 

@@ -16,6 +16,20 @@ struct UnitDef;
 
 struct SDrawElementsIndirectCommand;
 
+struct SIndexAndCount {
+	SIndexAndCount() = default;
+	SIndexAndCount(uint32_t index_, uint32_t count_)
+		: index{ index_ }
+		, count{ count_ }
+	{}
+	bool operator==(const SIndexAndCount& o) const { return index == o.index && count == o.count; }
+	uint64_t operator()(const SIndexAndCount& o) const {
+		return ((uint64_t)o.index << 32 | o.count);
+	}
+	uint32_t index;
+	uint32_t count;
+};
+
 // singleton
 class S3DModelVAO {
 public:
@@ -74,21 +88,7 @@ private:
 	VBO instVBO;
 	VAO vao;
 
-	struct IndexCount {
-		IndexCount(uint32_t index_, uint32_t count_)
-			: index{ index_ }
-			, count{ count_ }
-		{}
-		bool operator==(const IndexCount& o) const { return index == o.index && count == o.count; }
-		uint32_t index;
-		uint32_t count;
-	};
 
-	struct IndexCountHash {
-		size_t operator()(const IndexCount& p) const {
-			return (uint64_t)p.index << 32 | p.count;
-		}
-	};
 
-	std::unordered_map<IndexCount, std::vector<SInstanceData>, IndexCountHash> modelDataToInstance;
+	std::unordered_map<SIndexAndCount, std::vector<SInstanceData>, SIndexAndCount> modelDataToInstance;
 };

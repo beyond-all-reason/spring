@@ -149,7 +149,7 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
-	auto& modelInstanceData = modelDataToInstance[IndexCount{ indexStart, indexCount }];
+	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
 	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID));
 
 	return true;
@@ -228,7 +228,7 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	// do not increment base instance for now.
 	// TODO: dedicate some circular space (~1024 items) for immediate submissions closer to the end of instVBO
-	SInstanceData instanceData{ ssboIndex, teamID };
+	SInstanceData instanceData{ static_cast<uint32_t>(ssboIndex), teamID };
 	SDrawElementsIndirectCommand scmd{
 		indexCount,
 		1,
@@ -248,6 +248,9 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	if (bindUnbind)
 		Unbind();
+
+	//TODO sanitization
+	return true;
 }
 
 bool S3DModelVAO::SubmitImmediately(const S3DModel* model, const int teamID, const GLenum mode, const bool bindUnbind)
