@@ -779,8 +779,13 @@ size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID,
 {
 	InstanceDataFromDataCheck(attrID, __func__);
 
-	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
 	std::size_t idsSize = ids.size();
+
+	if (idsSize == 0u) //empty array
+		return 0u;
+
+	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
+
 	if (idsSize > elementsCount)
 		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Too many elements in Lua table", __func__);
 
@@ -802,6 +807,9 @@ size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID,
 template<typename TIn>
 size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffset, int attribIdx)
 {
+	if (dataVec.empty())
+		return 0u;
+
 	const uint32_t bufferOffsetInBytes = elemOffset * elemSizeInBytes;
 	const int mappedBufferSizeInBytes = bufferSizeInBytes - bufferOffsetInBytes;
 
