@@ -471,7 +471,7 @@ inline void StablePosAllocator<T>::Free(size_t& firstElem, size_t numElems)
 		firstElem = ~0u;
 		return;
 	}
-
+	memset(&data[firstElem], 0, numElems * sizeof(T)); //nullify matrix just in case
 	//lucky us, just remove trim the vector size
 	if (firstElem + numElems == data.size()) {
 		myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
