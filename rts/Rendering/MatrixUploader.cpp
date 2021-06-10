@@ -91,7 +91,7 @@ void MatrixUploader::Update()
 		//update on the GPU
 		matrixSSBO.Bind();
 #if 0 //unexpectedly expensive on idle run (NVidia & Windows). Needs triple buffering to perform
-		auto* buff = matrixSSBO.MapBuffer(matricesMemStorage.GetData(), GL_WRITE_ONLY); //matrices.size() always has the correct size no matter neededElemByteOffset
+		auto* buff = matrixSSBO.MapBuffer(matricesMemStorage.GetData(), 0, GL_WRITE_ONLY); //matrices.size() always has the correct size no matter neededElemByteOffset
 		memcpy(buff, matricesMemStorage.GetData().data(), matricesMemStorage.GetSize() * sizeof(CMatrix44f));
 		matrixSSBO.UnmapBuffer();
 #else
