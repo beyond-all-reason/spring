@@ -1343,14 +1343,12 @@ CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 		return localModel.GetTransformMatrix(true);
 	}
 
-	{
-		float3 unsyncedPos = drawPos;
+	float3 unsyncedPos = drawPos;
 
-		if (!fullread && !gu->spectatingFullView)
-			unsyncedPos += GetErrorVector(gu->myAllyTeam);
+	if (!fullread && !gu->spectatingFullView)
+		unsyncedPos += GetErrorVector(gu->myAllyTeam);
 
-		localModel.GetTransformMatrix(false) = ComposeMatrix(unsyncedPos);
-	}
+	localModel.GetTransformMatrix(false) = ComposeMatrix(unsyncedPos);
 	return localModel.GetTransformMatrix(false);
 }
 
