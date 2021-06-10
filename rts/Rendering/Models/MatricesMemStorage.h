@@ -14,7 +14,11 @@ public:
 public:
 	MatricesMemStorage();
 public:
-	void Reset() { spa->Reset(); };
+	void Reset() {
+		DeallocateDummy();
+		spa->Reset();
+		AllocateDummy();
+	};
 	std::size_t Allocate(std::size_t numElems, bool withMutex = false) { return spa->Allocate(numElems, withMutex); };
 	void Free(std::size_t& firstElem, size_t numElems) { spa->Free(firstElem, numElems); };
     const std::size_t GetSize() const { return spa->GetSize(); }
@@ -25,6 +29,9 @@ public:
 public:
 	static constexpr int INIT_NUM_ELEMS = 1 << 16u;
 	static constexpr std::size_t INVALID_INDEX = ~0u;
+private:
+	void AllocateDummy();
+	void DeallocateDummy();
 private:
 	std::unique_ptr<StablePosAllocator<CMatrix44f>> spa;
 };

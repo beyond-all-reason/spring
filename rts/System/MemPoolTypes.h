@@ -336,8 +336,8 @@ public:
 	const size_t GetSize() const { return data.size(); }
 	const std::vector<T>& GetData() const { return data; }
 
-	T& operator[](std::size_t idx) { return data[idx]; }
 	const T& operator[](std::size_t idx) const { return data[idx]; }
+	      T& operator[](std::size_t idx)       { return data[idx]; }
 private:
 	void CompactGaps();
 	size_t AllocateImpl(size_t numElems);
