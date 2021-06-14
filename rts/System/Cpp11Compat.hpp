@@ -6,7 +6,7 @@
 #include <functional>
 
 namespace spring {
-	template <typename ArgumentType, typename ResultType> using unary_function = std::function< ResultType(ArgumentType) >;
+	template <typename Arg1, typename Result> using unary_function = std::function< Result(Arg1) >;
 	template <typename Arg1, typename Arg2, typename Result> using binary_function = std::function< Result(Arg1, Arg2) >;
 
 	// https://en.cppreference.com/w/cpp/algorithm/random_shuffle

@@ -1,7 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Projectile.h"
+#include "PieceProjectile.h"
+#include "WeaponProjectiles/WeaponProjectileTypes.h"
+
 #include "Map/MapInfo.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Colors.h"
 #include "Rendering/GL/VertexArray.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
@@ -11,6 +15,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/Matrix44f.h"
+#include "System/MathConstants.h"
 
 CR_BIND_DERIVED_INTERFACE(CProjectile, CExpGenSpawnable)
 
@@ -51,6 +56,10 @@ CR_REG_METADATA(CProjectile,
 	CR_MEMBER(collisionFlags),
 	CR_IGNORED(renderIndex),
 
+	CR_IGNORED(matAlloc),
+	CR_IGNORED(transformMatrix),
+	CR_IGNORED(lastUpdateFrame),
+
 	CR_MEMBER(quads)
 ))
 
@@ -79,18 +88,27 @@ CProjectile::CProjectile(
 
 	, myrange(/*params.weaponDef->range*/0.0f)
 	, mygravity((mapInfo != nullptr)? mapInfo->map.gravity: 0.0f)
+
+	, matAlloc()
+	, transformMatrix()
+	, lastUpdateFrame(std::uint32_t(-1))
 {
 	SetRadiusAndHeight(1.7f, 0.0f);
+
+	if (synced) {
+		matAlloc = ScopedMatricesMemAlloc(1u);
+		transformMatrix = matAlloc[0];
+	}
+
 	Init(owner, ZeroVector);
 }
 
 
 CProjectile::~CProjectile()
 {
-	if (!synced)
-		return;
-
-	quadField.RemoveProjectile(this);
+	if (synced) {
+		quadField.RemoveProjectile(this);
+	}
 }
 
 void CProjectile::Init(const CUnit* owner, const float3& offset)
@@ -150,23 +168,43 @@ CUnit* CProjectile::owner() const {
 	return (unitHandler.GetUnit(ownerID));
 }
 
+// GetTransformMatrix() is called stateless, ad-hoc. TODO: make stateful with luaMoveCtrl in mind?
+// only called for weapon == true
+const CMatrix44f& CProjectile::GetTransformMatrix() const
+{
+	assert(transformMatrix.Valid());
 
-CMatrix44f CProjectile::GetTransformMatrix(bool offsetPos) const {
-	float3 xdir;
-	float3 ydir;
+	if (lastUpdateFrame == globalRendering->drawFrame)
+		return transformMatrix();
 
-	if (math::fabs(dir.y) < 0.95f) {
-		xdir = dir.cross(UpVector);
-		xdir.SafeANormalize();
+	lastUpdateFrame = globalRendering->drawFrame;
+
+	if (piece) {
+		const CPieceProjectile* pp = static_cast<const CPieceProjectile*>(this);
+
+		transformMatrix() = CMatrix44f(drawPos).Rotate(pp->GetDrawAngle() * math::DEG_TO_RAD, pp->spinVec);
 	} else {
-		xdir.x = 1.0f;
+		assert(weapon == true);
+		const bool offsetPos = (projectileType == WEAPON_MISSILE_PROJECTILE);
+
+		float3 xdir;
+		float3 ydir;
+
+		if (math::fabs(dir.y) < 0.95f) {
+			xdir = dir.cross(UpVector);
+			xdir.SafeANormalize();
+		}
+		else {
+			xdir.x = 1.0f;
+		}
+
+		ydir = xdir.cross(dir);
+
+		transformMatrix() = CMatrix44f(drawPos + (dir * radius * 0.9f * offsetPos), -xdir, ydir, dir);
 	}
 
-	ydir = xdir.cross(dir);
-
-	return (CMatrix44f(drawPos + (dir * radius * 0.9f * offsetPos), -xdir, ydir, dir));
+	return transformMatrix();
 }
-
 
 bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {

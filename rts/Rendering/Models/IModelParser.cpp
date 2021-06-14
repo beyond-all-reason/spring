@@ -159,6 +159,7 @@ void CModelLoader::KillModels()
 	for (unsigned int i = 0; i < numModels; i++) {
 		models[i].DeletePieces();
 	}
+	models.clear();
 }
 
 void CModelLoader::KillParsers()

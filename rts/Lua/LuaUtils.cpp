@@ -9,9 +9,7 @@
 
 #include "Game/GameVersion.h"
 #include "Rendering/Models/IModelParser.h"
-#include "Sim/Features/FeatureDef.h"
 #include "Sim/Objects/SolidObjectDef.h"
-#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/CommandAI/CommandDescription.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
@@ -1456,4 +1454,3 @@ void LuaUtils::PushCommandDesc(lua_State* L, const SCommandDescription& cd)
 	// CmdDesc["params"] = {[1] = "string1", [2] = "string2", ...}
 	lua_settable(L, -3);
 }
-

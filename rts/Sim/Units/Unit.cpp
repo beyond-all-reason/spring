@@ -31,6 +31,7 @@
 #include "Map/ReadMap.h"
 
 #include "Rendering/GroundFlash.h"
+#include "Rendering/GlobalRendering.h"
 
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
@@ -1336,12 +1337,19 @@ void CUnit::ApplyImpulse(const float3& impulse) {
 
 CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 {
-	float3 interPos = synced ? pos : drawPos;
 
-	if (!synced && !fullread && !gu->spectatingFullView)
-		interPos += GetErrorVector(gu->myAllyTeam);
+	if (synced) {
+		localModel.GetTransformMatrix(true) = ComposeMatrix(pos);
+		return localModel.GetTransformMatrix(true);
+	}
 
-	return (ComposeMatrix(interPos));
+	float3 unsyncedPos = drawPos;
+
+	if (!fullread && !gu->spectatingFullView)
+		unsyncedPos += GetErrorVector(gu->myAllyTeam);
+
+	localModel.GetTransformMatrix(false) = ComposeMatrix(unsyncedPos);
+	return localModel.GetTransformMatrix(false);
 }
 
 /******************************************************************************/

@@ -34,6 +34,7 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_IGNORED(original),
 
 	CR_IGNORED(dirty),
+	//CR_IGNORED(modelSpaceMat),
 	CR_IGNORED(modelSpaceMat),
 	CR_IGNORED(pieceSpaceMat),
 
@@ -43,6 +44,10 @@ CR_REG_METADATA(LocalModelPiece, (
 CR_BIND(LocalModel, )
 CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
+
+	CR_IGNORED(matAlloc),
+	CR_IGNORED(unsyncedTransformMatrix),
+	CR_IGNORED(transformMatSynced),
 
 	CR_IGNORED(boundingVolume),
 	CR_IGNORED(luaMaterialData)
@@ -72,7 +77,7 @@ void S3DModelPiece::DrawStatic() const
 		return;
 
 	glPushMatrix();
-	glMultMatrixf(bposeMatrix);
+	glMultMatrixf(BPoseMatrix());
 	glCallList(dispListID);
 	glPopMatrix();
 }
@@ -366,6 +371,22 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 }
 
 
+const CMatrix44f& LocalModel::GetTransformMatrix(bool synced) const
+{
+	if (synced)
+		return transformMatSynced;
+	else
+		return GetUnsyncedTransformMatrix();
+}
+
+CMatrix44f& LocalModel::GetTransformMatrix(bool synced)
+{
+	if (synced)
+		return transformMatSynced;
+	else
+		return GetUnsyncedTransformMatrix();
+}
+
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
 	// make sure we do not get called for trees, etc
@@ -376,11 +397,11 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 		assert(pieces.size() == model->numPieces);
 
 		// PostLoad; only update the pieces
-		for (size_t n = 0; n < pieces.size(); n++) {
-			S3DModelPiece* omp = model->GetPiece(n);
+		for (size_t i = 0; i < pieces.size(); ++i) {
+			S3DModelPiece* omp = model->GetPiece(i);
 
-			pieces[n].original = omp;
-			pieces[n].dispListID = omp->GetDisplayListID();
+			pieces[i].original = omp;
+			pieces[i].dispListID = omp->GetDisplayListID();
 		}
 
 		pieces[0].UpdateChildMatricesRec(true);
@@ -393,7 +414,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	pieces.clear();
 	pieces.reserve(model->numPieces);
 
-	CreateLocalModelPieces(model->GetRootPiece());
+	CreateLocalModelPieces(model);
 
 	// must recursively update matrices here too: for features
 	// LocalModel::Update is never called, but they might have
@@ -404,6 +425,13 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	assert(pieces.size() == model->numPieces);
 }
 
+LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModel* model)
+{
+	matAlloc = std::move(ScopedMatricesMemAlloc(model->numPieces + 1u));
+	unsyncedTransformMatrix = matAlloc[0];
+	return CreateLocalModelPieces(model->GetRootPiece());
+}
+
 LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParent)
 {
 	LocalModelPiece* lmpChild = nullptr;
@@ -411,9 +439,12 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 	// construct an LMP(mp) in-place
 	pieces.emplace_back(mpParent);
 	LocalModelPiece* lmpParent = &pieces.back();
+	lmpParent->SetLocalModel(this);
 
-	lmpParent->SetLModelPieceIndex(pieces.size() - 1);
-	lmpParent->SetScriptPieceIndex(pieces.size() - 1);
+	const size_t lastElemIdx = pieces.size() - 1;
+	lmpParent->SetModelSpaceAllocElem(matAlloc[lastElemIdx + 1u]); // +1u because first position is ocupied by unsyncedTransformMatrix
+	lmpParent->SetLModelPieceIndex(lastElemIdx);
+	lmpParent->SetScriptPieceIndex(lastElemIdx);
 
 	// the mapping is 1:1 for Lua scripts, but not necessarily for COB
 	// CobInstance::MapScriptToModelPieces does the remapping (if any)
@@ -427,7 +458,6 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 
 	return lmpParent;
 }
-
 
 void LocalModel::UpdateBoundingVolume()
 {
@@ -582,6 +612,45 @@ void S3DModel::UploadToVBO(const std::vector<SVertexData>& vertices, const std::
 
 }
 
+void S3DModel::DeletePieces()
+{
+	assert(!pieceObjects.empty());
+
+	// NOTE: actual piece memory is owned by parser pools
+	pieceObjects.clear();
+}
+
+void S3DModel::AllocateMatrices()
+{
+	// force mutex just in case this is called from modelLoader.PreloadModel()
+	// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+	matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
+}
+
+void S3DModel::FlattenPieceTree(S3DModelPiece* root)
+{
+	assert(root != nullptr);
+
+	pieceObjects.clear();
+	pieceObjects.reserve(numPieces);
+	AllocateMatrices();
+
+	std::vector<S3DModelPiece*> stack = { root };
+
+	while (!stack.empty()) {
+		S3DModelPiece* p = stack.back();
+
+		stack.pop_back();
+		p->SetBPosAllocElem(matAlloc[pieceObjects.size()]);
+		pieceObjects.push_back(p);
+
+		// add children in reverse for the correct DF traversal order
+		for (size_t n = 0; n < p->children.size(); n++) {
+			stack.push_back(p->children[p->children.size() - n - 1]);
+		}
+	}
+}
+
 /** ****************************************************************************************************
  * LocalModelPiece
  */
@@ -591,7 +660,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 
 	, dirty(true)
 
-	, scriptSetVisible(piece->HasGeometryData())
+	, scriptSetVisible(true)
 	, blockScriptAnims(false)
 
 	, lmodelPieceIndex(-1)
@@ -630,7 +699,6 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	dst = src;
 }
 
-
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 {
 	if (dirty) {
@@ -641,10 +709,10 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 	}
 
 	if (updateChildMatrices) {
-		modelSpaceMat = pieceSpaceMat;
+		GetModelSpaceMatrixRaw() = pieceSpaceMat;
 
 		if (parent != nullptr) {
-			modelSpaceMat >>= parent->modelSpaceMat;
+			GetModelSpaceMatrixRaw() >>= parent->GetModelSpaceMatrixRaw();
 		}
 	}
 
@@ -661,10 +729,10 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	dirty = false;
 
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
-	modelSpaceMat = pieceSpaceMat;
+	GetModelSpaceMatrixRaw() = pieceSpaceMat;
 
 	if (parent != nullptr)
-		modelSpaceMat >>= parent->modelSpaceMat;
+		GetModelSpaceMatrixRaw() >>= parent->GetModelSpaceMatrixRaw();
 }
 
 
@@ -673,8 +741,13 @@ void LocalModelPiece::Draw() const
 	if (!scriptSetVisible)
 		return;
 
+	const CMatrix44f& mat = GetModelSpaceMatrix();
+
+	if (!original->HasGeometryData())
+		return;
+
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(mat);
 	glCallList(dispListID);
 	glPopMatrix();
 }
@@ -684,8 +757,13 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 	if (!scriptSetVisible)
 		return;
 
+	const CMatrix44f& mat = GetModelSpaceMatrix();
+
+	if (!original->HasGeometryData())
+		return;
+
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(mat);
 	glCallList(lodDispLists[lod]);
 	glPopMatrix();
 }

@@ -48,7 +48,8 @@ public:
 
 	void SetDrawForwardPass(bool b) { drawForward = b; }
 	void SetDrawDeferredPass(bool b) { drawDeferred = b; }
-
+public:
+	const std::vector<CFeature*>& GetAllRenderFeatures() const { return unsortedFeatures; }
 public:
 	// CEventClient interface
 	bool WantsEvent(const std::string& eventName) {

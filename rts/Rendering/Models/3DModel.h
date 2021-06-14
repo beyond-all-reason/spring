@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 
+#include "MatricesMemStorage.h"
 #include "Lua/LuaObjectMaterial.h"
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -16,10 +17,10 @@
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
-
-#define MAX_MODEL_OBJECTS  2048
-#define NUM_MODEL_TEXTURES    2
-#define NUM_MODEL_UVCHANNS    2
+constexpr int MAX_MODEL_OBJECTS  = 2048;
+constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
+constexpr int NUM_MODEL_TEXTURES = 2;
+constexpr int NUM_MODEL_UVCHANNS = 2;
 
 static constexpr float3 DEF_MIN_SIZE( 10000.0f,  10000.0f,  10000.0f);
 static constexpr float3 DEF_MAX_SIZE(-10000.0f, -10000.0f, -10000.0f);
@@ -86,7 +87,6 @@ public:
  * A 3D model definition. Holds geometry (vertices/normals) and texture data as well as the piece tree.
  * The S3DModel is static and shouldn't change once created, instead a LocalModel is used by each agent.
  */
-
 struct S3DModelPiece {
 	S3DModelPiece() = default;
 
@@ -104,7 +104,8 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		bposeMatrix.LoadIdentity();
+		//BPoseMatrix().LoadIdentity(); //this one is deallocated already
+		bPosMat = {};
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -163,10 +164,10 @@ public:
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
 
 	void SetPieceMatrix(const CMatrix44f& m) {
-		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
+		BPoseMatrix() = m * ComposeTransform(offset, ZeroVector, scales);
 
 		for (S3DModelPiece* c: children) {
-			c->SetPieceMatrix(bposeMatrix);
+			c->SetPieceMatrix(BPoseMatrix());
 		}
 	}
 	void SetBakedMatrix(const CMatrix44f& m) {
@@ -193,6 +194,11 @@ public:
 		return m;
 	}
 
+	void SetBPosAllocElem(MatAllocElem mae) { bPosMat = mae; }
+
+	const CMatrix44f& BPoseMatrix() const { return bPosMat(); }
+	      CMatrix44f& BPoseMatrix()       { return bPosMat(); }
+
 	void SetCollisionVolume(const CollisionVolume& cv) { colvol = cv; }
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -200,6 +206,8 @@ public:
 	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
 	void SetParentModel(S3DModel* model_) { model = model_; }
 
+	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; };
+	const std::vector<uint32_t>& GetIndicesVec() const { return indices; };
 private:
 	void CreateShatterPiecesVariation(const int num);
 
@@ -211,7 +219,7 @@ public:
 	S3DModelPiece* parent = nullptr;
 	CollisionVolume colvol;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
+	//CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
 	CMatrix44f bakedMatrix;      /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
@@ -221,13 +229,17 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
+	uint32_t indxStart = 0u; //global VBO offset, size data
+	uint32_t indxCount = 0u;
 protected:
-	uint32_t vboIndxStart = 0u;
+	uint32_t vboIndxStart = 0u; // offset in per-model VBO array.
 	uint32_t vboVertStart = 0u;
 
 	std::vector<SVertexData> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
+
+	MatAllocElem bPosMat;
 
 	VBO vboShatterIndices;
 
@@ -261,17 +273,24 @@ struct S3DModel
 		, vertVBO(nullptr)
 		, indxVBO(nullptr)
 
+		, indxStart(0u)
+		, indxCount(0u)
+
 		, curVertStartIndx(0u)
 		, curIndxStartIndx(0u)
+
+		// Model has at least once piece matrix.
+		// This unfortunately costs extra perf on reallocation, but this is the way (c)
+		, matAlloc(ScopedMatricesMemAlloc(1u))
 	{
 
 	}
 
 	S3DModel(const S3DModel& m) = delete;
-	S3DModel(S3DModel&& m) { *this = std::move(m); }
+	S3DModel(S3DModel&& m) noexcept { *this = std::move(m); }
 
 	S3DModel& operator = (const S3DModel& m) = delete;
-	S3DModel& operator = (S3DModel&& m) {
+	S3DModel& operator = (S3DModel&& m) noexcept {
 		name    = std::move(m.name   );
 		texs[0] = std::move(m.texs[0]);
 		texs[1] = std::move(m.texs[1]);
@@ -292,11 +311,19 @@ struct S3DModel
 		vertVBO = std::move(m.vertVBO);
 		indxVBO = std::move(m.indxVBO);
 
+		indxStart = m.indxStart;
+		indxCount = m.indxCount;
+
 		curVertStartIndx = m.curVertStartIndx;
 		curIndxStartIndx = m.curIndxStartIndx;
 
+		matAlloc = std::move(m.matAlloc);
+
 		pieceObjects = std::move(m.pieceObjects);
-		for_each(pieceObjects.begin(), pieceObjects.end(), [this](S3DModelPiece* p) { p->SetParentModel(this); });
+
+		for (auto po : pieceObjects)
+			po->SetParentModel(this);
+
 		return *this;
 	}
 
@@ -327,32 +354,9 @@ struct S3DModel
 	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
 	void SetPieceMatrices() { pieceObjects[0]->SetPieceMatrix(CMatrix44f()); }
-	void DeletePieces() {
-		assert(!pieceObjects.empty());
-
-		// NOTE: actual piece memory is owned by parser pools
-		pieceObjects.clear();
-	}
-	void FlattenPieceTree(S3DModelPiece* root) {
-		assert(root != nullptr);
-
-		pieceObjects.clear();
-		pieceObjects.reserve(numPieces);
-
-		std::vector<S3DModelPiece*> stack = {root};
-
-		while (!stack.empty()) {
-			S3DModelPiece* p = stack.back();
-
-			stack.pop_back();
-			pieceObjects.push_back(p);
-
-			// add children in reverse for the correct DF traversal order
-			for (size_t n = 0; n < p->children.size(); n++) {
-				stack.push_back(p->children[p->children.size() - n - 1]);
-			}
-		}
-	}
+	void DeletePieces();
+	void AllocateMatrices();
+	void FlattenPieceTree(S3DModelPiece* root);
 
 	// default values set by parsers; radius is also cached in WorldObject::drawRadius (used by projectiles)
 	float CalcDrawRadius() const { return ((maxs - mins).Length() * 0.5f); }
@@ -363,6 +367,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];
@@ -374,12 +379,6 @@ public:
 	int numPieces;
 	int textureType;            /// FIXME: MAKE S3O ONLY (0 = 3DO, otherwise S3O or ASSIMP)
 
-	std::unique_ptr<VBO> vertVBO;
-	std::unique_ptr<VBO> indxVBO;
-
-	uint32_t curVertStartIndx;
-	uint32_t curIndxStartIndx;
-
 	ModelType type;
 
 	float radius;
@@ -388,6 +387,17 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+
+	std::unique_ptr<VBO> vertVBO;
+	std::unique_ptr<VBO> indxVBO;
+
+	uint32_t indxStart; //global VBO offset, size data
+	uint32_t indxCount;
+
+	uint32_t curVertStartIndx; // offset in per-model VBO array. Incremented after each piece is processed
+	uint32_t curIndxStartIndx;
+private:
+	ScopedMatricesMemAlloc matAlloc;
 };
 
 
@@ -407,6 +417,7 @@ struct LocalModelPiece
 	void AddChild(LocalModelPiece* c) { children.push_back(c); }
 	void RemoveChild(LocalModelPiece* c) { children.erase(std::find(children.begin(), children.end(), c)); }
 	void SetParent(LocalModelPiece* p) { parent = p; }
+	void SetLocalModel(LocalModel* lm) { localModel = lm; }
 
 	void SetLModelPieceIndex(unsigned int idx) { lmodelPieceIndex = idx; }
 	void SetScriptPieceIndex(unsigned int idx) { scriptPieceIndex = idx; }
@@ -459,19 +470,25 @@ struct LocalModelPiece
 	const float3& GetRotation() const { return rot; }
 	const float3& GetDirection() const { return dir; }
 
+	void SetModelSpaceAllocElem(MatAllocElem mae) { modelSpaceMat = mae; }
+
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
-	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return GetModelSpaceMatrixRaw(); }
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
-
+private:
+	CMatrix44f& GetModelSpaceMatrixRaw() const { return modelSpaceMat(); };
 private:
 	float3 pos; // translation relative to parent LMP, *INITIALLY* equal to original->offset
 	float3 rot; // orientation relative to parent LMP, in radians (updated by scripts)
 	float3 dir; // cached copy of original->GetEmitDir()
 
 	mutable CMatrix44f pieceSpaceMat; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
-	mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+
+	// transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	//mutable CMatrix44f modelSpaceMat;
+	mutable MatAllocElem modelSpaceMat;
 
 	CollisionVolume colvol;
 
@@ -487,6 +504,7 @@ public:
 
 	const S3DModelPiece* original;
 	LocalModelPiece* parent;
+	LocalModel* localModel;
 
 	std::vector<LocalModelPiece*> children;
 	std::vector<unsigned int> lodDispLists;
@@ -497,8 +515,11 @@ struct LocalModel
 {
 	CR_DECLARE_STRUCT(LocalModel)
 
-	LocalModel() {}
-	~LocalModel() { pieces.clear(); }
+	LocalModel()
+		: matAlloc{1u} //at least one matrix to hold UnsyncedTransformMatrix
+		, unsyncedTransformMatrix{ matAlloc[0] }
+	{};
+	~LocalModel() { pieces.clear(); };
 
 
 	bool HasPiece(unsigned int i) const { return (i < pieces.size()); }
@@ -518,6 +539,8 @@ struct LocalModel
 	// raw forms, the piece-index must be valid
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
 	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
+	const CMatrix44f& GetTransformMatrix(bool synced) const;
+	      CMatrix44f& GetTransformMatrix(bool synced);
 
 	// used by all SolidObject's; accounts for piece movement
 	float GetDrawRadius() const { return (boundingVolume.GetBoundingRadius()); }
@@ -559,9 +582,13 @@ struct LocalModel
 		verts[9] = bbMaxs;
 	}
 
-
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 private:
+	LocalModelPiece* CreateLocalModelPieces(const S3DModel* model);
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);
+
+	const CMatrix44f& GetUnsyncedTransformMatrix() const { return unsyncedTransformMatrix(); }
+	CMatrix44f& GetUnsyncedTransformMatrix() { return unsyncedTransformMatrix(); }
 
 	void DrawPieces() const;
 	void DrawPiecesLOD(unsigned int lod) const;
@@ -570,6 +597,11 @@ public:
 	std::vector<LocalModelPiece> pieces;
 
 private:
+	ScopedMatricesMemAlloc matAlloc;
+	MatAllocElem unsyncedTransformMatrix;
+
+	CMatrix44f transformMatSynced; // synced
+
 	// object-oriented box; accounts for piece movement
 	CollisionVolume boundingVolume;
 

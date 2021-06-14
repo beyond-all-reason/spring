@@ -12,6 +12,7 @@
 #include "ExpGenSpawnable.h"
 #include "System/float3.h"
 #include "System/type2.h"
+#include "Rendering/Models/MatricesMemStorage.h"
 
 class CUnit;
 class CFeature;
@@ -86,11 +87,11 @@ public:
 	void SetRenderIndex(unsigned int idx) { renderIndex = idx; }
 
 	// UNSYNCED ONLY
-	CMatrix44f GetTransformMatrix(bool offsetPos) const;
+	const CMatrix44f& GetTransformMatrix() const;
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 
 	float GetSortDist() const { return sortDist; }
 	void SetSortDist(float d) { sortDist = d + sortDistOffset; }
-
 
 public:
 	bool synced = false;           // is this projectile part of the simulation?
@@ -119,6 +120,10 @@ public:
 	float sortDistOffset = 0.0f;   // an offset used for z-sorting
 
 protected:
+	ScopedMatricesMemAlloc matAlloc;
+	mutable MatAllocElem transformMatrix;
+	mutable std::uint32_t lastUpdateFrame;
+
 	unsigned int ownerID = -1u;
 	unsigned int teamID = -1u;
 	int allyteamID = -1;

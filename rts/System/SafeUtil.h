@@ -45,23 +45,52 @@ namespace spring {
 		return (a / b);
 	}
 
+	// Updated version of https://stackoverflow.com/questions/49658182/does-c-have-an-equivalent-boostnumeric-castdesttypesourcetype
 
-	template<typename TIn, typename TOut>
-	TOut SafeCast(const TIn input)
-	{
-		if constexpr (std::is_same_v<TIn, TOut>)
-			return input;
+    template<typename TIn, typename TOut>
+    inline TOut SafeCast(TIn value)
+    {
+        using DstLim = std::numeric_limits<TOut>;
+        using SrcLim = std::numeric_limits<TIn>;
 
-		constexpr TOut minOut = std::numeric_limits<TOut>::lowest();
-		constexpr TOut maxOut = std::numeric_limits<TOut>::max();
+        constexpr bool positive_overflow_possible = DstLim::max() < SrcLim::max();
+        constexpr bool negative_overflow_possible = SrcLim::is_signed || (DstLim::lowest() > SrcLim::lowest());
 
-		const TIn minIn = static_cast<TIn>(minOut);
-		const TIn maxIn = static_cast<TIn>(maxOut);
+        // unsigned <-- unsigned
+        if constexpr ((!DstLim::is_signed) && (!SrcLim::is_signed)) {
+            if (positive_overflow_possible && (value > DstLim::max())) {
+                return DstLim::max();
+            }
+        }
+        // unsigned <-- signed
+        else if constexpr ((!DstLim::is_signed) && SrcLim::is_signed) {
+            if (positive_overflow_possible && (value > DstLim::max())) {
+                return DstLim::max();
+            }
+            else if (negative_overflow_possible && (value < 0)) {
+                return static_cast<TOut>(0);
+            }
 
-		if (input < minIn) return minOut; // underflow
-		if (input > maxIn) return maxOut; // overflow
-		return static_cast<TOut>(input);
-	}
+        }
+        // signed <-- unsigned
+        else if constexpr (DstLim::is_signed && (!SrcLim::is_signed)) {
+            if (positive_overflow_possible && (value > DstLim::max())) {
+                return DstLim::max();
+            }
+        }
+        // signed <-- signed
+        else if constexpr (DstLim::is_signed && SrcLim::is_signed) {
+            if (positive_overflow_possible && (value > DstLim::max())) {
+                return DstLim::max();
+            }
+            else if (negative_overflow_possible && (value < DstLim::lowest())) {
+                return DstLim::lowest();
+            }
+        }
+
+        // limits have been checked, therefore safe to cast
+        return static_cast<TOut>(value);
+    }
 
 };
 
