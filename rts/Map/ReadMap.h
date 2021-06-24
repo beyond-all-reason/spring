@@ -4,6 +4,7 @@
 #define READ_MAP_H
 
 #include <array>
+#include <map>
 #include <vector>
 
 #include "MapTexture.h"
@@ -14,6 +15,8 @@
 #include "System/type2.h"
 #include "System/creg/creg_cond.h"
 #include "System/Misc/RectangleOverlapHandler.h"
+
+#include "System/TimeProfiler.h"
 
 #define USE_UNSYNCED_HEIGHTMAP
 #define USE_HEIGHTMAP_DIGESTS
@@ -101,7 +104,7 @@ public:
 
 	virtual ~CReadMap();
 
-	virtual void Update() { UpdateHeightBounds(gs->frameNum); }
+	virtual void Update() {}
 	virtual void UpdateShadingTexture() {}
 
 	virtual void InitGroundDrawer() = 0;
@@ -204,11 +207,11 @@ public:
 
 	unsigned int GetMapChecksum() const { return mapChecksum; }
 	unsigned int CalcHeightmapChecksum();
+	void UpdateHeightsRefMap(const float h, const bool remove = false);
+	void UpdateHeightBounds();
 	unsigned int CalcTypemapChecksum();
 
 private:
-	void UpdateHeightBounds(int syncFrame);
-
 	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize);
 	void UpdateMipHeightmaps(const SRectangle& rect, bool initialize);
 	void UpdateFaceNormals(const SRectangle& rect, bool initialize);
@@ -275,11 +278,10 @@ private:
 
 	unsigned int mapChecksum = 0;
 
-	bool updateHeightBounds = false;
-
 	float2 initHeightBounds; //< initial minimum- and maximum-height (before any deformations)
-	float2 tempHeightBounds; //< temporary minimum- and maximum-height
 	float2 currHeightBounds; //< current minimum- and maximum-height
+
+	std::map<const float, int> heightRefMap;
 
 	float boundingRadius = 0.0f;
 };
@@ -291,13 +293,22 @@ extern MapDimensions mapDims;
 
 inline float CReadMap::AddHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
 inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
-	float& heightRef = (*heightMapSyncedPtr)[idx];
+	SCOPED_TIMER("CReadMap::SetHeight");
+	float& curH = (*heightMapSyncedPtr)[idx];
+	float newH = curH * add + h;
+
+	if (newH == curH)
+		return curH;
 
 	// add=0 <--> x = x*0 + h =   h
 	// add=1 <--> x = x*1 + h = x+h
-	float newHeight = heightRef * add + h;
-	updateHeightBounds |= (newHeight != heightRef);
-	return (heightRef = newHeight);
+	UpdateHeightsRefMap(curH,  true); //remove old height
+	curH = newH;
+	UpdateHeightsRefMap(newH, false); //add new height
+
+	UpdateHeightBounds();
+
+	return curH;
 }
 
 
