@@ -717,6 +717,12 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 			if (repairee != nullptr && ((repairee->beingBuilt && !ud->canAssist) || (!repairee->beingBuilt && !ud->canRepair)))
 				return false;
 		} break;
+
+		case CMD_SET_WANTED_MAX_SPEED: {
+			const bool group = c.GetParam(1) == 1;
+			if (!owner->moveType->UseWantedSpeed(group))
+				return false;
+		} break;
 	}
 
 
@@ -858,6 +864,10 @@ bool CCommandAI::ExecuteStateCommand(const Command& c)
 			stockpileWeapon->numStockpileQued = std::max(stockpileWeapon->numStockpileQued, 0);
 
 			UpdateStockpileIcon();
+			return true;
+		}
+		case CMD_SET_WANTED_MAX_SPEED: {
+			owner->moveType->SetWantedMaxSpeed(c.GetParam(0));
 			return true;
 		}
 	}

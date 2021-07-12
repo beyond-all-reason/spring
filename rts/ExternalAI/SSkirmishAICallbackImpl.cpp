@@ -437,6 +437,14 @@ EXPORT(int) skirmishAiCallback_Engine_executeCommand(
 			SetCommonCmdParams(&cmd, rc, unitId, groupId);
 			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
 		} break;
+		case COMMAND_UNIT_SET_WANTED_MAX_SPEED: {
+			SSetWantedMaxSpeedUnitCommand cmd;
+			cmd.wantedMaxSpeed = rc->params[0];
+			cmd.group = (bool) rc->params[1];
+
+			SetCommonCmdParams(&cmd, rc, unitId, groupId);
+			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+		} break;
 		case COMMAND_UNIT_LOAD_UNITS: {
 			if (rc->numParams > 0) {
 				std::vector<int> tmpUnitIds(rc->numParams);

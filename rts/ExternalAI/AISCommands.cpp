@@ -116,6 +116,11 @@ int toInternalUnitCommandTopic(int aiCmdTopic, const void* sUnitCommandData) {
 			internalUnitCommandTopic = CMD_SELFD;
 			break;
 		}
+		case COMMAND_UNIT_SET_WANTED_MAX_SPEED:
+		{
+			internalUnitCommandTopic = CMD_SET_WANTED_MAX_SPEED;
+			break;
+		}
 		case COMMAND_UNIT_LOAD_UNITS:
 		{
 			internalUnitCommandTopic = CMD_LOAD_UNITS;
@@ -349,6 +354,11 @@ int extractAICommandTopic(const Command* engineCmd, int maxUnits) {
 		case CMD_SELFD:
 		{
 			aiCommandTopic = COMMAND_UNIT_SELF_DESTROY;
+			break;
+		}
+		case CMD_SET_WANTED_MAX_SPEED:
+		{
+			aiCommandTopic = COMMAND_UNIT_SET_WANTED_MAX_SPEED;
 			break;
 		}
 		case CMD_LOAD_UNITS:
@@ -603,6 +613,13 @@ bool newCommand(void* sUnitCommandData, int sCommandId, int maxUnits, Command* c
 			SSelfDestroyUnitCommand* cmd = static_cast<SSelfDestroyUnitCommand*>(sUnitCommandData);
 			*c = Command(CMD_SELFD, cmd->options);
 			c->SetTimeOut(cmd->timeOut);
+		} break;
+
+		case COMMAND_UNIT_SET_WANTED_MAX_SPEED: {
+			SSetWantedMaxSpeedUnitCommand* cmd = static_cast<SSetWantedMaxSpeedUnitCommand*>(sUnitCommandData);
+			*c = Command(CMD_SET_WANTED_MAX_SPEED, cmd->options, cmd->wantedMaxSpeed);
+			c->SetTimeOut(cmd->timeOut);
+			c->PushParam(cmd->group ? 1 : 0);
 		} break;
 
 		case COMMAND_UNIT_LOAD_UNITS: {

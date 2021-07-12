@@ -37,6 +37,7 @@
 #define CMD_SETBASE               55
 #define CMD_INTERNAL              60
 #define CMD_SELFD                 65
+#define CMD_SET_WANTED_MAX_SPEED  70
 #define CMD_LOAD_UNITS            75
 #define CMD_LOAD_ONTO             76
 #define CMD_UNLOAD_UNITS          80
