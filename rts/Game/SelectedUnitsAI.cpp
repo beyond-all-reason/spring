@@ -69,6 +69,7 @@ static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 		case CMD_SELFD:
 		case CMD_FIRE_STATE:
 		case CMD_MOVE_STATE:
+		case CMD_SET_WANTED_MAX_SPEED:
 		case CMD_ONOFF:
 		case CMD_REPEAT: {
 			return false;
