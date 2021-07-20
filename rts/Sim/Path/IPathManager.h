@@ -170,6 +170,8 @@ public:
 	virtual const float* GetNodeExtraCosts(bool synced) const { return nullptr; }
 
 	virtual int2 GetNumQueuedUpdates() const { return (int2(0, 0)); }
+
+	virtual bool SupportsMultiThreadedRequests() const { return false; }
 };
 
 extern IPathManager* pathManager;

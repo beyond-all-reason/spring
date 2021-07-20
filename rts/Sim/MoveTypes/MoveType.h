@@ -81,6 +81,8 @@ public:
 	float CalcScriptMoveRate(float speed, float nsteps) const { return Clamp(math::floor((speed / maxSpeed) * nsteps), 0.0f, nsteps - 1.0f); }
 	float CalcStaticTurnRadius() const;
 
+	virtual void DelayedReRequestPath() {}
+
 public:
 	CUnit* owner;
 

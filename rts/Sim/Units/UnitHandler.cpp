@@ -14,10 +14,12 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
+#include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
@@ -340,17 +342,39 @@ void CUnitHandler::SlowUpdateUnits()
 	if ((gs->frameNum % UNIT_SLOWUPDATE_RATE) == 0)
 		activeSlowUpdateUnit = 0;
 
+	const size_t idxBeg = activeSlowUpdateUnit;
+	const size_t maximumCnt = activeUnits.size() - idxBeg;
+	const size_t logicalCnt = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1;
+	const size_t indCnt = logicalCnt > maximumCnt ? maximumCnt : logicalCnt;
+	const size_t idxEnd = idxBeg + indCnt;
+
+	activeSlowUpdateUnit = idxEnd;
+
 	// stagger the SlowUpdate's
-	for (size_t n = (activeUnits.size() / UNIT_SLOWUPDATE_RATE) + 1; (activeSlowUpdateUnit < activeUnits.size() && n != 0); ++activeSlowUpdateUnit) {
-		CUnit* unit = activeUnits[activeSlowUpdateUnit];
+	for (size_t i = idxBeg; i<idxEnd; ++i) {
+		CUnit* unit = activeUnits[i];
 
 		unit->SanityCheck();
 		unit->SlowUpdate();
 		unit->SlowUpdateWeapons();
 		unit->localModel.UpdateBoundingVolume();
 		unit->SanityCheck();
+	}
 
-		n--;
+	if (pathManager->SupportsMultiThreadedRequests()) {
+		for_mt(idxBeg, idxEnd, [this](const int i) {
+			CUnit* unit = activeUnits[i];
+
+			unit->moveType->DelayedReRequestPath();
+		});
+	}
+	else
+	{
+		for (size_t i = idxBeg; i<idxEnd; ++i) {
+			CUnit* unit = activeUnits[i];
+
+			unit->moveType->DelayedReRequestPath();
+		}
 	}
 }
 
