@@ -133,7 +133,9 @@ void CPathManager::RemoveCacheFiles()
 std::uint32_t CPathManager::GetPathCheckSum() const {
 	assert(IsFinalized());
 
-	return (medResPEs[0].GetPathChecksum() + lowResPEs[0].GetPathChecksum());
+	// MH: At the moment, blockstate cannot be synced.
+	//     VertexCost can but need next phase work to make that happen.
+	return 0;
 	//return (medResPE->GetPathChecksum() + lowResPE->GetPathChecksum());
 }
 
