@@ -92,6 +92,8 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
+	void DelayedReRequestPath() { if (wantRepath) { ReRequestPath(true); } }
+
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;

@@ -551,7 +551,7 @@ void CGroundMoveType::SlowUpdate()
 					LOG_L(L_DEBUG, "[%s] unit %i has pathID %i but %i ETA failures", __func__, owner->id, pathID, numIdlingUpdates);
 
 					if (numIdlingSlowUpdates < MAX_IDLING_SLOWUPDATES) {
-						ReRequestPath(true);
+						ReRequestPath(false);
 					} else {
 						// unit probably ended up on a non-traversable
 						// square, or got stuck in a non-moving crowd
@@ -561,11 +561,8 @@ void CGroundMoveType::SlowUpdate()
 			} else {
 				// case B: we want to be moving but don't have a path
 				LOG_L(L_DEBUG, "[%s] unit %i has no path", __func__, owner->id);
-				ReRequestPath(true);
+				ReRequestPath(false);
 			}
-
-			if (wantRepath)
-				ReRequestPath(true);
 		}
 
 		// move us into the map, and update <oldPos>
@@ -638,7 +635,7 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	// units passing intermediate waypoints will TYPICALLY not cause any
 	// script->{Start,Stop}Moving calls now (even when turnInPlace=true)
 	// unless they come to a full stop first
-	ReRequestPath(true);
+	ReRequestPath(false);
 
 	if (owner->team == gu->myTeam)
 		Channels::General->PlayRandomSample(owner->unitDef->sounds.activate, owner);
