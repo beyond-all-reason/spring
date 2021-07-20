@@ -362,17 +362,19 @@ void CUnitHandler::SlowUpdateUnits()
 	}
 
 	if (pathManager->SupportsMultiThreadedRequests()) {
-		for_mt(idxBeg, idxEnd, [this](const int i) {
-			CUnit* unit = activeUnits[i];
+		SCOPED_TIMER("Misc::Path::RequestPath");
 
+		for_mt(idxBeg, idxEnd, [this](const int i)
+		{
+			CUnit* unit = activeUnits[i];
 			unit->moveType->DelayedReRequestPath();
 		});
 	}
 	else
 	{
-		for (size_t i = idxBeg; i<idxEnd; ++i) {
+		for (size_t i = idxBeg; i<idxEnd; ++i)
+		{
 			CUnit* unit = activeUnits[i];
-
 			unit->moveType->DelayedReRequestPath();
 		}
 	}
