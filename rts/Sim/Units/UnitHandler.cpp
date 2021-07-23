@@ -361,20 +361,40 @@ void CUnitHandler::SlowUpdateUnits()
 		unit->SanityCheck();
 	}
 
+	std::vector<CUnit*> unitsToMove(activeUnits.size());
+	size_t unitsToMoveCount = 0;
+
+	for (size_t i = 0; i<idxBeg; ++i)
+	{
+		CUnit* unit = activeUnits[i];
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_IMMEDIATE))
+			unitsToMove[unitsToMoveCount++] = unit;
+	}
+	for (size_t i = idxBeg; i<idxEnd; ++i)
+	{
+		CUnit* unit = activeUnits[i];
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_DELAYED|PATH_REQUEST_IMMEDIATE))
+			unitsToMove[unitsToMoveCount++] = unit;
+	}
+	for (size_t i = idxEnd; i<activeUnits.size(); ++i)
+	{
+		CUnit* unit = activeUnits[i];
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_IMMEDIATE))
+			unitsToMove[unitsToMoveCount++] = unit;
+	}
+
 	if (pathManager->SupportsMultiThreadedRequests()) {
 		SCOPED_TIMER("Misc::Path::RequestPath");
 
-		for_mt(idxBeg, idxEnd, [this](const int i)
-		{
-			CUnit* unit = activeUnits[i];
+		for_mt(0, unitsToMoveCount, [&unitsToMove](const int i){
+			CUnit* unit = unitsToMove[i];
 			unit->moveType->DelayedReRequestPath();
 		});
 	}
 	else
 	{
-		for (size_t i = idxBeg; i<idxEnd; ++i)
-		{
-			CUnit* unit = activeUnits[i];
+		for (size_t i = 0; i<unitsToMoveCount; ++i){
+			CUnit* unit = unitsToMove[i];
 			unit->moveType->DelayedReRequestPath();
 		}
 	}

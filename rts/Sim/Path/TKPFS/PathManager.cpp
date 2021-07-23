@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "PathManager.h"
+#include "PathingState.h"
 #include "Sim/Path/Default/PathConstants.h"
 #include "Sim/Path/Default/PathFinder.h"
 #include "PathEstimator.h"
@@ -26,15 +27,20 @@ static CPathEstimator gLowResPE;
 
 namespace TKPFS {
 
-	const CPathFinder* CPathManager::GetMaxResPF() const { return &maxResPFs[0]; }
-	const CPathEstimator* CPathManager::GetMedResPE() const { return &medResPEs[0]; }
-	const CPathEstimator* CPathManager::GetLowResPE() const { return &lowResPEs[0]; }
-
 enum {
 	PATH_LOW_RES = 0,
 	PATH_MED_RES = 1,
+	PATH_ESTIMATOR_LEVELS,
+
 	PATH_MAX_RES = 2,
+	PATH_ALL_LEVELS,
 };
+
+static PathingState pathingStates[PATH_ESTIMATOR_LEVELS];
+
+const CPathFinder* CPathManager::GetMaxResPF() const { return &maxResPFs[0]; }
+const CPathEstimator* CPathManager::GetMedResPE() const { return &medResPEs[0]; }
+const CPathEstimator* CPathManager::GetLowResPE() const { return &lowResPEs[0]; }
 
 CPathManager::CPathManager()
 // : maxResPF(nullptr)
@@ -65,14 +71,20 @@ void CPathManager::InitStatic()
 
 	pathFinderGroups = ThreadPool::GetMaxThreads();
 
-	const size_t pathFinderCount = 3 * pathFinderGroups;
+	const size_t pathFinderCount = PATH_ALL_LEVELS * pathFinderGroups;
 	const size_t medLowResMem = sizeof(CPathEstimator) * pathFinderGroups;
 	const size_t maxResMem = sizeof(CPathFinder) * pathFinderGroups;
 
-	char* baseAddr = reinterpret_cast<char*>( malloc(medLowResMem*2 + maxResMem) );
-	lowResPEs = reinterpret_cast<CPathEstimator*>( baseAddr );
-	medResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + medLowResMem );
-	maxResPFs = reinterpret_cast<CPathFinder*>( baseAddr + medLowResMem*2 );
+	const size_t totalMem = medLowResMem*PATH_ESTIMATOR_LEVELS + maxResMem;
+
+	const size_t lowResPEsOffset = 0;
+	const size_t medResPEsOffset = lowResPEsOffset + medLowResMem;
+	const size_t maxResPFsOffset = medResPEsOffset + medLowResMem;
+
+	char* baseAddr = reinterpret_cast<char*>( malloc(totalMem) );
+	lowResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + lowResPEsOffset);
+	medResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + medResPEsOffset );
+	maxResPFs = reinterpret_cast<CPathFinder*>   ( baseAddr + maxResPFsOffset );
 
 	for (int i = 0; i<pathFinderGroups; ++i){
 		new (&lowResPEs[i]) CPathEstimator();
@@ -82,9 +94,9 @@ void CPathManager::InitStatic()
 
 	std::vector<IPathFinder*> newPathFinders(pathFinderCount);
 	for (int i = 0; i<pathFinderGroups; ++i){
-		newPathFinders[i*3 + PATH_LOW_RES] = &lowResPEs[i];
-		newPathFinders[i*3 + PATH_MED_RES] = &medResPEs[i];
-		newPathFinders[i*3 + PATH_MAX_RES] = &maxResPFs[i];
+		newPathFinders[i*PATH_ALL_LEVELS + PATH_LOW_RES] = &lowResPEs[i];
+		newPathFinders[i*PATH_ALL_LEVELS + PATH_MED_RES] = &medResPEs[i];
+		newPathFinders[i*PATH_ALL_LEVELS + PATH_MAX_RES] = &maxResPFs[i];
 	}
 
 	pathFinders = std::move(newPathFinders);
@@ -115,6 +127,9 @@ CPathManager::~CPathManager()
 		lowResPEs = nullptr;
 	}
 
+	for (int i=0; i<PATH_ESTIMATOR_LEVELS; ++i)
+		pathingStates[i].Terminate();
+
 	PathHeatMap::FreeInstance(pathHeatMap);
 	PathFlowMap::FreeInstance(pathFlowMap);
 	IPathFinder::KillStatic();
@@ -135,7 +150,7 @@ std::uint32_t CPathManager::GetPathCheckSum() const {
 
 	// MH: At the moment, blockstate cannot be synced.
 	//     VertexCost can but need next phase work to make that happen.
-	return 0;
+	return 0x53723894;
 	//return (medResPE->GetPathChecksum() + lowResPE->GetPathChecksum());
 }
 
@@ -152,11 +167,18 @@ std::int64_t CPathManager::Finalize() {
 		// medResPE->Init(maxResPF, MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 		// lowResPE->Init(medResPE, LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
+		for (int i=0; i<PATH_ESTIMATOR_LEVELS; ++i)
+			pathingStates[i].Init();
+
 		for (int i = 0; i<ThreadPool::GetMaxThreads(); ++i){
 			maxResPFs[i].Init(true);
 			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 		}
+
+		// for (int i = 0; i< PATH_ESTIMATOR_LEVELS; ++i){
+		// 	pathingStates[i].Init();
+		// }
 	}
 
 	finalized = true;

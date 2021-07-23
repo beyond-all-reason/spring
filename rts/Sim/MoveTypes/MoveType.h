@@ -13,6 +13,13 @@
 
 class CUnit;
 
+// Note bit patterns
+enum PathRequestType {
+	PATH_REQUEST_NONE = 0,
+	PATH_REQUEST_DELAYED = 1,
+	PATH_REQUEST_IMMEDIATE = 2,
+};
+
 class AMoveType : public CObject
 {
 	CR_DECLARE(AMoveType)
@@ -81,6 +88,7 @@ public:
 	float CalcScriptMoveRate(float speed, float nsteps) const { return Clamp(math::floor((speed / maxSpeed) * nsteps), 0.0f, nsteps - 1.0f); }
 	float CalcStaticTurnRadius() const;
 
+	virtual PathRequestType WantsReRequestPath() const { return wantRepath; }
 	virtual void DelayedReRequestPath() {}
 
 public:
@@ -107,6 +115,8 @@ protected:
 
 	bool useHeading = true;
 	bool useWantedSpeed[2] = {true, true};  // if false, SelUnitsAI will not (re)set wanted-speed for {[0] := individual, [1] := formation} orders
+
+	PathRequestType wantRepath = PATH_REQUEST_NONE;
 };
 
 #endif // MOVETYPE_H
