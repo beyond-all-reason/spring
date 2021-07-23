@@ -23,6 +23,7 @@ struct MoveDef;
 namespace TKPFS {
 class CPathEstimator;
 class PathHeatMap;
+class PathingState;
 
 class CPathManager: public IPathManager {
 public:
@@ -233,6 +234,8 @@ private:
 	CPathFinder* maxResPFs;
 
 	std::vector<IPathFinder*> pathFinders;
+
+	PathingState* pathingStates;
 };
 
 }

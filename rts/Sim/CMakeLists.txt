@@ -64,6 +64,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/PathCache.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/PathSearch.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/PathManager.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Path/TKPFS/PathingState.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/TKPFS/PathEstimator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/TKPFS/PathHeatMap.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/TKPFS/PathManager.cpp"

@@ -92,7 +92,7 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	void DelayedReRequestPath() { if (wantRepath) { ReRequestPath(true); } }
+	void DelayedReRequestPath() { if (wantRepath) { DoReRequestPath(); } }
 
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
@@ -112,6 +112,7 @@ private:
 	void SetNextWayPoint();
 	bool CanSetNextWayPoint();
 	void ReRequestPath(bool forceRequest);
+	void DoReRequestPath();
 
 	void StartEngine(bool callScript);
 	void StopEngine(bool callScript, bool hardStop = false);
@@ -213,7 +214,6 @@ private:
 
 	bool atGoal = false;
 	bool atEndOfPath = false;
-	bool wantRepath = false;
 
 	bool reversing = false;
 	bool idling = false;

@@ -551,7 +551,7 @@ void CGroundMoveType::SlowUpdate()
 					LOG_L(L_DEBUG, "[%s] unit %i has pathID %i but %i ETA failures", __func__, owner->id, pathID, numIdlingUpdates);
 
 					if (numIdlingSlowUpdates < MAX_IDLING_SLOWUPDATES) {
-						ReRequestPath(false);
+						ReRequestPath(true);
 					} else {
 						// unit probably ended up on a non-traversable
 						// square, or got stuck in a non-moving crowd
@@ -561,7 +561,7 @@ void CGroundMoveType::SlowUpdate()
 			} else {
 				// case B: we want to be moving but don't have a path
 				LOG_L(L_DEBUG, "[%s] unit %i has no path", __func__, owner->id);
-				ReRequestPath(false);
+				ReRequestPath(true);
 			}
 		}
 
@@ -1483,16 +1483,16 @@ unsigned int CGroundMoveType::GetNewPath()
 }
 
 void CGroundMoveType::ReRequestPath(bool forceRequest) {
-	if (forceRequest) {
-		StopEngine(false);
-		StartEngine(false);
-		wantRepath = false;
+	if (wantRepath == PATH_REQUEST_IMMEDIATE)
 		return;
-	}
 
-	wantRepath = true;
+	wantRepath = forceRequest ? PATH_REQUEST_IMMEDIATE : PATH_REQUEST_DELAYED;
 }
 
+void CGroundMoveType::DoReRequestPath() {
+	StopEngine(false);
+	StartEngine(false);
+}
 
 
 bool CGroundMoveType::CanSetNextWayPoint() {
@@ -1692,6 +1692,9 @@ void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 
 	currentSpeed *= (1 - hardStop);
 	wantedSpeed = 0.0f;
+
+	// Just in case a pathing request is pending.
+	wantRepath = PATH_REQUEST_NONE;
 }
 
 
