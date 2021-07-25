@@ -16,7 +16,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
-#include "Sim/MoveTypes/MoveMath/MoveMath.h"
+// #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "System/Threading/ThreadPool.h" // for_mt
 #include "System/TimeProfiler.h"
@@ -56,7 +56,7 @@ static size_t GetNumThreads() {
 
 
 
-void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
+void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName, PathingState* ps)
 {
 	IPathFinder::Init(BLOCK_SIZE);
 
@@ -75,12 +75,13 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::s
 
 		parentPathFinder = pf;
 		nextPathEstimator = nullptr;
+
+		pathingState = ps;
+		assert(pathingState != nullptr);
 	}
 	{
 		vertexCosts.clear();
 		vertexCosts.resize(moveDefHandler.GetNumMoveDefs() * blockStates.GetSize() * PATH_DIRECTION_VERTICES, PATHCOST_INFINITY);
-		maxSpeedMods.clear();
-		maxSpeedMods.resize(moveDefHandler.GetNumMoveDefs(), 0.001f);
 
 		updatedBlocks.clear();
 		consumedBlocks.clear();
@@ -108,27 +109,6 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::s
 		std::stable_sort(offsetBlocksSortedByCost.begin(), offsetBlocksSortedByCost.end(), [](const SOffsetBlock& a, const SOffsetBlock& b) {
 			return (a.cost < b.cost);
 		});
-	}
-
-	if (BLOCK_SIZE == LOWRES_PE_BLOCKSIZE) {
-		assert(parentPE != nullptr);
-
-		// calculate map-wide maximum positional speedmod for each MoveDef
-		for_mt(0, moveDefHandler.GetNumMoveDefs(), [&](unsigned int i) {
-			const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
-
-			for (int y = 0; y < mapDims.mapy; y++) {
-				for (int x = 0; x < mapDims.mapx; x++) {
-					childPE->maxSpeedMods[i] = std::max(childPE->maxSpeedMods[i], CMoveMath::GetPosSpeedMod(*md, x, y));
-				}
-			}
-		});
-
-		// calculate reciprocals, avoids divisions in TestBlock
-		for (unsigned int i = 0; i < maxSpeedMods.size(); i++) {
-			 childPE->maxSpeedMods[i] = 1.0f / childPE->maxSpeedMods[i];
-			parentPE->maxSpeedMods[i] = childPE->maxSpeedMods[i];
-		}
 	}
 
 	// load precalculated data if it exists
@@ -622,7 +602,7 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 
 	// get the goal square offset
 	const int2 goalSqrOffset = peDef.GoalSquareOffset(BLOCK_SIZE);
-	const float maxSpeedMod = maxSpeedMods[moveDef.pathType];
+	const float maxSpeedMod = pathingState->GetMaxSpeedMod(moveDef.pathType);
 
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
 		// get the open block with lowest cost

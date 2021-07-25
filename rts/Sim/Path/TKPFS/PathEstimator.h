@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "PathingState.h"
+
 #include "Sim/Path/Default/IPath.h"
 #include "Sim/Path/Default/IPathFinder.h"
 #include "Sim/Path/Default/PathConstants.h"
@@ -42,7 +44,7 @@ public:
 	 *   name of the corresponding map.
 	 *   Ex. PE-name "pe" + Mapname "Desert" => "Desert.pe"
 	 */
-	void Init(IPathFinder*, unsigned int BSIZE, const std::string& peFileName, const std::string& mapFileName);
+	void Init(IPathFinder*, unsigned int BSIZE, const std::string& peFileName, const std::string& mapFileName, PathingState* ps);
 	void Kill();
 
 	bool RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName);
@@ -150,7 +152,7 @@ private:
 	std::vector<IPathFinder*> pathFinders; // InitEstimator helpers
 	std::vector<spring::thread> threads;
 
-	std::vector<float> maxSpeedMods;
+	//std::vector<float> maxSpeedMods;
 	std::vector<float> vertexCosts;
 	/// blocks that may need an update due to map changes
 	std::deque<int2> updatedBlocks;
@@ -168,6 +170,8 @@ private:
 
 	std::vector<SingleBlock> consumedBlocks;
 	std::vector<SOffsetBlock> offsetBlocksSortedByCost;
+
+	PathingState* pathingState;
 };
 
 }

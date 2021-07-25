@@ -234,8 +234,6 @@ private:
 	CPathFinder* maxResPFs;
 
 	std::vector<IPathFinder*> pathFinders;
-
-	PathingState* pathingStates;
 };
 
 }

@@ -167,18 +167,15 @@ std::int64_t CPathManager::Finalize() {
 		// medResPE->Init(maxResPF, MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 		// lowResPE->Init(medResPE, LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
-		for (int i=0; i<PATH_ESTIMATOR_LEVELS; ++i)
-			pathingStates[i].Init();
+		
+		pathingStates[PATH_MED_RES].Init(nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
+		pathingStates[PATH_LOW_RES].Init(&pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
 		for (int i = 0; i<ThreadPool::GetMaxThreads(); ++i){
 			maxResPFs[i].Init(true);
-			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
-			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
+			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name, &pathingStates[PATH_MED_RES]);
+			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name, &pathingStates[PATH_LOW_RES]);
 		}
-
-		// for (int i = 0; i< PATH_ESTIMATOR_LEVELS; ++i){
-		// 	pathingStates[i].Init();
-		// }
 	}
 
 	finalized = true;
