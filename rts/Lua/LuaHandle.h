@@ -346,8 +346,7 @@ class CLuaHandle : public CEventClient
 		static bool GetDevMode() { return devMode; }
 
 		static void HandleLuaMsg(int playerID, int script, int mode, const std::vector<std::uint8_t>& msg);
-	public:
-		static inline bool inProjectileCallIn = false;
+
 	protected: // static
 		static bool devMode; // allows real file access
 

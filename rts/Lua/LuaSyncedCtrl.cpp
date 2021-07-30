@@ -4524,9 +4524,6 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 
 int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 {
-	if (CLuaHandle::inProjectileCallIn)
-		return 0; //disallow recursion
-
 	const float3 pos = {luaL_checkfloat(L, 1      ), luaL_checkfloat(L, 2      ), luaL_checkfloat(L, 3      )};
 	const float3 dir = {luaL_optfloat  (L, 4, 0.0f), luaL_optfloat  (L, 5, 0.0f), luaL_optfloat  (L, 6, 0.0f)};
 

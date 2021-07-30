@@ -1445,9 +1445,7 @@ void CLuaHandle::ProjectileCreated(const CProjectile* p)
 	lua_pushnumber(L, ((wd != nullptr)? wd->id: -1));
 
 	// call the routine
-	inProjectileCallIn = true;
 	RunCallIn(L, cmdStr, 3, 0);
-	inProjectileCallIn = false;
 }
 
 
@@ -1491,9 +1489,7 @@ void CLuaHandle::ProjectileDestroyed(const CProjectile* p)
 	lua_pushnumber(L, pwdefID);
 
 	// call the routine
-	inProjectileCallIn = true;
 	RunCallIn(L, cmdStr, 3, 0);
-	inProjectileCallIn = false;
 }
 
 /******************************************************************************/
