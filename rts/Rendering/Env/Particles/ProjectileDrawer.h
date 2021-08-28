@@ -11,7 +11,6 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelRenderContainer.h"
-#include "Sim/Projectiles/ProjectileFunctors.h"
 #include "System/EventClient.h"
 #include "System/UnorderedSet.hpp"
 
@@ -157,9 +156,6 @@ private:
 	bool drawPerlinTex = false;
 
 	FBO perlinFB;
-
-	ProjectileDistanceComparator zSortCmp;
-
 
 	std::vector<const AtlasedTexture*> smokeTextures;
 

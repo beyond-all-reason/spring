@@ -42,6 +42,8 @@ CR_REG_METADATA(CProjectile,
 	CR_IGNORED(sortDist),
 	CR_MEMBER(sortDistOffset),
 
+	CR_MEMBER(drawOrder),
+
 	CR_MEMBER(ownerID),
 	CR_MEMBER(teamID),
 	CR_MEMBER(allyteamID),
@@ -174,6 +176,7 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 		return true;
 
 	CHECK_MEMBER_INFO_FLOAT3(CProjectile, dir)
+	CHECK_MEMBER_INFO_INT(CProjectile, drawOrder)
 
 	return false;
 }

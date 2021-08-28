@@ -118,6 +118,7 @@ public:
 	float sortDist = 0.0f;         // distance used for z-sorting when rendering
 	float sortDistOffset = 0.0f;   // an offset used for z-sorting
 
+	int drawOrder = 0;
 protected:
 	unsigned int ownerID = -1u;
 	unsigned int teamID = -1u;
