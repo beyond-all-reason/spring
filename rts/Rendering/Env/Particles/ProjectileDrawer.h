@@ -5,6 +5,7 @@
 
 #include <array>
 
+#include "Sim/Projectiles/Projectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/Shaders/ShaderHandler.h"
@@ -171,6 +172,17 @@ private:
 	/// {[0] := unsorted, [1] := distance-sorted} projectiles;
 	/// used to render particle effects in back-to-front order
 	std::vector<CProjectile*> sortedProjectiles[2];
+
+	std::function<bool(const CProjectile*, const CProjectile*)> sortingPredicate = [this](const CProjectile* p1, const CProjectile* p2)
+	{
+		if (wantDrawOrder && p1->drawOrder != p2->drawOrder)
+			return (p1->drawOrder < p2->drawOrder);
+
+		if (p1->GetSortDist() != p2->GetSortDist()) // strict ordering required
+			return (p1->GetSortDist() > p2->GetSortDist());
+
+		return (p1 > p2);
+	};
 
 	bool drawSorted = true;
 

@@ -25,7 +25,6 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
@@ -39,6 +38,8 @@
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
+
+#define INPLACE_SORTING //todo benchmark
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
@@ -592,7 +593,15 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 	DrawProjectileModel(pro);
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
-	sortedProjectiles[drawSorted && pro->drawSorted].push_back(pro);
+
+	if (drawSorted && pro->drawSorted)
+#ifdef INPLACE_SORTING
+		spring::VectorPushBackSorted(sortedProjectiles[1], pro, sortingPredicate);
+#else
+		sortedProjectiles[1].push_back(pro);
+#endif
+	else
+		sortedProjectiles[0].push_back(pro);
 }
 
 
@@ -745,17 +754,9 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		DrawProjectilesSet(renderProjectiles, drawReflection, drawRefraction);
 
 		// empty if !drawSorted
-		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), [this](const CProjectile* p1, const CProjectile* p2)
-		{
-			if (wantDrawOrder && p1->drawOrder != p2->drawOrder)
-				return (p1->drawOrder < p2->drawOrder);
-
-			if (p1->GetSortDist() != p2->GetSortDist()) // strict ordering required
-				return (p1->GetSortDist() > p2->GetSortDist());
-
-			return (p1 > p2);
-		});
-
+#ifndef INPLACE_SORTING
+		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
+#endif
 
 		fxVA = GetVertexArray();
 		fxVA->Initialize();
