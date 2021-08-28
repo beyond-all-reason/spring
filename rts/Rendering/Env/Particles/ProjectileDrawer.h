@@ -75,6 +75,10 @@ public:
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }
 	int ToggleSoften() { return EnableSoften((wantSoften + 1) % WANT_SOFTEN_COUNT); }
+
+	int EnableDrawOrder(int b) { return wantDrawOrder = b; }
+	int ToggleDrawOrder() { return EnableDrawOrder((wantDrawOrder + 1) % 2); }
+
 	void CopyDepthBufferToTexture();
 
 	const AtlasedTexture* GetSmokeTexture(unsigned int i) const { return smokeTextures[i]; }
@@ -176,6 +180,8 @@ private:
 
 	constexpr static int WANT_SOFTEN_COUNT = 3;
 	int wantSoften = 0;
+
+	bool wantDrawOrder = true;
 };
 
 extern CProjectileDrawer* projectileDrawer;

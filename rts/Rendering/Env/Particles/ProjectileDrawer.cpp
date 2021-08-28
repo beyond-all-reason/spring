@@ -745,9 +745,9 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		DrawProjectilesSet(renderProjectiles, drawReflection, drawRefraction);
 
 		// empty if !drawSorted
-		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), [](const CProjectile* p1, const CProjectile* p2)
+		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), [this](const CProjectile* p1, const CProjectile* p2)
 		{
-			if (p1->drawOrder != p2->drawOrder)
+			if (wantDrawOrder && p1->drawOrder != p2->drawOrder)
 				return (p1->drawOrder < p2->drawOrder);
 
 			if (p1->GetSortDist() != p2->GetSortDist()) // strict ordering required
