@@ -89,49 +89,56 @@ void CSimpleParticleSystem::Draw(CVertexArray* va)
 		for (int i = 0; i < numParticles; i++) {
 			const Particle* p = &particles[i];
 
-			if (p->life < 1.0f) {
-				const float3 zdir = (p->pos - camera->GetPos()).SafeANormalize();
-				const float3 ydir = (zdir.cross(p->speed)).SafeANormalize();
-				const float3 xdir = (zdir.cross(ydir));
+			if (p->life >= 1.0f)
+				continue;
 
-				const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
-				const float size = p->size;
+			const float3 zdir = (p->pos - camera->GetPos()).SafeANormalize();
+			      float3 ydir = zdir.cross(p->speed); float yDirLen2 = ydir.SqLength(); ydir.SafeANormalize();
+			const float3 xdir = ydir.cross(zdir);
 
-				unsigned char color[4];
-				colorMap->GetColor(color, p->life);
+			const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
+			const float size = p->size;
 
-				if (p->speed.SqLength() > 0.001f) {
-					va->AddVertexQTC(interPos - ydir * size - xdir * size, texture->xstart, texture->ystart, color);
-					va->AddVertexQTC(interPos - ydir * size + xdir * size, texture->xend,   texture->ystart, color);
-					va->AddVertexQTC(interPos + ydir * size + xdir * size, texture->xend,   texture->yend,   color);
-					va->AddVertexQTC(interPos + ydir * size - xdir * size, texture->xstart, texture->yend,   color);
-				} else {
-					// in this case the particle's coor-system is degenerate
-					va->AddVertexQTC(interPos - camera->GetUp() * size - camera->GetRight() * size, texture->xstart, texture->ystart, color);
-					va->AddVertexQTC(interPos - camera->GetUp() * size + camera->GetRight() * size, texture->xend,   texture->ystart, color);
-					va->AddVertexQTC(interPos + camera->GetUp() * size + camera->GetRight() * size, texture->xend,   texture->yend,   color);
-					va->AddVertexQTC(interPos + camera->GetUp() * size - camera->GetRight() * size, texture->xstart, texture->yend,   color);
-				}
-			}
-		}
-	} else {
-		for (int i = 0; i < numParticles; i++) {
-			const Particle* p = &particles[i];
+			unsigned char color[4];
+			colorMap->GetColor(color, p->life);
 
-			if (p->life < 1.0f) {
-				unsigned char color[4];
-				colorMap->GetColor(color, p->life);
-
-				const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
+			if (yDirLen2 > 0.001f) {
+				va->AddVertexQTC(interPos - ydir * size - xdir * size, texture->xstart, texture->ystart, color);
+				va->AddVertexQTC(interPos - ydir * size + xdir * size, texture->xend,   texture->ystart, color);
+				va->AddVertexQTC(interPos + ydir * size + xdir * size, texture->xend,   texture->yend,   color);
+				va->AddVertexQTC(interPos + ydir * size - xdir * size, texture->xstart, texture->yend,   color);
+			} else {
+				// in this case the particle's coor-system is degenerate
 				const float3 cameraRight = camera->GetRight() * p->size;
-				const float3 cameraUp    = camera->GetUp() * p->size;
+				const float3 cameraUp    = camera->GetUp()    * p->size;
 
 				va->AddVertexQTC(interPos - cameraRight - cameraUp, texture->xstart, texture->ystart, color);
-				va->AddVertexQTC(interPos + cameraRight - cameraUp, texture->xend,   texture->ystart, color);
-				va->AddVertexQTC(interPos + cameraRight + cameraUp, texture->xend,   texture->yend,   color);
-				va->AddVertexQTC(interPos - cameraRight + cameraUp, texture->xstart, texture->yend,   color);
+				va->AddVertexQTC(interPos + cameraRight - cameraUp, texture->xend, texture->ystart, color);
+				va->AddVertexQTC(interPos + cameraRight + cameraUp, texture->xend, texture->yend, color);
+				va->AddVertexQTC(interPos - cameraRight + cameraUp, texture->xstart, texture->yend, color);
 			}
 		}
+		return;
+	}
+
+	// !directional
+	for (int i = 0; i < numParticles; i++) {
+		const Particle* p = &particles[i];
+
+		if (p->life >= 1.0f)
+			continue;
+
+		unsigned char color[4];
+		colorMap->GetColor(color, p->life);
+
+		const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
+		const float3 cameraRight = camera->GetRight() * p->size;
+		const float3 cameraUp    = camera->GetUp()    * p->size;
+
+		va->AddVertexQTC(interPos - cameraRight - cameraUp, texture->xstart, texture->ystart, color);
+		va->AddVertexQTC(interPos + cameraRight - cameraUp, texture->xend,   texture->ystart, color);
+		va->AddVertexQTC(interPos + cameraRight + cameraUp, texture->xend,   texture->yend,   color);
+		va->AddVertexQTC(interPos - cameraRight + cameraUp, texture->xstart, texture->yend,   color);
 	}
 }
 
