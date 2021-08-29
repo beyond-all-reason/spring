@@ -127,7 +127,7 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 	invttl = 1.0f / ttl;
 	createTime = gs->frameNum;
 
-	rotVal = (2.0f * guRNG.NextFloat24() - 1.0f) * rotParams.z; //spawn rotation spread
+	rotVal = rotParams.z; //initial rotation value
 	rotVel = rotParams.x; //initial rotation velocity
 }
 

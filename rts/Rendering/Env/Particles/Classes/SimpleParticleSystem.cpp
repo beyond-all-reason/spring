@@ -222,7 +222,7 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 
 		p.pos = offset;
 		p.speed = ((up * emitMul.y) * fastmath::cos(ay) - ((right * emitMul.x) * fastmath::cos(az) - (forward * emitMul.z) * fastmath::sin(az)) * fastmath::sin(ay)) * (particleSpeed + (guRNG.NextFloat() * particleSpeedSpread));
-		p.rotVal = (2.0f * guRNG.NextFloat24() - 1.0f) * rotParams.z; //spawn rotation spread
+		p.rotVal = rotParams.z; //initial rotation value
 		p.rotVel = rotParams.x; //initial rotation velocity
 		p.life = 0.0f;
 		p.decayrate = 1.0f / (particleLife + (guRNG.NextFloat() * particleLifeSpread));
