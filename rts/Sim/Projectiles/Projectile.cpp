@@ -109,7 +109,7 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 		SetVelocityAndSpeed(speed);
 	}
 
-	rotParams *= math::DEG_TO_RAD;
+	rotParams *= float3(math::DEG_TO_RAD / GAME_SPEED, math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED), math::DEG_TO_RAD);
 
 	// NOTE:
 	//   new CWeapon- and CPieceProjectile*'s add themselves
