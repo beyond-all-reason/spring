@@ -265,7 +265,7 @@ static int DamagesArray(lua_State* L, const void* data)
 static int VisualsTable(lua_State* L, const void* data)
 {
 	const struct WeaponDef::Visuals& v = *static_cast<const struct WeaponDef::Visuals*>(data);
-	lua_createtable(L, 0, 25);
+	lua_createtable(L, 0, 28);
 	HSTR_PUSH_STRING(L, "modelName",            modelLoader.FindModelPath(v.modelName));
 	HSTR_PUSH_NUMBER(L, "colorR",               v.color.x);
 	HSTR_PUSH_NUMBER(L, "colorG",               v.color.y);
@@ -276,6 +276,9 @@ static int VisualsTable(lua_State* L, const void* data)
 	HSTR_PUSH_BOOL  (L, "smokeTrail",           v.smokeTrail);
 	HSTR_PUSH_BOOL  (L, "smokeTrailCastShadow", v.smokeTrailCastShadow);
 	HSTR_PUSH_NUMBER(L, "smokePeriod",          v.smokePeriod);
+	HSTR_PUSH_NUMBER(L, "smokeTime",            v.smokeTime);
+	HSTR_PUSH_NUMBER(L, "smokeSize",            v.smokeSize);
+	HSTR_PUSH_NUMBER(L, "smokeColor",           v.smokeColor);
 	HSTR_PUSH_NUMBER(L, "tileLength",           v.tilelength);
 	HSTR_PUSH_NUMBER(L, "scrollSpeed",          v.scrollspeed);
 	HSTR_PUSH_NUMBER(L, "pulseSpeed",           v.pulseSpeed);

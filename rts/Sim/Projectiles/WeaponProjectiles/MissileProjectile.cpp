@@ -20,8 +20,6 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
-const float CMissileProjectile::SMOKE_TIME = 60.0f;
-
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CMissileProjectile,(
@@ -104,7 +102,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 void CMissileProjectile::Collision()
 {
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, 7, SMOKE_TIME, 0.6f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision();
 	oldSmoke = pos;
@@ -113,7 +111,7 @@ void CMissileProjectile::Collision()
 void CMissileProjectile::Collision(CUnit* unit)
 {
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, 7, SMOKE_TIME, 0.6f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(unit);
 	oldSmoke = pos;
@@ -122,7 +120,7 @@ void CMissileProjectile::Collision(CUnit* unit)
 void CMissileProjectile::Collision(CFeature* feature)
 {
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, 7, SMOKE_TIME, 0.6f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(feature);
 	oldSmoke = pos;
@@ -220,9 +218,9 @@ void CMissileProjectile::Update()
 				dir, oldDir,
 				age == weaponDef->visuals.smokePeriod,
 				false,
-				weaponDef->visuals.smokePeriod - 1,
-				SMOKE_TIME,
-				0.6f,
+				GetSmokeSize(),
+				GetSmokeTime(),
+				GetSmokeColor(),
 				weaponDef->visuals.texture2,
 				weaponDef->visuals.smokeTrailCastShadow
 			);
@@ -300,6 +298,20 @@ void CMissileProjectile::UpdateDance() {
 	SetPosition(pos + danceMove);
 }
 
+inline float CMissileProjectile::GetSmokeSize() const
+{
+	return weaponDef->visuals.smokeSize >= 0.0f ? weaponDef->visuals.smokeSize : SMOKE_SIZE;
+}
+
+inline float CMissileProjectile::GetSmokeColor() const
+{
+	return weaponDef->visuals.smokeColor >= 0.0f ? weaponDef->visuals.smokeColor : SMOKE_COLOR;
+}
+
+inline int CMissileProjectile::GetSmokeTime() const
+{
+	return weaponDef->visuals.smokeTime >= 0 ? weaponDef->visuals.smokeTime : SMOKE_TIME;
+}
 
 void CMissileProjectile::UpdateGroundBounce() {
 	if (luaMoveCtrl)
