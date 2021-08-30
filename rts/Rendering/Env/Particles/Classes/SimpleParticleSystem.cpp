@@ -48,8 +48,10 @@ CR_BIND(CSimpleParticleSystem::Particle, )
 CR_REG_METADATA_SUB(CSimpleParticleSystem, Particle,
 (
 	CR_MEMBER(pos),
-	CR_MEMBER(life),
 	CR_MEMBER(speed),
+	CR_MEMBER(life),
+	CR_MEMBER(rotVal),
+	CR_MEMBER(rotVel),
 	CR_MEMBER(decayrate),
 	CR_MEMBER(size),
 	CR_MEMBER(sizeGrowth),
