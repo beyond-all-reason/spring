@@ -100,7 +100,7 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 void CStarburstProjectile::Collision()
 {
 	if (leaveSmokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision();
 
@@ -111,7 +111,7 @@ void CStarburstProjectile::Collision()
 void CStarburstProjectile::Collision(CUnit* unit)
 {
 	if (leaveSmokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(unit);
 
@@ -122,7 +122,7 @@ void CStarburstProjectile::Collision(CUnit* unit)
 void CStarburstProjectile::Collision(CFeature* feature)
 {
 	if (leaveSmokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, 7, SMOKE_LIFETIME, 0.7f, weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(feature);
 
@@ -302,7 +302,8 @@ void CStarburstProjectile::UpdateSmokeTrail()
 		7.0f,
 		SMOKE_LIFETIME,
 		0.7f,
-		weaponDef->visuals.texture2
+		weaponDef->visuals.texture2,
+		weaponDef->visuals.smokeTrailCastShadow
 	);
 
 	numParts = 0;

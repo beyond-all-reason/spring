@@ -257,6 +257,7 @@ public:
 		/// TODO: make the scar-type configurable
 		bool explosionScar = true;
 		bool smokeTrail = false;
+		bool smokeTrailCastShadow = true;
 
 		bool castShadow = true;
 		bool noGap = true;
