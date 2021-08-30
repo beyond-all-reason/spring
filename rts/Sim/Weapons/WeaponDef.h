@@ -258,7 +258,7 @@ public:
 		bool explosionScar = true;
 		bool smokeTrail = false;
 
-		bool castShadow = false;
+		bool castShadow = true;
 		bool noGap = true;
 		bool alwaysVisible = true;
 	};

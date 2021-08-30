@@ -90,7 +90,7 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 	maxGoodDif = math::cos(tracking * 0.6f);
 	drawRadius = maxSpeed * 8.0f;
 
-	castShadow = true;
+	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
 	leaveSmokeTrail = (weaponDef != nullptr && weaponDef->visuals.smokeTrail);
 
 	InitTracerParts();
