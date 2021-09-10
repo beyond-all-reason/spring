@@ -27,6 +27,8 @@ struct float4 : public float3
 	constexpr float4(const float* f): float3(f[0], f[1], f[2]), w(f[3]) {}
 	constexpr float4(const float x, const float y, const float z, const float w = 0.0f): float3(x, y, z), w(w) {}
 
+	constexpr float4 operator-() const { return float4(-x, -y, -z, -w); }
+
 	float4 operator * (const float4& f) const { return {x * f.x, y * f.y, z * f.z, w * f.w}; }
 	float4 operator + (const float4& f) const { return {x + f.x, y + f.y, z + f.z, w + f.w}; }
 	float4 operator - (const float4& f) const { return {x - f.x, y - f.y, z - f.z, w - f.w}; }
@@ -103,9 +105,22 @@ struct float4 : public float3
 		return (x * f.x) + (y * f.y) + (z * f.z) + (w * f.w);
 	}
 
+	float SqLength() const {
+		return float3::SqLength() + w * w;
+	}
+
+	float Length() const {
+		return math::sqrt(SqLength());
+	}
+
+	bool Normalized() const { return math::fabs(1.0f - dot4(*this)) <= cmp_eps(); }
+
 	/// Allows implicit conversion to float* (for passing to gl functions)
 	operator const float* () const { return reinterpret_cast<const float*>(&x); }
 	operator       float* ()       { return reinterpret_cast<      float*>(&x); }
 };
+inline float4 operator*(const float f, const float4& v) {
+	return v * f;
+}
 
 #endif /* FLOAT4_H */
