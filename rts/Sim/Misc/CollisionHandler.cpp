@@ -279,7 +279,7 @@ bool CCollisionHandler::IntersectPiecesHelper(
 		if (!lmp->GetScriptVisible() || lmpVol->IgnoreHits())
 			continue;
 
-		volMat = m * lmp->GetModelSpaceMatrix();
+		volMat = m * lmp->GetModelSpaceTransform().ToMatrix();
 		volMat.Translate(lmpVol->GetOffsets());
 
 		CollisionQuery cqn;

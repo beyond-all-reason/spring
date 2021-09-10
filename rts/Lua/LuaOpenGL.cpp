@@ -1424,7 +1424,7 @@ static void GLObjectPieceMultMatrix(lua_State* L, const CSolidObject* obj)
 	if (lmp == nullptr)
 		return;
 
-	glMultMatrixf(lmp->GetModelSpaceMatrix());
+	glMultMatrixf(lmp->GetModelSpaceTransform().ToMatrix());
 }
 
 static bool GLObjectDrawWithLuaMat(lua_State* L, CSolidObject* obj, LuaObjType objType)
