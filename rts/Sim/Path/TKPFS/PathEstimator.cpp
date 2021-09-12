@@ -1,71 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/Platform/Win/win32.h"
-
-#include "zlib.h"
-#include "minizip/zip.h"
-
 #include "PathEstimator.h"
-#include "Sim/Path/Default/PathFinder.h"
+// #include "Sim/Path/Default/PathFinder.h"
 #include "Sim/Path/Default/PathFinderDef.h"
-// #include "PathFlowMap.hpp"
 #include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/Default/PathMemPool.h"
-#include "Game/GlobalUnsynced.h"
-#include "Game/LoadScreen.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
-#include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
-// #include "Sim/MoveTypes/MoveMath/MoveMath.h"
-#include "Net/Protocol/NetProtocol.h"
-#include "System/Threading/ThreadPool.h" // for_mt
-#include "System/TimeProfiler.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/FileSystem/Archives/IArchive.h"
-#include "System/FileSystem/ArchiveLoader.h"
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/FileQueryFlags.h"
-#include "System/Platform/Threading.h"
-#include "System/SafeUtil.h"
-#include "System/StringUtil.h"
-#include "System/Sync/SHA512.hpp"
 
-#define ENABLE_NETLOG_CHECKSUM 1
+//#define ENABLE_NETLOG_CHECKSUM 1
 
 namespace TKPFS {
 
-PCMemPool pcMemPool;
-PEMemPool peMemPool;
+// PCMemPool pcMemPool;
+// PEMemPool peMemPool;
 
 
-static const std::string GetPathCacheDir() {
-	return (FileSystem::GetCacheDir() + "/paths/");
-}
-
-static const std::string GetCacheFileName(const std::string& fileHashCode, const std::string& peFileName, const std::string& mapFileName) {
-	return (GetPathCacheDir() + mapFileName + "." + peFileName + "-" + fileHashCode + ".zip");
-}
-
-
-static size_t GetNumThreads() {
-	const size_t numThreads = std::max(0, configHandler->GetInt("PathingThreadCount"));
-	const size_t numCores = Threading::GetLogicalCpuCores();
-	return ((numThreads == 0)? numCores: numThreads);
-}
-
-
-
-void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName, PathingState* ps)
+void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, PathingState* ps)
 {
 	IPathFinder::Init(BLOCK_SIZE);
 
 	{
 		BLOCKS_TO_UPDATE = SQUARES_TO_UPDATE / (BLOCK_SIZE * BLOCK_SIZE) + 1;
 
-		blockUpdatePenalty = 0;
 		nextOffsetMessageIdx = 0;
-		nextCostMessageIdx = 0;
+		//nextCostMessageIdx = 0;
 
 		pathChecksum = 0;
 		fileHashCode = CalcHash(__func__);
@@ -78,14 +36,9 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::s
 
 		pathingState = ps;
 		assert(pathingState != nullptr);
-	}
-	{
-		vertexCosts.clear();
-		vertexCosts.resize(moveDefHandler.GetNumMoveDefs() * blockStates.GetSize() * PATH_DIRECTION_VERTICES, PATHCOST_INFINITY);
 
-		updatedBlocks.clear();
-		consumedBlocks.clear();
-		offsetBlocksSortedByCost.clear();
+		psBlockStates = &pathingState->blockStates;
+		assert(psBlockStates != nullptr);
 	}
 
 	CPathEstimator*  childPE = this;
@@ -94,469 +47,31 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, const std::s
 	if (parentPE != nullptr)
 		parentPE->nextPathEstimator = childPE;
 
-	// precalc for FindBlockPosOffset()
-	{
-		offsetBlocksSortedByCost.reserve(BLOCK_SIZE * BLOCK_SIZE);
-		for (unsigned int z = 0; z < BLOCK_SIZE; ++z) {
-			for (unsigned int x = 0; x < BLOCK_SIZE; ++x) {
-				const float dx = x - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float dz = z - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float cost = (dx * dx + dz * dz);
-
-				offsetBlocksSortedByCost.emplace_back(cost, x, z);
-			}
-		}
-		std::stable_sort(offsetBlocksSortedByCost.begin(), offsetBlocksSortedByCost.end(), [](const SOffsetBlock& a, const SOffsetBlock& b) {
-			return (a.cost < b.cost);
-		});
-	}
-
 	// load precalculated data if it exists
-	InitEstimator(peFileName, mapFileName);
+	InitEstimator();
 }
 
 
 void CPathEstimator::Kill()
 {
-	pcMemPool.free(pathCache[0]);
-	pcMemPool.free(pathCache[1]);
 }
 
 
-void CPathEstimator::InitEstimator(const std::string& peFileName, const std::string& mapFileName)
+void CPathEstimator::InitEstimator()
 {
-	const unsigned int numThreads = GetNumThreads();
-
-	if (threads.size() != numThreads) {
-		threads.clear();
-		threads.resize(numThreads);
-		pathFinders.clear();
-		pathFinders.resize(numThreads);
-	}
-
-	// always use PF for initialization, later PE maybe used
-	// TODO: pooling these will not help much, need to reuse
-	pathFinders[0] = pfMemPool.alloc<CPathFinder>(true);
-
-	// Not much point in multithreading these...
-	InitBlocks();
-
-	if (!ReadFile(peFileName, mapFileName)) {
-		// start extra threads if applicable, but always keep the total
-		// memory-footprint made by CPathFinder instances within bounds
-		const unsigned int minMemFootPrint = sizeof(CPathFinder) + parentPathFinder->GetMemFootPrint();
-		const unsigned int maxMemFootPrint = configHandler->GetInt("MaxPathCostsMemoryFootPrint") * 1024 * 1024;
-		const unsigned int numExtraThreads = Clamp(int(maxMemFootPrint / minMemFootPrint) - 1, 0, int(numThreads) - 1);
-		const unsigned int reqMemFootPrint = minMemFootPrint * (numExtraThreads + 1);
-
-		char calcMsg[512];
-		const char* fmtStrs[4] = {
-			"[%s] creating PE%u cache with %u PF threads (%u MB)",
-			"[%s] creating PE%u cache with %u PF thread (%u MB)",
-			"[%s] writing PE%u cache-file %s-%x",
-			"[%s] written PE%u cache-file %s-%x",
-		};
-
-		{
-			sprintf(calcMsg, fmtStrs[numExtraThreads == 0], __func__, BLOCK_SIZE, numExtraThreads + 1, reqMemFootPrint / (1024 * 1024));
-			loadscreen->SetLoadMessage(calcMsg);
-		}
-
-
-		// note: only really needed if numExtraThreads > 0
-		spring::barrier pathBarrier(numExtraThreads + 1);
-
-		for (unsigned int i = 1; i <= numExtraThreads; i++) {
-			pathFinders[i] = pfMemPool.alloc<CPathFinder>(true);
-			threads[i] = std::move(spring::thread(&CPathEstimator::CalcOffsetsAndPathCosts, this, i, &pathBarrier));
-		}
-
-		// Use the current thread as thread zero
-		CalcOffsetsAndPathCosts(0, &pathBarrier);
-
-		for (unsigned int i = 1; i <= numExtraThreads; i++) {
-			threads[i].join();
-			pfMemPool.free(pathFinders[i]);
-		}
-
-
-		sprintf(calcMsg, fmtStrs[2], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
-		loadscreen->SetLoadMessage(calcMsg, true);
-
-		WriteFile(peFileName, mapFileName);
-
-		sprintf(calcMsg, fmtStrs[3], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
-		loadscreen->SetLoadMessage(calcMsg, true);
-	}
-
-	// calculate checksum over block-offsets and vertex-costs
-	pathChecksum = CalcChecksum();
-
-	// switch to runtime wanted IPathFinder (maybe PF or PE)
-	pfMemPool.free(pathFinders[0]);
-	pathFinders[0] = parentPathFinder;
-
-	pathCache[0] = pcMemPool.alloc<CPathCache>(nbrOfBlocks.x, nbrOfBlocks.y);
-	pathCache[1] = pcMemPool.alloc<CPathCache>(nbrOfBlocks.x, nbrOfBlocks.y);
-}
-
-
-void CPathEstimator::InitBlocks()
-{
-	blockStates.peNodeOffsets.resize(moveDefHandler.GetNumMoveDefs());
-	for (unsigned int idx = 0; idx < moveDefHandler.GetNumMoveDefs(); idx++) {
-		blockStates.peNodeOffsets[idx].resize(nbrOfBlocks.x * nbrOfBlocks.y);
-	}
-}
-
-
-__FORCE_ALIGN_STACK__
-void CPathEstimator::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barrier* pathBarrier)
-{
-	// reset FPU state for synced computations
-	streflop::streflop_init<streflop::Simple>();
-
-	if (threadNum > 0) {
-		Threading::SetAffinity(~0);
-		Threading::SetThreadName(IntToString(threadNum, "pathhelper%i"));
-	}
-
-	// NOTE: EstimatePathCosts() [B] is temporally dependent on CalculateBlockOffsets() [A],
-	// A must be completely finished before B_i can be safely called. This means we cannot
-	// let thread i execute (A_i, B_i), but instead have to split the work such that every
-	// thread finishes its part of A before any starts B_i.
-	const unsigned int maxBlockIdx = blockStates.GetSize() - 1;
-	int i;
-
-	while ((i = --offsetBlockNum) >= 0)
-		CalculateBlockOffsets(maxBlockIdx - i, threadNum);
-
-	pathBarrier->wait();
-
-	while ((i = --costBlockNum) >= 0)
-		EstimatePathCosts(maxBlockIdx - i, threadNum);
-}
-
-
-void CPathEstimator::CalculateBlockOffsets(unsigned int blockIdx, unsigned int threadNum)
-{
-	const int2 blockPos = BlockIdxToPos(blockIdx);
-
-	if (threadNum == 0 && blockIdx >= nextOffsetMessageIdx) {
-		nextOffsetMessageIdx = blockIdx + blockStates.GetSize() / 16;
-		clientNet->Send(CBaseNetProtocol::Get().SendCPUUsage(BLOCK_SIZE | (blockIdx << 8)));
-	}
-
-	for (unsigned int i = 0; i < moveDefHandler.GetNumMoveDefs(); i++) {
-		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
-
-		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y);
-	}
-}
-
-
-void CPathEstimator::EstimatePathCosts(unsigned int blockIdx, unsigned int threadNum)
-{
-	const int2 blockPos = BlockIdxToPos(blockIdx);
-
-	if (threadNum == 0 && blockIdx >= nextCostMessageIdx) {
-		nextCostMessageIdx = blockIdx + blockStates.GetSize() / 16;
-
-		char calcMsg[128];
-		sprintf(calcMsg, "[%s] precached %d of %d blocks", __func__, blockIdx, blockStates.GetSize());
-
-		clientNet->Send(CBaseNetProtocol::Get().SendCPUUsage(0x1 | BLOCK_SIZE | (blockIdx << 8)));
-		loadscreen->SetLoadMessage(calcMsg, (blockIdx != 0));
-	}
-
-	for (unsigned int i = 0; i < moveDefHandler.GetNumMoveDefs(); i++) {
-		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
-
-		CalcVertexPathCosts(*md, blockPos, threadNum);
-	}
-}
-
-
-/**
- * Move around the blockPos a bit, so we `surround` unpassable blocks.
- */
-int2 CPathEstimator::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ) const
-{
-	// lower corner position of block
-	const unsigned int lowerX = blockX * BLOCK_SIZE;
-	const unsigned int lowerZ = blockZ * BLOCK_SIZE;
-	const unsigned int blockArea = (BLOCK_SIZE * BLOCK_SIZE) / SQUARE_SIZE;
-
-	int2 bestPos(lowerX + (BLOCK_SIZE >> 1), lowerZ + (BLOCK_SIZE >> 1));
-	float bestCost = std::numeric_limits<float>::max();
-
-	// search for an accessible position within this block
-	/*for (unsigned int z = 0; z < BLOCK_SIZE; ++z) {
-		for (unsigned int x = 0; x < BLOCK_SIZE; ++x) {
-			const float speedMod = CMoveMath::GetPosSpeedMod(moveDef, lowerX + x, lowerZ + z);
-			const bool curblock = (speedMod == 0.0f) || CMoveMath::IsBlockedStructure(moveDef, lowerX + x, lowerZ + z, nullptr);
-
-			if (!curblock) {
-				const float dx = x - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float dz = z - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float cost = (dx * dx + dz * dz) + (blockArea / (0.001f + speedMod));
-
-				if (cost < bestCost) {
-					bestCost = cost;
-					bestPos.x = lowerX + x;
-					bestPos.y = lowerZ + z;
-				}
-			}
-		}
-	}*/
-
-	// same as above, but with squares sorted by their baseCost
-	// s.t. we can exit early when a square exceeds our current
-	// best (from testing, on avg. 40% of blocks can be skipped)
-	for (const SOffsetBlock& ob: offsetBlocksSortedByCost) {
-		if (ob.cost >= bestCost)
-			break;
-
-		const int2 blockPos(lowerX + ob.offset.x, lowerZ + ob.offset.y);
-		const float speedMod = CMoveMath::GetPosSpeedMod(moveDef, blockPos.x, blockPos.y);
-
-		//assert((blockArea / (0.001f + speedMod) >= 0.0f);
-		const float cost = ob.cost + (blockArea / (0.001f + speedMod));
-
-		if (cost >= bestCost)
-			continue;
-
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)) {
-			bestCost = cost;
-			bestPos  = blockPos;
-		}
-	}
-
-	// return the offset found
-	return bestPos;
-}
-
-
-/**
- * Calculate costs of paths to all vertices connected from the given block
- */
-void CPathEstimator::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsigned int threadNum)
-{
-	// see GetBlockVertexOffset(); costs are bi-directional and only
-	// calculated for *half* the outgoing edges (while costs for the
-	// other four directions are stored at the adjacent vertices)
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
-}
-
-void CPathEstimator::CalcVertexPathCost(
-	const MoveDef& moveDef,
-	int2 parentBlockPos,
-	unsigned int pathDir,
-	unsigned int threadNum
-) {
-	const int2 childBlockPos = parentBlockPos + PE_DIRECTION_VECTORS[pathDir];
-
-	const unsigned int parentBlockIdx = BlockPosToIdx(parentBlockPos);
-	const unsigned int  childBlockIdx = BlockPosToIdx( childBlockPos);
-	const unsigned int  vertexCostIdx =
-		moveDef.pathType * blockStates.GetSize() * PATH_DIRECTION_VERTICES +
-		parentBlockIdx * PATH_DIRECTION_VERTICES +
-		pathDir;
-
-	// outside map?
-	if ((unsigned)childBlockPos.x >= nbrOfBlocks.x || (unsigned)childBlockPos.y >= nbrOfBlocks.y) {
-		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
-		return;
-	}
-
-
-	// start position within parent block, goal position within child block
-	const int2 parentSquare = blockStates.peNodeOffsets[moveDef.pathType][parentBlockIdx];
-	const int2  childSquare = blockStates.peNodeOffsets[moveDef.pathType][ childBlockIdx];
-
-	const float3 startPos = SquareToFloat3(parentSquare.x, parentSquare.y);
-	const float3  goalPos = SquareToFloat3( childSquare.x,  childSquare.y);
-
-	// keep search exactly contained within the two blocks
-	CRectangularSearchConstraint pfDef(startPos, goalPos, 0.0f, BLOCK_SIZE);
-
-	// we never want to allow searches from any blocked starting positions
-	// (otherwise PE and PF can disagree), but are more lenient for normal
-	// searches so players can "unstuck" units
-	// note: PE itself should ensure this never happens to begin with?
-	//
-	// blocked goal positions are always early-outs (no searching needed)
-	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr) & CMoveMath::BLOCK_STRUCTURE) != 0);
-	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr);
-
-	if (strtBlocked || goalBlocked) {
-		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
-		return;
-	}
-
-	// find path from parent to child block
-	//
-	// since CPathFinder::GetPath() is not thread-safe, use
-	// this thread's "private" CPathFinder instance (rather
-	// than locking parentPathFinder->GetPath()) if we are
-	// invoked in one
-	pfDef.skipSubSearches = true;
-	pfDef.testMobile      = false;
-	pfDef.needPath        = false;
-	pfDef.exactPath       = true;
-	pfDef.dirIndependent  = true;
-
-	IPath::Path path;
-	IPath::SearchResult result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
-
-	// store the result
-	if (result == IPath::Ok) {
-		vertexCosts[vertexCostIdx] = path.pathCost;
-	} else {
-		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
-	}
-}
-
-
-/**
- * Mark affected blocks as obsolete
- */
-void CPathEstimator::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2, unsigned z2)
-{
-	assert(x2 >= x1);
-	assert(z2 >= z1);
-
-	// find the upper and lower corner of the rectangular area
-	const int lowerX = Clamp(int(x1 / BLOCK_SIZE) - 1, 0, int(nbrOfBlocks.x - 1));
-	const int upperX = Clamp(int(x2 / BLOCK_SIZE) + 1, 0, int(nbrOfBlocks.x - 1));
-	const int lowerZ = Clamp(int(z1 / BLOCK_SIZE) - 1, 0, int(nbrOfBlocks.y - 1));
-	const int upperZ = Clamp(int(z2 / BLOCK_SIZE) + 1, 0, int(nbrOfBlocks.y - 1));
-
-	// mark the blocks inside the rectangle, enqueue them
-	// from upper to lower because of the placement of the
-	// bi-directional vertices
-	for (int z = upperZ; z >= lowerZ; z--) {
-		for (int x = upperX; x >= lowerX; x--) {
-			const int idx = BlockPosToIdx(int2(x, z));
-
-			if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
-				continue;
-
-			updatedBlocks.emplace_back(x, z);
-			blockStates.nodeMask[idx] |= PATHOPT_OBSOLETE;
-		}
-	}
-}
-
-
-/**
- * Update some obsolete blocks using the FIFO-principle
- */
-void CPathEstimator::Update()
-{
-	pathCache[0]->Update();
-	pathCache[1]->Update();
-
-	const unsigned int numMoveDefs = moveDefHandler.GetNumMoveDefs();
-
-	if (numMoveDefs == 0)
-		return;
-
-	// determine how many blocks we should update
-	int blocksToUpdate = 0;
-	int consumeBlocks = 0;
-	{
-		const int progressiveUpdates = updatedBlocks.size() * numMoveDefs * modInfo.pfUpdateRate;
-		const int MIN_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, 4U);
-		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE << 1, MIN_BLOCKS_TO_UPDATE);
-
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
-		blockUpdatePenalty = std::max(0, blockUpdatePenalty - blocksToUpdate);
-
-		if (blockUpdatePenalty > 0)
-			blocksToUpdate = std::max(0, blocksToUpdate - blockUpdatePenalty);
-
-		// we have to update blocks for all movedefs (PATHOPT_OBSOLETE applies per block, not per movedef)
-		consumeBlocks = int(progressiveUpdates != 0) * int(ceil(float(blocksToUpdate) / numMoveDefs)) * numMoveDefs;
-		blockUpdatePenalty += consumeBlocks;
-	}
-
-	if (blocksToUpdate == 0)
-		return;
-
-	if (updatedBlocks.empty())
-		return;
-
-	consumedBlocks.clear();
-	consumedBlocks.reserve(consumeBlocks);
-
-	// get blocks to update
-	while (!updatedBlocks.empty()) {
-		const int2& pos = updatedBlocks.front();
-		const int idx = BlockPosToIdx(pos);
-
-		if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) == 0) {
-			updatedBlocks.pop_front();
-			continue;
-		}
-
-		if (consumedBlocks.size() >= blocksToUpdate)
-			break;
-
-		// issue repathing for all active movedefs
-		for (unsigned int i = 0; i < numMoveDefs; i++) {
-			const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
-
-			consumedBlocks.emplace_back(pos, md);
-		}
-
-		// inform dependent estimator that costs were updated and it should do the same
-		// FIXME?
-		//   adjacent med-res PE blocks will cause a low-res block to be updated twice
-		//   (in addition to the overlap that already exists because MapChanged() adds
-		//   boundary blocks)
-		if (true && nextPathEstimator != nullptr)
-			nextPathEstimator->MapChanged(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE);
-
-		updatedBlocks.pop_front(); // must happen _after_ last usage of the `pos` reference!
-		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
-	}
-
-	// FindOffset (threadsafe)
-	{
-		SCOPED_TIMER("Sim::Path::Estimator::FindOffset");
-		for_mt(0, consumedBlocks.size(), [&](const int n) {
-			// copy the next block in line
-			const SingleBlock sb = consumedBlocks[n];
-			const int blockN = BlockPosToIdx(sb.blockPos);
-			const MoveDef* currBlockMD = sb.moveDef;
-			blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
-		});
-	}
-
-	// CalcVertexPathCosts (not threadsafe)
-	{
-		SCOPED_TIMER("Sim::Path::Estimator::CalcVertexPathCosts");
-		for (unsigned int n = 0; n < consumedBlocks.size(); ++n) {
-			CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos);
-		}
-	}
 }
 
 
 const CPathCache::CacheItem& CPathEstimator::GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const
 {
-	return pathCache[synced]->GetCachedPath(strtBlock, goalBlock, goalRadius, pathType);
+	return pathingState->GetCache(strtBlock, goalBlock, goalRadius, pathType, synced);
 }
+
 
 void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	pathCache[synced]->AddPath(path, result, strtBlock, goalBlock, goalRadius, pathType);
+	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
-
 
 
 IPath::SearchResult CPathEstimator::DoBlockSearch(
@@ -570,6 +85,7 @@ IPath::SearchResult CPathEstimator::DoBlockSearch(
 
 	return (DoBlockSearch(owner, moveDef, sw, gw));
 }
+
 
 IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const CSolidObject* owner,
@@ -614,7 +130,7 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 			continue;
 
 		// no, check if the goal is already reached
-		const int2 bSquare = blockStates.peNodeOffsets[moveDef.pathType][ob->nodeNum];
+		const int2 bSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][ob->nodeNum];
 		const int2 gSquare = ob->nodePos * BLOCK_SIZE + goalSqrOffset;
 
 		bool runBlkSearch = false;
@@ -712,15 +228,15 @@ bool CPathEstimator::TestBlock(
 		openBlockIdx * PATH_DIRECTION_VERTICES +
 		GetBlockVertexOffset(pathDir, nbrOfBlocks.x);
 
-	assert(testBlockIdx < blockStates.peNodeOffsets[moveDef.pathType].size());
-	assert(vertexCostIdx < vertexCosts.size());
+	assert(testBlockIdx < (*psBlockStates).peNodeOffsets[moveDef.pathType].size());
+	//assert(vertexCostIdx < vertexCosts.size());
 
 	// best accessible heightmap-coordinate within tested block
 	// [DBG] const int2 openBlockSquare = blockStates.peNodeOffsets[moveDef.pathType][openBlockIdx];
-	const int2 testBlockSquare = blockStates.peNodeOffsets[moveDef.pathType][testBlockIdx];
+	const int2 testBlockSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][testBlockIdx];
 
 	// transition-cost from parent to tested child
-	float testVertexCost = vertexCosts[vertexCostIdx];
+	float testVertexCost = pathingState->GetVertexCost(vertexCostIdx);
 
 
 	// inf-cost means we can not get from the parent VERTEX to the child
@@ -887,7 +403,7 @@ void CPathEstimator::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& 
 
 		while (true) {
 			// use offset defined by the block
-			const int2 square = blockStates.peNodeOffsets[moveDef.pathType][blockIdx];
+			const int2 square = (*psBlockStates).peNodeOffsets[moveDef.pathType][blockIdx];
 
 			// foundPath.squares.push_back(square);
 			foundPath.path.emplace_back(square.x * SQUARE_SIZE, CMoveMath::yLevel(moveDef, square.x, square.y), square.y * SQUARE_SIZE);
@@ -907,190 +423,6 @@ void CPathEstimator::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& 
 	}
 
 	foundPath.pathCost = blockStates.fCost[mGoalBlockIdx] - mGoalHeuristic;
-}
-
-
-bool CPathEstimator::RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName)
-{
-	return (FileSystem::Remove(GetCacheFileName(IntToString(fileHashCode, "%x"), peFileName, mapFileName)));
-}
-
-/**
- * Try to read offset and vertices data from file, return false on failure
- */
-bool CPathEstimator::ReadFile(const std::string& peFileName, const std::string& mapFileName)
-{
-	const std::string hashHexString = IntToString(fileHashCode, "%x");
-	const std::string cacheFileName = GetCacheFileName(hashHexString, peFileName, mapFileName);
-
-	LOG("[PathEstimator::%s] hash=%s file=\"%s\" (exists=%d)", __func__, hashHexString.c_str(), cacheFileName.c_str(), FileSystem::FileExists(cacheFileName));
-
-	if (!FileSystem::FileExists(cacheFileName))
-		return false;
-
-	std::unique_ptr<IArchive> upfile(archiveLoader.OpenArchive(dataDirsAccess.LocateFile(cacheFileName), "sdz"));
-
-	if (upfile == nullptr || !upfile->IsOpen()) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	char calcMsg[512];
-	sprintf(calcMsg, "Reading Estimate PathCosts [%d]", BLOCK_SIZE);
-	loadscreen->SetLoadMessage(calcMsg);
-
-	const unsigned fid = upfile->FindFile("pathinfo");
-	if (fid >= upfile->NumFiles()) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	std::vector<std::uint8_t> buffer;
-
-	if (!upfile->GetFile(fid, buffer) || buffer.size() < 4) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	const unsigned int filehash = *(reinterpret_cast<unsigned int*>(&buffer[0]));
-	const unsigned int blockSize = blockStates.GetSize() * sizeof(short2);
-	unsigned int pos = sizeof(unsigned);
-
-	if (filehash != fileHashCode) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	if (buffer.size() < (pos + blockSize * moveDefHandler.GetNumMoveDefs())) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	// read center-offset data
-	for (int pathType = 0; pathType < moveDefHandler.GetNumMoveDefs(); ++pathType) {
-		std::memcpy(&blockStates.peNodeOffsets[pathType][0], &buffer[pos], blockSize);
-		pos += blockSize;
-	}
-
-	// read vertex-cost data
-	if (buffer.size() < (pos + vertexCosts.size() * sizeof(float))) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	std::memcpy(&vertexCosts[0], &buffer[pos], vertexCosts.size() * sizeof(float));
-	return true;
-}
-
-
-/**
- * Try to write offset and vertex data to file.
- */
-bool CPathEstimator::WriteFile(const std::string& peFileName, const std::string& mapFileName)
-{
-	// we need this directory to exist
-	if (!FileSystem::CreateDirectory(GetPathCacheDir()))
-		return false;
-
-	const std::string hashHexString = IntToString(fileHashCode, "%x");
-	const std::string cacheFileName = GetCacheFileName(hashHexString, peFileName, mapFileName);
-
-	LOG("[PathEstimator::%s] hash=%s file=\"%s\" (exists=%d)", __func__, hashHexString.c_str(), cacheFileName.c_str(), FileSystem::FileExists(cacheFileName));
-
-	// open file for writing in a suitable location
-	zipFile file = zipOpen(dataDirsAccess.LocateFile(cacheFileName, FileQueryFlags::WRITE).c_str(), APPEND_STATUS_CREATE);
-
-	if (file == nullptr)
-		return false;
-
-	zipOpenNewFileInZip(file, "pathinfo", nullptr, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION);
-
-	// write hash-code (NOTE: this also affects the CRC!)
-	zipWriteInFileInZip(file, (const void*) &fileHashCode, 4);
-
-	// write center-offsets
-	for (int pathType = 0; pathType < moveDefHandler.GetNumMoveDefs(); ++pathType) {
-		zipWriteInFileInZip(file, (const void*) &blockStates.peNodeOffsets[pathType][0], blockStates.peNodeOffsets[pathType].size() * sizeof(short2));
-	}
-
-	// write vertex-costs
-	zipWriteInFileInZip(file, vertexCosts.data(), vertexCosts.size() * sizeof(float));
-
-	zipCloseFileInZip(file);
-	zipClose(file, nullptr);
-
-
-	// get the CRC over the written path data
-	std::unique_ptr<IArchive> upfile(archiveLoader.OpenArchive(dataDirsAccess.LocateFile(cacheFileName), "sdz"));
-
-	if (upfile == nullptr || !upfile->IsOpen()) {
-		FileSystem::Remove(cacheFileName);
-		return false;
-	}
-
-	assert(upfile->FindFile("pathinfo") < upfile->NumFiles());
-  return true;
-}
-
-
-std::uint32_t CPathEstimator::CalcChecksum() const
-{
-	std::uint32_t chksum = 0;
-	std::uint64_t nbytes = vertexCosts.size() * sizeof(float);
-	std::uint64_t offset = 0;
-
-	#if (ENABLE_NETLOG_CHECKSUM == 1)
-	std::array<char, 128 + sha512::SHA_LEN * 2 + 1> msgBuffer;
-
-	sha512::hex_digest hexChars;
-	sha512::raw_digest shaBytes;
-	sha512::msg_vector rawBytes;
-	#endif
-
-	#if (ENABLE_NETLOG_CHECKSUM == 1)
-	for (const auto& pathTypeOffsets: blockStates.peNodeOffsets) {
-		nbytes += (pathTypeOffsets.size() * sizeof(short2));
-	}
-
-	rawBytes.clear();
-	rawBytes.resize(nbytes);
-
-	for (const auto& pathTypeOffsets: blockStates.peNodeOffsets) {
-		nbytes = pathTypeOffsets.size() * sizeof(short2);
-		offset += nbytes;
-
-		std::memcpy(&rawBytes[offset - nbytes], pathTypeOffsets.data(), nbytes);
-	}
-
-	{
-		nbytes = vertexCosts.size() * sizeof(float);
-		offset += nbytes;
-
-		std::memcpy(&rawBytes[offset - nbytes], vertexCosts.data(), nbytes);
-
-		sha512::calc_digest(rawBytes, shaBytes); // hash(offsets|costs)
-		sha512::dump_digest(shaBytes, hexChars); // hexify(hash)
-
-		SNPRINTF(msgBuffer.data(), msgBuffer.size(), "[PE::%s][BLK_SIZE=%d][SHA_DATA=%s]", __func__, BLOCK_SIZE, hexChars.data());
-		CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuffer.data());
-	}
-	#endif
-
-	// make path-estimator checksum part of synced state s.t. when
-	// a client has a corrupted or stale cache it desyncs from the
-	// start, not minutes later
-	for (size_t i = 0, n = shaBytes.size() / 4; i < n; i += 1) {
-		const uint16_t hi = (shaBytes[i * 4 + 0] << 8) | (shaBytes[i * 4 + 1] << 0);
-		const uint16_t lo = (shaBytes[i * 4 + 2] << 8) | (shaBytes[i * 4 + 3] << 0);
-
-		const SyncedUint su = (hi << 16) | (lo << 0);
-
-		// copy first four bytes to reduced checksum
-		if (chksum == 0)
-			chksum = su;
-	}
-
-	return chksum;
 }
 
 

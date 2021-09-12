@@ -67,9 +67,13 @@ CPathManager::CPathManager()
 
 void CPathManager::InitStatic()
 {
-	assert(ThreadPool::GetMaxThreads() != 1);
+	assert(ThreadPool::GetNumThreads() != 1);
 
-	pathFinderGroups = ThreadPool::GetMaxThreads();
+	pathFinderGroups = ThreadPool::GetNumThreads();
+
+	LOG("TK CPathManager::InitStatic: %d threads available", pathFinderGroups);
+
+	// pathFinders[i] = pfMemPool.alloc<CPathFinder>(true);
 
 	const size_t pathFinderCount = PATH_ALL_LEVELS * pathFinderGroups;
 	const size_t medLowResMem = sizeof(CPathEstimator) * pathFinderGroups;
@@ -138,10 +142,8 @@ CPathManager::~CPathManager()
 
 void CPathManager::RemoveCacheFiles()
 {
-	medResPEs[0].RemoveCacheFile("pe" , mapInfo->map.name);
-	lowResPEs[0].RemoveCacheFile("pe2", mapInfo->map.name);
-	// medResPE->RemoveCacheFile("pe" , mapInfo->map.name);
-	// lowResPE->RemoveCacheFile("pe2", mapInfo->map.name);
+	pathingStates[PATH_MED_RES].RemoveCacheFile("pe" , mapInfo->map.name);
+	pathingStates[PATH_LOW_RES].RemoveCacheFile("pe2", mapInfo->map.name);
 }
 
 
@@ -150,7 +152,9 @@ std::uint32_t CPathManager::GetPathCheckSum() const {
 
 	// MH: At the moment, blockstate cannot be synced.
 	//     VertexCost can but need next phase work to make that happen.
-	return 0x53723894;
+	return ( pathingStates[PATH_MED_RES].GetPathChecksum()
+		   + pathingStates[PATH_LOW_RES].GetPathChecksum() );
+
 	//return (medResPE->GetPathChecksum() + lowResPE->GetPathChecksum());
 }
 
@@ -167,14 +171,17 @@ std::int64_t CPathManager::Finalize() {
 		// medResPE->Init(maxResPF, MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 		// lowResPE->Init(medResPE, LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
-		
-		pathingStates[PATH_MED_RES].Init(nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
-		pathingStates[PATH_LOW_RES].Init(&pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
-
-		for (int i = 0; i<ThreadPool::GetMaxThreads(); ++i){
+		for (int i = 0; i<pathFinderGroups; ++i){
 			maxResPFs[i].Init(true);
-			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name, &pathingStates[PATH_MED_RES]);
-			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name, &pathingStates[PATH_LOW_RES]);
+			LOG("TK CPathManager::Finalize PathFinder 0x%p has BLOCKSIZE %d", &maxResPFs[i], maxResPFs[i].BLOCK_SIZE);
+		}
+		
+		pathingStates[PATH_MED_RES].Init(maxResPFs, nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
+		pathingStates[PATH_LOW_RES].Init(maxResPFs, &pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
+
+		for (int i = 0; i<pathFinderGroups; ++i){
+			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, &pathingStates[PATH_MED_RES]);
+			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, &pathingStates[PATH_LOW_RES]);
 		}
 	}
 
@@ -253,9 +260,9 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 	const int currentThread = ThreadPool::GetThreadNum(); // thread ids start at 1.
 
-	IPathFinder* ownPathFinders[] =	{ pathFinders[currentThread*3 + PATH_LOW_RES]
-									, pathFinders[currentThread*3 + PATH_MED_RES]
-									, pathFinders[currentThread*3 + PATH_MAX_RES]
+	IPathFinder* ownPathFinders[] =	{ pathFinders[currentThread*PATH_ALL_LEVELS + PATH_LOW_RES]
+									, pathFinders[currentThread*PATH_ALL_LEVELS + PATH_MED_RES]
+									, pathFinders[currentThread*PATH_ALL_LEVELS + PATH_MAX_RES]
 									};
 	//{lowResPE, medResPE, maxResPF};
 	IPath::Path* pathObjects[] = {&newPath->lowResPath, &newPath->medResPath, &newPath->maxResPath};
@@ -710,21 +717,18 @@ float3 CPathManager::NextWayPoint(
 void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int /*type*/) {
 	if (!IsFinalized())
 		return;
+		
+	auto medResPE = &pathingStates[PATH_MED_RES];
+	auto lowResPE = &pathingStates[PATH_LOW_RES];
 
-	//medResPE->MapChanged(x1, z1, x2, z2);
-
-	for (int i=0; i<pathFinderGroups; ++i)
-		medResPEs[i].MapChanged(x1, z1, x2, z2);
+	medResPE->MapChanged(x1, z1, x2, z2);
 
 	// low-res PE will be informed via (medRes)PE::Update
 	// if (true && medResPE->nextPathEstimator != nullptr)
-	if (medResPEs[0].nextPathEstimator != nullptr)
+	if (medResPE->nextPathState != nullptr)
 		return;
 
-	//lowResPE->MapChanged(x1, z1, x2, z2);
-
-	for (int i=0; i<pathFinderGroups; ++i)
-		lowResPEs[i].MapChanged(x1, z1, x2, z2);
+	lowResPE->MapChanged(x1, z1, x2, z2);
 }
 
 
@@ -734,17 +738,15 @@ void CPathManager::Update()
 	SCOPED_TIMER("Sim::Path");
 	assert(IsFinalized());
 
+	// TODO: Review these!
 	pathFlowMap->Update();
 	pathHeatMap->Update();
 
-	// medResPE->Update();
-	// lowResPE->Update();
+	auto medResPE = &pathingStates[PATH_MED_RES];
+	auto lowResPE = &pathingStates[PATH_LOW_RES];
 
-	for (int i=0; i<pathFinderGroups; ++i)
-		medResPEs[i].Update();
-
-	for (int i=0; i<pathFinderGroups; ++i)
-		lowResPEs[i].Update();
+	medResPE->Update();
+	lowResPE->Update();
 }
 
 // used to deposit heat on the heat-map as a unit moves along its path
@@ -848,15 +850,18 @@ bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, 
 	if (x >= mapDims.mapx) { return false; }
 	if (z >= mapDims.mapy) { return false; }
 
-	auto maxResPF = &maxResPFs[ThreadPool::GetThreadNum()];
-	auto medResPE = &medResPEs[ThreadPool::GetThreadNum()];
-	auto lowResPE = &lowResPEs[ThreadPool::GetThreadNum()];
+	for (int i = 0; i<pathFinderGroups; ++i){
+		auto maxResPF = &maxResPFs[i];
+		PathNodeStateBuffer& maxResBuf = maxResPF->GetNodeStateBuffer();
+		maxResBuf.SetNodeExtraCost(x, z, cost, synced);
+	}
 
-	PathNodeStateBuffer& maxResBuf = maxResPF->GetNodeStateBuffer();
+	auto medResPE = &pathingStates[PATH_MED_RES];
+	auto lowResPE = &pathingStates[PATH_LOW_RES];
+
 	PathNodeStateBuffer& medResBuf = medResPE->GetNodeStateBuffer();
 	PathNodeStateBuffer& lowResBuf = lowResPE->GetNodeStateBuffer();
-
-	maxResBuf.SetNodeExtraCost(x, z, cost, synced);
+	
 	medResBuf.SetNodeExtraCost(x, z, cost, synced);
 	lowResBuf.SetNodeExtraCost(x, z, cost, synced);
 	return true;
@@ -869,16 +874,19 @@ bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, uns
 	if (sizex < 1 || sizex > mapDims.mapx) { return false; }
 	if (sizez < 1 || sizez > mapDims.mapy) { return false; }
 
-	auto maxResPF = &maxResPFs[ThreadPool::GetThreadNum()];
-	auto medResPE = &medResPEs[ThreadPool::GetThreadNum()];
-	auto lowResPE = &lowResPEs[ThreadPool::GetThreadNum()];
+	for (int i = 0; i<pathFinderGroups; ++i){
+		auto maxResPF = &maxResPFs[i];
+		PathNodeStateBuffer& maxResBuf = maxResPF->GetNodeStateBuffer();
+		maxResBuf.SetNodeExtraCosts(costs, sizex, sizez, synced);
+	}
 
-	PathNodeStateBuffer& maxResBuf = maxResPF->GetNodeStateBuffer();
+	auto medResPE = &pathingStates[PATH_MED_RES];
+	auto lowResPE = &pathingStates[PATH_LOW_RES];
+
 	PathNodeStateBuffer& medResBuf = medResPE->GetNodeStateBuffer();
 	PathNodeStateBuffer& lowResBuf = lowResPE->GetNodeStateBuffer();
 
 	// make all buffers share the same cost-overlay
-	maxResBuf.SetNodeExtraCosts(costs, sizex, sizez, synced);
 	medResBuf.SetNodeExtraCosts(costs, sizex, sizez, synced);
 	lowResBuf.SetNodeExtraCosts(costs, sizex, sizez, synced);
 	return true;
@@ -913,8 +921,8 @@ int2 CPathManager::GetNumQueuedUpdates() const {
 	int2 data;
 
 	if (IsFinalized()) {
-		auto medResPE = &medResPEs[ThreadPool::GetThreadNum()];
-		auto lowResPE = &lowResPEs[ThreadPool::GetThreadNum()];
+		auto medResPE = &pathingStates[PATH_MED_RES];
+		auto lowResPE = &pathingStates[PATH_LOW_RES];
 
 		data.x = medResPE->updatedBlocks.size();
 		data.y = lowResPE->updatedBlocks.size();
