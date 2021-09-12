@@ -7,23 +7,24 @@
 
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Path/Default/IPath.h"
-#include "Sim/Path/Default/IPathFinder.h"
+#include "IPathFinder.h"
 #include "Sim/Path/Default/PathFinderDef.h"
 #include "System/UnorderedMap.hpp"
 
 #include <mutex>
 
 class CSolidObject;
-class CPathFinder;
 class PathFlowMap;
 
 class CPathFinderDef;
 struct MoveDef;
 
 namespace TKPFS {
+
 class CPathEstimator;
 class PathHeatMap;
 class PathingState;
+class CPathFinder;
 
 class CPathManager: public IPathManager {
 public:

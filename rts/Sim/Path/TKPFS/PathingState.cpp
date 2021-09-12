@@ -12,6 +12,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "PathFinder.h"
 #include "Sim/Path/Default/IPath.h"
 #include "Sim/Path/Default/PathConstants.h"
 #include "Sim/Path/Default/PathFinderDef.h"
@@ -60,7 +61,7 @@ void PathingState::Init(CPathFinder* pathFinderlist, PathingState* parentState, 
 		nbrOfBlocks.x = mapDims.mapx / BLOCK_SIZE;
 		nbrOfBlocks.y = mapDims.mapy / BLOCK_SIZE;
 	}
-	
+
 	AllocStateBuffer();
 
 	{
@@ -497,9 +498,6 @@ bool PathingState::ReadFile(const std::string& peFileName, const std::string& ma
  */
 bool PathingState::WriteFile(const std::string& peFileName, const std::string& mapFileName)
 {
-	// TK TODO: rmeove this
-	return true;
-
 	// we need this directory to exist
 	if (!FileSystem::CreateDirectory(GetPathCacheDir()))
 		return false;
@@ -604,6 +602,7 @@ void PathingState::Update()
 			const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
 
 			consumedBlocks.emplace_back(pos, md);
+			//LOG("TK PathingState::Update: moveDef = %d %p (%p)", consumedBlocks.size(), &consumedBlocks.back(), consumedBlocks.back().moveDef);
 		}
 
 		// inform dependent estimator that costs were updated and it should do the same
@@ -637,9 +636,11 @@ void PathingState::Update()
 		const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
 
 		for_mt (0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
-			size_t n;
-			while ((n = --updateCostBlockNum) >= 0)
+			std::int64_t n;
+			while ((n = --updateCostBlockNum) >= 0){
+				//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
 				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
+			}
 		});
 	}
 }

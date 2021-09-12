@@ -12,7 +12,7 @@
 #include "PathingState.h"
 
 #include "Sim/Path/Default/IPath.h"
-#include "Sim/Path/Default/IPathFinder.h"
+#include "IPathFinder.h"
 #include "Sim/Path/Default/PathConstants.h"
 #include "Sim/Path/Default/PathDataTypes.h"
 #include "System/float3.h"
@@ -20,7 +20,6 @@
 
 
 struct MoveDef;
-class CPathFinder;
 class CPathEstimatorDef;
 class CPathFinderDef;
 class CPathCache;
@@ -29,6 +28,7 @@ class CSolidObject;
 namespace TKPFS {
 
 class PathingState;
+class CPathFinder;
 
 class CPathEstimator: public IPathFinder {
 public:
@@ -119,7 +119,6 @@ private:
 	CPathEstimator* nextPathEstimator; // next lower-resolution estimator
 
 	PathingState* pathingState;
-	PathNodeStateBuffer* psBlockStates;
 };
 
 }

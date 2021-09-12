@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "Sim/Path/Default/IPathFinder.h"
+#include "IPathFinder.h"
 #include "Sim/Path/Default/PathDataTypes.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -19,6 +19,7 @@
 namespace TKPFS {
 
 class CPathEstimator;
+class CPathFinder;
 
 class PathingState {
 public:

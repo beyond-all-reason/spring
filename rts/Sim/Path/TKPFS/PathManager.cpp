@@ -3,7 +3,7 @@
 #include "PathManager.h"
 #include "PathingState.h"
 #include "Sim/Path/Default/PathConstants.h"
-#include "Sim/Path/Default/PathFinder.h"
+#include "PathFinder.h"
 #include "PathEstimator.h"
 #include "Sim/Path/Default/PathFlowMap.hpp"
 #include "PathHeatMap.h"
