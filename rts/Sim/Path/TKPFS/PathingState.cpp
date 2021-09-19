@@ -79,7 +79,6 @@ void PathingState::Init(CPathFinder* pathFinderlist, PathingState* parentState, 
 		costBlockNum = {mapDimensionsInBlocks.x * mapDimensionsInBlocks.y};
 
 		vertexCosts.clear();
-        //vertexCosts.resize(moveDefHandler.GetNumMoveDefs() * mapBlockCount * PATH_DIRECTION_VERTICES, PATHCOST_INFINITY);
 		vertexCosts.resize(moveDefHandler.GetNumMoveDefs() * blockStates.GetSize() * PATH_DIRECTION_VERTICES, PATHCOST_INFINITY);
 		maxSpeedMods.clear();
 		maxSpeedMods.resize(moveDefHandler.GetNumMoveDefs(), 0.001f);
@@ -411,10 +410,10 @@ void PathingState::CalcVertexPathCost(
 	pfDef.exactPath       = true;
 	pfDef.dirIndependent  = true;
 
-	//LOG("TK PathingState::CalcVertexPathCost PathFinder 0x%p has BLOCKSIZE %d (thread %d)", &pathFinders[threadNum], pathFinders[threadNum].BLOCK_SIZE, threadNum);
-
 	IPath::Path path;
 	IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
+
+	LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d)", parentBlockIdx, childBlockIdx, path.pathCost, result);
 
 	// store the result
 	if (result == IPath::Ok) {
@@ -551,6 +550,8 @@ void PathingState::Update()
 	pathCache[0]->Update();
 	pathCache[1]->Update();
 
+	//LOG("PathingState::Update %d", BLOCK_SIZE);
+
 	const unsigned int numMoveDefs = moveDefHandler.GetNumMoveDefs();
 
 	if (numMoveDefs == 0)
@@ -583,6 +584,8 @@ void PathingState::Update()
 
 	consumedBlocks.clear();
 	consumedBlocks.reserve(consumeBlocks);
+
+	//LOG("PathingState::Update %d", updatedBlocks.size());
 
 	// get blocks to update
 	while (!updatedBlocks.empty()) {
@@ -628,7 +631,7 @@ void PathingState::Update()
 			blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
 		});
 	}
-
+/* TODO: Re-enable this
 	{
 		SCOPED_TIMER("Sim::Path::Estimator::CalcVertexPathCosts");
 
@@ -642,7 +645,7 @@ void PathingState::Update()
 				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
 			}
 		});
-	}
+	}*/
 }
 
 

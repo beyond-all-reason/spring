@@ -41,6 +41,8 @@ static PathingState pathingStates[PATH_ESTIMATOR_LEVELS];
 const CPathFinder* CPathManager::GetMaxResPF() const { return &maxResPFs[0]; }
 const CPathEstimator* CPathManager::GetMedResPE() const { return &medResPEs[0]; }
 const CPathEstimator* CPathManager::GetLowResPE() const { return &lowResPEs[0]; }
+const PathingState* CPathManager::GetMedResPS() const { return &pathingStates[PATH_MED_RES]; }
+const PathingState* CPathManager::GetLowResPS() const { return &pathingStates[PATH_LOW_RES]; }
 
 CPathManager::CPathManager()
 // : maxResPF(nullptr)

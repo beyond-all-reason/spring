@@ -163,13 +163,17 @@ public:
 	const CPathFinder* GetMaxResPF() const;
 	const CPathEstimator* GetMedResPE() const;
 	const CPathEstimator* GetLowResPE() const;
+	const PathingState* GetMedResPS() const;
+	const PathingState* GetLowResPS() const;
 
 	const PathFlowMap* GetPathFlowMap() const { return pathFlowMap; }
 	const PathHeatMap* GetPathHeatMap() const { return pathHeatMap; }
+	int GetPathFinderGroups() const { return pathFinderGroups; }
 
 	const spring::unordered_map<unsigned int, MultiPath>& GetPathMap() const { return pathMap; }
 
 private:
+
 	void InitStatic();
 
 	IPath::SearchResult ArrangePath(

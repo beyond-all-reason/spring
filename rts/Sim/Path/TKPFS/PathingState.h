@@ -14,7 +14,8 @@
 #include "Sim/Path/TKPFS/PathEstimator.h"
 #include "Sim/Path/TKPFS/PathManager.h"
 
-//extern CPathCache;
+
+class TKPFSPathDrawer;
 
 namespace TKPFS {
 
@@ -36,6 +37,9 @@ public:
 
     float GetVertexCost(size_t index) const { return vertexCosts[index]; };
 
+	const std::vector<float>& GetVertexCosts() const { return vertexCosts; }
+	const std::deque<int2>& GetUpdatedBlocks() const { return updatedBlocks; }
+
 	struct SOffsetBlock {
 		float cost;
 		int2 offset;
@@ -48,6 +52,9 @@ public:
 
 	std::uint32_t CalcChecksum() const;
 	std::uint32_t CalcHash(const char* caller) const;
+
+	unsigned int GetBlockSize() const { return BLOCK_SIZE; }
+	int2 GetNumBlocks() const { return nbrOfBlocks; }
 
     void Update();
 
@@ -89,6 +96,7 @@ public:
 
 private:
 	friend class TKPFS::CPathManager;
+	friend class ::TKPFSPathDrawer;
 
     void InitEstimator(const std::string& peFileName, const std::string& mapFileName);
     void InitBlocks();
