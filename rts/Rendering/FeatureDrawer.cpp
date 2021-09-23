@@ -22,8 +22,8 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
-#include "Rendering/UnitDrawer.h"
-#include "Rendering/UnitDrawerState.hpp"
+#include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawerState.hpp"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -67,7 +67,7 @@ static bool SetFeatureDrawAlpha(
 		return (f->drawAlpha = 0.0f, false);
 
 	const float sqrCamDist = (f->pos - cam->GetPos()).SqLength();
-	const float farTexDist = Square(f->GetDrawRadius() * unitDrawer->unitDrawDist);
+	const float farTexDist = Square(f->GetDrawRadius() * CUnitDrawer::GetUnitDrawDist());
 
 	// first test if feature should be rendered as a fartex
 	if (sqrCamDist >= farTexDist)
@@ -472,7 +472,7 @@ void CFeatureDrawer::DrawIndividualNoTrans(const CFeature* feature, bool noLuaCa
 void CFeatureDrawer::DrawAlphaPass()
 {
 	inAlphaPass = true;
-	ffpAlphaMat = !(unitDrawer->GetWantedDrawerState(true))->CanDrawAlpha();
+	ffpAlphaMat = !(unitDrawer->CanDrawAlpha());
 
 	{
 		unitDrawer->SetupAlphaDrawing(false);

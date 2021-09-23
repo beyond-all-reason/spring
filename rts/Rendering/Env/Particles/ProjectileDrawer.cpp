@@ -12,7 +12,7 @@
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/VertexArray.h"

@@ -45,7 +45,7 @@
 #include "Rendering/MatrixUploader.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/TeamHighlight.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -1344,7 +1344,7 @@ bool CGame::Draw() {
 
 	{
 		SCOPED_TIMER("Draw::Screen");
-		if (unitDrawer->useScreenIcons)
+		if (CUnitDrawer::UseScreenIcons())
 			unitDrawer->DrawUnitIconsScreen();
 
 		eventHandler.DrawScreenEffects();
@@ -1559,7 +1559,7 @@ void CGame::SimFrame() {
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.
 		// should probably be split from drawer
-		unitDrawer->UpdateGhostedBuildings();
+		CUnitDrawer::UpdateGhostedBuildings();
 		interceptHandler.Update(false);
 
 		teamHandler.GameFrame(gs->frameNum);

@@ -18,7 +18,7 @@
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/FeatureDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/SmoothHeightMeshDrawer.h"
 #include "Rendering/InMapDrawView.h"
@@ -180,6 +180,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// (it updates unitdrawpos which is used for maximized minimap too)
 	// unitDrawer->Update();
 	// lineDrawer.UpdateLineStipple();
+	CUnitDrawer::UpdateStatic();
 	treeDrawer->Update();
 	featureDrawer->Update();
 	IWater::ApplyPushedChanges(game);
@@ -398,7 +399,7 @@ void CWorldDrawer::DrawMiscObjects() const
 	// either draw from here, or make {Dyn,Bump}Water use blending
 	// pro: icons are drawn only once per frame, not every pass
 	// con: looks somewhat worse for underwater / obscured icons
-	if (!unitDrawer->useScreenIcons)
+	if (!CUnitDrawer::UseScreenIcons())
 		unitDrawer->DrawUnitIcons();
 
 	lineDrawer.DrawAll();

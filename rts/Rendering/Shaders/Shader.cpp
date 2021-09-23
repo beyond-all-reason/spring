@@ -282,6 +282,9 @@ namespace Shader {
 		if (shaderFlags.HashSet() && !shaderFlags.Updated())
 			return;
 
+		// make HashSet() true
+		shaderFlags.UpdateHash();
+
 		Reload(!shaderFlags.HashSet(), validate);
 		PrintDebugInfo();
 	}

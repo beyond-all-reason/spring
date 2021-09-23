@@ -36,7 +36,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/DecalsDrawerGL4.h"

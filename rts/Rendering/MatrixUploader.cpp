@@ -29,8 +29,6 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/Camera.h"
 
-#include "System/TimeProfiler.h" //KILL ME
-
 void MatrixUploader::InitVBO(const uint32_t newElemCount)
 {
 	matrixSSBO = new VBO(GL_SHADER_STORAGE_BUFFER, false, false);

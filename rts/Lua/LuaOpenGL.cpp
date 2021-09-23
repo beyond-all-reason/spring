@@ -50,7 +50,7 @@
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/FeatureDrawer.h"
 #include "Rendering/UnitDefImage.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
 #include "Rendering/Env/WaterRendering.h"
@@ -1432,9 +1432,9 @@ static void GLObjectShape(lua_State* L, const SolidObjectDef* def)
 
 	// does not set the full state by default
 	if (luaL_optboolean(L, 5, true)) {
-		CUnitDrawer::DrawIndividualDefOpaque(def, luaL_checkint(L, 2), rawState, toScreen);
+		unitDrawer->DrawIndividualDefOpaque(def, luaL_checkint(L, 2), rawState, toScreen);
 	} else {
-		CUnitDrawer::DrawIndividualDefAlpha(def, luaL_checkint(L, 2), rawState, toScreen);
+		unitDrawer->DrawIndividualDefAlpha(def, luaL_checkint(L, 2), rawState, toScreen);
 	}
 }
 
@@ -1492,11 +1492,11 @@ int LuaOpenGL::UnitCommon(lua_State* L, bool applyTransform, bool callDrawUnit)
 
 	glPushAttrib(GL_ENABLE_BIT);
 
-	typedef void(CUnitDrawer::*RawDrawMemFunc)(const CUnit*, unsigned int, unsigned int, bool, bool);
-	typedef void(CUnitDrawer::*MatDrawMemFunc)(const CUnit*, bool);
+	typedef void(CUnitDrawer::*RawDrawMemFunc)(const CUnit*, unsigned int, unsigned int, bool, bool) const;
+	typedef void(CUnitDrawer::*MatDrawMemFunc)(const CUnit*, bool) const;
 
-	const RawDrawMemFunc rawDrawFuncs[2] = {&CUnitDrawer::DrawUnitNoTrans, &CUnitDrawer::DrawUnitTrans};
-	const MatDrawMemFunc matDrawFuncs[2] = {&CUnitDrawer::DrawIndividualNoTrans, &CUnitDrawer::DrawIndividual};
+	const RawDrawMemFunc rawDrawFuncs[2] = { &CUnitDrawer::DrawUnitNoTrans, &CUnitDrawer::DrawUnitTrans };
+	const MatDrawMemFunc matDrawFuncs[2] = { &CUnitDrawer::DrawIndividualNoTrans, &CUnitDrawer::DrawIndividual };
 
 	if (!useLuaMat) {
 		// "scoped" draw; this prevents any Lua-assigned
