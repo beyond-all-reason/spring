@@ -49,7 +49,6 @@ CR_REG_METADATA(CFeature, (
 	CR_MEMBER(fireTime),
 	CR_MEMBER(smokeTime),
 
-	CR_MEMBER(drawQuad),
 	CR_MEMBER(drawFlag),
 
 	CR_MEMBER(def),

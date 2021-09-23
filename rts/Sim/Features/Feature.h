@@ -138,7 +138,6 @@ public:
 	int fireTime = 0;
 	int smokeTime = 0;
 
-	int drawQuad = -1; /// which drawQuad we are part of (unsynced)
 	int drawFlag = -2; /// one of FD_*_FLAG (unsynced)
 
 	SResourcePack defResources = {0.0f, 1.0f};

@@ -401,6 +401,8 @@ public:
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
 
+	int drawQuad = -1; /// which drawQuad we are part of (unsynced)
+
 	/**
 	 * @brief mod controlled parameters
 	 * This is a set of parameters that is initialized
