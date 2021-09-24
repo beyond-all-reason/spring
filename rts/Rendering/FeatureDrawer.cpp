@@ -116,6 +116,32 @@ static const SetFeatureAlphaMatFunc setFeatureAlphaMatFuncs[] = {
 };
 
 
+class CFeatureQuadDrawer : public CReadMap::IQuadDrawer {
+public:
+	CFeatureQuadDrawer() : numQuadsX(0) {}
+	CFeatureQuadDrawer(int _numQuadsX) : numQuadsX(_numQuadsX) {}
+
+	void ResetState() override {
+		camQuads.clear();
+		rdrProxies.clear();
+	}
+
+	void DrawQuad(int x, int y) override {
+		camQuads.push_back(y * numQuadsX + x);
+
+		// used so we do not iterate over non-visited renderers (in any pass)
+		rdrProxies[y * numQuadsX + x].SetLastDrawFrame(globalRendering->drawFrame);
+	}
+
+	std::vector<int>& GetCamQuads() { return camQuads; }
+	std::vector<CFeatureDrawer::RdrContProxy>& GetRdrProxies() { return rdrProxies; }
+
+private:
+	std::vector<int> camQuads;
+	std::vector<CFeatureDrawer::RdrContProxy> rdrProxies;
+
+	int numQuadsX;
+};
 
 
 void CFeatureDrawer::InitStatic() {
@@ -153,6 +179,9 @@ void CFeatureDrawer::Init()
 
 	drawQuadsX = mapDims.mapx / DRAW_QUAD_SIZE;
 	drawQuadsY = mapDims.mapy / DRAW_QUAD_SIZE;
+
+	quadDrawer = new CFeatureQuadDrawer(drawQuadsX);
+
 	featureDrawDistance = configHandler->GetFloat("FeatureDrawDistance");
 	featureFadeDistance = std::min(configHandler->GetFloat("FeatureFadeDistance"), featureDrawDistance);
 
@@ -185,6 +214,8 @@ void CFeatureDrawer::Kill()
 		(p.GetRenderer(MODELTYPE_S3O)).Kill();
 		(p.GetRenderer(MODELTYPE_ASS)).Kill();
 	}
+
+	spring::SafeDelete(quadDrawer);
 
 	unsortedFeatures.clear();
 
@@ -601,33 +632,6 @@ void CFeatureDrawer::DrawShadowPass()
 	inShadowPass = false;
 }
 
-
-
-class CFeatureQuadDrawer : public CReadMap::IQuadDrawer {
-public:
-	CFeatureQuadDrawer(int _numQuadsX): numQuadsX(_numQuadsX) {}
-
-	void ResetState() override { numQuadsX = 0; }
-
-	void DrawQuad(int x, int y) override {
-		camQuads.push_back(y * numQuadsX + x);
-
-		// used so we do not iterate over non-visited renderers (in any pass)
-		rdrProxies[y * numQuadsX + x].SetLastDrawFrame(globalRendering->drawFrame);
-	}
-
-	std::vector<int>& GetCamQuads() { return camQuads; }
-	std::vector<CFeatureDrawer::RdrContProxy>& GetRdrProxies() { return rdrProxies; }
-
-private:
-	std::vector<int> camQuads;
-	std::vector<CFeatureDrawer::RdrContProxy> rdrProxies;
-
-	int numQuadsX;
-};
-
-
-
 void CFeatureDrawer::FlagVisibleFeatures(
 	const CCamera* cam,
 	bool drawShadowPass,
@@ -721,16 +725,15 @@ void CFeatureDrawer::GetVisibleFeatures(CCamera* cam, int extraSize, bool drawFa
 	camVisibleQuads[cam->GetCamType()].reserve(256);
 
 	{
-		CFeatureQuadDrawer drawer(drawQuadsX);
-
-		(drawer.GetCamQuads()).swap(camVisibleQuads[cam->GetCamType()]);
-		(drawer.GetRdrProxies()).swap(featureDrawer->modelRenderers);
+		quadDrawer->ResetState();
+		(quadDrawer->GetCamQuads()).swap(camVisibleQuads[cam->GetCamType()]);
+		(quadDrawer->GetRdrProxies()).swap(featureDrawer->modelRenderers);
 
 		cam->CalcFrustumLines(readMap->GetCurrMinHeight() - 100.0f, readMap->GetCurrMaxHeight() + 100.0f, SQUARE_SIZE);
-		readMap->GridVisibility(cam, &drawer, featureDrawDistance, DRAW_QUAD_SIZE, extraSize);
+		readMap->GridVisibility(cam, quadDrawer, featureDrawDistance, DRAW_QUAD_SIZE, extraSize);
 
-		(drawer.GetCamQuads()).swap(camVisibleQuads[cam->GetCamType()]);
-		(drawer.GetRdrProxies()).swap(featureDrawer->modelRenderers);
+		(quadDrawer->GetCamQuads()).swap(camVisibleQuads[cam->GetCamType()]);
+		(quadDrawer->GetRdrProxies()).swap(featureDrawer->modelRenderers);
 	}
 
 	FlagVisibleFeatures(cam, inShadowPass, water->DrawReflectionPass(), water->DrawRefractionPass(), drawFar);

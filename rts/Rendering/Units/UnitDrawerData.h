@@ -43,30 +43,29 @@ public:
 class CUnitDrawerData : public CUnitRenderDataBase {
 public:
 	// CEventClient interface
-	bool WantsEvent(const std::string& eventName) {
+	bool WantsEvent(const std::string& eventName) override {
 		return
 			eventName == "RenderUnitCreated" || eventName == "RenderUnitDestroyed" ||
-			eventName == "UnitCloaked" || eventName == "UnitDecloaked" ||
-			eventName == "UnitEnteredRadar" || eventName == "UnitEnteredLos" ||
-			eventName == "UnitLeftRadar" || eventName == "UnitLeftLos" ||
-			eventName == "PlayerChanged" || eventName == "SunChanged";
+			eventName == "UnitCloaked"       || eventName == "UnitDecloaked"       ||
+			eventName == "UnitEnteredRadar"  || eventName == "UnitEnteredLos"      ||
+			eventName == "UnitLeftRadar"     || eventName == "UnitLeftLos"         ||
+			eventName == "PlayerChanged"     || eventName == "SunChanged";
 	}
 
+	void RenderUnitCreated(const CUnit* unit, int cloaked) override;
+	void RenderUnitDestroyed(const CUnit* unit) override;
 
-	void RenderUnitCreated(const CUnit* unit, int cloaked);
-	void RenderUnitDestroyed(const CUnit* unit);
+	void UnitEnteredRadar(const CUnit* unit, int allyTeam) override;
+	void UnitLeftRadar(const CUnit* unit, int allyTeam) override { UnitEnteredRadar(unit, allyTeam); }
 
-	void UnitEnteredRadar(const CUnit* unit, int allyTeam);
-	void UnitLeftRadar(const CUnit* unit, int allyTeam) { UnitEnteredRadar(unit, allyTeam); };
+	void UnitEnteredLos(const CUnit* unit, int allyTeam) override;
+	void UnitLeftLos(const CUnit* unit, int allyTeam) override;
 
-	void UnitEnteredLos(const CUnit* unit, int allyTeam);
-	void UnitLeftLos(const CUnit* unit, int allyTeam);
+	void UnitCloaked(const CUnit* unit) override;
+	void UnitDecloaked(const CUnit* unit) override;
 
-	void UnitCloaked(const CUnit* unit);
-	void UnitDecloaked(const CUnit* unit);
-
-	void PlayerChanged(int playerNum);
-	void SunChanged();
+	void PlayerChanged(int playerNum) override;
+	void SunChanged() override;
 public:
 	struct TempDrawUnit {
 		const UnitDef* unitDef;
@@ -170,9 +169,6 @@ public:
 	float iconFadeVanish = 1000.0f;
 
 private:
-	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> opaqueModelRenderers;
-	std::array<ModelRenderContainer<CUnit>, MODELTYPE_CNT> alphaModelRenderers;
-
 	/// AI unit ghosts
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempAlphaUnits;

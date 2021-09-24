@@ -1,4 +1,5 @@
 #include "UnitDrawerData.h"
+#include "UnitDrawerData.h"
 
 #include "System/MemPoolTypes.h"
 #include "System/ContainerUtil.h"
@@ -34,10 +35,11 @@ CUnitDrawerData::CUnitDrawerData()
 {
 	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
-	SetUnitDrawDist((float)configHandler->GetInt("UnitLodDist"));
-	SetUnitIconDist((float)configHandler->GetInt("UnitIconDist"));
-	iconScale = configHandler->GetFloat("UnitIconScaleUI");
-	iconFadeStart = configHandler->GetFloat("UnitIconFadeStart");
+	SetUnitDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
+	SetUnitIconDist(static_cast<float>(configHandler->GetInt("UnitIconDist")));
+
+	iconScale      = configHandler->GetFloat("UnitIconScaleUI");
+	iconFadeStart  = configHandler->GetFloat("UnitIconFadeStart");
 	iconFadeVanish = configHandler->GetFloat("UnitIconFadeVanish");
 	useScreenIcons = configHandler->GetBool("UnitIconsAsUI");
 	iconHideWithUI = configHandler->GetBool("UnitIconsHideWithUI");
@@ -417,6 +419,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 		if (addNewGhost && canSeeGhost) {
 			if (gso == nullptr) {
 				gso = ghostMemPool.alloc<GhostSolidObject>();
+
 				gso->pos = u->pos;
 				gso->model = gsoModel;
 				gso->decal = nullptr;
@@ -438,15 +441,9 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 		spring::VectorErase(liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
 	}
 
-	if (u->model != nullptr) {
-		// delete from both; cloaked state is unreliable at this point
-		alphaModelRenderers[MDL_TYPE(u)].DelObject(u);
-		opaqueModelRenderers[MDL_TYPE(u)].DelObject(u);
-	}
-
-	spring::VectorErase(unsortedObjects, u);
-
+	DelObject(unit);
 	UpdateUnitMiniMapIcon(unit, false, true);
+
 	LuaObjectDrawer::SetObjectLOD(u, LUAOBJ_UNIT, 0);
 }
 

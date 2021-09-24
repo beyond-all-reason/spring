@@ -16,6 +16,8 @@ namespace GL {
 	struct GeometryBuffer;
 }
 
+class CFeatureQuadDrawer;
+
 class CFeatureDrawer: public CEventClient
 {
 public:
@@ -114,7 +116,6 @@ private:
 
 		unsigned int GetLastDrawFrame() const { return lastDrawFrame; }
 		void SetLastDrawFrame(unsigned int f) { lastDrawFrame = f; }
-
 	private:
 		std::array<ModelRenderContainer<CFeature>, MODELTYPE_CNT> rendererTypes;
 
@@ -123,6 +124,9 @@ private:
 		// during *any* pass
 		unsigned int lastDrawFrame = 0;
 	};
+
+private:
+	CFeatureQuadDrawer* quadDrawer;
 
 	std::vector<RdrContProxy> modelRenderers;
 	std::array< std::vector<int>, CCamera::CAMTYPE_ENVMAP> camVisibleQuads;
