@@ -107,6 +107,7 @@
 #include "UI/ProfileDrawer.h"
 #include "UI/Groups/GroupHandler.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/creg/SerializeLuaState.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/Sync/FPUCheck.h"
@@ -434,7 +435,7 @@ void CGame::Load(const std::string& mapFileName)
 		{
 			char msgBuf[512];
 
-			SNPRINTF(msgBuf, sizeof(msgBuf), "[Game::%s][lua{Rules,Gaia}={%p,%p}]", __func__, luaRules, luaGaia);
+			SNPRINTF(msgBuf, sizeof(msgBuf), "[Game::%s][lua{Rules,Gaia}={%p,%p}][locale=\"%s\"]", __func__, luaRules, luaGaia, setlocale(LC_ALL, nullptr));
 			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
 		}
 	} catch (const content_error& e) {
@@ -834,14 +835,14 @@ void CGame::KillLua(bool dtor)
 	CLoadScreen::DeleteInstance();
 
 	// kill LuaUI here, various handler pointers are invalid in ~GuiHandler
-	LOG("[Game::%s][3] dtor=%d luaUI=%p", __func__, dtor, luaUI);
+	LOG("[Game::%s][1] dtor=%d luaUI=%p", __func__, dtor, luaUI);
 	CLuaUI::FreeHandler();
 
 	ENTER_SYNCED_CODE();
-	LOG("[Game::%s][1] dtor=%d luaGaia=%p", __func__, dtor, luaGaia);
+	LOG("[Game::%s][2] dtor=%d luaGaia=%p", __func__, dtor, luaGaia);
 	CLuaGaia::FreeHandler();
 
-	LOG("[Game::%s][2] dtor=%d luaRules=%p", __func__, dtor, luaRules);
+	LOG("[Game::%s][3] dtor=%d luaRules=%p", __func__, dtor, luaRules);
 	CLuaRules::FreeHandler();
 
 	CSplitLuaHandle::ClearGameParams();
@@ -850,6 +851,9 @@ void CGame::KillLua(bool dtor)
 
 	LOG("[Game::%s][4] dtor=%d", __func__, dtor);
 	LuaOpenGL::Free();
+
+	LOG("[Game::%s][5] dtor=%d", __func__, dtor);
+	creg::UnregisterAllCFunctions();
 }
 
 void CGame::KillMisc()

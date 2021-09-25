@@ -133,6 +133,8 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	fogParams.w = 1.0f / (fogParams.y - fogParams.x);
 	updateBuffer->fogParams = fogParams;
 
+	updateBuffer->sunDir = (sky != nullptr) ? sky->GetLight()->GetLightDir() : float4(/*map default*/ 0.0f, 0.447214f, 0.894427f, 1.0f);
+
 	updateBuffer->sunAmbientModel = sunLighting->modelAmbientColor;
 	updateBuffer->sunAmbientMap = sunLighting->groundAmbientColor;
 
@@ -141,6 +143,8 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 
 	updateBuffer->sunSpecularModel = sunLighting->modelSpecularColor;
 	updateBuffer->sunSpecularMap = sunLighting->groundSpecularColor;
+
+	updateBuffer->shadowDensity = float4{ sunLighting->groundShadowDensity, sunLighting->modelShadowDensity, 0.0, 0.0 };
 
 	updateBuffer->windInfo = float4{ envResHandler.GetCurrentWindVec(), envResHandler.GetCurrentWindStrength() };
 

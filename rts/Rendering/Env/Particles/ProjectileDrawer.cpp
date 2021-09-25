@@ -25,7 +25,6 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
@@ -592,6 +591,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 	DrawProjectileModel(pro);
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
+
 	sortedProjectiles[drawSorted && pro->drawSorted].push_back(pro);
 }
 
@@ -623,12 +623,12 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
+		if (!p->castShadow)
+			return;
+
 		// if this returns false, then projectile is
 		// neither weapon nor piece, or has no model
 		if (DrawProjectileModel(p))
-			return;
-
-		if (!p->castShadow)
 			return;
 
 		// don't need to z-sort in the shadow pass
@@ -745,8 +745,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		DrawProjectilesSet(renderProjectiles, drawReflection, drawRefraction);
 
 		// empty if !drawSorted
-		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), zSortCmp);
-
+		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
 		fxVA = GetVertexArray();
 		fxVA->Initialize();

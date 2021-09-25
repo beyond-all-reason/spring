@@ -57,12 +57,16 @@ struct UniformParamsBuffer {
 	float4 fogColor;  //fog color
 	float4 fogParams; //fog {start, end, 0.0, scale}
 
+	float4 sunDir;
+
 	float4 sunAmbientModel;
 	float4 sunAmbientMap;
 	float4 sunDiffuseModel;
 	float4 sunDiffuseMap;
 	float4 sunSpecularModel;
 	float4 sunSpecularMap;
+
+	float4 shadowDensity; // {ground, units, 0.0, 0.0}
 
 	float4 windInfo; // windx, windy, windz, windStrength
 	float2 mouseScreenPos; //x, y. Screen space.
