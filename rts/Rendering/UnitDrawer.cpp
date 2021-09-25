@@ -188,13 +188,13 @@ typedef const void (*PopRenderStateFunc)();
 
 typedef const void (*SetTeamColorFunc)(const IUnitDrawerState*, int team, const float2 alpha);
 
-static const BindTexFunc opaqueTexBindFuncs[MODELTYPE_OTHER] = {
+static const BindTexFunc opaqueTexBindFuncs[MODELTYPE_CNT] = {
 	BindOpaqueTexDummy, // 3DO (no-op, done by PushRenderState3DO)
 	BindOpaqueTex,      // S3O
 	BindOpaqueTex,      // ASS
 };
 
-static const BindTexFunc shadowTexBindFuncs[MODELTYPE_OTHER] = {
+static const BindTexFunc shadowTexBindFuncs[MODELTYPE_CNT] = {
 	BindShadowTexAtlas, // 3DO
 	BindShadowTex,      // S3O
 	BindShadowTex,      // ASS
@@ -205,20 +205,20 @@ static const BindTexFunc* bindModelTexFuncs[] = {
 	&shadowTexBindFuncs[0], // shadow
 };
 
-static const KillTexFunc shadowTexKillFuncs[MODELTYPE_OTHER] = {
+static const KillTexFunc shadowTexKillFuncs[MODELTYPE_CNT] = {
 	KillShadowTexAtlas, // 3DO
 	KillShadowTex,      // S3O
 	KillShadowTex,      // ASS
 };
 
 
-static const PushRenderStateFunc renderStatePushFuncs[MODELTYPE_OTHER] = {
+static const PushRenderStateFunc renderStatePushFuncs[MODELTYPE_CNT] = {
 	PushRenderState3DO,
 	PushRenderStateS3O,
 	PushRenderStateASS,
 };
 
-static const PopRenderStateFunc renderStatePopFuncs[MODELTYPE_OTHER] = {
+static const PopRenderStateFunc renderStatePopFuncs[MODELTYPE_CNT] = {
 	PopRenderState3DO,
 	PopRenderStateS3O,
 	PopRenderStateASS,
@@ -295,7 +295,7 @@ void CUnitDrawer::Init() {
 
 	LoadUnitExplosionGenerators();
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		opaqueModelRenderers[modelType].Init();
 		alphaModelRenderers[modelType].Init();
 	}
@@ -357,7 +357,7 @@ void CUnitDrawer::Kill()
 	}
 
 	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			auto& lgb = liveGhostBuildings[allyTeam][modelType];
 			auto& dgb = deadGhostBuildings[allyTeam][modelType];
 
@@ -382,7 +382,7 @@ void CUnitDrawer::Kill()
 	// liveGhostBuildings.clear();
 
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		opaqueModelRenderers[modelType].Kill();
 		alphaModelRenderers[modelType].Kill();
 	}
@@ -397,7 +397,7 @@ void CUnitDrawer::Kill()
 
 void CUnitDrawer::Update()
 {
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		UpdateTempDrawUnits(tempOpaqueUnits[modelType]);
 		UpdateTempDrawUnits(tempAlphaUnits[modelType]);
 	}
@@ -460,7 +460,7 @@ void CUnitDrawer::DrawOpaquePass(bool deferredPass, bool drawReflection, bool dr
 {
 	SetupOpaqueDrawing(deferredPass);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		PushModelRenderState(modelType);
 		DrawOpaqueUnits(modelType, drawReflection, drawRefraction);
 		DrawOpaqueAIUnits(modelType);
@@ -569,7 +569,7 @@ void CUnitDrawer::DrawUnitIconsScreen()
 {
 	if (game->hideInterface && iconHideWithUI)
 		return;
-	
+
 	// draw unit icons and radar blips
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
 	glEnable(GL_TEXTURE_2D);
@@ -604,7 +604,7 @@ void CUnitDrawer::DrawUnitIconsScreen()
 				continue;
 			if (unit->health <= 0 || unit->beingBuilt)
 				continue;
-			
+
 			const unsigned short closBits = (unit->losStatus[gu->myAllyTeam] & (LOS_INLOS                  ));
 			const unsigned short plosBits = (unit->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
 
@@ -726,7 +726,7 @@ void CUnitDrawer::DrawShadowPass()
 		DrawOpaqueUnitsShadow(MODELTYPE_3DO);
 		glEnable(GL_CULL_FACE);
 
-		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_S3O; modelType < MODELTYPE_CNT; modelType++) {
 			// note: just use DrawOpaqueUnits()? would
 			// save texture switches needed anyway for
 			// UNIT_SHADOW_ALPHA_MASKING
@@ -755,9 +755,9 @@ void CUnitDrawer::DrawIconScreenArray(const CUnit* unit, const icon::CIconData* 
 	float3 pos = (!gu->spectatingFullView) ?
 		unit->GetObjDrawErrorPos(gu->myAllyTeam) :
 		unit->GetObjDrawMidPos();
-	
+
 	pos = camera->CalcWindowCoordinates(pos);
-	if (pos.z < 0)
+	if (pos.z > 1.0f || pos.z < 0.0f)
 		return;
 
 	// use white for selected units
@@ -888,7 +888,7 @@ void CUnitDrawer::DrawAlphaPass()
 		if (UseAdvShading())
 			glDisable(GL_ALPHA_TEST);
 
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			PushModelRenderState(modelType);
 			DrawAlphaUnits(modelType);
 			DrawAlphaAIUnits(modelType);
@@ -1046,7 +1046,7 @@ void CUnitDrawer::DrawAlphaAIUnitBorder(const TempDrawUnit& unit)
 void CUnitDrawer::UpdateGhostedBuildings()
 {
 	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			auto& dgb = deadGhostBuildings[allyTeam][modelType];
 
 			for (int i = 0; i < dgb.size(); /*no-op*/) {
@@ -1582,7 +1582,7 @@ enum {
 
 void CUnitDrawer::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall)
 {
-	const float3 stageBounds = {0.0f, unit->model->CalcDrawHeight(), unit->buildProgress};
+	const float3 stageBounds = {0.0f, unit->model->GetDrawHeight(), unit->buildProgress};
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
 	// the default value derives from the model vertices and makes more sense to use here
@@ -1645,7 +1645,7 @@ void CUnitDrawer::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCal
 
 	const float3 frameColors[2] = {unit->unitDef->nanoColor, {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f}};
 	const float3 stageColors[2] = {frameColors[globalRendering->teamNanospray], frameColors[globalRendering->teamNanospray]};
-	const float3 stageBounds    = {0.0f, model->CalcDrawHeight(), unit->buildProgress};
+	const float3 stageBounds    = {0.0f, model->GetDrawHeight(), unit->buildProgress};
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
 	// the default value derives from the model vertices and makes more sense to use here

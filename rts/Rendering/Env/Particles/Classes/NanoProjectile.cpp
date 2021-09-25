@@ -8,6 +8,7 @@
 #include "Rendering/GL/VertexArray.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Colors.h"
+#include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -18,6 +19,7 @@ CR_REG_METADATA(CNanoProjectile,
 (
 	CR_MEMBER(rotVal),
 	CR_MEMBER(rotVel),
+	CR_MEMBER(rotAcc),
 
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(deathFrame),
@@ -45,6 +47,10 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 	drawRadius = 3;
 
 	projectileHandler.currentNanoParticles += 1;
+
+	rotVal = rotVal0 + rotValRng0 * (guRNG.NextFloat() * 2.0 - 1.0);
+	rotVel = rotVel0 + rotVelRng0 * (guRNG.NextFloat() * 2.0 - 1.0);
+	rotAcc = rotAcc0 + rotAccRng0 * (guRNG.NextFloat() * 2.0 - 1.0);
 }
 
 CNanoProjectile::~CNanoProjectile()
@@ -52,18 +58,12 @@ CNanoProjectile::~CNanoProjectile()
 	projectileHandler.currentNanoParticles -= 1;
 }
 
-void CNanoProjectile::Init(const CUnit* owner, const float3& offset)
-{
-	rotVal = rotVal0;
-	rotVel = rotVel0;
-}
-
 void CNanoProjectile::Update()
 {
 	pos += speed;
 
 	rotVal += rotVel;
-	rotVel += rotAcc0;
+	rotVel += rotAcc;
 
 	deleteMe |= (gs->frameNum >= deathFrame);
 }
@@ -80,9 +80,8 @@ void CNanoProjectile::Draw(CVertexArray* va)
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		CMatrix44f rotMat; rotMat.Rotate(rotVal, camera->GetForward());
-		for (auto& v : bounds)
-			v = (rotMat * float4(v, 1.0f)).xyz;
+		for (auto& b : bounds)
+			b = b.rotate(rotVal, camera->GetForward());
 	}
 
 	const auto* gfxt = projectileDrawer->gfxtex;

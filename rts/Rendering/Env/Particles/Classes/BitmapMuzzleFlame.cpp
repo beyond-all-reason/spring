@@ -18,7 +18,6 @@ CR_BIND_DERIVED(CBitmapMuzzleFlame, CProjectile, )
 CR_REG_METADATA(CBitmapMuzzleFlame,
 (
 	CR_MEMBER(invttl),
-	CR_MEMBER(life),
 	CR_MEMBER(createTime),
 	CR_MEMBER(rotVal),
 	CR_MEMBER(rotVel),
@@ -44,7 +43,6 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 	, frontOffset(0.0f)
 	, ttl(0)
 	, invttl(0.0f)
-	, life(0.0f)
 	, createTime(0)
 {
 	// set fields from super-classes
@@ -55,7 +53,7 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 
 void CBitmapMuzzleFlame::Draw(CVertexArray* va)
 {
-	life = (gs->frameNum - createTime + globalRendering->timeOffset) * invttl;
+	const float life = (gs->frameNum - createTime + globalRendering->timeOffset) * invttl;
 
 	unsigned char col[4];
 	colorMap->GetColor(col, life);
@@ -88,26 +86,28 @@ void CBitmapMuzzleFlame::Draw(CVertexArray* va)
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		CMatrix44f rotMat;
-		rotMat.Rotate(rotVal, dir);
 		for (auto& b : bounds)
-			b = (rotMat * float4(b, 1.0f)).xyz; //TODO float3:Rotate instead
+			b = b.rotate(rotVal, dir);
 	}
 
-	va->AddVertexTC(pos + bounds[ 0], sideTexture->xstart, sideTexture->ystart, col);
-	va->AddVertexTC(pos + bounds[ 1], sideTexture->xend,   sideTexture->ystart, col);
-	va->AddVertexTC(pos + bounds[ 2], sideTexture->xend,   sideTexture->yend,   col);
-	va->AddVertexTC(pos + bounds[ 3], sideTexture->xstart, sideTexture->yend,   col);
+	if (IsValidTexture(sideTexture)) {
+		va->AddVertexTC(pos + bounds[0], sideTexture->xstart, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[1], sideTexture->xend, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[2], sideTexture->xend, sideTexture->yend, col);
+		va->AddVertexTC(pos + bounds[3], sideTexture->xstart, sideTexture->yend, col);
 
-	va->AddVertexTC(pos + bounds[ 4], sideTexture->xstart, sideTexture->ystart, col);
-	va->AddVertexTC(pos + bounds[ 5], sideTexture->xend,   sideTexture->ystart, col);
-	va->AddVertexTC(pos + bounds[ 6], sideTexture->xend,   sideTexture->yend,   col);
-	va->AddVertexTC(pos + bounds[ 7], sideTexture->xstart, sideTexture->yend,   col);
+		va->AddVertexTC(pos + bounds[4], sideTexture->xstart, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[5], sideTexture->xend, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[6], sideTexture->xend, sideTexture->yend, col);
+		va->AddVertexTC(pos + bounds[7], sideTexture->xstart, sideTexture->yend, col);
+	}
 
-	va->AddVertexTC(fpos + bounds[ 8], frontTexture->xstart, frontTexture->ystart, col);
-	va->AddVertexTC(fpos + bounds[ 9], frontTexture->xend,   frontTexture->ystart, col);
-	va->AddVertexTC(fpos + bounds[10], frontTexture->xend,   frontTexture->yend,   col);
-	va->AddVertexTC(fpos + bounds[11], frontTexture->xstart, frontTexture->yend,   col);
+	if (IsValidTexture(frontTexture)) {
+		va->AddVertexTC(fpos + bounds[8], frontTexture->xstart, frontTexture->ystart, col);
+		va->AddVertexTC(fpos + bounds[9], frontTexture->xend, frontTexture->ystart, col);
+		va->AddVertexTC(fpos + bounds[10], frontTexture->xend, frontTexture->yend, col);
+		va->AddVertexTC(fpos + bounds[11], frontTexture->xstart, frontTexture->yend, col);
+	}
 }
 
 void CBitmapMuzzleFlame::Update()
@@ -122,7 +122,6 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 {
 	CProjectile::Init(owner, offset);
 
-	life = 0.0f;
 	invttl = 1.0f / ttl;
 	createTime = gs->frameNum;
 
@@ -132,7 +131,7 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 
 int CBitmapMuzzleFlame::GetProjectilesCount() const
 {
-	return 3;
+	return 2 * IsValidTexture(sideTexture) + 1 * IsValidTexture(frontTexture);
 }
 
 

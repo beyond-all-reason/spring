@@ -13,8 +13,8 @@
 
 #include "Rendering/GL/myGL.h"
 
-struct VBO;
-struct LuaVAOImpl;
+class VBO;
+class LuaVAOImpl;
 
 class LuaVBOImpl {
 public:
@@ -29,8 +29,8 @@ public:
 	void Define(const int elementsCount, const sol::optional<sol::object> attribDefArgOpt);
 	std::tuple<uint32_t, uint32_t, uint32_t> GetBufferSize();
 
-	size_t Upload(const sol::stack_table& luaTblData, const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> luaStartIndexOpt, const sol::optional<int> luaFinishIndexOpt);
-	sol::as_table_t<std::vector<lua_Number>> Download(const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt);
+	size_t Upload(const sol::stack_table& luaTblData, sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> luaStartIndexOpt, sol::optional<int> luaFinishIndexOpt);
+	sol::as_table_t<std::vector<lua_Number>> Download(sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> elemCountOpt, sol::optional<bool> forceGPUReadOpt);
 
 	size_t ShapeFromUnitDefID(const int id);
 	size_t ShapeFromFeatureDefID(const int id);
@@ -62,9 +62,6 @@ private:
 	bool FillAttribsNumberImpl(const int numVec4Attribs);
 	bool DefineElementArray(const sol::optional<sol::object> attribDefArgOpt);
 private:
-	template<typename... Args>
-	void LuaError(const std::string& format, Args... args);
-
 	template<typename TObj>
 	size_t ShapeFromDefIDImpl(const int defID);
 

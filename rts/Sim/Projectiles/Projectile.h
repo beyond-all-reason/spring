@@ -4,6 +4,7 @@
 #define PROJECTILE_H
 
 #include <vector>
+#include <array>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4291)
@@ -17,6 +18,7 @@ class CUnit;
 class CFeature;
 class CVertexArray;
 class CMatrix44f;
+struct AtlasedTexture;
 
 class CProjectile: public CExpGenSpawnable
 {
@@ -121,7 +123,9 @@ public:
 	float sortDistOffset = 0.0f;   // an offset used for z-sorting
 
 	int drawOrder = 0;
+
 protected:
+	std::array<bool, 5> validTextures = {false, false, false, false, false}; //overall state and 4 textures
 	unsigned int ownerID = -1u;
 	unsigned int teamID = -1u;
 	int allyteamID = -1;
@@ -132,7 +136,7 @@ protected:
 	unsigned int renderIndex = -1u;
 
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
-
+	static bool IsValidTexture(const AtlasedTexture* tex);
 public:
 	std::vector<int> quads;
 };

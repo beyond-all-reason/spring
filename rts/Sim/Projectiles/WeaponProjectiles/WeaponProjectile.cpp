@@ -99,6 +99,16 @@ CWeaponProjectile::CWeaponProjectile(const ProjectileParams& params)
 
 		alwaysVisible = weaponDef->visuals.alwaysVisible;
 		ignoreWater = weaponDef->waterweapon;
+
+		validTextures = {
+			false,
+			IsValidTexture(weaponDef->visuals.texture1),
+			IsValidTexture(weaponDef->visuals.texture2),
+			IsValidTexture(weaponDef->visuals.texture3),
+			IsValidTexture(weaponDef->visuals.texture4)
+		};
+		//whether to skip the draw call
+		validTextures[0] = validTextures[1] || validTextures[2] || validTextures[3] || validTextures[4];
 	}
 
 	{
@@ -301,8 +311,12 @@ void CWeaponProjectile::UpdateGroundBounce()
 		return;
 	if (luaMoveCtrl)
 		return;
-	if (ttl <= 0)
+	if (ttl <= 0) {
+		// //drop scheduled bounce, so HasScheduledBounce() check inside
+		// CProjectileHandler::CheckGroundCollisions(ProjectileContainer& pc) is false
+		bounced = false;
 		return;
+	}
 	#endif
 
 	if (!bounced) {
