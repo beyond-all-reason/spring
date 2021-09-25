@@ -676,6 +676,8 @@ void CUnitDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, boo
 
 void CUnitDrawerBase::DrawAlphaPass() const
 {
+	SCOPED_TIMER("CUnitDrawerBase::DrawAlphaPass");
+
 	const auto* currCamera = CCameraHandler::GetActiveCamera();
 	const auto& quads = unitDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
 
@@ -712,25 +714,29 @@ void CUnitDrawerBase::DrawAlphaPass() const
 
 void CUnitDrawerBase::Update() const
 {
+	SCOPED_TIMER("CUnitDrawerBase::Update");
 	unitDrawerData->Update();
 
 	// do matrices update based on rough (per-quad) visibility check
 	static std::vector<int> allQuads;
-	allQuads.reserve(3 * unitDrawerData->drawQuadsX * unitDrawerData->drawQuadsY);
 	allQuads.clear();
 
 	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
-		const auto& quads = unitDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
+		const auto& quads = unitDrawerData->GetCamVisibleQuads(camType);
 		for (int quad : quads) {
 			spring::VectorInsertUnique(allQuads, quad, true);
 		}
 	}
 
-	const auto matUpdateFunc = [](CUnit* unit) {
+	const static auto matUpdateFunc = [](CUnit* unit) {
 		unit->GetTransformMatrix();
-		for (auto& lmp : unit->localModel.pieces) {
-			lmp.UpdateParentMatricesRec();
-		}
+		#if 0
+			for (auto& lmp : unit->localModel.pieces) {
+				lmp.UpdateParentMatricesRec();
+			}
+		#else
+			unit->localModel.pieces[0].UpdateChildMatricesRec(true);
+		#endif
 	};
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
@@ -751,7 +757,7 @@ void CUnitDrawerBase::Update() const
 				const auto& bin = rdrCntProxy.GetObjectBin(i);
 
 				if (mtModelDrawer) {
-					for_mt(0, bin.size(), [&bin, &matUpdateFunc](const int k) {
+					for_mt(0, bin.size(), [&bin](const int k) {
 						CUnit* unit = bin[k];
 						matUpdateFunc(unit);
 					});
@@ -770,6 +776,7 @@ void CUnitDrawerBase::Update() const
 template<bool legacy>
 void CUnitDrawerBase::DrawShadowPassImpl() const
 {
+	SCOPED_TIMER("CUnitDrawerBase::DrawShadowPass");
 	if constexpr (legacy) {
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glPolygonOffset(1.0f, 1.0f);
@@ -847,6 +854,7 @@ void CUnitDrawerBase::DrawShadowPassImpl() const
 template<bool legacy>
 void CUnitDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
 {
+	SCOPED_TIMER("CUnitDrawerBase::Draw");
 	if constexpr(legacy)
 		sky->SetupFog();
 
