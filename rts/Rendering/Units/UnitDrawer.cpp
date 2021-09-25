@@ -1,6 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <unordered_set>
 #include <vector>
 
 #include "UnitDrawer.h"
@@ -717,60 +716,92 @@ void CUnitDrawerBase::Update() const
 	SCOPED_TIMER("CUnitDrawerBase::Update");
 	unitDrawerData->Update();
 
-	// do matrices update based on rough (per-quad) visibility check
-	static std::vector<int> allQuads;
-	allQuads.clear();
+	//TODO: move into unitDrawerData->Update() ?
 
-	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
-		const auto& quads = unitDrawerData->GetCamVisibleQuads(camType);
-		for (int quad : quads) {
-			spring::VectorInsertUnique(allQuads, quad, true);
-		}
-	}
+	const static auto shouldUpdateFunc = [](CCamera* cam, CUnit* unit) -> bool {
+		if (unit->noDraw)
+			return false;
+
+		if (unit->IsInVoid())
+			return false;
+
+		// unit will be drawn as icon instead
+		if (unit->isIcon)
+			return false;
+
+		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+			return false;
+
+		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
+	};
 
 	const static auto matUpdateFunc = [](CUnit* unit) {
 		unit->GetTransformMatrix();
-		#if 0
-			for (auto& lmp : unit->localModel.pieces) {
-				lmp.UpdateParentMatricesRec();
-			}
-		#else
-			unit->localModel.pieces[0].UpdateChildMatricesRec(true);
-		#endif
+
+		//TODO: benchmark
+	#if 1
+		//for (auto lmpIter = unit->localModel.pieces.begin(); lmpIter != unit->localModel.pieces.end(); ++lmpIter)
+		for (auto lmpIter = unit->localModel.pieces.rbegin(); lmpIter != unit->localModel.pieces.rend(); ++lmpIter)
+			lmpIter->UpdateParentMatricesRec();
+	#else
+		unit->localModel.pieces[0].UpdateChildMatricesRec(true);
+	#endif
 	};
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+		CCamera* cam = CCameraHandler::GetCamera(camType);
+		const auto& quads = unitDrawerData->GetCamVisibleQuads(camType);
 
-		for (int quad : allQuads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
+		static std::vector<CUnit*> updateList;
+		updateList.clear();
 
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+			const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
 
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
+			for (int quad : quads) {
+				const auto& rdrCntProxy = rdrContProxies[quad];
 
-			for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-				const auto& bin = rdrCntProxy.GetObjectBin(i);
+				// non visible quad
+				if (!rdrCntProxy.IsQuadVisible())
+					continue;
 
-				if (mtModelDrawer) {
-					for_mt(0, bin.size(), [&bin](const int k) {
-						CUnit* unit = bin[k];
+				// quad has no objects
+				if (!rdrCntProxy.HasObjects())
+					continue;
+
+				for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+					const auto& bin = rdrCntProxy.GetObjectBin(i);
+					for (CUnit* unit : bin)
+						spring::VectorInsertUnique(updateList, unit, true);
+				}
+			}
+
+			if (mtModelDrawer) {
+				for_mt(0, updateList.size(), [cam](const int k) {
+					CUnit* unit = updateList[k];
+					if (shouldUpdateFunc(cam, unit))
 						matUpdateFunc(unit);
 					});
-				}
-				else {
-					for (CUnit* unit : bin) {
+			}
+			else {
+				for (CUnit* unit : updateList) {
+					if (shouldUpdateFunc(cam, unit))
 						matUpdateFunc(unit);
-					}
 				}
 			}
 
 		}
+
+		for (CUnit* unit : unitDrawerData->GetUnsortedUnits()) {
+			if (unit->alwaysUpdateMat)
+				matUpdateFunc(unit);
+		}
 	}
+
+
+
+
+
 }
 
 template<bool legacy>
@@ -2573,10 +2604,8 @@ void CUnitDrawerGL4::Enable(bool deferredPass, bool alphaPass) const
 		default: SetDrawingMode(ShaderDrawingModes::NORMAL_MODEL); break;
 	}
 
-	if (alphaPass)
-		modelShader->SetUniform("alphaCtrl", 0.1f, 1.0f, 0.0f, 0.0f); // test > 0.1
-	else
-		modelShader->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
+	float gtThreshold = mix(0.5, 0.1, static_cast<float>(alphaPass));
+	modelShader->SetUniform("alphaCtrl", gtThreshold, 1.0f, 0.0f, 0.0f); // test > 0.1 | 0.5
 
 	// end of EnableCommon();
 }

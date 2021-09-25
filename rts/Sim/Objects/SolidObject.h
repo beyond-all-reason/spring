@@ -332,6 +332,8 @@ public:
 	bool luaDraw = false;
 	///< if true, unit/feature can not be selected/mouse-picked by a player (UNSYNCED)
 	bool noSelect = false;
+	///< if true, unsynced matrices (transformation + pieceSpaceMat/modelSpaceMat) will be updated unconditionally
+	bool alwaysUpdateMat = false;
 
 	///< x-size of this object, according to its footprint (note: rotated depending on buildFacing)
 	int xsize = 1;

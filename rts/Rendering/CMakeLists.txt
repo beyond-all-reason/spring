@@ -7,7 +7,6 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugDrawerAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DefaultPathDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/QTPFSPathDrawer.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelRenderData.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/AdvSky.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/AdvTreeDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/AdvTreeGenerator.cpp"

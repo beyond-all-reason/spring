@@ -113,7 +113,7 @@ public:
 	const std::vector<CUnit*>& GetUnsortedUnits() const { return unsortedObjects; }
 
 	const std::vector<UnitDefImage>& GetUnitDefImages() const { return unitDefImages; }
-	std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }
+	      std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }
 
 	const std::vector<TempDrawUnit>& GetTempOpaqueDrawUnits(int modelType) const { return tempOpaqueUnits[modelType]; }
 	const std::vector<TempDrawUnit>& GetTempAlphaDrawUnits(int modelType) const { return  tempAlphaUnits[modelType]; }
