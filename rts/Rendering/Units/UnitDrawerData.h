@@ -46,7 +46,6 @@ public:
 	bool WantsEvent(const std::string& eventName) override {
 		return
 			eventName == "RenderUnitCreated" || eventName == "RenderUnitDestroyed" ||
-			eventName == "UnitCloaked"       || eventName == "UnitDecloaked"       ||
 			eventName == "UnitEnteredRadar"  || eventName == "UnitEnteredLos"      ||
 			eventName == "UnitLeftRadar"     || eventName == "UnitLeftLos"         ||
 			eventName == "PlayerChanged"     || eventName == "SunChanged";
@@ -60,9 +59,6 @@ public:
 
 	void UnitEnteredLos(const CUnit* unit, int allyTeam) override;
 	void UnitLeftLos(const CUnit* unit, int allyTeam) override;
-
-	void UnitCloaked(const CUnit* unit) override;
-	void UnitDecloaked(const CUnit* unit) override;
 
 	void PlayerChanged(int playerNum) override;
 	void SunChanged() override;
@@ -115,9 +111,6 @@ public:
 	void UpdateUnitDefMiniMapIcons(const UnitDef* ud);
 public:
 	const std::vector<CUnit*>& GetUnsortedUnits() const { return unsortedObjects; }
-
-	const ModelRenderContainer<CUnit>& GetOpaqueModelRenderer(int modelType) const { return opaqueModelRenderers[modelType]; }
-	const ModelRenderContainer<CUnit>& GetAlphaModelRenderer(int modelType) const { return  alphaModelRenderers[modelType]; }
 
 	const std::vector<UnitDefImage>& GetUnitDefImages() const { return unitDefImages; }
 	std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }

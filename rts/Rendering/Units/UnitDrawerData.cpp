@@ -35,6 +35,8 @@ CUnitDrawerData::CUnitDrawerData()
 {
 	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
+	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
+
 	SetUnitDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
 	SetUnitIconDist(static_cast<float>(configHandler->GetInt("UnitIconDist")));
 
@@ -101,6 +103,7 @@ void CUnitDrawerData::Update()
 	float dist = CGround::LineGroundCol(camPos, camDir * 150000.0f, false);
 	if (dist < 0)
 		dist = std::max(0.0f, CGround::LinePlaneCol(camPos, camDir, 150000.0f, readMap->GetCurrAvgHeight()));
+
 	iconZoomDist = dist;
 
 	for (CUnit* unit : unsortedObjects) {
@@ -121,6 +124,11 @@ void CUnitDrawerData::Update()
 		const float overGround = camPos.y - groundHeight;
 
 		sqCamDistToGroundForIcons = overGround * overGround;
+	}
+
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+		CCamera* cam = CCameraHandler::GetCamera(camType);
+		UpdateVisibleQuads(cam, unitDrawDist);
 	}
 }
 
@@ -394,7 +402,7 @@ void CUnitDrawerData::UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUni
 
 void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
-	AddObject(unit);
+	UpdateDrawQuad(unit);
 	UpdateUnitMiniMapIcon(unit, false, false);
 }
 
@@ -479,26 +487,6 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 		return;
 
 	UpdateUnitMiniMapIcon(unit, false, false);
-}
-
-void CUnitDrawerData::UnitCloaked(const CUnit* unit)
-{
-	CUnit* u = const_cast<CUnit*>(unit);
-
-	if (u->model != nullptr) {
-		alphaModelRenderers[MDL_TYPE(u)].AddObject(u);
-		opaqueModelRenderers[MDL_TYPE(u)].DelObject(u);
-	}
-}
-
-void CUnitDrawerData::UnitDecloaked(const CUnit* unit)
-{
-	CUnit* u = const_cast<CUnit*>(unit);
-
-	if (u->model != nullptr) {
-		opaqueModelRenderers[MDL_TYPE(u)].AddObject(u);
-		alphaModelRenderers[MDL_TYPE(u)].DelObject(u);
-	}
 }
 
 void CUnitDrawerData::PlayerChanged(int playerNum)
