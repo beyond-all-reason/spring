@@ -656,16 +656,19 @@ void PathingState::Update()
 	{
 		SCOPED_TIMER("Sim::Path::Estimator::CalcVertexPathCosts");
 
-		std::atomic<std::int64_t> updateCostBlockNum = consumedBlocks.size();
-		const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
+		// std::atomic<std::int64_t> updateCostBlockNum = consumedBlocks.size();
+		// const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
 
-		for_mt (0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
-			std::int64_t n;
-			while ((n = --updateCostBlockNum) >= 0){
-				//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
-				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
-			}
-		});
+		// for_mt (0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
+		// 	std::int64_t n;
+		// 	while ((n = --updateCostBlockNum) >= 0){
+		// 		//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
+		// 		CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
+		// 	}
+		// });
+			for (unsigned int n = 0; n < consumedBlocks.size(); ++n) {
+				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos);
+		}
 	}
 }
 
