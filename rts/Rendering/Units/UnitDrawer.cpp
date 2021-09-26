@@ -740,22 +740,15 @@ void CUnitDrawerBase::Update() const
 		auto& smma = unitDrawerData->GetObjectMatricesMemAlloc(unit);
 		smma[0] = unit->GetTransformMatrix();
 
-		//TODO: benchmark
-	#if 1
-		//for (auto lmpIter = unit->localModel.pieces.begin(); lmpIter != unit->localModel.pieces.end(); ++lmpIter)
-		for (auto lmpIter = unit->localModel.pieces.rbegin(); lmpIter != unit->localModel.pieces.rend(); ++lmpIter)
-			lmpIter->UpdateParentMatricesRec();
-	#else
-		unit->localModel.pieces[0].UpdateChildMatricesRec(true);
-	#endif
-
 		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
 			auto& lmp = unit->localModel.pieces[i];
 			smma[i + 1] = lmp.scriptSetVisible ? lmp.GetModelSpaceMatrix() : CMatrix44f::Zero();
 		}
 	};
 
-	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+	//Experimental: do not include CAMTYPE_SHADOW. A little cheating to reduce the number of processed units
+	// Replace CAMTYPE_SHADOW -> CAMTYPE_ENVMAP in case missing shadow hits back
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_SHADOW; ++camType) {
 		CCamera* cam = CCameraHandler::GetCamera(camType);
 		const auto& quads = unitDrawerData->GetCamVisibleQuads(camType);
 
