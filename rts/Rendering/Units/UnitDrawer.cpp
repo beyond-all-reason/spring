@@ -36,6 +36,7 @@
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Rendering/Models/3DModelVAO.h"
+#include "Rendering/Models/MatricesMemStorage.h"
 
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/LosHandler.h"
@@ -735,8 +736,9 @@ void CUnitDrawerBase::Update() const
 		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
 	};
 
-	const static auto matUpdateFunc = [](CUnit* unit) {
-		unit->GetTransformMatrix();
+	const static auto matUpdateFunc = [this](CUnit* unit) {
+		auto& smma = unitDrawerData->GetObjectMatricesMemAlloc(unit);
+		smma[0] = unit->GetTransformMatrix();
 
 		//TODO: benchmark
 	#if 1
@@ -746,6 +748,10 @@ void CUnitDrawerBase::Update() const
 	#else
 		unit->localModel.pieces[0].UpdateChildMatricesRec(true);
 	#endif
+
+		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
+			smma[i + 1] = unit->localModel.pieces[i].GetModelSpaceMatrix();
+		}
 	};
 
 	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
@@ -797,11 +803,6 @@ void CUnitDrawerBase::Update() const
 				matUpdateFunc(unit);
 		}
 	}
-
-
-
-
-
 }
 
 template<bool legacy>

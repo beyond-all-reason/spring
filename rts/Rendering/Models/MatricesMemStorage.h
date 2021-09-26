@@ -44,39 +44,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////
 
-class ScopedMatricesMemAlloc;
-class MatAllocElem {
-public:
-	MatAllocElem() : MatAllocElem(MatricesMemStorage::INVALID_INDEX, nullptr) {};
-	MatAllocElem(const MatAllocElem& wmma) = default;
-	MatAllocElem(MatAllocElem&& wmma) = default;
-public:
-	friend class ScopedMatricesMemAlloc;
-private:
-	MatAllocElem(std::size_t elem_, const ScopedMatricesMemAlloc* smma_)
-		: elem{ elem_ }
-		, smma{ smma_ }
-	{ }
-public:
-	bool Valid() const { return elem != MatricesMemStorage::INVALID_INDEX; }
-
-	MatAllocElem& operator= (const MatAllocElem& mae) = default;
-	MatAllocElem& operator= (MatAllocElem&& mae) = default;
-	const CMatrix44f& operator()() const {
-		assert(elem != MatricesMemStorage::INVALID_INDEX);
-		assert(smma != nullptr);
-		return matricesMemStorage[elem];
-	}
-	CMatrix44f& operator()() {
-		assert(elem != MatricesMemStorage::INVALID_INDEX);
-		assert(smma != nullptr);
-		return matricesMemStorage[elem];
-	}
-private:
-	std::size_t elem;
-	const ScopedMatricesMemAlloc* smma;
-};
-
 class ScopedMatricesMemAlloc {
 public:
 	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(0u) {};
@@ -107,14 +74,21 @@ public:
 		return *this;
 	}
 
-	const MatAllocElem operator[](std::size_t offset) const {
+	const CMatrix44f& operator[](std::size_t offset) const {
+		assert(firstElem != MatricesMemStorage::INVALID_INDEX);
 		assert(offset >= 0 && offset < numElems);
-		return MatAllocElem(firstElem + offset, this);
+		return matricesMemStorage[firstElem + offset];
 	}
-	MatAllocElem operator[](std::size_t offset) {
+	CMatrix44f& operator[](std::size_t offset) {
+		assert(firstElem != MatricesMemStorage::INVALID_INDEX);
 		assert(offset >= 0 && offset < numElems);
-		return MatAllocElem(firstElem + offset, this);
+		return matricesMemStorage[firstElem + offset];
 	}
+public:
+	static const ScopedMatricesMemAlloc& Dummy() {
+		static ScopedMatricesMemAlloc dummy;
+		return dummy;
+	};
 private:
 	std::size_t firstElem = MatricesMemStorage::INVALID_INDEX;
 	std::size_t numElems  = 0u;

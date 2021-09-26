@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 
+#include "MatricesMemStorage.h"
 #include "Lua/LuaObjectMaterial.h"
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -270,12 +271,12 @@ struct S3DModel
 		, mins(DEF_MIN_SIZE)
 		, maxs(DEF_MAX_SIZE)
 		, relMidPos(ZeroVector)
-	{
 
-	}
+		, matAlloc(ScopedMatricesMemAlloc())
+	{}
 
 	S3DModel(const S3DModel& m) = delete;
-	S3DModel(S3DModel&& m) { *this = std::move(m); }
+	S3DModel(S3DModel&& m) noexcept { *this = std::move(m); }
 
 	S3DModel& operator = (const S3DModel& m) = delete;
 	S3DModel& operator = (S3DModel&& m) noexcept {
@@ -309,6 +310,8 @@ struct S3DModel
 
 		for (auto po : pieceObjects)
 			po->SetParentModel(this);
+
+		matAlloc = std::move(m.matAlloc);
 
 		return *this;
 	}
@@ -352,6 +355,10 @@ struct S3DModel
 		pieceObjects.clear();
 		pieceObjects.reserve(numPieces);
 
+		// force mutex just in case this is called from modelLoader.PreloadModel()
+		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+		matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
+
 		std::vector<S3DModelPiece*> stack = {root};
 
 		while (!stack.empty()) {
@@ -376,6 +383,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];
@@ -404,6 +412,8 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+private:
+	ScopedMatricesMemAlloc matAlloc;
 };
 
 

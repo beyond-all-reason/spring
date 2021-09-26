@@ -146,14 +146,12 @@ void S3DModelVAO::Unbind() const
 template<typename TObj>
 bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint32_t teamID, uint32_t drawID, uint32_t aux)
 {
-#if 0
-	const auto ssboIndex = MatrixUploader::GetInstance().GetElemOffset(obj);
+	const auto ssboIndex = matrixUploader.GetElemOffset(obj);
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
 	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
 	modelInstanceData.emplace_back(SInstanceData(ssboIndex, teamID, drawID, aux));
-#endif
 	return true;
 }
 
@@ -235,8 +233,7 @@ void S3DModelVAO::Submit(const GLenum mode, const bool bindUnbind)
 template<typename TObj>
 bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint32_t teamID, uint32_t drawID, uint32_t aux, GLenum mode, bool bindUnbind)
 {
-#if 0
-	std::size_t ssboIndex = MatrixUploader::GetInstance().GetElemOffset(obj);
+	std::size_t ssboIndex = matrixUploader.GetElemOffset(obj);
 	if (ssboIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
@@ -262,7 +259,7 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	if (bindUnbind)
 		Unbind();
-#endif
+
 	//TODO sanitization
 	return true;
 }
