@@ -114,8 +114,10 @@ void main(void)
 	float shadowMult = mix(1.0, GetShadowMult(shadowVertexPos.xyz / shadowVertexPos.w, NdotL), shadowDensity.y);
 
 	vec3 light = sunAmbientModel.rgb + (NdotL * sunDiffuseModel.rgb);
-	vec3 specular = sunSpecularModel.rgb * min(pow(HdotN, 2.0 * sunSpecularModel.a) + 0.25 * pow(HdotN, 8.0), 1.0);
-	specular *= (texColor2.g * 3.0);
+	
+	// A general rule of thumb is to set Blinn-Phong exponent between 2 and 4 times the Phong shininess exponent.
+	vec3 specular = sunSpecularModel.rgb * min(pow(HdotN, 3.0 * sunSpecularModel.a) + 0.25 * pow(HdotN, 3.0 * 3.0), 1.0);
+	specular *= (texColor2.g * 4.0);
 
 	// no highlights if in shadow; decrease light to ambient level
 	specular *= shadowMult;

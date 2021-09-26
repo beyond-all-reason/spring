@@ -2423,6 +2423,8 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
+	SetColorMultiplier();
+
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
@@ -2456,7 +2458,7 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
 {
 	auto& smv = S3DModelVAO::GetInstance();
-	smv.Unbind();
+	smv.Bind();
 
 	SetColorMultiplier(alphaValues.x);
 
