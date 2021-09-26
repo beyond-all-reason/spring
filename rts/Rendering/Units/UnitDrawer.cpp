@@ -750,7 +750,8 @@ void CUnitDrawerBase::Update() const
 	#endif
 
 		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
-			smma[i + 1] = unit->localModel.pieces[i].GetModelSpaceMatrix();
+			auto& lmp = unit->localModel.pieces[i];
+			smma[i + 1] = lmp.scriptSetVisible ? lmp.GetModelSpaceMatrix() : CMatrix44f::Zero();
 		}
 	};
 
