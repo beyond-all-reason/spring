@@ -56,7 +56,16 @@ void PathingState::Init(CPathFinder* pathFinderlist, PathingState* parentState, 
 		// 56 x 16 elms for QuickSilver
 		mapDimensionsInBlocks.x = mapDims.mapx / BLOCK_SIZE;
 		mapDimensionsInBlocks.y = mapDims.mapy / BLOCK_SIZE;
-        mapBlockCount = mapDimensionsInBlocks.x + mapDimensionsInBlocks.y;
+        mapBlockCount = mapDimensionsInBlocks.x * mapDimensionsInBlocks.y;
+
+		// LOG("TK PathingState::Init X(%d) = mapx(%d) / blks(%d), Y(%d) = mapy(%d) / blks(%d)"
+		// 	, mapDimensionsInBlocks.x
+		// 	, mapDims.mapx
+		// 	, BLOCK_SIZE
+		// 	, mapDimensionsInBlocks.y
+		// 	, mapDims.mapy
+		// 	, BLOCK_SIZE
+		// 	);
 
 		nbrOfBlocks.x = mapDims.mapx / BLOCK_SIZE;
 		nbrOfBlocks.y = mapDims.mapy / BLOCK_SIZE;
@@ -362,6 +371,18 @@ void PathingState::CalcVertexPathCost(
 
 	const unsigned int parentBlockIdx = BlockPosToIdx(parentBlockPos);
 	const unsigned int  childBlockIdx = BlockPosToIdx( childBlockPos);
+
+	// LOG("TK PathingState::CalcVertexPathCost parent (%d, %d) = %d (of %d), child (%d,%d) = %d (of %d)"
+	// 		, parentBlockPos.x
+	// 		, parentBlockPos.y
+	// 		, parentBlockIdx
+	// 		, mapDimensionsInBlocks.x
+	// 		, childBlockPos.x
+	// 		, childBlockPos.y
+	// 		, childBlockIdx
+	// 		, mapDimensionsInBlocks.y
+	// 		);
+
 	const unsigned int  vertexCostIdx =
 		moveDef.pathType * mapBlockCount * PATH_DIRECTION_VERTICES +
 		parentBlockIdx * PATH_DIRECTION_VERTICES +
@@ -413,7 +434,7 @@ void PathingState::CalcVertexPathCost(
 	IPath::Path path;
 	IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
 
-	LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d)", parentBlockIdx, childBlockIdx, path.pathCost, result);
+	//LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d) vertexId %d, blks %d", parentBlockIdx, childBlockIdx, path.pathCost, result, vertexCostIdx, BLOCK_SIZE);
 
 	// store the result
 	if (result == IPath::Ok) {
@@ -631,7 +652,7 @@ void PathingState::Update()
 			blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
 		});
 	}
-/* TODO: Re-enable this
+
 	{
 		SCOPED_TIMER("Sim::Path::Estimator::CalcVertexPathCosts");
 
@@ -645,7 +666,7 @@ void PathingState::Update()
 				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
 			}
 		});
-	}*/
+	}
 }
 
 

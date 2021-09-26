@@ -496,8 +496,8 @@ void TKPFSPathDrawer::Draw(const TKPFS::CPathEstimator* pe) const {
 					const float rawCost = ps->GetVertexCosts()[vertexNr];
 					const float nrmCost = (rawCost * PATH_NODE_SPACING) / ps->BLOCK_SIZE;
 
-					if (rawCost >= PATHCOST_INFINITY)
-						continue;
+					//if (rawCost >= PATHCOST_INFINITY)
+					//	continue;
 
 					float3 p2;
 						p2.x = (blockStates.peNodeOffsets[md->pathType][obBlockNr].x) * SQUARE_SIZE;
@@ -513,7 +513,10 @@ void TKPFSPathDrawer::Draw(const TKPFS::CPathEstimator* pe) const {
 						continue;
 
 					font->SetTextColor(1.0f, 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f);
-					font->glWorldPrint(p2, 5.0f, FloatToString(nrmCost, "f(%.2f)"));
+					if (rawCost >= PATHCOST_INFINITY)
+						font->glWorldPrint(p2, 5.0f, IntToString(vertexNr, "v(%d)"));
+					else
+						font->glWorldPrint(p2, 5.0f, FloatToString(nrmCost, "f(%.2f)"));
 				}
 			}
 		}
