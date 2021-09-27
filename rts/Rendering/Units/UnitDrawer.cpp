@@ -772,27 +772,27 @@ void CUnitDrawerBase::Update() const
 				for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 					const auto& bin = rdrCntProxy.GetObjectBin(i);
 					for (CUnit* unit : bin)
-						spring::VectorInsertUnique(updateList, unit, true);
+						updateList.emplace_back(unit);
 				}
 			}
+		}
+		spring::VectorSortUnique(updateList);
 
-			if (mtModelDrawer) {
-				for_mt(0, updateList.size(), [cam](const int k) {
-					CUnit* unit = updateList[k];
-					if (shouldUpdateFunc(cam, unit))
-						matUpdateFunc(unit);
-					});
+		if (mtModelDrawer) {
+			for_mt(0, updateList.size(), [cam](const int k) {
+				CUnit* unit = updateList[k];
+				if (shouldUpdateFunc(cam, unit))
+					matUpdateFunc(unit);
+				});
+		}
+		else {
+			for (CUnit* unit : updateList) {
+				if (shouldUpdateFunc(cam, unit))
+					matUpdateFunc(unit);
 			}
-			else {
-				for (CUnit* unit : updateList) {
-					if (shouldUpdateFunc(cam, unit))
-						matUpdateFunc(unit);
-				}
-			}
-
 		}
 
-		for (CUnit* unit : unitDrawerData->GetUnsortedUnits()) {
+		for (CUnit* unit : GetUnsortedUnits()) {
 			if (unit->alwaysUpdateMat)
 				matUpdateFunc(unit);
 		}

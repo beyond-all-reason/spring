@@ -101,7 +101,7 @@ public:
 
 	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { unitDrawerData->AddTempDrawUnit(tempDrawUnit); };
 
-	static const std::vector<CUnit*>& GetUnsortedUnits() { return unitDrawerData->GetUnsortedUnits(); }
+	static const std::vector<CUnit*>& GetUnsortedUnits() { return unitDrawerData->GetUnsortedObjects(); }
 	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return unitDrawerData->GetObjectMatricesMemAlloc(unit); }
 public:
 	virtual void SunChanged() const = 0;

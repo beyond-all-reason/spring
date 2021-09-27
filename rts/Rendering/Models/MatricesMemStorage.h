@@ -6,11 +6,13 @@
 #include "System/MemPoolTypes.h"
 
 class MatricesMemStorage {
+/*
 public:
 	static MatricesMemStorage& GetInstance() {
 		static MatricesMemStorage instance;
 		return instance;
 	};
+*/
 public:
 	MatricesMemStorage();
 public:
@@ -39,7 +41,8 @@ private:
 	static constexpr size_t DUMMY_ELEMS = 1u;
 };
 
-#define matricesMemStorage MatricesMemStorage::GetInstance()
+//#define matricesMemStorage MatricesMemStorage::GetInstance()  //benchmark shows it's costly
+extern MatricesMemStorage matricesMemStorage;
 
 
 ////////////////////////////////////////////////////////////////////

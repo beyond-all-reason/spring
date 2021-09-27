@@ -1,13 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #pragma once
 
-#include <memory>
-
-#include "System/EventClient.h"
-#include "System/UnorderedMap.hpp"
 #include "System/float3.h"
 #include "Rendering/Common/ModelRenderData.h"
-#include "Rendering/Models/ModelRenderContainer.h"
 #include "Rendering/UnitDefImage.h"
 #include "Game/GlobalUnsynced.h"
 
@@ -110,8 +105,6 @@ public:
 	void UpdateGhostedBuildings();
 	void UpdateUnitDefMiniMapIcons(const UnitDef* ud);
 public:
-	const std::vector<CUnit*>& GetUnsortedUnits() const { return unsortedObjects; }
-
 	const std::vector<UnitDefImage>& GetUnitDefImages() const { return unitDefImages; }
 	      std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }
 
