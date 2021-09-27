@@ -62,7 +62,7 @@
 #include "Rendering/DebugColVolDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
 #include "Rendering/IPathDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/HUDDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Screenshot.h"

@@ -10,7 +10,7 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/GrassDrawer.h"

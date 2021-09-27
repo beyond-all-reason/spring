@@ -26,8 +26,6 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Game/GlobalUnsynced.h"
 
-//#include "System/TimeProfiler.h" //KILL ME
-
 void MatrixUploader::InitVBO(const uint32_t newElemCount)
 {
 	matrixSSBO = VBO(GL_SHADER_STORAGE_BUFFER, false, false);
@@ -101,18 +99,6 @@ void MatrixUploader::Update()
 	matrixSSBO.SetBufferSubData(matricesMemStorage.GetData());
 #endif
 	matrixSSBO.Unbind();
-}
-
-template<typename TObj>
-bool MatrixUploader::IsObjectVisible(const TObj* obj)
-{
-	if (losHandler->GetGlobalLOS(gu->myAllyTeam))
-		return true;
-
-	if constexpr (std::is_same<TObj, CProjectile>::value) //CProjectile has no IsInLosForAllyTeam()
-		return losHandler->InLos(obj, gu->myAllyTeam);
-	else //else is needed. Otherwise won't compile
-		return obj->IsInLosForAllyTeam(gu->myAllyTeam);
 }
 
 std::size_t MatrixUploader::GetDefElemOffsetImpl(const S3DModel* model) const

@@ -50,7 +50,7 @@
 
 #include "System/EventHandler.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/FileSystem/FileHandler.h"
+//#include "System/FileSystem/FileHandler.h"
 
 #include "System/StringUtil.h"
 #include "System/MemPoolTypes.h"

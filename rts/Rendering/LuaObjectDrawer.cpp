@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaObjectDrawer.h"
-#include "FeatureDrawer.h"
+#include "Features/FeatureDrawer.h"
 #include "Units/UnitDrawer.h"
 #include "Units/UnitDrawerState.hpp"
 #include "Game/Camera.h"

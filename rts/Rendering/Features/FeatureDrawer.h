@@ -1,22 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef FEATUREDRAWER_H_
-#define FEATUREDRAWER_H_
+#pragma once
 
 #include <vector>
 #include <array>
 #include "Game/Camera.h"
 #include "Rendering/Models/ModelRenderContainer.h"
-#include "System/creg/creg_cond.h"
-#include "System/EventClient.h"
+#include "System/EventHandler.h"
 
 class CFeature;
 
 namespace GL {
 	struct GeometryBuffer;
 }
-
-class CFeatureQuadDrawer;
 
 class CFeatureDrawer: public CEventClient
 {
@@ -95,7 +91,6 @@ private:
 	int drawQuadsX;
 	int drawQuadsY;
 
-	float farDist;
 	float featureDrawDistance;
 	float featureFadeDistance;
 
@@ -137,6 +132,3 @@ private:
 };
 
 extern CFeatureDrawer* featureDrawer;
-
-
-#endif /* FEATUREDRAWER_H_ */

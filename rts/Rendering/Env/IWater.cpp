@@ -11,7 +11,7 @@
 #include "Game/GameHelper.h"
 #include "Map/ReadMap.h"
 #include "Map/BaseGroundDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Sim/Projectiles/ExplosionListener.h"

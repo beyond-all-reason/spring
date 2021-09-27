@@ -48,7 +48,7 @@
 #include "Rendering/LineDrawer.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/UnitDefImage.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"

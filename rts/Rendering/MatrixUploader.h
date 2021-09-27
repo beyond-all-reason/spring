@@ -49,9 +49,6 @@ public:
 	std::size_t GetFeatureElemOffset(int32_t featureID) const;
 	std::size_t GetProjectileElemOffset(int32_t syncedProjectileID) const;
 private:
-	template<typename TObj>
-	static bool IsObjectVisible(const TObj* obj);
-private:
 	std::size_t GetDefElemOffsetImpl(const S3DModel* model) const;
 	std::size_t GetDefElemOffsetImpl(const UnitDef* def) const;
 	std::size_t GetDefElemOffsetImpl(const FeatureDef* def) const;

@@ -16,7 +16,7 @@
 #include "Rendering/FarTextureHandler.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/IPathDrawer.h"

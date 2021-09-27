@@ -17,9 +17,9 @@ public:
 	MatricesMemStorage();
 public:
 	void Reset() {
-		DeallocateDummy();
+		//DeallocateDummy();
 		spa->Reset();
-		AllocateDummy();
+		//AllocateDummy();
 	};
 	std::size_t Allocate(std::size_t numElems, bool withMutex = false) { return spa->Allocate(numElems, withMutex); };
 	void Free(std::size_t firstElem, size_t numElems) { spa->Free(firstElem, numElems); };
