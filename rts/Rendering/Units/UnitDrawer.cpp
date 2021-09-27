@@ -733,6 +733,9 @@ void CUnitDrawerBase::Update() const
 		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
 			return false;
 
+		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
+			return false;
+
 		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
 	};
 
@@ -791,11 +794,11 @@ void CUnitDrawerBase::Update() const
 					matUpdateFunc(unit);
 			}
 		}
+	}
 
-		for (CUnit* unit : GetUnsortedUnits()) {
-			if (unit->alwaysUpdateMat)
-				matUpdateFunc(unit);
-		}
+	for (CUnit* unit : GetUnsortedUnits()) {
+		if (unit->alwaysUpdateMat)
+			matUpdateFunc(unit);
 	}
 }
 
