@@ -33,6 +33,8 @@
 
 namespace TKPFS {
 
+bool TEST_ACTIVE = false;
+
 static std::vector<PathNodeStateBuffer> nodeStateBuffers;
 
 PCMemPool pcMemPool;
@@ -46,7 +48,7 @@ static const std::string GetCacheFileName(const std::string& fileHashCode, const
 	return (GetPathCacheDir() + mapFileName + "." + peFileName + "-" + fileHashCode + ".zip");
 }
 
-void PathingState::Init(CPathFinder* pathFinderlist, PathingState* parentState, unsigned int _BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
+void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int _BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
 {
 	BLOCK_SIZE = _BLOCK_SIZE;
 
@@ -405,6 +407,13 @@ void PathingState::CalcVertexPathCost(
 	// keep search exactly contained within the two blocks
 	CRectangularSearchConstraint pfDef(startPos, goalPos, 0.0f, BLOCK_SIZE);
 
+	// LOG("TK PathingState::CalcVertexPathCost: (%d,%d -> %d,%d) (%d,%d -> %d,%d [%d])"
+	// 	, parentSquare.x, parentSquare.y
+	// 	, childSquare.x,  childSquare.y
+	// 	, pfDef.startSquareX, pfDef.startSquareZ
+	// 	, pfDef.goalSquareX, pfDef.goalSquareZ
+	// 	, BLOCK_SIZE);
+
 	// we never want to allow searches from any blocked starting positions
 	// (otherwise PE and PF can disagree), but are more lenient for normal
 	// searches so players can "unstuck" units
@@ -420,11 +429,6 @@ void PathingState::CalcVertexPathCost(
 	}
 
 	// find path from parent to child block
-	//
-	// since CPathFinder::GetPath() is not thread-safe, use
-	// this thread's "private" CPathFinder instance (rather
-	// than locking parentPathFinder->GetPath()) if we are
-	// invoked in one
 	pfDef.skipSubSearches = true;
 	pfDef.testMobile      = false;
 	pfDef.needPath        = false;
@@ -432,9 +436,24 @@ void PathingState::CalcVertexPathCost(
 	pfDef.dirIndependent  = true;
 
 	IPath::Path path;
-	IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
+	//const IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
 
-	//LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d) vertexId %d, blks %d", parentBlockIdx, childBlockIdx, path.pathCost, result, vertexCostIdx, BLOCK_SIZE);
+	IPath::SearchResult result;
+	{
+		//pathFinders[threadNum]->testedBlocks = 0;
+		//SCOPED_TIMER("AAA_IPathFinder::GetPath");
+		// if (vertexCostIdx == 27290 && moveDef.pathType == 8){
+		// 	TEST_ACTIVE = true;
+		// 	LOG("Allow Raw %d", (int)pfDef.allowRawPath);
+		// }
+		result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
+		
+		// if (TEST_ACTIVE){
+		// 	LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d) vertexId %d, tested %d, blks %d [MoveType %d : %d]"
+		// 	, parentBlockIdx, childBlockIdx, path.pathCost, result, vertexCostIdx, pathFinders[threadNum]->testedBlocks, BLOCK_SIZE, moveDef.pathType, moveDef.xsize);
+		// 	TEST_ACTIVE = false;
+		// }
+	}
 
 	// store the result
 	if (result == IPath::Ok) {
@@ -655,20 +674,20 @@ void PathingState::Update()
 
 	{
 		SCOPED_TIMER("Sim::Path::Estimator::CalcVertexPathCosts");
+		std::atomic<std::int64_t> updateCostBlockNum = consumedBlocks.size();
+		const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
 
-		// std::atomic<std::int64_t> updateCostBlockNum = consumedBlocks.size();
-		// const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
-
-		// for_mt (0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
-		// 	std::int64_t n;
-		// 	while ((n = --updateCostBlockNum) >= 0){
-		// 		//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
-		// 		CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
-		// 	}
-		// });
-			for (unsigned int n = 0; n < consumedBlocks.size(); ++n) {
-				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos);
-		}
+		for_mt (0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
+			std::int64_t n;
+			while ((n = --updateCostBlockNum) >= 0){
+				//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
+				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
+			}
+		});
+		// pathFinders[0]->testedBlocks = 0;
+		// for (unsigned int n = 0; n < consumedBlocks.size(); ++n) {
+		// 	CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos);
+		// }
 	}
 }
 

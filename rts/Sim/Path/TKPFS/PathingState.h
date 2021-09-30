@@ -25,7 +25,7 @@ class CPathFinder;
 class PathingState {
 public:
 
-    void Init(CPathFinder* pathFinderlist, PathingState* parentState, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName);
+    void Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName);
 
     void Terminate();
 
@@ -141,8 +141,8 @@ private:
     int2 mapDimensionsInBlocks = {0, 0};
 	int2 nbrOfBlocks;
 
-    CPathFinder* pathFinders = nullptr;
-    //std::vector<IPathFinder*> pathFinders; // InitEstimator helpers
+    //IPathFinder* pathFinders = nullptr;
+    std::vector<IPathFinder*> pathFinders; // InitEstimator helpers
     //std::vector<spring::thread> threads;
 
     std::vector<float> maxSpeedMods;

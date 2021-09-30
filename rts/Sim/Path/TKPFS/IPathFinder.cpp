@@ -5,6 +5,7 @@
 #include "Sim/Path/Default/PathLog.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "System/Log/ILog.h"
+#include "System/TimeProfiler.h"
 
 namespace TKPFS {
 

@@ -173,13 +173,18 @@ std::int64_t CPathManager::Finalize() {
 		// medResPE->Init(maxResPF, MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 		// lowResPE->Init(medResPE, LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
+		std::vector<IPathFinder*> maxResList(pathFinderGroups);
+		std::vector<IPathFinder*> medResList(pathFinderGroups);
+
 		for (int i = 0; i<pathFinderGroups; ++i){
 			maxResPFs[i].Init(true);
+			maxResList[i] = &maxResPFs[i];
+			medResList[i] = &medResPEs[i];
 			LOG("TK CPathManager::Finalize PathFinder 0x%p has BLOCKSIZE %d", &maxResPFs[i], maxResPFs[i].BLOCK_SIZE);
 		}
 		
-		pathingStates[PATH_MED_RES].Init(maxResPFs, nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
-		pathingStates[PATH_LOW_RES].Init(maxResPFs, &pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
+		pathingStates[PATH_MED_RES].Init(std::move(maxResList), nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
+		pathingStates[PATH_LOW_RES].Init(std::move(medResList), &pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
 
 		for (int i = 0; i<pathFinderGroups; ++i){
 			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, &pathingStates[PATH_MED_RES]);

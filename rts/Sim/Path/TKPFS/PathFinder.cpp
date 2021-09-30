@@ -15,8 +15,11 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "System/MathConstants.h"
+#include "System/TimeProfiler.h"
 
 namespace TKPFS {
+
+// extern bool TEST_ACTIVE;
 
 #define ENABLE_PATH_DEBUG 0
 #define ENABLE_DIAG_TESTS 1
@@ -207,9 +210,15 @@ IPath::SearchResult CPathFinder::DoSearch(
 	bool foundGoal = false;
 
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
+
 		// get the open square with lowest expected path-cost
 		const PathNode* openSquare = openBlocks.top();
 		openBlocks.pop();
+
+		// if (TEST_ACTIVE){
+		// 	LOG("TK CPathFinder::DoSearch - iterate (%d, %d : %f) (nCount %d) "
+		// 		, openSquare->nodePos.x, openSquare->nodePos.y, openSquare->fCost, testedNeighbours);
+		// }
 
 		// check if this PathNode has become obsolete
 		if (blockStates.fCost[openSquare->nodeNum] != openSquare->fCost)

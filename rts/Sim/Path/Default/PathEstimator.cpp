@@ -331,8 +331,6 @@ int2 CPathEstimator::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blo
 		}
 	}*/
 
-	// MH Notes: Not sure if this is worth while since it doesn't update when map does
-
 	// same as above, but with squares sorted by their baseCost
 	// s.t. we can exit early when a square exceeds our current
 	// best (from testing, on avg. 40% of blocks can be skipped)
