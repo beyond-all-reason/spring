@@ -178,6 +178,8 @@ std::int64_t CPathManager::Finalize() {
 
 		for (int i = 0; i<pathFinderGroups; ++i){
 			maxResPFs[i].Init(true);
+			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, &pathingStates[PATH_MED_RES]);
+			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, &pathingStates[PATH_LOW_RES]);
 			maxResList[i] = &maxResPFs[i];
 			medResList[i] = &medResPEs[i];
 			LOG("TK CPathManager::Finalize PathFinder 0x%p has BLOCKSIZE %d", &maxResPFs[i], maxResPFs[i].BLOCK_SIZE);
@@ -185,11 +187,6 @@ std::int64_t CPathManager::Finalize() {
 		
 		pathingStates[PATH_MED_RES].Init(std::move(maxResList), nullptr,                      MEDRES_PE_BLOCKSIZE, "pe" , mapInfo->map.name);
 		pathingStates[PATH_LOW_RES].Init(std::move(medResList), &pathingStates[PATH_MED_RES], LOWRES_PE_BLOCKSIZE, "pe2", mapInfo->map.name);
-
-		for (int i = 0; i<pathFinderGroups; ++i){
-			medResPEs[i].Init(&maxResPFs[i], MEDRES_PE_BLOCKSIZE, &pathingStates[PATH_MED_RES]);
-			lowResPEs[i].Init(&medResPEs[i], LOWRES_PE_BLOCKSIZE, &pathingStates[PATH_LOW_RES]);
-		}
 	}
 
 	finalized = true;
