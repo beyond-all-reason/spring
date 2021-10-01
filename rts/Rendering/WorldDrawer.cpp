@@ -61,11 +61,12 @@ void CWorldDrawer::InitPre() const
 	textureHandler3DO.Init();
 	textureHandlerS3O.Init();
 
-	CFeatureDrawer::InitStatic();
 	loadscreen->SetLoadMessage("Creating Sky");
 
 	sky = ISky::GetSky();
 	sunLighting->Init();
+
+	CFeatureDrawer::InitStatic();
 }
 
 void CWorldDrawer::InitPost() const
@@ -182,7 +183,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	treeDrawer->Update();
-	featureDrawer->Update();
+	CFeatureDrawer::UpdateStatic();
 	IWater::ApplyPushedChanges(game);
 
 	if (newSimFrame) {

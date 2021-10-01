@@ -13,11 +13,8 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/UI/MiniMap.h"
-#include "Map/BaseGroundDrawer.h"
-#include "Map/Ground.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/CubeMapHandler.h"
@@ -35,6 +32,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Models/3DModelVAO.h"
 #include "Rendering/Models/MatricesMemStorage.h"
 
@@ -60,7 +58,6 @@
 
 #define UNIT_SHADOW_ALPHA_MASKING
 
-CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
 CONFIG(int, UnitIconDist).defaultValue(200).headlessValue(0);
 CONFIG(float, UnitIconScaleUI).defaultValue(1.0f).minimumValue(0.5f).maximumValue(2.0f);
 CONFIG(float, UnitIconFadeStart).defaultValue(3000.0f).minimumValue(1.0f).maximumValue(10000.0f);
@@ -75,22 +72,15 @@ CONFIG(int, MaxDynamicModelLights)
 
 CONFIG(bool, AdvUnitShading).defaultValue(true).headlessValue(false).safemodeValue(false).description("Determines whether specular highlights and other lighting effects are rendered for units.");
 
-
-
-
-CUnitDrawer* unitDrawer = nullptr;
-
 /***********************************************************************/
 
-class CUnitDrawerHelper
+class CUnitDrawerHelper : public CModelDrawerHelper
 {
 public:
 	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
 	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
 	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
 	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat * textureMat)  const = 0;
-	virtual void PushRenderState() const = 0;
-	virtual void PopRenderState() const = 0;
 public:
 	static void EnableTexturesCommon() {
 		glActiveTexture(GL_TEXTURE1);
@@ -333,6 +323,8 @@ const std::array<const CUnitDrawerHelper*, MODELTYPE_CNT> CUnitDrawerHelper::uni
 
 void CUnitDrawer::InitStatic()
 {
+	CModelDrawerBase<CUnitDrawerData, CUnitDrawer>::InitStatic();
+
 	LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
 	alphaValues.x = std::max(0.11f, std::min(1.0f, 1.0f - configHandler->GetFloat("UnitTransparency")));
@@ -342,128 +334,12 @@ void CUnitDrawer::InitStatic()
 
 	CUnitDrawerHelper::LoadUnitExplosionGenerators();
 
-	forceLegacyPath = false;
-	wireFrameMode = false;
-
-	drawForward = true;
-
-	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
-
-	advShading = configHandler->GetBool("AdvUnitShading") && cubeMapHandler.Init();
-	deferredAllowed = configHandler->GetBool("AllowDeferredModelRendering");
-
-	// shared with FeatureDrawer!
-	geomBuffer = LuaObjectDrawer::GetGeometryBuffer();
-	deferredAllowed &= geomBuffer->Valid();
-
-	unitDrawerData = new CUnitDrawerData{};
-
-	CUnitDrawer::InitInstance<CUnitDrawerFFP >(UNIT_DRAWER_FFP );
-	CUnitDrawer::InitInstance<CUnitDrawerARB >(UNIT_DRAWER_ARB );
-	CUnitDrawer::InitInstance<CUnitDrawerGLSL>(UNIT_DRAWER_GLSL);
-	CUnitDrawer::InitInstance<CUnitDrawerGL4 >(UNIT_DRAWER_GL4 );
+	CUnitDrawer::InitInstance<CUnitDrawerFFP >(MODEL_DRAWER_FFP );
+	CUnitDrawer::InitInstance<CUnitDrawerARB >(MODEL_DRAWER_ARB );
+	CUnitDrawer::InitInstance<CUnitDrawerGLSL>(MODEL_DRAWER_GLSL);
+	CUnitDrawer::InitInstance<CUnitDrawerGL4 >(MODEL_DRAWER_GL4 );
 
 	SelectImplementation();
-}
-
-void CUnitDrawer::KillStatic(bool reload)
-{
-	for (int t = UNIT_DRAWER_FFP; t < UNIT_DRAWER_CNT; ++t) {
-		CUnitDrawer::KillInstance(t);
-	}
-
-	spring::SafeDelete(unitDrawerData);
-
-	unitDrawer = nullptr;
-
-	cubeMapHandler.Free();
-
-	geomBuffer = nullptr;
-}
-
-void CUnitDrawer::ForceLegacyPath()
-{
-	reselectionRequested = true;
-	forceLegacyPath = true;
-	LOG_L(L_WARNING, "[CUnitDrawer::%s] Using legacy (slow) unit renderer! This is caused by insufficient GPU/driver capabilities or by use of old Lua rendering API", __func__);
-}
-
-void CUnitDrawer::SelectImplementation(bool forceReselection)
-{
-	if (!reselectionRequested && !forceReselection)
-		return;
-
-	reselectionRequested = false;
-
-	if (!advShading) {
-		SelectImplementation(UnitDrawerTypes::UNIT_DRAWER_FFP);
-		return;
-	}
-
-	const auto qualifyDrawerFunc = [](const CUnitDrawer* ud) -> bool {
-		if (ud == nullptr)
-			return false;
-
-		if (forceLegacyPath && !ud)
-			return false;
-
-		if (!ud->CanEnable()) {
-			return false;
-		}
-
-		return true;
-	};
-
-	if (preferedDrawerType >= 0 && preferedDrawerType < UnitDrawerTypes::UNIT_DRAWER_CNT) {
-		auto* ud = unitDrawers[preferedDrawerType];
-		if (qualifyDrawerFunc(ud)) {
-			LOG_L(L_INFO, "[CUnitDrawer::%s] Force-switching to %s UnitDrawer", __func__, UnitDrawerNames[preferedDrawerType].c_str());
-			SelectImplementation(preferedDrawerType);
-			return;
-		} else {
-			LOG_L(L_ERROR, "[CUnitDrawer::%s] Couldn't force-switch to %s UnitDrawer", __func__, UnitDrawerNames[preferedDrawerType].c_str());
-			preferedDrawerType = UnitDrawerTypes::UNIT_DRAWER_CNT; //reset;
-		}
-	}
-
-	int best = UnitDrawerTypes::UNIT_DRAWER_FFP;
-	for (int t = UnitDrawerTypes::UNIT_DRAWER_ARB; t < UnitDrawerTypes::UNIT_DRAWER_CNT; ++t) {
-		if (qualifyDrawerFunc(unitDrawers[t])) {
-			best = t;
-		}
-	}
-
-	SelectImplementation(best);
-}
-
-void CUnitDrawer::SelectImplementation(int targetImplementation)
-{
-	//selectedImplementation = targetImplementation;
-
-	unitDrawer = unitDrawers[targetImplementation];
-	assert(unitDrawer);
-	assert(unitDrawer->CanEnable());
-
-	LOG_L(L_INFO, "[CUnitDrawer::%s] Switching to %s %s UnitDrawer", __func__, mtModelDrawer ? "MT" : "ST", UnitDrawerNames[targetImplementation].c_str());
-}
-
-void CUnitDrawer::UpdateStatic()
-{
-	SelectImplementation();
-	unitDrawer->Update();
-}
-
-
-void CUnitDrawer::SunChangedStatic()
-{
-	for (auto ud : unitDrawers) {
-		if (ud == nullptr)
-			continue;
-		if (!ud->CanEnable())
-			continue;
-
-		ud->SunChanged();
-	}
 }
 
 bool CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
@@ -512,26 +388,12 @@ void CUnitDrawer::PopModelRenderState(int mdlType)
 void CUnitDrawer::PopModelRenderState(const S3DModel*     m) { PopModelRenderState(m->type); }
 void CUnitDrawer::PopModelRenderState(const CSolidObject* o) { PopModelRenderState(o->model); }
 
-bool CUnitDrawer::ObjectVisibleReflection(const float3 objPos, const float3 camPos, float maxRadius)
-{
-	if (objPos.y < 0.0f)
-		return (CGround::GetApproximateHeight(objPos.x, objPos.z, false) <= maxRadius);
-
-	const float dif = objPos.y - camPos.y;
-
-	float3 zeroPos;
-	zeroPos += (camPos * ( objPos.y / dif));
-	zeroPos += (objPos * (-camPos.y / dif));
-
-	return (CGround::GetApproximateHeight(zeroPos.x, zeroPos.z, false) <= maxRadius);
-}
-
 bool CUnitDrawer::CanDrawOpaqueUnit(
 	const CUnit* unit,
 	bool drawReflection,
 	bool drawRefraction
 ) const {
-	if (unitDrawerData->IsAlpha(unit))
+	if (modelDrawerData->IsAlpha(unit))
 		return false;
 
 	if (unit == (drawReflection ? nullptr : (gu->GetMyPlayer())->fpsController.GetControllee()))
@@ -556,7 +418,7 @@ bool CUnitDrawer::CanDrawOpaqueUnit(
 	if (drawRefraction && !unit->IsInWater())
 		return false;
 
-	if (drawReflection && !ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
+	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
 		return false;
 
 	return (cam->InView(unit->drawMidPos, unit->GetDrawRadius()));
@@ -567,7 +429,7 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, b
 	if (!CanDrawOpaqueUnit(unit, drawReflection, drawRefraction))
 		return false;
 
-	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * unitDrawerData->unitDrawDistSqr)) {
+	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * modelDrawerData->modelDrawDistSqr)) {
 		farTextureHandler->Queue(unit);
 		return false;
 	}
@@ -580,7 +442,7 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, b
 
 bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* unit) const
 {
-	if (!unitDrawerData->IsAlpha(unit))
+	if (!modelDrawerData->IsAlpha(unit))
 		return false;
 
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
@@ -600,7 +462,7 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* unit) const
 
 bool CUnitDrawer::CanDrawOpaqueUnitShadow(const CUnit* unit) const
 {
-	if (unitDrawerData->IsAlpha(unit))
+	if (modelDrawerData->IsAlpha(unit))
 		return false;
 
 	if (unit->noDraw)
@@ -640,12 +502,12 @@ bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
 void CUnitDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const
 {
 	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = unitDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
+	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
 
 	SetupOpaqueDrawing(deferredPass);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
+		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 
 		PushModelRenderState(modelType);
 
@@ -679,12 +541,12 @@ void CUnitDrawerBase::DrawAlphaPass() const
 	SCOPED_TIMER("CUnitDrawerBase::DrawAlphaPass");
 
 	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = unitDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
+	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
 
 	SetupAlphaDrawing(false);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
+		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 
 		PushModelRenderState(modelType);
 
@@ -715,9 +577,9 @@ void CUnitDrawerBase::DrawAlphaPass() const
 void CUnitDrawerBase::Update() const
 {
 	SCOPED_TIMER("CUnitDrawerBase::Update");
-	unitDrawerData->Update();
+	modelDrawerData->Update();
 
-	//TODO: move into unitDrawerData->Update() ?
+	//TODO: move into modelDrawerData->Update() ?
 
 	const static auto shouldUpdateFunc = [](CCamera* cam, CUnit* unit) -> bool {
 		if (unit->noDraw)
@@ -733,19 +595,21 @@ void CUnitDrawerBase::Update() const
 		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
 			return false;
 
-		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
+		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
 			return false;
 
 		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
 	};
 
 	const static auto matUpdateFunc = [this](CUnit* unit) {
-		auto& smma = unitDrawerData->GetObjectMatricesMemAlloc(unit);
+		auto& smma = modelDrawerData->GetObjectMatricesMemAlloc(unit);
 		smma[0] = unit->GetTransformMatrix();
 
 		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
 			auto& lmp = unit->localModel.pieces[i];
-			smma[i + 1] = lmp.scriptSetVisible ? lmp.GetModelSpaceMatrix() : CMatrix44f::Zero();
+			smma[i + 1] = lmp.GetModelSpaceMatrix();
+			if unlikely(!lmp.scriptSetVisible)
+				smma[i + 1] = CMatrix44f::Zero();
 		}
 	};
 
@@ -753,13 +617,13 @@ void CUnitDrawerBase::Update() const
 	// Replace CAMTYPE_SHADOW -> CAMTYPE_ENVMAP in case missing shadow hits back
 	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_SHADOW; ++camType) {
 		CCamera* cam = CCameraHandler::GetCamera(camType);
-		const auto& quads = unitDrawerData->GetCamVisibleQuads(camType);
+		const auto& quads = modelDrawerData->GetCamVisibleQuads(camType);
 
 		static std::vector<CUnit*> updateList;
 		updateList.clear();
 
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-			const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
+			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 
 			for (int quad : quads) {
 				const auto& rdrCntProxy = rdrContProxies[quad];
@@ -830,7 +694,7 @@ void CUnitDrawerBase::DrawShadowPassImpl() const
 
 	{
 		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-		const auto& quads = unitDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
+		const auto& quads = modelDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
 
 		// 3DO's have clockwise-wound faces and
 		// (usually) holes, so disable backface
@@ -838,7 +702,7 @@ void CUnitDrawerBase::DrawShadowPassImpl() const
 		// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
 
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-			const auto& rdrContProxies = unitDrawerData->GetRdrContProxies(modelType);
+			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 			for (int quad : quads) {
 				const auto& rdrCntProxy = rdrContProxies[quad];
 
@@ -1006,7 +870,7 @@ void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 {
 	CVertexArray* va = GetVertexArray();
 
-	for (const auto& [icon, units] : unitDrawerData->GetUnitsByIcon()) {
+	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon()) {
 
 		if (icon == nullptr)
 			continue;
@@ -1040,7 +904,7 @@ void CUnitDrawerLegacy::DrawUnitIcons() const
 	if (globalRendering->msaaLevel >= 4)
 		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
 
-	for (CUnit* u : unitDrawerData->GetIconUnits()) {
+	for (CUnit* u : modelDrawerData->GetIconUnits()) {
 		const unsigned short closBits = (u->losStatus[gu->myAllyTeam] & (LOS_INLOS));
 		const unsigned short plosBits = (u->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
 
@@ -1052,7 +916,7 @@ void CUnitDrawerLegacy::DrawUnitIcons() const
 
 void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 {
-	if (game->hideInterface && unitDrawerData->iconHideWithUI)
+	if (game->hideInterface && modelDrawerData->iconHideWithUI)
 		return;
 
 	// draw unit icons and radar blips
@@ -1066,7 +930,7 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 
 	CVertexArray* va = GetVertexArray();
 
-	for (const auto& [icon, units] : unitDrawerData->GetUnitsByIcon())
+	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
 	{
 
 		if (icon == nullptr)
@@ -1091,7 +955,7 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 			const unsigned short plosBits = (unit->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
 
 			assert(unit->myIcon == icon);
-			DrawIconScreenArray(unit, icon, !gu->spectatingFullView && closBits == 0 && plosBits != (LOS_PREVLOS | LOS_CONTRADAR), unitDrawerData->iconZoomDist, va);
+			DrawIconScreenArray(unit, icon, !gu->spectatingFullView && closBits == 0 && plosBits != (LOS_PREVLOS | LOS_CONTRADAR), modelDrawerData->iconZoomDist, va);
 		}
 
 		va->DrawArray2dTC(GL_QUADS);
@@ -1145,7 +1009,7 @@ void CUnitDrawerLegacy::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& 
 
 void CUnitDrawerLegacy::DrawOpaqueAIUnits(int modelType) const
 {
-	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpOpaqueUnits = unitDrawerData->GetTempOpaqueDrawUnits(modelType);
+	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpOpaqueUnits = modelDrawerData->GetTempOpaqueDrawUnits(modelType);
 
 	// NOTE: not type-sorted
 	for (const auto& unit : tmpOpaqueUnits) {
@@ -1158,7 +1022,7 @@ void CUnitDrawerLegacy::DrawOpaqueAIUnits(int modelType) const
 
 void CUnitDrawerLegacy::DrawAlphaAIUnits(int modelType) const
 {
-	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpAlphaUnits = unitDrawerData->GetTempAlphaDrawUnits(modelType);
+	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpAlphaUnits = modelDrawerData->GetTempAlphaDrawUnits(modelType);
 
 	// NOTE: not type-sorted
 	for (const auto& unit : tmpAlphaUnits) {
@@ -1172,8 +1036,8 @@ void CUnitDrawerLegacy::DrawAlphaAIUnits(int modelType) const
 
 void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 {
-	const auto& deadGhostedBuildings = unitDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
-	const auto& liveGhostedBuildings = unitDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
+	const auto& deadGhostedBuildings = modelDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
+	const auto& liveGhostedBuildings = modelDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
 
 	glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
 
@@ -1216,7 +1080,7 @@ void CUnitDrawerLegacy::DrawOpaqueUnitShadow(CUnit* unit) const
 
 void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) const
 {
-	if (!unitDrawerData->IsAlpha(unit))
+	if (!modelDrawerData->IsAlpha(unit))
 		return;
 
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
@@ -1469,14 +1333,14 @@ void CUnitDrawerLegacy::DrawIconScreenArray(const CUnit* unit, const icon::CIcon
 
 	// fade icons away in high zoom in levels
 	if (!unit->isIcon)
-		if (dist / unitRadiusMult < unitDrawerData->iconFadeVanish)
+		if (dist / unitRadiusMult < modelDrawerData->iconFadeVanish)
 			return;
-		else if (unitDrawerData->iconFadeVanish < unitDrawerData->iconFadeStart && dist / unitRadiusMult < unitDrawerData->iconFadeStart)
+		else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && dist / unitRadiusMult < modelDrawerData->iconFadeStart)
 			// alpha range [64, 255], since icons is unrecognisable with alpha < 64
-			color[3] = 64 + 191.0f * (dist / unitRadiusMult - unitDrawerData->iconFadeVanish) / (unitDrawerData->iconFadeStart - unitDrawerData->iconFadeVanish);
+			color[3] = 64 + 191.0f * (dist / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
 
 	// calculate the vertices
-	const float offset = unitDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
+	const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
 
 	const float x0 = (pos.x - offset) / globalRendering->viewSizeX;
 	const float y0 = (pos.y + offset) / globalRendering->viewSizeY;
@@ -2497,7 +2361,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 	if (gu->spectatingFullView)
 		return;
 
-	const auto& deadGhostBuildings = unitDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
+	const auto& deadGhostBuildings = modelDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
 
 	// deadGhostedBuildings
 	{
@@ -2529,7 +2393,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 	// liveGhostedBuildings
 	{
-		const auto& liveGhostedBuildings = unitDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
+		const auto& liveGhostedBuildings = modelDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
 
 		int prevModelType = -1;
 		int prevTexType = -1;

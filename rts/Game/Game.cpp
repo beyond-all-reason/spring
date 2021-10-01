@@ -1197,10 +1197,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	// set camera
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
 
-	unitDrawer->Update();
 	lineDrawer.UpdateLineStipple();
-
-
 	{
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();

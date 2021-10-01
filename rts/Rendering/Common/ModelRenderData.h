@@ -8,6 +8,7 @@
 #include "System/EventClient.h"
 #include "System/EventHandler.h"
 #include "System/ContainerUtil.h"
+#include "System/Config/ConfigHandler.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Models/MatricesMemStorage.h"
 #include "Rendering/Models/ModelRenderContainer.h"
@@ -15,13 +16,17 @@
 #include "Map/ReadMap.h"
 #include "Game/Camera.h"
 
+CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
+
 class CModelRenderDataConcept : public CEventClient {
 public:
 	CModelRenderDataConcept(const std::string& ecName, int ecOrder)
 		: CEventClient(ecName, ecOrder, false)
 		, drawQuadsX{ mapDims.mapx / CModelRenderDataConcept::DRAW_QUAD_SIZE }
 		, drawQuadsY{ mapDims.mapy / CModelRenderDataConcept::DRAW_QUAD_SIZE }
-	{};
+	{
+		InitStaticOnce();
+	};
 	virtual ~CModelRenderDataConcept() {
 		eventHandler.RemoveClient(this);
 		autoLinkedEvents.clear();
@@ -29,6 +34,24 @@ public:
 public:
 	bool GetFullRead() const override { return true; }
 	int  GetReadAllyTeam() const override { return AllAccessTeam; }
+public:
+	static void SetModelDrawDist(float dist) {
+		modelDrawDist = dist;
+		modelDrawDistSqr = modelDrawDist * modelDrawDist;
+	}
+public:
+	static inline bool initialized = false;
+	// lenghts & distances
+	static float inline modelDrawDist = 0.0f;
+	static float inline modelDrawDistSqr = 0.0f;
+private:
+	static void InitStaticOnce() {
+		if (initialized)
+			return;
+		initialized = true;
+
+		SetModelDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
+	}
 public:
 	int drawQuadsX;
 	int drawQuadsY;
@@ -48,11 +71,11 @@ public:
 protected:
 	virtual bool IsAlpha(const T* co) const = 0;
 protected:
-	void DelObject(const T* co);
+	void DelObject(const T* co, bool del);
 private:
-	void AddObject(const T* co); //never to be called directly! Use UpdateDrawQuad() instead!
+	void AddObject(const T* co, bool add); //never to be called directly! Use UpdateObject() instead!
 protected:
-	void UpdateDrawQuad(const T* co);
+	void UpdateObject(const T* co, bool init);
 public:
 	void UpdateVisibleQuads(CCamera* cam, float maxDist, int xzExtraSize = 0, float extraHeight = 100.0f);
 public:
@@ -147,6 +170,9 @@ protected:
 	CModelQuadDrawer quadDrawer;
 };
 
+using CUnitRenderDataBase = CModelRenderDataBase<CUnit>;
+using CFeatureRenderDataBase = CModelRenderDataBase<CFeature>;
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -191,13 +217,16 @@ inline CModelRenderDataBase<T>::~CModelRenderDataBase()
 }
 
 template<typename T>
-inline void CModelRenderDataBase<T>::AddObject(const T* co)
+inline void CModelRenderDataBase<T>::AddObject(const T* co, bool add)
 {
 	T* o = const_cast<T*>(co);
 
 	if (o->model != nullptr) {
 		modelRenderers[MDL_TYPE(o)][o->drawQuad].AddObject(o);
 	}
+
+	if (!add)
+		return;
 
 	unsortedObjects.emplace_back(o);
 
@@ -206,19 +235,19 @@ inline void CModelRenderDataBase<T>::AddObject(const T* co)
 }
 
 template<typename T>
-inline void CModelRenderDataBase<T>::DelObject(const T* co)
+inline void CModelRenderDataBase<T>::DelObject(const T* co, bool del)
 {
 	T* o = const_cast<T*>(co);
 
 	if (o->model != nullptr && o->drawQuad >= 0)
 		modelRenderers[MDL_TYPE(o)][o->drawQuad].DelObject(o);
 
-	spring::VectorErase(unsortedObjects, o);
-	matricesMemAllocs.erase(o);
+	if (del && spring::VectorErase(unsortedObjects, o))
+		matricesMemAllocs.erase(o);
 }
 
 template<typename T>
-inline void CModelRenderDataBase<T>::UpdateDrawQuad(const T* co)
+inline void CModelRenderDataBase<T>::UpdateObject(const T* co, bool init)
 {
 	const int newDrawQuadX = std::clamp(int(co->pos.x / SQUARE_SIZE / CModelRenderDataConcept::DRAW_QUAD_SIZE), 0, drawQuadsX - 1);
 	const int newDrawQuadY = std::clamp(int(co->pos.z / SQUARE_SIZE / CModelRenderDataConcept::DRAW_QUAD_SIZE), 0, drawQuadsY - 1);
@@ -231,10 +260,10 @@ inline void CModelRenderDataBase<T>::UpdateDrawQuad(const T* co)
 	assert(co->drawQuad < drawQuadsX * drawQuadsY);
 	assert(newDrawQuad < drawQuadsX * drawQuadsY && newDrawQuad >= 0);
 
-	DelObject(co);
+	DelObject(co, false);
 	//update draw quad, mandatory for AddObject() to work correctly
 	(const_cast<T*>(co))->drawQuad = newDrawQuad;
-	AddObject(co);
+	AddObject(co, init);
 }
 
 template<typename T>
@@ -264,6 +293,3 @@ inline void CModelRenderDataBase<T>::UpdateVisibleQuads(CCamera* cam, float maxD
 		(quadDrawer.GetRdrProxies()).swap(modelRenderers);
 	}
 }
-
-using CUnitRenderDataBase = CModelRenderDataBase<CUnit>;
-using CFeatureRenderDataBase = CModelRenderDataBase<CFeature>;

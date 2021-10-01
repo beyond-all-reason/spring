@@ -43,7 +43,7 @@ public:
 			eventName == "RenderUnitCreated" || eventName == "RenderUnitDestroyed" ||
 			eventName == "UnitEnteredRadar"  || eventName == "UnitEnteredLos"      ||
 			eventName == "UnitLeftRadar"     || eventName == "UnitLeftLos"         ||
-			eventName == "PlayerChanged"     || eventName == "SunChanged";
+			eventName == "PlayerChanged";
 	}
 
 	void RenderUnitCreated(const CUnit* unit, int cloaked) override;
@@ -56,7 +56,6 @@ public:
 	void UnitLeftLos(const CUnit* unit, int allyTeam) override;
 
 	void PlayerChanged(int playerNum) override;
-	void SunChanged() override;
 public:
 	struct TempDrawUnit {
 		const UnitDef* unitDef;
@@ -75,10 +74,6 @@ public:
 	CUnitDrawerData();
 	virtual ~CUnitDrawerData();
 public:
-	void SetUnitDrawDist(float dist) {
-		unitDrawDist = dist;
-		unitDrawDistSqr = unitDrawDist * unitDrawDist;
-	}
 	void SetUnitIconDist(float dist) {
 		unitIconDist = dist;
 		iconLength = unitIconDist * unitIconDist * 750.0f;
@@ -138,8 +133,6 @@ private:
 	//bool DrawAsIconScreen(CUnit* unit) const;
 public:
 	// lenghts & distances
-	float unitDrawDist;
-	float unitDrawDistSqr;
 	float unitIconDist;
 	float iconLength;
 

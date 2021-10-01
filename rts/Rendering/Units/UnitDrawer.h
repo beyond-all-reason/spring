@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "Rendering/Common/ModelDrawer.h"
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Rendering/GL/LightHandler.h"
 #include "System/type2.h"
@@ -16,110 +17,58 @@ class ScopedMatricesMemAlloc;
 
 namespace Shader { struct IProgramObject; }
 
-enum UnitDrawerTypes {
-	UNIT_DRAWER_FFP  = 0, // fixed-function path
-	UNIT_DRAWER_ARB  = 1, // standard-shader path (ARB)
-	UNIT_DRAWER_GLSL = 2, // standard-shader path (GLSL)
-	UNIT_DRAWER_GL4  = 3, // GL4-shader path (GLSL)
-	UNIT_DRAWER_CNT  = 4
-};
-
-static const std::string UnitDrawerNames[UnitDrawerTypes::UNIT_DRAWER_CNT] = {
-	"FFP : fixed-function path",
-	"ARB : legacy standard shader path",
-	"GLSL: legacy standard shader path",
-	"GL4 : modern standard shader path",
-};
-
-class CUnitDrawer
+class CUnitDrawer : public CModelDrawerBase<CUnitDrawerData, CUnitDrawer>
 {
+public:
+	friend class CModelDrawerBase<CUnitDrawerData, CUnitDrawer>;
 public:
 	CUnitDrawer() {}
 	virtual ~CUnitDrawer() {}
 public:
-	template<typename T>
-	static void InitInstance(int t) {
-		if (unitDrawers[t] == nullptr)
-			unitDrawers[t] = new T{};
-	}
-	static void KillInstance(int t) {
-		spring::SafeDelete(unitDrawers[t]);
-	}
-
 	static void InitStatic();
-	static void KillStatic(bool reload);
-
-	static void ForceLegacyPath();
-
-	static void SelectImplementation(bool forceReselection = false);
-	static void SelectImplementation(int targetImplementation);
-
-	static void UpdateStatic();
-
-	// Set/Get state from outside
-	static void SetDrawForwardPass (bool b) { drawForward = b; }
-	static void SetDrawDeferredPass(bool b) { drawDeferred = b; }
-	static bool DrawForward () { return drawForward; }
-	static bool DrawDeferred() { return drawDeferred; }
-
-	static bool  UseAdvShading   () { return advShading; }
-	static bool& UseAdvShadingRef() { reselectionRequested = true; return advShading; }
-	static bool& WireFrameModeRef() { return wireFrameMode; }
-
-	static int  PreferedDrawerType   () { return preferedDrawerType; }
-	static int& PreferedDrawerTypeRef() { reselectionRequested = true; return preferedDrawerType; }
-
-	static bool& MTDrawerTypeRef() { return mtModelDrawer; } //no reselectionRequested needed
+	//static void KillStatic(bool reload); //use base
+	//static void UpdateStatic(); //use base
 public:
 	// Interface with CUnitDrawerData
-	static void SunChangedStatic();
+	static void UpdateGhostedBuildings() { modelDrawerData->UpdateGhostedBuildings(); }
 
-	static void UpdateGhostedBuildings() { unitDrawerData->UpdateGhostedBuildings(); }
+	static uint32_t GetUnitDefImage(const UnitDef* ud) { return modelDrawerData->GetUnitDefImage(ud); }
+	static void SetUnitDefImage(const UnitDef* unitDef, const std::string& texName) { return modelDrawerData->SetUnitDefImage(unitDef, texName); }
+	static void SetUnitDefImage(const UnitDef* unitDef, uint32_t texID, int xsize, int ysize) { return modelDrawerData->SetUnitDefImage(unitDef, texID, xsize, ysize); }
 
-	static uint32_t GetUnitDefImage(const UnitDef* ud) { return unitDrawerData->GetUnitDefImage(ud); }
-	static void SetUnitDefImage(const UnitDef* unitDef, const std::string& texName) { return unitDrawerData->SetUnitDefImage(unitDef, texName); }
-	static void SetUnitDefImage(const UnitDef* unitDef, uint32_t texID, int xsize, int ysize) { return unitDrawerData->SetUnitDefImage(unitDef, texID, xsize, ysize); }
+	static bool& UseScreenIcons() { return modelDrawerData->useScreenIcons; }
 
-	static bool& UseScreenIcons() { return unitDrawerData->useScreenIcons; }
+	static float GetUnitIconFadeStart() { return modelDrawerData->GetUnitIconFadeStart(); }
+	static void SetUnitIconFadeStart(float scale) { modelDrawerData->SetUnitIconFadeStart(scale); }
 
-	static float GetUnitIconFadeStart() { return unitDrawerData->GetUnitIconFadeStart(); }
-	static void SetUnitIconFadeStart(float scale) { unitDrawerData->SetUnitIconFadeStart(scale); }
+	static float GetUnitIconScaleUI() { return modelDrawerData->GetUnitIconScaleUI(); }
+	static void SetUnitIconScaleUI(float scale) { modelDrawerData->SetUnitIconScaleUI(scale); }
 
-	static float GetUnitIconScaleUI() { return unitDrawerData->GetUnitIconScaleUI(); }
-	static void SetUnitIconScaleUI(float scale) { unitDrawerData->SetUnitIconScaleUI(scale); }
+	static float GetUnitDrawDist() { return CModelRenderDataConcept::modelDrawDist; }
+	static void SetModelDrawDist(float dist) { CModelRenderDataConcept::SetModelDrawDist(dist); }
 
-	static float GetUnitDrawDist() { return unitDrawerData->unitDrawDist; }
-	static void SetUnitDrawDist(float dist) { unitDrawerData->SetUnitDrawDist(dist); }
+	static float GetUnitIconDist(float dist) { return modelDrawerData->unitIconDist; }
+	static void SetUnitIconDist(float dist) { modelDrawerData->SetUnitIconDist(dist); }
 
-	static float GetUnitIconDist(float dist) { return unitDrawerData->unitIconDist; }
-	static void SetUnitIconDist(float dist) { unitDrawerData->SetUnitIconDist(dist); }
+	static float GetUnitIconFadeVanish() { return modelDrawerData->iconFadeVanish; }
+	static void SetUnitIconFadeVanish(float dist) { modelDrawerData->SetUnitIconFadeVanish(dist); }
 
-	static float GetUnitIconFadeVanish() { return unitDrawerData->iconFadeVanish; }
-	static void SetUnitIconFadeVanish(float dist) { unitDrawerData->SetUnitIconFadeVanish(dist); }
+	static bool& IconHideWithUI() { return modelDrawerData->iconHideWithUI; }
 
-	static bool& IconHideWithUI() { return unitDrawerData->iconHideWithUI; }
+	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { modelDrawerData->AddTempDrawUnit(tempDrawUnit); };
 
-	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { unitDrawerData->AddTempDrawUnit(tempDrawUnit); };
-
-	static const std::vector<CUnit*>& GetUnsortedUnits() { return unitDrawerData->GetUnsortedObjects(); }
-	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return unitDrawerData->GetObjectMatricesMemAlloc(unit); }
-public:
-	virtual void SunChanged() const = 0;
+	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
+	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return modelDrawerData->GetObjectMatricesMemAlloc(unit); }
+protected:
 	virtual void Update() const = 0;
+public:
+	//virtual bool CanEnable() const = 0; //moved to CModelDrawerBase
 
 	// Former UnitDrawerState + new functions
-	virtual bool CanEnable() const = 0;
 	virtual bool CanDrawDeferred() const = 0;
-	virtual bool CanDrawAlpha() const = 0; //only used by feature drawer (legacy)
+	virtual bool CanDrawAlpha() const = 0; //only used by feature drawer (legacy), TODO: remove
 
-	virtual bool IsLegacy() const = 0;
-
-	// Setup Fixed State
-	virtual void SetupOpaqueDrawing(bool deferredPass) const = 0;
-	virtual void ResetOpaqueDrawing(bool deferredPass) const = 0;
-
-	virtual void SetupAlphaDrawing(bool deferredPass) const = 0;
-	virtual void ResetAlphaDrawing(bool deferredPass) const = 0;
+	virtual bool IsLegacy() const = 0; //TODO unused apparently
 
 	// alpha.x := alpha-value
 	// alpha.y := alpha-pass (true or false)
@@ -138,15 +87,12 @@ public:
 	virtual void DrawIndividualDefOpaque(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 	virtual void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 
-	// Draw*
+	// Draw
 	virtual void Draw(bool drawReflection, bool drawRefraction = false) const = 0;
-	virtual void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const = 0;
-	virtual void DrawShadowPass() const = 0;
-	virtual void DrawAlphaPass() const = 0;
 
 	// Icons Minimap
 	virtual void DrawUnitMiniMapIcons() const = 0;
-	        void UpdateUnitDefMiniMapIcons(const UnitDef* ud) { unitDrawerData->UpdateUnitDefMiniMapIcons(ud); }
+	        void UpdateUnitDefMiniMapIcons(const UnitDef* ud) { modelDrawerData->UpdateUnitDefMiniMapIcons(ud); }
 
 	// Icons Map
 	virtual void DrawUnitIcons() const = 0;
@@ -177,14 +123,6 @@ protected:
 
 	virtual void SetNanoColor(const float4& color) const = 0;
 public:
-	// lightHandler
-	const GL::LightHandler* GetLightHandler() const { return &lightHandler; }
-	      GL::LightHandler* GetLightHandler()       { return &lightHandler; }
-
-	// geomBuffer
-	const GL::GeometryBuffer* GetGeometryBuffer() const { return geomBuffer; }
-	      GL::GeometryBuffer* GetGeometryBuffer()       { return geomBuffer; }
-public:
 	// Render States Push/Pop
 	static void BindModelTypeTexture(int mdlType, int texType);
 
@@ -195,9 +133,6 @@ public:
 	static void PopModelRenderState(int mdlType);
 	static void PopModelRenderState(const S3DModel* m);
 	static void PopModelRenderState(const CSolidObject* o);
-
-	// Auxilary
-	static bool ObjectVisibleReflection(const float3 objPos, const float3 camPos, float maxRadius);
 public:
 	/// <summary>
 	/// .x := regular unit alpha
@@ -206,24 +141,9 @@ public:
 	/// .w := AI-temp unit alpha
 	/// </summary>
 	inline static float4 alphaValues = {}; //TODO move me to protected when UnitDrawerState is gone
-protected:
-	inline static int preferedDrawerType = UnitDrawerTypes::UNIT_DRAWER_CNT;
-	inline static bool mtModelDrawer = true;
 
-	inline static bool forceLegacyPath = false;
-
-	inline static bool wireFrameMode = false;
-
-	inline static bool drawForward = true;
-	inline static bool drawDeferred = true;
-
-	inline static bool deferredAllowed = false;
-
-	inline static CUnitDrawerData* unitDrawerData;
 private:
-	inline static bool advShading = false;
-
-	inline static std::array<CUnitDrawer*, UnitDrawerTypes::UNIT_DRAWER_CNT> unitDrawers = {};
+	inline static std::array<CUnitDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> unitDrawers = {};
 public:
 	enum BuildStages {
 		BUILDSTAGE_WIRE = 0,
@@ -239,17 +159,13 @@ public:
 		MODEL_SHADER_SHADOWED_DEFERRED = 3, ///< deferred version of MODEL_SHADER_SHADOW   (GLSL-only)
 		MODEL_SHADER_COUNT = 4,
 	};
-private:
-	inline static bool reselectionRequested = true;
-	//inline static int selectedImplementation = UnitDrawerTypes::UNIT_DRAWER_FFP;
-	inline static GL::LightHandler lightHandler;
-	inline static GL::GeometryBuffer* geomBuffer = nullptr;
 };
 
 class CUnitDrawerBase : public CUnitDrawer {
 public:
 	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override;
 	void DrawAlphaPass() const override;
+protected:
 	void Update() const override;
 protected:
 	template<bool legacy>
@@ -261,7 +177,6 @@ protected:
 
 class CUnitDrawerLegacy : public CUnitDrawerBase {
 public:
-	void SunChanged() const override {}
 	// caps functions
 	bool IsLegacy() const override { return true; }
 	// Inherited via CUnitDrawer
@@ -419,8 +334,6 @@ public:
 	CUnitDrawerGL4();
 	~CUnitDrawerGL4() override;
 public:
-	void SunChanged() const override {}
-
 	// Former UnitDrawerState + new functions
 	bool CanEnable() const;
 	bool CanDrawDeferred() const;
@@ -493,4 +406,4 @@ private:
 
 };
 
-extern CUnitDrawer* unitDrawer;
+#define unitDrawer (CUnitDrawer::selectedModelDrawer)

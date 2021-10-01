@@ -37,7 +37,6 @@ CUnitDrawerData::CUnitDrawerData()
 
 	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
 
-	SetUnitDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
 	SetUnitIconDist(static_cast<float>(configHandler->GetInt("UnitIconDist")));
 
 	iconScale      = configHandler->GetFloat("UnitIconScaleUI");
@@ -128,7 +127,7 @@ void CUnitDrawerData::Update()
 
 	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
 		CCamera* cam = CCameraHandler::GetCamera(camType);
-		UpdateVisibleQuads(cam, unitDrawDist);
+		UpdateVisibleQuads(cam, modelDrawDist);
 	}
 }
 
@@ -402,7 +401,7 @@ void CUnitDrawerData::UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUni
 
 void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
-	UpdateDrawQuad(unit);
+	UpdateObject(unit, true);
 	UpdateUnitMiniMapIcon(unit, false, false);
 }
 
@@ -449,7 +448,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 		spring::VectorErase(liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
 	}
 
-	DelObject(unit);
+	DelObject(unit, true);
 	UpdateUnitMiniMapIcon(unit, false, true);
 
 	LuaObjectDrawer::SetObjectLOD(u, LUAOBJ_UNIT, 0);
@@ -502,9 +501,4 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 		// force an erase (no-op) followed by an insert
 		UpdateUnitMiniMapIcon(unit, true, false);
 	}
-}
-
-void CUnitDrawerData::SunChanged()
-{
-	CUnitDrawer::SunChangedStatic();
 }
