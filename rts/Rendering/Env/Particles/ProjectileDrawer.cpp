@@ -550,7 +550,7 @@ void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		CUnitDrawer::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 		DrawProjectilesSet(mdlRenderer.GetObjectBin(i), drawReflection, drawRefraction);
 	}
 
@@ -731,12 +731,13 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	sortedProjectiles[1].clear();
 
 	{
+		#pragma message("FIX ME!!!")
 		unitDrawer->SetupOpaqueDrawing(false);
 
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-			unitDrawer->PushModelRenderState(modelType);
+			CModelDrawerHelper::PushModelRenderState(modelType);
 			DrawProjectiles(modelType, drawReflection, drawRefraction);
-			unitDrawer->PopModelRenderState(modelType);
+			CModelDrawerHelper::PopModelRenderState(modelType);
 		}
 
 		unitDrawer->ResetOpaqueDrawing(false);

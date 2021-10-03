@@ -406,10 +406,10 @@ public:
 	}
 };
 
-class ModelDrawerTypeActionExecutor : public IUnsyncedActionExecutor {
+class UnitDrawerTypeActionExecutor : public IUnsyncedActionExecutor {
 public:
-	ModelDrawerTypeActionExecutor() : IUnsyncedActionExecutor("ModelDrawer",
-		"Forces particular Unit/Feature drawer type") {}
+	UnitDrawerTypeActionExecutor() : IUnsyncedActionExecutor("UnitDrawer",
+		"Forces particular Unit drawer type") {}
 
 	bool Execute(const UnsyncedAction& action) const {
 
@@ -424,6 +424,29 @@ public:
 			CUnitDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
 
 		CUnitDrawer::PreferedDrawerTypeRef() = prefModelDrawer;
+
+		return true;
+	}
+};
+
+class FeatureDrawerTypeActionExecutor : public IUnsyncedActionExecutor {
+public:
+	FeatureDrawerTypeActionExecutor() : IUnsyncedActionExecutor("FeatureDrawer",
+		"Forces particular Feature drawer type") {}
+
+	bool Execute(const UnsyncedAction& action) const {
+
+		int prefModelDrawer = -1;
+		int mtModelDrawer = -1;
+		sscanf((action.GetArgs()).c_str(), "%i %i", &prefModelDrawer, &mtModelDrawer);
+
+		if (prefModelDrawer == -1)
+			return false;
+
+		if (mtModelDrawer != -1)
+			CFeatureDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
+
+		CFeatureDrawer::PreferedDrawerTypeRef() = prefModelDrawer;
 
 		return true;
 	}
@@ -3546,7 +3569,8 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<WaterActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AdvModelShadingActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<AdvMapShadingActionExecutor>()); // [maint]
-	AddActionExecutor(AllocActionExecutor<ModelDrawerTypeActionExecutor>()); // [maint]
+	AddActionExecutor(AllocActionExecutor<UnitDrawerTypeActionExecutor>()); // [maint]
+	AddActionExecutor(AllocActionExecutor<FeatureDrawerTypeActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<SayActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());

@@ -329,7 +329,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 	{
 		SCOPED_TIMER("Draw::World::Models::Opaque");
 		unitDrawer->Draw(false);
-		featureDrawer->Draw();
+		featureDrawer->Draw(false);
 
 		DebugColVolDrawer::Draw();
 		pathDrawer->DrawAll();

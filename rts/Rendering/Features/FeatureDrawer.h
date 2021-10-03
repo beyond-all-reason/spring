@@ -22,10 +22,6 @@ public:
 	//static void KillStatic(bool reload); will use base
 	//static void UpdateStatic();
 public:
-	virtual void Update() const = 0;
-
-	virtual void Draw() const = 0;
-
 	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) = 0;
 	virtual void DrawFeatureTrans(const CFeature*, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) = 0;
 
@@ -42,6 +38,7 @@ public:
 public:
 	// modelDrawerData proxies
 	void ConfigNotify(const std::string& key, const std::string& value) { modelDrawerData->ConfigNotify(key, value); }
+	static const std::vector<CFeature*>& GetUnsortedFeatures() { return modelDrawerData->GetUnsortedObjects(); }
 public:
 	static void PushModelRenderState(int mdlType) {};
 	static void PushModelRenderState(const S3DModel* m) {};
@@ -68,7 +65,7 @@ public:
 class CFeatureDrawerLegacy : public CFeatureDrawerCommon
 {
 public:
-	void Draw() const override {};
+	void Draw(bool drawReflection, bool drawRefraction) const override {};
 	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {};
 	void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) override {};
 	void DrawFeatureTrans(const CFeature*, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) override {};

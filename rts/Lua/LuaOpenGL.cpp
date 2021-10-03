@@ -50,6 +50,7 @@
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/UnitDefImage.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
@@ -1447,9 +1448,9 @@ static void GLObjectTextures(lua_State* L, const CSolidObject* obj)
 		return;
 
 	if (luaL_checkboolean(L, 2)) {
-		CUnitDrawer::PushModelRenderState(obj->model);
+		CModelDrawerHelper::PushModelRenderState(obj->model);
 	} else {
-		CUnitDrawer::PopModelRenderState(obj->model);
+		CModelDrawerHelper::PopModelRenderState(obj->model);
 	}
 }
 
@@ -1464,9 +1465,9 @@ static void GLObjectShapeTextures(lua_State* L, const SolidObjectDef* def)
 	// set textures and per-model(type) attributes, not shaders
 	// or other drawpass state
 	if (luaL_checkboolean(L, 2)) {
-		CUnitDrawer::PushModelRenderState(def->model);
+		CModelDrawerHelper::PushModelRenderState(def->model);
 	} else {
-		CUnitDrawer::PopModelRenderState(def->model);
+		CModelDrawerHelper::PopModelRenderState(def->model);
 	}
 }
 

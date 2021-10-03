@@ -4,6 +4,7 @@
 #include "FarTextureHandler.h"
 
 #include "Game/Camera.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/ISky.h"
@@ -161,7 +162,7 @@ void CFarTextureHandler::CreateFarTexture(const CSolidObject* obj)
 	//   current state (advModelShading, sunDir, etc)
 	//   and will not track later state-changes
 	unitDrawer->SetupOpaqueDrawing(false);
-	unitDrawer->PushModelRenderState(model);
+	CModelDrawerHelper::PushModelRenderState(model);
 	unitDrawer->SetTeamColour(obj->team);
 
 	// can pick any perspective-type
@@ -198,7 +199,7 @@ void CFarTextureHandler::CreateFarTexture(const CSolidObject* obj)
 		glRotatef(-360.0f / NUM_ICON_ORIENTATIONS, 0.0f, 1.0f, 0.0f);
 	}
 
-	unitDrawer->PopModelRenderState(model);
+	CModelDrawerHelper::PopModelRenderState(model);
 	unitDrawer->ResetOpaqueDrawing(false);
 
 	// glViewport(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);

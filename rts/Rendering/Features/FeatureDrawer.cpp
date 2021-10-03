@@ -23,8 +23,6 @@
 #include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
-//#include "Rendering/Units/UnitDrawer.h"
-//#include "Rendering/Units/UnitDrawerState.hpp"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -33,6 +31,8 @@
 #include "System/EventHandler.h"
 #include "System/SpringMath.h"
 #include "System/SafeUtil.h"
+#include "System/TimeProfiler.h"
+#include "System/Threading/ThreadPool.h"
 
 //CONFIG(bool, ShowRezBars).defaultValue(true).headlessValue(false);
 
@@ -91,5 +91,31 @@ void CFeatureDrawerCommon::DrawOpaquePass(bool deferredPass, bool drawReflection
 
 void CFeatureDrawerCommon::Update() const
 {
-	#pragma message("fix me")
+	SCOPED_TIMER("CFeatureDrawerCommon::Update");
+
+	const std::function<bool(const CCamera*, const CFeature*)> shouldUpdateFunc = [](const CCamera* cam, const CFeature* feature) -> bool {
+		assert(feature->def->drawType == DRAWTYPE_MODEL);
+
+		if (feature->drawFlag == CFeature::FD_NODRAW_FLAG)
+			return false;
+
+		if (feature->noDraw)
+			return false;
+
+		if (feature->drawAlpha == 0.0f) //?
+			return false;
+
+		if (feature->IsInVoid())
+			return false;
+
+		if (!feature->IsInLosForAllyTeam(gu->myAllyTeam) && !gu->spectatingFullView)
+			return false;
+
+		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(feature->drawMidPos, cam->GetPos(), feature->GetDrawRadius()))
+			return false;
+
+		return cam->InView(feature->drawMidPos, feature->GetDrawRadius());
+	};
+
+	UpdateImpl(shouldUpdateFunc);
 }

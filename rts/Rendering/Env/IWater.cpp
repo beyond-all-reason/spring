@@ -174,7 +174,7 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 		// rest needs the plane in model-space; V is combined with P
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(true);
-		featureDrawer->Draw();
+		featureDrawer->Draw(true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass();
@@ -210,7 +210,7 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(false, true);
-		featureDrawer->Draw();
+		featureDrawer->Draw(false, true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass();

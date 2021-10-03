@@ -6,6 +6,7 @@
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
@@ -181,7 +182,7 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 		unitDrawer->SetTeamColour(team);
 
 		if (texture != -1)
-			CUnitDrawer::BindModelTypeTexture(MODELTYPE_S3O, texture);
+			CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
 
 		piece->BindVertexAttribVBOs();
 		piece->BindShatterIndexVBO();
@@ -192,7 +193,7 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 		unitDrawer->SetTeamColour(team);
 
 	if (texture != prev->texture && texture != -1)
-		CUnitDrawer::BindModelTypeTexture(MODELTYPE_S3O, texture);
+		CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
 
 	if (piece != prev->piece) {
 		prev->piece->UnbindShatterIndexVBO();

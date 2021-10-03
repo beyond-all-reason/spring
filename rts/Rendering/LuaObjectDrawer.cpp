@@ -2,6 +2,7 @@
 
 #include "LuaObjectDrawer.h"
 #include "Features/FeatureDrawer.h"
+#include "Common/ModelDrawerHelpers.h"
 #include "Units/UnitDrawer.h"
 #include "Units/UnitDrawerState.hpp"
 #include "Game/Camera.h"
@@ -126,11 +127,11 @@ static float GetLODFloat(const std::string& name)
 // opaque-pass state management funcs
 static void SetupOpaqueUnitDrawState(unsigned int modelType, bool deferredPass) {
 	unitDrawer->SetupOpaqueDrawing(deferredPass);
-	unitDrawer->PushModelRenderState(modelType);
+	CModelDrawerHelper::PushModelRenderState(modelType);
 }
 
 static void ResetOpaqueUnitDrawState(unsigned int modelType, bool deferredPass) {
-	unitDrawer->PopModelRenderState(modelType);
+	CModelDrawerHelper::PopModelRenderState(modelType);
 	unitDrawer->ResetOpaqueDrawing(deferredPass);
 }
 
@@ -143,11 +144,11 @@ static void ResetOpaqueFeatureDrawState(unsigned int modelType, bool deferredPas
 // transparency-pass (reflection, ...) state management funcs
 static void SetupAlphaUnitDrawState(unsigned int modelType, bool deferredPass) {
 	unitDrawer->SetupAlphaDrawing(deferredPass);
-	unitDrawer->PushModelRenderState(modelType);
+	CModelDrawerHelper::PushModelRenderState(modelType);
 }
 
 static void ResetAlphaUnitDrawState(unsigned int modelType, bool deferredPass) {
-	unitDrawer->PopModelRenderState(modelType);
+	CModelDrawerHelper::PopModelRenderState(modelType);
 	unitDrawer->ResetAlphaDrawing(deferredPass);
 }
 

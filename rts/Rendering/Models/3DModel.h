@@ -342,7 +342,15 @@ struct S3DModel
 
 	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
-	void SetPieceMatrices() { pieceObjects[0]->SetPieceMatrix(CMatrix44f()); }
+	void SetPieceMatrices() {
+		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
+
+		//use this occasion and copy bpos matrices
+		for (int i = 0; i < pieceObjects.size(); ++i) {
+			const auto po = pieceObjects[i];
+			matAlloc[i] = po->bposeMatrix;
+		}
+	}
 	void DeletePieces() {
 		assert(!pieceObjects.empty());
 

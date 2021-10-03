@@ -123,17 +123,6 @@ protected:
 
 	virtual void SetNanoColor(const float4& color) const = 0;
 public:
-	// Render States Push/Pop
-	static void BindModelTypeTexture(int mdlType, int texType);
-
-	static void PushModelRenderState(int mdlType);
-	static void PushModelRenderState(const S3DModel* m);
-	static void PushModelRenderState(const CSolidObject* o);
-
-	static void PopModelRenderState(int mdlType);
-	static void PopModelRenderState(const S3DModel* m);
-	static void PopModelRenderState(const CSolidObject* o);
-public:
 	/// <summary>
 	/// .x := regular unit alpha
 	/// .y := ghosted unit alpha (out of radar)

@@ -17,7 +17,6 @@
 #include "Map/ReadMap.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
-#include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/FarTextureHandler.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/VertexArray.h"
@@ -74,76 +73,10 @@ CONFIG(bool, AdvUnitShading).defaultValue(true).headlessValue(false).safemodeVal
 
 /***********************************************************************/
 
-class CUnitDrawerHelper : public CModelDrawerHelper
+//don't inherit and leave only static Unit specific helpers
+class CUnitDrawerHelper
 {
 public:
-	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
-	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
-	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat * textureMat) const = 0;
-	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat * textureMat)  const = 0;
-public:
-	static void EnableTexturesCommon() {
-		glActiveTexture(GL_TEXTURE1);
-		glEnable(GL_TEXTURE_2D);
-
-		if (shadowHandler.ShadowsLoaded())
-			shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
-
-		glActiveTexture(GL_TEXTURE3);
-		glEnable(GL_TEXTURE_CUBE_MAP);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetEnvReflectionTextureID());
-
-		glActiveTexture(GL_TEXTURE4);
-		glEnable(GL_TEXTURE_CUBE_MAP);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMapHandler.GetSpecularTextureID());
-
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-	}
-
-	static void DisableTexturesCommon() {
-		glActiveTexture(GL_TEXTURE1);
-		glDisable(GL_TEXTURE_2D);
-
-		if (shadowHandler.ShadowsLoaded())
-			shadowHandler.ResetShadowTexSampler(GL_TEXTURE2, true);
-
-		glActiveTexture(GL_TEXTURE3);
-		glDisable(GL_TEXTURE_CUBE_MAP);
-
-		glActiveTexture(GL_TEXTURE4);
-		glDisable(GL_TEXTURE_CUBE_MAP);
-
-		glActiveTexture(GL_TEXTURE0);
-		glDisable(GL_TEXTURE_2D);
-	}
-
-	static void PushTransform(const CCamera* cam) {
-		// set model-drawing transform; view is combined with projection
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glMultMatrixf(cam->GetViewMatrix());
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-	}
-
-	static void PopTransform() {
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-	}
-
-	static float4 GetTeamColor(int team, float alpha) {
-		assert(teamHandler.IsValidTeam(team));
-
-		const   CTeam* t = teamHandler.Team(team);
-		const uint8_t* c = t->color;
-
-		return (float4(c[0] / 255.0f, c[1] / 255.0f, c[2] / 255.0f, alpha));
-	}
-
 	static void LoadUnitExplosionGenerators() {
 		using F = decltype(&UnitDef::AddModelExpGenID);
 		using T = decltype(UnitDef::modelCEGTags);
@@ -168,34 +101,6 @@ public:
 		}
 	}
 
-	static void DIDResetPrevProjection(bool toScreen)
-	{
-		if (!toScreen)
-			return;
-
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glPushMatrix();
-	}
-
-	static void DIDResetPrevModelView()
-	{
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-		glPushMatrix();
-	}
-
-	static bool DIDCheckMatrixMode(int wantedMode)
-	{
-		#if 1
-			int matrixMode = 0;
-			glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
-			return (matrixMode == wantedMode);
-		#else
-			return true;
-		#endif
-	}
-
 	static inline float GetUnitIconScale(const CUnit* unit) {
 		float scale = unit->myIcon->GetSize();
 
@@ -214,107 +119,6 @@ public:
 
 		return scale;
 	}
-public:
-	template<typename T>
-	static const CUnitDrawerHelper* GetInstance() {
-		static const T instance;
-		return &instance;
-	}
-public:
-	static const std::array<const CUnitDrawerHelper*, MODELTYPE_CNT> unitDrawerHelpers;
-};
-
-class CUnitDrawerHelper3DO : public CUnitDrawerHelper
-{
-public:
-	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {/*handled in PushRenderState()*/}
-	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {/*handled in PopRenderState()*/}
-	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
-	}
-	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-		glActiveTexture(GL_TEXTURE0);
-	}
-	virtual void PushRenderState() const override {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex1ID());
-
-		glDisable(GL_CULL_FACE);
-	}
-	virtual void PopRenderState() const override {
-		glEnable(GL_CULL_FACE);
-	}
-};
-
-class CUnitDrawerHelperS3O : public CUnitDrawerHelper
-{
-public:
-	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex1);
-	}
-	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
-	}
-	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-		glActiveTexture(GL_TEXTURE0);
-	}
-	virtual void PushRenderState() const override {/* no need for primitve restart*/};
-	virtual void PopRenderState() const override {/* no need for primitve restart*/};
-};
-
-class CUnitDrawerHelperASS : public CUnitDrawerHelper
-{
-public:
-	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex1);
-	}
-	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
-	}
-	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-		glActiveTexture(GL_TEXTURE0);
-	}
-	virtual void PushRenderState() const override {};
-	virtual void PopRenderState() const override {};
-};
-
-
-const std::array<const CUnitDrawerHelper*, MODELTYPE_CNT> CUnitDrawerHelper::unitDrawerHelpers = {
-	CUnitDrawerHelper::GetInstance<CUnitDrawerHelper3DO>(),
-	CUnitDrawerHelper::GetInstance<CUnitDrawerHelperS3O>(),
-	CUnitDrawerHelper::GetInstance<CUnitDrawerHelperASS>(),
 };
 
 
@@ -354,39 +158,6 @@ bool CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
 
 	return true;
 }
-
-void CUnitDrawer::BindModelTypeTexture(int mdlType, int texType)
-{
-	const auto texMat = textureHandlerS3O.GetTexture(texType);
-
-	if (shadowHandler.InShadowPass())
-		CUnitDrawerHelper::unitDrawerHelpers[mdlType]->BindShadowTex(texMat);
-	else
-		CUnitDrawerHelper::unitDrawerHelpers[mdlType]->BindOpaqueTex(texMat);
-}
-
-void CUnitDrawer::PushModelRenderState(int mdlType)
-{
-	assert(CUnitDrawerHelper::unitDrawerHelpers[mdlType]);
-	CUnitDrawerHelper::unitDrawerHelpers[mdlType]->PushRenderState();
-}
-
-void CUnitDrawer::PushModelRenderState(const S3DModel* m)
-{
-	PushModelRenderState(m->type);
-	BindModelTypeTexture(m->type, m->textureType);
-}
-
-void CUnitDrawer::PushModelRenderState(const CSolidObject* o) { PushModelRenderState(o->model); }
-
-void CUnitDrawer::PopModelRenderState(int mdlType)
-{
-	assert(CUnitDrawerHelper::unitDrawerHelpers[mdlType]);
-	CUnitDrawerHelper::unitDrawerHelpers[mdlType]->PopRenderState();
-}
-
-void CUnitDrawer::PopModelRenderState(const S3DModel*     m) { PopModelRenderState(m->type); }
-void CUnitDrawer::PopModelRenderState(const CSolidObject* o) { PopModelRenderState(o->model); }
 
 bool CUnitDrawer::CanDrawOpaqueUnit(
 	const CUnit* unit,
@@ -509,7 +280,7 @@ void CUnitDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, boo
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
 		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 
-		PushModelRenderState(modelType);
+		CModelDrawerHelper::PushModelRenderState(modelType);
 
 		for (int quad : quads) {
 			const auto& rdrCntProxy = rdrContProxies[quad];
@@ -526,7 +297,7 @@ void CUnitDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, boo
 		}
 
 		DrawOpaqueAIUnits(modelType);
-		PopModelRenderState(modelType);
+		CModelDrawerHelper::PopModelRenderState(modelType);
 	}
 
 	ResetOpaqueDrawing(deferredPass);
@@ -548,7 +319,7 @@ void CUnitDrawerBase::DrawAlphaPass() const
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
 		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
 
-		PushModelRenderState(modelType);
+		CModelDrawerHelper::PushModelRenderState(modelType);
 
 		for (int quad : quads) {
 			const auto& rdrCntProxy = rdrContProxies[quad];
@@ -565,7 +336,7 @@ void CUnitDrawerBase::DrawAlphaPass() const
 		}
 
 		DrawAlphaAIUnits(modelType);
-		PopModelRenderState(modelType);
+		CModelDrawerHelper::PopModelRenderState(modelType);
 	}
 
 	ResetAlphaDrawing(false);
@@ -608,7 +379,7 @@ void CUnitDrawerBase::Update() const
 		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
 			auto& lmp = unit->localModel.pieces[i];
 			smma[i + 1] = lmp.GetModelSpaceMatrix();
-			if unlikely(!lmp.scriptSetVisible)
+			if (unlikely(!lmp.scriptSetVisible))
 				smma[i + 1] = CMatrix44f::Zero();
 		}
 	};
@@ -971,20 +742,20 @@ void CUnitDrawerLegacy::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrCont
 
 		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
-		CUnitDrawerHelper::unitDrawerHelpers[modelType]->BindShadowTex(texMat);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
 		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
 			DrawOpaqueUnitShadow(unit);
 		}
 
-		CUnitDrawerHelper::unitDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
 	}
 }
 
 void CUnitDrawerLegacy::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const
 {
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
 			DrawOpaqueUnit(unit, drawReflection, drawRefraction);
@@ -995,7 +766,7 @@ void CUnitDrawerLegacy::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy&
 void CUnitDrawerLegacy::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
 {
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
 			DrawAlphaUnit(unit, modelType, false);
@@ -1048,7 +819,7 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 			glTranslatef3(dgb->pos);
 			glRotatef(dgb->facing * 90.0f, 0, 1, 0);
 
-			BindModelTypeTexture(modelType, dgb->model->textureType);
+			CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType);
 			SetTeamColour(dgb->team, float2(alphaValues.y, 1.0f));
 
 			dgb->model->DrawStatic();
@@ -1123,7 +894,7 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		// sorted by textureType, but we cannot merge them with
 		// alphaModelRenderers[modelType] either since they are
 		// not actually cloaked
-		BindModelTypeTexture(modelType, model->textureType);
+		CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType);
 
 		SetTeamColour(unit->team, float2((losStatus & LOS_CONTRADAR) ? alphaValues.z : alphaValues.y, 1.0f));
 		model->DrawStatic();
@@ -1153,7 +924,7 @@ void CUnitDrawerLegacy::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& un
 
 	assert(mdl != nullptr);
 
-	BindModelTypeTexture(mdl->type, mdl->textureType);
+	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
 	SetTeamColour(unit.team);
 	mdl->DrawStatic();
 
@@ -1171,7 +942,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& uni
 
 	assert(mdl != nullptr);
 
-	BindModelTypeTexture(mdl->type, mdl->textureType);
+	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
 	SetTeamColour(unit.team, float2(alphaValues.x, 1.0f));
 	mdl->DrawStatic();
 
@@ -1557,21 +1328,21 @@ void CUnitDrawerLegacy::PushIndividualOpaqueState(const S3DModel* model, int tea
 	glEnable(GL_DEPTH_TEST);
 
 	SetupOpaqueDrawing(deferredPass);
-	PushModelRenderState(model);
+	CModelDrawerHelper::PushModelRenderState(model);
 	SetTeamColour(teamID);
 }
 
 void CUnitDrawerLegacy::PushIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
 {
 	SetupAlphaDrawing(deferredPass);
-	PushModelRenderState(model);
+	CModelDrawerHelper::PushModelRenderState(model);
 	SetTeamColour(teamID, float2(alphaValues.x, 1.0f));
 }
 
 void CUnitDrawerLegacy::PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PopIndividualOpaqueState(unit->model, unit->team, deferredPass); }
 void CUnitDrawerLegacy::PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const
 {
-	PopModelRenderState(model);
+	CModelDrawerHelper::PopModelRenderState(model);
 	ResetOpaqueDrawing(deferredPass);
 
 	glPopAttrib();
@@ -1579,7 +1350,7 @@ void CUnitDrawerLegacy::PopIndividualOpaqueState(const S3DModel* model, int team
 
 void CUnitDrawerLegacy::PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
 {
-	PopModelRenderState(model);
+	CModelDrawerHelper::PopModelRenderState(model);
 	ResetAlphaDrawing(deferredPass);
 }
 
@@ -1612,7 +1383,7 @@ void CUnitDrawerLegacy::DrawIndividualDefOpaque(const SolidObjectDef* objectDef,
 		return;
 
 	if (!rawState) {
-		if (!CUnitDrawerHelper::DIDCheckMatrixMode(GL_MODELVIEW))
+		if (!CModelDrawerHelper::DIDCheckMatrixMode(GL_MODELVIEW))
 			return;
 
 		// teamID validity is checked by SetTeamColour
@@ -1625,8 +1396,8 @@ void CUnitDrawerLegacy::DrawIndividualDefOpaque(const SolidObjectDef* objectDef,
 		//   (by undoing the UnitDrawerState MVP setup)
 		//
 		//   assumes the Lua transform includes a LoadIdentity!
-		CUnitDrawerHelper::DIDResetPrevProjection(toScreen);
-		CUnitDrawerHelper::DIDResetPrevModelView();
+		CModelDrawerHelper::DIDResetPrevProjection(toScreen);
+		CModelDrawerHelper::DIDResetPrevModelView();
 	}
 
 	model->DrawStatic();
@@ -1644,13 +1415,13 @@ void CUnitDrawerLegacy::DrawIndividualDefAlpha(const SolidObjectDef* objectDef, 
 		return;
 
 	if (!rawState) {
-		if (!CUnitDrawerHelper::DIDCheckMatrixMode(GL_MODELVIEW))
+		if (!CModelDrawerHelper::DIDCheckMatrixMode(GL_MODELVIEW))
 			return;
 
 		PushIndividualAlphaState(model, teamID, false);
 
-		CUnitDrawerHelper::DIDResetPrevProjection(toScreen);
-		CUnitDrawerHelper::DIDResetPrevModelView();
+		CModelDrawerHelper::DIDResetPrevProjection(toScreen);
+		CModelDrawerHelper::DIDResetPrevModelView();
 	}
 
 	model->DrawStatic();
@@ -1782,7 +1553,7 @@ bool CUnitDrawerFFP::SetTeamColour(int team, const float2 alpha) const
 	const float4 m = { 1.0f, 1.0f, 1.0f, alpha.x };
 
 	glActiveTexture(GL_TEXTURE0);
-	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, std::move(CUnitDrawerHelper::GetTeamColor(team, alpha.x)));
+	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, &m.x);
 
 	return true;
@@ -1806,12 +1577,12 @@ void CUnitDrawerFFP::Enable(bool deferredPass, bool alphaPass) const
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, &color.x);
 	glColor4fv(&color.x);
 
-	CUnitDrawerHelper::PushTransform(camera);
+	CModelDrawerHelper::PushTransform(camera);
 }
 
 void CUnitDrawerFFP::Disable(bool deferredPass) const
 {
-	CUnitDrawerHelper::PopTransform();
+	CModelDrawerHelper::PopTransform();
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -1978,7 +1749,7 @@ bool CUnitDrawerARB::SetTeamColour(int team, const float2 alpha) const
 	assert(modelShader->IsBound());
 
 	modelShader->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-	modelShader->SetUniform4fv(14, std::move(CUnitDrawerHelper::GetTeamColor(team, alpha.x)));
+	modelShader->SetUniform4fv(14, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
 
 	return true;
 }
@@ -1986,8 +1757,8 @@ bool CUnitDrawerARB::SetTeamColour(int team, const float2 alpha) const
 void CUnitDrawerARB::Enable(bool deferredPass, bool alphaPass) const
 {
 	// body of former EnableCommon();
-	CUnitDrawerHelper::PushTransform(camera);
-	CUnitDrawerHelper::EnableTexturesCommon();
+	CModelDrawerHelper::PushTransform(camera);
+	CModelDrawerHelper::EnableTexturesCommon();
 
 	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
 	assert(modelShader != nullptr);
@@ -2017,8 +1788,8 @@ void CUnitDrawerARB::Disable(bool deferredPass) const
 	modelShader->Disable();
 	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
 
-	CUnitDrawerHelper::DisableTexturesCommon();
-	CUnitDrawerHelper::PopTransform();
+	CModelDrawerHelper::DisableTexturesCommon();
+	CModelDrawerHelper::PopTransform();
 }
 
 void CUnitDrawerARB::SetNanoColor(const float4& color) const
@@ -2031,8 +1802,8 @@ void CUnitDrawerARB::SetNanoColor(const float4& color) const
 	}
 }
 
-void CUnitDrawerARB::EnableTextures() const { CUnitDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerARB::DisableTextures() const { CUnitDrawerHelper::DisableTexturesCommon(); }
+void CUnitDrawerARB::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
+void CUnitDrawerARB::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
 
 CUnitDrawerGLSL::CUnitDrawerGLSL()
 {
@@ -2132,7 +1903,7 @@ bool CUnitDrawerGLSL::SetTeamColour(int team, const float2 alpha) const
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
-	modelShader->SetUniform4fv(9, std::move(CUnitDrawerHelper::GetTeamColor(team, alpha.x)));
+	modelShader->SetUniform4fv(9, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
 	// modelShaders[MODEL_SHADER_ACTIVE]->SetUniform1f(16, alpha.y);
 
 	return true;
@@ -2141,8 +1912,8 @@ bool CUnitDrawerGLSL::SetTeamColour(int team, const float2 alpha) const
 void CUnitDrawerGLSL::Enable(bool deferredPass, bool alphaPass) const
 {
 	// body of former EnableCommon();
-	CUnitDrawerHelper::PushTransform(camera);
-	CUnitDrawerHelper::EnableTexturesCommon();
+	CModelDrawerHelper::PushTransform(camera);
+	CModelDrawerHelper::EnableTexturesCommon();
 
 	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
 	assert(modelShader != nullptr);
@@ -2167,8 +1938,8 @@ void CUnitDrawerGLSL::Disable(bool deferredPass) const
 	modelShader->Disable();
 	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
 
-	CUnitDrawerHelper::DisableTexturesCommon();
-	CUnitDrawerHelper::PopTransform();
+	CModelDrawerHelper::DisableTexturesCommon();
+	CModelDrawerHelper::PopTransform();
 }
 
 void CUnitDrawerGLSL::SetNanoColor(const float4& color) const
@@ -2177,8 +1948,8 @@ void CUnitDrawerGLSL::SetNanoColor(const float4& color) const
 	modelShader->SetUniform4fv(10, color);
 }
 
-void CUnitDrawerGLSL::EnableTextures() const { CUnitDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerGLSL::DisableTextures() const { CUnitDrawerHelper::DisableTexturesCommon(); }
+void CUnitDrawerGLSL::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
+void CUnitDrawerGLSL::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
 
 
 
@@ -2244,7 +2015,7 @@ void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContPro
 	smv.Bind();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		const auto& binUnits = rdrCntProxy.GetObjectBin(i);
 
@@ -2273,7 +2044,7 @@ void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContPro
 		}
 		smv.Submit(GL_TRIANGLES, false);
 
-		CUnitDrawerHelper::unitDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
 	}
 
 	smv.Unbind();
@@ -2287,7 +2058,7 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 	SetColorMultiplier();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		if (!mtModelDrawer) {
 			for (const CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
@@ -2325,7 +2096,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 	//main cloaked alpha pass
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		const auto& binUnits = rdrCntProxy.GetObjectBin(i);
 
@@ -2383,7 +2154,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 			if (prevModelType != modelType || prevTexType != dgb->model->textureType) {
 				prevModelType = modelType; prevTexType = dgb->model->textureType;
-				BindModelTypeTexture(modelType, dgb->model->textureType); //ineficient rendering, but w/e
+				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType); //ineficient rendering, but w/e
 			}
 
 			SetStaticModelMatrix(staticWorldMat);
@@ -2433,7 +2204,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 			if (prevModelType != modelType || prevTexType != model->textureType) {
 				prevModelType = modelType; prevTexType = model->textureType;
-				BindModelTypeTexture(modelType, model->textureType); //ineficient rendering, but w/e
+				CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType); //ineficient rendering, but w/e
 			}
 
 			SetStaticModelMatrix(staticWorldMat);
@@ -2447,7 +2218,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 void CUnitDrawerGL4::Enable(bool deferredPass, bool alphaPass) const
 {
 	// body of former EnableCommon();
-	CUnitDrawerHelper::EnableTexturesCommon();
+	CModelDrawerHelper::EnableTexturesCommon();
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -2493,11 +2264,11 @@ void CUnitDrawerGL4::Disable(bool deferredPass) const
 	default: {} break;
 	}
 
-	CUnitDrawerHelper::DisableTexturesCommon();
+	CModelDrawerHelper::DisableTexturesCommon();
 }
 
-void CUnitDrawerGL4::EnableTextures() const { CUnitDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerGL4::DisableTextures() const { CUnitDrawerHelper::DisableTexturesCommon(); }
+void CUnitDrawerGL4::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
+void CUnitDrawerGL4::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
 
 
 void CUnitDrawerGL4::SetColorMultiplier(float r, float g, float b, float a) const

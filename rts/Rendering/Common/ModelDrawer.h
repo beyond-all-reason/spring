@@ -2,11 +2,14 @@
 
 #include <string>
 #include <string_view>
+#include <functional>
 
 #include "ModelRenderData.h"
 #include "System/Log/ILog.h"
 #include "System/TypeToStr.h"
+#include "System/Threading/ThreadPool.h"
 #include "Rendering/GL/LightHandler.h"
+#include "Game/Camera.h"
 
 namespace GL { struct GeometryBuffer; }
 
@@ -94,12 +97,9 @@ public:
 	static void SelectImplementation(bool forceReselection = false);
 	static void SelectImplementation(int targetImplementation);
 public:
+	virtual void Update() const = 0;
 	// Draw*
-
-	// Draw() is different in different context. CRTP it
-	template <typename ...Args>
-	void Draw(Args&&... args) const { static_cast<const TDrawer*>(this)->Draw(std::forward<Args>(args)...); }
-
+	virtual void Draw(bool drawReflection, bool drawRefraction = false) const = 0;
 	virtual void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const = 0;
 	virtual void DrawShadowPass() const = 0;
 	virtual void DrawAlphaPass() const = 0;
@@ -114,6 +114,9 @@ public:
 	virtual void ResetAlphaDrawing(bool deferredPass) const = 0;
 public:
 	inline static TDrawer* selectedModelDrawer = nullptr;
+protected:
+	template<typename T>
+	static void UpdateImpl(const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc);
 protected:
 	inline static int preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //no preference
 	inline static bool mtModelDrawer = true;
@@ -228,4 +231,75 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(int tar
 	assert(selectedModelDrawer->CanEnable());
 
 	LOG_L(L_INFO, "[%s::%s] Switching to %s %s ModelDrawer", className.data(), __func__, mtModelDrawer ? "MT" : "ST", ModelDrawerNames[targetImplementation].data());
+}
+
+template<typename TDrawerData, typename TDrawer>
+template<typename T>
+inline void CModelDrawerBase<TDrawerData, TDrawer>::UpdateImpl(const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc)
+{
+	modelDrawerData->Update();
+
+	const static auto matUpdateFunc = [](T* o) {
+		auto& smma = modelDrawerData->GetObjectMatricesMemAlloc(o);
+		smma[0] = o->GetTransformMatrix();
+
+		for (int i = 0; i < o->localModel.pieces.size(); ++i) {
+			auto& lmp = o->localModel.pieces[i];
+			smma[i + 1] = lmp.GetModelSpaceMatrix();
+			if (unlikely(!lmp.scriptSetVisible))
+				smma[i + 1] = CMatrix44f::Zero();
+		}
+	};
+
+	//Experimental: do not include CAMTYPE_SHADOW. A little cheating to reduce the number of processed units
+	// Replace CAMTYPE_SHADOW -> CAMTYPE_ENVMAP in case missing shadow hits back
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_SHADOW; ++camType) {
+		CCamera* cam = CCameraHandler::GetCamera(camType);
+		const auto& quads = modelDrawerData->GetCamVisibleQuads(camType);
+
+		static std::vector<T*> updateList;
+		updateList.clear();
+
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
+
+			for (int quad : quads) {
+				const auto& rdrCntProxy = rdrContProxies[quad];
+
+				// non visible quad
+				if (!rdrCntProxy.IsQuadVisible())
+					continue;
+
+				// quad has no objects
+				if (!rdrCntProxy.HasObjects())
+					continue;
+
+				for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+					const auto& bin = rdrCntProxy.GetObjectBin(i);
+					for (T* o : bin)
+						updateList.emplace_back(o);
+				}
+			}
+		}
+		spring::VectorSortUnique(updateList);
+
+		if (mtModelDrawer) {
+			for_mt(0, updateList.size(), [cam, shouldUpdateFunc](const int k) {
+				T* o = updateList[k];
+				if (shouldUpdateFunc(cam, o))
+					matUpdateFunc(o);
+				});
+		}
+		else {
+			for (T* o : updateList) {
+				if (shouldUpdateFunc(cam, o))
+					matUpdateFunc(o);
+			}
+		}
+	}
+
+	for (T* o : modelDrawerData->GetUnsortedObjects()) {
+		if (o->alwaysUpdateMat)
+			matUpdateFunc(o);
+	}
 }
