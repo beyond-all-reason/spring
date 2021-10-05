@@ -851,7 +851,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 			// weapon-projectile
 			const CWeaponProjectile* wp = static_cast<const CWeaponProjectile*>(p);
 
-			unitDrawer->SetTeamColour(wp->GetTeamID());
+			unitDrawer->SetTeamColor(wp->GetTeamID());
 
 			glPushMatrix();
 				glMultMatrixf(wp->GetTransformMatrix(wp->GetProjectileType() == WEAPON_MISSILE_PROJECTILE));
@@ -867,7 +867,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 			// piece-projectile
 			const CPieceProjectile* pp = static_cast<const CPieceProjectile*>(p);
 
-			unitDrawer->SetTeamColour(pp->GetTeamID());
+			unitDrawer->SetTeamColor(pp->GetTeamID());
 
 			glPushMatrix();
 				glTranslatef3(pp->drawPos);

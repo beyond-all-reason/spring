@@ -163,7 +163,7 @@ void CFarTextureHandler::CreateFarTexture(const CSolidObject* obj)
 	//   and will not track later state-changes
 	unitDrawer->SetupOpaqueDrawing(false);
 	CModelDrawerHelper::PushModelRenderState(model);
-	unitDrawer->SetTeamColour(obj->team);
+	unitDrawer->SetTeamColor(obj->team);
 
 	// can pick any perspective-type
 	CCamera iconCam(CCamera::CAMTYPE_PLAYER);

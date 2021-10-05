@@ -1609,8 +1609,8 @@ int LuaOpenGL::FeatureCommon(lua_State* L, bool applyTransform, bool callDrawFea
 
 	glPushAttrib(GL_ENABLE_BIT);
 
-	typedef void(CFeatureDrawer::*RawDrawMemFunc)(const CFeature*, unsigned int, unsigned int, bool, bool);
-	typedef void(CFeatureDrawer::*MatDrawMemFunc)(const CFeature*, bool);
+	typedef void(CFeatureDrawer::*RawDrawMemFunc)(const CFeature*, unsigned int, unsigned int, bool, bool) const;
+	typedef void(CFeatureDrawer::*MatDrawMemFunc)(const CFeature*, bool) const;
 
 	const RawDrawMemFunc rawDrawFuncs[2] = {&CFeatureDrawer::DrawFeatureNoTrans, &CFeatureDrawer::DrawFeatureTrans};
 	const MatDrawMemFunc matDrawFuncs[2] = {&CFeatureDrawer::DrawIndividualNoTrans, &CFeatureDrawer::DrawIndividual};

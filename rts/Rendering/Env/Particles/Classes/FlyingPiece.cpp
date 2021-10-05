@@ -179,7 +179,7 @@ CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFac
 void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 {
 	if (prev == nullptr) {
-		unitDrawer->SetTeamColour(team);
+		unitDrawer->SetTeamColor(team);
 
 		if (texture != -1)
 			CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
@@ -190,7 +190,7 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 	}
 
 	if (team != prev->team)
-		unitDrawer->SetTeamColour(team);
+		unitDrawer->SetTeamColor(team);
 
 	if (texture != prev->texture && texture != -1)
 		CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);

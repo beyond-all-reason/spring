@@ -79,7 +79,7 @@ typedef std::function<void(CFeatureDrawer*, const CFeature*, unsigned int, unsig
 //
 typedef void(CEventHandler::*EventFunc)();
 typedef void(CUnitDrawer   ::*   UnitDrawFunc)(const CUnit*,    unsigned int, unsigned int, bool, bool) const;
-typedef void(CFeatureDrawer::*FeatureDrawFunc)(const CFeature*, unsigned int, unsigned int, bool, bool) /*const*/;
+typedef void(CFeatureDrawer::*FeatureDrawFunc)(const CFeature*, unsigned int, unsigned int, bool, bool) const;
 
 #endif
 
@@ -196,7 +196,7 @@ static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial
 	// (engine) shader attached, otherwise requires testing
 	// if shader is bound in DrawerState etc
 	assert(m->shaders[deferredPass].IsEngineType());
-	unitDrawer->SetTeamColour(o->team, a);
+	unitDrawer->SetTeamColor(o->team, a);
 }
 
 

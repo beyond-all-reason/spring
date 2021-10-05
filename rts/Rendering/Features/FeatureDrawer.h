@@ -22,19 +22,23 @@ public:
 	//static void KillStatic(bool reload); will use base
 	//static void UpdateStatic();
 public:
-	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) = 0;
-	virtual void DrawFeatureTrans(const CFeature*, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) = 0;
+	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;
+	virtual void DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;
 
 	/// LuaOpenGL::Feature{Raw}: draw a single feature with full state setup
-	virtual void PushIndividualState(const CFeature* feature, bool deferredPass) = 0;
-	virtual void PopIndividualState(const CFeature* feature, bool deferredPass) = 0;
-	virtual void DrawIndividual(const CFeature* feature, bool noLuaCall) = 0;
-	virtual void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) = 0;
+	virtual void PushIndividualState(const CFeature* feature, bool deferredPass) const = 0;
+	virtual void PopIndividualState(const CFeature* feature, bool deferredPass) const = 0;
+	virtual void DrawIndividual(const CFeature* feature, bool noLuaCall) const = 0;
+	virtual void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const = 0;
 
-	virtual void DrawOpaqueFeatures(int modelType) = 0;
-	virtual void DrawAlphaFeatures(int modelType) = 0;
-	virtual void DrawAlphaFeature(CFeature* f, bool ffpMat) = 0;
-	virtual void DrawFarFeatures() = 0;
+	virtual void DrawOpaqueFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
+	virtual void DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const = 0;
+	virtual void DrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction) const = 0;
+	virtual void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
+	virtual void DrawAlphaFeature(CFeature* f, bool ffpMat) const = 0;
+	virtual void DrawFarFeatures() const = 0;
+
+	virtual bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const;
 public:
 	// modelDrawerData proxies
 	void ConfigNotify(const std::string& key, const std::string& value) { modelDrawerData->ConfigNotify(key, value); }
@@ -50,7 +54,7 @@ public:
 
 	virtual void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const = 0;
 protected:
-	bool CanDrawFeature(const CFeature*) const;
+	bool ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflection, bool drawRefraction) const;
 };
 
 #define featureDrawer (CFeatureDrawer::selectedModelDrawer)
@@ -60,53 +64,70 @@ class CFeatureDrawerCommon : public CFeatureDrawer
 public:
 	void Update() const override;
 	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override;
+protected:
+	template<bool legacy>
+	void DrawShadowPassImpl() const;
+
+	template<bool legacy>
+	void DrawImpl(bool drawReflection, bool drawRefraction) const;
 };
 
 class CFeatureDrawerLegacy : public CFeatureDrawerCommon
 {
 public:
-	void Draw(bool drawReflection, bool drawRefraction) const override {};
-	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {};
-	void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) override {};
-	void DrawFeatureTrans(const CFeature*, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) override {};
+	void Draw(bool drawReflection, bool drawRefraction) const override { DrawImpl<true>(drawReflection, drawRefraction); }
+	void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const override;
+	void DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const override;
 
 	/// LuaOpenGL::Feature{Raw}: draw a single feature with full state setup
-	void PushIndividualState(const CFeature* feature, bool deferredPass) override {};
-	void PopIndividualState(const CFeature* feature, bool deferredPass) override {};
-	void DrawIndividual(const CFeature* feature, bool noLuaCall) override {};
-	void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) override {};
+	void PushIndividualState(const CFeature* feature, bool deferredPass) const override {};
+	void PopIndividualState(const CFeature* feature, bool deferredPass) const override {};
+	void DrawIndividual(const CFeature* feature, bool noLuaCall) const override {};
+	void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const override {};
 
-	void DrawOpaqueFeatures(int modelType) override {};
-	void DrawAlphaFeatures(int modelType)override {};
-	void DrawAlphaFeature(CFeature* f, bool ffpMat) override {};
-	void DrawFarFeatures() override {};
+	void DrawOpaqueFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override {};
+	void DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction) const;
+	void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override {};
+	void DrawAlphaFeature(CFeature* f, bool ffpMat) const override {};
+	void DrawFarFeatures() const override {};
 
 	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override {};
-	void ResetOpaqueDrawing(bool deferredPass) const override {};
+	void SetupOpaqueDrawing(bool deferredPass) const override;
+	void ResetOpaqueDrawing(bool deferredPass) const override;
 
 	void SetupAlphaDrawing(bool deferredPass) const override {};
 	void ResetAlphaDrawing(bool deferredPass) const override {};
 
 	// Inherited via CFeatureDrawerCommon
-	void DrawShadowPass() const override {};
+	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); };
 	void DrawAlphaPass() const override {};
 	bool CanEnable() const override { return true; };
-	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override {};
+
+	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
 };
 
 class CFeatureDrawerFFP : public CFeatureDrawerLegacy
 {
+public:
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
 };
 
 class CFeatureDrawerARB : public CFeatureDrawerLegacy
 {
+public:
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
+
 };
 
 class CFeatureDrawerGLSL : public CFeatureDrawerLegacy
 {
+public:
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
 };
 
 class CFeatureDrawerGL4 : public CFeatureDrawerLegacy//CFeatureDrawerCommon
 {
+public:
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
 };

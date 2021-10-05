@@ -1,4 +1,5 @@
-#include "UnitDrawerData.h"
+#include <functional>
+
 #include "UnitDrawerData.h"
 
 #include "System/MemPoolTypes.h"
@@ -12,11 +13,13 @@
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/UI/MiniMap.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/IconHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
+#include "Rendering/Env/IWater.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
@@ -30,8 +33,8 @@ static FixedDynMemPool<sizeof(GhostSolidObject), MAX_UNITS / 1000, MAX_UNITS / 3
 
 ///////////////////////////
 
-CUnitDrawerData::CUnitDrawerData()
-	: CUnitRenderDataBase("[CUnitDrawerData]", 271828)
+CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
+	: CUnitRenderDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
 {
 	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
@@ -105,13 +108,24 @@ void CUnitDrawerData::Update()
 
 	iconZoomDist = dist;
 
-	for (CUnit* unit : unsortedObjects) {
+	const static auto updateBody = [this](CUnit* unit) {
 		if (useScreenIcons)
 			UpdateUnitIconStateScreen(unit);
 		else
 			UpdateUnitIconState(unit);
 
 		UpdateUnitDrawPos(unit);
+	};
+
+	if (mtModelDrawer) {
+		for_mt(0, unsortedObjects.size(), [this](const int k) {
+			CUnit* unit = unsortedObjects[k];
+			updateBody(unit);
+		});
+	}
+	else {
+		for (CUnit* unit : unsortedObjects)
+			updateBody(unit);
 	}
 
 	if ((useDistToGroundForIcons = (camHandler->GetCurrentController()).GetUseDistToGroundForIcons())) {
@@ -125,10 +139,29 @@ void CUnitDrawerData::Update()
 		sqCamDistToGroundForIcons = overGround * overGround;
 	}
 
-	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
-		CCamera* cam = CCameraHandler::GetCamera(camType);
-		UpdateVisibleQuads(cam, modelDrawDist);
-	}
+	//////////////////////////
+
+	const static std::function<bool(const CCamera*, const CUnit*)> shouldUpdateFunc = [](const CCamera* cam, const CUnit* unit) -> bool {
+		if (unit->noDraw)
+			return false;
+
+		if (unit->IsInVoid())
+			return false;
+
+		// unit will be drawn as icon instead
+		if (unit->isIcon)
+			return false;
+
+		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+			return false;
+
+		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
+			return false;
+
+		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
+	};
+
+	UpdateCommon(shouldUpdateFunc);
 }
 
 void CUnitDrawerData::UpdateGhostedBuildings()

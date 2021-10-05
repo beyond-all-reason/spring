@@ -71,7 +71,7 @@ public:
 		bool drawBorder;
 	};
 public:
-	CUnitDrawerData();
+	CUnitDrawerData(bool& mtModelDrawer_);
 	virtual ~CUnitDrawerData();
 public:
 	void SetUnitIconDist(float dist) {

@@ -72,7 +72,7 @@ public:
 
 	// alpha.x := alpha-value
 	// alpha.y := alpha-pass (true or false)
-	virtual bool SetTeamColour(int team, const float2 alpha = float2(1.0f, 0.0f)) const;
+	virtual bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const;
 
 	// DrawUnit*
 	virtual void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
@@ -102,10 +102,8 @@ public:
 	        bool ShowUnitBuildSquare(const BuildInfo& buildInfo) const { return ShowUnitBuildSquare(buildInfo, std::vector<Command>()); }
 	virtual bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const = 0;
 protected:
-	bool CanDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	bool ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	bool ShouldDrawAlphaUnit(CUnit* unit) const;
-	bool CanDrawOpaqueUnitShadow(const CUnit* unit) const;
 	bool ShouldDrawOpaqueUnitShadow(CUnit* unit) const;
 
 	virtual void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
@@ -257,7 +255,7 @@ public:
 	bool CanDrawDeferred() const override { return false; }
 	bool CanDrawAlpha() const override { return false; } //by legacy convention FFP is not alpha capable
 
-	bool SetTeamColour(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
 
 protected:
 	void Enable(bool deferredPass, bool alphaPass) const override;
@@ -286,7 +284,7 @@ public:
 	bool CanDrawDeferred() const override { return false; };
 	bool CanDrawAlpha() const override { return false; } //by legacy convention ARB is not alpha capable?
 
-	bool SetTeamColour(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
 
 protected:
 	void Enable(bool deferredPass, bool alphaPass) const override;
@@ -307,7 +305,7 @@ public:
 	bool CanDrawDeferred() const override;
 	bool CanDrawAlpha() const override { return false; } //by legacy convention ARB is not alpha capable?
 
-	bool SetTeamColour(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
 
 protected:
 	void Enable(bool deferredPass, bool alphaPass) const override;
@@ -337,7 +335,7 @@ public:
 	void SetupAlphaDrawing(bool deferredPass) const override;
 	void ResetAlphaDrawing(bool deferredPass) const override;
 
-	bool SetTeamColour(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
+	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
 
 	// DrawUnit*
 	/* TODO figure out

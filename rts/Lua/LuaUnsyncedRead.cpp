@@ -1007,7 +1007,7 @@ int LuaUnsyncedRead::GetVisibleFeatures(lua_State* L)
 			if (f->noDraw)
 				continue;
 
-			if (noIcons && f->drawFlag == CFeature::FD_FARTEX_FLAG)
+			if (noIcons && f->drawAsFarTex)
 				continue;
 
 			if (noGeos && f->def->geoThermal)

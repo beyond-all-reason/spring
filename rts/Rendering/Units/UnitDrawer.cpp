@@ -146,7 +146,7 @@ void CUnitDrawer::InitStatic()
 	SelectImplementation();
 }
 
-bool CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
+bool CUnitDrawer::SetTeamColor(int team, const float2 alpha) const
 {
 	// need this because we can be called by no-team projectiles
 	if (!teamHandler.IsValidTeam(team))
@@ -159,11 +159,8 @@ bool CUnitDrawer::SetTeamColour(int team, const float2 alpha) const
 	return true;
 }
 
-bool CUnitDrawer::CanDrawOpaqueUnit(
-	const CUnit* unit,
-	bool drawReflection,
-	bool drawRefraction
-) const {
+bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const
+{
 	if (modelDrawerData->IsAlpha(unit))
 		return false;
 
@@ -192,12 +189,7 @@ bool CUnitDrawer::CanDrawOpaqueUnit(
 	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
 		return false;
 
-	return (cam->InView(unit->drawMidPos, unit->GetDrawRadius()));
-}
-
-bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const
-{
-	if (!CanDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+	if (!cam->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return false;
 
 	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * modelDrawerData->modelDrawDistSqr)) {
@@ -231,7 +223,7 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* unit) const
 	return true;
 }
 
-bool CUnitDrawer::CanDrawOpaqueUnitShadow(const CUnit* unit) const
+bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
 {
 	if (modelDrawerData->IsAlpha(unit))
 		return false;
@@ -251,15 +243,10 @@ bool CUnitDrawer::CanDrawOpaqueUnitShadow(const CUnit* unit) const
 
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
 
-	const bool unitInLOS = ((unit->losStatus[gu->myAllyTeam] & LOS_INLOS) || gu->spectatingFullView);
-	const bool unitInView = cam->InView(unit->drawMidPos, unit->GetDrawRadius());
+	if (!((unit->losStatus[gu->myAllyTeam] & LOS_INLOS) || gu->spectatingFullView))
+		return false;
 
-	return (unitInLOS && unitInView);
-}
-
-bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
-{
-	if (!CanDrawOpaqueUnitShadow(unit))
+	if (!cam->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return false;
 
 	if (LuaObjectDrawer::AddShadowMaterialObject(unit, LUAOBJ_UNIT))
@@ -349,92 +336,6 @@ void CUnitDrawerBase::Update() const
 {
 	SCOPED_TIMER("CUnitDrawerBase::Update");
 	modelDrawerData->Update();
-
-	//TODO: move into modelDrawerData->Update() ?
-
-	const static auto shouldUpdateFunc = [](CCamera* cam, CUnit* unit) -> bool {
-		if (unit->noDraw)
-			return false;
-
-		if (unit->IsInVoid())
-			return false;
-
-		// unit will be drawn as icon instead
-		if (unit->isIcon)
-			return false;
-
-		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
-			return false;
-
-		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
-			return false;
-
-		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
-	};
-
-	const static auto matUpdateFunc = [this](CUnit* unit) {
-		auto& smma = modelDrawerData->GetObjectMatricesMemAlloc(unit);
-		smma[0] = unit->GetTransformMatrix();
-
-		for (int i = 0; i < unit->localModel.pieces.size(); ++i) {
-			auto& lmp = unit->localModel.pieces[i];
-			smma[i + 1] = lmp.GetModelSpaceMatrix();
-			if (unlikely(!lmp.scriptSetVisible))
-				smma[i + 1] = CMatrix44f::Zero();
-		}
-	};
-
-	//Experimental: do not include CAMTYPE_SHADOW. A little cheating to reduce the number of processed units
-	// Replace CAMTYPE_SHADOW -> CAMTYPE_ENVMAP in case missing shadow hits back
-	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_SHADOW; ++camType) {
-		CCamera* cam = CCameraHandler::GetCamera(camType);
-		const auto& quads = modelDrawerData->GetCamVisibleQuads(camType);
-
-		static std::vector<CUnit*> updateList;
-		updateList.clear();
-
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-
-			for (int quad : quads) {
-				const auto& rdrCntProxy = rdrContProxies[quad];
-
-				// non visible quad
-				if (!rdrCntProxy.IsQuadVisible())
-					continue;
-
-				// quad has no objects
-				if (!rdrCntProxy.HasObjects())
-					continue;
-
-				for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-					const auto& bin = rdrCntProxy.GetObjectBin(i);
-					for (CUnit* unit : bin)
-						updateList.emplace_back(unit);
-				}
-			}
-		}
-		spring::VectorSortUnique(updateList);
-
-		if (mtModelDrawer) {
-			for_mt(0, updateList.size(), [cam](const int k) {
-				CUnit* unit = updateList[k];
-				if (shouldUpdateFunc(cam, unit))
-					matUpdateFunc(unit);
-				});
-		}
-		else {
-			for (CUnit* unit : updateList) {
-				if (shouldUpdateFunc(cam, unit))
-					matUpdateFunc(unit);
-			}
-		}
-	}
-
-	for (CUnit* unit : GetUnsortedUnits()) {
-		if (unit->alwaysUpdateMat)
-			matUpdateFunc(unit);
-	}
 }
 
 template<bool legacy>
@@ -519,8 +420,10 @@ template<bool legacy>
 void CUnitDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
 {
 	SCOPED_TIMER("CUnitDrawerBase::Draw");
-	if constexpr(legacy)
+	if constexpr (legacy) {
+		glEnable(GL_ALPHA_TEST);
 		sky->SetupFog();
+	}
 
 	assert((CCameraHandler::GetActiveCamera())->GetCamType() != CCamera::CAMTYPE_SHADOW);
 
@@ -537,7 +440,6 @@ void CUnitDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
 
 	if constexpr (legacy) {
 		glDisable(GL_FOG);
-		glDisable(GL_ALPHA_TEST);
 		glDisable(GL_TEXTURE_2D);
 	}
 }
@@ -561,6 +463,7 @@ void CUnitDrawerLegacy::SetupOpaqueDrawing(bool deferredPass) const
 void CUnitDrawerLegacy::ResetOpaqueDrawing(bool deferredPass) const
 {
 	Disable(deferredPass);
+	glDisable(GL_ALPHA_TEST);
 	glPopAttrib();
 }
 
@@ -820,7 +723,7 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 			glRotatef(dgb->facing * 90.0f, 0, 1, 0);
 
 			CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType);
-			SetTeamColour(dgb->team, float2(alphaValues.y, 1.0f));
+			SetTeamColor(dgb->team, float2(alphaValues.y, 1.0f));
 
 			dgb->model->DrawStatic();
 			glPopMatrix();
@@ -839,7 +742,7 @@ void CUnitDrawerLegacy::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool dr
 		return;
 
 	// draw the unit with the default (non-Lua) material
-	SetTeamColour(unit->team);
+	SetTeamColor(unit->team);
 	DrawUnitTrans(unit, 0, 0, false, false);
 }
 
@@ -896,7 +799,7 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		// not actually cloaked
 		CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType);
 
-		SetTeamColour(unit->team, float2((losStatus & LOS_CONTRADAR) ? alphaValues.z : alphaValues.y, 1.0f));
+		SetTeamColor(unit->team, float2((losStatus & LOS_CONTRADAR) ? alphaValues.z : alphaValues.y, 1.0f));
 		model->DrawStatic();
 		glPopMatrix();
 
@@ -908,7 +811,7 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		return;
 
 	if ((losStatus & LOS_INLOS) || gu->spectatingFullView) {
-		SetTeamColour(unit->team, float2(alphaValues.x, 1.0f));
+		SetTeamColor(unit->team, float2(alphaValues.x, 1.0f));
 		DrawUnitTrans(unit, 0, 0, false, false);
 	}
 }
@@ -925,7 +828,7 @@ void CUnitDrawerLegacy::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& un
 	assert(mdl != nullptr);
 
 	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
-	SetTeamColour(unit.team);
+	SetTeamColor(unit.team);
 	mdl->DrawStatic();
 
 	glPopMatrix();
@@ -943,7 +846,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& uni
 	assert(mdl != nullptr);
 
 	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
-	SetTeamColour(unit.team, float2(alphaValues.x, 1.0f));
+	SetTeamColor(unit.team, float2(alphaValues.x, 1.0f));
 	mdl->DrawStatic();
 
 	glPopMatrix();
@@ -954,7 +857,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	if (!unit.drawBorder)
 		return;
 
-	SetTeamColour(unit.team, float2(alphaValues.w, 1.0f));
+	SetTeamColor(unit.team, float2(alphaValues.w, 1.0f));
 
 	const BuildInfo buildInfo(unit.unitDef, unit.pos, unit.facing);
 	const float3 buildPos = CGameHelper::Pos2BuildPos(buildInfo, false);
@@ -1329,14 +1232,14 @@ void CUnitDrawerLegacy::PushIndividualOpaqueState(const S3DModel* model, int tea
 
 	SetupOpaqueDrawing(deferredPass);
 	CModelDrawerHelper::PushModelRenderState(model);
-	SetTeamColour(teamID);
+	SetTeamColor(teamID);
 }
 
 void CUnitDrawerLegacy::PushIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
 {
 	SetupAlphaDrawing(deferredPass);
 	CModelDrawerHelper::PushModelRenderState(model);
-	SetTeamColour(teamID, float2(alphaValues.x, 1.0f));
+	SetTeamColor(teamID, float2(alphaValues.x, 1.0f));
 }
 
 void CUnitDrawerLegacy::PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PopIndividualOpaqueState(unit->model, unit->team, deferredPass); }
@@ -1386,7 +1289,7 @@ void CUnitDrawerLegacy::DrawIndividualDefOpaque(const SolidObjectDef* objectDef,
 		if (!CModelDrawerHelper::DIDCheckMatrixMode(GL_MODELVIEW))
 			return;
 
-		// teamID validity is checked by SetTeamColour
+		// teamID validity is checked by SetTeamColor
 		PushIndividualOpaqueState(model, teamID, false);
 
 		// NOTE:
@@ -1544,9 +1447,9 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 /***********************************************************************/
 
-bool CUnitDrawerFFP::SetTeamColour(int team, const float2 alpha) const
+bool CUnitDrawerFFP::SetTeamColor(int team, const float2 alpha) const
 {
-	if (!CUnitDrawer::SetTeamColour(team, alpha))
+	if (!CUnitDrawer::SetTeamColor(team, alpha))
 		return false;
 
 	// non-shader case via texture combiners
@@ -1736,9 +1639,9 @@ CUnitDrawerARB::~CUnitDrawerARB()
 
 bool CUnitDrawerARB::CanEnable() const { return globalRendering->haveARB && UseAdvShading(); }
 
-bool CUnitDrawerARB::SetTeamColour(int team, const float2 alpha) const
+bool CUnitDrawerARB::SetTeamColor(int team, const float2 alpha) const
 {
-	if (!CUnitDrawer::SetTeamColour(team, alpha))
+	if (!CUnitDrawer::SetTeamColor(team, alpha))
 		return false;
 
 	// NOTE:
@@ -1895,9 +1798,9 @@ bool CUnitDrawerGLSL::CanEnable() const { return globalRendering->haveGLSL && Us
 
 bool CUnitDrawerGLSL::CanDrawDeferred() const { return deferredAllowed; }
 
-bool CUnitDrawerGLSL::SetTeamColour(int team, const float2 alpha) const
+bool CUnitDrawerGLSL::SetTeamColor(int team, const float2 alpha) const
 {
-	if (!CUnitDrawer::SetTeamColour(team, alpha))
+	if (!CUnitDrawer::SetTeamColor(team, alpha))
 		return false;
 
 	assert(modelShader != nullptr);
@@ -2363,9 +2266,9 @@ void CUnitDrawerGL4::ResetAlphaDrawing(bool deferredPass) const
 	glPopAttrib();
 }
 
-bool CUnitDrawerGL4::SetTeamColour(int team, const float2 alpha) const
+bool CUnitDrawerGL4::SetTeamColor(int team, const float2 alpha) const
 {
-	if (!CUnitDrawer::SetTeamColour(team, alpha))
+	if (!CUnitDrawer::SetTeamColor(team, alpha))
 		return false;
 
 	//todo

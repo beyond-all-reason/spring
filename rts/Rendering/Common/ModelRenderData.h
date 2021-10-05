@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <functional>
 
 #include <unordered_map>
 
@@ -9,12 +10,16 @@
 #include "System/EventHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Threading/ThreadPool.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/ShadowHandler.h"
 #include "Rendering/Models/MatricesMemStorage.h"
 #include "Rendering/Models/ModelRenderContainer.h"
 #include "Rendering/Models/3DModel.h"
+#include "Rendering/Env/IWater.h"
 #include "Map/ReadMap.h"
 #include "Game/Camera.h"
+#include "Game/CameraHandler.h"
 
 CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
 
@@ -25,7 +30,8 @@ public:
 		, drawQuadsX{ mapDims.mapx / CModelRenderDataConcept::DRAW_QUAD_SIZE }
 		, drawQuadsY{ mapDims.mapy / CModelRenderDataConcept::DRAW_QUAD_SIZE }
 	{
-		InitStaticOnce();
+		if (modelDrawDist == 0.0f)
+			SetModelDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
 	};
 	virtual ~CModelRenderDataConcept() {
 		eventHandler.RemoveClient(this);
@@ -40,18 +46,9 @@ public:
 		modelDrawDistSqr = modelDrawDist * modelDrawDist;
 	}
 public:
-	static inline bool initialized = false;
 	// lenghts & distances
 	static float inline modelDrawDist = 0.0f;
 	static float inline modelDrawDistSqr = 0.0f;
-private:
-	static void InitStaticOnce() {
-		if (initialized)
-			return;
-		initialized = true;
-
-		SetModelDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
-	}
 public:
 	int drawQuadsX;
 	int drawQuadsY;
@@ -64,18 +61,23 @@ template <typename T>
 class CModelRenderDataBase : public CModelRenderDataConcept
 {
 public:
-	CModelRenderDataBase(const std::string& ecName, int ecOrder);
+	CModelRenderDataBase(const std::string& ecName, int ecOrder, bool& mtModelDrawer_);
 	virtual ~CModelRenderDataBase() override;
 public:
 	virtual void Update() = 0;
 protected:
 	virtual bool IsAlpha(const T* co) const = 0;
-protected:
-	void DelObject(const T* co, bool del);
 private:
 	void AddObject(const T* co, bool add); //never to be called directly! Use UpdateObject() instead!
 protected:
+	void DelObject(const T* co, bool del);
 	void UpdateObject(const T* co, bool init);
+protected:
+	void UpdateCommon(const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc);
+	void UpdateSMMA(const CCamera* cam, const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc); //conditionalUpdate
+	void UpdateSMMA(); //alwaysUpdate
+private:
+	void UpdateObjectSMMA(const T* o);
 public:
 	void UpdateVisibleQuads(CCamera* cam, float maxDist, int xzExtraSize = 0, float extraHeight = 100.0f);
 public:
@@ -168,6 +170,8 @@ protected:
 	std::unordered_map<T*, ScopedMatricesMemAlloc> matricesMemAllocs;
 
 	CModelQuadDrawer quadDrawer;
+
+	bool& mtModelDrawer;
 };
 
 using CUnitRenderDataBase = CModelRenderDataBase<CUnit>;
@@ -181,8 +185,9 @@ using CFeatureRenderDataBase = CModelRenderDataBase<CFeature>;
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-inline CModelRenderDataBase<T>::CModelRenderDataBase(const std::string& ecName, int ecOrder)
+inline CModelRenderDataBase<T>::CModelRenderDataBase(const std::string& ecName, int ecOrder, bool& mtModelDrawer_)
 	: CModelRenderDataConcept(ecName, ecOrder)
+	, mtModelDrawer(mtModelDrawer_)
 {
 	quadDrawer = CModelQuadDrawer(drawQuadsX);
 
@@ -265,6 +270,95 @@ inline void CModelRenderDataBase<T>::UpdateObject(const T* co, bool init)
 	(const_cast<T*>(co))->drawQuad = newDrawQuad;
 	AddObject(co, init);
 }
+
+
+template<typename T>
+inline void CModelRenderDataBase<T>::UpdateObjectSMMA(const T* o)
+{
+	ScopedMatricesMemAlloc& smma = GetObjectMatricesMemAlloc(o);
+	smma[0] = o->GetTransformMatrix();
+
+	for (int i = 0; i < o->localModel.pieces.size(); ++i) {
+		auto& lmp = o->localModel.pieces[i];
+		smma[i + 1] = lmp.GetModelSpaceMatrix();
+		if (unlikely(!lmp.scriptSetVisible))
+			smma[i + 1] = CMatrix44f::Zero();
+	}
+}
+
+template<typename T>
+inline void CModelRenderDataBase<T>::UpdateCommon(const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc)
+{
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+		if (camType == CCamera::CAMTYPE_UWREFL && !water->CanDrawReflectionPass())
+			continue;
+
+		if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))
+			continue;
+
+		CCamera* cam = CCameraHandler::GetCamera(camType);
+		UpdateVisibleQuads(cam, modelDrawDist);
+
+		UpdateSMMA(cam, shouldUpdateFunc);
+	}
+	UpdateSMMA();
+}
+
+template<typename T>
+inline void CModelRenderDataBase<T>::UpdateSMMA(const CCamera* cam, const std::function<bool(const CCamera*, const T*)>& shouldUpdateFunc)
+{
+	const auto& quads = GetCamVisibleQuads(cam->GetCamType());
+
+	static std::vector<T*> updateList;
+	updateList.clear();
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		const auto& rdrContProxies = GetRdrContProxies(modelType);
+
+		for (int quad : quads) {
+			const auto& rdrCntProxy = rdrContProxies[quad];
+
+			// non visible quad
+			if (!rdrCntProxy.IsQuadVisible())
+				continue;
+
+			// quad has no objects
+			if (!rdrCntProxy.HasObjects())
+				continue;
+
+			for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+				const auto& bin = rdrCntProxy.GetObjectBin(i);
+				for (T* o : bin)
+					updateList.emplace_back(o);
+			}
+		}
+	}
+	spring::VectorSortUnique(updateList);
+
+	if (mtModelDrawer) {
+		for_mt(0, updateList.size(), [cam, shouldUpdateFunc, this](const int k) {
+			T* o = updateList[k];
+			if (shouldUpdateFunc(cam, o))
+				this->UpdateObjectSMMA(o);
+			});
+	}
+	else {
+		for (T* o : updateList) {
+			if (shouldUpdateFunc(cam, o))
+				UpdateObjectSMMA(o);
+		}
+	}
+}
+
+template<typename T>
+inline void CModelRenderDataBase<T>::UpdateSMMA()
+{
+	for (T* o : GetUnsortedObjects()) {
+		if (o->alwaysUpdateMat)
+			UpdateObjectSMMA(o);
+	}
+}
+
 
 template<typename T>
 inline void CModelRenderDataBase<T>::UpdateVisibleQuads(CCamera* cam, float maxDist, int xzExtraSize, float extraHeight)
