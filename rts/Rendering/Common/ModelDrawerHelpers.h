@@ -76,10 +76,10 @@ class CModelDrawerHelperS3O : public CModelDrawerHelper {
 
 class CModelDrawerHelperASS : public CModelDrawerHelper {
 	// Inherited via CModelDrawerHelper
-	virtual void PushRenderState() const override { /*no-op*/ };
-	virtual void PopRenderState() const override { /*no-op*/ };
-	virtual void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
-	virtual void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
-	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
-	virtual void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
+	void PushRenderState() const override { /*no-op*/ };
+	void PopRenderState() const override { /*no-op*/ };
+	void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
+	void UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
+	void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
+	void UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
 };

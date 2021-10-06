@@ -230,8 +230,8 @@ void CFeatureDrawerCommon::DrawImpl(bool drawReflection, bool drawRefraction) co
 
 	// first do the deferred pass; conditional because
 	// most of the water renderers use their own FBO's
-	//if (drawDeferred && !drawReflection && !drawRefraction)
-		//LuaObjectDrawer::DrawDeferredPass(LUAOBJ_FEATURE);
+	if (drawDeferred && !drawReflection && !drawRefraction)
+		LuaObjectDrawer::DrawDeferredPass(LUAOBJ_FEATURE);
 
 	// now do the regular forward pass
 	if (drawForward)

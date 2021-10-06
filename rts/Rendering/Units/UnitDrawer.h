@@ -59,8 +59,6 @@ public:
 
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
 	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return modelDrawerData->GetObjectMatricesMemAlloc(unit); }
-protected:
-	virtual void Update() const = 0;
 public:
 	//virtual bool CanEnable() const = 0; //moved to CModelDrawerBase
 
@@ -115,9 +113,6 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) const = 0;
 
 	virtual void DrawGhostedBuildings(int modelType) const = 0;
-protected:
-	virtual void Enable(bool deferredPass, bool alphaPass) const = 0;
-	virtual void Disable(bool deferredPass) const = 0;
 
 	virtual void SetNanoColor(const float4& color) const = 0;
 public:
@@ -166,12 +161,6 @@ class CUnitDrawerLegacy : public CUnitDrawerBase {
 public:
 	// caps functions
 	bool IsLegacy() const override { return true; }
-	// Inherited via CUnitDrawer
-	void SetupOpaqueDrawing(bool deferredPass) const override;
-	void ResetOpaqueDrawing(bool deferredPass) const override;
-
-	void SetupAlphaDrawing(bool deferredPass) const override;
-	void ResetAlphaDrawing(bool deferredPass) const override;
 
 	void DrawUnitModel(const CUnit* unit, bool noLuaCall) const override;
 	void DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const override;
@@ -323,17 +312,10 @@ public:
 public:
 	// Former UnitDrawerState + new functions
 	bool CanEnable() const;
-	bool CanDrawDeferred() const;
+	bool CanDrawDeferred() const override;
 	bool CanDrawAlpha() const { return true; }
 
 	bool IsLegacy() const override { return false; }
-
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override;
-	void ResetOpaqueDrawing(bool deferredPass) const override;
-
-	void SetupAlphaDrawing(bool deferredPass) const override;
-	void ResetAlphaDrawing(bool deferredPass) const override;
 
 	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
 

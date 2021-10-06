@@ -105,6 +105,9 @@ public:
 	bool CanEnable() const override { return true; };
 
 	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
+
+	void Enable(bool deferredPass, bool alphaPass) const override {}
+	void Disable(bool deferredPass) const override {}
 };
 
 class CFeatureDrawerFFP : public CFeatureDrawerLegacy

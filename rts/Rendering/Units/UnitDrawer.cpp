@@ -446,48 +446,6 @@ void CUnitDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
 
 /***********************************************************************/
 
-void CUnitDrawerLegacy::SetupOpaqueDrawing(bool deferredPass) const
-{
-	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-
-	glAlphaFunc(GL_GREATER, 0.5f);
-	glEnable(GL_ALPHA_TEST);
-
-	Enable(deferredPass, false);
-}
-
-void CUnitDrawerLegacy::ResetOpaqueDrawing(bool deferredPass) const
-{
-	Disable(deferredPass);
-	glDisable(GL_ALPHA_TEST);
-	glPopAttrib();
-}
-
-void CUnitDrawerLegacy::SetupAlphaDrawing(bool deferredPass) const
-{
-	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-
-	Enable(/*deferredPass always false*/ false, true);
-
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.1f);
-	glDepthMask(GL_FALSE);
-}
-
-void CUnitDrawerLegacy::ResetAlphaDrawing(bool deferredPass) const
-{
-	Disable(/*deferredPass*/ false);
-	glPopAttrib();
-}
-
 void CUnitDrawerLegacy::DrawUnitModel(const CUnit* unit, bool noLuaCall) const
 {
 	if (!noLuaCall && unit->luaDraw && eventHandler.DrawUnit(unit))
@@ -1795,7 +1753,6 @@ CUnitDrawerGLSL::~CUnitDrawerGLSL()
 }
 
 bool CUnitDrawerGLSL::CanEnable() const { return globalRendering->haveGLSL && UseAdvShading(); }
-
 bool CUnitDrawerGLSL::CanDrawDeferred() const { return deferredAllowed; }
 
 bool CUnitDrawerGLSL::SetTeamColor(int team, const float2 alpha) const
@@ -2224,46 +2181,6 @@ bool CUnitDrawerGL4::CheckLegacyDrawing(const CUnit* unit, uint32_t preList, uin
 	}
 
 	return true;
-}
-
-void CUnitDrawerGL4::SetupOpaqueDrawing(bool deferredPass) const
-{
-	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-
-	//alpha test > 0.5
-
-	Enable(deferredPass, false);
-}
-
-void CUnitDrawerGL4::ResetOpaqueDrawing(bool deferredPass) const
-{
-	Disable(deferredPass);
-	glPopAttrib();
-}
-
-void CUnitDrawerGL4::SetupAlphaDrawing(bool deferredPass) const
-{
-	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-
-	Enable(/*deferredPass always false*/ false, true);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	//alpha test > 0.1
-
-	glDepthMask(GL_FALSE);
-}
-
-void CUnitDrawerGL4::ResetAlphaDrawing(bool deferredPass) const
-{
-	Disable(/*deferredPass*/ false);
-	glPopAttrib();
 }
 
 bool CUnitDrawerGL4::SetTeamColor(int team, const float2 alpha) const
