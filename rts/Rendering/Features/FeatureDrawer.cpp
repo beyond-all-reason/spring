@@ -295,27 +295,6 @@ void CFeatureDrawerLegacy::DrawOpaqueFeature(CFeature* f, bool drawReflection, b
 	DrawFeatureTrans(f, 0, 0, false, false);
 }
 
-void CFeatureDrawerLegacy::SetupOpaqueDrawing(bool deferredPass) const
-{
-	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-
-	glAlphaFunc(GL_GREATER, 0.5f);
-	glEnable(GL_ALPHA_TEST);
-
-	Enable(deferredPass, false);
-}
-
-void CFeatureDrawerLegacy::ResetOpaqueDrawing(bool deferredPass) const
-{
-	Disable(deferredPass);
-	glDisable(GL_ALPHA_TEST);
-	glPopAttrib();
-}
-
 void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaCall) const
 {
 	if (!noLuaCall && feature->luaDraw && eventHandler.DrawFeature(feature))

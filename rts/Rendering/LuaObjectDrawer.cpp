@@ -4,12 +4,13 @@
 #include "Features/FeatureDrawer.h"
 #include "Common/ModelDrawerHelpers.h"
 #include "Units/UnitDrawer.h"
-#include "Units/UnitDrawerState.hpp"
+#include "Common/ModelDrawerState.hpp"
 #include "Game/Camera.h"
 #include "Game/Game.h" // drawMode
 #include "Lua/LuaMaterial.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/ShadowHandler.h"
@@ -187,7 +188,7 @@ static const void SetObjectTeamColorNop(const CSolidObject*, const LuaMaterial*,
 static const void SetObjectTeamColorLua(const CSolidObject* o, const LuaMaterial* m, const float2 a, bool deferredPass)
 {
 	assert(m->shaders[deferredPass].IsCustomType());
-	m->ExecuteInstanceTeamColor(IUnitDrawerState::GetTeamColor(o->team, a.x), deferredPass);
+	m->ExecuteInstanceTeamColor(CModelDrawerHelper::GetTeamColor(o->team, a.x), deferredPass);
 }
 
 static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial* m, const float2 a, bool deferredPass)
@@ -196,7 +197,9 @@ static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial
 	// (engine) shader attached, otherwise requires testing
 	// if shader is bound in DrawerState etc
 	assert(m->shaders[deferredPass].IsEngineType());
-	unitDrawer->SetTeamColor(o->team, a);
+
+	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+	CUnitDrawer::SetTeamColor(o->team, a);
 }
 
 
@@ -486,7 +489,7 @@ void LuaObjectDrawer::DrawDeferredPass(LuaObjType objType)
 	// bail early if the FFP state *is going to be* selected by
 	// SetupOpaqueDrawing, and also if our shader-path happens
 	// to be ARB instead (saves an FBO bind)
-	if (!(unitDrawer->CanDrawDeferred()))
+	if (!(CUnitDrawer::CanDrawDeferred()))
 		return;
 
 	// note: should also set this during the map pass (in SMFGD)

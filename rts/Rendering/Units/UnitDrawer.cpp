@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "UnitDrawer.h"
-#include "UnitDrawerState.hpp"
 
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
@@ -144,19 +143,6 @@ void CUnitDrawer::InitStatic()
 	CUnitDrawer::InitInstance<CUnitDrawerGL4 >(MODEL_DRAWER_GL4 );
 
 	SelectImplementation();
-}
-
-bool CUnitDrawer::SetTeamColor(int team, const float2 alpha) const
-{
-	// need this because we can be called by no-team projectiles
-	if (!teamHandler.IsValidTeam(team))
-		return false;
-
-	// should be an assert, but projectiles (+FlyingPiece) would trigger it
-	if (shadowHandler.InShadowPass())
-		return false;
-
-	return true;
 }
 
 bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const
@@ -1405,470 +1391,6 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 /***********************************************************************/
 
-bool CUnitDrawerFFP::SetTeamColor(int team, const float2 alpha) const
-{
-	if (!CUnitDrawer::SetTeamColor(team, alpha))
-		return false;
-
-	// non-shader case via texture combiners
-	const float4 m = { 1.0f, 1.0f, 1.0f, alpha.x };
-
-	glActiveTexture(GL_TEXTURE0);
-	glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, &m.x);
-
-	return true;
-}
-
-void CUnitDrawerFFP::Enable(bool deferredPass, bool alphaPass) const
-{
-	glEnable(GL_LIGHTING);
-	// only for the advshading=0 case
-	glLightfv(GL_LIGHT1, GL_POSITION, sky->GetLight()->GetLightDir());
-	glLightfv(GL_LIGHT1, GL_AMBIENT, sunLighting->modelAmbientColor);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, sunLighting->modelDiffuseColor);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, sunLighting->modelSpecularColor);
-	glEnable(GL_LIGHT1);
-
-	CUnitDrawerFFP::SetupBasicS3OTexture1();
-	CUnitDrawerFFP::SetupBasicS3OTexture0();
-
-	const float4 color = { 1.0f, 1.0f, 1.0, mix(1.0f, alphaValues.x, (1.0f * alphaPass)) };
-
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, &color.x);
-	glColor4fv(&color.x);
-
-	CModelDrawerHelper::PushTransform(camera);
-}
-
-void CUnitDrawerFFP::Disable(bool deferredPass) const
-{
-	CModelDrawerHelper::PopTransform();
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	glDisable(GL_LIGHTING);
-	glDisable(GL_LIGHT1);
-
-	CUnitDrawerFFP::CleanupBasicS3OTexture1();
-	CUnitDrawerFFP::CleanupBasicS3OTexture0();
-}
-
-void CUnitDrawerFFP::SetNanoColor(const float4& color) const
-{
-	if (color.a > 0.0f) {
-		DisableTextures();
-		glColorf4(color);
-	}
-	else {
-		EnableTextures();
-		glColorf3(OnesVector);
-	}
-}
-
-void CUnitDrawerFFP::EnableTextures() const
-{
-	glEnable(GL_LIGHTING);
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glEnable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE1);
-	glEnable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0);
-}
-
-void CUnitDrawerFFP::DisableTextures() const
-{
-	glDisable(GL_LIGHTING);
-	glDisable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0);
-	glDisable(GL_TEXTURE_2D);
-}
-
-
-/**
- * Set up the texture environment in texture unit 0
- * to give an S3O texture its team-colour.
- *
- * Also:
- * - call SetBasicTeamColour to set the team colour to transform to.
- * - Replace the output alpha channel. If not, only the team-coloured bits will show, if that. Or something.
- */
-void CUnitDrawerFFP::SetupBasicS3OTexture0()
-{
-	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
-
-	// RGB = Texture * (1 - Alpha) + Teamcolor * Alpha
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_INTERPOLATE_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_CONSTANT_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB_ARB, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-	// ALPHA = Ignore
-}
-
-/**
- * This sets the first texture unit to GL_MODULATE the colours from the
- * first texture unit with the current glColor.
- *
- * Normal S3O drawing sets the color to full white; translucencies
- * use this setup to 'tint' the drawn model.
- *
- * - Leaves glActivateTextureARB at the first unit.
- * - This doesn't tinker with the output alpha, either.
- */
-void CUnitDrawerFFP::SetupBasicS3OTexture1()
-{
-	glActiveTexture(GL_TEXTURE1);
-	glEnable(GL_TEXTURE_2D);
-
-	// RGB = Primary Color * Previous
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_PRIMARY_COLOR_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-
-	// ALPHA = Current alpha * Alpha mask
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA_ARB, GL_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_PRIMARY_COLOR_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_ALPHA_ARB, GL_SRC_ALPHA);
-}
-
-void CUnitDrawerFFP::CleanupBasicS3OTexture1()
-{
-	// reset texture1 state
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_PREVIOUS_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-}
-
-void CUnitDrawerFFP::CleanupBasicS3OTexture0()
-{
-	// reset texture0 state
-	glActiveTexture(GL_TEXTURE0);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB_ARB, GL_CONSTANT_ARB);
-	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB_ARB, GL_SRC_ALPHA);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-}
-
-CUnitDrawerARB::CUnitDrawerARB()
-{
-	if (!CanEnable())
-		return;
-
-	// if GLEW_NV_vertex_program2 is supported, transparent objects are clipped against GL_CLIP_PLANE3
-	static const char* vertProgNamesARB[2] = { "ARB/units3o.vp", "ARB/units3o2.vp" };
-	static const char* fragProgNamesARB[2] = { "ARB/units3o.fp", "ARB/units3o_shadow.fp" };
-
-	#define sh shaderHandler
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD] = sh->CreateProgramObject("[UnitDrawer]", "S3OShaderDefARB", true);
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[0], "", GL_FRAGMENT_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->Link();
-
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD] = sh->CreateProgramObject("[UnitDrawer]", "S3OShaderAdvARB", true);
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[1], "", GL_FRAGMENT_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->Link();
-
-	modelShaders[MODEL_SHADER_NOSHADOW_DEFERRED] = nullptr; //cannot draw deferred
-	modelShaders[MODEL_SHADER_SHADOWED_DEFERRED] = nullptr;
-
-	#undef sh
-
-	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
-}
-
-CUnitDrawerARB::~CUnitDrawerARB()
-{
-	modelShaders.fill(nullptr);
-	shaderHandler->ReleaseProgramObjects("[UnitDrawer]");
-}
-
-bool CUnitDrawerARB::CanEnable() const { return globalRendering->haveARB && UseAdvShading(); }
-
-bool CUnitDrawerARB::SetTeamColor(int team, const float2 alpha) const
-{
-	if (!CUnitDrawer::SetTeamColor(team, alpha))
-		return false;
-
-	// NOTE:
-	//   both UnitDrawer::DrawAlphaPass and FeatureDrawer::DrawAlphaPass
-	//   disable advShading in case of ARB, so in that case we should end
-	//   up in StateFFP::SetTeamColor
-	assert(modelShader != nullptr);
-	assert(modelShader->IsBound());
-
-	modelShader->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-	modelShader->SetUniform4fv(14, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
-
-	return true;
-}
-
-void CUnitDrawerARB::Enable(bool deferredPass, bool alphaPass) const
-{
-	// body of former EnableCommon();
-	CModelDrawerHelper::PushTransform(camera);
-	CModelDrawerHelper::EnableTexturesCommon();
-
-	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
-	assert(modelShader != nullptr);
-	modelShader->Enable();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// end of EnableCommon();
-
-	modelShader->SetUniformTarget(GL_VERTEX_PROGRAM_ARB);
-	modelShader->SetUniform4fv(10, &sky->GetLight()->GetLightDir().x);
-	modelShader->SetUniform4f(11, sunLighting->modelDiffuseColor.x, sunLighting->modelDiffuseColor.y, sunLighting->modelDiffuseColor.z, 0.0f);
-	modelShader->SetUniform4f(12, sunLighting->modelAmbientColor.x, sunLighting->modelAmbientColor.y, sunLighting->modelAmbientColor.z, 1.0f); //!
-	modelShader->SetUniform4f(13, camera->GetPos().x, camera->GetPos().y, camera->GetPos().z, 0.0f);
-	modelShader->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
-	modelShader->SetUniform4f(10, 0.0f, 0.0f, 0.0f, sunLighting->modelShadowDensity);
-	modelShader->SetUniform4f(11, sunLighting->modelAmbientColor.x, sunLighting->modelAmbientColor.y, sunLighting->modelAmbientColor.z, 1.0f);
-
-	glMatrixMode(GL_MATRIX0_ARB);
-	glLoadMatrixf(shadowHandler.GetShadowMatrixRaw());
-	glMatrixMode(GL_MODELVIEW);
-}
-
-void CUnitDrawerARB::Disable(bool deferredPass) const
-{
-	assert(modelShader != nullptr);
-
-	modelShader->Disable();
-	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
-
-	CModelDrawerHelper::DisableTexturesCommon();
-	CModelDrawerHelper::PopTransform();
-}
-
-void CUnitDrawerARB::SetNanoColor(const float4& color) const
-{
-	if (color.a > 0.0f) {
-		glColorf4(color);
-	}
-	else {
-		glColorf3(OnesVector);
-	}
-}
-
-void CUnitDrawerARB::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerARB::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
-
-CUnitDrawerGLSL::CUnitDrawerGLSL()
-{
-	if (!CanEnable())
-		return;
-
-	#define sh shaderHandler
-
-	const GL::LightHandler* lightHandler = CUnitDrawer::GetLightHandler();
-	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
-		"ModelShaderGLSL-NoShadowStandard",
-		"ModelShaderGLSL-ShadowedStandard",
-		"ModelShaderGLSL-NoShadowDeferred",
-		"ModelShaderGLSL-ShadowedDeferred",
-	};
-	const std::string extraDefs =
-		("#define BASE_DYNAMIC_MODEL_LIGHT " + IntToString(lightHandler->GetBaseLight()) + "\n") +
-		("#define MAX_DYNAMIC_MODEL_LIGHTS " + IntToString(lightHandler->GetMaxLights()) + "\n");
-
-	for (uint32_t n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
-		modelShaders[n] = sh->CreateProgramObject("[UnitDrawer]", shaderNames[n], false);
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProg.glsl", extraDefs, GL_VERTEX_SHADER));
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProg.glsl", extraDefs, GL_FRAGMENT_SHADER));
-
-		modelShaders[n]->SetFlag("USE_SHADOWS", int((n & 1) == 1));
-		modelShaders[n]->SetFlag("DEFERRED_MODE", int(n >= MODEL_SHADER_NOSHADOW_DEFERRED));
-		modelShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
-		modelShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
-		modelShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
-		modelShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
-		modelShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
-		modelShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
-
-		modelShaders[n]->Link();
-		modelShaders[n]->SetUniformLocation("diffuseTex");        // idx  0 (t1: diffuse + team-color)
-		modelShaders[n]->SetUniformLocation("shadingTex");        // idx  1 (t2: spec/refl + self-illum)
-		modelShaders[n]->SetUniformLocation("shadowTex");         // idx  2
-		modelShaders[n]->SetUniformLocation("reflectTex");        // idx  3 (cube)
-		modelShaders[n]->SetUniformLocation("specularTex");       // idx  4 (cube)
-		modelShaders[n]->SetUniformLocation("sunDir");            // idx  5
-		modelShaders[n]->SetUniformLocation("cameraPos");         // idx  6
-		modelShaders[n]->SetUniformLocation("cameraMat");         // idx  7
-		modelShaders[n]->SetUniformLocation("cameraMatInv");      // idx  8
-		modelShaders[n]->SetUniformLocation("teamColor");         // idx  9
-		modelShaders[n]->SetUniformLocation("nanoColor");         // idx 10
-		modelShaders[n]->SetUniformLocation("sunAmbient");        // idx 11
-		modelShaders[n]->SetUniformLocation("sunDiffuse");        // idx 12
-		modelShaders[n]->SetUniformLocation("shadowDensity");     // idx 13
-		modelShaders[n]->SetUniformLocation("shadowMatrix");      // idx 14
-		modelShaders[n]->SetUniformLocation("shadowParams");      // idx 15
-		// modelShaders[n]->SetUniformLocation("alphaPass");         // idx 16
-
-		modelShaders[n]->Enable();
-		modelShaders[n]->SetUniform1i(0, 0); // diffuseTex  (idx 0, texunit 0)
-		modelShaders[n]->SetUniform1i(1, 1); // shadingTex  (idx 1, texunit 1)
-		modelShaders[n]->SetUniform1i(2, 2); // shadowTex   (idx 2, texunit 2)
-		modelShaders[n]->SetUniform1i(3, 3); // reflectTex  (idx 3, texunit 3)
-		modelShaders[n]->SetUniform1i(4, 4); // specularTex (idx 4, texunit 4)
-		modelShaders[n]->SetUniform3fv(5, &sky->GetLight()->GetLightDir().x);
-		modelShaders[n]->SetUniform3fv(6, &camera->GetPos()[0]);
-		modelShaders[n]->SetUniformMatrix4fv(7, false, camera->GetViewMatrix());
-		modelShaders[n]->SetUniformMatrix4fv(8, false, camera->GetViewMatrixInverse());
-		modelShaders[n]->SetUniform4f(9, 0.0f, 0.0f, 0.0f, 0.0f);
-		modelShaders[n]->SetUniform4f(10, 0.0f, 0.0f, 0.0f, 0.0f);
-		modelShaders[n]->SetUniform3fv(11, &sunLighting->modelAmbientColor[0]);
-		modelShaders[n]->SetUniform3fv(12, &sunLighting->modelDiffuseColor[0]);
-		modelShaders[n]->SetUniform1f(13, sunLighting->modelShadowDensity);
-		modelShaders[n]->SetUniformMatrix4fv(14, false, shadowHandler.GetShadowMatrixRaw());
-		modelShaders[n]->SetUniform4fv(15, &(shadowHandler.GetShadowParams().x));
-		// modelShaders[n]->SetUniform1f(16, 0.0f); // alphaPass
-		modelShaders[n]->Disable();
-		modelShaders[n]->Validate();
-	}
-
-	// make the active shader non-NULL
-	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
-
-	#undef sh
-
-}
-
-CUnitDrawerGLSL::~CUnitDrawerGLSL()
-{
-	modelShaders.fill(nullptr);
-	shaderHandler->ReleaseProgramObjects("[UnitDrawer]");
-}
-
-bool CUnitDrawerGLSL::CanEnable() const { return globalRendering->haveGLSL && UseAdvShading(); }
-bool CUnitDrawerGLSL::CanDrawDeferred() const { return deferredAllowed; }
-
-bool CUnitDrawerGLSL::SetTeamColor(int team, const float2 alpha) const
-{
-	if (!CUnitDrawer::SetTeamColor(team, alpha))
-		return false;
-
-	assert(modelShader != nullptr);
-	assert(modelShader->IsBound());
-
-	modelShader->SetUniform4fv(9, std::move(CModelDrawerHelper::GetTeamColor(team, alpha.x)));
-	// modelShaders[MODEL_SHADER_ACTIVE]->SetUniform1f(16, alpha.y);
-
-	return true;
-}
-
-void CUnitDrawerGLSL::Enable(bool deferredPass, bool alphaPass) const
-{
-	// body of former EnableCommon();
-	CModelDrawerHelper::PushTransform(camera);
-	CModelDrawerHelper::EnableTexturesCommon();
-
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
-	assert(modelShader != nullptr);
-	modelShader->Enable();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// end of EnableCommon();
-
-	modelShader->SetUniform3fv(6, &camera->GetPos()[0]);
-	modelShader->SetUniformMatrix4fv(7, false, camera->GetViewMatrix());
-	modelShader->SetUniformMatrix4fv(8, false, camera->GetViewMatrixInverse());
-	modelShader->SetUniformMatrix4fv(14, false, shadowHandler.GetShadowMatrixRaw());
-	modelShader->SetUniform4fv(15, &(shadowHandler.GetShadowParams().x));
-
-	const_cast<GL::LightHandler*>(CUnitDrawer::GetLightHandler())->Update(modelShader);
-}
-
-void CUnitDrawerGLSL::Disable(bool deferredPass) const
-{
-	assert(modelShader != nullptr);
-
-	modelShader->Disable();
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
-
-	CModelDrawerHelper::DisableTexturesCommon();
-	CModelDrawerHelper::PopTransform();
-}
-
-void CUnitDrawerGLSL::SetNanoColor(const float4& color) const
-{
-	assert(modelShader->IsBound());
-	modelShader->SetUniform4fv(10, color);
-}
-
-void CUnitDrawerGLSL::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerGLSL::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
-
-
-
-CUnitDrawerGL4::CUnitDrawerGL4()
-{
-	if (!CanEnable())
-		return;
-
-	#define sh shaderHandler
-
-	const GL::LightHandler* lightHandler = CUnitDrawer::GetLightHandler();
-	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
-		"ModelShaderGL4-NoShadowStandard",
-		"ModelShaderGL4-ShadowedStandard",
-		"ModelShaderGL4-NoShadowDeferred",
-		"ModelShaderGL4-ShadowedDeferred",
-	};
-
-	for (uint32_t n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
-		modelShaders[n] = sh->CreateProgramObject("[UnitDrawer-GL4]", shaderNames[n], false);
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProgGL4.glsl", "", GL_VERTEX_SHADER));
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
-
-		modelShaders[n]->SetFlag("USE_SHADOWS", int((n & 1) == 1));
-		modelShaders[n]->SetFlag("DEFERRED_MODE", int(n >= MODEL_SHADER_NOSHADOW_DEFERRED));
-		modelShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
-		modelShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
-		modelShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
-		modelShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
-		modelShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
-		modelShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
-
-		modelShaders[n]->Link();
-		//modelShaders[n]->SetUniformLocation("teamColor");         // idx  9
-		//modelShaders[n]->SetUniformLocation("nanoColor");         // idx 10
-
-		modelShaders[n]->Enable();
-		//modelShaders[n]->SetUniform4f(9, 0.0f, 0.0f, 0.0f, 0.0f);
-		//modelShaders[n]->SetUniform4f(10, 0.0f, 0.0f, 0.0f, 0.0f);
-		modelShaders[n]->Disable();
-		modelShaders[n]->Validate();
-	}
-
-	// make the active shader non-NULL
-	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
-
-	#undef sh
-
-}
-
-CUnitDrawerGL4::~CUnitDrawerGL4()
-{
-	modelShaders.fill(nullptr);
-	shaderHandler->ReleaseProgramObjects("[UnitDrawer-GL4]");
-}
-
-bool CUnitDrawerGL4::CanEnable() const { return globalRendering->haveGL4 && UseAdvShading(); }
-bool CUnitDrawerGL4::CanDrawDeferred() const { return deferredAllowed; }
-
 void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
 {
 	auto& smv = S3DModelVAO::GetInstance();
@@ -1915,7 +1437,7 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	SetColorMultiplier();
+	modelDrawerState->SetColorMultiplier();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
@@ -1952,7 +1474,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	SetColorMultiplier(alphaValues.x);
+	modelDrawerState->SetColorMultiplier(alphaValues.x);
 
 	//main cloaked alpha pass
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
@@ -1996,8 +1518,8 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 	// deadGhostedBuildings
 	{
-		SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
-		SetDrawingMode(ShaderDrawingModes::STATIC_MODEL);
+		modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
+		modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL);
 
 		int prevModelType = -1;
 		int prevTexType = -1;
@@ -2017,7 +1539,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType); //ineficient rendering, but w/e
 			}
 
-			SetStaticModelMatrix(staticWorldMat);
+			modelDrawerState->SetStaticModelMatrix(staticWorldMat);
 			smv.SubmitImmediately(dgb->model, dgb->team); //need to submit immediately every model because of static per-model matrix
 		}
 	}
@@ -2058,108 +1580,21 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 			// ghosted enemy units
 			if (losStatus & LOS_CONTRADAR)
-				SetColorMultiplier(0.9f, 0.9f, 0.9f, alphaValues.z);
+				modelDrawerState->SetColorMultiplier(0.9f, 0.9f, 0.9f, alphaValues.z);
 			else
-				SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
+				modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
 
 			if (prevModelType != modelType || prevTexType != model->textureType) {
 				prevModelType = modelType; prevTexType = model->textureType;
 				CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType); //ineficient rendering, but w/e
 			}
 
-			SetStaticModelMatrix(staticWorldMat);
+			modelDrawerState->SetStaticModelMatrix(staticWorldMat);
 			smv.SubmitImmediately(model, lgb->team); //need to submit immediately every model because of static per-model matrix
 		}
 	}
 
 	smv.Unbind();
-}
-
-void CUnitDrawerGL4::Enable(bool deferredPass, bool alphaPass) const
-{
-	// body of former EnableCommon();
-	CModelDrawerHelper::EnableTexturesCommon();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
-	assert(modelShader != nullptr);
-	modelShader->Enable();
-
-	switch (game->GetDrawMode())
-	{
-		case CGame::GameDrawMode::gameReflectionDraw: {
-			glEnable(GL_CLIP_DISTANCE2);
-			SetDrawingMode(ShaderDrawingModes::REFLCT_MODEL);
-		} break;
-		case CGame::GameDrawMode::gameRefractionDraw: {
-			glEnable(GL_CLIP_DISTANCE2);
-			SetDrawingMode(ShaderDrawingModes::REFRAC_MODEL);
-		} break;
-		default: SetDrawingMode(ShaderDrawingModes::NORMAL_MODEL); break;
-	}
-
-	float gtThreshold = mix(0.5, 0.1, static_cast<float>(alphaPass));
-	modelShader->SetUniform("alphaCtrl", gtThreshold, 1.0f, 0.0f, 0.0f); // test > 0.1 | 0.5
-
-	// end of EnableCommon();
-}
-
-void CUnitDrawerGL4::Disable(bool deferredPass) const
-{
-	assert(modelShader != nullptr);
-
-	modelShader->Disable();
-
-	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
-
-	switch (game->GetDrawMode())
-	{
-	case CGame::GameDrawMode::gameReflectionDraw: {
-		glDisable(GL_CLIP_DISTANCE2);
-	} break;
-	case CGame::GameDrawMode::gameRefractionDraw: {
-		glDisable(GL_CLIP_DISTANCE2);
-	} break;
-	default: {} break;
-	}
-
-	CModelDrawerHelper::DisableTexturesCommon();
-}
-
-void CUnitDrawerGL4::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
-void CUnitDrawerGL4::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
-
-
-void CUnitDrawerGL4::SetColorMultiplier(float r, float g, float b, float a) const
-{
-	assert(modelShader->IsBound());
-	modelShader->SetUniform("colorMult", r, g, b, a);
-}
-
-void CUnitDrawerGL4::SetDrawingMode(ShaderDrawingModes sdm) const
-{
-	assert(modelShader->IsBound());
-	modelShader->SetUniform("drawMode", static_cast<int>(sdm));
-
-	switch (sdm)
-	{
-		case CUnitDrawerGL4::REFLCT_MODEL:
-			modelShader->SetUniform("waterClipPlane", 0.0f,  1.0f, 0.0f, 0.0f);
-			break;
-		case CUnitDrawerGL4::REFRAC_MODEL:
-			modelShader->SetUniform("waterClipPlane", 0.0f, -1.0f, 0.0f, 0.0f);
-			break;
-		default:
-			modelShader->SetUniform("waterClipPlane", 0.0f, 0.0f, 0.0f, 1.0f);
-			break;
-	}
-}
-
-void CUnitDrawerGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
-{
-	assert(modelShader->IsBound());
-	modelShader->SetUniformMatrix4x4("staticModelMatrix", false, &mat.m[0]);
 }
 
 bool CUnitDrawerGL4::CheckLegacyDrawing(const CUnit* unit, bool noLuaCall) const
@@ -2182,14 +1617,3 @@ bool CUnitDrawerGL4::CheckLegacyDrawing(const CUnit* unit, uint32_t preList, uin
 
 	return true;
 }
-
-bool CUnitDrawerGL4::SetTeamColor(int team, const float2 alpha) const
-{
-	if (!CUnitDrawer::SetTeamColor(team, alpha))
-		return false;
-
-	//todo
-
-	return true;
-}
-

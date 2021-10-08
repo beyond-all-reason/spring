@@ -57,7 +57,7 @@ protected:
 	bool ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflection, bool drawRefraction) const;
 };
 
-#define featureDrawer (CFeatureDrawer::selectedModelDrawer)
+#define featureDrawer (CFeatureDrawer::modelDrawer)
 
 class CFeatureDrawerCommon : public CFeatureDrawer
 {
@@ -92,22 +92,18 @@ public:
 	void DrawAlphaFeature(CFeature* f, bool ffpMat) const override {};
 	void DrawFarFeatures() const override {};
 
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override;
-	void ResetOpaqueDrawing(bool deferredPass) const override;
-
-	void SetupAlphaDrawing(bool deferredPass) const override {};
-	void ResetAlphaDrawing(bool deferredPass) const override {};
-
 	// Inherited via CFeatureDrawerCommon
 	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); };
 	void DrawAlphaPass() const override {};
-	bool CanEnable() const override { return true; };
 
 	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
+public:
+	// Setup Fixed State
+	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<true>(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<true>(deferredPass); }
 
-	void Enable(bool deferredPass, bool alphaPass) const override {}
-	void Disable(bool deferredPass) const override {}
+	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<true>(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<true>(deferredPass); }
 };
 
 class CFeatureDrawerFFP : public CFeatureDrawerLegacy
@@ -133,4 +129,11 @@ class CFeatureDrawerGL4 : public CFeatureDrawerLegacy//CFeatureDrawerCommon
 {
 public:
 	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
+public:
+	// Setup Fixed State
+	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<false>(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<false>(deferredPass); }
+
+	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<false>(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<false>(deferredPass); }
 };

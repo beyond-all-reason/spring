@@ -4,6 +4,7 @@
 #include <array>
 
 #include "Rendering/Common/ModelDrawer.h"
+#include "Rendering/Common/ModelDrawerState.hpp"
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Rendering/GL/LightHandler.h"
 #include "System/type2.h"
@@ -60,18 +61,6 @@ public:
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
 	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return modelDrawerData->GetObjectMatricesMemAlloc(unit); }
 public:
-	//virtual bool CanEnable() const = 0; //moved to CModelDrawerBase
-
-	// Former UnitDrawerState + new functions
-	virtual bool CanDrawDeferred() const = 0;
-	virtual bool CanDrawAlpha() const = 0; //only used by feature drawer (legacy), TODO: remove
-
-	virtual bool IsLegacy() const = 0; //TODO unused apparently
-
-	// alpha.x := alpha-value
-	// alpha.y := alpha-pass (true or false)
-	virtual bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const;
-
 	// DrawUnit*
 	virtual void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
 	virtual void DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const = 0;
@@ -113,8 +102,6 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) const = 0;
 
 	virtual void DrawGhostedBuildings(int modelType) const = 0;
-
-	virtual void SetNanoColor(const float4& color) const = 0;
 public:
 	/// <summary>
 	/// .x := regular unit alpha
@@ -159,9 +146,6 @@ protected:
 
 class CUnitDrawerLegacy : public CUnitDrawerBase {
 public:
-	// caps functions
-	bool IsLegacy() const override { return true; }
-
 	void DrawUnitModel(const CUnit* unit, bool noLuaCall) const override;
 	void DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const override;
 	void DrawUnitTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const override;
@@ -181,6 +165,13 @@ public:
 	void DrawUnitIcons() const override;
 	void DrawUnitIconsScreen() const override;
 protected:
+	// Setup Fixed State
+	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<true>(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<true>(deferredPass); }
+
+	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<true>(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<true>(deferredPass); }
+
 	void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
 	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
 
@@ -190,9 +181,6 @@ protected:
 	void DrawAlphaAIUnits(int modelType) const override;
 
 	void DrawGhostedBuildings(int modelType) const override;
-
-	virtual void EnableTextures() const = 0;
-	virtual void DisableTextures() const = 0;
 
 	void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) const;
 	void DrawOpaqueUnitShadow(CUnit* unit) const;
@@ -223,102 +211,17 @@ protected:
 
 	static void DrawIcon(CUnit* unit, bool useDefaultIcon);
 	void DrawIconScreenArray(const CUnit* unit, const icon::CIconData* icon, bool useDefaultIcon, const float dist, CVertexArray* va) const;
-
-	void SetActiveShader(bool shadowed, bool deferred) const {
-		// shadowed=1 --> shader 1 (deferred=0) or 3 (deferred=1)
-		// shadowed=0 --> shader 0 (deferred=0) or 2 (deferred=1)
-		modelShader = modelShaders[shadowed + deferred * 2];
-	}
 protected:
-	std::array<Shader::IProgramObject*, MODEL_SHADER_COUNT> modelShaders = {};
-	mutable Shader::IProgramObject* modelShader = nullptr;
+
 };
 
-class CUnitDrawerFFP final : public CUnitDrawerLegacy {
-public:
-	CUnitDrawerFFP() {}
-	~CUnitDrawerFFP() override {}
-public:
-	// caps functions
-	bool CanEnable() const override { return true; }
-	bool CanDrawDeferred() const override { return false; }
-	bool CanDrawAlpha() const override { return false; } //by legacy convention FFP is not alpha capable
+class CUnitDrawerFFP  final : public CUnitDrawerLegacy {};
+class CUnitDrawerARB  final : public CUnitDrawerLegacy {};
+class CUnitDrawerGLSL final : public CUnitDrawerLegacy {};
 
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
-
-protected:
-	void Enable(bool deferredPass, bool alphaPass) const override;
-	void Disable(bool deferredPass) const override;
-	void SetNanoColor(const float4& color) const override;
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-private:
-public:
-	// TODO move back to private when DrawerState is gone
-	// needed by FFP drawer-state
-	static void SetupBasicS3OTexture0();
-	static void SetupBasicS3OTexture1();
-	static void CleanupBasicS3OTexture1();
-	static void CleanupBasicS3OTexture0();
-};
-
-class CUnitDrawerARB final : public CUnitDrawerLegacy {
-public:
-	CUnitDrawerARB();
-	~CUnitDrawerARB() override;
-public:
-	// caps functions
-	bool CanEnable() const override;
-	bool CanDrawDeferred() const override { return false; };
-	bool CanDrawAlpha() const override { return false; } //by legacy convention ARB is not alpha capable?
-
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
-
-protected:
-	void Enable(bool deferredPass, bool alphaPass) const override;
-	void Disable(bool deferredPass) const override;
-	void SetNanoColor(const float4& color) const override;
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-};
-
-class CUnitDrawerGLSL final : public CUnitDrawerLegacy {
-public:
-	CUnitDrawerGLSL();
-	~CUnitDrawerGLSL() override;
-public:
-	// caps functions
-	bool CanEnable() const override;
-	bool CanDrawDeferred() const override;
-	bool CanDrawAlpha() const override { return false; } //by legacy convention ARB is not alpha capable?
-
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
-
-protected:
-	void Enable(bool deferredPass, bool alphaPass) const override;
-	void Disable(bool deferredPass) const override;
-	void SetNanoColor(const float4& color) const override;
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-};
-
+//TODO remove CUnitDrawerLegacy inheritance
 class CUnitDrawerGL4 final : public CUnitDrawerLegacy {
 public:
-	CUnitDrawerGL4();
-	~CUnitDrawerGL4() override;
-public:
-	// Former UnitDrawerState + new functions
-	bool CanEnable() const;
-	bool CanDrawDeferred() const override;
-	bool CanDrawAlpha() const { return true; }
-
-	bool IsLegacy() const override { return false; }
-
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override;
-
 	// DrawUnit*
 	/* TODO figure out
 	void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
@@ -339,6 +242,13 @@ public:
 	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<false>(drawReflection, drawRefraction); }
 	void DrawShadowPass() const override { DrawShadowPassImpl<false>(); }
 
+public:
+	// Setup Fixed State
+	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<false>(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<false>(deferredPass); }
+
+	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<false>(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<false>(deferredPass); }
 protected:
 	void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
 	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
@@ -349,30 +259,9 @@ protected:
 	void DrawAlphaAIUnits(int modelType) const override {};
 
 	void DrawGhostedBuildings(int modelType) const override {};
-
-	void Enable(bool deferredPass, bool alphaPass) const override;
-	void Disable(bool deferredPass) const override;
-	void SetNanoColor(const float4& color) const override {};
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
 private:
-	enum ShaderDrawingModes {
-		STATIC_MODEL = -1,
-		NORMAL_MODEL =  0,
-		REFLCT_MODEL =  1,
-		REFRAC_MODEL =  2,
-	};
-private:
-	void SetColorMultiplier(float a = 1.0f) const { SetColorMultiplier(1.0f, 1.0f, 1.0f, a); };
-	void SetColorMultiplier(float r, float g, float b, float a) const;
-
-	void SetDrawingMode(ShaderDrawingModes sdm) const;
-	void SetStaticModelMatrix(const CMatrix44f& mat) const;
-
 	bool CheckLegacyDrawing(const CUnit* unit, bool noLuaCall) const;
 	bool CheckLegacyDrawing(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const;
-
 };
 
-#define unitDrawer (CUnitDrawer::selectedModelDrawer)
+#define unitDrawer (CUnitDrawer::modelDrawer)

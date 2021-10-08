@@ -846,12 +846,14 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 	if (p->model == nullptr)
 		return false;
 
+	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+
 	switch ((p->weapon * 2) + (p->piece * 1)) {
 		case 2: {
 			// weapon-projectile
 			const CWeaponProjectile* wp = static_cast<const CWeaponProjectile*>(p);
 
-			unitDrawer->SetTeamColor(wp->GetTeamID());
+			CUnitDrawer::SetTeamColor(wp->GetTeamID());
 
 			glPushMatrix();
 				glMultMatrixf(wp->GetTransformMatrix(wp->GetProjectileType() == WEAPON_MISSILE_PROJECTILE));
@@ -867,7 +869,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 			// piece-projectile
 			const CPieceProjectile* pp = static_cast<const CPieceProjectile*>(p);
 
-			unitDrawer->SetTeamColor(pp->GetTeamID());
+			CUnitDrawer::SetTeamColor(pp->GetTeamID());
 
 			glPushMatrix();
 				glTranslatef3(pp->drawPos);

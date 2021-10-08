@@ -161,9 +161,12 @@ void CFarTextureHandler::CreateFarTexture(const CSolidObject* obj)
 	//   the icons are RTT'ed using a snapshot of the
 	//   current state (advModelShading, sunDir, etc)
 	//   and will not track later state-changes
+	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+
 	unitDrawer->SetupOpaqueDrawing(false);
 	CModelDrawerHelper::PushModelRenderState(model);
-	unitDrawer->SetTeamColor(obj->team);
+
+	CUnitDrawer::SetTeamColor(obj->team);
 
 	// can pick any perspective-type
 	CCamera iconCam(CCamera::CAMTYPE_PLAYER);

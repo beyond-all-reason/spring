@@ -86,6 +86,7 @@ layout(std140, binding=0) readonly buffer MatrixBuffer {
 uniform int drawMode = 0;
 uniform mat4 staticModelMatrix = mat4(1.0);
 uniform vec4 waterClipPlane = vec4(0.0, 0.0, 0.0, 1.0);
+uniform float teamColorAlpha = 1.0;
 
 out Data {
 	vec4 uvCoord;
@@ -155,6 +156,8 @@ void main(void)
 	gl_ClipDistance[2] = dot(worldPos, waterClipPlane);
 
 	teamCol = teamColor[instData.y]; // team index
+	teamCol.a = teamColorAlpha;
+
 	uvCoord = uv;
 
 	shadowVertexPos = shadowView * worldPos;
