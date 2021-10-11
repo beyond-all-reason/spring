@@ -32,7 +32,7 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, PathingState
 		costBlockNum = {nbrOfBlocks.x * nbrOfBlocks.y};
 
 		parentPathFinder = pf;
-		nextPathEstimator = nullptr;
+		//nextPathEstimator = nullptr;
 
 		pathingState = ps;
 		assert(pathingState != nullptr);
@@ -44,8 +44,8 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, PathingState
 	CPathEstimator*  childPE = this;
 	CPathEstimator* parentPE = dynamic_cast<CPathEstimator*>(pf);
 
-	if (parentPE != nullptr)
-		parentPE->nextPathEstimator = childPE;
+	//if (parentPE != nullptr)
+	//	parentPE->nextPathEstimator = childPE;
 
 	// load precalculated data if it exists
 	InitEstimator();

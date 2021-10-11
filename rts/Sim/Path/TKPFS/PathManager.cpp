@@ -273,8 +273,6 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 	IPath::SearchResult bestResult = IPath::Error;
 
-#if 1
-
 	unsigned int bestSearch = -1u; // index
 
 	{
@@ -342,114 +340,6 @@ IPath::SearchResult CPathManager::ArrangePath(
 	}
 
 	return bestResult;
-
-
-#else
-
-
-	enum {
-		PATH_MAX_RES = 0,
-		PATH_MED_RES = 1,
-		PATH_LOW_RES = 3
-	};
-
-	int origPathRes = PATH_LOW_RES;
-
-	// first attempt - use ideal pathfinder (performance-wise)
-	{
-		if (heurGoalDist2D < MAXRES_SEARCH_DISTANCE) {
-			origPathRes = PATH_MAX_RES;
-		} else if (heurGoalDist2D < MEDRES_SEARCH_DISTANCE) {
-			origPathRes = PATH_MED_RES;
-		//} else {
-		//	origPathRes = PATH_LOW_RES;
-		}
-
-		switch (origPathRes) {
-			case PATH_MAX_RES: bestResult = maxResPF->GetPath(*moveDef, *pfDef, caller, startPos, newPath->maxResPath, nodeLimits[2]); break;
-			case PATH_MED_RES: bestResult = medResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->medResPath, nodeLimits[1]); break;
-			case PATH_LOW_RES: bestResult = lowResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->lowResPath, nodeLimits[0]); break;
-		}
-
-		if (bestResult == IPath::Ok) {
-			return bestResult;
-		}
-	}
-
-	// second attempt - try to reverse path
-	/*{
-		CCircularSearchConstraint reversedPfDef(goalPos, startPos, pfDef->sqGoalRadius, 7.0f, 8000);
-		switch (pathres) {
-			case PATH_MAX_RES: bestResult = maxResPF->GetPath(*moveDef, reversedPfDef, caller, goalPos, newPath->maxResPath, nodeLimits[2]); break;
-			case PATH_MED_RES: bestResult = medResPE->GetPath(*moveDef, reversedPfDef, caller, goalPos, newPath->medResPath, nodeLimits[1]); break;
-			case PATH_LOW_RES: bestResult = lowResPE->GetPath(*moveDef, reversedPfDef, caller, goalPos, newPath->lowResPath, nodeLimits[0]); break;
-		}
-
-		if (bestResult == IPath::Ok) {
-			assert(false);
-
-			float3 midPos;
-			switch (pathres) {
-				case PATH_MAX_RES: midPos = newPath->maxResPath.path.back(); break;
-				case PATH_MED_RES: midPos = newPath->medResPath.path.back(); break;
-				case PATH_LOW_RES: midPos = newPath->lowResPath.path.back(); break;
-			}
-
-			CCircularSearchConstraint midPfDef(startPos, midPos, pfDef->sqGoalRadius, 3.0f, 8000);
-			bestResult = maxResPF->GetPath(*moveDef, midPfDef, caller, startPos, newPath->maxResPath, MAX_SEARCHED_NODES_PF >> 3);
-
-			CCircularSearchConstraint restPfDef(midPos, goalPos, pfDef->sqGoalRadius, 7.0f, 8000);
-			switch (pathres) {
-				case PATH_MAX_RES:
-				case PATH_MED_RES: bestResult = medResPE->GetPath(*moveDef, restPfDef, caller, startPos, newPath->medResPath, nodeLimits[1]); break;
-				case PATH_LOW_RES: bestResult = lowResPE->GetPath(*moveDef, restPfDef, caller, startPos, newPath->lowResPath, nodeLimits[0]); break;
-			}
-
-			return bestResult;
-
-		}
-	}*/
-
-	// third attempt - use better pathfinder
-	{
-		int advPathRes = origPathRes;
-		int maxRes = (heurGoalDist2D < (MAXRES_SEARCH_DISTANCE * 2.0f)) ? PATH_MAX_RES : PATH_MED_RES;
-
-		while (--advPathRes >= maxRes) {
-			switch (advPathRes) {
-				case PATH_MAX_RES: bestResult = maxResPF->GetPath(*moveDef, *pfDef, caller, startPos, newPath->maxResPath, nodeLimits[2]); break;
-				case PATH_MED_RES: bestResult = medResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->medResPath, nodeLimits[1]); break;
-				case PATH_LOW_RES: bestResult = lowResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->lowResPath, nodeLimits[0]); break;
-			}
-
-			if (bestResult == IPath::Ok) {
-				return bestResult;
-			}
-		}
-	}
-
-	// fourth attempt - unconstrained search radius (performance heavy, esp. on max_res)
-	pfDef->DisableConstraint(true);
-	if (origPathRes > PATH_MAX_RES) {
-		int advPathRes = origPathRes;
-		int maxRes = PATH_MED_RES;
-
-		while (--advPathRes >= maxRes) {
-			switch (advPathRes) {
-				case PATH_MAX_RES: bestResult = maxResPF->GetPath(*moveDef, *pfDef, caller, startPos, newPath->maxResPath, nodeLimits[2]); break;
-				case PATH_MED_RES: bestResult = medResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->medResPath, nodeLimits[1]); break;
-				case PATH_LOW_RES: bestResult = lowResPE->GetPath(*moveDef, *pfDef, caller, startPos, newPath->lowResPath, nodeLimits[0]); break;
-			}
-
-			if (bestResult == IPath::Ok) {
-				return bestResult;
-			}
-		}
-	}
-
-	LOG_L(L_DEBUG, "PathManager: no path found");
-	return bestResult;
-	#endif
 }
 
 
@@ -758,7 +648,7 @@ void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 {
 	assert(IsFinalized());
 
-	pathFlowMap->AddFlow(owner);
+	//pathFlowMap->AddFlow(owner);
 	pathHeatMap->AddHeat(owner, this, pathID);
 }
 

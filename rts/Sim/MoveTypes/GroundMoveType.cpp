@@ -1668,7 +1668,8 @@ void CGroundMoveType::StartEngine(bool callScript) {
 		pathID = GetNewPath();
 
 	if (pathID != 0) {
-		pathManager->UpdatePath(owner, pathID);
+		// This is now handled by UnitHandler
+		//pathManager->UpdatePath(owner, pathID);
 
 		if (callScript) {
 			// makes no sense to call this unless we have a new path

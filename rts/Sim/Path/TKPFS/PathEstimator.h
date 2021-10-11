@@ -117,7 +117,7 @@ private:
 	std::atomic<std::int64_t> costBlockNum = {0};
 
 	IPathFinder* parentPathFinder; // parent (PF if BLOCK_SIZE is 16, PE[16] if 32)
-	CPathEstimator* nextPathEstimator; // next lower-resolution estimator
+	//CPathEstimator* nextPathEstimator; // next lower-resolution estimator
 
 	PathingState* pathingState;
 };
