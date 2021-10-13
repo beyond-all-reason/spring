@@ -1470,11 +1470,11 @@ unsigned int CGroundMoveType::GetNewPath()
 		atGoal = false;
 		atEndOfPath = false;
 
-		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyCurrWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,        owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyNextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
 		pathController.SetRealGoalPosition(newPathID, goalPos);
-		pathController.SetTempGoalPosition(newPathID, currWayPoint);
+		pathController.SetTempGoalPosition(newPathID, earlyCurrWayPoint);
 	} else {
 		Fail(false);
 	}

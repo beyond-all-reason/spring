@@ -90,6 +90,7 @@ public:
 
 	virtual PathRequestType WantsReRequestPath() const { return wantRepath; }
 	virtual void DelayedReRequestPath() {}
+	virtual void SyncWaypoints() {}
 	virtual unsigned int GetPathId() { return 0; }
 
 public:

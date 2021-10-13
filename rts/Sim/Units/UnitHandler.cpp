@@ -399,6 +399,11 @@ void CUnitHandler::SlowUpdateUnits()
 			if (pathId > 0)
 				pathManager->UpdatePath(unit, pathId);
 		}
+
+		for (size_t i = 0; i<unitsToMoveCount; ++i){
+			CUnit* unit = unitsToMove[i];
+			unit->moveType->SyncWaypoints();
+		}
 	}
 	else
 	{

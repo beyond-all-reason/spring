@@ -155,11 +155,6 @@ public:
 
 	int2 GetNumQueuedUpdates() const override;
 
-
-	//const CPathFinder* GetMaxResPF() const { return maxResPF; }
-	//const CPathEstimator* GetMedResPE() const { return medResPE; }
-	//const CPathEstimator* GetLowResPE() const { return lowResPE; }
-
 	const CPathFinder* GetMaxResPF() const;
 	const CPathEstimator* GetMedResPE() const;
 	const CPathEstimator* GetLowResPE() const;
@@ -217,10 +212,6 @@ private:
 	bool SupportsMultiThreadedRequests() const { return true; }
 
 private:
-	//CPathFinder* maxResPF;
-	//CPathEstimator* medResPE;
-	//CPathEstimator* lowResPE;
-
 	mutable std::mutex pathMapUpdate;
 
 	bool finalized = false;

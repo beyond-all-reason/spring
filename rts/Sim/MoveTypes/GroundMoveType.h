@@ -93,6 +93,10 @@ public:
 	float GetGroundHeight(const float3&) const;
 
 	void DelayedReRequestPath() { if (wantRepath) { DoReRequestPath(); } }
+	void SyncWaypoints() {
+		currWayPoint = earlyCurrWayPoint;
+		nextWayPoint = earlyNextWayPoint;
+	}
 	unsigned int GetPathId() { return pathID; }
 	
 
@@ -171,6 +175,9 @@ private:
 
 	SyncedFloat3 currWayPoint;
 	SyncedFloat3 nextWayPoint;
+
+	float3 earlyCurrWayPoint;
+	float3 earlyNextWayPoint;
 
 	float3 waypointDir;
 	float3 flatFrontDir;
