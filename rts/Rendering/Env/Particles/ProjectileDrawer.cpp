@@ -731,16 +731,18 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	sortedProjectiles[1].clear();
 
 	{
-		#pragma message("FIX ME!!!")
-		unitDrawer->SetupOpaqueDrawing(false);
+		{
+			ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+			unitDrawer->SetupOpaqueDrawing(false);
 
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-			CModelDrawerHelper::PushModelRenderState(modelType);
-			DrawProjectiles(modelType, drawReflection, drawRefraction);
-			CModelDrawerHelper::PopModelRenderState(modelType);
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
+				CModelDrawerHelper::PushModelRenderState(modelType);
+				DrawProjectiles(modelType, drawReflection, drawRefraction);
+				CModelDrawerHelper::PopModelRenderState(modelType);
+			}
+
+			unitDrawer->ResetOpaqueDrawing(false);
 		}
-
-		unitDrawer->ResetOpaqueDrawing(false);
 
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)

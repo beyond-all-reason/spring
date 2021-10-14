@@ -38,7 +38,6 @@ bool IModelDrawerState::SetTeamColor(int team, const float2 alpha) const
 	return true;
 }
 
-template<bool legacy>
 void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 {
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
@@ -47,7 +46,7 @@ void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 
-	if constexpr (legacy) {
+	if (IsLegacy()) {
 		glAlphaFunc(GL_GREATER, 0.5f);
 		glEnable(GL_ALPHA_TEST);
 	}
@@ -55,20 +54,19 @@ void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 	Enable(deferredPass, false);
 }
 
-template<bool legacy>
 void IModelDrawerState::ResetOpaqueDrawing(bool deferredPass) const
 {
 	Disable(deferredPass);
-	if constexpr (legacy) {
+
+	if (IsLegacy())
 		glDisable(GL_ALPHA_TEST);
-	}
+
 	glPopAttrib();
 }
 
-template<bool legacy>
 void IModelDrawerState::SetupAlphaDrawing(bool deferredPass) const
 {
-	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT | constexpr(legacy * GL_COLOR_BUFFER_BIT));
+	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT | (GL_COLOR_BUFFER_BIT * IsLegacy()));
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
 
 	Enable(/*deferredPass always false*/ false, true);
@@ -76,19 +74,21 @@ void IModelDrawerState::SetupAlphaDrawing(bool deferredPass) const
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	if constexpr (legacy) {
+
+	if (IsLegacy()) {
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0.1f);
 	}
+
 	glDepthMask(GL_FALSE);
 }
 
-template<bool legacy>
 void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 {
 	Disable(/*deferredPass*/ false);
 	glPopAttrib();
 }
+
 
 ////////////// FFP ////////////////
 

@@ -1,14 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-
 #pragma once
 
 #include <vector>
 #include <array>
+
 #include "Game/Camera.h"
 #include "Rendering/Models/ModelRenderContainer.h"
 #include "Rendering/Common/ModelDrawer.h"
 #include "Rendering/Features/FeatureDrawerData.h"
-#include "System/EventHandler.h"
 
 class CFeature;
 
@@ -22,6 +21,14 @@ public:
 	//static void KillStatic(bool reload); will use base
 	//static void UpdateStatic();
 public:
+	// Setup Fixed State
+	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
+
+	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing(deferredPass); }
+
+	// DrawFeature*
 	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;
 	virtual void DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;
 
@@ -93,13 +100,6 @@ public:
 	void DrawAlphaPass() const override {};
 
 	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
-public:
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<true>(deferredPass); }
-	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<true>(deferredPass); }
-
-	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<true>(deferredPass); }
-	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<true>(deferredPass); }
 };
 
 class CFeatureDrawerFFP  final : public CFeatureDrawerLegacy {};
@@ -110,12 +110,6 @@ class CFeatureDrawerGLSL final : public CFeatureDrawerLegacy {};
 class CFeatureDrawerGL4 final: public CFeatureDrawerLegacy//CFeatureDrawerBase
 {
 public:
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<false>(deferredPass); }
-	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing<false>(deferredPass); }
-
-	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<false>(deferredPass); }
-	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<false>(deferredPass); }
 };
 
 #define featureDrawer (CFeatureDrawer::modelDrawer)

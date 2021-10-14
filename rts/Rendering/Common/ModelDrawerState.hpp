@@ -76,13 +76,9 @@ public:
 	}
 	Shader::IProgramObject* ActiveShader() { return modelShader; }
 public:
-	template <bool legacy>
 	void SetupOpaqueDrawing(bool deferredPass) const;
-	template <bool legacy>
 	void ResetOpaqueDrawing(bool deferredPass) const;
-	template <bool legacy>
 	void SetupAlphaDrawing(bool deferredPass) const;
-	template <bool legacy>
 	void ResetAlphaDrawing(bool deferredPass) const;
 public:
 	inline static std::array<IModelDrawerState*, 4> modelDrawerStates = {};
@@ -99,15 +95,6 @@ protected:
 	mutable Shader::IProgramObject* modelShader = nullptr;
 };
 
-//instantiate to allow implementation in *.cpp
-template void IModelDrawerState::SetupOpaqueDrawing<false>(bool deferredPass)  const;
-template void IModelDrawerState::SetupOpaqueDrawing<true >(bool deferredPass)  const;
-template void IModelDrawerState::ResetOpaqueDrawing<false>(bool deferredPass)  const;
-template void IModelDrawerState::ResetOpaqueDrawing<true >(bool deferredPass)  const;
-template void IModelDrawerState::SetupAlphaDrawing <false>(bool deferredPass)  const;
-template void IModelDrawerState::SetupAlphaDrawing <true >(bool deferredPass) const;
-template void IModelDrawerState::ResetAlphaDrawing <false>(bool deferredPass) const;
-template void IModelDrawerState::ResetAlphaDrawing <true >(bool deferredPass) const;
 
 class CModelDrawerStateLegacy : public IModelDrawerState {
 public:
