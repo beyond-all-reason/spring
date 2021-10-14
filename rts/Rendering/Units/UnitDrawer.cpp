@@ -14,7 +14,6 @@
 #include "Game/UI/MiniMap.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/FarTextureHandler.h"
 #include "Rendering/GL/glExtra.h"
@@ -400,34 +399,6 @@ void CUnitDrawerBase::DrawShadowPassImpl() const
 
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
 	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_UNIT, false);
-}
-
-template<bool legacy>
-void CUnitDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
-{
-	SCOPED_TIMER("CUnitDrawerBase::Draw");
-	if constexpr (legacy) {
-		glEnable(GL_ALPHA_TEST);
-		sky->SetupFog();
-	}
-
-	assert((CCameraHandler::GetActiveCamera())->GetCamType() != CCamera::CAMTYPE_SHADOW);
-
-	// first do the deferred pass; conditional because
-	// most of the water renderers use their own FBO's
-	if (drawDeferred && !drawReflection && !drawRefraction)
-		LuaObjectDrawer::DrawDeferredPass(LUAOBJ_UNIT);
-
-	// now do the regular forward pass
-	if (drawForward)
-		DrawOpaquePass(false, drawReflection, drawRefraction);
-
-	farTextureHandler->Draw();
-
-	if constexpr (legacy) {
-		glDisable(GL_FOG);
-		glDisable(GL_TEXTURE_2D);
-	}
 }
 
 /***********************************************************************/

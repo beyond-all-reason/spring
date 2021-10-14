@@ -10,7 +10,10 @@
 #include "ModelDrawerState.hpp"
 #include "System/Log/ILog.h"
 #include "System/TypeToStr.h"
+#include "Rendering/LuaObjectDrawer.h"
+#include "Rendering/FarTextureHandler.h"
 #include "Rendering/GL/LightHandler.h"
+#include "Rendering/Env/ISky.h"
 
 namespace GL { struct GeometryBuffer; }
 template<typename T> class ScopedDrawerImpl;
@@ -119,21 +122,25 @@ public:
 	virtual void DrawShadowPass() const = 0;
 	virtual void DrawAlphaPass() const = 0;
 public:
-	// Setup Fixed State
+	// Setup Fixed State, reused by a few other classes, thus public:
 	void SetupOpaqueDrawing(bool deferredPass) const { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
 	void ResetOpaqueDrawing(bool deferredPass) const { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
 
 	void SetupAlphaDrawing(bool deferredPass) const { modelDrawerState->SetupAlphaDrawing(deferredPass); }
 	void ResetAlphaDrawing(bool deferredPass) const { modelDrawerState->ResetAlphaDrawing(deferredPass); }
+protected:
+	template<bool legacy, LuaObjType lot>
+	void DrawImpl(bool drawReflection, bool drawRefraction) const;
+	template<bool legacy, LuaObjType lot>
+	void DrawShadowPassImpl() const; //unused
 private:
 	static void Push(bool legacy, bool modern) {
 		implStack.emplace(std::make_pair(modelDrawer, modelDrawerState));
 		SelectImplementation(true, legacy, modern);
 	}
 	static void Pop() {
-		std::pair<TDrawer*, IModelDrawerState*> p = implStack.top();  implStack.pop();
-		modelDrawer = p.first;
-		modelDrawerState = p.second;
+		std::tie(modelDrawer, modelDrawerState) = implStack.top();
+		implStack.pop();
 	}
 private:
 	ModelDrawerTypes mdType = ModelDrawerTypes::MODEL_DRAWER_CNT;
@@ -250,7 +257,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 			return;
 		}
 		else {
-			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
+			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
 			preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //reset;
 		}
 	}
@@ -279,3 +286,111 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(int tar
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename TDrawerData, typename TDrawer>
+template<bool legacy, LuaObjType lot>
+inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawImpl(bool drawReflection, bool drawRefraction) const
+{
+	static const std::string methodName = std::string(className) + "::Draw";
+	SCOPED_TIMER(methodName.c_str());
+
+	if constexpr (legacy) {
+		glEnable(GL_ALPHA_TEST);
+		sky->SetupFog();
+	}
+
+	assert((CCameraHandler::GetActiveCamera())->GetCamType() != CCamera::CAMTYPE_SHADOW);
+
+	// first do the deferred pass; conditional because
+	// most of the water renderers use their own FBO's
+	if (drawDeferred && !drawReflection && !drawRefraction)
+		LuaObjectDrawer::DrawDeferredPass(lot);
+
+	// now do the regular forward pass
+	if (drawForward)
+		DrawOpaquePass(false, drawReflection, drawRefraction);
+
+	farTextureHandler->Draw();
+
+	if constexpr (legacy) {
+		glDisable(GL_FOG);
+		glDisable(GL_TEXTURE_2D);
+	}
+}
+
+
+//unused
+template<typename TDrawerData, typename TDrawer>
+template<bool legacy, LuaObjType lot>
+inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
+{
+	static const std::string methodName = std::string(className) + "::DrawShadowPass";
+	SCOPED_TIMER(methodName.c_str());
+
+	if constexpr (legacy) {
+		glColor3f(1.0f, 1.0f, 1.0f);
+		glPolygonOffset(1.0f, 1.0f);
+		glEnable(GL_POLYGON_OFFSET_FILL);
+
+		glAlphaFunc(GL_GREATER, 0.5f);
+		glEnable(GL_ALPHA_TEST);
+	}
+
+	CShadowHandler::ShadowGenProgram shadowGenProgram;
+	if constexpr (legacy)
+		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL;
+	else
+		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4;
+
+	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(shadowGenProgram);
+	assert(po);
+	assert(po->IsValid());
+	po->Enable();
+
+	{
+		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
+		const auto& quads = modelDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
+
+		// 3DO's have clockwise-wound faces and
+		// (usually) holes, so disable backface
+		// culling for them
+		// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
+
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
+			for (int quad : quads) {
+				const auto& rdrCntProxy = rdrContProxies[quad];
+
+				// non visible quad
+				if (!rdrCntProxy.IsQuadVisible())
+					continue;
+
+				// quad has no objects
+				if (!rdrCntProxy.HasObjects())
+					continue;
+
+				if (modelType == MODELTYPE_3DO)
+					glDisable(GL_CULL_FACE);
+
+				// note: just use DrawOpaqueUnits()? would
+				// save texture switches needed anyway for
+				// UNIT_SHADOW_ALPHA_MASKING
+				DrawOpaqueObjectsShadow(rdrCntProxy, modelType);
+
+				if (modelType == MODELTYPE_3DO)
+					glEnable(GL_CULL_FACE);
+
+			}
+		}
+	}
+
+	po->Disable();
+
+	if constexpr (legacy) {
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
+	LuaObjectDrawer::DrawShadowMaterialObjects(lot, false);
+}

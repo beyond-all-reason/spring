@@ -74,9 +74,6 @@ public:
 	virtual void DrawIndividualDefOpaque(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 	virtual void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 
-	// Draw
-	virtual void Draw(bool drawReflection, bool drawRefraction = false) const = 0;
-
 	// Icons Minimap
 	virtual void DrawUnitMiniMapIcons() const = 0;
 	        void UpdateUnitDefMiniMapIcons(const UnitDef* ud) { modelDrawerData->UpdateUnitDefMiniMapIcons(ud); }
@@ -139,9 +136,6 @@ protected:
 protected:
 	template<bool legacy>
 	void DrawShadowPassImpl() const;
-
-	template<bool legacy>
-	void DrawImpl(bool drawReflection, bool drawRefraction) const;
 };
 
 class CUnitDrawerLegacy : public CUnitDrawerBase {
@@ -158,7 +152,7 @@ public:
 	bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const override;
 
 
-	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<true>(drawReflection, drawRefraction); }
+	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<true, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction); }
 	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); }
 
 	void DrawUnitMiniMapIcons() const override;
@@ -232,7 +226,7 @@ public:
 	void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 	*/
 
-	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<false>(drawReflection, drawRefraction); }
+	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<false, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction); }
 	void DrawShadowPass() const override { DrawShadowPassImpl<false>(); }
 
 protected:
