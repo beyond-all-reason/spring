@@ -37,8 +37,6 @@ public:
 	virtual void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
 	virtual void DrawAlphaFeature(CFeature* f, bool ffpMat) const = 0;
 	virtual void DrawFarFeatures() const = 0;
-
-	virtual bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const;
 public:
 	// modelDrawerData proxies
 	void ConfigNotify(const std::string& key, const std::string& value) { modelDrawerData->ConfigNotify(key, value); }
@@ -57,9 +55,7 @@ protected:
 	bool ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflection, bool drawRefraction) const;
 };
 
-#define featureDrawer (CFeatureDrawer::modelDrawer)
-
-class CFeatureDrawerCommon : public CFeatureDrawer
+class CFeatureDrawerBase : public CFeatureDrawer
 {
 public:
 	void Update() const override;
@@ -72,7 +68,7 @@ protected:
 	void DrawImpl(bool drawReflection, bool drawRefraction) const;
 };
 
-class CFeatureDrawerLegacy : public CFeatureDrawerCommon
+class CFeatureDrawerLegacy : public CFeatureDrawerBase
 {
 public:
 	void Draw(bool drawReflection, bool drawRefraction) const override { DrawImpl<true>(drawReflection, drawRefraction); }
@@ -92,7 +88,7 @@ public:
 	void DrawAlphaFeature(CFeature* f, bool ffpMat) const override {};
 	void DrawFarFeatures() const override {};
 
-	// Inherited via CFeatureDrawerCommon
+	// Inherited via CFeatureDrawerBase
 	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); };
 	void DrawAlphaPass() const override {};
 
@@ -106,29 +102,13 @@ public:
 	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<true>(deferredPass); }
 };
 
-class CFeatureDrawerFFP : public CFeatureDrawerLegacy
-{
-public:
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
-};
+class CFeatureDrawerFFP  final : public CFeatureDrawerLegacy {};
+class CFeatureDrawerARB  final : public CFeatureDrawerLegacy {};
+class CFeatureDrawerGLSL final : public CFeatureDrawerLegacy {};
 
-class CFeatureDrawerARB : public CFeatureDrawerLegacy
+//TODO remove CFeatureDrawerLegacy inheritance
+class CFeatureDrawerGL4 final: public CFeatureDrawerLegacy//CFeatureDrawerBase
 {
-public:
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
-
-};
-
-class CFeatureDrawerGLSL : public CFeatureDrawerLegacy
-{
-public:
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
-};
-
-class CFeatureDrawerGL4 : public CFeatureDrawerLegacy//CFeatureDrawerCommon
-{
-public:
-	bool SetTeamColor(int team, const float2 alpha = float2(1.0f, 0.0f)) const override { return false; }
 public:
 	// Setup Fixed State
 	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing<false>(deferredPass); }
@@ -137,3 +117,5 @@ public:
 	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing<false>(deferredPass); }
 	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing<false>(deferredPass); }
 };
+
+#define featureDrawer (CFeatureDrawer::modelDrawer)

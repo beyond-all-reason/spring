@@ -110,7 +110,7 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflect
 	return true;
 }
 
-void CFeatureDrawerCommon::DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const
+void CFeatureDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const
 {
 	const auto* currCamera = CCameraHandler::GetActiveCamera();
 	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
@@ -147,9 +147,9 @@ void CFeatureDrawerCommon::DrawOpaquePass(bool deferredPass, bool drawReflection
 }
 
 template<bool legacy>
-void CFeatureDrawerCommon::DrawShadowPassImpl() const
+void CFeatureDrawerBase::DrawShadowPassImpl() const
 {
-	SCOPED_TIMER("CFeatureDrawerCommon::DrawShadowPass");
+	SCOPED_TIMER("CFeatureDrawerBase::DrawShadowPass");
 	if constexpr (legacy) {
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glPolygonOffset(1.0f, 1.0f);
@@ -219,9 +219,9 @@ void CFeatureDrawerCommon::DrawShadowPassImpl() const
 }
 
 template<bool legacy>
-void CFeatureDrawerCommon::DrawImpl(bool drawReflection, bool drawRefraction) const
+void CFeatureDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
 {
-	SCOPED_TIMER("CFeatureDrawerCommon::Draw");
+	SCOPED_TIMER("CFeatureDrawerBase::Draw");
 	if constexpr (legacy) {
 		sky->SetupFog();
 	}
@@ -245,9 +245,9 @@ void CFeatureDrawerCommon::DrawImpl(bool drawReflection, bool drawRefraction) co
 	}
 }
 
-void CFeatureDrawerCommon::Update() const
+void CFeatureDrawerBase::Update() const
 {
-	SCOPED_TIMER("CFeatureDrawerCommon::Update");
+	SCOPED_TIMER("CFeatureDrawerBase::Update");
 	modelDrawerData->Update();
 }
 
@@ -301,17 +301,4 @@ void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaC
 		return;
 
 	feature->localModel.Draw();
-}
-
-bool CFeatureDrawer::SetTeamColor(int team, const float2 alpha) const
-{
-	// need this because we can be called by no-team projectiles
-	if (!teamHandler.IsValidTeam(team))
-		return false;
-
-	// should be an assert, but projectiles (+FlyingPiece) would trigger it
-	if (shadowHandler.InShadowPass())
-		return false;
-
-	return true;
 }

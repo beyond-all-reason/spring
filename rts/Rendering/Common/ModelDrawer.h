@@ -259,7 +259,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 		if (d == nullptr || s == nullptr)
 			return false;
 
-		if (s->IsLegacy() && !forceLegacyPath)
+		if (CModelDrawerBase<TDrawerData, TDrawer>::forceLegacyPath && !s->IsLegacy())
 			return false;
 
 		if (s->IsLegacy() && !legacy)
