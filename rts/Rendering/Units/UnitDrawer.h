@@ -61,13 +61,6 @@ public:
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
 	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return modelDrawerData->GetObjectMatricesMemAlloc(unit); }
 public:
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
-	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
-
-	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing(deferredPass); }
-	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing(deferredPass); }
-
 	// DrawUnit*
 	virtual void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
 	virtual void DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const = 0;

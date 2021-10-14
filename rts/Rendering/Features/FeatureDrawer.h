@@ -21,13 +21,6 @@ public:
 	//static void KillStatic(bool reload); will use base
 	//static void UpdateStatic();
 public:
-	// Setup Fixed State
-	void SetupOpaqueDrawing(bool deferredPass) const override { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
-	void ResetOpaqueDrawing(bool deferredPass) const override { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
-
-	void SetupAlphaDrawing(bool deferredPass) const override { modelDrawerState->SetupAlphaDrawing(deferredPass); }
-	void ResetAlphaDrawing(bool deferredPass) const override { modelDrawerState->ResetAlphaDrawing(deferredPass); }
-
 	// DrawFeature*
 	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;
 	virtual void DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;

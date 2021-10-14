@@ -119,13 +119,12 @@ public:
 	virtual void DrawShadowPass() const = 0;
 	virtual void DrawAlphaPass() const = 0;
 public:
-	// Variuous auxilary drawers call unitDrawer->Setup/Reset...
 	// Setup Fixed State
-	virtual void SetupOpaqueDrawing(bool deferredPass) const = 0;
-	virtual void ResetOpaqueDrawing(bool deferredPass) const = 0;
+	void SetupOpaqueDrawing(bool deferredPass) const { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
+	void ResetOpaqueDrawing(bool deferredPass) const { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
 
-	virtual void SetupAlphaDrawing(bool deferredPass) const = 0;
-	virtual void ResetAlphaDrawing(bool deferredPass) const = 0;
+	void SetupAlphaDrawing(bool deferredPass) const { modelDrawerState->SetupAlphaDrawing(deferredPass); }
+	void ResetAlphaDrawing(bool deferredPass) const { modelDrawerState->ResetAlphaDrawing(deferredPass); }
 private:
 	static void Push(bool legacy, bool modern) {
 		implStack.emplace(std::make_pair(modelDrawer, modelDrawerState));
