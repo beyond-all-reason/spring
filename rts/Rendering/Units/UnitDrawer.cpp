@@ -144,97 +144,103 @@ void CUnitDrawer::InitStatic()
 	SelectImplementation();
 }
 
-bool CUnitDrawer::ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const
+bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, bool drawReflection, bool drawRefraction)
 {
-	if (modelDrawerData->IsAlpha(unit))
+	if (modelDrawerData->IsAlpha(u))
 		return false;
 
-	if (unit == (drawReflection ? nullptr : (gu->GetMyPlayer())->fpsController.GetControllee()))
+	if (u == (drawReflection ? nullptr : (gu->GetMyPlayer())->fpsController.GetControllee()))
 		return false;
 
-	if (unit->noDraw)
+	if (u->noDraw)
 		return false;
 
-	if (unit->IsInVoid())
+	if (u->IsInVoid())
 		return false;
 
 	// unit will be drawn as icon instead
-	if (unit->isIcon)
+	if (u->isIcon)
 		return false;
 
-	if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+	if (!(u->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
 		return false;
 
 	// either PLAYER or UWREFL
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
-
-	if (drawRefraction && !unit->IsInWater())
+	if (drawRefraction && !u->IsInWater())
 		return false;
 
-	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
+	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
 		return false;
 
-	if (!cam->InView(unit->drawMidPos, unit->GetDrawRadius()))
+	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
 		return false;
 
-	if ((unit->pos).SqDistance(camera->GetPos()) > (unit->sqRadius * modelDrawerData->modelDrawDistSqr)) {
-		farTextureHandler->Queue(unit);
+	#pragma message("FIX ME: copy drawAsFarTex from feature")
+	if ((u->pos).SqDistance(camera->GetPos()) > (u->sqRadius * modelDrawerData->modelDrawDistSqr)) {
+		farTextureHandler->Queue(u);
 		return false;
 	}
 
-	if (LuaObjectDrawer::AddOpaqueMaterialObject(const_cast<CUnit*>(unit), LUAOBJ_UNIT))
+	if (LuaObjectDrawer::AddOpaqueMaterialObject(u, LUAOBJ_UNIT))
 		return false;
 
 	return true;
 }
 
-bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* unit) const
+bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u)
 {
-	if (!modelDrawerData->IsAlpha(unit))
+	if (!modelDrawerData->IsAlpha(u))
 		return false;
 
-	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
+	if (u->noDraw)
 		return false;
 
-	if (LuaObjectDrawer::AddAlphaMaterialObject(unit, LUAOBJ_UNIT))
+	if (u->isIcon)
 		return false;
 
-	if (unit->isIcon)
+	if (u->IsInVoid())
 		return false;
 
-	if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
-		return false;
-
-	return true;
-}
-
-bool CUnitDrawer::ShouldDrawOpaqueUnitShadow(CUnit* unit) const
-{
-	if (modelDrawerData->IsAlpha(unit))
-		return false;
-
-	if (unit->noDraw)
-		return false;
-
-	if (unit->IsInVoid())
-		return false;
-
-	// no shadow if unit is already an icon from player's POV
-	if (unit->isIcon)
-		return false;
-
-	if (unit->isCloaked)
+	if (!(u->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
 		return false;
 
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
-
-	if (!((unit->losStatus[gu->myAllyTeam] & LOS_INLOS) || gu->spectatingFullView))
+	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
 		return false;
 
-	if (!cam->InView(unit->drawMidPos, unit->GetDrawRadius()))
+	if (LuaObjectDrawer::AddAlphaMaterialObject(u, LUAOBJ_UNIT))
 		return false;
 
-	if (LuaObjectDrawer::AddShadowMaterialObject(unit, LUAOBJ_UNIT))
+	return true;
+}
+
+bool CUnitDrawer::ShouldDrawUnitShadow(CUnit* u)
+{
+	if (modelDrawerData->IsAlpha(u))
+		return false;
+
+	if (u->noDraw)
+		return false;
+
+	if (u->IsInVoid())
+		return false;
+
+	// no shadow if unit is already an icon from player's POV
+	if (u->isIcon)
+		return false;
+
+	if (u->isCloaked)
+		return false;
+
+	if (!((u->losStatus[gu->myAllyTeam] & LOS_INLOS) || gu->spectatingFullView))
+		return false;
+
+	const CCamera* cam = CCameraHandler::GetActiveCamera();
+	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
+		return false;
+
+	if (LuaObjectDrawer::AddShadowMaterialObject(u, LUAOBJ_UNIT))
 		return false;
 
 	return true;
@@ -663,7 +669,7 @@ void CUnitDrawerLegacy::DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool dr
 
 void CUnitDrawerLegacy::DrawOpaqueUnitShadow(CUnit* unit) const
 {
-	if (ShouldDrawOpaqueUnitShadow(unit))
+	if (ShouldDrawUnitShadow(unit))
 		DrawUnitTrans(unit, 0, 0, false, false);
 }
 
@@ -1377,7 +1383,7 @@ void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContPro
 			renderUnits.resize(binUnits.size());
 
 			for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
-				renderUnits[i] = ShouldDrawOpaqueUnitShadow(binUnits[i]) ? binUnits[i] : nullptr;
+				renderUnits[i] = ShouldDrawUnitShadow(binUnits[i]) ? binUnits[i] : nullptr;
 			});
 
 			for (CUnit* unit : renderUnits) {
@@ -1389,7 +1395,7 @@ void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContPro
 		}
 		else {
 			for (auto* unit : binUnits) {
-				if (!ShouldDrawOpaqueUnitShadow(unit))
+				if (!ShouldDrawUnitShadow(unit))
 					continue;
 
 				smv.AddToSubmission(unit);
@@ -1414,7 +1420,7 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		if (!mtModelDrawer) {
-			for (const CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
+			for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
 				//DrawOpaqueUnit(unit, drawReflection, drawRefraction);
 				if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
 					continue;
@@ -1427,9 +1433,9 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 			static std::vector<const CUnit*> unitList;
 			unitList.resize(bin.size());
 			for_mt(0, unitList.size(), [this, &bin, drawReflection, drawRefraction](int k) {
-				const CUnit* unit = bin[k];
+				CUnit* unit = bin[k];
 				unitList[k] = ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction) ? unit : nullptr;
-				});
+			});
 
 			for (const CUnit* unit : unitList) if (unit)
 				smv.AddToSubmission(unit);
@@ -1468,7 +1474,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 			for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
 				renderUnits[i] = ShouldDrawAlphaUnit(binUnits[i]) ? binUnits[i] : nullptr;
-				});
+			});
 
 			for (CUnit* unit : renderUnits) {
 				if (!unit)

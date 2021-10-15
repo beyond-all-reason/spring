@@ -21,10 +21,7 @@ namespace Shader { struct IProgramObject; }
 class CUnitDrawer : public CModelDrawerBase<CUnitDrawerData, CUnitDrawer>
 {
 public:
-	friend class CModelDrawerBase<CUnitDrawerData, CUnitDrawer>;
-public:
-	CUnitDrawer() {}
-	virtual ~CUnitDrawer() {}
+	//friend class CModelDrawerBase<CUnitDrawerData, CUnitDrawer>;
 public:
 	static void InitStatic();
 	//static void KillStatic(bool reload); //use base
@@ -86,9 +83,9 @@ public:
 	        bool ShowUnitBuildSquare(const BuildInfo& buildInfo) const { return ShowUnitBuildSquare(buildInfo, std::vector<Command>()); }
 	virtual bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const = 0;
 protected:
-	bool ShouldDrawOpaqueUnit(const CUnit* unit, bool drawReflection, bool drawRefraction) const;
-	bool ShouldDrawAlphaUnit(CUnit* unit) const;
-	bool ShouldDrawOpaqueUnitShadow(CUnit* unit) const;
+	static bool ShouldDrawOpaqueUnit(CUnit* u, bool drawReflection, bool drawRefraction);
+	static bool ShouldDrawAlphaUnit(CUnit* u);
+	static bool ShouldDrawUnitShadow(CUnit* u);
 
 	virtual void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
 	virtual void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const = 0;

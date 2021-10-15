@@ -35,30 +35,6 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-//CONFIG(bool, ShowRezBars).defaultValue(true).headlessValue(false);
-
-static const void SetFeatureAlphaMatSSP(const CFeature* f) { glAlphaFunc(GL_GREATER, f->drawAlpha * 0.5f); }
-static const void SetFeatureAlphaMatFFP(const CFeature* f)
-{
-	const float cols[] = {1.0f, 1.0f, 1.0f, f->drawAlpha};
-
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, cols);
-	glColor4fv(cols);
-
-	// hack, sorting objects by distance would look better
-	glAlphaFunc(GL_GREATER, f->drawAlpha * 0.5f);
-}
-
-
-typedef const void (*SetFeatureAlphaMatFunc)(const CFeature*);
-
-static const SetFeatureAlphaMatFunc setFeatureAlphaMatFuncs[] = {
-	SetFeatureAlphaMatSSP,
-	SetFeatureAlphaMatFFP,
-};
-
-
-
 void CFeatureDrawer::InitStatic()
 {
 	CModelDrawerBase<CFeatureDrawerData, CFeatureDrawer>::InitStatic();
@@ -73,7 +49,7 @@ void CFeatureDrawer::InitStatic()
 	SelectImplementation();
 }
 
-bool CFeatureDrawer::ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflection, bool drawRefraction) const
+bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction)
 {
 	if (modelDrawerData->IsAlpha(f))
 		return false;
@@ -87,12 +63,11 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflect
 	if (!gu->spectatingFullView && !f->IsInLosForAllyTeam(gu->myAllyTeam))
 		return false;
 
-	// either PLAYER or UWREFL
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-
 	if (drawRefraction && !f->IsInWater())
 		return false;
 
+	// either PLAYER or UWREFL
+	const CCamera* cam = CCameraHandler::GetActiveCamera();
 	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(f->drawMidPos, cam->GetPos(), f->GetDrawRadius()))
 		return false;
 
@@ -104,10 +79,86 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(const CFeature* f, bool drawReflect
 		return false;
 	}
 
-	if (LuaObjectDrawer::AddOpaqueMaterialObject(const_cast<CFeature*>(f), LUAOBJ_FEATURE))
+	if (LuaObjectDrawer::AddOpaqueMaterialObject(f, LUAOBJ_FEATURE))
 		return false;
 
 	return true;
+}
+
+bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
+{
+	if (!modelDrawerData->IsAlpha(f))
+		return false;
+
+	if (f->noDraw)
+		return false;
+
+	if (f->IsInVoid())
+		return false;
+
+	if (!gu->spectatingFullView && !f->IsInLosForAllyTeam(gu->myAllyTeam))
+		return false;
+
+	const CCamera* cam = CCameraHandler::GetActiveCamera();
+	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
+		return false;
+
+	if (f->drawAsFarTex) {
+		farTextureHandler->Queue(f);
+		return false;
+	}
+
+	if (LuaObjectDrawer::AddAlphaMaterialObject(f, LUAOBJ_FEATURE))
+		return false;
+
+	return true;
+}
+
+bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
+{
+	if (modelDrawerData->IsAlpha(f))
+		return false;
+
+	if (f->noDraw)
+		return false;
+
+	if (f->IsInVoid())
+		return false;
+
+	if (!f->IsInLosForAllyTeam(gu->myAllyTeam) && !gu->spectatingFullView)
+		return false;
+
+	// same cutoff as AT; set during SP too
+	//if (f->drawAlpha <= 0.1f)
+		//return false;
+
+	// either PLAYER or SHADOW or UWREFL
+	const CCamera* cam = CCameraHandler::GetActiveCamera();
+	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
+		return false;
+
+	if (f->drawAsFarTex) {
+		//farTextureHandler->Queue(f);
+		return false;
+	}
+
+	if (LuaObjectDrawer::AddShadowMaterialObject(f, LUAOBJ_FEATURE))
+		return false;
+
+	return true;
+}
+
+void CFeatureDrawer::PushIndividualState(const CFeature* feature, bool deferredPass) const
+{
+	SetupOpaqueDrawing(false);
+	CModelDrawerHelper::PushModelRenderState(feature);
+	SetTeamColor(feature->team);
+}
+
+void CFeatureDrawer::PopIndividualState(const CFeature* feature, bool deferredPass) const
+{
+	CModelDrawerHelper::PopModelRenderState(feature);
+	ResetOpaqueDrawing(false);
 }
 
 void CFeatureDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const
@@ -218,33 +269,6 @@ void CFeatureDrawerBase::DrawShadowPassImpl() const
 	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_FEATURE, false);
 }
 
-template<bool legacy>
-void CFeatureDrawerBase::DrawImpl(bool drawReflection, bool drawRefraction) const
-{
-	SCOPED_TIMER("CFeatureDrawerBase::Draw");
-	if constexpr (legacy) {
-		sky->SetupFog();
-	}
-
-	assert((CCameraHandler::GetActiveCamera())->GetCamType() != CCamera::CAMTYPE_SHADOW);
-
-	// first do the deferred pass; conditional because
-	// most of the water renderers use their own FBO's
-	if (drawDeferred && !drawReflection && !drawRefraction)
-		LuaObjectDrawer::DrawDeferredPass(LUAOBJ_FEATURE);
-
-	// now do the regular forward pass
-	if (drawForward)
-		DrawOpaquePass(false, drawReflection, drawRefraction);
-
-	farTextureHandler->Draw();
-
-	if constexpr (legacy) {
-		glDisable(GL_FOG);
-		glDisable(GL_TEXTURE_2D);
-	}
-}
-
 void CFeatureDrawerBase::Update() const
 {
 	SCOPED_TIMER("CFeatureDrawerBase::Update");
@@ -274,6 +298,45 @@ void CFeatureDrawerLegacy::DrawFeatureTrans(const CFeature* feature, unsigned in
 	glPopMatrix();
 }
 
+void CFeatureDrawerLegacy::DrawIndividual(const CFeature* feature, bool noLuaCall) const
+{
+	if (LuaObjectDrawer::DrawSingleObject(feature, LUAOBJ_FEATURE /*, noLuaCall*/))
+		return;
+
+	// set the full default state
+	PushIndividualState(feature, false);
+	DrawFeatureTrans(feature, 0, 0, false, noLuaCall);
+	PopIndividualState(feature, false);
+}
+
+void CFeatureDrawerLegacy::DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const
+{
+	if (LuaObjectDrawer::DrawSingleObjectNoTrans(feature, LUAOBJ_FEATURE /*, noLuaCall*/))
+		return;
+
+	PushIndividualState(feature, false);
+	DrawFeatureNoTrans(feature, 0, 0, false, noLuaCall);
+	PopIndividualState(feature, false);
+}
+
+void CFeatureDrawerLegacy::DrawOpaqueFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+{
+	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+		// only need to bind the atlas once for 3DO's, but KISS
+		assert((modelType != MODELTYPE_3DO) || (rdrCntProxy.GetObjectBinKey(i) == 0));
+
+		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
+		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
+
+		for (CFeature* feature : rdrCntProxy.GetObjectBin(i)) {
+			DrawOpaqueFeatureShadow(feature);
+		}
+
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+	}
+}
+
 void CFeatureDrawerLegacy::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const
 {
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
@@ -293,6 +356,32 @@ void CFeatureDrawerLegacy::DrawOpaqueFeature(CFeature* f, bool drawReflection, b
 	// draw the unit with the default (non-Lua) material
 	SetTeamColor(f->team);
 	DrawFeatureTrans(f, 0, 0, false, false);
+}
+
+void CFeatureDrawerLegacy::DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+{
+	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+
+		for (CFeature* f : rdrCntProxy.GetObjectBin(i)) {
+			DrawAlphaFeature(f);
+		}
+	}
+}
+
+void CFeatureDrawerLegacy::DrawAlphaFeature(CFeature* f) const
+{
+	if (!ShouldDrawAlphaFeature(f))
+		return;
+
+	//SetTeamColor(f->team, float2(alphaValues.x, 1.0f));
+	//DrawUnitTrans(unit, 0, 0, false, false);
+}
+
+void CFeatureDrawerLegacy::DrawOpaqueFeatureShadow(CFeature* f) const
+{
+	if (ShouldDrawFeatureShadow(f))
+		DrawFeatureTrans(f, 0, 0, false, false);
 }
 
 void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaCall) const

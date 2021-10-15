@@ -14,6 +14,8 @@
 #include "Rendering/FarTextureHandler.h"
 #include "Rendering/GL/LightHandler.h"
 #include "Rendering/Env/ISky.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Shaders/Shader.h"
 
 namespace GL { struct GeometryBuffer; }
 template<typename T> class ScopedDrawerImpl;
