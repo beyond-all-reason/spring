@@ -732,7 +732,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 	{
 		{
-			ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+			ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 			unitDrawer->SetupOpaqueDrawing(false);
 
 			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
@@ -848,7 +848,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 	if (p->model == nullptr)
 		return false;
 
-	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
 	switch ((p->weapon * 2) + (p->piece * 1)) {
 		case 2: {

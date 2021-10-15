@@ -49,8 +49,10 @@ public:
 	void Unbind() const;
 
 	bool AddToSubmission(const S3DModel* model, int teamID, uint32_t aux = ~0u);
+
 	bool AddToSubmission(const CUnit* unit, uint32_t aux = ~0u);
 	bool AddToSubmission(const CFeature* feature, uint32_t aux = ~0u);
+
 	bool AddToSubmission(const UnitDef* unitDef, int teamID, uint32_t aux = ~0u);
 	void Submit(GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 

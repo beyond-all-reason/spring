@@ -18,7 +18,7 @@
 #include "Rendering/Shaders/Shader.h"
 
 namespace GL { struct GeometryBuffer; }
-template<typename T> class ScopedDrawerImpl;
+template<typename T> class ScopedModelDrawerImpl;
 class ScopedMatricesMemAlloc;
 
 enum ModelDrawerTypes {
@@ -110,7 +110,7 @@ public:
 	static void SelectImplementation(bool forceReselection = false, bool legacy = true, bool modern = true);
 	static void SelectImplementation(int targetImplementation);
 
-	template<typename T> friend class ScopedDrawerImpl;
+	template<typename T> friend class ScopedModelDrawerImpl;
 
 	/// Proxy interface for modelDrawerState
 	static bool CanDrawDeferred() { return modelDrawerState->CanDrawDeferred(); }
@@ -175,12 +175,12 @@ protected:
 };
 
 template<typename T>
-class ScopedDrawerImpl {
+class ScopedModelDrawerImpl {
 public:
-	ScopedDrawerImpl(bool legacy, bool modern) {
+	ScopedModelDrawerImpl(bool legacy, bool modern) {
 		T::Push(legacy, modern);
 	}
-	~ScopedDrawerImpl() {
+	~ScopedModelDrawerImpl() {
 		T::Pop();
 	}
 };

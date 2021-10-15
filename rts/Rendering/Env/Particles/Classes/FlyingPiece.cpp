@@ -178,7 +178,7 @@ CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFac
 
 void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 {
-	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
+	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
 	if (prev == nullptr) {
 		CUnitDrawer::SetTeamColor(team);

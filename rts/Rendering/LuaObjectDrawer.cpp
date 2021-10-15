@@ -198,7 +198,6 @@ static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial
 	// if shader is bound in DrawerState etc
 	assert(m->shaders[deferredPass].IsEngineType());
 
-	ScopedDrawerImpl<CUnitDrawer> legacy(true, false);
 	CUnitDrawer::SetTeamColor(o->team, a);
 }
 
