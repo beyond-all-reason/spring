@@ -184,7 +184,7 @@ void CModelDrawerHelper3DO::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
 }
 
-void CModelDrawerHelper3DO::UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+void CModelDrawerHelper3DO::UnbindShadowTex() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
@@ -201,7 +201,7 @@ void CModelDrawerHelperS3O::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* t
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex1);
 }
 
-void CModelDrawerHelperS3O::UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+void CModelDrawerHelperS3O::UnbindOpaqueTex() const
 {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -216,7 +216,7 @@ void CModelDrawerHelperS3O::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
 }
 
-void CModelDrawerHelperS3O::UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+void CModelDrawerHelperS3O::UnbindShadowTex() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
@@ -233,7 +233,7 @@ void CModelDrawerHelperASS::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* t
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex1);
 }
 
-void CModelDrawerHelperASS::UnbindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+void CModelDrawerHelperASS::UnbindOpaqueTex() const
 {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -248,7 +248,7 @@ void CModelDrawerHelperASS::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
 }
 
-void CModelDrawerHelperASS::UnbindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+void CModelDrawerHelperASS::UnbindShadowTex() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);

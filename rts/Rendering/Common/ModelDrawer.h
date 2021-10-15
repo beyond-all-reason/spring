@@ -87,7 +87,8 @@ public:
 	static void InitStatic();
 	static void KillStatic(bool reload);
 	static void UpdateStatic() {
-		SelectImplementation();
+		SelectImplementation(reselectionRequested);
+		reselectionRequested = false;
 		modelDrawer->Update();
 	}
 public:
@@ -227,10 +228,8 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::ForceLegacyPath()
 template<typename TDrawerData, typename TDrawer>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool forceReselection, bool legacy, bool modern)
 {
-	if (!reselectionRequested && !forceReselection)
+	if (!forceReselection)
 		return;
-
-	reselectionRequested = false;
 
 	if (!advShading) {
 		SelectImplementation(ModelDrawerTypes::MODEL_DRAWER_FFP);
@@ -256,18 +255,18 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 		return true;
 	};
 
-	if (preferedDrawerType >= 0 && preferedDrawerType < ModelDrawerTypes::MODEL_DRAWER_CNT) {
+	if (preferedDrawerType < ModelDrawerTypes::MODEL_DRAWER_CNT) {
 		auto d = modelDrawers[preferedDrawerType];
 		auto s = IModelDrawerState::modelDrawerStates[preferedDrawerType];
 		if (qualifyDrawerFunc(d, s)) {
 			LOG_L(L_INFO, "[%s::%s] Force-switching to %s", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
 			SelectImplementation(preferedDrawerType);
-			return;
 		}
 		else {
 			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
-			preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //reset;
 		}
+		preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //reset;
+		return;
 	}
 
 	int best = ModelDrawerTypes::MODEL_DRAWER_FFP;

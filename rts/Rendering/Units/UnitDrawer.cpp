@@ -1,8 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <vector>
-#include <type_traits>
-
 #include "UnitDrawer.h"
 
 #include "Game/Camera.h"
@@ -568,7 +565,7 @@ void CUnitDrawerLegacy::DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy&
 			DrawOpaqueUnitShadow(o);
 		}
 
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex();
 	}
 }
 
@@ -1370,17 +1367,26 @@ void CUnitDrawerGL4::DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rd
 	smv.Bind();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
 		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
+			for (auto* o : binObjects) {
+				if (!ShouldDrawUnitShadow(o))
+					continue;
+
+				smv.AddToSubmission(o);
+			}
+		}
+		else {
 			static std::vector<const ObjType*> renderList;
 			renderList.resize(binObjects.size());
 
 			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
 				renderList[i] = ShouldDrawUnitShadow(binObjects[i]) ? binObjects[i] : nullptr;
-			});
+				});
 
 			for (auto* o : renderList) {
 				if (!o)
@@ -1389,17 +1395,9 @@ void CUnitDrawerGL4::DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rd
 				smv.AddToSubmission(o);
 			}
 		}
-		else {
-			for (auto* o : binObjects) {
-				if (!ShouldDrawUnitShadow(o))
-					continue;
-
-				smv.AddToSubmission(o);
-			}
-		}
 		smv.Submit(GL_TRIANGLES, false);
 
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex();
 	}
 
 	smv.Unbind();

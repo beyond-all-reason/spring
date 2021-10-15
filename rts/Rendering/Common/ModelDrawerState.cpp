@@ -649,6 +649,8 @@ void CModelDrawerStateGL4::SetDrawingMode(ShaderDrawingModes sdm) const
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
+	modelShader->SetUniform("drawMode", static_cast<int>(sdm));
+
 	switch (sdm)
 	{
 	case ShaderDrawingModes::REFLCT_MODEL:

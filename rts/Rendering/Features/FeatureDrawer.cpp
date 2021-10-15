@@ -53,6 +53,8 @@ void CFeatureDrawer::InitStatic()
 
 bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction)
 {
+	assert(f);
+
 	if (modelDrawerData->IsAlpha(f))
 		return false;
 
@@ -89,6 +91,8 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, b
 
 bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 {
+	assert(f);
+
 	if (!modelDrawerData->IsAlpha(f))
 		return false;
 
@@ -118,6 +122,8 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 
 bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 {
+	assert(f);
+
 	if (modelDrawerData->IsAlpha(f))
 		return false;
 
@@ -161,79 +167,6 @@ void CFeatureDrawer::PopIndividualState(const CFeature* feature, bool deferredPa
 {
 	CModelDrawerHelper::PopModelRenderState(feature);
 	ResetOpaqueDrawing(false);
-}
-
-void CFeatureDrawerBase::DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const
-{
-	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
-
-	SetupOpaqueDrawing(deferredPass);
-
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-
-		CModelDrawerHelper::PushModelRenderState(modelType);
-
-		for (int quad : quads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
-
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
-
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
-
-			DrawOpaqueFeatures(rdrCntProxy, modelType, drawReflection, drawRefraction);
-		}
-
-		CModelDrawerHelper::PopModelRenderState(modelType);
-	}
-
-	ResetOpaqueDrawing(deferredPass);
-
-	// draw all custom'ed features that were bypassed in the loop above
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
-	LuaObjectDrawer::DrawOpaqueMaterialObjects(LUAOBJ_FEATURE, deferredPass);
-}
-
-void CFeatureDrawerBase::DrawAlphaPass() const
-{
-	SCOPED_TIMER("CUnitDrawerBase::DrawAlphaPass");
-
-	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
-
-	SetupAlphaDrawing(false);
-
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-
-		CModelDrawerHelper::PushModelRenderState(modelType);
-
-		for (int quad : quads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
-
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
-
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
-
-			DrawAlphaFeatures(rdrCntProxy, modelType);
-		}
-
-		CModelDrawerHelper::PopModelRenderState(modelType);
-	}
-
-	ResetAlphaDrawing(false);
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
-	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_FEATURE, false);
 }
 
 template<bool legacy>
@@ -308,6 +241,86 @@ void CFeatureDrawerBase::DrawShadowPassImpl() const
 	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_FEATURE, false);
 }
 
+template<bool legacy>
+void CFeatureDrawerBase::DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const
+{
+	const auto* currCamera = CCameraHandler::GetActiveCamera();
+	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
+
+	SetupOpaqueDrawing(deferredPass);
+
+	auto& smv = S3DModelVAO::GetInstance();
+	smv.Bind();
+
+	modelDrawerState->SetColorMultiplier();
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
+
+		CModelDrawerHelper::PushModelRenderState(modelType);
+
+		for (int quad : quads) {
+			const auto& rdrCntProxy = rdrContProxies[quad];
+
+			// non visible quad
+			if (!rdrCntProxy.IsQuadVisible())
+				continue;
+
+			// quad has no objects
+			if (!rdrCntProxy.HasObjects())
+				continue;
+
+			DrawOpaqueFeatures(rdrCntProxy, modelType, drawReflection, drawRefraction);
+		}
+
+		CModelDrawerHelper::PopModelRenderState(modelType);
+	}
+
+	ResetOpaqueDrawing(deferredPass);
+
+	// draw all custom'ed features that were bypassed in the loop above
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
+	LuaObjectDrawer::DrawOpaqueMaterialObjects(LUAOBJ_FEATURE, deferredPass);
+}
+
+template<bool legacy>
+void CFeatureDrawerBase::DrawAlphaPassImpl() const
+{
+	SCOPED_TIMER("CUnitDrawerBase::DrawAlphaPass");
+
+	const auto* currCamera = CCameraHandler::GetActiveCamera();
+	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
+
+	SetupAlphaDrawing(false);
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
+
+		CModelDrawerHelper::PushModelRenderState(modelType);
+
+		for (int quad : quads) {
+			const auto& rdrCntProxy = rdrContProxies[quad];
+
+			// non visible quad
+			if (!rdrCntProxy.IsQuadVisible())
+				continue;
+
+			// quad has no objects
+			if (!rdrCntProxy.HasObjects())
+				continue;
+
+			DrawAlphaFeatures(rdrCntProxy, modelType);
+		}
+
+		CModelDrawerHelper::PopModelRenderState(modelType);
+	}
+
+	ResetAlphaDrawing(false);
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
+	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_FEATURE, false);
+}
+
 void CFeatureDrawerBase::Update() const
 {
 	SCOPED_TIMER("CFeatureDrawerBase::Update");
@@ -372,7 +385,7 @@ void CFeatureDrawerLegacy::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrC
 			DrawOpaqueFeatureShadow(o);
 		}
 
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex();
 	}
 }
 
@@ -437,17 +450,26 @@ void CFeatureDrawerGL4::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrCont
 	smv.Bind();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
 		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
+			for (auto* o : binObjects) {
+				if (!ShouldDrawFeatureShadow(o))
+					continue;
+
+				smv.AddToSubmission(o);
+			}
+		}
+		else {
 			static std::vector<const ObjType*> renderList;
 			renderList.resize(binObjects.size());
 
 			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
 				renderList[i] = ShouldDrawFeatureShadow(binObjects[i]) ? binObjects[i] : nullptr;
-			});
+				});
 
 			for (auto* o : renderList) {
 				if (!o)
@@ -456,17 +478,9 @@ void CFeatureDrawerGL4::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrCont
 				smv.AddToSubmission(o);
 			}
 		}
-		else {
-			for (auto* o : binObjects) {
-				if (!ShouldDrawFeatureShadow(o))
-					continue;
-
-				smv.AddToSubmission(o);
-			}
-		}
 		smv.Submit(GL_TRIANGLES, false);
 
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
+		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex();
 	}
 
 	smv.Unbind();
@@ -476,8 +490,6 @@ void CFeatureDrawerGL4::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrCont
 {
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
-
-	modelDrawerState->SetColorMultiplier();
 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
@@ -498,7 +510,7 @@ void CFeatureDrawerGL4::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrCont
 			for_mt(0, renderList.size(), [this, &bin, drawReflection, drawRefraction](int k) {
 				auto* o = bin[k];
 				renderList[k] = ShouldDrawOpaqueFeature(o, drawReflection, drawRefraction) ? o : nullptr;
-				});
+			});
 
 			for (const auto* o : renderList)
 				if (o)
@@ -538,7 +550,7 @@ void CFeatureDrawerGL4::DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContP
 
 			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
 				renderList[i] = ShouldDrawAlphaFeature(binObjects[i]) ? binObjects[i] : nullptr;
-				});
+			});
 
 			for (auto* o : renderList) {
 				if (!o)
