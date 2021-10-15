@@ -61,6 +61,8 @@ template <typename T>
 class CModelRenderDataBase : public CModelRenderDataConcept
 {
 public:
+	using ObjType = T;
+public:
 	CModelRenderDataBase(const std::string& ecName, int ecOrder, bool& mtModelDrawer_);
 	virtual ~CModelRenderDataBase() override;
 public:

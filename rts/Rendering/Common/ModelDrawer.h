@@ -19,8 +19,7 @@
 
 namespace GL { struct GeometryBuffer; }
 template<typename T> class ScopedDrawerImpl;
-
-using DummY = void;
+class ScopedMatricesMemAlloc;
 
 enum ModelDrawerTypes {
 	MODEL_DRAWER_FFP =  0, // fixed-function path
@@ -69,6 +68,8 @@ protected:
 template <typename TDrawerData, typename TDrawer>
 class CModelDrawerBase : public CModelDrawerConcept {
 public:
+	using ObjType = typename TDrawerData::ObjType;
+public:
 	template<typename TDrawerDerivative>
 	static void InitInstance(int t) {
 		static_assert(std::is_base_of_v<TDrawer, TDrawerDerivative>, "");
@@ -115,6 +116,7 @@ public:
 	static bool CanDrawDeferred() { return modelDrawerState->CanDrawDeferred(); }
 	static bool SetTeamColor(int team, const float2 alpha = float2{ 1.0f, 0.0f }) { return modelDrawerState->SetTeamColor(team, alpha); }
 	static void SetNanoColor(const float4& color) { modelDrawerState->SetNanoColor(color); }
+	static const ScopedMatricesMemAlloc& GetMatricesMemAlloc(const ObjType* o) { return modelDrawerData->GetObjectMatricesMemAlloc(o); }
 public:
 	virtual void Update() const = 0;
 	// Draw*
@@ -135,6 +137,10 @@ protected:
 	void DrawImpl(bool drawReflection, bool drawRefraction) const;
 	template<bool legacy, LuaObjType lot>
 	void DrawShadowPassImpl() const; //unused
+
+	// TODO move into TDrawerData?
+	static bool CheckLegacyDrawing(const CSolidObject* so, bool noLuaCall);
+	static bool CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall);
 private:
 	static void Push(bool legacy, bool modern) {
 		implStack.emplace(std::make_pair(modelDrawer, modelDrawerState));
@@ -395,4 +401,28 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
 	LuaObjectDrawer::DrawShadowMaterialObjects(lot, false);
+}
+
+template<typename TDrawerData, typename TDrawer>
+inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSolidObject* so, bool noLuaCall)
+{
+	if (so->luaDraw || !noLuaCall)
+		return false;
+
+	return true;
+}
+
+template<typename TDrawerData, typename TDrawer>
+inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall)
+{
+	#pragma message("TODO: Make use of it")
+	if (forceLegacyPath)
+		return false;
+
+	if (lodCall || preList != 0 || postList != 0 || CheckLegacyDrawing(so, noLuaCall)) { //TODO: sanitize
+		ForceLegacyPath();
+		return false;
+	}
+
+	return true;
 }

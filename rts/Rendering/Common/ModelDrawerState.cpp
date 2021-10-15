@@ -670,3 +670,14 @@ void CModelDrawerStateGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
 
 	modelShader->SetUniformMatrix4x4("staticModelMatrix", false, &mat.m[0]);
 }
+
+IModelDrawerState::IModelDrawerState()
+{
+	modelShaders.fill(nullptr);
+
+	//dup with every instance, but ok
+	alphaValues.x = std::max(0.11f, std::min(1.0f, 1.0f - configHandler->GetFloat("UnitTransparency")));
+	alphaValues.y = std::min(1.0f, alphaValues.x + 0.1f);
+	alphaValues.z = std::min(1.0f, alphaValues.x + 0.2f);
+	alphaValues.w = std::min(1.0f, alphaValues.x + 0.4f);
+}

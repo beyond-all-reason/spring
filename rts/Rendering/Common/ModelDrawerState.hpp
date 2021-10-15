@@ -43,7 +43,7 @@ public:
 		spring::SafeDelete(modelDrawerStates[t]);
 	}
 public:
-	IModelDrawerState() { modelShaders.fill(nullptr); }
+	IModelDrawerState();
 	virtual ~IModelDrawerState() {}
 
 	virtual bool CanEnable() const = 0;
@@ -66,8 +66,8 @@ public:
 	void SetColorMultiplier(float a = 1.0f) const { SetColorMultiplier(1.0f, 1.0f, 1.0f, a); };
 	virtual void SetColorMultiplier(float r, float g, float b, float a) const {};
 
-	virtual void SetDrawingMode(ShaderDrawingModes sdm) const {};
-	virtual void SetStaticModelMatrix(const CMatrix44f& mat) const {};
+	virtual void SetDrawingMode(ShaderDrawingModes sdm) const {}; //doesn't make sense, except in GL4, overridden below
+	virtual void SetStaticModelMatrix(const CMatrix44f& mat) const {}; //doesn't make sense, except in GL4, overridden below
 
 	void SetActiveShader(bool shadowed, bool deferred) const {
 		// shadowed=1 --> shader 1 (deferred=0) or 3 (deferred=1)
@@ -82,7 +82,7 @@ public:
 	void ResetAlphaDrawing(bool deferredPass) const;
 public:
 	inline static std::array<IModelDrawerState*, 4> modelDrawerStates = {};
-protected:
+public:
 	/// <summary>
 	/// .x := regular unit alpha
 	/// .y := ghosted unit alpha (out of radar)

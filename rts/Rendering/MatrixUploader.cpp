@@ -23,6 +23,7 @@
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/MatricesMemStorage.h"
 #include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Game/GlobalUnsynced.h"
 
@@ -148,7 +149,7 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CUnit* unit)  const
 		return MatricesMemStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = CUnitDrawer::GetUnitMatricesMemAlloc(unit).GetOffset(); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (std::size_t offset = CUnitDrawer::GetMatricesMemAlloc(unit).GetOffset(); offset != MatricesMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 
@@ -162,11 +163,10 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CFeature* feature)  const
 		LOG_L(L_ERROR, "[MatrixUploader::%s] Supplied nullptr CFeature", __func__);
 		return MatricesMemStorage::INVALID_INDEX;
 	}
-	/*
-	if (std::size_t offset = feature->localModel.GetMatAlloc().GetOffset(); offset != MatricesMemStorage::INVALID_INDEX) {
+
+	if (std::size_t offset = CFeatureDrawer::GetMatricesMemAlloc(feature).GetOffset(); offset != MatricesMemStorage::INVALID_INDEX) {
 		return offset;
 	}
-	*/
 
 	LOG_L(L_ERROR, "[MatrixUploader::%s] Supplied invalid CFeature (id:%d)", __func__, feature->id);
 	return MatricesMemStorage::INVALID_INDEX;

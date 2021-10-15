@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <vector>
+#include <type_traits>
 
 #include "UnitDrawer.h"
 
@@ -128,11 +129,6 @@ void CUnitDrawer::InitStatic()
 	CModelDrawerBase<CUnitDrawerData, CUnitDrawer>::InitStatic();
 
 	LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
-
-	alphaValues.x = std::max(0.11f, std::min(1.0f, 1.0f - configHandler->GetFloat("UnitTransparency")));
-	alphaValues.y = std::min(1.0f, alphaValues.x + 0.1f);
-	alphaValues.z = std::min(1.0f, alphaValues.x + 0.2f);
-	alphaValues.w = std::min(1.0f, alphaValues.x + 0.4f);
 
 	CUnitDrawerHelper::LoadUnitExplosionGenerators();
 
@@ -383,7 +379,7 @@ void CUnitDrawerBase::DrawShadowPassImpl() const
 				// note: just use DrawOpaqueUnits()? would
 				// save texture switches needed anyway for
 				// UNIT_SHADOW_ALPHA_MASKING
-				DrawOpaqueUnitsShadow(rdrCntProxy, modelType);
+				DrawUnitsShadow(rdrCntProxy, modelType);
 
 				if (modelType == MODELTYPE_3DO)
 					glEnable(GL_CULL_FACE);
@@ -558,7 +554,7 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+void CUnitDrawerLegacy::DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
 {
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		// only need to bind the atlas once for 3DO's, but KISS
@@ -568,8 +564,8 @@ void CUnitDrawerLegacy::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrCont
 		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
-		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
-			DrawOpaqueUnitShadow(unit);
+		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
+			DrawOpaqueUnitShadow(o);
 		}
 
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex(nullptr);
@@ -581,8 +577,8 @@ void CUnitDrawerLegacy::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy&
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
-		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
-			DrawOpaqueUnit(unit, drawReflection, drawRefraction);
+		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
+			DrawOpaqueUnit(o, drawReflection, drawRefraction);
 		}
 	}
 }
@@ -592,8 +588,8 @@ void CUnitDrawerLegacy::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& 
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
-		for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
-			DrawAlphaUnit(unit, modelType, false);
+		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
+			DrawAlphaUnit(o, modelType, false);
 		}
 	}
 
@@ -634,7 +630,7 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 	const auto& deadGhostedBuildings = modelDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
 	const auto& liveGhostedBuildings = modelDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
 
-	glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
+	glColor4f(0.6f, 0.6f, 0.6f, IModelDrawerState::alphaValues.y);
 
 	// buildings that died while ghosted
 	for (GhostSolidObject* dgb : deadGhostedBuildings) {
@@ -644,7 +640,7 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 			glRotatef(dgb->facing * 90.0f, 0, 1, 0);
 
 			CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType);
-			SetTeamColor(dgb->team, float2(alphaValues.y, 1.0f));
+			SetTeamColor(dgb->team, float2(IModelDrawerState::alphaValues.y, 1.0f));
 
 			dgb->model->DrawStatic();
 			glPopMatrix();
@@ -704,10 +700,10 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 
 		// ghosted enemy units
 		if (losStatus & LOS_CONTRADAR) {
-			glColor4f(0.9f, 0.9f, 0.9f, alphaValues.z);
+			glColor4f(0.9f, 0.9f, 0.9f, IModelDrawerState::alphaValues.z);
 		}
 		else {
-			glColor4f(0.6f, 0.6f, 0.6f, alphaValues.y);
+			glColor4f(0.6f, 0.6f, 0.6f, IModelDrawerState::alphaValues.y);
 		}
 
 		glPushMatrix();
@@ -720,11 +716,11 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		// not actually cloaked
 		CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType);
 
-		SetTeamColor(unit->team, float2((losStatus & LOS_CONTRADAR) ? alphaValues.z : alphaValues.y, 1.0f));
+		SetTeamColor(unit->team, float2((losStatus & LOS_CONTRADAR) ? IModelDrawerState::alphaValues.z : IModelDrawerState::alphaValues.y, 1.0f));
 		model->DrawStatic();
 		glPopMatrix();
 
-		glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
+		glColor4f(1.0f, 1.0f, 1.0f, IModelDrawerState::alphaValues.x);
 		return;
 	}
 
@@ -732,7 +728,7 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		return;
 
 	if ((losStatus & LOS_INLOS) || gu->spectatingFullView) {
-		SetTeamColor(unit->team, float2(alphaValues.x, 1.0f));
+		SetTeamColor(unit->team, float2(IModelDrawerState::alphaValues.x, 1.0f));
 		DrawUnitTrans(unit, 0, 0, false, false);
 	}
 }
@@ -767,7 +763,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& uni
 	assert(mdl != nullptr);
 
 	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
-	SetTeamColor(unit.team, float2(alphaValues.x, 1.0f));
+	SetTeamColor(unit.team, float2(IModelDrawerState::alphaValues.x, 1.0f));
 	mdl->DrawStatic();
 
 	glPopMatrix();
@@ -778,7 +774,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	if (!unit.drawBorder)
 		return;
 
-	SetTeamColor(unit.team, float2(alphaValues.w, 1.0f));
+	SetTeamColor(unit.team, float2(IModelDrawerState::alphaValues.w, 1.0f));
 
 	const BuildInfo buildInfo(unit.unitDef, unit.pos, unit.facing);
 	const float3 buildPos = CGameHelper::Pos2BuildPos(buildInfo, false);
@@ -786,7 +782,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	const float xsize = buildInfo.GetXSize() * (SQUARE_SIZE >> 1);
 	const float zsize = buildInfo.GetZSize() * (SQUARE_SIZE >> 1);
 
-	glColor4f(0.2f, 1, 0.2f, alphaValues.w);
+	glColor4f(0.2f, 1, 0.2f, IModelDrawerState::alphaValues.w);
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_LINE_STRIP);
 	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
@@ -795,7 +791,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	glVertexf3(buildPos + float3(xsize, 1.0f, -zsize));
 	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
 	glEnd();
-	glColor4f(1.0f, 1.0f, 1.0f, alphaValues.x);
+	glColor4f(1.0f, 1.0f, 1.0f, IModelDrawerState::alphaValues.x);
 	glEnable(GL_TEXTURE_2D);
 }
 
@@ -1160,7 +1156,7 @@ void CUnitDrawerLegacy::PushIndividualAlphaState(const S3DModel* model, int team
 {
 	SetupAlphaDrawing(deferredPass);
 	CModelDrawerHelper::PushModelRenderState(model);
-	SetTeamColor(teamID, float2(alphaValues.x, 1.0f));
+	SetTeamColor(teamID, float2(IModelDrawerState::alphaValues.x, 1.0f));
 }
 
 void CUnitDrawerLegacy::PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PopIndividualOpaqueState(unit->model, unit->team, deferredPass); }
@@ -1368,7 +1364,7 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 /***********************************************************************/
 
-void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+void CUnitDrawerGL4::DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
 {
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
@@ -1376,29 +1372,29 @@ void CUnitDrawerGL4::DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContPro
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
-		const auto& binUnits = rdrCntProxy.GetObjectBin(i);
+		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
-			static vector<CUnit*> renderUnits;
-			renderUnits.resize(binUnits.size());
+			static std::vector<const ObjType*> renderList;
+			renderList.resize(binObjects.size());
 
-			for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
-				renderUnits[i] = ShouldDrawUnitShadow(binUnits[i]) ? binUnits[i] : nullptr;
+			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
+				renderList[i] = ShouldDrawUnitShadow(binObjects[i]) ? binObjects[i] : nullptr;
 			});
 
-			for (CUnit* unit : renderUnits) {
-				if (!unit)
+			for (auto* o : renderList) {
+				if (!o)
 					continue;
 
-				smv.AddToSubmission(unit);
+				smv.AddToSubmission(o);
 			}
 		}
 		else {
-			for (auto* unit : binUnits) {
-				if (!ShouldDrawUnitShadow(unit))
+			for (auto* o : binObjects) {
+				if (!ShouldDrawUnitShadow(o))
 					continue;
 
-				smv.AddToSubmission(unit);
+				smv.AddToSubmission(o);
 			}
 		}
 		smv.Submit(GL_TRIANGLES, false);
@@ -1420,25 +1416,27 @@ void CUnitDrawerGL4::DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rd
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
 		if (!mtModelDrawer) {
-			for (CUnit* unit : rdrCntProxy.GetObjectBin(i)) {
+			for (auto* o : rdrCntProxy.GetObjectBin(i)) {
 				//DrawOpaqueUnit(unit, drawReflection, drawRefraction);
-				if (!ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction))
+				if (!ShouldDrawOpaqueUnit(o, drawReflection, drawRefraction))
 					continue;
 
-				smv.AddToSubmission(unit);
+				smv.AddToSubmission(o);
 			}
 		}
 		else {
 			const auto& bin = rdrCntProxy.GetObjectBin(i);
-			static std::vector<const CUnit*> unitList;
-			unitList.resize(bin.size());
-			for_mt(0, unitList.size(), [this, &bin, drawReflection, drawRefraction](int k) {
-				CUnit* unit = bin[k];
-				unitList[k] = ShouldDrawOpaqueUnit(unit, drawReflection, drawRefraction) ? unit : nullptr;
+			static std::vector<const ObjType*> renderList;
+			renderList.resize(bin.size());
+			for_mt(0, renderList.size(), [this, &bin, drawReflection, drawRefraction](int k) {
+				auto* o = bin[k];
+				renderList[k] = ShouldDrawOpaqueUnit(o, drawReflection, drawRefraction) ? o : nullptr;
 			});
 
-			for (const CUnit* unit : unitList) if (unit)
-				smv.AddToSubmission(unit);
+			for (const auto* o : renderList)
+				if (o)
+					smv.AddToSubmission(o);
+
 		}
 		smv.Submit(GL_TRIANGLES, false);
 	}
@@ -1451,36 +1449,36 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	modelDrawerState->SetColorMultiplier(alphaValues.x);
+	modelDrawerState->SetColorMultiplier(IModelDrawerState::alphaValues.x);
 
 	//main cloaked alpha pass
 	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
 
-		const auto& binUnits = rdrCntProxy.GetObjectBin(i);
+		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
-			for (auto* unit : binUnits) {
-				if (!ShouldDrawAlphaUnit(unit))
+			for (auto* o : binObjects) {
+				if (!ShouldDrawAlphaUnit(o))
 					continue;
 
-				smv.AddToSubmission(unit);
+				smv.AddToSubmission(o);
 			}
 		}
 		else {
-			static vector<CUnit*> renderUnits;
+			static vector<const ObjType*> renderList;
 
-			renderUnits.resize(binUnits.size());
+			renderList.resize(binObjects.size());
 
-			for_mt(0, binUnits.size(), [&binUnits, this](const int i) {
-				renderUnits[i] = ShouldDrawAlphaUnit(binUnits[i]) ? binUnits[i] : nullptr;
+			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
+				renderList[i] = ShouldDrawAlphaUnit(binObjects[i]) ? binObjects[i] : nullptr;
 			});
 
-			for (CUnit* unit : renderUnits) {
-				if (!unit)
+			for (auto* o : renderList) {
+				if (!o)
 					continue;
 
-				smv.AddToSubmission(unit);
+				smv.AddToSubmission(o);
 			}
 		}
 
@@ -1495,7 +1493,7 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 	// deadGhostedBuildings
 	{
-		modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
+		modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, IModelDrawerState::alphaValues.y);
 		modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL);
 
 		int prevModelType = -1;
@@ -1557,9 +1555,9 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 
 			// ghosted enemy units
 			if (losStatus & LOS_CONTRADAR)
-				modelDrawerState->SetColorMultiplier(0.9f, 0.9f, 0.9f, alphaValues.z);
+				modelDrawerState->SetColorMultiplier(0.9f, 0.9f, 0.9f, IModelDrawerState::alphaValues.z);
 			else
-				modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, alphaValues.y);
+				modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, IModelDrawerState::alphaValues.y);
 
 			if (prevModelType != modelType || prevTexType != model->textureType) {
 				prevModelType = modelType; prevTexType = model->textureType;
@@ -1572,25 +1570,4 @@ void CUnitDrawerGL4::DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdr
 	}
 
 	smv.Unbind();
-}
-
-bool CUnitDrawerGL4::CheckLegacyDrawing(const CUnit* unit, bool noLuaCall) const
-{
-	if (unit->luaDraw || !noLuaCall)
-		return false;
-
-	return true;
-}
-
-bool CUnitDrawerGL4::CheckLegacyDrawing(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
-{
-	if (forceLegacyPath)
-		return false;
-
-	if (lodCall || preList != 0 || postList != 0 || CheckLegacyDrawing(unit, noLuaCall)) { //TODO: sanitize
-		ForceLegacyPath();
-		return false;
-	}
-
-	return true;
 }

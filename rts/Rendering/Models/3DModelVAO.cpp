@@ -11,6 +11,7 @@
 #include "Rendering/MatrixUploader.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
+#include "Sim/Features/Feature.h"
 
 
 void S3DModelVAO::EnableAttribs(bool inst) const
@@ -172,6 +173,16 @@ bool S3DModelVAO::AddToSubmission(const CUnit* unit, uint32_t aux)
 	return AddToSubmissionImpl(unit, model->indxStart, model->indxCount, unit->team, 0u, aux);
 }
 
+bool S3DModelVAO::AddToSubmission(const CFeature* feature, uint32_t aux)
+{
+	assert(feature);
+
+	const S3DModel* model = feature->model;
+	assert(model);
+
+	return AddToSubmissionImpl(feature, model->indxStart, model->indxCount, feature->team, 0u, aux);
+}
+
 bool S3DModelVAO::AddToSubmission(const UnitDef* unitDef, const int teamID, uint32_t aux)
 {
 	assert(unitDef);
@@ -278,6 +289,16 @@ bool S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, uint32
 	assert(model);
 
 	return SubmitImmediatelyImpl(unit, model->indxStart, model->indxCount, unit->team, 0u, aux, mode, bindUnbind);
+}
+
+bool S3DModelVAO::SubmitImmediately(const CFeature* feature, GLenum mode, uint32_t aux, bool bindUnbind)
+{
+	assert(feature);
+
+	const S3DModel* model = feature->model;
+	assert(model);
+
+	return SubmitImmediatelyImpl(feature, model->indxStart, model->indxCount, feature->team, 0u, aux, mode, bindUnbind);
 }
 
 bool S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, int teamID, GLenum mode, uint32_t aux, bool bindUnbind)

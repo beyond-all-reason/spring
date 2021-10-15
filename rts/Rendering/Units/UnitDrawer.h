@@ -14,14 +14,11 @@ class CSolidObject;
 class CUnit;
 struct S3DModel;
 struct SolidObjectDef;
-class ScopedMatricesMemAlloc;
 
 namespace Shader { struct IProgramObject; }
 
 class CUnitDrawer : public CModelDrawerBase<CUnitDrawerData, CUnitDrawer>
 {
-public:
-	//friend class CModelDrawerBase<CUnitDrawerData, CUnitDrawer>;
 public:
 	static void InitStatic();
 	//static void KillStatic(bool reload); //use base
@@ -56,7 +53,6 @@ public:
 	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { modelDrawerData->AddTempDrawUnit(tempDrawUnit); };
 
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
-	static const ScopedMatricesMemAlloc& GetUnitMatricesMemAlloc(const CUnit* unit) { return modelDrawerData->GetObjectMatricesMemAlloc(unit); }
 public:
 	// DrawUnit*
 	virtual void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
@@ -87,7 +83,7 @@ protected:
 	static bool ShouldDrawAlphaUnit(CUnit* u);
 	static bool ShouldDrawUnitShadow(CUnit* u);
 
-	virtual void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
+	virtual void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
 	virtual void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const = 0;
 
 	virtual void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
@@ -96,15 +92,6 @@ protected:
 	virtual void DrawAlphaAIUnits(int modelType) const = 0;
 
 	virtual void DrawGhostedBuildings(int modelType) const = 0;
-public:
-	/// <summary>
-	/// .x := regular unit alpha
-	/// .y := ghosted unit alpha (out of radar)
-	/// .z := ghosted unit alpha (inside radar)
-	/// .w := AI-temp unit alpha
-	/// </summary>
-	inline static float4 alphaValues = {}; //TODO move me to protected when UnitDrawerState is gone
-
 private:
 	inline static std::array<CUnitDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> unitDrawers = {};
 public:
@@ -156,7 +143,7 @@ public:
 	void DrawUnitIcons() const override;
 	void DrawUnitIconsScreen() const override;
 protected:
-	void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
+	void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
 	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
 
 	void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
@@ -227,7 +214,7 @@ public:
 	void DrawShadowPass() const override { DrawShadowPassImpl<false>(); }
 
 protected:
-	void DrawOpaqueUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
+	void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
 	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
 
 	void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
@@ -236,9 +223,6 @@ protected:
 	void DrawAlphaAIUnits(int modelType) const override {};
 
 	void DrawGhostedBuildings(int modelType) const override {};
-private:
-	bool CheckLegacyDrawing(const CUnit* unit, bool noLuaCall) const;
-	bool CheckLegacyDrawing(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const;
 };
 
 #define unitDrawer (CUnitDrawer::modelDrawer)
