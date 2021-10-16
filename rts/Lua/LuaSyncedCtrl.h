@@ -19,9 +19,9 @@ class LuaSyncedCtrl
 		inline static int inCreateFeature;
 		inline static int inDestroyFeature;
 		inline static int inGiveOrder;
-		static bool inTransferUnit;
-		static bool inHeightMap;
-		static bool inSmoothMesh;
+		inline static bool inTransferUnit;
+		inline static bool inHeightMap;
+		inline static bool inSmoothMesh;
 
 	private:
 		// all LuaHandleSynced

@@ -84,10 +84,6 @@ using std::min;
 /******************************************************************************/
 /******************************************************************************/
 
-bool LuaSyncedCtrl::inTransferUnit = false;
-bool LuaSyncedCtrl::inHeightMap = false;
-bool LuaSyncedCtrl::inSmoothMesh = false;
-
 static int heightMapx1 = 0;
 static int heightMapx2 = 0;
 static int heightMapz1 = 0;
