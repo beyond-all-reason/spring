@@ -48,7 +48,7 @@ void S3DModelVAO::DisableAttribs() const
 	}
 }
 
-void S3DModelVAO::Init()
+S3DModelVAO::S3DModelVAO()
 {
 	baseInstance = 0u;
 	std::vector<SVertexData> vertData; vertData.reserve(2 << 21);
@@ -129,6 +129,17 @@ void S3DModelVAO::Init()
 		indxVBO.Unbind();
 		instVBO.Unbind();
 	}
+}
+
+void S3DModelVAO::Init()
+{
+	Kill();
+	instance = new S3DModelVAO();
+}
+
+void S3DModelVAO::Kill()
+{
+	spring::SafeDelete(instance);
 }
 
 void S3DModelVAO::Bind() const

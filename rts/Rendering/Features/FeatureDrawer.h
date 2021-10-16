@@ -26,10 +26,7 @@ public:
 	virtual void DrawIndividual(const CFeature* feature, bool noLuaCall) const = 0;
 	virtual void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const = 0;
 protected:
-	virtual void DrawFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
-	virtual void DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const = 0;
 	virtual void DrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction) const = 0;
-	virtual void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
 	virtual void DrawAlphaFeature(CFeature* f) const = 0;
 public:
 	// modelDrawerData proxies
@@ -49,16 +46,16 @@ protected:
 class CFeatureDrawerBase : public CFeatureDrawer
 {
 public:
-	void Update() const override;
+	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {
+		DrawOpaquePassImpl<LuaObjType::LUAOBJ_FEATURE>(deferredPass, drawReflection, drawRefraction);
+	}
+	void DrawAlphaPass() const override {
+		DrawAlphaPassImpl<LuaObjType::LUAOBJ_FEATURE>();
+	};
 protected:
-	template<bool legacy>
-	void DrawShadowPassImpl() const;
-
-	template<bool legacy>
-	void DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const;
-
-	template<bool legacy>
-	void DrawAlphaPassImpl() const;
+	void DrawOpaqueObjectsAux(int modelType) const override {} //no aux objects here
+	void DrawAlphaObjectsAux(int modelType) const override {} //no aux objects here
+	void Update() const override;
 };
 
 class CFeatureDrawerLegacy : public CFeatureDrawerBase
@@ -67,10 +64,9 @@ public:
 	void Draw(bool drawReflection, bool drawRefraction) const override {
 		DrawImpl<true, LuaObjType::LUAOBJ_FEATURE>(drawReflection, drawRefraction);
 	}
-	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {
-		DrawOpaquePassImpl<true>(deferredPass, drawReflection, drawRefraction);
+	void DrawShadowPass() const override {
+		DrawShadowPassImpl<true, LuaObjType::LUAOBJ_FEATURE>();
 	}
-	void DrawAlphaPass() const override { DrawAlphaPassImpl<true>(); };
 
 	void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const override;
 	void DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const override;
@@ -79,16 +75,13 @@ public:
 	void DrawIndividual(const CFeature* feature, bool noLuaCall) const override;
 	void DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const override;
 protected:
-	void DrawFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
-	void DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawObjectsShadow(int modelType) const override;
+	void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawAlphaObjects(int modelType) const override;
+
 	void DrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction) const;
-	void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
 	void DrawAlphaFeature(CFeature* f) const override;
-
-	void DrawOpaqueFeatureShadow(CFeature* f) const;
-
-	// Inherited via CFeatureDrawerBase
-	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); };
+	void DrawFeatureShadow(CFeature* f) const;
 
 	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
 };
@@ -104,15 +97,14 @@ public:
 	void Draw(bool drawReflection, bool drawRefraction) const override {
 		DrawImpl<false, LuaObjType::LUAOBJ_FEATURE>(drawReflection, drawRefraction);
 	}
-	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {
-		DrawOpaquePassImpl<false>(deferredPass, drawReflection, drawRefraction);
+	void DrawShadowPass() const override {
+		DrawShadowPassImpl<false, LuaObjType::LUAOBJ_FEATURE>();
 	}
-	void DrawAlphaPass() const override { DrawAlphaPassImpl<false>(); };
-	void DrawShadowPass() const override { DrawShadowPassImpl<false>(); }
 protected:
-	void DrawFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
-	void DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
-	void DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
+	void DrawObjectsShadow(int modelType) const override;
+
+	void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawAlphaObjects(int modelType) const override;
 };
 
 #define featureDrawer (CFeatureDrawer::modelDrawer)

@@ -89,7 +89,7 @@ public:
 		std::swap(*ki, *(ke - 1));
 	}
 
-
+	bool empty() const { return numObjs == 0; }
 	unsigned int GetNumObjects() const { return numObjs; }
 	unsigned int GetNumObjectBins() const { return numBins; }
 	unsigned int GetObjectBinKey(unsigned int idx) const { return keys[idx]; }

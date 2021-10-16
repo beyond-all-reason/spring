@@ -2908,7 +2908,7 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		if (!action.GetArgs().empty()) {
 			const int drawDist = atoi(action.GetArgs().c_str());
-			CUnitDrawer::SetModelDrawDist(static_cast<float>(drawDist));
+			CModelDrawerDataConcept::SetModelDrawDist(static_cast<float>(drawDist));
 			configHandler->Set("UnitLodDist", drawDist);
 			LOG("Set UnitLodDist to %i", drawDist);
 		} else {

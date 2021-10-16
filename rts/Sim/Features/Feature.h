@@ -127,8 +127,6 @@ public:
 	int fireTime = 0;
 	int smokeTime = 0;
 
-	bool drawAsFarTex = false;
-
 	SResourcePack defResources = {0.0f, 1.0f};
 	SResourcePack resources = {0.0f, 1.0f};
 

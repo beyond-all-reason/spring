@@ -40,8 +40,8 @@ public:
 	static float GetUnitIconScaleUI() { return modelDrawerData->GetUnitIconScaleUI(); }
 	static void SetUnitIconScaleUI(float scale) { modelDrawerData->SetUnitIconScaleUI(scale); }
 
-	static float GetUnitDrawDist() { return CModelRenderDataConcept::modelDrawDist; }
-	static void SetModelDrawDist(float dist) { CModelRenderDataConcept::SetModelDrawDist(dist); }
+	static float GetUnitDrawDist() { return CModelDrawerDataConcept::modelDrawDist; }
+	static void SetModelDrawDist(float dist) { CModelDrawerDataConcept::SetModelDrawDist(dist); }
 
 	static float GetUnitIconDist(float dist) { return modelDrawerData->unitIconDist; }
 	static void SetUnitIconDist(float dist) { modelDrawerData->SetUnitIconDist(dist); }
@@ -84,14 +84,6 @@ protected:
 	static bool ShouldDrawAlphaUnit(CUnit* u);
 	static bool ShouldDrawUnitShadow(CUnit* u);
 
-	virtual void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
-	virtual void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const = 0;
-
-	virtual void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const = 0;
-
-	virtual void DrawOpaqueAIUnits(int modelType) const = 0;
-	virtual void DrawAlphaAIUnits(int modelType) const = 0;
-
 	virtual void DrawGhostedBuildings(int modelType) const = 0;
 private:
 	inline static std::array<CUnitDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> unitDrawers = {};
@@ -114,17 +106,25 @@ public:
 
 class CUnitDrawerBase : public CUnitDrawer {
 public:
-	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override;
-	void DrawAlphaPass() const override;
+	void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const override {
+		DrawOpaquePassImpl<LuaObjType::LUAOBJ_UNIT>(deferredPass, drawReflection, drawRefraction);
+	};
+	void DrawAlphaPass() const override {
+		DrawAlphaPassImpl<LuaObjType::LUAOBJ_UNIT>();
+	};
 protected:
 	void Update() const override;
-protected:
-	template<bool legacy>
-	void DrawShadowPassImpl() const;
 };
 
 class CUnitDrawerLegacy : public CUnitDrawerBase {
 public:
+	void Draw(bool drawReflection, bool drawRefraction = false) const override {
+		DrawImpl<true, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction);
+	}
+	void DrawShadowPass() const override {
+		DrawShadowPassImpl<true, LuaObjType::LUAOBJ_UNIT>();
+	}
+
 	void DrawUnitModel(const CUnit* unit, bool noLuaCall) const override;
 	void DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const override;
 	void DrawUnitTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const override;
@@ -136,27 +136,23 @@ public:
 
 	bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const override;
 
-
-	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<true, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction); }
-	void DrawShadowPass() const override { DrawShadowPassImpl<true>(); }
-
 	void DrawUnitMiniMapIcons() const override;
 	void DrawUnitIcons() const override;
 	void DrawUnitIconsScreen() const override;
 protected:
-	void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
-	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawObjectsShadow(int modelType) const override;
+	void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const;
+	void DrawOpaqueObjectsAux(int modelType) const override; //AI units
 
-	void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
-
-	void DrawOpaqueAIUnits(int modelType) const override;
-	void DrawAlphaAIUnits(int modelType) const override;
+	void DrawAlphaObjects(int modelType) const override;
+	void DrawAlphaObjectsAux(int modelType) const override;
 
 	void DrawGhostedBuildings(int modelType) const override;
 
 	void DrawOpaqueUnit(CUnit* unit, bool drawReflection, bool drawRefraction) const;
-	void DrawOpaqueUnitShadow(CUnit* unit) const;
+	void DrawUnitShadow(CUnit* unit) const;
 	void DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) const;
+
 	void DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const;
 	void DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const;
 	void DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUnit& unit) const;
@@ -194,6 +190,13 @@ class CUnitDrawerGLSL final : public CUnitDrawerLegacy {};
 //TODO remove CUnitDrawerLegacy inheritance
 class CUnitDrawerGL4 final : public CUnitDrawerLegacy {
 public:
+	void Draw(bool drawReflection, bool drawRefraction = false) const override {
+		DrawImpl<false, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction);
+	}
+	void DrawShadowPass() const override {
+		DrawShadowPassImpl<false, LuaObjType::LUAOBJ_UNIT>();
+	}
+
 	// DrawUnit*
 	/* TODO figure out
 	void DrawUnitModel(const CUnit* unit, bool noLuaCall) const = 0;
@@ -210,20 +213,23 @@ public:
 	void DrawIndividualDefOpaque(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 	void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 	*/
-
-	void Draw(bool drawReflection, bool drawRefraction = false) const override { DrawImpl<false, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction); }
-	void DrawShadowPass() const override { DrawShadowPassImpl<false>(); }
-
 protected:
-	void DrawUnitsShadow(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
-	void DrawOpaqueUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawObjectsShadow(int modelType) const override;
+	void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const override;
+	void DrawAlphaObjects(int modelType) const override;
 
-	void DrawAlphaUnits(const CUnitRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const override;
+	void DrawAlphaObjectsAux(int modelType) const override {
+		#pragma message("TODO: Implement")
+	};
 
-	void DrawOpaqueAIUnits(int modelType) const override {};
-	void DrawAlphaAIUnits(int modelType) const override {};
+	void DrawOpaqueObjectsAux(int modelType) const override {
+		#pragma message("TODO: Implement")
+	};
 
-	void DrawGhostedBuildings(int modelType) const override {};
+
+	void DrawGhostedBuildings(int modelType) const override {
+		#pragma message("TODO: Implement")
+	};
 };
 
 #define unitDrawer (CUnitDrawer::modelDrawer)

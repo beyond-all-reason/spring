@@ -31,6 +31,17 @@ enum TerrainChangeTypes {
 	TERRAINCHANGE_OBJECT_DELETED       = 5,
 };
 
+enum DrawFlags : uint8_t {
+	SO_NODRAW_FLAG = 0, // must be 0
+	SO_OPAQUE_FLAG = 1,
+	SO_ALPHAF_FLAG = 2,
+	SO_REFLEC_FLAG = 4,
+	SO_REFRAC_FLAG = 8,
+	SO_SHADOW_FLAG = 16,
+	SO_FARTEX_FLAG = 32,
+	SO_DRICON_FLAG = 128, //unused so far
+};
+
 enum YardmapStates {
 	YARDMAP_OPEN        = 0,    // always free      (    walkable      buildable)
 //	YARDMAP_WALKABLE    = 4,    // open for walk    (    walkable, not buildable)
@@ -287,6 +298,10 @@ public:
 
 	virtual void SetMass(float newMass);
 
+	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
+	void SetDrawFlag(DrawFlags f) { drawFlag  = f; }
+	void AddDrawFlag(DrawFlags f) { drawFlag |= f; }
+	bool HasDrawFlag(DrawFlags f) const { return (drawFlag & f) == f; }
 private:
 	void SetMidPos(const float3& mp, bool relative) {
 		if (relative) {
@@ -305,7 +320,6 @@ private:
 
 	float3 GetMidPos() const { return (GetObjectSpacePos(relMidPos)); }
 	float3 GetAimPos() const { return (GetObjectSpacePos(relAimPos)); }
-
 public:
 	float health = 0.0f;
 	float maxHealth = 1.0f;
@@ -403,7 +417,7 @@ public:
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
 
-	int drawQuad = -1; /// which drawQuad we are part of (unsynced)
+	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
 
 	/**
 	 * @brief mod controlled parameters

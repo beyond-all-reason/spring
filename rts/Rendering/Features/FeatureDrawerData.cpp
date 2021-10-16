@@ -27,7 +27,6 @@ void CFeatureDrawerData::RenderFeatureCreated(const CFeature* feature)
 	if (feature->def->drawType != DRAWTYPE_MODEL)
 		return;
 
-	SetFeatureDrawAlpha(feature, nullptr);
 	UpdateObject(feature, true);
 }
 
@@ -38,7 +37,7 @@ void CFeatureDrawerData::RenderFeatureDestroyed(const CFeature* feature)
 }
 
 CFeatureDrawerData::CFeatureDrawerData(bool& mtModelDrawer_)
-	: CFeatureRenderDataBase("[CFeatureDrawerData]", 313373, mtModelDrawer_)
+	: CFeatureDrawerDataBase("[CFeatureDrawerData]", 313373, mtModelDrawer_)
 {
 	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
 	configHandler->NotifyOnChange(this, { "FeatureDrawDistance", "FeatureFadeDistance" });
@@ -68,6 +67,9 @@ void CFeatureDrawerData::ConfigNotify(const std::string& key, const std::string&
 	featureFadeDistance = std::max(0.0f, featureFadeDistance);
 	featureFadeDistance = std::min(featureDrawDistance, featureFadeDistance);
 
+	sqFadeDistBegin = featureFadeDistance * featureFadeDistance;
+	sqFadeDistEnd   = featureDrawDistance * featureDrawDistance;
+
 	LOG_L(L_INFO, "[FeatureDrawer::%s] {draw,fade}distance set to {%f,%f}", __func__, featureDrawDistance, featureFadeDistance);
 }
 
@@ -76,13 +78,16 @@ void CFeatureDrawerData::Update()
 	const static std::function<bool(const CCamera*, const CFeature*)> shouldUpdateFunc = [](const CCamera* cam, const CFeature* feature) -> bool {
 		assert(feature->def->drawType == DRAWTYPE_MODEL);
 
-		if (feature->drawAsFarTex)
+		if (feature->drawFlag == DrawFlags::SO_NODRAW_FLAG)
+			return false;
+
+		if (feature->drawFlag == DrawFlags::SO_FARTEX_FLAG)
+			return false;
+
+		if (cam->GetCamType() == CCamera::CAMTYPE_SHADOW && feature->drawFlag == DrawFlags::SO_ALPHAF_FLAG)
 			return false;
 
 		if (feature->noDraw)
-			return false;
-
-		if (feature->drawAlpha == 0.0f) //?
 			return false;
 
 		if (feature->IsInVoid())
@@ -97,38 +102,18 @@ void CFeatureDrawerData::Update()
 		return cam->InView(feature->drawMidPos, feature->GetDrawRadius());
 	};
 
-
-	const CCamera* playerCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
-	const float sqFadeDistBegin = featureFadeDistance * featureFadeDistance;
-	const float sqFadeDistEnd = featureDrawDistance * featureDrawDistance;
-
-	const static auto updateBody = [playerCam, sqFadeDistBegin, sqFadeDistEnd](CFeature* f) {
-		UpdateDrawPos(f);
-
-		// here camera is only used to determine drawAlpha/drawAsFarTex attributes
-		if (SetFeatureDrawAlpha(f, playerCam, sqFadeDistBegin, sqFadeDistEnd)) {
-			f->UpdateTransform(f->drawPos, false);
-		}
-		else {
-			// note: it looks pretty bad to first alpha-fade and then
-			// draw a fully *opaque* fartex, so restrict impostors to
-			// non-fading features
-			f->drawAsFarTex = !f->alphaFade;
-		}
-	};
-
 	if (mtModelDrawer) {
 		for_mt(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
-			updateBody(f);
+			UpdateDrawPos(f);
 		});
 	}
 	else {
 		for (CFeature* f : unsortedObjects)
-			updateBody(f);
+			UpdateDrawPos(f);
 	}
 
-	UpdateCommon(shouldUpdateFunc);
+	UpdateMatrices();
 }
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
@@ -136,121 +121,105 @@ bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
 	return (co->drawAlpha < 1.0f);
 }
 
-/*
-void CFeatureDrawerData::FlagVisibleFeatures(const CCamera* currCamera, bool drawShadowPass, bool drawReflection, bool drawRefraction, bool drawFarFeatures)
+void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 {
-	const CCamera* playerCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+	CFeature* f = static_cast<CFeature*>(o);
+	f->ResetDrawFlag();
 
-	const auto& quads = GetCamVisibleQuads(currCamera->GetCamType());
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+		if (camType == CCamera::CAMTYPE_UWREFL && !water->CanDrawReflectionPass())
+			continue;
 
+		if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))
+			continue;
 
+		const CCamera* cam = CCameraHandler::GetCamera(camType);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = GetRdrContProxies(modelType);
-		for (int quad : quads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
+		if (f->noDraw)
+			continue;
 
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
+		if (f->IsInVoid())
+			continue;
 
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
+		if (!f->IsInLosForAllyTeam(gu->myAllyTeam) && !gu->spectatingFullView)
+			continue;
 
-			for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-				for (CFeature* f : rdrCntProxy.GetObjectBin(i)) {
-					assert(quad == f->drawQuad);
+		if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
+			continue;
 
-					if (f->noDraw)
-						continue;
-
-					if (f->IsInVoid())
-						continue;
-
-					assert(f->def->drawType == DRAWTYPE_MODEL);
-
-					if (!gu->spectatingFullView && !f->IsInLosForAllyTeam(gu->myAllyTeam))
-						continue;
-
-					if (drawShadowPass) {
-						if (SetFeatureDrawAlpha(f, playerCam, sqFadeDistBegin, sqFadeDistEnd)) {
-							// no shadows for fully alpha-faded features from player's POV
-							f->UpdateTransform(f->drawPos, false);
-							f->SetDrawFlag(CFeature::FD_SHADOW_FLAG);
-						}
-						continue;
-					}
-
-					if (drawRefraction && !f->IsInWater())
-						continue;
-
-					if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(f->drawMidPos, currCamera->GetPos(), f->GetDrawRadius()))
-						continue;
-
-					if (SetFeatureDrawAlpha(f, currCamera, sqFadeDistBegin, sqFadeDistEnd)) {
-						f->UpdateTransform(f->drawPos, false);
-						f->SetDrawFlag(mix(int(CFeature::FD_OPAQUE_FLAG), int(CFeature::FD_ALPHAF_FLAG), f->drawAlpha < 1.0f));
-						continue;
-					}
-
+		switch (camType)
+			{
+			case CCamera::CAMTYPE_PLAYER: {
+				const float sqrCamDist = (f->drawPos - cam->GetPos()).SqLength();
+				const float farTexDist = Square(f->GetDrawRadius() * CModelDrawerDataConcept::modelDrawDist);
+				if (sqrCamDist >= farTexDist) {
 					// note: it looks pretty bad to first alpha-fade and then
 					// draw a fully *opaque* fartex, so restrict impostors to
 					// non-fading features
-					f->SetDrawFlag(CFeature::FD_FARTEX_FLAG * drawFarFeatures * (!f->alphaFade));
+					if (!f->alphaFade)
+						f->SetDrawFlag(DrawFlags::SO_FARTEX_FLAG);
+
+					continue;
 				}
-			}
+
+				// special case for non-fading features
+				if (!f->alphaFade) {
+					f->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+					f->drawAlpha = 1.0f;
+					continue;
+				}
+
+				const float sqFadeDistBeg = mix(sqFadeDistBegin, farTexDist * (sqFadeDistBegin / sqFadeDistEnd), (farTexDist < sqFadeDistEnd));
+				const float sqFadeDistEnd = mix(sqFadeDistEnd, farTexDist, (farTexDist < sqFadeDistEnd));
+
+				// draw feature as normal, no fading
+				if (sqrCamDist < sqFadeDistBeg) {
+					f->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+
+					if (f->IsInWater())
+						f->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+
+					f->drawAlpha = 1.0f;
+					continue;
+				}
+
+				// otherwise save it for the fade-pass
+				if (sqrCamDist < sqFadeDistEnd) {
+					f->drawAlpha = 1.0f - (sqrCamDist - sqFadeDistBeg) / (sqFadeDistEnd - sqFadeDistBeg);
+					f->SetDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+					continue;
+				}
+			} break;
+
+			case CCamera::CAMTYPE_UWREFL: {
+				if (f->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
+					continue;
+
+				if (CModelDrawerHelper::ObjectVisibleReflection(f->drawMidPos, cam->GetPos(), f->GetDrawRadius()))
+					f->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+			} break;
+
+			case CCamera::CAMTYPE_SHADOW: {
+				if (f->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
+					continue;
+
+				if (f->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+					continue;
+
+				f->AddDrawFlag(DrawFlags::SO_SHADOW_FLAG);
+			} break;
+
+			default: { assert(false); } break;
 		}
 	}
-}
 
-void CFeatureDrawerData::GetVisibleFeatures(CCamera* cam, int extraSize, bool drawFar) {
-	FlagVisibleFeatures(
-		cam,
-		cam->GetCamType() == CCamera::CAMTYPE_SHADOW,
-		water->DrawReflectionPass(),
-		water->DrawRefractionPass(),
-		drawFar
-	);
+	if (f->alwaysUpdateMat || (f->drawFlag > DrawFlags::SO_NODRAW_FLAG && f->drawFlag < DrawFlags::SO_FARTEX_FLAG)) {
+		f->UpdateTransform(f->drawPos, false);
+	}
 }
-*/
 
 void CFeatureDrawerData::UpdateDrawPos(CFeature* f)
 {
 	f->drawPos    = f->GetDrawPos(globalRendering->timeOffset);
 	f->drawMidPos = f->GetMdlDrawMidPos();
-}
-
-bool CFeatureDrawerData::SetFeatureDrawAlpha(const CFeature* cf, const CCamera* cam, float sqFadeDistMin, float sqFadeDistMax)
-{
-	CFeature* f = const_cast<CFeature*>(cf);
-
-	// always reset outside ::Draw
-	if (cam == nullptr)
-		return (f->drawAlpha = 0.0f, f->drawAsFarTex = false, false);
-
-	const float sqrCamDist = (f->pos - cam->GetPos()).SqLength();
-	const float farTexDist = Square(f->GetDrawRadius() * CModelRenderDataConcept::modelDrawDist);
-
-	// first test if feature should be rendered as a fartex
-	if (sqrCamDist >= farTexDist)
-		return false;
-
-	// special case for non-fading features
-	if (!f->alphaFade)
-		return (f->drawAlpha = 1.0f, true);
-
-	const float sqFadeDistBeg = mix(sqFadeDistMin, farTexDist * (sqFadeDistMin / sqFadeDistMax), (farTexDist < sqFadeDistMax));
-	const float sqFadeDistEnd = mix(sqFadeDistMax, farTexDist, (farTexDist < sqFadeDistMax));
-
-	// draw feature as normal, no fading
-	if (sqrCamDist < sqFadeDistBeg)
-		return (f->drawAlpha = 1.0f, true);
-
-	// otherwise save it for the fade-pass
-	if (sqrCamDist < sqFadeDistEnd)
-		return (f->drawAlpha = 1.0f - ((sqrCamDist - sqFadeDistBeg) / (sqFadeDistEnd - sqFadeDistBeg)), true);
-
-	// do not draw at all, fully faded
-	return false;
 }

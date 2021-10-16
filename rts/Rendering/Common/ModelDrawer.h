@@ -6,8 +6,9 @@
 #include <stack>
 #include <tuple>
 
-#include "ModelRenderData.h"
+#include "ModelDrawerData.h"
 #include "ModelDrawerState.hpp"
+#include "ModelDrawerHelpers.h"
 #include "System/Log/ILog.h"
 #include "System/TypeToStr.h"
 #include "Rendering/LuaObjectDrawer.h"
@@ -16,6 +17,8 @@
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Textures/3DOTextureHandler.h"
+#include "Rendering/Textures/S3OTextureHandler.h"
 
 namespace GL { struct GeometryBuffer; }
 template<typename T> class ScopedModelDrawerImpl;
@@ -126,6 +129,14 @@ public:
 	virtual void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const = 0;
 	virtual void DrawShadowPass() const = 0;
 	virtual void DrawAlphaPass() const = 0;
+protected:
+	virtual void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const = 0;
+	virtual void DrawOpaqueObjectsAux(int modelType) const = 0;
+
+	virtual void DrawAlphaObjects(int modelType) const = 0;
+	virtual void DrawAlphaObjectsAux(int modelType) const = 0;
+
+	virtual void DrawObjectsShadow(int modelType) const = 0;
 public:
 	// Setup Fixed State, reused by a few other classes, thus public:
 	void SetupOpaqueDrawing(bool deferredPass) const { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
@@ -136,19 +147,26 @@ public:
 protected:
 	template<bool legacy, LuaObjType lot>
 	void DrawImpl(bool drawReflection, bool drawRefraction) const;
-	template<bool legacy, LuaObjType lot>
-	void DrawShadowPassImpl() const; //unused
 
+	template<LuaObjType lot>
+	void DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const;
+
+	template<LuaObjType lot>
+	void DrawAlphaPassImpl() const;
+
+	template<bool legacy, LuaObjType lot>
+	void DrawShadowPassImpl() const;
+protected:
 	// TODO move into TDrawerData?
 	static bool CheckLegacyDrawing(const CSolidObject* so, bool noLuaCall);
 	static bool CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall);
 private:
 	static void Push(bool legacy, bool modern) {
-		implStack.emplace(std::make_pair(modelDrawer, modelDrawerState));
+		implStack.emplace(std::make_tuple(modelDrawer, modelDrawerState, mtModelDrawer));
 		SelectImplementation(true, legacy, modern);
 	}
 	static void Pop() {
-		std::tie(modelDrawer, modelDrawerState) = implStack.top();
+		std::tie(modelDrawer, modelDrawerState, mtModelDrawer) = implStack.top();
 		implStack.pop();
 	}
 private:
@@ -170,7 +188,7 @@ protected:
 	inline static IModelDrawerState* modelDrawerState = nullptr;
 	inline static std::array<TDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> modelDrawers = {};
 
-	inline static std::stack<std::pair<TDrawer*, IModelDrawerState*>> implStack;
+	inline static std::stack<std::tuple<TDrawer*, IModelDrawerState*, bool>> implStack;
 protected:
 	static constexpr std::string_view className = spring::TypeToStr<TDrawer>();
 };
@@ -325,14 +343,65 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawImpl(bool drawReflection
 	}
 }
 
+template<typename TDrawerData, typename TDrawer>
+template<LuaObjType lot>
+inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const
+{
+	static const std::string methodName = std::string(className) + "::DrawOpaquePass";
+	SCOPED_TIMER(methodName.c_str());
 
-//unused
+	SetupOpaqueDrawing(deferredPass);
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		if (modelDrawerData->GetModelRenderer(modelType).empty())
+			continue;
+
+		CModelDrawerHelper::PushModelRenderState(modelType);
+		DrawOpaqueObjects(modelType, drawReflection, drawRefraction);
+		DrawOpaqueObjectsAux(modelType);
+		CModelDrawerHelper::PopModelRenderState(modelType);
+	}
+
+	ResetOpaqueDrawing(deferredPass);
+
+	// draw all custom'ed units that were bypassed in the loop above
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
+	LuaObjectDrawer::DrawOpaqueMaterialObjects(lot, deferredPass);
+}
+
+template<typename TDrawerData, typename TDrawer>
+template<LuaObjType lot>
+inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawAlphaPassImpl() const
+{
+	static const std::string methodName = std::string(className) + "::DrawAlphaPass";
+	SCOPED_TIMER(methodName.c_str());
+
+	SetupAlphaDrawing(false);
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		if (modelDrawerData->GetModelRenderer(modelType).empty())
+			continue;
+
+		CModelDrawerHelper::PushModelRenderState(modelType);
+		DrawAlphaObjects(modelType);
+		DrawAlphaObjectsAux(modelType);
+		CModelDrawerHelper::PopModelRenderState(modelType);
+	}
+
+	ResetAlphaDrawing(false);
+
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
+	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_UNIT, false);
+}
+
 template<typename TDrawerData, typename TDrawer>
 template<bool legacy, LuaObjType lot>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 {
 	static const std::string methodName = std::string(className) + "::DrawShadowPass";
 	SCOPED_TIMER(methodName.c_str());
+
+	assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
 
 	if constexpr (legacy) {
 		glColor3f(1.0f, 1.0f, 1.0f);
@@ -354,41 +423,17 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 	assert(po->IsValid());
 	po->Enable();
 
-	{
-		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-		const auto& quads = modelDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
+	// 3DO's have clockwise-wound faces and
+	// (usually) holes, so disable backface
+	// culling for them
+	// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+		if (modelDrawerData->GetModelRenderer(modelType).empty())
+			continue;
 
-		// 3DO's have clockwise-wound faces and
-		// (usually) holes, so disable backface
-		// culling for them
-		// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
-
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-			for (int quad : quads) {
-				const auto& rdrCntProxy = rdrContProxies[quad];
-
-				// non visible quad
-				if (!rdrCntProxy.IsQuadVisible())
-					continue;
-
-				// quad has no objects
-				if (!rdrCntProxy.HasObjects())
-					continue;
-
-				if (modelType == MODELTYPE_3DO)
-					glDisable(GL_CULL_FACE);
-
-				// note: just use DrawOpaqueUnits()? would
-				// save texture switches needed anyway for
-				// UNIT_SHADOW_ALPHA_MASKING
-				DrawOpaqueObjectsShadow(rdrCntProxy, modelType);
-
-				if (modelType == MODELTYPE_3DO)
-					glEnable(GL_CULL_FACE);
-
-			}
-		}
+		if (modelType == MODELTYPE_3DO) glDisable(GL_CULL_FACE);
+		DrawObjectsShadow(modelType);
+		if (modelType == MODELTYPE_3DO) glEnable(GL_CULL_FACE);
 	}
 
 	po->Disable();

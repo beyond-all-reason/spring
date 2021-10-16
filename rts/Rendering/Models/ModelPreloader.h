@@ -16,7 +16,7 @@ public:
 		LoadWeaponDefs();
 
 		// after that point we should've loaded all models, it's time to dispatch VBO/EBO/VAO creation
-		S3DModelVAO::GetInstance().Init();
+		S3DModelVAO::Init(); //TODO figure out where to put S3DModelVAO::Kill();
 	}
 private:
 	static constexpr bool enabled = true;

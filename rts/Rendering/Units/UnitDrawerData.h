@@ -2,7 +2,7 @@
 #pragma once
 
 #include "System/float3.h"
-#include "Rendering/Common/ModelRenderData.h"
+#include "Rendering/Common/ModelDrawerData.h"
 #include "Rendering/UnitDefImage.h"
 #include "Game/GlobalUnsynced.h"
 
@@ -35,7 +35,7 @@ public:
 	int lastDrawFrame;
 };
 
-class CUnitDrawerData : public CUnitRenderDataBase {
+class CUnitDrawerData : public CUnitDrawerDataBase {
 public:
 	// CEventClient interface
 	bool WantsEvent(const std::string& eventName) override {
@@ -118,6 +118,8 @@ public:
 	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
 
 	const std::vector<CUnit*>& GetIconUnits() const { return iconUnits; }
+protected:
+	void UpdateObjectDrawFlags(CSolidObject* o) const override;
 private:
 	const icon::CIconData* GetUnitIcon(const CUnit* unit);
 
@@ -126,7 +128,7 @@ private:
 	void UpdateUnitMiniMapIcon(const CUnit* unit, bool forced, bool killed);
 	void UpdateUnitIconState(CUnit* unit);
 	void UpdateUnitIconStateScreen(CUnit* unit);
-	static void UpdateUnitDrawPos(CUnit* unit);
+	static void UpdateDrawPos(CUnit* unit);
 
 	/// Returns true if the given unit should be drawn as icon in the current frame.
 	bool DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const;

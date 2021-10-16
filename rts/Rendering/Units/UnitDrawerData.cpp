@@ -34,7 +34,7 @@ static FixedDynMemPool<sizeof(GhostSolidObject), MAX_UNITS / 1000, MAX_UNITS / 3
 ///////////////////////////
 
 CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
-	: CUnitRenderDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
+	: CUnitDrawerDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
 {
 	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
@@ -108,13 +108,13 @@ void CUnitDrawerData::Update()
 
 	iconZoomDist = dist;
 
-	const static auto updateBody = [this](CUnit* unit) {
+	const static auto updateBody = [this](CUnit* u) {
 		if (useScreenIcons)
-			UpdateUnitIconStateScreen(unit);
+			UpdateUnitIconStateScreen(u);
 		else
-			UpdateUnitIconState(unit);
+			UpdateUnitIconState(u);
 
-		UpdateUnitDrawPos(unit);
+		UpdateDrawPos(u);
 	};
 
 	if (mtModelDrawer) {
@@ -139,29 +139,7 @@ void CUnitDrawerData::Update()
 		sqCamDistToGroundForIcons = overGround * overGround;
 	}
 
-	//////////////////////////
-
-	const static std::function<bool(const CCamera*, const CUnit*)> shouldUpdateFunc = [](const CCamera* cam, const CUnit* unit) -> bool {
-		if (unit->noDraw)
-			return false;
-
-		if (unit->IsInVoid())
-			return false;
-
-		// unit will be drawn as icon instead
-		if (unit->isIcon)
-			return false;
-
-		if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
-			return false;
-
-		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(unit->drawMidPos, cam->GetPos(), unit->GetDrawRadius()))
-			return false;
-
-		return cam->InView(unit->drawMidPos, unit->GetDrawRadius());
-	};
-
-	UpdateCommon(shouldUpdateFunc);
+	UpdateMatrices();
 }
 
 void CUnitDrawerData::UpdateGhostedBuildings()
@@ -316,7 +294,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	unit->isIcon = iconZoomDist / iconSizeMult > iconFadeStart && std::abs(pos.x - radiusPos.x) < limit * 0.9;
 }
 
-void CUnitDrawerData::UpdateUnitDrawPos(CUnit* u)
+void CUnitDrawerData::UpdateDrawPos(CUnit* u)
 {
 	const CUnit* t = u->GetTransporter();
 
@@ -328,6 +306,82 @@ void CUnitDrawerData::UpdateUnitDrawPos(CUnit* u)
 	}
 
 	u->drawMidPos = u->GetMdlDrawMidPos();
+}
+
+void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
+{
+	CUnit* u = static_cast<CUnit*>(o);
+	u->ResetDrawFlag();
+
+	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
+		if (camType == CCamera::CAMTYPE_UWREFL && !water->CanDrawReflectionPass())
+			continue;
+
+		if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))
+			continue;
+
+		const CCamera* cam = CCameraHandler::GetCamera(camType);
+
+		if (u->noDraw)
+			continue;
+
+		if (u->IsInVoid())
+			continue;
+
+		// unit will be drawn as icon instead
+		if (u->isIcon)
+			continue;
+
+		if (!(u->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+			continue;
+
+		if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
+			continue;
+
+		switch (camType)
+		{
+			case CCamera::CAMTYPE_PLAYER: {
+				const float sqrCamDist = (u->drawPos - cam->GetPos()).SqLength();
+				const float farTexDist = Square(u->GetDrawRadius() * CModelDrawerDataConcept::modelDrawDist);
+				if (sqrCamDist >= farTexDist) {
+					u->SetDrawFlag(DrawFlags::SO_FARTEX_FLAG);
+					continue;
+				}
+
+				if (!IsAlpha(u)) {
+					u->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+
+					if (u->IsInWater())
+						u->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+				}
+				else {
+					u->SetDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+				}
+			} break;
+
+			case CCamera::CAMTYPE_UWREFL: {
+				if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
+					continue;
+
+				if (CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
+					u->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+			} break;
+
+			case CCamera::CAMTYPE_SHADOW: {
+				if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
+					continue;
+
+				if (u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+					continue;
+
+				u->AddDrawFlag(DrawFlags::SO_SHADOW_FLAG);
+			} break;
+
+			default: { assert(false); } break;
+
+		}
+
+	}
 }
 
 bool CUnitDrawerData::DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const

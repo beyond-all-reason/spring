@@ -34,16 +34,13 @@ struct SIndexAndCount {
 // singleton
 class S3DModelVAO {
 public:
-	static S3DModelVAO& GetInstance() {
-		static S3DModelVAO instance;
-		return instance;
-	};
+	static void Init();
+	static void Kill();
+	static S3DModelVAO& GetInstance() { return *instance; }
 public:
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = 2 << 15;
 public:
-	S3DModelVAO() = default;
-
-	void Init();
+	S3DModelVAO();
 
 	void Bind() const;
 	void Unbind() const;
@@ -88,6 +85,8 @@ private:
 	);
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
+private:
+	inline static S3DModelVAO* instance = nullptr;
 private:
 	uint32_t baseInstance = 0u;
 

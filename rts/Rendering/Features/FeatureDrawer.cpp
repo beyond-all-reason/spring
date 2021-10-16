@@ -78,7 +78,7 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, b
 	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
 		return false;
 
-	if (f->drawAsFarTex) {
+	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
 		farTextureHandler->Queue(f);
 		return false;
 	}
@@ -109,7 +109,7 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
 		return false;
 
-	if (f->drawAsFarTex) {
+	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
 		farTextureHandler->Queue(f);
 		return false;
 	}
@@ -145,7 +145,7 @@ bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
 		return false;
 
-	if (f->drawAsFarTex) {
+	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
 		//farTextureHandler->Queue(f);
 		return false;
 	}
@@ -167,158 +167,6 @@ void CFeatureDrawer::PopIndividualState(const CFeature* feature, bool deferredPa
 {
 	CModelDrawerHelper::PopModelRenderState(feature);
 	ResetOpaqueDrawing(false);
-}
-
-template<bool legacy>
-void CFeatureDrawerBase::DrawShadowPassImpl() const
-{
-	SCOPED_TIMER("CFeatureDrawerBase::DrawShadowPass");
-	if constexpr (legacy) {
-		glColor3f(1.0f, 1.0f, 1.0f);
-		glPolygonOffset(1.0f, 1.0f);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-
-		glAlphaFunc(GL_GREATER, 0.5f);
-		glEnable(GL_ALPHA_TEST);
-	}
-
-	CShadowHandler::ShadowGenProgram shadowGenProgram;
-	if constexpr (legacy)
-		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL;
-	else
-		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4;
-
-	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(shadowGenProgram);
-	assert(po);
-	assert(po->IsValid());
-	po->Enable();
-
-	{
-		assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
-		const auto& quads = modelDrawerData->GetCamVisibleQuads(CCamera::CAMTYPE_SHADOW);
-
-		// 3DO's have clockwise-wound faces and
-		// (usually) holes, so disable backface
-		// culling for them
-		// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
-
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-			const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-			for (int quad : quads) {
-				const auto& rdrCntProxy = rdrContProxies[quad];
-
-				// non visible quad
-				if (!rdrCntProxy.IsQuadVisible())
-					continue;
-
-				// quad has no objects
-				if (!rdrCntProxy.HasObjects())
-					continue;
-
-				if (modelType == MODELTYPE_3DO)
-					glDisable(GL_CULL_FACE);
-
-				// note: just use DrawOpaqueUnits()? would
-				// save texture switches needed anyway for
-				// UNIT_SHADOW_ALPHA_MASKING
-				DrawFeaturesShadow(rdrCntProxy, modelType);
-
-				if (modelType == MODELTYPE_3DO)
-					glEnable(GL_CULL_FACE);
-
-			}
-		}
-	}
-
-	po->Disable();
-
-	if constexpr (legacy) {
-		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_POLYGON_OFFSET_FILL);
-	}
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
-	LuaObjectDrawer::DrawShadowMaterialObjects(LUAOBJ_FEATURE, false);
-}
-
-template<bool legacy>
-void CFeatureDrawerBase::DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const
-{
-	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
-
-	SetupOpaqueDrawing(deferredPass);
-
-	auto& smv = S3DModelVAO::GetInstance();
-	smv.Bind();
-
-	modelDrawerState->SetColorMultiplier();
-
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-
-		CModelDrawerHelper::PushModelRenderState(modelType);
-
-		for (int quad : quads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
-
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
-
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
-
-			DrawOpaqueFeatures(rdrCntProxy, modelType, drawReflection, drawRefraction);
-		}
-
-		CModelDrawerHelper::PopModelRenderState(modelType);
-	}
-
-	ResetOpaqueDrawing(deferredPass);
-
-	// draw all custom'ed features that were bypassed in the loop above
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
-	LuaObjectDrawer::DrawOpaqueMaterialObjects(LUAOBJ_FEATURE, deferredPass);
-}
-
-template<bool legacy>
-void CFeatureDrawerBase::DrawAlphaPassImpl() const
-{
-	SCOPED_TIMER("CUnitDrawerBase::DrawAlphaPass");
-
-	const auto* currCamera = CCameraHandler::GetActiveCamera();
-	const auto& quads = modelDrawerData->GetCamVisibleQuads(currCamera->GetCamType());
-
-	SetupAlphaDrawing(false);
-
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		const auto& rdrContProxies = modelDrawerData->GetRdrContProxies(modelType);
-
-		CModelDrawerHelper::PushModelRenderState(modelType);
-
-		for (int quad : quads) {
-			const auto& rdrCntProxy = rdrContProxies[quad];
-
-			// non visible quad
-			if (!rdrCntProxy.IsQuadVisible())
-				continue;
-
-			// quad has no objects
-			if (!rdrCntProxy.HasObjects())
-				continue;
-
-			DrawAlphaFeatures(rdrCntProxy, modelType);
-		}
-
-		CModelDrawerHelper::PopModelRenderState(modelType);
-	}
-
-	ResetAlphaDrawing(false);
-
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_FEATURE);
-	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_FEATURE, false);
 }
 
 void CFeatureDrawerBase::Update() const
@@ -371,31 +219,48 @@ void CFeatureDrawerLegacy::DrawIndividualNoTrans(const CFeature* feature, bool n
 	PopIndividualState(feature, false);
 }
 
-void CFeatureDrawerLegacy::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 {
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
+
+	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		// only need to bind the atlas once for 3DO's, but KISS
-		assert((modelType != MODELTYPE_3DO) || (rdrCntProxy.GetObjectBinKey(i) == 0));
+		assert((modelType != MODELTYPE_3DO) || (mdlRenderer.GetObjectBinKey(i) == 0));
 
 		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
-		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
+		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
-		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
-			DrawOpaqueFeatureShadow(o);
+		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+			DrawFeatureShadow(o);
 		}
 
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->UnbindShadowTex();
 	}
 }
 
-void CFeatureDrawerLegacy::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const
+void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
-		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
+	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+		for (auto* o : mdlRenderer.GetObjectBin(i)) {
 			DrawOpaqueFeature(o, drawReflection, drawRefraction);
+		}
+	}
+}
+
+void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType) const
+{
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
+
+	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+
+		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+			DrawAlphaFeature(o);
 		}
 	}
 }
@@ -410,27 +275,16 @@ void CFeatureDrawerLegacy::DrawOpaqueFeature(CFeature* f, bool drawReflection, b
 	DrawFeatureTrans(f, 0, 0, false, false);
 }
 
-void CFeatureDrawerLegacy::DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
-{
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
-
-		for (auto* o : rdrCntProxy.GetObjectBin(i)) {
-			DrawAlphaFeature(o);
-		}
-	}
-}
-
 void CFeatureDrawerLegacy::DrawAlphaFeature(CFeature* f) const
 {
 	if (!ShouldDrawAlphaFeature(f))
 		return;
 
-	//SetTeamColor(f->team, float2(alphaValues.x, 1.0f));
-	//DrawUnitTrans(unit, 0, 0, false, false);
+	SetTeamColor(f->team, float2(IModelDrawerState::alphaValues.x, 1.0f));
+	DrawFeatureTrans(f, 0, 0, false, false);
 }
 
-void CFeatureDrawerLegacy::DrawOpaqueFeatureShadow(CFeature* f) const
+void CFeatureDrawerLegacy::DrawFeatureShadow(CFeature* f) const
 {
 	if (ShouldDrawFeatureShadow(f))
 		DrawFeatureTrans(f, 0, 0, false, false);
@@ -444,19 +298,23 @@ void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaC
 	feature->localModel.Draw();
 }
 
-void CFeatureDrawerGL4::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 {
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
+
+	modelDrawerState->SetColorMultiplier();
+
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		const auto* texMat = textureHandlerS3O.GetTexture(rdrCntProxy.GetObjectBinKey(i));
+	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
-		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
+		const auto& bin = mdlRenderer.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
-			for (auto* o : binObjects) {
+			for (auto* o : bin) {
 				if (!ShouldDrawFeatureShadow(o))
 					continue;
 
@@ -465,10 +323,10 @@ void CFeatureDrawerGL4::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrCont
 		}
 		else {
 			static std::vector<const ObjType*> renderList;
-			renderList.resize(binObjects.size());
+			renderList.resize(bin.size());
 
-			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
-				renderList[i] = ShouldDrawFeatureShadow(binObjects[i]) ? binObjects[i] : nullptr;
+			for_mt(0, bin.size(), [&bin, this](const int i) {
+				renderList[i] = ShouldDrawFeatureShadow(bin[i]) ? bin[i] : nullptr;
 				});
 
 			for (auto* o : renderList) {
@@ -486,17 +344,20 @@ void CFeatureDrawerGL4::DrawFeaturesShadow(const CFeatureRenderDataBase::RdrCont
 	smv.Unbind();
 }
 
-void CFeatureDrawerGL4::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType, bool drawReflection, bool drawRefraction) const
+void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
+
+	modelDrawerState->SetColorMultiplier();
+
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
 		if (!mtModelDrawer) {
-			for (auto* o : rdrCntProxy.GetObjectBin(i)) {
-				//DrawOpaqueUnit(unit, drawReflection, drawRefraction);
+			for (auto* o : mdlRenderer.GetObjectBin(i)) {
 				if (!ShouldDrawOpaqueFeature(o, drawReflection, drawRefraction))
 					continue;
 
@@ -504,13 +365,13 @@ void CFeatureDrawerGL4::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrCont
 			}
 		}
 		else {
-			const auto& bin = rdrCntProxy.GetObjectBin(i);
+			const auto& bin = mdlRenderer.GetObjectBin(i);
 			static std::vector<const ObjType*> renderList;
 			renderList.resize(bin.size());
 			for_mt(0, renderList.size(), [this, &bin, drawReflection, drawRefraction](int k) {
 				auto* o = bin[k];
 				renderList[k] = ShouldDrawOpaqueFeature(o, drawReflection, drawRefraction) ? o : nullptr;
-			});
+				});
 
 			for (const auto* o : renderList)
 				if (o)
@@ -523,21 +384,22 @@ void CFeatureDrawerGL4::DrawOpaqueFeatures(const CFeatureRenderDataBase::RdrCont
 	smv.Unbind();
 }
 
-void CFeatureDrawerGL4::DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContProxy& rdrCntProxy, int modelType) const
+void CFeatureDrawerGL4::DrawAlphaObjects(int modelType) const
 {
+	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
+
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
 	modelDrawerState->SetColorMultiplier(IModelDrawerState::alphaValues.x);
-
 	//main cloaked alpha pass
-	for (uint32_t i = 0, n = rdrCntProxy.GetNumObjectBins(); i < n; i++) {
-		CModelDrawerHelper::BindModelTypeTexture(modelType, rdrCntProxy.GetObjectBinKey(i));
+	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		const auto& binObjects = rdrCntProxy.GetObjectBin(i);
+		const auto& bin = mdlRenderer.GetObjectBin(i);
 
 		if (!mtModelDrawer) {
-			for (auto* o : binObjects) {
+			for (auto* o : bin) {
 				if (!ShouldDrawAlphaFeature(o))
 					continue;
 
@@ -545,12 +407,13 @@ void CFeatureDrawerGL4::DrawAlphaFeatures(const CFeatureRenderDataBase::RdrContP
 			}
 		}
 		else {
-			static std::vector<const ObjType*> renderList;
-			renderList.resize(binObjects.size());
+			static vector<const ObjType*> renderList;
 
-			for_mt(0, binObjects.size(), [&binObjects, this](const int i) {
-				renderList[i] = ShouldDrawAlphaFeature(binObjects[i]) ? binObjects[i] : nullptr;
-			});
+			renderList.resize(bin.size());
+
+			for_mt(0, bin.size(), [&bin, this](const int i) {
+				renderList[i] = ShouldDrawAlphaFeature(bin[i]) ? bin[i] : nullptr;
+				});
 
 			for (auto* o : renderList) {
 				if (!o)
