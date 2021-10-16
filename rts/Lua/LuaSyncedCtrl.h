@@ -5,6 +5,8 @@
 
 struct lua_State;
 
+constexpr int MAX_CMD_RECURSION_DEPTH = 16;
+
 class LuaSyncedCtrl
 {
 	public:
@@ -12,12 +14,12 @@ class LuaSyncedCtrl
 		static void CheckAllowGameChanges(lua_State* L);
 
 	private:
-		static bool inCreateUnit;
-		static bool inDestroyUnit;
+		inline static int inCreateUnit;
+		inline static int inDestroyUnit;
+		inline static int inCreateFeature;
+		inline static int inDestroyFeature;
+		inline static int inGiveOrder;
 		static bool inTransferUnit;
-		static bool inCreateFeature;
-		static bool inDestroyFeature;
-		static bool inGiveOrder;
 		static bool inHeightMap;
 		static bool inSmoothMesh;
 
