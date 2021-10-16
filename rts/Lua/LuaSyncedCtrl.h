@@ -14,14 +14,14 @@ class LuaSyncedCtrl
 		static void CheckAllowGameChanges(lua_State* L);
 
 	private:
-		inline static int inCreateUnit;
-		inline static int inDestroyUnit;
-		inline static int inCreateFeature;
-		inline static int inDestroyFeature;
-		inline static int inGiveOrder;
-		inline static bool inTransferUnit;
-		inline static bool inHeightMap;
-		inline static bool inSmoothMesh;
+		inline static int inCreateUnit = 0;
+		inline static int inDestroyUnit = 0;
+		inline static int inCreateFeature = 0;
+		inline static int inDestroyFeature = 0;
+		inline static int inGiveOrder = 0;
+		inline static bool inTransferUnit = false;
+		inline static bool inHeightMap = false;
+		inline static bool inSmoothMesh = false;
 
 	private:
 		// all LuaHandleSynced
