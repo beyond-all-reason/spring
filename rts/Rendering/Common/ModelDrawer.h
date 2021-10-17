@@ -161,8 +161,9 @@ protected:
 	static bool CheckLegacyDrawing(const CSolidObject* so, bool noLuaCall);
 	static bool CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall);
 private:
-	static void Push(bool legacy, bool modern) {
+	static void Push(bool legacy, bool modern, bool mt) {
 		implStack.emplace(std::make_tuple(modelDrawer, modelDrawerState, mtModelDrawer));
+		mtModelDrawer = mt;
 		SelectImplementation(true, legacy, modern);
 	}
 	static void Pop() {
@@ -196,8 +197,8 @@ protected:
 template<typename T>
 class ScopedModelDrawerImpl {
 public:
-	ScopedModelDrawerImpl(bool legacy, bool modern) {
-		T::Push(legacy, modern);
+	ScopedModelDrawerImpl(bool legacy, bool modern, bool mt = false) {
+		T::Push(legacy, modern, mt);
 	}
 	~ScopedModelDrawerImpl() {
 		T::Pop();
@@ -364,6 +365,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawOpaquePassImpl(bool defe
 
 	ResetOpaqueDrawing(deferredPass);
 
+	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
 	// draw all custom'ed units that were bypassed in the loop above
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
 	LuaObjectDrawer::DrawOpaqueMaterialObjects(lot, deferredPass);
@@ -390,8 +392,10 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawAlphaPassImpl() const
 
 	ResetAlphaDrawing(false);
 
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(LUAOBJ_UNIT);
-	LuaObjectDrawer::DrawAlphaMaterialObjects(LUAOBJ_UNIT, false);
+	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
+	// draw all custom'ed units that were bypassed in the loop above
+	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
+	LuaObjectDrawer::DrawAlphaMaterialObjects(lot, /*deferredPass*/false);
 }
 
 template<typename TDrawerData, typename TDrawer>
@@ -443,8 +447,10 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
+	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
+	// draw all custom'ed units that were bypassed in the loop above
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
-	LuaObjectDrawer::DrawShadowMaterialObjects(lot, false);
+	LuaObjectDrawer::DrawShadowMaterialObjects(lot, /*deferredPass*/false);
 }
 
 template<typename TDrawerData, typename TDrawer>
