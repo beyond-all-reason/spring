@@ -261,7 +261,7 @@ void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : bin) {
 				if (!ShouldDrawFeatureShadow(o))
 					continue;
@@ -304,7 +304,7 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : mdlRenderer.GetObjectBin(i)) {
 				if (!ShouldDrawOpaqueFeature(o, drawReflection, drawRefraction))
 					continue;
@@ -346,7 +346,7 @@ void CFeatureDrawerGL4::DrawAlphaObjects(int modelType) const
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : bin) {
 				if (!ShouldDrawAlphaFeature(o))
 					continue;

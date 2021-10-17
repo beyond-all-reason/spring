@@ -1194,7 +1194,7 @@ void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : bin) {
 				if (!ShouldDrawUnitShadow(o))
 					continue;
@@ -1237,7 +1237,7 @@ void CUnitDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : mdlRenderer.GetObjectBin(i)) {
 				if (!ShouldDrawOpaqueUnit(o, drawReflection, drawRefraction))
 					continue;
@@ -1279,7 +1279,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType) const
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		if (!mtModelDrawer) {
+		if (!mtModelDrawer || true) {
 			for (auto* o : bin) {
 				if (!ShouldDrawAlphaUnit(o))
 					continue;
