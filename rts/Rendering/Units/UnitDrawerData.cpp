@@ -109,12 +109,12 @@ void CUnitDrawerData::Update()
 	iconZoomDist = dist;
 
 	const static auto updateBody = [this](CUnit* u) {
+		UpdateDrawPos(u);
+
 		if (useScreenIcons)
 			UpdateUnitIconStateScreen(u);
 		else
 			UpdateUnitIconState(u);
-
-		UpdateDrawPos(u);
 	};
 
 	if (mtModelDrawer) {
@@ -139,7 +139,7 @@ void CUnitDrawerData::Update()
 		sqCamDistToGroundForIcons = overGround * overGround;
 	}
 
-	UpdateMatrices();
+	UpdateCommon();
 }
 
 void CUnitDrawerData::UpdateGhostedBuildings()
@@ -342,7 +342,7 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 		{
 			case CCamera::CAMTYPE_PLAYER: {
 				const float sqrCamDist = (u->drawPos - cam->GetPos()).SqLength();
-				const float farTexDist = Square(u->GetDrawRadius() * CModelDrawerDataConcept::modelDrawDist);
+				const float farTexDist = Square(u->GetDrawRadius() + CModelDrawerDataConcept::modelDrawDist);
 				if (sqrCamDist >= farTexDist) {
 					u->SetDrawFlag(DrawFlags::SO_FARTEX_FLAG);
 					continue;

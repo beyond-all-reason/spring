@@ -149,6 +149,7 @@ void CWorldDrawer::Kill()
 	CUnitDrawer::KillStatic(gu->globalReload); // depends on unitHandler, cubeMapHandler
 	CProjectileDrawer::KillStatic(gu->globalReload);
 
+	ModelPreloader::Clean();
 	modelLoader.Kill();
 
 	spring::SafeDelete(farTextureHandler);

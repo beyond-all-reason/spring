@@ -68,12 +68,10 @@ protected:
 	void DelObject(const T* co, bool del);
 	void UpdateObject(const T* co, bool init);
 protected:
-	void UpdateMatrices();
+	void UpdateCommon();
 	virtual void UpdateObjectDrawFlags(CSolidObject* o) const = 0;
 private:
 	void UpdateObjectSMMA(const T* o);
-public:
-	void UpdateVisibleQuads(CCamera* cam, float maxDist, int xzExtraSize = 0, float extraHeight = 100.0f);
 public:
 	const std::vector<T*>& GetUnsortedObjects() const { return unsortedObjects; }
 	const ModelRenderContainer<T>& GetModelRenderer(int modelType) const { return modelRenderers[modelType]; }
@@ -177,7 +175,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectSMMA(const T* o)
 }
 
 template<typename T>
-inline void CModelDrawerDataBase<T>::UpdateMatrices()
+inline void CModelDrawerDataBase<T>::UpdateCommon()
 {
 	if (mtModelDrawer) {
 		for_mt(0, unsortedObjects.size(), [this](const int k) {

@@ -55,30 +55,13 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, b
 {
 	assert(f);
 
-	if (modelDrawerData->IsAlpha(f))
+	if (f->drawFlag == 0)
 		return false;
 
-	if (f->noDraw)
+	if (f->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
 		return false;
 
-	if (f->IsInVoid())
-		return false;
-
-	if (!gu->spectatingFullView && !f->IsInLosForAllyTeam(gu->myAllyTeam))
-		return false;
-
-	if (drawRefraction && !f->IsInWater())
-		return false;
-
-	// either PLAYER or UWREFL
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(f->drawMidPos, cam->GetPos(), f->GetDrawRadius()))
-		return false;
-
-	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
-		return false;
-
-	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
+	if (f->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) {
 		farTextureHandler->Queue(f);
 		return false;
 	}
@@ -93,23 +76,13 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 {
 	assert(f);
 
-	if (!modelDrawerData->IsAlpha(f))
+	if (f->drawFlag == 0)
 		return false;
 
-	if (f->noDraw)
+	if (f->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
 		return false;
 
-	if (f->IsInVoid())
-		return false;
-
-	if (!gu->spectatingFullView && !f->IsInLosForAllyTeam(gu->myAllyTeam))
-		return false;
-
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
-		return false;
-
-	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
+	if (f->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) { //redundant check?
 		farTextureHandler->Queue(f);
 		return false;
 	}
@@ -124,31 +97,8 @@ bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 {
 	assert(f);
 
-	if (modelDrawerData->IsAlpha(f))
+	if (!f->HasDrawFlag(DrawFlags::SO_SHADOW_FLAG))
 		return false;
-
-	if (f->noDraw)
-		return false;
-
-	if (f->IsInVoid())
-		return false;
-
-	if (!f->IsInLosForAllyTeam(gu->myAllyTeam) && !gu->spectatingFullView)
-		return false;
-
-	// same cutoff as AT; set during SP too
-	//if (f->drawAlpha <= 0.1f)
-		//return false;
-
-	// either PLAYER or SHADOW or UWREFL
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (!cam->InView(f->drawMidPos, f->GetDrawRadius()))
-		return false;
-
-	if (f->drawFlag == DrawFlags::SO_FARTEX_FLAG) {
-		//farTextureHandler->Queue(f);
-		return false;
-	}
 
 	if (LuaObjectDrawer::AddShadowMaterialObject(f, LUAOBJ_FEATURE))
 		return false;
@@ -301,8 +251,6 @@ void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaC
 void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 {
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
-
-	modelDrawerState->SetColorMultiplier();
 
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();

@@ -31,6 +31,6 @@ private:
 public:
 	float featureDrawDistance;
 	float featureFadeDistance;
-	float sqFadeDistBegin;
-	float sqFadeDistEnd;
+	float featureFadeDistanceSq;
+	float featureDrawDistanceSq;
 };

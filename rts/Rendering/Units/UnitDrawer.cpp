@@ -137,39 +137,24 @@ void CUnitDrawer::InitStatic()
 
 bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, bool drawReflection, bool drawRefraction)
 {
-	assert(u);
-
-	if (modelDrawerData->IsAlpha(u))
-		return false;
-
 	if (u == (drawReflection ? nullptr : (gu->GetMyPlayer())->fpsController.GetControllee()))
 		return false;
 
-	if (u->noDraw)
+	assert(u);
+
+	if (u->drawFlag == 0)
 		return false;
 
-	if (u->IsInVoid())
+	if (u->HasDrawFlag(DrawFlags::SO_DRICON_FLAG))
 		return false;
 
-	// unit will be drawn as icon instead
-	if (u->isIcon)
+	if (u->isIcon) //TODO remove isIcon
 		return false;
 
-	if (!(u->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+	if (u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
 		return false;
 
-	// either PLAYER or UWREFL
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (drawRefraction && !u->IsInWater())
-		return false;
-
-	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
-		return false;
-
-	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
-		return false;
-
-	if ((u->pos).SqDistance(camera->GetPos()) > (u->sqRadius * modelDrawerData->modelDrawDistSqr)) {
+	if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) {
 		farTextureHandler->Queue(u);
 		return false;
 	}
@@ -184,24 +169,22 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u)
 {
 	assert(u);
 
-	if (!modelDrawerData->IsAlpha(u))
+	if (u->drawFlag == 0)
 		return false;
 
-	if (u->noDraw)
+	if (u->HasDrawFlag(DrawFlags::SO_DRICON_FLAG))
 		return false;
 
-	if (u->isIcon)
+	if (u->isIcon) //TODO remove isIcon
 		return false;
 
-	if (u->IsInVoid())
+	if (u->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
 		return false;
 
-	if (!(u->losStatus[gu->myAllyTeam] & LOS_INLOS) && !gu->spectatingFullView)
+	if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) { //redundant check?
+		farTextureHandler->Queue(u);
 		return false;
-
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
-		return false;
+	}
 
 	if (LuaObjectDrawer::AddAlphaMaterialObject(u, LUAOBJ_UNIT))
 		return false;
@@ -213,27 +196,7 @@ bool CUnitDrawer::ShouldDrawUnitShadow(CUnit* u)
 {
 	assert(u);
 
-	if (modelDrawerData->IsAlpha(u))
-		return false;
-
-	if (u->noDraw)
-		return false;
-
-	if (u->IsInVoid())
-		return false;
-
-	// no shadow if unit is already an icon from player's POV
-	if (u->isIcon)
-		return false;
-
-	if (u->isCloaked)
-		return false;
-
-	if (!((u->losStatus[gu->myAllyTeam] & LOS_INLOS) || gu->spectatingFullView))
-		return false;
-
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
+	if (!u->HasDrawFlag(DrawFlags::SO_SHADOW_FLAG))
 		return false;
 
 	if (LuaObjectDrawer::AddShadowMaterialObject(u, LUAOBJ_UNIT))
@@ -1221,8 +1184,6 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 {
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
-
-	modelDrawerState->SetColorMultiplier();
 
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();

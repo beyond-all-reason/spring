@@ -44,6 +44,9 @@ CFeatureDrawerData::CFeatureDrawerData(bool& mtModelDrawer_)
 
 	featureDrawDistance = configHandler->GetFloat("FeatureDrawDistance");
 	featureFadeDistance = std::min(configHandler->GetFloat("FeatureFadeDistance"), featureDrawDistance);
+
+	featureFadeDistanceSq = Square(featureFadeDistance);
+	featureDrawDistanceSq = Square(featureDrawDistance);
 }
 
 CFeatureDrawerData::~CFeatureDrawerData()
@@ -67,41 +70,14 @@ void CFeatureDrawerData::ConfigNotify(const std::string& key, const std::string&
 	featureFadeDistance = std::max(0.0f, featureFadeDistance);
 	featureFadeDistance = std::min(featureDrawDistance, featureFadeDistance);
 
-	sqFadeDistBegin = featureFadeDistance * featureFadeDistance;
-	sqFadeDistEnd   = featureDrawDistance * featureDrawDistance;
+	featureFadeDistanceSq = Square(featureFadeDistance);
+	featureDrawDistanceSq = Square(featureDrawDistance);
 
 	LOG_L(L_INFO, "[FeatureDrawer::%s] {draw,fade}distance set to {%f,%f}", __func__, featureDrawDistance, featureFadeDistance);
 }
 
 void CFeatureDrawerData::Update()
 {
-	const static std::function<bool(const CCamera*, const CFeature*)> shouldUpdateFunc = [](const CCamera* cam, const CFeature* feature) -> bool {
-		assert(feature->def->drawType == DRAWTYPE_MODEL);
-
-		if (feature->drawFlag == DrawFlags::SO_NODRAW_FLAG)
-			return false;
-
-		if (feature->drawFlag == DrawFlags::SO_FARTEX_FLAG)
-			return false;
-
-		if (cam->GetCamType() == CCamera::CAMTYPE_SHADOW && feature->drawFlag == DrawFlags::SO_ALPHAF_FLAG)
-			return false;
-
-		if (feature->noDraw)
-			return false;
-
-		if (feature->IsInVoid())
-			return false;
-
-		if (!feature->IsInLosForAllyTeam(gu->myAllyTeam) && !gu->spectatingFullView)
-			return false;
-
-		if (cam->GetCamType() == CCamera::CAMTYPE_UWREFL && !CModelDrawerHelper::ObjectVisibleReflection(feature->drawMidPos, cam->GetPos(), feature->GetDrawRadius()))
-			return false;
-
-		return cam->InView(feature->drawMidPos, feature->GetDrawRadius());
-	};
-
 	if (mtModelDrawer) {
 		for_mt(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
@@ -113,7 +89,7 @@ void CFeatureDrawerData::Update()
 			UpdateDrawPos(f);
 	}
 
-	UpdateMatrices();
+	UpdateCommon();
 }
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
@@ -151,7 +127,7 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			{
 			case CCamera::CAMTYPE_PLAYER: {
 				const float sqrCamDist = (f->drawPos - cam->GetPos()).SqLength();
-				const float farTexDist = Square(f->GetDrawRadius() * CModelDrawerDataConcept::modelDrawDist);
+				const float farTexDist = Square(f->GetDrawRadius() + CModelDrawerDataConcept::modelDrawDist);
 				if (sqrCamDist >= farTexDist) {
 					// note: it looks pretty bad to first alpha-fade and then
 					// draw a fully *opaque* fartex, so restrict impostors to
@@ -169,8 +145,8 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 					continue;
 				}
 
-				const float sqFadeDistBeg = mix(sqFadeDistBegin, farTexDist * (sqFadeDistBegin / sqFadeDistEnd), (farTexDist < sqFadeDistEnd));
-				const float sqFadeDistEnd = mix(sqFadeDistEnd, farTexDist, (farTexDist < sqFadeDistEnd));
+				const float sqFadeDistBeg = mix(featureFadeDistanceSq, farTexDist * (featureFadeDistanceSq / featureDrawDistanceSq), (farTexDist < featureDrawDistanceSq));
+				const float sqFadeDistEnd = mix(featureDrawDistanceSq, farTexDist                                                  , (farTexDist < featureDrawDistanceSq));
 
 				// draw feature as normal, no fading
 				if (sqrCamDist < sqFadeDistBeg) {
