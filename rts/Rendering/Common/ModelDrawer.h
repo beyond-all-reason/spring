@@ -465,7 +465,7 @@ inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSo
 template<typename TDrawerData, typename TDrawer>
 inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall)
 {
-	#pragma message("TODO: Make use of it")
+	//#pragma message("TODO: Make use of it")
 	if (forceLegacyPath)
 		return false;
 

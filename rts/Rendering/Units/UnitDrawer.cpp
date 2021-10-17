@@ -1316,7 +1316,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType) const
 	// deadGhostedBuildings
 	{
 		modelDrawerState->SetColorMultiplier(0.6f, 0.6f, 0.6f, IModelDrawerState::alphaValues.y);
-		modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL);
+		modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL); //reset in Enable()
 
 		int prevModelType = -1;
 		int prevTexType = -1;
@@ -1392,4 +1392,90 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType) const
 	}
 
 	smv.Unbind();
+}
+
+void CUnitDrawerGL4::DrawAlphaObjectsAux(int modelType) const
+{
+	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpAlphaUnits = modelDrawerData->GetTempAlphaDrawUnits(modelType);
+	auto& smv = S3DModelVAO::GetInstance();
+	smv.Bind();
+
+	modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL); //reset in Enable()
+
+	// NOTE: not type-sorted
+	for (const auto& unit : tmpAlphaUnits) {
+		if (!camera->InView(unit.pos, 100.0f))
+			continue;
+
+		DrawAlphaAIUnit(unit);
+		DrawAlphaAIUnitBorder(unit);
+	}
+
+	smv.Unbind();
+}
+
+void CUnitDrawerGL4::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
+{
+	static CMatrix44f staticWorldMat;
+
+	staticWorldMat.LoadIdentity();
+	staticWorldMat.Translate(unit.pos);
+
+	staticWorldMat.RotateY(unit.rotation);
+
+	auto& smv = S3DModelVAO::GetInstance(); //bound already
+
+	const UnitDef* def = unit.unitDef;
+	const S3DModel* mdl = def->model;
+
+	assert(mdl != nullptr);
+
+	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
+
+	SetTeamColor(unit.team, float2(IModelDrawerState::alphaValues.x, 1.0f));
+	modelDrawerState->SetStaticModelMatrix(staticWorldMat);
+
+	smv.SubmitImmediately(mdl, unit.team);
+}
+
+void CUnitDrawerGL4::DrawOpaqueObjectsAux(int modelType) const
+{
+	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpOpaqueUnits = modelDrawerData->GetTempOpaqueDrawUnits(modelType);
+	auto& smv = S3DModelVAO::GetInstance();
+	smv.Bind();
+
+	modelDrawerState->SetDrawingMode(ShaderDrawingModes::STATIC_MODEL); //reset in Enable()
+
+	// NOTE: not type-sorted
+	for (const auto& unit : tmpOpaqueUnits) {
+		if (!camera->InView(unit.pos, 100.0f))
+			continue;
+
+		DrawOpaqueAIUnit(unit);
+	}
+	smv.Unbind();
+}
+
+void CUnitDrawerGL4::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
+{
+	static CMatrix44f staticWorldMat;
+
+	staticWorldMat.LoadIdentity();
+	staticWorldMat.Translate(unit.pos);
+
+	staticWorldMat.RotateY(unit.rotation);
+
+	auto& smv = S3DModelVAO::GetInstance(); //bound already
+
+	const UnitDef* def = unit.unitDef;
+	const S3DModel* mdl = def->model;
+
+	assert(mdl != nullptr);
+
+	CModelDrawerHelper::BindModelTypeTexture(mdl->type, mdl->textureType);
+
+	SetTeamColor(unit.team);
+	modelDrawerState->SetStaticModelMatrix(staticWorldMat);
+
+	smv.SubmitImmediately(mdl, unit.team);
 }

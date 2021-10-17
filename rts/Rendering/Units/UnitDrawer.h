@@ -51,7 +51,7 @@ public:
 
 	static bool& IconHideWithUI() { return modelDrawerData->iconHideWithUI; }
 
-	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { modelDrawerData->AddTempDrawUnit(tempDrawUnit); };
+	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { modelDrawerData->AddTempDrawUnit(tempDrawUnit); }
 
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
 public:
@@ -218,18 +218,14 @@ protected:
 	void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const override;
 	void DrawAlphaObjects(int modelType) const override;
 
-	void DrawAlphaObjectsAux(int modelType) const override {
-		#pragma message("TODO: Implement")
-	};
+	void DrawAlphaObjectsAux(int modelType) const override;
+	void DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const;
+	void DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUnit& unit) const {} //not implemented
 
-	void DrawOpaqueObjectsAux(int modelType) const override {
-		#pragma message("TODO: Implement")
-	};
+	void DrawOpaqueObjectsAux(int modelType) const override;
+	void DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const;
 
-
-	void DrawGhostedBuildings(int modelType) const override {
-		#pragma message("TODO: Implement")
-	};
+	void DrawGhostedBuildings(int modelType) const override {} //implemented in line
 };
 
 #define unitDrawer (CUnitDrawer::modelDrawer)
