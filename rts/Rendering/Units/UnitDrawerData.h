@@ -116,8 +116,6 @@ public:
 	}
 
 	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
-
-	const std::vector<CUnit*>& GetIconUnits() const { return iconUnits; }
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
 private:
@@ -148,8 +146,6 @@ public:
 	float iconScale = 1.0f;
 	float iconFadeStart = 3000.0f;
 	float iconFadeVanish = 1000.0f;
-
-	std::mutex iconsMutex;
 private:
 	/// AI unit ghosts
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
@@ -159,9 +155,6 @@ private:
 	std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
 	/// buildings that left LOS but are still alive
 	std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
-
-	/// units that are only rendered as icons this frame
-	std::vector<CUnit*> iconUnits;
 
 	spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> > unitsByIcon;
 

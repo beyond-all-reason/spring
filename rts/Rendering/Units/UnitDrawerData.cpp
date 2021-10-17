@@ -1,6 +1,3 @@
-#include <functional>
-#include <mutex>
-
 #include "UnitDrawerData.h"
 
 #include "System/MemPoolTypes.h"
@@ -98,8 +95,6 @@ void CUnitDrawerData::Update()
 		UpdateTempDrawUnits(tempOpaqueUnits[modelType]);
 		UpdateTempDrawUnits(tempAlphaUnits[modelType]);
 	}
-
-	iconUnits.clear();
 
 	const float3 camPos = (camHandler->GetCurrentController()).GetPos();
 	const float3 camDir = (camHandler->GetCurrentController()).GetDir();
@@ -243,9 +238,6 @@ void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 	// drawing icons is cheap but not free, avoid a perf-hit when many are offscreen
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return;
-
-	std::unique_lock<std::mutex> lck(iconsMutex);
-	iconUnits.push_back(unit);
 }
 
 void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)

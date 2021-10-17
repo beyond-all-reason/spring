@@ -309,7 +309,10 @@ void CUnitDrawerLegacy::DrawUnitIcons() const
 	if (globalRendering->msaaLevel >= 4)
 		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
 
-	for (CUnit* u : modelDrawerData->GetIconUnits()) {
+	for (CUnit* u : modelDrawerData->GetUnsortedObjects()) {
+		if (!u->isIcon)
+			continue;
+
 		const unsigned short closBits = (u->losStatus[gu->myAllyTeam] & (LOS_INLOS));
 		const unsigned short plosBits = (u->losStatus[gu->myAllyTeam] & (LOS_PREVLOS | LOS_CONTRADAR));
 
