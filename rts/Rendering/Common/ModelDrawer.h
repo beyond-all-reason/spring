@@ -277,11 +277,11 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 		auto d = modelDrawers[preferedDrawerType];
 		auto s = IModelDrawerState::modelDrawerStates[preferedDrawerType];
 		if (qualifyDrawerFunc(d, s)) {
-			LOG_L(L_INFO, "[%s::%s] Force-switching to %s", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
+			LOG_L(L_INFO, "[%s::%s] Force-switching to %s(%s)", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data(), mtModelDrawer ? "MT" : "ST");
 			SelectImplementation(preferedDrawerType);
 		}
 		else {
-			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data());
+			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s(%s)", className.data(), __func__, ModelDrawerNames[preferedDrawerType].data(), mtModelDrawer ? "MT" : "ST");
 		}
 		preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //reset;
 		return;
