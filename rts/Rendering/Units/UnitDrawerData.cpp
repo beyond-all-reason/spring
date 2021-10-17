@@ -1,4 +1,5 @@
 #include <functional>
+#include <mutex>
 
 #include "UnitDrawerData.h"
 
@@ -243,6 +244,7 @@ void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
 		return;
 
+	std::unique_lock<std::mutex> lck(iconsMutex);
 	iconUnits.push_back(unit);
 }
 

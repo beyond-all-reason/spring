@@ -220,6 +220,13 @@ void CFarTextureHandler::CreateFarTexture(const CSolidObject* obj)
 
 void CFarTextureHandler::DrawFarTexture(const CSolidObject* obj, CVertexArray* va)
 {
+	if (obj == nullptr)
+		return;
+
+	//crashing or dying objects apparently lose most of their properties, model included
+	if (obj->model == nullptr)
+		return;
+
 	const CachedIcon& icon = iconCache[obj->team][obj->model->id];
 
 	// not found in the atlas
@@ -253,6 +260,8 @@ void CFarTextureHandler::DrawFarTexture(const CSolidObject* obj, CVertexArray* v
 
 void CFarTextureHandler::Queue(const CSolidObject* obj)
 {
+	assert(obj->model);
+
 	if (!fbo.IsValid())
 		return;
 

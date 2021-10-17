@@ -141,6 +141,7 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, bool drawReflection, bool drawR
 		return false;
 
 	assert(u);
+	assert(u->model);
 
 	if (u->drawFlag == 0)
 		return false;
@@ -168,6 +169,7 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, bool drawReflection, bool drawR
 bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u)
 {
 	assert(u);
+	assert(u->model);
 
 	if (u->drawFlag == 0)
 		return false;
@@ -195,6 +197,7 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u)
 bool CUnitDrawer::ShouldDrawUnitShadow(CUnit* u)
 {
 	assert(u);
+	assert(u->model);
 
 	if (!u->HasDrawFlag(DrawFlags::SO_SHADOW_FLAG))
 		return false;

@@ -149,6 +149,7 @@ public:
 	float iconFadeStart = 3000.0f;
 	float iconFadeVanish = 1000.0f;
 
+	std::mutex iconsMutex;
 private:
 	/// AI unit ghosts
 	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;

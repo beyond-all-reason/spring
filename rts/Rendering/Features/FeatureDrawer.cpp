@@ -54,6 +54,7 @@ void CFeatureDrawer::InitStatic()
 bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, bool drawRefraction)
 {
 	assert(f);
+	assert(f->model);
 
 	if (f->drawFlag == 0)
 		return false;
@@ -75,6 +76,7 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, bool drawReflection, b
 bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 {
 	assert(f);
+	assert(f->model);
 
 	if (f->drawFlag == 0)
 		return false;
@@ -96,6 +98,7 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 {
 	assert(f);
+	assert(f->model);
 
 	if (!f->HasDrawFlag(DrawFlags::SO_SHADOW_FLAG))
 		return false;
