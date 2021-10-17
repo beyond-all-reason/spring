@@ -21,8 +21,6 @@
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 
-CONFIG(int, UnitLodDist).defaultValue(1000).headlessValue(0);
-
 class CModelDrawerDataConcept : public CEventClient {
 public:
 	CModelDrawerDataConcept(const std::string& ecName, int ecOrder)

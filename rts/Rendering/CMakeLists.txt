@@ -116,6 +116,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/QuadtreeAtlasAlloc.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/RowAtlasAlloc.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelDrawer.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelDrawerData.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelDrawerState.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Common/ModelDrawerHelpers.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDrawerData.cpp"
