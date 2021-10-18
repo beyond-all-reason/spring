@@ -183,11 +183,6 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u)
 	if (u->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
 		return false;
 
-	if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) { //redundant check?
-		farTextureHandler->Queue(u);
-		return false;
-	}
-
 	if (LuaObjectDrawer::AddAlphaMaterialObject(u, LUAOBJ_UNIT))
 		return false;
 
@@ -494,10 +489,10 @@ void CUnitDrawerLegacy::DrawUnitShadow(CUnit* unit) const
 
 void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhostBuildingsPass) const
 {
-	if (!modelDrawerData->IsAlpha(unit))
+	if (unit->drawFlag == 0)
 		return;
 
-	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
+	if (unit->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
 		return;
 
 	if (LuaObjectDrawer::AddAlphaMaterialObject(unit, LUAOBJ_UNIT))
@@ -546,6 +541,9 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, bool drawGhost
 		glColor4f(1.0f, 1.0f, 1.0f, IModelDrawerState::alphaValues.x);
 		return;
 	}
+
+	if (unit->HasDrawFlag(DrawFlags::SO_DRICON_FLAG))
+		return;
 
 	if (unit->isIcon)
 		return;

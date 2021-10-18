@@ -84,11 +84,6 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f)
 	if (f->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
 		return false;
 
-	if (f->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG)) { //redundant check?
-		farTextureHandler->Queue(f);
-		return false;
-	}
-
 	if (LuaObjectDrawer::AddAlphaMaterialObject(f, LUAOBJ_FEATURE))
 		return false;
 
