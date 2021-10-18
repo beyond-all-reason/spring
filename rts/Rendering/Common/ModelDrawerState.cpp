@@ -264,12 +264,12 @@ CModelDrawerStateARB::CModelDrawerStateARB()
 	#define sh shaderHandler
 	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD] = sh->CreateProgramObject(PO_CLASS, "S3OShaderDefARB", true);
 	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[0], "", GL_FRAGMENT_PROGRAM_ARB));
+	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[0                      ], "", GL_FRAGMENT_PROGRAM_ARB));
 	modelShaders[MODEL_SHADER_NOSHADOW_STANDARD]->Link();
 
 	modelShaders[MODEL_SHADER_SHADOWED_STANDARD] = sh->CreateProgramObject(PO_CLASS, "S3OShaderAdvARB", true);
 	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(vertProgNamesARB[GLEW_NV_vertex_program2], "", GL_VERTEX_PROGRAM_ARB));
-	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[1], "", GL_FRAGMENT_PROGRAM_ARB));
+	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->AttachShaderObject(sh->CreateShaderObject(fragProgNamesARB[1                      ], "", GL_FRAGMENT_PROGRAM_ARB));
 	modelShaders[MODEL_SHADER_SHADOWED_STANDARD]->Link();
 
 	modelShaders[MODEL_SHADER_NOSHADOW_DEFERRED] = nullptr; //cannot draw deferred
@@ -316,8 +316,6 @@ void CModelDrawerStateARB::Enable(bool deferredPass, bool alphaPass) const
 	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
 	assert(modelShader != nullptr);
 	modelShader->Enable();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// end of EnableCommon();
 
 	modelShader->SetUniformTarget(GL_VERTEX_PROGRAM_ARB);
@@ -339,7 +337,7 @@ void CModelDrawerStateARB::Disable(bool deferredPass) const
 	assert(modelShader != nullptr);
 
 	modelShader->Disable();
-	SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
+	//SetActiveShader(shadowHandler.ShadowsLoaded(), /*deferredPass*/ false);
 
 	CModelDrawerHelper::DisableTexturesCommon();
 	CModelDrawerHelper::PopTransform();
@@ -471,8 +469,6 @@ void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
 	assert(modelShader != nullptr);
 	modelShader->Enable();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// end of EnableCommon();
 
 	modelShader->SetUniform3fv(6, &camera->GetPos()[0]);
@@ -578,8 +574,6 @@ void CModelDrawerStateGL4::Enable(bool deferredPass, bool alphaPass) const
 {
 	// body of former EnableCommon();
 	CModelDrawerHelper::EnableTexturesCommon();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
 	assert(modelShader != nullptr);
