@@ -730,6 +730,13 @@ static inline void for_mt_chunk(int b, int e, F&& f)
 	const int numElems  = e - b;
 	const int numChunks = numElems / chunkSize + (numElems % chunkSize != 0);
 
+	if (numChunks <= 1) {
+		for (int i = b; i < e; ++i)
+			f(i);
+
+		return;
+	}
+
 	const int chunksPerThread = numChunks / maxThreads + (numChunks % maxThreads != 0);
 	const int numThreads = std::min(numChunks, maxThreads);
 
