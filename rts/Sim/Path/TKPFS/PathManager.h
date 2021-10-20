@@ -210,10 +210,12 @@ private:
 	bool IsFinalized() const { return finalized; }
 
 	bool SupportsMultiThreadedRequests() const { return true; }
+	void SavePathCacheForPathId(int pathIdToSave) override;
 
 private:
 	mutable std::mutex pathMapUpdate;
 
+	
 	bool finalized = false;
 
 	PathFlowMap* pathFlowMap;

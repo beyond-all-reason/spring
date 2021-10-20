@@ -14,7 +14,6 @@
 #include "Sim/Path/TKPFS/PathEstimator.h"
 #include "Sim/Path/TKPFS/PathManager.h"
 
-
 class TKPFSPathDrawer;
 
 namespace TKPFS {
@@ -72,21 +71,46 @@ public:
 	 */
 	std::uint32_t GetPathChecksum() const { return pathChecksum; }
 
-    // Re-entrant
-	const CPathCache::CacheItem& GetCache(
+    // Re-entrant - return value cannot be a ref to avoid race conditions
+	//const
+	CPathCache::CacheItem GetCache(
 		const int2 strtBlock,
 		const int2 goalBlock,
 		float goalRadius,
 		int pathType,
 		const bool synced
-	) const;
+	) const {
+		const std::lock_guard<std::mutex> lock(cacheAccessLock);
+		return pathCache[synced]->GetCachedPath(strtBlock, goalBlock, goalRadius, pathType);
+	}
 
-    // Re-entrant
+    // Re-entrant, but not MT sync-safe
 	void AddCache(
 		const IPath::Path* path,
 		const IPath::SearchResult result,
 		const int2 strtBlock,
 		const int2 goalBlock,
+		float goalRadius,
+		int pathType,
+		const bool synced
+	);
+
+	// For MT sync safe caching
+	void AddPathForCurrentFrame(
+		const IPath::Path* path,
+		const IPath::SearchResult result,
+		const int2 strtBlock,
+		const int2 goalBlock,
+		float goalRadius,
+		int pathType,
+		const bool synced
+	);
+
+	void PromotePathForCurrentFrame(
+		const IPath::Path* path,
+		const IPath::SearchResult result,
+		const float3 startPosition,
+		const float3 goalPosition,
 		float goalRadius,
 		int pathType,
 		const bool synced
@@ -159,6 +183,9 @@ private:
 
     std::vector<SingleBlock> consumedBlocks;
 	std::vector<SOffsetBlock> offsetBlocksSortedByCost;
+
+	int updatedBlocksDelayTimeout = 0;
+	bool updatedBlocksDelayActive = false;
 };
 
 }

@@ -117,7 +117,8 @@ IPath::SearchResult IPathFinder::GetPath(
 	assert(static_cast<unsigned int>(mStartBlock.y) < nbrOfBlocks.y);
 
 	// check cache (when there is one)
-	const int2 goalBlock = {int(pfDef.goalSquareX / BLOCK_SIZE), int(pfDef.goalSquareZ / BLOCK_SIZE)};
+	int2 goalBlock;
+	goalBlock = {int(pfDef.goalSquareX / BLOCK_SIZE), int(pfDef.goalSquareZ / BLOCK_SIZE)};
 	const CPathCache::CacheItem& ci = GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 
 	if (ci.pathType != -1) {
@@ -132,23 +133,23 @@ IPath::SearchResult IPathFinder::GetPath(
 	if (result == IPath::Ok || result == IPath::GoalOutOfRange) {
 		FinishSearch(moveDef, pfDef, path);
 		AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
-
-		if (LOG_IS_ENABLED(L_DEBUG)) {
-			LOG_L(L_DEBUG, "==== %s: Search completed ====", (BLOCK_SIZE != 1) ? "PE" : "PF");
-			LOG_L(L_DEBUG, "Tested blocks: %u", testedBlocks);
-			LOG_L(L_DEBUG, "Open blocks: %u", openBlockBuffer.GetSize());
-			LOG_L(L_DEBUG, "Path length: " _STPF_, path.path.size());
-			LOG_L(L_DEBUG, "Path cost: %f", path.pathCost);
-			LOG_L(L_DEBUG, "==============================");
-		}
-	} else {
-		if (LOG_IS_ENABLED(L_DEBUG)) {
-			LOG_L(L_DEBUG, "==== %s: Search failed! ====", (BLOCK_SIZE != 1) ? "PE" : "PF");
-			LOG_L(L_DEBUG, "Tested blocks: %u", testedBlocks);
-			LOG_L(L_DEBUG, "Open blocks: %u", openBlockBuffer.GetSize());
-			LOG_L(L_DEBUG, "============================");
-		}
 	}
+	// 	if (LOG_IS_ENABLED(L_DEBUG)) {
+	// 		LOG_L(L_DEBUG, "==== %s: Search completed ====", (BLOCK_SIZE != 1) ? "PE" : "PF");
+	// 		LOG_L(L_DEBUG, "Tested blocks: %u", testedBlocks);
+	// 		LOG_L(L_DEBUG, "Open blocks: %u", openBlockBuffer.GetSize());
+	// 		LOG_L(L_DEBUG, "Path length: " _STPF_, path.path.size());
+	// 		LOG_L(L_DEBUG, "Path cost: %f", path.pathCost);
+	// 		LOG_L(L_DEBUG, "==============================");
+	// 	}
+	// } else {
+	// 	if (LOG_IS_ENABLED(L_DEBUG)) {
+	// 		LOG_L(L_DEBUG, "==== %s: Search failed! ====", (BLOCK_SIZE != 1) ? "PE" : "PF");
+	// 		LOG_L(L_DEBUG, "Tested blocks: %u", testedBlocks);
+	// 		LOG_L(L_DEBUG, "Open blocks: %u", openBlockBuffer.GetSize());
+	// 		LOG_L(L_DEBUG, "============================");
+	// 	}
+	// }
 
 	return result;
 }

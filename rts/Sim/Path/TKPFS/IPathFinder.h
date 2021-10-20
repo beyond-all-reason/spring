@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 #include "Sim/Path/Default/IPath.h"
-#include "Sim/Path/Default/PathCache.h"
+#include "PathCache.h"
 #include "Sim/Path/Default/PathConstants.h"
 #include "Sim/Path/Default/PathDataTypes.h"
 

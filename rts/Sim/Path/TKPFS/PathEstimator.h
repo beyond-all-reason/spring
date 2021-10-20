@@ -119,6 +119,8 @@ private:
 	IPathFinder* parentPathFinder; // parent (PF if BLOCK_SIZE is 16, PE[16] if 32)
 	//CPathEstimator* nextPathEstimator; // next lower-resolution estimator
 
+	mutable CPathCache::CacheItem tempCacheItem;
+
 	PathingState* pathingState;
 };
 

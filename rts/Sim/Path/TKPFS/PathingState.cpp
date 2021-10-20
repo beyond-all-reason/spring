@@ -17,7 +17,7 @@
 #include "Sim/Path/Default/PathConstants.h"
 #include "Sim/Path/Default/PathFinderDef.h"
 #include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/Default/PathMemPool.h"
+#include "PathMemPool.h"
 
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/Archives/IArchive.h"
@@ -30,6 +30,8 @@
 #include "System/Threading/ThreadPool.h" // for_mt
 
 #define ENABLE_NETLOG_CHECKSUM 1
+
+static constexpr int BLOCK_UPDATE_DELAY_FRAMES = GAME_SPEED / 2;
 
 namespace TKPFS {
 
@@ -622,6 +624,16 @@ void PathingState::Update()
 	if (updatedBlocks.empty())
 		return;
 
+	if (!updatedBlocksDelayActive){
+		updatedBlocksDelayTimeout = gs->frameNum + BLOCK_UPDATE_DELAY_FRAMES;
+		updatedBlocksDelayActive = true;
+		return;
+	}
+
+	if (gs->frameNum < updatedBlocksDelayTimeout)
+		return;
+	updatedBlocksDelayActive = false;
+
 	consumedBlocks.clear();
 	consumedBlocks.reserve(consumeBlocks);
 
@@ -783,16 +795,38 @@ std::uint32_t PathingState::CalcChecksum() const
 	return chksum;
 }
 
-const CPathCache::CacheItem& PathingState::GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const
-{
-	const std::lock_guard<std::mutex> lock(cacheAccessLock);
-	return pathCache[synced]->GetCachedPath(strtBlock, goalBlock, goalRadius, pathType);
-}
+// CPathCache::CacheItem PathingState::GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const
+// {
+// 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
+// 	return pathCache[synced]->GetCachedPath(strtBlock, goalBlock, goalRadius, pathType);
+// }
 
 void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	pathCache[synced]->AddPath(path, result, strtBlock, goalBlock, goalRadius, pathType);
+}
+
+void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
+{
+	const std::lock_guard<std::mutex> lock(cacheAccessLock);
+	pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
+}
+
+void PathingState::PromotePathForCurrentFrame(
+		const IPath::Path* path,
+		const IPath::SearchResult result,
+		const float3 startPosition,
+		const float3 goalPosition,
+		float goalRadius,
+		int pathType,
+		const bool synced
+	)
+{
+	int2 strtBlock = {int(startPosition.x / BLOCK_SIZE), int(startPosition.z / BLOCK_SIZE)};;
+	int2 goalBlock = {int(goalPosition.x / BLOCK_SIZE), int(goalPosition.z / BLOCK_SIZE)};
+
+	pathCache[synced]->PromoteCachedPathToCoreCache(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
 std::uint32_t PathingState::CalcHash(const char* caller) const

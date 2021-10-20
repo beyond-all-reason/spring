@@ -64,13 +64,17 @@ void CPathEstimator::InitEstimator()
 
 const CPathCache::CacheItem& CPathEstimator::GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const
 {
-	return pathingState->GetCache(strtBlock, goalBlock, goalRadius, pathType, synced);
+	tempCacheItem = pathingState->GetCache(strtBlock, goalBlock, goalRadius, pathType, synced);
+	return tempCacheItem;
 }
 
 
 void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
+	if (!synced)
+		pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
+	else
+		pathingState->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
 
 

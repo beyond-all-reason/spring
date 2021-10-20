@@ -8,7 +8,7 @@
 #include "Sim/Path/Default/PathFlowMap.hpp"
 #include "PathHeatMap.h"
 #include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/Default/PathMemPool.h"
+#include "PathMemPool.h"
 #include "Map/MapInfo.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Objects/SolidObject.h"
@@ -404,7 +404,6 @@ unsigned int CPathManager::RequestPath(
 		FinalizePath(&newPath, startPos, goalPos, result == IPath::CantGetCloser);
 		newPath.searchResult = result;
 
-		// MH Note: this will have to be ST - so return path ptr instead from here
 		pathID = Store(newPath);
 	}
 
@@ -503,7 +502,6 @@ void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, c
 	}
 }
 
-
 /*
 Removes and return the next waypoint in the multipath corresponding to given id.
 */
@@ -516,7 +514,7 @@ float3 CPathManager::NextWayPoint(
 	bool synced
 ) {
 	// in misc since it is called from many points
-	SCOPED_TIMER("Misc::Path::NextWayPoint");
+	//SCOPED_TIMER("Misc::Path::NextWayPoint");
 
 	const float3 noPathPoint = -XZVector;
 
@@ -632,8 +630,7 @@ void CPathManager::Update()
 	SCOPED_TIMER("Sim::Path");
 	assert(IsFinalized());
 
-	// TODO: Review these!
-	pathFlowMap->Update();
+	//pathFlowMap->Update();
 	pathHeatMap->Update();
 
 	auto medResPE = &pathingStates[PATH_MED_RES];
@@ -653,6 +650,36 @@ void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 }
 
 
+void CPathManager::SavePathCacheForPathId(int pathIdToSave)
+{
+	MultiPath& mpath = pathMap[pathIdToSave];
+
+	if (!mpath.lowResPath.path.empty()) {
+		pathingStates[PATH_LOW_RES].PromotePathForCurrentFrame
+				( &mpath.lowResPath
+				, mpath.searchResult
+				, mpath.peDef.wsStartPos
+				, mpath.peDef.wsGoalPos
+				, mpath.peDef.sqGoalRadius
+				, mpath.moveDef->pathType
+				, mpath.peDef.synced
+				);
+	}
+	if (!mpath.medResPath.path.empty())
+	{
+		pathingStates[PATH_MED_RES].PromotePathForCurrentFrame
+				( &mpath.medResPath
+				, mpath.searchResult
+				, mpath.peDef.wsStartPos
+				, mpath.peDef.wsGoalPos
+				, mpath.peDef.sqGoalRadius
+				, mpath.moveDef->pathType
+				, mpath.peDef.synced
+				);
+	}
+	// if (mpath.medResPath.path.empty() && mpath.lowResPath.path.empty())
+	// 	LOG("Path resolved to max level ONLY");
+}
 
 // get the waypoints in world-coordinates
 void CPathManager::GetDetailedPath(unsigned pathID, std::vector<float3>& points) const

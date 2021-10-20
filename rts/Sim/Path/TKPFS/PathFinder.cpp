@@ -8,7 +8,7 @@
 #include "Sim/Path/Default/PathFlowMap.hpp"
 #include "PathHeatMap.h"
 #include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/Default/PathMemPool.h"
+#include "PathMemPool.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -164,6 +164,9 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	int2 fwdTestBlk = strtBlk;
 	int2 revTestBlk = goalBlk;
 
+	int2 prevFwdTestBlk = {-1, -1};
+	int2 prevRevTestBlk = {-1, -1};
+
 	// test bidirectionally so bad goal-squares cause early exits
 	// NOTE:
 	//   no need for integration with backtracking in FinishSearch
@@ -172,14 +175,16 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	//   goal until owner reaches it
 	for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
 		{
-			if ((blockCheckFunc(moveDef, fwdTestBlk.x, fwdTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			//if ((blockCheckFunc(moveDef, fwdTestBlk.x, fwdTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevFwdTestBlk, fwdTestBlk, owner) & MMBT::BLOCK_STRUCTURE) != 0)
 				return IPath::Error;
 			if (CMoveMath::GetPosSpeedMod(moveDef, fwdTestBlk.x, fwdTestBlk.y) <= pfDef.minRawSpeedMod)
 				return IPath::Error;
 		}
 
 		{
-			if ((blockCheckFunc(moveDef, revTestBlk.x, revTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			//if ((blockCheckFunc(moveDef, revTestBlk.x, revTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevRevTestBlk, revTestBlk, owner) & MMBT::BLOCK_STRUCTURE) != 0)
 				return IPath::Error;
 			if (CMoveMath::GetPosSpeedMod(moveDef, revTestBlk.x, revTestBlk.y) <= pfDef.minRawSpeedMod)
 				return IPath::Error;
@@ -188,6 +193,9 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 		// NOTE: for odd-length paths, center square is tested twice
 		if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
 			break;
+
+		prevFwdTestBlk = fwdTestBlk;
+		prevRevTestBlk = revTestBlk;
 
 		StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
 		StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);

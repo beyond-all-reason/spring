@@ -364,7 +364,7 @@ unsigned int CPathManager::RequestPath(
 		return 0;
 
 	// in misc since it is called from many points
-	SCOPED_TIMER("Misc::Path::RequestPath");
+	//SCOPED_TIMER("Misc::Path::RequestPath");
 	startPos.ClampInBounds();
 	goalPos.ClampInBounds();
 

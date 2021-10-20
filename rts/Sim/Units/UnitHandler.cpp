@@ -392,6 +392,14 @@ void CUnitHandler::SlowUpdateUnits()
 			unit->moveType->DelayedReRequestPath();
 		});
 
+		// update cache
+		for (size_t i = 0; i<unitsToMoveCount; ++i){
+			CUnit* unit = unitsToMove[i];
+			auto pathId = unit->moveType->GetPathId();
+			if (pathId > 0)
+				pathManager->SavePathCacheForPathId(pathId);
+		}
+
 		// Update Heatmaps for moved units.
 		for (size_t i = 0; i<unitsToMoveCount; ++i){
 			CUnit* unit = unitsToMove[i];
@@ -407,6 +415,7 @@ void CUnitHandler::SlowUpdateUnits()
 	}
 	else
 	{
+		SCOPED_TIMER("Misc::Path::RequestPath");
 		for (size_t i = 0; i<unitsToMoveCount; ++i){
 			CUnit* unit = unitsToMove[i];
 			unit->moveType->DelayedReRequestPath();
@@ -416,6 +425,10 @@ void CUnitHandler::SlowUpdateUnits()
 			auto pathId = unit->moveType->GetPathId();
 			if (pathId > 0)
 				pathManager->UpdatePath(unit, pathId);
+
+			unit->moveType->SyncWaypoints();
+
+			// update cache is still done inside the ST pathing
 		}
 	}
 }
