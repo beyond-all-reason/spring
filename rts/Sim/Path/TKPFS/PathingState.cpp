@@ -38,6 +38,7 @@ namespace TKPFS {
 bool TEST_ACTIVE = false;
 
 static std::vector<PathNodeStateBuffer> nodeStateBuffers;
+static size_t pathingStates = 0;
 
 PCMemPool pcMemPool;
 // PEMemPool peMemPool;
@@ -50,11 +51,12 @@ static const std::string GetCacheFileName(const std::string& fileHashCode, const
 	return (GetPathCacheDir() + mapFileName + "." + peFileName + "-" + fileHashCode + ".zip");
 }
 
+void PathingState::KillStatic() { pathingStates = 0; }
+
 void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int _BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
 {
 	BLOCK_SIZE = _BLOCK_SIZE;
-
-	// TK TODO: initialize blockStates as per IPathFinder
+	BLOCK_PIXEL_SIZE = BLOCK_SIZE * SQUARE_SIZE;
 
 	{
 		// 56 x 16 elms for QuickSilver
@@ -73,6 +75,8 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 
 		nbrOfBlocks.x = mapDims.mapx / BLOCK_SIZE;
 		nbrOfBlocks.y = mapDims.mapy / BLOCK_SIZE;
+
+		instanceIndex = pathingStates++;
 	}
 
 	AllocStateBuffer();
@@ -99,6 +103,9 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 		updatedBlocks.clear();
 		consumedBlocks.clear();
 		offsetBlocksSortedByCost.clear();
+
+		updatedBlocksDelayTimeout = 0;
+		updatedBlocksDelayActive = false;
 	}
 
 	PathingState*  childPE = this;
@@ -153,6 +160,16 @@ void PathingState::Terminate()
 {
 	pcMemPool.free(pathCache[0]);
 	pcMemPool.free(pathCache[1]);
+
+	//LOG("Pathing unporcessed updatedBlocks is %llu", updatedBlocks.size());
+
+	// Clear out lingering unprocessed map changes
+	while (!updatedBlocks.empty()) {
+		const int2& pos = updatedBlocks.front();
+		const int idx = BlockPosToIdx(pos);
+		updatedBlocks.pop_front();
+		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
+	}
 
 	// allow our PNSB to be reused across reloads
 	nodeStateBuffers[instanceIndex] = std::move(blockStates);
@@ -268,6 +285,10 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 
 		//LOG("TK PathingState::InitBlocks: blockStates.peNodeOffsets %d now %d looking up %d", i, blockStates.peNodeOffsets[md->pathType].size(), blockIdx);
 		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y);
+		// LOG("UPDATED blockStates.peNodeOffsets[%d][%d] = (%d, %d) : (%d, %d)"
+		// 		, md->pathType, blockIdx
+		// 		, blockStates.peNodeOffsets[md->pathType][blockIdx].x, blockStates.peNodeOffsets[md->pathType][blockIdx].y
+		// 		, blockPos.x, blockPos.y);
 	}
 }
 
@@ -618,17 +639,25 @@ void PathingState::Update()
 		blockUpdatePenalty += consumeBlocks;
 	}
 
+	//LOG("PathingState::Update blocksToUpdate %d", blocksToUpdate);
+
 	if (blocksToUpdate == 0)
 		return;
 
+	//LOG("PathingState::Update updatedBlocks.empty == %d", (int)updatedBlocks.empty());
+
 	if (updatedBlocks.empty())
 		return;
+
+	//LOG("PathingState::Update updatedBlocksDelayActive %d", (int)updatedBlocksDelayActive);
 
 	if (!updatedBlocksDelayActive){
 		updatedBlocksDelayTimeout = gs->frameNum + BLOCK_UPDATE_DELAY_FRAMES;
 		updatedBlocksDelayActive = true;
 		return;
 	}
+
+	//LOG("PathingState::Update frame %d next %d", gs->frameNum, updatedBlocksDelayTimeout);
 
 	if (gs->frameNum < updatedBlocksDelayTimeout)
 		return;
@@ -682,6 +711,17 @@ void PathingState::Update()
 			const MoveDef* currBlockMD = sb.moveDef;
 			blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
 		});
+
+		// for (int n=0; n<consumedBlocks.size(); n++){
+		// 	const SingleBlock sb = consumedBlocks[n];
+		// 	const int blockN = BlockPosToIdx(sb.blockPos);
+		// 	const MoveDef* currBlockMD = sb.moveDef;
+		// 	LOG("UPDATED consumed blockStates.peNodeOffsets[%d][%d] = (%d, %d) :(%d, %d)"
+		// 		, currBlockMD->pathType, blockN
+		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].x
+		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].y
+		// 		, sb.blockPos.x, sb.blockPos.y);
+		// }
 	}
 
 	{
@@ -725,8 +765,12 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 		for (int x = upperX; x >= lowerX; x--) {
 			const int idx = BlockPosToIdx(int2(x, z));
 
+			//LOG("Map Changed [%d] at (%d, %d) obsolete==%d", idx, x, z, (blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0);
+
 			if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
 				continue;
+
+			//LOG("Pushing update update blocks for size %d is %llu", BLOCK_SIZE, updatedBlocks.size());
 
 			updatedBlocks.emplace_back(x, z);
 			blockStates.nodeMask[idx] |= PATHOPT_OBSOLETE;
@@ -763,6 +807,14 @@ std::uint32_t PathingState::CalcChecksum() const
 
 		std::memcpy(&rawBytes[offset - nbytes], pathTypeOffsets.data(), nbytes);
 	}
+
+	// for (int i=0; i<blockStates.peNodeOffsets.size(); i++){
+	// 	for (int j =0; j<blockStates.peNodeOffsets[i].size(); j++){
+	// 		LOG("blockStates.peNodeOffsets[%d][%d] = (%d %d)", i, j
+	// 		, blockStates.peNodeOffsets[i][j].x
+	// 		, blockStates.peNodeOffsets[i][j].y);
+	// 	}
+	// }
 
 	{
 		nbytes = vertexCosts.size() * sizeof(float);
@@ -810,7 +862,7 @@ void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult r
 void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
-	pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
+	//pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
 void PathingState::PromotePathForCurrentFrame(
@@ -823,10 +875,10 @@ void PathingState::PromotePathForCurrentFrame(
 		const bool synced
 	)
 {
-	int2 strtBlock = {int(startPosition.x / BLOCK_SIZE), int(startPosition.z / BLOCK_SIZE)};;
-	int2 goalBlock = {int(goalPosition.x / BLOCK_SIZE), int(goalPosition.z / BLOCK_SIZE)};
+	int2 strtBlock = {int(startPosition.x / BLOCK_PIXEL_SIZE), int(startPosition.z / BLOCK_PIXEL_SIZE)};;
+	int2 goalBlock = {int(goalPosition.x / BLOCK_PIXEL_SIZE), int(goalPosition.z / BLOCK_PIXEL_SIZE)};
 
-	pathCache[synced]->PromoteCachedPathToCoreCache(path, result, strtBlock, goalBlock, goalRadius, pathType);
+	pathCache[synced]->AddPath(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
 std::uint32_t PathingState::CalcHash(const char* caller) const

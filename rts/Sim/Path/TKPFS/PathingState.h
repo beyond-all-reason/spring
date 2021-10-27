@@ -28,6 +28,8 @@ public:
 
     void Terminate();
 
+	static void KillStatic();
+
 	void AllocStateBuffer();
 
     bool RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName);
@@ -140,6 +142,7 @@ private:
 	friend class TKPFS::CPathEstimator;
 
     unsigned int BLOCK_SIZE = 0;
+	unsigned int BLOCK_PIXEL_SIZE = 0;
     unsigned int BLOCKS_TO_UPDATE = 0;
 
     std::uint32_t pathChecksum = 0;

@@ -7,6 +7,9 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+// #include "PathGlobal.h"
+// #include "System/Threading/ThreadPool.h"
+
 //#define ENABLE_NETLOG_CHECKSUM 1
 
 namespace TKPFS {
@@ -124,7 +127,37 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 	const int2 goalSqrOffset = peDef.GoalSquareOffset(BLOCK_SIZE);
 	const float maxSpeedMod = pathingState->GetMaxSpeedMod(moveDef.pathType);
 
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Block Size [%d] search started", BLOCK_SIZE);
+	// }
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+
+	// 	const PathNode* ob = openBlocks.top();
+	// 	int blockIdx = ob->nodeNum;
+
+	// 	int limitX = 0;
+	// 	int x = 0;
+	// 	int limitY = 0;
+	// 	int y = 0;
+
+	// 	for (; x<limitX; ++x) {
+	// 		for (;y<limitY; ++y){
+	// 			const unsigned int pathOpt = blockStates.nodeMask[blockIdx] & PATHOPT_CARDINALS;
+	// 			const unsigned int pathDir = PathOpt2PathDir(pathOpt);
+
+	// 	// 		blockIdx  = BlockPosToIdx(BlockIdxToPos(blockIdx) - PE_DIRECTION_VECTORS[pathDir]);
+	// 	// 		numNodes += 1;
+	// 		}
+	// 	}
+	// }
+
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
+
+		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+		// 	LOG("[%d:%d]", openBlockBuffer.GetSize(), maxBlocksToBeSearched);
+		// }
+
 		// get the open block with lowest cost
 		const PathNode* ob = openBlocks.top();
 		openBlocks.pop();
@@ -137,6 +170,12 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 		const int2 bSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][ob->nodeNum];
 		const int2 gSquare = ob->nodePos * BLOCK_SIZE + goalSqrOffset;
 
+		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+		// 	LOG("Node %d:%d bsquare (%d,%d) gSquare (%d,%d)", moveDef.pathType, ob->nodeNum
+		// 			, bSquare.x, bSquare.y
+		// 			, gSquare.x, gSquare.y);
+		// }
+
 		bool runBlkSearch = false;
 		bool canReachGoal =  true;
 
@@ -148,6 +187,10 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 		if (peDef.IsGoal(bSquare.x, bSquare.y) || (runBlkSearch = peDef.IsGoal(gSquare.x, gSquare.y))) {
 			if (runBlkSearch)
 				canReachGoal = (DoBlockSearch(owner, moveDef, bSquare, gSquare) == IPath::Ok);
+
+			// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+			// 	LOG("IsGoal (runBlkSearch %d) canReachGoal=%d", runBlkSearch, canReachGoal);
+			// }
 
 			if (canReachGoal) {
 				mGoalBlockIdx = ob->nodeNum;
@@ -172,6 +215,10 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 
 		// mark this block as closed
 		blockStates.nodeMask[ob->nodeNum] |= PATHOPT_CLOSED;
+
+		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+		// 	LOG("Closed off node %d [%x]", ob->nodeNum, blockStates.nodeMask[ob->nodeNum]);
+		// }
 	}
 
 	// we found our goal
@@ -212,6 +259,10 @@ bool CPathEstimator::TestBlock(
 	const int2 testBlockPos = openBlockPos + PE_DIRECTION_VECTORS[pathDir];
 	const int2 goalBlockPos = {int(peDef.goalSquareX / BLOCK_SIZE), int(peDef.goalSquareZ / BLOCK_SIZE)};
 
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Bounds check node (%d, %d)", testBlockPos.x, testBlockPos.y);
+	// }
+
 	// bounds-check
 	if (static_cast<unsigned int>(testBlockPos.x) >= nbrOfBlocks.x)
 		return false;
@@ -221,6 +272,10 @@ bool CPathEstimator::TestBlock(
 	// read precached vertex costs
 	const unsigned int openBlockIdx = BlockPosToIdx(openBlockPos);
 	const unsigned int testBlockIdx = BlockPosToIdx(testBlockPos);
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Testing node open %d [%d]", testBlockIdx, blockStates.nodeMask[testBlockIdx]);
+	// }
 
 	// check if the block is unavailable
 	if (blockStates.nodeMask[testBlockIdx] & (PATHOPT_BLOCKED | PATHOPT_CLOSED))
@@ -253,6 +308,10 @@ bool CPathEstimator::TestBlock(
 	const bool baseSetVertex = (testedBlocks <= 8);
 	const bool blockedSearch = (!baseSetVertex || peDef.skipSubSearches);
 
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Node Vertex Cost %d is infinity [%d]", testBlockIdx, (int)infCostVertex);
+	// }
+
 	if (infCostVertex) {
 		// warning: we cannot naively set PATHOPT_BLOCKED here;
 		// vertexCosts[] depends on the direction and nodeMask
@@ -272,6 +331,9 @@ bool CPathEstimator::TestBlock(
 			return false;
 	}
 
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Node WithinConstraints checking %d", testBlockIdx);
+	// }
 
 	// check if the block is outside constraints
 	if (!peDef.WithinConstraints(testBlockSquare)) {
@@ -299,7 +361,16 @@ bool CPathEstimator::TestBlock(
 			const float3 sWorldPos = SquareToFloat3(testBlockSquare.x, testBlockSquare.y);
 			const float3 gWorldPos = peDef.wsGoalPos;
 
+			// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+			// 	LOG("World pos sqDist %f > sqGoalRadius check %f", sWorldPos.SqDistance2D(gWorldPos), peDef.sqGoalRadius);
+			// }
+
 			if (sWorldPos.SqDistance2D(gWorldPos) > peDef.sqGoalRadius) {
+
+				// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+				// 	LOG("Node %d block search to close out", testBlockIdx);
+				// }
+
 				if (DoBlockSearch(owner, moveDef, sWorldPos, gWorldPos) != IPath::Ok) {
 					// we cannot set PATHOPT_BLOCKED here either, result
 					// depends on direction of entry from the parent node
@@ -330,6 +401,11 @@ bool CPathEstimator::TestBlock(
 	const float gCost = parentOpenBlock->gCost + nodeCost;
 	const float hCost = peDef.Heuristic(testBlockSquare.x, testBlockSquare.y, BLOCK_SIZE) * maxSpeedMod;
 	const float fCost = gCost + hCost;
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Testing node %d [%d] hCost %f, [%d]"
+	// 	, testBlockIdx, BLOCK_SIZE, hCost, blockStates.nodeMask[testBlockIdx]);
+	// }
 
 	// already in the open set?
 	if (blockStates.nodeMask[testBlockIdx] & PATHOPT_OPEN) {
@@ -365,6 +441,11 @@ bool CPathEstimator::TestBlock(
 	blockStates.fCost[testBlockIdx] = fCost;
 	blockStates.gCost[testBlockIdx] = gCost;
 	blockStates.nodeMask[testBlockIdx] |= (PathDir2PathOpt(pathDir) | PATHOPT_OPEN);
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Recording node %d [%d] fCost %f, gCost %f [%d]"
+	// 	, testBlockIdx, BLOCK_SIZE, fCost, gCost, blockStates.nodeMask[testBlockIdx]);
+	// }
 
 	dirtyBlocks.push_back(testBlockIdx);
 	return true;

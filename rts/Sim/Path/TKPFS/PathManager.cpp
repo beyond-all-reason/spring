@@ -17,6 +17,8 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "PathGlobal.h"
+
 // MH Note: Init NumThreads * 3 Finders (IPAthFinder) rather than static init here.
 
 /*
@@ -26,6 +28,8 @@ static CPathEstimator gLowResPE;
 */
 
 namespace TKPFS {
+
+int debugLoggingActive = -1;
 
 enum {
 	PATH_LOW_RES = 0,
@@ -139,6 +143,7 @@ CPathManager::~CPathManager()
 	PathHeatMap::FreeInstance(pathHeatMap);
 	PathFlowMap::FreeInstance(pathFlowMap);
 	IPathFinder::KillStatic();
+	PathingState::KillStatic();
 }
 
 
@@ -286,6 +291,10 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 			pfDef->AllowRawPathSearch(false);
 			pfDef->AllowDefPathSearch( true);
+
+			// if (debugLoggingActive == currentThread){
+			// 	LOG("RAW PATH Search Result is: %d", bestResult);
+			// }
 		}
 
 		if (bestResult != IPath::Ok) {
@@ -302,12 +311,20 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 				const IPath::SearchResult currResult = ownPathFinders[n]->GetPath(*moveDef, *pfDef, caller, startPos, *pathObjects[n], nodeLimits[n]);
 
+				// if (debugLoggingActive == currentThread){
+				// 	LOG("PATH level %d Search Result is: %d",  n, currResult);
+				// }
+
 				// note: GEQ s.t. MED-OK will be preferred over LOW-OK, etc
 				if (currResult >= bestResult)
 					continue;
 
 				bestResult = currResult;
 				bestSearch = n;
+
+				// if (debugLoggingActive == currentThread){
+				// 	LOG("PATH Best level %d Search Result is: %d",  bestSearch, bestResult);
+				// }
 
 				if (currResult == IPath::Ok)
 					break;
@@ -319,6 +336,10 @@ IPath::SearchResult CPathManager::ArrangePath(
 		if (n != bestSearch) {
 			pathObjects[n]->path.clear();
 			pathObjects[n]->squares.clear();
+
+			// if (debugLoggingActive == currentThread){
+			// 	LOG("PATH level %d clearing paths",  n);
+			// }
 		}
 	}
 
@@ -337,6 +358,11 @@ IPath::SearchResult CPathManager::ArrangePath(
 		pathObjects[PATH_LOW_RES]->squares.clear();
 
 		bestResult = std::min(bestResult, ownPathFinders[PATH_MED_RES]->GetPath(*moveDef, *pfDef, caller, startPos, *pathObjects[PATH_MED_RES], nodeLimits[PATH_MED_RES]));
+		
+		// if (debugLoggingActive == currentThread){
+		// 	LOG("Last ditched pathing attempt result is", bestResult);
+		// }
+	
 	}
 
 	return bestResult;
@@ -378,8 +404,35 @@ unsigned int CPathManager::RequestPath(
 
 	// Pass caller through so caller can be ignored. - already done above
 
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Start Position (%f, %f, %f)", startPos.x, startPos.y, startPos.z);
+	// 	LOG("Goal  Position (%f, %f, %f)", goalPos.x, goalPos.y, goalPos.z);
+	// 	LOG("Goal Radius %f", goalRadius);
+	// }
+
 	const IPath::SearchResult result = ArrangePath(&newPath, moveDef, startPos, goalPos, caller);
 	//const IPath::SearchResult result = IPath::Error;
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+
+	// 	std::array<IPath::Path*, PATH_ALL_LEVELS> paths;
+	// 	paths[PATH_LOW_RES] = &newPath.lowResPath;
+	// 	paths[PATH_MED_RES] = &newPath.medResPath;
+	// 	paths[PATH_MAX_RES] = &newPath.maxResPath;
+
+	// 	for (int i = 0; i<PATH_ALL_LEVELS; i++){
+	// 		LOG("Path Resolution level %d (cost: %f)", i, paths[i]->pathCost);
+	// 		LOG("Desired Goal (%f, %f, %f)", paths[i]->desiredGoal.x, paths[i]->desiredGoal.y, paths[i]->desiredGoal.z);
+	// 		LOG("Path Goal (%f, %f, %f)", paths[i]->pathGoal.x, paths[i]->pathGoal.y, paths[i]->pathGoal.z);
+			
+	// 		for (int j = 0; j<paths[i]->path.size(); j++){
+	// 			LOG("Path Step %d (%f, %f, %f)", j, paths[i]->path[j].x, paths[i]->path[j].y, paths[i]->path[j].z);
+	// 		}
+	// 		for (int j = 0; j<paths[i]->squares.size(); j++){
+	// 			LOG("Square Step %d (%d, %d)", j, paths[i]->squares[j].x, paths[i]->squares[j].y);
+	// 		}
+	// 	}
+	// }
 
 	unsigned int pathID = 0;
 
@@ -600,7 +653,7 @@ float3 CPathManager::NextWayPoint(
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
 
 	// y=0 indicates this is not a temporary waypoint
-	// (the default PFS does not queue path-requests)
+	// (the default PFS does not queue path-requests) // MH TODO: review
 	return (waypoint * XZVector);
 }
 

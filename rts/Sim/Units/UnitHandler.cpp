@@ -386,11 +386,16 @@ void CUnitHandler::SlowUpdateUnits()
 	if (pathManager->SupportsMultiThreadedRequests()) {
 		SCOPED_TIMER("Misc::Path::RequestPath");
 
+		//LOG("----- Unit Path Requests for Frame Started -----");
 		// Carry out the pathing requests without heatmap updates.
 		for_mt(0, unitsToMoveCount, [&unitsToMove](const int i){
 			CUnit* unit = unitsToMove[i];
 			unit->moveType->DelayedReRequestPath();
 		});
+		// for (size_t i = 0; i<unitsToMoveCount; ++i){
+		// 	CUnit* unit = unitsToMove[i];
+		// 	unit->moveType->DelayedReRequestPath();
+		// }
 
 		// update cache
 		for (size_t i = 0; i<unitsToMoveCount; ++i){
@@ -412,6 +417,7 @@ void CUnitHandler::SlowUpdateUnits()
 			CUnit* unit = unitsToMove[i];
 			unit->moveType->SyncWaypoints();
 		}
+		//LOG("----- Unit Path Requests for Frame Ended -----");
 	}
 	else
 	{

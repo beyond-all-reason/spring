@@ -7,6 +7,11 @@
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
 
+// #include "PathGlobal.h"
+// #include "System/Threading/ThreadPool.h"
+
+// #include <mutex>
+
 namespace TKPFS {
 
 static std::vector<PathNodeStateBuffer> nodeStateBuffers;
@@ -85,6 +90,7 @@ void IPathFinder::ResetSearch()
 	testedBlocks = 0;
 }
 
+//std::mutex cacheAccessLock;
 
 IPath::SearchResult IPathFinder::GetPath(
 	const MoveDef& moveDef,
@@ -119,6 +125,25 @@ IPath::SearchResult IPathFinder::GetPath(
 	// check cache (when there is one)
 	int2 goalBlock;
 	goalBlock = {int(pfDef.goalSquareX / BLOCK_SIZE), int(pfDef.goalSquareZ / BLOCK_SIZE)};
+
+	// (42, 28) -> (39, 31)
+	// if (mStartBlock.x == 41 && mStartBlock.y == 28
+	// 		&& goalBlock.x == 39 && goalBlock.y == 31
+	// 		&& moveDef.pathType == 44 && BLOCK_SIZE == 16){
+	// 	debugLoggingActive = ThreadPool::GetThreadNum();
+	// 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) [%f:%d] [%d] = %d"
+	// 			, mStartBlock.x, mStartBlock.y
+	// 			, goalBlock.x, goalBlock.y
+	// 			, pfDef.sqGoalRadius, moveDef.pathType
+	// 			, BLOCK_SIZE, debugLoggingActive);
+	// }
+
+	// const CPathCache::CacheItem* ct;
+	// {
+	// 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
+	// 	ct = &GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
+	// }
+	// const CPathCache::CacheItem& ci = *ct;
 	const CPathCache::CacheItem& ci = GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 
 	if (ci.pathType != -1) {
@@ -132,7 +157,32 @@ IPath::SearchResult IPathFinder::GetPath(
 	// if search was successful, generate new path and cache it
 	if (result == IPath::Ok || result == IPath::GoalOutOfRange) {
 		FinishSearch(moveDef, pfDef, path);
-		AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
+
+		//const std::lock_guard<std::mutex> lock(cacheAccessLock);
+
+		//if (ci.pathType == -1)
+		//AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
+		// else{
+		// 	if (debugLoggingActive == ThreadPool::GetThreadNum()){
+		// 	if (ci.path.path.size() != path.path.size())
+		// 		LOG("!!!!!! Pathing Difference DETECTED !!!!!!");
+		// 	LOG("===== Cache Returned the following =====");
+		// 	LOG("Query was: start (%d, %d) -> (%d, %d) [~%f:%d]"
+		// 			, ci.strtBlock.x, ci.strtBlock.y
+		// 			, ci.goalBlock.x, ci.goalBlock.y
+		// 			, ci.goalRadius, ci.pathType);
+		// 	LOG("Path Resolution level %d (cost: %f)", BLOCK_SIZE, ci.path.pathCost);
+		// 	LOG("Desired Goal (%f, %f, %f)", ci.path.desiredGoal.x, ci.path.desiredGoal.y, ci.path.desiredGoal.z);
+		// 	LOG("Path Goal (%f, %f, %f)", ci.path.pathGoal.x, ci.path.pathGoal.y, ci.path.pathGoal.z);
+
+		// 	for (int j = 0; j<ci.path.path.size(); j++){
+		// 		LOG("Path Step %d (%f, %f, %f)", j, ci.path.path[j].x, ci.path.path[j].y, ci.path.path[j].z);
+		// 	}
+		// 	for (int j = 0; j<ci.path.squares.size(); j++){
+		// 		LOG("Square Step %d (%d, %d)", j, ci.path.squares[j].x, ci.path.squares[j].y);
+		// 	}
+		// 	}
+		// }
 	}
 	// 	if (LOG_IS_ENABLED(L_DEBUG)) {
 	// 		LOG_L(L_DEBUG, "==== %s: Search completed ====", (BLOCK_SIZE != 1) ? "PE" : "PF");
@@ -149,6 +199,32 @@ IPath::SearchResult IPathFinder::GetPath(
 	// 		LOG_L(L_DEBUG, "Open blocks: %u", openBlockBuffer.GetSize());
 	// 		LOG_L(L_DEBUG, "============================");
 	// 	}
+	// }
+
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("===== Actual result from query attempt =====");
+	// 	LOG("Query was: start (%d, %d) -> (%d, %d) [~%f:%d]"
+	// 			, mStartBlock.x, mStartBlock.y
+	// 			, goalBlock.x, goalBlock.y
+	// 			, pfDef.sqGoalRadius, moveDef.pathType);
+	// 	LOG("Path Resolution level %d (cost: %f)", BLOCK_SIZE, path.pathCost);
+	// 	LOG("Desired Goal (%f, %f, %f)", path.desiredGoal.x, path.desiredGoal.y, path.desiredGoal.z);
+	// 	LOG("Path Goal (%f, %f, %f)", path.pathGoal.x, path.pathGoal.y, path.pathGoal.z);
+
+	// 	for (int j = 0; j<path.path.size(); j++){
+	// 		LOG("Path Step %d (%f, %f, %f)", j, path.path[j].x, path.path[j].y, path.path[j].z);
+	// 	}
+	// 	for (int j = 0; j<path.squares.size(); j++){
+	// 		LOG("Square Step %d (%d, %d)", j, path.squares[j].x, path.squares[j].y);
+	// 	}
+	// 	LOG("===== End of comparison =====");
+	// }
+
+	// if (mStartBlock.x == 41 && mStartBlock.y == 28
+	// 		&& goalBlock.x == 39 && goalBlock.y == 31
+	// 		&& moveDef.pathType == 44 && BLOCK_SIZE == 16){
+	// 	LOG("Deactivate deeper logging.");
+	// 	debugLoggingActive = -1;
 	// }
 
 	return result;

@@ -301,7 +301,9 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 
 		// IsBlockedNoSpeedModCheck; very expensive call but with a ~20% (?) chance of early-out
-		if ((sqState.blockMask = blockCheckFunc(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, owner)) & MMBT::BLOCK_STRUCTURE) {
+		//if ((sqState.blockMask = blockCheckFunc(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, owner)) & MMBT::BLOCK_STRUCTURE) {
+		sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner);
+		if (sqState.blockMask & MMBT::BLOCK_STRUCTURE) {
 			blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 			dirtyBlocks.push_back(ngbSquareIdx);
 			continue;

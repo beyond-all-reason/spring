@@ -23,6 +23,7 @@ CPathCache::CPathCache(int blocksX, int blocksZ)
 	, numCacheMisses(0)
 	, numHashCollisions(0)
 {
+	LOG("Path cache (%d, %d) initialized.", numBlocksX, numBlocksZ);
 	// {result, path, strtBlock, goalBlock, goalRadius, pathType}
 	dummyCacheItem = {IPath::Error, {}, {-1, -1}, {-1, -1}, -1.0f, -1};
 
@@ -57,7 +58,8 @@ bool CPathCache::AddPath(
 	const std::uint32_t cols = numHashCollisions;
 	const auto iter = cachedPaths.find(hash);
 
-	// LOG("Cache L1 added entry (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// LOG("%llu Cache L1 added entry (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// 		, numBlocks
 	// 		, result
 	// 		, strtBlock.x, strtBlock.y
 	// 		, goalBlock.x, goalBlock.y
@@ -91,7 +93,8 @@ void CPathCache::AddPathForCurrentFrame(
 	const std::uint64_t hash = GetHash(strtBlock, goalBlock, goalRadius, pathType);
 	const auto iter = currentFrameCachedPaths.find(hash);
 
-	// LOG("Cache L2 added entry (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// LOG("%llu Cache L2 entry (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// 		, numBlocks
 	// 		, result
 	// 		, strtBlock.x, strtBlock.y
 	// 		, goalBlock.x, goalBlock.y
@@ -100,9 +103,18 @@ void CPathCache::AddPathForCurrentFrame(
 	// 		, hash
 	// 		, (iter == currentFrameCachedPaths.end()));
 
+	// LOG("Path Details Cost %f (%f, %f, %f))", path->pathCost, path->pathGoal.x, path->pathGoal.y, path->pathGoal.z);
+	// for (int j = 0; j<path->path.size(); j++){
+	// 	LOG("%llu Path Step %d (%f, %f, %f)", numBlocks, j, path->path[j].x, path->path[j].y, path->path[j].z);
+	// }
+
 	// collisions are expected due to multiple threads sometimes working on identical queries
-	if (iter != currentFrameCachedPaths.end())
+	if (iter != currentFrameCachedPaths.end()){
+		//LOG("%llu Cache L2 entry already present", numBlocks);
 		return;
+	}
+
+	//LOG("%llu Cache L2 entry added", numBlocks);
 
 	currentFrameCachedPaths[hash] = CacheItem{result, *path, strtBlock, goalBlock, goalRadius, pathType};
 }
@@ -129,7 +141,8 @@ void CPathCache::PromoteCachedPathToCoreCache(
 
 	auto cfIter = currentFrameCachedPaths.find(hash);
 
-	// LOG("Cache promotion attempt (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// LOG("%llu Cache promotion attempt (%d): (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu (available? %d)"
+	// 		, numBlocks
 	// 		, result
 	// 		, strtBlock.x, strtBlock.y
 	// 		, goalBlock.x, goalBlock.y
@@ -164,7 +177,8 @@ const CPathCache::CacheItem& CPathCache::GetCachedPath(
 ) {
 	const std::uint64_t hash = GetHash(strtBlock, goalBlock, goalRadius, pathType);
 
-	// LOG("Cache lookup: (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu"
+	// LOG("%llu Cache lookup: (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu"
+	// 		, numBlocks
 	// 		, strtBlock.x, strtBlock.y
 	// 		, goalBlock.x, goalBlock.y
 	// 		, goalRadius, pathType
@@ -179,25 +193,10 @@ const CPathCache::CacheItem& CPathCache::GetCachedPath(
 				&& (iter->second).strtBlock == strtBlock
 				&& (iter->second).goalBlock == goalBlock
 				&& (iter->second).pathType == pathType
-				&& (iter->second).goalRadius == goalRadius
 			) {
-			//	LOG("Primary Cache Hit %d", iter->second.path.path.size());
+			// LOG("Primary Cache Hit %d", iter->second.path.path.size());
 			++numCacheHits;
 			return (iter->second);
-		}
-	}
-
-	// now for current frame cache
-	{
-		auto cfIter = currentFrameCachedPaths.find(hash);
-		if (cfIter != currentFrameCachedPaths.end()
-				&& (cfIter->second).strtBlock == strtBlock
-				&& (cfIter->second).goalBlock == goalBlock
-				&& (cfIter->second).pathType == pathType
-				&& (cfIter->second).goalRadius == goalRadius
-			){
-			++numCacheHits;
-			return (cfIter->second);
 		}
 	}
 
@@ -277,7 +276,7 @@ std::uint64_t CPathCache::GetHash(
 		(goalBlk.y * NX + goalBlk.x) * N;
 	const std::uint64_t offset =
 		pathType * N*N +
-		goalRadius * N*N*N;
+		std::max<std::uint32_t>(1, goalRadius) * N*N*N;
 	return (index + offset);
 	#endif
 
