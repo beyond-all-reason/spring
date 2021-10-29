@@ -24,6 +24,7 @@
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
 
+#include "Sim/Path/TKPFS/PathGlobal.h"
 
 CR_BIND(CUnitHandler, )
 CR_REG_METADATA(CUnitHandler, (
@@ -384,7 +385,9 @@ void CUnitHandler::SlowUpdateUnits()
 	}
 
 	if (pathManager->SupportsMultiThreadedRequests()) {
-		SCOPED_TIMER("Misc::Path::RequestPath");
+		SCOPED_TIMER("Sim::Unit::RequestPath");
+
+		TKPFS::PathingSystemActive = true;
 
 		//LOG("----- Unit Path Requests for Frame Started -----");
 		// Carry out the pathing requests without heatmap updates.
@@ -417,11 +420,13 @@ void CUnitHandler::SlowUpdateUnits()
 			CUnit* unit = unitsToMove[i];
 			unit->moveType->SyncWaypoints();
 		}
+
+		TKPFS::PathingSystemActive = false;
 		//LOG("----- Unit Path Requests for Frame Ended -----");
 	}
 	else
 	{
-		SCOPED_TIMER("Misc::Path::RequestPath");
+		SCOPED_TIMER("Sim::Unit::RequestPath");
 		for (size_t i = 0; i<unitsToMoveCount; ++i){
 			CUnit* unit = unitsToMove[i];
 			unit->moveType->DelayedReRequestPath();

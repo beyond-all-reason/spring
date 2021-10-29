@@ -35,6 +35,10 @@
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/HsiehHash.h"
 
+// TODO: Remove (only needed for debug)
+// #include <sim/Path/TKPFS/PathGlobal.h>
+// #include "System/Threading/ThreadPool.h"
+
 #if 1
 #include "Rendering/IPathDrawer.h"
 #define DEBUG_DRAWING_ENABLED ((gs->cheatEnabled || gu->spectatingFullView) && pathDrawer->IsEnabled())
@@ -421,7 +425,8 @@ void CGroundMoveType::PostLoad()
 	if (pathID == 0)
 		return;
 
-	pathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true);
+	ReRequestPath(true);
+	//pathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true);
 }
 
 bool CGroundMoveType::OwnerMoved(const short oldHeading, const float3& posDif, const float3& cmpEps) {
@@ -1466,6 +1471,9 @@ unsigned int CGroundMoveType::GetNewPath()
 	if ((owner->pos - goalPos).SqLength2D() <= Square(goalRadius + extraRadius))
 		return newPathID;
 
+	// if (gs->frameNum == 459 && this->owner->id == 9744)
+	// 	TKPFS::debugLoggingActive = ThreadPool::GetThreadNum();
+
 	if ((newPathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true)) != 0) {
 		atGoal = false;
 		atEndOfPath = false;
@@ -1478,6 +1486,9 @@ unsigned int CGroundMoveType::GetNewPath()
 	} else {
 		Fail(false);
 	}
+
+	// if (gs->frameNum == 459 && this->owner->id == 9744)
+	// 	TKPFS::debugLoggingActive = -1;
 
 	return newPathID;
 }
@@ -1509,6 +1520,7 @@ bool CGroundMoveType::CanSetNextWayPoint() {
 		      float3& cwp = (float3&) currWayPoint;
 		      float3& nwp = (float3&) nextWayPoint;
 
+		// QTPFS ONLY PATH
 		if (pathManager->PathUpdated(pathID)) {
 			// path changed while we were following it (eg. due
 			// to terrain deformation) in between two waypoints

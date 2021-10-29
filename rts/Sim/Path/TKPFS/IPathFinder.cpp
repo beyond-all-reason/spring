@@ -126,10 +126,12 @@ IPath::SearchResult IPathFinder::GetPath(
 	int2 goalBlock;
 	goalBlock = {int(pfDef.goalSquareX / BLOCK_SIZE), int(pfDef.goalSquareZ / BLOCK_SIZE)};
 
+
 	// (42, 28) -> (39, 31)
 	// if (mStartBlock.x == 41 && mStartBlock.y == 28
 	// 		&& goalBlock.x == 39 && goalBlock.y == 31
 	// 		&& moveDef.pathType == 44 && BLOCK_SIZE == 16){
+	// if (gs->frameNum == 2251 && BLOCK_SIZE == 16){
 	// 	debugLoggingActive = ThreadPool::GetThreadNum();
 	// 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) [%f:%d] [%d] = %d"
 	// 			, mStartBlock.x, mStartBlock.y
@@ -161,7 +163,8 @@ IPath::SearchResult IPathFinder::GetPath(
 		//const std::lock_guard<std::mutex> lock(cacheAccessLock);
 
 		//if (ci.pathType == -1)
-		//AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
+		if (!pfDef.synced)
+			AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 		// else{
 		// 	if (debugLoggingActive == ThreadPool::GetThreadNum()){
 		// 	if (ci.path.path.size() != path.path.size())
@@ -223,6 +226,7 @@ IPath::SearchResult IPathFinder::GetPath(
 	// if (mStartBlock.x == 41 && mStartBlock.y == 28
 	// 		&& goalBlock.x == 39 && goalBlock.y == 31
 	// 		&& moveDef.pathType == 44 && BLOCK_SIZE == 16){
+	// if (gs->frameNum == 2251 && BLOCK_SIZE == 16){
 	// 	LOG("Deactivate deeper logging.");
 	// 	debugLoggingActive = -1;
 	// }

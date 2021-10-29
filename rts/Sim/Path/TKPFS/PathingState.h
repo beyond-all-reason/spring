@@ -97,7 +97,6 @@ public:
 		const bool synced
 	);
 
-	// For MT sync safe caching
 	void AddPathForCurrentFrame(
 		const IPath::Path* path,
 		const IPath::SearchResult result,

@@ -30,6 +30,7 @@ static CPathEstimator gLowResPE;
 namespace TKPFS {
 
 int debugLoggingActive = -1;
+bool PathingSystemActive = false;
 
 enum {
 	PATH_LOW_RES = 0,
@@ -380,6 +381,9 @@ unsigned int CPathManager::RequestPath(
 	float goalRadius,
 	bool synced
 ) {
+	if (!PathingSystemActive && synced)
+		LOG("!!!!! WARNING !!! Request Outside of Pathing System Detected !!!!!");
+
 	if (!IsFinalized())
 		return 0;
 
@@ -600,6 +604,11 @@ float3 CPathManager::NextWayPoint(
 	const bool extendMaxResPath = EXTEND_PATH_POINTS(medResPath.path, maxResPath.path, MAXRES_SEARCH_DISTANCE_EXT);
 	const bool extendMedResPath = EXTEND_PATH_POINTS(lowResPath.path, medResPath.path, MEDRES_SEARCH_DISTANCE_EXT);
 	#undef EXTEND_PATH_POINTS
+
+	// This position is used to resolve maxres query start points.
+	// In longer paths, if this isn't updated to the caller's current
+	// position, then the query will produce incorrect results.
+	multiPath->peDef.wsStartPos = callerPos;
 
 	// check whether the max-res path needs extending through
 	// recursive refinement of its lower-resolution segments

@@ -74,10 +74,7 @@ const CPathCache::CacheItem& CPathEstimator::GetCache(const int2 strtBlock, cons
 
 void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	if (!synced)
-		pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
-	else
-		pathingState->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
+	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
 
 
@@ -309,7 +306,7 @@ bool CPathEstimator::TestBlock(
 	const bool blockedSearch = (!baseSetVertex || peDef.skipSubSearches);
 
 	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Node Vertex Cost %d is infinity [%d]", testBlockIdx, (int)infCostVertex);
+	// 	LOG("Node Vertex %d Cost %f is infinity [%d]", testBlockIdx, testVertexCost, (int)infCostVertex);
 	// }
 
 	if (infCostVertex) {

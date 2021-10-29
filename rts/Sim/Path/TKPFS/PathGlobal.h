@@ -9,6 +9,8 @@ namespace TKPFS {
 
 extern int debugLoggingActive;
 
+extern bool PathingSystemActive;
+
 }
 
 #endif
