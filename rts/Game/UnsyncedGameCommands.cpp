@@ -1772,7 +1772,26 @@ public:
 	}
 };
 
+class SetGamespeedActionExecutor : public IUnsyncedActionExecutor {
+public:
+	SetGamespeedActionExecutor() : IUnsyncedActionExecutor(
+		"GameSpeed",
+		"Set the simulation speed, bounded my minimum and maximum game speed settings."
+	) {}
 
+	bool Execute(const UnsyncedAction& action) const final {
+		if ((action.GetArgs()).empty())
+			return false;
+
+		float minSpeed = gs->minUserSped;
+		float maxSpeed = gs->maxUserSped;
+		float speed = atof((action.GetArgs()).c_str());
+		speed = Clamp(speed, minSpeed, maxSpeed)
+
+		clientNet->Send(CBaseNetProtocol::Get().SendUserSpeed(gu->myPlayerNum, speed);
+		return true;
+	}
+};
 
 class ControlUnitActionExecutor : public IUnsyncedActionExecutor {
 public:
