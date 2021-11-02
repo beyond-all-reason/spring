@@ -92,6 +92,21 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
+	void DelayedReRequestPath() {
+		PathRequestType curRepath = wantRepath;
+		wantRepath = PATH_REQUEST_NONE;
+		moveStateWaitingOnPathUpdated = false;
+
+		if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
+		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
+	}
+	void SyncWaypoints() {
+		currWayPoint = earlyCurrWayPoint;
+		nextWayPoint = earlyNextWayPoint;
+	}
+	unsigned int GetPathId() { return pathID; }
+	
+
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;
@@ -109,7 +124,9 @@ private:
 
 	void SetNextWayPoint();
 	bool CanSetNextWayPoint();
-	void ReRequestPath(bool forceRequest);
+	void DoSetNextWaypoint();
+	void ReRequestPath(PathRequestType requestType);
+	void DoReRequestPath();
 
 	void StartEngine(bool callScript);
 	void StopEngine(bool callScript, bool hardStop = false);
@@ -167,6 +184,9 @@ private:
 	SyncedFloat3 currWayPoint;
 	SyncedFloat3 nextWayPoint;
 
+	float3 earlyCurrWayPoint;
+	float3 earlyNextWayPoint;
+
 	float3 waypointDir;
 	float3 flatFrontDir;
 	float3 lastAvoidanceDir;
@@ -211,7 +231,6 @@ private:
 
 	bool atGoal = false;
 	bool atEndOfPath = false;
-	bool wantRepath = false;
 
 	bool reversing = false;
 	bool idling = false;
@@ -219,6 +238,8 @@ private:
 	bool canReverse = false;
 	bool useMainHeading = false;            /// if true, turn toward mainHeadingPos until weapons[0] can TryTarget() it
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
+
+	bool moveStateWaitingOnPathUpdated = false;
 };
 
 #endif // GROUNDMOVETYPE_H
