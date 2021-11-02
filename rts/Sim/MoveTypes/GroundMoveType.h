@@ -92,7 +92,14 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	void DelayedReRequestPath() { if (wantRepath) { DoReRequestPath(); } }
+	void DelayedReRequestPath() {
+		PathRequestType curRepath = wantRepath;
+		wantRepath = PATH_REQUEST_NONE;
+		moveStateWaitingOnPathUpdated = false;
+
+		if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
+		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
+	}
 	void SyncWaypoints() {
 		currWayPoint = earlyCurrWayPoint;
 		nextWayPoint = earlyNextWayPoint;
@@ -117,7 +124,8 @@ private:
 
 	void SetNextWayPoint();
 	bool CanSetNextWayPoint();
-	void ReRequestPath(bool forceRequest);
+	void DoSetNextWaypoint();
+	void ReRequestPath(PathRequestType requestType);
 	void DoReRequestPath();
 
 	void StartEngine(bool callScript);
@@ -230,6 +238,8 @@ private:
 	bool canReverse = false;
 	bool useMainHeading = false;            /// if true, turn toward mainHeadingPos until weapons[0] can TryTarget() it
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
+
+	bool moveStateWaitingOnPathUpdated = false;
 };
 
 #endif // GROUNDMOVETYPE_H

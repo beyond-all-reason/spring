@@ -368,19 +368,19 @@ void CUnitHandler::SlowUpdateUnits()
 	for (size_t i = 0; i<idxBeg; ++i)
 	{
 		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_IMMEDIATE))
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_IMMEDIATE))
 			unitsToMove[unitsToMoveCount++] = unit;
 	}
 	for (size_t i = idxBeg; i<idxEnd; ++i)
 	{
 		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_DELAYED|PATH_REQUEST_IMMEDIATE))
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_TIMING_IMMEDIATE))
 			unitsToMove[unitsToMoveCount++] = unit;
 	}
 	for (size_t i = idxEnd; i<activeUnits.size(); ++i)
 	{
 		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_IMMEDIATE))
+		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_IMMEDIATE))
 			unitsToMove[unitsToMoveCount++] = unit;
 	}
 
