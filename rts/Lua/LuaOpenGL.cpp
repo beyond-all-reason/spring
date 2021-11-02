@@ -48,9 +48,10 @@
 #include "Rendering/LineDrawer.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/UnitDefImage.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
 #include "Rendering/Env/WaterRendering.h"
@@ -1430,11 +1431,13 @@ static void GLObjectShape(lua_State* L, const SolidObjectDef* def)
 	const bool rawState = luaL_optboolean(L, 3,  true);
 	const bool toScreen = luaL_optboolean(L, 4, false);
 
+	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
+
 	// does not set the full state by default
 	if (luaL_optboolean(L, 5, true)) {
-		CUnitDrawer::DrawIndividualDefOpaque(def, luaL_checkint(L, 2), rawState, toScreen);
+		unitDrawer->DrawIndividualDefOpaque(def, luaL_checkint(L, 2), rawState, toScreen);
 	} else {
-		CUnitDrawer::DrawIndividualDefAlpha(def, luaL_checkint(L, 2), rawState, toScreen);
+		unitDrawer->DrawIndividualDefAlpha(def, luaL_checkint(L, 2), rawState, toScreen);
 	}
 }
 
@@ -1447,9 +1450,9 @@ static void GLObjectTextures(lua_State* L, const CSolidObject* obj)
 		return;
 
 	if (luaL_checkboolean(L, 2)) {
-		CUnitDrawer::PushModelRenderState(obj->model);
+		CModelDrawerHelper::PushModelRenderState(obj->model);
 	} else {
-		CUnitDrawer::PopModelRenderState(obj->model);
+		CModelDrawerHelper::PopModelRenderState(obj->model);
 	}
 }
 
@@ -1464,9 +1467,9 @@ static void GLObjectShapeTextures(lua_State* L, const SolidObjectDef* def)
 	// set textures and per-model(type) attributes, not shaders
 	// or other drawpass state
 	if (luaL_checkboolean(L, 2)) {
-		CUnitDrawer::PushModelRenderState(def->model);
+		CModelDrawerHelper::PushModelRenderState(def->model);
 	} else {
-		CUnitDrawer::PopModelRenderState(def->model);
+		CModelDrawerHelper::PopModelRenderState(def->model);
 	}
 }
 
@@ -1492,11 +1495,11 @@ int LuaOpenGL::UnitCommon(lua_State* L, bool applyTransform, bool callDrawUnit)
 
 	glPushAttrib(GL_ENABLE_BIT);
 
-	typedef void(CUnitDrawer::*RawDrawMemFunc)(const CUnit*, unsigned int, unsigned int, bool, bool);
-	typedef void(CUnitDrawer::*MatDrawMemFunc)(const CUnit*, bool);
+	typedef void(CUnitDrawer::*RawDrawMemFunc)(const CUnit*, unsigned int, unsigned int, bool, bool) const;
+	typedef void(CUnitDrawer::*MatDrawMemFunc)(const CUnit*, bool) const;
 
-	const RawDrawMemFunc rawDrawFuncs[2] = {&CUnitDrawer::DrawUnitNoTrans, &CUnitDrawer::DrawUnitTrans};
-	const MatDrawMemFunc matDrawFuncs[2] = {&CUnitDrawer::DrawIndividualNoTrans, &CUnitDrawer::DrawIndividual};
+	const RawDrawMemFunc rawDrawFuncs[2] = { &CUnitDrawer::DrawUnitNoTrans, &CUnitDrawer::DrawUnitTrans };
+	const MatDrawMemFunc matDrawFuncs[2] = { &CUnitDrawer::DrawIndividualNoTrans, &CUnitDrawer::DrawIndividual };
 
 	if (!useLuaMat) {
 		// "scoped" draw; this prevents any Lua-assigned
@@ -1608,8 +1611,8 @@ int LuaOpenGL::FeatureCommon(lua_State* L, bool applyTransform, bool callDrawFea
 
 	glPushAttrib(GL_ENABLE_BIT);
 
-	typedef void(CFeatureDrawer::*RawDrawMemFunc)(const CFeature*, unsigned int, unsigned int, bool, bool);
-	typedef void(CFeatureDrawer::*MatDrawMemFunc)(const CFeature*, bool);
+	typedef void(CFeatureDrawer::*RawDrawMemFunc)(const CFeature*, unsigned int, unsigned int, bool, bool) const;
+	typedef void(CFeatureDrawer::*MatDrawMemFunc)(const CFeature*, bool) const;
 
 	const RawDrawMemFunc rawDrawFuncs[2] = {&CFeatureDrawer::DrawFeatureNoTrans, &CFeatureDrawer::DrawFeatureTrans};
 	const MatDrawMemFunc matDrawFuncs[2] = {&CFeatureDrawer::DrawIndividualNoTrans, &CFeatureDrawer::DrawIndividual};
@@ -3287,6 +3290,45 @@ int LuaOpenGL::Texture(lua_State* L)
 	return 1;
 }
 
+namespace Impl {
+	static void ParseCommonLuaTexParams(lua_State* L, LuaTextures::Texture* tex, uint32_t strHash) {
+		switch (strHash) {
+		case hashString("target"): {
+			tex->target = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("format"): {
+			tex->format = (GLint)lua_tonumber(L, -1);
+		} break;
+		case hashString("min_filter"): {
+			tex->min_filter = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("mag_filter"): {
+			tex->mag_filter = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("wrap_s"): {
+			tex->wrap_s = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("wrap_t"): {
+			tex->wrap_t = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("wrap_r"): {
+			tex->wrap_r = (GLenum)lua_tonumber(L, -1);
+		} break;
+		case hashString("compareFunc"): {
+			tex->cmpFunc = lua_tonumber(L, -1);
+		} break;
+		case hashString("lodBias"): {
+			tex->lodBias = lua_tonumber(L, -1);
+		} break;
+		case hashString("aniso"): {
+			tex->aniso = (GLfloat)lua_tonumber(L, -1);
+		} break;
+		default: {
+		} break;
+
+		}
+	}
+}
 
 int LuaOpenGL::CreateTexture(lua_State* L)
 {
@@ -3303,42 +3345,15 @@ int LuaOpenGL::CreateTexture(lua_State* L)
 				continue;
 
 			if (lua_israwnumber(L, -1)) {
-				switch (hashString(lua_tostring(L, -2))) {
-					case hashString("target"): {
-						tex.target = (GLenum)lua_tonumber(L, -1);
-					} break;
-					case hashString("format"): {
-						tex.format = (GLint)lua_tonumber(L, -1);
-					} break;
-
+				uint32_t strHash = hashString(lua_tostring(L, -2));
+				switch (strHash) {
 					case hashString("samples"): {
 						// not Clamp(lua_tonumber(L, -1), 2, globalRendering->msaaLevel);
 						// AA sample count has to equal the default FB or blitting breaks
 						tex.samples = globalRendering->msaaLevel;
 					} break;
-
-					case hashString("min_filter"): {
-						tex.min_filter = (GLenum)lua_tonumber(L, -1);
-					} break;
-					case hashString("mag_filter"): {
-						tex.mag_filter = (GLenum)lua_tonumber(L, -1);
-					} break;
-
-					case hashString("wrap_s"): {
-						tex.wrap_s = (GLenum)lua_tonumber(L, -1);
-					} break;
-					case hashString("wrap_t"): {
-						tex.wrap_t = (GLenum)lua_tonumber(L, -1);
-					} break;
-					case hashString("wrap_r"): {
-						tex.wrap_r = (GLenum)lua_tonumber(L, -1);
-					} break;
-
-					case hashString("aniso"): {
-						tex.aniso = (GLfloat)lua_tonumber(L, -1);
-					} break;
-
 					default: {
+						Impl::ParseCommonLuaTexParams(L, &tex, strHash);
 					} break;
 				}
 
@@ -3393,34 +3408,7 @@ int LuaOpenGL::ChangeTextureParams(lua_State* L)
 		if (!lua_israwstring(L, -2) || !lua_israwnumber(L, -1))
 			continue;
 
-		switch (hashString(lua_tostring(L, -2))) {
-			case hashString("target"): {
-				tex->target = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("format"): {
-				tex->format = (GLint)lua_tonumber(L, -1);
-			} break;
-			case hashString("min_filter"): {
-				tex->min_filter = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("mag_filter"): {
-				tex->mag_filter = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("wrap_s"): {
-				tex->wrap_s = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("wrap_t"): {
-				tex->wrap_t = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("wrap_r"): {
-				tex->wrap_r = (GLenum)lua_tonumber(L, -1);
-			} break;
-			case hashString("aniso"): {
-				tex->aniso = (GLfloat)lua_tonumber(L, -1);
-			} break;
-			default: {
-			} break;
-		}
+		Impl::ParseCommonLuaTexParams(L, tex, hashString(lua_tostring(L, -2)));
 	}
 
 	textures.ChangeParams(*tex);
@@ -5463,6 +5451,34 @@ int LuaOpenGL::GetWaterRendering(lua_State* L)
 		} break;
 		case hashString("perlinAmplitude"): {
 			lua_pushnumber(L, waterRendering->perlinAmplitude);
+			return 1;
+		} break;
+		case hashString("windSpeed"): {
+			lua_pushnumber(L, waterRendering->windSpeed);
+			return 1;
+		} break;
+		case hashString("waveOffsetFactor"): {
+			lua_pushnumber(L, waterRendering->waveOffsetFactor);
+			return 1;
+		} break;
+		case hashString("waveLength"): {
+			lua_pushnumber(L, waterRendering->waveLength);
+			return 1;
+		} break;
+		case hashString("waveFoamDistortion"): {
+			lua_pushnumber(L, waterRendering->waveFoamDistortion);
+			return 1;
+		} break;
+		case hashString("waveFoamIntensity"): {
+			lua_pushnumber(L, waterRendering->waveFoamIntensity);
+			return 1;
+		} break;
+		case hashString("causticsResolution"): {
+			lua_pushnumber(L, waterRendering->causticsResolution);
+			return 1;
+		} break;
+		case hashString("causticsStrength"): {
+			lua_pushnumber(L, waterRendering->causticsStrength);
 			return 1;
 		} break;
 		case hashString("numTiles"): {

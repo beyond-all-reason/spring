@@ -1,14 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaObjectDrawer.h"
-#include "FeatureDrawer.h"
-#include "UnitDrawer.h"
-#include "UnitDrawerState.hpp"
+#include "Features/FeatureDrawer.h"
+#include "Common/ModelDrawerHelpers.h"
+#include "Units/UnitDrawer.h"
+#include "Common/ModelDrawerState.hpp"
 #include "Game/Camera.h"
 #include "Game/Game.h" // drawMode
 #include "Lua/LuaMaterial.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/ShadowHandler.h"
@@ -77,8 +79,8 @@ typedef std::function<void(CFeatureDrawer*, const CFeature*, unsigned int, unsig
 // while this can actually be done with C++11 forward magic, the code becomes unreadable)
 //
 typedef void(CEventHandler::*EventFunc)();
-typedef void(CUnitDrawer   ::*   UnitDrawFunc)(const CUnit*,    unsigned int, unsigned int, bool, bool);
-typedef void(CFeatureDrawer::*FeatureDrawFunc)(const CFeature*, unsigned int, unsigned int, bool, bool);
+typedef void(CUnitDrawer   ::*   UnitDrawFunc)(const CUnit*,    unsigned int, unsigned int, bool, bool) const;
+typedef void(CFeatureDrawer::*FeatureDrawFunc)(const CFeature*, unsigned int, unsigned int, bool, bool) const;
 
 #endif
 
@@ -126,11 +128,11 @@ static float GetLODFloat(const std::string& name)
 // opaque-pass state management funcs
 static void SetupOpaqueUnitDrawState(unsigned int modelType, bool deferredPass) {
 	unitDrawer->SetupOpaqueDrawing(deferredPass);
-	unitDrawer->PushModelRenderState(modelType);
+	CModelDrawerHelper::PushModelRenderState(modelType);
 }
 
 static void ResetOpaqueUnitDrawState(unsigned int modelType, bool deferredPass) {
-	unitDrawer->PopModelRenderState(modelType);
+	CModelDrawerHelper::PopModelRenderState(modelType);
 	unitDrawer->ResetOpaqueDrawing(deferredPass);
 }
 
@@ -143,11 +145,11 @@ static void ResetOpaqueFeatureDrawState(unsigned int modelType, bool deferredPas
 // transparency-pass (reflection, ...) state management funcs
 static void SetupAlphaUnitDrawState(unsigned int modelType, bool deferredPass) {
 	unitDrawer->SetupAlphaDrawing(deferredPass);
-	unitDrawer->PushModelRenderState(modelType);
+	CModelDrawerHelper::PushModelRenderState(modelType);
 }
 
 static void ResetAlphaUnitDrawState(unsigned int modelType, bool deferredPass) {
-	unitDrawer->PopModelRenderState(modelType);
+	CModelDrawerHelper::PopModelRenderState(modelType);
 	unitDrawer->ResetAlphaDrawing(deferredPass);
 }
 
@@ -182,20 +184,21 @@ static void SetupShadowFeatureDrawState(unsigned int modelType, bool deferredPas
 static void ResetShadowFeatureDrawState(unsigned int modelType, bool deferredPass) { ResetShadowUnitDrawState(modelType, deferredPass); }
 
 
-static const void SetObjectTeamColorNop(const CSolidObject*, const LuaMaterial*, const float2, bool) {}
-static const void SetObjectTeamColorLua(const CSolidObject* o, const LuaMaterial* m, const float2 a, bool deferredPass)
+static const void SetObjectTeamColorNop(const CSolidObject*, const LuaMaterial*, float, bool) {}
+static const void SetObjectTeamColorLua(const CSolidObject* o, const LuaMaterial* m, float a, bool deferredPass)
 {
 	assert(m->shaders[deferredPass].IsCustomType());
-	m->ExecuteInstanceTeamColor(IUnitDrawerState::GetTeamColor(o->team, a.x), deferredPass);
+	m->ExecuteInstanceTeamColor(CModelDrawerHelper::GetTeamColor(o->team, a), deferredPass);
 }
 
-static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial* m, const float2 a, bool deferredPass)
+static const void SetObjectTeamColorDef(const CSolidObject* o, const LuaMaterial* m, float a, bool deferredPass)
 {
 	// only useful to set this if the object has a standard
 	// (engine) shader attached, otherwise requires testing
 	// if shader is bound in DrawerState etc
 	assert(m->shaders[deferredPass].IsEngineType());
-	unitDrawer->SetTeamColour(o->team, a);
+
+	CUnitDrawer::SetTeamColor(o->team, a);
 }
 
 
@@ -449,7 +452,7 @@ void LuaObjectDrawer::DrawBinObject(
 
 			const CUnit* unit = static_cast<const CUnit*>(obj);
 
-			tcFunc(unit, luaMat, {1.0f, 1.0f * alphaMatBin}, deferredPass);
+			tcFunc(unit, luaMat, 1.0f, deferredPass);
 			soFunc(unit, luaMat, objType, deferredPass);
 			CALL_FUNC_VA(unitDrawer, udFunc, unit, preList, postList, true, noLuaCall);
 		} break;
@@ -460,7 +463,7 @@ void LuaObjectDrawer::DrawBinObject(
 
 			const CFeature* feat = static_cast<const CFeature*>(obj);
 
-			tcFunc(feat, luaMat, {feat->drawAlpha, 1.0f * alphaMatBin}, deferredPass);
+			tcFunc(feat, luaMat, feat->drawAlpha, deferredPass);
 			soFunc(feat, luaMat, objType, deferredPass);
 			CALL_FUNC_VA(featureDrawer, fdFunc, feat, preList, postList, true, noLuaCall);
 		} break;
@@ -485,7 +488,7 @@ void LuaObjectDrawer::DrawDeferredPass(LuaObjType objType)
 	// bail early if the FFP state *is going to be* selected by
 	// SetupOpaqueDrawing, and also if our shader-path happens
 	// to be ARB instead (saves an FBO bind)
-	if (!(unitDrawer->GetWantedDrawerState(false))->CanDrawDeferred())
+	if (!(CUnitDrawer::CanDrawDeferred()))
 		return;
 
 	// note: should also set this during the map pass (in SMFGD)
@@ -550,13 +553,13 @@ bool LuaObjectDrawer::DrawSingleObjectCommon(const CSolidObject* obj, LuaObjType
 
 	switch (objType) {
 		case LUAOBJ_UNIT: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupOpaqueUnitDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetOpaqueUnitDrawState;
 			}
 		} break;
 		case LUAOBJ_FEATURE: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupOpaqueFeatureDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetOpaqueFeatureDrawState;
 			}
@@ -656,13 +659,13 @@ void LuaObjectDrawer::DrawOpaqueMaterialObjects(LuaObjType objType, bool deferre
 {
 	switch (objType) {
 		case LUAOBJ_UNIT: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupOpaqueUnitDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetOpaqueUnitDrawState;
 			}
 		} break;
 		case LUAOBJ_FEATURE: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupOpaqueFeatureDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetOpaqueFeatureDrawState;
 			}
@@ -679,13 +682,13 @@ void LuaObjectDrawer::DrawAlphaMaterialObjects(LuaObjType objType, bool)
 {
 	switch (objType) {
 		case LUAOBJ_UNIT: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupAlphaUnitDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetAlphaUnitDrawState;
 			}
 		} break;
 		case LUAOBJ_FEATURE: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupAlphaFeatureDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetAlphaFeatureDrawState;
 			}
@@ -703,13 +706,13 @@ void LuaObjectDrawer::DrawShadowMaterialObjects(LuaObjType objType, bool)
 {
 	switch (objType) {
 		case LUAOBJ_UNIT: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupShadowUnitDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetShadowUnitDrawState;
 			}
 		} break;
 		case LUAOBJ_FEATURE: {
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 				luaMatHandler.setupDrawStateFuncs[modelType] = SetupShadowFeatureDrawState;
 				luaMatHandler.resetDrawStateFuncs[modelType] = ResetShadowFeatureDrawState;
 			}

@@ -6,16 +6,26 @@
 #include <string>
 #include <vector>
 
+#include "lib/fmt/printf.h"
+
 #include "LuaHashString.h"
 #include "LuaInclude.h"
 #include "LuaHandle.h"
 #include "LuaDefs.h"
 // FIXME: use fwd-decls
+#include "System/EventClient.h"
 #include "Sim/Units/CommandAI/Command.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/Misc/CollisionVolume.h"
+#include "Sim/Objects/SolidObject.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Units/Unit.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "System/EventClient.h"
+#include "Sim/Features/FeatureHandler.h"
+#include "Sim/Features/FeatureDef.h"
+#include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Units/UnitHandler.h"
+#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitDefHandler.h"
 
 // is defined as macro on FreeBSD (wtf)
 #ifdef isnumber
@@ -142,6 +152,18 @@ class LuaUtils {
 		static void PushStringVector(lua_State* L, const vector<string>& vec);
 
 		static void PushCommandDesc(lua_State* L, const SCommandDescription& cd);
+
+		template<typename ...Args>
+		static void SolLuaError(const std::string& format, Args ...args)
+		{
+			std::string what = fmt::sprintf(format, args...);
+			throw std::runtime_error(what.c_str());
+		}
+
+		template<typename TObj>
+		static const TObj* IdToObject(int id, const char* func = nullptr);
+		template<typename TObj>
+		static const TObj* SolIdToObject(int id, const char* func = nullptr);
 };
 
 
@@ -378,6 +400,75 @@ static inline const LocalModelPiece* ParseObjectConstLocalModelPiece(lua_State* 
 static inline LocalModelPiece* ParseObjectLocalModelPiece(lua_State* L, CSolidObject* obj, int pieceArg)
 {
 	return (const_cast<LocalModelPiece*>(ParseObjectConstLocalModelPiece(L, obj, pieceArg)));
+}
+
+
+template<>
+const inline CUnit* LuaUtils::IdToObject(int id, const char* func)
+{
+	return unitHandler.GetUnit(id);
+}
+
+template<>
+const inline CFeature* LuaUtils::IdToObject(int id, const char* func)
+{
+	return featureHandler.GetFeature(id);
+}
+
+template<>
+const inline UnitDef* LuaUtils::IdToObject(int id, const char* func)
+{
+	return unitDefHandler->GetUnitDefByID(id);
+}
+
+template<>
+const inline FeatureDef* LuaUtils::IdToObject(int id, const char* func)
+{
+	return featureDefHandler->GetFeatureDefByID(id);
+}
+
+template<>
+const inline CUnit* LuaUtils::SolIdToObject(int id, const char* func)
+{
+	const CUnit* obj = IdToObject<CUnit>(id, func);
+
+	if (obj == nullptr)
+		SolLuaError("[LuaUtils::%s] Non-existing %s (%d) is supplied", func ? func : __func__, "UnitID", id);
+
+	return obj;
+}
+
+template<>
+const inline CFeature* LuaUtils::SolIdToObject(int id, const char* func)
+{
+	const CFeature* obj = IdToObject<CFeature>(id, func);
+
+	if (obj == nullptr)
+		SolLuaError("[LuaUtils::%s] Non-existing %s (%d) is supplied", func ? func : __func__, "FeatureID", id);
+
+	return obj;
+}
+
+template<>
+const inline UnitDef* LuaUtils::SolIdToObject(int id, const char* func)
+{
+	const UnitDef* obj = IdToObject<UnitDef>(id, func);
+
+	if (obj == nullptr)
+		SolLuaError("[LuaUtils::%s] Non-existing %s (%d) is supplied", func ? func : __func__, "UnitDefID", id);
+
+	return obj;
+}
+
+template<>
+const inline FeatureDef* LuaUtils::SolIdToObject(int id, const char* func)
+{
+	const FeatureDef* obj = IdToObject<FeatureDef>(id, func);
+
+	if (obj == nullptr)
+		SolLuaError("[LuaUtils::%s] Non-existing %s (%d) is supplied", func ? func : __func__, "FeatureDefID", id);
+
+	return obj;
 }
 
 #endif // LUA_UTILS_H

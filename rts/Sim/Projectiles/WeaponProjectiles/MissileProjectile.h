@@ -62,9 +62,10 @@ private:
 	float3 oldSmoke;
 	float3 oldDir;
 	CSmokeTrailProjectile* smokeTrail;
-
-	/// the smokes life-time in frames
-	static const float SMOKE_TIME;
+private:
+	inline float GetSmokeSize() const;
+	inline float GetSmokeColor() const;
+	inline int GetSmokeTime() const;
 };
 
 

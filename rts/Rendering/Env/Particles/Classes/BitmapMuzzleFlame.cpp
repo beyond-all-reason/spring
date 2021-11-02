@@ -18,8 +18,12 @@ CR_BIND_DERIVED(CBitmapMuzzleFlame, CProjectile, )
 CR_REG_METADATA(CBitmapMuzzleFlame,
 (
 	CR_MEMBER(invttl),
-	CR_MEMBER(life),
 	CR_MEMBER(createTime),
+	CR_IGNORED(life),
+	CR_IGNORED(isize),
+	CR_IGNORED(ilength),
+	CR_MEMBER(rotVal),
+	CR_MEMBER(rotVel),
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(sideTexture),
 		CR_MEMBER(frontTexture),
@@ -42,7 +46,6 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 	, frontOffset(0.0f)
 	, ttl(0)
 	, invttl(0.0f)
-	, life(0.0f)
 	, createTime(0)
 {
 	// set fields from super-classes
@@ -53,55 +56,91 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 
 void CBitmapMuzzleFlame::Draw(CVertexArray* va)
 {
-	life = (gs->frameNum - createTime + globalRendering->timeOffset) * invttl;
-
 	unsigned char col[4];
 	colorMap->GetColor(col, life);
 
-	const float igrowth = sizeGrowth * (1.0f - (1.0f - life) * (1.0f - life));
-	const float isize = size * (igrowth + 1.0f);
-	const float ilength = length * (igrowth + 1.0f);
+	float3 fpos = pos + dir * frontOffset * ilength;
 
-	const float3 udir = (std::fabs(dir.dot(UpVector)) >= 0.99f)? FwdVector: UpVector;
-	const float3 xdir = (dir.cross(udir)).SafeANormalize();
+	const float3 zdir = (std::fabs(dir.dot(UpVector)) >= 0.99f)? FwdVector: UpVector;
+	const float3 xdir = (dir.cross(zdir)).SafeANormalize();
 	const float3 ydir = (dir.cross(xdir)).SafeANormalize();
 
-	va->AddVertexTC(pos + ydir * isize,                 sideTexture->xstart, sideTexture->ystart, col);
-	va->AddVertexTC(pos + ydir * isize + dir * ilength, sideTexture->xend,   sideTexture->ystart, col);
-	va->AddVertexTC(pos - ydir * isize + dir * ilength, sideTexture->xend,   sideTexture->yend,   col);
-	va->AddVertexTC(pos - ydir * isize,                 sideTexture->xstart, sideTexture->yend,   col);
+	std::array<float3, 12> bounds = {
+		  ydir * isize                ,
+		  ydir * isize + dir * ilength,
+		 -ydir * isize + dir * ilength,
+		 -ydir * isize                ,
 
-	va->AddVertexTC(pos + xdir * isize,                 sideTexture->xstart, sideTexture->ystart, col);
-	va->AddVertexTC(pos + xdir * isize + dir * ilength, sideTexture->xend,   sideTexture->ystart, col);
-	va->AddVertexTC(pos - xdir * isize + dir * ilength, sideTexture->xend,   sideTexture->yend,   col);
-	va->AddVertexTC(pos - xdir * isize,                 sideTexture->xstart, sideTexture->yend,   col);
+		  xdir * isize                ,
+		  xdir * isize + dir * ilength,
+		 -xdir * isize + dir * ilength,
+		 -xdir * isize                ,
 
-	float3 frontpos = pos + dir * frontOffset * ilength;
+		 -xdir * isize + ydir * isize,
+		  xdir * isize + ydir * isize,
+		  xdir * isize - ydir * isize,
+		 -xdir * isize - ydir * isize
+	};
 
-	va->AddVertexTC(frontpos - xdir * isize + ydir * isize, frontTexture->xstart, frontTexture->ystart, col);
-	va->AddVertexTC(frontpos + xdir * isize + ydir * isize, frontTexture->xend,   frontTexture->ystart, col);
-	va->AddVertexTC(frontpos + xdir * isize - ydir * isize, frontTexture->xend,   frontTexture->yend,   col);
-	va->AddVertexTC(frontpos - xdir * isize - ydir * isize, frontTexture->xstart, frontTexture->yend,   col);
+	if (math::fabs(rotVal) > 0.01f) {
+		for (auto& b : bounds)
+			b = b.rotate(rotVal, dir);
+	}
 
+	if (IsValidTexture(sideTexture)) {
+		va->AddVertexTC(pos + bounds[0], sideTexture->xstart, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[1], sideTexture->xend, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[2], sideTexture->xend, sideTexture->yend, col);
+		va->AddVertexTC(pos + bounds[3], sideTexture->xstart, sideTexture->yend, col);
+
+		va->AddVertexTC(pos + bounds[4], sideTexture->xstart, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[5], sideTexture->xend, sideTexture->ystart, col);
+		va->AddVertexTC(pos + bounds[6], sideTexture->xend, sideTexture->yend, col);
+		va->AddVertexTC(pos + bounds[7], sideTexture->xstart, sideTexture->yend, col);
+	}
+
+	if (IsValidTexture(frontTexture)) {
+		va->AddVertexTC(fpos + bounds[8], frontTexture->xstart, frontTexture->ystart, col);
+		va->AddVertexTC(fpos + bounds[9], frontTexture->xend, frontTexture->ystart, col);
+		va->AddVertexTC(fpos + bounds[10], frontTexture->xend, frontTexture->yend, col);
+		va->AddVertexTC(fpos + bounds[11], frontTexture->xstart, frontTexture->yend, col);
+	}
 }
 
 void CBitmapMuzzleFlame::Update()
 {
 	deleteMe |= ((ttl--) == 0);
+
+	rotVal += rotVel;
+	rotVel += rotParams.y; //rot accel
+
+	life = (gs->frameNum - createTime + globalRendering->timeOffset) * invttl;
+	const float igrowth = sizeGrowth * (1.0f - (1.0f - life) * (1.0f - life));
+
+	isize = size * (igrowth + 1.0f);
+	ilength = length * (igrowth + 1.0f);
+
+	SetDrawRadius(std::max(isize, ilength));
 }
 
 void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 {
 	CProjectile::Init(owner, offset);
 
-	life = 0.0f;
 	invttl = 1.0f / ttl;
 	createTime = gs->frameNum;
+
+	isize = size;
+	ilength = length;
+	SetDrawRadius(std::max(isize, ilength));
+
+	rotVal = rotParams.z; //initial rotation value
+	rotVel = rotParams.x; //initial rotation velocity
 }
 
 int CBitmapMuzzleFlame::GetProjectilesCount() const
 {
-	return 3;
+	return 2 * IsValidTexture(sideTexture) + 1 * IsValidTexture(frontTexture);
 }
 
 

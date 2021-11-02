@@ -38,6 +38,8 @@ public:
 	int GetID() const { return WATER_RENDERER_BUMPMAPPED; }
 	const char* GetName() const { return "bumpmapped"; }
 
+	bool CanDrawReflectionPass() const override { return true; }
+	bool CanDrawRefractionPass() const override { return true; }
 private:
 	void SetUniforms(); ///< @see #useUniforms
 	void SetupUniforms( std::string& definitions );
@@ -111,7 +113,7 @@ private:
 	Shader::IProgramObject* waterShader;
 	Shader::IProgramObject* blurShader;
 
-	GLuint uniforms[20]; ///< see useUniforms
+	std::array<GLuint, 26> uniforms; ///< see useUniforms
 
 	bool wasVisibleLastFrame;
 	GLuint occlusionQuery;

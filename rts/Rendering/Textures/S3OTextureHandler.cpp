@@ -7,7 +7,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/StringUtil.h"
@@ -60,6 +60,25 @@ void CS3OTextureHandler::Kill()
 	textureCache.clear();
 	textureTable.clear();
 	bitmapCache.clear();
+}
+
+void CS3OTextureHandler::Reload()
+{
+	cacheMutex.lock(); //needed?
+	for (auto& [texName, texData] : textureCache) {
+		if (texData.texID == 0)
+			continue;
+
+		CBitmap bitmap;
+		if (!bitmap.Load(texName) && !bitmap.Load("unittextures/" + texName))
+			continue;
+
+		{
+			uint32_t newTexId = bitmap.CreateTexture(0.0f, 0.0f, true, texData.texID);
+			assert(newTexId == texData.texID);
+		}
+	}
+	cacheMutex.unlock();
 }
 
 
@@ -148,7 +167,9 @@ unsigned int CS3OTextureHandler::LoadAndCacheTexture(
 	textureCache[textureName] = {
 		texID,
 		static_cast<unsigned int>(bitmap->xsize),
-		static_cast<unsigned int>(bitmap->ysize)
+		static_cast<unsigned int>(bitmap->ysize),
+		invertAxis,
+		invertAlpha
 	};
 
 	bitmapCache.erase(textureName);

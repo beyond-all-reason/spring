@@ -219,7 +219,7 @@ void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int t
 }
 
 
-void S3DModelPiece::PostProcessGeometry()
+void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 {
 	if (!HasGeometryData())
 		return;
@@ -227,7 +227,10 @@ void S3DModelPiece::PostProcessGeometry()
 	vboVertStart = model->curVertStartIndx;
 	vboIndxStart = model->curIndxStartIndx;
 
-	MeshOptimize();
+	for (auto& v : vertices)
+		v.pieceIndex = pieceIndex;
+
+	//MeshOptimize();
 
 	indicesVBO.resize(indices.size());
 	std::transform(indices.cbegin(), indices.cend(), indicesVBO.begin(), [this](uint32_t indx) { return indx + this->vboVertStart; });
@@ -342,7 +345,7 @@ void S3DModelPiece::DrawElements(GLuint prim) const
 
 void LocalModel::DrawPieces() const
 {
-	for (const auto& p: pieces) {
+	for (const auto& p : pieces) {
 		p.Draw();
 	}
 }

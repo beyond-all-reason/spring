@@ -50,6 +50,10 @@ public:
 		GLenum wrap_t = GL_REPEAT;
 		GLenum wrap_r = GL_REPEAT;
 
+		GLenum cmpFunc = GL_NONE;
+
+		GLfloat lodBias = 0.0f;
+
 		GLfloat aniso = 0.0f;
 	};
 

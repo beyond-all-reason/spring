@@ -10,7 +10,7 @@
 #include "Game/GlobalUnsynced.h" // randVector
 #include "Rendering/GlobalRendering.h" // drawFrame
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawerState.hpp"
+#include "Rendering/Common/ModelDrawerState.hpp"
 #include "Rendering/Env/ISky.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Misc/GlobalSynced.h" // simFrame
@@ -125,7 +125,7 @@ void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 	static_assert(int(LUASHADER_3DO) == int(MODELTYPE_3DO  ), "");
 	static_assert(int(LUASHADER_S3O) == int(MODELTYPE_S3O  ), "");
 	static_assert(int(LUASHADER_ASS) == int(MODELTYPE_ASS  ), "");
-	static_assert(int(LUASHADER_GL ) == int(MODELTYPE_OTHER), "");
+	static_assert(int(LUASHADER_GL ) == int(MODELTYPE_CNT), "");
 
 	if (type != prev.type) {
 		switch (prev.type) {

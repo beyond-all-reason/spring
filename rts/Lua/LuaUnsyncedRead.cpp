@@ -36,10 +36,11 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/DecalsDrawerGL4.h"
+#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -161,6 +162,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetMapSquareTexture);
 
 	REGISTER_LUA_CFUNC(GetLosViewColors);
+
+	REGISTER_LUA_CFUNC(GetNanoProjectileParams);
 
 	REGISTER_LUA_CFUNC(GetCameraNames);
 	REGISTER_LUA_CFUNC(GetCameraState);
@@ -1004,7 +1007,7 @@ int LuaUnsyncedRead::GetVisibleFeatures(lua_State* L)
 			if (f->noDraw)
 				continue;
 
-			if (noIcons && f->drawFlag == CFeature::FD_FARTEX_FLAG)
+			if (noIcons && f->drawFlag == DrawFlags::SO_FARTEX_FLAG)
 				continue;
 
 			if (noGeos && f->def->geoThermal)
@@ -1365,6 +1368,19 @@ int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 	PACK_COLOR_VECTOR(gd->jamColor);
 	PACK_COLOR_VECTOR(gd->radarColor2);
 	return 5;
+}
+
+int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
+{
+	lua_pushnumber(L, CNanoProjectile::rotVal0 * (math::RAD_TO_DEG                            ));
+	lua_pushnumber(L, CNanoProjectile::rotVel0 * (math::RAD_TO_DEG * GAME_SPEED               ));
+	lua_pushnumber(L, CNanoProjectile::rotAcc0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
+
+	lua_pushnumber(L, CNanoProjectile::rotValRng0 * (math::RAD_TO_DEG                            ));
+	lua_pushnumber(L, CNanoProjectile::rotVelRng0 * (math::RAD_TO_DEG * GAME_SPEED               ));
+	lua_pushnumber(L, CNanoProjectile::rotAccRng0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
+
+	return 6;
 }
 
 

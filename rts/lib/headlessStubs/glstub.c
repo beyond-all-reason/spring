@@ -261,6 +261,7 @@ GLAPI void APIENTRY glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr s
 GLAPI void APIENTRY glCopyBufferSubData(GLenum readtarget, GLenum writetarget, GLintptr readoffset, GLintptr writeoffset, GLsizeiptr size) {}
 GLAPI void APIENTRY glBindBufferBase(GLenum target, GLuint index, GLuint buffer) {}
 GLAPI void APIENTRY glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size) {}
+GLAPI GLboolean APIENTRY glIsBuffer(GLuint buffer) { return GL_TRUE; }
 
 GLAPI void APIENTRY glTexStorage3D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) {}
 
@@ -278,6 +279,14 @@ GLAPI GLvoid* APIENTRY glMapBuffer(GLenum target, GLenum access) {
 GLAPI GLboolean APIENTRY glUnmapBuffer(GLenum target) {
 	return GL_FALSE;
 }
+
+GLAPI GLsync APIENTRY glFenceSync(GLenum condition, GLbitfield flags) {
+    static GLsync dummy;
+    return dummy;
+}
+GLAPI GLenum APIENTRY glClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout) { return GL_ALREADY_SIGNALED; }
+GLAPI void APIENTRY glDeleteSync(GLsync sync) {}
+GLAPI GLboolean APIENTRY glIsSync(GLsync sync) { return GL_TRUE; }
 
 GLAPI void APIENTRY glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z) {}
 GLAPI void APIENTRY glMemoryBarrier(GLbitfield barriers) {}
@@ -344,6 +353,8 @@ GLAPI void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, cons
 GLAPI void APIENTRY glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLint basevertex) {}
 GLAPI void APIENTRY glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei primcount) {}
 GLAPI void APIENTRY glDrawElementsInstancedBaseVertex(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLint basevertex) {}
+GLAPI void APIENTRY glDrawElementsIndirect(GLenum mode, GLenum type, const void* indirect) {};
+GLAPI void APIENTRY glMultiDrawElementsIndirect(GLenum mode, GLenum type, const void* indirect, GLsizei primcount, GLsizei stride) {};
 GLAPI void APIENTRY glEdgeFlag(GLboolean flag) {}
 GLAPI void APIENTRY glEvalCoord1f(GLfloat u) {}
 GLAPI void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v) {}

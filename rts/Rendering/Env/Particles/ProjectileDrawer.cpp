@@ -12,7 +12,7 @@
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/VertexArray.h"
@@ -21,11 +21,11 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
@@ -71,8 +71,8 @@ void CProjectileDrawer::Init() {
 
 	loadscreen->SetLoadMessage("Creating Projectile Textures");
 
-	textureAtlas = new CTextureAtlas(); textureAtlas->SetName("ProjectileTextureAtlas");
-	groundFXAtlas = new CTextureAtlas(); groundFXAtlas->SetName("ProjectileEffectsAtlas");
+	textureAtlas = new CTextureAtlas(CTextureAtlas::ATLAS_ALLOC_LEGACY, 0, 0, "ProjectileTextureAtlas", true);
+	groundFXAtlas = new CTextureAtlas(CTextureAtlas::ATLAS_ALLOC_LEGACY, 0, 0, "ProjectileEffectsAtlas", true);
 
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
 	LuaParser mapResParser("gamedata/resources_map.lua", SPRING_VFS_MAP_BASE, SPRING_VFS_ZIP);
@@ -258,7 +258,7 @@ void CProjectileDrawer::Init() {
 
 	renderProjectiles.reserve(projectileHandler.maxParticles + projectileHandler.maxNanoParticles);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		modelRenderers[modelType].Init();
 	}
 
@@ -291,7 +291,7 @@ void CProjectileDrawer::Kill() {
 	spring::SafeDelete(textureAtlas);
 	spring::SafeDelete(groundFXAtlas);
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		modelRenderers[modelType].Kill();
 	}
 
@@ -550,7 +550,7 @@ void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		CUnitDrawer::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 		DrawProjectilesSet(mdlRenderer.GetObjectBin(i), drawReflection, drawRefraction);
 	}
 
@@ -581,7 +581,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
 		return;
-	if (drawReflection && !CUnitDrawer::ObjectVisibleReflection(pro->drawPos, camera->GetPos(), pro->GetDrawRadius()))
+	if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(pro->drawPos, camera->GetPos(), pro->GetDrawRadius()))
 		return;
 
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
@@ -592,6 +592,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 	DrawProjectileModel(pro);
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
+
 	sortedProjectiles[drawSorted && pro->drawSorted].push_back(pro);
 }
 
@@ -623,12 +624,12 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
+		if (!p->castShadow)
+			return;
+
 		// if this returns false, then projectile is
 		// neither weapon nor piece, or has no model
 		if (DrawProjectileModel(p))
-			return;
-
-		if (!p->castShadow)
 			return;
 
 		// don't need to z-sort in the shadow pass
@@ -645,7 +646,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 	lines->Initialize();
 	points->Initialize();
 
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		const auto& mdlRenderer = modelRenderers[modelType];
 		// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
@@ -730,23 +731,25 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	sortedProjectiles[1].clear();
 
 	{
-		unitDrawer->SetupOpaqueDrawing(false);
+		{
+			ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
+			unitDrawer->SetupOpaqueDrawing(false);
 
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
-			unitDrawer->PushModelRenderState(modelType);
-			DrawProjectiles(modelType, drawReflection, drawRefraction);
-			unitDrawer->PopModelRenderState(modelType);
+			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
+				CModelDrawerHelper::PushModelRenderState(modelType);
+				DrawProjectiles(modelType, drawReflection, drawRefraction);
+				CModelDrawerHelper::PopModelRenderState(modelType);
+			}
+
+			unitDrawer->ResetOpaqueDrawing(false);
 		}
-
-		unitDrawer->ResetOpaqueDrawing(false);
 
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
 		DrawProjectilesSet(renderProjectiles, drawReflection, drawRefraction);
 
 		// empty if !drawSorted
-		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), zSortCmp);
-
+		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
 		fxVA = GetVertexArray();
 		fxVA->Initialize();
@@ -784,7 +787,6 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 			CopyDepthBufferToTexture();
 			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-			fxShader->SetFlag("EXTRA_UNSAFE_SOFTNESS", wantSoften == 2);
 			fxShader->Enable();
 			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
 		}
@@ -814,7 +816,7 @@ void CProjectileDrawer::DrawShadowPass()
 	fxVA->Initialize();
 
 	{
-		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_OTHER; modelType++) {
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			DrawProjectilesShadow(modelType);
 		}
 
@@ -846,12 +848,14 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 	if (p->model == nullptr)
 		return false;
 
+	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
+
 	switch ((p->weapon * 2) + (p->piece * 1)) {
 		case 2: {
 			// weapon-projectile
 			const CWeaponProjectile* wp = static_cast<const CWeaponProjectile*>(p);
 
-			unitDrawer->SetTeamColour(wp->GetTeamID());
+			CUnitDrawer::SetTeamColor(wp->GetTeamID());
 
 			glPushMatrix();
 				glMultMatrixf(wp->GetTransformMatrix(wp->GetProjectileType() == WEAPON_MISSILE_PROJECTILE));
@@ -867,7 +871,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 			// piece-projectile
 			const CPieceProjectile* pp = static_cast<const CPieceProjectile*>(p);
 
-			unitDrawer->SetTeamColour(pp->GetTeamID());
+			CUnitDrawer::SetTeamColor(pp->GetTeamID());
 
 			glPushMatrix();
 				glTranslatef3(pp->drawPos);

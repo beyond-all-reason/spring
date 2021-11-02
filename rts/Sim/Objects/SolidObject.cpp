@@ -33,6 +33,7 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER_UN(noDraw),
 	CR_MEMBER_UN(luaDraw),
 	CR_MEMBER_UN(noSelect),
+	CR_MEMBER_UN(alwaysUpdateMat), //don't save?
 
 	CR_MEMBER(xsize),
 	CR_MEMBER(zsize),
@@ -71,6 +72,8 @@ CR_REG_METADATA(CSolidObject,
 
 	CR_MEMBER(drawPos),
 	CR_MEMBER(drawMidPos),
+
+	CR_MEMBER(drawFlag),
 
 	CR_MEMBER(buildFacing),
 	CR_MEMBER(modParams),
@@ -324,9 +327,7 @@ YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 	return blockMap[int(bx) + int(by) * footprint.x];
 }
 
-
-// FIXME move somewhere else?
-int2 CSolidObject::GetMapPos(const float3& position) const
+int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 {
 	int2 mp;
 

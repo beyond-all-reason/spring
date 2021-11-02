@@ -48,11 +48,12 @@
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/DecalsDrawerGL4.h"
+#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
-#include "Rendering/FeatureDrawer.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -219,6 +220,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraOffset);
 
 	REGISTER_LUA_CFUNC(SetLosViewColors);
+
+	REGISTER_LUA_CFUNC(SetNanoProjectileParams);
 
 	REGISTER_LUA_CFUNC(Reload);
 	REGISTER_LUA_CFUNC(Restart);
@@ -1201,6 +1204,34 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 						waterRendering->perlinAmplitude = value;
 					} break;
 
+					case hashString("windSpeed"): {
+						waterRendering->windSpeed = value;
+					} break;
+
+					case hashString("waveOffsetFactor"): {
+						waterRendering->waveOffsetFactor = value;
+					} break;
+
+					case hashString("waveLength"): {
+						waterRendering->waveLength = value;
+					} break;
+
+					case hashString("waveFoamDistortion"): {
+						waterRendering->waveFoamDistortion = value;
+					} break;
+
+					case hashString("waveFoamIntensity"): {
+						waterRendering->waveFoamIntensity = value;
+					} break;
+
+					case hashString("causticsResolution"): {
+						waterRendering->causticsResolution = value;
+					} break;
+
+					case hashString("causticsStrength"): {
+						waterRendering->causticsStrength = value;
+					} break;
+
 					case hashString("numTiles"): {
 						waterRendering->numTiles = (unsigned char)value;
 					} break;
@@ -1996,7 +2027,6 @@ int LuaUnsyncedCtrl::LoadCtrlPanelConfig(lua_State* L)
 	return 0;
 }
 
-
 int LuaUnsyncedCtrl::ForceLayoutUpdate(lua_State* L)
 {
 	if (guihandler == nullptr)
@@ -2087,6 +2117,20 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 	gd->radarColor2[1]  = (int)(scale * radarColor2[1]);
 	gd->radarColor2[2]  = (int)(scale * radarColor2[2]);
 	infoTextureHandler->SetMode(infoTextureHandler->GetMode());
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
+{
+	CNanoProjectile::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoProjectile::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoProjectile::rotAcc0 = luaL_optfloat(L, 3, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+
+	CNanoProjectile::rotValRng0 = luaL_optfloat(L, 4, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoProjectile::rotVelRng0 = luaL_optfloat(L, 5, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoProjectile::rotAccRng0 = luaL_optfloat(L, 6, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+
 	return 0;
 }
 
@@ -2309,7 +2353,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 
 	if (lua_isnoneornil(L, 2)) {
 		// reset to default texture
-		unitDrawer->SetUnitDefImage(ud, ud->buildPicName);
+		CUnitDrawer::SetUnitDefImage(ud, ud->buildPicName);
 		return 0;
 	}
 
@@ -2319,7 +2363,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 	const std::string& texName = lua_tostring(L, 2);
 
 	if (texName[0] != LuaTextures::prefix) { // '!'
-		unitDrawer->SetUnitDefImage(ud, texName);
+		CUnitDrawer::SetUnitDefImage(ud, texName);
 		return 0;
 	}
 
@@ -2329,7 +2373,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 	if (tex == nullptr)
 		return 0;
 
-	unitDrawer->SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
+	CUnitDrawer::SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
 	return 0;
 }
 

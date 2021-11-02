@@ -8,6 +8,7 @@
 #include "GlobalRendering.h"
 #include "GlobalRenderingInfo.h"
 #include "Rendering/VerticalSync.h"
+#include "Rendering/GL/StreamBuffer.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/UniformConstants.h"
@@ -146,6 +147,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(supportFragDepthLayout),
 	CR_IGNORED(haveARB),
 	CR_IGNORED(haveGLSL),
+	CR_IGNORED(haveGL4),
 	CR_IGNORED(glslMaxVaryings),
 	CR_IGNORED(glslMaxAttributes),
 	CR_IGNORED(glslMaxDrawBuffers),
@@ -248,6 +250,7 @@ CGlobalRendering::CGlobalRendering()
 	, supportFragDepthLayout(false)
 	, haveARB(false)
 	, haveGLSL(false)
+	, haveGL4(false)
 
 	, glslMaxVaryings(0)
 	, glslMaxAttributes(0)
@@ -582,6 +585,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 
 	const spring_time pre = spring_now();
 
+	IStreamBufferConcept::PutBufferLocks();
 	SDL_GL_SwapWindow(sdlWindows[0]);
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());
 }
@@ -626,9 +630,15 @@ void CGlobalRendering::SetGLSupportFlags()
 		throw unsupported_error("OpenGL shaders not supported, aborting");
 	#endif
 
+	haveGL4 = GLEW_ARB_multi_draw_indirect;
+	haveGL4 &= GLEW_ARB_uniform_buffer_object;
+	haveGL4 &= GLEW_ARB_shader_storage_buffer_object;
+	haveGL4 &= configHandler->GetBool("UseVBO");
+
 	// useful if a GPU claims to support GL4 and shaders but crashes (Intels...)
 	haveARB  &= !forceDisableShaders;
 	haveGLSL &= !forceDisableShaders;
+	haveGL4  &= !forceDisableShaders;
 
 	haveAMD    = (  glVendor.find(   "ati ") != std::string::npos) || (  glVendor.find("amd ") != std::string::npos) ||
 				 (glRenderer.find("radeon ") != std::string::npos) || (glRenderer.find("amd ") != std::string::npos); //it's amazing how inconsistent AMD detection can be
@@ -657,7 +667,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	supportPersistentMapping &= (configHandler->GetInt("ForceDisablePersistentMapping") == 0);
 
 	// ATI's x-series doesn't support NPOTs, hd-series does
-	supportNonPowerOfTwoTex = GLEW_ARB_texture_non_power_of_two && (!haveAMD || (glRenderer.find(" x") == std::string::npos && glRenderer.find(" 9") == std::string::npos));
+	supportNonPowerOfTwoTex = GLEW_ARB_texture_non_power_of_two /* && (!haveAMD || (glRenderer.find(" x") == std::string::npos && glRenderer.find(" 9") == std::string::npos))*/;
 	supportTextureQueryLOD = GLEW_ARB_texture_query_lod;
 
 
@@ -822,6 +832,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tInitialized OpenGL Context: %i.%i (%s)", globalRenderingInfo.glContextVersion.x, globalRenderingInfo.glContextVersion.y, globalRenderingInfo.glContextIsCore ? "Core" : "Compat");
 	LOG("\tARB shader support        : %i", haveARB);
 	LOG("\tGLSL shader support       : %i", haveGLSL);
+	LOG("\tGL4 support               : %i", haveGL4);
 	LOG("\tFBO extension support     : %i", FBO::IsSupported());
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));
 	LOG("\tATI GPU mem-info support  : %i", glewIsExtensionSupported("GL_ATI_meminfo"));

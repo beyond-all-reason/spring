@@ -258,7 +258,6 @@ inline static void BlurHorizontal(
 	const std::vector<float>& mesh,
 	      std::vector<float>& smoothed
 ) {
-	const float n = 2.0f * blurSize + 1.0f;
 	const int lineSize = maxx;
 
 	for_mt(0, maxy, [&](const int y)
@@ -272,6 +271,13 @@ inline static void BlurHorizontal(
 			const float ghaw = CGround::GetHeightAboveWater(x * resolution, y * resolution);
 
 			smoothed[x + y * lineSize] = std::max(ghaw, avg);
+
+			#pragma message ("FIX ME")
+			smoothed[x + y * lineSize] = std::clamp(
+				smoothed[x + y * lineSize],
+				readMap->GetCurrMinHeight(),
+				std::max(readMap->GetCurrMaxHeight(), 0.0f)
+			);
 
 			assert(smoothed[x + y * lineSize] <= std::max(readMap->GetCurrMaxHeight(), 0.0f));
 			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()       );
@@ -288,7 +294,6 @@ inline static void BlurVertical(
 	const std::vector<float>& mesh,
 	      std::vector<float>& smoothed
 ) {
-	const float n = 2.0f * blurSize + 1.0f;
 	const int lineSize = maxx;
 
 	for_mt(0, maxx, [&](const int x)
@@ -302,6 +307,13 @@ inline static void BlurVertical(
 			const float ghaw = CGround::GetHeightAboveWater(x * resolution, y * resolution);
 
 			smoothed[x + y * lineSize] = std::max(ghaw, avg);
+
+			#pragma message ("FIX ME")
+			smoothed[x + y * lineSize] = std::clamp(
+				smoothed[x + y * lineSize],
+				readMap->GetCurrMinHeight(),
+				std::max(readMap->GetCurrMaxHeight(), 0.0f)
+			);
 
 			assert(smoothed[x + y * lineSize] <= std::max(readMap->GetCurrMaxHeight(), 0.0f));
 			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()       );

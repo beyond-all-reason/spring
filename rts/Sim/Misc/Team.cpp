@@ -349,8 +349,12 @@ void CTeam::SlowUpdate()
 			if (team->isDead)
 				continue;
 
-			const float edif = std::max(0.0f, (team->resStorage.energy * 0.99f) - team->res.energy) * de;
-			const float mdif = std::max(0.0f, (team->resStorage.metal * 0.99f) - team->res.metal) * dm;
+			//due to precision errors mdif/edif sometimes can be slightly >= than res. If team has no metal income
+			//this causes units with zero fire resources requirements to be unable to fire
+			//when CTeam::HaveResources() is evaluated, thus clamp edif / mdif on both sides
+
+			const float edif = std::clamp(((team->resStorage.energy * 0.99f) - team->res.energy) * de, 0.0f, res.energy);
+			const float mdif = std::clamp(((team->resStorage.metal  * 0.99f) - team->res.metal ) * dm, 0.0f, res.metal );
 
 			res.energy     -= edif; team->res.energy         += edif;
 			resSent.energy += edif; team->resReceived.energy += edif;

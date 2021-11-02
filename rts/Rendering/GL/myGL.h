@@ -8,7 +8,7 @@
 #define NOMINMAX
 #endif
 
-
+#include <array>
 
 #if       defined(HEADLESS)
 	#define WINGDIAPI //working around https://github.com/beyond-all-reason/spring/issues/27
@@ -119,5 +119,36 @@ bool ShowDriverWarning(const char* glVendor, const char* glRenderer);
 
 class CVertexArray;
 CVertexArray* GetVertexArray();
+
+struct SDrawElementsIndirectCommand {
+	SDrawElementsIndirectCommand(uint32_t indexCount_, uint32_t instanceCount_, uint32_t firstIndex_, uint32_t baseVertex_, uint32_t baseInstance_)
+		: indexCount{ indexCount_ }
+		, instanceCount{ instanceCount_ }
+		, firstIndex{ firstIndex_ }
+		, baseVertex{ baseVertex_ }
+		, baseInstance{ baseInstance_ }
+	{};
+
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	uint32_t baseVertex;
+	uint32_t baseInstance;
+};
+
+struct SInstanceData {
+	SInstanceData() = default;
+	SInstanceData(uint32_t ssboOffset_, uint8_t teamIndex_, uint8_t drawFlags, uint32_t aux0_, uint32_t aux1_)
+		: ssboOffset{ ssboOffset_ }
+		, info { teamIndex_, drawFlags, 0, 0 }
+		, aux0 { aux0_ }
+		, aux1 { aux1_ }
+	{}
+
+	uint32_t ssboOffset;
+	std::array<uint8_t, 4> info;
+	uint32_t aux0;
+	uint32_t aux1;
+};
 
 #endif // _MY_GL_H

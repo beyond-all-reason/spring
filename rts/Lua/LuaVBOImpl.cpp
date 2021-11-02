@@ -22,6 +22,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
+#include "Game/GlobalUnsynced.h"
 
 #include "LuaUtils.h"
 
@@ -318,7 +319,7 @@ bool LuaVBOImpl::FillAttribsNumberImpl(const int numVec4Attribs)
 	};
 
 	if (numVec4Attribs > attributesCountMax) {
-		LuaError("[LuaVBOImpl::%s] Invalid number of vec4 arguments [%d], exceeded maximum of [%u]", __func__, numVec4Attribs, attributesCountMax);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid number of vec4 arguments [%d], exceeded maximum of [%u]", __func__, numVec4Attribs, attributesCountMax);
 	}
 
 	uint32_t nextPointer = 0u;
@@ -358,7 +359,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 		if (attribDefArgOpt.value().is<int>())
 			indexType = attribDefArgOpt.value().as<int>();
 		else
-			LuaError("[LuaVBOImpl::%s] Invalid argument object type [%d]. Must be a valid GL type constant", __func__, attribDefArgOpt.value().get_type());
+			LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid argument object type [%d]. Must be a valid GL type constant", __func__, attribDefArgOpt.value().get_type());
 	}
 
 	switch (indexType) {
@@ -378,7 +379,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 	}
 
 	if (elemSizeInBytes == 0u) {
-		LuaError("[LuaVBOImpl::%s] Invalid GL type constant [%d]", __func__, indexType);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid GL type constant [%d]", __func__, indexType);
 	}
 
 	bufferAttribDefs[0] = {
@@ -400,11 +401,11 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 void LuaVBOImpl::Define(const int elementsCount, const sol::optional<sol::object> attribDefArgOpt)
 {
 	if (vbo) {
-		LuaError("[LuaVBOImpl::%s] Attempt to call %s() multiple times. VBO definition is immutable.", __func__, __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Attempt to call %s() multiple times. VBO definition is immutable.", __func__, __func__);
 	}
 
 	if (elementsCount <= 0) {
-		LuaError("[LuaVBOImpl::%s] Elements count cannot be <= 0", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Elements count cannot be <= 0", __func__);
 	}
 
 	this->elementsCount = elementsCount;
@@ -416,7 +417,7 @@ void LuaVBOImpl::Define(const int elementsCount, const sol::optional<sol::object
 		if (attribDefArg.is<int>())
 			return FillAttribsNumberImpl(attribDefArg.as<const int>());
 
-		LuaError("[LuaVBOImpl::%s] Invalid argument object type [%d]. Must be a number or table", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid argument object type [%d]. Must be a number or table", __func__);
 		return false;
 	};
 
@@ -429,15 +430,15 @@ void LuaVBOImpl::Define(const int elementsCount, const sol::optional<sol::object
 	case GL_UNIFORM_BUFFER:
 	case GL_SHADER_STORAGE_BUFFER: {
 		if (!attribDefArgOpt.has_value())
-			LuaError("[LuaVBOImpl::%s] Function has to contain non-empty second argument", __func__);
+			LuaUtils::SolLuaError("[LuaVBOImpl::%s] Function has to contain non-empty second argument", __func__);
 		result = defineBufferFunc(attribDefArgOpt.value());
 	} break;
 	default:
-		LuaError("[LuaVBOImpl::%s] Invalid buffer target [%u]", __func__, defTarget);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid buffer target [%u]", __func__, defTarget);
 	}
 
 	if (!result) {
-		LuaError("[LuaVBOImpl::%s] Error in definition. See infolog for possible reasons", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Error in definition. See infolog for possible reasons", __func__);
 	}
 
 	CopyAttrMapToVec();
@@ -453,36 +454,36 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
 	);
 }
 
-size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> luaStartIndexOpt, const sol::optional<int> luaFinishIndexOpt)
+size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> luaStartIndexOpt, sol::optional<int> luaFinishIndexOpt)
 {
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define() or :ShapeFromUnitDefID/ShapeFromFeatureDefID()?", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define() or :ShapeFromUnitDefID/ShapeFromFeatureDefID()?", __func__);
 	}
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	if (elemOffset >= elementsCount) {
-		LuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] >= elementsCount [%u]", __func__, elemOffset, elementsCount);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] >= elementsCount [%u]", __func__, elemOffset, elementsCount);
 	}
 
 	const int attribIdx = std::max(attribIdxOpt.value_or(-1), -1);
 	if (attribIdx != -1 && bufferAttribDefs.find(attribIdx) == bufferAttribDefs.cend()) {
-		LuaError("[LuaVBOImpl::%s] attribIdx is not found in bufferAttribDefs", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] attribIdx is not found in bufferAttribDefs", __func__);
 	}
 
 	const uint32_t luaTblDataSize = luaTblData.size();
 
 	const uint32_t luaStartIndex = static_cast<uint32_t>(std::max(luaStartIndexOpt.value_or(1), 1));
 	if (luaStartIndex > luaTblDataSize) {
-		LuaError("[LuaVBOImpl::%s] Invalid luaStartIndex [%u] exceeds table size [%u]", __func__, luaStartIndex, luaTblDataSize);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid luaStartIndex [%u] exceeds table size [%u]", __func__, luaStartIndex, luaTblDataSize);
 	}
 
 	const uint32_t luaFinishIndex = static_cast<uint32_t>(std::max(luaFinishIndexOpt.value_or(luaTblDataSize), 1));
 	if (luaFinishIndex > luaTblDataSize) {
-		LuaError("[LuaVBOImpl::%s] Invalid luaFinishIndex [%u] exceeds table size [%u]", __func__, luaFinishIndex, luaTblDataSize);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid luaFinishIndex [%u] exceeds table size [%u]", __func__, luaFinishIndex, luaTblDataSize);
 	}
 
 	if (luaStartIndex > luaFinishIndex) {
-		LuaError("[LuaVBOImpl::%s] Invalid luaStartIndex [%u] is greater than luaFinishIndex [%u]", __func__, luaStartIndex, luaFinishIndex);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid luaStartIndex [%u] is greater than luaFinishIndex [%u]", __func__, luaStartIndex, luaFinishIndex);
 	}
 
 	std::vector<lua_Number> dataVec;
@@ -496,31 +497,39 @@ size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, const sol::optiona
 	return UploadImpl<lua_Number>(dataVec, elemOffset, attribIdx);
 }
 
-sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(const sol::optional<int> attribIdxOpt, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt)
+sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> elemCountOpt, sol::optional<bool> forceGPUReadOpt)
 {
 	std::vector<lua_Number> dataVec;
 
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define()?", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define()?", __func__);
 	}
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	const uint32_t elemCount = static_cast<uint32_t>(std::clamp(elemCountOpt.value_or(elementsCount), 1, static_cast<int>(elementsCount)));
 
 	if (elemOffset + elemCount > elementsCount) {
-		LuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] + elemCount [%u] >= elementsCount [%u]", __func__, elemOffset, elemCount, elementsCount);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] + elemCount [%u] >= elementsCount [%u]", __func__, elemOffset, elemCount, elementsCount);
 	}
 
 	const int attribIdx = std::max(attribIdxOpt.value_or(-1), -1);
 	if (attribIdx != -1 && bufferAttribDefs.find(attribIdx) == bufferAttribDefs.cend()) {
-		LuaError("[LuaVBOImpl::%s] attribIdx is not found in bufferAttribDefs", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] attribIdx is not found in bufferAttribDefs", __func__);
 	}
 
 	const uint32_t bufferOffsetInBytes = elemOffset * elemSizeInBytes;
 
-	vbo->Bind();
+	const bool forceGPURead = forceGPUReadOpt.value_or(false);
+	GLubyte* mappedBuf = nullptr;
+
 	const int mappedBufferSizeInBytes = bufferSizeInBytes - bufferOffsetInBytes;
-	auto mappedBuf = vbo->MapBuffer(bufferOffsetInBytes, mappedBufferSizeInBytes, GL_MAP_READ_BIT);
+	if (forceGPURead) {
+		vbo->Bind();
+		mappedBuf = vbo->MapBuffer(bufferOffsetInBytes, mappedBufferSizeInBytes, GL_MAP_READ_BIT);
+	}
+	else {
+		mappedBuf = reinterpret_cast<GLubyte*>(bufferData) + bufferOffsetInBytes;
+	}
 
 	int bytesRead = 0;
 
@@ -542,8 +551,10 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(const sol::optiona
 
 			#define TRANSFORM_AND_READ(T) { \
 				if (!TransformAndRead<T>(bytesRead, mappedBuf, mappedBufferSizeInBytes, basicTypeSize, dataVec, copyData)) { \
-					vbo->UnmapBuffer(); \
-					vbo->Unbind(); \
+					if (forceGPURead) { \
+						vbo->UnmapBuffer(); \
+						vbo->Unbind(); \
+					} \
 					return sol::as_table(dataVec); \
 				} \
 			}
@@ -580,8 +591,10 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(const sol::optiona
 		}
 	}
 
-	vbo->UnmapBuffer();
-	vbo->Unbind();
+	if (forceGPURead) {
+		vbo->UnmapBuffer();
+		vbo->Unbind();
+	}
 	return sol::as_table(dataVec);
 }
 
@@ -598,8 +611,7 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(const sol::optiona
 
 	uint32_t pieceIndex = 0;
 */
-template<typename TObj>
-size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
+size_t LuaVBOImpl::ModelsVBOImpl()
 {
 	const auto engineVertAttribDefFunc = [this]() {
 		// float3 pos
@@ -693,37 +705,17 @@ size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
 		this->primitiveRestartIndex = 0xffffff;
 	};
 
-	const SolidObjectDef* objDef;
-	if constexpr (std::is_same<TObj, UnitDef>::value)
-		objDef = unitDefHandler->GetUnitDefByID(defID);
-
-	if constexpr (std::is_same<TObj, FeatureDef>::value)
-		objDef = featureDefHandler->GetFeatureDefByID(defID);
-
-	if (objDef == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid objectDefID [%u]", __func__, defID);
-
-	const S3DModel* model = objDef->LoadModel();
-	if (model == nullptr)
-		LuaError("[LuaVBOImpl::%s] failed to load model for objectDefID [%u]", __func__, defID);
-
 	switch (defTarget) {
 	case GL_ARRAY_BUFFER: {
-		vbo = model->vertVBO.get(); //hack but should be fine
-		if (vbo == nullptr)
-			LuaError("[LuaVBOImpl::%s] Vertex VBO for objectDefID [%u] is unexpectedly nullptr", __func__, defID);
-
+		vbo = S3DModelVAO::GetInstance().GetVertVBO();
 		engineVertAttribDefFunc();
 	} break;
 	case GL_ELEMENT_ARRAY_BUFFER: {
-		vbo = model->indxVBO.get(); //hack but should be fine
-		if (vbo == nullptr)
-			LuaError("[LuaVBOImpl::%s] Index VBO for objectDefID [%u] is unexpectedly nullptr", __func__, defID);
-
+		vbo = S3DModelVAO::GetInstance().GetIndxVBO();
 		engineIndxAttribDefFunc();
 	} break;
 	default:
-		LuaError("[LuaVBOImpl::%s] Invalid buffer target [%u]", __func__, defTarget);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid buffer target [%u]", __func__, defTarget);
 	}
 
 	CopyAttrMapToVec();
@@ -733,54 +725,99 @@ size_t LuaVBOImpl::ShapeFromDefIDImpl(const int defID)
 	return bufferSizeInBytes;
 }
 
-template<typename TObj>
-size_t LuaVBOImpl::OffsetFromImpl(const int id, const int attrID)
+void LuaVBOImpl::InstanceDataFromDataCheck(int attrID, const char* func)
 {
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Invalid instance VBO. Did you call :Define() succesfully?", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Did you call :Define() succesfully?", func);
 	}
 
 	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
-		LuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", __func__, attrID);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
 	}
 
 	const BufferAttribDef& bad = bufferAttribDefs[attrID];
 	if (bad.type != GL_UNSIGNED_INT) {
-		LuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", __func__, attrID);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
+	}
+	if (bad.size != 4) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
+	}
+}
+
+template<typename TObj>
+SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t defTeamID, uint32_t aux0, uint32_t aux1)
+{
+	uint32_t ssboOffset;
+	uint32_t teamID = defTeamID;
+
+	const TObj* obj = LuaUtils::SolIdToObject<TObj>(id, __func__);
+	ssboOffset = MatrixUploader::GetInstance().GetElemOffset(obj);
+
+	uint8_t drawFlags = 0u;
+	if   constexpr (std::is_same_v<TObj, CUnit> || std::is_same_v<TObj, CFeature>) {
+		teamID = obj->team;
+		drawFlags = obj->drawFlag;
 	}
 
-	uint32_t ssboElemOffset;
-	if constexpr (std::is_same<TObj, CUnit>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetUnitElemOffset(id);
+	if (ssboOffset == ~0u) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+	}
+	return SInstanceData(ssboOffset, teamID, drawFlags, aux0, aux1);
+}
+
+template<typename TObj>
+size_t LuaVBOImpl::InstanceDataFromImpl(int id, int attrID, uint8_t defTeamID, const sol::optional<int>& elemOffsetOpt)
+{
+	InstanceDataFromDataCheck(attrID, __func__);
+
+	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
+	const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID, elemOffset);
+
+	if (elemOffset + 1 > elementsCount)
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Element offset is too big", __func__);
+
+	static std::vector<uint32_t> instanceDataVec(4);
+
+	memcpy(instanceDataVec.data(), &instanceData, sizeof(SInstanceData));
+
+	return UploadImpl<uint32_t>(instanceDataVec, elemOffset, attrID);
+}
+
+template<typename TObj>
+size_t LuaVBOImpl::InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint8_t defTeamID, const sol::optional<int>& elemOffsetOpt)
+{
+	InstanceDataFromDataCheck(attrID, __func__);
+
+	std::size_t idsSize = ids.size();
+
+	if (idsSize == 0u) //empty array
+		return 0u;
+
+	const uint32_t elemOffset = elemOffsetOpt.value_or(0u);
+
+	if (idsSize > elementsCount - elemOffset)
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Too many elements in Lua table", __func__);
+
+	static std::vector<uint32_t> instanceDataVec;
+	instanceDataVec.resize(4 * idsSize);
+
+	constexpr auto defaultValue = static_cast<lua_Number>(0);
+	for (std::size_t i = 0u; i < idsSize; ++i) {
+		lua_Number idLua = ids.raw_get_or<lua_Number>(i + 1, defaultValue);
+		int id = spring::SafeCast<lua_Number, int>(idLua);
+		const SInstanceData instanceData = InstanceDataFromGetData<TObj>(id, attrID, defTeamID, elemOffset + static_cast<uint32_t>(i));
+		memcpy(&instanceDataVec[4 * i], &instanceData, sizeof(SInstanceData));
 	}
 
-	if constexpr (std::is_same<TObj, CFeature>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetFeatureElemOffset(id);
-	}
-
-	if constexpr (std::is_same<TObj, UnitDef>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetUnitDefElemOffset(id);
-	}
-
-	if constexpr (std::is_same<TObj, FeatureDef>::value) {
-		ssboElemOffset = MatrixUploader::GetInstance().GetFeatureDefElemOffset(id);
-	}
-
-	if (ssboElemOffset == ~0u) {
-		LuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
-	}
-
-	std::vector<uint32_t> elemOffsets;
-	elemOffsets.resize(elementsCount);
-	std::fill(elemOffsets.begin(), elemOffsets.end(), ssboElemOffset);
-
-	size_t bytesWritten = 0u;
-	return UploadImpl<uint32_t>(elemOffsets, 0u, attrID);
+	return UploadImpl<uint32_t>(instanceDataVec, elemOffset, attrID);
 }
 
 template<typename TIn>
-size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, const uint32_t elemOffset, const int attribIdx)
+size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffset, int attribIdx)
 {
+	if (dataVec.empty())
+		return 0u;
+
 	const uint32_t bufferOffsetInBytes = elemOffset * elemSizeInBytes;
 	const int mappedBufferSizeInBytes = bufferSizeInBytes - bufferOffsetInBytes;
 
@@ -862,65 +899,67 @@ size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, const uint32_t el
 }
 
 
-size_t LuaVBOImpl::ShapeFromUnitDefID(const int id)
+size_t LuaVBOImpl::ModelsVBO()
 {
-	return ShapeFromDefIDImpl<UnitDef>(id);
+	return ModelsVBOImpl();
 }
 
-size_t LuaVBOImpl::ShapeFromFeatureDefID(const int id)
+
+size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
-	return ShapeFromDefIDImpl<FeatureDef>(id);
+	uint8_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<UnitDef>(id, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::ShapeFromUnitID(const int id)
+size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
-	const CUnit* obj = unitHandler.GetUnit(id);
-	if (obj == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid unitID %d", __func__, id);
-
-	return ShapeFromUnitDefID(obj->unitDef->id);
+	uint8_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<UnitDef>(ids, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::ShapeFromFeatureID(const int id)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(int id, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
-	const CFeature* obj = featureHandler.GetFeature(id);
-	if (obj == nullptr)
-		LuaError("[LuaVBOImpl::%s] Supplied invalid featureID %d", __func__, id);
-
-	return ShapeFromFeatureDefID(obj->def->id);
+	uint8_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<FeatureDef>(id, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::OffsetFromUnitDefID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, int attrID, sol::optional<int> teamIdOpt, sol::optional<int> elemOffsetOpt)
 {
-	return OffsetFromImpl<UnitDef>(id, attrID);
+	uint8_t defTeamID = teamIdOpt.value_or(gu->myTeam);
+	return InstanceDataFromImpl<FeatureDef>(ids, attrID, defTeamID, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::OffsetFromFeatureDefID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitIDs(int id, int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return OffsetFromImpl<FeatureDef>(id, attrID);
+	return InstanceDataFromImpl<CUnit>(id, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::OffsetFromUnitID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromUnitIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return OffsetFromImpl<CUnit>(id, attrID);
+	return InstanceDataFromImpl<CUnit>(ids, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
-size_t LuaVBOImpl::OffsetFromFeatureID(const int id, const int attrID)
+size_t LuaVBOImpl::InstanceDataFromFeatureIDs(int id, int attrID, sol::optional<int> elemOffsetOpt)
 {
-	return OffsetFromImpl<CFeature>(id, attrID);
+	return InstanceDataFromImpl<CFeature>(id, attrID, /*noop*/ 0u, elemOffsetOpt);
+}
+
+size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const sol::stack_table& ids, int attrID, sol::optional<int> elemOffsetOpt)
+{
+	return InstanceDataFromImpl<CFeature>(ids, attrID, /*noop*/ 0u, elemOffsetOpt);
 }
 
 int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt, const bool bind)
 {
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
 	}
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	const uint32_t elemCount = static_cast<uint32_t>(std::clamp(elemCountOpt.value_or(elementsCount), 1, static_cast<int>(elementsCount)));
 
 	if (elemOffset + elemCount > elementsCount) {
-		LuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] + elemCount [%u] > elementsCount [%u]", __func__, elemOffset, elemCount, elementsCount);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid elemOffset [%u] + elemCount [%u] > elementsCount [%u]", __func__, elemOffset, elemCount, elementsCount);
 	}
 
 	const uint32_t bufferOffsetInBytes = elemOffset * elemSizeInBytes;
@@ -931,7 +970,7 @@ int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int
 
 	GLenum target = targetOpt.value_or(defTarget);
 	if (target != GL_UNIFORM_BUFFER && target != GL_SHADER_STORAGE_BUFFER) {
-		LuaError("[LuaVBOImpl::%s] (Un)binding target can only be equal to [%u] or [%u]", __func__, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] (Un)binding target can only be equal to [%u] or [%u]", __func__, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER);
 	}
 	defTarget = target;
 
@@ -944,7 +983,7 @@ int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int
 		bindingIndex += ssboMinIndex;
 	} break;
 	default:
-		LuaError("[LuaVBOImpl::%s] (Un)binding target can only be equal to [%u] or [%u]", __func__, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] (Un)binding target can only be equal to [%u] or [%u]", __func__, GL_UNIFORM_BUFFER, GL_SHADER_STORAGE_BUFFER);
 	}
 
 	bool result = false;
@@ -954,7 +993,7 @@ int LuaVBOImpl::BindBufferRangeImpl(const GLuint index,  const sol::optional<int
 		result = vbo->UnbindBufferRange(defTarget, bindingIndex, bufferOffsetInBytes, boundBufferSizeInBytes);
 	}
 	if (!result) {
-		LuaError("[LuaVBOImpl::%s] Error (un)binding. See infolog for possible reasons", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Error (un)binding. See infolog for possible reasons", __func__);
 	}
 
 	return result ? bindingIndex : -1;
@@ -973,7 +1012,7 @@ int LuaVBOImpl::UnbindBufferRange(const GLuint index, const sol::optional<int> e
 void LuaVBOImpl::DumpDefinition()
 {
 	if (!vbo) {
-		LuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
 	}
 
 	std::ostringstream ss;
@@ -991,11 +1030,11 @@ void LuaVBOImpl::DumpDefinition()
 void LuaVBOImpl::AllocGLBuffer(size_t byteSize)
 {
 	if (defTarget == GL_UNIFORM_BUFFER && bufferSizeInBytes > UBO_SAFE_SIZE_BYTES) {
-		LuaError("[LuaVBOImpl::%s] Exceeded [%u] safe UBO buffer size limit of [%u] bytes", __func__, bufferSizeInBytes, LuaVBOImpl::UBO_SAFE_SIZE_BYTES);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Exceeded [%u] safe UBO buffer size limit of [%u] bytes", __func__, bufferSizeInBytes, LuaVBOImpl::UBO_SAFE_SIZE_BYTES);
 	}
 
 	if (bufferSizeInBytes > BUFFER_SANE_LIMIT_BYTES) {
-		LuaError("[LuaVBOImpl::%s] Exceeded [%u] sane buffer size limit of [%u] bytes", __func__, bufferSizeInBytes, LuaVBOImpl::BUFFER_SANE_LIMIT_BYTES);
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Exceeded [%u] sane buffer size limit of [%u] bytes", __func__, bufferSizeInBytes, LuaVBOImpl::BUFFER_SANE_LIMIT_BYTES);
 	}
 
 	bufferSizeInBytes = byteSize; //be strict here and don't account for possible increase of size on GPU due to alignment requirements
@@ -1087,11 +1126,4 @@ bool LuaVBOImpl::TransformAndRead(int& bytesRead, GLubyte*& mappedBuf, const int
 
 	bytesRead += inValSizeStride;
 	return true;
-}
-
-template<typename ...Args>
-void LuaVBOImpl::LuaError(const std::string& format, Args ...args)
-{
-	std::string what = fmt::sprintf(format, args...);
-	throw std::runtime_error(what.c_str());
 }

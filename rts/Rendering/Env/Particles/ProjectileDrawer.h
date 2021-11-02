@@ -5,13 +5,13 @@
 
 #include <array>
 
+#include "Sim/Projectiles/Projectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelRenderContainer.h"
-#include "Sim/Projectiles/ProjectileFunctors.h"
 #include "System/EventClient.h"
 #include "System/UnorderedSet.hpp"
 
@@ -76,6 +76,10 @@ public:
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }
 	int ToggleSoften() { return EnableSoften((wantSoften + 1) % WANT_SOFTEN_COUNT); }
+
+	int EnableDrawOrder(int b) { return wantDrawOrder = b; }
+	int ToggleDrawOrder() { return EnableDrawOrder((wantDrawOrder + 1) % 2); }
+
 	void CopyDepthBufferToTexture();
 
 	const AtlasedTexture* GetSmokeTexture(unsigned int i) const { return smokeTextures[i]; }
@@ -158,19 +162,27 @@ private:
 
 	FBO perlinFB;
 
-	ProjectileDistanceComparator zSortCmp;
-
-
 	std::vector<const AtlasedTexture*> smokeTextures;
 
 	/// projectiles without a model, e.g. nano-particles
 	std::vector<CProjectile*> renderProjectiles;
 	/// projectiles with a model
-	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_OTHER> modelRenderers;
+	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
 	/// {[0] := unsorted, [1] := distance-sorted} projectiles;
 	/// used to render particle effects in back-to-front order
 	std::vector<CProjectile*> sortedProjectiles[2];
+
+	std::function<bool(const CProjectile*, const CProjectile*)> sortingPredicate = [this](const CProjectile* p1, const CProjectile* p2)
+	{
+		if (wantDrawOrder && p1->drawOrder != p2->drawOrder)
+			return (p1->drawOrder < p2->drawOrder);
+
+		if (p1->GetSortDist() != p2->GetSortDist()) // strict ordering required
+			return (p1->GetSortDist() > p2->GetSortDist());
+
+		return (p1 > p2);
+	};
 
 	bool drawSorted = true;
 
@@ -178,8 +190,10 @@ private:
 	FBO* depthFBO = nullptr;
 	Shader::IProgramObject* fxShader = nullptr;
 
-	constexpr static int WANT_SOFTEN_COUNT = 3;
+	constexpr static int WANT_SOFTEN_COUNT = 2;
 	int wantSoften = 0;
+
+	bool wantDrawOrder = true;
 };
 
 extern CProjectileDrawer* projectileDrawer;

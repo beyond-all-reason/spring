@@ -8,6 +8,7 @@
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileTypes.h"
 #include "System/float4.h"
 #include "System/UnorderedMap.hpp"
+#include "Sim/Misc/GlobalConstants.h"
 
 struct AtlasedTexture;
 class CColorMap;
@@ -242,6 +243,11 @@ public:
 		int lodDistance = 0;
 		int stages = 0;
 
+		int smokePeriod = 8;
+		int smokeTime = 2 * GAME_SPEED;
+		float smokeSize = 7.0f;
+		float smokeColor = 0.65f;
+
 		float tilelength = 0.0f;
 		float scrollspeed = 0.0f;
 		float pulseSpeed = 0.0f;
@@ -256,7 +262,9 @@ public:
 		/// TODO: make the scar-type configurable
 		bool explosionScar = true;
 		bool smokeTrail = false;
+		bool smokeTrailCastShadow = true;
 
+		bool castShadow = true;
 		bool noGap = true;
 		bool alwaysVisible = true;
 	};

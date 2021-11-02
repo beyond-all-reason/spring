@@ -1,4 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+#include <array>
+
 #include "UnsyncedGameCommands.h"
 
 #include "UnsyncedActionExecutor.h"
@@ -60,14 +62,14 @@
 #include "Rendering/DebugColVolDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
 #include "Rendering/IPathDrawer.h"
-#include "Rendering/FeatureDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/HUDDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Screenshot.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/SmoothHeightMeshDrawer.h"
 #include "Rendering/TeamHighlight.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/VerticalSync.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/ISky.h"
@@ -79,6 +81,8 @@
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Map/InfoTexture/Modern/Path.h"
 #include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Textures/NamedTextures.h"
+#include "Rendering/Textures/S3OTextureHandler.h"
 
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -402,6 +406,51 @@ public:
 	}
 };
 
+class UnitDrawerTypeActionExecutor : public IUnsyncedActionExecutor {
+public:
+	UnitDrawerTypeActionExecutor() : IUnsyncedActionExecutor("UnitDrawer",
+		"Forces particular Unit drawer type") {}
+
+	bool Execute(const UnsyncedAction& action) const {
+
+		int prefModelDrawer = -1;
+		int mtModelDrawer = -1;
+		sscanf((action.GetArgs()).c_str(), "%i %i", &prefModelDrawer, &mtModelDrawer);
+
+		if (prefModelDrawer == -1)
+			return false;
+
+		if (mtModelDrawer != -1)
+			CUnitDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
+
+		CUnitDrawer::PreferedDrawerTypeRef() = prefModelDrawer;
+
+		return true;
+	}
+};
+
+class FeatureDrawerTypeActionExecutor : public IUnsyncedActionExecutor {
+public:
+	FeatureDrawerTypeActionExecutor() : IUnsyncedActionExecutor("FeatureDrawer",
+		"Forces particular Feature drawer type") {}
+
+	bool Execute(const UnsyncedAction& action) const {
+
+		int prefModelDrawer = -1;
+		int mtModelDrawer = -1;
+		sscanf((action.GetArgs()).c_str(), "%i %i", &prefModelDrawer, &mtModelDrawer);
+
+		if (prefModelDrawer == -1)
+			return false;
+
+		if (mtModelDrawer != -1)
+			CFeatureDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
+
+		CFeatureDrawer::PreferedDrawerTypeRef() = prefModelDrawer;
+
+		return true;
+	}
+};
 
 
 class SayActionExecutor : public IUnsyncedActionExecutor {
@@ -2055,7 +2104,6 @@ public:
 		if (mouse->offscreen)
 			return false;
 
-		const bool prevState = globalRendering->GetWindowInputGrabbing();
 		if (args.empty()) {
 			LogSystemStatus("Input grabbing", globalRendering->ToggleWindowInputGrabbing());
 		} else {
@@ -2544,20 +2592,43 @@ public:
 	ParticleSoftenActionExecutor() : IUnsyncedActionExecutor(
 		"SoftParticles",
 		"Enable/Disable particles softening: 0=disabled, 1=enabled"
-	) {
-	}
+	) { }
 
 	bool Execute(const UnsyncedAction& action) const final {
 		const auto& args = action.GetArgs();
 
 		const char* fmt = "ProjectileDrawer particles-softening %s";
-		const char* strs[] = { "disabled", "enabled", "enabled with extra unsafe softness" };
+		const char* strs[] = { "disabled", "enabled" };
 
 		if (!args.empty()) {
 			LOG(fmt, strs[projectileDrawer->EnableSoften(atoi(args.c_str()))]);
 		}
 		else {
 			LOG(fmt, strs[projectileDrawer->ToggleSoften()]);
+		}
+
+		return true;
+	}
+};
+
+class ParticleDrawOrderActionExecutor : public IUnsyncedActionExecutor {
+public:
+	ParticleDrawOrderActionExecutor() : IUnsyncedActionExecutor(
+		"DrawOrderParticles",
+		"Enable/Disable particles draw order: 0=disabled, 1=enabled"
+	) { }
+
+	bool Execute(const UnsyncedAction& action) const final {
+		const auto& args = action.GetArgs();
+
+		const char* fmt = "ProjectileDrawer draw order %s";
+		const char* strs[] = { "disabled", "enabled" };
+
+		if (!args.empty()) {
+			LOG(fmt, strs[projectileDrawer->EnableDrawOrder(atoi(args.c_str()))]);
+		}
+		else {
+			LOG(fmt, strs[projectileDrawer->ToggleDrawOrder()]);
 		}
 
 		return true;
@@ -2729,7 +2800,7 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		if (!action.GetArgs().empty()) {
 			const int iconDist = atoi(action.GetArgs().c_str());
-			unitDrawer->SetUnitIconDist((float)iconDist);
+			CUnitDrawer::SetUnitIconDist(static_cast<float>(iconDist));
 			configHandler->Set("UnitIconDist", iconDist);
 			LOG("Set UnitIconDist to %i", iconDist);
 		} else {
@@ -2746,9 +2817,9 @@ public:
 			"Set whether unit icons are drawn as an UI element (true) or old LOD-like style (false, default).") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		InverseOrSetBool(unitDrawer->useScreenIcons, action.GetArgs());
-		configHandler->Set("UnitIconsAsUI", unitDrawer->useScreenIcons ? 1 : 0);
-		LogSystemStatus("Draw unit icons as UI: ", unitDrawer->useScreenIcons);
+		InverseOrSetBool(CUnitDrawer::UseScreenIcons(), action.GetArgs());
+		configHandler->Set("UnitIconsAsUI", CUnitDrawer::UseScreenIcons() ? 1 : 0);
+		LogSystemStatus("Draw unit icons as UI: ", CUnitDrawer::UseScreenIcons());
 		return true;
 	}
 };
@@ -2804,12 +2875,12 @@ public:
 		if (!action.GetArgs().empty())
 		{
 			const float iconFadeVanish = (float) atof(action.GetArgs().c_str());
-			unitDrawer->SetUnitIconFadeVanish(iconFadeVanish);
+			CUnitDrawer::SetUnitIconFadeVanish(iconFadeVanish);
 			configHandler->Set("UnitIconFadeVanish", iconFadeVanish);
 			LOG("Set UnitIconFadeVanish to %f", iconFadeVanish);
 		}
 		else
-			LOG("UnitIconFadeVanish is %f", unitDrawer->GetUnitIconFadeVanish());
+			LOG("UnitIconFadeVanish is %f", CUnitDrawer::GetUnitIconFadeVanish());
 
 		return true;
 	}
@@ -2821,9 +2892,9 @@ public:
 			"Set whether unit icons are hidden when UI is hidden.") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		InverseOrSetBool(unitDrawer->iconHideWithUI, action.GetArgs());
-		configHandler->Set("IconsHideWithUI", unitDrawer->iconHideWithUI ? 1 : 0);
-		LogSystemStatus("Hide unit icons with UI: ", unitDrawer->iconHideWithUI);
+		InverseOrSetBool(CUnitDrawer::IconHideWithUI(), action.GetArgs());
+		configHandler->Set("IconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
+		LogSystemStatus("Hide unit icons with UI: ", CUnitDrawer::IconHideWithUI());
 		return true;
 	}
 };
@@ -2837,7 +2908,7 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		if (!action.GetArgs().empty()) {
 			const int drawDist = atoi(action.GetArgs().c_str());
-			unitDrawer->SetUnitDrawDist((float)drawDist);
+			CModelDrawerDataConcept::SetModelDrawDist(static_cast<float>(drawDist));
 			configHandler->Set("UnitLodDist", drawDist);
 			LOG("Set UnitLodDist to %i", drawDist);
 		} else {
@@ -3220,6 +3291,59 @@ public:
 	}
 };
 
+class ReloadTexturesActionExecutor : public IUnsyncedActionExecutor {
+public:
+	ReloadTexturesActionExecutor() : IUnsyncedActionExecutor("ReloadTextures", "Reloads textures") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		std::array<bool, 4> en = { false }; //lua, s3o, smf, ceg
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+
+		for (auto& arg : args) {
+			StringToLowerInPlace(arg);
+
+			switch (hashString(arg.c_str())) {
+			case hashString("lua"): {
+				en[0] = true;
+			} break;
+			case hashString("s3o"): {
+				en[1] = true;
+			} break;
+			case hashString("ssmf"):
+			case hashString("smf"): {
+				en[2] = true;
+			} break;
+			case hashString("cegs"):
+			case hashString("ceg"): {
+				en[3] = true;
+			} break;
+			}
+		}
+		if (args.empty())
+			en = { true };
+
+		if (en[0]) {
+			LOG("Reloading Lua textures");
+			CNamedTextures::Reload();
+		}
+		if (en[1]) {
+			LOG("Reloading S3O textures");
+			textureHandlerS3O.Reload();
+		}
+		if (en[2]) {
+			LOG("Reloading SMF textures");
+			readMap->ReloadTextures();
+		}
+		if (en[3]) {
+			LOG("Reloading CEG textures");
+			projectileDrawer->textureAtlas->ReloadTextures();
+			projectileDrawer->groundFXAtlas->ReloadTextures();
+		}
+
+		return true;
+	}
+};
 
 
 class DebugInfoActionExecutor : public IUnsyncedActionExecutor {
@@ -3445,6 +3569,8 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<WaterActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AdvModelShadingActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<AdvMapShadingActionExecutor>()); // [maint]
+	AddActionExecutor(AllocActionExecutor<UnitDrawerTypeActionExecutor>()); // [maint]
+	AddActionExecutor(AllocActionExecutor<FeatureDrawerTypeActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<SayActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());
@@ -3580,6 +3706,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 
 	AddActionExecutor(AllocActionExecutor<DistSortProjectilesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ParticleSoftenActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<ParticleDrawOrderActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MaxParticlesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MaxNanoParticlesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MinViewRangeActionExecutor>());
@@ -3615,6 +3742,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<SaveActionExecutor>(false));
 	AddActionExecutor(AllocActionExecutor<ReloadGameActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ReloadShadersActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<ReloadTexturesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugInfoActionExecutor>());
 
 	// XXX are these redirects really required?

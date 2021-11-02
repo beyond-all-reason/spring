@@ -49,6 +49,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/Models/MatricesMemStorage.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -97,8 +98,8 @@
 
 
 CONFIG(unsigned, SetCoreAffinity).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the main-thread should use.");
-CONFIG(unsigned, TextureMemPoolSize).defaultValue(128 * (1 + (__archBits__ == 64))).minimumValue(1);
-CONFIG(bool, UseLuaMemPools).defaultValue(__archBits__ == 64).description("Whether Lua VM memory allocations are made from pools.");
+CONFIG(unsigned, TextureMemPoolSize).defaultValue(512).minimumValue(1);
+CONFIG(bool, UseLuaMemPools).defaultValue(true).description("Whether Lua VM memory allocations are made from pools.");
 CONFIG(bool, UseHighResTimer).defaultValue(false).description("On Windows, sets whether Spring will use low- or high-resolution timer functions for tasks like graphical interpolation between game frames.");
 CONFIG(bool, UseFontConfigLib).defaultValue(false).description("Whether the system fontconfig library (if present and enabled at compile-time) should be used for handling fonts.");
 
@@ -714,6 +715,7 @@ void SpringApp::Reload(const std::string script)
 
 	LOG("[SpringApp::%s][10]", __func__);
 
+	matricesMemStorage.Reset();
 	gu->ResetState();
 	gs->ResetState();
 	// will be reconstructed from given script

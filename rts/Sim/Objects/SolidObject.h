@@ -31,6 +31,17 @@ enum TerrainChangeTypes {
 	TERRAINCHANGE_OBJECT_DELETED       = 5,
 };
 
+enum DrawFlags : uint8_t {
+	SO_NODRAW_FLAG = 0, // must be 0
+	SO_OPAQUE_FLAG = 1,
+	SO_ALPHAF_FLAG = 2,
+	SO_REFLEC_FLAG = 4,
+	SO_REFRAC_FLAG = 8,
+	SO_SHADOW_FLAG = 16,
+	SO_FARTEX_FLAG = 32,
+	SO_DRICON_FLAG = 128, //unused so far
+};
+
 enum YardmapStates {
 	YARDMAP_OPEN        = 0,    // always free      (    walkable      buildable)
 //	YARDMAP_WALKABLE    = 4,    // open for walk    (    walkable, not buildable)
@@ -222,7 +233,8 @@ public:
 
 
 	int2 GetMapPos() const { return (GetMapPos(pos)); }
-	int2 GetMapPos(const float3& position) const;
+	int2 GetMapPos(const float3& position) const { return GetMapPosStatic(pos, xsize, zsize); }
+	static int2 GetMapPosStatic(const float3& position, int xsize, int zsize);
 
 	float2 GetFootPrint(float scale) const { return {xsize * scale, zsize * scale}; }
 
@@ -287,6 +299,10 @@ public:
 
 	virtual void SetMass(float newMass);
 
+	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
+	void SetDrawFlag(DrawFlags f) { drawFlag  = f; }
+	void AddDrawFlag(DrawFlags f) { drawFlag |= f; }
+	bool HasDrawFlag(DrawFlags f) const { return (drawFlag & f) == f; }
 private:
 	void SetMidPos(const float3& mp, bool relative) {
 		if (relative) {
@@ -305,7 +321,6 @@ private:
 
 	float3 GetMidPos() const { return (GetObjectSpacePos(relMidPos)); }
 	float3 GetAimPos() const { return (GetObjectSpacePos(relAimPos)); }
-
 public:
 	float health = 0.0f;
 	float maxHealth = 1.0f;
@@ -332,6 +347,8 @@ public:
 	bool luaDraw = false;
 	///< if true, unit/feature can not be selected/mouse-picked by a player (UNSYNCED)
 	bool noSelect = false;
+	///< if true, unsynced matrices (transformation + pieceSpaceMat/modelSpaceMat) will be updated unconditionally
+	bool alwaysUpdateMat = false;
 
 	///< x-size of this object, according to its footprint (note: rotated depending on buildFacing)
 	int xsize = 1;
@@ -400,6 +417,8 @@ public:
 	float3 drawPos;
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
+
+	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
 
 	/**
 	 * @brief mod controlled parameters
