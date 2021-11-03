@@ -132,9 +132,6 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& system = root.SubTable("system");
 
 		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
-		// TK: TEMPORARY CHANGE FOR SYNC TEST START
-		pathFinderSystem = TKPFS_TYPE;
-		// TK: TEMPORARY CHANGE FOR SYNC TEST END
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
 
