@@ -1783,12 +1783,9 @@ public:
 		if ((action.GetArgs()).empty())
 			return false;
 
-		float minSpeed = gs->minUserSped;
-		float maxSpeed = gs->maxUserSped;
 		float speed = atof((action.GetArgs()).c_str());
-		speed = Clamp(speed, minSpeed, maxSpeed)
 
-		clientNet->Send(CBaseNetProtocol::Get().SendUserSpeed(gu->myPlayerNum, speed);
+		clientNet->Send(CBaseNetProtocol::Get().SendUserSpeed(gu->myPlayerNum, speed));
 		return true;
 	}
 };
