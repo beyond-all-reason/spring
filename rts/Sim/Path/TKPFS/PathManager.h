@@ -38,10 +38,29 @@ public:
 			, caller(nullptr)
 		{}
 
-		MultiPath(const MultiPath& mp) = delete;
+		//MultiPath(const MultiPath& mp) = delete;
+		MultiPath(const MultiPath& mp) {
+			*this = mp;
+		}
 		MultiPath(MultiPath&& mp) { *this = std::move(mp); }
 
-		MultiPath& operator = (const MultiPath& mp) = delete;
+		//MultiPath& operator = (const MultiPath& mp) = delete;
+		MultiPath& operator = (const MultiPath& mp) {
+			lowResPath = mp.lowResPath;
+			medResPath = mp.medResPath;
+			maxResPath = mp.maxResPath;
+
+			searchResult = mp.searchResult;
+
+			start = mp.start;
+			finalGoal = mp.finalGoal;
+
+			peDef   = mp.peDef;
+			moveDef = mp.moveDef;
+			caller  = mp.caller;
+
+			return *this;
+		}
 		MultiPath& operator = (MultiPath&& mp) {
 			lowResPath = std::move(mp.lowResPath);
 			medResPath = std::move(mp.medResPath);
@@ -179,7 +198,24 @@ private:
 		CSolidObject* caller
 	) const;
 
-	MultiPath* GetMultiPath(int pathID) { return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
+	MultiPath* GetMultiPath(int pathID) {return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
+
+	// Used by MT code - a copy must be taken
+	MultiPath GetMultiPathMT(int pathID) const {
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const auto pi = pathMap.find(pathID);
+		if (pi == pathMap.end())
+			return MultiPath();
+		return pi->second;
+	}
+
+	// Used by MT code
+	void UpdateMultiPathMT(int pathID, MultiPath& updatedPath) {
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const auto pi = pathMap.find(pathID);
+		if (pi != pathMap.end())
+			pi->second = updatedPath;
+	}
 
 	const MultiPath* GetMultiPathConst(int pathID) const {
 		const std::lock_guard<std::mutex> lock(pathMapUpdate);

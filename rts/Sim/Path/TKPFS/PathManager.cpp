@@ -583,7 +583,8 @@ float3 CPathManager::NextWayPoint(
 		return noPathPoint;
 
 	// find corresponding multipath entry
-	MultiPath* multiPath = GetMultiPath(pathID);
+	MultiPath localMultiPath = GetMultiPathMT(pathID);
+	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
 
 	if (multiPath == nullptr)
 		return noPathPoint;
@@ -660,6 +661,8 @@ float3 CPathManager::NextWayPoint(
 			maxResPath.path.pop_back();
 		}
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
+
+	UpdateMultiPathMT(pathID, localMultiPath);
 
 	// y=0 indicates this is not a temporary waypoint
 	// (the default PFS does not queue path-requests) // MH TODO: review

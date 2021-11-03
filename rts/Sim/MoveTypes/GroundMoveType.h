@@ -95,7 +95,6 @@ public:
 	void DelayedReRequestPath() {
 		PathRequestType curRepath = wantRepath;
 		wantRepath = PATH_REQUEST_NONE;
-		moveStateWaitingOnPathUpdated = false;
 
 		if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
 		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
@@ -238,8 +237,6 @@ private:
 	bool canReverse = false;
 	bool useMainHeading = false;            /// if true, turn toward mainHeadingPos until weapons[0] can TryTarget() it
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
-
-	bool moveStateWaitingOnPathUpdated = false;
 };
 
 #endif // GROUNDMOVETYPE_H
