@@ -11,11 +11,20 @@
 #include "System/Matrix44f.h"
 #include "System/type2.h"
 
-// Added only to calculate the size of unit memory blob's.
+// Added only to calculate the size of unit memory buffers.
 // change as appropriate if the largest type changes.
+
+// for amtMemBuffer
 #include "Sim/MoveTypes/GroundMoveType.h"
-#include "Sim/Units/Scripts/LuaUnitScript.h"
+
+// for smtMemBuffer
+#include "Sim/MoveTypes/ScriptMoveType.h"
+
+// for caiMemBuffer
 #include "Sim/Units/CommandAI/BuilderCAI.h"
+
+// for usMemBuffer
+#include "Sim/Units/Scripts/LuaUnitScript.h"
 
 
 class CPlayer;
@@ -306,7 +315,7 @@ public:
 	// sufficient for the largest AMoveType (CGroundMoveType)
 	// need two buffers since ScriptMoveType might be enabled
 	uint8_t amtMemBuffer[sizeof(CGroundMoveType)];
-	uint8_t smtMemBuffer[370];
+	uint8_t smtMemBuffer[sizeof(CScriptMoveType)];
 	// sufficient for the largest CommandAI type (CBuilderCAI)
 	// knowing the exact CAI object size here is not required;
 	// static asserts will catch any overflow
