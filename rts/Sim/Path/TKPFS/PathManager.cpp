@@ -19,6 +19,11 @@
 
 #include "PathGlobal.h"
 
+// #include "Game/GlobalUnsynced.h"
+// #include "Game/SelectedUnitsHandler.h"
+// #include "Rendering/IPathDrawer.h"
+// #define DEBUG_DRAWING_ENABLED ((gs->cheatEnabled || gu->spectatingFullView) && pathDrawer->IsEnabled())
+
 // MH Note: Init NumThreads * 3 Finders (IPAthFinder) rather than static init here.
 
 /*
@@ -589,6 +594,12 @@ float3 CPathManager::NextWayPoint(
 	if (multiPath == nullptr)
 		return noPathPoint;
 
+	// if (DEBUG_DRAWING_ENABLED) {
+	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+	// 		LOG("%s: numRetries=%d", __func__, numRetries);
+	// 	}
+	// }
+
 	if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
 		return (multiPath->finalGoal);
 
@@ -615,6 +626,12 @@ float3 CPathManager::NextWayPoint(
 	// recursive refinement of its lower-resolution segments
 	// if so, check if the med-res path also needs extending
 	if (extendMaxResPath) {
+
+		// if (DEBUG_DRAWING_ENABLED) {
+		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+		// 		LOG("%s extendMaxResPath == true", __func__);
+		// 	}
+		// }
 		//if (multiPath->caller != nullptr)
 		//	multiPath->caller->UnBlock();
 
@@ -641,9 +658,28 @@ float3 CPathManager::NextWayPoint(
 		// the way to it (ie. a GoalOutOfRange result)
 		// OR we are stuck on an impassable square
 		if (maxResPath.path.empty()) {
+			// if (DEBUG_DRAWING_ENABLED) {
+			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+			// 		LOG("%s maxres empty", __func__);
+			// 	}
+			// }
 			if (lowResPath.path.empty() && medResPath.path.empty()) {
+				// if (DEBUG_DRAWING_ENABLED) {
+				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				// 		LOG("%s lowResPath.path.empty() && medResPath.path.empty()", __func__);
+				// 	}
+				// }
+
 				if (multiPath->searchResult == IPath::Ok)
 					waypoint = multiPath->finalGoal;
+
+				// if (DEBUG_DRAWING_ENABLED) {
+				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				// 		LOG("%s waypoint for final goal (%f,%f,%f) [%d]", __func__
+				// 				, waypoint.x, waypoint.y, waypoint.z
+				// 				, multiPath->searchResult);
+				// 	}
+				// }
 
 				// [else]
 				// reached in the CantGetCloser case for any max-res searches
@@ -652,17 +688,73 @@ float3 CPathManager::NextWayPoint(
 				// this so waypoint will have been set to it (during previous
 				// iteration) if we end up here
 			} else {
+				// if (DEBUG_DRAWING_ENABLED) {
+				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				// 		LOG("%s calling NextWayPoint again", __func__);
+				// 	}
+				// }
 				waypoint = NextWayPoint(owner, pathID, numRetries + 1, callerPos, radius, synced);
 			}
 
 			break;
 		} else {
+
+			// if (DEBUG_DRAWING_ENABLED) {
+			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+			// 		LOG("%s maxres next point (%f,%f,%f)", __func__
+			// 				, maxResPath.path.back().x, maxResPath.path.back().y, maxResPath.path.back().z);
+			// 	}
+			// }
+
 			waypoint = maxResPath.path.back();
 			maxResPath.path.pop_back();
+
+			// if (DEBUG_DRAWING_ENABLED) {
+			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+			// 		LOG("%s waypoint (%f,%f,%f)", __func__
+			// 				, waypoint.x, waypoint.y, waypoint.z);
+			// 	}
+			// }
 		}
+		// if (DEBUG_DRAWING_ENABLED) {
+		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+		// 		LOG("%s callerPos.SqDistance2D(waypoint) [%f] < Square(radius) [%f] && (waypoint != maxResPath.pathGoal) [%d]", __func__
+		// 				, callerPos.SqDistance2D(waypoint)
+		// 				, Square(radius)
+		// 				, (int)(waypoint != maxResPath.pathGoal));
+		// 	}
+		// }
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
 
 	UpdateMultiPathMT(pathID, localMultiPath);
+
+	// if (DEBUG_DRAWING_ENABLED) {
+	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+
+	// 		LOG("Start Position (%f, %f, %f)", localMultiPath.start.x, localMultiPath.start.y, localMultiPath.start.z);
+	// 		LOG("Final  Position (%f, %f, %f)", localMultiPath.finalGoal.x, localMultiPath.finalGoal.y, localMultiPath.finalGoal.z);
+	// 		LOG("Goal Radius %f", radius);
+
+	// 		std::array<IPath::Path*, PATH_ALL_LEVELS> paths;
+	// 		paths[PATH_LOW_RES] = &localMultiPath.lowResPath;
+	// 		paths[PATH_MED_RES] = &localMultiPath.medResPath;
+	// 		paths[PATH_MAX_RES] = &localMultiPath.maxResPath;
+
+	// 		for (int i = 0; i<PATH_ALL_LEVELS; i++){
+	// 			LOG("Path Resolution level %d (cost: %f)", i, paths[i]->pathCost);
+	// 			LOG("Desired Goal (%f, %f, %f)", paths[i]->desiredGoal.x, paths[i]->desiredGoal.y, paths[i]->desiredGoal.z);
+	// 			LOG("Path Goal (%f, %f, %f)", paths[i]->pathGoal.x, paths[i]->pathGoal.y, paths[i]->pathGoal.z);
+				
+	// 			for (int j = 0; j<paths[i]->path.size(); j++){
+	// 				LOG("Path Step %d (%f, %f, %f)", j, paths[i]->path[j].x, paths[i]->path[j].y, paths[i]->path[j].z);
+	// 			}
+	// 			for (int j = 0; j<paths[i]->squares.size(); j++){
+	// 				LOG("Square Step %d (%d, %d)", j, paths[i]->squares[j].x, paths[i]->squares[j].y);
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 
 	// y=0 indicates this is not a temporary waypoint
 	// (the default PFS does not queue path-requests) // MH TODO: review

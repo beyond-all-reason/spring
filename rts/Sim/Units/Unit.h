@@ -11,6 +11,12 @@
 #include "System/Matrix44f.h"
 #include "System/type2.h"
 
+// Added only to calculate the size of unit memory blob's.
+// change as appropriate if the largest type changes.
+#include "Sim/MoveTypes/GroundMoveType.h"
+#include "Sim/Units/Scripts/LuaUnitScript.h"
+#include "Sim/Units/CommandAI/BuilderCAI.h"
+
 
 class CPlayer;
 class CCommandAI;
@@ -296,15 +302,15 @@ public:
 
 
 	// sufficient for the largest UnitScript (CLuaUnitScript)
-	uint8_t usMemBuffer[368];
+	uint8_t usMemBuffer[sizeof(CLuaUnitScript)];
 	// sufficient for the largest AMoveType (CGroundMoveType)
 	// need two buffers since ScriptMoveType might be enabled
-	uint8_t amtMemBuffer[520];
+	uint8_t amtMemBuffer[sizeof(CGroundMoveType)];
 	uint8_t smtMemBuffer[370];
 	// sufficient for the largest CommandAI type (CBuilderCAI)
 	// knowing the exact CAI object size here is not required;
 	// static asserts will catch any overflow
-	uint8_t caiMemBuffer[700];
+	uint8_t caiMemBuffer[sizeof(CBuilderCAI)];
 
 
 	std::vector<CWeapon*> weapons;
