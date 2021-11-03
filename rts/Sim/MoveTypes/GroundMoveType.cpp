@@ -733,6 +733,24 @@ bool CGroundMoveType::FollowPath()
 			atGoal |= (curGoalDistSq <= minGoalDistSq);
 			atGoal |= ((curGoalDistSq <= spdGoalDistSq) && !reversing && (ffd.dot(goalPos - opos) > 0.0f && ffd.dot(goalPos - (opos + ovel)) <= 0.0f));
 			atGoal |= ((curGoalDistSq <= spdGoalDistSq) &&  reversing && (ffd.dot(goalPos - opos) < 0.0f && ffd.dot(goalPos - (opos + ovel)) >= 0.0f));
+		
+			// if (DEBUG_DRAWING_ENABLED) {
+			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+			// 		LOG("%s unit origin (%f,%f,%f)", __func__
+			// 			, static_cast<float>(opos.x)
+			// 			, static_cast<float>(opos.y)
+			// 			, static_cast<float>(opos.z));
+
+			// 		LOG("%s unit origin (%f,%f,%f)", __func__
+			// 			, static_cast<float>(goalPos.x)
+			// 			, static_cast<float>(goalPos.y)
+			// 			, static_cast<float>(goalPos.z));
+
+			// 		LOG("%s curGoalDistSq(%f) <= minGoalDistSq(%f)", __func__, curGoalDistSq, minGoalDistSq);
+			// 		LOG("%s (ffd.dot(goalPos - opos)(%f) ffd.dot(goalPos - (opos + ovel))(%f)", __func__, ffd.dot(goalPos - opos), ffd.dot(goalPos - (opos + ovel)));
+			// 		LOG("%s atGoal(%d?) reversing(%d?)", __func__, (int)atGoal, (int)reversing);
+			// 	}
+			// }
 		}
 
 		if (!atGoal) {
@@ -746,9 +764,19 @@ bool CGroundMoveType::FollowPath()
 			//SetNextWayPoint();
 			//ReRequestPath(PATH_REQUEST_TIMING_IMMEDIATE|PATH_REQUEST_UPDATE_EXISTING);
 		} else {
-			if (atGoal)
+			if (atGoal){
+				// if (DEBUG_DRAWING_ENABLED) {
+				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				// 		LOG("%s arrival signaled", __func__);
+				// 	}
+				// }
 				Arrived(false);
-			else {
+			} else {
+				// if (DEBUG_DRAWING_ENABLED) {
+				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				// 		LOG("%s request new path since not at goal", __func__);
+				// 	}
+				// }
 				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 				//ReRequestPath(false);
 			}
@@ -1531,14 +1559,32 @@ unsigned int CGroundMoveType::GetNewPath()
 }
 
 void CGroundMoveType::ReRequestPath(PathRequestType requestType) {
-	if (wantRepath == PATH_REQUEST_NONE)
-		wantRepath = requestType;
-
 	// if (DEBUG_DRAWING_ENABLED) {
 	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
 	// 		LOG("%s want <- request (%d <- %d)", __func__, wantRepath, requestType);
 	// 	}
 	// }
+
+	if (wantRepath == PATH_REQUEST_NONE){
+		wantRepath = requestType;
+		return;
+	}
+
+	int requestPriority = (requestType & PATH_REQUEST_TIMING_BITMASK);
+	int currentPriority = (wantRepath & PATH_REQUEST_TIMING_BITMASK);
+
+	if (requestPriority > currentPriority){
+		wantRepath = requestType;
+		return;
+	}
+	if (requestPriority < currentPriority)
+		return;
+
+	int requestScope = (requestType & PATH_REQUEST_UPDATE_BITMASK);
+	int currentScope = (wantRepath & PATH_REQUEST_UPDATE_BITMASK);
+
+	if (requestScope > currentScope)
+		wantRepath = requestType;
 }
 
 void CGroundMoveType::DoReRequestPath() {
@@ -1746,7 +1792,6 @@ void CGroundMoveType::SetNextWayPoint()
 		// 		LOG("%s path failed", __func__);
 		// 	}
 		// }
-		//LOG("%s path failed", __func__);
 		return;
 	}
 
@@ -1759,7 +1804,6 @@ void CGroundMoveType::SetNextWayPoint()
 		// 		LOG("%s path is clear", __func__);
 		// 	}
 		// }
-		//LOG("%s path is clear", __func__);
 		return;
 	}
 
