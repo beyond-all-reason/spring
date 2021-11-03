@@ -8,7 +8,7 @@ enum {
 	TKPFS_TYPE  =  0, // default w/ multi-thread request support
 	QTPFS_TYPE  =  1,
 	HAPFS_TYPE  =  2, // original HPA
-	PFS_TYPE_MAX = TKPFS_TYPE,
+	PFS_TYPE_MAX = HAPFS_TYPE,
 };
 
 #endif
