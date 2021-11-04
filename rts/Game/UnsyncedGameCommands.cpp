@@ -1776,7 +1776,7 @@ class SetGamespeedActionExecutor : public IUnsyncedActionExecutor {
 public:
 	SetGamespeedActionExecutor() : IUnsyncedActionExecutor(
 		"GameSpeed",
-		"Set the simulation speed, bounded my minimum and maximum game speed settings."
+		"Set the simulation speed to any positive value, bounded my minimum and maximum game speed settings."
 	) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
@@ -1784,6 +1784,10 @@ public:
 			return false;
 
 		float speed = atof((action.GetArgs()).c_str());
+
+		// atof converts non-float strings to 0.0, can be ignored
+		if (speed <= 0.0)
+			return false;
 
 		clientNet->Send(CBaseNetProtocol::Get().SendUserSpeed(gu->myPlayerNum, speed));
 		return true;
@@ -3674,6 +3678,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<FeatureDrawDistActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SpeedUpActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SlowDownActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<SetGamespeedActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ControlUnitActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ShowStandardActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ShowElevationActionExecutor>());
