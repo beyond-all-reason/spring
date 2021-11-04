@@ -115,6 +115,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/S3OTextureHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TAPalette.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TextureAtlas.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TexturesSet.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/nv_dds.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/QuadtreeAtlasAlloc.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/RowAtlasAlloc.cpp"
