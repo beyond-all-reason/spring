@@ -41,11 +41,12 @@ public:
 	void Bind(GLenum target) const;
 	void Unbind() const;
 
+	bool BindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, 0u, bufSize); }
 	bool BindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, offset, size); }
 	bool BindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, vboId, offset, size); };
+	bool UnbindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, 0u, bufSize); };
 	bool UnbindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, offset, size); };
 	bool UnbindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, 0u, offset, size); };
-
 	/**
 	 * @param usage can be either GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY
 	 * @param data (optional) initialize the VBO with the data (the array must have minimum `size` length!)
@@ -77,6 +78,7 @@ public:
 		Unbind();
 	}
 
+	// uploads vector of data from 0 to size() - 1 at elemOffset
 	template<typename TData>
 	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
 	void SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
@@ -90,6 +92,10 @@ public:
 	GLuint GetIdRaw() const {
 		return vboId;
 	};
+
+	GLenum GetCurrTarget() const {
+		return curBoundTarget;
+	}
 
 	size_t GetSize() const { return bufSize; }
 	size_t GetAlignedSize(size_t sz) const { return VBO::GetAlignedSize(curBoundTarget, sz); };;

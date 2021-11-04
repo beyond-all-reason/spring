@@ -7,6 +7,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
+#include "Rendering/GL/VBO.h"
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/GlobalUnsynced.h"
@@ -24,14 +25,11 @@
 #include "System/SafeUtil.h"
 #include "SDL2/SDL_mouse.h"
 
-void UniformConstants::InitVBO(VBO*& vbo, const int vboSingleSize)
+bool UniformConstants::Supported()
 {
-	vbo = new VBO{GL_UNIFORM_BUFFER, WantPersistentMapping()};
-	vbo->Bind(GL_UNIFORM_BUFFER);
-	vbo->New(BUFFERING * vboSingleSize, GL_STREAM_DRAW); //allocate BUFFERING times the buffer size for non-blocking updates
-	vbo->Unbind();
+	static bool supported = VBO::IsSupported(GL_UNIFORM_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
+	return supported;
 }
-
 
 void UniformConstants::Init()
 {
@@ -43,11 +41,8 @@ void UniformConstants::Init()
 		return;
 	}
 
-	umbBufferSize = VBO::GetAlignedSize(GL_UNIFORM_BUFFER, sizeof(UniformMatricesBuffer));
-	upbBufferSize = VBO::GetAlignedSize(GL_UNIFORM_BUFFER, sizeof(UniformParamsBuffer  ));
-
-	InitVBO(umbVBO, umbBufferSize);
-	InitVBO(upbVBO, upbBufferSize);
+	umbSBT = IStreamBuffer<UniformMatricesBuffer>::CreateInstance(GL_UNIFORM_BUFFER, 1, "UniformMatricesBuffer");
+	upbSBT = IStreamBuffer<UniformParamsBuffer  >::CreateInstance(GL_UNIFORM_BUFFER, 1, "UniformParamsBuffer"  , IStreamBufferConcept::Types::SB_BUFFERSUBDATA);
 
 	initialized = true;
 }
@@ -57,20 +52,13 @@ void UniformConstants::Kill()
 	if (!Supported() || !initialized)
 		return;
 
-	//unbind the whole ring buffer range
-	umbVBO->UnbindBufferRange(GL_UNIFORM_BUFFER, UBO_MATRIX_IDX, 0, BUFFERING * umbBufferSize);
-	upbVBO->UnbindBufferRange(GL_UNIFORM_BUFFER, UBO_PARAMS_IDX, 0, BUFFERING * upbBufferSize);
+	umbSBT->UnbindBufferRange(UBO_MATRIX_IDX);
+	upbSBT->UnbindBufferRange(UBO_PARAMS_IDX);
 
-	spring::SafeDelete(umbVBO);
-	spring::SafeDelete(upbVBO);
+	umbSBT = nullptr;
+	upbSBT = nullptr;
 
 	initialized = false;
-}
-
-intptr_t UniformConstants::GetBufferOffset(const int vboSingleSize)
-{
-	unsigned int buffCurIdx = globalRendering->drawFrame % BUFFERING;
-	return (intptr_t)(buffCurIdx * vboSingleSize);
 }
 
 void UniformConstants::UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer)
@@ -79,7 +67,7 @@ void UniformConstants::UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer)
 	updateBuffer->screenProj = globalRendering->screenProjMatrix;
 	updateBuffer->screenViewProj = updateBuffer->screenProj * updateBuffer->screenView;
 
-	const auto camPlayer = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+	const auto* camPlayer = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 
 	updateBuffer->cameraView = camPlayer->GetViewMatrix();
 	updateBuffer->cameraProj = camPlayer->GetProjectionMatrix();
@@ -96,6 +84,19 @@ void UniformConstants::UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer)
 	updateBuffer->shadowView = shadowHandler.GetShadowViewMatrix(CShadowHandler::SHADOWMAT_TYPE_DRAWING);
 	updateBuffer->shadowProj = shadowHandler.GetShadowProjMatrix(CShadowHandler::SHADOWMAT_TYPE_DRAWING);
 	updateBuffer->shadowViewProj = updateBuffer->shadowProj * updateBuffer->shadowView;
+
+	{
+		const auto* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_UWREFL);
+
+		auto* reflCam = CCameraHandler::GetActiveCamera();
+		reflCam->CopyStateReflect(prvCam);
+
+		updateBuffer->reflectionView = reflCam->GetViewMatrix();
+		updateBuffer->reflectionProj = reflCam->GetProjectionMatrix();
+		updateBuffer->reflectionViewProj = reflCam->GetViewProjectionMatrix();
+
+		CCameraHandler::SetActiveCamera(CCamera::CAMTYPE_PLAYER);
+	}
 
 	updateBuffer->orthoProj01 = CMatrix44f::ClipOrthoProj01();
 
@@ -141,8 +142,8 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	updateBuffer->sunDiffuseModel = sunLighting->modelDiffuseColor;
 	updateBuffer->sunDiffuseMap = sunLighting->groundDiffuseColor;
 
-	updateBuffer->sunSpecularModel = sunLighting->modelSpecularColor;
-	updateBuffer->sunSpecularMap = sunLighting->groundSpecularColor;
+	updateBuffer->sunSpecularModel = float4{ sunLighting->modelSpecularColor.xyz, sunLighting->specularExponent };
+	updateBuffer->sunSpecularMap = float4{ sunLighting->groundSpecularColor.xyz, sunLighting->specularExponent };
 
 	updateBuffer->shadowDensity = float4{ sunLighting->groundShadowDensity, sunLighting->modelShadowDensity, 0.0, 0.0 };
 
@@ -202,56 +203,14 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	}
 }
 
-template<typename TBuffType, typename TUpdateFunc>
-void UniformConstants::UpdateMapStandard(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize)
-{
-	vbo->Bind(GL_UNIFORM_BUFFER);
-	buffMap = reinterpret_cast<TBuffType*>(vbo->MapBuffer(GetBufferOffset(vboSingleSize), vboSingleSize));
-	assert(buffMap != nullptr);
-
-	updateFunc(buffMap);
-
-	vbo->UnmapBuffer();
-	vbo->Unbind();
-}
-
-template<typename TBuffType, typename TUpdateFunc>
-void UniformConstants::UpdateMapPersistent(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize)
-{
-	TBuffType* thisFrameBuffMap = nullptr;
-
-	if (buffMap == nullptr) { //
-		vbo->Bind(GL_UNIFORM_BUFFER); //bind only first time
-		buffMap = reinterpret_cast<TBuffType*>(vbo->MapBuffer(0, BUFFERING * vboSingleSize)); //map first time and forever
-		assert(buffMap != nullptr);
-	}
-
-	thisFrameBuffMap = reinterpret_cast<TBuffType*>((intptr_t)(buffMap) + GetBufferOffset(vboSingleSize)); //choose the current part of the buffer
-
-	updateFunc(thisFrameBuffMap);
-
-	//no need to unmap
-
-	if (vbo->bound) //unbind only first time
-		vbo->Unbind();
-}
-
-
-template<typename TBuffType, typename TUpdateFunc>
-void UniformConstants::UpdateMap(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize)
-{
-	if (WantPersistentMapping())
-		UpdateMapPersistent(vbo, buffMap, updateFunc, vboSingleSize);
-	else
-		UpdateMapStandard  (vbo, buffMap, updateFunc, vboSingleSize);
-}
-
 void UniformConstants::UpdateMatrices()
 {
 	if (!Supported())
 		return;
 
-	UpdateMap(umbVBO, umbBufferMap, UniformConstants::UpdateMatricesImpl, umbBufferSize);
+	auto umbMap = umbSBT->Map();
+	UniformConstants::UpdateMatricesImpl(umbMap);
+	umbSBT->Unmap();
 }
 
 void UniformConstants::UpdateParams()
@@ -259,23 +218,18 @@ void UniformConstants::UpdateParams()
 	if (!Supported())
 		return;
 
-	UpdateMap(upbVBO, upbBufferMap, UniformConstants::UpdateParamsImpl, upbBufferSize);
+	auto upbMap = upbSBT->Map();
+	UniformConstants::UpdateParamsImpl(upbMap);
+	upbSBT->Unmap();
 }
 
-//lazy / implicit unbinding included
 void UniformConstants::Bind()
 {
 	if (!Supported())
 		return;
 
-	assert(umbVBO != nullptr && upbVBO != nullptr);
+	assert(umbSBT->GetID() && upbSBT->GetID());
 
-	umbVBO->BindBufferRange(GL_UNIFORM_BUFFER, UBO_MATRIX_IDX, GetBufferOffset(umbBufferSize), umbBufferSize);
-	upbVBO->BindBufferRange(GL_UNIFORM_BUFFER, UBO_PARAMS_IDX, GetBufferOffset(upbBufferSize), upbBufferSize);
-}
-
-bool UniformConstants::WantPersistentMapping()
-{
-	static bool wantPersistentMapping = globalRendering->supportPersistentMapping & false; //persistent mapping needs fences, tripple buffering alone is not enough :(
-	return wantPersistentMapping;
+	umbSBT->BindBufferRange(UBO_MATRIX_IDX);
+	upbSBT->BindBufferRange(UBO_PARAMS_IDX);
 }

@@ -49,9 +49,6 @@ CR_REG_METADATA(CFeature, (
 	CR_MEMBER(fireTime),
 	CR_MEMBER(smokeTime),
 
-	CR_MEMBER(drawQuad),
-	CR_MEMBER(drawFlag),
-
 	CR_MEMBER(def),
 	CR_MEMBER(udef),
 	CR_MEMBER(moveCtrl),
@@ -99,6 +96,7 @@ CFeature::~CFeature()
 
 void CFeature::PostLoad()
 {
+	eventHandler.RenderFeaturePreCreated(this);
 	eventHandler.RenderFeatureCreated(this);
 }
 
@@ -235,6 +233,7 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, def->collidable);
 	Block();
 
+	eventHandler.RenderFeaturePreCreated(this);
 	// allow Spring.SetFeatureBlocking to be called from gadget:FeatureCreated
 	// (callin sees the complete default state, but can change any part of it)
 	eventHandler.FeatureCreated(this);

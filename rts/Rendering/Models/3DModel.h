@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 
+#include "MatricesMemStorage.h"
 #include "Lua/LuaObjectMaterial.h"
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -16,7 +17,7 @@
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS = 2048;
+constexpr int MAX_MODEL_OBJECTS = 2560;
 constexpr int AVG_MODEL_PIECES = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
@@ -39,19 +40,29 @@ struct LocalModelPiece;
 
 
 struct SVertexData {
-	SVertexData() = default;
-	SVertexData(const float3& p, const float3& n, const float3& s, const float3& t, const float2& uv0, const float2& uv1, uint32_t i) {
+	SVertexData() {
+		pos = float3{};
+		normal = UpVector;
+		sTangent = float3{};
+		tTangent = float3{};
+		texCoords[0] = float2{};
+		texCoords[1] = float2{};
+		pieceIndex = uint32_t(-1);
+	}
+	SVertexData(const float3& p, const float3& n, const float3& s, const float3& t, const float2& uv0, const float2& uv1)
+	{
 		pos = p;
 		normal = n;
 		sTangent = s;
 		tTangent = t;
 		texCoords[0] = uv0;
 		texCoords[1] = uv1;
-		pieceIndex = i;
+		// pieceIndex is initialized afterwards
+		pieceIndex = uint32_t(-1);
 	}
 
 	float3 pos;
-	float3 normal = UpVector;
+	float3 normal;
 	float3 sTangent;
 	float3 tTangent;
 
@@ -60,7 +71,7 @@ struct SVertexData {
 	//   support an arbitrary number of channels, would be easy but overkill (for now)
 	float2 texCoords[NUM_MODEL_UVCHANNS];
 
-	uint32_t pieceIndex = 0;
+	uint32_t pieceIndex;
 };
 
 
@@ -129,7 +140,7 @@ struct S3DModelPiece {
 	virtual const float3& GetVertexPos(const int) const = 0;
 	virtual const float3& GetNormal(const int) const = 0;
 
-	virtual void PostProcessGeometry();
+	virtual void PostProcessGeometry(uint32_t pieceIndex);
 	void UploadToVBO();
 
 	void MeshOptimize();
@@ -270,12 +281,12 @@ struct S3DModel
 		, mins(DEF_MIN_SIZE)
 		, maxs(DEF_MAX_SIZE)
 		, relMidPos(ZeroVector)
-	{
 
-	}
+		, matAlloc(ScopedMatricesMemAlloc())
+	{}
 
 	S3DModel(const S3DModel& m) = delete;
-	S3DModel(S3DModel&& m) { *this = std::move(m); }
+	S3DModel(S3DModel&& m) noexcept { *this = std::move(m); }
 
 	S3DModel& operator = (const S3DModel& m) = delete;
 	S3DModel& operator = (S3DModel&& m) noexcept {
@@ -310,6 +321,8 @@ struct S3DModel
 		for (auto po : pieceObjects)
 			po->SetParentModel(this);
 
+		matAlloc = std::move(m.matAlloc);
+
 		return *this;
 	}
 
@@ -339,7 +352,15 @@ struct S3DModel
 
 	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
-	void SetPieceMatrices() { pieceObjects[0]->SetPieceMatrix(CMatrix44f()); }
+	void SetPieceMatrices() {
+		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
+
+		//use this occasion and copy bpos matrices
+		for (int i = 0; i < pieceObjects.size(); ++i) {
+			const auto po = pieceObjects[i];
+			matAlloc[i] = po->bposeMatrix;
+		}
+	}
 	void DeletePieces() {
 		assert(!pieceObjects.empty());
 
@@ -351,6 +372,10 @@ struct S3DModel
 
 		pieceObjects.clear();
 		pieceObjects.reserve(numPieces);
+
+		// force mutex just in case this is called from modelLoader.PreloadModel()
+		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+		matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
 
 		std::vector<S3DModelPiece*> stack = {root};
 
@@ -376,6 +401,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
 	std::string texs[NUM_MODEL_TEXTURES];
@@ -404,6 +430,8 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+private:
+	ScopedMatricesMemAlloc matAlloc;
 };
 
 

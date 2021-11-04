@@ -9,7 +9,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VBO.h"
+#include "Rendering/GL/StreamBuffer.h"
+//#include "Rendering/GL/VBO.h"
 
 struct UniformMatricesBuffer {
 	CMatrix44f screenView;
@@ -28,6 +29,10 @@ struct UniformMatricesBuffer {
 	CMatrix44f shadowView;
 	CMatrix44f shadowProj;
 	CMatrix44f shadowViewProj;
+
+	CMatrix44f reflectionView;
+	CMatrix44f reflectionProj;
+	CMatrix44f reflectionViewProj;
 
 	CMatrix44f orthoProj01;
 
@@ -83,10 +88,7 @@ public:
 		static UniformConstants uniformConstantsInstance;
 		return uniformConstantsInstance;
 	};
-	static bool Supported() {
-		static bool supported = VBO::IsSupported(GL_UNIFORM_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
-		return supported;
-	}
+	static bool Supported();
 public:
 	void Init();
 	void Kill();
@@ -98,37 +100,16 @@ public:
 	}
 	void Bind();
 private:
-
-	template<typename TBuffType, typename TUpdateFunc>
-	static void UpdateMapStandard(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize);
-
-	template<typename TBuffType, typename TUpdateFunc>
-	static void UpdateMapPersistent(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize);
-
-	template<typename TBuffType, typename TUpdateFunc>
-	void UpdateMap(VBO* vbo, TBuffType*& buffMap, const TUpdateFunc& updateFunc, const int vboSingleSize);
-
-	static void InitVBO(VBO*& vbo, const int vboSingleSize);
-
-	static intptr_t GetBufferOffset(const int vboSingleSize);
 	static void UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer);
 	static void UpdateParamsImpl(UniformParamsBuffer* updateBuffer);
-
-	static bool WantPersistentMapping();
 private:
 	static constexpr int BUFFERING = 3;
 
 	static constexpr int UBO_MATRIX_IDX = 0;
 	static constexpr int UBO_PARAMS_IDX = 1;
 
-	int umbBufferSize = 0;
-	int upbBufferSize = 0;
-
-	UniformMatricesBuffer* umbBufferMap = nullptr;
-	UniformParamsBuffer* upbBufferMap = nullptr;
-
-	VBO* umbVBO = nullptr;
-	VBO* upbVBO = nullptr;
+	std::unique_ptr<IStreamBuffer<UniformMatricesBuffer>> umbSBT;
+	std::unique_ptr<IStreamBuffer<UniformParamsBuffer  >> upbSBT;
 
 	bool initialized = false;
 };

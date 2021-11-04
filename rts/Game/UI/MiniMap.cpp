@@ -1,5 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <array>
+#include <tuple>
+
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
@@ -15,6 +18,7 @@
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/Players/Player.h"
 #include "Game/UI/UnitTracker.h"
+#include "Game/TraceRay.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Lua/LuaUnsyncedCtrl.h"
 #include "Map/BaseGroundDrawer.h"
@@ -24,7 +28,7 @@
 #include "Rendering/IconHandler.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/VertexArray.h"
@@ -1179,6 +1183,9 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 		// CCamera* cam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 		CCamera* cam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 
+		//this one is bugged, probably because CalcFrustumLines is bugged as well
+		// TODO: Investigate
+#if 0
 		cam->CalcFrustumLines(readMap->GetCurrAvgHeight(), readMap->GetCurrAvgHeight(), 1.0f, true);
 		cam->ClipFrustumLines(-100.0f, mapDims.mapy * SQUARE_SIZE + 100.0f, true);
 
@@ -1187,6 +1194,7 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 		CVertexArray* va = GetVertexArray();
 		va->Initialize();
 		va->EnlargeArrays(4 * 2, 0, VA_SIZE_2D0);
+
 
 		for (int idx = 0; idx < /*negLines[*/4/*].sign*/; idx++) {
 			const CCamera::FrustumLine& fl = negLines[idx];
@@ -1197,6 +1205,66 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 			va->AddVertexQ2d0((fl.dir * fl.minz) + fl.base, fl.minz);
 			va->AddVertexQ2d0((fl.dir * fl.maxz) + fl.base, fl.maxz);
 		}
+#else
+		const auto& pos = cam->GetPos();
+		const auto& dir = cam->GetForward();
+
+		const CUnit* unit = nullptr;
+		const CFeature* feature = nullptr;
+
+		const float rawRange = cam->GetFarPlaneDist() * 1.4f;
+		const float badRange = rawRange - 300.0f;
+
+		const float traceDist = TraceRay::GuiTraceRay(pos, dir, rawRange, nullptr, unit, feature, true, true, true);
+		const float3 tracePos = pos + (dir * traceDist);
+
+		float Y = tracePos.y;
+
+		if (traceDist < 0.0f || traceDist > badRange)
+			Y = readMap->GetCurrAvgHeight();
+
+		constexpr float3 plane = UpVector;
+
+		std::array<std::pair<float, float>, 4> pts;
+
+		uint8_t negCount = 0;
+		for (int i = 0; i < 4; ++i) {
+			const auto& fv = cam->GetFrustumVert(4 + i);
+			const float3 ray = (fv - pos);
+
+			float denom = plane.dot(ray);
+			if (denom == 0.0f)
+				continue;
+
+			float t = (Y - plane.dot(pos)) / denom;
+			if (t < 0.0f) { //if intersection happens "behind" the "pos", hack "t" to still point in front of the camera
+				t = 1.0f - t;
+				++negCount;
+			}
+
+			float3 xpos = pos + ray * t;
+			pts[i] = std::make_pair(xpos.x, xpos.z);
+		}
+
+		//if negCount == 4, then all intersections happen behind the "pos", doesn't make sense to draw anything but a small box
+		if (negCount == 4) {
+			constexpr float bias = 16.0f;
+			pts[0] = std::make_pair(pos.x - bias, pos.z + bias); //TL
+			pts[1] = std::make_pair(pos.x + bias, pos.z + bias); //TR
+			pts[2] = std::make_pair(pos.x + bias, pos.z - bias); //BR
+			pts[3] = std::make_pair(pos.x - bias, pos.z - bias); //BL
+		}
+
+
+		CVertexArray* va = GetVertexArray();
+		va->Initialize();
+		va->EnlargeArrays(4 * 2, 0, VA_SIZE_2D0);
+
+		for (int i = 0; i < pts.size(); ++i) {
+			const int ii = (i + 1) % (pts.size());
+			va->AddVertexQ2d0(pts[i ].first, pts[i ].second);
+			va->AddVertexQ2d0(pts[ii].first, pts[ii].second);
+		}
 
 		glLineWidth(2.5f);
 		glColor4f(0, 0, 0, 0.5f);
@@ -1205,7 +1273,9 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 		glLineWidth(1.5f);
 		glColor4f(1, 1, 1, 0.75f);
 		va->DrawArray2d0(GL_LINES);
+
 		glLineWidth(1.0f);
+#endif
 	}
 
 

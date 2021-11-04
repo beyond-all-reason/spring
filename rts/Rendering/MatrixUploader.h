@@ -1,74 +1,68 @@
-#ifndef MATRIX_UPLOADER_H
-#define MATRIX_UPLOADER_H
+#pragma once
 
 #include <string>
 #include <cstdint>
 #include <vector>
-#include <unordered_map>
-#include <map>
+#include <functional>
+#include <memory>
 
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VBO.h"
+#include "Rendering/GL/StreamBuffer.h"
+
+
+class CUnit;
+class CFeature;
+class CProjectile;
+struct UnitDef;
+struct FeatureDef;
+struct S3DModel;
 
 class MatrixUploader {
 public:
 	static constexpr bool enabled = true;
-	static constexpr bool checkInView = false;
 	static MatrixUploader& GetInstance() {
 		static MatrixUploader instance;
 		return instance;
 	};
-	static bool Supported() {
-		static bool supported = enabled && VBO::IsSupported(GL_SHADER_STORAGE_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
-		return supported;
-	}
+	static bool Supported();
 public:
 	void Init();
 	void Kill();
 	void Update();
 public:
-	uint32_t GetUnitDefElemOffset(int32_t unitDefID);
-	uint32_t GetFeatureDefElemOffset(int32_t featureDefID);
-	uint32_t GetUnitElemOffset(int32_t unitID);
-	uint32_t GetFeatureElemOffset(int32_t featureID);
+	// Defs
+	std::size_t GetElemOffset(const UnitDef* def) const { return GetDefElemOffsetImpl(def); }
+	std::size_t GetElemOffset(const FeatureDef* def) const { return GetDefElemOffsetImpl(def); }
+	std::size_t GetElemOffset(const S3DModel* model) const { return GetDefElemOffsetImpl(model); }
+	std::size_t GetUnitDefElemOffset(int32_t unitDefID) const;
+	std::size_t GetFeatureDefElemOffset(int32_t featureDefID) const;
+
+	// Objs
+	std::size_t GetElemOffset(const CUnit* unit) const { return GetElemOffsetImpl(unit); }
+	std::size_t GetElemOffset(const CFeature* feature) const { return GetElemOffsetImpl(feature); }
+	std::size_t GetElemOffset(const CProjectile* proj) const { return GetElemOffsetImpl(proj); }
+	std::size_t GetUnitElemOffset(int32_t unitID) const;
+	std::size_t GetFeatureElemOffset(int32_t featureID) const;
+	std::size_t GetProjectileElemOffset(int32_t syncedProjectileID) const;
 private:
-	template<typename TObj>
-	bool IsObjectVisible(const TObj* obj);
-
-	template<typename TObj>
-	bool IsInView(const TObj* obj);
-
-	template<typename TObj>
-	void GetVisibleObjects(std::map<int, const TObj*>& visibleObjects);
+	std::size_t GetDefElemOffsetImpl(const S3DModel* model) const;
+	std::size_t GetDefElemOffsetImpl(const UnitDef* def) const;
+	std::size_t GetDefElemOffsetImpl(const FeatureDef* def) const;
+	std::size_t GetElemOffsetImpl(const CUnit* so) const;
+	std::size_t GetElemOffsetImpl(const CFeature* so) const;
+	std::size_t GetElemOffsetImpl(const CProjectile* p) const;
 private:
 	void KillVBO();
-	void InitVBO(const uint32_t newElemCount);
-	uint32_t GetMatrixElemCount();
-
-	bool UpdateObjectDefs();
-
-	template<typename TObj>
-	void UpdateVisibleObjects();
+	void InitVBO();
+	uint32_t GetMatrixElemCount() const;
 private:
 	static constexpr uint32_t MATRIX_SSBO_BINDING_IDX = 0;
 	static constexpr uint32_t elemCount0 = 1u << 13;
 	static constexpr uint32_t elemIncreaseBy = 1u << 12;
 private:
-	uint32_t elemUpdateOffset = 0u; // a index offset separating constant part of the buffer from varying part
-
-	std::unordered_map<int32_t, std::string> unitDefToModel;
-	std::unordered_map<int32_t, std::string> featureDefToModel;
-	std::unordered_map<std::string, uint32_t> modelToOffsetMap;
-
-	std::unordered_map<int32_t, uint32_t> unitIDToOffsetMap;
-	std::unordered_map<int32_t, uint32_t> featureIDToOffsetMap;
-	std::unordered_map<int32_t, uint32_t> weaponIDToOffsetMap;
-
-	std::vector<CMatrix44f> matrices;
-
-	VBO* matrixSSBO;
+	std::unique_ptr<IStreamBuffer<CMatrix44f>> matrixSSBO;
 };
 
-#endif //MATRIX_UPLOADER_H
+#define matrixUploader MatrixUploader::GetInstance()

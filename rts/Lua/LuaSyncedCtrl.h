@@ -5,6 +5,8 @@
 
 struct lua_State;
 
+constexpr int MAX_CMD_RECURSION_DEPTH = 16;
+
 class LuaSyncedCtrl
 {
 	public:
@@ -12,14 +14,22 @@ class LuaSyncedCtrl
 		static void CheckAllowGameChanges(lua_State* L);
 
 	private:
-		static bool inCreateUnit;
-		static bool inDestroyUnit;
-		static bool inTransferUnit;
-		static bool inCreateFeature;
-		static bool inDestroyFeature;
-		static bool inGiveOrder;
-		static bool inHeightMap;
-		static bool inSmoothMesh;
+		/* Recursion counters: call-ins have a limit on
+		 * depth of recursion, this is mostly a safety
+		 * feature such that doing infinite recursion by
+		 * accident won't cause a freeze or a crash via
+		 * stack overflow. This is doubly important since
+		 * investigating such "issues" would waste engine
+		 * developer time if reported as engine crashes. */
+		inline static int inCreateUnit = 0;
+		inline static int inDestroyUnit = 0;
+		inline static int inCreateFeature = 0;
+		inline static int inDestroyFeature = 0;
+		inline static int inGiveOrder = 0;
+
+		inline static bool inTransferUnit = false;
+		inline static bool inHeightMap = false;
+		inline static bool inSmoothMesh = false;
 
 	private:
 		// all LuaHandleSynced
@@ -80,6 +90,7 @@ class LuaSyncedCtrl
 		static int SetUnitMetalExtraction(lua_State* L);
 		static int SetUnitHarvestStorage(lua_State* L);
 		static int SetUnitBuildSpeed(lua_State* L);
+		static int SetUnitBuildParams(lua_State* L);
 		static int SetUnitNanoPieces(lua_State* L);
 		static int SetUnitBlocking(lua_State* L);
 		static int SetUnitCrashing(lua_State* L);

@@ -52,8 +52,8 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
-#include "Rendering/FeatureDrawer.h"
-#include "Rendering/UnitDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -1204,6 +1204,34 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 						waterRendering->perlinAmplitude = value;
 					} break;
 
+					case hashString("windSpeed"): {
+						waterRendering->windSpeed = value;
+					} break;
+
+					case hashString("waveOffsetFactor"): {
+						waterRendering->waveOffsetFactor = value;
+					} break;
+
+					case hashString("waveLength"): {
+						waterRendering->waveLength = value;
+					} break;
+
+					case hashString("waveFoamDistortion"): {
+						waterRendering->waveFoamDistortion = value;
+					} break;
+
+					case hashString("waveFoamIntensity"): {
+						waterRendering->waveFoamIntensity = value;
+					} break;
+
+					case hashString("causticsResolution"): {
+						waterRendering->causticsResolution = value;
+					} break;
+
+					case hashString("causticsStrength"): {
+						waterRendering->causticsStrength = value;
+					} break;
+
 					case hashString("numTiles"): {
 						waterRendering->numTiles = (unsigned char)value;
 					} break;
@@ -2325,7 +2353,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 
 	if (lua_isnoneornil(L, 2)) {
 		// reset to default texture
-		unitDrawer->SetUnitDefImage(ud, ud->buildPicName);
+		CUnitDrawer::SetUnitDefImage(ud, ud->buildPicName);
 		return 0;
 	}
 
@@ -2335,7 +2363,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 	const std::string& texName = lua_tostring(L, 2);
 
 	if (texName[0] != LuaTextures::prefix) { // '!'
-		unitDrawer->SetUnitDefImage(ud, texName);
+		CUnitDrawer::SetUnitDefImage(ud, texName);
 		return 0;
 	}
 
@@ -2345,7 +2373,7 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 	if (tex == nullptr)
 		return 0;
 
-	unitDrawer->SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
+	CUnitDrawer::SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
 	return 0;
 }
 

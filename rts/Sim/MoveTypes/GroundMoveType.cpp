@@ -833,7 +833,6 @@ bool CGroundMoveType::FollowPath()
 
 		// if (DEBUG_DRAWING_ENABLED) {
 		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-
 		// 		LOG("%s waypointVec (%f,%f,%f)", __func__
 		// 			, static_cast<float>(waypointVec.x)
 		// 			, static_cast<float>(waypointVec.y)
