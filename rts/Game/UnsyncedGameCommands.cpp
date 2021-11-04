@@ -1775,7 +1775,7 @@ public:
 class SetGamespeedActionExecutor : public IUnsyncedActionExecutor {
 public:
 	SetGamespeedActionExecutor() : IUnsyncedActionExecutor(
-		"GameSpeed",
+		"SetSpeed",
 		"Set the simulation speed to any positive value, bounded my minimum and maximum game speed settings."
 	) {}
 
