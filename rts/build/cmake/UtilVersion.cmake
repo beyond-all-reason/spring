@@ -144,9 +144,9 @@ Macro    (fetch_spring_version dir prefix)
 
 	If     (EXISTS "${dir}/.git")
 		# Try to fetch version through git
-		If     (NOT GIT_FOUND)
+		If     (NOT Git_FOUND)
 			Message(FATAL_ERROR "Git repository detected, but git executable not found; failed to fetch ${prefix} version.")
-		EndIf  (NOT GIT_FOUND)
+		EndIf  (NOT Git_FOUND)
 
 		# Fetch git version info
 		git_util_describe(${prefix}_Describe ${dir} "[0-9]*")

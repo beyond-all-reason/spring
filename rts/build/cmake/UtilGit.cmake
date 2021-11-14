@@ -15,13 +15,13 @@
 Set(Git_FIND_QUIETLY TRUE)
 Find_Package(Git)
 
-If    (GIT_FOUND)
+If    (Git_FOUND)
 
 	# Executes a git command plus arguments.
 	Macro    (git_util_command var dir command)
 		Set(${var})
 		Set(${var}-NOTFOUND)
-		Set(CMD_GIT ${GIT_EXECUTABLE} ${command} ${ARGN})
+		Set(CMD_GIT ${Git_EXECUTABLE} ${command} ${ARGN})
 		Execute_Process(
 				COMMAND ${CMD_GIT}
 				WORKING_DIRECTORY ${dir}
@@ -209,4 +209,4 @@ If    (GIT_FOUND)
 		Message("    clean           : ${${prefix}_GIT_FILES_CLEAN}")
 		Message("    very clean      : ${${prefix}_GIT_FILES_CLEAN_VERY}")
 	EndMacro (Git_Print_Info)
-EndIf (GIT_FOUND)
+EndIf (Git_FOUND)
