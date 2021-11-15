@@ -9,6 +9,12 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_MODULES_SPRING}/OverrideFlags.cmake"
 
 project(Spring)
 
+# CMake removed .dll from default search suffixes in 3.17 for stuff like find_library
+# https://gitlab.kitware.com/cmake/cmake/-/issues/20019
+# https://cmake.org/cmake/help/latest/release/3.17.html
+# so add it back here since our mingw64 libs have no .dll.a import libs
+list(PREPEND CMAKE_FIND_LIBRARY_SUFFIXES .dll)
+
 add_definitions(-DFMT_HEADER_ONLY) #for fmt lib
 
 # dummy so that qtcreator shows all files (even those of windows)
