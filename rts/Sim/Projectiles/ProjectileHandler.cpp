@@ -1,5 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "Sim/Ecs/Systems/MissileProjectileSystem.h"
+
+
 #include <algorithm>
 
 #include "Projectile.h"
@@ -215,19 +218,39 @@ void CProjectileHandler::UpdateProjectiles(bool synced)
 		++i;
 	}
 
-	SCOPED_TIMER("Sim::Projectiles::Update");
+	// SCOPED_TIMER("Sim::Projectiles::Update");
 
-	// WARNING: same as above but for p->Update()
+	// // WARNING: same as above but for p->Update()
+	// for (size_t i = 0; i < pc.size(); ++i) {
+	// 	CProjectile* p = pc[i];
+	// 	assert(p != nullptr);
+
+	// 	MAPPOS_SANITY_CHECK(p->pos);
+
+	// 	p->Update();
+	// 	quadField.MovedProjectile(p);
+
+	// 	MAPPOS_SANITY_CHECK(p->pos);
+	// }
+
+
+	{
+	SCOPED_TIMER("Sim::Projectiles::Update");
+	// for (size_t i = 0; i < pc.size(); ++i) {
+	// 	CProjectile* p = pc[i];
+	//  	p->CProjectile::Update();
+	// }
+	missileProjectileSystem.Update();
+	}
+
+	// // WARNING: same as above but for p->Update()
 	for (size_t i = 0; i < pc.size(); ++i) {
 		CProjectile* p = pc[i];
-		assert(p != nullptr);
+	 	assert(p != nullptr);
 
-		MAPPOS_SANITY_CHECK(p->pos);
-
-		p->Update();
-		quadField.MovedProjectile(p);
-
-		MAPPOS_SANITY_CHECK(p->pos);
+	 	MAPPOS_SANITY_CHECK(p->pos);
+	 	quadField.MovedProjectile(p);
+	 	MAPPOS_SANITY_CHECK(p->pos);
 	}
 }
 
@@ -295,6 +318,8 @@ void CProjectileHandler::CreateProjectile(CProjectile* p)
 {
 	p->createMe = false;
 
+	missileProjectileSystem.AddProjectile(p);
+
 	if (p->synced || PH_UNSYNCED_PROJECTILE_EVENTS == 1)
 		eventHandler.ProjectileCreated(p, p->GetAllyteamID());
 
@@ -304,6 +329,8 @@ void CProjectileHandler::CreateProjectile(CProjectile* p)
 void CProjectileHandler::DestroyProjectile(CProjectile* p)
 {
 	assert(!p->createMe);
+
+	missileProjectileSystem.RemoveProjectile(p);
 
 	eventHandler.RenderProjectileDestroyed(p);
 

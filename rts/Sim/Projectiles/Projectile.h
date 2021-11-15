@@ -124,6 +124,8 @@ public:
 
 	int drawOrder = 0;
 
+	uint32_t entityId = 0;
+
 protected:
 	std::array<bool, 5> validTextures = {false, false, false, false, false}; //overall state and 4 textures
 	unsigned int ownerID = -1u;
