@@ -48,6 +48,18 @@ if    (PREFER_STATIC_LIBS)
 	# dependencies of FreeType
 	find_package_static(BZip2 REQUIRED)
 	list(APPEND engineLibraries ${BZIP2_LIBRARIES})
+	
+	# WOFF support was introduced in version 2.10.2 also introducing the dependency to brotli
+	# ubuntu 21.10: Freetype version: 2.10.4
+	if (FREETYPE_VERSION_STRING VERSION_GREATER 2.10.1)
+		find_package_static(BROTLI REQUIRED)
+
+		foreach(f ${BROTLI_INCLUDE_DIRS})
+			list(APPEND engineIncludes ${f})
+		endforeach(f)
+		list(APPEND engineLibraries ${BROTLIDEC_LIBRARY})
+		list(APPEND engineLibraries ${BROTLICOMMON_LIBRARY})
+	endif()
 endif (PREFER_STATIC_LIBS)
 
 if    (UNIX)
