@@ -38,6 +38,13 @@ namespace spring {
         };
     }
 
+    template <class T>
+    inline uint64_t hash_combine(T const& v, std::uint64_t seed = 1337u)
+    {
+        seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        return seed;
+    }
+
     template <typename ... TT>
     struct std::hash<std::tuple<TT...>>
     {

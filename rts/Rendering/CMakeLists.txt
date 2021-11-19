@@ -90,6 +90,8 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Map/InfoTexture/Modern/Path.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Map/InfoTexture/Modern/PboInfoTexture.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Map/InfoTexture/Modern/Radar.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Materials/CustomMaterial.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Materials/CustomMaterialRenderer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/3DModel.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/3DModelVAO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/3DOParser.cpp"
