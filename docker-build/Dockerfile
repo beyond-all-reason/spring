@@ -89,7 +89,10 @@ RUN  apt-get install --fix-missing -y \
 ENV CCACHE_DIR=/ccache
 ENV PATH="/usr/lib/ccache:${PATH}"
 
+# set primary config so no config from cache directory will be used
 COPY config/ccache.conf /etc/ccache.conf
+ENV CCACHE_CONFIGPATH=/etc/ccache.conf
+
 RUN /usr/sbin/update-ccache-symlinks; \
         ln -s ../../bin/ccache /usr/lib/ccache/x86_64-w64-mingw32.static-g++; \
         ln -s ../../bin/ccache /usr/lib/ccache/x86_64-w64-mingw32.static-gcc
