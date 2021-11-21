@@ -36,8 +36,9 @@ RUN apt-get update;apt-get install -y \
     unzip \
     wget \
     xz-utils
-	
-	
+
+
+# Install MXE and build cross-compile windows gcc
 RUN cd /; \
 	git clone https://github.com/mxe/mxe.git; \
 	cd mxe; \
@@ -46,6 +47,7 @@ RUN cd /; \
 	rm -rf /mxe/pkg /mxe/src /mxe/log /mxe/.git
 
 
+# Main Image
 FROM ubuntu:18.04
 
 ARG cmake_version=3.16.*
@@ -57,7 +59,7 @@ ENV PATH="/mxe/usr/bin:${PATH}"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Build Dependencies (Common)
-RUN  apt-get update -y; \
+RUN apt-get update -y; \
 	apt-get install --fix-missing -y \
 		  clang-format \
 		  coreutils \
@@ -69,7 +71,7 @@ RUN  apt-get update -y; \
 		  ccache \
 		  python3-pip; \
 		  pip3 install cmake==$cmake_version; \
-		  apt purge python3-pip -y
+		  apt purge python3-pip -y; apt auto-remove -y
 
 # GCC-10 PPA (linux-64)
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
