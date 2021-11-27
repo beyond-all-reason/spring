@@ -3450,9 +3450,11 @@ int LuaOpenGL::TextureInfo(lua_State* L)
 	if (!LuaOpenGLUtils::ParseTextureImage(L, tex, luaL_checkstring(L, 1)))
 		return 0;
 
-	lua_createtable(L, 0, 2);
-	HSTR_PUSH_NUMBER(L, "xsize", tex.GetSize().x);
-	HSTR_PUSH_NUMBER(L, "ysize", tex.GetSize().y);
+	lua_createtable(L, 0, 4);
+	HSTR_PUSH_NUMBER(L, "xsize" , tex.GetSize().x);
+	HSTR_PUSH_NUMBER(L, "ysize" , tex.GetSize().y);
+	HSTR_PUSH_NUMBER(L, "id"    , tex.GetTextureID());
+	HSTR_PUSH_NUMBER(L, "target", tex.GetTextureTarget());
 	// HSTR_PUSH_BOOL(L,   "alpha", texInfo.alpha);  FIXME
 	// HSTR_PUSH_NUMBER(L, "type",  texInfo.type);
 	return 1;
