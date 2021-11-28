@@ -4201,15 +4201,16 @@ int LuaOpenGL::ClipDistance(lua_State* L) {
 	CheckDrawingEnabled(L, __func__);
 
 	const int clipId = luaL_checkint(L, 1);
-	if ((clipId < 1) || (clipId > 2)) { //follow ClipPlane() for consistency
-		luaL_error(L, "gl.ClipDistance: bad clip number (use 1 or 2)");
+
+	if ((clipId < 0) || (clipId > 5)) {
+		luaL_error(L, "gl.ClipDistance: bad clip number (use 0-5)");
 	}
 
 	if (!lua_isboolean(L, 2)) {
 		luaL_error(L, "gl.ClipDistance: second param must be boolean");
 	}
 
-	const GLenum gl_clipId = GL_CLIP_DISTANCE4 + clipId - 1;
+	const GLenum gl_clipId = GL_CLIP_DISTANCE0 + clipId;
 
 	if (lua_toboolean(L, 2)) {
 		glEnable(gl_clipId);
