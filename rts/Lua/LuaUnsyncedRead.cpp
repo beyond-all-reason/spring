@@ -1174,7 +1174,7 @@ namespace {
 		uint32_t count = 0;
 		for (const auto renderObject : renderObjects)
 		{
-			if ((renderObject->drawFlag & drawMask) != drawMask)
+			if ((renderObject->drawFlag & drawMask) == 0)
 				continue;
 
 			lua_pushnumber(L, renderObject->id);
@@ -1188,7 +1188,7 @@ namespace {
 		count = 0;
 		for (const auto renderObject : renderObjects)
 		{
-			if ((renderObject->drawFlag & drawMask) != drawMask)
+			if ((renderObject->drawFlag & drawMask) == 0)
 				continue;
 
 			lua_pushnumber(L, renderObject->drawFlag);
