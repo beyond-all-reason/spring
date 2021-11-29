@@ -4202,8 +4202,8 @@ int LuaOpenGL::ClipDistance(lua_State* L) {
 
 	const int clipId = luaL_checkint(L, 1);
 
-	if ((clipId < 0) || (clipId > 5)) {
-		luaL_error(L, "gl.ClipDistance: bad clip number (use 0-5)");
+	if ((clipId < 0) || (clipId > 7)) { // GL_MAX_CLIP_DISTANCES / The value must be at least 8.
+		luaL_error(L, "gl.ClipDistance: bad clip number (use 0-7)");
 	}
 
 	if (!lua_isboolean(L, 2)) {
