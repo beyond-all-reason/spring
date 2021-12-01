@@ -121,7 +121,7 @@ GLuint LuaShaders::GetProgramName(lua_State* L, int index) const
 const LuaShaders::Program& LuaShaders::GetProgram(lua_State* L, int index) const
 {
 	if (luaL_checkint(L, index) <= 0)
-		return 0;
+		return dummyProgram;
 
 	return (GetProgram(luaL_checkint(L, index)));
 }
