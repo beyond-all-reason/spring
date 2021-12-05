@@ -1897,18 +1897,6 @@ bool CGame::IsSimLagging(float maxLatency) const
 }
 
 
-void CGame::Reload()
-{
-	if (saveFileHandler != nullptr) {
-		// This reloads heightmap, triggers Load call-in, etc.
-		// Inside the Load call-in, Lua can ensure old units are wiped before new ones are placed.
-		saveFileHandler->LoadGame();
-		saveFileHandler->LoadAIData();
-	} else {
-		LOG_L(L_WARNING, "[Game::%s] can only reload the game when it has been started from a savegame", __func__);
-	}
-}
-
 void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 {
 	globalSaveFileData.name = std::move(fileName);
