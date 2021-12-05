@@ -33,7 +33,7 @@ public:
 
 	static void PutBufferLocks();
 
-	IStreamBufferConcept(uint32_t target_, const std::string& name_, const std::string_view& bufferTypeName);
+	IStreamBufferConcept(uint32_t target_, uint32_t numElements_, const std::string& name_, const std::string_view& bufferTypeName);
 	virtual ~IStreamBufferConcept() {}
 
 	uint32_t GetAlignedByteSize(uint32_t byteSizeRaw);
@@ -57,8 +57,11 @@ protected:
 	const std::string name;
 	uint32_t target;
 	uint32_t id;
+	uint32_t numElements;
 	uint32_t byteSize;
 	uint32_t allocIdx;
+	uint32_t mapElemOffet;
+	uint32_t mapElemCount;
 protected:
 	inline static std::vector<GLsync*> lockList = {};
 	static constexpr uint32_t DEFAULT_NUM_BUFFERS = 3;
@@ -70,17 +73,34 @@ public:
 	static std::unique_ptr<IStreamBuffer<T>> CreateInstance(uint32_t target, uint32_t numElems, const std::string& name = "", Types type = SB_AUTODETECT, bool resizeAble = false, bool coherent = false, uint32_t numBuffers = DEFAULT_NUM_BUFFERS);
 public:
 	IStreamBuffer(uint32_t target_, uint32_t numElems, const std::string& name_, const std::string_view& bufferTypeName_)
-		: IStreamBufferConcept(target_, name_, bufferTypeName_)
+		: IStreamBufferConcept(target_, numElems, name_, bufferTypeName_)
 	{}
 
-	virtual T* Map(const T* clientPtr = nullptr) = 0;
-	virtual void Unmap(uint32_t updatedElems = 1) = 0;
-	virtual void Init(uint32_t numElems) = 0;
+	virtual T* Map(const T* clientPtr = nullptr, uint32_t elemOffset = 0, uint32_t elemCount = 0) {
+		this->mapElemOffet = elemOffset;
+
+		if (elemCount > 0) {
+			this->mapElemCount = elemCount;
+			assert((this->mapElemOffet + this->mapElemCount) <= this->numElements);
+		}
+		else {
+			this->mapElemCount = this->numElements - this->mapElemOffet;
+		}
+		return nullptr;
+	}
+
+	virtual void Unmap() = 0;
+	virtual void SwapBuffer() {};
+
+	virtual bool HasClientPtr() const { return false; };
+
+	virtual void Init() = 0;
 	virtual void Kill(bool deleteBuffer) = 0;
 
 	virtual void Resize(uint32_t numElems) {
 		Kill(false);
-		Init(numElems);
+
+		this->numElements = numElems; Init();
 	}
 };
 
@@ -94,14 +114,14 @@ public:
 		, clientMem { false }
 		, buffer{ nullptr }
 	{
-		Init(numElems);
+		Init();
 	}
 	~BufferDataImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));;
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
 		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
 	}
 
@@ -109,33 +129,43 @@ public:
 		if (!clientMem && buffer != nullptr) {
 			spring::FreeAlignedMemory(buffer);
 			buffer = nullptr;
-
-			if (deleteBuffer)
-				this->DeleteBuffer();
 		}
+
+		if (deleteBuffer) this->DeleteBuffer();
 	}
 
-	T* Map(const T* clientPtr) override {
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
+
 		if (clientPtr) {
-			buffer = const_cast<T*>(clientPtr);
 			clientMem = true;
+
+			// clientPtr is expected to point to 0th element
+			buffer = const_cast<T*>(clientPtr);
 		}
 		else if (buffer == nullptr) {
-			buffer = static_cast<T*>(spring::AllocateAlignedMemory(this->byteSize, 256));
 			clientMem = false;
-		}
 
-		assert(buffer);
-		return buffer;
+			buffer = static_cast<T*>(spring::AllocateAlignedMemory(this->byteSize, 256));
+			assert(buffer);
+		}
+		return buffer + this->mapElemOffet;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
-
+	void Unmap() override {
 		this->Bind();
-		glBufferData(this->target, updatedElems * sizeof(T), buffer, GL_STREAM_DRAW);
+		// BufferDataImpl can only upload the whole buffer completely
+		glBufferData(
+			this->target,
+			this->mapElemCount * sizeof(T),
+			buffer,
+			GL_STREAM_DRAW
+		);
+
 		this->Unbind();
 	}
+
+	bool HasClientPtr() const override { return clientMem; };
 private:
 	bool clientMem;
 	T* buffer;
@@ -149,14 +179,14 @@ public:
 		, clientMem{ false }
 		, buffer{ nullptr }
 	{
-		Init(numElems);
+		Init();
 	}
 	~BufferSubDataImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));;
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
 		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
 	}
 
@@ -164,33 +194,42 @@ public:
 		if (!clientMem && buffer != nullptr) {
 			spring::FreeAlignedMemory(buffer);
 			buffer = nullptr;
-
-			if (deleteBuffer)
-				this->DeleteBuffer();
 		}
+		if (deleteBuffer) this->DeleteBuffer();
 	}
 
-	T* Map(const T* clientPtr) override {
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
+
 		if (clientPtr) {
-			buffer = const_cast<T*>(clientPtr);
 			clientMem = true;
+
+			// clientPtr is expected to point to 0th element
+			buffer = const_cast<T*>(clientPtr);
 		}
 		else if (buffer == nullptr) {
-			buffer = static_cast<T*>(spring::AllocateAlignedMemory(this->byteSize, 256));
 			clientMem = false;
-		}
 
-		assert(buffer);
-		return buffer;
+			buffer = static_cast<T*>(spring::AllocateAlignedMemory(this->byteSize, 256));
+			assert(buffer);
+		}
+		return buffer + this->mapElemOffet;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
-
+	void Unmap() override {
 		this->Bind();
-		glBufferSubData(this->target, 0, updatedElems * sizeof(T), buffer);
+		// BufferSubDataImpl can upload only updated elements
+		glBufferSubData(
+			this->target,
+			this->mapElemOffet * sizeof(T),
+			this->mapElemCount * sizeof(T),
+			buffer + this->mapElemOffet
+		);
+
 		this->Unbind();
 	}
+
+	bool HasClientPtr() const override { return clientMem; };
 private:
 	bool clientMem;
 	T* buffer;
@@ -202,15 +241,15 @@ public:
 	MapAndOrphanImpl(GLenum target, uint32_t numElems, const std::string& name_)
 		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
 	{
-		Init(numElems);
+		Init();
 		mapUnsyncedBit = GL_MAP_UNSYNCHRONIZED_BIT * (1 - globalRendering->haveAMD);
 	}
 	~MapAndOrphanImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));;
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
 		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
 	}
 
@@ -219,22 +258,38 @@ public:
 			this->DeleteBuffer();
 	}
 
-	T* Map(const T* clientPtr) override {
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
+
+		mapInvalidateBit =
+			(this->mapElemOffet + this->mapElemCount == this->numElements) ?
+			GL_MAP_INVALIDATE_BUFFER_BIT :
+			GL_MAP_INVALIDATE_RANGE_BIT;
+
 		this->Bind();
-		T* ptr = reinterpret_cast<T*>(glMapBufferRange(this->target, 0, this->byteSize, GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | mapUnsyncedBit));
+		T* ptr = reinterpret_cast<T*>(glMapBufferRange(
+			this->target,
+			this->mapElemOffet * sizeof(T),
+			this->mapElemCount * sizeof(T),
+			GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | mapInvalidateBit | mapUnsyncedBit));
+
 		assert(ptr);
 		return ptr;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
+	void Unmap() override {
+		glFlushMappedBufferRange(
+			this->target,
+			/*this->mapElemOffet * sizeof(T)*/0, // offset is relative to the mapped range offset
+			this->mapElemCount * sizeof(T)
+		);
 
-		glFlushMappedBufferRange(this->target, 0, updatedElems * sizeof(T));
 		glUnmapBuffer(this->target);
 		this->Unbind();
 	}
 private:
 	uint32_t mapUnsyncedBit;
+	uint32_t mapInvalidateBit;
 };
 
 template<typename T>
@@ -245,14 +300,14 @@ public:
 		, numBuffers{ numBuffers_ }
 		, coherent{ coherent_ }
 	{
-		Init(numElems);
+		Init();
 	}
 	~MapAndSyncImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));
 		this->CreateBufferStorage(numBuffers * this->byteSize,
 			GL_MAP_WRITE_BIT | GL_CLIENT_STORAGE_BIT);
 
@@ -269,13 +324,16 @@ public:
 		this->DeleteBuffer(); //delete regardless because of immutability
 	}
 
-	T* Map(const T* clientPtr) override {
-		this->allocIdx = (this->allocIdx + 1) % numBuffers;
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
 
 		this->WaitBuffer(fences[this->allocIdx]);
 
 		this->Bind();
-		T* ptr = reinterpret_cast<T*>(glMapBufferRange(this->target, this->allocIdx * this->byteSize, this->byteSize,
+		T* ptr = reinterpret_cast<T*>(glMapBufferRange(
+			this->target,
+			this->allocIdx * this->byteSize + this->mapElemOffet * sizeof(T),
+			this->mapElemCount * sizeof(T),
 			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | (!coherent * GL_MAP_FLUSH_EXPLICIT_BIT)
 		));
 
@@ -283,17 +341,23 @@ public:
 		return ptr;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
-
-		if (!coherent)
-			glFlushMappedBufferRange(this->target, 0, updatedElems * sizeof(T));
+	void Unmap() override {
+		if (!coherent) {
+			glFlushMappedBufferRange(
+				this->target,
+				/*this->mapElemOffet * sizeof(T)*/0, // offset is relative to the mapped range offset
+				this->mapElemCount * sizeof(T)
+			);
+		}
 
 		glUnmapBuffer(this->target);
 		this->Unbind();
-
-		this->QueueLockBuffer(fences[this->allocIdx]);
 	}
+
+	void SwapBuffer() override {
+		this->QueueLockBuffer(fences[this->allocIdx]);
+		this->allocIdx = (this->allocIdx + 1) % numBuffers;
+	};
 private:
 	uint32_t numBuffers;
 	const bool coherent;
@@ -309,22 +373,25 @@ public:
 		, ptrBase{ nullptr }
 		, coherent{ coherent_ }
 	{
-		Init(numElems);
+		Init();
 	}
 	~PersistentMapImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));
 		this->CreateBufferStorage(numBuffers * this->byteSize,
 			GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | (coherent * GL_MAP_COHERENT_BIT));
 
 		this->Bind();
-		ptrBase = reinterpret_cast<T*>(glMapBufferRange(this->target, 0, numBuffers * this->byteSize,
-			GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | (coherent ? GL_MAP_COHERENT_BIT : GL_MAP_FLUSH_EXPLICIT_BIT)
+		ptrBase = reinterpret_cast<T*>(glMapBufferRange(
+			this->target,
+			0,
+			numBuffers * this->byteSize,
+			GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | mix(GL_MAP_FLUSH_EXPLICIT_BIT, GL_MAP_COHERENT_BIT, coherent)
 		));
-		this->Unbind(); //binding is not needed for mapping to stay valid
+		this->Unbind();
 
 		fences.resize(numBuffers);
 		for (auto& fence : fences)
@@ -336,36 +403,39 @@ public:
 			this->WaitBuffer(fence);
 		glFinish(); //just in case
 
-		this->Bind();
 		glUnmapBuffer(this->target);
-		this->Unbind();
 
 		this->DeleteBuffer(); //delete regardless because of immutability
 		ptrBase = nullptr;
 	}
 
-	T* Map(const T* clientPtr) override {
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
 		assert(ptrBase);
-
-		this->allocIdx = (this->allocIdx + 1) % fences.size();
 
 		this->WaitBuffer(fences[this->allocIdx]);
 
-		T* ptr = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(ptrBase) + this->allocIdx * this->byteSize);
+		T* ptr = ptrBase + this->allocIdx * this->numElements + this->mapElemOffet;
+
 		return ptr;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
-
+	void Unmap() override {
 		if (!coherent) {
-			this->Bind();
-			glFlushMappedBufferRange(this->target, 0, updatedElems * sizeof(T));
-			this->Unbind();
+			this->Bind(); //needed for glFlushMappedBufferRange()
+			glFlushMappedBufferRange(
+				this->target,
+				(this->allocIdx * this->byteSize) + this->mapElemOffet * sizeof(T),
+				this->mapElemCount * sizeof(T)
+			);
+			this->Unbind(); //needed for glFlushMappedBufferRange()
 		}
-
-		this->QueueLockBuffer(fences[this->allocIdx]);
 	}
+
+	void SwapBuffer() override {
+		this->QueueLockBuffer(fences[this->allocIdx]);
+		this->allocIdx = (this->allocIdx + 1) % numBuffers;
+	};
 private:
 	uint32_t numBuffers;
 	T* ptrBase;
@@ -380,14 +450,14 @@ public:
 		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
 		, numBuffers{ numBuffers_ }
 	{
-		Init(numElems);
+		Init();
 	}
 	~PinnedMemoryAMDImpl() override {
 		Kill(true);
 	}
 
-	void Init(uint32_t numElems) override {
-		this->byteSize = this->GetAlignedByteSize(numElems * sizeof(T));
+	void Init() override {
+		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));
 		uint32_t bufferSize = AlignUp(numBuffers * this->byteSize, ALIGN_PINNED_MEMORY_SIZE);
 		ptrBase = reinterpret_cast<T*>(spring::AllocateAlignedMemory(bufferSize, ALIGN_PINNED_MEMORY_SIZE));
 
@@ -415,22 +485,22 @@ public:
 		ptrBase = nullptr;
 	}
 
-	T* Map(const T* clientPtr) override {
+	T* Map(const T* clientPtr, uint32_t elemOffset, uint32_t elemCount) override {
+		IStreamBuffer<T>::Map(clientPtr, elemOffset, elemCount);
 		assert(ptrBase);
-
-		this->allocIdx = (this->allocIdx + 1) % fences.size();
 
 		this->WaitBuffer(fences[this->allocIdx]);
 
-		T* ptr = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(ptrBase) + this->allocIdx * this->byteSize);
+		T* ptr = ptrBase + this->allocIdx * this->numElements + this->mapElemOffet;
 		return ptr;
 	}
 
-	void Unmap(uint32_t updatedElems) override {
-		assert(updatedElems * sizeof(T) <= this->byteSize);
+	void Unmap() override {}
 
+	void SwapBuffer() override {
 		this->QueueLockBuffer(fences[this->allocIdx]);
-	}
+		this->allocIdx = (this->allocIdx + 1) % numBuffers;
+	};
 private:
 	uint32_t numBuffers;
 	T* ptrBase;

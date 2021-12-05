@@ -9,6 +9,7 @@
 #include "GlobalRenderingInfo.h"
 #include "Rendering/VerticalSync.h"
 #include "Rendering/GL/StreamBuffer.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/UniformConstants.h"
@@ -569,6 +570,9 @@ void CGlobalRendering::PostInit() {
 
 	LogVersionInfo(sdlVersionStr, glVidMemStr);
 	ToggleGLDebugOutput(0, 0, 0);
+
+	UniformConstants::GetInstance().Init();
+	RenderBuffer::InitRenderBuffers();
 }
 
 void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
@@ -585,6 +589,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 
 	const spring_time pre = spring_now();
 
+	RenderBuffer::SwapRenderBuffers();
 	IStreamBufferConcept::PutBufferLocks();
 	SDL_GL_SwapWindow(sdlWindows[0]);
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());
@@ -620,19 +625,19 @@ void CGlobalRendering::SetGLSupportFlags()
 	const std::string& glVendor = StringToLower(globalRenderingInfo.glVendor);
 	const std::string& glRenderer = StringToLower(globalRenderingInfo.glRenderer);
 
-	haveARB   = GLEW_ARB_vertex_program && GLEW_ARB_fragment_program;
+	haveARB   = static_cast<bool>(GLEW_ARB_vertex_program && GLEW_ARB_fragment_program);
 	haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
-	haveGLSL &= (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
-	haveGLSL &= GLEW_VERSION_2_0; // we want OpenGL 2.0 core functions
+	haveGLSL &= static_cast<bool>(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
+	haveGLSL &= static_cast<bool>(GLEW_VERSION_2_0); // we want OpenGL 2.0 core functions
 
 	#ifndef HEADLESS
 	if (!haveARB || !haveGLSL)
 		throw unsupported_error("OpenGL shaders not supported, aborting");
 	#endif
 
-	haveGL4 = GLEW_ARB_multi_draw_indirect;
-	haveGL4 &= GLEW_ARB_uniform_buffer_object;
-	haveGL4 &= GLEW_ARB_shader_storage_buffer_object;
+	haveGL4 = static_cast<bool>(GLEW_ARB_multi_draw_indirect);
+	haveGL4 &= static_cast<bool>(GLEW_ARB_uniform_buffer_object);
+	haveGL4 &= static_cast<bool>(GLEW_ARB_shader_storage_buffer_object);
 	haveGL4 &= configHandler->GetBool("UseVBO");
 
 	// useful if a GPU claims to support GL4 and shaders but crashes (Intels...)
@@ -1171,8 +1176,6 @@ void CGlobalRendering::InitGLState()
 
 	glViewport(viewPosX, viewPosY, viewSizeX, viewSizeY);
 	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);
-
-	UniformConstants::GetInstance().Init();
 
 	// this does not accomplish much
 	// SwapBuffers(true, true);

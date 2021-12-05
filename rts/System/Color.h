@@ -42,8 +42,16 @@ struct SColor
 		, a(u[3])
 	{}
 
-	SColor operator * (const float s) const {
+	SColor operator* (float s) const {
 		return SColor(int(float(r) * s), int(float(g) * s), int(float(b) * s), int(float(a) * s));
+	}
+	SColor& operator*= (float s) {
+		r = uint8_t(float(r) * s);
+		g = uint8_t(float(g) * s);
+		b = uint8_t(float(b) * s);
+		a = uint8_t(float(a) * s);
+
+		return *this;
 	}
 
 	operator const unsigned char* () const { return &r; }

@@ -27,7 +27,7 @@ namespace Shader {
 	struct IShaderObject {
 	public:
 		IShaderObject(unsigned int shType, const std::string& shSrcFile, const std::string& shSrcDefs = ""):
-			objID(0), type(shType), valid(false), srcFile(shSrcFile), rawDefStrs(shSrcDefs) {
+			objID(0), type(shType), valid(false), reloadRequested(false), srcFile(shSrcFile), rawDefStrs(shSrcDefs) {
 		}
 
 		virtual ~IShaderObject() {}
@@ -37,6 +37,8 @@ namespace Shader {
 
 		bool ReloadFromDisk();
 		bool IsValid() const { return valid; }
+		void SetReloadComplete() { reloadRequested = false; }
+		bool IsReloadRequested() const { return reloadRequested;  }
 
 		unsigned int GetObjID() const { return objID; }
 		unsigned int GetType() const { return type; }
@@ -45,12 +47,13 @@ namespace Shader {
 		const std::string& GetLog() const { return log; }
 
 		void SetDefinitions(const std::string& defs) { modDefStrs = defs; }
-
+		std::string GetShaderSource(const std::string& fileName);
 	protected:
 		unsigned int objID;
 		unsigned int type;
 
 		bool valid;
+		bool reloadRequested;
 
 		std::string srcFile;
 		std::string srcText;
@@ -117,10 +120,23 @@ namespace Shader {
 		virtual void DisableRaw() {}
 		virtual void Link() = 0;
 		virtual bool Validate() = 0;
-		virtual void Release() = 0;
+		virtual void Release();
 		virtual void Reload(bool reloadFromDisk, bool validate) = 0;
 		/// attach single shader objects (vertex, frag, ...) to the program
-		virtual void AttachShaderObject(IShaderObject* so) { shaderObjs.push_back(so); }
+		void AttachShaderObject(IShaderObject* so) { shaderObjs.push_back(so); }
+		bool RemoveShaderObject(GLenum soType);
+
+		void SetReloadComplete() {
+			for (auto so : shaderObjs)
+				so->SetReloadComplete();
+		}
+		bool IsReloadRequested() const {
+			bool reloadRequested = false;
+			for (auto so : shaderObjs)
+				reloadRequested |= so->IsReloadRequested();
+
+			return reloadRequested;
+		}
 
 		bool IsBound() const { return bound; }
 		bool IsValid() const { return valid; }
