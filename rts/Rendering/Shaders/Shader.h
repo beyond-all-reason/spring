@@ -157,18 +157,18 @@ namespace Shader {
 
 	public:
 		/// new interface
-		template<typename TK, typename TV> inline void SetUniform(const TK& name, TV v0) { SetUniform(GetUniformState(name), v0); }
-		template<typename TK, typename TV> inline void SetUniform(const TK& name, TV v0, TV v1)  { SetUniform(GetUniformState(name), v0, v1); }
-		template<typename TK, typename TV> inline void SetUniform(const TK& name, TV v0, TV v1, TV v2)  { SetUniform(GetUniformState(name), v0, v1, v2); }
-		template<typename TK, typename TV> inline void SetUniform(const TK& name, TV v0, TV v1, TV v2, TV v3)  { SetUniform(GetUniformState(name), v0, v1, v2, v3); }
+		template<typename TV> inline void SetUniform(const char* name, TV v0) { SetUniform(GetUniformState(name), v0); }
+		template<typename TV> inline void SetUniform(const char* name, TV v0, TV v1)  { SetUniform(GetUniformState(name), v0, v1); }
+		template<typename TV> inline void SetUniform(const char* name, TV v0, TV v1, TV v2)  { SetUniform(GetUniformState(name), v0, v1, v2); }
+		template<typename TV> inline void SetUniform(const char* name, TV v0, TV v1, TV v2, TV v3)  { SetUniform(GetUniformState(name), v0, v1, v2, v3); }
 
-		template<typename TK, typename TV> inline void SetUniform2v(const TK& name, const TV* v) { SetUniform2v(GetUniformState(name), v); }
-		template<typename TK, typename TV> inline void SetUniform3v(const TK& name, const TV* v) { SetUniform3v(GetUniformState(name), v); }
-		template<typename TK, typename TV> inline void SetUniform4v(const TK& name, const TV* v) { SetUniform4v(GetUniformState(name), v); }
+		template<typename TV> inline void SetUniform2v(const char* name, const TV* v) { SetUniform2v(GetUniformState(name), v); }
+		template<typename TV> inline void SetUniform3v(const char* name, const TV* v) { SetUniform3v(GetUniformState(name), v); }
+		template<typename TV> inline void SetUniform4v(const char* name, const TV* v) { SetUniform4v(GetUniformState(name), v); }
 
-		template<typename TK, typename TV> inline void SetUniformMatrix2x2(const TK& name, bool transp, const TV* v) { SetUniformMatrix2x2(GetUniformState(name), transp, v); }
-		template<typename TK, typename TV> inline void SetUniformMatrix3x3(const TK& name, bool transp, const TV* v) { SetUniformMatrix3x3(GetUniformState(name), transp, v); }
-		template<typename TK, typename TV> inline void SetUniformMatrix4x4(const TK& name, bool transp, const TV* v) { SetUniformMatrix4x4(GetUniformState(name), transp, v); }
+		template<typename TV> inline void SetUniformMatrix2x2(const char* name, bool transp, const TV* v) { SetUniformMatrix2x2(GetUniformState(name), transp, v); }
+		template<typename TV> inline void SetUniformMatrix3x3(const char* name, bool transp, const TV* v) { SetUniformMatrix3x3(GetUniformState(name), transp, v); }
+		template<typename TV> inline void SetUniformMatrix4x4(const char* name, bool transp, const TV* v) { SetUniformMatrix4x4(GetUniformState(name), transp, v); }
 
 		template<typename TV> void SetFlag(const char* key, TV val) { shaderFlags.Set(key, val); }
 

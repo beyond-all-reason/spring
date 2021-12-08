@@ -13,6 +13,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/UniformConstants.h"
+#include "Rendering/Fonts/glFont.h"
 #include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/type2.h"
@@ -572,7 +573,6 @@ void CGlobalRendering::PostInit() {
 	ToggleGLDebugOutput(0, 0, 0);
 
 	UniformConstants::GetInstance().Init();
-	RenderBuffer::InitRenderBuffers();
 }
 
 void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
@@ -589,7 +589,8 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 
 	const spring_time pre = spring_now();
 
-	RenderBuffer::SwapRenderBuffers();
+	RenderBuffer::SwapStandardRenderBuffers();
+	CglFont::SwapRenderBuffers();
 	IStreamBufferConcept::PutBufferLocks();
 	SDL_GL_SwapWindow(sdlWindows[0]);
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());

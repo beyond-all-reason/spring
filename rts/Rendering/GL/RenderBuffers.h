@@ -29,19 +29,12 @@ public:
 	template <typename T>
 	static TypedRenderBuffer<T>& GetTypedRenderBuffer();
 
-	virtual void Clear() = 0;
-	virtual void Init() = 0;
 	virtual void SwapBuffer() = 0;
-	static void InitRenderBuffers() {
-		for (const auto& trb : typedRenderBuffers) {
-			if (trb) trb->Init();
-		}
-	}
-	static void SwapRenderBuffers() {
+
+	static void SwapStandardRenderBuffers() {
 		for (const auto& trb : typedRenderBuffers) {
 			if (trb) {
 				trb->SwapBuffer();
-				trb->Clear();
 			}
 		}
 	}
@@ -278,26 +271,34 @@ public:
 	using VertType = T;
 	using IndcType = uint32_t;
 
-	TypedRenderBuffer<T>(size_t vboCount0_, size_t elemCount0_)
-		: vboCount0 { vboCount0_}
-		, elemCount0 { elemCount0_ }
+	TypedRenderBuffer<T>()
+		: vertCount0{ 0 }
+		, elemCount0{ 0 }
+		, bufferType{ bufferTypeDefault }
 	{}
-
-	void Init() override {
-		if (vboCount0 > 0)
-			vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER, vboCount0, std::string(vboTypeName), bufferType);
-
-		if (elemCount0 > 0)
-			ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, elemCount0, std::string(vboTypeName), bufferType);
-
-		InitVAO();
-	}
+	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault)
+		: vertCount0 { vertCount0_ }
+		, elemCount0 { elemCount0_ }
+		, bufferType { bufferType_ }
+	{}
 
 	void SwapBuffer() override {
 		if (vbo)
 			vbo->SwapBuffer();
 		if (ebo)
 			ebo->SwapBuffer();
+
+		// clear
+		verts.clear();
+		indcs.clear();
+
+		vboStartIndex = 0;
+		eboStartIndex = 0;
+
+		vboUploadIndex = 0;
+		eboUploadIndex = 0;
+
+		numSubmits = { 0, 0 };
 	}
 
 	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
@@ -305,7 +306,7 @@ public:
 
 	TypedRenderBuffer<T>& operator = (const TypedRenderBuffer<T>& rhs) = delete;
 	TypedRenderBuffer<T>& operator = (TypedRenderBuffer<T>&& rhs) {
-		vboCount0 = rhs.vboCount0;
+		vertCount0 = rhs.vertCount0;
 		elemCount0 = rhs.elemCount0;
 
 		std::swap(vbo, rhs.vbo);
@@ -328,7 +329,7 @@ public:
 		verts.emplace_back(v);
 	}
 	void AddVertices(std::initializer_list<VertType>&& vs) {
-		for (const auto& v : vs) {
+		for (auto&& v : vs) {
 			verts.emplace_back(v);
 		}
 	}
@@ -339,7 +340,7 @@ public:
 	}
 	void UpdateVertices(std::initializer_list<VertType>&& vs, size_t at) {
 		size_t cnt = 0;
-		for (const auto& v : vs) {
+		for (auto&& v : vs) {
 			assert(cnt + at < verts.size());
 			verts.emplace(cnt + at, v);
 			++cnt;
@@ -357,9 +358,9 @@ public:
 		verts.emplace_back(bl); //3
 
 		//triangle 1 {tl, tr, bl}
+		indcs.emplace_back(baseIndex + 3);
 		indcs.emplace_back(baseIndex + 0);
 		indcs.emplace_back(baseIndex + 1);
-		indcs.emplace_back(baseIndex + 3);
 
 		//triangle 2 {bl, tr, br}
 		indcs.emplace_back(baseIndex + 3);
@@ -441,19 +442,6 @@ public:
 		}
 	}
 
-	void Clear() override {
-		verts.clear();
-		indcs.clear();
-
-		vboStartIndex = 0;
-		eboStartIndex = 0;
-
-		vboUploadIndex = 0;
-		eboUploadIndex = 0;
-
-		numSubmits = { 0, 0 };
-	}
-
 	void UploadVBO();
 	void UploadEBO();
 
@@ -462,10 +450,12 @@ public:
 
 	static Shader::IProgramObject& GetShader() { return shader.GetShader(); }
 private:
+	void CondInit();
 	void InitVAO() const;
 private:
-	size_t vboCount0;
+	size_t vertCount0;
 	size_t elemCount0;
+	IStreamBufferConcept::Types bufferType;
 
 	std::unique_ptr<IStreamBuffer<VertType>> vbo;
 	std::unique_ptr<IStreamBuffer<IndcType>> ebo;
@@ -487,7 +477,7 @@ private:
 	inline static RenderBufferShader<T> shader;
 
 	static constexpr const char* vboTypeName = spring::TypeToCStr<VertType>();
-	static constexpr IStreamBufferConcept::Types bufferType = IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
+	static constexpr IStreamBufferConcept::Types bufferTypeDefault = IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
 };
 
 
@@ -500,10 +490,12 @@ inline void TypedRenderBuffer<T>::UploadVBO()
 	if (elemsCount <= 0)
 		return;
 
-	const size_t totalCount = vbo->GetByteSize() / sizeof(VertType);
-	if (verts.size() > totalCount) {
-		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
+	CondInit();
+
+	if (verts.size() > vertCount0) {
+		LOG_L(L_WARNING, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
 		vbo->Resize(verts.capacity());
+		vertCount0 = verts.capacity();
 	}
 
 	//update on the GPU
@@ -524,10 +516,12 @@ inline void TypedRenderBuffer<T>::UploadEBO()
 	if (elemsCount <= 0)
 		return;
 
-	const size_t totalCount = ebo->GetByteSize() / sizeof(IndcType);
-	if (indcs.size() > totalCount) {
-		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
+	CondInit();
+
+	if (indcs.size() > elemCount0) {
+		LOG_L(L_WARNING, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
 		ebo->Resize(indcs.capacity());
+		elemCount0 = indcs.capacity();
 	}
 
 	//update on the GPU
@@ -552,6 +546,7 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 	if (elemsCount <= 0)
 		return;
 
+	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
 	glDrawArrays(mode, vboStartIndex, elemsCount);
 	vao.Unbind();
@@ -571,6 +566,7 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 		return;
 
 	#define INT2PTR(x) ((const void*)static_cast<intptr_t>(x))
+	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
 	glDrawElements(mode, elemsCount, GL_UNSIGNED_INT, INT2PTR(eboStartIndex));
 	vao.Unbind();
@@ -578,6 +574,55 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 
 	if (rewind)
 		eboStartIndex += elemsCount;
+}
+
+
+template<typename T>
+inline void TypedRenderBuffer<T>::CondInit()
+{
+	if (vao.GetIdRaw() > 0)
+		return;
+
+	if (vertCount0 > 0)
+		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER        , vertCount0, std::string(vboTypeName), bufferType);
+
+	if (elemCount0 > 0)
+		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, elemCount0, std::string(vboTypeName), bufferType);
+
+	InitVAO();
+}
+
+template<typename T>
+inline void TypedRenderBuffer<T>::InitVAO() const
+{
+	assert(vbo);
+
+	vao.Bind(); //will instantiate
+
+	vbo->Bind();
+
+	if (ebo)
+		ebo->Bind();
+
+	for (const AttributeDef& ad : T::attributeDefs) {
+		glEnableVertexAttribArray(ad.index);
+		glVertexAttribDivisor(ad.index, 0);
+
+		//assume only float or float convertible values
+		glVertexAttribPointer(ad.index, ad.count, ad.type, ad.normalize, ad.stride, ad.data);
+	}
+
+	vao.Unbind();
+
+	vbo->Unbind();
+
+	if (ebo)
+		ebo->Unbind();
+
+	//restore default state
+	for (const AttributeDef& ad : T::attributeDefs) {
+		glDisableVertexAttribArray(ad.index);
+	}
 }
 
 //member template specializations
