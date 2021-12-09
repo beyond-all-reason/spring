@@ -101,14 +101,15 @@ public:
 
 	const std::string& GetFilePath() const { return fontPath; }
 
+	const TypedRenderBuffer<VA_TYPE_TC>& GetPrimaryBuffer() const { return primaryBufferTC; };
+	const TypedRenderBuffer<VA_TYPE_TC>& GetOutlineBuffer() const { return outlineBufferTC; };
+
 	static constexpr char8_t ColorCodeIndicator  = 0xFF;
 	static constexpr char8_t ColorResetIndicator = 0x08; // =: '\\b'
 	static bool threadSafety;
-
-	// typedef void (*ColorCodeCallBack)(float4);
-	typedef std::function<void(float4)> ColorCodeCallBack;
-
 private:
+	using ColorCodeCallBack = std::function<void(float4)>;
+
 	static const float4* ChooseOutlineColor(const float4& textColor);
 
 	template<int shiftXC, int shiftYC, bool outline>
@@ -123,10 +124,15 @@ private:
 	void RenderStringShadow(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb) {
 		RenderStringImpl<10, 10, true >(x, y, scaleX, scaleY, str, cccb);
 	}
-
 private:
 	float GetTextWidth_(const std::u8string& text);
 	float GetTextHeight_(const std::u8string& text, float* descender = nullptr, int* numLines = nullptr);
+private:
+	inline static spring::unsynced_set<CglFont*> loadedFonts = {};
+public:
+	static auto GetLoadedFonts() -> const decltype(loadedFonts)& {
+		return loadedFonts;
+	}
 private:
 	inline static Shader::IProgramObject* defShader = nullptr;
 

@@ -335,6 +335,9 @@ public:
 	void AddVertex(VertType&& v) {
 		verts.emplace_back(v);
 	}
+	//develop compat
+	void SafeAppend(VertType&& v) { AddVertex(std::forward<VertType&&>(v)); }
+
 	void AddVertices(std::initializer_list<VertType>&& vs) {
 		for (auto&& v : vs) {
 			verts.emplace_back(v);
@@ -455,6 +458,18 @@ public:
 	void DrawArrays(uint32_t mode, bool rewind = true);
 	void DrawElements(uint32_t mode, bool rewind = true);
 
+	//develop compat
+	void Submit(uint32_t mode) {
+		if (indcs.size() - eboStartIndex > 0)
+			DrawElements(mode);
+		else
+			DrawArrays(mode);
+	}
+
+	size_t SumElems() const { return verts.size(); }
+	size_t SumIndcs() const { return indcs.size(); }
+	size_t NumSubmits(bool indexed) const { return numSubmits[indexed]; }
+
 	static Shader::IProgramObject& GetShader() { return shader.GetShader(); }
 private:
 	void CondInit();
@@ -560,6 +575,8 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 
 	if (rewind)
 		vboStartIndex += elemsCount;
+
+	numSubmits[0] += 1;
 }
 
 template<typename T>
@@ -581,6 +598,8 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 
 	if (rewind)
 		eboStartIndex += elemsCount;
+
+	numSubmits[1] += 1;
 }
 
 

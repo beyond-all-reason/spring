@@ -63,6 +63,7 @@ protected:
 	uint32_t mapElemOffet;
 	uint32_t mapElemCount;
 protected:
+	inline static bool reportType = false;
 	inline static std::vector<GLsync*> lockList = {};
 	static constexpr uint32_t DEFAULT_NUM_BUFFERS = 3;
 };
@@ -528,6 +529,8 @@ private:
 template<typename T>
 inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(uint32_t target, uint32_t numElems, const std::string& name, Types type, bool resizeAble, bool coherent, uint32_t numBuffers)
 {
+	IStreamBufferConcept::reportType = (type == SB_AUTODETECT);
+
 	switch (type) {
 	case SB_BUFFERDATA:
 		return std::make_unique<BufferDataImpl<T>>(target, numElems, name);

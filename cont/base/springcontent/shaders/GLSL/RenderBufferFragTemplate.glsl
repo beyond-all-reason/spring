@@ -23,4 +23,5 @@ void main() {
 	outColor *= ucolor;
 	if (AlphaDiscard(outColor.a))
 		discard;
+	
 }

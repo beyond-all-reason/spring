@@ -41,7 +41,8 @@ IStreamBufferConcept::IStreamBufferConcept(uint32_t target_, uint32_t numElement
 	, mapElemOffet{ 0 }
 	, mapElemCount{ 0 }
 {
-	LOG_L(L_INFO, "[StreamBuffer::%s] Created StreamBuffer name %s type %s", __func__, name.c_str(), bufferTypeName.data());
+	if (reportType)
+		LOG_L(L_INFO, "[StreamBuffer::%s] Created StreamBuffer name %s type %s", __func__, name.c_str(), bufferTypeName.data());
 }
 
 void IStreamBufferConcept::QueueLockBuffer(GLsync& syncObj) const

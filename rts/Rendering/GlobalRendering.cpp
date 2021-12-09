@@ -166,7 +166,9 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(borderless),
 
 	CR_IGNORED(sdlWindows),
-	CR_IGNORED(glContexts)
+	CR_IGNORED(glContexts),
+
+	CR_IGNORED(glTimerQueries)
 ))
 
 
@@ -270,6 +272,8 @@ CGlobalRendering::CGlobalRendering()
 	, borderless(configHandler->GetBool("WindowBorderless"))
 	, sdlWindows{nullptr, nullptr}
 	, glContexts{nullptr, nullptr}
+
+	, glTimerQueries{0}
 {
 	verticalSync->WrapNotifyOnChange();
 	configHandler->NotifyOnChange(this, {"Fullscreen", "WindowBorderless"});
@@ -279,6 +283,11 @@ CGlobalRendering::~CGlobalRendering()
 {
 	configHandler->RemoveObserver(this);
 	verticalSync->WrapRemoveObserver();
+
+	// protect against aborted startup
+	if (glContexts[0] != nullptr) {
+		glDeleteQueries(glTimerQueries.size(), glTimerQueries.data());
+	}
 
 	DestroyWindowAndContext(sdlWindows[0], glContexts[0]);
 	DestroyWindowAndContext(sdlWindows[1], glContexts[1]);
@@ -573,6 +582,7 @@ void CGlobalRendering::PostInit() {
 	ToggleGLDebugOutput(0, 0, 0);
 
 	UniformConstants::GetInstance().Init();
+	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 }
 
 void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
@@ -594,6 +604,42 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 	IStreamBufferConcept::PutBufferLocks();
 	SDL_GL_SwapWindow(sdlWindows[0]);
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());
+}
+
+void CGlobalRendering::SetGLTimeStamp(uint32_t queryIdx) const
+{
+	if (!GLEW_ARB_timer_query)
+		return;
+
+	glQueryCounter(glTimerQueries[(NUM_OPENGL_TIMER_QUERIES * (drawFrame & 1)) + queryIdx], GL_TIMESTAMP);
+}
+
+uint64_t CGlobalRendering::CalcGLDeltaTime(uint32_t queryIdx0, uint32_t queryIdx1) const
+{
+	if (!GLEW_ARB_timer_query)
+		return 0;
+
+	const uint32_t queryBase = NUM_OPENGL_TIMER_QUERIES * (1 - (drawFrame & 1));
+
+	assert(queryIdx0 < NUM_OPENGL_TIMER_QUERIES);
+	assert(queryIdx1 < NUM_OPENGL_TIMER_QUERIES);
+	assert(queryIdx0 < queryIdx1);
+
+	GLuint64 t0 = 0;
+	GLuint64 t1 = 0;
+
+	GLint res = 0;
+
+	// results from the previous frame should already (or soon) be available
+	while (!res) {
+		glGetQueryObjectiv(glTimerQueries[queryBase + queryIdx1], GL_QUERY_RESULT_AVAILABLE, &res);
+	}
+
+	glGetQueryObjectui64v(glTimerQueries[queryBase + queryIdx0], GL_QUERY_RESULT, &t0);
+	glGetQueryObjectui64v(glTimerQueries[queryBase + queryIdx1], GL_QUERY_RESULT, &t1);
+
+	// nanoseconds between timestamps
+	return (t1 - t0);
 }
 
 

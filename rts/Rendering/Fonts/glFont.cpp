@@ -18,7 +18,6 @@
 
 #undef GetCharWidth // winapi.h
 
-//broken somehow
 #define INDEXED_FONTS_RENDERING
 
 // should be enough to hold all data for a given frame
@@ -49,8 +48,6 @@ bool CglFont::threadSafety = false;
 
 CglFont* font = nullptr;
 CglFont* smallFont = nullptr;
-
-static spring::unsynced_set<CglFont*> loadedFonts;
 
 static constexpr float4        white(1.00f, 1.00f, 1.00f, 0.95f);
 static constexpr float4  darkOutline(0.05f, 0.05f, 0.05f, 0.95f);

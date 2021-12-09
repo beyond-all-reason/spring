@@ -633,8 +633,15 @@ void CSelectedUnitsHandler::Draw()
 
 		auto& shader = rb.GetShader();
 		shader.Enable();
-		shader.SetUniformMatrix4x4("transformMatrix", false, camera->GetViewProjectionMatrix().m);
+		//shader.SetUniformMatrix4x4("transformMatrix", false, camera->GetViewProjectionMatrix().m);
+		//glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadMatrixf(camera->GetViewMatrix());
+		//glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(camera->GetProjectionMatrix());
+
 		rb.DrawElements(GL_LINES);
+
+		///*glMatrixMode(GL_PROJECTION);*/ glPopMatrix();
+		//glMatrixMode(GL_MODELVIEW);      glPopMatrix();
+
 		shader.Disable();
 	}
 
