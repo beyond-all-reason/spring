@@ -280,7 +280,10 @@ public:
 		: vertCount0 { vertCount0_ }
 		, elemCount0 { elemCount0_ }
 		, bufferType { bufferType_ }
-	{}
+	{
+		verts.reserve(vertCount0);
+		indcs.reserve(elemCount0);
+	}
 
 	void SwapBuffer() override {
 		if (vbo)
@@ -308,11 +311,15 @@ public:
 	TypedRenderBuffer<T>& operator = (TypedRenderBuffer<T>&& rhs) {
 		vertCount0 = rhs.vertCount0;
 		elemCount0 = rhs.elemCount0;
+		bufferType = rhs.bufferType;
 
 		std::swap(vbo, rhs.vbo);
 		std::swap(ebo, rhs.ebo);
 
 		std::swap(vao, rhs.vao);
+
+		std::swap(verts, rhs.verts);
+		std::swap(indcs, rhs.indcs);
 
 		vboStartIndex = rhs.vboStartIndex;
 		eboStartIndex = rhs.eboStartIndex;
@@ -548,7 +555,7 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 
 	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
-	glDrawArrays(mode, vboStartIndex, elemsCount);
+	glDrawArrays(mode, vbo->BufferElemOffset() + vboStartIndex, elemsCount);
 	vao.Unbind();
 
 	if (rewind)
@@ -565,12 +572,12 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 	if (elemsCount <= 0)
 		return;
 
-	#define INT2PTR(x) ((const void*)static_cast<intptr_t>(x))
+	#define BUFFER_OFFSET(T, n) (reinterpret_cast<void*>(sizeof(T) * (n)))
 	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
-	glDrawElements(mode, elemsCount, GL_UNSIGNED_INT, INT2PTR(eboStartIndex));
+	glDrawElements(mode, elemsCount, GL_UNSIGNED_INT, BUFFER_OFFSET(uint32_t, ebo->BufferElemOffset() + eboStartIndex));
 	vao.Unbind();
-	#undef INT2PTR
+	#undef BUFFER_OFFSET
 
 	if (rewind)
 		eboStartIndex += elemsCount;

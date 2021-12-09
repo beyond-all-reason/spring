@@ -93,6 +93,7 @@ public:
 	virtual void SwapBuffer() {};
 
 	virtual bool HasClientPtr() const { return false; };
+	virtual uint32_t BufferElemOffset() const { return 0; };
 
 	virtual void Init() = 0;
 	virtual void Kill(bool deleteBuffer) = 0;
@@ -354,6 +355,10 @@ public:
 		this->Unbind();
 	}
 
+	uint32_t BufferElemOffset() const override {
+		return this->allocIdx * this->numElements;
+	}
+
 	void SwapBuffer() override {
 		this->QueueLockBuffer(fences[this->allocIdx]);
 		this->allocIdx = (this->allocIdx + 1) % numBuffers;
@@ -391,6 +396,7 @@ public:
 			numBuffers * this->byteSize,
 			GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | mix(GL_MAP_FLUSH_EXPLICIT_BIT, GL_MAP_COHERENT_BIT, coherent)
 		));
+		assert(ptrBase);
 		this->Unbind();
 
 		fences.resize(numBuffers);
@@ -430,6 +436,10 @@ public:
 			);
 			this->Unbind(); //needed for glFlushMappedBufferRange()
 		}
+	}
+
+	uint32_t BufferElemOffset() const override {
+		return this->allocIdx * this->numElements;
 	}
 
 	void SwapBuffer() override {
@@ -496,6 +506,10 @@ public:
 	}
 
 	void Unmap() override {}
+
+	uint32_t BufferElemOffset() const override {
+		return this->allocIdx * this->numElements;
+	}
 
 	void SwapBuffer() override {
 		this->QueueLockBuffer(fences[this->allocIdx]);
