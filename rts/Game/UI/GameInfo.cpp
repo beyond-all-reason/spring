@@ -127,6 +127,7 @@ CGameInfo::CGameInfo()
 	labels.push_back("PFS Name:");
 	switch (pathManager->GetPathFinderType()) {
 		case NOPFS_TYPE: { values.push_back("NOPFS"  ); } break;
+		case TKPFS_TYPE: { values.push_back("TKPFS"); } break;
 		case HAPFS_TYPE: { values.push_back("HAPFS"  ); } break;
 		case QTPFS_TYPE: { values.push_back("QTPFS"  ); } break;
 		default        : { values.push_back("UNKNOWN"); } break; // not reachable
