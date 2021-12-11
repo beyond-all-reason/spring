@@ -106,7 +106,9 @@ static void DrawBufferStats(const float2 pos)
 		const auto& rdbN    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_N   >();
 		const auto& rdbT    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_T   >();
 		const auto& rdbTN   = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TN  >();
+		*/
 		const auto& rdbTC   = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC  >();
+		/*
 		const auto& rdbTNT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TNT >();
 		const auto& rdb2D0  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2d0 >();
 		const auto& rdb2DC  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dC >();
@@ -120,6 +122,7 @@ static void DrawBufferStats(const float2 pos)
 		font->glFormat(pos.x, pos.y - 0.005f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tFONTS=" FMT, lfMetrics[0], lfMetrics[1], lfMetrics[2], lfMetrics[3]);
 		font->glFormat(pos.x, pos.y - 0.025f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\t0=" FMT, rdb0.SumElems(), rdb0.SumIndcs(), rdb0.NumSubmits(false), rdb0.NumSubmits(true));
 		font->glFormat(pos.x, pos.y - 0.045f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tC=" FMT, rdbC.SumElems(), rdbC.SumIndcs(), rdbC.NumSubmits(false), rdbC.NumSubmits(true));
+		font->glFormat(pos.x, pos.y - 0.065f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tTC=" FMT, rdbTC.SumElems(), rdbTC.SumIndcs(), rdbTC.NumSubmits(false), rdbTC.NumSubmits(true));
 
 		#undef FMT
 	}
