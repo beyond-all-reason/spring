@@ -727,21 +727,19 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// empty if !drawSorted
 		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
-		for_mt_chunk(0, sortedProjectiles[1].size(), [this](int i) {
-			CProjectile* p = sortedProjectiles[1][i];
+		for(auto p : sortedProjectiles[1]) {
 			p->Draw();
-		});
+		}
 
-		for_mt_chunk(0, sortedProjectiles[0].size(), [this](int i) {
-			CProjectile* p = sortedProjectiles[0][i];
+		for (auto p : sortedProjectiles[0]) {
 			p->Draw();
-		});
+		}
 	}
 
 	glEnable(GL_BLEND);
 	glDisable(GL_FOG);
 
-	auto& rb = CExpGenSpawnable::GetJointRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetRenderBuffer();
 
 	if (rb.ShouldSubmit()) {
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -798,7 +796,7 @@ void CProjectileDrawer::DrawShadowPass()
 		DrawProjectilesSetShadow(renderProjectiles);
 	}
 
-	auto& rb = CExpGenSpawnable::GetMainThreadRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetRenderBuffer();
 	if (rb.ShouldSubmit()) {
 		glEnable(GL_TEXTURE_2D);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -894,7 +892,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 	bool depthTest = true;
 	bool depthMask = false;
 
-	auto& rb = CExpGenSpawnable::GetMainThreadRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetRenderBuffer();
 
 	for (CGroundFlash* gf: gfc) {
 		const bool inLos = gf->alwaysVisible || gu->spectatingFullView || losHandler->InAirLos(gf, gu->myAllyTeam);

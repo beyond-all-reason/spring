@@ -85,7 +85,7 @@ void CNanoProjectile::Draw()
 	}
 
 	const auto* gfxt = projectileDrawer->gfxtex;
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos + bounds[0], gfxt->xstart, gfxt->ystart, color },
 		{ drawPos + bounds[1], gfxt->xend  , gfxt->ystart, color },
 		{ drawPos + bounds[2], gfxt->xend  , gfxt->yend  , color },

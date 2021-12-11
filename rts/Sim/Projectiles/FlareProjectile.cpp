@@ -125,7 +125,7 @@ void CFlareProjectile::Draw()
 		const float3 interPos = subProjPos[a] + subProjVel[a] * globalRendering->timeOffset;
 
 		#define fpt projectileDrawer->flareprojectiletex
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos - camera->GetRight() * rad - camera->GetUp() * rad, fpt->xstart, fpt->ystart, col },
 			{ interPos + camera->GetRight() * rad - camera->GetUp() * rad, fpt->xend,   fpt->ystart, col },
 			{ interPos + camera->GetRight() * rad + camera->GetUp() * rad, fpt->xend,   fpt->yend,   col },

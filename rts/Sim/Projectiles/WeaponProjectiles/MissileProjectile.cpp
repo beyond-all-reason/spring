@@ -338,7 +338,7 @@ void CMissileProjectile::Draw()
 	const SColor lightYellow(255, 210, 180, 1);
 	const float fsize = radius * 0.4f;
 
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, lightYellow },
 		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, lightYellow },
 		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   lightYellow },

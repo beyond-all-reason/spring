@@ -95,7 +95,7 @@ void CWakeProjectile::Draw()
 	const float3 dir2 = dir1.cross(UpVector);
 
 	#define wt projectileDrawer->waketex
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos + dir1 + dir2, wt->xstart, wt->ystart, col },
 		{ drawPos + dir1 - dir2, wt->xstart, wt->yend,   col },
 		{ drawPos - dir1 - dir2, wt->xend,   wt->yend,   col },

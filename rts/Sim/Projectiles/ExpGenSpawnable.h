@@ -26,16 +26,13 @@ public:
 
 	//Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
-private:
-	static std::array<std::unique_ptr<TypedRenderBuffer<VA_TYPE_TC>>, ThreadPool::MAX_THREADS> rbs; //per thread
 protected:
-	TypedRenderBuffer<VA_TYPE_TC>& GetThreadRenderBuffer();
-
 	CExpGenSpawnable();
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
+
+	static TypedRenderBuffer<VA_TYPE_TC>& rb;
 public:
-	static TypedRenderBuffer<VA_TYPE_TC>& GetMainThreadRenderBuffer();
-	static TypedRenderBuffer<VA_TYPE_TC>& GetJointRenderBuffer();
+	static TypedRenderBuffer<VA_TYPE_TC>& GetRenderBuffer() { return rb; };
 };
 
 #endif //EXP_GEN_SPAWNABLE_H

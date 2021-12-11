@@ -125,7 +125,7 @@ void CSmokeProjectile2::Draw()
 	const float3 pos2 ((camera->GetRight() + camera->GetUp()) * interSize);
 
 	#define st projectileDrawer->GetSmokeTexture(textureNum)
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ interPos - pos2, st->xstart, st->ystart, col },
 		{ interPos + pos1, st->xend,   st->ystart, col },
 		{ interPos + pos2, st->xend,   st->yend,   col },

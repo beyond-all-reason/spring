@@ -132,7 +132,7 @@ void CSimpleParticleSystem::Draw()
 				for (auto& b : bounds)
 					b = b.rotate(p->rotVal, *fwdDir);
 			}
-			GetThreadRenderBuffer().AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ interPos + bounds[0], texture->xstart, texture->ystart, color },
 				{ interPos + bounds[1], texture->xend,   texture->ystart, color },
 				{ interPos + bounds[2], texture->xend,   texture->yend,   color },
@@ -167,7 +167,7 @@ void CSimpleParticleSystem::Draw()
 			for (auto& b : bounds)
 				b = b.rotate(p->rotVal, camera->GetForward());
 		}
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos + bounds[0], texture->xstart, texture->ystart, color },
 			{ interPos + bounds[1], texture->xend,   texture->ystart, color },
 			{ interPos + bounds[2], texture->xend,   texture->yend,   color },

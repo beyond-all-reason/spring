@@ -348,7 +348,7 @@ void ShieldSegmentProjectile::Draw()
 		for (int x = 0; x < (NUM_VERTICES_X - 1); ++x) {
 			const int idxTL = (y    ) * NUM_VERTICES_X + x, idxTR = (y    ) * NUM_VERTICES_X + x + 1;
 			const int idxBL = (y + 1) * NUM_VERTICES_X + x, idxBR = (y + 1) * NUM_VERTICES_X + x + 1;
-			GetThreadRenderBuffer().AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ shieldPos + vertices[idxTL] * size, texCoors[idxTL].x, texCoors[idxTL].y, color },
 				{ shieldPos + vertices[idxTR] * size, texCoors[idxTR].x, texCoors[idxTR].y, color },
 				{ shieldPos + vertices[idxBR] * size, texCoors[idxBR].x, texCoors[idxBR].y, color },

@@ -70,7 +70,7 @@ void CMuzzleFlame::Draw()
 		col[3] = (unsigned char) (255 * alpha * fade);
 
 		#define st projectileDrawer->GetSmokeTexture(tex)
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, st->xstart, st->ystart, col },
 			{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, st->xend,   st->ystart, col },
 			{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, st->xend,   st->yend,   col },
@@ -86,7 +86,7 @@ void CMuzzleFlame::Draw()
 			col[3] = (unsigned char) (1);
 
 			#define mft projectileDrawer->muzzleflametex
-			GetThreadRenderBuffer().AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, mft->xstart, mft->ystart, col },
 				{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, mft->xend,   mft->ystart, col },
 				{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, mft->xend,   mft->yend,   col },

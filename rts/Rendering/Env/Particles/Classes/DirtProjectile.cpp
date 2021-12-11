@@ -96,7 +96,7 @@ void CDirtProjectile::Draw()
 	const float interSize = size + globalRendering->timeOffset * sizeExpansion;
 	const float texx = texture->xstart + (texture->xend - texture->xstart) * ((1.0f - partAbove) * 0.5f);
 
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos - camera->GetRight() * interSize - camera->GetUp() * interSize * partAbove, texx,          texture->ystart, col },
 		{ drawPos + camera->GetRight() * interSize - camera->GetUp() * interSize * partAbove, texx,          texture->yend,   col },
 		{ drawPos + camera->GetRight() * interSize + camera->GetUp() * interSize,             texture->xend, texture->yend,   col },

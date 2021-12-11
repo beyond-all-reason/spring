@@ -78,7 +78,7 @@ void CLightningProjectile::Draw()
 		tempPos  = (startPos * (1.0f - f)) + (targetPos * f);
 
 		#define WDV (&weaponDef->visuals)
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ tempPosO + (dir1 * (displacements[d    ] + WDV->thickness)), WDV->texture1->xstart, WDV->texture1->ystart, col },
 			{ tempPosO + (dir1 * (displacements[d    ] - WDV->thickness)), WDV->texture1->xstart, WDV->texture1->yend,   col },
 			{ tempPos  + (dir1 * (displacements[d + 1] - WDV->thickness)), WDV->texture1->xend,   WDV->texture1->yend,   col },
@@ -94,7 +94,7 @@ void CLightningProjectile::Draw()
 		tempPos = startPos * (1.0f - f) + targetPos * f;
 
 		#define WDV (&weaponDef->visuals)
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ tempPosO + dir1 * (displacements2[d    ] + WDV->thickness), WDV->texture1->xstart, WDV->texture1->ystart, col },
 			{ tempPosO + dir1 * (displacements2[d    ] - WDV->thickness), WDV->texture1->xstart, WDV->texture1->yend,   col },
 			{ tempPos  + dir1 * (displacements2[d + 1] - WDV->thickness), WDV->texture1->xend,   WDV->texture1->yend,   col },

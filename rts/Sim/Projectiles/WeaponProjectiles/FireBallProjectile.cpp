@@ -65,7 +65,7 @@ void CFireBallProjectile::Draw()
 		col[2] = (numSparks - i) *  4;
 
 		#define ept projectileDrawer->explotex
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ sparks[i].pos - camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xstart, ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xend  , ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xend  , ept->yend  , col },
@@ -81,7 +81,7 @@ void CFireBallProjectile::Draw()
 		col[1] = (maxCol - i) * 15;
 		col[2] = (maxCol - i) * 10;
 		#define dgt projectileDrawer->dguntex
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size, dgt->xstart, dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend ,  dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size + camera->GetUp() * size, dgt->xend ,  dgt->yend  , col },

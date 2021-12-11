@@ -136,21 +136,21 @@ void CSmokeTrailProjectile::Draw()
 
 		const float midtexx = mix(texture->xstart, texture->xend, 0.5f);
 
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ pos1 - (odir1 * size),  texture->xstart, texture->ystart, col },
 			{ pos1 + (odir1 * size),  texture->xstart, texture->yend,   col },
 			{ midpos + (odir3 * size3), midtexx,         texture->yend,   col3 },
 			{ midpos - (odir3 * size3), midtexx,         texture->ystart, col3 }
 		);
 
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ midpos - (odir3 * size3), midtexx,         texture->ystart, col3 },
 			{ midpos + (odir3 * size3), midtexx,         texture->yend,   col3 },
 			{ pos2 + (odir2 * size2), texture->xend,   texture->yend,   col2 },
 			{ pos2 - (odir2 * size2), texture->xend,   texture->ystart, col2 }
 		);
 	} else {
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ pos1 - (odir1 * size),    texture->xstart, texture->ystart, col },
 			{ pos1 + (odir1 * size),    texture->xstart, texture->yend,   col },
 			{ pos2 + (odir2 * size2),   texture->xend,   texture->yend,   col2 },

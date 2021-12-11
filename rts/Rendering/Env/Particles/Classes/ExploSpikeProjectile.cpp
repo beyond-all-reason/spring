@@ -94,7 +94,7 @@ void CExploSpikeProjectile::Draw()
 	const float3 w = dir2 * width;
 
 	#define let projectileDrawer->laserendtex
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos + l + w, let->xend,   let->yend,   col },
 		{ drawPos + l - w, let->xend,   let->ystart, col },
 		{ drawPos - l - w, let->xstart, let->ystart, col },

@@ -90,7 +90,7 @@ void CHeatCloudProjectile::Draw()
 	col[3] = 1;//(dheat/maxheat)*255.0f;
 
 	const float drawsize = (size + sizeGrowth * globalRendering->timeOffset) * (1.0f - sizemod);
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xstart, texture->ystart, col },
 		{ drawPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xend,   texture->ystart, col },
 		{ drawPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xend,   texture->yend,   col },

@@ -222,7 +222,7 @@ void CStandardGroundFlash::Draw()
 		const float3 p4 = pos + (-side1 + side2) * iSize;
 
 		color.a = (unsigned char)(iAlpha * 255);
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ p1, projectileDrawer->groundringtex->xstart, projectileDrawer->groundringtex->ystart, color },
 			{ p2, projectileDrawer->groundringtex->xend,   projectileDrawer->groundringtex->ystart, color },
 			{ p3, projectileDrawer->groundringtex->xend,   projectileDrawer->groundringtex->yend,   color },
@@ -243,7 +243,7 @@ void CStandardGroundFlash::Draw()
 		const float3 p2 = pos + ( side1 - side2) * size;
 		const float3 p3 = pos + ( side1 + side2) * size;
 		const float3 p4 = pos + (-side1 + side2) * size;
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ p1, projectileDrawer->groundflashtex->xstart, projectileDrawer->groundflashtex->yend,   color },
 			{ p2, projectileDrawer->groundflashtex->xend,   projectileDrawer->groundflashtex->yend,   color },
 			{ p3, projectileDrawer->groundflashtex->xend,   projectileDrawer->groundflashtex->ystart, color },
@@ -304,7 +304,7 @@ void CSimpleGroundFlash::Draw()
 	const float3 p2 = pos + ( side1 - side2) * size;
 	const float3 p3 = pos + ( side1 + side2) * size;
 	const float3 p4 = pos + (-side1 + side2) * size;
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ p1, texture->xstart, texture->ystart, color },
 		{ p2, texture->xend,   texture->ystart, color },
 		{ p3, texture->xend,   texture->yend,   color },
@@ -378,7 +378,7 @@ void CSeismicGroundFlash::Draw()
 	const float3 p3 = pos + ( side1 + side2) * size;
 	const float3 p4 = pos + (-side1 + side2) * size;
 
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ p1, texture->xstart, texture->ystart, color },
 		{ p2, texture->xend,   texture->ystart, color },
 		{ p3, texture->xend,   texture->yend,   color },

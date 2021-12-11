@@ -69,7 +69,7 @@ void CGenericParticleProjectile::Draw()
 
 	unsigned char color[4];
 	colorMap->GetColor(color, life);
-	GetThreadRenderBuffer().AddQuadTriangles(
+	rb.AddQuadTriangles(
 		{ drawPos + (-dir1 - dir2) * size, texture->xstart, texture->ystart, color },
 		{ drawPos + (-dir1 + dir2) * size, texture->xend,   texture->ystart, color },
 		{ drawPos + ( dir1 + dir2) * size, texture->xend,   texture->yend,   color },

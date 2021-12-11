@@ -110,7 +110,7 @@ void CExplosiveProjectile::Draw()
 		col[2] = stageDecay * col[2];
 		col[3] = stageDecay * col[3];
 
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ stagePos - xdirCam - ydirCam, tex->xstart, tex->ystart, col },
 			{ stagePos + xdirCam - ydirCam, tex->xend,   tex->ystart, col },
 			{ stagePos + xdirCam + ydirCam, tex->xend,   tex->yend,   col },

@@ -101,7 +101,7 @@ void CSpherePartProjectile::Draw()
 			col1[2] = (unsigned char)(color.z * 255.0f * alpha);
 			col1[3] = ((unsigned char)(40 * alpha)) + 1;
 
-			GetThreadRenderBuffer().AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ centerPos + vectors[y*5 + x    ]     * interSize, texx, texy, col0 },
 				{ centerPos + vectors[y*5 + x + 1]     * interSize, texx, texy, col0 },
 				{ centerPos+vectors[(y + 1)*5 + x + 1] * interSize, texx, texy, col1 },

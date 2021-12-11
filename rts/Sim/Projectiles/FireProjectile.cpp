@@ -164,7 +164,7 @@ void CFireProjectile::Draw()
 		col[1] = (uint8_t) ((1 - age) * 255);
 		col[2] = (uint8_t) ((1 - age) * 255);
 
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
 			{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
 			{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
@@ -192,7 +192,7 @@ void CFireProjectile::Draw()
 			col[2] = (uint8_t) ((1 - age * 1.3f) * 255);
 			col[3] = 1;
 
-			GetThreadRenderBuffer().AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
 				{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
 				{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
@@ -211,7 +211,7 @@ void CFireProjectile::Draw()
 		col2[2] = (uint8_t) (c * 0.6f);
 		col2[3] = c;
 
-		GetThreadRenderBuffer().AddQuadTriangles(
+		rb.AddQuadTriangles(
 			{ interPos - dir1 - dir2, at->xstart, at->ystart, col2 },
 			{ interPos + dir1 - dir2, at->xend,   at->ystart, col2 },
 			{ interPos + dir1 + dir2, at->xend,   at->yend,   col2 },
