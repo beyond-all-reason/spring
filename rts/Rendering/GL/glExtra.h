@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GLEXTRA_H
-#define GLEXTRA_H
+#pragma once
 
 #include "myGL.h"
+#include "RenderBuffers.h"
 
 /*
  *  Draw a circle / rectangle on top of the top surface (ground/water).
@@ -33,4 +33,12 @@ extern void glWireCube(unsigned int* listID);
 extern void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize);
 extern void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCols);
 
-#endif
+template<typename TQuad, typename TColor, typename TRenderBuffer> void gleDrawQuadC(const TQuad& quad, const TColor& color, TRenderBuffer& rb) {
+	rb.SafeAppend({ {quad.x1, quad.y1, 0.0f}, color }); // tl
+	rb.SafeAppend({ {quad.x1, quad.y2, 0.0f}, color }); // bl
+	rb.SafeAppend({ {quad.x2, quad.y2, 0.0f}, color }); // br
+
+	rb.SafeAppend({ {quad.x2, quad.y2, 0.0f}, color }); // br
+	rb.SafeAppend({ {quad.x2, quad.y1, 0.0f}, color }); // tr
+	rb.SafeAppend({ {quad.x1, quad.y1, 0.0f}, color }); // tl
+}
