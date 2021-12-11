@@ -5,7 +5,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
@@ -54,7 +54,7 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 	deleteMe  = false;
 }
 
-void CBitmapMuzzleFlame::Draw(CVertexArray* va)
+void CBitmapMuzzleFlame::Draw()
 {
 	unsigned char col[4];
 	colorMap->GetColor(col, life);
@@ -88,22 +88,27 @@ void CBitmapMuzzleFlame::Draw(CVertexArray* va)
 	}
 
 	if (IsValidTexture(sideTexture)) {
-		va->AddVertexTC(pos + bounds[0], sideTexture->xstart, sideTexture->ystart, col);
-		va->AddVertexTC(pos + bounds[1], sideTexture->xend, sideTexture->ystart, col);
-		va->AddVertexTC(pos + bounds[2], sideTexture->xend, sideTexture->yend, col);
-		va->AddVertexTC(pos + bounds[3], sideTexture->xstart, sideTexture->yend, col);
-
-		va->AddVertexTC(pos + bounds[4], sideTexture->xstart, sideTexture->ystart, col);
-		va->AddVertexTC(pos + bounds[5], sideTexture->xend, sideTexture->ystart, col);
-		va->AddVertexTC(pos + bounds[6], sideTexture->xend, sideTexture->yend, col);
-		va->AddVertexTC(pos + bounds[7], sideTexture->xstart, sideTexture->yend, col);
+		GetThreadRenderBuffer().AddQuadTriangles(
+			{ pos + bounds[0], sideTexture->xstart, sideTexture->ystart, col },
+			{ pos + bounds[1], sideTexture->xend  , sideTexture->ystart, col },
+			{ pos + bounds[2], sideTexture->xend  , sideTexture->yend  , col },
+			{ pos + bounds[3], sideTexture->xstart, sideTexture->yend  , col }
+		);
+		GetThreadRenderBuffer().AddQuadTriangles(
+			{ pos + bounds[4], sideTexture->xstart, sideTexture->ystart, col },
+			{ pos + bounds[5], sideTexture->xend  , sideTexture->ystart, col },
+			{ pos + bounds[6], sideTexture->xend  , sideTexture->yend  , col },
+			{ pos + bounds[7], sideTexture->xstart, sideTexture->yend  , col }
+		);
 	}
 
 	if (IsValidTexture(frontTexture)) {
-		va->AddVertexTC(fpos + bounds[8], frontTexture->xstart, frontTexture->ystart, col);
-		va->AddVertexTC(fpos + bounds[9], frontTexture->xend, frontTexture->ystart, col);
-		va->AddVertexTC(fpos + bounds[10], frontTexture->xend, frontTexture->yend, col);
-		va->AddVertexTC(fpos + bounds[11], frontTexture->xstart, frontTexture->yend, col);
+		GetThreadRenderBuffer().AddQuadTriangles(
+			{ fpos + bounds[8 ], frontTexture->xstart, frontTexture->ystart, col },
+			{ fpos + bounds[9 ], frontTexture->xend  , frontTexture->ystart, col },
+			{ fpos + bounds[10], frontTexture->xend  , frontTexture->yend , col },
+			{ fpos + bounds[11], frontTexture->xstart, frontTexture->yend , col }
+		);
 	}
 }
 

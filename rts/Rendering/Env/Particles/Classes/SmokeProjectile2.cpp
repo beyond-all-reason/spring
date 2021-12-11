@@ -8,7 +8,7 @@
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
@@ -102,7 +102,7 @@ void CSmokeProjectile2::Update()
 	deleteMe |= (age >= 1.0f);
 }
 
-void CSmokeProjectile2::Draw(CVertexArray* va)
+void CSmokeProjectile2::Draw()
 {
 	const float interAge = std::min(1.0f, age + ageSpeed * globalRendering->timeOffset);
 	unsigned char col[4];
@@ -125,10 +125,12 @@ void CSmokeProjectile2::Draw(CVertexArray* va)
 	const float3 pos2 ((camera->GetRight() + camera->GetUp()) * interSize);
 
 	#define st projectileDrawer->GetSmokeTexture(textureNum)
-	va->AddVertexTC(interPos - pos2, st->xstart, st->ystart, col);
-	va->AddVertexTC(interPos + pos1, st->xend,   st->ystart, col);
-	va->AddVertexTC(interPos + pos2, st->xend,   st->yend,   col);
-	va->AddVertexTC(interPos - pos1, st->xstart, st->yend,   col);
+	GetThreadRenderBuffer().AddQuadTriangles(
+		{ interPos - pos2, st->xstart, st->ystart, col },
+		{ interPos + pos1, st->xend,   st->ystart, col },
+		{ interPos + pos2, st->xend,   st->yend,   col },
+		{ interPos - pos1, st->xstart, st->yend,   col }
+	);
 	#undef st
 }
 

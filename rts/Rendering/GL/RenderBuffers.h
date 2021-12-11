@@ -288,13 +288,7 @@ public:
 		indcs.reserve(elemCount0);
 	}
 
-	void SwapBuffer() override {
-		if (vbo)
-			vbo->SwapBuffer();
-		if (ebo)
-			ebo->SwapBuffer();
-
-		// clear
+	void Clear() {
 		verts.clear();
 		indcs.clear();
 
@@ -305,6 +299,15 @@ public:
 		eboUploadIndex = 0;
 
 		numSubmits = { 0, 0 };
+	}
+
+	void SwapBuffer() override {
+		if (vbo)
+			vbo->SwapBuffer();
+		if (ebo)
+			ebo->SwapBuffer();
+
+		Clear();
 	}
 
 	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
@@ -461,16 +464,30 @@ public:
 	void DrawArrays(uint32_t mode, bool rewind = true);
 	void DrawElements(uint32_t mode, bool rewind = true);
 
+	bool ShouldSubmit(bool indexed) const {
+		if (indexed)
+			return ((indcs.size() - eboUploadIndex) > 0 || (indcs.size() - eboStartIndex) > 0);
+		else
+			return ((verts.size() - vboUploadIndex) > 0 || (verts.size() - vboStartIndex) > 0);
+	}
+	bool ShouldSubmit() const {
+		return ShouldSubmit(false) || ShouldSubmit(true);
+	}
+
 	//develop compat
 	void Submit(uint32_t mode) {
-		if (indcs.size() - eboStartIndex > 0)
-			DrawElements(mode);
-		else
-			DrawArrays(mode);
+		DrawElements(mode);
+		DrawArrays(mode);
 	}
 
 	size_t SumElems() const { return verts.size(); }
 	size_t SumIndcs() const { return indcs.size(); }
+
+	const std::vector<VertType>& GetElems() const { return verts; }
+	      std::vector<VertType>& GetElems()       { return verts; }
+	const std::vector<IndcType>& GetIndcs() const { return indcs; }
+	      std::vector<IndcType>& GetIndcs()       { return indcs; }
+
 	size_t NumSubmits(bool indexed) const { return numSubmits[indexed]; }
 
 	//check everything is uploaded and submitted
@@ -613,6 +630,8 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 		eboStartIndex += indcsCount;
 		vboStartIndex += vertsCount;
 	}
+
+	vboStartIndex = verts.size();
 
 	numSubmits[1] += 1;
 }

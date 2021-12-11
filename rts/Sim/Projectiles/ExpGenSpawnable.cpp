@@ -1,4 +1,6 @@
 #include "ExpGenSpawnable.h"
+#include "ExpGenSpawnable.h"
+#include "ExpGenSpawnable.h"
 
 #include "ExpGenSpawnableMemberInfo.h"
 #include "ExpGenSpawner.h"
@@ -15,16 +17,52 @@
 #include "Rendering/Env/Particles/Classes/SmokeProjectile2.h"
 #include "Rendering/Env/Particles/Classes/SpherePartProjectile.h"
 #include "Rendering/Env/Particles/Classes/TracerProjectile.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "System/Sync/HsiehHash.h"
 
 
 CR_BIND_DERIVED_INTERFACE_POOL(CExpGenSpawnable, CWorldObject, projMemPool.allocMem, projMemPool.freeMem)
 CR_REG_METADATA(CExpGenSpawnable, )
 
+std::array<std::unique_ptr<TypedRenderBuffer<VA_TYPE_TC>>, ThreadPool::MAX_THREADS> CExpGenSpawnable::rbs = { nullptr }; //per thread
+
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
  : CWorldObject(pos, spd)
 {
 	assert(projMemPool.alloced(this));
+}
+
+TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::GetThreadRenderBuffer()
+{
+	assert(ThreadPool::GetThreadNum() < ThreadPool::MAX_THREADS);
+	if (rbs[ThreadPool::GetThreadNum()] == nullptr)
+		rbs[ThreadPool::GetThreadNum()] = std::make_unique<TypedRenderBuffer<VA_TYPE_TC>>(1 << 15, 1 << 15, IStreamBufferConcept::SB_BUFFERSUBDATA);
+
+	return *rbs[ThreadPool::GetThreadNum()].get();
+}
+
+TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::GetMainThreadRenderBuffer()
+{
+	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
+}
+
+TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::GetJointRenderBuffer()
+{
+	static auto targetRB = TypedRenderBuffer<VA_TYPE_TC>(1 << 18, 1 << 18);
+	targetRB.Clear();
+	for (auto& rb : rbs) {
+		if (rb == nullptr)
+			continue;
+
+		const uint32_t bias = static_cast<uint32_t>(targetRB.GetElems().size());
+
+		std::for_each(rb->GetIndcs().begin(), rb->GetIndcs().end(), [bias](uint32_t& elem) { elem += bias; }); //gonna salvage anyway, so add bias in place
+		targetRB.GetElems().insert(targetRB.GetElems().end(), rb->GetElems().begin(), rb->GetElems().end());
+		targetRB.GetIndcs().insert(targetRB.GetIndcs().end(), rb->GetIndcs().begin(), rb->GetIndcs().end());
+		rb->Clear();
+	}
+
+	return targetRB;
 }
 
 CExpGenSpawnable::CExpGenSpawnable()
@@ -37,8 +75,6 @@ CExpGenSpawnable::~CExpGenSpawnable()
 {
 	assert(projMemPool.mapped(this));
 }
-
-
 
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
@@ -56,6 +92,7 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 	return false;
 }
+
 
 #define CHECK_ALL_SPAWNABLES() \
 	CHECK_SPAWNABLE(CExpGenSpawner)         \

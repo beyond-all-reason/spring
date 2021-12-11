@@ -1,10 +1,13 @@
-#version 130
+#version 150 compatibility
 
 uniform sampler2D atlasTex;
 uniform sampler2D depthTex;
 
-in vec4 vertColor;
-in vec4 vsPos;
+in Data{
+	vec4 vsPos;
+	vec4 vCol;
+	vec2 vUV;
+};
 
 #define projMatrix gl_ProjectionMatrix
 
@@ -23,7 +26,7 @@ float GetViewSpaceDepth(float d) {
 }
 
 void main() {
-	vec4 color = texture(atlasTex, gl_TexCoord[0].xy);
+	vec4 color = texture(atlasTex, vUV);
 	vec2 screenUV = gl_FragCoord.xy * invScreenSize;
 
 	float depthZO = texture(depthTex, screenUV).x;
@@ -32,11 +35,11 @@ void main() {
 
 	if (softenThreshold > 0.0) {
 		edgeSmoothness = smoothstep(0.0, softenThreshold, vsPos.z - depthVS); // soften edges
-		gl_FragColor  = color * vertColor;
+		gl_FragColor  = color * vCol;
 		gl_FragColor *= pow(edgeSmoothness, softenExponent.x);
 	} else {
 		edgeSmoothness = smoothstep(softenThreshold, 0.0, vsPos.z - depthVS); // follow the surface up
-		gl_FragColor  = color * vertColor;
+		gl_FragColor  = color * vCol;
 		gl_FragColor *= pow(edgeSmoothness, softenExponent.y);
 	}
 }

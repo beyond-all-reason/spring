@@ -58,7 +58,7 @@ void CTracerProjectile::Update()
 	deleteMe |= (length < 0.0f);
 }
 
-void CTracerProjectile::Draw(CVertexArray* va)
+void CTracerProjectile::Draw()
 {
 	drawLength = std::min(drawLength, 3.0f);
 

@@ -5,7 +5,7 @@
 
 #include "Game/Camera.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Colors.h"
 #include "Game/GlobalUnsynced.h"
@@ -68,7 +68,7 @@ void CNanoProjectile::Update()
 	deleteMe |= (gs->frameNum >= deathFrame);
 }
 
-void CNanoProjectile::Draw(CVertexArray* va)
+void CNanoProjectile::Draw()
 {
 	const float3 ri = camera->GetRight() * drawRadius;
 	const float3 up = camera->GetUp() * drawRadius;
@@ -85,15 +85,18 @@ void CNanoProjectile::Draw(CVertexArray* va)
 	}
 
 	const auto* gfxt = projectileDrawer->gfxtex;
-	va->AddVertexTC(drawPos + bounds[0], gfxt->xstart, gfxt->ystart, color);
-	va->AddVertexTC(drawPos + bounds[1], gfxt->xend, gfxt->ystart, color);
-	va->AddVertexTC(drawPos + bounds[2], gfxt->xend, gfxt->yend, color);
-	va->AddVertexTC(drawPos + bounds[3], gfxt->xstart, gfxt->yend, color);
+	GetThreadRenderBuffer().AddQuadTriangles(
+		{ drawPos + bounds[0], gfxt->xstart, gfxt->ystart, color },
+		{ drawPos + bounds[1], gfxt->xend  , gfxt->ystart, color },
+		{ drawPos + bounds[2], gfxt->xend  , gfxt->yend  , color },
+		{ drawPos + bounds[3], gfxt->xstart, gfxt->yend  , color }
+	);
 }
 
-void CNanoProjectile::DrawOnMinimap(CVertexArray& lines, CVertexArray& points)
+void CNanoProjectile::DrawOnMinimap()
 {
-	points.AddVertexQC(pos, color4::green);
+	rbMM.AddVertex({ pos        , color4::green });
+	rbMM.AddVertex({ pos + speed, color4::green });
 }
 
 int CNanoProjectile::GetProjectilesCount() const

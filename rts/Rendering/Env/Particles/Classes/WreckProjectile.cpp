@@ -7,7 +7,7 @@
 #include "Map/Ground.h"
 #include "Rendering/Colors.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -45,7 +45,7 @@ void CWreckProjectile::Update()
 	deleteMe |= (pos.y + 0.3f < CGround::GetApproximateHeight(pos.x, pos.z));
 }
 
-void CWreckProjectile::Draw(CVertexArray* va)
+void CWreckProjectile::Draw()
 {
 	unsigned char col[4];
 	col[0] = (unsigned char) (0.15f * 200);
@@ -54,16 +54,19 @@ void CWreckProjectile::Draw(CVertexArray* va)
 	col[3] = 200;
 
 	#define wt projectileDrawer->wrecktex
-	va->AddVertexTC(drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xstart, wt->ystart, col);
-	va->AddVertexTC(drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xend,   wt->ystart, col);
-	va->AddVertexTC(drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xend,   wt->yend,   col);
-	va->AddVertexTC(drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xstart, wt->yend,   col);
+	GetThreadRenderBuffer().AddQuadTriangles(
+		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xstart, wt->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xend,   wt->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xend,   wt->yend,   col },
+		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xstart, wt->yend,   col }
+	);
 	#undef wt
 }
 
-void CWreckProjectile::DrawOnMinimap(CVertexArray& lines, CVertexArray& points)
+void CWreckProjectile::DrawOnMinimap()
 {
-	points.AddVertexQC(pos, color4::redA);
+	rbMM.AddVertex({ pos        , color4::redA });
+	rbMM.AddVertex({ pos + speed, color4::redA });
 }
 
 int CWreckProjectile::GetProjectilesCount() const

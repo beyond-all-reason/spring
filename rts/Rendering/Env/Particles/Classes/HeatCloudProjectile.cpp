@@ -6,7 +6,7 @@
 #include "Game/Camera.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
@@ -78,7 +78,7 @@ void CHeatCloudProjectile::Update()
 	sizemod *= sizemodmod;
 }
 
-void CHeatCloudProjectile::Draw(CVertexArray* va)
+void CHeatCloudProjectile::Draw()
 {
 	unsigned char col[4];
 	const float dheat = std::max(0.0f, heat-globalRendering->timeOffset);
@@ -90,11 +90,12 @@ void CHeatCloudProjectile::Draw(CVertexArray* va)
 	col[3] = 1;//(dheat/maxheat)*255.0f;
 
 	const float drawsize = (size + sizeGrowth * globalRendering->timeOffset) * (1.0f - sizemod);
-
-	va->AddVertexTC(drawPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xstart, texture->ystart, col);
-	va->AddVertexTC(drawPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xend,   texture->ystart, col);
-	va->AddVertexTC(drawPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xend,   texture->yend,   col);
-	va->AddVertexTC(drawPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xstart, texture->yend,   col);
+	GetThreadRenderBuffer().AddQuadTriangles(
+		{ drawPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xstart, texture->ystart, col },
+		{ drawPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xend,   texture->ystart, col },
+		{ drawPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xend,   texture->yend,   col },
+		{ drawPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xstart, texture->yend,   col }
+	);
 }
 
 int CHeatCloudProjectile::GetProjectilesCount() const

@@ -21,7 +21,7 @@ public:
 		const float size
 	);
 
-	void Draw(CVertexArray* va) override;
+	void Draw() override;
 	void Update() override;
 
 	int GetProjectilesCount() const override;

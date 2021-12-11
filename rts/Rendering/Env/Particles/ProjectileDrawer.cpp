@@ -15,7 +15,7 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/ColorMap.h"
@@ -626,7 +626,7 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 			return;
 
 		// don't need to z-sort in the shadow pass
-		p->Draw(projectileDrawer->fxVA);
+		p->Draw();
 	}
 }
 
@@ -634,11 +634,6 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 
 void CProjectileDrawer::DrawProjectilesMiniMap()
 {
-	CVertexArray* lines = GetVertexArray();
-	CVertexArray* points = GetVertexArray();
-	lines->Initialize();
-	points->Initialize();
-
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		const auto& mdlRenderer = modelRenderers[modelType];
 		// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
@@ -646,37 +641,25 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 			const auto& projectileBin = mdlRenderer.GetObjectBin(i);
 
-			lines->EnlargeArrays(projectileBin.size() * 2, 0, VA_SIZE_C);
-			points->EnlargeArrays(projectileBin.size(), 0, VA_SIZE_C);
-
 			for (CProjectile* p: projectileBin) {
 				if (!CanDrawProjectile(p, p->owner()))
 					continue;
 
-				p->DrawOnMinimap(*lines, *points);
+				p->DrawOnMinimap();
 			}
 		}
 	}
 
-	lines->DrawArrayC(GL_LINES);
-	points->DrawArrayC(GL_POINTS);
-
 	if (!renderProjectiles.empty()) {
-		lines->Initialize();
-		lines->EnlargeArrays(renderProjectiles.size() * 2, 0, VA_SIZE_C);
-		points->Initialize();
-		points->EnlargeArrays(renderProjectiles.size(), 0, VA_SIZE_C);
-
 		for (CProjectile* p: renderProjectiles) {
 			if (!CanDrawProjectile(p, p->owner()))
 				continue;
 
-			p->DrawOnMinimap(*lines, *points);
+			p->DrawOnMinimap();
 		}
-
-		lines->DrawArrayC(GL_LINES);
-		points->DrawArrayC(GL_POINTS);
 	}
+
+	CProjectile::GetMiniMapRenderBuffer().Submit(GL_LINES);
 }
 
 void CProjectileDrawer::DrawFlyingPieces(int modelType)
@@ -744,22 +727,23 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// empty if !drawSorted
 		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
-		fxVA = GetVertexArray();
-		fxVA->Initialize();
+		for_mt_chunk(0, sortedProjectiles[1].size(), [this](int i) {
+			CProjectile* p = sortedProjectiles[1][i];
+			p->Draw();
+		});
 
-		// collect the alpha-translucent particle effects in fxVA
-		for (CProjectile* p: sortedProjectiles[1]) {
-			p->Draw(fxVA);
-		}
-		for (CProjectile* p: sortedProjectiles[0]) {
-			p->Draw(fxVA);
-		}
+		for_mt_chunk(0, sortedProjectiles[0].size(), [this](int i) {
+			CProjectile* p = sortedProjectiles[0][i];
+			p->Draw();
+		});
 	}
 
 	glEnable(GL_BLEND);
 	glDisable(GL_FOG);
 
-	if (fxVA->drawIndex() > 0) {
+	auto& rb = CExpGenSpawnable::GetJointRenderBuffer();
+
+	if (rb.ShouldSubmit()) {
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_2D);
 
@@ -784,7 +768,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
 		}
 
-		fxVA->DrawArrayTC(GL_QUADS);
+		rb.DrawElements(GL_TRIANGLES);
 
 		if (wantSoften > 0) {
 			fxShader->Disable();
@@ -805,9 +789,6 @@ void CProjectileDrawer::DrawShadowPass()
 	glDisable(GL_TEXTURE_2D);
 	po->Enable();
 
-	fxVA = GetVertexArray();
-	fxVA->Initialize();
-
 	{
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			DrawProjectilesShadow(modelType);
@@ -817,7 +798,8 @@ void CProjectileDrawer::DrawShadowPass()
 		DrawProjectilesSetShadow(renderProjectiles);
 	}
 
-	if (fxVA->drawIndex() > 0) {
+	auto& rb = CExpGenSpawnable::GetMainThreadRenderBuffer();
+	if (rb.ShouldSubmit()) {
 		glEnable(GL_TEXTURE_2D);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		glAlphaFunc(GL_GREATER, 0.3f);
@@ -826,7 +808,7 @@ void CProjectileDrawer::DrawShadowPass()
 		// glDisable(GL_CULL_FACE);
 
 		textureAtlas->BindTexture();
-		fxVA->DrawArrayTC(GL_QUADS);
+		rb.DrawElements(GL_TRIANGLES);
 	}
 
 	po->Disable();
@@ -909,13 +891,10 @@ void CProjectileDrawer::DrawGroundFlashes()
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glFogfv(GL_FOG_COLOR, black);
 
-	gfVA = GetVertexArray();
-	gfVA->Initialize();
-	gfVA->EnlargeArrays(8 * gfc.size(), 0, VA_SIZE_TC);
-
-
 	bool depthTest = true;
 	bool depthMask = false;
+
+	auto& rb = CExpGenSpawnable::GetMainThreadRenderBuffer();
 
 	for (CGroundFlash* gf: gfc) {
 		const bool inLos = gf->alwaysVisible || gu->spectatingFullView || losHandler->InAirLos(gf, gu->myAllyTeam);
@@ -928,8 +907,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 		bool depthTestWanted = wantSoften > 0 ? false : gf->depthTest;
 
 		if (depthTest != depthTestWanted) {
-			gfVA->DrawArrayTC(GL_QUADS);
-			gfVA->Initialize();
+			rb.DrawElements(GL_TRIANGLES);
 
 			if ((depthTest = depthTestWanted)) {
 				glEnable(GL_DEPTH_TEST);
@@ -938,8 +916,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 			}
 		}
 		if (depthMask != gf->depthMask) {
-			gfVA->DrawArrayTC(GL_QUADS);
-			gfVA->Initialize();
+			rb.DrawElements(GL_TRIANGLES);
 
 			if ((depthMask = gf->depthMask)) {
 				glDepthMask(GL_TRUE);
@@ -948,7 +925,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 			}
 		}
 
-		gf->Draw(gfVA);
+		gf->Draw(); //TODO
 	}
 
 	if (wantSoften > 0) {
@@ -959,7 +936,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 		fxShader->SetUniform("softenThreshold", -CProjectileDrawer::softenThreshold[1]);
 	}
 
-	gfVA->DrawArrayTC(GL_QUADS);
+	rb.DrawElements(GL_TRIANGLES);
 
 	if (wantSoften > 0) {
 		fxShader->Disable();
@@ -1007,8 +984,7 @@ void CProjectileDrawer::UpdatePerlin() {
 	float speed = 1.0f;
 	float size = 1.0f;
 
-	CVertexArray* va = GetVertexArray();
-	va->CheckInitSize(4 * VA_SIZE_TC);
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
 
 	for (int a = 0; a < 4; ++a) {
 		perlinBlend[a] += time * speed;
@@ -1030,12 +1006,14 @@ void CProjectileDrawer::UpdatePerlin() {
 			col[b] = int((1.0f - perlinBlend[a]) * 16 * size);
 
 		glBindTexture(GL_TEXTURE_2D, perlinBlendTex[a * 2]);
-		va->Initialize();
-		va->AddVertexQTC(ZeroVector, 0,         0, col);
-		va->AddVertexQTC(  UpVector, 0,     tsize, col);
-		va->AddVertexQTC(  XYVector, tsize, tsize, col);
-		va->AddVertexQTC( RgtVector, tsize,     0, col);
-		va->DrawArrayTC(GL_QUADS);
+
+		rb.AddQuadTriangles(
+			{ ZeroVector, 0,         0, col },
+			{   UpVector, 0,     tsize, col },
+			{   XYVector, tsize, tsize, col },
+			{  RgtVector, tsize,     0, col }
+		);
+		rb.DrawElements(GL_TRIANGLES);
 
 		if (a == 0)
 			glEnable(GL_BLEND);
@@ -1044,12 +1022,14 @@ void CProjectileDrawer::UpdatePerlin() {
 			col[b] = int(perlinBlend[a] * 16 * size);
 
 		glBindTexture(GL_TEXTURE_2D, perlinBlendTex[a * 2 + 1]);
-		va->Initialize();
-		va->AddVertexQTC(ZeroVector,     0,     0, col);
-		va->AddVertexQTC(  UpVector,     0, tsize, col);
-		va->AddVertexQTC(  XYVector, tsize, tsize, col);
-		va->AddVertexQTC( RgtVector, tsize,     0, col);
-		va->DrawArrayTC(GL_QUADS);
+
+		rb.AddQuadTriangles(
+			{ ZeroVector,     0,     0, col },
+			{ UpVector  ,     0, tsize, col },
+			{ XYVector  , tsize, tsize, col },
+			{ RgtVector , tsize,     0, col }
+		);
+		rb.DrawElements(GL_TRIANGLES);
 
 		speed *= 0.6f;
 		size *= 2;

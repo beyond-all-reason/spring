@@ -1,10 +1,12 @@
+#include "Projectile.h"
+#include "Projectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Projectile.h"
 #include "Map/MapInfo.h"
 #include "Rendering/Colors.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Misc/QuadField.h"
@@ -60,7 +62,7 @@ CR_REG_METADATA(CProjectile,
 	CR_MEMBER(quads)
 ))
 
-
+TypedRenderBuffer<VA_TYPE_C >& CProjectile::rbMM = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C >();
 
 CProjectile::CProjectile()
 	: myrange(0.0f)
@@ -144,9 +146,10 @@ void CProjectile::Delete()
 }
 
 
-void CProjectile::DrawOnMinimap(CVertexArray& lines, CVertexArray& points)
+void CProjectile::DrawOnMinimap()
 {
-	points.AddVertexQC(pos, color4::whiteA);
+	rbMM.AddVertex({ pos        , color4::whiteA });
+	rbMM.AddVertex({ pos + speed, color4::whiteA });
 }
 
 
@@ -174,7 +177,6 @@ CMatrix44f CProjectile::GetTransformMatrix(bool offsetPos) const {
 
 	return (CMatrix44f(drawPos + (dir * radius * 0.9f * offsetPos), -xdir, ydir, dir));
 }
-
 
 bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
