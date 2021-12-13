@@ -261,23 +261,31 @@ void CProjectileDrawer::Init() {
 
 	LoadWeaponTextures();
 
-	if (CheckSoftenExt()) {
-		{
-			fxShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader", false);
-			fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXVertProg.glsl", "", GL_VERTEX_SHADER));
-			fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXFragProg.glsl", "", GL_FRAGMENT_SHADER));
-			fxShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);
-			fxShader->Link();
-			fxShader->Enable();
-			fxShader->SetUniform("atlasTex",  0);
+	fxShaders[0] = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader hard", false);
+	fxShaders[1] = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader soft", false);
+
+	for (auto*& fxShader : fxShaders)
+	{
+		fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXVertProg.glsl", "", GL_VERTEX_SHADER));
+		fxShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXFragProg.glsl", "", GL_FRAGMENT_SHADER));
+
+		fxShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);
+		if (fxShader == fxShaders[1])
+			fxShader->SetFlag("SMOOTH_PARTICLES", CheckSoftenExt());
+
+		fxShader->Link();
+		fxShader->Enable();
+		fxShader->SetUniform("atlasTex",  0);
+		if (fxShader == fxShaders[1]) {
 			fxShader->SetUniform("depthTex", 15);
-			fxShader->SetUniform("softenExponent", CProjectileDrawer::softenExponent[0], CProjectileDrawer::softenExponent[1]);
-			fxShader->Disable();
-			fxShader->Validate();
+			fxShader->SetUniform("softenExponent", softenExponent[0], softenExponent[1]);
 		}
-		ViewResize();
-		EnableSoften(configHandler->GetInt("SoftParticles"));
+		fxShader->Disable();
+
+		fxShader->Validate();
 	}
+	ViewResize();
+	EnableSoften(configHandler->GetInt("SoftParticles"));
 }
 
 void CProjectileDrawer::Kill() {
@@ -301,9 +309,9 @@ void CProjectileDrawer::Kill() {
 
 	drawSorted = true;
 
-	if (fxShader) {
+	for (auto*& fxShader : fxShaders) {
 		fxShader->Release();
-		//spring::SafeDelete(fxShader); crashes spring
+		fxShader = nullptr;
 	}
 
 	if (depthFBO) {
@@ -371,9 +379,9 @@ void CProjectileDrawer::ViewResize()
 	depthFBO->CheckStatus("PROJECTILE-DRAWER-DEPTHFBO");
 	depthFBO->Unbind();
 
-	fxShader->Enable();
-	fxShader->SetUniform("invScreenSize", 1.0f / globalRendering->viewSizeX, 1.0f / globalRendering->viewSizeY);
-	fxShader->Disable();
+	fxShaders[1]->Enable();
+	fxShaders[1]->SetUniform("invScreenSize", 1.0f / globalRendering->viewSizeX, 1.0f / globalRendering->viewSizeY);
+	fxShaders[1]->Disable();
 }
 
 bool CProjectileDrawer::CheckSoftenExt()
@@ -387,6 +395,9 @@ bool CProjectileDrawer::CheckSoftenExt()
 
 void CProjectileDrawer::CopyDepthBufferToTexture()
 {
+	if (lastDrawFrame == globalRendering->drawFrame) //copy once per draw frame
+		return;
+
 #if 1
 	//no need to touch glViewport
 	const int screenRect[4] = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
@@ -406,6 +417,8 @@ void CProjectileDrawer::CopyDepthBufferToTexture()
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
 	glActiveTexture(activeTex);
 #endif
+
+	lastDrawFrame = globalRendering->drawFrame;
 }
 
 void CProjectileDrawer::ParseAtlasTextures(
@@ -741,6 +754,8 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 	auto& rb = CExpGenSpawnable::GetRenderBuffer();
 
+	const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
+
 	if (rb.ShouldSubmit()) {
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_TEXTURE_2D);
@@ -758,20 +773,25 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 		glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
 
-		if (wantSoften > 0) {
+		if (needSoften) {
 			CopyDepthBufferToTexture();
 			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
+		}
 
-			fxShader->Enable();
-			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
+		fxShaders[needSoften]->Enable();
+		if (needSoften) {
+			fxShaders[needSoften]->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
 		}
 
 		rb.DrawElements(GL_TRIANGLES);
 
-		if (wantSoften > 0) {
-			fxShader->Disable();
-			glBindTexture(GL_TEXTURE_2D, 0); glActiveTexture(GL_TEXTURE0);
+		fxShaders[needSoften]->Disable();
+
+		if (needSoften) {
+			glBindTexture(GL_TEXTURE_2D, 0); //15th slot
+			glActiveTexture(GL_TEXTURE0);
 		}
+		glBindTexture(GL_TEXTURE_2D, 0);
 	} else {
 		eventHandler.DrawWorldPreParticles();
 	}
@@ -892,7 +912,19 @@ void CProjectileDrawer::DrawGroundFlashes()
 	bool depthTest = true;
 	bool depthMask = false;
 
+	const bool needSoften = (wantSoften > 0);
+
 	auto& rb = CExpGenSpawnable::GetRenderBuffer();
+
+	if (needSoften) {
+		CopyDepthBufferToTexture();
+		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
+	}
+
+	fxShaders[needSoften]->Enable();
+	if (needSoften) {
+		fxShaders[needSoften]->SetUniform("softenThreshold", -CProjectileDrawer::softenThreshold[1]);
+	}
 
 	for (CGroundFlash* gf: gfc) {
 		const bool inLos = gf->alwaysVisible || gu->spectatingFullView || losHandler->InAirLos(gf, gu->myAllyTeam);
@@ -902,9 +934,9 @@ void CProjectileDrawer::DrawGroundFlashes()
 		if (!camera->InView(gf->pos, gf->size))
 			continue;
 
-		bool depthTestWanted = wantSoften > 0 ? false : gf->depthTest;
+		bool depthTestWanted = needSoften ? false : gf->depthTest;
 
-		if (depthTest != depthTestWanted) {
+		if (depthTest != depthTestWanted || depthMask != gf->depthMask) {
 			rb.DrawElements(GL_TRIANGLES);
 
 			if ((depthTest = depthTestWanted)) {
@@ -912,9 +944,6 @@ void CProjectileDrawer::DrawGroundFlashes()
 			} else {
 				glDisable(GL_DEPTH_TEST);
 			}
-		}
-		if (depthMask != gf->depthMask) {
-			rb.DrawElements(GL_TRIANGLES);
 
 			if ((depthMask = gf->depthMask)) {
 				glDepthMask(GL_TRUE);
@@ -923,23 +952,18 @@ void CProjectileDrawer::DrawGroundFlashes()
 			}
 		}
 
-		gf->Draw(); //TODO
-	}
-
-	if (wantSoften > 0) {
-		CopyDepthBufferToTexture();
-		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
-
-		fxShader->Enable();
-		fxShader->SetUniform("softenThreshold", -CProjectileDrawer::softenThreshold[1]);
+		gf->Draw();
 	}
 
 	rb.DrawElements(GL_TRIANGLES);
 
-	if (wantSoften > 0) {
-		fxShader->Disable();
-		glBindTexture(GL_TEXTURE_2D, 0); glActiveTexture(GL_TEXTURE0);
+	fxShaders[needSoften]->Disable();
+
+	if (needSoften) {
+		glBindTexture(GL_TEXTURE_2D, 0); //15th slot
+		glActiveTexture(GL_TEXTURE0);
 	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFogfv(GL_FOG_COLOR, sky->fogColor);
 	glDisable(GL_POLYGON_OFFSET_FILL);

@@ -1,5 +1,5 @@
 #version 150 compatibility
-#extension GL_ARB_explicit_attrib_location : enable
+#extension GL_ARB_explicit_attrib_location : require
 
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec2 uv;
