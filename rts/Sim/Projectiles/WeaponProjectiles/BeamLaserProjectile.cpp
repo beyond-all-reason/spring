@@ -47,39 +47,28 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 			(weaponDef->visuals.texture2->xstart +
 			(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
 
-		coreColStart = SColor{
-			(weaponDef->visuals.color2.x * params.startAlpha),
-			(weaponDef->visuals.color2.y * params.startAlpha),
-			(weaponDef->visuals.color2.z * params.startAlpha),
-			1u
-		};
-
-		coreColEnd = SColor{
-			(weaponDef->visuals.color2.x * params.endAlpha),
-			(weaponDef->visuals.color2.y * params.endAlpha),
-			(weaponDef->visuals.color2.z * params.endAlpha),
-			1u
-		};
-
-		edgeColStart = SColor{
-			(weaponDef->visuals.color.x * params.startAlpha),
-			(weaponDef->visuals.color.y * params.startAlpha),
-			(weaponDef->visuals.color.z * params.startAlpha),
-			1u
-		};
-
-		edgeColEnd = SColor{
-			(weaponDef->visuals.color.x * params.endAlpha),
-			(weaponDef->visuals.color.y * params.endAlpha),
-			(weaponDef->visuals.color.z * params.endAlpha),
-			1u
-		};
-
-	} else {
-		coreColStart = SColor::Zero;
-		coreColEnd   = SColor::Zero;
-		edgeColStart = SColor::Zero;
-		edgeColEnd   = SColor::Zero;
+		coreColStart[0] = (weaponDef->visuals.color2.x * params.startAlpha);
+		coreColStart[1] = (weaponDef->visuals.color2.y * params.startAlpha);
+		coreColStart[2] = (weaponDef->visuals.color2.z * params.startAlpha);
+		coreColStart[3] = 1;
+		coreColEnd[0] = (weaponDef->visuals.color2.x * params.endAlpha);
+		coreColEnd[1] = (weaponDef->visuals.color2.y * params.endAlpha);
+		coreColEnd[2] = (weaponDef->visuals.color2.z * params.endAlpha);
+		coreColEnd[3] = 1;
+		edgeColStart[0] = (weaponDef->visuals.color.x * params.startAlpha);
+		edgeColStart[1] = (weaponDef->visuals.color.y * params.startAlpha);
+		edgeColStart[2] = (weaponDef->visuals.color.z * params.startAlpha);
+		edgeColStart[3] = 1;
+		edgeColEnd[0] = (weaponDef->visuals.color.x * params.endAlpha);
+		edgeColEnd[1] = (weaponDef->visuals.color.y * params.endAlpha);
+		edgeColEnd[2] = (weaponDef->visuals.color.z * params.endAlpha);
+		edgeColEnd[3] = 1;
+	}
+	else {
+		memset(&coreColStart[0], 0, sizeof(coreColStart));
+		memset(&coreColEnd[0], 0, sizeof(coreColEnd));
+		memset(&edgeColStart[0], 0, sizeof(edgeColStart));
+		memset(&edgeColEnd[0], 0, sizeof(edgeColEnd));
 	}
 }
 

@@ -54,22 +54,18 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 		beamtex       = *weaponDef->visuals.texture1;
 		sidetex       = *weaponDef->visuals.texture3;
 
-		coreColStart = SColor{
-			weaponDef->visuals.color2.x,
-			weaponDef->visuals.color2.y,
-			weaponDef->visuals.color2.z,
-			1u
-		};
-
-		edgeColStart = SColor{
-			weaponDef->visuals.color.x,
-			weaponDef->visuals.color.y,
-			weaponDef->visuals.color.z,
-			1u
-		};
-	} else {
-		coreColStart = SColor::Zero;
-		edgeColStart = SColor::Zero;
+		coreColStart[0] = (weaponDef->visuals.color2.x * 255);
+		coreColStart[1] = (weaponDef->visuals.color2.y * 255);
+		coreColStart[2] = (weaponDef->visuals.color2.z * 255);
+		coreColStart[3] = 1;
+		edgeColStart[0] = (weaponDef->visuals.color.x * 255);
+		edgeColStart[1] = (weaponDef->visuals.color.y * 255);
+		edgeColStart[2] = (weaponDef->visuals.color.z * 255);
+		edgeColStart[3] = 1;
+	}
+	else {
+		memset(&coreColStart[0], 0, sizeof(coreColStart));
+		memset(&edgeColStart[0], 0, sizeof(edgeColStart));
 	}
 }
 
@@ -80,8 +76,10 @@ void CLargeBeamLaserProjectile::Update()
 	if ((--ttl) <= 0) {
 		deleteMe = true;
 	} else {
-		coreColStart *= decay;
-		edgeColStart *= decay;
+		for (int i = 0; i < 3; i++) {
+			coreColStart[i] = (uint8_t)(coreColStart[i] * decay);
+			edgeColStart[i] = (uint8_t)(edgeColStart[i] * decay);
+		}
 
 		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
 	}
@@ -226,11 +224,13 @@ void CLargeBeamLaserProjectile::Draw()
 	float muzzleEdgeSize = thickness * flaresize * pulseStartTime;
 	float muzzleCoreSize = muzzleEdgeSize * 0.6f;
 
-	SColor coreColor = {0, 0, 0, 1};
-	SColor edgeColor = {0, 0, 0, 1};
+	uint8_t coreColor[4] = { 0, 0, 0, 1 };
+	uint8_t edgeColor[4] = { 0, 0, 0, 1 };
 
-	coreColor = coreColStart * (1.0f - pulseStartTime);
-	edgeColor = edgeColStart * (1.0f - pulseStartTime);
+	for (int i = 0; i < 3; i++) {
+		coreColor[i] = int(coreColStart[i] * (1.0f - pulseStartTime));
+		edgeColor[i] = int(edgeColStart[i] * (1.0f - pulseStartTime));
+	}
 
 	if (validTextures[3]) {
 		// draw muzzleflare
@@ -253,8 +253,11 @@ void CLargeBeamLaserProjectile::Draw()
 		pulseStartTime += 0.5f;
 		pulseStartTime -= (1.0f * (pulseStartTime > 1.0f));
 
-		coreColor = coreColStart * (1.0f - pulseStartTime);
-		edgeColor = edgeColStart * (1.0f - pulseStartTime);
+
+		for (int i = 0; i < 3; i++) {
+			coreColor[i] = int(coreColStart[i] * (1.0f - pulseStartTime));
+			edgeColor[i] = int(edgeColStart[i] * (1.0f - pulseStartTime));
+		}
 
 		muzzleEdgeSize = thickness * flaresize * pulseStartTime;
 

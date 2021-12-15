@@ -22,10 +22,10 @@ public:
 	int GetProjectilesCount() const override;
 
 private:
-	SColor coreColStart;
-	SColor coreColEnd;
-	SColor edgeColStart;
-	SColor edgeColEnd;
+	uint8_t coreColStart[4];
+	uint8_t coreColEnd[4];
+	uint8_t edgeColStart[4];
+	uint8_t edgeColEnd[4];
 
 	float thickness;
 	float corethickness;
