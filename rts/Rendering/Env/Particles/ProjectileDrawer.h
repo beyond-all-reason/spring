@@ -185,6 +185,7 @@ private:
 	GLuint depthTexture = 0u;
 	FBO* depthFBO = nullptr;
 	std::array<Shader::IProgramObject*, 2> fxShaders = { nullptr };
+	Shader::IProgramObject* fsShadowShader = nullptr;
 
 	uint32_t lastDrawFrame = 0; //normal, reflection
 

@@ -7,6 +7,7 @@ uniform sampler2D atlasTex;
 	uniform float softenThreshold;
 	uniform vec2 softenExponent;
 #endif
+uniform vec4 alphaCtrl = vec4(0.0, 0.0, 0.0, 1.0); //always pass
 
 in Data{
 	vec4 vsPos;
@@ -29,6 +30,13 @@ float GetViewSpaceDepth(float d) {
 }
 #endif
 
+bool AlphaDiscard(float a) {
+	float alphaTestGT = float(a > alphaCtrl.x) * alphaCtrl.y;
+	float alphaTestLT = float(a < alphaCtrl.x) * alphaCtrl.z;
+
+	return ((alphaTestGT + alphaTestLT + alphaCtrl.w) == 0.0);
+}
+
 void main() {
 	vec4 color = texture(atlasTex, vUV);
 	gl_FragColor  = color * vCol;
@@ -46,4 +54,7 @@ void main() {
 		gl_FragColor *= pow(edgeSmoothness, softenExponent.y);
 	}
 	#endif
+
+	if (AlphaDiscard(gl_FragColor.a))
+		discard;
 }

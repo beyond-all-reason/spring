@@ -261,6 +261,20 @@ void CProjectileDrawer::Init() {
 
 	LoadWeaponTextures();
 
+	{
+		fsShadowShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader shadow", false);
+		fsShadowShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXVertShadowProg.glsl", "", GL_VERTEX_SHADER));
+		fsShadowShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ProjFXFragShadowProg.glsl", "", GL_FRAGMENT_SHADER));
+		fsShadowShader->Link();
+		fsShadowShader->Enable();
+
+		fsShadowShader->SetUniform("atlasTex", 0);
+		fsShadowShader->SetUniform("alphaCtrl", 0.3f, 1.0f, 0.0f, 0.0f);
+
+		fsShadowShader->Disable();
+		fsShadowShader->Validate();
+	}
+
 	fxShaders[0] = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader hard", false);
 	fxShaders[1] = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader soft", false);
 
@@ -312,6 +326,10 @@ void CProjectileDrawer::Kill() {
 	for (auto*& fxShader : fxShaders) {
 		fxShader->Release();
 		fxShader = nullptr;
+	}
+	{
+		fsShadowShader->Release();
+		fsShadowShader = nullptr;
 	}
 
 	if (depthFBO) {
@@ -815,22 +833,21 @@ void CProjectileDrawer::DrawShadowPass()
 		// draw the model-less projectiles
 		DrawProjectilesSetShadow(renderProjectiles);
 	}
+	po->Disable();
 
 	auto& rb = CExpGenSpawnable::GetRenderBuffer();
-	if (rb.ShouldSubmit()) {
-		glEnable(GL_TEXTURE_2D);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		glAlphaFunc(GL_GREATER, 0.3f);
-		glEnable(GL_ALPHA_TEST);
-		glShadeModel(GL_SMOOTH);
-		// glDisable(GL_CULL_FACE);
 
+	if (rb.ShouldSubmit()) {
 		textureAtlas->BindTexture();
+
+		fsShadowShader->Enable();
+
 		rb.DrawElements(GL_TRIANGLES);
+
+		fsShadowShader->Disable();
 	}
 
-	po->Disable();
-	glShadeModel(GL_FLAT);
+	//glShadeModel(GL_FLAT);
 	glPopAttrib();
 }
 
