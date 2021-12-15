@@ -63,11 +63,11 @@ void CEmgProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
-	const SColor col = SColor{
-		(color.x * intensity),
-		(color.y * intensity),
-		(color.z * intensity),
-		intensity
+	const uint8_t col[4] {
+		(uint8_t)(color.x * intensity * 255),
+		(uint8_t)(color.y * intensity * 255),
+		(uint8_t)(color.z * intensity * 255),
+		intensity * 255
 	};
 
 	rb.AddQuadTriangles(

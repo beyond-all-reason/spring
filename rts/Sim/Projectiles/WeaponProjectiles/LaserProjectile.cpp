@@ -181,18 +181,18 @@ void CLaserProjectile::Draw()
 	dir1.Normalize();
 	float3 dir2(dif.cross(dir1));
 
-	SColor col = SColor{
-		(color.x * intensity),
-		(color.y * intensity),
-		(color.z * intensity),
-		1u
+	const uint8_t col[4] = {
+		(uint8_t)(color.x * intensity * 255),
+		(uint8_t)(color.y * intensity * 255),
+		(uint8_t)(color.z * intensity * 255),
+		1 //intensity*255;
 	};
 
-	SColor col2 = SColor{
-		(color2.x * intensity),
-		(color2.y * intensity),
-		(color2.z * intensity),
-		1u
+	const uint8_t col2[4] = {
+		(uint8_t)(color2.x * intensity * 255),
+		(uint8_t)(color2.y * intensity * 255),
+		(uint8_t)(color2.z * intensity * 255),
+		1 //intensity*255;
 	};
 
 	const float size = weaponDef->visuals.thickness;

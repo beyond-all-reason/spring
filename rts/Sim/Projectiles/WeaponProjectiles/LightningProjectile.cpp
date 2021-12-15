@@ -60,11 +60,11 @@ void CLightningProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
-	const SColor col = SColor {
-		(color.x * 255),
-		(color.y * 255),
-		(color.z * 255),
-		1u
+	uint8_t col[4] {
+		(uint8_t)(color.x * 255),
+		(uint8_t)(color.y * 255),
+		(uint8_t)(color.z * 255),
+		1 //intensity*255;
 	};
 
 	const float3 ddir = (targetPos - startPos).Normalize();
@@ -119,4 +119,3 @@ int CLightningProjectile::GetProjectilesCount() const
 {
 	return 2 * displacements_size * validTextures[0];
 }
-
