@@ -6,6 +6,9 @@
 #include "Map/BaseGroundDrawer.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/LightHandler.h"
+#include "Rendering/GL/RenderBuffersFwd.h"
+
+#include <memory>
 
 
 class CSMFReadMap;
@@ -83,8 +86,7 @@ protected:
 	int drawerMode;
 	int groundDetail;
 
-	GLuint waterPlaneDispLists[2];
-
+	std::array<std::unique_ptr<TypedRenderBuffer<VA_TYPE_C>>, 2> rbs;
 	// [0] := fallback shader-less rendering path
 	// [1] := default shader-driven rendering path
 	// [2] := custom shader-driven rendering path (via Lua)
