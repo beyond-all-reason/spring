@@ -28,20 +28,25 @@ void Window::AddChild(GuiElement* elem)
 void Window::DrawSelf()
 {
 	const float opacity = Opacity();
-	glColor4f(0.0f,0.0f,0.0f, opacity);
-	DrawBox(GL_QUADS);
 
-	glColor4f(0.7f,0.7f,0.7f, opacity);
-	glBegin(GL_QUADS);
-	glVertex2f(pos[0], pos[1]+size[1]-titleHeight);
-	glVertex2f(pos[0], pos[1]+size[1]);
-	glVertex2f(pos[0]+size[0], pos[1]+size[1]);
-	glVertex2f(pos[0]+size[0], pos[1]+size[1]-titleHeight);
-	glEnd();
+	DrawBox(GL_QUADS, { 0.0f,0.0f,0.0f, opacity });
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dC>();
+	auto& sh = rb.GetShader();
+
+	const SColor color = { 0.7f,0.7f,0.7f, opacity };
+	rb.AddQuadTriangles(
+		{ pos[0]          , pos[1] + size[1] - titleHeight, color },
+		{ pos[0]          , pos[1] + size[1]              , color },
+		{ pos[0] + size[0], pos[1] + size[1]              , color },
+		{ pos[0] + size[0], pos[1] + size[1] - titleHeight, color }
+	);
+	sh.Enable();
+	rb.DrawElements(GL_TRIANGLES);
+	sh.Disable();
 
 	glLineWidth(2.0f);
-	glColor4f(1.0f,1.0f,1.0f, opacity);
-	DrawBox(GL_LINE_LOOP);
+	DrawBox(GL_LINE_LOOP, { 1.0f,1.0f,1.0f, opacity });
 	/*
 	glBegin(GL_LINE);
 	glVertex2f(pos[0], pos[1]-titleHeight);
