@@ -111,7 +111,8 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(viewPosY),
 	CR_IGNORED(viewSizeX),
 	CR_IGNORED(viewSizeY),
-	CR_IGNORED(windowSettingsChanged),
+	CR_IGNORED(winBorder),
+	CR_IGNORED(winChgFrame),
 	CR_IGNORED(screenViewMatrix),
 	CR_IGNORED(screenProjMatrix),
 	CR_IGNORED(pixelX),
@@ -200,7 +201,9 @@ CGlobalRendering::CGlobalRendering()
 	, viewSizeX(1)
 	, viewSizeY(1)
 
-	, windowSettingsChanged(0)
+	, winBorder{0}
+
+	, winChgFrame(0)
 
 	, screenViewMatrix()
 	, screenProjMatrix()
@@ -317,7 +320,7 @@ void CGlobalRendering::PreKill()
 }
 
 
-SDL_Window* CGlobalRendering::CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden) const
+SDL_Window* CGlobalRendering::CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden)
 {
 	SDL_Window* newWindow = nullptr;
 
@@ -954,7 +957,7 @@ void CGlobalRendering::SetWindowTitle(const std::string& title)
 
 void CGlobalRendering::UpdateWindow()
 {
-	if (windowSettingsChanged < drawFrame)
+	if (winChgFrame < drawFrame)
 		return;
 
 	if (sdlWindows[0] == nullptr)
@@ -990,7 +993,6 @@ void CGlobalRendering::UpdateWindow()
 	if (SDL_SetWindowFullscreen(sdlWindows[0], 0) != 0)
 		LOG("[GR::%s][2][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
-	// fill up params right here, because the call to ReadWindowPosAndSize() is blocked for this drawFrame
 	screenSizeX = maxRes.x;
 	screenSizeY = maxRes.y;
 
@@ -999,18 +1001,16 @@ void CGlobalRendering::UpdateWindow()
 	winSizeX = newRes.x;
 	winSizeY = newRes.y;
 
-
 	SDL_RestoreWindow(sdlWindows[0]);
 	SDL_SetWindowBordered(sdlWindows[0], borderless ? SDL_FALSE : SDL_TRUE);
 
-	int t, b, l, r;
-	SDL_GetWindowBordersSize(sdlWindows[0], &t, &l, &b, &r);
+	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
 
 	SDL_SetWindowPosition(sdlWindows[0], winPosX, winPosY);
 	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
 
-	//if (newRes == maxRes)
-		//SDL_MaximizeWindow(sdlWindows[0]);
+	if (newRes == maxRes)
+		SDL_MaximizeWindow(sdlWindows[0]);
 
 	WindowManagerHelper::SetWindowResizable(sdlWindows[0], !borderless && !fullScreen);
 
@@ -1024,7 +1024,7 @@ void CGlobalRendering::UpdateWindow()
 void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
 {
 	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
-	windowSettingsChanged = drawFrame + 1; //will happen on next frame
+	winChgFrame = drawFrame + 1; //will happen on next frame
 }
 
 
@@ -1126,14 +1126,10 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	winPosY = 0;
 
 #else
-	if (windowSettingsChanged == drawFrame)
-		return;
-
 	SDL_Rect screenSize;
 	SDL_GetDisplayBounds(SDL_GetWindowDisplayIndex(sdlWindows[0]), &screenSize);
 
-	int t, b, l, r;
-	SDL_GetWindowBordersSize(sdlWindows[0], &t, &l, &b, &r);
+	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
 
 	// no other good place to set these
 	screenSizeX = screenSize.w;
@@ -1142,7 +1138,8 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	SDL_GetWindowSize(sdlWindows[0], &winSizeX, &winSizeY);
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
-	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
+	// enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
+	// enforce screenSize bounds instead
 	winPosX = std::max(winPosX, screenSize.x);
 	winPosY = std::max(winPosY, screenSize.y);
 

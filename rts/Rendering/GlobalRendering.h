@@ -40,7 +40,7 @@ public:
 	 * Sets SDL video mode options/settings
 	 */
 	bool CreateWindowAndContext(const char* title, bool hidden);
-	SDL_Window* CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden) const;
+	SDL_Window* CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden);
 	SDL_GLContext CreateGLContext(const int2& minCtx, SDL_Window* targetWindow) const;
 	SDL_Window* GetWindow(size_t i) { return sdlWindows[i]; }
 	SDL_GLContext GetContext(size_t i) { return glContexts[i]; }
@@ -142,8 +142,11 @@ public:
 	int viewSizeX;
 	int viewSizeY;
 
+	/// the window borders
+	std::array<int, 4> winBorder;
+
 	/// Some settings got changed need to adjust the way window is
-	unsigned int windowSettingsChanged;
+	unsigned int winChgFrame;
 
 	/// screen {View,Proj} matrices for rendering in pixel coordinates
 	CMatrix44f screenViewMatrix;
