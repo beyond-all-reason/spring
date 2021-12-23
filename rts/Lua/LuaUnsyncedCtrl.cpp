@@ -2198,8 +2198,11 @@ int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
 		return 0;
 	}
 
+	const int val = luaL_checkint(L, 2);
+	const bool uo = luaL_optboolean(L, 3, false);
+
 	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
-	configHandler->Set(key, luaL_checkint(L, 2), luaL_optboolean(L, 3, false));
+	configHandler->Set(key, val, uo);
 	configHandler->EnableWriting(true);
 	return 0;
 }

@@ -111,6 +111,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(viewPosY),
 	CR_IGNORED(viewSizeX),
 	CR_IGNORED(viewSizeY),
+	CR_IGNORED(windowSettingsChanged),
 	CR_IGNORED(screenViewMatrix),
 	CR_IGNORED(screenProjMatrix),
 	CR_IGNORED(pixelX),
@@ -199,6 +200,8 @@ CGlobalRendering::CGlobalRendering()
 	, viewSizeX(1)
 	, viewSizeY(1)
 
+	, windowSettingsChanged(0)
+
 	, screenViewMatrix()
 	, screenProjMatrix()
 
@@ -276,7 +279,16 @@ CGlobalRendering::CGlobalRendering()
 	, glTimerQueries{0}
 {
 	verticalSync->WrapNotifyOnChange();
-	configHandler->NotifyOnChange(this, {"Fullscreen", "WindowBorderless"});
+	configHandler->NotifyOnChange(this, {
+		"Fullscreen",
+		"WindowBorderless",
+		"XResolution",
+		"YResolution",
+		"XResolutionWindowed",
+		"YResolutionWindowed",
+		"WindowPosX",
+		"WindowPosY"
+	});
 }
 
 CGlobalRendering::~CGlobalRendering()
@@ -940,8 +952,11 @@ void CGlobalRendering::SetWindowTitle(const std::string& title)
 	SDL_SetWindowTitle(sdlWindows[0], title.c_str());
 }
 
-void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
+void CGlobalRendering::UpdateWindow()
 {
+	if (windowSettingsChanged < drawFrame)
+		return;
+
 	if (sdlWindows[0] == nullptr)
 		return;
 
@@ -958,38 +973,58 @@ void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& v
 	const int2 newRes = GetCfgWinRes(fullScreen);
 	const int2 maxRes = GetMaxWinRes();
 
-	LOG("[GR::%s][1] key=%s val=%s (cfgFullScreen=%d sdlFullScreen=%d) newRes=<%d,%d>", __func__, key.c_str(), value.c_str(), fullScreen, fullScreenFlag == SDL_WINDOW_FULLSCREEN, newRes.x, newRes.y);
+	LOG("[GR::%s][1] (cfgFullScreen=%d sdlFullScreen=%d) newRes=<%d,%d>", __func__, fullScreen, fullScreenFlag == SDL_WINDOW_FULLSCREEN, newRes.x, newRes.y);
 
 	// if currently in fullscreen mode, neither SDL_SetWindowSize nor SDL_SetWindowBordered will work
 	// need to first drop to windowed mode before changing these properties, then switch modes again
 	// the maximized-flag also has to be cleared, otherwise going from native fullscreen to windowed
 	// ignores the configured *ResolutionWindowed values
 	// (SDL_SetWindowDisplayMode sets the mode used by fullscreen windows which is not what we want)
-	#if 0
+#if 0
 	if (fullScreenFlag == SDL_WINDOW_FULLSCREEN) {
 		SDL_SetWindowFullscreen(sdlWindows[0], 0);
 		SDL_RestoreWindow(sdlWindows[0]);
 	}
-	#endif
+#endif
 
 	if (SDL_SetWindowFullscreen(sdlWindows[0], 0) != 0)
 		LOG("[GR::%s][2][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
+	// fill up params right here, because the call to ReadWindowPosAndSize() is blocked for this drawFrame
+	screenSizeX = maxRes.x;
+	screenSizeY = maxRes.y;
+
+	winPosX = configHandler->GetInt("WindowPosX");
+	winPosY = configHandler->GetInt("WindowPosY");
+	winSizeX = newRes.x;
+	winSizeY = newRes.y;
+
+
 	SDL_RestoreWindow(sdlWindows[0]);
-	SDL_SetWindowPosition(sdlWindows[0], configHandler->GetInt("WindowPosX"), configHandler->GetInt("WindowPosY"));
-	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
 	SDL_SetWindowBordered(sdlWindows[0], borderless ? SDL_FALSE : SDL_TRUE);
 
-	if (SDL_SetWindowFullscreen(sdlWindows[0], (borderless? SDL_WINDOW_FULLSCREEN_DESKTOP: SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
-		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+	int t, b, l, r;
+	SDL_GetWindowBordersSize(sdlWindows[0], &t, &l, &b, &r);
 
-	if (newRes == maxRes)
-		SDL_MaximizeWindow(sdlWindows[0]);
+	SDL_SetWindowPosition(sdlWindows[0], winPosX, winPosY);
+	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
+
+	//if (newRes == maxRes)
+		//SDL_MaximizeWindow(sdlWindows[0]);
 
 	WindowManagerHelper::SetWindowResizable(sdlWindows[0], !borderless && !fullScreen);
 
+	if (SDL_SetWindowFullscreen(sdlWindows[0], (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
+		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+
 	// on Windows, fullscreen-to-windowed switches can sometimes cause the context to be lost (?)
 	MakeCurrentContext(false, false, false);
+}
+
+void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
+{
+	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
+	windowSettingsChanged = drawFrame + 1; //will happen on next frame
 }
 
 
@@ -1091,9 +1126,14 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	winPosY = 0;
 
 #else
+	if (windowSettingsChanged == drawFrame)
+		return;
 
 	SDL_Rect screenSize;
 	SDL_GetDisplayBounds(SDL_GetWindowDisplayIndex(sdlWindows[0]), &screenSize);
+
+	int t, b, l, r;
+	SDL_GetWindowBordersSize(sdlWindows[0], &t, &l, &b, &r);
 
 	// no other good place to set these
 	screenSizeX = screenSize.w;
@@ -1103,8 +1143,11 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
 	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
-	winPosX = std::max(winPosX, 0);
-	winPosY = std::max(winPosY, 0);
+	winPosX = std::max(winPosX, screenSize.x);
+	winPosY = std::max(winPosY, screenSize.y);
+
+	winSizeX = std::min(winSizeX, screenSize.w);
+	winSizeY = std::min(winSizeY, screenSize.h);
 #endif
 
 	// should be done by caller

@@ -64,6 +64,7 @@ public:
 	void LogDisplayMode(SDL_Window* window) const;
 
 	void SetWindowTitle(const std::string& title);
+	void UpdateWindow();
 	// Notify on Fullscreen/WindowBorderless change
 	void ConfigNotify(const std::string& key, const std::string& value);
 
@@ -140,6 +141,9 @@ public:
 	/// the viewport size in pixels
 	int viewSizeX;
 	int viewSizeY;
+
+	/// Some settings got changed need to adjust the way window is
+	unsigned int windowSettingsChanged;
 
 	/// screen {View,Proj} matrices for rendering in pixel coordinates
 	CMatrix44f screenViewMatrix;
