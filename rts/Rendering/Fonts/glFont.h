@@ -65,7 +65,7 @@ public:
 
 	void SwapBuffers();
 
-	void glWorldPrint(const float3& p, const float size, const std::string& str);
+	void glWorldPrint(const float3& p, const float size, const std::string& str, bool buffered = false);
 
 	void SetViewMatrix(const CMatrix44f& mat) { viewMatrix = mat; }
 	void SetProjMatrix(const CMatrix44f& mat) { projMatrix = mat; }

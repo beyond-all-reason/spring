@@ -245,7 +245,7 @@ void CglFont::Begin(Shader::IProgramObject* shader) {}
 void CglFont::End() {}
 void CglFont::DrawBuffered(Shader::IProgramObject* shader) {}
 
-void CglFont::glWorldPrint(const float3& p, const float size, const std::string& str) {}
+void CglFont::glWorldPrint(const float3& p, const float size, const std::string& str, bool buffered) {}
 
 CMatrix44f CglFont::DefViewMatrix() { return CMatrix44f::Identity(); }
 CMatrix44f CglFont::DefProjMatrix() { return CMatrix44f::Identity(); }
@@ -885,15 +885,19 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 	}
 }
 
-void CglFont::glWorldPrint(const float3& p, const float size, const std::string& str)
+void CglFont::glWorldPrint(const float3& p, const float size, const std::string& str, bool buffered)
 {
 	glPushMatrix();
 	glTranslatef(p.x, p.y, p.z);
 	glMultMatrixf(camera->GetBillBoardMatrix());
 
-	Begin();
-	glPrint(0.0f, 0.0f, size, FONT_DESCENDER | FONT_CENTER | FONT_OUTLINE | FONT_BUFFERED, str);
-	End();
+	if (!buffered)
+		Begin();
+
+	glPrint(0.0f, 0.0f, size, FONT_DESCENDER | FONT_CENTER | FONT_OUTLINE | (FONT_BUFFERED * int(buffered)), str);
+
+	if (!buffered)
+		End();
 
 	glPopMatrix();
 }
