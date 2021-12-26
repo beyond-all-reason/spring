@@ -822,15 +822,26 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	const float xsize = buildInfo.GetXSize() * (SQUARE_SIZE >> 1);
 	const float zsize = buildInfo.GetZSize() * (SQUARE_SIZE >> 1);
 
-	glColor4f(0.2f, 1, 0.2f, IModelDrawerState::alphaValues.w);
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_LINE_STRIP);
-	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
-	glVertexf3(buildPos + float3(-xsize, 1.0f, zsize));
-	glVertexf3(buildPos + float3(-xsize, 1.0f, -zsize));
-	glVertexf3(buildPos + float3(xsize, 1.0f, -zsize));
-	glVertexf3(buildPos + float3(xsize, 1.0f, zsize));
-	glEnd();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	auto& sh = rb.GetShader();
+
+	GLint progID = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &progID);
+
+	const SColor col = SColor{ 0.2f, 1.0f, 0.2f, IModelDrawerState::alphaValues.w };
+
+	rb.AddVertices({
+		{buildPos + float3( xsize, 1.0f,  zsize), col},
+		{buildPos + float3(-xsize, 1.0f,  zsize), col},
+		{buildPos + float3(-xsize, 1.0f, -zsize), col},
+		{buildPos + float3( xsize, 1.0f, -zsize), col},
+		{buildPos + float3( xsize, 1.0f,  zsize), col}
+	});
+	rb.DrawArrays(GL_LINE_STRIP);
+
+	if (progID > 0)
+		glUseProgram(progID);
+
 	glColor4f(1.0f, 1.0f, 1.0f, IModelDrawerState::alphaValues.x);
 	glEnable(GL_TEXTURE_2D);
 }
