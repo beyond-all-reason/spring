@@ -29,6 +29,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Map/InfoTexture/Legacy/LegacyInfoTextureHandler.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 
@@ -101,7 +102,7 @@ void DefaultPathDrawer::DrawInMiniMap()
 }
 
 
-#if 0
+#if 1
 // part of LegacyInfoTexHandler, no longer called
 void DefaultPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int offset, unsigned char* texMem) const {
 	switch (extraTex) {
@@ -232,9 +233,9 @@ void DefaultPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, i
 		} break;
 
 		case CLegacyInfoTextureHandler::drawPathCost: {
-			const PathNodeStateBuffer& maxResStates = pm->GetMaxResPF()->GetBlockStates();
-			const PathNodeStateBuffer& medResStates = pm->GetMedResPE()->GetBlockStates();
-			const PathNodeStateBuffer& lowResStates = pm->GetLowResPE()->GetBlockStates();
+			const PathNodeStateBuffer& maxResStates = pm->GetMaxResPF()->blockStates;
+			const PathNodeStateBuffer& medResStates = pm->GetMedResPE()->blockStates;
+			const PathNodeStateBuffer& lowResStates = pm->GetLowResPE()->blockStates;
 
 			const unsigned int medResBlockSize = pm->GetMedResPE()->GetBlockSize(), medResBlocksX = pm->GetMedResPE()->GetNumBlocks().x;
 			const unsigned int lowResBlockSize = pm->GetLowResPE()->GetBlockSize(), lowResBlocksX = pm->GetLowResPE()->GetNumBlocks().x;
@@ -319,7 +320,7 @@ void DefaultPathDrawer::Draw() const {
 
 	// draw path definitions (goal, radius)
 	for (const auto& p: pm->GetPathMap()) {
-		Draw(&p.second.peDef, rb);
+		Draw(&p.second.peDef);
 	}
 
 	rb.DrawArrays(GL_LINES);
@@ -330,7 +331,7 @@ void DefaultPathDrawer::Draw() const {
 
 
 
-void DefaultPathDrawer::Draw(const CPathFinderDef* pfd, TypedRenderBuffer<VA_TYPE_C>& rb) const {
+void DefaultPathDrawer::Draw(const CPathFinderDef* pfd) const {
 	constexpr float4 colors[] = {
 		{0.0f, 1.0f, 1.0f, 1.0f},
 		{1.0f, 1.0f, 0.0f, 1.0f}
@@ -490,7 +491,7 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 						continue;
 
 					font->SetTextColor(1.0f, 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f);
-					font->glWorldPrint(p2, 5.0f, FloatToString(nrmCost, "f(%.2f)"));
+					font->glWorldPrint(p2, 5.0f, FloatToString(nrmCost, "f(%.2f)"), true);
 				}
 			}
 		}

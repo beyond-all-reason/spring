@@ -31,7 +31,7 @@ public:
 
 private:
 	void Draw() const;
-	void Draw(const CPathFinderDef*, TypedRenderBuffer<VA_TYPE_C>&) const;
+	void Draw(const CPathFinderDef*) const;
 	void Draw(const CPathFinder*) const;
 	void Draw(const CPathEstimator*) const;
 
