@@ -110,10 +110,10 @@ static void DrawBufferStats(const float2 pos)
 		const auto& rdbTC   = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC  >();
 		/*
 		const auto& rdbTNT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TNT >();
-		const auto& rdb2D0  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2d0 >();
+		const auto& rdb2D0  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0 >();
 		const auto& rdb2DC  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dC >();
-		const auto& rdb2DT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dT >();
-		const auto& rdb2DTC = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dTC>();
+		const auto& rdb2DT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT >();
+		const auto& rdb2DTC = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 		*/
 
 		#define FMT "{elems=" _STPF_ " indcs=" _STPF_ " submits{e,i}={" _STPF_ "," _STPF_ "}}"

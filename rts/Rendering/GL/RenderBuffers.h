@@ -245,7 +245,7 @@ inline const std::string RenderBufferShader<VA_TYPE_TNT>::GetFragOutput()
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2d0>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2D0>::GetFragOutput()
 {
 	return "\toutColor = vec4(1.0);";
 }
@@ -257,13 +257,13 @@ inline const std::string RenderBufferShader<VA_TYPE_2dC>::GetFragOutput()
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2dT>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2DT>::GetFragOutput()
 {
 	return "\toutColor = texture(tex, vuv);";
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2dTC>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2DTC>::GetFragOutput()
 {
 	return "\toutColor = vcolor * texture(tex, vuv);";
 }
@@ -702,9 +702,9 @@ GET_TYPED_RENDER_BUFFER(VA_TYPE_T   , 3)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TN  , 4)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TC  , 5)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TNT , 6)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2d0 , 7)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2D0 , 7)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_2dC , 8)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2dT , 9)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2dTC, 10)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2DT , 9)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2DTC, 10)
 
 #undef GET_TYPED_RENDER_BUFFER

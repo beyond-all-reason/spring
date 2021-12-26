@@ -42,7 +42,7 @@ namespace agui
 	void Picture::DrawSelf()
 	{
 		if (texture) {
-			auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dTC>();
+			auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 			auto& sh = rb.GetShader();
 			const SColor color = { 1.0f, 1.0f, 1.0f, 1.0f };
 

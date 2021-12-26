@@ -9,8 +9,8 @@ struct VA_TYPE_TC;
 struct VA_TYPE_TNT;
 struct VA_TYPE_2d0;
 struct VA_TYPE_2dC;
-struct VA_TYPE_2dT;
-struct VA_TYPE_2dTC;
+struct VA_TYPE_2DT;
+struct VA_TYPE_2DTC;
 
 /*
 template <typename T>

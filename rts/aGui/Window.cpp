@@ -47,11 +47,14 @@ void Window::DrawSelf()
 
 	glLineWidth(2.0f);
 	DrawBox(GL_LINE_LOOP, { 1.0f,1.0f,1.0f, opacity });
+
 	/*
-	glBegin(GL_LINE);
-	glVertex2f(pos[0], pos[1]-titleHeight);
-	glVertex2f(pos[0]+size[1], pos[1]-titleHeight);
-	glEnd();*/
+	rb.AddVertices({
+		{pos[0]          , pos[1] - titleHeight, { 1.0f,1.0f,1.0f, opacity }},
+		{pos[0] + size[1], pos[1] - titleHeight, { 1.0f,1.0f,1.0f, opacity }},
+	});
+	rb.DrawArrays(GL_LINES);
+	*/
 
 	font->Begin();
 	font->SetTextColor(1.0f, 1.0f, 1.0f, opacity);

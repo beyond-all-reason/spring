@@ -332,12 +332,12 @@ void DefaultPathDrawer::Draw() const {
 
 
 void DefaultPathDrawer::Draw(const CPathFinderDef* pfd) const {
-	constexpr float4 colors[] = {
+	constexpr SColor colors[] = {
 		{0.0f, 1.0f, 1.0f, 1.0f},
 		{1.0f, 1.0f, 0.0f, 1.0f}
 	};
 
-	glSurfaceColoredCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), SColor(colors[pfd->synced]), 20);
+	glSurfaceColoredCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), colors[pfd->synced], 20);
 }
 
 void DefaultPathDrawer::Draw(const CPathFinder* pf) const {
