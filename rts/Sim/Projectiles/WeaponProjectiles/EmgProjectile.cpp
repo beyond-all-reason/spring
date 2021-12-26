@@ -67,7 +67,7 @@ void CEmgProjectile::Draw()
 		(uint8_t)(color.x * intensity * 255),
 		(uint8_t)(color.y * intensity * 255),
 		(uint8_t)(color.z * intensity * 255),
-		intensity * 255
+		(uint8_t)(          intensity * 255)
 	};
 
 	rb.AddQuadTriangles(
