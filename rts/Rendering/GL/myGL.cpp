@@ -86,9 +86,6 @@ bool CheckAvailableVideoModes()
 			const float r1 = (cm.w * 10.0f) / cm.h;
 			const float r2 = (cm.w * 16.0f) / cm.h;
 
-			// skip legacy (3:2, 4:3, 5:4, ...) and weird (10:6, ...) ratios
-			if (r0 != 16.0f && r1 != 16.0f && r2 != 25.0f)
-				continue;
 			// show only the largest refresh-rate and bit-depth per resolution
 			if (cm.w == pm.w && cm.h == pm.h && (SDL_BPP(cm.format) < SDL_BPP(pm.format) || cm.refresh_rate < pm.refresh_rate))
 				continue;
