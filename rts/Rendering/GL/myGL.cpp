@@ -83,10 +83,6 @@ bool CheckAvailableVideoModes()
 		for (int i = 0; i < numModes; ++i) {
 			SDL_GetDisplayMode(k, i, &cm);
 
-			const float r0 = (cm.w *  9.0f) / cm.h;
-			const float r1 = (cm.w * 10.0f) / cm.h;
-			const float r2 = (cm.w * 16.0f) / cm.h;
-
 			// show only the largest refresh-rate and bit-depth per resolution
 			if (cm.w == pm.w && cm.h == pm.h && (SDL_BPP(cm.format) < SDL_BPP(pm.format) || cm.refresh_rate < pm.refresh_rate))
 				continue;
