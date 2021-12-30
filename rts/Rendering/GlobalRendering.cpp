@@ -103,6 +103,8 @@ CR_REG_METADATA(CGlobalRendering, (
 
 	CR_IGNORED(screenSizeX),
 	CR_IGNORED(screenSizeY),
+	CR_IGNORED(screenPosX),
+	CR_IGNORED(screenPosY),
 	CR_IGNORED(winPosX),
 	CR_IGNORED(winPosY),
 	CR_IGNORED(winSizeX),
@@ -188,6 +190,8 @@ CGlobalRendering::CGlobalRendering()
 
 	, screenSizeX(1)
 	, screenSizeY(1)
+	, screenPosX(0)
+	, screenPosY(0)
 
 	// window geometry
 	, winPosX(configHandler->GetInt("WindowPosX"))
@@ -993,6 +997,8 @@ void CGlobalRendering::UpdateWindow()
 	if (SDL_SetWindowFullscreen(sdlWindows[0], 0) != 0)
 		LOG("[GR::%s][2][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
+	screenPosX = 0;
+	screenPosY = 0;
 	screenSizeX = maxRes.x;
 	screenSizeY = maxRes.y;
 
@@ -1118,6 +1124,8 @@ void CGlobalRendering::UpdatePixelGeometry()
 void CGlobalRendering::ReadWindowPosAndSize()
 {
 #ifdef HEADLESS
+	screenPosX = 8;
+	screenPosY = 8;
 	screenSizeX = 8;
 	screenSizeY = 8;
 	winSizeX = 8;
@@ -1132,6 +1140,8 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
 
 	// no other good place to set these
+	screenPosX = screenSize.x;
+	screenPosY = screenSize.y;
 	screenSizeX = screenSize.w;
 	screenSizeY = screenSize.h;
 

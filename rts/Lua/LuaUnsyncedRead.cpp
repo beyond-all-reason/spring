@@ -512,8 +512,9 @@ int LuaUnsyncedRead::GetScreenGeometry(lua_State* L)
 {
 	lua_pushnumber(L, globalRendering->screenSizeX);
 	lua_pushnumber(L, globalRendering->screenSizeY);
-	lua_pushnumber(L, 0.0f);
-	lua_pushnumber(L, 0.0f);
+	lua_pushnumber(L, globalRendering->screenPosX);
+	lua_pushnumber(L, globalRendering->screenPosY);
+
 	return 4;
 }
 
