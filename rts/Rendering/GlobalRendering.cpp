@@ -1053,6 +1053,41 @@ bool CGlobalRendering::ToggleWindowInputGrabbing()
 	return (SetWindowInputGrabbing(true));
 }
 
+bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl)
+{
+	if (fs && !bl) //fullscreen and not borderless
+		return false;
+
+	const int numDisplays = SDL_GetNumVideoDisplays();
+	if (displayIdx < 0 || displayIdx >= numDisplays)
+		return false;
+
+	SDL_Rect db;
+	SDL_GetDisplayBounds(displayIdx, &db);
+
+	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY             };
+	const int2 brPos = { db.x + winRPosX + winSizeX_, db.y + winRPosY + winSizeY_ };
+
+	if ((tlPos.x < db.x) || (tlPos.y < db.y) || (tlPos.x > db.x + db.w) || (tlPos.y > db.y + db.h))
+		return false;
+
+	if (fs && (winRPosX != 0 || winRPosY != 0 || winSizeX_ != db.w || winSizeY_ != db.h))
+		return false;
+
+	configHandler->Set("WindowPosX", tlPos.x);
+	configHandler->Set("WindowPosY", tlPos.y);
+
+	static const char* xsKeys[2] = { "XResolutionWindowed", "XResolution" };
+	static const char* ysKeys[2] = { "YResolutionWindowed", "YResolution" };
+
+	configHandler->Set(xsKeys[fs], winSizeX_);
+	configHandler->Set(ysKeys[fs], winSizeX_);
+	configHandler->Set("Fullscreen", fs);
+	configHandler->Set("WindowBorderless", bl);
+
+	return true;
+}
+
 
 int2 CGlobalRendering::GetMaxWinRes() const {
 	SDL_DisplayMode dmode;

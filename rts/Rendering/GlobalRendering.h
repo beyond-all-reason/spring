@@ -72,6 +72,8 @@ public:
 	bool SetWindowInputGrabbing(bool enable);
 	bool ToggleWindowInputGrabbing();
 
+	bool SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl);
+
 	void SetFullScreen(bool cliWindowed, bool cliFullScreen);
 	void SetDualScreenParams();
 	void UpdateViewPortGeometry();

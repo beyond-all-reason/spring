@@ -286,6 +286,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SDLStartTextInput);
 	REGISTER_LUA_CFUNC(SDLStopTextInput);
 
+	REGISTER_LUA_CFUNC(SetWindowGeometry);
+
 	return true;
 }
 
@@ -3304,5 +3306,22 @@ int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
 int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 {
 	SDL_StopTextInput();
+	return 0;
+}
+
+int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
+{
+	const int displayIndex = luaL_checkint(L, 1) - 1;
+	const int winRelPosX = luaL_checkint(L, 2);
+	const int winRelPosY = luaL_checkint(L, 3);
+	const int winSizeX = luaL_checkint(L, 4);
+	const int winSizeY = luaL_checkint(L, 5);
+	const int fullScreen = luaL_checkboolean(L, 6);
+	const int borderless = luaL_checkboolean(L, 7);
+
+	const bool r = globalRendering->SetWindowPosHelper(displayIndex, winRelPosX, winRelPosY, winSizeX, winSizeY, fullScreen, borderless);
+	if (!r)
+		luaL_error(L, "[%s] Invalid function parameters\n", __func__);
+
 	return 0;
 }
