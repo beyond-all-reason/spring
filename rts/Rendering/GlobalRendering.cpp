@@ -1063,7 +1063,11 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 		return false;
 
 	SDL_Rect db;
-	SDL_GetDisplayBounds(displayIdx, &db);
+
+	if (fs)
+		SDL_GetDisplayBounds(displayIdx, &db);
+	else
+		SDL_GetDisplayUsableBounds(displayIdx, &db);
 
 	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY             };
 	const int2 brPos = { db.x + winRPosX + winSizeX_, db.y + winRPosY + winSizeY_ };
@@ -1081,7 +1085,7 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 	static const char* ysKeys[2] = { "YResolutionWindowed", "YResolution" };
 
 	configHandler->Set(xsKeys[fs], winSizeX_);
-	configHandler->Set(ysKeys[fs], winSizeX_);
+	configHandler->Set(ysKeys[fs], winSizeY_);
 	configHandler->Set("Fullscreen", fs);
 	configHandler->Set("WindowBorderless", bl);
 
