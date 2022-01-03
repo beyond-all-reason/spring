@@ -133,7 +133,7 @@ WEAPONTAG(float, metalcost).externalName("metalPerShot").defaultValue(0.0f);
 WEAPONTAG(float, energycost).externalName("energyPerShot").defaultValue(0.0f);
 
 // Other Properties
-WEAPONTAG(float, fireStarter).defaultValue(0.0f).minimumValue(0.0f).maximumValue(100.0f).scaleValue(0.01f)
+WEAPONTAG(float, fireStarter).defaultValue(0.0f).minimumValue(0.0f).maximumValue(1.0f).scaleValue(0.01f) // max here is after scaling, in defs it's 100
 	.description("The percentage chance of the weapon setting fire to static map features on impact.");
 WEAPONTAG(bool, paralyzer).defaultValue(false).description("Is the weapon a paralyzer? If true the weapon only stuns enemy units and does not cause damage in the form of lost hit-points.");
 WEAPONTAG(int, paralyzeTime,  damages.paralyzeDamageTime).defaultValue(10).minimumValue(0).description("Determines the maximum length of time in seconds that the target will be paralyzed. The timer is restarted every time the target is hit by the weapon. Cannot be less than 0.");
