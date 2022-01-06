@@ -81,10 +81,6 @@ CMouseHandler::CMouseHandler()
 {
 	const int2 screenCenter = globalRendering->GetScreenCenter();
 
-	// initially center the cursor
-	mouseInput->SetPos(screenCenter);
-	mouseInput->WarpPos(screenCenter);
-
 	dir = GetCursorCameraDir(lastx = screenCenter.x, lasty = screenCenter.y);
 
 
