@@ -1040,9 +1040,6 @@ bool CGlobalRendering::ToggleWindowInputGrabbing()
 
 bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl) const
 {
-	if (fs && !bl) //fullscreen and not borderless
-		return false;
-
 	const int numDisplays = SDL_GetNumVideoDisplays();
 	if (displayIdx < 0 || displayIdx >= numDisplays)
 		return false;
