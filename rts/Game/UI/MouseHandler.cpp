@@ -691,10 +691,6 @@ void CMouseHandler::ShowMouse()
 	// (by switching between default cursor and later the real one, e.g. `attack`)
 	// instead update state and cursor at the same time
 	ToggleHwCursor(hardwareCursor);
-
-	// force a warp back to center
-	mouseInput->SetPos(globalRendering->GetScreenCenter());
-	mouseInput->WarpPos(mouseInput->GetPos());
 }
 
 void CMouseHandler::HideMouse()
