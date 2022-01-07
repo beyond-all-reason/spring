@@ -13,6 +13,7 @@
 #include "System/type2.h"
 
 struct SDL_version;
+struct SDL_Rect;
 struct SDL_Window;
 typedef void* SDL_GLContext;
 
@@ -87,6 +88,9 @@ public:
 	int2 GetScreenCenter() const { return {viewPosX + (viewSizeX >> 1), viewPosY + (viewSizeY >> 1)}; }
 	int2 GetMaxWinRes() const;
 	int2 GetCfgWinRes(bool fullScrn) const;
+
+	int GetCurrentDisplayIndex() const;
+	void GetScreenEffectiveBounds(SDL_Rect& r, const int* di = nullptr, const bool* fs = nullptr) const;
 
 	bool CheckGLMultiSampling() const;
 	bool CheckGLContextVersion(const int2& minCtx) const;

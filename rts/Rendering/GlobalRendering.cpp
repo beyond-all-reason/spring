@@ -1040,16 +1040,13 @@ bool CGlobalRendering::ToggleWindowInputGrabbing()
 
 bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl) const
 {
+
 	const int numDisplays = SDL_GetNumVideoDisplays();
 	if (displayIdx < 0 || displayIdx >= numDisplays)
 		return false;
 
 	SDL_Rect db;
-
-	if (fs)
-		SDL_GetDisplayBounds(displayIdx, &db);
-	else
-		SDL_GetDisplayUsableBounds(displayIdx, &db);
+	GetScreenEffectiveBounds(db, &displayIdx, &fs);
 
 	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY };
 	const int2 brPos = { db.x + winRPosX + winSizeX_, db.y + winRPosY + winSizeY_ };
@@ -1099,6 +1096,21 @@ int2 CGlobalRendering::GetCfgWinRes(bool fullScrn) const
 	res.x = std::max(res.x, MIN_WIN_SIZE_X * (1 - fullScrn));
 	res.y = std::max(res.y, MIN_WIN_SIZE_Y * (1 - fullScrn));
 	return res;
+}
+
+int CGlobalRendering::GetCurrentDisplayIndex() const
+{
+	return sdlWindows[0] ? SDL_GetWindowDisplayIndex(sdlWindows[0]) : 0;
+}
+
+void CGlobalRendering::GetScreenEffectiveBounds(SDL_Rect& r, const int* di, const bool* fs) const
+{
+	const int displayIndex = di ? *di : GetCurrentDisplayIndex();
+	const bool fullScreen_ = fs ? *fs : this->fullScreen;
+	if (fullScreen_)
+		SDL_GetDisplayBounds(displayIndex, &r);
+	else
+		SDL_GetDisplayUsableBounds(displayIndex, &r);
 }
 
 
@@ -1154,16 +1166,18 @@ void CGlobalRendering::ReadWindowPosAndSize()
 #else
 
 	SDL_Rect screenSize;
-	SDL_GetDisplayBounds(SDL_GetWindowDisplayIndex(sdlWindows[0]), &screenSize);
+	GetScreenEffectiveBounds(screenSize);
 
 	// no other good place to set these
 	screenSizeX = screenSize.w;
 	screenSizeY = screenSize.h;
+	screenPosX  = screenSize.x;
+	screenPosY  = screenSize.y;
 
+	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
 	SDL_GetWindowSize(sdlWindows[0], &winSizeX, &winSizeY);
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
-	LOG("[GR::%s] window={%d,%d,%d,%d} screen={%d,%d,%d,%d}", __func__, winPosX, winPosY, winSizeX, winSizeY, screenSize.x, screenSize.y, screenSize.w, screenSize.h);
 	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
 	winPosX = std::max(winPosX, 0);
 	winPosY = std::max(winPosY, 0);
@@ -1217,15 +1231,15 @@ void CGlobalRendering::UpdateScreenMatrices()
 	const float vpy = viewPosY + bottomWinCoor;
 	const float vsx = viewSizeX; // same as winSizeX except in dual-screen mode
 	const float vsy = viewSizeY; // same as winSizeY
-	const float ssx = screenSizeX;
-	const float ssy = screenSizeY;
+	const float ssx = screenSizeX - screenPosX;
+	const float ssy = screenSizeY - screenPosY;
 	const float hssx = 0.5f * ssx;
 	const float hssy = 0.5f * ssy;
 
 	const float zplane = screenParameters.y * (ssx / screenParameters.x);
 	const float znear = zplane * 0.5f;
 	const float zfar = zplane * 2.0f;
-	const float zfact = znear / zplane;
+	constexpr float zfact = 0.5f;
 
 	const float left = (vpx - hssx) * zfact;
 	const float bottom = (vpy - hssy) * zfact;
