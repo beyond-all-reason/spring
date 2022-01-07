@@ -14,6 +14,7 @@
 
 struct SDL_version;
 struct SDL_Window;
+struct SDL_Rect;
 typedef void* SDL_GLContext;
 
 /**
@@ -87,6 +88,8 @@ public:
 	int2 GetScreenCenter() const { return {viewPosX + (viewSizeX >> 1), viewPosY + (viewSizeY >> 1)}; }
 	int2 GetMaxWinRes() const;
 	int2 GetCfgWinRes(bool fullScrn) const;
+	int GetCurrentDisplayIndex() const;
+	void GetEffectiveDisplayBounds(SDL_Rect& db, const int* displayIndex = nullptr, const bool* fullScreen_ = nullptr) const;
 
 	bool CheckGLMultiSampling() const;
 	bool CheckGLContextVersion(const int2& minCtx) const;
