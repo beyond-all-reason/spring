@@ -190,8 +190,6 @@ CGlobalRendering::CGlobalRendering()
 
 	, screenSizeX(1)
 	, screenSizeY(1)
-	, screenPosX(0)
-	, screenPosY(0)
 
 	// window geometry
 	, winPosX(configHandler->GetInt("WindowPosX"))
@@ -205,7 +203,7 @@ CGlobalRendering::CGlobalRendering()
 	, viewSizeX(1)
 	, viewSizeY(1)
 
-	, winBorder{0}
+	, winBorder{ 0 }
 
 	, winChgFrame(0)
 
@@ -287,14 +285,14 @@ CGlobalRendering::CGlobalRendering()
 {
 	verticalSync->WrapNotifyOnChange();
 	configHandler->NotifyOnChange(this, {
-		"Fullscreen",
-		"WindowBorderless",
-		"XResolution",
-		"YResolution",
-		"XResolutionWindowed",
-		"YResolutionWindowed",
-		"WindowPosX",
-		"WindowPosY"
+			"Fullscreen",
+			"WindowBorderless",
+			"XResolution",
+			"YResolution",
+			"XResolutionWindowed",
+			"YResolutionWindowed",
+			"WindowPosX",
+			"WindowPosY"
 	});
 }
 
@@ -324,7 +322,7 @@ void CGlobalRendering::PreKill()
 }
 
 
-SDL_Window* CGlobalRendering::CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden)
+SDL_Window* CGlobalRendering::CreateSDLWindow(const int2& winRes, const int2& minRes, const char* title, bool hidden) const
 {
 	SDL_Window* newWindow = nullptr;
 
@@ -959,6 +957,12 @@ void CGlobalRendering::SetWindowTitle(const std::string& title)
 	SDL_SetWindowTitle(sdlWindows[0], title.c_str());
 }
 
+void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
+{
+	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
+	winChgFrame = drawFrame + 1; //will happen on next frame
+}
+
 void CGlobalRendering::UpdateWindow()
 {
 	if (winChgFrame < drawFrame)
@@ -978,8 +982,7 @@ void CGlobalRendering::UpdateWindow()
 	// note that the configured fullscreen resolution is just
 	// ignored by SDL if not equal to the user's screen size
 	const int2 newRes = GetCfgWinRes(fullScreen);
-	SDL_Rect db;
-	GetEffectiveDisplayBounds(db, nullptr, &fullScreen);
+	const int2 maxRes = GetMaxWinRes();
 
 	LOG("[GR::%s][1] (cfgFullScreen=%d sdlFullScreen=%d) newRes=<%d,%d>", __func__, fullScreen, fullScreenFlag == SDL_WINDOW_FULLSCREEN, newRes.x, newRes.y);
 
@@ -988,50 +991,31 @@ void CGlobalRendering::UpdateWindow()
 	// the maximized-flag also has to be cleared, otherwise going from native fullscreen to windowed
 	// ignores the configured *ResolutionWindowed values
 	// (SDL_SetWindowDisplayMode sets the mode used by fullscreen windows which is not what we want)
-#if 0
+	#if 0
 	if (fullScreenFlag == SDL_WINDOW_FULLSCREEN) {
 		SDL_SetWindowFullscreen(sdlWindows[0], 0);
 		SDL_RestoreWindow(sdlWindows[0]);
 	}
-#endif
+	#endif
 
 	if (SDL_SetWindowFullscreen(sdlWindows[0], 0) != 0)
 		LOG("[GR::%s][2][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
-	screenPosX = db.x;
-	screenPosY = db.y;
-	screenSizeX = db.w;
-	screenSizeY = db.h;
-
-	winPosX = configHandler->GetInt("WindowPosX");
-	winPosY = configHandler->GetInt("WindowPosY");
-	winSizeX = newRes.x;
-	winSizeY = newRes.y;
-
 	SDL_RestoreWindow(sdlWindows[0]);
+	SDL_SetWindowPosition(sdlWindows[0], configHandler->GetInt("WindowPosX"), configHandler->GetInt("WindowPosY"));
+	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
 	SDL_SetWindowBordered(sdlWindows[0], borderless ? SDL_FALSE : SDL_TRUE);
 
-	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
+	if (SDL_SetWindowFullscreen(sdlWindows[0], (borderless? SDL_WINDOW_FULLSCREEN_DESKTOP: SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
+		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
-	SDL_SetWindowPosition(sdlWindows[0], winPosX, winPosY);
-	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
-
-	if (newRes == int2(screenSizeX, screenSizeY))
+	if (newRes == maxRes)
 		SDL_MaximizeWindow(sdlWindows[0]);
 
 	WindowManagerHelper::SetWindowResizable(sdlWindows[0], !borderless && !fullScreen);
 
-	if (SDL_SetWindowFullscreen(sdlWindows[0], (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
-		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
-
 	// on Windows, fullscreen-to-windowed switches can sometimes cause the context to be lost (?)
 	MakeCurrentContext(false, false, false);
-}
-
-void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
-{
-	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
-	winChgFrame = drawFrame + 1; //will happen on next frame
 }
 
 
@@ -1054,7 +1038,7 @@ bool CGlobalRendering::ToggleWindowInputGrabbing()
 	return (SetWindowInputGrabbing(true));
 }
 
-bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl)
+bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl) const
 {
 	if (fs && !bl) //fullscreen and not borderless
 		return false;
@@ -1064,9 +1048,13 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 		return false;
 
 	SDL_Rect db;
-	GetEffectiveDisplayBounds(db, &displayIdx, &fs);
 
-	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY             };
+	if (fs)
+		SDL_GetDisplayBounds(displayIdx, &db);
+	else
+		SDL_GetDisplayUsableBounds(displayIdx, &db);
+
+	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY };
 	const int2 brPos = { db.x + winRPosX + winSizeX_, db.y + winRPosY + winSizeY_ };
 
 	if ((tlPos.x < db.x) || (tlPos.y < db.y) || (tlPos.x > db.x + db.w) || (tlPos.y > db.y + db.h))
@@ -1091,8 +1079,8 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 
 int2 CGlobalRendering::GetMaxWinRes() const {
 	SDL_DisplayMode dmode;
-	SDL_GetDesktopDisplayMode(GetCurrentDisplayIndex(), &dmode);
-	return { dmode.w, dmode.h };
+	SDL_GetDesktopDisplayMode(0, &dmode);
+	return {dmode.w, dmode.h};
 }
 
 int2 CGlobalRendering::GetCfgWinRes(bool fullScrn) const
@@ -1116,21 +1104,6 @@ int2 CGlobalRendering::GetCfgWinRes(bool fullScrn) const
 	return res;
 }
 
-int CGlobalRendering::GetCurrentDisplayIndex() const
-{
-	return (sdlWindows[0] != nullptr) ? SDL_GetWindowDisplayIndex(sdlWindows[0]) : 0;
-}
-
-void CGlobalRendering::GetEffectiveDisplayBounds(SDL_Rect& db, const int* displayIndex, const bool* fullScreen_) const
-{
-	const int  di = displayIndex ? *displayIndex : GetCurrentDisplayIndex();
-	const bool fs = fullScreen_ ? *fullScreen_ : this->fullScreen;
-
-	if (fs)
-		SDL_GetDisplayBounds(di, &db);
-	else
-		SDL_GetDisplayUsableBounds(di, &db);
-}
 
 // only called on startup; change the config based on command-line args
 void CGlobalRendering::SetFullScreen(bool cliWindowed, bool cliFullScreen)
@@ -1174,8 +1147,6 @@ void CGlobalRendering::UpdatePixelGeometry()
 void CGlobalRendering::ReadWindowPosAndSize()
 {
 #ifdef HEADLESS
-	screenPosX = 8;
-	screenPosY = 8;
 	screenSizeX = 8;
 	screenSizeY = 8;
 	winSizeX = 8;
@@ -1184,21 +1155,18 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	winPosY = 0;
 
 #else
-	SDL_Rect screenSize;
-	GetEffectiveDisplayBounds(screenSize);
 
-	SDL_GetWindowBordersSize(sdlWindows[0], &winBorder[0], &winBorder[1], &winBorder[2], &winBorder[3]);
+	SDL_Rect screenSize;
+	SDL_GetDisplayBounds(SDL_GetWindowDisplayIndex(sdlWindows[0]), &screenSize);
 
 	// no other good place to set these
-	screenPosX = screenSize.x;
-	screenPosY = screenSize.y;
 	screenSizeX = screenSize.w;
 	screenSizeY = screenSize.h;
 
 	SDL_GetWindowSize(sdlWindows[0], &winSizeX, &winSizeY);
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
-	// enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
+	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
 	winPosX = std::max(winPosX, 0);
 	winPosY = std::max(winPosY, 0);
 #endif
