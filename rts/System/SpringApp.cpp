@@ -754,6 +754,7 @@ bool SpringApp::Update()
 	bool swap = true;
 
 	configHandler->Update();
+	globalRendering->UpdateWindow();
 
 	#if 0
 	if (activeController == nullptr)
@@ -770,7 +771,6 @@ bool SpringApp::Update()
 
 	// always swap by default, not doing so can upset some drivers
 	globalRendering->SwapBuffers(swap, false);
-	globalRendering->UpdateWindow();
 	return retc;
 }
 

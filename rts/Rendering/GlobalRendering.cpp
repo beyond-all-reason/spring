@@ -1166,6 +1166,7 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	SDL_GetWindowSize(sdlWindows[0], &winSizeX, &winSizeY);
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
+	LOG("[GR::%s] window={%d,%d,%d,%d} screen={%d,%d,%d,%d}", __func__, winPosX, winPosY, winSizeX, winSizeY, screenSize.x, screenSize.y, screenSize.w, screenSize.h);
 	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
 	winPosX = std::max(winPosX, 0);
 	winPosY = std::max(winPosY, 0);
