@@ -1220,7 +1220,6 @@ void CGlobalRendering::UpdateGLConfigs()
 
 void CGlobalRendering::UpdateScreenMatrices()
 {
-	LOG("[GR::%s]", __func__);
 	// .x := screen width (meters), .y := eye-to-screen (meters)
 	static float2 screenParameters = { 0.36f, 0.60f };
 
@@ -1231,8 +1230,8 @@ void CGlobalRendering::UpdateScreenMatrices()
 	const float vpy = viewPosY + bottomWinCoor;
 	const float vsx = viewSizeX; // same as winSizeX except in dual-screen mode
 	const float vsy = viewSizeY; // same as winSizeY
-	const float ssx = screenSizeX - screenPosX;
-	const float ssy = screenSizeY - screenPosY;
+	const float ssx = screenSizeX;
+	const float ssy = screenSizeY;
 	const float hssx = 0.5f * ssx;
 	const float hssy = 0.5f * ssy;
 
@@ -1245,6 +1244,8 @@ void CGlobalRendering::UpdateScreenMatrices()
 	const float bottom = (vpy - hssy) * zfact;
 	const float right = ((vpx + vsx) - hssx) * zfact;
 	const float top = ((vpy + vsy) - hssy) * zfact;
+
+	LOG("[GR::%s] vpx=%f, vpy=%f, vsx=%f, vsy=%f, ssx=%f, ssy=%f, screenPosX=%d, screenPosY=%d", __func__, vpx, vpy, vsx, vsy, ssx, ssy, screenPosX, screenPosY);
 
 	// translate s.t. (0,0,0) is on the zplane, on the window's bottom-left corner
 	screenViewMatrix = CMatrix44f{ float3{left / zfact, bottom / zfact, -zplane} };
