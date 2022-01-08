@@ -965,7 +965,7 @@ void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& v
 
 void CGlobalRendering::UpdateWindow()
 {
-	if (winChgFrame < drawFrame)
+	if (winChgFrame != drawFrame)
 		return;
 
 	if (sdlWindows[0] == nullptr)
@@ -1203,10 +1203,11 @@ void CGlobalRendering::SaveWindowPosAndSize()
 	if ((SDL_GetWindowFlags(sdlWindows[0]) & SDL_WINDOW_MINIMIZED) != 0)
 		return;
 
-	configHandler->Set("WindowPosX", winPosX);
-	configHandler->Set("WindowPosY", winPosY);
-	configHandler->Set("XResolutionWindowed", winSizeX);
-	configHandler->Set("YResolutionWindowed", winSizeY);
+	// do not notify about changes to block update loop
+	configHandler->Set("WindowPosX", winPosX, false, false);
+	configHandler->Set("WindowPosY", winPosY, false, false);
+	configHandler->Set("XResolutionWindowed", winSizeX, false, false);
+	configHandler->Set("YResolutionWindowed", winSizeY, false, false);
 }
 
 
