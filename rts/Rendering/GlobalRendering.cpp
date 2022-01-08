@@ -1162,7 +1162,7 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	winSizeY = 8;
 	winPosX = 0;
 	winPosY = 0;
-
+	winBorder = { 0 };
 #else
 
 	SDL_Rect screenSize;
