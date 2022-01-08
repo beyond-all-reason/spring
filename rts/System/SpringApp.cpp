@@ -944,10 +944,6 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 			switch (event.window.event) {
 				case SDL_WINDOWEVENT_MOVED: {
 					SaveWindowPosAndSize();
-					globalRendering->UpdateGLConfigs();
-					globalRendering->UpdateGLGeometry();
-					globalRendering->InitGLState();
-					UpdateInterfaceGeometry();
 				} break;
 				// case SDL_WINDOWEVENT_RESIZED: // always preceded by CHANGED
 				case SDL_WINDOWEVENT_SIZE_CHANGED: {

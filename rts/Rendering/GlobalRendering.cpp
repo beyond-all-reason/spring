@@ -285,14 +285,14 @@ CGlobalRendering::CGlobalRendering()
 {
 	verticalSync->WrapNotifyOnChange();
 	configHandler->NotifyOnChange(this, {
-			"Fullscreen",
-			"WindowBorderless",
-			"XResolution",
-			"YResolution",
-			"XResolutionWindowed",
-			"YResolutionWindowed",
-			"WindowPosX",
-			"WindowPosY"
+		"Fullscreen",
+		"WindowBorderless",
+		"XResolution",
+		"YResolution",
+		"XResolutionWindowed",
+		"YResolutionWindowed",
+		"WindowPosX",
+		"WindowPosY"
 	});
 }
 
