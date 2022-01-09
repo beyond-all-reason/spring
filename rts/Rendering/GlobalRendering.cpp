@@ -62,8 +62,8 @@ CONFIG(int, XResolution).defaultValue(0).headlessValue(8).minimumValue(0).descri
 CONFIG(int, YResolution).defaultValue(0).headlessValue(8).minimumValue(0).description("Sets the height of the game screen. If set to 0 Spring will autodetect the current resolution of your desktop.");
 CONFIG(int, XResolutionWindowed).defaultValue(0).headlessValue(8).minimumValue(0).description("See XResolution, just for windowed.");
 CONFIG(int, YResolutionWindowed).defaultValue(0).headlessValue(8).minimumValue(0).description("See YResolution, just for windowed.");
-CONFIG(int, WindowPosX).minimumValue(0).defaultValue(32).description("Sets the horizontal position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.");
-CONFIG(int, WindowPosY).minimumValue(0).defaultValue(32).description("Sets the vertical position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.");
+CONFIG(int, WindowPosX).defaultValue(0 ).description("Sets the horizontal position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.");
+CONFIG(int, WindowPosY).defaultValue(32).description("Sets the vertical position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.");
 
 
 /**
@@ -540,7 +540,7 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title, bool hidden)
 	}
 
 	// redundant, but harmless
-	SDL_GL_MakeCurrent(sdlWindows[0], glContexts[0]);
+	MakeCurrentContext(false, false, false);
 	SDL_DisableScreenSaver();
 	return true;
 }
@@ -1002,19 +1002,22 @@ void CGlobalRendering::UpdateWindow()
 		LOG("[GR::%s][2][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
 	SDL_RestoreWindow(sdlWindows[0]);
-	SDL_SetWindowPosition(sdlWindows[0], configHandler->GetInt("WindowPosX"), configHandler->GetInt("WindowPosY"));
+	int winPosX_ = configHandler->GetInt("WindowPosX");
+	int winPosY_ = configHandler->GetInt("WindowPosY");
+	SDL_SetWindowPosition(sdlWindows[0], winPosX_, winPosY_);
 	SDL_SetWindowSize(sdlWindows[0], newRes.x, newRes.y);
 	SDL_SetWindowBordered(sdlWindows[0], borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (SDL_SetWindowFullscreen(sdlWindows[0], (borderless? SDL_WINDOW_FULLSCREEN_DESKTOP: SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
-	if (newRes == maxRes)
-		SDL_MaximizeWindow(sdlWindows[0]);
+	//if (newRes == maxRes)
+		//SDL_MaximizeWindow(sdlWindows[0]);
 
 	WindowManagerHelper::SetWindowResizable(sdlWindows[0], !borderless && !fullScreen);
 
 	// on Windows, fullscreen-to-windowed switches can sometimes cause the context to be lost (?)
+	MakeCurrentContext(false, false, true );
 	MakeCurrentContext(false, false, false);
 }
 
@@ -1073,7 +1076,7 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 
 int2 CGlobalRendering::GetMaxWinRes() const {
 	SDL_DisplayMode dmode;
-	SDL_GetDesktopDisplayMode(0, &dmode);
+	SDL_GetDesktopDisplayMode(GetCurrentDisplayIndex(), &dmode);
 	return {dmode.w, dmode.h};
 }
 
@@ -1179,8 +1182,8 @@ void CGlobalRendering::ReadWindowPosAndSize()
 	SDL_GetWindowPosition(sdlWindows[0], &winPosX, &winPosY);
 
 	//enforce >=0 https://github.com/beyond-all-reason/spring/issues/23
-	winPosX = std::max(winPosX, 0);
-	winPosY = std::max(winPosY, 0);
+	//winPosX = std::max(winPosX, 0);
+	//winPosY = std::max(winPosY, 0);
 #endif
 
 	// should be done by caller
