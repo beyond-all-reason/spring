@@ -285,7 +285,7 @@ void CUnitDrawerLegacy::DrawUnitTrans(const CUnit* unit, uint32_t preList, uint3
 
 void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 {
-	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dTC>();
+	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 	assert(rb.AssertSubmission());
 
 	auto& sh = rb.GetShader();
@@ -485,7 +485,7 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dTC>();
+	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 	assert(rb.AssertSubmission());
 
 	auto& sh = rb.GetShader();
