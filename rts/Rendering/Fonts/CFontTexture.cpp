@@ -111,8 +111,6 @@ public:
 
 			if (error != 0)
 				throw std::runtime_error(errBuf);
-
-			// LOG_L(L_INFO, "%s", msgBuf);
 		}
 
         #ifdef USE_FONTCONFIG
@@ -164,10 +162,9 @@ public:
 		// so manually add windows fonts dir and engine fonts dir to fontconfig
 		// so it can use them as fallback.
 
-		auto b1 = FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>("fonts"));
-		auto b2 = FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>(osFontsDir));
-		auto b3 = FcConfigBuildFonts(fcConfig);
-		printf("[%s] b1=%d, b2=%d, b3=%d", __func__, b1, b2, b3);
+		FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>("fonts"));
+		FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>(osFontsDir));
+		FcConfigBuildFonts(fcConfig);
 
 		return FcConfigBuildFonts(fcConfig);
 	}
@@ -280,7 +277,6 @@ static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const 
 static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t>& characters, const FT_Face origFace, const int origSize)
 {
 #if defined(USE_FONTCONFIG)
-	LOG("GetFontForCharacters1");
 	if (characters.empty())
 		return nullptr;
 
@@ -289,7 +285,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 	for (auto c: characters) {
 		FcCharSetAddChar(cset, c);
 	}
-	LOG("GetFontForCharacters1.1");
 
 	// create properties of the wanted font
 	FcPattern* pattern = FcPatternCreate();
@@ -301,14 +296,15 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			FcPatternAddWeak(pattern, FC_ANTIALIAS, v, FcFalse);
 		}
 
-		FcPatternAddCharSet(pattern, FC_CHARSET, cset);
-		FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
-		FcPatternAddDouble(pattern, FC_SIZE, static_cast<double>(origSize));
+		FcPatternAddCharSet(pattern, FC_CHARSET , cset);
+		FcPatternAddBool(   pattern, FC_SCALABLE, FcTrue);
+		FcPatternAddDouble( pattern, FC_SIZE    , static_cast<double>(origSize));
 
 		int weight = FC_WEIGHT_NORMAL;
 		int slant  = FC_SLANT_ROMAN;
 		FcBool outline = FcFalse;
 		FcChar8* family = nullptr;
+		FcChar8* foundry = nullptr;
 
 		{
 			const FcChar8* ftname = reinterpret_cast<const FcChar8*>("not used");
@@ -316,10 +312,11 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			FcPattern* origPattern = FcFreeTypeQueryFace(origFace, ftname, 0, blanks);
 			FcBlanksDestroy(blanks);
 			if (origPattern) {
-				FcPatternGetInteger(origPattern, FC_WEIGHT, 0, &weight);
-				FcPatternGetInteger(origPattern, FC_SLANT,  0, &slant);
-				FcPatternGetBool(origPattern, FC_OUTLINE, 0, &outline);
-				FcPatternGetString(origPattern, FC_FAMILY, 0, &family);
+				FcPatternGetInteger(origPattern, FC_WEIGHT , 0, &weight);
+				FcPatternGetInteger(origPattern, FC_SLANT  , 0, &slant);
+				FcPatternGetBool(   origPattern, FC_OUTLINE, 0, &outline);
+				FcPatternGetString( origPattern, FC_FAMILY , 0, &family);
+				FcPatternGetString( origPattern, FC_FOUNDRY, 0, &foundry);
 
 				FcPatternDestroy(origPattern);
 			}
@@ -329,22 +326,21 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 		FcPatternAddBool(pattern, FC_OUTLINE, outline);
 		if (family)
 			FcPatternAddString(pattern, FC_FAMILY, family);
-
-		LOG("GetFontForCharacters2 %d %d %d %s", weight, slant, int(outline), reinterpret_cast<const char*>(family));
+		if (foundry)
+			FcPatternAddString(pattern, FC_FOUNDRY, foundry);
 	}
 
 	FcDefaultSubstitute(pattern);
 	if (!FcConfigSubstitute(FtLibraryHandler::GetFcConfig(), pattern, FcMatchPattern))
 	{
-		LOG("GetFontForCharacters3");
 		FcPatternDestroy(pattern);
+		FcCharSetDestroy(cset);
 		return nullptr;
 	}
 
 	// search fonts that fit our request
 	FcResult res;
 	FcFontSet* fs = FcFontSort(FtLibraryHandler::GetFcConfig(), pattern, FcFalse, nullptr, &res);
-	LOG("GetFontForCharacters4 %d", fs->nfont);
 
 	// dtors
 	auto del = [&](FcFontSet* fs) { FcFontSetDestroy(fs); };
@@ -365,7 +361,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 		if (r != FcResultMatch || cFilename == nullptr) continue;
 
 		const std::string filename = reinterpret_cast<char*>(cFilename);
-		LOG("[%s] Using font filename=%s as substitution", __func__, filename.c_str());
 		try {
 			return GetFontFace(filename, origSize);
 		} catch(const content_error& ex) {
