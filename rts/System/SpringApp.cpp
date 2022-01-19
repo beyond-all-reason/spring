@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <iostream>
+#include <chrono>
 
 #include <SDL.h>
 #include <gflags/gflags.h>
@@ -244,7 +245,7 @@ bool SpringApp::Init()
 	CBitmap::InitPool(configHandler->GetInt("TextureMemPoolSize"));
 
 	UpdateInterfaceGeometry();
-	CglFont::LoadConfigFonts();
+	InitFonts();
 
 	ClearScreen();
 
@@ -309,6 +310,34 @@ bool SpringApp::InitPlatformLibs()
 #endif
 
 	return true;
+}
+
+bool SpringApp::InitFonts()
+{
+	using namespace std::chrono_literals;
+
+	auto future = std::async(std::launch::async, [] {
+		return FtLibraryHandlerProxy::GenFontConfig();
+	});
+
+	auto status = future.wait_for(0ms);
+	for (;;) {
+		if (status == std::future_status::ready) {
+			if (future.get() == false)
+				return false;
+
+			return CglFont::LoadConfigFonts();
+		}
+		else {
+			//TODO: Draw something smart here
+			globalRendering->SwapBuffers(true, true);
+
+			Watchdog::ClearTimer(WDT_MAIN);
+			input.PushEvents();
+
+			status = future.wait_for(16.6666ms); //60 FPS
+		}
+	}
 }
 
 bool SpringApp::InitFileSystem()
@@ -418,12 +447,12 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 			spring_clock::PushTickRate();
 			spring_time::setstarttime(spring_time::gettime(true));
 		}
-		if (CFontTexture::GenFontConfig()) {
-			printf("[CFontTexture::GenFontConfig] is succesfull\n");
+		if (FtLibraryHandlerProxy::GenFontConfig()) {
+			printf("[FtLibraryHandler::GenFontConfig] is succesfull\n");
 			exit(spring::EXIT_CODE_SUCCESS);
 		}
 		else {
-			printf("[CFontTexture::GenFontConfig] is unsuccesfull\n");
+			printf("[FtLibraryHandler::GenFontConfig] is unsuccesfull\n");
 			exit(spring::EXIT_CODE_FAILURE);
 		}
 	}
