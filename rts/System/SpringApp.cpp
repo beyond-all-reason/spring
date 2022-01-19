@@ -320,8 +320,8 @@ bool SpringApp::InitFonts()
 		return FtLibraryHandlerProxy::GenFontConfig();
 	});
 
-	auto status = future.wait_for(0ms);
 	for (;;) {
+		auto status = future.wait_for(16.6666ms); //60 FPS
 		if (status == std::future_status::ready) {
 			if (future.get() == false)
 				return false;
@@ -334,8 +334,6 @@ bool SpringApp::InitFonts()
 
 			Watchdog::ClearTimer(WDT_MAIN);
 			input.PushEvents();
-
-			status = future.wait_for(16.6666ms); //60 FPS
 		}
 	}
 }
