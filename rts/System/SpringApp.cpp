@@ -51,6 +51,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/Models/ModelsMemStorage.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -60,6 +61,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "System/bitops.h"
+#include "System/ScopedResource.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/GlobalConfig.h"
@@ -314,8 +316,26 @@ bool SpringApp::InitPlatformLibs()
 
 bool SpringApp::InitFonts()
 {
-	using namespace std::chrono_literals;
+	std::string texPath = FileSystemAbstraction::GetSpringExecutableDir() + "base/fontscache.bmp";
+	texPath = FileSystem::ForwardSlashes(texPath);
 
+
+	// can't use shaders here because filesystem is not ready yet
+	// drawing w/o shader is meh, so use SDL renderer
+	const auto scopedSR = spring::ScopedResource(
+		SDL_CreateRenderer(globalRendering->GetWindow(0), -1, SDL_RENDERER_ACCELERATED),
+		[](SDL_Renderer* r) { SDL_DestroyRenderer(r); }
+	);
+
+	auto* surf = SDL_LoadBMP(texPath.c_str());
+	auto scopedTex = spring::ScopedResource(
+		surf ? SDL_CreateTextureFromSurface(scopedSR(), surf) : nullptr,
+		[](SDL_Texture* t) { SDL_DestroyTexture(t); }
+	);
+	SDL_FreeSurface(surf);
+
+
+	using namespace std::chrono_literals;
 	auto future = std::async(std::launch::async, [] {
 		return FtLibraryHandlerProxy::GenFontConfig();
 	});
@@ -329,11 +349,17 @@ bool SpringApp::InitFonts()
 			return CglFont::LoadConfigFonts();
 		}
 		else {
-			//TODO: Draw something smart here
-			globalRendering->SwapBuffers(true, true);
+			if (scopedTex())
+				SDL_RenderCopy(scopedSR(), scopedTex(), nullptr, nullptr);
+			else {
+				SDL_SetRenderDrawColor(scopedSR(), 0, 0, 0, 255);
+				SDL_RenderClear(scopedSR());
+			}
+
+			SDL_RenderPresent(scopedSR());
 
 			Watchdog::ClearTimer(WDT_MAIN);
-			input.PushEvents();
+			SDL_PumpEvents();
 		}
 	}
 }

@@ -155,11 +155,10 @@ public:
 
 	static bool GenFontConfig(bool fromCons) {
 	#ifndef HEADLESS
-		std::string osFontsDir;
-		osFontsDir.resize(32 * 1024);
+		char osFontsDir[8192];
 
 		#ifdef _WIN32
-			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir.data(), osFontsDir.size()); // expands %HOME% etc.
+			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir, sizeof(osFontsDir)); // expands %HOME% etc.
 		#else
 			strncpy(osFontsDir, "/etc/fonts/", sizeof(osFontsDir));
 		#endif
@@ -170,17 +169,17 @@ public:
 
 		if (FtLibraryHandler::CheckFontConfig()) {
 			if (!fromCons)
-				printf("[%s] fontconfig for directory \"%s\" up to date\n", __func__, osFontsDir.data());
+				printf("[%s] fontconfig for directory \"%s\" up to date\n", __func__, osFontsDir);
 			else
-				LOG("[%s] fontconfig for directory \"%s\" up to date\n", __func__, osFontsDir.data());
+				LOG("[%s] fontconfig for directory \"%s\" up to date\n", __func__, osFontsDir);
 			return true;
 		}
 
 		if (!fromCons)
-			printf("[%s] creating fontconfig for directory \"%s\"\n", __func__, osFontsDir.data());
+			printf("[%s] creating fontconfig for directory \"%s\"\n", __func__, osFontsDir);
 		else
-			LOG("[%s] creating fontconfig for directory \"%s\"\n", __func__, osFontsDir.data());
-		return (FtLibraryHandler::BuildFontConfig(osFontsDir.data()));
+			LOG("[%s] creating fontconfig for directory \"%s\"\n", __func__, osFontsDir);
+		return (FtLibraryHandler::BuildFontConfig(osFontsDir));
 	#endif
 
 		return true;
@@ -207,6 +206,7 @@ public:
 
 	static bool CheckFontConfig() { return false; }
 	static bool BuildFontConfig(const char*) { return false; }
+	static bool GenFontConfig(bool fromCons) { return false; }
 	#endif
 
 	static FT_Library& GetLibrary() {
@@ -229,7 +229,12 @@ private:
 
 bool FtLibraryHandlerProxy::GenFontConfig()
 {
+#ifndef HEADLESS
 	return FtLibraryHandler::GenFontConfig(false);
+#else
+	return false;
+#endif
+
 }
 
 
