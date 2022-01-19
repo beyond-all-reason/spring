@@ -199,7 +199,6 @@ public:
 
 		FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>("fonts"));
 		FcConfigAppFontAddDir(fcConfig, reinterpret_cast<const FcChar8*>(osFontsDir));
-		FcConfigBuildFonts(fcConfig);
 
 		return FcConfigBuildFonts(fcConfig);
 	}
