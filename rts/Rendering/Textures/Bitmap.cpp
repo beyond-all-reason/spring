@@ -262,12 +262,6 @@ public:
 static TexMemPool texMemPool;
 
 
-
-static constexpr float blurkernel[9] = {
-	1.0f/16.0f, 2.0f/16.0f, 1.0f/16.0f,
-	2.0f/16.0f, 4.0f/16.0f, 2.0f/16.0f,
-	1.0f/16.0f, 2.0f/16.0f, 1.0f/16.0f
-};
 // this is a minimal list of file formats that (should) be available at all platforms
 static constexpr int formatList[] = {
 	IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR,
@@ -296,17 +290,20 @@ public:
 	BitmapAction& operator=(const BitmapAction& ba) = delete;
 	BitmapAction& operator=(BitmapAction&& ba) noexcept = delete;
 
-	//virtual uint32_t GetPixelSize() const = 0;
-	//virtual uint32_t GetPixelChannelSize() const = 0;
-
-	//virtual void Renormalize(const float3& newCol) = 0;
-	//virtual void Blur(int iterations = 1, float weight = 1.0f) = 0;
-	//virtual void Fill(const SColor& c) = 0;
-
-	//virtual void InvertColors() = 0;
-	//virtual void InvertAlpha() = 0;
-
+	virtual void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue) = 0;
 	virtual void ReplaceAlpha(float a) = 0;
+	virtual void SetTransparent(const SColor& c, const SColor trans = SColor(0, 0, 0, 0)) = 0;
+
+	virtual void Renormalize(const float3& newCol) = 0;
+	virtual void Blur(int iterations = 1, float weight = 1.0f) = 0;
+	virtual void Fill(const SColor& c) = 0;
+
+	virtual void InvertColors() = 0;
+	virtual void InvertAlpha() = 0;
+	virtual void MakeGrayScale() = 0;
+	virtual void Tint(const float tint[3]) = 0;
+
+	virtual CBitmap CreateRescaled(int newx, int newy) = 0;
 
 	static std::unique_ptr<BitmapAction> GetBitmapAction(CBitmap* bmp);
 protected:
@@ -331,7 +328,7 @@ public:
 		: BitmapAction(bmp_)
 	{}
 
-	constexpr ChanType GetMaxNormValue() const {
+	constexpr const ChanType GetMaxNormValue() const {
 		if constexpr (std::is_same_v<T, float>) {
 			return 1.0f;
 		}
@@ -348,11 +345,24 @@ public:
 	}
 
 	ChanType& GetRef(uint32_t xyOffset, uint32_t chan) {
-		assert(chan > 0 && chan < 4);
+		assert(chan >= 0 && chan < 4);
 		return GetRef(xyOffset)[chan];
 	}
 
+	void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue) override;
 	void ReplaceAlpha(float a) override;
+	void SetTransparent(const SColor& c, const SColor trans) override;
+
+	void Renormalize(const float3& newCol) override;
+	void Blur(int iterations = 1, float weight = 1.0f) override;
+	void Fill(const SColor& c) override;
+
+	void InvertColors() override;
+	void InvertAlpha() override;
+	void MakeGrayScale() override;
+	void Tint(const float tint[3]) override;
+
+	CBitmap CreateRescaled(int newx, int newy) override;
 };
 
 //fugly way to make CH compile time constant
@@ -385,6 +395,53 @@ std::unique_ptr<BitmapAction> BitmapAction::GetBitmapAction(CBitmap* bmp)
 
 #undef GET_BITMAP_ACTION_HELPER
 
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
+{
+	//if constexpr needed here to avoid compilation errors
+	if constexpr (ch != 4) {
+		assert(false);
+		return;
+	}
+	else {
+		const ChanType N = GetMaxNormValue();
+		const float4 fRGBA = SColor{ red, green, blue, 0u };
+		const PixelType tRGBA = {
+			static_cast<ChanType>(fRGBA.r * N),
+			static_cast<ChanType>(fRGBA.g * N),
+			static_cast<ChanType>(fRGBA.b * N),
+			static_cast<ChanType>(fRGBA.a * N)
+		};
+
+		float3 aCol;
+		for (int a = 0; a < 3; ++a) {
+			float cCol = 0.0f;
+			int numCounted = 0;
+
+			for (int y = 0; y < bmp->ysize; ++y) {
+				int32_t yOffset = (y * bmp->xsize);
+				for (int x = 0; x < bmp->xsize; ++x) {
+					auto& pixel = GetRef(yOffset + x);
+
+					if (pixel[3] == ChanType{ 0 })
+						continue;
+					if (pixel[0] == tRGBA[0] && pixel[1] == tRGBA[1] && pixel[2] == tRGBA[2])
+						continue;
+
+					cCol += static_cast<float>(pixel[a]);
+					numCounted += 1;
+				}
+			}
+
+			if (numCounted != 0)
+				aCol[a] = static_cast<float>(cCol / GetMaxNormValue() / numCounted);
+		}
+
+		const SColor c(red, green, blue);
+		const SColor a(aCol.x, aCol.y, aCol.z, 0.0f);
+		SetTransparent(c, a);
+	}
+}
 
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::ReplaceAlpha(float a)
@@ -403,6 +460,370 @@ void TBitmapAction<T, ch>::ReplaceAlpha(float a)
 	}
 }
 
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::SetTransparent(const SColor& c, const SColor t)
+{
+	//if constexpr needed here to avoid compilation errors
+	if constexpr (ch != 4) {
+		assert(false);
+		return;
+	}
+	else {
+		const ChanType N = GetMaxNormValue();
+
+		const float4 fC = c;
+		const float4 fT = t;
+		const PixelType tC = {
+			static_cast<ChanType>(fC.r * N),
+			static_cast<ChanType>(fC.g * N),
+			static_cast<ChanType>(fC.b * N),
+			static_cast<ChanType>(fC.a * N)
+		};
+		const PixelType tT = {
+			static_cast<ChanType>(fT.r * N),
+			static_cast<ChanType>(fT.g * N),
+			static_cast<ChanType>(fT.b * N),
+			static_cast<ChanType>(fT.a * N)
+		};
+
+		for (int y = 0; y < bmp->ysize; ++y) {
+			int32_t yOffset = (y * bmp->xsize);
+			for (int x = 0; x < bmp->xsize; ++x) {
+				auto& pixel = GetRef(yOffset + x);
+
+				if (pixel[0] == tC[0] && pixel[1] == tC[1] && pixel[2] == tC[2]) {
+					pixel[0] =  tT[0];   pixel[1] =  tT[1];   pixel[2] =  tT[2];
+				}
+			}
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::Renormalize(const float3& newCol)
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	float3 aCol;
+	float3 colorDif;
+
+	for (int a = 0; a < 3; ++a) {
+		float cCol = 0.0f;
+		int numCounted = 0;
+
+		for (int y = 0; y < bmp->ysize; ++y) {
+			int32_t yOffset = (y * bmp->xsize);
+			for (int x = 0; x < bmp->xsize; ++x) {
+				auto& pixel = GetRef(yOffset + x);
+
+				if (pixel[3] != ChanType{ 0 }) {
+					cCol += static_cast<float>(pixel[a]);
+					numCounted += 1;
+				}
+			}
+		}
+
+		if (numCounted != 0)
+			aCol[a] = static_cast<float>(cCol / GetMaxNormValue() / numCounted);
+
+		//cCol /= xsize*ysize; //??
+		colorDif[a] = newCol[a] - aCol[a];
+	}
+
+	for (int a = 0; a < 3; ++a) {
+		for (int y = 0; y < bmp->ysize; ++y) {
+			int32_t yOffset = (y * bmp->xsize);
+			for (int x = 0; x < bmp->xsize; ++x) {
+				auto& pixel = GetRef(yOffset + x);
+
+				float nc = static_cast<float>(pixel[a]) / GetMaxNormValue() + colorDif[a];
+				pixel[a] = static_cast<ChanType>(std::max(0.0f, nc * GetMaxNormValue()));
+			}
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::Blur(int iterations, float weight)
+{
+	static constexpr float blurkernel[9] = {
+		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f,
+		2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f,
+		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f
+	};
+
+	CBitmap tmp(nullptr, bmp->xsize, bmp->ysize, bmp->channels, bmp->dataType);
+
+	CBitmap* src =  bmp;
+	CBitmap* dst = &tmp;
+
+	//don't use "this" here
+	auto srcAction = BitmapAction::GetBitmapAction(src);
+	auto dstAction = BitmapAction::GetBitmapAction(dst);
+
+	using ThisType = decltype(this);
+
+	for (int i = 0; i < iterations; ++i) {
+		for_mt(0, src->ysize, [&](const int y) {
+			for (int x = 0; x < src->xsize; x++) {
+				int yBaseOffset = (y * src->xsize);
+				for (int a = 0; a < src->channels; a++) {
+
+					///////////////////////////////////////
+					float fragment = 0.0f;
+
+					for (int i = 0; i < 9; ++i) {
+						int yoffset = (i / 3) - 1;
+						int xoffset = (i - (yoffset + 1) * 3) - 1;
+
+						const int tx = x + xoffset;
+						const int ty = y + yoffset;
+
+						xoffset *= ((tx >= 0) && (tx < src->xsize));
+						yoffset *= ((ty >= 0) && (ty < src->ysize));
+
+						const int offset = (yoffset * src->xsize + xoffset);
+
+						auto& srcChannel = static_cast<ThisType>(srcAction.get())->GetRef(yBaseOffset + x + offset, a);
+
+						if (i == 4)
+							fragment += (weight * blurkernel[i] * srcChannel);
+						else
+							fragment += (         blurkernel[i] * srcChannel);
+					}
+
+					auto& dstChannel = static_cast<ThisType>(dstAction.get())->GetRef(yBaseOffset + x, a);
+
+					if constexpr (std::is_same_v<ChanType, float>) {
+						dstChannel = static_cast<ChanType>(std::max(fragment, 0.0f));
+					}
+					else {
+						dstChannel = static_cast<ChanType>(std::clamp(fragment, 0.0f, static_cast<float>(GetMaxNormValue())));
+					}
+					///////////////////////////////////////
+				}
+			}
+		});
+
+		std::swap(srcAction, dstAction);
+		std::swap(src, dst);
+	}
+
+	// if dst points to temporary, we are done
+	// otherwise need to perform one more swap
+	// (e.g. if iterations=1)
+	if (dst != bmp)
+		return;
+
+	std::swap(src, dst);
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::Fill(const SColor& c)
+{
+	//if constexpr needed here to avoid compilation errors
+	if constexpr (ch != 4) {
+		assert(false);
+		return;
+	}
+	else {
+		const ChanType N = GetMaxNormValue();
+		const float4 fRGBA = c;
+		const PixelType tRGBA = {
+			static_cast<ChanType>(fRGBA.r * N),
+			static_cast<ChanType>(fRGBA.g * N),
+			static_cast<ChanType>(fRGBA.b * N),
+			static_cast<ChanType>(fRGBA.a * N)
+		};
+
+		for (uint32_t i = 0, n = bmp->xsize * bmp->ysize; i < n; i++) {
+			auto& pixel = GetRef(i);
+			memcpy(&pixel, &tRGBA, PixelTypeSize);
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::InvertColors()
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	for (int y = 0; y < bmp->ysize; ++y) {
+		uint32_t yOffset = (y * bmp->xsize);
+		for (int x = 0; x < bmp->xsize; ++x) {
+			auto& pixel = GetRef(yOffset + x);
+
+			// do not invert alpha
+			for (int a = 0; a < ch - 1; ++a)
+				pixel[a] = GetMaxNormValue() - std::clamp(pixel[a], ChanType{ 0 }, GetMaxNormValue());
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::InvertAlpha()
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	for (int y = 0; y < bmp->ysize; ++y) {
+		uint32_t yOffset = (y * bmp->xsize);
+		for (int x = 0; x < bmp->xsize; ++x) {
+			auto& pixel = GetRef(yOffset + x);
+
+			pixel[ch - 1] = GetMaxNormValue() - std::clamp(pixel[ch - 1], ChanType{ 0 }, GetMaxNormValue());
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::MakeGrayScale()
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	const ChanType N = GetMaxNormValue();
+
+	for (int y = 0; y < bmp->ysize; ++y) {
+		uint32_t yOffset = (y * bmp->xsize);
+		for (int x = 0; x < bmp->xsize; ++x) {
+			auto& pixel = GetRef(yOffset + x);
+
+			float3 rgb = {
+				static_cast<float>(pixel[0]) / N,
+				static_cast<float>(pixel[1]) / N,
+				static_cast<float>(pixel[2]) / N
+			};
+
+			const float luma =
+				(rgb.r * 0.299f) +
+				(rgb.g * 0.587f) +
+				(rgb.b * 0.114f);
+
+			const AccumChanType val = std::max(
+				static_cast<AccumChanType>((256.0f / 255.0f) * luma),
+				AccumChanType(0)
+			);
+
+			if constexpr (std::is_same_v<ChanType, float>) {
+				pixel[0] = val;
+				pixel[1] = val;
+				pixel[2] = val;
+			}
+			else {
+				const ChanType cval = static_cast<ChanType>( std::min(val, static_cast<AccumChanType>(N)) );
+				pixel[0] = cval;
+				pixel[1] = cval;
+				pixel[2] = cval;
+			}
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::Tint(const float tint[3])
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	const AccumChanType N = GetMaxNormValue();
+
+	for (int y = 0; y < bmp->ysize; ++y) {
+		uint32_t yOffset = (y * bmp->xsize);
+		for (int x = 0; x < bmp->xsize; ++x) {
+			auto& pixel = GetRef(yOffset + x);
+
+			// don't touch the alpha channel
+			for (int a = 0; a < ch - 1; ++a) {
+				AccumChanType val = pixel[a] * tint[a];
+				if constexpr (std::is_same_v<ChanType, float>) {
+					pixel[a] = static_cast<ChanType>(std::max  (val, AccumChanType{ 0 }   ));
+				}
+				else {
+					pixel[a] = static_cast<ChanType>(std::clamp(val, AccumChanType{ 0 }, N));
+				}
+			}
+		}
+	}
+}
+
+template<typename T, uint32_t ch>
+CBitmap TBitmapAction<T, ch>::CreateRescaled(int newx, int newy)
+{
+	CBitmap dst;
+
+	if (ch != 4) {
+		assert(false);
+		dst.AllocDummy();
+		return dst;
+	}
+
+	using ThisType = decltype(this);
+	const AccumChanType N = GetMaxNormValue();
+
+	dst.Alloc(newx, newy, bmp->channels, bmp->dataType);
+	auto dstAction = BitmapAction::GetBitmapAction(&dst);
+
+	const float dx = static_cast<float>(bmp->xsize) / static_cast<float>(newx);
+	const float dy = static_cast<float>(bmp->ysize) / static_cast<float>(newy);
+
+	float cy = 0;
+	for (int y = 0; y < newy; ++y) {
+		const int sy = (int)cy;
+		cy += dy;
+		int ey = (int)cy;
+		if (ey == sy)
+			ey = sy + 1;
+
+		float cx = 0;
+		for (int x = 0; x < newx; ++x) {
+			const int sx = (int)cx;
+			cx += dx;
+			int ex = (int)cx;
+			if (ex == sx)
+				ex = sx + 1;
+
+			std::array<AccumChanType, ch> rgba = {0};
+
+			for (int y2 = sy; y2 < ey; ++y2) {
+				for (int x2 = sx; x2 < ex; ++x2) {
+					const int index = y2 * bmp->xsize + x2;
+					auto& srcPixel = GetRef(index);
+
+					for (int a = 0; a < ch; ++a)
+						rgba[a] += srcPixel[a];
+				}
+			}
+			const float denom = static_cast<float>((ex - sx) * (ey - sy));
+
+			const int index = (y * dst.xsize + x);
+			auto& dstPixel = static_cast<ThisType>(dstAction.get())->GetRef(index);
+
+			for (int a = 0; a < ch; ++a) {
+				if constexpr (std::is_same_v<ChanType, float>) {
+					dstPixel[a] = static_cast<ChanType>(std::max  (rgba[a], AccumChanType{ 0 }   ));
+				}
+				else {
+					dstPixel[a] = static_cast<ChanType>(std::clamp(rgba[a], AccumChanType{ 0 }, N));
+				}
+			}
+		}
+	}
+
+	return dst;
+}
 
 
 //////////////////////////////////////////////////////////////////////
@@ -531,7 +952,7 @@ void CBitmap::AllocDummy(const SColor fill)
 {
 	compressed = false;
 
-	Alloc(1, 1, sizeof(SColor));
+	Alloc(1, 1, sizeof(SColor), dataType);
 	Fill(fill);
 }
 
@@ -1174,35 +1595,11 @@ unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lo
 
 void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 {
-	uint8_t* mem = GetRawMem();
+	if (compressed)
+		return;
 
-	float3 aCol;
-
-	for (int a = 0; a < 3; ++a) {
-		int cCol = 0;
-		int numCounted = 0;
-
-		for (int y = 0; y < ysize; ++y) {
-			for (int x = 0; x < xsize; ++x) {
-				const int index = (y * xsize + x) * 4;
-
-				if (mem[index + 3] == 0)
-					continue;
-				if (mem[index + 0] == red && mem[index + 1] == green && mem[index + 2] == blue)
-					continue;
-
-				cCol += mem[index + a];
-				numCounted += 1;
-			}
-		}
-
-		if (numCounted != 0)
-			aCol[a] = cCol / 255.0f / numCounted;
-	}
-
-	const SColor c(red, green, blue);
-	const SColor a(aCol.x, aCol.y, aCol.z, 0.0f);
-	SetTransparent(c, a);
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->CreateAlpha(red, green, blue);
 }
 
 
@@ -1211,99 +1608,36 @@ void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 	if (compressed)
 		return;
 
-	constexpr uint32_t RGB = 0x00FFFFFF;
-
-	uint32_t* mem_i = reinterpret_cast<uint32_t*>(GetRawMem());
-
-	for (int y = 0; y < ysize; ++y) {
-		for (int x = 0; x < xsize; ++x) {
-			if ((*mem_i & RGB) == (c.i & RGB))
-				*mem_i = trans.i;
-
-			mem_i++;
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->SetTransparent(c, trans);
 }
 
 
-void CBitmap::Renormalize(float3 newCol)
+void CBitmap::Renormalize(const float3& newCol)
 {
-	uint8_t* mem = GetRawMem();
+	if (compressed)
+		return;
 
-	float3 aCol;
-	float3 colorDif;
-
-	for (int a = 0; a < 3; ++a) {
-		int cCol = 0;
-		int numCounted = 0;
-		for (int y = 0; y < ysize; ++y) {
-			for (int x = 0; x < xsize; ++x) {
-				const unsigned int index = (y* xsize + x) * 4;
-				if (mem[index + 3] != 0) {
-					cCol += mem[index + a];
-					numCounted += 1;
-				}
-			}
-		}
-		aCol[a] = cCol / 255.0f / numCounted;
-		//cCol /= xsize*ysize; //??
-		colorDif[a] = newCol[a] - aCol[a];
-	}
-
-	for (int a = 0; a < 3; ++a) {
-		for (int y = 0; y < ysize; ++y) {
-			for (int x = 0; x < xsize; ++x) {
-				const unsigned int index = (y * xsize + x) * 4;
-				float nc = float(mem[index + a]) / 255.0f + colorDif[a];
-				mem[index + a] = (uint8_t) (std::min(255.f, std::max(0.0f, nc*255)));
-			}
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->Renormalize(newCol);
 }
-
-
-inline static void kernelBlur(
-	uint8_t* dstMem,
-	const uint8_t* srcMem,
-	int xsize,
-	int ysize,
-	int nchannels,
-	int x,
-	int y,
-	int channel,
-	float weight
-) {
-	float fragment = 0.0f;
-
-	const int pos = (x + y * xsize) * nchannels + channel;
-
-	for (int i = 0; i < 9; ++i) {
-		int yoffset = (i                 / 3) - 1;
-		int xoffset = (i - (yoffset + 1) * 3) - 1;
-
-		const int tx = x + xoffset;
-		const int ty = y + yoffset;
-
-		xoffset *= ((tx >= 0) && (tx < xsize));
-		yoffset *= ((ty >= 0) && (ty < ysize));
-
-		const int offset = (yoffset * xsize + xoffset) * nchannels;
-
-		if (i == 4) {
-			fragment += (weight * blurkernel[i] * srcMem[pos + offset]);
-		} else {
-			fragment +=           blurkernel[i] * srcMem[pos + offset];
-		}
-	}
-
-	dstMem[pos] = static_cast<uint8_t>(Clamp(fragment, 0.0f, 255.0f));
-}
-
 
 void CBitmap::Blur(int iterations, float weight)
 {
 	if (compressed)
 		return;
+
+#if 1
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->Blur(iterations, weight);
+#else
+	//////////////////////////////////////////////////
+
+	static constexpr float blurkernel[9] = {
+		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f,
+		2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f,
+		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f
+	};
 
 	CBitmap tmp(nullptr, xsize, ysize, channels);
 
@@ -1316,8 +1650,37 @@ void CBitmap::Blur(int iterations, float weight)
 
 		for_mt(0, ysize, [&](const int y) {
 			for (int x = 0; x < xsize; x++) {
+				int yBaseOffset = (y * src->xsize);
 				for (int j = 0; j < channels; j++) {
-					kernelBlur(dstMem, srcMem, xsize, ysize, channels, x, y, j, weight);
+
+					///////////////////////////////////////
+					float fragment = 0.0f;
+
+					//const int pos = (x + y * xsize) * channels + j;
+					const int pos = (yBaseOffset + x) * channels + j;
+
+					for (int i = 0; i < 9; ++i) {
+						int yoffset = (i / 3) - 1;
+						int xoffset = (i - (yoffset + 1) * 3) - 1;
+
+						const int tx = x + xoffset;
+						const int ty = y + yoffset;
+
+						xoffset *= ((tx >= 0) && (tx < xsize));
+						yoffset *= ((ty >= 0) && (ty < ysize));
+
+						const int offset = (yoffset * xsize + xoffset) * channels;
+
+						if (i == 4) {
+							fragment += (weight * blurkernel[i] * srcMem[pos + offset]);
+						}
+						else {
+							fragment += (         blurkernel[i] * srcMem[pos + offset]);
+						}
+}
+
+					dstMem[pos] = static_cast<uint8_t>(Clamp(fragment, 0.0f, 255.0f));
+					///////////////////////////////////////
 				}
 			}
 		});
@@ -1332,6 +1695,7 @@ void CBitmap::Blur(int iterations, float weight)
 		return;
 
 	std::swap(src, dst);
+#endif
 }
 
 
@@ -1340,16 +1704,15 @@ void CBitmap::Fill(const SColor& c)
 	if (compressed)
 		return;
 
-	uint8_t* mem = GetRawMem();
-
-	for (size_t i = 0, n = GetMemSize() / channels; i < n; i++) {
-		memcpy(&mem[i * channels], &c.r, channels);
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->Fill(c);
 }
 
 void CBitmap::ReplaceAlpha(float a)
 {
-	//uint8_t* mem = GetRawMem();
+	if (compressed)
+		return;
+
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->ReplaceAlpha(a);
 }
@@ -1370,12 +1733,13 @@ void CBitmap::CopySubImage(const CBitmap& src, int xpos, int ypos)
 	const uint8_t* srcMem = src.GetRawMem();
 	      uint8_t* dstMem =     GetRawMem();
 
+	const auto dts = GetDataTypeSize();
 	for (int y = 0; y < src.ysize; ++y) {
-		const int pixelDst = (((ypos + y) *     xsize) + xpos) * channels;
-		const int pixelSrc = ((        y  * src.xsize) +    0) * channels;
+		const int pixelDst = (((ypos + y) *     xsize) + xpos) * channels * dts;
+		const int pixelSrc = ((        y  * src.xsize) +    0) * channels * dts;
 
 		// copy the whole line
-		std::copy(&srcMem[pixelSrc], &srcMem[pixelSrc] + channels * src.xsize, &dstMem[pixelDst]);
+		std::copy(&srcMem[pixelSrc], &srcMem[pixelSrc] + src.xsize * channels * dts, &dstMem[pixelDst]);
 	}
 }
 
@@ -1393,7 +1757,7 @@ CBitmap CBitmap::CanvasResize(const int newx, const int newy, const bool center)
 	const int borderLeft = (center) ? (newx - xsize) / 2 : 0;
 	const int borderTop  = (center) ? (newy - ysize) / 2 : 0;
 
-	bm.Alloc(newx, newy, channels);
+	bm.Alloc(newx, newy, channels, dataType);
 	bm.CopySubImage(*this, borderLeft, borderTop);
 
 	return bm;
@@ -1404,7 +1768,7 @@ SDL_Surface* CBitmap::CreateSDLSurface()
 {
 	SDL_Surface* surface = nullptr;
 
-	if (channels < 3) {
+	if (channels < 3 && GetDataTypeSize() != 1) {
 		LOG_L(L_WARNING, "CBitmap::CreateSDLSurface works only with 24bit RGB and 32bit RGBA pictures!");
 		return surface;
 	}
@@ -1425,71 +1789,23 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 	newx = std::max(1, newx);
 	newy = std::max(1, newy);
 
-	CBitmap bm;
 
 	if (compressed) {
 		LOG_L(L_WARNING, "CBitmap::CreateRescaled doesn't work with compressed textures!");
+		CBitmap bm;
 		bm.AllocDummy();
 		return bm;
 	}
 
 	if (channels != 4) {
 		LOG_L(L_WARNING, "CBitmap::CreateRescaled only works with RGBA data!");
+		CBitmap bm;
 		bm.AllocDummy();
 		return bm;
 	}
 
-	bm.Alloc(newx, newy);
-
-	const uint8_t* srcMem =    GetRawMem();
-	      uint8_t* dstMem = bm.GetRawMem();
-
-	const float dx = (float) xsize / newx;
-	const float dy = (float) ysize / newy;
-
-	float cy = 0;
-	for (int y = 0; y < newy; ++y) {
-		const int sy = (int) cy;
-		cy += dy;
-		int ey = (int) cy;
-		if (ey == sy)
-			ey = sy + 1;
-
-		float cx = 0;
-		for (int x = 0; x < newx; ++x) {
-			const int sx = (int) cx;
-			cx += dx;
-			int ex = (int) cx;
-			if (ex == sx)
-				ex = sx + 1;
-
-			int r = 0;
-			int g = 0;
-			int b = 0;
-			int a = 0;
-
-			for (int y2 = sy; y2 < ey; ++y2) {
-				for (int x2 = sx; x2 < ex; ++x2) {
-					const int index = (y2*xsize + x2) * 4;
-
-					r += srcMem[index + 0];
-					g += srcMem[index + 1];
-					b += srcMem[index + 2];
-					a += srcMem[index + 3];
-				}
-			}
-
-			const int index = (y*bm.xsize + x) * 4;
-			const int denom = (ex - sx) * (ey - sy);
-
-			dstMem[index + 0] = r / denom;
-			dstMem[index + 1] = g / denom;
-			dstMem[index + 2] = b / denom;
-			dstMem[index + 3] = a / denom;
-		}
-	}
-
-	return bm;
+	auto action = BitmapAction::GetBitmapAction(const_cast<CBitmap*>(this));
+	return action->CreateRescaled(newx, newy);
 }
 
 
@@ -1498,17 +1814,8 @@ void CBitmap::InvertColors()
 	if (compressed)
 		return;
 
-	uint8_t* mem = GetRawMem();
-
-	for (int y = 0; y < ysize; ++y) {
-		for (int x = 0; x < xsize; ++x) {
-			const int base = ((y * xsize) + x) * 4;
-			mem[base + 0] = 0xFF - mem[base + 0];
-			mem[base + 1] = 0xFF - mem[base + 1];
-			mem[base + 2] = 0xFF - mem[base + 2];
-			// do not invert alpha
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->InvertColors();
 }
 
 
@@ -1517,14 +1824,8 @@ void CBitmap::InvertAlpha()
 	if (compressed)
 		return; // Don't try to invert DDS
 
-	uint8_t* mem = GetRawMem();
-
-	for (int y = 0; y < ysize; ++y) {
-		for (int x = 0; x < xsize; ++x) {
-			const int base = ((y * xsize) + x) * 4;
-			mem[base + 3] = 0xFF - mem[base + 3];
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->InvertAlpha();
 }
 
 
@@ -1533,22 +1834,8 @@ void CBitmap::MakeGrayScale()
 	if (compressed)
 		return;
 
-	uint8_t* mem = GetRawMem();
-
-	for (int y = 0; y < ysize; ++y) {
-		for (int x = 0; x < xsize; ++x) {
-			const int base = ((y * xsize) + x) * 4;
-			const float illum =
-				(mem[base + 0] * 0.299f) +
-				(mem[base + 1] * 0.587f) +
-				(mem[base + 2] * 0.114f);
-			const uint32_t ival = (unsigned int)(illum * (256.0f / 255.0f));
-			const uint8_t  cval = (ival <= 0xFF) ? ival : 0xFF;
-			mem[base + 0] = cval;
-			mem[base + 1] = cval;
-			mem[base + 2] = cval;
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->MakeGrayScale();
 }
 
 static ILubyte TintByte(ILubyte value, float tint)
@@ -1562,18 +1849,8 @@ void CBitmap::Tint(const float tint[3])
 	if (compressed)
 		return;
 
-	uint8_t* mem = GetRawMem();
-
-	for (int y = 0; y < ysize; y++) {
-		for (int x = 0; x < xsize; x++) {
-			const int base = ((y * xsize) + x) * 4;
-
-			mem[base + 0] = TintByte(mem[base + 0], tint[0]);
-			mem[base + 1] = TintByte(mem[base + 1], tint[1]);
-			mem[base + 2] = TintByte(mem[base + 2], tint[2]);
-			// don't touch the alpha channel
-		}
-	}
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->Tint(tint);
 }
 
 
@@ -1582,19 +1859,22 @@ void CBitmap::ReverseYAxis()
 	if (compressed)
 		return; // don't try to flip DDS
 
-	uint8_t* tmp = texMemPool.Alloc(xsize * channels);
+	const auto dts = GetDataTypeSize();
+	const auto memSize = xsize * channels * dts;
+
+	uint8_t* tmp = texMemPool.Alloc(memSize);
 	uint8_t* mem = GetRawMem();
 
 	for (int y = 0; y < (ysize / 2); ++y) {
-		const int pixelLow  = (((y            ) * xsize) + 0) * channels;
-		const int pixelHigh = (((ysize - 1 - y) * xsize) + 0) * channels;
+		const int pixelL = (((y            ) * xsize) + 0) * channels * dts;
+		const int pixelH = (((ysize - 1 - y) * xsize) + 0) * channels * dts;
 
 		// copy the whole line
-		std::copy(mem + pixelHigh, mem + pixelHigh + channels * xsize, tmp);
-		std::copy(mem + pixelLow , mem + pixelLow  + channels * xsize, mem + pixelHigh);
-		std::copy(tmp, tmp + channels * xsize, mem + pixelLow);
+		std::copy(mem + pixelH, mem + pixelH + memSize, tmp         );
+		std::copy(mem + pixelL, mem + pixelL + memSize, mem + pixelH);
+		std::copy(tmp, tmp + memSize, mem + pixelL);
 	}
 
-	texMemPool.Free(tmp, xsize * channels);
+	texMemPool.Free(tmp, memSize);
 }
 

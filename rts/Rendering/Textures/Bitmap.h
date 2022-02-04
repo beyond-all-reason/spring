@@ -63,7 +63,7 @@ public:
 	void ReplaceAlpha(float a = 1.0f);
 	void SetTransparent(const SColor& c, const SColor trans = SColor(0, 0, 0, 0));
 
-	void Renormalize(float3 newCol);
+	void Renormalize(const float3& newCol);
 	void Blur(int iterations = 1, float weight = 1.0f);
 	void Fill(const SColor& c);
 
