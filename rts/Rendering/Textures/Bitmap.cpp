@@ -270,14 +270,137 @@ static constexpr float blurkernel[9] = {
 };
 // this is a minimal list of file formats that (should) be available at all platforms
 static constexpr int formatList[] = {
-	IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP,
+	IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR,
 	IL_RGBA, IL_RGB, IL_BGRA, IL_BGR,
 	IL_COLOUR_INDEX, IL_LUMINANCE, IL_LUMINANCE_ALPHA
 };
 
 static bool IsValidImageFormat(int format) {
-	constexpr size_t N = sizeof(formatList) / sizeof(formatList[0]);
-	return (std::find(formatList, formatList + N, format) != (formatList + N));
+	return std::find(std::cbegin(formatList), std::cend(formatList), format) != std::cend(formatList);
+}
+
+//////////////////////////////////////////////////////////////////////
+// BitmapAction
+//////////////////////////////////////////////////////////////////////
+
+class BitmapAction {
+public:
+	BitmapAction() = delete;
+	BitmapAction(CBitmap* bmp_)
+		: bmp{ bmp_ }
+	{}
+
+	BitmapAction(const BitmapAction& ba) = delete;
+	BitmapAction(BitmapAction&& ba) noexcept = delete;
+
+	BitmapAction& operator=(const BitmapAction& ba) = delete;
+	BitmapAction& operator=(BitmapAction&& ba) noexcept = delete;
+
+	//virtual uint32_t GetPixelSize() const = 0;
+	//virtual uint32_t GetPixelChannelSize() const = 0;
+
+	//virtual void Renormalize(const float3& newCol) = 0;
+	//virtual void Blur(int iterations = 1, float weight = 1.0f) = 0;
+	//virtual void Fill(const SColor& c) = 0;
+
+	//virtual void InvertColors() = 0;
+	//virtual void InvertAlpha() = 0;
+
+	virtual void ReplaceAlpha(float a) = 0;
+
+	static std::unique_ptr<BitmapAction> GetBitmapAction(CBitmap* bmp);
+protected:
+	CBitmap* bmp;
+};
+
+template<typename T, uint32_t ch>
+class TBitmapAction : public BitmapAction {
+public:
+	static constexpr size_t PixelTypeSize = sizeof(T) * ch;
+
+	using ChanType  = T;
+	using PixelType = T[ch];
+
+	using AccumChanType = typename std::conditional<std::is_same_v<T, float>, float, uint32_t>::type;
+
+	using ChanTypeRep  = uint8_t[sizeof(T) *  1];
+	using PixelTypeRep = uint8_t[PixelTypeSize ];
+public:
+	TBitmapAction() = delete;
+	TBitmapAction(CBitmap* bmp_)
+		: BitmapAction(bmp_)
+	{}
+
+	constexpr ChanType GetMaxNormValue() const {
+		if constexpr (std::is_same_v<T, float>) {
+			return 1.0f;
+		}
+		else {
+			return std::numeric_limits<T>::max();
+		}
+	}
+
+	PixelType& GetRef(uint32_t xyOffset) {
+		auto* mem = bmp->GetRawMem();
+		assert(mem && xyOffset >= 0 && xyOffset <= bmp->GetMemSize() - sizeof(PixelTypeRep));
+		//return *static_cast<PT*>(static_cast<PTR*>(mem[xyOffset]));
+		return *(reinterpret_cast<PixelType*>(&mem[PixelTypeSize * xyOffset]));
+	}
+
+	ChanType& GetRef(uint32_t xyOffset, uint32_t chan) {
+		assert(chan > 0 && chan < 4);
+		return GetRef(xyOffset)[chan];
+	}
+
+	void ReplaceAlpha(float a) override;
+};
+
+//fugly way to make CH compile time constant
+#define GET_BITMAP_ACTION_HELPER(CH) do { \
+	if (bmp->channels == CH) { \
+		switch (bmp->dataType) { \
+			case GL_FLOAT         : { \
+				return std::make_unique<TBitmapAction<float   , CH>>(bmp); \
+			} break; \
+			case GL_UNSIGNED_SHORT: { \
+				return std::make_unique<TBitmapAction<uint16_t, CH>>(bmp); \
+			} break; \
+			case GL_UNSIGNED_BYTE : { \
+				return std::make_unique<TBitmapAction<uint8_t , CH>>(bmp); \
+			} break; \
+		} \
+	} \
+} while (0)
+
+std::unique_ptr<BitmapAction> BitmapAction::GetBitmapAction(CBitmap* bmp)
+{
+	GET_BITMAP_ACTION_HELPER(4);
+	GET_BITMAP_ACTION_HELPER(3);
+	GET_BITMAP_ACTION_HELPER(2);
+	GET_BITMAP_ACTION_HELPER(1);
+
+	assert(false);
+	return nullptr;
+}
+
+#undef GET_BITMAP_ACTION_HELPER
+
+
+template<typename T, uint32_t ch>
+void TBitmapAction<T, ch>::ReplaceAlpha(float a)
+{
+	if (ch != 4) {
+		assert(false);
+		return;
+	}
+
+	for (int32_t y = 0; y < bmp->ysize; ++y) {
+		int32_t yOffset = (y * bmp->xsize);
+		for (int32_t x = 0; x < bmp->xsize; ++x) {
+			auto& alpha = GetRef(yOffset + x, ch - 1);
+			alpha = static_cast<ChanType>(GetMaxNormValue() * a);
+		}
+	}
 }
 
 
@@ -291,10 +414,19 @@ CBitmap::~CBitmap()
 	texMemPool.Free(GetRawMem(), GetMemSize());
 }
 
-CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels)
+CBitmap::CBitmap()
+	: xsize(0)
+	, ysize(0)
+	, channels(4)
+	, dataType(0x1401)
+	, compressed(false)
+{}
+
+CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uint32_t reqDataType)
 	: xsize(_xsize)
 	, ysize(_ysize)
 	, channels(_channels)
+	, dataType(reqDataType == 0 ? 0x1401/*GL_UNSIGNED_BYTE*/ : reqDataType)
 	, compressed(false)
 {
 	assert(GetMemSize() > 0);
@@ -334,6 +466,7 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 		xsize = bmp.xsize;
 		ysize = bmp.ysize;
 		channels = bmp.channels;
+		dataType = bmp.dataType;
 		compressed = bmp.compressed;
 
 		#ifndef BITMAP_NO_OPENGL
@@ -355,6 +488,7 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 		std::swap(xsize, bmp.xsize);
 		std::swap(ysize, bmp.ysize);
 		std::swap(channels, bmp.channels);
+		std::swap(dataType, bmp.dataType);
 		std::swap(compressed, bmp.compressed);
 
 		#ifndef BITMAP_NO_OPENGL
@@ -384,7 +518,7 @@ const uint8_t* CBitmap::GetRawMem() const { return ((memIdx == size_t(-1))? null
       uint8_t* CBitmap::GetRawMem()       { return ((memIdx == size_t(-1))? nullptr: (texMemPool.Base() + memIdx)); }
 
 
-void CBitmap::Alloc(int w, int h, int c)
+void CBitmap::Alloc(int w, int h, int c, uint32_t glType)
 {
 	if (!Empty())
 		texMemPool.Free(GetRawMem(), GetMemSize());
@@ -401,7 +535,71 @@ void CBitmap::AllocDummy(const SColor fill)
 	Fill(fill);
 }
 
-bool CBitmap::Load(std::string const& filename, uint8_t defaultAlpha)
+#ifndef BITMAP_NO_OPENGL
+int32_t CBitmap::GetIntFmt() const
+{
+	constexpr uint32_t intFormats[3][5] = {
+			{ 0, GL_R8   , GL_RG8  , GL_RGB8  , GL_RGBA8   },
+			{ 0, GL_R16  , GL_RG16 , GL_RGB16 , GL_RGBA16  },
+			{ 0, GL_R32F , GL_RG32F, GL_RGB32F, GL_RGBA32F }
+	};
+	switch (dataType) {
+	case GL_FLOAT:
+		return intFormats[2][channels];
+	case GL_UNSIGNED_SHORT:
+		return intFormats[1][channels];
+	case GL_UNSIGNED_BYTE:
+		return intFormats[0][channels];
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+int32_t CBitmap::GetExtFmt(uint32_t ch)
+{
+	constexpr uint32_t extFormats[] = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
+	return extFormats[ch];
+}
+
+int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
+{
+	switch (extFmt) {
+	case GL_RED:
+		return 1;
+	case GL_RG:
+		return 2;
+	case GL_RGB:
+		return 3;
+	case GL_RGBA:
+		return 4;
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+uint32_t CBitmap::GetDataTypeSize() const
+{
+	switch (dataType) {
+	case GL_FLOAT:
+		return sizeof(float);
+	case GL_UNSIGNED_SHORT:
+		return sizeof(uint16_t);
+	case GL_UNSIGNED_BYTE:
+		return sizeof(uint8_t);
+	default:
+		assert(false);
+		return 0;
+	}
+}
+#else
+int32_t CBitmap::GetIntFmt() const { return 0; }
+int32_t CBitmap::GetExtFmt() const { return 0; }
+int32_t CBitmap::GetDataTypeSize() const { return 0; }
+#endif
+
+bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t reqChannel, uint32_t reqDataType)
 {
 	bool isLoaded = false;
 	bool isValid  = false;
@@ -497,20 +695,40 @@ bool CBitmap::Load(std::string const& filename, uint8_t defaultAlpha)
 		ilGenImages(1, &imageID);
 		ilBindImage(imageID);
 
+		ILint currFormat;
 		{
 			// do not signal floating point exceptions in devil library
 			ScopedDisableFpuExceptions fe;
 
 			isLoaded = !!ilLoadL(IL_TYPE_UNKNOWN, buffer.data(), buffer.size());
-			isValid = (isLoaded && IsValidImageFormat(ilGetInteger(IL_IMAGE_FORMAT)));
-			noAlpha = (isValid && (ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL) != 4));
+			currFormat = ilGetInteger(IL_IMAGE_FORMAT);
+			isValid = (isLoaded && IsValidImageFormat(currFormat));
+			//noAlpha = (isValid && (ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL) != 4));
+			noAlpha = (isValid && currFormat == GL_RGB);
+			dataType = ilGetInteger(IL_IMAGE_TYPE);
 
 			// FPU control word has to be restored as well
 			streflop::streflop_init<streflop::Simple>();
 		}
 
 		if (isValid) {
-			ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+			{
+				// conditional transformation
+				ILenum dstFormat;
+				if (reqChannel == 0) {
+					dstFormat = currFormat;
+					channels = ExtFmtToChannels(dstFormat);
+				}
+				else {
+					dstFormat = GetExtFmt(reqChannel);
+					channels = reqChannel;
+				}
+
+				if (reqDataType != 0)
+					dataType = reqDataType;
+
+				ilConvertImage(dstFormat, dataType);
+			}
 
 			xsize = ilGetInteger(IL_IMAGE_WIDTH);
 			ysize = ilGetInteger(IL_IMAGE_HEIGHT);
@@ -521,7 +739,7 @@ bool CBitmap::Load(std::string const& filename, uint8_t defaultAlpha)
 
 			// ilCopyPixels(0, 0, 0, xsize, ysize, 0, IL_RGBA, IL_UNSIGNED_BYTE, GetRawMem());
 			for (const ILubyte* imgData = ilGetData(); imgData != nullptr; imgData = nullptr) {
-				std::memset(GetRawMem(), 0xFF, GetMemSize());
+				std::memset(GetRawMem(), 0xFF   , GetMemSize());
 				std::memcpy(GetRawMem(), imgData, GetMemSize());
 			}
 		}
@@ -538,15 +756,8 @@ bool CBitmap::Load(std::string const& filename, uint8_t defaultAlpha)
 		return false;
 	}
 
-	if (noAlpha) {
-		uint8_t* mem = GetRawMem();
-
-		for (int y = 0; y < ysize; ++y) {
-			for (int x = 0; x < xsize; ++x) {
-				mem[((y * xsize + x) * 4) + 3] = defaultAlpha;
-			}
-		}
-	}
+	if (noAlpha)
+		ReplaceAlpha(defaultAlpha);
 
 	return true;
 }
@@ -833,10 +1044,6 @@ unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, ui
 		return bm.CreateTexture(aniso, mipmaps);
 	}
 
-
-	constexpr unsigned int intFormats[] = {0, GL_R8 , GL_RG8, GL_RGB8, GL_RGBA8};
-	constexpr unsigned int extFormats[] = {0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
-
 	if (texID == 0)
 		glGenTextures(1, &texID);
 
@@ -853,10 +1060,10 @@ unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, ui
 
 	if (mipmaps) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glBuildMipmaps(GL_TEXTURE_2D, intFormats[channels], xsize, ysize, extFormats[channels], GL_UNSIGNED_BYTE, GetRawMem());
+		glBuildMipmaps(GL_TEXTURE_2D, GetIntFmt(), xsize, ysize, GetExtFmt(), dataType, GetRawMem());
 	} else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, intFormats[channels], xsize, ysize, 0, extFormats[channels], GL_UNSIGNED_BYTE, GetRawMem());
+		glTexImage2D(GL_TEXTURE_2D, 0, GetIntFmt(), xsize, ysize, 0, GetExtFmt(), dataType, GetRawMem());
 	}
 
 	return texID;
@@ -1138,6 +1345,13 @@ void CBitmap::Fill(const SColor& c)
 	for (size_t i = 0, n = GetMemSize() / channels; i < n; i++) {
 		memcpy(&mem[i * channels], &c.r, channels);
 	}
+}
+
+void CBitmap::ReplaceAlpha(float a)
+{
+	//uint8_t* mem = GetRawMem();
+	auto action = BitmapAction::GetBitmapAction(this);
+	action->ReplaceAlpha(a);
 }
 
 
