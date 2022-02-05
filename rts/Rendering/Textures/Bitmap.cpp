@@ -7,7 +7,7 @@
 #include <IL/il.h>
 #include <SDL_video.h>
 
-#ifndef BITMAP_NO_OPENGL
+#ifndef HEADLESS
 	#include "Rendering/GL/myGL.h"
 	#include "System/TimeProfiler.h"
 #endif
@@ -277,6 +277,7 @@ static bool IsValidImageFormat(int format) {
 // BitmapAction
 //////////////////////////////////////////////////////////////////////
 
+#ifndef HEADLESS
 class BitmapAction {
 public:
 	BitmapAction() = delete;
@@ -824,7 +825,7 @@ CBitmap TBitmapAction<T, ch>::CreateRescaled(int newx, int newy)
 
 	return dst;
 }
-
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -890,7 +891,7 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 		dataType = bmp.dataType;
 		compressed = bmp.compressed;
 
-		#ifndef BITMAP_NO_OPENGL
+		#ifndef HEADLESS
 		textype = bmp.textype;
 
 		ddsimage = bmp.ddsimage;
@@ -912,7 +913,7 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 		std::swap(dataType, bmp.dataType);
 		std::swap(compressed, bmp.compressed);
 
-		#ifndef BITMAP_NO_OPENGL
+		#ifndef HEADLESS
 		std::swap(textype, bmp.textype);
 
 		std::swap(ddsimage, bmp.ddsimage);
@@ -956,7 +957,7 @@ void CBitmap::AllocDummy(const SColor fill)
 	Fill(fill);
 }
 
-#ifndef BITMAP_NO_OPENGL
+#ifndef HEADLESS
 int32_t CBitmap::GetIntFmt() const
 {
 	constexpr uint32_t intFormats[3][5] = {
@@ -1016,8 +1017,9 @@ uint32_t CBitmap::GetDataTypeSize() const
 }
 #else
 int32_t CBitmap::GetIntFmt() const { return 0; }
-int32_t CBitmap::GetExtFmt() const { return 0; }
-int32_t CBitmap::GetDataTypeSize() const { return 0; }
+int32_t CBitmap::GetExtFmt(uint32_t ch) { return 0; }
+int32_t CBitmap::ExtFmtToChannels(int32_t extFmt) { return 0; }
+uint32_t CBitmap::GetDataTypeSize() const { return 0; }
 #endif
 
 bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t reqChannel, uint32_t reqDataType)
@@ -1039,14 +1041,14 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 
 	channels = 4;
-	#ifndef BITMAP_NO_OPENGL
+	#ifndef HEADLESS
 	textype = GL_TEXTURE_2D;
 	#endif
 
 	#define BITMAP_USE_NV_DDS
 	#ifdef BITMAP_USE_NV_DDS
 	if (loadDDS) {
-		#ifndef BITMAP_NO_OPENGL
+		#ifndef HEADLESS
 		compressed = true;
 		xsize = 0;
 		ysize = 0;
@@ -1125,7 +1127,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			currFormat = ilGetInteger(IL_IMAGE_FORMAT);
 			isValid = (isLoaded && IsValidImageFormat(currFormat));
 			//noAlpha = (isValid && (ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL) != 4));
-			noAlpha = (isValid && currFormat == GL_RGB);
+			noAlpha = (isValid && currFormat == 0x1907/*GL_RGB*/);
 			dataType = ilGetInteger(IL_IMAGE_TYPE);
 
 			// FPU control word has to be restored as well
@@ -1245,7 +1247,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 bool CBitmap::Save(std::string const& filename, bool opaque, bool logged) const
 {
 	if (compressed) {
-		#ifndef BITMAP_NO_OPENGL
+		#ifndef HEADLESS
 		return ddsimage.save(filename);
 		#else
 		return false;
@@ -1448,7 +1450,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 }
 
 
-#ifndef BITMAP_NO_OPENGL
+#ifndef HEADLESS
 unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const
 {
 	if (compressed)
@@ -1581,7 +1583,7 @@ unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lo
 	glPopAttrib();
 	return texID;
 }
-#else  // !BITMAP_NO_OPENGL
+#else  // !HEADLESS
 
 unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const {
 	return 0;
@@ -1590,131 +1592,77 @@ unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, ui
 unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lodBias, bool mipmaps) const {
 	return 0;
 }
-#endif // !BITMAP_NO_OPENGL
+#endif // !HEADLESS
 
 
 void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->CreateAlpha(red, green, blue);
+#endif
 }
 
 
 void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->SetTransparent(c, trans);
+#endif
 }
 
 
 void CBitmap::Renormalize(const float3& newCol)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->Renormalize(newCol);
+#endif
 }
 
 void CBitmap::Blur(int iterations, float weight)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
-#if 1
+
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->Blur(iterations, weight);
-#else
-	//////////////////////////////////////////////////
-
-	static constexpr float blurkernel[9] = {
-		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f,
-		2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f,
-		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f
-	};
-
-	CBitmap tmp(nullptr, xsize, ysize, channels);
-
-	CBitmap* src = this;
-	CBitmap* dst = &tmp;
-
-	for (int i = 0; i < iterations; ++i) {
-		const uint8_t* srcMem = src->GetRawMem();
-		      uint8_t* dstMem = dst->GetRawMem();
-
-		for_mt(0, ysize, [&](const int y) {
-			for (int x = 0; x < xsize; x++) {
-				int yBaseOffset = (y * src->xsize);
-				for (int j = 0; j < channels; j++) {
-
-					///////////////////////////////////////
-					float fragment = 0.0f;
-
-					//const int pos = (x + y * xsize) * channels + j;
-					const int pos = (yBaseOffset + x) * channels + j;
-
-					for (int i = 0; i < 9; ++i) {
-						int yoffset = (i / 3) - 1;
-						int xoffset = (i - (yoffset + 1) * 3) - 1;
-
-						const int tx = x + xoffset;
-						const int ty = y + yoffset;
-
-						xoffset *= ((tx >= 0) && (tx < xsize));
-						yoffset *= ((ty >= 0) && (ty < ysize));
-
-						const int offset = (yoffset * xsize + xoffset) * channels;
-
-						if (i == 4) {
-							fragment += (weight * blurkernel[i] * srcMem[pos + offset]);
-						}
-						else {
-							fragment += (         blurkernel[i] * srcMem[pos + offset]);
-						}
-}
-
-					dstMem[pos] = static_cast<uint8_t>(Clamp(fragment, 0.0f, 255.0f));
-					///////////////////////////////////////
-				}
-			}
-		});
-
-		std::swap(src, dst);
-	}
-
-	// if dst points to temporary, we are done
-	// otherwise need to perform one more swap
-	// (e.g. if iterations=1)
-	if (dst != this)
-		return;
-
-	std::swap(src, dst);
 #endif
 }
 
 
 void CBitmap::Fill(const SColor& c)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->Fill(c);
+#endif
 }
 
 void CBitmap::ReplaceAlpha(float a)
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->ReplaceAlpha(a);
+#endif
 }
 
 
@@ -1789,7 +1737,7 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 	newx = std::max(1, newx);
 	newy = std::max(1, newy);
 
-
+#ifndef HEADLESS
 	if (compressed) {
 		LOG_L(L_WARNING, "CBitmap::CreateRescaled doesn't work with compressed textures!");
 		CBitmap bm;
@@ -1806,56 +1754,64 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 
 	auto action = BitmapAction::GetBitmapAction(const_cast<CBitmap*>(this));
 	return action->CreateRescaled(newx, newy);
+#else
+	CBitmap bm;
+	bm.AllocDummy();
+	return bm;
+#endif
 }
 
 
 void CBitmap::InvertColors()
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->InvertColors();
+#endif
 }
 
 
 void CBitmap::InvertAlpha()
 {
+#ifndef HEADLESS
 	if (compressed)
 		return; // Don't try to invert DDS
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->InvertAlpha();
+#endif
 }
 
 
 void CBitmap::MakeGrayScale()
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->MakeGrayScale();
+#endif
 }
-
-static ILubyte TintByte(ILubyte value, float tint)
-{
-	return Clamp(value * tint, 0.0f, 255.0f);
-}
-
 
 void CBitmap::Tint(const float tint[3])
 {
+#ifndef HEADLESS
 	if (compressed)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
 	action->Tint(tint);
+#endif
 }
 
 
 void CBitmap::ReverseYAxis()
 {
+#ifndef HEADLESS
 	if (compressed)
 		return; // don't try to flip DDS
 
@@ -1876,5 +1832,6 @@ void CBitmap::ReverseYAxis()
 	}
 
 	texMemPool.Free(tmp, memSize);
+#endif
 }
 

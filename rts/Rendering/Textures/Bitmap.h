@@ -6,9 +6,9 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#ifndef BITMAP_NO_OPENGL
+#ifndef HEADLESS
 	#include "nv_dds.h"
-#endif // !BITMAP_NO_OPENGL
+#endif // !HEADLESS
 #include "System/float3.h"
 #include "System/Color.h"
 
@@ -98,7 +98,7 @@ public:
 	int32_t channels = 4;
 	uint32_t dataType = 0;
 
-	#ifndef BITMAP_NO_OPENGL
+	#ifndef HEADLESS
 	// GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, ...
 	// not set to anything until Load is called
 	int32_t textype = 0;
