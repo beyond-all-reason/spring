@@ -6,6 +6,11 @@
 	https://springrts.com/
 */
 
+#ifdef USE_MIMALLOC
+	#include "mimalloc/include/mimalloc.h"
+	#include "mimalloc/include/mimalloc-new-delete.h"
+#endif
+
 #include "System/ExportDefines.h"
 #include "System/SpringApp.h"
 #include "System/Exceptions.h"
@@ -29,6 +34,12 @@ EXTERNALIZER_B EXPORT_CLAUSE uint32_t AmdPowerXpressRequestHighPerformance = 1; 
 
 int Run(int argc, char* argv[])
 {
+#ifdef USE_MIMALLOC
+	mi_option_enable(mi_option_verbose);
+	mi_option_enable(mi_option_large_os_pages);
+	mi_option_set(mi_option_reserve_huge_os_pages, 4);
+#endif
+
 #ifdef __MINGW32__
 	// For the MinGW backtrace() implementation we need to know the stack end.
 	{

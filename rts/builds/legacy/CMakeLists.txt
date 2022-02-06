@@ -75,7 +75,15 @@ list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 include_directories(${engineIncludes})
 
 ### Build the executable
-add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
+add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${engineCommonLibObjs} ${ENGINE_ICON} ${engineHeaders})
+
+set_source_files_properties(
+  ${engineCommonLibObjs}
+  PROPERTIES
+  EXTERNAL_OBJECT true
+  GENERATED true
+)
+
 target_link_libraries(engine-legacy ${engineLibraries})
 
 

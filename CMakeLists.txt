@@ -158,7 +158,7 @@ else  (UNIX AND NOT MINGW)
 	endif ()
 
 
-	add_definitions(-D_WIN32_WINNT=0x502) ## vista is minimum due to InterlockedIncrement64
+	add_definitions(-D_WIN32_WINNT=0x0601) ## // Windows 7
 	add_definitions(-D__USE_MINGW_ANSI_STDIO=1) ## use __mingw_sprintf instead of __builtin_sprintf (it's used by lua in a synced way, and builtin doesn't sync)
 
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

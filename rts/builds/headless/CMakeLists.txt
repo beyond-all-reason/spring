@@ -35,7 +35,15 @@ include_directories(${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 
 
 ### Build the executable
-add_executable(engine-headless ${engineSources} ${ENGINE_ICON})
+add_executable(engine-headless ${engineSources} ${engineCommonLibObjs} ${ENGINE_ICON})
+
+set_source_files_properties(
+  ${engineCommonLibObjs}
+  PROPERTIES
+  EXTERNAL_OBJECT true
+  GENERATED true
+)
+
 target_link_libraries(engine-headless no-sound ${engineHeadlessLibraries} no-sound)
 
 if    (MINGW)
