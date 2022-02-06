@@ -96,6 +96,10 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 		nextOffsetMessageIdx = 0;
 		nextCostMessageIdx = 0;
 
+		// These now need to be saved for later because of 'random maps'
+		pathStateCacheFileName = &peFileName;
+		srcMapFileName = &mapFileName;
+
 	 	pathChecksum = 0;
 	 	fileHashCode = CalcHash(__func__);
 
@@ -203,30 +207,42 @@ bool PathingState::RemoveCacheFile(const std::string& peFileName, const std::str
 	return (FileSystem::Remove(GetCacheFileName(IntToString(fileHashCode, "%x"), peFileName, mapFileName)));
 }
 
+void PathingState::SaveCacheFile()
+{
+	char calcMsg[512];
+	const char* fmtStrs[2] = {
+			"[%s] writing PE%u cache-file %s-%x",
+			"[%s] written PE%u cache-file %s-%x",
+		};
+
+	sprintf(calcMsg, fmtStrs[0], __func__, BLOCK_SIZE, pathStateCacheFileName->c_str(), fileHashCode);
+	loadscreen->SetLoadMessage(calcMsg, true);
+
+	WriteFile(*pathStateCacheFileName, *srcMapFileName);
+
+	sprintf(calcMsg, fmtStrs[1], __func__, BLOCK_SIZE, pathStateCacheFileName->c_str(), fileHashCode);
+	loadscreen->SetLoadMessage(calcMsg, true);
+}
 
 void PathingState::InitEstimator(const std::string& peFileName, const std::string& mapFileName)
 {
 	const unsigned int numThreads = ThreadPool::GetNumThreads();
 	//LOG("TK PathingState::InitEstimator: %d threads available", numThreads);
 
-	// Not much point in multithreading these...
 	InitBlocks();
 
 	if (!ReadFile(peFileName, mapFileName)) {
 		char calcMsg[512];
-		const char* fmtStrs[4] = {
+		const char* fmtStrs[2] = {
 			"[%s] creating PE%u cache with %u PF threads",
-			"[%s] creating PE%u cache with %u PF thread",
-			"[%s] writing PE%u cache-file %s-%x",
-			"[%s] written PE%u cache-file %s-%x",
+			"[%s] created PE%u cache",
 		};
 
 		{
-			sprintf(calcMsg, fmtStrs[numThreads==1], __func__, BLOCK_SIZE, numThreads);
+			sprintf(calcMsg, fmtStrs[0], __func__, BLOCK_SIZE, numThreads);
 			loadscreen->SetLoadMessage(calcMsg);
 		}
 
-		// note: only really needed if numExtraThreads > 0
 		spring::barrier pathBarrier(numThreads);
 
 		TKPFS::PathingSystemActive = true;
@@ -235,13 +251,7 @@ void PathingState::InitEstimator(const std::string& peFileName, const std::strin
 		});
 		TKPFS::PathingSystemActive = false;
 
-		sprintf(calcMsg, fmtStrs[2], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
-		loadscreen->SetLoadMessage(calcMsg, true);
-
-		WriteFile(peFileName, mapFileName);
-
-		sprintf(calcMsg, fmtStrs[3], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
-		loadscreen->SetLoadMessage(calcMsg, true);
+		SaveCacheFile();
 	}
 
 	// calculate checksum over block-offsets and vertex-costs

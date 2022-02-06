@@ -209,6 +209,9 @@ std::int64_t CPathManager::PostFinalizeRefresh()
 	{
 		pathingStates[PATH_MED_RES].UpdateVertexPathCosts(-1);
 		pathingStates[PATH_LOW_RES].UpdateVertexPathCosts(-1);
+
+		//pathingStates[PATH_MED_RES].SaveCacheFile();
+		//pathingStates[PATH_LOW_RES].SaveCacheFile();
 	}
 
 	const spring_time dt = spring_gettime() - t0;

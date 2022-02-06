@@ -36,6 +36,8 @@ public:
 
     bool RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName);
 
+	void SaveCacheFile();
+
     float GetMaxSpeedMod(unsigned int pathType) const { return maxSpeedMods[pathType]; };
 
     float GetVertexCost(size_t index) const { return vertexCosts[index]; };
@@ -147,6 +149,9 @@ private:
     unsigned int BLOCK_SIZE = 0;
 	unsigned int BLOCK_PIXEL_SIZE = 0;
     unsigned int BLOCKS_TO_UPDATE = 0;
+
+	const std::string* pathStateCacheFileName = nullptr;
+	const std::string* srcMapFileName = nullptr;
 
     std::uint32_t pathChecksum = 0;
     std::uint32_t fileHashCode = 0;
