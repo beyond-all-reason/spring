@@ -111,6 +111,14 @@ if    (USE_TCMALLOC AND TCMALLOC_LIBRARY)
 	list(APPEND engineCommonLibraries ${TCMALLOC_LIBRARY})
 endif (USE_TCMALLOC AND TCMALLOC_LIBRARY)
 
+#find_package_static(mimalloc)
+option(USE_MIMALLOC "use Microsoft mimalloc" OFF)
+if    (USE_MIMALLOC)
+	set(MI_BUILD_TESTS OFF CACHE BOOL "Build test executables")
+	message(STATUS "Using mimalloc")
+	list(APPEND engineCommonLibraries "mimalloc-static")
+endif (USE_MIMALLOC)
+
 
 if(UNIX)
 	find_package_static(Libunwind REQUIRED)
