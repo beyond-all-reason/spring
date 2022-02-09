@@ -112,7 +112,7 @@ public:
 	 * (for interpolation)
 	 */
 	float timeOffset;
-
+	float lastTimeOffset;
 	/**
 	 * @brief last frame time
 	 *
@@ -122,6 +122,8 @@ public:
 
 	/// the starting time in tick for last draw frame
 	spring_time lastFrameStart;
+
+	spring_time lastSwapBuffersEnd;
 
 	/// 0.001f * gu->simFPS, used for rendering
 	float weightedSpeedFactor;
@@ -166,7 +168,7 @@ public:
 	int viewSizeY;
 
 	/// the window borders
-	std::array<int, 4> winBorder;
+	mutable std::array<int, 4> winBorder;
 
 	/// Some settings got changed need to adjust the way window is
 	unsigned int winChgFrame;

@@ -65,7 +65,7 @@ AAirMoveType::GetGroundHeightFunc amtGetGroundHeightFuncs[6] = {
 	AAMTGetGroundHeightAW,       // canSubmerge=0 useSmoothMesh=0
 	AAMTGetGroundHeight  ,       // canSubmerge=1 useSmoothMesh=0
 	AAMTGetSmoothGroundHeightAW, // canSubmerge=0 useSmoothMesh=1
-	AAMTGetSmoothGroundHeight,   // canSubmerge=1 useSmoothMesh=1
+	AAMTGetSmoothGroundHeightAW, // canSubmerge=1 useSmoothMesh=1 : needs AW version to solve Seaplanes/SmoothHeightMesh bug - ref: https://github.com/beyond-all-reason/Beyond-All-Reason/issues/495
 	HAMTGetMaxGroundHeight,      // HoverAirMoveType::UpdateFlying
 	SAMTGetMaxGroundHeight,      // StrafeAirMoveType::UpdateFlying
 };

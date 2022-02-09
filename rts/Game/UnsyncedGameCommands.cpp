@@ -1317,15 +1317,17 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		// append zeros so all args can be safely omitted
-		std::istringstream buf(action.GetArgs() + " 0 0 0");
 
-		unsigned int msgSrceIdx = 0;
-		unsigned int msgTypeIdx = 0;
-		unsigned int msgSevrIdx = 0;
+		int32_t enabled = -1;
+		uint32_t msgSrceIdx = 0;
+		uint32_t msgTypeIdx = 0;
+		uint32_t msgSevrIdx = 0;
 
-		buf >> msgSrceIdx;
-		buf >> msgTypeIdx;
-		buf >> msgSevrIdx;
+		!!sscanf(action.GetArgs().c_str(), "%d %u %u %u", &enabled, &msgSrceIdx, &msgTypeIdx, &msgSevrIdx);
+		if (enabled == -1)
+			globalRendering->glDebug = !globalRendering->glDebug;
+		else
+			globalRendering->glDebug = static_cast<bool>(enabled);
 
 		globalRendering->ToggleGLDebugOutput(msgSrceIdx, msgTypeIdx, msgSevrIdx);
 		return true;
@@ -3272,8 +3274,9 @@ public:
 		const std::vector<std::string>& args = _local_strSpaceTokenize(action.GetArgs());
 
 		switch (args.size()) {
-			case 2: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()),                     1); } break;
-			case 3: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()), atoi(args[2].c_str())); } break;
+			case 2: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()),                     1,                       false); } break;
+			case 3: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()), atoi(args[2].c_str()),                       false); } break;
+			case 4: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()), atoi(args[2].c_str()), (bool)atoi(args[3].c_str())); } break;
 			default: {
 				LOG_L(L_WARNING, "/DumpState: wrong syntax");
 			} break;
