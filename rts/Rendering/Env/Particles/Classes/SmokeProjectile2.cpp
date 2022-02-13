@@ -10,7 +10,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/VertexArray.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
 CR_BIND_DERIVED(CSmokeProjectile2, CProjectile, )
@@ -86,7 +86,7 @@ void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)
 void CSmokeProjectile2::Update()
 {
 	wantedPos += speed;
-	wantedPos += (envResHandler.GetCurrentWindVec() * age * 0.05f);
+	wantedPos += (envResourceSystem.GetCurrentWindVec() * age * 0.05f);
 
 	pos.x += (wantedPos.x - pos.x) * 0.07f;
 	pos.y += (wantedPos.y - pos.y) * 0.02f;

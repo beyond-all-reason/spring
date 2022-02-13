@@ -23,7 +23,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/TextureAtlas.h"
-// #include "Sim/Misc/Wind.h"
+// #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "System/bitops.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FastMath.h"
@@ -551,8 +551,8 @@ CBumpWater::CBumpWater()
 
 
 /*
-	windndir = envResHandler.GetCurrentWindDir();
-	windStrength = (smoothstep(0.0f, 12.0f, envResHandler.GetCurrentWindStrength()) * 0.5f + 4.0f);
+	windndir = envResourceSystem.GetCurrentWindDir();
+	windStrength = (smoothstep(0.0f, 12.0f, envResourceSystem.GetCurrentWindStrength()) * 0.5f + 4.0f);
 	windVec = windndir * windStrength;
 */
 	windVec = float3(20.0, 0.0, 20.0);
@@ -687,9 +687,9 @@ void CBumpWater::Update()
 
 /*
 	windndir *= 0.995f;
-	windndir -= envResHandler.GetCurrentWindDir() * 0.005f;
+	windndir -= envResourceSystem.GetCurrentWindDir() * 0.005f;
 	windStrength *= 0.9999f;
-	windStrength += (smoothstep(0.0f, 12.0f, envResHandler.GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
+	windStrength += (smoothstep(0.0f, 12.0f, envResourceSystem.GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
 	windVec   = windndir * windStrength;
 */
 	if (dynWaves)

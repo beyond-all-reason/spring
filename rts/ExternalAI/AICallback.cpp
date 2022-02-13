@@ -24,6 +24,7 @@
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Units/UnitDrawerData.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
@@ -32,7 +33,6 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/ModInfo.h"
-#include "Sim/Misc/Wind.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -931,19 +931,19 @@ float CAICallback::GetExtractorRadius() const {
 }
 
 float CAICallback::GetMinWind() const {
-	return envResHandler.GetMinWindStrength();
+	return envResourceSystem.GetMinWindStrength();
 }
 
 float CAICallback::GetMaxWind() const {
-	return envResHandler.GetMaxWindStrength();
+	return envResourceSystem.GetMaxWindStrength();
 }
 
 float CAICallback::GetCurWind() const {
-	return envResHandler.GetCurrentWindStrength();
+	return envResourceSystem.GetCurrentWindStrength();
 }
 
 float CAICallback::GetTidalStrength() const {
-	return envResHandler.GetCurrentTidalStrength();
+	return envResourceSystem.GetCurrentTidalStrength();
 }
 
 float CAICallback::GetGravity() const {

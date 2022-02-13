@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -78,7 +79,6 @@
 #include "Sim/Misc/SideParser.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/Wind.h"
 #include "Sim/Misc/ResourceHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveTypeFactory.h"
@@ -257,7 +257,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	// clear left-over receivers in case we reloaded
 	gameCommandConsole.ResetState();
 
-	envResHandler.ResetState();
+	envResourceSystem.Init();
 
 	modInfo.Init(modFileName);
 
@@ -646,8 +646,8 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
 
-	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
-	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
+	envResourceSystem.LoadTidal(mapInfo->map.tidalStrength);
+	envResourceSystem.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
 
 
 	inMapDrawerModel = new CInMapDrawModel();
@@ -1672,7 +1672,7 @@ void CGame::SimFrame() {
 			SCOPED_TIMER("Sim::Script");
 			unitScriptEngine->Tick(33);
 		}
-		envResHandler.Update();
+		envResourceSystem.Update();
 		losHandler->Update();
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.

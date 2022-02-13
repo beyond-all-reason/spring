@@ -1,33 +1,23 @@
-/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-
-#ifndef ENV_RESOURCE_HANDLER_H
-#define ENV_RESOURCE_HANDLER_H
-
-#include <vector>
+#ifndef ENV_RESOURCE_SYSTEM_H__
+#define ENV_RESOURCE_SYSTEM_H__
 
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
 
-class CUnit;
-
-// updates time-varying global environment (wind, tidal) energy resources
-class EnvResourceHandler
-{
-	CR_DECLARE_STRUCT(EnvResourceHandler)
+class EnvResourceSystem {
+    CR_DECLARE_STRUCT(EnvResourceSystem)
 
 public:
-	EnvResourceHandler() { ResetState(); }
-	EnvResourceHandler(const EnvResourceHandler&) = delete;
-
-	EnvResourceHandler& operator = (const EnvResourceHandler&) = delete;
-
-	void ResetState();
-	void LoadTidal(float curStrength) { curTidalStrength = curStrength; }
-	void LoadWind(float minStrength, float maxStrength);
-	void Update();
+    void Init();
+    void Update();
 
 	bool AddGenerator(CUnit* u);
+
+	/* Not expected to be called unless a unit loses its ability to be a wind generator */
 	bool DelGenerator(CUnit* u);
+
+	void LoadTidal(float curStrength) { curTidalStrength = curStrength; }
+	void LoadWind(float minStrength, float maxStrength);
 
 	float GetMaxWindStrength() const { return maxWindStrength; }
 	float GetMinWindStrength() const { return minWindStrength; }
@@ -55,11 +45,11 @@ private:
 
 	int windDirTimer = 0;
 
-	std::vector<int> allGeneratorIDs;
-	std::vector<int> newGeneratorIDs;
+    void UpdateWindTimer();
+    void UpdateWindDirection();
+    void UpdateNewEnvResources();
 };
 
-extern EnvResourceHandler envResHandler;
+extern EnvResourceSystem envResourceSystem;
 
 #endif
-

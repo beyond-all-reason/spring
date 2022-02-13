@@ -82,10 +82,10 @@ void MissileProjectileSystem::AddProjectile(CProjectile* projectile)
     EcsMain::registry.emplace<Gravity>(entity, projectile->mygravity);
     EcsMain::registry.emplace<LuaMoveCtrl>(entity, projectile->luaMoveCtrl);
 
-    auto mproj = dynamic_cast<CMissileProjectile*>(projectile);
-    if (mproj){
-        EcsMain::registry.emplace<Ttl>(entity, mproj->ttl);
-    }
+    // auto mproj = dynamic_cast<CMissileProjectile*>(projectile);
+    // if (mproj){
+    //     EcsMain::registry.emplace<Ttl>(entity, mproj->ttl);
+    // }
 
     LOG("%s: added projectile %d", __func__, projectile->id);
 }
@@ -95,6 +95,7 @@ void MissileProjectileSystem::RemoveProjectile(CProjectile* projectile)
     auto view = EcsMain::registry.view<const ID>();
     entt::entity entity;
 
+    // done to minimize changes to other classes while investigating this
     for(auto ientity: view) {
         // a component at a time ...
         auto &id = view.get<const ID>(ientity);

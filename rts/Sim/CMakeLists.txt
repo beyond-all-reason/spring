@@ -3,7 +3,8 @@
 # > find . -name "*.cpp"" | sort
 add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/EcsMain.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/MissileProjectileSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/EnvResourceSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/UnitSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/Feature.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDefHandler.cpp"
@@ -36,7 +37,6 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamBase.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamStatistics.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/Wind.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/AAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/StrafeAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/GroundMoveType.cpp"

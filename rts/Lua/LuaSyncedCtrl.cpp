@@ -43,7 +43,7 @@
 #include "Sim/Misc/Team.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/QuadField.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
@@ -4250,13 +4250,13 @@ int LuaSyncedCtrl::SetTerrainTypeData(lua_State* L)
 
 int LuaSyncedCtrl::SetTidal(lua_State* L)
 {
-	envResHandler.LoadTidal(luaL_optnumber(L, 1, envResHandler.GetCurrentTidalStrength()));
+	envResourceSystem.LoadTidal(luaL_optnumber(L, 1, envResourceSystem.GetCurrentTidalStrength()));
 	return 0;
 }
 
 int LuaSyncedCtrl::SetWind(lua_State* L)
 {
-	envResHandler.LoadWind(luaL_optnumber(L, 1, envResHandler.GetMinWindStrength()), luaL_optnumber(L, 2, envResHandler.GetMaxWindStrength()));
+	envResourceSystem.LoadWind(luaL_optnumber(L, 1, envResourceSystem.GetMinWindStrength()), luaL_optnumber(L, 2, envResourceSystem.GetMaxWindStrength()));
 	return 0;
 }
 
