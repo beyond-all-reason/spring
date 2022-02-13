@@ -43,7 +43,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -330,7 +330,7 @@ void CUnit::PostInit(const CUnit* builder)
 	Block();
 
 	if (unitDef->windGenerator > 0.0f)
-		envResHandler.AddGenerator(this);
+		envResourceSystem.AddGenerator(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
@@ -469,7 +469,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 	SetGroup(nullptr);
 
 	if (unitDef->windGenerator > 0.0f)
-		envResHandler.DelGenerator(this);
+		envResourceSystem.DelGenerator(this);
 
 	blockHeightChanges = false;
 	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
@@ -1012,16 +1012,16 @@ void CUnit::SlowUpdate()
 		UseMetal(unitDef->metalUpkeep * 0.5f);
 
 		if (unitDef->windGenerator > 0.0f) {
-			if (envResHandler.GetCurrentWindStrength() > unitDef->windGenerator) {
+			if (envResourceSystem.GetCurrentWindStrength() > unitDef->windGenerator) {
  				AddEnergy(unitDef->windGenerator * 0.5f);
 			} else {
-				AddEnergy(envResHandler.GetCurrentWindStrength() * 0.5f);
+				AddEnergy(envResourceSystem.GetCurrentWindStrength() * 0.5f);
 			}
 		}
 	}
 
 	// FIXME: tidal part should be under "if (activated)"?
-	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
+	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResourceSystem.GetCurrentTidalStrength()) * 0.5f);
 
 
 	if (health < maxHealth) {

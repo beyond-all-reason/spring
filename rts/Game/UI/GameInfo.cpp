@@ -10,7 +10,7 @@
 #include "Sim/Misc/Team.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/FileSystem/FileSystem.h"
@@ -108,10 +108,13 @@ CGameInfo::CGameInfo()
 	values.push_back(buf);
 
 	labels.push_back("Map Tidal:");
-	values.push_back(envResHandler.GetCurrentTidalStrength());
+	values.push_back(envResourceSystem.GetCurrentTidalStrength());
 
 	labels.push_back("Map Wind:");
-	sprintf(buf, "%.2f - %.2f (%.2f)", envResHandler.GetMinWindStrength(), envResHandler.GetMaxWindStrength(), envResHandler.GetAverageWindStrength());
+	sprintf(buf, "%.2f - %.2f (%.2f)"
+			, envResourceSystem.GetMinWindStrength()
+			, envResourceSystem.GetMaxWindStrength()
+			, envResourceSystem.GetAverageWindStrength());
 	values.push_back(buf);
 
 	labels.push_back("Map Size:");

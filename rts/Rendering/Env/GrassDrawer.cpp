@@ -19,7 +19,7 @@
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "System/EventHandler.h"
 #include "System/GlobalRNG.h"
 #include "System/SpringMath.h"
@@ -344,7 +344,7 @@ void CGrassDrawer::LoadGrassShaders() {
 
 
 void CGrassDrawer::EnableShader(const GrassShaderProgram type) {
-	const float3 windSpeed = envResHandler.GetCurrentWindVec() * mapInfo->grass.bladeWaveScale;
+	const float3 windSpeed = envResourceSystem.GetCurrentWindVec() * mapInfo->grass.bladeWaveScale;
 
 	grassShader = grassShaders[type];
 	grassShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());

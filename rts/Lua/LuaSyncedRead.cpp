@@ -37,7 +37,7 @@
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -806,19 +806,19 @@ int LuaSyncedRead::GetGameSeconds(lua_State* L)
 
 int LuaSyncedRead::GetTidal(lua_State* L)
 {
-	lua_pushnumber(L, envResHandler.GetCurrentTidalStrength());
+	lua_pushnumber(L, envResourceSystem.GetCurrentTidalStrength());
 	return 1;
 }
 
 int LuaSyncedRead::GetWind(lua_State* L)
 {
-	lua_pushnumber(L, envResHandler.GetCurrentWindVec().x);
-	lua_pushnumber(L, envResHandler.GetCurrentWindVec().y);
-	lua_pushnumber(L, envResHandler.GetCurrentWindVec().z);
-	lua_pushnumber(L, envResHandler.GetCurrentWindStrength());
-	lua_pushnumber(L, envResHandler.GetCurrentWindDir().x);
-	lua_pushnumber(L, envResHandler.GetCurrentWindDir().y);
-	lua_pushnumber(L, envResHandler.GetCurrentWindDir().z);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindVec().x);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindVec().y);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindVec().z);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindStrength());
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindDir().x);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindDir().y);
+	lua_pushnumber(L, envResourceSystem.GetCurrentWindDir().z);
 	return 7;
 }
 

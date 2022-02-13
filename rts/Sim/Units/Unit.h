@@ -5,6 +5,9 @@
 
 #include <vector>
 
+//#include "lib/entt/entt.hpp"
+#include "Sim/Ecs/EcsMain.h"
+
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Misc/Resource.h"
 #include "Sim/Weapons/WeaponTarget.h"
@@ -290,6 +293,8 @@ public:
 
 public:
 	const UnitDef* unitDef = nullptr;
+
+	entt::entity entityReference = entt::null;
 
 	// Our shield weapon, NULL if we have none
 	CWeapon* shieldWeapon = nullptr;

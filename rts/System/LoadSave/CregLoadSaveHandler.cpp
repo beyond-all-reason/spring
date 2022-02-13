@@ -27,7 +27,7 @@
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/Wind.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandDescription.h"
 #include "Sim/Units/Scripts/CobEngine.h"
@@ -92,7 +92,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	CPlasmaRepulser::SerializeShieldSegmentCollectionPool(s);
 	CColorMap::SerializeColorMaps(s);
 	s->SerializeObjectInstance(&waitCommandsAI, waitCommandsAI.GetClass());
-	s->SerializeObjectInstance(&envResHandler, envResHandler.GetClass());
+	s->SerializeObjectInstance(&envResourceSystem, envResourceSystem.GetClass());
 	s->SerializeObjectInstance(&moveDefHandler, moveDefHandler.GetClass());
 	s->SerializeObjectInstance(&teamHandler, teamHandler.GetClass());
 	for (int a = 0; a < teamHandler.ActiveTeams(); a++) {

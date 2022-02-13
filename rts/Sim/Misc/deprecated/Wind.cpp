@@ -29,7 +29,7 @@ CR_REG_METADATA(EnvResourceHandler, (
 ))
 
 
-EnvResourceHandler envResHandler;
+EnvResourceHandler envResourceSystem;
 
 
 void EnvResourceHandler::ResetState()
