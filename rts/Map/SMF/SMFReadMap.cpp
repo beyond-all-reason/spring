@@ -381,6 +381,14 @@ void CSMFReadMap::CreateNormalTex()
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
 #ifdef USE_UNSYNCED_HEIGHTMAP
+	/*
+	const SRectangle updRect = {
+		update.x1 - 1,
+		update.z1 - 1,
+		update.x1 + 1,
+		update.x2 + 1
+	};
+	*/
 	UpdateVertexNormalsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
 #endif

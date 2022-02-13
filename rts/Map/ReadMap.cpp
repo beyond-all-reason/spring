@@ -546,7 +546,9 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool initiali
 		}
 		#endif
 
-		HeightMapUpdateLOSCheck(cornerRect);
+		//HeightMapUpdateLOSCheck(cornerRect);
+		for (int z = cornerRect.z1; z < cornerRect.z2; ++z)
+			unsyncedHeightMapUpdates.push_back({ cornerRect.x1, z, cornerRect.x2, z + 1 });
 	}
 	#else
 	unsyncedHeightMapUpdates.push_back(cornerRect);

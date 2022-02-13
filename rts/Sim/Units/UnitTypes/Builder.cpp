@@ -221,11 +221,11 @@ bool CBuilder::UpdateTerraform(const Command&)
 				}
 			}
 			SmoothBorders();
+			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 			if (curBuildee->terraformLeft <= 0.0f) {
 				terraforming = false;
 
-				mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 				curBuildee->groundLevelled = true;
 
 				if (eventHandler.TerraformComplete(this, curBuildee)) {
@@ -255,11 +255,11 @@ bool CBuilder::UpdateTerraform(const Command&)
 			}
 		}
 		SmoothBorders();
+		mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 		if (myTerraformLeft <= 0.0f) {
 			terraforming = false;
 
-			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 			StopBuild();
 		}
 	} break;
