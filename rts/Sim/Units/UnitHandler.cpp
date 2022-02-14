@@ -11,6 +11,7 @@
 #include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -286,6 +287,8 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 		--activeSlowUpdateUnit;
 
 	activeUnits.erase(it);
+
+	unitSystem.RemoveUnit(delUnit);
 
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam,           0), delUnit);
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam, delUnitType), delUnit);
