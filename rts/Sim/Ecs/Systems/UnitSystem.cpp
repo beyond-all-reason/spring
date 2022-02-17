@@ -36,6 +36,8 @@ void UnitSystem::RemoveUnit(CUnit* unit)
 {
     auto view = EcsMain::registry.view<const UnitId>();
     entt::entity entity = unit->entityReference;
+
+    unit->entityReference = entt::null;
     
     if (EcsMain::registry.valid(entity))
         EcsMain::registry.destroy(entity);

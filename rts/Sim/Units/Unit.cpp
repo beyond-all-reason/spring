@@ -935,7 +935,7 @@ void CUnit::SlowUpdate()
 	if (IsStunned()) {
 		// call this because we can be pushed into a different quad while stunned
 		// which would make us invulnerable to most non-/small-AOE weapon impacts
-		static_cast<AMoveType*>(moveType)->SlowUpdate();
+		//static_cast<AMoveType*>(moveType)->SlowUpdate();
 
 		const bool notStunned = (paralyzeDamage <= (modInfo.paralyzeOnMaxHealth? maxHealth: health));
 		const bool inFireBase = (transporter == nullptr || !transporter->unitDef->IsTransportUnit() || transporter->unitDef->isFirePlatform);
