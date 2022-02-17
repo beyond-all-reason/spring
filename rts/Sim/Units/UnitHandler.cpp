@@ -286,9 +286,10 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	if (activeSlowUpdateUnit > std::distance(activeUnits.begin(), it))
 		--activeSlowUpdateUnit;
 
-	activeUnits.erase(it);
 
 	unitSystem.RemoveUnit(delUnit);
+
+	activeUnits.erase(it);
 
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam,           0), delUnit);
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam, delUnitType), delUnit);
