@@ -29,7 +29,7 @@ ITreeDrawer* treeDrawer = nullptr;
 
 
 ITreeDrawer::ITreeDrawer(): CEventClient("[ITreeDrawer]", 314444, false)
-	, drawTrees(true)
+	, drawTrees(false)
 	, wireFrameMode(false)
 {
 	eventHandler.AddClient(this);
