@@ -74,6 +74,7 @@ protected:
 	void Initialize();
 
 	virtual void UpdateHeightMapUnsynced(const SRectangle&) = 0;
+	virtual void SanityCheckerUnsynced() const = 0;
 
 public:
 	//OK since it's loaded with SerializeObjectInstance

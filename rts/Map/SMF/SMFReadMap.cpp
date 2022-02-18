@@ -27,6 +27,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
 
+#include "fmt/format.h"
+
 #define SSMF_UNCOMPRESSED_NORMALS 0
 
 using std::max;
@@ -120,7 +122,7 @@ void CSMFReadMap::LoadHeightMap()
 	const SMFHeader& header = mapFile.GetHeader();
 
 	cornerHeightMapSynced.clear();
-	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
+	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1)); //mapDims.mapxp1, mapDims.mapyp1 are not available here
 	#ifdef USE_UNSYNCED_HEIGHTMAP
 	cornerHeightMapUnsynced.clear();
 	cornerHeightMapUnsynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
@@ -380,6 +382,7 @@ void CSMFReadMap::CreateNormalTex()
 
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
+	LOG("[CReadMap::%s] frame=%d {Blue, Rectangle[{%d,%d},{%d,%d}]},", __func__, globalRendering->drawFrame, update.x1, update.z1, update.x2, update.z2);
 #ifdef USE_UNSYNCED_HEIGHTMAP
 	UpdateVertexNormalsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
@@ -391,9 +394,8 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 {
-	const float*  shm = &cornerHeightMapSynced[0];
-		  float*  uhm = &cornerHeightMapUnsynced[0];
-		  float3* vvn = &visVertexNormals[0];
+	const auto& shm = cornerHeightMapSynced;
+	auto& vvn = visVertexNormals;
 
 	const int W = mapDims.mapxp1;
 	const int H = mapDims.mapyp1;
@@ -402,12 +404,25 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 
 	// a heightmap update over (x1, y1) - (x2, y2) implies the
 	// normals change over (x1 - 1, y1 - 1) - (x2 + 1, y2 + 1)
+
 	const int minx = std::max(update.x1 - 1,     0);
 	const int minz = std::max(update.y1 - 1,     0);
 	const int maxx = std::min(update.x2 + 1, W - 1);
 	const int maxz = std::min(update.y2 + 1, H - 1);
 
-	for_mt(minz, maxz+1, [&](const int z) {
+	for (int z = update.z1; z < update.z2; z++) {
+		{
+			const int idx0 = (z * mapDims.mapxp1 + (update.x1    ));
+			const int idx1 = (z * mapDims.mapxp1 + (update.x2 + 1));
+			std::copy(
+				cornerHeightMapSynced.begin() + idx0,
+				cornerHeightMapSynced.begin() + idx1,
+				cornerHeightMapUnsynced.begin() + idx0
+			);
+		}
+	}
+	/*
+	for_mt(minz, maxz + 1, [&](const int z) {
 		for (int x = minx; x <= maxx; x++) {
 			const int vIdxTL = (z    ) * W + x;
 
@@ -461,40 +476,109 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 			vn += vml.cross(vbl) * (zOffB & xOffL); assert(vml.cross(vbl).y >= 0.0f);
 
 			// update the visible vertex/face height/normal
-			uhm[vIdxTL] = shm[vIdxTL];
 			vvn[vIdxTL] = vn.ANormalize();
 		}
 	});
+	*/
 }
 
 
 void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 {
 
-	const float3* sfn = &faceNormalsSynced[0];
-	      float3* ufn = &faceNormalsUnsynced[0];
-	const float3* scn = &centerNormalsSynced[0];
-	      float3* ucn = &centerNormalsUnsynced[0];
+	const auto& sfn = faceNormalsSynced;
+	      auto& ufn = faceNormalsUnsynced;
+	const auto& scn = centerNormalsSynced;
+	      auto& ucn = centerNormalsUnsynced;
+
+	const float* heightmapUnsynced = GetCornerHeightMapUnsynced();
 
 	// a heightmap update over (x1, y1) - (x2, y2) implies the
 	// normals change over (x1 - 1, y1 - 1) - (x2 + 1, y2 + 1)
-	const int minx = std::max(update.x1 - 1,              0);
-	const int minz = std::max(update.y1 - 1,              0);
-	const int maxx = std::min(update.x2 + 1, mapDims.mapxm1);
-	const int maxz = std::min(update.y2 + 1, mapDims.mapym1);
 
-	for (int z = minz; z <= maxz; z++) {
+	const int minx = std::max(update.x1 - 1,              0);
+	const int minz = std::max(update.z1 - 1,              0);
+	const int maxx = std::min(update.x2 + 1, mapDims.mapxm1);
+	const int maxz = std::min(update.z2 + 1, mapDims.mapym1);
+
+
+	for (int z = update.z1; z < update.z2; z++) {
 		{
-			const int idx0 = (z * mapDims.mapx + minx) * 2    ;
-			const int idx1 = (z * mapDims.mapx + maxx) * 2 + 1;
-			memcpy(&ufn[idx0], &sfn[idx0], (idx1 - idx0 + 1) * sizeof(float3));
+			const int idx0 = (z * mapDims.mapx + update.x1    ) * 2;
+			const int idx1 = (z * mapDims.mapx + update.x2 + 1) * 2;
+			//memcpy(&ufn[idx0], &sfn[idx0], (idx1 - idx0 + 1) * sizeof(float3));
+			std::copy(
+				sfn.begin() + idx0,
+				sfn.begin() + idx1,
+				ufn.begin() + idx0
+			);
 		}
 		{
-			const int idx0 = (z * mapDims.mapx + minx);
-			const int idx1 = (z * mapDims.mapx + maxx);
-			memcpy(&ucn[idx0], &scn[idx0], (idx1 - idx0 + 1) * sizeof(float3));
+			const int idx0 = (z * mapDims.mapx + update.x1    );
+			const int idx1 = (z * mapDims.mapx + update.x2 + 1);
+			//memcpy(&ucn[idx0], &scn[idx0], (idx1 - idx0 + 1) * sizeof(float3));
+			std::copy(
+				scn.begin() + idx0,
+				scn.begin() + idx1,
+				ucn.begin() + idx0
+			);
 		}
 	}
+
+	const auto EdgeNormalsUpdateBody = [&ufn, &ucn](int x, int z) {
+		const int idxTL = (z + 0) * mapDims.mapxp1 + x; // TL
+		const int idxBL = (z + 1) * mapDims.mapxp1 + x; // BL
+
+		const float& hTL = cornerHeightMapUnsynced[idxTL + 0];
+		const float& hTR = cornerHeightMapUnsynced[idxTL + 1];
+		const float& hBL = cornerHeightMapUnsynced[idxBL + 0];
+		const float& hBR = cornerHeightMapUnsynced[idxBL + 1];
+
+		// normal of top-left triangle (face) in square
+		//
+		//  *---> e1
+		//  |
+		//  |
+		//  v
+		//  e2
+		//const float3 e1( SQUARE_SIZE, hTR - hTL,           0);
+		//const float3 e2(           0, hBL - hTL, SQUARE_SIZE);
+		//const float3 fnTL = (e2.cross(e1)).Normalize();
+		const float3 fnTL = float3{
+			-(hTR - hTL),
+			SQUARE_SIZE,
+			-(hBL - hTL)
+		}.Normalize();
+
+		// normal of bottom-right triangle (face) in square
+		//
+		//         e3
+		//         ^
+		//         |
+		//         |
+		//  e4 <---*
+		//const float3 e3(-SQUARE_SIZE, hBL - hBR,           0);
+		//const float3 e4(           0, hTR - hBR,-SQUARE_SIZE);
+		//const float3 fnBR = (e4.cross(e3)).Normalize();
+		const float3 fnBR = float3{
+			+(hBL - hBR),
+			SQUARE_SIZE,
+			+(hTR - hBR)
+		}.Normalize();
+
+
+		ufn[(z * mapDims.mapx + x) * 2 + 0] = fnTL;
+		ufn[(z * mapDims.mapx + x) * 2 + 1] = fnBR;
+		ucn[(z * mapDims.mapx + x)] = (fnTL + fnBR).Normalize();
+	};
+	/*
+	//edges of the update rectangle need recalculation of normals
+	for (int z = minz; z <= std::min(minz + 3, maxz); ++z) {
+		for (int x = minx; x <= maxx; ++x) {
+			EdgeNormalsUpdateBody(x, z);
+		}
+	}
+	*/
 }
 
 
@@ -596,6 +680,102 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 		// redefine the texture subregion
 		glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x1, y1, xsize, ysize, GL_RGBA, GL_UNSIGNED_BYTE, &shadingPixels[0]);
+	}
+}
+
+void CSMFReadMap::SanityCheckerUnsynced() const
+{
+	const float3* sfn = &faceNormalsSynced[0];
+	      float3* ufn = &faceNormalsUnsynced[0];
+	const float3* scn = &centerNormalsSynced[0];
+	      float3* ucn = &centerNormalsUnsynced[0];
+
+	//[x,z] address [x+1,z+1], can't go with mapDims.mapxp1, mapDims.mapyp1
+	for (int z = 0; z < mapDims.mapy; z++) {
+		float3 fnTL;
+		float3 fnBR;
+
+		int x0 = -1;
+		int x1 = -1;
+
+		for (int x = 0; x < mapDims.mapx; x++) {
+			const int idxTL = (z + 0) * mapDims.mapxp1 + x; // TL
+			const int idxBL = (z + 1) * mapDims.mapxp1 + x; // BL
+
+			const float hTL = cornerHeightMapUnsynced[idxTL + 0];
+			const float hTR = cornerHeightMapUnsynced[idxTL + 1];
+			const float hBL = cornerHeightMapUnsynced[idxBL + 0];
+			const float hBR = cornerHeightMapUnsynced[idxBL + 1];
+
+			// normal of top-left triangle (face) in square
+			//
+			//  *---> e1
+			//  |
+			//  |
+			//  v
+			//  e2
+			//const float3 e1( SQUARE_SIZE, hTR - hTL,           0);
+			//const float3 e2(           0, hBL - hTL, SQUARE_SIZE);
+			//const float3 fnTL = (e2.cross(e1)).Normalize();
+			fnTL.y = SQUARE_SIZE;
+			fnTL.x = -(hTR - hTL);
+			fnTL.z = -(hBL - hTL);
+			fnTL.Normalize();
+
+			// normal of bottom-right triangle (face) in square
+			//
+			//         e3
+			//         ^
+			//         |
+			//         |
+			//  e4 <---*
+			//const float3 e3(-SQUARE_SIZE, hBL - hBR,           0);
+			//const float3 e4(           0, hTR - hBR,-SQUARE_SIZE);
+			//const float3 fnBR = (e4.cross(e3)).Normalize();
+			fnBR.y = SQUARE_SIZE;
+			fnBR.x = +(hBL - hBR);
+			fnBR.z = +(hTR - hBR);
+			fnBR.Normalize();
+
+			//assert(ufn[(z * mapDims.mapx + x) * 2 + 0] == fnTL);
+			//assert(ufn[(z * mapDims.mapx + x) * 2 + 1] == fnBR);
+
+			// square-normal
+			//assert(centerNormalsUnsynced[z * mapDims.mapx + x] == (fnTL + fnBR).Normalize());
+
+			bool b0 = ufn[(z * mapDims.mapx + x) * 2 + 0] == fnTL;
+			bool b1 = ufn[(z * mapDims.mapx + x) * 2 + 1] == fnBR;
+
+			if ((b0 && b1)) {
+				if (x1 - x0 > 0) {
+					/*
+					std::ostringstream details;
+					details << "\n";
+					for (int xi = x0; xi <= x1; ++xi) {
+						details << fmt::format("x={} ufn[0]=({},{},{}),fnTL=({},{},{})  ufn[1]=({},{},{}),fnBR=({},{},{})\n",
+							xi,
+							ufn[(z * mapDims.mapx + x0) * 2 + 0].x, ufn[(z * mapDims.mapx + x0) * 2 + 0].y, ufn[(z * mapDims.mapx + x0) * 2 + 0].z,
+							fnTL.x, fnTL.y, fnTL.z,
+							ufn[(z * mapDims.mapx + x0) * 2 + 1].x, ufn[(z * mapDims.mapx + x0) * 2 + 1].y, ufn[(z * mapDims.mapx + x0) * 2 + 1].z,
+							fnBR.x, fnBR.y, fnBR.z
+						);
+					}
+					*/
+					LOG("[CSMFReadMap::%s] {Red, Rectangle[{%d,%d},{%d,%d}]},",
+						__func__,
+						x0, z, x1, z + 1
+//						details.str().c_str()
+					);
+
+					x0 = -1;
+					x1 = -1;
+				}
+			}
+			else {
+				if (x0 == -1) x0 = x;
+				x1 = x;
+			}
+		}
 	}
 }
 

@@ -164,6 +164,8 @@ private:
 	void UpdateNormalTexture(const SRectangle& update);
 	void UpdateShadingTexture(const SRectangle& update);
 
+	void SanityCheckerUnsynced() const override;
+
 	inline void UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) const;
 	inline const float GetCenterHeightUnsynced(const int x, const int y) const;
 

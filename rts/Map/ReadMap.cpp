@@ -490,6 +490,9 @@ void CReadMap::UpdateDraw(bool firstCall)
 
 	#else
 
+	//optimize layout
+	unsyncedHeightMapUpdates.Process();
+
 	// TODO: quadtree or whatever
 	for (size_t i = 0, n = std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates.size()); i < n; i++) {
 		UpdateHeightMapUnsynced(*(unsyncedHeightMapUpdates.begin() + i));
@@ -503,11 +506,17 @@ void CReadMap::UpdateDraw(bool firstCall)
 		unsyncedHeightMapUpdates.pop_front();
 	}
 	#endif
+
+	if (unsyncedHeightMapUpdates.empty()) {
+		SanityCheckerUnsynced();
+	}
 }
 
 
 void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool initialize)
 {
+	LOG("[CReadMap::%s] frame=%d {Black, Rectangle[{%d,%d},{%d,%d}]},", __func__, gs->frameNum, hgtMapRect.x1, hgtMapRect.z1, hgtMapRect.x2, hgtMapRect.z2);
+
 	const int2 mins = {hgtMapRect.x1 - 1, hgtMapRect.z1 - 1};
 	const int2 maxs = {hgtMapRect.x2 + 1, hgtMapRect.z2 + 1};
 
