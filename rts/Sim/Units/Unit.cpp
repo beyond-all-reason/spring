@@ -44,6 +44,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -331,6 +332,8 @@ void CUnit::PostInit(const CUnit* builder)
 
 	if (unitDef->windGenerator > 0.0f)
 		envResourceSystem.AddGenerator(this);
+
+	flowEconomySystem.AddUnitEconomy(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);

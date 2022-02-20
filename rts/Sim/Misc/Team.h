@@ -85,7 +85,7 @@ public:
 	SResourcePack resStorage;
 
 	SResourcePack resPull,    resPrevPull;
-	SResourcePack resIncome,  resPrevIncome;
+	SResourcePack resIncome,  resPrevIncome,	resNextIncome;
 	SResourcePack resExpense, resPrevExpense;
 	SResourcePack resShare;
 	SResourcePack resDelayedShare; //< excess that might be shared next SlowUpdate
