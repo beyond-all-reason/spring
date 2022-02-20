@@ -4,6 +4,8 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
 
+// TODO: save/restore components
+// save/restore entity in unit
 class EnvResourceSystem {
     CR_DECLARE_STRUCT(EnvResourceSystem)
 

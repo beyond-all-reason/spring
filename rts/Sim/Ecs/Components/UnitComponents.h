@@ -9,6 +9,10 @@ struct UnitId {
     int unitId;
 };
 
+struct Team {
+    int value;
+};
+
 struct WindGenerator {
 };
 

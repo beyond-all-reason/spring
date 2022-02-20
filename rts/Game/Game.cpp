@@ -64,6 +64,7 @@
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -1672,6 +1673,7 @@ void CGame::SimFrame() {
 			SCOPED_TIMER("Sim::Script");
 			unitScriptEngine->Tick(33);
 		}
+		flowEconomySystem.Update();
 		envResourceSystem.Update();
 		losHandler->Update();
 		// dead ghosts have to be updated in sim, after los,

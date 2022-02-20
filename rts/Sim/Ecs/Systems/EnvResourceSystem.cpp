@@ -52,6 +52,8 @@ void EnvResourceSystem::Init()
 
 void EnvResourceSystem::Update()
 {
+    SCOPED_TIMER("ECS::EnvResourceSystem::Update");
+
 	// zero-strength wind does not need updates
 	if (maxWindStrength <= 0.0f)
 		return;
