@@ -53,17 +53,17 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     float poratableMetalUse;
 
     if (!useMt) {
-    float energyForProration
+     energyForProration
         = teamHandler.Team(teamId)->resStorage.energy
         + teamHandler.Team(teamId)->resNextIncome.energy
         + (-getUnconditionalEnergyUse(teamId));
-    float metalForProration
+     metalForProration
         = teamHandler.Team(teamId)->resStorage.metal
         + teamHandler.Team(teamId)->resNextIncome.metal
         + (-getUnconditionalMetalUse(teamId));
 
-    float poratableEnergyUse = getPoratableEnergyUse(teamId);
-    float poratableMetalUse = getPoratableMetalUse(teamId);
+     poratableEnergyUse = getPoratableEnergyUse(teamId);
+     poratableMetalUse = getPoratableMetalUse(teamId);
     }
     else
     {
