@@ -95,9 +95,12 @@ void EnvResourceSystem::UpdateWindDirection()
     for (auto entity : envResourcesToUpdate) {
         auto unitId = envResourcesToUpdate.get<UnitId>(entity);
 
+    // auto envResourcesToUpdate = EcsMain::registry.group<UnitId>(entt::get<WindGenerator>);
+
+    // for (const auto [entity, unitId] : envResourcesToUpdate.each()){
         (unitHandler.GetUnit(unitId.unitId))->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
 
-        LOG("%s: updated existing generator %d", __func__, unitId.unitId);
+        //LOG("%s: updated existing generator %d", __func__, unitId.unitId);
     }
 }
 
@@ -124,7 +127,7 @@ void EnvResourceSystem::UpdateNewEnvResources()
         EcsMain::registry.remove<NewWindGenerator>(entity);
         EcsMain::registry.emplace<WindGenerator>(entity);
 
-        LOG("%s: updated new generator %d", __func__, unitId.unitId);
+        //LOG("%s: updated new generator %d", __func__, unitId.unitId);
     }
 }
 
