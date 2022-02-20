@@ -5,6 +5,7 @@
 
 #include <string>
 #include "Sim/Path/PFSTypes.h"
+#include "Sim/Misc/EconomySystems.h"
 
 class CModInfo
 {
@@ -169,6 +170,8 @@ public:
 	float pfUpdateRate;
 
 	bool allowTake;
+
+	int economySystem;
 };
 
 extern CModInfo modInfo;

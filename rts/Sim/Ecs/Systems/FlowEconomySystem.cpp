@@ -2,7 +2,7 @@
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/EcsMain.h"
-
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/TimeProfiler.h"
 #include "Sim/Units/Unit.h"
@@ -13,7 +13,14 @@ FlowEconomySystem flowEconomySystem;
 using namespace FlowEconomy;
 
 void FlowEconomySystem::Init() {
-
+    if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
+        active = true;
+        economyMultiplier = 1.f / GAME_SPEED;
+        LOG("%s: ECS economy system active", __func__);
+    } else {
+        active = false;
+        LOG("%s: ECS economy system disabled", __func__);
+    }
 }
 
 void FlowEconomySystem::AddUnitEconomy(CUnit *unit) {
@@ -35,6 +42,9 @@ void FlowEconomySystem::AddUnitEconomy(CUnit *unit) {
 }
 
 void FlowEconomySystem::Update() {
+    if (!active)
+        return;
+
     SCOPED_TIMER("ECS::FlowEconomySystem::Update");
     // multi-thread this?
     for (int i=0; i<teamHandler.ActiveTeams(); i++){
@@ -45,45 +55,52 @@ void FlowEconomySystem::Update() {
 void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     // Get available resources for proration
 
-    bool useMt = (teamHandler.Team(teamId)->GetNumUnits() > 100);
+    //bool useMt = (teamHandler.Team(teamId)->GetNumUnits() > 100);
 
-    float energyForProration;
-    float metalForProration;
-    float poratableEnergyUse;
-    float poratableMetalUse;
+    // float energyForProration;
+    // float metalForProration;
+    // float poratableEnergyUse;
+    // float poratableMetalUse;
 
-    if (!useMt) {
-     energyForProration
+    // if (!useMt) {
+    
+    float energyIncome = teamHandler.Team(teamId)->resNextIncome.energy;
+    float metalIncome = teamHandler.Team(teamId)->resNextIncome.metal;
+
+    float unconditionalEnergyUse = getUnconditionalEnergyUse(teamId);
+    float unconditionalMetalUse = getUnconditionalMetalUse(teamId);
+
+    float energyForProration
         = teamHandler.Team(teamId)->resStorage.energy
-        + teamHandler.Team(teamId)->resNextIncome.energy
-        + (-getUnconditionalEnergyUse(teamId));
-     metalForProration
+        + energyIncome
+        + (-unconditionalEnergyUse);
+    float metalForProration
         = teamHandler.Team(teamId)->resStorage.metal
-        + teamHandler.Team(teamId)->resNextIncome.metal
-        + (-getUnconditionalMetalUse(teamId));
+        + metalIncome
+        + (-unconditionalMetalUse);
 
-     poratableEnergyUse = getPoratableEnergyUse(teamId);
-     poratableMetalUse = getPoratableMetalUse(teamId);
-    }
-    else
-    {
-    for_mt(0, 4, [this, teamId, &energyForProration, &metalForProration, &poratableEnergyUse, &poratableMetalUse](int jobId){
-        if (jobId == 0)
-            energyForProration
-                = teamHandler.Team(teamId)->resStorage.energy
-                + teamHandler.Team(teamId)->resNextIncome.energy
-                + (-getUnconditionalEnergyUse(teamId));
-        else if (jobId == 1)
-            metalForProration
-                = teamHandler.Team(teamId)->resStorage.metal
-                + teamHandler.Team(teamId)->resNextIncome.metal
-                + (-getUnconditionalMetalUse(teamId));
-        else if (jobId == 2)
-            poratableEnergyUse = getPoratableEnergyUse(teamId);
-        else if (jobId == 3)
-            poratableMetalUse = getPoratableMetalUse(teamId);
-    });
-    }
+    float poratableEnergyUse = getPoratableEnergyUse(teamId);
+    float poratableMetalUse = getPoratableMetalUse(teamId);
+    // }
+    // else
+    // {
+    // for_mt(0, 4, [this, teamId, &energyForProration, &metalForProration, &poratableEnergyUse, &poratableMetalUse](int jobId){
+    //     if (jobId == 0)
+    //         energyForProration
+    //             = teamHandler.Team(teamId)->resStorage.energy
+    //             + teamHandler.Team(teamId)->resNextIncome.energy
+    //             + (-getUnconditionalEnergyUse(teamId));
+    //     else if (jobId == 1)
+    //         metalForProration
+    //             = teamHandler.Team(teamId)->resStorage.metal
+    //             + teamHandler.Team(teamId)->resNextIncome.metal
+    //             + (-getUnconditionalMetalUse(teamId));
+    //     else if (jobId == 2)
+    //         poratableEnergyUse = getPoratableEnergyUse(teamId);
+    //     else if (jobId == 3)
+    //         poratableMetalUse = getPoratableMetalUse(teamId);
+    // });
+    // }
 
     float energyProrationrate = (poratableEnergyUse != 0.f) ? std::min(1.f, energyForProration / poratableEnergyUse) : 1.f;
     float metalPropationrate = (poratableMetalUse != 0.f) ? std::min(1.f, metalForProration / poratableMetalUse) : 1.f;
@@ -91,33 +108,40 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     // if one resource needs heavier proration (lower rate) than the other,
     // then the lighter strained resource may have more resources to offer.
     if (energyProrationrate > metalPropationrate){
-        energyProrationrate = getRecalculatedEnergyUse(teamId, energyProrationrate, metalPropationrate);
+        poratableEnergyUse = getRecalculatedEnergyUse(teamId, energyProrationrate, metalPropationrate);
     }
     else if (metalPropationrate > energyProrationrate){
-        metalPropationrate = getRecalculatedMetalUse(teamId, energyProrationrate, metalPropationrate);
+        poratableMetalUse = getRecalculatedMetalUse(teamId, energyProrationrate, metalPropationrate);
     }
 
-    float minPropationRate = std::max(0.f, std::min(energyProrationrate, metalPropationrate));
+    teamHandler.Team(teamId)->AddEnergy(energyIncome);
+    teamHandler.Team(teamId)->AddMetal(metalIncome);
 
+    teamHandler.Team(teamId)->UseEnergy(unconditionalEnergyUse);
+    teamHandler.Team(teamId)->UseEnergy(unconditionalMetalUse);
+    teamHandler.Team(teamId)->UseEnergy(poratableEnergyUse);
+    teamHandler.Team(teamId)->UseEnergy(poratableMetalUse);
 
-    if (!useMt){
-    setEachBuildRate(teamId, minPropationRate, energyProrationrate, metalPropationrate);
+    float minProrationRate = std::max(0.f, std::min(energyProrationrate, metalPropationrate));
+
+    // if (!useMt){
+    setEachBuildRate(teamId, minProrationRate, energyProrationrate, metalPropationrate);
 
     // values to add to the storage next frame. This approach avoids the paradox
     // with variable income impacting variable use.
     teamHandler.Team(teamId)->resNextIncome.energy = getTotalEnergyIncome(teamId, metalPropationrate);
     teamHandler.Team(teamId)->resNextIncome.metal = getTotalMetalIncome(teamId, energyProrationrate);
-    }
-    else {
-    for_mt(0, 3, [this, teamId, minPropationRate, energyProrationrate, metalPropationrate](int jobId){
-        if (jobId == 0)
-            setEachBuildRate(teamId, minPropationRate, energyProrationrate, metalPropationrate);
-        else if (jobId == 1)
-            teamHandler.Team(teamId)->resNextIncome.energy = getTotalEnergyIncome(teamId, metalPropationrate);
-        else if (jobId == 2)
-            teamHandler.Team(teamId)->resNextIncome.metal = getTotalMetalIncome(teamId, energyProrationrate);
-    });
-    }
+    // }
+    // else {
+    // for_mt(0, 3, [this, teamId, minPropationRate, energyProrationrate, metalPropationrate](int jobId){
+    //     if (jobId == 0)
+    //         setEachBuildRate(teamId, minPropationRate, energyProrationrate, metalPropationrate);
+    //     else if (jobId == 1)
+    //         teamHandler.Team(teamId)->resNextIncome.energy = getTotalEnergyIncome(teamId, metalPropationrate);
+    //     else if (jobId == 2)
+    //         teamHandler.Team(teamId)->resNextIncome.metal = getTotalMetalIncome(teamId, energyProrationrate);
+    // });
+    // }
 }
 
 template <class TRecalc, class TOther>
@@ -196,35 +220,39 @@ void FlowEconomySystem::setEachBuildRate(int teamId, float minProrationRate, flo
 }
 
 float FlowEconomySystem::getRecalculatedEnergyUse(int teamId, float energyRate, float metalRate){
-    return recalculateProratableUsageForTeam<EnergyProratableUse, MetalProratableUse>(teamId, energyRate, metalRate);
+    return recalculateProratableUsageForTeam<EnergyProratableUse, MetalProratableUse>(teamId, energyRate, metalRate)
+         * economyMultiplier;
 }
 
 float FlowEconomySystem::getRecalculatedMetalUse(int teamId, float energyRate, float metalRate){
-    return recalculateProratableUsageForTeam<MetalProratableUse, EnergyProratableUse>(teamId, metalRate, energyRate);
+    return recalculateProratableUsageForTeam<MetalProratableUse, EnergyProratableUse>(teamId, metalRate, energyRate)
+        * economyMultiplier;
 }
 
 float FlowEconomySystem::getUnconditionalEnergyUse(int teamId){
-    return sumComponentForTeam<EnergyUnconditionalUse>(teamId);
+    return sumComponentForTeam<EnergyUnconditionalUse>(teamId) * economyMultiplier;
 }
 
 float FlowEconomySystem::getUnconditionalMetalUse(int teamId){
-    return sumComponentForTeam<MetalUnconditionalUse>(teamId);
+    return sumComponentForTeam<MetalUnconditionalUse>(teamId) * economyMultiplier;
 }
 
 float FlowEconomySystem::getPoratableEnergyUse(int teamId){
-    return sumComponentForTeam<EnergyProratableUse>(teamId);
+    return sumComponentForTeam<EnergyProratableUse>(teamId) * economyMultiplier;
 }
 
 float FlowEconomySystem::getPoratableMetalUse(int teamId){
-    return sumComponentForTeam<MetalProratableUse>(teamId);
+    return sumComponentForTeam<MetalProratableUse>(teamId) * economyMultiplier;
 }
 
 float FlowEconomySystem::getTotalEnergyIncome(int teamId, float prorationRate) {
-    return sumComponentForTeam<EnergyUnconditionalIncome>(teamId)
-        + sumComponentForTeam<EnergyProratableIncome>(teamId)*prorationRate;
+    return (sumComponentForTeam<EnergyUnconditionalIncome>(teamId)
+        + sumComponentForTeam<EnergyProratableIncome>(teamId)*prorationRate)
+        * economyMultiplier;
 }
 
 float FlowEconomySystem::getTotalMetalIncome(int teamId, float prorationRate) {
-    return sumComponentForTeam<MetalUnconditionalIncome>(teamId)
-        + sumComponentForTeam<MetalProratableIncome>(teamId)*prorationRate;
+    return (sumComponentForTeam<MetalUnconditionalIncome>(teamId)
+        + sumComponentForTeam<MetalProratableIncome>(teamId)*prorationRate)
+        * economyMultiplier;
 }

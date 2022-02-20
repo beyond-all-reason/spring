@@ -43,6 +43,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Misc/ModInfo.h"
@@ -987,45 +988,47 @@ void CUnit::SlowUpdate()
 	moveType->SlowUpdate();
 
 
-	// FIXME: scriptMakeMetal ...?
-	AddMetal(resourcesUncondMake.metal);
-	AddEnergy(resourcesUncondMake.energy);
-	UseMetal(resourcesUncondUse.metal);
-	UseEnergy(resourcesUncondUse.energy);
+	if (modInfo.economySystem == ECONOMY_SYSTEM_ORIGINAL){
 
-	if (activated) {
-		if (UseMetal(resourcesCondUse.metal))
-			AddEnergy(resourcesCondMake.energy);
+		// FIXME: scriptMakeMetal ...?
+		AddMetal(resourcesUncondMake.metal);
+		AddEnergy(resourcesUncondMake.energy);
+		UseMetal(resourcesUncondUse.metal);
+		UseEnergy(resourcesUncondUse.energy);
 
-		if (UseEnergy(resourcesCondUse.energy))
-			AddMetal(resourcesCondMake.metal);
+		if (activated) {
+			if (UseMetal(resourcesCondUse.metal))
+				AddEnergy(resourcesCondMake.energy);
 
-	}
+			if (UseEnergy(resourcesCondUse.energy))
+				AddMetal(resourcesCondMake.metal);
 
-	AddMetal(unitDef->metalMake * 0.5f);
-
-	if (activated) {
-		if (UseEnergy(unitDef->energyUpkeep * 0.5f)) {
-			AddMetal(unitDef->makesMetal * 0.5f);
-
-			if (unitDef->extractsMetal > 0.0f)
-				AddMetal(metalExtract * 0.5f);
 		}
 
-		UseMetal(unitDef->metalUpkeep * 0.5f);
+		AddMetal(unitDef->metalMake * 0.5f);
 
-		if (unitDef->windGenerator > 0.0f) {
-			if (envResourceSystem.GetCurrentWindStrength() > unitDef->windGenerator) {
- 				AddEnergy(unitDef->windGenerator * 0.5f);
-			} else {
-				AddEnergy(envResourceSystem.GetCurrentWindStrength() * 0.5f);
+		if (activated) {
+			if (UseEnergy(unitDef->energyUpkeep * 0.5f)) {
+				AddMetal(unitDef->makesMetal * 0.5f);
+
+				if (unitDef->extractsMetal > 0.0f)
+					AddMetal(metalExtract * 0.5f);
+			}
+
+			UseMetal(unitDef->metalUpkeep * 0.5f);
+
+			if (unitDef->windGenerator > 0.0f) {
+				if (envResourceSystem.GetCurrentWindStrength() > unitDef->windGenerator) {
+					AddEnergy(unitDef->windGenerator * 0.5f);
+				} else {
+					AddEnergy(envResourceSystem.GetCurrentWindStrength() * 0.5f);
+				}
 			}
 		}
+
+		// FIXME: tidal part should be under "if (activated)"?
+		AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResourceSystem.GetCurrentTidalStrength()) * 0.5f);
 	}
-
-	// FIXME: tidal part should be under "if (activated)"?
-	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResourceSystem.GetCurrentTidalStrength()) * 0.5f);
-
 
 	if (health < maxHealth) {
 		health += (unitDef->idleAutoHeal * (restTime > unitDef->idleTime));
@@ -2287,6 +2290,17 @@ void CUnit::Activate()
 
 	if (IsInLosForAllyTeam(gu->myAllyTeam))
 		Channels::General->PlayRandomSample(unitDef->sounds.activate, this);
+
+	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
+	{
+		if (unitDef->energyUpkeep){
+			auto &energyUse = EcsMain::registry.get<FlowEconomy::EnergyProratableUse>(entityReference);
+			energyUse.value = unitDef->energyUpkeep;
+
+			auto &metalMake = EcsMain::registry.get<FlowEconomy::MetalProratableIncome>(entityReference);
+			metalMake.value = unitDef->makesMetal + metalExtract * (unitDef->extractsMetal > 0.0f);
+		}
+	}
 }
 
 
@@ -2303,6 +2317,17 @@ void CUnit::Deactivate()
 
 	if (IsInLosForAllyTeam(gu->myAllyTeam))
 		Channels::General->PlayRandomSample(unitDef->sounds.deactivate, this);
+
+	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
+	{
+		if (unitDef->energyUpkeep){
+			auto &energyUse = EcsMain::registry.get<FlowEconomy::EnergyProratableUse>(entityReference);
+			energyUse.value = 0.f;
+
+			auto &metalMake = EcsMain::registry.get<FlowEconomy::MetalProratableIncome>(entityReference);
+			metalMake.value = 0.f;
+		}
+	}
 }
 
 
