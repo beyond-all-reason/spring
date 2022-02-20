@@ -11,6 +11,8 @@ public:
 
     void AddUnitEconomy(CUnit *unit);
 private:
+    bool active = false;
+
     void UpdateTeamEconomy(int teamId);
 
     void setEachBuildRate(int teamId, float minProrationRate, float energyProrationRate, float metalPropationRate);
@@ -29,6 +31,8 @@ private:
 
     float getTotalEnergyIncome(int teamId, float prorationRate);
     float getTotalMetalIncome(int teamId, float prorationRate);
+
+    float economyMultiplier = 0.f;
 };
 
 extern FlowEconomySystem flowEconomySystem;

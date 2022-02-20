@@ -97,6 +97,8 @@ void CModInfo::ResetState()
 		pfUpdateRate     = 0.007f;
 
 		allowTake = true;
+
+		economySystem = ECONOMY_SYSTEM_ECS;
 	}
 }
 
@@ -136,6 +138,8 @@ void CModInfo::Init(const std::string& modFileName)
 		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
 
 		allowTake = system.GetBool("allowTake", allowTake);
+
+		economySystem = system.GetInt("economySystem", economySystem);
 	}
 
 	{
