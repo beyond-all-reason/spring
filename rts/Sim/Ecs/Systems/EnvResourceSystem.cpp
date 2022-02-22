@@ -13,6 +13,7 @@
 #include "System/Log/ILog.h"
 
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
@@ -134,15 +135,13 @@ void EnvResourceSystem::UpdateWind()
         //LOG("%s: updated new generator %d", __func__, unitId.unitId);
     }
 
-    // Update income
-    // FIXME: this can definately be done better
-    if (flowEconomySystem.IsSystemActive()){
-        auto view = EcsMain::registry.group<WindGeneratorActive>(entt::get<UnitDefRef>);
-        for (auto entity : view){
-            const auto& unitDef = view.get<UnitDefRef>(entity);
-            float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
-            flowEconomySystem.UpdateUnitFixedEnergyCreation(entity, energyGenerated);
-        }
+    // Doing it here rather than in flow economy system is saves on wasted effort if the wind changes direction.
+    auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
+    for (auto entity : group){
+        const auto& teamId = group.get<Units::Team>(entity);
+        const auto& unitDef = group.get<Units::UnitDefRef>(entity);
+        float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
+        teamHandler.Team(teamId.value)->predCountedIncome.energy += energyGenerated;
     }
 }
 

@@ -1,4 +1,6 @@
 #include "FlowEconomySystem.h"
+#include "EnvResourceSystem.h"
+#include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/EcsMain.h"
@@ -6,6 +8,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
 
@@ -199,15 +202,30 @@ void FlowEconomySystem::Update() {
     
     // slow the eco down for debug purposes - to be removed later
     // also, accidentally commited change to stop world drawer timers - should re-enable those leter as well
-    if (gs->frameNum % GAME_SPEED)
-        return;
+    //if (gs->frameNum % GAME_SPEED)
+    //    return;
 
     SCOPED_TIMER("ECS::FlowEconomySystem::Update");
+
+    //UpdateWindGeneration();
+
     // multi-thread this?
     for (int i=0; i<teamHandler.ActiveTeams(); i++){
        UpdateTeamEconomy(i);
+       teamHandler.Team(i)->predCountedIncome = SResourcePack(0.f, 0.f);
     }
 }
+
+// void FlowEconomySystem::UpdateWindGeneration() {
+//     float curWindStrength = envResourceSystem.GetCurrentWindStrength();
+//     auto group = EcsMain::registry.group<EnvEconomy::WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
+//     for (auto entity : group){
+//         const auto& teamId = group.get<Units::Team>(entity);
+//         const auto& unitDef = group.get<Units::UnitDefRef>(entity);
+//         float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
+//         teamHandler.Team(teamId.value)->predCountedIncome.energy += energyGenerated;
+//     }
+// }
 
 void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     // Get available resources for proration
@@ -218,7 +236,7 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     SResourcePack unconditionalUse = curTeam->predFixedExpense;
     SResourcePack independentProratableUse = curTeam->predIndependentProratableExpense;
     SResourcePack dependentProratableUse = curTeam->predDependentProratableExpense;
-    SResourcePack fixedIncome = curTeam->predFixedIncome;
+    SResourcePack fixedIncome = curTeam->predFixedIncome + curTeam->predCountedIncome;
     SResourcePack proratableIncome = curTeam->predProratableIncome;
 
     // derived values
@@ -249,10 +267,10 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     SResourcePack independentProratedUseRates(metalProrationRate, energyProrationRate);
     SResourcePack proratableUseTaken = independentProratableUse * independentProratedUseRates
                                     + dependentProratableUse * minProrationRate;
-    SResourcePack expense = unconditionalUse + proratableUseTaken;
+    SResourcePack expense = (unconditionalUse + proratableUseTaken)*economyMultiplier;
 
     // Apply economy updates - take off the cap, then apply storage cap afterwards
-    curTeam->ApplyResources(income, expense);
+    curTeam->ApplyResources(income*economyMultiplier, expense);
     curTeam->resPull += expense;
 
     // do after all teams are updated.
