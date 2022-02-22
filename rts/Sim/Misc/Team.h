@@ -101,6 +101,7 @@ public:
 	SResourcePack predFixedExpense; // unconditional expense
 	SResourcePack predIndependentProratableExpense; // proratable expense not impacted by other resource availability
 	SResourcePack predDependentProratableExpense; // proratable expense that is dependent on the availablity of other resource
+	SResourcePack predCountedIncome;
 	// --
 
 	int nextHistoryEntry;

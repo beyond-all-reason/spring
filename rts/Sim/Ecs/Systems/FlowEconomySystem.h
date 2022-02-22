@@ -28,6 +28,7 @@ private:
     bool active = false;
 
     void UpdateTeamEconomy(int teamId);
+    // void UpdateWindGeneration();
 
     void setEachBuildRate(int teamId, float minProrationRate, float energyProrationRate, float metalPropationRate);
 
