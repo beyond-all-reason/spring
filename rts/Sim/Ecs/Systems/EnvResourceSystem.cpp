@@ -1,9 +1,11 @@
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Units/Unit.h"
 
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
+#include "FlowEconomySystem.h"
 
 #include "System/TimeProfiler.h"
 
@@ -12,6 +14,7 @@
 
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 
 CR_BIND(EnvResourceSystem, )
@@ -34,6 +37,7 @@ CR_REG_METADATA(EnvResourceSystem, (
 EnvResourceSystem envResourceSystem;
 
 using namespace Units;
+using namespace EnvEconomy;
 
 void EnvResourceSystem::Init()
 {
@@ -61,7 +65,7 @@ void EnvResourceSystem::Update()
 	if (windDirTimer == 0)
 		UpdateWindDirection();
     else
-        UpdateNewEnvResources();
+        UpdateWind();
 
     UpdateWindTimer();
 }
@@ -91,20 +95,21 @@ void EnvResourceSystem::UpdateWindDirection()
 
     // update generators
     auto envResourcesToUpdate = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
-
     for (auto entity : envResourcesToUpdate) {
         auto unitId = envResourcesToUpdate.get<UnitId>(entity);
 
-    // auto envResourcesToUpdate = EcsMain::registry.group<UnitId>(entt::get<WindGenerator>);
+        // Update energy values
+        float unitWindValue = 1.f;
+        float newWindValue = std::max(unitWindValue, newStrength);
 
-    // for (const auto [entity, unitId] : envResourcesToUpdate.each()){
-        (unitHandler.GetUnit(unitId.unitId))->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
+        auto unit = (unitHandler.GetUnit(unitId.unitId));
+        unit->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
 
         //LOG("%s: updated existing generator %d", __func__, unitId.unitId);
     }
 }
 
-void EnvResourceSystem::UpdateNewEnvResources()
+void EnvResourceSystem::UpdateWind()
 {
     const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
 
@@ -123,11 +128,21 @@ void EnvResourceSystem::UpdateNewEnvResources()
     for (auto entity : envResourcesToUpdate) {
         auto unitId = envResourcesToUpdate.get<UnitId>(entity);
 
-        (unitHandler.GetUnit(unitId.unitId))->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+        auto unit = (unitHandler.GetUnit(unitId.unitId));
+        unit->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
         EcsMain::registry.remove<NewWindGenerator>(entity);
-        EcsMain::registry.emplace<WindGenerator>(entity);
-
         //LOG("%s: updated new generator %d", __func__, unitId.unitId);
+    }
+
+    // Update income
+    // FIXME: this can definately be done better
+    if (flowEconomySystem.IsSystemActive()){
+        auto view = EcsMain::registry.group<WindGeneratorActive>(entt::get<UnitDefRef>);
+        for (auto entity : view){
+            const auto& unitDef = view.get<UnitDefRef>(entity);
+            float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
+            flowEconomySystem.UpdateUnitFixedEnergyCreation(entity, energyGenerated);
+        }
     }
 }
 
@@ -147,23 +162,42 @@ bool EnvResourceSystem::AddGenerator(CUnit* unit)
         return false;
     }
 
-    EcsMain::registry.emplace<NewWindGenerator>(unit->entityReference);
+    EcsMain::registry.emplace_or_replace<WindGenerator>(unit->entityReference);
+    if (windDirTimer != 0)
+        EcsMain::registry.emplace_or_replace<NewWindGenerator>(unit->entityReference);
 
     LOG("%s: added wind generator unit %d", __func__, unit->id);
 
     return true;
 }
 
+void EnvResourceSystem::ActivateGenerator(CUnit* unit){
+    if (!EcsMain::registry.valid(unit->entityReference)){
+        LOG("%s: cannot add generator unit to %d because it hasn't been registered yet.", __func__, unit->id);
+        return;
+    }
+
+    EcsMain::registry.emplace_or_replace<WindGeneratorActive>(unit->entityReference);
+}
+
+void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
+    if (!EcsMain::registry.valid(unit->entityReference)){
+        LOG("%s: cannot add generator unit to %d because it hasn't been registered yet.", __func__, unit->id);
+        return;
+    }
+
+    EcsMain::registry.remove<WindGeneratorActive>(unit->entityReference);
+}
+
 bool EnvResourceSystem::DelGenerator(CUnit* unit)
 {
-    auto view = EcsMain::registry.view<const UnitId>();
     entt::entity entity = unit->entityReference;
-    
     bool entityIsValid = EcsMain::registry.valid(entity);
+
     if (entityIsValid){
         EcsMain::registry.remove<NewWindGenerator>(entity);
         EcsMain::registry.remove<WindGenerator>(entity);
+        EcsMain::registry.remove<WindGeneratorActive>(entity);
     }
-
     return entityIsValid;
 }

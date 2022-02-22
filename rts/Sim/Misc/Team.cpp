@@ -175,6 +175,32 @@ bool CTeam::HaveResources(const SResourcePack& amount) const
 	return (res >= amount);
 }
 
+bool CTeam::ApplyResources(SResourcePack income, const SResourcePack& expense, bool useIncomeMultiplier)
+{
+	bool result = false;
+
+	if (useIncomeMultiplier)
+		income *= GetIncomeMultiplier();
+
+	res += income;
+	resIncome += income;
+
+	if (res >= expense) {
+		res -= expense;
+		resExpense += expense;
+		result = true;
+	}
+	
+	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+		if (res[i] <= resStorage[i])
+			continue;
+
+		resDelayedShare[i] += (res[i] - resStorage[i]);
+		res[i] = resStorage[i];
+	}
+
+	return result;
+}
 
 void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {

@@ -3,6 +3,8 @@
 
 #include "Sim/Units/Unit.h"
 
+class UnitDef;
+
 namespace Units {
 
 struct UnitId {
@@ -13,10 +15,8 @@ struct Team {
     int value;
 };
 
-struct WindGenerator {
-};
-
-struct NewWindGenerator {
+struct UnitDefRef {
+    const UnitDef* unitDefRef = nullptr;
 };
 
 }

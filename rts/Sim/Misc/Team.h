@@ -28,6 +28,7 @@ public:
 	bool HaveResources(const SResourcePack& amount) const;
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);
+	bool ApplyResources(SResourcePack income, const SResourcePack& expense, bool useIncomeMultiplier = true);
 
 	void AddMetal(float amount, bool useIncomeMultiplier = true);
 	void AddEnergy(float amount, bool useIncomeMultiplier = true);
@@ -85,13 +86,22 @@ public:
 	SResourcePack resStorage;
 
 	SResourcePack resPull,    resPrevPull;
-	SResourcePack resIncome,  resPrevIncome,	resNextIncome;
+	SResourcePack resIncome,  resPrevIncome;
 	SResourcePack resExpense, resPrevExpense;
 	SResourcePack resShare;
 	SResourcePack resDelayedShare; //< excess that might be shared next SlowUpdate
 	SResourcePack resSent,     resPrevSent;
 	SResourcePack resReceived, resPrevReceived;
 	SResourcePack resPrevExcess;
+
+	// New Flow Eco Values
+	SResourcePack resNextIncome;	// Resources created become available in the back frame.
+	SResourcePack predFixedIncome;	// unconditional income
+	SResourcePack predProratableIncome;	// proratable income dependent of availablity of other resource
+	SResourcePack predFixedExpense; // unconditional expense
+	SResourcePack predIndependentProratableExpense; // proratable expense not impacted by other resource availability
+	SResourcePack predDependentProratableExpense; // proratable expense that is dependent on the availablity of other resource
+	// --
 
 	int nextHistoryEntry;
 	std::vector<TeamStatistics> statHistory;

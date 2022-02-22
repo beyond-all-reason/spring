@@ -68,6 +68,8 @@
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/SyncedPrimitive.h"
 
+#include "System/TimeProfiler.h"
+
 #undef near
 
 
@@ -989,7 +991,6 @@ void CUnit::SlowUpdate()
 
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ORIGINAL){
-
 		// FIXME: scriptMakeMetal ...?
 		AddMetal(resourcesUncondMake.metal);
 		AddEnergy(resourcesUncondMake.energy);
@@ -2294,11 +2295,30 @@ void CUnit::Activate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep){
-			auto &energyUse = EcsMain::registry.get<FlowEconomy::EnergyProratableUse>(entityReference);
-			energyUse.value = unitDef->energyUpkeep;
+			SResourcePack upkeep(0.f, unitDef->energyUpkeep);
 
-			auto &metalMake = EcsMain::registry.get<FlowEconomy::MetalProratableIncome>(entityReference);
-			metalMake.value = unitDef->makesMetal + metalExtract * (unitDef->extractsMetal > 0.0f);
+			flowEconomySystem.UpdateUnitProratableResourceUse(this, upkeep);
+			flowEconomySystem.UpdateUnitProratableMetalCreation(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+
+			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, gs->frameNum, unitDef->energyUpkeep);
+			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, gs->frameNum, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+		}
+		else if (unitDef->energyMake) {
+			flowEconomySystem.UpdateUnitFixedEnergyCreation(this, unitDef->energyMake); // FIXME: not proratable actually
+
+			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, gs->frameNum, unitDef->energyMake);
+		}
+		if (unitDef->metalUpkeep){
+			SResourcePack upkeep(unitDef->metalUpkeep, 0.f);
+
+			flowEconomySystem.UpdateUnitProratableResourceUse(this, upkeep);
+			flowEconomySystem.UpdateUnitProratableEnergyCreation(this, unitDef->energyMake);
+		}
+		else if (unitDef->metalMake){
+			flowEconomySystem.UpdateUnitFixedMetalCreation(this, unitDef->metalMake);
+		}
+		if (unitDef->windGenerator > 0.0f) {
+			envResourceSystem.ActivateGenerator(this);
 		}
 	}
 }
@@ -2321,11 +2341,24 @@ void CUnit::Deactivate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep){
-			auto &energyUse = EcsMain::registry.get<FlowEconomy::EnergyProratableUse>(entityReference);
-			energyUse.value = 0.f;
+			flowEconomySystem.UpdateUnitProratableResourceUse(this, SResourcePack(0.f, 0.f));
+			flowEconomySystem.UpdateUnitProratableMetalCreation(this, 0.f);
 
-			auto &metalMake = EcsMain::registry.get<FlowEconomy::MetalProratableIncome>(entityReference);
-			metalMake.value = 0.f;
+			LOG("%s: %d: DEACTIVATE energyUse = %f", __func__, gs->frameNum, 0.f);
+			LOG("%s: %d: DEACTIVATE metalMake = %f", __func__, gs->frameNum, 0.f);
+		}
+		else if (unitDef->energyMake) {
+			flowEconomySystem.UpdateUnitFixedEnergyCreation(this, 0.f);
+		}
+		if (unitDef->metalUpkeep){
+			flowEconomySystem.UpdateUnitProratableResourceUse(this, SResourcePack(0.f, 0.f));
+			flowEconomySystem.UpdateUnitProratableEnergyCreation(this, 0.f);
+		}
+		else if (unitDef->metalMake){
+			flowEconomySystem.UpdateUnitFixedMetalCreation(this, 0.f);
+		}
+		if (unitDef->windGenerator > 0.0f) {
+			envResourceSystem.DeactivateGenerator(this);
 		}
 	}
 }
