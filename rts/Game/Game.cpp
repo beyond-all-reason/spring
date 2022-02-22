@@ -258,10 +258,10 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	// clear left-over receivers in case we reloaded
 	gameCommandConsole.ResetState();
 
+	modInfo.Init(modFileName);
+
 	flowEconomySystem.Init();
 	envResourceSystem.Init();
-
-	modInfo.Init(modFileName);
 
 	// needed for LuaIntro (pushes LuaConstGame)
 	assert(mapInfo == nullptr);

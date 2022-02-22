@@ -14,6 +14,8 @@ public:
     void Update();
 
 	bool AddGenerator(CUnit* u);
+	void ActivateGenerator(CUnit* u);
+	void DeactivateGenerator(CUnit* u);
 
 	/* Not expected to be called unless a unit loses its ability to be a wind generator */
 	bool DelGenerator(CUnit* u);
@@ -49,7 +51,7 @@ private:
 
     void UpdateWindTimer();
     void UpdateWindDirection();
-    void UpdateNewEnvResources();
+    void UpdateWind();
 };
 
 extern EnvResourceSystem envResourceSystem;

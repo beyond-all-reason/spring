@@ -27,6 +27,7 @@ void UnitSystem::AddUnit(CUnit* unit)
 
     EcsMain::registry.emplace<UnitId>(entity, unit->id);
     EcsMain::registry.emplace<Team>(entity, unit->team);
+    EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
 
     unit->entityReference = entity;
 

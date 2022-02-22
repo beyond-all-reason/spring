@@ -60,6 +60,38 @@ public:
 		return out;
 	}
 
+	SResourcePack operator-(const SResourcePack& other) const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] -= other.res[i];
+		}
+		return out;
+	}
+
+	SResourcePack operator*(const SResourcePack& other) const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] *= other.res[i];
+		}
+		return out;
+	}
+
+	SResourcePack operator*(float scale) const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] *= scale;
+		}
+		return out;
+	}
+
+	SResourcePack operator-() const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] = -out[i];
+		}
+		return out;
+	}
+
 	SResourcePack& operator+=(const SResourcePack& other) {
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			res[i] += other.res[i];
