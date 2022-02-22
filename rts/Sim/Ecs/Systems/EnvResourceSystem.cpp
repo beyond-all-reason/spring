@@ -136,12 +136,14 @@ void EnvResourceSystem::UpdateWind()
     }
 
     // Doing it here rather than in flow economy system is saves on wasted effort if the wind changes direction.
-    auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
-    for (auto entity : group){
-        const auto& teamId = group.get<Units::Team>(entity);
-        const auto& unitDef = group.get<Units::UnitDefRef>(entity);
-        float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
-        teamHandler.Team(teamId.value)->predCountedIncome.energy += energyGenerated;
+    if (flowEconomySystem.IsSystemActive()){
+        auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
+        for (auto entity : group){
+            const auto& teamId = group.get<Units::Team>(entity);
+            const auto& unitDef = group.get<Units::UnitDefRef>(entity);
+            float energyGenerated = std::min(curWindStrength, unitDef.unitDefRef->windGenerator);
+            teamHandler.Team(teamId.value)->predCountedIncome.energy += energyGenerated;
+        }
     }
 }
 
