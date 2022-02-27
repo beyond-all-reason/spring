@@ -16,6 +16,13 @@
 
 class CUnit;
 
+struct EconomyFlowSnapshot{
+	SResourcePack fixedIncome, proratableIncome;	// unconditional income
+	SResourcePack fixedExpense; // unconditional expense
+	SResourcePack independentProratableExpense; // proratable expense not impacted by other resource availability
+	SResourcePack dependentProratableExpense; // proratable expense that is dependent on the availablity of other resource
+};
+
 class CTeam : public TeamBase
 {
 	CR_DECLARE_DERIVED(CTeam)
@@ -95,13 +102,12 @@ public:
 	SResourcePack resPrevExcess;
 
 	// New Flow Eco Values
+
+	EconomyFlowSnapshot resCurrent, resNext;
 	SResourcePack resNextIncome;	// Resources created become available in the back frame.
-	SResourcePack predFixedIncome;	// unconditional income
-	SResourcePack predProratableIncome;	// proratable income dependent of availablity of other resource
-	SResourcePack predFixedExpense; // unconditional expense
-	SResourcePack predIndependentProratableExpense; // proratable expense not impacted by other resource availability
-	SResourcePack predDependentProratableExpense; // proratable expense that is dependent on the availablity of other resource
-	SResourcePack predCountedIncome;
+	float prorationRates[SResourcePack::MAX_RESOURCES+1];
+	//SResourcePack resProrationRate;
+	//float minResProrationRate;
 	// --
 
 	int nextHistoryEntry;

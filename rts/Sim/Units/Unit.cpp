@@ -336,7 +336,7 @@ void CUnit::PostInit(const CUnit* builder)
 	if (unitDef->windGenerator > 0.0f)
 		envResourceSystem.AddGenerator(this);
 
-	flowEconomySystem.AddUnitEconomy(this);
+	//flowEconomySystem.AddUnitEconomy(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
@@ -991,6 +991,8 @@ void CUnit::SlowUpdate()
 
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ORIGINAL){
+		SCOPED_TIMER("ECS::UnitEco::Update");
+
 		// FIXME: scriptMakeMetal ...?
 		AddMetal(resourcesUncondMake.metal);
 		AddEnergy(resourcesUncondMake.energy);
@@ -1897,20 +1899,31 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			if (!eventHandler.AllowUnitBuildStep(builder, this, step))
 				return false;
 
-			if (builder->UseMetal(metalCostStep)) {
-				// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
-				// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
-				if (builder->UseEnergy(energyCostStep)) {
-					health += (maxHealth * step);
-					health = std::min(health, maxHealth);
-					buildProgress += step;
+			bool continueBuilding = false;
+			// if (flowEconomySystem.IsSystemActive()){
 
-					if (buildProgress >= 1.0f) {
-						FinishedBuilding(false);
+			// }
+			// else {
+				if (builder->UseMetal(metalCostStep)) {
+					// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
+					// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
+
+					if (builder->UseEnergy(energyCostStep)) {
+						continueBuilding = true;
+					} else {
+						// refund already-deducted metal if *energy* cost cannot be
+						builder->UseMetal(-metalCostStep);
 					}
-				} else {
-					// refund already-deducted metal if *energy* cost cannot be
-					builder->UseMetal(-metalCostStep);
+				// }
+			}
+
+			if (continueBuilding){
+				health += (maxHealth * step);
+				health = std::min(health, maxHealth);
+				buildProgress += step;
+
+				if (buildProgress >= 1.0f) {
+					FinishedBuilding(false);
 				}
 			}
 
@@ -2295,27 +2308,23 @@ void CUnit::Activate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep){
-			SResourcePack upkeep(0.f, unitDef->energyUpkeep);
-
-			flowEconomySystem.UpdateUnitProratableResourceUse(this, upkeep);
-			flowEconomySystem.UpdateUnitProratableMetalCreation(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+			flowEconomySystem.UpdateUnitProratableEnergyUse(this, unitDef->energyUpkeep);
+			flowEconomySystem.UpdateUnitProratableMetalIncome(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
 
 			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, gs->frameNum, unitDef->energyUpkeep);
 			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, gs->frameNum, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
 		}
 		else if (unitDef->energyMake) {
-			flowEconomySystem.UpdateUnitFixedEnergyCreation(this, unitDef->energyMake); // FIXME: not proratable actually
+			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
 
 			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, gs->frameNum, unitDef->energyMake);
 		}
 		if (unitDef->metalUpkeep){
-			SResourcePack upkeep(unitDef->metalUpkeep, 0.f);
-
-			flowEconomySystem.UpdateUnitProratableResourceUse(this, upkeep);
-			flowEconomySystem.UpdateUnitProratableEnergyCreation(this, unitDef->energyMake);
+			flowEconomySystem.UpdateUnitProratableMetalUse(this, unitDef->metalUpkeep);
+			flowEconomySystem.UpdateUnitProratableEnergyIncome(this, unitDef->energyMake);
 		}
 		else if (unitDef->metalMake){
-			flowEconomySystem.UpdateUnitFixedMetalCreation(this, unitDef->metalMake);
+			flowEconomySystem.UpdateUnitFixedMetalIncome(this, unitDef->metalMake);
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			envResourceSystem.ActivateGenerator(this);
@@ -2341,21 +2350,21 @@ void CUnit::Deactivate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep){
-			flowEconomySystem.UpdateUnitProratableResourceUse(this, SResourcePack(0.f, 0.f));
-			flowEconomySystem.UpdateUnitProratableMetalCreation(this, 0.f);
+			flowEconomySystem.UpdateUnitProratableEnergyUse(this, 0.f);
+			flowEconomySystem.UpdateUnitProratableMetalIncome(this, 0.f);
 
 			LOG("%s: %d: DEACTIVATE energyUse = %f", __func__, gs->frameNum, 0.f);
 			LOG("%s: %d: DEACTIVATE metalMake = %f", __func__, gs->frameNum, 0.f);
 		}
 		else if (unitDef->energyMake) {
-			flowEconomySystem.UpdateUnitFixedEnergyCreation(this, 0.f);
+			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, 0.f);
 		}
 		if (unitDef->metalUpkeep){
-			flowEconomySystem.UpdateUnitProratableResourceUse(this, SResourcePack(0.f, 0.f));
-			flowEconomySystem.UpdateUnitProratableEnergyCreation(this, 0.f);
+			flowEconomySystem.UpdateUnitProratableMetalUse(this, 0.f);
+			flowEconomySystem.UpdateUnitProratableEnergyIncome(this, 0.f);
 		}
 		else if (unitDef->metalMake){
-			flowEconomySystem.UpdateUnitFixedMetalCreation(this, 0.f);
+			flowEconomySystem.UpdateUnitFixedMetalIncome(this, 0.f);
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			envResourceSystem.DeactivateGenerator(this);
