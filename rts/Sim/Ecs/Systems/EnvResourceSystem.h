@@ -1,8 +1,14 @@
 #ifndef ENV_RESOURCE_SYSTEM_H__
 #define ENV_RESOURCE_SYSTEM_H__
 
+#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
+
+enum class EnvResourceSystemState {
+	STATE_UPDATING_WIND_DIRECTION,
+	STATE_UPDATING_WIND_STRENGTH
+};
 
 // TODO: save/restore components
 // save/restore entity in unit
@@ -38,6 +44,7 @@ private:
 
 	float curTidalStrength = 0.0f;
 	float curWindStrength = 0.0f;
+	float newWindStrength = 0.0f;
 
 	float minWindStrength = 0.0f;
 	float maxWindStrength = 0.0f;
@@ -52,6 +59,11 @@ private:
     void UpdateWindTimer();
     void UpdateWindDirection();
     void UpdateWind();
+	void SlowUpdate();
+
+	SlowUpdateOnceSubSystem windGeneratorIncome;
+	SlowUpdateOnceSubSystem windGeneratorDirection;
+	EnvResourceSystemState systemState;
 };
 
 extern EnvResourceSystem envResourceSystem;

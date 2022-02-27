@@ -1674,8 +1674,8 @@ void CGame::SimFrame() {
 			SCOPED_TIMER("Sim::Script");
 			unitScriptEngine->Tick(33);
 		}
-		flowEconomySystem.Update();
 		envResourceSystem.Update();
+		flowEconomySystem.Update();
 		losHandler->Update();
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.

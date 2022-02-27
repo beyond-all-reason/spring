@@ -3,7 +3,7 @@
 
 namespace FlowEconomy {
 
-struct MetalUnconditionalIncome {
+struct MetalFixedIncome {
     float value = 0.f;
 };
 
@@ -19,7 +19,7 @@ struct MetalProratableUse {
     float value = 0.f;
 };
 
-struct EnergyUnconditionalIncome {
+struct EnergyFixedIncome {
     float value = 0.f;
 };
 

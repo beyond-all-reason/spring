@@ -50,6 +50,14 @@ static constexpr int TEAM_SLOWUPDATE_RATE = 30;
 
 
 /**
+ * @brief economy SlowUpdate rate
+ *
+ * Defines the interval of economy updates in sim-frames.
+ */
+static constexpr int ECONOMY_SLOWUPDATE_RATE = 15;
+
+
+/**
  * @brief max teams
  *
  * Defines the maximum number of teams as 255
