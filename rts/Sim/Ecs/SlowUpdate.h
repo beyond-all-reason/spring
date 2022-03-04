@@ -33,17 +33,17 @@ template <class RefreshCheck = SlowUpdateRefreshCheckByGameFrame>
 struct SlowUpdateSubSystemT {
 
     template<class T, class UnaryFunction>
-    void Update(T group, UnaryFunction f) {
+    void Update(T group, UnaryFunction f, size_t lengthReduceBy = 0) {
         constexpr int updateRate = ECONOMY_SLOWUPDATE_RATE;
         if (refreshNeeded(updateRate)){
             curIndex = 0;
-            lastFrameGroupSize = group.size();
+            lastFrameGroupSize = group.size() + (-lengthReduceBy);
             chunkSize = (lastFrameGroupSize / updateRate) + 1*(lastFrameGroupSize % updateRate != 0);
         }
         else
         {
             // iteration works backwards in EnTT.
-            auto changeInSize = group.size() - lastFrameGroupSize;
+            auto changeInSize = group.size() + (-lengthReduceBy) + (-lastFrameGroupSize);
             if (changeInSize > 0){
                 lastFrameGroupSize += changeInSize;
                 curIndex += changeInSize;

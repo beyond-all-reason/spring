@@ -4,6 +4,7 @@
 
 #include "ExternalAI/SkirmishAIWrapper.h"
 #include "Game/TraceRay.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Misc/QuadField.h"
@@ -219,8 +220,9 @@ float CAICheats::GetUnitHealth(int unitId) const
 {
 	const CUnit* unit = GetUnit(unitId);
 
-	if (unit != nullptr)
-		return unit->health;
+	if (unit != nullptr) {
+		return solidObjectSystem.ObjectHealth(unit->entityReference);
+	}
 
 	return 0.0f;
 }
@@ -229,8 +231,9 @@ float CAICheats::GetUnitMaxHealth(int unitId) const
 {
 	const CUnit* unit = GetUnit(unitId);
 
-	if (unit != nullptr)
-		return unit->maxHealth;
+	if (unit != nullptr){
+		return solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+	}
 
 	return 0.0f;
 }

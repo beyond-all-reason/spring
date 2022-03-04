@@ -13,6 +13,8 @@ public:
     void Init();
     void Update();
 
+    void AddFlowEconomyUnit(CUnit *unit);
+
     void UpdateUnitProratableEnergyIncome(CUnit *unit, float amount);
     void UpdateUnitProratableMetalIncome(CUnit *unit, float amount);
     void UpdateUnitFixedEnergyIncome(CUnit *unit, float amount);
@@ -20,8 +22,6 @@ public:
 
     void UpdateUnitProratableEnergyUse(CUnit *unit, float amount);
     void UpdateUnitProratableMetalUse(CUnit *unit, float amount);
-
-    //void UpdateUnitProratableResourceUse(CUnit *unit, SResourcePack res);
 
     void UpdateUnitFixedEnergyIncome(entt::entity entity, float amount);
 
@@ -38,11 +38,15 @@ private:
 
     void UpdateProratableMetalIncome();
     void UpdateProratableEnergyIncome();
-    void UpdateProratableCombinedIncome();
 
-    void UpdateWindGenerationIncome();
+    void UpdateFixedMetalExpense();
+    void UpdateFixedEnergyExpense();
 
-    void setEachBuildRate(int teamId, float minProrationRate, float energyProrationRate, float metalPropationRate);
+    void UpdateProratableMetalExpense();
+    void UpdateProratableEnergyExpense();
+    void UpdateProratableCombinedExpense();
+
+    void UpdateNewUnits();
 
     float economyMultiplier = 0.f;
 
@@ -55,6 +59,10 @@ private:
     SlowUpdateSubSystem proratableMetalIncomeUpdater;
     SlowUpdateSubSystem proratableEnergyIncomeUpdater;
     SlowUpdateSubSystem proratableCombinedIncomeUpdater;
+
+    SlowUpdateSubSystem fixedMetalExpenseUpdater;
+    SlowUpdateSubSystem fixedEnergyExpenseUpdater;
+    SlowUpdateSubSystem proratableCombinedExpenseUpdater;
 };
 
 extern FlowEconomySystem flowEconomySystem;

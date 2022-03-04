@@ -10,6 +10,8 @@
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
 #include "System/SpringMath.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -110,6 +112,8 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	captureSpeed   = scale * unitDef->captureSpeed;
 	terraformSpeed = scale * unitDef->terraformSpeed;
 
+	buildSystem.AddUnitBuilder(this);
+
 	CUnit::PreInit(params);
 }
 
@@ -129,7 +133,9 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 		return false;
 	if (u->beingBuilt)
 		return false;
-	if (u->health >= u->maxHealth)
+	auto uHealth = unitSystem.UnitHealth(u->entityReference);
+	auto uMaxHealth = unitSystem.UnitMaxHealth(u->entityReference);
+	if (uHealth >= uMaxHealth)
 		return false;
 
 	return (u->unitDef->repairable);
@@ -305,6 +311,7 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 		if (curBuildee->buildProgress < 1.0f) {
 			// prevent buildee from decaying (we cannot call StopBuild here)
 			curBuildee->AddBuildPower(this, 0.0f);
+			buildSystem.PauseBuilder(this);
 		} else {
 			// stop repairing (FIXME: should be much cleaner to let BuilderCAI
 			// call this instead when a wait command is given?)
@@ -348,12 +355,15 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 		adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
+		buildSystem.UnpauseBuilder(this);
 		CreateNanoParticle(curBuildee->midPos, curBuildee->radius * 0.5f, false);
 		return true;
 	}
 
 	// check if buildee finished construction
-	if (curBuildee->beingBuilt || curBuildee->health < curBuildee->maxHealth)
+	auto curBuildeeHealth = unitSystem.UnitHealth(curBuildee->entityReference);
+	auto curBuildeeMaxHealth = unitSystem.UnitMaxHealth(curBuildee->entityReference);
+	if (curBuildee->beingBuilt || curBuildeeHealth < curBuildeeMaxHealth)
 		return true;
 
 	StopBuild();
@@ -438,7 +448,8 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 		resurrectee->SetHeading(curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false);
 
 		// TODO: make configurable if this should happen
-		resurrectee->health *= 0.05f;
+		auto& resurrecteeHealth = unitSystem.UnitHealth(resurrectee->entityReference);
+		resurrecteeHealth *= 0.05f;
 
 		for (const int resurrecterID: cai->resurrecters) {
 			CBuilder* resurrecter = static_cast<CBuilder*>(unitHandler.GetUnit(resurrecterID));
@@ -492,7 +503,9 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 		return true;
 	}
 
-	const float captureMagicNumber = (150.0f + (curCapturee->buildTime / captureSpeed) * (curCapturee->health + curCapturee->maxHealth) / curCapturee->maxHealth * 0.4f);
+	auto& curCaptureeHealth = unitSystem.UnitHealth(curCapturee->entityReference);
+	auto& curCaptureeMaxHealth = unitSystem.UnitMaxHealth(curCapturee->entityReference);
+	const float captureMagicNumber = (150.0f + (curCapturee->buildTime / captureSpeed) * (curCaptureeHealth + curCaptureeMaxHealth) / curCaptureeMaxHealth * 0.4f);
 	const float captureProgressStep = 1.0f / captureMagicNumber;
 	const float captureProgressTemp = std::min(curCapturee->captureProgress + captureProgressStep, 1.0f);
 
@@ -696,6 +709,8 @@ void CBuilder::StopBuild(bool callScript)
 
 	terraforming = false;
 
+	buildSystem.RemovetUnitBuilder(this);
+
 	if (callScript)
 		script->StopBuilding();
 
@@ -764,6 +779,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
+					buildSystem.AddUnitBuildTarget(this, curBuild);
 					ScriptStartBuilding(u->pos, false);
 					return true;
 				}
@@ -820,6 +836,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	// impossible to *construct* with multiple builders
 	buildee->SetSoloBuilder(this, this->unitDef);
 	AddDeathDependence(curBuild = buildee, DEPENDENCE_BUILD);
+	buildSystem.AddUnitBuildTarget(this, curBuild);
 
 	// if the ground is not going to be terraformed the buildee would
 	// 'pop' to the correct height over the (un-flattened) terrain on

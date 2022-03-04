@@ -5,10 +5,6 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
 
-enum class EnvResourceSystemState {
-	STATE_UPDATING_WIND_DIRECTION,
-	STATE_UPDATING_WIND_STRENGTH
-};
 
 // TODO: save/restore components
 // save/restore entity in unit
@@ -61,9 +57,8 @@ private:
     void UpdateWind();
 	void SlowUpdate();
 
-	SlowUpdateOnceSubSystem windGeneratorIncome;
+	SlowUpdateSubSystem windGeneratorIncome;
 	SlowUpdateOnceSubSystem windGeneratorDirection;
-	EnvResourceSystemState systemState;
 };
 
 extern EnvResourceSystem envResourceSystem;

@@ -1,13 +1,13 @@
-#include "Sim/Ecs/EcsMain.h"
-#include "Sim/Ecs/Components/UnitComponents.h"
-#include "Sim/Units/Unit.h"
-
 #include "UnitSystem.h"
 
-#include "System/TimeProfiler.h"
-
-
+#include "SolidObjectSystem.h"
+#include "Sim/Ecs/EcsMain.h"
+#include "Sim/Ecs/Components/SolidObjectComponent.h"
+#include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "System/Log/ILog.h"
+#include "System/TimeProfiler.h"
 
 UnitSystem unitSystem;
 
@@ -23,24 +23,22 @@ void UnitSystem::Update()
 
 void UnitSystem::AddUnit(CUnit* unit)
 {
-    auto entity = EcsMain::registry.create();
+    if (unit->entityReference == entt::null) {
+        solidObjectSystem.AddObject(unit);
+        auto entity = unit->entityReference;
 
-    EcsMain::registry.emplace<UnitId>(entity, unit->id);
-    EcsMain::registry.emplace<Team>(entity, unit->team);
-    EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
+        EcsMain::registry.emplace<UnitId>(entity, unit->id);
+        EcsMain::registry.emplace<Team>(entity, unit->team);
+        EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
+        EcsMain::registry.emplace<SolidObject::MaxHealth>(entity, unit->unitDef->health);
 
-    unit->entityReference = entity;
+        unit->entityReference = entity;
 
-    LOG("%s: added unit %d", __func__, unit->id);
+        LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
+    }
 }
 
 void UnitSystem::RemoveUnit(CUnit* unit)
 {
-    auto view = EcsMain::registry.view<const UnitId>();
-    entt::entity entity = unit->entityReference;
-
-    unit->entityReference = entt::null;
-    
-    if (EcsMain::registry.valid(entity))
-        EcsMain::registry.destroy(entity);
+    solidObjectSystem.RemoveObject(unit);
 }

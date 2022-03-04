@@ -10,6 +10,7 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
@@ -207,8 +208,10 @@ void CCobInstance::Killed()
 {
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
+	auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+
 	callinArgs[0] = 2;
-	callinArgs[1] = int(unit->recentDamage / unit->maxHealth * 100);
+	callinArgs[1] = int(unit->recentDamage / unitMaxHealth * 100);
 	callinArgs[2] = 0;
 
 	Call(COBFN_Killed, callinArgs, CBKilled, 0, nullptr);

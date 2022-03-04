@@ -21,6 +21,7 @@
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/CameraHandler.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 
 class CModelDrawerDataConcept : public CEventClient {
 public:
@@ -201,8 +202,11 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 	if (gu->spectatingFullView || o->IsInLosForAllyTeam(gu->myAllyTeam)) {
 		uni.id = o->id;
 		uni.speed = o->speed;
-		uni.maxHealth = o->maxHealth;
-		uni.health = o->health;
+
+		auto oHealth = solidObjectSystem.ObjectHealth(o->entityReference);
+		auto oMaxHealth = solidObjectSystem.ObjectMaxHealth(o->entityReference);
+		uni.maxHealth = oMaxHealth;
+		uni.health = oHealth;
 	}
 }
 

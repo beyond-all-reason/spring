@@ -57,8 +57,6 @@ void EnvResourceSystem::Init()
 
     windGeneratorIncome.Init();
     windGeneratorDirection.Init();
-
-    systemState = EnvResourceSystemState::STATE_UPDATING_WIND_STRENGTH;
 }
 
 void EnvResourceSystem::Update()
@@ -102,23 +100,7 @@ void EnvResourceSystem::UpdateWindDirection()
     newWindVec *= (newStrength = Clamp(newStrength, minWindStrength, maxWindStrength));
 
     newWindStrength = newStrength;
-    systemState = EnvResourceSystemState::STATE_UPDATING_WIND_DIRECTION;
     windGeneratorDirection.Init();
-
-    // update generators
-    // auto envResourcesToUpdate = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
-    // for (auto entity : envResourcesToUpdate) {
-    //     auto unitId = envResourcesToUpdate.get<UnitId>(entity);
-
-    //     // Update energy values
-    //     float unitWindValue = 1.f;
-    //     float newWindValue = std::max(unitWindValue, newStrength);
-
-    //     auto unit = (unitHandler.GetUnit(unitId.unitId));
-    //     unit->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
-
-    //     //LOG("%s: updated existing generator %d", __func__, unitId.unitId);
-    // }
 }
 
 void EnvResourceSystem::UpdateWind()
@@ -135,13 +117,20 @@ void EnvResourceSystem::UpdateWind()
     curWindVec = curWindDir * (curWindStrength = Clamp(curWindStrength, minWindStrength, maxWindStrength));
 
     // make newly added generators point in direction of wind
-    auto envResourcesToUpdate = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId>);
+    auto group = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId, Units::UnitDefRef, Units::Team>);
+    for (auto entity : group) {
+        auto unitId = group.get<UnitId>(entity).value;
+        auto teamId = (group.get<Units::Team>(entity)).value;
+        auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
 
-    for (auto entity : envResourcesToUpdate) {
-        auto unitId = envResourcesToUpdate.get<UnitId>(entity);
+        // income
+        //auto income = std::min(curWindStrength, unitDef->windGenerator);
+        //teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
 
-        auto unit = (unitHandler.GetUnit(unitId.unitId));
+        // direction
+        auto unit = (unitHandler.GetUnit(unitId));
         unit->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+
         EcsMain::registry.remove<NewWindGenerator>(entity);
         //LOG("%s: updated new generator %d", __func__, unitId.unitId);
     }
@@ -151,29 +140,22 @@ void EnvResourceSystem::SlowUpdate(){
     if (!flowEconomySystem.IsSystemActive())
         return;
 
-    if (systemState == EnvResourceSystemState::STATE_UPDATING_WIND_DIRECTION){
-        auto group = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
-        windGeneratorDirection.Update(group, [this, &group](entt::entity entity){
-            auto unitId = group.get<UnitId>(entity).unitId;
+    // Runs a slow update once everytime the wind changes direction
+    {
+    auto group = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
+    windGeneratorDirection.Update(group, [this, &group](entt::entity entity){
+        auto unitId = group.get<UnitId>(entity).value;
+        auto unit = (unitHandler.GetUnit(unitId));
+        unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
 
-            // Update energy values
-            float unitWindValue = 1.f;
-            float newWindValue = std::max(unitWindValue, newWindStrength);
-
-            auto unit = (unitHandler.GetUnit(unitId));
-            unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
-
-            //LOG("%s: updated existing generator %d", __func__, unitId);
-        });
-        if (windGeneratorDirection.IsCycleDone()){
-            systemState = EnvResourceSystemState::STATE_UPDATING_WIND_STRENGTH;
-        }
+        //LOG("%s: updated existing generator %d", __func__, unitId);
+    });
     }
 
     auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
     windGeneratorIncome.Update(group, [this, &group](entt::entity entity) {
         auto teamId = (group.get<Units::Team>(entity)).value;
-        auto unitDef = (group.get<Units::UnitDefRef>(entity).unitDefRef);
+        auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
         auto income = std::min(curWindStrength, unitDef->windGenerator);
         
         teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;

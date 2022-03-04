@@ -7,7 +7,7 @@ struct MetalFixedIncome {
     float value = 0.f;
 };
 
-struct MetalUnconditionalUse {
+struct MetalFixedUse {
     float value = 0.f;
 };
 
@@ -23,7 +23,7 @@ struct EnergyFixedIncome {
     float value = 0.f;
 };
 
-struct EnergyUnconditionalUse {
+struct EnergyFixedUse {
     float value = 0.f;
 };
 
@@ -38,6 +38,9 @@ struct EnergyProratableUse {
 struct BuildRate {
     float value = 0.f;
 };
+
+struct NewUnitAddToSlowUpdate {};
+struct NewUnitAddToCurrent {};
 
 }
 

@@ -28,6 +28,7 @@
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -1534,8 +1535,11 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
+	auto& unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
+	auto& unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+
 	if (lua_isnumber(L, 2)) {
-		unit->health = std::min(unit->maxHealth, lua_tofloat(L, 2));
+		unitHealth = std::min(unitMaxHealth, lua_tofloat(L, 2));
 	} else if (lua_istable(L, 2)) {
 		constexpr int tableIdx = 2;
 
@@ -1545,14 +1549,14 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 
 			switch (hashString(lua_tolstring(L, -2, nullptr))) {
 				case hashString("health"): {
-					unit->health = std::min(unit->maxHealth, lua_tofloat(L, -1));
+					unitHealth = std::min(unitMaxHealth, lua_tofloat(L, -1));
 				} break;
 				case hashString("capture"): {
 					unit->captureProgress = lua_tofloat(L, -1);
 				} break;
 				case hashString("paralyze"): {
 					const float argValue = lua_tofloat(L, -1);
-					const float refValue = modInfo.paralyzeOnMaxHealth? unit->maxHealth: unit->health;
+					const float refValue = modInfo.paralyzeOnMaxHealth? unitMaxHealth: unitHealth;
 
 					if ((unit->paralyzeDamage = std::max(0.0f, argValue)) > refValue) {
 						unit->SetStunned(true);
@@ -1583,8 +1587,11 @@ int LuaSyncedCtrl::SetUnitMaxHealth(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	unit->maxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
-	unit->health = std::min(unit->maxHealth, unit->health);
+	auto& unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
+	auto& unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+
+	unitMaxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
+	unitHealth = std::min(unitMaxHealth, unitHealth);
 	return 0;
 }
 
@@ -3013,7 +3020,10 @@ int LuaSyncedCtrl::SetFeatureHealth(lua_State* L)
 	if (feature == nullptr)
 		return 0;
 
-	feature->health = std::min(feature->maxHealth, luaL_checkfloat(L, 2));
+	auto& featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
+	auto& featureMaxHealth = solidObjectSystem.ObjectMaxHealth(feature->entityReference);
+
+	featureHealth = std::min(featureMaxHealth, luaL_checkfloat(L, 2));
 	return 0;
 }
 
@@ -3025,8 +3035,11 @@ int LuaSyncedCtrl::SetFeatureMaxHealth(lua_State* L)
 	if (feature == nullptr)
 		return 0;
 
-	feature->maxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
-	feature->health = std::min(feature->health, feature->maxHealth);
+	auto& featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
+	auto& featureMaxHealth = solidObjectSystem.ObjectMaxHealth(feature->entityReference);
+
+	featureMaxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
+	featureHealth = std::min(featureHealth, featureMaxHealth);
 	return 0;
 }
 

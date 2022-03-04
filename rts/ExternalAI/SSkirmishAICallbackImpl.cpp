@@ -21,6 +21,7 @@
 #include "Map/MapInfo.h"
 #include "Lua/LuaRulesParams.h"
 #include "Lua/LuaHandleSynced.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
@@ -4257,7 +4258,7 @@ EXPORT(int) skirmishAiCallback_Feature_getDef(int skirmishAIId, int featureId) {
 EXPORT(float) skirmishAiCallback_Feature_getHealth(int skirmishAIId, int featureId) {
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		const CFeature* f = featureHandler.GetFeature(featureId);
-		return (f != nullptr)? f->health: 0.0f;
+		return (f != nullptr)? solidObjectSystem.ObjectHealth(f->entityReference): 0.0f;
 	}
 
 	return GetCallBack(skirmishAIId)->GetFeatureHealth(featureId);

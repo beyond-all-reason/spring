@@ -16,6 +16,7 @@
 #include "Rendering/LineDrawer.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -782,7 +783,9 @@ static inline bool IsBetterLeader(const UnitDef* newDef, const UnitDef* oldDef)
 					return false;
 			}
 		} else { // targetIsAlly
-			if (targetUnit->health < targetUnit->maxHealth) {
+			auto targetUnitHealth = unitSystem.UnitHealth(targetUnit->entityReference);
+			auto targetUnitMaxHealth = unitSystem.UnitMaxHealth(targetUnit->entityReference);
+			if (targetUnitHealth < targetUnitMaxHealth) {
 				if ( newDef->canRepair && !oldDef->canRepair)
 					return true;
 				if (!newDef->canRepair &&  oldDef->canRepair)

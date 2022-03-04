@@ -8,7 +8,7 @@ class UnitDef;
 namespace Units {
 
 struct UnitId {
-    int unitId;
+    int value;
 };
 
 struct Team {
@@ -16,7 +16,7 @@ struct Team {
 };
 
 struct UnitDefRef {
-    const UnitDef* unitDefRef = nullptr;
+    const UnitDef* value = nullptr;
 };
 
 }

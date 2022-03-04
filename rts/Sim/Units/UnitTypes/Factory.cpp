@@ -6,6 +6,7 @@
 #include "Game/WaitCommandsAI.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -222,7 +223,9 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 void CFactory::FinishBuild(CUnit* buildee) {
 	if (buildee->beingBuilt)
 		return;
-	if (unitDef->fullHealthFactory && buildee->health < buildee->maxHealth)
+	auto buildeeHealth = unitSystem.UnitHealth(buildee->entityReference);
+	auto buildeeMaxHealth = unitSystem.UnitMaxHealth(buildee->entityReference);
+	if (unitDef->fullHealthFactory && buildeeHealth < buildeeMaxHealth)
 		return;
 
 	// assign buildee to same group as us

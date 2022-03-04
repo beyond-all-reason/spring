@@ -9,6 +9,8 @@
 #include "System/Matrix44f.h"
 #include "Sim/Misc/Resource.h"
 
+#include "Sim/Ecs/EcsMain.h"
+
 #define TREE_RADIUS 20
 
 struct SolidObjectDef;

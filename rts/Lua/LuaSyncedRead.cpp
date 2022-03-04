@@ -26,6 +26,7 @@
 #include "Map/ReadMap.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/SideParser.h"
 #include "Sim/Features/Feature.h"
@@ -2869,18 +2870,21 @@ int LuaSyncedRead::GetUnitHealth(lua_State* L)
 	const UnitDef* ud = unit->unitDef;
 	const bool enemyUnit = LuaUtils::IsEnemyUnit(L, unit);
 
+	auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
+	auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+
 	if (ud->hideDamage && enemyUnit) {
 		lua_pushnil(L);
 		lua_pushnil(L);
 		lua_pushnil(L);
 	} else if (!enemyUnit || (ud->decoyDef == nullptr)) {
-		lua_pushnumber(L, unit->health);
-		lua_pushnumber(L, unit->maxHealth);
+		lua_pushnumber(L, unitHealth);
+		lua_pushnumber(L, unitMaxHealth);
 		lua_pushnumber(L, unit->paralyzeDamage);
 	} else {
 		const float scale = (ud->decoyDef->health / ud->health);
-		lua_pushnumber(L, scale * unit->health);
-		lua_pushnumber(L, scale * unit->maxHealth);
+		lua_pushnumber(L, scale * unitHealth);
+		lua_pushnumber(L, scale * unitMaxHealth);
 		lua_pushnumber(L, scale * unit->paralyzeDamage);
 	}
 	lua_pushnumber(L, unit->captureProgress);
@@ -4613,7 +4617,8 @@ int LuaSyncedRead::GetFeatureHealth(lua_State* L)
 	if (feature == nullptr || !LuaUtils::IsFeatureVisible(L, feature))
 		return 0;
 
-	lua_pushnumber(L, feature->health);
+	auto featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
+	lua_pushnumber(L, featureHealth);
 	lua_pushnumber(L, feature->def->health);
 	lua_pushnumber(L, feature->resurrectProgress);
 	return 3;

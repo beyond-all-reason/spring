@@ -25,6 +25,7 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
@@ -432,17 +433,18 @@ float CAICallback::GetUnitHealth(int unitId)
 			return health;
 
 		const int allyTeam = teamHandler.AllyTeam(team);
+		auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
 
 		if (teamHandler.Ally(unit->allyteam, allyTeam)) {
-			health = unit->health;
+			health = unitHealth;
 		} else if (unit->losStatus[allyTeam] & LOS_INLOS) {
 			const UnitDef* unitDef = unit->unitDef;
 			const UnitDef* decoyDef = unitDef->decoyDef;
 
 			if (decoyDef == nullptr) {
-				health = unit->health;
+				health = unitHealth;
 			} else {
-				health = unit->health * (decoyDef->health / unitDef->health);
+				health = unitHealth * (decoyDef->health / unitDef->health);
 			}
 		}
 	}
@@ -461,17 +463,19 @@ float CAICallback::GetUnitMaxHealth(int unitId)
 		if (unit == nullptr)
 			return maxHealth;
 
+		auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+
 		const int allyTeam = teamHandler.AllyTeam(team);
 		if (teamHandler.Ally(unit->allyteam, allyTeam)) {
-			maxHealth = unit->maxHealth;
+			maxHealth = unitMaxHealth;
 		} else if (unit->losStatus[allyTeam] & LOS_INLOS) {
 			const UnitDef* unitDef = unit->unitDef;
 			const UnitDef* decoyDef = unitDef->decoyDef;
 			if (decoyDef == nullptr) {
-				maxHealth = unit->maxHealth;
+				maxHealth = unitMaxHealth;
 			} else {
 				const float scale = (decoyDef->health / unitDef->health);
-				maxHealth = unit->maxHealth * scale;
+				maxHealth = unitMaxHealth * scale;
 			}
 		}
 	}
@@ -1284,7 +1288,7 @@ float CAICallback::GetFeatureHealth(int featureId)
 	const int allyteam = teamHandler.AllyTeam(team);
 
 	if (f->IsInLosForAllyTeam(allyteam))
-		return f->health;
+		return solidObjectSystem.ObjectHealth(f->entityReference);
 
 	return 0.0f;
 }

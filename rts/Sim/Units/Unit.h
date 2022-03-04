@@ -294,8 +294,6 @@ public:
 public:
 	const UnitDef* unitDef = nullptr;
 
-	entt::entity entityReference = entt::null;
-
 	// Our shield weapon, NULL if we have none
 	CWeapon* shieldWeapon = nullptr;
 	// Our weapon with stockpiled ammo, NULL if we have none

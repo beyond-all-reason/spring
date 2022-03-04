@@ -13,6 +13,7 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/LosHandler.h"
@@ -799,15 +800,20 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		break;
 
 	case HEALTH: {
-		if (p1 <= 0)
-			return int((unit->health / unit->maxHealth) * 100.0f);
+		if (p1 <= 0) {
+			auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
+			auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+			return int((unitHealth / unitMaxHealth) * 100.0f);
+		}
 
 		const CUnit* u = unitHandler.GetUnit(p1);
 
 		if (u == nullptr)
 			return 0;
 
-		return int((u->health / u->maxHealth) * 100.0f);
+		auto uHealth = unitSystem.UnitHealth(u->entityReference);
+		auto uMaxHealth = unitSystem.UnitMaxHealth(u->entityReference);
+		return int((uHealth / uMaxHealth) * 100.0f);
 	} break;
 
 	case INBUILDSTANCE: {

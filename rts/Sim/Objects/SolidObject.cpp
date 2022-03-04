@@ -5,6 +5,7 @@
 #include "SolidObjectDef.h"
 #include "Map/ReadMap.h"
 #include "Map/Ground.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
@@ -17,8 +18,8 @@ int CSolidObject::deletingRefID = -1;
 CR_BIND_DERIVED_INTERFACE(CSolidObject, CWorldObject)
 CR_REG_METADATA(CSolidObject,
 (
-	CR_MEMBER(health),
-	CR_MEMBER(maxHealth),
+	// CR_MEMBER(health),
+	// CR_MEMBER(maxHealth),
 
 	CR_MEMBER(mass),
 	CR_MEMBER(crushResistance),
@@ -445,6 +446,7 @@ void CSolidObject::ForcedSpin(const float3& newDir)
 void CSolidObject::Kill(CUnit* killer, const float3& impulse, bool crushed)
 {
 	UpdateVoidState(false);
+	auto health = solidObjectSystem.ObjectHealth(this->entityReference);
 	DoDamage(DamageArray(health + 1.0f), impulse, killer, crushed? -DAMAGE_EXTSOURCE_CRUSHED: -DAMAGE_EXTSOURCE_KILLED, -1);
 }
 
