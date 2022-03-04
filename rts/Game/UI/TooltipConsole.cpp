@@ -13,6 +13,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -324,9 +325,12 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 
 	++count;
 
+	auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
+	auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+
 	if (!decoyDef) {
-		health           += unit->health;
-		maxHealth        += unit->maxHealth;
+		health           += unitHealth;
+		maxHealth        += unitMaxHealth;
 		experience        = (experience * (count - 1) + unit->experience) / count; // average xp
 		cost             += unit->cost.metal + (unit->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, unit->maxRange);
@@ -345,8 +349,8 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		float metalMake_, metalUse_, energyMake_, energyUse_;
 		GetDecoyResources(unit, metalMake_, metalUse_, energyMake_, energyUse_);
 
-		health           += unit->health * healthScale;
-		maxHealth        += unit->maxHealth * healthScale;
+		health           += unitHealth * healthScale;
+		maxHealth        += unitMaxHealth * healthScale;
 		experience        = (experience * (count - 1) + unit->experience) / count;
 		cost             += decoyDef->metal + (decoyDef->energy / 60.0f);
 		maxRange          = std::max(maxRange, decoyDef->maxWeaponRange);

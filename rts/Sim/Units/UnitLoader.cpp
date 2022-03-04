@@ -18,7 +18,6 @@
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
 
-#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -99,7 +98,6 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 		unit = CUnitHandler::NewUnit(ud);
 
 		unit->PreInit(params);
-		unitSystem.AddUnit(unit);
 		unit->PostInit(params.builder);
 	}
 

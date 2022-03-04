@@ -6,6 +6,7 @@
 #include "WorldObject.h"
 #include "Lua/LuaRulesParams.h"
 #include "Rendering/Models/3DModel.h"
+#include "Sim/Ecs/EcsMain.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/bitops.h"
 #include "System/Matrix44f.h"
@@ -325,8 +326,10 @@ private:
 	float3 GetMidPos() const { return (GetObjectSpacePos(relMidPos)); }
 	float3 GetAimPos() const { return (GetObjectSpacePos(relAimPos)); }
 public:
-	float health = 0.0f;
-	float maxHealth = 1.0f;
+	//float health = 0.0f;
+	//float maxHealth = 1.0f;
+
+	entt::entity entityReference = entt::null;
 
 	///< the physical mass of this object (can be changed by SetMass)
 	float mass = DEFAULT_MASS;

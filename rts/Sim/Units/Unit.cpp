@@ -34,6 +34,9 @@
 
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -196,6 +199,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	// if this is < 0, UnitHandler will give us a random ID
 	id = params.unitID;
 	featureDefID = -1;
+	
+	solidObjectSystem.AddObject(this);
 
 	unitDef = params.unitDef;
 
@@ -261,8 +266,12 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	mass = (beingBuilt)? mass: unitDef->mass;
 	crushResistance = unitDef->crushResistance;
 	power = unitDef->power;
+
+	auto& health = unitSystem.UnitHealth(entityReference);
+	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 	maxHealth = unitDef->health;
 	health = beingBuilt? 0.1f: unitDef->health;
+
 	cost.metal = unitDef->metal;
 	cost.energy = unitDef->energy;
 	buildTime = unitDef->buildTime;
@@ -306,6 +315,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
 
+	unitSystem.AddUnit(this);
+
 	if (unitDef->selfdExpWeaponDef != nullptr)
 		selfdExpDamages = DynDamageArray::IncRef(&unitDef->selfdExpWeaponDef->damages);
 	if (unitDef->deathExpWeaponDef != nullptr)
@@ -336,7 +347,7 @@ void CUnit::PostInit(const CUnit* builder)
 	if (unitDef->windGenerator > 0.0f)
 		envResourceSystem.AddGenerator(this);
 
-	//flowEconomySystem.AddUnitEconomy(this);
+	flowEconomySystem.AddFlowEconomyUnit(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
@@ -416,6 +427,8 @@ void CUnit::FinishedBuilding(bool postInit)
 		DeleteDeathDependence(soloBuilder, DEPENDENCE_BUILDER);
 		soloBuilder = nullptr;
 	}
+
+	buildSystem.RemoveUnitBuild(this->entityReference);
 
 	ChangeLos(realLosRadius, realAirLosRadius);
 
@@ -510,7 +523,8 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		helper->Explosion(params);
 	}
 
-	recentDamage += (maxHealth * 2.0f * selfDestruct);
+	auto unitMaxHealth = unitSystem.UnitMaxHealth(entityReference);
+	recentDamage += (unitMaxHealth * 2.0f * selfDestruct);
 
 	// start running the unit's kill-script
 	script->Killed();
@@ -775,7 +789,9 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 			if (unitDef->canfly && transportee->unitDef->canmove)
 				transportee->commandAI->GiveCommand(Command(CMD_MOVE, transportee->pos));
 
-			transportee->SetStunned(transportee->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? transportee->maxHealth: transportee->health));
+			auto transporteeHealth = unitSystem.UnitHealth(transportee->entityReference);
+			auto transporteeMaxHealth = unitSystem.UnitMaxHealth(transportee->entityReference);
+			transportee->SetStunned(transportee->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? transporteeMaxHealth: transporteeHealth));
 			transportee->SetVelocityAndSpeed(speed * (0.5f + 0.5f * gsRNG.NextFloat()));
 
 			eventHandler.UnitUnloaded(transportee, this);
@@ -918,6 +934,9 @@ void CUnit::SlowUpdate()
 	UpdatePosErrorParams(false, true);
 
 	DoWaterDamage();
+
+	auto& health = unitSystem.UnitHealth(entityReference);
+	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 
 	if (health < 0.0f) {
 		KillUnit(nullptr, false, true);
@@ -1179,6 +1198,9 @@ static void AddUnitDamageStats(CUnit* unit, float damage, bool dealt)
 
 void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& baseDamage, float& experienceMod)
 {
+	auto& health = unitSystem.UnitHealth(entityReference);
+	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+
 	if (damages.paralyzeDamageTime == 0) {
 		// real damage
 		if (baseDamage > 0.0f) {
@@ -1250,6 +1272,9 @@ void CUnit::DoDamage(
 		return;
 	if (IsCrashing() || IsInVoid())
 		return;
+
+	auto& health = unitSystem.UnitHealth(entityReference);
+	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 
 	float baseDamage = damages.Get(armorType);
 	float experienceMod = expMultiplier;
@@ -1365,6 +1390,9 @@ void CUnit::AddExperience(float exp)
 		return;
 
 	assert((experience + exp) >= 0.0f);
+
+	auto& health = unitSystem.UnitHealth(entityReference);
+	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 
 	const float oldExperience = experience;
 	const float oldMaxHealth = maxHealth;
@@ -1876,10 +1904,22 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 	// stop decaying on building AND reclaim
 	lastNanoAdd = gs->frameNum;
 
+	if (flowEconomySystem.IsSystemActive()){
+		if (buildSystem.UnitBeingBuilt(this->entityReference)){
+			if (buildSystem.UnitBuildComplete(this->entityReference)){
+				FinishedBuilding(false);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	CTeam* builderTeam = teamHandler.Team(builder->team);
 
 	if (amount >= 0.0f) {
 		// build or repair
+		auto& health = unitSystem.UnitHealth(entityReference);
+		auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 		if (!beingBuilt && (health >= maxHealth))
 			return false;
 
@@ -1899,31 +1939,21 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			if (!eventHandler.AllowUnitBuildStep(builder, this, step))
 				return false;
 
-			bool continueBuilding = false;
-			// if (flowEconomySystem.IsSystemActive()){
+			if (builder->UseMetal(metalCostStep)) {
+				// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
+				// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
 
-			// }
-			// else {
-				if (builder->UseMetal(metalCostStep)) {
-					// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
-					// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
-
-					if (builder->UseEnergy(energyCostStep)) {
-						continueBuilding = true;
-					} else {
-						// refund already-deducted metal if *energy* cost cannot be
-						builder->UseMetal(-metalCostStep);
+				if (builder->UseEnergy(energyCostStep)) {
+					health += (maxHealth * step);
+					health = std::min(health, maxHealth);
+					buildProgress += step;
+					
+					if (buildProgress >= 1.0f) {
+						FinishedBuilding(false);
 					}
-				// }
-			}
-
-			if (continueBuilding){
-				health += (maxHealth * step);
-				health = std::min(health, maxHealth);
-				buildProgress += step;
-
-				if (buildProgress >= 1.0f) {
-					FinishedBuilding(false);
+				} else {
+					// refund already-deducted metal if *energy* cost cannot be
+					builder->UseMetal(-metalCostStep);
 				}
 			}
 
@@ -1931,6 +1961,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		}
 		else if (health < maxHealth) {
 			// repair
+			auto& health = unitSystem.UnitHealth(entityReference);
+			auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 			const float step = std::min(amount / buildTime, 1.0f - (health / maxHealth));
 			const float energyUse = (cost.energy * step);
 			const float energyUseScaled = energyUse * modInfo.repairEnergyCostFactor;
@@ -1960,6 +1992,9 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			builder->DependentDied(this);
 			return false;
 		}
+
+		auto& health = unitSystem.UnitHealth(entityReference);
+		auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 
 		const float step = std::max(amount / buildTime, -buildProgress);
 		const float energyRefundStep = cost.energy * step;
@@ -2679,7 +2714,9 @@ bool CUnit::DetachUnitCore(CUnit* unit)
 			unit->moveType->UseHeading(true);
 
 		// de-stun detaching units in case we are not a fire-platform
-		unit->SetStunned(unit->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? unit->maxHealth: unit->health));
+		auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
+		auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+		unit->SetStunned(unit->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? unitMaxHealth: unitHealth));
 
 		unit->moveType->SlowUpdate();
 		unit->moveType->LeaveTransport();

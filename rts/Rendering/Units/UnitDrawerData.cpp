@@ -18,6 +18,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/IWater.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
@@ -247,7 +248,8 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 		return;
 	}
 
-	if (unit->health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid())
+	auto health = unitSystem.UnitHealth(unit->entityReference);
+	if (health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid())
 	{
 		unit->SetIsIcon(false);
 		return;

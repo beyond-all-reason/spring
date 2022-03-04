@@ -9,6 +9,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapDamage.h"
+#include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -761,7 +762,9 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 		// do not consider units under construction irreparable
 		// even if they can be repaired
 		bool canRepairUnit = true;
-		canRepairUnit &= ((unit->beingBuilt) || (unit->unitDef->repairable && (unit->health < unit->maxHealth)));
+		auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
+		auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+		canRepairUnit &= ((unit->beingBuilt) || (unit->unitDef->repairable && (unitHealth < unitMaxHealth)));
 		canRepairUnit &= ((unit != owner) || owner->unitDef->canSelfRepair);
 		canRepairUnit &= (!unit->soloBuilder || (unit->soloBuilder == owner));
 		canRepairUnit &= (!c.IsInternalOrder() || (c.GetOpts() & CONTROL_KEY) || !IsUnitBeingReclaimed(unit, owner));
@@ -942,8 +945,10 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 	if (MoveInBuildRange(pos, radius)) {
 		StartSlowGuard(guardee->moveType->GetMaxSpeed());
 
+		auto guardeeHealth = unitSystem.UnitHealth(guardee->entityReference);
+		auto guardeeMaxHealth = unitSystem.UnitMaxHealth(guardee->entityReference);
 		const bool pushRepairCommand =
-			(  guardee->health < guardee->maxHealth) &&
+			(  guardeeHealth < guardeeMaxHealth) &&
 			(  guardee->soloBuilder == nullptr || guardee->soloBuilder == owner) &&
 			(( guardee->beingBuilt && owner->unitDef->canAssist) ||
 			 (!guardee->beingBuilt && owner->unitDef->canRepair));
@@ -1696,7 +1701,9 @@ bool CBuilderCAI::FindCaptureTargetAndCapture(
 			if (unit->IsMoving() && stationary)
 				continue;
 
-			if (healthyOnly && unit->health < unit->maxHealth && unit->captureProgress <= 0.0f)
+			auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
+			auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+			if (healthyOnly && unitHealth < unitMaxHealth && unit->captureProgress <= 0.0f)
 				continue;
 
 			const float dist = f3SqDist(unit->pos, owner->pos);
@@ -1743,7 +1750,9 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 
 	for (const CUnit* unit: *qfQuery.units) {
 		if (teamHandler.Ally(owner->allyteam, unit->allyteam)) {
-			if (!haveEnemy && (unit->health < unit->maxHealth)) {
+			auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
+			auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+			if (!haveEnemy && (unitHealth < unitMaxHealth)) {
 				// don't help allies build unless set on roam
 				if (unit->beingBuilt && owner->team != unit->team && (owner->moveState != MOVESTATE_ROAM))
 					continue;
@@ -1813,7 +1822,9 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 	}
 
 	if (bestUnit == nullptr) {
-		if (!trySelfRepair || !owner->unitDef->canSelfRepair || (owner->health >= owner->maxHealth))
+		auto unitHealth = unitSystem.UnitHealth(owner->entityReference);
+		auto unitMaxHealth = unitSystem.UnitMaxHealth(owner->entityReference);
+		if (!trySelfRepair || !owner->unitDef->canSelfRepair || (unitHealth >= unitMaxHealth))
 			return false;
 
 		bestUnit = owner;

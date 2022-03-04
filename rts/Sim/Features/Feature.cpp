@@ -11,6 +11,7 @@
 #include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
 #include "Rendering/Env/Particles/Classes/GeoThermSmokeProjectile.h"
 #include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
@@ -157,7 +158,13 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	smokeTime = params.smokeTime;
 
 	mass = def->mass;
+
+	solidObjectSystem.AddObject(this);
+
+	auto& health = solidObjectSystem.ObjectHealth(entityReference);
 	health = def->health;
+
+	auto& maxHealth = solidObjectSystem.ObjectMaxHealth(entityReference);
 	maxHealth = def->health;
 	reclaimTime = def->reclaimTime;
 
@@ -410,6 +417,7 @@ void CFeature::DoDamage(
 	ApplyImpulse((impulse * moveCtrl.impulseMask * impulseMult) / mass);
 
 	// clamp in case Lua-modified damage is negative
+	auto& health = solidObjectSystem.ObjectHealth(entityReference);
 	health -= baseDamage;
 	health = std::min(health, def->health);
 
