@@ -150,6 +150,11 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 
 	id = params.featureID;
 
+	// feature does not have an assigned ID yet
+	// this MUST be done before the Block() call
+	featureHandler.AddFeature(this);
+	solidObjectSystem.AddObject(this);
+
 	team = params.teamID;
 	allyteam = params.allyTeamID;
 
@@ -158,8 +163,6 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	smokeTime = params.smokeTime;
 
 	mass = def->mass;
-
-	solidObjectSystem.AddObject(this);
 
 	auto& health = solidObjectSystem.ObjectHealth(entityReference);
 	health = def->health;
@@ -231,9 +234,6 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	selectionVolume.InitDefault(float4(radius, height,  xsize * SQUARE_SIZE, zsize * SQUARE_SIZE));
 
 
-	// feature does not have an assigned ID yet
-	// this MUST be done before the Block() call
-	featureHandler.AddFeature(this);
 	quadField.AddFeature(this);
 
 	ChangeTeam(team);

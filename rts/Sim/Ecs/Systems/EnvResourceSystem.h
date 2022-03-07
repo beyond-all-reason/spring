@@ -1,7 +1,6 @@
 #ifndef ENV_RESOURCE_SYSTEM_H__
 #define ENV_RESOURCE_SYSTEM_H__
 
-#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
 
@@ -56,9 +55,6 @@ private:
     void UpdateWindDirection();
     void UpdateWind();
 	void SlowUpdate();
-
-	SlowUpdateSubSystem windGeneratorIncome;
-	SlowUpdateOnceSubSystem windGeneratorDirection;
 };
 
 extern EnvResourceSystem envResourceSystem;

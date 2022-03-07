@@ -1,81 +1,21 @@
 #ifndef SLOW_UPDATE_H__
 #define SLOW_UPDATE_H__
 
-#include <stdint.h>
+constexpr int REALTIME_SYSTEM_UPDATE = 1; // 30 hz
+constexpr int FAST_SYSTEM_UPDATE = 3; // 10 hz
 
-#include "Sim/Misc/GlobalConstants.h"
-#include "Sim/Misc/GlobalSynced.h"
+// I had considered using 6 frames; however performance counters refresh every 15 frames, which
+// would make it much harder to monitor peformance.
+constexpr int SLOW_SYSTEM_UPDATE = 5; // 6 hz
+constexpr int BACKGROUND_SYSTEM_UPDATE = 30; // 1 hz
 
+// SLOW SYSTEMS
+constexpr int BUILD_UPDATE_RATE = SLOW_SYSTEM_UPDATE;
+constexpr int ENV_RESOURCE_UPDATE_RATE = SLOW_SYSTEM_UPDATE;
+constexpr int FLOW_ECONOMY_UPDATE_RATE = SLOW_SYSTEM_UPDATE;
 
-struct SlowUpdateRefreshCheckByGameFrame {
-    bool operator()(int updateRate) {
-        return ((gs->frameNum % updateRate)==0);
-    }
-
-    void Init() {};
-};
-
-struct SlowUpdateRefreshCheckOnce {
-    bool hasAlreadyUpdated = false;
-
-    bool operator()(int updateRate) {
-        if (!hasAlreadyUpdated){
-            hasAlreadyUpdated = true;
-            return true;
-        }
-        return false;
-    }
-
-    void Init() { hasAlreadyUpdated = false; };
-};
-
-template <class RefreshCheck = SlowUpdateRefreshCheckByGameFrame>
-struct SlowUpdateSubSystemT {
-
-    template<class T, class UnaryFunction>
-    void Update(T group, UnaryFunction f, size_t lengthReduceBy = 0) {
-        constexpr int updateRate = ECONOMY_SLOWUPDATE_RATE;
-        if (refreshNeeded(updateRate)){
-            curIndex = 0;
-            lastFrameGroupSize = group.size() + (-lengthReduceBy);
-            chunkSize = (lastFrameGroupSize / updateRate) + 1*(lastFrameGroupSize % updateRate != 0);
-        }
-        else
-        {
-            // iteration works backwards in EnTT.
-            auto changeInSize = group.size() + (-lengthReduceBy) + (-lastFrameGroupSize);
-            if (changeInSize > 0){
-                lastFrameGroupSize += changeInSize;
-                curIndex += changeInSize;
-            }
-        }
-        auto stopBeforeIndex = std::min(curIndex+chunkSize, lastFrameGroupSize);
-
-        for (; curIndex<stopBeforeIndex; ++curIndex){
-            auto entity = group[curIndex];
-            f(entity);
-        }
-    }
-
-    void Init() {
-        curIndex = 0;
-        lastFrameGroupSize = 0;
-        chunkSize = 0;
-        refreshNeeded.Init();
-    }
-
-    bool IsCycleDone() {
-        return (curIndex >= lastFrameGroupSize);
-    }
-
-    uint32_t curIndex = 0;
-    uint32_t lastFrameGroupSize = 0;
-    uint32_t chunkSize = 0;
-
-    RefreshCheck refreshNeeded;
-};
-
-typedef SlowUpdateSubSystemT<> SlowUpdateSubSystem;
-typedef SlowUpdateSubSystemT<SlowUpdateRefreshCheckOnce> SlowUpdateOnceSubSystem;
+constexpr int BUILD_TICK = 2;
+constexpr int ENV_RESOURCE_TICK = 1;
+constexpr int FLOW_ECONOMY_TICK = 0;
 
 #endif

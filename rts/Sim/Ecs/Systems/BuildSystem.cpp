@@ -1,16 +1,17 @@
 #include "BuildSystem.h"
 
 #include "Sim/Ecs/EcsMain.h"
+#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/BuildComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/SolidObjectComponent.h"
-
+#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
-
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitTypes/Builder.h"
+#include "System/TimeProfiler.h"
 
 BuildSystem buildSystem;
 
@@ -32,6 +33,8 @@ void returnExcessEco(entt::entity entity, CTeam *team, float excessBuild){
 void BuildSystem::AddUnitBuilder(CBuilder *unit){
     auto entity = unit->entityReference;
     EcsMain::registry.emplace_or_replace<BuildPower>(entity, unit->buildSpeed);
+
+    LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
 }
 
 void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
@@ -158,8 +161,12 @@ void BuildSystem::RemoveUnitBuild(entt::entity entity) {
 }
 
 void BuildSystem::Update() {
-    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>);
+    if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
+       return;
 
+    SCOPED_TIMER("ECS::BuildSystem::Update");
+
+    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>);
     for (auto entity : group) {
         auto buildDetails = group.get<ActiveBuild>(entity);
         auto buildPower = buildDetails.currentBuildpower;

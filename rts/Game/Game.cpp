@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Features/FeatureDef.h"
@@ -1668,14 +1669,17 @@ void CGame::SimFrame() {
 		mapDamage->Update();
 		pathManager->Update();
 		unitHandler.Update();
+
+		buildSystem.Update();
+		envResourceSystem.Update();
+		flowEconomySystem.Update();
+
 		projectileHandler.Update();
 		featureHandler.Update();
 		{
 			SCOPED_TIMER("Sim::Script");
 			unitScriptEngine->Tick(33);
 		}
-		envResourceSystem.Update();
-		flowEconomySystem.Update();
 		losHandler->Update();
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.
