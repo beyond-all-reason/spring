@@ -5,12 +5,15 @@
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/EcsMain.h"
+#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
+
+#include "Sim/Misc/GlobalSynced.h"
 
 
 FlowEconomySystem flowEconomySystem;
@@ -20,7 +23,7 @@ using namespace FlowEconomy;
 void FlowEconomySystem::Init() {
     if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
         active = true;
-        economyMultiplier = 1.f / GAME_SPEED;
+        economyMultiplier = 1.f / GAME_SPEED; // sim display refresh rate
         LOG("%s: ECS economy system active (%f)", __func__, economyMultiplier);
     } else {
         active = false;
@@ -35,11 +38,6 @@ void FlowEconomySystem::AddFlowEconomyUnit(CUnit *unit) {
     auto entity = unit->entityReference;
     if (! EcsMain::registry.valid(entity)){
         LOG("%s: invalid entityId reference", __func__); return;
-    }
-
-    //tag the unit if the slow updater isn't going to check it 
-    if ((gs->frameNum % ECONOMY_SLOWUPDATE_RATE) != 0) {
-        EcsMain::registry.emplace_or_replace<NewUnitAddToSlowUpdate>(entity);
     }
 }
 
@@ -85,93 +83,59 @@ void FlowEconomySystem::UpdateUnitProratableMetalUse(CUnit *unit, float amount){
     UpdateUnitEconomy<MetalProratableUse>(unit->entityReference, amount);
 }
 
-template<class T>
-float unitEco(entt::entity entity) {
-    const auto ecoValue = EcsMain::registry.try_get<T>(entity);
-    return (ecoValue != nullptr) ? ecoValue->value : 0.f;
-}
-
-// void AddNewUnitEconomy() {
-//     auto group = EcsMain::registry.group<NewUnitAddToSlowUpdate>(entt::get<Units::Team>);
-//     for (auto entity: group) {
-//         auto teamId = (group.get<Units::Team>(entity)).value;
-//         auto teamRes = teamHandler.Team(teamId)->resNext;
-
-//         teamRes.fixedIncome.metal += unitEco<MetalFixedIncome>(entity);
-//         teamRes.fixedIncome.energy += unitEco<EnergyFixedIncome>(entity);
-//         teamRes.proratableIncome.metal += unitEco<MetalProratableIncome>(entity);
-//         teamRes.proratableIncome.energy += unitEco<EnergyProratableIncome>(entity);
-
-//         teamRes.fixedExpense.metal += unitEco<MetalFixedUse>(entity);
-//         teamRes.fixedExpense.energy += unitEco<EnergyFixedUse>(entity);
-
-//         if (EcsMain::registry.all_of<MetalProratableUse, EnergyProratableUse>(entity)){
-//             teamRes.dependentProratableExpense.metal += unitEco<MetalProratableIncome>(entity);
-//             teamRes.dependentProratableExpense.energy += unitEco<EnergyProratableIncome>(entity);
-//         }
-//         else {
-//             teamRes.independentProratableExpense.metal += unitEco<MetalProratableUse>(entity);
-//             teamRes.independentProratableExpense.energy += unitEco<EnergyProratableUse>(entity);
-//         }
-
-//         EcsMain::registry.remove<NewUnitAddToSlowUpdate>(entity);
-//     }
-// }
-
-
 void FlowEconomySystem::UpdateFixedMetalIncome(){
     auto group = EcsMain::registry.group<MetalFixedIncome>(entt::get<Units::Team>);
-    fixedMetalIncomeUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<MetalFixedIncome>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.fixedIncome.metal += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateFixedEnergyIncome(){
     auto group = EcsMain::registry.group<EnergyFixedIncome>(entt::get<Units::Team>);
-    fixedEnergyIncomeUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<EnergyFixedIncome>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateProratableMetalIncome(){
     // double check this is the correct way to utilise the natural behaviour of groups
     auto group = EcsMain::registry.group<MetalProratableIncome>(entt::get<Units::Team>);
-    proratableMetalIncomeUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<MetalProratableIncome>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.proratableIncome.metal += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateProratableEnergyIncome(){
     auto group = EcsMain::registry.group<EnergyProratableIncome>(entt::get<Units::Team>);
-    proratableEnergyIncomeUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<EnergyProratableIncome>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.proratableIncome.energy += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateFixedMetalExpense(){
     auto group = EcsMain::registry.group<MetalFixedUse>(entt::get<Units::Team>);
-    fixedMetalExpenseUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<MetalFixedUse>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.fixedExpense.metal += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateFixedEnergyExpense(){
     auto group = EcsMain::registry.group<EnergyFixedUse>(entt::get<Units::Team>);
-    fixedEnergyExpenseUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         auto income = (group.get<EnergyFixedUse>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.fixedExpense.energy += income;
-    });
+    }
 }
 
 void FlowEconomySystem::UpdateProratableMetalExpense(){
@@ -200,32 +164,32 @@ void FlowEconomySystem::UpdateProratableEnergyExpense(){
 
 void FlowEconomySystem::UpdateProratableCombinedExpense(){
     auto group = EcsMain::registry.group<MetalProratableUse, EnergyProratableUse>(entt::get<Units::Team>);
-    proratableCombinedExpenseUpdater.Update(group, [&group](entt::entity entity) {
+    for (auto entity : group) {
         SResourcePack income;
         income.energy = (group.get<EnergyProratableUse>(entity)).value;
         income.metal = (group.get<MetalProratableUse>(entity)).value;
         auto teamId = (group.get<Units::Team>(entity)).value;
         teamHandler.Team(teamId)->resNext.dependentProratableExpense += income;
-    });
+    }
 }
 
-void FlowEconomySystem::UpdateNewUnits() {
-    auto view = EcsMain::registry.view<FlowEconomy::NewUnitAddToSlowUpdate>();
-    for (auto entity : view) {
-        // check individual additions.
-    }
+bool FlowEconomySystem::RegisterOneOffExpense(CUnit* unit, float amount) {
+    // TODO
+    return false;
 }
 
 void FlowEconomySystem::Update() {
     if (!active)
         return;
-    
-    // slow the eco down for debug purposes - to be removed later
-    // also, accidentally commited change to stop world drawer timers - should re-enable those leter as well
-    //if (gs->frameNum % GAME_SPEED)
-    //    return;
 
     SCOPED_TIMER("ECS::FlowEconomySystem::Update");
+
+    SlowUpdate();
+}
+
+void FlowEconomySystem::SlowUpdate() {
+    if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
+       return;
 
     UpdateFixedEnergyIncome();
     UpdateFixedMetalIncome();
@@ -237,22 +201,9 @@ void FlowEconomySystem::Update() {
     UpdateFixedMetalExpense();
     UpdateFixedEnergyExpense();
 
+    UpdateProratableMetalExpense();
+    UpdateProratableEnergyExpense();
     UpdateProratableCombinedExpense();
-
-    // these updates are based on inverted groups of the combined metal/energy group
-    // as such they cannot be done on slowUpdate cycles because if a new entry is added
-    // that will qualify for the combined group then the last item in this group is moved
-    // to the back and that would cause to 1) not be counted this iteration and 2) cause
-    // the currently reached item to be counted twice.
-    switch (gs->frameNum % ECONOMY_SLOWUPDATE_RATE) {
-        case (ECONOMY_SLOWUPDATE_RATE - 2):
-            UpdateProratableMetalExpense();
-            break;
-        case (ECONOMY_SLOWUPDATE_RATE - 1):
-            UpdateProratableEnergyExpense();
-            break;
-        default:
-    }
 
     for (int i=0; i<teamHandler.ActiveTeams(); i++){
         UpdateTeamEconomy(i);
@@ -263,7 +214,7 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     // Get available resources for proration
     CTeam* curTeam = teamHandler.Team(teamId);
 
-    if ((gs->frameNum % ECONOMY_SLOWUPDATE_RATE)==0){
+    if ((gs->frameNum % ECONOMY_SLOWUPDATE_RATE) == FLOW_ECONOMY_TICK){
         curTeam->resCurrent = curTeam->resNext;
         curTeam->resNext = EconomyFlowSnapshot();
     }

@@ -1,15 +1,14 @@
 #include "Sim/Ecs/EcsMain.h"
-#include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
-#include "Sim/Units/Unit.h"
+#include "Sim/Ecs/Components/FlowEconomyComponents.h"
+#include "Sim/Ecs/Components/UnitComponents.h"
 
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
 #include "FlowEconomySystem.h"
 
 #include "System/TimeProfiler.h"
-
-
 #include "System/Log/ILog.h"
 
 #include "Sim/Misc/GlobalSynced.h"
@@ -54,9 +53,6 @@ void EnvResourceSystem::Init()
 	oldWindVec = ZeroVector;
 
 	windDirTimer = 0;
-
-    windGeneratorIncome.Init();
-    windGeneratorDirection.Init();
 }
 
 void EnvResourceSystem::Update()
@@ -69,10 +65,10 @@ void EnvResourceSystem::Update()
 
 	if (windDirTimer == 0)
 		UpdateWindDirection();
-    else
+    else {
         UpdateWind();
-
-    SlowUpdate();
+        SlowUpdate(); // here to reduce impact of UpdateWindDirection() on current frame
+    }
     UpdateWindTimer();
 }
 
@@ -98,9 +94,16 @@ void EnvResourceSystem::UpdateWindDirection()
     // normalize and clamp s.t. minWindStrength <= strength <= maxWindStrength
     newWindVec /= newStrength;
     newWindVec *= (newStrength = Clamp(newStrength, minWindStrength, maxWindStrength));
-
     newWindStrength = newStrength;
-    windGeneratorDirection.Init();
+
+    auto group = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
+    for (auto entity : group) {
+        auto unitId = group.get<UnitId>(entity).value;
+        auto unit = (unitHandler.GetUnit(unitId));
+        unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
+
+        //LOG("%s: updated existing generator %d", __func__, unitId);
+    }
 }
 
 void EnvResourceSystem::UpdateWind()
@@ -117,15 +120,9 @@ void EnvResourceSystem::UpdateWind()
     curWindVec = curWindDir * (curWindStrength = Clamp(curWindStrength, minWindStrength, maxWindStrength));
 
     // make newly added generators point in direction of wind
-    auto group = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId, Units::UnitDefRef, Units::Team>);
+    auto group = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId>);
     for (auto entity : group) {
         auto unitId = group.get<UnitId>(entity).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
-
-        // income
-        //auto income = std::min(curWindStrength, unitDef->windGenerator);
-        //teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
 
         // direction
         auto unit = (unitHandler.GetUnit(unitId));
@@ -140,26 +137,16 @@ void EnvResourceSystem::SlowUpdate(){
     if (!flowEconomySystem.IsSystemActive())
         return;
 
-    // Runs a slow update once everytime the wind changes direction
-    {
-    auto group = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
-    windGeneratorDirection.Update(group, [this, &group](entt::entity entity){
-        auto unitId = group.get<UnitId>(entity).value;
-        auto unit = (unitHandler.GetUnit(unitId));
-        unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
+    if ((gs->frameNum % ENV_RESOURCE_UPDATE_RATE) != ENV_RESOURCE_TICK)
+       return;
 
-        //LOG("%s: updated existing generator %d", __func__, unitId);
-    });
-    }
-
-    auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, Units::Team>);
-    windGeneratorIncome.Update(group, [this, &group](entt::entity entity) {
-        auto teamId = (group.get<Units::Team>(entity)).value;
+    auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
+    for (auto entity : group) {
         auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
-        auto income = std::min(curWindStrength, unitDef->windGenerator);
-        
-        teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
-    });
+        auto& energyIncome = (group.get<FlowEconomy::EnergyFixedIncome>(entity).value);
+
+        energyIncome = std::min(curWindStrength, unitDef->windGenerator);
+    }
 }
 
 void EnvResourceSystem::LoadWind(float minStrength, float maxStrength)
@@ -194,6 +181,7 @@ void EnvResourceSystem::ActivateGenerator(CUnit* unit){
     }
 
     EcsMain::registry.emplace_or_replace<WindGeneratorActive>(unit->entityReference);
+    EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
 }
 
 void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
@@ -203,6 +191,7 @@ void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
     }
 
     EcsMain::registry.remove<WindGeneratorActive>(unit->entityReference);
+    EcsMain::registry.remove<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
 }
 
 bool EnvResourceSystem::DelGenerator(CUnit* unit)

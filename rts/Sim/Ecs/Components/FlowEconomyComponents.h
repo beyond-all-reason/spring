@@ -39,9 +39,6 @@ struct BuildRate {
     float value = 0.f;
 };
 
-struct NewUnitAddToSlowUpdate {};
-struct NewUnitAddToCurrent {};
-
 }
 
 #endif

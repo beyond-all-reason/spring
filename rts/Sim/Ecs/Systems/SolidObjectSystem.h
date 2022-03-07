@@ -4,6 +4,8 @@
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/Components/SolidObjectComponent.h"
 
+#include "System/Log/ILog.h"
+
 class CSolidObject;
 
 class SolidObjectSystem {

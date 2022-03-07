@@ -30,7 +30,7 @@ void UnitSystem::AddUnit(CUnit* unit)
         EcsMain::registry.emplace<UnitId>(entity, unit->id);
         EcsMain::registry.emplace<Team>(entity, unit->team);
         EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
-        EcsMain::registry.emplace<SolidObject::MaxHealth>(entity, unit->unitDef->health);
+        EcsMain::registry.get<SolidObject::MaxHealth>(entity).value = unit->unitDef->health;
 
         unit->entityReference = entity;
 

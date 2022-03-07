@@ -112,9 +112,9 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	captureSpeed   = scale * unitDef->captureSpeed;
 	terraformSpeed = scale * unitDef->terraformSpeed;
 
-	buildSystem.AddUnitBuilder(this);
-
 	CUnit::PreInit(params);
+
+	buildSystem.AddUnitBuilder(this);
 }
 
 

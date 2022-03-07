@@ -199,10 +199,11 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	// if this is < 0, UnitHandler will give us a random ID
 	id = params.unitID;
 	featureDefID = -1;
-	
-	solidObjectSystem.AddObject(this);
 
 	unitDef = params.unitDef;
+
+	unitHandler.AddUnit(this);
+	unitSystem.AddUnit(this);
 
 	{
 		const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(unitDef->wreckName);
@@ -253,7 +254,6 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetRadiusAndHeight(model);
 	UpdateMidAndAimPos();
 
-	unitHandler.AddUnit(this);
 	quadField.MovedUnit(this);
 
 	losStatus[allyteam] = LOS_ALL_MASK_BITS | LOS_INLOS | LOS_INRADAR | LOS_PREVLOS | LOS_CONTRADAR;

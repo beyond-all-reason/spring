@@ -2,7 +2,6 @@
 #define FLOW_ECONOMY_SYSTEM_H__
 
 #include "Sim/Ecs/EcsMain.h"
-#include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/Resource.h"
 
 class CUnit;
@@ -25,6 +24,8 @@ public:
 
     void UpdateUnitFixedEnergyIncome(entt::entity entity, float amount);
 
+    bool RegisterOneOffExpense(CUnit* unit, float amount);
+
     bool IsSystemActive() { return active; }
 
 private:
@@ -46,23 +47,9 @@ private:
     void UpdateProratableEnergyExpense();
     void UpdateProratableCombinedExpense();
 
-    void UpdateNewUnits();
+    void SlowUpdate();
 
     float economyMultiplier = 0.f;
-
-    uint32_t slowUpdateIndexStart = 0;
-    uint32_t lastFrameGroupSize = 0;
-    uint32_t slowUpdateChunkSize = 0;
-
-    SlowUpdateSubSystem fixedMetalIncomeUpdater;
-    SlowUpdateSubSystem fixedEnergyIncomeUpdater;
-    SlowUpdateSubSystem proratableMetalIncomeUpdater;
-    SlowUpdateSubSystem proratableEnergyIncomeUpdater;
-    SlowUpdateSubSystem proratableCombinedIncomeUpdater;
-
-    SlowUpdateSubSystem fixedMetalExpenseUpdater;
-    SlowUpdateSubSystem fixedEnergyExpenseUpdater;
-    SlowUpdateSubSystem proratableCombinedExpenseUpdater;
 };
 
 extern FlowEconomySystem flowEconomySystem;
