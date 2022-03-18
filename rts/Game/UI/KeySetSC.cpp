@@ -137,6 +137,7 @@ bool CKeySetSC::Parse(const std::string& token, bool showerror)
 		if (keyScTest == SDL_SCANCODE_UNKNOWN) {
 			Reset();
 			if (showerror) LOG_L(L_ERROR, "Bad Scancodename: %s", scanCodeName.c_str());
+			LOG_L(L_ERROR, "Bad Scancodename: %s", scanCodeName.c_str());
 			return false;
 		}
 		else {

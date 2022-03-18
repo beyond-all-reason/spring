@@ -1143,6 +1143,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 
 			if (activeController != nullptr) {
 				gameTextInput.ignoreNextChar = false;
+				activeController->KeyReleased(KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym));
 				activeController->KeyReleasedSC(KeyInput::GetNormalizedKeySymbolSC(event.key.keysym.scancode), KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym));
 			}
 		} break;
