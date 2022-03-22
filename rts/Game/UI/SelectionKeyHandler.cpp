@@ -432,6 +432,27 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 			return;
 		} break;
 
+		case hashString("SelectOneNearestMouse"): {
+			if(selection.empty())
+				return;
+
+			const float gndDist = CGround::LineGroundCol(camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist(), false);
+			float3 mousePosition = camera->GetPos() + mouse->dir * gndDist;
+
+			CUnit* closest = nullptr;
+			float closestDistance = 0;
+			for(auto ui = selection.begin(); ui != selection.end(); ui++) {
+				CUnit* unit = *ui;
+				float distance = mousePosition.SqDistance(unit->pos);
+				if (!closest || distance < closestDistance) {
+					closestDistance = distance;
+				closest = unit;
+				}
+			}
+			if(closest)
+				selectedUnitsHandler.AddUnit(closest);
+		} break;
+
 		case hashString("SelectNum"): {
 			ReadDelimiter(selectString);
 			const int num = atoi(ReadToken(selectString).c_str());
