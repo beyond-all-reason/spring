@@ -135,7 +135,7 @@ If the *CONCLUSION* starts with `_ClearSelection`, your new selection will repla
 
 - `SelectAll`: all units
 - `SelectOne`: one unit, will also center the camera on that unit. This command remembers which unit was selected, on repeating the selection command, the **next** unit will be selected, so you can cycle through all matching units.
-- `SelectOneNearestMouse`: one unit, the one closest to the mouse pointer.
+- `SelectClosestToCursor`: one unit, the one closest to the mouse cursor.
 - `SelectNum_<integer>`: `<integer>` units. Repeating this command adds `<integer>` more units.
 - `SelectPart_<float>`: `<float>` percent of the units.
 
@@ -154,6 +154,7 @@ Some examples. Again, "unit" also includes buildings.
   Selects any (one) idle builder (unit or building) on entire map. Repeatedly running this command will cycle through all idle builders.
 
 - `AllMap+_Radar+_ClearSelection_SelectAll+`
+
   Selects all units with radar/sonar/jammer.
 
 - `AllMap+_Not_Aircraft_Weapons+_ClearSelection_SelectAll+`
