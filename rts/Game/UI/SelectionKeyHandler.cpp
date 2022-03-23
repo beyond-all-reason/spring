@@ -432,12 +432,12 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 			return;
 		} break;
 
-		case hashString("SelectOneNearestMouse"): {
+		case hashString("SelectClosestToCursor"): {
 			if (selection.empty())
 				return;
 
-			const float gndDist = CGround::LineGroundCol(camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist(), false);
-			float3 mousePosition = camera->GetPos() + mouse->dir * gndDist;
+			const float groundDist = CGround::LineGroundCol(camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist(), false);
+			float3 mousePosition = camera->GetPos() + mouse->dir * groundDist;
 
 			CUnit* closest = nullptr;
 			float closestDistance = 0;
@@ -445,7 +445,7 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 				float distance = mousePosition.SqDistance(unit->pos);
 				if (!closest || distance < closestDistance) {
 					closestDistance = distance;
-				closest = unit;
+					closest = unit;
 				}
 			}
 			if (closest)
