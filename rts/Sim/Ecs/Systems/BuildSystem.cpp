@@ -9,6 +9,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitTypes/Builder.h"
 #include "System/TimeProfiler.h"
@@ -27,12 +28,14 @@ void returnExcessEco(entt::entity entity, CTeam *team, float excessBuild){
             resToReturn.metal = (EcsMain::registry.get<BuildCostMetal>(entity)).value;
         }
         team->resNextIncome += resToReturn * excessBuild;
+        LOG("%s: %d (M:%f, E:%f))", __func__, (int)entity, resToReturn.metal * excessBuild, resToReturn.energy * excessBuild);
     }
 }
 
-void BuildSystem::AddUnitBuilder(CBuilder *unit){
+void BuildSystem::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;
-    EcsMain::registry.emplace_or_replace<BuildPower>(entity, unit->buildSpeed);
+    auto unitDef = unit->unitDef;
+    EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed);
 
     LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
 }
@@ -51,50 +54,53 @@ void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
         LOG("%s: unit %d has no build capacity", __func__, unit->id);  return;
     }
 
-    if (!EcsMain::registry.all_of<BuildProgress>(targetEntity)){
-        EcsMain::registry.emplace_or_replace<BuildProgress>(targetEntity);
-        EcsMain::registry.emplace_or_replace<BuildTime>(targetEntity, target->buildTime);
-        EcsMain::registry.emplace_or_replace<BuildCostMetal>(targetEntity, target->cost.metal);
-        EcsMain::registry.emplace_or_replace<BuildCostEnergy>(targetEntity, target->cost.energy);
-    }
-
+    EcsMain::registry.emplace_or_replace<FlowEconomy::AwaitingEconomyAssignment>(entity);
     EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity);
-    InitUnitBuildTarget(entity);
-}
 
-// (auto defaultValue) requires -fconcepts-ts or c++20
-template<class T>
-auto GetOptionalComponent(entt::entity entity, float defaultValue) {
-    auto checkPtr = EcsMain::registry.try_get<T>(entity);
-    return checkPtr != nullptr ? checkPtr->value : defaultValue;
-}
-
-void BuildSystem::InitUnitBuildTarget(entt::entity entity) {
     auto& activeBuild = EcsMain::registry.get<ActiveBuild>(entity);
-    auto targetEntity = activeBuild.buildTarget;
+    activeBuild.buildTarget = targetEntity;
 
     auto buildPower = EcsMain::registry.get<BuildPower>(entity).value;
     auto buildTime = EcsMain::registry.get<BuildTime>(targetEntity).value;
     auto costMetal = GetOptionalComponent<BuildCostMetal>(targetEntity, 0.f);
     auto costEnergy = GetOptionalComponent<BuildCostEnergy>(targetEntity, 0.f);
 
-    float step = buildPower / buildTime;
+    float step = (buildPower / buildTime) * GAME_SPEED;
     float metalUse = costMetal * step;
     float energyUse = costEnergy * step;
     int prorationRate = 0;
-    if (metalUse >= 0.f){
+    if (metalUse > 0.f){
         EcsMain::registry.emplace_or_replace<FlowEconomy::MetalProratableUse>(entity, metalUse);
         prorationRate += (int)ProrationRate::PRORATION_ONLY_METAL;
     }
-    if (energyUse >= 0.f) {
+    if (energyUse > 0.f) {
         EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyProratableUse>(entity, energyUse);
         prorationRate += (int)ProrationRate::PRORATION_ONLY_ENERGY;
     }
     activeBuild.currentBuildpower = buildPower;
     activeBuild.prorationType = (ProrationRate)prorationRate;
+    LOG("%s: %d: BuildPower = %f", __func__, (int)entity, buildPower);
 }
 
-void BuildSystem::RemovetUnitBuilder(CUnit *unit) {
+void BuildSystem::AddUnitBeingBuilt(CUnit *unit) {
+    entt::entity entity = unit->entityReference;
+    if (EcsMain::registry.all_of<BuildProgress>(entity))
+        return;
+        
+    EcsMain::registry.emplace_or_replace<BuildProgress>(entity);
+    EcsMain::registry.emplace_or_replace<BuildTime>(entity, unit->buildTime);
+    LOG("%s: %d: BuildTime = %f", __func__, (int)entity, unit->buildTime);
+    if (unit->cost.metal > 0.f) {
+        EcsMain::registry.emplace_or_replace<BuildCostMetal>(entity, unit->cost.metal);
+        LOG("%s: %d: BuildCostMetal = %f", __func__, (int)entity, unit->cost.metal);
+    }
+    if (unit->cost.energy > 0.f) {
+        EcsMain::registry.emplace_or_replace<BuildCostEnergy>(entity, unit->cost.energy);
+        LOG("%s: %d: BuildCostEnergy = %f", __func__, (int)entity, unit->cost.energy);
+    }
+}
+
+void BuildSystem::RemoveUnitBuilder(CUnit *unit) {
     auto entity = unit->entityReference;
     if (! EcsMain::registry.valid(entity)){
         LOG("%s: invalid entityId reference", __func__); return;
@@ -103,6 +109,8 @@ void BuildSystem::RemovetUnitBuilder(CUnit *unit) {
     EcsMain::registry.remove<ActiveBuild>(entity);
     EcsMain::registry.remove<FlowEconomy::MetalProratableUse>(entity);
     EcsMain::registry.remove<FlowEconomy::EnergyProratableUse>(entity);
+
+    LOG("%s", __func__);
 }
 
 entt::entity BuildSystem::GetUnitBuildTarget(CUnit *unit) {
@@ -132,7 +140,8 @@ void BuildSystem::UnpauseBuilder(CUnit *unit) {
     // this may not be currently paused.
     if (activeBuild.currentBuildpower >= 0.f) return;
 
-    InitUnitBuildTarget(entity);
+    // FIXME continue build
+    //AddUnitBeingBuilt(entity);
 }
 
 void BuildSystem::UpdateBuildPower(CUnit *unit, float power) {
@@ -164,9 +173,11 @@ void BuildSystem::Update() {
     if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
        return;
 
+    LOG("BuildSystem::%s: %d", __func__, gs->frameNum);
+
     SCOPED_TIMER("ECS::BuildSystem::Update");
 
-    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>);
+    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>, entt::exclude<FlowEconomy::AwaitingEconomyAssignment>);
     for (auto entity : group) {
         auto buildDetails = group.get<ActiveBuild>(entity);
         auto buildPower = buildDetails.currentBuildpower;
@@ -184,7 +195,7 @@ void BuildSystem::Update() {
         auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(buildTarget)).value;
         auto buildTime = (EcsMain::registry.get<BuildTime>(buildTarget)).value;
 
-        float buildStep = (buildPower*buildRate)/buildTime;
+        float buildStep = (buildPower*buildRate*BUILD_UPDATE_RATE)/buildTime;
         float nextProgress = buildProgress + buildStep;
         float nextHealth = health + maxHealth * buildStep;
 
@@ -195,5 +206,6 @@ void BuildSystem::Update() {
         if (buildProgress == 1.f){
             EcsMain::registry.emplace<BuildComplete>(buildTarget);
         }
+        LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
     }
 }

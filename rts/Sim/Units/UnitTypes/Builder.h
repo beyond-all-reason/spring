@@ -65,7 +65,7 @@ public:
 	bool range3D; ///< spheres instead of infinite cylinders for range tests
 
 	float buildDistance;
-	float buildSpeed;
+	//float buildSpeed;
 	float repairSpeed;
 	float reclaimSpeed;
 	float resurrectSpeed;

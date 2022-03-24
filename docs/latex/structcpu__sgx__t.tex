@@ -1,0 +1,112 @@
+\doxysection{cpu\+\_\+sgx\+\_\+t Struct Reference}
+\label{structcpu__sgx__t}\index{cpu\_sgx\_t@{cpu\_sgx\_t}}
+
+
+This contains information about SGX features of the processor Example usage\+:  
+
+
+
+
+{\ttfamily \#include $<$libcpuid.\+h$>$}
+
+\doxysubsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \textbf{ present}
+\item 
+uint8\+\_\+t \textbf{ max\+\_\+enclave\+\_\+32bit}
+\item 
+uint8\+\_\+t \textbf{ max\+\_\+enclave\+\_\+64bit}
+\item 
+uint8\+\_\+t \textbf{ flags} [SGX\+\_\+\+FLAGS\+\_\+\+MAX]
+\item 
+int \textbf{ num\+\_\+epc\+\_\+sections}
+\item 
+uint32\+\_\+t \textbf{ misc\+\_\+select}
+\item 
+uint64\+\_\+t \textbf{ secs\+\_\+attributes}
+\item 
+uint64\+\_\+t \textbf{ secs\+\_\+xfrm}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This contains information about SGX features of the processor Example usage\+: 
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{...}
+\DoxyCodeLine{struct cpu\_raw\_data\_t raw;}
+\DoxyCodeLine{\textcolor{keyword}{struct }cpu\_id\_t id;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordflow}{if} (cpuid\_get\_raw\_data(\&raw) == 0 \&\& cpu\_identify(\&raw, \&\textcolor{keywordtype}{id}) == 0 \&\& \textcolor{keywordtype}{id}.sgx.present) \{}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}SGX is present.\(\backslash\)n"{}});}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}SGX1 instructions: \%s.\(\backslash\)n"{}}, \textcolor{keywordtype}{id}.sgx.flags[INTEL\_SGX1] ? \textcolor{stringliteral}{"{}present"{}} : \textcolor{stringliteral}{"{}absent"{}});}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}SGX2 instructions: \%s.\(\backslash\)n"{}}, \textcolor{keywordtype}{id}.sgx.flags[INTEL\_SGX2] ? \textcolor{stringliteral}{"{}present"{}} : \textcolor{stringliteral}{"{}absent"{}});}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}Max 32-\/bit enclave size: 2\string^\%d bytes.\(\backslash\)n"{}}, \textcolor{keywordtype}{id}.sgx.max\_enclave\_32bit);}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}Max 64-\/bit enclave size: 2\string^\%d bytes.\(\backslash\)n"{}}, \textcolor{keywordtype}{id}.sgx.max\_enclave\_64bit);}
+\DoxyCodeLine{  \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < \textcolor{keywordtype}{id}.sgx.num\_epc\_sections; i++) \{}
+\DoxyCodeLine{    \textcolor{keyword}{struct }cpu\_epc\_t epc = cpuid\_get\_epc(i, NULL);}
+\DoxyCodeLine{    printf(\textcolor{stringliteral}{"{}EPC section \#\%d: address = \%x, size = \%d bytes.\(\backslash\)n"{}}, epc.address, epc.size);}
+\DoxyCodeLine{  \}}
+\DoxyCodeLine{\} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{  printf(\textcolor{stringliteral}{"{}SGX is not present.\(\backslash\)n"{}});}
+\DoxyCodeLine{\}}
+
+\end{DoxyCode}
+ 
+
+\doxysubsection{Field Documentation}
+\mbox{\label{structcpu__sgx__t_a4e61408256b02bf7b7a11f8a138c4d64}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!flags@{flags}}
+\index{flags@{flags}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{flags}
+{\footnotesize\ttfamily uint8\+\_\+t cpu\+\_\+sgx\+\_\+t\+::flags[SGX\+\_\+\+FLAGS\+\_\+\+MAX]}
+
+contains SGX feature flags. See the \doxyref{INTEL\+\_\+\+SGX$\ast$}{p.}{group__libcpuid_gab7731d6f7447310c9a29d2c92c867d4f} macros below. \mbox{\label{structcpu__sgx__t_a0de3dd00f3daf01b7d24f7b32f367125}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!max\_enclave\_32bit@{max\_enclave\_32bit}}
+\index{max\_enclave\_32bit@{max\_enclave\_32bit}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{max\_enclave\_32bit}
+{\footnotesize\ttfamily uint8\+\_\+t cpu\+\_\+sgx\+\_\+t\+::max\+\_\+enclave\+\_\+32bit}
+
+Max enclave size in 32-\/bit mode. This is a power-\/of-\/two value\+: if it is \char`\"{}31\char`\"{}, then the max enclave size is 2$^\wedge$31 bytes (2 GiB). \mbox{\label{structcpu__sgx__t_a602b21f7a1ef5632190fb0b569783f08}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!max\_enclave\_64bit@{max\_enclave\_64bit}}
+\index{max\_enclave\_64bit@{max\_enclave\_64bit}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{max\_enclave\_64bit}
+{\footnotesize\ttfamily uint8\+\_\+t cpu\+\_\+sgx\+\_\+t\+::max\+\_\+enclave\+\_\+64bit}
+
+Max enclave size in 64-\/bit mode. This is a power-\/of-\/two value\+: if it is \char`\"{}36\char`\"{}, then the max enclave size is 2$^\wedge$36 bytes (64 GiB). \mbox{\label{structcpu__sgx__t_a75e9a9c052936d6ae94af056a322f766}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!misc\_select@{misc\_select}}
+\index{misc\_select@{misc\_select}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{misc\_select}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+sgx\+\_\+t\+::misc\+\_\+select}
+
+bit vector of the supported extended features that can be written to the MISC region of the SSA (Save State Area) \mbox{\label{structcpu__sgx__t_ad46234d94db1beb4e58b9e3b558261c2}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!num\_epc\_sections@{num\_epc\_sections}}
+\index{num\_epc\_sections@{num\_epc\_sections}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{num\_epc\_sections}
+{\footnotesize\ttfamily int cpu\+\_\+sgx\+\_\+t\+::num\+\_\+epc\+\_\+sections}
+
+number of Enclave Page Cache (EPC) sections. Info for each section is available through the \doxyref{cpuid\+\_\+get\+\_\+epc()}{p.}{group__libcpuid_gad973835515aa3b0d807b07279f03b965} function \mbox{\label{structcpu__sgx__t_a9e44e3fb6976c51439d5acb01024e8c2}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!present@{present}}
+\index{present@{present}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{present}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+sgx\+\_\+t\+::present}
+
+Whether SGX is present (boolean) \mbox{\label{structcpu__sgx__t_a14cd1ee5faaabae392f9ed4194aebdca}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!secs\_attributes@{secs\_attributes}}
+\index{secs\_attributes@{secs\_attributes}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{secs\_attributes}
+{\footnotesize\ttfamily uint64\+\_\+t cpu\+\_\+sgx\+\_\+t\+::secs\+\_\+attributes}
+
+a bit vector of the attributes that can be set to SECS.\+ATTRIBUTES via ECREATE. Corresponds to bits 0-\/63 (incl.) of SECS.\+ATTRIBUTES. \mbox{\label{structcpu__sgx__t_a7dea9debd9b551a6e86df05a2ee234bc}} 
+\index{cpu\_sgx\_t@{cpu\_sgx\_t}!secs\_xfrm@{secs\_xfrm}}
+\index{secs\_xfrm@{secs\_xfrm}!cpu\_sgx\_t@{cpu\_sgx\_t}}
+\doxysubsubsection{secs\_xfrm}
+{\footnotesize\ttfamily uint64\+\_\+t cpu\+\_\+sgx\+\_\+t\+::secs\+\_\+xfrm}
+
+a bit vector of the bits that can be set in the XSAVE feature request mask; Corresponds to bits 64-\/127 of SECS.\+ATTRIBUTES. 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+rts/lib/libcpuid/libcpuid/\textbf{ libcpuid.\+h}\end{DoxyCompactItemize}

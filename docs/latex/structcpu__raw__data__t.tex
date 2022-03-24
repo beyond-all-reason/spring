@@ -1,0 +1,83 @@
+\doxysection{cpu\+\_\+raw\+\_\+data\+\_\+t Struct Reference}
+\label{structcpu__raw__data__t}\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+
+
+Contains just the raw CPUID data.  
+
+
+
+
+{\ttfamily \#include $<$libcpuid.\+h$>$}
+
+\doxysubsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \textbf{ basic\+\_\+cpuid} [MAX\+\_\+\+CPUID\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ ext\+\_\+cpuid} [MAX\+\_\+\+EXT\+\_\+\+CPUID\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ intel\+\_\+fn4} [MAX\+\_\+\+INTELFN4\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ intel\+\_\+fn11} [MAX\+\_\+\+INTELFN11\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ intel\+\_\+fn12h} [MAX\+\_\+\+INTELFN12\+H\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ intel\+\_\+fn14h} [MAX\+\_\+\+INTELFN14\+H\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\item 
+uint32\+\_\+t \textbf{ amd\+\_\+fn8000001dh} [MAX\+\_\+\+AMDFN8000001\+DH\+\_\+\+LEVEL][NUM\+\_\+\+REGS]
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Contains just the raw CPUID data. 
+
+This contains only the most basic CPU data, required to do identification and feature recognition. Every processor should be identifiable using this data only. 
+
+\doxysubsection{Field Documentation}
+\mbox{\label{structcpu__raw__data__t_ac9052fc46f2995e714356e02798f3e0b}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!amd\_fn8000001dh@{amd\_fn8000001dh}}
+\index{amd\_fn8000001dh@{amd\_fn8000001dh}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{amd\_fn8000001dh}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::amd\+\_\+fn8000001dh[MAX\+\_\+\+AMDFN8000001\+DH\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+when the CPU is AMD and supports leaf 8000001Dh (topology information for the DC) this stores the result of CPUID with eax = 8000001Dh and ecx = 0, 1, 2... \mbox{\label{structcpu__raw__data__t_a8387592e73ec8b1af6e43d94ef9894e0}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!basic\_cpuid@{basic\_cpuid}}
+\index{basic\_cpuid@{basic\_cpuid}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{basic\_cpuid}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::basic\+\_\+cpuid[MAX\+\_\+\+CPUID\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+contains results of CPUID for eax = 0, 1, ... \mbox{\label{structcpu__raw__data__t_acafcdc699f6b3fe6f61bf8198df9b575}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!ext\_cpuid@{ext\_cpuid}}
+\index{ext\_cpuid@{ext\_cpuid}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{ext\_cpuid}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::ext\+\_\+cpuid[MAX\+\_\+\+EXT\+\_\+\+CPUID\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+contains results of CPUID for eax = 0x80000000, 0x80000001, ... \mbox{\label{structcpu__raw__data__t_ae31e5a5ef73698ed7e8a2eea7a33216e}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!intel\_fn11@{intel\_fn11}}
+\index{intel\_fn11@{intel\_fn11}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{intel\_fn11}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::intel\+\_\+fn11[MAX\+\_\+\+INTELFN11\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+when the CPU is intel and it supports leaf 0Bh (Extended Topology enumeration leaf), this stores the result of CPUID with eax = 11 and ecx = 0, 1, 2... \mbox{\label{structcpu__raw__data__t_a97fbd39a2ce6e1464b79c04ec38c567b}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!intel\_fn12h@{intel\_fn12h}}
+\index{intel\_fn12h@{intel\_fn12h}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{intel\_fn12h}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::intel\+\_\+fn12h[MAX\+\_\+\+INTELFN12\+H\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+when the CPU is intel and supports leaf 12h (SGX enumeration leaf), this stores the result of CPUID with eax = 0x12 and ecx = 0, 1, 2... \mbox{\label{structcpu__raw__data__t_abb66429aecbd817d408ce68f405a5c80}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!intel\_fn14h@{intel\_fn14h}}
+\index{intel\_fn14h@{intel\_fn14h}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{intel\_fn14h}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::intel\+\_\+fn14h[MAX\+\_\+\+INTELFN14\+H\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+when the CPU is intel and supports leaf 14h (Intel Processor Trace capabilities leaf). this stores the result of CPUID with eax = 0x12 and ecx = 0, 1, 2... \mbox{\label{structcpu__raw__data__t_a0ff6f438d966bf7d4664e8e46097d4c2}} 
+\index{cpu\_raw\_data\_t@{cpu\_raw\_data\_t}!intel\_fn4@{intel\_fn4}}
+\index{intel\_fn4@{intel\_fn4}!cpu\_raw\_data\_t@{cpu\_raw\_data\_t}}
+\doxysubsubsection{intel\_fn4}
+{\footnotesize\ttfamily uint32\+\_\+t cpu\+\_\+raw\+\_\+data\+\_\+t\+::intel\+\_\+fn4[MAX\+\_\+\+INTELFN4\+\_\+\+LEVEL][NUM\+\_\+\+REGS]}
+
+when the CPU is intel and it supports deterministic cache information\+: this contains the results of CPUID for eax = 4 and ecx = 0, 1, ... 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+rts/lib/libcpuid/libcpuid/\textbf{ libcpuid.\+h}\end{DoxyCompactItemize}

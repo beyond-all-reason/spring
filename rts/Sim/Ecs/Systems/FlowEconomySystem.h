@@ -14,15 +14,7 @@ public:
 
     void AddFlowEconomyUnit(CUnit *unit);
 
-    void UpdateUnitProratableEnergyIncome(CUnit *unit, float amount);
-    void UpdateUnitProratableMetalIncome(CUnit *unit, float amount);
-    void UpdateUnitFixedEnergyIncome(CUnit *unit, float amount);
-    void UpdateUnitFixedMetalIncome(CUnit *unit, float amount);
-
-    void UpdateUnitProratableEnergyUse(CUnit *unit, float amount);
-    void UpdateUnitProratableMetalUse(CUnit *unit, float amount);
-
-    void UpdateUnitFixedEnergyIncome(entt::entity entity, float amount);
+    //void UpdateUnitFixedEnergyIncome(entt::entity entity, float amount);
 
     bool RegisterOneOffExpense(CUnit* unit, float amount);
 

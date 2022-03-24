@@ -29,6 +29,7 @@
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/ITreeDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -1566,7 +1567,8 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 					}
 				} break;
 				case hashString("build"): {
-					if ((unit->buildProgress = lua_tofloat(L, -1)) >= 1.0f)
+					auto& unitBuildProgress = buildSystem.GetBuildProgress(unit->entityReference);
+					if ((unitBuildProgress = lua_tofloat(L, -1)) >= 1.0f)
 						unit->FinishedBuilding(false);
 				} break;
 				default: {
@@ -2125,7 +2127,8 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	CFactory* factory = dynamic_cast<CFactory*>(unit);
 
 	if (factory != nullptr) {
-		factory->buildSpeed = buildSpeed;
+		buildSystem.GetBuildSpeed(unit->entityReference) = buildSpeed;
+		//factory->buildSpeed = buildSpeed;
 		return 0;
 	}
 
@@ -2134,7 +2137,9 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	if (builder == nullptr)
 		return 0;
 
-	builder->buildSpeed = buildSpeed;
+	//builder->buildSpeed = buildSpeed;
+	auto& builderBuildSpeed = buildSystem.GetBuildSpeed(unit->entityReference);
+	builderBuildSpeed = buildSpeed;
 	if (lua_isnumber(L, 3)) {
 		builder->repairSpeed    = buildScale * max(0.0f, lua_tofloat(L, 3));
 	}

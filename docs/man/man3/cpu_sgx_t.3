@@ -1,0 +1,89 @@
+.TH "cpu_sgx_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_sgx_t \- This contains information about SGX features of the processor Example usage:  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint32_t \fBpresent\fP"
+.br
+.ti -1c
+.RI "uint8_t \fBmax_enclave_32bit\fP"
+.br
+.ti -1c
+.RI "uint8_t \fBmax_enclave_64bit\fP"
+.br
+.ti -1c
+.RI "uint8_t \fBflags\fP [SGX_FLAGS_MAX]"
+.br
+.ti -1c
+.RI "int \fBnum_epc_sections\fP"
+.br
+.ti -1c
+.RI "uint32_t \fBmisc_select\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBsecs_attributes\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBsecs_xfrm\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This contains information about SGX features of the processor Example usage: 
+
+
+.PP
+.nf
+\&.\&.\&.
+struct cpu_raw_data_t raw;
+struct cpu_id_t id;
+
+if (cpuid_get_raw_data(&raw) == 0 && cpu_identify(&raw, &id) == 0 && id\&.sgx\&.present) {
+  printf("SGX is present\&.\n");
+  printf("SGX1 instructions: %s\&.\n", id\&.sgx\&.flags[INTEL_SGX1] ? "present" : "absent");
+  printf("SGX2 instructions: %s\&.\n", id\&.sgx\&.flags[INTEL_SGX2] ? "present" : "absent");
+  printf("Max 32-bit enclave size: 2^%d bytes\&.\n", id\&.sgx\&.max_enclave_32bit);
+  printf("Max 64-bit enclave size: 2^%d bytes\&.\n", id\&.sgx\&.max_enclave_64bit);
+  for (int i = 0; i < id\&.sgx\&.num_epc_sections; i++) {
+    struct cpu_epc_t epc = cpuid_get_epc(i, NULL);
+    printf("EPC section #%d: address = %x, size = %d bytes\&.\n", epc\&.address, epc\&.size);
+  }
+} else {
+  printf("SGX is not present\&.\n");
+}
+
+.fi
+.PP
+ 
+.SH "Field Documentation"
+.PP 
+.SS "uint8_t cpu_sgx_t::flags[SGX_FLAGS_MAX]"
+contains SGX feature flags\&. See the \fBINTEL_SGX*\fP macros below\&. 
+.SS "uint8_t cpu_sgx_t::max_enclave_32bit"
+Max enclave size in 32-bit mode\&. This is a power-of-two value: if it is '31', then the max enclave size is 2^31 bytes (2 GiB)\&. 
+.SS "uint8_t cpu_sgx_t::max_enclave_64bit"
+Max enclave size in 64-bit mode\&. This is a power-of-two value: if it is '36', then the max enclave size is 2^36 bytes (64 GiB)\&. 
+.SS "uint32_t cpu_sgx_t::misc_select"
+bit vector of the supported extended features that can be written to the MISC region of the SSA (Save State Area) 
+.SS "int cpu_sgx_t::num_epc_sections"
+number of Enclave Page Cache (EPC) sections\&. Info for each section is available through the \fBcpuid_get_epc()\fP function 
+.SS "uint32_t cpu_sgx_t::present"
+Whether SGX is present (boolean) 
+.SS "uint64_t cpu_sgx_t::secs_attributes"
+a bit vector of the attributes that can be set to SECS\&.ATTRIBUTES via ECREATE\&. Corresponds to bits 0-63 (incl\&.) of SECS\&.ATTRIBUTES\&. 
+.SS "uint64_t cpu_sgx_t::secs_xfrm"
+a bit vector of the bits that can be set in the XSAVE feature request mask; Corresponds to bits 64-127 of SECS\&.ATTRIBUTES\&. 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

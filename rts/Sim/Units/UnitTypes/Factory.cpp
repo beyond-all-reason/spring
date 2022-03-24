@@ -6,6 +6,8 @@
 #include "Game/WaitCommandsAI.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/QuadField.h"
@@ -30,7 +32,7 @@
 
 CR_BIND_DERIVED(CFactory, CBuilding, )
 CR_REG_METADATA(CFactory, (
-	CR_MEMBER(buildSpeed),
+	//CR_MEMBER(buildSpeed),
 	CR_MEMBER(lastBuildUpdateFrame),
 	CR_MEMBER(curBuildDef),
 	CR_MEMBER(curBuild),
@@ -44,7 +46,7 @@ CR_REG_METADATA(CFactory, (
 
 CFactory::CFactory():
 	CBuilding(),
-	buildSpeed(100.0f),
+	//buildSpeed(100.0f),
 	curBuild(nullptr),
 	curBuildDef(nullptr),
 	lastBuildUpdateFrame(-1)
@@ -64,7 +66,13 @@ void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool
 void CFactory::PreInit(const UnitLoadParams& params)
 {
 	unitDef = params.unitDef;
-	buildSpeed = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
+
+	buildSystem.AddUnitBuilder(this);
+
+	//buildSpeed = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
+	//if (!flowEconomySystem.IsSystemActive()) {
+		buildSystem.GetBuildSpeed(this->entityReference) = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
+	//}
 
 	CBuilding::PreInit(params);
 }
@@ -151,6 +159,8 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 
 	const float3& buildPos = CalcBuildPos(script->QueryBuildInfo());
 
+	LOG("%s: [%d] Checking Ground Blocked", __func__, (int)this->entityReference);
+
 	// wait until buildPos is no longer blocked (eg. by a previous buildee)
 	//
 	// it might rarely be the case that a unit got stuck inside the factory
@@ -158,6 +168,8 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	// to players to fix
 	if (groundBlockingObjectMap.GroundBlocked(buildPos, this))
 		return;
+
+	LOG("%s: [%d] Ground Clear", __func__, (int)this->entityReference);
 
 	UnitLoadParams buildeeParams = {buildeeDef, this, buildPos, ZeroVector, -1, team, buildFacing, true, false};
 	CUnit* buildee = unitLoader->LoadUnit(buildeeParams);
@@ -174,6 +186,8 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	// has started, otherwise we would keep being called
 	curBuild = buildee;
 	curBuildDef = nullptr;
+
+	buildSystem.AddUnitBuildTarget(this, buildee);
 
 	if (losStatus[gu->myAllyTeam] & LOS_INLOS) {
 		Channels::General->PlayRandomSample(unitDef->sounds.build, buildPos);
@@ -211,12 +225,15 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 
 	if (!queue.empty() && (queue.front().GetID() == CMD_WAIT)) {
 		buildee->AddBuildPower(this, 0.0f);
+		buildSystem.PauseBuilder(this);
 		return;
 	}
 
+	auto buildSpeed = buildSystem.GetBuildSpeed(this->entityReference);
 	if (!buildee->AddBuildPower(this, buildSpeed))
 		return;
 
+	buildSystem.UnpauseBuilder(this);
 	CreateNanoParticle();
 }
 
@@ -280,11 +297,13 @@ void CFactory::StopBuild()
 
 	if (curBuild) {
 		if (curBuild->beingBuilt) {
-			AddMetal(curBuild->cost.metal * curBuild->buildProgress, false);
+			AddMetal(curBuild->cost.metal * buildSystem.GetBuildProgress(curBuild->entityReference), false);
 			curBuild->KillUnit(nullptr, false, true);
 		}
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	}
+
+	buildSystem.RemoveUnitBuilder(this);
 
 	curBuild = nullptr;
 	curBuildDef = nullptr;

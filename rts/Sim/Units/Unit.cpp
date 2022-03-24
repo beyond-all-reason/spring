@@ -37,6 +37,8 @@
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Systems/UnitEconomySystem.h"
+#include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -202,8 +204,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	unitDef = params.unitDef;
 
-	unitHandler.AddUnit(this);
-	unitSystem.AddUnit(this);
+	solidObjectSystem.AddObject(this);
+	flowEconomySystem.AddFlowEconomyUnit(this);
 
 	{
 		const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(unitDef->wreckName);
@@ -254,6 +256,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetRadiusAndHeight(model);
 	UpdateMidAndAimPos();
 
+	unitHandler.AddUnit(this);
 	quadField.MovedUnit(this);
 
 	losStatus[allyteam] = LOS_ALL_MASK_BITS | LOS_INLOS | LOS_INRADAR | LOS_PREVLOS | LOS_CONTRADAR;
@@ -311,6 +314,9 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	harvestStorage.metal  = unitDef->harvestMetalStorage;
 	harvestStorage.energy = unitDef->harvestEnergyStorage;
+
+	if (beingBuilt)
+		buildSystem.AddUnitBeingBuilt(this);
 
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
@@ -420,7 +426,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		return;
 
 	beingBuilt = false;
-	buildProgress = 1.0f;
+	//buildProgress = 1.0f;
 	mass = unitDef->mass;
 
 	if (soloBuilder != nullptr) {
@@ -822,17 +828,17 @@ void CUnit::TransporteeKilled(const CObject* o)
 
 void CUnit::UpdateResources()
 {
-	resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
-	resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
-	resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
-	resourcesUse.energy  = resourcesUseI.energy  + resourcesUseOld.energy;
+	// resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
+	// resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
+	// resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
+	// resourcesUse.energy  = resourcesUseI.energy  + resourcesUseOld.energy;
 
-	resourcesMakeOld.metal  = resourcesMakeI.metal;
-	resourcesUseOld.metal   = resourcesUseI.metal;
-	resourcesMakeOld.energy = resourcesMakeI.energy;
-	resourcesUseOld.energy  = resourcesUseI.energy;
+	// resourcesMakeOld.metal  = resourcesMakeI.metal;
+	// resourcesUseOld.metal   = resourcesUseI.metal;
+	// resourcesMakeOld.energy = resourcesMakeI.energy;
+	// resourcesUseOld.energy  = resourcesUseI.energy;
 
-	resourcesMakeI.metal = resourcesUseI.metal = resourcesMakeI.energy = resourcesUseI.energy = 0.0f;
+	// resourcesMakeI.metal = resourcesUseI.metal = resourcesMakeI.energy = resourcesUseI.energy = 0.0f;
 }
 
 void CUnit::SetLosStatus(int at, unsigned short newStatus)
@@ -989,6 +995,7 @@ void CUnit::SlowUpdate()
 			float buildDecay = buildTime * modInfo.constructionDecaySpeed;
 
 			buildDecay = 1.0f / std::max(0.001f, buildDecay);
+			auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
 			buildDecay = std::min(buildProgress, buildDecay);
 
 			health         = std::max(0.0f, health - maxHealth * buildDecay);
@@ -1925,6 +1932,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 		if (beingBuilt) {
 			// build
+			auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
 			const float step = std::min(amount / buildTime, 1.0f - buildProgress);
 			const float metalCostStep  = cost.metal  * step;
 			const float energyCostStep = cost.energy * step;
@@ -1996,6 +2004,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		auto& health = unitSystem.UnitHealth(entityReference);
 		auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
 
+		auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
 		const float step = std::max(amount / buildTime, -buildProgress);
 		const float energyRefundStep = cost.energy * step;
 		const float metalRefundStep  =  cost.metal * step;
@@ -2213,6 +2222,7 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 		return true;
 	}*/
 	resourcesMakeI += pack;
+	unitEconomySystem.
 	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
 }
 
@@ -2342,28 +2352,55 @@ void CUnit::Activate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		if (unitDef->energyUpkeep){
+		if (unitDef->energyUpkeep < 0.f) {
+			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, (-unitDef->energyUpkeep));
+			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
+		}
+		else if (unitDef->energyUpkeep){
 			flowEconomySystem.UpdateUnitProratableEnergyUse(this, unitDef->energyUpkeep);
 			flowEconomySystem.UpdateUnitProratableMetalIncome(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+			unitEconomySystem.UpdateEconomyTrackEnergyUse(entityReference);
+			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackEnergyUse(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
 
-			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, gs->frameNum, unitDef->energyUpkeep);
-			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, gs->frameNum, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, (int)entityReference, unitDef->energyUpkeep);
+			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
 		}
 		else if (unitDef->energyMake) {
 			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
+			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
 
-			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, gs->frameNum, unitDef->energyMake);
+			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
 		}
 		if (unitDef->metalUpkeep){
+			flowEconomySystem.UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
+			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
+		}
+		else if (unitDef->metalUpkeep){
 			flowEconomySystem.UpdateUnitProratableMetalUse(this, unitDef->metalUpkeep);
 			flowEconomySystem.UpdateUnitProratableEnergyIncome(this, unitDef->energyMake);
+			unitEconomySystem.UpdateEconomyTrackMetalUse(entityReference);
+			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackMetalUse(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
 		}
 		else if (unitDef->metalMake){
 			flowEconomySystem.UpdateUnitFixedMetalIncome(this, unitDef->metalMake);
+			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
+
+			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake);
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			envResourceSystem.ActivateGenerator(this);
+			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
+			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
 		}
+		
 	}
 }
 
@@ -2924,7 +2961,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(transportCapacityUsed),
 	CR_MEMBER(transportMassUsed),
 
-	CR_MEMBER(buildProgress),
+	//CR_MEMBER(buildProgress),
 	CR_MEMBER(groundLevelled),
 	CR_MEMBER(terraformLeft),
 	CR_MEMBER(repairAmount),

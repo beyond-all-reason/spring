@@ -11,6 +11,7 @@
 #include "Map/ReadMap.h"
 #include "System/SpringMath.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -37,7 +38,7 @@ CR_BIND_DERIVED(CBuilder, CUnit, )
 CR_REG_METADATA(CBuilder, (
 	CR_MEMBER(range3D),
 	CR_MEMBER(buildDistance),
-	CR_MEMBER(buildSpeed),
+	//CR_MEMBER(buildSpeed),
 	CR_MEMBER(repairSpeed),
 	CR_MEMBER(reclaimSpeed),
 	CR_MEMBER(resurrectSpeed),
@@ -69,7 +70,7 @@ CBuilder::CBuilder():
 	CUnit(),
 	range3D(true),
 	buildDistance(16),
-	buildSpeed(100),
+	//buildSpeed(100),
 	repairSpeed(100),
 	reclaimSpeed(100),
 	resurrectSpeed(100),
@@ -103,9 +104,11 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
+	buildSystem.AddUnitBuilder(this);
+
 	const float scale = (1.0f / TEAM_SLOWUPDATE_RATE);
 
-	buildSpeed     = scale * unitDef->buildSpeed;
+	buildSystem.GetBuildSpeed(this->entityReference) = scale * unitDef->buildSpeed;
 	repairSpeed    = scale * unitDef->repairSpeed;
 	reclaimSpeed   = scale * unitDef->reclaimSpeed;
 	resurrectSpeed = scale * unitDef->resurrectSpeed;
@@ -113,8 +116,6 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	terraformSpeed = scale * unitDef->terraformSpeed;
 
 	CUnit::PreInit(params);
-
-	buildSystem.AddUnitBuilder(this);
 }
 
 
@@ -123,7 +124,7 @@ bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 	if (!unitDef->canAssist)
 		return false;
 
-	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (u->buildProgress < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
+	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (buildSystem.GetBuildProgress(u->entityReference) < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
 }
 
 
@@ -300,7 +301,7 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
-		if (curBuildee->buildProgress < 1.0f) {
+		if (buildSystem.GetBuildProgress(curBuildee->entityReference) < 1.0f) {
 			// prevent buildee from decaying (we cannot call StopBuild here)
 			curBuildee->AddBuildPower(this, 0.0f);
 			buildSystem.PauseBuilder(this);
@@ -341,10 +342,12 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	// adjusted build-speed: use repair-speed on units with
 	// progress >= 1 rather than raw build-speed on buildees
 	// with progress < 1
-	float adjBuildSpeed = buildSpeed;
+	//float adjBuildSpeed = buildSpeed;
+	float adjBuildSpeed = buildSystem.GetBuildSpeed(this->entityReference);
 
-	if (curBuildee->buildProgress >= 1.0f)
-		adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+	if (!flowEconomySystem.IsSystemActive())
+		if (buildSystem.GetBuildProgress(curBuildee->entityReference) >= 1.0f)
+			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
 		buildSystem.UnpauseBuilder(this);
@@ -701,7 +704,7 @@ void CBuilder::StopBuild(bool callScript)
 
 	terraforming = false;
 
-	buildSystem.RemovetUnitBuilder(this);
+	buildSystem.RemoveUnitBuilder(this);
 
 	if (callScript)
 		script->StopBuilding();

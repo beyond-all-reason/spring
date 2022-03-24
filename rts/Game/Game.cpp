@@ -66,6 +66,8 @@
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
+#include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
+#include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -263,6 +265,8 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 
 	flowEconomySystem.Init();
 	envResourceSystem.Init();
+	unitEconomySystem.Init();
+	unitEconomyReportSystem.Init();
 
 	// needed for LuaIntro (pushes LuaConstGame)
 	assert(mapInfo == nullptr);

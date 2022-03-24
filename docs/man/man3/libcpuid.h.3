@@ -1,0 +1,267 @@
+.TH "rts/lib/libcpuid/libcpuid/libcpuid.h" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+rts/lib/libcpuid/libcpuid/libcpuid.h
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'libcpuid_types\&.h'\fP
+.br
+\fC#include 'libcpuid_constants\&.h'\fP
+.br
+
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBcpu_raw_data_t\fP"
+.br
+.RI "Contains just the raw CPUID data\&. "
+.ti -1c
+.RI "struct \fBcpu_sgx_t\fP"
+.br
+.RI "This contains information about SGX features of the processor Example usage: "
+.ti -1c
+.RI "struct \fBcpu_id_t\fP"
+.br
+.RI "This contains the recognized CPU features/info\&. "
+.ti -1c
+.RI "struct \fBcpu_mark_t\fP"
+.br
+.RI "Internal structure, used in cpu_tsc_mark, cpu_tsc_unmark and cpu_clock_by_mark\&. "
+.ti -1c
+.RI "struct \fBcpu_epc_t\fP"
+.br
+.RI "The return value of \fBcpuid_get_epc()\fP\&. "
+.ti -1c
+.RI "struct \fBcpu_list_t\fP"
+.br
+.RI "a structure that holds a list of processor names "
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBNUM_CPU_VENDORS\fP   NUM_CPU_VENDORS"
+.br
+.ti -1c
+.RI "#define \fBCPU_INVALID_VALUE\fP   0x3fffffff"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef void(* \fBlibcpuid_warn_fn_t\fP) (const char *msg)"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBcpu_vendor_t\fP { \fBVENDOR_INTEL\fP = 0, \fBVENDOR_AMD\fP, \fBVENDOR_CYRIX\fP, \fBVENDOR_NEXGEN\fP, \fBVENDOR_TRANSMETA\fP, \fBVENDOR_UMC\fP, \fBVENDOR_CENTAUR\fP, \fBVENDOR_RISE\fP, \fBVENDOR_SIS\fP, \fBVENDOR_NSC\fP, \fBVENDOR_HYGON\fP, \fBNUM_CPU_VENDORS\fP, \fBVENDOR_UNKNOWN\fP = -1 }"
+.br
+.RI "CPU vendor, as guessed from the Vendor String\&. "
+.ti -1c
+.RI "enum \fBcpu_feature_t\fP { \fBCPU_FEATURE_FPU\fP = 0, \fBCPU_FEATURE_VME\fP, \fBCPU_FEATURE_DE\fP, \fBCPU_FEATURE_PSE\fP, \fBCPU_FEATURE_TSC\fP, \fBCPU_FEATURE_MSR\fP, \fBCPU_FEATURE_PAE\fP, \fBCPU_FEATURE_MCE\fP, \fBCPU_FEATURE_CX8\fP, \fBCPU_FEATURE_APIC\fP, \fBCPU_FEATURE_MTRR\fP, \fBCPU_FEATURE_SEP\fP, \fBCPU_FEATURE_PGE\fP, \fBCPU_FEATURE_MCA\fP, \fBCPU_FEATURE_CMOV\fP, \fBCPU_FEATURE_PAT\fP, \fBCPU_FEATURE_PSE36\fP, \fBCPU_FEATURE_PN\fP, \fBCPU_FEATURE_CLFLUSH\fP, \fBCPU_FEATURE_DTS\fP, \fBCPU_FEATURE_ACPI\fP, \fBCPU_FEATURE_MMX\fP, \fBCPU_FEATURE_FXSR\fP, \fBCPU_FEATURE_SSE\fP, \fBCPU_FEATURE_SSE2\fP, \fBCPU_FEATURE_SS\fP, \fBCPU_FEATURE_HT\fP, \fBCPU_FEATURE_TM\fP, \fBCPU_FEATURE_IA64\fP, \fBCPU_FEATURE_PBE\fP, \fBCPU_FEATURE_PNI\fP, \fBCPU_FEATURE_PCLMUL\fP, \fBCPU_FEATURE_DTS64\fP, \fBCPU_FEATURE_MONITOR\fP, \fBCPU_FEATURE_DS_CPL\fP, \fBCPU_FEATURE_VMX\fP, \fBCPU_FEATURE_SMX\fP, \fBCPU_FEATURE_EST\fP, \fBCPU_FEATURE_TM2\fP, \fBCPU_FEATURE_SSSE3\fP, \fBCPU_FEATURE_CID\fP, \fBCPU_FEATURE_CX16\fP, \fBCPU_FEATURE_XTPR\fP, \fBCPU_FEATURE_PDCM\fP, \fBCPU_FEATURE_DCA\fP, \fBCPU_FEATURE_SSE4_1\fP, \fBCPU_FEATURE_SSE4_2\fP, \fBCPU_FEATURE_SYSCALL\fP, \fBCPU_FEATURE_XD\fP, \fBCPU_FEATURE_MOVBE\fP, \fBCPU_FEATURE_POPCNT\fP, \fBCPU_FEATURE_AES\fP, \fBCPU_FEATURE_XSAVE\fP, \fBCPU_FEATURE_OSXSAVE\fP, \fBCPU_FEATURE_AVX\fP, \fBCPU_FEATURE_MMXEXT\fP, \fBCPU_FEATURE_3DNOW\fP, \fBCPU_FEATURE_3DNOWEXT\fP, \fBCPU_FEATURE_NX\fP, \fBCPU_FEATURE_FXSR_OPT\fP, \fBCPU_FEATURE_RDTSCP\fP, \fBCPU_FEATURE_LM\fP, \fBCPU_FEATURE_LAHF_LM\fP, \fBCPU_FEATURE_CMP_LEGACY\fP, \fBCPU_FEATURE_SVM\fP, \fBCPU_FEATURE_ABM\fP, \fBCPU_FEATURE_MISALIGNSSE\fP, \fBCPU_FEATURE_SSE4A\fP, \fBCPU_FEATURE_3DNOWPREFETCH\fP, \fBCPU_FEATURE_OSVW\fP, \fBCPU_FEATURE_IBS\fP, \fBCPU_FEATURE_SSE5\fP, \fBCPU_FEATURE_SKINIT\fP, \fBCPU_FEATURE_WDT\fP, \fBCPU_FEATURE_TS\fP, \fBCPU_FEATURE_FID\fP, \fBCPU_FEATURE_VID\fP, \fBCPU_FEATURE_TTP\fP, \fBCPU_FEATURE_TM_AMD\fP, \fBCPU_FEATURE_STC\fP, \fBCPU_FEATURE_100MHZSTEPS\fP, \fBCPU_FEATURE_HWPSTATE\fP, \fBCPU_FEATURE_CONSTANT_TSC\fP, \fBCPU_FEATURE_XOP\fP, \fBCPU_FEATURE_FMA3\fP, \fBCPU_FEATURE_FMA4\fP, \fBCPU_FEATURE_TBM\fP, \fBCPU_FEATURE_F16C\fP, \fBCPU_FEATURE_RDRAND\fP, \fBCPU_FEATURE_X2APIC\fP, \fBCPU_FEATURE_CPB\fP, \fBCPU_FEATURE_APERFMPERF\fP, \fBCPU_FEATURE_PFI\fP, \fBCPU_FEATURE_PA\fP, \fBCPU_FEATURE_AVX2\fP, \fBCPU_FEATURE_BMI1\fP, \fBCPU_FEATURE_BMI2\fP, \fBCPU_FEATURE_HLE\fP, \fBCPU_FEATURE_RTM\fP, \fBCPU_FEATURE_AVX512F\fP, \fBCPU_FEATURE_AVX512DQ\fP, \fBCPU_FEATURE_AVX512PF\fP, \fBCPU_FEATURE_AVX512ER\fP, \fBCPU_FEATURE_AVX512CD\fP, \fBCPU_FEATURE_SHA_NI\fP, \fBCPU_FEATURE_AVX512BW\fP, \fBCPU_FEATURE_AVX512VL\fP, \fBCPU_FEATURE_SGX\fP, \fBCPU_FEATURE_RDSEED\fP, \fBCPU_FEATURE_ADX\fP, \fBCPU_FEATURE_AVX512VNNI\fP, \fBCPU_FEATURE_AVX512VBMI\fP, \fBCPU_FEATURE_AVX512VBMI2\fP, \fBNUM_CPU_FEATURES\fP }"
+.br
+.RI "CPU feature identifiers\&. "
+.ti -1c
+.RI "enum \fBcpu_hint_t\fP { \fBCPU_HINT_SSE_SIZE_AUTH\fP = 0, \fBNUM_CPU_HINTS\fP }"
+.br
+.RI "CPU detection hints identifiers\&. "
+.ti -1c
+.RI "enum \fBcpu_sgx_feature_t\fP { \fBINTEL_SGX1\fP, \fBINTEL_SGX2\fP, \fBNUM_SGX_FEATURES\fP }"
+.br
+.RI "SGX features flags\&. "
+.ti -1c
+.RI "enum \fBcpu_error_t\fP { \fBERR_OK\fP = 0, \fBERR_NO_CPUID\fP = -1, \fBERR_NO_RDTSC\fP = -2, \fBERR_NO_MEM\fP = -3, \fBERR_OPEN\fP = -4, \fBERR_BADFMT\fP = -5, \fBERR_NOT_IMP\fP = -6, \fBERR_CPU_UNKN\fP = -7, \fBERR_NO_RDMSR\fP = -8, \fBERR_NO_DRIVER\fP = -9, \fBERR_NO_PERMS\fP = -10, \fBERR_EXTRACT\fP = -11, \fBERR_HANDLE\fP = -12, \fBERR_INVMSR\fP = -13, \fBERR_INVCNB\fP = -14, \fBERR_HANDLE_R\fP = -15, \fBERR_INVRANGE\fP = -16 }"
+.br
+.RI "Describes common library error codes\&. "
+.ti -1c
+.RI "enum \fBcpu_msrinfo_request_t\fP { \fBINFO_MPERF\fP, \fBINFO_APERF\fP, \fBINFO_MIN_MULTIPLIER\fP, \fBINFO_CUR_MULTIPLIER\fP, \fBINFO_MAX_MULTIPLIER\fP, \fBINFO_TEMPERATURE\fP, \fBINFO_THROTTLING\fP, \fBINFO_VOLTAGE\fP, \fBINFO_BCLK\fP, \fBINFO_BUS_CLOCK\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBcpuid_get_total_cpus\fP (void)"
+.br
+.RI "Returns the total number of logical CPU threads (even if CPUID is not present)\&. "
+.ti -1c
+.RI "int \fBcpuid_present\fP (void)"
+.br
+.RI "Checks if the CPUID instruction is supported\&. "
+.ti -1c
+.RI "void \fBcpu_exec_cpuid\fP (uint32_t eax, uint32_t *regs)"
+.br
+.RI "Executes the CPUID instruction\&. "
+.ti -1c
+.RI "void \fBcpu_exec_cpuid_ext\fP (uint32_t *regs)"
+.br
+.RI "Executes the CPUID instruction with the given input registers\&. "
+.ti -1c
+.RI "int \fBcpuid_get_raw_data\fP (struct \fBcpu_raw_data_t\fP *data)"
+.br
+.RI "Obtains the raw CPUID data from the current CPU\&. "
+.ti -1c
+.RI "int \fBcpuid_serialize_raw_data\fP (struct \fBcpu_raw_data_t\fP *data, const char *filename)"
+.br
+.RI "Writes the raw CPUID data to a text file\&. "
+.ti -1c
+.RI "int \fBcpuid_deserialize_raw_data\fP (struct \fBcpu_raw_data_t\fP *data, const char *filename)"
+.br
+.RI "Reads raw CPUID data from file\&. "
+.ti -1c
+.RI "int \fBcpu_identify\fP (struct \fBcpu_raw_data_t\fP *raw, struct \fBcpu_id_t\fP *data)"
+.br
+.RI "Identifies the CPU\&. "
+.ti -1c
+.RI "const char * \fBcpu_feature_str\fP (\fBcpu_feature_t\fP feature)"
+.br
+.RI "Returns the short textual representation of a CPU flag\&. "
+.ti -1c
+.RI "const char * \fBcpuid_error\fP (void)"
+.br
+.RI "Returns textual description of the last error\&. "
+.ti -1c
+.RI "void \fBcpu_rdtsc\fP (uint64_t *result)"
+.br
+.RI "Executes RDTSC\&. "
+.ti -1c
+.RI "void \fBcpu_tsc_mark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Store TSC and timing info\&. "
+.ti -1c
+.RI "void \fBcpu_tsc_unmark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Calculate TSC and timing difference\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_mark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Calculates the CPU clock\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_os\fP (void)"
+.br
+.RI "Returns the CPU clock, as reported by the OS\&. "
+.ti -1c
+.RI "int \fBcpu_clock_measure\fP (int millis, int quad_check)"
+.br
+.RI "Measure the CPU clock frequency\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_ic\fP (int millis, int runs)"
+.br
+.RI "Measure the CPU clock frequency using instruction-counting\&. "
+.ti -1c
+.RI "int \fBcpu_clock\fP (void)"
+.br
+.RI "Get the CPU clock frequency (all-in-one method) "
+.ti -1c
+.RI "struct \fBcpu_epc_t\fP \fBcpuid_get_epc\fP (int index, const struct \fBcpu_raw_data_t\fP *raw)"
+.br
+.RI "Fetches information about an EPC (Enclave Page Cache) area\&. "
+.ti -1c
+.RI "const char * \fBcpuid_lib_version\fP (void)"
+.br
+.RI "Returns the libcpuid version\&. "
+.ti -1c
+.RI "libcpuid_warn_fn_t \fBcpuid_set_warn_function\fP (libcpuid_warn_fn_t warn_fun)"
+.br
+.RI "Sets the warning print function\&. "
+.ti -1c
+.RI "void \fBcpuid_set_verbosiness_level\fP (int level)"
+.br
+.RI "Sets the verbosiness level\&. "
+.ti -1c
+.RI "\fBcpu_vendor_t\fP \fBcpuid_get_vendor\fP (void)"
+.br
+.RI "Obtains the CPU vendor from CPUID from the current CPU\&. "
+.ti -1c
+.RI "void \fBcpuid_get_cpu_list\fP (\fBcpu_vendor_t\fP vendor, struct \fBcpu_list_t\fP *list)"
+.br
+.RI "Gets a list of all known CPU names from a specific vendor\&. "
+.ti -1c
+.RI "void \fBcpuid_free_cpu_list\fP (struct \fBcpu_list_t\fP *list)"
+.br
+.RI "Frees a CPU list\&. "
+.ti -1c
+.RI "struct msr_driver_t * \fBcpu_msr_driver_open\fP (void)"
+.br
+.RI "Starts/opens a driver, needed to read MSRs (Model Specific Registers) "
+.ti -1c
+.RI "struct msr_driver_t * \fBcpu_msr_driver_open_core\fP (unsigned core_num)"
+.br
+.RI "Similar to \fBcpu_msr_driver_open\fP, but accept one parameter\&. "
+.ti -1c
+.RI "int \fBcpu_rdmsr\fP (struct msr_driver_t *handle, uint32_t msr_index, uint64_t *result)"
+.br
+.RI "Reads a Model-Specific Register (MSR) "
+.ti -1c
+.RI "int \fBcpu_rdmsr_range\fP (struct msr_driver_t *handle, uint32_t msr_index, uint8_t highbit, uint8_t lowbit, uint64_t *result)"
+.br
+.RI "Similar to \fBcpu_rdmsr\fP, but extract a range of bits\&. "
+.ti -1c
+.RI "int \fBcpu_msrinfo\fP (struct msr_driver_t *handle, \fBcpu_msrinfo_request_t\fP which)"
+.br
+.RI "Reads extended CPU information from Model-Specific Registers\&. "
+.ti -1c
+.RI "int \fBmsr_serialize_raw_data\fP (struct msr_driver_t *handle, const char *filename)"
+.br
+.RI "Writes the raw MSR data to a text file\&. "
+.ti -1c
+.RI "int \fBcpu_msr_driver_close\fP (struct msr_driver_t *handle)"
+.br
+.RI "Closes an open MSR driver\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.PP
+\fBAuthor\fP
+.RS 4
+Veselin Georgiev 
+.RE
+.PP
+\fBDate\fP
+.RS 4
+Oct 2008 
+.RE
+.PP
+\fBVersion\fP
+.RS 4
+0\&.5\&.1
+.RE
+.PP
+Version history:
+.PP
+.IP "\(bu" 2
+0\&.1\&.0 (2008-10-15): initial adaptation from wxfractgui sources
+.IP "\(bu" 2
+0\&.1\&.1 (2009-07-06): Added intel_fn11 fields to \fBcpu_raw_data_t\fP to handle new processor topology enumeration required on Core i7
+.IP "\(bu" 2
+0\&.1\&.2 (2009-09-26): Added support for MSR reading through self-extracting kernel driver on Win32\&.
+.IP "\(bu" 2
+0\&.1\&.3 (2010-04-20): Added support for greater more accurate CPU clock measurements with \fBcpu_clock_by_ic()\fP
+.IP "\(bu" 2
+0\&.2\&.0 (2011-10-11): Support for AMD Bulldozer CPUs, 128-bit SSE unit size checking\&. A backwards-incompatible change, since the sizeof \fBcpu_id_t\fP is now different\&.
+.IP "\(bu" 2
+0\&.2\&.1 (2012-05-26): Support for Ivy Bridge, and detecting the presence of the RdRand instruction\&.
+.IP "\(bu" 2
+0\&.2\&.2 (2015-11-04): Support for newer processors up to Haswell and Vishera\&. Fix clock detection in \fBcpu_clock_by_ic()\fP for Bulldozer\&. More entries supported in \fBcpu_msrinfo()\fP\&. *BSD and Solaris support (unofficial)\&.
+.IP "\(bu" 2
+0\&.3\&.0 (2016-07-09): Support for Skylake; MSR ops in FreeBSD; INFO_VOLTAGE for AMD CPUs\&. Level 4 cache support for Crystalwell (a backwards-incompatible change since the sizeof \fBcpu_raw_data_t\fP is now different)\&.
+.IP "\(bu" 2
+0\&.4\&.0 (2016-09-30): Better detection of AMD clock multiplier with msrinfo\&. Support for Intel SGX detection (a backwards-incompatible change since the sizeof \fBcpu_raw_data_t\fP and \fBcpu_id_t\fP is now different)\&.
+.IP "\(bu" 2
+0\&.4\&.1 (2019-02-05): A lot of DB updates, and better RDMSR
+.IP "\(bu" 2
+0\&.5\&.0 (2020-05-23): A lot of DB updates, detection of new CPU features, (a backwards-incompatible change since the sizeof \fBcpu_raw_data_t\fP and \fBcpu_id_t\fP is now different)\&.
+.IP "\(bu" 2
+0\&.5\&.1 (2021-03-20): A lot of DB updates 
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

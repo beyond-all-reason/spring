@@ -26,6 +26,7 @@
 #include "Map/ReadMap.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/SideParser.h"
@@ -2888,7 +2889,7 @@ int LuaSyncedRead::GetUnitHealth(lua_State* L)
 		lua_pushnumber(L, scale * unit->paralyzeDamage);
 	}
 	lua_pushnumber(L, unit->captureProgress);
-	lua_pushnumber(L, unit->buildProgress);
+	lua_pushnumber(L, buildSystem.GetBuildOptionalProgress(unit->entityReference));
 	return 5;
 }
 

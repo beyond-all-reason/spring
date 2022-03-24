@@ -1,0 +1,61 @@
+.TH "cpu_raw_data_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_raw_data_t \- Contains just the raw CPUID data\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint32_t \fBbasic_cpuid\fP [MAX_CPUID_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBext_cpuid\fP [MAX_EXT_CPUID_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBintel_fn4\fP [MAX_INTELFN4_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBintel_fn11\fP [MAX_INTELFN11_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBintel_fn12h\fP [MAX_INTELFN12H_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBintel_fn14h\fP [MAX_INTELFN14H_LEVEL][NUM_REGS]"
+.br
+.ti -1c
+.RI "uint32_t \fBamd_fn8000001dh\fP [MAX_AMDFN8000001DH_LEVEL][NUM_REGS]"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Contains just the raw CPUID data\&. 
+
+This contains only the most basic CPU data, required to do identification and feature recognition\&. Every processor should be identifiable using this data only\&. 
+.SH "Field Documentation"
+.PP 
+.SS "uint32_t cpu_raw_data_t::amd_fn8000001dh[MAX_AMDFN8000001DH_LEVEL][NUM_REGS]"
+when the CPU is AMD and supports leaf 8000001Dh (topology information for the DC) this stores the result of CPUID with eax = 8000001Dh and ecx = 0, 1, 2\&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::basic_cpuid[MAX_CPUID_LEVEL][NUM_REGS]"
+contains results of CPUID for eax = 0, 1, \&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::ext_cpuid[MAX_EXT_CPUID_LEVEL][NUM_REGS]"
+contains results of CPUID for eax = 0x80000000, 0x80000001, \&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::intel_fn11[MAX_INTELFN11_LEVEL][NUM_REGS]"
+when the CPU is intel and it supports leaf 0Bh (Extended Topology enumeration leaf), this stores the result of CPUID with eax = 11 and ecx = 0, 1, 2\&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::intel_fn12h[MAX_INTELFN12H_LEVEL][NUM_REGS]"
+when the CPU is intel and supports leaf 12h (SGX enumeration leaf), this stores the result of CPUID with eax = 0x12 and ecx = 0, 1, 2\&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::intel_fn14h[MAX_INTELFN14H_LEVEL][NUM_REGS]"
+when the CPU is intel and supports leaf 14h (Intel Processor Trace capabilities leaf)\&. this stores the result of CPUID with eax = 0x12 and ecx = 0, 1, 2\&.\&.\&. 
+.SS "uint32_t cpu_raw_data_t::intel_fn4[MAX_INTELFN4_LEVEL][NUM_REGS]"
+when the CPU is intel and it supports deterministic cache information: this contains the results of CPUID for eax = 4 and ecx = 0, 1, \&.\&.\&. 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

@@ -13,6 +13,7 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
@@ -889,7 +890,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	case GROUND_WATER_HEIGHT:
 		return int(CGround::GetHeightReal(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
 	case BUILD_PERCENT_LEFT:
-		return int((1.0f - unit->buildProgress) * 100);
+		return int((1.0f - buildSystem.GetBuildOptionalProgress(unit->entityReference)) * 100);
 
 	case YARD_OPEN:
 		return (unit->yardOpen) ? 1 : 0;
@@ -926,7 +927,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	case UNIT_BUILD_PERCENT_LEFT: {
 		const CUnit* u = unitHandler.GetUnit(p1);
 		if (u != nullptr)
-			return int((1.0f - u->buildProgress) * 100);
+			return int((1.0f - buildSystem.GetBuildOptionalProgress(u->entityReference)) * 100);
 
 		return 0;
 	} break;

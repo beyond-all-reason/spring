@@ -96,6 +96,7 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 		}
 
 		unit = CUnitHandler::NewUnit(ud);
+		unit->entityReference = EcsMain::registry.create();
 
 		unit->PreInit(params);
 		unit->PostInit(params.builder);
