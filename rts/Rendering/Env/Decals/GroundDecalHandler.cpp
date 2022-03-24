@@ -23,6 +23,7 @@
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -453,7 +454,7 @@ void CGroundDecalHandler::GatherDecalsForType(CGroundDecalHandler::SolidObjectDe
 				if (!gu->spectatingFullView && !decalOwnerInCurLOS && (!gameSetup->ghostedBuildings || !decalOwnerInPrvLOS))
 					continue;
 
-				decal->alpha = std::max(0.0f, decalOwnerUnit->buildProgress);
+				decal->alpha = std::max(0.0f, buildSystem.GetBuildProgress(decalOwnerUnit->entityReference) );
 			} else {
 				const CFeature* decalOwnerFeature = static_cast<const CFeature*>(decalOwner);
 

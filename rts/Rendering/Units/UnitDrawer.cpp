@@ -31,6 +31,7 @@
 #include "Rendering/Models/3DModelVAO.h"
 #include "Rendering/Models/ModelsMemStorage.h"
 
+#include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -815,7 +816,8 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 
 void CUnitDrawerLegacy::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const
 {
-	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unit->buildProgress };
+	auto& unitBuildProgress = buildSystem.GetBuildProgress(unit->entityReference);
+	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unitBuildProgress };
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
 	// the default value derives from the model vertices and makes more sense to use here
@@ -913,7 +915,7 @@ void CUnitDrawerLegacy::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool no
 
 	const float3 frameColors[2] = { unit->unitDef->nanoColor, {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f} };
 	const float3 stageColors[2] = { frameColors[globalRendering->teamNanospray], frameColors[globalRendering->teamNanospray] };
-	const float3 stageBounds = { 0.0f, model->CalcDrawHeight(), unit->buildProgress };
+	const float3 stageBounds = { 0.0f, model->CalcDrawHeight(), buildSystem.GetBuildProgress(unit->entityReference) };
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
 	// the default value derives from the model vertices and makes more sense to use here
@@ -1628,7 +1630,7 @@ void CUnitDrawerGL4::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLua
 {
 	auto& smv = S3DModelVAO::GetInstance();
 
-	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unit->buildProgress };
+	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), buildSystem.GetBuildProgress(unit->entityReference) };
 
 	const float4 upperPlanes[] = {
 		{0.0f, -1.0f, 0.0f,  stageBounds.x + stageBounds.y * (stageBounds.z * 3.0f       )},
@@ -1713,7 +1715,7 @@ void CUnitDrawerGL4::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLua
 	const float3 stageColors[2] = { frameColors[globalRendering->teamNanospray], frameColors[globalRendering->teamNanospray] };
 
 
-	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unit->buildProgress };
+	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), buildSystem.GetBuildProgress(unit->entityReference) };
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
 	// the default value derives from the model vertices and makes more sense to use here

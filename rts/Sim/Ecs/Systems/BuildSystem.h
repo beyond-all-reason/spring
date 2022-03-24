@@ -2,6 +2,7 @@
 #define BUILD_SYSTEM_H__
 
 #include "Sim/Ecs/EcsMain.h"
+#include "Sim/Ecs/Components/BuildComponents.h"
 
 class CBuilder;
 class CUnit;
@@ -12,11 +13,11 @@ public:
     void Init();
     void Update();
 
-    void AddUnitBuilder(CBuilder *unit);
+    void AddUnitBuilder(CUnit *unit);
 
     void AddUnitBuildTarget(CUnit *unit, CUnit *target);
     void RemoveUnitBuild(entt::entity entity);
-    void RemovetUnitBuilder(CUnit *unit);
+    void RemoveUnitBuilder(CUnit *unit);
 
     void PauseBuilder(CUnit *unit);
     void UnpauseBuilder(CUnit *unit);
@@ -29,10 +30,15 @@ public:
 
     bool IsSystemActive() { return active; }
 
+    float& GetBuildSpeed(entt::entity entity) { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
+    float& GetBuildProgress(entt::entity entity) { return EcsMain::registry.get<Build::BuildProgress>(entity).value; }
+
+    float GetBuildOptionalProgress(entt::entity entity) { return GetOptionalComponent<Build::BuildProgress>(entity, 1.f); }
+
+    void AddUnitBeingBuilt(CUnit *unit);
+
 private:
     bool active = true;
-
-    void InitUnitBuildTarget(entt::entity);
 };
 
 extern BuildSystem buildSystem;

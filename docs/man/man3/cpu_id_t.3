@@ -1,0 +1,251 @@
+.TH "cpu_id_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_id_t \- This contains the recognized CPU features/info\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "char \fBvendor_str\fP [VENDOR_STR_MAX]"
+.br
+.ti -1c
+.RI "char \fBbrand_str\fP [BRAND_STR_MAX]"
+.br
+.ti -1c
+.RI "\fBcpu_vendor_t\fP \fBvendor\fP"
+.br
+.ti -1c
+.RI "uint8_t \fBflags\fP [CPU_FLAGS_MAX]"
+.br
+.ti -1c
+.RI "int32_t \fBfamily\fP"
+.br
+.ti -1c
+.RI "int32_t \fBmodel\fP"
+.br
+.ti -1c
+.RI "int32_t \fBstepping\fP"
+.br
+.ti -1c
+.RI "int32_t \fBext_family\fP"
+.br
+.ti -1c
+.RI "int32_t \fBext_model\fP"
+.br
+.ti -1c
+.RI "int32_t \fBnum_cores\fP"
+.br
+.ti -1c
+.RI "int32_t \fBnum_logical_cpus\fP"
+.br
+.ti -1c
+.RI "int32_t \fBtotal_logical_cpus\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_data_cache\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_instruction_cache\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl2_cache\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl3_cache\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl4_cache\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_data_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_instruction_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl2_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl3_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl4_assoc\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_cacheline\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_data_cacheline\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl1_instruction_cacheline\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl2_cacheline\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl3_cacheline\fP"
+.br
+.ti -1c
+.RI "int32_t \fBl4_cacheline\fP"
+.br
+.ti -1c
+.RI "char \fBcpu_codename\fP [64]"
+.br
+.ti -1c
+.RI "int32_t \fBsse_size\fP"
+.br
+.ti -1c
+.RI "uint8_t \fBdetection_hints\fP [CPU_HINTS_MAX]"
+.br
+.ti -1c
+.RI "struct \fBcpu_sgx_t\fP \fBsgx\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This contains the recognized CPU features/info\&. 
+.SH "Field Documentation"
+.PP 
+.SS "char cpu_id_t::brand_str[BRAND_STR_MAX]"
+contains the brand string, e\&.g\&. 'Intel(R) Xeon(TM) CPU 2\&.40GHz' 
+.SS "char cpu_id_t::cpu_codename[64]"
+The brief and human-friendly CPU codename, which was recognized\&.
+.br
+ Examples: 
+.PP
+.nf
++--------+--------+-------+-------+-------+---------------------------------------+-----------------------+
+| Vendor | Family | Model | Step\&. | Cache |       Brand String                    | cpu_id_t\&.cpu_codename |
++--------+--------+-------+-------+-------+---------------------------------------+-----------------------+
+| AMD    |      6 |     8 |     0 |   256 | (not available - will be ignored)     | "K6-2"                |
+| Intel  |     15 |     2 |     5 |   512 | "Intel(R) Xeon(TM) CPU 2\&.40GHz"       | "Xeon (Prestonia)"    |
+| Intel  |      6 |    15 |    11 |  4096 | "Intel(R) Core(TM)2 Duo CPU E6550\&.\&.\&." | "Conroe (Core 2 Duo)" |
+| AMD    |     15 |    35 |     2 |  1024 | "Dual Core AMD Opteron(tm) Proces\&.\&.\&." | "Opteron (Dual Core)" |
++--------+--------+-------+-------+-------+---------------------------------------+-----------------------+
+
+.fi
+.PP
+ 
+.SS "uint8_t cpu_id_t::detection_hints[CPU_HINTS_MAX]"
+contain miscellaneous detection information\&. Used to test about specifics of certain detected features\&. See \fBCPU_HINT_*\fP macros below\&. 
+.PP
+\fBSee also\fP
+.RS 4
+Hints 
+.RE
+.PP
+
+.SS "int32_t cpu_id_t::ext_family"
+CPU display ('true') family (computed as BaseFamily[3:0]+ExtendedFamily[7:0]) 
+.SS "int32_t cpu_id_t::ext_model"
+CPU display ('true') model (computed as (ExtendedModel[3:0]<<4) + BaseModel[3:0]) For detailed discussion about what BaseModel / ExtendedModel / Model are, see Github issue #150\&. 
+.SS "int32_t cpu_id_t::family"
+CPU family (BaseFamily[3:0]) 
+.SS "uint8_t cpu_id_t::flags[CPU_FLAGS_MAX]"
+contain CPU flags\&. Used to test for features\&. See the \fBCPU_FEATURE_*\fP macros below\&. 
+.PP
+\fBSee also\fP
+.RS 4
+Features 
+.RE
+.PP
+
+.SS "int32_t cpu_id_t::l1_assoc"
+Cache associativity for the L1 data cache\&. -1 if undetermined 
+.PP
+\fBDeprecated\fP
+.RS 4
+replaced by \fBcpu_id_t::l1_data_assoc\fP 
+.RE
+.PP
+
+.SS "int32_t cpu_id_t::l1_cacheline"
+Cache-line size for L1 data cache\&. -1 if undetermined 
+.PP
+\fBDeprecated\fP
+.RS 4
+replaced by \fBcpu_id_t::l1_data_cacheline\fP 
+.RE
+.PP
+
+.SS "int32_t cpu_id_t::l1_data_assoc"
+Cache associativity for the L1 data cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l1_data_cache"
+L1 data cache size in KB\&. Could be zero, if the CPU lacks cache\&. If the size cannot be determined, it will be -1\&. 
+.SS "int32_t cpu_id_t::l1_data_cacheline"
+Cache-line size for L1 data cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l1_instruction_assoc"
+Cache associativity for the L1 intruction cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l1_instruction_cache"
+L1 instruction cache size in KB\&. Could be zero, if the CPU lacks cache\&. If the size cannot be determined, it will be -1\&. 
+.PP
+\fBNote\fP
+.RS 4
+On some Intel CPUs, whose instruction cache is in fact a trace cache, the size will be expressed in K uOps\&. 
+.RE
+.PP
+
+.SS "int32_t cpu_id_t::l1_instruction_cacheline"
+Cache-line size for L1 intruction cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l2_assoc"
+Cache associativity for the L2 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l2_cache"
+L2 cache size in KB\&. Could be zero, if the CPU lacks L2 cache\&. If the size of the cache could not be determined, it will be -1 
+.SS "int32_t cpu_id_t::l2_cacheline"
+Cache-line size for L2 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l3_assoc"
+Cache associativity for the L3 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l3_cache"
+L3 cache size in KB\&. Zero on most systems 
+.SS "int32_t cpu_id_t::l3_cacheline"
+Cache-line size for L3 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l4_assoc"
+Cache associativity for the L4 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::l4_cache"
+L4 cache size in KB\&. Zero on most systems 
+.SS "int32_t cpu_id_t::l4_cacheline"
+Cache-line size for L4 cache\&. -1 if undetermined 
+.SS "int32_t cpu_id_t::model"
+CPU model (BaseModel[3:0]) 
+.SS "int32_t cpu_id_t::num_cores"
+Number of CPU cores on the current processor 
+.SS "int32_t cpu_id_t::num_logical_cpus"
+Number of logical processors on the current processor\&. Could be more than the number of physical cores, e\&.g\&. when the processor has HyperThreading\&. 
+.SS "struct \fBcpu_sgx_t\fP cpu_id_t::sgx"
+contains information about SGX features if the processor, if present 
+.SS "int32_t cpu_id_t::sse_size"
+SSE execution unit size (64 or 128; -1 if N/A) 
+.SS "int32_t cpu_id_t::stepping"
+CPU stepping 
+.SS "int32_t cpu_id_t::total_logical_cpus"
+The total number of logical processors\&. The same value is available through \fBcpuid_get_total_cpus\fP\&.
+.PP
+This is num_logical_cpus * {total physical processors in the system} (but only on a real system, under a VM this number may be lower)\&.
+.PP
+If you're writing a multithreaded program and you want to run it on all CPUs, this is the number of threads you need\&.
+.PP
+\fBNote\fP
+.RS 4
+in a VM, this will exactly match the number of CPUs set in the VM's configuration\&. 
+.RE
+.PP
+
+.SS "\fBcpu_vendor_t\fP cpu_id_t::vendor"
+contains the recognized CPU vendor 
+.SS "char cpu_id_t::vendor_str[VENDOR_STR_MAX]"
+contains the CPU vendor string, e\&.g\&. 'GenuineIntel' 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

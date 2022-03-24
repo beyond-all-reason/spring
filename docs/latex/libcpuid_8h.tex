@@ -1,0 +1,342 @@
+\doxysection{rts/lib/libcpuid/libcpuid/libcpuid.h File Reference}
+\label{libcpuid_8h}\index{rts/lib/libcpuid/libcpuid/libcpuid.h@{rts/lib/libcpuid/libcpuid/libcpuid.h}}
+{\ttfamily \#include \char`\"{}libcpuid\+\_\+types.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}libcpuid\+\_\+constants.\+h\char`\"{}}\newline
+\doxysubsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t}
+\begin{DoxyCompactList}\small\item\em Contains just the raw CPUID data. \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+sgx\+\_\+t}
+\begin{DoxyCompactList}\small\item\em This contains information about SGX features of the processor Example usage\+: \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+id\+\_\+t}
+\begin{DoxyCompactList}\small\item\em This contains the recognized CPU features/info. \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+mark\+\_\+t}
+\begin{DoxyCompactList}\small\item\em Internal structure, used in cpu\+\_\+tsc\+\_\+mark, cpu\+\_\+tsc\+\_\+unmark and cpu\+\_\+clock\+\_\+by\+\_\+mark. \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+epc\+\_\+t}
+\begin{DoxyCompactList}\small\item\em The return value of \doxyref{cpuid\+\_\+get\+\_\+epc()}{p.}{group__libcpuid_gad973835515aa3b0d807b07279f03b965}. \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+list\+\_\+t}
+\begin{DoxyCompactList}\small\item\em a structure that holds a list of processor names \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define {\bfseries NUM\+\_\+\+CPU\+\_\+\+VENDORS}~NUM\+\_\+\+CPU\+\_\+\+VENDORS
+\item 
+\#define {\bfseries CPU\+\_\+\+INVALID\+\_\+\+VALUE}~0x3fffffff
+\end{DoxyCompactItemize}
+\doxysubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void($\ast$ {\bfseries libcpuid\+\_\+warn\+\_\+fn\+\_\+t}) (const char $\ast$msg)
+\end{DoxyCompactItemize}
+\doxysubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \textbf{ cpu\+\_\+vendor\+\_\+t} \{ \newline
+\textbf{ VENDOR\+\_\+\+INTEL} = 0
+, \textbf{ VENDOR\+\_\+\+AMD}
+, \textbf{ VENDOR\+\_\+\+CYRIX}
+, \textbf{ VENDOR\+\_\+\+NEXGEN}
+, \newline
+\textbf{ VENDOR\+\_\+\+TRANSMETA}
+, \textbf{ VENDOR\+\_\+\+UMC}
+, \textbf{ VENDOR\+\_\+\+CENTAUR}
+, \textbf{ VENDOR\+\_\+\+RISE}
+, \newline
+\textbf{ VENDOR\+\_\+\+SIS}
+, \textbf{ VENDOR\+\_\+\+NSC}
+, \textbf{ VENDOR\+\_\+\+HYGON}
+, \textbf{ NUM\+\_\+\+CPU\+\_\+\+VENDORS}
+, \newline
+{\bfseries VENDOR\+\_\+\+UNKNOWN} = -\/1
+ \}
+\begin{DoxyCompactList}\small\item\em CPU vendor, as guessed from the Vendor String. \end{DoxyCompactList}\item 
+enum \textbf{ cpu\+\_\+feature\+\_\+t} \{ \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FPU} = 0
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+VME}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+DE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PSE}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TSC}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MSR}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PAE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MCE}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CX8}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+APIC}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MTRR}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SEP}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PGE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MCA}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CMOV}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PAT}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PSE36}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PN}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CLFLUSH}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+DTS}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+ACPI}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MMX}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FXSR}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE2}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SS}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+HT}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TM}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+IA64}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PBE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PNI}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PCLMUL}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+DTS64}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MONITOR}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+DS\+\_\+\+CPL}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+VMX}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SMX}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+EST}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TM2}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSSE3}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CID}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CX16}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+XTPR}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PDCM}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+DCA}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE4\+\_\+1}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE4\+\_\+2}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SYSCALL}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+XD}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MOVBE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+POPCNT}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AES}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+XSAVE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+OSXSAVE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MMXEXT}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+3\+DNOW}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+3\+DNOWEXT}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+NX}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FXSR\+\_\+\+OPT}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+RDTSCP}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+LM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+LAHF\+\_\+\+LM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CMP\+\_\+\+LEGACY}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SVM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+ABM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+MISALIGNSSE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE4A}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+3\+DNOWPREFETCH}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+OSVW}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+IBS}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SSE5}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SKINIT}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+WDT}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TS}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FID}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+VID}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TTP}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TM\+\_\+\+AMD}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+STC}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+100\+MHZSTEPS}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+HWPSTATE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CONSTANT\+\_\+\+TSC}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+XOP}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FMA3}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+FMA4}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+TBM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+F16C}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+RDRAND}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+X2\+APIC}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+CPB}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+APERFMPERF}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PFI}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+PA}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX2}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+BMI1}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+BMI2}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+HLE}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+RTM}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512F}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+DQ}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+PF}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+ER}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+CD}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SHA\+\_\+\+NI}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+BW}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+VL}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+SGX}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+RDSEED}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+ADX}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+VNNI}
+, \textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+VBMI}
+, \newline
+\textbf{ CPU\+\_\+\+FEATURE\+\_\+\+AVX512\+VBMI2}
+, {\bfseries NUM\+\_\+\+CPU\+\_\+\+FEATURES}
+ \}
+\begin{DoxyCompactList}\small\item\em CPU feature identifiers. \end{DoxyCompactList}\item 
+enum \textbf{ cpu\+\_\+hint\+\_\+t} \{ \textbf{ CPU\+\_\+\+HINT\+\_\+\+SSE\+\_\+\+SIZE\+\_\+\+AUTH} = 0
+, {\bfseries NUM\+\_\+\+CPU\+\_\+\+HINTS}
+ \}
+\begin{DoxyCompactList}\small\item\em CPU detection hints identifiers. \end{DoxyCompactList}\item 
+enum \textbf{ cpu\+\_\+sgx\+\_\+feature\+\_\+t} \{ \textbf{ INTEL\+\_\+\+SGX1}
+, \textbf{ INTEL\+\_\+\+SGX2}
+, {\bfseries NUM\+\_\+\+SGX\+\_\+\+FEATURES}
+ \}
+\begin{DoxyCompactList}\small\item\em SGX features flags. \end{DoxyCompactList}\item 
+enum \textbf{ cpu\+\_\+error\+\_\+t} \{ \newline
+\textbf{ ERR\+\_\+\+OK} = 0
+, \textbf{ ERR\+\_\+\+NO\+\_\+\+CPUID} = -\/1
+, \textbf{ ERR\+\_\+\+NO\+\_\+\+RDTSC} = -\/2
+, \textbf{ ERR\+\_\+\+NO\+\_\+\+MEM} = -\/3
+, \newline
+\textbf{ ERR\+\_\+\+OPEN} = -\/4
+, \textbf{ ERR\+\_\+\+BADFMT} = -\/5
+, \textbf{ ERR\+\_\+\+NOT\+\_\+\+IMP} = -\/6
+, \textbf{ ERR\+\_\+\+CPU\+\_\+\+UNKN} = -\/7
+, \newline
+\textbf{ ERR\+\_\+\+NO\+\_\+\+RDMSR} = -\/8
+, \textbf{ ERR\+\_\+\+NO\+\_\+\+DRIVER} = -\/9
+, \textbf{ ERR\+\_\+\+NO\+\_\+\+PERMS} = -\/10
+, \textbf{ ERR\+\_\+\+EXTRACT} = -\/11
+, \newline
+\textbf{ ERR\+\_\+\+HANDLE} = -\/12
+, \textbf{ ERR\+\_\+\+INVMSR} = -\/13
+, \textbf{ ERR\+\_\+\+INVCNB} = -\/14
+, \textbf{ ERR\+\_\+\+HANDLE\+\_\+R} = -\/15
+, \newline
+\textbf{ ERR\+\_\+\+INVRANGE} = -\/16
+ \}
+\begin{DoxyCompactList}\small\item\em Describes common library error codes. \end{DoxyCompactList}\item 
+enum \textbf{ cpu\+\_\+msrinfo\+\_\+request\+\_\+t} \{ \newline
+\textbf{ INFO\+\_\+\+MPERF}
+, \textbf{ INFO\+\_\+\+APERF}
+, \textbf{ INFO\+\_\+\+MIN\+\_\+\+MULTIPLIER}
+, \textbf{ INFO\+\_\+\+CUR\+\_\+\+MULTIPLIER}
+, \newline
+\textbf{ INFO\+\_\+\+MAX\+\_\+\+MULTIPLIER}
+, \textbf{ INFO\+\_\+\+TEMPERATURE}
+, \textbf{ INFO\+\_\+\+THROTTLING}
+, \textbf{ INFO\+\_\+\+VOLTAGE}
+, \newline
+\textbf{ INFO\+\_\+\+BCLK}
+, \textbf{ INFO\+\_\+\+BUS\+\_\+\+CLOCK}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \textbf{ cpuid\+\_\+get\+\_\+total\+\_\+cpus} (void)
+\begin{DoxyCompactList}\small\item\em Returns the total number of logical CPU threads (even if CPUID is not present). \end{DoxyCompactList}\item 
+int \textbf{ cpuid\+\_\+present} (void)
+\begin{DoxyCompactList}\small\item\em Checks if the CPUID instruction is supported. \end{DoxyCompactList}\item 
+void \textbf{ cpu\+\_\+exec\+\_\+cpuid} (uint32\+\_\+t eax, uint32\+\_\+t $\ast$regs)
+\begin{DoxyCompactList}\small\item\em Executes the CPUID instruction. \end{DoxyCompactList}\item 
+void \textbf{ cpu\+\_\+exec\+\_\+cpuid\+\_\+ext} (uint32\+\_\+t $\ast$regs)
+\begin{DoxyCompactList}\small\item\em Executes the CPUID instruction with the given input registers. \end{DoxyCompactList}\item 
+int \textbf{ cpuid\+\_\+get\+\_\+raw\+\_\+data} (struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t} $\ast$data)
+\begin{DoxyCompactList}\small\item\em Obtains the raw CPUID data from the current CPU. \end{DoxyCompactList}\item 
+int \textbf{ cpuid\+\_\+serialize\+\_\+raw\+\_\+data} (struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t} $\ast$data, const char $\ast$filename)
+\begin{DoxyCompactList}\small\item\em Writes the raw CPUID data to a text file. \end{DoxyCompactList}\item 
+int \textbf{ cpuid\+\_\+deserialize\+\_\+raw\+\_\+data} (struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t} $\ast$data, const char $\ast$filename)
+\begin{DoxyCompactList}\small\item\em Reads raw CPUID data from file. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+identify} (struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t} $\ast$raw, struct \textbf{ cpu\+\_\+id\+\_\+t} $\ast$data)
+\begin{DoxyCompactList}\small\item\em Identifies the CPU. \end{DoxyCompactList}\item 
+const char $\ast$ \textbf{ cpu\+\_\+feature\+\_\+str} (\textbf{ cpu\+\_\+feature\+\_\+t} feature)
+\begin{DoxyCompactList}\small\item\em Returns the short textual representation of a CPU flag. \end{DoxyCompactList}\item 
+const char $\ast$ \textbf{ cpuid\+\_\+error} (void)
+\begin{DoxyCompactList}\small\item\em Returns textual description of the last error. \end{DoxyCompactList}\item 
+void \textbf{ cpu\+\_\+rdtsc} (uint64\+\_\+t $\ast$result)
+\begin{DoxyCompactList}\small\item\em Executes RDTSC. \end{DoxyCompactList}\item 
+void \textbf{ cpu\+\_\+tsc\+\_\+mark} (struct \textbf{ cpu\+\_\+mark\+\_\+t} $\ast$mark)
+\begin{DoxyCompactList}\small\item\em Store TSC and timing info. \end{DoxyCompactList}\item 
+void \textbf{ cpu\+\_\+tsc\+\_\+unmark} (struct \textbf{ cpu\+\_\+mark\+\_\+t} $\ast$mark)
+\begin{DoxyCompactList}\small\item\em Calculate TSC and timing difference. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+clock\+\_\+by\+\_\+mark} (struct \textbf{ cpu\+\_\+mark\+\_\+t} $\ast$mark)
+\begin{DoxyCompactList}\small\item\em Calculates the CPU clock. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+clock\+\_\+by\+\_\+os} (void)
+\begin{DoxyCompactList}\small\item\em Returns the CPU clock, as reported by the OS. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+clock\+\_\+measure} (int millis, int quad\+\_\+check)
+\begin{DoxyCompactList}\small\item\em Measure the CPU clock frequency. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+clock\+\_\+by\+\_\+ic} (int millis, int runs)
+\begin{DoxyCompactList}\small\item\em Measure the CPU clock frequency using instruction-\/counting. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+clock} (void)
+\begin{DoxyCompactList}\small\item\em Get the CPU clock frequency (all-\/in-\/one method) \end{DoxyCompactList}\item 
+struct \textbf{ cpu\+\_\+epc\+\_\+t} \textbf{ cpuid\+\_\+get\+\_\+epc} (int index, const struct \textbf{ cpu\+\_\+raw\+\_\+data\+\_\+t} $\ast$raw)
+\begin{DoxyCompactList}\small\item\em Fetches information about an EPC (Enclave Page Cache) area. \end{DoxyCompactList}\item 
+const char $\ast$ \textbf{ cpuid\+\_\+lib\+\_\+version} (void)
+\begin{DoxyCompactList}\small\item\em Returns the libcpuid version. \end{DoxyCompactList}\item 
+libcpuid\+\_\+warn\+\_\+fn\+\_\+t \textbf{ cpuid\+\_\+set\+\_\+warn\+\_\+function} (libcpuid\+\_\+warn\+\_\+fn\+\_\+t warn\+\_\+fun)
+\begin{DoxyCompactList}\small\item\em Sets the warning print function. \end{DoxyCompactList}\item 
+void \textbf{ cpuid\+\_\+set\+\_\+verbosiness\+\_\+level} (int level)
+\begin{DoxyCompactList}\small\item\em Sets the verbosiness level. \end{DoxyCompactList}\item 
+\textbf{ cpu\+\_\+vendor\+\_\+t} \textbf{ cpuid\+\_\+get\+\_\+vendor} (void)
+\begin{DoxyCompactList}\small\item\em Obtains the CPU vendor from CPUID from the current CPU. \end{DoxyCompactList}\item 
+void \textbf{ cpuid\+\_\+get\+\_\+cpu\+\_\+list} (\textbf{ cpu\+\_\+vendor\+\_\+t} vendor, struct \textbf{ cpu\+\_\+list\+\_\+t} $\ast$list)
+\begin{DoxyCompactList}\small\item\em Gets a list of all known CPU names from a specific vendor. \end{DoxyCompactList}\item 
+void \textbf{ cpuid\+\_\+free\+\_\+cpu\+\_\+list} (struct \textbf{ cpu\+\_\+list\+\_\+t} $\ast$list)
+\begin{DoxyCompactList}\small\item\em Frees a CPU list. \end{DoxyCompactList}\item 
+struct msr\+\_\+driver\+\_\+t $\ast$ \textbf{ cpu\+\_\+msr\+\_\+driver\+\_\+open} (void)
+\begin{DoxyCompactList}\small\item\em Starts/opens a driver, needed to read MSRs (Model Specific Registers) \end{DoxyCompactList}\item 
+struct msr\+\_\+driver\+\_\+t $\ast$ \textbf{ cpu\+\_\+msr\+\_\+driver\+\_\+open\+\_\+core} (unsigned core\+\_\+num)
+\begin{DoxyCompactList}\small\item\em Similar to \doxyref{cpu\+\_\+msr\+\_\+driver\+\_\+open}{p.}{group__libcpuid_gab99453e100b3b502ca15b8a79198828a}, but accept one parameter. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+rdmsr} (struct msr\+\_\+driver\+\_\+t $\ast$handle, uint32\+\_\+t msr\+\_\+index, uint64\+\_\+t $\ast$result)
+\begin{DoxyCompactList}\small\item\em Reads a Model-\/\+Specific Register (MSR) \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+rdmsr\+\_\+range} (struct msr\+\_\+driver\+\_\+t $\ast$handle, uint32\+\_\+t msr\+\_\+index, uint8\+\_\+t highbit, uint8\+\_\+t lowbit, uint64\+\_\+t $\ast$result)
+\begin{DoxyCompactList}\small\item\em Similar to \doxyref{cpu\+\_\+rdmsr}{p.}{group__libcpuid_ga0eddf30c99a094aa9942265948a13007}, but extract a range of bits. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+msrinfo} (struct msr\+\_\+driver\+\_\+t $\ast$handle, \textbf{ cpu\+\_\+msrinfo\+\_\+request\+\_\+t} which)
+\begin{DoxyCompactList}\small\item\em Reads extended CPU information from Model-\/\+Specific Registers. \end{DoxyCompactList}\item 
+int \textbf{ msr\+\_\+serialize\+\_\+raw\+\_\+data} (struct msr\+\_\+driver\+\_\+t $\ast$handle, const char $\ast$filename)
+\begin{DoxyCompactList}\small\item\em Writes the raw MSR data to a text file. \end{DoxyCompactList}\item 
+int \textbf{ cpu\+\_\+msr\+\_\+driver\+\_\+close} (struct msr\+\_\+driver\+\_\+t $\ast$handle)
+\begin{DoxyCompactList}\small\item\em Closes an open MSR driver. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\begin{DoxyAuthor}{Author}
+Veselin Georgiev 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+Oct 2008 
+\end{DoxyDate}
+\begin{DoxyVersion}{Version}
+0.\+5.\+1
+\end{DoxyVersion}
+Version history\+:
+
+
+\begin{DoxyItemize}
+\item 0.\+1.\+0 (2008-\/10-\/15)\+: initial adaptation from wxfractgui sources
+\item 0.\+1.\+1 (2009-\/07-\/06)\+: Added intel\+\_\+fn11 fields to \doxyref{cpu\+\_\+raw\+\_\+data\+\_\+t}{p.}{structcpu__raw__data__t} to handle new processor topology enumeration required on Core i7
+\item 0.\+1.\+2 (2009-\/09-\/26)\+: Added support for MSR reading through self-\/extracting kernel driver on Win32.
+\item 0.\+1.\+3 (2010-\/04-\/20)\+: Added support for greater more accurate CPU clock measurements with \doxyref{cpu\+\_\+clock\+\_\+by\+\_\+ic()}{p.}{group__libcpuid_ga4d23d7b9c774ad92b2d30a3798434224}
+\item 0.\+2.\+0 (2011-\/10-\/11)\+: Support for AMD Bulldozer CPUs, 128-\/bit SSE unit size checking. A backwards-\/incompatible change, since the sizeof \doxyref{cpu\+\_\+id\+\_\+t}{p.}{structcpu__id__t} is now different.
+\item 0.\+2.\+1 (2012-\/05-\/26)\+: Support for Ivy Bridge, and detecting the presence of the Rd\+Rand instruction.
+\item 0.\+2.\+2 (2015-\/11-\/04)\+: Support for newer processors up to Haswell and Vishera. Fix clock detection in \doxyref{cpu\+\_\+clock\+\_\+by\+\_\+ic()}{p.}{group__libcpuid_ga4d23d7b9c774ad92b2d30a3798434224} for Bulldozer. More entries supported in \doxyref{cpu\+\_\+msrinfo()}{p.}{group__libcpuid_gac977cbb78e00058098778411d7f784cf}. $\ast$\+BSD and Solaris support (unofficial).
+\item 0.\+3.\+0 (2016-\/07-\/09)\+: Support for Skylake; MSR ops in Free\+BSD; INFO\+\_\+\+VOLTAGE for AMD CPUs. Level 4 cache support for Crystalwell (a backwards-\/incompatible change since the sizeof \doxyref{cpu\+\_\+raw\+\_\+data\+\_\+t}{p.}{structcpu__raw__data__t} is now different).
+\item 0.\+4.\+0 (2016-\/09-\/30)\+: Better detection of AMD clock multiplier with msrinfo. Support for Intel SGX detection (a backwards-\/incompatible change since the sizeof \doxyref{cpu\+\_\+raw\+\_\+data\+\_\+t}{p.}{structcpu__raw__data__t} and \doxyref{cpu\+\_\+id\+\_\+t}{p.}{structcpu__id__t} is now different).
+\item 0.\+4.\+1 (2019-\/02-\/05)\+: A lot of DB updates, and better RDMSR
+\item 0.\+5.\+0 (2020-\/05-\/23)\+: A lot of DB updates, detection of new CPU features, (a backwards-\/incompatible change since the sizeof \doxyref{cpu\+\_\+raw\+\_\+data\+\_\+t}{p.}{structcpu__raw__data__t} and \doxyref{cpu\+\_\+id\+\_\+t}{p.}{structcpu__id__t} is now different).
+\item 0.\+5.\+1 (2021-\/03-\/20)\+: A lot of DB updates 
+\end{DoxyItemize}

@@ -16,15 +16,15 @@ void SolidObjectSystem::Update() {
 }
 
 void SolidObjectSystem::AddObject(CSolidObject* object) {
-    if (object->entityReference == entt::null) {
-        object->entityReference = EcsMain::registry.create();
-        auto entity = object->entityReference;
-
-        EcsMain::registry.emplace_or_replace<Health>(entity, 0.f);
-        EcsMain::registry.emplace_or_replace<MaxHealth>(entity, 0.f);
-
-        LOG("%s: added solid object %d (%d)", __func__, object->id, (int)entity);
+    auto entity = object->entityReference;
+    if (entity == entt::null) {
+        LOG("%s: error, object %d has no entity id (%d)", __func__, object->id, (int)entity);
     }
+
+    EcsMain::registry.emplace_or_replace<Health>(entity, 0.f);
+    EcsMain::registry.emplace_or_replace<MaxHealth>(entity, 0.f);
+
+    LOG("%s: added solid object %d (%d)", __func__, object->id, (int)entity);
 }
 
 void SolidObjectSystem::RemoveObject(CSolidObject* object) {

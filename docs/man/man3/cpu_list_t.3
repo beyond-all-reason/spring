@@ -1,0 +1,34 @@
+.TH "cpu_list_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_list_t \- a structure that holds a list of processor names  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "int \fBnum_entries\fP"
+.br
+.ti -1c
+.RI "char ** \fBnames\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+a structure that holds a list of processor names 
+.SH "Field Documentation"
+.PP 
+.SS "char** cpu_list_t::names"
+Pointers to names\&. There will be num_entries of them 
+.SS "int cpu_list_t::num_entries"
+Number of entries in the list 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

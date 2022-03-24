@@ -1,0 +1,324 @@
+\doxysection{cpu\+\_\+id\+\_\+t Struct Reference}
+\label{structcpu__id__t}\index{cpu\_id\_t@{cpu\_id\_t}}
+
+
+This contains the recognized CPU features/info.  
+
+
+
+
+{\ttfamily \#include $<$libcpuid.\+h$>$}
+
+\doxysubsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+char \textbf{ vendor\+\_\+str} [VENDOR\+\_\+\+STR\+\_\+\+MAX]
+\item 
+char \textbf{ brand\+\_\+str} [BRAND\+\_\+\+STR\+\_\+\+MAX]
+\item 
+\textbf{ cpu\+\_\+vendor\+\_\+t} \textbf{ vendor}
+\item 
+uint8\+\_\+t \textbf{ flags} [CPU\+\_\+\+FLAGS\+\_\+\+MAX]
+\item 
+int32\+\_\+t \textbf{ family}
+\item 
+int32\+\_\+t \textbf{ model}
+\item 
+int32\+\_\+t \textbf{ stepping}
+\item 
+int32\+\_\+t \textbf{ ext\+\_\+family}
+\item 
+int32\+\_\+t \textbf{ ext\+\_\+model}
+\item 
+int32\+\_\+t \textbf{ num\+\_\+cores}
+\item 
+int32\+\_\+t \textbf{ num\+\_\+logical\+\_\+cpus}
+\item 
+int32\+\_\+t \textbf{ total\+\_\+logical\+\_\+cpus}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+data\+\_\+cache}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+instruction\+\_\+cache}
+\item 
+int32\+\_\+t \textbf{ l2\+\_\+cache}
+\item 
+int32\+\_\+t \textbf{ l3\+\_\+cache}
+\item 
+int32\+\_\+t \textbf{ l4\+\_\+cache}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+data\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+instruction\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l2\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l3\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l4\+\_\+assoc}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+cacheline}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+data\+\_\+cacheline}
+\item 
+int32\+\_\+t \textbf{ l1\+\_\+instruction\+\_\+cacheline}
+\item 
+int32\+\_\+t \textbf{ l2\+\_\+cacheline}
+\item 
+int32\+\_\+t \textbf{ l3\+\_\+cacheline}
+\item 
+int32\+\_\+t \textbf{ l4\+\_\+cacheline}
+\item 
+char \textbf{ cpu\+\_\+codename} [64]
+\item 
+int32\+\_\+t \textbf{ sse\+\_\+size}
+\item 
+uint8\+\_\+t \textbf{ detection\+\_\+hints} [CPU\+\_\+\+HINTS\+\_\+\+MAX]
+\item 
+struct \textbf{ cpu\+\_\+sgx\+\_\+t} \textbf{ sgx}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This contains the recognized CPU features/info. 
+
+\doxysubsection{Field Documentation}
+\mbox{\label{structcpu__id__t_a06aa6176f92acfe849e7a73583d1f43e}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!brand\_str@{brand\_str}}
+\index{brand\_str@{brand\_str}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{brand\_str}
+{\footnotesize\ttfamily char cpu\+\_\+id\+\_\+t\+::brand\+\_\+str[BRAND\+\_\+\+STR\+\_\+\+MAX]}
+
+contains the brand string, e.\+g. \char`\"{}\+Intel(\+R) Xeon(\+TM) CPU 2.\+40\+GHz\char`\"{} \mbox{\label{structcpu__id__t_adec5c2819d5ab82676a39f6cae26d89c}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!cpu\_codename@{cpu\_codename}}
+\index{cpu\_codename@{cpu\_codename}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{cpu\_codename}
+{\footnotesize\ttfamily char cpu\+\_\+id\+\_\+t\+::cpu\+\_\+codename[64]}
+
+The brief and human-\/friendly CPU codename, which was recognized.~\newline
+ Examples\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+}
+\DoxyCodeLine{| Vendor | Family | Model | Step. | Cache |       Brand String                    | cpu\_id\_t.cpu\_codename |}
+\DoxyCodeLine{+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+}
+\DoxyCodeLine{| AMD    |      6 |     8 |     0 |   256 | (not available -\/ will be ignored)     | \textcolor{stringliteral}{"{}K6-\/2"{}}                |}
+\DoxyCodeLine{| Intel  |     15 |     2 |     5 |   512 | \textcolor{stringliteral}{"{}Intel(R) Xeon(TM) CPU 2.40GHz"{}}       | \textcolor{stringliteral}{"{}Xeon (Prestonia)"{}}    |}
+\DoxyCodeLine{| Intel  |      6 |    15 |    11 |  4096 | \textcolor{stringliteral}{"{}Intel(R) Core(TM)2 Duo CPU E6550..."{}} | \textcolor{stringliteral}{"{}Conroe (Core 2 Duo)"{}} |}
+\DoxyCodeLine{| AMD    |     15 |    35 |     2 |  1024 | \textcolor{stringliteral}{"{}Dual Core AMD Opteron(tm) Proces..."{}} | \textcolor{stringliteral}{"{}Opteron (Dual Core)"{}} |}
+\DoxyCodeLine{+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/+}
+
+\end{DoxyCode}
+ \mbox{\label{structcpu__id__t_a9ff2b61f549cd224f283c49bc8bbe865}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!detection\_hints@{detection\_hints}}
+\index{detection\_hints@{detection\_hints}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{detection\_hints}
+{\footnotesize\ttfamily uint8\+\_\+t cpu\+\_\+id\+\_\+t\+::detection\+\_\+hints[CPU\+\_\+\+HINTS\+\_\+\+MAX]}
+
+contain miscellaneous detection information. Used to test about specifics of certain detected features. See \doxyref{CPU\+\_\+\+HINT\+\_\+$\ast$}{p.}{group__libcpuid_gada395ff8a06f8f37d09a4a07926aa661} macros below. \begin{DoxySeeAlso}{See also}
+Hints 
+\end{DoxySeeAlso}
+\mbox{\label{structcpu__id__t_aa453990e79712f02d887e552ef1d476b}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!ext\_family@{ext\_family}}
+\index{ext\_family@{ext\_family}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{ext\_family}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::ext\+\_\+family}
+
+CPU display (\char`\"{}true\char`\"{}) family (computed as Base\+Family[3\+:0]+Extended\+Family[7\+:0]) \mbox{\label{structcpu__id__t_a1a27db236be904e2ed018ab31ae91486}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!ext\_model@{ext\_model}}
+\index{ext\_model@{ext\_model}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{ext\_model}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::ext\+\_\+model}
+
+CPU display (\char`\"{}true\char`\"{}) model (computed as (Extended\+Model[3\+:0]$<$$<$4) + Base\+Model[3\+:0]) For detailed discussion about what Base\+Model / Extended\+Model / Model are, see Github issue \#150. \mbox{\label{structcpu__id__t_a538277e1ba0dcdacd1ced85ff707001e}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!family@{family}}
+\index{family@{family}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{family}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::family}
+
+CPU family (Base\+Family[3\+:0]) \mbox{\label{structcpu__id__t_afe7f0f779b5986f1a89f02aa53d842a8}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!flags@{flags}}
+\index{flags@{flags}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{flags}
+{\footnotesize\ttfamily uint8\+\_\+t cpu\+\_\+id\+\_\+t\+::flags[CPU\+\_\+\+FLAGS\+\_\+\+MAX]}
+
+contain CPU flags. Used to test for features. See the \doxyref{CPU\+\_\+\+FEATURE\+\_\+$\ast$}{p.}{group__libcpuid_ga4c0b398deee739a645387c7329a4c289} macros below. \begin{DoxySeeAlso}{See also}
+Features 
+\end{DoxySeeAlso}
+\mbox{\label{structcpu__id__t_a486fed01524952d4487d092834e19466}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_assoc@{l1\_assoc}}
+\index{l1\_assoc@{l1\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+assoc}
+
+Cache associativity for the L1 data cache. -\/1 if undetermined \begin{DoxyRefDesc}{Deprecated}
+\item[\textbf{ Deprecated}]replaced by \doxyref{cpu\+\_\+id\+\_\+t\+::l1\+\_\+data\+\_\+assoc}{p.}{structcpu__id__t_a170254ff9438d4af1a86744b7ca4817f} \end{DoxyRefDesc}
+\mbox{\label{structcpu__id__t_a042eee2276b57355c66f8896d0ee141f}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_cacheline@{l1\_cacheline}}
+\index{l1\_cacheline@{l1\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+cacheline}
+
+Cache-\/line size for L1 data cache. -\/1 if undetermined \begin{DoxyRefDesc}{Deprecated}
+\item[\textbf{ Deprecated}]replaced by \doxyref{cpu\+\_\+id\+\_\+t\+::l1\+\_\+data\+\_\+cacheline}{p.}{structcpu__id__t_ac83920fc5ae898b14041448dffdddc57} \end{DoxyRefDesc}
+\mbox{\label{structcpu__id__t_a170254ff9438d4af1a86744b7ca4817f}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_data\_assoc@{l1\_data\_assoc}}
+\index{l1\_data\_assoc@{l1\_data\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_data\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+data\+\_\+assoc}
+
+Cache associativity for the L1 data cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a521f94f25038326af09bdaa560bb40be}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_data\_cache@{l1\_data\_cache}}
+\index{l1\_data\_cache@{l1\_data\_cache}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_data\_cache}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+data\+\_\+cache}
+
+L1 data cache size in KB. Could be zero, if the CPU lacks cache. If the size cannot be determined, it will be -\/1. \mbox{\label{structcpu__id__t_ac83920fc5ae898b14041448dffdddc57}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_data\_cacheline@{l1\_data\_cacheline}}
+\index{l1\_data\_cacheline@{l1\_data\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_data\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+data\+\_\+cacheline}
+
+Cache-\/line size for L1 data cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a2247e54fc475b2de0d01872b3583263a}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_instruction\_assoc@{l1\_instruction\_assoc}}
+\index{l1\_instruction\_assoc@{l1\_instruction\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_instruction\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+instruction\+\_\+assoc}
+
+Cache associativity for the L1 intruction cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_ae84b5ce3218be087a7202cc464c3b36b}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_instruction\_cache@{l1\_instruction\_cache}}
+\index{l1\_instruction\_cache@{l1\_instruction\_cache}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_instruction\_cache}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+instruction\+\_\+cache}
+
+L1 instruction cache size in KB. Could be zero, if the CPU lacks cache. If the size cannot be determined, it will be -\/1. \begin{DoxyNote}{Note}
+On some Intel CPUs, whose instruction cache is in fact a trace cache, the size will be expressed in K u\+Ops. 
+\end{DoxyNote}
+\mbox{\label{structcpu__id__t_ac47ea6a2e28a6ca18a022a7015941a91}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l1\_instruction\_cacheline@{l1\_instruction\_cacheline}}
+\index{l1\_instruction\_cacheline@{l1\_instruction\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l1\_instruction\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l1\+\_\+instruction\+\_\+cacheline}
+
+Cache-\/line size for L1 intruction cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_af3eb574f0137f0488613ea1476db3ec9}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l2\_assoc@{l2\_assoc}}
+\index{l2\_assoc@{l2\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l2\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l2\+\_\+assoc}
+
+Cache associativity for the L2 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a1c25ec074eb46257c9a5cbe6fffd05dc}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l2\_cache@{l2\_cache}}
+\index{l2\_cache@{l2\_cache}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l2\_cache}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l2\+\_\+cache}
+
+L2 cache size in KB. Could be zero, if the CPU lacks L2 cache. If the size of the cache could not be determined, it will be -\/1 \mbox{\label{structcpu__id__t_a944cd9e0fe6a4106d02c99838c8e7ecd}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l2\_cacheline@{l2\_cacheline}}
+\index{l2\_cacheline@{l2\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l2\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l2\+\_\+cacheline}
+
+Cache-\/line size for L2 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a607ddc319d790219bd4e9a8824f70731}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l3\_assoc@{l3\_assoc}}
+\index{l3\_assoc@{l3\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l3\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l3\+\_\+assoc}
+
+Cache associativity for the L3 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a21a0da3e567614c4762c3e13bae0e6ad}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l3\_cache@{l3\_cache}}
+\index{l3\_cache@{l3\_cache}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l3\_cache}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l3\+\_\+cache}
+
+L3 cache size in KB. Zero on most systems \mbox{\label{structcpu__id__t_a1a05fc3dabc91ff18bac5b7b9fa06fc8}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l3\_cacheline@{l3\_cacheline}}
+\index{l3\_cacheline@{l3\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l3\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l3\+\_\+cacheline}
+
+Cache-\/line size for L3 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a3a680c01129926bc338be40c5f054f46}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l4\_assoc@{l4\_assoc}}
+\index{l4\_assoc@{l4\_assoc}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l4\_assoc}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l4\+\_\+assoc}
+
+Cache associativity for the L4 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_a06e8e373fa31aa5aa759c71b64e075db}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l4\_cache@{l4\_cache}}
+\index{l4\_cache@{l4\_cache}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l4\_cache}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l4\+\_\+cache}
+
+L4 cache size in KB. Zero on most systems \mbox{\label{structcpu__id__t_a9f6dc585f625a86f5ba545f1ea706af1}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!l4\_cacheline@{l4\_cacheline}}
+\index{l4\_cacheline@{l4\_cacheline}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{l4\_cacheline}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::l4\+\_\+cacheline}
+
+Cache-\/line size for L4 cache. -\/1 if undetermined \mbox{\label{structcpu__id__t_abb6a0b806e88191ac428fc3d4b94930e}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!model@{model}}
+\index{model@{model}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{model}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::model}
+
+CPU model (Base\+Model[3\+:0]) \mbox{\label{structcpu__id__t_ab2702b07ab0b424946a6c5525a06bfbe}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!num\_cores@{num\_cores}}
+\index{num\_cores@{num\_cores}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{num\_cores}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::num\+\_\+cores}
+
+Number of CPU cores on the current processor \mbox{\label{structcpu__id__t_a052446102923b47cf859ffcf0f7c1845}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!num\_logical\_cpus@{num\_logical\_cpus}}
+\index{num\_logical\_cpus@{num\_logical\_cpus}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{num\_logical\_cpus}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::num\+\_\+logical\+\_\+cpus}
+
+Number of logical processors on the current processor. Could be more than the number of physical cores, e.\+g. when the processor has Hyper\+Threading. \mbox{\label{structcpu__id__t_a89b162728b0d5dbaf7b3169b2096ecbc}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!sgx@{sgx}}
+\index{sgx@{sgx}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{sgx}
+{\footnotesize\ttfamily struct \textbf{ cpu\+\_\+sgx\+\_\+t} cpu\+\_\+id\+\_\+t\+::sgx}
+
+contains information about SGX features if the processor, if present \mbox{\label{structcpu__id__t_ac8b6aff71ed7bab97f15194edac321fb}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!sse\_size@{sse\_size}}
+\index{sse\_size@{sse\_size}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{sse\_size}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::sse\+\_\+size}
+
+SSE execution unit size (64 or 128; -\/1 if N/A) \mbox{\label{structcpu__id__t_a5ba98ac07e6ff6c1e99ee1f4726d9d3f}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!stepping@{stepping}}
+\index{stepping@{stepping}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{stepping}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::stepping}
+
+CPU stepping \mbox{\label{structcpu__id__t_ae7ad9a6544e5fd9b5610824d1c66896e}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!total\_logical\_cpus@{total\_logical\_cpus}}
+\index{total\_logical\_cpus@{total\_logical\_cpus}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{total\_logical\_cpus}
+{\footnotesize\ttfamily int32\+\_\+t cpu\+\_\+id\+\_\+t\+::total\+\_\+logical\+\_\+cpus}
+
+The total number of logical processors. The same value is available through \doxyref{cpuid\+\_\+get\+\_\+total\+\_\+cpus}{p.}{group__libcpuid_ga1951ec0d29f43037df5e2e14cbae44b3}.
+
+This is num\+\_\+logical\+\_\+cpus $\ast$ \{total physical processors in the system\} (but only on a real system, under a VM this number may be lower).
+
+If you\textquotesingle{}re writing a multithreaded program and you want to run it on all CPUs, this is the number of threads you need.
+
+\begin{DoxyNote}{Note}
+in a VM, this will exactly match the number of CPUs set in the VM\textquotesingle{}s configuration. 
+\end{DoxyNote}
+\mbox{\label{structcpu__id__t_a531ac189d9462d9ecc8eb98e6a83eba5}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!vendor@{vendor}}
+\index{vendor@{vendor}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{vendor}
+{\footnotesize\ttfamily \textbf{ cpu\+\_\+vendor\+\_\+t} cpu\+\_\+id\+\_\+t\+::vendor}
+
+contains the recognized CPU vendor \mbox{\label{structcpu__id__t_a77b3f88a9f6fecdb61ed2d66be6244bd}} 
+\index{cpu\_id\_t@{cpu\_id\_t}!vendor\_str@{vendor\_str}}
+\index{vendor\_str@{vendor\_str}!cpu\_id\_t@{cpu\_id\_t}}
+\doxysubsubsection{vendor\_str}
+{\footnotesize\ttfamily char cpu\+\_\+id\+\_\+t\+::vendor\+\_\+str[VENDOR\+\_\+\+STR\+\_\+\+MAX]}
+
+contains the CPU vendor string, e.\+g. \char`\"{}\+Genuine\+Intel\char`\"{} 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+rts/lib/libcpuid/libcpuid/\textbf{ libcpuid.\+h}\end{DoxyCompactItemize}

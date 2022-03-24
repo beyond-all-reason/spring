@@ -1,0 +1,34 @@
+.TH "cpu_mark_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_mark_t \- Internal structure, used in cpu_tsc_mark, cpu_tsc_unmark and cpu_clock_by_mark\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint64_t \fBtsc\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBsys_clock\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Internal structure, used in cpu_tsc_mark, cpu_tsc_unmark and cpu_clock_by_mark\&. 
+.SH "Field Documentation"
+.PP 
+.SS "uint64_t cpu_mark_t::sys_clock"
+In microsecond resolution 
+.SS "uint64_t cpu_mark_t::tsc"
+Time-stamp from RDTSC 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

@@ -1,0 +1,1440 @@
+.TH "libcpuid" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+libcpuid \- LibCPUID
+.PP
+ \- LibCPUID provides CPU identification\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBcpu_raw_data_t\fP"
+.br
+.RI "Contains just the raw CPUID data\&. "
+.ti -1c
+.RI "struct \fBcpu_sgx_t\fP"
+.br
+.RI "This contains information about SGX features of the processor Example usage: "
+.ti -1c
+.RI "struct \fBcpu_id_t\fP"
+.br
+.RI "This contains the recognized CPU features/info\&. "
+.ti -1c
+.RI "struct \fBcpu_mark_t\fP"
+.br
+.RI "Internal structure, used in cpu_tsc_mark, cpu_tsc_unmark and cpu_clock_by_mark\&. "
+.ti -1c
+.RI "struct \fBcpu_epc_t\fP"
+.br
+.RI "The return value of \fBcpuid_get_epc()\fP\&. "
+.ti -1c
+.RI "struct \fBcpu_list_t\fP"
+.br
+.RI "a structure that holds a list of processor names "
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBNUM_CPU_VENDORS\fP   NUM_CPU_VENDORS"
+.br
+.ti -1c
+.RI "#define \fBCPU_INVALID_VALUE\fP   0x3fffffff"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef void(* \fBlibcpuid_warn_fn_t\fP) (const char *msg)"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBcpu_vendor_t\fP { \fBVENDOR_INTEL\fP = 0, \fBVENDOR_AMD\fP, \fBVENDOR_CYRIX\fP, \fBVENDOR_NEXGEN\fP, \fBVENDOR_TRANSMETA\fP, \fBVENDOR_UMC\fP, \fBVENDOR_CENTAUR\fP, \fBVENDOR_RISE\fP, \fBVENDOR_SIS\fP, \fBVENDOR_NSC\fP, \fBVENDOR_HYGON\fP, \fBNUM_CPU_VENDORS\fP, \fBVENDOR_UNKNOWN\fP = -1 }"
+.br
+.RI "CPU vendor, as guessed from the Vendor String\&. "
+.ti -1c
+.RI "enum \fBcpu_feature_t\fP { \fBCPU_FEATURE_FPU\fP = 0, \fBCPU_FEATURE_VME\fP, \fBCPU_FEATURE_DE\fP, \fBCPU_FEATURE_PSE\fP, \fBCPU_FEATURE_TSC\fP, \fBCPU_FEATURE_MSR\fP, \fBCPU_FEATURE_PAE\fP, \fBCPU_FEATURE_MCE\fP, \fBCPU_FEATURE_CX8\fP, \fBCPU_FEATURE_APIC\fP, \fBCPU_FEATURE_MTRR\fP, \fBCPU_FEATURE_SEP\fP, \fBCPU_FEATURE_PGE\fP, \fBCPU_FEATURE_MCA\fP, \fBCPU_FEATURE_CMOV\fP, \fBCPU_FEATURE_PAT\fP, \fBCPU_FEATURE_PSE36\fP, \fBCPU_FEATURE_PN\fP, \fBCPU_FEATURE_CLFLUSH\fP, \fBCPU_FEATURE_DTS\fP, \fBCPU_FEATURE_ACPI\fP, \fBCPU_FEATURE_MMX\fP, \fBCPU_FEATURE_FXSR\fP, \fBCPU_FEATURE_SSE\fP, \fBCPU_FEATURE_SSE2\fP, \fBCPU_FEATURE_SS\fP, \fBCPU_FEATURE_HT\fP, \fBCPU_FEATURE_TM\fP, \fBCPU_FEATURE_IA64\fP, \fBCPU_FEATURE_PBE\fP, \fBCPU_FEATURE_PNI\fP, \fBCPU_FEATURE_PCLMUL\fP, \fBCPU_FEATURE_DTS64\fP, \fBCPU_FEATURE_MONITOR\fP, \fBCPU_FEATURE_DS_CPL\fP, \fBCPU_FEATURE_VMX\fP, \fBCPU_FEATURE_SMX\fP, \fBCPU_FEATURE_EST\fP, \fBCPU_FEATURE_TM2\fP, \fBCPU_FEATURE_SSSE3\fP, \fBCPU_FEATURE_CID\fP, \fBCPU_FEATURE_CX16\fP, \fBCPU_FEATURE_XTPR\fP, \fBCPU_FEATURE_PDCM\fP, \fBCPU_FEATURE_DCA\fP, \fBCPU_FEATURE_SSE4_1\fP, \fBCPU_FEATURE_SSE4_2\fP, \fBCPU_FEATURE_SYSCALL\fP, \fBCPU_FEATURE_XD\fP, \fBCPU_FEATURE_MOVBE\fP, \fBCPU_FEATURE_POPCNT\fP, \fBCPU_FEATURE_AES\fP, \fBCPU_FEATURE_XSAVE\fP, \fBCPU_FEATURE_OSXSAVE\fP, \fBCPU_FEATURE_AVX\fP, \fBCPU_FEATURE_MMXEXT\fP, \fBCPU_FEATURE_3DNOW\fP, \fBCPU_FEATURE_3DNOWEXT\fP, \fBCPU_FEATURE_NX\fP, \fBCPU_FEATURE_FXSR_OPT\fP, \fBCPU_FEATURE_RDTSCP\fP, \fBCPU_FEATURE_LM\fP, \fBCPU_FEATURE_LAHF_LM\fP, \fBCPU_FEATURE_CMP_LEGACY\fP, \fBCPU_FEATURE_SVM\fP, \fBCPU_FEATURE_ABM\fP, \fBCPU_FEATURE_MISALIGNSSE\fP, \fBCPU_FEATURE_SSE4A\fP, \fBCPU_FEATURE_3DNOWPREFETCH\fP, \fBCPU_FEATURE_OSVW\fP, \fBCPU_FEATURE_IBS\fP, \fBCPU_FEATURE_SSE5\fP, \fBCPU_FEATURE_SKINIT\fP, \fBCPU_FEATURE_WDT\fP, \fBCPU_FEATURE_TS\fP, \fBCPU_FEATURE_FID\fP, \fBCPU_FEATURE_VID\fP, \fBCPU_FEATURE_TTP\fP, \fBCPU_FEATURE_TM_AMD\fP, \fBCPU_FEATURE_STC\fP, \fBCPU_FEATURE_100MHZSTEPS\fP, \fBCPU_FEATURE_HWPSTATE\fP, \fBCPU_FEATURE_CONSTANT_TSC\fP, \fBCPU_FEATURE_XOP\fP, \fBCPU_FEATURE_FMA3\fP, \fBCPU_FEATURE_FMA4\fP, \fBCPU_FEATURE_TBM\fP, \fBCPU_FEATURE_F16C\fP, \fBCPU_FEATURE_RDRAND\fP, \fBCPU_FEATURE_X2APIC\fP, \fBCPU_FEATURE_CPB\fP, \fBCPU_FEATURE_APERFMPERF\fP, \fBCPU_FEATURE_PFI\fP, \fBCPU_FEATURE_PA\fP, \fBCPU_FEATURE_AVX2\fP, \fBCPU_FEATURE_BMI1\fP, \fBCPU_FEATURE_BMI2\fP, \fBCPU_FEATURE_HLE\fP, \fBCPU_FEATURE_RTM\fP, \fBCPU_FEATURE_AVX512F\fP, \fBCPU_FEATURE_AVX512DQ\fP, \fBCPU_FEATURE_AVX512PF\fP, \fBCPU_FEATURE_AVX512ER\fP, \fBCPU_FEATURE_AVX512CD\fP, \fBCPU_FEATURE_SHA_NI\fP, \fBCPU_FEATURE_AVX512BW\fP, \fBCPU_FEATURE_AVX512VL\fP, \fBCPU_FEATURE_SGX\fP, \fBCPU_FEATURE_RDSEED\fP, \fBCPU_FEATURE_ADX\fP, \fBCPU_FEATURE_AVX512VNNI\fP, \fBCPU_FEATURE_AVX512VBMI\fP, \fBCPU_FEATURE_AVX512VBMI2\fP, \fBNUM_CPU_FEATURES\fP }"
+.br
+.RI "CPU feature identifiers\&. "
+.ti -1c
+.RI "enum \fBcpu_hint_t\fP { \fBCPU_HINT_SSE_SIZE_AUTH\fP = 0, \fBNUM_CPU_HINTS\fP }"
+.br
+.RI "CPU detection hints identifiers\&. "
+.ti -1c
+.RI "enum \fBcpu_sgx_feature_t\fP { \fBINTEL_SGX1\fP, \fBINTEL_SGX2\fP, \fBNUM_SGX_FEATURES\fP }"
+.br
+.RI "SGX features flags\&. "
+.ti -1c
+.RI "enum \fBcpu_error_t\fP { \fBERR_OK\fP = 0, \fBERR_NO_CPUID\fP = -1, \fBERR_NO_RDTSC\fP = -2, \fBERR_NO_MEM\fP = -3, \fBERR_OPEN\fP = -4, \fBERR_BADFMT\fP = -5, \fBERR_NOT_IMP\fP = -6, \fBERR_CPU_UNKN\fP = -7, \fBERR_NO_RDMSR\fP = -8, \fBERR_NO_DRIVER\fP = -9, \fBERR_NO_PERMS\fP = -10, \fBERR_EXTRACT\fP = -11, \fBERR_HANDLE\fP = -12, \fBERR_INVMSR\fP = -13, \fBERR_INVCNB\fP = -14, \fBERR_HANDLE_R\fP = -15, \fBERR_INVRANGE\fP = -16 }"
+.br
+.RI "Describes common library error codes\&. "
+.ti -1c
+.RI "enum \fBcpu_msrinfo_request_t\fP { \fBINFO_MPERF\fP, \fBINFO_APERF\fP, \fBINFO_MIN_MULTIPLIER\fP, \fBINFO_CUR_MULTIPLIER\fP, \fBINFO_MAX_MULTIPLIER\fP, \fBINFO_TEMPERATURE\fP, \fBINFO_THROTTLING\fP, \fBINFO_VOLTAGE\fP, \fBINFO_BCLK\fP, \fBINFO_BUS_CLOCK\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBcpuid_get_total_cpus\fP (void)"
+.br
+.RI "Returns the total number of logical CPU threads (even if CPUID is not present)\&. "
+.ti -1c
+.RI "int \fBcpuid_present\fP (void)"
+.br
+.RI "Checks if the CPUID instruction is supported\&. "
+.ti -1c
+.RI "void \fBcpu_exec_cpuid\fP (uint32_t eax, uint32_t *regs)"
+.br
+.RI "Executes the CPUID instruction\&. "
+.ti -1c
+.RI "void \fBcpu_exec_cpuid_ext\fP (uint32_t *regs)"
+.br
+.RI "Executes the CPUID instruction with the given input registers\&. "
+.ti -1c
+.RI "int \fBcpuid_get_raw_data\fP (struct \fBcpu_raw_data_t\fP *data)"
+.br
+.RI "Obtains the raw CPUID data from the current CPU\&. "
+.ti -1c
+.RI "int \fBcpuid_serialize_raw_data\fP (struct \fBcpu_raw_data_t\fP *data, const char *filename)"
+.br
+.RI "Writes the raw CPUID data to a text file\&. "
+.ti -1c
+.RI "int \fBcpuid_deserialize_raw_data\fP (struct \fBcpu_raw_data_t\fP *data, const char *filename)"
+.br
+.RI "Reads raw CPUID data from file\&. "
+.ti -1c
+.RI "int \fBcpu_identify\fP (struct \fBcpu_raw_data_t\fP *raw, struct \fBcpu_id_t\fP *data)"
+.br
+.RI "Identifies the CPU\&. "
+.ti -1c
+.RI "const char * \fBcpu_feature_str\fP (\fBcpu_feature_t\fP feature)"
+.br
+.RI "Returns the short textual representation of a CPU flag\&. "
+.ti -1c
+.RI "const char * \fBcpuid_error\fP (void)"
+.br
+.RI "Returns textual description of the last error\&. "
+.ti -1c
+.RI "void \fBcpu_rdtsc\fP (uint64_t *result)"
+.br
+.RI "Executes RDTSC\&. "
+.ti -1c
+.RI "void \fBcpu_tsc_mark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Store TSC and timing info\&. "
+.ti -1c
+.RI "void \fBcpu_tsc_unmark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Calculate TSC and timing difference\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_mark\fP (struct \fBcpu_mark_t\fP *mark)"
+.br
+.RI "Calculates the CPU clock\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_os\fP (void)"
+.br
+.RI "Returns the CPU clock, as reported by the OS\&. "
+.ti -1c
+.RI "int \fBcpu_clock_measure\fP (int millis, int quad_check)"
+.br
+.RI "Measure the CPU clock frequency\&. "
+.ti -1c
+.RI "int \fBcpu_clock_by_ic\fP (int millis, int runs)"
+.br
+.RI "Measure the CPU clock frequency using instruction-counting\&. "
+.ti -1c
+.RI "int \fBcpu_clock\fP (void)"
+.br
+.RI "Get the CPU clock frequency (all-in-one method) "
+.ti -1c
+.RI "struct \fBcpu_epc_t\fP \fBcpuid_get_epc\fP (int index, const struct \fBcpu_raw_data_t\fP *raw)"
+.br
+.RI "Fetches information about an EPC (Enclave Page Cache) area\&. "
+.ti -1c
+.RI "const char * \fBcpuid_lib_version\fP (void)"
+.br
+.RI "Returns the libcpuid version\&. "
+.ti -1c
+.RI "libcpuid_warn_fn_t \fBcpuid_set_warn_function\fP (libcpuid_warn_fn_t warn_fun)"
+.br
+.RI "Sets the warning print function\&. "
+.ti -1c
+.RI "void \fBcpuid_set_verbosiness_level\fP (int level)"
+.br
+.RI "Sets the verbosiness level\&. "
+.ti -1c
+.RI "\fBcpu_vendor_t\fP \fBcpuid_get_vendor\fP (void)"
+.br
+.RI "Obtains the CPU vendor from CPUID from the current CPU\&. "
+.ti -1c
+.RI "void \fBcpuid_get_cpu_list\fP (\fBcpu_vendor_t\fP vendor, struct \fBcpu_list_t\fP *list)"
+.br
+.RI "Gets a list of all known CPU names from a specific vendor\&. "
+.ti -1c
+.RI "void \fBcpuid_free_cpu_list\fP (struct \fBcpu_list_t\fP *list)"
+.br
+.RI "Frees a CPU list\&. "
+.ti -1c
+.RI "struct msr_driver_t * \fBcpu_msr_driver_open\fP (void)"
+.br
+.RI "Starts/opens a driver, needed to read MSRs (Model Specific Registers) "
+.ti -1c
+.RI "struct msr_driver_t * \fBcpu_msr_driver_open_core\fP (unsigned core_num)"
+.br
+.RI "Similar to \fBcpu_msr_driver_open\fP, but accept one parameter\&. "
+.ti -1c
+.RI "int \fBcpu_rdmsr\fP (struct msr_driver_t *handle, uint32_t msr_index, uint64_t *result)"
+.br
+.RI "Reads a Model-Specific Register (MSR) "
+.ti -1c
+.RI "int \fBcpu_rdmsr_range\fP (struct msr_driver_t *handle, uint32_t msr_index, uint8_t highbit, uint8_t lowbit, uint64_t *result)"
+.br
+.RI "Similar to \fBcpu_rdmsr\fP, but extract a range of bits\&. "
+.ti -1c
+.RI "int \fBcpu_msrinfo\fP (struct msr_driver_t *handle, \fBcpu_msrinfo_request_t\fP which)"
+.br
+.RI "Reads extended CPU information from Model-Specific Registers\&. "
+.ti -1c
+.RI "int \fBmsr_serialize_raw_data\fP (struct msr_driver_t *handle, const char *filename)"
+.br
+.RI "Writes the raw MSR data to a text file\&. "
+.ti -1c
+.RI "int \fBcpu_msr_driver_close\fP (struct msr_driver_t *handle)"
+.br
+.RI "Closes an open MSR driver\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+LibCPUID provides CPU identification\&. 
+
+
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBcpu_error_t\fP"
+
+.PP
+Describes common library error codes\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIERR_OK \fP\fP
+No error 
+.TP
+\fB\fIERR_NO_CPUID \fP\fP
+CPUID instruction is not supported 
+.TP
+\fB\fIERR_NO_RDTSC \fP\fP
+RDTSC instruction is not supported 
+.TP
+\fB\fIERR_NO_MEM \fP\fP
+Memory allocation failed 
+.TP
+\fB\fIERR_OPEN \fP\fP
+File open operation failed 
+.TP
+\fB\fIERR_BADFMT \fP\fP
+Bad file format 
+.TP
+\fB\fIERR_NOT_IMP \fP\fP
+Not implemented 
+.TP
+\fB\fIERR_CPU_UNKN \fP\fP
+Unsupported processor 
+.TP
+\fB\fIERR_NO_RDMSR \fP\fP
+RDMSR instruction is not supported 
+.TP
+\fB\fIERR_NO_DRIVER \fP\fP
+RDMSR driver error (generic) 
+.TP
+\fB\fIERR_NO_PERMS \fP\fP
+No permissions to install RDMSR driver 
+.TP
+\fB\fIERR_EXTRACT \fP\fP
+Cannot extract RDMSR driver (read only media?) 
+.TP
+\fB\fIERR_HANDLE \fP\fP
+Bad handle 
+.TP
+\fB\fIERR_INVMSR \fP\fP
+Invalid MSR 
+.TP
+\fB\fIERR_INVCNB \fP\fP
+Invalid core number 
+.TP
+\fB\fIERR_HANDLE_R \fP\fP
+Error on handle read 
+.TP
+\fB\fIERR_INVRANGE \fP\fP
+Invalid given range 
+.SS "enum \fBcpu_feature_t\fP"
+
+.PP
+CPU feature identifiers\&. Usage: 
+.PP
+.nf
+\&.\&.\&.
+struct cpu_raw_data_t raw;
+struct cpu_id_t id;
+if (cpuid_get_raw_data(&raw) == 0 && cpu_identify(&raw, &id) == 0) {
+    if (id\&.flags[CPU_FEATURE_SSE2]) {
+        // The CPU has SSE2\&.\&.\&.
+        \&.\&.\&.
+    } else {
+        // no SSE2
+    }
+} else {
+  // processor cannot be determined\&.
+}
+
+.fi
+.PP
+ 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fICPU_FEATURE_FPU \fP\fP
+Floating point unit 
+.TP
+\fB\fICPU_FEATURE_VME \fP\fP
+Virtual mode extension 
+.TP
+\fB\fICPU_FEATURE_DE \fP\fP
+Debugging extension 
+.TP
+\fB\fICPU_FEATURE_PSE \fP\fP
+Page size extension 
+.TP
+\fB\fICPU_FEATURE_TSC \fP\fP
+Time-stamp counter 
+.TP
+\fB\fICPU_FEATURE_MSR \fP\fP
+Model-specific regsisters, RDMSR/WRMSR supported 
+.TP
+\fB\fICPU_FEATURE_PAE \fP\fP
+Physical address extension 
+.TP
+\fB\fICPU_FEATURE_MCE \fP\fP
+Machine check exception 
+.TP
+\fB\fICPU_FEATURE_CX8 \fP\fP
+CMPXCHG8B instruction supported 
+.TP
+\fB\fICPU_FEATURE_APIC \fP\fP
+APIC support 
+.TP
+\fB\fICPU_FEATURE_MTRR \fP\fP
+Memory type range registers 
+.TP
+\fB\fICPU_FEATURE_SEP \fP\fP
+SYSENTER / SYSEXIT instructions supported 
+.TP
+\fB\fICPU_FEATURE_PGE \fP\fP
+Page global enable 
+.TP
+\fB\fICPU_FEATURE_MCA \fP\fP
+Machine check architecture 
+.TP
+\fB\fICPU_FEATURE_CMOV \fP\fP
+CMOVxx instructions supported 
+.TP
+\fB\fICPU_FEATURE_PAT \fP\fP
+Page attribute table 
+.TP
+\fB\fICPU_FEATURE_PSE36 \fP\fP
+36-bit page address extension 
+.TP
+\fB\fICPU_FEATURE_PN \fP\fP
+Processor serial # implemented (Intel P3 only) 
+.TP
+\fB\fICPU_FEATURE_CLFLUSH \fP\fP
+CLFLUSH instruction supported 
+.TP
+\fB\fICPU_FEATURE_DTS \fP\fP
+Debug store supported 
+.TP
+\fB\fICPU_FEATURE_ACPI \fP\fP
+ACPI support (power states) 
+.TP
+\fB\fICPU_FEATURE_MMX \fP\fP
+MMX instruction set supported 
+.TP
+\fB\fICPU_FEATURE_FXSR \fP\fP
+FXSAVE / FXRSTOR supported 
+.TP
+\fB\fICPU_FEATURE_SSE \fP\fP
+Streaming-SIMD Extensions (SSE) supported 
+.TP
+\fB\fICPU_FEATURE_SSE2 \fP\fP
+SSE2 instructions supported 
+.TP
+\fB\fICPU_FEATURE_SS \fP\fP
+Self-snoop 
+.TP
+\fB\fICPU_FEATURE_HT \fP\fP
+Hyper-threading supported (but might be disabled) 
+.TP
+\fB\fICPU_FEATURE_TM \fP\fP
+Thermal monitor 
+.TP
+\fB\fICPU_FEATURE_IA64 \fP\fP
+IA64 supported (Itanium only) 
+.TP
+\fB\fICPU_FEATURE_PBE \fP\fP
+Pending-break enable 
+.TP
+\fB\fICPU_FEATURE_PNI \fP\fP
+PNI (SSE3) instructions supported 
+.TP
+\fB\fICPU_FEATURE_PCLMUL \fP\fP
+PCLMULQDQ instruction supported 
+.TP
+\fB\fICPU_FEATURE_DTS64 \fP\fP
+64-bit Debug store supported 
+.TP
+\fB\fICPU_FEATURE_MONITOR \fP\fP
+MONITOR / MWAIT supported 
+.TP
+\fB\fICPU_FEATURE_DS_CPL \fP\fP
+CPL Qualified Debug Store 
+.TP
+\fB\fICPU_FEATURE_VMX \fP\fP
+Virtualization technology supported 
+.TP
+\fB\fICPU_FEATURE_SMX \fP\fP
+Safer mode exceptions 
+.TP
+\fB\fICPU_FEATURE_EST \fP\fP
+Enhanced SpeedStep 
+.TP
+\fB\fICPU_FEATURE_TM2 \fP\fP
+Thermal monitor 2 
+.TP
+\fB\fICPU_FEATURE_SSSE3 \fP\fP
+SSSE3 instructionss supported (this is different from SSE3!) 
+.TP
+\fB\fICPU_FEATURE_CID \fP\fP
+Context ID supported 
+.TP
+\fB\fICPU_FEATURE_CX16 \fP\fP
+CMPXCHG16B instruction supported 
+.TP
+\fB\fICPU_FEATURE_XTPR \fP\fP
+Send Task Priority Messages disable 
+.TP
+\fB\fICPU_FEATURE_PDCM \fP\fP
+Performance capabilities MSR supported 
+.TP
+\fB\fICPU_FEATURE_DCA \fP\fP
+Direct cache access supported 
+.TP
+\fB\fICPU_FEATURE_SSE4_1 \fP\fP
+SSE 4\&.1 instructions supported 
+.TP
+\fB\fICPU_FEATURE_SSE4_2 \fP\fP
+SSE 4\&.2 instructions supported 
+.TP
+\fB\fICPU_FEATURE_SYSCALL \fP\fP
+SYSCALL / SYSRET instructions supported 
+.TP
+\fB\fICPU_FEATURE_XD \fP\fP
+Execute disable bit supported 
+.TP
+\fB\fICPU_FEATURE_MOVBE \fP\fP
+MOVBE instruction supported 
+.TP
+\fB\fICPU_FEATURE_POPCNT \fP\fP
+POPCNT instruction supported 
+.TP
+\fB\fICPU_FEATURE_AES \fP\fP
+AES* instructions supported 
+.TP
+\fB\fICPU_FEATURE_XSAVE \fP\fP
+XSAVE/XRSTOR/etc instructions supported 
+.TP
+\fB\fICPU_FEATURE_OSXSAVE \fP\fP
+non-privileged copy of OSXSAVE supported 
+.TP
+\fB\fICPU_FEATURE_AVX \fP\fP
+Advanced vector extensions supported 
+.TP
+\fB\fICPU_FEATURE_MMXEXT \fP\fP
+AMD MMX-extended instructions supported 
+.TP
+\fB\fICPU_FEATURE_3DNOW \fP\fP
+AMD 3DNow! instructions supported 
+.TP
+\fB\fICPU_FEATURE_3DNOWEXT \fP\fP
+AMD 3DNow! extended instructions supported 
+.TP
+\fB\fICPU_FEATURE_NX \fP\fP
+No-execute bit supported 
+.TP
+\fB\fICPU_FEATURE_FXSR_OPT \fP\fP
+FFXSR: FXSAVE and FXRSTOR optimizations 
+.TP
+\fB\fICPU_FEATURE_RDTSCP \fP\fP
+RDTSCP instruction supported (AMD-only) 
+.TP
+\fB\fICPU_FEATURE_LM \fP\fP
+Long mode (x86_64/EM64T) supported 
+.TP
+\fB\fICPU_FEATURE_LAHF_LM \fP\fP
+LAHF/SAHF supported in 64-bit mode 
+.TP
+\fB\fICPU_FEATURE_CMP_LEGACY \fP\fP
+core multi-processing legacy mode 
+.TP
+\fB\fICPU_FEATURE_SVM \fP\fP
+AMD Secure virtual machine 
+.TP
+\fB\fICPU_FEATURE_ABM \fP\fP
+LZCNT instruction support 
+.TP
+\fB\fICPU_FEATURE_MISALIGNSSE \fP\fP
+Misaligned SSE supported 
+.TP
+\fB\fICPU_FEATURE_SSE4A \fP\fP
+SSE 4a from AMD 
+.TP
+\fB\fICPU_FEATURE_3DNOWPREFETCH \fP\fP
+PREFETCH/PREFETCHW support 
+.TP
+\fB\fICPU_FEATURE_OSVW \fP\fP
+OS Visible Workaround (AMD) 
+.TP
+\fB\fICPU_FEATURE_IBS \fP\fP
+Instruction-based sampling 
+.TP
+\fB\fICPU_FEATURE_SSE5 \fP\fP
+SSE 5 instructions supported (deprecated, will never be 1) 
+.TP
+\fB\fICPU_FEATURE_SKINIT \fP\fP
+SKINIT / STGI supported 
+.TP
+\fB\fICPU_FEATURE_WDT \fP\fP
+Watchdog timer support 
+.TP
+\fB\fICPU_FEATURE_TS \fP\fP
+Temperature sensor 
+.TP
+\fB\fICPU_FEATURE_FID \fP\fP
+Frequency ID control 
+.TP
+\fB\fICPU_FEATURE_VID \fP\fP
+Voltage ID control 
+.TP
+\fB\fICPU_FEATURE_TTP \fP\fP
+THERMTRIP 
+.TP
+\fB\fICPU_FEATURE_TM_AMD \fP\fP
+AMD-specified hardware thermal control 
+.TP
+\fB\fICPU_FEATURE_STC \fP\fP
+Software thermal control 
+.TP
+\fB\fICPU_FEATURE_100MHZSTEPS \fP\fP
+100 MHz multiplier control 
+.TP
+\fB\fICPU_FEATURE_HWPSTATE \fP\fP
+Hardware P-state control 
+.TP
+\fB\fICPU_FEATURE_CONSTANT_TSC \fP\fP
+TSC ticks at constant rate 
+.TP
+\fB\fICPU_FEATURE_XOP \fP\fP
+The XOP instruction set (same as the old CPU_FEATURE_SSE5) 
+.TP
+\fB\fICPU_FEATURE_FMA3 \fP\fP
+The FMA3 instruction set 
+.TP
+\fB\fICPU_FEATURE_FMA4 \fP\fP
+The FMA4 instruction set 
+.TP
+\fB\fICPU_FEATURE_TBM \fP\fP
+Trailing bit manipulation instruction support 
+.TP
+\fB\fICPU_FEATURE_F16C \fP\fP
+16-bit FP convert instruction support 
+.TP
+\fB\fICPU_FEATURE_RDRAND \fP\fP
+RdRand instruction 
+.TP
+\fB\fICPU_FEATURE_X2APIC \fP\fP
+x2APIC, APIC_BASE\&.EXTD, MSRs 0000_0800h\&.\&.\&.0000_0BFFh 64-bit ICR (+030h but not +031h), no DFR (+00Eh), SELF_IPI (+040h) also see standard level 0000_000Bh 
+.TP
+\fB\fICPU_FEATURE_CPB \fP\fP
+Core performance boost 
+.TP
+\fB\fICPU_FEATURE_APERFMPERF \fP\fP
+MPERF/APERF MSRs support 
+.TP
+\fB\fICPU_FEATURE_PFI \fP\fP
+Processor Feedback Interface support 
+.TP
+\fB\fICPU_FEATURE_PA \fP\fP
+Processor accumulator 
+.TP
+\fB\fICPU_FEATURE_AVX2 \fP\fP
+AVX2 instructions 
+.TP
+\fB\fICPU_FEATURE_BMI1 \fP\fP
+BMI1 instructions 
+.TP
+\fB\fICPU_FEATURE_BMI2 \fP\fP
+BMI2 instructions 
+.TP
+\fB\fICPU_FEATURE_HLE \fP\fP
+Hardware Lock Elision prefixes 
+.TP
+\fB\fICPU_FEATURE_RTM \fP\fP
+Restricted Transactional Memory instructions 
+.TP
+\fB\fICPU_FEATURE_AVX512F \fP\fP
+AVX-512 Foundation 
+.TP
+\fB\fICPU_FEATURE_AVX512DQ \fP\fP
+AVX-512 Double/Quad granular insns 
+.TP
+\fB\fICPU_FEATURE_AVX512PF \fP\fP
+AVX-512 Prefetch 
+.TP
+\fB\fICPU_FEATURE_AVX512ER \fP\fP
+AVX-512 Exponential/Reciprocal 
+.TP
+\fB\fICPU_FEATURE_AVX512CD \fP\fP
+AVX-512 Conflict detection 
+.TP
+\fB\fICPU_FEATURE_SHA_NI \fP\fP
+SHA-1/SHA-256 instructions 
+.TP
+\fB\fICPU_FEATURE_AVX512BW \fP\fP
+AVX-512 Byte/Word granular insns 
+.TP
+\fB\fICPU_FEATURE_AVX512VL \fP\fP
+AVX-512 128/256 vector length extensions 
+.TP
+\fB\fICPU_FEATURE_SGX \fP\fP
+SGX extensions\&. Non-autoritative, check cpu_id_t::sgx::present to verify presence 
+.TP
+\fB\fICPU_FEATURE_RDSEED \fP\fP
+RDSEED instruction 
+.TP
+\fB\fICPU_FEATURE_ADX \fP\fP
+ADX extensions (arbitrary precision) 
+.TP
+\fB\fICPU_FEATURE_AVX512VNNI \fP\fP
+AVX-512 Vector Neural Network Instructions 
+.TP
+\fB\fICPU_FEATURE_AVX512VBMI \fP\fP
+AVX-512 Vector Bit ManipulationInstructions (version 1) 
+.TP
+\fB\fICPU_FEATURE_AVX512VBMI2 \fP\fP
+AVX-512 Vector Bit ManipulationInstructions (version 2) 
+.SS "enum \fBcpu_hint_t\fP"
+
+.PP
+CPU detection hints identifiers\&. Usage: similar to the flags usage 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fICPU_HINT_SSE_SIZE_AUTH \fP\fP
+SSE unit size is authoritative (not only a Family/Model guesswork, but based on an actual CPUID bit) 
+.SS "enum \fBcpu_msrinfo_request_t\fP"
+
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIINFO_MPERF \fP\fP
+Maximum performance frequency clock\&. This is a counter, which increments as a proportion of the actual processor speed\&. 
+.TP
+\fB\fIINFO_APERF \fP\fP
+Actual performance frequency clock\&. This accumulates the core clock counts when the core is active\&. 
+.TP
+\fB\fIINFO_MIN_MULTIPLIER \fP\fP
+Minimum CPU:FSB ratio for this CPU, multiplied by 100\&. 
+.TP
+\fB\fIINFO_CUR_MULTIPLIER \fP\fP
+Current CPU:FSB ratio, multiplied by 100\&. e\&.g\&., a CPU:FSB value of 18\&.5 reads as '1850'\&. 
+.TP
+\fB\fIINFO_MAX_MULTIPLIER \fP\fP
+Maximum CPU:FSB ratio for this CPU, multiplied by 100\&. 
+.TP
+\fB\fIINFO_TEMPERATURE \fP\fP
+The current core temperature in Celsius\&. 
+.TP
+\fB\fIINFO_THROTTLING \fP\fP
+1 if the current logical processor is throttling\&. 0 if it is running normally\&. 
+.TP
+\fB\fIINFO_VOLTAGE \fP\fP
+The current core voltage in Volt, multiplied by 100\&. 
+.TP
+\fB\fIINFO_BCLK \fP\fP
+See \fBINFO_BUS_CLOCK\fP\&. 
+.TP
+\fB\fIINFO_BUS_CLOCK \fP\fP
+The main bus clock in MHz, e\&.g\&., FSB/QPI/DMI/HT base clock, multiplied by 100\&. 
+.SS "enum \fBcpu_sgx_feature_t\fP"
+
+.PP
+SGX features flags\&. 
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_sgx_t\fP
+.RE
+.PP
+Usage: 
+.PP
+.nf
+\&.\&.\&.
+struct cpu_raw_data_t raw;
+struct cpu_id_t id;
+if (cpuid_get_raw_data(&raw) == 0 && cpu_identify(&raw, &id) == 0 && id\&.sgx\&.present) {
+    if (id\&.sgx\&.flags[INTEL_SGX1])
+        // The CPU has SGX1 instructions support\&.\&.\&.
+        \&.\&.\&.
+    } else {
+        // no SGX
+    }
+} else {
+  // processor cannot be determined\&.
+}
+
+.fi
+.PP
+ 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIINTEL_SGX1 \fP\fP
+SGX1 instructions support 
+.TP
+\fB\fIINTEL_SGX2 \fP\fP
+SGX2 instructions support 
+.SS "enum \fBcpu_vendor_t\fP"
+
+.PP
+CPU vendor, as guessed from the Vendor String\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIVENDOR_INTEL \fP\fP
+Intel CPU 
+.TP
+\fB\fIVENDOR_AMD \fP\fP
+AMD CPU 
+.TP
+\fB\fIVENDOR_CYRIX \fP\fP
+Cyrix CPU 
+.TP
+\fB\fIVENDOR_NEXGEN \fP\fP
+NexGen CPU 
+.TP
+\fB\fIVENDOR_TRANSMETA \fP\fP
+Transmeta CPU 
+.TP
+\fB\fIVENDOR_UMC \fP\fP
+x86 CPU by UMC 
+.TP
+\fB\fIVENDOR_CENTAUR \fP\fP
+x86 CPU by IDT 
+.TP
+\fB\fIVENDOR_RISE \fP\fP
+x86 CPU by Rise Technology 
+.TP
+\fB\fIVENDOR_SIS \fP\fP
+x86 CPU by SiS 
+.TP
+\fB\fIVENDOR_NSC \fP\fP
+x86 CPU by National Semiconductor 
+.TP
+\fB\fIVENDOR_HYGON \fP\fP
+Hygon CPU 
+.TP
+\fB\fINUM_CPU_VENDORS \fP\fP
+Valid CPU vendor ids: 0\&.\&.NUM_CPU_VENDORS - 1 
+.SH "Function Documentation"
+.PP 
+.SS "int cpu_clock (void)"
+
+.PP
+Get the CPU clock frequency (all-in-one method) This is an all-in-one method for getting the CPU clock frequency\&. It tries to use the OS for that\&. If the OS doesn't have this info, it uses cpu_clock_measure with 200ms time interval and quadruple checking\&.
+.PP
+\fBReturns\fP
+.RS 4
+the CPU clock frequency in MHz\&. If every possible method fails, the result is -1\&. 
+.RE
+.PP
+
+.SS "int cpu_clock_by_ic (int millis, int runs)"
+
+.PP
+Measure the CPU clock frequency using instruction-counting\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImillis\fP - how much time to allocate for each run, in milliseconds 
+.br
+\fIruns\fP - how many runs to perform
+.RE
+.PP
+The function performs a busy-wait cycle using a known number of 'heavy' (SSE) instructions\&. These instructions run at (more or less guaranteed) 1 IPC rate, so by running a busy loop for a fixed amount of time, and measuring the amount of instructions done, the CPU clock is accurately measured\&.
+.PP
+Of course, this function is still affected by the power-saving schemes, so the warnings as of \fBcpu_clock_measure()\fP still apply\&. However, this function is immune to problems with detection, related to the Intel Nehalem's 'Turbo' mode, where the internal clock is raised, but the RDTSC rate is unaffected\&.
+.PP
+The function will run for about (millis * runs) milliseconds\&. You can make only a single busy-wait run (runs == 1); however, this can be affected by task scheduling (which will break the counting), so allowing more than one run is recommended\&. As run length is not imperative for accurate readings (e\&.g\&., 50ms is sufficient), you can afford a lot of short runs, e\&.g\&. 10 runs of 50ms or 20 runs of 25ms\&.
+.PP
+Recommended values - millis = 50, runs = 4\&. For more robustness, increase the number of runs\&.
+.PP
+NOTE: on Bulldozer and later CPUs, the busy-wait cycle runs at 1\&.4 IPC, thus the results are skewed\&. This is corrected internally by dividing the resulting value by 1\&.4\&. However, this only occurs if the thread is executed on a single CMT module - if there are other threads competing for resources, the results are unpredictable\&. Make sure you run \fBcpu_clock_by_ic()\fP on a CPU that is free from competing threads, or if there are such threads, they shouldn't exceed the number of modules\&. On a Bulldozer X8, that means 4 threads\&.
+.PP
+\fBReturns\fP
+.RS 4
+the CPU clock frequency in MHz (within some measurement error margin)\&. If SSE is not supported, the result is -1\&. If the input parameters are incorrect, or some other internal fault is detected, the result is -2\&. 
+.RE
+.PP
+
+.SS "int cpu_clock_by_mark (struct \fBcpu_mark_t\fP * mark)"
+
+.PP
+Calculates the CPU clock\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImark\fP - pointer to a \fBcpu_mark_t\fP structure, which has been initialized with cpu_tsc_mark and later `stopped' with cpu_tsc_unmark\&.
+.RE
+.PP
+\fBNote\fP
+.RS 4
+For reliable results, the marked time interval should be at least about 10 ms\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+the CPU clock frequency, in MHz\&. Due to measurement error, it will differ from the true value in a few least-significant bits\&. Accuracy depends on the timing interval - the more, the better\&. If the timing interval is insufficient, the result is -1\&. Also, see the comment on cpu_clock_measure for additional issues and pitfalls in using RDTSC for CPU frequency measurements\&. 
+.RE
+.PP
+
+.SS "int cpu_clock_by_os (void)"
+
+.PP
+Returns the CPU clock, as reported by the OS\&. This function uses OS-specific functions to obtain the CPU clock\&. It may differ from the true clock for several reasons:
+.br
+
+.br
+.PP
+i) The CPU might be in some power saving state, while the OS reports its full-power frequency, or vice-versa\&.
+.br
+ ii) In some cases you can raise or lower the CPU frequency with overclocking utilities and the OS will not notice\&.
+.PP
+\fBReturns\fP
+.RS 4
+the CPU clock frequency in MHz\&. If the OS is not (yet) supported or lacks the necessary reporting machinery, the return value is -1 
+.RE
+.PP
+
+.SS "int cpu_clock_measure (int millis, int quad_check)"
+
+.PP
+Measure the CPU clock frequency\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImillis\fP - How much time to waste in the busy-wait cycle\&. In millisecs\&. Useful values 10 - 1000 
+.br
+\fIquad_check\fP - Do a more thorough measurement if nonzero (see the explanation)\&.
+.RE
+.PP
+The function performs a busy-wait cycle for the given time and calculates the CPU frequency by the difference of the TSC values\&. The accuracy of the calculation depends on the length of the busy-wait cycle: more is better, but 100ms should be enough for most purposes\&.
+.PP
+While this will calculate the CPU frequency correctly in most cases, there are several reasons why it might be incorrect:
+.br
+.PP
+i) RDTSC doesn't guarantee it will run at the same clock as the CPU\&. Apparently there aren't CPUs at the moment, but still, there's no guarantee\&.
+.br
+ ii) The CPU might be in a low-frequency power saving mode, and the CPU might be switched to higher frequency at any time\&. If this happens during the measurement, the result can be anywhere between the low and high frequencies\&. Also, if you're interested in the high frequency value only, this function might return the low one instead\&.
+.br
+ iii) On SMP systems exhibiting TSC drift (see \fBcpu_rdtsc\fP)
+.PP
+the quad_check option will run four consecutive measurements and then return the average of the two most-consistent results\&. The total runtime of the function will still be `millis' - consider using a bit more time for the timing interval\&.
+.PP
+Finally, for benchmarking / CPU intensive applications, the best strategy is to use the \fBcpu_tsc_mark()\fP / \fBcpu_tsc_unmark()\fP / \fBcpu_clock_by_mark()\fP method\&. Begin by mark()-ing about one second after application startup (allowing the power-saving manager to kick in and rise the frequency during that time), then unmark() just before application finishing\&. The result will most acurately represent at what frequency your app was running\&.
+.PP
+\fBReturns\fP
+.RS 4
+the CPU clock frequency in MHz (within some measurement error margin)\&. If RDTSC is not supported, the result is -1\&. 
+.RE
+.PP
+
+.SS "void cpu_exec_cpuid (uint32_t eax, uint32_t * regs)"
+
+.PP
+Executes the CPUID instruction\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIeax\fP - the value of the EAX register when executing CPUID 
+.br
+\fIregs\fP - the results will be stored here\&. regs[0] = EAX, regs[1] = EBX, \&.\&.\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+CPUID will be executed with EAX set to the given value and EBX, ECX, EDX set to zero\&. 
+.RE
+.PP
+
+.SS "void cpu_exec_cpuid_ext (uint32_t * regs)"
+
+.PP
+Executes the CPUID instruction with the given input registers\&. 
+.PP
+\fBNote\fP
+.RS 4
+This is just a bit more generic version of cpu_exec_cpuid - it allows you to control all the registers\&. 
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIregs\fP - Input/output\&. Prior to executing CPUID, EAX, EBX, ECX and EDX will be set to regs[0], regs[1], regs[2] and regs[3]\&. After CPUID, this array will contain the results\&. 
+.RE
+.PP
+
+.SS "const char* cpu_feature_str (\fBcpu_feature_t\fP feature)"
+
+.PP
+Returns the short textual representation of a CPU flag\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIfeature\fP - the feature, whose textual representation is wanted\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+a constant string like 'fpu', 'tsc', 'sse2', etc\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+the names of the returned flags are compatible with those from /proc/cpuinfo in Linux, with the exception of `tm_amd' 
+.RE
+.PP
+
+.SS "int cpu_identify (struct \fBcpu_raw_data_t\fP * raw, struct \fBcpu_id_t\fP * data)"
+
+.PP
+Identifies the CPU\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIraw\fP - Input - a pointer to the raw CPUID data, which is obtained either by cpuid_get_raw_data or cpuid_deserialize_raw_data\&. Can also be NULL, in which case the functions calls cpuid_get_raw_data itself\&. 
+.br
+\fIdata\fP - Output - the decoded CPU features/info is written here\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+The function will not fail, even if some of the information cannot be obtained\&. Even when the CPU is new and thus unknown to libcpuid, some generic info, such as 'AMD K9 family CPU' will be written to data\&.cpu_codename, and most other things, such as the CPU flags, cache sizes, etc\&. should be detected correctly anyway\&. However, the function CAN fail, if the CPU is completely alien to libcpuid\&. 
+.PP
+While \fBcpu_identify()\fP and \fBcpuid_get_raw_data()\fP are fast for most purposes, running them several thousand times per second can hamper performance significantly\&. Specifically, avoid writing 'cpu feature
+      checker' wrapping function, which calls cpu_identify and returns the value of some flag, if that function is going to be called frequently\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "int cpu_msr_driver_close (struct msr_driver_t * handle)"
+
+.PP
+Closes an open MSR driver\&. This function unloads the MSR driver opened by cpu_msr_driver_open and frees any resources associated with it\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIhandle\fP - a handle to the MSR reader driver, as created by cpu_msr_driver_open
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "struct msr_driver_t* cpu_msr_driver_open (void)"
+
+.PP
+Starts/opens a driver, needed to read MSRs (Model Specific Registers) On systems that support it, this function will create a temporary system driver, that has privileges to execute the RDMSR instruction\&. After the driver is created, you can read MSRs by calling \fBcpu_rdmsr\fP
+.PP
+\fBReturns\fP
+.RS 4
+a handle to the driver on success, and NULL on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "struct msr_driver_t* cpu_msr_driver_open_core (unsigned core_num)"
+
+.PP
+Similar to \fBcpu_msr_driver_open\fP, but accept one parameter\&. This function works on certain operating systems (GNU/Linux, FreeBSD)
+.PP
+\fBParameters\fP
+.RS 4
+\fIcore_num\fP specify the core number for MSR\&. The first core number is 0\&. The last core number is \fBcpuid_get_total_cpus\fP - 1\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+a handle to the driver on success, and NULL on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "int cpu_msrinfo (struct msr_driver_t * handle, \fBcpu_msrinfo_request_t\fP which)"
+
+.PP
+Reads extended CPU information from Model-Specific Registers\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIhandle\fP - a handle to an open MSR driver, 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_msr_driver_open\fP 
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIwhich\fP - which info field should be returned\&. A list of available information entities is listed in the cpu_msrinfo_request_t enum\&. 
+.RE
+.PP
+\fBReturn values\fP
+.RS 4
+\fI-\fP if the requested information is available for the current processor model, the respective value is returned\&. if no information is available, or the CPU doesn't support the query, the special value CPU_INVALID_VALUE is returned 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+This function is not MT-safe\&. If you intend to call it from multiple threads, guard it through a mutex or a similar primitive\&. 
+.RE
+.PP
+
+.SS "int cpu_rdmsr (struct msr_driver_t * handle, uint32_t msr_index, uint64_t * result)"
+
+.PP
+Reads a Model-Specific Register (MSR) If the CPU has MSRs (as indicated by the CPU_FEATURE_MSR flag), you can read a MSR with the given index by calling this function\&.
+.PP
+There are several prerequisites you must do before reading MSRs: 1) You must ensure the CPU has RDMSR\&. Check the CPU_FEATURE_MSR flag in \fBcpu_id_t::flags\fP 2) You must ensure that the CPU implements the specific MSR you intend to read\&. 3) You must open a MSR-reader driver\&. RDMSR is a privileged instruction and needs ring-0 access in order to work\&. This temporary driver is created by calling \fBcpu_msr_driver_open\fP
+.PP
+\fBParameters\fP
+.RS 4
+\fIhandle\fP - a handle to the MSR reader driver, as created by cpu_msr_driver_open 
+.br
+\fImsr_index\fP - the numeric ID of the MSR you want to read 
+.br
+\fIresult\fP - a pointer to a 64-bit integer, where the MSR value is stored
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "int cpu_rdmsr_range (struct msr_driver_t * handle, uint32_t msr_index, uint8_t highbit, uint8_t lowbit, uint64_t * result)"
+
+.PP
+Similar to \fBcpu_rdmsr\fP, but extract a range of bits\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIhandle\fP - a handle to the MSR reader driver, as created by cpu_msr_driver_open 
+.br
+\fImsr_index\fP - the numeric ID of the MSR you want to read 
+.br
+\fIhighbit\fP - the high bit in range, must be inferior to 64 
+.br
+\fIlowbit\fP - the low bit in range, must be equal or superior to 0 
+.br
+\fIresult\fP - a pointer to a 64-bit integer, where the MSR value is stored
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "void cpu_rdtsc (uint64_t * result)"
+
+.PP
+Executes RDTSC\&. The RDTSC (ReaD Time Stamp Counter) instruction gives access to an internal 64-bit counter, which usually increments at each clock cycle\&. This can be used for various timing routines, and as a very precise clock source\&. It is set to zero on system startup\&. Beware that may not increment at the same frequency as the CPU\&. Consecutive calls of RDTSC are, however, guaranteed to return monotonically-increasing values\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIresult\fP - a pointer to a 64-bit unsigned integer, where the TSC value will be stored
+.RE
+.PP
+\fBNote\fP
+.RS 4
+If 100% compatibility is a concern, you must first check if the RDTSC instruction is present (if it is not, your program will crash with 'invalid opcode' exception)\&. Only some very old processors (i486, early AMD K5 and some Cyrix CPUs) lack that instruction - they should have become exceedingly rare these days\&. To verify RDTSC presence, run \fBcpu_identify()\fP and check flags[CPU_FEATURE_TSC]\&.
+.PP
+The monotonically increasing nature of the TSC may be violated on SMP systems, if their TSC clocks run at different rate\&. If the OS doesn't account for that, the TSC drift may become arbitrary large\&. 
+.RE
+.PP
+
+.SS "void cpu_tsc_mark (struct \fBcpu_mark_t\fP * mark)"
+
+.PP
+Store TSC and timing info\&. This function stores the current TSC value and current time info from a precise OS-specific clock source in the \fBcpu_mark_t\fP structure\&. The sys_clock field contains time with microsecond resolution\&. The values can later be used to measure time intervals, number of clocks, FPU frequency, etc\&. 
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_rdtsc\fP
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fImark\fP [out] - a pointer to a \fBcpu_mark_t\fP structure 
+.RE
+.PP
+
+.SS "void cpu_tsc_unmark (struct \fBcpu_mark_t\fP * mark)"
+
+.PP
+Calculate TSC and timing difference\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImark\fP - input/output: a pointer to a \fBcpu_mark_t\fP structure, which has already been initialized by cpu_tsc_mark\&. The difference in TSC and time will be written here\&.
+.RE
+.PP
+This function calculates the TSC and time difference, by obtaining the current TSC and timing values and subtracting the contents of the `mark' structure from them\&. Results are written in the same structure\&.
+.PP
+Example: 
+.PP
+.nf
+\&.\&.\&.
+struct cpu_mark_t mark;
+cpu_tsc_mark(&mark);
+foo();
+cpu_tsc_unmark(&mark);
+printf("Foo finished\&. Executed in %llu cycles and %llu usecs\n",
+       mark\&.tsc, mark\&.sys_clock);
+\&.\&.\&.
+
+.fi
+.PP
+ 
+.SS "int cpuid_deserialize_raw_data (struct \fBcpu_raw_data_t\fP * data, const char * filename)"
+
+.PP
+Reads raw CPUID data from file\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP - a pointer to \fBcpu_raw_data_t\fP structure\&. The deserialized data will be written here\&. 
+.br
+\fIfilename\fP - the path of the file, containing the serialized raw data\&. If empty, stdin will be used\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+This function may fail, if the file is created by different version of the library\&. Also, see the notes on cpuid_serialize_raw_data\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "const char* cpuid_error (void)"
+
+.PP
+Returns textual description of the last error\&. libcpuid stores an `errno'-style error status, whose description can be obtained with this function\&. 
+.PP
+\fBNote\fP
+.RS 4
+This function is not thread-safe 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "void cpuid_free_cpu_list (struct \fBcpu_list_t\fP * list)"
+
+.PP
+Frees a CPU list\&. This function deletes all the memory associated with a CPU list, as obtained by \fBcpuid_get_cpu_list()\fP
+.PP
+\fBParameters\fP
+.RS 4
+\fIlist\fP - the list to be free()'d\&. 
+.RE
+.PP
+
+.SS "void cpuid_get_cpu_list (\fBcpu_vendor_t\fP vendor, struct \fBcpu_list_t\fP * list)"
+
+.PP
+Gets a list of all known CPU names from a specific vendor\&. This function compiles a list of all known CPU (code)names (i\&.e\&. the possible values of \fBcpu_id_t::cpu_codename\fP) for the given vendor\&.
+.PP
+There are about 100 entries for Intel and AMD, and a few for the other vendors\&. The list is written out in approximate chronological introduction order of the parts\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIvendor\fP the vendor to be queried 
+.br
+\fIlist\fP [out] the resulting list will be written here\&. On failure, num_entries is set to zero and names to NULL\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP NOTE: As the memory is dynamically allocated, be sure to call \fBcpuid_free_cpu_list()\fP after you're done with the data 
+.PP
+\fBcpu_list_t\fP 
+.RE
+.PP
+
+.SS "struct \fBcpu_epc_t\fP cpuid_get_epc (int index, const struct \fBcpu_raw_data_t\fP * raw)"
+
+.PP
+Fetches information about an EPC (Enclave Page Cache) area\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIindex\fP - zero-based index, valid range [0\&.\&.cpu_id_t\&.egx\&.num_epc_sections) 
+.br
+\fIraw\fP - a pointer to fetched raw CPUID data\&. Needed only for testing, you can safely pass NULL here (if you pass a real structure, it will be used for fetching the leaf 12h data if index < 2; otherwise the real CPUID instruction will be used)\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+the requested data\&. If the CPU doesn't support SGX, or if index >= cpu_id_t\&.egx\&.num_epc_sections, both fields of the returned structure will be zeros\&. 
+.RE
+.PP
+
+.SS "int cpuid_get_raw_data (struct \fBcpu_raw_data_t\fP * data)"
+
+.PP
+Obtains the raw CPUID data from the current CPU\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP - a pointer to \fBcpu_raw_data_t\fP structure 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "int cpuid_get_total_cpus (void)"
+
+.PP
+Returns the total number of logical CPU threads (even if CPUID is not present)\&. Under VM, this number (and total_logical_cpus, since they are fetched with the same code) may be nonsensical, i\&.e\&. might not equal NumPhysicalCPUs*NumCoresPerCPU*HyperThreading\&. This is because no matter how many logical threads the host machine has, you may limit them in the VM to any number you like\&. \fBThis\fP is the number returned by \fBcpuid_get_total_cpus()\fP\&.
+.PP
+\fBReturns\fP
+.RS 4
+Number of logical CPU threads available\&. Equals the \fBcpu_id_t::total_logical_cpus\fP\&. 
+.RE
+.PP
+
+.SS "\fBcpu_vendor_t\fP cpuid_get_vendor (void)"
+
+.PP
+Obtains the CPU vendor from CPUID from the current CPU\&. 
+.PP
+\fBNote\fP
+.RS 4
+The result is cached\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+VENDOR_UNKNOWN if failed, otherwise the CPU vendor type\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_vendor_t\fP 
+.RE
+.PP
+
+.SS "const char* cpuid_lib_version (void)"
+
+.PP
+Returns the libcpuid version\&. 
+.PP
+\fBReturns\fP
+.RS 4
+the string representation of the libcpuid version, like '0\&.1\&.1' 
+.RE
+.PP
+
+.SS "int cpuid_present (void)"
+
+.PP
+Checks if the CPUID instruction is supported\&. 
+.PP
+\fBReturn values\fP
+.RS 4
+\fI1\fP if CPUID is present 
+.br
+\fI0\fP the CPU doesn't have CPUID\&. 
+.RE
+.PP
+
+.SS "int cpuid_serialize_raw_data (struct \fBcpu_raw_data_t\fP * data, const char * filename)"
+
+.PP
+Writes the raw CPUID data to a text file\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP - a pointer to \fBcpu_raw_data_t\fP structure 
+.br
+\fIfilename\fP - the path of the file, where the serialized data should be written\&. If empty, stdout will be used\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+This is intended primarily for debugging\&. On some processor, which is not currently supported or not completely recognized by cpu_identify, one can still successfully get the raw data and write it to a file\&. libcpuid developers can later import this file and debug the detection code as if running on the actual hardware\&. The file is simple text format of 'something=value' pairs\&. Version info is also written, but the format is not intended to be neither backward- nor forward compatible\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SS "void cpuid_set_verbosiness_level (int level)"
+
+.PP
+Sets the verbosiness level\&. When the verbosiness level is above zero, some functions might print diagnostic information about what are they doing\&. The higher the level is, the more detail is printed\&. Level zero is guaranteed to omit all such output\&. The output is written using the same machinery as the warnings, 
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpuid_set_warn_function()\fP
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIlevel\fP the desired verbosiness level\&. Useful values 0\&.\&.2 inclusive 
+.RE
+.PP
+
+.SS "libcpuid_warn_fn_t cpuid_set_warn_function (libcpuid_warn_fn_t warn_fun)"
+
+.PP
+Sets the warning print function\&. In some cases, the internal libcpuid machinery would like to emit useful debug warnings\&. By default, these warnings are written to stderr\&. However, you can set a custom function that will receive those warnings\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIwarn_fun\fP - the warning function you want to set\&. If NULL, warnings are disabled\&. The function takes const char* argument\&.
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+the current warning function\&. You can use the return value to keep the previous warning function and restore it at your discretion\&. 
+.RE
+.PP
+
+.SS "int msr_serialize_raw_data (struct msr_driver_t * handle, const char * filename)"
+
+.PP
+Writes the raw MSR data to a text file\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIhandle\fP - a handle to the MSR reader driver, as created by cpu_msr_driver_open 
+.br
+\fIfilename\fP - the path of the file, where the serialized data should be written\&. If empty, stdout will be used\&. 
+.RE
+.PP
+\fBNote\fP
+.RS 4
+This is intended primarily for debugging\&. On some processor, which is not currently supported or not completely recognized by cpu_identify, one can still successfully get the raw data and write it to a file\&. libcpuid developers can later import this file and debug the detection code as if running on the actual hardware\&. The file is simple text format of 'something=value' pairs\&. Version info is also written, but the format is not intended to be neither backward- nor forward compatible\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+zero if successful, and some negative number on error\&. The error message can be obtained by calling \fBcpuid_error\fP\&. 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBcpu_error_t\fP 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

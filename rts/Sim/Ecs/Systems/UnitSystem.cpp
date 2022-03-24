@@ -23,19 +23,16 @@ void UnitSystem::Update()
 
 void UnitSystem::AddUnit(CUnit* unit)
 {
-    if (unit->entityReference == entt::null) {
-        solidObjectSystem.AddObject(unit);
-        auto entity = unit->entityReference;
+    auto entity = unit->entityReference;
 
-        EcsMain::registry.emplace<UnitId>(entity, unit->id);
-        EcsMain::registry.emplace<Team>(entity, unit->team);
-        EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
-        EcsMain::registry.get<SolidObject::MaxHealth>(entity).value = unit->unitDef->health;
+    EcsMain::registry.emplace<UnitId>(entity, unit->id);
+    EcsMain::registry.emplace<Team>(entity, unit->team);
+    EcsMain::registry.emplace<UnitDefRef>(entity, unit->unitDef);
+    EcsMain::registry.get<SolidObject::MaxHealth>(entity).value = unit->unitDef->health;
 
-        unit->entityReference = entity;
+    unit->entityReference = entity;
 
-        LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
-    }
+    LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
 }
 
 void UnitSystem::RemoveUnit(CUnit* unit)

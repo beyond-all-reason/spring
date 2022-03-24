@@ -371,7 +371,7 @@ public:
 	float power = 100.0f;
 
 	// 0.0-1.0
-	float buildProgress = 0.0f;
+	//float buildProgress = 0.0f;
 	// if (health - this) is negative the unit is stunned
 	float paralyzeDamage = 0.0f;
 	// how close this unit is to being captured
@@ -448,16 +448,16 @@ public:
 	SResourcePack resourcesUncondMake;
 
 	// costs per UNIT_SLOWUPDATE_RATE frames
-	SResourcePack resourcesUse;
+	// SResourcePack resourcesUse;
 
 	// incomes per UNIT_SLOWUPDATE_RATE frames
-	SResourcePack resourcesMake;
+	// SResourcePack resourcesMake;
 
 	// variables used for calculating unit resource usage
-	SResourcePack resourcesUseI;
-	SResourcePack resourcesMakeI;
-	SResourcePack resourcesUseOld;
-	SResourcePack resourcesMakeOld;
+	// SResourcePack resourcesUseI;
+	// SResourcePack resourcesMakeI;
+	// SResourcePack resourcesUseOld;
+	// SResourcePack resourcesMakeOld;
 
 	// the amount of storage the unit contributes to the team
 	SResourcePack storage;

@@ -73,8 +73,9 @@ public:
 
 	const spring::unordered_map<unsigned int, CBuilderCAI*>& GetBuilderCAIs() const { return builderCAIs; }
 
-private:
 	void InsertActiveUnit(CUnit* unit);
+
+private:
 	bool QueueDeleteUnit(CUnit* unit);
 	void QueueDeleteUnits();
 	void DeleteUnit(CUnit* unit);

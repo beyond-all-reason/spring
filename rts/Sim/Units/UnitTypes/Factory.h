@@ -46,7 +46,7 @@ private:
 	void AssignBuildeeOrders(CUnit* unit);
 
 public:
-	float buildSpeed;
+	//float buildSpeed;
 
 	CUnit* curBuild;
 

@@ -1,0 +1,10 @@
+Lib\+CPUID provides CPU identification and access to the CPUID and RDTSC instructions on the x86. 
+
+To execute CPUID, use \doxyref{cpu\+\_\+exec\+\_\+cpuid}{p.}{group__libcpuid_ga43b66c6c5b7cb18218fd39fee60a72d2} ~\newline
+ To execute RDTSC, use \doxyref{cpu\+\_\+rdtsc}{p.}{group__libcpuid_ga08fe7335dd44017d8a653b6e2dc8977e} ~\newline
+ To fetch the CPUID info needed for CPU identification, use \doxyref{cpuid\+\_\+get\+\_\+raw\+\_\+data}{p.}{group__libcpuid_gacfc107ea367e6b918ca17fdf2c492746} ~\newline
+ To make sense of that data (decode, extract features), use \doxyref{cpu\+\_\+identify}{p.}{group__libcpuid_gaa0b5bcc626ff3dd0482553657f9d600e} ~\newline
+ To detect the CPU speed, use either \doxyref{cpu\+\_\+clock}{p.}{group__libcpuid_ga913d86d69748e282f94ee4d28dca078c}, \doxyref{cpu\+\_\+clock\+\_\+by\+\_\+os}{p.}{group__libcpuid_gae14aec8ba2ccbda9ae385370a6bd5361}, \doxyref{cpu\+\_\+tsc\+\_\+mark}{p.}{group__libcpuid_ga236be57c231aa5433416bd60c887a14a} + \doxyref{cpu\+\_\+tsc\+\_\+unmark}{p.}{group__libcpuid_gae69abf89db76d95039dc9338c4c5a697} + \doxyref{cpu\+\_\+clock\+\_\+by\+\_\+mark}{p.}{group__libcpuid_ga55d3419eeac6d46d957875f1c302ca44}, \doxyref{cpu\+\_\+clock\+\_\+measure}{p.}{group__libcpuid_ga6ba20c7c72b6c943e0b3e664ede42b80} or \doxyref{cpu\+\_\+clock\+\_\+by\+\_\+ic}{p.}{group__libcpuid_ga4d23d7b9c774ad92b2d30a3798434224}. Read carefully for pros/cons of each method. ~\newline
+
+
+To read MSRs, use \doxyref{cpu\+\_\+msr\+\_\+driver\+\_\+open}{p.}{group__libcpuid_gab99453e100b3b502ca15b8a79198828a} to get a handle, and then \doxyref{cpu\+\_\+rdmsr}{p.}{group__libcpuid_ga0eddf30c99a094aa9942265948a13007} for querying abilities. Some MSR decoding is available on recent CPUs, and can be queried through \doxyref{cpu\+\_\+msrinfo}{p.}{group__libcpuid_gac977cbb78e00058098778411d7f784cf}; the various types of queries are described in \doxyref{cpu\+\_\+msrinfo\+\_\+request\+\_\+t}{p.}{group__libcpuid_ga0e38033529430a12f20089b382d603a6}. 

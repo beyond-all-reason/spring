@@ -1,0 +1,30 @@
+.TH "cpu_epc_t" 3 "Fri Feb 18 2022" "libcpuid" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+cpu_epc_t \- The return value of \fBcpuid_get_epc()\fP\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <libcpuid\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "uint64_t \fBstart_addr\fP"
+.br
+.ti -1c
+.RI "uint64_t \fBlength\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The return value of \fBcpuid_get_epc()\fP\&. 
+
+Describes an EPC (Enclave Page Cache) layout (physical address and size)\&. A CPU may have one or more EPC areas, and information about each is fetched via \fBcpuid_get_epc\fP\&. 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for libcpuid from the source code\&.

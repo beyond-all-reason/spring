@@ -102,7 +102,7 @@ void EnvResourceSystem::UpdateWindDirection()
         auto unit = (unitHandler.GetUnit(unitId));
         unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
 
-        //LOG("%s: updated existing generator %d", __func__, unitId);
+        //LOG("%s: updated dir existing generator %d", __func__, unitId);
     }
 }
 
@@ -129,7 +129,7 @@ void EnvResourceSystem::UpdateWind()
         unit->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
 
         EcsMain::registry.remove<NewWindGenerator>(entity);
-        //LOG("%s: updated new generator %d", __func__, unitId.unitId);
+        //LOG("%s: updated new dir generator %d", __func__, unitId);
     }
 }
 
@@ -140,12 +140,16 @@ void EnvResourceSystem::SlowUpdate(){
     if ((gs->frameNum % ENV_RESOURCE_UPDATE_RATE) != ENV_RESOURCE_TICK)
        return;
 
+    LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
+
     auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
     for (auto entity : group) {
         auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
         auto& energyIncome = (group.get<FlowEconomy::EnergyFixedIncome>(entity).value);
 
         energyIncome = std::min(curWindStrength, unitDef->windGenerator);
+
+        //LOG("%s: updated wind value generator", __func__);
     }
 }
 
@@ -182,6 +186,7 @@ void EnvResourceSystem::ActivateGenerator(CUnit* unit){
 
     EcsMain::registry.emplace_or_replace<WindGeneratorActive>(unit->entityReference);
     EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
+    EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyCurrentMake>(unit->entityReference);
 }
 
 void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
@@ -192,6 +197,7 @@ void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
 
     EcsMain::registry.remove<WindGeneratorActive>(unit->entityReference);
     EcsMain::registry.remove<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
+    EcsMain::registry.remove<FlowEconomy::EnergyCurrentMake>(unit->entityReference);
 }
 
 bool EnvResourceSystem::DelGenerator(CUnit* unit)
