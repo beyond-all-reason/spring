@@ -19,14 +19,6 @@ struct MetalProratableUse {
     float value = 0.f;
 };
 
-struct MetalCurrentUsage {
-    float value = 0.f;
-};
-
-struct MetalCurrentMake {
-    float value = 0.f;
-};
-
 struct EnergyFixedIncome {
     float value = 0.f;
 };
@@ -43,13 +35,6 @@ struct EnergyProratableUse {
     float value = 0.f;
 };
 
-struct EnergyCurrentUsage {
-    float value = 0.f;
-};
-
-struct EnergyCurrentMake {
-    float value = 0.f;
-};
 
 struct BuildRate {
     float value = 0.f;

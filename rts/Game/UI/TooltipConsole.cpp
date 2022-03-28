@@ -12,6 +12,7 @@
 #include "Map/ReadMap.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Fonts/glFont.h"
+#include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
@@ -334,10 +335,10 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		experience        = (experience * (count - 1) + unit->experience) / count; // average xp
 		cost             += unit->cost.metal + (unit->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, unit->maxRange);
-		metalMake        += unit->resourcesMake.metal;
-		metalUse         += unit->resourcesUse.metal;
-		energyMake       += unit->resourcesMake.energy;
-		energyUse        += unit->resourcesUse.energy;
+		metalMake        += GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f);
+		metalUse         += GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
+		energyMake       += GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f);
+		energyUse        += GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
 		harvestMetal     += unit->harvested.metal;
 		harvestMetalMax  += unit->harvestStorage.metal;
 		harvestEnergy    += unit->harvested.energy;

@@ -32,6 +32,10 @@ void returnExcessEco(entt::entity entity, CTeam *team, float excessBuild){
     }
 }
 
+void BuildSystem::Init()
+{
+}
+
 void BuildSystem::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;
     auto unitDef = unit->unitDef;

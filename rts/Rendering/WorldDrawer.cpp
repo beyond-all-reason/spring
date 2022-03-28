@@ -168,7 +168,7 @@ void CWorldDrawer::Kill()
 
 void CWorldDrawer::Update(bool newSimFrame)
 {
-	SCOPED_TIMER("Update::WorldDrawer");
+	//SCOPED_TIMER("Update::WorldDrawer");
 	LuaObjectDrawer::Update(numUpdates == 0);
 	readMap->UpdateDraw(numUpdates == 0);
 
@@ -187,7 +187,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 		projectileDrawer->UpdateTextures();
 
 		{
-			SCOPED_TIMER("Update::WorldDrawer::{Sky,Water}");
+			//SCOPED_TIMER("Update::WorldDrawer::{Sky,Water}");
 
 			sky->Update();
 			water->Update();
@@ -207,7 +207,7 @@ void CWorldDrawer::GenerateIBLTextures() const
 {
 
 	if (shadowHandler.ShadowsLoaded()) {
-		SCOPED_TIMER("Draw::World::CreateShadows");
+		//SCOPED_TIMER("Draw::World::CreateShadows");
 
 		game->SetDrawMode(CGame::gameShadowDraw);
 		shadowHandler.CreateShadows();
@@ -215,21 +215,21 @@ void CWorldDrawer::GenerateIBLTextures() const
 	}
 
 	{
-		SCOPED_TIMER("Draw::World::UpdateReflTex");
+		//SCOPED_TIMER("Draw::World::UpdateReflTex");
 		cubeMapHandler.UpdateReflectionTexture();
 	}
 
 	if (sky->GetLight()->Update()) {
 		{
-			SCOPED_TIMER("Draw::World::UpdateSpecTex");
+			//SCOPED_TIMER("Draw::World::UpdateSpecTex");
 			cubeMapHandler.UpdateSpecularTexture();
 		}
 		{
-			SCOPED_TIMER("Draw::World::UpdateSkyTex");
+			//SCOPED_TIMER("Draw::World::UpdateSkyTex");
 			sky->UpdateSkyTexture();
 		}
 		{
-			SCOPED_TIMER("Draw::World::UpdateShadingTex");
+			//SCOPED_TIMER("Draw::World::UpdateShadingTex");
 			readMap->UpdateShadingTexture();
 		}
 	}
@@ -258,7 +258,7 @@ void CWorldDrawer::ResetMVPMatrices() const
 
 void CWorldDrawer::Draw() const
 {
-	SCOPED_TIMER("Draw::World");
+	//SCOPED_TIMER("Draw::World");
 
 	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -276,14 +276,14 @@ void CWorldDrawer::Draw() const
 	DrawAlphaObjects();
 
 	{
-		SCOPED_TIMER("Draw::World::Projectiles");
+		//SCOPED_TIMER("Draw::World::Projectiles");
 		projectileDrawer->Draw(false);
 	}
 
 	sky->DrawSun();
 
 	{
-		SCOPED_TIMER("Draw::World::DrawWorld");
+		//SCOPED_TIMER("Draw::World::DrawWorld");
 		eventHandler.DrawWorld();
 	}
 
@@ -300,16 +300,16 @@ void CWorldDrawer::DrawOpaqueObjects() const
 
 	if (globalRendering->drawGround) {
 		{
-			SCOPED_TIMER("Draw::World::Terrain");
+			//SCOPED_TIMER("Draw::World::Terrain");
 			gd->Draw(DrawPass::Normal);
 		}
 		{
-			SCOPED_TIMER("Draw::World::Decals");
+			//SCOPED_TIMER("Draw::World::Decals");
 			groundDecals->Draw();
 			projectileDrawer->DrawGroundFlashes();
 		}
 		{
-			SCOPED_TIMER("Draw::World::Foliage");
+			//SCOPED_TIMER("Draw::World::Foliage");
 			grassDrawer->Draw();
 		}
 		smoothHeightMeshDrawer->Draw(1.0f);
@@ -324,7 +324,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 	eventHandler.DrawWorldPreUnit();
 
 	{
-		SCOPED_TIMER("Draw::World::Models::Opaque");
+		//SCOPED_TIMER("Draw::World::Models::Opaque");
 		unitDrawer->Draw(false);
 		featureDrawer->Draw(false);
 
@@ -343,7 +343,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	static const double abovePlaneEq[4] = {0.0f,  1.0f, 0.0f, 0.0f};
 
 	{
-		SCOPED_TIMER("Draw::World::Models::Alpha");
+		//SCOPED_TIMER("Draw::World::Models::Alpha");
 		// clip in model-space
 		glPushMatrix();
 		glLoadIdentity();
@@ -360,14 +360,14 @@ void CWorldDrawer::DrawAlphaObjects() const
 
 	// draw water (in-between)
 	if (globalRendering->drawWater && !mapRendering->voidWater) {
-		SCOPED_TIMER("Draw::World::Water");
+		//SCOPED_TIMER("Draw::World::Water");
 
 		water->UpdateWater(game);
 		water->Draw();
 	}
 
 	{
-		SCOPED_TIMER("Draw::World::Models::Alpha");
+		//SCOPED_TIMER("Draw::World::Models::Alpha");
 		glPushMatrix();
 		glLoadIdentity();
 		glClipPlane(GL_CLIP_PLANE3, abovePlaneEq);

@@ -3,6 +3,7 @@
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
 
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
@@ -185,8 +186,8 @@ void EnvResourceSystem::ActivateGenerator(CUnit* unit){
     }
 
     EcsMain::registry.emplace_or_replace<WindGeneratorActive>(unit->entityReference);
-    EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
-    EcsMain::registry.emplace_or_replace<FlowEconomy::EnergyCurrentMake>(unit->entityReference);
+    UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 1.f);
+    EcsMain::registry.get<FlowEconomy::EnergyFixedIncome>(unit->entityReference).value = 0.f;
 }
 
 void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
@@ -196,8 +197,7 @@ void EnvResourceSystem::DeactivateGenerator(CUnit* unit){
     }
 
     EcsMain::registry.remove<WindGeneratorActive>(unit->entityReference);
-    EcsMain::registry.remove<FlowEconomy::EnergyFixedIncome>(unit->entityReference);
-    EcsMain::registry.remove<FlowEconomy::EnergyCurrentMake>(unit->entityReference);
+    UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 0.f);
 }
 
 bool EnvResourceSystem::DelGenerator(CUnit* unit)
@@ -206,6 +206,7 @@ bool EnvResourceSystem::DelGenerator(CUnit* unit)
     bool entityIsValid = EcsMain::registry.valid(entity);
 
     if (entityIsValid){
+        UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 0.f);
         EcsMain::registry.remove<NewWindGenerator>(entity);
         EcsMain::registry.remove<WindGenerator>(entity);
         EcsMain::registry.remove<WindGeneratorActive>(entity);

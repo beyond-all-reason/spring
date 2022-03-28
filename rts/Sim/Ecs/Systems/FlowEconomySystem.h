@@ -14,17 +14,16 @@ public:
 
     void AddFlowEconomyUnit(CUnit *unit);
 
-    //void UpdateUnitFixedEnergyIncome(entt::entity entity, float amount);
-
-    bool RegisterOneOffExpense(CUnit* unit, float amount);
-
     bool IsSystemActive() { return active; }
 
 private:
     bool active = false;
 
+
+    void UpdateEconomyPredictions();
+    void UpdateAllTeamsEconomy();
+    void InformWaitingEntitiesEconomyIsAssigned();
     void UpdateTeamEconomy(int teamId);
-    // void UpdateWindGeneration();
 
     void UpdateFixedMetalIncome();
     void UpdateFixedEnergyIncome();
@@ -38,8 +37,6 @@ private:
     void UpdateProratableMetalExpense();
     void UpdateProratableEnergyExpense();
     void UpdateProratableCombinedExpense();
-
-    void SlowUpdate();
 
     float economyMultiplier = 0.f;
 };

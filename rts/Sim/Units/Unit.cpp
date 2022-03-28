@@ -34,6 +34,8 @@
 
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
+#include "Sim/Ecs/Components/UnitEconomyComponents.h"
+#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
@@ -828,6 +830,7 @@ void CUnit::TransporteeKilled(const CObject* o)
 
 void CUnit::UpdateResources()
 {
+	// TODO: remove this, no longer needed, handled by the UnitEconomuyReportSystem
 	// resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
 	// resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
 	// resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
@@ -2112,7 +2115,8 @@ bool CUnit::UseMetal(float metal)
 	myTeam->resPull.metal += metal;
 
 	if (myTeam->UseMetal(metal)) {
-		resourcesUseI.metal += metal;
+		EcsMain::registry.get<UnitEconomy::MetalCurrentUsage>(entityReference).value += metal;
+		//resourcesUseI.metal += metal;
 		return true;
 	}
 
@@ -2126,7 +2130,8 @@ void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 		return;
 	}
 
-	resourcesMakeI.metal += metal;
+	EcsMain::registry.get<UnitEconomy::MetalCurrentMake>(entityReference).value += metal;
+	//resourcesMakeI.metal += metal;
 	teamHandler.Team(team)->AddMetal(metal, useIncomeMultiplier);
 }
 
@@ -2142,7 +2147,8 @@ bool CUnit::UseEnergy(float energy)
 	myTeam->resPull.energy += energy;
 
 	if (myTeam->UseEnergy(energy)) {
-		resourcesUseI.energy += energy;
+		EcsMain::registry.get<UnitEconomy::EnergyCurrentUsage>(entityReference).value += energy;
+		//resourcesUseI.energy += energy;
 		return true;
 	}
 
@@ -2155,7 +2161,8 @@ void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return;
 	}
-	resourcesMakeI.energy += energy;
+	EcsMain::registry.get<UnitEconomy::EnergyCurrentMake>(entityReference).value += energy;
+	//resourcesMakeI.energy += energy;
 	teamHandler.Team(team)->AddEnergy(energy, useIncomeMultiplier);
 }
 
@@ -2207,7 +2214,9 @@ bool CUnit::UseResources(const SResourcePack& pack)
 	myTeam->resPull += pack;
 
 	if (myTeam->UseResources(pack)) {
-		resourcesUseI += pack;
+		EcsMain::registry.get<UnitEconomy::EnergyCurrentUsage>(entityReference).value += pack.energy;
+		EcsMain::registry.get<UnitEconomy::MetalCurrentUsage>(entityReference).value += pack.metal;
+		//resourcesUseI += pack;
 		return true;
 	}
 	return false;
@@ -2221,8 +2230,9 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return true;
 	}*/
-	resourcesMakeI += pack;
-	unitEconomySystem.
+	EcsMain::registry.get<UnitEconomy::EnergyCurrentMake>(entityReference).value += pack.energy;
+	EcsMain::registry.get<UnitEconomy::MetalCurrentMake>(entityReference).value += pack.metal;
+	//resourcesMakeI += pack;
 	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
 }
 
@@ -2353,54 +2363,35 @@ void CUnit::Activate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep < 0.f) {
-			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, (-unitDef->energyUpkeep));
-			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
+			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, (-unitDef->energyUpkeep));
 		}
 		else if (unitDef->energyUpkeep){
-			flowEconomySystem.UpdateUnitProratableEnergyUse(this, unitDef->energyUpkeep);
-			flowEconomySystem.UpdateUnitProratableMetalIncome(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
-			unitEconomySystem.UpdateEconomyTrackEnergyUse(entityReference);
-			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackEnergyUse(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
+			UnitEconomyHelper::UpdateUnitProratableEnergyUse(this, unitDef->energyUpkeep);
+			UnitEconomyHelper::UpdateUnitProratableMetalIncome(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
 
 			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, (int)entityReference, unitDef->energyUpkeep);
 			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
 		}
 		else if (unitDef->energyMake) {
-			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
-			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
+			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
 
 			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
 		}
 		if (unitDef->metalUpkeep){
-			flowEconomySystem.UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
-			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
+			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
 		}
 		else if (unitDef->metalUpkeep){
-			flowEconomySystem.UpdateUnitProratableMetalUse(this, unitDef->metalUpkeep);
-			flowEconomySystem.UpdateUnitProratableEnergyIncome(this, unitDef->energyMake);
-			unitEconomySystem.UpdateEconomyTrackMetalUse(entityReference);
-			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackMetalUse(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
+			UnitEconomyHelper::UpdateUnitProratableMetalUse(this, unitDef->metalUpkeep);
+			UnitEconomyHelper::UpdateUnitProratableEnergyIncome(this, unitDef->energyMake);
 		}
 		else if (unitDef->metalMake){
-			flowEconomySystem.UpdateUnitFixedMetalIncome(this, unitDef->metalMake);
-			unitEconomySystem.UpdateEconomyTrackMetalMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackMetalMake(entityReference);
+			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, unitDef->metalMake);
 
 			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake);
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			envResourceSystem.ActivateGenerator(this);
-			unitEconomySystem.UpdateEconomyTrackEnergyMake(entityReference);
-			unitEconomyReportSystem.UpdateEconomyTrackEnergyMake(entityReference);
 		}
-		
 	}
 }
 
@@ -2422,21 +2413,21 @@ void CUnit::Deactivate()
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
 		if (unitDef->energyUpkeep){
-			flowEconomySystem.UpdateUnitProratableEnergyUse(this, 0.f);
-			flowEconomySystem.UpdateUnitProratableMetalIncome(this, 0.f);
+			UnitEconomyHelper::UpdateUnitProratableEnergyUse(this, 0.f);
+			UnitEconomyHelper::UpdateUnitProratableMetalIncome(this, 0.f);
 
 			LOG("%s: %d: DEACTIVATE energyUse = %f", __func__, gs->frameNum, 0.f);
 			LOG("%s: %d: DEACTIVATE metalMake = %f", __func__, gs->frameNum, 0.f);
 		}
 		else if (unitDef->energyMake) {
-			flowEconomySystem.UpdateUnitFixedEnergyIncome(this, 0.f);
+			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, 0.f);
 		}
 		if (unitDef->metalUpkeep){
-			flowEconomySystem.UpdateUnitProratableMetalUse(this, 0.f);
-			flowEconomySystem.UpdateUnitProratableEnergyIncome(this, 0.f);
+			UnitEconomyHelper::UpdateUnitProratableMetalUse(this, 0.f);
+			UnitEconomyHelper::UpdateUnitProratableEnergyIncome(this, 0.f);
 		}
 		else if (unitDef->metalMake){
-			flowEconomySystem.UpdateUnitFixedMetalIncome(this, 0.f);
+			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, 0.f);
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			envResourceSystem.DeactivateGenerator(this);
@@ -3014,13 +3005,13 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(resourcesUncondUse),
 	CR_MEMBER(resourcesUncondMake),
 
-	CR_MEMBER(resourcesUse),
-	CR_MEMBER(resourcesMake),
+	// CR_MEMBER(resourcesUse),
+	// CR_MEMBER(resourcesMake),
 
-	CR_MEMBER(resourcesUseI),
-	CR_MEMBER(resourcesMakeI),
-	CR_MEMBER(resourcesUseOld),
-	CR_MEMBER(resourcesMakeOld),
+	// CR_MEMBER(resourcesUseI),
+	// CR_MEMBER(resourcesMakeI),
+	// CR_MEMBER(resourcesUseOld),
+	// CR_MEMBER(resourcesMakeOld),
 
 	CR_MEMBER(storage),
 

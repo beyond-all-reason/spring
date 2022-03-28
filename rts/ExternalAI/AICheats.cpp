@@ -4,6 +4,7 @@
 
 #include "ExternalAI/SkirmishAIWrapper.h"
 #include "Game/TraceRay.h"
+#include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -285,10 +286,10 @@ bool CAICheats::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf) co
 	if (unit == nullptr)
 		return false;
 
-	unitResInf->energyMake = unit->resourcesMake.energy;
-	unitResInf->energyUse  = unit->resourcesUse.energy;
-	unitResInf->metalMake  = unit->resourcesMake.metal;
-	unitResInf->metalUse   = unit->resourcesUse.metal;
+	unitResInf->energyMake = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f);
+	unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
+	unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f);
+	unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
 	return true;
 }
 
