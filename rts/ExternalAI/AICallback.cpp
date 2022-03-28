@@ -24,6 +24,7 @@
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Units/UnitDrawerData.h"
+#include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
@@ -1163,10 +1164,10 @@ bool CAICallback::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf)
 	verify();
 	const CUnit* unit = GetInLosUnit(unitId);
 	if (unit) {
-		unitResInf->energyMake = unit->resourcesMake.energy;
-		unitResInf->energyUse  = unit->resourcesUse.energy;
-		unitResInf->metalMake  = unit->resourcesMake.metal;
-		unitResInf->metalUse   = unit->resourcesUse.metal;
+		unitResInf->energyMake = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f);
+		unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
+		unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f);
+		unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
 		fetchOk = true;
 	}
 

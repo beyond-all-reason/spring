@@ -1,6 +1,10 @@
 #ifndef UNIT_ECONOMY_HELPER__
 #define UNIT_ECONOMY_HELPER__
 
+#include "Sim/Ecs/EcsMain.h"
+
+class CUnit;
+
 class UnitEconomyHelper {
 public:
 

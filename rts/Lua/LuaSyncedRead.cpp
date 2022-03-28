@@ -39,6 +39,7 @@
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
@@ -2924,10 +2925,10 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	lua_pushnumber(L, unit->resourcesMake.metal);
-	lua_pushnumber(L, unit->resourcesUse.metal);
-	lua_pushnumber(L, unit->resourcesMake.energy);
-	lua_pushnumber(L, unit->resourcesUse.energy);
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f));
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f));
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f));
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f));
 	return 4;
 }
 

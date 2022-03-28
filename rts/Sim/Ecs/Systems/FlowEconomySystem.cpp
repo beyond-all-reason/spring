@@ -51,58 +51,6 @@ void FlowEconomySystem::AddFlowEconomyUnit(CUnit *unit) {
     // EcsMain::registry.emplace_or_replace<EnergyFixedUse>(entity);
 }
 
-template<class T>
-void UpdateUnitEconomy(entt::entity entity, float amount){
-    if (! EcsMain::registry.valid(entity)){
-        LOG("%s: invalid entityId reference", __func__); return;
-    }
-
-    if (amount <= 0.f){
-        EcsMain::registry.remove<T>(entity);
-        LOG("%s: %f [REMOVED]", __func__, amount);
-    }
-    else {
-        EcsMain::registry.emplace_or_replace<T>(entity, amount);
-        LOG("%s: %f", __func__, amount);
-    }
-}
-
-void FlowEconomySystem::UpdateUnitProratableEnergyIncome(CUnit *unit, float amount){
-    UpdateUnitEconomy<EnergyProratableIncome>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitProratableMetalIncome(CUnit *unit, float amount){
-    UpdateUnitEconomy<MetalProratableIncome>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitFixedEnergyIncome(CUnit *unit, float amount){
-    UpdateUnitEconomy<EnergyFixedIncome>(unit->entityReference, amount);
-}
-
-// void FlowEconomySystem::UpdateUnitFixedEnergyIncome(entt::entity entity, float amount) {
-//     UpdateUnitEconomy<EnergyFixedIncome>(entity, amount);
-// }
-
-void FlowEconomySystem::UpdateUnitFixedMetalIncome(CUnit *unit, float amount) {
-    UpdateUnitEconomy<MetalFixedIncome>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitFixedEnergyExpense(CUnit *unit, float amount){
-    UpdateUnitEconomy<EnergyFixedUse>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitFixedMetalExpense(CUnit *unit, float amount) {
-    UpdateUnitEconomy<MetalFixedUse>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitProratableEnergyUse(CUnit *unit, float amount){
-    UpdateUnitEconomy<EnergyProratableUse>(unit->entityReference, amount);
-}
-
-void FlowEconomySystem::UpdateUnitProratableMetalUse(CUnit *unit, float amount){
-    UpdateUnitEconomy<MetalProratableUse>(unit->entityReference, amount);
-}
-
 void FlowEconomySystem::UpdateFixedMetalIncome(){
     auto group = EcsMain::registry.group<MetalFixedIncome>(entt::get<Units::Team>);
     for (auto entity : group) {
@@ -203,26 +151,23 @@ void FlowEconomySystem::UpdateProratableCombinedExpense(){
     }
 }
 
-bool FlowEconomySystem::RegisterOneOffExpense(CUnit* unit, float amount) {
-    // TODO
-    return false;
-}
-
 void FlowEconomySystem::Update() {
     if (!active)
         return;
 
-    SCOPED_TIMER("ECS::FlowEconomySystem::Update");
-
-    SlowUpdate();
-}
-
-void FlowEconomySystem::SlowUpdate() {
     if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
        return;
 
+    SCOPED_TIMER("ECS::FlowEconomySystem::Update");
+
     LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
 
+    UpdateEconomyPredictions();
+    UpdateAllTeamsEconomy();
+    InformWaitingEntitiesEconomyIsAssigned();
+}
+
+void FlowEconomySystem::UpdateEconomyPredictions(){
     UpdateFixedEnergyIncome();
     UpdateFixedMetalIncome();
 
@@ -236,12 +181,15 @@ void FlowEconomySystem::SlowUpdate() {
     UpdateProratableMetalExpense();
     UpdateProratableEnergyExpense();
     UpdateProratableCombinedExpense();
+}
 
+void FlowEconomySystem::UpdateAllTeamsEconomy() {
     for (int i=0; i<teamHandler.ActiveTeams(); i++){
         UpdateTeamEconomy(i);
     }
+}
 
-    // Mark new entities as the latest economy demands are considered.
+void FlowEconomySystem::InformWaitingEntitiesEconomyIsAssigned() {
     EcsMain::registry.view<AwaitingEconomyAssignment>().each([](auto entity){EcsMain::registry.remove<AwaitingEconomyAssignment>(entity);});
 }
 

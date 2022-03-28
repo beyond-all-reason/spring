@@ -18,6 +18,12 @@ private:
     bool active = false;
 
     float economyMultiplier = 0.f;
+
+    void UpdateEnergyIncomeTracking();
+    void UpdateMetalIncomeTracking();
+    void UpdateEnergyUsageTracking();
+    void UpdateMetalUsageTracking();
+    void UpdateEconomyCombinedUsageTracking();
 };
 
 extern UnitEconomySystem unitEconomySystem;

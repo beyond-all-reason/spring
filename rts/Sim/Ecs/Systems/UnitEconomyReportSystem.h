@@ -18,6 +18,11 @@ private:
     bool active = false;
 
     float economyMultiplier = 0.f;
+
+    void TakeEnergyMakeSnapshot();
+    void TakeMetalMakeSnapshot();
+    void TakeEnergyUseSnapshot();
+    void TakeMetalUseSnapshot();
 };
 
 extern UnitEconomyReportSystem unitEconomyReportSystem;
