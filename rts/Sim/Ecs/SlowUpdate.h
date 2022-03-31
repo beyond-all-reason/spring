@@ -1,6 +1,8 @@
 #ifndef SLOW_UPDATE_H__
 #define SLOW_UPDATE_H__
 
+#include "Sim/Misc/GlobalConstants.h"
+
 constexpr int REALTIME_SYSTEM_UPDATE = 1; // 30 hz
 constexpr int FAST_SYSTEM_UPDATE = 3; // 10 hz
 
@@ -21,5 +23,10 @@ constexpr int ENV_RESOURCE_TICK = 2;
 constexpr int FLOW_ECONOMY_TICK = 0;
 constexpr int UNIT_ECONOMY_TICK = 1;
 constexpr int UNIT_ECONOMY_REPORT_TICK = 2;
+
+// BACKGROUND SYSTEMS
+constexpr int WIND_DIRECTION_UPDATE_RATE = 15 * GAME_SPEED;
+
+constexpr int WIND_DIRECTION_TICK = 0;
 
 #endif

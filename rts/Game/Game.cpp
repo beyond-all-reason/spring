@@ -64,6 +64,7 @@
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/EnvEconomySystem.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
@@ -265,6 +266,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 
 	flowEconomySystem.Init();
 	envResourceSystem.Init();
+	envEconomySystem.Init();
 	buildSystem.Init();
 	unitEconomySystem.Init();
 	unitEconomyReportSystem.Init();
@@ -1677,6 +1679,7 @@ void CGame::SimFrame() {
 
 		buildSystem.Update();
 		envResourceSystem.Update();
+		envEconomySystem.Update();
 		flowEconomySystem.Update();
 		unitEconomySystem.Update();
 		unitEconomyReportSystem.Update();

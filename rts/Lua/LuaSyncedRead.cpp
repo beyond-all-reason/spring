@@ -2929,6 +2929,10 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f));
 	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f));
 	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f));
+	// lua_pushnumber(L, unit->resourcesMake.metal);
+	// lua_pushnumber(L, unit->resourcesUse.metal);
+	// lua_pushnumber(L, unit->resourcesMake.energy);
+	// lua_pushnumber(L, unit->resourcesUse.energy);
 	return 4;
 }
 
