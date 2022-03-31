@@ -35,7 +35,7 @@ public:
 
 private:
 	// update all generators every 15 seconds
-	static constexpr int WIND_UPDATE_RATE = 15 * GAME_SPEED;
+	//static constexpr int WIND_UPDATE_RATE = 15 * GAME_SPEED;
 
 	float curTidalStrength = 0.0f;
 	float curWindStrength = 0.0f;
@@ -51,10 +51,8 @@ private:
 
 	int windDirTimer = 0;
 
-    void UpdateWindTimer();
     void UpdateWindDirection();
-    void UpdateWind();
-	void SlowUpdate();
+    void UpdateWindStrength();
 };
 
 extern EnvResourceSystem envResourceSystem;

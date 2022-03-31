@@ -339,6 +339,10 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		metalUse         += GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
 		energyMake       += GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f);
 		energyUse        += GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
+		// metalMake        += unit->resourcesMake.metal;
+		// metalUse         += unit->resourcesUse.metal;
+		// energyMake       += unit->resourcesMake.energy;
+		// energyUse        += unit->resourcesUse.energy;
 		harvestMetal     += unit->harvested.metal;
 		harvestMetalMax  += unit->harvestStorage.metal;
 		harvestEnergy    += unit->harvested.energy;

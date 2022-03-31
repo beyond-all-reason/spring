@@ -290,6 +290,10 @@ bool CAICheats::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf) co
 	unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
 	unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f);
 	unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
+	// unitResInf->energyMake = unit->resourcesMake.energy;
+	// unitResInf->energyUse  = unit->resourcesUse.energy;
+	// unitResInf->metalMake  = unit->resourcesMake.metal;
+	// unitResInf->metalUse   = unit->resourcesUse.metal;
 	return true;
 }
 

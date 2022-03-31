@@ -7,7 +7,6 @@
 
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
-#include "FlowEconomySystem.h"
 
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
@@ -64,18 +63,14 @@ void EnvResourceSystem::Update()
 	if (maxWindStrength <= 0.0f)
 		return;
 
-	if (windDirTimer == 0)
+	if ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == WIND_DIRECTION_TICK) {
+        windDirTimer = 0;
 		UpdateWindDirection();
-    else {
-        UpdateWind();
-        SlowUpdate(); // here to reduce impact of UpdateWindDirection() on current frame
     }
-    UpdateWindTimer();
-}
-
-void EnvResourceSystem::UpdateWindTimer()
-{
-    windDirTimer = (windDirTimer + 1) % (WIND_UPDATE_RATE + 1);
+    else {
+        windDirTimer++;
+        UpdateWindStrength();
+    }
 }
 
 void EnvResourceSystem::UpdateWindDirection()
@@ -107,9 +102,9 @@ void EnvResourceSystem::UpdateWindDirection()
     }
 }
 
-void EnvResourceSystem::UpdateWind()
+void EnvResourceSystem::UpdateWindStrength()
 {
-    const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
+    const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_DIRECTION_UPDATE_RATE));
 
     // blend between old & new wind directions
     // note: generators added on simframes when timer is 0
@@ -119,6 +114,8 @@ void EnvResourceSystem::UpdateWind()
 
     curWindDir = curWindVec;
     curWindVec = curWindDir * (curWindStrength = Clamp(curWindStrength, minWindStrength, maxWindStrength));
+
+    //LOG("%s: wind strength: %f<-%d = %f", __func__, mod, windDirTimer, curWindStrength);
 
     // make newly added generators point in direction of wind
     auto group = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId>);
@@ -131,26 +128,6 @@ void EnvResourceSystem::UpdateWind()
 
         EcsMain::registry.remove<NewWindGenerator>(entity);
         //LOG("%s: updated new dir generator %d", __func__, unitId);
-    }
-}
-
-void EnvResourceSystem::SlowUpdate(){
-    if (!flowEconomySystem.IsSystemActive())
-        return;
-
-    if ((gs->frameNum % ENV_RESOURCE_UPDATE_RATE) != ENV_RESOURCE_TICK)
-       return;
-
-    LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
-
-    auto group = EcsMain::registry.group<WindGeneratorActive>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
-    for (auto entity : group) {
-        auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
-        auto& energyIncome = (group.get<FlowEconomy::EnergyFixedIncome>(entity).value);
-
-        energyIncome = std::min(curWindStrength, unitDef->windGenerator);
-
-        //LOG("%s: updated wind value generator", __func__);
     }
 }
 
