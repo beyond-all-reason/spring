@@ -395,16 +395,12 @@ void Patch::RecursRender(const TriTreeNode* tri, const int2 left, const int2 rig
 				const float leftHeight = vertices[leftIndex * 3 + 1];
 				const float rightHeight = vertices[rightIndex * 3 + 1];
 
-				float heightDiff = leftHeight - rightHeight;
-				if (heightDiff < 0)
-					heightDiff = -heightDiff;
+				float heightDiff = std::abs(leftHeight - rightHeight);
 
 				const int baseNeighborApexIndex = baseNeighborApex.x + baseNeighborApex.y * (PATCH_SIZE + 1);
 				const float baseNeighborApexHeight = vertices[baseNeighborApexIndex * 3 + 1];
 
-				float heightDiff2 = apexHeight - baseNeighborApexHeight;
-				if (heightDiff2 < 0)
-					heightDiff2 = -heightDiff2;
+				float heightDiff2 = std::abs(apexHeight - baseNeighborApexHeight);
 
 				if (heightDiff2 < heightDiff - 0.0001f) {
 					indices.push_back(apexIndex);
