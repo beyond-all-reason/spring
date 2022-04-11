@@ -3,6 +3,20 @@
 
 namespace FlowEconomy {
 
+// MetalIncome (fixed/proratable)
+// EnergyIncome (fixed/proratable)
+
+// MetalExpense (proratable)
+// EnergyExpense (proratable)
+
+// Units
+// unconditional eco    (fixed value always applied)
+
+// Unit eco activated
+// conditional eco      (fixed vlaue applied on/off)
+// tidal                (fixed value always applied fir tidal gens)
+// wind                 (variable value always applied)
+
 struct MetalFixedIncome {
     float value = 0.f;
 };

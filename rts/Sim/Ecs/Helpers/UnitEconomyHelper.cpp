@@ -4,6 +4,7 @@
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
+
 #include "Sim/Units/Unit.h"
 
 template<typename TF, typename... TR>
