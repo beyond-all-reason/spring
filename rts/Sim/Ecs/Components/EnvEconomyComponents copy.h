@@ -16,10 +16,6 @@ struct NewWindGenerator {
 struct WindGeneratorActive {
 };
 
-struct WindEnergy {
-    float value = 0.f;
-};
-
 }
 
 #endif

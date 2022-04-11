@@ -1,5 +1,5 @@
-#ifndef UNIT_ECONOMY_HELPER__
-#define UNIT_ECONOMY_HELPER__
+#ifndef UNIT_ECONOMY_HELPER_H__
+#define UNIT_ECONOMY_HELPER_H__
 
 #include "Sim/Ecs/EcsMain.h"
 
@@ -7,7 +7,6 @@ class CUnit;
 
 class UnitEconomyHelper {
 public:
-
     static void UpdateUnitProratableEnergyIncome(CUnit *unit, float amount);
     static void UpdateUnitProratableMetalIncome(CUnit *unit, float amount);
     static void UpdateUnitFixedEnergyIncome(CUnit *unit, float amount);
