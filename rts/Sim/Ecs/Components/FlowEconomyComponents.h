@@ -57,6 +57,9 @@ struct BuildRate {
 struct AwaitingEconomyAssignment {
 };
 
+struct IsEconomyTask {
+};
+
 }
 
 #endif
