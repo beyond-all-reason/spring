@@ -22,6 +22,8 @@ struct LocalModelPiece;
 
 class CPieceProjectile: public CProjectile
 {
+	friend class PieceProjectileSimBasedRenderingSystem;
+
 	CR_DECLARE_DERIVED(CPieceProjectile)
 
 public:
