@@ -4,6 +4,8 @@
 //#include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 
+#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
+
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
 
@@ -139,35 +141,49 @@ void EnvResourceSystem::LoadWind(float minStrength, float maxStrength)
 	oldWindVec = curWindVec;
 }
 
-// bool EnvResourceSystem::AddGenerator(CUnit* unit)
-// {
-//     if (!EcsMain::registry.valid(unit->entityReference)){
-//         LOG("%s: cannot add generator unit to %d because it hasn't been registered yet.", __func__, unit->id);
-//         return false;
-//     }
+bool EnvResourceSystem::AddGenerator(CUnit* unit)
+{
+    if (!EcsMain::registry.valid(unit->entityReference)){
+        LOG("%s: cannot add generator unit to %d because it hasn't been registered yet.", __func__, unit->id);
+        return false;
+    }
 
-//     EcsMain::registry.emplace_or_replace<WindGenerator>(unit->entityReference);
-//     if (windDirTimer != 0)
-//         EcsMain::registry.emplace_or_replace<NewWindGenerator>(unit->entityReference);
+    EcsMain::registry.emplace_or_replace<WindGenerator>(unit->entityReference);
+    if (windDirTimer != 0)
+        EcsMain::registry.emplace_or_replace<NewWindGenerator>(unit->entityReference);
 
-//     LOG("%s: added wind generator unit %d", __func__, unit->id);
+    LOG("%s: added wind generator unit %d", __func__, unit->id);
 
-//     return true;
-// }
+    return true;
+}
 
-// bool EnvResourceSystem::DelGenerator(CUnit* unit)
-// {
-//     entt::entity entity = unit->entityReference;
-//     bool entityIsValid = EcsMain::registry.valid(entity);
+void EnvResourceSystem::ActivateGenerator(CUnit* unit) {
+    entt::entity entity = unit->entityReference;
+    bool entityIsValid = EcsMain::registry.valid(entity);
+    if (entityIsValid && EcsMain::registry.all_of<WindGenerator>(entity))
+        EcsMain::registry.emplace_or_replace<WindGeneratorActive>(entity);
+}
 
-//     if (entityIsValid){
-//         UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 0.f);
-//         EcsMain::registry.remove<NewWindGenerator>(entity);
-//         EcsMain::registry.remove<WindGenerator>(entity);
-//         EcsMain::registry.remove<WindGeneratorActive>(entity);
-//     }
-//     return entityIsValid;
-// }
+void EnvResourceSystem::DeactivateGenerator(CUnit* unit) {
+    entt::entity entity = unit->entityReference;
+    bool entityIsValid = EcsMain::registry.valid(entity);
+    if (entityIsValid && EcsMain::registry.all_of<WindGenerator>(entity))
+        EcsMain::registry.remove<WindGeneratorActive>(entity);
+}
+
+bool EnvResourceSystem::DelGenerator(CUnit* unit)
+{
+    entt::entity entity = unit->entityReference;
+    bool entityIsValid = EcsMain::registry.valid(entity);
+
+    if (entityIsValid){
+        UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 0.f);
+        EcsMain::registry.remove<NewWindGenerator>(entity);
+        EcsMain::registry.remove<WindGenerator>(entity);
+        EcsMain::registry.remove<WindGeneratorActive>(entity);
+    }
+    return entityIsValid;
+}
 
 bool EnvResourceSystem::IsWindAboutToChange() const {
     return ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == (WIND_DIRECTION_UPDATE_RATE - 1));

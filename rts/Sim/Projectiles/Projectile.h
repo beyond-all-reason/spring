@@ -125,7 +125,7 @@ public:
 
 	int drawOrder = 0;
 
-	//inline static spring::mutex mut = {};
+	inline static spring::mutex mut = {};
 	uint32_t entityId = 0;
 
 protected:

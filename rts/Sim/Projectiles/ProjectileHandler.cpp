@@ -1,8 +1,4 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-
-#include "Sim/Ecs/Systems/MissileProjectileSystem.h"
-
-
 #include <algorithm>
 
 #include "Projectile.h"
@@ -314,8 +310,6 @@ void CProjectileHandler::CreateProjectile(CProjectile* p)
 {
 	p->createMe = false;
 
-	missileProjectileSystem.AddProjectile(p);
-
 	if (p->synced || PH_UNSYNCED_PROJECTILE_EVENTS == 1)
 		eventHandler.ProjectileCreated(p, p->GetAllyteamID());
 
@@ -325,8 +319,6 @@ void CProjectileHandler::CreateProjectile(CProjectile* p)
 void CProjectileHandler::DestroyProjectile(CProjectile* p)
 {
 	assert(!p->createMe);
-
-	missileProjectileSystem.RemoveProjectile(p);
 
 	eventHandler.RenderProjectileDestroyed(p);
 
