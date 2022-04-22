@@ -140,7 +140,7 @@ void EnvResourceSystem::LoadWind(float minStrength, float maxStrength)
 	curWindVec = mix(curWindDir * GetAverageWindStrength(), RgtVector * GetAverageWindStrength(), curWindDir == RgtVector);
 	oldWindVec = curWindVec;
 }
-
+/*
 bool EnvResourceSystem::AddGenerator(CUnit* unit)
 {
     if (!EcsMain::registry.valid(unit->entityReference)){
@@ -183,7 +183,7 @@ bool EnvResourceSystem::DelGenerator(CUnit* unit)
         EcsMain::registry.remove<WindGeneratorActive>(entity);
     }
     return entityIsValid;
-}
+}*/
 
 bool EnvResourceSystem::IsWindAboutToChange() const {
     return ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == (WIND_DIRECTION_UPDATE_RATE - 1));

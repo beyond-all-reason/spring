@@ -36,6 +36,7 @@
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
+#include "Sim/Ecs/Helpers/WindGeneratorHelper.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
@@ -353,7 +354,7 @@ void CUnit::PostInit(const CUnit* builder)
 	Block();
 
 	if (unitDef->windGenerator > 0.0f)
-		envResourceSystem.AddGenerator(this);
+		WindGeneratorHelper::CreateWindGenerator(this);
 
 	flowEconomySystem.AddFlowEconomyUnit(this);
 
@@ -496,7 +497,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 	SetGroup(nullptr);
 
 	if (unitDef->windGenerator > 0.0f)
-		envResourceSystem.DelGenerator(this);
+		WindGeneratorHelper::RemoveWindGenerator(this);
 
 	blockHeightChanges = false;
 	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
@@ -2390,7 +2391,7 @@ void CUnit::Activate()
 			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake);
 		}
 		if (unitDef->windGenerator > 0.0f) {
-			envResourceSystem.ActivateGenerator(this);
+			WindGeneratorHelper::ActivateGenerator(this);
 		}
 	}
 }
@@ -2430,7 +2431,7 @@ void CUnit::Deactivate()
 			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, 0.f);
 		}
 		if (unitDef->windGenerator > 0.0f) {
-			envResourceSystem.DeactivateGenerator(this);
+			WindGeneratorHelper::DeactivateGenerator(this);
 		}
 	}
 }

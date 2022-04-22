@@ -14,12 +14,12 @@ public:
     void Init();
     void Update();
 
-	bool AddGenerator(CUnit* u);
-	void ActivateGenerator(CUnit* u);
-	void DeactivateGenerator(CUnit* u);
+	//bool AddGenerator(CUnit* u);
+	//void ActivateGenerator(CUnit* u);
+	//void DeactivateGenerator(CUnit* u);
 
 	/* Not expected to be called unless a unit loses its ability to be a wind generator */
-	bool DelGenerator(CUnit* u);
+	//bool DelGenerator(CUnit* u);
 
 	void LoadTidal(float curStrength) { curTidalStrength = curStrength; }
 	void LoadWind(float minStrength, float maxStrength);

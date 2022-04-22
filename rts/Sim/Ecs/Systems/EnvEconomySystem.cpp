@@ -35,6 +35,6 @@ void EnvEconomySystem::Update()
 
         energyIncome = std::min(envResourceSystem.GetCurrentWindStrength(), unitDef->windGenerator);
 
-        //LOG("%s: updated wind value generator", __func__);
+        LOG("%s: updated wind value generator", __func__);
     }
 }

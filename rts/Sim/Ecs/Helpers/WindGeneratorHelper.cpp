@@ -17,6 +17,13 @@ void WindGeneratorHelper::CreateWindGenerator(CUnit *unit){
     EcsMain::registry.emplace<EnvEconomy::WindGenerator>(entity);
 }
 
+void WindGeneratorHelper::RemoveWindGenerator(CUnit *unit){
+    auto entity = unit->entityReference;
+    DeactivateGenerator(unit);
+    EcsMain::registry.remove<EnvEconomy::NewWindGenerator>(entity);
+    EcsMain::registry.remove<EnvEconomy::WindGenerator>(entity);
+}
+
 void WindGeneratorHelper::ActivateGenerator(CUnit* unit){
     auto entity = unit->entityReference;
     if (!EcsMain::registry.valid(entity)){
