@@ -76,6 +76,7 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(drawMidPos),
 
 	CR_MEMBER(drawFlag),
+	CR_MEMBER(previousDrawFlag),
 
 	CR_MEMBER(buildFacing),
 	CR_MEMBER(modParams),

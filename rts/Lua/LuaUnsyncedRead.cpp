@@ -152,6 +152,9 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetRenderFeatures);
 	REGISTER_LUA_CFUNC(GetRenderFeaturesDrawFlagChanged);
 
+	REGISTER_LUA_CFUNC(ClearUnitsPreviousDrawFlag);
+	REGISTER_LUA_CFUNC(ClearFeaturesPreviousDrawFlag);
+
 	REGISTER_LUA_CFUNC(GetUnitsInScreenRectangle);
 
 	REGISTER_LUA_CFUNC(GetTeamColor);
@@ -1274,6 +1277,18 @@ int LuaUnsyncedRead::GetRenderFeatures(lua_State* L)
 int LuaUnsyncedRead::GetRenderFeaturesDrawFlagChanged(lua_State* L)
 {
 	return GetRenderObjectsDrawFlagChanged(L, featureDrawer->GetUnsortedFeatures(), __func__);
+}
+
+int LuaUnsyncedRead::ClearUnitsPreviousDrawFlag(lua_State* L)
+{
+	unitDrawer->ClearPreviousDrawFlags();
+	return 0;
+}
+
+int LuaUnsyncedRead::ClearFeaturesPreviousDrawFlag(lua_State* L)
+{
+	featureDrawer->ClearPreviousDrawFlags();
+	return 0;
 }
 
 int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
