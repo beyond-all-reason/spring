@@ -39,9 +39,9 @@ void BuildSystem::Init()
 void BuildSystem::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;
     auto unitDef = unit->unitDef;
-    EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed);
+    auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed / GAME_SPEED).value;
 
-    LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
+    LOG("%s: added unit %d (%d) with build speed %f", __func__, unit->id, (int)entity, buildSpeed);
 }
 
 void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
