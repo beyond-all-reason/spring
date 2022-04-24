@@ -1,54 +1,47 @@
 #ifndef ENTT_ENTITY_ORGANIZER_HPP
 #define ENTT_ENTITY_ORGANIZER_HPP
 
-
-#include <cstddef>
 #include <algorithm>
+#include <cstddef>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+#include "../container/dense_map.hpp"
 #include "../core/type_info.hpp"
 #include "../core/type_traits.hpp"
+#include "../core/utility.hpp"
 #include "fwd.hpp"
 #include "helper.hpp"
 
-
 namespace entt {
-
 
 /**
  * @cond TURN_OFF_DOXYGEN
  * Internal details not to be documented.
  */
 
-
 namespace internal {
-
 
 template<typename>
 struct is_view: std::false_type {};
 
-template<typename Entity, typename... Exclude, typename... Component>
-struct is_view<basic_view<Entity, exclude_t<Exclude...>, Component...>>: std::true_type {};
+template<typename Entity, typename... Component, typename... Exclude>
+struct is_view<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>>: std::true_type {};
 
 template<typename Type>
 inline constexpr bool is_view_v = is_view<Type>::value;
-
 
 template<typename Type, typename Override>
 struct unpack_type {
     using ro = std::conditional_t<
         type_list_contains_v<Override, std::add_const_t<Type>> || (std::is_const_v<Type> && !type_list_contains_v<Override, std::remove_const_t<Type>>),
         type_list<std::remove_const_t<Type>>,
-        type_list<>
-    >;
+        type_list<>>;
 
     using rw = std::conditional_t<
         type_list_contains_v<Override, std::remove_const_t<Type>> || (!std::is_const_v<Type> && !type_list_contains_v<Override, std::add_const_t<Type>>),
         type_list<Type>,
-        type_list<>
-    >;
+        type_list<>>;
 };
 
 template<typename Entity, typename... Override>
@@ -59,56 +52,46 @@ struct unpack_type<basic_registry<Entity>, type_list<Override...>> {
 
 template<typename Entity, typename... Override>
 struct unpack_type<const basic_registry<Entity>, type_list<Override...>>
-    : unpack_type<basic_registry<Entity>, type_list<Override...>>
-{};
+    : unpack_type<basic_registry<Entity>, type_list<Override...>> {};
 
-template<typename Entity, typename... Exclude, typename... Component, typename... Override>
-struct unpack_type<basic_view<Entity, exclude_t<Exclude...>, Component...>, type_list<Override...>> {
+template<typename Entity, typename... Component, typename... Exclude, typename... Override>
+struct unpack_type<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>> {
     using ro = type_list_cat_t<type_list<Exclude...>, typename unpack_type<Component, type_list<Override...>>::ro...>;
     using rw = type_list_cat_t<typename unpack_type<Component, type_list<Override...>>::rw...>;
 };
 
-template<typename Entity, typename... Exclude, typename... Component, typename... Override>
-struct unpack_type<const basic_view<Entity, exclude_t<Exclude...>, Component...>, type_list<Override...>>
-    : unpack_type<basic_view<Entity, exclude_t<Exclude...>, Component...>, type_list<Override...>>
-{};
-
+template<typename Entity, typename... Component, typename... Exclude, typename... Override>
+struct unpack_type<const basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>>
+    : unpack_type<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>> {};
 
 template<typename, typename>
-struct resource;
+struct resource_traits;
 
 template<typename... Args, typename... Req>
-struct resource<type_list<Args...>, type_list<Req...>> {
+struct resource_traits<type_list<Args...>, type_list<Req...>> {
     using args = type_list<std::remove_const_t<Args>...>;
     using ro = type_list_cat_t<typename unpack_type<Args, type_list<Req...>>::ro..., typename unpack_type<Req, type_list<>>::ro...>;
     using rw = type_list_cat_t<typename unpack_type<Args, type_list<Req...>>::rw..., typename unpack_type<Req, type_list<>>::rw...>;
 };
 
-
 template<typename... Req, typename Ret, typename... Args>
-resource<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> free_function_to_resource(Ret(*)(Args...));
+resource_traits<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> free_function_to_resource_traits(Ret (*)(Args...));
 
 template<typename... Req, typename Ret, typename Type, typename... Args>
-resource<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource(Ret(*)(Type &, Args...));
+resource_traits<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource_traits(Ret (*)(Type &, Args...));
 
 template<typename... Req, typename Ret, typename Class, typename... Args>
-resource<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource(Ret(Class:: *)(Args...));
+resource_traits<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource_traits(Ret (Class::*)(Args...));
 
 template<typename... Req, typename Ret, typename Class, typename... Args>
-resource<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource(Ret(Class:: *)(Args...) const);
+resource_traits<type_list<std::remove_reference_t<Args>...>, type_list<Req...>> constrained_function_to_resource_traits(Ret (Class::*)(Args...) const);
 
-template<typename... Req>
-resource<type_list<>, type_list<Req...>> to_resource();
-
-
-}
-
+} // namespace internal
 
 /**
  * Internal details not to be documented.
  * @endcond
  */
-
 
 /**
  * @brief Utility class for creating a static task graph.
@@ -123,9 +106,9 @@ resource<type_list<>, type_list<Req...>> to_resource();
  */
 template<typename Entity>
 class basic_organizer final {
-    using callback_type = void(const void *, entt::basic_registry<Entity> &);
-    using prepare_type = void(entt::basic_registry<Entity> &);
-    using dependency_type = std::size_t(const bool, type_info *, const std::size_t);
+    using callback_type = void(const void *, basic_registry<Entity> &);
+    using prepare_type = void(basic_registry<Entity> &);
+    using dependency_type = std::size_t(const bool, const type_info **, const std::size_t);
 
     struct vertex_data final {
         std::size_t ro_count{};
@@ -135,7 +118,7 @@ class basic_organizer final {
         callback_type *callback{};
         dependency_type *dependency;
         prepare_type *prepare{};
-        type_info info{};
+        const type_info *info{};
     };
 
     template<typename Type>
@@ -145,7 +128,7 @@ class basic_organizer final {
         } else if constexpr(internal::is_view_v<Type>) {
             return as_view{reg};
         } else {
-            return reg.template ctx_or_set<std::remove_reference_t<Type>>();
+            return reg.ctx().template emplace<std::remove_reference_t<Type>>();
         }
     }
 
@@ -155,11 +138,11 @@ class basic_organizer final {
     }
 
     template<typename... Type>
-    static std::size_t fill_dependencies(type_list<Type...>, [[maybe_unused]] type_info *buffer, [[maybe_unused]] const std::size_t count) {
+    static std::size_t fill_dependencies(type_list<Type...>, [[maybe_unused]] const type_info **buffer, [[maybe_unused]] const std::size_t count) {
         if constexpr(sizeof...(Type) == 0u) {
             return {};
         } else {
-            type_info info[sizeof...(Type)]{type_id<Type>()...};
+            const type_info *info[sizeof...(Type)]{&type_id<Type>()...};
             const auto length = (std::min)(count, sizeof...(Type));
             std::copy_n(info, length, buffer);
             return length;
@@ -177,7 +160,7 @@ class basic_organizer final {
         const auto length = vertices.size();
         std::vector<bool> edges(length * length, false);
 
-        // creates the ajacency matrix
+        // creates the adjacency matrix
         for(const auto &deps: dependencies) {
             const auto last = deps.second.cend();
             auto it = deps.second.cbegin();
@@ -262,8 +245,7 @@ public:
         vertex(const bool vtype, vertex_data data, std::vector<std::size_t> edges)
             : is_top_level{vtype},
               node{std::move(data)},
-              reachable{std::move(edges)}
-        {}
+              reachable{std::move(edges)} {}
 
         /**
          * @brief Fills a buffer with the type info objects for the writable
@@ -272,7 +254,7 @@ public:
          * @param length The length of the user-supplied buffer.
          * @return The number of type info objects written to the buffer.
          */
-        size_type ro_dependency(type_info *buffer, const std::size_t length) const ENTT_NOEXCEPT {
+        size_type ro_dependency(const type_info **buffer, const std::size_t length) const ENTT_NOEXCEPT {
             return node.dependency(false, buffer, length);
         }
 
@@ -283,7 +265,7 @@ public:
          * @param length The length of the user-supplied buffer.
          * @return The number of type info objects written to the buffer.
          */
-        size_type rw_dependency(type_info *buffer, const std::size_t length) const ENTT_NOEXCEPT {
+        size_type rw_dependency(const type_info **buffer, const std::size_t length) const ENTT_NOEXCEPT {
             return node.dependency(true, buffer, length);
         }
 
@@ -315,15 +297,15 @@ public:
          * @brief Returns a type info object associated with a vertex.
          * @return A properly initialized type info object.
          */
-        type_info info() const ENTT_NOEXCEPT {
-            return node.info;
+        const type_info &info() const ENTT_NOEXCEPT {
+            return *node.info;
         }
 
         /**
          * @brief Returns a user defined name associated with a vertex, if any.
          * @return The user defined name associated with the vertex, if any.
          */
-        const char * name() const ENTT_NOEXCEPT {
+        const char *name() const ENTT_NOEXCEPT {
             return node.name;
         }
 
@@ -331,7 +313,7 @@ public:
          * @brief Returns the function associated with a vertex.
          * @return The function associated with the vertex.
          */
-        function_type * callback() const ENTT_NOEXCEPT {
+        function_type *callback() const ENTT_NOEXCEPT {
             return node.callback;
         }
 
@@ -339,7 +321,7 @@ public:
          * @brief Returns the payload associated with a vertex, if any.
          * @return The payload associated with the vertex, if any.
          */
-        const void * data() const ENTT_NOEXCEPT {
+        const void *data() const ENTT_NOEXCEPT {
             return node.payload;
         }
 
@@ -347,7 +329,7 @@ public:
          * @brief Returns the list of nodes reachable from a given vertex.
          * @return The list of nodes reachable from the vertex.
          */
-        const std::vector<std::size_t> & children() const ENTT_NOEXCEPT {
+        const std::vector<std::size_t> &children() const ENTT_NOEXCEPT {
             return reachable;
         }
 
@@ -374,25 +356,25 @@ public:
      */
     template<auto Candidate, typename... Req>
     void emplace(const char *name = nullptr) {
-        using resource_type = decltype(internal::free_function_to_resource<Req...>(Candidate));
+        using resource_type = decltype(internal::free_function_to_resource_traits<Req...>(Candidate));
         constexpr auto requires_registry = type_list_contains_v<typename resource_type::args, basic_registry<entity_type>>;
 
         callback_type *callback = +[](const void *, basic_registry<entity_type> &reg) {
             std::apply(Candidate, to_args(reg, typename resource_type::args{}));
         };
 
-        track_dependencies(vertices.size(), requires_registry, typename resource_type::ro{}, typename resource_type::rw{});
-
-        vertices.push_back({
+        vertex_data vdata{
             resource_type::ro::size,
             resource_type::rw::size,
             name,
             nullptr,
             callback,
-            +[](const bool rw, type_info *buffer, const std::size_t length) { return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length); },
+            +[](const bool rw, const type_info **buffer, const std::size_t length) { return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length); },
             +[](basic_registry<entity_type> &reg) { void(to_args(reg, typename resource_type::args{})); },
-            type_id<std::integral_constant<decltype(Candidate), Candidate>>()
-        });
+            &type_id<std::integral_constant<decltype(Candidate), Candidate>>()};
+
+        track_dependencies(vertices.size(), requires_registry, typename resource_type::ro{}, typename resource_type::rw{});
+        vertices.push_back(std::move(vdata));
     }
 
     /**
@@ -406,7 +388,7 @@ public:
      */
     template<auto Candidate, typename... Req, typename Type>
     void emplace(Type &value_or_instance, const char *name = nullptr) {
-        using resource_type = decltype(internal::constrained_function_to_resource<Req...>(Candidate));
+        using resource_type = decltype(internal::constrained_function_to_resource_traits<Req...>(Candidate));
         constexpr auto requires_registry = type_list_contains_v<typename resource_type::args, basic_registry<entity_type>>;
 
         callback_type *callback = +[](const void *payload, basic_registry<entity_type> &reg) {
@@ -414,22 +396,18 @@ public:
             std::apply(Candidate, std::tuple_cat(std::forward_as_tuple(*curr), to_args(reg, typename resource_type::args{})));
         };
 
-        track_dependencies(vertices.size(), requires_registry, typename resource_type::ro{}, typename resource_type::rw{});
-
-        vertices.push_back({
+        vertex_data vdata{
             resource_type::ro::size,
             resource_type::rw::size,
             name,
             &value_or_instance,
             callback,
-            +[](const bool rw, type_info *buffer, const std::size_t length) {
-                return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length);
-            },
-            +[](basic_registry<entity_type> &reg) {
-                void(to_args(reg, typename resource_type::args{}));
-            },
-            type_id<std::integral_constant<decltype(Candidate), Candidate>>()
-        });
+            +[](const bool rw, const type_info **buffer, const std::size_t length) { return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length); },
+            +[](basic_registry<entity_type> &reg) { void(to_args(reg, typename resource_type::args{})); },
+            &type_id<std::integral_constant<decltype(Candidate), Candidate>>()};
+
+        track_dependencies(vertices.size(), requires_registry, typename resource_type::ro{}, typename resource_type::rw{});
+        vertices.push_back(std::move(vdata));
     }
 
     /**
@@ -442,21 +420,20 @@ public:
      */
     template<typename... Req>
     void emplace(function_type *func, const void *payload = nullptr, const char *name = nullptr) {
-        using resource_type = internal::resource<type_list<>, type_list<Req...>>;
+        using resource_type = internal::resource_traits<type_list<>, type_list<Req...>>;
         track_dependencies(vertices.size(), true, typename resource_type::ro{}, typename resource_type::rw{});
 
-        vertices.push_back({
+        vertex_data vdata{
             resource_type::ro::size,
             resource_type::rw::size,
             name,
             payload,
             func,
-            +[](const bool rw, type_info *buffer, const std::size_t length) {
-                return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length);
-            },
+            +[](const bool rw, const type_info **buffer, const std::size_t length) { return rw ? fill_dependencies(typename resource_type::rw{}, buffer, length) : fill_dependencies(typename resource_type::ro{}, buffer, length); },
             nullptr,
-            type_info{}
-        });
+            &type_id<void>()};
+
+        vertices.push_back(std::move(vdata));
     }
 
     /**
@@ -498,12 +475,10 @@ public:
     }
 
 private:
-    std::unordered_map<entt::id_type, std::vector<std::pair<std::size_t, bool>>> dependencies;
+    dense_map<id_type, std::vector<std::pair<std::size_t, bool>>, identity> dependencies;
     std::vector<vertex_data> vertices;
 };
 
-
-}
-
+} // namespace entt
 
 #endif
