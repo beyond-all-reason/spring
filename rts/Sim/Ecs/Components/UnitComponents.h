@@ -32,7 +32,7 @@ struct ChainEntity {
     entt::entity next{entt::null};
 };
 
-struct ConditionalResourceMakeRef {
+struct EnergyUpKeepEconomyTaskRef {
     entt::entity value{entt::null};
 };
 
