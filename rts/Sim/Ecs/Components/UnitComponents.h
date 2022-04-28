@@ -19,6 +19,23 @@ struct UnitDefRef {
     const UnitDef* value = nullptr;
 };
 
+struct OwningEntity {
+    entt::entity value{entt::null};
+};
+
+struct EconomyTasks {
+    std::size_t size = 0;
+};
+
+struct ChainEntity {
+    entt::entity prev{entt::null};
+    entt::entity next{entt::null};
+};
+
+struct ConditionalResourceMakeRef {
+    entt::entity value{entt::null};
+};
+
 }
 
 #endif

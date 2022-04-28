@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cmath>
+
 #include "UnitDef.h"
 #include "Unit.h"
 #include "UnitHandler.h"
@@ -42,6 +44,7 @@
 #include "Sim/Ecs/Systems/UnitSystem.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
+#include "Sim/Ecs/Utils/EconomyTask.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -2363,21 +2366,30 @@ void CUnit::Activate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		if (unitDef->energyUpkeep < 0.f) {
-			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, (-unitDef->energyUpkeep));
-		}
-		else if (unitDef->energyUpkeep){
-			UnitEconomyHelper::UpdateUnitProratableEnergyUse(this, unitDef->energyUpkeep);
-			UnitEconomyHelper::UpdateUnitProratableMetalIncome(this, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
+		if (unitDef->energyUpkeep) {
+			auto energyUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 
-			LOG("%s: %d: ACTIVATE energyUse = %f", __func__, (int)entityReference, unitDef->energyUpkeep);
-			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake + metalExtract * (unitDef->extractsMetal > 0.0f));
-		}
-		else if (unitDef->energyMake) {
-			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
+			if (unitDef->energyUpkeep < 0.f)
+				EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(energyUpkeepEconomyTaskId, (-unitDef->energyUpkeep));
+			else
+				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(energyUpkeepEconomyTaskId, unitDef->energyUpkeep);
 
-			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
+			auto metalIncome = metalExtract + unitDef->makesMetal;
+			if (metalIncome < 0.f) {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(energyUpkeepEconomyTaskId, (-metalIncome));
+			}
+			else {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(energyUpkeepEconomyTaskId, metalIncome);
+			}
+
+			EcsMain::registry.emplace<Units::EnergyUpKeepEconomyTaskRef>(entityReference, energyUpkeepEconomyTaskId);
 		}
+
+		// else if (unitDef->energyMake) {
+		// 	UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
+
+		// 	LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
+		// }
 		if (unitDef->metalUpkeep){
 			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
 		}

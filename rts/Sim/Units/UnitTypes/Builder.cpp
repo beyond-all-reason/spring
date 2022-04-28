@@ -108,7 +108,6 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 
 	const float scale = (1.0f / TEAM_SLOWUPDATE_RATE);
 
-	buildSystem.GetBuildSpeed(this->entityReference) = scale * unitDef->buildSpeed;
 	repairSpeed    = scale * unitDef->repairSpeed;
 	reclaimSpeed   = scale * unitDef->reclaimSpeed;
 	resurrectSpeed = scale * unitDef->resurrectSpeed;

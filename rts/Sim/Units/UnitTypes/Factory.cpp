@@ -69,9 +69,6 @@ void CFactory::PreInit(const UnitLoadParams& params)
 
 	buildSystem.AddUnitBuilder(this);
 
-	//buildSpeed = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
-	buildSystem.GetBuildSpeed(this->entityReference) = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
-
 	CBuilding::PreInit(params);
 }
 
