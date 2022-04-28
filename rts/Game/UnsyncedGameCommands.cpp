@@ -2090,8 +2090,7 @@ public:
 			TakeScreenshot("", 80);
 		} else {
 			int quality = args.size() > 1 ? StringToInt(args[1]) : 80;
-			if (quality < 1) quality = 1;
-			if (quality > 99) quality = 99;
+			quality = std::clamp(quality, 1, 99);
 			TakeScreenshot(args[0], quality);
 		}
 		return true;
