@@ -337,13 +337,11 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		int nextWaterRendererMode = 0;
+		bool parseFailure;
+		int nextWaterRendererMode = StringToInt(action.GetArgs(), &parseFailure);
 
-		if (!(action.GetArgs()).empty()) {
-			nextWaterRendererMode = atoi((action.GetArgs()).c_str());
-		} else {
+		if (parseFailure)
 			nextWaterRendererMode = -1;
-		}
 
 		IWater::PushWaterMode(nextWaterRendererMode);
 		return true;
