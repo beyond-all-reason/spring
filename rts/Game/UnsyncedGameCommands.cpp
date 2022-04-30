@@ -315,13 +315,13 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		std::istringstream buf(action.GetArgs() + " 0.0 0.0");
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
 		float& pofs = (readMap->GetGroundDrawer())->spPolygonOffsetScale;
 		float& pofu = (readMap->GetGroundDrawer())->spPolygonOffsetUnits;
 
-		buf >> pofs;
-		buf >> pofu;
+		pofs = args.size() > 0 ? StringToInt<float>(args[0]) : 0.0;
+		pofu = args.size() > 1 ? StringToInt<float>(args[1]) : 0.0;
 
 		LOG("MapShadowPolygonOffset{Scale,Units}={%f,%f}", pofs, pofu);
 		return true;
