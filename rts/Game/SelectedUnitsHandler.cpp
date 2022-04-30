@@ -87,8 +87,6 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 	possibleCommandsChanged = false;
 
 	int commandPage = 1000;
-	int foundGroup = -2;
-	int foundGroup2 = -2;
 
 	spring::unordered_map<int, int> states;
 	std::vector<SCommandDescription> commands;
@@ -96,7 +94,6 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 	for (const int unitID: selectedUnits) {
 		const CUnit* u = unitHandler.GetUnit(unitID);
 		const CCommandAI* cai = u->commandAI;
-		const CGroup* group = u->GetGroup();
 
 		for (const SCommandDescription* cmdDesc: cai->GetPossibleCommands()) {
 			states[cmdDesc->id] = cmdDesc->disabled ? 2 : 1;
@@ -104,18 +101,6 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 
 		if (cai->lastSelectedCommandPage < commandPage)
 			commandPage = cai->lastSelectedCommandPage;
-
-		if (foundGroup == -2 && group != nullptr)
-			foundGroup = group->id;
-
-		if (group == nullptr || foundGroup != group->id)
-			foundGroup = -1;
-
-		if (foundGroup2 == -2 && group != nullptr)
-			foundGroup2 = group->id;
-
-		if (foundGroup2 >= 0 && group != nullptr && group->id != foundGroup2)
-			foundGroup2 = -1;
 	}
 
 	// load the first set (separating build and non-build commands)
