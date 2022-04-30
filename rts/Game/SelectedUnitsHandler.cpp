@@ -96,7 +96,11 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 		const CCommandAI* cai = u->commandAI;
 
 		for (const SCommandDescription* cmdDesc: cai->GetPossibleCommands()) {
-			states[cmdDesc->id] = cmdDesc->disabled ? 2 : 1;
+			// Disable unit commands if we have a group selected.
+			if (cmdDesc->showUnique && selectedUnits.size() > 1)
+				states[cmdDesc->id] = 0;
+			else
+				states[cmdDesc->id] = cmdDesc->disabled ? 2 : 1;
 		}
 
 		if (cai->lastSelectedCommandPage < commandPage)
@@ -109,17 +113,11 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 		const CCommandAI* cai = u->commandAI;
 
 		for (const SCommandDescription* cmdDesc: cai->GetPossibleCommands()) {
-			if (buildIconsFirst) {
-				if (cmdDesc->id >= 0)
-					continue;
-			} else {
-				if (cmdDesc->id <  0)
-					continue;
-			}
-
-			if (cmdDesc->showUnique && selectedUnits.size() > 1)
+			// If the id < 0, it is a build command.
+			if (buildIconsFirst != (cmdDesc->id < 0))
 				continue;
 
+			// Prevent duplicates across different units.
 			if (states[cmdDesc->id] > 0) {
 				commands.push_back(*cmdDesc);
 				states[cmdDesc->id] = 0;
@@ -133,15 +131,7 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 		const CCommandAI* cai = u->commandAI;
 
 		for (const SCommandDescription* cmdDesc: cai->GetPossibleCommands()) {
-			if (buildIconsFirst) {
-				if (cmdDesc->id < 0)
-					continue;
-			} else {
-				if (cmdDesc->id >= 0)
-					continue;
-			}
-
-			if (cmdDesc->showUnique && selectedUnits.size() > 1)
+			if (buildIconsFirst != (cmdDesc->id >= 0))
 				continue;
 
 			if (states[cmdDesc->id] > 0) {
