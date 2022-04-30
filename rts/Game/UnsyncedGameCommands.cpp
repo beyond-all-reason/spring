@@ -500,20 +500,26 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const std::string::size_type pos = action.GetArgs().find_first_of(' ');
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
 
-		if (pos != std::string::npos) {
-			std::istringstream buf(action.GetArgs().substr(0, pos));
-			int playerID;
-			buf >> playerID;
-
-			if (playerID >= 0) {
-				game->SendNetChat(action.GetArgs().substr(pos + 1), playerID);
-			} else {
-				LOG_L(L_WARNING, "Player-ID invalid: %i", playerID);
-			}
-		} else {
+		if (args.size() == 0) {
 			LOG_L(L_WARNING, "/WByNum: wrong syntax (which is '/WByNum %%playerid')");
+			return true;
+		}
+
+		bool parseFailure;
+		const int playerID = StringToInt(args[0], &parseFailure);
+
+		if (parseFailure) {
+			LOG_L(L_WARNING, "/WByNum: wrong syntax (which is '/WByNum %%playerid')");
+			return true;
+		}
+
+		if (playerID >= 0) {
+			std::string message = (args.size() == 2) ? std::move(args[1]) : "";
+			game->SendNetChat(std::move(message), playerID);
+		} else {
+			LOG_L(L_WARNING, "Player-ID invalid: %i", playerID);
 		}
 
 		return true;
