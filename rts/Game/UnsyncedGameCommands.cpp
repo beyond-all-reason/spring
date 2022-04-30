@@ -1164,7 +1164,8 @@ public:
 		if (groupId < 0 || groupId > 9)
 			return WrongSyntax();
 		// Finally, actually run the command.
-		uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand);
+		if (!uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand))
+			return WrongSyntax();
 
 		return true;
 	}
