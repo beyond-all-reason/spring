@@ -394,16 +394,25 @@ public:
 		"Forces particular Unit drawer type") {}
 
 	bool Execute(const UnsyncedAction& action) const {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
+		bool parseFailure;
 
-		int prefModelDrawer = -1;
-		int mtModelDrawer = -1;
-		sscanf((action.GetArgs()).c_str(), "%i %i", &prefModelDrawer, &mtModelDrawer);
-
-		if (prefModelDrawer == -1)
+		if (args.size() == 0) {
+			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
 			return false;
+		}
 
-		if (mtModelDrawer != -1)
-			CUnitDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
+		int prefModelDrawer = StringToInt(args[0], &parseFailure);
+		if (parseFailure) return false;
+
+		if (args.size() > 1) {
+			// Note: there's StringToBool but it always returns something; so
+			// using it would change the code here.
+			int mtModelDrawer = StringToInt(args[1], &parseFailure);
+
+			if (!parseFailure)
+				CUnitDrawer::MTDrawerTypeRef() = static_cast<bool>(mtModelDrawer);
+		}
 
 		CUnitDrawer::PreferedDrawerTypeRef() = prefModelDrawer;
 
