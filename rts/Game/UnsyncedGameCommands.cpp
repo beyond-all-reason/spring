@@ -472,19 +472,20 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const std::string::size_type pos = action.GetArgs().find_first_of(' ');
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
 
-		if (pos != std::string::npos) {
-			const std::string name = action.GetArgs().substr(0, pos);
-			const int playerID = playerHandler.Player(name);
-
-			if (playerID >= 0) {
-				game->SendNetChat(action.GetArgs().substr(pos + 1), playerID);
-			} else {
-				LOG_L(L_WARNING, "/w: Player not found: %s", name.c_str());
-			}
-		} else {
+		if (args.size() == 0) {
 			LOG_L(L_WARNING, "/w: wrong syntax (which is '/w %%playername')");
+			return true;
+		}
+
+		const int playerID = playerHandler.Player(args[0]);
+
+		if (playerID >= 0) {
+			std::string message = (args.size() == 2) ? std::move(args[1]) : "";
+			game->SendNetChat(std::move(message), playerID);
+		} else {
+			LOG_L(L_WARNING, "/w: Player not found: %s", args[0].c_str());
 		}
 
 		return true;
