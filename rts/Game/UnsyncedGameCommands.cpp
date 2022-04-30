@@ -107,32 +107,6 @@
 #include <SDL_events.h>
 #include <SDL_video.h>
 
-
-static std::vector<std::string> _local_strSpaceTokenize(const std::string& text) {
-	static const char* const SPACE_DELIMS = " \t";
-
-	std::vector<std::string> tokens;
-
-	// Skip delimiters at beginning.
-	std::string::size_type lastPos = text.find_first_not_of(SPACE_DELIMS, 0);
-	// Find first "non-delimiter".
-	std::string::size_type pos     = text.find_first_of(SPACE_DELIMS, lastPos);
-
-	while (std::string::npos != pos || std::string::npos != lastPos) {
-		// Found a token, add it to the vector.
-		tokens.push_back(text.substr(lastPos, pos - lastPos));
-
-		// Skip delimiters.  Note the "not_of"
-		lastPos = text.find_first_not_of(SPACE_DELIMS, pos);
-		// Find next "non-delimiter"
-		pos = text.find_first_of(SPACE_DELIMS, lastPos);
-	}
-
-	return tokens;
-}
-
-
-
 namespace { // prevents linking problems in case of duplicate symbols
 
 /**
@@ -715,7 +689,7 @@ public:
 		const bool cheating           = gs->cheatEnabled;
 		const bool singlePlayer       = (playerHandler.ActivePlayers() <= 1);
 
-		const std::vector<std::string>& args = _local_strSpaceTokenize(action.GetArgs());
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 		const std::string actionName  = StringToLower(GetCommand()).substr(2);
 
 		if (!args.empty()) {
@@ -837,7 +811,7 @@ public:
 		const bool cheating           = gs->cheatEnabled;
 		const bool singlePlayer       = (playerHandler.ActivePlayers() <= 1);
 
-		const std::vector<std::string>& args = _local_strSpaceTokenize(action.GetArgs());
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
 		if (!args.empty()) {
 			std::string aiShortName;
@@ -2105,7 +2079,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		auto args = _local_strSpaceTokenize(action.GetArgs());
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
 		if (args.size() == 0) {
 			TakeScreenshot("", 80);
@@ -3243,7 +3217,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const std::vector<std::string>& args = _local_strSpaceTokenize(action.GetArgs());
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
 		switch (args.size()) {
 			case 2: { DumpState(atoi(args[0].c_str()), atoi(args[1].c_str()),                     1,                       false); } break;
@@ -3271,7 +3245,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		std::vector<std::string> args = _local_strSpaceTokenize(action.GetArgs());
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
 		switch (args.size()) {
 			case  1: { game->Save("Saves/" + args[0] + (usecreg? ".ssf": ".slsf"),                 ""); return  true; } break;
