@@ -474,9 +474,6 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][8] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadSkirmishAIs();
-			if (saveFileHandler != nullptr) {
-				saveFileHandler->LoadAIData();
-			}
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
@@ -812,16 +809,20 @@ void CGame::LoadSkirmishAIs()
 
 	// create Skirmish AI's if required
 	const std::vector<uint8_t>& localAIs = skirmishAIHandler.GetSkirmishAIsByPlayer(gu->myPlayerNum);
-	const std::string timerName = std::string("Game::") + __func__;
+	if (localAIs.empty() && !IsSavedGame())
+		return;
 
-	if (!localAIs.empty()) {
-		ScopedOnceTimer timer(timerName);
-		loadscreen->SetLoadMessage("Loading Skirmish AIs");
+	ScopedOnceTimer timer(std::string("Game::") + __func__);
+	loadscreen->SetLoadMessage("Loading Skirmish AIs");
 
-		for (uint8_t localAI: localAIs) {
-			ScopedOnceTimer subTimer(timerName + "::CreateAI(id=" + IntToString(localAI) + ")");
-			skirmishAIHandler.CreateLocalSkirmishAI(localAI);
-		}
+	for (uint8_t localAI: localAIs)
+		skirmishAIHandler.CreateLocalSkirmishAI(localAI, IsSavedGame());
+
+	if (IsSavedGame()) {
+		saveFileHandler->LoadAIData();
+
+		for (uint8_t localAI: localAIs)
+			skirmishAIHandler.PostLoadSkirmishAI(localAI);
 	}
 }
 
@@ -1011,46 +1012,109 @@ void CGame::ResizeEvent()
 }
 
 
-int CGame::KeyPressed(int key, bool isRepeat)
+//int CGame::KeyPressed(int key, bool isRepeat)
+//{
+//	if (!gameOver && !isRepeat)
+//		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
+//
+//	const CKeySet ks(key, false);
+//	curKeyChain.push_back(key, spring_gettime(), isRepeat);
+//
+//	// Get the list of possible key actions
+//	//LOG_L(L_DEBUG, "curKeyChain: %s", curKeyChain.GetString().c_str());
+//	const CKeyBindings::ActionList& actionList = keyBindings.GetActionList(curKeyChain);
+//
+//	if (gameTextInput.ConsumePressedKey(key, actionList))
+//		return 0;
+//
+//	if (luaInputReceiver->KeyPressed(key, isRepeat))
+//		return 0;
+//
+//	// try the input receivers
+//	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
+//		if (recv != nullptr && recv->KeyPressed(key, isRepeat))
+//			return 0;
+//	}
+//
+//
+//	// try our list of actions
+//	for (const Action& action: actionList) {
+//		if (ActionPressed(key, action, isRepeat)) {
+//			return 0;
+//		}
+//	}
+//
+//	// maybe a widget is interested?
+//	if (luaUI != nullptr) {
+//		for (const Action& action: actionList) {
+//			luaUI->GotChatMsg(action.rawline, false);
+//		}
+//	}
+//	if (luaMenu != nullptr) {
+//		for (const Action& action: actionList) {
+//			luaMenu->GotChatMsg(action.rawline, false);
+//		}
+//	}
+//
+//	return 0;
+//}
+
+int CGame::KeyPressedSC(int keyScanCode, int keySym, bool isRepeat)
 {
 	if (!gameOver && !isRepeat)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
 
-	const CKeySet ks(key, false);
-	curKeyChain.push_back(key, spring_gettime(), isRepeat);
+	const CKeySet ks(keySym, false);
+	curKeyChain.push_back(keySym, spring_gettime(), isRepeat);
+
+	const CKeySetSC ksSC(keyScanCode, false);
+	curKeyChainSC.push_back(keyScanCode, spring_gettime(), isRepeat);
 
 	// Get the list of possible key actions
-	//LOG_L(L_DEBUG, "curKeyChain: %s", curKeyChain.GetString().c_str());
 	const CKeyBindings::ActionList& actionList = keyBindings.GetActionList(curKeyChain);
+	const CKeyBindings::ActionList& actionListSC = keyBindings.GetActionListSC(curKeyChainSC);
 
-	if (gameTextInput.ConsumePressedKey(key, actionList))
+	if (gameTextInput.ConsumePressedKey(keySym, actionList)) {
 		return 0;
-
-	if (luaInputReceiver->KeyPressed(key, isRepeat))
-		return 0;
-
-	// try the input receivers
-	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyPressed(key, isRepeat))
-			return 0;
 	}
 
+	if (luaInputReceiver->KeyPressedSC(keyScanCode, keySym, isRepeat)) {
+		return 0;
+	}
 
-	// try our list of actions
-	for (const Action& action: actionList) {
-		if (ActionPressed(key, action, isRepeat)) {
+	// try the input receivers
+	for (CInputReceiver* recv : CInputReceiver::GetReceivers()) {
+		if (recv != nullptr && recv->KeyPressedSC(keyScanCode, keySym, isRepeat)) {
+			return 0;
+		}
+	}
+
+	// try our list of actions bound with scancode keys
+	for (const Action& action : actionListSC) {
+		if (ActionPressed(keyScanCode, action, isRepeat)) {
+			return 0;
+		}
+	}
+
+	// try our list of actions bound with keysym keys
+	for (const Action& action : actionList) {
+		if (ActionPressed(keySym, action, isRepeat)) {
 			return 0;
 		}
 	}
 
 	// maybe a widget is interested?
 	if (luaUI != nullptr) {
-		for (const Action& action: actionList) {
+		for (const Action& action : actionList) {
+			luaUI->GotChatMsg(action.rawline, false);
+		}
+		for (const Action& action : actionListSC) {
 			luaUI->GotChatMsg(action.rawline, false);
 		}
 	}
+
 	if (luaMenu != nullptr) {
-		for (const Action& action: actionList) {
+		for (const Action& action : actionList) {
 			luaMenu->GotChatMsg(action.rawline, false);
 		}
 	}
@@ -1059,25 +1123,59 @@ int CGame::KeyPressed(int key, bool isRepeat)
 }
 
 
-int CGame::KeyReleased(int k)
+//int CGame::KeyReleased(int k)
+//{
+//	if (gameTextInput.ConsumeReleasedKey(k))
+//		return 0;
+//
+//	if (luaInputReceiver->KeyReleased(k))
+//		return 0;
+//
+//	// try the input receivers
+//	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
+//		if (recv != nullptr && recv->KeyReleased(k)) {
+//			return 0;
+//		}
+//	}
+//
+//	// try our list of actions
+//	CKeySet ks(k, true);
+//	const CKeyBindings::ActionList& al = keyBindings.GetActionList(ks);
+//	for (const Action& action: al) {
+//		if (ActionReleased(action))
+//			return 0;
+//	}
+//
+//	return 0;
+//}
+
+int CGame::KeyReleasedSC(int keyScanCode, int keySym)
 {
-	if (gameTextInput.ConsumeReleasedKey(k))
+	if (gameTextInput.ConsumeReleasedKey(keySym))
 		return 0;
 
-	if (luaInputReceiver->KeyReleased(k))
+	if (luaInputReceiver->KeyReleasedSC(keyScanCode, keySym))
 		return 0;
 
 	// try the input receivers
-	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyReleased(k)) {
+	for (CInputReceiver* recv : CInputReceiver::GetReceivers()) {
+		if (recv != nullptr && recv->KeyReleasedSC(keyScanCode, keySym)) {
 			return 0;
 		}
 	}
 
-	// try our list of actions
-	CKeySet ks(k, true);
-	const CKeyBindings::ActionList& al = keyBindings.GetActionList(ks);
-	for (const Action& action: al) {
+	// try our list of actions bound with scancode keys
+	CKeySetSC ksSC(keyScanCode, true);
+	const CKeyBindings::ActionList& actionListSC = keyBindings.GetActionListSC(ksSC);
+	for (const Action& action : actionListSC) {
+		if (ActionReleased(action))
+			return 0;
+	}
+
+	// try our list of actions bound with keysym keys
+	CKeySet ks(keySym, true);
+	const CKeyBindings::ActionList& actionList = keyBindings.GetActionList(ks);
+	for (const Action& action : actionList) {
 		if (ActionReleased(action))
 			return 0;
 	}
@@ -2084,3 +2182,4 @@ bool CGame::ActionPressed(unsigned int key, const Action& action, bool isRepeat)
 
 	return (gameCommandConsole.ExecuteAction(action));
 }
+

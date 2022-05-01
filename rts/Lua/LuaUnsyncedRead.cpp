@@ -82,7 +82,8 @@
 #include <SDL_clipboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
-
+#include <SDL_scancode.h>
+#include <SDL_keyboard.h>
 
 /******************************************************************************/
 /******************************************************************************/
@@ -197,6 +198,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetPixelDir);
 
 	REGISTER_LUA_CFUNC(GetTimer);
+	REGISTER_LUA_CFUNC(GetTimerMicros);
 	REGISTER_LUA_CFUNC(GetFrameTimer);
 	REGISTER_LUA_CFUNC(DiffTimers);
 
@@ -230,7 +232,9 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetKeyCode);
 	REGISTER_LUA_CFUNC(GetKeySymbol);
+	REGISTER_LUA_CFUNC(GetKeyScancodeName);
 	REGISTER_LUA_CFUNC(GetKeyBindings);
+	REGISTER_LUA_CFUNC(GetKeyBindingsSC);
 	REGISTER_LUA_CFUNC(GetActionHotKeys);
 
 	REGISTER_LUA_CFUNC(GetLastMessagePositions);
@@ -1230,28 +1234,36 @@ namespace {
 	static int GetRenderObjectsDrawFlagChanged(lua_State* L, const V& renderObjects, const char* func) {
 		const bool sendMask = luaL_optboolean(L, 1, false);
 
-		lua_createtable(L, renderObjects.size(), 0);
-		uint32_t count = 0;
+		std::vector<int> changedIds;
+		changedIds.reserve(renderObjects.size());
+
+		std::vector<uint8_t> changedDrawFlags;
+		changedDrawFlags.reserve(renderObjects.size());
+
 		for (const auto renderObject : renderObjects)
 		{
 			if (renderObject->previousDrawFlag == renderObject->drawFlag)
 				continue;
+			changedIds.push_back(renderObject->id);
+			changedDrawFlags.push_back(renderObject->drawFlag);
+		}
 
-			lua_pushnumber(L, renderObject->id);
+		lua_createtable(L, changedIds.size(), 0);
+		uint32_t count = 0;
+		for (const auto id : changedIds)
+		{
+			lua_pushnumber(L, id);
 			lua_rawseti(L, -2, ++count);
 		}
 
 		if 	(!sendMask)
 			return 1;
 
-		lua_createtable(L, count, 0);
+		lua_createtable(L, changedDrawFlags.size(), 0);
 		count = 0;
-		for (const auto renderObject : renderObjects)
+		for (const auto drawFlag : changedDrawFlags)
 		{
-			if (renderObject->previousDrawFlag == renderObject->drawFlag)
-				continue;
-
-			lua_pushnumber(L, renderObject->drawFlag);
+			lua_pushnumber(L, drawFlag);
 			lua_rawseti(L, -2, ++count);
 		}
 
@@ -1994,7 +2006,7 @@ int LuaUnsyncedRead::GetTeamOrigColor(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
-static void PushTimer(lua_State* L, const spring_time& time)
+static void PushTimer(lua_State* L, const spring_time& time, bool microseconds)
 {
 	// use time since Spring's epoch in MILLIseconds because that
 	// is more likely to fit in a 32-bit pointer (on any platforms
@@ -2003,14 +2015,27 @@ static void PushTimer(lua_State* L, const spring_time& time)
 	// single-precision floats better
 	//
 	// 4e9millis == 4e6s == 46.3 days until overflow
-	const std::uint64_t millis = time.toMilliSecs<std::uint64_t>();
-
 	ptrdiff_t p = 0;
 
-	if (sizeof(void*) == 8) {
-		p = spring::SafeCast<std::uint64_t>(millis);
-	} else {
-		p = spring::SafeCast<std::uint32_t>(millis);
+	if (microseconds) {
+		const std::uint64_t micros = time.toMicroSecs<std::uint64_t>();
+
+		if (sizeof(void*) == 8) {
+			p = spring::SafeCast<std::uint64_t>(micros);
+		}
+		else {
+			p = spring::SafeCast<std::uint32_t>(micros);
+		}
+	}
+	else {
+		const std::uint64_t millis = time.toMilliSecs<std::uint64_t>();
+
+		if (sizeof(void*) == 8) {
+			p = spring::SafeCast<std::uint64_t>(millis);
+		}
+		else {
+			p = spring::SafeCast<std::uint32_t>(millis);
+		}
 	}
 
 	lua_pushlightuserdata(L, reinterpret_cast<void*>(p));
@@ -2018,16 +2043,23 @@ static void PushTimer(lua_State* L, const spring_time& time)
 
 int LuaUnsyncedRead::GetTimer(lua_State* L)
 {
-	PushTimer(L, spring_now());
+	PushTimer(L, spring_now(), false);
 	return 1;
 }
+
+int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
+{
+	PushTimer(L, spring_now(), true);
+	return 1;
+}
+
 
 int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 {
 	if (luaL_optboolean(L, 1, false)) {
-		PushTimer(L, game->lastFrameTime);
+		PushTimer(L, game->lastFrameTime, false);
 	} else {
-		PushTimer(L, globalRendering->lastFrameStart);
+		PushTimer(L, globalRendering->lastFrameStart, false);
 	}
 	return 1;
 }
@@ -2042,24 +2074,36 @@ int LuaUnsyncedRead::DiffTimers(lua_State* L)
 	const void* p1 = lua_touserdata(L, 1);
 	const void* p2 = lua_touserdata(L, 2);
 
-	const std::uint64_t t1 = (sizeof(void*) == 8)?
-		*reinterpret_cast<std::uint64_t*>(&p1):
+	const std::uint64_t t1 = (sizeof(void*) == 8) ?
+		*reinterpret_cast<std::uint64_t*>(&p1) :
 		*reinterpret_cast<std::uint32_t*>(&p1);
-	const std::uint64_t t2 = (sizeof(void*) == 8)?
-		*reinterpret_cast<std::uint64_t*>(&p2):
+	const std::uint64_t t2 = (sizeof(void*) == 8) ?
+		*reinterpret_cast<std::uint64_t*>(&p2) :
 		*reinterpret_cast<std::uint32_t*>(&p2);
 
 	// t1 is supposed to be the most recent time-point
 	assert(t1 >= t2);
 
-	const spring_time dt = spring_time::fromMilliSecs(t1 - t2);
-
-	if (luaL_optboolean(L, 3, false)) {
-		lua_pushnumber(L, dt.toMilliSecsf());
-	} else {
-		lua_pushnumber(L, dt.toSecsf());
+	if (luaL_optboolean(L, 4, false)) {
+		const spring_time dt = spring_time::fromMicroSecs(t1 - t2);
+		
+		if (luaL_optboolean(L, 3, false)) {
+			lua_pushnumber(L, dt.toMilliSecsf());
+		}
+		else {
+			lua_pushnumber(L, dt.toSecsf());
+		}
 	}
+	else {
+		const spring_time dt = spring_time::fromMilliSecs(t1 - t2);
 
+		if (luaL_optboolean(L, 3, false)) {
+			lua_pushnumber(L, dt.toMilliSecsf());
+		}
+		else {
+			lua_pushnumber(L, dt.toSecsf());
+		}
+	}
 	return 1;
 }
 
@@ -2537,6 +2581,21 @@ int LuaUnsyncedRead::GetKeySymbol(lua_State* L)
 	return 2;
 }
 
+int LuaUnsyncedRead::GetKeyScancodeName(lua_State* L)
+{
+	// Does SDL2 know that keyscancode ?
+	const string keyScancodeName = SDL_GetScancodeName(static_cast<SDL_Scancode>(luaL_checkint(L, 1)));
+	const int keyScancode = SDL_GetScancodeFromName(keyScancodeName.c_str());
+	if (keyScancode != SDL_SCANCODE_UNKNOWN) {
+		// feed lua with prefixed Scancodename
+		lua_pushsstring(L, "SC_" + keyScancodeName);
+	}
+	else {
+		lua_pushsstring(L, "");
+	}
+	return 1;
+}
+
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
 	CKeyBindings::ActionList actions;
@@ -2555,16 +2614,48 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 
 	int i = 1;
 	lua_newtable(L);
-	for (const Action& action: actions) {
-		lua_newtable(L);
-			lua_pushsstring(L, action.command);
-			lua_pushsstring(L, action.extra);
-			lua_rawset(L, -3);
-			LuaPushNamedString(L, "command",   action.command);
-			LuaPushNamedString(L, "extra",     action.extra);
-			LuaPushNamedString(L, "boundWith", action.boundWith);
-		lua_rawseti(L, -2, i++);
+		for (const Action& action: actions) {
+			lua_newtable(L);
+				// regardless of this keyValue-Pair being pushed or not, current actions.lua can�t handle it, so just delete it already
+				// lua_pushsstring(L, action.command);
+				// lua_pushsstring(L, action.extra);
+				// lua_rawset(L, -3);
+				// above 3 lines is same as: LuaPushNamedString(L, action.command, action.extra);
+
+				LuaPushNamedString(L, "command", action.command); 
+				LuaPushNamedString(L, "extra",     action.extra); 
+				LuaPushNamedString(L, "boundWith", action.boundWith); 
+	lua_rawseti(L, -2, i++);
+		}
+	return 1;
+}
+
+int LuaUnsyncedRead::GetKeyBindingsSC(lua_State* L)
+{
+	CKeyBindings::ActionList actions;
+	const std::string& argument = luaL_optstring(L, 1, "");
+
+	if (argument.empty()) {
+		actions = keyBindings.GetActionListSC();
 	}
+	else {
+		CKeySetSC ksSC;
+
+		if (!ksSC.Parse(luaL_checksstring(L, 1)))
+			return 0;
+
+		actions = keyBindings.GetActionListSC(ksSC);
+	}
+
+	int i = 1;
+	lua_newtable(L);
+		for (const Action& action : actions) {
+			lua_newtable(L);
+				LuaPushNamedString(L, "command", action.command);
+				LuaPushNamedString(L, "extra", action.extra);
+				LuaPushNamedString(L, "boundWith", action.boundWith);
+	lua_rawseti(L, -2, i++);
+		}
 	return 1;
 }
 
