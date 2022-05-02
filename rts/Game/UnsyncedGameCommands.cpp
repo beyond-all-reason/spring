@@ -539,43 +539,27 @@ public:
 	}
 };
 
-
-
 class SetActionExecutor : public IUnsyncedActionExecutor {
 public:
-	SetActionExecutor() : IUnsyncedActionExecutor("Set", "Set a config key=value pair") {
-	}
+	SetActionExecutor(bool overlay_) : IUnsyncedActionExecutor(overlay_ ? "TSet" : "Set",
+			std::string("Set a config key=value pair") +
+			(overlay_ ? " in the overlay, meaning it will not be persisted for future games" : "")
+		),
+		overlay(overlay_) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
 
 		if (args.size() != 2) {
-			LOG_L(L_WARNING, "/set: wrong syntax (which is '/set %%cfgtag %%cfgvalue')");
+			LOG_L(L_WARNING, "/%s: wrong syntax (which is '/%s %%cfgtag %%cfgvalue')", GetCommand().c_str(), GetCommand().c_str());
 			return true;
 		}
-		configHandler->SetString(args[0], args[1]);
+		configHandler->SetString(args[0], args[1], overlay);
 		return true;
 	}
-};
 
-
-
-class SetOverlayActionExecutor : public IUnsyncedActionExecutor {
-public:
-	SetOverlayActionExecutor() : IUnsyncedActionExecutor("TSet",
-			"Set a config key=value pair in the overlay, meaning it will not be"
-			" persisted for future games") {}
-
-	bool Execute(const UnsyncedAction& action) const final {
-		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
-
-		if (args.size() != 2) {
-			LOG_L(L_WARNING, "/tset: wrong syntax (which is '/tset %%cfgtag %%cfgvalue')");
-			return true;
-		}
-		configHandler->SetString(args[0], args[1], true);
-		return true;
-	}
+private:
+	bool overlay;
 };
 
 
@@ -3588,8 +3572,8 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<EchoActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<SetActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<SetOverlayActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<SetActionExecutor>(true));
+	AddActionExecutor(AllocActionExecutor<SetActionExecutor>(false));
 	AddActionExecutor(AllocActionExecutor<EnableDrawInMapActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DrawLabelActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MouseActionExecutor>(1));
