@@ -17,12 +17,7 @@ class COggStream
 {
 public:
 	COggStream(ALuint _source = 0);
-	~COggStream() { Stop(); }
-
-	COggStream(const COggStream& rhs)  { *this = rhs; }
-	COggStream& operator= (const COggStream& rhs);
-	COggStream(COggStream&& rhs) noexcept { *this = std::move(rhs); }
-	COggStream& operator= (COggStream&& rhs) noexcept;
+	~COggStream();
 
 	void Play(const std::string& path, float volume);
 	void Stop();
@@ -59,7 +54,7 @@ private:
 	static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 	static constexpr unsigned int NUM_BUFFERS = 2;
 
-	std::vector<char> pcmDecodeBuffer; //causes buffer overflow if allocated on stack
+	char* pcmDecodeBuffer;
 
 	ALuint buffers[NUM_BUFFERS];
 	ALuint source;
