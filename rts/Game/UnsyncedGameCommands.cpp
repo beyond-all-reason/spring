@@ -567,15 +567,13 @@ public:
 			" persisted for future games") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const std::string::size_type pos = action.GetArgs().find_first_of(' ');
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
 
-		if (pos != std::string::npos) {
-			const std::string varName = action.GetArgs().substr(0, pos);
-			configHandler->SetString(varName, action.GetArgs().substr(pos+1), true);
-		} else {
+		if (args.size() != 2) {
 			LOG_L(L_WARNING, "/tset: wrong syntax (which is '/tset %%cfgtag %%cfgvalue')");
+			return true;
 		}
-
+		configHandler->SetString(args[0], args[1], true);
 		return true;
 	}
 };
