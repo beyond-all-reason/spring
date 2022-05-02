@@ -65,7 +65,13 @@ COggStream::COggStream(ALuint _source)
 	, paused(false)
 {
 	memset(buffers, 0, NUM_BUFFERS * sizeof(buffers[0]));
-	memset(pcmDecodeBuffer, 0, BUFFER_SIZE * sizeof(pcmDecodeBuffer[0]));
+	pcmDecodeBuffer = new char[BUFFER_SIZE] {0};
+}
+
+COggStream::~COggStream()
+{
+	Stop();
+	delete[] pcmDecodeBuffer;
 }
 
 

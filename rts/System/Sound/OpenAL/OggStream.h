@@ -17,7 +17,7 @@ class COggStream
 {
 public:
 	COggStream(ALuint _source = 0);
-	~COggStream() { Stop(); }
+	~COggStream();
 
 	void Play(const std::string& path, float volume);
 	void Stop();
@@ -54,7 +54,7 @@ private:
 	static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 	static constexpr unsigned int NUM_BUFFERS = 2;
 
-	char pcmDecodeBuffer[BUFFER_SIZE];
+	char* pcmDecodeBuffer;
 
 	ALuint buffers[NUM_BUFFERS];
 	ALuint source;
