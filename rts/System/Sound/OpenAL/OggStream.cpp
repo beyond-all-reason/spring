@@ -65,55 +65,9 @@ COggStream::COggStream(ALuint _source)
 	, paused(false)
 {
 	memset(buffers, 0, NUM_BUFFERS * sizeof(buffers[0]));
-	pcmDecodeBuffer.resize(BUFFER_SIZE, 0);
+	memset(pcmDecodeBuffer, 0, BUFFER_SIZE * sizeof(pcmDecodeBuffer[0]));
 }
 
-
-COggStream& COggStream::operator=(const COggStream& rhs)
-{
-	ovFile = rhs.ovFile;
-	vorbisInfo = rhs.vorbisInfo;
-
-	pcmDecodeBuffer.assign(rhs.pcmDecodeBuffer.begin(), rhs.pcmDecodeBuffer.end());
-	memcpy(buffers, rhs.buffers, NUM_BUFFERS * sizeof(buffers[0]));
-
-	source = rhs.source;
-	format = rhs.format;
-
-	stopped = rhs.stopped;
-	paused = rhs.stopped;
-
-	msecsPlayed = rhs.msecsPlayed;
-	lastTick = rhs.msecsPlayed;
-
-	vorbisTags.assign(rhs.vorbisTags.begin(), rhs.vorbisTags.end());
-	vendor = rhs.vendor;
-
-	return *this;
-}
-
-COggStream& COggStream::operator=(COggStream&& rhs) noexcept
-{
-	std::swap(ovFile, rhs.ovFile);
-	std::swap(vorbisInfo, rhs.vorbisInfo);
-
-	std::swap(pcmDecodeBuffer, rhs.pcmDecodeBuffer);
-	std::swap(buffers, rhs.buffers);
-
-	std::swap(source, rhs.source);
-	std::swap(format, rhs.format);
-
-	std::swap(stopped, rhs.stopped);
-	std::swap(paused, rhs.stopped);
-
-	std::swap(msecsPlayed, rhs.msecsPlayed);
-	std::swap(lastTick, rhs.msecsPlayed);
-
-	std::swap(vorbisTags, rhs.vorbisTags);
-	std::swap(vendor, rhs.vendor);
-
-	return *this;
-}
 
 // open an Ogg stream from a given file and start playing it
 void COggStream::Play(const std::string& path, float volume)
@@ -337,14 +291,14 @@ void COggStream::Update()
 // read decoded data from audio stream into PCM buffer
 bool COggStream::DecodeStream(ALuint buffer)
 {
-	memset(pcmDecodeBuffer.data(), 0, BUFFER_SIZE);
+	memset(pcmDecodeBuffer, 0, BUFFER_SIZE);
 
 	int size = 0;
 	int section = 0;
 	int result = 0;
 
 	while (size < BUFFER_SIZE) {
-		result = ov_read(&ovFile, pcmDecodeBuffer.data() + size, BUFFER_SIZE - size, 0, 2, 1, &section);
+		result = ov_read(&ovFile, pcmDecodeBuffer + size, BUFFER_SIZE - size, 0, 2, 1, &section);
 
 		if (result > 0) {
 			size += result;
@@ -362,7 +316,7 @@ bool COggStream::DecodeStream(ALuint buffer)
 	if (size == 0)
 		return false;
 
-	alBufferData(buffer, format, pcmDecodeBuffer.data(), size, vorbisInfo->rate);
+	alBufferData(buffer, format, pcmDecodeBuffer, size, vorbisInfo->rate);
 	return (CheckError("[COggStream::DecodeStream]"));
 }
 
