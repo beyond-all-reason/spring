@@ -2366,30 +2366,31 @@ void CUnit::Activate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		if (unitDef->energyUpkeep) {
+		auto metalIncome = metalExtract + unitDef->makesMetal;
+		if (unitDef->energyUpkeep != 0.f || metalIncome != 0.f) {
 			auto energyUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			EcsMain::registry.emplace<Units::EnergyUpKeepEconomyTaskRef>(entityReference, energyUpkeepEconomyTaskId);
 
 			if (unitDef->energyUpkeep < 0.f)
 				EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(energyUpkeepEconomyTaskId, (-unitDef->energyUpkeep));
 			else
 				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(energyUpkeepEconomyTaskId, unitDef->energyUpkeep);
 
-			auto metalIncome = metalExtract + unitDef->makesMetal;
+			LOG("%s: %d: ACTIVATE energyUpkeep = %f", __func__, (int)energyUpkeepEconomyTaskId, unitDef->energyUpkeep);
+
 			if (metalIncome < 0.f) {
 				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(energyUpkeepEconomyTaskId, (-metalIncome));
 			}
 			else {
 				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(energyUpkeepEconomyTaskId, metalIncome);
+				LOG("%s: %d: ACTIVATE metalmaking = %f", __func__, (int)energyUpkeepEconomyTaskId, metalIncome);
 			}
-
-			EcsMain::registry.emplace<Units::EnergyUpKeepEconomyTaskRef>(entityReference, energyUpkeepEconomyTaskId);
 		}
 
-		// else if (unitDef->energyMake) {
-		// 	UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
-
-		// 	LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
-		// }
+		if (unitDef->energyMake) {
+		 	UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
+			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
+		}
 		if (unitDef->metalUpkeep){
 			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
 		}
@@ -2425,14 +2426,14 @@ void CUnit::Deactivate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		if (unitDef->energyUpkeep){
-			UnitEconomyHelper::UpdateUnitProratableEnergyUse(this, 0.f);
-			UnitEconomyHelper::UpdateUnitProratableMetalIncome(this, 0.f);
+		auto energyUpkeepTasComp = EcsMain::registry.try_get<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
+		if (energyUpkeepTasComp != nullptr){
+			EconomyTaskUtil::DeleteUnitEconomyTask(energyUpkeepTasComp->value);
 
-			LOG("%s: %d: DEACTIVATE energyUse = %f", __func__, gs->frameNum, 0.f);
-			LOG("%s: %d: DEACTIVATE metalMake = %f", __func__, gs->frameNum, 0.f);
+			LOG("%s: %d: DEACTIVATE energyUse", __func__, gs->frameNum);
+			LOG("%s: %d: DEACTIVATE metalMake", __func__, gs->frameNum);
 		}
-		else if (unitDef->energyMake) {
+		if (unitDef->energyMake) {
 			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, 0.f);
 		}
 		if (unitDef->metalUpkeep){

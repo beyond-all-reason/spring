@@ -24,6 +24,9 @@ error: expected primary-expression before '>' token
 
 #include "lib/entt/entt.hpp"
 
+#define GET_VERSION_FROM_ID(x) (x&0xfff00000)
+#define GET_ENTITY_FROM_ID(x) (x&0xfffff)
+
 class EcsMain {
 public:
     static entt::registry registry;
