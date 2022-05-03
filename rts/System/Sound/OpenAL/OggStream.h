@@ -11,6 +11,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 
 class COggStream
@@ -18,6 +19,12 @@ class COggStream
 public:
 	COggStream(ALuint _source = 0);
 	~COggStream();
+
+	COggStream(const COggStream& rhs) = delete;
+	COggStream& operator=(const COggStream& rhs) = delete;
+
+	COggStream(COggStream&& rhs) noexcept { *this = std::move(rhs); }
+	COggStream& operator=(COggStream&& rhs) noexcept;
 
 	void Play(const std::string& path, float volume);
 	void Stop();
@@ -56,7 +63,7 @@ private:
 
 	char* pcmDecodeBuffer;
 
-	ALuint buffers[NUM_BUFFERS];
+	std::array<ALuint, NUM_BUFFERS> buffers;
 	ALuint source;
 	ALenum format;
 
