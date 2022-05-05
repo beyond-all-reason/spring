@@ -52,17 +52,6 @@ local function ParseTypes(types, def)
 end
 
 
-local function MakeKeySetString(key, mods)
-	local keyset = ""
-	if (mods.alt)   then keyset = keyset .. "A+" end
-	if (mods.ctrl)  then keyset = keyset .. "C+" end
-	if (mods.meta)  then keyset = keyset .. "M+" end
-	if (mods.shift) then keyset = keyset .. "S+" end
-	local userSym, defSym = Spring.GetKeySymbol(key)
-	return (keyset .. defSym)
-end
-
-
 local function InsertCallInfo(callInfoList, addon, func, data)
 	local layer = addon._info.layer
 	local index = 1
@@ -211,11 +200,10 @@ end
 --
 
 
-local function KeyAction(press, key, mods, isRepeat, _)
+local function KeyAction(press, key, mods, isRepeat, _, scanCode)
 	assert(_ == nil, "actionHandler:Foobar() is deprecated, use actionHandler.Foobar()!")
 
-	local keyset = MakeKeySetString(key, mods)
-	local defBinds = Spring.GetKeyBindings(keyset)
+	local defBinds = Spring.GetActionList(key, scanCode, mods)
 	if (defBinds) then
 		local actionSet
 		if (press) then
@@ -223,7 +211,7 @@ local function KeyAction(press, key, mods, isRepeat, _)
 		else
 			actionSet = keyReleaseActions
 		end
-		for b,bAction in ipairs(defBinds) do
+		for _,bAction in ipairs(defBinds) do
 			local bCmd, bOpts = next(bAction, nil)
 			local words = MakeWords(bOpts)
 			if (TryAction(actionSet, bCmd, bOpts, words, isRepeat, not press)) then

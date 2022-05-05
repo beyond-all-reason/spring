@@ -39,6 +39,7 @@
 #include "Game/PreGame.h"
 #include "Game/UI/KeyBindings.h"
 #include "Game/UI/KeyCodes.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/InfoConsole.h"
 #include "Game/UI/MouseHandler.h"
 #include "Lua/LuaOpenGL.h"
@@ -272,6 +273,7 @@ bool SpringApp::Init()
 	agui::gui = new agui::Gui();
 	#endif
 	keyCodes.Reset();
+	scanCodes.Reset();
 
 	CNamedTextures::Init();
 	LuaOpenGL::Init();
@@ -1133,8 +1135,11 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 		case SDL_KEYDOWN: {
 			KeyInput::Update(event.key.keysym.sym, keyBindings.GetFakeMetaKey());
 
-			if (activeController != nullptr)
-				activeController->KeyPressed(KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym), event.key.repeat);
+			if (activeController != nullptr) {
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				activeController->KeyPressed(keyCode, scanCode, event.key.repeat);
+			}
 
 		} break;
 		case SDL_KEYUP: {
@@ -1142,7 +1147,9 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 
 			if (activeController != nullptr) {
 				gameTextInput.ignoreNextChar = false;
-				activeController->KeyReleased(KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym));
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				activeController->KeyReleased(keyCode, scanCode);
 			}
 		} break;
 	};

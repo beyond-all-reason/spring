@@ -16,8 +16,6 @@ namespace KeyInput {
 	typedef std::pair<int, bool> Key;
 
 	const std::vector<Key>& GetPressedKeys();
-
-	int GetNormalizedKeySymbol(int key);
 }
 
 #endif

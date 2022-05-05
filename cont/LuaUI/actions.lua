@@ -194,17 +194,6 @@ local function MakeWords(line)
 end
 
 
-local function MakeKeySetString(key, mods)
-  local keyset = ""
-  if (mods.alt)   then keyset = keyset .. "A+" end
-  if (mods.ctrl)  then keyset = keyset .. "C+" end
-  if (mods.meta)  then keyset = keyset .. "M+" end
-  if (mods.shift) then keyset = keyset .. "S+" end
-  local userSym, defSym = Spring.GetKeySymbol(key)
-  return (keyset .. defSym)
-end
-
-
 local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release)
   local callInfoList = actionMap[cmd]
   if (callInfoList == nil) then
@@ -222,9 +211,8 @@ local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release)
 end
 
 
-function actionHandler:KeyAction(press, key, mods, isRepeat)
-  local keyset = MakeKeySetString(key, mods)
-  local defBinds = Spring.GetKeyBindings(keyset)
+function actionHandler:KeyAction(press, key, mods, isRepeat, scanCode)
+  local defBinds = Spring.GetActionList(key, scanCode, mods)
   if (defBinds) then
     local actionSet
     if (press) then
@@ -232,7 +220,7 @@ function actionHandler:KeyAction(press, key, mods, isRepeat)
     else
       actionSet = self.keyReleaseActions
     end
-    for b,bAction in ipairs(defBinds) do
+    for _,bAction in ipairs(defBinds) do
       local bCmd, bOpts = next(bAction, nil)
 		  local words = MakeWords(bOpts)
       if (TryAction(actionSet, bCmd, bOpts, words, isRepeat, not press)) then

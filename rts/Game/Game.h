@@ -88,8 +88,8 @@ public:
 	/// Send a message to other players (allows prefixed messages with e.g. "a:...")
 	void SendNetChat(std::string message, int destination = -1);
 
-	bool ProcessCommandText(unsigned int key, const std::string& command);
-	bool ProcessAction(const Action& action, unsigned int key = -1, bool isRepeat = false);
+	bool ProcessCommandText(unsigned int keyCode, unsigned int scanCode, const std::string& command);
+	bool ProcessAction(const Action& action, unsigned int keyCode = -1, unsigned int scanCode = -1, bool isRepeat = false);
 
 	void ReloadCOB(const std::string& msg, int player);
 	void ReloadCEGs(const std::string& tag);
@@ -120,14 +120,14 @@ private:
 	void HandleChatMsg(const ChatMessage& msg);
 
 	/// Called when a key is released by the user
-	int KeyReleased(int k) override;
+	int KeyReleased(int keyCode, int scanCode) override;
 	/// Called when the key is pressed by the user (can be called several times due to key repeat)
-	int KeyPressed(int k, bool isRepeat) override;
+	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 	///
 	int TextInput(const std::string& utf8Text) override;
 	int TextEditing(const std::string& utf8Text, unsigned int start, unsigned int length) override;
 
-	bool ActionPressed(unsigned int key, const Action& action, bool isRepeat);
+	bool ActionPressed(unsigned int keyCode, unsigned int scanCode, const Action& action, bool isRepeat);
 	bool ActionReleased(const Action& action);
 	/// synced actions (received from server) go in here
 	void ActionReceived(const Action& action, int playerID);
@@ -212,7 +212,8 @@ public:
 private:
 	JobDispatcher jobDispatcher;
 
-	CTimedKeyChain curKeyChain;
+	CTimedKeyChain curKeyCodeChain;
+	CTimedKeyChain curScanCodeChain;
 
 	CWorldDrawer worldDrawer;
 

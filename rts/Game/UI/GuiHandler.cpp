@@ -1799,21 +1799,21 @@ int CGuiHandler::GetIconPosCommand(int slot) const // only called by SetActiveCo
 }
 
 
-bool CGuiHandler::KeyPressed(int key, bool isRepeat)
+bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	if (key == SDLK_ESCAPE && activeMousePress) {
+	if (keyCode == SDLK_ESCAPE && activeMousePress) {
 		activeMousePress = false;
 		inCommand = -1;
 		SetShowingMetal(false);
 		return true;
 	}
-	if (key == SDLK_ESCAPE && inCommand >= 0) {
+	if (keyCode == SDLK_ESCAPE && inCommand >= 0) {
 		inCommand=-1;
 		SetShowingMetal(false);
 		return true;
 	}
 
-	const CKeySet ks(key, false);
+	const CKeySet ks(keyCode);
 
 	// setup actionOffset
 	//WTF a bit more documentation???
@@ -1833,7 +1833,7 @@ bool CGuiHandler::KeyPressed(int key, bool isRepeat)
 		}
 	}
 
-	const CKeyBindings::ActionList& al = keyBindings.GetActionList(ks);
+	const CKeyBindings::ActionList& al = keyBindings.GetActionList(keyCode, scanCode);
 	for (int ali = 0; ali < (int)al.size(); ++ali) {
 		const int actionIndex = (ali + tmpActionOffset) % (int)al.size(); //????
 		const Action& action = al[actionIndex];
@@ -2012,7 +2012,7 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 }
 
 
-bool CGuiHandler::KeyReleased(int key)
+bool CGuiHandler::KeyReleased(int keyCode, int scanCode)
 {
 	return false;
 }

@@ -8,6 +8,7 @@
 #include "LuaConfig.h"
 
 #include "Game/GameVersion.h"
+#include "Game/UI/KeySet.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Features/Feature.h"
@@ -949,6 +950,53 @@ int LuaUtils::PushUnitAndCommand(lua_State* L, const CUnit* unit, const Command&
 
 	lua_pushnumber(L, cmd.GetTag());
 	return 7;
+}
+
+
+bool LuaUtils::ParseKeySetModifiers(
+	lua_State* L,
+	const char* caller,
+	const int idx,
+	unsigned char& modifiers
+) {
+	if (lua_isnumber(L, idx)) {
+		modifiers = lua_tonumber(L, idx);
+		return true;
+	}
+
+	if (!lua_istable(L, idx)) {
+		luaL_error(L, "%s(): bad modifiers-argument type", caller);
+		return false;
+	}
+
+	modifiers = 0;
+
+	for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
+		if (!lua_isboolean(L, -1) || !lua_israwstring(L, -2))
+			continue;
+
+		const bool value = lua_toboolean(L, -1);
+
+		switch (hashString(lua_tostring(L, -2))) {
+			case hashString("alt"): {
+				modifiers |= (CKeySet::KS_ALT * value);
+			} break;
+			case hashString("ctrl"): {
+				modifiers |= (CKeySet::KS_CTRL * value);
+			} break;
+			case hashString("meta"): {
+				modifiers |= (CKeySet::KS_META * value);
+			} break;
+			case hashString("shift"): {
+				modifiers |= (CKeySet::KS_SHIFT * value);
+			} break;
+			case hashString("any"): {
+				modifiers |= (CKeySet::KS_ANYMOD * value);
+			} break;
+		}
+	}
+
+	return true;
 }
 
 
