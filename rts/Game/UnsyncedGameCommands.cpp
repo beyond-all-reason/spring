@@ -822,6 +822,14 @@ public:
 	) {
 	}
 
+	bool WrongSyntax() const {
+		LOG("description: Let a Skirmish AI take over control of a team.");
+		LOG("usage:   /%s teamToControl aiShortName [aiVersion] [name] [options...]", GetCommand().c_str());
+		LOG("example: /%s 1 RAI 0.601 my_RAI_Friend difficulty=2 aggressiveness=3", GetCommand().c_str());
+
+		return true;
+	}
+
 	bool Execute(const UnsyncedAction& action) const final {
 		bool badArgs = false;
 
@@ -833,99 +841,94 @@ public:
 
 		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
-		if (!args.empty()) {
-			std::string aiShortName;
-			std::string aiVersion;
-			std::string aiName;
-			spring::unordered_map<std::string, std::string> aiOptions;
-
-			const int teamToControlId = atoi(args[0].c_str());
-			const CTeam* teamToControl = teamHandler.IsActiveTeam(teamToControlId) ?
-				teamHandler.Team(teamToControlId) : nullptr;
-
-			if (args.size() >= 2) {
-				aiShortName = args[1];
-			} else {
-				LOG_L(L_WARNING, "/%s: missing mandatory argument \"aiShortName\"", GetCommand().c_str());
-			}
-
-			if (args.size() >= 3)
-				aiVersion = args[2];
-
-			if (args.size() >= 4)
-				aiName = args[3];
-
-			if (teamToControl == nullptr) {
-				LOG_L(L_WARNING, "Team to control: not a valid team number: \"%s\"", args[0].c_str());
-				badArgs = true;
-			}
-			if (!badArgs) {
-				const bool weAreAllied  = teamHandler.AlliedTeams(fromTeamId, teamToControlId);
-				const bool weAreLeader  = (teamToControl->GetLeader() == gu->myPlayerNum);
-				const bool noLeader     = (!teamToControl->HasLeader());
-
-				if (!(weAreLeader || singlePlayer || (weAreAllied && (cheating || noLeader)))) {
-					LOG_L(L_WARNING, "Team to control: player %s is not allowed to let a Skirmish AI take over control of team %i (try with /cheat)",
-							fromPlayer->name.c_str(), teamToControlId);
-					badArgs = true;
-				}
-			}
-			if (!badArgs && teamToControl->isDead) {
-				LOG_L(L_WARNING, "Team to control: is a dead team: %i", teamToControlId);
-				badArgs = true;
-			}
-			// TODO remove this, if support for multiple Skirmish AIs per team is in place
-			if (!badArgs && (!skirmishAIHandler.GetSkirmishAIsInTeam(teamToControlId).empty())) {
-				LOG_L(L_WARNING, "Team to control: there is already an AI controlling this team: %i", teamToControlId);
-				badArgs = true;
-			}
-			if (!badArgs && (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr)) {
-				LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
-				badArgs = true;
-			}
-			if (!badArgs) {
-				const spring::unordered_set<std::string>& luaAIImplShortNames = skirmishAIHandler.GetLuaAIImplShortNames();
-				if (luaAIImplShortNames.find(aiShortName) != luaAIImplShortNames.end()) {
-					LOG_L(L_WARNING, "Team to control: it is currently not supported to initialize Lua AIs mid-game");
-					badArgs = true;
-				}
-			}
-
-			if (!badArgs) {
-				SkirmishAIKey aiKey(aiShortName, aiVersion);
-				aiKey = aiLibManager->ResolveSkirmishAIKey(aiKey);
-
-				if ((badArgs = aiKey.IsUnspecified())) {
-					LOG_L(L_WARNING, "Skirmish AI: not a valid Skirmish AI: %s %s", aiShortName.c_str(), aiVersion.c_str());
-				} else {
-					const CSkirmishAILibraryInfo& aiLibInfo = aiLibManager->GetSkirmishAIInfos().find(aiKey)->second;
-
-					SkirmishAIData aiData;
-					aiData.name       = !aiName.empty() ? aiName : aiShortName;
-					aiData.team       = teamToControlId;
-					aiData.hostPlayer = gu->myPlayerNum;
-					aiData.shortName  = aiShortName;
-					aiData.version    = aiVersion;
-
-					for (const auto& opt: aiOptions)
-						aiData.optionKeys.push_back(opt.first);
-
-					aiData.options = aiOptions;
-					aiData.isLuaAI = aiLibInfo.IsLuaAI();
-
-					skirmishAIHandler.NetCreateLocalSkirmishAI(aiData);
-				}
-			}
-		} else {
+		if (args.size() < 2) {
 			LOG_L(L_WARNING, "/%s: missing mandatory arguments \"teamToControl\" and \"aiShortName\"", GetCommand().c_str());
-			badArgs = true;
+			return WrongSyntax();
 		}
 
-		if (badArgs) {
-			LOG("description: Let a Skirmish AI take over control of a team.");
-			LOG("usage:   /%s teamToControl aiShortName [aiVersion] [name] [options...]", GetCommand().c_str());
-			LOG("example: /%s 1 RAI 0.601 my_RAI_Friend difficulty=2 aggressiveness=3", GetCommand().c_str());
+		bool parseFailure;
+
+		// Note: this seems unused.
+		spring::unordered_map<std::string, std::string> aiOptions;
+
+		// First parameter
+		const int teamToControlId = StringToInt(args[0], &parseFailure);
+		const CTeam* teamToControl = (!parseFailure && teamHandler.IsActiveTeam(teamToControlId)) ? teamHandler.Team(teamToControlId) : nullptr;
+		if (teamToControl == nullptr) {
+			LOG_L(L_WARNING, "Team to control: not a valid team number: \"%s\"", args[0].c_str());
+			return WrongSyntax();
 		}
+
+		// Second parameter
+		std::string aiShortName = args[1];
+
+		// Optional parameters
+		std::string aiVersion;
+		if (args.size() >= 3)
+			aiVersion = args[2];
+
+		std::string aiName;
+		if (args.size() >= 4)
+			aiName = args[3];
+
+		// Note: Shouldn't we parse options here..?
+
+		{
+			const bool weAreAllied  = teamHandler.AlliedTeams(fromTeamId, teamToControlId);
+			const bool weAreLeader  = (teamToControl->GetLeader() == gu->myPlayerNum);
+			const bool noLeader     = (!teamToControl->HasLeader());
+
+			if (!(weAreLeader || singlePlayer || (weAreAllied && (cheating || noLeader)))) {
+				LOG_L(L_WARNING, "Team to control: player %s is not allowed to let a Skirmish AI take over control of team %i (try with /cheat)",
+						fromPlayer->name.c_str(), teamToControlId);
+				return WrongSyntax();
+			}
+		}
+		if (teamToControl->isDead) {
+			LOG_L(L_WARNING, "Team to control: is a dead team: %i", teamToControlId);
+			return WrongSyntax();
+		}
+		// TODO remove this, if support for multiple Skirmish AIs per team is in place
+		if (!skirmishAIHandler.GetSkirmishAIsInTeam(teamToControlId).empty()) {
+			LOG_L(L_WARNING, "Team to control: there is already an AI controlling this team: %i", teamToControlId);
+			return WrongSyntax();
+		}
+		if (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr) {
+			LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
+			return WrongSyntax();
+		}
+
+		const spring::unordered_set<std::string>& luaAIImplShortNames = skirmishAIHandler.GetLuaAIImplShortNames();
+		if (luaAIImplShortNames.find(aiShortName) != luaAIImplShortNames.end()) {
+			LOG_L(L_WARNING, "Team to control: it is currently not supported to initialize Lua AIs mid-game");
+			return WrongSyntax();
+		}
+
+		SkirmishAIKey aiKey(aiShortName, aiVersion);
+		aiKey = aiLibManager->ResolveSkirmishAIKey(aiKey);
+
+		if (aiKey.IsUnspecified()) {
+			LOG_L(L_WARNING, "Skirmish AI: not a valid Skirmish AI: %s %s", aiShortName.c_str(), aiVersion.c_str());
+			return WrongSyntax();
+		}
+
+		// Execute command
+		const CSkirmishAILibraryInfo& aiLibInfo = aiLibManager->GetSkirmishAIInfos().find(aiKey)->second;
+
+		SkirmishAIData aiData;
+		aiData.name       = !aiName.empty() ? aiName : aiShortName;
+		aiData.team       = teamToControlId;
+		aiData.hostPlayer = gu->myPlayerNum;
+		aiData.shortName  = aiShortName;
+		aiData.version    = aiVersion;
+
+		for (const auto& opt: aiOptions)
+			aiData.optionKeys.push_back(opt.first);
+
+		aiData.options = aiOptions;
+		aiData.isLuaAI = aiLibInfo.IsLuaAI();
+
+		skirmishAIHandler.NetCreateLocalSkirmishAI(aiData);
 
 		return true;
 	}
