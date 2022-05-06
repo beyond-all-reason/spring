@@ -1095,28 +1095,38 @@ public:
 	) {
 	}
 
+	bool WrongSyntax() const {
+		LOG_L(L_WARNING, "/%s: wrong parameters (usage: /%s <other team> [0|1])", GetCommand().c_str(), GetCommand().c_str());
+		return true;
+	}
+
 	bool Execute(const UnsyncedAction& action) const final {
 		if (gu->spectating)
 			return false;
 
-		if (!action.GetArgs().empty()) {
-			if (!gameSetup->fixedAllies) {
-				std::istringstream is(action.GetArgs());
-				int otherAllyTeam = -1;
-				is >> otherAllyTeam;
-				int state = -1;
-				is >> state;
-
-				if (state >= 0 && state < 2 && otherAllyTeam >= 0 && otherAllyTeam != gu->myAllyTeam)
-					clientNet->Send(CBaseNetProtocol::Get().SendSetAllied(gu->myPlayerNum, otherAllyTeam, state));
-				else
-					LOG_L(L_WARNING, "/%s: wrong parameters (usage: /%s <other team> [0|1])", GetCommand().c_str(), GetCommand().c_str());
-			} else {
-				LOG_L(L_WARNING, "In-game alliances are not allowed");
-			}
-		} else {
-			LOG_L(L_WARNING, "/%s: wrong parameters (usage: /%s <other team> [0|1])", GetCommand().c_str(), GetCommand().c_str());
+		if (gameSetup->fixedAllies) {
+			LOG_L(L_WARNING, "In-game alliances are not allowed");
+			return true;
 		}
+
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
+		if (args.size() < 2)
+			return WrongSyntax();
+
+		bool parseFailure;
+
+		int otherAllyTeam = StringToInt(args[0], &parseFailure);
+		if (parseFailure)
+			return WrongSyntax();
+
+		int state = StringToInt(args[1], &parseFailure);
+		if (parseFailure)
+			return WrongSyntax();
+
+		if (!(state >= 0 && state < 2 && otherAllyTeam >= 0 && otherAllyTeam != gu->myAllyTeam))
+			return WrongSyntax();
+
+		clientNet->Send(CBaseNetProtocol::Get().SendSetAllied(gu->myPlayerNum, otherAllyTeam, state));
 
 		return true;
 	}
