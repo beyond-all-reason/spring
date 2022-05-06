@@ -1069,7 +1069,7 @@ public:
 			return false;
 
 		if (!action.GetArgs().empty()) {
-			const int mode = atoi(action.GetArgs().c_str());
+			const int mode = StringToInt(action.GetArgs());
 			gu->spectatingFullView   = !!(mode & 1);
 			gu->spectatingFullSelect = !!(mode & 2);
 		} else {
