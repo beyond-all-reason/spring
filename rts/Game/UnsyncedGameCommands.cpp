@@ -694,9 +694,24 @@ public:
 		kill = kill_;
 	}
 
-	bool Execute(const UnsyncedAction& action) const final {
-		bool badArgs = false;
+	bool WrongSyntax() const {
+		if (kill) {
+			LOG("description: "
+				"Kill a Skirmish AI controlling a team. The team itself will remain alive "
+				"unless a second argument is given, which specifies an active team "
+				"that will receive all the units of the AI team.");
+			LOG("usage:   /%s teamToKill [teamToReceiveUnits]", GetCommand().c_str());
+		} else {
+			// reload
+			LOG("description: "
+				"Reload a Skirmish AI controlling a team."
+				"The team itself will remain alive during the process.");
+			LOG("usage:   /%s teamToReload", GetCommand().c_str());
+		}
+		return true;
+	}
 
+	bool Execute(const UnsyncedAction& action) const final {
 		const CPlayer* fromPlayer     = playerHandler.Player(gu->myPlayerNum);
 		const int      fromTeamId     = (fromPlayer != nullptr) ? fromPlayer->team : -1;
 
@@ -706,98 +721,89 @@ public:
 		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 		const std::string actionName  = StringToLower(GetCommand()).substr(2);
 
-		if (!args.empty()) {
-			size_t skirmishAIId = 0; // will only be used if !badArgs
-			bool share = false;
+		if (args.empty()) {
+			LOG_L(L_WARNING, "/%s: missing mandatory argument \"teamTo%s\"", GetCommand().c_str(), actionName.c_str());
+			return WrongSyntax();
+		}
 
-			int teamToReceiveUnitsId = -1;
-			int teamToKillId = atoi(args[0].c_str());
+		bool parseFailure;
 
-			if ((args.size() >= 2) && kill) {
-				teamToReceiveUnitsId = atoi(args[1].c_str());
-				share = true;
-			}
+		// Parse first argument (team to reload/kill)
+		int teamToKillId = StringToInt(args[0], &parseFailure);
+		CTeam* teamToKill = (!parseFailure && teamHandler.IsActiveTeam(teamToKillId))? teamHandler.Team(teamToKillId) : nullptr;
 
-			CTeam* teamToKill = (teamHandler.IsActiveTeam(teamToKillId))? teamHandler.Team(teamToKillId) : nullptr;
-			const CTeam* teamToReceiveUnits = (teamHandler.IsActiveTeam(teamToReceiveUnitsId))? teamHandler.Team(teamToReceiveUnitsId): nullptr;
+		// Validate first argument
+		if (parseFailure || teamToKill == nullptr) {
+			LOG_L(L_WARNING, "Team to %s: not a valid team number: \"%s\"", actionName.c_str(), args[0].c_str());
+			return WrongSyntax();
+		}
 
-			if (teamToKill == nullptr) {
-				LOG_L(L_WARNING, "Team to %s: not a valid team number: \"%s\"", actionName.c_str(), args[0].c_str());
-				badArgs = true;
-			}
-			if (share && teamToReceiveUnits == nullptr) {
+		// Parse second argument if needed (team to receive units)
+		bool share = false;
+		int teamToReceiveUnitsId = -1;
+
+		if ((args.size() >= 2) && kill) {
+			share = true;
+			teamToReceiveUnitsId = StringToInt(args[1], &parseFailure);
+
+			// Validate second argument
+			if (parseFailure || !teamHandler.IsActiveTeam(teamToReceiveUnitsId)) {
 				LOG_L(L_WARNING, "Team to receive units: not a valid team number: \"%s\"", args[1].c_str());
-				badArgs = true;
+				return WrongSyntax();
 			}
-			if (!badArgs && skirmishAIHandler.GetSkirmishAIsInTeam(teamToKillId).empty()) {
-				LOG_L(L_WARNING, "Team to %s: not a Skirmish AI team: %i", actionName.c_str(), teamToKillId);
-				badArgs = true;
+		}
+
+		// Additional checks over first parameter.
+		if (skirmishAIHandler.GetSkirmishAIsInTeam(teamToKillId).empty()) {
+			LOG_L(L_WARNING, "Team to %s: not a Skirmish AI team: %i", actionName.c_str(), teamToKillId);
+			return WrongSyntax();
+		}
+
+		const std::vector<uint8_t>& teamAIs = skirmishAIHandler.GetSkirmishAIsInTeam(teamToKillId, gu->myPlayerNum);
+		if (teamAIs.empty()) {
+			LOG_L(L_WARNING, "Team to %s: not a local Skirmish AI team: %i", actionName.c_str(), teamToKillId);
+			return WrongSyntax();
+		}
+
+		size_t skirmishAIId = teamAIs[0];
+		if (skirmishAIHandler.GetSkirmishAI(skirmishAIId)->isLuaAI) {
+			LOG_L(L_WARNING, "Team to %s: it is not yet supported to %s Lua AIs", actionName.c_str(), actionName.c_str());
+			return WrongSyntax();
+		}
+
+		{
+			const bool weAreAllied  = teamHandler.AlliedTeams(fromTeamId, teamToKillId);
+			const bool weAreAIHost  = (skirmishAIHandler.GetSkirmishAI(skirmishAIId)->hostPlayer == gu->myPlayerNum);
+			const bool weAreLeader  = (teamToKill->GetLeader() == gu->myPlayerNum);
+
+			if (!(weAreAIHost || weAreLeader || singlePlayer || (weAreAllied && cheating))) {
+				LOG_L(L_WARNING, "Team to %s: player %s is not allowed to %s Skirmish AI controlling team %i (try with /cheat)",
+						actionName.c_str(), fromPlayer->name.c_str(), actionName.c_str(), teamToKillId);
+				return WrongSyntax();
+			}
+		}
+
+		if (teamToKill->isDead) {
+			LOG_L(L_WARNING, "Team to %s: is a dead team already: %i", actionName.c_str(), teamToKillId);
+			return WrongSyntax();
+		}
+
+		// Execute the command
+		if (kill) {
+			if (share) {
+				clientNet->Send(CBaseNetProtocol::Get().SendGiveAwayEverything(gu->myPlayerNum, teamToReceiveUnitsId, teamToKillId));
+				// when the AIs team has no units left,
+				// the AI will be destroyed automatically
 			} else {
-				const std::vector<uint8_t>& teamAIs = skirmishAIHandler.GetSkirmishAIsInTeam(teamToKillId, gu->myPlayerNum);
-				if (!teamAIs.empty()) {
-					skirmishAIId = teamAIs[0];
-				} else {
-					LOG_L(L_WARNING, "Team to %s: not a local Skirmish AI team: %i", actionName.c_str(), teamToKillId);
-					badArgs = true;
-				}
-			}
-			if (!badArgs && skirmishAIHandler.GetSkirmishAI(skirmishAIId)->isLuaAI) {
-				LOG_L(L_WARNING, "Team to %s: it is not yet supported to %s Lua AIs", actionName.c_str(), actionName.c_str());
-				badArgs = true;
-			}
-			if (!badArgs) {
-				const bool weAreAllied  = teamHandler.AlliedTeams(fromTeamId, teamToKillId);
-				const bool weAreAIHost  = (skirmishAIHandler.GetSkirmishAI(skirmishAIId)->hostPlayer == gu->myPlayerNum);
-				const bool weAreLeader  = (teamToKill->GetLeader() == gu->myPlayerNum);
-
-				if (!(weAreAIHost || weAreLeader || singlePlayer || (weAreAllied && cheating))) {
-					LOG_L(L_WARNING, "Team to %s: player %s is not allowed to %s Skirmish AI controlling team %i (try with /cheat)",
-							actionName.c_str(), fromPlayer->name.c_str(), actionName.c_str(), teamToKillId);
-					badArgs = true;
-				}
-			}
-			if (!badArgs && teamToKill->isDead) {
-				LOG_L(L_WARNING, "Team to %s: is a dead team already: %i", actionName.c_str(), teamToKillId);
-				badArgs = true;
-			}
-
-			if (!badArgs) {
-				if (kill) {
-					if (share) {
-						clientNet->Send(CBaseNetProtocol::Get().SendGiveAwayEverything(gu->myPlayerNum, teamToReceiveUnitsId, teamToKillId));
-						// when the AIs team has no units left,
-						// the AI will be destroyed automatically
-					} else {
-						if (skirmishAIHandler.IsLocalSkirmishAI(skirmishAIId))
-							skirmishAIHandler.SetLocalKillFlag(skirmishAIId, 3 /* = AI killed */);
-					}
-				} else {
-					// reload
-					clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
-				}
-
-				LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
+				if (skirmishAIHandler.IsLocalSkirmishAI(skirmishAIId))
+					skirmishAIHandler.SetLocalKillFlag(skirmishAIId, 3 /* = AI killed */);
 			}
 		} else {
-			LOG_L(L_WARNING, "/%s: missing mandatory argument \"teamTo%s\"", GetCommand().c_str(), actionName.c_str());
-			badArgs = true;
+			// reload
+			clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
 		}
 
-		if (badArgs) {
-			if (kill) {
-				LOG("description: "
-					"Kill a Skirmish AI controlling a team. The team itself will remain alive "
-					"unless a second argument is given, which specifies an active team "
-					"that will receive all the units of the AI team.");
-				LOG("usage:   /%s teamToKill [teamToReceiveUnits]", GetCommand().c_str());
-			} else {
-				// reload
-				LOG("description: "
-					"Reload a Skirmish AI controlling a team."
-					"The team itself will remain alive during the process.");
-				LOG("usage:   /%s teamToReload", GetCommand().c_str());
-			}
-		}
+		LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
 
 		return true;
 	}
