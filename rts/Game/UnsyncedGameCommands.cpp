@@ -1035,9 +1035,10 @@ public:
 		if (!gu->spectating)
 			return false;
 
-		const int teamId = atoi(action.GetArgs().c_str());
+		bool parseFailure;
+		const int teamId = StringToInt(action.GetArgs(), &parseFailure);
 
-		if (!teamHandler.IsValidTeam(teamId))
+		if (parseFailure || !teamHandler.IsValidTeam(teamId))
 			return false;
 
 		gu->myTeam = teamId;
