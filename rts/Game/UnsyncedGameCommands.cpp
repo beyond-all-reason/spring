@@ -1257,16 +1257,13 @@ private:
 
 class TrackActionExecutor : public IUnsyncedActionExecutor {
 public:
-	TrackActionExecutor() : IUnsyncedActionExecutor("Track", "Start/stop following the selected unit(s) with the camera") {
-	}
+	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
+			"Start/stop following the selected unit(s) with the camera") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		if (action.GetArgs().empty()) {
-			LOG("usage:   /%s 0/1", GetCommand().c_str());
-			return false;
-		}
+		bool enableTracking = unitTracker.Enabled();
+		InverseOrSetBool(enableTracking, action.GetArgs());
 
-		bool enableTracking = StringToBool(action.GetArgs());
 		if (enableTracking)
 			unitTracker.Track();
 		else
