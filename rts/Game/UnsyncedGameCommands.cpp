@@ -1419,26 +1419,29 @@ public:
 	SoundChannelEnableActionExecutor() : IUnsyncedActionExecutor(
 		"SoundChannelEnable",
 		"Enable/Disable specific sound channels: UnitReply, General, Battle, UserInterface, Music"
-	) {
-	}
+	) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		std::string channel;
-		std::istringstream buf(action.GetArgs());
-		int enable;
-		buf >> channel;
-		buf >> enable;
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
+
+		if (args.size() < 2) {
+			LOG_L(L_WARNING, "/%s: wrong syntax (which is '/%s channelName 0/1')", GetCommand().c_str(), GetCommand().c_str());
+			return true;
+		}
+
+		std::string channel = std::move(args[0]);
+		bool enable = StringToBool(args[1]);
 
 		if (channel == "UnitReply")
-			Channels::UnitReply->Enable(enable != 0);
+			Channels::UnitReply->Enable(enable);
 		else if (channel == "General")
-			Channels::General->Enable(enable != 0);
+			Channels::General->Enable(enable);
 		else if (channel == "Battle")
-			Channels::Battle->Enable(enable != 0);
+			Channels::Battle->Enable(enable);
 		else if (channel == "UserInterface")
-			Channels::UserInterface->Enable(enable != 0);
+			Channels::UserInterface->Enable(enable);
 		else if (channel == "Music")
-			Channels::BGMusic->Enable(enable != 0);
+			Channels::BGMusic->Enable(enable);
 		else
 			LOG_L(L_WARNING, "/%s: wrong channel name \"%s\"", GetCommand().c_str(), channel.c_str());
 
