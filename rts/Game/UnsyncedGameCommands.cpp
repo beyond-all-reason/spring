@@ -1309,18 +1309,22 @@ public:
 
 class DebugActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DebugActionExecutor() : IUnsyncedActionExecutor("Debug", "Enable/Disable debug rendering mode") {
-	}
+	DebugActionExecutor() : IUnsyncedActionExecutor("Debug", "Enable/Disable debug rendering mode") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		// toggle
+		bool drawDebug = !globalRendering->drawDebug;
+		bool draw4Real = drawDebug;
 
-		int drawDebug = static_cast<int>(!globalRendering->drawDebug);
-		int draw4Real = static_cast<int>(drawDebug);
+		if (!action.GetArgs().empty()) {
+			auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-		sscanf(action.GetArgs().c_str(), "%d %d", &drawDebug, &draw4Real);
+			if (args.size() > 0)
+				drawDebug = StringToBool(args[0]);
+			if (args.size() > 1)
+				draw4Real = StringToBool(args[1]);
+		}
 
-		globalRendering->drawDebug = static_cast<bool>(drawDebug);
+		globalRendering->drawDebug = drawDebug;
 
 		if (draw4Real && globalRendering->drawDebug)
 			ProfileDrawer::SetEnabled(true );
