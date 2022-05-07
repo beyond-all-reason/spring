@@ -1349,24 +1349,29 @@ public:
 
 class DebugGLActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DebugGLActionExecutor() : IUnsyncedActionExecutor("DebugGL", "Enable/Disable OpenGL debug-context output") {
-	}
+	DebugGLActionExecutor() : IUnsyncedActionExecutor("DebugGL", "Enable/Disable OpenGL debug-context output") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		// append zeros so all args can be safely omitted
-
-		int32_t enabled = -1;
+		bool enabled = !globalRendering->glDebug;
 		uint32_t msgSrceIdx = 0;
 		uint32_t msgTypeIdx = 0;
 		uint32_t msgSevrIdx = 0;
 
-		!!sscanf(action.GetArgs().c_str(), "%d %u %u %u", &enabled, &msgSrceIdx, &msgTypeIdx, &msgSevrIdx);
-		if (enabled == -1)
-			globalRendering->glDebug = !globalRendering->glDebug;
-		else
-			globalRendering->glDebug = static_cast<bool>(enabled);
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
+		if (args.size() > 0)
+			enabled = StringToBool(args[0]);
+
+		if (args.size() > 1)
+			msgSrceIdx = StringToInt(args[1]);
+		if (args.size() > 2)
+			msgTypeIdx = StringToInt(args[2]);
+		if (args.size() > 3)
+			msgSevrIdx = StringToInt(args[3]);
+
+		globalRendering->glDebug = enabled;
 		globalRendering->ToggleGLDebugOutput(msgSrceIdx, msgTypeIdx, msgSevrIdx);
+
 		return true;
 	}
 };
