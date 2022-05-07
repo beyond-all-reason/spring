@@ -1255,31 +1255,26 @@ private:
 };
 
 
-
-// TODO merge together with "TrackOff" to "Track 0|1", and deprecate the two old ones
 class TrackActionExecutor : public IUnsyncedActionExecutor {
 public:
-	TrackActionExecutor() : IUnsyncedActionExecutor("Track", "Start following the selected unit(s) with the camera") {
+	TrackActionExecutor() : IUnsyncedActionExecutor("Track", "Start/stop following the selected unit(s) with the camera") {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		unitTracker.Track();
+		if (action.GetArgs().empty()) {
+			LOG("usage:   /%s 0/1", GetCommand().c_str());
+			return false;
+		}
+
+		bool enableTracking = StringToBool(action.GetArgs());
+		if (enableTracking)
+			unitTracker.Track();
+		else
+			unitTracker.Disable();
+
 		return true;
 	}
 };
-
-class TrackOffActionExecutor : public IUnsyncedActionExecutor {
-public:
-	TrackOffActionExecutor() : IUnsyncedActionExecutor("TrackOff", "Stop following the selected unit(s) with the camera") {
-	}
-
-	bool Execute(const UnsyncedAction& action) const final {
-		unitTracker.Disable();
-		return true;
-	}
-};
-
-
 
 class TrackModeActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -3640,7 +3635,6 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<ChatActionExecutor>("Spec", "s:", true));
 
 	AddActionExecutor(AllocActionExecutor<TrackActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<TrackOffActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<TrackModeActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
