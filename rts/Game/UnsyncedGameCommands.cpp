@@ -2183,17 +2183,18 @@ public:
 				mouse->crossSize = std::max(1.0f, -mouse->crossSize);
 			}
 		} else {
-			float size;
-			float alpha;
-			float scale;
+			auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-			const char* args = action.GetArgs().c_str();
-			const int argcount = sscanf(args, "%f %f %f", &size, &alpha, &scale);
+			const float size = StringToInt<float>(args[0]);
 
-			if (argcount > 1)
+			if (args.size() > 1) {
+				const float alpha = StringToInt<float>(args[1]);
 				configHandler->Set("CrossAlpha", mouse->crossAlpha = alpha);
-			if (argcount > 2)
+			}
+			if (args.size() > 2) {
+				const float scale = StringToInt<float>(args[2]);
 				configHandler->Set("CrossMoveScale", mouse->crossMoveScale = scale);
+			}
 
 			mouse->crossSize = size;
 		}
