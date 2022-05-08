@@ -2704,7 +2704,7 @@ public:
 		const auto& args = action.GetArgs();
 
 		if (!args.empty()) {
-			projectileHandler.SetMaxParticles(atoi(args.c_str()));
+			projectileHandler.SetMaxParticles(StringToInt(args));
 			LOG("Set maximum particles to: %i", projectileHandler.maxParticles);
 		} else {
 			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
