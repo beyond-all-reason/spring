@@ -1599,7 +1599,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const bool enable = (atoi(action.GetArgs().c_str()) != 0);
+		const bool enable = StringToBool(action.GetArgs());
 		mouse->ToggleHwCursor(enable);
 		configHandler->Set("HardwareCursor", enable);
 		LogSystemStatus("Hardware mouse-cursor", enable);
