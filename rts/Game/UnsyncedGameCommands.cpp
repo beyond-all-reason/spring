@@ -2423,7 +2423,7 @@ public:
 		if (args.empty()) {
 			CEndGameBox::enabledMode = (CEndGameBox::enabledMode + 1) % 3;
 		} else {
-			CEndGameBox::enabledMode = std::clamp(atoi(args.c_str()), 0, 2);
+			CEndGameBox::enabledMode = std::clamp(StringToInt(args), 0, 2);
 		}
 		LOG(fmt, strs[CEndGameBox::enabledMode]);
 
