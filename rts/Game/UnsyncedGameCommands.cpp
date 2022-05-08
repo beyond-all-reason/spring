@@ -1521,11 +1521,11 @@ public:
 		int speedCtrl = game->speedControl;
 
 		if (action.GetArgs().empty()) {
-			// switch to next value
-			speedCtrl = mix(1, 2, speedCtrl == 1);
+			// switch to next value (1 <-> 2);
+			speedCtrl = (speedCtrl == 1) ? 2 : 1;
 		} else {
 			// set value
-			speedCtrl = Clamp(atoi(action.GetArgs().c_str()), 1, 2);
+			speedCtrl = Clamp(StringToInt(action.GetArgs()), 1, 2);
 		}
 
 		// constrain to bounds
