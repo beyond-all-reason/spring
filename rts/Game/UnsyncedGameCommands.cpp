@@ -1540,8 +1540,7 @@ public:
 	LuaGarbageCollectControlExecutor() : IUnsyncedActionExecutor(
 		"LuaGCControl",
 		"Toggle between 1/f and 30/s Lua garbage collection rate"
-	) {
-	}
+	) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		constexpr const char* strs[] = {"1/f", "30/s"};
@@ -1549,7 +1548,7 @@ public:
 		const std::string& args = action.GetArgs();
 
 		if (!args.empty()) {
-			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = Clamp(atoi(args.c_str()), 0, 1)]);
+			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = Clamp(StringToInt(args), 0, 1)]);
 		} else {
 			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = 1 - game->luaGCControl]);
 		}
