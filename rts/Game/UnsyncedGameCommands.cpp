@@ -2726,7 +2726,7 @@ public:
 		const auto& args = action.GetArgs();
 
 		if (!args.empty()) {
-			projectileHandler.SetMaxNanoParticles(atoi(args.c_str()));
+			projectileHandler.SetMaxNanoParticles(StringToInt(args));
 			LOG("Set maximum nano-particles to: %i", projectileHandler.maxNanoParticles);
 		} else {
 			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
