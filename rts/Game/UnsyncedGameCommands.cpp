@@ -1784,10 +1784,10 @@ public:
 		if ((action.GetArgs()).empty())
 			return false;
 
-		const float speed = atof((action.GetArgs()).c_str());
+		bool parseFailure;
+		const float speed = StringToInt<float>(action.GetArgs(), &parseFailure);
 
-		// atof converts non-float strings to 0.0, can be ignored
-		if (speed <= 0.0)
+		if (parseFailure || speed <= 0.0)
 			return false;
 
 		clientNet->Send(CBaseNetProtocol::Get().SendUserSpeed(gu->myPlayerNum, speed));
