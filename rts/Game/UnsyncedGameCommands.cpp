@@ -2113,6 +2113,7 @@ public:
 			TakeScreenshot("", 80);
 		} else {
 			int quality = args.size() > 1 ? StringToInt(args[1]) : 80;
+			LOG_L(L_WARNING, "/%s: quality = %d", GetCommand().c_str(), quality);
 			quality = std::clamp(quality, 1, 99);
 			TakeScreenshot(args[0], quality);
 		}
@@ -2137,7 +2138,7 @@ public:
 			LogSystemStatus("Input grabbing", globalRendering->ToggleWindowInputGrabbing());
 		} else {
 			const bool preState = globalRendering->GetWindowInputGrabbing();
-			const bool reqState = static_cast<bool>(atoi(args.c_str()));
+			const bool reqState = StringToBool(args);
 			if (reqState != preState)
 				LogSystemStatus("Input grabbing", globalRendering->SetWindowInputGrabbing(reqState));
 			else
