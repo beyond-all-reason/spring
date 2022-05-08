@@ -2765,7 +2765,7 @@ public:
 		if (args.empty())
 			return false;
 
-		globalRendering->maxViewRange = Clamp(strtof(args.c_str(), nullptr), globalRendering->minViewRange, CGlobalRendering::MAX_VIEW_RANGE);
+		globalRendering->maxViewRange = Clamp(StringToInt<float>(args), globalRendering->minViewRange, CGlobalRendering::MAX_VIEW_RANGE);
 		return true;
 	}
 };
