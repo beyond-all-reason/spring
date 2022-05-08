@@ -2244,7 +2244,7 @@ public:
 		if (action.GetArgs().empty()) {
 			globalConfig.teamHighlight = abs(globalConfig.teamHighlight + 1) % CTeamHighlight::HIGHLIGHT_SIZE;
 		} else {
-			globalConfig.teamHighlight = abs(atoi(action.GetArgs().c_str())) % CTeamHighlight::HIGHLIGHT_SIZE;
+			globalConfig.teamHighlight = abs(StringToInt(action.GetArgs())) % CTeamHighlight::HIGHLIGHT_SIZE;
 		}
 
 		LOG("Team highlighting: %s",
