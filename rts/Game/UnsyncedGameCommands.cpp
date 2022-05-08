@@ -2856,7 +2856,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		if (!action.GetArgs().empty()) {
-			const int iconDist = atoi(action.GetArgs().c_str());
+			const int iconDist = StringToInt(action.GetArgs());
 			CUnitDrawer::SetUnitIconDist(static_cast<float>(iconDist));
 			configHandler->Set("UnitIconDist", iconDist);
 			LOG("Set UnitIconDist to %i", iconDist);
