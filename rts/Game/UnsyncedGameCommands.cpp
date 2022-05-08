@@ -1676,7 +1676,6 @@ public:
 			"Increases the density of clouds (lower performance)") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-
 		sky->IncreaseCloudDensity();
 		ReportCloudDensity();
 		return true;
@@ -1688,14 +1687,12 @@ public:
 };
 
 
-
 class LessCloudsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	LessCloudsActionExecutor() : IUnsyncedActionExecutor("LessClouds",
 			"Decreases the density of clouds (higher performance)") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-
 		sky->DecreaseCloudDensity();
 		MoreCloudsActionExecutor::ReportCloudDensity();
 		return true;
@@ -1705,8 +1702,7 @@ public:
 
 class FeatureFadeDistActionExecutor : public IUnsyncedActionExecutor {
 public:
-	FeatureFadeDistActionExecutor(): IUnsyncedActionExecutor("FeatureFadeDistance", "") {
-	}
+	FeatureFadeDistActionExecutor(): IUnsyncedActionExecutor("FeatureFadeDistance", "") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		featureDrawer->ConfigNotify(action.GetCmd(), action.GetArgs());
@@ -1716,15 +1712,13 @@ public:
 
 class FeatureDrawDistActionExecutor : public IUnsyncedActionExecutor {
 public:
-	FeatureDrawDistActionExecutor(): IUnsyncedActionExecutor("FeatureDrawDistance", "") {
-	}
+	FeatureDrawDistActionExecutor(): IUnsyncedActionExecutor("FeatureDrawDistance", "") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		featureDrawer->ConfigNotify(action.GetCmd(), action.GetArgs());
 		return true;
 	}
 };
-
 
 
 class SpeedUpActionExecutor : public IUnsyncedActionExecutor {
@@ -1757,8 +1751,7 @@ public:
 	SlowDownActionExecutor() : IUnsyncedActionExecutor(
 		"SlowDown",
 		"Decreases the simulation speed. The engine will try to simulate less frames per second"
-	) {
-	}
+	) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		int index = 0;
