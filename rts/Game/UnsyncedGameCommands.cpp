@@ -2336,7 +2336,7 @@ public:
 		if (action.GetArgs().empty()) {
 			verticalSync->Toggle();
 		} else {
-			verticalSync->SetInterval(atoi(action.GetArgs().c_str()));
+			verticalSync->SetInterval(StringToInt(action.GetArgs()));
 		}
 
 		return true;
