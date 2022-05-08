@@ -2931,7 +2931,7 @@ public:
 	{
 		if (!action.GetArgs().empty())
 		{
-			const float iconFadeVanish = (float) atof(action.GetArgs().c_str());
+			const float iconFadeVanish = StringToInt<float>(action.GetArgs());
 			CUnitDrawer::SetUnitIconFadeVanish(iconFadeVanish);
 			configHandler->Set("UnitIconFadeVanish", iconFadeVanish);
 			LOG("Set UnitIconFadeVanish to %f", iconFadeVanish);
