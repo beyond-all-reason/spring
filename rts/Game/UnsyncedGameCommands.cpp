@@ -2910,7 +2910,7 @@ public:
 	{
 		if (!action.GetArgs().empty())
 		{
-			const float iconFadeStart = (float) atof(action.GetArgs().c_str());
+			const float iconFadeStart = StringToInt<float>(action.GetArgs());
 			unitDrawer->SetUnitIconFadeStart(iconFadeStart);
 			configHandler->Set("UnitIconFadeStart", iconFadeStart);
 			LOG("Set UnitIconFadeStart to %f", iconFadeStart);
