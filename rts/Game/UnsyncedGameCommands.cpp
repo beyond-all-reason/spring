@@ -1615,12 +1615,9 @@ public:
 			"Switches fullscreen mode") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool b;
-		if (!action.GetArgs().empty()) {
-			b = (atoi(action.GetArgs().c_str()) != 0);
-		} else {
-			b = !globalRendering->fullScreen;
-		}
+		bool b = globalRendering->fullScreen;
+		InverseOrSetBool(b, action.GetArgs());
+
 		configHandler->Set("Fullscreen", b);
 		return true;
 	}
