@@ -2635,7 +2635,7 @@ public:
 		const char* strs[] = {"disabled", "enabled"};
 
 		if (!args.empty()) {
-			LOG(fmt, strs[projectileDrawer->EnableSorting(atoi(args.c_str()))]);
+			LOG(fmt, strs[projectileDrawer->EnableSorting(StringToInt(args))]);
 		} else {
 			LOG(fmt, strs[projectileDrawer->ToggleSorting()]);
 		}
