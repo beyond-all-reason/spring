@@ -2889,7 +2889,7 @@ public:
 	bool Execute(const UnsyncedAction& action) const final
 	{
 		if (!action.GetArgs().empty()) {
-			const float iconScale = (float) atof(action.GetArgs().c_str());
+			const float iconScale = StringToInt<float>(action.GetArgs());
 			unitDrawer->SetUnitIconScaleUI(iconScale);
 			configHandler->Set("UnitIconScaleUI", iconScale);
 			LOG("Set UnitIconScaleUI to %f", iconScale);
