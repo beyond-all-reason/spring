@@ -2658,7 +2658,7 @@ public:
 		const char* strs[] = { "disabled", "enabled" };
 
 		if (!args.empty()) {
-			LOG(fmt, strs[projectileDrawer->EnableSoften(atoi(args.c_str()))]);
+			LOG(fmt, strs[projectileDrawer->EnableSoften(StringToInt(args))]);
 		}
 		else {
 			LOG(fmt, strs[projectileDrawer->ToggleSoften()]);
