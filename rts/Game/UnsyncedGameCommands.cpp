@@ -2965,32 +2965,32 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		if (!action.GetArgs().empty()) {
-			const vector<string> &args = CSimpleParser::Tokenize(action.GetArgs(), 0);
+		if (action.GetArgs().empty()) {
+			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+			return true;
+		}
+		const vector<string> &args = CSimpleParser::Tokenize(action.GetArgs());
 
-			if (args.size() == 2) {
-				const int objType = Clamp(atoi(args[0].c_str()), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
-				const float lodScale = strtof(args[1].c_str(), nullptr);
+		if (args.size() == 2) {
+			const int objType = Clamp(StringToInt(args[0]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
+			const float lodScale = StringToInt<float>(args[1]);
 
-				LuaObjectDrawer::SetLODScale(objType, lodScale);
-			}
-			else if (args.size() == 3) {
-				const int objType = Clamp(atoi(args[1].c_str()), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
-				const float lodScale = strtof(args[2].c_str(), nullptr);
+			LuaObjectDrawer::SetLODScale(objType, lodScale);
+		}
+		else if (args.size() == 3) {
+			const int objType = Clamp(StringToInt(args[1]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
+			const float lodScale = StringToInt<float>(args[2]);
 
-				switch (hashString(args[0].c_str())) {
-					case hashString("shadow"): {
-						LuaObjectDrawer::SetLODScaleShadow(objType, lodScale);
-					} break;
-					case hashString("reflection"): {
-						LuaObjectDrawer::SetLODScaleReflection(objType, lodScale);
-					} break;
-					case hashString("refraction"): {
-						LuaObjectDrawer::SetLODScaleRefraction(objType, lodScale);
-					} break;
-				}
-			} else {
-				LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+			switch (hashString(args[0].c_str())) {
+				case hashString("shadow"): {
+					LuaObjectDrawer::SetLODScaleShadow(objType, lodScale);
+				} break;
+				case hashString("reflection"): {
+					LuaObjectDrawer::SetLODScaleReflection(objType, lodScale);
+				} break;
+				case hashString("refraction"): {
+					LuaObjectDrawer::SetLODScaleRefraction(objType, lodScale);
+				} break;
 			}
 		} else {
 			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
