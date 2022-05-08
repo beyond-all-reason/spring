@@ -1660,7 +1660,7 @@ public:
 			LOG_L(L_WARNING, "/%s: missing argument", GetCommand().c_str());
 			return false;
 		}
-		detail = atoi((action.GetArgs()).c_str());
+		detail = StringToInt((action.GetArgs()).c_str());
 
 		readMap->GetGroundDrawer()->SetDetail(detail);
 		return true;
