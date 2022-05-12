@@ -3122,7 +3122,7 @@ public:
 		const std::string& args = action.GetArgs();
 
 		const spring_time t0 = spring_now();
-		const spring_time t1 = t0 + spring_time((args.empty())? 20.0f * 1000.0f: strtof(args.c_str(), nullptr) * 1000.0f);
+		const spring_time t1 = t0 + spring_time((args.empty() ? 20.0f : StringToInt<float>(args)) * 1000.0f);
 
 		for (spring_time t = t0; t < t1; t = spring_now()) {
 			// prevent compiler from removing this
