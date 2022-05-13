@@ -18,9 +18,7 @@ class CUnit;
 
 struct EconomyFlowSnapshot{
 	SResourcePack fixedIncome, proratableIncome;	// unconditional income
-	SResourcePack fixedExpense; // unconditional expense
-	SResourcePack independentProratableExpense; // proratable expense not impacted by other resource availability
-	SResourcePack dependentProratableExpense; // proratable expense that is dependent on the availablity of other resource
+	SResourcePack proratableExpense; // proratable expense not impacted by other resource availability
 };
 
 class CTeam : public TeamBase
@@ -32,10 +30,22 @@ public:
 	void ResetResourceState();
 	void SlowUpdate();
 
+	const SResourcePack GetResources() const {
+		SResourcePack result;
+
+		for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+			if (res[i] <= resStorage[i])
+				result[i] = res[i];
+			else
+				result[i] = resStorage[i];
+		}
+
+		return result;
+	}
+
 	bool HaveResources(const SResourcePack& amount) const;
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);
-	bool ApplyResources(SResourcePack income, const SResourcePack& expense, bool useIncomeMultiplier = true);
 
 	void AddMetal(float amount, bool useIncomeMultiplier = true);
 	void AddEnergy(float amount, bool useIncomeMultiplier = true);
@@ -60,6 +70,14 @@ public:
 
 	const TeamStatistics& GetCurrentStats() const { return statHistory.back(); }
 	      TeamStatistics& GetCurrentStats()       { return statHistory.back(); }
+
+	void recordFlowEcoPull(SResourcePack pull) {
+		flowEcoPull += pull;
+		flowEcoFullPull += pull;
+		resPull += pull;
+	}
+
+	void applyExcessToShared();
 
 	CTeam& operator = (const TeamBase& base) {
 		TeamBase::operator = (base);
@@ -104,7 +122,9 @@ public:
 	// New Flow Eco Values
 
 	EconomyFlowSnapshot resCurrent, resNext;
+	SResourcePack flowEcoPull, flowEcoFullPull;
 	SResourcePack resNextIncome;	// Resources created become available in the back frame.
+	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
 	float prorationRates[SResourcePack::MAX_RESOURCES+1];
 	//SResourcePack resProrationRate;
 	//float minResProrationRate;

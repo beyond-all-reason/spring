@@ -31,12 +31,12 @@ private:
     void UpdateProratableMetalIncome();
     void UpdateProratableEnergyIncome();
 
-    void UpdateFixedMetalExpense();
-    void UpdateFixedEnergyExpense();
+    // void UpdateMetalExpense();
+    // void UpdateEnergyExpense();
 
-    void UpdateProratableMetalExpense();
-    void UpdateProratableEnergyExpense();
-    void UpdateProratableCombinedExpense();
+    // void UpdateProratableMetalExpense();
+    // void UpdateProratableEnergyExpense();
+    // void UpdateProratableCombinedExpense();
 
     float economyMultiplier = 0.f;
 };

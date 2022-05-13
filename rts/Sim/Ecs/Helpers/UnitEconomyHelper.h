@@ -11,8 +11,6 @@ public:
     static void UpdateUnitProratableMetalIncome(CUnit *unit, float amount);
     static void UpdateUnitFixedEnergyIncome(CUnit *unit, float amount);
     static void UpdateUnitFixedMetalIncome(CUnit *unit, float amount);
-    static void UpdateUnitFixedEnergyExpense(CUnit *unit, float amount);
-    static void UpdateUnitFixedMetalExpense(CUnit *unit, float amount);
     static void UpdateUnitProratableEnergyUse(CUnit *unit, float amount);
     static void UpdateUnitProratableMetalUse(CUnit *unit, float amount);
 

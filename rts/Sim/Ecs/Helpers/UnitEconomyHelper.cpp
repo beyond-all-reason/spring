@@ -83,17 +83,6 @@ void UnitEconomyHelper::UpdateUnitProratableEnergyUse(CUnit *unit, float amount)
 void UnitEconomyHelper::UpdateUnitProratableMetalUse(CUnit *unit, float amount){
     auto entity = unit->entityReference;
     ComponentUpdateFuncs<UnitEconomy::MetalCurrentUsage, UnitEconomyReport::SnapshotMetalUsage> updater;
-    UpdateStuff<FlowEconomy::MetalProratableUse, FlowEconomy::MetalFixedUse>(entity, amount, updater);
+    UpdateStuff<FlowEconomy::MetalProratableUse>(entity, amount, updater);
 }
 
-void UnitEconomyHelper::UpdateUnitFixedEnergyExpense(CUnit *unit, float amount){
-    auto entity = unit->entityReference;
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentUsage, UnitEconomyReport::SnapshotEnergyUsage> updater;
-    UpdateStuff<FlowEconomy::EnergyFixedUse, FlowEconomy::EnergyProratableUse>(entity, amount, updater);
-}
-
-void UnitEconomyHelper::UpdateUnitFixedMetalExpense(CUnit *unit, float amount) {
-    auto entity = unit->entityReference;
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentUsage, UnitEconomyReport::SnapshotMetalUsage> updater;
-    UpdateStuff<FlowEconomy::MetalFixedUse, FlowEconomy::MetalProratableUse>(entity, amount, updater);
-}

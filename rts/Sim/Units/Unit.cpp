@@ -329,6 +329,21 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	unitSystem.AddUnit(this);
 
+	if (unitDef->metalMake != 0.f || unitDef->energyMake != 0.f) {
+		auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+		EcsMain::registry.emplace<Units::MakeResourcesEconomyTaskRef>(entityReference, economyTaskId);
+
+		if (unitDef->metalMake > 0.f)
+			EcsMain::registry.emplace<FlowEconomy::MetalFixedIncome>(economyTaskId, unitDef->metalMake);
+		else if (unitDef->metalMake < 0.f)
+			EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(economyTaskId, (-unitDef->metalMake));
+
+		if (unitDef->energyMake > 0.f)
+			EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(economyTaskId, unitDef->energyMake);
+		else if (unitDef->energyMake < 0.f)
+			EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(economyTaskId, (-unitDef->energyMake));
+	}
+
 	if (unitDef->selfdExpWeaponDef != nullptr)
 		selfdExpDamages = DynDamageArray::IncRef(&unitDef->selfdExpWeaponDef->damages);
 	if (unitDef->deathExpWeaponDef != nullptr)
@@ -2366,7 +2381,48 @@ void CUnit::Activate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		auto metalIncome = metalExtract + unitDef->makesMetal;
+		if (resourcesCondUse.metal != 0.f || resourcesCondMake.energy != 0.f){
+			auto conditionalMetalUseEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			EcsMain::registry.emplace<Units::ConditionalMetalUseEconomyTaskRef>(entityReference, conditionalMetalUseEconomyTaskId);
+
+			if (resourcesCondUse.metal < 0.f)
+				EcsMain::registry.emplace<FlowEconomy::MetalFixedIncome>(conditionalMetalUseEconomyTaskId, (-resourcesCondUse.metal));
+			else
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(conditionalMetalUseEconomyTaskId, resourcesCondUse.metal);
+
+			LOG("%s: %d: ACTIVATE conditional metal usage = %f", __func__, (int)conditionalMetalUseEconomyTaskId, resourcesCondUse.metal);
+
+			if (resourcesCondMake.energy < 0.f) {
+				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(conditionalMetalUseEconomyTaskId, (-resourcesCondMake.energy));
+			}
+			else {
+				EcsMain::registry.emplace<FlowEconomy::EnergyProratableIncome>(conditionalMetalUseEconomyTaskId, resourcesCondMake.energy);
+				LOG("%s: %d: ACTIVATE conditonal ebergy production = %f", __func__, (int)conditionalMetalUseEconomyTaskId, resourcesCondMake.energy);
+			}
+		}
+		if (resourcesCondUse.energy != 0.f || resourcesCondMake.metal != 0.f) {
+			auto conditionalEnergyUseEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			EcsMain::registry.emplace<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference, conditionalEnergyUseEconomyTaskId);
+
+			if (resourcesCondUse.energy < 0.f)
+				EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(conditionalEnergyUseEconomyTaskId, (-resourcesCondUse.energy));
+			else
+				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(conditionalEnergyUseEconomyTaskId, resourcesCondUse.energy);
+
+			LOG("%s: %d: ACTIVATE conditional energy usage = %f", __func__, (int)conditionalEnergyUseEconomyTaskId, resourcesCondUse.energy);
+
+			if (resourcesCondMake.metal < 0.f) {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(conditionalEnergyUseEconomyTaskId, (-resourcesCondMake.metal));
+			}
+			else {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(conditionalEnergyUseEconomyTaskId, resourcesCondMake.metal);
+				LOG("%s: %d: ACTIVATE conditonal ebergy production = %f", __func__, (int)conditionalEnergyUseEconomyTaskId, resourcesCondMake.metal);
+			}
+		}
+
+		auto metalIncome = unitDef->makesMetal;
+		if (unitDef->extractsMetal > 0.f) metalIncome += metalExtract;
+
 		if (unitDef->energyUpkeep != 0.f || metalIncome != 0.f) {
 			auto energyUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 			EcsMain::registry.emplace<Units::EnergyUpKeepEconomyTaskRef>(entityReference, energyUpkeepEconomyTaskId);
@@ -2387,22 +2443,17 @@ void CUnit::Activate()
 			}
 		}
 
-		if (unitDef->energyMake) {
-		 	UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, unitDef->energyMake); // FIXME: not proratable actually
-			LOG("%s: %d: ACTIVATE energyMake = %f", __func__, (int)entityReference, unitDef->energyMake);
-		}
-		if (unitDef->metalUpkeep){
-			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, (-unitDef->metalUpkeep));
-		}
-		else if (unitDef->metalUpkeep){
-			UnitEconomyHelper::UpdateUnitProratableMetalUse(this, unitDef->metalUpkeep);
-			UnitEconomyHelper::UpdateUnitProratableEnergyIncome(this, unitDef->energyMake);
-		}
-		else if (unitDef->metalMake){
-			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, unitDef->metalMake);
+		if (unitDef->metalUpkeep != 0.f){
+			auto metalUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			EcsMain::registry.emplace<Units::MetalUpKeepEconomyTaskRef>(entityReference, metalUpkeepEconomyTaskId);
 
-			LOG("%s: %d: ACTIVATE metalMake = %f", __func__, (int)entityReference, unitDef->metalMake);
+			if (unitDef->metalUpkeep > 0.f) {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(metalUpkeepEconomyTaskId, unitDef->metalUpkeep);
+			} else {
+				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(metalUpkeepEconomyTaskId, (-unitDef->metalUpkeep));
+			}
 		}
+
 		if (unitDef->windGenerator > 0.0f) {
 			WindGeneratorHelper::ActivateGenerator(this);
 		}
@@ -2426,22 +2477,44 @@ void CUnit::Deactivate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		auto energyUpkeepTasComp = EcsMain::registry.try_get<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
-		if (energyUpkeepTasComp != nullptr){
-			EconomyTaskUtil::DeleteUnitEconomyTask(energyUpkeepTasComp->value);
+		{
+			auto conditionalMetalUseTaskComp = EcsMain::registry.try_get<Units::ConditionalMetalUseEconomyTaskRef>(entityReference);
+			if (conditionalMetalUseTaskComp != nullptr){
+				EconomyTaskUtil::DeleteUnitEconomyTask(conditionalMetalUseTaskComp->value);
+				EcsMain::registry.remove<Units::ConditionalMetalUseEconomyTaskRef>(entityReference);
 
-			LOG("%s: %d: DEACTIVATE energyUse", __func__, gs->frameNum);
-			LOG("%s: %d: DEACTIVATE metalMake", __func__, gs->frameNum);
+				LOG("%s: %d: DEACTIVATE conditional metal use", __func__, gs->frameNum);
+				LOG("%s: %d: DEACTIVATE conditional energy prod", __func__, gs->frameNum);
+			}
 		}
-		if (unitDef->energyMake) {
-			UnitEconomyHelper::UpdateUnitFixedEnergyIncome(this, 0.f);
+		{
+			auto conditionalEnergyUseTaskComp = EcsMain::registry.try_get<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference);
+			if (conditionalEnergyUseTaskComp != nullptr){
+				EconomyTaskUtil::DeleteUnitEconomyTask(conditionalEnergyUseTaskComp->value);
+				EcsMain::registry.remove<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference);
+
+				LOG("%s: %d: DEACTIVATE conditional energy use", __func__, gs->frameNum);
+				LOG("%s: %d: DEACTIVATE conditional metal prod", __func__, gs->frameNum);
+			}
 		}
-		if (unitDef->metalUpkeep){
-			UnitEconomyHelper::UpdateUnitProratableMetalUse(this, 0.f);
-			UnitEconomyHelper::UpdateUnitProratableEnergyIncome(this, 0.f);
+		{
+			auto energyUpkeepTaskComp = EcsMain::registry.try_get<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
+			if (energyUpkeepTaskComp != nullptr){
+				EconomyTaskUtil::DeleteUnitEconomyTask(energyUpkeepTaskComp->value);
+				EcsMain::registry.remove<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
+
+				LOG("%s: %d: DEACTIVATE energyUse", __func__, gs->frameNum);
+				LOG("%s: %d: DEACTIVATE metalProd", __func__, gs->frameNum);
+			}
 		}
-		else if (unitDef->metalMake){
-			UnitEconomyHelper::UpdateUnitFixedMetalIncome(this, 0.f);
+		{
+			auto metalUpkeepTaskComp = EcsMain::registry.try_get<Units::MetalUpKeepEconomyTaskRef>(entityReference);
+			if (metalUpkeepTaskComp != nullptr){
+				EconomyTaskUtil::DeleteUnitEconomyTask(metalUpkeepTaskComp->value);
+				EcsMain::registry.remove<Units::MetalUpKeepEconomyTaskRef>(entityReference);
+
+				LOG("%s: %d: DEACTIVATE metalUpkeep", __func__, gs->frameNum);
+			}
 		}
 		if (unitDef->windGenerator > 0.0f) {
 			WindGeneratorHelper::DeactivateGenerator(this);

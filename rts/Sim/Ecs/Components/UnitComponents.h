@@ -32,7 +32,23 @@ struct ChainEntity {
     entt::entity next{entt::null};
 };
 
+struct MetalUpKeepEconomyTaskRef {
+    entt::entity value{entt::null};
+};
+
 struct EnergyUpKeepEconomyTaskRef {
+    entt::entity value{entt::null};
+};
+
+struct ConditionalMetalUseEconomyTaskRef {
+    entt::entity value{entt::null};
+};
+
+struct ConditionalEnergyUseEconomyTaskRef {
+    entt::entity value{entt::null};
+};
+
+struct MakeResourcesEconomyTaskRef {
     entt::entity value{entt::null};
 };
 

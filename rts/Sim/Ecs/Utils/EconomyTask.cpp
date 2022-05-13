@@ -87,3 +87,25 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
 
     return true;
 }
+
+void EconomyTaskUtil::DeleteAllUnitEconomyTasks(entt::entity unit) {
+
+    LOG("%s:Checking %d to remove economy tasks", __func__, (int)unit);
+
+    auto ChainEntityComp = EcsMain::registry.try_get<Units::ChainEntity>(unit);
+    if (ChainEntityComp == nullptr)
+        return;
+
+    for (auto nextInChain = ChainEntityComp->next; nextInChain != unit; ) {
+        auto currentInChain = nextInChain;
+        auto ChainEntityComp = EcsMain::registry.try_get<Units::ChainEntity>(nextInChain);
+        if (ChainEntityComp == nullptr)
+            nextInChain = unit;
+        else
+            nextInChain = ChainEntityComp->next;
+        
+        EcsMain::registry.destroy(currentInChain);
+
+        LOG("%s: Eco Task %d removed from %d", __func__, (int)currentInChain, (int)unit);
+    }
+}

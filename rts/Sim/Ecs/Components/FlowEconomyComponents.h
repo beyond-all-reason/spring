@@ -21,10 +21,6 @@ struct MetalFixedIncome {
     float value = 0.f;
 };
 
-struct MetalFixedUse {
-    float value = 0.f;
-};
-
 struct MetalProratableIncome {
     float value = 0.f;
 };

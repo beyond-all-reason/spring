@@ -148,11 +148,11 @@ void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 	res.metal += amount;
 	resIncome.metal += amount;
 
-	if (res.metal <= resStorage.metal)
-		return;
+	// if (res.metal <= resStorage.metal)
+	// 	return;
 
-	resDelayedShare.metal += (res.metal - resStorage.metal);
-	res.metal = resStorage.metal;
+	// resDelayedShare.metal += (res.metal - resStorage.metal);
+	// res.metal = resStorage.metal;
 }
 
 void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
@@ -163,10 +163,10 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	res.energy += amount;
 	resIncome.energy += amount;
 
-	if (res.energy > resStorage.energy) {
-		resDelayedShare.energy += (res.energy - resStorage.energy);
-		res.energy = resStorage.energy;
-	}
+	// if (res.energy > resStorage.energy) {
+	// 	resDelayedShare.energy += (res.energy - resStorage.energy);
+	// 	res.energy = resStorage.energy;
+	// }
 }
 
 
@@ -175,22 +175,8 @@ bool CTeam::HaveResources(const SResourcePack& amount) const
 	return (res >= amount);
 }
 
-bool CTeam::ApplyResources(SResourcePack income, const SResourcePack& expense, bool useIncomeMultiplier)
+void CTeam::applyExcessToShared()
 {
-	bool result = false;
-
-	if (useIncomeMultiplier)
-		income *= GetIncomeMultiplier();
-
-	res += income;
-	resIncome += income;
-
-	if (res >= expense) {
-		res -= expense;
-		resExpense += expense;
-		result = true;
-	}
-	
 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
 		if (res[i] <= resStorage[i])
 			continue;
@@ -198,8 +184,6 @@ bool CTeam::ApplyResources(SResourcePack income, const SResourcePack& expense, b
 		resDelayedShare[i] += (res[i] - resStorage[i]);
 		res[i] = resStorage[i];
 	}
-
-	return result;
 }
 
 void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
@@ -210,13 +194,13 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 	res += amount;
 	resIncome += amount;
 
-	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
-		if (res[i] <= resStorage[i])
-			continue;
+	// for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+	// 	if (res[i] <= resStorage[i])
+	// 		continue;
 
-		resDelayedShare[i] += (res[i] - resStorage[i]);
-		res[i] = resStorage[i];
-	}
+	// 	resDelayedShare[i] += (res[i] - resStorage[i]);
+	// 	res[i] = resStorage[i];
+	// }
 }
 
 bool CTeam::UseResources(const SResourcePack& amount)

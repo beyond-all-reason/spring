@@ -98,7 +98,7 @@ void CResourceBar::Draw()
 	y2 = metaly + .020f;
 
 	if (myTeam->resStorage.metal != 0.0f)
-		x = (myTeam->res.metal / myTeam->resStorage.metal) * metalbarlen;
+		x = (std::min(myTeam->res.metal, myTeam->resStorage.metal) / myTeam->resStorage.metal) * metalbarlen;
 	else
 		x = 0.0f;
 

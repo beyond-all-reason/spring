@@ -70,7 +70,6 @@ void UnitEconomySystem::UpdateMetalUsageTracking(){
         auto& ecoTrack = group.get<MetalCurrentUsage>(entity).value;
         auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
 
-        ecoTrack += GetOptionalComponent<FlowEconomy::MetalFixedUse>(entity, 0.f) * economyMultiplier;
         ecoTrack += GetOptionalComponent<FlowEconomy::MetalProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
     }
 }
@@ -84,7 +83,6 @@ void UnitEconomySystem::UpdateEconomyCombinedUsageTracking(){
 
         energyTrack += GetOptionalComponent<FlowEconomy::EnergyFixedUse>(entity, 0.f) * economyMultiplier;
         energyTrack += GetOptionalComponent<FlowEconomy::EnergyProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
-        metalTrack += GetOptionalComponent<FlowEconomy::MetalFixedUse>(entity, 0.f) * economyMultiplier;
         metalTrack += GetOptionalComponent<FlowEconomy::MetalProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
     }
 }

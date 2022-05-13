@@ -1152,7 +1152,7 @@ int LuaSyncedRead::GetTeamResources(lua_State* L)
 
 	switch (luaL_checkstring(L, 2)[0]) {
 		case 'm': {
-			lua_pushnumber(L, team->res.metal);
+			lua_pushnumber(L, std::min(team->res.metal, team->resStorage.metal));
 			lua_pushnumber(L, team->resStorage.metal);
 			lua_pushnumber(L, team->resPrevPull.metal);
 			lua_pushnumber(L, team->resPrevIncome.metal);
@@ -1164,7 +1164,7 @@ int LuaSyncedRead::GetTeamResources(lua_State* L)
 			return 9;
 		} break;
 		case 'e': {
-			lua_pushnumber(L, team->res.energy);
+			lua_pushnumber(L, std::min(team->res.energy, team->resStorage.energy));
 			lua_pushnumber(L, team->resStorage.energy);
 			lua_pushnumber(L, team->resPrevPull.energy);
 			lua_pushnumber(L, team->resPrevIncome.energy);

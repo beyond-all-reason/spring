@@ -10,6 +10,8 @@ public:
     static entt::entity CreateUnitEconomyTask(entt::entity unit);
 
     static bool DeleteUnitEconomyTask(entt::entity economyTask);
+
+    static void DeleteAllUnitEconomyTasks(entt::entity unit);
 };
 
 #endif
