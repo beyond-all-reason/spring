@@ -125,7 +125,8 @@ public:
 	SResourcePack flowEcoPull, flowEcoFullPull;
 	SResourcePack resNextIncome;	// Resources created become available in the back frame.
 	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
-	float prorationRates[SResourcePack::MAX_RESOURCES+1];
+	std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;
+	SResourcePack resSnapshot;
 	//SResourcePack resProrationRate;
 	//float minResProrationRate;
 	// --

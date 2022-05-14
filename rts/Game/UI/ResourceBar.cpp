@@ -98,7 +98,7 @@ void CResourceBar::Draw()
 	y2 = metaly + .020f;
 
 	if (myTeam->resStorage.metal != 0.0f)
-		x = (std::min(myTeam->res.metal, myTeam->resStorage.metal) / myTeam->resStorage.metal) * metalbarlen;
+		x = (myTeam->resSnapshot.metal / myTeam->resStorage.metal) * metalbarlen;
 	else
 		x = 0.0f;
 
@@ -196,12 +196,12 @@ void CResourceBar::Draw()
 	smallFont->glPrint(energybarx2 - 0.01f, energyy - 0.005f, labelsFontSize, fontOptions,
 			FloatToSmallString(myTeam->resStorage.energy));
 	smallFont->glPrint(energybarx1 + energybarlen / 2.0f, energyy - 0.005f, labelsFontSize, fontOptions,
-			FloatToSmallString(myTeam->res.energy));
+			FloatToSmallString(myTeam->resSnapshot.energy));
 
 	smallFont->glPrint(metalbarx2 - 0.01f, metaly - 0.005f, labelsFontSize, fontOptions,
 			FloatToSmallString(myTeam->resStorage.metal));
 	smallFont->glPrint(metalbarx1 + metalbarlen / 2.0f, metaly - 0.005f, labelsFontSize, fontOptions,
-			FloatToSmallString(myTeam->res.metal));
+			FloatToSmallString(myTeam->resSnapshot.metal));
 
 	smallFont->End();
 }

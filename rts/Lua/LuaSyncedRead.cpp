@@ -143,6 +143,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetTeamInfo);
 	REGISTER_LUA_CFUNC(GetTeamResources);
+	REGISTER_LUA_CFUNC(GetTeamResourcesSnapshot);
 	REGISTER_LUA_CFUNC(GetTeamUnitStats);
 	REGISTER_LUA_CFUNC(GetTeamResourceStats);
 	REGISTER_LUA_CFUNC(GetTeamRulesParam);
@@ -1165,6 +1166,49 @@ int LuaSyncedRead::GetTeamResources(lua_State* L)
 		} break;
 		case 'e': {
 			lua_pushnumber(L, std::min(team->res.energy, team->resStorage.energy));
+			lua_pushnumber(L, team->resStorage.energy);
+			lua_pushnumber(L, team->resPrevPull.energy);
+			lua_pushnumber(L, team->resPrevIncome.energy);
+			lua_pushnumber(L, team->resPrevExpense.energy);
+			lua_pushnumber(L, team->resShare.energy);
+			lua_pushnumber(L, team->resPrevSent.energy);
+			lua_pushnumber(L, team->resPrevReceived.energy);
+			lua_pushnumber(L, team->resPrevExcess.energy);
+			return 9;
+		} break;
+		default: {
+		} break;
+	}
+
+	return 0;
+}
+
+int LuaSyncedRead::GetTeamResourcesSnapshot(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr)
+		return 0;
+
+	const int teamID = team->teamNum;
+
+	if (!LuaUtils::IsAlliedTeam(L, teamID))
+		return 0;
+
+	switch (luaL_checkstring(L, 2)[0]) {
+		case 'm': {
+			lua_pushnumber(L, team->resSnapshot.metal);
+			lua_pushnumber(L, team->resStorage.metal);
+			lua_pushnumber(L, team->resPrevPull.metal);
+			lua_pushnumber(L, team->resPrevIncome.metal);
+			lua_pushnumber(L, team->resPrevExpense.metal);
+			lua_pushnumber(L, team->resShare.metal);
+			lua_pushnumber(L, team->resPrevSent.metal);
+			lua_pushnumber(L, team->resPrevReceived.metal);
+			lua_pushnumber(L, team->resPrevExcess.metal);
+			return 9;
+		} break;
+		case 'e': {
+			lua_pushnumber(L, team->resSnapshot.energy);
 			lua_pushnumber(L, team->resStorage.energy);
 			lua_pushnumber(L, team->resPrevPull.energy);
 			lua_pushnumber(L, team->resPrevIncome.energy);

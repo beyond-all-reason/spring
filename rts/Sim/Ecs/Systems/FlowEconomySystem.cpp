@@ -188,6 +188,15 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
 
     curTeam->applyExcessToShared();
 
+    if (teamId == 0) {
+        LOG("Last snapshot: (%f, %f)", curTeam->resSnapshot.metal, curTeam->resSnapshot.energy);
+        LOG("New snapshot: (%f, %f)", curTeam->res.metal, curTeam->res.energy);
+        if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
+            LOG("Upwards Blip Detected!!!");
+    }
+
+    curTeam->resSnapshot = curTeam->res;
+
     curTeam->resCurrent = curTeam->resNext;
     curTeam->resNext = EconomyFlowSnapshot();
 
