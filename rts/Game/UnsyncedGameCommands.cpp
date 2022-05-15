@@ -1510,7 +1510,7 @@ class SpeedControlActionExecutor : public IUnsyncedActionExecutor {
 public:
 	SpeedControlActionExecutor() : IUnsyncedActionExecutor(
 		"SpeedControl",
-		"Sets how server adjusts speed according to player's CPU load, 1: use average, 2: use highest"
+		"Sets how server adjusts speed according to player's CPU load, 1: use average, 0: use highest"
 	) {
 	}
 
@@ -1521,11 +1521,11 @@ public:
 		int speedCtrl = game->speedControl;
 
 		if (action.GetArgs().empty()) {
-			// switch to next value (1 <-> 2);
-			speedCtrl = (speedCtrl == 1) ? 2 : 1;
+			// switch to next value (0 <-> 1);
+			speedCtrl = (speedCtrl == 0) ? 1 : 0;
 		} else {
 			// set value
-			speedCtrl = Clamp(StringToInt(action.GetArgs()), 1, 2);
+			speedCtrl = Clamp(StringToInt(action.GetArgs()), 0, 1);
 		}
 
 		// constrain to bounds
