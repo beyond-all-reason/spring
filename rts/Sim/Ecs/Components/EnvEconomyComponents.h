@@ -1,6 +1,8 @@
 #ifndef ENV_ECONOMY_COMPONENTS_H__
 #define ENV_ECONOMY_COMPONENTS_H__
 
+#include "Sim/Ecs/EcsMain.h"
+
 namespace EnvEconomy {
 
 // holds values that always matter to a wind generator
@@ -17,7 +19,10 @@ struct WindGeneratorActive {
 };
 
 struct WindEnergy {
-    float value = 0.f;
+};
+
+struct WindEconomyTaskRef {
+    entt::entity value;
 };
 
 }

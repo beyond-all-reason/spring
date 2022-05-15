@@ -34,8 +34,8 @@ private:
     // void UpdateMetalExpense();
     // void UpdateEnergyExpense();
 
-    // void UpdateProratableMetalExpense();
-    // void UpdateProratableEnergyExpense();
+    void UpdateProratableMetalExpense();
+    void UpdateProratableEnergyExpense();
     // void UpdateProratableCombinedExpense();
 
     float economyMultiplier = 0.f;

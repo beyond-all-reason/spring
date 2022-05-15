@@ -1,6 +1,8 @@
 #include "EconomyTask.h"
 
 #include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/Components/UnitEconomyComponents.h"
+#include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Units/Unit.h"
 
 template <class T>
@@ -61,9 +63,30 @@ void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
     }
 }
 
+template<typename TF, typename... TR>
+void AddComponentsIfNotExist(entt::entity entity) {
+    if (!EcsMain::registry.all_of<TF>(entity)){
+        EcsMain::registry.emplace<TF>(entity);
+    }
+    if constexpr (sizeof...(TR) > 0) {
+        AddComponentsIfNotExist<TR...>(entity);
+    }
+}
+
 entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
     auto economyTask = EcsMain::registry.create();
     EcsMain::registry.emplace<Units::OwningEntity>(economyTask, unit);
+
+    AddComponentsIfNotExist
+        < UnitEconomy::MetalCurrentMake
+        , UnitEconomy::EnergyCurrentMake
+        , UnitEconomy::MetalCurrentUsage
+        , UnitEconomy::EnergyCurrentUsage
+        , UnitEconomyReport::SnapshotMetalMake
+        , UnitEconomyReport::SnapshotEnergyMake
+        , UnitEconomyReport::SnapshotMetalUsage
+        , UnitEconomyReport::SnapshotEnergyUsage
+        >(unit);
 
     auto team = EcsMain::registry.get<Units::Team>(unit).value;
     EcsMain::registry.emplace<Units::Team>(economyTask, team);
@@ -82,6 +105,20 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
 
     RemoveFromChain<Units::EconomyTasks, Units::ChainEntity>(unit, economyTask);
     EcsMain::registry.destroy(economyTask); // FIXME: mark for deletion rather than delete due to frame delays?
+
+    auto& chainHead = EcsMain::registry.get<Units::EconomyTasks>(unit);
+    if (chainHead.size <= 0) {
+        EcsMain::registry.remove
+                < UnitEconomy::MetalCurrentMake
+                , UnitEconomy::EnergyCurrentMake
+                , UnitEconomy::MetalCurrentUsage
+                , UnitEconomy::EnergyCurrentUsage
+                , UnitEconomyReport::SnapshotMetalMake
+                , UnitEconomyReport::SnapshotEnergyMake
+                , UnitEconomyReport::SnapshotMetalUsage
+                , UnitEconomyReport::SnapshotEnergyUsage
+                >(unit);
+    }
 
     LOG("%s: Eco Task %d removed from %d", __func__, (int)economyTask, (int)unit);
 

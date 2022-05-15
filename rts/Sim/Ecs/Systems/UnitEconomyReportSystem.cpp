@@ -62,6 +62,7 @@ void UnitEconomyReportSystem::TakeEnergyUseSnapshot(){
 
         displayValue = counterValue * economyMultiplier;
         counterValue = 0.f;
+        LOG("%s: energy snapshot is %f", __func__, displayValue);
     }
 }
 

@@ -28,7 +28,7 @@ void EnvEconomySystem::Update()
 
     LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
 
-    auto group = EcsMain::registry.group<EnvEconomy::WindGeneratorActive>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
+    auto group = EcsMain::registry.group<EnvEconomy::WindEnergy>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
     for (auto entity : group) {
         auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
         auto& energyIncome = (group.get<FlowEconomy::EnergyFixedIncome>(entity).value);
