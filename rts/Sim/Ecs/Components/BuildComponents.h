@@ -3,6 +3,8 @@
 
 #include "Sim/Ecs/EcsMain.h"
 
+#include "Sim/Misc/Resource.h"
+
 namespace Build {
 
 enum class ProrationRate {
@@ -16,7 +18,6 @@ enum class ProrationRate {
 struct ActiveBuild {
     entt::entity buildTarget = entt::null;
     float currentBuildpower = 0.f;
-    ProrationRate prorationType = ProrationRate::PRORATION_NONE;
 };
 
 struct BuildPower {
@@ -35,12 +36,16 @@ struct BuildProgress {
 struct BuildComplete {
 };
 
-struct BuildCostMetal {
-    float value = 0.f;
-};
+// struct BuildCostMetal {
+//     float value = 0.f;
+// };
 
-struct BuildCostEnergy {
-    float value = 0.f;
+// struct BuildCostEnergy {
+//     float value = 0.f;
+// };
+
+struct BuildCost : public SResourcePack {
+    using SResourcePack::operator=;
 };
 
 struct BuildTime {

@@ -32,48 +32,26 @@ void UnitEconomyReportSystem::Init()
 //     }
 // }
 
-void UnitEconomyReportSystem::TakeEnergyMakeSnapshot(){
-    auto group = EcsMain::registry.group<SnapshotEnergyMake>(entt::get<UnitEconomy::EnergyCurrentMake>);
+void UnitEconomyReportSystem::TakeMakeSnapshot(){
+    auto group = EcsMain::registry.group<SnapshotMake>(entt::get<UnitEconomy::ResourcesCurrentMake>);
     for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotEnergyMake>(entity).value;
-        auto& counterValue = group.get<UnitEconomy::EnergyCurrentMake>(entity).value;
+        auto& displayValue = group.get<SnapshotMake>(entity);
+        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
 
         displayValue = counterValue * economyMultiplier;
-        counterValue = 0.f;
+        counterValue = SResourcePack();
     }
 }
 
-void UnitEconomyReportSystem::TakeMetalMakeSnapshot(){
-    auto group = EcsMain::registry.group<SnapshotMetalMake>(entt::get<UnitEconomy::MetalCurrentMake>);
+void UnitEconomyReportSystem::TakeUseSnapshot(){
+    auto group = EcsMain::registry.group<SnapshotUsage>(entt::get<UnitEconomy::ResourcesCurrentUsage>);
     for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotMetalMake>(entity).value;
-        auto& counterValue = group.get<UnitEconomy::MetalCurrentMake>(entity).value;
+        auto& displayValue = group.get<SnapshotUsage>(entity);
+        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentUsage>(entity);
 
         displayValue = counterValue * economyMultiplier;
-        counterValue = 0.f;
-    }
-}
-
-void UnitEconomyReportSystem::TakeEnergyUseSnapshot(){
-    auto group = EcsMain::registry.group<SnapshotEnergyUsage>(entt::get<UnitEconomy::EnergyCurrentUsage>);
-    for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotEnergyUsage>(entity).value;
-        auto& counterValue = group.get<UnitEconomy::EnergyCurrentUsage>(entity).value;
-
-        displayValue = counterValue * economyMultiplier;
-        counterValue = 0.f;
-        LOG("%s: energy snapshot is %f", __func__, displayValue);
-    }
-}
-
-void UnitEconomyReportSystem::TakeMetalUseSnapshot(){
-    auto group = EcsMain::registry.group<SnapshotMetalUsage>(entt::get<UnitEconomy::MetalCurrentUsage>);
-    for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotMetalUsage>(entity).value;
-        auto& counterValue = group.get<UnitEconomy::MetalCurrentUsage>(entity).value;
-
-        displayValue = counterValue * economyMultiplier;
-        counterValue = 0.f;
+        counterValue = SResourcePack();
+        //LOG("%s: energy snapshot is %f", __func__, displayValue);
     }
 }
 
@@ -85,8 +63,6 @@ void UnitEconomyReportSystem::Update() {
 
     SCOPED_TIMER("ECS::UnitEconomySystem::Update");
 
-    TakeEnergyMakeSnapshot();
-    TakeMetalMakeSnapshot();
-    TakeEnergyUseSnapshot();
-    TakeMetalUseSnapshot();
+    TakeMakeSnapshot();
+    TakeUseSnapshot();
 }

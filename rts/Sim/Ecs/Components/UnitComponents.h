@@ -52,6 +52,10 @@ struct MakeResourcesEconomyTaskRef {
     entt::entity value{entt::null};
 };
 
+struct MakeDrainResourcesEconomyTaskRef {
+    entt::entity value{entt::null};
+};
+
 }
 
 #endif

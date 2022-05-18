@@ -28,8 +28,8 @@ struct ComponentUpdateFuncs {
     }
 };
 
-template<class Component, typename... RelatedComponents, typename UpdateType>
-void AddStuff(entt::entity entity, float amount, UpdateType& updater) {
+template<class Component, typename... RelatedComponents, typename UpdateType, typename T>
+void AddStuff(entt::entity entity, T amount, UpdateType& updater) {
     if (! EcsMain::registry.valid(entity)){
         LOG("%s: invalid entityId reference", __func__); return;
     }
@@ -54,63 +54,22 @@ void RemoveStuff(entt::entity entity, UpdateType& updater) {
     LOG("%s: [REMOVED]", typeid(Component).name());
 }
 
-void UnitEconomyHelper::AddProratableEnergyIncome(entt::entity entity, float amount){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentMake, UnitEconomyReport::SnapshotEnergyMake> updater;
-    AddStuff<FlowEconomy::EnergyProratableIncome, FlowEconomy::EnergyFixedIncome>(entity, amount, updater);
+void UnitEconomyHelper::AddIncome(entt::entity entity, const SResourcePack& amount){
+    ComponentUpdateFuncs<UnitEconomy::ResourcesCurrentMake, UnitEconomyReport::SnapshotMake> updater;
+    AddStuff<FlowEconomy::ResourceAdd>(entity, amount, updater);
 }
 
-void UnitEconomyHelper::AddProratableMetalIncome(entt::entity entity, float amount){
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentMake, UnitEconomyReport::SnapshotMetalMake> updater;
-    AddStuff<FlowEconomy::MetalProratableIncome, FlowEconomy::MetalFixedIncome>(entity, amount, updater);
+void UnitEconomyHelper::AddUse(entt::entity entity, const SResourcePack& amount){
+    ComponentUpdateFuncs<UnitEconomy::ResourcesCurrentUsage, UnitEconomyReport::SnapshotUsage> updater;
+    AddStuff<FlowEconomy::ResourceUse>(entity, amount, updater);
 }
 
-void UnitEconomyHelper::AddFixedEnergyIncome(entt::entity entity, float amount){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentMake, UnitEconomyReport::SnapshotEnergyMake> updater;
-    AddStuff<FlowEconomy::EnergyFixedIncome, FlowEconomy::EnergyProratableIncome>(entity, amount, updater);
+void UnitEconomyHelper::RemoveIncome(entt::entity entity){
+    ComponentUpdateFuncs<UnitEconomy::ResourcesCurrentMake, UnitEconomyReport::SnapshotMake> updater;
+    RemoveStuff<FlowEconomy::ResourceAdd>(entity, updater);
 }
 
-void UnitEconomyHelper::AddFixedMetalIncome(entt::entity entity, float amount) {
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentMake, UnitEconomyReport::SnapshotMetalMake> updater;
-    AddStuff<FlowEconomy::MetalFixedIncome, FlowEconomy::MetalProratableIncome>(entity, amount, updater);
-}
-
-void UnitEconomyHelper::AddProratableEnergyUse(entt::entity entity, float amount){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentUsage, UnitEconomyReport::SnapshotEnergyUsage> updater;
-    AddStuff<FlowEconomy::EnergyProratableUse>(entity, amount, updater);
-}
-
-void UnitEconomyHelper::AddProratableMetalUse(entt::entity entity, float amount){
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentUsage, UnitEconomyReport::SnapshotMetalUsage> updater;
-    AddStuff<FlowEconomy::MetalProratableUse>(entity, amount, updater);
-}
-
-
-void UnitEconomyHelper::RemoveProratableEnergyIncome(entt::entity entity){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentMake, UnitEconomyReport::SnapshotEnergyMake> updater;
-    RemoveStuff<FlowEconomy::EnergyProratableIncome, FlowEconomy::EnergyFixedIncome>(entity, updater);
-}
-
-void UnitEconomyHelper::RemoveProratableMetalIncome(entt::entity entity){
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentMake, UnitEconomyReport::SnapshotMetalMake> updater;
-    RemoveStuff<FlowEconomy::MetalProratableIncome, FlowEconomy::MetalFixedIncome>(entity, updater);
-}
-
-void UnitEconomyHelper::RemoveFixedEnergyIncome(entt::entity entity){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentMake, UnitEconomyReport::SnapshotEnergyMake> updater;
-    RemoveStuff<FlowEconomy::EnergyFixedIncome, FlowEconomy::EnergyProratableIncome>(entity, updater);
-}
-
-void UnitEconomyHelper::RemoveFixedMetalIncome(entt::entity entity) {
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentMake, UnitEconomyReport::SnapshotMetalMake> updater;
-    RemoveStuff<FlowEconomy::MetalFixedIncome, FlowEconomy::MetalProratableIncome>(entity, updater);
-}
-
-void UnitEconomyHelper::RemoveProratableEnergyUse(entt::entity entity){
-    ComponentUpdateFuncs<UnitEconomy::EnergyCurrentUsage, UnitEconomyReport::SnapshotEnergyUsage> updater;
-    RemoveStuff<FlowEconomy::EnergyProratableUse>(entity, updater);
-}
-
-void UnitEconomyHelper::RemoveProratableMetalUse(entt::entity entity){
-    ComponentUpdateFuncs<UnitEconomy::MetalCurrentUsage, UnitEconomyReport::SnapshotMetalUsage> updater;
-    RemoveStuff<FlowEconomy::MetalProratableUse>(entity, updater);
+void UnitEconomyHelper::RemoveUse(entt::entity entity){
+    ComponentUpdateFuncs<UnitEconomy::ResourcesCurrentUsage, UnitEconomyReport::SnapshotUsage> updater;
+    RemoveStuff<FlowEconomy::ResourceUse>(entity, updater);
 }

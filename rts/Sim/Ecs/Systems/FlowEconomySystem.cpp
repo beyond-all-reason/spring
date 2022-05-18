@@ -21,11 +21,6 @@ FlowEconomySystem flowEconomySystem;
 
 using namespace FlowEconomy;
 
-static float GetTeamProrationRate(int teamId, Build::ProrationRate prorationType){
-    auto team = teamHandler.Team(teamId);
-    return team->prorationRates[(int)prorationType];
-}
-
 void FlowEconomySystem::Init() {
     if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
         active = true;
@@ -50,118 +45,199 @@ void FlowEconomySystem::AddFlowEconomyUnit(CUnit *unit) {
     // force add the components needed when the system isn't active to ensure the original code still works.
 }
 
-void FlowEconomySystem::UpdateFixedMetalIncome(){
-    auto group = EcsMain::registry.group<MetalFixedIncome>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<MetalFixedIncome>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
-
-        teamHandler.Team(teamId)->resNext.fixedIncome.metal += income;
-
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            ecoTrack->value += income * economyMultiplier;
-        }
-
-        LOG("%s: [%d] metal %f", __func__, teamId, income);
+template<class T, typename V>
+void TryAddToComponent(entt::entity entity, V addition) {
+    auto comp = EcsMain::registry.try_get<T>(entity);
+    if (comp != nullptr) {
+        *comp += addition;
     }
 }
 
-void FlowEconomySystem::UpdateFixedEnergyIncome(){
-    auto group = EcsMain::registry.group<EnergyFixedIncome>(entt::get<Units::Team, Units::OwningEntity>);
+void FlowEconomySystem::ProcessProratableIncome() {
+    auto group = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
     for (auto entity : group) {
-        auto income = (group.get<EnergyFixedIncome>(entity)).value;
+        auto& resAdd = group.get<ResourceAdd>(entity);
+        auto& resUse = group.get<ResourceUse>(entity);
         auto teamId = (group.get<Units::Team>(entity)).value;
+        auto team = teamHandler.Team(teamId);
         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
+        // auto& altResUse = EcsMain::registry.get<ResourceUse>(entity);
+        // LOG("%s: %p %p %d", __func__, &resUse, &altResUse[0], entity);
 
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            ecoTrack->value += income * economyMultiplier;
+        float minProrationRate = 1.f;
+        for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
+            LOG("%s: %d %f (%f) -> %f", __func__, i, resUse[i], team->resProrationRates[i], minProrationRate);
+            bool foundLowerProrationrate = (resUse[i] > 0.f) && (team->resProrationRates[i] < minProrationRate);
+            minProrationRate = foundLowerProrationrate ? team->resProrationRates[i] : minProrationRate;
         }
 
-        LOG("%s: [%d] energy %f", __func__, teamId, income);
+        SResourcePack proratedResAdd = resAdd * minProrationRate * economyMultiplier;
+        SResourcePack proratedResUse = resUse * minProrationRate * economyMultiplier;
+
+        team->resNext.income += proratedResAdd;
+        team->resNext.expense += proratedResUse;
+        team->recordFlowEcoPull(resUse);
+
+        TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, proratedResAdd);
+        TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
     }
 }
 
-void FlowEconomySystem::UpdateProratableMetalIncome(){
-    // double check this is the correct way to utilise the natural behaviour of groups
-    auto group = EcsMain::registry.group<MetalProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+void FlowEconomySystem::ProcessFixedIncome() {
+    auto combinedGroup = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
+    auto group = EcsMain::registry.group<ResourceAdd>(entt::get<Units::Team, Units::OwningEntity>/*, entt::exclude<ResourceUse>*/);
+    auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
-        auto income = (group.get<MetalProratableIncome>(entity)).value;
+        if (entitiesLeftToProcess-- == 0) break;
+        auto& resAdd = group.get<ResourceAdd>(entity);
         auto teamId = (group.get<Units::Team>(entity)).value;
         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        teamHandler.Team(teamId)->resNext.proratableIncome.metal += income;
+        SResourcePack fixedResAdd = resAdd * economyMultiplier;
+        teamHandler.Team(teamId)->resNext.income += fixedResAdd;
 
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_ENERGY);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
-
-        LOG("%s: [%d] metal %f", __func__, teamId, income);
+        TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, fixedResAdd);
     }
 }
 
-void FlowEconomySystem::UpdateProratableEnergyIncome(){
-    auto group = EcsMain::registry.group<EnergyProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+void FlowEconomySystem::ProcessExpenses() {
+    auto combinedGroup = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
+    auto group = EcsMain::registry.group<ResourceUse>(entt::get<Units::Team, Units::OwningEntity>/*, entt::exclude<ResourceAdd>*/);
+    auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
-        auto income = (group.get<EnergyProratableIncome>(entity)).value;
+        if (entitiesLeftToProcess-- == 0) break;
+        auto& resUse = group.get<ResourceUse>(entity);
         auto teamId = (group.get<Units::Team>(entity)).value;
+        auto team = teamHandler.Team(teamId);
         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        teamHandler.Team(teamId)->resNext.proratableIncome.energy += income;
-
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_METAL);
-            ecoTrack->value += income * buildRate * economyMultiplier;
+        float minProrationRate = 1.f;
+        for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
+            bool foundLowerProrationrate = (resUse[i] > 0.f) && (team->resProrationRates[i] < minProrationRate);
+            minProrationRate = foundLowerProrationrate ? team->resProrationRates[i] : minProrationRate;
         }
 
-        LOG("%s: [%d] energy %f", __func__, teamId, income);
+        SResourcePack proratedResUse = resUse * minProrationRate * economyMultiplier;
+        team->resNext.expense += proratedResUse;
+        team->recordFlowEcoPull(resUse);
+
+        TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
     }
 }
 
-void FlowEconomySystem::UpdateProratableMetalExpense(){
-    auto group = EcsMain::registry.group<MetalProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<MetalProratableUse>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// void FlowEconomySystem::UpdateFixedMetalIncome(){
+//     auto group = EcsMain::registry.group<MetalFixedIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<MetalFixedIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        teamHandler.Team(teamId)->resNext.proratableExpense.metal += income;
+//         teamHandler.Team(teamId)->resNext.fixedIncome.metal += income;
 
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentUsage>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_METAL);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             ecoTrack->value += income * economyMultiplier;
+//         }
 
-        LOG("%s: [%d] metal %f", __func__, teamId, income);
-    }
-}
+//         LOG("%s: [%d] metal %f", __func__, teamId, income);
+//     }
+// }
 
-void FlowEconomySystem::UpdateProratableEnergyExpense(){
-    auto group = EcsMain::registry.group<EnergyProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<EnergyProratableUse>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// void FlowEconomySystem::UpdateFixedEnergyIncome(){
+//     auto group = EcsMain::registry.group<EnergyFixedIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<EnergyFixedIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        teamHandler.Team(teamId)->resNext.proratableExpense.energy += income;
+//         teamHandler.Team(teamId)->resNext.fixedIncome.energy += income;
 
-        auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentUsage>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_ENERGY);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             ecoTrack->value += income * economyMultiplier;
+//         }
 
-        LOG("%s: [%d] energy %f", __func__, teamId, income);
-    }
-}
+//         LOG("%s: [%d] energy %f", __func__, teamId, income);
+//     }
+// }
+
+// void FlowEconomySystem::UpdateProratableMetalIncome(){
+//     // double check this is the correct way to utilise the natural behaviour of groups
+//     auto group = EcsMain::registry.group<MetalProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<MetalProratableIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
+
+//         teamHandler.Team(teamId)->resNext.proratableIncome.metal += income;
+
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_ENERGY);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+
+//         LOG("%s: [%d] metal %f", __func__, teamId, income);
+//     }
+// }
+
+// void FlowEconomySystem::UpdateProratableEnergyIncome(){
+//     auto group = EcsMain::registry.group<EnergyProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<EnergyProratableIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
+
+//         teamHandler.Team(teamId)->resNext.proratableIncome.energy += income;
+
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_METAL);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+
+//         LOG("%s: [%d] energy %f", __func__, teamId, income);
+//     }
+// }
+
+// void FlowEconomySystem::UpdateProratableMetalExpense(){
+//     auto group = EcsMain::registry.group<MetalProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<MetalProratableUse>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
+
+//         teamHandler.Team(teamId)->resNext.proratableExpense.metal += income;
+
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::MetalCurrentUsage>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_METAL);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+
+//         LOG("%s: [%d] metal %f", __func__, teamId, income);
+//     }
+// }
+
+// void FlowEconomySystem::UpdateProratableEnergyExpense(){
+//     auto group = EcsMain::registry.group<EnergyProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<EnergyProratableUse>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
+
+//         teamHandler.Team(teamId)->resNext.proratableExpense.energy += income;
+
+//         auto ecoTrack = EcsMain::registry.try_get<UnitEconomy::EnergyCurrentUsage>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(teamId, Build::ProrationRate::PRORATION_ONLY_ENERGY);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+
+//         LOG("%s: [%d] energy %f", __func__, teamId, income);
+//     }
+// }
 
 // void FlowEconomySystem::UpdateProratableMetalExpense(){
 //     auto combinedGroup = EcsMain::registry.group<MetalProratableUse, EnergyProratableUse>(entt::get<Units::Team>);
@@ -214,24 +290,29 @@ void FlowEconomySystem::Update() {
     LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
 
     UpdateAllTeamsEconomy();
-    InformWaitingEntitiesEconomyIsAssigned();
+    // InformWaitingEntitiesEconomyIsAssigned();
 
     UpdateEconomyPredictions();
 }
 
 void FlowEconomySystem::UpdateEconomyPredictions(){
-    UpdateFixedEnergyIncome();
-    UpdateFixedMetalIncome();
 
-    UpdateProratableEnergyIncome();
-    UpdateProratableMetalIncome();
+    ProcessExpenses();
+    ProcessFixedIncome();
+    ProcessProratableIncome();
+
+    // UpdateFixedEnergyIncome();
+    // UpdateFixedMetalIncome();
+
+    // UpdateProratableEnergyIncome();
+    // UpdateProratableMetalIncome();
     
     // Add counter for resource usage
     // UpdateFixedMetalExpense();
     // UpdateFixedEnergyExpense();
 
-    UpdateProratableMetalExpense();
-    UpdateProratableEnergyExpense();
+    // UpdateProratableMetalExpense();
+    // UpdateProratableEnergyExpense();
     // UpdateProratableCombinedExpense();
 }
 
@@ -241,9 +322,9 @@ void FlowEconomySystem::UpdateAllTeamsEconomy() {
     }
 }
 
-void FlowEconomySystem::InformWaitingEntitiesEconomyIsAssigned() {
-    EcsMain::registry.view<AwaitingEconomyAssignment>().each([](auto entity){EcsMain::registry.remove<AwaitingEconomyAssignment>(entity);});
-}
+// void FlowEconomySystem::InformWaitingEntitiesEconomyIsAssigned() {
+//     EcsMain::registry.view<AwaitingEconomyAssignment>().each([](auto entity){EcsMain::registry.remove<AwaitingEconomyAssignment>(entity);});
+// }
 
 float getProrationRate(float supplyInUnits, float demandInUnits) {
     if (demandInUnits == 0.f)
@@ -269,35 +350,37 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
 
     curTeam->applyExcessToShared();
 
-    if (teamId == 0) {
-        LOG("Last snapshot: (%f, %f)", curTeam->resSnapshot.metal, curTeam->resSnapshot.energy);
-        LOG("New snapshot: (%f, %f)", curTeam->res.metal, curTeam->res.energy);
-        if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
-            LOG("Upwards Blip Detected!!!");
-    }
+    // if (teamId == 0) {
+    //     LOG("Last snapshot: (%f, %f)", curTeam->resSnapshot.metal, curTeam->resSnapshot.energy);
+    //     LOG("New snapshot: (%f, %f)", curTeam->res.metal, curTeam->res.energy);
+    //     if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
+    //         LOG("Upwards Blip Detected!!!");
+    // }
 
     curTeam->resSnapshot = curTeam->res;
-
     curTeam->resCurrent = curTeam->resNext;
     curTeam->resNext = EconomyFlowSnapshot();
 
     SResourcePack storage = curTeam->res;
-    SResourcePack incomeFromLastFrame = curTeam->resNextIncome;
-    SResourcePack demand = curTeam->flowEcoPull + curTeam->resCurrent.proratableExpense;
-
-    SResourcePack fixedIncome = curTeam->resCurrent.fixedIncome;
-    SResourcePack proratableIncome = curTeam->resCurrent.proratableIncome;
+    SResourcePack incomeFromLastFrame = curTeam->resCurrent.income;
+    SResourcePack demand = curTeam->flowEcoPull;
 
     // derived values
     SResourcePack supply = storage + incomeFromLastFrame;
 
-    float energyProrationRate = getProrationRate(supply.energy, demand.energy);
-    float metalProrationRate = getProrationRate(supply.metal, demand.metal);
-    float minProrationRate = std::min(energyProrationRate, metalProrationRate);
+    // float energyProrationRate = getProrationRate(supply.energy, demand.energy);
+    // float metalProrationRate = getProrationRate(supply.metal, demand.metal);
+    // float minProrationRate = std::min(energyProrationRate, metalProrationRate);
 
-    SResourcePack proratedUseRates(metalProrationRate, energyProrationRate);
+    // SResourcePack proratedUseRates(metalProrationRate, energyProrationRate);
+
+    SResourcePack proratedUseRates;
+    for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
+        proratedUseRates[i] = getProrationRate(supply[i], demand[i]);
+    }
+
     SResourcePack proratedDemand = demand * proratedUseRates;
-    SResourcePack incomeCost = curTeam->resCurrent.proratableExpense * proratedUseRates * economyMultiplier;
+    SResourcePack incomeCost = curTeam->resCurrent.expense;
 
     // Apply economy updates
     curTeam->flowEcoPull = SResourcePack();
@@ -305,32 +388,33 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     
     curTeam->AddResources(incomeFromLastFrame);
     curTeam->UseResources(incomeCost);
-    curTeam->resPull += proratedDemand*economyMultiplier;
+    //curTeam->recordFlowEcoPull(demand);
 
     curTeam->flowEcoReservedSupply = proratedDemand * economyMultiplier;
 
     // do after all teams are updated.
-    curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_NONE] = 1.f;
-    curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ONLY_METAL] = metalProrationRate;
-    curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ONLY_ENERGY] = energyProrationRate;
-    curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ALL] = minProrationRate;
+    curTeam->resProrationRates = proratedUseRates;
+    // curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_NONE] = 1.f;
+    // curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ONLY_METAL] = metalProrationRate;
+    // curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ONLY_ENERGY] = energyProrationRate;
+    // curTeam->prorationRates[(int)Build::ProrationRate::PRORATION_ALL] = minProrationRate;
 
     // values to add to the storage next frame. This approach avoids the paradox
     // with variable income impacting variable use.
     // proratable income is dependent on the other resource - so this deliberately looks to wrong way around
-    SResourcePack proratedIncomeRates(energyProrationRate, metalProrationRate);
-    SResourcePack nextFrameIncome = fixedIncome + proratableIncome * proratedIncomeRates;
+    //SResourcePack proratedIncomeRates(energyProrationRate, metalProrationRate);
+    //SResourcePack nextFrameIncome = fixedIncome + proratableIncome * proratedIncomeRates;
 
-    curTeam->resNextIncome = nextFrameIncome * economyMultiplier;
+    //curTeam->resNextIncome = nextFrameIncome * economyMultiplier;
 
     if (teamId == 0){
         LOG("============================================");
         LOG("%s: %d: income = (%f,%f)", __func__, gs->frameNum, incomeFromLastFrame.energy, incomeFromLastFrame.metal);
         LOG("%s: %d: forProration = (%f,%f)", __func__, gs->frameNum, supply.energy, supply.metal);
         LOG("%s: %d: poratableUse = (%f,%f)", __func__, gs->frameNum, demand.energy, demand.metal);
-        LOG("%s: %d: prorationrate = (%.10f,%.10f)", __func__, gs->frameNum, energyProrationRate, metalProrationRate);
-        LOG("%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
-        LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
-        LOG("%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);
+        LOG("%s: %d: prorationrate = (%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[1], proratedUseRates[0]);
+        //LOG("%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
+        //LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
+        //LOG("%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);
     }
 }

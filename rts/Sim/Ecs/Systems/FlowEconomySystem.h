@@ -25,17 +25,22 @@ private:
     void InformWaitingEntitiesEconomyIsAssigned();
     void UpdateTeamEconomy(int teamId);
 
-    void UpdateFixedMetalIncome();
-    void UpdateFixedEnergyIncome();
+    void ProcessProratableIncome();
 
-    void UpdateProratableMetalIncome();
-    void UpdateProratableEnergyIncome();
+    void ProcessFixedIncome();
+    void ProcessExpenses();
+
+    // void UpdateFixedMetalIncome();
+    // void UpdateFixedEnergyIncome();
+
+    // void UpdateProratableMetalIncome();
+    // void UpdateProratableEnergyIncome();
 
     // void UpdateMetalExpense();
     // void UpdateEnergyExpense();
 
-    void UpdateProratableMetalExpense();
-    void UpdateProratableEnergyExpense();
+    // void UpdateProratableMetalExpense();
+    // void UpdateProratableEnergyExpense();
     // void UpdateProratableCombinedExpense();
 
     float economyMultiplier = 0.f;

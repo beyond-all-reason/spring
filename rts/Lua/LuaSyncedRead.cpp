@@ -2969,10 +2969,11 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f));
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f));
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f));
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f));
+	SResourcePack emptyResources;
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).metal);
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).metal);
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).energy);
+	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).energy);
 	// lua_pushnumber(L, unit->resourcesMake.metal);
 	// lua_pushnumber(L, unit->resourcesUse.metal);
 	// lua_pushnumber(L, unit->resourcesMake.energy);

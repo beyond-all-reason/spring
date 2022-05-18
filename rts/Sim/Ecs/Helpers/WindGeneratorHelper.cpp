@@ -1,12 +1,10 @@
 #include "WindGeneratorHelper.h"
-#include "UnitEconomyHelper.h"
 
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
-#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
 
 #include "Sim/Units/Unit.h"
@@ -41,7 +39,9 @@ void WindGeneratorHelper::ActivateGenerator(CUnit* unit){
         EcsMain::registry.emplace<EnvEconomy::WindEconomyTaskRef>(entity, taskEntity);
         EcsMain::registry.emplace<EnvEconomy::WindEnergy>(taskEntity);
         EcsMain::registry.emplace<Units::UnitDefRef>(taskEntity, unitDefRef);
-        UnitEconomyHelper::AddFixedEnergyIncome(taskEntity, 0.f);
+
+        SResourcePack emptyResources;
+        EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(taskEntity, emptyResources);
     }
 }
 

@@ -28,12 +28,12 @@ void EnvEconomySystem::Update()
 
     LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
 
-    auto group = EcsMain::registry.group<EnvEconomy::WindEnergy>(entt::get<Units::UnitDefRef, FlowEconomy::EnergyFixedIncome>);
+    auto group = EcsMain::registry.group<EnvEconomy::WindEnergy>(entt::get<Units::UnitDefRef, FlowEconomy::ResourceAdd>);
     for (auto entity : group) {
         auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
-        auto& energyIncome = (group.get<FlowEconomy::EnergyFixedIncome>(entity).value);
+        auto& energyIncome = group.get<FlowEconomy::ResourceAdd>(entity);
 
-        energyIncome = std::min(envResourceSystem.GetCurrentWindStrength(), unitDef->windGenerator);
+        energyIncome.energy = std::min(envResourceSystem.GetCurrentWindStrength(), unitDef->windGenerator);
 
         LOG("%s: updated wind value generator", __func__);
     }

@@ -33,10 +33,10 @@ public:
 };
 
 // (auto defaultValue) requires -fconcepts-ts or c++20
-template<class T>
-auto GetOptionalComponent(entt::entity entity, float defaultValue) {
+template<class T, class V>
+auto& GetOptionalComponent(entt::entity entity, V& defaultValue) {
     auto checkPtr = EcsMain::registry.try_get<T>(entity);
-    return checkPtr != nullptr ? checkPtr->value : defaultValue;
+    return checkPtr != nullptr ? *checkPtr : defaultValue;
 }
 
 #ifdef RESTORE_LUA_MACROS

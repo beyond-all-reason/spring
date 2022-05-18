@@ -19,10 +19,10 @@ void UnitEconomySystem::Init()
     economyMultiplier = ((float)UNIT_ECONOMY_UPDATE_RATE) / ((float)GAME_SPEED);
 }
 
-static float GetTeamProrationRate(int teamId, Build::ProrationRate prorationType){
-    auto team = teamHandler.Team(teamId);
-    return team->prorationRates[(int)prorationType];
-}
+// static float GetTeamProrationRate(int teamId, Build::ProrationRate prorationType){
+//     auto team = teamHandler.Team(teamId);
+//     return team->prorationRates[(int)prorationType];
+// }
 
 // These really should be templated, but GCC 10.3 can't compile the templated version.
 void UnitEconomySystem::UpdateEnergyIncomeTracking(){
@@ -34,32 +34,32 @@ void UnitEconomySystem::UpdateEnergyIncomeTracking(){
     //     ecoTrack += GetOptionalComponent<FlowEconomy::EnergyFixedIncome>(entity, 0.f) * economyMultiplier;
     //     ecoTrack += GetOptionalComponent<FlowEconomy::EnergyProratableIncome>(entity, 0.f) * buildRate * economyMultiplier;
     // }
-{
-    auto group = EcsMain::registry.group<FlowEconomy::EnergyProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::EnergyProratableIncome>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::EnergyProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::EnergyProratableIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
-    }
-}
-{
-    auto group = EcsMain::registry.group<FlowEconomy::EnergyFixedIncome>(entt::get<Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::EnergyFixedIncome>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+//         auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+//     }
+// }
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::EnergyFixedIncome>(entt::get<Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::EnergyFixedIncome>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            ecoTrack->value += income * economyMultiplier;
-        }
-    }
-}
+//         auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             ecoTrack->value += income * economyMultiplier;
+//         }
+//     }
+// }
 }
 
 void UnitEconomySystem::UpdateMetalIncomeTracking(){
@@ -71,32 +71,32 @@ void UnitEconomySystem::UpdateMetalIncomeTracking(){
     //     ecoTrack += GetOptionalComponent<FlowEconomy::MetalFixedIncome>(entity, 0.f) * economyMultiplier;
     //     ecoTrack += GetOptionalComponent<FlowEconomy::MetalProratableIncome>(entity, 0.f) * buildRate * economyMultiplier;
     // }
-{
-    auto group = EcsMain::registry.group<FlowEconomy::MetalProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::MetalProratableIncome>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::MetalProratableIncome>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::MetalProratableIncome>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<MetalCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
-    }
-}
-{
-    auto group = EcsMain::registry.group<FlowEconomy::MetalFixedIncome>(entt::get<Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::MetalFixedIncome>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+//         auto ecoTrack = EcsMain::registry.try_get<MetalCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+//     }
+// }
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::MetalFixedIncome>(entt::get<Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::MetalFixedIncome>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<MetalCurrentMake>(owner);
-        if (ecoTrack != nullptr) {
-            ecoTrack->value += income * economyMultiplier;
-        }
-    }
-}
+//         auto ecoTrack = EcsMain::registry.try_get<MetalCurrentMake>(owner);
+//         if (ecoTrack != nullptr) {
+//             ecoTrack->value += income * economyMultiplier;
+//         }
+//     }
+// }
 }
 
 void UnitEconomySystem::UpdateEnergyUsageTracking(){
@@ -111,20 +111,20 @@ void UnitEconomySystem::UpdateEnergyUsageTracking(){
     //     ecoTrack += GetOptionalComponent<FlowEconomy::EnergyFixedUse>(entity, 0.f) * economyMultiplier;
     //     ecoTrack += GetOptionalComponent<FlowEconomy::EnergyProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
     // }
-{
-    auto group = EcsMain::registry.group<FlowEconomy::EnergyProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::EnergyProratableUse>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::EnergyProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::EnergyProratableUse>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentUsage>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_ENERGY);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
-    }
-}
+//         auto ecoTrack = EcsMain::registry.try_get<EnergyCurrentUsage>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_ENERGY);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+//     }
+// }
 }
 
 void UnitEconomySystem::UpdateMetalUsageTracking(){
@@ -138,33 +138,33 @@ void UnitEconomySystem::UpdateMetalUsageTracking(){
 
     //     ecoTrack += GetOptionalComponent<FlowEconomy::MetalProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
     // }
-{
-    auto group = EcsMain::registry.group<FlowEconomy::MetalProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
-    for (auto entity : group) {
-        auto income = (group.get<FlowEconomy::MetalProratableUse>(entity)).value;
-        auto teamId = (group.get<Units::Team>(entity)).value;
-        auto owner = (group.get<Units::OwningEntity>(entity)).value;
+// {
+//     auto group = EcsMain::registry.group<FlowEconomy::MetalProratableUse>(entt::get<Units::Team, Units::OwningEntity>);
+//     for (auto entity : group) {
+//         auto income = (group.get<FlowEconomy::MetalProratableUse>(entity)).value;
+//         auto teamId = (group.get<Units::Team>(entity)).value;
+//         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        auto ecoTrack = EcsMain::registry.try_get<MetalCurrentUsage>(owner);
-        if (ecoTrack != nullptr) {
-            auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
-            ecoTrack->value += income * buildRate * economyMultiplier;
-        }
-    }
-}
+//         auto ecoTrack = EcsMain::registry.try_get<MetalCurrentUsage>(owner);
+//         if (ecoTrack != nullptr) {
+//             auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ONLY_METAL);
+//             ecoTrack->value += income * buildRate * economyMultiplier;
+//         }
+//     }
+// }
 }
 
 void UnitEconomySystem::UpdateEconomyCombinedUsageTracking(){
-    auto group = EcsMain::registry.group<EnergyCurrentUsage, MetalCurrentUsage>(entt::get<Units::Team>);
-    for (auto entity : group) {
-        auto& energyTrack = group.get<EnergyCurrentUsage>(entity).value;
-        auto& metalTrack = group.get<MetalCurrentUsage>(entity).value;
-        auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ALL);
+    // auto group = EcsMain::registry.group<EnergyCurrentUsage, MetalCurrentUsage>(entt::get<Units::Team>);
+    // for (auto entity : group) {
+    //     auto& energyTrack = group.get<EnergyCurrentUsage>(entity).value;
+    //     auto& metalTrack = group.get<MetalCurrentUsage>(entity).value;
+    //     auto buildRate = GetTeamProrationRate(group.get<Units::Team>(entity).value, Build::ProrationRate::PRORATION_ALL);
 
-        energyTrack += GetOptionalComponent<FlowEconomy::EnergyFixedUse>(entity, 0.f) * economyMultiplier;
-        energyTrack += GetOptionalComponent<FlowEconomy::EnergyProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
-        metalTrack += GetOptionalComponent<FlowEconomy::MetalProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
-    }
+    //     energyTrack += GetOptionalComponent<FlowEconomy::EnergyFixedUse>(entity, 0.f) * economyMultiplier;
+    //     energyTrack += GetOptionalComponent<FlowEconomy::EnergyProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
+    //     metalTrack += GetOptionalComponent<FlowEconomy::MetalProratableUse>(entity, 0.f) * buildRate * economyMultiplier;
+    // }
 }
 
 void UnitEconomySystem::Update() {

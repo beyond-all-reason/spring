@@ -17,8 +17,8 @@
 class CUnit;
 
 struct EconomyFlowSnapshot{
-	SResourcePack fixedIncome, proratableIncome;	// unconditional income
-	SResourcePack proratableExpense; // proratable expense not impacted by other resource availability
+	SResourcePack income;	// unconditional income
+	SResourcePack expense; // proratable expense not impacted by other resource availability
 };
 
 class CTeam : public TeamBase
@@ -123,9 +123,10 @@ public:
 
 	EconomyFlowSnapshot resCurrent, resNext;
 	SResourcePack flowEcoPull, flowEcoFullPull;
-	SResourcePack resNextIncome;	// Resources created become available in the back frame.
+	//SResourcePack resNextIncome;	// Resources created become available in the back frame.
 	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
-	std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;
+	//std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;
+	SResourcePack resProrationRates;
 	SResourcePack resSnapshot;
 	//SResourcePack resProrationRate;
 	//float minResProrationRate;

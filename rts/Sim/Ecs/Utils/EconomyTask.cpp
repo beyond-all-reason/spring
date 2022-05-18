@@ -78,14 +78,10 @@ entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
     EcsMain::registry.emplace<Units::OwningEntity>(economyTask, unit);
 
     AddComponentsIfNotExist
-        < UnitEconomy::MetalCurrentMake
-        , UnitEconomy::EnergyCurrentMake
-        , UnitEconomy::MetalCurrentUsage
-        , UnitEconomy::EnergyCurrentUsage
-        , UnitEconomyReport::SnapshotMetalMake
-        , UnitEconomyReport::SnapshotEnergyMake
-        , UnitEconomyReport::SnapshotMetalUsage
-        , UnitEconomyReport::SnapshotEnergyUsage
+        < UnitEconomy::ResourcesCurrentMake
+        , UnitEconomy::ResourcesCurrentUsage
+        , UnitEconomyReport::SnapshotMake
+        , UnitEconomyReport::SnapshotUsage
         >(unit);
 
     auto team = EcsMain::registry.get<Units::Team>(unit).value;
@@ -109,14 +105,10 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
     auto& chainHead = EcsMain::registry.get<Units::EconomyTasks>(unit);
     if (chainHead.size <= 0) {
         EcsMain::registry.remove
-                < UnitEconomy::MetalCurrentMake
-                , UnitEconomy::EnergyCurrentMake
-                , UnitEconomy::MetalCurrentUsage
-                , UnitEconomy::EnergyCurrentUsage
-                , UnitEconomyReport::SnapshotMetalMake
-                , UnitEconomyReport::SnapshotEnergyMake
-                , UnitEconomyReport::SnapshotMetalUsage
-                , UnitEconomyReport::SnapshotEnergyUsage
+                < UnitEconomy::ResourcesCurrentMake
+                , UnitEconomy::ResourcesCurrentUsage
+                , UnitEconomyReport::SnapshotMake
+                , UnitEconomyReport::SnapshotUsage
                 >(unit);
     }
 
@@ -127,7 +119,7 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
 
 void EconomyTaskUtil::DeleteAllUnitEconomyTasks(entt::entity unit) {
 
-    LOG("%s:Checking %d to remove economy tasks", __func__, (int)unit);
+    LOG("%s: checking %d to remove economy tasks", __func__, (int)unit);
 
     auto ChainEntityComp = EcsMain::registry.try_get<Units::ChainEntity>(unit);
     if (ChainEntityComp == nullptr)
@@ -146,3 +138,4 @@ void EconomyTaskUtil::DeleteAllUnitEconomyTasks(entt::entity unit) {
         LOG("%s: Eco Task %d removed from %d", __func__, (int)currentInChain, (int)unit);
     }
 }
+

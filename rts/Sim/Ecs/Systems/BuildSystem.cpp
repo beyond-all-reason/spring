@@ -44,7 +44,7 @@ void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
         LOG("%s: unit %d has no build capacity", __func__, unit->id);  return;
     }
 
-    EcsMain::registry.emplace_or_replace<FlowEconomy::AwaitingEconomyAssignment>(entity);
+    //EcsMain::registry.emplace_or_replace<FlowEconomy::AwaitingEconomyAssignment>(entity);
     EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity);
 
     auto& activeBuild = EcsMain::registry.get<ActiveBuild>(entity);
@@ -52,21 +52,8 @@ void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
 
     auto buildPower = EcsMain::registry.get<BuildPower>(entity).value;
     auto buildTime = EcsMain::registry.get<BuildTime>(targetEntity).value;
-    auto costMetal = GetOptionalComponent<BuildCostMetal>(targetEntity, 0.f);
-    auto costEnergy = GetOptionalComponent<BuildCostEnergy>(targetEntity, 0.f);
 
-    float step = (buildPower / buildTime) * GAME_SPEED;
-    float metalUse = costMetal * step;
-    float energyUse = costEnergy * step;
-    int prorationRate = 0;
-    if (metalUse > 0.f) {
-        prorationRate += (int)ProrationRate::PRORATION_ONLY_METAL;
-    }
-    if (energyUse > 0.f) {
-        prorationRate += (int)ProrationRate::PRORATION_ONLY_ENERGY;
-    }
     activeBuild.currentBuildpower = buildPower;
-    activeBuild.prorationType = (ProrationRate)prorationRate;
     LOG("%s: %d: BuildPower = %f", __func__, (int)entity, buildPower);
 }
 
@@ -78,12 +65,12 @@ void BuildSystem::AddUnitBeingBuilt(CUnit *unit) {
     EcsMain::registry.emplace_or_replace<BuildProgress>(entity);
     EcsMain::registry.emplace_or_replace<BuildTime>(entity, unit->buildTime);
     LOG("%s: %d: BuildTime = %f", __func__, (int)entity, unit->buildTime);
-    if (unit->cost.metal > 0.f) {
-        EcsMain::registry.emplace_or_replace<BuildCostMetal>(entity, unit->cost.metal);
+
+    SResourcePack zeroResources;
+    bool hasBuildCost = !(unit->cost <= zeroResources);
+    if (hasBuildCost) {
+        EcsMain::registry.emplace_or_replace<BuildCost>(entity, unit->cost);
         LOG("%s: %d: BuildCostMetal = %f", __func__, (int)entity, unit->cost.metal);
-    }
-    if (unit->cost.energy > 0.f) {
-        EcsMain::registry.emplace_or_replace<BuildCostEnergy>(entity, unit->cost.energy);
         LOG("%s: %d: BuildCostEnergy = %f", __func__, (int)entity, unit->cost.energy);
     }
 }
@@ -114,7 +101,6 @@ void BuildSystem::PauseBuilder(CUnit *unit) {
     auto entity = unit->entityReference;
     auto& activeBuild = EcsMain::registry.get<ActiveBuild>(entity);
     activeBuild.currentBuildpower = 0.f;
-    activeBuild.prorationType = ProrationRate::PRORATION_NONE;
 }
 
 void BuildSystem::UnpauseBuilder(CUnit *unit) {
@@ -148,8 +134,7 @@ bool BuildSystem::UnitBuildComplete(entt::entity entity) {
 void BuildSystem::RemoveUnitBuild(entt::entity entity) {
     EcsMain::registry.remove<BuildProgress>(entity);
     EcsMain::registry.remove<BuildTime>(entity);
-    EcsMain::registry.remove<BuildCostMetal>(entity);
-    EcsMain::registry.remove<BuildCostEnergy>(entity);
+    EcsMain::registry.remove<BuildCost>(entity);
     EcsMain::registry.remove<BuildComplete>(entity);
 }
 
@@ -161,9 +146,9 @@ void BuildSystem::Update() {
 
     SCOPED_TIMER("ECS::BuildSystem::Update");
 
-    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>, entt::exclude<FlowEconomy::AwaitingEconomyAssignment>);
+    auto group = EcsMain::registry.group<ActiveBuild>(entt::get<Units::Team, Units::UnitId>);
     for (auto entity : group) {
-        auto buildDetails = group.get<ActiveBuild>(entity);
+        auto& buildDetails = group.get<ActiveBuild>(entity);
         auto buildPower = buildDetails.currentBuildpower;
         auto buildTarget = buildDetails.buildTarget;
 
@@ -172,11 +157,15 @@ void BuildSystem::Update() {
 
         auto teamId = (group.get<Units::Team>(entity)).value;
         auto team = teamHandler.Team(teamId);
+        auto& buildCost = EcsMain::registry.get<BuildCost>(buildTarget);
 
-        auto metalUse = EcsMain::registry.try_get<BuildCostMetal>(buildTarget);
-        auto energyUse = EcsMain::registry.try_get<BuildCostEnergy>(buildTarget);
+        float buildRate = 1.f;
+        for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
+            bool foundLowerProrationrate = (buildCost[i] > 0.f) && (team->resProrationRates[i] < buildRate);
+            buildRate = foundLowerProrationrate ? team->resProrationRates[i] : buildRate;
+        }
 
-        float buildRate = team->prorationRates[(int)buildDetails.prorationType];
+        // float buildRate = team->prorationRates[(int)buildDetails.prorationType];
         auto& buildProgress = (EcsMain::registry.get<BuildProgress>(buildTarget)).value;
         auto& health = (EcsMain::registry.get<SolidObject::Health>(buildTarget)).value;
         auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(buildTarget)).value;
@@ -187,12 +176,8 @@ void BuildSystem::Update() {
         float nextProgress = buildProgress + proratedBuildStep;
         float nextHealth = health + maxHealth * proratedBuildStep;
 
-        SResourcePack resBase;
-        resBase.metal = (metalUse != nullptr) ? metalUse->value : 0.f;
-        resBase.energy = (energyUse != nullptr) ? energyUse->value : 0.f;
-
-        SResourcePack resPull = resBase * buildStep;
-        SResourcePack resUsage(resBase);
+        SResourcePack resPull = buildCost * buildStep;
+        SResourcePack resUsage(buildCost);
         resUsage *= (nextProgress >= 1.f) ? (1.f - buildProgress) : proratedBuildStep;
 
         LOG("BuildSystem::%s: %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);

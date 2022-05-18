@@ -33,7 +33,9 @@ public:
     float& GetBuildSpeed(entt::entity entity) { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
     float& GetBuildProgress(entt::entity entity) { return EcsMain::registry.get<Build::BuildProgress>(entity).value; }
 
-    float GetBuildOptionalProgress(entt::entity entity) { return GetOptionalComponent<Build::BuildProgress>(entity, 1.f); }
+    float GetBuildOptionalProgress(entt::entity entity) {
+        auto comp = EcsMain::registry.try_get<Build::BuildProgress>(entity);
+        return (comp != nullptr) ? comp->value : 1.f; }
 
     void AddUnitBeingBuilt(CUnit *unit);
 

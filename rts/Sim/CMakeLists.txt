@@ -3,7 +3,6 @@
 # > find . -name "*.cpp"" | sort
 add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/EcsMain.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helpers/UnitEconomyHelper.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helpers/WindGeneratorHelper.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EconomyTask.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/BuildSystem.cpp"

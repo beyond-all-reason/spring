@@ -1,59 +1,62 @@
 #ifndef FLOW_ECONOMY_COMPONENTS_H__
 #define FLOW_ECONOMY_COMPONENTS_H__
 
+#include "Sim/Misc/Resource.h"
+
 namespace FlowEconomy {
 
-// MetalIncome (fixed/proratable)
-// EnergyIncome (fixed/proratable)
+// struct MetalFixedIncome {
+//     float value = 0.f;
+// };
 
-// MetalExpense (proratable)
-// EnergyExpense (proratable)
+// struct MetalProratableIncome {
+//     float value = 0.f;
+// };
 
-// Units
-// unconditional eco    (fixed value always applied)
+// struct MetalProratableUse {
+//     float value = 0.f;
+// };
 
-// Unit eco activated
-// conditional eco      (fixed vlaue applied on/off)
-// tidal                (fixed value always applied fir tidal gens)
-// wind                 (variable value always applied)
+// struct EnergyFixedIncome {
+//     float value = 0.f;
+// };
 
-struct MetalFixedIncome {
-    float value = 0.f;
+// struct EnergyFixedUse {
+//     float value = 0.f;
+// };
+
+// struct EnergyProratableIncome {
+//     float value = 0.f;
+// };
+
+// struct EnergyProratableUse {
+//     float value = 0.f;
+// };
+
+struct ResourceOrder {
+    SResourcePack add;
+    SResourcePack use;
 };
 
-struct MetalProratableIncome {
-    float value = 0.f;
+struct ResourceAdd : public SResourcePack {
+    using SResourcePack::operator=;
 };
 
-struct MetalProratableUse {
-    float value = 0.f;
+struct ResourceUse : public SResourcePack {
+    using SResourcePack::operator=;
 };
-
-struct EnergyFixedIncome {
-    float value = 0.f;
-};
-
-struct EnergyFixedUse {
-    float value = 0.f;
-};
-
-struct EnergyProratableIncome {
-    float value = 0.f;
-};
-
-struct EnergyProratableUse {
-    float value = 0.f;
-};
-
 
 struct BuildRate {
     float value = 0.f;
 };
 
-struct AwaitingEconomyAssignment {
-};
+// struct AwaitingEconomyAssignment {
+// };
 
 struct IsEconomyTask {
+};
+
+struct IsConditionalEconomyTask {
 };
 
 }

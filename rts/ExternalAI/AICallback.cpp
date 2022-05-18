@@ -1164,10 +1164,11 @@ bool CAICallback::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf)
 	verify();
 	const CUnit* unit = GetInLosUnit(unitId);
 	if (unit) {
-		unitResInf->energyMake = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyMake>(unit->entityReference, 0.f);
-		unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotEnergyUsage>(unit->entityReference, 0.f);
-		unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMetalMake>(unit->entityReference, 0.f);
-		unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotMetalUsage>(unit->entityReference, 0.f);
+		SResourcePack emptyResources;
+		unitResInf->energyMake = GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).energy;
+		unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).energy;
+		unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).metal;
+		unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).metal;
 		// unitResInf->energyMake = unit->resourcesMake.energy;
 		// unitResInf->energyUse  = unit->resourcesUse.energy;
 		// unitResInf->metalMake  = unit->resourcesMake.metal;

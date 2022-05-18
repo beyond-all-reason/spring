@@ -18,7 +18,10 @@ struct SResourcePack {
 	};
 
 public:
-	SResourcePack() : res1(0.0f), res2(0.0f) {}
+	SResourcePack() {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = 0.0f;
+	}
 	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
 	CR_DECLARE_STRUCT(SResourcePack)
 
@@ -91,6 +94,13 @@ public:
 		}
 		return out;
 	}
+
+	// void operator=(const SResourcePack& other) {
+	// 	for (int i = 0; i < MAX_RESOURCES; ++i) {
+	// 		res[i] = other.res[i];
+	// 	}
+	// 	//return *this;
+	// }
 
 	SResourcePack& operator+=(const SResourcePack& other) {
 		for (int i = 0; i < MAX_RESOURCES; ++i) {

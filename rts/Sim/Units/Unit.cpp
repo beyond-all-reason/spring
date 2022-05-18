@@ -329,19 +329,28 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	unitSystem.AddUnit(this);
 
-	if (unitDef->metalMake != 0.f || unitDef->energyMake != 0.f) {
+	if (unitDef->metalMake > 0.f || unitDef->energyMake > 0.f) {
 		auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 		EcsMain::registry.emplace<Units::MakeResourcesEconomyTaskRef>(entityReference, economyTaskId);
 
-		if (unitDef->metalMake > 0.f)
-			EcsMain::registry.emplace<FlowEconomy::MetalFixedIncome>(economyTaskId, unitDef->metalMake);
-		else if (unitDef->metalMake < 0.f)
-			EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(economyTaskId, (-unitDef->metalMake));
+		SResourcePack newRes;
+		newRes.metal = (unitDef->metalMake > 0.f) ? unitDef->metalMake : 0.f;
+		newRes.energy = (unitDef->energyMake > 0.f) ? unitDef->energyMake : 0.f;
 
-		if (unitDef->energyMake > 0.f)
-			EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(economyTaskId, unitDef->energyMake);
-		else if (unitDef->energyMake < 0.f)
-			EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(economyTaskId, (-unitDef->energyMake));
+		EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(economyTaskId, newRes);
+	}
+
+	if (unitDef->metalMake < 0.f || unitDef->energyMake < 0.f) {
+		auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+		EcsMain::registry.emplace<Units::MakeDrainResourcesEconomyTaskRef>(entityReference, economyTaskId);
+
+		SResourcePack newRes;
+		newRes.metal = (unitDef->metalMake < 0.f) ? (-unitDef->metalMake) : 0.f;
+		newRes.energy = (unitDef->energyMake < 0.f) ? (-unitDef->energyMake) : 0.f;
+
+		EcsMain::registry.emplace<FlowEconomy::ResourceUse>(economyTaskId, newRes);
+		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(economyTaskId);
+		LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], economyTaskId);
 	}
 
 	if (unitDef->selfdExpWeaponDef != nullptr)
@@ -2134,7 +2143,7 @@ bool CUnit::UseMetal(float metal)
 	myTeam->resPull.metal += metal;
 
 	if (myTeam->UseMetal(metal)) {
-		EcsMain::registry.get<UnitEconomy::MetalCurrentUsage>(entityReference).value += metal;
+		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference).metal += metal;
 		//resourcesUseI.metal += metal;
 		return true;
 	}
@@ -2149,7 +2158,7 @@ void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 		return;
 	}
 
-	EcsMain::registry.get<UnitEconomy::MetalCurrentMake>(entityReference).value += metal;
+	EcsMain::registry.get<UnitEconomy::ResourcesCurrentMake>(entityReference).metal += metal;
 	//resourcesMakeI.metal += metal;
 	teamHandler.Team(team)->AddMetal(metal, useIncomeMultiplier);
 }
@@ -2166,7 +2175,7 @@ bool CUnit::UseEnergy(float energy)
 	myTeam->resPull.energy += energy;
 
 	if (myTeam->UseEnergy(energy)) {
-		EcsMain::registry.get<UnitEconomy::EnergyCurrentUsage>(entityReference).value += energy;
+		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference).energy += energy;
 		//resourcesUseI.energy += energy;
 		return true;
 	}
@@ -2180,7 +2189,7 @@ void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return;
 	}
-	EcsMain::registry.get<UnitEconomy::EnergyCurrentMake>(entityReference).value += energy;
+	EcsMain::registry.get<UnitEconomy::ResourcesCurrentMake>(entityReference).energy += energy;
 	//resourcesMakeI.energy += energy;
 	teamHandler.Team(team)->AddEnergy(energy, useIncomeMultiplier);
 }
@@ -2233,8 +2242,7 @@ bool CUnit::UseResources(const SResourcePack& pack)
 	myTeam->resPull += pack;
 
 	if (myTeam->UseResources(pack)) {
-		EcsMain::registry.get<UnitEconomy::EnergyCurrentUsage>(entityReference).value += pack.energy;
-		EcsMain::registry.get<UnitEconomy::MetalCurrentUsage>(entityReference).value += pack.metal;
+		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference) += pack;
 		//resourcesUseI += pack;
 		return true;
 	}
@@ -2249,8 +2257,7 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return true;
 	}*/
-	EcsMain::registry.get<UnitEconomy::EnergyCurrentMake>(entityReference).value += pack.energy;
-	EcsMain::registry.get<UnitEconomy::MetalCurrentMake>(entityReference).value += pack.metal;
+	EcsMain::registry.get<UnitEconomy::ResourcesCurrentMake>(entityReference) += pack;
 	//resourcesMakeI += pack;
 	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
 }
@@ -2365,6 +2372,59 @@ bool CUnit::IssueResourceOrder(SResourceOrder* order)
 /******************************************************************************/
 /******************************************************************************/
 
+void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, float resAddAmount, int resUseType, int resAddType) {
+	if (resUseAmount != 0.f || resAddAmount != 0.f){
+		SResourcePack zeroResources;
+
+		if (resAddAmount <= 0.f) {
+			// energy use, metal + energy use
+			{
+				auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+				EcsMain::registry.emplace<FlowEconomy::IsConditionalEconomyTask>(newEconomyTaskEntity);
+
+				SResourcePack use;
+				use[resAddType] = (-resAddAmount);
+				if (resUseAmount > 0.f)
+					use[resUseType] = resUseAmount;
+
+				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
+				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
+				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], newEconomyTaskEntity);
+			}
+			// fixed metal add
+			if (resUseAmount < 0.f)
+			{
+				auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+				EcsMain::registry.emplace<FlowEconomy::IsConditionalEconomyTask>(newEconomyTaskEntity);
+
+				SResourcePack add;
+				add[resUseType] = (-resUseAmount);
+				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
+			}
+		}
+		else {
+			auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			EcsMain::registry.emplace<FlowEconomy::IsConditionalEconomyTask>(newEconomyTaskEntity);
+
+			SResourcePack use;
+			SResourcePack add;
+			add[resAddType] = resAddAmount;
+			if (resUseAmount > 0.f)
+				use[resUseType] = resUseAmount;
+			else
+				add[resUseType] = (-resUseAmount);
+
+			if (!add.empty())
+				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
+			if (!use.empty()) {
+				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
+				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
+				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], newEconomyTaskEntity);
+			}
+		}
+	}
+}
+
 void CUnit::Activate()
 {
 	if (activated)
@@ -2381,78 +2441,13 @@ void CUnit::Activate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		if (resourcesCondUse.metal != 0.f || resourcesCondMake.energy != 0.f){
-			auto conditionalMetalUseEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
-			EcsMain::registry.emplace<Units::ConditionalMetalUseEconomyTaskRef>(entityReference, conditionalMetalUseEconomyTaskId);
-
-			if (resourcesCondUse.metal < 0.f)
-				EcsMain::registry.emplace<FlowEconomy::MetalFixedIncome>(conditionalMetalUseEconomyTaskId, (-resourcesCondUse.metal));
-			else
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(conditionalMetalUseEconomyTaskId, resourcesCondUse.metal);
-
-			LOG("%s: %d: ACTIVATE conditional metal usage = %f", __func__, (int)conditionalMetalUseEconomyTaskId, resourcesCondUse.metal);
-
-			if (resourcesCondMake.energy < 0.f) {
-				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(conditionalMetalUseEconomyTaskId, (-resourcesCondMake.energy));
-			}
-			else {
-				EcsMain::registry.emplace<FlowEconomy::EnergyProratableIncome>(conditionalMetalUseEconomyTaskId, resourcesCondMake.energy);
-				LOG("%s: %d: ACTIVATE conditonal ebergy production = %f", __func__, (int)conditionalMetalUseEconomyTaskId, resourcesCondMake.energy);
-			}
-		}
-		if (resourcesCondUse.energy != 0.f || resourcesCondMake.metal != 0.f) {
-			auto conditionalEnergyUseEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
-			EcsMain::registry.emplace<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference, conditionalEnergyUseEconomyTaskId);
-
-			if (resourcesCondUse.energy < 0.f)
-				EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(conditionalEnergyUseEconomyTaskId, (-resourcesCondUse.energy));
-			else
-				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(conditionalEnergyUseEconomyTaskId, resourcesCondUse.energy);
-
-			LOG("%s: %d: ACTIVATE conditional energy usage = %f", __func__, (int)conditionalEnergyUseEconomyTaskId, resourcesCondUse.energy);
-
-			if (resourcesCondMake.metal < 0.f) {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(conditionalEnergyUseEconomyTaskId, (-resourcesCondMake.metal));
-			}
-			else {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(conditionalEnergyUseEconomyTaskId, resourcesCondMake.metal);
-				LOG("%s: %d: ACTIVATE conditonal ebergy production = %f", __func__, (int)conditionalEnergyUseEconomyTaskId, resourcesCondMake.metal);
-			}
-		}
+		AddProratedEconomyTask(entityReference, resourcesCondUse.metal, resourcesCondMake.energy, 0, 1);
+		AddProratedEconomyTask(entityReference, resourcesCondUse.energy, resourcesCondMake.metal, 1, 0);
 
 		auto metalIncome = unitDef->makesMetal;
-		if (unitDef->extractsMetal > 0.f) metalIncome += metalExtract;
-
-		if (unitDef->energyUpkeep != 0.f || metalIncome != 0.f) {
-			auto energyUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
-			EcsMain::registry.emplace<Units::EnergyUpKeepEconomyTaskRef>(entityReference, energyUpkeepEconomyTaskId);
-
-			if (unitDef->energyUpkeep < 0.f)
-				EcsMain::registry.emplace<FlowEconomy::EnergyFixedIncome>(energyUpkeepEconomyTaskId, (-unitDef->energyUpkeep));
-			else
-				EcsMain::registry.emplace<FlowEconomy::EnergyProratableUse>(energyUpkeepEconomyTaskId, unitDef->energyUpkeep);
-
-			LOG("%s: %d: ACTIVATE energyUpkeep = %f", __func__, (int)energyUpkeepEconomyTaskId, unitDef->energyUpkeep);
-
-			if (metalIncome < 0.f) {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(energyUpkeepEconomyTaskId, (-metalIncome));
-			}
-			else {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(energyUpkeepEconomyTaskId, metalIncome);
-				LOG("%s: %d: ACTIVATE metalmaking = %f", __func__, (int)energyUpkeepEconomyTaskId, metalIncome);
-			}
-		}
-
-		if (unitDef->metalUpkeep != 0.f){
-			auto metalUpkeepEconomyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
-			EcsMain::registry.emplace<Units::MetalUpKeepEconomyTaskRef>(entityReference, metalUpkeepEconomyTaskId);
-
-			if (unitDef->metalUpkeep > 0.f) {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableUse>(metalUpkeepEconomyTaskId, unitDef->metalUpkeep);
-			} else {
-				EcsMain::registry.emplace<FlowEconomy::MetalProratableIncome>(metalUpkeepEconomyTaskId, (-unitDef->metalUpkeep));
-			}
-		}
+		metalIncome += (unitDef->extractsMetal > 0.f) ? metalExtract : 0.f;
+		AddProratedEconomyTask(entityReference, unitDef->energyUpkeep, metalIncome, 1, 0);
+		AddProratedEconomyTask(entityReference, unitDef->metalUpkeep, 0.f, 0, 1);
 
 		if (unitDef->windGenerator > 0.0f) {
 			WindGeneratorHelper::ActivateGenerator(this);
@@ -2477,48 +2472,14 @@ void CUnit::Deactivate()
 
 	if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
 	{
-		{
-			auto conditionalMetalUseTaskComp = EcsMain::registry.try_get<Units::ConditionalMetalUseEconomyTaskRef>(entityReference);
-			if (conditionalMetalUseTaskComp != nullptr){
-				EconomyTaskUtil::DeleteUnitEconomyTask(conditionalMetalUseTaskComp->value);
-				EcsMain::registry.remove<Units::ConditionalMetalUseEconomyTaskRef>(entityReference);
+		EconomyTaskUtil::IterateAllUnitEconomyTasks(entityReference,
+			[](entt::entity task) {
+				if (EcsMain::registry.all_of<FlowEconomy::IsConditionalEconomyTask>(task))
+					EconomyTaskUtil::DeleteUnitEconomyTask(task);
+			});
 
-				LOG("%s: %d: DEACTIVATE conditional metal use", __func__, gs->frameNum);
-				LOG("%s: %d: DEACTIVATE conditional energy prod", __func__, gs->frameNum);
-			}
-		}
-		{
-			auto conditionalEnergyUseTaskComp = EcsMain::registry.try_get<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference);
-			if (conditionalEnergyUseTaskComp != nullptr){
-				EconomyTaskUtil::DeleteUnitEconomyTask(conditionalEnergyUseTaskComp->value);
-				EcsMain::registry.remove<Units::ConditionalEnergyUseEconomyTaskRef>(entityReference);
-
-				LOG("%s: %d: DEACTIVATE conditional energy use", __func__, gs->frameNum);
-				LOG("%s: %d: DEACTIVATE conditional metal prod", __func__, gs->frameNum);
-			}
-		}
-		{
-			auto energyUpkeepTaskComp = EcsMain::registry.try_get<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
-			if (energyUpkeepTaskComp != nullptr){
-				EconomyTaskUtil::DeleteUnitEconomyTask(energyUpkeepTaskComp->value);
-				EcsMain::registry.remove<Units::EnergyUpKeepEconomyTaskRef>(entityReference);
-
-				LOG("%s: %d: DEACTIVATE energyUse", __func__, gs->frameNum);
-				LOG("%s: %d: DEACTIVATE metalProd", __func__, gs->frameNum);
-			}
-		}
-		{
-			auto metalUpkeepTaskComp = EcsMain::registry.try_get<Units::MetalUpKeepEconomyTaskRef>(entityReference);
-			if (metalUpkeepTaskComp != nullptr){
-				EconomyTaskUtil::DeleteUnitEconomyTask(metalUpkeepTaskComp->value);
-				EcsMain::registry.remove<Units::MetalUpKeepEconomyTaskRef>(entityReference);
-
-				LOG("%s: %d: DEACTIVATE metalUpkeep", __func__, gs->frameNum);
-			}
-		}
-		if (unitDef->windGenerator > 0.0f) {
+		if (unitDef->windGenerator > 0.0f)
 			WindGeneratorHelper::DeactivateGenerator(this);
-		}
 	}
 }
 
