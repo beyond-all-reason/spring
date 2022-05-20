@@ -37,7 +37,6 @@
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
-#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
 #include "Sim/Ecs/Helpers/WindGeneratorHelper.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
@@ -45,6 +44,7 @@
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -55,7 +55,6 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
@@ -1078,16 +1077,18 @@ void CUnit::SlowUpdate()
 			UseMetal(unitDef->metalUpkeep * 0.5f);
 
 			if (unitDef->windGenerator > 0.0f) {
-				if (envResourceSystem.GetCurrentWindStrength() > unitDef->windGenerator) {
+				auto currentWindStrength = EnvResources::envResourceUtils.GetCurrentWindStrength();
+				if (currentWindStrength > unitDef->windGenerator) {
 					AddEnergy(unitDef->windGenerator * 0.5f);
 				} else {
-					AddEnergy(envResourceSystem.GetCurrentWindStrength() * 0.5f);
+					AddEnergy(currentWindStrength * 0.5f);
 				}
 			}
 		}
 
 		// FIXME: tidal part should be under "if (activated)"?
-		AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResourceSystem.GetCurrentTidalStrength()) * 0.5f);
+		auto currentTidalStrength = EnvResources::envResourceUtils.GetCurrentTidalStrength();
+		AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * currentTidalStrength) * 0.5f);
 	}
 
 	if (health < maxHealth) {

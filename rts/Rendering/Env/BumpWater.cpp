@@ -23,7 +23,6 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/TextureAtlas.h"
-// #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "System/bitops.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FastMath.h"

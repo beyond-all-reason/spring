@@ -13,7 +13,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -125,7 +125,8 @@ static void GetDecoyResources(const CUnit* unit,
 
 	mMake += ud->metalMake;
 	eMake += ud->energyMake;
-	eMake += (ud->tidalGenerator * envResourceSystem.GetCurrentTidalStrength() * (ud->tidalGenerator > 0.0f));
+	auto currentTidalStrength = EnvResources::envResourceUtils.GetCurrentTidalStrength();
+	eMake += (ud->tidalGenerator * currentTidalStrength * (ud->tidalGenerator > 0.0f));
 
 	bool active = ud->activateWhenBuilt;
 	if (rd->onoffable && ud->onoffable) {
@@ -142,10 +143,11 @@ static void GetDecoyResources(const CUnit* unit,
 		mUse += ud->metalUpkeep;
 
 		if (ud->windGenerator > 0.0f) {
-			if (envResourceSystem.GetCurrentWindStrength() > ud->windGenerator) {
+			auto currentWindStrength = EnvResources::envResourceUtils.GetCurrentWindStrength();
+			if (currentWindStrength > ud->windGenerator) {
 				eMake += ud->windGenerator;
 			} else {
-				eMake += envResourceSystem.GetCurrentWindStrength();
+				eMake += currentWindStrength;
 			}
 		}
 		eUse += ud->energyUpkeep;

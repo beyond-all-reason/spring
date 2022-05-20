@@ -19,7 +19,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
@@ -147,7 +147,7 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 
 	updateBuffer->shadowDensity = float4{ sunLighting->groundShadowDensity, sunLighting->modelShadowDensity, 0.0, 0.0 };
 
-	updateBuffer->windInfo = float4{ envResourceSystem.GetCurrentWindVec(), envResourceSystem.GetCurrentWindStrength() };
+	updateBuffer->windInfo = float4{ EnvResources::envResourceUtils.GetCurrentWindVec(), EnvResources::envResourceUtils.GetCurrentWindStrength() };
 
 	updateBuffer->mouseScreenPos = float2{
 		static_cast<float>(mouse->lastx - globalRendering->viewPosX),

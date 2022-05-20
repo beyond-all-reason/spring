@@ -9,12 +9,12 @@
 
 
 struct SResourcePack {
-	static const int MAX_RESOURCES = 2;
+	static constexpr int MAX_RESOURCES = 4;
 
 	union {
 		float res[MAX_RESOURCES];
 		struct { float metal, energy; };
-		struct { float res1, res2; };
+		struct { float res1, res2, res3, res4; };
 	};
 
 public:

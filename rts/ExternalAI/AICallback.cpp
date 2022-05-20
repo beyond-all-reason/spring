@@ -25,7 +25,7 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -936,19 +936,19 @@ float CAICallback::GetExtractorRadius() const {
 }
 
 float CAICallback::GetMinWind() const {
-	return envResourceSystem.GetMinWindStrength();
+	return EnvResources::envResourceUtils.GetMinWindStrength();
 }
 
 float CAICallback::GetMaxWind() const {
-	return envResourceSystem.GetMaxWindStrength();
+	return EnvResources::envResourceUtils.GetMaxWindStrength();
 }
 
 float CAICallback::GetCurWind() const {
-	return envResourceSystem.GetCurrentWindStrength();
+	return EnvResources::envResourceUtils.GetCurrentWindStrength();
 }
 
 float CAICallback::GetTidalStrength() const {
-	return envResourceSystem.GetCurrentTidalStrength();
+	return EnvResources::envResourceUtils.GetCurrentTidalStrength();
 }
 
 float CAICallback::GetGravity() const {

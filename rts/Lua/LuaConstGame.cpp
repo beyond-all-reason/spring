@@ -13,7 +13,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/Units/UnitHandler.h"
@@ -42,8 +42,8 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxUnits", unitHandler.MaxUnits());
 
 		// NB: not constants
-		LuaPushNamedNumber(L, "windMin" , envResourceSystem.GetMinWindStrength());
-		LuaPushNamedNumber(L, "windMax" , envResourceSystem.GetMaxWindStrength());
+		LuaPushNamedNumber(L, "windMin" , EnvResources::envResourceUtils.GetMinWindStrength());
+		LuaPushNamedNumber(L, "windMax" , EnvResources::envResourceUtils.GetMaxWindStrength());
 
 		// map-damage; enabled iff !mapInfo->map.notDeformable
 		LuaPushNamedBool(L, "mapDamage", !mapDamage->Disabled());

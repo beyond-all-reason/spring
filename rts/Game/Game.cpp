@@ -69,6 +69,7 @@
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -653,9 +654,8 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
 
-	envResourceSystem.LoadTidal(mapInfo->map.tidalStrength);
-	envResourceSystem.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
-
+	EnvResources::envResourceUtils.LoadTidal(mapInfo->map.tidalStrength);
+	EnvResources::envResourceUtils.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
 
 	inMapDrawerModel = new CInMapDrawModel();
 	inMapDrawer = new CInMapDraw();

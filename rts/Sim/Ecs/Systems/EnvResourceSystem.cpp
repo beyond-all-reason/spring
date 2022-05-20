@@ -1,10 +1,8 @@
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
-//#include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 
-#include "Sim/Ecs/Helpers/UnitEconomyHelper.h"
 
 #include "UnitSystem.h"
 #include "EnvResourceSystem.h"
@@ -12,28 +10,15 @@
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 
-CR_BIND(EnvResourceSystem, )
-
-CR_REG_METADATA(EnvResourceSystem, (
-	CR_MEMBER(curTidalStrength),
-	CR_MEMBER(curWindStrength),
-	CR_MEMBER(minWindStrength),
-	CR_MEMBER(maxWindStrength),
-
-	CR_MEMBER(curWindVec),
-	CR_MEMBER(curWindDir),
-
-	CR_MEMBER(newWindVec),
-	CR_MEMBER(oldWindVec),
-
-	CR_MEMBER(windDirTimer)
-))
+using namespace SystemGlobals;
 
 EnvResourceSystem envResourceSystem;
 
@@ -42,79 +27,70 @@ using namespace EnvEconomy;
 
 void EnvResourceSystem::Init()
 {
-	curTidalStrength = 0.0f;
-	curWindStrength = 0.0f;
-    newWindStrength = 0.0f;
-	minWindStrength = 0.0f;
-	maxWindStrength = 100.0f;
-
-	curWindDir = RgtVector;
-	curWindVec = ZeroVector;
-	newWindVec = ZeroVector;
-	oldWindVec = ZeroVector;
-
-	windDirTimer = 0;
+    systemGlobals.InitSystemComponent<EnvResourceComponent>();
 }
 
 void EnvResourceSystem::Update()
 {
     SCOPED_TIMER("ECS::EnvResourceSystem::Update");
 
+    auto& comp = systemGlobals.GetSystemComponent<EnvResourceComponent>();
+
 	// zero-strength wind does not need updates
-	if (maxWindStrength <= 0.0f)
+	if (comp.maxWindStrength <= 0.0f)
 		return;
 
 	if ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == WIND_DIRECTION_TICK) {
-        windDirTimer = 0;
-		UpdateWindDirection();
+        comp.windDirTimer = 0;
+		UpdateWindDirection(comp);
     }
     else {
-        windDirTimer++;
-        UpdateWindStrength();
+        comp.windDirTimer++;
+        UpdateWindStrength(comp);
     }
 }
 
-void EnvResourceSystem::UpdateWindDirection()
+void EnvResourceSystem::UpdateWindDirection(EnvResourceComponent& comp)
 {
-    oldWindVec = curWindVec;
-    newWindVec = oldWindVec;
+    comp.oldWindVec = comp.curWindVec;
+    comp.newWindVec = comp.oldWindVec;
 
     // generate new wind direction
     float newStrength = 0.0f;
 
     do {
-        newWindVec.x -= (gsRNG.NextFloat() - 0.5f) * maxWindStrength;
-        newWindVec.z -= (gsRNG.NextFloat() - 0.5f) * maxWindStrength;
-        newStrength = newWindVec.Length();
+        comp.newWindVec.x -= (gsRNG.NextFloat() - 0.5f) * comp.maxWindStrength;
+        comp.newWindVec.z -= (gsRNG.NextFloat() - 0.5f) * comp.maxWindStrength;
+        newStrength = comp.newWindVec.Length();
     } while (newStrength == 0.0f);
 
     // normalize and clamp s.t. minWindStrength <= strength <= maxWindStrength
-    newWindVec /= newStrength;
-    newWindVec *= (newStrength = Clamp(newStrength, minWindStrength, maxWindStrength));
-    newWindStrength = newStrength;
+    comp.newWindVec /= newStrength;
+    comp.newWindVec *= (newStrength = Clamp(newStrength, comp.minWindStrength, comp.maxWindStrength));
+    comp.newWindStrength = newStrength;
 
     auto group = EcsMain::registry.group<WindGenerator>(entt::get<UnitId>);
     for (auto entity : group) {
         auto unitId = group.get<UnitId>(entity).value;
         auto unit = (unitHandler.GetUnit(unitId));
-        unit->UpdateWind(newWindVec.x, newWindVec.z, newWindStrength);
+        unit->UpdateWind(comp.newWindVec.x, comp.newWindVec.z, comp.newWindStrength);
 
         //LOG("%s: updated dir existing generator %d", __func__, unitId);
     }
 }
 
-void EnvResourceSystem::UpdateWindStrength()
+void EnvResourceSystem::UpdateWindStrength(EnvResourceComponent& comp)
 {
-    const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_DIRECTION_UPDATE_RATE));
+    const float mod = smoothstep(0.0f, 1.0f, comp.windDirTimer / float(WIND_DIRECTION_UPDATE_RATE));
 
     // blend between old & new wind directions
     // note: generators added on simframes when timer is 0
     // do not receive a snapshot of the blended direction
-    curWindVec = mix(oldWindVec, newWindVec, mod);
-    curWindStrength = curWindVec.LengthNormalize();
+    comp.curWindVec = mix(comp.oldWindVec, comp.newWindVec, mod);
+    comp.curWindStrength = comp.curWindVec.LengthNormalize();
 
-    curWindDir = curWindVec;
-    curWindVec = curWindDir * (curWindStrength = Clamp(curWindStrength, minWindStrength, maxWindStrength));
+    comp.curWindDir = comp.curWindVec;
+    comp.curWindVec = comp.curWindDir * (comp.curWindStrength = Clamp(comp.curWindStrength, comp.minWindStrength, comp.maxWindStrength));
 
     //LOG("%s: wind strength: %f<-%d = %f", __func__, mod, windDirTimer, curWindStrength);
 
@@ -125,21 +101,14 @@ void EnvResourceSystem::UpdateWindStrength()
 
         // direction
         auto unit = (unitHandler.GetUnit(unitId));
-        unit->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+        unit->UpdateWind(comp.curWindDir.x, comp.curWindDir.z, comp.curWindStrength);
 
         EcsMain::registry.remove<NewWindGenerator>(entity);
         //LOG("%s: updated new dir generator %d", __func__, unitId);
     }
 }
 
-void EnvResourceSystem::LoadWind(float minStrength, float maxStrength)
-{
-	minWindStrength = std::min(minStrength, maxStrength);
-	maxWindStrength = std::max(minStrength, maxStrength);
 
-	curWindVec = mix(curWindDir * GetAverageWindStrength(), RgtVector * GetAverageWindStrength(), curWindDir == RgtVector);
-	oldWindVec = curWindVec;
-}
 /*
 bool EnvResourceSystem::AddGenerator(CUnit* unit)
 {
@@ -184,7 +153,3 @@ bool EnvResourceSystem::DelGenerator(CUnit* unit)
     }
     return entityIsValid;
 }*/
-
-bool EnvResourceSystem::IsWindAboutToChange() const {
-    return ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == (WIND_DIRECTION_UPDATE_RATE - 1));
-}

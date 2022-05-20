@@ -5,6 +5,8 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/EcsMain.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helpers/WindGeneratorHelper.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EconomyTask.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EnvResourceUtils.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SystemGlobalUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/BuildSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/EnvEconomySystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/EnvResourceSystem.cpp"

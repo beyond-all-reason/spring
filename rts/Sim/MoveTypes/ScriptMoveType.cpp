@@ -5,7 +5,7 @@
 
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitTypes/Building.h"
 #include "System/EventHandler.h"
@@ -84,7 +84,7 @@ bool CScriptMoveType::Update()
 		// NOTE: only gravitational acc. is allowed to build up velocity
 		// NOTE: strong wind plus low gravity can cause substantial drift
 		const float3 gravVec = UpVector * (mapInfo->map.gravity * gravityFactor);
-		const float3 windVec =            (envResourceSystem.GetCurrentWindVec() * windFactor);
+		const float3 windVec =            (EnvResources::envResourceUtils.GetCurrentWindVec() * windFactor);
 		const float3 unitVec = useRelVel?
 			(owner->frontdir *  relVel.z) +
 			(owner->updir    *  relVel.y) +

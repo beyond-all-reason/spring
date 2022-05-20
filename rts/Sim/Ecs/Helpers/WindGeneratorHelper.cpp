@@ -4,14 +4,14 @@
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
 
 #include "Sim/Units/Unit.h"
 
 void WindGeneratorHelper::CreateWindGenerator(CUnit *unit){
     auto entity = unit->entityReference;
-    if (!envResourceSystem.IsWindAboutToChange())
+    if (! EnvResources::envResourceUtils.IsWindAboutToChange())
         EcsMain::registry.emplace<EnvEconomy::NewWindGenerator>(entity);
     EcsMain::registry.emplace<EnvEconomy::WindGenerator>(entity);
 }

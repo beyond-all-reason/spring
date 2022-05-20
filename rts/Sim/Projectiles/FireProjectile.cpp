@@ -12,7 +12,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/DamageArray.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Deque.h"
@@ -96,9 +96,10 @@ void CFireProjectile::Update()
 		}
 		if (!(ttl & 31)) {
 			// copy on purpose, since the below can call Lua
+			auto currentWindVec = EnvResources::envResourceUtils.GetCurrentWindVec();
 			QuadFieldQuery qfQuery;
-			quadField.GetFeaturesExact(qfQuery, emitPos + envResourceSystem.GetCurrentWindVec() * 0.7f, emitRadius * 2);
-			quadField.GetUnitsExact(qfQuery, emitPos + envResourceSystem.GetCurrentWindVec() * 0.7f, emitRadius * 2);
+			quadField.GetFeaturesExact(qfQuery, emitPos + currentWindVec * 0.7f, emitRadius * 2);
+			quadField.GetUnitsExact(qfQuery, emitPos + currentWindVec * 0.7f, emitRadius * 2);
 
 			const DamageArray fireDmg(30.0f);
 
@@ -122,7 +123,8 @@ void CFireProjectile::Update()
 			break;
 		}
 
-		pi.pos += (speed + envResourceSystem.GetCurrentWindVec() * pi.age * 0.05f + pi.posDif * 0.1f);
+		auto currentWindVec = EnvResources::envResourceUtils.GetCurrentWindVec();
+		pi.pos += (speed + currentWindVec * pi.age * 0.05f + pi.posDif * 0.1f);
 		pi.posDif *= 0.9f;
 	}
 

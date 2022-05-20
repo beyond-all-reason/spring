@@ -74,7 +74,6 @@ void FlowEconomySystem::ProcessProratableIncome() {
         SResourcePack proratedResAdd = resAdd * minProrationRate * economyMultiplier;
 
         team->resNext.income += proratedResAdd;
-        //team->resNext.expense += proratedResUse;
         team->UseResources(proratedResUse);
         team->recordFlowEcoPull(resPull);
 
@@ -119,7 +118,6 @@ void FlowEconomySystem::ProcessExpenses() {
 
         SResourcePack resPull = resUse * economyMultiplier;
         SResourcePack proratedResUse = resPull * minProrationRate;
-        //team->resNext.expense += proratedResUse;
         team->UseResources(proratedResUse);
         team->recordFlowEcoPull(resPull);
 
@@ -139,13 +137,11 @@ void FlowEconomySystem::Update() {
     LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
 
     UpdateAllTeamsEconomy();
-    // InformWaitingEntitiesEconomyIsAssigned();
 
     UpdateEconomyPredictions();
 }
 
 void FlowEconomySystem::UpdateEconomyPredictions(){
-
     ProcessExpenses();
     ProcessFixedIncome();
     ProcessProratableIncome();
@@ -181,12 +177,38 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
 
     curTeam->applyExcessToShared();
 
-    if (teamId == 0) {
-        LOG("Last snapshot: (%f, %f)", curTeam->resSnapshot.metal, curTeam->resSnapshot.energy);
-        LOG("New snapshot: (%f, %f)", curTeam->res.metal, curTeam->res.energy);
-        if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
-            LOG("Upwards Blip Detected!!!");
-    }
+    // if (teamId == 0) {
+    //     LOG("Last snapshot: (%f, %f)", curTeam->resSnapshot.metal, curTeam->resSnapshot.energy);
+    //     LOG("New snapshot: (%f, %f)", curTeam->res.metal, curTeam->res.energy);
+    //     if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
+    //         LOG("Upwards Blip Detected!!!");
+    // }
+
+    // TODO:
+    // singleton components
+    // eco draw from building -- switch to dependencies
+    // reserve enforcement
+    // dynamic reserve
+    // SSE SresourcePack?
+    // support builders
+    // stop/start building
+    // check original eco still works
+    //  - get alt system up to support
+    // rez
+    // repair
+    // reclaim
+    // terraform
+    // check all entities are cleared at end of match
+    // save/load entities/components
+
+    // reserve
+    // resReal = resUse + resFailedUse
+    // lastResReserve = resReserve
+    // resIdeal = proration == 1.f ? resPull : supply 
+    // if resIdeal - resReal < 0.5
+    // resReserve = resIdeal
+    // else
+    // resReserve = (resReal + lastResReserve)/2, min resReal, max resIdeal
 
     curTeam->resSnapshot = curTeam->res;
     curTeam->resCurrent = curTeam->resNext;
@@ -205,7 +227,7 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     }
 
     SResourcePack proratedDemand = demand * proratedUseRates;
-    
+
     // Apply economy updates
     curTeam->flowEcoPull = SResourcePack();
     curTeam->flowEcoFullPull = SResourcePack();

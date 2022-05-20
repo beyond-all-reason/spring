@@ -4,6 +4,16 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
 
+// #include "Sim/Ecs/Components/SystemGlobalComponents.h"
+
+// struct SystemComponentTraits : public entt::component_traits<SystemGlobals::EnvResourceComponent> {
+// 	static constexpr bool in_place_delete = false;
+//     static constexpr std::size_t page_size = 1;
+// };
+
+namespace SystemGlobals {
+    struct EnvResourceComponent;
+}
 
 // TODO: save/restore components
 // save/restore entity in unit
@@ -14,47 +24,12 @@ public:
     void Init();
     void Update();
 
-	//bool AddGenerator(CUnit* u);
-	//void ActivateGenerator(CUnit* u);
-	//void DeactivateGenerator(CUnit* u);
-
-	/* Not expected to be called unless a unit loses its ability to be a wind generator */
-	//bool DelGenerator(CUnit* u);
-
-	void LoadTidal(float curStrength) { curTidalStrength = curStrength; }
-	void LoadWind(float minStrength, float maxStrength);
-
-	float GetMaxWindStrength() const { return maxWindStrength; }
-	float GetMinWindStrength() const { return minWindStrength; }
-	float GetAverageWindStrength() const { return ((minWindStrength + maxWindStrength) * 0.5f); }
-	float GetCurrentWindStrength() const { return curWindStrength; }
-	float GetCurrentTidalStrength() const { return curTidalStrength; }
-
-	const float3& GetCurrentWindVec() const { return curWindVec; }
-	const float3& GetCurrentWindDir() const { return curWindDir; }
-
-	bool IsWindAboutToChange() const;
+	// update all generators every 15 seconds
+	static constexpr int WIND_UPDATE_RATE = 15 * GAME_SPEED;
 
 private:
-	// update all generators every 15 seconds
-	//static constexpr int WIND_UPDATE_RATE = 15 * GAME_SPEED;
-
-	float curTidalStrength = 0.0f;
-	float curWindStrength = 0.0f;
-	float newWindStrength = 0.0f;
-
-	float minWindStrength = 0.0f;
-	float maxWindStrength = 0.0f;
-
-	float3 curWindDir;
-	float3 curWindVec; // curWindDir * curWindStrength
-	float3 newWindVec;
-	float3 oldWindVec;
-
-	int windDirTimer = 0;
-
-    void UpdateWindDirection();
-    void UpdateWindStrength();
+    void UpdateWindDirection(SystemGlobals::EnvResourceComponent& comp);
+    void UpdateWindStrength(SystemGlobals::EnvResourceComponent& comp);
 };
 
 extern EnvResourceSystem envResourceSystem;
