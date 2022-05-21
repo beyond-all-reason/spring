@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "KeySet.h"
-#include "KeySetSC.h"
 #include "InputReceiver.h"
 #include "MouseHandler.h"
 #include "Game/Camera.h"
@@ -37,7 +36,6 @@ public:
 
 	bool AboveGui(int x, int y);
 	bool KeyPressed(int key, bool isRepeat);
-	bool KeyPressedSC(int keyScanCode, int keySym, bool isRepeat);
 	bool KeyReleased(int key);
 	bool MousePress(int x, int y, int button);
 	void MouseRelease(int x, int y, int button)
@@ -101,7 +99,6 @@ public:
 	bool SetActiveCommand(int cmdIndex, bool rightMouseButton);
 	bool SetActiveCommand(int cmdIndex, int button, bool leftMouseButton, bool rightMouseButton, bool alt, bool ctrl, bool meta, bool shift);
 	bool SetActiveCommand(const Action& action, const CKeySet& ks, int actionIndex);
-	bool SetActiveCommandSC(const Action& action, const CKeySetSC& ks, int actionIndex);
 
 	void SetDrawSelectionInfo(bool dsi) { drawSelectionInfo = dsi; }
 	bool GetDrawSelectionInfo() const { return drawSelectionInfo; }
@@ -248,7 +245,6 @@ private:
 	};
 	Box buttonBox;
 	CKeySet lastKeySet;
-	CKeySetSC lastKeySetSC;
 
 	struct IconInfo {
 		int commandsID; // index into commands list (or -1)

@@ -16,8 +16,8 @@ class CLuaInputReceiver : public CInputReceiver
 
 		static CLuaInputReceiver* GetInstace();
 
-		bool KeyPressedSC(int keyScanCode, int keySym, bool isRepeat);
-		bool KeyReleasedSC(int keyScanCode, int keySym);
+		bool KeyPressed(int key, bool isRepeat);
+		bool KeyReleased(int key);
 
 		bool MousePress(int x, int y, int button);
 		void MouseMove(int x, int y, int dx, int dy, int button);
