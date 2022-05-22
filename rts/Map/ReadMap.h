@@ -85,6 +85,13 @@ public:
 
 	/// creg serialize callback
 	void Serialize(creg::ISerializer* s);
+
+private:
+	void SerializeMapChangesBeforeMatch(creg::ISerializer* s);
+	void SerializeMapChangesDuringMatch(creg::ISerializer* s);
+	void SerializeTypeMap(creg::ISerializer* s);
+
+public:
 	void PostLoad();
 
 	void InitHeightMapDigestVectors(const int2 losMapSize);
@@ -156,6 +163,7 @@ public:
 
 
 	/// synced only
+	const float* GetMapFileHeightMapSynced() const { return &mapFileHeightMap[0]; }
 	const float* GetOriginalHeightMapSynced() const { return &originalHeightMap[0]; }
 	const float* GetCenterHeightMapSynced() const { return &centerHeightMap[0]; }
 	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
@@ -210,8 +218,11 @@ public:
 	void UpdateHeightBounds();
 
 	bool GetHeightMapUpdated() const { return hmUpdated; }
+
+	void Finalize();
 private:
 	void InitHeightBounds();
+	void LoadOriginalHeightMapAndChecksum();
 	void UpdateHeightBounds(int syncFrame);
 
 	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize);
@@ -235,6 +246,7 @@ protected:
 
 	// note: intentionally declared static, s.t. repeated reloading to the same
 	// (or any smaller) map does not fragment the heap which invites bad_alloc's
+	static std::vector<float> mapFileHeightMap;			// raw heightMap unmodified from the map file
 	static std::vector<float> originalHeightMap;        //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, does NOT update on terrain deformation]
 	static std::vector<float> centerHeightMap;          //< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
 	static std::array<std::vector<float>, numHeightMipMaps - 1> mipCenterHeightMaps;
