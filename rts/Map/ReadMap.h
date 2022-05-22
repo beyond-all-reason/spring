@@ -196,6 +196,9 @@ public:
 	float SetHeight(const int idx, const float h, const int add = 0);
 	float AddHeight(const int idx, const float a);
 
+	/// These will not modify the current heightmap, only the original
+	float SetOriginalHeight(const int idx, const float h, const int add = 0);
+	float AddOriginalHeight(const int idx, const float a);
 
 	float GetInitMinHeight() const { return initHeightBounds.x; }
 	float GetCurrMinHeight() const { return currHeightBounds.x; }
@@ -243,6 +246,7 @@ protected:
 	std::vector<float>* heightMapSyncedPtr = nullptr;      //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, updates on terrain deformation]
 	std::vector<float>* heightMapUnsyncedPtr = nullptr;    //< size: (mapx+1)*(mapy+1) (per vertex) [UNSYNCED]
 
+	std::vector<float>* originalHeightMapPtr = nullptr;
 
 	// note: intentionally declared static, s.t. repeated reloading to the same
 	// (or any smaller) map does not fragment the heap which invites bad_alloc's
@@ -316,7 +320,16 @@ inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
 	return (heightRef = newHeight);
 }
 
+inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
+inline float CReadMap::SetOriginalHeight(const int idx, const float h, const int add) {
+	float& heightRef = (*originalHeightMapPtr)[idx];
 
+	// add=0 <--> x = x*0 + h =   h
+	// add=1 <--> x = x*1 + h = x+h
+	float newHeight = heightRef * add + h;
+	hmUpdated |= (newHeight != heightRef);
+	return (heightRef = newHeight);
+}
 
 
 static inline float3 CornerSqrToPosRaw(const float* hm, int sqx, int sqz) { return {sqx * SQUARE_SIZE * 1.0f, hm[(sqz * mapDims.mapxp1) + sqx], sqz * SQUARE_SIZE * 1.0f}; }

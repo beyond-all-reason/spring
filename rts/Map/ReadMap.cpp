@@ -68,6 +68,7 @@ CR_REG_METADATA(CReadMap, (
 
 	CR_IGNORED(heightMapSyncedPtr),
 	CR_IGNORED(heightMapUnsyncedPtr),
+	CR_IGNORED(originalHeightMapPtr),
 
 	/*
 	CR_IGNORED(originalHeightMap),
@@ -364,6 +365,8 @@ void CReadMap::Initialize()
 	mipPointerHeightMaps.fill(nullptr);
 	mipPointerHeightMaps[0] = &centerHeightMap[0];
 
+	originalHeightMapPtr = &originalHeightMap;
+
 	for (int i = 1; i < numHeightMipMaps; i++) {
 		mipCenterHeightMaps[i - 1].clear();
 		mipCenterHeightMaps[i - 1].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
@@ -386,6 +389,7 @@ void CReadMap::Initialize()
 	// for SMF maps so indexing it is forbidden (!)
 	assert(heightMapSyncedPtr != nullptr);
 	assert(heightMapUnsyncedPtr != nullptr);
+	assert(originalHeightMapPtr != nullptr);
 
 	{
 		#ifndef USE_UNSYNCED_HEIGHTMAP
