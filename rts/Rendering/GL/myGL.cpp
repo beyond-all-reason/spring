@@ -135,7 +135,7 @@ static bool GetVideoMemInfoATI(GLint* memInfo)
 	// these are not disjoint, don't sum
 	for (uint32_t param: {/*GL_VBO_FREE_MEMORY_ATI,*/ GL_TEXTURE_FREE_MEMORY_ATI/*, GL_RENDERBUFFER_FREE_MEMORY_ATI*/}) {
 		glGetIntegerv(param, &memInfo[0]);
-		if (memInfo[2] < 0) memInfo[2] = ( 1 << 27 ) + memInfo[2]; // workaround
+		if (memInfo[2] < 0) memInfo[2] = ( 1 << 27 ) + memInfo[2]; // a workaround for AMD GPU that might return negative sizes
 		memInfo[4] += (memInfo[0] + memInfo[2]); // total main plus aux. memory free in pool
 		memInfo[5] += (memInfo[1] + memInfo[3]); // largest main plus aux. free block in pool
 	}
