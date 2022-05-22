@@ -4136,7 +4136,7 @@ int LuaSyncedCtrl::AddOriginalHeightMap(lua_State* L)
 int LuaSyncedCtrl::SetOriginalHeightMap(lua_State* L)
 {
 	if (!inOriginalHeightMap) {
-		luaL_error(L, "SetHeightMap() can only be called in SetOriginalHeightMapFunc()");
+		luaL_error(L, "SetOriginalHeightMap() can only be called in SetOriginalHeightMapFunc()");
 	}
 
 	const float xl = luaL_checkfloat(L, 1);
