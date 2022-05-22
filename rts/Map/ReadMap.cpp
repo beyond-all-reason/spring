@@ -788,10 +788,6 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize)
 
 void CReadMap::Finalize()
 {
-	// set map start height map to modified levels
-	// recalculate checksums
-	// do the checksums need to be sent out?
-
 	LoadOriginalHeightMapAndChecksum();
 }
 
