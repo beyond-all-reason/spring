@@ -1761,6 +1761,7 @@ void CGame::SimFrame() {
 
 		helper->Update();
 		readMap->Update();
+		smoothGround.UpdateSmoothMesh();
 		mapDamage->Update();
 		pathManager->Update();
 		unitHandler.Update();
