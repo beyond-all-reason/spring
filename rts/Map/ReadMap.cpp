@@ -199,31 +199,20 @@ void CReadMap::Serialize(creg::ISerializer* s)
 
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)
 {
-	      int32_t*  ichms = reinterpret_cast<      int32_t*>(const_cast<float*>(GetOriginalHeightMapSynced()));
-	const int32_t* iochms = reinterpret_cast<const int32_t*>(GetMapFileHeightMapSynced());
-
-	int32_t height;
-
-	if (s->IsWriting()) {
-		for (unsigned int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
-			height = ichms[i] ^ iochms[i];
-			s->Serialize(&height, sizeof(int32_t));
-		}
-	} else {
-		for (unsigned int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
-			s->Serialize(&height, sizeof(int32_t));
-			ichms[i] = height ^ iochms[i];
-		}
-	}
+	SerializeMapChanges(s, GetMapFileHeightMapSynced(), const_cast<float*>(GetOriginalHeightMapSynced()));
 }
 
 void CReadMap::SerializeMapChangesDuringMatch(creg::ISerializer* s)
 {
+	SerializeMapChanges(s, GetOriginalHeightMapSynced(), const_cast<float*>(GetCornerHeightMapSynced()));
+}
+
+void CReadMap::SerializeMapChanges(creg::ISerializer* s, const float* refHeightMap, float* modifiedHeightMap) {
 	// using integers so we can xor the original heightmap with the
 	// current one (affected by Lua, explosions, etc) - long runs of
 	// zeros for unchanged squares should compress significantly better.
-	      int32_t*  ichms = reinterpret_cast<      int32_t*>(const_cast<float*>(GetCornerHeightMapSynced()));
-	const int32_t* iochms = reinterpret_cast<const int32_t*>(GetOriginalHeightMapSynced());
+	      int32_t*  ichms = reinterpret_cast<      int32_t*>(modifiedHeightMap);
+	const int32_t* iochms = reinterpret_cast<const int32_t*>(refHeightMap);
 
 	int32_t height;
 
