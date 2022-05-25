@@ -443,7 +443,6 @@ void CGame::Load(const std::string& mapFileName)
 			eventHandler.CollectGarbage(true);
 
 			//needed in case pre-game terraform changed the map
-			readMap->Finalize();
 			readMap->UpdateHeightBounds();
 			pathManager->PostFinalizeRefresh();
 			LEAVE_SYNCED_CODE();

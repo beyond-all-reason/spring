@@ -222,7 +222,6 @@ public:
 
 	bool GetHeightMapUpdated() const { return hmUpdated; }
 
-	void Finalize();
 private:
 	void InitHeightBounds();
 	void LoadOriginalHeightMapAndChecksum();
@@ -308,11 +307,12 @@ private:
 extern CReadMap* readMap;
 extern MapDimensions mapDims;
 
+//#include "System/Log/ILog.h"
 
 inline float CReadMap::AddHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
 inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
 	float& heightRef = (*heightMapSyncedPtr)[idx];
-
+//LOG("%s called", __func__);
 	// add=0 <--> x = x*0 + h =   h
 	// add=1 <--> x = x*1 + h = x+h
 	float newHeight = heightRef * add + h;
@@ -320,10 +320,10 @@ inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
 	return (heightRef = newHeight);
 }
 
-inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
+inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetOriginalHeight(idx, a, 1); }
 inline float CReadMap::SetOriginalHeight(const int idx, const float h, const int add) {
 	float& heightRef = (*originalHeightMapPtr)[idx];
-
+//LOG("%s called", __func__);
 	// add=0 <--> x = x*0 + h =   h
 	// add=1 <--> x = x*1 + h = x+h
 	float newHeight = heightRef * add + h;

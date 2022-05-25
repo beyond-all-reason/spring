@@ -790,11 +790,6 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize)
 	}
 }
 
-void CReadMap::Finalize()
-{
-	LoadOriginalHeightMapAndChecksum();
-}
-
 
 void CReadMap::UpdateMipHeightmaps(const SRectangle& rect, bool initialize)
 {
