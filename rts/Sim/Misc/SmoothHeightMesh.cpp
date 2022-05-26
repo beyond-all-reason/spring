@@ -166,9 +166,9 @@ inline static void FindRadialMaximum(
 		const int endx = std::min(maxx - 1, x + winSize);
 
 		for (int i = startx; i <= endx; ++i) {
-			assert(i >= 0);
-			assert(i <= maxx);
-			assert(CGround::GetHeightReal(i * resolution, cury) <= colsMaxima[i]);
+			// assert(i >= 0);
+			// assert(i <= maxx);
+			// assert(CGround::GetHeightReal(i * resolution, cury) <= colsMaxima[i]);
 
 			maxRowHeight = std::max(colsMaxima[i], maxRowHeight);
 		}
@@ -210,7 +210,7 @@ inline static void FixRemainingMaxima(
 	const int nextrow = min.y + winSize + 1;
 	const float nextrowy = nextrow * resolution;
 
-	for (int x = 0; x <= max.x; ++x) {
+	for (int x = min.x; x <= max.x; ++x) {
 #ifdef _DEBUG
 		for (int y1 = std::max(min.y, min.y - winSize); y1 <= std::min(max.y, min.y + winSize); ++y1) {
 			assert(CGround::GetHeightReal(x * resolution, y1 * resolution) <= colsMaxima[x]);
@@ -566,11 +566,12 @@ void SmoothHeightMesh::MakeSmoothMesh()
 
 	// actually smooth with approximate Gaussian blur passes
 	for (int numBlurs = blurPassesCount; numBlurs > 0; --numBlurs) {
-
 		BlurHorizontal(max, min, max, blurSize, resolution, gaussianKernel, (numBlurs == blurPassesCount) ? maximaMesh : mesh, tempMesh); mesh.swap(tempMesh);
 		BlurVertical(max, min, max, blurSize, resolution, gaussianKernel, mesh, tempMesh); mesh.swap(tempMesh);
 	}
 
 	// <mesh> now contains the final smoothed heightmap, save it in origMesh
 	std::copy(mesh.begin(), mesh.end(), origMesh.begin());
+	//std::copy(maximaMesh.begin(), maximaMesh.end(), origMesh.begin());
+	//std::copy(maximaMesh.begin(), maximaMesh.end(), mesh.begin());
 }
