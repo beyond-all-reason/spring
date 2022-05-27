@@ -6,6 +6,8 @@
 #include <memory_resource>
 #include <vector>
 
+#include "System/type2.h"
+
 class CGround;
 
 // class CacheAlignedMemoryResource : public std::pmr::memory_resource
@@ -49,7 +51,7 @@ public:
 	// 	: maximaHeightMap(NewCacheAlignedMemoryResource())
 	// {}
 
-	void Init(float mx, float my, float res, float smoothRad);
+	void Init(int2 max, int res, int smoothRad);
 	void Kill();
 
 	float GetHeight(float x, float y);
@@ -62,7 +64,7 @@ public:
 	int GetMaxY() const { return maxy; }
 	float GetFMaxX() const { return fmaxx; }
 	float GetFMaxY() const { return fmaxy; }
-	float GetResolution() const { return resolution; }
+	float GetResolution() const { return fresolution; }
 
 	const float* GetMeshData() const { return &mesh[0]; }
 	const float* GetOriginalMeshData() const { return &origMesh[0]; }
@@ -76,8 +78,9 @@ private:
 	int maxy = 0;
 	float fmaxx = 0.0f;
 	float fmaxy = 0.0f;
-	float resolution = 0.0f;
-	float smoothRadius = 0.0f;
+	float fresolution = 0.f;
+	int resolution = 0;
+	int smoothRadius = 0;
 
 	std::vector<float> maximaMesh;
 	std::vector<float> mesh;
