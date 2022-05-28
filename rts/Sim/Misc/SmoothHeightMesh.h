@@ -52,7 +52,6 @@ private:
 	std::vector<float> tempMesh;
 	std::vector<float> origMesh;
 
-	std::vector<float> gaussianKernel;
 	std::vector<float> colsMaxima;
 	std::vector<int> maximaRows;
 
