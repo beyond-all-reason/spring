@@ -13,6 +13,8 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Log/ILog.h"
+
 SmoothHeightMesh smoothGround;
 
 
@@ -48,8 +50,8 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 	fresolution = res * SQUARE_SIZE;
 
 	resolution = res;
-	maxx = max.x / resolution; // max.x;
-	maxy = max.y / resolution; // max.y;
+	maxx = max.x / resolution;
+	maxy = max.y / resolution;
 
 	smoothRadius = std::max(1, smoothRad);
 
@@ -57,10 +59,6 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 }
 
 void SmoothHeightMesh::Kill() {
-	// if (maximaHeightMap != nullptr) {
-	// 	_mm_free(maximaHeightMap);
-	// 	maximaHeightMap = nullptr;
-	// }
 	maximaMesh.clear();
 	mesh.clear();
 	origMesh.clear();
@@ -111,20 +109,21 @@ inline static void FindMaximumColumnHeights(
 	// height per column and the corresponding row
 	for (int y = min.y; y <= std::min(max.y, min.y + winSize); ++y) {
 		for (int x = min.x; x <= max.x; ++x)  {
-			//const float curx = x * resolution;
-			//const float cury = y * resolution;
-			//const float curh = CGround::GetHeightReal(curx, cury);
 			const float curh = readMap->GetCornerHeightMapSynced()[(x + y*mapDims.mapxp1)*resolution];
 
-			if (curh > colsMaxima[x]) {
+			// LOG("%s: y:%d col:%d cur: %f", __func__, y, x, curh);
+
+			if (curh >= colsMaxima[x]) {
 				colsMaxima[x] = curh;
 				maximaRows[x] = y;
 			}
 		}
 	}
+	// for (int x = min.x; x <= max.x; ++x)
+	// 	LOG("%s: y:%d col:%d row:%d max: %f", __func__, min.y + winSize, x, maximaRows[x], colsMaxima[x]);
 }
 
-inline static void AdvanceMaximaRows(
+inline static void AdvanceMaximaRows( // really useful?
 	const int y,
 	const int minx,
 	const int maxx,
@@ -132,13 +131,9 @@ inline static void AdvanceMaximaRows(
 	const std::vector<float>& colsMaxima,
 	      std::vector<int>& maximaRows
 ) {
-	//const float cury = y * resolution;
-
 	// try to advance rows if they're equal to current maximum but are further away
 	for (int x = minx; x <= maxx; ++x) {
 		if (maximaRows[x] == (y - 1)) {
-			//const float curx = x * resolution;
-			//const float curh = CGround::GetHeightReal(curx, cury);
 			const float curh = readMap->GetCornerHeightMapSynced()[(x + y*mapDims.mapxp1)*resolution];
 
 			if (curh == colsMaxima[x]) {
@@ -148,6 +143,9 @@ inline static void AdvanceMaximaRows(
 			assert(curh <= colsMaxima[x]);
 		}
 	}
+
+	// for (int x = minx; x <= maxx; ++x)
+	// 	LOG("%s: y:%d col:%d row:%d max: %f", __func__, y, x, maximaRows[x], colsMaxima[x]);
 }
 
 
@@ -162,22 +160,39 @@ inline static void FindRadialMaximum(
 	const std::vector<float>& colsMaxima,
 	      std::vector<float>& mesh
 ) {
-	//const float cury = y * resolution;
-
 	for (int x = minx; x <= maxx; ++x) {
 		float maxRowHeight = -std::numeric_limits<float>::max();
 
 		// find current maximum within radius smoothRadius
 		// (in every column stack) along the current row
 		const int startx = std::max(x - winSize, 0);
-		const int endx = std::min(maxx, x + winSize);
+		const int endx = std::min(mapx, x + winSize);
 
-		for (int i = startx; i <= endx; ++i) {
-			// assert(i >= 0);
-			// assert(i <= maxx);
-			// assert(CGround::GetHeightReal(i * resolution, cury) <= colsMaxima[i]);
+		// for (int i = startx; i <= endx; ++i) { // SSE candidate?
+		// 	maxRowHeight = std::max(colsMaxima[i], maxRowHeight);
+		// }
 
-			maxRowHeight = std::max(colsMaxima[i], maxRowHeight);
+		const int endIdx = endx - 3;
+		__m128 best = _mm_loadu_ps(&colsMaxima[startx]);
+		for (int i = startx + 4; i < endIdx; i += 4) {
+			__m128 next = _mm_loadu_ps(&colsMaxima[i]);
+			best = _mm_max_ps(best, next);
+		}
+
+		{
+			__m128 next = _mm_loadu_ps(&colsMaxima[endIdx]);
+			best = _mm_max_ps(best, next);
+		}
+
+		{
+			// split the four values into sets of two and compare
+			__m128 bestAlt = _mm_movehl_ps(best, best);
+			best = _mm_max_ps(best, bestAlt);
+
+			// split the two values and compare
+			bestAlt = _mm_shuffle_ps(best, best, _MM_SHUFFLE(0, 0, 0, 1));
+			best = _mm_max_ss(best, bestAlt);
+			_mm_store_ss(&maxRowHeight, best);
 		}
 
 // #ifndef NDEBUG
@@ -200,12 +215,18 @@ inline static void FindRadialMaximum(
 // #endif
 
 		mesh[x + y * mapx] = maxRowHeight;
+
+		// LOG("%s: y:%d x:%d local max: %f", __func__, y, x, maxRowHeight);
+
+		// for (int x = minx; x <= maxx; ++x)
+		// 	LOG("%s: y:%d x:%d local max: %f", __func__, y, x, maxRowHeight);
 	}
 }
 
 
 
 inline static void FixRemainingMaxima(
+	const int mapy,
 	const int minx,
 	const int miny,
 	const int2 max,
@@ -215,7 +236,7 @@ inline static void FixRemainingMaxima(
 	std::vector<int>& maximaRows
 ) {
 	// fix remaining maximums after a pass
-	const int nextrow = miny + winSize + 1;
+	const int nextrow = std::min(mapy, miny + winSize + 1);
 	const int nextrowy = nextrow; // * resolution;
 
 	for (int x = minx; x <= max.x; ++x) {
@@ -230,7 +251,7 @@ inline static void FixRemainingMaxima(
 			// find a new maximum if the old one left the window
 			colsMaxima[x] = -std::numeric_limits<float>::max();
 
-			for (int y1 = std::max(0, miny - winSize + 1); y1 <= std::min(max.y, nextrow); ++y1) {
+			for (int y1 = std::max(0, (miny - winSize) + 1); y1 <= std::min(mapy, nextrow); ++y1) {
 				//const float h = CGround::GetHeightReal(curx, y1 * resolution);
 				const float h = readMap->GetCornerHeightMapSynced()[(x + y1*mapDims.mapxp1)*resolution];
 
@@ -278,7 +299,8 @@ inline static void BlurHorizontal(
 ) {
 	const int lineSize = mapSize.x;
 
-	for_mt(min.y, max.y+1, [&](const int y)
+	//for_mt(min.y, max.y+1, [&](const int y)
+	for (int y = min.y; y < max.y+1; y++)
 	{
 		float avg = 0.0f;
 		float lv = 0;
@@ -312,7 +334,7 @@ inline static void BlurHorizontal(
 			rv = mesh[std::max(0, std::min(mapSize.x-1, ri)) + y * lineSize];
 			li++; ri++;
 		}
-	});
+	}//);
 }
 
 inline static void BlurVertical(
@@ -328,7 +350,8 @@ inline static void BlurVertical(
 	//SCOPED_TIMER("Sim::SmoothHeightMesh::BlurVertical");
 	const int lineSize = mapSize.x;
 
-	for_mt(min.x, max.x+1, [&](const int x)
+	//for_mt(min.x, max.x+1, [&](const int x)
+	for (int x = min.x; x < max.x+1; x++)
 	{
 		float avg = 0.0f;
 		float lv = 0;
@@ -362,7 +385,7 @@ inline static void BlurVertical(
 			rv = mesh[ x + std::max(0, std::min(mapSize.y-1, ri)) * lineSize];
 			li++; ri++;
 		}
-	});
+	}//);
 }
 
 
@@ -392,76 +415,6 @@ inline static void CheckInvariants(
 	}
 }
 
-// static int mapWidth = 0.f;
-
-// static float GetLocalMaxima(int2 point, int2 windowSize) {
-// 	float localMax = -std::numeric_limits<float>::max();
-
-// 	auto heightMap = readMap->GetCornerHeightMapSynced();
-
-// 	int yHalfWindow = windowSize.y / 2;
-// 	int yStart = std::max(0, point.y - yHalfWindow);
-// 	int yEnd = std::min(mapDims.mapy, yStart + yHalfWindow);
-
-// 	int xHalfWindow = windowSize.x / 2;
-// 	int xStart = std::max(0, point.x - xHalfWindow);
-// 	int xEnd = std::min(mapDims.mapx, xStart + xHalfWindow);
-
-// 	for (int y = yStart; y < yEnd; y++) {
-// 		for (int x = xStart; x < xEnd; x++) {
-// 			int pointIndex = x + y * mapWidth;
-// 			localMax = std::max(localMax, heightMap[pointIndex]);
-// 		}
-// 	}
-
-// 	return localMax;
-// }
-
-// static void BuildLocalMaximaGrid(std::pmr::vector<float> &maximaHeightMap, int2 point, int2 sampleSize) {
-// 	int windowSize = 20;
-
-// 	int yStart = std::max(0, point.y);
-// 	int yEnd = std::min(mapDims.mapy, yStart + sampleSize.y);
-
-// 	int xStart = std::max(0, point.x);
-// 	int xEnd = std::min(mapDims.mapx, xStart + sampleSize.x);
-
-// 	for (int y = yStart; y < yEnd; y++) {
-// 		for (int x = xStart; x < xEnd; x++) {
-// 			int pointIndex = x + y * mapWidth;
-// 			maximaHeightMap[pointIndex] = GetLocalMaxima(int2(x, y), int2(windowSize, windowSize));
-// 		}
-// 	}
-// }
-
-// void SmoothHeightMesh::UpdateMapMaximaGrid() {
-// 	constexpr int itemsPerChunk = CacheAlignedMemoryResource::cacheLineLength / sizeof(float);
-// 	size_t chunks = chunksPerLine * mapDims.mapy;
-
-// 	for_mt(0, chunks, [&, itemsPerChunk](const int i) {
-// 		int y = i / chunksPerLine;
-// 		int x = i % chunksPerLine;
-
-// 		BuildLocalMaximaGrid(maximaHeightMap, int2(x, y), int2(itemsPerChunk, 1));
-// 	});
-// }
-
-
-// // get built after initial changes applied
-// void SmoothHeightMesh::BuildNewMapMaximaGrid() {
-// 	constexpr int itemsPerChunk = CacheAlignedMemoryResource::cacheLineLength / sizeof(float);
-// 	chunksPerLine = (mapDims.mapx / itemsPerChunk) + (mapDims.mapx % itemsPerChunk ? 1: 0);
-// 	cacheAlignMapWidth = chunksPerLine * itemsPerChunk;
-
-// 	size_t mapSize = mapDims.mapy*cacheAlignMapWidth;
-// 	maximaHeightMap.resize(mapSize);
-
-// 	//maximaHeightMap = (float*)_mm_malloc(memorySize, cacheLineLength);
-// 	//std::pmr::monotonic_buffer_resource mbr(addr, memorySize, std::pmr::null_memory_resource());
-// 	//maximaHeightMap = new std::pmr::vector<float>(mapSize, &mbr);
-// 	//std::pmr::vector<float> maximaHeightMa(mapSize, &mbr);
-// }
-
 void SmoothHeightMesh::UpdateSmoothMesh()
 {
 	if (gs->frameNum % (GAME_SPEED/2) != 0) return;
@@ -470,21 +423,20 @@ void SmoothHeightMesh::UpdateSmoothMesh()
 
 	const int winSize = smoothRadius / resolution;
 	const int blurSize = std::max(1, winSize / 2);
-	constexpr int blurPassesCount = 1;
 
 	int2 impactRadius{winSize, winSize};
 
 	// area of map damaged.
-	int2 damageMin{40,40};
-	int2 damageMax{44,44};
+	int2 damageMin{64,64};
+	int2 damageMax{95,95};
 
 	// area of the map which may need a max height change
-	int2 updateLocation = damageMin - impactRadius;
-	int2 updateLimit = damageMax + impactRadius;
+	int2 updateLocation = damageMin;// - impactRadius;
+	int2 updateLimit = damageMax;// + impactRadius;
 
 	// area of map to load maximums for to update the updateLocation
 	int2 min = updateLocation - impactRadius;
-	int2 max = updateLocation + impactRadius;
+	int2 max = updateLimit + impactRadius;
 	int2 map{maxx, maxy};
 
 	updateLocation.x = std::clamp(updateLocation.x, 0, map.x);
@@ -496,24 +448,25 @@ void SmoothHeightMesh::UpdateSmoothMesh()
 	max.x = std::clamp(max.x, 0, map.x);
 	max.y = std::clamp(max.y, 0, map.y);
 
-	FindMaximumColumnHeights(min, max, winSize, resolution, colsMaxima, maximaRows);
+ 	FindMaximumColumnHeights(min, max, winSize, resolution, colsMaxima, maximaRows);
 
 	for (int y = updateLocation.y; y <= updateLimit.y; ++y) {
-
 		AdvanceMaximaRows(y, min.x, max.x, resolution, colsMaxima, maximaRows);
 		FindRadialMaximum(map.x, y, updateLocation.x, updateLimit.x, winSize, resolution, colsMaxima, maximaMesh);
-		FixRemainingMaxima(min.x, y, max, winSize, resolution, colsMaxima, maximaRows);
+		FixRemainingMaxima(map.y, min.x, y, max, winSize, resolution, colsMaxima, maximaRows);
 
 // #ifdef _DEBUG
 // 		CheckInvariants(y, updateLimit.x, updateLimit.y, winSize, resolution, colsMaxima, maximaRows);
 // #endif
 	}
 
+	//std::copy(maximaMesh.begin(), maximaMesh.end(), mesh.begin());
+
 	// actually smooth with approximate Gaussian blur passes
-	for (int numBlurs = blurPassesCount; numBlurs > 0; --numBlurs) {
-		BlurHorizontal(map, updateLocation, updateLimit, blurSize, resolution, gaussianKernel, (numBlurs == blurPassesCount) ? maximaMesh : mesh, tempMesh); mesh.swap(tempMesh);
-		BlurVertical(map, updateLocation, updateLimit, blurSize, resolution, gaussianKernel, mesh, tempMesh); mesh.swap(tempMesh);
-	}
+	//for (int numBlurs = blurPassesCount; numBlurs > 0; --numBlurs) {
+		BlurHorizontal(map, updateLocation, updateLimit, blurSize, resolution, gaussianKernel, maximaMesh, tempMesh);
+		BlurVertical(map, updateLocation, updateLimit, blurSize, resolution, gaussianKernel, tempMesh, mesh);
+	//
 }
 
 void SmoothHeightMesh::MakeSmoothMesh()
@@ -537,7 +490,6 @@ void SmoothHeightMesh::MakeSmoothMesh()
 	// use sliding window of maximums to reduce computational complexity
 	const int winSize = smoothRadius / resolution;
 	const int blurSize = std::max(1, winSize / 2);
-	constexpr int blurPassesCount = 1;
 
 	// const auto fillGaussianKernelFunc = [blurSize](std::vector<float>& gaussianKernel, const float sigma) {
 	// 	gaussianKernel.resize(blurSize + 1);
@@ -566,7 +518,6 @@ void SmoothHeightMesh::MakeSmoothMesh()
 	mesh.resize((maxx) * (maxy), 0.0f);
 	tempMesh.resize((maxx) * (maxy), 0.0f);
 	origMesh.resize((maxx) * (maxy), 0.0f);
-
 	colsMaxima.clear();
 	colsMaxima.resize(maxx, -std::numeric_limits<float>::max());
 	maximaRows.clear();
@@ -576,23 +527,23 @@ void SmoothHeightMesh::MakeSmoothMesh()
 	int2 max{maxx-1, maxy-1};
 	int2 map{maxx, maxy};
 
-// 	FindMaximumColumnHeights(int2{0, 0}, max, winSize, resolution, colsMaxima, maximaRows);
+ 	FindMaximumColumnHeights(int2{0, 0}, max, winSize, resolution, colsMaxima, maximaRows);
 
-// 	for (int y = 0; y <= max.y; ++y) {
-// 		AdvanceMaximaRows(y, 0, max.x, resolution, colsMaxima, maximaRows);
-// 		FindRadialMaximum(map.x, y, 0, max.x, winSize, resolution, colsMaxima, maximaMesh);
-// 		FixRemainingMaxima(0, y, max, winSize, resolution, colsMaxima, maximaRows);
+	for (int y = 0; y <= max.y; ++y) {
+		AdvanceMaximaRows(y, 0, max.x, resolution, colsMaxima, maximaRows);
+		FindRadialMaximum(map.x, y, 0, max.x, winSize, resolution, colsMaxima, maximaMesh);
+		FixRemainingMaxima(map.y, 0, y, max, winSize, resolution, colsMaxima, maximaRows);
 
-// // #ifdef _DEBUG
-// // 		CheckInvariants(y, maxx, maxy, winSize, resolution, colsMaxima, maximaRows);
-// // #endif
-// 	}
+// #ifdef _DEBUG
+// 		CheckInvariants(y, maxx, maxy, winSize, resolution, colsMaxima, maximaRows);
+// #endif
+	}
 
 	// actually smooth with approximate Gaussian blur passes
-	for (int numBlurs = blurPassesCount; numBlurs > 0; --numBlurs) {
-		BlurHorizontal(map, min, max, blurSize, resolution, gaussianKernel, (numBlurs == blurPassesCount) ? maximaMesh : mesh, tempMesh); mesh.swap(tempMesh);
-		BlurVertical(map, min, max, blurSize, resolution, gaussianKernel, mesh, tempMesh); mesh.swap(tempMesh);
-	}
+	//for (int numBlurs = blurPassesCount; numBlurs > 0; --numBlurs) {
+		BlurHorizontal(map, min, max, blurSize, resolution, gaussianKernel, maximaMesh, tempMesh);// mesh.swap(tempMesh);
+		BlurVertical(map, min, max, blurSize, resolution, gaussianKernel, tempMesh, mesh);// mesh.swap(tempMesh);
+	//}
 
 	// int i = 0;
 	// for (int y =0; y < maxy; y++)

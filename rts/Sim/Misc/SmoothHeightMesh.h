@@ -10,47 +10,12 @@
 
 class CGround;
 
-// class CacheAlignedMemoryResource : public std::pmr::memory_resource
-// {
-// public:
-// 	constexpr static int cacheLineLength = 64;
-
-// 	CacheAlignedMemoryResource()
-// 		: std::pmr::memory_resource()
-// 	{}
-
-//     virtual void*
-//     do_allocate(size_t __bytes, size_t __alignment) {
-// 		return _mm_malloc(__bytes, cacheLineLength);
-// 	}
-
-//     virtual void
-//     do_deallocate(void* __p, size_t __bytes, size_t __alignment) {
-// 		_mm_free(__p);
-// 	}
-
-//     virtual bool
-//     do_is_equal(const memory_resource& __other) const noexcept {
-// 		return (this == &__other);
-// 	};
-// };
-
-//   inline std::pmr::memory_resource*
-//   NewCacheAlignedMemoryResource() noexcept
-//   {
-//     return new CacheAlignedMemoryResource();
-//   }
-
 /**
  * Provides a GetHeight(x, y) of its own that smooths the mesh.
  */
 class SmoothHeightMesh
 {
 public:
-	// SmoothHeightMesh()
-	// 	: maximaHeightMap(NewCacheAlignedMemoryResource())
-	// {}
-
 	void Init(int2 max, int res, int smoothRad);
 	void Kill();
 
@@ -93,14 +58,6 @@ private:
 
 	void UpdateMapMaximaGrid();
 	void BuildNewMapMaximaGrid();
-
-	//std::pmr::monotonic_buffer_resource maximaBuffer;
-	//std::pmr::polymorphic_allocator<float> maximaAllocator;
-	//std::pmr::vector<float> maximaHeightMap;
-	//float *maximaHeightMap = nullptr;
-
-	//size_t cacheAlignMapWidth;
-	//size_t chunksPerLine;
 };
 
 extern SmoothHeightMesh smoothGround;
