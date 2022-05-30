@@ -20,17 +20,6 @@ public:
 	std::string boundWith;    ///< the string that defined the binding keyset
 	CKeyChain   keyChain;     ///< the bound keychain/keyset
 
-	bool operator<(const Action& action) const
-	{
-		bool selfAnyMod = keyChain.back().AnyMod();
-		bool actionAnyMod = action.keyChain.back().AnyMod();
-
-		if (selfAnyMod == actionAnyMod)
-			return bindingIndex < action.bindingIndex;
-		else
-			return actionAnyMod;
-	}
-
 	bool operator==(const Action& action) const
 	{
 		return line == action.line;

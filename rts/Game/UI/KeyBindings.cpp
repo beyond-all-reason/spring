@@ -36,6 +36,23 @@ struct DefaultBinding {
 	const char* action;
 };
 
+
+static const CKeyBindings::ActionComparison compareActionByTriggerOrder = [](const Action& a, const Action& b) {
+	bool selfAnyMod = a.keyChain.back().AnyMod();
+	bool actionAnyMod = b.keyChain.back().AnyMod();
+
+	if (selfAnyMod == actionAnyMod)
+		return a.bindingIndex < b.bindingIndex;
+	else
+		return actionAnyMod;
+};
+
+
+static const CKeyBindings::ActionComparison compareActionByBindingOrder = [](const Action& a, const Action& b) {
+  return (a.bindingIndex < b.bindingIndex);
+};
+
+
 static const DefaultBinding defaultBindings[] = {
 	{            "esc", "quitmessage" },
 	{      "Shift+esc", "quitmenu"    },
@@ -303,7 +320,7 @@ CKeyBindings::ActionList CKeyBindings::GetActionListFromKeyMap(const KeyMap& bin
 		merged.insert(merged.end(), al.begin(), al.end());
 	}
 
-	std::sort(merged.begin(), merged.end());
+	std::sort(merged.begin(), merged.end(), compareActionByBindingOrder);
 
 	return merged;
 }
@@ -344,7 +361,7 @@ CKeyBindings::ActionList CKeyBindings::RemoveDuplicateActions(ActionList& action
 }
 
 
-CKeyBindings::ActionList CKeyBindings::MergeActionLists(const ActionList& actionListA, const ActionList& actionListB)
+CKeyBindings::ActionList CKeyBindings::MergeActionLists(const ActionList& actionListA, const ActionList& actionListB, ActionComparison compare = compareActionByTriggerOrder)
 {
 	if (actionListA.empty())
 		return actionListB;
@@ -357,7 +374,7 @@ CKeyBindings::ActionList CKeyBindings::MergeActionLists(const ActionList& action
 	merged.insert(std::end(merged), std::begin(actionListA), std::end(actionListA));
 	merged.insert(std::end(merged), std::begin(actionListB), std::end(actionListB));
 
-	std::inplace_merge(std::begin(merged), std::next(std::begin(merged), actionListA.size()), std::end(merged));
+	std::inplace_merge(std::begin(merged), std::next(std::begin(merged), actionListA.size()), std::end(merged), compare);
 
 	return merged;
 }
@@ -368,7 +385,7 @@ CKeyBindings::ActionList CKeyBindings::GetActionList() const
 	const ActionList& codeActionList = GetActionListFromKeyMap(codeBindings);
 	const ActionList& scanActionList = GetActionListFromKeyMap(scanBindings);
 
-	return MergeActionLists(codeActionList, scanActionList);
+	return MergeActionLists(codeActionList, scanActionList, compareActionByBindingOrder);
 }
 
 
@@ -906,14 +923,7 @@ bool CKeyBindings::FileSave(FILE* out) const
 	if (fakeMetaKey >= 0)
 		fprintf(out, "fakemeta  %s\n\n", keyCodes.GetName(fakeMetaKey).c_str());
 
-	ActionList actionList = GetActionList();
-	// sort by actions bindingIndex instead of trigger order (Any+ isn't pushed back)
-	const static auto bindingOrder = [](const Action& a, const Action& b) {
-		return (a.bindingIndex < b.bindingIndex);
-	};
-	std::sort(actionList.begin(), actionList.end(), bindingOrder);
-	// save the bindings
-	for (const Action& action: actionList) {
+	for (const Action& action: GetActionList()) {
 		std::string comment;
 
 		if (unitDefHandler && (action.command.find("buildunit_") == 0)) {

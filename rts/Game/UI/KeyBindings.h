@@ -18,6 +18,7 @@ class CKeyBindings : public CommandReceiver
 	public:
 		typedef std::vector<Action> ActionList;
 		typedef spring::unsynced_set<std::string> HotkeyList;
+		typedef std::function<bool (Action, Action)> ActionComparison;
 
 	protected:
 		struct KeySetHash {
@@ -63,7 +64,7 @@ class CKeyBindings : public CommandReceiver
 		static ActionList RemoveDuplicateActions(ActionList& actionList);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
 		static ActionList GetActionListFromKeyMap(const KeyMap& bindings);
-		static ActionList MergeActionLists(const ActionList& actionListA, const ActionList& actionListB);
+		static ActionList MergeActionLists(const ActionList& actionListA, const ActionList& actionListB, ActionComparison compare);
 
 		bool Bind(const std::string& keystring, const std::string& action);
 		bool UnBind(const std::string& keystring, const std::string& action);
