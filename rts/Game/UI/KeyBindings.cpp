@@ -308,6 +308,42 @@ CKeyBindings::ActionList CKeyBindings::GetActionListFromKeyMap(const KeyMap& bin
 	return merged;
 }
 
+
+CKeyBindings::ActionList CKeyBindings::RemoveDuplicateActions(ActionList& actionList) {
+	// If the user bound same action to both keys and scancodes we want to remove
+	// the duplicates keeping the action with lower bindingIndex.
+	//
+	// We have a list of ordered actions that is partitioned in two sections:
+	// [k, k, ..., Any+k, Any+k,...]
+	// An action bound with Any+ is not a duplicate to one bound without Any, so
+	// we can remove duplicates for each section separately
+
+	// We define a matcher that retains memory of previous lookups
+	std::map<std::string, Action> seen;
+
+	auto lineMatcher = [&seen](Action a) {
+		auto it = seen.find(a.line);
+		return (it == seen.end()) ? (seen[a.line] = a, false) : true;
+	};
+
+	// We find the position that partitions the vector
+	auto anyIt = std::find_if(actionList.begin(), actionList.end(), [](const Action& a) {
+		return a.keyChain.back().AnyMod();
+	});
+
+	// We remove all duplicates without anyMod
+	anyIt = actionList.erase(std::remove_if(actionList.begin(), anyIt, lineMatcher), anyIt);
+
+	// We clear the duplicate memory
+	seen.clear();
+
+	// We remove all duplicates with anyMod
+	actionList.erase(std::remove_if(anyIt, actionList.end(), lineMatcher), actionList.end());
+
+	return actionList;
+}
+
+
 CKeyBindings::ActionList CKeyBindings::MergeActionLists(const ActionList& actionListA, const ActionList& actionListB)
 {
 	if (actionListA.empty())
@@ -316,16 +352,16 @@ CKeyBindings::ActionList CKeyBindings::MergeActionLists(const ActionList& action
 		return actionListA;
 
 	ActionList merged;
+	merged.reserve(actionListA.size() + actionListB.size());
 
-	merged.insert(merged.end(), actionListA.begin(), actionListA.end());
-	merged.insert(merged.end(), actionListB.begin(), actionListB.end());
+	merged.insert(std::end(merged), std::begin(actionListA), std::end(actionListA));
+	merged.insert(std::end(merged), std::begin(actionListB), std::end(actionListB));
 
-	std::sort(merged.begin(), merged.end());
-
-	merged.erase(std::unique(merged.begin(), merged.end()), merged.end());
+	std::inplace_merge(std::begin(merged), std::next(std::begin(merged), actionListA.size()), std::end(merged));
 
 	return merged;
 }
+
 
 CKeyBindings::ActionList CKeyBindings::GetActionList() const
 {
@@ -334,6 +370,20 @@ CKeyBindings::ActionList CKeyBindings::GetActionList() const
 
 	return MergeActionLists(codeActionList, scanActionList);
 }
+
+
+void CKeyBindings::DebugActionList(const CKeyBindings::ActionList& actionList) const {
+	LOG("Action List:");
+	if (actionList.empty()) {
+		LOG("   EMPTY");
+	} else {
+		int i = 1;
+		for (const auto& a: actionList) {
+			LOG("   %i.  action=\"%s\"  rawline=\"%s\"  shortcut=\"%s\"  index=\"%i\"", i++, a.command.c_str(), a.rawline.c_str(), a.boundWith.c_str(), a.bindingIndex);
+		}
+	}
+};
+
 
 CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeySet& ks) const
 {
@@ -374,19 +424,6 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeySet& ks) const
 		}
 	}
 
-	if (debugEnabled) {
-		LOG("GetActions: hex=0x%02X ascii=\"%s\":", ks.Key(), ks.GetString(false).c_str());
-
-		if (out.empty()) {
-			LOG("   EMPTY");
-		} else {
-			int i = 1;
-			for (const auto& a: out) {
-				LOG("   %i.  action=\"%s\"  rawline=\"%s\"  shortcut=\"%s\"  index=\"%i\"", i++, a.command.c_str(), a.rawline.c_str(), a.boundWith.c_str(), a.bindingIndex);
-			}
-		}
-	}
-
 	return out;
 }
 
@@ -402,7 +439,20 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, 
 	const CKeySet& codeSet = CKeySet(keyCode, modifiers, CKeySet::KSKeyCode);
 	const CKeySet& scanSet = CKeySet(scanCode, modifiers, CKeySet::KSScanCode);
 
-	return MergeActionLists(GetActionList(codeSet), GetActionList(scanSet));
+	ActionList merged = MergeActionLists(GetActionList(codeSet), GetActionList(scanSet));
+
+	// When we are retrieving actionlists for a given keyboard state we need to
+	// remove duplicate actions that might arise from binding the same action
+	// to both key and scancodes
+	RemoveDuplicateActions(merged);
+
+	if (debugEnabled) {
+		LOG("GetActions: keyCode=\"%d\" scanCode=\"%d\" modifiers=\"%d\":", keyCode, scanCode, modifiers);
+
+		DebugActionList(merged);
+	}
+
+	return merged;
 }
 
 
@@ -422,9 +472,23 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
 	return out;
 }
 
+
 CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const CKeyChain& sc) const
 {
-	return MergeActionLists(GetActionList(kc), GetActionList(sc));
+	ActionList merged = MergeActionLists(GetActionList(kc), GetActionList(sc));
+
+	// When we are retrieving actionlists for a given keyboard state we need to
+	// remove duplicate actions that might arise from binding the same action
+	// to both key and scancodes
+	RemoveDuplicateActions(merged);
+
+	if (debugEnabled) {
+		LOG("GetActions: codeChain=\"%s\" scanChain=\"%s\":", kc.GetString().c_str(), sc.GetString().c_str());
+
+		DebugActionList(merged);
+	}
+
+	return merged;
 }
 
 
@@ -462,6 +526,7 @@ static bool ParseSingleChain(const std::string& keystr, CKeyChain* kc)
 
 	return true;
 }
+
 
 static bool ParseKeyChain(std::string keystr, CKeyChain* kc, const size_t pos = std::string::npos)
 {
@@ -505,20 +570,14 @@ void CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 		assert(it->first == ks);
 
 		// check if the command is already found to the given keyset
-		bool found = false;
-		for (const Action& act: al) {
-			if (act.command == action.command && act.extra == action.extra) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
+		if (std::find(al.begin(), al.end(), action) == std::end(al)) {
 			// not yet bound, push it
 			action.bindingIndex = ++bindingsCount;
 			al.push_back(action);
 		}
 	}
 }
+
 
 bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 {
@@ -849,7 +908,10 @@ bool CKeyBindings::FileSave(FILE* out) const
 
 	ActionList actionList = GetActionList();
 	// sort by actions bindingIndex instead of trigger order (Any+ isn't pushed back)
-	std::sort(actionList.begin(), actionList.end(), [](const Action& a, const Action& b) { return (a.bindingIndex < b.bindingIndex); });
+	const static auto bindingOrder = [](const Action& a, const Action& b) {
+		return (a.bindingIndex < b.bindingIndex);
+	};
+	std::sort(actionList.begin(), actionList.end(), bindingOrder);
 	// save the bindings
 	for (const Action& action: actionList) {
 		std::string comment;

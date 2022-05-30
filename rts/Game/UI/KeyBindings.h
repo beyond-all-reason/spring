@@ -57,8 +57,10 @@ class CKeyBindings : public CommandReceiver
 	protected:
 		void LoadDefaults();
 		void BuildHotkeyMap();
+		void DebugActionList(const ActionList& actionList) const;
 
 		void AddActionToKeyMap(KeyMap& bindings, Action& action);
+		static ActionList RemoveDuplicateActions(ActionList& actionList);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
 		static ActionList GetActionListFromKeyMap(const KeyMap& bindings);
 		static ActionList MergeActionLists(const ActionList& actionListA, const ActionList& actionListB);

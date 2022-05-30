@@ -16,10 +16,10 @@ static inline void rtrim(std::string &s) {
 }
 
 
-Action::Action(const std::string& line)
-	: rawline(line)
+Action::Action(const std::string& l)
+	: rawline(l)
 {
-	const std::vector<std::string> &words = CSimpleParser::Tokenize(line, 1);
+	const std::vector<std::string> &words = CSimpleParser::Tokenize(l, 1);
 	if (!words.empty()) {
 		command.resize(words[0].length());
 		std::transform(words[0].begin(), words[0].end(), command.begin(), (int (*)(int))tolower);
@@ -28,4 +28,6 @@ Action::Action(const std::string& line)
 		extra = words[1].substr(0, words[1].find("//", 0));
 		rtrim(extra);
 	}
+
+	line = command + extra;
 }
