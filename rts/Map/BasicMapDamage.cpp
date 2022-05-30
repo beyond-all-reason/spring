@@ -228,7 +228,7 @@ void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 
 	readMap->UpdateHeightMapSynced(updRect);
 	featureHandler.TerrainChanged(x1, y1, x2, y2);
-	smoothGround.OnMapDamage(x1, y1, x2, y2);
+	smoothGround.MapChanged(x1, y1, x2, y2);
 	{
 		SCOPED_TIMER("Sim::BasicMapDamage::Los");
 		losHandler->UpdateHeightMapSynced(updRect);
