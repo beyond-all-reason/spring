@@ -14,7 +14,7 @@ public:
 
 	int         bindingIndex; ///< the order for the action trigger
 	std::string command;      ///< first word, lowercase
-	std::string extra;        ///< everything but the first word
+	std::string extra;        ///< everything but the first word, stripped of comments (//)
 	std::string rawline;      ///< includes the command, case preserved
 	std::string boundWith;    ///< the string that defined the binding keyset
 	CKeyChain   keyChain;     ///< the bound keychain/keyset
