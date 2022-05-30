@@ -2009,7 +2009,7 @@ void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 
 
 
-bool CGame::ProcessCommandText(unsigned int keyCode, unsigned int scanCode, const std::string& command) {
+bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& command) {
 	if (command.size() <= 2)
 		return false;
 
@@ -2022,7 +2022,7 @@ bool CGame::ProcessCommandText(unsigned int keyCode, unsigned int scanCode, cons
 	return false;
 }
 
-bool CGame::ProcessAction(const Action& action, unsigned int keyCode, unsigned int scanCode, bool isRepeat)
+bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool isRepeat)
 {
 	if (ActionPressed(keyCode, scanCode, action, isRepeat))
 		return true;
@@ -2053,7 +2053,7 @@ void CGame::ActionReceived(const Action& action, int playerID)
 	}
 }
 
-bool CGame::ActionPressed(unsigned int keyCode, unsigned int scanCode, const Action& action, bool isRepeat)
+bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat)
 {
 	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
