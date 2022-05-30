@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 
 class IKeys {
@@ -39,6 +40,13 @@ protected:
 	std::vector<NameCodePair> defaultNameToCode;
 	std::vector<CodeNamePair> defaultCodeToName;
 	std::vector<         int> printableCodes;
+
+	const std::function<int (CodeNamePair, CodeNamePair)> codePred = [](const auto& a, const auto& b) {
+		return (a.first < b.first);
+	};
+	const std::function<int (NameCodePair, NameCodePair)> namePred = [](const auto& a, const auto& b) {
+		return (a.first < b.first);
+	};
 };
 
 #endif /* IKEYS_H */

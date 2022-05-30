@@ -6,8 +6,7 @@
 
 int IKeys::GetCode(const std::string& name) const
 {
-	const auto pred = [](const NameCodePair& a, const NameCodePair& b) { return (a.first < b.first); };
-	const auto iter = std::lower_bound(nameToCode.begin(), nameToCode.end(), NameCodePair{name, 0}, pred);
+	const auto iter = std::lower_bound(nameToCode.begin(), nameToCode.end(), NameCodePair{name, 0}, namePred);
 
 	if (iter == nameToCode.end() || iter->first != name)
 		return -1;
@@ -18,8 +17,7 @@ int IKeys::GetCode(const std::string& name) const
 
 std::string IKeys::GetName(int code) const
 {
-	const auto pred = [](const CodeNamePair& a, const CodeNamePair& b) { return (a.first < b.first); };
-	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{0, ""}, pred);
+	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{0, ""}, codePred);
 
 	if (iter == codeToName.end() || iter->first != code)
 		return IntToString(code, "0x%03X");
@@ -29,8 +27,7 @@ std::string IKeys::GetName(int code) const
 
 std::string IKeys::GetDefaultName(int code) const
 {
-	const auto pred = [](const CodeNamePair& a, const CodeNamePair& b) { return (a.first < b.first); };
-	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{0, ""}, pred);
+	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{0, ""}, codePred);
 
 	if (iter == defaultCodeToName.end() || iter->first != code)
 		return IntToString(code, "0x%03X");
@@ -47,7 +44,6 @@ bool IKeys::AddKeySymbol(const std::string& name, int code)
 	const std::string keysym = StringToLower(name);
 
 	// do not allow existing keysyms to be renamed
-	const auto namePred = [](const NameCodePair& a, const NameCodePair& b) { return (a.first < b.first); };
 	const auto nameIter = std::lower_bound(nameToCode.begin(), nameToCode.end(), NameCodePair{keysym, 0}, namePred);
 
 	if (nameIter != nameToCode.end() && nameIter->first == name)
@@ -77,8 +73,7 @@ bool IKeys::AddKeySymbol(const std::string& name, int code)
 
 bool IKeys::IsPrintable(int code) const
 {
-	const auto pred = [](int a, int b) { return (a < b); };
-	const auto iter = std::lower_bound(printableCodes.begin(), printableCodes.end(), code, pred);
+	const auto iter = std::lower_bound(printableCodes.begin(), printableCodes.end(), code);
 
 	return (iter != printableCodes.end() && *iter == code);
 }
@@ -88,8 +83,7 @@ void IKeys::SaveUserKeySymbols(FILE* file) const
 	bool output = false;
 
 	for (const auto& p: nameToCode) {
-		const auto defSymPred = [](const NameCodePair& a, const NameCodePair& b) { return (a.first < b.first); };
-		const auto defSymIter = std::lower_bound(defaultNameToCode.begin(), defaultNameToCode.end(), NameCodePair{p.first, 0}, defSymPred);
+		const auto defSymIter = std::lower_bound(defaultNameToCode.begin(), defaultNameToCode.end(), NameCodePair{p.first, 0}, namePred);
 
 		if (defSymIter != defaultNameToCode.end() && defSymIter->first == p.first)
 			continue;
