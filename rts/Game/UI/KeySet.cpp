@@ -84,21 +84,28 @@ unsigned char CKeySet::GetCurrentModifiers()
 }
 
 
-std::string CKeySet::GetString(bool useDefaultKeysym) const
+std::string CKeySet::GetHumanModifiers(unsigned char modifiers)
 {
-	std::string name;
 	std::string modstr;
-
-	IKeys keys = GetKeys();
-	name = useDefaultKeysym ? keys.GetDefaultName(key) : keys.GetName(key);
 
 	if (modifiers & KS_ANYMOD)  { modstr += "Any+"; }
 	if (modifiers & KS_ALT)     { modstr += "Alt+"; }
 	if (modifiers & KS_CTRL)    { modstr += "Ctrl+"; }
 	if (modifiers & KS_META)    { modstr += "Meta+"; }
 	if (modifiers & KS_SHIFT)   { modstr += "Shift+"; }
+
+	return modstr;
+}
+
+
+std::string CKeySet::GetString(bool useDefaultKeysym) const
+{
+	std::string name;
+
+	IKeys keys = GetKeys();
+	name = useDefaultKeysym ? keys.GetDefaultName(key) : keys.GetName(key);
 	
-	return (modstr + name);
+	return (GetHumanModifiers(modifiers) + name);
 }
 
 

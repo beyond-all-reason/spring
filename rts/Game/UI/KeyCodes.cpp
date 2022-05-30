@@ -150,12 +150,12 @@ void CKeyCodes::Reset()
 	//AddPair("euro", SDLK_EURO);       // Some european keyboards
 	//AddPair("undo", SDLK_UNDO);       // Atari keyboard has Undo
 
-	std::sort(nameToCode.begin(), nameToCode.end(), [](const NameCodePair& a, const NameCodePair& b) { return (a.first < b.first); });
-	std::sort(codeToName.begin(), codeToName.end(), [](const CodeNamePair& a, const CodeNamePair& b) { return (a.first < b.first); });
+	std::sort(nameToCode.begin(), nameToCode.end(), namePred);
+	std::sort(codeToName.begin(), codeToName.end(), codePred);
 	std::sort(printableCodes.begin(), printableCodes.end());
 
-	nameToCode.erase(std::unique(nameToCode.begin(), nameToCode.end(), [](const NameCodePair& a, const NameCodePair& b) { return (a.first == b.first); }), nameToCode.end());
-	codeToName.erase(std::unique(codeToName.begin(), codeToName.end(), [](const CodeNamePair& a, const CodeNamePair& b) { return (a.first == b.first); }), codeToName.end());
+	nameToCode.erase(std::unique(nameToCode.begin(), nameToCode.end(), [](const auto& a, const auto& b) { return (a.first == b.first); }), nameToCode.end());
+	codeToName.erase(std::unique(codeToName.begin(), codeToName.end(), [](const auto& a, const auto& b) { return (a.first == b.first); }), codeToName.end());
 	printableCodes.erase(std::unique(printableCodes.begin(), printableCodes.end()), printableCodes.end());
 
 	// remember our defaults

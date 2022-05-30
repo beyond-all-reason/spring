@@ -464,7 +464,7 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, 
 	RemoveDuplicateActions(merged);
 
 	if (debugEnabled) {
-		LOG("GetActions: keyCode=\"%d\" scanCode=\"%d\" modifiers=\"%d\":", keyCode, scanCode, modifiers);
+		LOG("GetActions: key=\"%s\" scan=\"%s\" keyCode=\"%d\" scanCode=\"%d\":", codeSet.GetString(true).c_str(), scanSet.GetString(true).c_str(), keyCode, scanCode);
 
 		DebugActionList(merged);
 	}

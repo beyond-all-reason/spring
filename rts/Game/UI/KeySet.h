@@ -20,6 +20,7 @@ class CKeySet {
 		CKeySet(int key, unsigned char modifiers, CKeySetType codeType);
 
 		static unsigned char GetCurrentModifiers();
+		static std::string GetHumanModifiers(unsigned char modifiers);
 
 		void Reset();
 		void SetAnyBit();
