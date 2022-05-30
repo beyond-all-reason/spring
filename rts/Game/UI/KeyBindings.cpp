@@ -336,11 +336,11 @@ CKeyBindings::ActionList CKeyBindings::RemoveDuplicateActions(ActionList& action
 	// we can remove duplicates for each section separately
 
 	// We define a matcher that retains memory of previous lookups
-	std::map<std::string, Action> seen;
+	std::unordered_map<std::string, bool> seen;
 
 	auto lineMatcher = [&seen](Action a) {
 		auto it = seen.find(a.line);
-		return (it == seen.end()) ? (seen[a.line] = a, false) : true;
+		return (it == seen.end()) ? (seen[a.line] = true, false) : true;
 	};
 
 	// We find the position that partitions the vector
