@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cstdio>
+#include <set>
 
 #include "KeyBindings.h"
 #include "KeyCodes.h"
@@ -336,11 +337,11 @@ CKeyBindings::ActionList CKeyBindings::RemoveDuplicateActions(ActionList& action
 	// we can remove duplicates for each section separately
 
 	// We define a matcher that retains memory of previous lookups
-	std::unordered_map<std::string, bool> seen;
+	std::set<std::string> seen;
 
 	auto lineMatcher = [&seen](Action a) {
 		auto it = seen.find(a.line);
-		return (it == seen.end()) ? (seen[a.line] = true, false) : true;
+		return (it == seen.end()) ? (seen.insert(a.line), false) : true;
 	};
 
 	// We find the position that partitions the vector
