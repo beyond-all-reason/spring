@@ -281,10 +281,8 @@ inline static void AdvanceMaximas(
 		LOG("%s: y:%d x:%d column max: %f", __func__, y, x, colsMaxima[x]);
 #endif
 
-#ifndef NDEBUG
 		assert(maximaRows[x] <= maxy);
-		assert(maximaRows[x] >= (y - winSize) + 1);
-#endif
+		assert(maximaRows[x] >= y - winSize);
 	}
 }
 
@@ -326,19 +324,17 @@ inline static void BlurHorizontal(
 			const float gh = GetRealGroundHeight(x, y, resolution);
 			smoothed[x + y * lineSize] = std::max(gh, avg*weight);
 
-#ifndef NDEBUG
-			assert(smoothed[x + y * lineSize] <=          readMap->GetCurrMaxHeight()       );
-			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()       );
-#endif
-
 			// Get the values to add/remove for next iteration
 			lv = mesh[std::max(0, std::min(li, mapMaxX)) + y * lineSize];
 			rv = mesh[            std::min(ri, mapMaxX)  + y * lineSize];
 			li++; ri++;
 
 #ifdef SMOOTH_MESH_DEBUG_BLUR
-			LOG("%s: x: %d, y: %d, avg: %f (%f) (g: %f)", __func__, x, y, avg, avg*weight, gh);
+			LOG ( "%s: x: %d, y: %d, avg: %f (%f) (g: %f) (max h: %f)"
+				, __func__, x, y, avg, avg*weight, gh, readMap->GetCurrMaxHeight());
 #endif
+			assert(smoothed[x + y * lineSize] <=          readMap->GetCurrMaxHeight()+1     );
+			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()-1     );
 		}
 	}
 }
@@ -380,11 +376,6 @@ inline static void BlurVertical(
 			const float gh = GetRealGroundHeight(x, y, resolution);
 			smoothed[x + y * lineSize] = std::max(gh, avg*weight);
 
-#ifndef NDEBUG
-			assert(smoothed[x + y * lineSize] <=          readMap->GetCurrMaxHeight()       );
-			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()       );
-#endif
-
 			lv = mesh[ x + std::max(0, std::min(li, mapMaxY)) * lineSize];
 			rv = mesh[ x +             std::min(ri, mapMaxY)  * lineSize];
 			li++; ri++;
@@ -393,6 +384,8 @@ inline static void BlurVertical(
 			LOG("%s: x: %d, y: %d, avg: %f (%f) (g: %f)", __func__, x, y, avg, avg*weight, gh);
 			LOG("%s: for next line -%f +%f", __func__, lv, rv);
 #endif
+			assert(smoothed[x + y * lineSize] <=          readMap->GetCurrMaxHeight()+1     );
+			assert(smoothed[x + y * lineSize] >=          readMap->GetCurrMinHeight()-1     );
 		}
 	}
 }
