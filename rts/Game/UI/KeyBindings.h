@@ -39,7 +39,6 @@ class CKeyBindings : public CommandReceiver
 		void Print() const;
 
 		ActionList GetActionList() const;
-		ActionList GetActionList(const CKeySet& ks) const;
 		ActionList GetActionList(int keyCode, int scanCode) const;
 		ActionList GetActionList(int keyCode, int scanCode, unsigned char modifiers) const;
 		ActionList GetActionList(const CKeyChain& kc) const;
@@ -62,7 +61,6 @@ class CKeyBindings : public CommandReceiver
 
 		void AddActionToKeyMap(KeyMap& bindings, Action& action);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
-		static ActionList MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& actionListB);
 
 		bool Bind(const std::string& keystring, const std::string& action);
 		bool UnBind(const std::string& keystring, const std::string& action);
@@ -76,6 +74,8 @@ class CKeyBindings : public CommandReceiver
 		bool FileSave(FILE* file) const;
 
   protected:
+		const ActionList & GetActionList(const CKeySet& ks, bool forceAny) const;
+
 		KeyMap codeBindings;
 		KeyMap scanBindings;
 		ActionMap hotkeys;
