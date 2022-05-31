@@ -65,6 +65,8 @@ private:
 	void MakeSmoothMesh();
 	void UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax);
 
+	bool enabled = true;
+
 	int maxx = 0;
 	int maxy = 0;
 	float fmaxx = 0.0f;
@@ -82,9 +84,6 @@ private:
 	std::vector<int> maximaRows;
 
 	MapChangeTrack mapChangeTrack;
-
-	void UpdateMapMaximaGrid();
-	void BuildNewMapMaximaGrid();
 };
 
 extern SmoothHeightMesh smoothGround;

@@ -8,12 +8,13 @@
 
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/float3.h"
+#include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-#include "System/Log/ILog.h"
 
 using namespace SmoothHeightMeshNamespace;
 
@@ -58,6 +59,8 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 {
 	Kill();
 
+	enabled = modInfo.enableSmoothMesh;
+
 	// we use SSE in performance sensitive code, don't let the window size be too small.
 	if (smoothRad < 4) smoothRad = 4;
 
@@ -73,7 +76,8 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 
 	InitMapChangeTracking();
 	InitDataStructures();
-	MakeSmoothMesh();
+
+	if (enabled) MakeSmoothMesh();
 }
 
 void SmoothHeightMesh::InitMapChangeTracking() {
@@ -419,6 +423,8 @@ inline static void CheckInvariants(
 
 void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 
+	if (!enabled) return;
+
 	const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
 	const int res = resolution*SAMPLES_PER_QUAD;
 	const int w = mapChangeTrack.width;
@@ -531,6 +537,8 @@ LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
 
 
 void SmoothHeightMesh::UpdateSmoothMesh() {
+	if (!enabled) return;
+
 	SCOPED_TIMER("Sim::SmoothHeightMesh::UpdateSmoothMesh");
 
 	if (!UpdateSmoothMeshRequired(mapChangeTrack)) return;
