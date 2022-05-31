@@ -76,6 +76,28 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 	MakeSmoothMesh();
 }
 
+void SmoothHeightMesh::InitMapChangeTracking() {
+	const int damageTrackWidth = maxx / SAMPLES_PER_QUAD + (maxx % SAMPLES_PER_QUAD ? 1 : 0);
+	const int damageTrackHeight = maxy / SAMPLES_PER_QUAD + (maxy % SAMPLES_PER_QUAD ? 1 : 0);
+	const int damageTrackQuads = damageTrackWidth * damageTrackHeight;
+	mapChangeTrack.damageMap.clear();
+	mapChangeTrack.damageMap.resize(damageTrackQuads);
+	mapChangeTrack.width = damageTrackWidth;
+	mapChangeTrack.height = damageTrackHeight;
+}
+
+void SmoothHeightMesh::InitDataStructures() {
+	assert(mesh.empty());
+	maximaMesh.resize(maxx * maxy, 0.0f);
+	mesh.resize(maxx * maxy, 0.0f);
+	tempMesh.resize(maxx * maxy, 0.0f);
+	origMesh.resize(maxx * maxy, 0.0f);
+	colsMaxima.clear();
+	colsMaxima.resize(maxx, -std::numeric_limits<float>::max());
+	maximaRows.clear();
+	maximaRows.resize(maxx, -1);
+}
+
 void SmoothHeightMesh::Kill() {
 	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop(); }
 	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop(); }
@@ -402,21 +424,6 @@ inline static void CheckInvariants(
 }
 
 
-inline static void CopyMeshPart
-	( int mapx
-	, int2 min
-	, int2 max
-	, const std::vector<float>& src
-	, std::vector<float>& dest
-	) {
-	for (int y = min.y; y <= max.y; ++y) {
-		const int startIdx = min.x + y*mapx;
-		const int endIdx = max.x + y*mapx + 1;
-		std::copy(&src[startIdx], &src[endIdx], &dest[startIdx]);
-	}
-}
-
-
 void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 
 	const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
@@ -446,9 +453,22 @@ void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 }
 
 
-void SmoothHeightMesh::UpdateSmoothMesh() {
-	SCOPED_TIMER("Sim::SmoothHeightMesh::UpdateSmoothMesh");
+inline static void CopyMeshPart
+		( int mapx
+		, int2 min
+		, int2 max
+		, const std::vector<float>& src
+		, std::vector<float>& dest
+		) {
+	for (int y = min.y; y <= max.y; ++y) {
+		const int startIdx = min.x + y*mapx;
+		const int endIdx = max.x + y*mapx + 1;
+		std::copy(&src[startIdx], &src[endIdx], &dest[startIdx]);
+	}
+}
 
+
+inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& mapChangeTrack) {
 	const bool flushBuffer = !mapChangeTrack.activeBuffer;
 	const bool activeBuffer = mapChangeTrack.activeBuffer;
 	const bool currentWorkloadComplete = mapChangeTrack.damageQueue[flushBuffer].empty()
@@ -456,11 +476,9 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 									  && mapChangeTrack.verticalBlurQueue.empty();
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
-	LOG("%s: flush buffer is %d; damage queue is %I64d; blur queue is %I64d",
-		__func__,
-		(int)flushBuffer,
-		meshDamageTrack.damageQueue[flushBuffer].size(),
-		meshDamageTrack.blurQueue.size()
+	LOG("%s: flush buffer is %d; damage queue is %I64d; blur queue is %I64d"
+		, __func__, (int)flushBuffer, meshDamageTrack.damageQueue[flushBuffer].size()
+		, meshDamageTrack.blurQueue.size()
 		);
 #endif
 
@@ -473,15 +491,62 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 			LOG("%s: opening new queue", __func__);
 #endif
 		}
-		return;
 	}
 
-	bool updateMaxima = !mapChangeTrack.damageQueue[flushBuffer].empty();
-	bool doHorizontalBlur = !mapChangeTrack.horizontalBlurQueue.empty();
-	int damagedAreaIndex = 0;
+	return !currentWorkloadComplete;
+}
+
+
+void SmoothHeightMesh::UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax) {
+	const int winSize = smoothRadius / resolution;
+	const int blurSize = std::max(1, winSize / 2);
+	int2 map{maxx, maxy};
+
+	int2 impactRadius{winSize, winSize};
+	int2 min = damageMin - impactRadius;
+	int2 max = damageMax + impactRadius;
+
+	min.x = std::clamp(min.x, 0, map.x - 1);
+	min.y = std::clamp(min.y, 0, map.y - 1);
+	max.x = std::clamp(max.x, 0, map.x - 1);
+	max.y = std::clamp(max.y, 0, map.y - 1);
+
+#ifdef SMOOTH_MESH_DEBUG_GENERAL
+LOG("%s: quad index %d (%d,%d)-(%d,%d) (%d,%d)-(%d,%d) updating maxima"
+	, __func__, damagedAreaIndex, damageMin.x, damageMin.y, damageMax.x, damageMax.y, min.x, min.y, max.x, max.y
+	);
+
+LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
+	, (float)damageMin.x * fresolution, (float)damageMin.y * fresolution
+	, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution
+	);
+#endif
+
+	for (int i = min.x; i <= max.x; ++i)
+		colsMaxima[i] = -std::numeric_limits<float>::max();
+
+	for (int i = min.x; i <= max.x; ++i)
+		maximaRows[i] = -1;
+
+	FindMaximumColumnHeights(map, damageMin.y, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
+
+	for (int y = damageMin.y; y <= damageMax.y; ++y) {
+		FindRadialMaximum(map, y, damageMin.x, damageMax.x, winSize, resolution, colsMaxima, maximaMesh);
+		AdvanceMaximas(map, y+1, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
+	}
+}
+
+
+void SmoothHeightMesh::UpdateSmoothMesh() {
+	SCOPED_TIMER("Sim::SmoothHeightMesh::UpdateSmoothMesh");
+
+	if (!UpdateSmoothMeshRequired(mapChangeTrack)) return;
+
+	const bool flushBuffer = !mapChangeTrack.activeBuffer;
+	const bool updateMaxima = !mapChangeTrack.damageQueue[flushBuffer].empty();
+	const bool doHorizontalBlur = !mapChangeTrack.horizontalBlurQueue.empty();
 
 	std::queue<int>* activeQueue = nullptr;
-
 	if (updateMaxima) 
 		activeQueue = &mapChangeTrack.damageQueue[flushBuffer];
 	else if (doHorizontalBlur)
@@ -489,89 +554,39 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	else
 		activeQueue = &mapChangeTrack.verticalBlurQueue;
 
-	damagedAreaIndex = activeQueue->front();
+	const int damagedAreaIndex = activeQueue->front();
 	activeQueue->pop();
 
-	const int winSize = smoothRadius / resolution;
-	const int blurSize = std::max(1, winSize / 2);
-
-	int2 impactRadius{winSize, winSize};
-
+	// area of the map which to recalculate the height values
 	const int damageX = damagedAreaIndex % mapChangeTrack.width;
 	const int damageY = damagedAreaIndex / mapChangeTrack.width;
-
-	// area of map damaged.
-	// area of the map which may need a max height change
 	int2 damageMin{damageX*SAMPLES_PER_QUAD, damageY*SAMPLES_PER_QUAD};
 	int2 damageMax = damageMin + int2{SAMPLES_PER_QUAD - 1, SAMPLES_PER_QUAD - 1};
 
-	// area of map to load maximums for to update the updateLocation
-	int2 min = damageMin - impactRadius;
-	int2 max = damageMax + impactRadius;
-	int2 map{maxx, maxy};
-
-	damageMin.x = std::clamp(damageMin.x, 0, map.x);
-	damageMin.y = std::clamp(damageMin.y, 0, map.y);
-	damageMax.x = std::clamp(damageMax.x, 0, map.x);
-	damageMax.y = std::clamp(damageMax.y, 0, map.y);
-	min.x = std::clamp(min.x, 0, map.x - 1);
-	min.y = std::clamp(min.y, 0, map.y - 1);
-	max.x = std::clamp(max.x, 0, map.x - 1);
-	max.y = std::clamp(max.y, 0, map.y - 1);
+	damageMin.x = std::clamp(damageMin.x, 0, maxx - 1);
+	damageMin.y = std::clamp(damageMin.y, 0, maxy - 1);
+	damageMax.x = std::clamp(damageMax.x, 0, maxx - 1);
+	damageMax.y = std::clamp(damageMax.y, 0, maxy - 1);
 
 	if (updateMaxima) {
-
-#ifdef SMOOTH_MESH_DEBUG_GENERAL
-		LOG("%s: quad index %d (%d,%d)-(%d,%d) (%d,%d)-(%d,%d) updating maxima",
-			__func__,
-			damagedAreaIndex,
-			damageMin.x, damageMin.y,
-			damageMax.x, damageMax.y,
-			min.x, min.y,
-			max.x, max.y
-			);
-
-		LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
-			, (float)damageMin.x * fresolution
-			, (float)damageMin.y * fresolution
-			, (float)damageMax.x * fresolution
-			, (float)damageMax.y * fresolution
-			);
-#endif
-
-		for (int i = min.x; i <= max.x; ++i)
-			colsMaxima[i] = -std::numeric_limits<float>::max();
-
-		for (int i = min.x; i <= max.x; ++i)
-			maximaRows[i] = -1;
-
-		FindMaximumColumnHeights(map, damageMin.y, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
-
-		for (int y = damageMin.y; y <= damageMax.y; ++y) {
-			FindRadialMaximum(map, y, damageMin.x, damageMax.x, winSize, resolution, colsMaxima, maximaMesh);
-			AdvanceMaximas(map, y+1, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
-		}
+		UpdateSmoothMeshMaximas(damageMin, damageMax);
 
 		mapChangeTrack.horizontalBlurQueue.push(damagedAreaIndex);
 		mapChangeTrack.damageMap[damagedAreaIndex] = false;
 	} else {
+		const int winSize = smoothRadius / resolution;
+		const int blurSize = std::max(1, winSize / 2);
+		const int2 map{maxx, maxy};
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
-		LOG("%s: quad index %d (%d,%d)-(%d,%d) (%d,%d)-(%d,%d) applying blur",
-			__func__,
-			damagedAreaIndex,
-			damageMin.x, damageMin.y,
-			damageMax.x, damageMax.y,
-			min.x, min.y,
-			max.x, max.y
-			);
+	LOG("%s: quad index %d (%d,%d)-(%d,%d) applying blur", __func__
+		, damagedAreaIndex, damageMin.x, damageMin.y, damageMax.x, damageMax.y
+		);
 
-		LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
-			, (float)damageMin.x * fresolution
-			, (float)damageMin.y * fresolution
-			, (float)damageMax.x * fresolution
-			, (float)damageMax.y * fresolution
-			);
+	LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
+		, (float)damageMin.x * fresolution, (float)damageMin.y * fresolution
+		, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution
+		);
 #endif
 
 		if (doHorizontalBlur) {
@@ -585,27 +600,6 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	}
 }
 
-void SmoothHeightMesh::InitMapChangeTracking() {
-	const int damageTrackWidth = maxx / SAMPLES_PER_QUAD + (maxx % SAMPLES_PER_QUAD ? 1 : 0);
-	const int damageTrackHeight = maxy / SAMPLES_PER_QUAD + (maxy % SAMPLES_PER_QUAD ? 1 : 0);
-	const int damageTrackQuads = damageTrackWidth * damageTrackHeight;
-	mapChangeTrack.damageMap.clear();
-	mapChangeTrack.damageMap.resize(damageTrackQuads);
-	mapChangeTrack.width = damageTrackWidth;
-	mapChangeTrack.height = damageTrackHeight;
-}
-
-void SmoothHeightMesh::InitDataStructures() {
-	assert(mesh.empty());
-	maximaMesh.resize(maxx * maxy, 0.0f);
-	mesh.resize(maxx * maxy, 0.0f);
-	tempMesh.resize(maxx * maxy, 0.0f);
-	origMesh.resize(maxx * maxy, 0.0f);
-	colsMaxima.clear();
-	colsMaxima.resize(maxx, -std::numeric_limits<float>::max());
-	maximaRows.clear();
-	maximaRows.resize(maxx, -1);
-}
 
 void SmoothHeightMesh::MakeSmoothMesh() {
 	ScopedOnceTimer timer("SmoothHeightMesh::MakeSmoothMesh");
