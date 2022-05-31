@@ -15,6 +15,8 @@
 
 #include "System/Log/ILog.h"
 
+using namespace SmoothHeightMeshNamespace;
+
 #if 0
 #define SMOOTH_MESH_DEBUG_MAXIMA
 #endif
@@ -26,9 +28,6 @@
 #if 0
 #define SMOOTH_MESH_DEBUG_GENERAL
 #endif
-
-constexpr int SMOOTH_MESH_UPDATE_DELAY = GAME_SPEED;
-constexpr int SAMPLES_PER_QUAD = 32; 
 
 SmoothHeightMesh smoothGround;
 
@@ -78,12 +77,12 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 }
 
 void SmoothHeightMesh::Kill() {
-	while (!meshDamageTrack.damageQueue[0].empty()) { meshDamageTrack.damageQueue[0].pop(); }
-	while (!meshDamageTrack.damageQueue[1].empty()) { meshDamageTrack.damageQueue[1].pop(); }
-	while (!meshDamageTrack.horizontalBlurQueue.empty()) { meshDamageTrack.horizontalBlurQueue.pop(); }
-	while (!meshDamageTrack.verticalBlurQueue.empty()) { meshDamageTrack.verticalBlurQueue.pop(); }
+	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop(); }
+	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop(); }
+	while (!mapChangeTrack.horizontalBlurQueue.empty()) { mapChangeTrack.horizontalBlurQueue.pop(); }
+	while (!mapChangeTrack.verticalBlurQueue.empty()) { mapChangeTrack.verticalBlurQueue.pop(); }
 
-	meshDamageTrack.damageMap.clear();
+	mapChangeTrack.damageMap.clear();
 	maximaMesh.clear();
 	mesh.clear();
 	origMesh.clear();
@@ -405,10 +404,10 @@ inline static void CheckInvariants(
 
 void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 
-	const bool queueWasEmpty = meshDamageTrack.damageQueue[meshDamageTrack.activeBuffer].empty();
+	const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
 	const int res = resolution*SAMPLES_PER_QUAD;
-	const int w = meshDamageTrack.width;
-	const int h = meshDamageTrack.height;
+	const int w = mapChangeTrack.width;
+	const int h = mapChangeTrack.height;
 	
 	const int2 min  { std::max((x1 - smoothRadius) / res, 0)
 					, std::max((y1 - smoothRadius) / res, 0)};
@@ -418,28 +417,28 @@ void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 	for (int y = min.y; y <= max.y; ++y) {
 		int i = min.x + y*w;
 		for (int x = min.x; x <= max.x; ++x, ++i) {
-			if (!meshDamageTrack.damageMap[i]) {
-				meshDamageTrack.damageMap[i] = true;
-				meshDamageTrack.damageQueue[meshDamageTrack.activeBuffer].push(i);
+			if (!mapChangeTrack.damageMap[i]) {
+				mapChangeTrack.damageMap[i] = true;
+				mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].push(i);
 			}
 		}	
 	}
 
-	const bool queueWasUpdated = !meshDamageTrack.damageQueue[meshDamageTrack.activeBuffer].empty();
+	const bool queueWasUpdated = !mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
 
 	if (queueWasEmpty && queueWasUpdated)
-		meshDamageTrack.queueReleaseOnFrame = gs->frameNum + SMOOTH_MESH_UPDATE_DELAY;
+		mapChangeTrack.queueReleaseOnFrame = gs->frameNum + SMOOTH_MESH_UPDATE_DELAY;
 }
 
 
 void SmoothHeightMesh::UpdateSmoothMesh() {
 	SCOPED_TIMER("Sim::SmoothHeightMesh::UpdateSmoothMesh");
 
-	const bool flushBuffer = !meshDamageTrack.activeBuffer;
-	const bool activeBuffer = meshDamageTrack.activeBuffer;
-	const bool currentWorkloadComplete = meshDamageTrack.damageQueue[flushBuffer].empty()
-									  && meshDamageTrack.horizontalBlurQueue.empty()
-									  && meshDamageTrack.verticalBlurQueue.empty();
+	const bool flushBuffer = !mapChangeTrack.activeBuffer;
+	const bool activeBuffer = mapChangeTrack.activeBuffer;
+	const bool currentWorkloadComplete = mapChangeTrack.damageQueue[flushBuffer].empty()
+									  && mapChangeTrack.horizontalBlurQueue.empty()
+									  && mapChangeTrack.verticalBlurQueue.empty();
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
 	LOG("%s: flush buffer is %d; damage queue is %I64d; blur queue is %I64d",
@@ -451,10 +450,10 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 #endif
 
 	if (currentWorkloadComplete){
-		const bool activeBufferReady = !meshDamageTrack.damageQueue[activeBuffer].empty()
-									&& gs->frameNum >= meshDamageTrack.queueReleaseOnFrame;
+		const bool activeBufferReady = !mapChangeTrack.damageQueue[activeBuffer].empty()
+									&& gs->frameNum >= mapChangeTrack.queueReleaseOnFrame;
 		if (activeBufferReady) {
-			meshDamageTrack.activeBuffer = !meshDamageTrack.activeBuffer;
+			mapChangeTrack.activeBuffer = !mapChangeTrack.activeBuffer;
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
 			LOG("%s: opening new queue", __func__);
 #endif
@@ -462,18 +461,18 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 		return;
 	}
 
-	bool updateMaxima = !meshDamageTrack.damageQueue[flushBuffer].empty();
-	bool doHorizontalBlur = !meshDamageTrack.horizontalBlurQueue.empty();
+	bool updateMaxima = !mapChangeTrack.damageQueue[flushBuffer].empty();
+	bool doHorizontalBlur = !mapChangeTrack.horizontalBlurQueue.empty();
 	int damagedAreaIndex = 0;
 
 	std::queue<int>* activeQueue = nullptr;
 
 	if (updateMaxima) 
-		activeQueue = &meshDamageTrack.damageQueue[flushBuffer];
+		activeQueue = &mapChangeTrack.damageQueue[flushBuffer];
 	else if (doHorizontalBlur)
-		activeQueue = &meshDamageTrack.horizontalBlurQueue;
+		activeQueue = &mapChangeTrack.horizontalBlurQueue;
 	else
-		activeQueue = &meshDamageTrack.verticalBlurQueue;
+		activeQueue = &mapChangeTrack.verticalBlurQueue;
 
 	damagedAreaIndex = activeQueue->front();
 	activeQueue->pop();
@@ -483,8 +482,8 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 
 	int2 impactRadius{winSize, winSize};
 
-	const int damageX = damagedAreaIndex % meshDamageTrack.width;
-	const int damageY = damagedAreaIndex / meshDamageTrack.width;
+	const int damageX = damagedAreaIndex % mapChangeTrack.width;
+	const int damageY = damagedAreaIndex / mapChangeTrack.width;
 
 	// area of map damaged.
 	// area of the map which may need a max height change
@@ -539,8 +538,8 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 		}
 		//std::copy(maximaMesh.begin(), maximaMesh.end(), mesh.begin());
 
-		meshDamageTrack.horizontalBlurQueue.push(damagedAreaIndex);
-		meshDamageTrack.damageMap[damagedAreaIndex] = false;
+		mapChangeTrack.horizontalBlurQueue.push(damagedAreaIndex);
+		mapChangeTrack.damageMap[damagedAreaIndex] = false;
 	} else {
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
@@ -563,7 +562,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 
 		if (doHorizontalBlur) {
 			BlurHorizontal(map, damageMin, damageMax, blurSize, resolution, maximaMesh, tempMesh);
-			meshDamageTrack.verticalBlurQueue.push(damagedAreaIndex);
+			mapChangeTrack.verticalBlurQueue.push(damagedAreaIndex);
 		}
 		else {
 			BlurVertical(map, damageMin, damageMax, blurSize, resolution, tempMesh, mesh);
@@ -581,10 +580,10 @@ void SmoothHeightMesh::InitMapChangeTracking() {
 	const int damageTrackWidth = maxx / SAMPLES_PER_QUAD + (maxx % SAMPLES_PER_QUAD ? 1 : 0);
 	const int damageTrackHeight = maxy / SAMPLES_PER_QUAD + (maxy % SAMPLES_PER_QUAD ? 1 : 0);
 	const int damageTrackQuads = damageTrackWidth * damageTrackHeight;
-	meshDamageTrack.damageMap.clear();
-	meshDamageTrack.damageMap.resize(damageTrackQuads);
-	meshDamageTrack.width = damageTrackWidth;
-	meshDamageTrack.height = damageTrackHeight;
+	mapChangeTrack.damageMap.clear();
+	mapChangeTrack.damageMap.resize(damageTrackQuads);
+	mapChangeTrack.width = damageTrackWidth;
+	mapChangeTrack.height = damageTrackHeight;
 }
 
 void SmoothHeightMesh::InitDataStructures() {

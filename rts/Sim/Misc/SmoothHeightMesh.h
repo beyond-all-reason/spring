@@ -7,16 +7,25 @@
 #include <queue>
 #include <vector>
 
+#include "Sim/Misc/GlobalConstants.h"
 #include "System/type2.h"
 
 class CGround;
+
+namespace SmoothHeightMeshNamespace {
+	constexpr int SMOOTH_MESH_UPDATE_DELAY = GAME_SPEED;
+	constexpr int SAMPLES_PER_QUAD = 32;
+}
 
 /**
  * Provides a GetHeight(x, y) of its own that smooths the mesh.
  */
 class SmoothHeightMesh
 {
+	friend class SmoothHeightMeshDrawer;
+
 public:
+
 	struct MapChangeTrack {
 		std::vector<bool> damageMap;
 		std::queue<int> damageQueue[2];
@@ -72,7 +81,7 @@ private:
 	std::vector<float> colsMaxima;
 	std::vector<int> maximaRows;
 
-	MapChangeTrack meshDamageTrack;
+	MapChangeTrack mapChangeTrack;
 
 	void UpdateMapMaximaGrid();
 	void BuildNewMapMaximaGrid();
