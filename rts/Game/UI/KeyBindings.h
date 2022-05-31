@@ -61,10 +61,8 @@ class CKeyBindings : public CommandReceiver
 		void DebugActionList(const ActionList& actionList) const;
 
 		void AddActionToKeyMap(KeyMap& bindings, Action& action);
-		static ActionList RemoveDuplicateActions(ActionList& actionList);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
-		static ActionList GetActionListFromKeyMap(const KeyMap& bindings);
-		static ActionList MergeActionLists(const ActionList& actionListA, const ActionList& actionListB, ActionComparison compare);
+		static ActionList MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& actionListB);
 
 		bool Bind(const std::string& keystring, const std::string& action);
 		bool UnBind(const std::string& keystring, const std::string& action);

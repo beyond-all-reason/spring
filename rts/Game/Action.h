@@ -19,11 +19,6 @@ public:
 	std::string rawline;      ///< includes the command, case preserved
 	std::string boundWith;    ///< the string that defined the binding keyset
 	CKeyChain   keyChain;     ///< the bound keychain/keyset
-
-	bool operator==(const Action& action) const
-	{
-		return line == action.line;
-	}
 };
 
 #endif // ACTION_H
