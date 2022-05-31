@@ -402,6 +402,21 @@ inline static void CheckInvariants(
 }
 
 
+inline static void CopyMeshPart
+	( int mapx
+	, int2 min
+	, int2 max
+	, const std::vector<float>& src
+	, std::vector<float>& dest
+	) {
+	for (int y = min.y; y <= max.y; ++y) {
+		const int startIdx = min.x + y*mapx;
+		const int endIdx = max.x + y*mapx + 1;
+		std::copy(&src[startIdx], &src[endIdx], &dest[startIdx]);
+	}
+}
+
+
 void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 
 	const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
@@ -536,7 +551,6 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 			FindRadialMaximum(map, y, damageMin.x, damageMax.x, winSize, resolution, colsMaxima, maximaMesh);
 			AdvanceMaximas(map, y+1, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
 		}
-		//std::copy(maximaMesh.begin(), maximaMesh.end(), mesh.begin());
 
 		mapChangeTrack.horizontalBlurQueue.push(damagedAreaIndex);
 		mapChangeTrack.damageMap[damagedAreaIndex] = false;
@@ -566,12 +580,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 		}
 		else {
 			BlurVertical(map, damageMin, damageMax, blurSize, resolution, tempMesh, mesh);
-
-			for (int y = damageMin.y; y <= damageMax.y; ++y) {
-				const int startIdx = damageMin.x + y*map.x;
-				const int endIdx = damageMax.x + y*map.x + 1;
-				std::copy(&mesh[startIdx], &mesh[endIdx], &tempMesh[startIdx]);
-			}
+			CopyMeshPart(map.x, damageMin, damageMax, mesh, tempMesh);
 		}
 	}
 }
