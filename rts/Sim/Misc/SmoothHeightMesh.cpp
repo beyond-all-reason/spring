@@ -34,10 +34,10 @@ SmoothHeightMesh smoothGround;
 
 static float Interpolate(float x, float y, const int maxx, const int maxy, const float res, const float* heightmap)
 {
-	x = Clamp(x / res, 0.0f, ((float)maxx - 1));
-	y = Clamp(y / res, 0.0f, ((float)maxy - 1));
-	const int sx = x;
-	const int sy = y;
+	x = Clamp(x / res, 0.0f, (float)maxx);
+	y = Clamp(y / res, 0.0f, (float)maxy);
+	const int sx = std::min((int)x, maxx - 1);
+	const int sy = std::min((int)y, maxy - 1);
 	const float dx = (x - sx);
 	const float dy = (y - sy);
 
@@ -97,7 +97,7 @@ float SmoothHeightMesh::GetHeight(float x, float y)
 float SmoothHeightMesh::GetHeightAboveWater(float x, float y)
 {
 	assert(!mesh.empty());
-	return std::max(0.0f, Interpolate(x, y, maxx, maxy, resolution, &mesh[0]));
+	return std::max(0.0f, Interpolate(x, y, maxx, maxy, fresolution, &mesh[0]));
 }
 
 float SmoothHeightMesh::SetHeight(int index, float h)
