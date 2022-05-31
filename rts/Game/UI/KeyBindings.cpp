@@ -488,18 +488,13 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode) 
 
 CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char modifiers) const
 {
-	const CKeySet& codeSet = CKeySet(keyCode, modifiers, CKeySet::KSKeyCode);
-	const CKeySet& scanSet = CKeySet(scanCode, modifiers, CKeySet::KSScanCode);
+	CKeyChain codeChain;
+	CKeyChain scanChain;
 
-	ActionList merged = MergeActionListsByTrigger(GetActionList(codeSet), GetActionList(scanSet));
+	codeChain.emplace_back(CKeySet(keyCode, modifiers, CKeySet::KSKeyCode));
+	scanChain.emplace_back(CKeySet(scanCode, modifiers, CKeySet::KSScanCode));
 
-	if (debugEnabled) {
-		LOG("GetActions: key=\"%s\" scan=\"%s\" keyCode=\"%d\" scanCode=\"%d\":", codeSet.GetString(true).c_str(), scanSet.GetString(true).c_str(), keyCode, scanCode);
-
-		DebugActionList(merged);
-	}
-
-	return merged;
+	return GetActionList(codeChain, scanChain);
 }
 
 
