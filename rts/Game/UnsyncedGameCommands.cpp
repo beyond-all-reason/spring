@@ -234,19 +234,13 @@ public:
 		}
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs());
-		bool overallParseFailure = false, parseFailure;
+		bool parseFailure;
 
-		if (args.size() != 2)
-			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+		int smfMeshDrawerArg = (args.size() > 0) ? StringToInt(args[0], &parseFailure) : -1.0;
+		if (parseFailure) smfMeshDrawerArg = -1.0;
 
-		int smfMeshDrawerArg = StringToInt(args[0], &parseFailure);
-		overallParseFailure |= parseFailure;
-
-		int roamPatchModeArg = StringToInt(args[1], &parseFailure);
-		overallParseFailure |= parseFailure;
-
-		if (overallParseFailure)
-			LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+		int roamPatchModeArg = (args.size() > 1) ? StringToInt(args[1], &parseFailure) : -1.0;
+		if (parseFailure) roamPatchModeArg = -1.0;
 
 		smfDrawer->SwitchMeshDrawer(smfMeshDrawerArg);
 
