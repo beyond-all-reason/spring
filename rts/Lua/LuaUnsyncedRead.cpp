@@ -2581,7 +2581,7 @@ int LuaUnsyncedRead::GetKeySymbol(lua_State* L)
 
 int LuaUnsyncedRead::GetActionList(lua_State* L)
 {
-	CKeyBindings::ActionList actions;
+	ActionList actions;
 	unsigned char modifiers = 0;
 
 	const int keyCode = luaL_optint(L, 1, -1);
@@ -2608,7 +2608,7 @@ int LuaUnsyncedRead::GetActionList(lua_State* L)
 
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
-	CKeyBindings::ActionList actions;
+	ActionList actions;
 	const std::string& argument = luaL_optstring(L, 1, "");
 
 	if (argument.empty()) {
@@ -2619,7 +2619,10 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 		if (!ks.Parse(luaL_checksstring(L, 1)))
 			return 0;
 
-		actions = keyBindings.GetActionList(ks);
+		CKeyChain keyChain;
+		keyChain.emplace_back(ks);
+
+		actions = keyBindings.GetActionList(keyChain);
 	}
 
 	int i = 1;

@@ -16,7 +16,6 @@
 class CKeyBindings : public CommandReceiver
 {
 	public:
-		typedef std::vector<Action> ActionList;
 		typedef spring::unsynced_set<std::string> HotkeyList;
 		typedef std::function<bool (Action, Action)> ActionComparison;
 

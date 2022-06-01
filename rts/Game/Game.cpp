@@ -1015,7 +1015,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
 
 	// Get the list of possible key actions
-	const CKeyBindings::ActionList& actionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+	const ActionList& actionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
 	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, actionList))
 		return 0;
@@ -1070,7 +1070,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	}
 
 	// try our list of actions
-	const CKeyBindings::ActionList& al = keyBindings.GetActionList(keyCode, scanCode);
+	const ActionList& al = keyBindings.GetActionList(keyCode, scanCode);
 	for (const Action& action: al) {
 		if (ActionReleased(action))
 			return 0;

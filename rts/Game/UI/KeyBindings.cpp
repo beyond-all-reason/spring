@@ -309,38 +309,16 @@ void CKeyBindings::Kill()
 
 /******************************************************************************/
 
-const CKeyBindings::ActionList & CKeyBindings::GetActionList(const CKeySet& ks, bool forceAny) const
+void FilterByKeychain(const ActionList & in, const CKeyChain & kc, ActionList & out)
 {
-	static ActionList empty;
-
-	if (ks.Key() < 0)
-		return empty;
-
-	const auto & bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
-
-	CKeySet toUse = ks;
-	if (forceAny) toUse.SetAnyBit();
-
-	const auto it = bindings.find(ks);
-	if (it != bindings.end())
-		return (it->second);
-
-	return empty;
-}
-
-void FilterByKeychain(const CKeyBindings::ActionList & in, const CKeyChain & kc, CKeyBindings::ActionList & out) {
 	for (const Action& action: in)
 		if (kc.fit(action.keyChain))
 			out.push_back(action);
 }
 
-void FilterByKeyset(const CKeyBindings::ActionList & in, const CKeySet & kc, CKeyBindings::ActionList & out) {
-	for (const Action& action: in)
-		if (action.keyChain.size() == 1 && action.keyChain[0].fit(kc))
-			out.push_back(action);
-}
 
-void MergeActionListsByTrigger(const CKeyBindings::ActionList& actionListA, const CKeyBindings::ActionList& actionListB, CKeyBindings::ActionList & out) {
+void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& actionListB, ActionList & out)
+{
 	// When we are retrieving actionlists for a given keyboard state we need to
 	// remove duplicate actions that might arise from binding the same action
 	// to both key and scancodes
@@ -401,7 +379,28 @@ void MergeActionListsByTrigger(const CKeyBindings::ActionList& actionListA, cons
 	std::inplace_merge(std::next(std::begin(out), aBeginId), std::next(std::begin(out), aEndId), std::end(out), compareActionByTriggerOrder);
 }
 
-CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
+
+const ActionList & CKeyBindings::GetActionList(const CKeySet& ks, bool forceAny) const
+{
+	static ActionList empty;
+
+	if (ks.Key() < 0)
+		return empty;
+
+	const auto & bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
+
+	CKeySet toUse = ks;
+	if (forceAny) toUse.SetAnyBit();
+
+	const auto it = bindings.find(toUse);
+	if (it != bindings.end())
+		return (it->second);
+
+	return empty;
+}
+
+
+ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
 {
 	ActionList out;
 
@@ -419,7 +418,8 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
 	return out;
 }
 
-CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const CKeyChain& sc) const
+
+ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const CKeyChain& sc) const
 {
 	// Recover the actionLists we need to merge.
 	ActionList merged;
@@ -448,39 +448,26 @@ CKeyBindings::ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const 
 	return merged;
 }
 
-CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode) const
+
+ActionList CKeyBindings::GetActionList(int keyCode, int scanCode) const
 {
 	return GetActionList(keyCode, scanCode, CKeySet::GetCurrentModifiers());
 }
 
-CKeyBindings::ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char modifiers) const
+
+ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char modifiers) const
 {
-	CKeySet kSet(keyCode, modifiers, CKeySet::KSKeyCode);
-	CKeySet sSet(scanCode, modifiers, CKeySet::KSScanCode);
+	CKeyChain codeChain;
+	CKeyChain scanChain;
 
-	// Recover the actionLists we need to merge.
-	ActionList merged;
+	codeChain.emplace_back(CKeySet(keyCode, modifiers, CKeySet::KSKeyCode));
+	scanChain.emplace_back(CKeySet(scanCode, modifiers, CKeySet::KSScanCode));
 
-	// First get non-Any lists.
-	ActionList kList, sList;
-	if (!kSet.AnyMod()) FilterByKeyset(GetActionList(kSet, false), kSet, kList);
-	if (!sSet.AnyMod()) FilterByKeyset(GetActionList(kSet, false), sSet, sList);
-
-	MergeActionListsByTrigger(kList, sList, merged);
-
-	// Now do Any
-	kList.clear();
-	sList.clear();
-	FilterByKeyset(GetActionList(kSet, true), kSet, kList);
-	FilterByKeyset(GetActionList(sSet, true), sSet, sList);
-
-	MergeActionListsByTrigger(kList, sList, merged);
-
-	return merged;
+	return GetActionList(codeChain, scanChain);
 }
 
 
-CKeyBindings::ActionList CKeyBindings::GetActionList() const
+ActionList CKeyBindings::GetActionList() const
 {
 	ActionList merged;
 
@@ -506,7 +493,7 @@ CKeyBindings::ActionList CKeyBindings::GetActionList() const
 }
 
 
-void CKeyBindings::DebugActionList(const CKeyBindings::ActionList& actionList) const {
+void CKeyBindings::DebugActionList(const ActionList& actionList) const {
 	LOG("Action List:");
 	if (actionList.empty()) {
 		LOG("   EMPTY");
@@ -517,10 +504,6 @@ void CKeyBindings::DebugActionList(const CKeyBindings::ActionList& actionList) c
 		}
 	}
 };
-
-
-
-
 
 
 const CKeyBindings::HotkeyList& CKeyBindings::GetHotkeys(const std::string& action) const
@@ -964,4 +947,3 @@ bool CKeyBindings::FileSave(FILE* out) const
 
 
 /******************************************************************************/
-
