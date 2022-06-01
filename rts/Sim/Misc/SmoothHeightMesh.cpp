@@ -128,16 +128,19 @@ float SmoothHeightMesh::GetHeightAboveWater(float x, float y)
 
 float SmoothHeightMesh::SetHeight(int index, float h)
 {
+	assert(index < maxx*maxy);
 	return (mesh[index] = h);
 }
 
 float SmoothHeightMesh::AddHeight(int index, float h)
 {
+	assert(index < maxx*maxy);
 	return (mesh[index] += h);
 }
 
 float SmoothHeightMesh::SetMaxHeight(int index, float h)
 {
+	assert(index < maxx*maxy);
 	return (mesh[index] = std::max(h, mesh[index]));
 }
 
