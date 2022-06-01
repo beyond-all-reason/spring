@@ -96,10 +96,10 @@ void SmoothHeightMeshDrawer::Draw(float yoffset) {
 
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
-	va->EnlargeArrays((numQuadsX + 1) * (numQuadsZ + 1) * 4, 0, VA_SIZE_0);
+	va->EnlargeArrays(numQuadsX * numQuadsZ * 4, 0, VA_SIZE_0);
 
-	for (unsigned int zq = 0; zq <= numQuadsZ; zq++) {
-		for (unsigned int xq = 0; xq <= numQuadsX; xq++) {
+	for (unsigned int zq = 0; zq < numQuadsZ; zq++) {
+		for (unsigned int xq = 0; xq < numQuadsX; xq++) {
 			const float x = xq * quadSize;
 			const float z = zq * quadSize;
 
