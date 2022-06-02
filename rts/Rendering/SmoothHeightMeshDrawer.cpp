@@ -10,6 +10,7 @@
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "System/EventHandler.h"
 #include "System/float3.h"
+#include "System/SafeUtil.h"
 
 using namespace SmoothHeightMeshNamespace;
 
@@ -24,8 +25,7 @@ SmoothHeightMeshDrawer* SmoothHeightMeshDrawer::GetInstance() {
 
 void SmoothHeightMeshDrawer::FreeInstance() {
 	if (smoothMeshDrawer != nullptr) {
-		delete smoothMeshDrawer;
-		smoothMeshDrawer = nullptr;
+		spring::SafeDelete(smoothMeshDrawer);
 	}
 }
 
