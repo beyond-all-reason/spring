@@ -22,6 +22,7 @@
 #include "Game/UI/GuiHandler.h"
 #include "Game/UI/InfoConsole.h"
 #include "Game/UI/KeyCodes.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/KeySet.h"
 #include "Game/UI/KeyBindings.h"
 #include "Game/UI/MiniMap.h"
@@ -231,8 +232,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetKeyCode);
 	REGISTER_LUA_CFUNC(GetKeySymbol);
+	REGISTER_LUA_CFUNC(GetScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyBindings);
-	REGISTER_LUA_CFUNC(GetActionList);
 	REGISTER_LUA_CFUNC(GetActionHotKeys);
 
 	REGISTER_LUA_CFUNC(GetLastMessagePositions);
@@ -2579,32 +2580,15 @@ int LuaUnsyncedRead::GetKeySymbol(lua_State* L)
 	return 2;
 }
 
-int LuaUnsyncedRead::GetActionList(lua_State* L)
+
+int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
 {
-	ActionList actions;
-	unsigned char modifiers = 0;
-
-	const int keyCode = luaL_optint(L, 1, -1);
-	const int scanCode = luaL_optint(L, 2, -1);
-	if (!lua_isnone(L, 3))
-		LuaUtils::ParseKeySetModifiers(L, __func__, 3, modifiers); 
-
-	actions = keyBindings.GetActionList(keyCode, scanCode, modifiers);
-
-	int i = 1;
-	lua_newtable(L);
-	for (const Action& action: actions) {
-		lua_newtable(L);
-			lua_pushsstring(L, action.command);
-			lua_pushsstring(L, action.extra);
-			lua_rawset(L, -3);
-			LuaPushNamedString(L, "command",   action.command);
-			LuaPushNamedString(L, "extra",     action.extra);
-			LuaPushNamedString(L, "boundWith", action.boundWith);
-		lua_rawseti(L, -2, i++);
-	}
-	return 1;
+	const int scanCode = luaL_checkint(L, 1);
+	lua_pushsstring(L, scanCodes.GetName(scanCode));
+	lua_pushsstring(L, scanCodes.GetDefaultName(scanCode));
+	return 2;
 }
+
 
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
@@ -2622,7 +2606,19 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 		CKeyChain keyChain;
 		keyChain.emplace_back(ks);
 
-		actions = keyBindings.GetActionList(keyChain);
+		const std::string& arg2 = luaL_optstring(L, 2, "");
+
+		if (arg2.empty()) {
+			actions = keyBindings.GetActionList(keyChain);
+		} else {
+			if (!ks.Parse(luaL_checksstring(L, 2)))
+				return 0;
+
+			CKeyChain keyChain2;
+			keyChain2.emplace_back(ks);
+
+			actions = keyBindings.GetActionList(keyChain, keyChain2);
+		}
 	}
 
 	int i = 1;

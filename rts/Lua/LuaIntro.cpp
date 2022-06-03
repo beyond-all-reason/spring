@@ -247,8 +247,8 @@ bool CLuaIntro::LoadUnsyncedReadFunctions(lua_State* L)
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetKeyCode);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetKeySymbol);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetScanSymbol);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetKeyBindings);
-	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetActionList);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetActionHotKeys);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetLogSections);
