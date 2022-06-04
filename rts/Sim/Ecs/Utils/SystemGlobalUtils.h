@@ -26,6 +26,7 @@ public:
         if (typeToEntity.contains(typeId)) {
             auto entity = typeToEntity.at(typeId);
             if (EcsMain::registry.valid(entity)) EcsMain::registry.destroy(entity);
+            typeToEntity.erase(typeId);
         }
     }
 

@@ -19,14 +19,13 @@ EnvEconomySystem envEconomySystem;
 
 void EnvEconomySystem::Update()
 {
-    SCOPED_TIMER("ECS::EnvEconomySystem::Update");
-
     if (!flowEconomySystem.IsSystemActive())
         return;
 
     if ((gs->frameNum % ENV_RESOURCE_UPDATE_RATE) != ENV_RESOURCE_TICK)
        return;
 
+    SCOPED_TIMER("ECS::EnvEconomySystem::Update");
     LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
 
     auto& envResourceComp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();

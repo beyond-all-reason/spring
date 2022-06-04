@@ -28,6 +28,9 @@ using namespace EnvEconomy;
 void EnvResourceSystem::Init()
 {
     systemGlobals.InitSystemComponent<EnvResourceComponent>();
+
+    entt::component_traits<EnvResourceComponent> systemComponentTraits;
+    LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
 }
 
 void EnvResourceSystem::Update()
@@ -107,49 +110,3 @@ void EnvResourceSystem::UpdateWindStrength(EnvResourceComponent& comp)
         //LOG("%s: updated new dir generator %d", __func__, unitId);
     }
 }
-
-
-/*
-bool EnvResourceSystem::AddGenerator(CUnit* unit)
-{
-    if (!EcsMain::registry.valid(unit->entityReference)){
-        LOG("%s: cannot add generator unit to %d because it hasn't been registered yet.", __func__, unit->id);
-        return false;
-    }
-
-    EcsMain::registry.emplace_or_replace<WindGenerator>(unit->entityReference);
-    if (windDirTimer != 0)
-        EcsMain::registry.emplace_or_replace<NewWindGenerator>(unit->entityReference);
-
-    LOG("%s: added wind generator unit %d", __func__, unit->id);
-
-    return true;
-}
-
-void EnvResourceSystem::ActivateGenerator(CUnit* unit) {
-    entt::entity entity = unit->entityReference;
-    bool entityIsValid = EcsMain::registry.valid(entity);
-    if (entityIsValid && EcsMain::registry.all_of<WindGenerator>(entity))
-        EcsMain::registry.emplace_or_replace<WindGeneratorActive>(entity);
-}
-
-void EnvResourceSystem::DeactivateGenerator(CUnit* unit) {
-    entt::entity entity = unit->entityReference;
-    bool entityIsValid = EcsMain::registry.valid(entity);
-    if (entityIsValid && EcsMain::registry.all_of<WindGenerator>(entity))
-        EcsMain::registry.remove<WindGeneratorActive>(entity);
-}
-
-bool EnvResourceSystem::DelGenerator(CUnit* unit)
-{
-    entt::entity entity = unit->entityReference;
-    bool entityIsValid = EcsMain::registry.valid(entity);
-
-    if (entityIsValid){
-        UnitEconomyHelper::UpdateUnitFixedEnergyIncome(unit, 0.f);
-        EcsMain::registry.remove<NewWindGenerator>(entity);
-        EcsMain::registry.remove<WindGenerator>(entity);
-        EcsMain::registry.remove<WindGeneratorActive>(entity);
-    }
-    return entityIsValid;
-}*/
