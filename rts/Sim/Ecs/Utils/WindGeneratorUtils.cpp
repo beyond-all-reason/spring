@@ -1,4 +1,4 @@
-#include "WindGeneratorHelper.h"
+#include "WindGeneratorUtils.h"
 
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
@@ -9,21 +9,21 @@
 
 #include "Sim/Units/Unit.h"
 
-void WindGeneratorHelper::CreateWindGenerator(CUnit *unit){
+void WindGeneratorUtils::CreateWindGenerator(CUnit *unit){
     auto entity = unit->entityReference;
     if (! EnvResources::EnvResourceUtils::IsWindAboutToChange())
         EcsMain::registry.emplace<EnvEconomy::NewWindGenerator>(entity);
     EcsMain::registry.emplace<EnvEconomy::WindGenerator>(entity);
 }
 
-void WindGeneratorHelper::RemoveWindGenerator(CUnit *unit){
+void WindGeneratorUtils::RemoveWindGenerator(CUnit *unit){
     auto entity = unit->entityReference;
     DeactivateGenerator(unit);
     EcsMain::registry.remove<EnvEconomy::NewWindGenerator>(entity);
     EcsMain::registry.remove<EnvEconomy::WindGenerator>(entity);
 }
 
-void WindGeneratorHelper::ActivateGenerator(CUnit* unit){
+void WindGeneratorUtils::ActivateGenerator(CUnit* unit){
     auto entity = unit->entityReference;
     if (!EcsMain::registry.valid(entity)){
         LOG("%s: cannot activate generator unit %d because it hasn't been registered yet.", __func__, unit->id);
@@ -45,7 +45,7 @@ void WindGeneratorHelper::ActivateGenerator(CUnit* unit){
     }
 }
 
-void WindGeneratorHelper::DeactivateGenerator(CUnit* unit){
+void WindGeneratorUtils::DeactivateGenerator(CUnit* unit){
     auto entity = unit->entityReference;
     if (!EcsMain::registry.valid(entity)){
         LOG("%s: cannot deactivate generator unit %d because it hasn't been registered yet.", __func__, unit->id);

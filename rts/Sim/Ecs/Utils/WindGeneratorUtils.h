@@ -3,7 +3,7 @@
 
 class CUnit;
 
-class WindGeneratorHelper {
+class WindGeneratorUtils {
 public:
     static void CreateWindGenerator(CUnit *unit);
 	static void RemoveWindGenerator(CUnit *unit);

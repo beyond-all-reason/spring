@@ -37,7 +37,6 @@
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
-#include "Sim/Ecs/Helpers/WindGeneratorHelper.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
 #include "Sim/Ecs/Systems/UnitSystem.h"
@@ -45,6 +44,7 @@
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
+#include "Sim/Ecs/Utils/WindGeneratorUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -380,7 +380,7 @@ void CUnit::PostInit(const CUnit* builder)
 	Block();
 
 	if (unitDef->windGenerator > 0.0f)
-		WindGeneratorHelper::CreateWindGenerator(this);
+		WindGeneratorUtils::CreateWindGenerator(this);
 
 	flowEconomySystem.AddFlowEconomyUnit(this);
 
@@ -523,7 +523,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 	SetGroup(nullptr);
 
 	if (unitDef->windGenerator > 0.0f)
-		WindGeneratorHelper::RemoveWindGenerator(this);
+		WindGeneratorUtils::RemoveWindGenerator(this);
 
 	blockHeightChanges = false;
 	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
@@ -2451,7 +2451,7 @@ void CUnit::Activate()
 		AddProratedEconomyTask(entityReference, unitDef->metalUpkeep, 0.f, 0, 1);
 
 		if (unitDef->windGenerator > 0.0f) {
-			WindGeneratorHelper::ActivateGenerator(this);
+			WindGeneratorUtils::ActivateGenerator(this);
 		}
 	}
 }
@@ -2480,7 +2480,7 @@ void CUnit::Deactivate()
 			});
 
 		if (unitDef->windGenerator > 0.0f)
-			WindGeneratorHelper::DeactivateGenerator(this);
+			WindGeneratorUtils::DeactivateGenerator(this);
 	}
 }
 

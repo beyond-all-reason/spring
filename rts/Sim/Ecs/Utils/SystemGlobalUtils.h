@@ -30,7 +30,7 @@ public:
     entt::entity GetSystemEntity() { return typeToEntity.at(entt::type_id<T>().index()); }
 
     template<class T>
-    bool IsSystemComponentActive() {
+    bool IsSystemActive() {
         auto systemActiveComp = EcsMain::registry.try_get<SystemActive>(GetSystemEntity<T>());
         if (systemActiveComp != nullptr) {
             return systemActiveComp->value;

@@ -27,7 +27,7 @@ void BuildSystem::Init() {
 }
 
 bool BuildSystem::IsSystemActive() {
-    return systemGlobals.IsSystemComponentActive<BuildSystemComponent>();
+    return systemGlobals.IsSystemActive<BuildSystemComponent>();
 }
 
 void BuildSystem::AddUnitBuilder(CUnit *unit){
