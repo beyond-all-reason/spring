@@ -349,7 +349,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 		EcsMain::registry.emplace<FlowEconomy::ResourceUse>(economyTaskId, newRes);
 		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(economyTaskId);
-		LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], economyTaskId);
+		LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)economyTaskId);
 	}
 
 	if (unitDef->selfdExpWeaponDef != nullptr)
@@ -1077,7 +1077,7 @@ void CUnit::SlowUpdate()
 			UseMetal(unitDef->metalUpkeep * 0.5f);
 
 			if (unitDef->windGenerator > 0.0f) {
-				auto currentWindStrength = EnvResources::envResourceUtils.GetCurrentWindStrength();
+				auto currentWindStrength = EnvResources::EnvResourceUtils::GetCurrentWindStrength();
 				if (currentWindStrength > unitDef->windGenerator) {
 					AddEnergy(unitDef->windGenerator * 0.5f);
 				} else {
@@ -1087,7 +1087,7 @@ void CUnit::SlowUpdate()
 		}
 
 		// FIXME: tidal part should be under "if (activated)"?
-		auto currentTidalStrength = EnvResources::envResourceUtils.GetCurrentTidalStrength();
+		auto currentTidalStrength = EnvResources::EnvResourceUtils::GetCurrentTidalStrength();
 		AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * currentTidalStrength) * 0.5f);
 	}
 
@@ -2390,7 +2390,7 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 
 				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], newEconomyTaskEntity);
+				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)newEconomyTaskEntity);
 			}
 			// fixed metal add
 			if (resUseAmount < 0.f)
@@ -2420,7 +2420,7 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 			if (!use.empty()) {
 				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], newEconomyTaskEntity);
+				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)newEconomyTaskEntity);
 			}
 		}
 	}

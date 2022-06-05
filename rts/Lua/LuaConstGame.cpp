@@ -42,8 +42,8 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxUnits", unitHandler.MaxUnits());
 
 		// NB: not constants
-		LuaPushNamedNumber(L, "windMin" , EnvResources::envResourceUtils.GetMinWindStrength());
-		LuaPushNamedNumber(L, "windMax" , EnvResources::envResourceUtils.GetMaxWindStrength());
+		LuaPushNamedNumber(L, "windMin" , EnvResources::EnvResourceUtils::GetMinWindStrength());
+		LuaPushNamedNumber(L, "windMax" , EnvResources::EnvResourceUtils::GetMaxWindStrength());
 
 		// map-damage; enabled iff !mapInfo->map.notDeformable
 		LuaPushNamedBool(L, "mapDamage", !mapDamage->Disabled());

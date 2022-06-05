@@ -11,7 +11,7 @@
 
 void WindGeneratorHelper::CreateWindGenerator(CUnit *unit){
     auto entity = unit->entityReference;
-    if (! EnvResources::envResourceUtils.IsWindAboutToChange())
+    if (! EnvResources::EnvResourceUtils::IsWindAboutToChange())
         EcsMain::registry.emplace<EnvEconomy::NewWindGenerator>(entity);
     EcsMain::registry.emplace<EnvEconomy::WindGenerator>(entity);
 }

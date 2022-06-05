@@ -147,7 +147,7 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 
 	updateBuffer->shadowDensity = float4{ sunLighting->groundShadowDensity, sunLighting->modelShadowDensity, 0.0, 0.0 };
 
-	updateBuffer->windInfo = float4{ EnvResources::envResourceUtils.GetCurrentWindVec(), EnvResources::envResourceUtils.GetCurrentWindStrength() };
+	updateBuffer->windInfo = float4{ EnvResources::EnvResourceUtils::GetCurrentWindVec(), EnvResources::EnvResourceUtils::GetCurrentWindStrength() };
 
 	updateBuffer->mouseScreenPos = float2{
 		static_cast<float>(mouse->lastx - globalRendering->viewPosX),

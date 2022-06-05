@@ -5,34 +5,6 @@
 
 namespace FlowEconomy {
 
-// struct MetalFixedIncome {
-//     float value = 0.f;
-// };
-
-// struct MetalProratableIncome {
-//     float value = 0.f;
-// };
-
-// struct MetalProratableUse {
-//     float value = 0.f;
-// };
-
-// struct EnergyFixedIncome {
-//     float value = 0.f;
-// };
-
-// struct EnergyFixedUse {
-//     float value = 0.f;
-// };
-
-// struct EnergyProratableIncome {
-//     float value = 0.f;
-// };
-
-// struct EnergyProratableUse {
-//     float value = 0.f;
-// };
-
 struct ResourceOrder {
     SResourcePack add;
     SResourcePack use;
@@ -49,9 +21,6 @@ struct ResourceUse : public SResourcePack {
 struct BuildRate {
     float value = 0.f;
 };
-
-// struct AwaitingEconomyAssignment {
-// };
 
 struct IsEconomyTask {
 };

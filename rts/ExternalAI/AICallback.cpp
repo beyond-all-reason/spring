@@ -936,19 +936,19 @@ float CAICallback::GetExtractorRadius() const {
 }
 
 float CAICallback::GetMinWind() const {
-	return EnvResources::envResourceUtils.GetMinWindStrength();
+	return EnvResources::EnvResourceUtils::GetMinWindStrength();
 }
 
 float CAICallback::GetMaxWind() const {
-	return EnvResources::envResourceUtils.GetMaxWindStrength();
+	return EnvResources::EnvResourceUtils::GetMaxWindStrength();
 }
 
 float CAICallback::GetCurWind() const {
-	return EnvResources::envResourceUtils.GetCurrentWindStrength();
+	return EnvResources::EnvResourceUtils::GetCurrentWindStrength();
 }
 
 float CAICallback::GetTidalStrength() const {
-	return EnvResources::envResourceUtils.GetCurrentTidalStrength();
+	return EnvResources::EnvResourceUtils::GetCurrentTidalStrength();
 }
 
 float CAICallback::GetGravity() const {

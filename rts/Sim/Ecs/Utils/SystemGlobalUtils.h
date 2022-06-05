@@ -33,7 +33,6 @@ public:
     void ClearComponents() { for (auto typeAndEntity : typeToEntity) EcsMain::registry.destroy(typeAndEntity.second); }
 
 private:
-
     entt::dense_map<ENTT_ID_TYPE, entt::entity> typeToEntity;
 };
 

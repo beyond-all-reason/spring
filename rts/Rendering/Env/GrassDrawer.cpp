@@ -344,7 +344,7 @@ void CGrassDrawer::LoadGrassShaders() {
 
 
 void CGrassDrawer::EnableShader(const GrassShaderProgram type) {
-	const float3 windSpeed = EnvResources::envResourceUtils.GetCurrentWindVec() * mapInfo->grass.bladeWaveScale;
+	const float3 windSpeed = EnvResources::EnvResourceUtils::GetCurrentWindVec() * mapInfo->grass.bladeWaveScale;
 
 	grassShader = grassShaders[type];
 	grassShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());

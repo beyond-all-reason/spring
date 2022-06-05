@@ -810,15 +810,15 @@ int LuaSyncedRead::GetGameSeconds(lua_State* L)
 
 int LuaSyncedRead::GetTidal(lua_State* L)
 {
-	lua_pushnumber(L, EnvResources::envResourceUtils.GetCurrentTidalStrength());
+	lua_pushnumber(L, EnvResources::EnvResourceUtils::GetCurrentTidalStrength());
 	return 1;
 }
 
 int LuaSyncedRead::GetWind(lua_State* L)
 {
-	auto currentWindVec      = EnvResources::envResourceUtils.GetCurrentWindVec();
-	auto currentWindStrength = EnvResources::envResourceUtils.GetCurrentWindStrength();
-	auto currentWindDir      = EnvResources::envResourceUtils.GetCurrentWindDir();
+	auto currentWindVec      = EnvResources::EnvResourceUtils::GetCurrentWindVec();
+	auto currentWindStrength = EnvResources::EnvResourceUtils::GetCurrentWindStrength();
+	auto currentWindDir      = EnvResources::EnvResourceUtils::GetCurrentWindDir();
 	lua_pushnumber(L, currentWindVec.x);
 	lua_pushnumber(L, currentWindVec.y);
 	lua_pushnumber(L, currentWindVec.z);

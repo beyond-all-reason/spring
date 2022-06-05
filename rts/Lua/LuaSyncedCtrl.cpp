@@ -4468,13 +4468,13 @@ int LuaSyncedCtrl::SetTerrainTypeData(lua_State* L)
 
 int LuaSyncedCtrl::SetTidal(lua_State* L)
 {
-	EnvResources::envResourceUtils.LoadTidal(luaL_optnumber(L, 1, EnvResources::envResourceUtils.GetCurrentTidalStrength()));
+	EnvResources::EnvResourceUtils::LoadTidal(luaL_optnumber(L, 1, EnvResources::EnvResourceUtils::GetCurrentTidalStrength()));
 	return 0;
 }
 
 int LuaSyncedCtrl::SetWind(lua_State* L)
 {
-	EnvResources::envResourceUtils.LoadWind(luaL_optnumber(L, 1, EnvResources::envResourceUtils.GetMinWindStrength()), luaL_optnumber(L, 2, EnvResources::envResourceUtils.GetMaxWindStrength()));
+	EnvResources::EnvResourceUtils::LoadWind(luaL_optnumber(L, 1, EnvResources::EnvResourceUtils::GetMinWindStrength()), luaL_optnumber(L, 2, EnvResources::EnvResourceUtils::GetMaxWindStrength()));
 	return 0;
 }
 

@@ -12,41 +12,27 @@ namespace EnvResources {
 
 class EnvResourceUtils {
 public:
-	void LoadTidal(float curStrength) {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        comp.curTidalStrength = curStrength; }
-	void LoadWind(float minStrength, float maxStrength);
+    static SystemGlobals::EnvResourceComponent& GetComp() {
+        return SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>(); }
 
-	float GetMaxWindStrength() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.maxWindStrength; }
-	float GetMinWindStrength() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.minWindStrength; }
-	float GetAverageWindStrength() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return ((comp.minWindStrength + comp.maxWindStrength) * 0.5f); }
-	float GetCurrentWindStrength() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.curWindStrength; }
-	float GetCurrentTidalStrength() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.curTidalStrength; }
+	static void LoadTidal(float curStrength) { GetComp().curTidalStrength = curStrength; }
+	static void LoadWind(float minStrength, float maxStrength);
 
-	const float3& GetCurrentWindVec() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.curWindVec; }
-	const float3& GetCurrentWindDir() const {
-        auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
-        return comp.curWindDir; }
+	static float GetMaxWindStrength() { return GetComp().maxWindStrength; }
+	static float GetMinWindStrength() { return GetComp().minWindStrength; }
 
-    bool IsWindAboutToChange() const {
-    return ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == (WIND_DIRECTION_UPDATE_RATE - 1));
-}
+	static float GetAverageWindStrength() {
+        auto& comp = GetComp(); return ((comp.minWindStrength + comp.maxWindStrength) * 0.5f); }
+
+	static float GetCurrentWindStrength() { return GetComp().curWindStrength; }
+	static float GetCurrentTidalStrength() { return GetComp().curTidalStrength; }
+	static const float3& GetCurrentWindVec() { return GetComp().curWindVec; }
+	static const float3& GetCurrentWindDir() { return GetComp().curWindDir; }
+
+    static bool IsWindAboutToChange() {
+        return ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == (WIND_DIRECTION_UPDATE_RATE - 1)); }
 
 };
-
-extern EnvResourceUtils envResourceUtils;
 
 }
 

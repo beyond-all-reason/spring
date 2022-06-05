@@ -4,15 +4,14 @@
 
 using namespace EnvResources;
 
-EnvResourceUtils EnvResources::envResourceUtils;
-
 void EnvResourceUtils::LoadWind(float minStrength, float maxStrength)
 {
-    auto& comp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
+    auto& comp = GetComp();
+	auto avgWindStrength = GetAverageWindStrength();
 
 	comp.minWindStrength = std::min(minStrength, maxStrength);
 	comp.maxWindStrength = std::max(minStrength, maxStrength);
 
-	comp.curWindVec = mix(comp.curWindDir * GetAverageWindStrength(), RgtVector * GetAverageWindStrength(), comp.curWindDir == RgtVector);
+	comp.curWindVec = mix(comp.curWindDir * avgWindStrength, RgtVector * avgWindStrength, comp.curWindDir == RgtVector);
 	comp.oldWindVec = comp.curWindVec;
 }

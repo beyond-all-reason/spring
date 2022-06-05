@@ -96,7 +96,7 @@ void CFireProjectile::Update()
 		}
 		if (!(ttl & 31)) {
 			// copy on purpose, since the below can call Lua
-			auto currentWindVec = EnvResources::envResourceUtils.GetCurrentWindVec();
+			auto currentWindVec = EnvResources::EnvResourceUtils::GetCurrentWindVec();
 			QuadFieldQuery qfQuery;
 			quadField.GetFeaturesExact(qfQuery, emitPos + currentWindVec * 0.7f, emitRadius * 2);
 			quadField.GetUnitsExact(qfQuery, emitPos + currentWindVec * 0.7f, emitRadius * 2);
@@ -123,7 +123,7 @@ void CFireProjectile::Update()
 			break;
 		}
 
-		auto currentWindVec = EnvResources::envResourceUtils.GetCurrentWindVec();
+		auto currentWindVec = EnvResources::EnvResourceUtils::GetCurrentWindVec();
 		pi.pos += (speed + currentWindVec * pi.age * 0.05f + pi.posDif * 0.1f);
 		pi.posDif *= 0.9f;
 	}

@@ -108,13 +108,13 @@ CGameInfo::CGameInfo()
 	values.push_back(buf);
 
 	labels.push_back("Map Tidal:");
-	values.push_back(EnvResources::envResourceUtils.GetCurrentTidalStrength());
+	values.push_back(EnvResources::EnvResourceUtils::GetCurrentTidalStrength());
 
 	labels.push_back("Map Wind:");
 	sprintf(buf, "%.2f - %.2f (%.2f)"
-			, EnvResources::envResourceUtils.GetMinWindStrength()
-			, EnvResources::envResourceUtils.GetMaxWindStrength()
-			, EnvResources::envResourceUtils.GetAverageWindStrength());
+			, EnvResources::EnvResourceUtils::GetMinWindStrength()
+			, EnvResources::EnvResourceUtils::GetMaxWindStrength()
+			, EnvResources::EnvResourceUtils::GetAverageWindStrength());
 	values.push_back(buf);
 
 	labels.push_back("Map Size:");
