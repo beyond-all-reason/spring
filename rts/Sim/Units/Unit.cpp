@@ -39,7 +39,7 @@
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/SolidObjectSystem.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
@@ -275,8 +275,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	crushResistance = unitDef->crushResistance;
 	power = unitDef->power;
 
-	auto& health = unitSystem.UnitHealth(entityReference);
-	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto& health = UnitUtils::UnitHealth(entityReference);
+	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 	maxHealth = unitDef->health;
 	health = beingBuilt? 0.1f: unitDef->health;
 
@@ -326,7 +326,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
 
-	unitSystem.AddUnit(this);
+	UnitUtils::AddUnit(this);
 
 	if (unitDef->metalMake > 0.f || unitDef->energyMake > 0.f) {
 		auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
@@ -558,7 +558,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		helper->Explosion(params);
 	}
 
-	auto unitMaxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto unitMaxHealth = UnitUtils::UnitMaxHealth(entityReference);
 	recentDamage += (unitMaxHealth * 2.0f * selfDestruct);
 
 	// start running the unit's kill-script
@@ -824,8 +824,8 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 			if (unitDef->canfly && transportee->unitDef->canmove)
 				transportee->commandAI->GiveCommand(Command(CMD_MOVE, transportee->pos));
 
-			auto transporteeHealth = unitSystem.UnitHealth(transportee->entityReference);
-			auto transporteeMaxHealth = unitSystem.UnitMaxHealth(transportee->entityReference);
+			auto transporteeHealth = UnitUtils::UnitHealth(transportee->entityReference);
+			auto transporteeMaxHealth = UnitUtils::UnitMaxHealth(transportee->entityReference);
 			transportee->SetStunned(transportee->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? transporteeMaxHealth: transporteeHealth));
 			transportee->SetVelocityAndSpeed(speed * (0.5f + 0.5f * gsRNG.NextFloat()));
 
@@ -971,8 +971,8 @@ void CUnit::SlowUpdate()
 
 	DoWaterDamage();
 
-	auto& health = unitSystem.UnitHealth(entityReference);
-	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto& health = UnitUtils::UnitHealth(entityReference);
+	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 	if (health < 0.0f) {
 		KillUnit(nullptr, false, true);
@@ -1237,8 +1237,8 @@ static void AddUnitDamageStats(CUnit* unit, float damage, bool dealt)
 
 void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& baseDamage, float& experienceMod)
 {
-	auto& health = unitSystem.UnitHealth(entityReference);
-	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto& health = UnitUtils::UnitHealth(entityReference);
+	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 	if (damages.paralyzeDamageTime == 0) {
 		// real damage
@@ -1312,8 +1312,8 @@ void CUnit::DoDamage(
 	if (IsCrashing() || IsInVoid())
 		return;
 
-	auto& health = unitSystem.UnitHealth(entityReference);
-	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto& health = UnitUtils::UnitHealth(entityReference);
+	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 	float baseDamage = damages.Get(armorType);
 	float experienceMod = expMultiplier;
@@ -1430,8 +1430,8 @@ void CUnit::AddExperience(float exp)
 
 	assert((experience + exp) >= 0.0f);
 
-	auto& health = unitSystem.UnitHealth(entityReference);
-	auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+	auto& health = UnitUtils::UnitHealth(entityReference);
+	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 	const float oldExperience = experience;
 	const float oldMaxHealth = maxHealth;
@@ -1957,8 +1957,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 	if (amount >= 0.0f) {
 		// build or repair
-		auto& health = unitSystem.UnitHealth(entityReference);
-		auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+		auto& health = UnitUtils::UnitHealth(entityReference);
+		auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 		if (!beingBuilt && (health >= maxHealth))
 			return false;
 
@@ -2001,8 +2001,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		}
 		else if (health < maxHealth) {
 			// repair
-			auto& health = unitSystem.UnitHealth(entityReference);
-			auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+			auto& health = UnitUtils::UnitHealth(entityReference);
+			auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 			const float step = std::min(amount / buildTime, 1.0f - (health / maxHealth));
 			const float energyUse = (cost.energy * step);
 			const float energyUseScaled = energyUse * modInfo.repairEnergyCostFactor;
@@ -2033,8 +2033,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			return false;
 		}
 
-		auto& health = unitSystem.UnitHealth(entityReference);
-		auto& maxHealth = unitSystem.UnitMaxHealth(entityReference);
+		auto& health = UnitUtils::UnitHealth(entityReference);
+		auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 		auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
 		const float step = std::max(amount / buildTime, -buildProgress);
@@ -2791,8 +2791,8 @@ bool CUnit::DetachUnitCore(CUnit* unit)
 			unit->moveType->UseHeading(true);
 
 		// de-stun detaching units in case we are not a fire-platform
-		auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
-		auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+		auto unitHealth = UnitUtils::UnitHealth(unit->entityReference);
+		auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
 		unit->SetStunned(unit->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? unitMaxHealth: unitHealth));
 
 		unit->moveType->SlowUpdate();

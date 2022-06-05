@@ -12,7 +12,7 @@
 #include "System/SpringMath.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -133,8 +133,8 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 		return false;
 	if (u->beingBuilt)
 		return false;
-	auto uHealth = unitSystem.UnitHealth(u->entityReference);
-	auto uMaxHealth = unitSystem.UnitMaxHealth(u->entityReference);
+	auto uHealth = UnitUtils::UnitHealth(u->entityReference);
+	auto uMaxHealth = UnitUtils::UnitMaxHealth(u->entityReference);
 	if (uHealth >= uMaxHealth)
 		return false;
 
@@ -363,8 +363,8 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	}
 
 	// check if buildee finished construction
-	auto curBuildeeHealth = unitSystem.UnitHealth(curBuildee->entityReference);
-	auto curBuildeeMaxHealth = unitSystem.UnitMaxHealth(curBuildee->entityReference);
+	auto curBuildeeHealth = UnitUtils::UnitHealth(curBuildee->entityReference);
+	auto curBuildeeMaxHealth = UnitUtils::UnitMaxHealth(curBuildee->entityReference);
 	if (curBuildee->beingBuilt || curBuildeeHealth < curBuildeeMaxHealth)
 		return true;
 
@@ -450,7 +450,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 		resurrectee->SetHeading(curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false);
 
 		// TODO: make configurable if this should happen
-		auto& resurrecteeHealth = unitSystem.UnitHealth(resurrectee->entityReference);
+		auto& resurrecteeHealth = UnitUtils::UnitHealth(resurrectee->entityReference);
 		resurrecteeHealth *= 0.05f;
 
 		for (const int resurrecterID: cai->resurrecters) {
@@ -505,8 +505,8 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 		return true;
 	}
 
-	auto& curCaptureeHealth = unitSystem.UnitHealth(curCapturee->entityReference);
-	auto& curCaptureeMaxHealth = unitSystem.UnitMaxHealth(curCapturee->entityReference);
+	auto& curCaptureeHealth = UnitUtils::UnitHealth(curCapturee->entityReference);
+	auto& curCaptureeMaxHealth = UnitUtils::UnitMaxHealth(curCapturee->entityReference);
 	const float captureMagicNumber = (150.0f + (curCapturee->buildTime / captureSpeed) * (curCaptureeHealth + curCaptureeMaxHealth) / curCaptureeMaxHealth * 0.4f);
 	const float captureProgressStep = 1.0f / captureMagicNumber;
 	const float captureProgressTemp = std::min(curCapturee->captureProgress + captureProgressStep, 1.0f);

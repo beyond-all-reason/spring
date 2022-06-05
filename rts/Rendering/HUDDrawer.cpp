@@ -9,7 +9,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Weapons/Weapon.h"
@@ -132,8 +132,8 @@ void HUDDrawer::DrawWeaponStates(const CUnit* unit)
 
 	glEnable(GL_TEXTURE_2D);
 	glColor4f(0.2f, 0.8f, 0.2f, 0.8f);
-	auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
-	auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+	auto unitHealth = UnitUtils::UnitHealth(unit->entityReference);
+	auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
 	font->glFormat(-0.9f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "Health: %.0f / %.0f", (float) unitHealth, (float) unitMaxHealth);
 
 	if (playerHandler.Player(gu->myPlayerNum)->fpsController.mouse2)

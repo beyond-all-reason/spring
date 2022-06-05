@@ -10,7 +10,7 @@
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
 #include "Rendering/Models/3DModel.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -715,8 +715,8 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				targetPriority *= tgtPriorityMults[(dist2D > baseRange) * 6];
 
 				if (targetLOSState & LOS_INLOS) {
-					auto targetUnitHealth = unitSystem.UnitHealth(targetUnit->entityReference);
-					auto targetUnitMaxHealth = unitSystem.UnitMaxHealth(targetUnit->entityReference);
+					auto targetUnitHealth = UnitUtils::UnitHealth(targetUnit->entityReference);
+					auto targetUnitMaxHealth = UnitUtils::UnitMaxHealth(targetUnit->entityReference);
 					targetPriority *= (secDamage + targetUnitHealth);
 
 					if (paralyzer && targetUnit->paralyzeDamage > (modInfo.paralyzeOnMaxHealth? targetUnitMaxHealth: targetUnitHealth))

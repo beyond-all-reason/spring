@@ -8,7 +8,7 @@
 #include "Map/ReadMap.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -235,8 +235,8 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 void CFactory::FinishBuild(CUnit* buildee) {
 	if (buildee->beingBuilt)
 		return;
-	auto buildeeHealth = unitSystem.UnitHealth(buildee->entityReference);
-	auto buildeeMaxHealth = unitSystem.UnitMaxHealth(buildee->entityReference);
+	auto buildeeHealth = UnitUtils::UnitHealth(buildee->entityReference);
+	auto buildeeMaxHealth = UnitUtils::UnitMaxHealth(buildee->entityReference);
 	if (unitDef->fullHealthFactory && buildeeHealth < buildeeMaxHealth)
 		return;
 

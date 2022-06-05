@@ -11,7 +11,7 @@
 #include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -287,7 +287,7 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 		--activeSlowUpdateUnit;
 
 
-	unitSystem.RemoveUnit(delUnit);
+	UnitUtils::RemoveUnit(delUnit);
 
 	activeUnits.erase(it);
 

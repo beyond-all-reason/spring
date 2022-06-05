@@ -14,7 +14,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/LosHandler.h"
@@ -802,8 +802,8 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 
 	case HEALTH: {
 		if (p1 <= 0) {
-			auto unitHealth = unitSystem.UnitHealth(unit->entityReference);
-			auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+			auto unitHealth = UnitUtils::UnitHealth(unit->entityReference);
+			auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
 			return int((unitHealth / unitMaxHealth) * 100.0f);
 		}
 
@@ -812,8 +812,8 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		if (u == nullptr)
 			return 0;
 
-		auto uHealth = unitSystem.UnitHealth(u->entityReference);
-		auto uMaxHealth = unitSystem.UnitMaxHealth(u->entityReference);
+		auto uHealth = UnitUtils::UnitHealth(u->entityReference);
+		auto uMaxHealth = UnitUtils::UnitMaxHealth(u->entityReference);
 		return int((uHealth / uMaxHealth) * 100.0f);
 	} break;
 

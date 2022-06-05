@@ -16,7 +16,7 @@
 #include "Lua/LuaHandleSynced.h"
 #include "Lua/LuaRules.h"
 #include "Lua/LuaUtils.h"
-#include "Sim/Ecs/Systems/UnitSystem.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/Unit.h"
@@ -595,7 +595,7 @@ void CLuaUnitScript::Killed()
 	LUA_CALL_IN_CHECK(L);
 	lua_checkstack(L, 3);
 
-	auto unitMaxHealth = unitSystem.UnitMaxHealth(unit->entityReference);
+	auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
 
 	PushFunction(fn);
 	lua_pushnumber(L, unit->recentDamage);

@@ -2,9 +2,8 @@
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 
-
-#include "UnitSystem.h"
 #include "EnvResourceSystem.h"
 
 #include "System/TimeProfiler.h"

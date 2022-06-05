@@ -1,5 +1,5 @@
-#ifndef WIND_GENERATOR_HELPER_H__
-#define WIND_GENERATOR_HELPER_H__
+#ifndef WIND_GENERATOR_UTILS_H__
+#define WIND_GENERATOR_UTILS_H__
 
 class CUnit;
 
