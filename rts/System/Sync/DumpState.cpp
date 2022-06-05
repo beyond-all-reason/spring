@@ -12,7 +12,7 @@
 #include "Net/GameServer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -261,7 +261,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
 		file << "\t\t\theading: " << int(u->heading) << ", mapSquare: " << u->mapSquare << "\n";
-		file << "\t\t\thealth: " << TapFloats(solidObjectSystem.ObjectHealth(u->entityReference));
+		file << "\t\t\thealth: " << TapFloats(SolidObjectUtils::ObjectHealth(u->entityReference));
 		file << "\t\t\texperience: " << TapFloats(u->experience);
 		file << "\t\t\tisDead: " << u->isDead << ", activated: " << u->activated << "\n";
 		file << "\t\t\tphysicalState: " << u->physicalState << "\n";
@@ -346,7 +346,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(f->pos);
-		file << "\t\t\thealth: " << TapFloats(solidObjectSystem.ObjectHealth(f->entityReference));
+		file << "\t\t\thealth: " << TapFloats(SolidObjectUtils::ObjectHealth(f->entityReference));
 		file << "\t\t\treclaimLeft: " << TapFloats(f->reclaimLeft);
 	}
 	#endif

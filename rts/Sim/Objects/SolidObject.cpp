@@ -5,7 +5,7 @@
 #include "SolidObjectDef.h"
 #include "Map/ReadMap.h"
 #include "Map/Ground.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
@@ -447,7 +447,7 @@ void CSolidObject::ForcedSpin(const float3& newDir)
 void CSolidObject::Kill(CUnit* killer, const float3& impulse, bool crushed)
 {
 	UpdateVoidState(false);
-	auto health = solidObjectSystem.ObjectHealth(this->entityReference);
+	auto health = SolidObjectUtils::ObjectHealth(this->entityReference);
 	DoDamage(DamageArray(health + 1.0f), impulse, killer, crushed? -DAMAGE_EXTSOURCE_CRUSHED: -DAMAGE_EXTSOURCE_KILLED, -1);
 }
 

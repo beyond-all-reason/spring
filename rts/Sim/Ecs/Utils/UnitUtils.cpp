@@ -4,7 +4,7 @@
 #include "Sim/Ecs/Components/SolidObjectComponent.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Log/ILog.h"
@@ -30,5 +30,5 @@ void UnitUtils::RemoveUnit(CUnit* unit)
 {
     EconomyTaskUtil::DeleteAllUnitEconomyTasks(unit->entityReference);
 
-    solidObjectSystem.RemoveObject(unit);
+    SolidObjectUtils::RemoveObject(unit);
 }

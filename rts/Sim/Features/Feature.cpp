@@ -11,7 +11,7 @@
 #include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
 #include "Rendering/Env/Particles/Classes/GeoThermSmokeProjectile.h"
 #include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
@@ -153,7 +153,7 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	// feature does not have an assigned ID yet
 	// this MUST be done before the Block() call
 	featureHandler.AddFeature(this);
-	solidObjectSystem.AddObject(this);
+	SolidObjectUtils::AddObject(this);
 
 	team = params.teamID;
 	allyteam = params.allyTeamID;
@@ -164,10 +164,10 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 
 	mass = def->mass;
 
-	auto& health = solidObjectSystem.ObjectHealth(entityReference);
+	auto& health = SolidObjectUtils::ObjectHealth(entityReference);
 	health = def->health;
 
-	auto& maxHealth = solidObjectSystem.ObjectMaxHealth(entityReference);
+	auto& maxHealth = SolidObjectUtils::ObjectMaxHealth(entityReference);
 	maxHealth = def->health;
 	reclaimTime = def->reclaimTime;
 
@@ -417,7 +417,7 @@ void CFeature::DoDamage(
 	ApplyImpulse((impulse * moveCtrl.impulseMask * impulseMult) / mass);
 
 	// clamp in case Lua-modified damage is negative
-	auto& health = solidObjectSystem.ObjectHealth(entityReference);
+	auto& health = SolidObjectUtils::ObjectHealth(entityReference);
 	health -= baseDamage;
 	health = std::min(health, def->health);
 

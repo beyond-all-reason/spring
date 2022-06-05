@@ -26,7 +26,7 @@
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
@@ -434,7 +434,7 @@ float CAICallback::GetUnitHealth(int unitId)
 			return health;
 
 		const int allyTeam = teamHandler.AllyTeam(team);
-		auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
+		auto unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
 
 		if (teamHandler.Ally(unit->allyteam, allyTeam)) {
 			health = unitHealth;
@@ -464,7 +464,7 @@ float CAICallback::GetUnitMaxHealth(int unitId)
 		if (unit == nullptr)
 			return maxHealth;
 
-		auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+		auto unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
 
 		const int allyTeam = teamHandler.AllyTeam(team);
 		if (teamHandler.Ally(unit->allyteam, allyTeam)) {
@@ -1294,7 +1294,7 @@ float CAICallback::GetFeatureHealth(int featureId)
 	const int allyteam = teamHandler.AllyTeam(team);
 
 	if (f->IsInLosForAllyTeam(allyteam))
-		return solidObjectSystem.ObjectHealth(f->entityReference);
+		return SolidObjectUtils::ObjectHealth(f->entityReference);
 
 	return 0.0f;
 }

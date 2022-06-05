@@ -14,7 +14,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -328,8 +328,8 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 
 	++count;
 
-	auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
-	auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+	auto unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
+	auto unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
 
 	SResourcePack emptyResources;
 	if (!decoyDef) {

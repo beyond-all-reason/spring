@@ -10,7 +10,7 @@
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/UI/MouseHandler.h"
 #include "Map/Ground.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/UnitDef.h"
@@ -132,7 +132,7 @@ namespace {
 		minRange = 0.0f;
 	)
 
-	DECLARE_FILTER_EX(AbsoluteHealth, 1, solidObjectSystem.ObjectHealth(unit->entityReference) > minHealth,
+	DECLARE_FILTER_EX(AbsoluteHealth, 1, SolidObjectUtils::ObjectHealth(unit->entityReference) > minHealth,
 		float minHealth;
 		void SetParam(int index, const std::string& value) override {
 			minHealth = atof(value.c_str());
@@ -140,7 +140,7 @@ namespace {
 		minHealth = 0.0f;
 	)
 
-	DECLARE_FILTER_EX(RelativeHealth, 1, solidObjectSystem.ObjectHealth(unit->entityReference) / solidObjectSystem.ObjectMaxHealth(unit->entityReference) > minHealth,
+	DECLARE_FILTER_EX(RelativeHealth, 1, SolidObjectUtils::ObjectHealth(unit->entityReference) / SolidObjectUtils::ObjectMaxHealth(unit->entityReference) > minHealth,
 		float minHealth;
 		void SetParam(int index, const std::string& value) override {
 			minHealth = atof(value.c_str()) * 0.01f; // convert from percent

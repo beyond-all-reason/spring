@@ -38,7 +38,7 @@
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
@@ -209,7 +209,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	unitDef = params.unitDef;
 
-	solidObjectSystem.AddObject(this);
+	SolidObjectUtils::AddObject(this);
 	flowEconomySystem.AddFlowEconomyUnit(this);
 
 	{

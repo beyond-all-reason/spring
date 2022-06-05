@@ -27,7 +27,7 @@
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/SideParser.h"
 #include "Sim/Features/Feature.h"
@@ -2919,8 +2919,8 @@ int LuaSyncedRead::GetUnitHealth(lua_State* L)
 	const UnitDef* ud = unit->unitDef;
 	const bool enemyUnit = LuaUtils::IsEnemyUnit(L, unit);
 
-	auto unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
-	auto unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+	auto unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
+	auto unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
 
 	if (ud->hideDamage && enemyUnit) {
 		lua_pushnil(L);
@@ -4671,7 +4671,7 @@ int LuaSyncedRead::GetFeatureHealth(lua_State* L)
 	if (feature == nullptr || !LuaUtils::IsFeatureVisible(L, feature))
 		return 0;
 
-	auto featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
+	auto featureHealth = SolidObjectUtils::ObjectHealth(feature->entityReference);
 	lua_pushnumber(L, featureHealth);
 	lua_pushnumber(L, feature->def->health);
 	lua_pushnumber(L, feature->resurrectProgress);

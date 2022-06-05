@@ -29,7 +29,7 @@
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Sim/Ecs/Systems/BuildSystem.h"
-#include "Sim/Ecs/Systems/SolidObjectSystem.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -1546,8 +1546,8 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	auto& unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
-	auto& unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+	auto& unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
+	auto& unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
 
 	if (lua_isnumber(L, 2)) {
 		unitHealth = std::min(unitMaxHealth, lua_tofloat(L, 2));
@@ -1599,8 +1599,8 @@ int LuaSyncedCtrl::SetUnitMaxHealth(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	auto& unitHealth = solidObjectSystem.ObjectHealth(unit->entityReference);
-	auto& unitMaxHealth = solidObjectSystem.ObjectMaxHealth(unit->entityReference);
+	auto& unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
+	auto& unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
 
 	unitMaxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
 	unitHealth = std::min(unitMaxHealth, unitHealth);
@@ -3035,8 +3035,8 @@ int LuaSyncedCtrl::SetFeatureHealth(lua_State* L)
 	if (feature == nullptr)
 		return 0;
 
-	auto& featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
-	auto& featureMaxHealth = solidObjectSystem.ObjectMaxHealth(feature->entityReference);
+	auto& featureHealth = SolidObjectUtils::ObjectHealth(feature->entityReference);
+	auto& featureMaxHealth = SolidObjectUtils::ObjectMaxHealth(feature->entityReference);
 
 	featureHealth = std::min(featureMaxHealth, luaL_checkfloat(L, 2));
 	return 0;
@@ -3050,8 +3050,8 @@ int LuaSyncedCtrl::SetFeatureMaxHealth(lua_State* L)
 	if (feature == nullptr)
 		return 0;
 
-	auto& featureHealth = solidObjectSystem.ObjectHealth(feature->entityReference);
-	auto& featureMaxHealth = solidObjectSystem.ObjectMaxHealth(feature->entityReference);
+	auto& featureHealth = SolidObjectUtils::ObjectHealth(feature->entityReference);
+	auto& featureMaxHealth = SolidObjectUtils::ObjectMaxHealth(feature->entityReference);
 
 	featureMaxHealth = std::max(0.1f, luaL_checkfloat(L, 2));
 	featureHealth = std::min(featureHealth, featureMaxHealth);
