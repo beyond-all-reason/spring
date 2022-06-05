@@ -15,8 +15,6 @@
 #include "System/Log/ILog.h"
 
 
-EnvEconomySystem envEconomySystem;
-
 void EnvEconomySystem::Update()
 {
     if (!flowEconomySystem.IsSystemActive())

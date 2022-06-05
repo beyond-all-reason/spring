@@ -7,13 +7,8 @@ class CUnit;
 class EnvEconomySystem {
 
 public:
-    void Init() {};
-    void Update();
-
-private:
-
+    static void Init() {};
+    static void Update();
 };
-
-extern EnvEconomySystem envEconomySystem;
 
 #endif

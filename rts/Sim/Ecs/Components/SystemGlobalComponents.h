@@ -10,6 +10,14 @@ namespace SystemGlobals {
     // entt::component_traits<EnvResourceComponent> systemComponentTraits;
     // systemComponentTraits.page_size = 1;
 
+struct SystemActive {
+	bool value = true;
+};
+
+struct BuildSystemComponent {
+    static constexpr std::size_t page_size = 1;
+};
+
 struct EnvResourceComponent {
     static constexpr std::size_t page_size = 1;
 

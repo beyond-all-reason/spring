@@ -4,8 +4,10 @@
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/BuildComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/SolidObjectComponent.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
@@ -16,10 +18,16 @@
 
 BuildSystem buildSystem;
 
+using namespace SystemGlobals;
 using namespace Build;
 
-void BuildSystem::Init()
-{
+void BuildSystem::Init() {
+    systemGlobals.InitSystemComponent<BuildSystemComponent>();
+    systemGlobals.SetSystemActiveState<BuildSystemComponent>(true);
+}
+
+bool BuildSystem::IsSystemActive() {
+    return systemGlobals.IsSystemComponentActive<BuildSystemComponent>();
 }
 
 void BuildSystem::AddUnitBuilder(CUnit *unit){
@@ -139,6 +147,9 @@ void BuildSystem::RemoveUnitBuild(entt::entity entity) {
 }
 
 void BuildSystem::Update() {
+    if (!IsSystemActive())
+        return;
+
     if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
        return;
 
