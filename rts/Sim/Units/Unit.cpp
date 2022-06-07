@@ -37,13 +37,16 @@
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
-#include "Sim/Ecs/Utils/BuildUtils.h"
-#include "Sim/Ecs/Utils/SolidObjectUtils.h"
-#include "Sim/Ecs/Utils/UnitUtils.h"
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
+#include "Sim/Ecs/Utils/LegacyUtils.h"
+#include "Sim/Ecs/Utils/SolidObjectUtils.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Ecs/Utils/WindGeneratorUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -210,7 +213,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	unitDef = params.unitDef;
 
 	SolidObjectUtils::AddObject(this);
-	flowEconomySystem.AddFlowEconomyUnit(this);
+	LegacyUtils::AddFlowEconomyUnit(this);
 
 	{
 		const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(unitDef->wreckName);
@@ -382,7 +385,7 @@ void CUnit::PostInit(const CUnit* builder)
 	if (unitDef->windGenerator > 0.0f)
 		WindGeneratorUtils::CreateWindGenerator(this);
 
-	flowEconomySystem.AddFlowEconomyUnit(this);
+	LegacyUtils::AddFlowEconomyUnit(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
@@ -1943,7 +1946,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 	// stop decaying on building AND reclaim
 	lastNanoAdd = gs->frameNum;
 
-	if (flowEconomySystem.IsSystemActive()){
+	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
 		if (BuildUtils::UnitBeingBuilt(this->entityReference)){
 			if (BuildUtils::UnitBuildComplete(this->entityReference)){
 				FinishedBuilding(false);

@@ -9,8 +9,8 @@ namespace SystemGlobals {
 class SystemGlobal {
 public:
     template<class T>
-    void InitSystemComponent() {
-        DestroyComponent<T>();
+    void CreateSystemComponent() {
+        DestroySystemComponent<T>();
         
         entt::entity entity = EcsMain::registry.create();
         EcsMain::registry.emplace<T>(entity);
@@ -27,7 +27,13 @@ public:
     T& GetSystemComponent() { return EcsMain::registry.get<T>(GetSystemEntity<T>()); }
 
     template<class T>
-    entt::entity GetSystemEntity() { return typeToEntity.at(entt::type_id<T>().index()); }
+    entt::entity GetSystemEntity() {
+        auto typeId = entt::type_id<T>().index();
+        if (typeToEntity.contains(typeId)) {
+            return typeToEntity.at(typeId);
+        }
+        return entt::null;
+    }
 
     template<class T>
     bool IsSystemActive() {
@@ -39,7 +45,7 @@ public:
     }
 
     template<class T>
-    void DestroyComponent() {
+    void DestroySystemComponent() {
         auto typeId = entt::type_id<T>().index();
         if (typeToEntity.contains(typeId)) {
             auto entity = typeToEntity.at(typeId);

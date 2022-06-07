@@ -1,15 +1,16 @@
 #include "FlowEconomySystem.h"
-#include "EnvResourceSystem.h"
+
 #include "Sim/Ecs/Components/BuildComponents.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
@@ -17,32 +18,21 @@
 #include "Sim/Misc/GlobalSynced.h"
 
 
-FlowEconomySystem flowEconomySystem;
-
 using namespace FlowEconomy;
+using namespace SystemGlobals;
 
 void FlowEconomySystem::Init() {
     if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
-        active = true;
-        economyMultiplier = 1.f / (GAME_SPEED / FLOW_ECONOMY_UPDATE_RATE); // sim display refresh rate
-        LOG("%s: ECS economy system active (%f)", __func__, economyMultiplier);
+        systemGlobals.CreateSystemComponent<FlowEconomySystemComponent>();
+        systemGlobals.SetSystemActiveState<FlowEconomySystemComponent>(true);
+
+        auto& flowEconomyComp = systemGlobals.GetSystemComponent<FlowEconomySystemComponent>();
+        flowEconomyComp.economyMultiplier = 1.f / (GAME_SPEED / FLOW_ECONOMY_UPDATE_RATE); // sim display refresh rate
+
+        LOG("%s: ECS economy system active (%f)", __func__, flowEconomyComp.economyMultiplier);
     } else {
-        active = false;
         LOG("%s: ECS economy system disabled", __func__);
     }
-}
-
-void FlowEconomySystem::AddFlowEconomyUnit(CUnit *unit) {
-
-    auto entity = unit->entityReference;
-    if (! EcsMain::registry.valid(entity)){
-        LOG("%s: invalid entityId reference", __func__); return;
-    }
-
-    if (active)
-        return; // eco is only added when needed
-
-    // force add the components needed when the system isn't active to ensure the original code still works.
 }
 
 template<class T, typename V>
@@ -53,7 +43,7 @@ void TryAddToComponent(entt::entity entity, V addition) {
     }
 }
 
-void FlowEconomySystem::ProcessProratableIncome() {
+void ProcessProratableIncome(FlowEconomySystemComponent& system) {
     auto group = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
     for (auto entity : group) {
         auto& resAdd = group.get<ResourceAdd>(entity);
@@ -69,9 +59,9 @@ void FlowEconomySystem::ProcessProratableIncome() {
             minProrationRate = foundLowerProrationrate ? team->resProrationRates[i] : minProrationRate;
         }
 
-        SResourcePack resPull = resUse * economyMultiplier;
+        SResourcePack resPull = resUse * system.economyMultiplier;
         SResourcePack proratedResUse = resPull * minProrationRate;
-        SResourcePack proratedResAdd = resAdd * minProrationRate * economyMultiplier;
+        SResourcePack proratedResAdd = resAdd * minProrationRate * system.economyMultiplier;
 
         team->resNext.income += proratedResAdd;
         team->UseResources(proratedResUse);
@@ -82,7 +72,7 @@ void FlowEconomySystem::ProcessProratableIncome() {
     }
 }
 
-void FlowEconomySystem::ProcessFixedIncome() {
+void ProcessFixedIncome(FlowEconomySystemComponent& system) {
     auto combinedGroup = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
     auto group = EcsMain::registry.group<ResourceAdd>(entt::get<Units::Team, Units::OwningEntity>/*, entt::exclude<ResourceUse>*/);
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
@@ -92,14 +82,14 @@ void FlowEconomySystem::ProcessFixedIncome() {
         auto teamId = (group.get<Units::Team>(entity)).value;
         auto owner = (group.get<Units::OwningEntity>(entity)).value;
 
-        SResourcePack fixedResAdd = resAdd * economyMultiplier;
+        SResourcePack fixedResAdd = resAdd * system.economyMultiplier;
         teamHandler.Team(teamId)->resNext.income += fixedResAdd;
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, fixedResAdd);
     }
 }
 
-void FlowEconomySystem::ProcessExpenses() {
+void ProcessExpenses(FlowEconomySystemComponent& system) {
     auto combinedGroup = EcsMain::registry.group<ResourceAdd, ResourceUse>(entt::get<Units::Team, Units::OwningEntity>);
     auto group = EcsMain::registry.group<ResourceUse>(entt::get<Units::Team, Units::OwningEntity>/*, entt::exclude<ResourceAdd>*/);
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
@@ -116,39 +106,12 @@ void FlowEconomySystem::ProcessExpenses() {
             minProrationRate = foundLowerProrationrate ? team->resProrationRates[i] : minProrationRate;
         }
 
-        SResourcePack resPull = resUse * economyMultiplier;
+        SResourcePack resPull = resUse * system.economyMultiplier;
         SResourcePack proratedResUse = resPull * minProrationRate;
         team->UseResources(proratedResUse);
         team->recordFlowEcoPull(resPull);
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
-    }
-}
-
-void FlowEconomySystem::Update() {
-    if (!active)
-        return;
-
-    if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
-       return;
-
-    SCOPED_TIMER("ECS::FlowEconomySystem::Update");
-
-    LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
-
-    UpdateAllTeamsEconomy();
-    UpdateEconomyPredictions();
-}
-
-void FlowEconomySystem::UpdateEconomyPredictions(){
-    ProcessExpenses();
-    ProcessFixedIncome();
-    ProcessProratableIncome();
-}
-
-void FlowEconomySystem::UpdateAllTeamsEconomy() {
-    for (int i=0; i<teamHandler.ActiveTeams(); i++){
-        UpdateTeamEconomy(i);
     }
 }
 
@@ -170,7 +133,7 @@ float getProrationRate(float supplyInUnits, float demandInUnits) {
     return std::min(1.f, supplyDemandRatio);
 }
 
-void FlowEconomySystem::UpdateTeamEconomy(int teamId){
+void UpdateTeamEconomy(int teamId){
     // Get available resources for proration
     CTeam* curTeam = teamHandler.Team(teamId);
 
@@ -182,32 +145,6 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
     //     if (curTeam->res.metal > curTeam->resSnapshot.metal + 0.5f || curTeam->res.energy > curTeam->resSnapshot.energy + 0.5f)
     //         LOG("Upwards Blip Detected!!!");
     // }
-
-    // TODO:
-    // singleton components
-    // eco draw from building -- switch to dependencies
-    // reserve enforcement
-    // dynamic reserve
-    // SSE SresourcePack?
-    // support builders
-    // stop/start building
-    // check original eco still works
-    //  - get alt system up to support
-    // rez
-    // repair
-    // reclaim
-    // terraform
-    // check all entities are cleared at end of match
-    // save/load entities/components
-
-    // reserve
-    // resReal = resUse + resFailedUse
-    // lastResReserve = resReserve
-    // resIdeal = proration == 1.f ? resPull : supply 
-    // if resIdeal - resReal < 0.5
-    // resReserve = resIdeal
-    // else
-    // resReserve = (resReal + lastResReserve)/2, min resReal, max resIdeal
 
     curTeam->resSnapshot = curTeam->res;
     curTeam->resCurrent = curTeam->resNext;
@@ -248,4 +185,30 @@ void FlowEconomySystem::UpdateTeamEconomy(int teamId){
         //LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
         //LOG("%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);
     }
+}
+
+void UpdateAllTeamsEconomy() {
+    for (int i=0; i<teamHandler.ActiveTeams(); i++){
+        UpdateTeamEconomy(i);
+    }
+}
+
+void FlowEconomySystem::Update() {
+    if (!systemGlobals.IsSystemActive<FlowEconomySystemComponent>())
+        return;
+
+    if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
+       return;
+
+    SCOPED_TIMER("ECS::FlowEconomySystem::Update");
+
+    LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
+
+    auto& system = systemGlobals.GetSystemComponent<FlowEconomySystemComponent>();
+
+    UpdateAllTeamsEconomy();
+
+    ProcessExpenses(system);
+    ProcessFixedIncome(system);
+    ProcessProratableIncome(system);
 }

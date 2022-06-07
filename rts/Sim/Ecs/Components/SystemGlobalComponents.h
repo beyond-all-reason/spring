@@ -41,6 +41,12 @@ struct EnvResourceComponent {
 	int windDirTimer = 0;
 };
 
+struct FlowEconomySystemComponent {
+    static constexpr std::size_t page_size = 1;
+
+    float economyMultiplier = 0.f;
+};
+
 }
 
 #endif

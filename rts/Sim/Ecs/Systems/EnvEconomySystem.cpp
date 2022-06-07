@@ -14,10 +14,11 @@
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
+using namespace SystemGlobals;
 
 void EnvEconomySystem::Update()
 {
-    if (!flowEconomySystem.IsSystemActive())
+    if (!systemGlobals.IsSystemActive<FlowEconomySystemComponent>())
         return;
 
     if ((gs->frameNum % ENV_RESOURCE_UPDATE_RATE) != ENV_RESOURCE_TICK)

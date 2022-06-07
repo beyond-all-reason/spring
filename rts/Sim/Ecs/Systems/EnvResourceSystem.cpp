@@ -81,7 +81,7 @@ void UpdateWindStrength(EnvResourceComponent& comp)
 
 void EnvResourceSystem::Init()
 {
-    systemGlobals.InitSystemComponent<EnvResourceComponent>();
+    systemGlobals.CreateSystemComponent<EnvResourceComponent>();
 
     entt::component_traits<EnvResourceComponent> systemComponentTraits;
     LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);

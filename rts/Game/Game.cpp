@@ -265,7 +265,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 
 	modInfo.Init(modFileName);
 
-	flowEconomySystem.Init();
+	FlowEconomySystem::Init();
 	EnvResourceSystem::Init();
 	EnvEconomySystem::Init();
 	BuildSystem::Init();
@@ -1779,7 +1779,7 @@ void CGame::SimFrame() {
 		BuildSystem::Update();
 		EnvResourceSystem::Update();
 		EnvEconomySystem::Update();
-		flowEconomySystem.Update();
+		FlowEconomySystem::Update();
 		unitEconomySystem.Update();
 		unitEconomyReportSystem.Update();
 

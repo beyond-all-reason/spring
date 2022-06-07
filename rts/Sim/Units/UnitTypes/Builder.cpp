@@ -10,8 +10,9 @@
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
 #include "System/SpringMath.h"
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
-#include "Sim/Ecs/Systems/FlowEconomySystem.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -352,9 +353,10 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	//float adjBuildSpeed = buildSpeed;
 	float adjBuildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 
-	if (!flowEconomySystem.IsSystemActive())
+	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
 		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
 			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+	}
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
 		BuildUtils::UnpauseBuilder(this);
