@@ -38,7 +38,6 @@
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
-#include "Sim/Ecs/Systems/UnitEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"

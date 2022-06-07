@@ -7,7 +7,6 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/EnvEconomySystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/EnvResourceSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/FlowEconomySystem.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/UnitEconomySystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Systems/UnitEconomyReportSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/BuildUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EconomyTask.cpp"

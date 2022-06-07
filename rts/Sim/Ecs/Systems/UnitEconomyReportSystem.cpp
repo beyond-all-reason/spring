@@ -15,8 +15,7 @@ using namespace UnitEconomyReport;
 
 void UnitEconomyReportSystem::Init()
 {
-    active = true;
-    economyMultiplier = GAME_SPEED / UNIT_ECONOMY_REPORT_UPDATE_RATE;
+    updatesPerSecond = GAME_SPEED / UNIT_ECONOMY_REPORT_UPDATE_RATE;
 }
 
 // Should work but GCC 10.3 cannot process this correctly
@@ -38,7 +37,7 @@ void UnitEconomyReportSystem::TakeMakeSnapshot(){
         auto& displayValue = group.get<SnapshotMake>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
 
-        displayValue = counterValue * economyMultiplier;
+        displayValue = counterValue * updatesPerSecond;
         counterValue = SResourcePack();
     }
 }
@@ -49,7 +48,7 @@ void UnitEconomyReportSystem::TakeUseSnapshot(){
         auto& displayValue = group.get<SnapshotUsage>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentUsage>(entity);
 
-        displayValue = counterValue * economyMultiplier;
+        displayValue = counterValue * updatesPerSecond;
         counterValue = SResourcePack();
         //LOG("%s: energy snapshot is %f", __func__, displayValue);
     }

@@ -12,12 +12,8 @@ public:
     void Init();
     void Update();
 
-    bool IsSystemActive() { return active; }
-
 private:
-    bool active = false;
-
-    float economyMultiplier = 0.f;
+    float updatesPerSecond = 0.f;
 
     void TakeMakeSnapshot();
     void TakeUseSnapshot();
