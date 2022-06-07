@@ -1,21 +1,24 @@
 #include "UnitEconomyReportSystem.h"
 
 #include "Sim/Ecs/SlowUpdate.h"
+#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
+#include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 
 #include "System/TimeProfiler.h"
 
 
-UnitEconomyReportSystem unitEconomyReportSystem;
-
+using namespace SystemGlobals;
 using namespace UnitEconomyReport;
 
 void UnitEconomyReportSystem::Init()
 {
-    updatesPerSecond = GAME_SPEED / UNIT_ECONOMY_REPORT_UPDATE_RATE;
+    systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
+    auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
+    system.updatesPerSecond = GAME_SPEED / UNIT_ECONOMY_REPORT_UPDATE_RATE;
 }
 
 // Should work but GCC 10.3 cannot process this correctly
@@ -31,24 +34,24 @@ void UnitEconomyReportSystem::Init()
 //     }
 // }
 
-void UnitEconomyReportSystem::TakeMakeSnapshot(){
+void TakeMakeSnapshot(UnitEconomyReportSystemComponent& system){
     auto group = EcsMain::registry.group<SnapshotMake>(entt::get<UnitEconomy::ResourcesCurrentMake>);
     for (auto entity : group) {
         auto& displayValue = group.get<SnapshotMake>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
 
-        displayValue = counterValue * updatesPerSecond;
+        displayValue = counterValue * system.updatesPerSecond;
         counterValue = SResourcePack();
     }
 }
 
-void UnitEconomyReportSystem::TakeUseSnapshot(){
+void TakeUseSnapshot(UnitEconomyReportSystemComponent& system){
     auto group = EcsMain::registry.group<SnapshotUsage>(entt::get<UnitEconomy::ResourcesCurrentUsage>);
     for (auto entity : group) {
         auto& displayValue = group.get<SnapshotUsage>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentUsage>(entity);
 
-        displayValue = counterValue * updatesPerSecond;
+        displayValue = counterValue * system.updatesPerSecond;
         counterValue = SResourcePack();
         //LOG("%s: energy snapshot is %f", __func__, displayValue);
     }
@@ -62,6 +65,8 @@ void UnitEconomyReportSystem::Update() {
 
     SCOPED_TIMER("ECS::UnitEconomySystem::Update");
 
-    TakeMakeSnapshot();
-    TakeUseSnapshot();
+    auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
+
+    TakeMakeSnapshot(system);
+    TakeUseSnapshot(system);
 }

@@ -47,6 +47,12 @@ struct FlowEconomySystemComponent {
     float economyMultiplier = 0.f;
 };
 
+struct UnitEconomyReportSystemComponent {
+    static constexpr std::size_t page_size = 1;
+
+    float updatesPerSecond = 0.f;
+};
+
 }
 
 #endif

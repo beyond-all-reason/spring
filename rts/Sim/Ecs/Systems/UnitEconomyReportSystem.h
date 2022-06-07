@@ -9,16 +9,8 @@ class CUnit;
 class UnitEconomyReportSystem {
 
 public:
-    void Init();
-    void Update();
-
-private:
-    float updatesPerSecond = 0.f;
-
-    void TakeMakeSnapshot();
-    void TakeUseSnapshot();
+    static void Init();
+    static void Update();
 };
-
-extern UnitEconomyReportSystem unitEconomyReportSystem;
 
 #endif

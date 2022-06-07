@@ -268,7 +268,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	EnvResourceSystem::Init();
 	EnvEconomySystem::Init();
 	BuildSystem::Init();
-	unitEconomyReportSystem.Init();
+	UnitEconomyReportSystem::Init();
 
 	// needed for LuaIntro (pushes LuaConstGame)
 	assert(mapInfo == nullptr);
@@ -1778,7 +1778,7 @@ void CGame::SimFrame() {
 		EnvResourceSystem::Update();
 		EnvEconomySystem::Update();
 		FlowEconomySystem::Update();
-		unitEconomyReportSystem.Update();
+		UnitEconomyReportSystem::Update();
 
 		projectileHandler.Update();
 		featureHandler.Update();
