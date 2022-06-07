@@ -10,7 +10,7 @@
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
 #include "System/SpringMath.h"
-#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Features/Feature.h"
@@ -104,7 +104,7 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
-	buildSystem.AddUnitBuilder(this);
+	BuildUtils::AddUnitBuilder(this);
 
 	const float scale = (1.0f / TEAM_SLOWUPDATE_RATE);
 
@@ -123,7 +123,7 @@ bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 	if (!unitDef->canAssist)
 		return false;
 
-	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (buildSystem.GetBuildProgress(u->entityReference) < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
+	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (BuildUtils::GetBuildProgress(u->entityReference) < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
 }
 
 
@@ -308,10 +308,10 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
-		if (buildSystem.GetBuildProgress(curBuildee->entityReference) < 1.0f) {
+		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) < 1.0f) {
 			// prevent buildee from decaying (we cannot call StopBuild here)
 			curBuildee->AddBuildPower(this, 0.0f);
-			buildSystem.PauseBuilder(this);
+			BuildUtils::PauseBuilder(this);
 		} else {
 			// stop repairing (FIXME: should be much cleaner to let BuilderCAI
 			// call this instead when a wait command is given?)
@@ -350,14 +350,14 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	// progress >= 1 rather than raw build-speed on buildees
 	// with progress < 1
 	//float adjBuildSpeed = buildSpeed;
-	float adjBuildSpeed = buildSystem.GetBuildSpeed(this->entityReference);
+	float adjBuildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 
 	if (!flowEconomySystem.IsSystemActive())
-		if (buildSystem.GetBuildProgress(curBuildee->entityReference) >= 1.0f)
+		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
 			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
-		buildSystem.UnpauseBuilder(this);
+		BuildUtils::UnpauseBuilder(this);
 		CreateNanoParticle(curBuildee->midPos, curBuildee->radius * 0.5f, false);
 		return true;
 	}
@@ -711,7 +711,7 @@ void CBuilder::StopBuild(bool callScript)
 
 	terraforming = false;
 
-	buildSystem.RemoveUnitBuilder(this);
+	BuildUtils::RemoveUnitBuilder(this);
 
 	if (callScript)
 		script->StopBuilding();
@@ -781,7 +781,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-					buildSystem.AddUnitBuildTarget(this, curBuild);
+					BuildUtils::AddUnitBuildTarget(this, curBuild);
 					ScriptStartBuilding(u->pos, false);
 					return true;
 				}
@@ -838,7 +838,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	// impossible to *construct* with multiple builders
 	buildee->SetSoloBuilder(this, this->unitDef);
 	AddDeathDependence(curBuild = buildee, DEPENDENCE_BUILD);
-	buildSystem.AddUnitBuildTarget(this, curBuild);
+	BuildUtils::AddUnitBuildTarget(this, curBuild);
 
 	// if the ground is not going to be terraformed the buildee would
 	// 'pop' to the correct height over the (un-flattened) terrain on

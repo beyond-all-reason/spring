@@ -6,7 +6,7 @@
 #include "Game/WaitCommandsAI.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
-#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
@@ -67,7 +67,7 @@ void CFactory::PreInit(const UnitLoadParams& params)
 {
 	unitDef = params.unitDef;
 
-	buildSystem.AddUnitBuilder(this);
+	BuildUtils::AddUnitBuilder(this);
 
 	CBuilding::PreInit(params);
 }
@@ -182,7 +182,7 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	curBuild = buildee;
 	curBuildDef = nullptr;
 
-	buildSystem.AddUnitBuildTarget(this, buildee);
+	BuildUtils::AddUnitBuildTarget(this, buildee);
 
 	if (losStatus[gu->myAllyTeam] & LOS_INLOS) {
 		Channels::General->PlayRandomSample(unitDef->sounds.build, buildPos);
@@ -220,15 +220,15 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 
 	if (!queue.empty() && (queue.front().GetID() == CMD_WAIT)) {
 		buildee->AddBuildPower(this, 0.0f);
-		buildSystem.PauseBuilder(this);
+		BuildUtils::PauseBuilder(this);
 		return;
 	}
 
-	auto buildSpeed = buildSystem.GetBuildSpeed(this->entityReference);
+	auto buildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 	if (!buildee->AddBuildPower(this, buildSpeed))
 		return;
 
-	buildSystem.UnpauseBuilder(this);
+	BuildUtils::UnpauseBuilder(this);
 	CreateNanoParticle();
 }
 
@@ -292,13 +292,13 @@ void CFactory::StopBuild()
 
 	if (curBuild) {
 		if (curBuild->beingBuilt) {
-			AddMetal(curBuild->cost.metal * buildSystem.GetBuildProgress(curBuild->entityReference), false);
+			AddMetal(curBuild->cost.metal * BuildUtils::GetBuildProgress(curBuild->entityReference), false);
 			curBuild->KillUnit(nullptr, false, true);
 		}
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	}
 
-	buildSystem.RemoveUnitBuilder(this);
+	BuildUtils::RemoveUnitBuilder(this);
 
 	curBuild = nullptr;
 	curBuildDef = nullptr;

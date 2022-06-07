@@ -21,7 +21,7 @@
 #include "Map/MapInfo.h"
 #include "Lua/LuaRulesParams.h"
 #include "Lua/LuaHandleSynced.h"
-#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Units/UnitDef.h"
@@ -3737,14 +3737,14 @@ EXPORT(float) skirmishAiCallback_Unit_getBuildProgress(int skirmishAIId, int uni
 		return fail;
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)){
-		return buildSystem.GetBuildProgress(unit->entityReference);;
+		return BuildUtils::GetBuildProgress(unit->entityReference);;
 	}
 
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 	const int allyId = teamHandler.AllyTeam(teamId);
 
 	if (teamHandler.Ally(unit->allyteam, allyId) || unit->losStatus[allyId] & LOS_INLOS)
-		return buildSystem.GetBuildProgress(unit->entityReference);;
+		return BuildUtils::GetBuildProgress(unit->entityReference);;
 
 	return fail;
 }

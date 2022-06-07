@@ -37,7 +37,7 @@
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
-#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Ecs/Systems/UnitEconomySystem.h"
@@ -321,7 +321,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	harvestStorage.energy = unitDef->harvestEnergyStorage;
 
 	if (beingBuilt)
-		buildSystem.AddUnitBeingBuilt(this);
+		BuildUtils::AddUnitBeingBuilt(this);
 
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
@@ -463,7 +463,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	buildSystem.RemoveUnitBuild(this->entityReference);
+	BuildUtils::RemoveUnitBuild(this->entityReference);
 
 	ChangeLos(realLosRadius, realAirLosRadius);
 
@@ -1025,7 +1025,7 @@ void CUnit::SlowUpdate()
 			float buildDecay = buildTime * modInfo.constructionDecaySpeed;
 
 			buildDecay = 1.0f / std::max(0.001f, buildDecay);
-			auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
+			auto& buildProgress = BuildUtils::GetBuildProgress(entityReference);
 			buildDecay = std::min(buildProgress, buildDecay);
 
 			health         = std::max(0.0f, health - maxHealth * buildDecay);
@@ -1944,8 +1944,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 	lastNanoAdd = gs->frameNum;
 
 	if (flowEconomySystem.IsSystemActive()){
-		if (buildSystem.UnitBeingBuilt(this->entityReference)){
-			if (buildSystem.UnitBuildComplete(this->entityReference)){
+		if (BuildUtils::UnitBeingBuilt(this->entityReference)){
+			if (BuildUtils::UnitBuildComplete(this->entityReference)){
 				FinishedBuilding(false);
 			}
 			return true;
@@ -1964,7 +1964,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 		if (beingBuilt) {
 			// build
-			auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
+			auto& buildProgress = BuildUtils::GetBuildProgress(entityReference);
 			const float step = std::min(amount / buildTime, 1.0f - buildProgress);
 			const float metalCostStep  = cost.metal  * step;
 			const float energyCostStep = cost.energy * step;
@@ -2036,7 +2036,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		auto& health = UnitUtils::UnitHealth(entityReference);
 		auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
-		auto& buildProgress = buildSystem.GetBuildProgress(entityReference);
+		auto& buildProgress = BuildUtils::GetBuildProgress(entityReference);
 		const float step = std::max(amount / buildTime, -buildProgress);
 		const float energyRefundStep = cost.energy * step;
 		const float metalRefundStep  =  cost.metal * step;
