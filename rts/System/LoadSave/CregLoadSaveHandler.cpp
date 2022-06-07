@@ -91,7 +91,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	CPlasmaRepulser::SerializeShieldSegmentCollectionPool(s);
 	CColorMap::SerializeColorMaps(s);
 	s->SerializeObjectInstance(&waitCommandsAI, waitCommandsAI.GetClass());
-	//s->SerializeObjectInstance(&envResourceSystem, envResourceSystem.GetClass());
+	//s->SerializeObjectInstance(&envResourceSystem, EnvResourceSystem::GetClass());
 	s->SerializeObjectInstance(&moveDefHandler, moveDefHandler.GetClass());
 	s->SerializeObjectInstance(&teamHandler, teamHandler.GetClass());
 	for (int a = 0; a < teamHandler.ActiveTeams(); a++) {

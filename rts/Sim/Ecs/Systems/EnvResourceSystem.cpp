@@ -18,41 +18,10 @@
 #include "Sim/Units/UnitHandler.h"
 
 using namespace SystemGlobals;
-
-EnvResourceSystem envResourceSystem;
-
 using namespace Units;
 using namespace EnvEconomy;
 
-void EnvResourceSystem::Init()
-{
-    systemGlobals.InitSystemComponent<EnvResourceComponent>();
-
-    entt::component_traits<EnvResourceComponent> systemComponentTraits;
-    LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
-}
-
-void EnvResourceSystem::Update()
-{
-    SCOPED_TIMER("ECS::EnvResourceSystem::Update");
-
-    auto& comp = systemGlobals.GetSystemComponent<EnvResourceComponent>();
-
-	// zero-strength wind does not need updates
-	if (comp.maxWindStrength <= 0.0f)
-		return;
-
-	if ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == WIND_DIRECTION_TICK) {
-        comp.windDirTimer = 0;
-		UpdateWindDirection(comp);
-    }
-    else {
-        comp.windDirTimer++;
-        UpdateWindStrength(comp);
-    }
-}
-
-void EnvResourceSystem::UpdateWindDirection(EnvResourceComponent& comp)
+void UpdateWindDirection(EnvResourceComponent& comp)
 {
     comp.oldWindVec = comp.curWindVec;
     comp.newWindVec = comp.oldWindVec;
@@ -81,7 +50,7 @@ void EnvResourceSystem::UpdateWindDirection(EnvResourceComponent& comp)
     }
 }
 
-void EnvResourceSystem::UpdateWindStrength(EnvResourceComponent& comp)
+void UpdateWindStrength(EnvResourceComponent& comp)
 {
     const float mod = smoothstep(0.0f, 1.0f, comp.windDirTimer / float(WIND_DIRECTION_UPDATE_RATE));
 
@@ -107,5 +76,33 @@ void EnvResourceSystem::UpdateWindStrength(EnvResourceComponent& comp)
 
         EcsMain::registry.remove<NewWindGenerator>(entity);
         //LOG("%s: updated new dir generator %d", __func__, unitId);
+    }
+}
+
+void EnvResourceSystem::Init()
+{
+    systemGlobals.InitSystemComponent<EnvResourceComponent>();
+
+    entt::component_traits<EnvResourceComponent> systemComponentTraits;
+    LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
+}
+
+void EnvResourceSystem::Update()
+{
+    SCOPED_TIMER("ECS::EnvResourceSystem::Update");
+
+    auto& comp = systemGlobals.GetSystemComponent<EnvResourceComponent>();
+
+	// zero-strength wind does not need updates
+	if (comp.maxWindStrength <= 0.0f)
+		return;
+
+	if ((gs->frameNum % WIND_DIRECTION_UPDATE_RATE) == WIND_DIRECTION_TICK) {
+        comp.windDirTimer = 0;
+		UpdateWindDirection(comp);
+    }
+    else {
+        comp.windDirTimer++;
+        UpdateWindStrength(comp);
     }
 }

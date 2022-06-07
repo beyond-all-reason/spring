@@ -2136,7 +2136,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	CFactory* factory = dynamic_cast<CFactory*>(unit);
 
 	if (factory != nullptr) {
-		buildSystem.GetBuildSpeed(unit->entityReference) = buildSpeed;
+		buildSystem.SetBuildPower(unit->entityReference, buildSpeed);
 		//factory->buildSpeed = buildSpeed;
 		return 0;
 	}
@@ -2147,8 +2147,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 		return 0;
 
 	//builder->buildSpeed = buildSpeed;
-	auto& builderBuildSpeed = buildSystem.GetBuildSpeed(unit->entityReference);
-	builderBuildSpeed = buildSpeed;
+	buildSystem.SetBuildPower(unit->entityReference, buildSpeed);
 	if (lua_isnumber(L, 3)) {
 		builder->repairSpeed    = buildScale * max(0.0f, lua_tofloat(L, 3));
 	}

@@ -550,8 +550,8 @@ CBumpWater::CBumpWater()
 
 
 /*
-	windndir = envResourceSystem.GetCurrentWindDir();
-	windStrength = (smoothstep(0.0f, 12.0f, envResourceSystem.GetCurrentWindStrength()) * 0.5f + 4.0f);
+	windndir = EnvResourceSystem::GetCurrentWindDir();
+	windStrength = (smoothstep(0.0f, 12.0f, EnvResourceSystem::GetCurrentWindStrength()) * 0.5f + 4.0f);
 	windVec = windndir * windStrength;
 */
 	windVec = float3(20.0, 0.0, 20.0);
@@ -686,9 +686,9 @@ void CBumpWater::Update()
 
 /*
 	windndir *= 0.995f;
-	windndir -= envResourceSystem.GetCurrentWindDir() * 0.005f;
+	windndir -= EnvResourceSystem::GetCurrentWindDir() * 0.005f;
 	windStrength *= 0.9999f;
-	windStrength += (smoothstep(0.0f, 12.0f, envResourceSystem.GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
+	windStrength += (smoothstep(0.0f, 12.0f, EnvResourceSystem::GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
 	windVec   = windndir * windStrength;
 */
 	if (dynWaves)

@@ -26,11 +26,11 @@ public:
     bool UnitBuildComplete(entt::entity entity);
 
     entt::entity GetUnitBuildTarget(CUnit *unit);
-    void UpdateBuildPower(CUnit *unit, float power);
+    void SetBuildPower(entt::entity entity, float power);
 
     bool IsSystemActive();
 
-    float& GetBuildSpeed(entt::entity entity) { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
+    const float GetBuildSpeed(entt::entity entity) const { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
     float& GetBuildProgress(entt::entity entity) { return EcsMain::registry.get<Build::BuildProgress>(entity).value; }
 
     float GetBuildOptionalProgress(entt::entity entity) {

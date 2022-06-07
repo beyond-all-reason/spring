@@ -52,10 +52,7 @@ void BuildSystem::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
         LOG("%s: unit %d has no build capacity", __func__, unit->id);  return;
     }
 
-    //EcsMain::registry.emplace_or_replace<FlowEconomy::AwaitingEconomyAssignment>(entity);
-    EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity);
-
-    auto& activeBuild = EcsMain::registry.get<ActiveBuild>(entity);
+    auto& activeBuild = EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity);
     activeBuild.buildTarget = targetEntity;
 
     auto buildPower = EcsMain::registry.get<BuildPower>(entity).value;
@@ -122,11 +119,12 @@ void BuildSystem::UnpauseBuilder(CUnit *unit) {
     //AddUnitBeingBuilt(entity);
 }
 
-void BuildSystem::UpdateBuildPower(CUnit *unit, float power) {
-    auto entity = unit->entityReference;
+void BuildSystem::SetBuildPower(entt::entity entity, float power) {
     if (! EcsMain::registry.valid(entity)){
         LOG("%s: invalid entityId reference", __func__); return;
     }
+
+    LOG("%s: BuildPower changed to %f (%d)", __func__, power, (int)entity);
 
     EcsMain::registry.emplace_or_replace<BuildPower>(entity, power);
 }

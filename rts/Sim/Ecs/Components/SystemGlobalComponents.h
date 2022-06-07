@@ -7,6 +7,11 @@
 
 namespace SystemGlobals {
 
+// struct SystemComponentTraits : public entt::component_traits<SystemGlobals::EnvResourceComponent> {
+// 	static constexpr bool in_place_delete = false;
+//     static constexpr std::size_t page_size = 1;
+// };
+
     // entt::component_traits<EnvResourceComponent> systemComponentTraits;
     // systemComponentTraits.page_size = 1;
 

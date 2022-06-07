@@ -137,7 +137,6 @@ void FlowEconomySystem::Update() {
     LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
 
     UpdateAllTeamsEconomy();
-
     UpdateEconomyPredictions();
 }
 

@@ -31,10 +31,10 @@ void EnvEconomySystem::Update()
     auto group = EcsMain::registry.group<EnvEconomy::WindEnergy>(entt::get<Units::UnitDefRef, FlowEconomy::ResourceAdd>);
     for (auto entity : group) {
         auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
-        auto& energyIncome = group.get<FlowEconomy::ResourceAdd>(entity);
+        auto& income = group.get<FlowEconomy::ResourceAdd>(entity);
 
-        energyIncome.energy = std::min(envResourceComp.curWindStrength, unitDef->windGenerator);
+        income.energy = std::min(envResourceComp.curWindStrength, unitDef->windGenerator);
 
-        LOG("%s: updated wind value generator", __func__);
+        LOG("%s: updated wind generator income", __func__);
     }
 }
