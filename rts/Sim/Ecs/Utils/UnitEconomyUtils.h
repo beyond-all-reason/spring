@@ -33,6 +33,9 @@ public:
         auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentMake>(entity);
         if (comp == nullptr) {
             comp = &EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentMake>(entity);
+            auto reportComp = EcsMain::registry.try_get<UnitEconomyReport::SnapshotMake>(entity);
+            if (reportComp == nullptr)
+                EcsMain::registry.emplace<UnitEconomyReport::SnapshotMake>(entity);
         }
         return *comp;
     }
@@ -41,6 +44,9 @@ public:
         auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);
         if (comp == nullptr) {
             comp = &EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
+            auto reportComp = EcsMain::registry.try_get<UnitEconomyReport::SnapshotUsage>(entity);
+            if (reportComp == nullptr)
+                EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
         }
         return *comp;
     }
