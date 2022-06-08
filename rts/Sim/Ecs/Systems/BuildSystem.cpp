@@ -44,7 +44,10 @@ void BuildSystem::Update() {
         auto buildTarget = buildDetails.buildTarget;
 
         // currently paused
-        if (buildPower == 0.f) continue;
+        if (buildPower == 0.f) {
+            LOG("BuildSystem::%s: %d -> %d (%d) paused", __func__, (int)entity, (int)buildTarget, (int)buildPower);
+            continue;
+        }
 
         auto teamId = (group.get<Units::Team>(entity)).value;
         auto team = teamHandler.Team(teamId);
@@ -73,7 +76,7 @@ void BuildSystem::Update() {
 
         LOG("BuildSystem::%s: %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
 
-        if (team->UseResources(resUsage)) {
+        if (team->UseFlowEcoResources(resUsage)) {
             if (nextProgress < 1.f) team->recordFlowEcoPull(resPull);
 
             buildProgress = std::min(nextProgress, 1.f);

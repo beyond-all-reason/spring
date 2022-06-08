@@ -64,7 +64,7 @@ void ProcessProratableIncome(FlowEconomySystemComponent& system) {
         SResourcePack proratedResAdd = resAdd * minProrationRate * system.economyMultiplier;
 
         team->resNext.income += proratedResAdd;
-        team->UseResources(proratedResUse);
+        team->UseFlowEcoResources(proratedResUse);
         team->recordFlowEcoPull(resPull);
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, proratedResAdd);
@@ -108,7 +108,7 @@ void ProcessExpenses(FlowEconomySystemComponent& system) {
 
         SResourcePack resPull = resUse * system.economyMultiplier;
         SResourcePack proratedResUse = resPull * minProrationRate;
-        team->UseResources(proratedResUse);
+        team->UseFlowEcoResources(proratedResUse);
         team->recordFlowEcoPull(resPull);
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
@@ -164,23 +164,35 @@ void UpdateTeamEconomy(int teamId){
 
     SResourcePack proratedDemand = demand * proratedUseRates;
 
+    // Calculate eco to reserve for flow eco tasks
+    // Stops non-flow eco from using the eco before flow eco tasks can use it
+    auto lastReserved = curTeam->flowEcoReservedSupply;
+    auto lastEcoConsumed = curTeam->flowEcoExpense;
+    auto newReserved = (lastReserved + lastEcoConsumed) * 0.5f;
+
+    for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
+        float max = std::min(supply[i], demand[i]);
+        float min = std::min(lastEcoConsumed[i] + max*0.1f, max);
+        newReserved[i] = std::clamp(newReserved[i], min, max);
+    }
+
     // Apply economy updates
     curTeam->flowEcoPull = SResourcePack();
-    curTeam->flowEcoFullPull = SResourcePack();
-    
+    curTeam->flowEcoExpense = SResourcePack();
     curTeam->AddResources(incomeFromLastFrame);
-
-    curTeam->flowEcoReservedSupply = proratedDemand;
+    curTeam->flowEcoReservedSupply = newReserved;
 
     // do after all teams are updated.
     curTeam->resProrationRates = proratedUseRates;
 
     if (teamId == 0){
         LOG("============================================");
-        LOG("%s: %d: income = (%f,%f)", __func__, gs->frameNum, incomeFromLastFrame.energy, incomeFromLastFrame.metal);
-        LOG("%s: %d: forProration = (%f,%f)", __func__, gs->frameNum, supply.energy, supply.metal);
-        LOG("%s: %d: poratableUse = (%f,%f)", __func__, gs->frameNum, demand.energy, demand.metal);
-        LOG("%s: %d: prorationrate = (%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[1], proratedUseRates[0]);
+        LOG("%s: %d: income = (%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1]);
+        LOG("%s: %d: forProration = (%f,%f)", __func__, gs->frameNum, supply[0], supply[1]);
+        LOG("%s: %d: poratableUse = (%f,%f)", __func__, gs->frameNum, demand[0], demand[1]);
+        LOG("%s: %d: reserved eco = (%f,%f)", __func__, gs->frameNum, newReserved[0], newReserved[1]);
+        LOG("%s: %d: prorationrate = (%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[0], proratedUseRates[1]);
+
         //LOG("%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
         //LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
         //LOG("%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);

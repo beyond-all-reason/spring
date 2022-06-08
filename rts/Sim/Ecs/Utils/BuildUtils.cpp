@@ -106,10 +106,9 @@ void BuildUtils::UnpauseBuilder(CUnit *unit) {
     auto& activeBuild = EcsMain::registry.get<ActiveBuild>(entity);
 
     // this may not be currently paused.
-    if (activeBuild.currentBuildpower >= 0.f) return;
+    if (activeBuild.currentBuildpower > 0.f) return;
 
-    // FIXME continue build
-    //AddUnitBeingBuilt(entity);
+    activeBuild.currentBuildpower = EcsMain::registry.get<BuildPower>(entity).value;
 }
 
 void BuildUtils::SetBuildPower(entt::entity entity, float power) {

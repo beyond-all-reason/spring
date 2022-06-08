@@ -46,6 +46,7 @@ public:
 	bool HaveResources(const SResourcePack& amount) const;
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);
+	bool UseFlowEcoResources(const SResourcePack& res);
 
 	void AddMetal(float amount, bool useIncomeMultiplier = true);
 	void AddEnergy(float amount, bool useIncomeMultiplier = true);
@@ -73,7 +74,6 @@ public:
 
 	void recordFlowEcoPull(SResourcePack pull) {
 		flowEcoPull += pull;
-		flowEcoFullPull += pull;
 		resPull += pull;
 	}
 
@@ -122,7 +122,7 @@ public:
 	// New Flow Eco Values
 
 	EconomyFlowSnapshot resCurrent, resNext;
-	SResourcePack flowEcoPull, flowEcoFullPull;
+	SResourcePack flowEcoPull, flowEcoExpense;
 	//SResourcePack resNextIncome;	// Resources created become available in the back frame.
 	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
 	//std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;

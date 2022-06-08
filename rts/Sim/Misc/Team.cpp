@@ -120,7 +120,8 @@ void CTeam::ClampStartPosInStartBox(float3* pos) const
 
 bool CTeam::UseMetal(float amount)
 {
-	if (res.metal < amount)
+	auto unreservedMetal = res.metal - flowEcoReservedSupply.metal;
+	if (unreservedMetal < amount)
 		return false;
 
 	res.metal -= amount;
@@ -130,7 +131,8 @@ bool CTeam::UseMetal(float amount)
 
 bool CTeam::UseEnergy(float amount)
 {
-	if (res.energy < amount)
+	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
+	if (unreservedEnergy < amount)
 		return false;
 
 	res.energy -= amount;
@@ -172,7 +174,8 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
-	return (res >= amount);
+	auto unreservedRes = res - flowEcoReservedSupply;
+	return (unreservedRes >= amount);
 }
 
 void CTeam::applyExcessToShared()
@@ -205,11 +208,33 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 
 bool CTeam::UseResources(const SResourcePack& amount)
 {
+	auto unreservedRes = res - flowEcoReservedSupply;
+	if (!(unreservedRes >= amount))
+		return false;
+
+	res -= amount;
+	resExpense += amount;
+	return true;
+}
+
+bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
+{
+	LOG("%s: %d: (%f,%f,%f,%f) <= (%f,%f,%f,%f) %d", __func__, gs->frameNum
+			, amount[0], amount[1], amount[2], amount[3]
+			, res[0], res[1], res[2], res[3], (int)(res >= amount));
 	if (!(res >= amount))
 		return false;
 
 	res -= amount;
 	resExpense += amount;
+	flowEcoReservedSupply -= amount;
+	flowEcoExpense += amount;
+
+	for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
+		if (flowEcoReservedSupply[i] < 0.f)
+			flowEcoReservedSupply[i] = 0.f;
+	}
+
 	return true;
 }
 

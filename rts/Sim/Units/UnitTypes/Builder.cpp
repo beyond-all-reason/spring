@@ -353,7 +353,7 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	//float adjBuildSpeed = buildSpeed;
 	float adjBuildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 
-	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
+	if (! SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
 		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
 			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
 	}
