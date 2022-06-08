@@ -46,6 +46,7 @@
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Ecs/Utils/WindGeneratorUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
@@ -2146,7 +2147,7 @@ bool CUnit::UseMetal(float metal)
 	myTeam->resPull.metal += metal;
 
 	if (myTeam->UseMetal(metal)) {
-		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference).metal += metal;
+		UnitEconomyUtils::GetCurrentUsage(entityReference).metal += metal;
 		//resourcesUseI.metal += metal;
 		return true;
 	}
@@ -2161,7 +2162,7 @@ void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 		return;
 	}
 
-	EcsMain::registry.get<UnitEconomy::ResourcesCurrentMake>(entityReference).metal += metal;
+	UnitEconomyUtils::GetCurrentMake(entityReference).metal += metal;
 	//resourcesMakeI.metal += metal;
 	teamHandler.Team(team)->AddMetal(metal, useIncomeMultiplier);
 }
@@ -2178,7 +2179,7 @@ bool CUnit::UseEnergy(float energy)
 	myTeam->resPull.energy += energy;
 
 	if (myTeam->UseEnergy(energy)) {
-		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference).energy += energy;
+		UnitEconomyUtils::GetCurrentUsage(entityReference).energy += energy;
 		//resourcesUseI.energy += energy;
 		return true;
 	}
@@ -2192,7 +2193,7 @@ void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return;
 	}
-	EcsMain::registry.get<UnitEconomy::ResourcesCurrentMake>(entityReference).energy += energy;
+	UnitEconomyUtils::GetCurrentMake(entityReference).energy += energy;
 	//resourcesMakeI.energy += energy;
 	teamHandler.Team(team)->AddEnergy(energy, useIncomeMultiplier);
 }
@@ -2245,7 +2246,7 @@ bool CUnit::UseResources(const SResourcePack& pack)
 	myTeam->resPull += pack;
 
 	if (myTeam->UseResources(pack)) {
-		EcsMain::registry.get<UnitEconomy::ResourcesCurrentUsage>(entityReference) += pack;
+		UnitEconomyUtils::GetCurrentMake(entityReference) += pack;
 		//resourcesUseI += pack;
 		return true;
 	}
