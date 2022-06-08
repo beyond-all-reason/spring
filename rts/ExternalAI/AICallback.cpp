@@ -27,6 +27,7 @@
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
@@ -1164,11 +1165,13 @@ bool CAICallback::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf)
 	verify();
 	const CUnit* unit = GetInLosUnit(unitId);
 	if (unit) {
-		SResourcePack emptyResources;
-		unitResInf->energyMake = GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).energy;
-		unitResInf->energyUse  = GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).energy;
-		unitResInf->metalMake  = GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).metal;
-		unitResInf->metalUse   = GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).metal;
+		SResourcePack resMake = UnitEconomyUtils::GetCurrentResourceMakeSnapshot(unit->entityReference);
+		SResourcePack resUse = UnitEconomyUtils::GetCurrentResourceUsageSnapshot(unit->entityReference);
+
+		unitResInf->energyMake = resMake.energy;
+		unitResInf->energyUse  = resUse.energy;
+		unitResInf->metalMake  = resMake.metal;
+		unitResInf->metalUse   = resUse.metal;
 		// unitResInf->energyMake = unit->resourcesMake.energy;
 		// unitResInf->energyUse  = unit->resourcesUse.energy;
 		// unitResInf->metalMake  = unit->resourcesMake.metal;

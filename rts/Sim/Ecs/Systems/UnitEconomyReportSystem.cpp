@@ -17,8 +17,6 @@ using namespace UnitEconomyReport;
 void UnitEconomyReportSystem::Init()
 {
     systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
-    auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
-    system.updatesPerSecond = GAME_SPEED / UNIT_ECONOMY_REPORT_UPDATE_RATE;
 }
 
 // Should work but GCC 10.3 cannot process this correctly
@@ -40,7 +38,7 @@ void TakeMakeSnapshot(UnitEconomyReportSystemComponent& system){
         auto& displayValue = group.get<SnapshotMake>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
 
-        displayValue = counterValue * system.updatesPerSecond;
+        displayValue.resources[system.activeBuffer] = counterValue;
         counterValue = SResourcePack();
     }
 }
@@ -51,7 +49,7 @@ void TakeUseSnapshot(UnitEconomyReportSystemComponent& system){
         auto& displayValue = group.get<SnapshotUsage>(entity);
         auto& counterValue = group.get<UnitEconomy::ResourcesCurrentUsage>(entity);
 
-        displayValue = counterValue * system.updatesPerSecond;
+        displayValue.resources[system.activeBuffer] = counterValue;
         counterValue = SResourcePack();
         //LOG("%s: energy snapshot is %f", __func__, displayValue);
     }
@@ -66,6 +64,7 @@ void UnitEconomyReportSystem::Update() {
     SCOPED_TIMER("ECS::UnitEconomySystem::Update");
 
     auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
+    system.activeBuffer = (system.activeBuffer + 1) % SnapshotBase::BUFFERS;
 
     TakeMakeSnapshot(system);
     TakeUseSnapshot(system);

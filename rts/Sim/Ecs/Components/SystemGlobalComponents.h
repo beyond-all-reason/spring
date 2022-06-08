@@ -50,7 +50,7 @@ struct FlowEconomySystemComponent {
 struct UnitEconomyReportSystemComponent {
     static constexpr std::size_t page_size = 1;
 
-    float updatesPerSecond = 0.f;
+    int activeBuffer = 0;
 };
 
 }

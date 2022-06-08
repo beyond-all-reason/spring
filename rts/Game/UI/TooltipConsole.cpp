@@ -15,6 +15,7 @@
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -330,18 +331,19 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 
 	auto unitHealth = SolidObjectUtils::ObjectHealth(unit->entityReference);
 	auto unitMaxHealth = SolidObjectUtils::ObjectMaxHealth(unit->entityReference);
+	SResourcePack resMake = UnitEconomyUtils::GetCurrentResourceMakeSnapshot(unit->entityReference);
+	SResourcePack resUse = UnitEconomyUtils::GetCurrentResourceUsageSnapshot(unit->entityReference);
 
-	SResourcePack emptyResources;
 	if (!decoyDef) {
 		health           += unitHealth;
 		maxHealth        += unitMaxHealth;
 		experience        = (experience * (count - 1) + unit->experience) / count; // average xp
 		cost             += unit->cost.metal + (unit->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, unit->maxRange);
-		metalMake        += GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).metal;
-		metalUse         += GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).metal;
-		energyMake       += GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).energy;
-		energyUse        += GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).energy;
+		metalMake        += resMake.metal;
+		metalUse         += resUse.metal;
+		energyMake       += resMake.energy;
+		energyUse        += resUse.energy;
 		// metalMake        += unit->resourcesMake.metal;
 		// metalUse         += unit->resourcesUse.metal;
 		// energyMake       += unit->resourcesMake.energy;

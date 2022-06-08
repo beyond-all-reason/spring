@@ -28,6 +28,7 @@
 #include "Rendering/Models/IModelParser.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/SideParser.h"
 #include "Sim/Features/Feature.h"
@@ -2972,11 +2973,13 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	SResourcePack emptyResources;
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).metal);
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).metal);
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotMake>(unit->entityReference, emptyResources).energy);
-	lua_pushnumber(L, GetOptionalComponent<UnitEconomyReport::SnapshotUsage>(unit->entityReference, emptyResources).energy);
+	SResourcePack resMake = UnitEconomyUtils::GetCurrentResourceMakeSnapshot(unit->entityReference);
+	SResourcePack resUse = UnitEconomyUtils::GetCurrentResourceUsageSnapshot(unit->entityReference);
+
+	lua_pushnumber(L, resMake.metal);
+	lua_pushnumber(L, resUse.metal);
+	lua_pushnumber(L, resMake.energy);
+	lua_pushnumber(L, resUse.energy);
 	// lua_pushnumber(L, unit->resourcesMake.metal);
 	// lua_pushnumber(L, unit->resourcesUse.metal);
 	// lua_pushnumber(L, unit->resourcesMake.energy);
