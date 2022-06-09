@@ -5,17 +5,9 @@
 
 namespace UnitEconomyReport {
 
-// struct SnapshotMake : public SResourcePack {
-//     using SResourcePack::operator=;
-// };
-
-// struct SnapshotUsage : public SResourcePack {
-//     using SResourcePack::operator=;
-// };
-
 struct SnapshotBase {
     constexpr static int BUFFERS = 2;
-    
+
     SResourcePack resources[BUFFERS];
 };
 

@@ -109,7 +109,16 @@ public:
 
 	void Activate();
 	void Deactivate();
+	void UpdateUnconditionalEconomy();
+	void UpdateConditionalEconomy();
 
+private:
+	void EnableUnconditionalEconomy();
+	void DisableUnconditionalEconomy();
+	void EnableConditionalEconomy();
+	void DisableConditionalEconomy();
+
+public:
 	void ForcedMove(const float3& newPos);
 
 	void DeleteScript();
@@ -440,12 +449,12 @@ public:
 
 
 	// only when the unit is active
-	SResourcePack resourcesCondUse;
-	SResourcePack resourcesCondMake;
+	// SResourcePack resourcesCondUse;
+	// SResourcePack resourcesCondMake;
 
 	// always applied
-	SResourcePack resourcesUncondUse;
-	SResourcePack resourcesUncondMake;
+	// SResourcePack resourcesUncondUse;
+	// SResourcePack resourcesUncondMake;
 
 	// costs per UNIT_SLOWUPDATE_RATE frames
 	// SResourcePack resourcesUse;

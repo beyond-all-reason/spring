@@ -28,6 +28,9 @@ struct IsEconomyTask {
 struct IsConditionalEconomyTask {
 };
 
+struct IsGeneralPurposeEconomyTask {
+};
+
 }
 
 #endif

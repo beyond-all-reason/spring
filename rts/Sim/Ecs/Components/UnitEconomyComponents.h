@@ -13,21 +13,21 @@ struct ResourcesCurrentUsage : public SResourcePack {
     using SResourcePack::operator=;
 };
 
-// struct MetalCurrentUsage {
-//     float value = 0.f;
-// };
+struct ResourcesComponentBase {
+    SResourcePack resources;
+};
 
-// struct MetalCurrentMake {
-//     float value = 0.f;
-// };
+struct ResourcesConditionalUse : public ResourcesComponentBase {
+};
 
-// struct EnergyCurrentUsage {
-//     float value = 0.f;
-// };
+struct ResourcesConditionalMake : public ResourcesComponentBase {
+};
 
-// struct EnergyCurrentMake {
-//     float value = 0.f;
-// };
+struct ResourcesUnconditionalUse : public ResourcesComponentBase {
+};
+
+struct ResourcesUnconditionalMake : public ResourcesComponentBase {
+};
 
 }
 

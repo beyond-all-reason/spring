@@ -28,6 +28,7 @@
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SolidObjectUtils.h"
 #include "Sim/Features/Feature.h"
@@ -1443,25 +1444,37 @@ int LuaSyncedCtrl::SetUnitCosts(lua_State* L)
 
 static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 {
+	UnitEconomy::ResourcesComponentBase zeroResources;
+	bool result = false;
+	
 	// [u|c][u|m][m|e]
 	//
 	// unconditional | conditional
 	//           use | make
 	//         metal | energy
-
-	value *= 0.5f;
+	if (modInfo.economySystem != ECONOMY_SYSTEM_ECS) value *= 0.5f;
 
 	switch (name[0]) {
 		case 'u': {
 			switch (name[1]) {
 				case 'u': {
-					if (name[2] == 'm') { unit->resourcesUncondUse.metal  = value; return true; }
-					if (name[2] == 'e') { unit->resourcesUncondUse.energy = value; return true; }
+					auto &resourcesUncondUse = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalUse>(unit->entityReference, zeroResources).resources;
+					if (name[2] == 'm') { resourcesUncondUse.metal  = value; result = true; }
+					if (name[2] == 'e') { resourcesUncondUse.energy = value; result = true; }
+					if (result == true) {
+						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesUnconditionalUse>(unit->entityReference, resourcesUncondUse);
+						unit->UpdateUnconditionalEconomy();
+					}
 				} break;
 
 				case 'm': {
-					if (name[2] == 'm') { unit->resourcesUncondMake.metal  = value; return true; }
-					if (name[2] == 'e') { unit->resourcesUncondMake.energy = value; return true; }
+					auto &resourcesUncondMake = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalMake>(unit->entityReference, zeroResources).resources;
+					if (name[2] == 'm') { resourcesUncondMake.metal  = value; result = true; }
+					if (name[2] == 'e') { resourcesUncondMake.energy = value; result = true; }
+					if (result == true) {
+						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesUnconditionalMake>(unit->entityReference, resourcesUncondMake);
+						unit->UpdateUnconditionalEconomy();
+					}
 				} break;
 
 				default: {
@@ -1472,13 +1485,23 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 		case 'c': {
 			switch (name[1]) {
 				case 'u': {
-					if (name[2] == 'm') { unit->resourcesCondUse.metal  = value; return true; }
-					if (name[2] == 'e') { unit->resourcesCondUse.energy = value; return true; }
+					auto &resourcesCondUse = GetOptionalComponent<UnitEconomy::ResourcesConditionalUse>(unit->entityReference, zeroResources).resources;
+					if (name[2] == 'm') { resourcesCondUse.metal  = value; result = true; }
+					if (name[2] == 'e') { resourcesCondUse.energy = value; result = true; }
+					if (result == true) {
+						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesConditionalUse>(unit->entityReference, resourcesCondUse);
+						unit->UpdateConditionalEconomy();
+					}
 				} break;
 
 				case 'm': {
-					if (name[2] == 'm') { unit->resourcesCondMake.metal  = value; return true; }
-					if (name[2] == 'e') { unit->resourcesCondMake.energy = value; return true; }
+					auto &resourcesCondMake = GetOptionalComponent<UnitEconomy::ResourcesConditionalMake>(unit->entityReference, zeroResources).resources;
+					if (name[2] == 'm') { resourcesCondMake.metal  = value; result = true; }
+					if (name[2] == 'e') { resourcesCondMake.energy = value; result = true; }
+					if (result == true) {
+						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesConditionalMake>(unit->entityReference, resourcesCondMake);
+						unit->UpdateConditionalEconomy();
+					}
 				} break;
 
 				default: {
@@ -1490,7 +1513,7 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 		} break;
 	}
 
-	return false;
+	return result;
 }
 
 
