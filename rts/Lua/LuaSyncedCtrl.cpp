@@ -1447,6 +1447,8 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 	UnitEconomy::ResourcesComponentBase zeroResources;
 	bool result = false;
 	
+	LOG("%s: %c%c%c = %f", __func__, name[0], name[1], name[2], value);
+
 	// [u|c][u|m][m|e]
 	//
 	// unconditional | conditional

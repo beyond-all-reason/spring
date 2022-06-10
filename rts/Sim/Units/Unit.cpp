@@ -108,52 +108,63 @@ void MultipleEmplace(entt::entity entity) {
 template<typename... T>
 void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, float resAddAmount, int resUseType, int resAddType) {
 	if (resUseAmount != 0.f || resAddAmount != 0.f){
-		SResourcePack zeroResources;
 
-		if (resAddAmount <= 0.f) {
-			// energy use, metal + energy use
+		// If use amount > 0.f then
+		//	add amount is joined
+		// If use amount <= 0.f then
+		//	add amount is separate
+
+		if (resUseAmount >= 0.f) {
+			auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
+			MultipleEmplace<T...>(newEconomyTaskEntity);
+
+			SResourcePack use;
+			SResourcePack add;
+			use[resUseType] = resUseAmount;
+			if (resAddAmount >= 0.f)
+				add[resAddType] = resUseAmount;
+			else
+				use[resAddType] = (-resUseAmount);
+
+			if (!add.empty()) {
+				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
+				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(newEconomyTaskEntity);
+				LOG("%s: (add1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+			}
+			if (!use.empty()) {
+				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
+				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
+				LOG("%s: (use1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+			}
+		} // !!! if (resUseAmount >= 0.f)
+		else {
+			if (resAddAmount < 0.f)
 			{
 				auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 				MultipleEmplace<T...>(newEconomyTaskEntity);
 
 				SResourcePack use;
 				use[resAddType] = (-resAddAmount);
-				if (resUseAmount > 0.f)
-					use[resUseType] = resUseAmount;
 
 				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)newEconomyTaskEntity);
+				LOG("%s: (use0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 			// fixed metal add
-			if (resUseAmount < 0.f)
+
 			{
+				// use is neg so add
+				// add is postive so add
+
 				auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 				MultipleEmplace<T...>(newEconomyTaskEntity);
 
 				SResourcePack add;
 				add[resUseType] = (-resUseAmount);
+				add[resAddType] = resAddAmount * (resAddAmount > 0.f);
 				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
-			}
-		}
-		else {
-			auto newEconomyTaskEntity = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
-			MultipleEmplace<T...>(newEconomyTaskEntity);
-
-			SResourcePack use;
-			SResourcePack add;
-			add[resAddType] = resAddAmount;
-			if (resUseAmount > 0.f)
-				use[resUseType] = resUseAmount;
-			else
-				add[resUseType] = (-resUseAmount);
-
-			if (!add.empty())
-				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
-			if (!use.empty()) {
-				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
-				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)newEconomyTaskEntity);
+				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(newEconomyTaskEntity);
+				LOG("%s: (add0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 		}
 	}
