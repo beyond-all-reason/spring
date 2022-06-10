@@ -40,6 +40,7 @@ void TryAddToComponent(entt::entity entity, V addition) {
     auto comp = EcsMain::registry.try_get<T>(entity);
     if (comp != nullptr) {
         *comp += addition;
+        LOG("%s: (%f,%f)", __func__, (*comp)[0], (*comp)[1]);
     }
 }
 

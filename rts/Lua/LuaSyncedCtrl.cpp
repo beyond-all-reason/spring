@@ -1442,6 +1442,17 @@ int LuaSyncedCtrl::SetUnitCosts(lua_State* L)
 }
 
 
+template<class T>
+static bool UpdateIfChanged(T& field, T value)
+{
+	bool result = false;
+	if (field != value) {
+		field = value;
+		result = true;
+	}
+	return result;
+}
+
 static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 {
 	UnitEconomy::ResourcesComponentBase zeroResources;
@@ -1461,8 +1472,8 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 			switch (name[1]) {
 				case 'u': {
 					auto &resourcesUncondUse = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalUse>(unit->entityReference, zeroResources).resources;
-					if (name[2] == 'm') { resourcesUncondUse.metal  = value; result = true; }
-					if (name[2] == 'e') { resourcesUncondUse.energy = value; result = true; }
+					if (name[2] == 'm') { result = UpdateIfChanged(resourcesUncondUse.metal, value); }
+					if (name[2] == 'e') { result = UpdateIfChanged(resourcesUncondUse.energy, value); }
 					if (result == true) {
 						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesUnconditionalUse>(unit->entityReference, resourcesUncondUse);
 						unit->UpdateUnconditionalEconomy();
@@ -1471,8 +1482,8 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 
 				case 'm': {
 					auto &resourcesUncondMake = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalMake>(unit->entityReference, zeroResources).resources;
-					if (name[2] == 'm') { resourcesUncondMake.metal  = value; result = true; }
-					if (name[2] == 'e') { resourcesUncondMake.energy = value; result = true; }
+					if (name[2] == 'm') { result = UpdateIfChanged(resourcesUncondMake.metal, value); }
+					if (name[2] == 'e') { result = UpdateIfChanged(resourcesUncondMake.energy, value); }
 					if (result == true) {
 						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesUnconditionalMake>(unit->entityReference, resourcesUncondMake);
 						unit->UpdateUnconditionalEconomy();
@@ -1488,8 +1499,8 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 			switch (name[1]) {
 				case 'u': {
 					auto &resourcesCondUse = GetOptionalComponent<UnitEconomy::ResourcesConditionalUse>(unit->entityReference, zeroResources).resources;
-					if (name[2] == 'm') { resourcesCondUse.metal  = value; result = true; }
-					if (name[2] == 'e') { resourcesCondUse.energy = value; result = true; }
+					if (name[2] == 'm') { result = UpdateIfChanged(resourcesCondUse.metal, value); }
+					if (name[2] == 'e') { result = UpdateIfChanged(resourcesCondUse.energy, value); }
 					if (result == true) {
 						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesConditionalUse>(unit->entityReference, resourcesCondUse);
 						unit->UpdateConditionalEconomy();
@@ -1498,8 +1509,8 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 
 				case 'm': {
 					auto &resourcesCondMake = GetOptionalComponent<UnitEconomy::ResourcesConditionalMake>(unit->entityReference, zeroResources).resources;
-					if (name[2] == 'm') { resourcesCondMake.metal  = value; result = true; }
-					if (name[2] == 'e') { resourcesCondMake.energy = value; result = true; }
+					if (name[2] == 'm') { result = UpdateIfChanged(resourcesCondMake.metal, value); }
+					if (name[2] == 'e') { result = UpdateIfChanged(resourcesCondMake.energy, value); }
 					if (result == true) {
 						EcsMain::registry.emplace_or_replace<UnitEconomy::ResourcesConditionalMake>(unit->entityReference, resourcesCondMake);
 						unit->UpdateConditionalEconomy();

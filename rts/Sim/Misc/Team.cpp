@@ -230,10 +230,8 @@ bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
 	flowEcoReservedSupply -= amount;
 	flowEcoExpense += amount;
 
-	for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
-		if (flowEcoReservedSupply[i] < 0.f)
-			flowEcoReservedSupply[i] = 0.f;
-	}
+	for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
+		flowEcoReservedSupply[i] *= (flowEcoReservedSupply[i] > 0.f);
 
 	return true;
 }

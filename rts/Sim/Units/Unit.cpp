@@ -187,6 +187,9 @@ void AddEconomyTask(entt::entity entityReference, const SResourcePack& resMake, 
 		auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
 		MultipleEmplace<T...>(economyTaskId);
 		EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(economyTaskId, make);
+
+		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(economyTaskId);
+		LOG("%s: (use) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
 	}
 
 	if (use.metal > 0.f || use.energy > 0.f) {
@@ -195,7 +198,7 @@ void AddEconomyTask(entt::entity entityReference, const SResourcePack& resMake, 
 		EcsMain::registry.emplace<FlowEconomy::ResourceUse>(economyTaskId, use);
 
 		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(economyTaskId);
-		LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)economyTaskId);
+		LOG("%s: (add) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
 	}
 }
 

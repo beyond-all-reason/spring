@@ -16,6 +16,7 @@ public:
             for (int i=0; i<UnitEconomyReport::SnapshotUsage::BUFFERS; ++i)
                 snapshot += comp->resources[i];
         }
+        LOG("%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
         return snapshot;
     }
 
@@ -26,29 +27,20 @@ public:
             for (int i=0; i<UnitEconomyReport::SnapshotUsage::BUFFERS; ++i)
                 snapshot += comp->resources[i];
         }
+        LOG("%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
         return snapshot;
     }
 
     static SResourcePack& GetCurrentMake(entt::entity entity) {
-        auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentMake>(entity);
-        if (comp == nullptr) {
-            comp = &EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentMake>(entity);
-            auto reportComp = EcsMain::registry.try_get<UnitEconomyReport::SnapshotMake>(entity);
-            if (reportComp == nullptr)
-                EcsMain::registry.emplace<UnitEconomyReport::SnapshotMake>(entity);
-        }
-        return *comp;
+        auto snapshotMissing = ( EcsMain::registry.try_get<UnitEconomyReport::SnapshotMake>(entity) == nullptr );
+        if (snapshotMissing) EcsMain::registry.emplace<UnitEconomyReport::SnapshotMake>(entity);
+        return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentMake>(entity);
     }
 
     static SResourcePack& GetCurrentUsage(entt::entity entity) {
-        auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);
-        if (comp == nullptr) {
-            comp = &EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
-            auto reportComp = EcsMain::registry.try_get<UnitEconomyReport::SnapshotUsage>(entity);
-            if (reportComp == nullptr)
-                EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
-        }
-        return *comp;
+        auto snapshotMissing = ( EcsMain::registry.try_get<UnitEconomyReport::SnapshotUsage>(entity) == nullptr );
+        if (snapshotMissing) EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
+        return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
     }
 };
 
