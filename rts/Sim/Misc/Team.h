@@ -72,9 +72,10 @@ public:
 	const TeamStatistics& GetCurrentStats() const { return statHistory.back(); }
 	      TeamStatistics& GetCurrentStats()       { return statHistory.back(); }
 
-	void recordFlowEcoPull(SResourcePack pull) {
-		flowEcoPull += pull;
-		resPull += pull;
+	void recordFlowEcoPull(SResourcePack& fullPull, SResourcePack& proratedPull) {
+		flowEcoProratedPull += proratedPull;
+		flowEcoPull += fullPull;
+		resPull += fullPull;
 	}
 
 	void applyExcessToShared();
@@ -122,7 +123,7 @@ public:
 	// New Flow Eco Values
 
 	EconomyFlowSnapshot resCurrent, resNext;
-	SResourcePack flowEcoPull, flowEcoExpense;
+	SResourcePack flowEcoPull, flowEcoProratedPull;
 	//SResourcePack resNextIncome;	// Resources created become available in the back frame.
 	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
 	//std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;

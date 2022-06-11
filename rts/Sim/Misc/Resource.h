@@ -79,6 +79,22 @@ public:
 		return out;
 	}
 
+	SResourcePack operator/(const SResourcePack& other) const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] /= other.res[i];
+		}
+		return out;
+	}
+
+	SResourcePack operator+(float value) const {
+		SResourcePack out = *this;
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			out[i] += value;
+		}
+		return out;
+	}
+
 	SResourcePack operator*(float scale) const {
 		SResourcePack out = *this;
 		for (int i = 0; i < MAX_RESOURCES; ++i) {

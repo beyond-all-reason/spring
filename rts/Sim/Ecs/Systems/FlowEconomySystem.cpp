@@ -55,9 +55,10 @@ void ProcessProratableIncome(FlowEconomySystemComponent& system) {
 
         float minProrationRate = 1.f;
         for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
-            LOG("%s: %d %f (%f) -> %f", __func__, i, resUse[i], team->resProrationRates[i], minProrationRate);
             bool foundLowerProrationrate = (resUse[i] > 0.f) && (team->resProrationRates[i] < minProrationRate);
             minProrationRate = foundLowerProrationrate ? team->resProrationRates[i] : minProrationRate;
+
+            LOG("%s: %d %f (%f) -> %f", __func__, i, resUse[i], team->resProrationRates[i], minProrationRate);
         }
 
         SResourcePack resPull = resUse * system.economyMultiplier;
@@ -66,7 +67,7 @@ void ProcessProratableIncome(FlowEconomySystemComponent& system) {
 
         team->resNext.income += proratedResAdd;
         team->UseFlowEcoResources(proratedResUse);
-        team->recordFlowEcoPull(resPull);
+        team->recordFlowEcoPull(resPull, proratedResUse);
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, proratedResAdd);
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
@@ -110,7 +111,7 @@ void ProcessExpenses(FlowEconomySystemComponent& system) {
         SResourcePack resPull = resUse * system.economyMultiplier;
         SResourcePack proratedResUse = resPull * minProrationRate;
         team->UseFlowEcoResources(proratedResUse);
-        team->recordFlowEcoPull(resPull);
+        team->recordFlowEcoPull(resPull, proratedResUse);
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, proratedResUse);
     }
@@ -132,6 +133,20 @@ float getProrationRate(float supplyInUnits, float demandInUnits) {
     float supplyDemandRatio = (float)(std::trunc((supply / demand)*truncAccuracy) / truncAccuracy);
 
     return std::min(1.f, supplyDemandRatio);
+}
+
+float getProrationChangeRatio(float currentProrationRate, float previousProrationRate) {
+    if (previousProrationRate == 0.f)
+        return 1.f;
+
+    double curProration(currentProrationRate);
+    double prevProration(previousProrationRate);
+
+    // This is to over estimate the ratio slightly to ensure the reserve is at least as big
+    // as the expected pull. It is fine to be slightly over.
+    constexpr double ceilAccuracy = 100000.;
+
+    return (float)(std::ceil((curProration / prevProration)*ceilAccuracy) / ceilAccuracy);
 }
 
 void UpdateTeamEconomy(int teamId){
@@ -167,19 +182,29 @@ void UpdateTeamEconomy(int teamId){
 
     // Calculate eco to reserve for flow eco tasks
     // Stops non-flow eco from using the eco before flow eco tasks can use it
-    auto lastReserved = curTeam->flowEcoReservedSupply;
-    auto lastEcoConsumed = curTeam->flowEcoExpense;
-    auto newReserved = (lastReserved + lastEcoConsumed) * 0.5f;
+    SResourcePack& previousProratedUseRates = curTeam->resProrationRates;
+    SResourcePack newReserved;
 
     for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
         float max = std::min(supply[i], demand[i]);
-        float min = std::min(lastEcoConsumed[i] + max*0.1f, max);
-        newReserved[i] = std::clamp(newReserved[i], min, max);
+
+        if (curTeam->flowEcoProratedPull[i] <= 0.f) {
+            newReserved[i] = max;
+            continue;
+        }
+        if (proratedUseRates[i] <= previousProratedUseRates[i]) {
+            newReserved[i] = curTeam->flowEcoProratedPull[i];
+        }
+        else {
+            auto changeInProration = getProrationChangeRatio(proratedUseRates[i], curTeam->resProrationRates[i]);
+            auto adjustedPull = (curTeam->flowEcoProratedPull[i] * changeInProration);
+            newReserved[i] = std::min(adjustedPull, max);
+        }
     }
 
     // Apply economy updates
     curTeam->flowEcoPull = SResourcePack();
-    curTeam->flowEcoExpense = SResourcePack();
+    curTeam->flowEcoProratedPull = SResourcePack();
     curTeam->AddResources(incomeFromLastFrame);
     curTeam->flowEcoReservedSupply = newReserved;
 

@@ -77,7 +77,7 @@ void BuildSystem::Update() {
         LOG("BuildSystem::%s: %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
 
         if (team->UseFlowEcoResources(resUsage)) {
-            if (nextProgress < 1.f) team->recordFlowEcoPull(resPull);
+            if (nextProgress < 1.f) team->recordFlowEcoPull(resPull, resUsage);
 
             buildProgress = std::min(nextProgress, 1.f);
             health = std::min(nextHealth, maxHealth);
@@ -87,7 +87,7 @@ void BuildSystem::Update() {
             LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
         }
         else {
-            team->recordFlowEcoPull(resPull);
+            team->recordFlowEcoPull(resPull, resUsage);
         }
     }
 }

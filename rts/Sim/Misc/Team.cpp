@@ -222,13 +222,13 @@ bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
 	LOG("%s: %d: (%f,%f,%f,%f) <= (%f,%f,%f,%f) %d", __func__, gs->frameNum
 			, amount[0], amount[1], amount[2], amount[3]
 			, res[0], res[1], res[2], res[3], (int)(res >= amount));
+
 	if (!(res >= amount))
 		return false;
 
 	res -= amount;
 	resExpense += amount;
 	flowEcoReservedSupply -= amount;
-	flowEcoExpense += amount;
 
 	for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
 		flowEcoReservedSupply[i] *= (flowEcoReservedSupply[i] > 0.f);
