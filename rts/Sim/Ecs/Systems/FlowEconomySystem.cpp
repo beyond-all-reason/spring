@@ -213,11 +213,12 @@ void UpdateTeamEconomy(int teamId){
 
     if (teamId == 0){
         LOG("============================================");
-        LOG("%s: %d: income = (%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1]);
-        LOG("%s: %d: forProration = (%f,%f)", __func__, gs->frameNum, supply[0], supply[1]);
-        LOG("%s: %d: poratableUse = (%f,%f)", __func__, gs->frameNum, demand[0], demand[1]);
-        LOG("%s: %d: reserved eco = (%f,%f)", __func__, gs->frameNum, newReserved[0], newReserved[1]);
-        LOG("%s: %d: prorationrate = (%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[0], proratedUseRates[1]);
+        LOG("%s: %d: resources = (%f,%f,%f,%f)", __func__, gs->frameNum, storage[0], storage[1], storage[2], storage[3]);
+        LOG("%s: %d: income = (%f,%f,%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1], incomeFromLastFrame[2], incomeFromLastFrame[3]);
+        LOG("%s: %d: forProration = (%f,%f,%f,%f)", __func__, gs->frameNum, supply[0], supply[1], supply[2], supply[3]);
+        LOG("%s: %d: poratableUse = (%f,%f,%f,%f)", __func__, gs->frameNum, demand[0], demand[1], demand[2], demand[3]);
+        LOG("%s: %d: reserved eco = (%f,%f,%f,%f)", __func__, gs->frameNum, newReserved[0], newReserved[1], newReserved[2], newReserved[3]);
+        LOG("%s: %d: prorationrate = (%.10f,%.10f,%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[0], proratedUseRates[1], proratedUseRates[2], proratedUseRates[3]);
 
         //LOG("%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
         //LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);

@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#undef NDEBUG
+
 #include "Team.h"
 
 #include "TeamHandler.h"
@@ -125,6 +127,7 @@ bool CTeam::UseMetal(float amount)
 		return false;
 
 	res.metal -= amount;
+	assert(res.metal >= 0.f);
 	resExpense.metal += amount;
 	return true;
 }
@@ -136,6 +139,7 @@ bool CTeam::UseEnergy(float amount)
 		return false;
 
 	res.energy -= amount;
+	assert(res.energy >= 0.f);
 	resExpense.energy += amount;
 	return true;
 }
@@ -146,6 +150,8 @@ void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 {
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
+
+	assert (amount >= 0.f);
 
 	res.metal += amount;
 	resIncome.metal += amount;
@@ -161,6 +167,8 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 {
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
+
+	assert (amount >= 0.f);
 
 	res.energy += amount;
 	resIncome.energy += amount;
@@ -194,6 +202,9 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
 
+	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i)
+		assert (amount[i] >= 0.f);
+
 	res += amount;
 	resIncome += amount;
 
@@ -213,6 +224,8 @@ bool CTeam::UseResources(const SResourcePack& amount)
 		return false;
 
 	res -= amount;
+	static SResourcePack zeroResources;
+	assert(res >= zeroResources);
 	resExpense += amount;
 	return true;
 }
@@ -227,6 +240,9 @@ bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
 		return false;
 
 	res -= amount;
+	static SResourcePack zeroResources;
+	assert(res >= zeroResources);
+
 	resExpense += amount;
 	flowEcoReservedSupply -= amount;
 

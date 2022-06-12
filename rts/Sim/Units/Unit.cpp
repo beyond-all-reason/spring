@@ -122,9 +122,9 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 			SResourcePack add;
 			use[resUseType] = resUseAmount;
 			if (resAddAmount >= 0.f)
-				add[resAddType] = resUseAmount;
+				add[resAddType] = resAddAmount;
 			else
-				use[resAddType] = (-resUseAmount);
+				use[resAddType] = (-resAddAmount);
 
 			if (!add.empty()) {
 				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
@@ -2524,7 +2524,10 @@ void CUnit::Activate()
 		EnableConditionalEconomy();
 
 		auto metalIncome = unitDef->makesMetal;
-		metalIncome += (unitDef->extractsMetal > 0.f) ? metalExtract : 0.f;
+		metalIncome += (unitDef->extractsMetal > 0.f) * metalExtract;
+
+		LOG("%s: TK_EXTRACT %f + %f (%f) = %f", __func__, unitDef->makesMetal, metalExtract, unitDef->extractsMetal, metalIncome);
+
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask
 			>(entityReference, unitDef->energyUpkeep, metalIncome, 1, 0);
