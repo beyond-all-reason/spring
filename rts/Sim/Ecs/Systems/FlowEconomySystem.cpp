@@ -24,7 +24,6 @@ using namespace SystemGlobals;
 void FlowEconomySystem::Init() {
     if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
         systemGlobals.CreateSystemComponent<FlowEconomySystemComponent>();
-        systemGlobals.SetSystemActiveState<FlowEconomySystemComponent>(true);
 
         auto& flowEconomyComp = systemGlobals.GetSystemComponent<FlowEconomySystemComponent>();
         flowEconomyComp.economyMultiplier = 1.f / (GAME_SPEED / FLOW_ECONOMY_UPDATE_RATE); // sim display refresh rate
@@ -187,19 +186,22 @@ void UpdateTeamEconomy(int teamId){
 
     for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
         float max = std::min(supply[i], demand[i]);
+        float newReserve = 0.f;
 
         if (curTeam->flowEcoProratedPull[i] <= 0.f) {
-            newReserved[i] = max;
-            continue;
+            // no previous pull, reserve what we can.
+            newReserve = max;
         }
-        if (proratedUseRates[i] <= previousProratedUseRates[i]) {
-            newReserved[i] = curTeam->flowEcoProratedPull[i];
+        else if (proratedUseRates[i] <= previousProratedUseRates[i]) {
+            // proration rate has dropped or stayed the same, use last frame's pull to be safe.
+            newReserve = curTeam->flowEcoProratedPull[i];
         }
         else {
-            auto changeInProration = getProrationChangeRatio(proratedUseRates[i], curTeam->resProrationRates[i]);
-            auto adjustedPull = (curTeam->flowEcoProratedPull[i] * changeInProration);
-            newReserved[i] = std::min(adjustedPull, max);
+            // proration rate has increased, reserve extra to compensate.
+            auto changeInProration = getProrationChangeRatio(proratedUseRates[i], previousProratedUseRates[i]);
+            newReserve = (curTeam->flowEcoProratedPull[i] * changeInProration);
         }
+        newReserved[i] = std::min(newReserve, max);
     }
 
     // Apply economy updates

@@ -22,7 +22,6 @@ using namespace Build;
 
 void BuildSystem::Init() {
     systemGlobals.CreateSystemComponent<BuildSystemComponent>();
-    systemGlobals.SetSystemActiveState<BuildSystemComponent>(true);
 }
 
 

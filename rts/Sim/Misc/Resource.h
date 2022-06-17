@@ -22,7 +22,10 @@ public:
 		for (int i = 0; i < MAX_RESOURCES; ++i)
 			res[i] = 0.0f;
 	}
-	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
+	SResourcePack(const float m, const float e) : metal(m), energy(e) {
+		for (int i = 2; i < MAX_RESOURCES; ++i)
+			res[i] = 0.0f;
+	}
 	CR_DECLARE_STRUCT(SResourcePack)
 
 	bool empty() const {

@@ -10,55 +10,81 @@ class SystemGlobal {
 public:
     template<class T>
     void CreateSystemComponent() {
-        DestroySystemComponent<T>();
-        
-        entt::entity entity = EcsMain::registry.create();
-        EcsMain::registry.emplace<T>(entity);
+        if (! EcsMain::registry.valid(systemGlobalsEntity))
+            systemGlobalsEntity = EcsMain::registry.create();
 
-        typeToEntity.emplace(entt::type_id<T>().index(), entity);
+        EcsMain::registry.emplace_or_replace<T>(systemGlobalsEntity);
     };
 
     template<class T>
-    void SetSystemActiveState(bool activeState) {
-        EcsMain::registry.emplace_or_replace<SystemActive>(GetSystemEntity<T>(), activeState);
-    };
+    T& GetSystemComponent() { return EcsMain::registry.get<T>(systemGlobalsEntity); }
 
     template<class T>
-    T& GetSystemComponent() { return EcsMain::registry.get<T>(GetSystemEntity<T>()); }
+    bool IsSystemActive() { return (nullptr != EcsMain::registry.try_get<T>(systemGlobalsEntity)); }
 
-    template<class T>
-    entt::entity GetSystemEntity() {
-        auto typeId = entt::type_id<T>().index();
-        if (typeToEntity.contains(typeId)) {
-            return typeToEntity.at(typeId);
-        }
-        return entt::null;
+    void ClearComponents() {
+        if (EcsMain::registry.valid(systemGlobalsEntity))
+            EcsMain::registry.destroy(systemGlobalsEntity);
+
+        systemGlobalsEntity = entt::null;
     }
-
-    template<class T>
-    bool IsSystemActive() {
-        auto systemActiveComp = EcsMain::registry.try_get<SystemActive>(GetSystemEntity<T>());
-        if (systemActiveComp != nullptr) {
-            return systemActiveComp->value;
-        }
-        return false;
-    }
-
-    template<class T>
-    void DestroySystemComponent() {
-        auto typeId = entt::type_id<T>().index();
-        if (typeToEntity.contains(typeId)) {
-            auto entity = typeToEntity.at(typeId);
-            if (EcsMain::registry.valid(entity)) EcsMain::registry.destroy(entity);
-            typeToEntity.erase(typeId);
-        }
-    }
-
-    void ClearComponents() { for (auto typeAndEntity : typeToEntity) EcsMain::registry.destroy(typeAndEntity.second); }
 
 private:
 
-    entt::dense_map<ENTT_ID_TYPE, entt::entity> typeToEntity;
+    entt::entity systemGlobalsEntity = entt::null;
+
+// public:
+//     template<class T>
+//     void CreateSystemComponent() {
+//         DestroySystemComponent<T>();
+        
+//         entt::entity entity = EcsMain::registry.create();
+//         EcsMain::registry.emplace<T>(entity);
+
+//         typeToEntity.emplace(entt::type_id<T>().index(), entity);
+//     };
+
+//     template<class T>
+//     void SetSystemActiveState(bool activeState) {
+//         EcsMain::registry.emplace_or_replace<SystemActive>(GetSystemEntity<T>(), activeState);
+//     };
+
+//     template<class T>
+//     T& GetSystemComponent() { return EcsMain::registry.get<T>(GetSystemEntity<T>()); }
+
+//     template<class T>
+//     entt::entity GetSystemEntity() {
+//         auto typeId = entt::type_id<T>().index();
+//         if (typeToEntity.contains(typeId)) {
+//             return typeToEntity.at(typeId);
+//         }
+//         return entt::null;
+//     }
+
+//     template<class T>
+//     bool IsSystemActive() {
+//         auto systemActiveComp = EcsMain::registry.try_get<SystemActive>(GetSystemEntity<T>());
+//         if (systemActiveComp != nullptr) {
+//             return systemActiveComp->value;
+//         }
+//         return false;
+//     }
+
+//     template<class T>
+//     void DestroySystemComponent() {
+//         auto typeId = entt::type_id<T>().index();
+//         if (typeToEntity.contains(typeId)) {
+//             auto entity = typeToEntity.at(typeId);
+//             if (EcsMain::registry.valid(entity)) EcsMain::registry.destroy(entity);
+//             typeToEntity.erase(typeId);
+//         }
+//     }
+
+//     void ClearComponents() { for (auto typeAndEntity : typeToEntity) EcsMain::registry.destroy(typeAndEntity.second); }
+
+// private:
+
+//     entt::dense_map<ENTT_ID_TYPE, entt::entity> typeToEntity;
 };
 
 extern SystemGlobal systemGlobals;
