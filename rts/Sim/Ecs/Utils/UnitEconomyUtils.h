@@ -42,6 +42,15 @@ public:
         if (snapshotMissing) EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
         return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
     }
+
+    static void SetupEconomyTacking(entt::entity entity) {
+        AddComponentsIfNotExist
+            < UnitEconomy::ResourcesCurrentMake
+            , UnitEconomy::ResourcesCurrentUsage
+            , UnitEconomyReport::SnapshotMake
+            , UnitEconomyReport::SnapshotUsage
+            >(entity);
+    }
 };
 
 #endif

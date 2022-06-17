@@ -3,6 +3,7 @@
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Units/Unit.h"
 
 template <class T>
@@ -33,7 +34,7 @@ void AddToChain(entt::entity head, entt::entity newLink) {
     T& chainHeadLinkComp = GetChainHeadLink<T>(head);
     InsertAfterChainLink<T>(chainHeadLinkComp.prev, newLink);
 
-    auto& chainHeadComp = EcsMain::registry.get_or_emplace<ChainHeadComp>(head);
+    auto& chainHeadComp = EcsMain::registry.get<ChainHeadComp>(head);
     chainHeadComp.size++;
 
     LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
@@ -63,26 +64,13 @@ void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
     }
 }
 
-template<typename TF, typename... TR>
-void AddComponentsIfNotExist(entt::entity entity) {
-    if (!EcsMain::registry.all_of<TF>(entity)){
-        EcsMain::registry.emplace<TF>(entity);
-    }
-    if constexpr (sizeof...(TR) > 0) {
-        AddComponentsIfNotExist<TR...>(entity);
-    }
-}
-
 entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
     auto economyTask = EcsMain::registry.create();
     EcsMain::registry.emplace<Units::OwningEntity>(economyTask, unit);
 
-    AddComponentsIfNotExist
-        < UnitEconomy::ResourcesCurrentMake
-        , UnitEconomy::ResourcesCurrentUsage
-        , UnitEconomyReport::SnapshotMake
-        , UnitEconomyReport::SnapshotUsage
-        >(unit);
+    auto& chainHead = EcsMain::registry.get_or_emplace<Units::EconomyTasks>(unit);
+    if (chainHead.size <= 0)
+        UnitEconomyUtils::SetupEconomyTacking(unit);
 
     auto team = EcsMain::registry.get<Units::Team>(unit).value;
     EcsMain::registry.emplace<Units::Team>(economyTask, team);
@@ -103,14 +91,6 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
     EcsMain::registry.destroy(economyTask); // FIXME: mark for deletion rather than delete due to frame delays?
 
     auto& chainHead = EcsMain::registry.get<Units::EconomyTasks>(unit);
-    if (chainHead.size <= 0) {
-        EcsMain::registry.remove
-                < UnitEconomy::ResourcesCurrentMake
-                , UnitEconomy::ResourcesCurrentUsage
-                , UnitEconomyReport::SnapshotMake
-                , UnitEconomyReport::SnapshotUsage
-                >(unit);
-    }
 
     LOG("%s: Eco Task %d removed from %d", __func__, (int)economyTask, (int)unit);
 

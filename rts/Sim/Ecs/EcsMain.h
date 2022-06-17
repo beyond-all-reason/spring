@@ -39,6 +39,16 @@ auto& GetOptionalComponent(entt::entity entity, V& defaultValue) {
     return checkPtr != nullptr ? *checkPtr : defaultValue;
 }
 
+template<typename TF, typename... TR>
+void AddComponentsIfNotExist(entt::entity entity) {
+    if (!EcsMain::registry.all_of<TF>(entity)){
+        EcsMain::registry.emplace<TF>(entity);
+    }
+    if constexpr (sizeof...(TR) > 0) {
+        AddComponentsIfNotExist<TR...>(entity);
+    }
+}
+
 #ifdef RESTORE_LUA_MACROS
 // from llimits.h
 #define cast(t, exp)	((t)(exp))

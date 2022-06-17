@@ -8,6 +8,7 @@
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/SolidObjectComponent.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/UnitEconomyUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
@@ -27,6 +28,8 @@ void BuildUtils::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;
     auto unitDef = unit->unitDef;
     auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed / GAME_SPEED).value;
+
+    UnitEconomyUtils::SetupEconomyTacking(entity);
 
     LOG("%s: added unit %d (%d) with build speed %f", __func__, unit->id, (int)entity, buildSpeed);
 }

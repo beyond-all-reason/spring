@@ -4,9 +4,10 @@
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/BuildComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
+#include "Sim/Ecs/Components/SolidObjectComponent.h"
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
-#include "Sim/Ecs/Components/SolidObjectComponent.h"
+#include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -77,6 +78,10 @@ void BuildSystem::Update() {
 
         if (team->UseFlowEcoResources(resUsage)) {
             if (nextProgress < 1.f) team->recordFlowEcoPull(resPull, resUsage);
+
+            auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);
+            if (comp != nullptr)
+                *comp += resUsage;
 
             buildProgress = std::min(nextProgress, 1.f);
             health = std::min(nextHealth, maxHealth);
