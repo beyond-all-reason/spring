@@ -14,9 +14,20 @@
 using namespace SystemGlobals;
 using namespace UnitEconomyReport;
 
+template<class T>
+void AddComponent(entt::registry &registry, entt::entity entity) {
+    if (! registry.all_of<T>(entity))
+        registry.emplace<T>(entity);
+}
+
 void UnitEconomyReportSystem::Init()
 {
     systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
+
+    EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentMake>()
+                     .connect<&AddComponent<UnitEconomyReport::SnapshotMake>>();
+    EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentUsage>()
+                     .connect<&AddComponent<UnitEconomyReport::SnapshotUsage>>();
 }
 
 // Should work but GCC 10.3 cannot process this correctly

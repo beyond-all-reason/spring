@@ -32,14 +32,10 @@ public:
     }
 
     static SResourcePack& GetCurrentMake(entt::entity entity) {
-        auto snapshotMissing = ( EcsMain::registry.try_get<UnitEconomyReport::SnapshotMake>(entity) == nullptr );
-        if (snapshotMissing) EcsMain::registry.emplace<UnitEconomyReport::SnapshotMake>(entity);
         return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentMake>(entity);
     }
 
     static SResourcePack& GetCurrentUsage(entt::entity entity) {
-        auto snapshotMissing = ( EcsMain::registry.try_get<UnitEconomyReport::SnapshotUsage>(entity) == nullptr );
-        if (snapshotMissing) EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
         return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
     }
 
@@ -47,8 +43,6 @@ public:
         AddComponentsIfNotExist
             < UnitEconomy::ResourcesCurrentMake
             , UnitEconomy::ResourcesCurrentUsage
-            , UnitEconomyReport::SnapshotMake
-            , UnitEconomyReport::SnapshotUsage
             >(entity);
     }
 };

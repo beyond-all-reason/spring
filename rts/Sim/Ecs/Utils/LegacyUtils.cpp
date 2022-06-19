@@ -26,7 +26,4 @@ void LegacyUtils::AddFlowEconomyUnit(CUnit *unit) {
     EcsMain::registry.emplace<UnitEconomy::ResourcesUnconditionalUse>(entity);
     EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentMake>(entity);
     EcsMain::registry.emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
-
-    EcsMain::registry.emplace<UnitEconomyReport::SnapshotMake>(entity);
-    EcsMain::registry.emplace<UnitEconomyReport::SnapshotUsage>(entity);
 }
