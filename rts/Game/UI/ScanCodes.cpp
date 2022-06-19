@@ -205,6 +205,15 @@ void CScanCodes::Reset()
 	AddPair("sc_f13", SDL_SCANCODE_F13);
 	AddPair("sc_f14", SDL_SCANCODE_F14);
 	AddPair("sc_f15", SDL_SCANCODE_F15);
+	AddPair("sc_f16", SDL_SCANCODE_F16);
+	AddPair("sc_f17", SDL_SCANCODE_F17);
+	AddPair("sc_f18", SDL_SCANCODE_F18);
+	AddPair("sc_f19", SDL_SCANCODE_F19);
+	AddPair("sc_f20", SDL_SCANCODE_F20);
+	AddPair("sc_f21", SDL_SCANCODE_F21);
+	AddPair("sc_f22", SDL_SCANCODE_F22);
+	AddPair("sc_f23", SDL_SCANCODE_F23);
+	AddPair("sc_f24", SDL_SCANCODE_F24);
 
 	// Key state modifier keys
 	//AddPair("sc_numlock", SDL_SCANCODE_NUMLOCKCLEAR);
