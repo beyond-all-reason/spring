@@ -124,14 +124,10 @@ public:
 
 	EconomyFlowSnapshot resCurrent, resNext;
 	SResourcePack flowEcoPull, flowEcoProratedPull;
-	//SResourcePack resNextIncome;	// Resources created become available in the back frame.
 	SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
-	//std::array<float, SResourcePack::MAX_RESOURCES+2> prorationRates;
+	SResourcePack lastFlowEcoReservedSupply, lastFlowEcoOptimalSupply;
 	SResourcePack resProrationRates;
 	SResourcePack resSnapshot;
-	//SResourcePack resProrationRate;
-	//float minResProrationRate;
-	// --
 
 	int nextHistoryEntry;
 	std::vector<TeamStatistics> statHistory;

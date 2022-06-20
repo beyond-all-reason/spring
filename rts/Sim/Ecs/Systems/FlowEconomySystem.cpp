@@ -183,25 +183,24 @@ void UpdateTeamEconomy(int teamId){
     // Stops non-flow eco from using the eco before flow eco tasks can use it
     SResourcePack& previousProratedUseRates = curTeam->resProrationRates;
     SResourcePack newReserved;
+    SResourcePack optimalSupply;
 
     for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i) {
-        float max = std::min(supply[i], demand[i]);
-        float newReserve = 0.f;
+        // no previous pull, or the pull has increased above our current reservation point, or pull is close to optimal.
+        bool resetReserve = (curTeam->flowEcoProratedPull[i] <= 0.f)
+                         || (curTeam->flowEcoProratedPull[i] >= curTeam->lastFlowEcoOptimalSupply[i] * 0.9999f)
+                         || (curTeam->flowEcoProratedPull[i] >= curTeam->lastFlowEcoReservedSupply[i]);
 
-        if (curTeam->flowEcoProratedPull[i] <= 0.f) {
-            // no previous pull, reserve what we can.
-            newReserve = max;
-        }
-        else if (proratedUseRates[i] <= previousProratedUseRates[i]) {
-            // proration rate has dropped or stayed the same, use last frame's pull to be safe.
-            newReserve = curTeam->flowEcoProratedPull[i];
-        }
-        else {
-            // proration rate has increased, reserve extra to compensate.
-            auto changeInProration = getProrationChangeRatio(proratedUseRates[i], previousProratedUseRates[i]);
-            newReserve = (curTeam->flowEcoProratedPull[i] * changeInProration);
-        }
-        newReserved[i] = std::min(newReserve, max);
+        float max = std::min(supply[i], demand[i]);
+        optimalSupply[i] = max;
+
+        // even when the economy is stable there will be fluctations during proration, we want to avoid
+        // these fluctations causing unnecessary jumps back to max reserve.
+        float buffer = max*0.0001f;
+        float newReserve[2] = { (curTeam->flowEcoProratedPull[i] + curTeam->lastFlowEcoReservedSupply[i]) * 0.5f + buffer
+                              , (max) };
+
+        newReserved[i] = std::min(newReserve[resetReserve], max);
     }
 
     // Apply economy updates
@@ -209,6 +208,8 @@ void UpdateTeamEconomy(int teamId){
     curTeam->flowEcoProratedPull = SResourcePack();
     curTeam->AddResources(incomeFromLastFrame);
     curTeam->flowEcoReservedSupply = newReserved;
+    curTeam->lastFlowEcoReservedSupply = newReserved;
+    curTeam->lastFlowEcoOptimalSupply = optimalSupply;
 
     // do after all teams are updated.
     curTeam->resProrationRates = proratedUseRates;

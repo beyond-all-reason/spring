@@ -29,7 +29,7 @@ void BuildUtils::AddUnitBuilder(CUnit *unit){
     auto unitDef = unit->unitDef;
     auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed / GAME_SPEED).value;
 
-    UnitEconomyUtils::SetupEconomyTacking(entity);
+    AddComponentsIfNotExist<UnitEconomy::ResourcesCurrentUsage>(entity);
 
     LOG("%s: added unit %d (%d) with build speed %f", __func__, unit->id, (int)entity, buildSpeed);
 }

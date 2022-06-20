@@ -38,13 +38,6 @@ public:
     static SResourcePack& GetCurrentUsage(entt::entity entity) {
         return EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity);
     }
-
-    static void SetupEconomyTacking(entt::entity entity) {
-        AddComponentsIfNotExist
-            < UnitEconomy::ResourcesCurrentMake
-            , UnitEconomy::ResourcesCurrentUsage
-            >(entity);
-    }
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include "UnitEconomyReportSystem.h"
 
 #include "Sim/Ecs/SlowUpdate.h"
+#include "Sim/Ecs/Components/FlowEconomyComponents.h"
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
@@ -20,14 +21,43 @@ void AddComponent(entt::registry &registry, entt::entity entity) {
         registry.emplace<T>(entity);
 }
 
-void UnitEconomyReportSystem::Init()
-{
-    systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
+template<class T>
+void RemoveComponent(entt::registry &registry, entt::entity entity) {
+    registry.remove<T>(entity);
+}
 
+template<class T>
+void AddComponentToOwnerOfEcoTask(entt::registry &registry, entt::entity taskEntity) {
+    auto entity = EcsMain::registry.get<Units::OwningEntity>(taskEntity).value;
+    if (! registry.all_of<T>(entity))
+        registry.emplace<T>(entity);
+}
+
+void SetupObserversForEcoTasks() {
+    EcsMain::registry.on_construct<FlowEconomy::ResourceAdd>()
+                     .connect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentMake>>();
+    EcsMain::registry.on_construct<FlowEconomy::ResourceUse>()
+                     .connect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentUsage>>();
+}
+
+void SetupObserversForResourceTracking() {
     EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentMake>()
                      .connect<&AddComponent<UnitEconomyReport::SnapshotMake>>();
     EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentUsage>()
                      .connect<&AddComponent<UnitEconomyReport::SnapshotUsage>>();
+
+    EcsMain::registry.on_destroy<UnitEconomy::ResourcesCurrentMake>()
+                     .connect<&RemoveComponent<UnitEconomyReport::SnapshotMake>>();
+    EcsMain::registry.on_destroy<UnitEconomy::ResourcesCurrentUsage>()
+                     .connect<&RemoveComponent<UnitEconomyReport::SnapshotUsage>>();
+}
+
+void UnitEconomyReportSystem::Init()
+{
+    systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
+
+    SetupObserversForEcoTasks();
+    SetupObserversForResourceTracking();
 }
 
 // Should work but GCC 10.3 cannot process this correctly
@@ -46,11 +76,11 @@ void UnitEconomyReportSystem::Init()
 void TakeMakeSnapshot(UnitEconomyReportSystemComponent& system){
     auto group = EcsMain::registry.group<SnapshotMake>(entt::get<UnitEconomy::ResourcesCurrentMake>);
     for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotMake>(entity);
-        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
-
-        displayValue.resources[system.activeBuffer] = counterValue;
-        counterValue = SResourcePack();
+        EcsMain::registry.patch<SnapshotMake>(entity, [entity, &system, &group](auto& snapshot){
+                const auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
+                snapshot.resources[system.activeBuffer] = counterValue;
+            });
+        EcsMain::registry.replace<UnitEconomy::ResourcesCurrentMake>(entity, SResourcePack());
     }
 }
 

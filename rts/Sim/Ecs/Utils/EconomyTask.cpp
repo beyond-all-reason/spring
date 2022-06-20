@@ -34,10 +34,9 @@ void AddToChain(entt::entity head, entt::entity newLink) {
     T& chainHeadLinkComp = GetChainHeadLink<T>(head);
     InsertAfterChainLink<T>(chainHeadLinkComp.prev, newLink);
 
-    auto& chainHeadComp = EcsMain::registry.get<ChainHeadComp>(head);
-    chainHeadComp.size++;
-
-    LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
+    EcsMain::registry.patch<ChainHeadComp>(head, [](auto& chainHead){++chainHead.size;});
+    
+    //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
 }
 
 template <class T>
@@ -57,10 +56,9 @@ template<class ChainHeadComp, class T>
 void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
     if (head != linkToRemove) {
         DisconnectChainLink<T>(linkToRemove);
-        auto& chainHeadComp = EcsMain::registry.get<ChainHeadComp>(head);
-        chainHeadComp.size--;
+        EcsMain::registry.patch<ChainHeadComp>(head, [](auto& chainHead){--chainHead.size;});
 
-        LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
+        //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
     }
 }
 
@@ -68,9 +66,8 @@ entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
     auto economyTask = EcsMain::registry.create();
     EcsMain::registry.emplace<Units::OwningEntity>(economyTask, unit);
 
-    auto& chainHead = EcsMain::registry.get_or_emplace<Units::EconomyTasks>(unit);
-    if (chainHead.size <= 0)
-        UnitEconomyUtils::SetupEconomyTacking(unit);
+    if (nullptr == EcsMain::registry.try_get<Units::ChainEntity>(unit))
+        EcsMain::registry.emplace<Units::ChainEntity>(unit);
 
     auto team = EcsMain::registry.get<Units::Team>(unit).value;
     EcsMain::registry.emplace<Units::Team>(economyTask, team);
@@ -89,8 +86,6 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
 
     RemoveFromChain<Units::EconomyTasks, Units::ChainEntity>(unit, economyTask);
     EcsMain::registry.destroy(economyTask); // FIXME: mark for deletion rather than delete due to frame delays?
-
-    auto& chainHead = EcsMain::registry.get<Units::EconomyTasks>(unit);
 
     LOG("%s: Eco Task %d removed from %d", __func__, (int)economyTask, (int)unit);
 
