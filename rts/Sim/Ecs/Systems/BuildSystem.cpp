@@ -16,6 +16,7 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitTypes/Builder.h"
+#include "System/SpringMath.h"
 #include "System/TimeProfiler.h"
 
 using namespace SystemGlobals;
@@ -59,7 +60,6 @@ void BuildSystem::Update() {
             buildRate = foundLowerProrationrate ? team->resProrationRates[i] : buildRate;
         }
 
-        // float buildRate = team->prorationRates[(int)buildDetails.prorationType];
         auto& buildProgress = (EcsMain::registry.get<BuildProgress>(buildTarget)).value;
         auto& health = (EcsMain::registry.get<SolidObject::Health>(buildTarget)).value;
         auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(buildTarget)).value;
@@ -76,7 +76,30 @@ void BuildSystem::Update() {
 
         LOG("BuildSystem::%s: %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
 
-        if (team->UseFlowEcoResources(resUsage)) {
+        bool isResAvailable = team->UseFlowEcoResources(resUsage);
+        if (!isResAvailable) {
+            buildRate = 1.f;
+            for (int i=0; i<SResourcePack::MAX_RESOURCES; ++i){
+                float resBuildRate = (resPull[i] > 0.f) ? (team->res[i] / resPull[i]) : 1.f;
+                LOG("BuildSystem::%s: Retry: resBuildRate = %f [%f]", __func__, resBuildRate, resPull[i]);
+                buildRate = std::min(resBuildRate, buildRate);
+            }
+            // trunc buildRate to avoid rounding error when this should actually work
+            constexpr double truncAccuracy = 1000000.;
+            LOG("BuildSystem::%s: Retry: BuildRate = %.10f", __func__, buildRate);
+            buildRate = springmath::trunc((double)buildRate, truncAccuracy);
+            LOG("BuildSystem::%s: Retry: BuildRate = %.10f (%f)", __func__, buildRate, truncAccuracy);
+            if (buildRate > 0.000001f){
+                for (int i=0; i<SResourcePack::MAX_RESOURCES; ++i)
+                    resUsage[i] = resPull[i] * buildRate * (resPull[i] > 0.f);
+
+                LOG("BuildSystem::%s: Retry %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
+
+                isResAvailable = team->UseFlowEcoResources(resUsage);
+            }
+        }
+
+        if (isResAvailable) {
             if (nextProgress < 1.f) team->recordFlowEcoPull(resPull, resUsage);
 
             auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);

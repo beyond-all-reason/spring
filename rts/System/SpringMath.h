@@ -134,6 +134,14 @@ constexpr T AlignDown(T value, size_t size)
 	return static_cast<T>(value - value % size);
 }
 
+namespace springmath {
+template <typename T>
+constexpr T trunc(T value, T accuracy)
+{
+	return std::trunc(value*accuracy) / accuracy;
+}
+}
+
 /**
  * @brief does a division and returns additionally the remnant
  */

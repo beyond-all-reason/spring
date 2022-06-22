@@ -12,6 +12,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/UnitDef.h"
+#include "System/SpringMath.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
 
@@ -129,7 +130,8 @@ float getProrationRate(float supplyInUnits, float demandInUnits) {
     // never exceeds the available resource supply; otherwise the last unit to draw resources
     // will fail when it should have succeeded: all because it went over the supply by a tiny
     // fraction.
-    float supplyDemandRatio = (float)(std::trunc((supply / demand)*truncAccuracy) / truncAccuracy);
+    float supplyDemandRatio = springmath::trunc(supply / demand, truncAccuracy);
+    //float supplyDemandRatio = (float)(std::trunc((supply / demand)*truncAccuracy) / truncAccuracy);
 
     return std::min(1.f, supplyDemandRatio);
 }

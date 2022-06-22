@@ -34,7 +34,7 @@ void AddToChain(entt::entity head, entt::entity newLink) {
     T& chainHeadLinkComp = GetChainHeadLink<T>(head);
     InsertAfterChainLink<T>(chainHeadLinkComp.prev, newLink);
 
-    EcsMain::registry.patch<ChainHeadComp>(head, [](auto& chainHead){++chainHead.size;});
+    EcsMain::registry.get_or_emplace<ChainHeadComp>(head).size++;
     
     //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
 }
@@ -56,7 +56,8 @@ template<class ChainHeadComp, class T>
 void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
     if (head != linkToRemove) {
         DisconnectChainLink<T>(linkToRemove);
-        EcsMain::registry.patch<ChainHeadComp>(head, [](auto& chainHead){--chainHead.size;});
+
+        EcsMain::registry.get<ChainHeadComp>(head).size--;
 
         //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
     }
@@ -67,7 +68,7 @@ entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
     EcsMain::registry.emplace<Units::OwningEntity>(economyTask, unit);
 
     if (nullptr == EcsMain::registry.try_get<Units::ChainEntity>(unit))
-        EcsMain::registry.emplace<Units::ChainEntity>(unit);
+        EcsMain::registry.emplace<Units::ChainEntity>(unit, unit, unit);
 
     auto team = EcsMain::registry.get<Units::Team>(unit).value;
     EcsMain::registry.emplace<Units::Team>(economyTask, team);

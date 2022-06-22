@@ -76,11 +76,18 @@ void UnitEconomyReportSystem::Init()
 void TakeMakeSnapshot(UnitEconomyReportSystemComponent& system){
     auto group = EcsMain::registry.group<SnapshotMake>(entt::get<UnitEconomy::ResourcesCurrentMake>);
     for (auto entity : group) {
-        EcsMain::registry.patch<SnapshotMake>(entity, [entity, &system, &group](auto& snapshot){
-                const auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
-                snapshot.resources[system.activeBuffer] = counterValue;
-            });
-        EcsMain::registry.replace<UnitEconomy::ResourcesCurrentMake>(entity, SResourcePack());
+        auto& displayValue = group.get<SnapshotMake>(entity);
+        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
+
+        displayValue.resources[system.activeBuffer] = counterValue;
+        counterValue = SResourcePack();
+
+        // Example of Patch/Replace approach - needed if observers are used
+        // EcsMain::registry.patch<SnapshotMake>(entity, [entity, &system, &group](auto& snapshot){
+        //         const auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
+        //         snapshot.resources[system.activeBuffer] = counterValue;
+        //     });
+        // EcsMain::registry.replace<UnitEconomy::ResourcesCurrentMake>(entity, SResourcePack());
     }
 }
 
