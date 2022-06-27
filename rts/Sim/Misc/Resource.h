@@ -7,6 +7,7 @@
 #include <iterator>
 #include "System/creg/creg_cond.h"
 
+#include <immintrin.h>
 
 struct SResourcePack {
 	static constexpr int MAX_RESOURCES = 4;
@@ -19,8 +20,13 @@ struct SResourcePack {
 
 public:
 	SResourcePack() {
-		for (int i = 0; i < MAX_RESOURCES; ++i)
-			res[i] = 0.0f;
+		if constexpr (MAX_RESOURCES == 4) {
+			_mm_storeu_ps(&res[0], _mm_set1_ps(0));
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				res[i] = 0.0f;
+		}
 	}
 	SResourcePack(const float m, const float e) : metal(m), energy(e) {
 		for (int i = 2; i < MAX_RESOURCES; ++i)
@@ -29,10 +35,16 @@ public:
 	CR_DECLARE_STRUCT(SResourcePack)
 
 	bool empty() const {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] != 0.0f) return false;
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			return (_mm_movemask_ps(_mm_cmpneq_ps(v1, _mm_set1_ps(0))) == 0);
 		}
-		return true;
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i) {
+				if (res[i] != 0.0f) return false;
+			}
+			return true;
+		}
 	}
 
 	decltype(std::begin(res)) begin() { return std::begin(res); }
@@ -46,61 +58,121 @@ public:
 	}
 
 	bool operator<=(const SResourcePack& other) const {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] > other.res[i]) return false;
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			return (_mm_movemask_ps(_mm_cmpgt_ps(v1, v2)) == 0);
 		}
-		return true;
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i) {
+				if (res[i] > other.res[i]) return false;
+			}
+			return true;
+		}
 	}
 	bool operator>=(const SResourcePack& other) const {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] < other.res[i]) return false;
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			return (_mm_movemask_ps(_mm_cmplt_ps(v1, v2)) == 0);
 		}
-		return true;
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i) {
+				if (res[i] < other.res[i]) return false;
+			}
+			return true;
+		}
 	}
 
 	SResourcePack operator+(const SResourcePack& other) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] += other.res[i];
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_add_ps(v1, v2);
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] += other.res[i];
 		}
 		return out;
 	}
 
 	SResourcePack operator-(const SResourcePack& other) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] -= other.res[i];
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_sub_ps(v1, v2);
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] -= other.res[i];
 		}
 		return out;
 	}
 
 	SResourcePack operator*(const SResourcePack& other) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] *= other.res[i];
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_mul_ps(v1, v2);
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] *= other.res[i];
 		}
 		return out;
 	}
 
 	SResourcePack operator/(const SResourcePack& other) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] /= other.res[i];
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_div_ps(v1, v2);
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] /= other.res[i];
 		}
 		return out;
 	}
 
 	SResourcePack operator+(float value) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] += value;
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			v1 = _mm_add_ps(v1, _mm_set1_ps(value));
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] += value;
 		}
 		return out;
 	}
 
 	SResourcePack operator*(float scale) const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
 			out[i] *= scale;
 		}
 		return out;
@@ -108,7 +180,14 @@ public:
 
 	SResourcePack operator-() const {
 		SResourcePack out = *this;
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
+
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			v1 = _mm_sub_ps(_mm_set1_ps(0), v1);
+			_mm_storeu_ps(&out.res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
 			out[i] = -out[i];
 		}
 		return out;
@@ -122,20 +201,40 @@ public:
 	// }
 
 	SResourcePack& operator+=(const SResourcePack& other) {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			res[i] += other.res[i];
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_add_ps(v1, v2);
+			_mm_storeu_ps(&res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				res[i] += other.res[i];
 		}
 		return *this;
 	}
 	SResourcePack& operator-=(const SResourcePack& other) {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			v1 = _mm_sub_ps(v1, v2);
+			_mm_storeu_ps(&res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
 			res[i] -= other.res[i];
 		}
 		return *this;
 	}
 
 	SResourcePack& operator*=(float scale) {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
+			_mm_storeu_ps(&res[0], v1);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i)
 			res[i] *= scale;
 		}
 		return *this;
