@@ -130,7 +130,6 @@ if    (USE_MIMALLOC)
 	#add_definitions(-DMI_DEBUG=0x0)
 endif (USE_MIMALLOC)
 
-
 if(UNIX)
 	find_package_static(Libunwind REQUIRED)
 	prefer_static_libs()

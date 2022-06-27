@@ -29,7 +29,7 @@ void spring::FreeAlignedMemory(void* ptr)
 #ifdef _WIN32
         _aligned_free(ptr);
 #else
-        std::free(ptr);
+        ::free(ptr);
 #endif
     }
 }
@@ -39,7 +39,7 @@ void* spring::malloc(size_t size)
 #ifdef USE_MIMALLOC
     return mi_malloc(size);
 #else
-    return std::malloc(size);
+    return ::malloc(size);
 #endif
 }
 
@@ -48,6 +48,6 @@ void spring::free(void* _Block)
 #ifdef USE_MIMALLOC
     mi_free(_Block);
 #else
-    std::free(_Block);
+    ::free(_Block);
 #endif
 }

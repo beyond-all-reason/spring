@@ -42,9 +42,18 @@ EXTERNALIZER_B EXPORT_CLAUSE uint32_t AmdPowerXpressRequestHighPerformance = 1; 
 int Run(int argc, char* argv[])
 {
 #ifdef USE_MIMALLOC
-	mi_option_enable(mi_option_verbose);
+	#ifdef _DEBUG
+		mi_option_enable(mi_option_show_errors);
+		mi_option_enable(mi_option_show_stats);
+		mi_option_enable(mi_option_verbose);
+	#else
+		mi_option_disable(mi_option_show_errors);
+		mi_option_disable(mi_option_show_stats);
+		mi_option_disable(mi_option_verbose);
+	#endif
 	mi_option_enable(mi_option_large_os_pages);
-	mi_option_set(mi_option_reserve_huge_os_pages, 4);
+	//mi_option_set(mi_option_reserve_huge_os_pages, 4);
+	//mi_option_set(mi_option_eager_commit_delay, 16);
 #endif
 
 #ifdef __MINGW32__
