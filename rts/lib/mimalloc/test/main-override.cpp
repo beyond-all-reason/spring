@@ -32,22 +32,27 @@ static void heap_late_free();         // issue #204
 static void padding_shrink();         // issue #209
 static void various_tests();
 static void test_mt_shutdown();
+static void large_alloc(void);        // issue #363
 static void fail_aslr();              // issue #372
 static void tsan_numa_test();         // issue #414
-static void strdup_test();     // issue #445
+static void strdup_test();            // issue #445
+static void bench_alloc_large(void);  // issue #xxx
 
 int main() {
   mi_stats_reset();  // ignore earlier allocations
-  heap_thread_free_large();
-  heap_no_delete();
-  heap_late_free();
-  padding_shrink();
-  various_tests();
-  tsan_numa_test();
-  strdup_test();
 
-  //test_mt_shutdown();
+   heap_thread_free_large();
+   heap_no_delete();
+   heap_late_free();
+   padding_shrink();
+   various_tests();
+   large_alloc();
+   tsan_numa_test();
+   strdup_test();
+
+  test_mt_shutdown();
   //fail_aslr();
+  bench_alloc_large();
   mi_stats_print(NULL);
   return 0;
 }
@@ -71,7 +76,7 @@ public:
 static void various_tests() {
   atexit(free_p);
   void* p1 = malloc(78);
-  void* p2 = mi_malloc_aligned(16, 24);
+  void* p2 = mi_malloc_aligned(24, 16);
   free(p1);
   p1 = malloc(8);
   char* s = mi_strdup("hello\n");
@@ -188,7 +193,7 @@ static void heap_thread_free_large_worker() {
 
 static void heap_thread_free_large() {
   for (int i = 0; i < 100; i++) {
-    shared_p = mi_malloc_aligned(2*1024*1024 + 1, 8);
+    shared_p = mi_malloc_aligned(2 * 1024 * 1024 + 1, 8);
     auto t1 = std::thread(heap_thread_free_large_worker);
     t1.join();
   }
@@ -220,6 +225,18 @@ static void test_mt_shutdown()
   std::cout << "done" << std::endl;
 }
 
+// issue #363
+using namespace std;
+
+void large_alloc(void)
+{
+  char* a = new char[1ull << 25];
+  thread th([&] {
+    delete[] a;
+    });
+  th.join();
+}
+
 // issue #372
 static void fail_aslr() {
   size_t sz = (4ULL << 40); // 4TiB
@@ -231,7 +248,7 @@ static void fail_aslr() {
 // issues #414
 static void dummy_worker() {
   void* p = mi_malloc(0);
-  mi_free(p);  
+  mi_free(p);
 }
 
 static void tsan_numa_test() {
@@ -239,3 +256,34 @@ static void tsan_numa_test() {
   dummy_worker();
   t1.join();
 }
+
+// issue #?
+#include <chrono>
+#include <random>
+#include <iostream>
+
+static void bench_alloc_large(void) {
+  static constexpr int kNumBuffers = 20;
+  static constexpr size_t kMinBufferSize = 5 * 1024 * 1024;
+  static constexpr size_t kMaxBufferSize = 25 * 1024 * 1024;
+  std::unique_ptr<char[]> buffers[kNumBuffers];
+
+  std::random_device rd;
+  std::mt19937 gen(42); //rd());
+  std::uniform_int_distribution<> size_distribution(kMinBufferSize, kMaxBufferSize);
+  std::uniform_int_distribution<> buf_number_distribution(0, kNumBuffers - 1);
+
+  static constexpr int kNumIterations = 2000;
+  const auto start = std::chrono::steady_clock::now();
+  for (int i = 0; i < kNumIterations; ++i) {
+    int buffer_idx = buf_number_distribution(gen);
+    size_t new_size = size_distribution(gen);
+    buffers[buffer_idx] = std::make_unique<char[]>(new_size);
+  }
+  const auto end = std::chrono::steady_clock::now();
+  const auto num_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  const auto us_per_allocation = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / kNumIterations;
+  std::cout << kNumIterations << " allocations Done in " << num_ms << "ms." << std::endl;
+  std::cout << "Avg " << us_per_allocation << " us per allocation" << std::endl;
+}
+

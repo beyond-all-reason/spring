@@ -92,7 +92,7 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
   mi_collect_t collect = *((mi_collect_t*)arg_collect);
   _mi_page_free_collect(page, collect >= MI_FORCE);
   if (mi_page_all_free(page)) {
-    // no more used blocks, free the page. 
+    // no more used blocks, free the page.
     // note: this will free retired pages as well.
     _mi_page_free(page, pq, collect >= MI_FORCE);
   }
@@ -115,22 +115,25 @@ static bool mi_heap_page_never_delayed_free(mi_heap_t* heap, mi_page_queue_t* pq
 static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 {
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
-  _mi_deferred_free(heap, collect >= MI_FORCE);
 
-  // note: never reclaim on collect but leave it to threads that need storage to reclaim 
-  if (
-  #ifdef NDEBUG
+  const bool force = collect >= MI_FORCE;
+  _mi_deferred_free(heap, force);
+
+  // note: never reclaim on collect but leave it to threads that need storage to reclaim
+  const bool force_main =
+    #ifdef NDEBUG
       collect == MI_FORCE
-  #else
+    #else
       collect >= MI_FORCE
-  #endif
-    && _mi_is_main_thread() && mi_heap_is_backing(heap) && !heap->no_reclaim)
-  {
+    #endif
+      && _mi_is_main_thread() && mi_heap_is_backing(heap) && !heap->no_reclaim;
+
+  if (force_main) {
     // the main thread is abandoned (end-of-program), try to reclaim all abandoned segments.
     // if all memory is freed by now, all segments should be freed.
     _mi_abandoned_reclaim_all(heap, &heap->tld->segments);
   }
-  
+
   // if abandoning, mark all pages to no longer add to delayed_free
   if (collect == MI_ABANDON) {
     mi_heap_visit_pages(heap, &mi_heap_page_never_delayed_free, NULL, NULL);
@@ -141,20 +144,28 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
   _mi_heap_delayed_free(heap);
 
   // collect retired pages
-  _mi_heap_collect_retired(heap, collect >= MI_FORCE);
+  _mi_heap_collect_retired(heap, force);
 
   // collect all pages owned by this thread
   mi_heap_visit_pages(heap, &mi_heap_page_collect, &collect, NULL);
   mi_assert_internal( collect != MI_ABANDON || mi_atomic_load_ptr_acquire(mi_block_t,&heap->thread_delayed_free) == NULL );
 
-  // collect segment caches
-  if (collect >= MI_FORCE) {
+  // collect abandoned segments (in particular, decommit expired parts of segments in the abandoned segment list)
+  // note: forced decommit can be quite expensive if many threads are created/destroyed so we do not force on abandonment
+  _mi_abandoned_collect(heap, collect == MI_FORCE /* force? */, &heap->tld->segments);
+
+  // collect segment local caches
+  if (force) {
     _mi_segment_thread_collect(&heap->tld->segments);
   }
 
+  // decommit in global segment caches
+  // note: forced decommit can be quite expensive if many threads are created/destroyed so we do not force on abandonment
+  _mi_segment_cache_collect( collect == MI_FORCE, &heap->tld->os);
+
   // collect regions on program-exit (or shared library unload)
-  if (collect >= MI_FORCE && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
-    _mi_mem_collect(&heap->tld->os);
+  if (force && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
+    //_mi_mem_collect(&heap->tld->os);
   }
 }
 
@@ -240,7 +251,7 @@ static void mi_heap_free(mi_heap_t* heap) {
   // remove ourselves from the thread local heaps list
   // linear search but we expect the number of heaps to be relatively small
   mi_heap_t* prev = NULL;
-  mi_heap_t* curr = heap->tld->heaps; 
+  mi_heap_t* curr = heap->tld->heaps;
   while (curr != heap && curr != NULL) {
     prev = curr;
     curr = curr->next;
@@ -272,9 +283,9 @@ static bool _mi_heap_page_destroy(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_
 
   // stats
   const size_t bsize = mi_page_block_size(page);
-  if (bsize > MI_LARGE_OBJ_SIZE_MAX) {
-    if (bsize > MI_HUGE_OBJ_SIZE_MAX) {
-      mi_heap_stat_decrease(heap, giant, bsize);
+  if (bsize > MI_MEDIUM_OBJ_SIZE_MAX) {
+    if (bsize <= MI_LARGE_OBJ_SIZE_MAX) {
+      mi_heap_stat_decrease(heap, large, bsize);
     }
     else {
       mi_heap_stat_decrease(heap, huge, bsize);
@@ -340,8 +351,8 @@ static void mi_heap_absorb(mi_heap_t* heap, mi_heap_t* from) {
 
   // reduce the size of the delayed frees
   _mi_heap_delayed_free(from);
-  
-  // transfer all pages by appending the queues; this will set a new heap field 
+
+  // transfer all pages by appending the queues; this will set a new heap field
   // so threads may do delayed frees in either heap for a while.
   // note: appending waits for each page to not be in the `MI_DELAYED_FREEING` state
   // so after this only the new heap will get delayed frees
@@ -354,17 +365,17 @@ static void mi_heap_absorb(mi_heap_t* heap, mi_heap_t* from) {
   }
   mi_assert_internal(from->page_count == 0);
 
-  // and do outstanding delayed frees in the `from` heap  
+  // and do outstanding delayed frees in the `from` heap
   // note: be careful here as the `heap` field in all those pages no longer point to `from`,
-  // turns out to be ok as `_mi_heap_delayed_free` only visits the list and calls a 
+  // turns out to be ok as `_mi_heap_delayed_free` only visits the list and calls a
   // the regular `_mi_free_delayed_block` which is safe.
-  _mi_heap_delayed_free(from);  
+  _mi_heap_delayed_free(from);
   #if !defined(_MSC_VER) || (_MSC_VER > 1900) // somehow the following line gives an error in VS2015, issue #353
   mi_assert_internal(mi_atomic_load_ptr_relaxed(mi_block_t,&from->thread_delayed_free) == NULL);
   #endif
 
   // and reset the `from` heap
-  mi_heap_reset_pages(from);  
+  mi_heap_reset_pages(from);
 }
 
 // Safe delete a heap without freeing any still allocated blocks in that heap.
@@ -470,13 +481,14 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
   if (page->used == 0) return true;
 
   const size_t bsize = mi_page_block_size(page);
+  const size_t ubsize = mi_page_usable_block_size(page); // without padding
   size_t   psize;
   uint8_t* pstart = _mi_page_start(_mi_page_segment(page), page, &psize);
 
   if (page->capacity == 1) {
     // optimize page with one block
     mi_assert_internal(page->used == 1 && page->free == NULL);
-    return visitor(mi_page_heap(page), area, pstart, bsize, arg);
+    return visitor(mi_page_heap(page), area, pstart, ubsize, arg);
   }
 
   // create a bitmap of free blocks.
@@ -510,7 +522,7 @@ static bool mi_heap_area_visit_blocks(const mi_heap_area_ex_t* xarea, mi_block_v
     else if ((m & ((uintptr_t)1 << bit)) == 0) {
       used_count++;
       uint8_t* block = pstart + (i * bsize);
-      if (!visitor(mi_page_heap(page), area, block, bsize, arg)) return false;
+      if (!visitor(mi_page_heap(page), area, block, ubsize, arg)) return false;
     }
   }
   mi_assert_internal(page->used == used_count);
@@ -526,12 +538,14 @@ static bool mi_heap_visit_areas_page(mi_heap_t* heap, mi_page_queue_t* pq, mi_pa
   mi_heap_area_visit_fun* fun = (mi_heap_area_visit_fun*)vfun;
   mi_heap_area_ex_t xarea;
   const size_t bsize = mi_page_block_size(page);
+  const size_t ubsize = mi_page_usable_block_size(page);
   xarea.page = page;
   xarea.area.reserved = page->reserved * bsize;
   xarea.area.committed = page->capacity * bsize;
   xarea.area.blocks = _mi_page_start(_mi_page_segment(page), page, NULL);
-  xarea.area.used = page->used;
-  xarea.area.block_size = bsize;
+  xarea.area.used = page->used * bsize;
+  xarea.area.block_size = ubsize;
+  xarea.area.full_block_size = bsize;
   return fun(heap, &xarea, arg);
 }
 

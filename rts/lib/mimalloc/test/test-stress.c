@@ -39,12 +39,12 @@ static size_t use_one_size = 0;              // use single object size of `N * s
 
 // #define USE_STD_MALLOC
 #ifdef USE_STD_MALLOC
-#define custom_calloc(n,s)    calloc(n,s)
+#define custom_calloc(n,s)    malloc(n*s)
 #define custom_realloc(p,s)   realloc(p,s)
 #define custom_free(p)        free(p)
 #else
 #include <mimalloc.h>
-#define custom_calloc(n,s)    mi_calloc(n,s)
+#define custom_calloc(n,s)    mi_malloc(n*s)
 #define custom_realloc(p,s)   mi_realloc(p,s)
 #define custom_free(p)        mi_free(p)
 #endif
@@ -189,10 +189,13 @@ static void test_stress(void) {
         free_items(p);
       }
     }
-    // mi_collect(false);
-#if !defined(NDEBUG) || defined(MI_TSAN)
+    #ifndef NDEBUG
+    //mi_collect(false);
+    //mi_debug_show_arenas();
+    #endif
+    #if !defined(NDEBUG) || defined(MI_TSAN)
     if ((n + 1) % 10 == 0) { printf("- iterations left: %3d\n", ITER - (n + 1)); }
-#endif
+    #endif
   }
 }
 
@@ -218,7 +221,7 @@ static void test_leak(void) {
 }
 #endif
 
-int main(int argc, char** argv) {  
+int main(int argc, char** argv) {
   // > mimalloc-test-stress [THREADS] [SCALE] [ITER]
   if (argc >= 2) {
     char* end;
@@ -244,16 +247,23 @@ int main(int argc, char** argv) {
 
   // Run ITER full iterations where half the objects in the transfer buffer survive to the next round.
   srand(0x7feb352d);
-  // mi_stats_reset();
+
+  //mi_reserve_os_memory(512ULL << 20, true, true);
+
+#if !defined(NDEBUG) && !defined(USE_STD_MALLOC)
+  mi_stats_reset();
+#endif
+
 #ifdef STRESS
-    test_stress();
+  test_stress();
 #else
-    test_leak();
+  test_leak();
 #endif
 
 #ifndef USE_STD_MALLOC
   #ifndef NDEBUG
   mi_collect(true);
+  //mi_debug_show_arenas();
   #endif
   mi_stats_print(NULL);
 #endif

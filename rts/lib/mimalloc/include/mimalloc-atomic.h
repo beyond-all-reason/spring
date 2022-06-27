@@ -11,9 +11,9 @@ terms of the MIT license. A copy of the license can be found in the file
 // --------------------------------------------------------------------------------------------
 // Atomics
 // We need to be portable between C, C++, and MSVC.
-// We base the primitives on the C/C++ atomics and create a mimimal wrapper for MSVC in C compilation mode. 
-// This is why we try to use only `uintptr_t` and `<type>*` as atomic types. 
-// To gain better insight in the range of used atomics, we use explicitly named memory order operations 
+// We base the primitives on the C/C++ atomics and create a mimimal wrapper for MSVC in C compilation mode.
+// This is why we try to use only `uintptr_t` and `<type>*` as atomic types.
+// To gain better insight in the range of used atomics, we use explicitly named memory order operations
 // instead of passing the memory order as a parameter.
 // -----------------------------------------------------------------------------------------------
 
@@ -23,10 +23,15 @@ terms of the MIT license. A copy of the license can be found in the file
 #define  _Atomic(tp)            std::atomic<tp>
 #define  mi_atomic(name)        std::atomic_##name
 #define  mi_memory_order(name)  std::memory_order_##name
+#if !defined(ATOMIC_VAR_INIT) || (__cplusplus >= 202002L) // c++20, see issue #571
+ #define MI_ATOMIC_VAR_INIT(x)  x
+#else
+ #define MI_ATOMIC_VAR_INIT(x)  ATOMIC_VAR_INIT(x)
+#endif
 #elif defined(_MSC_VER)
 // Use MSVC C wrapper for C11 atomics
-#define  _Atomic(tp)            tp 
-#define  ATOMIC_VAR_INIT(x)     x
+#define  _Atomic(tp)            tp
+#define  MI_ATOMIC_VAR_INIT(x)  x
 #define  mi_atomic(name)        mi_atomic_##name
 #define  mi_memory_order(name)  mi_memory_order_##name
 #else
@@ -34,6 +39,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <stdatomic.h>
 #define  mi_atomic(name)        atomic_##name
 #define  mi_memory_order(name)  memory_order_##name
+#define  MI_ATOMIC_VAR_INIT(x)  ATOMIC_VAR_INIT(x)
 #endif
 
 // Various defines for all used memory orders in mimalloc
@@ -269,7 +275,7 @@ static inline intptr_t mi_atomic_subi(_Atomic(intptr_t)*p, intptr_t sub) {
   return (intptr_t)mi_atomic_addi(p, -sub);
 }
 
-// Yield 
+// Yield
 #if defined(__cplusplus)
 #include <thread>
 static inline void mi_atomic_yield(void) {

@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2020, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2022, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -19,8 +19,8 @@ terms of the MIT license. A copy of the license can be found in the file
    This is done through the malloc zone interface.
    It seems to be most robust in combination with interposing
    though or otherwise we may get zone errors as there are could
-   be allocations done by the time we take over the 
-   zone. 
+   be allocations done by the time we take over the
+   zone.
 ------------------------------------------------------ */
 
 #include <AvailabilityMacros.h>
@@ -32,8 +32,7 @@ terms of the MIT license. A copy of the license can be found in the file
 extern "C" {
 #endif
 
-#if defined(MAC_OS_X_VERSION_10_6) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 // only available from OSX 10.6
 extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_import));
 #endif
@@ -44,7 +43,7 @@ extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_im
 
 static size_t zone_size(malloc_zone_t* zone, const void* p) {
   MI_UNUSED(zone);
-  //if (!mi_is_in_heap_region(p)){ return 0; } // not our pointer, bail out
+  if (!mi_is_in_heap_region(p)){ return 0; } // not our pointer, bail out
   return mi_usable_size(p);
 }
 
@@ -65,7 +64,7 @@ static void* zone_valloc(malloc_zone_t* zone, size_t size) {
 
 static void zone_free(malloc_zone_t* zone, void* p) {
   MI_UNUSED(zone);
-  mi_free(p);
+  mi_cfree(p);
 }
 
 static void* zone_realloc(malloc_zone_t* zone, void* p, size_t newsize) {
@@ -184,6 +183,10 @@ static boolean_t intro_zone_locked(malloc_zone_t* zone) {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wc99-extensions"
+#endif
+
 static malloc_introspection_t mi_introspect = {
   .enumerator = &intro_enumerator,
   .good_size = &intro_good_size,
@@ -192,14 +195,16 @@ static malloc_introspection_t mi_introspect = {
   .log = &intro_log,
   .force_lock = &intro_force_lock,
   .force_unlock = &intro_force_unlock,
-#if defined(MAC_OS_X_VERSION_10_6) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   .statistics = &intro_statistics,
   .zone_locked = &intro_zone_locked,
 #endif
 };
 
 static malloc_zone_t mi_malloc_zone = {
+  // note: even with designators, the order is important for C++ compilation
+  //.reserved1 = NULL,
+  //.reserved2 = NULL,
   .size = &zone_size,
   .malloc = &zone_malloc,
   .calloc = &zone_calloc,
@@ -210,20 +215,22 @@ static malloc_zone_t mi_malloc_zone = {
   .zone_name = "mimalloc",
   .batch_malloc = &zone_batch_malloc,
   .batch_free = &zone_batch_free,
-  .introspect = &mi_introspect,  
-#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+  .introspect = &mi_introspect,
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
+  #if defined(MAC_OS_X_VERSION_10_14) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14)
+  .version = 10,
+  #else
+  .version = 9,
+  #endif
   // switch to version 9+ on OSX 10.6 to support memalign.
   .memalign = &zone_memalign,
   .free_definite_size = &zone_free_definite_size,
   .pressure_relief = &zone_pressure_relief,
-  #if defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
+  #if defined(MAC_OS_X_VERSION_10_14) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14)
   .claimed_address = &zone_claimed_address,
-  .version = 10
-  #else
-  .version = 9
   #endif
 #else
-  .version = 4
+  .version = 4,
 #endif
 };
 
@@ -235,7 +242,7 @@ static malloc_zone_t mi_malloc_zone = {
 #if defined(MI_OSX_INTERPOSE) && defined(MI_SHARED_LIB_EXPORT)
 
 // ------------------------------------------------------
-// Override malloc_xxx and malloc_zone_xxx api's to use only 
+// Override malloc_xxx and malloc_zone_xxx api's to use only
 // our mimalloc zone. Since even the loader uses malloc
 // on macOS, this ensures that all allocations go through
 // mimalloc (as all calls are interposed).
@@ -247,7 +254,7 @@ static malloc_zone_t mi_malloc_zone = {
 static inline malloc_zone_t* mi_get_default_zone(void)
 {
   static bool init;
-  if (mi_unlikely(!init)) { 
+  if (mi_unlikely(!init)) {
     init = true;
     malloc_zone_register(&mi_malloc_zone);  // by calling register we avoid a zone error on free (see <http://eatmyrandom.blogspot.com/2010/03/mallocfree-interception-on-mac-os-x.html>)
   }
@@ -265,7 +272,7 @@ static malloc_zone_t* mi_malloc_create_zone(vm_size_t size, unsigned flags) {
   return mi_get_default_zone();
 }
 
-static malloc_zone_t* mi_malloc_default_zone (void) {   
+static malloc_zone_t* mi_malloc_default_zone (void) {
   return mi_get_default_zone();
 }
 
@@ -285,11 +292,11 @@ static kern_return_t mi_malloc_get_all_zones (task_t task, memory_reader_t mr, v
   return KERN_SUCCESS;
 }
 
-static const char* mi_malloc_get_zone_name(malloc_zone_t* zone) {  
+static const char* mi_malloc_get_zone_name(malloc_zone_t* zone) {
   return (zone == NULL ? mi_malloc_zone.zone_name : zone->zone_name);
 }
 
-static void mi_malloc_set_zone_name(malloc_zone_t* zone, const char* name) {  
+static void mi_malloc_set_zone_name(malloc_zone_t* zone, const char* name) {
   MI_UNUSED(zone); MI_UNUSED(name);
 }
 
@@ -299,7 +306,7 @@ static int mi_malloc_jumpstart(uintptr_t cookie) {
 }
 
 static void mi__malloc_fork_prepare(void) {
-  // nothing  
+  // nothing
 }
 static void mi__malloc_fork_parent(void) {
   // nothing
@@ -360,7 +367,7 @@ __attribute__((used)) static const struct mi_interpose_s _mi_zone_interposes[]  
   MI_INTERPOSE_MI(malloc_destroy_zone),
   MI_INTERPOSE_MI(malloc_get_all_zones),
   MI_INTERPOSE_MI(malloc_get_zone_name),
-  MI_INTERPOSE_MI(malloc_jumpstart),  
+  MI_INTERPOSE_MI(malloc_jumpstart),
   MI_INTERPOSE_MI(malloc_printf),
   MI_INTERPOSE_MI(malloc_set_zone_name),
   MI_INTERPOSE_MI(_malloc_fork_child),
@@ -409,15 +416,14 @@ static inline malloc_zone_t* mi_get_default_zone(void)
 }
 
 #if defined(__clang__)
-__attribute__((constructor(0))) 
+__attribute__((constructor(0)))
 #else
 __attribute__((constructor))      // seems not supported by g++-11 on the M1
 #endif
 static void _mi_macos_override_malloc() {
   malloc_zone_t* purgeable_zone = NULL;
 
-  #if defined(MAC_OS_X_VERSION_10_6) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+  #if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   // force the purgeable zone to exist to avoid strange bugs
   if (malloc_default_purgeable_zone) {
     purgeable_zone = malloc_default_purgeable_zone();
