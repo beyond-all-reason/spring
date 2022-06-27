@@ -280,6 +280,8 @@ CUnit::~CUnit()
 	// ScriptCallback may reference weapons, so delete the script first
 	CWeaponLoader::FreeWeapons(this);
 	quadField.RemoveUnit(this);
+
+	EconomyTaskUtil::DeleteAllUnitEconomyTasks(this->entityReference);
 }
 
 

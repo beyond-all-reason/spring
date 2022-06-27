@@ -979,6 +979,13 @@ void CGame::KillSimulation()
 	CUnitScriptEngine::KillStatic();
 	CWeaponLoader::KillStatic();
 	CommonDefHandler::KillStatic();
+
+	// Checks to make sure ECS system is properly shutdown
+	SystemGlobals::systemGlobals.ClearComponents();
+	auto aliveEntities = EcsMain::registry.alive();
+	if (aliveEntities > 0) {
+		LOG("[Game::%s][5]: ERROR! %d entities still alive!", __func__, (int)aliveEntities);
+	}
 }
 
 

@@ -589,6 +589,7 @@ void CBuilder::SetRepairTarget(CUnit* target)
 
 	curBuild = target;
 	AddDeathDependence(curBuild, DEPENDENCE_BUILD);
+	BuildUtils::AddUnitBuildTarget(this, curBuild);
 
 	if (!target->groundLevelled) {
 		// resume levelling the ground

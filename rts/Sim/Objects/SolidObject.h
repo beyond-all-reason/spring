@@ -111,7 +111,7 @@ public:
 		DAMAGE_EXTSOURCE_CRUSHED = 7,
 	};
 
-	virtual ~CSolidObject() {}
+	virtual ~CSolidObject() { EcsMain::registry.destroy(this->entityReference); }
 
 	void PostLoad();
 
