@@ -90,7 +90,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_add_ps(v1, v2);
+			       v1 = _mm_add_ps(v1, v2);
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -106,7 +106,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_sub_ps(v1, v2);
+			       v1 = _mm_sub_ps(v1, v2);
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -122,7 +122,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_mul_ps(v1, v2);
+			       v1 = _mm_mul_ps(v1, v2);
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -138,7 +138,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_div_ps(v1, v2);
+			       v1 = _mm_div_ps(v1, v2);
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -153,7 +153,7 @@ public:
 
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
-			v1 = _mm_add_ps(v1, _mm_set1_ps(value));
+			       v1 = _mm_add_ps(v1, _mm_set1_ps(value));
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -168,7 +168,7 @@ public:
 
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
-			v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
+			       v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -183,7 +183,7 @@ public:
 
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&out.res[0]);
-			v1 = _mm_sub_ps(_mm_set1_ps(0), v1);
+			       v1 = _mm_sub_ps(_mm_set1_ps(0), v1);
 			_mm_storeu_ps(&out.res[0], v1);
 		}
 		else {
@@ -204,7 +204,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_add_ps(v1, v2);
+			       v1 = _mm_add_ps(v1, v2);
 			_mm_storeu_ps(&res[0], v1);
 		}
 		else {
@@ -217,7 +217,7 @@ public:
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
-			v1 = _mm_sub_ps(v1, v2);
+			       v1 = _mm_sub_ps(v1, v2);
 			_mm_storeu_ps(&res[0], v1);
 		}
 		else {
@@ -230,7 +230,7 @@ public:
 	SResourcePack& operator*=(float scale) {
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
-			v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
+			       v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
 			_mm_storeu_ps(&res[0], v1);
 		}
 		else {
