@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <utility>
+#include "System/SpringMem.h"
 
 #define DCHECK_EQ_F(a, b)
 #define DCHECK_LT_F(a, b)
@@ -223,8 +224,8 @@ public:
 				_pairs[bucket].~PairT();
 			}
 		}
-		free(_states);
-		free(_pairs);
+		spring::free(_states);
+		spring::free(_pairs);
 	}
 
 	void swap(HashMap& other)
@@ -482,12 +483,12 @@ public:
 		size_t num_buckets = 4;
 		while (num_buckets < required_buckets) { num_buckets *= 2; }
 
-		auto new_states = (State*)malloc(num_buckets * sizeof(State));
-		auto new_pairs  = (PairT*)malloc(num_buckets * sizeof(PairT));
+		auto new_states = (State*)spring::malloc(num_buckets * sizeof(State));
+		auto new_pairs  = (PairT*)spring::malloc(num_buckets * sizeof(PairT));
 
 		if (!new_states || !new_pairs) {
-			free(new_states);
-			free(new_pairs);
+			spring::free(new_states);
+			spring::free(new_pairs);
 			throw std::bad_alloc();
 		}
 
@@ -523,8 +524,8 @@ public:
 
 		//DCHECK_EQ_F(old_num_filled, _num_filled);
 
-		free(old_states);
-		free(old_pairs);
+		spring::free(old_states);
+		spring::free(old_pairs);
 	}
 
 private:

@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "System/SpringMem.h"
+
 #if defined(__GNUC__)
 // Disable -Wconversion warnings (spuriously triggered when Traits::size_t and
 // Traits::index_t are set to < 32 bits, causing integer promotion, causing warnings
@@ -315,13 +317,13 @@ struct ConcurrentQueueDefaultTraits
 #if defined(malloc) || defined(free)
 	// Gah, this is 2015, stop defining macros that break standard code already!
 	// Work around malloc/free being special macros:
-	static inline void* WORKAROUND_malloc(size_t size) { return malloc(size); }
-	static inline void WORKAROUND_free(void* ptr) { return free(ptr); }
+	static inline void* WORKAROUND_malloc(size_t size) { return spring::malloc(size); }
+	static inline void WORKAROUND_free(void* ptr) { return spring::free(ptr); }
 	static inline void* (malloc)(size_t size) { return WORKAROUND_malloc(size); }
 	static inline void (free)(void* ptr) { return WORKAROUND_free(ptr); }
 #else
-	static inline void* malloc(size_t size) { return std::malloc(size); }
-	static inline void free(void* ptr) { return std::free(ptr); }
+	static inline void* malloc(size_t size) { return spring::malloc(size); }
+	static inline void free(void* ptr) { return spring::free(ptr); }
 #endif
 #else
 	// Debug versions when running under the Relacy race detector (ignore

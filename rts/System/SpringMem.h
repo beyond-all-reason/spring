@@ -6,6 +6,8 @@
 namespace spring {
 	void* AllocateAlignedMemory(size_t size, size_t alignment);
 	void FreeAlignedMemory(void* ptr);
+	void* malloc(size_t size);
+	void free(void* _Block);
 }
 
 #endif

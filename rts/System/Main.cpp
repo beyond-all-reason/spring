@@ -7,6 +7,13 @@
 */
 
 #ifdef USE_MIMALLOC
+	#undef new
+	#undef delete
+	#undef malloc
+	#undef free
+	#undef _aligned_malloc
+	#undef posix_memalign
+	#undef _aligned_free
 	#include "mimalloc/include/mimalloc.h"
 	#include "mimalloc/include/mimalloc-new-delete.h"
 #endif

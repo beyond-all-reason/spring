@@ -1,7 +1,11 @@
-#ifdef _WIN32
-    #include <malloc.h>
+#ifdef USE_MIMALLOC
+    #include <mimalloc.h>
 #else
-    #include <cstdlib>
+    #ifdef _WIN32
+        #include <malloc.h>
+    #else
+        #include <cstdlib>
+    #endif
 #endif
 
 #include "SpringMem.h"
@@ -25,7 +29,25 @@ void spring::FreeAlignedMemory(void* ptr)
 #ifdef _WIN32
         _aligned_free(ptr);
 #else
-        free(ptr);
+        std::free(ptr);
 #endif
     }
+}
+
+void* spring::malloc(size_t size)
+{
+#ifdef USE_MIMALLOC
+    return mi_malloc(size);
+#else
+    return std::malloc(size);
+#endif
+}
+
+void spring::free(void* _Block)
+{
+#ifdef USE_MIMALLOC
+    mi_free(_Block);
+#else
+    std::free(_Block);
+#endif
 }

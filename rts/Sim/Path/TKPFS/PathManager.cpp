@@ -16,6 +16,7 @@
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
+#include "System/SpringMem.h"
 
 #include "PathGlobal.h"
 
@@ -98,7 +99,7 @@ void CPathManager::InitStatic()
 	const size_t medResPEsOffset = lowResPEsOffset + medLowResMem;
 	const size_t maxResPFsOffset = medResPEsOffset + medLowResMem;
 
-	char* baseAddr = reinterpret_cast<char*>( malloc(totalMem) );
+	char* baseAddr = reinterpret_cast<char*>( spring::malloc(totalMem) );
 	lowResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + lowResPEsOffset);
 	medResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + medResPEsOffset );
 	maxResPFs = reinterpret_cast<CPathFinder*>   ( baseAddr + maxResPFsOffset );
@@ -142,7 +143,7 @@ CPathManager::~CPathManager()
 	pathFinders.clear();
 
 	if (lowResPEs != nullptr) {
-		free(lowResPEs);
+		spring::free(lowResPEs);
 		lowResPEs = nullptr;
 	}
 

@@ -3,6 +3,9 @@
 
 #include "7zAlloc.h"
 
+//break encapsulation and include spring files
+#include "System/SpringMem.h"
+
 /* #define _SZ_ALLOC_DEBUG */
 /* use _SZ_ALLOC_DEBUG to debug alloc/free operations */
 
@@ -18,6 +21,11 @@ int g_allocCountTemp = 0;
 
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void *SzAlloc(void *p, size_t size)
 {
   p = p;
@@ -27,7 +35,7 @@ void *SzAlloc(void *p, size_t size)
   fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount);
   g_allocCount++;
   #endif
-  return malloc(size);
+  return spring::malloc(size);
 }
 
 void SzFree(void *p, void *address)
@@ -40,7 +48,7 @@ void SzFree(void *p, void *address)
     fprintf(stderr, "\nFree; count = %10d", g_allocCount);
   }
   #endif
-  free(address);
+  spring::free(address);
 }
 
 void *SzAllocTemp(void *p, size_t size)
@@ -55,7 +63,7 @@ void *SzAllocTemp(void *p, size_t size)
   return HeapAlloc(GetProcessHeap(), 0, size);
   #endif
   #endif
-  return malloc(size);
+  return spring::malloc(size);
 }
 
 void SzFreeTemp(void *p, void *address)
@@ -72,5 +80,9 @@ void SzFreeTemp(void *p, void *address)
   return;
   #endif
   #endif
-  free(address);
+  spring::free(address);
 }
+
+#ifdef __cplusplus
+}
+#endif

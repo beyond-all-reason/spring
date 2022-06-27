@@ -122,14 +122,12 @@ if    (USE_MIMALLOC)
 	set(MI_BUILD_STATIC ON "Build static library" FORCE)
 	set(MI_BUILD_OBJECT OFF "Build object library" FORCE)
 	set(MI_OVERRIDE ON CACHE BOOL "Override the standard malloc interface (e.g. define entry points for malloc() etc)" FORCE)
-	#set(MI_USE_CXX ON CACHE BOOL "Use the C++ compiler to compile the library (instead of the C compiler)" FORCE)
-	if (MI_USE_CXX AND NOT MSVC) #todo figure out GCC version
-		#set(MI_USE_LIBATOMIC ON CACHE BOOL "Explicitly link with -latomic (on older systems)" FORCE)
-	endif (MI_USE_CXX AND NOT MSVC)
+	set(MI_USE_CXX ON CACHE BOOL "Use the C++ compiler to compile the library (instead of the C compiler)" FORCE)
+
 	message(STATUS "Using mimalloc")
 	list(APPEND engineCommonLibraries "mimalloc-static")
 	add_definitions(-DUSE_MIMALLOC)
-	add_definitions(-DMI_DEBUG=0x0)
+	#add_definitions(-DMI_DEBUG=0x0)
 endif (USE_MIMALLOC)
 
 
