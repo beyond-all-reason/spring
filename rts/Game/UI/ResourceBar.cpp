@@ -139,7 +139,7 @@ void CResourceBar::Draw()
 	y2 = energyy + 0.020f;
 
 	if (myTeam->resStorage.energy != 0.0f) {
-		x = (myTeam->res.energy / myTeam->resStorage.energy) * energybarlen;
+		x = (myTeam->resSnapshot.energy / myTeam->resStorage.energy) * energybarlen;
 	}
 
 	// energy draw
