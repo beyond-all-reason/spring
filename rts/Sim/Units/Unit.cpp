@@ -505,8 +505,6 @@ void CUnit::PostInit(const CUnit* builder)
 	if (unitDef->windGenerator > 0.0f)
 		WindGeneratorUtils::CreateWindGenerator(this);
 
-	LegacyUtils::AddFlowEconomyUnit(this);
-
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
 	UpdatePosErrorParams(true, true);
