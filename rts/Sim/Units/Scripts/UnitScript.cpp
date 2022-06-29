@@ -890,7 +890,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	case GROUND_WATER_HEIGHT:
 		return int(CGround::GetHeightReal(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
 	case BUILD_PERCENT_LEFT:
-		return int((1.0f - BuildUtils::GetBuildOptionalProgress(unit->entityReference)) * 100);
+		return int((1.0f - BuildUtils::GetBuildProgress(unit->entityReference)) * 100);
 
 	case YARD_OPEN:
 		return (unit->yardOpen) ? 1 : 0;
@@ -927,7 +927,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	case UNIT_BUILD_PERCENT_LEFT: {
 		const CUnit* u = unitHandler.GetUnit(p1);
 		if (u != nullptr)
-			return int((1.0f - BuildUtils::GetBuildOptionalProgress(u->entityReference)) * 100);
+			return int((1.0f - BuildUtils::GetBuildProgress(u->entityReference)) * 100);
 
 		return 0;
 	} break;

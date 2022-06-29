@@ -28,11 +28,9 @@ public:
     static bool IsSystemActive();
 
     static const float GetBuildSpeed(entt::entity entity) { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
-    static float& GetBuildProgress(entt::entity entity) { return EcsMain::registry.get<Build::BuildProgress>(entity).value; }
-
-    static float GetBuildOptionalProgress(entt::entity entity) {
-        auto comp = EcsMain::registry.try_get<Build::BuildProgress>(entity);
-        return (comp != nullptr) ? comp->value : 1.f; }
+    static float& GetBuildProgress(entt::entity entity) {
+        return EcsMain::registry.get_or_emplace<Build::BuildProgress>(entity, 1.f).value;
+    }
 
     static void AddUnitBeingBuilt(CUnit *unit);
 };
