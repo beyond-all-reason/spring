@@ -179,7 +179,6 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	// }
 }
 
-
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
 	auto unreservedRes = res - flowEcoReservedSupply;
@@ -245,9 +244,7 @@ bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
 
 	resExpense += amount;
 	flowEcoReservedSupply -= amount;
-
-	for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
-		flowEcoReservedSupply[i] *= (flowEcoReservedSupply[i] > 0.f);
+	flowEcoReservedSupply.RemoveNegativeValues();
 
 	return true;
 }
@@ -349,6 +346,15 @@ void CTeam::ResetResourceState()
 	resPrevReceived.metal = resReceived.metal; resReceived.metal = 0.0f;
 	resPrevSent.energy = resSent.energy; resSent.energy = 0.0f;
 	resPrevReceived.energy = resReceived.energy; resReceived.energy = 0.0f;
+	resSnapshot.metal = resDelayedShare.metal = 0.f;
+	resSnapshot.energy = resDelayedShare.energy = 0.f;
+
+	flowEcoPull.metal = flowEcoProratedPull.metal = 0.f;
+	flowEcoPull.energy = flowEcoProratedPull.energy = 0.f;
+	flowEcoReservedSupply.metal = lastFlowEcoReservedSupply.metal = lastFlowEcoOptimalSupply.metal = 0.f;
+	flowEcoReservedSupply.energy = lastFlowEcoReservedSupply.energy = lastFlowEcoOptimalSupply.energy = 0.f;
+	resProrationRates.metal = resSnapshot.metal = 0.f;
+	resProrationRates.energy = resSnapshot.energy = 0.f;
 }
 
 void CTeam::SlowUpdate()

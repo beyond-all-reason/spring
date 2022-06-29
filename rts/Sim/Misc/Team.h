@@ -17,8 +17,8 @@
 class CUnit;
 
 struct EconomyFlowSnapshot{
-	SResourcePack income;	// unconditional income
-	SResourcePack expense; // proratable expense not impacted by other resource availability
+	SResourcePack income;
+	SResourcePack expense;
 };
 
 class CTeam : public TeamBase
@@ -30,18 +30,8 @@ public:
 	void ResetResourceState();
 	void SlowUpdate();
 
-	const SResourcePack GetResources() const {
-		SResourcePack result;
-
-		for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
-			if (res[i] <= resStorage[i])
-				result[i] = res[i];
-			else
-				result[i] = resStorage[i];
-		}
-
-		return result;
-	}
+	SResourcePack GetResources() const { return SResourcePack::min(res, resStorage); }
+	SResourcePack GetUsableResources() const { return SResourcePack::min(res - flowEcoReservedSupply, resStorage); }
 
 	bool HaveResources(const SResourcePack& amount) const;
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
