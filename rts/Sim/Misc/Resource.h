@@ -21,7 +21,7 @@ struct SResourcePack {
 public:
 	SResourcePack() {
 		if constexpr (MAX_RESOURCES == 4) {
-			_mm_storeu_ps(&res[0], _mm_set1_ps(0));
+			_mm_storeu_ps(&res[0], _mm_setzero_ps());
 		}
 		else {
 			for (int i = 0; i < MAX_RESOURCES; ++i)
@@ -32,12 +32,19 @@ public:
 		for (int i = 2; i < MAX_RESOURCES; ++i)
 			res[i] = 0.0f;
 	}
+
+	template<typename T = __m128>
+	SResourcePack(__m128 packed) {
+		static_assert(MAX_RESOURCES == 4);
+		_mm_storeu_ps(&res[0], packed);
+	}
+
 	CR_DECLARE_STRUCT(SResourcePack)
 
 	bool empty() const {
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
-			return (_mm_movemask_ps(_mm_cmpneq_ps(v1, _mm_set1_ps(0))) == 0);
+			return (_mm_movemask_ps(_mm_cmpneq_ps(v1, _mm_setzero_ps())) == 0);
 		}
 		else {
 			for (int i = 0; i < MAX_RESOURCES; ++i) {
@@ -85,120 +92,106 @@ public:
 	}
 
 	SResourcePack operator+(const SResourcePack& other) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
 			       v1 = _mm_add_ps(v1, v2);
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
 				out[i] += other.res[i];
+			return out;
 		}
-		return out;
 	}
 
 	SResourcePack operator-(const SResourcePack& other) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
 			       v1 = _mm_sub_ps(v1, v2);
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
 				out[i] -= other.res[i];
+			return out;
 		}
-		return out;
 	}
 
 	SResourcePack operator*(const SResourcePack& other) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
 			       v1 = _mm_mul_ps(v1, v2);
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
 				out[i] *= other.res[i];
+			return out;
 		}
-		return out;
 	}
 
 	SResourcePack operator/(const SResourcePack& other) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			__m128 v2 = _mm_loadu_ps(&other.res[0]);
 			       v1 = _mm_div_ps(v1, v2);
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
 				out[i] /= other.res[i];
+			return out;
 		}
-		return out;
 	}
 
 	SResourcePack operator+(float value) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			       v1 = _mm_add_ps(v1, _mm_set1_ps(value));
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
 				out[i] += value;
-		}
-		return out;
+			return out;
+		}	
 	}
 
 	SResourcePack operator*(float scale) const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
 			       v1 = _mm_mul_ps(v1, _mm_set1_ps(scale));
-			_mm_storeu_ps(&out.res[0], v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
-			out[i] *= scale;
+				out[i] *= scale;
+			return out;
 		}
-		return out;
 	}
 
 	SResourcePack operator-() const {
-		SResourcePack out = *this;
-
 		if constexpr (MAX_RESOURCES == 4) {
-			__m128 v1 = _mm_loadu_ps(&out.res[0]);
-			       v1 = _mm_sub_ps(_mm_set1_ps(0), v1);
-			_mm_storeu_ps(&out.res[0], v1);
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			       v1 = _mm_sub_ps(_mm_setzero_ps(), v1);
+			return SResourcePack(v1);
 		}
 		else {
+			SResourcePack out = *this;
 			for (int i = 0; i < MAX_RESOURCES; ++i)
-			out[i] = -out[i];
+				out[i] = -out[i];
+			return out;
 		}
-		return out;
 	}
-
-	// void operator=(const SResourcePack& other) {
-	// 	for (int i = 0; i < MAX_RESOURCES; ++i) {
-	// 		res[i] = other.res[i];
-	// 	}
-	// 	//return *this;
-	// }
 
 	SResourcePack& operator+=(const SResourcePack& other) {
 		if constexpr (MAX_RESOURCES == 4) {
@@ -222,7 +215,7 @@ public:
 		}
 		else {
 			for (int i = 0; i < MAX_RESOURCES; ++i)
-			res[i] -= other.res[i];
+				res[i] -= other.res[i];
 		}
 		return *this;
 	}
@@ -235,9 +228,41 @@ public:
 		}
 		else {
 			for (int i = 0; i < MAX_RESOURCES; ++i)
-			res[i] *= scale;
+				res[i] *= scale;
 		}
 		return *this;
+	}
+
+	void RemoveNegativeValues() {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			// with _mm_cmpgt_ps(x, [0.f, 0.f, 0.f, 0.f]):
+			// packed values > 0 == FFFFFFFF, so we 'and' it against (1.0f) to convert
+			// the unusable FFFFFFFF to 1.0f, which we can use as a multiplier to keep
+			// values we want to preserve. Values multiplied against 0.0f will be reset.
+			__m128 v2 = _mm_and_ps(_mm_cmpgt_ps(v1, _mm_setzero_ps()), _mm_set_ps1(1.0f));
+				   v1 = _mm_mul_ps(v1, v2);
+			_mm_storeu_ps(&res[0], v1);
+		}
+		else {
+			for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
+				res[i] *= (res[i] > 0.f);
+		}
+	}
+
+	static SResourcePack min(const SResourcePack& lv, const SResourcePack& rv) {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&lv.res[0]);
+			__m128 v2 = _mm_loadu_ps(&rv.res[0]);
+			       v1 = _mm_min_ps(v1, v2);
+			return SResourcePack(v1);
+		}
+		else {
+			SResourcePack out = lv;
+			for (int i = 0; i < MAX_RESOURCES; ++i)
+				out[i] = std::min(out.res[i], rv.res[i]);
+			return out;
+		}
 	}
 };
 
