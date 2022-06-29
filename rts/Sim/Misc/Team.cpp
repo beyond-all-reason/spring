@@ -346,15 +346,8 @@ void CTeam::ResetResourceState()
 	resPrevReceived.metal = resReceived.metal; resReceived.metal = 0.0f;
 	resPrevSent.energy = resSent.energy; resSent.energy = 0.0f;
 	resPrevReceived.energy = resReceived.energy; resReceived.energy = 0.0f;
-	resSnapshot.metal = resDelayedShare.metal = 0.f;
-	resSnapshot.energy = resDelayedShare.energy = 0.f;
-
-	flowEcoPull.metal = flowEcoProratedPull.metal = 0.f;
-	flowEcoPull.energy = flowEcoProratedPull.energy = 0.f;
-	flowEcoReservedSupply.metal = lastFlowEcoReservedSupply.metal = lastFlowEcoOptimalSupply.metal = 0.f;
-	flowEcoReservedSupply.energy = lastFlowEcoReservedSupply.energy = lastFlowEcoOptimalSupply.energy = 0.f;
-	resProrationRates.metal = resSnapshot.metal = 0.f;
-	resProrationRates.energy = resSnapshot.energy = 0.f;
+	
+	// flow economy tasks are cleaned up be the FlowEconomySystem
 }
 
 void CTeam::SlowUpdate()
