@@ -133,7 +133,7 @@ bool BuildUtils::UnitBuildComplete(entt::entity entity) {
 }
 
 void BuildUtils::RemoveUnitBuild(entt::entity entity) {
-    EcsMain::registry.remove<BuildProgress>(entity);
+    //EcsMain::registry.remove<BuildProgress>(entity); // pointless removing this since games use to determine a 'built' unit
     EcsMain::registry.remove<BuildTime>(entity);
     EcsMain::registry.remove<BuildCost>(entity);
     EcsMain::registry.remove<BuildComplete>(entity);

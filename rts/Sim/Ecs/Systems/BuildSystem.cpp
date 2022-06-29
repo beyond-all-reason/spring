@@ -11,6 +11,7 @@
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -23,7 +24,8 @@ using namespace SystemGlobals;
 using namespace Build;
 
 void BuildSystem::Init() {
-    systemGlobals.CreateSystemComponent<BuildSystemComponent>();
+    if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
+        systemGlobals.CreateSystemComponent<BuildSystemComponent>();
 }
 
 
