@@ -67,6 +67,7 @@
 #include "Sim/Ecs/Systems/EnvEconomySystem.h"
 #include "Sim/Ecs/Systems/EnvResourceSystem.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
+#include "Sim/Ecs/Systems/FluxEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Features/FeatureDef.h"
@@ -265,6 +266,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	modInfo.Init(modFileName);
 
 	FlowEconomySystem::Init();
+	FluxEconomySystem::Init();
 	EnvResourceSystem::Init();
 	EnvEconomySystem::Init();
 	BuildSystem::Init();
@@ -454,6 +456,7 @@ void CGame::Load(const std::string& mapFileName)
 			//needed in case pre-game terraform changed the map
 			readMap->UpdateHeightBounds();
 			pathManager->PostFinalizeRefresh();
+			teamHandler.UpdateResourceSnapshots();
 			LEAVE_SYNCED_CODE();
 		}
 
@@ -1785,6 +1788,7 @@ void CGame::SimFrame() {
 		EnvResourceSystem::Update();
 		EnvEconomySystem::Update();
 		FlowEconomySystem::Update();
+		FluxEconomySystem::Update();
 		UnitEconomyReportSystem::Update();
 
 		projectileHandler.Update();

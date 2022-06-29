@@ -1,10 +1,10 @@
-#ifndef FLOW_ECONOMY_SYSTEM_H__
-#define FLOW_ECONOMY_SYSTEM_H__
+#ifndef FLUX_ECONOMY_SYSTEM_H__
+#define FLUX_ECONOMY_SYSTEM_H__
 
 #include "Sim/Ecs/EcsMain.h"
 
 
-class FlowEconomySystem {
+class FluxEconomySystem {
 
 public:
     static void Init();

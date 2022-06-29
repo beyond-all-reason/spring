@@ -218,6 +218,7 @@ void UpdateTeamEconomy(int teamId){
 
     if (teamId == 0){
         LOG("============================================");
+        LOG("%s: %d: snapshot = (%f,%f,%f,%f)", __func__, gs->frameNum, curTeam->resSnapshot[0], curTeam->resSnapshot[1], curTeam->resSnapshot[2], curTeam->resSnapshot[3]);
         LOG("%s: %d: resources = (%f,%f,%f,%f)", __func__, gs->frameNum, storage[0], storage[1], storage[2], storage[3]);
         LOG("%s: %d: income = (%f,%f,%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1], incomeFromLastFrame[2], incomeFromLastFrame[3]);
         LOG("%s: %d: forProration = (%f,%f,%f,%f)", __func__, gs->frameNum, supply[0], supply[1], supply[2], supply[3]);

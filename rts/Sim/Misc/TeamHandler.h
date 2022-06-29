@@ -141,6 +141,12 @@ public:
 	void UpdateTeamUnitLimitsPreSpawn(int liveTeamNum);
 	void UpdateTeamUnitLimitsPreDeath(int deadTeamNum);
 
+	void UpdateResourceSnapshots() {
+		for (int i=0; i<ActiveTeams(); ++i){
+			teams[i].resSnapshot = teams[i].res;
+		}
+	}
+
 private:
 
 	/**
