@@ -125,7 +125,7 @@ void BuildUtils::SetBuildPower(entt::entity entity, float power) {
 }
 
 bool BuildUtils::UnitBeingBuilt(entt::entity entity) {
-    return EcsMain::registry.all_of<BuildProgress>(entity);
+    return EcsMain::registry.get<BuildProgress>(entity).value < 1.f;
 }
 
 bool BuildUtils::UnitBuildComplete(entt::entity entity) {
