@@ -33,6 +33,7 @@ public:
 	SResourcePack GetResources() const { return SResourcePack::min(res, resStorage); }
 	SResourcePack GetUsableResources() const { return SResourcePack::min(res - flowEcoReservedSupply, resStorage); }
 
+	bool HaveEnergy(float amount) const;
 	bool HaveResources(const SResourcePack& amount) const;
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);

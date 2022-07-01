@@ -183,8 +183,9 @@ bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hit
 	if (curPower < shieldDamage)
 		return false;
 
-		// team does not have enough energy, don't touch the projectile
-	if (teamHandler.Team(owner->team)->res.energy < weaponDef->shieldEnergyUse)
+	// team does not have enough energy, don't touch the projectile
+	// if (teamHandler.Team(owner->team)->res.energy < weaponDef->shieldEnergyUse)
+	if (! teamHandler.Team(owner->team)->HaveEnergy(weaponDef->shieldEnergyUse))
 		return false;
 
 	rechargeDelay = defRechargeDelay;
@@ -266,7 +267,8 @@ bool CPlasmaRepulser::IncomingBeam(const CWeapon* emitter, const float3& startPo
 		return false;
 
 	// team does not have enough energy, don't touch the projectile
-	if (teamHandler.Team(owner->team)->res.energy < weaponDef->shieldEnergyUse)
+	// if (teamHandler.Team(owner->team)->res.energy < weaponDef->shieldEnergyUse)
+	if (! teamHandler.Team(owner->team)->HaveEnergy(weaponDef->shieldEnergyUse))
 		return false;
 
 	curPower -= (shieldDamage * damageMultiplier * (weaponDef->shieldPower > 0.0f));

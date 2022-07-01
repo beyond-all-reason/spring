@@ -2072,6 +2072,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 	// stop decaying on building AND reclaim
 	lastNanoAdd = gs->frameNum;
 
+	// New build system
 	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
 		if (BuildUtils::UnitBeingBuilt(this->entityReference)){
 			if (BuildUtils::UnitBuildComplete(this->entityReference)){
@@ -2082,6 +2083,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		return false;
 	}
 
+	// Original build system
 	CTeam* builderTeam = teamHandler.Team(builder->team);
 	bool beingBuilt = BuildUtils::UnitBeingBuilt(entityReference);
 
@@ -2405,7 +2407,7 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 
 static bool CanDispatch(const CUnit* u, const CTeam* team, const SResourceOrder& order)
 {
-	const bool haveEnoughResources = (team->res >= order.use);
+	const bool haveEnoughResources = (team->HaveResources(order.use));
 	bool canDispatch = haveEnoughResources;
 
 	if (order.overflow)
@@ -2433,15 +2435,18 @@ static void GetScale(const float x1, const float x2, float* scale)
 static bool LimitToFullStorage(const CUnit* u, const CTeam* team, SResourceOrder* order)
 {
 	float scales[SResourcePack::MAX_RESOURCES];
+	auto availableRes = team->GetUsableResources();
 
 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
 		scales[i] = 1.0f;
 		float& scale = order->separate ? scales[i] : scales[0];
 
-		GetScale(order->use[i], team->res[i], &scale);
+		// GetScale(order->use[i], team->res[i], &scale);
+		GetScale(order->use[i], availableRes[i], &scale);
 
 		if (u->harvestStorage.empty()) {
-			GetScale(order->add[i], team->resStorage.res[i] - team->res[i], &scale);
+			// GetScale(order->add[i], team->resStorage.res[i] - team->res[i], &scale);
+			GetScale(order->add[i], team->resStorage.res[i] - availableRes[i], &scale);
 		} else {
 			GetScale(order->add[i], u->harvestStorage[i] - u->harvested[i], &scale);
 		}

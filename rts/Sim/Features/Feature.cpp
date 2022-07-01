@@ -279,7 +279,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		// Work out how much that will cost
 		const float metalUse  = step * defResources.metal;
 		const float energyUse = step * defResources.energy;
-		const bool canExecRepair = (builderTeam->res.metal >= metalUse && builderTeam->res.energy >= energyUse);
+		// const bool canExecRepair = (builderTeam->res.metal >= metalUse && builderTeam->res.energy >= energyUse);
+		const bool canExecRepair = builderTeam->HaveResources(SResourcePack(metalUse, energyUse));
 		const bool repairAllowed = !canExecRepair ? false : eventHandler.AllowFeatureBuildStep(builder, this, step);
 
 		if (repairAllowed) {

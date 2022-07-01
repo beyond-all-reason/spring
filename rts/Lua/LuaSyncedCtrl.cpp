@@ -876,13 +876,15 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 		team->resPull.metal  += metal;
 		team->resPull.energy += energy;
 
-		if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
-			team->UseMetal(metal);
-			team->UseEnergy(energy);
-			lua_pushboolean(L, true);
-		} else {
-			lua_pushboolean(L, false);
-		}
+		lua_pushboolean(L, team->UseResources(SResourcePack(metal, energy)) );
+		
+		// if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
+		// 	team->UseMetal(metal);
+		// 	team->UseEnergy(energy);
+		// 	lua_pushboolean(L, true);
+		// } else {
+		// 	lua_pushboolean(L, false);
+		// }
 
 		return 1;
 	}
@@ -994,7 +996,7 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
 
 	switch (type[0]) {
 		case 'm': {
-			amount = std::min(amount, (float)team1->res.metal);
+			amount = std::min(amount, team1->res.metal);
 
 			if (eventHandler.AllowResourceTransfer(teamID1, teamID2, "m", amount)) { //FIXME can cause an endless loop
 				team1->res.metal                       -= amount;
@@ -1006,7 +1008,7 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
 			}
 		} break;
 		case 'e': {
-			amount = std::min(amount, (float)team1->res.energy);
+			amount = std::min(amount, team1->res.energy);
 
 			if (eventHandler.AllowResourceTransfer(teamID1, teamID2, "e", amount)) { //FIXME can cause an endless loop
 				team1->res.energy                       -= amount;
@@ -2878,15 +2880,21 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 
 		CTeam* team = teamHandler.Team(unit->team);
 
-		if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
-			unit->UseMetal(metal);
-			unit->UseEnergy(energy);
-			lua_pushboolean(L, true);
-		} else {
-			team->resPull.metal  += metal;
-			team->resPull.energy += energy;
-			lua_pushboolean(L, false);
-		}
+		SResourcePack resWanted(metal, energy);
+		bool resIsTaken = team->UseResources(resWanted);
+		if (!resIsTaken)
+			team->resPull += resWanted;
+		lua_pushboolean(L, resIsTaken);
+
+		// if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
+		// 	unit->UseMetal(metal);
+		// 	unit->UseEnergy(energy);
+		// 	lua_pushboolean(L, true);
+		// } else {
+		// 	team->resPull.metal  += metal;
+		// 	team->resPull.energy += energy;
+		// 	lua_pushboolean(L, false);
+		// }
 
 		return 1;
 	}

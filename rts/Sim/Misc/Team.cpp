@@ -179,6 +179,12 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	// }
 }
 
+bool CTeam::HaveEnergy(float amount) const
+{
+	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
+	return (unreservedEnergy >= amount);
+}
+
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
 	auto unreservedRes = res - flowEcoReservedSupply;
