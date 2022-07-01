@@ -124,7 +124,7 @@ bool CPlasmaRepulser::IgnoreInteriorHit(CWeaponProjectile* p) const
 
 bool CPlasmaRepulser::IsActive() const
 {
-	return isEnabled && !owner->IsStunned() && !owner->beingBuilt;
+	return isEnabled && !owner->IsStunned() && !owner->beingBuilt();
 }
 
 bool CPlasmaRepulser::CanIntercept(unsigned interceptedType, int allyTeam) const

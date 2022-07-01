@@ -524,7 +524,7 @@ bool CGroundMoveType::Update()
 
 void CGroundMoveType::UpdateOwnerAccelAndHeading()
 {
-	if (owner->IsStunned() || owner->beingBuilt) {
+	if (owner->IsStunned() || owner->beingBuilt()) {
 		ChangeSpeed(0.0f, false);
 		return;
 	}
@@ -1041,7 +1041,7 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 bool CGroundMoveType::CanApplyImpulse(const float3& impulse)
 {
 	// NOTE: ships must be able to receive impulse too (for collision handling)
-	if (owner->beingBuilt)
+	if (owner->beingBuilt())
 		return false;
 	// will be applied to transporter instead
 	if (owner->GetTransporter() != nullptr)
@@ -2115,7 +2115,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	// handle collisions for even-numbered objects on even-numbered frames and vv.
 	// (temporal resolution is still high enough to not compromise accuracy much?)
 	// if ((collider->id & 1) == (gs->frameNum & 1)) {
-	if (!collider->beingBuilt) {
+	if (!collider->beingBuilt()) {
 		const UnitDef* colliderUD = collider->unitDef;
 		const MoveDef* colliderMD = collider->moveDef;
 
@@ -2157,7 +2157,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 	bool checkTerrain
 ) {
 	// while being built, units that overlap their factory yardmap should not be moved at all
-	assert(!collider->beingBuilt);
+	assert(!collider->beingBuilt());
 
 	if (checkTerrain && (!collider->IsMoving() || collider->IsInAir()))
 		return false;
@@ -2448,8 +2448,8 @@ void CGroundMoveType::HandleUnitCollisions(
 		//   this also happens when both parties are pushResistant
 		pushCollider = pushCollider && (alliedCollision || allowPEU || !collider->blockEnemyPushing);
 		pushCollidee = pushCollidee && (alliedCollision || allowPEU || !collidee->blockEnemyPushing);
-		pushCollider = pushCollider && (!collider->beingBuilt && !collider->UsingScriptMoveType() && !collider->moveType->IsPushResistant());
-		pushCollidee = pushCollidee && (!collidee->beingBuilt && !collidee->UsingScriptMoveType() && !collidee->moveType->IsPushResistant());
+		pushCollider = pushCollider && (!collider->beingBuilt() && !collider->UsingScriptMoveType() && !collider->moveType->IsPushResistant());
+		pushCollidee = pushCollidee && (!collidee->beingBuilt() && !collidee->UsingScriptMoveType() && !collidee->moveType->IsPushResistant());
 
 		if ((!collideeMobile && !collideeUD->IsAirUnit()) || (!pushCollider && !pushCollidee)) {
 			// building (always axis-aligned, possibly has a yardmap)
@@ -2814,7 +2814,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 	// the ground and would jitter from gravity acting on it
 	// --> nanoframes can not move anyway, just return early
 	// (units that become reverse-built will continue moving)
-	if (owner->beingBuilt)
+	if (owner->beingBuilt())
 		return;
 
 	if (!newSpeedVector.same(ZeroVector)) {

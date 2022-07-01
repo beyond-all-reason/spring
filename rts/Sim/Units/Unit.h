@@ -7,6 +7,7 @@
 
 //#include "lib/entt/entt.hpp"
 #include "Sim/Ecs/EcsMain.h"
+#include "Sim/Ecs/Utils/BuildUtils.h"
 
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Misc/Resource.h"
@@ -186,7 +187,7 @@ public:
 
 	bool HaveTarget() const { return (curTarget.type != Target_None); }
 	bool CanUpdateWeapons() const {
-		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !beingBuilt && !IsStunned()));
+		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !BuildUtils::UnitBeingBuilt(entityReference) && !IsStunned()));
 	}
 
 	void SetNeutral(bool b);
@@ -553,7 +554,8 @@ public:
 	// if true, unit will not be automatically fired upon unless attacker's fireState is set to > FIREATWILL
 	bool neutral = false;
 	// if unit is currently incompletely constructed (implies buildProgress < 1)
-	bool beingBuilt = true;
+	//bool beingBuilt = true;
+	bool beingBuilt() const { return BuildUtils::UnitBeingBuilt(entityReference); }
 	// if the updir is straight up or align to the ground vector
 	bool upright = true;
 	// whether the ground below this unit has been terraformed

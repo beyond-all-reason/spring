@@ -62,7 +62,8 @@ void BuildUtils::AddUnitBeingBuilt(CUnit *unit) {
     entt::entity entity = unit->entityReference;
     if (EcsMain::registry.all_of<BuildProgress>(entity))
         return;
-        
+    
+    EcsMain::registry.emplace_or_replace<BeingBuilt>(entity);
     EcsMain::registry.emplace_or_replace<BuildProgress>(entity);
     EcsMain::registry.emplace_or_replace<BuildTime>(entity, unit->buildTime);
     LOG("%s: %d: BuildTime = %f", __func__, (int)entity, unit->buildTime);
@@ -124,17 +125,9 @@ void BuildUtils::SetBuildPower(entt::entity entity, float power) {
     EcsMain::registry.emplace_or_replace<BuildPower>(entity, power);
 }
 
-bool BuildUtils::UnitBeingBuilt(entt::entity entity) {
-    return EcsMain::registry.get<BuildProgress>(entity).value < 1.f;
-}
-
-bool BuildUtils::UnitBuildComplete(entt::entity entity) {
-    return EcsMain::registry.all_of<BuildComplete>(entity);
-}
-
 void BuildUtils::RemoveUnitBuild(entt::entity entity) {
-    //EcsMain::registry.remove<BuildProgress>(entity); // pointless removing this since games use to determine a 'built' unit
+    //EcsMain::registry.remove<BuildProgress>(entity); // pointless removing this since games use it to determine a 'built' unit
     EcsMain::registry.remove<BuildTime>(entity);
     EcsMain::registry.remove<BuildCost>(entity);
-    EcsMain::registry.remove<BuildComplete>(entity);
+    EcsMain::registry.remove<BeingBuilt>(entity);
 }

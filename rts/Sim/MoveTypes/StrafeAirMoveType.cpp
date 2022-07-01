@@ -422,9 +422,9 @@ bool CStrafeAirMoveType::Update()
 	// need to additionally check that we are not crashing,
 	// otherwise we might fall through the map when stunned
 	// (the kill-on-impact code is not reached in that case)
-	if ((owner->IsStunned() && !owner->IsCrashing()) || owner->beingBuilt) {
+	if ((owner->IsStunned() && !owner->IsCrashing()) || owner->beingBuilt()) {
 		UpdateAirPhysics({0.0f * lastRudderPos[0], lastElevatorPos[0], lastAileronPos[0], 0.0f}, ZeroVector);
-		return (HandleCollisions(collide && !owner->beingBuilt && (aircraftState != AIRCRAFT_TAKEOFF)));
+		return (HandleCollisions(collide && !owner->beingBuilt() && (aircraftState != AIRCRAFT_TAKEOFF)));
 	}
 
 	if (aircraftState != AIRCRAFT_CRASHING) {
@@ -445,7 +445,7 @@ bool CStrafeAirMoveType::Update()
 			UpdateAirPhysics({0.0f, elevator, aileron, 1.0f}, owner->frontdir);
 			maneuverState = MANEUVER_FLY_STRAIGHT;
 
-			return (HandleCollisions(collide && !owner->beingBuilt && (aircraftState != AIRCRAFT_TAKEOFF)));
+			return (HandleCollisions(collide && !owner->beingBuilt() && (aircraftState != AIRCRAFT_TAKEOFF)));
 
 		}
 	}
@@ -525,7 +525,7 @@ bool CStrafeAirMoveType::Update()
 	if (lastSpd == ZeroVector && owner->speed != ZeroVector) { owner->script->StartMoving(false); }
 	if (lastSpd != ZeroVector && owner->speed == ZeroVector) { owner->script->StopMoving(); }
 
-	return (HandleCollisions(collide && !owner->beingBuilt && (aircraftState != AIRCRAFT_TAKEOFF)));
+	return (HandleCollisions(collide && !owner->beingBuilt() && (aircraftState != AIRCRAFT_TAKEOFF)));
 }
 
 
@@ -1101,7 +1101,7 @@ void CStrafeAirMoveType::UpdateAirPhysics(const float4& controlInputs, const flo
 
 		owner->SetVelocity(spd - (wingDir * wingDir.dot(spd) * wingDrag));
 		owner->SetVelocity(spd + ((frontdir * linearSpeed - spd) * speedToFront));
-		owner->SetVelocity(spd * (1 - int(owner->beingBuilt && aircraftState == AIRCRAFT_LANDED)));
+		owner->SetVelocity(spd * (1 - int(owner->beingBuilt() && aircraftState == AIRCRAFT_LANDED)));
 	}
 
 	if (nextPosInBounds)

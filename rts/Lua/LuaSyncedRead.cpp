@@ -2960,9 +2960,11 @@ int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	lua_pushboolean(L, unit->IsStunned() || unit->beingBuilt);
+	bool unitBeingBuilt = BuildUtils::UnitBeingBuilt(unit->entityReference);
+
+	lua_pushboolean(L, unit->IsStunned() || unitBeingBuilt);
 	lua_pushboolean(L, unit->IsStunned());
-	lua_pushboolean(L, unit->beingBuilt);
+	lua_pushboolean(L, unitBeingBuilt);
 	return 3;
 }
 

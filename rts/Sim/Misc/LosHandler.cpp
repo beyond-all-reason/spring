@@ -166,7 +166,7 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 	// do not check if the unit is inside a transporter here
 	// non-firebase transporters stun their cargo, so are already handled below
 	// firebase transporters should not deprive sensor coverage from their cargo
-	if (unit->isDead || unit->beingBuilt)
+	if (unit->isDead || unit->beingBuilt())
 		return;
 
 	// NOTE:
@@ -912,7 +912,7 @@ bool CLosHandler::InRadar(const CUnit* unit, int allyTeam) const
 {
 	// unit is discoverable by sonar
 	if (unit->IsInWater()) {
-		if ((!unit->sonarStealth || unit->beingBuilt) &&
+		if ((!unit->sonarStealth || unit->beingBuilt()) &&
 		    sonar.InSight(unit->pos, allyTeam) &&
 		    !InJammer(unit, allyTeam))
 			return true;
@@ -923,7 +923,7 @@ bool CLosHandler::InRadar(const CUnit* unit, int allyTeam) const
 		return false;
 
 	// radar stealth
-	if (unit->stealth && !unit->beingBuilt)
+	if (unit->stealth && !unit->beingBuilt())
 		return false;
 
 	return (radar.InSight(unit->pos, allyTeam) && !InJammer(unit, allyTeam));

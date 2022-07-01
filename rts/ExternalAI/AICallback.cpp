@@ -1202,7 +1202,8 @@ bool CAICallback::UnitBeingBuilt(int unitId)
 	verify();
 	const CUnit* unit = GetInLosUnit(unitId);
 	if (unit) {
-		beingBuilt = unit->beingBuilt;
+		beingBuilt = BuildUtils::UnitBeingBuilt(unit->entityReference);
+		//beingBuilt = unit->beingBuilt;
 	}
 
 	return beingBuilt;

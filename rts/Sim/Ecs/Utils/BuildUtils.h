@@ -19,8 +19,11 @@ public:
     static void PauseBuilder(CUnit *unit);
     static void UnpauseBuilder(CUnit *unit);
 
-    static bool UnitBeingBuilt(entt::entity entity);
-    static bool UnitBuildComplete(entt::entity entity);
+    static bool UnitBeingBuilt(entt::entity entity) {
+        return (EcsMain::registry.all_of<Build::BeingBuilt>(entity)); }
+
+    static bool UnitBuildComplete(entt::entity entity) {
+        return (EcsMain::registry.get<Build::BuildProgress>(entity).value >= 1.f); }
 
     static entt::entity GetUnitBuildTarget(CUnit *unit);
     static void SetBuildPower(entt::entity entity, float power);

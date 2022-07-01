@@ -33,7 +33,7 @@ struct BuildProgress {
     float value = 0.f;
 };
 
-struct BuildComplete {
+struct BeingBuilt {
 };
 
 // struct BuildCostMetal {

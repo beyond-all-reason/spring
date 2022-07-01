@@ -147,7 +147,7 @@ void AAirMoveType::UpdateLanded()
 {
 	// while an aircraft is being built we do not adjust its
 	// position, because the builder might be a tall platform
-	if (owner->beingBuilt)
+	if (owner->beingBuilt())
 		return;
 
 	// when an aircraft transitions to the landed state it

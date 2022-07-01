@@ -292,7 +292,7 @@ void CMobileCAI::GiveCommandReal(const Command& c, bool fromSynced)
 			// toggle between the "land" and "fly" idle-modes
 			airMT->autoLand = (int(c.GetParam(0)) == 1);
 
-			if (!airMT->owner->beingBuilt) {
+			if (!airMT->owner->beingBuilt()) {
 				if (!airMT->autoLand)
 					airMT->Takeoff();
 				else

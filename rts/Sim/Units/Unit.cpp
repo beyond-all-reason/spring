@@ -39,7 +39,6 @@
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
-#include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/EconomyTask.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
 #include "Sim/Ecs/Utils/LegacyUtils.h"
@@ -391,7 +390,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	footprint = int2(unitDef->xsize, unitDef->zsize);
 
-	beingBuilt = params.beingBuilt;
+	bool beingBuilt = params.beingBuilt;
 	mass = (beingBuilt)? mass: unitDef->mass;
 	crushResistance = unitDef->crushResistance;
 	power = unitDef->power;
@@ -546,14 +545,15 @@ void CUnit::PostInit(const CUnit* builder)
 
 	// Lua might call SetUnitHealth within UnitCreated
 	// and trigger FinishedBuilding before we get to it
-	const bool preBeingBuilt = beingBuilt;
+	const bool preBeingBuilt = BuildUtils::UnitBeingBuilt(entityReference);
 
 	// these must precede UnitFinished from FinishedBuilding
 	eventHandler.UnitCreated(this, builder);
 	eoh->UnitCreated(*this, builder);
 
 	// skip past the gradual build-progression
-	if (!preBeingBuilt && !beingBuilt)
+	//if (!preBeingBuilt && !beingBuilt)
+	if (!preBeingBuilt && !BuildUtils::UnitBeingBuilt(entityReference))
 		FinishedBuilding(true);
 
 	eventHandler.RenderUnitCreated(this, isCloaked);
@@ -572,10 +572,11 @@ void CUnit::PostLoad()
 
 void CUnit::FinishedBuilding(bool postInit)
 {
-	if (!beingBuilt && !postInit)
+	//if (!beingBuilt && !postInit)
+	if (!BuildUtils::UnitBeingBuilt(entityReference) && !postInit)
 		return;
 
-	beingBuilt = false;
+	//beingBuilt = false;
 	//buildProgress = 1.0f;
 	mass = unitDef->mass;
 
@@ -584,7 +585,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	BuildUtils::RemoveUnitBuild(this->entityReference);
+	BuildUtils::RemoveUnitBuild(entityReference);
 
 	ChangeLos(realLosRadius, realAirLosRadius);
 
@@ -620,7 +621,8 @@ void CUnit::FinishedBuilding(bool postInit)
 
 void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
 {
-	if (IsCrashing() && !beingBuilt)
+	//if (IsCrashing() && !beingBuilt)
+	if (IsCrashing() && !BuildUtils::UnitBeingBuilt(entityReference))
 		return;
 
 	ForcedKillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
@@ -647,7 +649,8 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		WindGeneratorUtils::RemoveWindGenerator(this);
 
 	blockHeightChanges = false;
-	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	//deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	deathScriptFinished = (!showDeathSequence || reclaimed || BuildUtils::UnitBeingBuilt(entityReference));
 
 	if (deathScriptFinished)
 		return;
@@ -810,7 +813,7 @@ void CUnit::Update()
 	UpdatePosErrorParams(true, false);
 	UpdateTransportees(); // none if already dead
 
-	if (beingBuilt)
+	if (BuildUtils::UnitBeingBuilt(entityReference))
 		return;
 	if (isDead)
 		return;
@@ -1129,6 +1132,8 @@ void CUnit::SlowUpdate()
 		SlowUpdateCloak(true);
 		return;
 	}
+
+	bool beingBuilt = BuildUtils::UnitBeingBuilt(entityReference);
 
 	if (selfDCountdown > 0) {
 		if ((selfDCountdown -= 1) == 0) {
@@ -1495,7 +1500,7 @@ void CUnit::DoDamage(
 
 	if (!isDead)
 		return;
-	if (beingBuilt)
+	if (BuildUtils::UnitBeingBuilt(entityReference))
 		return;
 	if (attacker == nullptr)
 		return;
@@ -1672,7 +1677,7 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 		teamHandler.Team(newteam)->AddUnit(this,    CTeam::AddCaptured);
 	}
 
-	if (!beingBuilt) {
+	if (!BuildUtils::UnitBeingBuilt(entityReference)) {
 		teamHandler.Team(oldteam)->resStorage.metal  -= storage.metal;
 		teamHandler.Team(oldteam)->resStorage.energy -= storage.energy;
 
@@ -1829,7 +1834,7 @@ bool CUnit::FloatOnWater() const {
 
 bool CUnit::IsIdle() const
 {
-	if (beingBuilt)
+	if (BuildUtils::UnitBeingBuilt(entityReference))
 		return false;
 
 	return (commandAI->commandQue.empty());
@@ -2078,6 +2083,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 	}
 
 	CTeam* builderTeam = teamHandler.Team(builder->team);
+	bool beingBuilt = BuildUtils::UnitBeingBuilt(entityReference);
 
 	if (amount >= 0.0f) {
 		// build or repair
@@ -2198,7 +2204,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 		// turn reclaimee into nanoframe (even living units)
 		if ((modInfo.reclaimUnitMethod == 0) && !beingBuilt) {
-			beingBuilt = true;
+			// beingBuilt = true;
+			EcsMain::registry.emplace<Build::BeingBuilt>(entityReference);
 			SetMetalStorage(0);
 			SetEnergyStorage(0);
 			eventHandler.UnitReverseBuilt(this);
@@ -2245,7 +2252,7 @@ void CUnit::SetEnergyStorage(float newStorage)
 bool CUnit::AllowedReclaim(CUnit* builder) const
 {
 	// Don't allow the reclaim if the unit is finished and we arent allowed to reclaim it
-	if (!beingBuilt) {
+	if (!BuildUtils::UnitBeingBuilt(entityReference)) {
 		if (allyteam == builder->allyteam) {
 			if ((team != builder->team) && (!modInfo.reclaimAllowAllies)) return false;
 		} else {
@@ -2825,7 +2832,8 @@ bool CUnit::CanTransport(const CUnit* unit) const
 	if (unit->xsize < (unitDef->minTransportSize * SPRING_FOOTPRINT_SCALE))
 		return false;
 
-	if (unit->mass >= CSolidObject::DEFAULT_MASS || unit->beingBuilt)
+	//if (unit->mass >= CSolidObject::DEFAULT_MASS || unit->beingBuilt)
+	if (unit->mass >= CSolidObject::DEFAULT_MASS || BuildUtils::UnitBeingBuilt(unit->entityReference))
 		return false;
 	if (unit->mass < unitDef->minTransportMass)
 		return false;
@@ -3122,7 +3130,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(limExperience),
 
 	CR_MEMBER(neutral),
-	CR_MEMBER(beingBuilt),
+	//CR_MEMBER(beingBuilt),
 	CR_MEMBER(upright),
 
 	CR_MEMBER(lastAttackFrame),

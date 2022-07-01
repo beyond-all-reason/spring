@@ -362,7 +362,7 @@ void CFactoryCAI::SlowUpdate()
 	// Commands issued may invoke SlowUpdate when paused
 	if (gs->paused)
 		return;
-	if (commandQue.empty() || owner->beingBuilt)
+	if (commandQue.empty() || owner->beingBuilt())
 		return;
 
 	CFactory* fac = static_cast<CFactory*>(owner);

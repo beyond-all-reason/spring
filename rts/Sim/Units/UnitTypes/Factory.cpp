@@ -87,7 +87,7 @@ void CFactory::Update()
 {
 	nanoPieceCache.Update();
 
-	if (beingBuilt) {
+	if (beingBuilt()) {
 		// factory is under construction, cannot build anything yet
 		CUnit::Update();
 
@@ -233,7 +233,7 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 }
 
 void CFactory::FinishBuild(CUnit* buildee) {
-	if (buildee->beingBuilt)
+	if (buildee->beingBuilt())
 		return;
 	auto buildeeHealth = UnitUtils::UnitHealth(buildee->entityReference);
 	auto buildeeMaxHealth = UnitUtils::UnitMaxHealth(buildee->entityReference);
@@ -266,7 +266,7 @@ void CFactory::FinishBuild(CUnit* buildee) {
 
 unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buildCmd)
 {
-	assert(!beingBuilt);
+	assert(!beingBuilt());
 	assert(buildeeDef != nullptr);
 
 	if (curBuild != nullptr)
@@ -291,7 +291,7 @@ void CFactory::StopBuild()
 	script->StopBuilding();
 
 	if (curBuild) {
-		if (curBuild->beingBuilt) {
+		if (curBuild->beingBuilt()) {
 			AddMetal(curBuild->cost.metal * BuildUtils::GetBuildProgress(curBuild->entityReference), false);
 			curBuild->KillUnit(nullptr, false, true);
 		}

@@ -751,9 +751,9 @@ void CHoverAirMoveType::UpdateVerticalSpeed(const float4& spd, float curRelHeigh
 		ws *= (1.0f - ((spd.y < -0.0001f) && (((wh - curRelHeight) / spd.y) * accRate * 0.7f) < -spd.y));
 	}
 
-	ws *= (1 - owner->beingBuilt);
+	ws *= (1 - owner->beingBuilt());
 	// note: don't want this in case unit is built on some raised platform?
-	wh *= (1 - owner->beingBuilt);
+	wh *= (1 - owner->beingBuilt());
 
 	if (math::fabs(wh - curRelHeight) > 2.0f) {
 		if (spd.y > ws) {
@@ -874,11 +874,11 @@ bool CHoverAirMoveType::Update()
 
 	AAirMoveType::Update();
 
-	if ((owner->IsStunned() && !owner->IsCrashing()) || owner->beingBuilt) {
+	if ((owner->IsStunned() && !owner->IsCrashing()) || owner->beingBuilt()) {
 		wantedSpeed = ZeroVector;
 
 		UpdateAirPhysics();
-		return (HandleCollisions(collide && !owner->beingBuilt && (aircraftState != AIRCRAFT_TAKEOFF)));
+		return (HandleCollisions(collide && !owner->beingBuilt() && (aircraftState != AIRCRAFT_TAKEOFF)));
 	}
 
 	// allow us to stop if wanted (changes aircraft state)
@@ -959,7 +959,7 @@ bool CHoverAirMoveType::Update()
 	UpdateHeading();
 	UpdateBanking(aircraftState == AIRCRAFT_HOVERING || aircraftState == AIRCRAFT_LANDING);
 
-	return (HandleCollisions(collide && !owner->beingBuilt && (aircraftState != AIRCRAFT_TAKEOFF)));
+	return (HandleCollisions(collide && !owner->beingBuilt() && (aircraftState != AIRCRAFT_TAKEOFF)));
 }
 
 void CHoverAirMoveType::SlowUpdate()

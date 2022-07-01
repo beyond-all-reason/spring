@@ -356,7 +356,7 @@ bool CBuilderCAI::IsBuildPosBlocked(const BuildInfo& bi, const CUnit** nanoFrame
 				continue;
 
 			// figure out if object is soft- or hard-blocking
-			if (u->beingBuilt) {
+			if (u->beingBuilt()) {
 				// we can't or don't want assist finishing the nanoframe
 				// if a mobile unit blocks the position, wait until it is
 				// finished & moved
@@ -516,7 +516,7 @@ void CBuilderCAI::SlowUpdate()
 		return;
 	}
 
-	if (owner->beingBuilt || owner->IsStunned())
+	if (owner->beingBuilt() || owner->IsStunned())
 		return;
 
 	Command& c = commandQue.front();
@@ -764,7 +764,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 		bool canRepairUnit = true;
 		auto unitHealth = UnitUtils::UnitHealth(unit->entityReference);
 		auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
-		canRepairUnit &= ((unit->beingBuilt) || (unit->unitDef->repairable && (unitHealth < unitMaxHealth)));
+		canRepairUnit &= ((unit->beingBuilt()) || (unit->unitDef->repairable && (unitHealth < unitMaxHealth)));
 		canRepairUnit &= ((unit != owner) || owner->unitDef->canSelfRepair);
 		canRepairUnit &= (!unit->soloBuilder || (unit->soloBuilder == owner));
 		canRepairUnit &= (!c.IsInternalOrder() || (c.GetOpts() & CONTROL_KEY) || !IsUnitBeingReclaimed(unit, owner));
@@ -904,8 +904,8 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		const bool pushRepairCommand =
 			(  b->curBuild != nullptr) &&
 			(  b->curBuild->soloBuilder == nullptr || b->curBuild->soloBuilder == owner) &&
-			(( b->curBuild->beingBuilt && owner->unitDef->canAssist) ||
-			( !b->curBuild->beingBuilt && owner->unitDef->canRepair));
+			(( b->curBuild->beingBuilt() && owner->unitDef->canAssist) ||
+			( !b->curBuild->beingBuilt() && owner->unitDef->canRepair));
 
 		if (pushRepairCommand) {
 			StopSlowGuard();
@@ -923,8 +923,8 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		const bool pushRepairCommand =
 			(  fac->curBuild != nullptr) &&
 			(  fac->curBuild->soloBuilder == nullptr || fac->curBuild->soloBuilder == owner) &&
-			(( fac->curBuild->beingBuilt && owner->unitDef->canAssist) ||
-			 (!fac->curBuild->beingBuilt && owner->unitDef->canRepair));
+			(( fac->curBuild->beingBuilt() && owner->unitDef->canAssist) ||
+			 (!fac->curBuild->beingBuilt() && owner->unitDef->canRepair));
 
 		if (pushRepairCommand) {
 			StopSlowGuard();
@@ -950,8 +950,8 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		const bool pushRepairCommand =
 			(  guardeeHealth < guardeeMaxHealth) &&
 			(  guardee->soloBuilder == nullptr || guardee->soloBuilder == owner) &&
-			(( guardee->beingBuilt && owner->unitDef->canAssist) ||
-			 (!guardee->beingBuilt && owner->unitDef->canRepair));
+			(( guardee->beingBuilt() && owner->unitDef->canAssist) ||
+			 (!guardee->beingBuilt() && owner->unitDef->canRepair));
 
 		if (pushRepairCommand) {
 			StopSlowGuard();
@@ -1691,7 +1691,7 @@ bool CBuilderCAI::FindCaptureTargetAndCapture(
 	for (const CUnit* unit: *qfQuery.units) {
 		const bool isAlliedUnit = teamHandler.Ally(owner->allyteam, unit->allyteam);
 		const bool isVisibleUnit = (unit->losStatus[owner->allyteam] & (LOS_INRADAR | LOS_INLOS));
-		const bool isCapturableUnit = !unit->beingBuilt && unit->unitDef->capturable;
+		const bool isCapturableUnit = !unit->beingBuilt() && unit->unitDef->capturable;
 
 		const bool isEnemyTarget = ((ctrlOpt && owner->team != unit->team) || !isAlliedUnit);
 		const bool isValidTarget = ((unit != owner) && isVisibleUnit && isCapturableUnit);
@@ -1754,11 +1754,11 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 			auto unitMaxHealth = UnitUtils::UnitMaxHealth(unit->entityReference);
 			if (!haveEnemy && (unitHealth < unitMaxHealth)) {
 				// don't help allies build unless set on roam
-				if (unit->beingBuilt && owner->team != unit->team && (owner->moveState != MOVESTATE_ROAM))
+				if (unit->beingBuilt() && owner->team != unit->team && (owner->moveState != MOVESTATE_ROAM))
 					continue;
 
 				// don't help factories produce units when set on hold pos
-				if (unit->beingBuilt && unit->moveDef != nullptr && (owner->moveState == MOVESTATE_HOLDPOS))
+				if (unit->beingBuilt() && unit->moveDef != nullptr && (owner->moveState == MOVESTATE_HOLDPOS))
 					continue;
 
 				// don't assist or repair if can't assist or repair
@@ -1773,7 +1773,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 				if (unit->IsMoving() && stationary)
 					continue;
 
-				if (builtOnly && unit->beingBuilt)
+				if (builtOnly && unit->beingBuilt())
 					continue;
 
 				float dist = f3SqDist(unit->pos, owner->pos);

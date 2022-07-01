@@ -110,9 +110,6 @@ void BuildSystem::Update() {
 
             buildProgress = std::min(nextProgress, 1.f);
             health = std::min(nextHealth, maxHealth);
-            if (buildProgress == 1.f){
-                EcsMain::registry.emplace<BuildComplete>(buildTarget);
-            }
             LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
         }
         else {

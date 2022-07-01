@@ -275,7 +275,8 @@ bool CAICheats::UnitBeingBuilt(int unitId) const
 	const CUnit* unit = GetUnit(unitId);
 
 	if (unit != nullptr)
-		return unit->beingBuilt;
+		return BuildUtils::UnitBeingBuilt(unit->entityReference);
+		//return unit->beingBuilt;
 
 	return false;
 }

@@ -887,7 +887,7 @@ void CGame::ClientReadNet()
 							throw netcode::UnpackPacketException("Invalid unit ID");
 
 						// ChangeTeam() handles the AllowUnitTransfer() LuaRule
-						if (u->team == srcTeamID && !u->beingBuilt) {
+						if (u->team == srcTeamID && !u->beingBuilt()) {
 							u->ChangeTeam(dstTeamID, CUnit::ChangeGiven);
 						}
 					}

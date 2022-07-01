@@ -1636,17 +1636,20 @@ void CMiniMap::DrawUnitRanges() const
 		const CUnit* unit = unitHandler.GetUnit(unitID);
 
 		// LOS Ranges
-		if (unit->radarRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeRadar);
-			DrawCircle(unit->pos, unit->radarRadius);
-		}
-		if (unit->sonarRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeSonar);
-			DrawCircle(unit->pos, unit->sonarRadius);
-		}
-		if (unit->jammerRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeJammer);
-			DrawCircle(unit->pos, unit->jammerRadius);
+		bool showable = (! BuildUtils::UnitBeingBuilt(unit->entityReference)) && unit->activated;
+		if (showable) {
+			if (unit->radarRadius) { // && !unit->beingBuilt && unit->activated) {
+				glColor3fv(cmdColors.rangeRadar);
+				DrawCircle(unit->pos, unit->radarRadius);
+			}
+			if (unit->sonarRadius) { //  && !unit->beingBuilt && unit->activated) {
+				glColor3fv(cmdColors.rangeSonar);
+				DrawCircle(unit->pos, unit->sonarRadius);
+			}
+			if (unit->jammerRadius) { //  && !unit->beingBuilt && unit->activated) {
+				glColor3fv(cmdColors.rangeJammer);
+				DrawCircle(unit->pos, unit->jammerRadius);
+			}
 		}
 
 		// Interceptor Ranges

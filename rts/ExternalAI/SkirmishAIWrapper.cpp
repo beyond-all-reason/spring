@@ -212,7 +212,8 @@ void CSkirmishAIWrapper::SendUnitEvents()
 		if (unit->team == teamId) {
 			UnitCreated(unit->id, -1);
 
-			if (!unit->beingBuilt)
+			//if (!unit->beingBuilt)
+			if (! BuildUtils::UnitBeingBuilt(unit->entityReference))
 				UnitFinished(unit->id);
 
 			continue;

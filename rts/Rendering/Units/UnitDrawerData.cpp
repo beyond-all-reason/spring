@@ -249,7 +249,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	}
 
 	auto health = UnitUtils::UnitHealth(unit->entityReference);
-	if (health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid())
+	if (health <= 0 || unit->beingBuilt() || unit->noDraw || unit->IsInVoid())
 	{
 		unit->SetIsIcon(false);
 		return;

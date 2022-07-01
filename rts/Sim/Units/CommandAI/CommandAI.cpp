@@ -714,7 +714,7 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 
 			if (repairee != nullptr && !repairee->pos.IsInBounds())
 				return false;
-			if (repairee != nullptr && ((repairee->beingBuilt && !ud->canAssist) || (!repairee->beingBuilt && !ud->canRepair)))
+			if (repairee != nullptr && ((repairee->beingBuilt() && !ud->canAssist) || (!repairee->beingBuilt() && !ud->canRepair)))
 				return false;
 		} break;
 	}
@@ -731,7 +731,7 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 	if (cmdID == CMD_TRAJECTORY && (npOrder || ud->highTrajectoryType < 2))
 		return false;
 
-	if (cmdID == CMD_ONOFF && (npOrder || !ud->onoffable || owner->beingBuilt || ((int)c.GetParam(0) % 2) != (int)c.GetParam(0)/* only 0 or 1 allowed */))
+	if (cmdID == CMD_ONOFF && (npOrder || !ud->onoffable || owner->beingBuilt() || ((int)c.GetParam(0) % 2) != (int)c.GetParam(0)/* only 0 or 1 allowed */))
 		return false;
 
 	if (cmdID == CMD_CLOAK && (npOrder || !ud->canCloak || ((int)c.GetParam(0) % 2) != (int)c.GetParam(0)/* only 0 or 1 allowed */))
@@ -987,7 +987,7 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 
 	commandQue.push_back(c);
 
-	if (commandQue.size() == 1 && !owner->beingBuilt && !owner->IsStunned()) {
+	if (commandQue.size() == 1 && !owner->beingBuilt() && !owner->IsStunned()) {
 		SlowUpdate();
 	}
 }

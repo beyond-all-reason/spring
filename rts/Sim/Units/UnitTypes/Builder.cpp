@@ -124,7 +124,7 @@ bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 	if (!unitDef->canAssist)
 		return false;
 
-	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (BuildUtils::GetBuildProgress(u->entityReference) < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
+	return ((def == nullptr || u->unitDef == def) && u->beingBuilt() && (BuildUtils::GetBuildProgress(u->entityReference) < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
 }
 
 
@@ -132,7 +132,7 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 {
 	if (!unitDef->canRepair)
 		return false;
-	if (u->beingBuilt)
+	if (u->beingBuilt())
 		return false;
 	auto uHealth = UnitUtils::UnitHealth(u->entityReference);
 	auto uMaxHealth = UnitUtils::UnitMaxHealth(u->entityReference);
@@ -367,7 +367,7 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	// check if buildee finished construction
 	auto curBuildeeHealth = UnitUtils::UnitHealth(curBuildee->entityReference);
 	auto curBuildeeMaxHealth = UnitUtils::UnitMaxHealth(curBuildee->entityReference);
-	if (curBuildee->beingBuilt || curBuildeeHealth < curBuildeeMaxHealth)
+	if (curBuildee->beingBuilt() || curBuildeeHealth < curBuildeeMaxHealth)
 		return true;
 
 	StopBuild();
@@ -557,7 +557,7 @@ void CBuilder::Update()
 
 	nanoPieceCache.Update();
 
-	if (!beingBuilt && !IsStunned()) {
+	if (!beingBuilt() && !IsStunned()) {
 		updated = updated || UpdateTerraform(fCommand);
 		updated = updated || AssistTerraform(fCommand);
 		updated = updated || UpdateBuild(fCommand);

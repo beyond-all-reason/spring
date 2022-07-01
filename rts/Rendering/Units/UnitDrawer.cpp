@@ -236,7 +236,7 @@ void CUnitDrawerLegacy::DrawUnitModel(const CUnit* unit, bool noLuaCall) const
 
 void CUnitDrawerLegacy::DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
 {
-	const bool noNanoDraw = lodCall || !unit->beingBuilt || !unit->unitDef->showNanoFrame;
+	const bool noNanoDraw = lodCall || !unit->beingBuilt() || !unit->unitDef->showNanoFrame;
 	const bool shadowPass = shadowHandler.InShadowPass();
 
 	if (preList != 0) {
@@ -1336,7 +1336,7 @@ void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 			if (!ShouldDrawUnitShadow(o))
 				continue;
 
-			if (o->beingBuilt && o->unitDef->showNanoFrame) {
+			if (o->beingBuilt() && o->unitDef->showNanoFrame) {
 				beingBuilt.emplace_back(o);
 				continue;
 			}
@@ -1384,7 +1384,7 @@ void CUnitDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool 
 			if (!ShouldDrawOpaqueUnit(o, thisPassMask))
 				continue;
 
-			if (o->beingBuilt && o->unitDef->showNanoFrame) {
+			if (o->beingBuilt() && o->unitDef->showNanoFrame) {
 				beingBuilt.emplace_back(o);
 				continue;
 			}
