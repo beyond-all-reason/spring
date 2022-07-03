@@ -42,6 +42,8 @@ EXTERNALIZER_B EXPORT_CLAUSE uint32_t AmdPowerXpressRequestHighPerformance = 1; 
 int Run(int argc, char* argv[])
 {
 #ifdef USE_MIMALLOC
+	mi_version();
+	mi_stats_reset();
 	#ifdef _DEBUG
 		mi_option_enable(mi_option_show_errors);
 		mi_option_enable(mi_option_show_stats);
