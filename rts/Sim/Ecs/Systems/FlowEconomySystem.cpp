@@ -21,15 +21,6 @@
 using namespace FlowEconomy;
 using namespace SystemGlobals;
 
-template<class T, typename V>
-void TryAddToComponent(entt::entity entity, V addition) {
-    auto comp = EcsMain::registry.try_get<T>(entity);
-    if (comp != nullptr) {
-        *comp += addition;
-        LOG("%s: (%f,%f)", __func__, (*comp)[0], (*comp)[1]);
-    }
-}
-
 void ReturnUnusedEco(entt::registry &registry, entt::entity entity) {
     //LOG("%s: %d returning unused eco", __func__, (int)entity);
 
