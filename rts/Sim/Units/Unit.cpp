@@ -450,7 +450,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	SResourcePack zeroResources;
 	SResourcePack resMake(unitDef->metalMake, unitDef->energyMake);
-	AddEconomyTask(entityReference, resMake, zeroResources);
+	AddEconomyTask<FlowEconomy::IsPassiveEconomyTask>(entityReference, resMake, zeroResources);
 
 	// if (unitDef->metalMake > 0.f || unitDef->energyMake > 0.f) {
 	// 	auto economyTaskId = EconomyTaskUtil::CreateUnitEconomyTask(entityReference);
@@ -2542,9 +2542,11 @@ void CUnit::Activate()
 
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask
+			, FlowEconomy::IsPassiveEconomyTask
 			>(entityReference, unitDef->energyUpkeep, metalIncome, 1, 0);
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask
+			, FlowEconomy::IsPassiveEconomyTask
 			>(entityReference, unitDef->metalUpkeep, 0.f, 0, 1);
 
 		if (unitDef->windGenerator > 0.0f) {
@@ -2604,7 +2606,7 @@ void CUnit::EnableUnconditionalEconomy()
 		auto &resourcesUncondMake = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalMake>(entityReference, zeroResources).resources;
 		auto &resourcesUncondUse = GetOptionalComponent<UnitEconomy::ResourcesUnconditionalUse>(entityReference, zeroResources).resources;
 
-		AddEconomyTask<FlowEconomy::IsGeneralPurposeEconomyTask>(entityReference, resourcesUncondMake, resourcesUncondUse);
+		AddEconomyTask<FlowEconomy::IsPassiveEconomyTask>(entityReference, resourcesUncondMake, resourcesUncondUse);
 	}
 }
 
@@ -2614,7 +2616,7 @@ void CUnit::DisableUnconditionalEconomy()
 
 	EconomyTaskUtil::IterateAllUnitEconomyTasks(entityReference,
 		[](entt::entity task) {
-			bool isGeneralPurpose = EcsMain::registry.all_of<FlowEconomy::IsGeneralPurposeEconomyTask>(task);
+			bool isGeneralPurpose = EcsMain::registry.all_of<FlowEconomy::IsPassiveEconomyTask>(task);
 			bool isNotConditional = !( EcsMain::registry.all_of<FlowEconomy::IsConditionalEconomyTask>(task) );
 			if (isGeneralPurpose && isNotConditional)
 				EconomyTaskUtil::DeleteUnitEconomyTask(task);
@@ -2631,11 +2633,11 @@ void CUnit::EnableConditionalEconomy()
 
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask
-			, FlowEconomy::IsGeneralPurposeEconomyTask
+			, FlowEconomy::IsPassiveEconomyTask
 			>(entityReference, resourcesCondUse.metal, resourcesCondMake.energy, 0, 1);
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask
-			, FlowEconomy::IsGeneralPurposeEconomyTask
+			, FlowEconomy::IsPassiveEconomyTask
 			>(entityReference, resourcesCondUse.energy, resourcesCondMake.metal, 1, 0);
 	}
 }
@@ -2647,7 +2649,7 @@ void CUnit::DisableConditionalEconomy()
 	EconomyTaskUtil::IterateAllUnitEconomyTasks(entityReference,
 		[](entt::entity task) {
 			bool isGeneralPurposeAndConditional = EcsMain::registry.all_of
-					< FlowEconomy::IsGeneralPurposeEconomyTask
+					< FlowEconomy::IsPassiveEconomyTask
 					, FlowEconomy::IsConditionalEconomyTask>(task);
 			if (isGeneralPurposeAndConditional)
 				EconomyTaskUtil::DeleteUnitEconomyTask(task);

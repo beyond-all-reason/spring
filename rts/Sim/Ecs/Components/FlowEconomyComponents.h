@@ -18,6 +18,11 @@ struct ResourceUse : public SResourcePack {
     using SResourcePack::operator=;
 };
 
+struct AllocatedUnusedResource {
+    SResourcePack res;
+    float prorationRate = 0.f;
+};
+
 struct BuildRate {
     float value = 0.f;
 };
@@ -28,7 +33,7 @@ struct IsEconomyTask {
 struct IsConditionalEconomyTask {
 };
 
-struct IsGeneralPurposeEconomyTask {
+struct IsPassiveEconomyTask {
 };
 
 }

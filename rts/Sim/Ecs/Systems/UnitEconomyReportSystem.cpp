@@ -28,7 +28,10 @@ void RemoveComponent(entt::registry &registry, entt::entity entity) {
 
 template<class T>
 void AddComponentToOwnerOfEcoTask(entt::registry &registry, entt::entity taskEntity) {
-    auto entity = EcsMain::registry.get<Units::OwningEntity>(taskEntity).value;
+    auto OwnerComp = EcsMain::registry.try_get<Units::OwningEntity>(taskEntity);
+    if (OwnerComp == nullptr) return;
+
+    auto entity = OwnerComp->value;
     if (! registry.all_of<T>(entity))
         registry.emplace<T>(entity);
 }

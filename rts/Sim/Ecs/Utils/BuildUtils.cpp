@@ -84,6 +84,7 @@ void BuildUtils::RemoveUnitBuilder(CUnit *unit) {
     }
 
     EcsMain::registry.remove<ActiveBuild>(entity);
+    EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
 
     LOG("%s", __func__);
 }

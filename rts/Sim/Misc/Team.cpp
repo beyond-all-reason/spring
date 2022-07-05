@@ -122,24 +122,22 @@ void CTeam::ClampStartPosInStartBox(float3* pos) const
 
 bool CTeam::UseMetal(float amount)
 {
-	auto unreservedMetal = res.metal - flowEcoReservedSupply.metal;
+	auto unreservedMetal = res.metal;// - flowEcoReservedSupply.metal;
 	if (unreservedMetal < amount)
 		return false;
 
 	res.metal -= amount;
-	assert(res.metal >= 0.f);
 	resExpense.metal += amount;
 	return true;
 }
 
 bool CTeam::UseEnergy(float amount)
 {
-	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
+	auto unreservedEnergy = res.energy;// - flowEcoReservedSupply.energy;
 	if (unreservedEnergy < amount)
 		return false;
 
 	res.energy -= amount;
-	assert(res.energy >= 0.f);
 	resExpense.energy += amount;
 	return true;
 }
@@ -156,11 +154,11 @@ void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 	res.metal += amount;
 	resIncome.metal += amount;
 
-	// if (res.metal <= resStorage.metal)
-	// 	return;
+	if (res.metal <= resStorage.metal)
+		return;
 
-	// resDelayedShare.metal += (res.metal - resStorage.metal);
-	// res.metal = resStorage.metal;
+	resDelayedShare.metal += (res.metal - resStorage.metal);
+	res.metal = resStorage.metal;
 }
 
 void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
@@ -173,26 +171,43 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	res.energy += amount;
 	resIncome.energy += amount;
 
-	// if (res.energy > resStorage.energy) {
-	// 	resDelayedShare.energy += (res.energy - resStorage.energy);
-	// 	res.energy = resStorage.energy;
-	// }
+	if (res.energy > resStorage.energy) {
+		resDelayedShare.energy += (res.energy - resStorage.energy);
+		res.energy = resStorage.energy;
+	}
 }
 
-bool CTeam::HaveEnergy(float amount) const
-{
-	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
-	return (unreservedEnergy >= amount);
-}
+// bool CTeam::HaveEnergy(float amount) const
+// {
+// 	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
+// 	return (unreservedEnergy >= amount);
+// }
 
-bool CTeam::HaveResources(const SResourcePack& amount) const
-{
-	auto unreservedRes = res - flowEcoReservedSupply;
-	return (unreservedRes >= amount);
-}
+// bool CTeam::HaveResources(const SResourcePack& amount) const
+// {
+// 	auto unreservedRes = res - flowEcoReservedSupply;
+// 	return (unreservedRes >= amount);
+// }
 
-void CTeam::applyExcessToShared()
+// void CTeam::applyExcessToShared()
+// {
+// 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+// 		if (res[i] <= resStorage[i])
+// 			continue;
+
+// 		resDelayedShare[i] += (res[i] - resStorage[i]);
+// 		res[i] = resStorage[i];
+// 	}
+// }
+
+void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {
+	if (useIncomeMultiplier)
+		amount *= GetIncomeMultiplier();
+
+	res += amount;
+	resIncome += amount;
+
 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
 		if (res[i] <= resStorage[i])
 			continue;
@@ -202,58 +217,69 @@ void CTeam::applyExcessToShared()
 	}
 }
 
-void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
-{
-	if (useIncomeMultiplier)
-		amount *= GetIncomeMultiplier();
-
-	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i)
-		assert (amount[i] >= 0.f);
-
-	res += amount;
-	resIncome += amount;
-
-	// for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
-	// 	if (res[i] <= resStorage[i])
-	// 		continue;
-
-	// 	resDelayedShare[i] += (res[i] - resStorage[i]);
-	// 	res[i] = resStorage[i];
-	// }
-}
-
 bool CTeam::UseResources(const SResourcePack& amount)
 {
-	auto unreservedRes = res - flowEcoReservedSupply;
-	if (!(unreservedRes >= amount))
-		return false;
-
-	res -= amount;
-	static SResourcePack zeroResources;
-	assert(res >= zeroResources);
-	resExpense += amount;
-	return true;
-}
-
-bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
-{
-	LOG("%s: %d: (%f,%f,%f,%f) <= (%f,%f,%f,%f) %d", __func__, gs->frameNum
-			, amount[0], amount[1], amount[2], amount[3]
-			, res[0], res[1], res[2], res[3], (int)(res >= amount));
-
+	// auto unreservedRes = res- flowEcoReservedSupply;
+	// if (!(unreservedRes >= amount))
 	if (!(res >= amount))
 		return false;
 
 	res -= amount;
-	static SResourcePack zeroResources;
-	assert(res >= zeroResources);
-
 	resExpense += amount;
-	flowEcoReservedSupply -= amount;
-	flowEcoReservedSupply.RemoveNegativeValues();
-
 	return true;
 }
+
+void CTeam::UnuseResources(const SResourcePack& amount)
+{
+	res += amount;
+	resExpense -= amount;
+
+	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+		if (res[i] <= resStorage[i])
+			continue;
+
+		resDelayedShare[i] += (res[i] - resStorage[i]);
+		res[i] = resStorage[i];
+	}
+}
+
+bool CTeam::ApplyResourceFlow(const SResourceFlow& order)
+{
+	res += order.add;
+	resIncome += order.add;
+
+	bool result = UseResources(order.use);
+
+	for (int i=0; i<SResourcePack::MAX_RESOURCES; ++i) {
+		if (res[i] <= resStorage[i])
+			continue;
+
+		resDelayedShare[i] += (res[i] - resStorage[i]);
+		res[i] = resStorage[i];
+	}
+
+	return result;
+}
+
+// bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
+// {
+// 	LOG("%s: %d: (%f,%f,%f,%f) <= (%f,%f,%f,%f) %d", __func__, gs->frameNum
+// 			, amount[0], amount[1], amount[2], amount[3]
+// 			, res[0], res[1], res[2], res[3], (int)(res >= amount));
+
+// 	if (!(res >= amount))
+// 		return false;
+
+// 	res -= amount;
+// 	static SResourcePack zeroResources;
+// 	assert(res >= zeroResources);
+
+// 	resExpense += amount;
+// 	flowEcoReservedSupply -= amount;
+// 	flowEcoReservedSupply.RemoveNegativeValues();
+
+// 	return true;
+// }
 
 
 void CTeam::GiveEverythingTo(const unsigned toTeam)

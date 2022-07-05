@@ -28,7 +28,11 @@ public:
 				res[i] = 0.0f;
 		}
 	}
-	SResourcePack(const float m, const float e) : metal(m), energy(e) {
+	SResourcePack(float v) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = v;
+	}
+	SResourcePack(float m, float e) : metal(m), energy(e) {
 		for (int i = 2; i < MAX_RESOURCES; ++i)
 			res[i] = 0.0f;
 	}
@@ -64,6 +68,19 @@ public:
 		return res[i];
 	}
 
+	bool operator==(const SResourcePack& other) const {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			__m128 v2 = _mm_loadu_ps(&other.res[0]);
+			return (_mm_movemask_ps(_mm_cmpneq_ps(v1, v2)) == 0);
+		}
+		else {
+			for (int i = 0; i < MAX_RESOURCES; ++i) {
+				if (res[i] != other.res[i]) return false;
+			}
+			return true;
+		}
+	}
 	bool operator<=(const SResourcePack& other) const {
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
@@ -233,7 +250,9 @@ public:
 		return *this;
 	}
 
-	void RemoveNegativeValues() {
+	SResourcePack& RemoveNegativeValues() {
+		//static __m128 all1s = _mm_set_ps1(1.0f);
+
 		if constexpr (MAX_RESOURCES == 4) {
 			__m128 v1 = _mm_loadu_ps(&res[0]);
 			// with _mm_cmpgt_ps(x, [0.f, 0.f, 0.f, 0.f]):
@@ -248,6 +267,7 @@ public:
 			for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
 				res[i] *= (res[i] > 0.f);
 		}
+		return *this;
 	}
 
 	static SResourcePack min(const SResourcePack& lv, const SResourcePack& rv) {
