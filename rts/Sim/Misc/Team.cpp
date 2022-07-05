@@ -49,6 +49,14 @@ CR_REG_METADATA(CTeam, (
 	CR_MEMBER(resReceived),
 	CR_MEMBER(resPrevReceived),
 	CR_MEMBER(resPrevExcess),
+
+	CR_MEMBER(resCurrent),
+	CR_MEMBER(resNext),
+	CR_MEMBER(resProrationRates),
+	CR_MEMBER(resSnapshot),
+	CR_MEMBER(resDemand),
+	CR_MEMBER(resProrationOn),
+
 	CR_MEMBER(nextHistoryEntry),
 	CR_MEMBER(statHistory),
 	CR_MEMBER(modParams),
@@ -177,29 +185,6 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	}
 }
 
-// bool CTeam::HaveEnergy(float amount) const
-// {
-// 	auto unreservedEnergy = res.energy - flowEcoReservedSupply.energy;
-// 	return (unreservedEnergy >= amount);
-// }
-
-// bool CTeam::HaveResources(const SResourcePack& amount) const
-// {
-// 	auto unreservedRes = res - flowEcoReservedSupply;
-// 	return (unreservedRes >= amount);
-// }
-
-// void CTeam::applyExcessToShared()
-// {
-// 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
-// 		if (res[i] <= resStorage[i])
-// 			continue;
-
-// 		resDelayedShare[i] += (res[i] - resStorage[i]);
-// 		res[i] = resStorage[i];
-// 	}
-// }
-
 void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {
 	if (useIncomeMultiplier)
@@ -219,8 +204,6 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 
 bool CTeam::UseResources(const SResourcePack& amount)
 {
-	// auto unreservedRes = res- flowEcoReservedSupply;
-	// if (!(unreservedRes >= amount))
 	if (!(res >= amount))
 		return false;
 
@@ -260,26 +243,6 @@ bool CTeam::ApplyResourceFlow(const SResourceFlow& order)
 
 	return result;
 }
-
-// bool CTeam::UseFlowEcoResources(const SResourcePack& amount)
-// {
-// 	LOG("%s: %d: (%f,%f,%f,%f) <= (%f,%f,%f,%f) %d", __func__, gs->frameNum
-// 			, amount[0], amount[1], amount[2], amount[3]
-// 			, res[0], res[1], res[2], res[3], (int)(res >= amount));
-
-// 	if (!(res >= amount))
-// 		return false;
-
-// 	res -= amount;
-// 	static SResourcePack zeroResources;
-// 	assert(res >= zeroResources);
-
-// 	resExpense += amount;
-// 	flowEcoReservedSupply -= amount;
-// 	flowEcoReservedSupply.RemoveNegativeValues();
-
-// 	return true;
-// }
 
 
 void CTeam::GiveEverythingTo(const unsigned toTeam)

@@ -28,6 +28,12 @@ CR_REG_METADATA(SResourceOrder,(
 	CR_MEMBER(overflow)
 ))
 
+CR_BIND(SResourceFlow,)
+CR_REG_METADATA(SResourceFlow,(
+	CR_MEMBER(use),
+	CR_MEMBER(add)
+))
+
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

@@ -16,11 +16,6 @@
 
 class CUnit;
 
-struct SResourceFlow{
-	SResourcePack add;
-	SResourcePack use;
-};
-
 class CTeam : public TeamBase
 {
 	CR_DECLARE_DERIVED(CTeam)
@@ -30,9 +25,6 @@ public:
 	void ResetResourceState();
 	void SlowUpdate();
 
-	// SResourcePack GetResources() const { return SResourcePack::min(res, resStorage); }
-	// SResourcePack GetUsableResources() const { return SResourcePack::min(res - flowEcoReservedSupply, resStorage); }
-
 	SResourcePack GetResources() const { return res; }
 	SResourcePack GetUsableResources() const { return res; }
 
@@ -41,7 +33,6 @@ public:
 	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);
 	void UnuseResources(const SResourcePack& res);
-	//bool UseFlowEcoResources(const SResourcePack& res);
 	bool ApplyResourceFlow(const SResourceFlow& order);
 
 	void AddMetal(float amount, bool useIncomeMultiplier = true);
@@ -67,14 +58,6 @@ public:
 
 	const TeamStatistics& GetCurrentStats() const { return statHistory.back(); }
 	      TeamStatistics& GetCurrentStats()       { return statHistory.back(); }
-
-	// void recordFlowEcoPull(SResourcePack& fullPull, SResourcePack& proratedPull) {
-	// 	flowEcoProratedPull += proratedPull;
-	// 	flowEcoPull += fullPull;
-	// 	resPull += fullPull;
-	// }
-
-	// void applyExcessToShared();
 
 	CTeam& operator = (const TeamBase& base) {
 		TeamBase::operator = (base);
@@ -117,11 +100,7 @@ public:
 	SResourcePack resPrevExcess;
 
 	// New Flow Eco Values
-
 	SResourceFlow resCurrent, resNext;
-	//SResourcePack flowEcoPull, flowEcoProratedPull;
-	//SResourcePack flowEcoReservedSupply; // Resource reserved exclusively for flow economy.
-	//SResourcePack lastFlowEcoReservedSupply, lastFlowEcoOptimalSupply;
 	SResourcePack resProrationRates;
 	SResourcePack resSnapshot;
 	SResourcePack resDemand;

@@ -104,19 +104,8 @@ void BuildSystem::Update() {
         float buildStep = (buildPower*BUILD_UPDATE_RATE)/buildTime;
         SResourcePack resPull = buildCost * buildStep;
 
-        // float buildRate = 1.f;
-        // for (int i=0; i<SResourcePack::MAX_RESOURCES; i++){
-        //     bool foundLowerProrationrate = (buildCost[i] > 0.f) && (team->resProrationRates[i] < buildRate);
-        //     buildRate = foundLowerProrationrate ? team->resProrationRates[i] : buildRate;
-        // }
-
         auto& resAllocated = EcsMain::registry.get<FlowEconomy::AllocatedUnusedResource>(entity); // EcsMain::registry.get_or_emplace<FlowEconomy::AllocatedUnusedResource>(entity);
         float buildRate = resAllocated.prorationRate;
-        // if (buildRate == 0.f) {
-        //     EcsMain::registry.get_or_emplace<FlowEconomy::ResourceUse>(entity, resPull);
-        //     team->resPull += resPull;
-        //     return;
-        // }
 
         auto& buildProgress = (EcsMain::registry.get<BuildProgress>(buildTarget)).value;
         auto& health = (EcsMain::registry.get<SolidObject::Health>(buildTarget)).value;
@@ -138,49 +127,14 @@ void BuildSystem::Update() {
         else
             resAllocated.res = SResourcePack();
 
-        // resUsage *= (nextProgress >= 1.f) ? (1.f - buildProgress) : proratedBuildStep;
+        if (nextProgress >= 1.f) EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
 
-        // LOG("BuildSystem::%s: %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
+        auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);
+        if (comp != nullptr)
+            *comp += resUsage;
 
-        // bool isResAvailable = team->UseFlowEcoResources(resUsage);
-        // if (!isResAvailable) {
-        //     buildRate = 1.f;
-        //     for (int i=0; i<SResourcePack::MAX_RESOURCES; ++i){
-        //         float resBuildRate = (resPull[i] > 0.f) ? (team->res[i] / resPull[i]) : 1.f;
-        //         LOG("BuildSystem::%s: Retry: resBuildRate = %f [%f]", __func__, resBuildRate, resPull[i]);
-        //         buildRate = std::min(resBuildRate, buildRate);
-        //     }
-        //     // trunc buildRate to avoid rounding error when this should actually work
-        //     constexpr double truncAccuracy = 1000000.;
-        //     LOG("BuildSystem::%s: Retry: BuildRate = %.10f", __func__, buildRate);
-        //     buildRate = springmath::trunc((double)buildRate, truncAccuracy);
-        //     LOG("BuildSystem::%s: Retry: BuildRate = %.10f (%f)", __func__, buildRate, truncAccuracy);
-        //     if (buildRate > 0.000001f){
-        //         for (int i=0; i<SResourcePack::MAX_RESOURCES; ++i)
-        //             resUsage[i] = resPull[i] * buildRate * (resPull[i] > 0.f);
-
-        //         LOG("BuildSystem::%s: Retry %d -> %d (tid: %d m:%f e:%f)", __func__, (int)entity, (int)buildTarget, teamId, resUsage.metal, resUsage.energy);
-
-        //         isResAvailable = team->UseFlowEcoResources(resUsage);
-        //     }
-        // }
-
-        // if (isResAvailable) {
-            // if (nextProgress < 1.f) team->recordFlowEcoPull(resPull, resUsage);
-
-            //if (nextProgress < 1.f) team->resPull += resPull;
-            if (nextProgress >= 1.f) EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
-
-            auto comp = EcsMain::registry.try_get<UnitEconomy::ResourcesCurrentUsage>(entity);
-            if (comp != nullptr)
-                *comp += resUsage;
-
-            buildProgress = std::min(nextProgress, 1.f);
-            health = std::min(nextHealth, maxHealth);
-            LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
-        // }
-        // else {
-        //     team->recordFlowEcoPull(resPull, resUsage);
-        // }
+        buildProgress = std::min(nextProgress, 1.f);
+        health = std::min(nextHealth, maxHealth);
+        LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
     }
 }

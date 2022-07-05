@@ -328,5 +328,11 @@ public:
 	float maxWorth;
 };
 
+struct SResourceFlow{
+	SResourcePack add;
+	SResourcePack use;
+
+	CR_DECLARE_STRUCT(SResourceFlow)
+};
 
 #endif // _RESOURCE_H
