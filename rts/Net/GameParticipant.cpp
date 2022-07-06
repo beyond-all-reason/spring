@@ -4,6 +4,7 @@
 
 #include "Net/Protocol/BaseNetProtocol.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/Log/ILog.h"
 #include "System/Net/Connection.h"
 
 GameParticipant::GameParticipant()
@@ -38,6 +39,7 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 		// it will cause a slight lag in the game server during kick, but not a big deal
 		if (flush) {
 			disconnectDelay = spring_gettime() + spring_time(1000);
+			LOG("%s: client disconnecting...", __func__);
 		} else {
 			clientLink->Close(false);
 			clientLink.reset();
@@ -60,6 +62,7 @@ void GameParticipant::Update() {
 			clientLink.reset();
 
 			myState = DISCONNECTED;
+			LOG("%s: client desconnected after delay", __func__);
 		}
 	}
 }
