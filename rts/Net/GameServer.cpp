@@ -797,14 +797,15 @@ void CGameServer::Update()
 	if (lastPlayerInfo < (spring_gettime() - playerInfoTime)) {
 		lastPlayerInfo = spring_gettime();
 
+		for (GameParticipant& p: players)
+			if (!p.isFromDemo) p.CheckForExpiredConnection();
+
 		if (!PreSimFrame()) {
 			LagProtection();
 		} else {
 			for (GameParticipant& p: players) {
 				if (p.isFromDemo)
 					continue;
-
-				p.CheckForExpiredConnections();
 
 				switch (p.myState) {
 					case GameParticipant::CONNECTED: {

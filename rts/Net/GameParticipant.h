@@ -27,7 +27,7 @@ public:
 	void Connected(std::shared_ptr<netcode::CConnection> link, bool local);
 	void Kill(const std::string& reason, const bool flush = false);
 
-	void CheckForExpiredConnections();
+	void CheckForExpiredConnection();
 
 	GameParticipant& operator=(const PlayerBase& base) { PlayerBase::operator=(base); return *this; };
 

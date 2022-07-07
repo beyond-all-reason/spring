@@ -64,14 +64,14 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 	myState = (disconnected) ? DISCONNECTED : DISCONNECTING;
 }
 
-void GameParticipant::CheckForExpiredConnections() {
+void GameParticipant::CheckForExpiredConnection() {
 	if (myState == DISCONNECTING) {
 		if (spring_gettime() >= disconnectDelay) {
 			clientLink->Close(true);
 			clientLink.reset();
 
 			myState = DISCONNECTED;
-			LOG("%s: client desconnected after delay", __func__);
+			LOG("%s: client disconnected after delay", __func__);
 		}
 	}
 }
