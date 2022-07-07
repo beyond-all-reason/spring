@@ -12,6 +12,15 @@ GameParticipant::GameParticipant()
 	aiClientLinks[MAX_AIS] = ClientLinkData(false);
 }
 
+GameParticipant::~GameParticipant()
+{
+	if (myState == DISCONNECTING) {
+		clientLink->Close(true);
+		clientLink.reset();
+		myState = DISCONNECTED;
+	}
+}
+
 void GameParticipant::SendData(std::shared_ptr<const netcode::RawPacket> packet)
 {
 	if (clientLink != nullptr)
@@ -30,7 +39,7 @@ void GameParticipant::Connected(std::shared_ptr<netcode::CConnection> _link, boo
 
 void GameParticipant::Kill(const std::string& reason, const bool flush)
 {
-	bool disconnected = false;
+	bool disconnected = true;
 
 	if (clientLink != nullptr) {
 		clientLink->SendData(CBaseNetProtocol::Get().SendQuit(reason));
@@ -39,11 +48,11 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 		// it will cause a slight lag in the game server during kick, but not a big deal
 		if (flush) {
 			disconnectDelay = spring_gettime() + spring_time(1000);
+			disconnected = false;
 			LOG("%s: client disconnecting...", __func__);
 		} else {
 			clientLink->Close(false);
 			clientLink.reset();
-			disconnected = true;
 		}
 	}
 
@@ -55,7 +64,7 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 	myState = (disconnected) ? DISCONNECTED : DISCONNECTING;
 }
 
-void GameParticipant::Update() {
+void GameParticipant::CheckForExpiredConnections() {
 	if (myState == DISCONNECTING) {
 		if (spring_gettime() >= disconnectDelay) {
 			clientLink->Close(true);

@@ -804,7 +804,7 @@ void CGameServer::Update()
 				if (p.isFromDemo)
 					continue;
 
-				p.Update();
+				p.CheckForExpiredConnections();
 
 				switch (p.myState) {
 					case GameParticipant::CONNECTED: {
