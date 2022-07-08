@@ -189,7 +189,7 @@ bool CTextureAtlas::CreateTexture()
 
 		if (debug) {
 			CBitmap tex(data, atlasSize.x, atlasSize.y);
-			tex.Save(name + "-" + IntToString(atlasSize.x) + "x" + IntToString(atlasSize.y) + ".png");
+			tex.Save(name + "-" + IntToString(atlasSize.x) + "x" + IntToString(atlasSize.y) + ".png", true);
 		}
 	} else {
 		LOG_L(L_ERROR, "[TextureAtlas::%s] failed to map PBO for atlas \"%s\" (size=<%d,%d>)", __func__, name.c_str(), atlasSize.x, atlasSize.y);
@@ -228,6 +228,11 @@ void CTextureAtlas::BindTexture()
 bool CTextureAtlas::TextureExists(const std::string& name)
 {
 	return (textures.find(StringToLower(name)) != textures.end());
+}
+
+const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& CTextureAtlas::GetTextures() const
+{
+	return atlasAllocator->GetEntries();
 }
 
 void CTextureAtlas::ReloadTextures()

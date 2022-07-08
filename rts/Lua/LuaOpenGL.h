@@ -81,6 +81,7 @@ class LuaOpenGL {
 		NOOP_STATE_FUNCS(DrawGroundPreForward)
 		NOOP_STATE_FUNCS(DrawGroundPostForward)
 		NOOP_STATE_FUNCS(DrawGroundPreDeferred)
+		NOOP_STATE_FUNCS(DrawGroundDeferred)
 		NOOP_STATE_FUNCS(DrawGroundPostDeferred)
 		NOOP_STATE_FUNCS(DrawUnitsPostDeferred)
 		NOOP_STATE_FUNCS(DrawFeaturesPostDeferred)
@@ -238,6 +239,8 @@ class LuaOpenGL {
 		static int DeleteTextureAtlas(lua_State* L);
 		static int AddAtlasTexture(lua_State* L);
 		static int GetAtlasTexture(lua_State* L);
+
+		static int GetEngineAtlasTextures(lua_State* L);
 
 		static int Shape(lua_State* L);
 		static int BeginEnd(lua_State* L);

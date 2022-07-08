@@ -95,6 +95,7 @@ class LuaUnsyncedRead {
 		static int GetSelectedUnitsSorted(lua_State* L);
 		static int GetSelectedUnitsCounts(lua_State* L);
 		static int GetSelectedUnitsCount(lua_State* L);
+		static int GetBoxSelectionByEngine(lua_State* L);
 
 		static int IsGUIHidden(lua_State* L);
 		static int HaveShadows(lua_State* L);
@@ -161,9 +162,8 @@ class LuaUnsyncedRead {
 
 		static int GetKeyCode(lua_State* L);
 		static int GetKeySymbol(lua_State* L);
-		static int GetKeyScancodeName(lua_State* L);
+		static int GetScanSymbol(lua_State* L);
 		static int GetKeyBindings(lua_State* L);
-		static int GetKeyBindingsSC(lua_State* L);
 		static int GetActionHotKeys(lua_State* L);
 
 		static int GetGroupList(lua_State* L);

@@ -22,6 +22,7 @@
 #include "Game/UI/GuiHandler.h"
 #include "Game/UI/InfoConsole.h"
 #include "Game/UI/KeyCodes.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/KeySet.h"
 #include "Game/UI/KeyBindings.h"
 #include "Game/UI/MiniMap.h"
@@ -82,8 +83,7 @@
 #include <SDL_clipboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
-#include <SDL_scancode.h>
-#include <SDL_keyboard.h>
+
 
 /******************************************************************************/
 /******************************************************************************/
@@ -176,6 +176,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetSelectedUnitsSorted);
 	REGISTER_LUA_CFUNC(GetSelectedUnitsCounts);
 	REGISTER_LUA_CFUNC(GetSelectedUnitsCount);
+	REGISTER_LUA_CFUNC(GetBoxSelectionByEngine);
 
 	REGISTER_LUA_CFUNC(HaveShadows);
 	REGISTER_LUA_CFUNC(HaveAdvShading);
@@ -232,9 +233,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetKeyCode);
 	REGISTER_LUA_CFUNC(GetKeySymbol);
-	REGISTER_LUA_CFUNC(GetKeyScancodeName);
+	REGISTER_LUA_CFUNC(GetScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyBindings);
-	REGISTER_LUA_CFUNC(GetKeyBindingsSC);
 	REGISTER_LUA_CFUNC(GetActionHotKeys);
 
 	REGISTER_LUA_CFUNC(GetLastMessagePositions);
@@ -1539,6 +1539,12 @@ int LuaUnsyncedRead::GetSelectedUnitsCount(lua_State* L)
 	return 1;
 }
 
+int LuaUnsyncedRead::GetBoxSelectionByEngine(lua_State* L)
+{
+	lua_pushboolean(L, selectedUnitsHandler.GetBoxSelectionHandledByEngine());
+	return 1;
+}
+
 
 /******************************************************************************/
 /******************************************************************************/
@@ -2581,24 +2587,19 @@ int LuaUnsyncedRead::GetKeySymbol(lua_State* L)
 	return 2;
 }
 
-int LuaUnsyncedRead::GetKeyScancodeName(lua_State* L)
+
+int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
 {
-	// Does SDL2 know that keyscancode ?
-	const string keyScancodeName = SDL_GetScancodeName(static_cast<SDL_Scancode>(luaL_checkint(L, 1)));
-	const int keyScancode = SDL_GetScancodeFromName(keyScancodeName.c_str());
-	if (keyScancode != SDL_SCANCODE_UNKNOWN) {
-		// feed lua with prefixed Scancodename
-		lua_pushsstring(L, "SC_" + keyScancodeName);
-	}
-	else {
-		lua_pushsstring(L, "");
-	}
-	return 1;
+	const int scanCode = luaL_checkint(L, 1);
+	lua_pushsstring(L, scanCodes.GetName(scanCode));
+	lua_pushsstring(L, scanCodes.GetDefaultName(scanCode));
+	return 2;
 }
+
 
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
-	CKeyBindings::ActionList actions;
+	ActionList actions;
 	const std::string& argument = luaL_optstring(L, 1, "");
 
 	if (argument.empty()) {
@@ -2609,53 +2610,36 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 		if (!ks.Parse(luaL_checksstring(L, 1)))
 			return 0;
 
-		actions = keyBindings.GetActionList(ks);
+		CKeyChain keyChain;
+		keyChain.emplace_back(ks);
+
+		const std::string& arg2 = luaL_optstring(L, 2, "");
+
+		if (arg2.empty()) {
+			actions = keyBindings.GetActionList(keyChain);
+		} else {
+			if (!ks.Parse(luaL_checksstring(L, 2)))
+				return 0;
+
+			CKeyChain keyChain2;
+			keyChain2.emplace_back(ks);
+
+			actions = keyBindings.GetActionList(keyChain, keyChain2);
+		}
 	}
 
 	int i = 1;
 	lua_newtable(L);
-		for (const Action& action: actions) {
-			lua_newtable(L);
-				// regardless of this keyValue-Pair being pushed or not, current actions.lua can�t handle it, so just delete it already
-				// lua_pushsstring(L, action.command);
-				// lua_pushsstring(L, action.extra);
-				// lua_rawset(L, -3);
-				// above 3 lines is same as: LuaPushNamedString(L, action.command, action.extra);
-
-				LuaPushNamedString(L, "command", action.command); 
-				LuaPushNamedString(L, "extra",     action.extra); 
-				LuaPushNamedString(L, "boundWith", action.boundWith); 
-	lua_rawseti(L, -2, i++);
-		}
-	return 1;
-}
-
-int LuaUnsyncedRead::GetKeyBindingsSC(lua_State* L)
-{
-	CKeyBindings::ActionList actions;
-	const std::string& argument = luaL_optstring(L, 1, "");
-
-	if (argument.empty()) {
-		actions = keyBindings.GetActionListSC();
+	for (const Action& action: actions) {
+		lua_newtable(L);
+			lua_pushsstring(L, action.command);
+			lua_pushsstring(L, action.extra);
+			lua_rawset(L, -3);
+			LuaPushNamedString(L, "command",   action.command);
+			LuaPushNamedString(L, "extra",     action.extra);
+			LuaPushNamedString(L, "boundWith", action.boundWith);
+		lua_rawseti(L, -2, i++);
 	}
-	else {
-		CKeySetSC ksSC;
-
-		if (!ksSC.Parse(luaL_checksstring(L, 1)))
-			return 0;
-
-		actions = keyBindings.GetActionListSC(ksSC);
-	}
-
-	int i = 1;
-	lua_newtable(L);
-		for (const Action& action : actions) {
-			lua_newtable(L);
-				LuaPushNamedString(L, "command", action.command);
-				LuaPushNamedString(L, "extra", action.extra);
-				LuaPushNamedString(L, "boundWith", action.boundWith);
-	lua_rawseti(L, -2, i++);
-		}
 	return 1;
 }
 
@@ -3205,7 +3189,7 @@ namespace {
 int LuaUnsyncedRead::MakeGLDBQuery(lua_State* L)
 {
 	const bool forced = luaL_optboolean(L, 1, false);
-	if (LuaGLDBQuery::object && forced) {
+	if (LuaGLDBQuery::object && !forced) {
 		lua_pushboolean(L, false); //can't make another one (unless forced), old one is not consumed yet
 		return 1;
 	}

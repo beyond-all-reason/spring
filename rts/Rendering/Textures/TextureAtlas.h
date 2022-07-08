@@ -109,6 +109,8 @@ public:
 	 */
 	bool TextureExists(const std::string& name);
 
+	const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& GetTextures() const;
+
 	void ReloadTextures();
 
 

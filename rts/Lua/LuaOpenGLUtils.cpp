@@ -25,6 +25,7 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Units/UnitDef.h"
@@ -119,6 +120,10 @@ LuaMatTexture::Type LuaOpenGLUtils::GetLuaMatTextureType(const std::string& name
 		case hashString("$font"     ): { return LuaMatTexture::LUATEX_FONT     ; } break;
 		case hashString("$smallfont"): { return LuaMatTexture::LUATEX_FONTSMALL; } break;
 		case hashString("$fontsmall"): { return LuaMatTexture::LUATEX_FONTSMALL; } break;
+
+		case hashString("$explosions"): { return LuaMatTexture::LUATEX_EXPLOSIONS_ATLAS; } break;
+		case hashString("$groundfx"):   { return LuaMatTexture::LUATEX_GROUNDFX_ATLAS; } break;
+
 
 		default: {} break;
 	}
@@ -623,6 +628,9 @@ GLuint LuaMatTexture::GetTextureID() const
 			texID = smallFont->GetTexture();
 		} break;
 
+		case LUATEX_EXPLOSIONS_ATLAS: { texID = projectileDrawer->textureAtlas->GetTexID();  } break;
+		case LUATEX_GROUNDFX_ATLAS:   { texID = projectileDrawer->groundFXAtlas->GetTexID(); } break;
+
 		default: {
 			assert(false);
 		} break;
@@ -732,6 +740,12 @@ GLuint LuaMatTexture::GetTextureTarget() const
 			texType = GL_TEXTURE_2D;
 		} break;
 
+
+		case LUATEX_EXPLOSIONS_ATLAS:
+		case LUATEX_GROUNDFX_ATLAS: {
+			texType = GL_TEXTURE_2D;
+		} break;
+
 		default:
 			assert(false);
 	}
@@ -754,13 +768,14 @@ void LuaMatTexture::Bind() const
 
 		// do not enable cubemap samplers here (not
 		// needed for shaders, not wanted otherwise)
-		// I really wonder why 3D and cube samplers _shouldnt_ be enabled here?
+		// Q: I really wonder why 3D and cube samplers _shouldnt_ be enabled here?
+		// A: FFP doesn't generally know how to deal with TEXTURE_3D and TEXTURE_CUBE_MAP (prehistoric methods don't count)
+		//    and shaders don't care about Enable/Disable
 		if (enable) {
 			switch (texType) {
 				case GL_TEXTURE_2D:           {   glEnable(texType);   } break;
-				case GL_TEXTURE_3D:           {   glEnable(texType);   } break;
-				case GL_TEXTURE_CUBE_MAP:     {   glEnable(texType);   } break;
-				//case GL_TEXTURE_CUBE_MAP_ARB: { /*glEnable(texType);*/ } break;
+				case GL_TEXTURE_3D:           { /*glEnable(texType);*/ } break;
+				case GL_TEXTURE_CUBE_MAP:     { /*glEnable(texType);*/ } break;
 				default:                      {                        } break;
 			}
 		}
@@ -769,9 +784,8 @@ void LuaMatTexture::Bind() const
 	else if (!enable) {
 		switch (texType) {
 			case GL_TEXTURE_2D:           {   glDisable(texType);   } break;
-			case GL_TEXTURE_3D:           {   glDisable(texType);   } break;
-			case GL_TEXTURE_CUBE_MAP:     {   glDisable(texType);   } break;
-			//case GL_TEXTURE_CUBE_MAP_ARB: { /*glDisable(texType);*/ } break;
+			case GL_TEXTURE_3D:           { /*glDisable(texType);*/ } break;
+			case GL_TEXTURE_CUBE_MAP:     { /*glDisable(texType);*/ } break;
 			default:                      {                         } break;
 		}
 	}
@@ -946,6 +960,8 @@ int2 LuaMatTexture::GetSize() const
 		case LUATEX_FONTSMALL:
 			return {smallFont->GetTextureWidth(), smallFont->GetTextureHeight()};
 
+		case LUATEX_EXPLOSIONS_ATLAS: { return projectileDrawer->textureAtlas->GetSize();   } break;
+		case LUATEX_GROUNDFX_ATLAS:   { return projectileDrawer->groundFXAtlas->GetSize();  } break;
 
 		case LUATEX_NONE:
 		default: break;
@@ -1033,6 +1049,9 @@ void LuaMatTexture::Print(const string& indent) const
 
 		STRING_CASE(typeName, LUATEX_FONT);
 		STRING_CASE(typeName, LUATEX_FONTSMALL);
+
+		STRING_CASE(typeName, LUATEX_EXPLOSIONS_ATLAS);
+		STRING_CASE(typeName, LUATEX_GROUNDFX_ATLAS);
 
 		#undef STRING_CASE
 	}

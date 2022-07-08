@@ -626,6 +626,7 @@ DRAW_CALLIN(WorldRefraction)
 DRAW_CALLIN(GroundPreForward)
 DRAW_CALLIN(GroundPostForward)
 DRAW_CALLIN(GroundPreDeferred)
+DRAW_CALLIN(GroundDeferred)
 DRAW_CALLIN(GroundPostDeferred)
 DRAW_CALLIN(UnitsPostDeferred)
 DRAW_CALLIN(FeaturesPostDeferred)
@@ -693,24 +694,14 @@ bool CEventHandler::CommandNotify(const Command& cmd)
 }
 
 
-bool CEventHandler::KeyPress(int key, bool isRepeat)
+bool CEventHandler::KeyPress(int keyCode, int scanCode, bool isRepeat)
 {
-	return ControlReverseIterateDefTrue(listKeyPress, &CEventClient::KeyPress, key, isRepeat);
+	return ControlReverseIterateDefTrue(listKeyPress, &CEventClient::KeyPress, keyCode, scanCode, isRepeat);
 }
 
-bool CEventHandler::KeyRelease(int key)
+bool CEventHandler::KeyRelease(int keyCode, int scanCode)
 {
-	return ControlReverseIterateDefTrue(listKeyRelease, &CEventClient::KeyRelease, key);
-}
-
-bool CEventHandler::KeyPressSC(int keyScanCode, bool isRepeat)
-{
-	return ControlReverseIterateDefTrue(listKeyPressSC, &CEventClient::KeyPressSC, keyScanCode, isRepeat);
-}
-
-bool CEventHandler::KeyReleaseSC(int keyScanCode)
-{
-	return ControlReverseIterateDefTrue(listKeyReleaseSC, &CEventClient::KeyReleaseSC, keyScanCode);
+	return ControlReverseIterateDefTrue(listKeyRelease, &CEventClient::KeyRelease, keyCode, scanCode);
 }
 
 
@@ -890,5 +881,4 @@ void CEventHandler::DrawShadowFeaturesLua()
 	ITERATE_EVENTCLIENTLIST_NA(DrawShadowFeaturesLua);
 }
 
-/******************************************************************************/
 /******************************************************************************/
