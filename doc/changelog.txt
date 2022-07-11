@@ -10,6 +10,18 @@ Lua:
    becomes 100 in Lua after rescale). Now uncapped.
  - add Spring.AddUnitExperience(unitID, delta_xp). Can subtract, but the result cannot be negative.
  - change widget, gadget and action handlers to support scancodes
+ - Added Lua SyncedControl callins to modify the original/base heightmap (i.e. the values that the
+   restore command will aim for.)
+    - Spring.AdjustOriginalHeightMap
+    - Spring.LevelOriginalHeightMap
+    - Spring.RevertOriginalHeightMap
+    - Spring.SetOriginalHeightMapFunc
+    - Spring.AddOriginalHeightMap
+    - Spring.SetOriginalHeightMap
+ - Added Spring.GetRenderFeaturesDrawFlagChanged to report all features whose draw flags have
+   changed since the last sim frame.
+ - Added Spring.GetRenderUnitsDrawFlagChanged to report all units whose draw flags have changed
+   since the last sim frame.
 
 Maps:
  - New bumpwater params, most of these were just hard-coded values:
@@ -19,6 +31,11 @@ Maps:
 		- waveFoamIntensity   (0.5)
 		- causticsResolution  (75.0)
 		- causticsStrength    (0.08)
+
+Map:
+ - The original/base height map is now editable, so the height map as read from the map file is
+   held separately. Both the map file height map and the original/base height map are saved and
+   loaded with save/load feature.
 
 Misc:
  - the `useFootPrintCollisionVolume` unit def tag now takes precedence over the default sphere
@@ -31,6 +48,29 @@ Misc:
  - /keysave and /keyprint now preserves the binding order, providing a better output
  - add support for f16-f24 key and scancodes; keycode support requires SDL1
    keycode deprecation
+
+Sim:
+ - Added a new 'b' designator for yardmaps to declare an area that is buildable, but is not
+   walkable. This allows for the current method of upgradable buildings to create a locking
+   pattern that won't break pathing.
+ - Reserved MaxParticles *2 for unsynced projectile-container vector to avoid a re-alloc during
+   the multi-threaded section. To avoid a race condition while processing unsynced particles.
+ - Smooth Height Mesh tracks damage to height map and updates itself in 64m^2 squares
+ - Smooth Height Mesh switched from 2-pass Gaussian Blur to a single, kernelless Linear pass to
+   reduce computational needs of the mesh to minimize impact of recaclulating mesh running sim
+   frames
+ - Smooth Height Mesh uses SSE to optimize local maxima calculations.
+ - Smooth Height Mesh no longer multi-threads the horizontal and vertical passes because single
+   thread is faster during sim frame (the work load has been reduced below multi-thread benefit
+   threshold)
+ - Smooth Height Mesh can be disabled by setting mod rule "enableSmoothMesh" = 0 (enabled by
+   default)
+ - Record the previous draw flag of units/features to support incremental rendering queries
+
+System:
+ - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
+   test-and-set (TAS) to test and test-and-set (TTAS) to reduce cache coherency traffic on the
+   processor
 
 UI:
  - KeyPress and KeyRelease callins receive an additional scanCode
@@ -50,6 +90,7 @@ Fixes:
  - Fix `GetKeyBindings` returning incorrect actions for bound keychains,
    e.g. if actions bound to m,n and b,n both would be
    returned on `GetKeyBindings('n')` regardless of the previously pressed key
+ - Fix server pause that happens when a spectator or player leaves the match
 
 -- 105.0 --------------------------------------------------------
 Sim:
