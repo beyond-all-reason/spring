@@ -13,6 +13,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EconomyTask.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/EnvResourceUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/LegacyUtils.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SaveLoadUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SolidObjectUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SystemGlobalUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/UnitUtils.cpp"

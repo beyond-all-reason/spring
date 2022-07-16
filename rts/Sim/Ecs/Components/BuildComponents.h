@@ -2,17 +2,11 @@
 #define BUILD_COMPONENTS_H__
 
 #include "Sim/Ecs/EcsMain.h"
+#include "BaseComponents.h"
 
 #include "Sim/Misc/Resource.h"
 
 namespace Build {
-
-enum class ProrationRate {
-    PRORATION_NONE,
-    PRORATION_ONLY_METAL,
-    PRORATION_ONLY_ENERGY,
-    PRORATION_ALL
-};
 
 // builder
 struct ActiveBuild {
@@ -20,36 +14,15 @@ struct ActiveBuild {
     float currentBuildpower = 0.f;
 };
 
-struct BuildPower {
-    float value = 0.f;
-};
+ALIAS_COMPONENT(BuildPower, float)
+ALIAS_COMPONENT(RepairPower, float)
+ALIAS_COMPONENT(BuildProgress, float)
+ALIAS_COMPONENT(BuildTime, float)
 
-struct RepairPower {
-    float value = 0.f;
-};
-
-// buildee
-struct BuildProgress {
-    float value = 0.f;
-};
-
-struct BeingBuilt {
-};
-
-// struct BuildCostMetal {
-//     float value = 0.f;
-// };
-
-// struct BuildCostEnergy {
-//     float value = 0.f;
-// };
+struct BeingBuilt {};
 
 struct BuildCost : public SResourcePack {
     using SResourcePack::operator=;
-};
-
-struct BuildTime {
-    float value = 0.f;
 };
 
 }

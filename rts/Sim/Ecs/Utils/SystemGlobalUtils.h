@@ -3,11 +3,15 @@
 
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
+#include "System/creg/creg.h"
 
 namespace SystemGlobals {
 
+//  undefined reference to `SystemGlobals::SystemGlobal::creg_class'
 class SystemGlobal {
 public:
+    CR_DECLARE(SystemGlobal)
+
     template<class T>
     void CreateSystemComponent() {
         if (! EcsMain::registry.valid(systemGlobalsEntity))

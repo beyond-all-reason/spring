@@ -17,6 +17,7 @@
 #include "Lua/LuaRules.h"
 #include "Net/GameServer.h"
 #include "Rendering/Textures/ColorMap.h"
+#include "Sim/Ecs/Utils/SaveLoadUtils.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -260,6 +261,8 @@ void CCregLoadSaveHandler::SaveGame(const std::string& path)
 			os.SavePackage(&oss, &gsc, gsc.GetClass());
 			PrintSize("Game", ((int)oss.tellp()) - gameStart);
 
+			// save ECS state
+			SystemGlobals::SaveLoadUtils::SaveComponents(os, oss);
 
 			// save AI state
 			const int aiStart = oss.tellp();
@@ -366,6 +369,9 @@ void CCregLoadSaveHandler::LoadGame()
 		// the only job of gsc is to collect gamestate data
 		CGameStateCollector* gsc = static_cast<CGameStateCollector*>(pGSC);
 		spring::SafeDelete(gsc);
+
+		// load ECS state
+		SystemGlobals::SaveLoadUtils::LoadComponents(inputStream, iss);
 	}
 
 	LEAVE_SYNCED_CODE();
