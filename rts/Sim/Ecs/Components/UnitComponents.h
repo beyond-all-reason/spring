@@ -2,59 +2,30 @@
 #define UNIT_COMPONENTS_H__
 
 #include "Sim/Units/Unit.h"
+#include "BaseComponents.h"
+
 
 class UnitDef;
 
 namespace Units {
 
-struct UnitId {
-    int value;
-};
-
-struct Team {
-    int value;
-};
-
-struct UnitDefRef {
-    const UnitDef* value = nullptr;
-};
-
-struct OwningEntity {
-    entt::entity value{entt::null};
-};
-
-struct EconomyTasks {
-    std::size_t size = 0;
-};
+ALIAS_COMPONENT(UnitId, int)
+ALIAS_COMPONENT(Team, int)
+ALIAS_COMPONENT(UnitDefRef, int)
+ALIAS_COMPONENT(OwningEntity, entt::entity)
+ALIAS_COMPONENT(EconomyTasks, std::size_t)
 
 struct ChainEntity {
     entt::entity prev{entt::null};
     entt::entity next{entt::null};
 };
 
-struct MetalUpKeepEconomyTaskRef {
-    entt::entity value{entt::null};
-};
-
-struct EnergyUpKeepEconomyTaskRef {
-    entt::entity value{entt::null};
-};
-
-struct ConditionalMetalUseEconomyTaskRef {
-    entt::entity value{entt::null};
-};
-
-struct ConditionalEnergyUseEconomyTaskRef {
-    entt::entity value{entt::null};
-};
-
-struct MakeResourcesEconomyTaskRef {
-    entt::entity value{entt::null};
-};
-
-struct MakeDrainResourcesEconomyTaskRef {
-    entt::entity value{entt::null};
-};
+ALIAS_COMPONENT(MetalUpKeepEconomyTaskRef, entt::entity)
+ALIAS_COMPONENT(EnergyUpKeepEconomyTaskRef, entt::entity)
+ALIAS_COMPONENT(ConditionalMetalUseEconomyTaskRef, entt::entity)
+ALIAS_COMPONENT(ConditionalEnergyUseEconomyTaskRef, entt::entity)
+ALIAS_COMPONENT(MakeResourcesEconomyTaskRef, entt::entity)
+ALIAS_COMPONENT(MakeDrainResourcesEconomyTaskRef, entt::entity)
 
 }
 

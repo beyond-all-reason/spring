@@ -34,7 +34,7 @@ void AddToChain(entt::entity head, entt::entity newLink) {
     T& chainHeadLinkComp = GetChainHeadLink<T>(head);
     InsertAfterChainLink<T>(chainHeadLinkComp.prev, newLink);
 
-    EcsMain::registry.get_or_emplace<ChainHeadComp>(head).size++;
+    EcsMain::registry.get_or_emplace<ChainHeadComp>(head).value++;
     
     //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
 }
@@ -57,7 +57,7 @@ void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
     if (head != linkToRemove) {
         DisconnectChainLink<T>(linkToRemove);
 
-        EcsMain::registry.get<ChainHeadComp>(head).size--;
+        EcsMain::registry.get<ChainHeadComp>(head).value--;
 
         //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
     }

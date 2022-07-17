@@ -63,48 +63,24 @@ void UnitEconomyReportSystem::Init()
     SetupObserversForResourceTracking();
 }
 
-// Should work but GCC 10.3 cannot process this correctly
-// template<class SnapshotType, class ResourceCounterType>
-// void TakeSnapshot(){
-//     auto group = EcsMain::registry.group<SnapshotType>(entt::get<ResourceCounterType>);
-//     for (auto entity : group) {
-//         auto& displayValue = group.get<SnapshotType>(entity).value;
-//         auto& counterValue = group.get<ResourceCounterType>(entity).value;
-
-//         displayValue = counterValue;
-//         counterValue = 0.f;
-//     }
-// }
-
-void TakeMakeSnapshot(UnitEconomyReportSystemComponent& system){
-    auto group = EcsMain::registry.group<SnapshotMake>(entt::get<UnitEconomy::ResourcesCurrentMake>);
+template<class SnapshotType, class ResourceCounterType>
+void TakeSnapshot(UnitEconomyReportSystemComponent& system){
+    auto group = EcsMain::registry.template group<SnapshotType>(entt::get<ResourceCounterType>);
     for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotMake>(entity);
-        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
+        auto& displayValue = group.template get<SnapshotType>(entity);
+        auto& counterValue = group.template get<ResourceCounterType>(entity);
 
         displayValue.resources[system.activeBuffer] = counterValue;
         counterValue = SResourcePack();
-
-        // Example of Patch/Replace approach - needed if observers are used
-        // EcsMain::registry.patch<SnapshotMake>(entity, [entity, &system, &group](auto& snapshot){
-        //         const auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
-        //         snapshot.resources[system.activeBuffer] = counterValue;
-        //     });
-        // EcsMain::registry.replace<UnitEconomy::ResourcesCurrentMake>(entity, SResourcePack());
     }
 }
 
-void TakeUseSnapshot(UnitEconomyReportSystemComponent& system){
-    auto group = EcsMain::registry.group<SnapshotUsage>(entt::get<UnitEconomy::ResourcesCurrentUsage>);
-    for (auto entity : group) {
-        auto& displayValue = group.get<SnapshotUsage>(entity);
-        auto& counterValue = group.get<UnitEconomy::ResourcesCurrentUsage>(entity);
-
-        displayValue.resources[system.activeBuffer] = counterValue;
-        counterValue = SResourcePack();
-        //LOG("%s: energy snapshot is %f", __func__, displayValue);
-    }
-}
+// Example of Patch/Replace approach - needed if observers are used
+// EcsMain::registry.patch<SnapshotMake>(entity, [entity, &system, &group](auto& snapshot){
+//         const auto& counterValue = group.get<UnitEconomy::ResourcesCurrentMake>(entity);
+//         snapshot.resources[system.activeBuffer] = counterValue;
+//     });
+// EcsMain::registry.replace<UnitEconomy::ResourcesCurrentMake>(entity, SResourcePack());
 
 void UnitEconomyReportSystem::Update() {
     if ((gs->frameNum % UNIT_ECONOMY_REPORT_UPDATE_RATE) != UNIT_ECONOMY_REPORT_TICK)
@@ -117,6 +93,6 @@ void UnitEconomyReportSystem::Update() {
     auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
     system.activeBuffer = (system.activeBuffer + 1) % SnapshotBase::BUFFERS;
 
-    TakeMakeSnapshot(system);
-    TakeUseSnapshot(system);
+    TakeSnapshot<SnapshotMake, UnitEconomy::ResourcesCurrentMake>(system);
+    TakeSnapshot<SnapshotUsage, UnitEconomy::ResourcesCurrentUsage>(system);
 }

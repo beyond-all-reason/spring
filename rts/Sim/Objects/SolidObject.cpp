@@ -81,6 +81,8 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(buildFacing),
 	CR_MEMBER(modParams),
 
+	CR_MEMBER(entityReference),
+
 	CR_POSTLOAD(PostLoad)
 ))
 

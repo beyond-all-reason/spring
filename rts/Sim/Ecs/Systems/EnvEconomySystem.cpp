@@ -9,6 +9,7 @@
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitDefHandler.h"
 
 #include "System/SpringMath.h"
 #include "System/TimeProfiler.h"
@@ -31,7 +32,7 @@ void EnvEconomySystem::Update()
 
     auto group = EcsMain::registry.group<EnvEconomy::WindEnergy>(entt::get<Units::UnitDefRef, FlowEconomy::ResourceAdd>);
     for (auto entity : group) {
-        auto unitDef = (group.get<Units::UnitDefRef>(entity).value);
+        auto unitDef = unitDefHandler->GetUnitDefByID(group.get<Units::UnitDefRef>(entity).value);
         auto& income = group.get<FlowEconomy::ResourceAdd>(entity);
 
         income.energy = std::min(envResourceComp.curWindStrength, unitDef->windGenerator);

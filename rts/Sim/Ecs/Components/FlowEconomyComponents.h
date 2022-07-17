@@ -2,6 +2,7 @@
 #define FLOW_ECONOMY_COMPONENTS_H__
 
 #include "Sim/Misc/Resource.h"
+#include "BaseComponents.h"
 
 namespace FlowEconomy {
 
@@ -23,18 +24,11 @@ struct AllocatedUnusedResource {
     float prorationRate = 0.f;
 };
 
-struct BuildRate {
-    float value = 0.f;
-};
+ALIAS_COMPONENT(BuildRate, float)
 
-struct IsEconomyTask {
-};
-
-struct IsConditionalEconomyTask {
-};
-
-struct IsPassiveEconomyTask {
-};
+struct IsEconomyTask {};
+struct IsConditionalEconomyTask {};
+struct IsPassiveEconomyTask {};
 
 }
 

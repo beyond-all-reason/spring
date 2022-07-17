@@ -247,6 +247,9 @@ void CCregLoadSaveHandler::SaveGame(const std::string& path)
 
 
 		{
+			// save ECS state
+			SystemGlobals::SaveLoadUtils::SaveComponents(oss);
+
 			creg::COutputStreamSerializer os;
 
 			// save lua state first as lua unit scripts depend on it
@@ -260,9 +263,6 @@ void CCregLoadSaveHandler::SaveGame(const std::string& path)
 			CGameStateCollector gsc;
 			os.SavePackage(&oss, &gsc, gsc.GetClass());
 			PrintSize("Game", ((int)oss.tellp()) - gameStart);
-
-			// save ECS state
-			SystemGlobals::SaveLoadUtils::SaveComponents(os, oss);
 
 			// save AI state
 			const int aiStart = oss.tellp();
@@ -353,6 +353,9 @@ void CCregLoadSaveHandler::LoadGame()
 #ifdef USING_CREG
 	ENTER_SYNCED_CODE();
 	{
+		// load ECS state
+		SystemGlobals::SaveLoadUtils::LoadComponents(iss);
+
 		creg::CInputStreamSerializer inputStream;
 
 		// load lua state first, as lua unit scripts depend on it
@@ -369,9 +372,6 @@ void CCregLoadSaveHandler::LoadGame()
 		// the only job of gsc is to collect gamestate data
 		CGameStateCollector* gsc = static_cast<CGameStateCollector*>(pGSC);
 		spring::SafeDelete(gsc);
-
-		// load ECS state
-		SystemGlobals::SaveLoadUtils::LoadComponents(inputStream, iss);
 	}
 
 	LEAVE_SYNCED_CODE();
