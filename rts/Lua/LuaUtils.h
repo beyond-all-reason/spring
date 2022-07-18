@@ -442,15 +442,9 @@ const inline CFeature* LuaUtils::IdToObject(int id, const char* func)
 template<>
 const inline CProjectile* LuaUtils::IdToObject(int id, const char* func)
 {
-	const auto& syncedProjectiles = projectileHandler.GetActiveProjectiles(true);
-	const auto it = std::find_if(syncedProjectiles.cbegin(), syncedProjectiles.cend(), [id](const CProjectile* p) {
-		return p->id == id;
-	});
-
-	if (it == syncedProjectiles.cend())
+	const CProjectile* p = projectileHandler.GetProjectileBySyncedID(id);
+	if (p == nullptr)
 		return nullptr;
-
-	const CProjectile* p = *it;
 
 	assert(p->synced);
 
