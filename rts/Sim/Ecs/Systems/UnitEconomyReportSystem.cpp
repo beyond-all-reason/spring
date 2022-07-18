@@ -72,6 +72,10 @@ void TakeSnapshot(UnitEconomyReportSystemComponent& system){
 
         displayValue.resources[system.activeBuffer] = counterValue;
         counterValue = SResourcePack();
+
+        LOG("UnitEconomyReportSystem::%s: entity %d (%d) display value (%f, %f)", __func__
+        , entt::to_entity(entity), entt::to_integral(entity)
+        , displayValue.resources[system.activeBuffer][0], displayValue.resources[system.activeBuffer][1]);
     }
 }
 
@@ -93,6 +97,9 @@ void UnitEconomyReportSystem::Update() {
     auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
     system.activeBuffer = (system.activeBuffer + 1) % SnapshotBase::BUFFERS;
 
+    LOG("UnitEconomyReportSystem::%s: active buffer SnapshotMake %d", __func__, system.activeBuffer);
     TakeSnapshot<SnapshotMake, UnitEconomy::ResourcesCurrentMake>(system);
+
+    LOG("UnitEconomyReportSystem::%s: active buffer SnapshotUsage %d", __func__, system.activeBuffer);
     TakeSnapshot<SnapshotUsage, UnitEconomy::ResourcesCurrentUsage>(system);
 }

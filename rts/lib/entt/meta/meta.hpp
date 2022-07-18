@@ -1071,6 +1071,15 @@ public:
     }
 
     /**
+     * @brief Provides the type for which the pointer is defined.
+     * @return The type for which the pointer is defined or this type if it
+     * doesn't refer to a pointer type.
+     */
+    [[nodiscard]] meta_type remove_pointer() const ENTT_NOEXCEPT {
+        return node->remove_pointer();
+    }
+
+    /**
      * @brief Checks whether a type is a pointer-like type or not.
      * @return True if the underlying type is a pointer-like one, false
      * otherwise.
@@ -1464,11 +1473,11 @@ public:
           offset{},
           handle{} {}
 
-    template<typename It>
-    explicit meta_iterator(It iter, const difference_type init) ENTT_NOEXCEPT
-        : deref{&deref_fn<It>},
+    template<typename Type>
+    explicit meta_iterator(Type &cont, const difference_type init) ENTT_NOEXCEPT
+        : deref{&deref_fn<decltype(cont.begin())>},
           offset{init},
-          handle{std::move(iter)} {}
+          handle{cont.begin()} {}
 
     meta_iterator &operator++() ENTT_NOEXCEPT {
         return ++offset, *this;
