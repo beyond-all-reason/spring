@@ -23,6 +23,7 @@
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Systems/FluxEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
+#include "SystemGlobalUtils.h"
 
 
 // Partial Specialization of Function Templates are not allowed so we can't do this
@@ -153,19 +154,30 @@ void ProcessComponents(T&& archive, S&& regSnapshot) {
 using namespace SystemGlobals;
 
 void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
+    auto archive = cereal::BinaryInputArchive{iss};
     LOG("%s: Entities before clear is %d", __func__, (int)EcsMain::registry.alive());
     EcsMain::registry.each([](entt::entity entity) { EcsMain::registry.destroy(entity); });
     LOG("%s: Entities after clear is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
-    {ProcessComponents<entt::snapshot_loader>(cereal::BinaryInputArchive{iss}, entt::snapshot_loader{EcsMain::registry});}
+    {ProcessComponents<entt::snapshot_loader>(archive, entt::snapshot_loader{EcsMain::registry});}
     LOG("%s: Entities after load is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
     EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d added (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
 
     LOG("%s: eco multiplier is %f", __func__, EcsMain::registry.get<SystemGlobals::FlowEconomySystemComponent>(entt::entity(0)).economyMultiplier);
+    {
+        using namespace SystemGlobals;
+        archive(systemGlobals);
+    }
 }
 
 void SaveLoadUtils::SaveComponents(std::stringstream &oss) {
+    auto archive = cereal::BinaryOutputArchive{oss};
     LOG("%s: Entities before save is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)oss.tellp());
-    {ProcessComponents<entt::snapshot>(cereal::BinaryOutputArchive{oss}, entt::snapshot{EcsMain::registry});}
+    {ProcessComponents<entt::snapshot>(archive, entt::snapshot{EcsMain::registry});}
     LOG("%s: Save bytes writen %d", __func__, (int)oss.tellp());
     EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d saved (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
+
+    {
+        using namespace SystemGlobals;
+        archive(systemGlobals);
+    }
 }

@@ -1,10 +1,7 @@
 #include "SystemGlobalUtils.h"
 
-using namespace SystemGlobals;
+namespace SystemGlobals {
 
-SystemGlobals::SystemGlobal SystemGlobals::systemGlobals;
+SystemGlobal systemGlobals;
 
-CR_BIND(SystemGlobal, )
-CR_REG_METADATA(SystemGlobal, (
-	CR_MEMBER(systemGlobalsEntity)
-))
+}
