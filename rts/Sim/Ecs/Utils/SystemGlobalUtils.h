@@ -5,17 +5,21 @@
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "System/creg/creg.h"
 
+#include "System/Log/ILog.h"
+
 namespace SystemGlobals {
 
-//  undefined reference to `SystemGlobals::SystemGlobal::creg_class'
-class SystemGlobal {
-public:
-    CR_DECLARE(SystemGlobal)
 
+class SystemGlobal {
+    CR_DECLARE_STRUCT(SystemGlobal)
+
+public:
     template<class T>
     void CreateSystemComponent() {
-        if (! EcsMain::registry.valid(systemGlobalsEntity))
+        if (! EcsMain::registry.valid(systemGlobalsEntity)) {
             systemGlobalsEntity = EcsMain::registry.create();
+            LOG("%s: globals entity is set to %d", __func__, entt::to_integral(systemGlobalsEntity)); 
+        }
 
         EcsMain::registry.emplace_or_replace<T>(systemGlobalsEntity);
     };
@@ -24,7 +28,7 @@ public:
     T& GetSystemComponent() { return EcsMain::registry.get<T>(systemGlobalsEntity); }
 
     template<class T>
-    bool IsSystemActive() { return (nullptr != EcsMain::registry.try_get<T>(systemGlobalsEntity)); }
+    bool IsSystemActive() { LOG("%s: globals entity is %d", __func__, entt::to_integral(systemGlobalsEntity)); return (nullptr != EcsMain::registry.try_get<T>(systemGlobalsEntity)); }
 
     void ClearComponents() {
         if (EcsMain::registry.valid(systemGlobalsEntity))

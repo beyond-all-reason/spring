@@ -8,7 +8,7 @@ namespace SystemGlobals {
 
 class SaveLoadUtils {
 public:
-    static void LoadComponents(std::stringstream &oss);
+    static void LoadComponents(std::stringstream &iss);
     static void SaveComponents(std::stringstream &oss);
 };
 

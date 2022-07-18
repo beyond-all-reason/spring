@@ -212,8 +212,12 @@ void ApplyAllTeamsEconomy() {
 }
 
 void FlowEconomySystem::Update() {
+    LOG("FlowEconomySystem::%s: Check active %d", __func__, gs->frameNum);
+
     if (!systemGlobals.IsSystemActive<FlowEconomySystemComponent>())
         return;
+
+    LOG("FlowEconomySystem::%s: Check tick %d", __func__, gs->frameNum);
 
     if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
        return;

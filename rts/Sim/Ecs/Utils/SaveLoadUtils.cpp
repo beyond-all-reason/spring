@@ -14,6 +14,16 @@
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 
 #include "Sim/Misc/Resource.h"
+#include "System/Log/ILog.h"
+
+// temporary measure
+#include "Sim/Ecs/Systems/BuildSystem.h"
+#include "Sim/Ecs/Systems/EnvEconomySystem.h"
+#include "Sim/Ecs/Systems/EnvResourceSystem.h"
+#include "Sim/Ecs/Systems/FlowEconomySystem.h"
+#include "Sim/Ecs/Systems/FluxEconomySystem.h"
+#include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
+
 
 // Partial Specialization of Function Templates are not allowed so we can't do this
 //
@@ -142,10 +152,20 @@ void ProcessComponents(T&& archive, S&& regSnapshot) {
 
 using namespace SystemGlobals;
 
-void SaveLoadUtils::LoadComponents(std::stringstream &oss) {
-    ProcessComponents<entt::snapshot_loader>(cereal::BinaryInputArchive{oss}, entt::snapshot_loader{EcsMain::registry});
+void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
+    LOG("%s: Entities before clear is %d", __func__, (int)EcsMain::registry.alive());
+    EcsMain::registry.each([](entt::entity entity) { EcsMain::registry.destroy(entity); });
+    LOG("%s: Entities after clear is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
+    {ProcessComponents<entt::snapshot_loader>(cereal::BinaryInputArchive{iss}, entt::snapshot_loader{EcsMain::registry});}
+    LOG("%s: Entities after load is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
+    EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d added (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
+
+    LOG("%s: eco multiplier is %f", __func__, EcsMain::registry.get<SystemGlobals::FlowEconomySystemComponent>(entt::entity(0)).economyMultiplier);
 }
 
 void SaveLoadUtils::SaveComponents(std::stringstream &oss) {
-    ProcessComponents<entt::snapshot>(cereal::BinaryOutputArchive{oss}, entt::snapshot{EcsMain::registry});
+    LOG("%s: Entities before save is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)oss.tellp());
+    {ProcessComponents<entt::snapshot>(cereal::BinaryOutputArchive{oss}, entt::snapshot{EcsMain::registry});}
+    LOG("%s: Save bytes writen %d", __func__, (int)oss.tellp());
+    EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d saved (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
 }
