@@ -543,7 +543,9 @@ void CProjectileHandler::CheckUnitFeatureCollisions(bool synced)
 	static std::vector<CFeature*> tempFeatures;
 	static std::vector<CPlasmaRepulser*> tempRepulsers;
 
-	for (CProjectile* p : projectiles[synced]) {
+	//can't use iterators here, because instructions inside the loop modify projectiles[synced]
+	for (size_t i = 0; i < projectiles[synced].size(); ++i) {
+		CProjectile* p = projectiles[synced][i];
 
 		if (!p->checkCol) continue;
 		if ( p->deleteMe) continue;
@@ -554,15 +556,17 @@ void CProjectileHandler::CheckUnitFeatureCollisions(bool synced)
 
 		quadField.GetUnitsAndFeaturesColVol(p->pos, p->speed.w + p->radius, tempUnits, tempFeatures, &tempRepulsers);
 
-		CheckShieldCollisions(p, tempRepulsers, ppos0, ppos1); tempRepulsers.clear();
-		CheckUnitCollisions(p, tempUnits, ppos0, ppos1); tempUnits.clear();
-		CheckFeatureCollisions(p, tempFeatures, ppos0, ppos1); tempFeatures.clear();
+		CheckShieldCollisions (p, tempRepulsers, ppos0, ppos1); tempRepulsers.clear();
+		CheckUnitCollisions   (p, tempUnits    , ppos0, ppos1); tempUnits.clear();
+		CheckFeatureCollisions(p, tempFeatures , ppos0, ppos1); tempFeatures.clear();
 	}
 }
 
 void CProjectileHandler::CheckGroundCollisions(bool synced)
 {
-	for (CProjectile* p : projectiles[synced]) {
+	//can't use iterators here, because instructions inside the loop modify projectiles[synced]
+	for (size_t i = 0; i < projectiles[synced].size(); ++i) {
+		CProjectile* p = projectiles[synced][i];
 
 		if (!p->checkCol)
 			continue;
