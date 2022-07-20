@@ -16,6 +16,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SaveLoadUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SolidObjectUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SystemGlobalUtils.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/SystemUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/UnitUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Utils/WindGeneratorUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/Feature.cpp"

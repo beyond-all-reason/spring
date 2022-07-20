@@ -15,6 +15,7 @@
 #include "System/SpringMath.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
+#include "System/Log/ILog.h"
 
 #include "Sim/Misc/GlobalSynced.h"
 

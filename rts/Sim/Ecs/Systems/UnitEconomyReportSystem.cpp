@@ -7,6 +7,7 @@
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 
 #include "System/TimeProfiler.h"
@@ -36,14 +37,21 @@ void AddComponentToOwnerOfEcoTask(entt::registry &registry, entt::entity taskEnt
         registry.emplace<T>(entity);
 }
 
-void SetupObserversForEcoTasks() {
+void ConnectObserversForEcoTasks() {
     EcsMain::registry.on_construct<FlowEconomy::ResourceAdd>()
                      .connect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentMake>>();
     EcsMain::registry.on_construct<FlowEconomy::ResourceUse>()
                      .connect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentUsage>>();
 }
 
-void SetupObserversForResourceTracking() {
+void DisconnectObserversForEcoTasks() {
+    EcsMain::registry.on_construct<FlowEconomy::ResourceAdd>()
+                     .disconnect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentMake>>();
+    EcsMain::registry.on_construct<FlowEconomy::ResourceUse>()
+                     .disconnect<&AddComponentToOwnerOfEcoTask<UnitEconomy::ResourcesCurrentUsage>>();
+}
+
+void ConnectObserversForResourceTracking() {
     EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentMake>()
                      .connect<&AddComponent<UnitEconomyReport::SnapshotMake>>();
     EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentUsage>()
@@ -55,12 +63,38 @@ void SetupObserversForResourceTracking() {
                      .connect<&RemoveComponent<UnitEconomyReport::SnapshotUsage>>();
 }
 
+void DisconnectObserversForResourceTracking() {
+    EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentMake>()
+                     .disconnect<&AddComponent<UnitEconomyReport::SnapshotMake>>();
+    EcsMain::registry.on_construct<UnitEconomy::ResourcesCurrentUsage>()
+                     .disconnect<&AddComponent<UnitEconomyReport::SnapshotUsage>>();
+
+    EcsMain::registry.on_destroy<UnitEconomy::ResourcesCurrentMake>()
+                     .disconnect<&RemoveComponent<UnitEconomyReport::SnapshotMake>>();
+    EcsMain::registry.on_destroy<UnitEconomy::ResourcesCurrentUsage>()
+                     .disconnect<&RemoveComponent<UnitEconomyReport::SnapshotUsage>>();
+}
+
+void DisconnectObserversForPreLoad() {
+    DisconnectObserversForEcoTasks();
+    DisconnectObserversForResourceTracking();
+}
+
+void ReconnectObserversForPostLoad() {
+    ConnectObserversForEcoTasks();
+    ConnectObserversForResourceTracking();
+}
+
 void UnitEconomyReportSystem::Init()
 {
     systemGlobals.CreateSystemComponent<UnitEconomyReportSystemComponent>();
 
-    SetupObserversForEcoTasks();
-    SetupObserversForResourceTracking();
+    ConnectObserversForEcoTasks();
+    ConnectObserversForResourceTracking();
+
+    SystemUtils::systemUtils.OnPreLoad().connect<&DisconnectObserversForPreLoad>();
+    SystemUtils::systemUtils.OnPostLoad().connect<&ReconnectObserversForPostLoad>();
+    SystemUtils::systemUtils.OnUpdate().connect<&UnitEconomyReportSystem::Update>();
 }
 
 template<class SnapshotType, class ResourceCounterType>
@@ -73,9 +107,9 @@ void TakeSnapshot(UnitEconomyReportSystemComponent& system){
         displayValue.resources[system.activeBuffer] = counterValue;
         counterValue = SResourcePack();
 
-        LOG("UnitEconomyReportSystem::%s: entity %d (%d) display value (%f, %f)", __func__
-        , entt::to_entity(entity), entt::to_integral(entity)
-        , displayValue.resources[system.activeBuffer][0], displayValue.resources[system.activeBuffer][1]);
+        // LOG("UnitEconomyReportSystem::%s: entity %d (%d) display value (%f, %f)", __func__
+        // , entt::to_entity(entity), entt::to_integral(entity)
+        // , displayValue.resources[system.activeBuffer][0], displayValue.resources[system.activeBuffer][1]);
     }
 }
 
@@ -96,7 +130,7 @@ void UnitEconomyReportSystem::Update() {
 
     auto& system = systemGlobals.GetSystemComponent<UnitEconomyReportSystemComponent>();
     system.activeBuffer = (system.activeBuffer + 1) % SnapshotBase::BUFFERS;
-
+    
     LOG("UnitEconomyReportSystem::%s: active buffer SnapshotMake %d", __func__, system.activeBuffer);
     TakeSnapshot<SnapshotMake, UnitEconomy::ResourcesCurrentMake>(system);
 

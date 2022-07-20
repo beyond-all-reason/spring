@@ -12,6 +12,7 @@
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyReportComponents.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 
 #include "Sim/Misc/Resource.h"
 #include "System/Log/ILog.h"
@@ -154,6 +155,8 @@ void ProcessComponents(T&& archive, S&& regSnapshot) {
 using namespace SystemGlobals;
 
 void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
+    SystemUtils::systemUtils.NotifyPreLoad();
+    
     auto archive = cereal::BinaryInputArchive{iss};
     LOG("%s: Entities before clear is %d", __func__, (int)EcsMain::registry.alive());
     EcsMain::registry.each([](entt::entity entity) { EcsMain::registry.destroy(entity); });
@@ -167,6 +170,7 @@ void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
         using namespace SystemGlobals;
         archive(systemGlobals);
     }
+    SystemUtils::systemUtils.NotifyPostLoad();
 }
 
 void SaveLoadUtils::SaveComponents(std::stringstream &oss) {
