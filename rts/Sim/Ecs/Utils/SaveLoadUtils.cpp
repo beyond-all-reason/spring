@@ -156,16 +156,14 @@ using namespace SystemGlobals;
 
 void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
     SystemUtils::systemUtils.NotifyPreLoad();
-    
-    auto archive = cereal::BinaryInputArchive{iss};
-    LOG("%s: Entities before clear is %d", __func__, (int)EcsMain::registry.alive());
-    EcsMain::registry.each([](entt::entity entity) { EcsMain::registry.destroy(entity); });
-    LOG("%s: Entities after clear is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
-    {ProcessComponents<entt::snapshot_loader>(archive, entt::snapshot_loader{EcsMain::registry});}
-    LOG("%s: Entities after load is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
-    EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d added (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
 
-    LOG("%s: eco multiplier is %f", __func__, EcsMain::registry.get<SystemGlobals::FlowEconomySystemComponent>(entt::entity(0)).economyMultiplier);
+    auto archive = cereal::BinaryInputArchive{iss};
+    LOG_L(L_DEBUG, "%s: Entities before clear is %d", __func__, (int)EcsMain::registry.alive());
+    EcsMain::registry.each([](entt::entity entity) { EcsMain::registry.destroy(entity); });
+    LOG_L(L_DEBUG, "%s: Entities after clear is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
+    {ProcessComponents<entt::snapshot_loader>(archive, entt::snapshot_loader{EcsMain::registry});}
+    LOG_L(L_DEBUG, "%s: Entities after load is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)iss.tellg());
+
     {
         using namespace SystemGlobals;
         archive(systemGlobals);
@@ -175,10 +173,9 @@ void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
 
 void SaveLoadUtils::SaveComponents(std::stringstream &oss) {
     auto archive = cereal::BinaryOutputArchive{oss};
-    LOG("%s: Entities before save is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)oss.tellp());
+    LOG_L(L_DEBUG, "%s: Entities before save is %d (%d)", __func__, (int)EcsMain::registry.alive(), (int)oss.tellp());
     {ProcessComponents<entt::snapshot>(archive, entt::snapshot{EcsMain::registry});}
-    LOG("%s: Save bytes writen %d", __func__, (int)oss.tellp());
-    EcsMain::registry.each([](entt::entity entity) { LOG("%s: Entity %d saved (%d)", __func__, entt::to_entity(entity), entt::to_integral(entity)); });
+    LOG_L(L_DEBUG, "%s: Save bytes writen %d", __func__, (int)oss.tellp());
 
     {
         using namespace SystemGlobals;

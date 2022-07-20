@@ -128,12 +128,12 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 			if (!add.empty()) {
 				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(newEconomyTaskEntity);
-				LOG("%s: (add1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+				LOG_L(L_DEBUG, "%s: (add1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 			if (!use.empty()) {
 				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: (use1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+				LOG_L(L_DEBUG, "%s: (use1) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 		} // !!! if (resUseAmount >= 0.f)
 		else {
@@ -147,7 +147,7 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 
 				EcsMain::registry.emplace<FlowEconomy::ResourceUse>(newEconomyTaskEntity, use);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(newEconomyTaskEntity);
-				LOG("%s: (use0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+				LOG_L(L_DEBUG, "%s: (use0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 			// fixed metal add
 
@@ -163,7 +163,7 @@ void AddProratedEconomyTask(entt::entity entityReference, float resUseAmount, fl
 				add[resAddType] = resAddAmount * (resAddAmount > 0.f);
 				EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(newEconomyTaskEntity, add);
 				auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(newEconomyTaskEntity);
-				LOG("%s: (add0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
+				LOG_L(L_DEBUG, "%s: (add0) %f %f %d", __func__, altResUse[0], altResUse[1], (int)newEconomyTaskEntity);
 			}
 		}
 	}
@@ -188,7 +188,7 @@ void AddEconomyTask(entt::entity entityReference, const SResourcePack& resMake, 
 		EcsMain::registry.emplace<FlowEconomy::ResourceAdd>(economyTaskId, make);
 
 		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceAdd>(economyTaskId);
-		LOG("%s: (use) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
+		LOG_L(L_DEBUG, "%s: (use) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
 	}
 
 	if (use.metal > 0.f || use.energy > 0.f) {
@@ -197,7 +197,7 @@ void AddEconomyTask(entt::entity entityReference, const SResourcePack& resMake, 
 		EcsMain::registry.emplace<FlowEconomy::ResourceUse>(economyTaskId, use);
 
 		auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(economyTaskId);
-		LOG("%s: (add) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
+		LOG_L(L_DEBUG, "%s: (add) %f %f %d", __func__, altResUse[0], altResUse[1], (int)economyTaskId);
 	}
 }
 
@@ -471,7 +471,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	// 	EcsMain::registry.emplace<FlowEconomy::ResourceUse>(economyTaskId, newRes);
 	// 	auto& altResUse = EcsMain::registry.get<FlowEconomy::ResourceUse>(economyTaskId);
-	// 	LOG("%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)economyTaskId);
+	// 	LOG_L(L_DEBUG, "%s: %f :%p %d", __func__, altResUse[0], &altResUse[0], (int)economyTaskId);
 	// }
 
 	if (unitDef->selfdExpWeaponDef != nullptr)
@@ -2275,7 +2275,6 @@ bool CUnit::UseMetal(float metal)
 
 	CTeam* myTeam = teamHandler.Team(team);
 	myTeam->resPull.metal += metal;
-	LOG("%s: (%f)", __func__, metal);
 
 	if (myTeam->UseMetal(metal)) {
 		UnitEconomyUtils::GetCurrentUsage(entityReference).metal += metal;
@@ -2292,7 +2291,6 @@ void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 		UseMetal(-metal);
 		return;
 	}
-	LOG("%s: (%f)", __func__, metal);
 
 	UnitEconomyUtils::GetCurrentMake(entityReference).metal += metal;
 	//resourcesMakeI.metal += metal;
@@ -2309,15 +2307,14 @@ bool CUnit::UseEnergy(float energy)
 
 	CTeam* myTeam = teamHandler.Team(team);
 	myTeam->resPull.energy += energy;
-	LOG("%s: (%f)", __func__, energy);
 
 	if (myTeam->UseEnergy(energy)) {
-		LOG("%s: (%f) TAKEN", __func__, energy);
+		LOG_L(L_DEBUG, "%s: (%f) TAKEN", __func__, energy);
 		UnitEconomyUtils::GetCurrentUsage(entityReference).energy += energy;
 		//resourcesUseI.energy += energy;
 		return true;
 	}
-	LOG("%s: (%f) REJECTED", __func__, energy);
+	LOG_L(L_DEBUG, "%s: (%f) REJECTED", __func__, energy);
 
 	return false;
 }
@@ -2331,7 +2328,6 @@ void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 	UnitEconomyUtils::GetCurrentMake(entityReference).energy += energy;
 	//resourcesMakeI.energy += energy;
 	teamHandler.Team(team)->AddEnergy(energy, useIncomeMultiplier);
-	LOG("%s: (%f)", __func__, energy);
 }
 
 
@@ -2381,7 +2377,6 @@ bool CUnit::UseResources(const SResourcePack& pack)
 	CTeam* myTeam = teamHandler.Team(team);
 	myTeam->resPull += pack;
 
-	LOG("%s: (%f,%f)", __func__, pack[0], pack[1]);
 	if (myTeam->UseResources(pack)) {
 		UnitEconomyUtils::GetCurrentMake(entityReference) += pack;
 		//resourcesUseI += pack;
@@ -2398,7 +2393,6 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 		UseEnergy(-energy);
 		return true;
 	}*/
-	LOG("%s: (%f,%f)", __func__, pack[0], pack[1]);
 	UnitEconomyUtils::GetCurrentMake(entityReference) += pack;
 	//resourcesMakeI += pack;
 	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
@@ -2538,7 +2532,7 @@ void CUnit::Activate()
 		auto metalIncome = unitDef->makesMetal;
 		metalIncome += (unitDef->extractsMetal > 0.f) * metalExtract;
 
-		LOG("%s: TK_EXTRACT %f + %f (%f) = %f", __func__, unitDef->makesMetal, metalExtract, unitDef->extractsMetal, metalIncome);
+		LOG_L(L_DEBUG, "%s: TK_EXTRACT %f + %f (%f) = %f", __func__, unitDef->makesMetal, metalExtract, unitDef->extractsMetal, metalIncome);
 
 		AddProratedEconomyTask
 			< FlowEconomy::IsConditionalEconomyTask

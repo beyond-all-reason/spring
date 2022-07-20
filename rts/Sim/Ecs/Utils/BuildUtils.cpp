@@ -31,21 +31,21 @@ void BuildUtils::AddUnitBuilder(CUnit *unit){
 
     AddComponentsIfNotExist<UnitEconomy::ResourcesCurrentUsage>(entity);
 
-    LOG("%s: added unit %d (%d) with build speed %f", __func__, unit->id, (int)entity, buildSpeed);
+    LOG_L(L_DEBUG, "%s: added unit %d (%d) with build speed %f", __func__, unit->id, (int)entity, buildSpeed);
 }
 
 void BuildUtils::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
     auto entity = unit->entityReference;
     auto targetEntity = target->entityReference;
     if (! EcsMain::registry.valid(entity)){
-        LOG("%s: invalid entityId reference", __func__); return;
+        LOG_L(L_DEBUG, "%s: invalid entityId reference", __func__); return;
     }
     if (! EcsMain::registry.valid(targetEntity)){
-        LOG("%s: invalid target entityId reference", __func__); return;
+        LOG_L(L_DEBUG, "%s: invalid target entityId reference", __func__); return;
     }
     const auto buildPowerComp = EcsMain::registry.try_get<BuildPower>(entity);
     if (buildPowerComp == nullptr){
-        LOG("%s: unit %d has no build capacity", __func__, unit->id);  return;
+        LOG_L(L_DEBUG, "%s: unit %d has no build capacity", __func__, unit->id);  return;
     }
 
     auto& activeBuild = EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity);
@@ -55,7 +55,7 @@ void BuildUtils::AddUnitBuildTarget(CUnit *unit, CUnit *target) {
     auto buildTime = EcsMain::registry.get<BuildTime>(targetEntity).value;
 
     activeBuild.currentBuildpower = buildPower;
-    LOG("%s: %d: BuildPower = %f", __func__, (int)entity, buildPower);
+    LOG_L(L_DEBUG, "%s: %d: BuildPower = %f", __func__, (int)entity, buildPower);
 }
 
 void BuildUtils::AddUnitBeingBuilt(CUnit *unit) {
@@ -66,27 +66,27 @@ void BuildUtils::AddUnitBeingBuilt(CUnit *unit) {
     EcsMain::registry.emplace_or_replace<BeingBuilt>(entity);
     EcsMain::registry.emplace_or_replace<BuildProgress>(entity);
     EcsMain::registry.emplace_or_replace<BuildTime>(entity, unit->buildTime);
-    LOG("%s: %d: BuildTime = %f", __func__, (int)entity, unit->buildTime);
+    LOG_L(L_DEBUG, "%s: %d: BuildTime = %f", __func__, (int)entity, unit->buildTime);
 
     SResourcePack zeroResources;
     bool hasBuildCost = !(unit->cost <= zeroResources);
     if (hasBuildCost) {
         EcsMain::registry.emplace_or_replace<BuildCost>(entity, unit->cost);
-        LOG("%s: %d: BuildCostMetal = %f", __func__, (int)entity, unit->cost.metal);
-        LOG("%s: %d: BuildCostEnergy = %f", __func__, (int)entity, unit->cost.energy);
+        LOG_L(L_DEBUG, "%s: %d: BuildCostMetal = %f", __func__, (int)entity, unit->cost.metal);
+        LOG_L(L_DEBUG, "%s: %d: BuildCostEnergy = %f", __func__, (int)entity, unit->cost.energy);
     }
 }
 
 void BuildUtils::RemoveUnitBuilder(CUnit *unit) {
     auto entity = unit->entityReference;
     if (! EcsMain::registry.valid(entity)){
-        LOG("%s: invalid entityId reference", __func__); return;
+        LOG_L(L_DEBUG, "%s: invalid entityId reference", __func__); return;
     }
 
     EcsMain::registry.remove<ActiveBuild>(entity);
     EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
 
-    LOG("%s", __func__);
+    LOG_L(L_DEBUG, "%s", __func__);
 }
 
 entt::entity BuildUtils::GetUnitBuildTarget(CUnit *unit) {
@@ -118,10 +118,10 @@ void BuildUtils::UnpauseBuilder(CUnit *unit) {
 
 void BuildUtils::SetBuildPower(entt::entity entity, float power) {
     if (! EcsMain::registry.valid(entity)){
-        LOG("%s: invalid entityId reference", __func__); return;
+        LOG_L(L_DEBUG, "%s: invalid entityId reference", __func__); return;
     }
 
-    LOG("%s: BuildPower changed to %f (%d)", __func__, power, (int)entity);
+    LOG_L(L_DEBUG, "%s: BuildPower changed to %f (%d)", __func__, power, (int)entity);
 
     EcsMain::registry.emplace_or_replace<BuildPower>(entity, power);
 }

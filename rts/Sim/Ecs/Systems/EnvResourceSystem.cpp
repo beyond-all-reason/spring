@@ -43,7 +43,7 @@ void UpdateWindDirection(EnvResourceComponent& comp)
         auto unit = (unitHandler.GetUnit(unitId));
         unit->UpdateWind(comp.newWindVec.x, comp.newWindVec.z, comp.newWindStrength);
 
-        //LOG("%s: updated dir existing generator %d", __func__, unitId);
+        //LOG_L(L_DEBUG, "%s: updated dir existing generator %d", __func__, unitId);
     }
 }
 
@@ -60,7 +60,7 @@ void UpdateWindStrength(EnvResourceComponent& comp)
     comp.curWindDir = comp.curWindVec;
     comp.curWindVec = comp.curWindDir * (comp.curWindStrength = Clamp(comp.curWindStrength, comp.minWindStrength, comp.maxWindStrength));
 
-    //LOG("%s: wind strength: %f<-%d = %f", __func__, mod, windDirTimer, curWindStrength);
+    //LOG_L(L_DEBUG, "%s: wind strength: %f<-%d = %f", __func__, mod, windDirTimer, curWindStrength);
 
     // make newly added generators point in direction of wind
     auto group = EcsMain::registry.group<NewWindGenerator>(entt::get<UnitId>);
@@ -72,7 +72,7 @@ void UpdateWindStrength(EnvResourceComponent& comp)
         unit->UpdateWind(comp.curWindDir.x, comp.curWindDir.z, comp.curWindStrength);
 
         EcsMain::registry.remove<NewWindGenerator>(entity);
-        //LOG("%s: updated new dir generator %d", __func__, unitId);
+        //LOG_L(L_DEBUG, "%s: updated new dir generator %d", __func__, unitId);
     }
 }
 
@@ -81,7 +81,7 @@ void EnvResourceSystem::Init()
     systemGlobals.CreateSystemComponent<EnvResourceComponent>();
 
     entt::component_traits<EnvResourceComponent> systemComponentTraits;
-    LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
+    LOG_L(L_DEBUG, "%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
 
     SystemUtils::systemUtils.OnUpdate().connect<&EnvResourceSystem::Update>();
 }

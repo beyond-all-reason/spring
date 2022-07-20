@@ -16,7 +16,7 @@ public:
             for (int i=0; i<UnitEconomyReport::SnapshotUsage::BUFFERS; ++i)
                 snapshot += comp->resources[i];
         }
-        LOG("%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
+        LOG_L(L_DEBUG, "%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
         return snapshot;
     }
 
@@ -27,7 +27,7 @@ public:
             for (int i=0; i<UnitEconomyReport::SnapshotUsage::BUFFERS; ++i)
                 snapshot += comp->resources[i];
         }
-        LOG("%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
+        LOG_L(L_DEBUG, "%s: (%f,%f)", __func__, snapshot[0], snapshot[1]);
         return snapshot;
     }
 

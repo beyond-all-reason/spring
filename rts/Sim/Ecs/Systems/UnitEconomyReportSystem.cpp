@@ -120,7 +120,7 @@ void UnitEconomyReportSystem::Update() {
     if ((gs->frameNum % UNIT_ECONOMY_REPORT_UPDATE_RATE) != UNIT_ECONOMY_REPORT_TICK)
         return;
 
-    LOG("UnitEconomyReportSystem::%s: %d", __func__, gs->frameNum);
+    LOG_L(L_DEBUG, "UnitEconomyReportSystem::%s: %d", __func__, gs->frameNum);
 
     SCOPED_TIMER("ECS::UnitEconomySystem::Update");
 

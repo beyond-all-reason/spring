@@ -31,7 +31,7 @@ void EnvEconomySystem::Update()
        return;
 
     SCOPED_TIMER("ECS::EnvEconomySystem::Update");
-    LOG("EnvResourceSystem::%s: %d", __func__, gs->frameNum);
+    LOG_L(L_DEBUG, "EnvResourceSystem::%s: %d", __func__, gs->frameNum);
 
     auto& envResourceComp = SystemGlobals::systemGlobals.GetSystemComponent<SystemGlobals::EnvResourceComponent>();
 
@@ -42,6 +42,6 @@ void EnvEconomySystem::Update()
 
         income.energy = std::min(envResourceComp.curWindStrength, unitDef->windGenerator);
 
-        LOG("%s: updated wind generator income", __func__);
+        LOG_L(L_DEBUG, "%s: updated wind generator income", __func__);
     }
 }

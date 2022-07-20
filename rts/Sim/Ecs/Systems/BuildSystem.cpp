@@ -45,7 +45,7 @@ void RequestBuildResources() {
         // currently paused
         if (buildPower == 0.f) {
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
-            LOG("BuildSystem::%s: %d -> %d (%d) paused", __func__, (int)entity, (int)buildTarget, (int)buildPower);
+            LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%d) paused", __func__, (int)entity, (int)buildTarget, (int)buildPower);
             continue;
         }
 
@@ -55,7 +55,7 @@ void RequestBuildResources() {
         SResourcePack resPull = buildCost * buildStep;
 
         EcsMain::registry.emplace_or_replace<FlowEconomy::ResourceUse>(entity, resPull);
-        LOG("BuildSystem::%s: %d -> %d (%f,%f,%f,%f)", __func__, (int)entity, (int)buildTarget, resPull[0], resPull[1], resPull[2], resPull[3]);
+        LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%f,%f,%f,%f)", __func__, (int)entity, (int)buildTarget, resPull[0], resPull[1], resPull[2], resPull[3]);
     }
 }
 
@@ -71,7 +71,7 @@ void BuildTasks() {
         // currently paused
         if (buildPower == 0.f) {
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
-            LOG("BuildSystem::%s: %d -> %d (%d) paused", __func__, (int)entity, (int)buildTarget, (int)buildPower);
+            LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%d) paused", __func__, (int)entity, (int)buildTarget, (int)buildPower);
             continue;
         }
 
@@ -102,7 +102,7 @@ void BuildTasks() {
 
         buildProgress = std::min(nextProgress, 1.f);
         health = std::min(nextHealth, maxHealth);
-        LOG("BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
+        LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
     }
 }
 
@@ -113,7 +113,7 @@ void BuildSystem::Update() {
     if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
        return;
 
-    LOG("BuildSystem::%s: %d", __func__, gs->frameNum);
+    LOG_L(L_DEBUG, "BuildSystem::%s: %d", __func__, gs->frameNum);
 
     SCOPED_TIMER("ECS::BuildSystem::Update");
 

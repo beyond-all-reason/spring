@@ -23,7 +23,7 @@ void UnitUtils::AddUnit(CUnit* unit)
 
     unit->entityReference = entity;
 
-    LOG("%s: added unit %d (%d)", __func__, unit->id, (int)entity);
+    LOG_L(L_DEBUG, "%s: added unit %d (%d)", __func__, unit->id, (int)entity);
 }
 
 void UnitUtils::RemoveUnit(CUnit* unit)

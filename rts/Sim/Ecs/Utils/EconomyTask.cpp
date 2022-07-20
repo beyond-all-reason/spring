@@ -26,7 +26,7 @@ void InsertAfterChainLink(entt::entity insertAfter, entt::entity newLink) {
     insertAfterLinkComp.next = newLink;
     insertBeforeLinkComp.prev = newLink;
 
-    LOG("%s: new link %d <-> (%d) <-> %d", __func__, (int)insertAfter, (int)newLink, (int)insertBefore);
+    LOG_L(L_DEBUG, "%s: new link %d <-> (%d) <-> %d", __func__, (int)insertAfter, (int)newLink, (int)insertBefore);
 }
 
 template<class ChainHeadComp, class T>
@@ -36,7 +36,7 @@ void AddToChain(entt::entity head, entt::entity newLink) {
 
     EcsMain::registry.get_or_emplace<ChainHeadComp>(head).value++;
     
-    //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
+    //LOG_L(L_DEBUG, "%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
 }
 
 template <class T>
@@ -49,7 +49,7 @@ void DisconnectChainLink(entt::entity linkToRemove) {
     beforeRemovedLinkComp.next = removedLinkComp.next;
     afterRemovedLinkComp.prev = removedLinkComp.prev;
 
-    LOG("%s: new link %d <-x (%d) x-> %d", __func__, (int)removedLinkComp.prev, (int)linkToRemove, (int)removedLinkComp.next);
+    LOG_L(L_DEBUG, "%s: new link %d <-x (%d) x-> %d", __func__, (int)removedLinkComp.prev, (int)linkToRemove, (int)removedLinkComp.next);
 }
 
 template<class ChainHeadComp, class T>
@@ -59,7 +59,7 @@ void RemoveFromChain(entt::entity head, entt::entity linkToRemove) {
 
         EcsMain::registry.get<ChainHeadComp>(head).value--;
 
-        //LOG("%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
+        //LOG_L(L_DEBUG, "%s: %d chain links now on %d", __func__, (int)chainHeadComp.size, (int)head);
     }
 }
 
@@ -75,7 +75,7 @@ entt::entity EconomyTaskUtil::CreateUnitEconomyTask(entt::entity unit) {
 
     AddToChain<Units::EconomyTasks, Units::ChainEntity>(unit, economyTask);
 
-    LOG("%s: Eco Task %d owned by %d", __func__, (int)economyTask, (int)unit);
+    LOG_L(L_DEBUG, "%s: Eco Task %d owned by %d", __func__, (int)economyTask, (int)unit);
 
     return economyTask;
 }
@@ -88,14 +88,14 @@ bool EconomyTaskUtil::DeleteUnitEconomyTask(entt::entity economyTask) {
     RemoveFromChain<Units::EconomyTasks, Units::ChainEntity>(unit, economyTask);
     EcsMain::registry.destroy(economyTask); // FIXME: mark for deletion rather than delete due to frame delays?
 
-    LOG("%s: Eco Task %d removed from %d", __func__, (int)economyTask, (int)unit);
+    LOG_L(L_DEBUG, "%s: Eco Task %d removed from %d", __func__, (int)economyTask, (int)unit);
 
     return true;
 }
 
 void EconomyTaskUtil::DeleteAllUnitEconomyTasks(entt::entity unit) {
 
-    LOG("%s: checking %d to remove economy tasks", __func__, (int)unit);
+    LOG_L(L_DEBUG, "%s: checking %d to remove economy tasks", __func__, (int)unit);
 
     auto ChainEntityComp = EcsMain::registry.try_get<Units::ChainEntity>(unit);
     if (ChainEntityComp == nullptr)
@@ -111,7 +111,7 @@ void EconomyTaskUtil::DeleteAllUnitEconomyTasks(entt::entity unit) {
         
         EcsMain::registry.destroy(currentInChain);
 
-        LOG("%s: Eco Task %d removed from %d", __func__, (int)currentInChain, (int)unit);
+        LOG_L(L_DEBUG, "%s: Eco Task %d removed from %d", __func__, (int)currentInChain, (int)unit);
     }
 }
 

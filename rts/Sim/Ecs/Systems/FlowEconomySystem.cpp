@@ -24,29 +24,29 @@ using namespace FlowEconomy;
 using namespace SystemGlobals;
 
 void ReturnUnusedEco(entt::registry &registry, entt::entity entity) {
-    //LOG("%s: %d returning unused eco", __func__, (int)entity);
+    //LOG_L(L_DEBUG, "%s: %d returning unused eco", __func__, (int)entity);
 
     auto resUnused = EcsMain::registry.get<AllocatedUnusedResource>(entity).res;
     if (resUnused == SResourcePack()) return;
 
-    //LOG("%s: %d (%f,%f,%f,%f)", __func__, (int)entity, resUnused[0], resUnused[1], resUnused[2], resUnused[3]);
+    //LOG_L(L_DEBUG, "%s: %d (%f,%f,%f,%f)", __func__, (int)entity, resUnused[0], resUnused[1], resUnused[2], resUnused[3]);
 
     auto teamComp = EcsMain::registry.try_get<Units::Team>(entity);
     if (teamComp == nullptr) return;
 
-    //LOG("%s: %d on team %d", __func__, (int)entity, teamComp->value);
+    //LOG_L(L_DEBUG, "%s: %d on team %d", __func__, (int)entity, teamComp->value);
 
     auto ownerComp = EcsMain::registry.try_get<Units::OwningEntity>(entity);
     if (ownerComp != nullptr) entity = ownerComp->value;
 
-    //LOG("%s: %d after owner check", __func__, (int)entity);
+    //LOG_L(L_DEBUG, "%s: %d after owner check", __func__, (int)entity);
 
     auto team = teamHandler.Team(teamComp->value);
     team->UnuseResources(resUnused);
 
     TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(entity, -resUnused);
 
-    //LOG("%s: %d eco returned", __func__, (int)entity);
+    //LOG_L(L_DEBUG, "%s: %d eco returned", __func__, (int)entity);
 }
 
 void FlowEconomySystem::Init() {
@@ -80,7 +80,7 @@ void ProcessProratableIncome(const FlowEconomySystemComponent& system) {
         TryAddToComponent<UnitEconomy::ResourcesCurrentMake>(owner, proratedResAdd);
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, allocatedResources.res);
 
-        LOG("%s: %d (%f,%f,%f,%f)", __func__, (int)entity, allocatedResources.res[0], allocatedResources.res[1], allocatedResources.res[2], allocatedResources.res[3]);
+        LOG_L(L_DEBUG, "%s: %d (%f,%f,%f,%f)", __func__, (int)entity, allocatedResources.res[0], allocatedResources.res[1], allocatedResources.res[2], allocatedResources.res[3]);
 
         allocatedResources.res = SResourcePack();
     }
@@ -115,7 +115,7 @@ void ProcessExpenses(const FlowEconomySystemComponent& system) {
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(owner, allocatedResources.res);
 
-        LOG("%s: %d (%f,%f,%f,%f)", __func__, (int)entity, allocatedResources.res[0], allocatedResources.res[1], allocatedResources.res[2], allocatedResources.res[3]);
+        LOG_L(L_DEBUG, "%s: %d (%f,%f,%f,%f)", __func__, (int)entity, allocatedResources.res[0], allocatedResources.res[1], allocatedResources.res[2], allocatedResources.res[3]);
         allocatedResources.res = SResourcePack();
     }
 }
@@ -154,7 +154,7 @@ void AllocateResources(const FlowEconomySystemComponent& system) {
 
         curTeam->resCurrent.use += resAllocated;
 
-        LOG("%s: %d (%f,%f,%f,%f)", __func__, (int)entity, resAllocated[0], resAllocated[1], resAllocated[2], resAllocated[3]);
+        LOG_L(L_DEBUG, "%s: %d (%f,%f,%f,%f)", __func__, (int)entity, resAllocated[0], resAllocated[1], resAllocated[2], resAllocated[3]);
     }
 }
 
@@ -180,17 +180,17 @@ void UpdateTeamEconomy(int teamId){
     curTeam->resProrationOn = !(proratedUseRates == maxProrationrate);
 
     if (teamId == 0){
-        LOG("============================================");
-        LOG("%s: %d: snapshot = (%f,%f,%f,%f)", __func__, gs->frameNum, curTeam->resSnapshot[0], curTeam->resSnapshot[1], curTeam->resSnapshot[2], curTeam->resSnapshot[3]);
-        LOG("%s: %d: resources = (%f,%f,%f,%f)", __func__, gs->frameNum, storage[0], storage[1], storage[2], storage[3]);
-        LOG("%s: %d: income = (%f,%f,%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1], incomeFromLastFrame[2], incomeFromLastFrame[3]);
-        LOG("%s: %d: forProration = (%f,%f,%f,%f)", __func__, gs->frameNum, supply[0], supply[1], supply[2], supply[3]);
-        LOG("%s: %d: poratableUse = (%f,%f,%f,%f)", __func__, gs->frameNum, demand[0], demand[1], demand[2], demand[3]);
-        LOG("%s: %d: prorationrate = (%.10f,%.10f,%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[0], proratedUseRates[1], proratedUseRates[2], proratedUseRates[3]);
+        LOG_L(L_DEBUG, "============================================");
+        LOG_L(L_DEBUG, "%s: %d: snapshot = (%f,%f,%f,%f)", __func__, gs->frameNum, curTeam->resSnapshot[0], curTeam->resSnapshot[1], curTeam->resSnapshot[2], curTeam->resSnapshot[3]);
+        LOG_L(L_DEBUG, "%s: %d: resources = (%f,%f,%f,%f)", __func__, gs->frameNum, storage[0], storage[1], storage[2], storage[3]);
+        LOG_L(L_DEBUG, "%s: %d: income = (%f,%f,%f,%f)", __func__, gs->frameNum, incomeFromLastFrame[0], incomeFromLastFrame[1], incomeFromLastFrame[2], incomeFromLastFrame[3]);
+        LOG_L(L_DEBUG, "%s: %d: forProration = (%f,%f,%f,%f)", __func__, gs->frameNum, supply[0], supply[1], supply[2], supply[3]);
+        LOG_L(L_DEBUG, "%s: %d: poratableUse = (%f,%f,%f,%f)", __func__, gs->frameNum, demand[0], demand[1], demand[2], demand[3]);
+        LOG_L(L_DEBUG, "%s: %d: prorationrate = (%.10f,%.10f,%.10f,%.10f)", __func__, gs->frameNum, proratedUseRates[0], proratedUseRates[1], proratedUseRates[2], proratedUseRates[3]);
 
-        //LOG("%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
-        //LOG("%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
-        //LOG("%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);
+        //LOG_L(L_DEBUG, "%s: %d: minProrationRate = %.10f", __func__, gs->frameNum, minProrationRate);
+        //LOG_L(L_DEBUG, "%s: %d: resNextIncome.energy = %f", __func__, gs->frameNum, curTeam->resNextIncome.energy);
+        //LOG_L(L_DEBUG, "%s: %d: resNextIncome.metal = %f", __func__, gs->frameNum, curTeam->resNextIncome.metal);
     }
 }
 
@@ -223,7 +223,7 @@ void FlowEconomySystem::Update() {
 
     SCOPED_TIMER("ECS::FlowEconomySystem::Update");
 
-    LOG("FlowEconomySystem::%s: %d", __func__, gs->frameNum);
+    LOG_L(L_DEBUG, "FlowEconomySystem::%s: %d", __func__, gs->frameNum);
 
     auto& system = systemGlobals.GetSystemComponent<FlowEconomySystemComponent>();
 

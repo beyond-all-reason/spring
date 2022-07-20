@@ -14,7 +14,7 @@ void SolidObjectUtils::AddObject(CSolidObject* object) {
     EcsMain::registry.emplace_or_replace<Health>(entity, 0.f);
     EcsMain::registry.emplace_or_replace<MaxHealth>(entity, 0.f);
 
-    LOG("%s: added solid object %d (%d)", __func__, object->id, (int)entity);
+    LOG_L(L_DEBUG, "%s: added solid object %d (%d)", __func__, object->id, (int)entity);
 }
 
 void SolidObjectUtils::RemoveObject(CSolidObject* object) {
