@@ -3,8 +3,9 @@
 #ifndef _RESOURCE_H
 #define _RESOURCE_H
 
-#include <string>
+#include <bitset>
 #include <iterator>
+#include <string>
 #include "System/creg/creg_cond.h"
 
 #include <immintrin.h>
@@ -248,6 +249,23 @@ public:
 				res[i] *= scale;
 		}
 		return *this;
+	}
+
+	size_t CountValuesSet() {
+		if constexpr (MAX_RESOURCES == 4) {
+			__m128 v1 = _mm_loadu_ps(&res[0]);
+			// with _mm_cmpgt_ps(x, [0.f, 0.f, 0.f, 0.f]):
+			// packed values not equal to 0, are set to FFFFFFFF, so we take take the
+			// bit mask of values with FFFFFFFF and count the bits set.
+			std::bitset<32> val( _mm_movemask_ps(_mm_cmpneq_ps(v1, _mm_setzero_ps())) );
+			return val.count();
+		}
+		else {
+			size_t count = 0;
+			for (int i = 0; i<SResourcePack::MAX_RESOURCES; ++i)
+				count += (res[i] > 0.f);
+			return count;
+		}
 	}
 
 	SResourcePack& RemoveNegativeValues() {

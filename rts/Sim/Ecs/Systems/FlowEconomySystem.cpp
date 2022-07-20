@@ -24,22 +24,14 @@ using namespace FlowEconomy;
 using namespace SystemGlobals;
 
 void ReturnUnusedEco(entt::registry &registry, entt::entity entity) {
-    //LOG_L(L_DEBUG, "%s: %d returning unused eco", __func__, (int)entity);
-
     auto resUnused = EcsMain::registry.get<AllocatedUnusedResource>(entity).res;
     if (resUnused == SResourcePack()) return;
-
-    //LOG_L(L_DEBUG, "%s: %d (%f,%f,%f,%f)", __func__, (int)entity, resUnused[0], resUnused[1], resUnused[2], resUnused[3]);
 
     auto teamComp = EcsMain::registry.try_get<Units::Team>(entity);
     if (teamComp == nullptr) return;
 
-    //LOG_L(L_DEBUG, "%s: %d on team %d", __func__, (int)entity, teamComp->value);
-
     auto ownerComp = EcsMain::registry.try_get<Units::OwningEntity>(entity);
     if (ownerComp != nullptr) entity = ownerComp->value;
-
-    //LOG_L(L_DEBUG, "%s: %d after owner check", __func__, (int)entity);
 
     auto team = teamHandler.Team(teamComp->value);
     team->UnuseResources(resUnused);
