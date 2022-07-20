@@ -2,6 +2,7 @@
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Ecs/Components/EnvEconomyComponents.h"
 #include "Sim/Ecs/Components/UnitComponents.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Ecs/Utils/UnitUtils.h"
 
 #include "EnvResourceSystem.h"
@@ -9,12 +10,8 @@
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
-#include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Sim/Units/Unit.h"
-#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 
 using namespace SystemGlobals;
@@ -85,6 +82,8 @@ void EnvResourceSystem::Init()
 
     entt::component_traits<EnvResourceComponent> systemComponentTraits;
     LOG("%s: Component page size is %d", __func__, (int)systemComponentTraits.page_size);
+
+    SystemUtils::systemUtils.OnUpdate().connect<&EnvResourceSystem::Update>();
 }
 
 void EnvResourceSystem::Update()

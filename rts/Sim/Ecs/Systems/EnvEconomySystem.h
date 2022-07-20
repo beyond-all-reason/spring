@@ -7,7 +7,7 @@ class CUnit;
 class EnvEconomySystem {
 
 public:
-    static void Init() {};
+    static void Init();
     static void Update();
 };
 

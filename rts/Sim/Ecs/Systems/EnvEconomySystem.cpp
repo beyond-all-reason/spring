@@ -7,6 +7,7 @@
 #include "Sim/Ecs/Components/SystemGlobalComponents.h"
 #include "Sim/Ecs/Systems/FlowEconomySystem.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
@@ -16,6 +17,10 @@
 #include "System/Log/ILog.h"
 
 using namespace SystemGlobals;
+
+void EnvEconomySystem::Init() {
+    SystemUtils::systemUtils.OnUpdate().connect<&EnvEconomySystem::Update>();
+}
 
 void EnvEconomySystem::Update()
 {

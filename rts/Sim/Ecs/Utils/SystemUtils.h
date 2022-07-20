@@ -8,6 +8,8 @@ namespace SystemUtils {
 class SystemUtils {
 public:
 
+    void InitSystems();
+
     void NotifyUpdate() {
         update.publish();
     }

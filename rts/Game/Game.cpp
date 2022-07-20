@@ -63,13 +63,8 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
-#include "Sim/Ecs/Systems/BuildSystem.h"
-#include "Sim/Ecs/Systems/EnvEconomySystem.h"
-#include "Sim/Ecs/Systems/EnvResourceSystem.h"
-#include "Sim/Ecs/Systems/FlowEconomySystem.h"
-#include "Sim/Ecs/Systems/FluxEconomySystem.h"
-#include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Utils/EnvResourceUtils.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -266,12 +261,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 
 	modInfo.Init(modFileName);
 
-	FlowEconomySystem::Init();
-	FluxEconomySystem::Init();
-	EnvResourceSystem::Init();
-	EnvEconomySystem::Init();
-	BuildSystem::Init();
-	UnitEconomyReportSystem::Init();
+	SystemUtils::systemUtils.InitSystems();
 
 	// needed for LuaIntro (pushes LuaConstGame)
 	assert(mapInfo == nullptr);
@@ -1690,12 +1680,7 @@ void CGame::SimFrame() {
 		pathManager->Update();
 		unitHandler.Update();
 
-		BuildSystem::Update();
-		EnvResourceSystem::Update();
-		EnvEconomySystem::Update();
-		FlowEconomySystem::Update();
-		FluxEconomySystem::Update();
-		UnitEconomyReportSystem::Update();
+		SystemUtils::systemUtils.NotifyUpdate();
 
 		projectileHandler.Update();
 		featureHandler.Update();

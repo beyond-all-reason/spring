@@ -7,6 +7,7 @@
 #include "Sim/Ecs/Components/UnitComponents.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Ecs/EcsMain.h"
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/ModInfo.h"
@@ -56,6 +57,7 @@ void FlowEconomySystem::Init() {
         flowEconomyComp.economyMultiplier = 1.f / (GAME_SPEED / FLOW_ECONOMY_UPDATE_RATE); // sim display refresh rate
 
         EcsMain::registry.on_destroy<AllocatedUnusedResource>().connect<&ReturnUnusedEco>();
+        SystemUtils::systemUtils.OnUpdate().connect<&FlowEconomySystem::Update>();
 
         LOG("%s: ECS economy system active (%f)", __func__, flowEconomyComp.economyMultiplier);
     } else {
@@ -213,12 +215,8 @@ void ApplyAllTeamsEconomy() {
 }
 
 void FlowEconomySystem::Update() {
-    LOG("FlowEconomySystem::%s: Check active %d", __func__, gs->frameNum);
-
-    if (!systemGlobals.IsSystemActive<FlowEconomySystemComponent>())
-        return;
-
-    LOG("FlowEconomySystem::%s: Check tick %d", __func__, gs->frameNum);
+    // if (!systemGlobals.IsSystemActive<FlowEconomySystemComponent>())
+    //     return;
 
     if ((gs->frameNum % FLOW_ECONOMY_UPDATE_RATE) != FLOW_ECONOMY_TICK)
        return;

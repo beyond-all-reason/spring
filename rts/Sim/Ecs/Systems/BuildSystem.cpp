@@ -10,6 +10,7 @@
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Utils/BuildUtils.h"
 #include "Sim/Ecs/Utils/SystemGlobalUtils.h"
+#include "Sim/Ecs/Utils/SystemUtils.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -24,8 +25,10 @@ using namespace SystemGlobals;
 using namespace Build;
 
 void BuildSystem::Init() {
-    if (modInfo.economySystem == ECONOMY_SYSTEM_ECS)
+    if (modInfo.economySystem == ECONOMY_SYSTEM_ECS) {
         systemGlobals.CreateSystemComponent<BuildSystemComponent>();
+        SystemUtils::systemUtils.OnUpdate().connect<&BuildSystem::Update>();
+    }
 }
 
 void RequestBuildResources() {
@@ -104,8 +107,8 @@ void BuildTasks() {
 }
 
 void BuildSystem::Update() {
-    if (!BuildUtils::IsSystemActive())
-        return;
+    // if (!BuildUtils::IsSystemActive())
+    //     return;
 
     if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
        return;
