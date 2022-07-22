@@ -74,7 +74,6 @@ protected:
 	void Initialize();
 
 	virtual void UpdateHeightMapUnsynced(const SRectangle&) = 0;
-
 public:
 	//OK since it's loaded with SerializeObjectInstance
 	CR_DECLARE_STRUCT(CReadMap)
@@ -86,6 +85,14 @@ public:
 
 	/// creg serialize callback
 	void Serialize(creg::ISerializer* s);
+
+private:
+	void SerializeMapChangesBeforeMatch(creg::ISerializer* s);
+	void SerializeMapChangesDuringMatch(creg::ISerializer* s);
+	void SerializeMapChanges(creg::ISerializer* s, const float* refHeightMap, float* modifiedHeightMap);
+	void SerializeTypeMap(creg::ISerializer* s);
+
+public:
 	void PostLoad();
 
 	void InitHeightMapDigestVectors(const int2 losMapSize);
@@ -157,6 +164,7 @@ public:
 
 
 	/// synced only
+	const float* GetMapFileHeightMapSynced() const { return &mapFileHeightMap[0]; }
 	const float* GetOriginalHeightMapSynced() const { return &originalHeightMap[0]; }
 	const float* GetCenterHeightMapSynced() const { return &centerHeightMap[0]; }
 	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
@@ -189,6 +197,9 @@ public:
 	float SetHeight(const int idx, const float h, const int add = 0);
 	float AddHeight(const int idx, const float a);
 
+	/// These will not modify the current heightmap, only the original
+	float SetOriginalHeight(const int idx, const float h, const int add = 0);
+	float AddOriginalHeight(const int idx, const float a);
 
 	float GetInitMinHeight() const { return initHeightBounds.x; }
 	float GetCurrMinHeight() const { return currHeightBounds.x; }
@@ -208,8 +219,13 @@ public:
 	unsigned int CalcHeightmapChecksum();
 	unsigned int CalcTypemapChecksum();
 
+	void UpdateHeightBounds();
+
+	bool GetHeightMapUpdated() const { return hmUpdated; }
+
 private:
 	void InitHeightBounds();
+	void LoadOriginalHeightMapAndChecksum();
 	void UpdateHeightBounds(int syncFrame);
 
 	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize);
@@ -218,7 +234,9 @@ private:
 	void UpdateSlopemap(const SRectangle& rect, bool initialize);
 
 	inline void HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect);
-	inline bool HasHeightMapChanged(const int2 losMapPos);
+	inline bool HasHeightMapViewChanged(const int2 losMapPos);
+
+	float SetHeightValue(float& heightRef, const int idx, const float h, const int add = 0);
 
 public:
 	/// number of heightmap mipmaps, including full resolution
@@ -230,9 +248,11 @@ protected:
 	std::vector<float>* heightMapSyncedPtr = nullptr;      //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, updates on terrain deformation]
 	std::vector<float>* heightMapUnsyncedPtr = nullptr;    //< size: (mapx+1)*(mapy+1) (per vertex) [UNSYNCED]
 
+	std::vector<float>* originalHeightMapPtr = nullptr;
 
 	// note: intentionally declared static, s.t. repeated reloading to the same
 	// (or any smaller) map does not fragment the heap which invites bad_alloc's
+	static std::vector<float> mapFileHeightMap;			// raw heightMap unmodified from the map file
 	static std::vector<float> originalHeightMap;        //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, does NOT update on terrain deformation]
 	static std::vector<float> centerHeightMap;          //< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
 	static std::array<std::vector<float>, numHeightMipMaps - 1> mipCenterHeightMaps;
@@ -256,8 +276,6 @@ protected:
 
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
-	CRectangleOverlapHandler unsyncedHeightMapUpdatesTemp;
-
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced
@@ -279,7 +297,7 @@ private:
 	unsigned int mapChecksum = 0;
 
 	bool processingHeightBounds = false;
-	bool updateHeightBounds = false;
+	bool hmUpdated = false;
 
 	float2 initHeightBounds; //< initial minimum- and maximum-height (before any deformations)
 	float2 tempHeightBounds; //< temporary minimum- and maximum-height
@@ -292,19 +310,23 @@ private:
 extern CReadMap* readMap;
 extern MapDimensions mapDims;
 
-
 inline float CReadMap::AddHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
 inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
-	float& heightRef = (*heightMapSyncedPtr)[idx];
+	return SetHeightValue((*heightMapSyncedPtr)[idx], idx, h, add);
+}
 
+inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetOriginalHeight(idx, a, 1); }
+inline float CReadMap::SetOriginalHeight(const int idx, const float h, const int add) {
+	return SetHeightValue((*originalHeightMapPtr)[idx], idx, h, add);
+}
+
+inline float CReadMap::SetHeightValue(float& heightRef, const int idx, const float h, const int add) {
 	// add=0 <--> x = x*0 + h =   h
 	// add=1 <--> x = x*1 + h = x+h
 	float newHeight = heightRef * add + h;
-	updateHeightBounds |= (newHeight != heightRef);
+	hmUpdated |= (newHeight != heightRef);
 	return (heightRef = newHeight);
 }
-
-
 
 
 static inline float3 CornerSqrToPosRaw(const float* hm, int sqx, int sqz) { return {sqx * SQUARE_SIZE * 1.0f, hm[(sqz * mapDims.mapxp1) + sqx], sqz * SQUARE_SIZE * 1.0f}; }

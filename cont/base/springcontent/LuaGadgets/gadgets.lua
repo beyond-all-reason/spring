@@ -1928,6 +1928,12 @@ function gadgetHandler:DrawGroundPreDeferred()
   end
 end
 
+function gadgetHandler:DrawGroundDeferred()
+  for _,g in r_ipairs(self.DrawGroundDeferredList) do
+    g:DrawGroundDeferred()
+  end
+end
+
 function gadgetHandler:DrawGroundPostDeferred()
   for _,g in r_ipairs(self.DrawGroundPostDeferredList) do
     g:DrawGroundPostDeferred()
@@ -1983,9 +1989,9 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-function gadgetHandler:KeyPress(key, mods, isRepeat, label, unicode)
+function gadgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode)
   for _,g in r_ipairs(self.KeyPressList) do
-    if (g:KeyPress(key, mods, isRepeat, label, unicode)) then
+    if (g:KeyPress(key, mods, isRepeat, label, unicode, scanCode)) then
       return true
     end
   end
@@ -1993,9 +1999,9 @@ function gadgetHandler:KeyPress(key, mods, isRepeat, label, unicode)
 end
 
 
-function gadgetHandler:KeyRelease(key, mods, label, unicode)
+function gadgetHandler:KeyRelease(key, mods, label, unicode, scanCode)
   for _,g in r_ipairs(self.KeyReleaseList) do
-    if (g:KeyRelease(key, mods, label, unicode)) then
+    if (g:KeyRelease(key, mods, label, unicode, scanCode)) then
       return true
     end
   end

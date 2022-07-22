@@ -19,8 +19,7 @@ public:
 	bool MousePress(int x, int y, int button) override;
 	void MouseRelease(int x, int y, int button) override;
 	void MouseMove(int x, int y, int dx, int dy, int button) override;
-	bool KeyPressed(int key, bool isRepeat) override;
-
+	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 private:
 	TRectangle<float> box;
 

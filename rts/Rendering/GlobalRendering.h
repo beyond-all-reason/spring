@@ -71,7 +71,7 @@ public:
 	void SetWindowTitle(const std::string& title);
 	void SetWindowAttributes(SDL_Window* window);
 	void UpdateWindow();
-	// Notify on Fullscreen/WindowBorderless change
+
 	void ConfigNotify(const std::string& key, const std::string& value);
 
 	bool GetWindowInputGrabbing();
@@ -90,12 +90,15 @@ public:
 	void UpdateGLGeometry();
 	void UpdateScreenMatrices();
 
+	void UpdateWindowBorders(SDL_Window* window) const;
+
 	int2 GetScreenCenter() const { return {viewPosX + (viewSizeX >> 1), viewPosY + (viewSizeY >> 1)}; }
 	int2 GetMaxWinRes() const;
 	int2 GetCfgWinRes() const;
 
 	int GetCurrentDisplayIndex() const;
-	void GetScreenEffectiveBounds(SDL_Rect& r, const int* di = nullptr, const bool* fs = nullptr) const;
+	void GetScreenBounds(SDL_Rect& r, const int* di = nullptr) const;
+	void GetUsableScreenBounds(SDL_Rect& r, const int* di = nullptr) const;
 
 	bool CheckGLMultiSampling() const;
 	bool CheckGLContextVersion(const int2& minCtx) const;
@@ -112,7 +115,7 @@ public:
 	 * (for interpolation)
 	 */
 	float timeOffset;
-
+	float lastTimeOffset;
 	/**
 	 * @brief last frame time
 	 *
@@ -122,6 +125,8 @@ public:
 
 	/// the starting time in tick for last draw frame
 	spring_time lastFrameStart;
+
+	spring_time lastSwapBuffersEnd;
 
 	/// 0.001f * gu->simFPS, used for rendering
 	float weightedSpeedFactor;
@@ -158,7 +163,7 @@ public:
 	int viewSizeY;
 
 	/// the window borders
-	std::array<int, 4> winBorder;
+	mutable std::array<int, 4> winBorder;
 
 	/// Some settings got changed need to adjust the way window is
 	unsigned int winChgFrame;
@@ -182,6 +187,7 @@ public:
 
 	int forceDisablePersistentMapping;
 	int forceDisableShaders;
+	int forceDisableGL4;
 	int forceCoreContext;
 	int forceSwapBuffers;
 
@@ -363,6 +369,9 @@ public:
 private:
 	// double-buffered; results from frame N become available on frame N+1
 	std::array<uint32_t, NUM_OPENGL_TIMER_QUERIES * 2> glTimerQueries;
+private:
+	static constexpr inline const char* xsKeys[2] = { "XResolutionWindowed", "XResolution" };
+	static constexpr inline const char* ysKeys[2] = { "YResolutionWindowed", "YResolution" };
 };
 
 extern CGlobalRendering* globalRendering;

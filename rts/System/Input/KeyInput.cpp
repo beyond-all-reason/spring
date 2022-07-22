@@ -6,12 +6,10 @@
 #include <cctype>
 
 #include <SDL_keyboard.h>
-#include <SDL_keycode.h>
 #include <SDL_events.h>
 #include <SDL_stdinc.h>
 
 #include "KeyInput.h"
-#include "System/Log/ILog.h"
 
 /**
 * @brief keys
@@ -88,22 +86,6 @@ namespace KeyInput {
 	const std::vector<Key>& GetPressedKeys()
 	{
 		return keyVec;
-	}
-
-	int GetNormalizedKeySymbol(int sym)
-	{
-		if (sym <= SDLK_DELETE)
-			return (tolower(sym));
-
-		switch (sym) {
-			case SDLK_RSHIFT: { return SDLK_LSHIFT; } break;
-			case SDLK_RCTRL : { return SDLK_LCTRL ; } break;
-			case SDLK_RGUI  : { return SDLK_LGUI  ; } break;
-			case SDLK_RALT  : { return SDLK_LALT  ; } break;
-			default         : {                     } break;
-		}
-
-		return sym;
 	}
 
 	void ReleaseAllKeys()

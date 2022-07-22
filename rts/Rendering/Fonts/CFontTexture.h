@@ -18,6 +18,12 @@ typedef struct FT_FaceRec_* FT_Face;
 class CBitmap;
 struct FontFace;
 
+class FtLibraryHandlerProxy {
+public:
+	static void InitFtLibrary();
+	static bool CheckGenFontConfigFull(bool console);
+};
+
 
 struct IGlyphRect { //FIXME use SRect or float4
 	IGlyphRect():
@@ -77,8 +83,6 @@ class CFontTexture
 {
 public:
 	static void Update();
-	static bool GenFontConfig();
-
 public:
 	CFontTexture(const std::string& fontfile, int size, int outlinesize, float  outlineweight);
 	virtual ~CFontTexture();

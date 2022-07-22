@@ -136,6 +136,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SelectUnitMap);
 	REGISTER_LUA_CFUNC(SelectUnitArray);
+	REGISTER_LUA_CFUNC(SetBoxSelectionByEngine);
 
 	REGISTER_LUA_CFUNC(AddWorldIcon);
 	REGISTER_LUA_CFUNC(AddWorldText);
@@ -186,6 +187,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AddUnitIcon);
 	REGISTER_LUA_CFUNC(FreeUnitIcon);
+	REGISTER_LUA_CFUNC(UnitIconSetDraw);
 
 	REGISTER_LUA_CFUNC(ExtractModArchiveFile);
 
@@ -778,8 +780,9 @@ int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
 	if (lua_istable(L, 1)) {
 		// second arg indicates if table is a map
 		const int unitArg = luaL_optboolean(L, 2, false)? -2 : -1;
-		const int tableIdx = 1;
+		const int queueDrawDepth = luaL_optnumber(L, 3, -1); //same value for all
 
+		constexpr int tableIdx = 1;
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
 			if (!lua_israwnumber(L, -2))
 				continue;
@@ -789,13 +792,15 @@ int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
 			if (unit == nullptr)
 				continue;
 
-			commandDrawer->AddLuaQueuedUnit(unit);
+			commandDrawer->AddLuaQueuedUnit(unit, queueDrawDepth);
 		}
 	} else {
 		const CUnit* unit = ParseAllyUnit(L, __func__, 1);
 
-		if (unit != nullptr)
-			commandDrawer->AddLuaQueuedUnit(unit);
+		if (unit != nullptr) {
+			const int queueDrawDepth = luaL_optnumber(L, 2, -1);
+			commandDrawer->AddLuaQueuedUnit(unit, queueDrawDepth);
+		}
 	}
 
 	return 0;
@@ -926,6 +931,13 @@ int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 		}
 	}
 
+	return 0;
+}
+
+int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
+{
+	bool b = luaL_checkboolean(L, 1);
+	selectedUnitsHandler.SetBoxSelectionHandledByEngine(b);
 	return 0;
 }
 
@@ -1883,6 +1895,17 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 
 	lua_pushboolean(L, icon::iconHandler.FreeIcon(luaL_checkstring(L, 1)));
 	return 1;
+}
+
+int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->drawIcon = luaL_checkboolean(L, 2);
+	return 0;
 }
 
 
@@ -3316,8 +3339,8 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 	const int winRelPosY = luaL_checkint(L, 3);
 	const int winSizeX = luaL_checkint(L, 4);
 	const int winSizeY = luaL_checkint(L, 5);
-	const int fullScreen = luaL_checkboolean(L, 6);
-	const int borderless = luaL_checkboolean(L, 7);
+	const bool fullScreen = luaL_checkboolean(L, 6);
+	const bool borderless = luaL_checkboolean(L, 7);
 
 	const bool r = globalRendering->SetWindowPosHelper(displayIndex, winRelPosX, winRelPosY, winSizeX, winSizeY, fullScreen, borderless);
 	if (!r)

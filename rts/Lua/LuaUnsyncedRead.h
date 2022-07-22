@@ -74,7 +74,12 @@ class LuaUnsyncedRead {
 		static int GetVisibleProjectiles(lua_State* L);
 
 		static int GetRenderUnits(lua_State* L);
+		static int GetRenderUnitsDrawFlagChanged(lua_State* L);
 		static int GetRenderFeatures(lua_State* L);
+		static int GetRenderFeaturesDrawFlagChanged(lua_State* L);
+
+		static int ClearUnitsPreviousDrawFlag(lua_State* L);
+		static int ClearFeaturesPreviousDrawFlag(lua_State* L);
 
 		static int GetUnitsInScreenRectangle(lua_State* L);
 
@@ -90,6 +95,7 @@ class LuaUnsyncedRead {
 		static int GetSelectedUnitsSorted(lua_State* L);
 		static int GetSelectedUnitsCounts(lua_State* L);
 		static int GetSelectedUnitsCount(lua_State* L);
+		static int GetBoxSelectionByEngine(lua_State* L);
 
 		static int IsGUIHidden(lua_State* L);
 		static int HaveShadows(lua_State* L);
@@ -113,6 +119,7 @@ class LuaUnsyncedRead {
 		static int GetPixelDir(lua_State* L);
 
 		static int GetTimer(lua_State* L);
+		static int GetTimerMicros(lua_State* L);
 		static int GetFrameTimer(lua_State* L);
 		static int DiffTimers(lua_State* L);
 
@@ -155,6 +162,7 @@ class LuaUnsyncedRead {
 
 		static int GetKeyCode(lua_State* L);
 		static int GetKeySymbol(lua_State* L);
+		static int GetScanSymbol(lua_State* L);
 		static int GetKeyBindings(lua_State* L);
 		static int GetActionHotKeys(lua_State* L);
 
@@ -188,6 +196,11 @@ class LuaUnsyncedRead {
 		static int GetDecalAlpha(lua_State* L);
 		static int GetDecalType(lua_State* L);
 		static int GetDecalOwner(lua_State* L);
+
+		static int UnitIconGetDraw(lua_State* L);
+
+		static int MakeGLDBQuery(lua_State* L);
+		static int GetGLDBQuery(lua_State* L);
 };
 
 

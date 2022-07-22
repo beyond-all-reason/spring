@@ -36,11 +36,10 @@ private:
 
 	bool MousePress(int x, int y, int button) override;
 	void MouseRelease(int x, int y, int button) override;
-	bool KeyPressed(int key, bool isRepeat) override;
+	bool KeyPressed(int key, nt scanCode, bool isRepeat) override;
 	bool IsAbove(int x, int y) override;
 	std::string GetTooltip(int x,int y) override;
 	void Draw() override;
-
 private:
 	TRectangle<float> box;
 

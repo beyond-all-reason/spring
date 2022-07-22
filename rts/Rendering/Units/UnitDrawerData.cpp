@@ -177,7 +177,7 @@ const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 	// or have seen it before and did not lose contact since
 	bool unitVisible = ((losStatus & (LOS_INLOS | LOS_INRADAR)) && ((losStatus & prevMask) == prevMask));
 	unitVisible |= gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit() && (losStatus & LOS_PREVLOS);
-	const bool customIcon = (minimap->UseUnitIcons() && (unitVisible || gu->spectatingFullView));
+	const bool customIcon = (unitVisible || gu->spectatingFullView);
 
 	if (customIcon)
 		return (unitDef->iconType.GetIconData());
@@ -192,12 +192,12 @@ void CUnitDrawerData::UpdateUnitDefMiniMapIcons(const UnitDef* ud)
 {
 	for (int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
 		for (const CUnit* unit : unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
-			UpdateUnitMiniMapIcon(unit, true, false);
+			UpdateUnitIcon(unit, true, false);
 		}
 	}
 }
 
-void CUnitDrawerData::UpdateUnitMiniMapIcon(const CUnit* unit, bool forced, bool killed)
+void CUnitDrawerData::UpdateUnitIcon(const CUnit* unit, bool forced, bool killed)
 {
 	CUnit* u = const_cast<CUnit*>(unit);
 
@@ -223,21 +223,20 @@ void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 {
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
 
-	// reset
-	unit->SetIsIcon(losStatus & LOS_INRADAR);
+	unit->SetIsIcon((losStatus & LOS_INRADAR) != 0);
 
-	if ((losStatus & LOS_INLOS) || gu->spectatingFullView)
-		unit->SetIsIcon(DrawAsIcon(unit, (unit->pos - camera->GetPos()).SqLength()));
+	//further refinement if visible
+	if ((losStatus & LOS_INLOS) != 0 || gu->spectatingFullView) {
+		bool asIcon = true;
 
-	if (!unit->GetIsIcon())
-		return;
-	if (unit->noDraw)
-		return;
-	if (unit->IsInVoid())
-		return;
-	// drawing icons is cheap but not free, avoid a perf-hit when many are offscreen
-	if (!camera->InView(unit->drawMidPos, unit->GetDrawRadius()))
-		return;
+		asIcon &= (!unit->noDraw);
+		asIcon &= (!unit->IsInVoid());
+
+		asIcon &= DrawAsIconByDistance(unit, (unit->pos - camera->GetPos()).SqLength());
+		// drawing icons is cheap but not free, avoid a perf-hit when many are offscreen
+		asIcon &= (camera->InView(unit->drawMidPos, unit->GetDrawRadius()));
+		unit->SetIsIcon(asIcon);
+	}
 }
 
 void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
@@ -248,16 +247,14 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 		return;
 	}
 
-	if (unit->health <= 0 || unit->beingBuilt)
+	if (unit->health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid())
 	{
 		unit->SetIsIcon(false);
 		return;
 	}
 
-	// If the icon is to be drawn as a radar blip, we want to get the default icon.
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
-	const unsigned short plosBits = (losStatus & (LOS_PREVLOS | LOS_CONTRADAR));
-	bool useDefaultIcon = !gu->spectatingFullView && !(losStatus & (LOS_INLOS)) && plosBits != (LOS_PREVLOS | LOS_CONTRADAR);
+	bool useDefaultIcon = (unit->myIcon == icon::iconHandler.GetDefaultIconData());
 
 	const icon::CIconData* iconData = useDefaultIcon ? icon::iconHandler.GetDefaultIconData() : unit->unitDef->iconType.GetIconData();
 
@@ -342,11 +339,6 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 		{
 			case CCamera::CAMTYPE_PLAYER: {
 				const float sqrCamDist = (u->drawPos - cam->GetPos()).SqLength();
-				const float farTexDist = Square(u->GetDrawRadius() + CModelDrawerDataConcept::modelDrawDist);
-				if (sqrCamDist >= farTexDist) {
-					u->SetDrawFlag(DrawFlags::SO_FARTEX_FLAG);
-					continue;
-				}
 
 				if (!IsAlpha(u)) {
 					u->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
@@ -360,17 +352,11 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			} break;
 
 			case CCamera::CAMTYPE_UWREFL: {
-				if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
-					continue;
-
 				if (CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
 					u->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
 			} break;
 
 			case CCamera::CAMTYPE_SHADOW: {
-				if (u->HasDrawFlag(DrawFlags::SO_FARTEX_FLAG))
-					continue;
-
 				if (u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
 					continue;
 
@@ -384,7 +370,7 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 	}
 }
 
-bool CUnitDrawerData::DrawAsIcon(const CUnit* unit, const float sqUnitCamDist) const
+bool CUnitDrawerData::DrawAsIconByDistance(const CUnit* unit, const float sqUnitCamDist) const
 {
 	const float sqIconDistMult = unit->unitDef->iconType->GetDistanceSqr();
 	const float realIconLength = iconLength * sqIconDistMult;
@@ -494,7 +480,7 @@ void CUnitDrawerData::RenderUnitPreCreated(const CUnit* unit)
 void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
 	assert(std::find(unsortedObjects.begin(), unsortedObjects.end(), unit) != unsortedObjects.end());
-	UpdateUnitMiniMapIcon(unit, false, false);
+	UpdateUnitIcon(unit, false, false);
 }
 
 void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
@@ -541,7 +527,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 	}
 
 	DelObject(unit, true);
-	UpdateUnitMiniMapIcon(unit, false, true);
+	UpdateUnitIcon(unit, false, true);
 
 	LuaObjectDrawer::SetObjectLOD(u, LUAOBJ_UNIT, 0);
 }
@@ -551,7 +537,7 @@ void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitMiniMapIcon(unit, false, false);
+	UpdateUnitIcon(unit, false, false);
 }
 
 void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
@@ -564,7 +550,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitMiniMapIcon(unit, false, false);
+	UpdateUnitIcon(unit, false, false);
 }
 
 void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
@@ -577,7 +563,7 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitMiniMapIcon(unit, false, false);
+	UpdateUnitIcon(unit, false, false);
 }
 
 void CUnitDrawerData::PlayerChanged(int playerNum)
@@ -591,6 +577,6 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 
 	for (CUnit* unit : unsortedObjects) {
 		// force an erase (no-op) followed by an insert
-		UpdateUnitMiniMapIcon(unit, true, false);
+		UpdateUnitIcon(unit, true, false);
 	}
 }

@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <iostream>
+#include <chrono>
 
 #include <SDL.h>
 #include <gflags/gflags.h>
@@ -38,6 +39,7 @@
 #include "Game/PreGame.h"
 #include "Game/UI/KeyBindings.h"
 #include "Game/UI/KeyCodes.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/InfoConsole.h"
 #include "Game/UI/MouseHandler.h"
 #include "Lua/LuaOpenGL.h"
@@ -50,6 +52,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/Models/ModelsMemStorage.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
@@ -59,6 +62,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "System/bitops.h"
+#include "System/ScopedResource.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/GlobalConfig.h"
@@ -98,10 +102,10 @@
 
 
 CONFIG(unsigned, SetCoreAffinity).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the main-thread should use.");
-CONFIG(unsigned, TextureMemPoolSize).defaultValue(512).minimumValue(1);
+CONFIG(unsigned, TextureMemPoolSize).defaultValue(512).minimumValue(0).description("Set to 0 to disable, otherwise specify a predefined memory to serve Bitmap allocation requests");
 CONFIG(bool, UseLuaMemPools).defaultValue(true).description("Whether Lua VM memory allocations are made from pools.");
 CONFIG(bool, UseHighResTimer).defaultValue(false).description("On Windows, sets whether Spring will use low- or high-resolution timer functions for tasks like graphical interpolation between game frames.");
-CONFIG(bool, UseFontConfigLib).defaultValue(false).description("Whether the system fontconfig library (if present and enabled at compile-time) should be used for handling fonts.");
+CONFIG(bool, UseFontConfigLib).defaultValue(true).description("Whether the system fontconfig library (if present and enabled at compile-time) should be used for handling fonts.");
 
 CONFIG(std::string, name).defaultValue(UnnamedPlayerName).description("Sets your name in the game. Since this is overridden by lobbies with your lobby username when playing, it usually only comes up when viewing replays or starting the engine directly for testing purposes.");
 CONFIG(std::string, DefaultStartScript).defaultValue("").description("filename of script.txt to use when no command line parameters are specified.");
@@ -244,7 +248,7 @@ bool SpringApp::Init()
 	CBitmap::InitPool(configHandler->GetInt("TextureMemPoolSize"));
 
 	UpdateInterfaceGeometry();
-	CglFont::LoadConfigFonts();
+	InitFonts();
 
 	ClearScreen();
 
@@ -269,6 +273,7 @@ bool SpringApp::Init()
 	agui::gui = new agui::Gui();
 	#endif
 	keyCodes.Reset();
+	scanCodes.Reset();
 
 	CNamedTextures::Init();
 	LuaOpenGL::Init();
@@ -309,6 +314,32 @@ bool SpringApp::InitPlatformLibs()
 #endif
 
 	return true;
+}
+
+bool SpringApp::InitFonts()
+{
+	FtLibraryHandlerProxy::InitFtLibrary();
+	const bool ret = CglFont::LoadConfigFonts();
+
+	using namespace std::chrono_literals;
+	auto future = std::async(std::launch::async, []() {
+		return FtLibraryHandlerProxy::CheckGenFontConfigFull(false);
+	});
+
+	for (;;) {
+		auto status = future.wait_for(16.6666ms); //60 FPS
+		if (status == std::future_status::ready) {
+			if (future.get() == false)
+				return false;
+
+			return ret;
+		}
+		else {
+			Watchdog::ClearTimer(WDT_MAIN);
+			SDL_PumpEvents();
+			globalRendering->SwapBuffers(true, true);
+		}
+	}
 }
 
 bool SpringApp::InitFileSystem()
@@ -413,20 +444,8 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	}
 #endif
 
-	if (FLAGS_gen_fontconfig) {
-		CFontTexture::GenFontConfig();
-		exit(spring::EXIT_CODE_SUCCESS);
-	}
-
-	if (FLAGS_sync_version) {
-		// Note, the missing "Spring " is intentionally to make it compatible with `spring-dedicated --sync-version`
-		std::cout << SpringVersion::GetSync() << std::endl;
-		exit(spring::EXIT_CODE_SUCCESS);
-	}
-
 	if (FLAGS_isolation)
 		dataDirLocater.SetIsolationMode(true);
-
 
 	if (!FLAGS_isolation_dir.empty()) {
 		dataDirLocater.SetIsolationMode(true);
@@ -436,6 +455,27 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	if (!FLAGS_write_dir.empty())
 		dataDirLocater.SetWriteDir(FLAGS_write_dir);
 
+	if (FLAGS_gen_fontconfig) {
+		{
+			spring_clock::PushTickRate();
+			spring_time::setstarttime(spring_time::gettime(true));
+		}
+		FtLibraryHandlerProxy::InitFtLibrary();
+		if (FtLibraryHandlerProxy::CheckGenFontConfigFull(true)) {
+			printf("[FtLibraryHandler::GenFontConfig] is succesfull\n");
+			exit(spring::EXIT_CODE_SUCCESS);
+		}
+		else {
+			printf("[FtLibraryHandler::GenFontConfig] is unsuccesfull\n");
+			exit(spring::EXIT_CODE_FAILURE);
+		}
+	}
+
+	if (FLAGS_sync_version) {
+		// Note, the missing "Spring " is intentionally to make it compatible with `spring-dedicated --sync-version`
+		std::cout << SpringVersion::GetSync() << std::endl;
+		exit(spring::EXIT_CODE_SUCCESS);
+	}
 
 	// Interface Documentations in JSON-Format
 	if (FLAGS_list_config_vars) {
@@ -1095,8 +1135,11 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 		case SDL_KEYDOWN: {
 			KeyInput::Update(event.key.keysym.sym, keyBindings.GetFakeMetaKey());
 
-			if (activeController != nullptr)
-				activeController->KeyPressed(KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym), event.key.repeat);
+			if (activeController != nullptr) {
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				activeController->KeyPressed(keyCode, scanCode, event.key.repeat);
+			}
 
 		} break;
 		case SDL_KEYUP: {
@@ -1104,7 +1147,9 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 
 			if (activeController != nullptr) {
 				gameTextInput.ignoreNextChar = false;
-				activeController->KeyReleased(KeyInput::GetNormalizedKeySymbol(event.key.keysym.sym));
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				activeController->KeyReleased(keyCode, scanCode);
 			}
 		} break;
 	};

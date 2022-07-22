@@ -11,6 +11,7 @@
 #include "System/SpringMath.h"
 #include "System/Sync/HsiehHash.h"
 
+#include "System/TimeProfiler.h"
 
 CR_BIND_DERIVED_INTERFACE(AMoveType, CObject)
 CR_REG_METADATA(AMoveType, (
@@ -28,7 +29,8 @@ CR_REG_METADATA(AMoveType, (
 	CR_MEMBER(waterline),
 
 	CR_MEMBER(useHeading),
-	CR_MEMBER(useWantedSpeed)
+	CR_MEMBER(useWantedSpeed),
+	CR_MEMBER(wantRepath)
 ))
 
 
@@ -68,9 +70,7 @@ AMoveType::AMoveType(CUnit* owner):
 {
 }
 
-
-
-void AMoveType::SlowUpdate()
+void AMoveType::UpdateCollisionMap()
 {
 	if (owner->pos != oldSlowUpdatePos) {
 		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);

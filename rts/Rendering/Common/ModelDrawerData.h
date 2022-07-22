@@ -26,25 +26,14 @@ class CModelDrawerDataConcept : public CEventClient {
 public:
 	CModelDrawerDataConcept(const std::string& ecName, int ecOrder)
 		: CEventClient(ecName, ecOrder, false)
-	{
-		if (modelDrawDist == 0.0f)
-			SetModelDrawDist(static_cast<float>(configHandler->GetInt("UnitLodDist")));
-	};
+	{};
 	virtual ~CModelDrawerDataConcept() {
 		eventHandler.RemoveClient(this);
 		autoLinkedEvents.clear();
-		modelDrawDist = 0.0f; //force re-read of UnitLodDist
 	};
 public:
 	bool GetFullRead() const override { return true; }
 	int  GetReadAllyTeam() const override { return AllAccessTeam; }
-public:
-	static void SetModelDrawDist(float dist) {
-		modelDrawDist    = dist;
-	}
-public:
-	// lenghts & distances
-	static float inline modelDrawDist    = 0.0f;
 protected:
 	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_SMMA = -128;
 	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT = -256;
@@ -77,6 +66,8 @@ private:
 public:
 	const std::vector<T*>& GetUnsortedObjects() const { return unsortedObjects; }
 	const ModelRenderContainer<T>& GetModelRenderer(int modelType) const { return modelRenderers[modelType]; }
+
+	void ClearPreviousDrawFlags() { for (auto object : unsortedObjects) object->previousDrawFlag = 0; }
 
 	const ScopedMatricesMemAlloc& GetObjectMatricesMemAlloc(const T* o) const {
 		const auto it = matricesMemAllocs.find(const_cast<T*>(o));
@@ -178,15 +169,17 @@ inline void CModelDrawerDataBase<T>::UpdateObjectSMMA(const T* o)
 
 	for (int i = 0; i < o->localModel.pieces.size(); ++i) {
 		const LocalModelPiece& lmp = o->localModel.pieces[i];
+		const bool wasCustomDirty = lmp.SetGetCustomDirty(false);
 
-		if (unlikely(!lmp.scriptSetVisible)) {
+		if (!wasCustomDirty)
+			continue;
+
+		if (unlikely(!lmp.GetScriptVisible())) {
 			smma[i + 1] = CMatrix44f::Zero();
 			continue;
 		}
 
-		const bool wasCustomDirty = lmp.SetGetCustomDirty(false);
-		if (wasCustomDirty)
-			smma[i + 1] = lmp.GetModelSpaceMatrix();
+		smma[i + 1] = lmp.GetModelSpaceMatrix();
 	}
 }
 
@@ -197,6 +190,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 	uni.drawFlag = o->drawFlag;
 
 	if (gu->spectatingFullView || o->IsInLosForAllyTeam(gu->myAllyTeam)) {
+		uni.id = o->id;
 		uni.speed = o->speed;
 		uni.maxHealth = o->maxHealth;
 		uni.health = o->health;
@@ -208,6 +202,7 @@ inline void CModelDrawerDataBase<T>::UpdateCommon()
 {
 	const auto updateBody = [this](int k) {
 		T* o = unsortedObjects[k];
+		o->previousDrawFlag = o->drawFlag;
 		UpdateObjectDrawFlags(o);
 
 		if (o->alwaysUpdateMat || (o->drawFlag > DrawFlags::SO_NODRAW_FLAG && o->drawFlag < DrawFlags::SO_FARTEX_FLAG))

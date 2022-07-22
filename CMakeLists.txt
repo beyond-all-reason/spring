@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.1)
-
+cmake_minimum_required(VERSION 3.16)
+cmake_policy(SET CMP0060 OLD) #causes link errors on Linux otherwise
 
 set(CMAKE_MODULES_SPRING "${CMAKE_CURRENT_SOURCE_DIR}/rts/build/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_MODULES_SPRING}")
@@ -138,6 +138,11 @@ else  (UNIX AND NOT MINGW)
 		endif(MSVC)
 	endif ()
 	if    (EXISTS "${MINGWLIBS}" AND IS_DIRECTORY "${MINGWLIBS}")
+		if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
+			#rectifying dll search issue present in CMake >= 3.17.0, see https://discourse.cmake.org/t/findzlib-fails-starting-with-cmake-3-17/6046/4
+			set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+		endif()
+
 		# MinGW needs an additional library, mwindows
 		# It's total link flags should look like -lmingw32 -lSDL2main -lSDL2 -lmwindows
 		# (Actually on second look, I think it only needs one of the m* libraries.)
@@ -169,9 +174,7 @@ else  (UNIX AND NOT MINGW)
 		add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 		add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 		set(GLEW_STATIC ON)
-		set(EXE_FLAGS WIN32)
-	else()
-		include_directories(rts/lib/mingw-std-threads)
+		#set(EXE_FLAGS WIN32)
 	endif()
 endif (UNIX AND NOT MINGW)
 
@@ -346,7 +349,6 @@ else (MSVC)
 endif(MSVC)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
-add_definitions(-D_RANDOM_TCC) # don't include <bits/random.tcc>, it fails to compile with single precision constants
 
 
 ### our custom OpenMP replacement

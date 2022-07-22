@@ -31,18 +31,10 @@
 
 ////////////////////////////////////////////////////////////////////
 
-
-template<typename T, typename Derived>
-inline bool TypedStorageBufferUploader<T, Derived>::Supported()
-{
-	static bool supported = VBO::IsSupported(GL_SHADER_STORAGE_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
-	return supported;
-}
-
 template<typename T, typename Derived>
 void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint32_t elemCount0_, uint32_t elemCountIncr_, uint8_t type, bool coherent, uint32_t numBuffers)
 {
-	if (!Supported())
+	if (!globalRendering->haveGL4)
 		return;
 
 	bindingIdx = bindingIdx_;
@@ -58,7 +50,7 @@ void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint
 template<typename T, typename Derived>
 void TypedStorageBufferUploader<T, Derived>::KillImpl()
 {
-	if (!Supported())
+	if (!globalRendering->haveGL4)
 		return;
 
 	ssbo->UnbindBufferRange(bindingIdx);
@@ -103,21 +95,34 @@ std::size_t TypedStorageBufferUploader<T, Derived>::GetProjectileElemOffset(int3
 
 void MatrixUploader::InitDerived()
 {
+	if (!globalRendering->haveGL4)
+		return;
+
 	const auto sbType = globalRendering->supportPersistentMapping
 		? IStreamBufferConcept::Types::SB_PERSISTENTMAP
 		: IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
 
 	InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, sbType, true, MatricesMemStorage::BUFFERING);
+	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
+		// some potatoe driver overestimated its support for SB_PERSISTENTMAP
+		// Redo with good old SB_BUFFERSUBDATA
+		LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer failed. Falling back.", __func__);
+		KillImpl();
+		InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
+	}
 }
 
 void MatrixUploader::KillDerived()
 {
+	if (!globalRendering->haveGL4)
+		return;
+
 	KillImpl();
 }
 
 void MatrixUploader::UpdateDerived()
 {
-	if (!Supported())
+	if (!globalRendering->haveGL4)
 		return;
 
 	SCOPED_TIMER("MatrixUploader::Update");
@@ -130,6 +135,13 @@ void MatrixUploader::UpdateDerived()
 		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
 		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
 		ssbo->Resize(newElemCount);
+
+		if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
+			LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u size failed. Falling back.", __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
+			KillImpl();
+			InitImpl(MATRIX_SSBO_BINDING_IDX, newElemCount, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
+		}
+
 		matricesMemStorage.SetAllDirty(); //Resize doesn't copy the data
 	}
 
@@ -264,17 +276,23 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CProjectile* p) const
 
 void ModelsUniformsUploader::InitDerived()
 {
+	if (!globalRendering->haveGL4)
+		return;
+
 	InitImpl(MATUNI_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, 3);
 }
 
 void ModelsUniformsUploader::KillDerived()
 {
+	if (!globalRendering->haveGL4)
+		return;
+
 	KillImpl();
 }
 
 void ModelsUniformsUploader::UpdateDerived()
 {
-	if (!Supported())
+	if (!globalRendering->haveGL4)
 		return;
 
 	SCOPED_TIMER("ModelsUniformsUploader::Update");

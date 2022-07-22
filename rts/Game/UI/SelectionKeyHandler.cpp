@@ -117,6 +117,7 @@ namespace {
 	DECLARE_FILTER(Weapons, !unit->weapons.empty())
 	DECLARE_FILTER(Idle, unit->commandAI->commandQue.empty())
 	DECLARE_FILTER(Waiting, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_WAIT))
+	DECLARE_FILTER(Guarding, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_GUARD))
 	DECLARE_FILTER(InHotkeyGroup, unit->GetGroup() != nullptr)
 	DECLARE_FILTER(Radar, (unit->radarRadius > 0 || unit->sonarRadius > 0))
 	DECLARE_FILTER(Jammer, (unit->jammerRadius > 0))
@@ -430,6 +431,26 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 			}
 
 			return;
+		} break;
+
+		case hashString("SelectClosestToCursor"): {
+			if (selection.empty())
+				return;
+
+			const float groundDist = CGround::LineGroundCol(camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist(), false);
+			float3 mousePosition = camera->GetPos() + mouse->dir * groundDist;
+
+			CUnit* closest = nullptr;
+			float closestDistance = 0;
+			for (auto* unit : selection) {
+				float distance = mousePosition.SqDistance(unit->pos);
+				if (!closest || distance < closestDistance) {
+					closestDistance = distance;
+					closest = unit;
+				}
+			}
+			if (closest)
+				selectedUnitsHandler.AddUnit(closest);
 		} break;
 
 		case hashString("SelectNum"): {

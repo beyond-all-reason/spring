@@ -8,6 +8,21 @@ Lua:
  - allow empty argument for Spring.GetKeyBindings to return all keybindings
  - `firestarter` weapon tag no longer capped at 10000 in defs (which
    becomes 100 in Lua after rescale). Now uncapped.
+ - add Spring.AddUnitExperience(unitID, delta_xp). Can subtract, but the result cannot be negative.
+ - change widget, gadget and action handlers to support scancodes
+ - Added Lua SyncedControl callins to modify the original/base heightmap (i.e. the values that the
+   restore command will aim for.)
+    - Spring.AdjustOriginalHeightMap
+    - Spring.LevelOriginalHeightMap
+    - Spring.RevertOriginalHeightMap
+    - Spring.SetOriginalHeightMapFunc
+    - Spring.AddOriginalHeightMap
+    - Spring.SetOriginalHeightMap
+ - Added Spring.GetRenderFeaturesDrawFlagChanged to report all features whose draw flags have
+   changed since the last sim frame.
+ - Added Spring.GetRenderUnitsDrawFlagChanged to report all units whose draw flags have changed
+   since the last sim frame.
+
 Maps:
  - New bumpwater params, most of these were just hard-coded values:
     - waveOffsetFactor    (0.0)
@@ -16,6 +31,66 @@ Maps:
 		- waveFoamIntensity   (0.5)
 		- causticsResolution  (75.0)
 		- causticsStrength    (0.08)
+
+Map:
+ - The original/base height map is now editable, so the height map as read from the map file is
+   held separately. Both the map file height map and the original/base height map are saved and
+   loaded with save/load feature.
+
+Misc:
+ - the `useFootPrintCollisionVolume` unit def tag now takes precedence over the default sphere
+   that appears when `collisionVolumeScales` are zero. This means that units no longer have to
+   define a bogus custom colvol just to prevent the default sphere.
+ - don't warn for archive checksum mismatch if server's checksum is zero
+ - 3D and Cubemap .dds textures supported in Lua
+ - deprecate DISALLOW_RELEASE_BINDINGS and Up+ modifier for keysets, a
+   warning is displayed if attempted to bind. No change in behavior
+ - /keysave and /keyprint now preserves the binding order, providing a better output
+ - add support for f16-f24 key and scancodes; keycode support requires SDL1
+   keycode deprecation
+
+Sim:
+ - Added a new 'b' designator for yardmaps to declare an area that is buildable, but is not
+   walkable. This allows for the current method of upgradable buildings to create a locking
+   pattern that won't break pathing.
+ - Reserved MaxParticles *2 for unsynced projectile-container vector to avoid a re-alloc during
+   the multi-threaded section. To avoid a race condition while processing unsynced particles.
+ - Smooth Height Mesh tracks damage to height map and updates itself in 64m^2 squares
+ - Smooth Height Mesh switched from 2-pass Gaussian Blur to a single, kernelless Linear pass to
+   reduce computational needs of the mesh to minimize impact of recaclulating mesh running sim
+   frames
+ - Smooth Height Mesh uses SSE to optimize local maxima calculations.
+ - Smooth Height Mesh no longer multi-threads the horizontal and vertical passes because single
+   thread is faster during sim frame (the work load has been reduced below multi-thread benefit
+   threshold)
+ - Smooth Height Mesh can be disabled by setting mod rule "enableSmoothMesh" = 0 (enabled by
+   default)
+ - Record the previous draw flag of units/features to support incremental rendering queries
+
+System:
+ - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
+   test-and-set (TAS) to test and test-and-set (TTAS) to reduce cache coherency traffic on the
+   processor
+
+UI:
+ - KeyPress and KeyRelease callins receive an additional scanCode
+   argument
+ - sc_<k> keysets are introduced for scancodes and handled in conjunction
+   with keycode bindings preserving the order on which the actions where
+   bound. Can also be bound via `sc_0x<hexvalue>`
+ - Extend GetKeyBindings to receive an additional keyset string to retrieve scancode actions
+ - Add GetScanSymbol(int scanCode)
+
+Fixes:
+ - Fix keysets bound to duplicate actions when the action line contains
+   discrepant comment sections
+ - Fix name retrieval for keycodes always returning hex value, this
+   affected the `label` parameter of `KeyPress` and `KeyRelease` callins
+   as well as the output of /keydebug
+ - Fix `GetKeyBindings` returning incorrect actions for bound keychains,
+   e.g. if actions bound to m,n and b,n both would be
+   returned on `GetKeyBindings('n')` regardless of the previously pressed key
+ - Fix server pause that happens when a spectator or player leaves the match
 
 -- 105.0 --------------------------------------------------------
 Sim:
@@ -99,7 +174,7 @@ Lua:
    this was done by the engine). You can prevent this filter by adding
    the `dont_remove` field to such movedefs. This is useful to make
    them available in `Spring.MoveCtrl.SetMoveDef` but beware the perf cost.
- - new TextEditing(utf8, start, length) callin, which holds the IME editing composition (https://wiki.libsdl.org/Tutorials/TextInput)
+ - new TextEditing(utf8, start, length) callin, which holds the IME editing composition (https://wiki.libsdl.org/Tutorials-TextInput)
  - new SDLSetTextInputRect(x, y, w, h), SDLStartTextInput() and SDLStopTextInput() functions for controlling IME input from Lua
  - Add AllowUnitTransport callin. Called when the engine tests whether unit A can transport unit B. Returning true will let
    the engine decide, returning false will force the engine to disallow transportation (for this specific call).

@@ -83,6 +83,9 @@ class LuaMatTexture {
 
 			LUATEX_FONT,
 			LUATEX_FONTSMALL,
+
+			LUATEX_EXPLOSIONS_ATLAS,
+			LUATEX_GROUNDFX_ATLAS,
 		};
 
 	public:
@@ -103,6 +106,7 @@ class LuaMatTexture {
 
 	public:
 		Type type = LUATEX_NONE;
+		GLuint texType = 0;
 
 		const void* data = nullptr;
 		      void* state = nullptr;

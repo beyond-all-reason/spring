@@ -8,6 +8,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
+#include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Path/IPathManager.h"
@@ -214,11 +215,23 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius)
 
 void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 {
-	readMap->UpdateHeightMapSynced(SRectangle(x1, y1, x2, y2));
+	if (!readMap->GetHeightMapUpdated())
+		return;
+
+	x1 = std::max(x1, 0); x2 = std::clamp(x2, x1, mapDims.mapx);
+	y1 = std::max(y1, 0); y2 = std::clamp(y2, y1, mapDims.mapy);
+
+	// do not bother with zero-area updates
+	const SRectangle updRect(x1, y1, x2, y2);
+	if (updRect.GetArea() <= 0)
+		return;
+
+	readMap->UpdateHeightMapSynced(updRect);
 	featureHandler.TerrainChanged(x1, y1, x2, y2);
+	smoothGround.MapChanged(x1, y1, x2, y2);
 	{
 		SCOPED_TIMER("Sim::BasicMapDamage::Los");
-		losHandler->UpdateHeightMapSynced(SRectangle(x1, y1, x2, y2));
+		losHandler->UpdateHeightMapSynced(updRect);
 	}
 	{
 		SCOPED_TIMER("Sim::BasicMapDamage::Path");

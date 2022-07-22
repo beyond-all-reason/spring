@@ -272,9 +272,9 @@ class CSplitLuaHandle
 		static const LuaRulesParams::Params& GetGameParams() { return gameParams; }
 
 	private:
-		//FIXME: add to CREG?
-		static LuaRulesParams::Params  gameParams;
 		friend class LuaSyncedCtrl;
+		friend class CGameStateCollector;
+		static LuaRulesParams::Params gameParams;
 };
 
 

@@ -29,11 +29,10 @@
 	struct _UTIL_CONCAT(doOnce, __LINE__) { _UTIL_CONCAT(doOnce, __LINE__)() { code; } }; static _UTIL_CONCAT(doOnce, __LINE__) _UTIL_CONCAT(doOnceVar, __LINE__);
 
 
+static char lcstr[32768];
+static char lcsub[32768];
 static inline const char* StrCaseStr(const char* str, const char* sub) {
 	const char* pos = nullptr;
-
-	char lcstr[32768];
-	char lcsub[32768];
 
 	if (str == nullptr)
 		return nullptr;
@@ -149,9 +148,8 @@ static inline std::string FloatToString(float f, const std::string& format = "%f
 }
 
 template<typename int_type = int>
-static inline int_type StringToInt(std::string str, bool* failed = NULL)
+static inline int_type StringToInt(const std::string & str, bool* failed = NULL)
 {
-	StringTrimInPlace(str);
 	std::istringstream stream(str);
 	int_type buffer = 0;
 	stream >> buffer;

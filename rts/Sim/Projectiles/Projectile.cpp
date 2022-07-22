@@ -37,7 +37,6 @@ CR_REG_METADATA(CProjectile,
 
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(dir),
-		CR_MEMBER(rotParams),
 		CR_MEMBER(drawOrder),
 	CR_MEMBER_ENDFLAG(CM_Config),
 
@@ -114,7 +113,7 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 		SetVelocityAndSpeed(speed);
 	}
 
-	rotParams *= float3(math::DEG_TO_RAD / GAME_SPEED, math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED), math::DEG_TO_RAD);
+	CExpGenSpawnable::Init(owner, offset);
 
 	// NOTE:
 	//   new CWeapon- and CPieceProjectile*'s add themselves
@@ -184,7 +183,6 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 		return true;
 
 	CHECK_MEMBER_INFO_FLOAT3(CProjectile, dir)
-	CHECK_MEMBER_INFO_FLOAT3(CProjectile, rotParams) //consider moving to CExpGenSpawnable(?)
 	CHECK_MEMBER_INFO_INT(CProjectile, drawOrder)
 
 	return false;

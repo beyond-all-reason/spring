@@ -141,6 +141,7 @@ CONFIG(int, ShowPlayerInfo).defaultValue(1).headlessValue(0);
 CONFIG(float, GuiOpacity).defaultValue(0.8f).minimumValue(0.0f).maximumValue(1.0f).description("Sets the opacity of the built-in Spring UI. Generally has no effect on LuaUI widgets. Can be set in-game using shift+, to decrease and shift+. to increase.");
 CONFIG(std::string, InputTextGeo).defaultValue("");
 
+CONFIG(int, SmoothTimeOffset).defaultValue(0).headlessValue(0).description("Enables frametimeoffset smoothing, 0 = off (old version), -1 = forced 0.5,  1-20 smooth, recommended = 2-3");
 
 CGame* game = nullptr;
 
@@ -205,7 +206,8 @@ CR_REG_METADATA(CGame, (
 	CR_MEMBER(luaGCControl),
 
 	CR_IGNORED(jobDispatcher),
-	CR_IGNORED(curKeyChain),
+	CR_IGNORED(curKeyCodeChain),
+	CR_IGNORED(curScanCodeChain),
 	CR_IGNORED(worldDrawer),
 	CR_IGNORED(saveFileHandler),
 
@@ -440,6 +442,10 @@ void CGame::Load(const std::string& mapFileName)
 			ENTER_SYNCED_CODE();
 			eventHandler.GamePreload();
 			eventHandler.CollectGarbage(true);
+
+			//needed in case pre-game terraform changed the map
+			readMap->UpdateHeightBounds();
+			pathManager->PostFinalizeRefresh();
 			LEAVE_SYNCED_CODE();
 		}
 
@@ -459,9 +465,6 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][8] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadSkirmishAIs();
-			if (saveFileHandler != nullptr) {
-				saveFileHandler->LoadAIData();
-			}
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
@@ -572,7 +575,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(float3::maxxpos, float3::maxzpos, SQUARE_SIZE * 2, SQUARE_SIZE * 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
@@ -797,16 +800,20 @@ void CGame::LoadSkirmishAIs()
 
 	// create Skirmish AI's if required
 	const std::vector<uint8_t>& localAIs = skirmishAIHandler.GetSkirmishAIsByPlayer(gu->myPlayerNum);
-	const std::string timerName = std::string("Game::") + __func__;
+	if (localAIs.empty() && !IsSavedGame())
+		return;
 
-	if (!localAIs.empty()) {
-		ScopedOnceTimer timer(timerName);
-		loadscreen->SetLoadMessage("Loading Skirmish AIs");
+	ScopedOnceTimer timer(std::string("Game::") + __func__);
+	loadscreen->SetLoadMessage("Loading Skirmish AIs");
 
-		for (uint8_t localAI: localAIs) {
-			ScopedOnceTimer subTimer(timerName + "::CreateAI(id=" + IntToString(localAI) + ")");
-			skirmishAIHandler.CreateLocalSkirmishAI(localAI);
-		}
+	for (uint8_t localAI: localAIs)
+		skirmishAIHandler.CreateLocalSkirmishAI(localAI, IsSavedGame());
+
+	if (IsSavedGame()) {
+		saveFileHandler->LoadAIData();
+
+		for (uint8_t localAI: localAIs)
+			skirmishAIHandler.PostLoadSkirmishAI(localAI);
 	}
 }
 
@@ -996,34 +1003,36 @@ void CGame::ResizeEvent()
 }
 
 
-int CGame::KeyPressed(int key, bool isRepeat)
+int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
 	if (!gameOver && !isRepeat)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
 
-	const CKeySet ks(key, false);
-	curKeyChain.push_back(key, spring_gettime(), isRepeat);
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+	const CKeySet ks(scanCode, CKeySet::KSScanCode);
+
+	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
+	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
 
 	// Get the list of possible key actions
-	//LOG_L(L_DEBUG, "curKeyChain: %s", curKeyChain.GetString().c_str());
-	const CKeyBindings::ActionList& actionList = keyBindings.GetActionList(curKeyChain);
+	const ActionList& actionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
-	if (gameTextInput.ConsumePressedKey(key, actionList))
+	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, actionList))
 		return 0;
 
-	if (luaInputReceiver->KeyPressed(key, isRepeat))
+	if (luaInputReceiver->KeyPressed(keyCode, scanCode, isRepeat))
 		return 0;
+
 
 	// try the input receivers
 	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyPressed(key, isRepeat))
+		if (recv != nullptr && recv->KeyPressed(keyCode, scanCode, isRepeat))
 			return 0;
 	}
 
-
 	// try our list of actions
 	for (const Action& action: actionList) {
-		if (ActionPressed(key, action, isRepeat)) {
+		if (ActionPressed(keyCode, scanCode, action, isRepeat)) {
 			return 0;
 		}
 	}
@@ -1034,6 +1043,7 @@ int CGame::KeyPressed(int key, bool isRepeat)
 			luaUI->GotChatMsg(action.rawline, false);
 		}
 	}
+
 	if (luaMenu != nullptr) {
 		for (const Action& action: actionList) {
 			luaMenu->GotChatMsg(action.rawline, false);
@@ -1044,24 +1054,23 @@ int CGame::KeyPressed(int key, bool isRepeat)
 }
 
 
-int CGame::KeyReleased(int k)
+int CGame::KeyReleased(int keyCode, int scanCode)
 {
-	if (gameTextInput.ConsumeReleasedKey(k))
+	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
-	if (luaInputReceiver->KeyReleased(k))
+	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
 		return 0;
 
 	// try the input receivers
 	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyReleased(k)) {
+		if (recv != nullptr && recv->KeyReleased(keyCode, scanCode)) {
 			return 0;
 		}
 	}
 
 	// try our list of actions
-	CKeySet ks(k, true);
-	const CKeyBindings::ActionList& al = keyBindings.GetActionList(ks);
+	const ActionList& al = keyBindings.GetActionList(keyCode, scanCode);
 	for (const Action& action: al) {
 		if (ActionReleased(action))
 			return 0;
@@ -1186,13 +1195,86 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		return true;
 	}
 
+	const bool newSimFrame = (lastSimFrame != gs->frameNum);
 	numDrawFrames++;
 	globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 	globalRendering->lastFrameStart = currentTime;
 	// Update the interpolation coefficient (globalRendering->timeOffset)
 	if (!gs->paused && !IsSimLagging() && !gs->PreSimFrame() && !videoCapturing->AllowRecord()) {
-		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS;
+		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS; 
+		globalRendering->lastTimeOffset = globalRendering->timeOffset;
 		globalRendering->timeOffset = (currentTime - lastFrameTime).toMilliSecsf() * globalRendering->weightedSpeedFactor;
+
+		int SmoothTimeOffset = configHandler->GetInt("SmoothTimeOffset");
+		float strictness = 0.9f; // This defines how strict we are going to be when trying to keep frame timings
+		if (SmoothTimeOffset > 0) {
+			strictness = 1.0f - (SmoothTimeOffset) * 0.025f;
+		}
+
+		// The main issue that SmoothTimeOffset tries to fix:
+		// Is that lastFrameTime is reset when a sim frame is issued.
+		// This makes the calculation of the timeOffset of the next draw frame after simframe incorrect (too small),
+		// if the previous draw frame had a large timeOffset
+
+		float drawsimratio = gu->simFPS * gu->avgFrameTime * 0.001f; // This should be like 0.5 for 60hz draw 30hz sim
+		float LTO = globalRendering->lastTimeOffset;
+		float CTO = globalRendering->timeOffset;
+
+		// This mode forces a strict time step of 0.5 simframes per draw frames. Only useful for testing @ 60hz
+		if (SmoothTimeOffset == -1) { 
+			if (newSimFrame) {
+				if (LTO > (1.0f - drawsimratio * strictness)) 
+					globalRendering->timeOffset = drawsimratio;
+				else 
+					globalRendering->timeOffset = 0.0f;
+			} else {
+				if (LTO > drawsimratio * strictness) 
+					globalRendering->timeOffset = std::fmin(LTO + drawsimratio * strictness, 1.0f);
+				else
+					globalRendering->timeOffset = std::fmin(drawsimratio * strictness, 1.0f);
+			}
+		}
+
+		// This mode tries to correct for the wrongly calculated timeOffset adaptively, 
+		// while trying to maintain a smooth interpolation rate 
+		// As frame rates dip below 45fps, this method is only marginally better than old method
+		// But that is heavily dependent on wether the load is sim or draw based.
+		// TODO: the camera smoothing still seems to take sim load into account heavily. So large sim loads jitter the camera quite a bit when moving
+		if (SmoothTimeOffset > 0){
+
+			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was. 
+			drawsimratio = std::fmin(drawsimratio, 1.0);  // Clamp it otherwise we will accumulate delay when < 30 FPS
+			float oldCTO = globalRendering->timeOffset;
+			float newCTO = globalRendering->timeOffset;
+
+			if (newSimFrame) { 
+				// newsimframe is a special case, as our new time offset is kind of wrong. 
+				// What we want to know is when the last draw happened, and at what offset.
+				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0, 
+				// irrespective of the time spent in sim.
+				// If the last draw frame didnt happend on time, and had a large CTO, then we need to 'carry over' some time offset
+
+				if ((LTO + drawsimratio - 1.0 > (CTO)* strictness)) {
+					newCTO = std::fmin((LTO + drawsimratio - 1.0f) * strictness, 1.3f);
+					//LOG_L(L_DEBUG, "UpdateUnsynced newframe skipping, last = %.3f, currtimeoffset = %.3f, averageoffset = %.3f, now cheating it to %.3f", globalRendering->lastTimeOffset, globalRendering->timeOffset, drawsimratio, newCTO);
+					globalRendering->timeOffset = newCTO;
+				}
+			}
+			else {
+				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit. 
+				// Otherwise, the sim frame is also calculated into the offset, making things jittery
+				if ((CTO - LTO < (drawsimratio) * strictness)) {
+					newCTO = std::fmin(LTO + drawsimratio * strictness, 1.3f);
+					//LOG_L(L_DEBUG, "UpdateUnsynced Too short draw offset, last = %.3f, currtimeoffset = %.3f, averageoffset = %.3f, now cheating it to %.3f", globalRendering->lastTimeOffset, globalRendering->timeOffset, drawsimratio, newCTO);
+					globalRendering->timeOffset = newCTO;
+				}
+
+			}
+			//LOG_L(L_DEBUG, "oldCTO = %.3f newCTO = %.3f, drawsimratio = %.3f,  newframe = %d", oldCTO, newCTO, drawsimratio, newSimFrame);
+		}
+
+
+
 	} else {
 		globalRendering->timeOffset = videoCapturing->GetTimeOffset();
 
@@ -1209,7 +1291,6 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	}
 
-	const bool newSimFrame = (lastSimFrame != gs->frameNum);
 	const bool forceUpdate = (unsyncedUpdateDeltaTime >= (1.0f / GAME_SPEED));
 
 	lastSimFrame = gs->frameNum;
@@ -1520,7 +1601,23 @@ void CGame::SimFrame() {
 
 	// note: starts at -1, first actual frame is 0
 	gs->frameNum += 1;
-	lastFrameTime = spring_gettime();
+	lastFrameTime = spring_gettime(); 
+	// This is not very ideal, as the timeoffset of each new draw frame is also calculated from this
+	// with a strange side effect: if the timeOffset was a high number, like 0.9, then this will force the next draw frame to have an offset of 0.0x
+	// What this means, is that in the case where we have frames to spare, and and over rendering, then the following can happen at 60hz:
+	// simframe
+	// drawframe timeOffset ~ 0.0
+	// drawframe timeoffset ~ 0.5
+	// drawframe timeoffset ~ 1.0 (1 extra draw!)
+	// simframe
+	// drawframe timeoffset ~ 0.0 // THIS is the problematic case, as visually, this frame is 'near identical' to the previously drawn one!
+	// simframe 
+	// drawframe timeoffset ~ 0.0
+	// drawframe timeoffset ~ 0.5
+	// simframe
+	// etc...
+	// See SmoothTimeOffset for a fix to this
+
 
 #if 0
 	if (globalRendering->timeOffset > 1.0)
@@ -1570,6 +1667,7 @@ void CGame::SimFrame() {
 
 		helper->Update();
 		readMap->Update();
+		smoothGround.UpdateSmoothMesh();
 		mapDamage->Update();
 		pathManager->Update();
 		unitHandler.Update();
@@ -1611,7 +1709,7 @@ void CGame::SimFrame() {
 	#endif
 
 	// useful for desync-debugging (enter instead of -1 start & end frame of the range you want to debug)
-	DumpState(-1, -1, 1);
+	DumpState(-1, -1, 1, false);
 
 	ASSERT_SYNCED(gsRNG.GetGenState());
 	LEAVE_SYNCED_CODE();
@@ -1912,22 +2010,22 @@ void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 
 
 
-bool CGame::ProcessCommandText(unsigned int key, const std::string& command) {
+bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& command) {
 	if (command.size() <= 2)
 		return false;
 
 	if ((command[0] == '/') && (command[1] != '/')) {
 		// strip the '/'
-		ProcessAction(Action(command.substr(1)), key, false);
+		ProcessAction(Action(command.substr(1)), keyCode, scanCode, false);
 		return true;
 	}
 
 	return false;
 }
 
-bool CGame::ProcessAction(const Action& action, unsigned int key, bool isRepeat)
+bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool isRepeat)
 {
-	if (ActionPressed(key, action, isRepeat))
+	if (ActionPressed(keyCode, scanCode, action, isRepeat))
 		return true;
 
 	// maybe a widget is interested?
@@ -1956,13 +2054,13 @@ void CGame::ActionReceived(const Action& action, int playerID)
 	}
 }
 
-bool CGame::ActionPressed(unsigned int key, const Action& action, bool isRepeat)
+bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat)
 {
 	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
 	if (executor != nullptr) {
 		// an executor for that action was found
-		if (executor->ExecuteAction(UnsyncedAction(action, key, isRepeat)))
+		if (executor->ExecuteAction(UnsyncedAction(action, keyCode, isRepeat)))
 			return true;
 	}
 

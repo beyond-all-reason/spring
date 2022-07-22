@@ -16,7 +16,7 @@ CLuaInputReceiver::CLuaInputReceiver()
 CLuaInputReceiver::~CLuaInputReceiver() = default;
 
 
-CLuaInputReceiver* CLuaInputReceiver::GetInstace()
+CLuaInputReceiver* CLuaInputReceiver::GetInstance()
 {
 	static CLuaInputReceiver instance;
 
@@ -24,15 +24,15 @@ CLuaInputReceiver* CLuaInputReceiver::GetInstace()
 }
 
 
-bool CLuaInputReceiver::KeyPressed(int key, bool isRepeat)
+bool CLuaInputReceiver::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	return eventHandler.KeyPress(key, isRepeat);
+	return eventHandler.KeyPress(keyCode, scanCode, isRepeat);
 }
 
 
-bool CLuaInputReceiver::KeyReleased(int key)
+bool CLuaInputReceiver::KeyReleased(int keyCode, int scanCode)
 {
-	return eventHandler.KeyRelease(key);
+	return eventHandler.KeyRelease(keyCode, scanCode);
 }
 
 

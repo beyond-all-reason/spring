@@ -38,7 +38,7 @@ enum DrawFlags : uint8_t {
 	SO_REFLEC_FLAG = 4,
 	SO_REFRAC_FLAG = 8,
 	SO_SHADOW_FLAG = 16,
-	SO_FARTEX_FLAG = 32,
+	SO_FARTEX_FLAG = 32, //legacy, no longer used for anything meaningful
 	SO_DRICON_FLAG = 128,
 };
 
@@ -48,7 +48,8 @@ enum YardmapStates {
 	YARDMAP_GEOSTACKABLE = 2,    // can be built on top of YARDMAP_BLOCKED and needs GEO
 	YARDMAP_YARD         = 4,    // walkable when yard is open
 	YARDMAP_YARDINV      = 8,    // walkable when yard is closed
-//	YARDMAP_WALKABLE     = 16,    // open for walk    (    walkable, not buildable)
+//	YARDMAP_WALKABLE     = 16,   // open for walk    (    walkable, not buildable)
+	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)
 	YARDMAP_BLOCKED      = 0xFF & ~YARDMAP_YARDINV, // always block     (not walkable, not buildable)
 
 	// helpers
@@ -425,6 +426,7 @@ public:
 	float3 drawMidPos;
 
 	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
+	uint8_t previousDrawFlag = DrawFlags::SO_NODRAW_FLAG;
 
 	/**
 	 * @brief mod controlled parameters

@@ -201,13 +201,11 @@ bool GetAvailableVideoRAM(GLint* memory, const char* glVendor)
 
 
 
-bool ShowDriverWarning(const char* glVendor, const char* glRenderer)
+bool ShowDriverWarning(const char* glVendor)
 {
 	assert(glVendor != nullptr);
-	assert(glRenderer != nullptr);
 
 	const std::string& _glVendor = StringToLower(glVendor);
-	// const std::string& _glRenderer = StringToLower(glRenderer);
 
 	// should be unreachable
 	// note that checking for Microsoft stubs is no longer required
@@ -342,7 +340,7 @@ void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei wid
 
 	// create mipmapped texture
 
-	if (IS_GL_FUNCTION_AVAILABLE(glGenerateMipmap) && !globalRendering->amdHacks) {
+	if (IS_GL_FUNCTION_AVAILABLE(glGenerateMipmap)) {
 		// newest method
 		glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data);
 		if (globalRendering->amdHacks) {

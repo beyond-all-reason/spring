@@ -61,6 +61,10 @@ CONFIG(float, CamTimeExponent)
 	.minimumValue(0.0f)
 	.description("Camera transitions happen at lerp(old, new, timeNorm ^ CamTimeExponent).");
 
+CONFIG(int, CamFrameTimeCorrection)
+.defaultValue(0)
+.minimumValue(0)
+.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 CCameraHandler* camHandler = nullptr;
 
@@ -229,7 +233,7 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 {
 	if (keyMove) {
 		// NOTE: z-component contains speed scaling factor, xy is movement
-		const float3 camMoveVector = camera->GetMoveVectorFromState(true);
+		const float3 camMoveVector = camera->GetMoveVectorFromState(true); 
 
 		// key scrolling
 		if ((camMoveVector * XYVector).SqLength() > 0.0f) {
@@ -270,7 +274,13 @@ void CCameraHandler::CameraTransition(float nsecs)
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
 	// calculate when transition should end based on duration in seconds
-	camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
+	int useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
+	if (useInterpolate == 0) { // old
+		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
+	}
+	if (useInterpolate > 0) {
+		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
+	}
 	camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
 
 	camTransState.startPos = camera->GetPos();
@@ -284,8 +294,39 @@ void CCameraHandler::UpdateTransition()
 	camTransState.tweenRot = camControllers[currCamCtrlNum]->GetRot();
 	camTransState.tweenFOV = camControllers[currCamCtrlNum]->GetFOV();
 
-	const float transTime = globalRendering->lastFrameStart.toMilliSecsf();
 
+	int vsync = configHandler->GetInt("VSync");
+	int useInterpolate =  configHandler->GetInt("CamFrameTimeCorrection");
+	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
+	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
+	float drawFPS = std::fmax(globalRendering->FPS, 1.0f); // this is probably much better
+
+
+	if (vsync == 1 && useInterpolate > 0) {
+		transTime = lastswaptime;
+		transTime = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / drawFPS;
+	}
+
+	const float timeRatio = std::fmax(0.0f, (camTransState.timeEnd - transTime) / (camTransState.timeEnd - camTransState.timeStart));
+	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
+	
+
+	if (vsync == 1 && useInterpolate == 1) {
+		tweenFact = 1.0f - timeRatio;
+	}
+	if (vsync == 0 && useInterpolate == 1){
+		tweenFact = 0.08f * (camTransState.timeEnd - camTransState.timeStart) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
+	}
+	/*
+	LOG_L(L_INFO, "CamUpdate: %.3f, 1/FPS = %.4f, DF=%d, timeRatio = %.3f, tween = %.3f, swap = %.3f i=%d", globalRendering->lastFrameStart.toMilliSecsf(), drawFPS, globalRendering->drawFrame, timeRatio, tweenFact, lastswaptime, useInterpolate);
+	LOG_L(L_INFO, "CamEnd: %.3f, CamStart = %.3f, deltat = %.3f CamExp = %.3f",
+		camTransState.timeEnd,
+		camTransState.timeStart,
+		camTransState.timeEnd - camTransState.timeStart,
+		camTransState.timeExponent
+		);
+	LOG_L(L_INFO, "CSX = %.2f, CSZ = %.2f, CTX = %.2f CTZ = %.2f", camTransState.startPos.x, camTransState.startPos.z, camTransState.tweenPos.x, camTransState.tweenPos.z );
+	*/
 	if (transTime >= camTransState.timeEnd) {
 		camera->SetPos(camTransState.tweenPos);
 		camera->SetRot(camTransState.tweenRot);
@@ -297,8 +338,6 @@ void CCameraHandler::UpdateTransition()
 	if (camTransState.timeEnd <= camTransState.timeStart)
 		return;
 
-	const float timeRatio = (camTransState.timeEnd - transTime) / (camTransState.timeEnd - camTransState.timeStart);
-	const float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
 
 	camera->SetPos(mix(camTransState.startPos, camTransState.tweenPos, tweenFact));
 	camera->SetRot(mix(camTransState.startRot, camTransState.tweenRot, tweenFact));

@@ -59,6 +59,7 @@ CR_BIND_DERIVED(CSimpleGroundFlash, CGroundFlash, )
 CR_REG_METADATA(CSimpleGroundFlash, (
 	CR_MEMBER(side1),
 	CR_MEMBER(side2),
+	CR_MEMBER(normal),
 	CR_MEMBER(age),
 	CR_MEMBER(agerate),
  	CR_MEMBER_BEGINFLAG(CM_Config),
@@ -270,13 +271,14 @@ bool CStandardGroundFlash::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 
 CSimpleGroundFlash::CSimpleGroundFlash()
+	: texture(nullptr)
+	, colorMap(nullptr)
+	, agerate(0.0f)
+	, age(0.0f)
+	, ttl(0)
+	, sizeGrowth(0.0f)
 {
-	texture = nullptr;
-	colorMap = nullptr;
-	agerate = 0.0f;
-	age = 0.0f;
-	ttl = 0;
-	sizeGrowth = 0.0f;
+
 }
 
 void CSimpleGroundFlash::Init(const CUnit* owner, const float3& offset)
@@ -287,16 +289,20 @@ void CSimpleGroundFlash::Init(const CUnit* owner, const float3& offset)
 	age = ttl ? 0.0f : 1.0f;
 	agerate = ttl ? 1.0f / ttl : 1.0f;
 
-	const float3 normal = CalcNormal(pos, camera->GetDir() * -1000.0f, size + (sizeGrowth * ttl));
+	normal = CalcNormal(pos, camera->GetDir() * -1000.0f, size + (sizeGrowth * ttl));
 
 	side1 = (normal.cross(RgtVector)).ANormalize();
 	side2 = side1.cross(normal);
+
+	CExpGenSpawnable::Init(owner, offset); // scales rotParams
 
 	projectileHandler.AddGroundFlash(this);
 }
 
 void CSimpleGroundFlash::Draw()
 {
+	UpdateRotation();
+
 	unsigned char color[4] = {0, 0, 0, 0};
 	colorMap->GetColor(color, age);
 
@@ -304,12 +310,25 @@ void CSimpleGroundFlash::Draw()
 	const float3 p2 = pos + ( side1 - side2) * size;
 	const float3 p3 = pos + ( side1 + side2) * size;
 	const float3 p4 = pos + (-side1 + side2) * size;
-	rb.AddQuadTriangles(
-		{ p1, texture->xstart, texture->ystart, color },
-		{ p2, texture->xend,   texture->ystart, color },
-		{ p3, texture->xend,   texture->yend,   color },
-		{ p4, texture->xstart, texture->yend,   color }
-	);
+
+	std::array<float3, 4> bounds = {
+		(-side1 - side2) * size,
+		( side1 - side2) * size,
+		( side1 + side2) * size,
+		(-side1 + side2) * size
+	};
+
+	if (math::fabs(rotVal) > 0.01f) {
+		for (auto& b : bounds)
+			b = b.rotate(rotVal, normal);
+	}
+
+  rb.AddQuadTriangles(
+    { pos + bounds[0], texture->xstart, texture->ystart, color },
+    { pos + bounds[1], texture->xend  , texture->ystart, color },
+    { pos + bounds[2], texture->xend  , texture->yend  , color },
+    { pos + bounds[3], texture->xstart, texture->yend  , color }
+  };
 }
 
 bool CSimpleGroundFlash::Update()

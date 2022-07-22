@@ -77,6 +77,8 @@ void CModInfo::ResetState()
 	}
 	{
 		flankingBonusModeDefault = 0;
+		flankingBonusMaxDefault = 1.9f;
+		flankingBonusMinDefault = 0.9f;
 	}
 	{
 		losMipLevel = 0;
@@ -95,6 +97,8 @@ void CModInfo::ResetState()
 		pathFinderSystem = NOPFS_TYPE;
 		pfRawDistMult    = 1.25f;
 		pfUpdateRate     = 0.007f;
+
+		enableSmoothMesh = true;
 
 		allowTake = true;
 	}
@@ -134,6 +138,8 @@ void CModInfo::Init(const std::string& modFileName)
 		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
+
+		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
 		allowTake = system.GetBool("allowTake", allowTake);
 	}
@@ -236,6 +242,8 @@ void CModInfo::Init(const std::string& modFileName)
 		// flanking bonus
 		const LuaTable& flankingBonusTbl = root.SubTable("flankingBonus");
 		flankingBonusModeDefault = flankingBonusTbl.GetInt("defaultMode", 1);
+		flankingBonusMaxDefault = flankingBonusTbl.GetFloat("defaultMax", 1.9f);
+		flankingBonusMinDefault = flankingBonusTbl.GetFloat("defaultMin", 0.9f);
 	}
 
 	{

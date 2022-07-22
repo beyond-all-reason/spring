@@ -22,6 +22,7 @@
 #include "Game/UI/GuiHandler.h"
 #include "Game/UI/InfoConsole.h"
 #include "Game/UI/KeyCodes.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/KeySet.h"
 #include "Game/UI/KeyBindings.h"
 #include "Game/UI/MiniMap.h"
@@ -36,6 +37,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/ShadowHandler.h"
+#include "Rendering/OGLDBInfo.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
@@ -66,6 +68,7 @@
 #include "System/LoadSave/DemoReader.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Platform/SDL1_keysym.h"
+#include "System/Platform/Misc.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/Misc/SpringTime.h"
 
@@ -146,7 +149,12 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetVisibleProjectiles);
 
 	REGISTER_LUA_CFUNC(GetRenderUnits);
+	REGISTER_LUA_CFUNC(GetRenderUnitsDrawFlagChanged);
 	REGISTER_LUA_CFUNC(GetRenderFeatures);
+	REGISTER_LUA_CFUNC(GetRenderFeaturesDrawFlagChanged);
+
+	REGISTER_LUA_CFUNC(ClearUnitsPreviousDrawFlag);
+	REGISTER_LUA_CFUNC(ClearFeaturesPreviousDrawFlag);
 
 	REGISTER_LUA_CFUNC(GetUnitsInScreenRectangle);
 
@@ -168,6 +176,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetSelectedUnitsSorted);
 	REGISTER_LUA_CFUNC(GetSelectedUnitsCounts);
 	REGISTER_LUA_CFUNC(GetSelectedUnitsCount);
+	REGISTER_LUA_CFUNC(GetBoxSelectionByEngine);
 
 	REGISTER_LUA_CFUNC(HaveShadows);
 	REGISTER_LUA_CFUNC(HaveAdvShading);
@@ -190,6 +199,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetPixelDir);
 
 	REGISTER_LUA_CFUNC(GetTimer);
+	REGISTER_LUA_CFUNC(GetTimerMicros);
 	REGISTER_LUA_CFUNC(GetFrameTimer);
 	REGISTER_LUA_CFUNC(DiffTimers);
 
@@ -223,6 +233,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetKeyCode);
 	REGISTER_LUA_CFUNC(GetKeySymbol);
+	REGISTER_LUA_CFUNC(GetScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyBindings);
 	REGISTER_LUA_CFUNC(GetActionHotKeys);
 
@@ -259,6 +270,11 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetDecalAlpha);
 	REGISTER_LUA_CFUNC(GetDecalOwner);
 	REGISTER_LUA_CFUNC(GetDecalType);
+
+	REGISTER_LUA_CFUNC(UnitIconGetDraw);
+
+	REGISTER_LUA_CFUNC(MakeGLDBQuery);
+	REGISTER_LUA_CFUNC(GetGLDBQuery);
 
 	return true;
 }
@@ -510,12 +526,38 @@ int LuaUnsyncedRead::GetWindowGeometry(lua_State* L)
 
 int LuaUnsyncedRead::GetScreenGeometry(lua_State* L)
 {
-	lua_pushnumber(L, globalRendering->screenSizeX);
-	lua_pushnumber(L, globalRendering->screenSizeY);
-	lua_pushnumber(L, globalRendering->screenPosX);
-	lua_pushnumber(L, globalRendering->screenPosY);
+	const int displayIndex = luaL_optint(L, 1, -1);
+	const int* displayIndexPtr = (displayIndex != -1) ? &displayIndex : nullptr;
+	const bool queryUsable = luaL_optboolean(L, 2, false); // whether to query usable screen size
 
-	return 4;
+	if (displayIndexPtr == nullptr) {
+		lua_pushnumber(L, globalRendering->screenSizeX);
+		lua_pushnumber(L, globalRendering->screenSizeY);
+		lua_pushnumber(L, globalRendering->screenPosX);
+		lua_pushnumber(L, globalRendering->screenPosY);
+	}
+	else {
+		SDL_Rect r{};
+		globalRendering->GetScreenBounds(r, displayIndexPtr);
+		lua_pushnumber(L, r.w);
+		lua_pushnumber(L, r.h);
+		lua_pushnumber(L, r.x);
+		lua_pushnumber(L, r.y);
+	}
+
+	if (!queryUsable)
+		return 4;
+
+	{
+		SDL_Rect r{};
+		globalRendering->GetUsableScreenBounds(r, displayIndexPtr);
+		lua_pushnumber(L, r.w);
+		lua_pushnumber(L, r.h);
+		lua_pushnumber(L, r.x);
+		lua_pushnumber(L, r.y);
+
+		return 4 + 4;
+	}
 }
 
 
@@ -1203,6 +1245,46 @@ namespace {
 
 		return 2;
 	}
+
+	template<typename V>
+	static int GetRenderObjectsDrawFlagChanged(lua_State* L, const V& renderObjects, const char* func) {
+		const bool sendMask = luaL_optboolean(L, 1, false);
+
+		std::vector<int> changedIds;
+		changedIds.reserve(renderObjects.size());
+
+		std::vector<uint8_t> changedDrawFlags;
+		changedDrawFlags.reserve(renderObjects.size());
+
+		for (const auto renderObject : renderObjects)
+		{
+			if (renderObject->previousDrawFlag == renderObject->drawFlag)
+				continue;
+			changedIds.push_back(renderObject->id);
+			changedDrawFlags.push_back(renderObject->drawFlag);
+		}
+
+		lua_createtable(L, changedIds.size(), 0);
+		uint32_t count = 0;
+		for (const auto id : changedIds)
+		{
+			lua_pushnumber(L, id);
+			lua_rawseti(L, -2, ++count);
+		}
+
+		if 	(!sendMask)
+			return 1;
+
+		lua_createtable(L, changedDrawFlags.size(), 0);
+		count = 0;
+		for (const auto drawFlag : changedDrawFlags)
+		{
+			lua_pushnumber(L, drawFlag);
+			lua_rawseti(L, -2, ++count);
+		}
+
+		return 2;
+	}
 }
 
 int LuaUnsyncedRead::GetRenderUnits(lua_State* L)
@@ -1210,9 +1292,31 @@ int LuaUnsyncedRead::GetRenderUnits(lua_State* L)
 	return GetRenderObjects(L, unitDrawer->GetUnsortedUnits(), __func__);
 }
 
+int LuaUnsyncedRead::GetRenderUnitsDrawFlagChanged(lua_State* L)
+{
+	return GetRenderObjectsDrawFlagChanged(L, unitDrawer->GetUnsortedUnits(), __func__);
+}
+
 int LuaUnsyncedRead::GetRenderFeatures(lua_State* L)
 {
 	return GetRenderObjects(L, featureDrawer->GetUnsortedFeatures(), __func__);
+}
+
+int LuaUnsyncedRead::GetRenderFeaturesDrawFlagChanged(lua_State* L)
+{
+	return GetRenderObjectsDrawFlagChanged(L, featureDrawer->GetUnsortedFeatures(), __func__);
+}
+
+int LuaUnsyncedRead::ClearUnitsPreviousDrawFlag(lua_State* L)
+{
+	unitDrawer->ClearPreviousDrawFlags();
+	return 0;
+}
+
+int LuaUnsyncedRead::ClearFeaturesPreviousDrawFlag(lua_State* L)
+{
+	featureDrawer->ClearPreviousDrawFlags();
+	return 0;
 }
 
 int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
@@ -1448,6 +1552,12 @@ int LuaUnsyncedRead::GetSelectedUnitsCounts(lua_State* L)
 int LuaUnsyncedRead::GetSelectedUnitsCount(lua_State* L)
 {
 	lua_pushnumber(L, selectedUnitsHandler.selectedUnits.size());
+	return 1;
+}
+
+int LuaUnsyncedRead::GetBoxSelectionByEngine(lua_State* L)
+{
+	lua_pushboolean(L, selectedUnitsHandler.GetBoxSelectionHandledByEngine());
 	return 1;
 }
 
@@ -1918,7 +2028,7 @@ int LuaUnsyncedRead::GetTeamOrigColor(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
-static void PushTimer(lua_State* L, const spring_time& time)
+static void PushTimer(lua_State* L, const spring_time& time, bool microseconds)
 {
 	// use time since Spring's epoch in MILLIseconds because that
 	// is more likely to fit in a 32-bit pointer (on any platforms
@@ -1927,14 +2037,27 @@ static void PushTimer(lua_State* L, const spring_time& time)
 	// single-precision floats better
 	//
 	// 4e9millis == 4e6s == 46.3 days until overflow
-	const std::uint64_t millis = time.toMilliSecs<std::uint64_t>();
-
 	ptrdiff_t p = 0;
 
-	if (sizeof(void*) == 8) {
-		p = spring::SafeCast<std::uint64_t>(millis);
-	} else {
-		p = spring::SafeCast<std::uint32_t>(millis);
+	if (microseconds) {
+		const std::uint64_t micros = time.toMicroSecs<std::uint64_t>();
+
+		if (sizeof(void*) == 8) {
+			p = spring::SafeCast<std::uint64_t>(micros);
+		}
+		else {
+			p = spring::SafeCast<std::uint32_t>(micros);
+		}
+	}
+	else {
+		const std::uint64_t millis = time.toMilliSecs<std::uint64_t>();
+
+		if (sizeof(void*) == 8) {
+			p = spring::SafeCast<std::uint64_t>(millis);
+		}
+		else {
+			p = spring::SafeCast<std::uint32_t>(millis);
+		}
 	}
 
 	lua_pushlightuserdata(L, reinterpret_cast<void*>(p));
@@ -1942,16 +2065,23 @@ static void PushTimer(lua_State* L, const spring_time& time)
 
 int LuaUnsyncedRead::GetTimer(lua_State* L)
 {
-	PushTimer(L, spring_now());
+	PushTimer(L, spring_now(), false);
 	return 1;
 }
+
+int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
+{
+	PushTimer(L, spring_now(), true);
+	return 1;
+}
+
 
 int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 {
 	if (luaL_optboolean(L, 1, false)) {
-		PushTimer(L, game->lastFrameTime);
+		PushTimer(L, game->lastFrameTime, false);
 	} else {
-		PushTimer(L, globalRendering->lastFrameStart);
+		PushTimer(L, globalRendering->lastFrameStart, false);
 	}
 	return 1;
 }
@@ -1966,24 +2096,36 @@ int LuaUnsyncedRead::DiffTimers(lua_State* L)
 	const void* p1 = lua_touserdata(L, 1);
 	const void* p2 = lua_touserdata(L, 2);
 
-	const std::uint64_t t1 = (sizeof(void*) == 8)?
-		*reinterpret_cast<std::uint64_t*>(&p1):
+	const std::uint64_t t1 = (sizeof(void*) == 8) ?
+		*reinterpret_cast<std::uint64_t*>(&p1) :
 		*reinterpret_cast<std::uint32_t*>(&p1);
-	const std::uint64_t t2 = (sizeof(void*) == 8)?
-		*reinterpret_cast<std::uint64_t*>(&p2):
+	const std::uint64_t t2 = (sizeof(void*) == 8) ?
+		*reinterpret_cast<std::uint64_t*>(&p2) :
 		*reinterpret_cast<std::uint32_t*>(&p2);
 
 	// t1 is supposed to be the most recent time-point
 	assert(t1 >= t2);
 
-	const spring_time dt = spring_time::fromMilliSecs(t1 - t2);
-
-	if (luaL_optboolean(L, 3, false)) {
-		lua_pushnumber(L, dt.toMilliSecsf());
-	} else {
-		lua_pushnumber(L, dt.toSecsf());
+	if (luaL_optboolean(L, 4, false)) {
+		const spring_time dt = spring_time::fromMicroSecs(t1 - t2);
+		
+		if (luaL_optboolean(L, 3, false)) {
+			lua_pushnumber(L, dt.toMilliSecsf());
+		}
+		else {
+			lua_pushnumber(L, dt.toSecsf());
+		}
 	}
+	else {
+		const spring_time dt = spring_time::fromMilliSecs(t1 - t2);
 
+		if (luaL_optboolean(L, 3, false)) {
+			lua_pushnumber(L, dt.toMilliSecsf());
+		}
+		else {
+			lua_pushnumber(L, dt.toSecsf());
+		}
+	}
 	return 1;
 }
 
@@ -2461,9 +2603,19 @@ int LuaUnsyncedRead::GetKeySymbol(lua_State* L)
 	return 2;
 }
 
+
+int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
+{
+	const int scanCode = luaL_checkint(L, 1);
+	lua_pushsstring(L, scanCodes.GetName(scanCode));
+	lua_pushsstring(L, scanCodes.GetDefaultName(scanCode));
+	return 2;
+}
+
+
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
-	CKeyBindings::ActionList actions;
+	ActionList actions;
 	const std::string& argument = luaL_optstring(L, 1, "");
 
 	if (argument.empty()) {
@@ -2474,7 +2626,22 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 		if (!ks.Parse(luaL_checksstring(L, 1)))
 			return 0;
 
-		actions = keyBindings.GetActionList(ks);
+		CKeyChain keyChain;
+		keyChain.emplace_back(ks);
+
+		const std::string& arg2 = luaL_optstring(L, 2, "");
+
+		if (arg2.empty()) {
+			actions = keyBindings.GetActionList(keyChain);
+		} else {
+			if (!ks.Parse(luaL_checksstring(L, 2)))
+				return 0;
+
+			CKeyChain keyChain2;
+			keyChain2.emplace_back(ks);
+
+			actions = keyBindings.GetActionList(keyChain, keyChain2);
+		}
 	}
 
 	int i = 1;
@@ -2786,7 +2953,7 @@ int LuaUnsyncedRead::GetConfigParams(lua_State* L)
 	for (ConfigVariable::MetaDataMap::const_iterator it = cfgmap.begin(); it != cfgmap.end(); ++it) {
 		const ConfigVariableMetaData* meta = it->second;
 
-		lua_createtable(L, 0, 9);
+		lua_createtable(L, 0, 11);
 
 			lua_pushliteral(L, "name");
 			lua_pushsstring(L, meta->GetKey());
@@ -2832,6 +2999,11 @@ int LuaUnsyncedRead::GetConfigParams(lua_State* L)
 			if (meta->GetReadOnly().IsSet()) {
 				lua_pushliteral(L, "readOnly");
 				lua_pushboolean(L, !!meta->GetReadOnly().Get());
+				lua_rawset(L, -3);
+			}
+			if (meta->GetDeprecated().IsSet()) {
+				lua_pushliteral(L, "readOnly");
+				lua_pushboolean(L, !!meta->GetDeprecated().Get());
 				lua_rawset(L, -3);
 			}
 
@@ -3014,3 +3186,74 @@ int LuaUnsyncedRead::GetDecalType(lua_State* L)
 	return 1;
 }
 
+int LuaUnsyncedRead::UnitIconGetDraw(lua_State* L) {
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->drawIcon);
+	return 1;
+}
+
+namespace {
+	struct LuaGLDBQuery {
+		inline static std::unique_ptr<OGLDBInfo> object = nullptr;
+	};
+};
+
+int LuaUnsyncedRead::MakeGLDBQuery(lua_State* L)
+{
+	const bool forced = luaL_optboolean(L, 1, false);
+	if (LuaGLDBQuery::object && !forced) {
+		lua_pushboolean(L, false); //can't make another one (unless forced), old one is not consumed yet
+		return 1;
+	}
+
+	LuaGLDBQuery::object = std::make_unique<OGLDBInfo>(globalRenderingInfo.glRenderer, Platform::GetOSFamilyStr());
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+int LuaUnsyncedRead::GetGLDBQuery(lua_State* L)
+{
+	if (LuaGLDBQuery::object == nullptr) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	const bool blockingCall = luaL_optboolean(L, 1, true);
+
+	if (blockingCall || LuaGLDBQuery::object->IsReady()) {
+
+		int2 maxCtx = {0, 0};
+		std::string url;
+		std::string drv;
+
+		if (!LuaGLDBQuery::object->GetResult(maxCtx, url, drv)) {
+			LuaGLDBQuery::object = nullptr;
+			lua_pushnil(L);
+			return 1;
+		}
+
+		LuaGLDBQuery::object = nullptr;
+
+		if (maxCtx.x * 10 + maxCtx.y <= globalRenderingInfo.glContextVersion.x * 10 + globalRenderingInfo.glContextVersion.y) {
+			lua_pushboolean(L, true ); // ready
+			lua_pushboolean(L, false); // drivers are ok
+			return 2;
+		}
+
+		lua_pushboolean(L, true); // ready
+		lua_pushboolean(L, true); // drivers are not ok
+		lua_pushinteger(L, maxCtx.x);
+		lua_pushinteger(L, maxCtx.y);
+		lua_pushstring(L, url.c_str());
+		lua_pushstring(L, drv.c_str());
+
+		return 6;
+	}
+
+	lua_pushboolean(L, false); // not ready, user should come back later
+	return 1;
+}

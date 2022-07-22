@@ -275,8 +275,8 @@ class CEventClient
 		virtual void Update();
 		virtual void UnsyncedHeightMapUpdate(const SRectangle& rect);
 
-		virtual bool KeyPress(int key, bool isRepeat);
-		virtual bool KeyRelease(int key);
+		virtual bool KeyPress(int keyCode, int scanCode, bool isRepeat);
+		virtual bool KeyRelease(int keyCode, int scanCode);
 		virtual bool TextInput(const std::string& utf8);
 		virtual bool TextEditing(const std::string& utf8, unsigned int start, unsigned int length);
 		virtual bool MouseMove(int x, int y, int dx, int dy, int button);
@@ -329,6 +329,7 @@ class CEventClient
 		virtual void DrawGroundPreForward() {}
 		virtual void DrawGroundPostForward() {}
 		virtual void DrawGroundPreDeferred() {}
+		virtual void DrawGroundDeferred() {}
 		virtual void DrawGroundPostDeferred() {}
 		virtual void DrawUnitsPostDeferred() {}
 		virtual void DrawFeaturesPostDeferred() {}

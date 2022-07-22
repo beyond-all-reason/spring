@@ -24,6 +24,8 @@ class CPathFinder;
 class PathingState {
 public:
 
+	PathingState();
+
     void Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName);
 
     void Terminate();
@@ -58,6 +60,8 @@ public:
 	int2 GetNumBlocks() const { return nbrOfBlocks; }
 
     void Update();
+
+	void UpdateVertexPathCosts(int blocksToUpdate);
 
 	/**
 	 * This is called whenever the ground structure of the map changes
@@ -186,8 +190,8 @@ private:
     std::vector<SingleBlock> consumedBlocks;
 	std::vector<SOffsetBlock> offsetBlocksSortedByCost;
 
-	int updatedBlocksDelayTimeout = 0;
-	bool updatedBlocksDelayActive = false;
+	// int updatedBlocksDelayTimeout = (-1);
+	// bool updatedBlocksDelayActive = false;
 };
 
 }

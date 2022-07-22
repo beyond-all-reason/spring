@@ -41,6 +41,7 @@ public:
 	enum {
 		ATLAS_ALLOC_LEGACY   = 0,
 		ATLAS_ALLOC_QUADTREE = 1,
+		ATLAS_ALLOC_ROW      = 2,
 	};
 
 public:
@@ -107,6 +108,8 @@ public:
 	 *         the "textures" map and false if it does not.
 	 */
 	bool TextureExists(const std::string& name);
+
+	const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& GetTextures() const;
 
 	void ReloadTextures();
 

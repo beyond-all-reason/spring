@@ -214,8 +214,8 @@ class CEventHandler
 		void UnsyncedHeightMapUpdate(const SRectangle& rect);
 		void Update();
 
-		bool KeyPress(int key, bool isRepeat);
-		bool KeyRelease(int key);
+		bool KeyPress(int keyCode, int scanCode, bool isRepeat);
+		bool KeyRelease(int keyCode, int scanCode);
 		bool TextInput(const std::string& utf8);
 		bool TextEditing(const std::string& utf8, unsigned int start, unsigned int length);
 		bool MouseMove(int x, int y, int dx, int dy, int button);
@@ -268,6 +268,7 @@ class CEventHandler
 		void DrawGroundPreForward();
 		void DrawGroundPostForward();
 		void DrawGroundPreDeferred();
+		void DrawGroundDeferred();
 		void DrawGroundPostDeferred();
 		void DrawUnitsPostDeferred();
 		void DrawFeaturesPostDeferred();

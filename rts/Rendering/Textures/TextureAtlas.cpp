@@ -6,6 +6,7 @@
 #include "Bitmap.h"
 #include "LegacyAtlasAlloc.h"
 #include "QuadtreeAtlasAlloc.h"
+#include "RowAtlasAlloc.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/PBO.h"
@@ -56,6 +57,7 @@ void CTextureAtlas::ReinitAllocator()
 	switch (allocType) {
 		case ATLAS_ALLOC_LEGACY:   { atlasAllocator = new   CLegacyAtlasAlloc(); } break;
 		case ATLAS_ALLOC_QUADTREE: { atlasAllocator = new CQuadtreeAtlasAlloc(); } break;
+		case ATLAS_ALLOC_ROW:      { atlasAllocator = new      CRowAtlasAlloc(); } break;
 		default:                   {                              assert(false); } break;
 	}
 
@@ -187,7 +189,7 @@ bool CTextureAtlas::CreateTexture()
 
 		if (debug) {
 			CBitmap tex(data, atlasSize.x, atlasSize.y);
-			tex.Save(name + "-" + IntToString(atlasSize.x) + "x" + IntToString(atlasSize.y) + ".png");
+			tex.Save(name + "-" + IntToString(atlasSize.x) + "x" + IntToString(atlasSize.y) + ".png", true);
 		}
 	} else {
 		LOG_L(L_ERROR, "[TextureAtlas::%s] failed to map PBO for atlas \"%s\" (size=<%d,%d>)", __func__, name.c_str(), atlasSize.x, atlasSize.y);
@@ -226,6 +228,11 @@ void CTextureAtlas::BindTexture()
 bool CTextureAtlas::TextureExists(const std::string& name)
 {
 	return (textures.find(StringToLower(name)) != textures.end());
+}
+
+const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& CTextureAtlas::GetTextures() const
+{
+	return atlasAllocator->GetEntries();
 }
 
 void CTextureAtlas::ReloadTextures()

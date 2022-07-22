@@ -42,9 +42,6 @@ public:
 	static float GetUnitIconScaleUI() { return modelDrawerData->GetUnitIconScaleUI(); }
 	static void SetUnitIconScaleUI(float scale) { modelDrawerData->SetUnitIconScaleUI(scale); }
 
-	static float GetUnitDrawDist() { return CModelDrawerDataConcept::modelDrawDist; }
-	static void SetModelDrawDist(float dist) { CModelDrawerDataConcept::SetModelDrawDist(dist); }
-
 	static float GetUnitIconDist(float dist) { return modelDrawerData->unitIconDist; }
 	static void SetUnitIconDist(float dist) { modelDrawerData->SetUnitIconDist(dist); }
 
@@ -56,6 +53,8 @@ public:
 	static void AddTempDrawUnit(const CUnitDrawerData::TempDrawUnit& tempDrawUnit) { modelDrawerData->AddTempDrawUnit(tempDrawUnit); }
 
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
+
+	static void ClearPreviousDrawFlags() { modelDrawerData->ClearPreviousDrawFlags(); }
 public:
 	// DrawUnit*
 	virtual void DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const = 0;

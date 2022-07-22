@@ -377,8 +377,8 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	moveState = std::min(moveState, int(MOVESTATE_ROAM));
 
 	flankingBonusMode = udTable.GetInt("flankingBonusMode", modInfo.flankingBonusModeDefault);
-	flankingBonusMax  = udTable.GetFloat("flankingBonusMax", 1.9f);
-	flankingBonusMin  = udTable.GetFloat("flankingBonusMin", 0.9f);
+	flankingBonusMax  = udTable.GetFloat("flankingBonusMax", modInfo.flankingBonusMaxDefault);
+	flankingBonusMin  = udTable.GetFloat("flankingBonusMin", modInfo.flankingBonusMinDefault);
 	flankingBonusDir  = udTable.GetFloat3("flankingBonusDir", FwdVector);
 	flankingBonusMobilityAdd = udTable.GetFloat("flankingBonusMobilityAdd", 0.01f);
 
@@ -526,8 +526,8 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 			// we have no MoveDef, so pathType == -1 and IsAirUnit() MIGHT be true
 			cantBeTransported |= (!modInfo.transportAir && canfly);
 		} else {
-			upright           |= (moveDef->speedModClass == MoveDef::Hover);
-			upright           |= (moveDef->speedModClass == MoveDef::Ship );
+			//upright           |= (moveDef->speedModClass == MoveDef::Hover);
+			//upright           |= (moveDef->speedModClass == MoveDef::Ship );
 
 			// we have a MoveDef, so pathType != -1 and IsGroundUnit() MUST be true
 			cantBeTransported |= (!modInfo.transportGround && moveDef->speedModClass == MoveDef::Tank );
@@ -761,6 +761,7 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 			case 's': { defYardMap[ymCopyIdx - 1] = YARDMAP_STACKABLE;                    } break;
 			case 'c': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARD;                         } break;
 			case 'i': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARDINV;                      } break;
+			case 'b': { defYardMap[ymCopyIdx - 1] = YARDMAP_BUILDONLY;                    } break;
 //			case 'w': { defYardMap[ymCopyIdx - 1] = YARDMAP_WALKABLE;                     } break; // TODO?
 			case 'w':
 			case 'x':

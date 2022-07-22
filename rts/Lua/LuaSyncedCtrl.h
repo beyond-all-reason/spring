@@ -29,6 +29,7 @@ class LuaSyncedCtrl
 
 		inline static bool inTransferUnit = false;
 		inline static bool inHeightMap = false;
+		inline static bool inOriginalHeightMap = false;
 		inline static bool inSmoothMesh = false;
 
 	private:
@@ -78,6 +79,7 @@ class LuaSyncedCtrl
 		static int SetUnitWeaponDamages(lua_State* L);
 		static int SetUnitMaxRange(lua_State* L);
 		static int SetUnitExperience(lua_State* L);
+		static int AddUnitExperience(lua_State* L);
 		static int SetUnitArmored(lua_State* L);
 		static int SetUnitLosMask(lua_State* L);
 		static int SetUnitLosState(lua_State* L);
@@ -181,6 +183,14 @@ class LuaSyncedCtrl
 		static int AddHeightMap(lua_State* L);
 		static int SetHeightMap(lua_State* L);
 		static int SetHeightMapFunc(lua_State* L);
+
+		static int LevelOriginalHeightMap(lua_State* L);
+		static int AdjustOriginalHeightMap(lua_State* L);
+		static int RevertOriginalHeightMap(lua_State* L);
+
+		static int AddOriginalHeightMap(lua_State* L);
+		static int SetOriginalHeightMap(lua_State* L);
+		static int SetOriginalHeightMapFunc(lua_State* L);
 
 		static int LevelSmoothMesh(lua_State* L);
 		static int AdjustSmoothMesh(lua_State* L);

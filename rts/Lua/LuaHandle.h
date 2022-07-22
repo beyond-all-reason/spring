@@ -188,8 +188,8 @@ class CLuaHandle : public CEventClient
 		void UnsyncedHeightMapUpdate(const SRectangle& rect) override;
 		void Update() override;
 
-		bool KeyPress(int key, bool isRepeat) override;
-		bool KeyRelease(int key) override;
+		bool KeyPress(int keyCode, int scanCode, bool isRepeat) override;
+		bool KeyRelease(int keyCode, int scanCode) override;
 		bool TextInput(const std::string& utf8) override;
 		bool TextEditing(const std::string& utf8, unsigned int start, unsigned int length) override;
 		bool MouseMove(int x, int y, int dx, int dy, int button) override;
@@ -240,6 +240,7 @@ class CLuaHandle : public CEventClient
 		void DrawGroundPreForward() override;
 		void DrawGroundPostForward() override;
 		void DrawGroundPreDeferred() override;
+		void DrawGroundDeferred() override;
 		void DrawGroundPostDeferred() override;
 		void DrawUnitsPostDeferred() override;
 		void DrawFeaturesPostDeferred() override;
@@ -363,6 +364,8 @@ class CLuaHandle : public CEventClient
 
 		// FIXME needs access to L & RunCallIn
 		friend class CLuaRules;
+
+		friend class CLuaStateCollector;
 };
 
 

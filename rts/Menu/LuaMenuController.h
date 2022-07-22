@@ -18,8 +18,8 @@ public:
 
 	static bool ActivateInstance(const std::string& msg);
 
-	int KeyReleased(int k) override;
-	int KeyPressed(int k, bool isRepeat) override;
+	int KeyReleased(int keyCode, int scanCode) override;
+	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 	int TextInput(const std::string& utf8Text) override;
 	int TextEditing(const std::string& utf8, unsigned int start, unsigned int length) override;
 

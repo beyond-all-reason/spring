@@ -12,12 +12,15 @@ public:
 	Action() {}
 	Action(const std::string& line);
 
-	std::string command;   ///< first word, lowercase
-	std::string extra;     ///< everything but the first word
-	std::string rawline;   ///< includes the command, case preserved
-	std::string boundWith; ///< the string that defined the binding keyset
-
-	CKeyChain keyChain;    ///< the bounded keychain/keyset
+	int         bindingIndex; ///< the order for the action trigger
+	std::string command;      ///< first word, lowercase
+	std::string extra;        ///< everything but the first word, stripped of comments (//)
+	std::string line;         ///< the whole command line, sanitized
+	std::string rawline;      ///< includes the command, case preserved
+	std::string boundWith;    ///< the string that defined the binding keyset
+	CKeyChain   keyChain;     ///< the bound keychain/keyset
 };
+
+typedef std::vector<Action> ActionList;
 
 #endif // ACTION_H

@@ -78,8 +78,15 @@ void CHeatCloudProjectile::Update()
 	sizemod *= sizemodmod;
 }
 
+void CHeatCloudProjectile::Init(const CUnit* owner, const float3& offset)
+{
+	CProjectile::Init(owner, offset);
+}
+
 void CHeatCloudProjectile::Draw()
 {
+	UpdateRotation();
+
 	unsigned char col[4];
 	const float dheat = std::max(0.0f, heat-globalRendering->timeOffset);
 	const float alpha = (dheat / maxheat) * 255.0f;
@@ -90,12 +97,27 @@ void CHeatCloudProjectile::Draw()
 	col[3] = 1;//(dheat/maxheat)*255.0f;
 
 	const float drawsize = (size + sizeGrowth * globalRendering->timeOffset) * (1.0f - sizemod);
-	rb.AddQuadTriangles(
-		{ drawPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xstart, texture->ystart, col },
-		{ drawPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, texture->xend,   texture->ystart, col },
-		{ drawPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xend,   texture->yend,   col },
-		{ drawPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, texture->xstart, texture->yend,   col }
-	);
+
+	const float3 ri = camera->GetRight();
+	const float3 up = camera->GetUp();
+
+	std::array<float3, 4> bounds = {
+		-ri * drawsize - up * drawsize,
+		 ri * drawsize - up * drawsize,
+		 ri * drawsize + up * drawsize,
+		-ri * drawsize + up * drawsize
+	};
+
+	if (math::fabs(rotVal) > 0.01f) {
+		for (auto& b : bounds)
+			b = b.rotate(rotVal, camera->GetForward());
+	}
+  rb.AddQuadTriangles(
+    { drawPos + bounds[0], texture->xstart, texture->ystart, col },
+    { drawPos + bounds[1], texture->xend,   texture->ystart, col },
+    { drawPos + bounds[2], texture->xend,   texture->yend,   col },
+    { drawPos + bounds[3], texture->xstart, texture->yend,   col }
+  );
 }
 
 int CHeatCloudProjectile::GetProjectilesCount() const

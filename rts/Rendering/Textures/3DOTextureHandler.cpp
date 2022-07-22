@@ -153,8 +153,8 @@ void C3DOTextureHandler::Init()
 		CBitmap tex1(bigtex1.data(), curAtlasSize.x, curAtlasSize.y);
 		CBitmap tex2(bigtex2.data(), curAtlasSize.x, curAtlasSize.y);
 
-		tex1.Save(atlas.GetName() + "-1-" + IntToString(curAtlasSize.x) + "x" + IntToString(curAtlasSize.y) + ".png");
-		tex2.Save(atlas.GetName() + "-2-" + IntToString(curAtlasSize.x) + "x" + IntToString(curAtlasSize.y) + ".png");
+		tex1.Save(atlas.GetName() + "-1-" + IntToString(curAtlasSize.x) + "x" + IntToString(curAtlasSize.y) + ".png", true);
+		tex2.Save(atlas.GetName() + "-2-" + IntToString(curAtlasSize.x) + "x" + IntToString(curAtlasSize.y) + ".png", true);
 	}
 }
 
@@ -238,7 +238,8 @@ C3DOTextureHandler::UnitTexture* C3DOTextureHandler::Get3DOTexture(const std::st
 TexFile C3DOTextureHandler::CreateTex(const std::string& name, const std::string& name2, bool teamcolor)
 {
 	TexFile texFile;
-	texFile.tex.Load(name, 30);
+	static constexpr float defaultAlpha = 30.0f / 255.0f;
+	texFile.tex.Load(name, defaultAlpha);
 	texFile.name = name2;
 
 	texFile.tex2.Alloc(texFile.tex.xsize, texFile.tex.ysize);

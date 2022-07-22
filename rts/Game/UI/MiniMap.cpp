@@ -1485,6 +1485,7 @@ void CMiniMap::DrawNotes()
 
 	const float baseSize = mapDims.mapx * SQUARE_SIZE;
 	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	auto& shader = rb.GetShader();
 
 	std::deque<Notification>::iterator ni = notes.begin();
 	while (ni != notes.end()) {
@@ -1522,7 +1523,10 @@ void CMiniMap::DrawNotes()
 		}
 		++ni;
 	}
+
+	shader.Enable();
 	rb.DrawArrays(GL_LINES);
+	shader.Disable();
 }
 
 
@@ -1602,21 +1606,28 @@ void CMiniMap::DrawBackground() const
 
 void CMiniMap::DrawUnitIcons() const
 {
+	for (int i = 0; i < 4; ++i)
+		glDisable(GL_CLIP_PLANE0 + i);
+
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(curPos.x, curPos.y, curDim.x, curDim.y);
+
 	// switch to top-down map/world coords (z is twisted with y compared to the real map/world coords)
 	glPushMatrix();
 	glTranslatef(0.0f, +1.0f, 0.0f);
 	glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
 
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
 	unitDrawer->DrawUnitMiniMapIcons();
 
-	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D); //maybe later stages need it
 
 	glPopMatrix();
+
+	glDisable(GL_SCISSOR_TEST);
+
+	for (int i = 0; i < 4; ++i)
+		glEnable(GL_CLIP_PLANE0 + i);
+
 }
 
 

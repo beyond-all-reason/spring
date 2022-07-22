@@ -43,7 +43,8 @@ CONFIG(int, MaxDynamicMapLights)
 
 CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
 CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false);
-CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(true);
+CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false);
+CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false);
 
 
 CONFIG(int, ROAM)
@@ -65,7 +66,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	groundTextures = new CSMFGroundTextures(smfMap);
 	meshDrawer = SwitchMeshDrawer(drawerMode);
 
-	smfRenderStates.resize(RENDER_STATE_CNT, nullptr);
+	smfRenderStates = { nullptr };
 	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveARB, globalRendering->haveGLSL, false);
 	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                   false,                     false, false);
 	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                   false,                      true,  true);
@@ -77,6 +78,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	drawDeferred = geomBuffer.Valid();
 	drawMapEdges = configHandler->GetBool("MapBorder");
 	postDeferredEvents = configHandler->GetBool("AllowDrawMapPostDeferredEvents");
+	deferredEvents = configHandler->GetBool("AllowDrawMapDeferredEvents");
 
 
 	// NOTE:
@@ -109,7 +111,8 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	smfRenderStates[RENDER_STATE_FFP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_FFP]);
 	smfRenderStates[RENDER_STATE_SSP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_SSP]);
 	smfRenderStates[RENDER_STATE_LUA]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_LUA]);
-	smfRenderStates.clear();
+
+	smfRenderStates = { nullptr };
 
 	spring::SafeDelete(groundTextures);
 	spring::SafeDelete(meshDrawer);
@@ -301,6 +304,9 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 
 		smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
 		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
+
+		if (deferredEvents)
+			eventHandler.DrawGroundDeferred();
 
 		geomBuffer.SetDepthRange(0.0f, 1.0f);
 		geomBuffer.UnBind();
