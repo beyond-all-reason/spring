@@ -47,6 +47,8 @@ void CWreckProjectile::Update()
 
 void CWreckProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	col[0] = (unsigned char) (0.15f * 200);
 	col[1] = (unsigned char) (0.1f  * 200);
@@ -65,6 +67,7 @@ void CWreckProjectile::Draw()
 
 void CWreckProjectile::DrawOnMinimap()
 {
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ pos        , color4::redA });
 	rbMM.AddVertex({ pos + speed, color4::redA });
 }

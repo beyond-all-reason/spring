@@ -334,6 +334,8 @@ void CMissileProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	// rocket flare
 	const SColor lightYellow(255, 210, 180, 1);
 	const float fsize = radius * 0.4f;

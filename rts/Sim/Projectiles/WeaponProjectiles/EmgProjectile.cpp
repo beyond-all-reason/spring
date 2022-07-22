@@ -63,6 +63,8 @@ void CEmgProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const uint8_t col[4] {
 		(uint8_t)(color.x * intensity * 255),
 		(uint8_t)(color.y * intensity * 255),

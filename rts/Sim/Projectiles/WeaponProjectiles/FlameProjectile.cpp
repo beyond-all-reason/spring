@@ -75,6 +75,8 @@ void CFlameProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	weaponDef->visuals.colorMap->GetColor(col, curTime);
 

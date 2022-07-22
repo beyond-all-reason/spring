@@ -61,8 +61,6 @@ CR_REG_METADATA(CProjectile,
 	CR_MEMBER(quads)
 ))
 
-TypedRenderBuffer<VA_TYPE_C >& CProjectile::rbMM = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C >();
-
 CProjectile::CProjectile()
 	: myrange(0.0f)
 	, mygravity((mapInfo != nullptr)? mapInfo->map.gravity: 0.0f)
@@ -147,6 +145,7 @@ void CProjectile::Delete()
 
 void CProjectile::DrawOnMinimap()
 {
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ pos        , color4::whiteA });
 	rbMM.AddVertex({ pos + speed, color4::whiteA });
 }
@@ -191,5 +190,15 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 bool CProjectile::IsValidTexture(const AtlasedTexture* tex)
 {
 	return tex && tex != &CTextureAtlas::dummy;
+}
+
+TypedRenderBuffer<VA_TYPE_C>& CProjectile::GetMiniMapRenderBuffer()
+{
+	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C >();
+}
+
+TypedRenderBuffer<VA_TYPE_C>& CProjectile::GetAnimationRenderBuffer()
+{
+	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C >();
 }
 

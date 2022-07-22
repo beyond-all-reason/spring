@@ -73,6 +73,8 @@ void CExplosiveProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	uint8_t col[4] = {0};
 
 	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;

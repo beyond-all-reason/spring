@@ -19,7 +19,9 @@ CR_BIND_DERIVED(CNanoProjectile, CProjectile, )
 CR_REG_METADATA(CNanoProjectile,
 (
 	CR_MEMBER(rotAcc),
-
+	CR_MEMBER(rotVal0x),
+	CR_MEMBER(rotVel0x),
+	CR_MEMBER(rotAcc0x),
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(deathFrame),
 		CR_MEMBER(color),
@@ -70,6 +72,8 @@ void CNanoProjectile::Update()
 
 void CNanoProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	{
 		const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 		// rotParams.y is acceleration in angle per frame^2
@@ -102,6 +106,7 @@ void CNanoProjectile::Draw()
 
 void CNanoProjectile::DrawOnMinimap()
 {
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ pos        , color4::green });
 	rbMM.AddVertex({ pos + speed, color4::green });
 }

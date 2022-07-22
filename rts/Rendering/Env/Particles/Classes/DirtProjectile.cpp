@@ -80,6 +80,8 @@ void CDirtProjectile::Draw()
 	if (!IsValidTexture(texture))
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float partAbove = (pos.y / (size * camera->GetUp().y));
 
 	if (partAbove < -1.0f)

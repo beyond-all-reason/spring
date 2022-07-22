@@ -97,6 +97,8 @@ void CSmokeTrailProjectile::UpdateEndPos(const float3 pos, const float3 dir)
 
 void CSmokeTrailProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float age = gs->frameNum + globalRendering->timeOffset - creationTime;
 	const float invLifeTime = (1.0f / lifeTime);
 

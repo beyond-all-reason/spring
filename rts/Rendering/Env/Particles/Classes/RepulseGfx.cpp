@@ -66,6 +66,8 @@ void CRepulseGfx::Draw()
 	if (owner == nullptr || repulsed == nullptr)
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float3 zdir = (repulsed->pos - owner->pos).SafeANormalize();
 	const float3 xdir = (zdir.cross(UpVector)).SafeANormalize();
 	const float3 ydir = xdir.cross(zdir);

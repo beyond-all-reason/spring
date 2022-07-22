@@ -58,6 +58,8 @@ void CGenericParticleProjectile::Update()
 
 void CGenericParticleProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float3 dir1 = camera->GetRight();
 	float3 dir2 = camera->GetUp();
 	if (directional) {

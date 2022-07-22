@@ -147,6 +147,8 @@ void CFireProjectile::Draw()
 	size_t sz2 = subParticles2.size();
 	size_t sz = subParticles.size();
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	for (const SubParticle& pi: subParticles2) {
 		const float  age = pi.age + ageSpeed * globalRendering->timeOffset;
 		const float size = pi.maxSize * age;

@@ -97,6 +97,8 @@ void CBeamLaserProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float3 midPos = (targetPos + startPos) * 0.5f;
 	const float3 cameraDir = (midPos - camera->GetPos()).SafeANormalize();
 	// beam's coor-system; degenerate if targetPos == startPos
@@ -206,6 +208,7 @@ void CBeamLaserProjectile::DrawOnMinimap()
 {
 	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
 
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ startPos , color });
 	rbMM.AddVertex({ targetPos, color });
 }

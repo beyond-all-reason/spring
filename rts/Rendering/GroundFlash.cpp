@@ -211,6 +211,8 @@ bool CStandardGroundFlash::Update()
 
 void CStandardGroundFlash::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float iAlpha = Clamp(circleAlpha - (circleAlphaDec * globalRendering->timeOffset), 0.0f, 1.0f);
 
 	const float iSize = circleSize + circleGrowth * globalRendering->timeOffset;
@@ -301,6 +303,8 @@ void CSimpleGroundFlash::Init(const CUnit* owner, const float3& offset)
 
 void CSimpleGroundFlash::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	UpdateRotation();
 
 	unsigned char color[4] = {0, 0, 0, 0};
@@ -390,6 +394,8 @@ CSeismicGroundFlash::CSeismicGroundFlash(
 
 void CSeismicGroundFlash::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	color.a = mix(255, int(255 * (ttl / (1.0f * fade))), (ttl < fade));
 
 	const float3 p1 = pos + (-side1 - side2) * size;

@@ -167,12 +167,12 @@ struct VA_TYPE_2D0 {
 
 	static std::array<AttributeDef, 1> attributeDefs;
 };
-struct VA_TYPE_2dC {
+struct VA_TYPE_2DC {
 	float x, y;
 	SColor c;
 
-	VA_TYPE_2dC operator* (float t) const {
-		VA_TYPE_2dC v = *this;
+	VA_TYPE_2DC operator* (float t) const {
+		VA_TYPE_2DC v = *this;
 		v.x *= t;
 		v.y *= t;
 

@@ -95,6 +95,8 @@ void CSmokeProjectile::Update()
 
 void CSmokeProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	unsigned char alpha = (unsigned char) ((1 - age) * 255);
 	col[0] = (unsigned char) (color * alpha);

@@ -133,7 +133,7 @@ void GuiElement::Move(float x, float y)
 
 void GuiElement::DrawBox(int primType, const SColor& color)
 {
-	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dC>();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
 	auto& sh = rb.GetShader();
 
 	sh.Enable();

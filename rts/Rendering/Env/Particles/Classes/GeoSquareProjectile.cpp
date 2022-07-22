@@ -52,6 +52,8 @@ void CGeoSquareProjectile::Draw()
 	col[2] = (unsigned char) (b * a * 255);
 	col[3] = (unsigned char) (    a * 255);
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float3 dif(p1 - camera->GetPos()); dif.ANormalize();
 	float3 dir1(dif.cross(v1)); dir1.ANormalize();
 

@@ -174,6 +174,8 @@ void CLaserProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float3 dif(pos - camera->GetPos());
 	const float camDist = dif.LengthNormalize();
 

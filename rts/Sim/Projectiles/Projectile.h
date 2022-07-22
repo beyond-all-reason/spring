@@ -134,13 +134,11 @@ protected:
 	uint32_t collisionFlags = 0;
 	uint32_t renderIndex = -1u;
 
-	static TypedRenderBuffer<VA_TYPE_C >& rbMM; // minimap lines/pts
-	//static TypedRenderBuffer<VA_TYPE_C>* rbAnim; // animated projectiles
-
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 	static bool IsValidTexture(const AtlasedTexture* tex);
 public:
-	static TypedRenderBuffer<VA_TYPE_C >& GetMiniMapRenderBuffer() { return rbMM; }
+	static TypedRenderBuffer<VA_TYPE_C >& GetMiniMapRenderBuffer();
+	static TypedRenderBuffer<VA_TYPE_C >& GetAnimationRenderBuffer();
 	std::vector<int> quads;
 };
 

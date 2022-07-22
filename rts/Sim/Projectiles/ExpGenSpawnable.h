@@ -39,10 +39,8 @@ protected:
 
 	CExpGenSpawnable();
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
-
-	static TypedRenderBuffer<VA_TYPE_TC>& rb;
 public:
-	static TypedRenderBuffer<VA_TYPE_TC>& GetRenderBuffer() { return rb; };
+	static TypedRenderBuffer<VA_TYPE_TC>& GetPrimaryRenderBuffer();
 };
 
 #endif //EXP_GEN_SPAWNABLE_H

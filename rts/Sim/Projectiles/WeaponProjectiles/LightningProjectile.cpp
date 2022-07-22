@@ -60,6 +60,8 @@ void CLightningProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	uint8_t col[4] {
 		(uint8_t)(color.x * 255),
 		(uint8_t)(color.y * 255),
@@ -111,6 +113,8 @@ void CLightningProjectile::DrawOnMinimap()
 		color[1],
 		color[2]
 	};
+
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ startPos,  lcolor });
 	rbMM.AddVertex({ targetPos, lcolor });
 }

@@ -594,13 +594,14 @@ void CglFont::CreateDefaultShader()
 	// but fonts are expected to be available all the time
 	defShader = std::make_unique<Shader::GLSLProgramObject>("[GL-Font]");
 
-	LOG("[CglFont::CreateDefaultShader] Creating Font shaders: GLEW_ARB_explicit_attrib_location = %s", GLEW_ARB_explicit_attrib_location ? "true" : "false");
 	// 330 version was broken on AMD, probably due to bad attributes location (how?, why?). TODO: investigate
 	if (GLEW_ARB_explicit_attrib_location && false) {
+		LOG("[CglFont::%s] Creating Font shaders: GLEW_ARB_explicit_attrib_location = true", __func__);
 		defShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont330));
 		defShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsFont330));
 	}
 	else {
+		LOG("[CglFont::%s] Creating Font shaders: GLEW_ARB_explicit_attrib_location = false", __func__);
 		defShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont130));
 		defShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsFont130));
 		defShader->BindAttribLocation("pos", 0);

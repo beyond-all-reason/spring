@@ -166,6 +166,8 @@ void CTorpedoProjectile::Draw()
 	if (model != nullptr)
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	float3 r = dir.cross(UpVector);
 
 	if (r.SqLength() < 0.001f)

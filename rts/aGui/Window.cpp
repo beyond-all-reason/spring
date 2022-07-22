@@ -32,7 +32,7 @@ void Window::DrawSelf()
 
 	DrawBox(GL_QUADS, { 0.0f,0.0f,0.0f, opacity });
 
-	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2dC>();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
 	auto& sh = rb.GetShader();
 
 	const SColor color = { 0.7f,0.7f,0.7f, opacity };

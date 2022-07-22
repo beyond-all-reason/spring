@@ -47,9 +47,9 @@ std::array<AttributeDef, 5> VA_TYPE_TNT::attributeDefs = {
 std::array<AttributeDef, 1> VA_TYPE_2D0::attributeDefs = {
 	VA_ATTR_DEF(VA_TYPE_2D0, 0, 2, GL_FLOAT, x, false, "pos")
 };
-std::array<AttributeDef, 2> VA_TYPE_2dC::attributeDefs = {
-	VA_ATTR_DEF(VA_TYPE_2dC, 0, 2, GL_FLOAT, x, false, "pos"),
-	VA_ATTR_DEF(VA_TYPE_2dC, 1, 4, GL_UNSIGNED_BYTE, c, true, "color")
+std::array<AttributeDef, 2> VA_TYPE_2DC::attributeDefs = {
+	VA_ATTR_DEF(VA_TYPE_2DC, 0, 2, GL_FLOAT, x, false, "pos"),
+	VA_ATTR_DEF(VA_TYPE_2DC, 1, 4, GL_UNSIGNED_BYTE, c, true, "color")
 };
 
 std::array<AttributeDef, 2> VA_TYPE_2DT::attributeDefs = {

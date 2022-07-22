@@ -104,6 +104,8 @@ void CSmokeProjectile2::Update()
 
 void CSmokeProjectile2::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float interAge = std::min(1.0f, age + ageSpeed * globalRendering->timeOffset);
 	unsigned char col[4];
 	unsigned char alpha;

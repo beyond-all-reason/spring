@@ -31,8 +31,6 @@ CR_REG_METADATA(CExpGenSpawnable, (
 	CR_MEMBER_ENDFLAG(CM_Config)
 ))
 
-TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
-
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	: CWorldObject(pos, spd)
 	, createFrame{0}
@@ -89,6 +87,11 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 	CHECK_MEMBER_INFO_FLOAT3(CProjectile, rotParams)
 
 	return false;
+}
+
+TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::GetPrimaryRenderBuffer()
+{
+	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
 }
 
 

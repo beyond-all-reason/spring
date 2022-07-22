@@ -82,6 +82,8 @@ void CWakeProjectile::Update()
 
 void CWakeProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	col[0] = (unsigned char) (255 * alpha);
 	col[1] = (unsigned char) (255 * alpha);

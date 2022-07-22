@@ -80,6 +80,8 @@ void CExploSpikeProjectile::Update()
 
 void CExploSpikeProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float3 dif = (pos - camera->GetPos()).ANormalize();
 	const float3 dir2 = (dif.cross(dir)).ANormalize();
 

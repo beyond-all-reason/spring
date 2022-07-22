@@ -276,7 +276,7 @@ inline const std::string RenderBufferShader<VA_TYPE_2D0>::GetFragOutput()
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2dC>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2DC>::GetFragOutput()
 {
 	return "\toutColor = vcolor;";
 }
@@ -738,7 +738,7 @@ GET_TYPED_RENDER_BUFFER(VA_TYPE_TN  , 4)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TC  , 5)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TNT , 6)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_2D0 , 7)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2dC , 8)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2DC , 8)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_2DT , 9)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_2DTC, 10)
 

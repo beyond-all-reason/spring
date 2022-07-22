@@ -49,6 +49,8 @@ void CFireBallProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4] = {255, 150, 100, 1};
 
 	const float3 interPos = mix(pos, drawPos, checkCol);

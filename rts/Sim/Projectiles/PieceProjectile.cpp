@@ -253,6 +253,7 @@ void CPieceProjectile::Update()
 
 void CPieceProjectile::DrawOnMinimap()
 {
+	auto& rbMM = GetAnimationRenderBuffer();
 	rbMM.AddVertex({ pos        , color4::red });
 	rbMM.AddVertex({ pos + speed, color4::red });
 }
@@ -262,6 +263,8 @@ void CPieceProjectile::Draw()
 {
 	if ((explFlags & PF_Fire) == 0)
 		return;
+
+	auto& rb = GetPrimaryRenderBuffer();
 
 	static const SColor lightOrange(1.f, 0.78f, 0.59f, 0.2f);
 

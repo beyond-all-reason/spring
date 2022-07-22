@@ -77,6 +77,8 @@ void CSpherePartProjectile::Update()
 
 void CSpherePartProjectile::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col0[4];
 	unsigned char col1[4];
 

@@ -51,6 +51,8 @@ void CBitmapMuzzleFlame::Draw()
 {
 	UpdateRotation();
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const float life = (gs->frameNum - createFrame + globalRendering->timeOffset) * invttl;
 	const float igrowth = sizeGrowth * (1.0f - Square(1.0f - life));
 

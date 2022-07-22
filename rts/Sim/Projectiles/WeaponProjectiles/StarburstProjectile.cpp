@@ -326,6 +326,8 @@ void CStarburstProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	const auto wt3 = weaponDef->visuals.texture3;
 	const auto wt1 = weaponDef->visuals.texture1;
 

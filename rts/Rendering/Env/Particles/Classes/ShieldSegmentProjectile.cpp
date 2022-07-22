@@ -339,6 +339,7 @@ void ShieldSegmentProjectile::Draw()
 	if (!collection->AllowDrawing())
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
 
 	const float3 shieldPos = collection->GetShieldDrawPos();
 	const float size = collection->GetSize();

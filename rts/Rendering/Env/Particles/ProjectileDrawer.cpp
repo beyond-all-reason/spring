@@ -759,11 +759,11 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// empty if !drawSorted
 		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
-		for(auto p : sortedProjectiles[1]) {
+		for (auto p : sortedProjectiles[1]) if (!p->deleteMe) {
 			p->Draw();
 		}
 
-		for (auto p : sortedProjectiles[0]) {
+		for (auto p : sortedProjectiles[0]) if (!p->deleteMe) {
 			p->Draw();
 		}
 	}
@@ -771,7 +771,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	glEnable(GL_BLEND);
 	glDisable(GL_FOG);
 
-	auto& rb = CExpGenSpawnable::GetRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
 
@@ -836,7 +836,7 @@ void CProjectileDrawer::DrawShadowPass()
 	}
 	po->Disable();
 
-	auto& rb = CExpGenSpawnable::GetRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	if (rb.ShouldSubmit()) {
 		textureAtlas->BindTexture();
@@ -932,7 +932,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 
 	const bool needSoften = (wantSoften > 0);
 
-	auto& rb = CExpGenSpawnable::GetRenderBuffer();
+	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	if (needSoften) {
 		CopyDepthBufferToTexture();

@@ -85,6 +85,8 @@ CSimpleParticleSystem::CSimpleParticleSystem()
 
 void CSimpleParticleSystem::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	std::array<float3, 4> bounds;
 
 	if (directional) {

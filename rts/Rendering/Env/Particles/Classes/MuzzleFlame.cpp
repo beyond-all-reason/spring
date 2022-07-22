@@ -51,6 +51,8 @@ void CMuzzleFlame::Update()
 
 void CMuzzleFlame::Draw()
 {
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	float alpha = std::max(0.0f, 1 - (age / (4 + size * 30)));
 	float modAge = fastmath::apxsqrt(static_cast<float>(age + 2));

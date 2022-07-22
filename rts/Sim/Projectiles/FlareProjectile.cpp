@@ -111,6 +111,8 @@ void CFlareProjectile::Draw()
 	if (gs->frameNum <= activateFrame)
 		return;
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	constexpr float rad = 6.0f;
 	const     float alpha = std::max(0.0f, 1.0f - (gs->frameNum - activateFrame) * alphaFalloff);
 

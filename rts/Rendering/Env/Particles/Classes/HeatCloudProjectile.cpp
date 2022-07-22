@@ -87,6 +87,8 @@ void CHeatCloudProjectile::Draw()
 {
 	UpdateRotation();
 
+	auto& rb = GetPrimaryRenderBuffer();
+
 	unsigned char col[4];
 	const float dheat = std::max(0.0f, heat-globalRendering->timeOffset);
 	const float alpha = (dheat / maxheat) * 255.0f;
