@@ -633,7 +633,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 	const spring_time pre = spring_now();
 
 	RenderBuffer::SwapStandardRenderBuffers();
-	//CglFont::SwapRenderBuffers();
+	CglFont::SwapRenderBuffers();
 	IStreamBufferConcept::PutBufferLocks();
 
 	//https://stackoverflow.com/questions/68480028/supporting-opengl-screen-capture-by-third-party-applications

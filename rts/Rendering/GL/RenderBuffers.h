@@ -270,7 +270,7 @@ inline const std::string RenderBufferShader<VA_TYPE_TNT>::GetFragOutput()
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2d0>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2D0>::GetFragOutput()
 {
 	return "\toutColor = vec4(1.0);";
 }
@@ -282,13 +282,13 @@ inline const std::string RenderBufferShader<VA_TYPE_2dC>::GetFragOutput()
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2dT>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2DT>::GetFragOutput()
 {
 	return "\toutColor = texture(tex, vuv);";
 }
 
 template<>
-inline const std::string RenderBufferShader<VA_TYPE_2dTC>::GetFragOutput()
+inline const std::string RenderBufferShader<VA_TYPE_2DTC>::GetFragOutput()
 {
 	return "\toutColor = vcolor * texture(tex, vuv);";
 }
@@ -315,12 +315,7 @@ public:
 		indcs.reserve(elemCount0);
 	}
 
-	void SwapBuffer() override {
-		if (vbo)
-			vbo->SwapBuffer();
-		if (ebo)
-			ebo->SwapBuffer();
-
+	void Clear() {
 		maxSize = std::max(maxSize, { verts.size(), indcs.size() });
 
 		// clear
@@ -335,6 +330,15 @@ public:
 
 		numSubmits = { 0, 0 };
 	}
+
+	void SwapBuffer() override {
+		if (vbo)
+			vbo->SwapBuffer();
+		if (ebo)
+			ebo->SwapBuffer();
+
+		Clear();
+  }
 
 	const char* GetBufferName() const override {
 		return vboTypeName;
@@ -498,16 +502,30 @@ public:
 	void DrawArrays(uint32_t mode, bool rewind = true);
 	void DrawElements(uint32_t mode, bool rewind = true);
 
+	bool ShouldSubmit(bool indexed) const {
+		if (indexed)
+			return ((indcs.size() - eboUploadIndex) > 0 || (indcs.size() - eboStartIndex) > 0);
+		else
+			return ((verts.size() - vboUploadIndex) > 0 || (verts.size() - vboStartIndex) > 0);
+	}
+	bool ShouldSubmit() const {
+		return ShouldSubmit(false) || ShouldSubmit(true);
+	}
+
 	//develop compat
 	void Submit(uint32_t mode) {
-		if (indcs.size() - eboStartIndex > 0)
-			DrawElements(mode);
-		else
-			DrawArrays(mode);
+		DrawElements(mode);
+		DrawArrays(mode);
 	}
 
 	size_t SumElems() const { return verts.size(); }
 	size_t SumIndcs() const { return indcs.size(); }
+
+	const std::vector<VertType>& GetElems() const { return verts; }
+	      std::vector<VertType>& GetElems()       { return verts; }
+	const std::vector<IndcType>& GetIndcs() const { return indcs; }
+	      std::vector<IndcType>& GetIndcs()       { return indcs; }
+
 	size_t NumSubmits(bool indexed) const { return numSubmits[indexed]; }
 
 	//check everything is uploaded and submitted
@@ -648,6 +666,8 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 		vboStartIndex += vertsCount;
 	}
 
+	vboStartIndex = verts.size();
+
 	numSubmits[1] += 1;
 }
 
@@ -717,9 +737,9 @@ GET_TYPED_RENDER_BUFFER(VA_TYPE_T   , 3)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TN  , 4)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TC  , 5)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_TNT , 6)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2d0 , 7)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2D0 , 7)
 GET_TYPED_RENDER_BUFFER(VA_TYPE_2dC , 8)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2dT , 9)
-GET_TYPED_RENDER_BUFFER(VA_TYPE_2dTC, 10)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2DT , 9)
+GET_TYPED_RENDER_BUFFER(VA_TYPE_2DTC, 10)
 
 #undef GET_TYPED_RENDER_BUFFER

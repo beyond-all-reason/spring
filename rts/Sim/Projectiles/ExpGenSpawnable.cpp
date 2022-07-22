@@ -1,5 +1,4 @@
 #include "ExpGenSpawnable.h"
-#include "ExpGenSpawnable.h"
 
 #include "ExpGenSpawnableMemberInfo.h"
 #include "ExpGenSpawner.h"
@@ -17,6 +16,7 @@
 #include "Rendering/Env/Particles/Classes/SmokeProjectile2.h"
 #include "Rendering/Env/Particles/Classes/SpherePartProjectile.h"
 #include "Rendering/Env/Particles/Classes/TracerProjectile.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "System/Sync/HsiehHash.h"
 #include "Sim/Misc/GlobalSynced.h"
 
@@ -30,6 +30,8 @@ CR_REG_METADATA(CExpGenSpawnable, (
 	CR_MEMBER(rotParams),
 	CR_MEMBER_ENDFLAG(CM_Config)
 ))
+
+TypedRenderBuffer<VA_TYPE_TC>& CExpGenSpawnable::rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
 
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	: CWorldObject(pos, spd)
@@ -88,6 +90,7 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 	return false;
 }
+
 
 #define CHECK_ALL_SPAWNABLES() \
 	CHECK_SPAWNABLE(CExpGenSpawner)         \
