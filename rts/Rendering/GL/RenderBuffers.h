@@ -20,6 +20,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <type_traits>
 
 template <typename T>
 class TypedRenderBuffer;
@@ -51,6 +52,10 @@ public:
 	virtual const char* GetBufferName() const = 0;
 	virtual std::array<size_t, 2> GetBuffersCapacity() const = 0;
 
+	virtual size_t SumElems() const = 0;
+	virtual size_t SumIndcs() const = 0;
+	virtual size_t NumSubmits(bool indexed) const = 0;
+
 	std::array<size_t, 2> GetSubmitNum() const { return numSubmits; }
 	std::array<size_t, 2> GetMaxSize()   const { return maxSize;    }
 	std::array<size_t, 2> GetInitialCapacity()   const { return initCapacity; }
@@ -65,6 +70,8 @@ protected:
 	std::array<size_t, 2> initCapacity = { 0, 0 };
 private:
 	static std::array<std::unique_ptr<RenderBuffer>, 11> typedRenderBuffers;
+public:
+	static auto GetAllRenderBuffers() -> const decltype(typedRenderBuffers)& { return typedRenderBuffers; };
 };
 
 template <typename T>
@@ -402,8 +409,17 @@ public:
 	}
 
 	// render with DrawElements(GL_TRIANGLES)
-	void AddQuadTriangles(const VertType* vs) { AddQuadTriangles(vs + 0, vs + 1, vs + 2, vs + 3, vs + 4); }
-	void AddQuadTriangles(VertType&& tl, VertType&& tr, VertType&& br, VertType&& bl) {
+	template<std::size_t N>
+	void AddQuadTriangles(const VertType(&vs)[N]) {
+		static_assert(N == 4);
+		AddQuadTriangles(vs[0], vs[1], vs[2], vs[3]);
+	}
+
+	template<
+		typename TT = VertType,
+		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
+	>
+	void AddQuadTriangles(TT&& tl, TT&& tr, TT&& br, TT&& bl) {
 		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 
 		verts.emplace_back(tl); //0
@@ -423,8 +439,17 @@ public:
 	}
 
 	// render with DrawElements(GL_LINES)
-	void AddQuadLines(const VertType* vs) { AddQuadLines(vs + 0, vs + 1, vs + 2, vs + 3, vs + 4); }
-	void AddQuadLines(VertType&& tl, VertType&& tr, VertType&& br, VertType&& bl) {
+	template<std::size_t N>
+	void AddQuadLines(const VertType(&vs)[N]) {
+		static_assert(N == 4);
+		AddQuadLines(vs[0], vs[1], vs[2], vs[3]);
+	}
+
+	template<
+		typename TT = VertType,
+		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
+	>
+	void AddQuadLines(TT&& tl, TT&& tr, TT&& br, TT&& bl) {
 		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 
 		verts.emplace_back(tl); //0
@@ -443,8 +468,17 @@ public:
 	}
 
 	// render with DrawElements(GL_TRIANGLES)
-	void MakeQuadsTriangles(const VertType* vs, int xDiv, int yDiv) { MakeQuadsTriangles(vs + 0, vs + 1, vs + 2, vs + 3, vs + 4, xDiv, yDiv); }
-	void MakeQuadsTriangles(VertType&& tl, VertType&& tr, VertType&& br, VertType&& bl, int xDiv, int yDiv) {
+	template<std::size_t N>
+	void MakeQuadsTriangles(const VertType(&vs)[N], int xDiv, int yDiv) {
+		static_assert(N == 4);
+		MakeQuadsTriangles(vs[0], vs[1], vs[2], vs[3], xDiv, yDiv);
+	}
+
+	template<
+		typename TT = VertType,
+		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
+	>
+	void MakeQuadsTriangles(TT&& tl, TT&& tr, TT&& br, TT&& bl, int xDiv, int yDiv) {
 		const IndcType baseIndex = static_cast<IndcType>(verts.size_t());
 		float ratio;
 
@@ -479,8 +513,17 @@ public:
 	}
 
 	// render with DrawArrays(GL_LINE_LOOP)
-	void MakeQuadsLines(const VertType* vs, int xDiv, int yDiv) { MakeQuadsLines(vs + 0, vs + 1, vs + 2, vs + 3, vs + 4, xDiv, yDiv); }
-	void MakeQuadsLines(const VertType& tl, const VertType& tr, const VertType& br, const VertType& bl, int xDiv, int yDiv) {
+	template<std::size_t N>
+	void MakeQuadsLines(const VertType(&vs)[N], int xDiv, int yDiv) {
+		static_assert(N == 4);
+		MakeQuadsLines(vs[0], vs[1], vs[2], vs[3], xDiv, yDiv);
+	}
+
+	template<
+		typename TT = VertType,
+		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
+	>
+	void MakeQuadsLines(TT&& tl, TT&& tr, TT&& br, TT&& bl, int xDiv, int yDiv) {
 		float ratio;
 
 		for (int x = 0; x < yDiv; ++x) {
@@ -518,15 +561,15 @@ public:
 		DrawArrays(mode);
 	}
 
-	size_t SumElems() const { return verts.size(); }
-	size_t SumIndcs() const { return indcs.size(); }
+	size_t SumElems() const override { return verts.size(); }
+	size_t SumIndcs() const override { return indcs.size(); }
 
 	const std::vector<VertType>& GetElems() const { return verts; }
 	      std::vector<VertType>& GetElems()       { return verts; }
 	const std::vector<IndcType>& GetIndcs() const { return indcs; }
 	      std::vector<IndcType>& GetIndcs()       { return indcs; }
 
-	size_t NumSubmits(bool indexed) const { return numSubmits[indexed]; }
+	size_t NumSubmits(bool indexed) const override { return numSubmits[indexed]; }
 
 	//check everything is uploaded and submitted
 	bool AssertSubmission() const {
