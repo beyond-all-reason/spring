@@ -101,29 +101,27 @@ static void DrawBufferStats(const float2 pos)
 			lfMetrics[3] += lf->GetOutlineBuffer().NumSubmits(true);
 		}
 
-		const auto& rdb0    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0   >();
-		const auto& rdbC    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C   >();
-		/*
-		const auto& rdbN    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_N   >();
-		const auto& rdbT    = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_T   >();
-		const auto& rdbTN   = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TN  >();
-		*/
-		const auto& rdbTC   = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC  >();
-		/*
-		const auto& rdbTNT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TNT >();
-		const auto& rdb2D0  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0 >();
-		const auto& rdb2DC  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC >();
-		const auto& rdb2DT  = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT >();
-		const auto& rdb2DTC = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
-		*/
-
-		#define FMT "{elems=" _STPF_ " indcs=" _STPF_ " submits{e,i}={" _STPF_ "," _STPF_ "}}"
+		#define FMT "\t%s={e=" _STPF_ " i=" _STPF_ " subs{e,i}={" _STPF_ "," _STPF_ "}}"
 		font->SetTextColor(1.0f, 1.0f, 0.5f, 0.8f);
 
-		font->glFormat(pos.x, pos.y - 0.005f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tFONTS=" FMT, lfMetrics[0], lfMetrics[1], lfMetrics[2], lfMetrics[3]);
-		font->glFormat(pos.x, pos.y - 0.025f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\t0=" FMT, rdb0.SumElems(), rdb0.SumIndcs(), rdb0.NumSubmits(false), rdb0.NumSubmits(true));
-		font->glFormat(pos.x, pos.y - 0.045f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tC=" FMT, rdbC.SumElems(), rdbC.SumIndcs(), rdbC.NumSubmits(false), rdbC.NumSubmits(true));
-		font->glFormat(pos.x, pos.y - 0.065f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "\tTC=" FMT, rdbTC.SumElems(), rdbTC.SumIndcs(), rdbTC.NumSubmits(false), rdbTC.NumSubmits(true));
+		font->glFormat(pos.x, pos.y - 0.005f, 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, FMT, "FONTS", lfMetrics[0], lfMetrics[1], lfMetrics[2], lfMetrics[3]);
+
+		float bias = 0.0f;
+		for (const auto& rb : RenderBuffer::GetAllRenderBuffers()) {
+			const auto ms = rb->GetMaxSize();
+			if (ms[0] == 0 && ms[1] == 0)
+				continue;
+
+			std::string_view rbNameShort = rb->GetBufferName();
+			const auto uId = rbNameShort.find_last_of("_");
+			rbNameShort = rbNameShort.substr(uId + 1, rbNameShort.size() - uId - 1);
+
+			font->glFormat(pos.x, pos.y - (0.025f + bias), 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, FMT, rbNameShort,
+				rb->SumElems(), rb->SumIndcs(),
+				rb->NumSubmits(false), rb->NumSubmits(true)
+			);
+			bias += 0.02f;
+		}
 
 		#undef FMT
 	}

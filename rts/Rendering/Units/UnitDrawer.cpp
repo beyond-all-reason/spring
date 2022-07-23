@@ -1226,7 +1226,7 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	return canBuild;
 }
 
-void CUnitDrawerLegacy::DrawBuildIcons(const std::set<CCursorIcons::BuildIcon>& buildIcons) const
+void CUnitDrawerLegacy::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const
 {
 	if (buildIcons.empty())
 		return;
@@ -1260,7 +1260,7 @@ void CUnitDrawerLegacy::DrawBuildIcons(const std::set<CCursorIcons::BuildIcon>& 
 /***********************************************************************/
 
 // CUnitDrawerLegacy::DrawBuildIcons is seemingly unbeatable in terms of FPS ?
-void CUnitDrawerGL4::DrawBuildIcons(const std::set<CCursorIcons::BuildIcon>& buildIcons) const
+void CUnitDrawerGL4::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const
 {
 	if (buildIcons.empty())
 		return;
