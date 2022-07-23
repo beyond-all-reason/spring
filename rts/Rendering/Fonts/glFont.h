@@ -83,7 +83,9 @@ public:
 	 */
 	void glPrint(float x, float y, float s, const int options, const std::string& str);
 	void glPrintTable(float x, float y, float s, const int options, const std::string& str);
-	void glFormat(float x, float y, float s, const int options, const char* fmt, ...);
+
+	template <typename... Args>
+	void glFormat(float x, float y, float s, const int options, const char* fmt, Args&&... args);
 
 	void SetAutoOutlineColor(bool enable); // auto-select outline color for in-text-colorcodes
 	void SetTextColor(const float4* color = nullptr);
@@ -176,3 +178,20 @@ float CglFont::GetTextHeight(const std::string& text, float* descender, int* num
 {
 	return GetTextHeight_(toustring(text), descender, numLines);
 }
+
+//templated inlines
+#ifdef HEADLESS
+template<typename ...Args>
+inline void CglFont::glFormat(float x, float y, float s, const int options, const char* fmt, Args && ...args) {}
+#else
+#include "fmt/printf.h"
+
+template<typename ...Args>
+inline void CglFont::glFormat(float x, float y, float s, const int options, const char* fmt, Args && ...args)
+{
+	if (fmt == nullptr)
+		return;
+
+	glPrint(x, y, s, options, fmt::sprintf(fmt, args...));
+}
+#endif

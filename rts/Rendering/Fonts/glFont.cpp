@@ -252,7 +252,6 @@ CMatrix44f CglFont::DefProjMatrix() { return CMatrix44f::Identity(); }
 
 void CglFont::glPrint(float x, float y, float s, const int options, const std::string& str) {}
 void CglFont::glPrintTable(float x, float y, float s, const int options, const std::string& str) {}
-void CglFont::glFormat(float x, float y, float s, const int options, const char* fmt, ...) {}
 
 void CglFont::SetAutoOutlineColor(bool enable) {}
 void CglFont::SetTextColor(const float4* color) {}
@@ -1135,19 +1134,6 @@ void CglFont::glPrintTable(float x, float y, float s, const int options, const s
 	}
 }
 
-void CglFont::glFormat(float x, float y, float s, const int options, const char* fmt, ...)
-{
-	char out[512];
-
-	if (fmt == nullptr)
-		return;
-
-	va_list ap;
-	va_start(ap, fmt);
-	VSNPRINTF(out, sizeof(out), fmt, ap);
-	va_end(ap);
-	glPrint(x, y, s, options, std::string(out));
-}
 
 #endif
 
