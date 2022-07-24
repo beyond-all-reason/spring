@@ -20,9 +20,6 @@
 using namespace SystemGlobals;
 using namespace Build;
 
-bool BuildUtils::IsSystemActive() {
-    return systemGlobals.IsSystemActive<BuildSystemComponent>();
-}
 
 void BuildUtils::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;

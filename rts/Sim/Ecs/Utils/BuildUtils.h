@@ -28,8 +28,6 @@ public:
     static entt::entity GetUnitBuildTarget(CUnit *unit);
     static void SetBuildPower(entt::entity entity, float power);
 
-    static bool IsSystemActive();
-
     static const float GetBuildSpeed(entt::entity entity) { return EcsMain::registry.get<Build::BuildPower>(entity).value; }
     static float& GetBuildProgress(entt::entity entity) {
         return EcsMain::registry.get_or_emplace<Build::BuildProgress>(entity, 1.f).value;

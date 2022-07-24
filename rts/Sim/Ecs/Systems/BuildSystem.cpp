@@ -107,9 +107,6 @@ void BuildTasks() {
 }
 
 void BuildSystem::Update() {
-    // if (!BuildUtils::IsSystemActive())
-    //     return;
-
     if ((gs->frameNum % BUILD_UPDATE_RATE) != BUILD_TICK)
        return;
 
