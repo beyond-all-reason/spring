@@ -12,7 +12,6 @@
 #include "System/FileSystem/VFSHandler.h"
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
-#include "Rendering/Fonts/glFont.h"
 
 CONFIG(std::string, DefaultLuaMenu).defaultValue("").description("Sets the default menu to be used when spring is started.");
 
@@ -114,7 +113,6 @@ bool CLuaMenuController::Draw()
 	const bool forceDraw = ((spring_gettime() - lastDrawFrameTime).toSecsi() > 30);
 
 	if (allowDraw || forceDraw) {
-		CFontTexture::Update();
 		globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 		ClearScreen();
 

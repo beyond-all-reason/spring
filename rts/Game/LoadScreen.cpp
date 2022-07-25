@@ -220,7 +220,6 @@ bool CLoadScreen::Update()
 
 bool CLoadScreen::Draw()
 {
-	CFontTexture::Update();
 	globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 	// let LuaMenu keep the lobby connection alive
 	if (luaMenu != nullptr)

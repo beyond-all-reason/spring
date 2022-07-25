@@ -185,7 +185,6 @@ SelectMenu::~SelectMenu()
 bool SelectMenu::Draw()
 {
 	spring_msecs(10).sleep(true);
-	CFontTexture::Update();
 	globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 	ClearScreen();
 	agui::gui->Draw();

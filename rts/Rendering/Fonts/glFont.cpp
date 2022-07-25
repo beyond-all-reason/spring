@@ -19,7 +19,6 @@
 #undef GetCharWidth // winapi.h
 
 #define INDEXED_FONTS_RENDERING
-#define IMMEDIATE_RENDERING
 
 // should be enough to hold all data for a given frame
 //constexpr size_t NUM_BUFFER_ELEMS = (1 << 17);
@@ -720,10 +719,8 @@ void CglFont::End() {
 		GLboolean inListCompile;
 		glGetBooleanv(GL_LIST_INDEX, &inListCompile);
 		if (!inListCompile) {
-			#ifdef IMMEDIATE_RENDERING
 			UpdateGlyphAtlasTexture();
 			UploadGlyphAtlasTexture();
-			#endif
 		}
 
 		glBindTexture(GL_TEXTURE_2D, GetTexture());
@@ -765,10 +762,8 @@ void CglFont::DrawBuffered(Shader::IProgramObject* shader)
 		bufferMutex.lock();
 
 	{
-		#ifdef IMMEDIATE_RENDERING
 		UpdateGlyphAtlasTexture();
 		UploadGlyphAtlasTexture();
-		#endif
 
 		// assume external shaders are never null and already bound
 		curShader = shader;

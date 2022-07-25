@@ -225,8 +225,6 @@ void ShowSplashScreen(
 		va->AddVertex2dT({quadElems[3].x, quadElems[3].y}, {quadElems[3].s, quadElems[3].t});
 		va->DrawArray2dT(GL_QUADS);
 
-		CFontTexture::Update();
-
 		font->Begin();
 		font->SetTextColor(color.x, color.y, color.z, color.w);
 		font->glFormat(coors.x - (normWidth[0] * 0.500f), coors.y                             , coors.z, fontFlags, fmtStrs[0]);
