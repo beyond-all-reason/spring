@@ -14,7 +14,6 @@
 		#include <fontconfig/fontconfig.h>
 		#include <fontconfig/fcfreetype.h>
 	#endif
-	#include "LanguageBlocksDefs.h"
 #endif // HEADLESS
 
 #include "Rendering/GL/myGL.h"
@@ -25,7 +24,12 @@
 #include "System/Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Threading/SpringThreading.h"
+#include "System/Threading/ThreadPool.h"
+#ifdef _DEBUG
+	#include "System/Platform/Threading.h"
+#endif
 #include "System/SafeUtil.h"
+#include "System/ContainerUtil.h"
 #include "System/StringUtil.h"
 #include "System/TimeProfiler.h"
 #include "System/UnorderedMap.hpp"
@@ -85,7 +89,7 @@ struct FontFace {
 	std::shared_ptr<SP_Byte> memory;
 };
 
-static spring::unsynced_set<CFontTexture*> allFonts;
+static std::vector<CFontTexture*> allFonts;
 static spring::unsynced_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unsynced_map<std::string, std::weak_ptr<SP_Byte>> fontMemCache;
 static spring::recursive_mutex fontCacheMutex;
@@ -266,7 +270,8 @@ static inline uint32_t GetKerningHash(char32_t lchar, char32_t rchar)
 
 static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const int size)
 {
-	std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+	assert(Threading::IsMainThread());
+	//std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
 
 	//TODO add support to load fonts by name (needs fontconfig)
 
@@ -492,8 +497,10 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	// has to be done before first GetGlyph() call!
 	CreateTexture(32, 32);
 
-	// precache ASCII glyphs & kernings (save them in an array for better lvl2 cpu cache hitrate)
-	memset(kerningPrecached, 0, sizeof(kerningPrecached));
+	// precache ASCII glyphs & kernings (save them in kerningPrecached array for better lvl2 cpu cache hitrate)
+
+	//preload Glyphs
+	LoadWantedGlyphs(32, 127);
 
 	for (char32_t i = 32; i < 127; ++i) {
 		const auto& lgl = GetGlyph(i);
@@ -507,14 +514,14 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 		}
 	}
 
-	allFonts.insert(this);
+	spring::VectorInsertUnique(allFonts, this, true);
 #endif
 }
 
 CFontTexture::~CFontTexture()
 {
 #ifndef HEADLESS
-	allFonts.erase(this);
+	spring::VectorErase(allFonts, this);
 
 	glDeleteTextures(1, &glyphAtlasTextureID);
 	glyphAtlasTextureID = 0;
@@ -524,34 +531,27 @@ CFontTexture::~CFontTexture()
 
 void CFontTexture::Update() {
 	// called from Game::UpdateUnsynced
-	std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
-	for (auto& font: allFonts) {
-		font->UpdateGlyphAtlasTexture();
-	}
+	assert(Threading::IsMainThread());
+	//std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+
+	for_mt_chunk(0, allFonts.size(), [](int i) {
+		allFonts[i]->UpdateGlyphAtlasTexture();
+	});
+
+	for (const auto& font : allFonts)
+		font->UploadGlyphAtlasTexture();
 }
 
 const GlyphInfo& CFontTexture::GetGlyph(char32_t ch)
 {
-	static const GlyphInfo dummy = GlyphInfo();
-
 #ifndef HEADLESS
-	for (int i = 0; i < 2; i++) {
-		const auto it = glyphs.find(ch);
+	const auto it = glyphs.find(ch);
 
-		if (it != glyphs.end())
-			return it->second;
-		if (i == 1)
-			break;
-
-		// get block-range containing this character
-		char32_t end = 0;
-		char32_t start = GetLanguageBlock(ch, end);
-
-		LoadBlock(start, end);
-	}
+	if (it != glyphs.end())
+		return it->second;
 #endif
 
-	return dummy;
+	return dummyGlyph;
 }
 
 
@@ -561,7 +561,7 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 	// first check caches
 	const uint32_t hash = GetKerningHash(lgl.utf16, rgl.utf16);
 
-	if (hash < (sizeof(kerningPrecached) / sizeof(kerningPrecached[0])))
+	if (hash < kerningPrecached.size())
 		return kerningPrecached[hash];
 
 	const auto it = kerningDynamic.find(hash);
@@ -581,22 +581,30 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 #endif
 }
 
-
-void CFontTexture::LoadBlock(char32_t start, char32_t end)
+void CFontTexture::LoadWantedGlyphs(char32_t begin, char32_t end)
 {
-	std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+	static std::vector<char32_t> wanted;
+	for (char32_t i = begin; i < end; ++i)
+		wanted.emplace_back(i);
+
+	LoadWantedGlyphs(wanted);
+}
+
+void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
+{
+	if (wanted.empty())
+		return;
+
+	assert(Threading::IsMainThread());
+	//std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+
+	static std::vector<char32_t> map;
+	map.assign(wanted.cbegin(), wanted.cend());
 
 	// load glyphs from different fonts (using fontconfig)
 	std::shared_ptr<FontFace> f = shFace;
 
 	spring::unsynced_set<std::shared_ptr<FontFace>> alreadyCheckedFonts;
-
-	// generate list of wanted glyphs
-	std::vector<char32_t> map(end - start, 0);
-
-	for (char32_t i = start; i < end; ++i)
-		map[i - start] = i;
-
 #ifndef HEADLESS
 	do {
 		alreadyCheckedFonts.insert(f);
@@ -644,7 +652,7 @@ void CFontTexture::LoadBlock(char32_t start, char32_t end)
 		if ((atlasUpdateShadow.xsize != wantedTexWidth) || (atlasUpdateShadow.ysize != wantedTexHeight))
 			atlasUpdateShadow = std::move(atlasUpdateShadow.CanvasResize(wantedTexWidth, wantedTexHeight, false));
 
-		for (char32_t i = start; i < end; ++i) {
+		for (const auto i : wanted) {
 			const std::string glyphName  = IntToString(i);
 			const std::string glyphName2 = glyphName + "sh";
 
@@ -654,6 +662,7 @@ void CFontTexture::LoadBlock(char32_t start, char32_t end)
 			const auto texpos  = atlasAlloc.GetEntry(glyphName);
 			const auto texpos2 = atlasAlloc.GetEntry(glyphName2);
 
+			//glyphs is a map
 			glyphs[i].texCord       = IGlyphRect(texpos [0], texpos [1], texpos [2] - texpos [0], texpos [3] - texpos [1]);
 			glyphs[i].shadowTexCord = IGlyphRect(texpos2[0], texpos2[1], texpos2[2] - texpos2[0], texpos2[3] - texpos2[1]);
 
@@ -738,7 +747,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 		return;
 	}
 
-	// store glyph bitmap (index) in allocator until the next LoadBlock call
+	// store glyph bitmap (index) in allocator until the next LoadWantedGlyphs call
 	atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, 1);
 
 	atlasAlloc.AddEntry(IntToString(ch)       , int2(width         , height         ), reinterpret_cast<void*>(atlasGlyphs.size() - 1));
@@ -832,7 +841,8 @@ void CFontTexture::ReallocAtlases(bool pre)
 void CFontTexture::UpdateGlyphAtlasTexture()
 {
 #ifndef HEADLESS
-	std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+	//assert(Threading::IsMainThread());
+	//std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
 
 	if (curTextureUpdate == lastTextureUpdate)
 		return;
@@ -858,10 +868,17 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 			dst[i] |= src[i];
 		}
 
-		atlasUpdateShadow = {};
+		atlasUpdateShadow = {}; // MT-safe
 	}
 
 
+
+#endif
+}
+
+void CFontTexture::UploadGlyphAtlasTexture() const
+{
+#ifndef HEADLESS
 	// update texture atlas
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, texWidth, texHeight, 0, GL_RED, GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());

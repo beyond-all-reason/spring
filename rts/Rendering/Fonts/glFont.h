@@ -129,6 +129,7 @@ private:
 		RenderStringImpl<10, 10, true >(x, y, scaleX, scaleY, str, cccb);
 	}
 private:
+	void ScanForWantedGlyphs(const std::u8string& str);
 	float GetTextWidth_(const std::u8string& text);
 	float GetTextHeight_(const std::u8string& text, float* descender = nullptr, int* numLines = nullptr);
 private:

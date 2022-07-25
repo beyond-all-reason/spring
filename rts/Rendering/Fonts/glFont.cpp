@@ -260,6 +260,7 @@ void CglFont::SetColors(const float4* textColor, const float4* outlineColor) {}
 void CglFont::CreateDefaultShader() {}
 
 float CglFont::GetCharacterWidth(const char32_t c) { return 1.0f; }
+void CglFont::ScanForWantedGlyphs(const std::u8string& str) {}
 float CglFont::GetTextWidth_(const std::u8string& text) { return (text.size() * 1.0f); }
 float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* numLines) { return 1.0f; }
 
@@ -307,11 +308,11 @@ static inline bool SkipColorCodesAndNewLines(
 				cccb(*color = *colorReset);
 			} break;
 
-			case 0x0d: {
-				// CR; fall-through
-				idx += (idx < end && text[idx] == 0x0a);
+			case 0x0D: {
+				idx += (idx < end && text[idx] == 0x0A);
+				[[fallthrough]]; // CR; fall-through
 			}
-			case 0x0a: {
+			case 0x0A: {
 				// LF
 				idx += 1;
 				nls += 1;
@@ -339,13 +340,17 @@ static inline bool SkipColorCodesAndNewLines(
 
 float CglFont::GetCharacterWidth(const char32_t c)
 {
-	return GetGlyph(c).advance;
+	const auto& glyph = GetGlyph(c);
+	assert(&glyph != &CFontTexture::dummyGlyph);
+	return glyph.advance;
 }
 
 float CglFont::GetTextWidth_(const std::u8string& text)
 {
 	if (text.empty())
 		return 0.0f;
+
+	ScanForWantedGlyphs(text);
 
 	float curw = 0.0f;
 	float maxw = 0.0f;
@@ -375,14 +380,14 @@ float CglFont::GetTextWidth_(const std::u8string& text)
 			case ColorResetIndicator: {
 			} break;
 
-			case 0x0d: {
-				// CR; fall-through
-				idx += (idx < end && text[idx] == 0x0a);
+			case 0x0D: {
+				idx += (idx < end && text[idx] == 0x0A);
+				[[fallthrough]]; // CR; fall-through
 			}
-			case 0x0a: {
+			case 0x0A: {
 				// LF
 				if (prvGlyphPtr != nullptr)
-					curw += GetGlyph(prvGlyphIdx).advance;
+					curw += GetCharacterWidth(prvGlyphIdx);
 
 				maxw = std::max(curw, maxw);
 				curw = 0.0f;
@@ -393,9 +398,13 @@ float CglFont::GetTextWidth_(const std::u8string& text)
 			// printable char
 			default: {
 				curGlyphPtr = &GetGlyph(curGlyphIdx);
+				assert(curGlyphPtr != &CFontTexture::dummyGlyph);
 
-				if (prvGlyphPtr != nullptr)
-					curw += GetKerning(GetGlyph(prvGlyphIdx), *curGlyphPtr);
+				if (prvGlyphPtr != nullptr) {
+					prvGlyphPtr = &GetGlyph(prvGlyphIdx);
+					assert(prvGlyphPtr != &CFontTexture::dummyGlyph);
+					curw += GetKerning(*prvGlyphPtr, *curGlyphPtr);
+				}
 
 				prvGlyphPtr = curGlyphPtr;
 				prvGlyphIdx = curGlyphIdx;
@@ -404,7 +413,7 @@ float CglFont::GetTextWidth_(const std::u8string& text)
 	}
 
 	if (prvGlyphPtr != nullptr)
-		curw += GetGlyph(prvGlyphIdx).advance;
+		curw += GetCharacterWidth(prvGlyphIdx);
 
 	return (std::max(curw, maxw));
 }
@@ -417,6 +426,8 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 		if (numLines != nullptr) *numLines = 0;
 		return 0.0f;
 	}
+
+	ScanForWantedGlyphs(text);
 
 	float h = 0.0f;
 	float d = GetLineHeight() + GetDescender();
@@ -444,11 +455,11 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 			case ColorResetIndicator: {
 			} break;
 
-			case 0x0d: {
-				// CR; fall-through
-				idx += (idx < end && text[idx] == 0x0a);
+			case 0x0D: {
+				idx += (idx < end && text[idx] == 0x0A);
+				[[fallthrough]]; // CR; fall-through
 			}
-			case 0x0a: {
+			case 0x0A: {
 				// LF
 				multiLine++;
 				d = GetLineHeight() + GetDescender();
@@ -457,6 +468,7 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 			// printable char
 			default: {
 				const GlyphInfo& g = GetGlyph(u);
+				assert(&g != &CFontTexture::dummyGlyph);
 
 				d = std::min(d, g.descender);
 				h = std::max(h, g.height * (multiLine < 2)); // only calculate height for the first line
@@ -472,7 +484,44 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 	return h;
 }
 
+void CglFont::ScanForWantedGlyphs(const std::u8string& ustr)
+{
+	static std::vector<char32_t> missingGlyphs;
 
+	missingGlyphs.clear();
+
+	char32_t nextChar = 0;
+
+	for (int idx = 0, end = int(ustr.length()); idx < end; ) {
+		switch (nextChar = utf8::GetNextChar(ustr, idx)) {
+			// inlined colorcode; subtract 1 since GetNextChar increments idx
+		case ColorCodeIndicator: {
+			idx = SkipColorCodes(ustr, idx - 1);
+		} break;
+
+			// reset color; no-op since GetNextChar increments idx
+		case ColorResetIndicator: {
+		} break;
+
+		case 0x0D: {
+			idx += (idx < end&& ustr[idx] == 0x0A);
+			[[fallthrough]]; // CR; fall-through
+		}
+		case 0x0A: {
+			// LF
+		} break;
+
+			// printable char
+		default: {
+			const GlyphInfo& curGlyph = GetGlyph(nextChar);
+			if (&curGlyph == &CFontTexture::dummyGlyph)
+				missingGlyphs.emplace_back(nextChar);
+		} break;
+		}
+	}
+
+	LoadWantedGlyphs(missingGlyphs);
+}
 
 
 std::deque<std::string> CglFont::SplitIntoLines(const std::u8string& text)
@@ -508,11 +557,11 @@ std::deque<std::string> CglFont::SplitIntoLines(const std::u8string& text)
 				lines.back() += c;
 			} break;
 
-			case 0x0d: {
-				// CR; increment if next char is a LF and fall-through
-				idx += ((idx + 1) < end && text[idx + 1] == 0x0a);
+			case 0x0D: {
+				idx += ((idx + 1) < end && text[idx + 1] == 0x0A);
+				[[fallthrough]]; // CR; fall-through
 			}
-			case 0x0a: {
+			case 0x0A: {
 				lines.emplace_back("");
 
 				#if 0
@@ -669,8 +718,10 @@ void CglFont::End() {
 		//without this, fonts textures are empty in display lists somehow
 		GLboolean inListCompile;
 		glGetBooleanv(GL_LIST_INDEX, &inListCompile);
-		if (!inListCompile)
+		if (!inListCompile) {
 			UpdateGlyphAtlasTexture();
+			UploadGlyphAtlasTexture();
+		}
 
 		glBindTexture(GL_TEXTURE_2D, GetTexture());
 
@@ -712,6 +763,7 @@ void CglFont::DrawBuffered(Shader::IProgramObject* shader)
 
 	{
 		UpdateGlyphAtlasTexture();
+		UploadGlyphAtlasTexture();
 
 		// assume external shaders are never null and already bound
 		curShader = shader;
@@ -757,14 +809,16 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 {
 	const std::u8string& ustr = toustring(str);
 
+	ScanForWantedGlyphs(ustr);
+
 	const float startx = x;
 	const float lineHeight_ = scaleY * GetLineHeight();
 
-	int currentPos = 0;
-	int skippedLines = 0;
-
 	char32_t curGlyphIdx = 0;
 	char32_t prvGlyphIdx = 0;
+
+	int currentPos = 0;
+	int skippedLines = 0;
 
 	float4 newColor = textColor;
 
@@ -776,6 +830,7 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 		curGlyphIdx = utf8::GetNextChar(str, currentPos);
 
 		const GlyphInfo* curGlyphPtr = &GetGlyph(curGlyphIdx);
+		assert(curGlyphPtr != &CFontTexture::dummyGlyph);
 		const GlyphInfo* prvGlyphPtr = nullptr;
 
 		if (skippedLines > 0) {
@@ -784,6 +839,7 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 		}
 		else if (prvGlyphIdx != 0) {
 			prvGlyphPtr = &GetGlyph(prvGlyphIdx);
+			assert(prvGlyphPtr != &CFontTexture::dummyGlyph);
 			x += (scaleX * GetKerning(*prvGlyphPtr, *curGlyphPtr));
 		}
 
@@ -1017,7 +1073,7 @@ void CglFont::glPrintTable(float x, float y, float s, const int options, const s
 				if ((col += 1) >= colLines.size()) {
 					colLines.emplace_back("");
 					for (int i = 0; i < row; ++i)
-						colLines[col] += 0x0a;
+						colLines[col] += 0x0A;
 					colColor.push_back(defColor);
 				}
 				if (colColor[col] != curColor) {
@@ -1027,14 +1083,14 @@ void CglFont::glPrintTable(float x, float y, float s, const int options, const s
 				}
 			} break;
 
-			case 0x0d: {
-				// CR; fall-through
-				pos += ((pos + 1) < text.length() && text[pos + 1] == 0x0a);
+			case 0x0D: {
+				pos += ((pos + 1) < text.length() && text[pos + 1] == 0x0A);
+				[[fallthrough]]; // CR; fall-through
 			}
-			case 0x0a: {
+			case 0x0A: {
 				// LF
 				for (auto& colLine: colLines)
-					colLine += 0x0a;
+					colLine += 0x0A;
 
 				if (colColor[0] != curColor) {
 					for (int i = 0; i < 4; ++i)

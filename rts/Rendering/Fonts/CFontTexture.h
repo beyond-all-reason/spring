@@ -100,24 +100,24 @@ public:
 	const std::string& GetFamily() const { return fontFamily; }
 	const std::string& GetStyle() const { return fontStyle; }
 
-	const GlyphInfo& GetGlyph(char32_t ch); //< Get or load a glyph
+	const GlyphInfo& GetGlyph(char32_t ch); //< Get a glyph
 
 public:
 	void ReallocAtlases(bool pre);
 protected:
+	void LoadWantedGlyphs(char32_t begin, char32_t end);
+	void LoadWantedGlyphs(const std::vector<char32_t>& wanted);
 	void UpdateGlyphAtlasTexture();
+	void UploadGlyphAtlasTexture() const;
 private:
 	void CreateTexture(const int width, const int height);
-
-	// Load all chars in block's range
-	void LoadBlock(char32_t start, char32_t end);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
-
 protected:
 	float GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl);
-
 protected:
-	float kerningPrecached[128 * 128]; // contains ASCII kerning
+	static inline const GlyphInfo dummyGlyph = GlyphInfo();
+
+	std::array<float, 128 * 128> kerningPrecached = {}; // contains ASCII kerning
 
 	int outlineSize;
 	float outlineWeight;
