@@ -29,7 +29,6 @@
 	#include "System/Platform/Threading.h"
 #endif
 #include "System/SafeUtil.h"
-#include "System/ContainerUtil.h"
 #include "System/StringUtil.h"
 #include "System/TimeProfiler.h"
 #include "System/UnorderedMap.hpp"
@@ -89,7 +88,6 @@ struct FontFace {
 	std::shared_ptr<SP_Byte> memory;
 };
 
-static std::vector<CFontTexture*> allFonts;
 static spring::unsynced_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unsynced_map<std::string, std::weak_ptr<SP_Byte>> fontMemCache;
 static spring::recursive_mutex fontCacheMutex;
@@ -513,26 +511,41 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 			kerningPrecached[hash] = advance + normScale * kerning.x;
 		}
 	}
-
-	spring::VectorInsertUnique(allFonts, this, true);
 #endif
 }
 
 CFontTexture::~CFontTexture()
 {
 #ifndef HEADLESS
-	spring::VectorErase(allFonts, this);
-
 	glDeleteTextures(1, &glyphAtlasTextureID);
 	glyphAtlasTextureID = 0;
 #endif
 }
 
 
+void CFontTexture::RemoveUnused(bool kill)
+{
+	for (size_t i = 0; i < allFonts.size(); /*NOOP*/) {
+		if (allFonts[i].use_count() <= 1) {
+			allFonts[i] = std::move(allFonts.back());
+			allFonts.pop_back();
+		}
+		else {
+			++i;
+		}
+	}
+	if (kill) {
+		assert(allFonts.empty());
+		allFonts = {}; //just in case
+	}
+}
+
 void CFontTexture::Update() {
 	// called from Game::UpdateUnsynced
 	assert(Threading::IsMainThread());
 	//std::lock_guard<spring::recursive_mutex> lk(fontCacheMutex);
+
+	RemoveUnused();
 
 	for_mt_chunk(0, allFonts.size(), [](int i) {
 		allFonts[i]->UpdateGlyphAtlasTexture();

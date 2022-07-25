@@ -82,11 +82,11 @@ It works only and only with UTF32 chars
 class CFontTexture
 {
 public:
+	static void RemoveUnused(bool kill = false);
 	static void Update();
-public:
+protected:
 	CFontTexture(const std::string& fontfile, int size, int outlinesize, float  outlineweight);
 	virtual ~CFontTexture();
-
 public:
 	int GetSize() const { return fontSize; }
 	int GetTextureWidth() const { return texWidth; }
@@ -101,7 +101,6 @@ public:
 	const std::string& GetStyle() const { return fontStyle; }
 
 	const GlyphInfo& GetGlyph(char32_t ch); //< Get a glyph
-
 public:
 	void ReallocAtlases(bool pre);
 protected:
@@ -115,6 +114,8 @@ private:
 protected:
 	float GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl);
 protected:
+	static inline std::vector<std::shared_ptr<CFontTexture>> allFonts = {};
+
 	static inline const GlyphInfo dummyGlyph = GlyphInfo();
 
 	std::array<float, 128 * 128> kerningPrecached = {}; // contains ASCII kerning

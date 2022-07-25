@@ -46,8 +46,8 @@ CONFIG(float, SmallFontOutlineWeight).defaultValue(10.0f).description("see FontO
 bool CglFont::threadSafety = false;
 
 
-CglFont* font = nullptr;
-CglFont* smallFont = nullptr;
+std::shared_ptr<CglFont> font = nullptr;
+std::shared_ptr<CglFont> smallFont = nullptr;
 
 static constexpr float4        white(1.00f, 1.00f, 1.00f, 0.95f);
 static constexpr float4  darkOutline(0.05f, 0.05f, 0.05f, 0.95f);
@@ -136,13 +136,10 @@ void main() {
 
 bool CglFont::LoadConfigFonts()
 {
-	spring::SafeDelete(font);
-	spring::SafeDelete(smallFont);
-
-	font = CglFont::LoadFont("", false);
+	font      = CglFont::LoadFont("", false);
 	smallFont = CglFont::LoadFont("", true);
 
-	if (font == nullptr)
+	if (font      == nullptr)
 		throw content_error("Failed to load FontFile \"" + configHandler->GetString("FontFile") + "\", did you forget to run make install?");
 
 	if (smallFont == nullptr)
@@ -153,13 +150,10 @@ bool CglFont::LoadConfigFonts()
 
 bool CglFont::LoadCustomFonts(const std::string& smallFontFile, const std::string& largeFontFile)
 {
-	CglFont* newLargeFont = CglFont::LoadFont(largeFontFile, false);
-	CglFont* newSmallFont = CglFont::LoadFont(smallFontFile, true);
+	auto newLargeFont = CglFont::LoadFont(largeFontFile, false);
+	auto newSmallFont = CglFont::LoadFont(smallFontFile,  true);
 
 	if (newLargeFont != nullptr && newSmallFont != nullptr) {
-		spring::SafeDelete(font);
-		spring::SafeDelete(smallFont);
-
 		font = newLargeFont;
 		smallFont = newSmallFont;
 
@@ -171,7 +165,7 @@ bool CglFont::LoadCustomFonts(const std::string& smallFontFile, const std::strin
 	return true;
 }
 
-CglFont* CglFont::LoadFont(const std::string& fontFileOverride, bool smallFont)
+std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFileOverride, bool smallFont)
 {
 	const std::string fontFiles[] = {configHandler->GetString("FontFile"), configHandler->GetString("SmallFontFile")};
 	const std::string& fontFile = (fontFileOverride.empty())? fontFiles[smallFont]: fontFileOverride;
@@ -180,36 +174,64 @@ CglFont* CglFont::LoadFont(const std::string& fontFileOverride, bool smallFont)
 	const   int fontWidths[] = {configHandler->GetInt("FontOutlineWidth"), configHandler->GetInt("SmallFontOutlineWidth")};
 	const float fontWeights[] = {configHandler->GetFloat("FontOutlineWeight"), configHandler->GetFloat("SmallFontOutlineWeight")};
 
-	return (CglFont::LoadFont(fontFile, fontSizes[smallFont], fontWidths[smallFont], fontWeights[smallFont]));
+	return std::move(CglFont::LoadFont(fontFile, fontSizes[smallFont], fontWidths[smallFont], fontWeights[smallFont]));
 }
 
 
-CglFont* CglFont::LoadFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight)
+std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight)
 {
 	try {
-		return (new CglFont(fontFile, size, outlinewidth, outlineweight));
+		//return (new CglFont(fontFile, size, outlinewidth, outlineweight));
+		auto fnt = FindFont(fontFile, size, outlinewidth, outlineweight);
+		if (fnt) {
+			return fnt;
+		}
+
+		fnt = std::make_shared<CglFont>(fontFile, size, outlinewidth, outlineweight);
+		allFonts.emplace_back(fnt);
+
+		return fnt;
+
 	} catch (const content_error& ex) {
 		LOG_L(L_ERROR, "Failed creating font: %s", ex.what());
 		return nullptr;
 	}
 }
 
+std::shared_ptr<CglFont> CglFont::FindFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight)
+{
+	const auto cmpPred = [&fontFile, size, outlinewidth, outlineweight](std::shared_ptr<CFontTexture> item) {
+		std::shared_ptr<CglFont> font = std::static_pointer_cast<CglFont>(item);
+		return
+			size == font->GetSize() &&
+			outlinewidth == font->GetOutlineWidth() &&
+			outlineweight == font->GetOutlineWeight() &&
+			fontFile == font->GetFilePath();
+	};
+
+	auto it = std::find_if(allFonts.begin(), allFonts.end(), cmpPred);
+	if (it == allFonts.end())
+		return nullptr;
+
+	return std::static_pointer_cast<CglFont>(*it);
+}
+
 
 void CglFont::ReallocAtlases(bool pre)
 {
-	if (font != nullptr)
-		static_cast<CFontTexture*>(font)->ReallocAtlases(pre);
+	if (font != nullptr)		
+		font->ReallocAtlases(pre);
 	if (smallFont != nullptr)
-		static_cast<CFontTexture*>(smallFont)->ReallocAtlases(pre);
+		smallFont->ReallocAtlases(pre);
 }
 
 void CglFont::SwapRenderBuffers()
 {
-	assert(     font == nullptr || loadedFonts.find(     font) != loadedFonts.end());
-	assert(smallFont == nullptr || loadedFonts.find(smallFont) != loadedFonts.end());
+	assert(     font == nullptr || std::find(allFonts.begin(), allFonts.end(),      font) != allFonts.end());
+	assert(smallFont == nullptr || std::find(allFonts.begin(), allFonts.end(), smallFont) != allFonts.end());
 
-	for (CglFont* f: loadedFonts) {
-		f->SwapBuffers();
+	for (auto f: allFonts) {
+		std::static_pointer_cast<CglFont>(f)->SwapBuffers();
 	}
 }
 
@@ -228,13 +250,6 @@ CglFont::CglFont(const std::string& fontFile, int size, int _outlineWidth, float
 
 	CreateDefaultShader();
 	curShader = defShader.get();
-
-	loadedFonts.insert(this);
-}
-
-CglFont::~CglFont()
-{
-	loadedFonts.erase(this);
 }
 
 #ifdef HEADLESS

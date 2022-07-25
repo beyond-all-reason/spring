@@ -4,6 +4,7 @@
 
 #include <string>
 #include <deque>
+#include <memory>
 
 #include "TextWrap.h"
 #include "ustring.h"
@@ -45,13 +46,17 @@ public:
 
 	static bool LoadConfigFonts();
 	static bool LoadCustomFonts(const std::string& smallFontFile, const std::string& largeFontFile);
-	static CglFont* LoadFont(const std::string& fontFile, bool small);
-	static CglFont* LoadFont(const std::string& fontFile, int size, int outlinewidth = 2, float outlineweight = 5.0f);
+
+	static std::shared_ptr<CglFont> LoadFont(const std::string& fontFile, bool small);
+	static std::shared_ptr<CglFont> LoadFont(const std::string& fontFile, int size, int outlinewidth = 2, float outlineweight = 5.0f);
+
+	static std::shared_ptr<CglFont> FindFont(const std::string& fontFile, int size, int outlinewidth = 2, float outlineweight = 5.0f);
+
 	static void ReallocAtlases(bool pre);
 	static void SwapRenderBuffers();
 
 	CglFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight);
-	~CglFont();
+	~CglFont() override {};
 
 	void Begin(Shader::IProgramObject* shader);
 	void Begin() { Begin(defShader.get()); };
@@ -132,11 +137,9 @@ private:
 	void ScanForWantedGlyphs(const std::u8string& str);
 	float GetTextWidth_(const std::u8string& text);
 	float GetTextHeight_(const std::u8string& text, float* descender = nullptr, int* numLines = nullptr);
-private:
-	inline static spring::unsynced_set<CglFont*> loadedFonts = {};
 public:
-	static auto GetLoadedFonts() -> const decltype(loadedFonts)& {
-		return loadedFonts;
+	static auto GetLoadedFonts() -> const decltype(allFonts)& {
+		return allFonts;
 	}
 private:
 	inline static std::unique_ptr<Shader::IProgramObject> defShader = nullptr;
@@ -166,8 +169,8 @@ private:
 };
 
 
-extern CglFont* font;
-extern CglFont* smallFont;
+extern std::shared_ptr<CglFont> font;
+extern std::shared_ptr<CglFont> smallFont;
 
 
 // wrappers
