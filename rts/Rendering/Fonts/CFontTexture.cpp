@@ -584,6 +584,7 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 void CFontTexture::LoadWantedGlyphs(char32_t begin, char32_t end)
 {
 	static std::vector<char32_t> wanted;
+	wanted.clear();
 	for (char32_t i = begin; i < end; ++i)
 		wanted.emplace_back(i);
 
