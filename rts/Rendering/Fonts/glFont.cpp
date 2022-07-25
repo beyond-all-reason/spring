@@ -801,9 +801,8 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 		const float tx1 = tc.x1() * texScaleX;
 		const float ty1 = tc.y1() * texScaleY;
 
-#ifdef INDEXED_FONTS_RENDERING
-		if constexpr (shiftXC > 0 || shiftYC > 0 || outline) {
 
+		if constexpr (shiftXC > 0 || shiftYC > 0 || outline) {
 			const auto& stc = prvGlyphPtr->shadowTexCord;
 			const float stx0 = stc.x0() * texScaleX;
 			const float sty0 = stc.y0() * texScaleY;
@@ -824,43 +823,14 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 				ssY = (scaleY / fontSize) * GetOutlineWidth();
 			}
 
+#ifdef INDEXED_FONTS_RENDERING
 			outlineBufferTC.AddQuadTriangles(
 				{ {dx0 + shiftX - ssX, dy0 - shiftY + ssY, textDepth.y},  stx0, sty0,  (&outlineColor.x) },
 				{ {dx1 + shiftX + ssX, dy0 - shiftY + ssY, textDepth.y},  stx1, sty0,  (&outlineColor.x) },
 				{ {dx1 + shiftX + ssX, dy1 - shiftY - ssY, textDepth.y},  stx1, sty1,  (&outlineColor.x) },
 				{ {dx0 + shiftX - ssX, dy1 - shiftY - ssY, textDepth.y},  stx0, sty1,  (&outlineColor.x) }
 			);
-		}
-
-		primaryBufferTC.AddQuadTriangles(
-			{ {dx0, dy0, textDepth.x},  tx0, ty0,  (&newColor.x) },
-			{ {dx1, dy0, textDepth.x},  tx1, ty0,  (&newColor.x) },
-			{ {dx1, dy1, textDepth.x},  tx1, ty1,  (&newColor.x) },
-			{ {dx0, dy1, textDepth.x},  tx0, ty1,  (&newColor.x) }
-		);
 #else
-		if constexpr (shiftXC > 0 || shiftYC > 0 || outline) {
-
-			float shiftX = 0.0f;
-			float shiftY = 0.0f;
-			if constexpr (shiftXC > 0 || shiftYC > 0) {
-				shiftX = scaleX * static_cast<float>(shiftXC) / 100.0f;
-				shiftY = scaleY * static_cast<float>(shiftYC) / 100.0f;
-			}
-
-			float ssX = 0.0f;
-			float ssY = 0.0f;
-			if constexpr (outline) {
-				ssX = (scaleX / fontSize) * GetOutlineWidth();
-				ssY = (scaleY / fontSize) * GetOutlineWidth();
-			}
-
-			const auto& stc = prvGlyphPtr->shadowTexCord;
-			const float stx0 = stc.x0() * texScaleX;
-			const float sty0 = stc.y0() * texScaleY;
-			const float stx1 = stc.x1() * texScaleX;
-			const float sty1 = stc.y1() * texScaleY;
-
 			outlineBufferTC.AddVertices({
 				{ {dx0 + shiftX - ssX, dy1 - shiftY - ssY, textDepth.y},  stx0, sty1,  (&outlineColor.x) },
 				{ {dx0 + shiftX - ssX, dy0 - shiftY + ssY, textDepth.y},  stx0, sty0,  (&outlineColor.x) },
@@ -870,8 +840,17 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 				{ {dx1 + shiftX + ssX, dy0 - shiftY + ssY, textDepth.y},  stx1, sty0,  (&outlineColor.x) },
 				{ {dx1 + shiftX + ssX, dy1 - shiftY - ssY, textDepth.y},  stx1, sty1,  (&outlineColor.x) },
 			});
+#endif
 		}
 
+#ifdef INDEXED_FONTS_RENDERING
+		primaryBufferTC.AddQuadTriangles(
+			{ {dx0, dy0, textDepth.x},  tx0, ty0,  (&newColor.x) },
+			{ {dx1, dy0, textDepth.x},  tx1, ty0,  (&newColor.x) },
+			{ {dx1, dy1, textDepth.x},  tx1, ty1,  (&newColor.x) },
+			{ {dx0, dy1, textDepth.x},  tx0, ty1,  (&newColor.x) }
+		);
+#else
 		primaryBufferTC.AddVertices({
 			{ {dx0, dy1, textDepth.x},  tx0, ty1,  (&newColor.x) },
 			{ {dx0, dy0, textDepth.x},  tx0, ty0,  (&newColor.x) },
@@ -880,7 +859,7 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 			{ {dx0, dy1, textDepth.x},  tx0, ty1,  (&newColor.x) },
 			{ {dx1, dy0, textDepth.x},  tx1, ty0,  (&newColor.x) },
 			{ {dx1, dy1, textDepth.x},  tx1, ty1,  (&newColor.x) },
-			});
+		});
 #endif
 	}
 }
