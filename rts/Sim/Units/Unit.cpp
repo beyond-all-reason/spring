@@ -587,6 +587,11 @@ void CUnit::FinishedBuilding(bool postInit)
 
 	BuildUtils::RemoveUnitBuild(entityReference);
 
+	// switch to repair mode if needed
+	if (UnitUtils::UnitHealth(entityReference) < UnitUtils::UnitMaxHealth(entityReference)) {
+		BuildUtils::AddUnitBeingRepaired(this);
+	}
+
 	ChangeLos(realLosRadius, realAirLosRadius);
 
 	if (unitDef->activateWhenBuilt)
@@ -1096,7 +1101,7 @@ void CUnit::SlowUpdate()
 	DoWaterDamage();
 
 	auto& health = UnitUtils::UnitHealth(entityReference);
-	auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
+	const auto& maxHealth = UnitUtils::UnitMaxHealth(entityReference);
 
 	if (health < 0.0f) {
 		KillUnit(nullptr, false, true);
@@ -2074,10 +2079,13 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 	// New build system
 	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
-		if (BuildUtils::UnitBeingBuilt(this->entityReference)){
-			if (BuildUtils::UnitBuildComplete(this->entityReference)){
+		if (BuildUtils::UnitBeingBuilt(entityReference)){
+			if (BuildUtils::UnitBuildComplete(entityReference)){
 				FinishedBuilding(false);
 			}
+			return true;
+		}
+		else if (UnitUtils::UnitHealth(entityReference) < UnitUtils::UnitMaxHealth(entityReference)) {
 			return true;
 		}
 		return false;

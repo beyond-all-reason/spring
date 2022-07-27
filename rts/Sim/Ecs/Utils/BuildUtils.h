@@ -12,7 +12,9 @@ class BuildUtils {
 public:
     static void AddUnitBuilder(CUnit *unit);
 
-    static void AddUnitBuildTarget(CUnit *unit, CUnit *target);
+    static void AddUnitBuildTarget(entt::entity unit, entt::entity target);
+    static void AddUnitRepairTarget(entt::entity unit, entt::entity target);
+
     static void RemoveUnitBuild(entt::entity entity);
     static void RemoveUnitBuilder(CUnit *unit);
 
@@ -34,6 +36,7 @@ public:
     }
 
     static void AddUnitBeingBuilt(CUnit *unit);
+    static void AddUnitBeingRepaired(CUnit *unit);
 };
 
 #endif

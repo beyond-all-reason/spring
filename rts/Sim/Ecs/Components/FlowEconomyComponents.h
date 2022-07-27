@@ -24,11 +24,23 @@ struct AllocatedUnusedResource {
     float prorationRate = 0.f;
 };
 
+template<class Archive>
+void serialize(Archive &ar, AllocatedUnusedResource &c) { ar(c.res, c.prorationRate); }
+
 ALIAS_COMPONENT(BuildRate, float)
 
 struct IsEconomyTask {};
 struct IsConditionalEconomyTask {};
 struct IsPassiveEconomyTask {};
+
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < AllocatedUnusedResource, BuildRate
+            , IsConditionalEconomyTask, IsEconomyTask, IsPassiveEconomyTask
+            , ResourceAdd, ResourceUse
+        >(archive);
+}
 
 }
 

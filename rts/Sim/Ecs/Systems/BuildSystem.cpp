@@ -52,9 +52,10 @@ void RequestBuildResources() {
         const auto& buildCost = EcsMain::registry.get<BuildCost>(buildTarget);
         const auto buildTime = (EcsMain::registry.get<BuildTime>(buildTarget)).value;
         const float buildStep = (buildPower*GAME_SPEED)/buildTime;
-        SResourcePack resPull = buildCost * buildStep;
 
+        SResourcePack resPull = buildCost * buildStep;
         EcsMain::registry.emplace_or_replace<FlowEconomy::ResourceUse>(entity, resPull);
+
         LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%f,%f,%f,%f)", __func__, (int)entity, (int)buildTarget, resPull[0], resPull[1], resPull[2], resPull[3]);
     }
 }
@@ -77,14 +78,14 @@ void BuildTasks() {
 
         const auto buildTime = (EcsMain::registry.get<BuildTime>(buildTarget)).value;
         const auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(buildTarget)).value;
-        auto& resAllocated = EcsMain::registry.get<FlowEconomy::AllocatedUnusedResource>(entity); // EcsMain::registry.get_or_emplace<FlowEconomy::AllocatedUnusedResource>(entity);
+        auto& resAllocated = group.get<FlowEconomy::AllocatedUnusedResource>(entity);
         auto& buildProgress = (EcsMain::registry.get<BuildProgress>(buildTarget)).value;
         auto& health = (EcsMain::registry.get<SolidObject::Health>(buildTarget)).value;
         
         const float buildStep = (buildPower*BUILD_UPDATE_RATE)/buildTime;
         const float proratedBuildStep = buildStep * resAllocated.prorationRate;
         const float nextProgress = buildProgress + proratedBuildStep;
-        const float nextHealth = health + maxHealth * proratedBuildStep;
+        const float nextHealth = health + maxHealth * proratedBuildStep *.1f; // just to test repair.
         SResourcePack resUsage(resAllocated.res);
 
         if (nextProgress > 1.f) {
@@ -95,13 +96,18 @@ void BuildTasks() {
         else
             resAllocated.res = SResourcePack();
 
-        if (nextProgress >= 1.f)
+        if (nextProgress >= 1.f) {
+            if (nextHealth < maxHealth) {
+                EcsMain::registry.emplace<ActiveRepair>(entity, buildTarget, buildPower);
+                EcsMain::registry.erase<ActiveBuild>(entity);
+            }
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
+        }
 
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(entity, resUsage);
-
         buildProgress = std::min(nextProgress, 1.f);
         health = std::min(nextHealth, maxHealth);
+
         LOG_L(L_DEBUG, "BuildSystem::%s: %d -> %d (%f%%)", __func__, (int)entity, (int)buildTarget, buildProgress*100.f);
     }
 }

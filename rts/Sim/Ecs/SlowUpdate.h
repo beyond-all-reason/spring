@@ -1,11 +1,11 @@
 #ifndef SLOW_UPDATE_H__
 #define SLOW_UPDATE_H__
 
-#ifndef LOG_SECTION_CURRENT
-#define LOG_SECTION_ECS "ECS"
-#define LOG_SECTION_CURRENT LOG_SECTION_ECS
-#define DEBUG
-#endif
+// #ifndef LOG_SECTION_CURRENT
+// #define LOG_SECTION_ECS "ECS"
+// #define LOG_SECTION_CURRENT LOG_SECTION_ECS
+// #define DEBUG
+// #endif
 
 #include "Sim/Misc/GlobalConstants.h"
 

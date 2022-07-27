@@ -20,9 +20,13 @@ struct WindEnergy {};
 
 ALIAS_COMPONENT(WindEconomyTaskRef, entt::entity)
 
-// struct WindEconomyTaskRef {
-//     entt::entity value{entt::null};
-// };
+
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < NewWindGenerator, WindEconomyTaskRef, WindEnergy, WindGenerator, WindGeneratorActive
+        >(archive);
+}
 
 }
 

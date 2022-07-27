@@ -20,12 +20,24 @@ struct ChainEntity {
     entt::entity next{entt::null};
 };
 
+template<class Archive>
+void serialize(Archive &ar, ChainEntity &c) { ar(c.prev, c.next); }
+
 ALIAS_COMPONENT(MetalUpKeepEconomyTaskRef, entt::entity)
 ALIAS_COMPONENT(EnergyUpKeepEconomyTaskRef, entt::entity)
 ALIAS_COMPONENT(ConditionalMetalUseEconomyTaskRef, entt::entity)
 ALIAS_COMPONENT(ConditionalEnergyUseEconomyTaskRef, entt::entity)
 ALIAS_COMPONENT(MakeResourcesEconomyTaskRef, entt::entity)
 ALIAS_COMPONENT(MakeDrainResourcesEconomyTaskRef, entt::entity)
+
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < ChainEntity, ConditionalEnergyUseEconomyTaskRef, ConditionalMetalUseEconomyTaskRef, EconomyTasks
+            , EnergyUpKeepEconomyTaskRef, MakeDrainResourcesEconomyTaskRef, MakeResourcesEconomyTaskRef
+            , MetalUpKeepEconomyTaskRef, OwningEntity, Team, UnitDefRef, UnitId
+        >(archive);
+}
 
 }
 

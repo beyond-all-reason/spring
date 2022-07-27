@@ -353,10 +353,8 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	//float adjBuildSpeed = buildSpeed;
 	float adjBuildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 
-	if (! SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
-		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
-			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
-	}
+	if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
+		adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
 		BuildUtils::UnpauseBuilder(this);
@@ -589,7 +587,7 @@ void CBuilder::SetRepairTarget(CUnit* target)
 
 	curBuild = target;
 	AddDeathDependence(curBuild, DEPENDENCE_BUILD);
-	BuildUtils::AddUnitBuildTarget(this, curBuild);
+	BuildUtils::AddUnitRepairTarget(this->entityReference, curBuild->entityReference);
 
 	if (!target->groundLevelled) {
 		// resume levelling the ground
@@ -784,7 +782,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-					BuildUtils::AddUnitBuildTarget(this, curBuild);
+					BuildUtils::AddUnitBuildTarget(this->entityReference, curBuild->entityReference);
 					ScriptStartBuilding(u->pos, false);
 					return true;
 				}
@@ -841,7 +839,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	// impossible to *construct* with multiple builders
 	buildee->SetSoloBuilder(this, this->unitDef);
 	AddDeathDependence(curBuild = buildee, DEPENDENCE_BUILD);
-	BuildUtils::AddUnitBuildTarget(this, curBuild);
+	BuildUtils::AddUnitBuildTarget(this->entityReference, curBuild->entityReference);
 
 	// if the ground is not going to be terraformed the buildee would
 	// 'pop' to the correct height over the (un-flattened) terrain on

@@ -23,6 +23,7 @@ struct BuildSystemComponent {
     static constexpr std::size_t page_size = 1;
 };
 
+
 struct EnvResourceComponent {
     static constexpr std::size_t page_size = 1;
 
@@ -41,17 +42,39 @@ struct EnvResourceComponent {
 	int windDirTimer = 0;
 };
 
+template<class Archive>
+void serialize(Archive &ar, EnvResourceComponent &c)
+	{ ar( c.curTidalStrength, c.curWindStrength, c.newWindStrength, c.minWindStrength, c.maxWindStrength
+		, c.curWindDir, c.curWindVec, c.newWindVec, c.oldWindVec, c.windDirTimer
+	);}
+
+
 struct FlowEconomySystemComponent {
     static constexpr std::size_t page_size = 1;
 
     float economyMultiplier = 0.f;
 };
 
+template<class Archive>
+void serialize(Archive &ar, FlowEconomySystemComponent &c) { ar(c.economyMultiplier); }
+
+
 struct UnitEconomyReportSystemComponent {
     static constexpr std::size_t page_size = 1;
 
     int activeBuffer = 0;
 };
+
+template<class Archive>
+void serialize(Archive &ar, UnitEconomyReportSystemComponent &c) { ar(c.activeBuffer); }
+
+
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < BuildSystemComponent, EnvResourceComponent, FlowEconomySystemComponent, UnitEconomyReportSystemComponent
+        >(archive);
+}
 
 }
 

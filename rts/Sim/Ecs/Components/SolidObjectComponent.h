@@ -8,6 +8,13 @@ namespace SolidObject {
 ALIAS_COMPONENT(Health, float)
 ALIAS_COMPONENT(MaxHealth, float)
 
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < Health, MaxHealth
+        >(archive);
+}
+
 }
 
 #endif

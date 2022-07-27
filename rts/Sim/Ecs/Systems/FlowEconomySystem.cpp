@@ -84,6 +84,7 @@ void ProcessFixedIncome(const FlowEconomySystemComponent& system) {
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
         if (entitiesLeftToProcess-- == 0) break;
+        
         const auto& resAdd = group.get<ResourceAdd>(entity);
         auto teamId = (group.get<Units::Team>(entity)).value;
         auto owner = (group.get<Units::OwningEntity>(entity)).value;

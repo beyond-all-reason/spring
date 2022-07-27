@@ -182,7 +182,7 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	curBuild = buildee;
 	curBuildDef = nullptr;
 
-	BuildUtils::AddUnitBuildTarget(this, buildee);
+	BuildUtils::AddUnitBuildTarget(entityReference, buildee->entityReference);
 
 	if (losStatus[gu->myAllyTeam] & LOS_INLOS) {
 		Channels::General->PlayRandomSample(unitDef->sounds.build, buildPos);
