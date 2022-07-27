@@ -14,5 +14,6 @@ struct BasicComponentType<entt::entity> {
 };
 
 #define ALIAS_COMPONENT(Component, T) struct Component : public BasicComponentType<T> {};
+#define VOID_COMPONENT(Component) struct Component {};
 
 #endif
