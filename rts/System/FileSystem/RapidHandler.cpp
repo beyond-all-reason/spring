@@ -100,6 +100,11 @@ static std::vector<std::string> ParseRapidTagResolutionOrder() {
 		order.emplace_back(orderStr.substr(beg, end - beg));
 	}
 	order.emplace_back(orderStr.substr(beg,orderStr.size() - beg));
+
+	static const std::string springRtsRepo = "repos.springrts.com";
+	if (std::find(order.begin(), order.end(), springRtsRepo) == order.end()) {
+		order.emplace_back(springRtsRepo);
+	}
 	return order;
 }
 
