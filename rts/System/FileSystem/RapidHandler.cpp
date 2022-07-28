@@ -1,10 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cstddef>
+#include <limits>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #include "DataDirsAccess.h"
 #include "FileQueryFlags.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
 #include <zlib.h>
@@ -82,17 +88,44 @@ static bool GetRapidEntry(const std::string& file, RapidEntry* re, Lambda p)
 	return false;
 }
 
+CONFIG(std::string, RapidTagResolutionOrder)
+	.defaultValue("")
+	.description("';' separated list of domains, preference order for resolving package from rapid tags");
 
-
+static std::unordered_map<std::string, std::size_t> ParseRapidTagResolutionOrder() {
+	const auto orderStr = configHandler->GetString("RapidTagResolutionOrder");
+	std::unordered_map<std::string, std::size_t> order;
+	std::size_t beg, end;
+	for (beg = 0; (end = orderStr.find(';', beg)) != orderStr.npos; beg = end + 1) {
+		order[orderStr.substr(beg, end - beg)] = beg;
+	}
+	order[orderStr.substr(beg,orderStr.size() - beg)] = beg;
+	return order;
+}
 
 std::string GetRapidPackageFromTag(const std::string& tag)
 {
+	const auto order = ParseRapidTagResolutionOrder();
+	std::string package = tag;
+	std::size_t rank = std::numeric_limits<std::size_t>::max();
 	for (const std::string& file: dataDirsAccess.FindFiles("rapid", "versions.gz", FileQueryFlags::RECURSE)) {
 		RapidEntry re;
-		if (GetRapidEntry(dataDirsAccess.LocateFile(file), &re, [&](const RapidEntry& re) { return re.GetTag() == tag; }))
-			return re.GetName();
+		if (GetRapidEntry(dataDirsAccess.LocateFile(file), &re, [&](const RapidEntry& re) { return re.GetTag() == tag; })) {
+			const auto rapidDomain = std::filesystem::path{file}.parent_path().parent_path().filename().string();
+			std::size_t new_rank = std::numeric_limits<std::size_t>::max() - 1;
+			if (auto it = order.find(rapidDomain); it != order.end()) {
+				new_rank = it->second;
+			}
+			if (new_rank == rank)
+				LOG_L(L_WARNING, "Rapid tag %s resolves to multiple versions with the same preference, picking from %s",
+				      tag.c_str(), file.c_str());
+			if (new_rank <= rank) {
+				package = re.GetName();
+				rank = new_rank;
+			}
+		}
 	}
-	return tag;
+	return package;
 }
 
 std::string GetRapidTagFromPackage(const std::string& pkg)
