@@ -111,6 +111,9 @@ std::string GetRapidPackageFromTag(const std::string& tag)
 	for (const std::string& file: dataDirsAccess.FindFiles("rapid", "versions.gz", FileQueryFlags::RECURSE)) {
 		RapidEntry re;
 		if (GetRapidEntry(dataDirsAccess.LocateFile(file), &re, [&](const RapidEntry& re) { return re.GetTag() == tag; })) {
+			// The `file` path looks like `rapid/[domain]/[repo]/versions.gz`
+			// e.g: `rapid/repos.springrts.com/byar-chobby/versions.gz` as created
+			// by pr-downloader. We extract the domain part from it.
 			const auto rapidDomain = std::filesystem::path{file}.parent_path().parent_path().filename().string();
 			std::size_t new_rank = std::numeric_limits<std::size_t>::max() - 1;
 			if (auto it = std::find(order.begin(), order.end(), rapidDomain); it != order.end()) {
