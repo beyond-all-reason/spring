@@ -40,7 +40,7 @@ CR_REG_METADATA(CBuilder, (
 	CR_MEMBER(range3D),
 	CR_MEMBER(buildDistance),
 	//CR_MEMBER(buildSpeed),
-	CR_MEMBER(repairSpeed),
+	//CR_MEMBER(repairSpeed),
 	CR_MEMBER(reclaimSpeed),
 	CR_MEMBER(resurrectSpeed),
 	CR_MEMBER(captureSpeed),
@@ -72,7 +72,7 @@ CBuilder::CBuilder():
 	range3D(true),
 	buildDistance(16),
 	//buildSpeed(100),
-	repairSpeed(100),
+	//repairSpeed(100),
 	reclaimSpeed(100),
 	resurrectSpeed(100),
 	captureSpeed(100),
@@ -109,7 +109,7 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 
 	const float scale = (1.0f / TEAM_SLOWUPDATE_RATE);
 
-	repairSpeed    = scale * unitDef->repairSpeed;
+	//repairSpeed    = scale * unitDef->repairSpeed;
 	reclaimSpeed   = scale * unitDef->reclaimSpeed;
 	resurrectSpeed = scale * unitDef->resurrectSpeed;
 	captureSpeed   = scale * unitDef->captureSpeed;
@@ -353,8 +353,12 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 	//float adjBuildSpeed = buildSpeed;
 	float adjBuildSpeed = BuildUtils::GetBuildSpeed(this->entityReference);
 
-	if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f)
-		adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
+		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f){
+			auto repairSpeed = EcsMain::registry.get<Build::RepairPower>(entityReference).value;
+			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+		}
+	}
 
 	if (adjBuildSpeed > 0.0f && curBuildee->AddBuildPower(this, adjBuildSpeed)) {
 		BuildUtils::UnpauseBuilder(this);

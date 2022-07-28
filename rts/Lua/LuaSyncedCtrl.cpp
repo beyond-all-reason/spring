@@ -2200,7 +2200,8 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	//builder->buildSpeed = buildSpeed;
 	BuildUtils::SetBuildPower(unit->entityReference, buildSpeed);
 	if (lua_isnumber(L, 3)) {
-		builder->repairSpeed    = buildScale * max(0.0f, lua_tofloat(L, 3));
+		//builder->repairSpeed    = buildScale * max(0.0f, lua_tofloat(L, 3));
+		BuildUtils::SetRepairPower(unit->entityReference, (buildScale * max(0.0f, lua_tofloat(L, 3))));
 	}
 	if (lua_isnumber(L, 4)) {
 		builder->reclaimSpeed   = buildScale * max(0.0f, lua_tofloat(L, 4));

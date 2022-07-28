@@ -32,6 +32,7 @@ ALIAS_COMPONENT(BuildProgress, float)
 ALIAS_COMPONENT(BuildTime, float)
 ALIAS_COMPONENT(RepairPower, float)
 ALIAS_COMPONENT_DEF(MaxRepairPowerRate, float, defaultMaxRepairPowerRate)
+//ALIAS_COMPONENT(MaxRepairPowerRate, float)
 ALIAS_COMPONENT(RepairPowerRecieved, float)
 
 struct BeingBuilt {};

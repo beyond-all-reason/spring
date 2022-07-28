@@ -66,7 +66,7 @@ public:
 
 	float buildDistance;
 	//float buildSpeed;
-	float repairSpeed;
+	//float repairSpeed;
 	float reclaimSpeed;
 	float resurrectSpeed;
 	float captureSpeed;

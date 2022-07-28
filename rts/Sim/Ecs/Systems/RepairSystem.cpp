@@ -25,7 +25,7 @@ void RepairSystem::Init() {
 
 void RequestRepairResources() {
     auto combinedGroup = EcsMain::registry.group<ActiveRepair>(entt::get<FlowEconomy::AllocatedUnusedResource>);
-    auto group = EcsMain::registry.group<ActiveRepair>();
+    auto group = EcsMain::registry.view<ActiveRepair>();
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
         if (entitiesLeftToProcess-- == 0) break;

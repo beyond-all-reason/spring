@@ -33,7 +33,7 @@ void BuildSystem::Init() {
 
 void RequestBuildResources() {
     auto combinedGroup = EcsMain::registry.group<ActiveBuild>(entt::get<FlowEconomy::AllocatedUnusedResource>);
-    auto group = EcsMain::registry.group<ActiveBuild>();
+    auto group = EcsMain::registry.view<ActiveBuild>();
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
         if (entitiesLeftToProcess-- == 0) break;
@@ -98,7 +98,8 @@ void BuildTasks() {
 
         if (nextProgress >= 1.f) {
             if (nextHealth < maxHealth) {
-                EcsMain::registry.emplace<ActiveRepair>(entity, buildTarget, buildPower);
+                const auto repairPower = (EcsMain::registry.get_or_emplace<RepairPower>(entity)).value;
+                EcsMain::registry.emplace<ActiveRepair>(entity, buildTarget, repairPower);
                 EcsMain::registry.erase<ActiveBuild>(entity);
             }
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);

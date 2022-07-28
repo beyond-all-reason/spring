@@ -26,6 +26,8 @@ void BuildUtils::AddUnitBuilder(CUnit *unit){
     auto unitDef = unit->unitDef;
     auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed / GAME_SPEED).value;
     auto repairSpeed = EcsMain::registry.emplace_or_replace<RepairPower>(entity, unitDef->repairSpeed / GAME_SPEED).value;
+    auto maxRepairSpeed = EcsMain::registry.emplace_or_replace<MaxRepairPowerRate>(entity
+            , unitDef->maxRepairSpeed / (GAME_SPEED / REPAIR_UPDATE_RATE)).value;
 
     static_cast<void>(EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity));
 
@@ -143,6 +145,16 @@ void BuildUtils::SetBuildPower(entt::entity entity, float power) {
     }
 
     EcsMain::registry.emplace_or_replace<BuildPower>(entity, power);
+
+    LOG_L(L_DEBUG, "%s: BuildPower changed to %f (%d)", __func__, power, entt::to_entity(entity));
+}
+
+void BuildUtils::SetRepairPower(entt::entity entity, float power) {
+    if (! EcsMain::registry.valid(entity)){
+        LOG("%s: invalid entityId reference %d", __func__, entt::to_entity(entity)); return;
+    }
+
+    EcsMain::registry.emplace_or_replace<RepairPower>(entity, power);
 
     LOG_L(L_DEBUG, "%s: BuildPower changed to %f (%d)", __func__, power, entt::to_entity(entity));
 }
