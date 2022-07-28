@@ -2,9 +2,9 @@
 
 #include "Sim/Ecs/Components/BuildComponents.h"
 #include "Sim/Ecs/Components/FlowEconomyComponents.h"
+#include "Sim/Ecs/Components/SolidObjectComponent.h"
 #include "Sim/Ecs/Components/UnitEconomyComponents.h"
 #include "Sim/Ecs/Utils/SystemUtils.h"
-#include "Sim/Ecs/Utils/UnitUtils.h"
 #include "Sim/Ecs/SlowUpdate.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
@@ -25,7 +25,7 @@ void RepairSystem::Init() {
 
 void RequestRepairResources() {
     auto combinedGroup = EcsMain::registry.group<ActiveRepair>(entt::get<FlowEconomy::AllocatedUnusedResource>);
-    auto group = EcsMain::registry.view<ActiveRepair>();
+    auto group = EcsMain::registry.group<ActiveRepair>();
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
         if (entitiesLeftToProcess-- == 0) break;
@@ -59,10 +59,11 @@ void RepairTasks() {
     for (auto entity : group) {
         ReleaseComponentOnExit<FlowEconomy::AllocatedUnusedResource> scopedExit(entity);
 
+        auto& resAllocated = group.get<FlowEconomy::AllocatedUnusedResource>(entity);
         const auto& repairDetails = group.get<ActiveRepair>(entity);
         const auto repairPower = repairDetails.currentBuildpower;
         const auto repairTarget = repairDetails.buildTarget;
-
+        
         // currently paused
         if (repairPower == 0.f) {
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
@@ -71,29 +72,36 @@ void RepairTasks() {
             continue;
         }
 
-		auto& health = UnitUtils::UnitHealth(repairTarget);
-		const auto maxHealth = UnitUtils::UnitMaxHealth(repairTarget);
+		auto& health = (EcsMain::registry.get<SolidObject::Health>(repairTarget)).value;
+		const auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(repairTarget)).value;
         const auto buildTime = (EcsMain::registry.get<BuildTime>(repairTarget)).value;
-        auto& resAllocated = group.get<FlowEconomy::AllocatedUnusedResource>(entity);
-
-        const float step = (repairPower*REPAIR_UPDATE_RATE)/buildTime;
-        const float proratedHealthStep = step * resAllocated.prorationRate * maxHealth *.1f; // just to test repair.;
-        const float nextHealth = health + proratedHealthStep;
+        
+        const auto maxRepairRate = (EcsMain::registry.get_or_emplace<MaxRepairPowerRate>(entity)).value;
+        auto& repairRecieved = (EcsMain::registry.get_or_emplace<RepairPowerRecieved>(repairTarget)).value;
         SResourcePack resUsage(resAllocated.res);
 
-        if (nextHealth > maxHealth) {
-            float allocRatioUsed = ((maxHealth - health) / proratedHealthStep);
-            resUsage *= allocRatioUsed;
+        const float proratedPower = (repairPower*REPAIR_UPDATE_RATE) * resAllocated.prorationRate;
+        const float finishPower = (1.f - (health / maxHealth)) * buildTime;
+        const float availablePower = maxRepairRate - repairRecieved;
+
+        const float power = std::max(0.f, std::min(proratedPower, std::min(finishPower, availablePower)));
+        if (power < proratedPower) {
+            resUsage *= (power / proratedPower);
             resAllocated.res -= resUsage;
         }
         else
             resAllocated.res = SResourcePack();
 
+        const float step = power / buildTime;
+        const float proratedHealthStep = step * maxHealth *.1f; // just to test repair.;
+        const float nextHealth = health + proratedHealthStep;
         if (nextHealth >= maxHealth) {
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);
             EcsMain::registry.erase<ActiveRepair>(entity);
         }
+
         health = std::min(nextHealth, maxHealth);
+        repairRecieved += power;
         TryAddToComponent<UnitEconomy::ResourcesCurrentUsage>(entity, resUsage);
 
         LOG_L(L_DEBUG, "RepairSystem::%s: %d -> %d (%f/%f)", __func__

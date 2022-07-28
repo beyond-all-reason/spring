@@ -33,7 +33,7 @@ void BuildSystem::Init() {
 
 void RequestBuildResources() {
     auto combinedGroup = EcsMain::registry.group<ActiveBuild>(entt::get<FlowEconomy::AllocatedUnusedResource>);
-    auto group = EcsMain::registry.view<ActiveBuild>();
+    auto group = EcsMain::registry.group<ActiveBuild>();
     auto entitiesLeftToProcess = group.size() - combinedGroup.size();
     for (auto entity : group) {
         if (entitiesLeftToProcess-- == 0) break;

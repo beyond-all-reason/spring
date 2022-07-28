@@ -13,6 +13,7 @@ struct BasicComponentType<entt::entity> {
     entt::entity value{entt::null};
 };
 
+#define ALIAS_COMPONENT_DEF(Component, T, DefaultValue) struct Component : public BasicComponentType<T> { Component(){ value = DefaultValue; }};
 #define ALIAS_COMPONENT(Component, T) struct Component : public BasicComponentType<T> {};
 #define VOID_COMPONENT(Component) struct Component {};
 
