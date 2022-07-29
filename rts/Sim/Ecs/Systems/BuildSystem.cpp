@@ -98,7 +98,7 @@ void BuildTasks() {
 
         if (nextProgress >= 1.f) {
             if (nextHealth < maxHealth) {
-                const auto repairPower = (EcsMain::registry.get_or_emplace<RepairPower>(entity)).value;
+                const auto repairPower = (EcsMain::registry.get_or_emplace<RepairSpeed>(entity)).value;
                 EcsMain::registry.emplace<ActiveRepair>(entity, buildTarget, repairPower);
                 EcsMain::registry.erase<ActiveBuild>(entity);
             }

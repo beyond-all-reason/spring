@@ -1108,7 +1108,7 @@ void CUnit::SlowUpdate()
 		return;
 	}
 
-	repairAmount = 0.0f;
+	//repairAmount = 0.0f;
 
 	if (paralyzeDamage > 0.0f) {
 		// NOTE: the paralysis degradation-rate has to vary, because
@@ -2160,6 +2160,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 				return false;
 			}
 
+			auto& repairAmount = (EcsMain::registry.get_or_emplace<Build::RepairRecieved>(entityReference)).value;
 			repairAmount += amount;
 			health += (maxHealth * step);
 			health = std::min(health, maxHealth);
@@ -3179,7 +3180,7 @@ CR_REG_METADATA(CUnit, (
 	//CR_MEMBER(buildProgress),
 	CR_MEMBER(groundLevelled),
 	CR_MEMBER(terraformLeft),
-	CR_MEMBER(repairAmount),
+	//CR_MEMBER(repairAmount),
 
 	CR_MEMBER(realLosRadius),
 	CR_MEMBER(realAirLosRadius),

@@ -76,13 +76,16 @@ void RepairTasks() {
 		const auto maxHealth = (EcsMain::registry.get<SolidObject::MaxHealth>(repairTarget)).value;
         const auto buildTime = (EcsMain::registry.get<BuildTime>(repairTarget)).value;
         
-        const auto maxRepairRate = (EcsMain::registry.get_or_emplace<MaxRepairPowerRate>(entity)).value;
-        auto& repairRecieved = (EcsMain::registry.get_or_emplace<RepairPowerRecieved>(repairTarget)).value;
+        const auto maxRepairRate = (EcsMain::registry.get_or_emplace<MaxRepairSpeed>(entity)).value;
+        auto& repairRecieved = (EcsMain::registry.get_or_emplace<RepairRecieved>(repairTarget)).value;
         SResourcePack resUsage(resAllocated.res);
 
         const float proratedPower = (repairPower*REPAIR_UPDATE_RATE) * resAllocated.prorationRate;
         const float finishPower = (1.f - (health / maxHealth)) * buildTime;
         const float availablePower = maxRepairRate - repairRecieved;
+
+        LOG_L(L_DEBUG, "RepairSystem::%s: %d -> %d (%f : %f : %f)", __func__
+                , entt::to_entity(entity), entt::to_entity(repairTarget), proratedPower, finishPower, availablePower);
 
         const float power = std::max(0.f, std::min(proratedPower, std::min(finishPower, availablePower)));
         if (power < proratedPower) {
@@ -93,7 +96,7 @@ void RepairTasks() {
             resAllocated.res = SResourcePack();
 
         const float step = power / buildTime;
-        const float proratedHealthStep = step * maxHealth *.1f; // just to test repair.;
+        const float proratedHealthStep = step * maxHealth;
         const float nextHealth = health + proratedHealthStep;
         if (nextHealth >= maxHealth) {
             EcsMain::registry.remove<FlowEconomy::ResourceUse>(entity);

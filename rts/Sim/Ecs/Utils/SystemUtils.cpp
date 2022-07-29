@@ -7,6 +7,7 @@
 #include "Sim/Ecs/Systems/FluxEconomySystem.h"
 #include "Sim/Ecs/Systems/UnitEconomyReportSystem.h"
 #include "Sim/Ecs/Systems/RepairSystem.h"
+#include "Sim/Ecs/Systems/RepairReceivedSystem.h"
 
 namespace SystemUtils {
 
@@ -20,6 +21,7 @@ void SystemUtils::InitSystems() {
 	BuildSystem::Init();
 	UnitEconomyReportSystem::Init();
 	RepairSystem::Init();
+	RepairReceivedSystem::Init();
 }
 
 }

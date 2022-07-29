@@ -394,7 +394,7 @@ public:
 	// how much terraforming is left to do
 	float terraformLeft = 0.0f;
 	// How much reapir power has been added to this recently
-	float repairAmount = 0.0f;
+	//float repairAmount = 0.0f;
 
 	// last frame unit was attacked by other unit
 	int lastAttackFrame = -200;

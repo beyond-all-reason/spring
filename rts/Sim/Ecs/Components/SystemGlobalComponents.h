@@ -58,6 +58,14 @@ struct FlowEconomySystemComponent {
 template<class Archive>
 void serialize(Archive &ar, FlowEconomySystemComponent &c) { ar(c.economyMultiplier); }
 
+struct RepairReceivedSystemComponent {
+    static constexpr std::size_t page_size = 1;
+
+    int updateFrequency = 0;
+};
+
+template<class Archive>
+void serialize(Archive &ar, RepairReceivedSystemComponent &c) { ar(c.updateFrequency); }
 
 struct UnitEconomyReportSystemComponent {
     static constexpr std::size_t page_size = 1;
@@ -72,7 +80,8 @@ void serialize(Archive &ar, UnitEconomyReportSystemComponent &c) { ar(c.activeBu
 template<class Archive, class Snapshot>
 void serializeComponents(Archive &archive, Snapshot &snapshot) {
     snapshot.template component
-        < BuildSystemComponent, EnvResourceComponent, FlowEconomySystemComponent, UnitEconomyReportSystemComponent
+        < BuildSystemComponent, EnvResourceComponent, FlowEconomySystemComponent
+		, RepairReceivedSystemComponent, UnitEconomyReportSystemComponent
         >(archive);
 }
 

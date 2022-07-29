@@ -355,8 +355,10 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 
 	if (SystemGlobals::systemGlobals.IsSystemActive<SystemGlobals::FlowEconomySystemComponent>()){
 		if (BuildUtils::GetBuildProgress(curBuildee->entityReference) >= 1.0f){
-			auto repairSpeed = EcsMain::registry.get<Build::RepairPower>(entityReference).value;
-			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+			auto repairSpeed = EcsMain::registry.get<Build::RepairSpeed>(entityReference).value;
+			auto repairAmount = EcsMain::registry.get_or_emplace<Build::RepairRecieved>(curBuildee->entityReference).value;
+			//adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - curBuildee->repairAmount); // repair
+			adjBuildSpeed = std::min(repairSpeed, unitDef->maxRepairSpeed * 0.5f - repairAmount);
 		}
 	}
 

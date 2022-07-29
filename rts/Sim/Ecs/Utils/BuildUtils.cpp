@@ -24,9 +24,9 @@ using namespace Build;
 void BuildUtils::AddUnitBuilder(CUnit *unit){
     auto entity = unit->entityReference;
     auto unitDef = unit->unitDef;
-    auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildPower>(entity, unitDef->buildSpeed / GAME_SPEED).value;
-    auto repairSpeed = EcsMain::registry.emplace_or_replace<RepairPower>(entity, unitDef->repairSpeed / GAME_SPEED).value;
-    auto maxRepairSpeed = EcsMain::registry.emplace_or_replace<MaxRepairPowerRate>(entity
+    auto buildSpeed = EcsMain::registry.emplace_or_replace<BuildSpeed>(entity, unitDef->buildSpeed / GAME_SPEED).value;
+    auto repairSpeed = EcsMain::registry.emplace_or_replace<RepairSpeed>(entity, unitDef->repairSpeed / GAME_SPEED).value;
+    auto maxRepairSpeed = EcsMain::registry.emplace_or_replace<MaxRepairSpeed>(entity
             , unitDef->maxRepairSpeed / (GAME_SPEED / REPAIR_UPDATE_RATE)).value;
 
     static_cast<void>(EcsMain::registry.get_or_emplace<UnitEconomy::ResourcesCurrentUsage>(entity));
@@ -42,7 +42,7 @@ void BuildUtils::AddUnitBuildTarget(entt::entity entity, entt::entity targetEnti
     if (! EcsMain::registry.valid(targetEntity)){
         LOG("%s: invalid target entityId reference %d", __func__, entt::to_entity(targetEntity)); return;
     }
-    const auto buildPowerComp = EcsMain::registry.try_get<BuildPower>(entity);
+    const auto buildPowerComp = EcsMain::registry.try_get<BuildSpeed>(entity);
     if (buildPowerComp == nullptr){
         LOG("%s: unit %d has no build capacity", __func__, entt::to_entity(entity));  return;
     }
@@ -50,14 +50,14 @@ void BuildUtils::AddUnitBuildTarget(entt::entity entity, entt::entity targetEnti
     auto buildPower = buildPowerComp->value;
     EcsMain::registry.emplace_or_replace<ActiveBuild>(entity, targetEntity, buildPower);
 
-    LOG_L(L_DEBUG, "%s: %d: BuildPower = %f", __func__, entt::to_entity(entity), buildPower);
+    LOG_L(L_DEBUG, "%s: %d: BuildSpeed = %f", __func__, entt::to_entity(entity), buildPower);
 }
 
 void BuildUtils::AddUnitRepairTarget(entt::entity entity, entt::entity targetEntity) {
-    auto buildPower = EcsMain::registry.get<BuildPower>(entity).value;
+    auto buildPower = EcsMain::registry.get<BuildSpeed>(entity).value;
     EcsMain::registry.emplace_or_replace<ActiveRepair>(entity, targetEntity, buildPower);
 
-    LOG_L(L_DEBUG, "%s: %d: RepairPower = %f", __func__, entt::to_entity(entity), buildPower);
+    LOG_L(L_DEBUG, "%s: %d: RepairSpeed = %f", __func__, entt::to_entity(entity), buildPower);
 }
 
 void BuildUtils::AddUnitBeingBuilt(CUnit *unit) {
@@ -127,14 +127,14 @@ void BuildUtils::UnpauseBuilder(CUnit *unit) {
         auto activeBuild = EcsMain::registry.try_get<ActiveBuild>(entity);
         if (activeBuild != nullptr) {
             if (activeBuild->currentBuildpower == 0.f)
-                activeBuild->currentBuildpower = EcsMain::registry.get<BuildPower>(entity).value;
+                activeBuild->currentBuildpower = EcsMain::registry.get<BuildSpeed>(entity).value;
         }
     }
     {
         auto activeBuild = EcsMain::registry.try_get<ActiveRepair>(entity);
         if (activeBuild != nullptr) {
             if (activeBuild->currentBuildpower == 0.f)
-                activeBuild->currentBuildpower = EcsMain::registry.get<BuildPower>(entity).value;
+                activeBuild->currentBuildpower = EcsMain::registry.get<BuildSpeed>(entity).value;
         }
     }
 }
@@ -144,9 +144,9 @@ void BuildUtils::SetBuildPower(entt::entity entity, float power) {
         LOG("%s: invalid entityId reference %d", __func__, entt::to_entity(entity)); return;
     }
 
-    EcsMain::registry.emplace_or_replace<BuildPower>(entity, power);
+    EcsMain::registry.emplace_or_replace<BuildSpeed>(entity, power);
 
-    LOG_L(L_DEBUG, "%s: BuildPower changed to %f (%d)", __func__, power, entt::to_entity(entity));
+    LOG_L(L_DEBUG, "%s: BuildSpeed changed to %f (%d)", __func__, power, entt::to_entity(entity));
 }
 
 void BuildUtils::SetRepairPower(entt::entity entity, float power) {
@@ -154,9 +154,9 @@ void BuildUtils::SetRepairPower(entt::entity entity, float power) {
         LOG("%s: invalid entityId reference %d", __func__, entt::to_entity(entity)); return;
     }
 
-    EcsMain::registry.emplace_or_replace<RepairPower>(entity, power);
+    EcsMain::registry.emplace_or_replace<RepairSpeed>(entity, power);
 
-    LOG_L(L_DEBUG, "%s: BuildPower changed to %f (%d)", __func__, power, entt::to_entity(entity));
+    LOG_L(L_DEBUG, "%s: BuildSpeed changed to %f (%d)", __func__, power, entt::to_entity(entity));
 }
 
 void BuildUtils::RemoveUnitBuild(entt::entity entity) {
