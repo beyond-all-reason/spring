@@ -696,7 +696,7 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	progressState = Done;
 }
 
-void CGroundMoveType::UpdateObstacleAvoidence() {
+void CGroundMoveType::UpdateObstacleAvoidance() {
 	if (owner->GetTransporter() != nullptr)
 		return;
 

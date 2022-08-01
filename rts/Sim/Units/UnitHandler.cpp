@@ -308,7 +308,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
-		moveType->UpdateObstacleAvoidence();
+		moveType->UpdateObstacleAvoidance();
 	});
 
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {

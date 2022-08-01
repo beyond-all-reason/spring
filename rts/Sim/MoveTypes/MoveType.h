@@ -64,7 +64,7 @@ public:
 	virtual void SlowUpdate() {};
 	void UpdateCollisionMap();
 
-	virtual void UpdateObstacleAvoidence() {};
+	virtual void UpdateObstacleAvoidance() {};
 
 	virtual bool IsSkidding() const { return false; }
 	virtual bool IsFlying() const { return false; }

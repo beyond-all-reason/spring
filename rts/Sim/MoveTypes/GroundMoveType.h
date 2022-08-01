@@ -32,7 +32,7 @@ public:
 	bool Update() override;
 	void SlowUpdate() override;
 
-	void UpdateObstacleAvoidence() override;
+	void UpdateObstacleAvoidance() override;
 
 	void StartMovingRaw(const float3 moveGoalPos, float moveGoalRadius) override;
 	void StartMoving(float3 pos, float moveGoalRadius) override;
