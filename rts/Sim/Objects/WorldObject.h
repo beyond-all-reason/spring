@@ -15,7 +15,6 @@ public:
 	CR_DECLARE(CWorldObject)
 
 	CWorldObject() = default;
-
 	CWorldObject(const float3& pos, const float3& spd): CWorldObject()
 	{
 		SetPosition(pos);
@@ -73,7 +72,7 @@ protected:
 	float drawRadius = 0.0f;    ///< unsynced, used for projectile visibility culling
 
 public:
-	int mtTempNum[ThreadPool::MAX_THREADS] = {};
+	std::array<int, ThreadPool::MAX_THREADS> mtTempNum = {};
 };
 
 #endif /* WORLD_OBJECT_H */

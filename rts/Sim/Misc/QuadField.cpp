@@ -760,7 +760,7 @@ void CQuadField::GetSolidsExact(
 ) {
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, pos, radius);
-	const int tempNum = gs->GetTempNum();
+	const int tempNum = gs->GetMtTempNum();
 	auto curThread = ThreadPool::GetThreadNum();
 	qfq.solids = tempSolids[curThread].ReserveVector();
 	
