@@ -14,14 +14,14 @@ class CWorldObject: public CObject
 public:
 	CR_DECLARE(CWorldObject)
 
-	CWorldObject()
-	{
-		InitMtTempNum();
-	}
+	CWorldObject() = default;
+	// {
+	// 	InitMtTempNum();
+	// }
 
 	CWorldObject(const float3& pos, const float3& spd): CWorldObject()
 	{
-		InitMtTempNum();
+		//InitMtTempNum();
 		SetPosition(pos);
 		SetVelocity(spd);
 	}
@@ -54,7 +54,7 @@ public:
 
 	void SetRadiusAndHeight(const S3DModel* model);
 
-	void InitMtTempNum();
+	// void InitMtTempNum();
 
 	// extrapolated base-positions; used in unsynced code
 	float3 GetDrawPos(                float t) const { return (speed.w != 0.0f) ? (pos + speed * t) : pos; }
@@ -63,9 +63,7 @@ public:
 public:
 	int id = -1;
 	int tempNum = 0;            ///< used to check if object has already been processed (in QuadField queries, etc)
-	std::vector<int> mtTempNum;
-
-	//int mtTempNum[ThreadPool::MAX_THREADS] mtTempNum = {};
+	//std::vector<int> mtTempNum;
 
 	float3 pos;                 ///< position of the very bottom of the object
 	float4 speed;               ///< current velocity vector (elmos/frame), .w = |velocity|
@@ -80,6 +78,9 @@ public:
 	S3DModel* model = nullptr;
 protected:
 	float drawRadius = 0.0f;    ///< unsynced, used for projectile visibility culling
+
+public:
+	int mtTempNum[ThreadPool::MAX_THREADS] = {};
 };
 
 #endif /* WORLD_OBJECT_H */

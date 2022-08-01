@@ -33,7 +33,7 @@ CR_BIND(CGlobalSynced, )
 
 CR_REG_METADATA(CGlobalSynced, (
 	CR_MEMBER(frameNum),
-	CR_MEMBER(tempNum),
+	//CR_MEMBER(tempNum), -- temp disable
 	CR_MEMBER(godMode),
 
 	CR_MEMBER(speedFactor),

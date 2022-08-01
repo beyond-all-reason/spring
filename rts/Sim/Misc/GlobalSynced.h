@@ -6,6 +6,8 @@
 #include "System/creg/creg_cond.h"
 #include "System/GlobalRNG.h"
 
+#include <atomic>
+
 
 class CGameSetup;
 class CTeam;
@@ -48,7 +50,8 @@ private:
 	* Used for getting temporary but unique numbers
 	* (increase after each use)
 	*/
-	int tempNum = 1;
+	//int tempNum = 1;
+	std::atomic<int> tempNum = 1;
 
 public:
 	/**
