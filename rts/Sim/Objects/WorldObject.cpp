@@ -2,12 +2,13 @@
 
 #include "WorldObject.h"
 #include "Rendering/Models/3DModel.h"
+#include "System/Threading/ThreadPool.h"
 
 CR_BIND_DERIVED(CWorldObject, CObject, )
 CR_REG_METADATA(CWorldObject, (
 	CR_MEMBER(id),
 	CR_MEMBER(tempNum),
-
+	CR_MEMBER(mtTempNum),
 	CR_MEMBER(radius),
 	CR_MEMBER(height),
 	CR_MEMBER(sqRadius),
@@ -33,3 +34,11 @@ void CWorldObject::SetRadiusAndHeight(const S3DModel* mdl)
 	drawRadius = mdl->CalcDrawRadius();
 }
 
+void CWorldObject::InitMtTempNum()
+{
+	auto threadCount = ThreadPool::GetNumThreads();
+	mtTempNum.reserve(threadCount);
+	for (auto i = threadCount; i > 0; --i) {
+		mtTempNum.push_back(0);
+	}
+}
