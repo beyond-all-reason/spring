@@ -33,12 +33,3 @@ void CWorldObject::SetRadiusAndHeight(const S3DModel* mdl)
 	// we always want the (more reliable) auto-calculated DR value
 	drawRadius = mdl->CalcDrawRadius();
 }
-
-// void CWorldObject::InitMtTempNum()
-// {
-// 	auto threadCount = ThreadPool::GetNumThreads();
-// 	mtTempNum.reserve(threadCount);
-// 	for (auto i = threadCount; i > 0; --i) {
-// 		mtTempNum.push_back(0);
-// 	}
-// }
