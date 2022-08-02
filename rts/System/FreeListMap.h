@@ -27,7 +27,7 @@ namespace spring {
 		}
 
 		template<typename ShuffleFunc>
-		std::size_t Add(const TVal& val, ShuffleFunc shuffleFunc) {
+		std::size_t Add(const TVal& val, ShuffleFunc&& shuffleFunc) {
 			const std::size_t id = GetId(shuffleFunc);
 			operator[](id) = val;
 
@@ -125,8 +125,14 @@ namespace spring {
 			return vault[idx];
 		}
 
+		void SeedFreeKeys(const TKey& first, const TKey& last, bool init = false) {
+			for (TKey k = first; k < last; ++k) {
+				spring::VectorInsertUnique(freeKeys, k, !init);
+			}
+		}
+
 		template<typename ShuffleFunc>
-		TKey Add(const TVal& val, ShuffleFunc shuffleFunc) {
+		TKey Add(const TVal& val, ShuffleFunc&& shuffleFunc) {
 			TKey key = GetKey(shuffleFunc);
 			const auto pos = vault.size();
 			kpMap[key] = pos;
