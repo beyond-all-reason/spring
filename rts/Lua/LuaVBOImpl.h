@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #include "lib/lua/include/lua.h" //for lua_Number
 #include "lib/sol2/forward.hpp"

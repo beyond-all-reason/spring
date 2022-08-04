@@ -6,6 +6,7 @@
 #include "System/creg/creg_cond.h"
 #include "System/Cpp11Compat.hpp"
 #include "System/UnorderedMap.hpp"
+#include "System/ContainerUtil.h"
 
 namespace spring {
 
@@ -113,7 +114,8 @@ namespace spring {
 	// Stored elements might be reordered, but the array won't have any gaps
 	template<typename TVal, typename TKey = int>
 	class FreeListMapCompact {
-		CR_DECLARE_STRUCT(CR_SINGLE_ARG(FreeListMapCompact<TVal, TKey>))
+		using TypedFreeListMapCompact = FreeListMapCompact<TVal, TKey>;
+		CR_DECLARE_STRUCT(TypedFreeListMapCompact) //can't pass the original type with <A,B> due to macros limitations
 	public:
 		const TVal& operator[](std::size_t idx) const {
 			assert(idx < vault.size());
@@ -239,6 +241,7 @@ namespace spring {
 		spring::unordered_map<size_t, TKey> pkMap; // pos --> key
 	};
 }
+
 
 CR_BIND_TEMPLATE_1TYPED(spring::FreeListMap, TVal, )
 CR_REG_METADATA_TEMPLATE_1TYPED(spring::FreeListMap, TVal, (

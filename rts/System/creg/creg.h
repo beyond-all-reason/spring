@@ -202,8 +202,6 @@ namespace creg {
 //FIXME: defined cause gcc4.8 still doesn't support c++11's offsetof for non-static members
 #define offsetof_creg(type, member) (std::size_t)(((char*)&null->member) - ((char*)null))
 
-#define CR_SINGLE_ARG(...) __VA_ARGS__
-
 #define CR_DECLARE_BASE(TCls, isStr, VIRTUAL, OVERRIDE)	\
 public: \
 	static creg::Class creg_class; \

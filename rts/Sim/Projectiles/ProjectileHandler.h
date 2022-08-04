@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Rendering/Models/3DModel.h"
+#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
 #include "System/float3.h"
 #include "System/FreeListMap.h"
 
@@ -20,7 +21,6 @@ class CFeature;
 class CPlasmaRepulser;
 class CGroundFlash;
 struct UnitDef;
-struct FlyingPiece;
 
 typedef std::vector<CGroundFlash*> GroundFlashContainer;
 typedef std::vector<FlyingPiece> FlyingPieceContainer;
