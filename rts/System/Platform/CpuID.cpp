@@ -114,24 +114,25 @@ namespace springproc {
 			return;
 		}
 
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
+		// ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
 
-		switch (data.vendor) {
-			case VENDOR_INTEL: {
-				GetIdsIntel();
-			} break;
-			/*
-			// this does nothing smart for now. Makes no sense to call
-			case VENDOR_AMD: {
-				GetIdsAMD();
-			} break;
-			*/
-			case VENDOR_AMD: [[fallthrough]];
-			default: {
-				assert(data.num_logical_cpus == numLogicalCores);
-				numPhysicalCores = data.num_cores;
-			} break;
-		}
+		// switch (data.vendor) {
+		// 	case VENDOR_INTEL: {
+		// 		GetIdsIntel();
+		// 	} break;
+		// 	/*
+		// 	// this does nothing smart for now. Makes no sense to call
+		// 	case VENDOR_AMD: {
+		// 		GetIdsAMD();
+		// 	} break;
+		// 	*/
+		// 	case VENDOR_AMD: [[fallthrough]];
+		// 	default: {
+		// 		assert(data.num_logical_cpus == numLogicalCores);
+		// 		numPhysicalCores = data.num_cores;
+		// 	} break;
+		// }
+		numPhysicalCores = data.num_cores;
 	}
 
 	// Function based on Figure 1 from Kuo_CpuTopology_rc1.rh1.final.pdf
