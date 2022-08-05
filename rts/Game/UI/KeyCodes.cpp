@@ -160,7 +160,7 @@ void CKeyCodes::Reset()
 
 std::string CKeyCodes::GetName(int code) const
 {
-	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{code, ""}, codePred);
+	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{0, ""}, codePred);
 
 	if (iter == codeToName.end() || iter->first != code)
 		return IntToString(code, "0x%03X");
@@ -171,7 +171,7 @@ std::string CKeyCodes::GetName(int code) const
 
 std::string CKeyCodes::GetDefaultName(int code) const
 {
-	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{code, ""}, codePred);
+	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{0, ""}, codePred);
 
 	if (iter == defaultCodeToName.end() || iter->first != code)
 		return IntToString(code, "0x%03X");
