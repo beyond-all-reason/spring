@@ -1288,7 +1288,9 @@ void CGame::ClientReadNet()
 						LOG("[Game::%s] %s skirmish AI \"%s\" (ID: %i) being removed from team %i", __func__, types[isLocal], aiData->name.c_str(), aiNum, aiTeamId);
 
 						wordCompletion.RemoveWord(aiData->name + " ");
-						skirmishAIHandler.RemoveSkirmishAI(aiNum);
+						// NB: Mid-game skirmish AI data removal messes up save/load,
+						//     as engine doesn't save AI states and loads all AIs defined by initial setup.
+						//skirmishAIHandler.RemoveSkirmishAI(aiNum);
 
 						CPlayer::UpdateControlledTeams();
 						eventHandler.PlayerChanged(playerNum);
