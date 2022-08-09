@@ -299,6 +299,7 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	CSolidObject::SetDeletingRefID(-1);
 }
 
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 
 void CUnitHandler::UpdateUnitMoveTypes()
 {
@@ -310,8 +311,10 @@ void CUnitHandler::UpdateUnitMoveTypes()
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
+mtSection = true;
 		moveType->UpdateObstacleAvoidance();
 		moveType->UpdateOwnerAccelAndHeading();
+	mtSection = false;
 	});
 	}
 
