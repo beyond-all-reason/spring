@@ -392,6 +392,18 @@ public:
 		return (*this) * ca + axis.cross(*this) * sa + axis * axis.dot(*this) * (1.0f - ca);
 	}
 
+    /**
+     * @brief directional difference in rad
+     * @param other float3 to compute against
+     * @return float3 angle difference
+     *
+     * Calculates the angle between this float3
+     * and another float3
+     */
+    float3 angleDifference(const float3& other) const {
+         return float3::fmod((other - *this) + 3.0f*math::PI, 2.0f*math::PI) - math::PI;
+    }
+
 	/**
 	 * @brief distance between float3s
 	 * @param f float3 to compare against
@@ -713,6 +725,7 @@ public:
 	static float3 max(const float3 v1, const float3 v2);
 	static float3 fabs(const float3 v);
 	static float3 sign(const float3 v);
+	static float3 fmod(const float3 v, float d);
 
 	static constexpr float cmp_eps() { return 1e-04f; }
 	static constexpr float nrm_eps() { return 1e-12f; }

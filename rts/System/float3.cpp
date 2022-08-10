@@ -70,3 +70,7 @@ bool float3::equals(const float3& f, const float3& eps) const
 	return (epscmp(x, f.x, eps.x) && epscmp(y, f.y, eps.y) && epscmp(z, f.z, eps.z));
 }
 
+float3 float3::fmod(const float3 v, float d)
+{
+    return {std::fmod(v.x, d), std::fmod(v.y, d), std::fmod(v.z, d)};
+}

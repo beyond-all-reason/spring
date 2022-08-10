@@ -10,6 +10,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include "Game/CameraHandler.h"
+
 CONFIG(float, RotOverheadMouseScale).defaultValue(0.01f);
 CONFIG(int, RotOverheadScrollSpeed).defaultValue(10);
 CONFIG(bool, RotOverheadEnabled).defaultValue(true).headlessValue(false);
@@ -44,10 +46,11 @@ void CRotOverheadController::KeyMove(float3 move)
 
 void CRotOverheadController::MouseMove(float3 move)
 {
-	camera->SetRotY(camera->GetRot().y + mouseScale * move.x);
-	camera->SetRotX(camera->GetRot().x + mouseScale * move.y * move.z);
-	camera->SetRotX(Clamp(camera->GetRot().x, math::PI * 0.4999f, math::PI * 0.9999f));
-	dir = camera->GetDir();
+	auto rot = CCamera::GetRotFromDir(dir);
+	rot.y = rot.y + mouseScale * move.x;
+	rot.x = Clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
+	dir = CCamera::GetFwdFromRot(rot);
+
 	Update();
 }
 
