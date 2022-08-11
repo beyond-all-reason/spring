@@ -311,10 +311,13 @@ void CUnitHandler::UpdateUnitMoveTypes()
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
-mtSection = true;
-		moveType->UpdateObstacleAvoidance();
-		moveType->UpdateOwnerAccelAndHeading();
-	mtSection = false;
+		mtSection = true;
+
+		unit->SanityCheck();
+		unit->PreUpdate();
+
+		moveType->UpdatePreCollisionsMt();
+		mtSection = false;
 	});
 	}
 
@@ -325,11 +328,9 @@ mtSection = true;
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
-		unit->SanityCheck();
-		unit->PreUpdate();
-
 		moveType->UpdatePreCollisions();
 	}
+
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
 		CUnit* unit = activeUnits[activeUpdateUnit];
 		AMoveType* moveType = unit->moveType;

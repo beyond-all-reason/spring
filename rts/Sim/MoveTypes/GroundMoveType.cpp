@@ -485,7 +485,6 @@ void CGroundMoveType::UpdatePreCollisions()
  	ASSERT_SYNCED(owner->pos);
  	ASSERT_SYNCED(currWayPoint);
  	ASSERT_SYNCED(nextWayPoint);
- 	ASSERT_SYNCED(owner->pos);
 
 	if (pathingArrived) {
 		Arrived(false);
@@ -564,10 +563,6 @@ bool CGroundMoveType::Update()
 
 void CGroundMoveType::UpdateOwnerAccelAndHeading()
 {
-	if (owner->GetTransporter() != nullptr) return;
-	if (owner->IsSkidding()) return;
-	if (owner->IsFalling()) return;
-
 	if (owner->IsStunned() || owner->beingBuilt) {
 		ChangeSpeed(0.0f, false);
 		return;
@@ -745,16 +740,16 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	progressState = Done;
 }
 
+void CGroundMoveType::UpdatePreCollisionsMt() {
+	if (owner->GetTransporter() != nullptr) return;
+	if (owner->IsSkidding()) return;
+	if (owner->IsFalling()) return;
+
+	UpdateObstacleAvoidance();
+	UpdateOwnerAccelAndHeading();
+}
+
 void CGroundMoveType::UpdateObstacleAvoidance() {
-	if (owner->GetTransporter() != nullptr)
-		return;
-
-	if (owner->IsSkidding())
-		return;
-
-	if (owner->IsFalling())
-		return;
-
 	if (owner->IsStunned() || owner->beingBuilt)
 		return;
 
