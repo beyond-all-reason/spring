@@ -308,8 +308,6 @@ CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSqu
 	return r;
 }
 
-bool mtSection = false;
-
 CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread)
 {
 	xmin = std::max(xmin,                0);
@@ -318,7 +316,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 	zmax = std::min(zmax, mapDims.mapy - 1);
 
 	BlockType ret = BLOCK_NONE;
-	if (mtSection) {
+	if (ThreadPool::inMultiThreadedSection) {
 	//const int thread = ThreadPool::GetThreadNum();
 	const int tempNum = gs->GetMtTempNum(thread);
 
