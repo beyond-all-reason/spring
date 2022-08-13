@@ -317,7 +317,57 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 
 	BlockType ret = BLOCK_NONE;
 	if (ThreadPool::inMultiThreadedSection) {
-	//const int thread = ThreadPool::GetThreadNum();
+		ret = CMoveMath::RangeIsBlockedMt(moveDef, xmin, xmax, zmin, zmax, collider, thread);
+	} else {
+		ret = CMoveMath::RangeIsBlockedSt(moveDef, xmin, xmax, zmin, zmax, collider);
+	}
+
+	return ret;
+}
+
+CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider) {
+	// xmin = std::max(xmin,                0);
+	// zmin = std::max(zmin,                0);
+	// xmax = std::min(xmax, mapDims.mapx - 1);
+	// zmax = std::min(zmax, mapDims.mapy - 1);
+
+	BlockType ret = BLOCK_NONE;
+
+	// footprints are point-symmetric around <xSquare, zSquare>
+	const int tempNum = gs->GetTempNum();
+	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
+		const int zOffset = z * mapDims.mapx;
+
+		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP) {
+			const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zOffset + x);
+
+			for (size_t i = 0, n = cell.size(); i < n; i++) {
+				CSolidObject* collidee = cell[i];
+
+				if (collidee->tempNum == tempNum)
+					continue;
+
+				collidee->tempNum = tempNum;
+
+				if (((ret |= ObjectBlockType(moveDef, collidee, collider)) & BLOCK_STRUCTURE) == 0)
+					continue;
+
+				return ret;
+			}
+		}
+	}
+
+	return ret;
+}
+
+CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread) {
+	// xmin = std::max(xmin,                0);
+	// zmin = std::max(zmin,                0);
+	// xmax = std::min(xmax, mapDims.mapx - 1);
+	// zmax = std::min(zmax, mapDims.mapy - 1);
+
+	BlockType ret = BLOCK_NONE;
+
 	const int tempNum = gs->GetMtTempNum(thread);
 
 	// footprints are point-symmetric around <xSquare, zSquare>
@@ -341,30 +391,6 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 				return ret;
 			}
 		}
-	}
-	} else {
-		const int tempNum = gs->GetTempNum();
-	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
-		const int zOffset = z * mapDims.mapx;
-
-		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP) {
-			const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zOffset + x);
-
-			for (size_t i = 0, n = cell.size(); i < n; i++) {
-				CSolidObject* collidee = cell[i];
-
-				if (collidee->tempNum == tempNum)
-					continue;
-
-				collidee->tempNum = tempNum;
-
-				if (((ret |= ObjectBlockType(moveDef, collidee, collider)) & BLOCK_STRUCTURE) == 0)
-					continue;
-
-				return ret;
-			}
-		}
-	}
 	}
 
 	return ret;
