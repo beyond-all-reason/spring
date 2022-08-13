@@ -74,12 +74,14 @@ public:
 	}
 	static BlockType RangeIsBlocked(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread = 0);
 
+private:
+	static BlockType RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider);
+	static BlockType RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread);
+
 public:
 	static bool noHoverWaterMove;
 	static float waterDamageCost;
 };
-
-extern bool mtSection;
 
 
 /* Check if a given square-position is accessable by the MoveDef footprint. */
