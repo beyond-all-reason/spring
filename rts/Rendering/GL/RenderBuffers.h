@@ -95,7 +95,9 @@ public:
 		if (!shader)
 			shader = shaderHandler->CreateProgramObject(poClass, typeName, false);
 
+#ifndef HEADLESS
 		assert(shader);
+#endif
 
 		std::string vertSrc = GetShaderTemplate("GLSL/RenderBufferVertTemplate.glsl");
 		std::string fragSrc = GetShaderTemplate("GLSL/RenderBufferFragTemplate.glsl");
@@ -145,7 +147,9 @@ public:
 		shader->Disable();
 
 		shader->Validate();
+#ifndef HEADLESS
 		assert(shader->IsValid());
+#endif
 		shader->SetReloadComplete();
 
 		return *shader;
