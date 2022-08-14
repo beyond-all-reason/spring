@@ -46,6 +46,7 @@ void CRotOverheadController::KeyMove(float3 move)
 
 void CRotOverheadController::MouseMove(float3 move)
 {
+	// use local dir state so CameraHandler can later create smooth transition
 	auto rot = CCamera::GetRotFromDir(dir);
 	rot.y = rot.y + mouseScale * move.x;
 	rot.x = Clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
