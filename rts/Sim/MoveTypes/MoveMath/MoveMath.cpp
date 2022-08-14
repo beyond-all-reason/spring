@@ -325,12 +325,8 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider) {
-	// xmin = std::max(xmin,                0);
-	// zmin = std::max(zmin,                0);
-	// xmax = std::min(xmax, mapDims.mapx - 1);
-	// zmax = std::min(zmax, mapDims.mapy - 1);
-
+CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider)
+{
 	BlockType ret = BLOCK_NONE;
 
 	// footprints are point-symmetric around <xSquare, zSquare>
@@ -360,12 +356,8 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmi
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread) {
-	// xmin = std::max(xmin,                0);
-	// zmin = std::max(zmin,                0);
-	// xmax = std::min(xmax, mapDims.mapx - 1);
-	// zmax = std::min(zmax, mapDims.mapy - 1);
-
+CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread)
+{
 	BlockType ret = BLOCK_NONE;
 
 	const int tempNum = gs->GetMtTempNum(thread);
