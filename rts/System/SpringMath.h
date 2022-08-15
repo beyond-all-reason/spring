@@ -112,14 +112,10 @@ template<> inline float3 argmax(const float3 v1, const float3 v2) { return float
 // template<class T> T mix(const T v1, const T v2, const float a) { return (v1 * (1.0f - a) + v2 * a); }
 template<class T, typename T2> constexpr T mix(const T v1, const T v2, const T2 a) { return (v1 + (v2 - v1) * a); }
 
-template <class T> inline T angleDifference(const T& v1, const T& v2) {
-     return std::fmod((v2 - v1) + 3.0f*math::PI, 2.0f*math::PI) - math::PI;}
-
-template <> inline float3 angleDifference(const float3& v1, const float3& v2) {
-     return float3::fmod((v2 - v1) + 3.0f*math::PI, 2.0f*math::PI) - math::PI;
+// accepts angles in range (-pi,pi)
+template <class T, class T2> constexpr T mixRotation(const T v1, const T v2, const T2 a) {
+    return ClampRad(v1 + GetRadAngleToward(v1, v2) * a + math::PI) - math::PI;
 }
-
-template <class T, class T2> constexpr T mixRotation(const T v1, const T v2, const T2 a) { return v1 + angleDifference(v1, v2)*a; }
 
 template<class T> constexpr T Blend(const T v1, const T v2, const float a) { return mix(v1, v2, a); }
 
@@ -162,6 +158,28 @@ float ClampRad(float f) _const _warn_unused_result;
  * @param f float* value to clamp
  */
 void ClampRad(float* f);
+
+
+/**
+ * @brief Clamps an radian angle between 0 .. 2*pi
+ * @param v float3 value to clamp
+ */
+float3 ClampRad(float3 v);
+
+/**
+ * @brief Shortest angle in radians
+ * @param f1 float first compare value
+ * @param f2 float first compare value
+ */
+float GetRadAngleToward(float f1, float f2);
+
+
+/**
+ * @brief Shortest angle in radians for float3
+ * @param v1 float3 first compare value
+ * @param v2 float3 second compare value
+ */
+float GetRadAngleToward(float v1, float v2);
 
 
 /**

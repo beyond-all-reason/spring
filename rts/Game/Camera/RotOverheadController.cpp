@@ -46,12 +46,24 @@ void CRotOverheadController::KeyMove(float3 move)
 
 void CRotOverheadController::MouseMove(float3 move)
 {
-	// use local dir state so CameraHandler can later create smooth transition
+	// use local dir state so CameraHandler can create smooth transition between
+	// current camera rot and desired
 	auto rot = CCamera::GetRotFromDir(dir);
-	rot.y = rot.y + mouseScale * move.x;
 	rot.x = Clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
-	dir = CCamera::GetFwdFromRot(rot);
 
+	float new_rot_y = ClampRad(rot.y + mouseScale * move.x + math::PI) - math::PI;
+	float cam_rot_y = camera->GetRot().y;
+	bool over_half_rot_y = (GetRadAngleToward(cam_rot_y, new_rot_y) *
+			GetRadAngleToward(cam_rot_y , rot.y) > 0.0f) &&
+			(fabsf(GetRadAngleToward(cam_rot_y, rot.y)) > math::HALFPI);
+
+	if (!over_half_rot_y) {
+		// pending rotation can't be over 180deg as CameraHandler will smooth it
+		// in the opposite direction
+		rot.y = new_rot_y;
+	}
+
+	dir = CCamera::GetFwdFromRot(rot);
 	Update();
 }
 
