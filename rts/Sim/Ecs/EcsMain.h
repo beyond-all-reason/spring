@@ -1,20 +1,6 @@
 #ifndef ECS_MAIN_H__
 #define ECS_MAIN_H__
 
-/* Note that GCC 10.3 is unable to compile the following template (though VC++2019 can)
-template<class T>
-void TestGroup() {
-    auto view = registry.view<T>();
-    for (auto entity : view) {
-        auto comp = view.get<T>(entity);
-    }
-}
-
-You get error with GCC 10.3:
-error: expected primary-expression before '>' token
-      auto comp = view.get<T>(entity);
-*/
-
 // lua llimits.h and lstate.h makes some macros that breaks EnTT
 #ifdef cast
 #define RESTORE_LUA_MACROS
