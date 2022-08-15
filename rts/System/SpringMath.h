@@ -179,7 +179,7 @@ float GetRadAngleToward(float f1, float f2);
  * @param v1 float3 first compare value
  * @param v2 float3 second compare value
  */
-float GetRadAngleToward(float v1, float v2);
+float3 GetRadAngleToward(float3 v1, float3 v2);
 
 
 /**
