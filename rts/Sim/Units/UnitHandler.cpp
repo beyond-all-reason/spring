@@ -304,7 +304,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	SCOPED_TIMER("Sim::Unit::MoveType");
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::Multithreaded");
+	SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
 	for_mt(0, activeUnits.size(), [this](const int i){
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
@@ -317,20 +317,44 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::Singlethreaded");
+	SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
 	std::size_t len = activeUnits.size();
 	for (std::size_t i=0; i<len; ++i) {
-		// for (int i=activeUnits.size()-1; i>=0; --i) {
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
 		moveType->UpdatePreCollisions();
 	}
+	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::Collisions");
+	SCOPED_TIMER("Sim::Unit::MoveType::3::UpdateMT");
+	std::size_t len = activeUnits.size();
+	//for (std::size_t i=0; i<len; ++i) {
+	for_mt(0, activeUnits.size(), [this](const int i){
+		CUnit* unit = activeUnits[i];
+		AMoveType* moveType = unit->moveType;
+
+		moveType->UpdateCollisionDetections();
+	}
+	);
+	}
+
+	{
+	SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
 		CUnit* unit = activeUnits[activeUpdateUnit];
+		AMoveType* moveType = unit->moveType;
+
+		moveType->ProcessCollisionEvents();
+	}
+	}
+
+	{
+	SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+	std::size_t len = activeUnits.size();
+	for (std::size_t i=0; i<len; ++i) {
+		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
 		if (moveType->Update())
@@ -343,7 +367,6 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 		unit->SanityCheck();
 		assert(activeUnits[activeUpdateUnit] == unit);
-	}
 	}
 	}
 }

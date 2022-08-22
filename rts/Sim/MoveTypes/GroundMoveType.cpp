@@ -73,6 +73,8 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 #define WAIT_FOR_PATH               1
 #define MODEL_TURN_INERTIA          1
 
+#define UNIT_EVENTS_RESERVE			8
+
 #define UNIT_CMD_QUE_SIZE(u) (u->commandAI->commandQue.size())
 // Not using IsMoveCommand on purpose, as the following is changing the effective goalRadius
 #define UNIT_HAS_MOVE_CMD(u) (u->commandAI->commandQue.empty() || u->commandAI->commandQue[0].GetID() == CMD_MOVE || u->commandAI->commandQue[0].GetID() == CMD_FIGHT)
@@ -410,6 +412,12 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 	myGravity = mix(-math::fabs(ud->myGravity), mapInfo->map.gravity, ud->myGravity == 0.0f);
 
 	ownerRadius = md->CalcFootPrintMinExteriorRadius();
+
+	collidedFeatures.reserve(UNIT_EVENTS_RESERVE);
+	collidedUnits.reserve(UNIT_EVENTS_RESERVE);
+	killFeatures.reserve(UNIT_EVENTS_RESERVE);
+	killUnits.reserve(UNIT_EVENTS_RESERVE);
+	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
 }
 
 CGroundMoveType::~CGroundMoveType()
@@ -536,11 +544,47 @@ void CGroundMoveType::UpdatePreCollisions()
 	UpdateOwnerPos(owner->speed, calcSpeedVectorFuncs[modInfo.allowGroundUnitGravity](owner, this, deltaSpeed, myGravity));
 }
 
+void CGroundMoveType::UpdateCollisionDetections() {
+	if (owner->GetTransporter() != nullptr) return;
+	if (owner->IsSkidding()) return;
+	if (owner->IsFalling()) return;
+
+	earlyCurrWayPoint = currWayPoint;
+	earlyNextWayPoint = nextWayPoint;
+
+	HandleObjectCollisions();
+}
+
+void CGroundMoveType::ProcessCollisionEvents() {
+	if (owner->GetTransporter() != nullptr) return;
+	if (owner->IsSkidding()) return;
+	if (owner->IsFalling()) return;
+
+	SyncWaypoints();
+
+	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
+	for (auto collidee: killUnits)
+		collidee->Kill(owner, crushImpulse, true);
+	killUnits.clear();
+
+	for (auto collidee: killFeatures)
+		collidee->Kill(owner, crushImpulse, true);
+	killFeatures.clear();
+
+	for (const auto collidee: collidedUnits)
+		eventHandler.UnitUnitCollision(owner, collidee);
+	collidedUnits.clear();
+
+	for (const auto collidee: collidedFeatures)
+		eventHandler.UnitFeatureCollision(owner, collidee);
+	collidedFeatures.clear();
+}
+
 bool CGroundMoveType::Update()
 {
 	//SCOPED_TIMER("Sim::Unit::MoveType::Update");
 
-	// // do nothing at all if we are inside a transport
+	// do nothing at all if we are inside a transport
 	if (owner->GetTransporter() != nullptr)
 		return false;
 
@@ -569,7 +613,22 @@ bool CGroundMoveType::Update()
 	// UpdateOwnerAccelAndHeading();
 
 	// UpdateOwnerPos(owner->speed, calcSpeedVectorFuncs[modInfo.allowGroundUnitGravity](owner, this, deltaSpeed, myGravity));
-	HandleObjectCollisions();
+	// HandleObjectCollisions();
+
+	for (auto collision: moveFeatures) {
+		auto collidee = std::get<0>(collision);
+		auto moveVec = std::get<1>(collision);
+		quadField.RemoveFeature(collidee);
+		collidee->Move(moveVec, true);
+		quadField.AddFeature(collidee);
+	}
+	moveFeatures.clear();
+	
+	if (resultantForces.SqLength() > 0.f) {
+		if (owner->moveDef->TestMoveSquare(owner, owner->pos + resultantForces, resultantForces))
+			owner->Move(resultantForces, true);
+	}
+
 	AdjustPosToWaterLine();
 
 	ASSERT_SANE_OWNER_SPEED(owner->speed);
@@ -1303,7 +1362,7 @@ void CGroundMoveType::UpdateSkid()
 		CheckCollisionSkid();
 	} else {
 		// do this here since ::Update returns early if it calls us
-		HandleObjectCollisions();
+		// HandleObjectCollisions(); // No longer the case
 	}
 
 	AdjustPosToWaterLine();
@@ -1947,7 +2006,8 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		}
 
 		{
-			const float curGoalDistSq = (currWayPoint - goalPos).SqLength2D();
+			// const float curGoalDistSq = (currWayPoint - goalPos).SqLength2D();
+			const float curGoalDistSq = (earlyCurrWayPoint - goalPos).SqLength2D();
 			const float minGoalDistSq = (UNIT_HAS_MOVE_CMD(owner))?
 				Square((goalRadius + extraRadius) * (numIdlingSlowUpdates + 1)):
 				Square((goalRadius + extraRadius)                             );
@@ -2083,7 +2143,7 @@ void CGroundMoveType::DoSetNextWaypoint() {
 	//currWayPoint = nextWayPoint;
 	//nextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 	earlyCurrWayPoint = nextWayPoint;
-	earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+	earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
 	#ifdef PATHING_DEBUG
 	if (DEBUG_DRAWING_ENABLED) {
@@ -2212,6 +2272,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	//SCOPED_TIMER("Sim::Unit::MoveType::Collisions");
 
 	CUnit* collider = owner;
+	auto curThread = ThreadPool::GetThreadNum();
 
 	// handle collisions for even-numbered objects on even-numbered frames and vv.
 	// (temporal resolution is still high enough to not compromise accuracy much?)
@@ -2220,14 +2281,16 @@ void CGroundMoveType::HandleObjectCollisions()
 		const UnitDef* colliderUD = collider->unitDef;
 		const MoveDef* colliderMD = collider->moveDef;
 
+		resultantForces *= 0.f;
+
 		// NOTE:
 		//   use the collider's MoveDef footprint as radius since it is
 		//   always mobile (its UnitDef footprint size may be different)
 		const float colliderFootPrintRadius = colliderMD->CalcFootPrintMaxInteriorRadius(); // ~= CalcFootPrintMinExteriorRadius(0.75f)
 		const float colliderAxisStretchFact = colliderMD->CalcFootPrintAxisStretchFactor();
 
-		HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD);
-		HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD);
+		HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
+		HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
 
 		// blocked square collision (very performance hungry, process only every 2nd game frame)
 		// dangerous: reduces effective square-size from 8 to 4, but many ground units can move
@@ -2241,6 +2304,15 @@ void CGroundMoveType::HandleObjectCollisions()
 
 		if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true))
 			return;
+
+		auto unitMoveDist = resultantForces.SqLength();
+		bool sanitizeForces = (unitMoveDist > 0.f && unitMoveDist > maxSpeed);
+		if (sanitizeForces)
+			(resultantForces.Normalize()) *= maxSpeed;
+
+		// bool moveIsClear = owner->moveDef->TestMoveSquare(owner, owner->pos + resultantForces, resultantForces);
+		// if (! moveIsClear)
+		// 	resultantForces *= 0.f;
 
 		ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 	}
@@ -2316,8 +2388,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		const int xmin = std::min(-1, -xsh), xmax = std::max(1, xsh);
 		const int zmin = std::min(-1, -zsh), zmax = std::max(1, zsh);
 
-		if (DEBUG_DRAWING_ENABLED)
-			geometricObjects->AddLine(pos + (UpVector * 25.0f), pos + (UpVector * 100.0f), 3, 1, 4);
+		// if (DEBUG_DRAWING_ENABLED)
+		// 	geometricObjects->AddLine(pos + (UpVector * 25.0f), pos + (UpVector * 100.0f), 3, 1, 4);
 
 		// check for blocked squares inside collider's MoveDef footprint zone
 		// interpret each square as a "collidee" and sum up separation vectors
@@ -2387,15 +2459,20 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 			// if checkTerrain is true, test only the center square
 			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain)) {
-				collider->Move(summedVec, true);
+				// collider->Move(summedVec, true);
+				resultantForces += summedVec;
 
 				// minimal hack to make FollowPath work at all turn-rates
 				// since waypointDir will undergo a (large) discontinuity
-				currWayPoint += summedVec;
-				nextWayPoint += summedVec;
+				// currWayPoint += summedVec;
+				// nextWayPoint += summedVec;
+				earlyCurrWayPoint += summedVec;
+				earlyNextWayPoint += summedVec;
 			} else {
 				// never move fully back to oldPos when dealing with yardmaps
-				collider->Move((oldPos - pos) + summedVec * 0.25f * checkYardMap, true);
+				// collider->Move((oldPos - pos) + summedVec * 0.25f * checkYardMap, true);
+				resultantForces += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
+				// TODO: possible cause of units getting stuck on yardmaps?
 			}
 		}
 
@@ -2420,10 +2497,13 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		summedVec = strafeVec + bounceVec;
 
 		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true)) {
-			collider->Move(summedVec, true);
+			// collider->Move(summedVec, true);
+			resultantForces += summedVec;
 
-			currWayPoint += summedVec;
-			nextWayPoint += summedVec;
+			// currWayPoint += summedVec;
+			// nextWayPoint += summedVec;
+			earlyCurrWayPoint += summedVec;
+			earlyNextWayPoint += summedVec;
 		} else {
 			// move back to previous-frame position
 			// ChangeSpeed calculates speedMod without checking squares for *structure* blockage
@@ -2431,7 +2511,9 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			// this means deltaSpeed will be non-zero if stuck on an impassable square and hence
 			// the new speedvector which is constructed from deltaSpeed --> we would simply keep
 			// moving forward through obstacles if not counteracted by this
-			collider->Move((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f), true);
+			// collider->Move((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f), true);
+			resultantForces += ((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f));
+			// TODO: possible cause of units getting stuck on yardmaps?
 		}
 
 		// same here
@@ -2443,7 +2525,8 @@ void CGroundMoveType::HandleUnitCollisions(
 	CUnit* collider,
 	const float3& colliderParams, // .x := speed, .y := radius, .z := fpstretch
 	const UnitDef* colliderUD,
-	const MoveDef* colliderMD
+	const MoveDef* colliderMD,
+	int curThread
 ) {
 	// NOTE: probably too large for most units (eg. causes tree falling animations to be skipped)
 	const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
@@ -2456,6 +2539,7 @@ void CGroundMoveType::HandleUnitCollisions(
 
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
+	qfQuery.threadOwner = curThread;
 	quadField.GetUnitsExact(qfQuery, collider->pos, colliderParams.x + (colliderParams.y * 2.0f));
 
 	for (CUnit* collidee: *qfQuery.units) {
@@ -2532,10 +2616,12 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
 		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			collidee->Kill(collider, crushImpulse, true);
+			killUnits.push_back(collidee);
+			// collidee->Kill(collider, crushImpulse, true);
 
-		if (eventHandler.UnitUnitCollision(collider, collidee))
-			continue;
+		collidedUnits.push_back(collidee);
+		// if (eventHandler.UnitUnitCollision(collider, collidee))
+		// 	continue;
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2599,7 +2685,7 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		// far from a realistic treatment, but works
 		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f) * (allowUCO? (1.0f / colliderRelRadius): 1.0f);
-		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
+		// const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
 
 		// try to prevent both parties from being pushed onto non-traversable
 		// squares (without resetting their position which stops them dead in
@@ -2609,23 +2695,26 @@ void CGroundMoveType::HandleUnitCollisions(
 		// is pushResistant), treat the collision as regular and push both to
 		// avoid deadlocks
 		const float colliderSlideSign = Sign( separationVect.dot(collider->rightdir));
-		const float collideeSlideSign = Sign(-separationVect.dot(collidee->rightdir));
+		// const float collideeSlideSign = Sign(-separationVect.dot(collidee->rightdir));
 
 		const float3 colliderPushVec  =  colResponseVec * colliderMassScale * int(!ignoreCollidee);
-		const float3 collideePushVec  = -colResponseVec * collideeMassScale;
+		// const float3 collideePushVec  = -colResponseVec * collideeMassScale;
 		const float3 colliderSlideVec = collider->rightdir * colliderSlideSign * (1.0f / penDistance) * r2;
-		const float3 collideeSlideVec = collidee->rightdir * collideeSlideSign * (1.0f / penDistance) * r1;
+		// const float3 collideeSlideVec = collidee->rightdir * collideeSlideSign * (1.0f / penDistance) * r1;
 		const float3 colliderMoveVec  = colliderPushVec + colliderSlideVec;
-		const float3 collideeMoveVec  = collideePushVec + collideeSlideVec;
+		// const float3 collideeMoveVec  = collideePushVec + collideeSlideVec;
 
 		const bool moveCollider = ((pushCollider || !pushCollidee) && colliderMobile);
-		const bool moveCollidee = ((pushCollidee || !pushCollider) && collideeMobile);
+		// const bool moveCollidee = ((pushCollidee || !pushCollider) && collideeMobile);
 
-		if (moveCollider && colliderMD->TestMoveSquare(collider, collider->pos + colliderMoveVec, colliderMoveVec))
-			collider->Move(colliderMoveVec, true);
+		if (moveCollider)
+			resultantForces += colliderMoveVec;
 
-		if (moveCollidee && collideeMD->TestMoveSquare(collidee, collidee->pos + collideeMoveVec, collideeMoveVec))
-			collidee->Move(collideeMoveVec, true);
+		// if (moveCollider && colliderMD->TestMoveSquare(collider, collider->pos + colliderMoveVec, colliderMoveVec))
+		// 	collider->Move(colliderMoveVec, true);
+
+		// if (moveCollidee && collideeMD->TestMoveSquare(collidee, collidee->pos + collideeMoveVec, collideeMoveVec))
+		// 	collidee->Move(collideeMoveVec, true);
 	}
 }
 
@@ -2633,15 +2722,17 @@ void CGroundMoveType::HandleFeatureCollisions(
 	CUnit* collider,
 	const float3& colliderParams,
 	const UnitDef* colliderUD,
-	const MoveDef* colliderMD
+	const MoveDef* colliderMD,
+	int curThread
 ) {
-	const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
+	// const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
 
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
 	// copy on purpose, since DoDamage below can call Lua
 	QuadFieldQuery qfQuery;
+	qfQuery.threadOwner = curThread;
 	quadField.GetFeaturesExact(qfQuery, collider->pos, colliderParams.x + (colliderParams.y * 2.0f));
 
 	for (CFeature* collidee: *qfQuery.features) {
@@ -2658,15 +2749,17 @@ void CGroundMoveType::HandleFeatureCollisions(
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			collidee->Kill(collider, crushImpulse, true);
+			killFeatures.push_back(collidee);
+			// collidee->Kill(collider, crushImpulse, true);
 
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		if (eventHandler.UnitFeatureCollision(collider, collidee))
-			continue;
+		collidedFeatures.push_back(collidee);
+		// if (eventHandler.UnitFeatureCollision(collider, collidee))
+		// 	continue;
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false))
@@ -2700,10 +2793,12 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f);
 		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f);
 
-		quadField.RemoveFeature(collidee);
-		collider->Move( colResponseVec * colliderMassScale, true);
-		collidee->Move(-colResponseVec * collideeMassScale, true);
-		quadField.AddFeature(collidee);
+		// quadField.RemoveFeature(collidee);
+		// collider->Move( colResponseVec * colliderMassScale, true);
+		// collidee->Move(-colResponseVec * collideeMassScale, true);
+		// quadField.AddFeature(collidee);
+		resultantForces += colResponseVec * colliderMassScale;
+		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
 	}
 }
 
