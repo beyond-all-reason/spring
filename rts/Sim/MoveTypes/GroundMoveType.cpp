@@ -2302,7 +2302,7 @@ void CGroundMoveType::HandleObjectCollisions()
 		if (!squareChange && !checkAllowed)
 			return;
 
-		if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true))
+		if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread))
 			return;
 
 		auto unitMoveDist = resultantForces.SqLength();
@@ -2327,7 +2327,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 	const float3& separationVector,
 	bool canRequestPath,
 	bool checkYardMap,
-	bool checkTerrain
+	bool checkTerrain,
+	int curThread
 ) {
 	// while being built, units that overlap their factory yardmap should not be moved at all
 	assert(!collider->beingBuilt);
@@ -2458,7 +2459,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			summedVec = strafeVec + bounceVec;
 
 			// if checkTerrain is true, test only the center square
-			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain)) {
+			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
 				// collider->Move(summedVec, true);
 				resultantForces += summedVec;
 
@@ -2496,7 +2497,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		bounceVec = (separationVector /  sepDistance) * bounceScale;
 		summedVec = strafeVec + bounceVec;
 
-		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true)) {
+		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
 			// collider->Move(summedVec, true);
 			resultantForces += summedVec;
 
@@ -2529,7 +2530,7 @@ void CGroundMoveType::HandleUnitCollisions(
 	int curThread
 ) {
 	// NOTE: probably too large for most units (eg. causes tree falling animations to be skipped)
-	const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
+	// const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
 
 	const bool allowUCO = modInfo.allowUnitCollisionOverlap;
 	const bool allowCAU = modInfo.allowCrushingAlliedUnits;
@@ -2553,13 +2554,13 @@ void CGroundMoveType::HandleUnitCollisions(
 		const bool colliderMobile = (colliderMD != nullptr); // always true
 		const bool collideeMobile = (collideeMD != nullptr); // maybe true
 
-		const bool unloadingCollidee = (collidee->unloadingTransportId == collider->id);
-		const bool unloadingCollider = (collider->unloadingTransportId == collidee->id);
+		// const bool unloadingCollidee = (collidee->unloadingTransportId == collider->id);
+		// const bool unloadingCollider = (collider->unloadingTransportId == collidee->id);
 
-		if (unloadingCollidee)
-			collidee->unloadingTransportId = -1;
-		if (unloadingCollider)
-			collider->unloadingTransportId = -1;
+		// if (unloadingCollidee)
+		// 	collidee->unloadingTransportId = -1;
+		// if (unloadingCollider)
+		// 	collider->unloadingTransportId = -1;
 
 
 		// don't push/crush either party if the collidee does not block the collider (or vv.)
@@ -2588,15 +2589,15 @@ void CGroundMoveType::HandleUnitCollisions(
 			continue;
 
 
-		if (unloadingCollidee) {
-			collidee->unloadingTransportId = collider->id;
-			continue;
-		}
+		// if (unloadingCollidee) {
+		// 	collidee->unloadingTransportId = collider->id;
+		// 	continue;
+		// }
 
-		if (unloadingCollider) {
-			collider->unloadingTransportId = collidee->id;
-			continue;
-		}
+		// if (unloadingCollider) {
+		// 	collider->unloadingTransportId = collidee->id;
+		// 	continue;
+		// }
 
 
 		// NOTE:
@@ -2649,7 +2650,7 @@ void CGroundMoveType::HandleUnitCollisions(
 			const bool allowNewPath = (!atEndOfPath && !atGoal);
 			const bool checkYardMap = ((pushCollider || pushCollidee) || collideeUD->IsFactoryUnit());
 
-			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, allowNewPath, checkYardMap, false))
+			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, allowNewPath, checkYardMap, false, curThread))
 				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 
 			continue;
@@ -2762,7 +2763,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 		// 	continue;
 
 		if (!collidee->IsMoving()) {
-			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false))
+			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread))
 				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 
 			continue;

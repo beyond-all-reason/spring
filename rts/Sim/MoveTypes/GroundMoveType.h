@@ -157,7 +157,8 @@ private:
 		const float3& separationVector,
 		bool canRequestPath,
 		bool checkYardMap,
-		bool checkTerrain
+		bool checkTerrain,
+		int curThread
 	);
 
 	void HandleUnitCollisions(
