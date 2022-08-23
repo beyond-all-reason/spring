@@ -2284,8 +2284,7 @@ void CGroundMoveType::HandleObjectCollisions()
 				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 		}
 
-		auto unitMoveDist = resultantForces.SqLength();
-		bool sanitizeForces = (unitMoveDist > 0.f && unitMoveDist > maxSpeed);
+		bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed);
 		if (sanitizeForces)
 			(resultantForces.Normalize()) *= maxSpeed;
 
