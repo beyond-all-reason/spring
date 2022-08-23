@@ -582,38 +582,10 @@ void CGroundMoveType::ProcessCollisionEvents() {
 
 bool CGroundMoveType::Update()
 {
-	//SCOPED_TIMER("Sim::Unit::MoveType::Update");
-
 	// do nothing at all if we are inside a transport
-	if (owner->GetTransporter() != nullptr)
-		return false;
-
+	if (owner->GetTransporter() != nullptr) return false;
 	if (owner->IsSkidding()) return false;
 	if (owner->IsFalling()) return false;
-
-	// owner->UpdatePhysicalStateBit(CSolidObject::PSTATE_BIT_SKIDDING, owner->IsSkidding() || OnSlope(1.0f));
-
-	// if (owner->IsSkidding()) {
-	// 	UpdateSkid();
-	// 	return false;
-	// }
-
-	// ASSERT_SYNCED(owner->pos);
-
-	// // set drop height when we start to drop
-	// if (owner->IsFalling()) {
-	// 	UpdateControlledDrop();
-	// 	return false;
-	// }
-
-	const short heading = owner->heading;
-
-	// these must be executed even when stunned (so
-	// units do not get buried by restoring terrain)
-	// UpdateOwnerAccelAndHeading();
-
-	// UpdateOwnerPos(owner->speed, calcSpeedVectorFuncs[modInfo.allowGroundUnitGravity](owner, this, deltaSpeed, myGravity));
-	// HandleObjectCollisions();
 
 	for (auto collision: moveFeatures) {
 		auto collidee = std::get<0>(collision);
@@ -636,7 +608,7 @@ bool CGroundMoveType::Update()
 	// <dif> is normally equal to owner->speed (if no collisions)
 	// we need more precision (less tolerance) in the y-dimension
 	// for all-terrain units that are slowed down a lot on cliffs
-	return (OwnerMoved(heading, owner->pos - oldPos, float3(float3::cmp_eps(), float3::cmp_eps() * 1e-2f, float3::cmp_eps())));
+	return (OwnerMoved(owner->heading, owner->pos - oldPos, float3(float3::cmp_eps(), float3::cmp_eps() * 1e-2f, float3::cmp_eps())));
 }
 
 void CGroundMoveType::UpdateOwnerAccelAndHeading()
@@ -2269,8 +2241,6 @@ void CGroundMoveType::Fail(bool callScript)
 
 void CGroundMoveType::HandleObjectCollisions()
 {
-	//SCOPED_TIMER("Sim::Unit::MoveType::Collisions");
-
 	CUnit* collider = owner;
 	auto curThread = ThreadPool::GetThreadNum();
 
@@ -2292,6 +2262,7 @@ void CGroundMoveType::HandleObjectCollisions()
 		HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
 		HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
 
+		// TODO: possible cause of units getting stuck on edge of factories?
 		// blocked square collision (very performance hungry, process only every 2nd game frame)
 		// dangerous: reduces effective square-size from 8 to 4, but many ground units can move
 		// at speeds greater than half the effective square-size per frame so this risks getting
@@ -2299,22 +2270,29 @@ void CGroundMoveType::HandleObjectCollisions()
 		const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
 		const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
 
-		if (!squareChange && !checkAllowed)
-			return;
+		// if (!squareChange && !checkAllowed)
+		// 	return;
 
-		if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread))
-			return;
+		// if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread))
+		// 	return;
+
+		// ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
+		
+		if (squareChange || checkAllowed) {
+			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread);
+			if (requestPath)
+				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
+		}
 
 		auto unitMoveDist = resultantForces.SqLength();
 		bool sanitizeForces = (unitMoveDist > 0.f && unitMoveDist > maxSpeed);
 		if (sanitizeForces)
 			(resultantForces.Normalize()) *= maxSpeed;
 
+		// TODO: this may work now!
 		// bool moveIsClear = owner->moveDef->TestMoveSquare(owner, owner->pos + resultantForces, resultantForces);
 		// if (! moveIsClear)
 		// 	resultantForces *= 0.f;
-
-		ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 	}
 }
 
