@@ -330,14 +330,14 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	{
 	SCOPED_TIMER("Sim::Unit::MoveType::3::UpdateMT");
 	std::size_t len = activeUnits.size();
-	// for (std::size_t i=0; i<len; ++i) {
-	for_mt(0, activeUnits.size(), [this](const int i){
+	for (std::size_t i=0; i<len; ++i) {
+	// for_mt(0, activeUnits.size(), [this](const int i){
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
 
 		moveType->UpdateCollisionDetections();
 	}
-	);
+	// );
 	}
 
 	{

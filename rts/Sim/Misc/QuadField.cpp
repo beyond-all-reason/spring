@@ -161,26 +161,6 @@ void CQuadField::Kill()
 		cache.ReleaseAll();
 }
 
-// void CQuadField::ReleaseVector(std::vector<CUnit*>* v, int onThread)
-// {
-// 	tempUnits[onThread].ReleaseVector(v);
-// }
-
-// void CQuadField::ReleaseVector(std::vector<CFeature*>* v, int onThread)
-// {
-// 	tempFeatures[onThread].ReleaseVector(v);
-// }
-
-// void CQuadField::ReleaseVector(std::vector<CSolidObject*>* v, int onThread)
-// {
-// 	tempSolids[onThread].ReleaseVector(v);
-// }
-
-// void CQuadField::ReleaseVector(std::vector<int>* v, int onThread)
-// {
-// 	tempQuads[onThread].ReleaseVector(v);
-// }
-
 
 int2 CQuadField::WorldPosToQuadField(const float3 p) const
 {

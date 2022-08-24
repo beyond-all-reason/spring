@@ -168,15 +168,13 @@ public:
 	void MovedRepulser(CPlasmaRepulser* repulser);
 	void RemoveRepulser(CPlasmaRepulser* repulser);
 
-	void ReleaseVector(std::vector<CUnit*>* v       , int onThread = 0) { tempUnits[onThread].ReleaseVector(v); } // { tempUnits.ReleaseVector(v); }
-	void ReleaseVector(std::vector<CFeature*>* v    , int onThread = 0) { tempFeatures[onThread].ReleaseVector(v); } // { tempFeatures.ReleaseVector(v); }
+	// Note: ensure ReleaseVector is called in the same thread as original quad field query generated.
+
+	void ReleaseVector(std::vector<CUnit*>* v       , int onThread = 0) { tempUnits[onThread].ReleaseVector(v); }
+	void ReleaseVector(std::vector<CFeature*>* v    , int onThread = 0) { tempFeatures[onThread].ReleaseVector(v); }
 	void ReleaseVector(std::vector<CProjectile*>* v ) { tempProjectiles.ReleaseVector(v); }
-
-	// Ensure release in same thread as original quad field query generated.
-	void ReleaseVector(std::vector<CSolidObject*>* v, int onThread = 0) { tempSolids[onThread].ReleaseVector(v); } //{ tempSolids.ReleaseVector(v); }
-
-	// Ensure release in same thread as original quad field query generated.
-	void ReleaseVector(std::vector<int>* v          , int onThread = 0) { tempQuads[onThread].ReleaseVector(v); } // { tempQuads.ReleaseVector(v); }
+	void ReleaseVector(std::vector<CSolidObject*>* v, int onThread = 0) { tempSolids[onThread].ReleaseVector(v); }
+	void ReleaseVector(std::vector<int>* v          , int onThread = 0) { tempQuads[onThread].ReleaseVector(v); }
 
 	struct Quad {
 	public:
