@@ -2658,8 +2658,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const MoveDef* colliderMD,
 	int curThread
 ) {
-	// const float3 crushImpulse = collider->speed * collider->mass * Sign(int(!reversing));
-
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
@@ -2683,7 +2681,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
 			killFeatures.push_back(collidee);
-			// collidee->Kill(collider, crushImpulse, true);
 
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
@@ -2691,8 +2688,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 		#endif
 
 		collidedFeatures.push_back(collidee);
-		// if (eventHandler.UnitFeatureCollision(collider, collidee))
-		// 	continue;
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread))
