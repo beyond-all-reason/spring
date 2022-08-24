@@ -45,6 +45,7 @@
 #if 1
 #include "Rendering/IPathDrawer.h"
 #define DEBUG_DRAWING_ENABLED ((gs->cheatEnabled || gu->spectatingFullView) && pathDrawer->IsEnabled())
+spring::spinlock geometryLock;
 #else
 #define DEBUG_DRAWING_ENABLED false
 #endif
@@ -1632,8 +1633,11 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		// (or not yet fully apart), then the object is on the path of the unit
 		// and they are not collided
 		if (DEBUG_DRAWING_ENABLED) {
-			if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end())
+			if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+				geometryLock.lock();
 				geometricObjects->AddLine(avoider->pos + (UpVector * 20.0f), avoidee->pos + (UpVector * 20.0f), 3, 1, 4);
+				geometryLock.unlock();
+			}
 		}
 
 		float avoiderTurnSign = -Sign(avoidee->pos.dot(avoider->rightdir) - avoider->pos.dot(avoider->rightdir));
@@ -1667,19 +1671,21 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 	avoidanceDir = (mix(desiredDir, avoidanceVec, DESIRED_DIR_WEIGHT)).SafeNormalize();
 	avoidanceDir = (mix(avoidanceDir, lastAvoidanceDir, LAST_DIR_MIX_ALPHA)).SafeNormalize();
 
-	// if (DEBUG_DRAWING_ENABLED) { - MT Safety check
-	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()) {
-	// 		const float3 p0 = owner->pos + (    UpVector * 20.0f);
-	// 		const float3 p1 =         p0 + (avoidanceVec * 40.0f);
-	// 		const float3 p2 =         p0 + (avoidanceDir * 40.0f);
+	if (DEBUG_DRAWING_ENABLED) {
+		if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()) {
+			const float3 p0 = owner->pos + (    UpVector * 20.0f);
+			const float3 p1 =         p0 + (avoidanceVec * 40.0f);
+			const float3 p2 =         p0 + (avoidanceDir * 40.0f);
 
-	// 		const int avFigGroupID = geometricObjects->AddLine(p0, p1, 8.0f, 1, 4);
-	// 		const int adFigGroupID = geometricObjects->AddLine(p0, p2, 8.0f, 1, 4);
+			geometryLock.lock();
+			const int avFigGroupID = geometricObjects->AddLine(p0, p1, 8.0f, 1, 4);
+			const int adFigGroupID = geometricObjects->AddLine(p0, p2, 8.0f, 1, 4);
 
-	// 		geometricObjects->SetColor(avFigGroupID, 1, 0.3f, 0.3f, 0.6f);
-	// 		geometricObjects->SetColor(adFigGroupID, 1, 0.3f, 0.3f, 0.6f);
-	// 	}
-	// }
+			geometricObjects->SetColor(avFigGroupID, 1, 0.3f, 0.3f, 0.6f);
+			geometricObjects->SetColor(adFigGroupID, 1, 0.3f, 0.3f, 0.6f);
+			geometryLock.unlock();
+		}
+	}
 
 	return (lastAvoidanceDir = avoidanceDir);
 }
@@ -1871,17 +1877,19 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			nwp = pathManager->NextWayPoint(owner, pathID, 0, cwp, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 		}
 
-		// needs mt safety applied
-		// if (DEBUG_DRAWING_ENABLED) {
-		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()) {
-		// 		// plot the vectors to {curr, next}WayPoint
-		// 		const int cwpFigGroupID = geometricObjects->AddLine(pos + (UpVector * 20.0f), cwp + (UpVector * (pos.y + 20.0f)), 8.0f, 1, 4);
-		// 		const int nwpFigGroupID = geometricObjects->AddLine(pos + (UpVector * 20.0f), nwp + (UpVector * (pos.y + 20.0f)), 8.0f, 1, 4);
+		if (DEBUG_DRAWING_ENABLED) {
+			if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()) {
+				// plot the vectors to {curr, next}WayPoint
 
-		// 		geometricObjects->SetColor(cwpFigGroupID, 1, 0.3f, 0.3f, 0.6f);
-		// 		geometricObjects->SetColor(nwpFigGroupID, 1, 0.3f, 0.3f, 0.6f);
-		// 	}
-		// }
+				geometryLock.lock();
+				const int cwpFigGroupID = geometricObjects->AddLine(pos + (UpVector * 20.0f), cwp + (UpVector * (pos.y + 20.0f)), 8.0f, 1, 4);
+				const int nwpFigGroupID = geometricObjects->AddLine(pos + (UpVector * 20.0f), nwp + (UpVector * (pos.y + 20.0f)), 8.0f, 1, 4);
+
+				geometricObjects->SetColor(cwpFigGroupID, 1, 0.3f, 0.3f, 0.6f);
+				geometricObjects->SetColor(nwpFigGroupID, 1, 0.3f, 0.3f, 0.6f);
+				geometryLock.unlock();
+			}
+		}
 
 		// perform a turn-radius check: if the waypoint lies outside
 		// our turning circle, do not skip since we can steer toward
@@ -2269,14 +2277,6 @@ void CGroundMoveType::HandleObjectCollisions()
 		// stuck on impassable squares
 		const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
 		const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
-
-		// if (!squareChange && !checkAllowed)
-		// 	return;
-
-		// if (!HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread))
-		// 	return;
-
-		// ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 		
 		if (squareChange || checkAllowed) {
 			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread);
@@ -2287,11 +2287,6 @@ void CGroundMoveType::HandleObjectCollisions()
 		bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed);
 		if (sanitizeForces)
 			(resultantForces.Normalize()) *= maxSpeed;
-
-		// TODO: this may work now!
-		// bool moveIsClear = owner->moveDef->TestMoveSquare(owner, owner->pos + resultantForces, resultantForces);
-		// if (! moveIsClear)
-		// 	resultantForces *= 0.f;
 	}
 }
 
@@ -2366,8 +2361,11 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		const int xmin = std::min(-1, -xsh), xmax = std::max(1, xsh);
 		const int zmin = std::min(-1, -zsh), zmax = std::max(1, zsh);
 
-		// if (DEBUG_DRAWING_ENABLED)
-		// 	geometricObjects->AddLine(pos + (UpVector * 25.0f), pos + (UpVector * 100.0f), 3, 1, 4);
+		if (DEBUG_DRAWING_ENABLED){
+			geometryLock.lock();
+			geometricObjects->AddLine(pos + (UpVector * 25.0f), pos + (UpVector * 100.0f), 3, 1, 4);
+			geometryLock.unlock();
+		}
 
 		// check for blocked squares inside collider's MoveDef footprint zone
 		// interpret each square as a "collidee" and sum up separation vectors
@@ -2437,18 +2435,14 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 			// if checkTerrain is true, test only the center square
 			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
-				// collider->Move(summedVec, true);
 				resultantForces += summedVec;
 
 				// minimal hack to make FollowPath work at all turn-rates
 				// since waypointDir will undergo a (large) discontinuity
-				// currWayPoint += summedVec;
-				// nextWayPoint += summedVec;
 				earlyCurrWayPoint += summedVec;
 				earlyNextWayPoint += summedVec;
 			} else {
 				// never move fully back to oldPos when dealing with yardmaps
-				// collider->Move((oldPos - pos) + summedVec * 0.25f * checkYardMap, true);
 				resultantForces += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
 				// TODO: possible cause of units getting stuck on yardmaps?
 			}
@@ -2475,11 +2469,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		summedVec = strafeVec + bounceVec;
 
 		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
-			// collider->Move(summedVec, true);
 			resultantForces += summedVec;
-
-			// currWayPoint += summedVec;
-			// nextWayPoint += summedVec;
 			earlyCurrWayPoint += summedVec;
 			earlyNextWayPoint += summedVec;
 		} else {
@@ -2489,7 +2479,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			// this means deltaSpeed will be non-zero if stuck on an impassable square and hence
 			// the new speedvector which is constructed from deltaSpeed --> we would simply keep
 			// moving forward through obstacles if not counteracted by this
-			// collider->Move((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f), true);
 			resultantForces += ((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f));
 			// TODO: possible cause of units getting stuck on yardmaps?
 		}
@@ -2531,15 +2520,6 @@ void CGroundMoveType::HandleUnitCollisions(
 		const bool colliderMobile = (colliderMD != nullptr); // always true
 		const bool collideeMobile = (collideeMD != nullptr); // maybe true
 
-		// const bool unloadingCollidee = (collidee->unloadingTransportId == collider->id);
-		// const bool unloadingCollider = (collider->unloadingTransportId == collidee->id);
-
-		// if (unloadingCollidee)
-		// 	collidee->unloadingTransportId = -1;
-		// if (unloadingCollider)
-		// 	collider->unloadingTransportId = -1;
-
-
 		// don't push/crush either party if the collidee does not block the collider (or vv.)
 		if (colliderMobile && CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
@@ -2566,17 +2546,6 @@ void CGroundMoveType::HandleUnitCollisions(
 			continue;
 
 
-		// if (unloadingCollidee) {
-		// 	collidee->unloadingTransportId = collider->id;
-		// 	continue;
-		// }
-
-		// if (unloadingCollider) {
-		// 	collider->unloadingTransportId = collidee->id;
-		// 	continue;
-		// }
-
-
 		// NOTE:
 		//   we exclude aircraft (which have NULL moveDef's) landed
 		//   on the ground, since they would just stack when pushed
@@ -2595,11 +2564,8 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
 			killUnits.push_back(collidee);
-			// collidee->Kill(collider, crushImpulse, true);
 
 		collidedUnits.push_back(collidee);
-		// if (eventHandler.UnitUnitCollision(collider, collidee))
-		// 	continue;
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2673,26 +2639,15 @@ void CGroundMoveType::HandleUnitCollisions(
 		// is pushResistant), treat the collision as regular and push both to
 		// avoid deadlocks
 		const float colliderSlideSign = Sign( separationVect.dot(collider->rightdir));
-		// const float collideeSlideSign = Sign(-separationVect.dot(collidee->rightdir));
 
 		const float3 colliderPushVec  =  colResponseVec * colliderMassScale * int(!ignoreCollidee);
-		// const float3 collideePushVec  = -colResponseVec * collideeMassScale;
 		const float3 colliderSlideVec = collider->rightdir * colliderSlideSign * (1.0f / penDistance) * r2;
-		// const float3 collideeSlideVec = collidee->rightdir * collideeSlideSign * (1.0f / penDistance) * r1;
 		const float3 colliderMoveVec  = colliderPushVec + colliderSlideVec;
-		// const float3 collideeMoveVec  = collideePushVec + collideeSlideVec;
 
 		const bool moveCollider = ((pushCollider || !pushCollidee) && colliderMobile);
-		// const bool moveCollidee = ((pushCollidee || !pushCollider) && collideeMobile);
 
 		if (moveCollider)
 			resultantForces += colliderMoveVec;
-
-		// if (moveCollider && colliderMD->TestMoveSquare(collider, collider->pos + colliderMoveVec, colliderMoveVec))
-		// 	collider->Move(colliderMoveVec, true);
-
-		// if (moveCollidee && collideeMD->TestMoveSquare(collidee, collidee->pos + collideeMoveVec, collideeMoveVec))
-		// 	collidee->Move(collideeMoveVec, true);
 	}
 }
 
@@ -2771,10 +2726,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f);
 		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f);
 
-		// quadField.RemoveFeature(collidee);
-		// collider->Move( colResponseVec * colliderMassScale, true);
-		// collidee->Move(-colResponseVec * collideeMassScale, true);
-		// quadField.AddFeature(collidee);
 		resultantForces += colResponseVec * colliderMassScale;
 		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
 	}

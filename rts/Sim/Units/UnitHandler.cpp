@@ -304,7 +304,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	SCOPED_TIMER("Sim::Unit::MoveType");
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
+	// SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
 	for_mt(0, activeUnits.size(), [this](const int i){
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
@@ -317,7 +317,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
+	// SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
 	std::size_t len = activeUnits.size();
 	for (std::size_t i=0; i<len; ++i) {
 		CUnit* unit = activeUnits[i];
@@ -328,9 +328,8 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::3::UpdateMT");
+	// SCOPED_TIMER("Sim::Unit::MoveType::3::UpdateMT");
 	std::size_t len = activeUnits.size();
-	// for (std::size_t i=0; i<len; ++i) {
 	for_mt(0, activeUnits.size(), [this](const int i){
 		CUnit* unit = activeUnits[i];
 		AMoveType* moveType = unit->moveType;
@@ -341,17 +340,22 @@ void CUnitHandler::UpdateUnitMoveTypes()
 	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
+	// SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
 		CUnit* unit = activeUnits[activeUpdateUnit];
 		AMoveType* moveType = unit->moveType;
 
 		moveType->ProcessCollisionEvents();
+
+		if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
+			unit->ForcedKillUnit(nullptr, false, true, false);
+
+		assert(activeUnits[activeUpdateUnit] == unit);
 	}
 	}
 
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+	// SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
 	std::size_t len = activeUnits.size();
 	for (std::size_t i=0; i<len; ++i) {
 		CUnit* unit = activeUnits[i];
@@ -360,13 +364,12 @@ void CUnitHandler::UpdateUnitMoveTypes()
 		if (moveType->Update())
 			eventHandler.UnitMoved(unit);
 
-		// this unit is not coming back, kill it now without any death
-		// sequence (s.t. deathScriptFinished becomes true immediately)
-		if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-			unit->ForcedKillUnit(nullptr, false, true, false);
+		// // this unit is not coming back, kill it now without any death
+		// // sequence (s.t. deathScriptFinished becomes true immediately)
+		// if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
+		// 	unit->ForcedKillUnit(nullptr, false, true, false);
 
 		unit->SanityCheck();
-		assert(activeUnits[activeUpdateUnit] == unit);
 	}
 	}
 }
