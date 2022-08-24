@@ -182,7 +182,6 @@ void CQuadField::GetQuads(QuadFieldQuery& qfq, float3 pos, float radius)
 {
 	pos.AssertNaNs();
 	pos.ClampInBounds();
-	//qfq.quads = tempQuads[ThreadPool::GetThreadNum()].ReserveVector();
 	qfq.quads = tempQuads[qfq.threadOwner].ReserveVector();
 
 	const int2 min = WorldPosToQuadField(pos - radius);

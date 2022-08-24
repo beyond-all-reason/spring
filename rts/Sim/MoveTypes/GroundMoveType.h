@@ -64,7 +64,6 @@ public:
 
 	void TriggerSkipWayPoint() {
 		earlyCurrWayPoint.y = -1.0f;
-		// nextWayPoint.y = -1.0f;
 	}
 	void TriggerCallArrived() {
 		atEndOfPath = true;
