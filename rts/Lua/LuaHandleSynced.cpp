@@ -372,27 +372,27 @@ bool CSyncedLuaHandle::Init(const std::string& code, const std::string& file)
 	SPRING_LUA_OPEN_LIB(L, luaopen_math);
 	SPRING_LUA_OPEN_LIB(L, luaopen_table);
 	SPRING_LUA_OPEN_LIB(L, luaopen_string);
-	SPRING_LUA_OPEN_LIB(L, luaopen_io);
-	SPRING_LUA_OPEN_LIB(L, luaopen_os);
-	SPRING_LUA_OPEN_LIB(L, luaopen_package);
-	SPRING_LUA_OPEN_LIB(L, luaopen_debug);
+	//SPRING_LUA_OPEN_LIB(L, luaopen_io);
+	//SPRING_LUA_OPEN_LIB(L, luaopen_os);
+	//SPRING_LUA_OPEN_LIB(L, luaopen_package);
+	//SPRING_LUA_OPEN_LIB(L, luaopen_debug);
 
 	lua_getglobal(L, "next");
 	origNextRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	// delete/replace some dangerous functions
-	//lua_pushnil(L); lua_setglobal(L, "dofile");
-	//lua_pushnil(L); lua_setglobal(L, "loadfile");
-	//lua_pushnil(L); lua_setglobal(L, "loadlib");
-	//lua_pushnil(L); lua_setglobal(L, "require");
-	//lua_pushnil(L); lua_setglobal(L, "rawequal"); //FIXME not unsafe anymore since split?
-	//lua_pushnil(L); lua_setglobal(L, "rawget"); //FIXME not unsafe anymore since split?
-	//lua_pushnil(L); lua_setglobal(L, "rawset"); //FIXME not unsafe anymore since split?
+	lua_pushnil(L); lua_setglobal(L, "dofile");
+	lua_pushnil(L); lua_setglobal(L, "loadfile");
+	lua_pushnil(L); lua_setglobal(L, "loadlib");
+	lua_pushnil(L); lua_setglobal(L, "require");
+	lua_pushnil(L); lua_setglobal(L, "rawequal"); //FIXME not unsafe anymore since split?
+	lua_pushnil(L); lua_setglobal(L, "rawget"); //FIXME not unsafe anymore since split?
+	lua_pushnil(L); lua_setglobal(L, "rawset"); //FIXME not unsafe anymore since split?
 	//lua_pushnil(L); lua_setglobal(L, "getfenv");
 	//lua_pushnil(L); lua_setglobal(L, "setfenv");
-	//lua_pushnil(L); lua_setglobal(L, "newproxy"); // sync unsafe cause of __gc
-	//lua_pushnil(L); lua_setglobal(L, "gcinfo");
-	//lua_pushnil(L); lua_setglobal(L, "collectgarbage");
+	lua_pushnil(L); lua_setglobal(L, "newproxy"); // sync unsafe cause of __gc
+	lua_pushnil(L); lua_setglobal(L, "gcinfo");
+	//lua_pushnil(L); lua_setglobal(L, "collectgarbage"); // enable this to get memory info, seems safe
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 	LuaPushNamedCFunc(L, "loadstring", CSplitLuaHandle::LoadStringData);
