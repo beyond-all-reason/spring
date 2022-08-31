@@ -174,24 +174,31 @@ private:
 	std::vector<XcursorImage*> cimages;
 };
 
-//TODO
 class HardwareCursorWayland : public IHardwareCursor {
+	struct WaylandCursorFrame {
+		SDL_Cursor* cursor;
+		SDL_Surface* surface;
+		float delay;
+	};
+
 public:
-	void PushImage(int xsize, int ysize, const void* mem) override {}
-	void PushFrame(int index, float delay) override {}
-	void SetDelay(float delay) override {}
-	void SetHotSpot(CMouseCursor::HotSpot hs) override {}
-	void Finish() override {}
-
+	void PushImage(int xsize, int ysize, const void* mem) override;
+	void PushFrame(int index, float delay) override;
+	void Update(float animTime) override;
+	void SetDelay(float delay) override;
+	void SetHotSpot(CMouseCursor::HotSpot hs) override;
+	void Finish() override;
 	bool NeedsYFlip() const override { return false; }
-	bool IsValid() const override { return false; }
-
-	void Init(CMouseCursor::HotSpot hs) override {
-		LOG_L(L_WARNING, "[%s::%s] Hardware cursor for wayland is disabled", spring::TypeToCStr<decltype(*this)>(), __func__);
-	}
-	void Kill() override {}
-	void Bind() override {}
+	bool IsValid() const override { return !frames.empty();}
+	void Init(CMouseCursor::HotSpot hs) override;
+	void Kill() override;
+	void Bind() override;
+private:
+	std::vector<WaylandCursorFrame> frames;
+	CMouseCursor::HotSpot hotSpot;
+	float total_frame_length = .0;
 };
+
 #endif
 
 IHardwareCursor* IHardwareCursor::Alloc(void* mem) {
@@ -701,6 +708,100 @@ void HardwareCursorX11::Bind()
 	// do between lock/unlock so SDL's default cursor doesn't flicker in
 	SDL_ShowCursor(SDL_ENABLE);
 	XDefineCursor(info.info.x11.display, info.info.x11.window, cursor);
+}
+
+
+void HardwareCursorWayland::PushImage(int xsize, int ysize, const void* mem)
+{
+    auto surface = SDL_CreateRGBSurface(0, xsize, ysize, 32, 0x000000FF, 0x0000FF00, 0x00FF0000,  0xFF000000);
+    if (!surface) {
+        LOG_L(L_ERROR, "SDL_CreateRGBSurface failed: %s", SDL_GetError());
+        return;
+    }
+    SDL_memcpy(surface->pixels, mem, xsize * ysize * 4);
+    this->frames.emplace_back(WaylandCursorFrame{nullptr, surface, CMouseCursor::DEF_FRAME_LENGTH});
+}
+
+void HardwareCursorWayland::PushFrame(int index, float delay)
+{
+    if (index >= this->frames.size()) {
+        return;
+    }
+
+    auto& elem = this->frames[index];
+    if (elem.delay != delay) {
+        this->PushImage(elem.surface->w, elem.surface->h, elem.surface->pixels);
+        this->SetDelay(delay);
+    }
+}
+
+void HardwareCursorWayland::Update(float animTime)
+{
+    float accumulated_time = 0;
+    auto elem = this->frames.begin();
+    while (elem != this->frames.end()) {
+        accumulated_time += elem->delay;
+        if (accumulated_time >= animTime) {
+            SDL_SetCursor(elem->cursor);
+            break;
+        }
+        std::advance(elem, 1);
+    }
+}
+
+void HardwareCursorWayland::SetDelay(float delay)
+{
+    if (!this->frames.empty()) {
+        this->frames.back().delay = delay;
+    }
+}
+
+void HardwareCursorWayland::SetHotSpot(CMouseCursor::HotSpot hs)
+{
+    hotSpot = hs;
+}
+
+void HardwareCursorWayland::Finish()
+{
+    for (auto &c : this->frames) {
+        auto hotx = (hotSpot == CMouseCursor::TopLeft) ? 0 : c.surface->w / 2;
+        auto hoty = (hotSpot == CMouseCursor::TopLeft) ? 0 : c.surface->h / 2;
+        c.cursor = SDL_CreateColorCursor(c.surface, hotx, hoty);
+        if (!c.cursor) {
+            LOG_L(L_ERROR, "SDL_CreateColorCursor failed: %s", SDL_GetError());
+            this->Kill();
+            return;
+        }
+        this->total_frame_length += c.delay;
+    }
+}
+
+void HardwareCursorWayland::Init(CMouseCursor::HotSpot hs)
+{
+    hotSpot = hs;
+}
+
+void HardwareCursorWayland::Kill()
+{
+    this->total_frame_length = 0.0;
+
+    for (auto &c : this->frames) {
+        if (c.cursor) {
+            SDL_FreeCursor(c.cursor);
+        }
+        if (c.surface) {
+            SDL_FreeSurface(c.surface);
+        }
+    }
+    this->frames.clear();
+}
+
+void HardwareCursorWayland::Bind()
+{
+    SDL_ShowCursor(SDL_ENABLE);
+    if (!this->frames.empty()) {
+        SDL_SetCursor(this->frames[0].cursor);
+    }
 }
 
 

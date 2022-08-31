@@ -393,3 +393,8 @@ void CMouseCursor::BindHwCursor() const
 	hwCursor->Bind();
 }
 
+void CMouseCursor::DrawHwCursor() const
+{
+    assert(hwCursor != nullptr);
+    hwCursor->Update(animTime);
+}
