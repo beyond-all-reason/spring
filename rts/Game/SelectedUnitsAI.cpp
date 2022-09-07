@@ -77,6 +77,49 @@ static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 	return true;
 }
 
+static std::vector<float3> moveOffsets;
+
+void GetPositionsAroundPoint(float3 centre, float dist, int posCount) {
+	int step = (SPRING_MAX_HEADING / posCount) * 2;
+	int offset = step / 2;
+
+	//LOG("[%s] dist=%f, posCount=%d", __func__, dist, posCount);
+
+	for (int i = 0; i < posCount; ++i) {
+		int angle = offset + step * i;
+		float3 offset = centre + (GetVectorFromHeading(angle) * dist);
+		moveOffsets.push_back(offset);
+	}
+}
+
+static constexpr float refUnitSize = 3;
+static constexpr float refUnitDist = 3;
+
+void GetCirclePositions(float3 centre) {
+	int maxUnits = 10000;
+	float radiusOffset = 0;
+
+	moveOffsets.reserve(maxUnits);
+
+	for (int i = 0, cycle = 1; i < maxUnits; ++cycle) {
+
+		float radius = radiusOffset + cycle * (refUnitDist + refUnitSize);
+		float circumference = radius * math::PI * 2;
+
+		int units = circumference / (refUnitDist + refUnitSize);
+
+		units = std::min(units, SPRING_MAX_HEADING);
+		units = std::min(units, maxUnits - i);
+
+		if (units <= 0)
+			break;
+
+		GetPositionsAroundPoint(centre, radius * 8, units);
+
+		i += units;
+	}
+}
+
 bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 {
 	assert(playerHandler.IsValidPlayer(playerNum));
@@ -205,6 +248,13 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 
 		CalculateGroupData(playerNum, queuedOrder);
 
+		static bool setupRings = false;
+		if (!setupRings) {
+			GetCirclePositions(float3());
+			setupRings = true;
+		}
+
+		int i = 0;
 		for (const int unitID: netSelectedUnitIDs) {
 			CUnit* unit = unitHandler.GetUnit(unitID);
 
@@ -216,8 +266,12 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 			// modify the destination relative to the center of the group
 			Command uc = c;
 
-			const float3 midPos = (queuedOrder? LastQueuePosition(unit): float3(unit->midPos));
-			const float3 difPos = midPos - groupCenterCoor;
+			// const float3 midPos = (queuedOrder? LastQueuePosition(unit): float3(unit->midPos));
+			// const float3 difPos = midPos - groupCenterCoor;
+
+			const float3 difPos = moveOffsets[i];
+
+			//LOG("[%s] unit (%d [%d]) offset is (%f, %f, %f)", __func__, unitID, i, difPos.x, difPos.y, difPos.z);
 
 			uc.SetParam(CMDPARAM_MOVE_X, uc.GetParam(CMDPARAM_MOVE_X) + difPos.x);
 			uc.SetParam(CMDPARAM_MOVE_Y, uc.GetParam(CMDPARAM_MOVE_Y) + difPos.y);
@@ -230,6 +284,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 			}
 
 			unit->commandAI->GiveCommand(uc, playerNum, ret = true, false);
+			++i;
 		}
 
 		return ret;
