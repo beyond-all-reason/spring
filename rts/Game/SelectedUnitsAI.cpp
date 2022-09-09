@@ -92,6 +92,13 @@ void GetPositionsAroundPoint(float3 centre, float dist, int posCount) {
 	}
 }
 
+// Collect all needed move type sizes
+// Determine maximum number of units
+// On order, determine best size to use
+// Setup command progress tracker
+//   record when units reach or abort their goal
+//	 increase search radius as number increases
+
 static constexpr float refUnitSize = 3;
 static constexpr float refUnitDist = 3;
 
@@ -118,6 +125,11 @@ void GetCirclePositions(float3 centre) {
 
 		i += units;
 	}
+}
+
+void SetCirclePositionsPerUnitSizes() {
+	
+
 }
 
 bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
