@@ -2550,7 +2550,7 @@ int LuaUnsyncedRead::GetKeyFromScanSymbol(lua_State* L)
 		LOG_L(L_ERROR, "Received \"%s\".", symbol.c_str());
 		SDL_Scancode scanCode = (SDL_Scancode)scanCodes.GetCode(symbol);
 		LOG_L(L_ERROR, "Found scancode: \"%d\", name %s.", scanCode, scanCodes.GetName(scanCode).c_str());
-		SDL_KeyCode keyCode = (SDL_KeyCode)SDL_GetKeyFromScancode(scanCode);
+		SDL_Keycode keyCode = (SDL_Keycode)SDL_GetKeyFromScancode(scanCode);
 		result = keyCodes.GetName(keyCode);
 		LOG_L(L_ERROR, "Found keycode: \"%d\", name %s.", keyCode, result.c_str());
 	}
