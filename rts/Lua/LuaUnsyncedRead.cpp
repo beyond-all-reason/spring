@@ -82,6 +82,7 @@
 #include <cctype>
 #include <algorithm>
 
+#include "SDL_keyboard.h"
 #include <SDL_clipboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
@@ -226,6 +227,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetMouseCursor);
 	REGISTER_LUA_CFUNC(GetMouseStartPosition);
 
+	REGISTER_LUA_CFUNC(GetKeyFromScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyState);
 	REGISTER_LUA_CFUNC(GetModKeyState);
 	REGISTER_LUA_CFUNC(GetPressedKeys);
@@ -2537,6 +2539,26 @@ int LuaUnsyncedRead::IsUserWriting(lua_State* L)
 
 /******************************************************************************/
 /******************************************************************************/
+int LuaUnsyncedRead::GetKeyFromScanSymbol(lua_State* L)
+{
+	const std::string& symbol = luaL_optstring(L, 1, "");
+
+	std::string result = "";
+
+	if (!symbol.empty()) {
+
+		LOG_L(L_ERROR, "Received \"%s\".", symbol.c_str());
+		SDL_Scancode scanCode = (SDL_Scancode)scanCodes.GetCode(symbol);
+		LOG_L(L_ERROR, "Found scancode: \"%d\", name %s.", scanCode, scanCodes.GetName(scanCode).c_str());
+		SDL_KeyCode keyCode = (SDL_KeyCode)SDL_GetKeyFromScancode(scanCode);
+		result = keyCodes.GetName(keyCode);
+		LOG_L(L_ERROR, "Found keycode: \"%d\", name %s.", keyCode, result.c_str());
+	}
+
+	lua_pushstring(L, result.c_str());
+
+	return 1;
+}
 
 int LuaUnsyncedRead::GetKeyState(lua_State* L)
 {
