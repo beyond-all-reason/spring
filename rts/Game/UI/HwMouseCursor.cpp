@@ -174,6 +174,8 @@ private:
 	std::vector<XcursorImage*> cimages;
 };
 
+// SDL supports cursors for X11, Wayland, Windows and others
+// requires call to Update() to animate it
 class HardwareCursorSDL : public IHardwareCursor {
 	struct CursorFrameSDL {
 		SDL_Cursor* cursor;
