@@ -174,8 +174,8 @@ private:
 	std::vector<XcursorImage*> cimages;
 };
 
-class HardwareCursorWayland : public IHardwareCursor {
-	struct WaylandCursorFrame {
+class HardwareCursorSDL : public IHardwareCursor {
+	struct CursorFrameSDL {
 		SDL_Cursor* cursor;
 		SDL_Surface* surface;
 		float delay;
@@ -189,12 +189,12 @@ public:
 	void SetHotSpot(CMouseCursor::HotSpot hs) override;
 	void Finish() override;
 	bool NeedsYFlip() const override { return false; }
-	bool IsValid() const override { return !frames.empty();}
+	bool IsValid() const override { return !frames.empty(); }
 	void Init(CMouseCursor::HotSpot hs) override;
 	void Kill() override;
 	void Bind() override;
 private:
-	std::vector<WaylandCursorFrame> frames;
+	std::vector<CursorFrameSDL> frames;
 	CMouseCursor::HotSpot hotSpot;
 };
 
@@ -208,8 +208,8 @@ IHardwareCursor* IHardwareCursor::Alloc(void* mem) {
 	static_assert(sizeof(HardwareCursorWindows) <= CMouseCursor::HWC_MEM_SIZE, "");
 	return (new (mem) HardwareCursorWindows());
 #else //LINUX
-	static_assert(sizeof(HardwareCursorX11    ) <= CMouseCursor::HWC_MEM_SIZE, "");
-	static_assert(sizeof(HardwareCursorWayland) <= CMouseCursor::HWC_MEM_SIZE, "");
+	static_assert(sizeof(HardwareCursorX11) <= CMouseCursor::HWC_MEM_SIZE, "");
+	static_assert(sizeof(HardwareCursorSDL) <= CMouseCursor::HWC_MEM_SIZE, "");
 
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
@@ -217,12 +217,11 @@ IHardwareCursor* IHardwareCursor::Alloc(void* mem) {
 	if (SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info)) {
 		switch (info.subsystem)
 		{
-		case SDL_SYSWM_WAYLAND:
-			return (new (mem) HardwareCursorWayland());
 		case SDL_SYSWM_X11:
 			return (new (mem) HardwareCursorX11());
+		case SDL_SYSWM_WAYLAND:
 		default: {
-			assert(false);
+			return (new (mem) HardwareCursorSDL());
 		} break;
 		}
 	}
@@ -710,7 +709,7 @@ void HardwareCursorX11::Bind()
 }
 
 
-void HardwareCursorWayland::PushImage(int xsize, int ysize, const void* mem)
+void HardwareCursorSDL::PushImage(int xsize, int ysize, const void* mem)
 {
     auto surface = SDL_CreateRGBSurface(0, xsize, ysize, 32, 0x000000FF, 0x0000FF00, 0x00FF0000,  0xFF000000);
     if (!surface) {
@@ -718,10 +717,10 @@ void HardwareCursorWayland::PushImage(int xsize, int ysize, const void* mem)
         return;
     }
     SDL_memcpy(surface->pixels, mem, xsize * ysize * 4);
-    this->frames.emplace_back(WaylandCursorFrame{nullptr, surface, CMouseCursor::DEF_FRAME_LENGTH});
+    this->frames.emplace_back(CursorFrameSDL{nullptr, surface, CMouseCursor::DEF_FRAME_LENGTH});
 }
 
-void HardwareCursorWayland::PushFrame(int index, float delay)
+void HardwareCursorSDL::PushFrame(int index, float delay)
 {
     if (index >= this->frames.size()) {
         return;
@@ -734,7 +733,7 @@ void HardwareCursorWayland::PushFrame(int index, float delay)
     }
 }
 
-void HardwareCursorWayland::Update(float animTime)
+void HardwareCursorSDL::Update(float animTime)
 {
     float accumulated_time = 0;
     auto elem = this->frames.begin();
@@ -748,19 +747,19 @@ void HardwareCursorWayland::Update(float animTime)
     }
 }
 
-void HardwareCursorWayland::SetDelay(float delay)
+void HardwareCursorSDL::SetDelay(float delay)
 {
     if (!this->frames.empty()) {
         this->frames.back().delay = delay;
     }
 }
 
-void HardwareCursorWayland::SetHotSpot(CMouseCursor::HotSpot hs)
+void HardwareCursorSDL::SetHotSpot(CMouseCursor::HotSpot hs)
 {
     hotSpot = hs;
 }
 
-void HardwareCursorWayland::Finish()
+void HardwareCursorSDL::Finish()
 {
     for (auto &c : this->frames) {
         auto hotx = (hotSpot == CMouseCursor::TopLeft) ? 0 : c.surface->w / 2;
@@ -774,12 +773,12 @@ void HardwareCursorWayland::Finish()
     }
 }
 
-void HardwareCursorWayland::Init(CMouseCursor::HotSpot hs)
+void HardwareCursorSDL::Init(CMouseCursor::HotSpot hs)
 {
     hotSpot = hs;
 }
 
-void HardwareCursorWayland::Kill()
+void HardwareCursorSDL::Kill()
 {
     for (auto &c : this->frames) {
         if (c.cursor) {
@@ -792,7 +791,7 @@ void HardwareCursorWayland::Kill()
     this->frames.clear();
 }
 
-void HardwareCursorWayland::Bind()
+void HardwareCursorSDL::Bind()
 {
     SDL_ShowCursor(SDL_ENABLE);
     if (!this->frames.empty()) {
