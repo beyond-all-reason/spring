@@ -901,7 +901,7 @@ void CMouseHandler::DrawCursor()
 		return;
 
 	if (hardwareCursor && loadedCursors[activeCursorIdx].IsHWValid()) {
-		loadedCursors[activeCursorIdx].DrawHwCursor();
+		loadedCursors[activeCursorIdx].UpdateHwCursor();
 		return;
 	}
 

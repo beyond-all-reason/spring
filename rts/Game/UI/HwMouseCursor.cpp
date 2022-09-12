@@ -196,7 +196,6 @@ public:
 private:
 	std::vector<WaylandCursorFrame> frames;
 	CMouseCursor::HotSpot hotSpot;
-	float total_frame_length = .0;
 };
 
 #endif
@@ -772,7 +771,6 @@ void HardwareCursorWayland::Finish()
             this->Kill();
             return;
         }
-        this->total_frame_length += c.delay;
     }
 }
 
@@ -783,8 +781,6 @@ void HardwareCursorWayland::Init(CMouseCursor::HotSpot hs)
 
 void HardwareCursorWayland::Kill()
 {
-    this->total_frame_length = 0.0;
-
     for (auto &c : this->frames) {
         if (c.cursor) {
             SDL_FreeCursor(c.cursor);
