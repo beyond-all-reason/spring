@@ -5,6 +5,8 @@ Spring changelog
 -- 106.0 --------------------------------------------------------
 
 Lua:
+ - Add Spring.GetPressedScans, for new returns output similar to
+   GetPressedKeys but with scancodes
  - Add Spring.GetKeyFromScanSymbol(scanSymbol) that receives a scancode and
    returns the users correspondent key in the current keyboard layout
  - allow empty argument for Spring.GetKeyBindings to return all keybindings
