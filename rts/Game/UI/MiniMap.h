@@ -36,6 +36,7 @@ public:
 	void Update();
 
 	void ConfigCommand(const std::string& command);
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 	float3 GetMapPosition(int x, int y) const;
 	CUnit* GetSelectUnit(const float3& pos) const;
@@ -51,8 +52,9 @@ public:
 
 	void SetMinimized(bool state) { minimized = state; }
 	bool GetMinimized() const { return minimized; }
-
 	bool GetMaximized() const { return maximized; }
+
+	float GetRotation();
 
 	int GetPosX()  const { return curPos.x; }
 	int GetPosY()  const { return curPos.y; }
@@ -60,6 +62,8 @@ public:
 	int GetSizeY() const { return curDim.y; }
 	float GetUnitSizeX() const { return unitSizeX; }
 	float GetUnitSizeY() const { return unitSizeY; }
+
+	float GetFlipped() const { return flipped; }
 
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
@@ -80,6 +84,8 @@ protected:
 	void ParseGeometry(const std::string& geostr);
 	void ToggleMaximized(bool maxspect);
 	void SetMaximizedGeometry();
+
+	void ConfigUpdate();
 
 	void SelectUnits(int x, int y);
 	void ProxyMousePress(int x, int y, int button);
@@ -126,6 +132,7 @@ protected:
 	float unitSizeY = 0.0f;
 	float unitSelectRadius = 0.0f;
 
+	bool minimapCanFlip = false;
 	bool fullProxy = false;
 	bool proxyMode = false;
 	bool selecting = false;
@@ -136,6 +143,8 @@ protected:
 	bool mouseLook = false;
 	bool mouseMove = false;
 	bool mouseResize = false;
+
+	bool flipped = false;
 
 	bool slaveDrawMode = false;
 	bool simpleColors = false;

@@ -116,6 +116,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetScreenGeometry);
 	REGISTER_LUA_CFUNC(GetMiniMapGeometry);
 	REGISTER_LUA_CFUNC(GetMiniMapDualScreen);
+	REGISTER_LUA_CFUNC(GetMiniMapRotation);
 	REGISTER_LUA_CFUNC(GetSelectionBox);
 	REGISTER_LUA_CFUNC(IsAboveMiniMap);
 	REGISTER_LUA_CFUNC(IsGUIHidden);
@@ -197,6 +198,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetCameraState);
 	REGISTER_LUA_CFUNC(GetCameraPosition);
 	REGISTER_LUA_CFUNC(GetCameraDirection);
+	REGISTER_LUA_CFUNC(GetCameraRotation);
 	REGISTER_LUA_CFUNC(GetCameraFOV);
 	REGISTER_LUA_CFUNC(GetCameraVectors);
 	REGISTER_LUA_CFUNC(WorldToScreenCoords);
@@ -583,6 +585,17 @@ int LuaUnsyncedRead::GetMiniMapGeometry(lua_State* L)
 	lua_pushboolean(L, minimap->GetMaximized());
 
 	return 6;
+}
+
+
+int LuaUnsyncedRead::GetMiniMapRotation(lua_State* L)
+{
+	if (minimap == nullptr)
+		return 0;
+
+	lua_pushnumber(L, minimap->GetRotation());
+
+	return 1;
 }
 
 
@@ -1826,6 +1839,14 @@ int LuaUnsyncedRead::GetCameraDirection(lua_State* L)
 	lua_pushnumber(L, camera->GetDir().x);
 	lua_pushnumber(L, camera->GetDir().y);
 	lua_pushnumber(L, camera->GetDir().z);
+	return 3;
+}
+
+int LuaUnsyncedRead::GetCameraRotation(lua_State* L)
+{
+	lua_pushnumber(L, camera->GetRot().x);
+	lua_pushnumber(L, camera->GetRot().y);
+	lua_pushnumber(L, camera->GetRot().z);
 	return 3;
 }
 
