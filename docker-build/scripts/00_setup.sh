@@ -19,7 +19,7 @@ INSTALL_DIR="${BUILD_DIR}/install"
 
 function print_usage() {
     echo "usage:"
-    echo "  -b      git brach name"
+    echo "  -b      git branch name"
     echo "  -u      URL of SpringRTS git repository"
     echo "  -a      URL prefix for auxiliary repositories"
     echo "  -p      platform to build"
@@ -30,11 +30,13 @@ function print_usage() {
     echo "  -f      c/c++ flags"
     echo "  -s      strip debug symbols"
     echo "  -z      enable ccache debug"
+    echo "  -l      local build"
+    echo "  -o      disable headless and dedicated builds"
     echo "  -h      print this help"
     exit 1
 }
 
-while getopts :b:u:a:p:dc:hr:f:s:z:e: flag
+while getopts :b:u:a:p:dc:hr:f:s:z:e:lo flag
 do
     case "${flag}" in
         b) BRANCH_NAME=${OPTARG};;
@@ -49,6 +51,8 @@ do
         f) MYCFLAGS=${OPTARG};;
         s) STRIP_SYMBOLS=${OPTARG};;
         z) DEBUG_CCACHE=${OPTARG};;
+        l) LOCAL_BUILD=true;;
+        o) ONLY_LEGACY=true;;
         \:) printf "argument missing from -%s option\n" $OPTARG >&2
             exit 2
             ;;
