@@ -35,6 +35,7 @@ class LuaUnsyncedRead {
 		static int GetScreenGeometry(lua_State* L);
 		static int GetMiniMapGeometry(lua_State* L);
 		static int GetMiniMapDualScreen(lua_State* L);
+		static int GetMiniMapRotation(lua_State* L);
 		static int GetSelectionBox(lua_State* L);
 		static int IsAboveMiniMap(lua_State* L);
 
@@ -113,6 +114,7 @@ class LuaUnsyncedRead {
 		static int GetCameraState(lua_State* L);
 		static int GetCameraPosition(lua_State* L);
 		static int GetCameraDirection(lua_State* L);
+		static int GetCameraRotation(lua_State* L);
 		static int GetCameraFOV(lua_State* L);
 		static int GetCameraVectors(lua_State* L);
 		static int WorldToScreenCoords(lua_State* L);

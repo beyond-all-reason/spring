@@ -341,10 +341,19 @@ void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 			const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
 			const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
 
-			const float x0 = iconPos.x - iconSizeX;
-			const float x1 = iconPos.x + iconSizeX;
-			const float y0 = iconPos.z - iconSizeY;
-			const float y1 = iconPos.z + iconSizeY;
+			float x0 = iconPos.x - iconSizeX;
+			float x1 = iconPos.x + iconSizeX;
+			float y0 = iconPos.z - iconSizeY;
+			float y1 = iconPos.z + iconSizeY;
+
+			if (minimap->GetFlipped()) {
+				const float ty0 = mapDims.mapy * SQUARE_SIZE - y0;
+				const float ty1 = mapDims.mapy * SQUARE_SIZE - y1;
+				x0 = mapDims.mapx * SQUARE_SIZE - x0;
+				x1 = mapDims.mapx * SQUARE_SIZE - x1;
+				y0 = ty1;
+				y1 = ty0;
+			}
 
 			rb.AddQuadTriangles(
 				{ x0, y0, 0.0f, 0.0f, color },

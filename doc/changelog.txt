@@ -15,6 +15,7 @@ Lua:
    bindings
  - Fix moveslow and movefast camera bindings not being respected in favor of
    hardcoded ones
+ - Add `rotX, rotY, rotZ = Spring.GetCameraRotation` and `(0..2*PI) = Spring.GetMiniMapRotation()`
  - Add Spring.GetPressedScans, for new returns output similar to
    GetPressedKeys but with scancodes
  - Add minx, maxy, maxx, miny = Spring.GetSelectionBox() returning coordinates
@@ -103,6 +104,8 @@ UI:
  - Add `group unset` action to unassign any groups from selected units
  - Allow drawlabel events inside minimap and add MiniMapCanDraw to enable drawing lines via
    cursor over minimap
+ - Minimap can flip if camera rotation is between 90 and 270 degrees. Can be
+   turned on via spring setting `MiniMapCanFlip = [0]|1`
  - KeyPress and KeyRelease callins receive an additional scanCode
    argument
  - sc_<k> keysets are introduced for scancodes and handled in conjunction

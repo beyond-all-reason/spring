@@ -67,6 +67,7 @@ CONFIG(bool, SimpleMiniMapColors).defaultValue(false);
 CONFIG(bool, MiniMapRenderToTexture).defaultValue(true).safemodeValue(false).description("Asynchronous render MiniMap to a texture independent of screen FPS.");
 CONFIG(int, MiniMapRefreshRate).defaultValue(0).minimumValue(0).description("The refresh rate of the async MiniMap texture. Needs MiniMapRenderToTexture to be true. Value of \"0\" autoselects between 10-60FPS.");
 
+CONFIG(bool, MiniMapCanFlip).defaultValue(false).description("Whether minimap inverts coordinates when camera Y rotation is between 90 and 270 degrees.");
 
 
 //////////////////////////////////////////////////////////////////////
@@ -95,18 +96,17 @@ CMiniMap::CMiniMap()
 	}
 
 	fullProxy = configHandler->GetBool("MiniMapFullProxy");
-	buttonSize = configHandler->GetInt("MiniMapButtonSize");
 
 	unitBaseSize = configHandler->GetFloat("MiniMapUnitSize");
 	unitExponent = configHandler->GetFloat("MiniMapUnitExp");
 
-	cursorScale = configHandler->GetFloat("MiniMapCursorScale");
-	useIcons = configHandler->GetBool("MiniMapIcons");
-	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
-	drawProjectiles = configHandler->GetBool("MiniMapDrawProjectiles");
 	simpleColors = configHandler->GetBool("SimpleMiniMapColors");
 	minimapRefreshRate = configHandler->GetInt("MiniMapRefreshRate");
 	renderToTexture = configHandler->GetBool("MiniMapRenderToTexture") && FBO::IsSupported();
+
+	ConfigUpdate();
+
+	configHandler->NotifyOnChange(this, {"MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
 
 	UpdateGeometry();
 
@@ -173,8 +173,24 @@ CMiniMap::~CMiniMap()
 	glDeleteLists(circleLists, circleListsCount);
 	glDeleteTextures(1, &buttonsTexture);
 	glDeleteTextures(1, &minimapTex);
+
+	configHandler->RemoveObserver(this);
 }
 
+void CMiniMap::ConfigUpdate()
+{
+	buttonSize = configHandler->GetInt("MiniMapButtonSize");
+	minimapCanFlip = configHandler->GetBool("MiniMapCanFlip");
+	drawProjectiles = configHandler->GetBool("MiniMapDrawProjectiles");
+	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
+	cursorScale = configHandler->GetFloat("MiniMapCursorScale");
+	useIcons = configHandler->GetBool("MiniMapIcons");
+}
+
+void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
+{
+	ConfigUpdate();
+}
 
 void CMiniMap::ParseGeometry(const string& geostr)
 {
@@ -732,8 +748,13 @@ float3 CMiniMap::GetMapPosition(int x, int y) const
 	//   (x = dim.x, y =     0) maps to world-coors (mapX, h,    0)
 	//   (x = dim.x, y = dim.y) maps to world-coors (mapX, h, mapZ)
 	//   (x =     0, y = dim.y) maps to world-coors (   0, h, mapZ)
-	const float sx = Clamp(float(x -                               tmpPos.x            ) / curDim.x, 0.0f, 1.0f);
-	const float sz = Clamp(float(y - (globalRendering->viewSizeY - tmpPos.y - curDim.y)) / curDim.y, 0.0f, 1.0f);
+	float sx = Clamp(float(x -                               tmpPos.x            ) / curDim.x, 0.0f, 1.0f);
+	float sz = Clamp(float(y - (globalRendering->viewSizeY - tmpPos.y - curDim.y)) / curDim.y, 0.0f, 1.0f);
+
+	if (flipped) {
+		sx = 1 - sx;
+		sz = 1 - sz;
+	}
 
 	return {mapX * sx, readMap->GetCurrMaxHeight(), mapZ * sz};
 }
@@ -908,6 +929,11 @@ void CMiniMap::ApplyConstraintsMatrix() const
 }
 
 
+float CMiniMap::GetRotation() {
+	return flipped ? math::PI : 0;
+}
+
+
 /******************************************************************************/
 
 void CMiniMap::Update()
@@ -926,6 +952,13 @@ void CMiniMap::Update()
 
 	if (spring_gettime() <= nextDrawScreen)
 		return;
+
+	if (!minimapCanFlip) {
+		flipped = false;
+	} else {
+		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
+		flipped = rotY > math::PI/2 && rotY <= 3 * math::PI/2;
+	}
 
 	float refreshRate = minimapRefreshRate;
 
@@ -1174,8 +1207,13 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 
 	// switch to top-down map/world coords (z is twisted with y compared to the real map/world coords)
 	glPushMatrix();
-	glTranslatef(0.0f, +1.0f, 0.0f);
-	glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+	if (flipped) {
+		glTranslatef(+1.0f, 0.0f, 0.0f);
+		glScalef(-1.0f / (mapDims.mapx * SQUARE_SIZE), +1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+	} else {
+		glTranslatef(0.0f, +1.0f, 0.0f);
+		glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+	}
 
 	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0>();
 	auto& sh = rb.GetShader();
@@ -1595,11 +1633,20 @@ void CMiniMap::DrawBackground() const
 	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 
+	if (flipped) {
+		glPushMatrix();
+		glTranslatef(1.0f, 1.0f, 0.0f);
+		glScalef(-1.0f, -1.0f, 1.0f);
+	}
+
 		// draw the map
 		glDisable(GL_ALPHA_TEST);
 		glDisable(GL_BLEND);
 			readMap->DrawMinimap();
 		glEnable(GL_BLEND);
+
+	if (flipped)
+		glPopMatrix();
 
 	glMatrixMode(GL_TEXTURE);
 	glPopMatrix();
@@ -1677,8 +1724,15 @@ void CMiniMap::DrawUnitRanges() const
 void CMiniMap::DrawWorldStuff() const
 {
 	glPushMatrix();
-	glTranslatef(0.0f, +1.0f, 0.0f);
-	glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+
+	if (flipped) {
+		glTranslatef(+1.0f, 0.0f, 0.0f);
+		glScalef(-1.0f / (mapDims.mapx * SQUARE_SIZE), +1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+	} else {
+		glTranslatef(0.0f, +1.0f, 0.0f);
+		glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
+	}
+
 	glRotatef(-90.0f, +1.0f, 0.0f, 0.0f); // real 'world' coordinates
 	glScalef(1.0f, 0.0f, 1.0f); // skip the y-coord (Lua's DrawScreen is perspective and so any z-coord in it influence the x&y, too)
 
