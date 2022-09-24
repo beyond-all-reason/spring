@@ -85,6 +85,7 @@ System:
    processor
 
 UI:
+ - Add `group unset` action to unassign any groups from selected units
  - KeyPress and KeyRelease callins receive an additional scanCode
    argument
  - sc_<k> keysets are introduced for scancodes and handled in conjunction

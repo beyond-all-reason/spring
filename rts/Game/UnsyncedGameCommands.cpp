@@ -1149,8 +1149,8 @@ public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Allows modifying the members of a group") {
 	}
 
-	bool WrongSyntax() const {
-		LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+	bool WrongSyntax(std::string description = "wrong syntax") const {
+		LOG_L(L_WARNING, "/%s error: %s", GetCommand().c_str(), description.c_str());
 		return false;
 	}
 
@@ -1166,6 +1166,10 @@ public:
 
 		switch (args.size()) {
 			case 1:
+				if (args[0] == "unset") {
+					selectedUnitsHandler.SetGroup(nullptr);
+					return true;
+				}
 				groupId = StringToInt(args[0], &parseFailure);
 				break;
 			case 2:
@@ -1181,10 +1185,10 @@ public:
 		// This check is important because GroupCommand doesn't check the range
 		// and we can go OOB.
 		if (groupId < 0 || groupId > 9)
-			return WrongSyntax();
+			return WrongSyntax("groupId must be single digit number");
 		// Finally, actually run the command.
 		if (!uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand))
-			return WrongSyntax();
+			return WrongSyntax("subcommand " + subCommand + " not found");
 
 		return true;
 	}
