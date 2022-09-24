@@ -31,12 +31,13 @@ function print_usage() {
     echo "  -s      strip debug symbols"
     echo "  -z      enable ccache debug"
     echo "  -l      local build"
+    echo "  -w      suppress outdated container warning"
     echo "  -o      disable headless and dedicated builds"
     echo "  -h      print this help"
     exit 1
 }
 
-while getopts :b:u:a:p:dc:hr:f:s:z:e:lo flag
+while getopts :b:u:a:p:dc:hr:f:s:z:e:lwo flag
 do
     case "${flag}" in
         b) BRANCH_NAME=${OPTARG};;
@@ -52,6 +53,7 @@ do
         s) STRIP_SYMBOLS=${OPTARG};;
         z) DEBUG_CCACHE=${OPTARG};;
         l) LOCAL_BUILD=true;;
+        w) SUPPRESS_OUTDATED=true;;
         o) ONLY_LEGACY=true;;
         \:) printf "argument missing from -%s option\n" $OPTARG >&2
             exit 2
@@ -61,6 +63,23 @@ do
             ;;
     esac
 done
+
+if [ ${LOCAL_BUILD} ]; then
+    trap 'exit 1' SIGINT
+    if ! cmp -s -- "/Dockerfile" "${SPRING_DIR}/docker-build/Dockerfile"; then
+        echo "WARNING: Docker container is outdated. Please run init_container.sh."
+        if [ ${SUPPRESS_OUTDATED} ]; then
+            echo "Outdated warning suppressed."
+        else
+            echo "Add -w flag to suppress this warning."
+            read -r -p "Continue anyway? [y/N] " response
+            case "$response" in
+                [yY][eE][sS]|[yY]) ;;
+                *) exit 1;;
+            esac
+        fi
+    fi
+fi
 
 if [ "${PLATFORM}" != "windows-64" ] && [ "${PLATFORM}" != "linux-64" ]; then
     echo "Unsupported platform: '${PLATFORM}'" >&2
