@@ -418,6 +418,19 @@ void CSelectedUnitsHandler::ClearSelected()
 }
 
 
+void CSelectedUnitsHandler::SetGroup(CGroup* group, bool fromFactory, bool autoSelect)
+{
+	for (const int unitID: selectedUnits) {
+		CUnit* u = unitHandler.GetUnit(unitID);
+
+		if (u == nullptr)
+			continue;
+
+		u->SetGroup(group, fromFactory, autoSelect);
+	}
+}
+
+
 void CSelectedUnitsHandler::SelectGroup(int num)
 {
 	ClearSelected();

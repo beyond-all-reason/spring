@@ -143,7 +143,7 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd)
 	}
 
 	if (group->units.empty())
-		return false;
+		return true;
 
 	if (selectedUnitsHandler.IsGroupSelected(num)) {
 		camHandler->CameraTransition(0.5f);
