@@ -5,6 +5,10 @@ Spring changelog
 -- 106.0 --------------------------------------------------------
 
 Lua:
+ - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
+   Makes the erase happen locally, optionally as if done by given player,
+   same as the existing interface for MarkerAddPoint and MarkerAddLine.
+   NOTE: 4th arg is currently unused!
  - Add Spring.GetPressedScans, for new returns output similar to
    GetPressedKeys but with scancodes
  - Add minx, maxy, maxx, miny = Spring.GetSelectionBox() returning coordinates
