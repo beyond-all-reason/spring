@@ -72,31 +72,34 @@ AMoveType::AMoveType(CUnit* owner):
 {
 }
 
-void AMoveType::UpdateCollisionMap()
+void AMoveType::SlowUpdate()
 {
 	if (owner->pos != oldSlowUpdatePos) {
-		
-		if (((gs->frameNum + owner->id) % UNIT_SLOWUPDATE_RATE) == 0){
-			const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
+		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
 
-			if (newMapSquare != owner->mapSquare) {
-				owner->mapSquare = newMapSquare;
+		if (newMapSquare != owner->mapSquare) {
+			owner->mapSquare = newMapSquare;
 
-				if (!owner->UsingScriptMoveType()) {
-					if ((owner->IsOnGround() || owner->IsInWater()) && owner->unitDef->IsGroundUnit()) {
-						// always (re-)add us to occupation map if we moved
-						// (since our last SlowUpdate) and are on the ground
-						// NOTE: ships are ground units but not on the ground
-						owner->Block();
-					}
+			if (!owner->UsingScriptMoveType()) {
+				if ((owner->IsOnGround() || owner->IsInWater()) && owner->unitDef->IsGroundUnit()) {
+					// always (re-)add us to occupation map if we moved
+					// (since our last SlowUpdate) and are on the ground
+					// NOTE: ships are ground units but not on the ground
+					owner->Block();
 				}
 			}
 		}
+	}
+}
 
-		if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
-			return;
+void AMoveType::UpdateCollisionMap()
+{
+	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
+		return;
 
+	if (owner->pos != oldCollisionUpdatePos){
 		quadField.MovedUnit(owner);
+		oldCollisionUpdatePos = owner->pos;
 	}
 }
 
