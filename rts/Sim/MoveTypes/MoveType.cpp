@@ -98,8 +98,8 @@ void AMoveType::UpdateCollisionMap()
 		return;
 
 	if (owner->pos != oldCollisionUpdatePos){
-		quadField.MovedUnit(owner);
 		oldCollisionUpdatePos = owner->pos;
+		quadField.MovedUnit(owner);
 	}
 }
 
