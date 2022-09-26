@@ -21,6 +21,7 @@ CR_REG_METADATA(AMoveType, (
 	CR_MEMBER(goalPos),
 	CR_MEMBER(oldPos),
 	CR_MEMBER(oldSlowUpdatePos),
+	CR_MEMBER(oldCollisionUpdatePos),
 
 	CR_MEMBER(progressState),
 
