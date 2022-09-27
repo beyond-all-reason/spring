@@ -714,6 +714,7 @@ void CGlobalRendering::SetGLSupportFlags()
 {
 	const std::string& glVendor = StringToLower(globalRenderingInfo.glVendor);
 	const std::string& glRenderer = StringToLower(globalRenderingInfo.glRenderer);
+	const std::string& glVersion = StringToLower(globalRenderingInfo.glVersion);
 
 	haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
 	haveGLSL &= static_cast<bool>(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
@@ -731,7 +732,7 @@ void CGlobalRendering::SetGLSupportFlags()
 				 (glRenderer.find("radeon ") != std::string::npos) || (glRenderer.find("amd ") != std::string::npos); //it's amazing how inconsistent AMD detection can be
 	haveIntel  = (  glVendor.find(  "intel") != std::string::npos);
 	haveNvidia = (  glVendor.find("nvidia ") != std::string::npos);
-	haveMesa   = (glRenderer.find(  "mesa ") != std::string::npos) || (glRenderer.find("gallium ") != std::string::npos);
+	haveMesa   = (glRenderer.find("mesa ") != std::string::npos) || (glRenderer.find("gallium ") != std::string::npos) || (glVersion.find(" mesa ") != std::string::npos);
 
 	if (haveAMD) {
 		globalRenderingInfo.gpuName   = globalRenderingInfo.glRenderer;
