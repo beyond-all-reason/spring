@@ -79,6 +79,9 @@ if [ ${LOCAL_BUILD} ]; then
             esac
         fi
     fi
+
+    BUILD_DIR="${BUILD_DIR}-${PLATFORM}"
+    INSTALL_DIR="${BUILD_DIR}/install"
 fi
 
 if [ "${PLATFORM}" != "windows-64" ] && [ "${PLATFORM}" != "linux-64" ]; then
