@@ -49,7 +49,7 @@ CONFIG(int, ForceDisableGL4).defaultValue(0).safemodeValue(1).minimumValue(0).ma
 
 CONFIG(int, ForceCoreContext).defaultValue(0).minimumValue(0).maximumValue(1);
 CONFIG(int, ForceSwapBuffers).defaultValue(1).minimumValue(0).maximumValue(1);
-CONFIG(int, AtiHacks).defaultValue(-1).headlessValue(0).minimumValue(-1).maximumValue(1).description("Enables graphics drivers workarounds for users with AMD video cards.\n -1:=runtime detect, 0:=off, 1:=on");
+CONFIG(int, AtiHacks).defaultValue(-1).headlessValue(0).minimumValue(-1).maximumValue(1).description("Enables graphics drivers workarounds for users with AMD proprietary drivers.\n -1:=runtime detect, 0:=off, 1:=on");
 
 // enabled in safemode, far more likely the gpu runs out of memory than this extension causes crashes!
 CONFIG(bool, CompressTextures).defaultValue(false).safemodeValue(true).description("Runtime compress most textures to save VideoRAM.");
@@ -788,7 +788,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	{
 		// use some ATI bugfixes?
 		const int amdHacksCfg = configHandler->GetInt("AtiHacks");
-		amdHacks = haveAMD;
+		amdHacks = haveAMD && !haveMesa;
 		amdHacks &= (amdHacksCfg < 0); // runtime detect
 		amdHacks |= (amdHacksCfg > 0); // user override
 	}
