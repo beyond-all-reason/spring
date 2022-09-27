@@ -352,7 +352,10 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 	// to owner->speed which gets overridden below, so
 	// need to calculate hSpeedScale from it (not from
 	// currentSpeed) directly
-	return (owner->frontdir * (owner->speed.w * Sign(int(!mt->IsReversing())) + hAcc));
+	if ((hAcc == 0.f) && (math::fabs(owner->speed.w) <= 0.015f))
+		return ZeroVector;
+	else
+		return (owner->frontdir * (owner->speed.w * Sign(int(!mt->IsReversing())) + hAcc));
 }
 
 
