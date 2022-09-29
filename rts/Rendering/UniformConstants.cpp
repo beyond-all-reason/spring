@@ -233,8 +233,8 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	updateBuffer->windInfo = float4{ envResHandler.GetCurrentWindVec(), envResHandler.GetCurrentWindStrength() };
 
 	updateBuffer->mouseScreenPos = float2{
-		static_cast<float>(mouse->lastx - globalRendering->viewPosX),
-		static_cast<float>(globalRendering->viewSizeY - mouse->lasty - 1)
+		static_cast<float>(mouse->lastx),
+		static_cast<float>(globalRendering->viewPosY + globalRendering->viewSizeY - mouse->lasty - 1)
 	};
 
 	updateBuffer->mouseStatus = (
@@ -249,7 +249,7 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 
 	{
 		const int wx = mouse->lastx;
-		const int wy = mouse->lasty - globalRendering->viewPosY;
+		const int wy = mouse->lasty;
 
 		const CUnit* unit = nullptr;
 		const CFeature* feature = nullptr;

@@ -32,6 +32,7 @@
 #include "System/creg/creg_cond.h"
 
 #include <SDL_syswm.h>
+#include <SDL_rect.h>
 
 
 CONFIG(bool, DebugGL).defaultValue(false).description("Enables GL debug-context and output. (see GL_ARB_debug_output)");
@@ -116,6 +117,8 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(drawFrame),
 	CR_MEMBER(FPS),
 
+	CR_IGNORED(numDisplays),
+
 	CR_IGNORED(screenSizeX),
 	CR_IGNORED(screenSizeY),
 	CR_IGNORED(screenPosX),
@@ -129,6 +132,12 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(viewPosY),
 	CR_IGNORED(viewSizeX),
 	CR_IGNORED(viewSizeY),
+	CR_IGNORED(viewWindowOffsetY),
+	CR_IGNORED(dualViewPosX),
+	CR_IGNORED(dualViewPosY),
+	CR_IGNORED(dualViewSizeX),
+	CR_IGNORED(dualViewSizeY),
+	CR_IGNORED(dualWindowOffsetY),
 	CR_IGNORED(winBorder),
 	CR_IGNORED(winChgFrame),
 	CR_IGNORED(screenViewMatrix),
@@ -206,6 +215,8 @@ CGlobalRendering::CGlobalRendering()
 	, drawFrame(1)
 	, FPS(1.0f)
 
+	, numDisplays(1)
+
 	, screenSizeX(1)
 	, screenSizeY(1)
 
@@ -220,6 +231,14 @@ CGlobalRendering::CGlobalRendering()
 	, viewPosY(0)
 	, viewSizeX(1)
 	, viewSizeY(1)
+	, viewWindowOffsetY(0)
+
+	// dual viewport geometry (DualScreenMode = 1)
+	, dualViewPosX(0)
+	, dualViewPosY(0)
+	, dualViewSizeX(0)
+	, dualViewSizeY(0)
+	, dualWindowOffsetY(0)
 
 	, winBorder{ 0 }
 
@@ -299,7 +318,6 @@ CGlobalRendering::CGlobalRendering()
 	, borderless(configHandler->GetBool("WindowBorderless"))
 	, sdlWindows{nullptr, nullptr}
 	, glContexts{nullptr, nullptr}
-
 	, glTimerQueries{0}
 {
 	verticalSync->WrapNotifyOnChange();
@@ -988,13 +1006,13 @@ void CGlobalRendering::LogDisplayMode(SDL_Window* window) const
 void CGlobalRendering::GetAllDisplayBounds(SDL_Rect& r) const
 {
 	int displayIdx = 0;
-	GetScreenBounds(r, &displayIdx);
+	GetDisplayBounds(r, &displayIdx);
 
 	std::array<int, 4> mb = { r.x, r.y, r.x + r.w, r.y + r.h }; //L, T, R, B
 
-	for (displayIdx = 1; displayIdx < SDL_GetNumVideoDisplays(); ++displayIdx) {
+	for (displayIdx = 1; displayIdx < numDisplays; ++displayIdx) {
 		SDL_Rect db;
-		GetScreenBounds(db, &displayIdx);
+		GetDisplayBounds(db, &displayIdx);
 		std::array<int, 4> b = { db.x, db.y, db.x + db.w, db.y + db.h }; //L, T, R, B
 
 		if (b[0] < mb[0]) mb[0] = b[0];
@@ -1031,15 +1049,18 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	winPosX = configHandler->GetInt("WindowPosX");
 	winPosY = configHandler->GetInt("WindowPosY");
 
+	// update display count
+	numDisplays = SDL_GetNumVideoDisplays();
+
 	// get desired resolution
 	// note that the configured fullscreen resolution is just
 	// ignored by SDL if not equal to the user's screen size
 	const int2 maxRes = GetMaxWinRes();
 	      int2 newRes = GetCfgWinRes();
 
-	LOG("[GR::%s][1] cfgFullScreen=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, winPosX, winPosY, newRes.x, newRes.y);
+	LOG("[GR::%s][1] cfgFullScreen=%d numDisplays=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, numDisplays, winPosX, winPosY, newRes.x, newRes.y);
 	GetWindowPosSizeBounded(winPosX, winPosY, newRes.x, newRes.y);
-	LOG("[GR::%s][2] cfgFullScreen=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, winPosX, winPosY, newRes.x, newRes.y);
+	LOG("[GR::%s][2] cfgFullScreen=%d numDisplays=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, numDisplays, winPosX, winPosY, newRes.x, newRes.y);
 
 //	if (SDL_SetWindowFullscreen(window, 0) != 0)
 //		LOG("[GR::%s][3][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
@@ -1100,14 +1121,13 @@ bool CGlobalRendering::ToggleWindowInputGrabbing()
 bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl) const
 {
 #ifndef HEADLESS
-	const int numDisplays = SDL_GetNumVideoDisplays();
 	if (displayIdx < 0 || displayIdx >= numDisplays) {
 		LOG_L(L_ERROR, "[GR::%s] displayIdx(%d) is out of bounds (%d,%d)", __func__, displayIdx, 0, numDisplays - 1);
 		return false;
 	}
 
 	SDL_Rect db;
-	GetScreenBounds(db, &displayIdx);
+	GetDisplayBounds(db, &displayIdx);
 
 	const int2 tlPos = { db.x + winRPosX            , db.y + winRPosY             };
 	const int2 brPos = { db.x + winRPosX + winSizeX_, db.y + winRPosY + winSizeY_ };
@@ -1150,13 +1170,13 @@ int CGlobalRendering::GetCurrentDisplayIndex() const
 	return sdlWindows[0] ? SDL_GetWindowDisplayIndex(sdlWindows[0]) : 0;
 }
 
-void CGlobalRendering::GetScreenBounds(SDL_Rect& r, const int* di) const
+void CGlobalRendering::GetDisplayBounds(SDL_Rect& r, const int* di) const
 {
 	const int displayIndex = di ? *di : GetCurrentDisplayIndex();
 	SDL_GetDisplayBounds(displayIndex, &r);
 }
 
-void CGlobalRendering::GetUsableScreenBounds(SDL_Rect& r, const int* di) const
+void CGlobalRendering::GetUsableDisplayBounds(SDL_Rect& r, const int* di) const
 {
 	const int displayIndex = di ? *di : GetCurrentDisplayIndex();
 	SDL_GetDisplayUsableBounds(displayIndex, &r);
@@ -1176,21 +1196,115 @@ void CGlobalRendering::SetFullScreen(bool cliWindowed, bool cliFullScreen)
 
 void CGlobalRendering::SetDualScreenParams()
 {
-	if ((dualScreenMode = configHandler->GetBool("DualScreenMode"))) {
-		dualScreenMiniMapOnLeft = configHandler->GetBool("DualScreenMiniMapOnLeft");
-	} else {
-		dualScreenMiniMapOnLeft = false;
-	}
+	dualScreenMode = configHandler->GetBool("DualScreenMode");
+	dualScreenMiniMapOnLeft = dualScreenMode && configHandler->GetBool("DualScreenMiniMapOnLeft");
 }
+
+static const auto compareSDLRectPosX = [](const SDL_Rect& a, const SDL_Rect& b) {
+  return (a.x < b.x);
+};
 
 void CGlobalRendering::UpdateViewPortGeometry()
 {
-	// NOTE: viewPosY is not currently used (always 0)
-	viewSizeX = winSizeX >> (1 * dualScreenMode);
-	viewSizeY = winSizeY;
-
-	viewPosX = (winSizeX >> 1) * dualScreenMode * dualScreenMiniMapOnLeft;
 	viewPosY = 0;
+	viewSizeY = winSizeY;
+	viewWindowOffsetY = 0;
+
+	if (!dualScreenMode) {
+		viewPosX = 0;
+		viewSizeX = winSizeX;
+
+		return;
+	}
+
+	dualViewPosY = 0;
+	dualViewSizeY = viewSizeY;
+	dualWindowOffsetY = 0;
+
+	if (numDisplays == 1) {
+		const int halfWinSize = winSizeX >> 1;
+
+		viewPosX = halfWinSize * dualScreenMiniMapOnLeft;
+		viewSizeX = halfWinSize;
+
+		dualViewPosX = halfWinSize - viewPosX;
+		dualViewSizeX = halfWinSize;
+
+		return;
+	}
+
+	std::vector<SDL_Rect> screenRects;
+	SDL_Rect winRect = { winPosX, winPosY, winSizeX, winSizeY };
+
+	for(int i = 0 ; i < numDisplays ; ++i)
+	{
+		SDL_Rect screen, interRect;
+		GetDisplayBounds(screen, &i);
+		LOG("[GR::%s] Raw Screen %i: pos %dx%d | size %dx%d", __func__, i, screen.x, screen.y, screen.w, screen.h);
+		// we only care about screenRects that overlap window
+		if (!SDL_IntersectRect(&screen, &winRect, &interRect)) {
+			LOG("[GR::%s] No intersection: pos %dx%d | size %dx%d", __func__, screen.x, screen.y, screen.w, screen.h);
+			continue;
+		}
+
+		// make screen positions relative to each other
+		interRect.x -= winPosX;
+		interRect.y -= winPosY;
+
+		screenRects.push_back(interRect);
+	}
+
+	std::sort(screenRects.begin(), screenRects.end(), compareSDLRectPosX);
+
+	int i = 0;
+	for (auto screen : screenRects) {
+		LOG("[GR::%s] Screen %i: pos %dx%d | size %dx%d", __func__, ++i, screen.x, screen.y, screen.w, screen.h);
+	}
+
+	if (screenRects.size() == 1) {
+		SDL_Rect screenRect = screenRects.front();
+
+		const int halfWinSize = screenRect.w >> 1;
+
+		viewPosX = halfWinSize * dualScreenMiniMapOnLeft;
+		viewSizeX = halfWinSize;
+
+		dualViewPosX = halfWinSize - viewPosX;
+		dualViewSizeX = halfWinSize;
+
+		return;
+	}
+
+	SDL_Rect dualScreenRect = dualScreenMiniMapOnLeft ? screenRects.front() : screenRects.back();
+
+	if (dualScreenMiniMapOnLeft) {
+		screenRects.erase(screenRects.begin());
+	} else {
+		screenRects.pop_back();
+	}
+
+	const SDL_Rect first = screenRects.front();
+	const SDL_Rect last = screenRects.back();
+
+	viewPosX = first.x;
+	viewSizeX = last.x + last.w - first.x;
+	viewSizeY = first.h;
+
+	dualViewPosX = dualScreenRect.x;
+	dualViewSizeX = dualScreenRect.w;
+	dualViewSizeY = dualScreenRect.h;
+
+	// We store the offset in relation to window top border for sdl mouse translation
+	viewWindowOffsetY = first.y;
+	dualWindowOffsetY = dualScreenRect.y;
+
+	// In-game and GL coords y orientation is inverse of SDL screen coords
+	viewPosY = winSizeY - (viewSizeY + viewWindowOffsetY);
+	dualViewPosY = winSizeY - (dualViewSizeY + dualWindowOffsetY);
+
+	LOG("[GR::%s] Wind: pos %dx%d | size %dx%d", __func__, winPosX, winPosY, winSizeX, winSizeY);
+	LOG("[GR::%s] View: pos %dx%d | size %dx%d | yoff %d", __func__,  viewPosX, viewPosY, viewSizeX, viewSizeY, viewWindowOffsetY);
+	LOG("[GR::%s] Dual: pos %dx%d | size %dx%d | yoff %d", __func__,  dualViewPosX, dualViewPosY, dualViewSizeX, dualViewSizeY, dualWindowOffsetY);
 }
 
 void CGlobalRendering::UpdatePixelGeometry()
@@ -1215,7 +1329,7 @@ void CGlobalRendering::ReadWindowPosAndSize()
 #else
 
 	SDL_Rect screenSize;
-	GetScreenBounds(screenSize);
+	GetDisplayBounds(screenSize);
 
 	// no other good place to set these
 	screenSizeX = screenSize.w;

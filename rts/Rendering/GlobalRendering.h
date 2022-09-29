@@ -95,13 +95,12 @@ public:
 
 	void UpdateWindowBorders(SDL_Window* window) const;
 
-	int2 GetScreenCenter() const { return {viewPosX + (viewSizeX >> 1), viewPosY + (viewSizeY >> 1)}; }
 	int2 GetMaxWinRes() const;
 	int2 GetCfgWinRes() const;
 
 	int GetCurrentDisplayIndex() const;
-	void GetScreenBounds(SDL_Rect& r, const int* di = nullptr) const;
-	void GetUsableScreenBounds(SDL_Rect& r, const int* di = nullptr) const;
+	void GetDisplayBounds(SDL_Rect& r, const int* di = nullptr) const;
+	void GetUsableDisplayBounds(SDL_Rect& r, const int* di = nullptr) const;
 
 	bool CheckGLMultiSampling() const;
 	bool CheckGLContextVersion(const int2& minCtx) const;
@@ -142,6 +141,8 @@ public:
 	/// Frames Per Second
 	float FPS;
 
+	/// the number of displays
+	int numDisplays;
 
 	/// the screen size in pixels
 	int screenSizeX;
@@ -151,7 +152,7 @@ public:
 	int screenPosX;
 	int screenPosY;
 
-	/// the window position relative to the screen's bottom-left corner
+	/// the window position relative to the screen's top-left corner
 	int winPosX;
 	int winPosY;
 
@@ -159,13 +160,25 @@ public:
 	int winSizeX;
 	int winSizeY;
 
-	/// the viewport position relative to the window's bottom-left corner
+	/// the viewport position relative to the window's top-left corner
 	int viewPosX;
 	int viewPosY;
 
 	/// the viewport size in pixels
 	int viewSizeX;
 	int viewSizeY;
+
+	/// the y offset in relation to window top border
+	int viewWindowOffsetY;
+	int dualWindowOffsetY;
+
+	/// the dual viewport position relative to the window's top-left corner (DualScreenMode = 1)
+	int dualViewPosX;
+	int dualViewPosY;
+
+	/// the dual viewport size in pixels (DualScreenMode = 1)
+	int dualViewSizeX;
+	int dualViewSizeY;
 
 	/// the window borders
 	mutable std::array<int, 4> winBorder;

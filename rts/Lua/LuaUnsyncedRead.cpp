@@ -549,7 +549,7 @@ int LuaUnsyncedRead::GetScreenGeometry(lua_State* L)
 	}
 	else {
 		SDL_Rect r{};
-		globalRendering->GetScreenBounds(r, displayIndexPtr);
+		globalRendering->GetDisplayBounds(r, displayIndexPtr);
 		lua_pushnumber(L, r.w);
 		lua_pushnumber(L, r.h);
 		lua_pushnumber(L, r.x);
@@ -561,7 +561,7 @@ int LuaUnsyncedRead::GetScreenGeometry(lua_State* L)
 
 	{
 		SDL_Rect r{};
-		globalRendering->GetUsableScreenBounds(r, displayIndexPtr);
+		globalRendering->GetUsableDisplayBounds(r, displayIndexPtr);
 		lua_pushnumber(L, r.w);
 		lua_pushnumber(L, r.h);
 		lua_pushnumber(L, r.x);
@@ -648,7 +648,7 @@ int LuaUnsyncedRead::IsAboveMiniMap(lua_State* L)
 		return false;
 
 	const int x = luaL_checkint(L, 1) + globalRendering->viewPosX;
-	const int y = luaL_checkint(L, 2);
+	const int y = luaL_checkint(L, 2) + globalRendering->viewPosY;
 
 	const int x0 = minimap->GetPosX();
 	const int y0 = minimap->GetPosY();
@@ -1899,8 +1899,8 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 	const int mx = luaL_checkint(L, 1);
 	const int my = luaL_checkint(L, 2);
 
-	const int wx =                                  mx + globalRendering->viewPosX;
-	const int wy = globalRendering->viewSizeY - 1 - my - globalRendering->viewPosY;
+	const int wx = mx + globalRendering->viewPosX;
+	const int wy = globalRendering->viewSizeY - 1 - my;
 
 	const int optArgIdx = 3 + lua_isnumber(L, 3); // 3 or 4
 	const int newArgIdx = 3 + 4 * (optArgIdx == 3); // 7 or 3
@@ -1911,8 +1911,8 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 	const bool ignoreWater = luaL_optboolean(L, optArgIdx + 3, false);
 
 	if (useMiniMap && (minimap != nullptr) && !minimap->GetMinimized()) {
-		const int px = minimap->GetPosX() - globalRendering->viewPosX; // for left dualscreen
-		const int py = minimap->GetPosY();
+		const int px = minimap->GetPosX() - globalRendering->viewPosX;
+		const int py = minimap->GetPosY() - globalRendering->viewPosY;
 		const int sx = minimap->GetSizeX();
 		const int sy = minimap->GetSizeY();
 

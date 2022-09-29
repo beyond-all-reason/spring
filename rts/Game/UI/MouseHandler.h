@@ -50,6 +50,7 @@ public:
 	void MousePress(int x, int y, int button);
 	void MouseMove(int x, int y, int dx, int dy);
 	void MouseWheel(float delta);
+	void WindowLeave();
 
 	bool AssignMouseCursor(const std::string& cmdName,
 	                       const std::string& fileName,
@@ -84,6 +85,7 @@ public:
 	bool GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, float3& tr) const;
 
 private:
+	int2 GetViewMouseCenter() const;
 	void SetCursor(const std::string& cmdName, const bool forceRebind = false);
 
 	void DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb);
