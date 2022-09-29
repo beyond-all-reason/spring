@@ -71,6 +71,14 @@ public:
 	/// How fast do they decay?
 	float constructionDecaySpeed;
 
+	// Damage behaviour
+	/// unit pieces flying off (usually on death)
+	float debrisDamage;
+
+	/* FIXME: ideally things like debris / forest fire AoE would also
+	 * be configurable, but it would be best to implement it as a fake
+	 * weapon def as opposed to a loose collection of modrules. */
+
 	// Reclaim behaviour
 	/// 0 = 1 reclaimer per feature max, otherwise unlimited
 	int multiReclaim;
