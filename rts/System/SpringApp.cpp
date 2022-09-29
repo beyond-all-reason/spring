@@ -431,7 +431,7 @@ void SpringApp::UpdateInterfaceGeometry()
 {
 	#ifndef HEADLESS
 	const int vpx = globalRendering->viewPosX;
-	const int vpy = globalRendering->winSizeY - globalRendering->viewSizeY - globalRendering->viewPosY;
+	const int vpy = globalRendering->viewWindowOffsetY;
 
 	agui::gui->UpdateScreenGeometry(globalRendering->viewSizeX, globalRendering->viewSizeY, vpx, vpy);
 	#endif
@@ -1011,6 +1011,17 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 						, globalRendering->winPosY);
 
 					SaveWindowPosAndSize();
+
+					if (globalRendering->numDisplays > 1 && globalRendering->dualScreenMode) {
+						{
+							ScopedOnceTimer timer("GlobalRendering::UpdateGL");
+
+							globalRendering->UpdateGLConfigs();
+							globalRendering->UpdateGLGeometry();
+							globalRendering->InitGLState();
+							UpdateInterfaceGeometry();
+						}
+					}
 
 					LOG("[SpringApp::%s][SDL_WINDOWEVENT_MOVED][2] di=%d, ssx=%d, ssy=%d, wsx=%d, wsy=%d, wpx=%d, wpy=%d"
 						, __func__

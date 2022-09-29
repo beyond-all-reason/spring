@@ -76,12 +76,9 @@ static CInputReceiver*& activeReceiver = CInputReceiver::GetActiveReceiverRef();
 
 CMouseHandler::CMouseHandler()
 {
-	const int2 screenCenter = globalRendering->GetScreenCenter();
+	const int2 viewMouseCenter = GetViewMouseCenter();
 
-
-
-	dir = GetCursorCameraDir(lastx = screenCenter.x, lasty = screenCenter.y);
-
+	dir = GetCursorCameraDir(lastx = viewMouseCenter.x, lasty = viewMouseCenter.y);
 
 #ifndef __APPLE__
 	hardwareCursor = configHandler->GetBool("HardwareCursor");
@@ -216,14 +213,25 @@ void CMouseHandler::ReloadCursors()
 	activeCursorIdx = defCursorIt->second;
 }
 
+void CMouseHandler::WindowLeave()
+{
+	offscreen = true;
+
+	const int2 viewMouseCenter = GetViewMouseCenter();
+
+	lastx = viewMouseCenter.x;
+	lasty = viewMouseCenter.y;
+}
+
 
 /******************************************************************************/
 
 void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 {
 	// FIXME: don't update if locked?
-	lastx = std::abs(x);
-	lasty = std::abs(y);
+	lastx = x;
+	// Origin for mousecursor on internal coordinates is top border of view screen
+	lasty = y - globalRendering->viewWindowOffsetY;
 
 	// switching to MMB-mode while user is moving mouse can generate
 	// a spurious event in the opposite direction (if cursor happens
@@ -233,15 +241,13 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	dy *= (1 - ignoreMove);
 
 	ignoreMove = false;
-	// MouseInput passes negative coordinates when cursor leaves the window
-	offscreen = (x < 0 && y < 0);
 
 	// calculating deltas (scroll{x,y} = last{x,y} - screenCenter.{x,y})
 	// is not required when using relative motion mode, can add directly
 	scrollx += (dx * hideCursor);
 	scrolly += (dy * hideCursor);
 
-	dir = GetCursorCameraDir(x, y);
+	dir = GetCursorCameraDir(x, lasty);
 
 	if (locked) {
 		camHandler->GetCurrentController().MouseMove(float3(dx, dy, invertMouse ? -1.0f : 1.0f));
@@ -256,10 +262,10 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mousePixels += movedPixels;
 
 	if (activeReceiver != nullptr)
-		activeReceiver->MouseMove(x, y, dx, dy, activeButtonIdx);
+		activeReceiver->MouseMove(x, lasty, dx, dy, activeButtonIdx);
 
 	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode())
-		inMapDrawer->MouseMove(x, y, dx, dy, activeButtonIdx);
+		inMapDrawer->MouseMove(x, lasty, dx, dy, activeButtonIdx);
 
 	if (buttons[SDL_BUTTON_MIDDLE].pressed && (activeReceiver == nullptr)) {
 		camHandler->GetCurrentController().MouseMove(float3(dx, dy, invertMouse ? -1.0f : 1.0f));
@@ -273,6 +279,9 @@ void CMouseHandler::MousePress(int x, int y, int button)
 {
 	if (button > NUM_BUTTONS)
 		return;
+
+	// Origin for mousecursor on internal coordinates is lower border of view screen
+	y = y - globalRendering->viewWindowOffsetY;
 
 	if (game != nullptr && !game->IsGameOver())
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mouseClicks++;
@@ -429,6 +438,9 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 	if (button > NUM_BUTTONS)
 		return;
 
+	// Origin for mousecursor on internal coordinates is lower border of view screen
+	y = y - globalRendering->viewWindowOffsetY;
+
 	dir = GetCursorCameraDir(x, y);
 
 	buttons[button].pressed = false;
@@ -574,6 +586,13 @@ void CMouseHandler::DrawSelectionBox()
 	glPopAttrib();
 }
 
+int2 CMouseHandler::GetViewMouseCenter() const
+{
+	return {
+		globalRendering->viewPosX + (globalRendering->viewSizeX >> 1),
+		                            (globalRendering->viewSizeY >> 1)
+	};
+}
 
 float3 CMouseHandler::GetCursorCameraDir(int x, int y) const { return (hideCursor? camera->GetDir() : camera->CalcPixelDir(x, y)); }
 float3 CMouseHandler::GetWorldMapPos() const
@@ -658,20 +677,20 @@ void CMouseHandler::Update()
 	if (!hideCursor)
 		return;
 
-	const int2 screenCenter = globalRendering->GetScreenCenter();
+	const int2 viewMouseCenter = GetViewMouseCenter();
 
 	// smoothly decay scroll{x,y} to zero s.t the cursor arrows
 	// indicate magnitude and direction of mouse movement while
 	// MMB-scrolling
 	scrollx *= 0.9f;
 	scrolly *= 0.9f;
-	lastx = screenCenter.x;
-	lasty = screenCenter.y;
+	lastx = viewMouseCenter.x;
+	lasty = viewMouseCenter.y;
 
 	if (!globalRendering->active)
 		return;
 
-	mouseInput->SetPos(screenCenter);
+	mouseInput->SetPos(viewMouseCenter);
 }
 
 
@@ -681,10 +700,9 @@ void CMouseHandler::WarpMouse(int x, int y)
 		return;
 
 	lastx = x + globalRendering->viewPosX;
-	lasty = y + globalRendering->viewPosY;
+	lasty = y;
 
-	mouseInput->SetPos({lastx, lasty});
-	mouseInput->WarpPos(mouseInput->GetPos());
+	mouseInput->SetWarpPos({lastx, lasty});
 }
 
 
@@ -720,15 +738,15 @@ void CMouseHandler::HideMouse()
 	// technically supercedes SDL_ShowCursor as well
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	const int2 screenCenter = globalRendering->GetScreenCenter();
+	const int2 viewMouseCenter = GetViewMouseCenter();
 
 	scrollx = 0.0f;
 	scrolly = 0.0f;
-	lastx = screenCenter.x;
-	lasty = screenCenter.y;
+	lastx = viewMouseCenter.x;
+	lasty = viewMouseCenter.y;
 
 	mouseInput->SetWMMouseCursor(nullptr);
-	mouseInput->SetPos(screenCenter);
+	mouseInput->SetPos(viewMouseCenter);
 }
 
 

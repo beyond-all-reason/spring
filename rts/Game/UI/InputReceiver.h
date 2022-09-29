@@ -38,8 +38,8 @@ public:
 	bool InBox(float x, float y, const TRectangle<float>& box) const;
 
 	// transform from mouse X/Y to OpenGL X/Y value in screen pixels
-	static float MouseX(int x) { return (float(x - globalRendering->viewPosX     ) * globalRendering->pixelX); }
-	static float MouseY(int y) { return (float(    globalRendering->viewSizeY - y) * globalRendering->pixelY); }
+	static float MouseX(int x) { return (float(                             x - globalRendering->viewPosX) * globalRendering->pixelX); }
+	static float MouseY(int y) { return (float(globalRendering->viewSizeY - y + globalRendering->viewPosY) * globalRendering->pixelY); }
 
 	// transform from mouse X/Y to OpenGL X/Y value in
 	// orthogonal projection 0-1 left-right/bottom-top
