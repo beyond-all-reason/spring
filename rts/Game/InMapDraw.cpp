@@ -16,12 +16,16 @@
 #include "Net/Protocol/BaseNetProtocol.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/Net/UnpackPacket.h"
 #include "System/EventHandler.h"
 #include "System/EventClient.h"
 #include "System/Log/ILog.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
+
+
+CONFIG(bool, MiniMapCanDraw).defaultValue(false).description("Enables drawing with cursor over MiniMap.");
 
 
 CInMapDraw* inMapDrawer = nullptr;
@@ -79,7 +83,9 @@ CInMapDraw::~CInMapDraw()
 
 void CInMapDraw::MousePress(int x, int y, int button)
 {
-	const float3 pos = mouse->GetWorldMapPos();
+	const bool isInMiniMap = (minimap != nullptr) && minimap->IsInside(x,y);
+	const float3 pos = isInMiniMap ? minimap->GetMapPosition(x, y) : mouse->GetWorldMapPos();
+
 	if (pos.x < 0.0f)
 		return;
 
@@ -94,7 +100,8 @@ void CInMapDraw::MousePress(int x, int y, int button)
 			SendPoint(pos, "", false);
 		} break;
 		case SDL_BUTTON_RIGHT: {
-			SendErase(pos);
+			if (!isInMiniMap || configHandler->GetBool("MiniMapCanDraw"))
+				SendErase(pos);
 		} break;
 		default: {
 		} break;
@@ -112,7 +119,13 @@ void CInMapDraw::MouseRelease(int x, int y, int button)
 
 void CInMapDraw::MouseMove(int x, int y, int dx, int dy, int button)
 {
-	const float3 pos = mouse->GetWorldMapPos();
+	const bool isInMiniMap = (minimap != nullptr) && minimap->IsInside(x,y);
+
+	if (isInMiniMap && !configHandler->GetBool("MiniMapCanDraw"))
+		return;
+
+	const float3 pos = isInMiniMap ? minimap->GetMapPosition(x, y) : mouse->GetWorldMapPos();
+
 	if (pos.x < 0.0f)
 		return;
 

@@ -593,7 +593,13 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		const float3 pos = mouse->GetWorldMapPos();
+		float3 pos;
+
+		if (minimap != nullptr && minimap->IsInside(mouse->lastx, mouse->lasty)) {
+			pos = minimap->GetMapPosition(mouse->lastx, mouse->lasty);
+		} else {
+			pos = mouse->GetWorldMapPos();
+		}
 
 		if (pos.x >= 0.0f) {
 			inMapDrawer->SetDrawMode(false);
