@@ -29,6 +29,7 @@ public:
 	void MouseRelease(int x, int y, int button);
 	void MoveView(int x, int y);
 	bool IsAbove(int x, int y);
+	bool IsInside(int x, int y);
 	std::string GetTooltip(int x, int y);
 	void Draw();
 	void DrawForReal(bool useNormalizedCoors = true, bool updateTex = false, bool luaCall = false);

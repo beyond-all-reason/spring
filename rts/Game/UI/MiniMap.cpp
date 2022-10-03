@@ -780,6 +780,11 @@ void CMiniMap::ProxyMouseRelease(int x, int y, int button)
 
 
 /******************************************************************************/
+bool CMiniMap::IsInside(int x, int y)
+{
+	return !minimized && mapBox.Inside(x, y);
+}
+
 
 bool CMiniMap::IsAbove(int x, int y)
 {
