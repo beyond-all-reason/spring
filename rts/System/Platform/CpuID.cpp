@@ -138,7 +138,7 @@ namespace springproc {
 			case PURPOSE_PERFORMANCE:
 				affinityMaskOfCores[curLogicalCpu] = 1u << processor;
 				availableProceesorAffinityMask |= 1u << processor;
-				LOG("[CpuId] setting logical cpu %d affinity mask to 0x%I64x", curLogicalCpu, affinityMaskOfCores[curLogicalCpu]);
+				LOG("[CpuId] setting logical cpu %d affinity mask to 0x%x", curLogicalCpu, (int)affinityMaskOfCores[curLogicalCpu]);
 				curLogicalCpu++;
 			// case PURPOSE_EFFICIENCY is ignored
 			}
@@ -168,7 +168,7 @@ namespace springproc {
 			prevPurpose = cpu_id.purpose;
 		}
 
-		LOG("[CpuId] available logical proceesor mask is set to 0x%I64x", availableProceesorAffinityMask);
+		LOG("[CpuId] available logical proceesor mask is set to 0x%x", (int)availableProceesorAffinityMask);
 
 		Threading::SetAffinity(oldAffinity);
 	}
