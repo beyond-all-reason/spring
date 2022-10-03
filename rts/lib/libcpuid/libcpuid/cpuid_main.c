@@ -35,21 +35,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /* Implementation: */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ == 201112L
-	_Thread_local int _libcpiud_errno = ERR_OK;
+	_Thread_local int _libcpuid_errno = ERR_OK;
 #elif defined(__GNUC__) // Also works for clang
-	__thread int _libcpiud_errno = ERR_OK;
+	__thread int _libcpuid_errno = ERR_OK;
 #else
-	static int _libcpiud_errno = ERR_OK;
+	static int _libcpuid_errno = ERR_OK;
 #endif
 
 int set_error(cpu_error_t err)
 {
-	_libcpiud_errno = (int) err;
+	_libcpuid_errno = (int) err;
 	return (int) err;
+}
+
+int get_error()
+{
+	return _libcpuid_errno;
 }
 
 static void raw_data_t_constructor(struct cpu_raw_data_t* raw)
@@ -63,30 +69,82 @@ static void cpu_id_t_constructor(struct cpu_id_t* id)
 	id->l1_data_cache = id->l1_instruction_cache = id->l2_cache = id->l3_cache = id->l4_cache = -1;
 	id->l1_assoc = id->l1_data_assoc = id->l1_instruction_assoc = id->l2_assoc = id->l3_assoc = id->l4_assoc = -1;
 	id->l1_cacheline = id->l1_data_cacheline = id->l1_instruction_cacheline = id->l2_cacheline = id->l3_cacheline = id->l4_cacheline = -1;
+	id->l1_data_instances = id->l1_instruction_instances = id->l2_instances = id->l3_instances = id->l4_instances = -1;
 	id->sse_size = -1;
+	init_affinity_mask(&id->affinity_mask);
+	id->purpose = PURPOSE_GENERAL;
 }
 
-static int parse_token(const char* expected_token, const char *token,
-                        const char *value, uint32_t array[][4], int limit, int *recognized)
+static void cpu_raw_data_array_t_constructor(struct cpu_raw_data_array_t* raw_array, bool with_affinity)
 {
-	char format[32];
-	int veax, vebx, vecx, vedx;
-	int index;
+	raw_array->with_affinity = with_affinity;
+	raw_array->num_raw = 0;
+	raw_array->raw = NULL;
+}
 
-	if (*recognized) return 1; /* already recognized */
-	if (strncmp(token, expected_token, strlen(expected_token))) return 1; /* not what we search for */
-	sprintf(format, "%s[%%d]", expected_token);
-	*recognized = 1;
-	if (1 == sscanf(token, format, &index) && index >=0 && index < limit) {
-		if (4 == sscanf(value, "%x%x%x%x", &veax, &vebx, &vecx, &vedx)) {
-			array[index][0] = veax;
-			array[index][1] = vebx;
-			array[index][2] = vecx;
-			array[index][3] = vedx;
-			return 1;
-		}
+static void system_id_t_constructor(struct system_id_t* system)
+{
+	system->num_cpu_types                  = 0;
+	system->cpu_types                      = NULL;
+	system->l1_data_total_instances        = -1;
+	system->l1_instruction_total_instances = -1;
+	system->l2_total_instances             = -1;
+	system->l3_total_instances             = -1;
+	system->l4_total_instances             = -1;
+}
+
+static void apic_info_t_constructor(struct internal_apic_info_t* apic_info, logical_cpu_t logical_cpu)
+{
+	memset(apic_info, 0, sizeof(struct internal_apic_info_t));
+	apic_info->apic_id     = -1;
+	apic_info->package_id  = -1;
+	apic_info->core_id     = -1;
+	apic_info->smt_id      = -1;
+	apic_info->logical_cpu = logical_cpu;
+}
+
+static void cache_instances_t_constructor(struct internal_cache_instances_t* data)
+{
+	memset(data->instances, 0, sizeof(data->instances));
+	memset(data->htable,    0, sizeof(data->htable));
+}
+
+static void cpuid_grow_raw_data_array(struct cpu_raw_data_array_t* raw_array, logical_cpu_t n)
+{
+	logical_cpu_t i;
+	struct cpu_raw_data_t *tmp = NULL;
+
+	if ((n <= 0) || (n < raw_array->num_raw)) return;
+	debugf(3, "Growing cpu_raw_data_array_t from %u to %u items\n", raw_array->num_raw, n);
+	tmp = realloc(raw_array->raw, sizeof(struct cpu_raw_data_t) * n);
+	if (tmp == NULL) { /* Memory allocation failure */
+		set_error(ERR_NO_MEM);
+		return;
 	}
-	return 0;
+
+	for (i = raw_array->num_raw; i < n; i++)
+		raw_data_t_constructor(&tmp[i]);
+	raw_array->num_raw = n;
+	raw_array->raw     = tmp;
+}
+
+static void cpuid_grow_system_id(struct system_id_t* system, uint8_t n)
+{
+	uint8_t i;
+	struct cpu_id_t *tmp = NULL;
+
+	if ((n <= 0) || (n < system->num_cpu_types)) return;
+	debugf(3, "Growing system_id_t from %u to %u items\n", system->num_cpu_types, n);
+	tmp = realloc(system->cpu_types, sizeof(struct cpu_id_t) * n);
+	if (tmp == NULL) { /* Memory allocation failure */
+		set_error(ERR_NO_MEM);
+		return;
+	}
+
+	for (i = system->num_cpu_types; i < n; i++)
+		cpu_id_t_constructor(&tmp[i]);
+	system->num_cpu_types = n;
+	system->cpu_types     = tmp;
 }
 
 /* get_total_cpus() system specific code: uses OS routines to determine total number of CPUs */
@@ -95,6 +153,7 @@ static int parse_token(const char* expected_token, const char *token,
 #include <mach/clock_types.h>
 #include <mach/clock.h>
 #include <mach/mach.h>
+#include <mach/thread_policy.h>
 static int get_total_cpus(void)
 {
 	kern_return_t kr;
@@ -107,7 +166,15 @@ static int get_total_cpus(void)
 	return basic_info.avail_cpus;
 }
 #define GET_TOTAL_CPUS_DEFINED
-#endif
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	thread_affinity_policy_data_t ap;
+	ap.affinity_tag = logical_cpu + 1;
+	return thread_policy_set(mach_thread_self(), THREAD_AFFINITY_POLICY, (thread_policy_t) &ap, THREAD_AFFINITY_POLICY_COUNT) == KERN_SUCCESS;
+}
+#define SET_CPU_AFFINITY
+#endif /* __APPLE__ */
 
 #ifdef _WIN32
 #include <windows.h>
@@ -118,7 +185,44 @@ static int get_total_cpus(void)
 	return system_info.dwNumberOfProcessors;
 }
 #define GET_TOTAL_CPUS_DEFINED
-#endif
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+/* Credits to https://github.com/PolygonTek/BlueshiftEngine/blob/fbc374cbc391e1147c744649f405a66a27c35d89/Source/Runtime/Private/Platform/Windows/PlatformWinThread.cpp#L27 */
+#if (_WIN32_WINNT >= 0x0601)
+	int groups = GetActiveProcessorGroupCount();
+	int total_processors = 0;
+	int group = 0;
+	int number = 0;
+	HANDLE thread = GetCurrentThread();
+	GROUP_AFFINITY groupAffinity;
+
+	for (int i = 0; i < groups; i++) {
+		int processors = GetActiveProcessorCount(i);
+		if (total_processors + processors > logical_cpu) {
+			group = i;
+			number = logical_cpu - total_processors;
+			break;
+		}
+		total_processors += processors;
+	}
+
+	memset(&groupAffinity, 0, sizeof(groupAffinity));
+	groupAffinity.Group = (WORD) group;
+	groupAffinity.Mask = (KAFFINITY) (1ULL << number);
+	return SetThreadGroupAffinity(thread, &groupAffinity, NULL);
+#else
+	if (logical_cpu > (sizeof(DWORD_PTR) * 8)) {
+		warnf("set_cpu_affinity for logical CPU %u is not supported in this operating system.\n", logical_cpu);
+		return -1;
+	}
+	HANDLE process = GetCurrentProcess();
+	DWORD_PTR processAffinityMask = 1ULL << logical_cpu;
+	return SetProcessAffinityMask(process, processAffinityMask);
+#endif /* (_WIN32_WINNT >= 0x0601) */
+}
+#define SET_CPU_AFFINITY
+#endif /* _WIN32 */
 
 #ifdef __HAIKU__
 #include <OS.h>
@@ -129,7 +233,7 @@ static int get_total_cpus(void)
 	return info.cpu_count;
 }
 #define GET_TOTAL_CPUS_DEFINED
-#endif
+#endif /* __HAIKU__ */
 
 #if defined linux || defined __linux__ || defined __sun
 #include <sys/sysinfo.h>
@@ -140,7 +244,36 @@ static int get_total_cpus(void)
 	return sysconf(_SC_NPROCESSORS_ONLN);
 }
 #define GET_TOTAL_CPUS_DEFINED
-#endif
+#endif /* defined linux || defined __linux__ || defined __sun */
+
+#if defined linux || defined __linux__
+#include <sched.h>
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(logical_cpu, &cpuset);
+	return sched_setaffinity(0, sizeof(cpuset), &cpuset) == 0;
+}
+#define SET_CPU_AFFINITY
+#endif /* defined linux || defined __linux__ */
+
+#if defined sun || defined __sun
+#include <sys/types.h>
+#include <sys/processor.h>
+#include <sys/procset.h>
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	if (logical_cpu > (sizeof(processorid_t) * 8)) {
+		warnf("set_cpu_affinity for logical CPU %u is not supported in this operating system.\n", logical_cpu);
+		return -1;
+	}
+	return processor_bind(P_LWPID, P_MYID, logical_cpu, NULL) == 0;
+}
+#define SET_CPU_AFFINITY
+#endif /* defined sun || defined __sun */
 
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __NetBSD__ || defined __bsdi__ || defined __QNX__
 #include <sys/types.h>
@@ -155,7 +288,51 @@ static int get_total_cpus(void)
 	return ncpus;
 }
 #define GET_TOTAL_CPUS_DEFINED
-#endif
+#endif /* defined __FreeBSD__ || defined __OpenBSD__ || defined __NetBSD__ || defined __bsdi__ || defined __QNX__ */
+
+#if defined __FreeBSD__
+#include <sys/param.h>
+#include <sys/cpuset.h>
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	cpuset_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(logical_cpu, &cpuset);
+	return cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1, sizeof(cpuset), &cpuset) == 0;
+}
+#define SET_CPU_AFFINITY
+#endif /* defined __FreeBSD__ */
+
+#if defined __DragonFly__
+#include <pthread.h>
+#include <pthread_np.h>
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	cpuset_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(logical_cpu, &cpuset);
+	return pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset) == 0;
+}
+#define SET_CPU_AFFINITY
+#endif /* defined __DragonFly__ */
+
+#if defined __NetBSD__
+#include <pthread.h>
+#include <sched.h>
+
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	cpuset_t *cpuset;
+	cpuset = cpuset_create();
+	cpuset_set((cpuid_t) logical_cpu, cpuset);
+	int ret = pthread_setaffinity_np(pthread_self(), cpuset_size(cpuset), cpuset);
+	cpuset_destroy(cpuset);
+	return ret == 0;
+}
+#define SET_CPU_AFFINITY
+#endif /* defined __NetBSD__ */
 
 #ifndef GET_TOTAL_CPUS_DEFINED
 static int get_total_cpus(void)
@@ -171,6 +348,216 @@ static int get_total_cpus(void)
 }
 #endif /* GET_TOTAL_CPUS_DEFINED */
 
+#ifndef SET_CPU_AFFINITY
+static bool set_cpu_affinity(logical_cpu_t logical_cpu)
+{
+	static int warning_printed = 0;
+	if (!warning_printed) {
+		warning_printed = 1;
+		warnf("Your system is not supported by libcpuid -- don't know how to set the CPU affinity.\n");
+	}
+	return false;
+}
+#endif /* SET_CPU_AFFINITY */
+
+static int cpuid_serialize_raw_data_internal(struct cpu_raw_data_t* single_raw, struct cpu_raw_data_array_t* raw_array, const char* filename)
+{
+	int i;
+	bool end_loop = false;
+	const bool use_raw_array = (raw_array != NULL) && raw_array->num_raw > 0;
+	logical_cpu_t logical_cpu = 0;
+	struct cpu_raw_data_t* raw_ptr = use_raw_array ? &raw_array->raw[0] : single_raw;
+	FILE *f;
+
+	/* Open file descriptor */
+	f = !strcmp(filename, "") ? stdout : fopen(filename, "wt");
+	if (!f)
+		return set_error(ERR_OPEN);
+	debugf(1, "Writing raw CPUID dump to '%s'\n", f == stdout ? "stdout" : filename);
+
+	/* Write raw data to output file */
+	fprintf(f, "version=%s\n", VERSION);
+	while (!end_loop) {
+		if (use_raw_array) {
+			debugf(2, "Writing raw dump for logical CPU %i\n", logical_cpu);
+			fprintf(f, "\n_________________ Logical CPU #%i _________________\n", logical_cpu);
+			raw_ptr = &raw_array->raw[logical_cpu];
+		}
+		for (i = 0; i < MAX_CPUID_LEVEL; i++)
+			fprintf(f, "basic_cpuid[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->basic_cpuid[i][EAX], raw_ptr->basic_cpuid[i][EBX],
+				raw_ptr->basic_cpuid[i][ECX], raw_ptr->basic_cpuid[i][EDX]);
+		for (i = 0; i < MAX_EXT_CPUID_LEVEL; i++)
+			fprintf(f, "ext_cpuid[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->ext_cpuid[i][EAX], raw_ptr->ext_cpuid[i][EBX],
+				raw_ptr->ext_cpuid[i][ECX], raw_ptr->ext_cpuid[i][EDX]);
+		for (i = 0; i < MAX_INTELFN4_LEVEL; i++)
+			fprintf(f, "intel_fn4[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->intel_fn4[i][EAX], raw_ptr->intel_fn4[i][EBX],
+				raw_ptr->intel_fn4[i][ECX], raw_ptr->intel_fn4[i][EDX]);
+		for (i = 0; i < MAX_INTELFN11_LEVEL; i++)
+			fprintf(f, "intel_fn11[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->intel_fn11[i][EAX], raw_ptr->intel_fn11[i][EBX],
+				raw_ptr->intel_fn11[i][ECX], raw_ptr->intel_fn11[i][EDX]);
+		for (i = 0; i < MAX_INTELFN12H_LEVEL; i++)
+			fprintf(f, "intel_fn12h[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->intel_fn12h[i][EAX], raw_ptr->intel_fn12h[i][EBX],
+				raw_ptr->intel_fn12h[i][ECX], raw_ptr->intel_fn12h[i][EDX]);
+		for (i = 0; i < MAX_INTELFN14H_LEVEL; i++)
+			fprintf(f, "intel_fn14h[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->intel_fn14h[i][EAX], raw_ptr->intel_fn14h[i][EBX],
+				raw_ptr->intel_fn14h[i][ECX], raw_ptr->intel_fn14h[i][EDX]);
+		for (i = 0; i < MAX_AMDFN8000001DH_LEVEL; i++)
+			fprintf(f, "amd_fn8000001dh[%d]=%08x %08x %08x %08x\n", i,
+				raw_ptr->amd_fn8000001dh[i][EAX], raw_ptr->amd_fn8000001dh[i][EBX],
+				raw_ptr->amd_fn8000001dh[i][ECX], raw_ptr->amd_fn8000001dh[i][EDX]);
+		logical_cpu++;
+		end_loop = ((use_raw_array && (logical_cpu >= raw_array->num_raw)) || !use_raw_array);
+	}
+
+	/* Close file descriptor */
+	if (strcmp(filename, ""))
+		fclose(f);
+	return set_error(ERR_OK);
+}
+
+#define RAW_ASSIGN_LINE(__line) __line[EAX] = eax ; __line[EBX] = ebx ; __line[ECX] = ecx ; __line[EDX] = edx
+static int cpuid_deserialize_raw_data_internal(struct cpu_raw_data_t* single_raw, struct cpu_raw_data_array_t* raw_array, const char* filename)
+{
+	int i;
+	int cur_line = 0;
+	int assigned = 0;
+	int subleaf = 0;
+	bool is_header = true;
+	bool is_libcpuid_dump = true;
+	bool is_aida64_dump = false;
+	const bool use_raw_array = (raw_array != NULL);
+	logical_cpu_t logical_cpu = 0;
+	uint32_t addr, eax, ebx, ecx, edx;
+	char version[8] = "";
+	char line[100];
+	struct cpu_raw_data_t* raw_ptr = single_raw;
+	FILE *f;
+
+	/* Open file descriptor */
+	f = !strcmp(filename, "") ? stdin : fopen(filename, "rt");
+	if (!f)
+		return set_error(ERR_OPEN);
+	debugf(1, "Opening raw dump from '%s'\n", f == stdin ? "stdin" : filename);
+
+	if (use_raw_array)
+		cpu_raw_data_array_t_constructor(raw_array, false);
+
+	/* Parse file and store data in cpu_raw_data_t */
+	while (fgets(line, sizeof(line), f) != NULL) {
+		i = -1;
+		line[strcspn(line, "\n")] = '\0';
+		if (line[0] == '\0') // Skip empty lines
+			continue;
+		if (!strcmp(line, "--------------------------------------------------------------------------------")) // Skip test results
+			break;
+		cur_line++;
+		if (is_header) {
+			if (sscanf(line, "version=%s", version) >= 1) {
+				debugf(2, "Recognized version '%s' from raw dump\n", version);
+				is_libcpuid_dump = true;
+				is_aida64_dump = false;
+				continue;
+			}
+			else if (sscanf(line, "basic_cpuid[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) {
+				debugf(2, "Parsing raw dump for a single CPU dump\n");
+				is_header = false;
+				is_libcpuid_dump = true;
+				is_aida64_dump = false;
+				if (use_raw_array) {
+					cpuid_grow_raw_data_array(raw_array, 1);
+					raw_ptr = &raw_array->raw[0];
+					raw_array->with_affinity = false;
+				}
+			}
+			else if (!strcmp(line, "------[ Versions ]------") || !strcmp(line, "------[ Logical CPU #0 ]------") || !strcmp(line, "------[ CPUID Registers / Logical CPU #0 ]------")) {
+				debugf(2, "Recognized AIDA64 raw dump\n");
+				is_header = false;
+				is_libcpuid_dump = false;
+				is_aida64_dump = true;
+			}
+		}
+
+		if (is_libcpuid_dump) {
+			if (use_raw_array && (sscanf(line, "_________________ Logical CPU #%hi _________________", &logical_cpu) >= 1)) {
+				debugf(2, "Parsing raw dump for logical CPU %i\n", logical_cpu);
+				is_header = false;
+				cpuid_grow_raw_data_array(raw_array, logical_cpu + 1);
+				raw_ptr = &raw_array->raw[logical_cpu];
+				raw_array->with_affinity = true;
+			}
+			else if ((sscanf(line, "basic_cpuid[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_CPUID_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->basic_cpuid[i]);
+			}
+			else if ((sscanf(line, "ext_cpuid[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_EXT_CPUID_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->ext_cpuid[i]);
+			}
+			else if ((sscanf(line, "intel_fn4[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_INTELFN4_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->intel_fn4[i]);
+			}
+			else if ((sscanf(line, "intel_fn11[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_INTELFN11_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->intel_fn11[i]);
+			}
+			else if ((sscanf(line, "intel_fn12h[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_INTELFN12H_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->intel_fn12h[i]);
+			}
+			else if ((sscanf(line, "intel_fn14h[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_INTELFN14H_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->intel_fn14h[i]);
+			}
+			else if ((sscanf(line, "amd_fn8000001dh[%d]=%x %x %x %x", &i, &eax, &ebx, &ecx, &edx) >= 5) && (i >= 0) && (i < MAX_AMDFN8000001DH_LEVEL)) {
+				RAW_ASSIGN_LINE(raw_ptr->amd_fn8000001dh[i]);
+			}
+			else if (line[0] != '\0') {
+				warnf("Warning: file '%s', line %d: '%s' not understood!\n", filename, cur_line, line);
+			}
+		}
+		else if (is_aida64_dump) {
+			if (use_raw_array && ((sscanf(line, "------[ Logical CPU #%hi ]------", &logical_cpu) >= 1) || \
+			                      (sscanf(line, "------[ CPUID Registers / Logical CPU #%hi ]------", &logical_cpu) >= 1))) {
+				debugf(2, "Parsing AIDA64 raw dump for logical CPU %i\n", logical_cpu);
+				cpuid_grow_raw_data_array(raw_array, logical_cpu + 1);
+				raw_ptr = &raw_array->raw[logical_cpu];
+				raw_array->with_affinity = true;
+				continue;
+			}
+			subleaf = 0;
+			assigned = sscanf(line, "CPUID %x: %x-%x-%x-%x [SL %02i]", &addr, &eax, &ebx, &ecx, &edx, &subleaf);
+			debugf(3, "raw line %d: %i items assigned for string '%s'\n", cur_line, assigned, line);
+			if ((assigned >= 5) && (subleaf == 0)) {
+				if (addr < MAX_CPUID_LEVEL) {
+					i = (int) addr;
+					RAW_ASSIGN_LINE(raw_ptr->basic_cpuid[i]);
+				}
+				else if ((addr >= ADDRESS_EXT_CPUID_START) && (addr < ADDRESS_EXT_CPUID_END)) {
+					i = (int) addr - ADDRESS_EXT_CPUID_START;
+					RAW_ASSIGN_LINE(raw_ptr->ext_cpuid[i]);
+				}
+			}
+			if (assigned >= 6) {
+				i = subleaf;
+				switch (addr) {
+					case 0x00000004: RAW_ASSIGN_LINE(raw_ptr->intel_fn4[i]);       break;
+					case 0x0000000B: RAW_ASSIGN_LINE(raw_ptr->intel_fn11[i]);      break;
+					case 0x00000012: RAW_ASSIGN_LINE(raw_ptr->intel_fn12h[i]);     break;
+					case 0x00000014: RAW_ASSIGN_LINE(raw_ptr->intel_fn14h[i]);     break;
+					case 0x8000001D: RAW_ASSIGN_LINE(raw_ptr->amd_fn8000001dh[i]); break;
+					default: break;
+				}
+			}
+		}
+	}
+
+	/* Close file descriptor */
+	if (strcmp(filename, ""))
+		fclose(f);
+	return set_error(ERR_OK);
+}
+#undef RAW_ASSIGN_LINE
 
 static void load_features_common(struct cpu_raw_data_t* raw, struct cpu_id_t* data)
 {
@@ -216,6 +603,7 @@ static void load_features_common(struct cpu_raw_data_t* raw, struct cpu_id_t* da
 		{ 28, CPU_FEATURE_AVX },
 		{ 29, CPU_FEATURE_F16C },
 		{ 30, CPU_FEATURE_RDRAND },
+		{ 31, CPU_FEATURE_HYPERVISOR },
 	};
 	const struct feature_map_t matchtable_ebx7[] = {
 		{  3, CPU_FEATURE_BMI1 },
@@ -310,6 +698,7 @@ static int cpuid_basic_identify(struct cpu_raw_data_t* raw, struct cpu_id_t* dat
 
 	if (data->vendor == VENDOR_UNKNOWN)
 		return set_error(ERR_CPU_UNKN);
+	data->architecture = ARCHITECTURE_X86;
 	basic = raw->basic_cpuid[0][EAX];
 	if (basic >= 1) {
 		data->family = (raw->basic_cpuid[1][EAX] >> 8) & 0xf;
@@ -373,6 +762,72 @@ static void make_list_from_string(const char* csv, struct cpu_list_t* list)
 		n++;
 		last = i;
 	}
+}
+
+static bool cpu_ident_apic_id(logical_cpu_t logical_cpu, struct cpu_raw_data_t* raw, struct internal_apic_info_t* apic_info)
+{
+	uint8_t subleaf;
+	uint8_t level_type = 0;
+	uint8_t mask_core_shift = 0;
+	uint32_t mask_smt_shift, core_plus_mask_width, package_mask, core_mask, smt_mask;
+	cpu_vendor_t vendor = VENDOR_UNKNOWN;
+	char vendor_str[VENDOR_STR_MAX];
+
+	apic_info_t_constructor(apic_info, logical_cpu);
+	vendor = cpuid_vendor_identify(raw->basic_cpuid[0], vendor_str);
+	if (vendor == VENDOR_UNKNOWN) {
+		set_error(ERR_CPU_UNKN);
+		return false;
+	}
+
+	/* Only AMD and Intel x86 CPUs support Extended Processor Topology Eumeration */
+	switch (vendor) {
+		case VENDOR_INTEL:
+		case VENDOR_AMD:
+			break;
+		default:
+			return false;
+	}
+
+	/* Documentation: Intel® 64 and IA-32 Architectures Software Developer’s Manual
+	   Combined Volumes: 1, 2A, 2B, 2C, 2D, 3A, 3B, 3C, 3D and 4
+	   https://cdrdv2.intel.com/v1/dl/getContent/671200
+	   Examples 8-20 and 8-22 are implemented below.
+	*/
+
+	/* Check if leaf 0Bh is supported and if number of logical processors at this level type is greater than 0 */
+	if ((raw->basic_cpuid[0][EAX] < 11) || (EXTRACTS_BITS(raw->basic_cpuid[11][EBX], 15, 0) == 0))
+		return false;
+
+	/* Derive core mask offsets */
+	for (subleaf = 0; (raw->intel_fn11[subleaf][EAX] != 0x0) && (raw->intel_fn11[subleaf][EBX] != 0x0) && (subleaf < MAX_INTELFN11_LEVEL); subleaf++)
+		mask_core_shift = EXTRACTS_BITS(raw->intel_fn11[subleaf][EAX], 4, 0);
+
+	/* Find mask and ID for SMT and cores */
+	for (subleaf = 0; (raw->intel_fn11[subleaf][EAX] != 0x0) && (raw->intel_fn11[subleaf][EBX] != 0x0) && (subleaf < MAX_INTELFN11_LEVEL); subleaf++) {
+		level_type         = EXTRACTS_BITS(raw->intel_fn11[subleaf][ECX], 15, 8);
+		apic_info->apic_id = raw->intel_fn11[subleaf][EDX];
+		switch (level_type) {
+			case 0x01:
+				mask_smt_shift    = EXTRACTS_BITS(raw->intel_fn11[subleaf][EAX], 4, 0);
+				smt_mask          = ~( (-1) << mask_smt_shift);
+				apic_info->smt_id = apic_info->apic_id & smt_mask;
+				break;
+			case 0x02:
+				core_plus_mask_width = ~( (-1) << mask_core_shift);
+				core_mask            = core_plus_mask_width ^ smt_mask;
+				apic_info->core_id   = apic_info->apic_id & core_mask;
+				break;
+			default:
+				break;
+		}
+	}
+
+	/* Find mask and ID for packages */
+	package_mask          = (-1) << mask_core_shift;
+	apic_info->package_id = apic_info->apic_id & package_mask;
+
+	return (level_type > 0);
 }
 
 
@@ -442,110 +897,49 @@ int cpuid_get_raw_data(struct cpu_raw_data_t* data)
 	return set_error(ERR_OK);
 }
 
+int cpuid_get_all_raw_data(struct cpu_raw_data_array_t* data)
+{
+	int cur_error = set_error(ERR_OK);
+	int ret_error = set_error(ERR_OK);
+	logical_cpu_t logical_cpu = 0;
+	struct cpu_raw_data_t* raw_ptr = NULL;
+
+	if (data == NULL)
+		return set_error(ERR_HANDLE);
+
+	cpu_raw_data_array_t_constructor(data, true);
+	while (set_cpu_affinity(logical_cpu)) {
+		debugf(2, "Getting raw dump for logical CPU %i\n", logical_cpu);
+		cpuid_grow_raw_data_array(data, logical_cpu + 1);
+		raw_ptr = &data->raw[logical_cpu];
+		cur_error = cpuid_get_raw_data(raw_ptr);
+		if (ret_error == ERR_OK)
+			ret_error = cur_error;
+		logical_cpu++;
+	}
+
+	return ret_error;
+}
+
 int cpuid_serialize_raw_data(struct cpu_raw_data_t* data, const char* filename)
 {
-	int i;
-	FILE *f;
+	return cpuid_serialize_raw_data_internal(data, NULL, filename);
+}
 
-	if (!strcmp(filename, ""))
-		f = stdout;
-	else
-		f = fopen(filename, "wt");
-	if (!f) return set_error(ERR_OPEN);
-
-	fprintf(f, "version=%s\n", VERSION);
-	for (i = 0; i < MAX_CPUID_LEVEL; i++)
-		fprintf(f, "basic_cpuid[%d]=%08x %08x %08x %08x\n", i,
-			data->basic_cpuid[i][EAX], data->basic_cpuid[i][EBX],
-			data->basic_cpuid[i][ECX], data->basic_cpuid[i][EDX]);
-	for (i = 0; i < MAX_EXT_CPUID_LEVEL; i++)
-		fprintf(f, "ext_cpuid[%d]=%08x %08x %08x %08x\n", i,
-			data->ext_cpuid[i][EAX], data->ext_cpuid[i][EBX],
-			data->ext_cpuid[i][ECX], data->ext_cpuid[i][EDX]);
-	for (i = 0; i < MAX_INTELFN4_LEVEL; i++)
-		fprintf(f, "intel_fn4[%d]=%08x %08x %08x %08x\n", i,
-			data->intel_fn4[i][EAX], data->intel_fn4[i][EBX],
-			data->intel_fn4[i][ECX], data->intel_fn4[i][EDX]);
-	for (i = 0; i < MAX_INTELFN11_LEVEL; i++)
-		fprintf(f, "intel_fn11[%d]=%08x %08x %08x %08x\n", i,
-			data->intel_fn11[i][EAX], data->intel_fn11[i][EBX],
-			data->intel_fn11[i][ECX], data->intel_fn11[i][EDX]);
-	for (i = 0; i < MAX_INTELFN12H_LEVEL; i++)
-		fprintf(f, "intel_fn12h[%d]=%08x %08x %08x %08x\n", i,
-			data->intel_fn12h[i][EAX], data->intel_fn12h[i][EBX],
-			data->intel_fn12h[i][ECX], data->intel_fn12h[i][EDX]);
-	for (i = 0; i < MAX_INTELFN14H_LEVEL; i++)
-		fprintf(f, "intel_fn14h[%d]=%08x %08x %08x %08x\n", i,
-			data->intel_fn14h[i][EAX], data->intel_fn14h[i][EBX],
-			data->intel_fn14h[i][ECX], data->intel_fn14h[i][EDX]);
-	for (i = 0; i < MAX_AMDFN8000001DH_LEVEL; i++)
-		fprintf(f, "amd_fn8000001dh[%d]=%08x %08x %08x %08x\n", i,
-			data->amd_fn8000001dh[i][EAX], data->amd_fn8000001dh[i][EBX],
-			data->amd_fn8000001dh[i][ECX], data->amd_fn8000001dh[i][EDX]);
-
-	if (strcmp(filename, ""))
-		fclose(f);
-	return set_error(ERR_OK);
+int cpuid_serialize_all_raw_data(struct cpu_raw_data_array_t* data, const char* filename)
+{
+	return cpuid_serialize_raw_data_internal(NULL, data, filename);
 }
 
 int cpuid_deserialize_raw_data(struct cpu_raw_data_t* data, const char* filename)
 {
-	int i, len;
-	char line[100];
-	char token[100];
-	char *value;
-	int syntax;
-	int cur_line = 0;
-	int recognized;
-	FILE *f;
-
 	raw_data_t_constructor(data);
+	return cpuid_deserialize_raw_data_internal(data, NULL, filename);
+}
 
-	if (!strcmp(filename, ""))
-		f = stdin;
-	else
-		f = fopen(filename, "rt");
-	if (!f) return set_error(ERR_OPEN);
-	while (fgets(line, sizeof(line), f)) {
-		++cur_line;
-		len = (int) strlen(line);
-		if (len < 2) continue;
-		if (line[len - 1] == '\n')
-			line[--len] = '\0';
-		for (i = 0; i < len && line[i] != '='; i++)
-		if (i >= len && i < 1 && len - i - 1 <= 0) {
-			fclose(f);
-			return set_error(ERR_BADFMT);
-		}
-		strncpy(token, line, i);
-		token[i] = '\0';
-		value = &line[i + 1];
-		/* try to recognize the line */
-		recognized = 0;
-		if (!strcmp(token, "version") || !strcmp(token, "build_date")) {
-			recognized = 1;
-		}
-		syntax = 1;
-		syntax = syntax && parse_token("basic_cpuid", token, value, data->basic_cpuid,   MAX_CPUID_LEVEL, &recognized);
-		syntax = syntax && parse_token("ext_cpuid", token, value, data->ext_cpuid,       MAX_EXT_CPUID_LEVEL, &recognized);
-		syntax = syntax && parse_token("intel_fn4", token, value, data->intel_fn4,       MAX_INTELFN4_LEVEL, &recognized);
-		syntax = syntax && parse_token("intel_fn11", token, value, data->intel_fn11,     MAX_INTELFN11_LEVEL, &recognized);
-		syntax = syntax && parse_token("intel_fn12h", token, value, data->intel_fn12h,   MAX_INTELFN12H_LEVEL, &recognized);
-		syntax = syntax && parse_token("intel_fn14h", token, value, data->intel_fn14h,   MAX_INTELFN14H_LEVEL, &recognized);
-		syntax = syntax && parse_token("amd_fn8000001dh", token, value, data->amd_fn8000001dh, MAX_AMDFN8000001DH_LEVEL, &recognized);
-		if (!syntax) {
-			warnf("Error: %s:%d: Syntax error\n", filename, cur_line);
-			fclose(f);
-			return set_error(ERR_BADFMT);
-		}
-		if (!recognized) {
-			warnf("Warning: %s:%d not understood!\n", filename, cur_line);
-		}
-	}
-
-	if (strcmp(filename, ""))
-		fclose(f);
-	return set_error(ERR_OK);
+int cpuid_deserialize_all_raw_data(struct cpu_raw_data_array_t* data, const char* filename)
+{
+	return cpuid_deserialize_raw_data_internal(NULL, data, filename);
 }
 
 int cpu_ident_internal(struct cpu_raw_data_t* raw, struct cpu_id_t* data, struct internal_id_info_t* internal)
@@ -558,6 +952,7 @@ int cpu_ident_internal(struct cpu_raw_data_t* raw, struct cpu_id_t* data, struct
 		raw = &myraw;
 	}
 	cpu_id_t_constructor(data);
+	memset(internal->cache_mask, 0, sizeof(internal->cache_mask));
 	if ((r = cpuid_basic_identify(raw, data)) < 0)
 		return set_error(r);
 	switch (data->vendor) {
@@ -578,10 +973,270 @@ int cpu_ident_internal(struct cpu_raw_data_t* raw, struct cpu_id_t* data, struct
 	return set_error(r);
 }
 
+static cpu_purpose_t cpu_ident_purpose(struct cpu_raw_data_t* raw)
+{
+	cpu_vendor_t vendor = VENDOR_UNKNOWN;
+	cpu_purpose_t purpose = PURPOSE_GENERAL;
+	char vendor_str[VENDOR_STR_MAX];
+
+	vendor = cpuid_vendor_identify(raw->basic_cpuid[0], vendor_str);
+	if (vendor == VENDOR_UNKNOWN) {
+		set_error(ERR_CPU_UNKN);
+		return purpose;
+	}
+
+	switch (vendor) {
+		case VENDOR_INTEL:
+			purpose = cpuid_identify_purpose_intel(raw);
+			break;
+		default:
+			purpose = PURPOSE_GENERAL;
+			break;
+	}
+	debugf(3, "Identified a '%s' CPU core type\n", cpu_purpose_str(purpose));
+
+	return purpose;
+}
+
 int cpu_identify(struct cpu_raw_data_t* raw, struct cpu_id_t* data)
 {
+	int r;
 	struct internal_id_info_t throwaway;
-	return cpu_ident_internal(raw, data, &throwaway);
+	r = cpu_ident_internal(raw, data, &throwaway);
+	return r;
+}
+
+static void update_cache_instances(struct internal_cache_instances_t* caches,
+                                   struct internal_apic_info_t* apic_info,
+                                   struct internal_id_info_t* id_info)
+{
+	uint32_t cache_id_index = 0;
+	cache_type_t level;
+
+	for (level = 0; level < NUM_CACHE_TYPES; level++) {
+		if (id_info->cache_mask[level] == 0x00000000) {
+			apic_info->cache_id[level] = -1;
+			continue;
+		}
+		apic_info->cache_id[level] = apic_info->apic_id & id_info->cache_mask[level];
+		cache_id_index             = apic_info->cache_id[level] % CACHES_HTABLE_SIZE;
+		if ((caches->htable[level][cache_id_index].cache_id == 0) || (caches->htable[level][cache_id_index].cache_id == apic_info->cache_id[level])) {
+			if (caches->htable[level][cache_id_index].num_logical_cpu == 0)
+				caches->instances[level]++;
+			caches->htable[level][cache_id_index].cache_id = apic_info->cache_id[level];
+			caches->htable[level][cache_id_index].num_logical_cpu++;
+		}
+		else {
+			warnf("update_cache_instances: collision at index %u (cache ID is %i, not %i)\n",
+				cache_id_index, caches->htable[level][cache_id_index].cache_id, apic_info->cache_id[level]);
+		}
+	}
+
+	debugf(3, "Logical CPU %4u: APIC ID %4i, package ID %4i, core ID %4i, thread %i, L1I$ ID %4i, L1D$ ID %4i, L2$ ID %4i, L3$ ID %4i, L4$ ID %4i\n",
+		apic_info->logical_cpu, apic_info->apic_id, apic_info->package_id, apic_info->core_id, apic_info->smt_id,
+		apic_info->cache_id[L1I], apic_info->cache_id[L1D], apic_info->cache_id[L2], apic_info->cache_id[L3], apic_info->cache_id[L4]);
+}
+
+int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t* system)
+{
+	int cur_error = set_error(ERR_OK);
+	int ret_error = set_error(ERR_OK);
+	double smt_divisor;
+	bool is_new_cpu_type;
+	bool is_last_item;
+	bool is_smt_supported;
+	bool is_apic_supported = true;
+	uint8_t cpu_type_index = 0;
+	int32_t num_logical_cpus = 0;
+	int32_t cur_package_id = 0;
+	int32_t prev_package_id = 0;
+	logical_cpu_t logical_cpu = 0;
+	cpu_purpose_t purpose;
+	cpu_affinity_mask_t affinity_mask;
+	struct cpu_raw_data_array_t my_raw_array;
+	struct internal_id_info_t id_info;
+	struct internal_apic_info_t apic_info;
+	struct internal_cache_instances_t caches_type, caches_all;
+
+	if (system == NULL)
+		return set_error(ERR_HANDLE);
+	if (!raw_array) {
+		if ((ret_error = cpuid_get_all_raw_data(&my_raw_array)) < 0)
+			return set_error(ret_error);
+		raw_array = &my_raw_array;
+	}
+	system_id_t_constructor(system);
+	cache_instances_t_constructor(&caches_type);
+	cache_instances_t_constructor(&caches_all);
+	if (raw_array->with_affinity)
+		init_affinity_mask(&affinity_mask);
+
+	/* Iterate over all raw */
+	for (logical_cpu = 0; logical_cpu < raw_array->num_raw; logical_cpu++) {
+		is_new_cpu_type = false;
+		is_last_item    = (logical_cpu + 1 >= raw_array->num_raw);
+		debugf(2, "Identifying logical core %u\n", logical_cpu);
+		/* Get CPU purpose and APIC ID
+		   For hybrid CPUs, the purpose may be different than the previous iteration (e.g. from P-cores to E-cores)
+		   APIC ID are unique for each logical CPU cores.
+		*/
+		purpose = cpu_ident_purpose(&raw_array->raw[logical_cpu]);
+		if (raw_array->with_affinity && is_apic_supported) {
+			is_apic_supported = cpu_ident_apic_id(logical_cpu, &raw_array->raw[logical_cpu], &apic_info);
+			if (is_apic_supported)
+				cur_package_id = apic_info.package_id;
+		}
+
+		/* Put data to system->cpu_types on the first iteration or when purpose is different than previous core */
+		if ((system->num_cpu_types == 0) || (purpose != system->cpu_types[system->num_cpu_types - 1].purpose) || (cur_package_id != prev_package_id)) {
+			is_new_cpu_type = true;
+			cpu_type_index  = system->num_cpu_types;
+			cpuid_grow_system_id(system, system->num_cpu_types + 1);
+			cur_error = cpu_ident_internal(&raw_array->raw[logical_cpu], &system->cpu_types[cpu_type_index], &id_info);
+			if (ret_error == ERR_OK)
+				ret_error = cur_error;
+		}
+		/* Increment counters only for current purpose */
+		if (raw_array->with_affinity && ((logical_cpu == 0) || !is_new_cpu_type)) {
+			set_affinity_mask_bit(logical_cpu, &affinity_mask);
+			num_logical_cpus++;
+			if (is_apic_supported) {
+				update_cache_instances(&caches_type, &apic_info, &id_info);
+				update_cache_instances(&caches_all,  &apic_info, &id_info);
+			}
+		}
+
+		/* Update logical and physical CPU counters in system->cpu_types on the last iteration or when purpose is different than previous core */
+		if (raw_array->with_affinity && (is_last_item || (is_new_cpu_type && (system->num_cpu_types > 1)))) {
+			cpu_type_index   = is_new_cpu_type ? system->num_cpu_types - 2 : system->num_cpu_types - 1;
+			is_smt_supported = (system->cpu_types[cpu_type_index].num_logical_cpus % system->cpu_types[cpu_type_index].num_cores) == 0;
+			smt_divisor      = is_smt_supported ? system->cpu_types[cpu_type_index].num_logical_cpus / system->cpu_types[cpu_type_index].num_cores : 1.0;
+			/* Save current values in system->cpu_types[cpu_type_index] and reset values for the next purpose */
+			system->cpu_types[cpu_type_index].num_cores        = num_logical_cpus / smt_divisor;
+			system->cpu_types[cpu_type_index].num_logical_cpus = num_logical_cpus;
+			num_logical_cpus                                   = 1;
+			copy_affinity_mask(&system->cpu_types[cpu_type_index].affinity_mask, &affinity_mask);
+			if (!is_last_item) {
+				init_affinity_mask(&affinity_mask);
+				set_affinity_mask_bit(logical_cpu, &affinity_mask);
+			}
+			if (is_apic_supported) {
+				system->cpu_types[cpu_type_index].l1_instruction_instances = caches_type.instances[L1I];
+				system->cpu_types[cpu_type_index].l1_data_instances        = caches_type.instances[L1D];
+				system->cpu_types[cpu_type_index].l2_instances             = caches_type.instances[L2];
+				system->cpu_types[cpu_type_index].l3_instances             = caches_type.instances[L3];
+				system->cpu_types[cpu_type_index].l4_instances             = caches_type.instances[L4];
+				if (!is_last_item) {
+					cache_instances_t_constructor(&caches_type);
+					update_cache_instances(&caches_type, &apic_info, &id_info);
+					update_cache_instances(&caches_all,  &apic_info, &id_info);
+				}
+			}
+		}
+		prev_package_id = cur_package_id;
+	}
+
+	/* Update the grand total of cache instances */
+	if (is_apic_supported) {
+		system->l1_instruction_total_instances = caches_all.instances[L1I];
+		system->l1_data_total_instances        = caches_all.instances[L1D];
+		system->l2_total_instances             = caches_all.instances[L2];
+		system->l3_total_instances             = caches_all.instances[L3];
+		system->l4_total_instances             = caches_all.instances[L4];
+	}
+
+	/* Update the total_logical_cpus value for each purpose */
+	for (cpu_type_index = 0; cpu_type_index < system->num_cpu_types; cpu_type_index++)
+		system->cpu_types[cpu_type_index].total_logical_cpus = logical_cpu;
+
+	return ret_error;
+}
+
+int cpu_request_core_type(cpu_purpose_t purpose, struct cpu_raw_data_array_t* raw_array, struct cpu_id_t* data)
+{
+	int error;
+	logical_cpu_t logical_cpu = 0;
+	struct cpu_raw_data_array_t my_raw_array;
+	struct internal_id_info_t throwaway;
+
+	if (!raw_array) {
+		if ((error = cpuid_get_all_raw_data(&my_raw_array)) < 0)
+			return set_error(error);
+		raw_array = &my_raw_array;
+	}
+
+	for (logical_cpu = 0; logical_cpu < raw_array->num_raw; logical_cpu++) {
+		if (cpu_ident_purpose(&raw_array->raw[logical_cpu]) == purpose) {
+			cpu_ident_internal(&raw_array->raw[logical_cpu], data, &throwaway);
+			return set_error(ERR_OK);
+		}
+	}
+
+	return set_error(ERR_NOT_FOUND);
+}
+
+const char* cpu_architecture_str(cpu_architecture_t architecture)
+{
+	const struct { cpu_architecture_t architecture; const char* name; }
+	matchtable[] = {
+		{ ARCHITECTURE_UNKNOWN, "unknown" },
+		{ ARCHITECTURE_X86,     "x86"     },
+		{ ARCHITECTURE_ARM,     "ARM"     },
+	};
+	unsigned i, n = COUNT_OF(matchtable);
+	if (n != NUM_CPU_ARCHITECTURES + 1) {
+		warnf("Warning: incomplete library, architecture matchtable size differs from the actual number of architectures.\n");
+	}
+	for (i = 0; i < n; i++)
+		if (matchtable[i].architecture == architecture)
+			return matchtable[i].name;
+	return "";
+}
+
+const char* cpu_purpose_str(cpu_purpose_t purpose)
+{
+	const struct { cpu_purpose_t purpose; const char* name; }
+	matchtable[] = {
+		{ PURPOSE_GENERAL,     "general"     },
+		{ PURPOSE_PERFORMANCE, "performance" },
+		{ PURPOSE_EFFICIENCY,  "efficiency"  },
+	};
+	unsigned i, n = COUNT_OF(matchtable);
+	if (n != NUM_CPU_PURPOSES) {
+		warnf("Warning: incomplete library, purpose matchtable size differs from the actual number of purposes.\n");
+	}
+	for (i = 0; i < n; i++)
+		if (matchtable[i].purpose == purpose)
+			return matchtable[i].name;
+	return "";
+}
+
+char* affinity_mask_str_r(cpu_affinity_mask_t* affinity_mask, char* buffer, uint32_t buffer_len)
+{
+	logical_cpu_t mask_index = __MASK_SETSIZE - 1;
+	logical_cpu_t str_index = 0;
+	bool do_print = false;
+
+	while (str_index + 1 < buffer_len) {
+		if (do_print || (mask_index < 4) || (affinity_mask->__bits[mask_index] != 0x00)) {
+			snprintf(&buffer[str_index], 3, "%02X", affinity_mask->__bits[mask_index]);
+			do_print = true;
+			str_index += 2;
+		}
+		/* mask_index in unsigned, so we cannot decrement it beyond 0 */
+		if (mask_index == 0)
+			break;
+		mask_index--;
+	}
+	buffer[str_index] = '\0';
+
+	return buffer;
+}
+
+char* affinity_mask_str(cpu_affinity_mask_t* affinity_mask)
+{
+	static char buffer[__MASK_SETSIZE + 1] = "";
+	return affinity_mask_str_r(affinity_mask, buffer, __MASK_SETSIZE + 1);
 }
 
 const char* cpu_feature_str(cpu_feature_t feature)
@@ -701,6 +1356,7 @@ const char* cpu_feature_str(cpu_feature_t feature)
 		{ CPU_FEATURE_AVX512VNNI, "avx512vnni" },
 		{ CPU_FEATURE_AVX512VBMI, "avx512vbmi" },
 		{ CPU_FEATURE_AVX512VBMI2, "avx512vbmi2" },
+		{ CPU_FEATURE_HYPERVISOR, "hypervisor" },
 	};
 	unsigned i, n = COUNT_OF(matchtable);
 	if (n != NUM_CPU_FEATURES) {
@@ -733,10 +1389,11 @@ const char* cpuid_error(void)
 		{ ERR_INVCNB   , "Invalid core number"},
 		{ ERR_HANDLE_R , "Error on handle read"},
 		{ ERR_INVRANGE , "Invalid given range"},
+		{ ERR_NOT_FOUND, "Requested type not found"},
 	};
 	unsigned i;
 	for (i = 0; i < COUNT_OF(matchtable); i++)
-		if (_libcpiud_errno == matchtable[i].error)
+		if (_libcpuid_errno == matchtable[i].error)
 			return matchtable[i].description;
 	return "Unknown error";
 }
@@ -819,6 +1476,65 @@ void cpuid_get_cpu_list(cpu_vendor_t vendor, struct cpu_list_t* list)
  	}
 }
 
+hypervisor_vendor_t cpuid_get_hypervisor(struct cpu_raw_data_t* raw, struct cpu_id_t* data)
+{
+	int i, r;
+	uint32_t hypervisor_fn40000000h[NUM_REGS];
+	char hypervisor_str[VENDOR_STR_MAX];
+	struct cpu_id_t mydata;
+	const struct { hypervisor_vendor_t hypervisor; char match[16]; }
+	matchtable[NUM_HYPERVISOR_VENDORS] = {
+		/* source: https://github.com/a0rtega/pafish/blob/master/pafish/cpu.c */
+		{ HYPERVISOR_BHYVE      , "bhyve bhyve\0"   },
+		{ HYPERVISOR_HYPERV     , "Microsoft Hv"    },
+		{ HYPERVISOR_KVM        , "KVMKVMKVM\0\0\0" },
+		{ HYPERVISOR_PARALLELS  , "prl hyperv\0\0"  },
+		{ HYPERVISOR_QEMU       , "TCGTCGTCGTCG"    },
+		{ HYPERVISOR_VIRTUALBOX , "VBoxVBoxVBox"    },
+		{ HYPERVISOR_VMWARE     , "VMwareVMware"    },
+		{ HYPERVISOR_XEN        , "XenVMMXenVMM"    },
+	};
+
+	if (!data) {
+		if ((r = cpu_identify(raw, data)) < 0)
+			return HYPERVISOR_UNKNOWN;
+		data = &mydata;
+	}
+
+	/* Intel and AMD CPUs have reserved bit 31 of ECX of CPUID leaf 0x1 as the hypervisor present bit
+	Source: https://kb.vmware.com/s/article/1009458 */
+	switch (data->vendor) {
+		case VENDOR_AMD:
+		case VENDOR_INTEL:
+			break;
+		default:
+			return HYPERVISOR_UNKNOWN;
+	}
+	if (!data->flags[CPU_FEATURE_HYPERVISOR])
+		return HYPERVISOR_NONE;
+
+	/* Intel and AMD have also reserved CPUID leaves 0x40000000 - 0x400000FF for software use.
+	Hypervisors can use these leaves to provide an interface to pass information
+	from the hypervisor to the guest operating system running inside a virtual machine.
+	The hypervisor bit indicates the presence of a hypervisor
+	and that it is safe to test these additional software leaves. */
+	memset(hypervisor_fn40000000h, 0, sizeof(hypervisor_fn40000000h));
+	hypervisor_fn40000000h[EAX] = 0x40000000;
+	cpu_exec_cpuid_ext(hypervisor_fn40000000h);
+
+	/* Copy the hypervisor CPUID information leaf */
+	memcpy(hypervisor_str + 0, &hypervisor_fn40000000h[1], 4);
+	memcpy(hypervisor_str + 4, &hypervisor_fn40000000h[2], 4);
+	memcpy(hypervisor_str + 8, &hypervisor_fn40000000h[3], 4);
+	hypervisor_str[12] = '\0';
+
+	/* Determine hypervisor */
+	for (i = 0; i < NUM_HYPERVISOR_VENDORS; i++)
+		if (!strcmp(hypervisor_str, matchtable[i].match))
+			return matchtable[i].hypervisor;
+	return HYPERVISOR_UNKNOWN;
+}
+
 void cpuid_free_cpu_list(struct cpu_list_t* list)
 {
 	int i;
@@ -826,4 +1542,18 @@ void cpuid_free_cpu_list(struct cpu_list_t* list)
 	for (i = 0; i < list->num_entries; i++)
 		free(list->names[i]);
 	free(list->names);
+}
+
+void cpuid_free_raw_data_array(struct cpu_raw_data_array_t* raw_array)
+{
+	if (raw_array->num_raw <= 0) return;
+	free(raw_array->raw);
+	raw_array->num_raw = 0;
+}
+
+void cpuid_free_system_id(struct system_id_t* system)
+{
+	if (system->num_cpu_types <= 0) return;
+	free(system->cpu_types);
+	system->num_cpu_types = 0;
 }
