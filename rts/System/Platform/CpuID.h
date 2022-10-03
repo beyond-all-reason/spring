@@ -38,7 +38,7 @@ namespace springproc {
 
 	class CPUID {
 	public:
-		CPUID();
+		static CPUID& GetInstance();
 
 		/** Total number of cores in the system. This excludes SMT/HT
 		    cores. */
@@ -47,24 +47,17 @@ namespace springproc {
 		/** Total number of physical processor dies in the system. */
 		int GetTotalNumPackages() const { return totalNumPackages; }
 
+		uint64_t GetAvailableProceesorAffinityMask() const { return availableProceesorAffinityMask; };
+
 		uint64_t GetCoreAffinityMask(int x) const { return affinityMaskOfCores[x & (MAX_PROCESSORS - 1)]; }
 		uint64_t GetPackageAffinityMask(int x) { return affinityMaskOfPackages[x & (MAX_PROCESSORS - 1)]; }
 
 	private:
-		void GetIdsAMD();
-		void GetIdsIntel();
+		CPUID();
+
 		void SetDefault();
+		void EnumerateCores();
 
-	private:
-		void GetIdsIntelEnumerate();
-
-		void GetMasksIntelLeaf11Enumerate();
-		void GetMasksIntelLeaf11();
-		void GetMasksIntelLeaf1and4();
-
-		uint32_t GetApicIdIntel();
-
-	private:
 		int numLogicalCores;
 		int numPhysicalCores;
 		int totalNumPackages;
@@ -75,6 +68,7 @@ namespace springproc {
 		    core the affinity mask. */
 		uint64_t affinityMaskOfCores[MAX_PROCESSORS];
 		uint64_t affinityMaskOfPackages[MAX_PROCESSORS];
+		uint64_t availableProceesorAffinityMask;
 
 		////////////////////////
 		// Intel specific fields
