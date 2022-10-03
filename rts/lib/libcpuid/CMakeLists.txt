@@ -21,7 +21,7 @@ if(UNIX)
   set(exec_prefix "\${prefix}")
   set(libdir "\${exec_prefix}/lib")
   set(includedir "\${prefix}/include")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wuninitialized -Wstrict-prototypes -Wformat -Wformat-security -fPIC")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wuninitialized -Wstrict-prototypes -Wformat -Wformat-security")
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libcpuid.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/libcpuid.pc" ESCAPE_QUOTES
                  @ONLY)
   install(FILES "${PROJECT_BINARY_DIR}/libcpuid.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
