@@ -115,8 +115,6 @@ namespace springproc {
 		numLogicalCores = 0;
 		numPhysicalCores = 0;
 
-		LOG("[CpuId] logical threads report now is %d", Threading::GetLogicalCpuCores());
-
 		struct cpu_raw_data_array_t raw_array;
 		system_id_t system;
 
@@ -138,21 +136,17 @@ namespace springproc {
 				availableProceesorAffinityMask |= *(uint64_t*)&cpu_id.affinity_mask;
 				numLogicalCores += cpu_id.num_logical_cpus;
 				numPhysicalCores += cpu_id.num_cores;
-				LOG("[CpuId] found %d cores and %d logical cpus of type %s"
+				LOG("[CpuId] found %d cores and %d logical cpus (mask: 0x%x) of type %s"
 						, cpu_id.num_cores
 						, cpu_id.num_logical_cpus
+						, *(int*)&cpu_id.affinity_mask
 						, cpu_purpose_str(cpu_id.purpose));
-				LOG("[CpuId] add logical cpu affinity mask with 0x%x", *(int*)&cpu_id.affinity_mask);
 				LOG("[CpuId] setting logical cpu affinity mask to 0x%x", (int)availableProceesorAffinityMask);
 			// ignore case PURPOSE_EFFICIENCY:
 			}
 		}
 
 		cpuid_free_system_id(&system);
-
-		LOG("[CpuId] available logical proceesor mask is set to 0x%x", (int)availableProceesorAffinityMask);
-		LOG("[CpuId] available logical proceesors are %d, available cores are %d", numLogicalCores, numPhysicalCores);
-		LOG("[CpuId] logical threads report now is %d", Threading::GetLogicalCpuCores());
 	}
 
 	void CPUID::SetDefault()
