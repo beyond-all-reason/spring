@@ -66,6 +66,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Config/ConfigVariable.h"
 #include "System/Input/KeyInput.h"
+#include "System/Input/ControllerInput.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Platform/SDL1_keysym.h"
@@ -83,8 +84,10 @@
 #include <cctype>
 #include <algorithm>
 
-#include <SDL_keyboard.h>
 #include <SDL_clipboard.h>
+#include <SDL_gamecontroller.h>
+#include <SDL_joystick.h>
+#include <SDL_keyboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
@@ -228,6 +231,9 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetMouseState);
 	REGISTER_LUA_CFUNC(GetMouseCursor);
 	REGISTER_LUA_CFUNC(GetMouseStartPosition);
+
+	REGISTER_LUA_CFUNC(GetControllerState);
+	REGISTER_LUA_CFUNC(GetAvailableControllers);
 
 	REGISTER_LUA_CFUNC(GetKeyFromScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyState);
@@ -2483,6 +2489,79 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 	lua_pushnumber(L, bp.dir.y);
 	lua_pushnumber(L, bp.dir.z);
 	return 8;
+}
+
+/******************************************************************************/
+
+int LuaUnsyncedRead::GetControllerState(lua_State* L)
+{
+	const int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	SDL_GameController* controller = SDL_GameControllerFromInstanceID(instanceId);
+
+	if (controller == NULL) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_newtable(L);
+		lua_pushliteral(L, "axis");
+		lua_newtable(L);
+			for (int i = 0; i < SDL_CONTROLLER_AXIS_MAX; ++i) {
+				SDL_GameControllerAxis axis = (SDL_GameControllerAxis)i;
+
+				if (!SDL_GameControllerHasAxis(controller, axis))
+					continue;
+
+					LuaPushNamedNumber(L, SDL_GameControllerGetStringForAxis(axis), SDL_GameControllerGetAxis(controller, axis));
+
+				lua_rawseti(L, -2, i++);
+			}
+		lua_rawset(L, -3);
+		lua_pushliteral(L, "buttons");
+		lua_newtable(L);
+			for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; ++i) {
+				SDL_GameControllerButton button = (SDL_GameControllerButton)i;
+
+				if (!SDL_GameControllerHasButton(controller, button))
+					continue;
+
+					LuaPushNamedNumber(L, SDL_GameControllerGetStringForButton(button), SDL_GameControllerGetButton(controller, button));
+			}
+		lua_rawset(L, -3);
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetAvailableControllers(lua_State* L)
+{
+	std::vector<int> controllers;
+
+	for (int i = 0; i < SDL_NumJoysticks(); ++i)
+		if (SDL_IsGameController(i))
+			controllers.push_back(i);
+
+	int i = 1;
+	lua_newtable(L); {
+		for (const int deviceIndex : controllers) {
+			lua_pushnumber(L, deviceIndex);
+			lua_newtable(L); {
+				LuaPushNamedString(L, "name", SDL_GameControllerNameForIndex(deviceIndex));
+
+				const int instanceId = SDL_JoystickGetDeviceInstanceID(deviceIndex);
+				if (instanceId > 0)
+					LuaPushNamedNumber(L, "instanceId", instanceId);
+			}
+			lua_rawset(L, -3);
+		}
+	}
+
+	return 1;
 }
 
 /******************************************************************************/
