@@ -188,10 +188,14 @@ local callInLists = {
   'KeyRelease',
   'MousePress',
   'MouseWheel',
-  'JoyAxis',
-  'JoyHat',
-  'JoyButtonDown',
-  'JoyButtonUp',
+  'ControllerAdded',
+  'ControllerRemoved',
+  'ControllerConnected',
+  'ControllerDisconnected',
+  'ControllerRemapped',
+  'ControllerButtonUp',
+  'ControllerButtonDown',
+  'ControllerAxisMotion',
   'IsAbove',
   'GetTooltip',
   'GroupChanged',
@@ -1589,37 +1593,73 @@ function widgetHandler:MouseWheel(up, value)
   end
 end
 
-function widgetHandler:JoyAxis(axis, value)
-	for _,w in ipairs(self.JoyAxisList) do
-		if (w:JoyAxis(axis, value)) then
-		return true
+function widgetHandler:ControllerAdded(deviceIndex)
+	for _, w in ipairs(self.ControllerAddedList) do
+		if w:ControllerAdded(deviceIndex) then
+			return true
 		end
 	end
 	return false
 end
 
-function widgetHandler:JoyHat(hat, value)
-	for _,w in ipairs(self.JoyHatList) do
-		if (w:JoyHat(hat, value)) then
-		return true
+function widgetHandler:ControllerRemoved(instanceId)
+	for _, w in ipairs(self.ControllerRemovedList) do
+		if w:ControllerRemoved(instanceId) then
+			return true
 		end
 	end
 	return false
 end
 
-function widgetHandler:JoyButtonDown(button, state)
-	for _,w in ipairs(self.JoyButtonDownList) do
-		if (w:JoyButtonDown(button, state)) then
-		return true
+function widgetHandler:ControllerConnected(instanceId)
+	for _, w in ipairs(self.ControllerConnectedList) do
+		if w:ControllerConnected(instanceId) then
+			return true
 		end
 	end
 	return false
 end
 
-function widgetHandler:JoyButtonUp(button, state)
-	for _,w in ipairs(self.JoyButtonUpList) do
-		if (w:JoyButtonUp(button, state)) then
-		return true
+function widgetHandler:ControllerDisconnected(instanceId)
+	for _, w in ipairs(self.ControllerDisconnectedList) do
+		if w:ControllerDisconnected(instanceId) then
+			return true
+		end
+	end
+	return false
+end
+
+function widgetHandler:ControllerRemapped(instanceId)
+	for _, w in ipairs(self.ControllerRemappedList) do
+		if w:ControllerRemapped(instanceId) then
+			return true
+		end
+	end
+	return false
+end
+
+function widgetHandler:ControllerButtonUp(instanceId, button, value, name)
+	for _, w in ipairs(self.ControllerButtonUpList) do
+		if w:ControllerButtonUp(instanceId, button, value, name) then
+			return true
+		end
+	end
+	return false
+end
+
+function widgetHandler:ControllerButtonDown(instanceId, button, value, name)
+	for _, w in ipairs(self.ControllerButtonDownList) do
+		if w:ControllerButtonDown(instanceId, button, value, name) then
+			return true
+		end
+	end
+	return false
+end
+
+function widgetHandler:ControllerAxisMotion(instanceId, axis, value, name)
+	for _, w in ipairs(self.ControllerAxisMotionList) do
+		if w:ControllerAxisMotion(instanceId, axis, value, name) then
+			return true
 		end
 	end
 	return false

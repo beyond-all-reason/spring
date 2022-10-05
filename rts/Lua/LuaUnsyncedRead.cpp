@@ -66,6 +66,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Config/ConfigVariable.h"
 #include "System/Input/KeyInput.h"
+#include "System/Input/ControllerInput.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Platform/SDL1_keysym.h"
@@ -83,8 +84,10 @@
 #include <cctype>
 #include <algorithm>
 
-#include <SDL_keyboard.h>
 #include <SDL_clipboard.h>
+#include <SDL_gamecontroller.h>
+#include <SDL_joystick.h>
+#include <SDL_keyboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
@@ -210,6 +213,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetSoundStreamTime);
 	REGISTER_LUA_CFUNC(GetSoundEffectParams);
+//	REGISTER_LUA_CFUNC(GetSoundDevices);
 
 	REGISTER_LUA_CFUNC(GetFPS);
 	REGISTER_LUA_CFUNC(GetGameSpeed);
@@ -228,6 +232,14 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetMouseState);
 	REGISTER_LUA_CFUNC(GetMouseCursor);
 	REGISTER_LUA_CFUNC(GetMouseStartPosition);
+
+	REGISTER_LUA_CFUNC(GetControllerState);
+	REGISTER_LUA_CFUNC(GetAvailableControllers);
+	REGISTER_LUA_CFUNC(GetConnectedControllers);
+	REGISTER_LUA_CFUNC(GetControllerDeviceGUID);
+	REGISTER_LUA_CFUNC(GetControllerGUID);
+	REGISTER_LUA_CFUNC(GetControllerMappingForGUID);
+	REGISTER_LUA_CFUNC(GetAvailableJoysticks);
 
 	REGISTER_LUA_CFUNC(GetKeyFromScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyState);
@@ -2252,6 +2264,32 @@ int LuaUnsyncedRead::GetSoundEffectParams(lua_State* L)
 }
 
 
+//int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
+//{
+//#if defined(HEADLESS) || defined(NO_SOUND)
+//	return 0;
+//#else
+//	if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT") != AL_TRUE)
+//		return 0;
+//
+//	const char * alDevices = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
+//
+//	unsigned int count = 0;
+//	lua_createtable(L, 0, 0);
+//
+//	if (alDevices) {
+//		while (*alDevices) {
+//			lua_pushstring(L, alDevices);
+//			lua_rawseti(L, -2, ++count);
+//			alDevices += strlen(alDevices) + 1;
+//		}
+//	}
+//
+//	return 1;
+//#endif // defined(HEADLESS) || defined(NO_SOUND)
+//}
+
+
 /******************************************************************************/
 /******************************************************************************/
 //
@@ -2483,6 +2521,158 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 	lua_pushnumber(L, bp.dir.y);
 	lua_pushnumber(L, bp.dir.z);
 	return 8;
+}
+
+/******************************************************************************/
+
+int LuaUnsyncedRead::GetControllerState(lua_State* L)
+{
+	const int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	SDL_GameController* controller = SDL_GameControllerFromInstanceID(instanceId);
+
+	if (controller == NULL) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_newtable(L); {
+		lua_pushliteral(L, "axes");
+		lua_newtable(L); {
+			for (int i = 0; i < SDL_CONTROLLER_AXIS_MAX; ++i) {
+				SDL_GameControllerAxis axis = (SDL_GameControllerAxis)i;
+
+				//FIXME: Upgrade SDL to at least 2.0.14
+				if (!SDL_GameControllerHasAxis(controller, axis))
+					continue;
+
+				LuaPushNamedNumber(L, SDL_GameControllerGetStringForAxis(axis), SDL_GameControllerGetAxis(controller, axis));
+			}
+			lua_rawset(L, -3);
+		}
+		lua_pushliteral(L, "buttons");
+		lua_newtable(L); {
+			for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; ++i) {
+				SDL_GameControllerButton button = (SDL_GameControllerButton)i;
+
+				//FIXME: Upgrade SDL to at least 2.0.14
+				if (!SDL_GameControllerHasButton(controller, button))
+					continue;
+
+				LuaPushNamedNumber(L, SDL_GameControllerGetStringForButton(button), SDL_GameControllerGetButton(controller, button));
+			}
+			lua_rawset(L, -3);
+		}
+	}
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetAvailableControllers(lua_State* L)
+{
+	std::vector<int> controllers;
+
+	for (int i = 0; i < SDL_NumJoysticks(); ++i)
+		if (SDL_IsGameController(i))
+			controllers.push_back(i);
+
+	lua_createtable(L, 0, controllers.size()); {
+		for (const int deviceIndex : controllers) {
+			lua_pushnumber(L, deviceIndex);
+			const int instanceId = SDL_JoystickGetDeviceInstanceID(deviceIndex);
+			lua_createtable(L, 0, 1 + (instanceId > 0)); {
+				LuaPushNamedString(L, "name", SDL_GameControllerNameForIndex(deviceIndex));
+
+				if (instanceId > 0)
+					LuaPushNamedNumber(L, "instanceId", instanceId);
+			}
+			lua_rawset(L, -3);
+		}
+	}
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetConnectedControllers(lua_State* L)
+{
+	if (controllerInput == nullptr)
+		return 0;
+
+	const auto controllerIds = controllerInput->GetConnectedControllers();
+
+	lua_createtable(L, controllerIds.size(), 0);
+
+	unsigned int count = 0;
+
+	for (const int instanceId: controllerIds) {
+		lua_pushnumber(L, instanceId);
+		lua_rawseti(L, -2, ++count);
+	}
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetControllerDeviceGUID(lua_State* L)
+{
+	const int deviceId = luaL_checkint(L, 1);
+
+	if (deviceId < 0)
+		return 0;
+
+	lua_pushstring(L, ControllerInput::GetDeviceGUID(deviceId).c_str());
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetControllerGUID(lua_State* L)
+{
+	const int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0)
+		return 0;
+
+	lua_pushstring(L, ControllerInput::GetControllerGUID(instanceId).c_str());
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetControllerMappingForGUID(lua_State* L)
+{
+	const std::string guid = luaL_checkstring(L, 1);
+
+	lua_pushstring(L, ControllerInput::GetMappingForGUID(guid).c_str());
+
+	return 1;
+}
+
+int LuaUnsyncedRead::GetAvailableJoysticks(lua_State* L)
+{
+	std::vector<int> deviceIds;
+
+	for (int i = 0; i < SDL_NumJoysticks(); ++i)
+		deviceIds.push_back(i);
+
+	lua_createtable(L, 0, deviceIds.size()); {
+		for (const int deviceIndex : deviceIds) {
+			lua_pushnumber(L, deviceIndex);
+			const int instanceId = SDL_JoystickGetDeviceInstanceID(deviceIndex);
+			lua_createtable(L, 0, 2 + (instanceId > 0)); {
+				LuaPushNamedString(L, "name", SDL_JoystickNameForIndex(deviceIndex));
+				LuaPushNamedBool(L, "controller", SDL_IsGameController(deviceIndex));
+
+				if (instanceId > 0)
+					LuaPushNamedNumber(L, "instanceId", instanceId);
+			}
+			lua_rawset(L, -3);
+		}
+	}
+
+	return 1;
 }
 
 /******************************************************************************/

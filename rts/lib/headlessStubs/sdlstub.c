@@ -12,13 +12,12 @@
 extern "C" {
 #endif
 
-
 static struct SDL_Surface stubSurface;
 static struct SDL_RWops stubRWops;
 static Uint8 stubKeyState[1];
 static SDL_version stubVersion;
 static Uint32 stubSubSystemsInit = 0;
-
+static SDL_GUID stubGUID = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} };
 
 extern DECLSPEC void SDLCALL SDL_free(void* p) {
 	return;
@@ -74,6 +73,10 @@ extern DECLSPEC Uint32 SDLCALL SDL_GetWindowPixelFormat(SDL_Window* window) { re
 extern DECLSPEC const char* SDLCALL SDL_GetPixelFormatName(Uint32 format) { return ""; }
 
 extern DECLSPEC struct SDL_RWops* SDLCALL SDL_RWFromFile(const char* file, const char* mode) {
+	return &stubRWops;
+}
+
+extern DECLSPEC SDL_RWops *SDLCALL SDL_RWFromMem(void *mem, int size) {
 	return &stubRWops;
 }
 
@@ -243,6 +246,37 @@ extern DECLSPEC int SDLCALL SDL_NumJoysticks() {
 	return 0;
 }
 
+extern DECLSPEC SDL_JoystickGUID SDLCALL SDL_JoystickGetDeviceGUID(int device_index) {
+	return stubGUID;
+}
+
+extern DECLSPEC void SDLCALL SDL_JoystickGetGUIDString(SDL_JoystickGUID guid, char *pszGUID, int cbGUID) {
+}
+
+extern DECLSPEC const char *SDLCALL SDL_JoystickNameForIndex(int device_index) {
+	return "";
+}
+
+extern DECLSPEC SDL_JoystickGUID SDLCALL SDL_JoystickGetGUID(SDL_Joystick *joystick) {
+	return stubGUID;
+}
+
+extern DECLSPEC char * SDLCALL SDL_GameControllerMappingForGUID(SDL_JoystickGUID guid) {
+	return "";
+}
+
+extern DECLSPEC SDL_JoystickGUID SDLCALL SDL_JoystickGetGUIDFromString(const char *pchGUID) {
+	return stubGUID;
+}
+
+extern DECLSPEC SDL_JoystickID SDLCALL SDL_JoystickInstanceID(SDL_Joystick *joystick) {
+	return 0;
+}
+
+extern DECLSPEC SDL_JoystickID SDLCALL SDL_JoystickGetDeviceInstanceID(int device_index) {
+	return 0;
+}
+
 extern DECLSPEC const char* SDLCALL SDL_JoystickName(SDL_Joystick* device_index) {
 	return "";
 }
@@ -252,6 +286,73 @@ extern DECLSPEC SDL_Joystick* SDLCALL SDL_JoystickOpen(int device_index) {
 }
 
 extern DECLSPEC void SDLCALL SDL_JoystickClose(SDL_Joystick* joystick) {
+}
+
+extern DECLSPEC SDL_GameController *SDLCALL SDL_GameControllerOpen(int joystick_index) {
+	return 0;
+};
+
+extern DECLSPEC void SDLCALL SDL_GameControllerClose(SDL_GameController *gamecontroller) {
+};
+
+extern DECLSPEC const char *SDLCALL SDL_GameControllerName(SDL_GameController *gamecontroller) {
+	return "";
+}
+
+extern DECLSPEC SDL_Joystick *SDLCALL SDL_GameControllerGetJoystick(SDL_GameController *gamecontroller) {
+	return 0;
+}
+
+extern DECLSPEC const char *SDLCALL SDL_GameControllerNameForIndex(int mapping_index) {
+	return "";
+}
+
+extern DECLSPEC SDL_bool SDLCALL SDL_GameControllerHasButton(SDL_GameController *gamecontroller,
+                                                             SDL_GameControllerButton button) {
+	return SDL_FALSE;
+}
+
+extern DECLSPEC SDL_bool SDLCALL
+SDL_GameControllerHasAxis(SDL_GameController *gamecontroller, SDL_GameControllerAxis axis) {
+	return SDL_FALSE;
+}
+
+extern DECLSPEC Uint8 SDLCALL SDL_GameControllerGetButton(SDL_GameController *gamecontroller,
+                                                          SDL_GameControllerButton button) {
+	return 0;
+}
+
+extern DECLSPEC Sint16 SDLCALL
+SDL_GameControllerGetAxis(SDL_GameController *gamecontroller, SDL_GameControllerAxis axis) {
+	return 0;
+}
+
+extern DECLSPEC const char* SDLCALL SDL_GameControllerGetStringForAxis(SDL_GameControllerAxis axis) {
+	return "";
+}
+
+extern DECLSPEC const char* SDLCALL SDL_GameControllerGetStringForButton(SDL_GameControllerButton button) {
+	return "";
+}
+
+extern DECLSPEC char * SDLCALL SDL_GameControllerMapping(SDL_GameController *gamecontroller) {
+	return "";
+}
+
+extern DECLSPEC int SDLCALL SDL_GameControllerAddMapping(const char* mappingString) {
+	return 0;
+}
+
+extern DECLSPEC int SDLCALL SDL_GameControllerAddMappingsFromRW(SDL_RWops * rw, int freerw) {
+	return 0;
+}
+
+extern DECLSPEC SDL_bool SDLCALL SDL_IsGameController(int joystick_index) {
+	return SDL_FALSE;
+}
+
+extern DECLSPEC SDL_GameController *SDLCALL SDL_GameControllerFromInstanceID(SDL_JoystickID joyid) {
+  return 0;
 }
 
 extern DECLSPEC int SDLCALL SDL_GetNumDisplayModes(int displayIndex) {

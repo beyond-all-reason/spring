@@ -199,6 +199,16 @@ class CLuaHandle : public CEventClient
 		bool MousePress(int x, int y, int button) override;
 		void MouseRelease(int x, int y, int button) override;
 		bool MouseWheel(bool up, float value) override;
+
+		bool ControllerButtonDown(int instanceId, int buttonId, int state) override;
+		bool ControllerButtonUp(int instanceId, int buttonId, int state) override;
+		bool ControllerAxisMotion(int instanceId, int axisId, int value) override;
+		bool ControllerAdded(int deviceIndex) override;
+		bool ControllerRemoved(int instanceId) override;
+		bool ControllerConnected(int instanceId) override;
+		bool ControllerDisconnected(int instanceId) override;
+		bool ControllerRemapped(int instanceId) override;
+
 		bool IsAbove(int x, int y) override;
 		std::string GetTooltip(int x, int y) override;
 

@@ -71,6 +71,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
+#include "System/Input/ControllerInput.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Log/ILog.h"
 #include "System/Net/PackPacket.h"
@@ -99,9 +100,11 @@
 
 #include <fstream>
 
-#include <SDL_keyboard.h>
 #include <SDL_clipboard.h>
+#include <SDL_gamecontroller.h>
+#include <SDL_keyboard.h>
 #include <SDL_mouse.h>
+#include <SDL_rwops.h>
 
 // MinGW defines this for a WINAPI function
 #undef SendMessage
@@ -148,6 +151,11 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AssignMouseCursor);
 	REGISTER_LUA_CFUNC(ReplaceMouseCursor);
+
+	REGISTER_LUA_CFUNC(ConnectController);
+	REGISTER_LUA_CFUNC(DisconnectController);
+	REGISTER_LUA_CFUNC(AddControllerMapping);
+	REGISTER_LUA_CFUNC(LoadControllerMappings);
 
 	REGISTER_LUA_CFUNC(SetCustomCommandDrawData);
 
@@ -992,6 +1000,79 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	lua_pushboolean(L, retval && !synced);
+	return 1;
+}
+
+/******************************************************************************/
+
+int LuaUnsyncedCtrl::ConnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int deviceIndex = luaL_checkint(L, 1);
+
+	if (deviceIndex < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	int instanceId;
+	SDL_GameController* controller = controllerInput->ConnectController(deviceIndex, instanceId);
+
+	if (controller == nullptr) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushinteger(L, instanceId);
+
+	return 1;
+}
+
+int LuaUnsyncedCtrl::DisconnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, controllerInput->DisconnectController(instanceId));
+	return 1;
+}
+
+int LuaUnsyncedCtrl::AddControllerMapping(lua_State* L)
+{
+	const std::string mapping = luaL_checkstring(L, 1);
+
+	int result = SDL_GameControllerAddMapping(mapping.c_str());
+
+	if (result < 0)
+		return 0;
+
+	lua_pushboolean(L, result > 0);
+
+	return 1;
+}
+
+int LuaUnsyncedCtrl::LoadControllerMappings(lua_State* L)
+{
+	const std::string mappings = luaL_checkstring(L, 1);
+
+	char mappingsBuffer[mappings.length()];
+	strcpy(mappingsBuffer, mappings.c_str());
+	auto rw = SDL_RWFromMem((void *)mappingsBuffer, mappings.length());
+
+	int result = SDL_GameControllerAddMappingsFromRW(rw, 0);
+
+	if (result < 0)
+		return 0;
+
+	lua_pushinteger(L, result);
+
 	return 1;
 }
 

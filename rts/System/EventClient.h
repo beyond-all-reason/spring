@@ -285,6 +285,15 @@ class CEventClient
 		virtual void MouseRelease(int x, int y, int button);
 		virtual bool MouseWheel(bool up, float value);
 
+		virtual bool ControllerAxisMotion(int instanceId, int axisId, int value);
+		virtual bool ControllerButtonDown(int instanceId, int buttonId, int state);
+		virtual bool ControllerButtonUp(int instanceId, int buttonId, int state);
+		virtual bool ControllerAdded(int deviceIndex);
+		virtual bool ControllerRemoved(int instanceId);
+		virtual bool ControllerConnected(int instanceId);
+		virtual bool ControllerDisconnected(int instanceId);
+		virtual bool ControllerRemapped(int instanceId);
+
 		virtual void DownloadQueued(int ID, const string& archiveName, const string& archiveType);
 		virtual void DownloadStarted(int ID);
 		virtual void DownloadFinished(int ID);

@@ -71,6 +71,15 @@ bool CEventClient::MousePress(int x, int y, int button) { return false; }
 void CEventClient::MouseRelease(int x, int y, int button) { }
 bool CEventClient::MouseWheel(bool up, float value) { return false; }
 
+bool CEventClient::ControllerAxisMotion(int instanceId, int axisId, int value) { return false; }
+bool CEventClient::ControllerButtonDown(int instanceId, int buttonId, int state) { return false; }
+bool CEventClient::ControllerButtonUp(int instanceId, int buttonId, int state) { return false; }
+bool CEventClient::ControllerAdded(int deviceIndex) { return false; }
+bool CEventClient::ControllerRemoved(int instanceId) { return false; }
+bool CEventClient::ControllerConnected(int instanceId) { return false; }
+bool CEventClient::ControllerDisconnected(int instanceId) { return false; }
+bool CEventClient::ControllerRemapped(int instanceId) { return false; }
+
 void CEventClient::DownloadQueued(int ID, const string& archiveName, const string& archiveType) {}
 void CEventClient::DownloadStarted(int ID) {}
 void CEventClient::DownloadFinished(int ID) {}
