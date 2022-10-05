@@ -49,6 +49,9 @@ class LuaUnsyncedCtrl {
 		static int AssignMouseCursor(lua_State* L);
 		static int ReplaceMouseCursor(lua_State* L);
 
+		static int ConnectController(lua_State* L);
+		static int DisconnectController(lua_State* L);
+
 		static int SetCustomCommandDrawData(lua_State* L);
 
 		static int SetDrawSky(lua_State* L);
