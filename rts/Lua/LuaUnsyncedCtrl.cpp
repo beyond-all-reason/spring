@@ -71,6 +71,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
+#include "System/Input/ControllerInput.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Log/ILog.h"
 #include "System/Net/PackPacket.h"
@@ -148,6 +149,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AssignMouseCursor);
 	REGISTER_LUA_CFUNC(ReplaceMouseCursor);
+
+	REGISTER_LUA_CFUNC(ConnectController);
+	REGISTER_LUA_CFUNC(DisconnectController);
 
 	REGISTER_LUA_CFUNC(SetCustomCommandDrawData);
 
@@ -992,6 +996,47 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	lua_pushboolean(L, retval && !synced);
+	return 1;
+}
+
+/******************************************************************************/
+
+int LuaUnsyncedCtrl::ConnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int deviceIndex = luaL_checkint(L, 1);
+
+	if (deviceIndex < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	int instanceId;
+	SDL_GameController* controller = controllerInput->ConnectController(deviceIndex, instanceId);
+
+	if (controller == nullptr) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushinteger(L, instanceId);
+
+	return 1;
+}
+
+int LuaUnsyncedCtrl::DisconnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, controllerInput->DisconnectController(instanceId));
 	return 1;
 }
 
