@@ -192,7 +192,7 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 #if (_WIN32_WINNT >= 0x0601)
 	int groups = GetActiveProcessorGroupCount();
 	int total_processors = 0;
-	int group = 0;
+	int group = -1;
 	int number = 0;
 	HANDLE thread = GetCurrentThread();
 	GROUP_AFFINITY groupAffinity;
@@ -206,6 +206,9 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 		}
 		total_processors += processors;
 	}
+
+	if (group < 0)
+		return false;
 
 	memset(&groupAffinity, 0, sizeof(groupAffinity));
 	groupAffinity.Group = (WORD) group;

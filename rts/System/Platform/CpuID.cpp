@@ -109,68 +109,61 @@ namespace springproc {
 	}
 
 	void CPUID::EnumerateCores() {
-
-		// Note we don't use cpu_identify_all() because it relies on cpuid_get_all_raw_data()
-		// being called, and the way that goes through the threads breask ASIO threading.
-
 		const auto oldAffinity = Threading::GetAffinity();
-		cpu_purpose_t prevPurpose = NUM_CPU_PURPOSES;
-		int curLogicalCpu = 0;
-		int cpusToCheck = numLogicalCores;
 
 		availableProceesorAffinityMask = 0;
 		numLogicalCores = 0;
 		numPhysicalCores = 0;
 
-		for (int processor = 0; processor < cpusToCheck; processor++) {
-			Threading::SetAffinity(1u << processor, true);
-			spring::this_thread::yield();
+		LOG("[CpuId] logical threads report now is %d", Threading::GetLogicalCpuCores());
 
-			struct cpu_id_t cpu_id;
-			// identify the CPU, using the given raw data.
-			if (cpu_identify(NULL, &cpu_id) < 0) {
+		struct cpu_raw_data_array_t raw_array;
+		system_id_t system;
+
+		// {
+		// 	bool badResult = (cpuid_get_all_raw_data(&raw_array) < 0);
+		// 	Threading::SetAffinity(oldAffinity);
+		// 	if (badResult) {
+		// 		cpuid_free_raw_data_array(&raw_array);
+		// 		LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
+		// 		return;
+		// 	}
+		// }
+		{
+			bool badResult = (cpu_identify_all(NULL, &system) < 0);
+			// cpuid_free_raw_data_array(&raw_array);
+			Threading::SetAffinity(oldAffinity);
+			if (badResult) {
+				cpuid_free_system_id(&system);
 				LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
 				return;
 			}
+		}
 
+		for (int group = 0; group < system.num_cpu_types; ++group) {
+			cpu_id_t cpu_id = system.cpu_types[group];
 			switch(cpu_id.purpose) {
 			case PURPOSE_GENERAL:
 			case PURPOSE_PERFORMANCE:
-				affinityMaskOfCores[curLogicalCpu] = 1u << processor;
-				availableProceesorAffinityMask |= 1u << processor;
-				LOG("[CpuId] setting logical cpu %d affinity mask to 0x%x", curLogicalCpu, (int)affinityMaskOfCores[curLogicalCpu]);
-				curLogicalCpu++;
-			// case PURPOSE_EFFICIENCY is ignored
-			}
-
-			if (cpu_id.purpose == prevPurpose)
-				continue;
-
-			switch(cpu_id.purpose) {
-			case PURPOSE_GENERAL:
-			case PURPOSE_PERFORMANCE:
-				numPhysicalCores += cpu_id.num_cores;
+				availableProceesorAffinityMask |= *(uint64_t*)&cpu_id.affinity_mask;
 				numLogicalCores += cpu_id.num_logical_cpus;
-
+				numPhysicalCores += cpu_id.num_cores;
 				LOG("[CpuId] found %d cores and %d logical cpus of type %s"
 						, cpu_id.num_cores
 						, cpu_id.num_logical_cpus
 						, cpu_purpose_str(cpu_id.purpose));
-				break;
-			case PURPOSE_EFFICIENCY:
-			default:
-				LOG("[CpuId] found %d cores and %d logical cpus of type %s - these will be ignored."
-						, cpu_id.num_cores
-						, cpu_id.num_logical_cpus
-						, cpu_purpose_str(cpu_id.purpose));
+				LOG("[CpuId] add logical cpu affinity mask with 0x%x", *(int*)&cpu_id.affinity_mask);
+				LOG("[CpuId] setting logical cpu affinity mask to 0x%x", (int)availableProceesorAffinityMask);
 			}
-
-			prevPurpose = cpu_id.purpose;
 		}
+
+		cpuid_free_system_id(&system);
 
 		LOG("[CpuId] available logical proceesor mask is set to 0x%x", (int)availableProceesorAffinityMask);
 
-		Threading::SetAffinity(oldAffinity);
+		LOG("[CpuId] available logical proceesors are %d, available cores are %d", numLogicalCores, numPhysicalCores);
+
+		LOG("[CpuId] logical threads report now is %d", Threading::GetLogicalCpuCores());
 	}
 
 	void CPUID::SetDefault()
