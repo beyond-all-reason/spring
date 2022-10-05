@@ -129,6 +129,34 @@ function MouseRelease(x, y, button)
   return widgetHandler:MouseRelease(x, y, button)
 end
 
+function ControllerAdded(deviceIndex)
+	return widgetHandler:ControllerAdded(deviceIndex)
+end
+
+function ControllerRemoved(instanceId)
+	return widgetHandler:ControllerRemoved(instanceId)
+end
+
+function ControllerConnected(instanceId)
+	return widgetHandler:ControllerConnected(instanceId)
+end
+
+function ControllerDisconnected(instanceId)
+	return widgetHandler:ControllerDisconnected(instanceId)
+end
+
+function ControllerButtonUp(button, value, name)
+	return widgetHandler:ControllerButtonUp(button, value, name)
+end
+
+function ControllerButtonDown(button, value, name)
+	return widgetHandler:ControllerButtonDown(button, value, name)
+end
+
+function ControllerAxisMotion(axis, value, name)
+	return widgetHandler:ControllerAxisMotion(axis, value, name)
+end
+
 function IsAbove(x, y)
   return widgetHandler:IsAbove(x, y)
 end
