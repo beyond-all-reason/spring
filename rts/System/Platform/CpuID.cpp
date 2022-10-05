@@ -120,18 +120,8 @@ namespace springproc {
 		struct cpu_raw_data_array_t raw_array;
 		system_id_t system;
 
-		// {
-		// 	bool badResult = (cpuid_get_all_raw_data(&raw_array) < 0);
-		// 	Threading::SetAffinity(oldAffinity);
-		// 	if (badResult) {
-		// 		cpuid_free_raw_data_array(&raw_array);
-		// 		LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
-		// 		return;
-		// 	}
-		// }
 		{
 			bool badResult = (cpu_identify_all(NULL, &system) < 0);
-			// cpuid_free_raw_data_array(&raw_array);
 			Threading::SetAffinity(oldAffinity);
 			if (badResult) {
 				cpuid_free_system_id(&system);
@@ -154,15 +144,14 @@ namespace springproc {
 						, cpu_purpose_str(cpu_id.purpose));
 				LOG("[CpuId] add logical cpu affinity mask with 0x%x", *(int*)&cpu_id.affinity_mask);
 				LOG("[CpuId] setting logical cpu affinity mask to 0x%x", (int)availableProceesorAffinityMask);
+			// ignore case PURPOSE_EFFICIENCY:
 			}
 		}
 
 		cpuid_free_system_id(&system);
 
 		LOG("[CpuId] available logical proceesor mask is set to 0x%x", (int)availableProceesorAffinityMask);
-
 		LOG("[CpuId] available logical proceesors are %d, available cores are %d", numLogicalCores, numPhysicalCores);
-
 		LOG("[CpuId] logical threads report now is %d", Threading::GetLogicalCpuCores());
 	}
 
