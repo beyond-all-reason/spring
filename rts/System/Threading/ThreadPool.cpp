@@ -592,7 +592,11 @@ void SetDefaultThreadCount()
 	mainAffinity &= configHandler->GetUnsigned("SetCoreAffinity");
 	#endif
 
+	LOG("%s: mainAffinity mask is: %d", __func__, mainAffinity);
+
 	std::uint32_t workerAvailCores = systemCores & ~mainAffinity;
+
+	LOG("%s: workerAvailCores is: %d", __func__, workerAvailCores);
 
 	SetThreadCount(GetDefaultNumWorkers());
 
@@ -609,6 +613,8 @@ void SetDefaultThreadCount()
 
 			const std::uint32_t workerCore = FindWorkerThreadCore(i - 1, workerAvailCores, mainAffinity);
 			// const std::uint32_t workerCore = workerAvailCores;
+
+			LOG("%s: worker %d core mask is: %x", __func__, i, workerCore);
 
 			Threading::SetAffinity(workerCore);
 			return workerCore;
