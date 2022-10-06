@@ -13,6 +13,7 @@
 #include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
 #include "Rendering/Models/3DModel.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
@@ -137,7 +138,7 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 		return;
 
 	if ((explFlags & PF_Explode) && (unit || feature)) {
-		const DamageArray damageArray(50.0f);
+		const DamageArray damageArray(modInfo.debrisDamage);
 		const CExplosionParams params = {
 			pos,
 			ZeroVector,
