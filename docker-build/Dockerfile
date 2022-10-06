@@ -72,8 +72,15 @@ RUN apt-get update -y; \
         pip3 install cmake==$cmake_version; \
         apt purge python3-pip -y; apt auto-remove -y
 
-# GCC-10 PPA (linux-64)
+# Add PPAs:
+# - ubuntu-toolchain-r/test: GCC-10 PPA (linux-64)
+# - ppa:savoury1/multimedia:
+#   - sdl: 2.0.8 -> 2.0.22
+#   - openal: 1.18.2 -> 1.19.1
+#   - freetype: 2.8.1 -> 2.12.1
+#   - fontconfig: 2.12.6 -> 2.13.1
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
+    add-apt-repository ppa:savoury1/multimedia -y; \
     apt update -y; \
     apt install -y gcc-11 g++-11
 
