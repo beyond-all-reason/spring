@@ -5,6 +5,10 @@ Spring changelog
 -- 106.0 --------------------------------------------------------
 
 Lua:
+ - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
+   Makes the erase happen locally, optionally as if done by given player,
+   same as the existing interface for MarkerAddPoint and MarkerAddLine.
+   NOTE: 4th arg is currently unused!
  - Add movetilt and movereset for previously hardcoded ALT and CTRL camera
    bindings
  - Fix moveslow and movefast camera bindings not being respected in favor of
