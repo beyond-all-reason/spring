@@ -2832,7 +2832,7 @@ int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
 	                 luaL_checkfloat(L, 2),
 	                 luaL_checkfloat(L, 3));
 	const string text = luaL_optstring(L, 4, "");
-	const bool onlyLocal = (lua_isnumber(L, 5)) ? bool(luaL_optnumber(L, 5, 1)) : luaL_optboolean(L, 5, true);
+	const bool onlyLocal = luaL_optboolean(L, 5, true);
 
 	if (onlyLocal) {
 		inMapDrawerModel->AddPoint(pos, text, luaL_optnumber(L, 6, gu->myPlayerNum));
@@ -2855,7 +2855,7 @@ int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
 	const float3 pos2(luaL_checkfloat(L, 4),
 	                  luaL_checkfloat(L, 5),
 	                  luaL_checkfloat(L, 6));
-	const bool onlyLocal = (lua_isnumber(L, 7)) ? bool(luaL_optnumber(L, 7, 0)) : luaL_optboolean(L, 7, false);
+	const bool onlyLocal = luaL_optboolean(L, 7, false);
 
 	if (onlyLocal) {
 		inMapDrawerModel->AddLine(pos1, pos2, luaL_optnumber(L, 8, gu->myPlayerNum));
@@ -2879,7 +2879,7 @@ int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
 	/* Argument 4 is going to be radius
 	 * after some future refactoring. */
 
-	const bool onlyLocal = (lua_isnumber(L, 5)) ? bool(luaL_optnumber(L, 5, 0)) : luaL_optboolean(L, 5, false);
+	const bool onlyLocal = luaL_optboolean(L, 5, false);
 	if (onlyLocal) {
 		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum));
 	} else {

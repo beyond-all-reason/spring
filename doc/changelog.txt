@@ -9,6 +9,8 @@ Lua:
    Makes the erase happen locally, optionally as if done by given player,
    same as the existing interface for MarkerAddPoint and MarkerAddLine.
    NOTE: 4th arg is currently unused!
+ - onlyLocal for all three Marker functions (Point, Line, Erase) no longer accepts
+   numerical 0 as false (now follows regular Lua language rules where 0 is true)
  - Add movetilt and movereset for previously hardcoded ALT and CTRL camera
    bindings
  - Fix moveslow and movefast camera bindings not being respected in favor of
