@@ -14,6 +14,7 @@
 	#include "System/Config/ConfigHandler.h"
 #endif
 #include "System/Log/ILog.h"
+#include "System/Platform/CpuID.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -584,7 +585,7 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
-	std::uint32_t systemCores  = Threading::GetAvailableCoresMask();
+	std::uint32_t systemCores  = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
 	std::uint32_t mainAffinity = systemCores;
 
 	#ifndef UNIT_TEST
