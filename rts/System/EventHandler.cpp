@@ -761,6 +761,48 @@ bool CEventHandler::MouseWheel(bool up, float value)
 }
 
 
+bool CEventHandler::ControllerButtonDown(int instanceId, int buttonId, int state)
+{
+	return ControlReverseIterateDefTrue(listControllerButtonDown, &CEventClient::ControllerButtonDown, instanceId, buttonId, state);
+}
+
+
+bool CEventHandler::ControllerButtonUp(int instanceId, int buttonId, int state)
+{
+	return ControlReverseIterateDefTrue(listControllerButtonUp, &CEventClient::ControllerButtonUp, instanceId, buttonId, state);
+}
+
+
+bool CEventHandler::ControllerAxisMotion(int instanceId, int axisId, int value)
+{
+	return ControlReverseIterateDefTrue(listControllerAxisMotion, &CEventClient::ControllerAxisMotion, instanceId, axisId, value);
+}
+
+
+bool CEventHandler::ControllerAdded(int deviceIndex)
+{
+	return ControlReverseIterateDefTrue(listControllerAdded, &CEventClient::ControllerAdded, deviceIndex);
+}
+
+
+bool CEventHandler::ControllerRemoved(int instanceId)
+{
+	return ControlReverseIterateDefTrue(listControllerRemoved, &CEventClient::ControllerRemoved, instanceId);
+}
+
+
+bool CEventHandler::ControllerConnected(int instanceId)
+{
+	return ControlReverseIterateDefTrue(listControllerConnected, &CEventClient::ControllerConnected, instanceId);
+}
+
+
+bool CEventHandler::ControllerDisconnected(int instanceId)
+{
+	return ControlReverseIterateDefTrue(listControllerDisconnected, &CEventClient::ControllerDisconnected, instanceId);
+}
+
+
 bool CEventHandler::IsAbove(int x, int y)
 {
 	return ControlReverseIterateDefTrue(listIsAbove, &CEventClient::IsAbove, x, y);
