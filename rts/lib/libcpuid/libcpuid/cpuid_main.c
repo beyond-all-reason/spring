@@ -207,6 +207,7 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 		total_processors += processors;
 	}
 
+	// Tarnished Knight: needed this check to avoid a infinite loop.
 	if (group < 0)
 		return false;
 
