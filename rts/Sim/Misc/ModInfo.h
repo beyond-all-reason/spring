@@ -71,6 +71,14 @@ public:
 	/// How fast do they decay?
 	float constructionDecaySpeed;
 
+	// Damage behaviour
+	/// unit pieces flying off (usually on death)
+	float debrisDamage;
+
+	/* FIXME: ideally things like debris / forest fire AoE would also
+	 * be configurable, but it would be best to implement it as a fake
+	 * weapon def as opposed to a loose collection of modrules. */
+
 	// Reclaim behaviour
 	/// 0 = 1 reclaimer per feature max, otherwise unlimited
 	int multiReclaim;
@@ -84,6 +92,8 @@ public:
 	float reclaimUnitEfficiency;
 	/// How much should energy should reclaiming a feature cost, default 0.0
 	float reclaimFeatureEnergyCostFactor;
+	/// Does wireframe reclaim drain health? default true
+	bool reclaimUnitDrainHealth;
 	/// Allow reclaiming enemies? default true
 	bool reclaimAllowEnemies;
 	/// Allow reclaiming allies? default true
@@ -180,6 +190,8 @@ public:
 	float pfUpdateRate;
 
 	bool enableSmoothMesh;
+
+	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
 };

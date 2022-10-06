@@ -49,6 +49,8 @@ public:
 		MOVE_STATE_DWN = 5, // down
 		MOVE_STATE_FST = 6, // fast
 		MOVE_STATE_SLW = 7, // slow
+		MOVE_STATE_TLT = 8, // tilt
+		MOVE_STATE_RST = 9, // reset
 	};
 
 	struct Frustum {
@@ -114,7 +116,7 @@ public:
 	void SetRotZ(const float z) { SetRot(float3(rot.x, rot.y,     z)); }
 
 	float3 CalcPixelDir(int x, int y) const;
-	float3 CalcWindowCoordinates(const float3& objPos) const;
+	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
 	bool InView(const float3& point, float radius = 0.0f) const { return (frustum.IntersectSphere(pos, {point, radius})); }
 	bool InView(const float3& mins, const float3& maxs) const { return (InView(AABB{mins, maxs})); }
@@ -260,7 +262,7 @@ private:
 	// PROJTYPE_*
 	unsigned int projType = -1u;
 
-	bool movState[8]; // fwd, back, left, right, up, down, fast, slow
+	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
 };
 

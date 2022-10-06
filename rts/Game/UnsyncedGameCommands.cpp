@@ -1149,8 +1149,8 @@ public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Allows modifying the members of a group") {
 	}
 
-	bool WrongSyntax() const {
-		LOG_L(L_WARNING, "/%s: wrong syntax", GetCommand().c_str());
+	bool WrongSyntax(std::string description = "wrong syntax") const {
+		LOG_L(L_WARNING, "/%s error: %s", GetCommand().c_str(), description.c_str());
 		return false;
 	}
 
@@ -1166,6 +1166,10 @@ public:
 
 		switch (args.size()) {
 			case 1:
+				if (args[0] == "unset") {
+					selectedUnitsHandler.SetGroup(nullptr);
+					return true;
+				}
 				groupId = StringToInt(args[0], &parseFailure);
 				break;
 			case 2:
@@ -1181,10 +1185,10 @@ public:
 		// This check is important because GroupCommand doesn't check the range
 		// and we can go OOB.
 		if (groupId < 0 || groupId > 9)
-			return WrongSyntax();
+			return WrongSyntax("groupId must be single digit number");
 		// Finally, actually run the command.
 		if (!uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand))
-			return WrongSyntax();
+			return WrongSyntax("subcommand " + subCommand + " not found");
 
 		return true;
 	}
@@ -3613,6 +3617,12 @@ bool CGame::ActionReleased(const Action& action)
 		case hashString("moveslow"): {
 			camera->SetMovState(CCamera::MOVE_STATE_SLW, false);
 		} break;
+		case hashString("movetilt"): {
+			camera->SetMovState(CCamera::MOVE_STATE_TLT, false);
+		} break;
+		case hashString("movereset"): {
+			camera->SetMovState(CCamera::MOVE_STATE_RST, false);
+		} break;
 
 		case hashString("mouse1"): {
 			mouse->MouseRelease(mouse->lastx, mouse->lasty, 1);
@@ -3686,14 +3696,16 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<MouseActionExecutor>(5));
 	AddActionExecutor(AllocActionExecutor<MouseCancelSelectionRectangleActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ViewSelectionActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(0, "Forward"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(1, "Back"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(2, "Left"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(3, "Right"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(4, "Up"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(5, "Down"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(6, "Fast"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(7, "Slow"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FWD, "Forward"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_BCK, "Back"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_LFT, "Left"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RGT, "Right"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_UP , "Up"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_DWN, "Down"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FST, "Fast"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_SLW, "Slow"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_TLT, "Tilt"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RST, "Reset"));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(true));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(false));
 	AddActionExecutor(AllocActionExecutor<AIControlActionExecutor>());

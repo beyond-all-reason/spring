@@ -44,12 +44,16 @@ void CModInfo::ResetState()
 		constructionDecaySpeed = 1.0f;
 	}
 	{
+		debrisDamage = 50.0f;
+	}
+	{
 		multiReclaim                   = 1;
 		reclaimMethod                  = 1;
 		reclaimUnitMethod              = 1;
 		reclaimUnitEnergyCostFactor    = 0.0f;
 		reclaimUnitEfficiency          = 1.0f;
 		reclaimFeatureEnergyCostFactor = 0.0f;
+		reclaimUnitDrainHealth         = true;
 		reclaimAllowEnemies            = true;
 		reclaimAllowAllies             = true;
 	}
@@ -103,6 +107,7 @@ void CModInfo::ResetState()
 		pfUpdateRate     = 0.007f;
 
 		enableSmoothMesh = true;
+		quadFieldQuadSizeInElmos = 128;
 
 		allowTake = true;
 	}
@@ -145,6 +150,8 @@ void CModInfo::Init(const std::string& modFileName)
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
+		quadFieldQuadSizeInElmos = Clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
+
 		allowTake = system.GetBool("allowTake", allowTake);
 	}
 
@@ -163,8 +170,8 @@ void CModInfo::Init(const std::string& modFileName)
 		allowGroundUnitGravity = movementTbl.GetBool("allowGroundUnitGravity", allowGroundUnitGravity);
 		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", (pathFinderSystem == QTPFS_TYPE));
 		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
-		unitQuadPositionUpdateRate = movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate);
-		groundUnitCollisionAvoidanceUpdateRate = movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate);
+		unitQuadPositionUpdateRate = Clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
+		groundUnitCollisionAvoidanceUpdateRate = Clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
 	}
 
 	{
@@ -177,6 +184,11 @@ void CModInfo::Init(const std::string& modFileName)
 	}
 
 	{
+		const LuaTable& damageTbl = root.SubTable("damage");
+
+		debrisDamage = damageTbl.GetFloat("debris", debrisDamage);
+	}
+	{
 		// reclaim
 		const LuaTable& reclaimTbl = root.SubTable("reclaim");
 
@@ -186,6 +198,7 @@ void CModInfo::Init(const std::string& modFileName)
 		reclaimUnitEnergyCostFactor = reclaimTbl.GetFloat("unitEnergyCostFactor", reclaimUnitEnergyCostFactor);
 		reclaimUnitEfficiency = reclaimTbl.GetFloat("unitEfficiency", reclaimUnitEfficiency);
 		reclaimFeatureEnergyCostFactor = reclaimTbl.GetFloat("featureEnergyCostFactor", reclaimFeatureEnergyCostFactor);
+		reclaimUnitDrainHealth = reclaimTbl.GetBool("unitDrainHealth", reclaimUnitDrainHealth);
 		reclaimAllowEnemies = reclaimTbl.GetBool("allowEnemies", reclaimAllowEnemies);
 		reclaimAllowAllies = reclaimTbl.GetBool("allowAllies", reclaimAllowAllies);
 	}

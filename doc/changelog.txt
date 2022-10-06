@@ -9,15 +9,22 @@ Lua:
    Makes the erase happen locally, optionally as if done by given player,
    same as the existing interface for MarkerAddPoint and MarkerAddLine.
    NOTE: 4th arg is currently unused!
+ - Add movetilt and movereset for previously hardcoded ALT and CTRL camera
+   bindings
+ - Fix moveslow and movefast camera bindings not being respected in favor of
+   hardcoded ones
  - Add Spring.GetPressedScans, for new returns output similar to
    GetPressedKeys but with scancodes
  - Add minx, maxy, maxx, miny = Spring.GetSelectionBox() returning coordinates
    for current selection box. Returns nil if no valid selection active.
+ - Add `damage.debris` modrule, controls damage done by exploding pieces (default 50)
  - Add Spring.GetKeyFromScanSymbol(scanSymbol) that receives a scancode and
    returns the users correspondent key in the current keyboard layout
  - allow empty argument for Spring.GetKeyBindings to return all keybindings
  - `firestarter` weapon tag no longer capped at 10000 in defs (which
    becomes 100 in Lua after rescale). Now uncapped.
+ - add modrule `reclaim.unitDrainHealth`, bool on whether reclaiming units drains health.
+   To be used with the revert-to-nanoframe method (since the 'classic' method relies on health drain).
  - add Spring.AddUnitExperience(unitID, delta_xp). Can subtract, but the result cannot be negative.
  - change widget, gadget and action handlers to support scancodes
  - Added Lua SyncedControl callins to modify the original/base heightmap (i.e. the values that the
@@ -89,6 +96,7 @@ System:
    processor
 
 UI:
+ - Add `group unset` action to unassign any groups from selected units
  - KeyPress and KeyRelease callins receive an additional scanCode
    argument
  - sc_<k> keysets are introduced for scancodes and handled in conjunction
