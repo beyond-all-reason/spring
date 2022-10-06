@@ -5,10 +5,6 @@ inputs:
     description: 'Platform to build (e.g. "linux-64")'
     required: false
     default: 'windows-64'
-  branch:
-    description: 'Branch to build'
-    required: false
-    default: 'BAR105'
   archtune-flags:
     description: 'Archtune flags'
     required: false
@@ -39,10 +35,10 @@ inputs:
     description: 'Strip debug symbols from artifacts'
     required: false
     default: 'true'
-  repository-url:
-    description: 'URL of the SpringRTS git repository'
-    required: 'false'
-    default: 'https://github.com/beyond-all-reason/spring '
+  build-configuration:
+    description: 'Make only specified build configuration'
+    required: false
+    default: 'legacy'
   debug-tmate:
     description: 'Debug with tmate'
     required: false
@@ -51,109 +47,77 @@ inputs:
     description: 'Debug ccache'
     required: false
     default: 'true'
-  docker-image:
-    description: 'Docker Image to use from Docker Hub (instead of embedded image)'
-    required: false
-    #default: '*'
-    default: 'verybadsoldier/springrts-build:dbg'
 outputs:
   bin_name:
     description: 'Spring Binary Package Filename'
-    value: ${{ steps.docker-run.outputs.bin_name }}    
+    value: ${{ steps.docker-run.outputs.bin_name }}
   dbg_name:
     description: 'Debug Package Filename'
-    value: ${{ steps.docker-run.outputs.dbg_name }}    
+    value: ${{ steps.docker-run.outputs.dbg_name }}
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: Get Primary Cache key
-      id: get-prim-cache-key
-      run: |
-        # Docker image will be built by both jobs (win and linux) but we want to only cache the windows one
-        # we dont want the docker image built by linux-64 to be cached since it would produce ccache-misses for windows-64
-        # so we add a random string to the linux-key so windows-64 won't pick it up
-        CACHEKEY="docker-image-${{ hashFiles('./docker-build/**') }}"
-        if [ ${{ inputs.platform }} == "linux-64" ]; then
-          RANDOMNUMB=$(head /dev/random -c 32 | sha1sum | awk '{ print $1 }')
-          CACHEKEY+="-${RANDOMNUMB}"
-        fi
-        echo "::set-output name=cachekey::$CACHEKEY"
-      shell: bash
-
-    - name: Download Cache Data
-      if: inputs.use-cache == 'true' && inputs.docker-image == '*'
-      id: cache-dl-docker
-      uses: actions/cache@v2
+    - name: Cache ccache
+      uses: actions/cache@v3
+      if: ${{ inputs.use-cache == 'true' }}
       with:
-        path: /tmp/docker
-        key: ${{ steps.get-prim-cache-key.outputs.cachekey }}
+        path: ${{ github.workspace }}/docker-build/cache/ccache
+        key: ccache-${{ inputs.platform }}-${{ inputs.buildtype }}
         restore-keys: |
-          docker-image-${{ hashFiles('./docker-build/**') }}
+          ccache-${{ inputs.platform }}-
+          ccache-
 
-    - name: Extract or build Docker image
-      if: inputs.docker-image == '*'
+    - name: Cache Conan
+      uses: actions/cache@v3
+      if: ${{ inputs.use-cache == 'true' }}
+      with:
+        path: ${{ github.workspace }}/docker-build/cache/.conan
+        key: conan-${{ inputs.platform }}
+
+    - name: Build Docker image
       run: |
-          if [ -f /tmp/docker/local.tgz ]; then
-            echo "Found cached Docker image: /tmp/docker/local.tgz"
-
-            echo "Extracting and loading..."
-            pigz -dc /tmp/docker/local.tgz > /tmp/docker/local.tar
-            docker load -i /tmp/docker/local.tar
-          else
-            echo "No cached Docker image found. Building Docker image from scratch..."
-
-            docker build -t local ./docker-build
-            mkdir -p /tmp/docker
-
-            # as we don't want linux to cache its docker image (as described above), we don't store the linux docker image
-            if [ ${{ inputs.platform }} == "windows-64" ]; then
-              echo "Saving docker image to /tmp/docker/local.tgz..."
-              docker save local | pigz -1 > /tmp/docker/local.tgz
-            fi
-          fi
+        '${{ github.workspace }}/docker-build/init_container.sh'
       shell: bash
 
     - name: Run Docker Build
       run: |
-        # Docker args
-        ARGS=(run -v /tmp/ccache:/ccache -v "${{ github.workspace }}/artifacts:/publish")
-
-        if [ "${{ inputs.debug-ccache }}" == "true" ]; then
-          ARGS+=(-v "${{ github.workspace }}/ccache_dbg:/ccache_dbg" )
-        fi
-        
-        DOCKER_IMAGE="${{ inputs.docker-image }}"
-        if [ "${DOCKER_IMAGE}" == "*" ]; then
-          DOCKER_IMAGE="local"
-        fi
-
         # Image args
-        ARGS+=("${DOCKER_IMAGE}" build -p "${{ inputs.platform }}" -u "${{ inputs.repository-url }}" -b "${{ inputs.branch }}" -c "${{ inputs.archtune-flags }}" -t "${{ inputs.buildtype }}" -f "${{ inputs.compilation-flags }}")
+        BUILD_ARGS=(
+          -p '${{ inputs.platform }}'
+          -c '${{ inputs.archtune-flags }}'
+          -t '${{ inputs.buildtype }}'
+          -f '${{ inputs.compilation-flags }}'
+          -o '${{ inputs.build-configuration }}'
+        )
 
-        if [ ! -z "${{ inputs.buildtype-flags }}" ]; then
-          ARGS+=(-r "${{ inputs.buildtype-flags }}")
+        if [ ! -z '${{ inputs.buildtype-flags }}' ]; then
+          BUILD_ARGS+=(-r '${{ inputs.buildtype-flags }}')
         fi
 
-        if [ "${use-cache}" == "true" ]; then
-          ARGS+=(-h 1)
+        if [ '${{ inputs.debug-ccache }}' == 'true' ]; then
+          BUILD_ARGS+=(-v '${{ github.workspace }}/ccache_dbg:/ccache_dbg' )
         fi
 
-        if [ "${{ inputs.debug-ccache }}" == "true" ]; then
-          ARGS+=(-z 1)
+        if [ '${use-cache}' == 'true' ]; then
+          BUILD_ARGS+=(-h 1)
         fi
 
-        if [ "${{ inputs.strip-symbols }}" == "true" ]; then
-          ARGS+=(-s 1)
+        if [ '${{ inputs.debug-ccache }}' == 'true' ]; then
+          BUILD_ARGS+=(-z 1)
         fi
-        
-        echo "Running docker with arguments: 'docker ${ARGS[@]}'"
 
-        echo "tmate-debug: ${{ inputs.debug-tmate }}"
+        if [ '${{ inputs.strip-symbols }}' == 'true' ]; then
+          BUILD_ARGS+=(-s 1)
+        fi
 
-        if [ "${{ inputs.debug-tmate }}" == "pre" ]; then
-          echo "tmate debugging enabled. Skipping docker run command. Connect via SSH now..."
+        echo 'Running docker build with arguments: '${BUILD_ARGS[@]}''
+
+        echo 'tmate-debug: ${{ inputs.debug-tmate }}'
+
+        if [ '${{ inputs.debug-tmate }}' == 'pre' ]; then
+          echo 'tmate debugging enabled. Skipping docker run command. Connect via SSH now...'
         else
-          docker "${ARGS[@]}"
+          '${{ github.workspace }}/docker-build/build.sh' '${BUILD_ARGS[@]}'
         fi
       shell: bash
       id: docker-run

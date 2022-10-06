@@ -30,7 +30,6 @@ if    (NOT NO_SOUND)
 			Null/NullSound.cpp
 			OpenAL/ALShared.cpp
 			OpenAL/EFX.cpp
-			OpenAL/EFXfuncs.cpp
 			OpenAL/EFXPresets.cpp
 			OpenAL/AudioChannel.cpp
 			OpenAL/OggStream.cpp
@@ -41,6 +40,9 @@ if    (NOT NO_SOUND)
 			OpenAL/SoundSource.cpp
 			OpenAL/VorbisShared.cpp
 		)
+	if    (NOT PREFER_STATIC_LIBS)
+		list(APPEND soundSources OpenAL/EFXfuncs.cpp)
+	endif (NOT PREFER_STATIC_LIBS)
 
 	find_package_static(OpenAL REQUIRED)
 	include_directories(${OPENAL_INCLUDE_DIR})

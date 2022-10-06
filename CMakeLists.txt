@@ -24,6 +24,15 @@ endif()
 include(Util)
 include(PreferStaticLibs)
 
+if(EXISTS "${CMAKE_SOURCE_DIR}/conan/conanbuildinfo.cmake")
+	include(${CMAKE_SOURCE_DIR}/conan/conanbuildinfo.cmake)
+	if (MINGW)
+		string(REGEX MATCH "\/conan\/\.conan\/data\/getopt-for-visual-studio\/[a-z0-9]+\/_\/_\/package\/[a-z0-9]+\/include" GETOPTS_DIR ${CONAN_INCLUDE_DIRS})
+		list(REMOVE_ITEM CONAN_INCLUDE_DIRS ${GETOPTS_DIR})
+	endif()
+	conan_basic_setup()
+endif()
+
 # check for minimal gcc version
 set(MIN_GCC_VER "7.0")
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -36,11 +45,11 @@ endif()
 
 # set some internal vars
 
-if (NOT "${CMAKE_C_FLAGS}" STREQUAL "")
+if (NOT "${CMAKE_C_FLAGS}" MATCHES "^ *$")
 	message(WARNING "Using custom C_FLAGS: ${CMAKE_C_FLAGS} this build will very likely not sync in online mode!")
 endif()
 
-if (NOT "${CMAKE_CXX_FLAGS}" STREQUAL "")
+if (NOT "${CMAKE_CXX_FLAGS}" MATCHES "^ *$")
 	message(WARNING "Using custom CXX_FLAGS: ${CMAKE_CXX_FLAGS} this build will very likely not sync in online mode!")
 endif()
 
@@ -138,31 +147,18 @@ else  (UNIX AND NOT MINGW)
 			endif(BUILD_BITS EQUAL 32)
 		endif(MSVC)
 	endif ()
+
+	set(CMAKE_FIND_LIBRARY_PREFIXES "" "lib")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll" ".lib")
+
 	if    (EXISTS "${MINGWLIBS}" AND IS_DIRECTORY "${MINGWLIBS}")
-		if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
-			#rectifying dll search issue present in CMake >= 3.17.0, see https://discourse.cmake.org/t/findzlib-fails-starting-with-cmake-3-17/6046/4
-			set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll" ${CMAKE_FIND_LIBRARY_SUFFIXES})
-		endif()
-
-		# MinGW needs an additional library, mwindows
-		# It's total link flags should look like -lmingw32 -lSDL2main -lSDL2 -lmwindows
-		# (Actually on second look, I think it only needs one of the m* libraries.)
-		if(NOT MSVC)
-			set(MINGW32_LIBRARY mingw32 CACHE STRING "mwindows for MinGW")
-		endif(NOT MSVC)
-		set(SDL2_INCLUDE_DIR "${MINGWLIBS}/include/SDL2")
-		set(CMAKE_PREFIX_PATH ${MINGWLIBS})
+		set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${MINGWLIBS})
+		set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MINGWLIBS})
+		set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${MINGWLIBS}/lib ${MINGWLIBS}/bin)
 		include_directories(${MINGWLIBS}/include)
-		set(CMAKE_LIBRARY_PATH ${MINGWLIBS}/dll ${MINGWLIBS}/lib)
-
-		# some cross-compile fixes
-		set(CMAKE_FIND_ROOT_PATH ${MINGWLIBS} ${CMAKE_FIND_ROOT_PATH})
-		set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-		set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-	else()
+	else  ()
 		message(WARNING "Compiling for windows. MINGWLIBS '${MINGWLIBS}' is not a valid directory, trying system libs")
 	endif ()
-
 
 	add_definitions(-D_WIN32_WINNT=0x0601) ## Win7 is minimum due to cpuid processor group affinity
 	add_definitions(-D__USE_MINGW_ANSI_STDIO=1) ## use __mingw_sprintf instead of __builtin_sprintf (it's used by lua in a synced way, and builtin doesn't sync)
@@ -276,7 +272,11 @@ endif (USE_ASAN)
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2)
 
-find_package_static(DevIL)
+if    (NOT WIN32)
+	find_package_static(DevIL REQUIRED)
+else  (NOT WIN32)
+	find_library(IL_LIBRARIES DevIL REQUIRED)
+endif (NOT WIN32)
 if    (PREFER_STATIC_LIBS)
 	# dependencies of DevIL
 	find_package_static(JPEG REQUIRED)
@@ -336,22 +336,6 @@ if    (DEBUG_BOUNDSCHECK)
 	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${MPX_FLAGS}")
 endif (DEBUG_BOUNDSCHECK)
 
-
-### ld.gold
-option(COMPRESS_DEBUG_SYMBOLS "Compresses the DebugSymbols (needs ld.gold, beware: slow)" FALSE)
-if    (LDGOLD_FOUND)
-	message(STATUS "Found ld.gold")
-	if    (COMPRESS_DEBUG_SYMBOLS)
-		message(STATUS "Compressing debug symbols")
-		set(LDGOLD_LINKER_FLAGS " -Wl,--compress-debug-sections=zlib ${LDGOLD_LINKER_FLAGS}")
-	endif (COMPRESS_DEBUG_SYMBOLS)
-
-	set(CMAKE_LINKER LD_GOLD)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LDGOLD_CXX_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LDGOLD_LINKER_FLAGS}")
-else  (LDGOLD_FOUND)
-	message(WARNING "You are using ld.bfd, it's much slower than ld.gold.")
-endif (LDGOLD_FOUND)
 
 message(STATUS "Compiling with C++17")
 if(MSVC)
@@ -415,11 +399,6 @@ add_definitions(-DSTREFLOP_SSE)
 else ()
 add_definitions(-DNOT_USING_STREFLOP)
 endif ()
-
-
-
-### Asio
-add_definitions(-DASIO_STANDALONE)
 
 ### compiler specific flags
 set(CXX_FLAGS_DEBUG_ADDITIONAL "")
@@ -497,12 +476,9 @@ else  (MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsingle-precision-constant -frounding-math")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IEEE_FP_FLAG} -pipe -fno-strict-aliasing ${VISIBILITY_HIDDEN} ${VISIBILITY_INLINES_HIDDEN}")
-	if (UNIX)
+	if (UNIX OR MINGW)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-	endif (UNIX)
-	if    (MINGW)
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mthreads")
-	endif (MINGW)
+	endif (UNIX OR MINGW)
 
 	#set(CMAKE_CXX_FLAGS_DEBUG           "${CXX_FLAGS_DEBUG_ADDITIONAL} -O0     ${DEBUG_WARNINGS}  ${CXX_DEBUG_DEFINES}")
 	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "${CXX_FLAGS_DEBUG_ADDITIONAL} -O2     ${COMMON_WARNINGS} ${CXX_RELWITHDEBINFO_DEFINES}")
@@ -516,8 +492,8 @@ else  (MSVC)
 	set(CMAKE_CXX_FLAGS_PROFILE         "${CMAKE_CXX_FLAGS_PROFILE} ${DEBUG_WARNINGS}  ${CXX_PROFILE_DEFINES}")
 
 
-	set(CMAKE_MODULE_LINKER_FLAGS_PROFILE "-pg")
-	set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "-pg")
+	set(CMAKE_MODULE_LINKER_FLAGS_PROFILE "${CMAKE_MODULE_LINKER_FLAGS_PROFILE} -pg")
+	set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_MODULE_LINKER_FLAGS_PROFILE} -pg")
 
 	#set(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3") #cmake has -g it by default
 	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb3") #cmake has -g it by default
@@ -536,7 +512,7 @@ else  (MSVC)
 			message(STATUS "Enable IMAGE_FILE_LARGE_ADDRESS_AWARE (>2GB memory limit)")
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
 		else (BUILD_BITS EQUAL 32)
-			message(WARNING "The 64bit version of spring on windows is experimental and may not sync with regular builds")
+			#message(WARNING "The 64bit version of spring on windows is experimental and may not sync with regular builds")
 		endif (BUILD_BITS EQUAL 32)
 	endif  (MINGW)
 endif (MSVC)

@@ -1,0 +1,4 @@
+include(conanprofile-linux-64-RELEASE)
+
+[settings]
+build_type=Debug

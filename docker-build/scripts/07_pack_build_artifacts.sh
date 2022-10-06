@@ -1,7 +1,8 @@
 cd "${BUILD_DIR}"
 
+BRANCH_NAME=$(git branch --show-current)
 tag_name_short="{${BRANCH_NAME}\}"$(git describe --abbrev=7)
-tag_name="{${BRANCH_NAME}}""$(git describe --abbrev=7)_${PLATFORM}"
+tag_name="{${BRANCH_NAME}}""$(git describe --abbrev=7)_${PLATFORM}_${BUILD_CONFIG}"
 bin_name=spring_bar_$tag_name-minimal-portable.7z
 dbg_name=spring_bar_$tag_name-minimal-symbols.tgz
 ccache_dbg_name=ccache_dbg.tgz
@@ -24,7 +25,7 @@ if [ -d /ccache_dbg ]; then
     echo "Packing ccache debug data..."
 
     echo "::set-output name=ccache_dbg::${ccache_dbg_name}"
-    tar cvfz "/publish/${ccache_dbg_name}" -C /ccache_dbg /ccache_dbg > /dev/null 2>&1
+    tar cvfz "${ARTIFACTS_DIR}/${ccache_dbg_name}" -C /ccache_dbg /ccache_dbg > /dev/null 2>&1
 else
     echo "No ccache debug data, so skipping packing it..."
 fi

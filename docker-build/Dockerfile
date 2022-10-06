@@ -1,127 +1,83 @@
-FROM ubuntu:18.04 AS mxe
-
-ARG mxe_version=02852a7b690aa411ce2a2089deea25a7292a33d6
-ARG mxe_gcc=gcc11
-
-# Install MXE dependencies
-RUN apt-get update;apt-get install -y \
-        autoconf \
-        automake \
-        autopoint \
-        bash \
-        bison \
-        bzip2 \
-        flex \
-        g++ \
-        g++-multilib \
-        gettext \
-        git \
-        gperf \
-        intltool \
-        libc6-dev-i386 \
-        libgdk-pixbuf2.0-dev \
-        libltdl-dev \
-        libssl-dev \
-        libtool-bin \
-        libxml-parser-perl \
-        lzip \
-        make \
-        openssl \
-        p7zip-full \
-        patch \
-        perl \
-        python \
-        ruby \
-        sed \
-        unzip \
-        wget \
-        xz-utils
-
-# Install MXE and build cross-compile windows gcc
-RUN cd /; \
-    git clone https://github.com/mxe/mxe.git; \
-    cd mxe; \
-    git checkout $mxe_version; \
-    make cc -j$(nproc) MXE_USE_CCACHE= MXE_PLUGIN_DIRS=plugins/$mxe_gcc MXE_TARGETS=x86_64-w64-mingw32.static; \
-    rm -rf /mxe/pkg /mxe/src /mxe/log /mxe/.git
-
-# Main Image
-FROM ubuntu:18.04
-
-ARG cmake_version=3.16.*
-ARG ccache_version="v4.5.1"
-
-COPY --from=mxe /mxe /mxe
-
-ENV PATH="/mxe/usr/bin:${PATH}"
+FROM ubuntu:22.10
 
 # suppress questions from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Build Dependencies (Common)
-RUN apt-get update -y; \
-    apt-get install --fix-missing -y \
-        clang-format \
+ENV CONAN_USER_HOME="/conan"
+ENV CONAN_V2_MODE=1
+
+RUN apt-get update -y \
+    && apt-get install --fix-missing -y \
+        g++ \
+        g++-mingw-w64-x86-64-posix \
         coreutils \
         git \
         ninja-build \
         p7zip-full \
         pigz \
-        software-properties-common \
-        python3-pip; \
-        pip3 install cmake==$cmake_version; \
-        apt purge python3-pip -y; apt auto-remove -y
+        ccache \
+        libatomic1 \
+        python3-pip \
+        pkg-config \
+        clang-format \
+        cmake \
+        mold \
+        libglu-dev \
+        libopengl-dev \
+        libegl-dev \
+        libx11-dev \
+        libx11-xcb-dev \
+        libfontenc-dev \
+        libice-dev \
+        libsm-dev \
+        libxau-dev \
+        libxaw7-dev \
+        libxcomposite-dev \
+        libxcursor-dev \
+        libxdamage-dev \
+        libxdmcp-dev \
+        libxext-dev \
+        libxfixes-dev \
+        libxi-dev \
+        libxinerama-dev \
+        libxkbfile-dev \
+        libxmu-dev \
+        libxmuu-dev \
+        libxpm-dev \
+        libxrandr-dev \
+        libxrender-dev \
+        libxres-dev \
+        libxss-dev \
+        libxt-dev \
+        libxtst-dev \
+        libxv-dev \
+        libxvmc-dev \
+        libxxf86vm-dev \
+        xtrans-dev \
+        libxcb-render0-dev \
+        libxcb-render-util0-dev \
+        libxcb-xkb-dev \
+        libxcb-icccm4-dev \
+        libxcb-image0-dev \
+        libxcb-keysyms1-dev \
+        libxcb-randr0-dev \
+        libxcb-shape0-dev \
+        libxcb-sync-dev \
+        libxcb-xfixes0-dev \
+        libxcb-xinerama0-dev \
+        xkb-data \
+        libxcb-dri3-dev \
+        uuid-dev \
+        libxcb-util-dev \
+        libdevil-dev \
+        libmng-dev \
+        libtiff-dev \
+    && pip install conan
 
-# GCC-10 PPA (linux-64)
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
-    apt update -y; \
-    apt install -y gcc-11 g++-11
-
-# Install Build Dependencies (linux-64)
-RUN apt-get install --fix-missing -y \
-        libsdl2-dev \
-        libopenal-dev \
-        libfreetype6-dev \
-        libfontconfig1-dev
-
-# Compile and install ccache
-RUN git clone https://github.com/ccache/ccache.git /tmp/ccache/src; \
-    cd /tmp/ccache/src; \
-    git checkout $ccache_version; \
-    mkdir -p build; \
-    cd build; \
-    cmake .. -DHIREDIS_FROM_INTERNET=ON -DZSTD_FROM_INTERNET=ON -DCMAKE_INSTALL_PREFIX=/tmp/ccache/bin -DCMAKE_INSTALL_SYSCONFDIR=/etc -DENABLE_DOCUMENTATION= -DENABLE_TESTING=; \
-    make -j$(nproc); \
-    make install; \
-    cp /tmp/ccache/bin/bin/ccache /usr/bin; \
-    rm -rf /tmp/ccache
-
-# Setup ccache
 ENV CCACHE_DIR=/ccache
-ENV CCACHE_CONFIGPATH=/etc/ccache.conf
-ENV PATH="/usr/lib/ccache:${PATH}"
-
-# Install Vulkan SDK
-RUN apt install wget; \
-	wget -q https://sdk.lunarg.com/sdk/download/latest/linux/vulkan-sdk.tar.gz; \
-	mkdir /vulkan-sdk && tar -xf vulkan-sdk.tar.gz --strip-components=1 -C /vulkan-sdk; \
-	rm -rf vulkan-sdk.tar.gz
-
-
-COPY scripts /scripts
-ENV PATH="/scripts:${PATH}"
-
-# set primary config so no config from cache directory will be used
-COPY config/ccache.conf /etc/ccache.conf
-
-RUN mkdir -p /usr/lib/ccache; \
-        /scripts/update-ccache-symlinks.sh; \
-        ln -s ../../bin/ccache /usr/lib/ccache/x86_64-w64-mingw32.static-g++; \
-        ln -s ../../bin/ccache /usr/lib/ccache/x86_64-w64-mingw32.static-c++; \
-        ln -s ../../bin/ccache /usr/lib/ccache/x86_64-w64-mingw32.static-gcc
-
-VOLUME /publish
+ENV CCACHE_DEBUGDIR=/ccache_dbg
 
 ENTRYPOINT ["/bin/bash", "/scripts/entrypoint.sh"]
 
+# used for container version checking for local builds
 COPY Dockerfile /Dockerfile

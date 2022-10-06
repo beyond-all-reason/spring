@@ -1,3 +1,3 @@
 cd "${BUILD_DIR}"
 
-make install
+ninja install

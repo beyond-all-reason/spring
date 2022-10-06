@@ -22,6 +22,7 @@ set(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 ### Assemble libraries
 list(APPEND engineDedicatedLibraries cpuid)
 list(APPEND engineDedicatedLibraries ${Boost_REGEX_LIBRARY})
+find_package(ZLIB REQUIRED)
 list(APPEND engineDedicatedLibraries lua archives 7zip ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} gflags)
 list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
 list(APPEND engineDedicatedLibraries ${LIBUNWIND_LIBRARIES})
@@ -158,7 +159,14 @@ add_executable(engine-dedicated
 		${ENGINE_ICON}
 		main
 	)
-target_link_libraries(engine-dedicated ${engineDedicatedLibraries})
+
+set(LINKER_COMMANDS "")
+
+if    (UNIX)
+	list(APPEND LINKER_COMMANDS "-Wl,--disable-new-dtags -Wl,-rpath=./${CMAKE_INSTALL_LIBDIR}")
+endif (UNIX)
+
+target_link_libraries(engine-dedicated ${engineDedicatedLibraries} ${LINKER_COMMANDS})
 if    (MINGW)
 	target_link_libraries(engine-dedicated ${WS2_32_LIBRARY} ${IMAGEHLP_LIBRARY} ${IPHLPAPI_LIBRARY} ${WINMM_LIBRARY})
 endif (MINGW)

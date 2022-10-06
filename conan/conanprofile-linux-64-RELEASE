@@ -1,0 +1,8 @@
+include(default)
+
+[settings]
+compiler=gcc
+compiler.version=11
+sdl:compiler.version=10
+nas:compiler.version=10
+build_type=Release

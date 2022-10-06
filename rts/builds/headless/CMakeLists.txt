@@ -35,7 +35,14 @@ include_directories(${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 
 ### Build the executable
 add_executable(engine-headless ${engineSources} ${ENGINE_ICON})
-target_link_libraries(engine-headless no-sound ${engineHeadlessLibraries} no-sound)
+
+set(LINKER_COMMANDS "")
+
+if    (UNIX)
+	list(APPEND LINKER_COMMANDS "-Wl,--disable-new-dtags -Wl,-rpath=./${CMAKE_INSTALL_LIBDIR}")
+endif (UNIX)
+
+target_link_libraries(engine-headless no-sound ${engineHeadlessLibraries} no-sound ${LINKER_COMMANDS})
 
 if    (MINGW)
 	# To enable console output/force a console window to open
