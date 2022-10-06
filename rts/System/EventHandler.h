@@ -223,13 +223,6 @@ class CEventHandler
 		bool MousePress(int x, int y, int button);
 		void MouseRelease(int x, int y, int button);
 		bool MouseWheel(bool up, float value);
-
-		// AxisMotion (axisName), ButtonDown (buttonName), ButtonUp (buttonName)
-		bool ControllerState(const std::string& eventName, int instanceId, int statefulId, int value);
-		// Added, Removed, Remapped, Connected, Disconnected
-		// NOTE: For Added the index in relation to SDL_NumJoysticks() is provided instead
-		bool ControllerDevice(const std::string& eventName, int instanceId);
-
 		bool IsAbove(int x, int y);
 
 		std::string GetTooltip(int x, int y);

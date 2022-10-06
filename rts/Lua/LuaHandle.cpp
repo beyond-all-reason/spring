@@ -44,7 +44,6 @@
 
 #include "LuaInclude.h"
 
-#include <SDL_gamecontroller.h>
 #include <SDL_keyboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
@@ -2214,57 +2213,6 @@ bool CLuaHandle::MouseWheel(bool up, float value)
 
 	// call the function
 	if (!RunCallIn(L, cmdStr, 2, 1))
-		return false;
-
-	const bool retval = luaL_optboolean(L, -1, false);
-	lua_pop(L, 1);
-	return retval;
-}
-
-bool CLuaHandle::ControllerDevice(const std::string& eventName, int instanceId)
-{
-	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 4, __func__);
-	static const LuaHashString cmdStr(eventName.c_str());
-	if (!cmdStr.GetGlobalFunc(L))
-		return false;
-
-	lua_pushstring(L, ("Controller" + eventName).c_str());
-	lua_pushnumber(L, instanceId);
-
-	// call the function
-	if (!RunCallIn(L, cmdStr, 2, 1))
-		return false;
-
-	const bool retval = luaL_optboolean(L, -1, false);
-	lua_pop(L, 1);
-	return retval;
-}
-
-bool CLuaHandle::ControllerState(const std::string& eventName, int instanceId, int statefulId, int value)
-{
-	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 6, __func__);
-	static const LuaHashString cmdStr(eventName.c_str());
-	if (!cmdStr.GetGlobalFunc(L))
-		return false;
-
-	lua_pushstring(L, ("Controller" + eventName).c_str());
-	lua_pushnumber(L, instanceId);
-	lua_pushnumber(L, statefulId);
-	lua_pushnumber(L, value);
-
-	std::string statefulName;
-	if (eventName.substr(0, 6) == "Button") {
-		statefulName = SDL_GameControllerGetStringForButton((SDL_GameControllerButton)statefulId);
-	} else {
-		statefulName = SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)statefulId);
-	}
-
-	lua_pushsstring(L, statefulName);
-
-	// call the function
-	if (!RunCallIn(L, cmdStr, 4, 1))
 		return false;
 
 	const bool retval = luaL_optboolean(L, -1, false);

@@ -71,9 +71,6 @@ bool CEventClient::MousePress(int x, int y, int button) { return false; }
 void CEventClient::MouseRelease(int x, int y, int button) { }
 bool CEventClient::MouseWheel(bool up, float value) { return false; }
 
-bool CEventClient::ControllerState(const std::string& eventName, int instanceId, int statefulId, int value) { return false; }
-bool CEventClient::ControllerDevice(const std::string& eventName, int instanceId) { return false; }
-
 void CEventClient::DownloadQueued(int ID, const string& archiveName, const string& archiveType) {}
 void CEventClient::DownloadStarted(int ID) {}
 void CEventClient::DownloadFinished(int ID) {}

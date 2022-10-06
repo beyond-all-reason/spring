@@ -285,9 +285,6 @@ class CEventClient
 		virtual void MouseRelease(int x, int y, int button);
 		virtual bool MouseWheel(bool up, float value);
 
-		virtual bool ControllerState(const std::string& eventName, int instanceId, int statefulId, int value);
-		virtual bool ControllerDevice(const std::string& eventName, int instanceId);
-
 		virtual void DownloadQueued(int ID, const string& archiveName, const string& archiveType);
 		virtual void DownloadStarted(int ID);
 		virtual void DownloadFinished(int ID);

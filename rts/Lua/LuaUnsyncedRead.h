@@ -135,9 +135,6 @@ class LuaUnsyncedRead {
 		static int GetMouseCursor(lua_State* L);
 		static int GetMouseStartPosition(lua_State* L);
 
-		static int GetControllerState(lua_State* L);
-		static int GetAvailableControllers(lua_State* L);
-
 		static int GetKeyFromScanSymbol(lua_State* L);
 		static int GetKeyState(lua_State* L);
 		static int GetModKeyState(lua_State* L);
