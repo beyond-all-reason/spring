@@ -26,6 +26,8 @@
 #ifndef __LIBCPUID_UTIL_H__
 #define __LIBCPUID_UTIL_H__
 
+#include "libcpuid_internal.h"
+
 #define COUNT_OF(array) (sizeof(array) / sizeof(array[0]))
 
 struct feature_map_t {
@@ -92,7 +94,40 @@ void debug_print_lbits(int debuglevel, uint64_t mask);
  */
 int set_error(cpu_error_t err);
 
+/*
+ * Gets the current errno
+ */
+int get_error(void);
+
 extern libcpuid_warn_fn_t _warn_fun;
 extern int _current_verboselevel;
+
+/*
+ * Manage cpu_affinity_mask_t type
+ */
+
+/* initialize affinity_mask */
+void init_affinity_mask(cpu_affinity_mask_t *affinity_mask);
+
+/* copy one affinity_mask to another one */
+void copy_affinity_mask(cpu_affinity_mask_t *dest_affinity_mask, cpu_affinity_mask_t *src_affinity_mask);
+
+/* set bit corresponding to 'logical_cpu' to '1' */
+void set_affinity_mask_bit(logical_cpu_t logical_cpu, cpu_affinity_mask_t *affinity_mask);
+
+/* get bit corresponding to 'logical_cpu' */
+bool get_affinity_mask_bit(logical_cpu_t logical_cpu, cpu_affinity_mask_t *affinity_mask);
+
+/* set bit corresponding to 'logical_cpu' to '0' */
+void clear_affinity_mask_bit(logical_cpu_t logical_cpu, cpu_affinity_mask_t *affinity_mask);
+
+/* assign cache values in cpu_id_t type */
+void assign_cache_data(uint8_t on, cache_type_t cache, int size, int assoc, int linesize, struct cpu_id_t* data);
+
+/* generic way to retrieve cache topology for x86 CPUs */
+void decode_deterministic_cache_info_x86(uint32_t cache_regs[][NUM_REGS],
+                                         uint8_t subleaf_count,
+                                         struct cpu_id_t* data,
+                                         struct internal_id_info_t* internal);
 
 #endif /* __LIBCPUID_UTIL_H__ */

@@ -29,7 +29,7 @@
  * \file     libcpuid.h
  * \author   Veselin Georgiev
  * \date     Oct 2008
- * \version  0.5.1
+ * \version  0.6.0
  *
  * Version history:
  *
@@ -62,6 +62,10 @@
  *                       (a backwards-incompatible change since the sizeof
  *                        cpu_raw_data_t and cpu_id_t is now different).
  * * 0.5.1 (2021-03-20): A lot of DB updates
+ * * 0.6.0 (2022-09-23): Support for hybrid CPUs; CPU cache instances count;
+ *                       a lot of DB updates
+ *                       (a backwards-incompatible change since the sizeof
+ *                        cpu_id_t is now different).
  */
 
 /** @mainpage A simple libcpuid introduction
@@ -89,6 +93,9 @@
 /** @defgroup libcpuid LibCPUID
  * @brief LibCPUID provides CPU identification
  @{ */
+
+/* Include C99 booleans: */
+#include <stdbool.h>
 
 /* Include some integer type specifications: */
 #include "libcpuid_types.h"
@@ -120,6 +127,48 @@ typedef enum {
 	VENDOR_UNKNOWN = -1,
 } cpu_vendor_t;
 #define NUM_CPU_VENDORS NUM_CPU_VENDORS
+
+/**
+ * @brief CPU architecture
+ */
+typedef enum {
+	ARCHITECTURE_X86 = 0,  /*!< x86 CPU */
+	ARCHITECTURE_ARM,      /*!< ARM CPU */
+
+	NUM_CPU_ARCHITECTURES, /*!< Valid CPU architecture ids: 0..NUM_CPU_ARCHITECTURES - 1 */
+	ARCHITECTURE_UNKNOWN = -1,
+} cpu_architecture_t;
+#define NUM_CPU_ARCHITECTURES NUM_CPU_ARCHITECTURES
+
+/**
+ * @brief CPU purpose
+ */
+typedef enum {
+	PURPOSE_GENERAL = 0,  /*!< general purpose CPU */
+	PURPOSE_PERFORMANCE,  /*!< performance CPU */
+	PURPOSE_EFFICIENCY,   /*!< efficiency CPU */
+
+	NUM_CPU_PURPOSES,     /*!< Valid CPU purpose ids: 0..NUM_CPU_PURPOSES - 1 */
+} cpu_purpose_t;
+#define NUM_CPU_PURPOSES NUM_CPU_PURPOSES
+
+/**
+ * @brief Hypervisor vendor, as guessed from the CPU_FEATURE_HYPERVISOR flag.
+ */
+typedef enum {
+	HYPERVISOR_NONE = 0,     /*!< no hypervisor */
+	HYPERVISOR_BHYVE,        /*!< FreeBSD bhyve hypervisor */
+	HYPERVISOR_HYPERV,       /*!< Microsoft Hyper-V or Windows Virtual PC hypervisor */
+	HYPERVISOR_KVM,          /*!< KVM hypervisor */
+	HYPERVISOR_PARALLELS,    /*!< Parallels hypervisor */
+	HYPERVISOR_QEMU,         /*!< QEMU hypervisor */
+	HYPERVISOR_VIRTUALBOX,   /*!< VirtualBox hypervisor */
+	HYPERVISOR_VMWARE,       /*!< VMware hypervisor */
+	HYPERVISOR_XEN,          /*!< Xen hypervisor */
+	NUM_HYPERVISOR_VENDORS,  /*!< Valid hypervisor vendor ids: 0..NUM_HYPERVISOR_VENDORS - 1 */
+	HYPERVISOR_UNKNOWN = -1,
+} hypervisor_vendor_t;
+#define NUM_HYPERVISOR_VENDORS NUM_HYPERVISOR_VENDORS
 
 /**
  * @brief Contains just the raw CPUID data.
@@ -161,6 +210,29 @@ struct cpu_raw_data_t {
 	 * this stores the result of CPUID with eax = 8000001Dh and
 	 *  ecx = 0, 1, 2... */
 	uint32_t amd_fn8000001dh[MAX_AMDFN8000001DH_LEVEL][NUM_REGS];
+};
+
+/**
+ * @brief Contains an array of raw CPUID data.
+ *
+ * This contains one \ref cpu_raw_data_t for each logical CPU.
+ *
+ * @note There is a hard limit of raw array: it is bounded by the logical_cpu_t type.
+ * In other words, the limit is 65536 logical CPUs in the system.
+ */
+struct cpu_raw_data_array_t {
+	/** Indicates if \ref raw was obtained by using CPU affinity
+	 *  if false, \ref raw contains a single data from an old dump (versions 0.5.1 and below).
+	 *  if true, \ref raw contains data from a new dump (versions 0.6.0 and above).
+	 *  if true and if \ref num_raw is 1, it indicates only one logical core was detected on the system.
+	 */
+	bool with_affinity;
+
+	/** \ref raw length */
+	logical_cpu_t num_raw;
+
+	/** array of raw CPUID data */
+	struct cpu_raw_data_t* raw;
 };
 
 /**
@@ -231,6 +303,9 @@ struct cpu_sgx_t {
  * @brief This contains the recognized CPU features/info
  */
 struct cpu_id_t {
+	/** contains the CPU architecture ID (e.g. ARCHITECTURE_X86) */
+	cpu_architecture_t architecture;
+
 	/** contains the CPU vendor string, e.g. "GenuineIntel" */
 	char vendor_str[VENDOR_STR_MAX];
 
@@ -357,6 +432,21 @@ struct cpu_id_t {
 	/** Cache-line size for L4 cache. -1 if undetermined */
 	int32_t l4_cacheline;
 
+	/** Number of L1 data cache instances. -1 if undetermined */
+	int32_t l1_data_instances;
+
+	/** Number of L1 intruction cache instances. -1 if undetermined */
+	int32_t l1_instruction_instances;
+
+	/** Number of L2 cache instances. -1 if undetermined */
+	int32_t l2_instances;
+
+	/** Number of L3 cache instances. -1 if undetermined */
+	int32_t l3_instances;
+
+	/** Number of L4 cache instances. -1 if undetermined */
+	int32_t l4_instances;
+
 	/**
 	 * The brief and human-friendly CPU codename, which was recognized.<br>
 	 * Examples:
@@ -385,6 +475,38 @@ struct cpu_id_t {
 
 	/** contains information about SGX features if the processor, if present */
 	struct cpu_sgx_t sgx;
+
+	/** bitmask of the affinity ids this processor type is occupying */
+	cpu_affinity_mask_t affinity_mask;
+
+	/** processor type purpose, relevant in case of hybrid CPU (e.g. PURPOSE_PERFORMANCE) */
+	cpu_purpose_t purpose;
+};
+
+/**
+ * @brief This contains the recognized features/info for all CPUs on the system
+ */
+struct system_id_t {
+	/** count of different processor types in the system (e.g. performance, efficiency, ...) */
+	uint8_t num_cpu_types;
+
+	/** array of recognized CPU features/info for each different processor types in the system */
+	struct cpu_id_t* cpu_types;
+
+	/** Number of total L1 data cache instances. -1 if undetermined */
+	int32_t l1_data_total_instances;
+
+	/** Number of total L1 intruction cache instances. -1 if undetermined */
+	int32_t l1_instruction_total_instances;
+
+	/** Number of total L2 cache instances. -1 if undetermined */
+	int32_t l2_total_instances;
+
+	/** Number of total L3 cache instances. -1 if undetermined */
+	int32_t l3_total_instances;
+
+	/** Number of total L4 cache instances. -1 if undetermined */
+	int32_t l4_total_instances;
 };
 
 /**
@@ -521,6 +643,7 @@ typedef enum {
 	CPU_FEATURE_AVX512VNNI, /*!< AVX-512 Vector Neural Network Instructions */
 	CPU_FEATURE_AVX512VBMI, /*!< AVX-512 Vector Bit ManipulationInstructions (version 1) */
 	CPU_FEATURE_AVX512VBMI2, /*!< AVX-512 Vector Bit ManipulationInstructions (version 2) */
+	CPU_FEATURE_HYPERVISOR, /*!< Hypervisor present (always zero on physical CPUs) */
 	/* termination: */
 	NUM_CPU_FEATURES,
 } cpu_feature_t;
@@ -587,6 +710,7 @@ typedef enum {
 	ERR_INVCNB   = -14,	/*!< Invalid core number */
 	ERR_HANDLE_R = -15,	/*!< Error on handle read */
 	ERR_INVRANGE = -16,	/*!< Invalid given range */
+	ERR_NOT_FOUND= -17,	/*!< Requested type not found */
 } cpu_error_t;
 
 /**
@@ -646,6 +770,17 @@ void cpu_exec_cpuid_ext(uint32_t* regs);
 int cpuid_get_raw_data(struct cpu_raw_data_t* data);
 
 /**
+ * @brief Obtains the raw CPUID data from all CPUs
+ * @param data - a pointer to cpu_raw_data_array_t structure
+ * @note As the memory is dynamically allocated, be sure to call
+ *       cpuid_free_raw_data_array() after you're done with the data
+ * @returns zero if successful, and some negative number on error.
+ *          The error message can be obtained by calling \ref cpuid_error.
+ *          @see cpu_error_t
+ */
+int cpuid_get_all_raw_data(struct cpu_raw_data_array_t* data);
+
+/**
  * @brief Writes the raw CPUID data to a text file
  * @param data - a pointer to cpu_raw_data_t structure
  * @param filename - the path of the file, where the serialized data should be
@@ -665,6 +800,25 @@ int cpuid_get_raw_data(struct cpu_raw_data_t* data);
 int cpuid_serialize_raw_data(struct cpu_raw_data_t* data, const char* filename);
 
 /**
+ * @brief Writes all the raw CPUID data to a text file
+ * @param data - a pointer to cpu_raw_data_array_t structure
+ * @param filename - the path of the file, where the serialized data for all CPUs
+ *                   should be written. If empty, stdout will be used.
+ * @note This is intended primarily for debugging. On some processor, which is
+ *       not currently supported or not completely recognized by cpu_identify_all,
+ *       one can still successfully get the raw data and write it to a file.
+ *       libcpuid developers can later import this file and debug the detection
+ *       code as if running on the actual hardware.
+ *       The file is simple text format of "something=value" pairs. Version info
+ *       is also written, but the format is not intended to be neither backward-
+ *       nor forward compatible.
+ * @returns zero if successful, and some negative number on error.
+ *          The error message can be obtained by calling \ref cpuid_error.
+ *          @see cpu_error_t
+ */
+int cpuid_serialize_all_raw_data(struct cpu_raw_data_array_t* data, const char* filename);
+
+/**
  * @brief Reads raw CPUID data from file
  * @param data - a pointer to cpu_raw_data_t structure. The deserialized data will
  *               be written here.
@@ -677,6 +831,22 @@ int cpuid_serialize_raw_data(struct cpu_raw_data_t* data, const char* filename);
  *          @see cpu_error_t
 */
 int cpuid_deserialize_raw_data(struct cpu_raw_data_t* data, const char* filename);
+
+/**
+ * @brief Reads all raw CPUID data from file
+ * @param data - a pointer to cpu_raw_data_array_t structure. The deserialized array data will
+ *               be written here.
+ * @param filename - the path of the file, containing the serialized raw data.
+ *                   If empty, stdin will be used.
+ * @note This function may fail, if the file is created by different version of
+ *       the library. Also, see the notes on cpuid_serialize_all_raw_data.
+ * @note As the memory is dynamically allocated, be sure to call
+ *       cpuid_free_raw_data_array() after you're done with the data
+ * @returns zero if successful, and some negative number on error.
+ *          The error message can be obtained by calling \ref cpuid_error.
+ *          @see cpu_error_t
+*/
+int cpuid_deserialize_all_raw_data(struct cpu_raw_data_array_t* data, const char* filename);
 
 /**
  * @brief Identifies the CPU
@@ -702,6 +872,67 @@ int cpuid_deserialize_raw_data(struct cpu_raw_data_t* data, const char* filename
  *          @see cpu_error_t
  */
 int cpu_identify(struct cpu_raw_data_t* raw, struct cpu_id_t* data);
+
+/**
+ * @brief Identifies all the CPUs
+ * @param raw_array - Input - a pointer to the array of raw CPUID data, which is obtained
+ *              either by cpuid_get_all_raw_data or cpuid_deserialize_all_raw_data.
+ *              Can also be NULL, in which case the functions calls
+ *              cpuid_get_all_raw_data itself.
+ * @param system - Output - the decoded CPU features/info is written here for each CPU type.
+ * @note The function is similar to cpu_identify. Refer to cpu_identify notes.
+ * @note As the memory is dynamically allocated, be sure to call
+ *       cpuid_free_raw_data_array() and cpuid_free_system_id() after you're done with the data
+ * @returns zero if successful, and some negative number on error.
+ *          The error message can be obtained by calling \ref cpuid_error.
+ *          @see cpu_error_t
+ */
+int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t* system);
+
+/**
+ * @brief Identifies a given CPU type
+ * @param purpose - Input - a \ref cpu_purpose_t to request
+ * @param raw_array - Optional input - a pointer to the array of raw CPUID data, which is obtained
+ *              either by cpuid_get_all_raw_data or cpuid_deserialize_all_raw_data.
+ *              Can also be NULL, in which case the functions calls
+ *              cpuid_get_all_raw_data itself.
+ * @param data - Output - the decoded CPU features/info is written here.
+ * @returns zero if successful, and some negative number on error (like ERR_NOT_FOUND if CPU type not found).
+ *          The error message can be obtained by calling \ref cpuid_error.
+ *          @see cpu_error_t
+ */
+int cpu_request_core_type(cpu_purpose_t purpose, struct cpu_raw_data_array_t* raw_array, struct cpu_id_t* data);
+
+/**
+ * @brief Returns the short textual representation of a CPU architecture
+ * @param architecture - the architecture, whose textual representation is wanted.
+ * @returns a constant string like "x86", "ARM", etc.
+ */
+const char* cpu_architecture_str(cpu_architecture_t architecture);
+
+/**
+ * @brief Returns the short textual representation of a CPU purpose
+ * @param purpose - the purpose, whose textual representation is wanted.
+ * @returns a constant string like "general", "performance", "efficiency", etc.
+ */
+const char* cpu_purpose_str(cpu_purpose_t purpose);
+
+/**
+ * @brief Returns textual representation of a CPU affinity mask (thread-safe)
+ * @param affinity_mask - Input - the affinity mask (in hexadecimal), whose textual representation is wanted.
+ * @param buffer - Output - an allocated string where to store the textual representation, like "0000FFFF", "00FF0000", etc.
+ * @param buffer_len - Input - the size of buffer.
+ * @returns a pointer on buffer
+ */
+char* affinity_mask_str_r(cpu_affinity_mask_t* affinity_mask, char* buffer, uint32_t buffer_len);
+
+/**
+ * @brief Returns textual representation of a CPU affinity mask
+ * @param affinity_mask - the affinity mask (in hexadecimal), whose textual representation is wanted.
+ * @note This function is not thread-safe
+ * @returns a string like "0000FFFF", "00FF0000", etc.
+ */
+char* affinity_mask_str(cpu_affinity_mask_t *affinity_mask);
 
 /**
  * @brief Returns the short textual representation of a CPU flag
@@ -990,6 +1221,24 @@ void cpuid_set_verbosiness_level(int level);
 cpu_vendor_t cpuid_get_vendor(void);
 
 /**
+ * @brief Obtains the hypervisor vendor from CPUID from the current CPU
+ * @param raw - Optional input - a pointer to the raw CPUID data, which is obtained
+ *              either by cpuid_get_raw_data or cpuid_deserialize_raw_data.
+ *              Can also be NULL, in which case the functions calls
+ *              cpuid_get_raw_data itself.
+ * @param data - Optional input - the decoded CPU features/info is written here.
+ *              Can also be NULL, in which case the functions calls
+ *              cpu_identify itself.
+ * @note If no hypervisor is detected, the hypervisor can be hidden in some cases.
+ *       Refer to https://github.com/anrieff/libcpuid/issues/90#issuecomment-296568713.
+ * @returns HYPERVISOR_UNKNOWN if failed,
+ *          HYPERVISOR_NONE if no hypervisor detected (or hidden),
+ *          otherwise the hypervisor vendor type.
+ *          @see hypervisor_vendor_t
+ */
+hypervisor_vendor_t cpuid_get_hypervisor(struct cpu_raw_data_t* raw, struct cpu_id_t* data);
+
+/**
  * @brief a structure that holds a list of processor names
  */
 struct cpu_list_t {
@@ -1028,6 +1277,26 @@ void cpuid_get_cpu_list(cpu_vendor_t vendor, struct cpu_list_t* list);
  * @param list - the list to be free()'d.
  */
 void cpuid_free_cpu_list(struct cpu_list_t* list);
+
+/**
+ * @brief Frees a raw array
+ *
+ * This function deletes all the memory associated with a raw array, as obtained
+ * by cpuid_get_all_raw_data(), cpuid_deserialize_all_raw_data() and cpu_identify_all()
+ *
+ * @param raw_array - the raw array to be free()'d.
+ */
+void cpuid_free_raw_data_array(struct cpu_raw_data_array_t* raw_array);
+
+/**
+ * @brief Frees a system ID type
+ *
+ * This function deletes all the memory associated with a system ID, as obtained
+ * by cpu_identify_all()
+ *
+ * @param system - the system ID to be free()'d.
+ */
+void cpuid_free_system_id(struct system_id_t* system);
 
 struct msr_driver_t;
 /**

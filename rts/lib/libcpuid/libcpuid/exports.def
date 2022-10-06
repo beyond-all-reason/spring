@@ -33,3 +33,15 @@ cpuid_get_vendor @29
 cpu_rdmsr_range @30
 cpuid_get_epc @31
 msr_serialize_raw_data @32
+cpuid_get_all_raw_data @33
+cpuid_serialize_all_raw_data @34
+cpuid_deserialize_all_raw_data @35
+cpu_identify_all @36
+cpu_request_core_type @37
+cpu_architecture_str @38
+cpu_purpose_str @39
+cpuid_free_raw_data_array @40
+affinity_mask_str @41
+cpuid_free_system_id @42
+affinity_mask_str_r @43
+cpuid_get_hypervisor @44

@@ -12,7 +12,7 @@ all: libcpuid.lib
 
 CC = cl.exe /nologo /TC
 OPTFLAGS = /MT
-DEFINES = /D "VERSION=\"0.5.1\""
+DEFINES = /D "VERSION=\"0.6.0\""
 OBJECTS = asm-bits.obj cpuid_main.obj libcpuid_util.obj recog_amd.obj recog_intel.obj rdtsc.obj
 
 libcpuid.lib: $(OBJECTS)

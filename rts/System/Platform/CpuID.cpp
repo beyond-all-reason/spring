@@ -80,6 +80,10 @@ namespace springproc {
 	void ExecCPUID(unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {}
 #endif
 
+	CPUID& CPUID::GetInstance() {
+		static CPUID cpuid;
+		return cpuid;
+	}
 
 	CPUID::CPUID()
 		: shiftCore(0)
@@ -101,222 +105,55 @@ namespace springproc {
 			return;
 		}
 
-		struct cpu_raw_data_t raw;
-		if (cpuid_get_raw_data(&raw) < 0) {
-			LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
-			return;
-		}
-
-		struct cpu_id_t data;
-		// identify the CPU, using the given raw data.
-		if (cpu_identify(&raw, &data) < 0) {
-			LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
-			return;
-		}
-
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-
-		switch (data.vendor) {
-			case VENDOR_INTEL: {
-				GetIdsIntel();
-			} break;
-			/*
-			// this does nothing smart for now. Makes no sense to call
-			case VENDOR_AMD: {
-				GetIdsAMD();
-			} break;
-			*/
-			case VENDOR_AMD: [[fallthrough]];
-			default: {
-				assert(data.num_logical_cpus == numLogicalCores);
-				numPhysicalCores = data.num_cores;
-			} break;
-		}
+		EnumerateCores();
 	}
 
-	// Function based on Figure 1 from Kuo_CpuTopology_rc1.rh1.final.pdf
-	void CPUID::GetIdsIntel()
-	{
-		int maxLeaf = 0;
-		uint32_t regs[REG_CNT] = {0, 0, 0, 0};
+	void CPUID::EnumerateCores() {
+		const auto oldAffinity = Threading::GetAffinity();
 
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
+		availableProceesorAffinityMask = 0;
+		numLogicalCores = 0;
+		numPhysicalCores = 0;
 
-		if ((maxLeaf = regs[REG_EAX]) >= 0xB) {
-			regs[REG_EAX] = 11;
-			regs[REG_ECX] = 0;
-			ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
+		struct cpu_raw_data_array_t raw_array;
+		system_id_t system;
 
-			// Check if cpuid leaf 11 really exists
-			if (regs[REG_EBX] != 0) {
-				hasLeaf11 = true;
-				LOG_L(L_DEBUG,"[CpuId] leaf 11 support");
-				GetMasksIntelLeaf11();
-				GetIdsIntelEnumerate();
+		{
+			bool badResult = (cpu_identify_all(NULL, &system) < 0);
+			Threading::SetAffinity(oldAffinity);
+			if (badResult) {
+				cpuid_free_system_id(&system);
+				LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
 				return;
 			}
 		}
 
-		if (maxLeaf >= 4) {
-			LOG_L(L_DEBUG,"[CpuId] leaf 4 support");
-			GetMasksIntelLeaf1and4();
-			GetIdsIntelEnumerate();
-			return;
+		for (int group = 0; group < system.num_cpu_types; ++group) {
+			cpu_id_t cpu_id = system.cpu_types[group];
+			switch(cpu_id.purpose) {
+			case PURPOSE_GENERAL:
+			case PURPOSE_PERFORMANCE:
+				availableProceesorAffinityMask |= *(uint64_t*)&cpu_id.affinity_mask;
+				numLogicalCores += cpu_id.num_logical_cpus;
+				numPhysicalCores += cpu_id.num_cores;
+				LOG("[CpuId] found %d cores and %d logical cpus (mask: 0x%x) of type %s"
+						, cpu_id.num_cores
+						, cpu_id.num_logical_cpus
+						, *(int*)&cpu_id.affinity_mask
+						, cpu_purpose_str(cpu_id.purpose));
+				LOG("[CpuId] setting logical cpu affinity mask to 0x%x", (int)availableProceesorAffinityMask);
+			// ignore case PURPOSE_EFFICIENCY:
+			}
 		}
 
-		// Either it is a very old processor, or the cpuid instruction is disabled
-		// from BIOS. Print a warning and use default processor number
-		LOG_L(L_WARNING,"[CpuId] max cpuid leaf is less than 4! Using OS processor number.");
-		SetDefault();
-	}
-
-	void CPUID::GetMasksIntelLeaf11Enumerate()
-	{
-		uint32_t currentLevel = 0;
-		uint32_t regs[REG_CNT] = {1, 0, 0, 0};
-
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-
-		regs[REG_EAX] = 11;
-		regs[REG_ECX] = currentLevel++;
-
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-
-		if ((regs[REG_EBX] & 0xFFFF) == 0)
-			return;
-
-		if (((regs[REG_ECX] >> 8) & 0xFF) == 1) {
-			LOG_L(L_DEBUG,"[CpuId] SMT level found");
-			shiftCore = regs[REG_EAX] & 0xf;
-		} else {
-			LOG_L(L_DEBUG,"[CpuId] No SMT level supported");
-		}
-
-		regs[REG_EAX] = 11;
-		regs[REG_ECX] = currentLevel++;
-
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-
-		if (((regs[REG_ECX] >> 8) & 0xFF) == 2) {
-			LOG_L(L_DEBUG,"[CpuId] Core level found");
-		    // Practically this is shiftCore + shiftVirtual so it is shiftPackage
-		    shiftPackage = regs[REG_EAX] & 0xf;
-		} else {
-			LOG_L(L_DEBUG,"[CpuId] NO Core level supported");
-		}
-	}
-
-	// Implementing "Sub ID Extraction Parameters for x2APIC ID" from
-	// Kuo_CpuTopology_rc1.rh1.final.pdf
-
-	void CPUID::GetMasksIntelLeaf11()
-	{
-		GetMasksIntelLeaf11Enumerate();
-
-		// determined the shifts, now compute the masks
-		maskVirtual =  ~((-1u) << shiftCore    );
-		maskCore    = (~((-1u) << shiftPackage)) ^ maskVirtual;
-		maskPackage =   ((-1u) << shiftPackage );
-	}
-
-	void CPUID::GetMasksIntelLeaf1and4()
-	{
-		uint32_t regs[REG_CNT] = {1, 0, 0, 0};
-
-		unsigned maxAddressableLogical;
-		unsigned maxAddressableCores;
-
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-
-		maxAddressableLogical = (regs[REG_EBX] >> 18) & 0xff;
-
-		regs[REG_EAX] = 4;
-		regs[REG_ECX] = 0;
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-		maxAddressableCores = ((regs[REG_EAX] >> 26) & 0x3f) + 1;
-		shiftCore = (maxAddressableLogical / maxAddressableCores);
-
-		{
-			// compute the next power of 2 that is larger than shiftPackage
-			int i = 0;
-			while ((1u << i) < shiftCore)
-				i++;
-			shiftCore = i;
-		}
-		{
-			int i = 0;
-			while ((1u << i) < maxAddressableCores)
-				i++;
-			shiftPackage = i;
-		}
-
-		// determined the shifts, now compute the masks
-		maskVirtual =  ~((-1u) << shiftCore    );
-		maskCore    = (~((-1u) << shiftPackage)) ^ maskVirtual;
-		maskPackage =   ((-1u) << shiftPackage );
-	}
-
-	void CPUID::GetIdsIntelEnumerate()
-	{
-		const auto oldAffinity = Threading::GetAffinity();
-
-		for (int processor = 0; processor < numLogicalCores; processor++) {
-			Threading::SetAffinity(1u << processor, true);
-			spring::this_thread::yield();
-			processorApicIds[processor] = GetApicIdIntel();
-		}
-
-		spring::unordered_set<uint32_t> cores;
-		spring::unordered_set<uint32_t> packages;
-
-		// determine the total number of cores
-		for (int processor = 0; processor < numLogicalCores; processor++) {
-			auto ret = cores.insert(processorApicIds[processor] >> shiftCore);
-			if (!ret.second)
-				continue;
-
-			affinityMaskOfCores[cores.size() - 1] = (1lu << processor);
-		}
-		numPhysicalCores = cores.size();
-
-		// determine the total number of packages
-		for (int processor = 0; processor < numLogicalCores; processor++) {
-			auto ret = packages.insert(processorApicIds[processor] >> shiftPackage);
-			if (!ret.second)
-				continue;
-
-			affinityMaskOfPackages[packages.size() - 1] |= (1lu << processor);
-		}
-
-		totalNumPackages = packages.size();
-
-		Threading::SetAffinity(oldAffinity);
-	}
-
-	uint32_t CPUID::GetApicIdIntel()
-	{
-		uint32_t regs[REG_CNT] = {0, 0, 0, 0};
-
-		if (hasLeaf11) {
-			regs[REG_EAX] = 11;
-			ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-			return regs[REG_EDX];
-		}
-
-		regs[REG_EAX] = 1;
-		ExecCPUID(&regs[REG_EAX], &regs[REG_EBX], &regs[REG_ECX], &regs[REG_EDX]);
-		return (regs[REG_EBX] >> 24);
-	}
-
-	void CPUID::GetIdsAMD()
-	{
-		#pragma message ("TODO")
+		cpuid_free_system_id(&system);
 	}
 
 	void CPUID::SetDefault()
 	{
 		numLogicalCores = Threading::GetLogicalCpuCores();
 		numPhysicalCores = numLogicalCores >> 1; //In 2022 HyperThreading is likely more common rather than not
+		availableProceesorAffinityMask = 1;
 		totalNumPackages = 1;
 
 		// affinity mask is a uint64_t, but spring uses uint32_t
@@ -328,6 +165,9 @@ namespace springproc {
 		memset(affinityMaskOfCores   , 0, sizeof(affinityMaskOfCores   ));
 		memset(affinityMaskOfPackages, 0, sizeof(affinityMaskOfPackages));
 		memset(processorApicIds      , 0, sizeof(processorApicIds      ));
+
+		for (int i = 0; i<numLogicalCores; ++i)
+			availableProceesorAffinityMask |= 1 << i;
 
 		// failed to determine CPU anatomy, just set affinity mask to (-1)
 		for (int i = 0; i < numLogicalCores; i++) {

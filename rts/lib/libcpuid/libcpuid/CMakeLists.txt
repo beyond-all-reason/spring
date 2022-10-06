@@ -8,8 +8,11 @@ set(cpuid_sources
     asm-bits.c)
 
 if(WIN32)
-   list(APPEND cpuid_sources msrdriver.c)
+  list(APPEND cpuid_sources msrdriver.c)
 endif()
+if(UNIX)
+  add_compile_definitions(_GNU_SOURCE)
+endif(UNIX)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fvisibility=hidden ${PIC_FLAG} -Wall")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PIC_FLAG}")

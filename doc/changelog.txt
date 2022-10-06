@@ -94,6 +94,8 @@ System:
  - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
    test-and-set (TAS) to test and test-and-set (TTAS) to reduce cache coherency traffic on the
    processor
+ - Correct thread assignment for Intel 12th gen processors (Alder Lake)
+ - Windows Vista is now longer supported, Windows 7 is now the minimum required Windows OS
 
 UI:
  - Add `group unset` action to unassign any groups from selected units

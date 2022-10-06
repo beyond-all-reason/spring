@@ -63,6 +63,13 @@ the raw CPUID data and the expected decoded items) by using
    and tests/intel to get an idea) and copy your test file to an
    appropriate place within the tests directory hierarchy.
 
+AIDA64 CPUID dumps (mostly found on [InstLatx64](http://instlatx64.atw.hu/)) are also supported.
+To create a new test based on a AIDA64 CPUID dump, you can do:
+```sh
+cpuid_tool --load=aida64_raw.txt --outfile=report.txt --report
+./tests/create_test.py aida64_raw.txt report.txt > tests/xxx/yyy/my-cpu.test
+```
+
 For non-developers, who still want to contribute tests for the project,
 use [this page](http://libcpuid.sourceforge.net/bugreport.php) to report
 misdetections or new CPUs that libcpuid doesn't handle well yet.
@@ -89,13 +96,14 @@ You can find latest versioned archives [here](https://github.com/anrieff/libcpui
 
 Also, libcpuid is available for following systems in official repositories:
 
-* [Debian (since version 11 "Bullseye")](https://packages.debian.org/source/bullseye/libcpuid): `apt install cpuidtool libcpuid14 libcpuid-dev`
+* [Arch Linux](https://archlinux.org/packages/community/x86_64/libcpuid/): `pacman -S libcpuid`
+* [Debian (since version 11 "Bullseye")](https://packages.debian.org/source/bullseye/libcpuid): `apt install cpuidtool libcpuid-dev`
 * [Fedora (since version 25)](https://src.fedoraproject.org/rpms/libcpuid): `dnf install libcpuid libcpuid-devel`
 * [FreeBSD (since version 11)](https://www.freshports.org/sysutils/libcpuid): `pkg install libcpuid`
-* [OpenMandriva Lx (since version 4.0 "Nitrogen")](https://github.com/OpenMandrivaAssociation/libcpuid): `dnf install libcpuid-tools libcpuid14 libcpuid-devel`
-* [openSUSE Leap (since version 15.1)](https://software.opensuse.org/package/libcpuid): `zypper install libcpuid-tools libcpuid14 libcpuid-devel`
+* [OpenMandriva Lx (since version 4.0 "Nitrogen")](https://github.com/OpenMandrivaAssociation/libcpuid): `dnf install libcpuid-tools libcpuid-devel`
+* [openSUSE Leap (since version 15.1)](https://software.opensuse.org/package/libcpuid): `zypper install libcpuid-tools libcpuid-devel`
 * [Solus](https://packages.getsol.us/shannon/libc/libcpuid/): `eopkg install libcpuid libcpuid-devel`
-* [Ubuntu (since version 20.04 "Focal Fossa")](https://packages.ubuntu.com/source/focal/libcpuid) : `apt install cpuidtool libcpuid14 libcpuid-dev`
+* [Ubuntu (since version 20.04 "Focal Fossa")](https://packages.ubuntu.com/source/focal/libcpuid) : `apt install cpuidtool libcpuid-dev`
 
 #### Build tool
 
