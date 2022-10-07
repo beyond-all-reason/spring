@@ -5,6 +5,10 @@ Spring changelog
 -- 106.0 --------------------------------------------------------
 
 Lua:
+ - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
+   Makes the erase happen locally, optionally as if done by given player,
+   same as the existing interface for MarkerAddPoint and MarkerAddLine.
+   NOTE: 4th arg is currently unused!
  - Add movetilt and movereset for previously hardcoded ALT and CTRL camera
    bindings
  - Fix moveslow and movefast camera bindings not being respected in favor of
@@ -13,6 +17,7 @@ Lua:
    GetPressedKeys but with scancodes
  - Add minx, maxy, maxx, miny = Spring.GetSelectionBox() returning coordinates
    for current selection box. Returns nil if no valid selection active.
+ - Add `damage.debris` modrule, controls damage done by exploding pieces (default 50)
  - Add Spring.GetKeyFromScanSymbol(scanSymbol) that receives a scancode and
    returns the users correspondent key in the current keyboard layout
  - allow empty argument for Spring.GetKeyBindings to return all keybindings
@@ -89,8 +94,11 @@ System:
  - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
    test-and-set (TAS) to test and test-and-set (TTAS) to reduce cache coherency traffic on the
    processor
+ - Correct thread assignment for Intel 12th gen processors (Alder Lake)
+ - Windows Vista is now longer supported, Windows 7 is now the minimum required Windows OS
 
 UI:
+ - Add `group unset` action to unassign any groups from selected units
  - KeyPress and KeyRelease callins receive an additional scanCode
    argument
  - sc_<k> keysets are introduced for scancodes and handled in conjunction

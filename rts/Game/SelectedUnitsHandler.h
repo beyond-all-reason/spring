@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#include "Game/UI/Groups/Group.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/float4.h"
 #include "System/Object.h"
@@ -20,6 +21,7 @@ class CSelectedUnitsHandler : public CObject
 public:
 	void Init(unsigned numPlayers);
 	void SelectGroup(int num);
+	void SetGroup(CGroup* group, bool fromFactory= false, bool autoSelect = false);
 	void AINetOrder(int unitID, int aiTeamID, int playerID, const Command& c);
 	int GetDefaultCmd(const CUnit* unit, const CFeature* feature);
 

@@ -44,6 +44,9 @@ void CModInfo::ResetState()
 		constructionDecaySpeed = 1.0f;
 	}
 	{
+		debrisDamage = 50.0f;
+	}
+	{
 		multiReclaim                   = 1;
 		reclaimMethod                  = 1;
 		reclaimUnitMethod              = 1;
@@ -180,6 +183,11 @@ void CModInfo::Init(const std::string& modFileName)
 		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", 0.03), 0.01f);
 	}
 
+	{
+		const LuaTable& damageTbl = root.SubTable("damage");
+
+		debrisDamage = damageTbl.GetFloat("debris", debrisDamage);
+	}
 	{
 		// reclaim
 		const LuaTable& reclaimTbl = root.SubTable("reclaim");

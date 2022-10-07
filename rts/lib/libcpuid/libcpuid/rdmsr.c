@@ -23,7 +23,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#define _XOPEN_SOURCE 500
+
+/* freebsd requires _XOPEN_SOURCE 600 for snprintf()
+ * for linux it is enough 500 */
+#define _XOPEN_SOURCE 600
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +41,6 @@
 #if defined (__linux__) || defined (__gnu_linux__)
 /* Assuming linux with /dev/cpu/x/msr: */
 #include <unistd.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1024,30 +1026,37 @@ int msr_serialize_raw_data(struct msr_driver_t* handle, const char* filename)
 	FILE *f;
 	uint64_t reg;
 	const uint32_t *msr;
-	struct cpu_raw_data_t raw;
-	struct cpu_id_t id;
-	struct internal_id_info_t internal;
+	struct cpu_id_t* id;
+	static int cpu_clock = 0;
 
+	/* Check if MSR driver is initialized */
 	if (handle == NULL)
 		return set_error(ERR_HANDLE);
 
-	if ((filename == NULL) || !strcmp(filename, ""))
-		f = stdout;
-	else
-		f = fopen(filename, "wt");
-	if (!f) return set_error(ERR_OPEN);
+	/* Open file descriptor */
+	f = ((filename == NULL) || !strcmp(filename, "")) ? stdout : fopen(filename, "wt");
+	if (!f)
+		return set_error(ERR_OPEN);
 
-	if (cpuid_get_raw_data(&raw) || cpu_ident_internal(&raw, &id, &internal))
-		return -1;
+	/* Get cached decoded CPUID information */
+	id = get_cached_cpuid();
+	if (id->vendor == VENDOR_UNKNOWN)
+		return get_error();
 
-	fprintf(f, "CPU is %s %s, stock clock is %dMHz.\n", id.vendor_str, id.brand_str, cpu_clock_measure(250, 1));
-	switch (id.vendor) {
+	/* Get CPU stock speed */
+	if (cpu_clock == 0)
+		cpu_clock = cpu_clock_measure(250, 1);
+
+	/* Check if CPU vendor is supported */
+	fprintf(f, "vendor_str=%s\nbrand_str=%s\ncpu_clock_measure=%dMHz\n", id->vendor_str, id->brand_str, cpu_clock);
+	switch (id->vendor) {
 		case VENDOR_HYGON:
-		case VENDOR_AMD:   msr = amd_msr; break;
+		case VENDOR_AMD:   msr = amd_msr;   break;
 		case VENDOR_INTEL: msr = intel_msr; break;
 		default: return set_error(ERR_CPU_UNKN);
 	}
 
+	/* Print raw MSR values */
 	for (i = 0; msr[i] != CPU_INVALID_VALUE; i++) {
 		cpu_rdmsr(handle, msr[i], &reg);
 		fprintf(f, "msr[%#08x]=", msr[i]);
@@ -1056,7 +1065,8 @@ int msr_serialize_raw_data(struct msr_driver_t* handle, const char* filename)
 		fprintf(f, "\n");
 	}
 
-	if ((filename != NULL) && strcmp(filename, ""))
+	/* Close file descriptor */
+	if (f != stdout)
 		fclose(f);
 	return set_error(ERR_OK);
 }

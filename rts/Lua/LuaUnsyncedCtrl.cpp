@@ -2921,7 +2921,15 @@ int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
 	                 luaL_checkfloat(L, 2),
 	                 luaL_checkfloat(L, 3));
 
-	inMapDrawer->SendErase(pos);
+	/* Argument 4 is going to be radius
+	 * after some future refactoring. */
+
+	const bool onlyLocal = (lua_isnumber(L, 5)) ? bool(luaL_optnumber(L, 5, 0)) : luaL_optboolean(L, 5, false);
+	if (onlyLocal) {
+		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum));
+	} else {
+		inMapDrawer->SendErase(pos);
+	}
 
 	return 0;
 }
