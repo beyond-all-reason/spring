@@ -68,7 +68,7 @@ public:
 
 	void GetWindowPosSizeBounded(int& x, int& y, int& w, int& h) const;
 
-	void SetWindowTitle(const std::string& title);
+	void SetWindowTitle(const std::string& title) const;
 	void SetWindowAttributes(SDL_Window* window);
 	void UpdateWindow();
 

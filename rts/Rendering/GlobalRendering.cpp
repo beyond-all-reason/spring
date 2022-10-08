@@ -1018,7 +1018,7 @@ void CGlobalRendering::GetWindowPosSizeBounded(int& x, int& y, int& w, int& h) c
 }
 
 
-void CGlobalRendering::SetWindowTitle(const std::string& title)
+void CGlobalRendering::SetWindowTitle(const std::string& title) const
 {
 	SDL_SetWindowTitle(sdlWindows[0], title.c_str());
 }
@@ -1050,7 +1050,7 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	SDL_SetWindowSize(window, newRes.x, newRes.y);
 	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
-	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_FULLSCREEN_DESKTOP) * fullScreen) != 0)
+	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
 	if (newRes == maxRes)
