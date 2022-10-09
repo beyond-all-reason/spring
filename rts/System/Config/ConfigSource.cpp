@@ -135,6 +135,7 @@ void FileConfigSource::Read(FILE* file)
 	std::ostringstream commentBuffer;
 	char line[500];
 	rewind(file);
+	comments.clear();
 	while (fgets(line, sizeof(line), file)) {
 		char* line_stripped = Strip(line, strchr(line, '\0') - 1);
 		if (*line_stripped == '\0' || *line_stripped == '#') {
