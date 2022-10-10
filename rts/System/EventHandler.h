@@ -223,15 +223,6 @@ class CEventHandler
 		bool MousePress(int x, int y, int button);
 		void MouseRelease(int x, int y, int button);
 		bool MouseWheel(bool up, float value);
-
-		bool ControllerAxisMotion(int instanceId, int axisId, int value);
-		bool ControllerButtonDown(int instanceId, int buttonId, int state);
-		bool ControllerButtonUp(int instanceId, int buttonId, int state);
-		bool ControllerAdded(int deviceIndex);
-		bool ControllerRemoved(int instanceId);
-		bool ControllerConnected(int instanceId);
-		bool ControllerDisconnected(int instanceId);
-
 		bool IsAbove(int x, int y);
 
 		std::string GetTooltip(int x, int y);
