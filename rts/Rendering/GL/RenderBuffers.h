@@ -718,7 +718,7 @@ inline void TypedRenderBuffer<T>::UploadVBO()
 	CondInit();
 
 	if (verts.size() > vertCount0) {
-		LOG_L(L_WARNING, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
+		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
 		vbo->Resize(verts.capacity());
 		vertCount0 = verts.capacity();
 	}
