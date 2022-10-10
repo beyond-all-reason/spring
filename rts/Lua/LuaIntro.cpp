@@ -207,6 +207,8 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWMIcon);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWMCaption);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowGeometry);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowMinimized);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowMaximized);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetLogSectionFilterLevel);
 

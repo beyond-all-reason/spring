@@ -1480,6 +1480,23 @@ int CGlobalRendering::DepthBitsToFormat(int bits)
 	}
 }
 
+bool CGlobalRendering::SetWindowMinMaximized(bool maximize) const
+{
+	static constexpr uint32_t mmFlags[] = {
+		SDL_WINDOW_MINIMIZED,
+		SDL_WINDOW_MAXIMIZED
+	};
+	if ((SDL_GetWindowFlags(sdlWindows[0]) & mmFlags[maximize]) != 0)
+		return false; //already in desired state
+
+	if (maximize)
+		SDL_MaximizeWindow(sdlWindows[0]);
+	else
+		SDL_MinimizeWindow(sdlWindows[0]);
+
+	return (SDL_GetWindowFlags(sdlWindows[0]) & mmFlags[maximize]) != 0;
+}
+
 /**
  * @brief multisample verify
  * @return whether verification passed

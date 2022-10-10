@@ -292,6 +292,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SDLStopTextInput);
 
 	REGISTER_LUA_CFUNC(SetWindowGeometry);
+	REGISTER_LUA_CFUNC(SetWindowMinimized);
+	REGISTER_LUA_CFUNC(SetWindowMaximized);
 
 	return true;
 }
@@ -3382,4 +3384,16 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 		luaL_error(L, "[%s] Invalid function parameters\n", __func__);
 
 	return 0;
+}
+
+int LuaUnsyncedCtrl::SetWindowMinimized(lua_State* L)
+{
+	lua_pushboolean(L, globalRendering->SetWindowMinimized());
+	return 1;
+}
+
+int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
+{
+	lua_pushboolean(L, globalRendering->SetWindowMaximized());
+	return 1;
 }

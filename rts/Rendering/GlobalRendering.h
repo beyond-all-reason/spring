@@ -80,6 +80,9 @@ public:
 
 	bool SetWindowPosHelper(int displayIdx, int winRPosX, int winRPosY, int winSizeX_, int winSizeY_, bool fs, bool bl) const;
 
+	bool SetWindowMaximized() const { return SetWindowMinMaximized(true ); };
+	bool SetWindowMinimized() const { return SetWindowMinMaximized(false); };
+
 	void SetFullScreen(bool cliWindowed, bool cliFullScreen);
 	void SetDualScreenParams();
 	void UpdateViewPortGeometry();
@@ -370,6 +373,8 @@ public:
 	static constexpr uint32_t NUM_OPENGL_TIMER_QUERIES = 8;
 	static constexpr uint32_t FRAME_REF_TIME_QUERY_IDX = 0;
 	static constexpr uint32_t FRAME_END_TIME_QUERY_IDX = NUM_OPENGL_TIMER_QUERIES - 1;
+private:
+	bool SetWindowMinMaximized(bool maximize) const;
 private:
 	// double-buffered; results from frame N become available on frame N+1
 	std::array<uint32_t, NUM_OPENGL_TIMER_QUERIES * 2> glTimerQueries;
