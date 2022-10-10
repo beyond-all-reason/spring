@@ -54,6 +54,8 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
+#include "Rendering/Models/3DModel.h"
+#include "Rendering/Models/IModelParser.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
@@ -275,6 +277,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(PreloadUnitDefModel);
 	REGISTER_LUA_CFUNC(PreloadFeatureDefModel);
 	REGISTER_LUA_CFUNC(PreloadSoundItem);
+	REGISTER_LUA_CFUNC(LoadModelTextures);
 
 	REGISTER_LUA_CFUNC(CreateDecal);
 	REGISTER_LUA_CFUNC(DestroyDecal);
@@ -3214,6 +3217,30 @@ int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	lua_pushboolean(L, retval && !synced);
+	return 1;
+}
+
+int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
+{
+	const std::string modelName = luaL_optstring(L, 1, nullptr);
+	if (modelName.empty()) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	for (S3DModel& model : modelLoader.GetModelsVec()) {
+		if (model.name == modelName) {
+			if (model.type == MODELTYPE_3DO) {
+				lua_pushboolean(L, false);
+				return 1;
+			}
+			textureHandlerS3O.LoadTexture(&model);
+			lua_pushboolean(L, true);
+			return 1;
+		}
+	}
+
+	lua_pushboolean(L, false);
 	return 1;
 }
 
