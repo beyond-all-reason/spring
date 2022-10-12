@@ -76,6 +76,10 @@ void COverheadController::KeyMove(float3 move)
 
 void COverheadController::MouseMove(float3 move)
 {
+	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
+	move.x *= move.z;
+	move.y *= move.z;
+
 	if (flipped) {
 		move.x = -move.x;
 		move.y = -move.y;
