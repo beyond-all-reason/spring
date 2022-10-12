@@ -101,7 +101,7 @@ void COverheadController::ScreenEdgeMove(float3 move)
 }
 
 
-void COverheadController::MouseWheelMove(float move)
+void COverheadController::MouseWheelMove(float move, const float3& newDir)
 {
 	if (move == 0.0f)
 		return;
@@ -134,9 +134,9 @@ void COverheadController::MouseWheelMove(float move)
 
 			// instazoom in to standard view
 			if (moveReset)
-				dif = (height - oldAltHeight) / mouse->dir.y * dir.y;
+				dif = (height - oldAltHeight) / newDir.y * dir.y;
 
-			float3 wantedPos = cpos + mouse->dir * dif;
+			float3 wantedPos = cpos + newDir * dif;
 
 			float newHeight = CGround::LineGroundCol(wantedPos, wantedPos + dir * 15000.0f, false);
 			float yDirClamp = std::max(std::fabs(dir.y), 0.0001f) * std::copysign(1.0f, dir.y);

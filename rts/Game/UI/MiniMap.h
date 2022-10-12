@@ -25,9 +25,10 @@ public:
 	virtual ~CMiniMap();
 
 	bool MousePress(int x, int y, int button);
-	void MouseMove(int x, int y, int dx,int dy, int button);
+	void MouseMove(int x, int y, int dx, int dy, int button);
 	void MouseRelease(int x, int y, int button);
-	void MoveView(int x, int y);
+	void MouseWheel(bool up, float delta);
+	void MoveView(int x, int y) { MoveView(GetMapPosition(x, y)); }
 	bool IsAbove(int x, int y);
 	bool IsInside(int x, int y);
 	std::string GetTooltip(int x, int y);
@@ -90,6 +91,7 @@ protected:
 	void SelectUnits(int x, int y);
 	void ProxyMousePress(int x, int y, int button);
 	void ProxyMouseRelease(int x, int y, int button);
+	void MoveView(const float3& mapPos);
 
 	bool RenderCachedTexture(bool useGeom);
 	void DrawBackground() const;

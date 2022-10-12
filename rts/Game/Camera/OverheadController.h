@@ -4,6 +4,7 @@
 #define _OVERHEAD_CONTROLLER_H
 
 #include "CameraController.h"
+#include "Game/UI/MouseHandler.h"
 
 
 class COverheadController : public CCameraController
@@ -17,7 +18,8 @@ public:
 	void KeyMove(float3 move);
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
-	void MouseWheelMove(float move);
+	void MouseWheelMove(float move) { MouseWheelMove(move, mouse->dir); }
+	void MouseWheelMove(float move, const float3& newDir);
 
 	void Update();
 	float3 GetPos() const { return (pos - dir * height); }

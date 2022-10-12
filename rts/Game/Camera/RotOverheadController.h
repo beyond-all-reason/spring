@@ -16,6 +16,7 @@ public:
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
 	void MouseWheelMove(float move);
+	void MouseWheelMove(float move, const float3& newDir) { MouseWheelMove(move); }
 
 	void SetPos(const float3& newPos);
 

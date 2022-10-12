@@ -4,6 +4,7 @@
 #define _SPRING_CONTROLLER_H
 
 #include "CameraController.h"
+#include "Game/UI/MouseHandler.h"
 #include "System/type2.h"
 
 class CSpringController : public CCameraController
@@ -16,7 +17,8 @@ public:
 	void KeyMove(float3 move);
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
-	void MouseWheelMove(float move);
+	void MouseWheelMove(float move) { MouseWheelMove(move, mouse->dir); }
+	void MouseWheelMove(float move, const float3& newDir);
 
 	void Update();
 	void SetPos(const float3& newPos) { pos = newPos; Update(); }
@@ -33,8 +35,8 @@ private:
 	float GetAzimuth() const;
 	float MoveAzimuth(float move);
 
-	inline float ZoomIn(const float3& curCamPos, const float2& zoomParams);
-	inline float ZoomOut(const float3& curCamPos, const float2& zoomParams);
+	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& scaledMode);
+	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
 private:
 	float3 rot;

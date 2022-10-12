@@ -135,6 +135,8 @@ public:
 	float scrollWheelSpeed = 0.0f;
 	float dragScrollThreshold = 0.0f;
 
+	bool miniMapMouseWheel = false;
+
 	int dragSelectionThreshold = 0;
 	int dragBoxCommandThreshold = 0;
 	int dragCircleCommandThreshold = 0;
