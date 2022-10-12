@@ -1717,7 +1717,7 @@ void CUnitDrawerGL4::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLua
 	glEnable(GL_CLIP_DISTANCE0);
 	glEnable(GL_CLIP_DISTANCE1);
 
-	const auto SetClipPlane = [po](uint8_t idx, const float4& cp = float4{ 0.0f, 0.0f, 0.0f, 1.0f }) {
+	const auto SetClipPlane = [po](uint8_t idx, const float4& cp) {
 		switch (idx)
 		{
 		case 0: //upper construction clip plane
@@ -1750,8 +1750,8 @@ void CUnitDrawerGL4::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLua
 		smv.SubmitImmediately(unit, GL_TRIANGLES);
 	}
 
-	SetClipPlane(0); //default
-	SetClipPlane(1); //default;
+	SetClipPlane(0, float4{ 0.0f, 0.0f, 0.0f, 1.0f }); //default
+	SetClipPlane(1, float4{ 0.0f, 0.0f, 0.0f, 1.0f }); //default;
 
 	glDisable(GL_CLIP_DISTANCE1);
 	glDisable(GL_CLIP_DISTANCE0);

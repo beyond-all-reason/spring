@@ -415,10 +415,10 @@ public:
 	}
 
 	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
-	TypedRenderBuffer<T>(TypedRenderBuffer<T>&& trdb) { *this = std::move(trdb); }
+	TypedRenderBuffer<T>(TypedRenderBuffer<T>&& trdb) noexcept { *this = std::move(trdb); }
 
 	TypedRenderBuffer<T>& operator = (const TypedRenderBuffer<T>& rhs) = delete;
-	TypedRenderBuffer<T>& operator = (TypedRenderBuffer<T>&& rhs) {
+	TypedRenderBuffer<T>& operator = (TypedRenderBuffer<T>&& rhs) noexcept {
 		vertCount0 = rhs.vertCount0;
 		elemCount0 = rhs.elemCount0;
 		bufferType = rhs.bufferType;
