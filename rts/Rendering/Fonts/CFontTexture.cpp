@@ -765,7 +765,7 @@ public:
 			if (!config)
 				return;
 
-			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>.</cachedir></fontconfig>)";
+			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			if (!FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue)) {
 				FcConfigDestroy(config);
 				config = nullptr;
