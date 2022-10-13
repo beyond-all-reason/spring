@@ -760,7 +760,16 @@ public:
 			std::string msg = fmt::sprintf("%s::FontConfigInit (version %d.%d.%d)", __func__, FC_MAJOR, FC_MINOR, FC_REVISION);
 			ScopedOnceTimer timer(msg);
 
-			config = FcInitLoadConfig();
+			FcInit();
+			config = FcConfigCreate();
+			if (!config)
+				return;
+
+			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>.</cachedir></fontconfig>)";
+			if (!FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue)) {
+				FcConfigDestroy(config);
+				config = nullptr;
+			}
 		}
 		#endif
 	}
