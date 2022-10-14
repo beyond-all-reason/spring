@@ -2,7 +2,7 @@
 
     git clone https://github.com/beyond-all-reason/spring
 
-BeyondAllReason a fork of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring).
+BeyondAllReason is a fork of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring).
 
 Visit our [webpage](https://www.beyondallreason.info) for help, suggestions,
 bugs, community forum and everything spring related.
