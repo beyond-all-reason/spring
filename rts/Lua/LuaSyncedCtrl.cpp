@@ -1407,7 +1407,7 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 	const bool recycleID = luaL_optboolean(L, 5, false);
 
 	CUnit* attacker = nullptr;
-	if (!lua_isnil(L, 4))
+	if (!lua_isnoneornil(L, 4))
 		attacker = ParseUnit(L, __func__, 4);
 
 	if (inDestroyUnit >= MAX_CMD_RECURSION_DEPTH)
