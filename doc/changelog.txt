@@ -115,6 +115,9 @@ UI:
  - Add GetScanSymbol(int scanCode)
 
 Fixes:
+ - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
+   i.e. unplug/replug USB headset or swtich between builtin soundcard to 
+   monitor soundcard (HDMI), seamlessly possible without requiring a program restart
  - Fix keysets bound to duplicate actions when the action line contains
    discrepant comment sections
  - Fix name retrieval for keycodes always returning hex value, this
