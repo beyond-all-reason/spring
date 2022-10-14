@@ -1,6 +1,6 @@
 # BeyondAllReason RTS game engine
 
-    git clone https://github.com/beyond-all-reason/spring
+    git clone https://github.com/beyond-all-reason/spring -b BAR105
 
 BeyondAllReason is a fork of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring).
 
