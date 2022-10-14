@@ -1,42 +1,45 @@
-# Spring RTS game engine
-[![Build Status](https://travis-ci.org/spring/spring.svg?branch=develop)](https://travis-ci.org/spring/spring)
+# BeyondAllReason RTS game engine
 
-## README
+    git clone https://github.com/beyond-all-reason/spring
 
-Spring (formerly TASpring) is an Open Source Real Time Strategy game engine.
-Visit our [project homepage](https://springrts.com/) for help, suggestions,
+BeyondAllReason a fork of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring).
+
+Visit our [webpage](https://www.beyondallreason.info) for help, suggestions,
 bugs, community forum and everything spring related.
+
+### Installation
+
+You can use a pre-compiled binary, usually, you want to use an installer or a package prepared for your OS:
+
+* <https://www.beyondallreason.info/download>
+
 
 ### Compiling
 
-Detailed instructions for how to compile Spring can be found [here](https://springrts.com/wiki/Building_spring)
+Detailed instructions for how to compile BeyondAllReason can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker)
+
+Don't use 'master' branch, it is quite old.
+
+You need to check our tags:
+
+	git tag
+	spring_bar_{BAR105}105.0-430-g2727993
+	spring_bar_{BAR105}105.1.1-1005-ga7ea1cc
+	spring_bar_{BAR105}105.1.1-1011-g325620e
+	spring_bar_{BAR105}105.1.1-1032-gf4d6126
+	spring_bar_{BAR105}105.1.1-1039-g895d540
+	spring_bar_{BAR105}105.1.1-1050-g5075cc0
+	...
+
+And also the BAR105 branch in this case:
+
+	git checkout origin/BAR105 -b BAR105
 
 The most simple set of commands will be:
 
 	cmake .
 	make
 
-### Installation
+### License
 
-Usually, you want to use an installer or a package prepared for your OS:
-
-* Windows: <https://springrts.com/wiki/Download>
-* Linux:   <https://springrts.com/wiki/SetupGuide>
-
-If you want to compile and install from source, please see [this wiki page](https://springrts.com/wiki/Building_spring)
-
-The most simple set of commands will be:
-
-	make install
-
-### Using
-
-Use a lobby client for playing single- or multi-player matches.
-A list of lobbies may be found [here](https://springrts.com/wiki/Lobby_Development#Lobby_client_development)
-
-Once you are in-game, Spring games basically work like every other RTS,
-though it has [a LOT of additional ways of control and customizability](https://springrts.com/wiki/Using_Spring).
-
-### Notes
-
-A more extensive readme can be found [here](https://springrts.com/wiki/Read_Me_First).
+Our Terms are documented in the [LICENSE](LICENSE).
