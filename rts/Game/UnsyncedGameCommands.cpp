@@ -689,13 +689,14 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		camera->SetMovState(moveStateIdx, true);
 
-		return !unHaltingStates.contains(StringToLower(action.GetCmd()));
+		std::string cmd = action.GetCmd(); StringToLowerInPlace(cmd);
+		return std::find(unHaltingStates.begin(), unHaltingStates.end(), cmd) == unHaltingStates.end();
 	}
 
 private:
 	int moveStateIdx;
 	// Some camera state commands should not halt the chain
-	const spring::unordered_set<std::string> unHaltingStates = {
+	static constexpr std::array unHaltingStates = {
 		"moveslow",
 		"movefast",
 		"movetilt",
