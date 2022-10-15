@@ -793,6 +793,8 @@ static int FilterUnitsVector(const std::vector<CUnit*>& units, int* unitIds, int
 
 	for (auto ui = units.begin(); (ui != units.end()) && (a < maxUnitIds); ++ui) {
 		const CUnit* u = *ui;
+		if (!CHECK_UNITID(u->id))
+			continue;
 
 		if ((includeUnit == nullptr) || (*includeUnit)(u)) {
 			if (unitIds != nullptr)
