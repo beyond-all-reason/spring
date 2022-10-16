@@ -143,8 +143,6 @@ struct S3DModelPiece {
 	virtual void PostProcessGeometry(uint32_t pieceIndex);
 	void UploadToVBO();
 
-	//void MeshOptimize();
-
 	void BindVertexAttribVBOs() const;
 	void UnbindVertexAttribVBOs() const;
 
