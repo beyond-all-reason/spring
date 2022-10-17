@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "Rendering/Models/3DModel.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
@@ -44,6 +45,11 @@ public:
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = INSTANCE_BUFFER_NUM_BATCHED + INSTANCE_BUFFER_NUM_IMMEDIATE;
 public:
 	S3DModelVAO();
+
+	void LoadModel(S3DModel* model, bool upload);
+	void LoadExistingModels();
+	void CreateVAO();
+	void UploadVBOs();
 
 	void Bind() const;
 	void Unbind() const;
@@ -87,10 +93,13 @@ private:
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
-	inline static S3DModelVAO* instance = nullptr;
+	inline static std::unique_ptr<S3DModelVAO> instance = nullptr;
 private:
 	uint32_t batchedBaseInstance;
 	uint32_t immediateBaseInstance; //note relative index
+
+	std::vector<SVertexData> vertData;
+	std::vector<uint32_t   > indxData;
 
 	VBO vertVBO;
 	VBO indxVBO;

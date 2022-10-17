@@ -23,7 +23,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Models/IModelParser.h"
-#include "Rendering/Models/ModelPreloader.h"
+#include "Rendering/Models/3DModelVAO.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
@@ -72,7 +72,7 @@ void CWorldDrawer::InitPost() const
 
 	{
 		loadscreen->SetLoadMessage("Loading Models");
-		ModelPreloader::Load();
+		S3DModelVAO::Init();
 	}
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
@@ -143,7 +143,7 @@ void CWorldDrawer::Kill()
 	CUnitDrawer::KillStatic(gu->globalReload); // depends on unitHandler, cubeMapHandler
 	CProjectileDrawer::KillStatic(gu->globalReload);
 
-	ModelPreloader::Clean();
+	S3DModelVAO::Kill();
 	modelLoader.Kill();
 
 	spring::SafeDelete(heightMapTexture);
