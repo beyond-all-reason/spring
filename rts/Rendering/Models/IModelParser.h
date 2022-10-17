@@ -45,8 +45,8 @@ public:
 
 private:
 	S3DModel ParseModel(const std::string& name, const std::string& path);
-	S3DModel* CreateModel(const std::string& name, const std::string& path, bool preload);
-	S3DModel* LoadCachedModel(const std::string& name, bool preload);
+	void CreateModel(S3DModel& model, const std::string& name, const std::string& path);
+	S3DModel* GetCachedModel(const std::string& name, bool preload);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
 
@@ -54,7 +54,7 @@ private:
 	void KillModels();
 	void KillParsers();
 
-	void PostProcessGeometry(S3DModel* o) const;
+	void PostProcessGeometry(S3DModel* o);
 	void Upload(S3DModel* o) const;
 
 private:

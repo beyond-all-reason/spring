@@ -34,7 +34,7 @@ FlyingPiece::FlyingPiece(
 , age(0)
 , piece(_piece)
 {
-	assert(piece->GetVertexDrawIndexCount() % 3 == 0); // only triangles
+	assert(piece->GetIndicesVec().size() % 3 == 0); // only triangles
 
 	InitCommon(pos, speed, _pieceParams.x, _renderParams.y, _renderParams.x);
 
@@ -218,7 +218,8 @@ void FlyingPiece::Draw(const FlyingPiece* prev) const
 	for (auto& cp: splitterParts) {
 		glPushMatrix();
 		glMultMatrixf(GetMatrixOf(cp, dragFactors));
-		piece->DrawShatterElements(cp.indexStart, cp.indexCount);
+		const uint32_t indxOffset = piece->indxStart + piece->indxCount; //shatter piece indices come after regular indices
+		piece->DrawShatterElements(indxOffset + cp.indexStart, cp.indexCount);
 		glPopMatrix();
 	}
 }

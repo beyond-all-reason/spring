@@ -40,6 +40,8 @@ public:
 	static S3DModelVAO& GetInstance() { assert(IsValid()); return *instance; }
 	static bool IsValid() { return instance != nullptr; }
 public:
+	static constexpr size_t VERT_SIZE0 = 1 << 18;
+	static constexpr size_t INDX_SIZE0 = VERT_SIZE0 * 4;
 	static constexpr size_t INSTANCE_BUFFER_NUM_BATCHED = 2 << 15;
 	static constexpr size_t INSTANCE_BUFFER_NUM_IMMEDIATE = 2 << 10;
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = INSTANCE_BUFFER_NUM_BATCHED + INSTANCE_BUFFER_NUM_IMMEDIATE;
@@ -48,17 +50,16 @@ public:
 
 	uint32_t GetVertOffset() const { return static_cast<uint32_t>(vertData.size()); }
 
-	void PreloadModel(S3DModel* model) const;
-	void LoadModel(S3DModel* model, bool upload);
-	void LoadExistingModels();
+	void ProcessVertices(const S3DModel* model);
+	void ProcessIndicies(S3DModel* model);
 	void CreateVAO();
 	void UploadVBOs();
 
 	void Bind() const;
 	void Unbind() const;
 
-	void BindLegacyVertexAttribs() const;
-	void UnbindLegacyVertexAttribs() const;
+	void BindLegacyVertexAttribsAndVBOs() const;
+	void UnbindLegacyVertexAttribsAndVBOs() const;
 
 	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const;
 
@@ -105,6 +106,9 @@ private:
 private:
 	uint32_t batchedBaseInstance;
 	uint32_t immediateBaseInstance; //note relative index
+
+	size_t vertUploadIndex = 0;
+	size_t indxUploadIndex = 0;
 
 	std::vector<SVertexData> vertData;
 	std::vector<uint32_t   > indxData;

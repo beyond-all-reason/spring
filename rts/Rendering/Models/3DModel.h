@@ -17,8 +17,8 @@
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS = 2560;
-constexpr int AVG_MODEL_PIECES = 16; // as it used to be
+constexpr int MAX_MODEL_OBJECTS  = 2560;
+constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
 
@@ -109,6 +109,10 @@ struct S3DModelPiece {
 			p.renderData.clear();
 		}
 
+		vertices.clear();
+		indices.clear();
+		shatterIndices.clear();
+
 		parent = nullptr;
 		colvol = {};
 
@@ -129,19 +133,21 @@ struct S3DModelPiece {
 	virtual float3 GetEmitDir() const;
 
 	// internal use
-	uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertices.size()); }
-	uint32_t GetVertexDrawIndexCount() const { return static_cast<uint32_t>(indices.size()); }
-	virtual const float3& GetVertexPos(const int) const = 0;
-	virtual const float3& GetNormal(const int) const = 0;
+	const float3& GetVertexPos(const int idx) const { return vertices[idx].pos; }
+	const float3& GetNormal(const int idx) const { return vertices[idx].normal; }
 
 	virtual void PostProcessGeometry(uint32_t pieceIndex);
+
+	void BindLegacyAttrVBOs() const;
+	void UnbindLegacyAttrVBOs() const;
 
 	void DrawElements(GLuint prim = GL_TRIANGLES) const;
 	void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES) const;
 
 	bool HasBackedMat() const { return hasBakedMat; }
 public:
-	void DrawStaticLegacy() const;
+	void DrawStaticLegacy(bool bind = true) const;
+	void DrawStaticLegacyRec() const;
 
 	void CreateShatterPieces();
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
@@ -181,8 +187,10 @@ public:
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
 
-	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
+	bool HasGeometryData() const { return indices.size() >= 3; }
 	void SetParentModel(S3DModel* model_) { model = model_; }
+
+	void ReleaseShatterIndices();
 
 	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; }
 	const std::vector<uint32_t>& GetIndicesVec() const { return indices; }
@@ -207,9 +215,9 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
-	uint32_t vertIndex = 0u; // global vertex number offset
-	uint32_t indxStart = 0u; // global Index VBO offset
-	uint32_t indxCount = 0u;
+	uint32_t vertIndex = ~0u; // global vertex number offset
+	uint32_t indxStart = ~0u; // global Index VBO offset
+	uint32_t indxCount = ~0u;
 protected:
 	std::vector<SVertexData> vertices;
 	std::vector<uint32_t> indices;
@@ -223,15 +231,19 @@ public:
 };
 
 
-
 struct S3DModel
 {
+	enum LoadStatus {
+		NOTLOADED,
+		LOADING,
+		LOADED
+	};
 	S3DModel()
 		: id(-1)
 		, numPieces(0)
 		, textureType(-1)
 
-		, indxStart(0u)
+		, indxStart(~0u)
 		, indxCount(0u)
 
 		, type(MODELTYPE_CNT)
@@ -242,6 +254,9 @@ struct S3DModel
 		, mins(DEF_MIN_SIZE)
 		, maxs(DEF_MAX_SIZE)
 		, relMidPos(ZeroVector)
+
+		, loadStatus(NOTLOADED)
+		, uploaded(false)
 
 		, matAlloc(ScopedMatricesMemAlloc())
 	{}
@@ -276,6 +291,9 @@ struct S3DModel
 		for (auto po : pieceObjects)
 			po->SetParentModel(this);
 
+		loadStatus = m.loadStatus;
+		uploaded = m.uploaded;
+
 		matAlloc = std::move(m.matAlloc);
 
 		return *this;
@@ -287,7 +305,7 @@ struct S3DModel
 	void AddPiece(S3DModelPiece* p) { pieceObjects.push_back(p); }
 	void DrawStatic() const {
 		// draw pieces in their static bind-pose (ie. without script-transforms)
-		for (const S3DModelPiece* pieceObj: pieceObjects) {
+		for (const S3DModelPiece* pieceObj : pieceObjects) {
 			pieceObj->DrawStaticLegacy();
 		}
 	}
@@ -313,11 +331,11 @@ struct S3DModel
 		pieceObjects.clear();
 		pieceObjects.reserve(numPieces);
 
-		// force mutex just in case this is called from modelLoader.PreloadModel()
-		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+		// force mutex just in case this is called from modelLoader.ProcessVertices()
+		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
 		matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
 
-		std::vector<S3DModelPiece*> stack = {root};
+		std::vector<S3DModelPiece*> stack = { root };
 
 		while (!stack.empty()) {
 			S3DModelPiece* p = stack.back();
@@ -344,7 +362,7 @@ struct S3DModel
 	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
-	std::string texs[NUM_MODEL_TEXTURES];
+	std::array<std::string, NUM_MODEL_TEXTURES> texs;
 
 	// flattened tree; pieceObjects[0] is the root
 	std::vector<S3DModelPiece*> pieceObjects;
@@ -364,6 +382,9 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+
+	LoadStatus loadStatus;
+	bool uploaded;
 private:
 	ScopedMatricesMemAlloc matAlloc;
 };

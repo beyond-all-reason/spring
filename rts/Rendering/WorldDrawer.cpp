@@ -3,6 +3,9 @@
 #include "Rendering/GL/myGL.h"
 
 #include "WorldDrawer.h"
+#include "Sim/Units/UnitDefHandler.h"
+#include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Weapons/WeaponDefHandler.h"
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
@@ -43,6 +46,9 @@
 #include "System/TimeProfiler.h"
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
+#include "System/Config/ConfigHandler.h"
+
+CONFIG(bool, PreloadModels).defaultValue(true).description("The engine will preload all models");
 
 void CWorldDrawer::InitPre() const
 {
@@ -73,6 +79,20 @@ void CWorldDrawer::InitPost() const
 	{
 		loadscreen->SetLoadMessage("Loading Models");
 		S3DModelVAO::Init();
+
+		if (configHandler->GetBool("PreloadModels")) {
+			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
+				def.PreloadModel();
+			}
+
+			for (const auto& def : featureDefHandler->GetFeatureDefsVec()) {
+				def.PreloadModel();
+			}
+
+			for (const auto& def : weaponDefHandler->GetWeaponDefsVec()) {
+				def.PreloadModel();
+			}
+		}
 	}
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
@@ -124,6 +144,10 @@ void CWorldDrawer::InitPost() const
 	}
 	{
 		sky->SetupFog();
+	}
+	{
+		loadscreen->SetLoadMessage("Finalizing Models");
+		modelLoader.DrainPreloadFutures(0);
 	}
 }
 

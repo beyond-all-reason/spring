@@ -940,14 +940,17 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 				glTranslatef3(pp->drawPos);
 				glRotatef(pp->GetDrawAngle(), pp->spinVec.x, pp->spinVec.y, pp->spinVec.z);
 
-				if (!p->luaDraw || !eventHandler.DrawProjectile(p)) {
-					if (pp->explFlags & PF_Recursive) {
-						pp->omp->DrawStaticLegacy();
-					} else {
-						assert(false);
-						//glCallList(pp->dispList);
-					}
+				if (p->luaDraw && eventHandler.DrawProjectile(p))
+					return true;
+
+				if ((pp->explFlags & PF_Recursive) != 0) {
+					pp->omp->DrawStaticLegacyRec();
 				}
+				else {
+					// non-recursive, only draw one piece
+					pp->omp->DrawStaticLegacy();
+				}
+
 			glPopMatrix();
 			return true;
 		} break;

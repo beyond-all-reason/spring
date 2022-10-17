@@ -99,11 +99,11 @@ static S3DModel CreateDummyModel(unsigned int id)
 
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
-	if (modelPiece->GetVertexCount() >= 3) {
+	if (auto vertCount = modelPiece->GetVerticesVec().size(); vertCount >= 3) {
 		// do not check pseudo-pieces
 		unsigned int numNullNormals = 0;
 
-		for (unsigned int n = 0; n < modelPiece->GetVertexCount(); n++) {
+		for (unsigned int n = 0; n < vertCount; n++) {
 			numNullNormals += (modelPiece->GetNormal(n).SqLength() < 0.5f);
 		}
 
@@ -115,7 +115,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 			const char* modelName = model->name.c_str();
 			const char* pieceName = modelPiece->name.c_str();
 
-			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, numNullNormals, modelPiece->GetVertexCount());
+			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, numNullNormals, vertCount);
 		}
 	}
 
@@ -134,10 +134,8 @@ void CModelLoader::Init()
 	models.clear();
 	models.resize(MAX_MODEL_OBJECTS);
 
-	preloadFutures.reserve(1024);
-
 	// dummy first model, legitimate model IDs start at 1
-	models[0] = std::move(CreateDummyModel(numModels = 0));
+	models[0] = CreateDummyModel(numModels = 0);
 }
 
 void CModelLoader::InitParsers()
@@ -218,7 +216,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 	assert(Threading::IsMainThread());
 
 	//NB: do preload in any case
-	if (ThreadPool::HasThreads()) {
+	if (ThreadPool::HasThreads() && false) {
 
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
@@ -232,8 +230,6 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 				})
 			)
 		);
-
-		DrainPreloadFutures(preloadFutures.capacity() - 1); //keep the queue busy enough
 	}
 	else {
 		modelLoader.LoadModel(modelName, true);
@@ -249,7 +245,7 @@ void CModelLoader::LogErrors()
 
 	// block any preload threads from modifying <errors>
 	// doing the empty-check outside lock should be fine
-	std::lock_guard<spring::mutex> lock(mutex);
+	std::scoped_lock lock(mutex);
 
 	for (const auto& pair: errors) {
 		char buf[1024];
@@ -269,47 +265,77 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	if (name.empty())
 		return nullptr;
 
-	std::string  path;
-	std::string* refs[2] = {&name, &path};
-
 	StringToLowerInPlace(name);
 
+	bool load = false;
+	S3DModel* model = nullptr;
 	{
-		std::lock_guard<spring::mutex> lock(mutex);
+		std::scoped_lock lock(mutex);
 
 		// search in cache first
-		for (const auto& ref: refs) {
-			S3DModel* cachedModel = LoadCachedModel(*ref, preload);
+		model = GetCachedModel(name, preload);
 
-			if (cachedModel != nullptr)
-				return cachedModel;
-
-			// expensive, delay until needed
-			path = FindModelPath(name);
-		}
+		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
+		if (load)
+			model->loadStatus = S3DModel::LoadStatus::LOADING;
 	}
 
-	// not found in cache, create the model and cache it
-	return (CreateModel(name, path, preload));
+	assert(model);
+	if (load) {
+		CreateModel(*model, name, FindModelPath(name));
+	}
+
+	//spin wait other thread to load the same model for us
+	while (model->loadStatus == S3DModel::LoadStatus::LOADING)
+	{
+		spring_msecs(10).sleep();
+	}
+
+	if (!preload)
+		Upload(model);
+
+	return model;
 }
 
-S3DModel* CModelLoader::LoadCachedModel(const std::string& name, bool preload)
+S3DModel* CModelLoader::GetCachedModel(const std::string& name, bool preload)
 {
 	// caller has lock
 	const auto ci = cache.find(name);
 
-	if (ci == cache.end())
-		return nullptr;
+	if (ci == cache.end()) {
+		++numModels;
+
+		models[numModels].id = numModels;
+		cache[name] = numModels;
+
+		return &models[numModels];
+	}
 
 	S3DModel* cachedModel = &models[ci->second];
-
-	assert(cachedModel->id >= 0);
-	//PostProcessGeometry(cachedModel);
-
-	if (!preload)
-		Upload(cachedModel);
-
 	return cachedModel;
+}
+
+void CModelLoader::CreateModel(
+	S3DModel& model,
+	const std::string& name,
+	const std::string& path
+) {
+	//fugly hack
+	auto id = model.id;
+	auto ls = model.loadStatus;
+	model = ParseModel(name, path);
+	model.id = id;
+	model.loadStatus = ls;
+	//
+
+	assert(model.numPieces != 0);
+	assert(model.GetRootPiece() != nullptr);
+
+	model.SetPieceMatrices();
+
+	PostProcessGeometry(&model);
+
+	model.loadStatus = S3DModel::LoadStatus::LOADED;
 }
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
@@ -319,69 +345,21 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
-	const auto erasePredicate = [](decltype(preloadFutures)::value_type item, std::chrono::microseconds timeout) {
+	const auto erasePredicate = [timeout = 0us](decltype(preloadFutures)::value_type item) {
 		return item->wait_for(timeout) == std::future_status::ready;
 	};
 
-	const auto erasePredicate1 = [erasePredicate, timeout = 0us  ](decltype(preloadFutures)::value_type item) { return erasePredicate(item, timeout); };
-	const auto erasePredicate2 = [erasePredicate, timeout = 100us](decltype(preloadFutures)::value_type item) { return erasePredicate(item, timeout); };
-
 	// collect completed futures
-	spring::VectorEraseAllIf(preloadFutures, erasePredicate1);
+	spring::VectorEraseAllIf(preloadFutures, erasePredicate);
 
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
 	while (preloadFutures.size() > numAllowed) {
 		//drain queue until there are <= numAllowed items there
-		spring::VectorEraseAllIf(preloadFutures, erasePredicate2);
+		spring::VectorEraseAllIf(preloadFutures, erasePredicate);
 	}
 }
-
-
-
-S3DModel* CModelLoader::CreateModel(
-	const std::string& name,
-	const std::string& path,
-	bool preload
-) {
-	S3DModel model = std::move(ParseModel(name, path));
-	S3DModel* pmodel = &models[0];
-
-	{
-		assert(model.numPieces != 0);
-		assert(model.GetRootPiece() != nullptr);
-
-		model.SetPieceMatrices();
-
-		PostProcessGeometry(&model);
-
-		if (!preload)
-			Upload(&model);
-	}
-	{
-		std::lock_guard<spring::mutex> lock(mutex);
-
-		// discard loaded model and return dummy if at limit
-		if (numModels >= MAX_MODEL_OBJECTS) {
-			errors.emplace_back(name, "numModels >= MAX_MODEL_OBJECTS");
-			return pmodel;
-		}
-
-		// NB: id depends on thread order, can not be used in synced code
-		pmodel = &models[model.id = ++numModels];
-
-		// add (parsed or dummy) model to cache
-		cache[name] = model.id;
-		cache[path] = model.id;
-
-		*pmodel = std::move(model);
-	}
-
-	return pmodel;
-}
-
-
 
 IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 {
@@ -400,18 +378,18 @@ S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& pa
 
 	if (parser == nullptr) {
 		LOG_L(L_ERROR, "could not find a parser for model \"%s\" (unknown format?)", name.c_str());
-		return (CreateDummyModel(0));
+		return CreateDummyModel(0);
 	}
 
 	try {
-		model = std::move(parser->Load(path));
+		model = parser->Load(path);
 	} catch (const content_error& ex) {
 		{
-			std::lock_guard<spring::mutex> lock(mutex);
+			std::scoped_lock lock(mutex);
 			errors.emplace_back(name, ex.what());
 		}
 
-		model = std::move(CreateDummyModel(0));
+		model = CreateDummyModel(0);
 	}
 
 	return model;
@@ -419,26 +397,37 @@ S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& pa
 
 
 
-void CModelLoader::PostProcessGeometry(S3DModel* model) const
+void CModelLoader::PostProcessGeometry(S3DModel* model)
 {
-	if (model->id >= 0)
+	if (model->loadStatus == S3DModel::LoadStatus::LOADED)
 		return;
 
-	uint32_t vertOffset = S3DModelVAO::GetInstance().GetVertOffset();
-	for (int i = 0; i < model->pieceObjects.size(); ++i) {
-		S3DModelPiece* p = model->pieceObjects[i];
-		p->vertIndex = vertOffset;
-		p->PostProcessGeometry(i);
+	// does quads and strips conversion sometimes. Need to run first
+	for (size_t i = 0; i < model->pieceObjects.size(); ++i) {
+		auto* p = model->pieceObjects[i];
+		p->PostProcessGeometry(static_cast<uint32_t>(i));
 		p->CreateShatterPieces();
-		vertOffset += p->GetVertexCount();
 	}
+
+	std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
+	auto& inst = S3DModelVAO::GetInstance();
+	inst.ProcessVertices(model);
+	inst.ProcessIndicies(model);
 }
 
 void CModelLoader::Upload(S3DModel* model) const {
-	if (model->indxCount > 0) //already uploaded
+	if (model->uploaded) //already uploaded
 		return;
 
-	S3DModelVAO::GetInstance().LoadModel(model, true);
+	assert(Threading::IsMainThread());
+
+	S3DModelVAO::GetInstance().UploadVBOs();
+
+	for (auto* p : model->pieceObjects) {
+		p->ReleaseShatterIndices();
+	}
+
+	model->uploaded = true;
 
 	// 3DO atlases are preloaded C3DOTextureHandler::Init()
 	if (model->type == MODELTYPE_3DO)

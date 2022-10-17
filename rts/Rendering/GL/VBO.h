@@ -134,9 +134,10 @@ private:
 		bool operator == (const BoundBufferRangeData& rhs) const {
 			return offset == rhs.offset && size == rhs.size;
 		};
-		void operator = (const BoundBufferRangeData& rhs) {
+		BoundBufferRangeData& operator= (const BoundBufferRangeData& rhs) {
 			offset = std::min(offset, rhs.offset);
 			size = std::max(size, rhs.size);
+			return *this;
 		};
 		GLuint offset;
 		GLsizeiptr size;

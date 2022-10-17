@@ -52,21 +52,41 @@ CR_REG_METADATA(LocalModel, (
  * S3DModelPiece
  */
 
-void S3DModelPiece::DrawStaticLegacy() const
+void S3DModelPiece::DrawStaticLegacy(bool bind) const
 {
 	if (!HasGeometryData())
 		return;
 
+	if (bind) BindLegacyAttrVBOs();
+
 	glPushMatrix();
 	glMultMatrixf(bposeMatrix);
+
 	DrawElements();
+
 	glPopMatrix();
+
+	if (bind) UnbindLegacyAttrVBOs();
+}
+
+// only used by projectiles with the PF_Recursive flag
+void S3DModelPiece::DrawStaticLegacyRec() const
+{
+	BindLegacyAttrVBOs();
+
+	DrawStaticLegacy();
+
+	for (const S3DModelPiece* childPiece : children) {
+		childPiece->DrawStaticLegacy();
+	}
+
+	UnbindLegacyAttrVBOs();
 }
 
 
 float3 S3DModelPiece::GetEmitPos() const
 {
-	switch (GetVertexCount()) {
+	switch (vertices.size()) {
 		case 0:
 		case 1: { return ZeroVector; } break;
 		default: { return GetVertexPos(0); } break;
@@ -75,7 +95,7 @@ float3 S3DModelPiece::GetEmitPos() const
 
 float3 S3DModelPiece::GetEmitDir() const
 {
-	switch (GetVertexCount()) {
+	switch (vertices.size()) {
 		case 0: { return FwdVector; } break;
 		case 1: { return GetVertexPos(0); } break;
 		default: { return (GetVertexPos(1) - GetVertexPos(0)); } break;
@@ -88,7 +108,7 @@ void S3DModelPiece::CreateShatterPieces()
 	if (!HasGeometryData())
 		return;
 
-	shatterIndices.reserve(S3DModelPiecePart::SHATTER_VARIATIONS * GetVertexDrawIndexCount());
+	shatterIndices.reserve(S3DModelPiecePart::SHATTER_VARIATIONS * indices.size());
 
 	for (int i = 0; i < S3DModelPiecePart::SHATTER_VARIATIONS; ++i) {
 		CreateShatterPiecesVariation(i);
@@ -140,9 +160,10 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 
 		assert(mcp);
 
-		(mcp->second).push_back(indices[i + 0] + vertIndex);
-		(mcp->second).push_back(indices[i + 1] + vertIndex);
-		(mcp->second).push_back(indices[i + 2] + vertIndex);
+		//  + vertIndex will be added in void S3DModelVAO::ProcessIndicies(S3DModel* model)
+		(mcp->second).push_back(indices[i + 0]);
+		(mcp->second).push_back(indices[i + 1]);
+		(mcp->second).push_back(indices[i + 2]);
 	}
 
 	{
@@ -151,8 +172,8 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 		uint32_t indxPos = 0;
 
 		for (auto& [rd, idcs] : shatterPartsBuf) {
-			rd.indexCount = idcs.size();
-			rd.indexStart = num * mapSize + indxPos;
+			rd.indexCount = static_cast<uint32_t>(idcs.size());
+			rd.indexStart = static_cast<uint32_t>(num * mapSize) + indxPos;
 
 			if (rd.indexCount > 0) {
 				shatterIndices.insert(shatterIndices.end(), idcs.begin(), idcs.end());
@@ -205,6 +226,15 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 		v.pieceIndex = pieceIndex;
 }
 
+void S3DModelPiece::BindLegacyAttrVBOs() const
+{
+	S3DModelVAO::GetInstance().BindLegacyVertexAttribsAndVBOs();
+}
+void S3DModelPiece::UnbindLegacyAttrVBOs() const
+{
+	S3DModelVAO::GetInstance().UnbindLegacyVertexAttribsAndVBOs();
+}
+
 void S3DModelPiece::DrawElements(GLuint prim) const
 {
 	if (indxCount == 0)
@@ -221,6 +251,10 @@ void S3DModelPiece::DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxC
 	S3DModelVAO::GetInstance().DrawElements(prim, vboIndxStart, vboIndxCount);
 }
 
+void S3DModelPiece::ReleaseShatterIndices()
+{
+	shatterIndices.clear();
+}
 
 /** ****************************************************************************************************
  * LocalModel
@@ -461,7 +495,9 @@ void LocalModelPiece::Draw() const
 
 	glPushMatrix();
 	glMultMatrixf(GetModelSpaceMatrix());
+	original->BindLegacyAttrVBOs();
 	original->DrawElements();
+	original->UnbindLegacyAttrVBOs();
 	glPopMatrix();
 }
 

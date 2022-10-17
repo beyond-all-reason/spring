@@ -41,9 +41,6 @@ struct SAssPiece: public S3DModelPiece
 		numTexCoorChannels = 0;
 	}
 
-	const float3& GetVertexPos(const int idx) const override { return vertices[idx].pos; }
-	const float3& GetNormal(const int idx) const override { return vertices[idx].normal; }
-
 	unsigned int GetNumTexCoorChannels() const { return numTexCoorChannels; }
 	void SetNumTexCoorChannels(unsigned int n) { numTexCoorChannels = n; }
 public:
