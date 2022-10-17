@@ -8,14 +8,15 @@
 class CKeyCodes : public IKeys {
 public:
 
-	bool IsModifier(int code);
+	void Reset() override;
 
-	void Reset();
-	void PrintNameToCode() const;
-	void PrintCodeToName() const;
-	std::string GetName(int code) const;
-	std::string GetDefaultName(int code) const;
+	bool IsModifier(int code) const override;
+	void PrintNameToCode() const override;
+	void PrintCodeToName() const override;
+	std::string GetName(int code) const override;
+	std::string GetDefaultName(int code) const override;
 
+	static std::string GetCodeString(int code);
 	static int GetNormalizedSymbol(int sym);
 };
 
