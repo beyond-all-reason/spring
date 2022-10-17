@@ -450,19 +450,6 @@ void S3DOPiece::PostProcessGeometry(uint32_t pieceIndex)
 	// indices.clear();
 }
 
-void S3DOPiece::DrawForList() const
-{
-	if (!HasGeometryData())
-		return;
-
-	BindVertexAttribVBOs();
-	BindIndexVBO();
-		DrawElements(GL_TRIANGLES);
-	UnbindIndexVBO();
-	UnbindVertexAttribVBOs();
-}
-
-
 void S3DOPiece::CalcNormals()
 {
 	// generate for each vertex a list of faces that share it

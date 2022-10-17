@@ -46,7 +46,7 @@ public:
 	float GetDrawAngle() const;
 
 private:
-	CPieceProjectile() { }
+	CPieceProjectile() = default;
 	float3 RandomVertexPos() const;
 	void Collision(CUnit* unit, CFeature* feature);
 
@@ -59,12 +59,11 @@ public:
 	int age;
 
 	unsigned int explFlags;
-	unsigned int dispList;
 
 	const S3DModelPiece* omp;
 
 	static constexpr unsigned NUM_TRAIL_PARTS = 8;
-	FireTrailPoint fireTrailPoints[NUM_TRAIL_PARTS];
+	std::array<FireTrailPoint, NUM_TRAIL_PARTS> fireTrailPoints;
 
 	float3 spinVec;
 	float spinSpeed;

@@ -1389,7 +1389,8 @@ static void GLObjectPiece(lua_State* L, const CSolidObject* obj)
 	if (lmp == nullptr)
 		return;
 
-	glCallList(lmp->dispListID);
+	assert(lmp->original);
+	lmp->original->DrawElements();
 }
 
 static void GLObjectPieceMultMatrix(lua_State* L, const CSolidObject* obj)

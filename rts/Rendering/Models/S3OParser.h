@@ -42,8 +42,6 @@ public:
 		primType = S3O_PRIMTYPE_TRIANGLES;
 	}
 
-	void DrawForList() const override;
-
 	const float3& GetVertexPos(const int idx) const override { return vertices[idx].pos; }
 	const float3& GetNormal(const int idx) const override { return vertices[idx].normal; }
 

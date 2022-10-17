@@ -725,11 +725,9 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 	if (container.empty())
 		return;
 
-	glPushAttrib(GL_POLYGON_BIT);
-	glDisable(GL_CULL_FACE);
+	FlyingPiece::BeginDraw();
 
 	const FlyingPiece* last = nullptr;
-
 	for (const FlyingPiece& fp: container) {
 		const bool noLosTst = gu->spectatingFullView || teamHandler.AlliedTeams(gu->myTeam, fp.GetTeam());
 		const bool inAirLos = noLosTst || losHandler->InAirLos(fp.GetPos(), gu->myAllyTeam);
@@ -744,10 +742,7 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 		last = &fp;
 	}
 
-	if (last != nullptr)
-		last->EndDraw();
-
-	glPopAttrib();
+	FlyingPiece::EndDraw();
 }
 
 
@@ -947,9 +942,10 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 
 				if (!p->luaDraw || !eventHandler.DrawProjectile(p)) {
 					if (pp->explFlags & PF_Recursive) {
-						pp->omp->DrawStatic();
+						pp->omp->DrawStaticLegacy();
 					} else {
-						glCallList(pp->dispList);
+						assert(false);
+						//glCallList(pp->dispList);
 					}
 				}
 			glPopMatrix();

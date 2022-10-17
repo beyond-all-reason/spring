@@ -6,6 +6,7 @@
 #include "3DOParser.h"
 #include "S3OParser.h"
 #include "AssParser.h"
+#include "3DModelVAO.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Net/Protocol/NetProtocol.h" // NETLOG
@@ -303,10 +304,10 @@ S3DModel* CModelLoader::LoadCachedModel(const std::string& name, bool preload)
 	S3DModel* cachedModel = &models[ci->second];
 
 	assert(cachedModel->id >= 0);
-	//LoadAndProcessGeometry(cachedModel);
+	//PostProcessGeometry(cachedModel);
 
 	if (!preload)
-		CreateLists(cachedModel);
+		Upload(cachedModel);
 
 	return cachedModel;
 }
@@ -353,10 +354,10 @@ S3DModel* CModelLoader::CreateModel(
 
 		model.SetPieceMatrices();
 
-		LoadAndProcessGeometry(&model);
+		PostProcessGeometry(&model);
 
 		if (!preload)
-			CreateLists(&model);
+			Upload(&model);
 	}
 	{
 		std::lock_guard<spring::mutex> lock(mutex);
@@ -418,42 +419,26 @@ S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& pa
 
 
 
-void CModelLoader::LoadAndProcessGeometry(S3DModel* model)
+void CModelLoader::PostProcessGeometry(S3DModel* model) const
 {
 	if (model->id >= 0)
 		return;
 
-	const S3DModelPiece* rootPiece = model->GetRootPiece();
-
-	model->curVertStartIndx = 0u;
-	model->curIndxStartIndx = 0u;
-
+	uint32_t vertOffset = S3DModelVAO::GetInstance().GetVertOffset();
 	for (int i = 0; i < model->pieceObjects.size(); ++i) {
 		S3DModelPiece* p = model->pieceObjects[i];
+		p->vertIndex = vertOffset;
 		p->PostProcessGeometry(i);
-		model->curVertStartIndx += p->GetVertexCount();
-		model->curIndxStartIndx += p->GetVertexDrawIndexCount();
+		p->CreateShatterPieces();
+		vertOffset += p->GetVertexCount();
 	}
 }
 
-void CModelLoader::CreateLists(S3DModel* model) {
-	const S3DModelPiece* rootPiece = model->GetRootPiece();
-
-	if (rootPiece->GetDisplayListID() != 0)
+void CModelLoader::Upload(S3DModel* model) const {
+	if (model->indxCount > 0) //already uploaded
 		return;
 
-	for (int i = 0; i < model->pieceObjects.size(); ++i) {
-		S3DModelPiece* p = model->pieceObjects[i];
-		p->CreateShatterPieces();
-	}
-
-	model->CreateVBOs();
-	for (S3DModelPiece* p : model->pieceObjects) {
-		p->UploadToVBO();
-	}
-	for (S3DModelPiece* p : model->pieceObjects) {
-		p->CreateDispList();
-	}
+	S3DModelVAO::GetInstance().LoadModel(model, true);
 
 	// 3DO atlases are preloaded C3DOTextureHandler::Init()
 	if (model->type == MODELTYPE_3DO)
@@ -464,6 +449,6 @@ void CModelLoader::CreateLists(S3DModel* model) {
 
 	// warn about models with bad normals (they break lighting)
 	// skip for 3DO's since those have auto-calculated normals
-	CheckPieceNormals(model, rootPiece);
+	CheckPieceNormals(model, model->GetRootPiece());
 }
 

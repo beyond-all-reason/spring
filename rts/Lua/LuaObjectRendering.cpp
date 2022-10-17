@@ -197,7 +197,7 @@ int LuaObjectRenderingImpl::SetPieceList(lua_State* L)
 		return 0;
 
 	// (re)set the default if no fourth argument
-	unsigned int dlist = lmp->dispListID;
+	unsigned int dlist = 0u;
 
 	if (lua_isnumber(L, 4)) {
 		CLuaDisplayLists& displayLists = CLuaHandle::GetActiveDisplayLists(L);

@@ -80,8 +80,8 @@ struct S3DModelPiecePart {
 public:
 	struct RenderData {
 		float3 dir;
-		size_t vboOffset;
-		size_t indexCount;
+		uint32_t indexStart;
+		uint32_t indexCount;
 	};
 
 	static const int SHATTER_MAX_PARTS  = 10;
@@ -100,9 +100,6 @@ public:
 
 struct S3DModelPiece {
 	S3DModelPiece() = default;
-
-	// runs during global deinit, can not Clear() since that touches OpenGL
-	virtual ~S3DModelPiece() { assert(vboShatterIndices.GetIdRaw() == 0); }
 
 	virtual void Clear() {
 		name.clear();
@@ -125,9 +122,6 @@ struct S3DModelPiece {
 		mins = DEF_MIN_SIZE;
 		maxs = DEF_MAX_SIZE;
 
-		DeleteDispList();
-		DeleteBuffers();
-
 		hasBakedMat = false;
 	}
 
@@ -135,38 +129,19 @@ struct S3DModelPiece {
 	virtual float3 GetEmitDir() const;
 
 	// internal use
-	uint32_t GetVertexCount() const { return vertices.size(); }
-	uint32_t GetVertexDrawIndexCount() const { return indices.size(); }
+	uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertices.size()); }
+	uint32_t GetVertexDrawIndexCount() const { return static_cast<uint32_t>(indices.size()); }
 	virtual const float3& GetVertexPos(const int) const = 0;
 	virtual const float3& GetNormal(const int) const = 0;
 
 	virtual void PostProcessGeometry(uint32_t pieceIndex);
-	void UploadToVBO();
-
-	void BindVertexAttribVBOs() const;
-	void UnbindVertexAttribVBOs() const;
-
-	void BindIndexVBO() const;
-	void UnbindIndexVBO() const;
 
 	void DrawElements(GLuint prim = GL_TRIANGLES) const;
+	void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES) const;
 
-	void BindShatterIndexVBO() const { vboShatterIndices.Bind(GL_ELEMENT_ARRAY_BUFFER); }
-	void UnbindShatterIndexVBO() const { vboShatterIndices.Unbind(); }
-
-	const VBO& GetShatterIndexVBO() const { return vboShatterIndices; }
 	bool HasBackedMat() const { return hasBakedMat; }
-protected:
-	virtual void DrawForList() const = 0;
 public:
-	void DrawStatic() const;
-	void CreateDispList();
-	void DeleteDispList();
-	void DeleteBuffers() {
-		vboShatterIndices = {};
-	}
-
-	uint32_t GetDisplayListID() const { return dispListID; }
+	void DrawStaticLegacy() const;
 
 	void CreateShatterPieces();
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
@@ -209,11 +184,11 @@ public:
 	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
 	void SetParentModel(S3DModel* model_) { model = model_; }
 
-	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; };
-	const std::vector<uint32_t>& GetIndicesVec() const { return indices; };
+	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; }
+	const std::vector<uint32_t>& GetIndicesVec() const { return indices; }
+	const std::vector<uint32_t>& GetShatterIndicesVec() const { return shatterIndices; }
 private:
-	void CreateShatterPiecesVariation(const int num);
-
+	void CreateShatterPiecesVariation(int num);
 public:
 	std::string name;
 	std::vector<S3DModelPiece*> children;
@@ -232,21 +207,15 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
-	uint32_t indxStart = 0u; //global VBO offset, size data
+	uint32_t vertIndex = 0u; // global vertex number offset
+	uint32_t indxStart = 0u; // global Index VBO offset
 	uint32_t indxCount = 0u;
 protected:
-	uint32_t vboIndxStart = 0u;
-	uint32_t vboVertStart = 0u;
-
 	std::vector<SVertexData> vertices;
 	std::vector<uint32_t> indices;
-	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
-
-	VBO vboShatterIndices;
+	std::vector<uint32_t> shatterIndices;
 
 	S3DModel* model;
-
-	uint32_t dispListID;
 
 	bool hasBakedMat;
 public:
@@ -262,14 +231,8 @@ struct S3DModel
 		, numPieces(0)
 		, textureType(-1)
 
-		, vertVBO(nullptr)
-		, indxVBO(nullptr)
-
 		, indxStart(0u)
 		, indxCount(0u)
-
-		, curVertStartIndx(0u)
-		, curIndxStartIndx(0u)
 
 		, type(MODELTYPE_CNT)
 
@@ -305,14 +268,8 @@ struct S3DModel
 		maxs = m.maxs;
 		relMidPos = m.relMidPos;
 
-		vertVBO = std::move(m.vertVBO);
-		indxVBO = std::move(m.indxVBO);
-
 		indxStart = m.indxStart;
 		indxCount = m.indxCount;
-
-		curVertStartIndx = m.curVertStartIndx;
-		curIndxStartIndx = m.curIndxStartIndx;
 
 		pieceObjects = std::move(m.pieceObjects);
 
@@ -331,24 +288,9 @@ struct S3DModel
 	void DrawStatic() const {
 		// draw pieces in their static bind-pose (ie. without script-transforms)
 		for (const S3DModelPiece* pieceObj: pieceObjects) {
-			pieceObj->DrawStatic();
+			pieceObj->DrawStaticLegacy();
 		}
 	}
-
-	void CreateVBOs();
-
-	void BindVertexAttribs() const;
-	void UnbindVertexAttribs() const;
-
-	void BindIndexVBO() const;
-	void UnbindIndexVBO() const;
-
-	void BindVertexVBO() const;
-	void UnbindVertexVBO() const;
-
-	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxEnd) const;
-
-	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
 	void SetPieceMatrices() {
 		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
@@ -411,14 +353,8 @@ public:
 	int numPieces;
 	int textureType;            /// FIXME: MAKE S3O ONLY (0 = 3DO, otherwise S3O or ASSIMP)
 
-	std::unique_ptr<VBO> vertVBO;
-	std::unique_ptr<VBO> indxVBO;
-
 	uint32_t indxStart; //global VBO offset, size data
 	uint32_t indxCount;
-
-	uint32_t curVertStartIndx;
-	uint32_t curIndxStartIndx;
 
 	ModelType type;
 
@@ -532,7 +468,6 @@ public:
 
 	unsigned int lmodelPieceIndex; // index of this piece into LocalModel::pieces
 	unsigned int scriptPieceIndex; // index of this piece into UnitScript::pieces
-	unsigned int dispListID;
 
 	const S3DModelPiece* original;
 	LocalModelPiece* parent;

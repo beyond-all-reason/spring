@@ -175,44 +175,6 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 	return piece;
 }
 
-void SS3OPiece::DrawForList() const
-{
-	if (!HasGeometryData())
-		return;
-
-	BindVertexAttribVBOs();
-	BindIndexVBO();
-
-	switch (primType) {
-		case S3O_PRIMTYPE_TRIANGLES: {
-			DrawElements(GL_TRIANGLES);
-		} break;
-		case S3O_PRIMTYPE_TRIANGLE_STRIP: {
-			#ifdef GLEW_NV_primitive_restart
-			if (globalRendering->supportRestartPrimitive) {
-				// this is not compiled into display lists, but executed immediately
-				glPrimitiveRestartIndexNV(-1U);
-				glEnableClientState(GL_PRIMITIVE_RESTART_NV);
-			}
-			#endif
-
-			DrawElements(GL_TRIANGLE_STRIP);
-
-			#ifdef GLEW_NV_primitive_restart
-			if (globalRendering->supportRestartPrimitive) {
-				glDisableClientState(GL_PRIMITIVE_RESTART_NV);
-			}
-			#endif
-		} break;
-		case S3O_PRIMTYPE_QUADS: {
-			DrawElements(GL_QUADS);
-		} break;
-	}
-	UnbindIndexVBO();
-	UnbindVertexAttribVBOs();
-}
-
-
 void SS3OPiece::SetMinMaxExtends()
 {
 	for (const SVertexData& v: vertices) {

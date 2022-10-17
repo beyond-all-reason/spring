@@ -54,8 +54,8 @@ private:
 	void KillModels();
 	void KillParsers();
 
-	void LoadAndProcessGeometry(S3DModel* o);
-	void CreateLists(S3DModel* o);
+	void PostProcessGeometry(S3DModel* o) const;
+	void Upload(S3DModel* o) const;
 
 private:
 	ModelMap cache;

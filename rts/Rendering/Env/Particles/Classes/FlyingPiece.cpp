@@ -51,8 +51,8 @@ FlyingPiece::FlyingPiece(
 		splitterParts.emplace_back();
 		splitterParts.back().speed                = speed + flyDir * mix<float>(1.f, EXPLOSION_SPEED, guRNG.NextFloat());
 		splitterParts.back().rotationAxisAndSpeed = float4(guRNG.NextVector().ANormalize(), guRNG.NextFloat() * 0.1f);
-		splitterParts.back().indexCount           = cp.indexCount;
-		splitterParts.back().vboOffset            = cp.vboOffset;
+		splitterParts.back().indexCount = cp.indexCount;
+		splitterParts.back().indexStart	= cp.indexStart;
 	}
 }
 
@@ -97,7 +97,6 @@ bool FlyingPiece::Update()
 
 	return false;
 }
-
 
 float3 FlyingPiece::GetDragFactors() const
 {
@@ -186,8 +185,6 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 		if (texture != -1)
 			CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
 
-		piece->BindVertexAttribVBOs();
-		piece->BindShatterIndexVBO();
 		return;
 	}
 
@@ -196,20 +193,19 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 
 	if (texture != prev->texture && texture != -1)
 		CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
-
-	if (piece != prev->piece) {
-		prev->piece->UnbindShatterIndexVBO();
-		prev->piece->UnbindVertexAttribVBOs();
-		piece->BindVertexAttribVBOs();
-		piece->BindShatterIndexVBO();
-	}
 }
 
 
-void FlyingPiece::EndDraw() const
+void FlyingPiece::BeginDraw()
 {
-	piece->UnbindShatterIndexVBO();
-	piece->UnbindVertexAttribVBOs();
+	assert(false);
+	glDisable(GL_CULL_FACE);
+}
+
+void FlyingPiece::EndDraw()
+{
+	assert(false);
+	glEnable(GL_CULL_FACE);
 }
 
 
@@ -218,12 +214,11 @@ void FlyingPiece::Draw(const FlyingPiece* prev) const
 	CheckDrawStateChange(prev);
 
 	const float3 dragFactors = GetDragFactors(); // speedDrag, gravityDrag, interAge
-	const VBO& shatterIndices = piece->GetShatterIndexVBO();
 
 	for (auto& cp: splitterParts) {
 		glPushMatrix();
 		glMultMatrixf(GetMatrixOf(cp, dragFactors));
-		glDrawRangeElements(GL_TRIANGLES, 0, piece->GetVertexCount() - 1, cp.indexCount, GL_UNSIGNED_INT, shatterIndices.GetPtr(cp.vboOffset));
+		piece->DrawShatterElements(cp.indexStart, cp.indexCount);
 		glPopMatrix();
 	}
 }

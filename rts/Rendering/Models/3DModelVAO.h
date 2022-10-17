@@ -46,6 +46,9 @@ public:
 public:
 	S3DModelVAO();
 
+	uint32_t GetVertOffset() const { return static_cast<uint32_t>(vertData.size()); }
+
+	void PreloadModel(S3DModel* model) const;
 	void LoadModel(S3DModel* model, bool upload);
 	void LoadExistingModels();
 	void CreateVAO();
@@ -53,6 +56,11 @@ public:
 
 	void Bind() const;
 	void Unbind() const;
+
+	void BindLegacyVertexAttribs() const;
+	void UnbindLegacyVertexAttribs() const;
+
+	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const;
 
 	bool AddToSubmission(const S3DModel* model, uint8_t teamID, uint8_t drawFlags);
 
