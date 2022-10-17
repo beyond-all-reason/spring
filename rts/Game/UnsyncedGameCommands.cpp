@@ -681,27 +681,22 @@ class CameraMoveActionExecutor : public IUnsyncedActionExecutor {
 public:
 	CameraMoveActionExecutor(
 		int _moveStateIdx,
-		const std::string& commandPostfix
+		const std::string& commandPostfix,
+		const bool _halt = true
 	): IUnsyncedActionExecutor("Move" + commandPostfix, "Moves the camera " + commandPostfix + " a bit") {
 		moveStateIdx = _moveStateIdx;
+		halt = _halt;
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		camera->SetMovState(moveStateIdx, true);
 
-		std::string cmd = action.GetCmd(); StringToLowerInPlace(cmd);
-		return std::find(unHaltingStates.begin(), unHaltingStates.end(), cmd) == unHaltingStates.end();
+		return halt;
 	}
 
 private:
 	int moveStateIdx;
-	// Some camera state commands should not halt the chain
-	static constexpr std::array unHaltingStates = {
-		"moveslow",
-		"movefast",
-		"movetilt",
-		"movereset",
-	};
+	bool halt;
 };
 
 
@@ -3711,16 +3706,16 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<MouseActionExecutor>(5));
 	AddActionExecutor(AllocActionExecutor<MouseCancelSelectionRectangleActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ViewSelectionActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FWD, "Forward"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_BCK, "Back"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_LFT, "Left"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RGT, "Right"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_UP , "Up"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_DWN, "Down"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FST, "Fast"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_SLW, "Slow"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_TLT, "Tilt"));
-	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RST, "Reset"));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FWD, "Forward"     ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_BCK, "Back"        ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_LFT, "Left"        ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RGT, "Right"       ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_UP , "Up"          ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_DWN, "Down"        ));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_FST, "Fast" , false));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_SLW, "Slow" , false));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_TLT, "Tilt" , false));
+	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RST, "Reset", false));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(true));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(false));
 	AddActionExecutor(AllocActionExecutor<AIControlActionExecutor>());
