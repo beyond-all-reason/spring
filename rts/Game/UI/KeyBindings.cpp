@@ -445,7 +445,13 @@ ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const CKeyChain& sc)
 	MergeActionListsByTrigger(kList, sList, merged);
 
 	if (debugEnabled) {
-		LOG("GetActions: codeChain=\"%s\" scanChain=\"%s\":", kc.GetString().c_str(), sc.GetString().c_str());
+		LOG(
+			"GetActions: codeChain=\"%s\" scanChain=\"%s\" keyCode=\"%s\" scanCode=\"%s\":",
+			kc.GetString().c_str(),
+			sc.GetString().c_str(),
+			kc.back().GetCodeString().c_str(),
+			sc.back().GetCodeString().c_str()
+		);
 
 		DebugActionList(merged);
 	}
@@ -731,7 +737,7 @@ bool CKeyBindings::AddKeySymbol(const std::string& keysym, const std::string& co
 		LOG_L(L_WARNING, "AddKeySymbol: could not parse key: %s", code.c_str());
 		return false;
 	}
-	if (!ks.GetKeys().AddKeySymbol(keysym, ks.Key())) {
+	if (!(ks.GetKeys()->AddKeySymbol(keysym, ks.Key()))) {
 		LOG_L(L_WARNING, "AddKeySymbol: could not add: %s", keysym.c_str());
 		return false;
 	}

@@ -46,7 +46,7 @@ bool CKeySet::IsPureModifier() const
 
 bool CKeySet::IsModifier() const
 {
-	return GetKeys().IsModifier(key);
+	return GetKeys()->IsModifier(key);
 }
 
 bool CKeySet::IsKeyCode() const
@@ -54,9 +54,13 @@ bool CKeySet::IsKeyCode() const
 	return type == KSKeyCode;
 }
 
-IKeys CKeySet::GetKeys() const
+IKeys* CKeySet::GetKeys() const
 {
-	return IsKeyCode() ? (IKeys)keyCodes : (IKeys)scanCodes;
+	if (IsKeyCode()) {
+		return &keyCodes;
+	} else {
+		return &scanCodes;
+	}
 }
 
 CKeySet::CKeySet(int k)
@@ -102,10 +106,16 @@ std::string CKeySet::GetString(bool useDefaultKeysym) const
 {
 	std::string name;
 
-	IKeys keys = GetKeys();
-	name = useDefaultKeysym ? keys.GetDefaultName(key) : keys.GetName(key);
+	const IKeys* keys = GetKeys();
+	name = useDefaultKeysym ? keys->GetDefaultName(key) : keys->GetName(key);
 	
 	return (GetHumanModifiers(modifiers) + name);
+}
+
+
+std::string CKeySet::GetCodeString() const
+{
+	return IsKeyCode() ? CKeyCodes::GetCodeString(key) : CScanCodes::GetCodeString(key);
 }
 
 

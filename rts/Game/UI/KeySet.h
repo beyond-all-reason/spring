@@ -28,6 +28,7 @@ class CKeySet {
 		bool Parse(const std::string& token, bool showerror = true);
 
 		std::string GetString(bool useDefaultKeysym) const;
+		std::string GetCodeString() const;
 
 		enum CKeySetModifiers {
 			KS_ALT     = (1 << 0),
@@ -49,7 +50,7 @@ class CKeySet {
 		bool IsPureModifier() const;
 		bool IsModifier() const;
 		bool IsKeyCode() const;
-		IKeys GetKeys() const;
+		IKeys* GetKeys() const;
 
 		bool operator<(const CKeySet& ks) const
 		{

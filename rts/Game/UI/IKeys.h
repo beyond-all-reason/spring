@@ -20,11 +20,11 @@ public:
 
 public:
 
-	virtual void PrintNameToCode() const {};
-	virtual void PrintCodeToName() const {};
-	virtual bool IsModifier(int code) { return false; };
-	virtual std::string GetName(int code) const { return ""; };
-	virtual std::string GetDefaultName(int code) const { return ""; };
+	virtual void PrintNameToCode() const = 0;
+	virtual void PrintCodeToName() const = 0;
+	virtual bool IsModifier(int code) const = 0;
+	virtual std::string GetName(int code) const = 0;
+	virtual std::string GetDefaultName(int code) const = 0;
 
 	static bool IsValidLabel(const std::string& label);
 
