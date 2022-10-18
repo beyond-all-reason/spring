@@ -132,16 +132,16 @@ struct SAIInterfaceCallback {
 
 
 	/// the number of teams in this game
-	int               (CALLING_CONV *Teams_getSize)(int interfaceId);
+	int               (CALLING_CONV *getNumTeams)(int interfaceId);
 
 	/// the number of skirmish AIs in this game
-	int               (CALLING_CONV *SkirmishAIs_getSize)(int interfaceId);
+	int               (CALLING_CONV *getNumSkirmishAIs)(int interfaceId);
 
 	/// the maximum number of skirmish AIs in any game
-	int               (CALLING_CONV *SkirmishAIs_getMax)(int interfaceId);
+	int               (CALLING_CONV *getMaxSkirmishAIs)(int interfaceId);
 
 	/// Returns the value accosiated to the given key from the skirmish AIs info map
-	const char*       (CALLING_CONV *SkirmishAIs_Info_getValueByKey)(int interfaceId, const char* const shortName, const char* const version, const char* const key);
+	const char*       (CALLING_CONV *SkirmishAI_Info_getValueByKey)(int interfaceId, const char* const shortName, const char* const version, const char* const key);
 
 	/// This will end up in infolog
 	void              (CALLING_CONV *Log_log)(int interfaceId, const char* const msg);
@@ -203,11 +203,6 @@ struct SAIInterfaceCallback {
 	 */
 	bool              (CALLING_CONV *DataDirs_locatePath)(int interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common);
 
-	/**
-	 * @see     locatePath()
-	 */
-	char*             (CALLING_CONV *DataDirs_allocatePath)(int interfaceId, const char* const relPath, bool writeable, bool create, bool dir, bool common);
-
 	/// Returns the number of springs data dirs.
 	int               (CALLING_CONV *DataDirs_Roots_getSize)(int interfaceId);
 
@@ -238,8 +233,6 @@ struct SAIInterfaceCallback {
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
 	bool              (CALLING_CONV *DataDirs_Roots_locatePath)(int interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir);
-
-	char*             (CALLING_CONV *DataDirs_Roots_allocatePath)(int interfaceId, const char* const relPath, bool writeable, bool create, bool dir);
 
 	// Reading the file is better done directly by the interface, eg with fopen()
 	//int               (CALLING_CONV *DataDirs_File_getSize)(int interfaceId, const char* const filePath);

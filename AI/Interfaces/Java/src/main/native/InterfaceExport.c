@@ -139,7 +139,7 @@ EXPORT(int) unloadSkirmishAILibrary(
 	const char* const shortName,
 	const char* const version
 ) {
-	const char* const className = callback->SkirmishAIs_Info_getValueByKey(interfaceId, shortName, version, JAVA_SKIRMISH_AI_PROPERTY_CLASS_NAME);
+	const char* const className = callback->SkirmishAI_Info_getValueByKey(interfaceId, shortName, version, JAVA_SKIRMISH_AI_PROPERTY_CLASS_NAME);
 
 	if (java_releaseSkirmishAIClass(className))
 		return 0;

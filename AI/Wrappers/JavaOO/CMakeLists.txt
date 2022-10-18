@@ -104,7 +104,6 @@ if    (BUILD_${myName}_AIWRAPPER)
 		)
 
 	set(myGenClbClasses
-		"Camera"
 		"Cheats"
 		"CommandDescription"
 		"Command"
@@ -122,7 +121,6 @@ if    (BUILD_${myName}_AIWRAPPER)
 		"GraphDrawer"
 		"GraphLine"
 		"Group"
-		"Gui"
 		"Info"
 		"Line"
 		"Log"
@@ -140,9 +138,7 @@ if    (BUILD_${myName}_AIWRAPPER)
 		"Roots"
 		"Shield"
 		"SkirmishAI"
-		"SkirmishAIs"
 		"Team"
-		"Teams"
 		"OverlayTexture"
 		"UnitDef"
 		"Unit"

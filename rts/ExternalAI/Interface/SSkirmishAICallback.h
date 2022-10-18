@@ -114,13 +114,13 @@ struct SSkirmishAICallback {
 	const char*       (CALLING_CONV *Engine_Version_getFull)(int skirmishAIId);
 
 	/** Returns the number of teams in this game */
-	int               (CALLING_CONV *Teams_getSize)(int skirmishAIId);
+	int               (CALLING_CONV *getNumTeams)(int skirmishAIId);
 
 	/** Returns the number of skirmish AIs in this game */
-	int               (CALLING_CONV *SkirmishAIs_getSize)(int skirmishAIId);
+	int               (CALLING_CONV *getNumSkirmishAIs)(int skirmishAIId);
 
 	/** Returns the maximum number of skirmish AIs in any game */
-	int               (CALLING_CONV *SkirmishAIs_getMax)(int skirmishAIId);
+	int               (CALLING_CONV *getMaxSkirmishAIs)(int skirmishAIId);
 
 	/**
 	 * Returns the ID of the team controled by this Skirmish AI.
@@ -236,18 +236,13 @@ struct SSkirmishAICallback {
 	 * @return  whether the locating process was successfull
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
-	bool              (CALLING_CONV *DataDirs_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common);
-
-	/**
-	 * @see     locatePath()
-	 */
-	char*             (CALLING_CONV *DataDirs_allocatePath)(int skirmishAIId, const char* const relPath, bool writeable, bool create, bool dir, bool common);
+	bool              (CALLING_CONV *DataDirs_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common); //$ RET_STRING:path:path_sizeMax
 
 	/** Returns the number of springs data dirs. */
 	int               (CALLING_CONV *DataDirs_Roots_getSize)(int skirmishAIId);
 
 	/** Returns the data dir at dirIndex, which is valid between 0 and (DataDirs_Roots_getSize() - 1). */
-	bool              (CALLING_CONV *DataDirs_Roots_getDir)(int skirmishAIId, char* path, int path_sizeMax, int dirIndex);
+	bool              (CALLING_CONV *DataDirs_Roots_getDir)(int skirmishAIId, char* path, int path_sizeMax, int dirIndex); //$ RET_STRING:path:path_sizeMax
 
 	/**
 	 * Returns an absolute path which consists of:
@@ -272,9 +267,7 @@ struct SSkirmishAICallback {
 	 * @return  whether the locating process was successfull
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
-	bool              (CALLING_CONV *DataDirs_Roots_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir);
-
-	char*             (CALLING_CONV *DataDirs_Roots_allocatePath)(int skirmishAIId, const char* const relPath, bool writeable, bool create, bool dir);
+	bool              (CALLING_CONV *DataDirs_Roots_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir); //$ RET_STRING:path:path_sizeMax
 
 // BEGINN misc callback functions
 	/**
@@ -420,20 +413,6 @@ struct SSkirmishAICallback {
 	const char*       (CALLING_CONV *Game_getRulesParamString)(int skirmishAIId, const char* gameRulesParamName, const char* defaultValue);
 
 // END misc callback functions
-
-
-// BEGINN Visualization related callback functions
-	float             (CALLING_CONV *Gui_getViewRange)(int skirmishAIId);
-
-	float             (CALLING_CONV *Gui_getScreenX)(int skirmishAIId);
-
-	float             (CALLING_CONV *Gui_getScreenY)(int skirmishAIId);
-
-	void              (CALLING_CONV *Gui_Camera_getDirection)(int skirmishAIId, float* return_posF3_out);
-
-	void              (CALLING_CONV *Gui_Camera_getPosition)(int skirmishAIId, float* return_posF3_out);
-
-// END Visualization related callback functions
 
 
 // BEGINN OBJECT Cheats
@@ -1264,7 +1243,7 @@ struct SSkirmishAICallback {
 
 	int               (CALLING_CONV *getEnemyTeams)(int skirmishAIId, int* teamIds, int teamIds_sizeMax); //$ FETCHER:MULTI:IDs:Team:teamIds
 
-	int               (CALLING_CONV *getAllyTeams)(int skirmishAIId, int* teamIds, int teamIds_sizeMax); //$ FETCHER:MULTI:IDs:Team:teamIds
+	int               (CALLING_CONV *getAlliedTeams)(int skirmishAIId, int* teamIds, int teamIds_sizeMax); //$ FETCHER:MULTI:IDs:Team:teamIds
 
 	/**
 	 * @return float value of parameter if it's set, defaultValue otherwise.

@@ -1213,16 +1213,16 @@ EXPORT(const char*) skirmishAiCallback_Engine_Version_getFull(int skirmishAIId) 
 	return aiInterfaceCallback_Engine_Version_getFull(-1);
 }
 
-EXPORT(int) skirmishAiCallback_Teams_getSize(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_getNumTeams(int skirmishAIId) {
 	return teamHandler.ActiveTeams();
 }
 
-EXPORT(int) skirmishAiCallback_SkirmishAIs_getSize(int skirmishAIId) {
-	return aiInterfaceCallback_SkirmishAIs_getSize(-1);
+EXPORT(int) skirmishAiCallback_getNumSkirmishAIs(int skirmishAIId) {
+	return aiInterfaceCallback_getNumSkirmishAIs(-1);
 }
 
-EXPORT(int) skirmishAiCallback_SkirmishAIs_getMax(int skirmishAIId) {
-	return aiInterfaceCallback_SkirmishAIs_getMax(-1);
+EXPORT(int) skirmishAiCallback_getMaxSkirmishAIs(int skirmishAIId) {
+	return aiInterfaceCallback_getMaxSkirmishAIs(-1);
 }
 
 EXPORT(int) skirmishAiCallback_SkirmishAI_getTeamId(int skirmishAIId) {
@@ -1358,10 +1358,6 @@ EXPORT(bool) skirmishAiCallback_DataDirs_Roots_locatePath(int UNUSED_skirmishAII
 	return aiInterfaceCallback_DataDirs_Roots_locatePath(-1, path, pathMaxSize, relPath, writeable, create, dir);
 }
 
-EXPORT(char*) skirmishAiCallback_DataDirs_Roots_allocatePath(int UNUSED_skirmishAIId, const char* const relPath, bool writeable, bool create, bool dir) {
-	return aiInterfaceCallback_DataDirs_Roots_allocatePath(-1, relPath, writeable, create, dir);
-}
-
 EXPORT(const char*) skirmishAiCallback_DataDirs_getConfigDir(int skirmishAIId) {
 	CheckSkirmishAIId(skirmishAIId, __func__);
 
@@ -1393,22 +1389,6 @@ EXPORT(bool) skirmishAiCallback_DataDirs_locatePath(
 	aiRelPath += (ps + std::string(relPath));
 
 	return skirmishAiCallback_DataDirs_Roots_locatePath(skirmishAIId, path, pathMaxSize, aiRelPath.c_str(), writeable, create, dir);
-}
-
-EXPORT(char*) skirmishAiCallback_DataDirs_allocatePath(
-	int skirmishAIId,
-	const char* const relPath,
-	bool writeable,
-	bool create,
-	bool dir,
-	bool common
-) {
-	static char path[2048];
-
-	if (!skirmishAiCallback_DataDirs_locatePath(skirmishAIId, &path[0], sizeof(path), relPath, writeable, create, dir, common))
-		path[0] = 0;
-
-	return &path[0];
 }
 
 
@@ -1722,19 +1702,6 @@ EXPORT(float) skirmishAiCallback_Game_getRulesParamFloat(int skirmishAIId, const
 EXPORT(const char*) skirmishAiCallback_Game_getRulesParamString(int skirmishAIId, const char* rulesParamName, const char* defaultValue) {
 	return getRulesParamStringValueByName(CSplitLuaHandle::GetGameParams(), gameModParamLosMask(), rulesParamName, defaultValue);
 }
-
-
-EXPORT(float) skirmishAiCallback_Gui_getViewRange(int skirmishAIId) { return 0.0f; }
-EXPORT(float) skirmishAiCallback_Gui_getScreenX(int skirmishAIId) { return 0.0f; }
-EXPORT(float) skirmishAiCallback_Gui_getScreenY(int skirmishAIId) { return 0.0f; }
-
-EXPORT(void) skirmishAiCallback_Gui_Camera_getDirection(int skirmishAIId, float* dir) {} // DEPRECATED
-EXPORT(void) skirmishAiCallback_Gui_Camera_getPosition(int skirmishAIId, float* pos) {} // DEPRECATED
-
-
-
-
-
 
 
 //########### BEGINN Mod
@@ -4014,7 +3981,7 @@ EXPORT(int) skirmishAiCallback_getEnemyTeams(int skirmishAIId, int* teamIds, int
 	return a;
 }
 
-EXPORT(int) skirmishAiCallback_getAllyTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getAlliedTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize) {
 	int a = 0;
 
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
@@ -5085,9 +5052,9 @@ static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
 	callback->Engine_Version_getNormal = &skirmishAiCallback_Engine_Version_getNormal;
 	callback->Engine_Version_getSync = &skirmishAiCallback_Engine_Version_getSync;
 	callback->Engine_Version_getFull = &skirmishAiCallback_Engine_Version_getFull;
-	callback->Teams_getSize = &skirmishAiCallback_Teams_getSize;
-	callback->SkirmishAIs_getSize = &skirmishAiCallback_SkirmishAIs_getSize;
-	callback->SkirmishAIs_getMax = &skirmishAiCallback_SkirmishAIs_getMax;
+	callback->getNumTeams = &skirmishAiCallback_getNumTeams;
+	callback->getNumSkirmishAIs = &skirmishAiCallback_getNumSkirmishAIs;
+	callback->getMaxSkirmishAIs = &skirmishAiCallback_getMaxSkirmishAIs;
 	callback->SkirmishAI_getTeamId = &skirmishAiCallback_SkirmishAI_getTeamId;
 	callback->SkirmishAI_Info_getSize = &skirmishAiCallback_SkirmishAI_Info_getSize;
 	callback->SkirmishAI_Info_getKey = &skirmishAiCallback_SkirmishAI_Info_getKey;
@@ -5104,11 +5071,9 @@ static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
 	callback->DataDirs_getConfigDir = &skirmishAiCallback_DataDirs_getConfigDir;
 	callback->DataDirs_getWriteableDir = &skirmishAiCallback_DataDirs_getWriteableDir;
 	callback->DataDirs_locatePath = &skirmishAiCallback_DataDirs_locatePath;
-	callback->DataDirs_allocatePath = &skirmishAiCallback_DataDirs_allocatePath;
 	callback->DataDirs_Roots_getSize = &skirmishAiCallback_DataDirs_Roots_getSize;
 	callback->DataDirs_Roots_getDir = &skirmishAiCallback_DataDirs_Roots_getDir;
 	callback->DataDirs_Roots_locatePath = &skirmishAiCallback_DataDirs_Roots_locatePath;
-	callback->DataDirs_Roots_allocatePath = &skirmishAiCallback_DataDirs_Roots_allocatePath;
 	callback->Game_getCurrentFrame = &skirmishAiCallback_Game_getCurrentFrame;
 	callback->Game_getAiInterfaceVersion = &skirmishAiCallback_Game_getAiInterfaceVersion;
 	callback->Game_getMyTeam = &skirmishAiCallback_Game_getMyTeam;
@@ -5138,11 +5103,6 @@ static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
 	callback->Game_getCategoryName = &skirmishAiCallback_Game_getCategoryName;
 	callback->Game_getRulesParamFloat = &skirmishAiCallback_Game_getRulesParamFloat;
 	callback->Game_getRulesParamString = &skirmishAiCallback_Game_getRulesParamString;
-	callback->Gui_getViewRange = &skirmishAiCallback_Gui_getViewRange;
-	callback->Gui_getScreenX = &skirmishAiCallback_Gui_getScreenX;
-	callback->Gui_getScreenY = &skirmishAiCallback_Gui_getScreenY;
-	callback->Gui_Camera_getDirection = &skirmishAiCallback_Gui_Camera_getDirection;
-	callback->Gui_Camera_getPosition = &skirmishAiCallback_Gui_Camera_getPosition;
 	callback->Cheats_isEnabled = &skirmishAiCallback_Cheats_isEnabled;
 	callback->Cheats_setEnabled = &skirmishAiCallback_Cheats_setEnabled;
 	callback->Cheats_setEventsEnabled = &skirmishAiCallback_Cheats_setEventsEnabled;
@@ -5417,7 +5377,7 @@ static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
 	callback->Unit_getWeapon = &skirmishAiCallback_Unit_getWeapon;
 	callback->Team_hasAIController = &skirmishAiCallback_Team_hasAIController;
 	callback->getEnemyTeams = &skirmishAiCallback_getEnemyTeams;
-	callback->getAllyTeams = &skirmishAiCallback_getAllyTeams;
+	callback->getAlliedTeams = &skirmishAiCallback_getAlliedTeams;
 	callback->Team_getRulesParamFloat = &skirmishAiCallback_Team_getRulesParamFloat;
 	callback->Team_getRulesParamString = &skirmishAiCallback_Team_getRulesParamString;
 	callback->getGroups = &skirmishAiCallback_getGroups;

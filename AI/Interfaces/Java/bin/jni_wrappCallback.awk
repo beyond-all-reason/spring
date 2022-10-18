@@ -124,6 +124,12 @@ function printNativeJNI() {
 		metaInf          = funcMetaInf[i];
 
 		if (doWrapp(i)) {
+			isRetString = part_isRetString(fullName, metaInf);
+			if (isRetString) {
+				retString = part_getRetString(metaInf);
+				split(retString, retStringNames, ":");  # must return 2 elements
+			}
+
 			javaName = fullName;
 			sub("^" bridgePrefix, "", javaName);
 			gsub(/_/, "_1", javaName);
@@ -147,6 +153,11 @@ function printNativeJNI() {
 				jni_paramTypes[p] = pType_jni;
 				jni_paramNames[p] = pName;
 
+				if (isRetString && (pName == retStringNames[1] || pName == retStringNames[2])) {
+					if (pName == retStringNames[1])
+						jni_retType = convertCToJNIType(pType_c);
+					continue;
+				}
 				jni_paramList = jni_paramList ", " pType_jni " " pName;
 			}
 			jni_paramListNoTypes = removeParamTypes(jni_paramList);
@@ -167,9 +178,11 @@ function printNativeJNI() {
 			}
 
 			# Return value conversion - pre call
-			retType_isString = (match(retType, /^(const )?char*/) && (jni_retType == "jstring"));
+			retType_isString = ((match(retType, /^(const )?char*/) || isRetString) && (jni_retType == "jstring"));
 			retTypeConv = 0;
 			if (retType_isString) {
+				if (isRetString)
+					print("\t" "char " retStringNames[1] "[2048] = {'\\0'};") >> outFile_nc;
 				print("\t" retType " _retNative;") >> outFile_nc;
 				retTypeConv = 1;
 			}
@@ -181,9 +194,14 @@ function printNativeJNI() {
 
 				if (pType_jni == "jstring") {
 					# jstring
-					c_paramNames[p] = c_paramNames[p] "_native";
-					sub(" " jni_paramNames[p], " " c_paramNames[p], paramListNoTypes);
-					print("\t" c_paramTypes[p] " " c_paramNames[p] " = (" c_paramTypes[p] ") (*__env)->GetStringUTFChars(__env, " jni_paramNames[p] ", NULL);") >> outFile_nc;
+					if (!isRetString || c_paramNames[p] != retStringNames[1]) {
+						c_paramNames[p] = c_paramNames[p] "_native";
+						sub(" " jni_paramNames[p], " " c_paramNames[p], paramListNoTypes);
+						print("\t" c_paramTypes[p] " " c_paramNames[p] " = (" c_paramTypes[p] ") (*__env)->GetStringUTFChars(__env, " jni_paramNames[p] ", NULL);") >> outFile_nc;
+					}
+				} else if (pType_jni == "jint") {
+					if (isRetString && c_paramNames[p] == retStringNames[2])
+						sub(" " jni_paramNames[p], " sizeof(" retStringNames[1] ")", paramListNoTypes);
 				} else if (match(pType_jni, /^j.+Array$/)) {
 					# primitive arrray
 					c_paramNames[p] = c_paramNames[p] "_native";
@@ -242,7 +260,8 @@ function printNativeJNI() {
 
 				if (pType_jni == "jstring") {
 					# jstring
-					print("\t" "(*__env)->ReleaseStringUTFChars(__env, " jni_paramNames[p] ", " c_paramNames[p] ");") >> outFile_nc;
+					if (!isRetString || c_paramNames[p] != retStringNames[1])
+						print("\t" "(*__env)->ReleaseStringUTFChars(__env, " jni_paramNames[p] ", " c_paramNames[p] ");") >> outFile_nc;
 				} else if (match(pType_jni, /^j.+Array$/)) {
 					# primitive arrray
 					capArrType = pType_jni;
@@ -278,7 +297,7 @@ function printNativeJNI() {
 
 			# Return value conversion - post call
 			if (retType_isString) {
-				print("\t" "_ret = (*__env)->NewStringUTF(__env, _retNative);") >> outFile_nc;
+				print("\t" "_ret = (*__env)->NewStringUTF(__env, " (isRetString ? retStringNames[1] : "_retNative") ");") >> outFile_nc;
 			}
 
 			if (!isVoidRet) {
@@ -370,6 +389,28 @@ function printJavaClsAndInt() {
 			paramList = funcParamListJ[i];
 			metaInf   = funcMetaInf[i];
 
+			isRetString = part_isRetString(fullName, metaInf);
+			if (isRetString) {
+				retString = part_getRetString(metaInf);
+				split(retString, retStringNames, ":");  # must return 2 elements
+				size_params = split(paramList, params, ",");
+				for (p=1; p <= size_params; p++) {
+					pName = params[p];
+					sub(/^.* /, "", pName);
+					if (pName == retStringNames[1]) {
+						ps = 1;
+					} else if (pName == retStringNames[2]) {
+						ps = 2;
+					} else continue;
+					pType_c = params[p];
+					sub(/ [^ ]+$/, "", pType_c);
+					pType_c = trim(pType_c);
+					retStringTypes[ps] = convertJNIToJavaType(convertCToJNIType(pType_c, pName));
+				}
+				retType = retStringTypes[1];
+				sub(", " retStringTypes[1] " " retStringNames[1] ", " retStringTypes[2] " " retStringNames[2], "", paramList);
+			}
+
 			paramListNoSID = paramList;
 			sub(/int _skirmishAIId(, )?/, "", paramListNoSID);
 			paramListNoSIDNoTypes = removeParamTypes(paramListNoSID);
@@ -460,7 +501,7 @@ function wrappFunction(funcDef, commentEol) {
 		storeDocLines(funcDocComment, fi);
 		fi++;
 	} else {
-		print("warninig: function intentionally NOT wrapped: " funcDef);
+		print("warning: function intentionally NOT wrapped: " funcDef);
 	}
 }
 
