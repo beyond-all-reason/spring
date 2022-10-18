@@ -29,11 +29,11 @@ EXPORT(const char*      ) aiInterfaceCallback_AIInterface_Info_getValue(int inte
 EXPORT(const char*      ) aiInterfaceCallback_AIInterface_Info_getDescription(int interfaceId, int infoIndex);
 EXPORT(const char*      ) aiInterfaceCallback_AIInterface_Info_getValueByKey(int interfaceId, const char* const key);
 
-EXPORT(int              ) aiInterfaceCallback_Teams_getSize(int UNUSED_interfaceId);
+EXPORT(int              ) aiInterfaceCallback_getNumTeams(int UNUSED_interfaceId);
 
-EXPORT(int              ) aiInterfaceCallback_SkirmishAIs_getSize(int UNUSED_interfaceId);
-EXPORT(int              ) aiInterfaceCallback_SkirmishAIs_getMax(int UNUSED_interfaceId);
-EXPORT(const char*      ) aiInterfaceCallback_SkirmishAIs_Info_getValueByKey(int UNUSED_interfaceId, const char* const shortName, const char* const version, const char* const key);
+EXPORT(int              ) aiInterfaceCallback_getNumSkirmishAIs(int UNUSED_interfaceId);
+EXPORT(int              ) aiInterfaceCallback_getMaxSkirmishAIs(int UNUSED_interfaceId);
+EXPORT(const char*      ) aiInterfaceCallback_SkirmishAI_Info_getValueByKey(int UNUSED_interfaceId, const char* const shortName, const char* const version, const char* const key);
 
 EXPORT(void             ) aiInterfaceCallback_Log_log(int interfaceId, const char* const msg);
 EXPORT(void             ) aiInterfaceCallback_Log_logsl(int interfaceId, const char* section, int loglevel, const char* const msg);
@@ -43,10 +43,8 @@ EXPORT(char             ) aiInterfaceCallback_DataDirs_getPathSeparator(int UNUS
 EXPORT(int              ) aiInterfaceCallback_DataDirs_Roots_getSize(int UNUSED_interfaceId);
 EXPORT(bool             ) aiInterfaceCallback_DataDirs_Roots_getDir(int UNUSED_interfaceId, char* path, int path_sizeMax, int dirIndex);
 EXPORT(bool             ) aiInterfaceCallback_DataDirs_Roots_locatePath(int UNUSED_interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir);
-EXPORT(char*            ) aiInterfaceCallback_DataDirs_Roots_allocatePath(int UNUSED_interfaceId, const char* const relPath, bool writeable, bool create, bool dir);
 EXPORT(const char*      ) aiInterfaceCallback_DataDirs_getConfigDir(int interfaceId);
 EXPORT(bool             ) aiInterfaceCallback_DataDirs_locatePath(int interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common);
-EXPORT(char*            ) aiInterfaceCallback_DataDirs_allocatePath(int interfaceId, const char* const relPath, bool writeable, bool create, bool dir, bool common);
 EXPORT(const char*      ) aiInterfaceCallback_DataDirs_getWriteableDir(int interfaceId);
 
 

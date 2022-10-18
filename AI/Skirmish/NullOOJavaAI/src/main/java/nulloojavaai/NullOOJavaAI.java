@@ -89,7 +89,7 @@ public class NullOOJavaAI extends OOAI implements AI {
 	private int sendTextMsg(String msg) {
 
 		try {
-			clb.getGame().sendTextMessage(msg, DEFAULT_ZONE);
+			clb.getGame().sendTextMessage("/say " + msg, DEFAULT_ZONE);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return 1;
@@ -131,7 +131,7 @@ public class NullOOJavaAI extends OOAI implements AI {
 
 		// initialize the log
 		try {
-			myLogFile = callback.getDataDirs().allocatePath("log-team-" + teamId + ".txt", true, true, false, false);
+			myLogFile = callback.getDataDirs().locatePath("log-team-" + teamId + ".txt", true, true, false, false);
 			FileHandler fileLogger = new FileHandler(myLogFile, false);
 			fileLogger.setFormatter(new MyCustomLogFormatter());
 			fileLogger.setLevel(Level.ALL);

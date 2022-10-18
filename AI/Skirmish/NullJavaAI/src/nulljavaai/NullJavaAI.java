@@ -84,9 +84,7 @@ public class NullJavaAI extends AbstractAI implements AI {
 		// initialize the log
 		try {
 			int teamId = clb.SkirmishAI_getTeamId();
-			// most likely, this causes a memory leak, as the C string
-			// allocated by this, is never freed
-			myLogFile = callback.DataDirs_allocatePath("log-team-" + teamId + "-" + skirmishAIId + ".txt", true, true, false, false);
+			myLogFile = callback.DataDirs_locatePath("log-team-" + teamId + "-" + skirmishAIId + ".txt", true, true, false, false);
 			FileHandler fileLogger = new FileHandler(myLogFile, false);
 			fileLogger.setFormatter(new MyCustomLogFormatter());
 			fileLogger.setLevel(Level.ALL);

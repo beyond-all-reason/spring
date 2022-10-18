@@ -1523,7 +1523,7 @@ struct SAddOverlayTextureDrawerDebugCommand {
 	const float* texData;
 	int w;
 	int h;
-}; //$ COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD Debug_addOverlayTexture REF:ret_textureId->OverlayTexture
+}; //$ COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD Debug_addOverlayTexture REF:ret_overlayTextureId->OverlayTexture
 
 struct SUpdateOverlayTextureDrawerDebugCommand {
 	int overlayTextureId;

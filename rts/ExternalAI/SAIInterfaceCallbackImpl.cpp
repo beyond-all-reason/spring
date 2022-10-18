@@ -124,20 +124,20 @@ EXPORT(const char*) aiInterfaceCallback_AIInterface_Info_getValueByKey(int inter
 	return info->GetInfo(key).c_str();
 }
 
-EXPORT(int) aiInterfaceCallback_Teams_getSize(int UNUSED_interfaceId) {
+EXPORT(int) aiInterfaceCallback_getNumTeams(int UNUSED_interfaceId) {
 	return teamHandler.ActiveTeams();
 }
 
-EXPORT(int) aiInterfaceCallback_SkirmishAIs_getSize(int UNUSED_interfaceId) {
+EXPORT(int) aiInterfaceCallback_getNumSkirmishAIs(int UNUSED_interfaceId) {
 	return skirmishAIHandler.GetNumSkirmishAIs();
 }
 
-EXPORT(int) aiInterfaceCallback_SkirmishAIs_getMax(int UNUSED_interfaceId) {
+EXPORT(int) aiInterfaceCallback_getMaxSkirmishAIs(int UNUSED_interfaceId) {
 	// TODO: should rather be something like (maxPlayers - numPlayers)
 	return MAX_TEAMS;
 }
 
-EXPORT(const char*) aiInterfaceCallback_SkirmishAIs_Info_getValueByKey(
+EXPORT(const char*) aiInterfaceCallback_SkirmishAI_Info_getValueByKey(
 	int UNUSED_interfaceId,
 	const char* const shortName,
 	const char* const version,
@@ -248,18 +248,6 @@ EXPORT(bool) aiInterfaceCallback_DataDirs_Roots_locatePath(
 	return (locatedPath != relPath);
 }
 
-EXPORT(char*) aiInterfaceCallback_DataDirs_Roots_allocatePath(int UNUSED_interfaceId, const char* const relPath, bool writeable, bool create, bool dir) {
-	static const unsigned int pathMaxSize = 2048;
-
-	// FIXME LEAK
-	char* path = (char*) calloc(pathMaxSize, sizeof(char*));
-
-	if (!aiInterfaceCallback_DataDirs_Roots_locatePath(-1, path, pathMaxSize, relPath, writeable, create, dir))
-		FREE(path);
-
-	return path;
-}
-
 EXPORT(const char*) aiInterfaceCallback_DataDirs_getConfigDir(int interfaceId) {
 	CHECK_INTERFACE_ID(interfaceId);
 	return infos[interfaceId]->GetDataDir().c_str();
@@ -284,18 +272,6 @@ EXPORT(bool) aiInterfaceCallback_DataDirs_locatePath(int interfaceId, char* path
 	interfaceRelPath += (ps + std::string(relPath));
 
 	return aiInterfaceCallback_DataDirs_Roots_locatePath(interfaceId, path, pathMaxSize, interfaceRelPath.c_str(), writeable, create, dir);
-}
-
-EXPORT(char*) aiInterfaceCallback_DataDirs_allocatePath(int interfaceId, const char* const relPath, bool writeable, bool create, bool dir, bool common) {
-	static const unsigned int pathMaxSize = 2048;
-
-	// FIXME LEAK
-	char* path = (char*) calloc(pathMaxSize, sizeof(char*));
-
-	if (!aiInterfaceCallback_DataDirs_locatePath(interfaceId, path, pathMaxSize, relPath, writeable, create, dir, common))
-		FREE(path);
-
-	return path;
 }
 
 
@@ -354,10 +330,10 @@ static void aiInterfaceCallback_init(struct SAIInterfaceCallback* callback) {
 	callback->AIInterface_Info_getValue = &aiInterfaceCallback_AIInterface_Info_getValue;
 	callback->AIInterface_Info_getDescription = &aiInterfaceCallback_AIInterface_Info_getDescription;
 	callback->AIInterface_Info_getValueByKey = &aiInterfaceCallback_AIInterface_Info_getValueByKey;
-	callback->Teams_getSize = &aiInterfaceCallback_Teams_getSize;
-	callback->SkirmishAIs_getSize = &aiInterfaceCallback_SkirmishAIs_getSize;
-	callback->SkirmishAIs_getMax = &aiInterfaceCallback_SkirmishAIs_getMax;
-	callback->SkirmishAIs_Info_getValueByKey = &aiInterfaceCallback_SkirmishAIs_Info_getValueByKey;
+	callback->getNumTeams = &aiInterfaceCallback_getNumTeams;
+	callback->getNumSkirmishAIs = &aiInterfaceCallback_getNumSkirmishAIs;
+	callback->getMaxSkirmishAIs = &aiInterfaceCallback_getMaxSkirmishAIs;
+	callback->SkirmishAI_Info_getValueByKey = &aiInterfaceCallback_SkirmishAI_Info_getValueByKey;
 	callback->Log_log = &aiInterfaceCallback_Log_log;
 	callback->Log_logsl = &aiInterfaceCallback_Log_logsl;
 	callback->Log_exception = &aiInterfaceCallback_Log_exception;
@@ -365,11 +341,9 @@ static void aiInterfaceCallback_init(struct SAIInterfaceCallback* callback) {
 	callback->DataDirs_getConfigDir = &aiInterfaceCallback_DataDirs_getConfigDir;
 	callback->DataDirs_getWriteableDir = &aiInterfaceCallback_DataDirs_getWriteableDir;
 	callback->DataDirs_locatePath = &aiInterfaceCallback_DataDirs_locatePath;
-	callback->DataDirs_allocatePath = &aiInterfaceCallback_DataDirs_allocatePath;
 	callback->DataDirs_Roots_getSize = &aiInterfaceCallback_DataDirs_Roots_getSize;
 	callback->DataDirs_Roots_getDir = &aiInterfaceCallback_DataDirs_Roots_getDir;
 	callback->DataDirs_Roots_locatePath = &aiInterfaceCallback_DataDirs_Roots_locatePath;
-	callback->DataDirs_Roots_allocatePath = &aiInterfaceCallback_DataDirs_Roots_allocatePath;
 }
 
 int aiInterfaceCallback_getInstanceFor(const CAIInterfaceLibraryInfo* info, struct SAIInterfaceCallback* callback) {

@@ -143,11 +143,13 @@ static bool java_createClassPath(char* classPathStr, const size_t classPathStr_s
 	// We need to search for this jar, instead of looking only where
 	// the AIInterface.so/InterfaceInfo.lua is, because on some systems
 	// (eg. Debian), the .so is in /usr/lib, and the .jar's  are in /usr/shared.
-	char* mainJarPath = callback->DataDirs_allocatePath(interfaceId,
+	char mainJarPath[2048];
+	const bool located = callback->DataDirs_locatePath(interfaceId,
+			mainJarPath, sizeof(mainJarPath),
 			JAVA_AI_INTERFACE_LIBRARY_FILE_NAME,
 			false, false, false, false);
 
-	if (mainJarPath == NULL) {
+	if (!located) {
 		simpleLog_logL(LOG_LEVEL_ERROR, "Couldn't find %s", JAVA_AI_INTERFACE_LIBRARY_FILE_NAME);
 		return false;
 	}
@@ -160,7 +162,6 @@ static bool java_createClassPath(char* classPathStr, const size_t classPathStr_s
 	}
 
 	char* jarsDataDir = mainJarPath;
-	mainJarPath = NULL;
 
 	// the directories in the following list will be searched for .jar files
 	// which will then be added to the classPathStr, plus the dirs will be added
@@ -267,7 +268,7 @@ static size_t java_createAIClassPath(
 	size_t       jarFiles_size = 0;
 
 	const char* const skirmDD =
-			callback->SkirmishAIs_Info_getValueByKey(interfaceId,
+			callback->SkirmishAI_Info_getValueByKey(interfaceId,
 			shortName, version,
 			SKIRMISH_AI_PROPERTY_DATA_DIR);
 	if (skirmDD == NULL) {
@@ -307,7 +308,7 @@ static size_t java_createAIClassPath(
 	// add the dir common for all versions of the Skirmish AI,
 	// if it is specified and exists
 	const char* const skirmDDCommon =
-			callback->SkirmishAIs_Info_getValueByKey(interfaceId,
+			callback->SkirmishAI_Info_getValueByKey(interfaceId,
 			shortName, version,
 			SKIRMISH_AI_PROPERTY_DATA_DIR_COMMON);
 
@@ -435,24 +436,23 @@ static bool java_readJvmCfgFile(struct Properties* props)
 	props->values = (const char**) calloc(props_sizeMax, sizeof(char*));
 
 	// ### read JVM options config file ###
-	char* jvmPropFile = callback->DataDirs_allocatePath(interfaceId, JVM_PROPERTIES_FILE, false, false, false, false);
+	char jvmPropFile[2048];
+	bool located = callback->DataDirs_locatePath(interfaceId, jvmPropFile, sizeof(jvmPropFile), JVM_PROPERTIES_FILE, false, false, false, false);
 
 	// if the version specific file does not exist,
 	// try to get the common one
-	if (jvmPropFile == NULL)
-		jvmPropFile = callback->DataDirs_allocatePath(interfaceId, JVM_PROPERTIES_FILE, false, false, false, true);
+	if (!located)
+		located = callback->DataDirs_locatePath(interfaceId, jvmPropFile, sizeof(jvmPropFile), JVM_PROPERTIES_FILE, false, false, false, true);
 
-	if (jvmPropFile != NULL) {
+	if (located) {
 		props->size = util_parsePropertiesFile(jvmPropFile, props->keys, props->values, props_sizeMax);
 		read = true;
 		simpleLog_logL(LOG_LEVEL_INFO, "JVM: arguments loaded from: %s", jvmPropFile);
 	} else {
 		props->size = 0;
 		read = false;
-		simpleLog_logL(LOG_LEVEL_INFO, "JVM: arguments NOT loaded from: %s", jvmPropFile);
+		simpleLog_logL(LOG_LEVEL_INFO, "JVM: arguments NOT loaded");
 	}
-
-	FREE(jvmPropFile);
 
 	return read;
 }
@@ -480,14 +480,14 @@ static bool java_createNativeLibsPath(char* libraryPath, const size_t libraryPat
 	STRCPY_T(libraryPath, libraryPath_sizeMax, dd_r);
 
 	// {spring-data-dir}/{AI_INTERFACES_DATA_DIR}/Java/{version}/lib/
-	char* dd_lib_r = callback->DataDirs_allocatePath(interfaceId, NATIVE_LIBS_DIR, false, false, true, false);
+	char dd_lib_r[2048];
+	const bool located = callback->DataDirs_locatePath(interfaceId, dd_lib_r, sizeof(dd_lib_r), NATIVE_LIBS_DIR, false, false, true, false);
 
-	if (dd_lib_r == NULL) {
+	if (!located) {
 		simpleLog_logL(LOG_LEVEL_NOTICE, "Unable to find read-only native libs data-dir (optional): %s", NATIVE_LIBS_DIR);
 	} else {
 		STRCAT_T(libraryPath, libraryPath_sizeMax, ENTRY_DELIM);
 		STRCAT_T(libraryPath, libraryPath_sizeMax, dd_lib_r);
-		FREE(dd_lib_r);
 	}
 
 
@@ -504,14 +504,14 @@ static bool java_createNativeLibsPath(char* libraryPath, const size_t libraryPat
 
 	// {spring-data-dir}/{AI_INTERFACES_DATA_DIR}/Java/common/lib/
 	if (dd_r_common != NULL) {
-		char* dd_lib_r_common = callback->DataDirs_allocatePath(interfaceId, NATIVE_LIBS_DIR, false, false, true, true);
+		char dd_lib_r_common[2048];
+		const bool located = callback->DataDirs_locatePath(interfaceId, dd_lib_r_common, sizeof(dd_lib_r_common), NATIVE_LIBS_DIR, false, false, true, true);
 
-		if (dd_lib_r_common == NULL || !util_fileExists(dd_lib_r_common)) {
+		if (!located || !util_fileExists(dd_lib_r_common)) {
 			simpleLog_logL(LOG_LEVEL_NOTICE, "Unable to find common read-only native libs data-dir (optional).");
 		} else {
 			STRCAT_T(libraryPath, libraryPath_sizeMax, ENTRY_DELIM);
 			STRCAT_T(libraryPath, libraryPath_sizeMax, dd_lib_r_common);
-			FREE(dd_lib_r_common);
 		}
 	}
 
@@ -669,7 +669,8 @@ static bool java_createJavaVMInitArgs(struct JavaVMInitArgs* vm_args, const stru
 
 	// fill strOptions into the JVM options
 	simpleLog_logL(LOG_LEVEL_INFO, "JVM: options:", numOpts);
-	char* dd_rw = callback->DataDirs_allocatePath(interfaceId, "", true, true, true, false);
+	char dd_rw[2048] = {'\0'};
+	callback->DataDirs_locatePath(interfaceId, dd_rw, sizeof(dd_rw), "", true, true, true, false);
 	size_t i;
 
 	for (i = 0; i < numOpts; ++i) {
@@ -690,8 +691,6 @@ static bool java_createJavaVMInitArgs(struct JavaVMInitArgs* vm_args, const stru
 
 		simpleLog_logL(LOG_LEVEL_INFO, "JVM option %ul: %s", vm_args->nOptions - 1, tmpOptionString);
 	}
-
-	FREE(dd_rw);
 
 	simpleLog_logL(LOG_LEVEL_INFO, "");
 	return true;
@@ -883,17 +882,17 @@ bool java_initStatic(int _interfaceId, const struct SAIInterfaceCallback* _callb
 	}
 
 	// dynamically load the JVM
-	char* jreLocationFile = callback->DataDirs_allocatePath(interfaceId, JRE_LOCATION_FILE, false, false, false, false);
+	char jreLocationFile[2048];
+	const bool located = callback->DataDirs_locatePath(interfaceId, jreLocationFile, sizeof(jreLocationFile), JRE_LOCATION_FILE, false, false, false, false);
 	char jrePath[1024];
 	char jvmLibPath[1024];
 
-	if (!GetJREPath(jrePath, sizeof(jrePath), jreLocationFile, NULL)) {
+	if (!GetJREPath(jrePath, sizeof(jrePath), located ? jreLocationFile : NULL, NULL)) {
 		simpleLog_logL(LOG_LEVEL_ERROR, "Failed locating a JRE installation, you may specify the JAVA_HOME env var.");
 		return false;
 	}
 
 	simpleLog_logL(LOG_LEVEL_NOTICE, "Using JRE (can be changed with JAVA_HOME): %s", jrePath);
-	FREE(jreLocationFile);
 
 #if defined __arch64__
 	static const char* defJvmType = "server";

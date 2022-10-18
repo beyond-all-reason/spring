@@ -956,24 +956,20 @@ bool springLegacyAI::CAIAICallback::GetValue(int valueId, void *data)
 		}case AIVAL_GAME_SPEED_FACTOR:{
 			*(float*)data = sAICallback->Game_getSpeedFactor(skirmishAIId);
 			return true;
-		}case AIVAL_GUI_VIEW_RANGE:{
-			*(float*)data = sAICallback->Gui_getViewRange(skirmishAIId);
+		}case AIVAL_GUI_VIEW_RANGE:{  // deprecated
+			*(float*)data = 0;
 			return true;
-		}case AIVAL_GUI_SCREENX:{
-			*(float*)data = sAICallback->Gui_getScreenX(skirmishAIId);
+		}case AIVAL_GUI_SCREENX:{  // deprecated
+			*(float*)data = 0;
 			return true;
-		}case AIVAL_GUI_SCREENY:{
-			*(float*)data = sAICallback->Gui_getScreenY(skirmishAIId);
+		}case AIVAL_GUI_SCREENY:{  // deprecated
+			*(float*)data = 0;
 			return true;
-		}case AIVAL_GUI_CAMERA_DIR:{
-			float3 dir;
-			sAICallback->Gui_Camera_getDirection(skirmishAIId, &dir[0]);
-			*(static_cast<float3*>(data)) = dir;
+		}case AIVAL_GUI_CAMERA_DIR:{  // deprecated
+			*(static_cast<float3*>(data)) = ZeroVector;
 			return true;
-		}case AIVAL_GUI_CAMERA_POS:{
-			float3 pos;
-			sAICallback->Gui_Camera_getPosition(skirmishAIId, &pos[0]);
-			*(static_cast<float3*>(data)) = pos;
+		}case AIVAL_GUI_CAMERA_POS:{  // deprecated
+			*(static_cast<float3*>(data)) = ZeroVector;
 			return true;
 		}case AIVAL_LOCATE_FILE_R:{
 			//sAICallback->File_locateForReading(skirmishAIId, (char*) data);
@@ -1800,14 +1796,16 @@ int springLegacyAI::CAIAICallback::HandleCommand(int commandId, void* data) {
 
 		case AIHCGetDataDirId: {
 			AIHCGetDataDir* cppCmdData = static_cast<AIHCGetDataDir*>(data);
-			cppCmdData->ret_path = sAICallback->DataDirs_allocatePath(
+			const bool located = sAICallback->DataDirs_locatePath(
 					skirmishAIId,
+					cppCmdData->ret_path,
+					cppCmdData->pathMaxSize,
 					cppCmdData->relPath,
 					cppCmdData->writeable,
 					cppCmdData->create,
 					cppCmdData->dir,
 					cppCmdData->common);
-			ret = (cppCmdData->ret_path[0] != 0);
+			ret = located && (cppCmdData->ret_path[0] != 0);
 			break;
 		}
 	}

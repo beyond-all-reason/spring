@@ -484,6 +484,30 @@ function convertCToCppType(cType__common) {
 ################################################################################
 
 
+
+################################################################################
+### BEGIN: Meta comment functions
+
+function part_isRetString(namePart_p, metaInfo_p) {
+	return match(metaInfo_p, /RET_STRING:/)
+}
+function part_getRetString(metaInfo_p) {
+
+	retStringPart_p = metaInfo_p;
+
+	# remove pre class part
+	sub(/.*RET_STRING:/, "", retStringPart_p);
+
+	# remove post class part
+	sub(/: .*/,     "", retStringPart_p);
+
+	return retStringPart_p;
+}
+
+### END: Meta comment functions
+################################################################################
+
+
 END {
 	# finalize things
 }

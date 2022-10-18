@@ -197,7 +197,7 @@ std::string CInterface::FindLibFile(const SSkirmishAISpecifier& spec)
 	const char* sn = spec.shortName;
 	const char* sv = spec.version;
 
-	std::string dataDir = callback->SkirmishAIs_Info_getValueByKey(interfaceId, sn, sv, SKIRMISH_AI_PROPERTY_DATA_DIR);
+	std::string dataDir = callback->SkirmishAI_Info_getValueByKey(interfaceId, sn, sv, SKIRMISH_AI_PROPERTY_DATA_DIR);
 
 	if (dataDir.empty()) {
 		reportError(std::string("Missing Skirmish AI data-dir for ") + sn + " " + sv);
