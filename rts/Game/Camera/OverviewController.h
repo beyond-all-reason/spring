@@ -16,6 +16,7 @@ public:
 	void MouseMove(float3 move) override {}
 	void ScreenEdgeMove(float3 move) override {}
 	void MouseWheelMove(float move) override {}
+	void MouseWheelMove(float move, const float3& newDir) override { }
 
 	void SetPos(const float3& newPos) override {}
 	void SetDir(const float3& newDir) override {}

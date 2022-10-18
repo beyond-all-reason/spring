@@ -510,12 +510,10 @@ void CMiniMap::UpdateGeometry()
 
 /******************************************************************************/
 
-void CMiniMap::MoveView(int x, int y)
+void CMiniMap::MoveView(const float3& mapPos)
 {
-	const float3 clickPos = GetMapPosition(x, y);
-
 	camHandler->CameraTransition(0.0f);
-	camHandler->GetCurrentController().SetPos({clickPos.x, 0.0f, clickPos.z});
+	camHandler->GetCurrentController().SetPos({mapPos.x, 0.0f, mapPos.z});
 	unitTracker.Disable();
 }
 
@@ -564,6 +562,23 @@ void CMiniMap::SelectUnits(int x, int y)
 }
 
 /******************************************************************************/
+
+void CMiniMap::MouseWheel(bool up, float delta)
+{
+	float3 mapPos = GetMapPosition(mouse->lastx, mouse->lasty);
+	mapPos.y = CGround::GetHeightAboveWater(mapPos.x, mapPos.z, false);
+
+	// If cursor position in minimap refers to a point outside camera view just move to it
+	if (!camera->InView(mapPos)) {
+		MoveView(mapPos);
+		return;
+	}
+
+	float3 newDir = (mapPos - camera->pos);
+	newDir.LengthNormalize();
+
+	camHandler->GetCurrentController().MouseWheelMove(delta * mouse->scrollWheelSpeed, newDir);
+}
 
 bool CMiniMap::MousePress(int x, int y, int button)
 {

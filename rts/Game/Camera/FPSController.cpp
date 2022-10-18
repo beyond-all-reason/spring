@@ -63,9 +63,9 @@ void CFPSController::MouseMove(float3 move)
 }
 
 
-void CFPSController::MouseWheelMove(float move)
+void CFPSController::MouseWheelMove(float move, const float3& newDir)
 {
-	pos += (camera->GetUp() * move);
+	pos += (newDir * move);
 	Update();
 }
 

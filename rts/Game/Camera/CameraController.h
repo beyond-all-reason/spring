@@ -97,6 +97,7 @@ public:
 	virtual void MouseMove(float3 move) = 0;
 	virtual void ScreenEdgeMove(float3 move) = 0;
 	virtual void MouseWheelMove(float move) = 0;
+	virtual void MouseWheelMove(float move, const float3& dir) = 0;
 
 	virtual void Update() {}
 

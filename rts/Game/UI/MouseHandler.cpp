@@ -50,6 +50,7 @@
 CONFIG(bool, HardwareCursor).defaultValue(false).description("Sets hardware mouse cursor rendering. If you have a low framerate, your mouse cursor will seem \"laggy\". Setting hardware cursor will render the mouse cursor separately from spring and the mouse will behave normally. Note, not all GPU drivers support it in fullscreen mode!");
 CONFIG(bool, InvertMouse).defaultValue(false);
 CONFIG(bool, MouseRelativeModeWarp).defaultValue(true);
+CONFIG(bool, MiniMapMouseWheel).defaultValue(false).description("Whether MiniMap responds to MouseWheel events");
 
 CONFIG(float, CrossSize).defaultValue(12.0f);
 CONFIG(float, CrossAlpha).defaultValue(0.5f);
@@ -95,12 +96,13 @@ CMouseHandler::CMouseHandler()
 	ConfigUpdate();
 
 	configHandler->NotifyOnChange(this, {
-		"InvertMouse",
+		"MiniMapMouseWheel",
 		"MouseDragScrollThreshold",
 		"MouseDragSelectionThreshold",
 		"MouseDragBoxCommandThreshold",
 		"MouseDragCircleCommandThreshold",
-		"MouseDragFrontCommandThreshold"
+		"MouseDragFrontCommandThreshold",
+		"InvertMouse",
 		"ScrollWheelSpeed",
 	});
 }
@@ -515,6 +517,11 @@ void CMouseHandler::MouseWheel(float delta)
 {
 	if (eventHandler.MouseWheel(delta > 0.0f, delta))
 		return;
+
+	if (miniMapMouseWheel && (minimap != nullptr) && minimap->IsInside(mouse->lastx, mouse->lasty)) {
+		minimap->MouseWheel(delta > 0.0f, delta);
+		return;
+	}
 
 	camHandler->GetCurrentController().MouseWheelMove(delta * scrollWheelSpeed);
 }
@@ -1013,19 +1020,20 @@ bool CMouseHandler::ReplaceMouseCursor(
 
 
 /******************************************************************************/
-void CMouseHandler::ConfigUpdate()
-{
-	invertMouse = configHandler->GetBool("InvertMouse");
-	dragScrollThreshold = configHandler->GetFloat("MouseDragScrollThreshold");
-	dragSelectionThreshold = configHandler->GetInt("MouseDragSelectionThreshold");
-	dragBoxCommandThreshold = configHandler->GetInt("MouseDragBoxCommandThreshold");
-	dragCircleCommandThreshold = configHandler->GetInt("MouseDragCircleCommandThreshold");
-	dragFrontCommandThreshold = configHandler->GetInt("MouseDragFrontCommandThreshold");
-	scrollWheelSpeed = configHandler->GetFloat("ScrollWheelSpeed");
-}
 
 void CMouseHandler::ConfigNotify(const std::string& key, const std::string& value)
 {
 	ConfigUpdate();
 }
 
+void CMouseHandler::ConfigUpdate()
+{
+	dragScrollThreshold = configHandler->GetFloat("MouseDragScrollThreshold");
+	dragSelectionThreshold = configHandler->GetInt("MouseDragSelectionThreshold");
+	dragBoxCommandThreshold = configHandler->GetInt("MouseDragBoxCommandThreshold");
+	dragCircleCommandThreshold = configHandler->GetInt("MouseDragCircleCommandThreshold");
+	dragFrontCommandThreshold = configHandler->GetInt("MouseDragFrontCommandThreshold");
+	invertMouse = configHandler->GetBool("InvertMouse");
+	miniMapMouseWheel = configHandler->GetBool("MiniMapMouseWheel");
+	scrollWheelSpeed = configHandler->GetFloat("ScrollWheelSpeed");
+}
