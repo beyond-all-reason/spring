@@ -59,6 +59,10 @@ void CSpringController::KeyMove(float3 move)
 
 void CSpringController::MouseMove(float3 move)
 {
+	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
+	move.x *= move.z;
+	move.y *= move.z;
+
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 
 	move *= 0.005f;

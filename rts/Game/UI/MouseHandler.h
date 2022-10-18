@@ -80,6 +80,7 @@ public:
 
 	/// @see ConfigHandler::ConfigNotifyCallback
 	void ConfigNotify(const std::string& key, const std::string& value);
+	void ConfigUpdate();
 
 	bool GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, float3& tr) const;
 

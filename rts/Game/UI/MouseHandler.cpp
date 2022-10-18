@@ -85,28 +85,23 @@ CMouseHandler::CMouseHandler()
 #ifndef __APPLE__
 	hardwareCursor = configHandler->GetBool("HardwareCursor");
 #endif
-	invertMouse = configHandler->GetBool("InvertMouse");
 
 	crossSize      = configHandler->GetFloat("CrossSize");
 	crossAlpha     = configHandler->GetFloat("CrossAlpha");
 	crossMoveScale = configHandler->GetFloat("CrossMoveScale") * 0.005f;
 
 	doubleClickTime = configHandler->GetFloat("DoubleClickTime") / 1000.0f;
-	scrollWheelSpeed = configHandler->GetFloat("ScrollWheelSpeed");
 
-	dragScrollThreshold = configHandler->GetFloat("MouseDragScrollThreshold");
-	dragSelectionThreshold = configHandler->GetInt("MouseDragSelectionThreshold");
-	dragBoxCommandThreshold = configHandler->GetInt("MouseDragBoxCommandThreshold");
-	dragCircleCommandThreshold = configHandler->GetInt("MouseDragCircleCommandThreshold");
-	dragFrontCommandThreshold = configHandler->GetInt("MouseDragFrontCommandThreshold");
+	ConfigUpdate();
 
 	configHandler->NotifyOnChange(this, {
-		"ScrollWheelSpeed",
+		"InvertMouse",
 		"MouseDragScrollThreshold",
 		"MouseDragSelectionThreshold",
 		"MouseDragBoxCommandThreshold",
 		"MouseDragCircleCommandThreshold",
 		"MouseDragFrontCommandThreshold"
+		"ScrollWheelSpeed",
 	});
 }
 
@@ -1018,14 +1013,19 @@ bool CMouseHandler::ReplaceMouseCursor(
 
 
 /******************************************************************************/
-
-void CMouseHandler::ConfigNotify(const std::string& key, const std::string& value)
+void CMouseHandler::ConfigUpdate()
 {
-	scrollWheelSpeed = configHandler->GetFloat("ScrollWheelSpeed");
+	invertMouse = configHandler->GetBool("InvertMouse");
 	dragScrollThreshold = configHandler->GetFloat("MouseDragScrollThreshold");
 	dragSelectionThreshold = configHandler->GetInt("MouseDragSelectionThreshold");
 	dragBoxCommandThreshold = configHandler->GetInt("MouseDragBoxCommandThreshold");
 	dragCircleCommandThreshold = configHandler->GetInt("MouseDragCircleCommandThreshold");
 	dragFrontCommandThreshold = configHandler->GetInt("MouseDragFrontCommandThreshold");
+	scrollWheelSpeed = configHandler->GetFloat("ScrollWheelSpeed");
+}
+
+void CMouseHandler::ConfigNotify(const std::string& key, const std::string& value)
+{
+	ConfigUpdate();
 }
 
