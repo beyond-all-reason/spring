@@ -48,6 +48,15 @@ CR_REG_METADATA(LocalModel, (
 ))
 
 
+void S3DModelHelpers::BindLegacyAttrVBOs()
+{
+	S3DModelVAO::GetInstance().BindLegacyVertexAttribsAndVBOs();
+}
+void S3DModelHelpers::UnbindLegacyAttrVBOs()
+{
+	S3DModelVAO::GetInstance().UnbindLegacyVertexAttribsAndVBOs();
+}
+
 /** ****************************************************************************************************
  * S3DModelPiece
  */
@@ -57,30 +66,28 @@ void S3DModelPiece::DrawStaticLegacy(bool bind) const
 	if (!HasGeometryData())
 		return;
 
-	if (bind) BindLegacyAttrVBOs();
+	if (bind) S3DModelHelpers::BindLegacyAttrVBOs();
 
 	glPushMatrix();
 	glMultMatrixf(bposeMatrix);
-
 	DrawElements();
-
 	glPopMatrix();
 
-	if (bind) UnbindLegacyAttrVBOs();
+	if (bind) S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 // only used by projectiles with the PF_Recursive flag
 void S3DModelPiece::DrawStaticLegacyRec() const
 {
-	BindLegacyAttrVBOs();
+	S3DModelHelpers::BindLegacyAttrVBOs();
 
-	DrawStaticLegacy();
+	DrawStaticLegacy(false);
 
 	for (const S3DModelPiece* childPiece : children) {
-		childPiece->DrawStaticLegacy();
+		childPiece->DrawStaticLegacy(false);
 	}
 
-	UnbindLegacyAttrVBOs();
+	S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 
@@ -226,15 +233,6 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 		v.pieceIndex = pieceIndex;
 }
 
-void S3DModelPiece::BindLegacyAttrVBOs() const
-{
-	S3DModelVAO::GetInstance().BindLegacyVertexAttribsAndVBOs();
-}
-void S3DModelPiece::UnbindLegacyAttrVBOs() const
-{
-	S3DModelVAO::GetInstance().UnbindLegacyVertexAttribsAndVBOs();
-}
-
 void S3DModelPiece::DrawElements(GLuint prim) const
 {
 	if (indxCount == 0)
@@ -243,7 +241,7 @@ void S3DModelPiece::DrawElements(GLuint prim) const
 	S3DModelVAO::GetInstance().DrawElements(prim, indxStart, indxCount);
 }
 
-void S3DModelPiece::DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim) const
+void S3DModelPiece::DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim)
 {
 	if (vboIndxCount == 0)
 		return;
@@ -495,9 +493,9 @@ void LocalModelPiece::Draw() const
 
 	glPushMatrix();
 	glMultMatrixf(GetModelSpaceMatrix());
-	original->BindLegacyAttrVBOs();
+	S3DModelHelpers::BindLegacyAttrVBOs();
 	original->DrawElements();
-	original->UnbindLegacyAttrVBOs();
+	S3DModelHelpers::UnbindLegacyAttrVBOs();
 	glPopMatrix();
 }
 

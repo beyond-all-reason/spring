@@ -948,7 +948,7 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 				}
 				else {
 					// non-recursive, only draw one piece
-					pp->omp->DrawStaticLegacy();
+					pp->omp->DrawStaticLegacy(true);
 				}
 
 			glPopMatrix();

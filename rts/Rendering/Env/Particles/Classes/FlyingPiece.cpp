@@ -198,14 +198,14 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 
 void FlyingPiece::BeginDraw()
 {
-	assert(false);
 	glDisable(GL_CULL_FACE);
+	S3DModelHelpers::BindLegacyAttrVBOs();
 }
 
 void FlyingPiece::EndDraw()
 {
-	assert(false);
 	glEnable(GL_CULL_FACE);
+	S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 
@@ -219,7 +219,7 @@ void FlyingPiece::Draw(const FlyingPiece* prev) const
 		glPushMatrix();
 		glMultMatrixf(GetMatrixOf(cp, dragFactors));
 		const uint32_t indxOffset = piece->indxStart + piece->indxCount; //shatter piece indices come after regular indices
-		piece->DrawShatterElements(indxOffset + cp.indexStart, cp.indexCount);
+		S3DModelPiece::DrawShatterElements(indxOffset + cp.indexStart, cp.indexCount);
 		glPopMatrix();
 	}
 }

@@ -1390,9 +1390,9 @@ static void GLObjectPiece(lua_State* L, const CSolidObject* obj)
 		return;
 
 	assert(lmp->original);
-	lmp->original->BindLegacyAttrVBOs();
+	S3DModelHelpers::BindLegacyAttrVBOs();
 	lmp->original->DrawElements();
-	lmp->original->UnbindLegacyAttrVBOs();
+	S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 static void GLObjectPieceMultMatrix(lua_State* L, const CSolidObject* obj)

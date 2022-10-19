@@ -90,6 +90,10 @@ public:
 	std::vector<RenderData> renderData;
 };
 
+struct S3DModelHelpers {
+	static void BindLegacyAttrVBOs();
+	static void UnbindLegacyAttrVBOs();
+};
 
 
 /**
@@ -138,15 +142,13 @@ struct S3DModelPiece {
 
 	virtual void PostProcessGeometry(uint32_t pieceIndex);
 
-	void BindLegacyAttrVBOs() const;
-	void UnbindLegacyAttrVBOs() const;
 
 	void DrawElements(GLuint prim = GL_TRIANGLES) const;
-	void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES) const;
+	static void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES);
 
 	bool HasBackedMat() const { return hasBakedMat; }
 public:
-	void DrawStaticLegacy(bool bind = true) const;
+	void DrawStaticLegacy(bool bind) const;
 	void DrawStaticLegacyRec() const;
 
 	void CreateShatterPieces();
@@ -304,10 +306,14 @@ struct S3DModel
 
 	void AddPiece(S3DModelPiece* p) { pieceObjects.push_back(p); }
 	void DrawStatic() const {
+		S3DModelHelpers::BindLegacyAttrVBOs();
+
 		// draw pieces in their static bind-pose (ie. without script-transforms)
 		for (const S3DModelPiece* pieceObj : pieceObjects) {
-			pieceObj->DrawStaticLegacy();
+			pieceObj->DrawStaticLegacy(false);
 		}
+
+		S3DModelHelpers::UnbindLegacyAttrVBOs();
 	}
 
 	void SetPieceMatrices() {

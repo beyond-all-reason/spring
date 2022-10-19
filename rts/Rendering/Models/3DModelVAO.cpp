@@ -85,8 +85,11 @@ void S3DModelVAO::ProcessIndicies(S3DModel* model)
 	model->indxStart = static_cast<uint32_t>(std::distance(indxData.cbegin(), indxData.cend()));
 
 	for (auto* modelPiece : model->pieceObjects) {
-		if (!modelPiece->HasGeometryData())
+		if (!modelPiece->HasGeometryData()) {
+			modelPiece->indxStart = static_cast<uint32_t>(indxData.size());
+			modelPiece->indxCount = 0;
 			continue;
+		}
 
 		const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
 		indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
