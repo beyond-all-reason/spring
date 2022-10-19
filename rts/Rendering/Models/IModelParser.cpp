@@ -45,10 +45,10 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 	return (iter != whitelist.end());
 }
 
-static void RegisterModelFormats(CModelLoader::FormatMap& formats) {
+static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 	// file-extension should be lowercase
-	formats.insert("3do", MODELTYPE_3DO);
-	formats.insert("s3o", MODELTYPE_S3O);
+	parsers.emplace_back("3do", &g3DOParser);
+	parsers.emplace_back("s3o", &gS3OParser);
 
 	std::string extension;
 	std::string extensions;
@@ -73,10 +73,10 @@ static void RegisterModelFormats(CModelLoader::FormatMap& formats) {
 
 		if (!CheckAssimpWhitelist(extension.c_str()))
 			continue;
-		if (formats.find(extension) != formats.end())
+		if (std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; }) != parsers.end())
 			continue;
 
-		formats.insert(extension, MODELTYPE_ASS);
+		parsers.emplace_back(extension, &gAssParser);
 		enabledExtensions.append("*." + extension + ";");
 	}
 
@@ -128,7 +128,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 
 void CModelLoader::Init()
 {
-	RegisterModelFormats(formats);
+	RegisterModelFormats(parsers);
 	InitParsers();
 
 	models.clear();
@@ -138,15 +138,11 @@ void CModelLoader::Init()
 	models[0] = CreateDummyModel(numModels = 0);
 }
 
-void CModelLoader::InitParsers()
+void CModelLoader::InitParsers() const
 {
-	parsers[MODELTYPE_3DO] = &g3DOParser;
-	parsers[MODELTYPE_S3O] = &gS3OParser;
-	parsers[MODELTYPE_ASS] = &gAssParser;
-
-	for (IModelParser* p: parsers) {
-		p->Init();
-	}
+	g3DOParser.Init();
+	gS3OParser.Init();
+	gAssParser.Init();
 }
 
 void CModelLoader::Kill()
@@ -156,7 +152,7 @@ void CModelLoader::Kill()
 	KillParsers();
 
 	cache.clear();
-	formats.clear();
+	parsers.clear();
 }
 
 void CModelLoader::KillModels()
@@ -167,15 +163,11 @@ void CModelLoader::KillModels()
 	models.clear();
 }
 
-void CModelLoader::KillParsers()
+void CModelLoader::KillParsers() const
 {
-	for (IModelParser* p: parsers) {
-		p->Kill();
-	}
-
-	parsers[MODELTYPE_3DO] = nullptr;
-	parsers[MODELTYPE_S3O] = nullptr;
-	parsers[MODELTYPE_ASS] = nullptr;
+	g3DOParser.Kill();
+	gS3OParser.Kill();
+	gAssParser.Kill();
 }
 
 
@@ -188,12 +180,9 @@ std::string CModelLoader::FindModelPath(std::string name) const
 		return name;
 
 	const std::string vfsPath = "objects3d/";
-	const std::string& fileExt = FileSystem::GetExtension(name);
 
-	if (fileExt.empty()) {
-		for (const auto& format: formats) {
-			const std::string& formatExt = format.first;
-
+	if (const std::string& fileExt = FileSystem::GetExtension(name); fileExt.empty()) {
+		for (const auto& [formatExt, parser] : parsers) {
 			if (CFileHandler::FileExists(name + "." + formatExt, SPRING_VFS_ZIP)) {
 				name.append("." + formatExt);
 				break;
@@ -363,12 +352,20 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 
 IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 {
-	const auto fi = formats.find(StringToLower(pathExt));
+	// cached record
+	static std::pair<std::string, IModelParser*> lastParser = {};
 
-	if (fi == formats.end())
+	const std::string extension = StringToLower(pathExt);
+
+	if (lastParser.first == extension)
+		return lastParser.second;
+
+	const auto it = std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; });
+	if (it == parsers.end())
 		return nullptr;
 
-	return parsers[fi->second];
+	lastParser = *it;
+	return it->second;
 }
 
 S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& path)
