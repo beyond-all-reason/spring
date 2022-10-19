@@ -47,12 +47,15 @@ void S3DModelVAO::DisableAttribs() const
 	}
 }
 
-S3DModelVAO::S3DModelVAO()
-	: batchedBaseInstance{ 0u }
-	, immediateBaseInstance{ 0u }
+S3DModelVAO::S3DModelVAO(bool preloadModelMode_)
+	: preloadModelMode(preloadModelMode_)
 {
 	vertData.reserve(VERT_SIZE0);
 	indxData.reserve(INDX_SIZE0);
+
+	vertVBO = VBO{ GL_ARRAY_BUFFER        , false };
+	indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
+	instVBO = VBO{ GL_ARRAY_BUFFER        , false };
 
 	//no better place to init it
 	instVBO.Bind();
@@ -173,12 +176,21 @@ void S3DModelVAO::UploadVBOs()
 
 	if (reinitVAO)
 		CreateVAO();
+
+	if (preloadModelMode) {
+		// all models have been uploaded in the calls above
+		// safe to clear CPU copy of the data
+		vertData.clear();
+		indxData.clear();
+		vertUploadIndex = 0;
+		indxUploadIndex = 0;
+	}
 }
 
-void S3DModelVAO::Init()
+void S3DModelVAO::Init(bool preloadModelMode)
 {
 	Kill();
-	instance = std::make_unique<S3DModelVAO>();
+	instance = std::make_unique<S3DModelVAO>(preloadModelMode);
 }
 
 void S3DModelVAO::Kill()

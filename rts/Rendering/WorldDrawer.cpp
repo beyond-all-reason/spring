@@ -78,9 +78,11 @@ void CWorldDrawer::InitPost() const
 
 	{
 		loadscreen->SetLoadMessage("Loading Models");
-		S3DModelVAO::Init();
 
-		if (configHandler->GetBool("PreloadModels")) {
+		const bool preloadMode = configHandler->GetBool("PreloadModels");
+		S3DModelVAO::Init(preloadMode);
+
+		if (preloadMode) {
 			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
 				def.PreloadModel();
 			}
