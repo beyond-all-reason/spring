@@ -14,7 +14,7 @@
 class IModelParser
 {
 public:
-	virtual ~IModelParser() {}
+	virtual ~IModelParser() = default;
 	virtual void Init() {}
 	virtual void Kill() {}
 	virtual S3DModel Load(const std::string& name) = 0;
@@ -41,7 +41,7 @@ public:
 private:
 	S3DModel ParseModel(const std::string& name, const std::string& path);
 	void CreateModel(S3DModel& model, const std::string& name, const std::string& path);
-	S3DModel* GetCachedModel(const std::string& name, bool preload);
+	S3DModel* GetCachedModel(const std::string& name);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
 

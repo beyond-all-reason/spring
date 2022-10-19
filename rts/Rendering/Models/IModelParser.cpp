@@ -205,7 +205,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 	assert(Threading::IsMainThread());
 
 	//NB: do preload in any case
-	if (ThreadPool::HasThreads() && false) {
+	if (ThreadPool::HasThreads()) {
 
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
@@ -261,8 +261,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	{
 		std::scoped_lock lock(mutex);
 
-		// search in cache first
-		model = GetCachedModel(name, preload);
+		model = GetCachedModel(name);
 
 		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
 		if (load)
@@ -274,9 +273,10 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 		CreateModel(*model, name, FindModelPath(name));
 	}
 
-	//spin wait other thread to load the same model for us
-	while (model->loadStatus == S3DModel::LoadStatus::LOADING)
-	{
+	// spin wait other thread to load the same model for us
+	// reading model->loadStatus without locking the mutex is
+	// not totally MT correct, but seems to work flawlessly
+	while (model->loadStatus != S3DModel::LoadStatus::LOADED) {
 		spring_msecs(10).sleep();
 	}
 
@@ -286,7 +286,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	return model;
 }
 
-S3DModel* CModelLoader::GetCachedModel(const std::string& name, bool preload)
+S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 {
 	// caller has lock
 	const auto ci = cache.find(name);
@@ -323,8 +323,6 @@ void CModelLoader::CreateModel(
 	model.SetPieceMatrices();
 
 	PostProcessGeometry(&model);
-
-	model.loadStatus = S3DModel::LoadStatus::LOADED;
 }
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
@@ -406,10 +404,13 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 		p->CreateShatterPieces();
 	}
 
-	std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
-	auto& inst = S3DModelVAO::GetInstance();
-	inst.ProcessVertices(model);
-	inst.ProcessIndicies(model);
+	{
+		std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
+		auto& inst = S3DModelVAO::GetInstance();
+		inst.ProcessVertices(model);
+		inst.ProcessIndicies(model);
+		model->loadStatus = S3DModel::LoadStatus::LOADED;
+	}
 }
 
 void CModelLoader::Upload(S3DModel* model) const {
