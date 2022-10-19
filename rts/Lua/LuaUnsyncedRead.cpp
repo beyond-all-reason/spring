@@ -2589,6 +2589,8 @@ int LuaUnsyncedRead::GetKeyFromScanSymbol(lua_State* L)
 {
 	const std::string& symbol = StringToLower(luaL_optstring(L, 1, ""));
 
+	std::string filename = std::string(luaL_optstring(L, 1, ""));
+
 	std::string result = "";
 
 	if (symbol.empty()) {
@@ -2608,7 +2610,8 @@ int LuaUnsyncedRead::GetKeyFromScanSymbol(lua_State* L)
 		return 1;
 	}
 
-	result = keyCodes.GetDefaultName(keyCode);
+	//result = keyCodes.GetDefaultName(keyCode);
+	result = SDL_GetKeyName(keyCode);
 
 	lua_pushstring(L, result.c_str());
 
