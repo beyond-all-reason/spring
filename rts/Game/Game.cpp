@@ -1014,10 +1014,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
 	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
 
-	// Get the list of possible key actions
-	const ActionList& actionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
-	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, actionList))
+	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
 		return 0;
 
 	if (luaInputReceiver->KeyPressed(keyCode, scanCode, isRepeat))
@@ -1031,7 +1030,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	}
 
 	// try our list of actions
-	for (const Action& action: actionList) {
+	for (const Action& action: lastActionList) {
 		if (ActionPressed(keyCode, scanCode, action, isRepeat)) {
 			return 0;
 		}
@@ -1039,13 +1038,13 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	// maybe a widget is interested?
 	if (luaUI != nullptr) {
-		for (const Action& action: actionList) {
+		for (const Action& action: lastActionList) {
 			luaUI->GotChatMsg(action.rawline, false);
 		}
 	}
 
 	if (luaMenu != nullptr) {
-		for (const Action& action: actionList) {
+		for (const Action& action: lastActionList) {
 			luaMenu->GotChatMsg(action.rawline, false);
 		}
 	}
@@ -1059,6 +1058,9 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
+	// update actionlist for lua consumer
+	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
 	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
 		return 0;
 
@@ -1069,9 +1071,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 		}
 	}
 
-	// try our list of actions
-	const ActionList& al = keyBindings.GetActionList(keyCode, scanCode);
-	for (const Action& action: al) {
+	for (const Action& action: lastActionList) {
 		if (ActionReleased(action))
 			return 0;
 	}

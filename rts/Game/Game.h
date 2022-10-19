@@ -10,6 +10,7 @@
 #include "GameController.h"
 #include "GameJobDispatcher.h"
 #include "Game/UI/KeySet.h"
+#include "Game/Action.h"
 #include "Rendering/WorldDrawer.h"
 #include "System/UnorderedMap.hpp"
 #include "System/creg/creg_cond.h"
@@ -17,7 +18,6 @@
 
 class LuaParser;
 class ILoadSaveHandler;
-class Action;
 class ChatMessage;
 
 
@@ -165,6 +165,8 @@ public:
 	spring_time lastSimFrameNetPacketTime;
 	spring_time lastUnsyncedUpdateTime;
 	spring_time skipLastDrawTime;
+
+	ActionList lastActionList;
 
 	float updateDeltaSeconds = 0.0f;
 	/// Time in seconds, stops at game end

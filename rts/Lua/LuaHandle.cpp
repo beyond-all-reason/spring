@@ -14,6 +14,8 @@
 #include "LuaMathExtra.h"
 #include "LuaUtils.h"
 #include "LuaZip.h"
+#include "Game/Game.h"
+#include "Game/Action.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
@@ -2030,7 +2032,10 @@ bool CLuaHandle::KeyMapChanged()
 bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 {
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 7, __func__);
+
+	const bool isGame = game != nullptr;
+
+	luaL_checkstack(L, 7 + isGame, __func__);
 	static const LuaHashString cmdStr(__func__);
 
 	// if the call is not defined, do not take the event
@@ -2053,8 +2058,21 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 	lua_pushinteger(L, 0); //FIXME remove, was deprecated utf32 char (now uses TextInput for that)
 	lua_pushinteger(L, scanCode);
 
+	if (isGame) {
+		int i = 1;
+		lua_createtable(L, 0, game->lastActionList.size());
+		for (const Action& action: game->lastActionList) {
+			lua_createtable(L, 0, 3); {
+				LuaPushNamedString(L, "command",   action.command);
+				LuaPushNamedString(L, "extra",     action.extra);
+				LuaPushNamedString(L, "boundWith", action.boundWith);
+			}
+			lua_rawseti(L, -2, i++);
+		}
+	}
+
 	// call the function
-	if (!RunCallIn(L, cmdStr, 6, 1))
+	if (!RunCallIn(L, cmdStr, 6 + isGame, 1))
 		return false;
 
 	const bool retval = luaL_optboolean(L, -1, false);
@@ -2066,14 +2084,17 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 {
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 6, __func__);
+
+	const bool isGame = game != nullptr;
+
+	luaL_checkstack(L, 6 + isGame, __func__);
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return false;
 
 	lua_pushinteger(L, SDL21_keysyms(keyCode));
 
-	lua_createtable(L, 0, 5);
+	lua_createtable(L, 0, 4);
 	HSTR_PUSH_BOOL(L, "alt",   !!KeyInput::GetKeyModState(KMOD_ALT));
 	HSTR_PUSH_BOOL(L, "ctrl",  !!KeyInput::GetKeyModState(KMOD_CTRL));
 	HSTR_PUSH_BOOL(L, "meta",  !!KeyInput::GetKeyModState(KMOD_GUI));
@@ -2084,8 +2105,21 @@ bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 	lua_pushinteger(L, 0); //FIXME remove, was deprecated utf32 char (now uses TextInput for that)
 	lua_pushinteger(L, scanCode);
 
+	if (isGame) {
+		int i = 1;
+		lua_createtable(L, 0, game->lastActionList.size());
+		for (const Action& action: game->lastActionList) {
+			lua_createtable(L, 0, 3); {
+				LuaPushNamedString(L, "command",   action.command);
+				LuaPushNamedString(L, "extra",     action.extra);
+				LuaPushNamedString(L, "boundWith", action.boundWith);
+			}
+			lua_rawseti(L, -2, i++);
+		}
+	}
+
 	// call the function
-	if (!RunCallIn(L, cmdStr, 5, 1))
+	if (!RunCallIn(L, cmdStr, 5 + isGame, 1))
 		return false;
 
 	const bool retval = luaL_optboolean(L, -1, false);
