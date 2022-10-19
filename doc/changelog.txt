@@ -102,13 +102,17 @@ System:
  - Windows Vista is now longer supported, Windows 7 is now the minimum required Windows OS
 
 UI:
+ - KeyPress and KeyRelease callins receive an additional actions
+   7th argument
+ - Allow minimap to receive MouseWheelPress events, controlled by
+   MiniMapMouseWheel = [0]|1
  - Add `group unset` action to unassign any groups from selected units
- - Allow drawlabel events inside minimap and add MiniMapCanDraw to enable drawing lines via
-   cursor over minimap
+ - Allow drawlabel events inside minimap and add MiniMapCanDraw to enable
+   drawing lines via cursor over minimap
  - Minimap can flip if camera rotation is between 90 and 270 degrees. Can be
    turned on via spring setting `MiniMapCanFlip = [0]|1`
  - KeyPress and KeyRelease callins receive an additional scanCode
-   argument
+   6th argument
  - sc_<k> keysets are introduced for scancodes and handled in conjunction
    with keycode bindings preserving the order on which the actions where
    bound. Can also be bound via `sc_0x<hexvalue>`
@@ -116,6 +120,8 @@ UI:
  - Add GetScanSymbol(int scanCode)
 
 Fixes:
+ - Fix KeyChains not being respected for GuiHandler actions and allow games to
+   handle them with new actions argument on KeyPress/KeyRelease
  - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
    i.e. unplug/replug USB headset or swtich between builtin soundcard to 
    monitor soundcard (HDMI), seamlessly possible without requiring a program restart

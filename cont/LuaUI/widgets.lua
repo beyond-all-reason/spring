@@ -1406,22 +1406,22 @@ function widgetHandler:KeyMapChanged()
   return false
 end
 
-function widgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode)
+function widgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode, actions)
   if (self.tweakMode) then
     self.tweakKeys[key] = true
     local mo = self.mouseOwner
     if (mo and mo.TweakKeyPress) then
-      mo:TweakKeyPress(key, mods, isRepeat, label, unicode, scanCode)
+      mo:TweakKeyPress(key, mods, isRepeat, label, unicode, scanCode, actions)
     end
     return true
   end
 
-  if (self.actionHandler:KeyAction(true, key, mods, isRepeat, scanCode)) then
+  if (self.actionHandler:KeyAction(true, key, mods, isRepeat, scanCode, actions)) then
     return true
   end
 
   for _,w in ipairs(self.KeyPressList) do
-    if (w:KeyPress(key, mods, isRepeat, label, unicode, scanCode)) then
+    if (w:KeyPress(key, mods, isRepeat, label, unicode, scanCode, actions)) then
       return true
     end
   end
@@ -1429,11 +1429,11 @@ function widgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode)
 end
 
 
-function widgetHandler:KeyRelease(key, mods, label, unicode, scanCode)
+function widgetHandler:KeyRelease(key, mods, label, unicode, scanCode, actions)
   if (self.tweakMode and self.tweakKeys[key] ~= nil) then
     local mo = self.mouseOwner
     if (mo and mo.TweakKeyRelease) then
-      mo:TweakKeyRelease(key, mods, label, unicode, scanCode)
+      mo:TweakKeyRelease(key, mods, label, unicode, scanCode, actions)
     elseif (key == KEYSYMS.ESCAPE) then
       Spring.Log(section, LOG.INFO, "LuaUI TweakMode: OFF")
       self.tweakMode = false
@@ -1441,12 +1441,12 @@ function widgetHandler:KeyRelease(key, mods, label, unicode, scanCode)
     return true
   end
 
-  if (self.actionHandler:KeyAction(false, key, mods, false, scanCode)) then
+  if (self.actionHandler:KeyAction(false, key, mods, false, scanCode, actions)) then
     return true
   end
 
   for _,w in ipairs(self.KeyReleaseList) do
-    if (w:KeyRelease(key, mods, label, unicode, scanCode)) then
+    if (w:KeyRelease(key, mods, label, unicode, scanCode, actions)) then
       return true
     end
   end

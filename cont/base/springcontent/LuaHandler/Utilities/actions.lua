@@ -52,20 +52,6 @@ local function ParseTypes(types, def)
 end
 
 
-local function MakeKeySetString(key, mods, getSymbol)
-  if key == nil then return "" end
-
-  getSymbol = getSymbol or Spring.GetKeySymbol
-  local keyset = ""
-  if (mods.alt)   then keyset = keyset .. "A+" end
-  if (mods.ctrl)  then keyset = keyset .. "C+" end
-  if (mods.meta)  then keyset = keyset .. "M+" end
-  if (mods.shift) then keyset = keyset .. "S+" end
-  local _, defSym = getSymbol(key)
-  return (keyset .. defSym)
-end
-
-
 local function InsertCallInfo(callInfoList, addon, func, data)
 	local layer = addon._info.layer
 	local index = 1
@@ -127,7 +113,7 @@ local function RemoveAction(map, addon, cmd)
 end
 
 
-local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release)
+local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release, actions)
 	local callInfoList = actionMap[cmd]
 	if not callInfoList then
 		return false
@@ -136,7 +122,7 @@ local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release)
 		--local addon = callInfo[1]
 		local func   = callInfo[2]
 		local data   = callInfo[3]
-		if (func(cmd, optLine, optWords, data, isRepeat, release)) then
+		if (func(cmd, optLine, optWords, data, isRepeat, release, actions)) then
 			return true
 		end
 	end
@@ -214,27 +200,23 @@ end
 --
 
 
-local function KeyAction(press, key, mods, isRepeat, scanCode)
-	local keyset = MakeKeySetString(key, mods, Spring.GetKeySymbol)
-	local scanset = MakeKeySetString(scanCode, mods, Spring.GetScanSymbol)
+local function KeyAction(press, _, _, isRepeat, _, actions)
+	if (not(actions and next(actions))) then return false end
 
-	local defBinds = Spring.GetKeyBindings(keyset, scanset)
-
-	if (defBinds) then
-		local actionSet
-		if (press) then
-			actionSet = isRepeat and keyRepeatActions or keyPressActions
-		else
-			actionSet = keyReleaseActions
-		end
-		for _,bAction in ipairs(defBinds) do
-			local bCmd, bOpts = next(bAction, nil)
-			local words = MakeWords(bOpts)
-			if (TryAction(actionSet, bCmd, bOpts, words, isRepeat, not press)) then
-				return true
-			end
+	local actionSet
+	if (press) then
+		actionSet = isRepeat and keyRepeatActions or keyPressActions
+	else
+		actionSet = keyReleaseActions
+	end
+	for _,bAction in ipairs(actions) do
+		local bCmd, bOpts = next(bAction, nil)
+		local words = MakeWords(bOpts)
+		if (TryAction(actionSet, bCmd, bOpts, words, isRepeat, not press, actions)) then
+			return true
 		end
 	end
+
 	return false
 end
 
