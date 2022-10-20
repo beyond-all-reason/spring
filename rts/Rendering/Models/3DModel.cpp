@@ -509,7 +509,13 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 
 	glPushMatrix();
 	glMultMatrixf(GetModelSpaceMatrix());
-	glCallList(lodDispLists[lod]);
+	if (const auto ldl = lodDispLists[lod]; ldl == 0) {
+		S3DModelHelpers::BindLegacyAttrVBOs();
+		original->DrawElements();
+		S3DModelHelpers::UnbindLegacyAttrVBOs();
+	} else {
+		glCallList(ldl);
+	}
 	glPopMatrix();
 }
 
