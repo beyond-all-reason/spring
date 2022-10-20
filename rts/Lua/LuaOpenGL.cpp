@@ -87,8 +87,6 @@ CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValu
 
 void (*LuaOpenGL::resetMatrixFunc)() = nullptr;
 
-unsigned int LuaOpenGL::resetStateList = 0;
-
 LuaOpenGL::DrawMode LuaOpenGL::drawMode = LuaOpenGL::DRAW_NONE;
 LuaOpenGL::DrawMode LuaOpenGL::prevDrawMode = LuaOpenGL::DRAW_NONE;
 
@@ -246,12 +244,6 @@ static CFeature* ParseFeature(lua_State* L, const char* caller, int index)
 
 void LuaOpenGL::Init()
 {
-	resetStateList = glGenLists(1);
-
-	glNewList(resetStateList, GL_COMPILE);
-	ResetGLState();
-	glEndList();
-
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	canUseShaders = (globalRendering->haveGLSL && configHandler->GetBool("LuaShaders"));
@@ -265,7 +257,6 @@ void LuaOpenGL::Init()
 
 void LuaOpenGL::Free()
 {
-	glDeleteLists(resetStateList, 1);
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	if (!globalRendering->haveGLSL)
@@ -609,7 +600,7 @@ void LuaOpenGL::EnableCommon(DrawMode mode)
 	drawMode = mode;
 	if (safeMode) {
 		glPushAttrib(AttribBits);
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 	// FIXME  --  not needed by shadow or minimap   (use a WorldCommon ? )
 	//glEnable(GL_NORMALIZE);
@@ -660,7 +651,7 @@ void LuaOpenGL::ResetDrawGenesis()
 {
 	if (safeMode) {
 		ResetGenesisMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -690,7 +681,7 @@ void LuaOpenGL::ResetDrawWorld()
 {
 	if (safeMode) {
 		ResetWorldMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -720,7 +711,7 @@ void LuaOpenGL::ResetDrawWorldPreUnit()
 {
 	if (safeMode) {
 		ResetWorldMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -759,7 +750,7 @@ void LuaOpenGL::ResetDrawWorldShadow()
 {
 	if (safeMode) {
 		ResetWorldShadowMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glPolygonOffset(1.0f, 1.0f);
 		glEnable(GL_POLYGON_OFFSET_FILL);
@@ -792,7 +783,7 @@ void LuaOpenGL::ResetDrawWorldReflection()
 {
 	if (safeMode) {
 		ResetWorldMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -822,7 +813,7 @@ void LuaOpenGL::ResetDrawWorldRefraction()
 {
 	if (safeMode) {
 		ResetWorldMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -838,7 +829,7 @@ void LuaOpenGL::EnableDrawScreenCommon()
 
 	SetupScreenMatrices();
 	SetupScreenLighting();
-	glCallList(resetStateList);
+	ResetGLState();
 	//glEnable(GL_NORMALIZE);
 }
 
@@ -855,7 +846,7 @@ void LuaOpenGL::ResetDrawScreenCommon()
 {
 	if (safeMode) {
 		ResetScreenMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -888,7 +879,7 @@ void LuaOpenGL::DisableDrawInMiniMap()
 		if (safeMode) {
 			glPopAttrib();
 		} else {
-			glCallList(resetStateList);
+			ResetGLState();
 		}
 		resetMatrixFunc = ResetScreenMatrices;
 		ResetScreenMatrices();
@@ -906,7 +897,7 @@ void LuaOpenGL::ResetDrawInMiniMap()
 {
 	if (safeMode) {
 		ResetMiniMapMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -940,7 +931,7 @@ void LuaOpenGL::DisableDrawInMiniMapBackground()
 		if (safeMode) {
 			glPopAttrib();
 		} else {
-			glCallList(resetStateList);
+			ResetGLState();
 		}
 		resetMatrixFunc = ResetScreenMatrices;
 		ResetScreenMatrices();
@@ -958,7 +949,7 @@ void LuaOpenGL::ResetDrawInMiniMapBackground()
 {
 	if (safeMode) {
 		ResetMiniMapMatrices();
-		glCallList(resetStateList);
+		ResetGLState();
 	}
 }
 
@@ -2606,7 +2597,7 @@ int LuaOpenGL::Material(lua_State* L)
 int LuaOpenGL::ResetState(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
-	glCallList(resetStateList);
+	ResetGLState();
 	return 0;
 }
 
