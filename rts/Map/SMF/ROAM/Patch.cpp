@@ -692,7 +692,7 @@ void Patch::Upload()
 		VBOUploadVertices();
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), &indices[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), &indices[0], GL_STREAM_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	isChanged = false;
 }
