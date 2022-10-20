@@ -237,6 +237,7 @@ void S3DModelPiece::DrawElements(GLuint prim) const
 {
 	if (indxCount == 0)
 		return;
+	assert(indxCount != ~0u);
 
 	S3DModelVAO::GetInstance().DrawElements(prim, indxStart, indxCount);
 }

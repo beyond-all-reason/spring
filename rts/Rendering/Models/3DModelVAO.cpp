@@ -66,6 +66,8 @@ S3DModelVAO::S3DModelVAO(bool preloadModelMode_)
 void S3DModelVAO::ProcessVertices(const S3DModel* model)
 {
 	assert(model);
+	assert(model->loadStatus == S3DModel::LoadStatus::LOADING);
+
 	if (const auto* root = model->GetRootPiece(); root->vertIndex != ~0u)
 		return;
 

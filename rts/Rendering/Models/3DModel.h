@@ -130,6 +130,10 @@ struct S3DModelPiece {
 		mins = DEF_MIN_SIZE;
 		maxs = DEF_MAX_SIZE;
 
+		vertIndex = ~0u;
+		indxStart = ~0u;
+		indxCount = ~0u;
+
 		hasBakedMat = false;
 	}
 

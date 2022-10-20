@@ -218,6 +218,7 @@ void FlyingPiece::Draw(const FlyingPiece* prev) const
 	for (auto& cp: splitterParts) {
 		glPushMatrix();
 		glMultMatrixf(GetMatrixOf(cp, dragFactors));
+		assert(piece->indxCount != ~0u);
 		const uint32_t indxOffset = piece->indxStart + piece->indxCount; //shatter piece indices come after regular indices
 		S3DModelPiece::DrawShatterElements(indxOffset + cp.indexStart, cp.indexCount);
 		glPopMatrix();
