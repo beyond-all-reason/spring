@@ -21,19 +21,12 @@
 #include "System/Threading/ThreadPool.h"
 
 #include <climits>
+#include <array>
 
 
 TriTreeNode TriTreeNode::dummyNode;
 
-Patch::RenderMode Patch::renderMode = Patch::VBO;
-
-
-static size_t CUR_POOL_SIZE =                 0; // split over all threads
-static size_t MAX_POOL_SIZE = NEW_POOL_SIZE * 8; // upper limit for ResetAll
-
-
-static CTriNodePool pools[CRoamMeshDrawer::MESH_COUNT];
-
+static std::array<CTriNodePool, CRoamMeshDrawer::MESH_COUNT> pools;
 
 void CTriNodePool::InitPools(bool shadowPass, size_t newPoolSize)
 {
@@ -212,16 +205,12 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 
 void Patch::VBOUploadVertices()
 {
-	if (renderMode == VBO) {
-		// Upload vertexBuffer
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// Upload vertexBuffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		vboVerticesUploaded = true;
-	} else {
-		vboVerticesUploaded = false;
-	}
+	vboVerticesUploaded = true;
 }
 
 
@@ -585,39 +574,20 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 // Render the mesh.
 //
 
-void Patch::Draw()
+void Patch::Draw() const
 {
-	switch (renderMode) {
-		case VA: {
-			glEnableClientState(GL_VERTEX_ARRAY);
-				glVertexPointer(3, GL_FLOAT, 0, &vertices[0]);
-				glDrawRangeElements(GL_TRIANGLES, 0, vertices.size(), indices.size(), GL_UNSIGNED_INT, &indices[0]);
-			glDisableClientState(GL_VERTEX_ARRAY);
-		} break;
+	// enable VBOs
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); // coors
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer); // indices
 
-		case DL: {
-			glCallList(triList);
-		} break;
+		glEnableClientState(GL_VERTEX_ARRAY);
+			glVertexPointer(3, GL_FLOAT, 0, 0); // last param is offset, not ptr
+			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+		glDisableClientState(GL_VERTEX_ARRAY);
 
-		case VBO: {
-			// enable VBOs
-			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); // coors
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer); // indices
-
-				glEnableClientState(GL_VERTEX_ARRAY);
-					glVertexPointer(3, GL_FLOAT, 0, 0); // last param is offset, not ptr
-					glDrawRangeElements(GL_TRIANGLES, 0, vertices.size(), indices.size(), GL_UNSIGNED_INT, 0);
-				glDisableClientState(GL_VERTEX_ARRAY);
-
-			// disable VBO mode
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		} break;
-
-		default: {
-			assert(false);
-		} break;
-	}
+	// disable VBO mode
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 
@@ -718,28 +688,12 @@ void Patch::GenerateBorderIndices(CVertexArray* va)
 
 void Patch::Upload()
 {
-	switch (renderMode) {
-		case DL: {
-			glNewList(triList, GL_COMPILE);
-				glEnableClientState(GL_VERTEX_ARRAY);
-					glVertexPointer(3, GL_FLOAT, 0, &vertices[0]);
-					glDrawRangeElements(GL_TRIANGLES, 0, vertices.size(), indices.size(), GL_UNSIGNED_INT, &indices[0]);
-				glDisableClientState(GL_VERTEX_ARRAY);
-			glEndList();
-		} break;
+	if (!vboVerticesUploaded)
+		VBOUploadVertices();
 
-		case VBO: {
-			if (!vboVerticesUploaded)
-				VBOUploadVertices();
-
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), &indices[0], GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		} break;
-
-		default: {
-		} break;
-	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), &indices[0], GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	isChanged = false;
 }
 
@@ -749,51 +703,20 @@ void Patch::SetSquareTexture() const
 }
 
 
-void Patch::SwitchRenderMode(int mode)
-{
-	if (mode < 0)
-		mode = (renderMode + 1) % 3;
-
-	if (!GLEW_ARB_vertex_buffer_object && mode == VBO)
-		mode = DL;
-
-	if (mode == renderMode)
-		return;
-
-	switch (mode) {
-		case VA: {
-			LOG("Set ROAM mode to VA");
-			renderMode = VA;
-		} break;
-		case DL: {
-			LOG("Set ROAM mode to DisplayLists");
-			renderMode = DL;
-		} break;
-		case VBO: {
-			LOG("Set ROAM mode to VBO");
-			renderMode = VBO;
-		} break;
-	}
-
-	CRoamMeshDrawer::ForceNextTesselation(true, true);
-}
-
-
-
 // ---------------------------------------------------------------------
 // Visibility Update Functions
 //
 class CPatchInViewChecker : public CReadMap::IQuadDrawer
 {
 public:
-	void ResetState() {}
+	void ResetState() override {}
 	void ResetState(CCamera* c = nullptr, Patch* p = nullptr, int xsize = 0) {
 		testCamera = c;
 		patchArray = p;
 		numPatchesX = xsize;
 	}
 
-	void DrawQuad(int x, int y) {
+	void DrawQuad(int x, int y) override {
 		patchArray[y * numPatchesX + x].lastDrawFrames[testCamera->GetCamType()] = globalRendering->drawFrame;
 	}
 

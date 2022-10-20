@@ -238,16 +238,10 @@ public:
 		auto args = CSimpleParser::Tokenize(action.GetArgs());
 		bool parseFailure;
 
-		int smfMeshDrawerArg = (args.size() > 0) ? StringToInt(args[0], &parseFailure) : -1.0;
+		int smfMeshDrawerArg = (!args.empty()) ? StringToInt(args[0], &parseFailure) : -1.0;
 		if (parseFailure) smfMeshDrawerArg = -1.0;
 
-		int roamPatchModeArg = (args.size() > 1) ? StringToInt(args[1], &parseFailure) : -1.0;
-		if (parseFailure) roamPatchModeArg = -1.0;
-
 		smfDrawer->SwitchMeshDrawer(smfMeshDrawerArg);
-
-		if (smfMeshDrawerArg == SMF_MESHDRAWER_ROAM && roamPatchModeArg >= 0)
-			Patch::SwitchRenderMode(roamPatchModeArg);
 
 		return true;
 	}

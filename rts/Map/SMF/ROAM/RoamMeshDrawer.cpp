@@ -48,9 +48,6 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 {
 	eventHandler.AddClient(this);
 
-	// set patch upload-mode (VA,DL,VBO)
-	Patch::SwitchRenderMode(configHandler->GetInt("ROAM"));
-
 	for (unsigned int i = MESH_NORMAL; i <= MESH_SHADOW; i++) {
 		CTriNodePool::InitPools(i == MESH_SHADOW);
 	}
