@@ -135,7 +135,8 @@ void CModelLoader::Init()
 	models.resize(MAX_MODEL_OBJECTS);
 
 	// dummy first model, legitimate model IDs start at 1
-	models[0] = CreateDummyModel(numModels = 0);
+	modelID = 0;
+	models[0] = CreateDummyModel(modelID);
 }
 
 void CModelLoader::InitParsers() const
@@ -157,8 +158,11 @@ void CModelLoader::Kill()
 
 void CModelLoader::KillModels()
 {
-	for (unsigned int i = 0; i < numModels; i++) {
-		models[i].DeletePieces();
+	for (auto& model : models) {
+		if (model.pieceObjects.empty())
+			continue;
+
+		model.DeletePieces();
 	}
 	models.clear();
 }
@@ -210,7 +214,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
 		// requires locking around cache.find(...) since some other
-		// preload worker might be down in CreateModel modifying it
+		// preload worker might be down in FillModel modifying it
 		// at the same time
 		preloadFutures.emplace_back(
 			std::move(
@@ -270,7 +274,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 
 	assert(model);
 	if (load) {
-		CreateModel(*model, name, FindModelPath(name));
+		FillModel(*model, name, FindModelPath(name));
 	}
 
 	// spin wait other thread to load the same model for us
@@ -289,22 +293,23 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 {
 	// caller has lock
+	if (modelID + 1 == MAX_MODEL_OBJECTS)
+		return &models[0]; //dummy model
+
 	const auto ci = cache.find(name);
 
 	if (ci == cache.end()) {
-		++numModels;
+		models[modelID].id = ++modelID;
+		cache[name] = modelID;
 
-		models[numModels].id = numModels;
-		cache[name] = numModels;
-
-		return &models[numModels];
+		return &models[modelID];
 	}
 
 	S3DModel* cachedModel = &models[ci->second];
 	return cachedModel;
 }
 
-void CModelLoader::CreateModel(
+void CModelLoader::FillModel(
 	S3DModel& model,
 	const std::string& name,
 	const std::string& path

@@ -40,7 +40,7 @@ public:
 	      std::vector<S3DModel>& GetModelsVec()       { return models; }
 private:
 	S3DModel ParseModel(const std::string& name, const std::string& path);
-	void CreateModel(S3DModel& model, const std::string& name, const std::string& path);
+	void FillModel(S3DModel& model, const std::string& name, const std::string& path);
 	S3DModel* GetCachedModel(const std::string& name);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
@@ -65,7 +65,7 @@ private:
 	std::vector< std::pair<std::string, std::string> > errors;
 
 	// all unique models loaded so far
-	unsigned int numModels = 0;
+	uint32_t modelID = 0;
 public:
 	using ParsersType = decltype(parsers);
 };
