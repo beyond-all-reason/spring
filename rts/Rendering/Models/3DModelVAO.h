@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "Rendering/Models/3DModel.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
@@ -34,19 +35,33 @@ struct SIndexAndCount {
 // singleton
 class S3DModelVAO {
 public:
-	static void Init();
+	static void Init(bool preloadModelMode);
 	static void Kill();
 	static S3DModelVAO& GetInstance() { assert(IsValid()); return *instance; }
 	static bool IsValid() { return instance != nullptr; }
 public:
+	static constexpr size_t VERT_SIZE0 = 1 << 18;
+	static constexpr size_t INDX_SIZE0 = VERT_SIZE0 * 4;
 	static constexpr size_t INSTANCE_BUFFER_NUM_BATCHED = 2 << 15;
 	static constexpr size_t INSTANCE_BUFFER_NUM_IMMEDIATE = 2 << 10;
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = INSTANCE_BUFFER_NUM_BATCHED + INSTANCE_BUFFER_NUM_IMMEDIATE;
 public:
-	S3DModelVAO();
+	explicit S3DModelVAO(bool preloadModelMode_);
+
+	uint32_t GetVertOffset() const { return static_cast<uint32_t>(vertData.size()); }
+
+	void ProcessVertices(const S3DModel* model);
+	void ProcessIndicies(S3DModel* model);
+	void CreateVAO();
+	void UploadVBOs();
 
 	void Bind() const;
 	void Unbind() const;
+
+	void BindLegacyVertexAttribsAndVBOs() const;
+	void UnbindLegacyVertexAttribsAndVBOs() const;
+
+	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const;
 
 	bool AddToSubmission(const S3DModel* model, uint8_t teamID, uint8_t drawFlags);
 
@@ -87,10 +102,18 @@ private:
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;
 private:
-	inline static S3DModelVAO* instance = nullptr;
+	inline static std::unique_ptr<S3DModelVAO> instance = nullptr;
 private:
-	uint32_t batchedBaseInstance;
-	uint32_t immediateBaseInstance; //note relative index
+	bool preloadModelMode;
+
+	uint32_t batchedBaseInstance   = 0;
+	uint32_t immediateBaseInstance = 0; //note relative index
+
+	size_t vertUploadIndex = 0;
+	size_t indxUploadIndex = 0;
+
+	std::vector<SVertexData> vertData;
+	std::vector<uint32_t   > indxData;
 
 	VBO vertVBO;
 	VBO indxVBO;

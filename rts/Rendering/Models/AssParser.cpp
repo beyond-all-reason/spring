@@ -828,22 +828,3 @@ void CAssParser::FindTextures(
 	model->texs[1] = FindTexture(modelTable.GetString("tex2", ""), modelPath, model->texs[1]);
 }
 
-void SAssPiece::DrawForList() const
-{
-	if (!HasGeometryData())
-		return;
-
-	/*
-	 * since aiProcess_SortByPType is being used,
-	 * we're sure we'll get only 1 type here,
-	 * so combination check isn't needed, also
-	 * anything more complex than triangles is
-	 * being split thanks to aiProcess_Triangulate
-	 */
-	BindVertexAttribVBOs();
-	BindIndexVBO();
-		DrawElements(GL_TRIANGLES);
-	UnbindIndexVBO();
-	UnbindVertexAttribVBOs();
-}
-

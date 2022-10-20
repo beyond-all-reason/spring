@@ -14,7 +14,7 @@
 class IModelParser
 {
 public:
-	virtual ~IModelParser() {}
+	virtual ~IModelParser() = default;
 	virtual void Init() {}
 	virtual void Kill() {}
 	virtual S3DModel Load(const std::string& name) = 0;
@@ -30,7 +30,7 @@ public:
 	S3DModel* LoadModel(std::string name, bool preload = false);
 	std::string FindModelPath(std::string name) const;
 
-	bool IsValid() const { return (!formats.empty()); }
+	bool IsValid() const { return (!parsers.empty()); }
 	void PreloadModel(const std::string& name);
 	void LogErrors();
 
@@ -38,29 +38,23 @@ public:
 
 	const std::vector<S3DModel>& GetModelsVec() const { return models; }
 	      std::vector<S3DModel>& GetModelsVec()       { return models; }
-public:
-	typedef spring::unordered_map<std::string, unsigned int> ModelMap; // "armflash.3do" --> id
-	typedef spring::unordered_map<std::string, unsigned int> FormatMap; // "3do" --> MODELTYPE_3DO
-	typedef std::array<IModelParser*, MODELTYPE_CNT> ParserMap; // MODELTYPE_3DO --> parser
-
 private:
 	S3DModel ParseModel(const std::string& name, const std::string& path);
-	S3DModel* CreateModel(const std::string& name, const std::string& path, bool preload);
-	S3DModel* LoadCachedModel(const std::string& name, bool preload);
+	void FillModel(S3DModel& model, const std::string& name, const std::string& path);
+	S3DModel* GetCachedModel(const std::string& name);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
 
-	void InitParsers();
+	void InitParsers() const;
 	void KillModels();
-	void KillParsers();
+	void KillParsers() const;
 
-	void LoadAndProcessGeometry(S3DModel* o);
-	void CreateLists(S3DModel* o);
+	void PostProcessGeometry(S3DModel* o);
+	void Upload(S3DModel* o) const;
 
 private:
-	ModelMap cache;
-	FormatMap formats;
-	ParserMap parsers;
+	spring::unordered_map<std::string, unsigned int> cache; // "armflash.3do" --> id
+	std::vector<std::pair<std::string, IModelParser*>> parsers;
 
 	spring::mutex mutex;
 
@@ -71,7 +65,9 @@ private:
 	std::vector< std::pair<std::string, std::string> > errors;
 
 	// all unique models loaded so far
-	unsigned int numModels = 0;
+	uint32_t modelID = 0;
+public:
+	using ParsersType = decltype(parsers);
 };
 
 extern CModelLoader modelLoader;

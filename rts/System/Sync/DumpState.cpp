@@ -223,6 +223,8 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 				file << "\t\t\tscales: " << TapFloats(p->mins);
 				file << "\t\t\tscales: " << TapFloats(p->maxs);
 
+				// GetVerticesVec and GetIndicesVec are now empty after upload to GPu is complete
+#if 0
 				file << "\t\t\tvertices.size(): " << p->GetVerticesVec().size() << "\n";
 				for (const auto& v : p->GetVerticesVec()) { //is it sync significant?
 					file << "\t\t\tpos: " << TapFloats(v.pos);
@@ -233,6 +235,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 				for (const auto& i : p->GetIndicesVec()) { //is it sync significant?
 					file << i << ", ";
 				}
+#endif
 				file << "\n";
 			}
 			file << "\n";

@@ -110,6 +110,7 @@ VBO& VBO::operator=(VBO&& other) noexcept
 	std::swap(readableStorage, other.readableStorage);
 
 	std::swap(data, other.data);
+	std::swap(bbrItems, other.bbrItems);
 	return *this;
 }
 
@@ -210,7 +211,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 	if (bufSize == 0)
 		return New(newSize, usage, nullptr);
 
-	assert(newSize > bufSize);
+	assert(newSize >= bufSize);
 
 	const size_t oldSize = bufSize;
 	bufSize = newSize;
@@ -225,7 +226,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 			VBO vbo(GL_COPY_WRITE_BUFFER, immutableStorage);
 
 			vbo.Bind(GL_COPY_WRITE_BUFFER);
-			vbo.New(bufSize, GL_STREAM_DRAW);
+			vbo.New(bufSize, usage);
 
 			// gpu internal copy (fast)
 			if (oldSize > 0)

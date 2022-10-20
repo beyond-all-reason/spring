@@ -17,8 +17,8 @@
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS = 2560;
-constexpr int AVG_MODEL_PIECES = 16; // as it used to be
+constexpr int MAX_MODEL_OBJECTS  = 2560;
+constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
 
@@ -80,8 +80,8 @@ struct S3DModelPiecePart {
 public:
 	struct RenderData {
 		float3 dir;
-		size_t vboOffset;
-		size_t indexCount;
+		uint32_t indexStart;
+		uint32_t indexCount;
 	};
 
 	static const int SHATTER_MAX_PARTS  = 10;
@@ -90,6 +90,10 @@ public:
 	std::vector<RenderData> renderData;
 };
 
+struct S3DModelHelpers {
+	static void BindLegacyAttrVBOs();
+	static void UnbindLegacyAttrVBOs();
+};
 
 
 /**
@@ -101,9 +105,6 @@ public:
 struct S3DModelPiece {
 	S3DModelPiece() = default;
 
-	// runs during global deinit, can not Clear() since that touches OpenGL
-	virtual ~S3DModelPiece() { assert(vboShatterIndices.GetIdRaw() == 0); }
-
 	virtual void Clear() {
 		name.clear();
 		children.clear();
@@ -111,6 +112,10 @@ struct S3DModelPiece {
 		for (S3DModelPiecePart& p : shatterParts) {
 			p.renderData.clear();
 		}
+
+		vertices.clear();
+		indices.clear();
+		shatterIndices.clear();
 
 		parent = nullptr;
 		colvol = {};
@@ -125,8 +130,9 @@ struct S3DModelPiece {
 		mins = DEF_MIN_SIZE;
 		maxs = DEF_MAX_SIZE;
 
-		DeleteDispList();
-		DeleteBuffers();
+		vertIndex = ~0u;
+		indxStart = ~0u;
+		indxCount = ~0u;
 
 		hasBakedMat = false;
 	}
@@ -135,40 +141,19 @@ struct S3DModelPiece {
 	virtual float3 GetEmitDir() const;
 
 	// internal use
-	uint32_t GetVertexCount() const { return vertices.size(); }
-	uint32_t GetVertexDrawIndexCount() const { return indices.size(); }
-	virtual const float3& GetVertexPos(const int) const = 0;
-	virtual const float3& GetNormal(const int) const = 0;
+	const float3& GetVertexPos(const int idx) const { return vertices[idx].pos; }
+	const float3& GetNormal(const int idx) const { return vertices[idx].normal; }
 
 	virtual void PostProcessGeometry(uint32_t pieceIndex);
-	void UploadToVBO();
 
-	//void MeshOptimize();
-
-	void BindVertexAttribVBOs() const;
-	void UnbindVertexAttribVBOs() const;
-
-	void BindIndexVBO() const;
-	void UnbindIndexVBO() const;
 
 	void DrawElements(GLuint prim = GL_TRIANGLES) const;
+	static void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES);
 
-	void BindShatterIndexVBO() const { vboShatterIndices.Bind(GL_ELEMENT_ARRAY_BUFFER); }
-	void UnbindShatterIndexVBO() const { vboShatterIndices.Unbind(); }
-
-	const VBO& GetShatterIndexVBO() const { return vboShatterIndices; }
 	bool HasBackedMat() const { return hasBakedMat; }
-protected:
-	virtual void DrawForList() const = 0;
 public:
-	void DrawStatic() const;
-	void CreateDispList();
-	void DeleteDispList();
-	void DeleteBuffers() {
-		vboShatterIndices = {};
-	}
-
-	uint32_t GetDisplayListID() const { return dispListID; }
+	void DrawStaticLegacy(bool bind) const;
+	void DrawStaticLegacyRec() const;
 
 	void CreateShatterPieces();
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
@@ -208,14 +193,16 @@ public:
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
 
-	bool HasGeometryData() const { return (GetVertexDrawIndexCount() >= 3); }
+	bool HasGeometryData() const { return indices.size() >= 3; }
 	void SetParentModel(S3DModel* model_) { model = model_; }
 
-	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; };
-	const std::vector<uint32_t>& GetIndicesVec() const { return indices; };
-private:
-	void CreateShatterPiecesVariation(const int num);
+	void ReleaseShatterIndices();
 
+	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; }
+	const std::vector<uint32_t>& GetIndicesVec() const { return indices; }
+	const std::vector<uint32_t>& GetShatterIndicesVec() const { return shatterIndices; }
+private:
+	void CreateShatterPiecesVariation(int num);
 public:
 	std::string name;
 	std::vector<S3DModelPiece*> children;
@@ -234,21 +221,15 @@ public:
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
 
-	uint32_t indxStart = 0u; //global VBO offset, size data
-	uint32_t indxCount = 0u;
+	uint32_t vertIndex = ~0u; // global vertex number offset
+	uint32_t indxStart = ~0u; // global Index VBO offset
+	uint32_t indxCount = ~0u;
 protected:
-	uint32_t vboIndxStart = 0u;
-	uint32_t vboVertStart = 0u;
-
 	std::vector<SVertexData> vertices;
 	std::vector<uint32_t> indices;
-	std::vector<uint32_t> indicesVBO; //used only to upload to VBO with shifted indices
-
-	VBO vboShatterIndices;
+	std::vector<uint32_t> shatterIndices;
 
 	S3DModel* model;
-
-	uint32_t dispListID;
 
 	bool hasBakedMat;
 public:
@@ -256,22 +237,20 @@ public:
 };
 
 
-
 struct S3DModel
 {
+	enum LoadStatus {
+		NOTLOADED,
+		LOADING,
+		LOADED
+	};
 	S3DModel()
 		: id(-1)
 		, numPieces(0)
 		, textureType(-1)
 
-		, vertVBO(nullptr)
-		, indxVBO(nullptr)
-
-		, indxStart(0u)
+		, indxStart(~0u)
 		, indxCount(0u)
-
-		, curVertStartIndx(0u)
-		, curIndxStartIndx(0u)
 
 		, type(MODELTYPE_CNT)
 
@@ -281,6 +260,9 @@ struct S3DModel
 		, mins(DEF_MIN_SIZE)
 		, maxs(DEF_MAX_SIZE)
 		, relMidPos(ZeroVector)
+
+		, loadStatus(NOTLOADED)
+		, uploaded(false)
 
 		, matAlloc(ScopedMatricesMemAlloc())
 	{}
@@ -307,19 +289,16 @@ struct S3DModel
 		maxs = m.maxs;
 		relMidPos = m.relMidPos;
 
-		vertVBO = std::move(m.vertVBO);
-		indxVBO = std::move(m.indxVBO);
-
 		indxStart = m.indxStart;
 		indxCount = m.indxCount;
-
-		curVertStartIndx = m.curVertStartIndx;
-		curIndxStartIndx = m.curIndxStartIndx;
 
 		pieceObjects = std::move(m.pieceObjects);
 
 		for (auto po : pieceObjects)
 			po->SetParentModel(this);
+
+		loadStatus = m.loadStatus;
+		uploaded = m.uploaded;
 
 		matAlloc = std::move(m.matAlloc);
 
@@ -331,26 +310,15 @@ struct S3DModel
 
 	void AddPiece(S3DModelPiece* p) { pieceObjects.push_back(p); }
 	void DrawStatic() const {
+		S3DModelHelpers::BindLegacyAttrVBOs();
+
 		// draw pieces in their static bind-pose (ie. without script-transforms)
-		for (const S3DModelPiece* pieceObj: pieceObjects) {
-			pieceObj->DrawStatic();
+		for (const S3DModelPiece* pieceObj : pieceObjects) {
+			pieceObj->DrawStaticLegacy(false);
 		}
+
+		S3DModelHelpers::UnbindLegacyAttrVBOs();
 	}
-
-	void CreateVBOs();
-
-	void BindVertexAttribs() const;
-	void UnbindVertexAttribs() const;
-
-	void BindIndexVBO() const;
-	void UnbindIndexVBO() const;
-
-	void BindVertexVBO() const;
-	void UnbindVertexVBO() const;
-
-	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxEnd) const;
-
-	void UploadToVBO(const std::vector<SVertexData>& vertices, const std::vector<uint32_t>& indices, const uint32_t vertStart, const uint32_t indxStart) const;
 
 	void SetPieceMatrices() {
 		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
@@ -373,11 +341,11 @@ struct S3DModel
 		pieceObjects.clear();
 		pieceObjects.reserve(numPieces);
 
-		// force mutex just in case this is called from modelLoader.PreloadModel()
-		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from PreloadModel(MT)
+		// force mutex just in case this is called from modelLoader.ProcessVertices()
+		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
 		matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
 
-		std::vector<S3DModelPiece*> stack = {root};
+		std::vector<S3DModelPiece*> stack = { root };
 
 		while (!stack.empty()) {
 			S3DModelPiece* p = stack.back();
@@ -404,7 +372,7 @@ struct S3DModel
 	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
-	std::string texs[NUM_MODEL_TEXTURES];
+	std::array<std::string, NUM_MODEL_TEXTURES> texs;
 
 	// flattened tree; pieceObjects[0] is the root
 	std::vector<S3DModelPiece*> pieceObjects;
@@ -413,14 +381,8 @@ public:
 	int numPieces;
 	int textureType;            /// FIXME: MAKE S3O ONLY (0 = 3DO, otherwise S3O or ASSIMP)
 
-	std::unique_ptr<VBO> vertVBO;
-	std::unique_ptr<VBO> indxVBO;
-
 	uint32_t indxStart; //global VBO offset, size data
 	uint32_t indxCount;
-
-	uint32_t curVertStartIndx;
-	uint32_t curIndxStartIndx;
 
 	ModelType type;
 
@@ -430,6 +392,9 @@ public:
 	float3 mins;
 	float3 maxs;
 	float3 relMidPos;
+
+	LoadStatus loadStatus;
+	bool uploaded;
 private:
 	ScopedMatricesMemAlloc matAlloc;
 };
@@ -534,7 +499,6 @@ public:
 
 	unsigned int lmodelPieceIndex; // index of this piece into LocalModel::pieces
 	unsigned int scriptPieceIndex; // index of this piece into UnitScript::pieces
-	unsigned int dispListID;
 
 	const S3DModelPiece* original;
 	LocalModelPiece* parent;

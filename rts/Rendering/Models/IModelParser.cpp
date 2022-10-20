@@ -6,6 +6,7 @@
 #include "3DOParser.h"
 #include "S3OParser.h"
 #include "AssParser.h"
+#include "3DModelVAO.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Net/Protocol/NetProtocol.h" // NETLOG
@@ -44,10 +45,10 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 	return (iter != whitelist.end());
 }
 
-static void RegisterModelFormats(CModelLoader::FormatMap& formats) {
+static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 	// file-extension should be lowercase
-	formats.insert("3do", MODELTYPE_3DO);
-	formats.insert("s3o", MODELTYPE_S3O);
+	parsers.emplace_back("3do", &g3DOParser);
+	parsers.emplace_back("s3o", &gS3OParser);
 
 	std::string extension;
 	std::string extensions;
@@ -72,10 +73,10 @@ static void RegisterModelFormats(CModelLoader::FormatMap& formats) {
 
 		if (!CheckAssimpWhitelist(extension.c_str()))
 			continue;
-		if (formats.find(extension) != formats.end())
+		if (std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; }) != parsers.end())
 			continue;
 
-		formats.insert(extension, MODELTYPE_ASS);
+		parsers.emplace_back(extension, &gAssParser);
 		enabledExtensions.append("*." + extension + ";");
 	}
 
@@ -98,11 +99,11 @@ static S3DModel CreateDummyModel(unsigned int id)
 
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
-	if (modelPiece->GetVertexCount() >= 3) {
+	if (auto vertCount = modelPiece->GetVerticesVec().size(); vertCount >= 3) {
 		// do not check pseudo-pieces
 		unsigned int numNullNormals = 0;
 
-		for (unsigned int n = 0; n < modelPiece->GetVertexCount(); n++) {
+		for (unsigned int n = 0; n < vertCount; n++) {
 			numNullNormals += (modelPiece->GetNormal(n).SqLength() < 0.5f);
 		}
 
@@ -114,7 +115,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 			const char* modelName = model->name.c_str();
 			const char* pieceName = modelPiece->name.c_str();
 
-			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, numNullNormals, modelPiece->GetVertexCount());
+			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, numNullNormals, vertCount);
 		}
 	}
 
@@ -127,27 +128,22 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 
 void CModelLoader::Init()
 {
-	RegisterModelFormats(formats);
+	RegisterModelFormats(parsers);
 	InitParsers();
 
 	models.clear();
 	models.resize(MAX_MODEL_OBJECTS);
 
-	preloadFutures.reserve(1024);
-
 	// dummy first model, legitimate model IDs start at 1
-	models[0] = std::move(CreateDummyModel(numModels = 0));
+	modelID = 0;
+	models[0] = CreateDummyModel(modelID);
 }
 
-void CModelLoader::InitParsers()
+void CModelLoader::InitParsers() const
 {
-	parsers[MODELTYPE_3DO] = &g3DOParser;
-	parsers[MODELTYPE_S3O] = &gS3OParser;
-	parsers[MODELTYPE_ASS] = &gAssParser;
-
-	for (IModelParser* p: parsers) {
-		p->Init();
-	}
+	g3DOParser.Init();
+	gS3OParser.Init();
+	gAssParser.Init();
 }
 
 void CModelLoader::Kill()
@@ -157,26 +153,25 @@ void CModelLoader::Kill()
 	KillParsers();
 
 	cache.clear();
-	formats.clear();
+	parsers.clear();
 }
 
 void CModelLoader::KillModels()
 {
-	for (unsigned int i = 0; i < numModels; i++) {
-		models[i].DeletePieces();
+	for (auto& model : models) {
+		if (model.pieceObjects.empty())
+			continue;
+
+		model.DeletePieces();
 	}
 	models.clear();
 }
 
-void CModelLoader::KillParsers()
+void CModelLoader::KillParsers() const
 {
-	for (IModelParser* p: parsers) {
-		p->Kill();
-	}
-
-	parsers[MODELTYPE_3DO] = nullptr;
-	parsers[MODELTYPE_S3O] = nullptr;
-	parsers[MODELTYPE_ASS] = nullptr;
+	g3DOParser.Kill();
+	gS3OParser.Kill();
+	gAssParser.Kill();
 }
 
 
@@ -189,12 +184,9 @@ std::string CModelLoader::FindModelPath(std::string name) const
 		return name;
 
 	const std::string vfsPath = "objects3d/";
-	const std::string& fileExt = FileSystem::GetExtension(name);
 
-	if (fileExt.empty()) {
-		for (const auto& format: formats) {
-			const std::string& formatExt = format.first;
-
+	if (const std::string& fileExt = FileSystem::GetExtension(name); fileExt.empty()) {
+		for (const auto& [formatExt, parser] : parsers) {
 			if (CFileHandler::FileExists(name + "." + formatExt, SPRING_VFS_ZIP)) {
 				name.append("." + formatExt);
 				break;
@@ -222,7 +214,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
 		// requires locking around cache.find(...) since some other
-		// preload worker might be down in CreateModel modifying it
+		// preload worker might be down in FillModel modifying it
 		// at the same time
 		preloadFutures.emplace_back(
 			std::move(
@@ -231,8 +223,6 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 				})
 			)
 		);
-
-		DrainPreloadFutures(preloadFutures.capacity() - 1); //keep the queue busy enough
 	}
 	else {
 		modelLoader.LoadModel(modelName, true);
@@ -248,7 +238,7 @@ void CModelLoader::LogErrors()
 
 	// block any preload threads from modifying <errors>
 	// doing the empty-check outside lock should be fine
-	std::lock_guard<spring::mutex> lock(mutex);
+	std::scoped_lock lock(mutex);
 
 	for (const auto& pair: errors) {
 		char buf[1024];
@@ -268,47 +258,76 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	if (name.empty())
 		return nullptr;
 
-	std::string  path;
-	std::string* refs[2] = {&name, &path};
-
 	StringToLowerInPlace(name);
 
+	bool load = false;
+	S3DModel* model = nullptr;
 	{
-		std::lock_guard<spring::mutex> lock(mutex);
+		std::scoped_lock lock(mutex);
 
-		// search in cache first
-		for (const auto& ref: refs) {
-			S3DModel* cachedModel = LoadCachedModel(*ref, preload);
+		model = GetCachedModel(name);
 
-			if (cachedModel != nullptr)
-				return cachedModel;
-
-			// expensive, delay until needed
-			path = FindModelPath(name);
-		}
+		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
+		if (load)
+			model->loadStatus = S3DModel::LoadStatus::LOADING;
 	}
 
-	// not found in cache, create the model and cache it
-	return (CreateModel(name, path, preload));
-}
+	assert(model);
+	if (load) {
+		FillModel(*model, name, FindModelPath(name));
+	}
 
-S3DModel* CModelLoader::LoadCachedModel(const std::string& name, bool preload)
-{
-	// caller has lock
-	const auto ci = cache.find(name);
-
-	if (ci == cache.end())
-		return nullptr;
-
-	S3DModel* cachedModel = &models[ci->second];
-
-	assert(cachedModel->id >= 0);
-	//LoadAndProcessGeometry(cachedModel);
+	// spin wait other thread to load the same model for us
+	// reading model->loadStatus without locking the mutex is
+	// not totally MT correct, but seems to work flawlessly
+	while (model->loadStatus != S3DModel::LoadStatus::LOADED) {
+		spring_msecs(10).sleep();
+	}
 
 	if (!preload)
-		CreateLists(cachedModel);
+		Upload(model);
 
+	return model;
+}
+
+S3DModel* CModelLoader::GetCachedModel(const std::string& name)
+{
+	// caller has lock
+	if (modelID + 1 == MAX_MODEL_OBJECTS)
+		return &models[0]; //dummy model
+
+	const auto ci = cache.find(name);
+
+	if (ci == cache.end()) {
+		models[modelID].id = ++modelID;
+		cache[name] = modelID;
+
+		return &models[modelID];
+	}
+
+	S3DModel* cachedModel = &models[ci->second];
 	return cachedModel;
+}
+
+void CModelLoader::FillModel(
+	S3DModel& model,
+	const std::string& name,
+	const std::string& path
+) {
+	//fugly hack
+	auto id = model.id;
+	auto ls = model.loadStatus;
+	model = ParseModel(name, path);
+	model.id = id;
+	model.loadStatus = ls;
+	//
+
+	assert(model.numPieces != 0);
+	assert(model.GetRootPiece() != nullptr);
+
+	model.SetPieceMatrices();
+
+	PostProcessGeometry(&model);
 }
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
@@ -318,78 +337,38 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
-	const auto erasePredicate = [](decltype(preloadFutures)::value_type item, std::chrono::microseconds timeout) {
+	const auto erasePredicate = [timeout = 0us](decltype(preloadFutures)::value_type item) {
 		return item->wait_for(timeout) == std::future_status::ready;
 	};
 
-	const auto erasePredicate1 = [erasePredicate, timeout = 0us  ](decltype(preloadFutures)::value_type item) { return erasePredicate(item, timeout); };
-	const auto erasePredicate2 = [erasePredicate, timeout = 100us](decltype(preloadFutures)::value_type item) { return erasePredicate(item, timeout); };
-
 	// collect completed futures
-	spring::VectorEraseAllIf(preloadFutures, erasePredicate1);
+	spring::VectorEraseAllIf(preloadFutures, erasePredicate);
 
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
 	while (preloadFutures.size() > numAllowed) {
 		//drain queue until there are <= numAllowed items there
-		spring::VectorEraseAllIf(preloadFutures, erasePredicate2);
+		spring::VectorEraseAllIf(preloadFutures, erasePredicate);
 	}
 }
-
-
-
-S3DModel* CModelLoader::CreateModel(
-	const std::string& name,
-	const std::string& path,
-	bool preload
-) {
-	S3DModel model = std::move(ParseModel(name, path));
-	S3DModel* pmodel = &models[0];
-
-	{
-		assert(model.numPieces != 0);
-		assert(model.GetRootPiece() != nullptr);
-
-		model.SetPieceMatrices();
-
-		LoadAndProcessGeometry(&model);
-
-		if (!preload)
-			CreateLists(&model);
-	}
-	{
-		std::lock_guard<spring::mutex> lock(mutex);
-
-		// discard loaded model and return dummy if at limit
-		if (numModels >= MAX_MODEL_OBJECTS) {
-			errors.emplace_back(name, "numModels >= MAX_MODEL_OBJECTS");
-			return pmodel;
-		}
-
-		// NB: id depends on thread order, can not be used in synced code
-		pmodel = &models[model.id = ++numModels];
-
-		// add (parsed or dummy) model to cache
-		cache[name] = model.id;
-		cache[path] = model.id;
-
-		*pmodel = std::move(model);
-	}
-
-	return pmodel;
-}
-
-
 
 IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 {
-	const auto fi = formats.find(StringToLower(pathExt));
+	// cached record
+	static std::pair<std::string, IModelParser*> lastParser = {};
 
-	if (fi == formats.end())
+	const std::string extension = StringToLower(pathExt);
+
+	if (lastParser.first == extension)
+		return lastParser.second;
+
+	const auto it = std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; });
+	if (it == parsers.end())
 		return nullptr;
 
-	return parsers[fi->second];
+	lastParser = *it;
+	return it->second;
 }
 
 S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& path)
@@ -399,18 +378,18 @@ S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& pa
 
 	if (parser == nullptr) {
 		LOG_L(L_ERROR, "could not find a parser for model \"%s\" (unknown format?)", name.c_str());
-		return (CreateDummyModel(0));
+		return CreateDummyModel(0);
 	}
 
 	try {
-		model = std::move(parser->Load(path));
+		model = parser->Load(path);
 	} catch (const content_error& ex) {
 		{
-			std::lock_guard<spring::mutex> lock(mutex);
+			std::scoped_lock lock(mutex);
 			errors.emplace_back(name, ex.what());
 		}
 
-		model = std::move(CreateDummyModel(0));
+		model = CreateDummyModel(0);
 	}
 
 	return model;
@@ -418,42 +397,40 @@ S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& pa
 
 
 
-void CModelLoader::LoadAndProcessGeometry(S3DModel* model)
+void CModelLoader::PostProcessGeometry(S3DModel* model)
 {
-	if (model->id >= 0)
+	if (model->loadStatus == S3DModel::LoadStatus::LOADED)
 		return;
 
-	const S3DModelPiece* rootPiece = model->GetRootPiece();
-
-	model->curVertStartIndx = 0u;
-	model->curIndxStartIndx = 0u;
-
-	for (int i = 0; i < model->pieceObjects.size(); ++i) {
-		S3DModelPiece* p = model->pieceObjects[i];
-		p->PostProcessGeometry(i);
-		model->curVertStartIndx += p->GetVertexCount();
-		model->curIndxStartIndx += p->GetVertexDrawIndexCount();
-	}
-}
-
-void CModelLoader::CreateLists(S3DModel* model) {
-	const S3DModelPiece* rootPiece = model->GetRootPiece();
-
-	if (rootPiece->GetDisplayListID() != 0)
-		return;
-
-	for (int i = 0; i < model->pieceObjects.size(); ++i) {
-		S3DModelPiece* p = model->pieceObjects[i];
+	// does quads and strips conversion sometimes. Need to run first
+	for (size_t i = 0; i < model->pieceObjects.size(); ++i) {
+		auto* p = model->pieceObjects[i];
+		p->PostProcessGeometry(static_cast<uint32_t>(i));
 		p->CreateShatterPieces();
 	}
 
-	model->CreateVBOs();
-	for (S3DModelPiece* p : model->pieceObjects) {
-		p->UploadToVBO();
+	{
+		std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
+		auto& inst = S3DModelVAO::GetInstance();
+		inst.ProcessVertices(model);
+		inst.ProcessIndicies(model);
+		model->loadStatus = S3DModel::LoadStatus::LOADED;
 	}
-	for (S3DModelPiece* p : model->pieceObjects) {
-		p->CreateDispList();
+}
+
+void CModelLoader::Upload(S3DModel* model) const {
+	if (model->uploaded) //already uploaded
+		return;
+
+	assert(Threading::IsMainThread());
+
+	S3DModelVAO::GetInstance().UploadVBOs();
+
+	for (auto* p : model->pieceObjects) {
+		p->ReleaseShatterIndices();
 	}
+
+	model->uploaded = true;
 
 	// 3DO atlases are preloaded C3DOTextureHandler::Init()
 	if (model->type == MODELTYPE_3DO)
@@ -464,6 +441,6 @@ void CModelLoader::CreateLists(S3DModel* model) {
 
 	// warn about models with bad normals (they break lighting)
 	// skip for 3DO's since those have auto-calculated normals
-	CheckPieceNormals(model, rootPiece);
+	CheckPieceNormals(model, model->GetRootPiece());
 }
 

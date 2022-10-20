@@ -94,14 +94,9 @@ struct S3DOPiece: public S3DModelPiece
 	}
 
 	void PostProcessGeometry(uint32_t pieceIndex) override;
-	void DrawForList() const override;
-
-	const float3& GetVertexPos(const int idx) const override { return vertices[idx].pos; }
-	const float3& GetNormal(const int idx)    const override { return vertices[idx].normal; }
 
 	float3 GetEmitPos() const override { return emitPos; }
 	float3 GetEmitDir() const override { return emitDir; }
-
 public:
 	void SetMinMaxExtends();
 	void CalcNormals();

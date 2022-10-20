@@ -725,11 +725,9 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 	if (container.empty())
 		return;
 
-	glPushAttrib(GL_POLYGON_BIT);
-	glDisable(GL_CULL_FACE);
+	FlyingPiece::BeginDraw();
 
 	const FlyingPiece* last = nullptr;
-
 	for (const FlyingPiece& fp: container) {
 		const bool noLosTst = gu->spectatingFullView || teamHandler.AlliedTeams(gu->myTeam, fp.GetTeam());
 		const bool inAirLos = noLosTst || losHandler->InAirLos(fp.GetPos(), gu->myAllyTeam);
@@ -744,10 +742,7 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 		last = &fp;
 	}
 
-	if (last != nullptr)
-		last->EndDraw();
-
-	glPopAttrib();
+	FlyingPiece::EndDraw();
 }
 
 
@@ -945,13 +940,17 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 				glTranslatef3(pp->drawPos);
 				glRotatef(pp->GetDrawAngle(), pp->spinVec.x, pp->spinVec.y, pp->spinVec.z);
 
-				if (!p->luaDraw || !eventHandler.DrawProjectile(p)) {
-					if (pp->explFlags & PF_Recursive) {
-						pp->omp->DrawStatic();
-					} else {
-						glCallList(pp->dispList);
-					}
+				if (p->luaDraw && eventHandler.DrawProjectile(p))
+					return true;
+
+				if ((pp->explFlags & PF_Recursive) != 0) {
+					pp->omp->DrawStaticLegacyRec();
 				}
+				else {
+					// non-recursive, only draw one piece
+					pp->omp->DrawStaticLegacy(true);
+				}
+
 			glPopMatrix();
 			return true;
 		} break;

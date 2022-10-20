@@ -1389,7 +1389,10 @@ static void GLObjectPiece(lua_State* L, const CSolidObject* obj)
 	if (lmp == nullptr)
 		return;
 
-	glCallList(lmp->dispListID);
+	assert(lmp->original);
+	S3DModelHelpers::BindLegacyAttrVBOs();
+	lmp->original->DrawElements();
+	S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 static void GLObjectPieceMultMatrix(lua_State* L, const CSolidObject* obj)

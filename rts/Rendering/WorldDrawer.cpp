@@ -3,6 +3,9 @@
 #include "Rendering/GL/myGL.h"
 
 #include "WorldDrawer.h"
+#include "Sim/Units/UnitDefHandler.h"
+#include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Weapons/WeaponDefHandler.h"
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
@@ -23,7 +26,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Models/IModelParser.h"
-#include "Rendering/Models/ModelPreloader.h"
+#include "Rendering/Models/3DModelVAO.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
@@ -43,6 +46,9 @@
 #include "System/TimeProfiler.h"
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
+#include "System/Config/ConfigHandler.h"
+
+CONFIG(bool, PreloadModels).defaultValue(true).description("The engine will preload all models");
 
 void CWorldDrawer::InitPre() const
 {
@@ -72,7 +78,23 @@ void CWorldDrawer::InitPost() const
 
 	{
 		loadscreen->SetLoadMessage("Loading Models");
-		ModelPreloader::Load();
+
+		const bool preloadMode = configHandler->GetBool("PreloadModels");
+		S3DModelVAO::Init(preloadMode);
+
+		if (preloadMode) {
+			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
+				def.PreloadModel();
+			}
+
+			for (const auto& def : featureDefHandler->GetFeatureDefsVec()) {
+				def.PreloadModel();
+			}
+
+			for (const auto& def : weaponDefHandler->GetWeaponDefsVec()) {
+				def.PreloadModel();
+			}
+		}
 	}
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
@@ -125,6 +147,10 @@ void CWorldDrawer::InitPost() const
 	{
 		sky->SetupFog();
 	}
+	{
+		loadscreen->SetLoadMessage("Finalizing Models");
+		modelLoader.DrainPreloadFutures(0);
+	}
 }
 
 
@@ -143,7 +169,7 @@ void CWorldDrawer::Kill()
 	CUnitDrawer::KillStatic(gu->globalReload); // depends on unitHandler, cubeMapHandler
 	CProjectileDrawer::KillStatic(gu->globalReload);
 
-	ModelPreloader::Clean();
+	S3DModelVAO::Kill();
 	modelLoader.Kill();
 
 	spring::SafeDelete(heightMapTexture);

@@ -15,17 +15,9 @@
 class CSMFGroundDrawer;
 class CCamera;
 
-
 // how many heightmap pixels a patch consists of
-#define PATCH_SIZE 128
+static constexpr int PATCH_SIZE = 128;
 
-// depth of variance tree; should be near SQRT(PATCH_SIZE) + 1
-#define VARIANCE_DEPTH (12)
-
-// how many TriTreeNodes should be reserved per pool
-// (2M is a reasonable baseline for most large maps)
-// if a 32bit TriTreeNode struct is 28 bytes, the total ram usage of LOAM is 2M*28*2 = 104 MB
-#define NEW_POOL_SIZE (1 << 21)
 // debug (simulates fast pool exhaustion)
 // #define NEW_POOL_SIZE (1 << 2)
 
@@ -86,6 +78,14 @@ private:
 
 	// index of next free TriTreeNode
 	size_t nextTriNodeIdx = 0;
+
+	// how many TriTreeNodes should be reserved per pool
+	// (2M is a reasonable baseline for most large maps)
+	// if a 32bit TriTreeNode struct is 28 bytes, the total ram usage of LOAM is 2M*28*2 = 104 MB
+	static constexpr size_t NEW_POOL_SIZE = 1 << 21;
+
+	static inline size_t CUR_POOL_SIZE = 0;                 // split over all threads
+	static inline size_t MAX_POOL_SIZE = NEW_POOL_SIZE * 8; // upper limit for ResetAll
 };
 
 
@@ -93,13 +93,6 @@ private:
 // stores information needed at the Patch level
 class Patch
 {
-public:
-	enum RenderMode {
-		VBO = 1,
-		DL  = 2,
-		VA  = 3
-	};
-
 public:
 	friend class CRoamMeshDrawer;
 	friend class CPatchInViewChecker;
@@ -132,15 +125,11 @@ public:
 
 	void GenerateIndices();
 	void Upload();
-	void Draw();
+	void Draw() const;
 	void DrawBorder();
 	void SetSquareTexture() const;
 
 public:
-	static void SwitchRenderMode(int mode = -1);
-	static int GetRenderMode() { return renderMode; }
-
-
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 
 protected:
@@ -175,7 +164,8 @@ private:
 	void GenerateBorderIndices(CVertexArray* va);
 
 private:
-	static RenderMode renderMode;
+	// depth of variance tree; should be near SQRT(PATCH_SIZE) + 1
+	static constexpr size_t VARIANCE_DEPTH = 12;
 
 	CSMFGroundDrawer* smfGroundDrawer = nullptr;
 
@@ -209,7 +199,6 @@ private:
 	//   shadow-mesh patches are only ever viewed by one camera
 	//   normal-mesh patches can be viewed by *multiple* types!
 	std::array<unsigned int, CCamera::CAMTYPE_VISCUL> lastDrawFrames = {};
-
 
 	GLuint triList = 0;
 	GLuint vertexBuffer = 0;

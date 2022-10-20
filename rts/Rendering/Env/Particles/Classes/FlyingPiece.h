@@ -26,9 +26,10 @@ public:
 	);
 
 	bool Update();
+	static void BeginDraw();
 	void Draw(const FlyingPiece* prev) const;
-	void EndDraw() const;
-	unsigned GetDrawCallCount() const { return splitterParts.size(); }
+	static void EndDraw();
+	uint32_t GetDrawCallCount() const { return static_cast<uint32_t>(splitterParts.size()); }
 
 public:
 	const int& GetTeam() const { return team; }
@@ -50,8 +51,8 @@ private:
 	struct SplitterData {
 		float3 speed;
 		float4 rotationAxisAndSpeed;
-		size_t vboOffset;
-		size_t indexCount;
+		uint32_t indexStart;
+		uint32_t indexCount;
 	};
 
 private:

@@ -7,7 +7,6 @@
 
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
-#include "Rendering/Models/ModelPreloader.h"
 #include "Rendering/ModelsDataUploader.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -48,87 +47,157 @@ void S3DModelVAO::DisableAttribs() const
 	}
 }
 
-S3DModelVAO::S3DModelVAO()
-	: batchedBaseInstance{ 0u }
-	, immediateBaseInstance{ 0u }
+S3DModelVAO::S3DModelVAO(bool preloadModelMode_)
+	: preloadModelMode(preloadModelMode_)
 {
-	std::vector<SVertexData> vertData; vertData.reserve(2 << 21);
-	std::vector<uint32_t   > indxData; indxData.reserve(2 << 22);
+	vertData.reserve(VERT_SIZE0);
+	indxData.reserve(INDX_SIZE0);
 
-	//populate content of the common buffers
-	{
-		auto& allModels = modelLoader.GetModelsVec();
-		for (auto& model : allModels) {
+	vertVBO = VBO{ GL_ARRAY_BUFFER        , false };
+	indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
+	instVBO = VBO{ GL_ARRAY_BUFFER        , false };
 
-			//models should know their index offset
-			model.indxStart = std::distance(indxData.cbegin(), indxData.cend());
+	//no better place to init it
+	instVBO.Bind();
+	instVBO.New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
+	instVBO.Unbind();
+}
 
-			for (auto modelPiece : model.pieceObjects) { //vec of pointers
-				if (!modelPiece->HasGeometryData())
-					continue;
+void S3DModelVAO::ProcessVertices(const S3DModel* model)
+{
+	assert(model);
+	assert(model->loadStatus == S3DModel::LoadStatus::LOADING);
 
-				const auto& modelPieceVerts = modelPiece->GetVerticesVec();
-				const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
+	if (const auto* root = model->GetRootPiece(); root->vertIndex != ~0u)
+		return;
 
-				const uint32_t indexOffsetVertNum = vertData.size();
-
-				vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); //append
-				indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
-
-				const auto endIdx = indxData.end();
-				const auto begIdx = endIdx - modelPieceIndcs.size();
-
-				std::for_each(begIdx, endIdx, [indexOffsetVertNum](uint32_t& indx) { indx += indexOffsetVertNum; }); // add per piece vertex offset to indices
-
-				//model pieces should know their index offset
-				modelPiece->indxStart = std::distance(indxData.begin(), begIdx);
-
-				//model pieces should know their index count
-				modelPiece->indxCount = modelPieceIndcs.size();
-			}
-
-			//models should know their index count
-			model.indxCount = indxData.size() - model.indxStart;
-		}
-	}
-
-	//OpenGL stuff
-	{
-		vao = VAO{};
-		vao.Bind();
-
-		vertVBO = VBO{ GL_ARRAY_BUFFER, false };
-		vertVBO.Bind();
-		vertVBO.New(vertData);
-
-		indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
-		indxVBO.Bind();
-		indxVBO.New(indxData);
-		EnableAttribs(false); // vertex attribs
-		vertVBO.Unbind();
-
-		instVBO = VBO{ GL_ARRAY_BUFFER, false };
-		instVBO.Bind();
-		instVBO.New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
-		EnableAttribs(true); // instance attribs
-
-		vao.Unbind();
-		DisableAttribs();
-
-		indxVBO.Unbind();
-		instVBO.Unbind();
+	uint32_t vertIndex = static_cast<uint32_t>(vertData.size());
+	for (auto* modelPiece : model->pieceObjects) {
+		modelPiece->vertIndex = vertIndex;
+		const auto& modelPieceVerts = modelPiece->GetVerticesVec();
+		vertIndex += modelPieceVerts.size();
+		vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); //append
 	}
 }
 
-void S3DModelVAO::Init()
+void S3DModelVAO::ProcessIndicies(S3DModel* model)
+{
+	assert(model);
+	if (model->indxStart != ~0u)
+		return;
+
+	//models should know their index offset
+	model->indxStart = static_cast<uint32_t>(std::distance(indxData.cbegin(), indxData.cend()));
+
+	for (auto* modelPiece : model->pieceObjects) {
+		if (!modelPiece->HasGeometryData()) {
+			modelPiece->indxStart = static_cast<uint32_t>(indxData.size());
+			modelPiece->indxCount = 0;
+			continue;
+		}
+
+		const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
+		indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
+
+		const auto endIdx = indxData.end();
+		const auto begIdx = endIdx - modelPieceIndcs.size();
+
+		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) { indx += offset; }); // add per piece vertex offset to indices
+
+		//model pieces should know their index offset
+		modelPiece->indxStart = static_cast<uint32_t>(std::distance(indxData.begin(), begIdx));
+
+		//model pieces should know their index count
+		modelPiece->indxCount = static_cast<uint32_t>(modelPieceIndcs.size());
+	}
+	//models should know their index count
+	model->indxCount = static_cast<uint32_t>(indxData.size() - model->indxStart);
+
+	//add shatter indices to the end of indxData
+	for (const auto* modelPiece : model->pieceObjects) {
+		if (!modelPiece->HasGeometryData())
+			continue;
+
+		const auto& mdlPcsShatIndcs = modelPiece->GetShatterIndicesVec();
+
+		indxData.insert(indxData.end(), mdlPcsShatIndcs.begin(), mdlPcsShatIndcs.end()); //append
+
+		const auto endIdx = indxData.end();
+		const auto begIdx = endIdx - mdlPcsShatIndcs.size();
+
+		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) { indx += offset; }); // add per piece vertex offset to indices
+	}
+}
+
+void S3DModelVAO::CreateVAO()
+{
+	vao = VAO{};
+	vao.Bind();
+
+	vertVBO.Bind();
+	indxVBO.Bind();
+	EnableAttribs(false); // vertex attribs
+	vertVBO.Unbind();
+
+	instVBO.Bind();
+	EnableAttribs(true); // instance attribs
+
+	vao.Unbind();
+	DisableAttribs();
+
+	indxVBO.Unbind();
+	instVBO.Unbind();
+}
+
+void S3DModelVAO::UploadVBOs()
+{
+	static constexpr size_t MEM_STEP = 8 * 1024 * 1024;
+	bool reinitVAO = (vao.GetIdRaw() == 0);
+
+	if (vertData.size() > vertUploadIndex) {
+		vertVBO.Bind();
+		auto vertVBOId = vertVBO.GetIdRaw();
+		const size_t reqSize = AlignUp(std::max(vertData.size(), S3DModelVAO::VERT_SIZE0) * sizeof(SVertexData), MEM_STEP);
+		vertVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
+		reinitVAO |= (vertVBO.GetIdRaw() != vertVBOId);
+		vertVBO.SetBufferSubData(vertUploadIndex * sizeof(SVertexData), (vertData.size() - vertUploadIndex) * sizeof(SVertexData), vertData.data() + vertUploadIndex);
+		vertVBO.Unbind();
+		vertUploadIndex = vertData.size();
+	}
+
+	if (indxData.size() > indxUploadIndex) {
+		indxVBO.Bind();
+		auto indxVBOId = indxVBO.GetIdRaw();
+		const size_t reqSize = AlignUp(std::max(indxData.size(), S3DModelVAO::INDX_SIZE0) * sizeof(   uint32_t), MEM_STEP);
+		indxVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
+		reinitVAO |= (indxVBO.GetIdRaw() != indxVBOId);
+		indxVBO.SetBufferSubData(indxUploadIndex * sizeof(   uint32_t), (indxData.size() - indxUploadIndex) * sizeof(   uint32_t), indxData.data() + indxUploadIndex);
+		indxVBO.Unbind();
+		indxUploadIndex = indxData.size();
+	}
+
+	if (reinitVAO)
+		CreateVAO();
+
+	if (preloadModelMode) {
+		// all models have been uploaded in the calls above
+		// safe to clear CPU copy of the data
+		vertData.clear();
+		indxData.clear();
+		vertUploadIndex = 0;
+		indxUploadIndex = 0;
+	}
+}
+
+void S3DModelVAO::Init(bool preloadModelMode)
 {
 	Kill();
-	instance = new S3DModelVAO();
+	instance = std::make_unique<S3DModelVAO>(preloadModelMode);
 }
 
 void S3DModelVAO::Kill()
 {
-	spring::SafeDelete(instance);
+	instance = nullptr;
 }
 
 void S3DModelVAO::Bind() const
@@ -143,6 +212,59 @@ void S3DModelVAO::Unbind() const
 	vao.Unbind();
 }
 
+void S3DModelVAO::BindLegacyVertexAttribsAndVBOs() const
+{
+	vertVBO.Bind();
+	indxVBO.Bind();
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, pos)));
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, normal)));
+
+	glClientActiveTexture(GL_TEXTURE0);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, texCoords[0])));
+
+	glClientActiveTexture(GL_TEXTURE1);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, texCoords[1])));
+
+	glClientActiveTexture(GL_TEXTURE5);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(3, GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, sTangent)));
+
+	glClientActiveTexture(GL_TEXTURE6);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(3, GL_FLOAT, sizeof(SVertexData), vertVBO.GetPtr(offsetof(SVertexData, tTangent)));
+}
+
+void S3DModelVAO::UnbindLegacyVertexAttribsAndVBOs() const
+{
+	glClientActiveTexture(GL_TEXTURE6);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glClientActiveTexture(GL_TEXTURE5);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glClientActiveTexture(GL_TEXTURE1);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glClientActiveTexture(GL_TEXTURE0);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+
+	indxVBO.Unbind();
+	vertVBO.Unbind();
+}
+
+void S3DModelVAO::DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const
+{
+	glDrawElements(prim, vboIndxCount, GL_UNSIGNED_INT, indxVBO.GetPtr(vboIndxStart * sizeof(uint32_t)));
+}
 
 template<typename TObj>
 bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags)
