@@ -41,9 +41,9 @@ void CSpringController::KeyMove(float3 move)
 {
 	move *= math::sqrt(move.z);
 
-	const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
+	const bool moveRotate = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RTT];
 
-	if (moveReset) {
+	if (moveRotate) {
 		rot.x = Clamp(rot.x + move.y, math::PI * 0.51f, math::PI * 0.99f);
 		MoveAzimuth(move.x);
 		Update();

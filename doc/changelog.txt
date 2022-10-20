@@ -5,6 +5,7 @@ Spring changelog
 -- 106.0 --------------------------------------------------------
 
 Lua:
+ - Add and split moverotate from movereset binding camera modifier
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
    Makes the erase happen locally, optionally as if done by given player,
    same as the existing interface for MarkerAddPoint and MarkerAddLine.
