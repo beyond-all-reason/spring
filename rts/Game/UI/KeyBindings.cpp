@@ -235,11 +235,12 @@ static const DefaultBinding defaultBindings[] = {
 	{    "Any+pageup",   "moveup"       },
 	{    "Any+pagedown", "movedown"     },
 
-	{    "Any+ctrl",     "moveslow"     },
-	{    "Any+shift",    "movefast"     },
+	{    "Any+ctrl",     "moveslow"     }, // decreases delta for move/zoom camera transitions
+	{    "Any+shift",    "movefast"     }, // increases delta for move/zoom camera transitions
 
-	{    "Any+ctrl",     "movetilt"     },
-	{    "Any+alt",      "movereset"    },
+	{    "Any+ctrl",     "movetilt"     }, // rotates the camera over the x axis on mousewheel move
+	{    "Any+alt",      "movereset"    }, // resets camera state to maxzoom/minzoom on mousewheel move, additionally resets tilt on Overhead cam
+	{    "Any+alt",      "moverotate"   }, // rotates the camera in x and y axis on mmb move (Spring cam)
 
 	// selection keys
 	{ "Ctrl+a",    "select AllMap++_ClearSelection_SelectAll+"                                         },
@@ -282,6 +283,7 @@ void CKeyBindings::Init()
 	statefulCommands.insert("movefast");
 	statefulCommands.insert("movetilt");
 	statefulCommands.insert("movereset");
+	statefulCommands.insert("moverotate");
 
 	RegisterAction("bind");
 	RegisterAction("unbind");

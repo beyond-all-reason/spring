@@ -41,16 +41,17 @@ public:
 	};
 
 	enum {
-		MOVE_STATE_FWD = 0, // forward
-		MOVE_STATE_BCK = 1, // back
-		MOVE_STATE_LFT = 2, // left
-		MOVE_STATE_RGT = 3, // right
-		MOVE_STATE_UP  = 4, // up
-		MOVE_STATE_DWN = 5, // down
-		MOVE_STATE_FST = 6, // fast
-		MOVE_STATE_SLW = 7, // slow
-		MOVE_STATE_TLT = 8, // tilt
-		MOVE_STATE_RST = 9, // reset
+		MOVE_STATE_FWD = 0 ,  // forward
+		MOVE_STATE_BCK = 1 ,  // back
+		MOVE_STATE_LFT = 2 ,  // left
+		MOVE_STATE_RGT = 3 ,  // right
+		MOVE_STATE_UP  = 4 ,  // up
+		MOVE_STATE_DWN = 5 ,  // down
+		MOVE_STATE_FST = 6 ,  // fast
+		MOVE_STATE_SLW = 7 ,  // slow
+		MOVE_STATE_TLT = 8 ,  // tilt
+		MOVE_STATE_RST = 9 ,  // reset
+		MOVE_STATE_RTT = 10,  // rotate
 	};
 
 	struct Frustum {
