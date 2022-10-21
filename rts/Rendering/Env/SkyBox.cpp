@@ -10,6 +10,7 @@
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Env/DebugCubeMapTexture.h"
+#include "Rendering/Env/WaterRendering.h"
 #include "Game/Game.h"
 #include "Game/Camera.h"
 #include "Map/MapInfo.h"
@@ -74,10 +75,9 @@ void CSkyBox::Draw()
 	if (!globalRendering->drawSky)
 		return;
 
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
-	//glDepthFunc(GL_LEQUAL);
+	glDepthFunc(GL_LEQUAL);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -98,6 +98,12 @@ void CSkyBox::Draw()
 	skyVAO.Bind();
 	assert(shader->IsValid());
 	shader->Enable();
+	shader->SetUniform("planeColor",
+		waterRendering->planeColor.x,
+		waterRendering->planeColor.y,
+		waterRendering->planeColor.z,
+		static_cast<float>(waterRendering->hasWaterPlane && !globalRendering->drawDebugCubeMap)
+	);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -114,7 +120,5 @@ void CSkyBox::Draw()
 	glPopMatrix();
 
 	sky->SetupFog();
-
-	glEnable(GL_DEPTH_TEST);
 #endif
 }

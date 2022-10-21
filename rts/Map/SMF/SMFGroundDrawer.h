@@ -74,8 +74,6 @@ public:
 private:
 	ISMFRenderState* SelectRenderState(const DrawPass::e& drawPass);
 
-	void CreateWaterPlane();
-	inline void DrawWaterPlane(bool drawWaterReflection);
 	inline void DrawBorder(const DrawPass::e drawPass);
 
 	bool HaveLuaRenderState() const;
@@ -87,9 +85,6 @@ protected:
 
 	int drawerMode;
 	int groundDetail;
-
-	VAO waterPlaneVAO; //no attachments needed
-	Shader::IProgramObject* waterPlaneShader;
 
 	// [0] := fallback shader-less rendering path
 	// [1] := default shader-driven rendering path
