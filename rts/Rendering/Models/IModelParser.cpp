@@ -371,6 +371,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 	if (parser == nullptr) {
 		LOG_L(L_ERROR, "could not find a parser for model \"%s\" (unknown format?)", name.c_str());
 		LoadDummyModel(model);
+		return;
 	}
 
 	try {
@@ -382,6 +383,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 		}
 
 		LoadDummyModel(model);
+		return;
 	}
 }
 
