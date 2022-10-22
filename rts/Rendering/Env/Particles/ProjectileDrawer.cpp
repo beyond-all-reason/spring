@@ -425,16 +425,9 @@ void CProjectileDrawer::CopyDepthBufferToTexture()
 
 #if 1
 	//no need to touch glViewport
-	const int screenRect[4] = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
+	const std::array<int, 4> screenRect = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
 
-	GLint currentFBO;
-	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &currentFBO);
-
-	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, currentFBO);
-	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, depthFBO->fboId);
-	glBlitFramebufferEXT(screenRect[0], screenRect[1], screenRect[2], screenRect[3], screenRect[0], screenRect[1], screenRect[2], screenRect[3], GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
+	FBO::Blit(-1, depthFBO->GetId(), screenRect, screenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #else
 	GLint activeTex;
 	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTex);
