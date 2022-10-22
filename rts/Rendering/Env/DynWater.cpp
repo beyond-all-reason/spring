@@ -330,6 +330,7 @@ void CDynWater::Draw()
 
 	const float dx = float(globalRendering->viewSizeX) / globalRendering->viewSizeY * camera->GetTanHalfFov();
 	const float dy = float(globalRendering->viewSizeY) / globalRendering->viewSizeY * camera->GetTanHalfFov();
+	const auto& sky = ISky::GetSky();
 	const float3& L = sky->GetLight()->GetLightDir();
 
 
@@ -444,7 +445,8 @@ void CDynWater::DrawReflection(CGame* game)
 {
 	reflectFBO.Bind();
 
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 1.0f);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const double clipPlaneEqs[2 * 4] = {
@@ -484,7 +486,8 @@ void CDynWater::DrawRefraction(CGame* game)
 	refractFBO.Bind();
 	glViewport(0, 0, refractSize, refractSize);
 
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 1.0f);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const double clipPlaneEqs[2 * 4] = {
@@ -501,7 +504,7 @@ void CDynWater::DrawRefraction(CGame* game)
 	DrawRefractions(&clipPlaneEqs[0], true, true);
 
 	glViewport(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 1);
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1);
 
 	sunLighting->modelDiffuseColor = oldsun;
 	sunLighting->modelAmbientColor = oldambient;

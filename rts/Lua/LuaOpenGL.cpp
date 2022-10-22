@@ -968,6 +968,7 @@ void LuaOpenGL::ResetDrawInMiniMapBackground()
 
 void LuaOpenGL::SetupWorldLighting()
 {
+	const auto& sky = ISky::GetSky();
 	if (sky == nullptr)
 		return;
 
@@ -1004,6 +1005,7 @@ void LuaOpenGL::RevertScreenMatrices()
 
 void LuaOpenGL::SetupScreenLighting()
 {
+	const auto& sky = ISky::GetSky();
 	if (sky == nullptr)
 		return;
 
@@ -5286,6 +5288,7 @@ int LuaOpenGL::GetShadowMapParams(lua_State* L)
 
 int LuaOpenGL::GetAtmosphere(lua_State* L)
 {
+	const auto& sky = ISky::GetSky();
 	if (lua_gettop(L) == 0) {
 		lua_pushnumber(L, sky->GetLight()->GetLightDir().x);
 		lua_pushnumber(L, sky->GetLight()->GetLightDir().y);
@@ -5326,6 +5329,10 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 		case hashString("cloudColor"): {
 			data = &sky->cloudColor.x;
 		} break;
+		case hashString("scatterInfo"): {
+			data = &sky->scatterInfo.x;
+		} break;
+		default: {} break;
 	}
 
 	if (data != nullptr) {
@@ -5340,6 +5347,7 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 
 int LuaOpenGL::GetSun(lua_State* L)
 {
+	const auto& sky = ISky::GetSky();
 	if (lua_gettop(L) == 0) {
 		lua_pushnumber(L, sky->GetLight()->GetLightDir().x);
 		lua_pushnumber(L, sky->GetLight()->GetLightDir().y);

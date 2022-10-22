@@ -5,10 +5,12 @@
 #include "BasicSky.h"
 #include "AdvSky.h"
 #include "SkyBox.h"
+#include "ModernSky.h"
 #include "Game/Camera.h"
 #include "Game/TraceRay.h"
 #include "Map/MapInfo.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/Env/DebugCubeMapTexture.h"
 #include "Rendering/GL/myGL.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
@@ -17,12 +19,11 @@
 
 CONFIG(bool, AdvSky).defaultValue(true).headlessValue(false).defaultValue(false).description("Enables High Resolution Clouds.");
 
-ISky* sky = nullptr;
-
 ISky::ISky()
 	: skyColor(mapInfo->atmosphere.skyColor)
 	, sunColor(mapInfo->atmosphere.sunColor)
 	, cloudColor(mapInfo->atmosphere.cloudColor)
+	, scatterInfo(mapInfo->atmosphere.scatterInfo)
 	, fogColor(mapInfo->atmosphere.fogColor)
 	, fogStart(mapInfo->atmosphere.fogStart)
 	, fogEnd(mapInfo->atmosphere.fogEnd)
@@ -56,28 +57,26 @@ void ISky::SetupFog() {
 	glFogf(GL_FOG_DENSITY, 1.0f);
 }
 
-
-
-ISky* ISky::GetSky()
+void ISky::SetSky()
 {
-	ISky* sky = nullptr;
+	sky = nullptr; //break before make
 
 	try {
-		if (!mapInfo->atmosphere.skyBox.empty()) {
-			sky = new CSkyBox("maps/" + mapInfo->atmosphere.skyBox);
-		} else if (configHandler->GetBool("AdvSky")) {
-			sky = new CAdvSky();
+		if (globalRendering->drawDebugCubeMap) {
+			int2 dims = debugCubeMapTexture.GetDimensions();
+			sky = std::make_unique<CSkyBox>(debugCubeMapTexture.GetId(), dims.x, dims.y);
+		}
+		else if (!mapInfo->atmosphere.skyBox.empty()) {
+			sky = std::make_unique<CSkyBox>("maps/" + mapInfo->atmosphere.skyBox);
+		}
+		else {
+			sky = std::make_unique<CModernSky>();
 		}
 	} catch (const content_error& ex) {
-		LOG_L(L_ERROR, "[%s] error: %s (falling back to BasicSky)", __FUNCTION__, ex.what());
-
-		spring::SafeDelete(sky);
+		LOG_L(L_ERROR, "[ISky::%s] error: %s (falling back to BasicSky)", __func__, ex.what());
+		//TODO remove, make NullSky that does absolutely nothing
+		sky = std::make_unique<CBasicSky>();
 	}
-
-	if (sky == nullptr)
-		sky = new CBasicSky();
-
-	return sky;
 }
 
 bool ISky::SunVisible(const float3 pos) const {

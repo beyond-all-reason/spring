@@ -183,7 +183,8 @@ void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 	reflectionCubeFBO.AttachTexture((skyOnly? skyReflectionTexID: envReflectionTexID), glFace);
 
 	glPushAttrib(GL_FOG_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 1.0f);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	if (!skyOnly) {
@@ -278,6 +279,7 @@ void CubeMapHandler::CreateSpecularFacePart(
 	unsigned int y,
 	unsigned char* buf
 ) {
+	const auto& sky = ISky::GetSky();
 	// TODO move to a shader
 	for (int x = 0; x < size; ++x) {
 		const float3 dir = (cdir + (xdif * (x + 0.5f)) / size + (ydif * (y + 0.5f)) / size).Normalize();

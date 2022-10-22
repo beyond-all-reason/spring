@@ -92,6 +92,7 @@ void CBasicWater::Draw()
 		return;
 
 	glPushAttrib(GL_FOG_BIT | GL_POLYGON_BIT);
+	const auto& sky = ISky::GetSky();
 	sky->SetupFog();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
 	glCallList(displistID);

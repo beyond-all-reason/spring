@@ -333,7 +333,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawImpl(bool drawReflection
 
 	if constexpr (legacy) {
 		glEnable(GL_ALPHA_TEST);
-		sky->SetupFog();
+		ISky::GetSky()->SetupFog();
 	}
 
 	assert((CCameraHandler::GetActiveCamera())->GetCamType() != CCamera::CAMTYPE_SHADOW);

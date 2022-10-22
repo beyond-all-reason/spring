@@ -4,6 +4,7 @@
 #define I_SKY_H
 
 #include "SkyLight.h"
+#include <memory>
 
 #define CLOUD_SIZE 256 // must be divisible by 4 and 8
 
@@ -43,12 +44,14 @@ public:
 	void SetupFog();
 
 public:
-	static ISky* GetSky();
-
+	static void SetSky();
+	static auto& GetSky() { return sky; }
+	static void KillSky() { sky = nullptr; }
 public:
 	float3 skyColor;
 	float3 sunColor;
 	float3 cloudColor;
+	float3 scatterInfo;
 	float4 fogColor;
 
 	float fogStart;
@@ -56,12 +59,12 @@ public:
 	float cloudDensity;
 
 protected:
+	static inline std::unique_ptr<ISky> sky = nullptr;
+
 	ISkyLight* skyLight;
 
 	bool wireFrameMode;
 	bool dynamicSky;
 };
-
-extern ISky* sky;
 
 #endif // I_SKY_H

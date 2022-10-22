@@ -750,7 +750,7 @@ void LuaMatUniforms::Execute() const
 
 	camPos.Execute(camera->GetPos());
 	camDir.Execute(camera->GetDir());
-	sunDir.Execute(sky->GetLight()->GetLightDir());
+	sunDir.Execute(ISky::GetSky()->GetLight()->GetLightDir());
 	rndVec.Execute(guRNG.NextVector());
 
 	simFrame.Execute(gs->frameNum);

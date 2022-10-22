@@ -30,25 +30,19 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_SKY_BOX)
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_SKY_BOX
 
-
-CSkyBox::CSkyBox(const std::string& texture)
-	: skyVAO()
-	, shader{nullptr}
+void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize)
 {
+	shader = nullptr;
 #ifndef HEADLESS
-	CBitmap btex;
-	if (!btex.Load(texture) || btex.textype != GL_TEXTURE_CUBE_MAP) {
-		LOG_L(L_WARNING, "could not load skybox texture from file %s", texture.c_str());
-	} else {
-		skyTex.SetRawTexID(btex.CreateTexture());
-		skyTex.SetRawSize(int2(btex.xsize, btex.ysize));
-		glEnable(GL_TEXTURE_CUBE_MAP);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex.GetID());
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		glDisable(GL_TEXTURE_CUBE_MAP);
-	}
+	skyTex.SetRawTexID(textureID);
+	skyTex.SetRawSize(int2(xsize, ysize));
+
+	glEnable(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex.GetID());
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	glDisable(GL_TEXTURE_CUBE_MAP);
 
 	shader = shaderHandler->CreateProgramObject("[SkyBox]", "SkyBox");
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/CubeMapVS.glsl", "", GL_VERTEX_SHADER));
@@ -62,10 +56,23 @@ CSkyBox::CSkyBox(const std::string& texture)
 	globalRendering->drawFog = (fogStart <= 0.99f);
 }
 
+CSkyBox::CSkyBox(const std::string& texture)
+{
+	CBitmap btex;
+#ifndef HEADLESS
+	if (!btex.Load(texture) || btex.textype != GL_TEXTURE_CUBE_MAP) {
+		LOG_L(L_WARNING, "could not load skybox texture from file %s", texture.c_str());
+	}
+#endif
+	Init(btex.CreateTexture(), btex.xsize, btex.ysize);
+}
+
+
 CSkyBox::~CSkyBox()
 {
 #ifndef HEADLESS
-	shaderHandler->ReleaseProgramObject("[SkyBox]", "SkyBox");
+	if (shader)
+		shaderHandler->ReleaseProgramObject("[SkyBox]", "SkyBox");
 #endif
 }
 
@@ -90,10 +97,7 @@ void CSkyBox::Draw()
 	glLoadMatrixf(camera->GetProjectionMatrix());
 
 	glEnable(GL_TEXTURE_CUBE_MAP);
-	if (globalRendering->drawDebugCubeMap)
-		glBindTexture(GL_TEXTURE_CUBE_MAP, debugCubeMapTexture.GetId());
-	else
-		glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex.GetID());
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex.GetID());
 
 	skyVAO.Bind();
 	assert(shader->IsValid());

@@ -92,6 +92,7 @@ public:
 		float3 skyDir;
 		float3 sunColor;
 		float3 cloudColor;
+		float3 scatterInfo; // Rayleigh, Mie coefficient, Mie scattering direction
 		float  minWind;
 		float  maxWind;
 		std::string skyBox;

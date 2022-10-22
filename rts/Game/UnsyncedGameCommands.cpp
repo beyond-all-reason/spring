@@ -1361,6 +1361,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		globalRendering->drawDebugCubeMap = !globalRendering->drawDebugCubeMap;
+		ISky::SetSky();
 		return true;
 	}
 };
@@ -1488,6 +1489,7 @@ public:
 	DynamicSkyActionExecutor() : IUnsyncedActionExecutor("DynamicSky", "Enable/Disable dynamic-sky rendering") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		const auto& sky = ISky::GetSky();
 		LogSystemStatus("dynamic-sky rendering", sky->DynamicSkyRef() = !sky->DynamicSkyRef());
 		return true;
 	}
@@ -1709,13 +1711,13 @@ public:
 			"Increases the density of clouds (lower performance)") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		sky->IncreaseCloudDensity();
+		ISky::GetSky()->IncreaseCloudDensity();
 		ReportCloudDensity();
 		return true;
 	}
 
 	static void ReportCloudDensity() {
-		LOG("Cloud density %f", 1.0f / sky->GetCloudDensity());
+		LOG("Cloud density %f", 1.0f / ISky::GetSky()->GetCloudDensity());
 	}
 };
 
@@ -1726,7 +1728,7 @@ public:
 			"Decreases the density of clouds (higher performance)") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		sky->DecreaseCloudDensity();
+		ISky::GetSky()->DecreaseCloudDensity();
 		MoreCloudsActionExecutor::ReportCloudDensity();
 		return true;
 	}
@@ -3079,6 +3081,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		const auto& sky = ISky::GetSky();
 		LogSystemStatus("wireframe sky-drawing mode", sky->WireFrameModeRef() = !sky->WireFrameModeRef());
 		return true;
 	}

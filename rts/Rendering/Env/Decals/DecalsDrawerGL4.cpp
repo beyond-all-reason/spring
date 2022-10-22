@@ -677,6 +677,7 @@ void CDecalsDrawerGL4::SunChanged()
 
 	assert(uniformBlockSize == sizeof(SGLSLGroundLighting));
 
+	const auto& sky = ISky::GetSky();
 	uboGroundLighting.Bind(GL_UNIFORM_BUFFER);
 	uboGroundLighting.New(uniformBlockSize, GL_STATIC_DRAW);
 		SGLSLGroundLighting* uboGroundLightingData = (SGLSLGroundLighting*)uboGroundLighting.MapBuffer(0, sizeof(SGLSLGroundLighting));

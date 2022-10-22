@@ -136,6 +136,7 @@ void CMapInfo::ReadAtmosphere()
 	atmo.skyDir.ANormalize();
 	atmo.sunColor     = atmoTable.GetFloat3("sunColor", float3(1.0f, 1.0f, 1.0f));
 	atmo.cloudColor   = atmoTable.GetFloat3("cloudColor", float3(1.0f, 1.0f, 1.0f));
+	atmo.scatterInfo = atmoTable.GetFloat3("scatterInfo", float3(0.0020f, 0.0009f, 0.9200f));
 	atmo.fluidDensity = atmoTable.GetFloat("fluidDensity", 1.2f * 0.25f);
 	atmo.cloudDensity = atmoTable.GetFloat("cloudDensity", 0.5f);
 

@@ -692,6 +692,7 @@ void CGrassDrawer::SetupGlStateNear()
 	glDisable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
 	glDepthMask(GL_TRUE);
+	const auto& sky = ISky::GetSky();
 	sky->SetupFog();
 }
 

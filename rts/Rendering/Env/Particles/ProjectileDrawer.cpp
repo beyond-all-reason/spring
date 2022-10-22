@@ -745,7 +745,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	glEnable(GL_TEXTURE_2D);
 	glDepthMask(GL_TRUE);
 
-	sky->SetupFog();
+	ISky::GetSky()->SetupFog();
 
 	sortedProjectiles[0].clear();
 	sortedProjectiles[1].clear();

@@ -1719,7 +1719,7 @@ int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
-	if (sky != nullptr)
+	if (const auto& sky = ISky::GetSky(); sky != nullptr)
 		sky->SetLuaTexture(ParseLuaTextureData(L, false));
 
 	return 0;
@@ -2933,6 +2933,7 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 	if (!lua_istable(L, 1))
 		luaL_error(L, "Incorrect arguments to SetAtmosphere()");
 
+	const auto& sky = ISky::GetSky();
 	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
 		if (!lua_israwstring(L, -2))
 			continue;
@@ -2958,6 +2959,9 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 				} break;
 				case hashString("cloudColor"): {
 					sky->cloudColor = color;
+				} break;
+				case hashString("scatterInfo"): {
+					sky->scatterInfo = color;
 				} break;
 				default: {
 					luaL_error(L, "[%s] unknown array key %s", __func__, key);
@@ -2989,7 +2993,7 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 
 int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
 {
-	sky->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
+	ISky::GetSky()->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
 	return 0;
 }
 

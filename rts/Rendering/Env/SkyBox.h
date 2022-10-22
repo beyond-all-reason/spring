@@ -16,8 +16,10 @@ namespace Shader {
 class CSkyBox : public ISky
 {
 public:
-	CSkyBox(const std::string& texture);
+	explicit CSkyBox(uint32_t textureID, uint32_t xsize, uint32_t ysize) { Init(textureID, xsize, ysize); }
+	explicit CSkyBox(const std::string& texture);
 	~CSkyBox() override;
+	void Init(uint32_t textureID, uint32_t xsize, uint32_t ysize);
 
 	void Update() override {}
 	void UpdateSunDir() override {}

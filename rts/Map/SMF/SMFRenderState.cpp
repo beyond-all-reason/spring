@@ -169,7 +169,7 @@ void SMFRenderStateGLSL::Update(
 			glslShaders[n]->SetUniform("mapSizePO2", mapDims.pwr2mapx * SQUARE_SIZE * 1.0f, mapDims.pwr2mapy * SQUARE_SIZE * 1.0f);
 			glslShaders[n]->SetUniform("mapSize",    mapDims.mapx     * SQUARE_SIZE * 1.0f, mapDims.mapy     * SQUARE_SIZE * 1.0f);
 
-			glslShaders[n]->SetUniform4v("lightDir",  &sky->GetLight()->GetLightDir()[0]);
+			glslShaders[n]->SetUniform4v("lightDir",  &ISky::GetSky()->GetLight()->GetLightDir()[0]);
 			glslShaders[n]->SetUniform3v("cameraPos", &camera->GetPos()[0]);
 
 			glslShaders[n]->SetUniform3v("groundAmbientColor",  &sunLighting->groundAmbientColor[0]);

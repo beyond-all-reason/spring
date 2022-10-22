@@ -752,7 +752,7 @@ void CSMFReadMap::UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) c
 float CSMFReadMap::DiffuseSunCoeff(const int x, const int y) const
 {
 	const float3& N = centerNormalsUnsynced[y * mapDims.mapx + x];
-	const float3& L = sky->GetLight()->GetLightDir();
+	const float3& L = ISky::GetSky()->GetLight()->GetLightDir();
 	return Clamp(L.dot(N), 0.0f, 1.0f);
 }
 

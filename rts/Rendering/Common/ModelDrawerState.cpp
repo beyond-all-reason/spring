@@ -188,7 +188,7 @@ void CModelDrawerStateFFP::Enable(bool deferredPass, bool alphaPass) const
 {
 	glEnable(GL_LIGHTING);
 	// only for the advshading=0 case
-	glLightfv(GL_LIGHT1, GL_POSITION, sky->GetLight()->GetLightDir());
+	glLightfv(GL_LIGHT1, GL_POSITION, ISky::GetSky()->GetLight()->GetLightDir());
 	glLightfv(GL_LIGHT1, GL_AMBIENT, sunLighting->modelAmbientColor);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, sunLighting->modelDiffuseColor);
 	glLightfv(GL_LIGHT1, GL_SPECULAR, sunLighting->modelSpecularColor);
@@ -295,7 +295,7 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 		modelShaders[n]->SetUniform("reflectTex"    , 4);
 		modelShaders[n]->SetUniform("specularTex"   , 5);
 
-		modelShaders[n]->SetUniform3v("sunDir", &sky->GetLight()->GetLightDir().x);
+		modelShaders[n]->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 		modelShaders[n]->SetUniform3v("cameraPos", &camera->GetPos()[0]);
 		modelShaders[n]->SetUniform("teamColor", 0.0f, 0.0f, 0.0f, 0.0f);
 		modelShaders[n]->SetUniform("nanoColor", 0.0f, 0.0f, 0.0f, 0.0f);
@@ -350,7 +350,7 @@ void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 	modelShader->Enable();
 	// end of EnableCommon();
 
-	modelShader->SetUniform3v("sunDir", &sky->GetLight()->GetLightDir().x);
+	modelShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 	modelShader->SetUniform3v("sunAmbient", &sunLighting->modelAmbientColor[0]);
 	modelShader->SetUniform3v("sunDiffuse", &sunLighting->modelDiffuseColor[0]);
 	modelShader->SetUniform3v("sunSpecular", &sunLighting->modelSpecularColor[0]);

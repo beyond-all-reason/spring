@@ -424,7 +424,7 @@ CBumpWater::CBumpWater()
 		GLSLDefineConstf1(definitions, "SpecularFactor", waterRendering->specularFactor);
 		GLSLDefineConstf1(definitions, "AmbientFactor",  waterRendering->ambientFactor);
 		GLSLDefineConstf1(definitions, "DiffuseFactor",  waterRendering->diffuseFactor * 15.0f);
-		GLSLDefineConstf3(definitions, "SunDir",         sky->GetLight()->GetLightDir()); // FIXME: not a constant
+		GLSLDefineConstf3(definitions, "SunDir"       ,  ISky::GetSky()->GetLight()->GetLightDir()); // FIXME: not a constant
 		GLSLDefineConstf1(definitions, "FresnelMin",     waterRendering->fresnelMin);
 		GLSLDefineConstf1(definitions, "FresnelMax",     waterRendering->fresnelMax);
 		GLSLDefineConstf1(definitions, "FresnelPower",   waterRendering->fresnelPower);
@@ -1043,7 +1043,7 @@ void CBumpWater::SetUniforms()
 	glUniform1f( uniforms[ 5], waterRendering->specularFactor);
 	glUniform1f( uniforms[ 6], waterRendering->ambientFactor);
 	glUniform1f( uniforms[ 7], waterRendering->diffuseFactor * 15.0f);
-	glUniform3fv(uniforms[ 8], 1, &sky->GetLight()->GetLightDir().x);
+	glUniform3fv(uniforms[ 8], 1, &ISky::GetSky()->GetLight()->GetLightDir().x);
 	glUniform1f( uniforms[ 9], waterRendering->fresnelMin);
 	glUniform1f( uniforms[10], waterRendering->fresnelMax);
 	glUniform1f( uniforms[11], waterRendering->fresnelPower);
@@ -1163,7 +1163,8 @@ void CBumpWater::DrawRefraction(CGame* game)
 	camera->Update();
 
 	glViewport(0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 0);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_FOG); // fog has overground settings, if at all we should add special underwater settings
 
@@ -1191,7 +1192,8 @@ void CBumpWater::DrawReflection(CGame* game)
 {
 	reflectFBO.Bind();
 
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 0.0f);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const double clipPlaneEqs[2 * 4] = {

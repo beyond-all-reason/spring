@@ -316,7 +316,8 @@ void CAdvWater::UpdateWater(CGame* game)
 
 
 	reflectFBO.Bind();
-	glClearColor(sky->fogColor[0], sky->fogColor[1], sky->fogColor[2], 1.0f);
+	const auto& sky = ISky::GetSky();
+	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const double clipPlaneEqs[2 * 4] = {

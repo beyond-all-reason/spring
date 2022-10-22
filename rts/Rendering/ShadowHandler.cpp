@@ -413,7 +413,7 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
-	const CMatrix44f lightMatrix = ComposeLightMatrix(sky->GetLight());
+	const CMatrix44f lightMatrix = ComposeLightMatrix(ISky::GetSky()->GetLight());
 	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix));
 
 	// KISS; define only the world-to-light transform (P[CULLING] is unused anyway)
@@ -531,7 +531,7 @@ void CShadowHandler::CreateShadows()
 
 	CCamera* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_SHADOW);
 
-	if ((sky->GetLight())->GetLightIntensity() > 0.0f)
+	if (ISky::GetSky()->GetLight()->GetLightIntensity() > 0.0f)
 		DrawShadowPasses();
 
 	CCameraHandler::SetActiveCamera(prvCam->GetCamType());
