@@ -4,6 +4,7 @@
 #define FBO_H
 
 #include <vector>
+#include <array>
 
 #include "myGL.h"
 #include "System/UnorderedMap.hpp"
@@ -27,7 +28,7 @@ public:
 	static GLint GetCurrentBoundFBO();
 
 	FBO(         ) { Init(false); }
-	FBO(bool noop) { Init( noop); }
+	explicit FBO(bool noop) { Init( noop); }
 	~FBO() { Kill(); }
 
 	void Init(bool noop);
@@ -134,7 +135,14 @@ public:
 	 */
 	static void Unbind();
 
-
+	static bool Blit(
+		int32_t fromID,
+		int32_t toID,
+		const std::array<int, 4>& srcRect,
+		const std::array<int, 4>& dstRect,
+		uint32_t mask = GL_DEPTH_BUFFER_BIT,
+		uint32_t filter = GL_NEAREST
+	);
 
 	/**
 	 * @brief GLContextLost (post atl-tab)

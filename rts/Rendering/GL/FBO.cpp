@@ -333,6 +333,32 @@ void FBO::Unbind()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, const std::array<int, 4>& dstRect, uint32_t mask, uint32_t filter)
+{
+	if (!GLEW_EXT_framebuffer_blit)
+		return false;
+
+	if (srcRect[2] - srcRect[0] <= 0 || srcRect[3] - srcRect[1] <= 0)
+		return false;
+
+	if (dstRect[2] - dstRect[0] <= 0 || dstRect[3] - dstRect[1] <= 0)
+		return false;
+
+	GLint currentFBO;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &currentFBO);
+	if (fromID < 0)
+		fromID = currentFBO;
+
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fromID);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,   toID);
+	glBlitFramebufferEXT(srcRect[0], srcRect[1], srcRect[2], srcRect[3], dstRect[0], dstRect[1], dstRect[2], dstRect[3], mask, filter);
+
+	// required call
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
+
+	return true;
+}
+
 
 /**
  * Tests if the framebuffer is a complete and
