@@ -292,7 +292,7 @@ struct S3DModel
 		indxStart = m.indxStart;
 		indxCount = m.indxCount;
 
-		pieceObjects = std::move(m.pieceObjects);
+		pieceObjects.swap(m.pieceObjects);
 
 		for (auto po : pieceObjects)
 			po->SetParentModel(this);
@@ -300,7 +300,7 @@ struct S3DModel
 		loadStatus = m.loadStatus;
 		uploaded = m.uploaded;
 
-		matAlloc = std::move(m.matAlloc);
+		std::swap(matAlloc, m.matAlloc);
 
 		return *this;
 	}
@@ -329,12 +329,7 @@ struct S3DModel
 			matAlloc[i] = po->bposeMatrix;
 		}
 	}
-	void DeletePieces() {
-		assert(!pieceObjects.empty());
 
-		// NOTE: actual piece memory is owned by parser pools
-		pieceObjects.clear();
-	}
 	void FlattenPieceTree(S3DModelPiece* root) {
 		assert(root != nullptr);
 

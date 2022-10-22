@@ -149,7 +149,7 @@ void C3DOParser::Kill()
 }
 
 
-S3DModel C3DOParser::Load(const std::string& name)
+void C3DOParser::Load(S3DModel& model, const std::string& name)
 {
 	CFileHandler file(name);
 	std::vector<uint8_t> fileBuf;
@@ -166,13 +166,13 @@ S3DModel C3DOParser::Load(const std::string& name)
 		fileBuf = std::move(file.GetBuffer());
 	}
 
-	S3DModel model;
-		model.name = name;
-		model.type = MODELTYPE_3DO;
-		model.textureType = 0;
-		model.numPieces   = 0;
-		model.mins = DEF_MIN_SIZE;
-		model.maxs = DEF_MAX_SIZE;
+
+	model.name = name;
+	model.type = MODELTYPE_3DO;
+	model.textureType = 0;
+	model.numPieces   = 0;
+	model.mins = DEF_MIN_SIZE;
+	model.maxs = DEF_MAX_SIZE;
 
 	model.FlattenPieceTree(LoadPiece(&model, nullptr, fileBuf, 0));
 
@@ -180,8 +180,6 @@ S3DModel C3DOParser::Load(const std::string& name)
 	model.radius = model.CalcDrawRadius();
 	model.height = model.CalcDrawHeight();
 	model.relMidPos = model.CalcDrawMidPos();
-
-	return model;
 }
 
 

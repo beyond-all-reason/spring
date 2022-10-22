@@ -57,8 +57,7 @@ public:
 	void Init() override;
 	void Kill() override;
 
-	S3DModel Load(const std::string& modelFileName) override;
-
+	void Load(S3DModel& model, const std::string& name) override;
 private:
 	static void PreProcessFileBuffer(std::vector<unsigned char>& fileBuffer);
 

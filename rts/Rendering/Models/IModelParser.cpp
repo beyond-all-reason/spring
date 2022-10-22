@@ -83,19 +83,24 @@ static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 	LOG("[%s] supported (Assimp) model formats: %s", __func__, enabledExtensions.c_str());
 }
 
-static S3DModel CreateDummyModel(unsigned int id)
+static void LoadDummyModel(S3DModel& model)
 {
 	// create a crash-dummy
-	S3DModel model;
-	model.id = id;
 	model.type = MODELTYPE_3DO;
 	model.numPieces = 1;
 	// give it one empty piece
 	model.AddPiece(g3DOParser.AllocPiece());
 	model.FlattenPieceTree(model.GetRootPiece()); //useless except for setting up matAlloc
 	model.GetRootPiece()->SetCollisionVolume(CollisionVolume('b', 'z', -UpVector, ZeroVector));
-	return model;
 }
+
+static void LoadDummyModel(S3DModel& model, int id)
+{
+	// create a crash-dummy
+	model.id = id;
+	LoadDummyModel(model);
+}
+
 
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
@@ -108,9 +113,8 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 		}
 
 		if (numNullNormals > 0) {
-			const char* formatStr =
-				"[%s] piece \"%s\" of model \"%s\" has %u (of %u) null-normals! "
-				"It will either be rendered fully black or with black splotches!";
+			constexpr const char* formatStr =
+				"[%s] piece \"%s\" of model \"%s\" has %u (of %u) normals with invalid length (<0.5)";
 
 			const char* modelName = model->name.c_str();
 			const char* pieceName = modelPiece->name.c_str();
@@ -136,7 +140,7 @@ void CModelLoader::Init()
 
 	// dummy first model, legitimate model IDs start at 1
 	modelID = 0;
-	models[0] = CreateDummyModel(modelID);
+	LoadDummyModel(models[0], modelID);
 }
 
 void CModelLoader::InitParsers() const
@@ -158,13 +162,8 @@ void CModelLoader::Kill()
 
 void CModelLoader::KillModels()
 {
-	for (auto& model : models) {
-		if (model.pieceObjects.empty())
-			continue;
-
-		model.DeletePieces();
-	}
 	models.clear();
+	modelID = 0;
 }
 
 void CModelLoader::KillParsers() const
@@ -314,13 +313,7 @@ void CModelLoader::FillModel(
 	const std::string& name,
 	const std::string& path
 ) {
-	//fugly hack
-	auto id = model.id;
-	auto ls = model.loadStatus;
-	model = ParseModel(name, path);
-	model.id = id;
-	model.loadStatus = ls;
-	//
+	ParseModel(model, name, path);
 
 	assert(model.numPieces != 0);
 	assert(model.GetRootPiece() != nullptr);
@@ -371,28 +364,25 @@ IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 	return it->second;
 }
 
-S3DModel CModelLoader::ParseModel(const std::string& name, const std::string& path)
+void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const std::string& path)
 {
-	S3DModel model;
 	IModelParser* parser = GetFormatParser(FileSystem::GetExtension(path));
 
 	if (parser == nullptr) {
 		LOG_L(L_ERROR, "could not find a parser for model \"%s\" (unknown format?)", name.c_str());
-		return CreateDummyModel(0);
+		LoadDummyModel(model);
 	}
 
 	try {
-		model = parser->Load(path);
+		parser->Load(model, path);
 	} catch (const content_error& ex) {
 		{
 			std::scoped_lock lock(mutex);
 			errors.emplace_back(name, ex.what());
 		}
 
-		model = CreateDummyModel(0);
+		LoadDummyModel(model);
 	}
-
-	return model;
 }
 
 

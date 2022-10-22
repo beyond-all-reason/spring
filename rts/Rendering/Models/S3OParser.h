@@ -35,10 +35,6 @@ public:
 
 	void Clear() override {
 		S3DModelPiece::Clear();
-
-		vertices.clear();
-		indices.clear();
-
 		primType = S3O_PRIMTYPE_TRIANGLES;
 	}
 public:
@@ -63,7 +59,7 @@ public:
 	void Init() override;
 	void Kill() override;
 
-	S3DModel Load(const std::string& name) override;
+	void Load(S3DModel& model, const std::string& name) override;
 
 private:
 	SS3OPiece* AllocPiece();

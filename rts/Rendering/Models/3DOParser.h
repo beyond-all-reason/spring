@@ -134,7 +134,7 @@ public:
 	void Init() override;
 	void Kill() override;
 
-	S3DModel Load(const std::string& name);
+	void Load(S3DModel& model, const std::string& name) override;
 
 	S3DOPiece* AllocPiece();
 	S3DOPiece* LoadPiece(S3DModel* model, S3DOPiece* parent, const std::vector<uint8_t>& buf, int pos);

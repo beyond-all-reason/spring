@@ -151,7 +151,7 @@ void CAssParser::Kill()
 }
 
 
-S3DModel CAssParser::Load(const std::string& modelFilePath)
+void CAssParser::Load(S3DModel& model, const std::string& modelFilePath)
 {
 	LOG_SL(LOG_SECTION_MODEL, L_INFO, "Loading model: %s", modelFilePath.c_str());
 
@@ -229,7 +229,6 @@ S3DModel CAssParser::Load(const std::string& modelFilePath)
 	ModelPieceMap pieceMap;
 	ParentNameMap parentMap;
 
-	S3DModel model;
 	model.name = modelFilePath;
 	model.type = MODELTYPE_ASS;
 
@@ -255,7 +254,6 @@ S3DModel CAssParser::Load(const std::string& modelFilePath)
 	LOG_SL(LOG_SECTION_MODEL, L_DEBUG, "model->mins: (%f,%f,%f)", model.mins[0], model.mins[1], model.mins[2]);
 	LOG_SL(LOG_SECTION_MODEL, L_DEBUG, "model->maxs: (%f,%f,%f)", model.maxs[0], model.maxs[1], model.maxs[2]);
 	LOG_SL(LOG_SECTION_MODEL, L_INFO, "Model %s Imported.", model.name.c_str());
-	return model;
 }
 
 

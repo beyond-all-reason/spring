@@ -31,7 +31,7 @@ void CS3OParser::Kill() {
 	numPoolPieces = 0;
 }
 
-S3DModel CS3OParser::Load(const std::string& name)
+void CS3OParser::Load(S3DModel& model, const std::string& name)
 {
 	CFileHandler file(name);
 	std::vector<uint8_t> fileBuf;
@@ -53,14 +53,13 @@ S3DModel CS3OParser::Load(const std::string& name)
 	memcpy(&header, fileBuf.data(), sizeof(header));
 	header.swap();
 
-	S3DModel model;
-		model.name = name;
-		model.type = MODELTYPE_S3O;
-		model.numPieces = 0;
-		model.texs[0] = (header.texture1 == 0)? "" : (char*) &fileBuf[header.texture1];
-		model.texs[1] = (header.texture2 == 0)? "" : (char*) &fileBuf[header.texture2];
-		model.mins = DEF_MIN_SIZE;
-		model.maxs = DEF_MAX_SIZE;
+	model.name = name;
+	model.type = MODELTYPE_S3O;
+	model.numPieces = 0;
+	model.texs[0] = (header.texture1 == 0)? "" : (char*) &fileBuf[header.texture1];
+	model.texs[1] = (header.texture2 == 0)? "" : (char*) &fileBuf[header.texture2];
+	model.mins = DEF_MIN_SIZE;
+	model.maxs = DEF_MAX_SIZE;
 
 	textureHandlerS3O.PreloadTexture(&model);
 
@@ -70,8 +69,6 @@ S3DModel CS3OParser::Load(const std::string& name)
 	model.radius = (header.radius <= 0.01f)? model.CalcDrawRadius(): header.radius;
 	model.height = (header.height <= 0.01f)? model.CalcDrawHeight(): header.height;
 	model.relMidPos = float3(header.midx, header.midy, header.midz);
-
-	return model;
 }
 
 
