@@ -35,7 +35,7 @@ struct SIndexAndCount {
 // singleton
 class S3DModelVAO {
 public:
-	static void Init(bool preloadModelMode);
+	static void Init();
 	static void Kill();
 	static S3DModelVAO& GetInstance() { assert(IsValid()); return *instance; }
 	static bool IsValid() { return instance != nullptr; }
@@ -46,7 +46,7 @@ public:
 	static constexpr size_t INSTANCE_BUFFER_NUM_IMMEDIATE = 2 << 10;
 	static constexpr size_t INSTANCE_BUFFER_NUM_ELEMS = INSTANCE_BUFFER_NUM_BATCHED + INSTANCE_BUFFER_NUM_IMMEDIATE;
 public:
-	explicit S3DModelVAO(bool preloadModelMode_);
+	explicit S3DModelVAO();
 
 	uint32_t GetVertOffset() const { return static_cast<uint32_t>(vertData.size()); }
 
@@ -54,6 +54,8 @@ public:
 	void ProcessIndicies(S3DModel* model);
 	void CreateVAO();
 	void UploadVBOs();
+
+	void SetSafeToDeleteVectors() { safeToDeleteVectors = true; };
 
 	void Bind() const;
 	void Unbind() const;
@@ -104,7 +106,7 @@ private:
 private:
 	inline static std::unique_ptr<S3DModelVAO> instance = nullptr;
 private:
-	bool preloadModelMode;
+	bool safeToDeleteVectors = false;
 
 	uint32_t batchedBaseInstance   = 0;
 	uint32_t immediateBaseInstance = 0; //note relative index

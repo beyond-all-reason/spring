@@ -56,11 +56,9 @@ void CWorldDrawer::InitPre() const
 
 	CColorMap::InitStatic();
 
-	const bool preloadMode = configHandler->GetBool("PreloadModels");
-	S3DModelVAO::Init(preloadMode);
-
 	// these need to be loaded before featureHandler is created
 	// (maps with features have their models loaded at startup)
+	S3DModelVAO::Init();
 	modelLoader.Init();
 
 	loadscreen->SetLoadMessage("Creating Unit Textures");
@@ -96,6 +94,8 @@ void CWorldDrawer::InitPost() const
 			for (const auto& def : weaponDefHandler->GetWeaponDefsVec()) {
 				def.PreloadModel();
 			}
+
+			S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
 		}
 	}
 	{

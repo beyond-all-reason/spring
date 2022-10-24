@@ -47,8 +47,7 @@ void S3DModelVAO::DisableAttribs() const
 	}
 }
 
-S3DModelVAO::S3DModelVAO(bool preloadModelMode_)
-	: preloadModelMode(preloadModelMode_)
+S3DModelVAO::S3DModelVAO()
 {
 	vertData.reserve(VERT_SIZE0);
 	indxData.reserve(INDX_SIZE0);
@@ -179,7 +178,7 @@ void S3DModelVAO::UploadVBOs()
 	if (reinitVAO)
 		CreateVAO();
 
-	if (preloadModelMode) {
+	if (safeToDeleteVectors) {
 		// all models have been uploaded in the calls above
 		// safe to clear CPU copy of the data
 		vertData.clear();
@@ -189,10 +188,10 @@ void S3DModelVAO::UploadVBOs()
 	}
 }
 
-void S3DModelVAO::Init(bool preloadModelMode)
+void S3DModelVAO::Init()
 {
 	Kill();
-	instance = std::make_unique<S3DModelVAO>(preloadModelMode);
+	instance = std::make_unique<S3DModelVAO>();
 }
 
 void S3DModelVAO::Kill()

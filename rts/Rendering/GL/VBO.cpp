@@ -209,7 +209,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 
 	// first call: no *BO exists yet to copy old data from, so use ::New() (faster)
 	if (bufSize == 0)
-		return New(newSize, usage, nullptr);
+		return New(newSize, newUsage, nullptr);
 
 	assert(newSize >= bufSize);
 
