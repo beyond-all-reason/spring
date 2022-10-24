@@ -325,7 +325,7 @@ struct S3DModel
 
 		//use this occasion and copy bpos matrices
 		for (int i = 0; i < pieceObjects.size(); ++i) {
-			const auto po = pieceObjects[i];
+			const auto* po = pieceObjects[i];
 			matAlloc[i] = po->bposeMatrix;
 		}
 	}

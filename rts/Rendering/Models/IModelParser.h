@@ -5,10 +5,11 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
+#include <condition_variable>
 
 #include "3DModel.h"
 #include "System/UnorderedMap.hpp"
-#include "System/Threading/SpringThreading.h"
 
 
 class IModelParser
@@ -53,10 +54,11 @@ private:
 	void Upload(S3DModel* o) const;
 
 private:
-	spring::unordered_map<std::string, unsigned int> cache; // "armflash.3do" --> id
+	spring::unordered_map<std::string, unsigned int> cache; // "armflash.3do" --> id and idx at models
 	std::vector<std::pair<std::string, IModelParser*>> parsers;
 
-	spring::mutex mutex;
+	std::mutex mutex;
+	std::condition_variable cv;
 
 	//can't be weak_ptr here, because in that case there are no owners left for futures. preloadFutures needs to own futures
 	std::vector<std::shared_ptr<std::future<void>>> preloadFutures;

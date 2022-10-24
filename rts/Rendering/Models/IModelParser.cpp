@@ -270,17 +270,18 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 		if (load)
 			model->loadStatus = S3DModel::LoadStatus::LOADING;
 	}
+	cv.notify_all();
 
 	assert(model);
 	if (load) {
 		FillModel(*model, name, FindModelPath(name));
 	}
 
-	// spin wait other thread to load the same model for us
-	// reading model->loadStatus without locking the mutex is
-	// not totally MT correct, but seems to work flawlessly
-	while (model->loadStatus != S3DModel::LoadStatus::LOADED) {
-		spring_msecs(10).sleep();
+	{
+		std::unique_lock lock(mutex);
+		cv.wait(lock, [model]() {
+			return model->loadStatus == S3DModel::LoadStatus::LOADED; }
+		);
 	}
 
 	if (!preload)
@@ -330,7 +331,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
-	const auto erasePredicate = [timeout = 0us](decltype(preloadFutures)::value_type item) {
+	const auto erasePredicate = [timeout = 100us](decltype(preloadFutures)::value_type item) {
 		return item->wait_for(timeout) == std::future_status::ready;
 	};
 
@@ -400,7 +401,6 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 		p->PostProcessGeometry(static_cast<uint32_t>(i));
 		p->CreateShatterPieces();
 	}
-
 	{
 		std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
 		auto& inst = S3DModelVAO::GetInstance();
@@ -408,6 +408,7 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 		inst.ProcessIndicies(model);
 		model->loadStatus = S3DModel::LoadStatus::LOADED;
 	}
+	cv.notify_all();
 }
 
 void CModelLoader::Upload(S3DModel* model) const {
