@@ -148,6 +148,8 @@ CR_REG_METADATA(CGlobalRendering, (
 
 	CR_IGNORED(msaaLevel),
 	CR_IGNORED(maxTextureSize),
+	CR_IGNORED(maxFragShSlots),
+	CR_IGNORED(maxCombShSlots),
 	CR_IGNORED(maxTexAnisoLvl),
 
 	CR_IGNORED(active),
@@ -245,6 +247,8 @@ CGlobalRendering::CGlobalRendering()
 	// fallback
 	, msaaLevel(configHandler->GetInt("MSAALevel"))
 	, maxTextureSize(2048)
+	, maxFragShSlots(8)
+	, maxCombShSlots(8)
 	, maxTexAnisoLvl(0.0f)
 
 	, drawSky(true)
@@ -853,6 +857,9 @@ void CGlobalRendering::QueryGLMaxVals()
 	// maximum 2D texture size
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
 
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragShSlots);
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombShSlots);
+
 	if (GLEW_EXT_texture_filter_anisotropic)
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxTexAnisoLvl);
 
@@ -951,16 +958,17 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tmulti draw indirect       : %i (-)" , glewIsExtensionSupported("GL_ARB_multi_draw_indirect"));
 
 	LOG("\t");
-	LOG("\tmax. FBO samples             : %i", FBO::GetMaxSamples());
-	LOG("\tmax. texture size            : %i", maxTextureSize);
-	LOG("\tmax. texture anisotropy level: %f", maxTexAnisoLvl);
-	LOG("\tmax. vec4 varyings/attributes: %i/%i", glslMaxVaryings, glslMaxAttributes);
-	LOG("\tmax. draw-buffers            : %i", glslMaxDrawBuffers);
-	LOG("\tmax. rec. indices/vertices   : %i/%i", glslMaxRecommendedIndices, glslMaxRecommendedVertices);
-	LOG("\tmax. uniform buffer-bindings : %i", glslMaxUniformBufferBindings);
-	LOG("\tmax. uniform block-size      : %iKB", glslMaxUniformBufferSize / 1024);
-	LOG("\tmax. storage buffer-bindings : %i", glslMaxStorageBufferBindings);
-	LOG("\tmax. storage block-size      : %iMB", glslMaxStorageBufferSize / (1024 * 1024));
+	LOG("\tmax. FBO samples              : %i", FBO::GetMaxSamples());
+	LOG("\tmax. FS/program texture slots : %i/%i", maxFragShSlots, maxCombShSlots);
+	LOG("\tmax. texture size             : %i", maxTextureSize);
+	LOG("\tmax. texture anisotropy level : %f", maxTexAnisoLvl);
+	LOG("\tmax. vec4 varyings/attributes : %i/%i", glslMaxVaryings, glslMaxAttributes);
+	LOG("\tmax. draw-buffers             : %i", glslMaxDrawBuffers);
+	LOG("\tmax. rec. indices/vertices    : %i/%i", glslMaxRecommendedIndices, glslMaxRecommendedVertices);
+	LOG("\tmax. uniform buffer-bindings  : %i", glslMaxUniformBufferBindings);
+	LOG("\tmax. uniform block-size       : %iKB", glslMaxUniformBufferSize / 1024);
+	LOG("\tmax. storage buffer-bindings  : %i", glslMaxStorageBufferBindings);
+	LOG("\tmax. storage block-size       : %iMB", glslMaxStorageBufferSize / (1024 * 1024));
 	LOG("\t");
 	LOG("\tenable AMD-hacks : %i", amdHacks);
 	LOG("\tcompress MIP-maps: %i", compressTextures);
