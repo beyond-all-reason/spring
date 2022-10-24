@@ -56,6 +56,9 @@ void CWorldDrawer::InitPre() const
 
 	CColorMap::InitStatic();
 
+	const bool preloadMode = configHandler->GetBool("PreloadModels");
+	S3DModelVAO::Init(preloadMode);
+
 	// these need to be loaded before featureHandler is created
 	// (maps with features have their models loaded at startup)
 	modelLoader.Init();
@@ -80,7 +83,6 @@ void CWorldDrawer::InitPost() const
 		loadscreen->SetLoadMessage("Loading Models");
 
 		const bool preloadMode = configHandler->GetBool("PreloadModels");
-		S3DModelVAO::Init(preloadMode);
 
 		if (preloadMode) {
 			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
