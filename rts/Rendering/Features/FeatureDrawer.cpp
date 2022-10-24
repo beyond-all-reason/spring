@@ -65,6 +65,9 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, uint8_t thisPassMask)
 	if (thisPassMask == DrawFlags::SO_REFRAC_FLAG && !f->HasDrawFlag(DrawFlags::SO_REFRAC_FLAG))
 		return false;
 
+	if (thisPassMask == DrawFlags::SO_OPAQUE_FLAG && !f->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+		return false;
+
 	if (LuaObjectDrawer::AddOpaqueMaterialObject(f, LUAOBJ_FEATURE))
 		return false;
 
@@ -89,6 +92,9 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f, uint8_t thisPassMask)
 		return false;
 
 	if (thisPassMask == DrawFlags::SO_REFRAC_FLAG && !f->HasDrawFlag(DrawFlags::SO_REFRAC_FLAG))
+		return false;
+
+	if (thisPassMask == DrawFlags::SO_ALPHAF_FLAG && !f->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
 		return false;
 
 	if (LuaObjectDrawer::AddAlphaMaterialObject(f, LUAOBJ_FEATURE))

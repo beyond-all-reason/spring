@@ -158,6 +158,9 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, uint8_t thisPassMask)
 	if (thisPassMask == DrawFlags::SO_REFRAC_FLAG && !u->HasDrawFlag(DrawFlags::SO_REFRAC_FLAG))
 		return false;
 
+	if (thisPassMask == DrawFlags::SO_OPAQUE_FLAG && !u->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+		return false;
+
 	if (LuaObjectDrawer::AddOpaqueMaterialObject(u, LUAOBJ_UNIT))
 		return false;
 
@@ -185,6 +188,9 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u, uint8_t thisPassMask)
 		return false;
 
 	if (thisPassMask == DrawFlags::SO_REFRAC_FLAG && !u->HasDrawFlag(DrawFlags::SO_REFRAC_FLAG))
+		return false;
+
+	if (thisPassMask == DrawFlags::SO_ALPHAF_FLAG && !u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
 		return false;
 
 	if (LuaObjectDrawer::AddAlphaMaterialObject(u, LUAOBJ_UNIT))
