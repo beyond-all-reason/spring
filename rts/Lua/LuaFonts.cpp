@@ -320,7 +320,7 @@ int LuaFonts::SubmitBuffered(lua_State* L)
 	CheckDrawingEnabled(L, __func__);
 	auto f = tofont(L, 1);
 
-	if (luaL_optboolean(L, 2, false)) // world or not
+	if (luaL_optboolean(L, 2, true)) // world or not
 		f->DrawBuffered();
 	else
 		f->DrawWorldBuffered();
