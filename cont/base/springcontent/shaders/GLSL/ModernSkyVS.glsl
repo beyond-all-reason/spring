@@ -46,22 +46,19 @@ const vec3 CUBE_VERT[36] = vec3[36](
 	vec3(-1.0f,  1.0f, -1.0f)
 );
 
-const vec3 defSkyDir = vec3(0.0, 0.0, -1.0);
+uniform vec3 midMap;
 
-uniform vec3 skyDir;
-
-out vec3 vPos;
-
-vec3 RotateRodrigues(vec3 v, vec3 axis, float ca, float sa)
-{
-	return v * ca + cross(axis, v) * sa + axis * dot(axis, v) * (1.0f - ca);
-}
+out vec3 dir;
 
 void main()
 {
-	// use RotateRodrigues to shift things around
-	vec3 pos = CUBE_VERT[gl_VertexID];
-	vPos = pos;
+	vec3 camPos = gl_ModelViewMatrixInverse[3].xyz;
+
+	float R = sqrt(16.0 * (midMap.x * midMap.x + midMap.z * midMap.z));
+
+	vec3 pos  = midMap + CUBE_VERT[gl_VertexID] * R;
+
+	dir = pos - camPos.xyz;
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
 	gl_Position = gl_Position.xyww;

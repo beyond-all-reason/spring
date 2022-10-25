@@ -51,7 +51,6 @@ public:
 	float3 skyColor;
 	float3 sunColor;
 	float3 cloudColor;
-	float3 scatterInfo;
 	float4 fogColor;
 
 	float fogStart;

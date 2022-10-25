@@ -102,6 +102,7 @@ void CSkyBox::Draw()
 	skyVAO.Bind();
 	assert(shader->IsValid());
 	shader->Enable();
+
 	shader->SetUniform("planeColor",
 		waterRendering->planeColor.x,
 		waterRendering->planeColor.y,

@@ -5329,9 +5329,6 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 		case hashString("cloudColor"): {
 			data = &sky->cloudColor.x;
 		} break;
-		case hashString("scatterInfo"): {
-			data = &sky->scatterInfo.x;
-		} break;
 		default: {} break;
 	}
 

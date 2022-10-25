@@ -2960,9 +2960,6 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 				case hashString("cloudColor"): {
 					sky->cloudColor = color;
 				} break;
-				case hashString("scatterInfo"): {
-					sky->scatterInfo = color;
-				} break;
 				default: {
 					luaL_error(L, "[%s] unknown array key %s", __func__, key);
 				} break;

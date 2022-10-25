@@ -9,6 +9,7 @@
 #include "Game/Camera.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Map/MapInfo.h"
+#include "Map/ReadMap.h"
 
 CModernSky::CModernSky()
 {
@@ -38,13 +39,15 @@ void CModernSky::Draw()
 
 	// FFP
 	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthFunc(GL_LEQUAL);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	CMatrix44f view = camera->GetViewMatrix();
-	view.SetPos(float3());
+	const CMatrix44f& view = camera->GetViewMatrix();
+	//view.SetPos(float3());
 	glLoadMatrixf(view);
 
 	glMatrixMode(GL_PROJECTION);
@@ -55,17 +58,21 @@ void CModernSky::Draw()
 	//assert(skyShader->IsValid());
 	skyShader->Enable();
 
+	const float3 midMap{ static_cast<float>(SQUARE_SIZE * mapDims.mapx >> 1), 0.0f, static_cast<float>(SQUARE_SIZE * mapDims.mapy >> 1) };
+	skyShader->SetUniform("midMap", midMap.x, midMap.y, midMap.z);
+
 	const float4& sunDir = skyLight->GetLightDir();
 	skyShader->SetUniform("sunDir", sunDir.x, sunDir.y, sunDir.z);
-
-	const float3& skyDir = mapInfo->atmosphere.skyDir;
-	skyShader->SetUniform("skyDir", skyDir.x, skyDir.y, skyDir.z);
 
 	const float3& cloudColor = mapInfo->atmosphere.cloudColor;
 	skyShader->SetUniform("cloudInfo", cloudColor.x, cloudColor.y, cloudColor.z, mapInfo->atmosphere.cloudDensity);
 
-	const float3& scatterInfo = mapInfo->atmosphere.scatterInfo;
-	skyShader->SetUniform("scatterInfo", scatterInfo.x, scatterInfo.y, scatterInfo.z);
+	const float3& skyColor = mapInfo->atmosphere.skyColor;
+	skyShader->SetUniform("skyColor", skyColor.x, skyColor.y, skyColor.z);
+
+	const float3& fogColor = mapInfo->atmosphere.fogColor;
+	skyShader->SetUniform("fogColor", fogColor.x, fogColor.y, fogColor.z);
+
 	skyShader->SetUniform("planeColor",
 		waterRendering->planeColor.x,
 		waterRendering->planeColor.y,

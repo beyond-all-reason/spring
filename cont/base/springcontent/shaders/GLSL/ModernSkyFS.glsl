@@ -1,29 +1,17 @@
 #version 130
 
-in vec3 vPos;
+in vec3 dir;
 
-uniform float time    = 0.0;
+uniform float time;
 
-uniform vec4 cloudInfo = vec4(1.0, 1.0, 1.0, 0.5);
+uniform vec4 cloudInfo;
+uniform vec3 skyColor;
+uniform vec3 fogColor;
 uniform vec4 planeColor; // .w signals if enabled
-uniform vec3 scatterInfo = vec3(0.0020, 0.0009, 0.9200);
 uniform vec3 sunDir;
 
 const float cirrus1  = 0.8;
-const float cumulus1 = 1.6;
-
-
-#define Br (scatterInfo.x)
-#define Bm (scatterInfo.y)
-#define g  (scatterInfo.z)
-
-/*
-const float Br = 0.0320; // Rayleigh coefficient
-const float Bm = 0.0005; // Mie coefficient
-const float g =  0.9200; // Mie scattering direction. Should be ALMOST 1.0f
-*/
-
-const vec3 nitrogen = vec3(0.650, 0.570, 0.475);
+const float cumulus1 = 1.8;
 
 out vec4 fragColor;
 
@@ -68,27 +56,29 @@ float fbm(vec3 p)
 	return f;
 }
 
+float csstep(float m0, float m1, float n0, float n1, float v)
+{
+	return smoothstep(m0, m1, v) * (1.0 - smoothstep(n0, n1, v));
+}
+
 void main()
 {
-	vec3 pos = normalize(vPos);
-	pos.y = max(pos.y, -0.3);
+	vec3 pos = normalize(dir);
 
 	float cirrus  = cloudInfo.w * cirrus1;
 	float cumulus = cloudInfo.w * cumulus1;
 
-	vec3 Kr = Br / pow(nitrogen, vec3(4.0));
-	vec3 Km = Bm / pow(nitrogen, vec3(0.84));
-
-	// Atmosphere Scattering
-	float mu = dot(normalize(vPos), normalize(sunDir));
-	float rayleigh = 3.0 / (8.0 * 3.14) * (1.0 + mu * mu);
-	vec3 mie = (Kr + Km * (1.0 - g * g) / (2.0 + g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5)) / (Br + Bm);
-
-	vec3 day_extinction = exp(-exp(-((pos.y + sunDir.y * 4.0) * (exp(-pos.y * 16.0) + 0.1) / 80.0) / Br) * (exp(-pos.y * 16.0) + 0.1) * Kr / Br) * exp(-pos.y * exp(-pos.y * 8.0 ) * 4.0) * exp(-pos.y * 2.0) * 4.0;
-	vec3 night_extinction = vec3(1.0 - exp(sunDir.y)) * 0.2;
-	vec3 extinction = mix(day_extinction, night_extinction, -sunDir.y * 0.2 + 0.5);
 	const vec3 sunColor = vec3(0.992, 0.985, 0.827);
-	fragColor.rgb = rayleigh * mie * extinction * sunColor;
+	float sunContrib = pow(max(0.0, dot(pos, normalize(sunDir))), 64.0);
+
+	float wpContrib = (1.0 - smoothstep(-0.5, -0.2, pos.y)) * planeColor.w;
+	fragColor.rgb = mix(skyColor, planeColor.rgb, wpContrib);
+	fragColor.rgb = mix(fragColor.rgb, sunColor * 1.3, sunContrib);
+
+
+    vec3 day_extinction = vec3(1.0);
+    vec3 night_extinction = vec3(1.0 - exp(sunDir.y)) * 0.2;
+    vec3 extinction = mix(day_extinction, night_extinction, -sunDir.y * 0.2 + 0.5);
 
 	// Cirrus Clouds
 	float density = smoothstep(1.0 - cirrus, 1.0, fbm(pos.xyz / pos.y * 2.0 + time * 0.05)) * 0.3;
@@ -97,14 +87,11 @@ void main()
 	// Cumulus Clouds
 	for (int i = 0; i < 2; i++)
 	{
-		float density = smoothstep(1.0 - cumulus, 1.0, fbm((0.7 + float(i) * 0.01) * pos.xyz / pos.y + time * 0.3));
+		//vec3 cpos = pos; cpos.y = smoothstep(-0.5, 1.5, pos.y); cpos.xz /= cpos.y; cpos *= 2.0;
+		vec3 cpos = pos; cpos.y = smoothstep(-0.5, 1.5, pos.y); cpos.xz /= cpos.y;
+		float density = smoothstep(1.0 - cumulus, 1.0, fbm((0.7 + float(i) * 0.01) * cpos + time * 0.3));
 		fragColor.rgb = mix(fragColor.rgb, cloudInfo.rgb * extinction * density * 5.0, min(density, 1.0) * (max(pos.y, 0.0)));
 	}
 
-
-	fragColor.rgb = pow(1.0 - exp(-1.3 * fragColor.rgb), vec3(1.3));
-
-	//fragColor = mix(fragColor, vec4(planeColor.rgb, 1.0), smoothstep(0.0, 0.8, -pos.y) * planeColor.w);
-
-	fragColor = mix(vec4(planeColor.rgb, 1.0), fragColor, smoothstep(-0.7, 0.0, pos.y) * planeColor.w);
+	fragColor.a = (0.5 - csstep(-0.8, -0.0, -0.5, 0.3, pos.y));
 }
