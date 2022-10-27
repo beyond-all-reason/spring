@@ -44,6 +44,7 @@ private:
 	float curDist; // current zoom-out distance
 	float maxDist; // maximum zoom-out distance
 	float oldDist;
+	float moveFastMult;
 
 	bool zoomBack;
 	bool cursorZoomIn;

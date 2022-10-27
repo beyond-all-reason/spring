@@ -22,6 +22,7 @@ CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("W
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
+CONFIG(float, CameraMoveFastMult).defaultValue(3.0f).minimumValue(1.0f).description("The multiplier applied to speed when camera is in movefast state.");
 
 
 CSpringController::CSpringController()
@@ -32,6 +33,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 	, cursorZoomIn(configHandler->GetBool("CamSpringZoomInToMousePos"))
 	, cursorZoomOut(configHandler->GetBool("CamSpringZoomOutFromMousePos"))
+	, moveFastMult(configHandler->GetFloat("CameraMoveFastMult"))
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
 }
@@ -66,7 +68,7 @@ void CSpringController::MouseMove(float3 move)
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 
 	move *= 0.005f;
-	move *= (1 + moveFast * 3);
+	move *= (1 + moveFast * 3); // See on siin juba muutunud, aga *3 on ikkagi HARD-CODED
 	move.y = -move.y;
 	move.z = 1.0f;
 
@@ -83,7 +85,7 @@ void CSpringController::ScreenEdgeMove(float3 move)
 
 	if (doRotate && aboveMin && belowMax) {
 		// rotate camera when mouse touches top screen borders
-		move *= (1 + moveFast * 3);
+		move *= (1 + moveFast * moveFastMult);
 		MoveAzimuth(move.x * 0.75f);
 		move.x = 0.0f;
 	}
@@ -96,7 +98,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 {
 	const bool moveFast    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed = (moveFast ? 2.0f : 1.0f);
+	const float shiftSpeed = (moveFast ? moveFastMult : 1.0f);
 	const float scaledMove = 1.0f + (move * shiftSpeed * 0.007f);
 	const float curDistPre = curDist;
 

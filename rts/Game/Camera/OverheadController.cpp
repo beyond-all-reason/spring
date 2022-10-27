@@ -21,6 +21,7 @@ CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
 CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("float multiplier for maximum overhead camera height");
+CONFIG(float, CameraMoveFastMult).defaultValue(3.0f).minimumValue(1.0f).description("The multiplier applied to speed when camera is in movefast state.");
 
 static const float angleStep = math::HALFPI / 14.0f;
 
@@ -35,6 +36,7 @@ COverheadController::COverheadController()
 
 	, maxHeight(10000.0f)
 	, angle(DEFAULT_ANGLE)
+	, moveFastMult(configHandler->GetFloat("CameraMoveFastMult"))
 {
 	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor"});
 	ConfigUpdate();
@@ -89,8 +91,8 @@ void COverheadController::MouseMove(float3 move)
 
 	// ignore middleClickScrollSpeed sign in locked MMB-scroll mode
 	move = mix(move, move * Sign(middleClickScrollSpeed), mouse->locked) * middleClickScrollSpeed * 100.0f;
-	pos.x += (move.x * pixelSize * (1 + moveFast * 3) * scrollSpeed);
-	pos.z += (move.y * pixelSize * (1 + moveFast * 3) * scrollSpeed);
+	pos.x += (move.x * pixelSize * (1 + moveFast * moveFastMult) * scrollSpeed);
+	pos.z += (move.y * pixelSize * (1 + moveFast * moveFastMult) * scrollSpeed);
 
 	Update();
 }
@@ -110,7 +112,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 	const bool moveFast     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed  = (moveFast ? 3.0f : 1.0f);
+	const float shiftSpeed  = (moveFast ? moveFastMult : 1.0f);
 	const float altZoomDist = height * move * 0.007f * shiftSpeed;
 
 	// tilt the camera if LCTRL is pressed
