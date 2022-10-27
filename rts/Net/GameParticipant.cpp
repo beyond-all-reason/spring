@@ -41,19 +41,23 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 {
 	bool disconnected = true;
 
-	if (clientLink != nullptr && myState != GameParticipant::State::DISCONNECTING) {
-		clientLink->SendData(CBaseNetProtocol::Get().SendQuit(reason));
+	if (clientLink != nullptr) {
+		if (myState != GameParticipant::State::DISCONNECTING) {
+			clientLink->SendData(CBaseNetProtocol::Get().SendQuit(reason));
 
-		if (flush) {
-			/* delay to make sure the Flush() performed by Close()
-			 * has an effect (forced flushes are undesirable) */
-			disconnectDelay = spring_gettime() + spring_time(1000);
-			disconnected = false;
-			LOG("%s: client disconnecting...", __func__);
-		} else {
-			clientLink->Close(false);
-			clientLink.reset();
+			if (flush) {
+				/* delay to make sure the Flush() performed by Close()
+				* has an effect (forced flushes are undesirable) */
+				disconnectDelay = spring_gettime() + spring_time(1000);
+				disconnected = false;
+				LOG("%s: client disconnecting...", __func__);
+			} else {
+				clientLink->Close(false);
+				clientLink.reset();
+			}
 		}
+		else
+			disconnected = false;
 	}
 
 	aiClientLinks[MAX_AIS].link.reset();
