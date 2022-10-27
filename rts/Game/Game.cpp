@@ -685,6 +685,7 @@ void CGame::LoadInterface()
 	cmdColors.LoadConfigFromFile("cmdcolors.txt");
 
 	keyBindings.Init();
+	keyBindings.LoadDefaults();
 	keyBindings.Load("uikeys.txt");
 
 	{

@@ -36,6 +36,7 @@ class CKeyBindings : public CommandReceiver
 		bool Load(const std::string& filename);
 		bool Save(const std::string& filename) const;
 		void Print() const;
+		void LoadDefaults();
 
 		ActionList GetActionList() const;
 		ActionList GetActionList(int keyCode, int scanCode) const;
@@ -54,7 +55,6 @@ class CKeyBindings : public CommandReceiver
 		int GetKeyChainTimeout() const { return keyChainTimeout; }
 
 	protected:
-		void LoadDefaults();
 		void BuildHotkeyMap();
 		void DebugActionList(const ActionList& actionList) const;
 
@@ -78,6 +78,7 @@ class CKeyBindings : public CommandReceiver
 		KeyMap codeBindings;
 		KeyMap scanBindings;
 		ActionMap hotkeys;
+		std::vector<std::string> loadStack;
 		int bindingsCount;
 
 		// commands that use both Up and Down key presses
