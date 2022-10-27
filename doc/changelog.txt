@@ -93,6 +93,15 @@ Sim:
  - Multi-threaded GroundMoveType heading and accelaration planning
  - GroundMoveType checks whether waypoints have changed before updating synced waypoint vars.
    This avoids unnecessary expensive checksum updates.
+ - Resurrecting units no longer overrides their health to 5%. To get back the old behaviour:
+ 
+   ```
+   function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
+     if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
+       Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
+     end
+   end
+   ```
 
 System:
  - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
