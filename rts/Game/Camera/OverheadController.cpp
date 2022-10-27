@@ -38,7 +38,7 @@ COverheadController::COverheadController()
 	, angle(DEFAULT_ANGLE)
 	, moveFastMult(configHandler->GetFloat("CameraMoveFastMult"))
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor"});
+	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor", "CameraMoveFastMult"});
 	ConfigUpdate();
 }
 
@@ -55,6 +55,7 @@ void COverheadController::ConfigUpdate()
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
+	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 }
 
 void COverheadController::ConfigNotify(const std::string & key, const std::string & value)

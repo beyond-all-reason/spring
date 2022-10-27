@@ -31,11 +31,30 @@ CSpringController::CSpringController()
 	, maxDist(std::max(mapDims.mapx, mapDims.mapy) * SQUARE_SIZE * 1.333f)
 	, oldDist(0.0f)
 	, zoomBack(false)
-	, cursorZoomIn(configHandler->GetBool("CamSpringZoomInToMousePos"))
-	, cursorZoomOut(configHandler->GetBool("CamSpringZoomOutFromMousePos"))
-	, moveFastMult(configHandler->GetFloat("CameraMoveFastMult"))
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CameraMoveFastMult"});
+	ConfigUpdate();
+}
+
+CSpringController::~CSpringController()
+{
+	configHandler->RemoveObserver(this);
+}
+
+
+void CSpringController::ConfigUpdate()
+{
+	scrollSpeed = configHandler->GetFloat("CamSpringScrollSpeed") * 0.1f;
+	fov = configHandler->GetFloat("CamSpringFOV");
+	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
+	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
+	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
+}
+
+void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
 }
 
 
