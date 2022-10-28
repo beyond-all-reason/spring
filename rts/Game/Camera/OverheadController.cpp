@@ -21,7 +21,6 @@ CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
 CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("float multiplier for maximum overhead camera height");
-CONFIG(float, CameraMoveFastMult).defaultValue(3.0f).minimumValue(1.0f).description("The multiplier applied to speed when camera is in movefast state.");
 
 static const float angleStep = math::HALFPI / 14.0f;
 
@@ -36,9 +35,8 @@ COverheadController::COverheadController()
 
 	, maxHeight(10000.0f)
 	, angle(DEFAULT_ANGLE)
-	, moveFastMult(configHandler->GetFloat("CameraMoveFastMult"))
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor", "CameraMoveFastMult"});
+	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor"});
 	ConfigUpdate();
 }
 
@@ -49,13 +47,13 @@ COverheadController::~COverheadController()
 
 void COverheadController::ConfigUpdate()
 {
+	CCameraController::ConfigUpdate();
 	middleClickScrollSpeed = configHandler->GetFloat("MiddleClickScrollSpeed");
 	scrollSpeed = configHandler->GetInt("OverheadScrollSpeed") * 0.1f;
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
-	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 }
 
 void COverheadController::ConfigNotify(const std::string & key, const std::string & value)

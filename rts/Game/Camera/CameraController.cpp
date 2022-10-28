@@ -9,6 +9,10 @@
 
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
+CONFIG(float, CameraMoveFastMult)
+	.defaultValue(3.0f)
+	.minimumValue(1.0f)
+	.description("The multiplier applied to speed when camera is in movefast state.");
 
 
 CCameraController::CCameraController()
@@ -25,8 +29,25 @@ CCameraController::CCameraController()
 
 	pos = float3(mapDims.mapx * 0.5f * SQUARE_SIZE, 1000.0f, mapDims.mapy * 0.5f * SQUARE_SIZE); // center map
 	dir = FwdVector;
+
+	configHandler->NotifyOnChange(this, {"CameraMoveFastMult"});
 }
 
+CCameraController::~CCameraController()
+{
+	configHandler->RemoveObserver(this);
+}
+
+
+void CCameraController::ConfigUpdate()
+{
+	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
+}
+
+void CCameraController::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
+}
 
 float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir()); }
 

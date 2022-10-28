@@ -22,7 +22,6 @@ CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("W
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
-CONFIG(float, CameraMoveFastMult).defaultValue(3.0f).minimumValue(1.0f).description("The multiplier applied to speed when camera is in movefast state.");
 
 
 CSpringController::CSpringController()
@@ -33,7 +32,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CameraMoveFastMult"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos"});
 	ConfigUpdate();
 }
 
@@ -45,11 +44,11 @@ CSpringController::~CSpringController()
 
 void CSpringController::ConfigUpdate()
 {
+	CCameraController::ConfigUpdate();
 	scrollSpeed = configHandler->GetFloat("CamSpringScrollSpeed") * 0.1f;
 	fov = configHandler->GetFloat("CamSpringFOV");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
 	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
-	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
@@ -87,7 +86,7 @@ void CSpringController::MouseMove(float3 move)
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 
 	move *= 0.005f;
-	move *= (1 + moveFast * 3); // See on siin juba muutunud, aga *3 on ikkagi HARD-CODED
+	move *= (1 + moveFast * moveFastMult);
 	move.y = -move.y;
 	move.z = 1.0f;
 

@@ -46,7 +46,6 @@ private:
 	float maxHeight;
 	float tiltSpeed;
 	float angle;
-	float moveFastMult;
 
 	static constexpr float DEFAULT_ANGLE = 0.464f;
 };
