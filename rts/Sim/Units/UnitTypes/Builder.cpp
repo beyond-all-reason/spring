@@ -437,9 +437,6 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 		resurrectee->SetSoloBuilder(this, resurrecteeDef);
 		resurrectee->SetHeading(curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false, 0.0f);
 
-		// TODO: make configurable if this should happen
-		resurrectee->health *= 0.05f;
-
 		for (const int resurrecterID: cai->resurrecters) {
 			CBuilder* resurrecter = static_cast<CBuilder*>(unitHandler.GetUnit(resurrecterID));
 			CCommandAI* resurrecterCAI = resurrecter->commandAI;
