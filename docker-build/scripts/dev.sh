@@ -8,11 +8,11 @@ set -a
 . /scripts/00_setup.sh
 set +a
 
-/scripts/01_clone.sh
+. /scripts/01_clone.sh
 
 ERROR=$?
 if [ $? -eq 0 ]; then
-    /scripts/02_configure.sh
+    . /scripts/02_configure.sh
     ERROR=$?
 fi
 
