@@ -1505,6 +1505,11 @@ bool CGlobalRendering::SetWindowMinMaximized(bool maximize) const
 	return (SDL_GetWindowFlags(sdlWindows[0]) & mmFlags[maximize]) != 0;
 }
 
+bool CGlobalRendering::RestoreWindow() {
+	SDL_RestoreWindow(sdlWindows[0]);
+	return true;
+}
+
 /**
  * @brief multisample verify
  * @return whether verification passed

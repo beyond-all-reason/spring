@@ -195,6 +195,7 @@ class LuaUnsyncedCtrl {
 		static int SetWindowGeometry(lua_State* L);
 		static int SetWindowMinimized(lua_State* L);
 		static int SetWindowMaximized(lua_State* L);
+		static int RestoreWindow(lua_State* L);
 };
 
 #endif /* LUA_UNSYNCED_CTRL_H */
