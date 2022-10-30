@@ -28,6 +28,8 @@ void GameParticipant::SendData(std::shared_ptr<const netcode::RawPacket> packet)
 
 void GameParticipant::Connected(std::shared_ptr<netcode::CConnection> _link, bool local)
 {
+	CloseConnection(false);
+
 	clientLink = _link;
 	aiClientLinks[MAX_AIS].link.reset(new netcode::CLoopbackConnection());
 

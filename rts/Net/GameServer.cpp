@@ -2971,11 +2971,14 @@ unsigned CGameServer::BindConnection(
 		clientLink->SendData(CBaseNetProtocol::Get().SendCreateNewPlayer(newPlayerNumber, newPlayer.spectator, newPlayer.team, newPlayer.name));
 
 	// there is an open link -> reconnect
-	if (newPlayer.clientLink != nullptr && newPlayer.myState != GameParticipant::State::DISCONNECTING) {
+	if (newPlayer.clientLink != nullptr) {
 		newPlayer.clientLink->ReconnectTo(*clientLink);
 
 		if (udpListener != nullptr)
 			udpListener->UpdateConnections();
+
+		if (newPlayer.myState == GameParticipant::State::DISCONNECTING)
+			newPlayer.myState = GameParticipant::State::CONNECTED;
 
 		Message(spring::format(" -> Connection reestablished (id %i)", newPlayerNumber));
 		newPlayer.clientLink->SetLossFactor(netloss);
