@@ -853,7 +853,7 @@ void CGameServer::Update()
 		bool hasPlayers = false;
 
 		for (const GameParticipant& p: players) {
-			if ((hasPlayers |= (p.clientLink != nullptr && p.myState != GameParticipant::State::DISCONNECTING)))
+			if (hasPlayers |= (p.clientLink != nullptr))
 				break;
 		}
 
