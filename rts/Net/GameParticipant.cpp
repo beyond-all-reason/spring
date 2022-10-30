@@ -15,8 +15,7 @@ GameParticipant::GameParticipant()
 GameParticipant::~GameParticipant()
 {
 	if (myState == DISCONNECTING) {
-		clientLink->Close(true);
-		clientLink.reset();
+		CloseConnection(true);
 		myState = DISCONNECTED;
 	}
 }
@@ -51,10 +50,8 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 				disconnectDelay = spring_gettime() + spring_time(1000);
 				disconnected = false;
 				LOG("%s: client disconnecting...", __func__);
-			} else {
-				clientLink->Close(false);
-				clientLink.reset();
-			}
+			} else
+				CloseConnection(false);
 		}
 		else
 			disconnected = false;
@@ -71,11 +68,16 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 void GameParticipant::CheckForExpiredConnection() {
 	if (myState == DISCONNECTING) {
 		if (spring_gettime() >= disconnectDelay) {
-			clientLink->Close(true);
-			clientLink.reset();
-
+			CloseConnection(true);
 			myState = DISCONNECTED;
 			LOG("%s: client disconnected after delay", __func__);
 		}
+	}
+}
+
+void GameParticipant::CloseConnection(bool flush) {
+	if (clientLink != nullptr) {
+		clientLink->Close(flush);
+		clientLink.reset();
 	}
 }
