@@ -1510,6 +1510,11 @@ bool CGlobalRendering::RestoreWindow() {
 	return true;
 }
 
+bool CGlobalRendering::RaiseWindow() {
+	SDL_RaiseWindow(sdlWindows[0]);
+	return true;
+}
+
 /**
  * @brief multisample verify
  * @return whether verification passed

@@ -210,6 +210,7 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowMinimized);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowMaximized);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, RestoreWindow);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, RaiseWindow);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetLogSectionFilterLevel);
 

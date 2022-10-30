@@ -61,6 +61,7 @@ extern DECLSPEC void SDLCALL SDL_DestroyWindow(SDL_Window * window) {}
 extern DECLSPEC void SDLCALL SDL_MinimizeWindow(SDL_Window * window) {}
 extern DECLSPEC void SDLCALL SDL_MaximizeWindow(SDL_Window * window) {}
 extern DECLSPEC void SDLCALL SDL_RestoreWindow(SDL_Window * window) {}
+extern DECLSPEC void SDLCALL SDL_RaiseWindow(SDL_Window * window) {}
 
 extern DECLSPEC int SDLCALL SDL_GL_MakeCurrent(SDL_Window * window, SDL_GLContext context){
 	return 0;

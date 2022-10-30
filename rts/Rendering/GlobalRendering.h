@@ -83,6 +83,7 @@ public:
 	bool SetWindowMaximized() const { return SetWindowMinMaximized(true ); };
 	bool SetWindowMinimized() const { return SetWindowMinMaximized(false); };
 	bool RestoreWindow();
+	bool RaiseWindow();
 
 	void SetFullScreen(bool cliWindowed, bool cliFullScreen);
 	void SetDualScreenParams();

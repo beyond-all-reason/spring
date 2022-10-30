@@ -295,6 +295,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetWindowMinimized);
 	REGISTER_LUA_CFUNC(SetWindowMaximized);
 	REGISTER_LUA_CFUNC(RestoreWindow);
+	REGISTER_LUA_CFUNC(RaiseWindow);
 
 	return true;
 }
@@ -3403,6 +3404,12 @@ int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 int LuaUnsyncedCtrl::RestoreWindow(lua_State* L)
 {
 	lua_pushboolean(L, globalRendering->RestoreWindow());
+	return 1;
+}
+
+int LuaUnsyncedCtrl::RaiseWindow(lua_State* L)
+{
+	lua_pushboolean(L, globalRendering->RaiseWindow());
 	return 1;
 }
 
