@@ -88,9 +88,7 @@ void CSkyBox::Draw()
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	CMatrix44f view = camera->GetViewMatrix();
-	view.SetPos(float3());
-	glLoadMatrixf(view);
+	glLoadMatrixf(camera->GetViewMatrix());
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
