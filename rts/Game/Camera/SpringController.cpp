@@ -22,6 +22,7 @@ CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("W
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
+CONFIG(float, CamSpringFastScale).defaultValue(2.0f / 3.0f).description("Scaling for CameraMoveFastMult in spring camera mode.");
 
 
 CSpringController::CSpringController()
@@ -32,7 +33,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScale"});
 	ConfigUpdate();
 }
 
@@ -49,6 +50,7 @@ void CSpringController::ConfigUpdate()
 	fov = configHandler->GetFloat("CamSpringFOV");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
 	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
+	springFastScale = configHandler->GetFloat("CamSpringFastScale");
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
@@ -116,7 +118,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 {
 	const bool moveFast    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed = (moveFast ? moveFastMult : 1.0f);
+	const float shiftSpeed = (moveFast ? moveFastMult * springFastScale : 1.0f);
 	const float scaledMove = 1.0f + (move * shiftSpeed * 0.007f);
 	const float curDistPre = curDist;
 
