@@ -79,6 +79,7 @@ void GameParticipant::CheckForExpiredConnection() {
 
 void GameParticipant::CloseConnection(bool flush) {
 	if (clientLink != nullptr) {
+		LOG("%s: client connection closed", __func__);
 		clientLink->Close(flush);
 		clientLink.reset();
 	}
