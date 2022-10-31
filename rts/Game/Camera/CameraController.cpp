@@ -9,11 +9,6 @@
 
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
-CONFIG(float, CameraMoveFastMult)
-	.defaultValue(3.0f)
-	.minimumValue(1.0f)
-	.description("The multiplier applied to speed when camera is in movefast state.");
-
 
 CCameraController::CCameraController()
 {

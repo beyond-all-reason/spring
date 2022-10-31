@@ -22,6 +22,17 @@ CONFIG(float, EdgeMoveWidth)
 CONFIG(bool, EdgeMoveDynamic)
 	.defaultValue(true)
 	.description("If EdgeMove scrolling speed should fade with edge distance.");
+CONFIG(float, CameraMoveFastMult)
+	.defaultValue(3.0f)
+	.minimumValue(1.0f)
+	.description("The multiplier applied to speed when camera is in movefast state.");
+CONFIG(float, CameraMoveSlowMult)
+	.defaultValue(0.1f)
+	.maximumValue(1.0f)
+	.description("The multiplier applied to speed when camera is in moveslow state.");
+CONFIG(float, CameraFastScale)
+	.defaultValue(10.0f / 3.0f)
+	.description("Scaling for CameraMoveFastMult.");
 
 
 CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
@@ -655,8 +666,8 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	
 	float camMoveSpeed = 1.0f;
 
-	camMoveSpeed *= (1.0f - movState[MOVE_STATE_SLW] * 0.9f);
-	camMoveSpeed *= (1.0f + movState[MOVE_STATE_FST] * 9.0f);
+	camMoveSpeed *= movState[MOVE_STATE_SLW] ? configHandler->GetFloat("CameraMoveSlowMult") : 1.0f;
+	camMoveSpeed *= movState[MOVE_STATE_FST] ? configHandler->GetFloat("CameraMoveFastMult") * configHandler->GetFloat("CameraFastScale") : 1.0f;
 
 	float3 v = FwdVector * camMoveSpeed;
 
