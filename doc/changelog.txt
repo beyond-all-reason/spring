@@ -45,6 +45,9 @@ Lua:
    since the last sim frame.
  - Added Spring.KeyMapChanged callin for when the user switches keyboard
    layouts, for example switching input method language.
+ - Added Spring.GetTeamAllyTeamID(), returns the team's allyTeamID.
+   Same as the 4th arg from GetTeamInfo, just more idiomatic.
+ - Added Spring.GetProjectileAllyTeamID(), ditto.
 
 Maps:
  - New bumpwater params, most of these were just hard-coded values:
