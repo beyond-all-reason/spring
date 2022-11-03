@@ -139,6 +139,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetAIInfo);
 
 	REGISTER_LUA_CFUNC(GetTeamInfo);
+	REGISTER_LUA_CFUNC(GetTeamAllyTeamID);
 	REGISTER_LUA_CFUNC(GetTeamResources);
 	REGISTER_LUA_CFUNC(GetTeamUnitStats);
 	REGISTER_LUA_CFUNC(GetTeamResourceStats);
@@ -300,6 +301,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileTimeToLive);
 	REGISTER_LUA_CFUNC(GetProjectileOwnerID);
 	REGISTER_LUA_CFUNC(GetProjectileTeamID);
+	REGISTER_LUA_CFUNC(GetProjectileAllyTeamID);
 	REGISTER_LUA_CFUNC(GetProjectileType);
 	REGISTER_LUA_CFUNC(GetProjectileDefID);
 	REGISTER_LUA_CFUNC(GetProjectileName);
@@ -1137,6 +1139,19 @@ int LuaSyncedRead::GetTeamInfo(lua_State* L)
 	return 7 + getTeamOpts;
 }
 
+int LuaSyncedRead::GetTeamAllyTeamID(lua_State* L)
+{
+	const int teamID = luaL_checkint(L, 1);
+	if (!teamHandler.IsValidTeam(teamID))
+		return 0;
+
+	const CTeam* const team = teamHandler.Team(teamID);
+	if (team == nullptr)
+		return 0;
+
+	lua_pushnumber(L, teamHandler.AllyTeam(team->teamNum));
+	return 1;
+}
 
 int LuaSyncedRead::GetTeamResources(lua_State* L)
 {
@@ -5030,6 +5045,20 @@ int LuaSyncedRead::GetProjectileTeamID(lua_State* L)
 		return 0;
 
 	lua_pushnumber(L, pro->GetTeamID());
+	return 1;
+}
+
+int LuaSyncedRead::GetProjectileAllyTeamID(lua_State* L)
+{
+	const CProjectile* const pro = ParseProjectile(L, __func__, 1);
+	if (pro == nullptr)
+		return 0;
+
+	const auto allyTeamID = pro->GetAllyteamID();
+	if (!teamHandler.IsValidAllyTeam(allyTeamID))
+		return 0;
+
+	lua_pushnumber(L, allyTeamID);
 	return 1;
 }
 
