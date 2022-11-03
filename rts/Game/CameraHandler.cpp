@@ -85,6 +85,7 @@ void CCameraHandler::InitStatic() {
 		cameras[i].SetCamType(i);
 		cameras[i].SetProjType((i == CCamera::CAMTYPE_SHADOW)? CCamera::PROJTYPE_ORTHO: CCamera::PROJTYPE_PERSP);
 		cameras[i].SetClipCtrlMatrix(CMatrix44f::ClipControl(globalRendering->supportClipSpaceControl));
+	    cameras[i].InitConfigNotify();
 	}
 
 	SetActiveCamera(CCamera::CAMTYPE_PLAYER);
@@ -93,6 +94,9 @@ void CCameraHandler::InitStatic() {
 }
 
 void CCameraHandler::KillStatic() {
+	for (unsigned int i = CCamera::CAMTYPE_PLAYER; i < CCamera::CAMTYPE_COUNT; i++) {
+	    cameras[i].RemoveConfigNotify();
+	}
 	spring::SafeDestruct(camHandler);
 	std::memset(camHandlerMem, 0, sizeof(camHandlerMem));
 }

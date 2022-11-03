@@ -52,6 +52,28 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 	UpdateFrustum();
 }
 
+void CCamera::InitConfigNotify(){
+	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CameraFastScale"});
+	ConfigUpdate();
+}
+
+void CCamera::RemoveConfigNotify(){
+	configHandler->RemoveObserver(this);
+}
+
+
+void CCamera::ConfigUpdate()
+{
+	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
+	moveSlowMult = configHandler->GetFloat("CameraMoveSlowMult");
+	moveFastScale = configHandler->GetFloat("CameraFastScale");
+}
+
+void CCamera::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
+}
+
 
 CCamera* CCamera::GetActive()
 {
@@ -666,8 +688,8 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	
 	float camMoveSpeed = 1.0f;
 
-	camMoveSpeed *= movState[MOVE_STATE_SLW] ? configHandler->GetFloat("CameraMoveSlowMult") : 1.0f;
-	camMoveSpeed *= movState[MOVE_STATE_FST] ? configHandler->GetFloat("CameraMoveFastMult") * configHandler->GetFloat("CameraFastScale") : 1.0f;
+	camMoveSpeed *= movState[MOVE_STATE_SLW] ? moveSlowMult : 1.0f;
+	camMoveSpeed *= movState[MOVE_STATE_FST] ? moveFastMult * moveFastScale : 1.0f;
 
 	float3 v = FwdVector * camMoveSpeed;
 

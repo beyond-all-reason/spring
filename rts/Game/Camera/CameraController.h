@@ -89,7 +89,7 @@ public:
 
 public:
 	CCameraController();
-	virtual ~CCameraController();
+	virtual ~CCameraController() {}
 
 	virtual const std::string GetName() const = 0;
 
@@ -118,9 +118,6 @@ public:
 	virtual void GetState(StateMap& sm) const;
 	virtual bool SetState(const StateMap& sm);
 	virtual void SetTrackingInfo(const float3& pos, float radius) { SetPos(pos); }
-
-	virtual void ConfigNotify(const std::string& key, const std::string& value);
-	virtual void ConfigUpdate();
 
 	/**
 	 * Whether the camera's distance to the ground or to the units
@@ -157,12 +154,6 @@ protected:
 	 * * 0.0 = 90 degree = first person
 	 */
 	float switchVal;
-
-	/**
-	* @brief moveFastMult
-	* scales move and zoom speed
-	*/
-	float moveFastMult;
 
 	float pixelSize;
 };

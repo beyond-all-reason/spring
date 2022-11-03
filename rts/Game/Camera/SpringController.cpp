@@ -45,7 +45,6 @@ CSpringController::~CSpringController()
 
 void CSpringController::ConfigUpdate()
 {
-	CCameraController::ConfigUpdate();
 	scrollSpeed = configHandler->GetFloat("CamSpringScrollSpeed") * 0.1f;
 	fov = configHandler->GetFloat("CamSpringFOV");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
@@ -88,7 +87,7 @@ void CSpringController::MouseMove(float3 move)
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 
 	move *= 0.005f;
-	move *= (1 + moveFast * moveFastMult);
+	move *= (1 + moveFast * camera->moveFastMult);
 	move.y = -move.y;
 	move.z = 1.0f;
 
@@ -105,7 +104,7 @@ void CSpringController::ScreenEdgeMove(float3 move)
 
 	if (doRotate && aboveMin && belowMax) {
 		// rotate camera when mouse touches top screen borders
-		move *= (1 + moveFast * moveFastMult);
+		move *= (1 + moveFast * camera->moveFastMult);
 		MoveAzimuth(move.x * 0.75f);
 		move.x = 0.0f;
 	}
@@ -118,7 +117,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 {
 	const bool moveFast    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed = (moveFast ? moveFastMult * springFastScale : 1.0f);
+	const float shiftSpeed = (moveFast ? camera->moveFastMult * springFastScale : 1.0f);
 	const float scaledMove = 1.0f + (move * shiftSpeed * 0.007f);
 	const float curDistPre = curDist;
 

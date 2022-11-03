@@ -47,7 +47,6 @@ COverheadController::~COverheadController()
 
 void COverheadController::ConfigUpdate()
 {
-	CCameraController::ConfigUpdate();
 	middleClickScrollSpeed = configHandler->GetFloat("MiddleClickScrollSpeed");
 	scrollSpeed = configHandler->GetInt("OverheadScrollSpeed") * 0.1f;
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
@@ -90,8 +89,8 @@ void COverheadController::MouseMove(float3 move)
 
 	// ignore middleClickScrollSpeed sign in locked MMB-scroll mode
 	move = mix(move, move * Sign(middleClickScrollSpeed), mouse->locked) * middleClickScrollSpeed * 100.0f;
-	pos.x += (move.x * pixelSize * (1 + moveFast * moveFastMult) * scrollSpeed);
-	pos.z += (move.y * pixelSize * (1 + moveFast * moveFastMult) * scrollSpeed);
+	pos.x += (move.x * pixelSize * (1 + moveFast * camera->moveFastMult) * scrollSpeed);
+	pos.z += (move.y * pixelSize * (1 + moveFast * camera->moveFastMult) * scrollSpeed);
 
 	Update();
 }
@@ -111,7 +110,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 	const bool moveFast     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed  = (moveFast ? moveFastMult : 1.0f);
+	const float shiftSpeed  = (moveFast ? camera->moveFastMult : 1.0f);
 	const float altZoomDist = height * move * 0.007f * shiftSpeed;
 
 	// tilt the camera if LCTRL is pressed
