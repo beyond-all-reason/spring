@@ -16,10 +16,10 @@ namespace Shader {
 class CSkyBox : public ISky
 {
 public:
-	explicit CSkyBox(uint32_t textureID, uint32_t xsize, uint32_t ysize) { Init(textureID, xsize, ysize); }
+	explicit CSkyBox(uint32_t textureID, uint32_t xsize, uint32_t ysize) { Init(textureID, xsize, ysize, false); }
 	explicit CSkyBox(const std::string& texture);
 	~CSkyBox() override;
-	void Init(uint32_t textureID, uint32_t xsize, uint32_t ysize);
+	void Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool convertToCM);
 
 	void Update() override {}
 	void UpdateSunDir() override {}
@@ -27,6 +27,10 @@ public:
 
 	void Draw();
 	void DrawSun() {}
+
+	bool IsValid() const override { return valid; }
+
+	std::string GetName() const override { return "SkyBox"; }
 
 	void SetLuaTexture(const MapTextureData& td) override
 	{
@@ -37,6 +41,7 @@ private:
 	VAO skyVAO; //even though VAO has no attached VBOs, it's still needed to perform rendering
 	Shader::IProgramObject* shader;
 	MapTexture skyTex;
+	bool valid = false;
 };
 
 #endif // SKY_BOX_H

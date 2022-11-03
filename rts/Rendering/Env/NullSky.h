@@ -11,4 +11,8 @@ public:
 
 	void UpdateSunDir() override {}
 	void UpdateSkyTexture() override {}
+
+	bool IsValid() const override { return true; }
+
+	std::string GetName() const override { return "NullSky"; }
 };

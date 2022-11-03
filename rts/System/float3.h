@@ -171,7 +171,7 @@ public:
 	 * When negating the float3, inverts all three
 	 * x/y/z components.
 	 */
-	float3 operator- () const {
+	constexpr float3 operator- () const {
 		return float3(-x, -y, -z);
 	}
 

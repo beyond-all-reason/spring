@@ -2,6 +2,8 @@
 
 out vec3 uvw;
 
+uniform vec3 uvFlip;
+
 // positions
 const vec3 CUBE_VERT[36] = vec3[36](
 	//RIGHT
@@ -51,7 +53,7 @@ const vec3 CUBE_VERT[36] = vec3[36](
 void main()
 {
 	vec3 pos = CUBE_VERT[gl_VertexID];
-	uvw = vec3(pos.x, -pos.y, pos.z); //Figure out the need to flip the sign here
+	uvw = pos * uvFlip; //Figure out the need to flip the sign here
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
 	gl_Position = gl_Position.xyww;
