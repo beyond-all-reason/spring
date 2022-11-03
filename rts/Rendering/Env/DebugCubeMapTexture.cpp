@@ -34,6 +34,8 @@ DebugCubeMapTexture::DebugCubeMapTexture()
 		std::vector<SColor> debugColorVec;
 		debugColorVec.resize(FALLBACK_DIM * FALLBACK_DIM);
 
+		dims = { FALLBACK_DIM, FALLBACK_DIM };
+
 		glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
 		for (GLenum glFace = GL_TEXTURE_CUBE_MAP_POSITIVE_X; glFace <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; ++glFace) {
 			std::fill(debugColorVec.begin(), debugColorVec.end(), debugFaceColors[glFace - GL_TEXTURE_CUBE_MAP_POSITIVE_X]);
@@ -41,6 +43,7 @@ DebugCubeMapTexture::DebugCubeMapTexture()
 		}
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	} else {
+		dims = { btex.xsize, btex.ysize };
 		texId = btex.CreateTexture();
 	}
 
