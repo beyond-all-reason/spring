@@ -806,9 +806,9 @@ void CKeyBindings::PushAction(const Action& action)
 {
 	if (action.command == "keysave") {
 		const std::vector<std::string> args = CSimpleParser::Tokenize(action.extra, 2);
-		const std::string filename = args.empty() ? "uikeys.tmp" : args[0];
+		const std::string filename = args.empty() ? "uikeys.tmp" : args[0]; // tmp, not txt
 
-		if (Save(filename)) {  // tmp, not txt
+		if (Save(filename)) {
 			LOG("Saved active keybindings at %s", filename.c_str());
 		} else {
 			LOG_L(L_WARNING, "Could not save %s", filename.c_str());
