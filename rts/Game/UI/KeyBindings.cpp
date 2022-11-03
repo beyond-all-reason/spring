@@ -852,6 +852,7 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		if (debugEnabled)
 			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
 
+		// Backward-compatibility from before `/keydefaults` existed
 		if (loadStack.empty() && words.size() == 1)
 			LoadDefaults();
 
