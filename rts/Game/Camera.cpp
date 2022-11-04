@@ -57,10 +57,8 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 }
 
 void CCamera::InitConfigNotify(){
-	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CameraFastScale"});
+	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CameraFastScale", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
 	ConfigUpdate();
-	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
-	edgeMoveDynamic = configHandler->GetBool("EdgeMoveDynamic");
 }
 
 void CCamera::RemoveConfigNotify(){
@@ -73,6 +71,9 @@ void CCamera::ConfigUpdate()
 	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 	moveSlowMult = configHandler->GetFloat("CameraMoveSlowMult");
 	moveFastScale = configHandler->GetFloat("CameraFastScale");
+	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
+	edgeMoveDynamic = configHandler->GetBool("EdgeMoveDynamic");
+	edgeMoveWidth = configHandler->GetFloat("EdgeMoveWidth");
 }
 
 void CCamera::ConfigNotify(const std::string & key, const std::string & value)
