@@ -685,7 +685,8 @@ void CGame::LoadInterface()
 	cmdColors.LoadConfigFromFile("cmdcolors.txt");
 
 	keyBindings.Init();
-	keyBindings.Load("uikeys.txt");
+	keyBindings.LoadDefaults();
+	keyBindings.Load();
 
 	{
 		ScopedOnceTimer timer("Game::LoadInterface (Console)");

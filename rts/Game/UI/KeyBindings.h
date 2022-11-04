@@ -30,12 +30,15 @@ class CKeyBindings : public CommandReceiver
 		typedef spring::unsynced_map<std::string, HotkeyList> ActionMap; // action to keyset
 
 	public:
+		static const std::string DEFAULT_FILENAME;
+
 		void Init();
 		void Kill();
 
-		bool Load(const std::string& filename);
+		bool Load(const std::string& filename = DEFAULT_FILENAME);
 		bool Save(const std::string& filename) const;
 		void Print() const;
+		void LoadDefaults();
 
 		ActionList GetActionList() const;
 		ActionList GetActionList(int keyCode, int scanCode) const;
@@ -54,7 +57,6 @@ class CKeyBindings : public CommandReceiver
 		int GetKeyChainTimeout() const { return keyChainTimeout; }
 
 	protected:
-		void LoadDefaults();
 		void BuildHotkeyMap();
 		void DebugActionList(const ActionList& actionList) const;
 
@@ -78,6 +80,7 @@ class CKeyBindings : public CommandReceiver
 		KeyMap codeBindings;
 		KeyMap scanBindings;
 		ActionMap hotkeys;
+		std::vector<std::string> loadStack;
 		int bindingsCount;
 
 		// commands that use both Up and Down key presses

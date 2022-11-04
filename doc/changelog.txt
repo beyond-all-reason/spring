@@ -118,6 +118,8 @@ UI:
    7th argument
  - Allow minimap to receive MouseWheelPress events, controlled by
    MiniMapMouseWheel = [0]|1
+ - Accept keyreload and keyload commands in uikeys, accept arguments for
+   keyload, keyreload and keysave for the filename. Add keydefaults command
  - Add `group unset` action to unassign any groups from selected units
  - Allow drawlabel events inside minimap and add MiniMapCanDraw to enable
    drawing lines via cursor over minimap
