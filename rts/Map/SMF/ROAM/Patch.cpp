@@ -108,16 +108,9 @@ Patch::Patch()
 
 Patch::~Patch()
 {
-	glDeleteLists(triList, 1);
-
-	if (GLEW_ARB_vertex_buffer_object) {
-		glDeleteBuffers(1, &vertexBuffer);
-		glDeleteBuffers(1, &vertexIndexBuffer);
-	}
-
-	triList = 0;
-	vertexBuffer = 0;
-	vertexIndexBuffer = 0;
+	//not really needed
+	vertVBO = {};
+	indxVBO = {};
 }
 
 void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
@@ -127,14 +120,8 @@ void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 
 	smfGroundDrawer = _drawer;
 
-	// create used OpenGL objects
-	triList = glGenLists(1);
-
-	if (GLEW_ARB_vertex_buffer_object) {
-		glGenBuffers(1, &vertexBuffer);
-		glGenBuffers(1, &vertexIndexBuffer);
-	}
-
+	vertVBO = { GL_ARRAY_BUFFER        , false, false };
+	indxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
 
 	vertices.resize(3 * (PATCH_SIZE + 1) * (PATCH_SIZE + 1));
 	unsigned int index = 0;
@@ -205,10 +192,12 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 
 void Patch::VBOUploadVertices()
 {
-	// Upload vertexBuffer
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	vertVBO.Bind();
+	if (vertVBO.GetSize() < vertices.size() * sizeof(float)) {
+		vertVBO.Resize(vertices.size() * sizeof(float), GL_STATIC_DRAW);
+	}
+	vertVBO.SetBufferSubData(vertices);
+	vertVBO.Unbind();
 
 	vboVerticesUploaded = true;
 }
@@ -577,17 +566,17 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 void Patch::Draw() const
 {
 	// enable VBOs
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); // coors
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer); // indices
+	vertVBO.Bind();
+	indxVBO.Bind();
 
-		glEnableClientState(GL_VERTEX_ARRAY);
-			glVertexPointer(3, GL_FLOAT, 0, 0); // last param is offset, not ptr
-			glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
-		glDisableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, 0, nullptr); // last param is offset, not ptr
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+	glDisableClientState(GL_VERTEX_ARRAY);
 
 	// disable VBO mode
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	vertVBO.Unbind();
+	indxVBO.Unbind();
 }
 
 
@@ -691,9 +680,14 @@ void Patch::Upload()
 	if (!vboVerticesUploaded)
 		VBOUploadVertices();
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), &indices[0], GL_STREAM_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	indxVBO.Bind();
+	if (indxVBO.GetSize() < indices.size() * sizeof(uint32_t)) {
+		indxVBO.Resize(indices.size() * sizeof(uint32_t), GL_STREAM_DRAW);
+	}
+	indxVBO.SetBufferSubData(indices);
+	indxVBO.Unbind();
+
 	isChanged = false;
 }
 

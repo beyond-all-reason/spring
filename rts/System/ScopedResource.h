@@ -46,6 +46,7 @@ namespace spring {
 
 		void Reset() {
 			if (!released) d(r);
+			released = true;
 		}
 
 		bool operator==(const MyType& rhs) { return  r == rhs.r; }

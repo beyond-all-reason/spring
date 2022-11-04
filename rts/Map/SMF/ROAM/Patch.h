@@ -4,6 +4,7 @@
 #define PATCH_H
 
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/VBO.h"
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
@@ -98,7 +99,12 @@ public:
 	friend class CPatchInViewChecker;
 
 	Patch();
+	Patch(const Patch&) = delete;
+	Patch(Patch&& rhs) = default;
 	~Patch();
+
+	Patch& operator=(const Patch&) = delete;
+	Patch& operator=(Patch&&) = default;
 
 	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ); //FIXME move this into the ctor
 	void Reset();
@@ -129,13 +135,10 @@ public:
 	void DrawBorder();
 	void SetSquareTexture() const;
 
-public:
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
-
-protected:
+private:
 	void VBOUploadVertices();
 
-private:
 	// recursive functions
 	bool Split(TriTreeNode* tri);
 	void RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right, const int2 apex, const int varTreeIdx, const int curNodeIdx);
@@ -200,9 +203,8 @@ private:
 	//   normal-mesh patches can be viewed by *multiple* types!
 	std::array<unsigned int, CCamera::CAMTYPE_VISCUL> lastDrawFrames = {};
 
-	GLuint triList = 0;
-	GLuint vertexBuffer = 0;
-	GLuint vertexIndexBuffer = 0;
+	VBO vertVBO;
+	VBO indxVBO;
 };
 
 #endif
