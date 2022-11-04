@@ -53,6 +53,8 @@ private:
 	bool zoomBack;
 	bool cursorZoomIn;
 	bool cursorZoomOut;
+	bool doRotate;
+	bool lockCardinalDirections;
 };
 
 #endif // _SPRING_CONTROLLER_H

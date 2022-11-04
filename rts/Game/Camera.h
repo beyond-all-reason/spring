@@ -267,6 +267,10 @@ public:
 	*/
 	float moveFastScale;
 
+	int edgeMoveWidth;
+	int useInterpolate;
+	bool edgeMoveDynamic;
+
 private:
 	CMatrix44f projectionMatrix;
 	CMatrix44f projectionMatrixInverse;

@@ -33,7 +33,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScale"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScale", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections"});
 	ConfigUpdate();
 }
 
@@ -50,6 +50,8 @@ void CSpringController::ConfigUpdate()
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
 	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
 	springFastScale = configHandler->GetFloat("CamSpringFastScale");
+	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
+	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
@@ -97,7 +99,6 @@ void CSpringController::MouseMove(float3 move)
 
 void CSpringController::ScreenEdgeMove(float3 move)
 {
-	const bool doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	const bool belowMax = (mouse->lasty < globalRendering->viewSizeY /  3);
 	const bool aboveMin = (mouse->lasty > globalRendering->viewSizeY / 10);
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
@@ -269,7 +270,7 @@ float CSpringController::MoveAzimuth(float move)
 
 	rot.y -= move;
 
-	if (configHandler->GetBool("CamSpringLockCardinalDirections"))
+	if (lockCardinalDirections)
 		return GetRotationWithCardinalLock(rot.y);
 	if (moveTilt)
 		rot.y = Clamp(rot.y, minRot + 0.02f, maxRot - 0.02f);
@@ -280,7 +281,7 @@ float CSpringController::MoveAzimuth(float move)
 
 float CSpringController::GetAzimuth() const
 {
-	if (configHandler->GetBool("CamSpringLockCardinalDirections"))
+	if (lockCardinalDirections)
 		return GetRotationWithCardinalLock(rot.y);
 	return rot.y;
 }

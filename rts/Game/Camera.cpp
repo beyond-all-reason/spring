@@ -33,6 +33,10 @@ CONFIG(float, CameraMoveSlowMult)
 CONFIG(float, CameraFastScale)
 	.defaultValue(10.0f / 3.0f)
 	.description("Scaling for CameraMoveFastMult.");
+CONFIG(int, CamFrameTimeCorrection)
+    .defaultValue(0)
+	.minimumValue(0)
+	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 
 CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
@@ -55,6 +59,8 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 void CCamera::InitConfigNotify(){
 	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CameraFastScale"});
 	ConfigUpdate();
+	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
+	edgeMoveDynamic = configHandler->GetBool("EdgeMoveDynamic");
 }
 
 void CCamera::RemoveConfigNotify(){
@@ -682,7 +688,6 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
 	float camDeltaTime = globalRendering->lastFrameTime;
 
-	int useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
 	if (useInterpolate > 0)
 		camDeltaTime = 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
 	
@@ -702,11 +707,9 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 		const int screenH = globalRendering->viewSizeY;
 		const int screenW = globalRendering->viewSizeX << static_cast<uint32_t>(globalRendering->dualScreenMode);
 
-		const float width = configHandler->GetFloat("EdgeMoveWidth");
-
 		int2 border;
-		border.x = std::max<int>(1, screenW * width);
-		border.y = std::max<int>(1, screenH * width);
+		border.x = std::max<int>(1, screenW * edgeMoveWidth);
+		border.y = std::max<int>(1, screenH * edgeMoveWidth);
 
 		float2 move;
 		// must be float, ints don't save the sign in case of 0 and we need it for copysign()
@@ -715,7 +718,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 		if (((screenW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((screenW - 1) - distToEdge.x);
 		if (((screenH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((screenH - 1) - distToEdge.y);
 
-		if (configHandler->GetBool("EdgeMoveDynamic")) {
+		if (edgeMoveDynamic) {
 			move.x = Clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
 			move.y = Clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
 		} else {
