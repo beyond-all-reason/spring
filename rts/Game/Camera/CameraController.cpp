@@ -10,6 +10,7 @@
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
 
+
 CCameraController::CCameraController()
 {
 	// switchVal:

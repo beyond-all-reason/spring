@@ -242,9 +242,6 @@ void CSpringController::Update()
 
 	curDist = Clamp(curDist, 20.0f, maxDist);
 	pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * curDist * 2.0f;
-
-	scrollSpeed = configHandler->GetInt("CamSpringScrollSpeed") * 0.1f;
-	fov = configHandler->GetFloat("CamSpringFOV");
 }
 
 
