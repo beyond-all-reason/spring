@@ -68,6 +68,7 @@ class LuaSyncedRead {
 		static int GetTeamLuaAI(lua_State* L);
 
 		static int GetAllyTeamInfo(lua_State* L);
+		static int GetTeamAllyTeamID(lua_State* L);
 		static int AreTeamsAllied(lua_State* L);
 		static int ArePlayersAllied(lua_State* L);
 
@@ -219,6 +220,7 @@ class LuaSyncedRead {
 		static int GetProjectileTimeToLive(lua_State* L);
 		static int GetProjectileOwnerID(lua_State* L);
 		static int GetProjectileTeamID(lua_State* L);
+		static int GetProjectileAllyTeamID(lua_State* L);
 		static int GetProjectileType(lua_State* L);
 		static int GetProjectileDefID(lua_State* L);
 		static int GetProjectileDamages(lua_State* L);
