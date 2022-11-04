@@ -22,7 +22,8 @@ CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("W
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
-CONFIG(float, CamSpringFastScale).defaultValue(2.0f / 3.0f).description("Scaling for CameraMoveFastMult in spring camera mode.");
+CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
+CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
 
 
 CSpringController::CSpringController()
@@ -33,7 +34,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScale", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections"});
 	ConfigUpdate();
 }
 
@@ -49,7 +50,8 @@ void CSpringController::ConfigUpdate()
 	fov = configHandler->GetFloat("CamSpringFOV");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
 	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
-	springFastScale = configHandler->GetFloat("CamSpringFastScale");
+	fastScaleMove = configHandler->GetFloat("CamSpringFastScaleMouseMove");
+	fastScaleMousewheel = configHandler->GetFloat("CamSpringFastScaleMousewheelMove");
 	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
 }
@@ -89,7 +91,7 @@ void CSpringController::MouseMove(float3 move)
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 
 	move *= 0.005f;
-	move *= (1 + moveFast * camera->moveFastMult);
+	move *= (1 + moveFast * camera->moveFastMult * fastScaleMove);
 	move.y = -move.y;
 	move.z = 1.0f;
 
@@ -105,7 +107,7 @@ void CSpringController::ScreenEdgeMove(float3 move)
 
 	if (doRotate && aboveMin && belowMax) {
 		// rotate camera when mouse touches top screen borders
-		move *= (1 + moveFast * camera->moveFastMult);
+		move *= (1 + moveFast * camera->moveFastMult * fastScaleMove);
 		MoveAzimuth(move.x * 0.75f);
 		move.x = 0.0f;
 	}
@@ -118,7 +120,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 {
 	const bool moveFast    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed = (moveFast ? camera->moveFastMult * springFastScale : 1.0f);
+	const float shiftSpeed = (moveFast ? camera->moveFastMult * fastScaleMousewheel : 1.0f);
 	const float scaledMove = 1.0f + (move * shiftSpeed * 0.007f);
 	const float curDistPre = curDist;
 

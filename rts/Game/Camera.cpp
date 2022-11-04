@@ -23,16 +23,13 @@ CONFIG(bool, EdgeMoveDynamic)
 	.defaultValue(true)
 	.description("If EdgeMove scrolling speed should fade with edge distance.");
 CONFIG(float, CameraMoveFastMult)
-	.defaultValue(3.0f)
+	.defaultValue(10.0f)
 	.minimumValue(1.0f)
 	.description("The multiplier applied to speed when camera is in movefast state.");
 CONFIG(float, CameraMoveSlowMult)
 	.defaultValue(0.1f)
 	.maximumValue(1.0f)
 	.description("The multiplier applied to speed when camera is in moveslow state.");
-CONFIG(float, CameraFastScale)
-	.defaultValue(10.0f / 3.0f)
-	.description("Scaling for CameraMoveFastMult.");
 CONFIG(int, CamFrameTimeCorrection)
     .defaultValue(0)
 	.minimumValue(0)
@@ -57,7 +54,7 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 }
 
 void CCamera::InitConfigNotify(){
-	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CameraFastScale", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
+	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
 	ConfigUpdate();
 }
 
@@ -70,7 +67,6 @@ void CCamera::ConfigUpdate()
 {
 	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 	moveSlowMult = configHandler->GetFloat("CameraMoveSlowMult");
-	moveFastScale = configHandler->GetFloat("CameraFastScale");
 	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
 	edgeMoveDynamic = configHandler->GetBool("EdgeMoveDynamic");
 	edgeMoveWidth = configHandler->GetFloat("EdgeMoveWidth");
@@ -695,7 +691,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	float camMoveSpeed = 1.0f;
 
 	camMoveSpeed *= movState[MOVE_STATE_SLW] ? moveSlowMult : 1.0f;
-	camMoveSpeed *= movState[MOVE_STATE_FST] ? moveFastMult * moveFastScale : 1.0f;
+	camMoveSpeed *= movState[MOVE_STATE_FST] ? moveFastMult : 1.0f;
 
 	float3 v = FwdVector * camMoveSpeed;
 

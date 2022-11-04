@@ -261,12 +261,6 @@ public:
 	*/
 	float moveSlowMult;
 
-	/**
-	* @brief moveFastScale
-	* Scaling for CameraMoveFastMult.
-	*/
-	float moveFastScale;
-
 	int edgeMoveWidth;
 	int useInterpolate;
 	bool edgeMoveDynamic;
