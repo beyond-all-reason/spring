@@ -10,6 +10,7 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
+#include "System/SpringMath.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -27,26 +28,20 @@ CBasicWater::CBasicWater()
 
 	// create mipmapped texture
 	textureID = waterTexBM.CreateMipMapTexture();
-	displistID = GenWaterQuadsList(waterTexBM.xsize, waterTexBM.ysize);
+	xsize = waterTexBM.xsize;
+	ysize = waterTexBM.ysize;
+
+	GenWaterQuadsRB();
 }
 
 CBasicWater::~CBasicWater()
 {
 	glDeleteTextures(1, &textureID);
-	glDeleteLists(displistID, 1);
 }
 
-unsigned int CBasicWater::GenWaterQuadsList(unsigned int textureWidth, unsigned int textureHeight) const
+void CBasicWater::GenWaterQuadsRB()
 {
-	unsigned int listID = glGenLists(1);
-
-	glNewList(listID, GL_COMPILE);
-	glDisable(GL_ALPHA_TEST);
-	glDepthMask(0);
-	glColor4f(0.7f, 0.7f, 0.7f, 0.5f);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glBegin(GL_QUADS);
+	static constexpr float div16 = 1.0f / 16.0f;
 
 	const float mapSizeX = mapDims.mapx * SQUARE_SIZE;
 	const float mapSizeY = mapDims.mapy * SQUARE_SIZE;
@@ -54,7 +49,7 @@ unsigned int CBasicWater::GenWaterQuadsList(unsigned int textureWidth, unsigned 
 	// Calculate number of times texture should repeat over the map,
 	// taking aspect ratio into account.
 	float repeatX = 65536.0f / mapDims.mapx;
-	float repeatY = 65536.0f / mapDims.mapy * textureWidth / textureHeight;
+	float repeatY = 65536.0f / mapDims.mapy * xsize / ysize;
 
 	// Use better repeat setting of 1 repeat per 4096 mapx/mapy for the new
 	// ocean.jpg while retaining backward compatibility with old maps relying
@@ -67,21 +62,20 @@ unsigned int CBasicWater::GenWaterQuadsList(unsigned int textureWidth, unsigned 
 	repeatX = (waterRendering->repeatX != 0 ? waterRendering->repeatX : repeatX) / 16;
 	repeatY = (waterRendering->repeatY != 0 ? waterRendering->repeatY : repeatY) / 16;
 
+	auto& tmpRB = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_T>();
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
-			glTexCoord2f(x       * repeatX,  y      * repeatY); glVertex3f(x       * mapSizeX/16, 0,  y      * mapSizeY/16);
-			glTexCoord2f(x       * repeatX, (y + 1) * repeatY); glVertex3f(x       * mapSizeX/16, 0, (y + 1) * mapSizeY/16);
-			glTexCoord2f((x + 1) * repeatX, (y + 1) * repeatY); glVertex3f((x + 1) * mapSizeX/16, 0, (y + 1) * mapSizeY/16);
-			glTexCoord2f((x + 1) * repeatX,  y      * repeatY); glVertex3f((x + 1) * mapSizeX/16, 0,  y      * mapSizeY/16);
+			tmpRB.AddQuadTriangles(
+				{ { (x + 0) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 0) * repeatY },
+				{ { (x + 0) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 1) * repeatY },
+				{ { (x + 1) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 1) * repeatX, (y + 1) * repeatY },
+				{ { (x + 1) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16 }, (x + 1) * repeatX, (y + 0) * repeatY }
+			);
 		}
 	}
 
-	glEnd();
-	glDisable(GL_TEXTURE_2D);
-	glDepthMask(1);
-	glEndList();
-
-	return listID;
+	rb = tmpRB.CopyCurrent(true);
+	tmpRB.DropCurrent();
 }
 
 
@@ -91,10 +85,26 @@ void CBasicWater::Draw()
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
-	glPushAttrib(GL_FOG_BIT | GL_POLYGON_BIT);
+	glPushAttrib(GL_FOG_BIT | GL_POLYGON_BIT | GL_ENABLE_BIT);
+
+	glDisable(GL_ALPHA_TEST);
+	glDepthMask(GL_FALSE);
+	glEnable(GL_TEXTURE_2D);
+
 	const auto& sky = ISky::GetSky();
 	sky->SetupFog();
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * wireFrameMode + GL_FILL * (1 - wireFrameMode));
-	glCallList(displistID);
+	glPolygonMode(GL_FRONT_AND_BACK, mix(GL_FILL, GL_LINE, static_cast<int>(wireFrameMode)));
+
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+	sh.SetUniform("ucolor", 0.7f, 0.7f, 0.7f, 0.5f);
+	rb.DrawElements(GL_TRIANGLES, false);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+
+	glBindTexture(GL_TEXTURE_2D,         0);
+
 	glPopAttrib();
 }

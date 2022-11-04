@@ -398,13 +398,16 @@ public:
 	}
 
 	void SwapBuffer() override {
+		if (readOnly)
+			return;
+
 		if (vbo)
 			vbo->SwapBuffer();
 		if (ebo)
 			ebo->SwapBuffer();
 
 		Clear();
-  }
+	}
 
 	const char* GetBufferName() const override {
 		return vboTypeName;
@@ -439,26 +442,49 @@ public:
 
 		std::swap(numSubmits, rhs.numSubmits);
 
+		std::swap(readOnly, rhs.readOnly);
+
 		return *this;
 	}
 
 	void AddVertex(VertType&& v) {
+		if (readOnly)
+			return;
+
 		verts.emplace_back(v);
 	}
 	void AddVertices(const std::vector<VertType>& vertices) {
+		if (readOnly)
+			return;
+
 		verts.insert(verts.end(), vertices.begin(), vertices.end());
 	}
+	void AddVertices(typename std::vector<VertType>::const_iterator begin, typename std::vector<VertType>::const_iterator end) {
+		if (readOnly)
+			return;
+
+		verts.insert(verts.end(), begin, end);
+	}
 	void AddVertices(std::initializer_list<VertType>&& vertices) {
+		if (readOnly)
+			return;
+
 		verts.insert(verts.end(), vertices.begin(), vertices.end());
 	}
 	//106.0 compat
 	void SafeAppend(VertType&& v) { AddVertex(std::forward<VertType&&>(v)); }
 
 	void UpdateVertex(VertType&& v, size_t at) {
+		if (readOnly)
+			return;
+
 		assert(at < verts.size());
 		verts.emplace(at, v);
 	}
 	void UpdateVertices(const std::vector<VertType>& vs, size_t at) {
+		if (readOnly)
+			return;
+
 		size_t cnt = 0;
 		for (auto&& v : vs) {
 			assert(cnt + at < verts.size());
@@ -467,6 +493,9 @@ public:
 		}
 	}
 	void UpdateVertices(std::initializer_list<VertType>&& vs, size_t at) {
+		if (readOnly)
+			return;
+
 		size_t cnt = 0;
 		for (auto&& v : vs) {
 			assert(cnt + at < verts.size());
@@ -474,6 +503,16 @@ public:
 			++cnt;
 		}
 	}
+
+	void AddIndices(typename std::vector<IndcType>::const_iterator begin, typename std::vector<IndcType>::const_iterator end, int32_t vertBias = 0) {
+		if (readOnly)
+			return;
+
+		const auto transformFunc = [vertBias](IndcType origIndex) { return origIndex + vertBias; };
+		std::transform(begin, end, std::back_inserter(indcs), transformFunc);
+	}
+
+	void SetReadonly() { readOnly = true; }
 
 	// render with DrawElements(GL_TRIANGLES)
 	void AddQuadTriangles(const std::vector<VertType>& vs) {
@@ -529,13 +568,14 @@ public:
 	void MakeQuadsLines(VertType&& tl, VertType&& tr, VertType&& br, VertType&& bl, int xDiv, int yDiv) { MakeQuadsLinesImpl(tl, tr, br, bl, xDiv, yDiv); }
 	void MakeQuadsLines(const VertType& tl, const VertType& tr, const VertType& br, const VertType& bl, int xDiv, int yDiv) { MakeQuadsLinesImpl(std::move(tl), std::move(tr), std::move(br), std::move(bl), xDiv, yDiv); }
 
-
 	void UploadVBO();
 	void UploadEBO();
 
 	void DrawArrays(uint32_t mode, bool rewind = true);
 	void DrawElements(uint32_t mode, bool rewind = true);
-	void DrainCurrent(bool drainIndcs = true);
+	void DropCurrent();
+
+	TypedRenderBuffer<T> CopyCurrent(bool readOnly) const;
 
 	bool ShouldSubmit(bool indexed) const {
 		if (indexed)
@@ -579,6 +619,9 @@ private:
 		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
 	>
 	void AddQuadTrianglesImpl(TT&& tl, TT&& tr, TT&& br, TT&& bl) {
+		if (readOnly)
+			return;
+
 		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 
 		verts.emplace_back(tl); //0
@@ -602,6 +645,9 @@ private:
 		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
 	>
 	void AddQuadLinesImpl(TT&& tl, TT&& tr, TT&& br, TT&& bl) {
+		if (readOnly)
+			return;
+
 		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 
 		verts.emplace_back(tl); //0
@@ -625,6 +671,9 @@ private:
 		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
 	>
 	void MakeQuadsTrianglesImpl(TT&& tl, TT&& tr, TT&& br, TT&& bl, int xDiv, int yDiv) {
+		if (readOnly)
+			return;
+
 		const IndcType baseIndex = static_cast<IndcType>(verts.size_t());
 		float ratio;
 
@@ -663,6 +712,9 @@ private:
 		typename = typename std::enable_if_t<std::is_same_v<VertType, typename std::decay_t<T>>>
 	>
 	void MakeQuadsLinesImpl(TT&& tl, TT&& tr, TT&& br, TT&& bl, int xDiv, int yDiv) {
+		if (readOnly)
+			return;
+
 		float ratio;
 
 		for (int x = 0; x < yDiv; ++x) {
@@ -698,6 +750,8 @@ private:
 
 	size_t vboUploadIndex = 0;
 	size_t eboUploadIndex = 0;
+
+	bool readOnly = false;
 
 	inline static RenderBufferShader<T> shader;
 
@@ -777,7 +831,7 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 	glDrawArrays(mode, vbo->BufferElemOffset() + vboStartIndex, vertsCount);
 	vao.Unbind();
 
-	if (rewind)
+	if (rewind && !readOnly)
 		vboStartIndex += vertsCount;
 
 	numSubmits[0] += 1;
@@ -803,7 +857,7 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 	vao.Unbind();
 	#undef BUFFER_OFFSET
 
-	if (rewind) {
+	if (rewind && !readOnly) {
 		eboStartIndex += indcsCount;
 		vboStartIndex += vertsCount;
 	}
@@ -814,22 +868,43 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 }
 
 template<typename T>
-inline void TypedRenderBuffer<T>::DrainCurrent(bool drainIndcs) {
+inline void TypedRenderBuffer<T>::DropCurrent()
+{
+	if (readOnly)
+		return;
+
 	{
-		size_t elemsCount = (verts.size() - vboUploadIndex);
-		vboUploadIndex += elemsCount;
-		size_t vertsCount = (verts.size() - vboStartIndex);
-		vboStartIndex += vertsCount;
-		if (!drainIndcs)
-			vboStartIndex += vertsCount;
+		vboUploadIndex = verts.size();
+		vboStartIndex  = verts.size();
 	}
-	if (drainIndcs) {
-		size_t elemsCount = (indcs.size() - eboUploadIndex);
-		eboUploadIndex += elemsCount;
-		size_t indcsCount = (indcs.size() - eboStartIndex);
-		eboStartIndex += indcsCount;
-		vboStartIndex = verts.size();
+	{
+		eboUploadIndex = indcs.size();
+		eboStartIndex  = indcs.size();
 	}
+}
+
+template<typename T>
+inline TypedRenderBuffer<T> TypedRenderBuffer<T>::CopyCurrent(bool readOnly) const
+{
+	size_t vertsCount = (verts.size() - vboUploadIndex);
+	size_t elemsCount = (indcs.size() - eboUploadIndex);
+
+	//TODO make readonly buffer with 1 buffer chunk
+	TypedRenderBuffer<T> newRB { vertsCount, elemsCount, bufferType };
+	{
+		auto b = verts.begin(); std::advance(b, vboUploadIndex);
+		auto e = verts.end();
+		newRB.AddVertices(b, e);
+	}
+	{
+		auto b = indcs.begin(); std::advance(b, eboUploadIndex);
+		auto e = indcs.end();
+		newRB.AddIndices(b, e, static_cast<int32_t>(vboUploadIndex));
+	}
+	if (readOnly)
+		newRB.SetReadonly();
+
+	return newRB;
 }
 
 
