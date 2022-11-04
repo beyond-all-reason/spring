@@ -168,9 +168,6 @@ protected:
 		float xminTx, xmaxTx, yminTx, ymaxTx;  // texture coordinates
 	};
 
-	int lastWindowSizeX = 0;
-	int lastWindowSizeY = 0;
-
 	int buttonSize = 0;
 
 	int drawCommands = 0;

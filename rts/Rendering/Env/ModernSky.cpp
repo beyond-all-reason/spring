@@ -20,7 +20,9 @@ CModernSky::CModernSky()
 	skyShader->Link();
 	skyShader->Enable();
 	skyShader->Disable();
-	skyShader->Validate();
+	valid = skyShader->Validate();
+#else
+	valid = true;
 #endif
 }
 
@@ -35,6 +37,9 @@ void CModernSky::Draw()
 {
 #ifndef HEADLESS
 	if (!globalRendering->drawSky)
+		return;
+
+	if (!valid)
 		return;
 
 	// FFP

@@ -20,9 +20,12 @@ public:
 
 	void UpdateSunDir() override {}
 	void UpdateSkyTexture() override {}
-private:
 
+	bool IsValid() const override { return valid; }
+
+	std::string GetName() const override { return "ModernSky"; }
 private:
 	VAO vao;
 	Shader::IProgramObject* skyShader  = nullptr;
+	bool valid = false;
 };

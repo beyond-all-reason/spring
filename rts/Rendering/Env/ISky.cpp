@@ -2,8 +2,7 @@
 
 
 #include "ISky.h"
-#include "BasicSky.h"
-#include "AdvSky.h"
+#include "NullSky.h"
 #include "SkyBox.h"
 #include "ModernSky.h"
 #include "Game/Camera.h"
@@ -17,7 +16,7 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
-CONFIG(bool, AdvSky).defaultValue(true).headlessValue(false).defaultValue(false).description("Enables High Resolution Clouds.");
+CONFIG(bool, AdvSky).deprecated(true);
 
 ISky::ISky()
 	: skyColor(mapInfo->atmosphere.skyColor)
@@ -72,9 +71,13 @@ void ISky::SetSky()
 			sky = std::make_unique<CModernSky>();
 		}
 	} catch (const content_error& ex) {
-		LOG_L(L_ERROR, "[ISky::%s] error: %s (falling back to BasicSky)", __func__, ex.what());
-		//TODO remove, make NullSky that does absolutely nothing
-		sky = std::make_unique<CBasicSky>();
+		LOG_L(L_ERROR, "[ISky::%s] error: %s (falling back to NullSky)", __func__, ex.what());
+		sky = std::make_unique<CNullSky>();
+	}
+
+	if (!sky->IsValid()) {
+		LOG_L(L_ERROR, "[ISky::%s] error creating %s (falling back to NullSky)", __func__, sky->GetName().c_str());
+		sky = std::make_unique<CNullSky>();
 	}
 }
 

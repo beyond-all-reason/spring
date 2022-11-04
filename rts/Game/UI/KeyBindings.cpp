@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cstdio>
+#include <algorithm>
 
 #include "KeyBindings.h"
 #include "KeyCodes.h"
@@ -52,6 +53,7 @@ static const CKeyBindings::ActionComparison compareActionByBindingOrder = [](con
   return (a.bindingIndex < b.bindingIndex);
 };
 
+const std::string CKeyBindings::DEFAULT_FILENAME = "uikeys.txt";
 
 static const DefaultBinding defaultBindings[] = {
 	{            "esc", "quitmessage" },
@@ -308,6 +310,7 @@ void CKeyBindings::Kill()
 	codeBindings.clear();
 	scanBindings.clear();
 	hotkeys.clear();
+	loadStack.clear();
 	statefulCommands.clear();
 
 	configHandler->RemoveObserver(this);
@@ -613,7 +616,7 @@ void CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 {
 	if (debugEnabled)
-		LOG("[CKeyBindings::Bind] index=%i keystr=%s line=%s", bindingsCount + 1, keystr.c_str(), line.c_str());
+		LOG("[CKeyBindings::%s] index=%i keystr=%s line=%s", __func__, bindingsCount + 1, keystr.c_str(), line.c_str());
 
 	Action action(line);
 	action.boundWith = keystr;
@@ -647,6 +650,9 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 		return false;
 	}
 
+	if (debugEnabled)
+		LOG("[CKeyBindings::%s] keystr=%s command=%s", __func__, keystr.c_str(), command.c_str());
+
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 	const auto it = bindings.find(ks);
 
@@ -665,6 +671,9 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 
 bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 {
+	if (debugEnabled)
+		LOG("[CKeyBindings::%s] keystr=%s", __func__, keystr.c_str());
+
 	CKeySet ks;
 	if (!ks.Parse(keystr)) {
 		LOG_L(L_WARNING, "UnBindKeyset: could not parse key: %s", keystr.c_str());
@@ -708,6 +717,8 @@ bool CKeyBindings::RemoveActionFromKeyMap(const std::string& command, KeyMap& bi
 
 bool CKeyBindings::UnBindAction(const std::string& command)
 {
+	if (debugEnabled)
+		LOG("[CKeyBindings::%s] command=%s", __func__, command.c_str());
 	return RemoveActionFromKeyMap(command, codeBindings) || RemoveActionFromKeyMap(command, scanBindings);
 }
 
@@ -772,32 +783,38 @@ void CKeyBindings::ConfigNotify(const std::string& key, const std::string& value
 }
 
 
-/******************************************************************************/
-
 void CKeyBindings::LoadDefaults()
 {
+	const bool tmpBuildHotkeyMap = buildHotkeyMap;
+	buildHotkeyMap = false;
+
+	if (debugEnabled)
+		LOG("[CKeyBindings::%s]", __func__);
+
 	SetFakeMetaKey("space");
 
 	for (const auto& b: defaultBindings) {
 		Bind(b.key, b.action);
 	}
+
+	buildHotkeyMap = tmpBuildHotkeyMap;
 }
+
+
+/******************************************************************************/
 
 void CKeyBindings::PushAction(const Action& action)
 {
-	if (action.command == "keyload") {
-		Load("uikeys.txt");
-	}
-	else if (action.command == "keyreload") {
-		ExecuteCommand("unbindall");
-		ExecuteCommand("unbind enter chat");
-		Load("uikeys.txt");
-	}
-	else if (action.command == "keysave") {
-		if (Save("uikeys.tmp")) {  // tmp, not txt
-			LOG("Saved uikeys.tmp");
+	if (action.command == "keysave") {
+		static const std::string defaultOutFilename = "uikeys.tmp"; // tmp, not txt
+
+		const std::vector<std::string> args = CSimpleParser::Tokenize(action.extra, 2);
+		const std::string& filename = args.empty() ? defaultOutFilename : args[0];
+
+		if (Save(filename)) {
+			LOG("Saved active keybindings at %s", filename.c_str());
 		} else {
-			LOG_L(L_WARNING, "Could not save uikeys.tmp");
+			LOG_L(L_WARNING, "Could not save %s", filename.c_str());
 		}
 	}
 	else if (action.command == "keyprint") {
@@ -832,6 +849,35 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 			debugEnabled = atoi(words[1].c_str());
 		}
 	}
+	else if (command == "keyload") {
+		const std::string& filename = words.size() > 1 ? words[1] : DEFAULT_FILENAME;
+
+		if (debugEnabled)
+			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
+
+		// Backward-compatibility from before `/keydefaults` existed
+		if (loadStack.empty() && words.size() == 1)
+			LoadDefaults();
+
+		Load(filename);
+	}
+	else if (command == "keyreload") {
+		const std::string& filename = words.size() > 1 ? words[1] : DEFAULT_FILENAME;
+
+		if (debugEnabled)
+			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
+
+		ExecuteCommand("unbindall");
+		ExecuteCommand("unbind enter chat");
+
+		if (loadStack.empty() && words.size() == 1)
+			LoadDefaults();
+
+		Load(filename);
+	}
+	else if (command == "keydefaults") {
+		LoadDefaults();
+	}
 	else if ((command == "fakemeta") && (words.size() > 1)) {
 		if (!SetFakeMetaKey(words[1])) { return false; }
 	}
@@ -857,6 +903,9 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		scanCodes.Reset();
 		bindingsCount = 0;
 		Bind("enter", "chat"); // bare minimum
+
+		if (debugEnabled)
+			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
 	}
 	else {
 		return false;
@@ -871,23 +920,46 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 
 bool CKeyBindings::Load(const std::string& filename)
 {
+	if (std::find(loadStack.begin(), loadStack.end(), filename) != loadStack.end()) {
+		LOG_L(L_WARNING, "[CKeyBindings::%s] Cyclic keys file inclusion: %s, load stack:", __func__, filename.c_str());
+		LOG_L(L_WARNING, " !-> %s", filename.c_str());
+		for (auto it = loadStack.rbegin(); it != loadStack.rend(); ++it)
+			LOG_L(L_WARNING, "  -> %s", (*it).c_str());
+
+		return false;
+	}
+
+	const bool tmpBuildHotkeyMap = buildHotkeyMap;
+	buildHotkeyMap = false;
+
+	if (debugEnabled) {
+		LOG("[CKeyBindings::%s] filename=%s%s", __func__, filename.c_str(), loadStack.empty() ? "" : ", load stack:");
+		for (auto it = loadStack.rbegin(); it != loadStack.rend(); ++it)
+			LOG("  -> %s", (*it).c_str());
+	}
+
+	loadStack.push_back(filename);
+
 	CFileHandler ifs(filename);
 	CSimpleParser parser(ifs);
-	buildHotkeyMap = false; // temporarily disable BuildHotkeyMap() calls
-	LoadDefaults();
 
 	while (!parser.Eof()) {
 		ExecuteCommand(parser.GetCleanLine());
 	}
 
-	BuildHotkeyMap();
-	buildHotkeyMap = true; // re-enable BuildHotkeyMap() calls
+	loadStack.pop_back();
+
+	buildHotkeyMap = tmpBuildHotkeyMap;
+
 	return true;
 }
 
 
 void CKeyBindings::BuildHotkeyMap()
 {
+	if (debugEnabled)
+		LOG("[CKeyBindings::%s]", __func__);
+
 	// create reverse map of bindings ([action] -> key shortcuts)
 	hotkeys.clear();
 

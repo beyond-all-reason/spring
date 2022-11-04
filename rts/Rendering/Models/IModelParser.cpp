@@ -119,7 +119,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 			const char* modelName = model->name.c_str();
 			const char* pieceName = modelPiece->name.c_str();
 
-			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, numNullNormals, vertCount);
+			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, static_cast<uint32_t>(numNullNormals), static_cast<uint32_t>(vertCount));
 		}
 	}
 
@@ -264,7 +264,8 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	{
 		std::scoped_lock lock(mutex);
 
-		model = GetCachedModel(name);
+		std::string modelBaseName = FileSystem::GetBasename(FileSystem::GetFilename(name));
+		model = GetCachedModel(modelBaseName);
 
 		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
 		if (load)

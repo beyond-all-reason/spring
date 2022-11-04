@@ -34,7 +34,7 @@ namespace spring {
 			, released{ false }
 		{}
 		~ScopedResource() {
-			if (!released) d(r);
+			Reset();
 		}
 
 		R&& Release() {
@@ -42,6 +42,10 @@ namespace spring {
 				throw std::runtime_error("Scoped Object already released");
 			released = true;
 			return std::move(r);
+		}
+
+		void Reset() {
+			if (!released) d(r);
 		}
 
 		bool operator==(const MyType& rhs) { return  r == rhs.r; }
@@ -52,6 +56,9 @@ namespace spring {
 
 		operator const R&() const { return r; };
 		operator       R&()       { return r; };
+
+		MyType& operator=(std::nullptr_t) noexcept { Reset(); return *this; }
+		MyType& operator=(const MyType&) = delete;
 	private:
 		R r;
 		D&& d;

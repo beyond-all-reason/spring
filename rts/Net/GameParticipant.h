@@ -70,6 +70,9 @@ public:
 	#ifdef SYNCCHECK
 	spring::unordered_map<int, unsigned int> syncResponse; // syncResponse[frameNum] = checksum
 	#endif
+
+private:
+	void CloseConnection(bool flush);
 };
 
 #endif // _GAME_PARTICIPANT_H

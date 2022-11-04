@@ -422,6 +422,8 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
 		glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_1D, texId, mipLevel);
 	} else if (texTarget == GL_TEXTURE_3D) {
 		glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_3D, texId, mipLevel, zSlice);
+	} else if (texTarget == GL_TEXTURE_CUBE_MAP) {
+		if (GLEW_VERSION_3_2) glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
 	} else {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, texTarget, texId, mipLevel);
 	}

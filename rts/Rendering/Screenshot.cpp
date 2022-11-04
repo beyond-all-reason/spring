@@ -36,8 +36,8 @@ void TakeScreenshot(std::string type, unsigned quality)
 		return;
 
 	FunctionArgs args;
-	args.x  = globalRendering->dualScreenMode? globalRendering->viewSizeX << 1: globalRendering->viewSizeX;
-	args.y  = globalRendering->viewSizeY;
+	args.x  = globalRendering->winSizeX;
+	args.y  = globalRendering->winSizeY;
 	args.x += ((4 - (args.x % 4)) * int((args.x % 4) != 0));
 
 	const int shotCounter = configHandler->GetInt("ScreenshotCounter");

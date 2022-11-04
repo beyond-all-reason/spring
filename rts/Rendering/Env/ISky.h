@@ -5,8 +5,7 @@
 
 #include "SkyLight.h"
 #include <memory>
-
-#define CLOUD_SIZE 256 // must be divisible by 4 and 8
+#include <string>
 
 struct MapTextureData;
 class ISky
@@ -25,6 +24,10 @@ public:
 	virtual void DrawSun() = 0;
 
 	virtual void SetLuaTexture(const MapTextureData& td) {}
+
+	virtual bool IsValid() const = 0;
+
+	virtual std::string GetName() const = 0;
 
 	void IncreaseCloudDensity() { cloudDensity *= 1.05f; }
 	void DecreaseCloudDensity() { cloudDensity *= 0.95f; }

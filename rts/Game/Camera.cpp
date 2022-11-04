@@ -136,7 +136,7 @@ void CCamera::Update(const UpdateParams& p)
 	if (p.updateMats)
 		UpdateMatrices(globalRendering->viewSizeX, globalRendering->viewSizeY, aspectRatio);
 	if (p.updateViewPort)
-		UpdateViewPort(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		UpdateViewPort(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
 	if (p.updateFrustum)
 		UpdateFrustum();
 
@@ -703,35 +703,46 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 		v.y -= (camDeltaTime * 0.001f * movState[MOVE_STATE_BCK]);
 		v.x += (camDeltaTime * 0.001f * movState[MOVE_STATE_RGT]);
 		v.x -= (camDeltaTime * 0.001f * movState[MOVE_STATE_LFT]);
-	} else {
-		const int screenH = globalRendering->viewSizeY;
-		const int screenW = globalRendering->viewSizeX << static_cast<uint32_t>(globalRendering->dualScreenMode);
 
-		int2 border;
-		border.x = std::max<int>(1, screenW * edgeMoveWidth);
-		border.y = std::max<int>(1, screenH * edgeMoveWidth);
-
-		float2 move;
-		// must be float, ints don't save the sign in case of 0 and we need it for copysign()
-		float2 distToEdge = {Clamp(mouse->lastx, 0, screenW) * 1.0f, Clamp(mouse->lasty, 0, screenH) * 1.0f};
-
-		if (((screenW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((screenW - 1) - distToEdge.x);
-		if (((screenH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((screenH - 1) - distToEdge.y);
-
-		if (edgeMoveDynamic) {
-			move.x = Clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
-			move.y = Clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
-		} else {
-			move.x = int(std::abs(distToEdge.x) < border.x);
-			move.y = int(std::abs(distToEdge.y) < border.y);
-		}
-
-		move.x = std::copysign(move.x, -distToEdge.x);
-		move.y = std::copysign(move.y,  distToEdge.y);
-
-		v.x = (camDeltaTime * 0.001f * move.x);
-		v.y = (camDeltaTime * 0.001f * move.y);
+		return v;
 	}
+
+	const int windowW = globalRendering->winSizeX;
+	int mouseY = mouse->lasty;
+	int viewH;
+
+	// Translate mouseY so it maps from mousecoords: top of view to 0 and bottom of view to viewSize
+	if (globalRendering->dualScreenMode && (mouse->lastx >= globalRendering->dualViewPosX) && (mouse->lastx <= globalRendering->dualViewPosX + globalRendering->dualViewSizeX)) {
+		viewH = globalRendering->dualViewSizeY;
+		mouseY -= globalRendering->dualWindowOffsetY - globalRendering->viewWindowOffsetY;
+	} else {
+		viewH = globalRendering->viewSizeY;
+	}
+
+	int2 border;
+	border.x = std::max<int>(1, windowW * edgeMoveWidth);
+	border.y = std::max<int>(1, viewH * edgeMoveWidth);
+
+	float2 move;
+	// must be float, ints don't save the sign in case of 0 and we need it for copysign()
+	float2 distToEdge = {Clamp(mouse->lastx, 0, windowW) * 1.0f, Clamp(mouseY, 0, viewH) * 1.0f};
+
+	if (((windowW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((windowW - 1) - distToEdge.x);
+	if (((viewH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((viewH - 1) - distToEdge.y);
+
+	if (edgeMoveDynamic) {
+		move.x = Clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
+		move.y = Clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
+	} else {
+		move.x = int(std::abs(distToEdge.x) < border.x);
+		move.y = int(std::abs(distToEdge.y) < border.y);
+	}
+
+	move.x = std::copysign(move.x, -distToEdge.x);
+	move.y = std::copysign(move.y,  distToEdge.y);
+
+	v.x = (camDeltaTime * 0.001f * move.x);
+	v.y = (camDeltaTime * 0.001f * move.y);
 
 	return v;
 }

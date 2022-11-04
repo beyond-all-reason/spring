@@ -83,15 +83,7 @@ CMiniMap::CMiniMap()
 	, allyColor(0.3f, 0.3f, 0.9f, 1.0f)
 	, enemyColor(0.9f, 0.2f, 0.2f, 1.0f)
  {
-	lastWindowSizeX = globalRendering->viewSizeX;
-	lastWindowSizeY = globalRendering->viewSizeY;
-
-	if (globalRendering->dualScreenMode) {
-		curDim.x = globalRendering->viewSizeX;
-		curDim.y = globalRendering->viewSizeY;
-		curPos.x = (globalRendering->viewSizeX - globalRendering->viewPosX);
-		curPos.y = 0;
-	} else {
+	if (!globalRendering->dualScreenMode) {
 		ParseGeometry(configHandler->GetString("MiniMapGeometry"));
 	}
 
@@ -394,12 +386,11 @@ void CMiniMap::SetGeometry(int px, int py, int sx, int sy)
 void CMiniMap::UpdateGeometry()
 {
 	// keep the same distance to the top
-	curPos.y -= (lastWindowSizeY - globalRendering->viewSizeY);
 	if (globalRendering->dualScreenMode) {
-		curDim.x = globalRendering->viewSizeX;
-		curDim.y = globalRendering->viewSizeY;
-		curPos.x = (globalRendering->viewSizeX - globalRendering->viewPosX);
-		curPos.y = 0;
+		curPos.x = globalRendering->dualViewPosX;
+		curPos.y = globalRendering->dualViewPosY;
+		curDim.x = globalRendering->dualViewSizeX;
+		curDim.y = globalRendering->dualViewSizeY;
 	}
 	else if (maximized) {
 		SetMaximizedGeometry();
@@ -435,9 +426,6 @@ void CMiniMap::UpdateGeometry()
 		projMats[1] = CMatrix44f::ClipOrthoProj(0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, globalRendering->supportClipSpaceControl * 1.0f);
 		projMats[2] = projMats[1];
 	}
-
-	lastWindowSizeX = globalRendering->viewSizeX;
-	lastWindowSizeY = globalRendering->viewSizeY;
 
 	// setup the unit scaling
 	const float w = float(curDim.x);
@@ -763,8 +751,12 @@ float3 CMiniMap::GetMapPosition(int x, int y) const
 	//   (x = dim.x, y =     0) maps to world-coors (mapX, h,    0)
 	//   (x = dim.x, y = dim.y) maps to world-coors (mapX, h, mapZ)
 	//   (x =     0, y = dim.y) maps to world-coors (   0, h, mapZ)
-	float sx = Clamp(float(x -                               tmpPos.x            ) / curDim.x, 0.0f, 1.0f);
-	float sz = Clamp(float(y - (globalRendering->viewSizeY - tmpPos.y - curDim.y)) / curDim.y, 0.0f, 1.0f);
+
+	// translate mouse coords orientation and origin to map coords
+	y = y - globalRendering->viewPosY + curDim.y - globalRendering->viewSizeY;
+
+	float sx = Clamp(float(x - tmpPos.x) / curDim.x, 0.0f, 1.0f);
+	float sz = Clamp(float(y + tmpPos.y) / curDim.y, 0.0f, 1.0f);
 
 	if (flipped) {
 		sx = 1 - sx;
@@ -938,7 +930,11 @@ void CMiniMap::DrawSurfaceSquare(const float3& pos, float xsize, float ysize)
 void CMiniMap::ApplyConstraintsMatrix() const
 {
 	if (!renderToTexture) {
-		glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
+		if (globalRendering->dualScreenMode) {
+			glTranslatef(curPos.x, curPos.y, 0.0f);
+		} else {
+			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
+		}
 		glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
 	}
 }
@@ -1149,7 +1145,6 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 		// switch to normalized minimap coords
 		if (globalRendering->dualScreenMode) {
 			glViewport(curPos.x, curPos.y, curDim.x, curDim.y);
-			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
 		} else {
 			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
 			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
@@ -1189,8 +1184,12 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 
 	if (!updateTex) {
 		glPushMatrix();
-			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
-			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
+			if (globalRendering->dualScreenMode) {
+				glTranslatef(curPos.x, curPos.y, 0.0f);
+			} else {
+				glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
+				glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
+			}
 			DrawCameraFrustumAndMouseSelection();
 		glPopMatrix();
 	}
@@ -1198,7 +1197,7 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 	// Finish
 	// Reset of GL state
 	if (useNormalizedCoors && globalRendering->dualScreenMode)
-		glViewport(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		CCamera::GetActive()->LoadViewPort();
 
 	// disable ClipPlanes
 	glDisable(GL_CLIP_PLANE0);
@@ -1602,12 +1601,12 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 	if (useNormalizedCoors) {
 		glPushMatrix();
 
-		if (globalRendering->dualScreenMode)
+		if (globalRendering->dualScreenMode) {
 			glViewport(curPos.x, curPos.y, curDim.x, curDim.y);
-		else
+		} else {
 			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
-
-		glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
+			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
+		}
 	}
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1625,7 +1624,7 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 
 	if (useNormalizedCoors) {
 		if (globalRendering->dualScreenMode)
-			glViewport(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+			CCamera::GetActive()->LoadViewPort();
 
 		glPopMatrix();
 	}

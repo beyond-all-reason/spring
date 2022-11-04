@@ -144,7 +144,6 @@ class LuaOpenGL {
 		static float screenWidth;
 		static float screenDistance;
 		static void (*resetMatrixFunc)(void);
-		static unsigned int resetStateList;
 
 		static std::unordered_set<std::string> deprecatedGLWarned;
 		static std::unordered_map<GLenum, std::string> fixedStateEnumToString;

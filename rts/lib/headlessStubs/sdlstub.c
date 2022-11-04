@@ -296,6 +296,14 @@ extern DECLSPEC int SDL_GetNumVideoDisplays(void) {
 	return 0;
 }
 
+extern DECLSPEC SDL_bool SDL_HasIntersection(const SDL_Rect * A, const SDL_Rect * B) {
+	return SDL_TRUE;
+}
+
+extern DECLSPEC SDL_bool SDL_IntersectRect(const SDL_Rect * A, const SDL_Rect * B, SDL_Rect * result) {
+	return SDL_TRUE;
+}
+
 extern DECLSPEC int SDL_GetDisplayBounds(int displayIndex, SDL_Rect* rect) {
 	if (rect == 0) return -1;
 	rect->w = 640;

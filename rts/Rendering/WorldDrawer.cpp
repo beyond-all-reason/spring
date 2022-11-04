@@ -94,8 +94,6 @@ void CWorldDrawer::InitPost() const
 			for (const auto& def : weaponDefHandler->GetWeaponDefsVec()) {
 				def.PreloadModel();
 			}
-
-			S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
 		}
 	}
 	{
@@ -152,6 +150,7 @@ void CWorldDrawer::InitPost() const
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
+		S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
 	}
 }
 
