@@ -686,7 +686,7 @@ void CGame::LoadInterface()
 
 	keyBindings.Init();
 	keyBindings.LoadDefaults();
-	keyBindings.Load("uikeys.txt");
+	keyBindings.Load();
 
 	{
 		ScopedOnceTimer timer("Game::LoadInterface (Console)");

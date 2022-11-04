@@ -30,10 +30,12 @@ class CKeyBindings : public CommandReceiver
 		typedef spring::unsynced_map<std::string, HotkeyList> ActionMap; // action to keyset
 
 	public:
+		static const std::string DEFAULT_FILENAME;
+
 		void Init();
 		void Kill();
 
-		bool Load(const std::string& filename);
+		bool Load(const std::string& filename = DEFAULT_FILENAME);
 		bool Save(const std::string& filename) const;
 		void Print() const;
 		void LoadDefaults();

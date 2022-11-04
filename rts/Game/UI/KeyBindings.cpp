@@ -53,6 +53,7 @@ static const CKeyBindings::ActionComparison compareActionByBindingOrder = [](con
   return (a.bindingIndex < b.bindingIndex);
 };
 
+const std::string CKeyBindings::DEFAULT_FILENAME = "uikeys.txt";
 
 static const DefaultBinding defaultBindings[] = {
 	{            "esc", "quitmessage" },
@@ -805,8 +806,10 @@ void CKeyBindings::LoadDefaults()
 void CKeyBindings::PushAction(const Action& action)
 {
 	if (action.command == "keysave") {
+		static const std::string defaultOutFilename = "uikeys.tmp"; // tmp, not txt
+
 		const std::vector<std::string> args = CSimpleParser::Tokenize(action.extra, 2);
-		const std::string filename = args.empty() ? "uikeys.tmp" : args[0]; // tmp, not txt
+		const std::string& filename = args.empty() ? defaultOutFilename : args[0];
 
 		if (Save(filename)) {
 			LOG("Saved active keybindings at %s", filename.c_str());
@@ -847,7 +850,7 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		}
 	}
 	else if (command == "keyload") {
-		const std::string filename = words.size() > 1 ? words[1] : "uikeys.txt";
+		const std::string& filename = words.size() > 1 ? words[1] : DEFAULT_FILENAME;
 
 		if (debugEnabled)
 			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
@@ -859,7 +862,7 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		Load(filename);
 	}
 	else if (command == "keyreload") {
-		const std::string filename = words.size() > 1 ? words[1] : "uikeys.txt";
+		const std::string& filename = words.size() > 1 ? words[1] : DEFAULT_FILENAME;
 
 		if (debugEnabled)
 			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());
@@ -919,6 +922,7 @@ bool CKeyBindings::Load(const std::string& filename)
 {
 	if (std::find(loadStack.begin(), loadStack.end(), filename) != loadStack.end()) {
 		LOG_L(L_WARNING, "[CKeyBindings::%s] Cyclic keys file inclusion: %s, load stack:", __func__, filename.c_str());
+		LOG_L(L_WARNING, " !-> %s", filename.c_str());
 		for (auto it = loadStack.rbegin(); it != loadStack.rend(); ++it)
 			LOG_L(L_WARNING, "  -> %s", (*it).c_str());
 
