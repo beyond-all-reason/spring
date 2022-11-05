@@ -58,7 +58,7 @@ public:
 	void New(const std::vector<TData>& data, GLenum newUsage = GL_STATIC_DRAW) { New(sizeof(TData) * data.size(), newUsage, data.data()); };
 	void New(GLsizeiptr newSize, GLenum newUsage = GL_STREAM_DRAW, const void* newData = nullptr);
 
-	void Invalidate(); //< discards all current data (frees the memory w/o resizing)
+	void Invalidate() const; //< discards all current data (frees the memory w/o resizing)
 
 	/**
 	 * @see http://www.opengl.org/sdk/docs/man/xhtml/glMapBufferRange.xml

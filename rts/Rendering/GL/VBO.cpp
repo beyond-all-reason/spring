@@ -431,10 +431,11 @@ void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
 }
 
 
-void VBO::Invalidate()
+void VBO::Invalidate() const
 {
 	assert(bound);
-	assert(immutableStorage || !mapped);
+	assert(!immutableStorage);
+	assert(!mapped);
 
 #ifdef GLEW_ARB_invalidate_subdata
 	// OpenGL4 way
@@ -445,7 +446,7 @@ void VBO::Invalidate()
 #endif
 
 	// note: allocating memory doesn't actually block the memory it just makes room in _virtual_ memory space
-	New(bufSize, usage, nullptr);
+	glBufferData(curBoundTarget, GetAlignedSize(bufSize), nullptr, usage);
 }
 
 
