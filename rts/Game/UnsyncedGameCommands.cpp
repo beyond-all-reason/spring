@@ -1483,20 +1483,6 @@ public:
 	}
 };
 
-
-class DynamicSkyActionExecutor : public IUnsyncedActionExecutor {
-public:
-	DynamicSkyActionExecutor() : IUnsyncedActionExecutor("DynamicSky", "Enable/Disable dynamic-sky rendering") {}
-
-	bool Execute(const UnsyncedAction& action) const final {
-		const auto& sky = ISky::GetSky();
-		LogSystemStatus("dynamic-sky rendering", sky->DynamicSkyRef() = !sky->DynamicSkyRef());
-		return true;
-	}
-};
-
-
-
 class NetPingActionExecutor : public IUnsyncedActionExecutor {
 public:
 	NetPingActionExecutor() : IUnsyncedActionExecutor("NetPing", "Send a ping request to the server") {
@@ -3760,7 +3746,6 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<CreateVideoActionExecutor>());
 	// [devel] AddActionExecutor(AllocActionExecutor<DrawGrassActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<DynamicSkyActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<NetPingActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<NetMsgSmoothingActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SpeedControlActionExecutor>());

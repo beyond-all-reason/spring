@@ -38,7 +38,6 @@ public:
 	bool SunVisible(const float3 pos) const;
 
 	bool& WireFrameModeRef() { return wireFrameMode; }
-	bool& DynamicSkyRef() { return dynamicSky; }
 
 	/**
 	 * Sets up OpenGL to draw fog or not, according to the value of
@@ -66,7 +65,6 @@ protected:
 	ISkyLight* skyLight;
 
 	bool wireFrameMode;
-	bool dynamicSky;
 };
 
 #endif // I_SKY_H
