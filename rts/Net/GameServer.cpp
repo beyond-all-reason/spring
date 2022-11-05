@@ -1020,7 +1020,7 @@ void CGameServer::ProcessPacket(const unsigned playerNum, std::shared_ptr<const 
 	const unsigned a = playerNum;
 	const unsigned msgCode = (unsigned) inbuf[0];
 
-	// Ignore packets from clienting in process of disconnecting.
+	// Ignore packets from clients in process of disconnecting.
 	if (players[a].myState == GameParticipant::DISCONNECTING)
 		return;
 
@@ -1962,7 +1962,8 @@ void CGameServer::ServerReadNet()
 			const auto aiLinkIt = aiClientLinks.find(aiID);
 
 			if (aiLinkIt != aiClientLinks.end()) {
-				aiLinkIt->second.link->SendData(packet);
+				if (aiLinkIt->second.link != nullptr)
+					aiLinkIt->second.link->SendData(packet);
 			} else {
 				// unreachable, aiClientLinks always contains a loopback entry for id=MAX_AIS
 				Message(spring::format("Player %s sent invalid SkirmishAI ID %d in AICOMMAND %d", player.name.c_str(), (int)aiID, cmdID));
