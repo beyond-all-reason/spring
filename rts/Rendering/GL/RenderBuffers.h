@@ -804,7 +804,7 @@ inline void TypedRenderBuffer<T>::UploadEBO()
 	CondInit();
 
 	if (indcs.size() > elemCount0) {
-		LOG_L(L_WARNING, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
+		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
 		ebo->Resize(indcs.capacity());
 		elemCount0 = indcs.capacity();
 	}
