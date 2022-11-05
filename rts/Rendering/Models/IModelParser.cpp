@@ -278,12 +278,10 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 		FillModel(*model, name, FindModelPath(name));
 	}
 
-	{
-		std::unique_lock lock(mutex);
-		cv.wait(lock, [model]() {
-			return model->loadStatus == S3DModel::LoadStatus::LOADED; }
-		);
-	}
+	std::unique_lock lock(mutex);
+	cv.wait(lock, [model]() {
+		return model->loadStatus == S3DModel::LoadStatus::LOADED;
+	});
 
 	if (!preload)
 		Upload(model);
