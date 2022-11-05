@@ -680,11 +680,19 @@ void Patch::Upload()
 	if (!vboVerticesUploaded)
 		VBOUploadVertices();
 
-
+	static constexpr auto usage = GL_STREAM_DRAW;
 	indxVBO.Bind();
-	if (indxVBO.GetSize() < indices.size() * sizeof(uint32_t)) {
-		indxVBO.Resize(indices.size() * sizeof(uint32_t), GL_STREAM_DRAW);
+	if (const size_t sz = indices.size() * sizeof(uint32_t); indxVBO.GetSize() >= sz * 2) {
+		// size the buffer down
+		indxVBO.Unbind();
+		indxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
+		indxVBO.Bind();
+		indxVBO.New(sz, usage, nullptr);
+	} else if (indxVBO.GetSize() < sz) {
+		// size the buffer up
+		indxVBO.Resize(sz, usage);
 	}
+
 	indxVBO.SetBufferSubData(indices);
 	indxVBO.Unbind();
 
