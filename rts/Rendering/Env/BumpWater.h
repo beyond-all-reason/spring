@@ -5,6 +5,7 @@
 
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "IWater.h"
 
 #include "System/EventClient.h"
@@ -27,28 +28,22 @@ public:
 
 public:
 	CBumpWater();
-	virtual ~CBumpWater();
+	~CBumpWater() override { FreeResources(); }
+	void FreeResources() override;
 
-	void Update();
-	void UpdateWater(CGame* game);
-	void OcclusionQuery();
-	void DrawReflection(CGame* game);
-	void DrawRefraction(CGame* game);
-	void Draw();
-	int GetID() const { return WATER_RENDERER_BUMPMAPPED; }
-	const char* GetName() const { return "bumpmapped"; }
+	void Update() override;
+	void UpdateWater(const CGame* game) override;
+	void DrawReflection(const CGame* game);
+	void DrawRefraction(const CGame* game);
+	void Draw() override;
+	WATER_RENDERER GetID() const override { return WATER_RENDERER_BUMPMAPPED; }
 
 	bool CanDrawReflectionPass() const override { return true; }
 	bool CanDrawRefractionPass() const override { return true; }
 private:
-	void SetUniforms(); ///< @see #useUniforms
-	void SetupUniforms( std::string& definitions );
-	void GetUniformLocations(const Shader::IProgramObject*);
-
-private:
 	//! coastmap (needed for shorewaves)
 	struct CoastAtlasRect {
-		CoastAtlasRect(const SRectangle& rect);
+		explicit CoastAtlasRect(const SRectangle& rect);
 		bool isCoastline; ///< if false, then the whole rect is either above water or below water (no coastline -> no need to calc/render distfield)
 		int ix1, iy1;
 		int ix2, iy2;
@@ -82,9 +77,8 @@ private:
 	bool  shoreWaves;
 	bool  endlessOcean; ///< render the water around the whole map
 	bool  dynWaves;     ///< only usable if bumpmap/normal texture is a TileSet
-	bool  useUniforms;  ///< use Uniforms instead of \#define'd const. Warning: this is much slower, but has the advantage that you can change the params on runtime.
 
-	unsigned char* tileOffsets; ///< used to randomize the wave/bumpmap/normal texture
+	std::vector<uint8_t> tileOffsets; ///< used to randomize the wave/bumpmap/normal texture
 	int  normalTextureX; ///< needed for dynamic waves
 	int  normalTextureY;
 
@@ -97,7 +91,7 @@ private:
 	FBO coastFBO;
 	FBO dynWavesFBO;
 
-	GLuint displayList;
+	TypedRenderBuffer<VA_TYPE_0> rb;
 
 	GLuint refractTexture;
 	GLuint reflectTexture;
@@ -112,12 +106,6 @@ private:
 
 	Shader::IProgramObject* waterShader;
 	Shader::IProgramObject* blurShader;
-
-	std::array<GLuint, 26> uniforms; ///< see useUniforms
-
-	bool wasVisibleLastFrame;
-	GLuint occlusionQuery;
-	GLuint occlusionQueryResult;
 
 	float3 windVec;
 	float3 windndir;

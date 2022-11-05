@@ -17,6 +17,14 @@ CRefractWater::CRefractWater()
 	LoadGfx();
 }
 
+void CRefractWater::FreeResources()
+{
+	if (subSurfaceTex) {
+		glDeleteTextures(1, &subSurfaceTex);
+		subSurfaceTex = 0;
+	}
+}
+
 void CRefractWater::LoadGfx()
 {
 	// valid because GL_TEXTURE_RECTANGLE_ARB = GL_TEXTURE_RECTANGLE_EXT
@@ -37,13 +45,6 @@ void CRefractWater::LoadGfx()
 	} else {
 		glTexImage2D(target, 0, 3, next_power_of_2(globalRendering->viewSizeX), next_power_of_2(globalRendering->viewSizeY), 0, GL_RGB, GL_INT, 0);
 		waterFP = LoadFragmentProgram("ARB/waterRefractT2D.fp");
-	}
-}
-
-CRefractWater::~CRefractWater()
-{
-	if (subSurfaceTex) {
-		glDeleteTextures(1, &subSurfaceTex);
 	}
 }
 

@@ -1,3 +1,4 @@
+#version 130
 /**
  * @project Spring RTS
  * @file bumpWaterFS.glsl
@@ -8,7 +9,7 @@
  * GNU GPL, v2 or later.
  */
 
-#line 10011
+#line 20012
 
 #define CausticDepth 0.5
 #define CausticRange 0.45
@@ -16,25 +17,26 @@
 //////////////////////////////////////////////////
 // Uniforms + Varyings
 
-  uniform sampler2D normalmap;
-  uniform sampler2D heightmap;
-  uniform sampler2D caustic;
-  uniform sampler2D foam;
-  uniform sampler2D reflection;
-  uniform sampler2D refraction;
-  uniform sampler2D coastmap;
-  uniform sampler2D depthmap;
-  uniform sampler2D waverand;
-  uniform float frame;
-  uniform vec3 eyePos;
+uniform sampler2D normalmap;
+uniform sampler2D heightmap;
+uniform sampler2D caustic;
+uniform sampler2D foam;
+uniform sampler2D reflection;
+uniform sampler2D refraction;
+uniform sampler2D coastmap;
+uniform sampler2D depthmap;
+uniform sampler2D waverand;
+uniform float frame;
+uniform vec3 eyePos;
 
-  varying float eyeVertexZ;
-  varying vec3 eyeVec;
-  varying vec3 ligVec;
-  varying vec3 worldPos;
-  varying vec2 clampedPotCoords;
+in float eyeVertexZ;
+in vec3 eyeVec;
+in vec3 ligVec;
+in vec3 worldPos;
+in vec4 texCoords[6];
 
-  vec2 clampedWorldPos = clamp(worldPos.xz, vec2(0.0), (vec2(1.0) / TexGenPlane.xy));
+
+vec2 clampedWorldPos = clamp(worldPos.xz, vec2(0.0), (vec2(1.0) / TexGenPlane.xy));
 
 //////////////////////////////////////////////////
 // Screen Coordinates (normalized and screen dimensions)
@@ -123,11 +125,11 @@ void GetWaterHeight(out float waterdepth, out float invwaterdepth, out float out
 	outside = 0.0;
 
 #ifdef opt_shorewaves
-	vec3 coast = texture2D(coastmap, gl_TexCoord[0].st).rgb;
+	vec3 coast = texture2D(coastmap, texCoords[0].st).rgb;
 	coastdist = coast.rg;
 	invwaterdepth = coast.b;
 #else
-	invwaterdepth = texture2D(heightmap, gl_TexCoord[5].st).a; // heightmap in alpha channel
+	invwaterdepth = texture2D(heightmap, texCoords[5].st).a; // heightmap in alpha channel
 #endif
 
 #ifdef opt_endlessocean
@@ -141,10 +143,10 @@ void GetWaterHeight(out float waterdepth, out float invwaterdepth, out float out
 
 vec3 GetNormal(out vec3 octave)
 {
-	vec3 octave1 = texture2D(normalmap, gl_TexCoord[1].st).rgb;
-	vec3 octave2 = texture2D(normalmap, gl_TexCoord[1].pq).rgb;
-	vec3 octave3 = texture2D(normalmap, gl_TexCoord[2].st).rgb;
-	vec3 octave4 = texture2D(normalmap, gl_TexCoord[2].pq).rgb;
+	vec3 octave1 = texture2D(normalmap, texCoords[1].st).rgb;
+	vec3 octave2 = texture2D(normalmap, texCoords[1].pq).rgb;
+	vec3 octave3 = texture2D(normalmap, texCoords[2].st).rgb;
+	vec3 octave4 = texture2D(normalmap, texCoords[2].pq).rgb;
 
 	float a = PerlinAmp;
 	octave1 = (octave1 * 2.0 - 1.0) * a;
@@ -190,15 +192,15 @@ vec3 GetShorewaves(vec2 coast, vec3 octave, float waterdepth , float invwaterdep
 		// no shorewaves/foam under terrain (is 0.0 underground, 1.0 else)
 		float underground = 1.0 - step(1.0, invwaterdepth);
 
-		vec3 wavefoam = texture2D(foam, gl_TexCoord[3].st + octave.xy * WaveFoamDistortion).rgb;
-		wavefoam += texture2D(foam, gl_TexCoord[3].pq + octave.xy * WaveFoamDistortion).rgb;
+		vec3 wavefoam = texture2D(foam, texCoords[3].st + octave.xy * WaveFoamDistortion).rgb;
+		wavefoam += texture2D(foam, texCoords[3].pq + octave.xy * WaveFoamDistortion).rgb;
 		wavefoam *= WaveFoamIntensity;
 
 		// shorewaves
-		vec4 waverands = texture2D(waverand, gl_TexCoord[4].pq);
+		vec4 waverands = texture2D(waverand, texCoords[4].pq);
 
 		vec4 fi = vec4(0.25, 0.50, 0.75, 1.00);
-		vec4 f = fract(fi + frame * 50.0 + (gl_TexCoord[1].x + gl_TexCoord[1].y) * WaveOffsetFactor);
+		vec4 f = fract(fi + frame * 50.0 + (texCoords[1].x + texCoords[1].y) * WaveOffsetFactor);
 		f = f * 1.4 - vec4(coastdist);
 		f = vec4(1.0) - f * InvWavesLength;
 		f = clamp(f, 0.0, 1.0);
@@ -255,7 +257,7 @@ void main()
 
 //#define dbg_coastmap
 #ifdef dbg_coastmap
-    gl_FragColor = vec4(texture2D(coastmap, gl_TexCoord[0].st).g);
+    gl_FragColor = vec4(texture2D(coastmap, texCoords[0].st).g);
     return;
 #endif
 
@@ -304,7 +306,7 @@ void main()
 
   // CAUSTICS
     if (waterdepth > 0.0) {
-      vec3 caust = texture2D(caustic, gl_TexCoord[0].pq * CausticsResolution).rgb;
+      vec3 caust = texture2D(caustic, texCoords[0].pq * CausticsResolution).rgb;
   #ifdef opt_refraction
       float caustBlend = smoothstep(CausticRange, 0.0, abs(waterdepth - CausticDepth));
       gl_FragColor.rgb += caust * caustBlend * CausticsStrength;

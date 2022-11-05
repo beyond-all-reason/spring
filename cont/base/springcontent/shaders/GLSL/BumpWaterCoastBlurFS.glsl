@@ -1,4 +1,4 @@
-#version 120
+#version 130
 
 /**
  * @project Spring RTS
@@ -12,28 +12,33 @@
  * GNU GPL, v2 or later.
  */
 
-#define res 15.0
-#define renderToAtlas (gl_TexCoord[2].x > 0.5)
-#define radius gl_TexCoord[2].y
+in vec4 vTexCoord;
 
 uniform sampler2D tex0; //! final (fullsize) texture
 uniform sampler2D tex1; //! atlas with to be updated rects
+uniform ivec2     args;
+
+#define res 15.0
+#define renderToAtlas (args.x > 0.5)
+#define radius args.y
+
+out vec4 fragColor;
 
 const float kernel = 1.0 / 10.0;
 
-vec2 texelScissor = vec2(dFdx(gl_TexCoord[0].p), dFdy(gl_TexCoord[0].q)); // heightmap pos
-vec2 texel0 = vec2(dFdx(gl_TexCoord[0].s), dFdy(gl_TexCoord[0].t)); // 0..1
+vec2 texelScissor = vec2(dFdx(vTexCoord.p), dFdy(vTexCoord.q)); // heightmap pos
+vec2 texel0 = vec2(dFdx(vTexCoord.s), dFdy(vTexCoord.t)); // 0..1
 
 vec4 tex2D(vec2 offset) {
 	if (renderToAtlas) {
-		return texture2D(tex0, gl_TexCoord[0].st + offset * texel0);
+		return texture2D(tex0, vTexCoord.st + offset * texel0);
 	} else {
-		vec2 scissor = gl_TexCoord[0].pq + (offset * texelScissor);
+		vec2 scissor = vTexCoord.pq + (offset * texelScissor);
 		bool outOfAtlasBound = any(greaterThan(scissor,vec2(1.0))) || any(lessThan(scissor,vec2(0.0)));
 		if (outOfAtlasBound) {
-			return texture2D(tex1, gl_TexCoord[0].st);
+			return texture2D(tex1, vTexCoord.st);
 		} else {
-			return texture2D(tex1, gl_TexCoord[0].st + offset * texel0);
+			return texture2D(tex1, vTexCoord.st + offset * texel0);
 		}
 	}
 }
@@ -92,7 +97,7 @@ void LoopIter(inout float maxDist, inout vec3 minDist, float i) {
 void main() {
 	if (radius < 0.5) {
 		//! initialize
-		gl_FragColor = texture2D(tex1, gl_TexCoord[0].st);
+		fragColor = texture2D(tex1, vTexCoord.st);
 		return;
 	}
 
@@ -104,26 +109,26 @@ void main() {
 			groundSurrounding += tex2D(vec2(-1.0,-1.0)).rb;
 			groundSurrounding += tex2D(vec2( 1.0,-1.0)).rb;
 
-		gl_FragColor = texture2D(tex1, gl_TexCoord[0].st);
+		fragColor = texture2D(tex1, vTexCoord.st);
 
-		if (groundSurrounding.x + gl_FragColor.r == 5.0) {
-			gl_FragColor.r = 1.0;
+		if (groundSurrounding.x + fragColor.r == 5.0) {
+			fragColor.r = 1.0;
 		} else {
-			gl_FragColor.r = 0.93 - (groundSurrounding.y + gl_FragColor.b) / 5.0;
+			fragColor.r = 0.93 - (groundSurrounding.y + fragColor.b) / 5.0;
 		}
 
 		return;
 	} else if (radius > 8.5) {
 		//! blur the texture in the final stage
 		vec2
-			blur  = texture2D(tex0, gl_TexCoord[0].st + vec2( 1.0, 1.0) * texel0).rg;
-			blur += texture2D(tex0, gl_TexCoord[0].st + vec2(-1.0, 1.0) * texel0).rg;
-			blur += texture2D(tex0, gl_TexCoord[0].st + vec2(-1.0,-1.0) * texel0).rg;
-			blur += texture2D(tex0, gl_TexCoord[0].st + vec2( 1.0,-1.0) * texel0).rg;
+			blur  = texture2D(tex0, vTexCoord.st + vec2( 1.0, 1.0) * texel0).rg;
+			blur += texture2D(tex0, vTexCoord.st + vec2(-1.0, 1.0) * texel0).rg;
+			blur += texture2D(tex0, vTexCoord.st + vec2(-1.0,-1.0) * texel0).rg;
+			blur += texture2D(tex0, vTexCoord.st + vec2( 1.0,-1.0) * texel0).rg;
 
-		gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
-		gl_FragColor.r = step(5.0, blur.x + gl_FragColor.r);
-		gl_FragColor.g = mix(gl_FragColor.g, blur.y * 0.25, 0.4);
+		fragColor = texture2D(tex0, vTexCoord.st);
+		fragColor.r = step(5.0, blur.x + fragColor.r);
+		fragColor.g = mix(fragColor.g, blur.y * 0.25, 0.4);
 		return;
 	}
 
@@ -150,10 +155,10 @@ void main() {
 	float fDist = 1.0 - (min(res, sqrt(minDist.z)) / res);
 
 	if (renderToAtlas) {
-		gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
+		fragColor = texture2D(tex0, vTexCoord.st);
 	} else {
-		gl_FragColor = texture2D(tex1, gl_TexCoord[0].st);
+		fragColor = texture2D(tex1, vTexCoord.st);
 	}
 
-	gl_FragColor.g = max(gl_FragColor.g, fDist * fDist * fDist);
+	fragColor.g = max(fragColor.g, fDist * fDist * fDist);
 }

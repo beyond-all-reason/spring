@@ -142,7 +142,7 @@ void CWorldDrawer::InitPost() const
 
 	{
 		loadscreen->SetLoadMessage("Creating Water");
-		water = IWater::GetWater(nullptr, -1);
+		IWater::SetWater(-1);
 	}
 	{
 		ISky::GetSky()->SetupFog();
@@ -159,7 +159,7 @@ void CWorldDrawer::Kill()
 {
 	spring::SafeDelete(infoTextureHandler);
 
-	spring::SafeDelete(water);
+	IWater::KillWater();
 	ISky::KillSky();
 	spring::SafeDelete(grassDrawer);
 	spring::SafeDelete(pathDrawer);
@@ -204,7 +204,6 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
-	IWater::ApplyPushedChanges(game);
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();
@@ -213,7 +212,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 			SCOPED_TIMER("Update::WorldDrawer::{Sky,Water}");
 
 			ISky::GetSky()->Update();
-			water->Update();
+			IWater::GetWater()->Update();
 		}
 
 		// once every simframe is frequent enough here
@@ -338,11 +337,6 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		smoothHeightMeshDrawer->Draw(1.0f);
 	}
 
-	// run occlusion query here so it has more time to finish before UpdateWater
-	if (globalRendering->drawWater && !mapRendering->voidWater) {
-		water->OcclusionQuery();
-	}
-
 	selectedUnitsHandler.Draw();
 	eventHandler.DrawWorldPreUnit();
 
@@ -385,6 +379,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	if (globalRendering->drawWater && !mapRendering->voidWater) {
 		SCOPED_TIMER("Draw::World::Water");
 
+		const auto& water = IWater::GetWater();
 		water->UpdateWater(game);
 		water->Draw();
 	}

@@ -34,7 +34,7 @@ CBasicWater::CBasicWater()
 	GenWaterQuadsRB();
 }
 
-CBasicWater::~CBasicWater()
+void CBasicWater::FreeResources()
 {
 	glDeleteTextures(1, &textureID);
 }
@@ -62,10 +62,10 @@ void CBasicWater::GenWaterQuadsRB()
 	repeatX = (waterRendering->repeatX != 0 ? waterRendering->repeatX : repeatX) / 16;
 	repeatY = (waterRendering->repeatY != 0 ? waterRendering->repeatY : repeatY) / 16;
 
-	auto& tmpRB = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_T>();
+	rb = TypedRenderBuffer<VA_TYPE_T>(4 * 16 * 16, 6 * 16 * 16, IStreamBufferConcept::Types::SB_BUFFERDATA);
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
-			tmpRB.AddQuadTriangles(
+			rb.AddQuadTriangles(
 				{ { (x + 0) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 0) * repeatY },
 				{ { (x + 0) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 1) * repeatY },
 				{ { (x + 1) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 1) * repeatX, (y + 1) * repeatY },
@@ -73,9 +73,7 @@ void CBasicWater::GenWaterQuadsRB()
 			);
 		}
 	}
-
-	rb = tmpRB.CopyCurrent(true);
-	tmpRB.DropCurrent();
+	rb.SetReadonly();
 }
 
 

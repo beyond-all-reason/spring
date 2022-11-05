@@ -1,3 +1,4 @@
+#version 130
 /**
  * @project Spring RTS
  * @file bumpWaterVS.glsl
@@ -57,40 +58,47 @@
 // #define opt_texrect
 // #define opt_endlessocean
 
+#line 10061
+
+in vec3 pos;
+
 uniform float frame;
 uniform vec3 eyePos;
+uniform vec2 windVector;
 
-varying float eyeVertexZ;
-varying vec3 eyeVec;
-varying vec3 ligVec;
-varying vec3 worldPos;
+out float eyeVertexZ;
+out vec3 eyeVec;
+out vec3 ligVec;
+out vec3 worldPos;
+out vec4 texCoords[6];
 
 void main()
 {
+	vec4 pos4 = vec4(pos, 1.0);
 	// COMPUTE TEXCOORDS
-	gl_TexCoord[0] = TexGenPlane * gl_Vertex.xzxz;
-	gl_TexCoord[5].st = ShadingPlane.xy * gl_Vertex.xz;
+	texCoords[0] = TexGenPlane * pos4.xzxz;
+	texCoords[5].st = ShadingPlane.xy * pos4.xz;
 
 	// COMPUTE WAVE TEXTURE COORDS
 	float fstart = PerlinStartFreq;
 	float f      = PerlinLacunarity;
-	gl_TexCoord[1].st = (vec2(-1.0,-1.0) + gl_TexCoord[0].pq + 0.75) * fstart       + frame * WindSpeed * gl_MultiTexCoord1.st;
-	gl_TexCoord[1].pq = (vec2(-1.0, 1.0) + gl_TexCoord[0].pq + 0.50) * fstart*f     - frame * WindSpeed * gl_MultiTexCoord1.st;
-	gl_TexCoord[2].st = (vec2( 1.0,-1.0) + gl_TexCoord[0].pq + 0.25) * fstart*f*f   + frame * WindSpeed * gl_MultiTexCoord1.st;
-	gl_TexCoord[2].pq = (vec2( 1.0, 1.0) + gl_TexCoord[0].pq + 0.00) * fstart*f*f*f + frame * WindSpeed * gl_MultiTexCoord1.st;
+	texCoords[1].st = (vec2(-1.0,-1.0) + texCoords[0].pq + 0.75) * fstart       + frame * WindSpeed * windVector;
+	texCoords[1].pq = (vec2(-1.0, 1.0) + texCoords[0].pq + 0.50) * fstart*f     - frame * WindSpeed * windVector;
+	texCoords[2].st = (vec2( 1.0,-1.0) + texCoords[0].pq + 0.25) * fstart*f*f   + frame * WindSpeed * windVector;
+	texCoords[2].pq = (vec2( 1.0, 1.0) + texCoords[0].pq + 0.00) * fstart*f*f*f + frame * WindSpeed * windVector;
 
-	gl_TexCoord[3].st = gl_TexCoord[0].pq * 160.0 + frame * 2.5;
-	gl_TexCoord[3].pq = gl_TexCoord[0].pq * 90.0  - frame * 2.0;
-	gl_TexCoord[4].st = gl_TexCoord[0].pq * 2.0;
-	gl_TexCoord[4].pq = gl_TexCoord[0].pq * 6.0 + frame * 0.37;
+	texCoords[3].st = texCoords[0].pq * 160.0 + frame * 2.5;
+	texCoords[3].pq = texCoords[0].pq * 90.0  - frame * 2.0;
+	texCoords[4].st = texCoords[0].pq * 2.0;
+	texCoords[4].pq = texCoords[0].pq * 6.0 + frame * 0.37;
 
 	// SIMULATE WAVES
 	// TODO:
 	//   restrict amplitude to less than shallow water depth
 	//   decrease cycling speed of caustics when zoomed out?
 	vec4 waveVertex;
-	waveVertex.xzw = gl_Vertex.xzw;
-	waveVertex.y = 3.0 * (cos(frame * 500.0 + gl_Vertex.z) * sin(frame * 500.0 + gl_Vertex.x / 1000.0));
+	waveVertex.xzw = pos4.xzw;
+	waveVertex.y = 3.0 * (cos(frame * 500.0 + pos4.z) * sin(frame * 500.0 + pos4.x / 1000.0));
 
 	// COMPUTE LIGHT VECTORS
 	eyeVec = eyePos - waveVertex.xyz;
@@ -104,7 +112,7 @@ void main()
 
 	#if 0
 	// distance to unperturbed vertex
-	eyeVertexZ = (gl_ModelViewMatrix * gl_Vertex).z;
+	eyeVertexZ = (gl_ModelViewMatrix * pos4).z;
 	#endif
 }
 

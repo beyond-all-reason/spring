@@ -989,8 +989,7 @@ void CGame::ResizeEvent()
 		if (minimap != nullptr)
 			minimap->UpdateGeometry();
 
-		// reload water renderer (it may depend on screen resolution)
-		water = IWater::GetWater(water, water->GetID());
+		IWater::GetWater()->ViewResize();
 	}
 
 	LOG("[Game::%s][2]", __func__);

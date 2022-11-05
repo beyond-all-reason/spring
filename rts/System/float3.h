@@ -220,7 +220,7 @@ public:
 	 * Same as multiplying a float, but stores
 	 * the new float3 inside this one.
 	 */
-	float3& operator*= (const float f) {
+	float3& operator*= (float f) {
 		x *= f;
 		y *= f;
 		z *= f;

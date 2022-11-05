@@ -254,39 +254,47 @@ CDynWater::CDynWater()
 	}
 }
 
-CDynWater::~CDynWater()
+void CDynWater::FreeResources()
 {
-	glDeleteTextures (1, &reflectTexture);
-	glDeleteTextures (1, &refractTexture);
-	glDeleteTextures (3, rawBumpTexture);
-	glDeleteTextures (1, &detailNormalTex);
-	glDeleteTextures (1, &waveTex1);
-	glDeleteTextures (1, &waveTex2);
-	glDeleteTextures (1, &waveTex3);
-	glDeleteTextures (1, &waveHeight32);
-	glDeleteTextures (1, &splashTex);
-	glDeleteTextures (1, &foamTex);
-	glDeleteTextures (1, &boatShape);
-	glDeleteTextures (1, &hoverShape);
-	glDeleteTextures (1, &zeroTex);
-	glDeleteTextures (1, &fixedUpTex);
+	const auto DeleteTexture = [](GLuint& texID) { if (texID > 0) { glDeleteTextures(1, &texID); texID = 0; } };
+	const auto DeleteProgram = [](GLuint& proID) { if (proID > 0) { glSafeDeleteProgram(proID); proID = 0; } };
 
-	glSafeDeleteProgram(waterFP);
-	glSafeDeleteProgram(waterVP);
-	glSafeDeleteProgram(waveFP);
-	glSafeDeleteProgram(waveVP);
-	glSafeDeleteProgram(waveFP2);
-	glSafeDeleteProgram(waveVP2);
-	glSafeDeleteProgram(waveNormalFP);
-	glSafeDeleteProgram(waveNormalVP);
-	glSafeDeleteProgram(waveCopyHeightFP);
-	glSafeDeleteProgram(waveCopyHeightVP);
-	glSafeDeleteProgram(dwDetailNormalVP);
-	glSafeDeleteProgram(dwDetailNormalFP);
-	glSafeDeleteProgram(dwAddSplashVP);
-	glSafeDeleteProgram(dwAddSplashFP);
+	DeleteTexture(reflectTexture);
+	DeleteTexture(refractTexture);
+	for (auto& rbt : rawBumpTexture)
+		DeleteTexture(rbt);
 
-	glDeleteFramebuffersEXT(1, &frameBuffer);
+	DeleteTexture(detailNormalTex);
+	DeleteTexture(waveTex1);
+	DeleteTexture(waveTex2);
+	DeleteTexture(waveTex3);
+	DeleteTexture(waveHeight32);
+	DeleteTexture(splashTex);
+	DeleteTexture(foamTex);
+	DeleteTexture(boatShape);
+	DeleteTexture(hoverShape);
+	DeleteTexture(zeroTex);
+	DeleteTexture(fixedUpTex);
+
+	DeleteProgram(waterFP);
+	DeleteProgram(waterVP);
+	DeleteProgram(waveFP);
+	DeleteProgram(waveVP);
+	DeleteProgram(waveFP2);
+	DeleteProgram(waveVP2);
+	DeleteProgram(waveNormalFP);
+	DeleteProgram(waveNormalVP);
+	DeleteProgram(waveCopyHeightFP);
+	DeleteProgram(waveCopyHeightVP);
+	DeleteProgram(dwDetailNormalVP);
+	DeleteProgram(dwDetailNormalFP);
+	DeleteProgram(dwAddSplashVP);
+	DeleteProgram(dwAddSplashFP);
+
+	if (frameBuffer) {
+		glDeleteFramebuffersEXT(1, &frameBuffer);
+		frameBuffer = 0;
+	}
 }
 
 void CDynWater::Draw()
@@ -387,7 +395,7 @@ void CDynWater::Draw()
 	*/
 }
 
-void CDynWater::UpdateWater(CGame* game)
+void CDynWater::UpdateWater(const CGame* game)
 {
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
@@ -441,7 +449,7 @@ void CDynWater::Update()
 	glDepthMask(1);
 }
 
-void CDynWater::DrawReflection(CGame* game)
+void CDynWater::DrawReflection(const CGame* game)
 {
 	reflectFBO.Bind();
 
@@ -474,7 +482,7 @@ void CDynWater::DrawReflection(CGame* game)
 	prvCam->LoadViewPort();
 }
 
-void CDynWater::DrawRefraction(CGame* game)
+void CDynWater::DrawRefraction(const CGame* game)
 {
 	camera->Update();
 

@@ -1633,8 +1633,9 @@ int LuaUnsyncedRead::HaveAdvShading(lua_State* L)
 
 int LuaUnsyncedRead::GetWaterMode(lua_State* L)
 {
+	const auto& water = IWater::GetWater();
 	lua_pushnumber(L, water->GetID());
-	lua_pushstring(L, water->GetName());
+	lua_pushstring(L, IWater::GetWaterName(water->GetID()));
 	return 2;
 }
 

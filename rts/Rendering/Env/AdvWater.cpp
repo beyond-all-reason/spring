@@ -103,12 +103,16 @@ CAdvWater::CAdvWater(bool loadShader)
 	}
 }
 
-CAdvWater::~CAdvWater()
+void CAdvWater::FreeResources()
 {
-	glDeleteTextures(1, &reflectTexture);
-	glDeleteTextures(1, &bumpTexture);
-	glDeleteTextures(4, rawBumpTexture);
+	const auto DeleteTexture = [](GLuint& texID) { if (texID > 0) { glDeleteTextures(1, &texID); texID = 0; } };
+	DeleteTexture(reflectTexture);
+	DeleteTexture(bumpTexture);
+	for (auto& rbt : rawBumpTexture)
+		DeleteTexture(rbt);
+
 	glSafeDeleteProgram(waterFP);
+	waterFP = 0;
 }
 
 void CAdvWater::Draw()
@@ -239,7 +243,7 @@ void CAdvWater::Draw(bool useBlending)
 		glEnable(GL_BLEND);
 }
 
-void CAdvWater::UpdateWater(CGame* game)
+void CAdvWater::UpdateWater(const CGame* game)
 {
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;

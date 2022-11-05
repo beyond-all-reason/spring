@@ -4,6 +4,7 @@
 
 #include "System/Color.h"
 #include "System/float3.h"
+#include "System/float4.h"
 #include "System/type2.h"
 #include "myGL.h"
 
@@ -85,6 +86,20 @@ struct VA_TYPE_T {
 
 		v.s *= t;
 		v.t *= t;
+
+		return v;
+	}
+
+	static std::array<AttributeDef, 2> attributeDefs;
+};
+struct VA_TYPE_T4 {
+	float3 pos;
+	float4 uv;
+
+	VA_TYPE_T4 operator* (float t) const {
+		VA_TYPE_T4 v = *this;
+		v.pos *= t;
+		v.uv *= t;
 
 		return v;
 	}

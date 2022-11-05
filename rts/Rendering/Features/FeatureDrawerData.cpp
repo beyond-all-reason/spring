@@ -112,7 +112,7 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 	f->ResetDrawFlag();
 
 	for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
-		if (camType == CCamera::CAMTYPE_UWREFL && !water->CanDrawReflectionPass())
+		if (camType == CCamera::CAMTYPE_UWREFL && !IWater::GetWater()->CanDrawReflectionPass())
 			continue;
 
 		if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))

@@ -14,20 +14,20 @@ class CDynWater : public IWater
 {
 public:
 	CDynWater();
-	~CDynWater();
+	~CDynWater() override { FreeResources(); }
+	void FreeResources() override;
 
-	void Draw();
-	void UpdateWater(CGame* game);
-	void Update();
+	void Draw() override;
+	void UpdateWater(const CGame* game) override;
+	void Update() override;
 	void AddExplosion(const float3& pos, float strength, float size);
-	int GetID() const { return WATER_RENDERER_DYNAMIC; }
-	const char* GetName() const { return "dynamic"; }
+	WATER_RENDERER GetID() const override { return WATER_RENDERER_DYNAMIC; }
 
 	bool CanDrawReflectionPass() const override { return true; }
 	bool CanDrawRefractionPass() const override { return true; }
 private:
-	void DrawReflection(CGame* game);
-	void DrawRefraction(CGame* game);
+	void DrawReflection(const CGame* game);
+	void DrawRefraction(const CGame* game);
 	void DrawWaves();
 	void DrawHeightTex();
 	void DrawWaterSurface();

@@ -11,12 +11,12 @@ class CBasicWater : public IWater
 {
 public:
 	CBasicWater();
-	~CBasicWater() override;
+	~CBasicWater() override { FreeResources(); }
+	void FreeResources() override;
 
 	void Draw() override;
-	void UpdateWater(CGame* game)  override {}
-	int GetID() const override { return WATER_RENDERER_BASIC; }
-	const char* GetName() const override { return "basic"; }
+	void UpdateWater(const CGame* game)  override {}
+	WATER_RENDERER GetID() const override { return WATER_RENDERER_BASIC; }
 
 	bool CanDrawReflectionPass() const override { return false; }
 	bool CanDrawRefractionPass() const override { return false; }

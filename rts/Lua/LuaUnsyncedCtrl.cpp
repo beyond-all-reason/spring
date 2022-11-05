@@ -3225,7 +3225,7 @@ int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 
 int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 {
-	const std::string modelName = luaL_optstring(L, 1, nullptr);
+	const std::string modelName = luaL_optstring(L, 1, "");
 	if (modelName.empty()) {
 		lua_pushnil(L);
 		return 1;

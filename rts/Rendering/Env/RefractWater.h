@@ -9,14 +9,13 @@ class CRefractWater : public CAdvWater
 {
 public:
 	CRefractWater();
-	~CRefractWater();
+	~CRefractWater() override { FreeResources(); }
+	void FreeResources() override;
 
 	void LoadGfx();
 
-	void Draw();
-	int GetID() const { return WATER_RENDERER_REFL_REFR; }
-	const char* GetName() const { return "reflective&refractive"; }
-
+	void Draw() override;
+	WATER_RENDERER GetID() const override { return WATER_RENDERER_REFL_REFR; }
 protected:
 	void SetupWaterDepthTex();
 

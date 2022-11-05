@@ -347,7 +347,7 @@ public:
 		if (parseFailure)
 			nextWaterRendererMode = -1;
 
-		IWater::PushWaterMode(nextWaterRendererMode);
+		IWater::SetWater(nextWaterRendererMode);
 		return true;
 	}
 };
@@ -3093,6 +3093,7 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		const auto& water = IWater::GetWater();
 		LogSystemStatus("wireframe water-drawing mode", water->WireFrameModeRef() = !water->WireFrameModeRef());
 		return true;
 	}

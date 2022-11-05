@@ -312,12 +312,12 @@ void LuaObjectDrawer::SetDrawPassGlobalLODFactor(LuaObjType objType)
 		return;
 	}
 
-	if (water->DrawReflectionPass()) {
+	if (IWater::GetWater()->DrawReflectionPass()) {
 		LuaObjectMaterialData::SetGlobalLODFactor(objType, GetLODScaleReflection(objType) * camera->GetLPPScale());
 		return;
 	}
 
-	if (water->DrawRefractionPass()) {
+	if (IWater::GetWater()->DrawRefractionPass()) {
 		LuaObjectMaterialData::SetGlobalLODFactor(objType, GetLODScaleRefraction(objType) * camera->GetLPPScale());
 		return;
 	}
@@ -326,8 +326,8 @@ void LuaObjectDrawer::SetDrawPassGlobalLODFactor(LuaObjType objType)
 }
 
 
-LuaMatType LuaObjectDrawer::GetDrawPassOpaqueMat() { return opaqueMats[water->DrawReflectionPass()]; }
-LuaMatType LuaObjectDrawer::GetDrawPassAlphaMat() { return alphaMats[water->DrawReflectionPass()]; }
+LuaMatType LuaObjectDrawer::GetDrawPassOpaqueMat() { return opaqueMats[IWater::GetWater()->DrawReflectionPass()]; }
+LuaMatType LuaObjectDrawer::GetDrawPassAlphaMat() { return alphaMats[IWater::GetWater()->DrawReflectionPass()]; }
 
 
 void LuaObjectDrawer::DrawMaterialBins(LuaObjType objType, LuaMatType matType, bool deferredPass)

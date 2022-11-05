@@ -10,14 +10,14 @@
 class CAdvWater : public IWater
 {
 public:
-	CAdvWater(bool loadShader = true);
-	virtual ~CAdvWater();
-	virtual int GetID() const { return WATER_RENDERER_REFLECTIVE; }
-	virtual const char* GetName() const { return "reflective"; }
+	explicit CAdvWater(bool loadShader = true);
+	~CAdvWater() override { FreeResources(); }
+	void FreeResources() override;
+	WATER_RENDERER GetID() const override { return WATER_RENDERER_REFLECTIVE; }
 
-	virtual void Draw();
+	void Draw() override;
 	void Draw(bool useBlending);
-	void UpdateWater(CGame* game);
+	void UpdateWater(const CGame* game) override;
 
 	bool CanDrawReflectionPass() const override { return true; }
 	bool CanDrawRefractionPass() const override { return false; }

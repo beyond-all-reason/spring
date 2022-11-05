@@ -3,6 +3,8 @@
 #ifndef I_WATER_H
 #define I_WATER_H
 
+#include <array>
+
 #include "System/float3.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 class CGame;
@@ -10,7 +12,7 @@ class CGame;
 class IWater : public IExplosionListener
 {
 public:
-	enum {
+	enum WATER_RENDERER {
 		WATER_RENDERER_BASIC      = 0,
 		WATER_RENDERER_REFLECTIVE = 1,
 		WATER_RENDERER_DYNAMIC    = 2,
@@ -20,15 +22,15 @@ public:
 	};
 
 	IWater();
-	virtual ~IWater() {}
+	virtual ~IWater() = default;
+	virtual void FreeResources() = 0;
 
+	virtual void ViewResize() {}
 	virtual void Draw() {}
 	virtual void Update() {}
-	virtual void UpdateWater(CGame* game) {}
-	virtual void OcclusionQuery() {}
+	virtual void UpdateWater(const CGame* game) {}
 	virtual void AddExplosion(const float3& pos, float strength, float size) {}
-	virtual int  GetID() const { return -1; }
-	virtual const char* GetName() const { return ""; }
+	virtual WATER_RENDERER GetID() const = 0;
 
 	virtual bool CanDrawReflectionPass() const { return false; }
 	virtual bool CanDrawRefractionPass() const { return false; }
@@ -40,23 +42,30 @@ public:
 	bool BlockWakeProjectiles() const { return (GetID() == WATER_RENDERER_DYNAMIC); }
 	bool& WireFrameModeRef() { return wireFrameMode; }
 
-	static IWater* GetWater(IWater* curRenderer, int nxtRendererMode);
-
-	static void ApplyPushedChanges(CGame* game);
-	static void PushWaterMode(int nxtRendererMode);
-
 	static void SetModelClippingPlane(const double* planeEq);
 
+	static void SetWater(int rendererMode);
+	static auto& GetWater() { return water; }
+	static void KillWater() { water = nullptr; }
+	static const char* GetWaterName(WATER_RENDERER wr) { return WaterNames[wr]; }
 protected:
 	void DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky);
 	void DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky);
 
 protected:
+	static inline std::unique_ptr<IWater> water = nullptr;
+
 	bool drawReflection;
 	bool drawRefraction;
 	bool wireFrameMode;
+private:
+	static constexpr std::array<const char*, NUM_WATER_RENDERERS> WaterNames{
+		"basic",
+		"reflective",
+		"dynamic",
+		"reflective&refractive",
+		"bumpmapped"
+	};
 };
-
-extern IWater* water;
 
 #endif // I_WATER_H

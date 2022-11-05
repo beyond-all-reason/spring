@@ -2,7 +2,7 @@
 
 #include "System/Log/ILog.h"
 
-std::array<std::unique_ptr<RenderBuffer>, 12> RenderBuffer::typedRenderBuffers;
+std::array<std::unique_ptr<RenderBuffer>, 13> RenderBuffer::typedRenderBuffers;
 
 void RenderBuffer::InitStatic()
 {
@@ -11,6 +11,7 @@ void RenderBuffer::InitStatic()
 		std::make_unique<TypedRenderBuffer<VA_TYPE_C   >>(1 << 20, 1 << 20),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_N   >>(1 << 10, 1 << 10),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_T   >>(1 << 20, 1 << 20),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_T4  >>(1 << 10, 1 << 10),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_TN  >>(1 << 16, 1 << 16),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_TC  >>(1 << 20, 1 << 20),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_PROJ>>(1 << 20, 1 << 20),

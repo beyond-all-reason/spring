@@ -62,7 +62,7 @@ struct float4 : public float3
 		z *= f.z; w *= f.w;
 		return *this;
 	}
-	float4& operator *= (const float f) {
+	float4& operator*= (float f) {
 		x *= f; y *= f;
 		z *= f; w *= f;
 		return *this;
