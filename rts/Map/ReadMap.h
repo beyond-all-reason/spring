@@ -227,8 +227,9 @@ private:
 	void InitHeightBounds();
 	void LoadOriginalHeightMapAndChecksum();
 	void UpdateHeightBounds(int syncFrame);
+	void UpdateTempHeightBoundsSIMD(size_t begin, size_t end);
 
-	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize);
+	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize) const;
 	void UpdateMipHeightmaps(const SRectangle& rect, bool initialize);
 	void UpdateFaceNormals(const SRectangle& rect, bool initialize);
 	void UpdateSlopemap(const SRectangle& rect, bool initialize);
