@@ -112,7 +112,7 @@ static GLuint LoadTexture(const string& filename, const float anisotropy = 0.0f,
 
 static TypedRenderBuffer<VA_TYPE_0> GenWaterPlaneBuffer(bool radial)
 {
-	auto rb = TypedRenderBuffer<VA_TYPE_0>(4 * (32 + 1) * 2, 0, IStreamBufferConcept::Types::SB_BUFFERDATA);
+	auto rb = TypedRenderBuffer<VA_TYPE_0>(9 * 9 * 6, 0, IStreamBufferConcept::Types::SB_BUFFERDATA);
 
 	if (radial) {
 		// FIXME: more or less copied from SMFGroundDrawer

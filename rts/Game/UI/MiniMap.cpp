@@ -74,6 +74,7 @@ CONFIG(bool, MiniMapCanFlip).defaultValue(false).description("Whether minimap in
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
+#define USE_CLIP_PLANES 0
 
 CMiniMap* minimap = nullptr;
 
@@ -1155,19 +1156,24 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 	setSurfaceSquareFunc(DrawSurfaceSquare);
 	cursorIcons.Enable(false);
 
+#if USE_CLIP_PLANES
 	// clip everything outside of the minimap box
 	SetClipPlanes(false);
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE1);
 	glEnable(GL_CLIP_PLANE2);
 	glEnable(GL_CLIP_PLANE3);
-
+#endif
 	DrawBackground();
 
 	// allow Lua scripts to overdraw the background image
+#if USE_CLIP_PLANES
 	SetClipPlanes(true);
+#endif
 	eventHandler.DrawInMiniMapBackground();
+#if USE_CLIP_PLANES
 	SetClipPlanes(false);
+#endif
 
 	DrawUnitIcons();
 	DrawWorldStuff();
@@ -1200,11 +1206,12 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 		CCamera::GetActive()->LoadViewPort();
 
 	// disable ClipPlanes
+#if USE_CLIP_PLANES
 	glDisable(GL_CLIP_PLANE0);
 	glDisable(GL_CLIP_PLANE1);
 	glDisable(GL_CLIP_PLANE2);
 	glDisable(GL_CLIP_PLANE3);
-
+#endif
 	cursorIcons.Enable(true);
 	setSurfaceCircleFunc(nullptr);
 	setSurfaceSquareFunc(nullptr);
@@ -1356,13 +1363,14 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 
 	DrawNotes();
 
-	/*
+
 	// disable ClipPlanes
+#if USE_CLIP_PLANES
 	glDisable(GL_CLIP_PLANE0);
 	glDisable(GL_CLIP_PLANE1);
 	glDisable(GL_CLIP_PLANE2);
 	glDisable(GL_CLIP_PLANE3);
-	*/
+#endif
 
 	glPopMatrix();
 
@@ -1672,9 +1680,10 @@ void CMiniMap::DrawBackground() const
 
 void CMiniMap::DrawUnitIcons() const
 {
+#if USE_CLIP_PLANES
 	for (int i = 0; i < 4; ++i)
 		glDisable(GL_CLIP_PLANE0 + i);
-
+#endif
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(curPos.x, curPos.y, curDim.x, curDim.y);
 
@@ -1691,9 +1700,10 @@ void CMiniMap::DrawUnitIcons() const
 
 	glDisable(GL_SCISSOR_TEST);
 
+#if USE_CLIP_PLANES
 	for (int i = 0; i < 4; ++i)
 		glEnable(GL_CLIP_PLANE0 + i);
-
+#endif
 }
 
 
