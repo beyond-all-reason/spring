@@ -989,7 +989,10 @@ void CGame::ResizeEvent()
 		if (minimap != nullptr)
 			minimap->UpdateGeometry();
 
-		IWater::GetWater()->ViewResize();
+		//recreate water on resize (lazy but works)
+		const auto wt = IWater::GetWater()->GetID();
+		IWater::KillWater();
+		IWater::SetWater(wt);
 	}
 
 	LOG("[Game::%s][2]", __func__);

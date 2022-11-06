@@ -25,7 +25,6 @@ public:
 	virtual ~IWater() = default;
 	virtual void FreeResources() = 0;
 
-	virtual void ViewResize() {}
 	virtual void Draw() {}
 	virtual void Update() {}
 	virtual void UpdateWater(const CGame* game) {}
