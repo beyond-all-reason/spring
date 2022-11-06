@@ -779,13 +779,13 @@ inline void TypedRenderBuffer<T>::UploadVBO()
 
 	if (verts.size() > vertCount0) {
 		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
-		vbo->Resize(verts.capacity());
+		vbo->Resize(static_cast<uint32_t>(verts.capacity()));
 		vertCount0 = verts.capacity();
 	}
 
 	//update on the GPU
 	const VertType* clientPtr = verts.data();
-	VertType* mappedPtr = vbo->Map(clientPtr, vboUploadIndex, elemsCount);
+	VertType* mappedPtr = vbo->Map(clientPtr, static_cast<uint32_t>(vboUploadIndex), static_cast<uint32_t>(elemsCount));
 
 	if (!vbo->HasClientPtr())
 		memcpy(mappedPtr, clientPtr + vboUploadIndex, elemsCount * sizeof(VertType));
@@ -805,13 +805,13 @@ inline void TypedRenderBuffer<T>::UploadEBO()
 
 	if (indcs.size() > elemCount0) {
 		LOG_L(L_DEBUG, "[TypedRenderBuffer<%s>::%s] Increase the number of elements here!", vboTypeName, __func__);
-		ebo->Resize(indcs.capacity());
+		ebo->Resize(static_cast<uint32_t>(indcs.capacity()));
 		elemCount0 = indcs.capacity();
 	}
 
 	//update on the GPU
 	const IndcType* clientPtr = indcs.data();
-	IndcType* mappedPtr = ebo->Map(clientPtr, eboUploadIndex, elemsCount);
+	IndcType* mappedPtr = ebo->Map(clientPtr, static_cast<uint32_t>(eboUploadIndex), static_cast<uint32_t>(elemsCount));
 
 	if (!ebo->HasClientPtr())
 		memcpy(mappedPtr, clientPtr + eboUploadIndex, elemsCount * sizeof(IndcType));
@@ -834,7 +834,7 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 	assert(vao.GetIdRaw() > 0);
 #endif
 	vao.Bind();
-	glDrawArrays(mode, vbo->BufferElemOffset() + vboStartIndex, vertsCount);
+	glDrawArrays(mode, static_cast<GLint>(vbo->BufferElemOffset() + vboStartIndex), static_cast<GLsizei>(vertsCount));
 	vao.Unbind();
 
 	if (rewind && !readOnly)
@@ -859,7 +859,7 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 	assert(vao.GetIdRaw() > 0);
 #endif
 	vao.Bind();
-	glDrawElements(mode, indcsCount, GL_UNSIGNED_INT, BUFFER_OFFSET(uint32_t, ebo->BufferElemOffset() + eboStartIndex));
+	glDrawElements(mode, static_cast<GLsizei>(indcsCount), GL_UNSIGNED_INT, BUFFER_OFFSET(uint32_t, ebo->BufferElemOffset() + eboStartIndex));
 	vao.Unbind();
 	#undef BUFFER_OFFSET
 
@@ -921,10 +921,10 @@ inline void TypedRenderBuffer<T>::CondInit()
 		return;
 
 	if (vertCount0 > 0)
-		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER        , vertCount0, std::string(vboTypeName), bufferType);
+		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER        , static_cast<uint32_t>(vertCount0), std::string(vboTypeName), bufferType);
 
 	if (elemCount0 > 0)
-		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, elemCount0, std::string(vboTypeName), bufferType);
+		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, static_cast<uint32_t>(elemCount0), std::string(vboTypeName), bufferType);
 
 	InitVAO();
 }
