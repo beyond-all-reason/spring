@@ -96,18 +96,23 @@ bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 
 		} break;
 		case SDL_WINDOWEVENT: {
-			if (event.window.event == SDL_WINDOWEVENT_LEAVE) {
-				// mouse left window; set pos internally to view center-pixel to prevent endless scrolling
-				mousepos = {
-					globalRendering->viewPosX          + (globalRendering->viewSizeX >> 1),
-					globalRendering->viewWindowOffsetY + (globalRendering->viewSizeY >> 1)
-				};
+			switch (event.window.event) {
+				case SDL_WINDOWEVENT_ENTER: {
+					if (mouse != nullptr)
+						mouse->WindowEnter();
+				} break;
+				case SDL_WINDOWEVENT_LEAVE: {
+					// mouse left window; set pos internally to view center-pixel to prevent endless scrolling
+					mousepos = {
+						globalRendering->viewPosX          + (globalRendering->viewSizeX >> 1),
+						globalRendering->viewWindowOffsetY + (globalRendering->viewSizeY >> 1)
+					};
 
-				if (mouse != nullptr)
-					mouse->WindowLeave();
-
-			} break;
-		}
+					if (mouse != nullptr)
+						mouse->WindowLeave();
+				} break;
+			}
+		} break;
 	}
 
 	return false;

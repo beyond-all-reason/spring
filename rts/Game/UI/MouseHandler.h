@@ -51,6 +51,7 @@ public:
 	void MouseMove(int x, int y, int dx, int dy);
 	void MouseWheel(float delta);
 	void WindowLeave();
+	void WindowEnter();
 
 	bool AssignMouseCursor(const std::string& cmdName,
 	                       const std::string& fileName,

@@ -3452,8 +3452,8 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 		glDisable(GL_ALPHA_TEST);
 	}
 
-	float3 tracePos = camera->GetPos();
-	float3 traceDir = mouse->dir;
+	float3 tracePos;
+	float3 traceDir;
 
 	// setup for minimap proxying
 	const bool minimapInput = (activeReceiver != this && !mouse->offscreen && GetReceiverAt(mouse->lastx, mouse->lasty) == minimap);
@@ -3469,6 +3469,9 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 		if (miniMapMarker && minimap->FullProxy() && !onMiniMap && !minimap->GetMinimized()) {
 			DrawMiniMapMarker(tracePos);
 		}
+	} else {
+		tracePos = camera->GetPos();
+		traceDir = mouse->dir;
 	}
 
 
