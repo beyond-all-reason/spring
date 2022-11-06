@@ -1339,7 +1339,6 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 
 
 	// selection box
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
 	if (selecting && fullProxy && (bp.movement > mouse->dragSelectionThreshold)) {
 		const float3 oldMapPos = GetMapPosition(bp.x, bp.y);
@@ -1355,8 +1354,11 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 			{newMapPos.x, newMapPos.z},
 			{oldMapPos.x, newMapPos.z}
 		});
+		sh.Enable();
+		sh.SetUniform("ucolor", cmdColors.mouseBox[0], cmdColors.mouseBox[1], cmdColors.mouseBox[2], cmdColors.mouseBox[3]);
 		rb.DrawArrays(GL_LINE_LOOP);
-
+		sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+		sh.Disable();
 		glLineWidth(1.0f);
 		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
