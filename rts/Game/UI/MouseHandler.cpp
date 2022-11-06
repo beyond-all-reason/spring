@@ -213,6 +213,11 @@ void CMouseHandler::ReloadCursors()
 	activeCursorIdx = defCursorIt->second;
 }
 
+void CMouseHandler::WindowEnter()
+{
+	offscreen = false;
+}
+
 void CMouseHandler::WindowLeave()
 {
 	offscreen = true;
