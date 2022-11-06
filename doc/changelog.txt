@@ -2,7 +2,7 @@ Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
 
--- 106.0 --------------------------------------------------------
+-- BAR105 --------------------------------------------------------
 
 BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
