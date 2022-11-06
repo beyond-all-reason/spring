@@ -24,6 +24,9 @@ public:
 	static CShaderHandler* GetInstance();
 	static void FreeInstance();
 
+	void SetCurrentlyBoundProgram(Shader::IProgramObject* p) { currentlyBoundProgram = p; }
+	Shader::IProgramObject* GetCurrentlyBoundProgram() const { return currentlyBoundProgram; }
+
 	void ReloadAll();
 	bool ReleaseProgramObjects(const std::string& poClass);
 	bool ReleaseProgramObject(const std::string& poClass, const std::string& poName);
@@ -81,6 +84,7 @@ private:
 	// all (re)loaded program ID's, by hash
 	ShaderCache shaderCache;
 
+	Shader::IProgramObject* currentlyBoundProgram = nullptr;
 	static inline CShaderHandler* gShaderHandler = nullptr;
 };
 

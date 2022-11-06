@@ -259,6 +259,19 @@ namespace Shader {
 		return false;
 	}
 
+	void IProgramObject::Enable()
+	{
+		assert(!bound);
+		shaderHandler->SetCurrentlyBoundProgram(this);
+		bound = true;
+	}
+
+	void IProgramObject::Disable()
+	{
+		assert(bound);
+		shaderHandler->SetCurrentlyBoundProgram(nullptr);
+		bound = false;
+	}
 
 	bool IProgramObject::LoadFromLua(const std::string& filename) {
 		return Shader::LoadFromLua(this, filename);

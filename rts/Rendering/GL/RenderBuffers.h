@@ -577,6 +577,7 @@ public:
 	void UploadVBO();
 	void UploadEBO();
 
+	void AssertBoundShader() const;
 	void DrawArrays(uint32_t mode, bool rewind = true);
 	void DrawElements(uint32_t mode, bool rewind = true);
 	void DropCurrent();
@@ -823,8 +824,20 @@ inline void TypedRenderBuffer<T>::UploadEBO()
 }
 
 template<typename T>
+inline void TypedRenderBuffer<T>::AssertBoundShader() const
+{
+#ifdef DEBUG
+	auto* shader = shaderHandler->GetCurrentlyBoundProgram();
+	assert(shader);
+	assert(shader->IsValid());
+#endif
+}
+
+template<typename T>
 inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 {
+	AssertBoundShader();
+
 	UploadVBO();
 
 	size_t vertsCount = (verts.size() - vboStartIndex);
@@ -846,6 +859,8 @@ inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 template<typename T>
 inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 {
+	AssertBoundShader();
+
 	UploadVBO();
 	UploadEBO();
 

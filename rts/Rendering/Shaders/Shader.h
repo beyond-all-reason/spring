@@ -119,8 +119,8 @@ namespace Shader {
 		template<typename VAT>
 		void BindAttribLocations();
 
-		virtual void Enable() { bound = true; }
-		virtual void Disable() { bound = false; }
+		virtual void Enable();
+		virtual void Disable();
 		virtual void EnableRaw() {}
 		virtual void DisableRaw() {}
 		virtual void Link() = 0;
