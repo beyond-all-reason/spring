@@ -61,17 +61,22 @@ void S3DModelHelpers::UnbindLegacyAttrVBOs()
  * S3DModelPiece
  */
 
-void S3DModelPiece::DrawStaticLegacy(bool bind) const
+void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 {
 	if (!HasGeometryData())
 		return;
 
 	if (bind) S3DModelHelpers::BindLegacyAttrVBOs();
 
-	glPushMatrix();
-	glMultMatrixf(bposeMatrix);
-	DrawElements();
-	glPopMatrix();
+	if (bindPosMat) {
+		glPushMatrix();
+		glMultMatrixf(bposeMatrix);
+		DrawElements();
+		glPopMatrix();
+	}
+	else {
+		DrawElements();
+	}
 
 	if (bind) S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
@@ -81,10 +86,10 @@ void S3DModelPiece::DrawStaticLegacyRec() const
 {
 	S3DModelHelpers::BindLegacyAttrVBOs();
 
-	DrawStaticLegacy(false);
+	DrawStaticLegacy(false, false);
 
 	for (const S3DModelPiece* childPiece : children) {
-		childPiece->DrawStaticLegacy(false);
+		childPiece->DrawStaticLegacy(false, false);
 	}
 
 	S3DModelHelpers::UnbindLegacyAttrVBOs();

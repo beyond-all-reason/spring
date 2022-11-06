@@ -152,7 +152,7 @@ struct S3DModelPiece {
 
 	bool HasBackedMat() const { return hasBakedMat; }
 public:
-	void DrawStaticLegacy(bool bind) const;
+	void DrawStaticLegacy(bool bind, bool bindPosMat) const;
 	void DrawStaticLegacyRec() const;
 
 	void CreateShatterPieces();
@@ -314,7 +314,7 @@ struct S3DModel
 
 		// draw pieces in their static bind-pose (ie. without script-transforms)
 		for (const S3DModelPiece* pieceObj : pieceObjects) {
-			pieceObj->DrawStaticLegacy(false);
+			pieceObj->DrawStaticLegacy(false, true);
 		}
 
 		S3DModelHelpers::UnbindLegacyAttrVBOs();

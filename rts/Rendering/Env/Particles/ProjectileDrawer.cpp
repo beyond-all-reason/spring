@@ -39,6 +39,7 @@
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
+#include "System/ScopedResource.h"
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
@@ -929,22 +930,23 @@ bool CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 
 			CUnitDrawer::SetTeamColor(pp->GetTeamID());
 
-			glPushMatrix();
-				glTranslatef3(pp->drawPos);
-				glRotatef(pp->GetDrawAngle(), pp->spinVec.x, pp->spinVec.y, pp->spinVec.z);
+			auto scopedPushPop = spring::ScopedNullResource(glPushMatrix, glPopMatrix);
 
-				if (p->luaDraw && eventHandler.DrawProjectile(p))
-					return true;
+			glTranslatef3(pp->drawPos);
+			glRotatef(pp->GetDrawAngle(), pp->spinVec.x, pp->spinVec.y, pp->spinVec.z);
 
-				if ((pp->explFlags & PF_Recursive) != 0) {
-					pp->omp->DrawStaticLegacyRec();
-				}
-				else {
-					// non-recursive, only draw one piece
-					pp->omp->DrawStaticLegacy(true);
-				}
+			if (p->luaDraw && eventHandler.DrawProjectile(p)) {
+				return true;
+			}
 
-			glPopMatrix();
+			if ((pp->explFlags & PF_Recursive) != 0) {
+				pp->omp->DrawStaticLegacyRec();
+			}
+			else {
+				// non-recursive, only draw one piece
+				pp->omp->DrawStaticLegacy(true, false);
+			}
+
 			return true;
 		} break;
 
