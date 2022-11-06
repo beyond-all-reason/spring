@@ -472,7 +472,7 @@ CBumpWater::CBumpWater()
 		GLSLDefineConst4f(definitions, "ShadingPlane", shadingX/mapX, shadingZ/mapZ, shadingX, shadingZ);
 	}
 
-	windVec = guRNG.NextVector(0.0f) * mix(envResHandler.GetMinWindStrength(), envResHandler.GetMaxWindStrength(), guRNG.NextFloat());
+	windVec = envResHandler.GetCurrentWindVec();
 
 	// LOAD SHADERS
 	{
@@ -565,6 +565,8 @@ void CBumpWater::Update()
 	windStrength += (smoothstep(0.0f, 12.0f, envResHandler.GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
 	windVec   = windndir * windStrength;
 */
+	windVec = mix(windVec, envResHandler.GetCurrentWindVec(), 0.001);
+
 	if (dynWaves)
 		UpdateDynWaves();
 
@@ -848,7 +850,7 @@ void CBumpWater::UpdateDynWaves(const bool initialize)
 	glBindTexture(GL_TEXTURE_2D, normalTexture2);
 	glBlendFunc(GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
 	glBlendColor(1.0f, 1.0f, 1.0f, (initialize) ? 1.0f : (modFrameNum + 1)/600.0f );
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 	glEnable(GL_BLEND);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
