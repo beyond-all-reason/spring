@@ -77,10 +77,9 @@ void CWorldDrawer::InitPost() const
 {
 	char buf[512] = {0};
 
+	const bool preloadMode = configHandler->GetBool("PreloadModels");
 	{
 		loadscreen->SetLoadMessage("Loading Models");
-
-		const bool preloadMode = configHandler->GetBool("PreloadModels");
 
 		if (preloadMode) {
 			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
@@ -150,7 +149,8 @@ void CWorldDrawer::InitPost() const
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
-		S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
+		if (preloadMode)
+			S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
 	}
 }
 
