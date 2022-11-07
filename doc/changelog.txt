@@ -2,18 +2,32 @@ Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
 
--- 106.0 --------------------------------------------------------
+-- BAR105 --------------------------------------------------------
+
+BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
+ ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
+   To get back old behaviour, make sure to rebind them (remember "Any+", as in "Any+Alt")
+
+ ! Split moverotate from movereset binding camera modifier. This is used in the Spring camera
+   for free rotation. To get back old behaviour, bind it to ALT.
+
+ ! Resurrecting units no longer overrides their health to 5%. To get back the old behaviour:
+
+   function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
+     if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
+       Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
+     end
+   end
+
+ ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
+   numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
+   back old behaviour, change `0` to `false`.
 
 Lua:
- - Add and split moverotate from movereset binding camera modifier
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
    Makes the erase happen locally, optionally as if done by given player,
    same as the existing interface for MarkerAddPoint and MarkerAddLine.
    NOTE: 4th arg is currently unused!
- - onlyLocal for all three Marker functions (Point, Line, Erase) no longer accepts
-   numerical 0 as false (now follows regular Lua language rules where 0 is true)
- - Add movetilt and movereset for previously hardcoded ALT and CTRL camera
-   bindings
  - Fix moveslow and movefast camera bindings not being respected in favor of
    hardcoded ones
  - Add `rotX, rotY, rotZ = Spring.GetCameraRotation` and `(0..2*PI) = Spring.GetMiniMapRotation()`
@@ -96,15 +110,6 @@ Sim:
  - Multi-threaded GroundMoveType heading and accelaration planning
  - GroundMoveType checks whether waypoints have changed before updating synced waypoint vars.
    This avoids unnecessary expensive checksum updates.
- - Resurrecting units no longer overrides their health to 5%. To get back the old behaviour:
- 
-   ```
-   function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
-     if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
-       Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
-     end
-   end
-   ```
 
 System:
  - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
