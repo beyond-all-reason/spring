@@ -100,11 +100,10 @@ public:
 	int32_t channels = 4;
 	uint32_t dataType = 0;
 
-	#ifndef HEADLESS
 	// GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, ...
 	// not set to anything until Load is called
 	int32_t textype = 0;
-
+	#ifndef HEADLESS
 	nv_dds::CDDSImage ddsimage;
 	#endif
 

@@ -8,8 +8,8 @@
 #include <IL/il.h>
 #include <SDL_video.h>
 
+#include "Rendering/GL/myGL.h"
 #ifndef HEADLESS
-	#include "Rendering/GL/myGL.h"
 	#include "System/TimeProfiler.h"
 #endif
 
@@ -1040,6 +1040,49 @@ void CBitmap::AllocDummy(const SColor fill)
 	Fill(fill);
 }
 
+uint32_t CBitmap::GetDataTypeSize() const
+{
+	switch (dataType) {
+	case GL_FLOAT:
+		return sizeof(float);
+	case GL_INT: [[fallthrough]];
+	case GL_UNSIGNED_INT:
+		return sizeof(uint32_t);
+	case GL_SHORT: [[fallthrough]];
+	case GL_UNSIGNED_SHORT:
+		return sizeof(uint16_t);
+	case GL_BYTE: [[fallthrough]];
+	case GL_UNSIGNED_BYTE:
+		return sizeof(uint8_t);
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+int32_t CBitmap::GetExtFmt(uint32_t ch)
+{
+	constexpr std::array<uint32_t, 5> extFormats = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
+	return extFormats[ch];
+}
+
+int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
+{
+	switch (extFmt) {
+	case GL_RED:
+		return 1;
+	case GL_RG:
+		return 2;
+	case GL_RGB:
+		return 3;
+	case GL_RGBA:
+		return 4;
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
 #ifndef HEADLESS
 int32_t CBitmap::GetIntFmt() const
 {
@@ -1061,53 +1104,8 @@ int32_t CBitmap::GetIntFmt() const
 	}
 }
 
-int32_t CBitmap::GetExtFmt(uint32_t ch)
-{
-	constexpr uint32_t extFormats[] = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
-	return extFormats[ch];
-}
-
-int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
-{
-	switch (extFmt) {
-	case GL_RED:
-		return 1;
-	case GL_RG:
-		return 2;
-	case GL_RGB:
-		return 3;
-	case GL_RGBA:
-		return 4;
-	default:
-		assert(false);
-		return 0;
-	}
-}
-
-uint32_t CBitmap::GetDataTypeSize() const
-{
-	switch (dataType) {
-	case GL_FLOAT:
-		return sizeof(float);
-	case GL_INT: [[fallthrough]];
-	case GL_UNSIGNED_INT:
-		return sizeof(uint32_t);
-	case GL_SHORT: [[fallthrough]];
-	case GL_UNSIGNED_SHORT:
-		return sizeof(uint16_t);
-	case GL_BYTE: [[fallthrough]];
-	case GL_UNSIGNED_BYTE:
-		return sizeof(uint8_t);
-	default:
-		assert(false);
-		return 0;
-	}
-}
 #else
 int32_t CBitmap::GetIntFmt() const { return 0; }
-int32_t CBitmap::GetExtFmt(uint32_t ch) { return 0; }
-int32_t CBitmap::ExtFmtToChannels(int32_t extFmt) { return 0; }
-uint32_t CBitmap::GetDataTypeSize() const { return 0; }
 #endif
 
 bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t reqChannel, uint32_t reqDataType, bool forceReplaceAlpha)
@@ -1127,11 +1125,8 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 	const size_t curMemSize = GetMemSize();
 
-
 	channels = 4;
-	#ifndef HEADLESS
 	textype = GL_TEXTURE_2D;
-	#endif
 
 	#define BITMAP_USE_NV_DDS
 	#ifdef BITMAP_USE_NV_DDS
@@ -1217,16 +1212,43 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			dataType = ilGetInteger(IL_IMAGE_TYPE);
 			uint32_t bytesPerChannel = std::max(GetDataTypeSize(), 1u); //make sure we don't div by 0 later on
 
-			uint32_t bytesPerPixel;
-			if (currFormat == IL_COLOUR_INDEX)
+			uint32_t numChannels = 0;
+			switch (currFormat)
+			{
+			case IL_COLOUR_INDEX: {
+				uint32_t bytesPerPixel;
 				bytesPerPixel = ilGetInteger(IL_PALETTE_BPP);
-			else
-				bytesPerPixel = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
+				numChannels = bytesPerPixel / bytesPerChannel;
+				hasAlpha = (numChannels == 4);
+			} break;
+			case IL_ALPHA: {
+				numChannels = 1;
+				hasAlpha = true;
+			} break;
+			case IL_BGR: [[fallthrough]];
+			case IL_RGB: {
+				numChannels = 3;
+				hasAlpha = false;
+			} break;
+			case IL_BGRA: [[fallthrough]];
+			case IL_RGBA: {
+				numChannels = 4;
+				hasAlpha = true;
+			} break;
+			case IL_LUMINANCE: {
+				numChannels = 1;
+				hasAlpha = false;
+			} break;
+			case IL_LUMINANCE_ALPHA: {
+				numChannels = 2;
+				hasAlpha = true;
+			} break;
+			default:
+				assert(false);
+				break;
+			}
 
-			uint32_t numChannels = bytesPerPixel / bytesPerChannel;
 			assert(numChannels > 0 && numChannels <= 4);
-
-			hasAlpha  = (numChannels == 4) || (currFormat == IL_LUMINANCE_ALPHA);
 			hasAlpha &= !forceReplaceAlpha;
 
 			// FPU control word has to be restored as well
