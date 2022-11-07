@@ -331,14 +331,20 @@ void ITexMemPool::Kill()
 }
 
 
-// this is a minimal list of file formats that (should) be available at all platforms
-static constexpr int formatList[] = {
-	IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR,
-	IL_RGBA, IL_RGB, IL_BGRA, IL_BGR,
-	IL_COLOUR_INDEX, IL_LUMINANCE, IL_LUMINANCE_ALPHA
-};
+static bool IsValidImageType(int type) {
+	// this is a minimal list of file formats that (should) be available at all platforms
+	static constexpr int typeList[] = {
+		IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR
+	};
+
+	return std::find(std::cbegin(typeList), std::cend(typeList), type) != std::cend(typeList);
+}
 
 static bool IsValidImageFormat(int format) {
+	static constexpr int formatList[] = {
+		IL_RGBA, IL_RGB, IL_BGRA, IL_BGR,
+		IL_COLOUR_INDEX, IL_LUMINANCE, IL_LUMINANCE_ALPHA
+	};
 	return std::find(std::cbegin(formatList), std::cend(formatList), format) != std::cend(formatList);
 }
 
@@ -564,7 +570,10 @@ void TBitmapAction<T, ch>::SetTransparent(const SColor& c, const SColor t)
 				auto& pixel = GetRef(yOffset + x);
 
 				if (pixel[0] == tC[0] && pixel[1] == tC[1] && pixel[2] == tC[2]) {
-					pixel[0] =  tT[0];   pixel[1] =  tT[1];   pixel[2] =  tT[2];
+					pixel[0] = tT[0];
+					pixel[1] = tT[1];
+					pixel[2] = tT[2];
+					pixel[3] = tT[3];
 				}
 			}
 		}
@@ -1068,13 +1077,20 @@ int32_t CBitmap::GetExtFmt(uint32_t ch)
 
 int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
 {
+	// IL_COLOUR_INDEX is transformed elsewhere
+
 	switch (extFmt) {
+	case GL_LUMINANCE: [[fallthrough]];
+	case GL_ALPHA: [[fallthrough]];
 	case GL_RED:
 		return 1;
+	case GL_LUMINANCE_ALPHA: [[fallthrough]];
 	case GL_RG:
 		return 2;
+	case GL_BGR: [[fallthrough]];
 	case GL_RGB:
 		return 3;
+	case GL_BGRA: [[fallthrough]];
 	case GL_RGBA:
 		return 4;
 	default:
@@ -1210,36 +1226,48 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			currFormat = ilGetInteger(IL_IMAGE_FORMAT);
 			isValid = (isLoaded && IsValidImageFormat(currFormat));
 			dataType = ilGetInteger(IL_IMAGE_TYPE);
+			auto bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
 
-			uint32_t numChannels = 0;
+			// want to keep the format RGB* no matter the source swizzle
 			switch (currFormat)
 			{
 			case IL_COLOUR_INDEX: {
-				const uint32_t bytesPerPixel = ilGetInteger(IL_PALETTE_BPP);
-				const uint32_t bytesPerChannel = std::max(GetDataTypeSize(), 1u);
-				numChannels = bytesPerPixel / bytesPerChannel;
-				hasAlpha = (numChannels == 4);
+				switch (auto pt = ilGetInteger(IL_PALETTE_TYPE))
+				{
+				case IL_PAL_BGR24: [[fallthrough]];
+				case IL_PAL_BGR32: [[fallthrough]];
+				case IL_PAL_RGB24: [[fallthrough]];
+				case IL_PAL_RGB32: {
+					currFormat = GL_RGB;
+					hasAlpha = false;
+				} break;
+				case IL_PAL_RGBA32: [[fallthrough]];
+				case IL_PAL_BGRA32: {
+					currFormat = GL_RGBA;
+					hasAlpha = true;
+				} break;
+				default: {
+					assert(false);
+				} break;
+				}
 			} break;
 			case IL_ALPHA: {
-				numChannels = 1;
 				hasAlpha = true;
 			} break;
 			case IL_BGR: [[fallthrough]];
 			case IL_RGB: {
-				numChannels = 3;
+				currFormat = GL_RGB;
 				hasAlpha = false;
 			} break;
 			case IL_BGRA: [[fallthrough]];
 			case IL_RGBA: {
-				numChannels = 4;
+				currFormat = GL_RGBA;
 				hasAlpha = true;
 			} break;
 			case IL_LUMINANCE: {
-				numChannels = 1;
 				hasAlpha = false;
 			} break;
 			case IL_LUMINANCE_ALPHA: {
-				numChannels = 2;
 				hasAlpha = true;
 			} break;
 			default:
@@ -1247,7 +1275,6 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 				break;
 			}
 
-			assert(numChannels > 0 && numChannels <= 4);
 			hasAlpha &= !forceReplaceAlpha;
 
 			// FPU control word has to be restored as well
@@ -1275,12 +1302,10 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 			xsize = ilGetInteger(IL_IMAGE_WIDTH);
 			ysize = ilGetInteger(IL_IMAGE_HEIGHT);
-			// format = ilGetInteger(IL_IMAGE_FORMAT);
 
 			ITexMemPool::texMemPool->FreeRaw(GetRawMem(), curMemSize);
 			memIdx = ITexMemPool::texMemPool->AllocIdxRaw(GetMemSize());
 
-			// ilCopyPixels(0, 0, 0, xsize, ysize, 0, IL_RGBA, IL_UNSIGNED_BYTE, GetRawMem());
 			for (const ILubyte* imgData = ilGetData(); imgData != nullptr; imgData = nullptr) {
 				std::memset(GetRawMem(), 0xFF   , GetMemSize());
 				std::memcpy(GetRawMem(), imgData, GetMemSize());
