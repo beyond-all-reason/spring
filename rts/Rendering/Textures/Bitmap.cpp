@@ -1206,18 +1206,17 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			// do not signal floating point exceptions in devil library
 			ScopedDisableFpuExceptions fe;
 
-			isLoaded = !!ilLoadL(IL_TYPE_UNKNOWN, buffer.data(), buffer.size());
+			isLoaded = !!ilLoadL(IL_TYPE_UNKNOWN, buffer.data(), static_cast<ILuint>(buffer.size()));
 			currFormat = ilGetInteger(IL_IMAGE_FORMAT);
 			isValid = (isLoaded && IsValidImageFormat(currFormat));
 			dataType = ilGetInteger(IL_IMAGE_TYPE);
-			uint32_t bytesPerChannel = std::max(GetDataTypeSize(), 1u); //make sure we don't div by 0 later on
 
 			uint32_t numChannels = 0;
 			switch (currFormat)
 			{
 			case IL_COLOUR_INDEX: {
-				uint32_t bytesPerPixel;
-				bytesPerPixel = ilGetInteger(IL_PALETTE_BPP);
+				const uint32_t bytesPerPixel = ilGetInteger(IL_PALETTE_BPP);
+				const uint32_t bytesPerChannel = std::max(GetDataTypeSize(), 1u);
 				numChannels = bytesPerPixel / bytesPerChannel;
 				hasAlpha = (numChannels == 4);
 			} break;
