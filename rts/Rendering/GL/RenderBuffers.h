@@ -826,7 +826,7 @@ inline void TypedRenderBuffer<T>::UploadEBO()
 template<typename T>
 inline void TypedRenderBuffer<T>::AssertBoundShader() const
 {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(HEADLESS)
 	auto* shader = shaderHandler->GetCurrentlyBoundProgram();
 	assert(shader);
 	assert(shader->IsValid());
