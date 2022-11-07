@@ -76,3 +76,15 @@ private:
 	std::array<std::vector<VA_TYPE_TC>, 2> verts; // OL, PM
 	std::array<std::vector<uint16_t  >, 2> indcs; // OL, PM
 };
+
+class CglNullFontRenderer final : public CglFontRenderer {
+	// Inherited via CglFontRenderer
+	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {};
+	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {};
+	virtual void DrawTraingleElements() override {};
+	virtual void PushGLState(const CglFont* font) override {};
+	virtual void PopGLState() override {};
+	virtual bool IsLegacy() const override { return true; };
+	virtual bool IsValid() const override { return true; };
+	virtual void GetStats(std::array<size_t, 8>& stats) const override;
+};

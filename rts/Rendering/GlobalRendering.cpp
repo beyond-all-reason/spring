@@ -1541,6 +1541,7 @@ void CGlobalRendering::InitGLState()
 
 bool CGlobalRendering::CheckShaderGL4() const
 {
+#ifndef HEADLESS
 	//the code below doesn't make any sense, but here only to test if the shader can be compiled
 	constexpr static const char* vsSrc = R"(
 #version 430 core
@@ -1585,6 +1586,9 @@ void main()
 
 	return testShader->IsValid();
 	//no need for explicit destuction here
+#else
+	return false;
+#endif
 }
 
 int CGlobalRendering::DepthBitsToFormat(int bits)

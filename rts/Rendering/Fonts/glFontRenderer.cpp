@@ -294,6 +294,7 @@ void CglNoShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 
 CglFontRenderer* CglFontRenderer::CreateInstance()
 {
+#ifndef HEADLESS
 	//return new CglNoShaderFontRenderer();
 	if (globalRendering->amdHacks)
 		return new CglNoShaderFontRenderer();
@@ -304,9 +305,17 @@ CglFontRenderer* CglFontRenderer::CreateInstance()
 
 	delete fr;
 	return new CglNoShaderFontRenderer();
+#else
+	return new CglNullFontRenderer();
+#endif
 }
 
 void CglFontRenderer::DeleteInstance(CglFontRenderer*& instance)
 {
 	spring::SafeDelete(instance);
+}
+
+void CglNullFontRenderer::GetStats(std::array<size_t, 8>& stats) const
+{
+	std::fill(stats.begin(), stats.end(), 0u);
 }
