@@ -11,6 +11,7 @@ class CSpringController : public CCameraController
 {
 public:
 	CSpringController();
+	~CSpringController();
 
 	const std::string GetName() const { return "spring"; }
 
@@ -31,6 +32,9 @@ public:
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
 
+	void ConfigNotify(const std::string& key, const std::string& value);
+	void ConfigUpdate();
+
 private:
 	float GetAzimuth() const;
 	float MoveAzimuth(float move);
@@ -44,10 +48,14 @@ private:
 	float curDist; // current zoom-out distance
 	float maxDist; // maximum zoom-out distance
 	float oldDist;
+	float fastScaleMove;
+	float fastScaleMousewheel;
 
 	bool zoomBack;
 	bool cursorZoomIn;
 	bool cursorZoomOut;
+	bool doRotate;
+	bool lockCardinalDirections;
 };
 
 #endif // _SPRING_CONTROLLER_H

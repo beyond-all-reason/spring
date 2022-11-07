@@ -27,7 +27,6 @@ CCameraController::CCameraController()
 	dir = FwdVector;
 }
 
-
 float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir()); }
 
 

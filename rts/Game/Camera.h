@@ -212,12 +212,17 @@ public:
 	unsigned int GetProjType() const { return projType; }
 	unsigned int SetCamType(unsigned int ct) { return (camType = ct); }
 	unsigned int SetProjType(unsigned int pt) { return (projType = pt); }
+	void InitConfigNotify();
+	void RemoveConfigNotify();
 
 public:
 	void UpdateViewRange();
 	void UpdateFrustum();
 	void UpdateMatrices(unsigned int vsx, unsigned int vsy, float var);
 	void UpdateViewPort(int px, int py, int sx, int sy);
+
+	void ConfigNotify(const std::string& key, const std::string& value);
+	void ConfigUpdate();
 
 private:
 	void gluPerspectiveSpring(const float aspect, const float zn, const float zf);
@@ -243,6 +248,22 @@ public:
 	float aspectRatio = 1.0f;  ///< horizontal
 
 	int viewport[4];
+
+	/**
+	* @brief moveFastMult
+	* The multiplier applied to speed when camera is in movefast state.
+	*/
+	float moveFastMult;
+
+	/**
+	* @brief moveSlowMult
+	* The multiplier applied to speed when camera is in moveslow state.
+	*/
+	float moveSlowMult;
+
+	int edgeMoveWidth;
+	int useInterpolate;
+	bool edgeMoveDynamic;
 
 private:
 	CMatrix44f projectionMatrix;

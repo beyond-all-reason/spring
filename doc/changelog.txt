@@ -88,6 +88,10 @@ Misc:
  - /keysave and /keyprint now preserves the binding order, providing a better output
  - add support for f16-f24 key and scancodes; keycode support requires SDL1
    keycode deprecation
+ - add configurability of movefast and moveslow speed via added config values
+   (CameraMoveFastMult, CameraMoveSlowMult) and scaling factors for specific
+   cameras (CamSpringFastScaleMouseMove, CamSpringFastScaleMousewheelMove,
+   CamOverheadFastScale).
 
 Sim:
  - Added a new 'b' designator for yardmaps to declare an area that is buildable, but is not

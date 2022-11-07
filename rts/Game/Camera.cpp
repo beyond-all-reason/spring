@@ -22,6 +22,18 @@ CONFIG(float, EdgeMoveWidth)
 CONFIG(bool, EdgeMoveDynamic)
 	.defaultValue(true)
 	.description("If EdgeMove scrolling speed should fade with edge distance.");
+CONFIG(float, CameraMoveFastMult)
+	.defaultValue(10.0f)
+	.minimumValue(1.0f)
+	.description("The multiplier applied to speed when camera is in movefast state.");
+CONFIG(float, CameraMoveSlowMult)
+	.defaultValue(0.1f)
+	.maximumValue(1.0f)
+	.description("The multiplier applied to speed when camera is in moveslow state.");
+CONFIG(int, CamFrameTimeCorrection)
+    .defaultValue(0)
+	.minimumValue(0)
+	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 
 CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
@@ -39,6 +51,30 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 
 	SetVFOV(45.0f);
 	UpdateFrustum();
+}
+
+void CCamera::InitConfigNotify(){
+	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
+	ConfigUpdate();
+}
+
+void CCamera::RemoveConfigNotify(){
+	configHandler->RemoveObserver(this);
+}
+
+
+void CCamera::ConfigUpdate()
+{
+	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
+	moveSlowMult = configHandler->GetFloat("CameraMoveSlowMult");
+	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
+	edgeMoveDynamic = configHandler->GetBool("EdgeMoveDynamic");
+	edgeMoveWidth = configHandler->GetFloat("EdgeMoveWidth");
+}
+
+void CCamera::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
 }
 
 
@@ -649,14 +685,13 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
 	float camDeltaTime = globalRendering->lastFrameTime;
 
-	int useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
 	if (useInterpolate > 0)
 		camDeltaTime = 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
 	
 	float camMoveSpeed = 1.0f;
 
-	camMoveSpeed *= (1.0f - movState[MOVE_STATE_SLW] * 0.9f);
-	camMoveSpeed *= (1.0f + movState[MOVE_STATE_FST] * 9.0f);
+	camMoveSpeed *= movState[MOVE_STATE_SLW] ? moveSlowMult : 1.0f;
+	camMoveSpeed *= movState[MOVE_STATE_FST] ? moveFastMult : 1.0f;
 
 	float3 v = FwdVector * camMoveSpeed;
 
@@ -681,11 +716,9 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 		viewH = globalRendering->viewSizeY;
 	}
 
-	const float width = configHandler->GetFloat("EdgeMoveWidth");
-
 	int2 border;
-	border.x = std::max<int>(1, windowW * width);
-	border.y = std::max<int>(1, viewH * width);
+	border.x = std::max<int>(1, windowW * edgeMoveWidth);
+	border.y = std::max<int>(1, viewH * edgeMoveWidth);
 
 	float2 move;
 	// must be float, ints don't save the sign in case of 0 and we need it for copysign()
@@ -694,7 +727,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	if (((windowW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((windowW - 1) - distToEdge.x);
 	if (((viewH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((viewH - 1) - distToEdge.y);
 
-	if (configHandler->GetBool("EdgeMoveDynamic")) {
+	if (edgeMoveDynamic) {
 		move.x = Clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
 		move.y = Clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
 	} else {

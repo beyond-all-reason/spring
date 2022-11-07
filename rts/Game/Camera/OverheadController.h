@@ -48,6 +48,8 @@ private:
 	float angle;
 
 	static constexpr float DEFAULT_ANGLE = 0.464f;
+
+	float fastScale;
 };
 
 #endif // _OVERHEAD_CONTROLLER_H

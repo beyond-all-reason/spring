@@ -61,11 +61,6 @@ CONFIG(float, CamTimeExponent)
 	.minimumValue(0.0f)
 	.description("Camera transitions happen at lerp(old, new, timeNorm ^ CamTimeExponent).");
 
-CONFIG(int, CamFrameTimeCorrection)
-.defaultValue(0)
-.minimumValue(0)
-.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
-
 CCameraHandler* camHandler = nullptr;
 
 
@@ -85,6 +80,7 @@ void CCameraHandler::InitStatic() {
 		cameras[i].SetCamType(i);
 		cameras[i].SetProjType((i == CCamera::CAMTYPE_SHADOW)? CCamera::PROJTYPE_ORTHO: CCamera::PROJTYPE_PERSP);
 		cameras[i].SetClipCtrlMatrix(CMatrix44f::ClipControl(globalRendering->supportClipSpaceControl));
+	    cameras[i].InitConfigNotify();
 	}
 
 	SetActiveCamera(CCamera::CAMTYPE_PLAYER);
@@ -93,6 +89,9 @@ void CCameraHandler::InitStatic() {
 }
 
 void CCameraHandler::KillStatic() {
+	for (unsigned int i = CCamera::CAMTYPE_PLAYER; i < CCamera::CAMTYPE_COUNT; i++) {
+	    cameras[i].RemoveConfigNotify();
+	}
 	spring::SafeDestruct(camHandler);
 	std::memset(camHandlerMem, 0, sizeof(camHandlerMem));
 }
@@ -274,11 +273,10 @@ void CCameraHandler::CameraTransition(float nsecs)
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
 	// calculate when transition should end based on duration in seconds
-	int useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
-	if (useInterpolate == 0) { // old
+	if (camera->useInterpolate == 0) { // old
 		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
 	}
-	if (useInterpolate > 0) {
+	if (camera->useInterpolate > 0) {
 		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
 	}
 	camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
@@ -296,13 +294,12 @@ void CCameraHandler::UpdateTransition()
 
 
 	int vsync = configHandler->GetInt("VSync");
-	int useInterpolate =  configHandler->GetInt("CamFrameTimeCorrection");
 	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
 	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
 	float drawFPS = std::fmax(globalRendering->FPS, 1.0f); // this is probably much better
 
 
-	if (vsync == 1 && useInterpolate > 0) {
+	if (vsync == 1 && camera->useInterpolate > 0) {
 		transTime = lastswaptime;
 		transTime = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / drawFPS;
 	}
@@ -314,10 +311,10 @@ void CCameraHandler::UpdateTransition()
 	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
 	
 
-	if (vsync == 1 && useInterpolate == 1) {
+	if (vsync == 1 && camera->useInterpolate == 1) {
 		tweenFact = 1.0f - timeRatio;
 	}
-	if (vsync == 0 && useInterpolate == 1){
+	if (vsync == 0 && camera->useInterpolate == 1){
 		tweenFact = 0.08f * (camTransState.timeEnd - camTransState.timeStart) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
 	}
 	/*
