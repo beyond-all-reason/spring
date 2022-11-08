@@ -47,6 +47,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	}
 	lua_rawset(L, -3);
 
+	LuaPushNamedNumber(L, "numDisplays", globalRendering->numDisplays);
+
 	LuaPushNamedBool(L, "glSupportNonPowerOfTwoTex", globalRendering->supportNonPowerOfTwoTex);
 	LuaPushNamedBool(L, "glSupportTextureQueryLOD" , globalRendering->supportTextureQueryLOD);
 	LuaPushNamedBool(L, "glSupportMSAAFrameBuffer" , globalRendering->supportMSAAFrameBuffer);

@@ -111,6 +111,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetLastUpdateSeconds);
 	REGISTER_LUA_CFUNC(GetVideoCapturingMode);
 
+	REGISTER_LUA_CFUNC(GetNumDisplays);
 	REGISTER_LUA_CFUNC(GetViewGeometry);
 	REGISTER_LUA_CFUNC(GetWindowGeometry);
 	REGISTER_LUA_CFUNC(GetScreenGeometry);
@@ -506,6 +507,13 @@ int LuaUnsyncedRead::GetVidMemUsage(lua_State* L)
 
 
 /******************************************************************************/
+
+int LuaUnsyncedRead::GetNumDisplays(lua_State* L)
+{
+	lua_pushnumber(L, SDL_GetNumVideoDisplays());
+	return 1;
+}
+
 
 int LuaUnsyncedRead::GetViewGeometry(lua_State* L)
 {

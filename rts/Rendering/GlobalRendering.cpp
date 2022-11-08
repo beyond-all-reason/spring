@@ -326,6 +326,8 @@ CGlobalRendering::CGlobalRendering()
 {
 	verticalSync->WrapNotifyOnChange();
 	configHandler->NotifyOnChange(this, {
+		"DualScreenMode",
+		"DualScreenMiniMapOnLeft",
 		"Fullscreen",
 		"WindowBorderless",
 		"XResolution",
@@ -335,6 +337,7 @@ CGlobalRendering::CGlobalRendering()
 		"WindowPosX",
 		"WindowPosY"
 	});
+	SetDualScreenParams();
 }
 
 CGlobalRendering::~CGlobalRendering()
@@ -1091,6 +1094,11 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
 {
 	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
+	if (key == "DualScreenMode" || key == "DualScreenMiniMapOnLeft") {
+		SetDualScreenParams();
+		UpdateGLGeometry();
+		return;
+	}
 	winChgFrame = drawFrame + 1; //will happen on next frame
 }
 
@@ -1229,7 +1237,8 @@ void CGlobalRendering::UpdateViewPortGeometry()
 	dualViewSizeY = viewSizeY;
 	dualWindowOffsetY = 0;
 
-	if (numDisplays == 1) {
+	// Use halfscreen dual and view if only 1 display or fullscreen
+	if (numDisplays == 1 || fullScreen) {
 		const int halfWinSize = winSizeX >> 1;
 
 		viewPosX = halfWinSize * dualScreenMiniMapOnLeft;
@@ -1490,7 +1499,6 @@ void CGlobalRendering::UpdateGLGeometry()
 	LOG("[GR::%s][1] winSize=<%d,%d>", __func__, winSizeX, winSizeY);
 
 	ReadWindowPosAndSize();
-	SetDualScreenParams();
 	UpdateViewPortGeometry();
 	UpdatePixelGeometry();
 	UpdateScreenMatrices();

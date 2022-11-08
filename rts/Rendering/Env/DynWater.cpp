@@ -511,7 +511,7 @@ void CDynWater::DrawRefraction(const CGame* game)
 
 	DrawRefractions(&clipPlaneEqs[0], true, true);
 
-	glViewport(globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
 	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1);
 
 	sunLighting->modelDiffuseColor = oldsun;

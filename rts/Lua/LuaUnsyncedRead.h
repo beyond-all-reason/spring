@@ -30,12 +30,14 @@ class LuaUnsyncedRead {
 		static int GetLastUpdateSeconds(lua_State* L);
 		static int GetVideoCapturingMode(lua_State* L);
 
+		static int GetNumDisplays(lua_State* L);
 		static int GetViewGeometry(lua_State* L);
 		static int GetWindowGeometry(lua_State* L);
 		static int GetScreenGeometry(lua_State* L);
 		static int GetMiniMapGeometry(lua_State* L);
 		static int GetMiniMapDualScreen(lua_State* L);
 		static int GetMiniMapRotation(lua_State* L);
+
 		static int GetSelectionBox(lua_State* L);
 		static int IsAboveMiniMap(lua_State* L);
 

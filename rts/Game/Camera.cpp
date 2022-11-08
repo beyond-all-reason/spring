@@ -708,9 +708,9 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	int mouseY = mouse->lasty;
 	int viewH;
 
-	// Translate mouseY so it maps from mousecoords: top of view to 0 and bottom of view to viewSize
 	if (globalRendering->dualScreenMode && (mouse->lastx >= globalRendering->dualViewPosX) && (mouse->lastx <= globalRendering->dualViewPosX + globalRendering->dualViewSizeX)) {
 		viewH = globalRendering->dualViewSizeY;
+		// Translate mouseY so it maps mousecoords to bottom of dual view to 0 and top of dualview to dualViewSize
 		mouseY -= globalRendering->dualWindowOffsetY - globalRendering->viewWindowOffsetY;
 	} else {
 		viewH = globalRendering->viewSizeY;

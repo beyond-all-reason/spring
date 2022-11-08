@@ -173,11 +173,14 @@ CMiniMap::~CMiniMap()
 void CMiniMap::ConfigUpdate()
 {
 	buttonSize = configHandler->GetInt("MiniMapButtonSize");
-	minimapCanFlip = configHandler->GetBool("MiniMapCanFlip");
 	drawProjectiles = configHandler->GetBool("MiniMapDrawProjectiles");
 	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
 	cursorScale = configHandler->GetFloat("MiniMapCursorScale");
 	useIcons = configHandler->GetBool("MiniMapIcons");
+
+	minimapCanFlip = configHandler->GetBool("MiniMapCanFlip");
+	if (!minimapCanFlip)
+		flipped = false;
 }
 
 void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
@@ -965,9 +968,7 @@ void CMiniMap::Update()
 	if (spring_gettime() <= nextDrawScreen)
 		return;
 
-	if (!minimapCanFlip) {
-		flipped = false;
-	} else {
+	if (minimapCanFlip) {
 		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
 		flipped = rotY > math::PI/2 && rotY <= 3 * math::PI/2;
 	}
