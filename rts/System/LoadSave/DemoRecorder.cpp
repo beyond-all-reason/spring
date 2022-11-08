@@ -136,6 +136,10 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 	if (!FileSystem::CreateDirectory(demoDir))
 		return;
 
+	std::string engineVersionName = SpringVersion::GetSync();
+	// FIXME: possible to escape instead perhaps? Requires working around *nix and windows conventions
+	std::replace(engineVersionName.begin(), engineVersionName.end(), '/', '_'); // Sanitize generated engine version name when not release version
+
 	std::ostringstream oss;
 	std::ostringstream buf;
 
@@ -145,7 +149,7 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 	// FIXME: why is this not included?
 	// oss << FileSystem::GetBasename(modName);
 	// oss << "_";
-	oss << SpringVersion::GetSync();
+	oss << engineVersionName;
 	buf << oss.str() << ".sdfz";
 
 	int n = 0;
