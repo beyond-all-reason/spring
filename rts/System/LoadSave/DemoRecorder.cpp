@@ -137,7 +137,7 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 		return;
 
 	std::string engineVersionName = SpringVersion::GetSync();
-	// FIXME: possible to escape instead perhaps? Requires working around *nix and windows convensions
+	// FIXME: possible to escape instead perhaps? Requires working around *nix and windows conventions
 	std::replace(engineVersionName.begin(), engineVersionName.end(), '/', '_'); // Sanitize generated engine version name when not release version
 
 	std::ostringstream oss;
