@@ -472,7 +472,7 @@ CBumpWater::CBumpWater()
 		GLSLDefineConst4f(definitions, "ShadingPlane", shadingX/mapX, shadingZ/mapZ, shadingX, shadingZ);
 	}
 
-	windVec = envResHandler.GetCurrentWindVec();
+	UpdateWindVec(true);
 
 	// LOAD SHADERS
 	{
@@ -522,11 +522,6 @@ CBumpWater::CBumpWater()
 	}
 
 	rb = GenWaterPlaneBuffer(endlessOcean);
-/*
-	windndir = envResHandler.GetCurrentWindDir();
-	windStrength = (smoothstep(0.0f, 12.0f, envResHandler.GetCurrentWindStrength()) * 0.5f + 4.0f);
-	windVec = windndir * windStrength;
-*/
 }
 
 void CBumpWater::FreeResources()
@@ -558,14 +553,7 @@ void CBumpWater::Update()
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
-/*
-	windndir *= 0.995f;
-	windndir -= envResHandler.GetCurrentWindDir() * 0.005f;
-	windStrength *= 0.9999f;
-	windStrength += (smoothstep(0.0f, 12.0f, envResHandler.GetCurrentWindStrength()) * 0.5f + 4.0f) * 0.0001f;
-	windVec   = windndir * windStrength;
-*/
-	windVec = mix(windVec, envResHandler.GetCurrentWindVec(), 0.001);
+	UpdateWindVec(false);
 
 	if (dynWaves)
 		UpdateDynWaves();
@@ -988,6 +976,15 @@ void CBumpWater::Draw()
 
 	if (refraction > 0)
 		glEnable(GL_BLEND);
+}
+
+void CBumpWater::UpdateWindVec(bool init)
+{
+	auto curWindVec = envResHandler.GetCurrentWindDir();
+	auto windStrength = envResHandler.GetCurrentWindStrength();
+	windStrength = smoothstep(0.0f, 20.0f, windStrength);
+	curWindVec *= 1.0f + windStrength * 4.0f;
+	windVec = mix(windVec, curWindVec, init ? 1.0f : 0.01f);
 }
 
 
