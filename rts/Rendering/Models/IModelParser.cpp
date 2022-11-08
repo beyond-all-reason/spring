@@ -271,11 +271,11 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 		if (load)
 			model->loadStatus = S3DModel::LoadStatus::LOADING;
 	}
-	cv.notify_all();
 
 	assert(model);
 	if (load) {
 		FillModel(*model, name, FindModelPath(name));
+		cv.notify_all();
 	}
 
 	std::unique_lock lock(mutex);
