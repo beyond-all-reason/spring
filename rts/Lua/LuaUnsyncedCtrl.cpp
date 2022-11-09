@@ -3381,6 +3381,7 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 	const bool borderless = luaL_checkboolean(L, 7);
 
 	const bool r = globalRendering->SetWindowPosHelper(displayIndex, winRelPosX, winRelPosY, winSizeX, winSizeY, fullScreen, borderless);
+
 	if (!r)
 		luaL_error(L, "[%s] Invalid function parameters\n", __func__);
 
