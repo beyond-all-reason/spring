@@ -16,6 +16,11 @@ if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
 	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
 endif()
 
+find_package(Vulkan)
+if    (Vulkan_FOUND)
+	list(APPEND engineIncludes ${Vulkan_INCLUDE_DIRS})
+	add_definitions(-DHAS_VULKAN)
+endif (Vulkan_FOUND)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL REQUIRED)
