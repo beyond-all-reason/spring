@@ -50,6 +50,10 @@ set(test_Log_sources
 		"${ENGINE_SOURCE_DIR}/System/Log/StreamSink.cpp"
 	)
 
+set(test_common_libraries
+	cpuid
+)
+
 add_custom_target(tests)
 add_custom_target(check ${CMAKE_CTEST_COMMAND} --output-on-failure -V
 	DEPENDS engine-headless)
@@ -60,8 +64,8 @@ macro (add_spring_test target sources libraries flags)
 	add_dependencies(tests test_${target})
 	add_dependencies(check test_${target})
 	add_dependencies(install-tests test_${target})
-	add_executable(test_${target} EXCLUDE_FROM_ALL ${sources})
-	target_link_libraries(test_${target} ${libraries})
+	add_executable(test_${target} ${sources})
+	target_link_libraries(test_${target} ${libraries} ${test_common_libraries})
 	set_target_properties(test_${target} PROPERTIES COMPILE_FLAGS "${flags}")
 	#install(TARGETS test_${target} DESTINATION ${BINDIR})
 endmacro()
@@ -219,7 +223,6 @@ endif()
 	set(test_libs
 			${REALTIME_LIBRARY}
 			${WINMM_LIBRARY}
-			cpuid
 		)
 
 	set(test_flags "-DNOT_USING_CREG -DNOT_USING_STREFLOP -DBUILDING_AI")
@@ -254,13 +257,16 @@ endif()
 	set(test_src
 			"${ENGINE_SOURCE_DIR}/System/FileSystem/FileSystem.cpp"
 			"${ENGINE_SOURCE_DIR}/System/FileSystem/FileSystemAbstraction.cpp"
+			"${ENGINE_SOURCE_DIR}/System/Platform/Misc.cpp"
+			"${ENGINE_SOURCE_DIR}/System/CRC.cpp"
+			"${ENGINE_SOURCE_DIR}/System/Sync/SHA512.cpp"
 			"${ENGINE_SOURCE_DIR}/System/StringUtil.cpp"
 			"${ENGINE_SOURCE_DIR}/Game/GameVersion.cpp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/FileSystem/TestFileSystem.cpp"
 			${test_Log_sources}
 		)
 	set(test_libs
-			""
+			7zip
 		)
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "")
 	add_dependencies(test_${test_name} generateVersionFiles)
