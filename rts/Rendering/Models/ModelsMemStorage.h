@@ -17,9 +17,7 @@ public:
 	explicit MatricesMemStorage()
 		: StablePosAllocator<CMatrix44f>(INIT_NUM_ELEMS)
 		, dirtyMap(INIT_NUM_ELEMS, BUFFERING)
-	{
-		assert(Threading::IsMainThread());
-	}
+	{}
 	void Reset() override {
 		assert(Threading::IsMainThread());
 		StablePosAllocator<CMatrix44f>::Reset();
