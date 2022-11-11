@@ -159,7 +159,7 @@ void CWorldDrawer::InitPost() const
 					continue;
 
 				if (model.loadStatus != S3DModel::LoadStatus::LOADED) {
-					const std::string err = fmt::format("ML Error. ModelName {}, ModelID {}, numPieces {}, LS {}", model.name, model.id, model.numPieces, model.loadStatus);
+					const std::string err = fmt::format("ML Error. ModelName {}, ModelID {}, numPieces {}, LS {}", model.name, model.id, model.numPieces, static_cast<uint32_t>(model.loadStatus));
 					throw std::runtime_error(err);
 				}
 			}
