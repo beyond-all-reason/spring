@@ -149,8 +149,21 @@ void CWorldDrawer::InitPost() const
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
-		if (preloadMode)
+		if (preloadMode) {
 			S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
+
+			const auto& mdlVec = modelLoader.GetModelsVec();
+			for (size_t i = 0; i < mdlVec.size(); ++i) {
+				const auto& model = mdlVec[i];
+				if (model.id == -1)
+					continue;
+
+				if (model.loadStatus != S3DModel::LoadStatus::LOADED) {
+					const std::string err = fmt::format("ML Error. ModelName {}, ModelID {}, numPieces {}, LS {}", model.name, model.id, model.numPieces, model.loadStatus);
+					throw std::runtime_error(err);
+				}
+			}
+		}
 	}
 }
 

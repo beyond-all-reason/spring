@@ -331,42 +331,26 @@ public:
 		assert(positionToSize.empty());
 	}
 
-	virtual size_t Allocate(size_t numElems, bool withMutex = false);
+	virtual size_t Allocate(size_t numElems);
 	virtual void Free(size_t firstElem, size_t numElems, const T* T0 = nullptr);
 	const size_t GetSize() const { return data.size(); }
 	const std::vector<T>& GetData() const { return data; }
 	      std::vector<T>& GetData()       { return data; }
 
-	const T& operator[](std::size_t idx) const { return data[idx]; }
-	      T& operator[](std::size_t idx)       { return data[idx]; }
+	virtual const T& operator[](std::size_t idx) const { return data[idx]; }
+	virtual       T& operator[](std::size_t idx)       { return data[idx]; }
 
 	static constexpr std::size_t INVALID_INDEX = ~0u;
 private:
 	void CompactGaps();
-	size_t AllocateImpl(size_t numElems);
 private:
-	spring::mutex mut;
 	std::vector<T> data;
 	std::multimap<size_t, size_t> sizeToPositions;
 	std::map<size_t, size_t> positionToSize;
 };
 
-
 template<typename T>
-inline size_t StablePosAllocator<T>::Allocate(size_t numElems, bool withMutex)
-{
-	if (withMutex) {
-		std::scoped_lock<spring::mutex> lck(mut);
-		return AllocateImpl(numElems);
-	}
-	else {
-		assert(Threading::IsMainThread());
-		return AllocateImpl(numElems);
-	}
-}
-
-template<typename T>
-inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
+inline size_t StablePosAllocator<T>::Allocate(size_t numElems)
 {
 	if (numElems == 0)
 		return ~0u;
@@ -375,7 +359,7 @@ inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
 	if (positionToSize.empty()) {
 		size_t returnPos = data.size();
 		data.resize(data.size() + numElems);
-		myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u [thread_id = %u]", uint32_t(numElems), uint32_t(returnPos), static_cast<uint32_t>(Threading::GetCurrentThreadId()));
+		myLog("StablePosAllocator<T>::Allocate(%u) = %u [thread_id = %u]", uint32_t(numElems), uint32_t(returnPos), static_cast<uint32_t>(Threading::GetCurrentThreadId()));
 		return returnPos;
 	}
 
@@ -395,14 +379,14 @@ inline size_t StablePosAllocator<T>::AllocateImpl(size_t numElems)
 		}
 
 		sizeToPositions.erase(it);
-		myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
+		myLog("StablePosAllocator<T>::Allocate(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
 		return returnPos;
 	}
 
 	//all gaps are too small
 	size_t returnPos = data.size();
 	data.resize(data.size() + numElems);
-	myLog("StablePosAllocator<T>::AllocateImpl(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
+	myLog("StablePosAllocator<T>::Allocate(%u) = %u", uint32_t(numElems), uint32_t(returnPos));
 	return returnPos;
 }
 

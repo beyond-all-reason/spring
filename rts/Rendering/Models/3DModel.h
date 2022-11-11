@@ -338,7 +338,7 @@ struct S3DModel
 
 		// force mutex just in case this is called from modelLoader.ProcessVertices()
 		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
-		matAlloc = std::move(ScopedMatricesMemAlloc(numPieces, true));
+		matAlloc = ScopedMatricesMemAlloc(numPieces);
 
 		std::vector<S3DModelPiece*> stack = { root };
 

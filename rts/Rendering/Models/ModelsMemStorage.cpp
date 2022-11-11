@@ -41,14 +41,9 @@ ModelUniformData& ModelsUniformsStorage::GetObjUniformsArray(const CWorldObject*
 	size_t offset = GetObjOffset(o);
 	return storage[offset];
 }
-/*
-void MatricesMemStorage::SetDirty(bool d)
-{
-	std::fill(dirtyMap.begin(), dirtyMap.end(), d);
-}
-*/
 
 void MatricesMemStorage::SetAllDirty()
 {
+	assert(Threading::IsMainThread());
 	std::fill(dirtyMap.begin(), dirtyMap.end(), BUFFERING);
 }

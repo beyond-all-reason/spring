@@ -8,35 +8,62 @@
 #include "System/Matrix44f.h"
 #include "System/MemPoolTypes.h"
 #include "System/FreeListMap.h"
+#include "System/Threading/SpringThreading.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Objects/SolidObjectDef.h"
 
 class MatricesMemStorage : public StablePosAllocator<CMatrix44f> {
 public:
-	MatricesMemStorage()
+	explicit MatricesMemStorage()
 		: StablePosAllocator<CMatrix44f>(INIT_NUM_ELEMS)
 		, dirtyMap(INIT_NUM_ELEMS, BUFFERING)
-	{}
+	{
+		assert(Threading::IsMainThread());
+	}
 	void Reset() override {
+		assert(Threading::IsMainThread());
 		StablePosAllocator<CMatrix44f>::Reset();
 		dirtyMap.resize(GetSize(), BUFFERING);
 	}
 
-	size_t Allocate(size_t numElems, bool withMutex = false) override {
-		size_t res = StablePosAllocator<CMatrix44f>::Allocate(numElems, withMutex);
+	size_t Allocate(size_t numElems) override {
+		std::scoped_lock lock(mtx);
+		size_t res = StablePosAllocator<CMatrix44f>::Allocate(numElems);
 		dirtyMap.resize(GetSize(), BUFFERING);
 
 		return res;
 	}
 	void Free(size_t firstElem, size_t numElems, const CMatrix44f* T0 = nullptr) override {
+		std::scoped_lock lock(mtx);
 		StablePosAllocator<CMatrix44f>::Free(firstElem, numElems, T0);
 		dirtyMap.resize(GetSize(), BUFFERING);
 	}
+
+	const CMatrix44f& operator[](std::size_t idx) const override
+	{
+		std::scoped_lock lock(mtx);
+		return StablePosAllocator<CMatrix44f>::operator[](idx);
+	}
+	CMatrix44f& operator[](std::size_t idx) override
+	{
+		std::scoped_lock lock(mtx);
+		return StablePosAllocator<CMatrix44f>::operator[](idx);
+	}
 private:
+	mutable spring::mutex mtx;
 	std::vector<uint8_t> dirtyMap;
 public:
-	const decltype(dirtyMap)& GetDirtyMap() const { return dirtyMap; }
-	      decltype(dirtyMap)& GetDirtyMap()       { return dirtyMap; }
+	const decltype(dirtyMap)& GetDirtyMap() const
+	{
+		std::scoped_lock lock(mtx);
+		return dirtyMap;
+	}
+	decltype(dirtyMap)& GetDirtyMap()
+	{
+		std::scoped_lock lock(mtx);
+		return dirtyMap;
+	}
+
 	void SetAllDirty();
 public:
 	//need to update buffer with matrices BUFFERING times, because the actual buffer is made of BUFFERING number of parts
@@ -53,13 +80,14 @@ extern MatricesMemStorage matricesMemStorage;
 class ScopedMatricesMemAlloc {
 public:
 	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(0u) {};
-	ScopedMatricesMemAlloc(std::size_t numElems_, bool withMutex = true) : numElems{numElems_} {
-		firstElem = matricesMemStorage.Allocate(numElems, withMutex);
+	ScopedMatricesMemAlloc(std::size_t numElems_)
+		: numElems{numElems_}
+	{
+		firstElem = matricesMemStorage.Allocate(numElems);
 	}
 
 	ScopedMatricesMemAlloc(const ScopedMatricesMemAlloc&) = delete;
 	ScopedMatricesMemAlloc(ScopedMatricesMemAlloc&& smma) noexcept { *this = std::move(smma); }
-
 
 	~ScopedMatricesMemAlloc() {
 		if (firstElem == MatricesMemStorage::INVALID_INDEX)
