@@ -111,6 +111,37 @@
 
 namespace { // prevents linking problems in case of duplicate symbols
 
+
+	//helper functions
+	using ArgTuple = std::tuple<uint32_t, bool, std::function<void()>>;
+
+	template<typename Iterable>
+	bool GenericArgsExecutor(std::vector<std::string>& args, Iterable& argsExec) {
+		for (auto& arg : args) {
+			StringToLowerInPlace(arg);
+
+			auto hs = hashString(arg.c_str());
+			for (auto& [ahs, aen, afun] : argsExec) {
+				if (ahs == hs)
+					aen = true;
+			}
+		}
+
+		if (args.empty()) {
+			for (auto& [ahs, aen, afun] : argsExec) {
+				aen = true;
+			}
+		}
+
+		for (const auto& [ahs, aen, afun] : argsExec) {
+			if (aen)
+				afun();
+		}
+
+		return true;
+	}
+	// end of helper function
+
 /**
  * Special case executor which is used for creating aliases to other commands.
  * The inner executor will be delet'ed in this executors dtor.
@@ -3352,51 +3383,34 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		std::array<bool, 4> en = { false }; //lua, s3o, smf, ceg
-		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs(), 1);
-
-		for (auto& arg : args) {
-			StringToLowerInPlace(arg);
-
-			switch (hashString(arg.c_str())) {
-			case hashString("lua"): {
-				en[0] = true;
-			} break;
-			case hashString("s3o"): {
-				en[1] = true;
-			} break;
-			case hashString("ssmf"):
-			case hashString("smf"): {
-				en[2] = true;
-			} break;
-			case hashString("cegs"):
-			case hashString("ceg"): {
-				en[3] = true;
-			} break;
-			}
-		}
-		if (args.empty())
-			en = { true };
-
-		if (en[0]) {
+		auto luaFunc = []() {
 			LOG("Reloading Lua textures");
 			CNamedTextures::Reload();
-		}
-		if (en[1]) {
+		};
+		auto s3oFunc = []() {
 			LOG("Reloading S3O textures");
 			textureHandlerS3O.Reload();
-		}
-		if (en[2]) {
+		};
+		auto smfFunc = []() {
 			LOG("Reloading SMF textures");
 			readMap->ReloadTextures();
-		}
-		if (en[3]) {
+		};
+		auto cegFunc = []() {
 			LOG("Reloading CEG textures");
 			projectileDrawer->textureAtlas->ReloadTextures();
 			projectileDrawer->groundFXAtlas->ReloadTextures();
-		}
+		};
 
-		return true;
+		std::array argsExec = {
+			ArgTuple(hashString("lua") , false, luaFunc),
+			ArgTuple(hashString("s3o") , false, s3oFunc),
+			ArgTuple(hashString("ssmf"), false, smfFunc),
+			ArgTuple(hashString("smf") , false, smfFunc),
+			ArgTuple(hashString("cegs"), false, cegFunc),
+			ArgTuple(hashString("ceg") , false, cegFunc),
+		};
+
+		return GenericArgsExecutor(CSimpleParser::Tokenize(action.GetArgs(), 1), argsExec);
 	}
 };
 
@@ -3406,7 +3420,6 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		using ArgTuple = std::tuple<uint32_t, bool, std::function<void()>>;
 		std::array argsExec = {
 			ArgTuple(hashString("proj"), false, []() {
 				LOG("Dumping projectile textures");
@@ -3415,30 +3428,7 @@ public:
 			}),
 		};
 
-		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs(), 1);
-
-		for (auto& arg : args) {
-			StringToLowerInPlace(arg);
-
-			auto hs = hashString(arg.c_str());
-			for (auto& [ahs, aen, afun] : argsExec) {
-				if (ahs == hs)
-					aen = true;
-			}
-		}
-
-		if (args.empty()) {
-			for (auto& [ahs, aen, afun] : argsExec) {
-				aen = true;
-			}
-		}
-
-		for (auto& [ahs, aen, afun] : argsExec) {
-			if (aen)
-				afun();
-		}
-
-		return true;
+		return GenericArgsExecutor(CSimpleParser::Tokenize(action.GetArgs(), 1), argsExec);
 	}
 };
 

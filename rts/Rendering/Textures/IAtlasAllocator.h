@@ -8,6 +8,7 @@
 #include "System/float4.h"
 #include "System/type2.h"
 #include "System/UnorderedMap.hpp"
+#include "System/StringHash.h"
 
 
 
@@ -17,9 +18,14 @@ public:
 	struct SAtlasEntry
 	{
 		SAtlasEntry() : data(nullptr) {}
-		SAtlasEntry(const int2 _size, void* _data = nullptr) : size(_size), data(_data) {}
+		SAtlasEntry(const int2 _size, const std::string& name, void* _data = nullptr)
+			: size(_size)
+			, strHash(hashString(name.c_str()))
+			, data(_data)
+		{}
 
 		int2 size;
+		uint32_t strHash;
 		float4 texCoords;
 		void* data;
 	};
@@ -37,7 +43,7 @@ public:
 public:
 	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
 	{
-		entries[name] = SAtlasEntry(size, data);
+		entries[name] = SAtlasEntry(size, name, data);
 	}
 
 	float4 GetEntry(const std::string& name)

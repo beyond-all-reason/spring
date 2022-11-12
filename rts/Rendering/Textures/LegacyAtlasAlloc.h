@@ -14,7 +14,7 @@ public:
 
 private:
 	bool IncreaseSize();
-	static int CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2);
+	static bool CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2);
 };
 
 #endif // LEGACY_ATLAS_ALLOC_H

@@ -11,13 +11,21 @@
 static constexpr int ATLAS_PADDING = 1;
 
 
-inline int CRowAtlasAlloc::CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2)
+inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	// sort by large to small
-	if (tex1->size.y == tex2->size.y)
-		return (tex1->size.x > tex2->size.x);
 
-	return (tex1->size.y > tex2->size.y);
+	if (tex1->size.y > tex2->size.y) return true;
+	if (tex2->size.y > tex1->size.y) return false;
+
+	if (tex1->size.x > tex2->size.x) return true;
+	if (tex2->size.x > tex1->size.x) return false;
+
+	// silly but will help stabilizing the placement on reload
+	if (tex1->strHash > tex2->strHash) return true;
+	if (tex2->strHash > tex1->strHash) return false;
+
+	return false;
 }
 
 

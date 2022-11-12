@@ -19,7 +19,7 @@ public:
 	virtual int GetMaxMipMaps();
 
 private:
-	static int CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2);
+	static bool CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2);
 	QuadTreeNode* FindPosInQuadTree(int xsize, int ysize);
 
 private:

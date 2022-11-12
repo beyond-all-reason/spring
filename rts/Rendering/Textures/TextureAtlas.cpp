@@ -15,6 +15,7 @@
 #include "System/StringUtil.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
+#include "System/UnorderedSet.hpp"
 
 #include <cstring>
 
@@ -69,7 +70,7 @@ void CTextureAtlas::ReinitAllocator()
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 }
 
-size_t CTextureAtlas::AddTex(std::string name, int xsize, int ysize, TextureType texType)
+size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureType texType)
 {
 	memTextures.emplace_back();
 	MemTex& tex = memTextures.back();
@@ -79,17 +80,17 @@ size_t CTextureAtlas::AddTex(std::string name, int xsize, int ysize, TextureType
 	tex.texType = texType;
 	tex.mem.resize((xsize * ysize * GetBPP(texType)) / 8, 0);
 
-	StringToLowerInPlace(name);
-	tex.names.emplace_back(std::move(name));
+	StringToLowerInPlace(texName);
+	tex.names.emplace_back(std::move(texName));
 
 	atlasAllocator->AddEntry(tex.names.back(), int2(xsize, ysize));
 
 	return (memTextures.size() - 1);
 }
 
-size_t CTextureAtlas::AddTexFromMem(std::string name, int xsize, int ysize, TextureType texType, void* data)
+size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, TextureType texType, void* data)
 {
-	const size_t texIdx = AddTex(std::move(name), xsize, ysize, texType);
+	const size_t texIdx = AddTex(std::move(texName), xsize, ysize, texType);
 
 	MemTex& tex = memTextures[texIdx];
 
@@ -97,19 +98,17 @@ size_t CTextureAtlas::AddTexFromMem(std::string name, int xsize, int ysize, Text
 	return texIdx;
 }
 
-size_t CTextureAtlas::AddTexFromFile(std::string name, std::string file)
+size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& file)
 {
-	StringToLowerInPlace(name);
+	StringToLowerInPlace(texName);
 
 	// if the file is already loaded, use that instead
 	const std::string& lcFile = StringToLower(file);
-	const auto it = files.find(lcFile);
 
-	if (it != files.end()) {
-		memTextures[it->second].names.emplace_back(std::move(name));
+	if (const auto it = files.find(lcFile); it != files.end()) {
+		memTextures[it->second].names.emplace_back(texName);
 		return (it->second);
 	}
-
 
 	CBitmap bitmap;
 	if (!bitmap.Load(file)) {
@@ -121,7 +120,7 @@ size_t CTextureAtlas::AddTexFromFile(std::string name, std::string file)
 	if (bitmap.channels != 4 || bitmap.compressed)
 		throw content_error("Unsupported bitmap format in file " + file);
 
-	return (files[lcFile] = AddTexFromMem(std::move(name), bitmap.xsize, bitmap.ysize, RGBA32, bitmap.GetRawMem()));
+	return (files[lcFile] = AddTexFromMem(std::move(texName), bitmap.xsize, bitmap.ysize, RGBA32, bitmap.GetRawMem()));
 }
 
 
@@ -166,6 +165,7 @@ bool CTextureAtlas::CreateTexture()
 		// make spacing between textures black transparent to avoid ugly lines with linear filtering
 		std::memset(data, 0, atlasSize.x * atlasSize.y * 4);
 
+		int iter = 0;
 		for (const MemTex& memTex: memTextures) {
 			const float4 texCoords = atlasAllocator->GetTexCoords(memTex.names[0]);
 			const float4 absCoords = atlasAllocator->GetEntry(memTex.names[0]);
@@ -238,29 +238,44 @@ const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& CTexture
 void CTextureAtlas::ReloadTextures()
 {
 	if (!reloadable) {
-		LOG_L(L_ERROR, "[CTextureAtlas::%s] Attempring to reload non-reloadable texture atlas name=\"%s\"", __func__, name.c_str());
+		LOG_L(L_ERROR, "[CTextureAtlas::%s] Attempting to reload non-reloadable texture atlas name=\"%s\"", __func__, name.c_str());
 		return;
 	}
 
 	ReinitAllocator();
 
+	spring::unordered_set<size_t> nonFileEntries;
+	for (size_t i = 0; i < memTextures.size(); ++i) {
+		nonFileEntries.emplace(i);
+	}
+
 	for (const auto& [filename, idx] : files) {
-		CBitmap bitmap;
-
-		if (!bitmap.Load(filename))
-			continue;
-
 		assert(idx < memTextures.size());
+		nonFileEntries.erase(idx);
 		auto& memTex = memTextures[idx];
+
+		CBitmap bitmap;
+		if (!bitmap.Load(filename)) {
+			LOG_L(L_WARNING, "[TexAtlas::%s] could not reload texture from file \"%s\"", __func__, filename.c_str());
+			bitmap.Alloc(2, 2, 4);
+			bitmap.Fill(SColor(1.0f, 0.0f, 0.0f, 1.0f));
+		}
 
 		memTex.xsize = bitmap.xsize;
 		memTex.ysize = bitmap.ysize;
 		memTex.texType = RGBA32;
-		memTex.mem.resize((memTex.xsize * memTex.ysize * GetBPP(memTex.texType)) / 8, 0);
+		memTex.mem.resize(bitmap.GetMemSize(), 0);
 		std::memcpy(memTex.mem.data(), bitmap.GetRawMem(), memTex.mem.size());
 
-		for (const auto& name : memTex.names) {
-			atlasAllocator->AddEntry(name, int2(memTex.xsize, memTex.ysize));
+		for (const auto& texName : memTex.names) {
+			atlasAllocator->AddEntry(texName, int2(memTex.xsize, memTex.ysize));
+		}
+	}
+
+	for (auto idx : nonFileEntries) {
+		const auto& memTex = memTextures[idx];
+		for (const auto& texName : memTex.names) {
+			atlasAllocator->AddEntry(texName, int2(memTex.xsize, memTex.ysize));
 		}
 	}
 

@@ -8,16 +8,24 @@
 
 
 // texture spacing in the atlas (in pixels)
-#define TEXMARGIN 2
+static constexpr int TEXMARGIN = 2;
 
 
-inline int CLegacyAtlasAlloc::CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2)
+inline bool CLegacyAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
-	// sort in reverse order
-	if ((tex1)->size.y == (tex2)->size.y)
-		return ((tex1)->size.x > (tex2)->size.x);
+	// sort by large to small
 
-	return ((tex1)->size.y > (tex2)->size.y);
+	if (tex1->size.y > tex2->size.y) return true;
+	if (tex2->size.y > tex1->size.y) return false;
+
+	if (tex1->size.x > tex2->size.x) return true;
+	if (tex2->size.x > tex1->size.x) return false;
+
+	// silly but will help stabilizing the placement on reload
+	if (tex1->strHash > tex2->strHash) return true;
+	if (tex2->strHash > tex1->strHash) return false;
+
+	return false;
 }
 
 
@@ -92,13 +100,15 @@ bool CLegacyAtlasAlloc::Allocate()
 							cur.y = max.y = cur.x = 0;
 							recalc = true;
 							break;
-						} else {
+						}
+						else {
 							success = false;
 							break;
 						}
 					}
 					thisSub.push_back(int2(0, cur.y));
-				} else {
+				}
+				else {
 					thisSub = nextSub;
 					nextSub.clear();
 				}
@@ -131,7 +141,7 @@ bool CLegacyAtlasAlloc::Allocate()
 
 			thisSub.front().x += (curtex->size.x + TEXMARGIN);
 
-			while (thisSub.size()>1 && thisSub.front().x >= (++thisSub.begin())->x) {
+			while (thisSub.size() > 1 && thisSub.front().x >= (++thisSub.begin())->x) {
 				(++thisSub.begin())->x = thisSub.front().x;
 				thisSub.erase(thisSub.begin());
 			}

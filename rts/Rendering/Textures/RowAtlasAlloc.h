@@ -39,7 +39,7 @@ private:
 	void EstimateNeededSize();
 	Row* AddRow(int glyphWidth, int glyphHeight);
 	Row* FindRow(int glyphWidth, int glyphHeight);
-	static int CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2);
+	static bool CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2);
 };
 
 #endif // ROW_ATLAS_ALLOC_H

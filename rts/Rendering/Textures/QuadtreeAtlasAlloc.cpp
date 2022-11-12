@@ -142,11 +142,19 @@ QuadTreeNode* CQuadtreeAtlasAlloc::FindPosInQuadTree(int xsize, int ysize)
 }
 
 
-int CQuadtreeAtlasAlloc::CompareTex(SAtlasEntry* tex1, SAtlasEntry* tex2)
+bool CQuadtreeAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	const size_t area1 = std::max(tex1->size.x, tex1->size.y);
 	const size_t area2 = std::max(tex2->size.x, tex2->size.y);
-	return (area1 > area2);
+
+	if (area1 > area2) return true;
+	if (area2 > area1) return false;
+
+	// silly but will help stabilizing the placement on reload
+	if (tex1->strHash > tex2->strHash) return true;
+	if (tex2->strHash > tex1->strHash) return false;
+
+	return false;
 }
 
 
