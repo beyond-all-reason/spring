@@ -163,7 +163,7 @@ void CSMFReadMap::LoadMinimap()
 	glGenTextures(1, minimapTex.GetIDPtr());
 	glBindTexture(GL_TEXTURE_2D, minimapTex.GetID());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, MINIMAP_NUM_MIPMAP - 1);
 	int offset = 0;
 	for (unsigned int i = 0; i < MINIMAP_NUM_MIPMAP; i++) {

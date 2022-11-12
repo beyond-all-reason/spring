@@ -13,10 +13,11 @@ out vec4 fragColor;
 
 void main()
 {
-	vec4 shadingColor = texture(shadingTex, vTexCoords * uvMult);
-	vec4 minimapColor = texture(minimapTex, vTexCoords         );
-	vec4 infomapColor = texture(infomapTex, vTexCoords * uvMult) - vec4(0.5);
+	const float depthBias = -2.0;
+
+	vec4 shadingColor = texture(shadingTex, vTexCoords * uvMult           );
+	vec4 minimapColor = texture(minimapTex, vTexCoords         , depthBias);
+	vec4 infomapColor = texture(infomapTex, vTexCoords * uvMult, depthBias) - vec4(0.5);
 
 	fragColor = shadingColor * minimapColor + (infomapColor * infotexMul);
 }
-
