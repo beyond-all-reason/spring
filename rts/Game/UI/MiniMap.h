@@ -18,6 +18,9 @@ namespace icon {
 	class CIconData;
 }
 
+namespace Shader {
+	struct IProgramObject;
+}
 
 class CMiniMap : public CInputReceiver {
 public:
@@ -32,7 +35,7 @@ public:
 	bool IsAbove(int x, int y);
 	bool IsInside(int x, int y);
 	std::string GetTooltip(int x, int y);
-	void Draw();
+	void Draw() override;
 	void DrawForReal(bool useNormalizedCoors = true, bool updateTex = false, bool luaCall = false);
 	void Update();
 
@@ -203,6 +206,8 @@ protected:
 		float color[4];
 	};
 	std::deque<Notification> notes;
+
+	Shader::IProgramObject* bgShader = nullptr;
 
 	CUnit* lastClicked = nullptr;
 };

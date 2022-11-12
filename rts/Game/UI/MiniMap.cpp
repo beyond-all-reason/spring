@@ -27,6 +27,7 @@
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
 #include "Rendering/LineDrawer.h"
+#include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/GL/myGL.h"
@@ -103,6 +104,24 @@ CMiniMap::CMiniMap()
 
 	UpdateGeometry();
 
+	const float isx = mapDims.mapx / float(mapDims.pwr2mapx);
+	const float isy = mapDims.mapy / float(mapDims.pwr2mapy);
+
+	bgShader = shaderHandler->CreateProgramObject("[MiniMap]", "Background");
+	bgShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/MiniMapVertProg.glsl", "", GL_VERTEX_SHADER));
+	bgShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/MiniMapFragProg.glsl", "", GL_FRAGMENT_SHADER));
+	bgShader->BindAttribLocation("vertexPos", 0);
+	bgShader->BindAttribLocation("texCoords", 1);
+	bgShader->Link();
+
+	bgShader->Enable();
+	bgShader->SetUniform("shadingTex", 0);
+	bgShader->SetUniform("minimapTex", 1);
+	bgShader->SetUniform("infomapTex", 2);
+	bgShader->SetUniform("uvMult", isx, isy);
+	bgShader->SetUniform("infotexMul", 0.0f);
+	bgShader->Disable();
+
 	circleLists = glGenLists(circleListsCount);
 	for (int cl = 0; cl < circleListsCount; cl++) {
 		glNewList(circleLists + cl, GL_COMPILE);
@@ -163,6 +182,8 @@ CMiniMap::CMiniMap()
 
 CMiniMap::~CMiniMap()
 {
+	shaderHandler->ReleaseProgramObjects("[MiniMap]");
+
 	glDeleteLists(circleLists, circleListsCount);
 	glDeleteTextures(1, &buttonsTexture);
 	glDeleteTextures(1, &minimapTex);
@@ -1073,12 +1094,8 @@ void CMiniMap::UpdateTextureCache()
 
 	// resolve multisampled FBO if there is one
 	if (multisampledFBO) {
-		glBindFramebufferEXT(GL_READ_FRAMEBUFFER, fbo.fboId);
-		glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, fboResolve.fboId);
-		glBlitFramebufferEXT(
-			0, 0, minimapTexSize.x, minimapTexSize.y,
-			0, 0, minimapTexSize.x, minimapTexSize.y,
-			GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		const std::array rect = { 0, 0, minimapTexSize.x, minimapTexSize.y };
+		FBO::Blit(fbo.fboId, fboResolve.fboId, rect, rect, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 }
 
@@ -1646,7 +1663,52 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 	return true;
 }
 
+void CMiniMap::DrawBackground() const
+{
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
 
+	if (flipped) {
+		rb.AddQuadTriangles(
+			{ 1.0f, 1.0f, 0.0f, 1.0f }, // tl
+			{ 0.0f, 1.0f, 1.0f, 1.0f }, // tr
+			{ 0.0f, 0.0f, 1.0f, 0.0f }, // br
+			{ 1.0f, 0.0f, 0.0f, 0.0f }  // bl
+		);
+	} else {
+		rb.AddQuadTriangles(
+			{ 0.0f, 0.0f, 0.0f, 1.0f }, // tl
+			{ 1.0f, 0.0f, 1.0f, 1.0f }, // tr
+			{ 1.0f, 1.0f, 1.0f, 0.0f }, // br
+			{ 0.0f, 1.0f, 0.0f, 0.0f }  // bl
+		);
+	}
+
+	//glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadMatrixf(projMats[0]);
+
+	// draw the map
+	glDisable(GL_BLEND);
+
+	readMap->BindMiniMapTextures();
+	bgShader->Enable();
+	bgShader->SetUniform("infotexMul", static_cast<float>(infoTextureHandler->IsEnabled()));
+	rb.DrawElements(GL_TRIANGLES);
+	bgShader->Disable();
+
+	glEnable(GL_BLEND);
+
+	//glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+/*
 void CMiniMap::DrawBackground() const
 {
 	glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
@@ -1679,7 +1741,7 @@ void CMiniMap::DrawBackground() const
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-
+*/
 
 void CMiniMap::DrawUnitIcons() const
 {
