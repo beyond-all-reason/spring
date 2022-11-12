@@ -122,19 +122,6 @@ CMiniMap::CMiniMap()
 	bgShader->SetUniform("infotexMul", 0.0f);
 	bgShader->Disable();
 
-	circleLists = glGenLists(circleListsCount);
-	for (int cl = 0; cl < circleListsCount; cl++) {
-		glNewList(circleLists + cl, GL_COMPILE);
-		glBegin(GL_LINE_LOOP);
-		const int divs = (1 << (cl + 3));
-		for (int d = 0; d < divs; d++) {
-			const float rads = math::TWOPI * float(d) / float(divs);
-			glVertex3f(std::sin(rads), 0.0f, std::cos(rads));
-		}
-		glEnd();
-		glEndList();
-	}
-
 	// setup the buttons' texture and texture coordinates
 	buttonsTexture = 0;
 	CBitmap bitmap;
@@ -184,7 +171,6 @@ CMiniMap::~CMiniMap()
 {
 	shaderHandler->ReleaseProgramObjects("[MiniMap]");
 
-	glDeleteLists(circleLists, circleListsCount);
 	glDeleteTextures(1, &buttonsTexture);
 	glDeleteTextures(1, &minimapTex);
 
@@ -910,47 +896,26 @@ void CMiniMap::AddNotification(float3 pos, float3 color, float alpha)
 
 /******************************************************************************/
 
-void CMiniMap::DrawCircle(const float3& pos, float radius) const
+void CMiniMap::DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, SColor color, float radius) const
 {
-	glPushMatrix();
-	glTranslatef(pos.x, pos.y, pos.z);
-	glScalef(radius, 1.0f, radius);
-
 	const float xPixels = radius * float(curDim.x) / float(mapDims.mapx * SQUARE_SIZE);
 	const float yPixels = radius * float(curDim.y) / float(mapDims.mapy * SQUARE_SIZE);
-	const int lod = (int)(0.25 * math::log2(1.0f + (xPixels * yPixels)));
-	const int lodClamp = std::max(0, std::min(circleListsCount - 1, lod));
-	glCallList(circleLists + lodClamp);
+	const auto lod = static_cast<int>(0.25 * math::log2(1.0f + (xPixels * yPixels)));
+	const int divs = 1 << (std::clamp(lod, 0, 6 - 1) + 3);
 
-	glPopMatrix();
+	for (int d = 0; d < divs; d++) {
+		const float step0 = static_cast<float>(d + 0) / static_cast<float>(divs);
+		const float step1 = static_cast<float>(d + 1) / static_cast<float>(divs);
+		const float rads0 = math::TWOPI * step0;
+		const float rads1 = math::TWOPI * step1;
+
+		const float3 vtx0 = { std::sin(rads0), 0.0f, std::cos(rads0) };
+		const float3 vtx1 = { std::sin(rads1), 0.0f, std::cos(rads1) };
+
+		rb.AddVertex({ pos + vtx0 * radius, color });
+		rb.AddVertex({ pos + vtx1 * radius, color });
+	}
 }
-
-void CMiniMap::DrawSquare(const float3& pos, float xsize, float zsize) const
-{
-	float verts[] = {
-		pos.x + xsize, 0.0f, pos.z + zsize,
-		pos.x - xsize, 0.0f, pos.z + zsize,
-		pos.x - xsize, 0.0f, pos.z - zsize,
-		pos.x + xsize, 0.0f, pos.z - zsize
-	};
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, verts);
-	glDrawArrays(GL_LINE_LOOP, 0, 4);
-	glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-
-void CMiniMap::DrawSurfaceCircle(const float3& pos, float radius, unsigned int)
-{
-	minimap->DrawCircle(pos, radius);
-}
-
-
-void CMiniMap::DrawSurfaceSquare(const float3& pos, float xsize, float ysize)
-{
-	minimap->DrawSquare(pos, xsize, ysize);
-}
-
 
 void CMiniMap::ApplyConstraintsMatrix() const
 {
@@ -964,11 +929,9 @@ void CMiniMap::ApplyConstraintsMatrix() const
 	}
 }
 
-
 float CMiniMap::GetRotation() {
 	return flipped ? math::PI : 0;
 }
-
 
 /******************************************************************************/
 
@@ -1170,8 +1133,6 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 		}
 	}
 
-	setSurfaceCircleFunc(DrawSurfaceCircle);
-	setSurfaceSquareFunc(DrawSurfaceSquare);
 	cursorIcons.Enable(false);
 
 #if USE_CLIP_PLANES
@@ -1231,8 +1192,6 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 	glDisable(GL_CLIP_PLANE3);
 #endif
 	cursorIcons.Enable(true);
-	setSurfaceCircleFunc(nullptr);
-	setSurfaceSquareFunc(nullptr);
 }
 
 
@@ -1776,37 +1735,38 @@ void CMiniMap::DrawUnitRanges() const
 {
 	// draw unit ranges
 	const auto& selUnits = selectedUnitsHandler.selectedUnits;
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 
 	for (const int unitID: selUnits) {
 		const CUnit* unit = unitHandler.GetUnit(unitID);
 
 		// LOS Ranges
 		if (unit->radarRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeRadar);
-			DrawCircle(unit->pos, unit->radarRadius);
+			DrawCircle(rb, unit->pos, cmdColors.rangeRadar, static_cast<float>(unit->radarRadius));
 		}
 		if (unit->sonarRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeSonar);
-			DrawCircle(unit->pos, unit->sonarRadius);
+			DrawCircle(rb, unit->pos, cmdColors.rangeSonar, static_cast<float>(unit->sonarRadius));
 		}
 		if (unit->jammerRadius && !unit->beingBuilt && unit->activated) {
-			glColor3fv(cmdColors.rangeJammer);
-			DrawCircle(unit->pos, unit->jammerRadius);
+			DrawCircle(rb, unit->pos, cmdColors.rangeJammer, static_cast<float>(unit->jammerRadius));
 		}
 
 		// Interceptor Ranges
 		for (const CWeapon* w: unit->weapons) {
 			auto& wd = *w->weaponDef;
 			if ((w->range > 300) && wd.interceptor) {
-				if (w->numStockpiled || !wd.stockpile) {
-					glColor3fv(cmdColors.rangeInterceptorOn);
-				} else {
-					glColor3fv(cmdColors.rangeInterceptorOff);
-				}
-				DrawCircle(unit->pos, wd.coverageRange);
+				SColor rangeColor = (w->numStockpiled || !wd.stockpile) ?
+					cmdColors.rangeInterceptorOn : cmdColors.rangeInterceptorOff;
+
+				DrawCircle(rb, unit->pos, rangeColor, wd.coverageRange);
 			}
 		}
 	}
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+	rb.DrawArrays(GL_LINES);
+	sh.Disable();
 }
 
 

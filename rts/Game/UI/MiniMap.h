@@ -7,6 +7,7 @@
 #include <deque>
 #include "InputReceiver.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/RenderBuffersFwd.h"
 #include "System/Matrix44f.h"
 #include "System/Color.h"
 #include "System/float3.h"
@@ -75,9 +76,9 @@ public:
 	bool UseUnitIcons() const { return useIcons; }
 	bool UseSimpleColors() const { return simpleColors; }
 
-	const unsigned char* GetMyTeamIconColor() const { return &myColor[0]; }
-	const unsigned char* GetAllyTeamIconColor() const { return &allyColor[0]; }
-	const unsigned char* GetEnemyTeamIconColor() const { return &enemyColor[0]; }
+	const uint8_t* GetMyTeamIconColor() const { return &myColor[0]; }
+	const uint8_t* GetAllyTeamIconColor() const { return &allyColor[0]; }
+	const uint8_t* GetEnemyTeamIconColor() const { return &enemyColor[0]; }
 
 	const CMatrix44f& GetViewMat(unsigned int idx) const { return viewMats[idx]; }
 	const CMatrix44f& GetProjMat(unsigned int idx) const { return projMats[idx]; }
@@ -110,16 +111,11 @@ protected:
 	void DrawMinimizedButton();
 
 	void DrawUnitHighlight(const CUnit* unit);
-	void DrawCircle(const float3& pos, float radius) const;
-	void DrawSquare(const float3& pos, float xsize, float zsize) const;
+	void DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, SColor color, float radius) const;
 	const icon::CIconData* GetUnitIcon(const CUnit* unit, float& scale) const;
 
 	void UpdateTextureCache();
 	void ResizeTextureCache();
-
-protected:
-	static void DrawSurfaceCircle(const float3& pos, float radius, unsigned int resolution);
-	static void DrawSurfaceSquare(const float3& pos, float xsize, float zsize);
 
 protected:
 	int2 curPos;
@@ -197,8 +193,6 @@ protected:
 	int2 minimapTexSize;
 
 	GLuint buttonsTexture;
-	GLuint circleLists; // 8 - 256 divs
-	static constexpr int circleListsCount = 6;
 
 	struct Notification {
 		float creationTime;

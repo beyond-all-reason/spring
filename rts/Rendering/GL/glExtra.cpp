@@ -63,7 +63,6 @@ static void defSurfaceSquare(const float3& center, float xsize, float zsize)
 
 SurfaceCircleFunc glSurfaceCircle = defSurfaceCircle;
 SurfaceColoredCircleFunc glSurfaceColoredCircle = defSurfaceColoredCircle;
-SurfaceSquareFunc glSurfaceSquare = defSurfaceSquare;
 
 void setSurfaceCircleFunc(SurfaceCircleFunc func)
 {
@@ -74,14 +73,6 @@ void setSurfaceColoredCircleFunc(SurfaceColoredCircleFunc func)
 {
 	glSurfaceColoredCircle = (func == nullptr) ? defSurfaceColoredCircle : func;
 }
-
-void setSurfaceSquareFunc(SurfaceSquareFunc func)
-{
-	glSurfaceSquare = (func == nullptr)? defSurfaceSquare: func;
-}
-
-
-
 
 static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, float, float) = {
 	CWeapon::GetStaticRange2D,
