@@ -1076,7 +1076,7 @@ void CProjectileDrawer::UpdatePerlin() {
 	float size = 1.0f;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
-	assert(rb.AssertSubmission());
+	rb.AssertSubmission();
 
 	auto& sh = rb.GetShader();
 	sh.Enable();

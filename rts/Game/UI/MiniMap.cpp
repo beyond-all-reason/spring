@@ -123,15 +123,15 @@ CMiniMap::CMiniMap()
 	bgShader->Disable();
 
 	// setup the buttons' texture and texture coordinates
-	buttonsTexture = 0;
+	buttonsTextureID = 0;
 	CBitmap bitmap;
 	bool unfiltered = false;
 	if (bitmap.Load("bitmaps/minimapbuttons.png")) {
 		if ((bitmap.ysize == buttonSize) && (bitmap.xsize == (buttonSize * 4))) {
 			unfiltered = true;
 		}
-		glGenTextures(1, &buttonsTexture);
-		glBindTexture(GL_TEXTURE_2D, buttonsTexture);
+		glGenTextures(1, &buttonsTextureID);
+		glBindTexture(GL_TEXTURE_2D, buttonsTextureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
 								 bitmap.xsize, bitmap.ysize, 0,
 								 GL_RGBA, GL_UNSIGNED_BYTE, bitmap.GetRawMem());
@@ -171,7 +171,7 @@ CMiniMap::~CMiniMap()
 {
 	shaderHandler->ReleaseProgramObjects("[MiniMap]");
 
-	glDeleteTextures(1, &buttonsTexture);
+	glDeleteTextures(1, &buttonsTextureID);
 	glDeleteTextures(1, &minimapTex);
 
 	configHandler->RemoveObserver(this);
@@ -1082,21 +1082,91 @@ void CMiniMap::Draw()
 		glMatrixMode(GL_MODELVIEW);
 
 		if (minimized) {
-			DrawMinimizedButton();
+			DrawMinimizedButtonQuad();
+			DrawMinimizedButtonLoop();
 			glPopAttrib();
 			glEnable(GL_TEXTURE_2D);
 			return;
 		}
 
 		// draw the frameborder
-		if (!globalRendering->dualScreenMode)
+		if (!globalRendering->dualScreenMode) {
 			DrawFrame();
+			DrawButtons();
+		}
 
 		glPopAttrib();
 	}
 
 	// draw minimap itself
 	DrawForReal(true, false, false);
+}
+
+void CMiniMap::DrawMinimizedButtonQuad() const
+{
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
+	rb.AssertSubmission();
+
+	const float px = globalRendering->pixelX;
+	const float py = globalRendering->pixelY;
+
+	const float xmin = (globalRendering->viewPosX + 1 +          0) * px;
+	const float xmax = (globalRendering->viewPosX + 1 + buttonSize) * px;
+	const float ymin = 1.0f - (1 + buttonSize) * py;
+	const float ymax = 1.0f - (1 +          0) * py;
+
+	glBindTexture(GL_TEXTURE_2D, buttonsTextureID);
+
+	rb.AddQuadTriangles(
+		{ xmin, ymin, minimizeBox.xminTx, minimizeBox.yminTx, {1.0f, 1.0f, 1.0f, 1.0f} },
+		{ xmax, ymin, minimizeBox.xmaxTx, minimizeBox.yminTx, {1.0f, 1.0f, 1.0f, 1.0f} },
+		{ xmax, ymax, minimizeBox.xmaxTx, minimizeBox.ymaxTx, {1.0f, 1.0f, 1.0f, 1.0f} },
+		{ xmin, ymax, minimizeBox.xminTx, minimizeBox.ymaxTx, {1.0f, 1.0f, 1.0f, 1.0f} }
+	);
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+	rb.DrawElements(GL_TRIANGLES);
+	sh.Disable();
+}
+
+void CMiniMap::DrawMinimizedButtonLoop() const
+{
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
+	rb.AssertSubmission();
+
+	const float px = globalRendering->pixelX;
+	const float py = globalRendering->pixelY;
+
+	const float xmin = (globalRendering->viewPosX + 1 +          0) * px;
+	const float xmax = (globalRendering->viewPosX + 1 + buttonSize) * px;
+	const float ymin = 1.0f - (1 + buttonSize) * py;
+	const float ymax = 1.0f - (1 +          0) * py;
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+
+	// highlight
+	if (((mouse->lastx + 1) <= buttonSize) && ((mouse->lasty + 1) <= buttonSize)) {
+		rb.AddQuadTriangles(
+			{ xmin, ymin, {1.0f, 1.0f, 1.0f, 0.4f} },
+			{ xmax, ymin, {1.0f, 1.0f, 1.0f, 0.4f} },
+			{ xmax, ymax, {1.0f, 1.0f, 1.0f, 0.4f} },
+			{ xmin, ymax, {1.0f, 1.0f, 1.0f, 0.4f} }
+		);
+		rb.DrawElements(GL_TRIANGLES);
+	}
+
+	// outline
+	rb.AddQuadLines(
+		{ xmin - 0.5f * px, ymax + 0.5f * py, {0.0f, 0.0f, 0.0f, 1.0f} },
+		{ xmin - 0.5f * px, ymin - 0.5f * py, {0.0f, 0.0f, 0.0f, 1.0f} },
+		{ xmax + 0.5f * px, ymin - 0.5f * py, {0.0f, 0.0f, 0.0f, 1.0f} },
+		{ xmax + 0.5f * px, ymax + 0.5f * py, {0.0f, 0.0f, 0.0f, 1.0f} }
+	);
+	rb.Submit(GL_LINES);
+
+	sh.Disable();
 }
 
 
@@ -1214,6 +1284,7 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 	}
 
 	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0>();
+	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	if (!minimap->maximized) {
@@ -1320,7 +1391,7 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 	if (selecting && fullProxy && (bp.movement > mouse->dragSelectionThreshold)) {
 		const float3 oldMapPos = GetMapPosition(bp.x, bp.y);
 		const float3 newMapPos = GetMapPosition(mouse->lastx, mouse->lasty);
-		glColor4fv(cmdColors.mouseBox);
+
 		//glBlendFunc((GLenum)cmdColors.MouseBoxBlendSrc(),
 		//            (GLenum)cmdColors.MouseBoxBlendDst());
 		glLineWidth(cmdColors.MouseBoxLineWidth());
@@ -1357,90 +1428,56 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 	glEnable(GL_TEXTURE_2D);
 }
 
-
 void CMiniMap::DrawFrame()
 {
-	// outline
-	glLineWidth(1.0f);
-	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(float(curPos.x            - 2 + 0.5f) * globalRendering->pixelX, float(curPos.y            - 2 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x            - 2 + 0.5f) * globalRendering->pixelX, float(curPos.y + curDim.y + 2 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x + curDim.x + 2 - 0.5f) * globalRendering->pixelX, float(curPos.y + curDim.y + 2 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x + curDim.x + 2 - 0.5f) * globalRendering->pixelX, float(curPos.y            - 2 + 0.5f) * globalRendering->pixelY);
-	glEnd();
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(float(curPos.x            - 1 + 0.5f) * globalRendering->pixelX, float(curPos.y            - 1 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x            - 1 + 0.5f) * globalRendering->pixelX, float(curPos.y + curDim.y + 1 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x + curDim.x + 1 - 0.5f) * globalRendering->pixelX, float(curPos.y + curDim.y + 1 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(curPos.x + curDim.x + 1 - 0.5f) * globalRendering->pixelX, float(curPos.y            - 1 + 0.5f) * globalRendering->pixelY);
-	glEnd();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
+	rb.AssertSubmission();
 
-	DrawButtons();
+	const float px = globalRendering->pixelX;
+	const float py = globalRendering->pixelY;
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+
+	rb.AddVertex({ float(curPos.x            - 2 + 0.5f) * px, float(curPos.y            - 2 + 0.5f) * py, {0.0f, 0.0f, 0.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x            - 2 + 0.5f) * px, float(curPos.y + curDim.y + 2 - 0.5f) * py, {0.0f, 0.0f, 0.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x + curDim.x + 2 - 0.5f) * px, float(curPos.y + curDim.y + 2 - 0.5f) * py, {0.0f, 0.0f, 0.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x + curDim.x + 2 - 0.5f) * px, float(curPos.y            - 2 + 0.5f) * py, {0.0f, 0.0f, 0.0f, 1.0f} });
+	rb.DrawArrays(GL_LINE_LOOP);
+
+	rb.AddVertex({ float(curPos.x            - 1 + 0.5f) * px, float(curPos.y            - 1 + 0.5f) * py, {1.0f, 1.0f, 1.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x            - 1 + 0.5f) * px, float(curPos.y + curDim.y + 1 - 0.5f) * py, {1.0f, 1.0f, 1.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x + curDim.x + 1 - 0.5f) * px, float(curPos.y + curDim.y + 1 - 0.5f) * py, {1.0f, 1.0f, 1.0f, 1.0f} });
+	rb.AddVertex({ float(curPos.x + curDim.x + 1 - 0.5f) * px, float(curPos.y            - 1 + 0.5f) * py, {1.0f, 1.0f, 1.0f, 1.0f} });
+	rb.DrawArrays(GL_LINE_LOOP);
+
+	sh.Disable();
 }
 
-
-void CMiniMap::DrawMinimizedButton()
+void CMiniMap::IntBox::GetBoxRenderData(TypedRenderBuffer<VA_TYPE_2DC>& rb, SColor col) const
 {
-	const int bs = buttonSize + 0;
+	const float px = globalRendering->pixelX;
+	const float py = globalRendering->pixelY;
 
-	float xmin = (globalRendering->viewPosX + 1) * globalRendering->pixelX;
-	float xmax = (globalRendering->viewPosX + 1 + bs) * globalRendering->pixelX;
-	float ymin = 1.0f - (1 + bs) * globalRendering->pixelY;
-	float ymax = 1.0f - (1) * globalRendering->pixelY;
-
-	if (!buttonsTexture) {
-		glDisable(GL_TEXTURE_2D);
-		glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
-		glRectf(xmin, ymin, xmax, ymax);
-	} else {
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, buttonsTexture);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		const IntBox& mb = minimizeBox;
-		glBegin(GL_QUADS);
-			glTexCoord2f(mb.xminTx, mb.yminTx); glVertex2f(xmin, ymin);
-			glTexCoord2f(mb.xmaxTx, mb.yminTx); glVertex2f(xmax, ymin);
-			glTexCoord2f(mb.xmaxTx, mb.ymaxTx); glVertex2f(xmax, ymax);
-			glTexCoord2f(mb.xminTx, mb.ymaxTx); glVertex2f(xmin, ymax);
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-	}
-
-	// highlight
-	if ((mouse->lastx+1 <= buttonSize) && (mouse->lasty+1 <= buttonSize)) {
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		glColor4f(1.0f, 1.0f, 1.0f, 0.4f);
-		glRectf(xmin, ymin, xmax, ymax);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	// outline
-	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(xmin - 0.5f * globalRendering->pixelX, ymax + 0.5f * globalRendering->pixelY);
-		glVertex2f(xmin - 0.5f * globalRendering->pixelX, ymin - 0.5f * globalRendering->pixelY);
-		glVertex2f(xmax + 0.5f * globalRendering->pixelX, ymin - 0.5f * globalRendering->pixelY);
-		glVertex2f(xmax + 0.5f * globalRendering->pixelX, ymax + 0.5f * globalRendering->pixelY);
-	glEnd();
+	rb.AddQuadTriangles(
+		{ float(xmin + 0) * px, 1.0f - float(ymin + 0) * py, col },
+		{ float(xmax + 1) * px, 1.0f - float(ymin + 0) * py, col },
+		{ float(xmax + 1) * px, 1.0f - float(ymax + 1) * py, col },
+		{ float(xmin + 0) * px, 1.0f - float(ymax + 1) * py, col }
+	);
 }
 
-
-void CMiniMap::IntBox::DrawBox() const
+void CMiniMap::IntBox::GetTextureBoxRenderData(TypedRenderBuffer<VA_TYPE_2DT>& rb) const
 {
-	glRectf(float(xmin)/globalRendering->viewSizeX, 1.0f - float(ymin)/globalRendering->viewSizeY, float(xmax+1)/globalRendering->viewSizeX, 1.0f - float(ymax+1)/globalRendering->viewSizeY);
-}
+	const float px = globalRendering->pixelX;
+	const float py = globalRendering->pixelY;
 
-
-void CMiniMap::IntBox::DrawTextureBox() const
-{
-	glBegin(GL_QUADS);
-		glTexCoord2f(xminTx, yminTx); glVertex2f(float(xmin) * globalRendering->pixelX, 1.0f - float(ymin) * globalRendering->pixelY);
-		glTexCoord2f(xmaxTx, yminTx); glVertex2f(float(xmax+1) * globalRendering->pixelX, 1.0f - float(ymin) * globalRendering->pixelY);
-		glTexCoord2f(xmaxTx, ymaxTx); glVertex2f(float(xmax+1) * globalRendering->pixelX, 1.0f - float(ymax+1) * globalRendering->pixelY);
-		glTexCoord2f(xminTx, ymaxTx); glVertex2f(float(xmin) * globalRendering->pixelX, 1.0f - float(ymax+1) * globalRendering->pixelY);
-	glEnd();
+	rb.AddQuadTriangles(
+		{ float(xmin + 0) * px, 1.0f - float(ymin + 0) * py, xminTx, yminTx },
+		{ float(xmax + 1) * px, 1.0f - float(ymin + 0) * py, xmaxTx, yminTx },
+		{ float(xmax + 1) * px, 1.0f - float(ymax + 1) * py, xmaxTx, ymaxTx },
+		{ float(xmin + 0) * px, 1.0f - float(ymax + 1) * py, xminTx, ymaxTx }
+	);
 }
 
 
@@ -1462,62 +1499,88 @@ void CMiniMap::DrawButtons()
 		return;
 	}
 
-	if (buttonsTexture) {
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, buttonsTexture);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	auto& rbBox = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
+	rbBox.AssertSubmission();
+	auto& shBox = rbBox.GetShader();
 
-		resizeBox.DrawTextureBox();
-		moveBox.DrawTextureBox();
-		maximizeBox.DrawTextureBox();
-		minimizeBox.DrawTextureBox();
+	if (buttonsTextureID) {
+		glBindTexture(GL_TEXTURE_2D, buttonsTextureID);
 
-		glDisable(GL_TEXTURE_2D);
+		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
+		rb.AssertSubmission();
+		auto& sh = rb.GetShader();
+		sh.Enable();
+		sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+
+		resizeBox.GetTextureBoxRenderData(rb);
+		moveBox.GetTextureBoxRenderData(rb);
+		maximizeBox.GetTextureBoxRenderData(rb);
+		minimizeBox.GetTextureBoxRenderData(rb);
+
+		rb.DrawElements(GL_TRIANGLES);
+		sh.Disable();
 	} else {
-		glColor4f(0.1f, 0.1f, 0.8f, 0.8f); resizeBox.DrawBox();   // blue
-		glColor4f(0.0f, 0.8f, 0.0f, 0.8f); moveBox.DrawBox();     // green
-		glColor4f(0.8f, 0.8f, 0.0f, 0.8f); maximizeBox.DrawBox(); // yellow
-		glColor4f(0.8f, 0.0f, 0.0f, 0.8f); minimizeBox.DrawBox(); // red
+		resizeBox.GetBoxRenderData  (rbBox, { 0.1f, 0.1f, 0.8f, 0.8f }); // blue
+		moveBox.GetBoxRenderData    (rbBox, { 0.0f, 0.8f, 0.0f, 0.8f }); // green
+		maximizeBox.GetBoxRenderData(rbBox, { 0.8f, 0.8f, 0.0f, 0.8f }); // yellow
+		minimizeBox.GetBoxRenderData(rbBox, { 0.8f, 0.0f, 0.0f, 0.8f }); // red
+
+		shBox.Enable();
+		rbBox.DrawElements(GL_TRIANGLES);
+		shBox.Disable();
 	}
 
 	// highlight
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glColor4f(1.0f, 1.0f, 1.0f, 0.4f);
+	SColor boxColor = SColor(1.0f, 1.0f, 1.0f, 0.4f);
 	if (mouseResize || (!mouseMove && resizeBox.Inside(x, y))) {
-		if (!buttonsTexture) { glColor4f(0.3f, 0.4f, 1.0f, 0.9f); }
-		resizeBox.DrawBox();
+		if (!buttonsTextureID) { boxColor = SColor(0.3f, 0.4f, 1.0f, 0.9f); }
+		resizeBox.GetBoxRenderData(rbBox, boxColor);
 	}
 	else if (mouseMove || (!mouseResize && moveBox.Inside(x, y))) {
-		if (!buttonsTexture) { glColor4f(1.0f, 1.0f, 1.0f, 0.3f); }
-		moveBox.DrawBox();
+		if (!buttonsTextureID) { boxColor = SColor(1.0f, 1.0f, 1.0f, 0.3f); }
+		moveBox.GetBoxRenderData(rbBox, boxColor);
 	}
 	else if (!mouseMove && !mouseResize) {
 		if (minimizeBox.Inside(x, y)) {
-			if (!buttonsTexture) { glColor4f(1.0f, 0.2f, 0.2f, 0.6f); }
-			minimizeBox.DrawBox();
+			if (!buttonsTextureID) { boxColor = SColor(1.0f, 0.2f, 0.2f, 0.6f); }
+			minimizeBox.GetBoxRenderData(rbBox, boxColor);
 		} else if (maximizeBox.Inside(x, y)) {
-			if (!buttonsTexture) { glColor4f(1.0f, 1.0f, 1.0f, 0.3f); }
-			maximizeBox.DrawBox();
+			if (!buttonsTextureID) { boxColor = SColor(1.0f, 1.0f, 1.0f, 0.3f); }
+			maximizeBox.GetBoxRenderData(rbBox, boxColor);
 		}
 	}
+
+	shBox.Enable();
+	rbBox.DrawElements(GL_TRIANGLES);
+
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// outline the button box
-	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(float(buttonBox.xmin - 1 - 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymin + 2 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmin - 1 - 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymax + 2 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmax + 2 + 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymax + 2 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmax + 2 + 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymin + 2 - 0.5f) * globalRendering->pixelY);
-	glEnd();
+	{
+		const float px = globalRendering->pixelX;
+		const float py = globalRendering->pixelY;
 
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2f(float(buttonBox.xmin - 0 - 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymin + 3 - 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmin - 0 - 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymax + 1 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmax + 1 + 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymax + 1 + 0.5f) * globalRendering->pixelY);
-		glVertex2f(float(buttonBox.xmax + 1 + 0.5f) * globalRendering->pixelX, 1.0f - float(buttonBox.ymin + 3 - 0.5f) * globalRendering->pixelY);
-	glEnd();
+		auto c0 = SColor(0.0f, 0.0f, 0.0f, 1.0f);
+		rbBox.AddVertices({
+			{ float(buttonBox.xmin - 1 - 0.5f) * px, 1.0f - float(buttonBox.ymin + 2 - 0.5f) * py, c0 },
+			{ float(buttonBox.xmin - 1 - 0.5f) * px, 1.0f - float(buttonBox.ymax + 2 + 0.5f) * py, c0 },
+			{ float(buttonBox.xmax + 2 + 0.5f) * px, 1.0f - float(buttonBox.ymax + 2 + 0.5f) * py, c0 },
+			{ float(buttonBox.xmax + 2 + 0.5f) * px, 1.0f - float(buttonBox.ymin + 2 - 0.5f) * py, c0 }
+		});
+		rbBox.DrawArrays(GL_LINE_LOOP);
+
+		auto c1 = SColor(1.0f, 1.0f, 1.0f, 1.0f);
+		rbBox.AddVertices({
+			{ float(buttonBox.xmin - 0 - 0.5f) * px, 1.0f - float(buttonBox.ymin + 3 - 0.5f) * py, c1 },
+			{ float(buttonBox.xmin - 0 - 0.5f) * px, 1.0f - float(buttonBox.ymax + 1 + 0.5f) * py, c1 },
+			{ float(buttonBox.xmax + 1 + 0.5f) * px, 1.0f - float(buttonBox.ymax + 1 + 0.5f) * py, c1 },
+			{ float(buttonBox.xmax + 1 + 0.5f) * px, 1.0f - float(buttonBox.ymin + 3 - 0.5f) * py, c1 }
+		});
+		rbBox.DrawArrays(GL_LINE_LOOP);
+	}
+
+	shBox.Disable();
 }
 
 
@@ -1529,6 +1592,7 @@ void CMiniMap::DrawNotes()
 
 	const float baseSize = mapDims.mapx * SQUARE_SIZE;
 	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 	auto& shader = rb.GetShader();
 
 	std::deque<Notification>::iterator ni = notes.begin();
@@ -1596,13 +1660,21 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 		}
 	}
 
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0); glVertex2f(0.0f, 0.0f);
-		glTexCoord2f(1.0, 0.0); glVertex2f(1.0f, 0.0f);
-		glTexCoord2f(1.0, 1.0); glVertex2f(1.0f, 1.0f);
-		glTexCoord2f(0.0, 1.0); glVertex2f(0.0f, 1.0f);
-	glEnd();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
+	rb.AssertSubmission();
+
+	rb.AddQuadTriangles(
+		{ 0.0f, 0.0f, 0.0, 0.0 },
+		{ 1.0f, 0.0f, 1.0, 0.0 },
+		{ 1.0f, 1.0f, 1.0, 1.0 },
+		{ 0.0f, 1.0f, 0.0, 1.0 }
+	);
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	rb.DrawElements(GL_TRIANGLES);
+	sh.Disable();
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1617,7 +1689,6 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 	}
 
 	glDisable(GL_TEXTURE_2D);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glPopAttrib();
 	return true;
 }
@@ -1625,6 +1696,7 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 void CMiniMap::DrawBackground() const
 {
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
+	rb.AssertSubmission();
 
 	if (flipped) {
 		rb.AddQuadTriangles(
@@ -1667,40 +1739,6 @@ void CMiniMap::DrawBackground() const
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 }
-/*
-void CMiniMap::DrawBackground() const
-{
-	glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
-	//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	// don't mirror the map texture with flipped cameras
-	glMatrixMode(GL_TEXTURE);
-	glPushMatrix();
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW);
-
-	if (flipped) {
-		glPushMatrix();
-		glTranslatef(1.0f, 1.0f, 0.0f);
-		glScalef(-1.0f, -1.0f, 1.0f);
-	}
-
-		// draw the map
-		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_BLEND);
-			readMap->DrawMinimap();
-		glEnable(GL_BLEND);
-
-	if (flipped)
-		glPopMatrix();
-
-	glMatrixMode(GL_TEXTURE);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-}
-*/
 
 void CMiniMap::DrawUnitIcons() const
 {
@@ -1736,6 +1774,7 @@ void CMiniMap::DrawUnitRanges() const
 	// draw unit ranges
 	const auto& selUnits = selectedUnitsHandler.selectedUnits;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 
 	for (const int unitID: selUnits) {
 		const CUnit* unit = unitHandler.GetUnit(unitID);

@@ -1253,6 +1253,7 @@ int LuaOpenGL::DrawMiniMap(lua_State* L)
 		luaL_error(L, "gl.DrawMiniMap() can only be used if the minimap is in slave mode");
 
 	if (luaL_optboolean(L, 1, true)) {
+		// default transform
 		glPushMatrix();
 		glScalef(globalRendering->viewSizeX, globalRendering->viewSizeY, 1.0f);
 
@@ -1260,6 +1261,7 @@ int LuaOpenGL::DrawMiniMap(lua_State* L)
 
 		glPopMatrix();
 	} else {
+		// custom transform
 		minimap->DrawForReal(false, false, true);
 	}
 

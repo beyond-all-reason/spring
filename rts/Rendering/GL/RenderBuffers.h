@@ -611,12 +611,13 @@ public:
 	size_t NumSubmits(bool indexed) const override { return numSubmits[indexed]; }
 
 	//check everything is uploaded and submitted
-	bool AssertSubmission() const {
-		return
+	void AssertSubmission() const {
+		assert(
 			(indcs.size() - eboUploadIndex == 0) &&
 			(verts.size() - vboUploadIndex == 0) &&
 			(indcs.size() - eboStartIndex  == 0) &&
-			(verts.size() - vboStartIndex  == 0);
+			(verts.size() - vboStartIndex  == 0)
+		);
 	}
 
 	static Shader::IProgramObject& GetShader() { return shader.GetShader(); }

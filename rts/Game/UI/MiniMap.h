@@ -26,7 +26,7 @@ namespace Shader {
 class CMiniMap : public CInputReceiver {
 public:
 	CMiniMap();
-	virtual ~CMiniMap();
+	~CMiniMap() override;
 
 	bool MousePress(int x, int y, int button);
 	void MouseMove(int x, int y, int dx, int dy, int button);
@@ -108,7 +108,8 @@ protected:
 	void DrawFrame();
 	void DrawNotes();
 	void DrawButtons();
-	void DrawMinimizedButton();
+	void DrawMinimizedButtonQuad() const;
+	void DrawMinimizedButtonLoop() const;
 
 	void DrawUnitHighlight(const CUnit* unit);
 	void DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, SColor color, float radius) const;
@@ -161,8 +162,8 @@ protected:
 		bool Inside(int x, int y) const {
 			return ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax));
 		}
-		void DrawBox() const;
-		void DrawTextureBox() const;
+		void GetBoxRenderData(TypedRenderBuffer<VA_TYPE_2DC>& rb, SColor col) const;
+		void GetTextureBoxRenderData(TypedRenderBuffer<VA_TYPE_2DT>& rb) const;
 		int xmin, xmax, ymin, ymax;
 		float xminTx, xmaxTx, yminTx, ymaxTx;  // texture coordinates
 	};
@@ -192,7 +193,7 @@ protected:
 	GLuint minimapTex = 0;
 	int2 minimapTexSize;
 
-	GLuint buttonsTexture;
+	GLuint buttonsTextureID;
 
 	struct Notification {
 		float creationTime;
