@@ -3410,7 +3410,8 @@ public:
 			ArgTuple(hashString("ceg") , false, cegFunc),
 		};
 
-		return GenericArgsExecutor(CSimpleParser::Tokenize(action.GetArgs(), 1), argsExec);
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+		return GenericArgsExecutor(args, argsExec);
 	}
 };
 
@@ -3428,7 +3429,8 @@ public:
 			}),
 		};
 
-		return GenericArgsExecutor(CSimpleParser::Tokenize(action.GetArgs(), 1), argsExec);
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+		return GenericArgsExecutor(args, argsExec);
 	}
 };
 
