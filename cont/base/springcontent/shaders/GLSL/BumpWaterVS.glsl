@@ -82,10 +82,10 @@ void main()
 	// COMPUTE WAVE TEXTURE COORDS
 	float fstart = PerlinStartFreq;
 	float f      = PerlinLacunarity;
-	texCoords[1].st = (vec2(-1.0,-1.0) + texCoords[0].pq + 0.75) * fstart       + frame * WindSpeed * windVector;
-	texCoords[1].pq = (vec2(-1.0, 1.0) + texCoords[0].pq + 0.50) * fstart*f     - frame * WindSpeed * windVector;
-	texCoords[2].st = (vec2( 1.0,-1.0) + texCoords[0].pq + 0.25) * fstart*f*f   + frame * WindSpeed * windVector;
-	texCoords[2].pq = (vec2( 1.0, 1.0) + texCoords[0].pq + 0.00) * fstart*f*f*f + frame * WindSpeed * windVector;
+	texCoords[1].st = (vec2(-1.0,-1.0) + texCoords[0].pq + 0.75) * fstart       + frame * windVector;
+	texCoords[1].pq = (vec2(-1.0, 1.0) + texCoords[0].pq + 0.50) * fstart*f     - frame * windVector;
+	texCoords[2].st = (vec2( 1.0,-1.0) + texCoords[0].pq + 0.25) * fstart*f*f   + frame * windVector;
+	texCoords[2].pq = (vec2( 1.0, 1.0) + texCoords[0].pq + 0.00) * fstart*f*f*f + frame * windVector;
 
 	texCoords[3].st = texCoords[0].pq * 160.0 + frame * 2.5;
 	texCoords[3].pq = texCoords[0].pq * 90.0  - frame * 2.0;

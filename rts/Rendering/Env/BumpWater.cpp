@@ -451,7 +451,6 @@ CBumpWater::CBumpWater()
 	GLSLDefineConstf1(definitions, "PerlinStartFreq",  waterRendering->perlinStartFreq);
 	GLSLDefineConstf1(definitions, "PerlinLacunarity", waterRendering->perlinLacunarity);
 	GLSLDefineConstf1(definitions, "PerlinAmp",        waterRendering->perlinAmplitude);
-	GLSLDefineConstf1(definitions, "WindSpeed",        waterRendering->windSpeed);
 	GLSLDefineConstf1(definitions, "WaveOffsetFactor",   waterRendering->waveOffsetFactor);
 	GLSLDefineConstf1(definitions, "WaveLength",         waterRendering->waveLength);
 	GLSLDefineConstf1(definitions, "WaveFoamDistortion", waterRendering->waveFoamDistortion);
@@ -982,8 +981,8 @@ void CBumpWater::UpdateWindVec(bool init)
 {
 	auto curWindVec = envResHandler.GetCurrentWindDir();
 	auto windStrength = envResHandler.GetCurrentWindStrength();
-	windStrength = smoothstep(0.0f, 20.0f, windStrength);
-	curWindVec *= 1.0f + windStrength * 4.0f;
+	windStrength = smoothstep(0.0f, 30.0f, windStrength);
+	curWindVec *= 4.0f + windStrength * 16.0f;
 	windVec = mix(windVec, curWindVec, init ? 1.0f : 0.01f);
 }
 
