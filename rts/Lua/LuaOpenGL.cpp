@@ -299,7 +299,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ColorMask);
 	REGISTER_LUA_CFUNC(DepthMask);
 	REGISTER_LUA_CFUNC(DepthTest);
-	if (GLEW_NV_depth_clamp)
+	if (GLEW_ARB_depth_clamp)
 		REGISTER_LUA_CFUNC(DepthClamp);
 
 	REGISTER_LUA_CFUNC(Culling);
@@ -494,8 +494,8 @@ void LuaOpenGL::ResetGLState()
 	glDisable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
-	if (GLEW_NV_depth_clamp)
-		glDisable(GL_DEPTH_CLAMP_NV);
+	if (GLEW_ARB_depth_clamp)
+		glDisable(GL_DEPTH_CLAMP);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
@@ -2756,9 +2756,9 @@ int LuaOpenGL::DepthClamp(lua_State* L)
 	CheckDrawingEnabled(L, __func__);
 	luaL_checktype(L, 1, LUA_TBOOLEAN);
 	if (lua_toboolean(L, 1)) {
-		glEnable(GL_DEPTH_CLAMP_NV);
+		glEnable(GL_DEPTH_CLAMP);
 	} else {
-		glDisable(GL_DEPTH_CLAMP_NV);
+		glDisable(GL_DEPTH_CLAMP);
 	}
 	return 0;
 }
