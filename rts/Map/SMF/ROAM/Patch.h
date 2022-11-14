@@ -8,6 +8,7 @@
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
+#include "Rendering/GL/VertexArrayTypes.h"
 
 #include <array>
 #include <vector>
@@ -49,7 +50,7 @@ struct TriTreeNode
 	TriTreeNode*  LeftNeighbor = &dummyNode;
 	TriTreeNode* RightNeighbor = &dummyNode;
 
-	Patch* parentPatch = NULL; //triangles know their parent patch so they know of a neighbour's Split() func caused changes to them
+	Patch* parentPatch = nullptr; //triangles know their parent patch so they know of a neighbour's Split() func caused changes to them
 };
 
 
@@ -72,8 +73,8 @@ public:
 	bool ValidNode(const TriTreeNode* n) const { return (n >= &tris.front() && n <= &tris.back()); }
 	bool OutOfNodes() const { return (nextTriNodeIdx >= tris.size()); }
 
-	size_t getPoolSize() { return tris.size(); }
-	size_t getNextTriNodeIdx() { return nextTriNodeIdx; }
+	size_t GetPoolSize() const { return tris.size(); }
+	size_t GetNextTriNodeIdx() const { return nextTriNodeIdx; }
 private:
 	std::vector<TriTreeNode> tris;
 
@@ -114,7 +115,7 @@ public:
 
 	bool IsVisible(const CCamera*) const;
 	char IsDirty() const { return isDirty; }
-	int GetTriCount() const { return (indices.size() / 3); }
+	auto GetTriCount() const { return (indices.size() / 3); }
 
 	void UpdateHeightMap(const SRectangle& rect = SRectangle(0, 0, PATCH_SIZE, PATCH_SIZE));
 
@@ -132,12 +133,14 @@ public:
 	void GenerateIndices();
 	void Upload();
 	void Draw() const;
-	void DrawBorder();
+	void DrawBorder() const;
 	void SetSquareTexture() const;
 
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
-	void VBOUploadVertices();
+	void UploadVertices();
+	void UploadIndices();
+	void UploadBorderVertices();
 
 	// recursive functions
 	bool Split(TriTreeNode* tri);
@@ -153,8 +156,7 @@ private:
 		const    int curNodeIdx
 	);
 
-	void RecursBorderRender(
-		CVertexArray* va,
+	void RecursGenBorderVertices(
 		const TriTreeNode* tri,
 		const int2 left,
 		const int2 rght,
@@ -165,7 +167,7 @@ private:
 	float GetHeight(int2 pos);
 
 	void GenerateBorderIndices(CVertexArray* va);
-
+	void GenerateBorderVertices();
 private:
 	// depth of variance tree; should be near SQRT(PATCH_SIZE) + 1
 	static constexpr size_t VARIANCE_DEPTH = 12;
@@ -176,6 +178,7 @@ private:
 	CTriNodePool* curTriPool = nullptr;
 	float3 midPos;
 	// does the variance-tree need to be recalculated for this Patch?
+	bool isTesselated = false;
 	bool isDirty = true;
 	bool vboVerticesUploaded = false;
 	// Did the tesselation tree change from what we have stored in the VBO?
@@ -193,9 +196,9 @@ private:
 
 	std::array<float, 1 << VARIANCE_DEPTH> varianceTrees[2];
 
-	// TODO: remove for both the Displaylist and the VBO implementations (only really needed for VA's)
 	std::vector<float> vertices;
-	std::vector<unsigned int> indices;
+	std::vector<uint32_t> indices;
+	std::vector<VA_TYPE_C> borderVertices;
 
 	// frame on which this patch was last visible, per pass
 	// NOTE:
@@ -205,6 +208,7 @@ private:
 
 	VBO vertVBO;
 	VBO indxVBO;
+	VBO borderVBO;
 };
 
 #endif

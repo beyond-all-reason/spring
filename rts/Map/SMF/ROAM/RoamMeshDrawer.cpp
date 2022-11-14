@@ -249,8 +249,8 @@ void CRoamMeshDrawer::Update()
 							LOG("Too many patches (%i) left visibility, forcing retess on this df #%i! poolsize=%i used=%i",
 								numPatchesLeftVisibility[shadowPass],
 								globalRendering->drawFrame,
-								p.curTriPool->getPoolSize(),
-								p.curTriPool->getNextTriNodeIdx());
+								p.curTriPool->GetPoolSize(),
+								p.curTriPool->GetNextTriNodeIdx());
 						#endif
 						forceNextTesselation[shadowPass] = true;
 						numPatchesLeftVisibility[shadowPass] = 0;
@@ -394,6 +394,7 @@ void CRoamMeshDrawer::Update()
 					return;
 
 				p->GenerateIndices();
+				p->GenerateBorderVertices();
 			});
 		} else {
 			for (Patch& p: patches) {
@@ -401,6 +402,7 @@ void CRoamMeshDrawer::Update()
 					continue;
 
 				p.GenerateIndices();
+				p.GenerateBorderVertices();
 			}
 		}
 	}

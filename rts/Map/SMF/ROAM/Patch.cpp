@@ -16,7 +16,6 @@
 #include "Map/ReadMap.h"
 #include "Map/SMF/SMFGroundDrawer.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/VertexArray.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/ThreadPool.h"
 
@@ -111,6 +110,7 @@ Patch::~Patch()
 	//not really needed
 	vertVBO = {};
 	indxVBO = {};
+	borderVBO = {};
 }
 
 void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
@@ -120,8 +120,9 @@ void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 
 	smfGroundDrawer = _drawer;
 
-	vertVBO = { GL_ARRAY_BUFFER        , false, false };
-	indxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
+	vertVBO   = { GL_ARRAY_BUFFER        , false, false };
+	indxVBO   = { GL_ELEMENT_ARRAY_BUFFER, false, false };
+	borderVBO = { GL_ARRAY_BUFFER        , false, false };
 
 	vertices.resize(3 * (PATCH_SIZE + 1) * (PATCH_SIZE + 1));
 	unsigned int index = 0;
@@ -185,12 +186,12 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 	}
 
 	midPos.y = averageHeight/((PATCH_SIZE+1)*(PATCH_SIZE+1));
-	VBOUploadVertices();
+	UploadVertices();
 	isDirty = true;
 }
 
 
-void Patch::VBOUploadVertices()
+void Patch::UploadVertices()
 {
 	vertVBO.Bind();
 	if (vertVBO.GetSize() < vertices.size() * sizeof(float)) {
@@ -202,6 +203,41 @@ void Patch::VBOUploadVertices()
 	vboVerticesUploaded = true;
 }
 
+namespace {
+	template<typename T>
+	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	{
+		static constexpr auto usage = GL_STREAM_DRAW;
+		vbo.Bind();
+		auto oldId = vbo.GetIdRaw();
+		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
+			// size the buffer down
+			vbo.Unbind();
+			vbo = { target, false, false };
+			vbo.Bind();
+			vbo.New(sz, usage, nullptr);
+		}
+		else if (vbo.GetSize() < sz) {
+			// size the buffer up
+			vbo.Resize(sz, usage);
+		}
+
+		vbo.SetBufferSubData(vec);
+		vbo.Unbind();
+
+		return oldId != vbo.GetIdRaw();
+	}
+}
+
+void Patch::UploadIndices()
+{
+	UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2);
+}
+
+void Patch::UploadBorderVertices()
+{
+	UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2);
+}
 
 // -------------------------------------------------------------------------------------------------
 // Split a single Triangle and link it into the mesh.
@@ -517,6 +553,8 @@ void Patch::ComputeVariance()
 //
 bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 {
+	isTesselated = true;
+
 	// Set/Update LOD params (FIXME: wrong height?)
 
 	curTriPool = CTriNodePool::GetPool(shadowPass);
@@ -580,60 +618,72 @@ void Patch::Draw() const
 }
 
 
-void Patch::DrawBorder()
+void Patch::DrawBorder() const
 {
-	CVertexArray* va = GetVertexArray();
-	GenerateBorderIndices(va);
-	va->DrawArrayC(GL_TRIANGLES);
+	#define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
+
+	borderVBO.Bind();
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+		glVertexPointer(3, GL_FLOAT        , sizeof(VA_TYPE_C), INT2PTR(offsetof(VA_TYPE_C, pos)));
+		glColorPointer( 4, GL_UNSIGNED_BYTE, sizeof(VA_TYPE_C), INT2PTR(offsetof(VA_TYPE_C, c  )));
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	borderVBO.Unbind();
+
+	#undef INT2PTR
 }
 
-
-void Patch::RecursBorderRender(
-	CVertexArray* va,
+void Patch::RecursGenBorderVertices(
 	const TriTreeNode* tri,
 	const int2 left,
 	const int2 rght,
 	const int2 apex,
 	const int2 depth
 ) {
+	if (tri->IsDummy())
+		return;
+
 	if (tri->IsLeaf()) {
-		const float3& v1 = *(float3*)&vertices[(apex.x + apex.y * (PATCH_SIZE + 1))*3];
-		const float3& v2 = *(float3*)&vertices[(left.x + left.y * (PATCH_SIZE + 1))*3];
-		const float3& v3 = *(float3*)&vertices[(rght.x + rght.y * (PATCH_SIZE + 1))*3];
+		const float3& v1 = *(float3*) &vertices[(apex.x + apex.y * (PATCH_SIZE + 1)) * 3];
+		const float3& v2 = *(float3*) &vertices[(left.x + left.y * (PATCH_SIZE + 1)) * 3];
+		const float3& v3 = *(float3*) &vertices[(rght.x + rght.y * (PATCH_SIZE + 1)) * 3];
 
 		static constexpr unsigned char white[] = {255, 255, 255, 255};
 		static constexpr unsigned char trans[] = {255, 255, 255,   0};
 
-		va->EnlargeArrays(6, 0, VA_SIZE_C);
-
 		if ((depth.x & 1) == 0) {
-			va->AddVertexQC(v2,                          white);
-			va->AddVertexQC(float3(v2.x, -400.0f, v2.z), trans);
-			va->AddVertexQC(float3(v3.x, v3.y, v3.z),    white);
+			borderVertices.push_back(VA_TYPE_C{ v2,                   {white}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x,    v3.y, v3.z}, {white}});
 
-			va->AddVertexQC(v3,                          white);
-			va->AddVertexQC(float3(v2.x, -400.0f, v2.z), trans);
-			va->AddVertexQC(float3(v3.x, -400.0f, v3.z), trans);
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
+			return;
+		}
+
+		if (depth.y) {
+			// left child
+			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x,    v2.y, v2.z}, {white}});
+
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v2                  , {white}});
 		} else {
-			if (depth.y) {
-				// left child
-				va->AddVertexQC(v1,                          white);
-				va->AddVertexQC(float3(v1.x, -400.0f, v1.z), trans);
-				va->AddVertexQC(float3(v2.x, v2.y, v2.z),    white);
+			// right child
+			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x,    v1.y, v1.z}, {white}});
 
-				va->AddVertexQC(v2,                          white);
-				va->AddVertexQC(float3(v1.x, -400.0f, v1.z), trans);
-				va->AddVertexQC(float3(v2.x, -400.0f, v2.z), trans);
-			} else {
-				// right child
-				va->AddVertexQC(v3,                          white);
-				va->AddVertexQC(float3(v3.x, -400.0f, v3.z), trans);
-				va->AddVertexQC(float3(v1.x, v1.y, v1.z),    white);
-
-				va->AddVertexQC(v1,                          white);
-				va->AddVertexQC(float3(v3.x, -400.0f, v3.z), trans);
-				va->AddVertexQC(float3(v1.x, -400.0f, v1.z), trans);
-			}
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
 		}
 
 		return;
@@ -645,56 +695,48 @@ void Patch::RecursBorderRender(
 	// are on the patch-edge; returns are needed for gcc's TCO (although
 	// unlikely to be applied)
 	if ((depth.x & 1) == 0) {
-		       RecursBorderRender(va, tri-> LeftChild, apex, left, center, {depth.x + 1, !depth.y});
-		return RecursBorderRender(va, tri->RightChild, rght, apex, center, {depth.x + 1,  depth.y});
+		       RecursGenBorderVertices(tri-> LeftChild, apex, left, center, {depth.x + 1, !depth.y});
+		return RecursGenBorderVertices(tri->RightChild, rght, apex, center, {depth.x + 1,  depth.y});
 	}
 
 	// at odd depths (where only one triangle is on the edge), always force
 	// a left-bias for the next call so the recursion ends up at the correct
 	// leafs
 	if (depth.y) {
-		return RecursBorderRender(va, tri-> LeftChild, apex, left, center, {depth.x + 1, true});
+		return RecursGenBorderVertices(tri-> LeftChild, apex, left, center, {depth.x + 1, true});
 	} else {
-		return RecursBorderRender(va, tri->RightChild, rght, apex, center, {depth.x + 1, true});
+		return RecursGenBorderVertices(tri->RightChild, rght, apex, center, {depth.x + 1, true});
 	}
 }
 
-void Patch::GenerateBorderIndices(CVertexArray* va)
+void Patch::GenerateBorderVertices()
 {
-	va->Initialize();
+	if (!isTesselated)
+		return;
 
-	#define PS PATCH_SIZE
+	isTesselated = false;
+
+	borderVertices.clear();
+	borderVertices.reserve((PATCH_SIZE + 1) * 2);
+
+	constexpr auto PS = PATCH_SIZE;
 	// border vertices are always part of base-level triangles
 	// that have either no left or no right neighbor, i.e. are
 	// on the map edge
-	if (baseLeft . LeftNeighbor->IsDummy()) RecursBorderRender(va, &baseLeft , { 0, PS}, {PS,  0}, { 0,  0}, {1,  true}); // left border
-	if (baseLeft .RightNeighbor->IsDummy()) RecursBorderRender(va, &baseLeft , { 0, PS}, {PS,  0}, { 0,  0}, {1, false}); // right border
-	if (baseRight.RightNeighbor->IsDummy()) RecursBorderRender(va, &baseRight, {PS,  0}, { 0, PS}, {PS, PS}, {1, false}); // bottom border
-	if (baseRight. LeftNeighbor->IsDummy()) RecursBorderRender(va, &baseRight, {PS,  0}, { 0, PS}, {PS, PS}, {1,  true}); // top border
-	#undef PS
+	if (baseLeft . LeftNeighbor->IsDummy()) RecursGenBorderVertices(&baseLeft , { 0, PS}, {PS,  0}, { 0,  0}, {1,  true}); // left border
+	if (baseLeft .RightNeighbor->IsDummy()) RecursGenBorderVertices(&baseLeft , { 0, PS}, {PS,  0}, { 0,  0}, {1, false}); // right border
+	if (baseRight.RightNeighbor->IsDummy()) RecursGenBorderVertices(&baseRight, {PS,  0}, { 0, PS}, {PS, PS}, {1, false}); // bottom border
+	if (baseRight. LeftNeighbor->IsDummy()) RecursGenBorderVertices(&baseRight, {PS,  0}, { 0, PS}, {PS, PS}, {1,  true}); // top border
 }
 
 
 void Patch::Upload()
 {
 	if (!vboVerticesUploaded)
-		VBOUploadVertices();
+		UploadVertices();
 
-	static constexpr auto usage = GL_STREAM_DRAW;
-	indxVBO.Bind();
-	if (const size_t sz = indices.size() * sizeof(uint32_t); indxVBO.GetSize() >= sz * 2) {
-		// size the buffer down
-		indxVBO.Unbind();
-		indxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
-		indxVBO.Bind();
-		indxVBO.New(sz, usage, nullptr);
-	} else if (indxVBO.GetSize() < sz) {
-		// size the buffer up
-		indxVBO.Resize(sz, usage);
-	}
-
-	indxVBO.SetBufferSubData(indices);
-	indxVBO.Unbind();
+	UploadIndices();
+	UploadBorderVertices();
 
 	isChanged = false;
 }
