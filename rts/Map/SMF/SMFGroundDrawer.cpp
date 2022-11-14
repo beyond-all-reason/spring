@@ -74,9 +74,24 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	meshDrawer = SwitchMeshDrawer(drawerMode);
 
 	smfRenderStates = { nullptr };
-	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false);
 	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false);
+	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false);
 	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true);
+	smfRenderStates[RENDER_STATE_NOP] = ISMFRenderState::GetInstance(                    false, false);
+
+	borderShader = shaderHandler->CreateProgramObject("[SMFGroundDrawer]", "Border");
+	borderShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFBorderVertProg.glsl", "", GL_VERTEX_SHADER));
+	borderShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFBorderFragProg.glsl", "", GL_FRAGMENT_SHADER));
+	borderShader->BindAttribLocation("vertexPos", 0);
+	borderShader->BindAttribLocation("vertexCol", 1);
+	borderShader->Link();
+
+	borderShader->Enable();
+	borderShader->SetUniform("diffuseTex", 0);
+	borderShader->SetUniform("detailsTex", 2);
+	borderShader->Disable();
+
+	borderShader->Validate();
 
 	// LH must be initialized before render-state is initialized
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicMapLights"));
@@ -116,8 +131,11 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	smfRenderStates[RENDER_STATE_FFP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_FFP]);
 	smfRenderStates[RENDER_STATE_SSP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_SSP]);
 	smfRenderStates[RENDER_STATE_LUA]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_LUA]);
+	smfRenderStates[RENDER_STATE_NOP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_NOP]);
 
 	smfRenderStates = { nullptr };
+
+	shaderHandler->ReleaseProgramObject("[SMFGroundDrawer]", "Border");
 
 	spring::SafeDelete(groundTextures);
 	spring::SafeDelete(meshDrawer);
@@ -315,75 +333,35 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 
 void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 {
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-
 	ISMFRenderState* prvState = smfRenderStates[RENDER_STATE_SEL];
 
-	smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP];
-	// smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
+	// no need to enable, does nothing
+	smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_NOP];
 
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	glActiveTexture(GL_TEXTURE2);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
 
-	//glMultiTexCoord4f(GL_TEXTURE2_ARB, 1.0f, 1.0f, 1.0f, 1.0f);
-	//SetTexGen(1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), -0.5f / mapDims.pwr2mapx, -0.5f / mapDims.pwr2mapy);
+	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
-	static const GLfloat planeX[] = {0.005f, 0.0f, 0.005f, 0.5f};
-	static const GLfloat planeZ[] = {0.0f, 0.005f, 0.0f, 0.5f};
+	borderShader->Enable();
+	meshDrawer->DrawBorderMesh(drawPass);
+	borderShader->Disable();
 
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_S, GL_EYE_PLANE, planeX);
-	glEnable(GL_TEXTURE_GEN_S);
-
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_T, GL_EYE_PLANE, planeZ);
-	glEnable(GL_TEXTURE_GEN_T);
-
-	glActiveTexture(GL_TEXTURE3); glDisable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE1); glDisable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D); // needed for the non-shader case
-
-	glEnable(GL_BLEND);
-
-		if (wireframe)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-		/*
-		if (mapRendering->voidWater && (drawPass != DrawPass::WaterReflection)) {
-			glEnable(GL_ALPHA_TEST);
-			glAlphaFunc(GL_GREATER, 0.9f);
-		}
-		*/
-
-		meshDrawer->DrawBorderMesh(drawPass);
-
-		/*
-		if (mapRendering->voidWater && (drawPass != DrawPass::WaterReflection)) {
-			glDisable(GL_ALPHA_TEST);
-		}
-		*/
-
-		if (wireframe)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	glDisable(GL_BLEND);
-
-	glActiveTexture(GL_TEXTURE2);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
+	if (wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glActiveTexture(GL_TEXTURE0);
 	glDisable(GL_TEXTURE_2D);
 
-	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-	smfRenderStates[RENDER_STATE_SEL] = prvState;
-
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+
+	smfRenderStates[RENDER_STATE_SEL] = prvState;
 }
 
 
@@ -419,6 +397,10 @@ void CSMFGroundDrawer::SetupBigSquare(const int bigSquareX, const int bigSquareY
 {
 	groundTextures->BindSquareTexture(bigSquareX, bigSquareY);
 	smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY);
+
+	//ugly but w/e
+	if (borderShader->IsBound())
+		borderShader->SetUniform("texSquare", bigSquareX, bigSquareY);
 }
 
 

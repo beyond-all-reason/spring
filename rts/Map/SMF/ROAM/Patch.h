@@ -5,6 +5,7 @@
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/VAO.h"
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
@@ -139,8 +140,11 @@ public:
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
 	void UploadVertices();
-	void UploadIndices();
-	void UploadBorderVertices();
+	bool UploadIndices();
+	bool UploadBorderVertices();
+
+	void InitMainVAO() const;
+	void InitBorderVAO() const;
 
 	// recursive functions
 	bool Split(TriTreeNode* tri);
@@ -209,6 +213,9 @@ private:
 	VBO vertVBO;
 	VBO indxVBO;
 	VBO borderVBO;
+
+	VAO mainVAO;
+	VAO borderVAO;
 };
 
 #endif
