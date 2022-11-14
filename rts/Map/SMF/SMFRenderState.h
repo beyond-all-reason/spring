@@ -18,8 +18,9 @@ enum {
 	RENDER_STATE_FFP = 0, // fixed-function path
 	RENDER_STATE_SSP = 1, // standard-shader path (ARB/GLSL)
 	RENDER_STATE_LUA = 2, // Lua-shader path
-	RENDER_STATE_SEL = 3, // selected path
-	RENDER_STATE_CNT = 4,
+	RENDER_STATE_NOP = 3, // NO-OP path
+	RENDER_STATE_SEL = 4, // selected path
+	RENDER_STATE_CNT = 5,
 };
 
 
@@ -50,53 +51,78 @@ public:
 };
 
 
+struct SMFRenderStateNOOP : public ISMFRenderState {
+public:
+	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader);
+	static void FreeInstance(ISMFRenderState* state) { delete state; }
+
+	~SMFRenderStateNOOP() override = default;
+	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override {}
+	void Kill() override {}
+	void Update(
+		const CSMFGroundDrawer* smfGroundDrawer,
+		const LuaMapShaderData* luaMapShaderData
+	) override {}
+
+	bool HasValidShader(const DrawPass::e& drawPass) const override { return true; }
+	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override { return true; }
+	bool CanDrawForward() const override { return false; }
+	bool CanDrawDeferred() const override { return false; }
+
+	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
+	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
+
+	void SetSquareTexGen(const int sqx, const int sqy) const override {}
+	void SetCurrentShader(const DrawPass::e& drawPass) override {}
+	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override {}
+};
 
 
 struct SMFRenderStateFFP: public ISMFRenderState {
 public:
-	bool Init(const CSMFGroundDrawer* smfGroundDrawer) { return false; }
-	void Kill() {}
+	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override { return false; }
+	void Kill() override {}
 	void Update(
 		const CSMFGroundDrawer* smfGroundDrawer,
 		const LuaMapShaderData* luaMapShaderData
-	) {}
+	) override {}
 
-	bool HasValidShader(const DrawPass::e& drawPass) const { return false; }
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const;
-	bool CanDrawForward() const { return true; }
-	bool CanDrawDeferred() const { return false; }
+	bool HasValidShader(const DrawPass::e& drawPass) const override { return false; }
+	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override;
+	bool CanDrawForward() const override { return true; }
+	bool CanDrawDeferred() const override { return false; }
 
-	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
-	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
+	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
+	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 
-	void SetSquareTexGen(const int sqx, const int sqy) const;
-	void SetCurrentShader(const DrawPass::e& drawPass) {}
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const {};
+	void SetSquareTexGen(const int sqx, const int sqy) const override;
+	void SetCurrentShader(const DrawPass::e& drawPass) override {}
+	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override {};
 };
 
 struct SMFRenderStateGLSL: public ISMFRenderState {
 public:
-	SMFRenderStateGLSL(bool lua): useLuaShaders(lua) { glslShaders.fill(nullptr); }
-	~SMFRenderStateGLSL() { glslShaders.fill(nullptr); }
+	explicit SMFRenderStateGLSL(bool lua): useLuaShaders(lua) { glslShaders.fill(nullptr); }
+	~SMFRenderStateGLSL() override { glslShaders.fill(nullptr); }
 
-	bool Init(const CSMFGroundDrawer* smfGroundDrawer);
-	void Kill();
+	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override;
+	void Kill() override;
 	void Update(
 		const CSMFGroundDrawer* smfGroundDrawer,
 		const LuaMapShaderData* luaMapShaderData
-	);
+	) override;
 
-	bool HasValidShader(const DrawPass::e& drawPass) const;
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const;
-	bool CanDrawForward() const { return true; }
-	bool CanDrawDeferred() const { return true; }
+	bool HasValidShader(const DrawPass::e& drawPass) const override;
+	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override;
+	bool CanDrawForward() const override { return true; }
+	bool CanDrawDeferred() const override { return true; }
 
-	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
-	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass);
+	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
+	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 
-	void SetSquareTexGen(const int sqx, const int sqy) const;
-	void SetCurrentShader(const DrawPass::e& drawPass);
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const;
+	void SetSquareTexGen(const int sqx, const int sqy) const override;
+	void SetCurrentShader(const DrawPass::e& drawPass) override;
+	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override;
 
 	enum {
 		GLSL_SHADER_STANDARD = 0,
