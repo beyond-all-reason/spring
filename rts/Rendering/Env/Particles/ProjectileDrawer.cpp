@@ -406,7 +406,6 @@ void CProjectileDrawer::ViewResize()
 	depthFBO->Unbind();
 
 	fxShaders[1]->Enable();
-	fxShaders[1]->SetUniform("invScreenSize", 1.0f / globalRendering->viewSizeX, 1.0f / globalRendering->viewSizeY);
 	fxShaders[1]->Disable();
 }
 
@@ -426,9 +425,10 @@ void CProjectileDrawer::CopyDepthBufferToTexture()
 
 #if 1
 	//no need to touch glViewport
-	const std::array<int, 4> screenRect = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
+	const std::array<int, 4> srcScreenRect = { globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewPosX + globalRendering->viewSizeX, globalRendering->viewPosY + globalRendering->viewSizeY };
+	const std::array<int, 4> dstScreenRect = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
 
-	FBO::Blit(-1, depthFBO->GetId(), screenRect, screenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	FBO::Blit(-1, depthFBO->GetId(), srcScreenRect, dstScreenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 #else
 	GLint activeTex;
 	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTex);

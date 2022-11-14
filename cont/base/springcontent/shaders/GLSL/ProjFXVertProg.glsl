@@ -7,11 +7,17 @@ in vec4 uvInfo;
 in vec3 aparams;
 in vec4 color;
 
-out vec4 vsPos;
 out vec4 vCol;
 out vec4 vUV;
 out float vLayer;
 out float vBF;
+#ifdef SMOOTH_PARTICLES
+	out vec4 vsPos;
+	noperspective out vec2 screenUV;
+#endif
+
+#define NORM2SNORM(value) (value * 2.0 - 1.0)
+#define SNORM2NORM(value) (value * 0.5 + 0.5)
 
 void main() {
 	float ap = fract(aparams.z);
@@ -41,6 +47,12 @@ void main() {
 	vLayer = uvw.z;
 	vCol = color;
 
-	vsPos = gl_ModelViewMatrix * vec4(pos, 1.0);
-	gl_Position = gl_ProjectionMatrix * vsPos;
+	#ifdef SMOOTH_PARTICLES
+		// viewport relative UV [0.0, 1.0]
+		vsPos = gl_ModelViewMatrix * vec4(pos, 1.0);
+		gl_Position = gl_ProjectionMatrix * vsPos;
+		screenUV = SNORM2NORM(gl_Position.xy / gl_Position.w);
+	#else
+		gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
+	#endif
 }

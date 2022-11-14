@@ -3,17 +3,19 @@
 uniform sampler2D atlasTex;
 #ifdef SMOOTH_PARTICLES
 	uniform sampler2D depthTex;
-	uniform vec2 invScreenSize;
 	uniform float softenThreshold;
 	uniform vec2 softenExponent;
 #endif
 uniform vec4 alphaCtrl = vec4(0.0, 0.0, 0.0, 1.0); //always pass
 
-in vec4 vsPos;
 in vec4 vCol;
 in vec4 vUV;
 in float vLayer; //for sampler2Darray (future)
 in float vBF;
+#ifdef SMOOTH_PARTICLES
+	in vec4 vsPos;
+	noperspective in vec2 screenUV;
+#endif
 
 out vec4 fragColor;
 
@@ -47,7 +49,6 @@ void main() {
 	fragColor = color * vCol;
 
 	#ifdef SMOOTH_PARTICLES
-	vec2 screenUV = gl_FragCoord.xy * invScreenSize;
 	float depthZO = texture(depthTex, screenUV).x;
 	float depthVS = GetViewSpaceDepth(depthZO);
 
