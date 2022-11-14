@@ -455,7 +455,7 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	// convert xy-diameter to radius
 	shadowCam->SetFrustumScales(shadowProjScales * float4(0.5f, 0.5f, 1.0f, 1.0f));
 	shadowCam->UpdateFrustum();
-	shadowCam->UpdateLoadViewPort(0, 0, shadowMapSize, shadowMapSize);
+	shadowCam->UpdateLoadViewport(0, 0, shadowMapSize, shadowMapSize);
 	// load matrices into gl_{ModelView,Projection}Matrix
 	shadowCam->Update({false, false, false, false, false});
 

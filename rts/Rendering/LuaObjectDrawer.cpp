@@ -493,6 +493,7 @@ void LuaObjectDrawer::DrawDeferredPass(LuaObjType objType)
 
 	// note: should also set this during the map pass (in SMFGD)
 	game->SetDrawMode(CGame::gameDeferredDraw);
+	GL::GeometryBuffer::LoadViewport();
 	geomBuffer->Bind();
 	geomBuffer->SetDepthRange(1.0f, 0.0f);
 
@@ -532,6 +533,8 @@ void LuaObjectDrawer::DrawDeferredPass(LuaObjType objType)
 		assert(eventFuncs[objType] != nullptr);
 		CALL_FUNC_NA(&eventHandler, eventFuncs[objType]);
 	}
+
+	globalRendering->LoadViewport();
 }
 
 

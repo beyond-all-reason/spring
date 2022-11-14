@@ -93,6 +93,9 @@ public:
 	void UpdateGLGeometry();
 	void UpdateScreenMatrices();
 
+	void LoadViewport();
+	void LoadDualViewport();
+
 	void UpdateWindowBorders(SDL_Window* window) const;
 
 	int2 GetMaxWinRes() const;
@@ -185,6 +188,7 @@ public:
 
 	/// Some settings got changed need to adjust the way window is
 	unsigned int winChgFrame;
+	unsigned int gmeChgFrame;
 
 	/// screen {View,Proj} matrices for rendering in pixel coordinates
 	CMatrix44f screenViewMatrix;

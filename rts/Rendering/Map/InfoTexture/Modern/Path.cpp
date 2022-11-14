@@ -199,10 +199,10 @@ void CPathTexture::Update()
 		isCleared = true;
 		updateProcess = 0;
 		fbo.Bind();
-		glViewport(0,0, texSize.x, texSize.y);
+		glViewport(0, 0, texSize.x, texSize.y);
 		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		globalRendering->LoadViewport();
 		FBO::Unbind();
 		return;
 	}

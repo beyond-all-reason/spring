@@ -113,6 +113,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetNumDisplays);
 	REGISTER_LUA_CFUNC(GetViewGeometry);
+	REGISTER_LUA_CFUNC(GetDualViewGeometry);
 	REGISTER_LUA_CFUNC(GetWindowGeometry);
 	REGISTER_LUA_CFUNC(GetScreenGeometry);
 	REGISTER_LUA_CFUNC(GetMiniMapGeometry);
@@ -521,6 +522,16 @@ int LuaUnsyncedRead::GetViewGeometry(lua_State* L)
 	lua_pushnumber(L, globalRendering->viewSizeY);
 	lua_pushnumber(L, globalRendering->viewPosX);
 	lua_pushnumber(L, globalRendering->viewPosY);
+	return 4;
+}
+
+
+int LuaUnsyncedRead::GetDualViewGeometry(lua_State* L)
+{
+	lua_pushnumber(L, globalRendering->dualViewSizeX);
+	lua_pushnumber(L, globalRendering->dualViewSizeY);
+	lua_pushnumber(L, globalRendering->dualViewPosX);
+	lua_pushnumber(L, globalRendering->dualViewPosY);
 	return 4;
 }
 

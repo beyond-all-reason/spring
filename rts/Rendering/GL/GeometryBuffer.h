@@ -30,6 +30,8 @@ namespace GL {
 		void DrawDebug(const unsigned int texID, const float2 texMins, const float2 texMaxs) const;
 		void DrawDebug(const unsigned int texID) const { DrawDebug(texID, float2(0.0f, 0.0f), float2(1.0f, 1.0f)); }
 
+		static void LoadViewport();
+
 		bool HasAttachments() const { return (bufferTextureIDs[0] != 0); }
 		bool Valid() const { return (buffer.IsValid()); }
 		bool Create(const int2 size);

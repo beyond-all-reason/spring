@@ -68,6 +68,8 @@ CONFIG(bool, SimpleMiniMapColors).defaultValue(false);
 CONFIG(bool, MiniMapRenderToTexture).defaultValue(true).safemodeValue(false).description("Asynchronous render MiniMap to a texture independent of screen FPS.");
 CONFIG(int, MiniMapRefreshRate).defaultValue(0).minimumValue(0).description("The refresh rate of the async MiniMap texture. Needs MiniMapRenderToTexture to be true. Value of \"0\" autoselects between 10-60FPS.");
 
+CONFIG(bool, DualScreenMiniMapAspectRatio).defaultValue(true).description("Whether minimap preserves aspect ratio on dual screen mode.");
+
 CONFIG(bool, MiniMapCanFlip).defaultValue(false).description("Whether minimap inverts coordinates when camera Y rotation is between 90 and 270 degrees.");
 
 
@@ -100,7 +102,7 @@ CMiniMap::CMiniMap()
 
 	ConfigUpdate();
 
-	configHandler->NotifyOnChange(this, {"MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
+	configHandler->NotifyOnChange(this, {"DualScreenMiniMapAspectRatio", "MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
 
 	UpdateGeometry();
 
@@ -179,6 +181,7 @@ CMiniMap::~CMiniMap()
 
 void CMiniMap::ConfigUpdate()
 {
+	aspectRatio = configHandler->GetBool("DualScreenMiniMapAspectRatio");
 	buttonSize = configHandler->GetInt("MiniMapButtonSize");
 	drawProjectiles = configHandler->GetBool("MiniMapDrawProjectiles");
 	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
@@ -193,6 +196,9 @@ void CMiniMap::ConfigUpdate()
 void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
 {
 	ConfigUpdate();
+
+	if (key == "DualScreenMiniMapAspectRatio")
+		UpdateGeometry();
 }
 
 void CMiniMap::ParseGeometry(const string& geostr)
@@ -243,6 +249,53 @@ void CMiniMap::ToggleMaximized(bool _maxspect)
 }
 
 
+void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
+		const float& viewPosX, const float& viewPosY, const MINIMAP_POSITION position)
+{
+	const float  mapRatio = (float)mapDims.mapx / (float)mapDims.mapy;
+	const float viewRatio = viewSizeX / float(viewSizeY);;
+
+	if (mapRatio > viewRatio) {
+		curPos.x = viewPosX;
+		curDim.x = viewSizeX;
+		curDim.y = viewSizeX / mapRatio;
+		curPos.y = viewPosY + (viewSizeY - curDim.y) / 2;
+	} else {
+		curPos.y = viewPosY;
+		curDim.y = viewSizeY;
+		curDim.x = viewSizeY * mapRatio;
+		// CENTER = 0, LEFT = 1, CENTER = 2
+		//curPos.x = viewPosX + (position > 0) * (viewSizeX - curDim.x) / position;
+		switch (position)
+		{
+			case (MINIMAP_POSITION_CENTER):
+			{
+				curPos.x = viewPosX + (viewSizeX - curDim.x) / 2;
+			} break;
+			case (MINIMAP_POSITION_LEFT):
+			{
+				curPos.x = viewPosX;
+			} break;
+			case (MINIMAP_POSITION_RIGHT):
+			{
+				curPos.x = viewPosX + (viewSizeX - curDim.x);
+			} break;
+		}
+	}
+}
+
+
+void CMiniMap::LoadDualViewport() const {
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(globalRendering->dualViewPosX, globalRendering->dualViewPosY, globalRendering->dualViewSizeX, globalRendering->dualViewSizeY);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+
+	glViewport(curPos.x, curPos.y, curDim.x, curDim.y);
+}
+
+
 void CMiniMap::SetMaximizedGeometry()
 {
 	if (!maxspect) {
@@ -253,20 +306,7 @@ void CMiniMap::SetMaximizedGeometry()
 		return;
 	}
 
-	const float  mapRatio = (float)mapDims.mapx / (float)mapDims.mapy;
-	const float viewRatio = globalRendering->aspectRatio;
-
-	if (mapRatio > viewRatio) {
-		curPos.x = 0;
-		curDim.x = globalRendering->viewSizeX;
-		curDim.y = globalRendering->viewSizeX / mapRatio;
-		curPos.y = (globalRendering->viewSizeY - curDim.y) / 2;
-	} else {
-		curPos.y = 0;
-		curDim.y = globalRendering->viewSizeY;
-		curDim.x = globalRendering->viewSizeY * mapRatio;
-		curPos.x = (globalRendering->viewSizeX - curDim.x) / 2;
-	}
+	SetAspectRatioGeometry(globalRendering->viewSizeX, globalRendering->viewSizeY);
 }
 
 
@@ -398,10 +438,15 @@ void CMiniMap::UpdateGeometry()
 {
 	// keep the same distance to the top
 	if (globalRendering->dualScreenMode) {
-		curPos.x = globalRendering->dualViewPosX;
-		curPos.y = globalRendering->dualViewPosY;
-		curDim.x = globalRendering->dualViewSizeX;
-		curDim.y = globalRendering->dualViewSizeY;
+		if (aspectRatio) {
+			const MINIMAP_POSITION position = globalRendering->viewPosX > globalRendering->dualViewPosX ? MINIMAP_POSITION_RIGHT : MINIMAP_POSITION_LEFT;
+			SetAspectRatioGeometry(globalRendering->dualViewSizeX, globalRendering->dualViewSizeY, globalRendering->dualViewPosX, globalRendering->dualViewPosY, position);
+		} else {
+			curPos.x = globalRendering->dualViewPosX;
+			curPos.y = globalRendering->dualViewPosY;
+			curDim.x = globalRendering->dualViewSizeX;
+			curDim.y = globalRendering->dualViewSizeY;
+		}
 	}
 	else if (maximized) {
 		SetMaximizedGeometry();
@@ -1196,7 +1241,7 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 
 		// switch to normalized minimap coords
 		if (globalRendering->dualScreenMode) {
-			glViewport(curPos.x, curPos.y, curDim.x, curDim.y);
+			LoadDualViewport();
 		} else {
 			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
 			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
@@ -1252,7 +1297,7 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 	// Finish
 	// Reset of GL state
 	if (useNormalizedCoors && globalRendering->dualScreenMode)
-		CCamera::GetActive()->LoadViewPort();
+		globalRendering->LoadViewport();
 
 	// disable ClipPlanes
 #if USE_CLIP_PLANES
@@ -1653,7 +1698,7 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 		glPushMatrix();
 
 		if (globalRendering->dualScreenMode) {
-			glViewport(curPos.x, curPos.y, curDim.x, curDim.y);
+			LoadDualViewport();
 		} else {
 			glTranslatef(curPos.x * globalRendering->pixelX, curPos.y * globalRendering->pixelY, 0.0f);
 			glScalef(curDim.x * globalRendering->pixelX, curDim.y * globalRendering->pixelY, 1.0f);
@@ -1683,7 +1728,7 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 
 	if (useNormalizedCoors) {
 		if (globalRendering->dualScreenMode)
-			CCamera::GetActive()->LoadViewPort();
+			globalRendering->LoadViewport();
 
 		glPopMatrix();
 	}

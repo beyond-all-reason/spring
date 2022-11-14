@@ -213,7 +213,7 @@ void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 		curCam->SetAspectRatio(1.0f);
 		curCam->SetPos(prvCam->GetPos());
 
-		curCam->UpdateLoadViewPort(0, 0, reflTexSize, reflTexSize);
+		curCam->UpdateLoadViewport(0, 0, reflTexSize, reflTexSize);
 		curCam->UpdateViewRange();
 		curCam->UpdateMatrices(globalRendering->viewSizeX, globalRendering->viewSizeY, curCam->GetAspectRatio());
 		curCam->UpdateFrustum();

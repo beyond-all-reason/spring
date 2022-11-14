@@ -112,7 +112,7 @@ void CMetalExtractionTexture::Update()
 	// do post-processing on the gpu (los-checking & scaling)
 	fbo.Bind();
 	shader->Enable();
-	glViewport(0,0, texSize.x, texSize.y);
+	glViewport(0, 0, texSize.x, texSize.y);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ZERO, GL_SRC_COLOR);
 	glBindTexture(GL_TEXTURE_2D, infoTex->GetTexture());
@@ -124,7 +124,7 @@ void CMetalExtractionTexture::Update()
 	glEnd();
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glDisable(GL_BLEND);
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	shader->Disable();
 	FBO::Unbind();
 }

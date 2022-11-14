@@ -334,14 +334,14 @@ void CAdvWater::UpdateWater(const CGame* game)
 
 	{
 		curCam->CopyStateReflect(prvCam);
-		curCam->UpdateLoadViewPort(0, 0, 512, 512);
+		curCam->UpdateLoadViewport(0, 0, 512, 512);
 
 		DrawReflections(&clipPlaneEqs[0], true, true);
 	}
 
 	CCameraHandler::SetActiveCamera(prvCam->GetCamType());
 	prvCam->Update();
-	prvCam->LoadViewPort();
+	prvCam->LoadViewport();
 
 	FBO::Unbind();
 

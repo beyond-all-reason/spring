@@ -190,3 +190,7 @@ int2 GL::GeometryBuffer::GetWantedSize(bool allowed) const {
 	return {globalRendering->viewSizeX * allowed, globalRendering->viewSizeY * allowed};
 }
 
+void GL::GeometryBuffer::LoadViewport()
+{
+	glViewport(0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+}
