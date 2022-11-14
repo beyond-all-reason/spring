@@ -40,8 +40,6 @@ public:
 
 	bool CanDrawReflectionPass() const override { return true; }
 	bool CanDrawRefractionPass() const override { return true; }
-
-	void UpdateWindVec(bool init);
 private:
 	//! coastmap (needed for shorewaves)
 	struct CoastAtlasRect {
@@ -108,8 +106,6 @@ private:
 
 	Shader::IProgramObject* waterShader;
 	Shader::IProgramObject* blurShader;
-
-	float3 windVec;
 };
 
 #endif // BUMP_WATER_H

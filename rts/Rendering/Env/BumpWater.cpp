@@ -22,7 +22,6 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Sim/Misc/Wind.h"
 #include "System/bitops.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FastMath.h"
@@ -471,8 +470,6 @@ CBumpWater::CBumpWater()
 		GLSLDefineConst4f(definitions, "ShadingPlane", shadingX/mapX, shadingZ/mapZ, shadingX, shadingZ);
 	}
 
-	UpdateWindVec(true);
-
 	// LOAD SHADERS
 	{
 		waterShader = shaderHandler->CreateProgramObject("[BumpWater]", "WaterShader");
@@ -506,7 +503,7 @@ CBumpWater::CBumpWater()
 		waterShader->SetUniform("infotex"       , 1 );
 		waterShader->SetUniform("shadowmap"     , 9 );
 		waterShader->SetUniform("shadowColorTex", 11);
-		waterShader->SetUniform("windVector"    , windVec.x, windVec.z);
+		waterShader->SetUniform("windVector"    , 15.0f, 15.0f);
 
 		waterShader->Disable();
 		waterShader->Validate();
@@ -551,8 +548,6 @@ void CBumpWater::Update()
 {
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
-
-	UpdateWindVec(false);
 
 	if (dynWaves)
 		UpdateDynWaves();
@@ -953,10 +948,8 @@ void CBumpWater::Draw()
 	//glActiveTexture(GL_TEXTURE11); see above
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, normalTexture);
 
-	waterShader->SetUniform("windVector", windVec.x, windVec.z);
-
-	glPolygonMode(GL_FRONT_AND_BACK, mix(GL_FILL, GL_LINE, static_cast<int>(wireFrameMode)));
-	rb.DrawArrays(mix(GL_TRIANGLES, GL_TRIANGLE_STRIP, static_cast<int>(endlessOcean)));
+	glPolygonMode(GL_FRONT_AND_BACK, wireFrameMode ? GL_LINE : GL_FILL);
+	rb.DrawArrays(endlessOcean ? GL_TRIANGLE_STRIP : GL_TRIANGLES);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	waterShader->Disable();
@@ -976,16 +969,6 @@ void CBumpWater::Draw()
 	if (refraction > 0)
 		glEnable(GL_BLEND);
 }
-
-void CBumpWater::UpdateWindVec(bool init)
-{
-	auto curWindVec = envResHandler.GetCurrentWindDir();
-	auto windStrength = envResHandler.GetCurrentWindStrength();
-	windStrength = smoothstep(0.0f, 30.0f, windStrength);
-	curWindVec *= 4.0f + windStrength * 16.0f;
-	windVec = mix(windVec, curWindVec, init ? 1.0f : 0.01f);
-}
-
 
 void CBumpWater::DrawRefraction(const CGame* game)
 {
