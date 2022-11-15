@@ -261,8 +261,6 @@ void Patch::InitMainVAO() const
 
 void Patch::InitBorderVAO() const
 {
-	#define VA_TYPE_OFFSET(T, m) reinterpret_cast<const void*>(offsetof(T, m))
-
 	borderVAO.Bind();
 	borderVBO.Bind();
 
@@ -279,8 +277,6 @@ void Patch::InitBorderVAO() const
 
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);
-
-	#undef VA_TYPE_OFFSET
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -647,54 +643,17 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 
 void Patch::Draw() const
 {
-#if 1
-	if (mainVAO.GetIdRaw() == 0)
-		InitMainVAO();
-
 	mainVAO.Bind();
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
 	mainVAO.Unbind();
-#else
-	// enable VBOs
-	vertVBO.Bind();
-	indxVBO.Bind();
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, nullptr); // last param is offset, not ptr
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
-	// disable VBO mode
-	vertVBO.Unbind();
-	indxVBO.Unbind();
-#endif
 }
 
 
 void Patch::DrawBorder() const
 {
-#if 1
-	if (borderVAO.GetIdRaw() == 0)
-		InitBorderVAO();
-
 	borderVAO.Bind();
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
 	borderVAO.Unbind();
-#else
-	#define VA_TYPE_OFFSET(T, m) reinterpret_cast<const void*>(offsetof(T, m))
-	borderVBO.Bind();
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
-	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
-	borderVBO.Unbind();
-	#undef VA_TYPE_OFFSET
-#endif
 }
 
 void Patch::RecursGenBorderVertices(
@@ -717,11 +676,11 @@ void Patch::RecursGenBorderVertices(
 
 		if ((depth.x & 1) == 0) {
 			borderVertices.push_back(VA_TYPE_C{ v2,                   {white}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v3.x,    v3.y, v3.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
 			return;
 		}
@@ -729,20 +688,20 @@ void Patch::RecursGenBorderVertices(
 		if (depth.y) {
 			// left child
 			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v2.x,    v2.y, v2.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v2                  , {white}});
 		} else {
 			// right child
 			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v1.x,    v1.y, v1.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
 		}
 

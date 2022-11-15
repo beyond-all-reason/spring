@@ -8,7 +8,6 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "Map/SMF/Basic/BasicMeshDrawer.h"
-#include "Map/SMF/Legacy/LegacyMeshDrawer.h"
 #include "Map/SMF/ROAM/RoamMeshDrawer.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
@@ -158,9 +157,8 @@ IMeshDrawer* CSMFGroundDrawer::SwitchMeshDrawer(int wantedMode)
 
 	switch ((drawerMode = wantedMode)) {
 		case SMF_MESHDRAWER_LEGACY: {
-			LOG("Switching to Legacy Mesh Rendering");
-			meshDrawer = new CLegacyMeshDrawer(smfMap, this);
-		} break;
+			LOG("Legacy Mesh Renderer is no longer available");
+		} [[fallthrough]];
 		case SMF_MESHDRAWER_BASIC: {
 			LOG("Switching to Basic Mesh Rendering");
 			meshDrawer = new CBasicMeshDrawer(this);
