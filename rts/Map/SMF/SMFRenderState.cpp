@@ -24,9 +24,11 @@
 static constexpr float SMF_TEXSQUARE_SIZE = 1024.0f;
 
 
-ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders) {
-	ISMFRenderState* instance = nullptr;
+ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders, bool noop) {
+	if (noop)
+		return new SMFRenderStateNOOP();
 
+	ISMFRenderState* instance = nullptr;
 	if (!haveGLSL)
 		instance = new SMFRenderStateFFP();
 	else

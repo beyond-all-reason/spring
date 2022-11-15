@@ -74,10 +74,10 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	meshDrawer = SwitchMeshDrawer(drawerMode);
 
 	smfRenderStates = { nullptr };
-	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false);
-	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false);
-	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true);
-	smfRenderStates[RENDER_STATE_NOP] = ISMFRenderState::GetInstance(                    false, false);
+	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false, false);
+	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false, false);
+	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true, false);
+	smfRenderStates[RENDER_STATE_NOP] = ISMFRenderState::GetInstance(                    false, false,  true);
 
 	borderShader = shaderHandler->CreateProgramObject("[SMFGroundDrawer]", "Border");
 	borderShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFBorderVertProg.glsl", "", GL_VERTEX_SHADER));
@@ -345,6 +345,9 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glActiveTexture(GL_TEXTURE2);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
+
+	//for CSMFGroundTextures::BindSquareTexture()
+	glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D);
 
 	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 

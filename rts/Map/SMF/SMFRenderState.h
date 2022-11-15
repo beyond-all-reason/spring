@@ -26,7 +26,7 @@ enum {
 
 struct ISMFRenderState {
 public:
-	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader);
+	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader, bool noop);
 	static void FreeInstance(ISMFRenderState* state) { delete state; }
 
 	virtual ~ISMFRenderState() {}
@@ -53,11 +53,8 @@ public:
 
 struct SMFRenderStateNOOP : public ISMFRenderState {
 public:
-	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader);
-	static void FreeInstance(ISMFRenderState* state) { delete state; }
-
 	~SMFRenderStateNOOP() override = default;
-	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override {}
+	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override { return false; }
 	void Kill() override {}
 	void Update(
 		const CSMFGroundDrawer* smfGroundDrawer,

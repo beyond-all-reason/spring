@@ -199,62 +199,62 @@ void Patch::UploadVertices()
 	}
 	vertVBO.SetBufferSubData(vertices);
 	vertVBO.Unbind();
-
-	vboVerticesUploaded = true;
 }
 
 namespace {
 	template<typename T>
-	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	void UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
 	{
-		static constexpr auto usage = GL_STREAM_DRAW;
-		const auto oldId = vbo.GetIdRaw();
+		if (vec.empty())
+			return;
 
+		static constexpr auto usage = GL_STREAM_DRAW;
 		vbo.Bind();
 		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
 			// size the buffer down
 			vbo.Unbind();
-			vbo = { target, false, false };
+			vbo = VBO{ target, false, false };
 			vbo.Bind();
 			vbo.New(sz, usage, nullptr);
 		}
-		else if (vbo.GetSize() < sz) {
+		else if (sz > vbo.GetSize()) {
 			// size the buffer up
 			vbo.Resize(sz, usage);
 		}
 
 		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
-
-		return oldId != vbo.GetIdRaw();
 	}
 }
 
-bool Patch::UploadIndices()
+void Patch::UploadIndices()
 {
-	return UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2);
+	UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2);
+	InitMainVAO();
 }
 
-bool Patch::UploadBorderVertices()
+void Patch::UploadBorderVertices()
 {
-	return UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2);
+	UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2);
+	InitBorderVAO();
 }
 
 void Patch::InitMainVAO() const
 {
 	mainVAO.Bind();
 
-	vertVBO.Bind();
 	indxVBO.Bind();
+	vertVBO.Bind();
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribDivisor(0, 0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), nullptr);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
 	mainVAO.Unbind();
 
-	vertVBO.Unbind();
 	indxVBO.Unbind();
+	vertVBO.Unbind();
 
 	glDisableVertexAttribArray(0);
 }
@@ -267,17 +267,18 @@ void Patch::InitBorderVAO() const
 	borderVBO.Bind();
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribDivisor(0, 0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
 	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(0, 0);
 	glVertexAttribDivisor(1, 0);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, true, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
 
 	borderVAO.Unbind();
 	borderVBO.Unbind();
 
-	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
 
 	#undef VA_TYPE_OFFSET
 }
@@ -646,25 +647,54 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 
 void Patch::Draw() const
 {
+#if 1
 	if (mainVAO.GetIdRaw() == 0)
 		InitMainVAO();
 
 	mainVAO.Bind();
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
 	mainVAO.Unbind();
+#else
+	// enable VBOs
+	vertVBO.Bind();
+	indxVBO.Bind();
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, nullptr); // last param is offset, not ptr
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	// disable VBO mode
+	vertVBO.Unbind();
+	indxVBO.Unbind();
+#endif
 }
 
 
 void Patch::DrawBorder() const
 {
-	return;
-
+#if 1
 	if (borderVAO.GetIdRaw() == 0)
 		InitBorderVAO();
 
 	borderVAO.Bind();
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
 	borderVAO.Unbind();
+#else
+	#define VA_TYPE_OFFSET(T, m) reinterpret_cast<const void*>(offsetof(T, m))
+	borderVBO.Bind();
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
+	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	borderVBO.Unbind();
+	#undef VA_TYPE_OFFSET
+#endif
 }
 
 void Patch::RecursGenBorderVertices(
@@ -762,15 +792,8 @@ void Patch::GenerateBorderVertices()
 
 void Patch::Upload()
 {
-	if (!vboVerticesUploaded)
-		UploadVertices();
-
-	if (UploadIndices())
-		mainVAO = {}; //invalidate
-
-	if (UploadBorderVertices())
-		borderVAO = {}; //invalidate
-
+	UploadIndices();
+	UploadBorderVertices();
 	isChanged = false;
 }
 
