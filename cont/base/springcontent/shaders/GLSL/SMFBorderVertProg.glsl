@@ -17,13 +17,15 @@ out vec2 vDetailsUV;
 void main() {
 	vec4 vertexPos4 = vec4(vertexPos, 1.0);
 
-	vVertPos = vertexPos;
+	vVertPos = vertexPos4.xyz;
 	vVertCol = vertexCol;
+	
+	vDiffuseUV = (floor(vertexPos4.xz) * (1.0 / SMF_TEXSQR_SIZE)) - vec2(texSquare);
 
-	vDiffuseUV.s = dot(vertexPos4, vec4(1.0 / SMF_TEXSQR_SIZE, 0.0, 0.0                  , -texSquare.x * 1.0));
-	vDiffuseUV.t = dot(vertexPos4, vec4(0.0                  , 0.0, 1.0 / SMF_TEXSQR_SIZE, -texSquare.y * 1.0));
-	vDetailsUV.s = dot(vertexPos4, detailPlaneS);
-	vDetailsUV.t = dot(vertexPos4, detailPlaneT);
+	vDetailsUV = vec2(
+		dot(vertexPos4, detailPlaneS),
+		dot(vertexPos4, detailPlaneT)
+	);
 
 	gl_Position = gl_ModelViewProjectionMatrix * vertexPos4;
 }

@@ -140,8 +140,8 @@ public:
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
 	void UploadVertices();
-	bool UploadIndices();
-	bool UploadBorderVertices();
+	void UploadIndices();
+	void UploadBorderVertices();
 
 	void InitMainVAO() const;
 	void InitBorderVAO() const;
@@ -184,7 +184,6 @@ private:
 	// does the variance-tree need to be recalculated for this Patch?
 	bool isTesselated = false;
 	bool isDirty = true;
-	bool vboVerticesUploaded = false;
 	// Did the tesselation tree change from what we have stored in the VBO?
 	bool isChanged = false;
 
