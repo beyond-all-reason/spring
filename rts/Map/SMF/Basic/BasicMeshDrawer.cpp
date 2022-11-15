@@ -530,8 +530,8 @@ void CBasicMeshDrawer::UploadPatchIndices(uint32_t n) {
 			// uint32_t quadCtr = 0;
 
 			for (uint32_t vi = 0; vi < lodQuads; vi += 1) {
-				indcs[indxCtr++] = (vi               ); // A
-				indcs[indxCtr++] = (vi +     lodVerts); // C
+				indcs[indxCtr++] = (vi             ); // A
+				indcs[indxCtr++] = (vi +   lodVerts); // C
 			}
 
 			indcs[indxCtr++] = (lodQuads           ); // B
