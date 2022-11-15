@@ -191,7 +191,7 @@ void CBasicMeshDrawer::UploadPatchSquareGeometry(uint32_t n, uint32_t px, uint32
 
 		squareVAO.Bind();
 		squareVBO.Bind(GL_ARRAY_BUFFER);
-		squareVBO.New((lodVerts * lodVerts) * sizeof(float3), GL_DYNAMIC_DRAW);
+		squareVBO.New((lodVerts * lodVerts) * sizeof(float3), GL_STREAM_DRAW);
 
 
 		float3* verts = meshPatch.squareVertexPtrs[n];
@@ -250,7 +250,7 @@ void CBasicMeshDrawer::UploadPatchBorderGeometry(uint32_t n, uint32_t px, uint32
 		{
 			borderVAO.Bind();
 			borderVBO.Bind(GL_ARRAY_BUFFER);
-			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_DYNAMIC_DRAW);
+			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_STREAM_DRAW);
 
 			VA_TYPE_C* verts = reinterpret_cast<VA_TYPE_C*>(borderVBO.MapBuffer());
 
@@ -297,7 +297,7 @@ void CBasicMeshDrawer::UploadPatchBorderGeometry(uint32_t n, uint32_t px, uint32
 		{
 			borderVAO.Bind();
 			borderVBO.Bind(GL_ARRAY_BUFFER);
-			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_DYNAMIC_DRAW);
+			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_STREAM_DRAW);
 
 			VA_TYPE_C* verts = reinterpret_cast<VA_TYPE_C*>(borderVBO.MapBuffer());
 
@@ -343,7 +343,7 @@ void CBasicMeshDrawer::UploadPatchBorderGeometry(uint32_t n, uint32_t px, uint32
 		{
 			borderVAO.Bind();
 			borderVBO.Bind(GL_ARRAY_BUFFER);
-			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_DYNAMIC_DRAW);
+			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_STREAM_DRAW);
 
 			VA_TYPE_C* verts = reinterpret_cast<VA_TYPE_C*>(borderVBO.MapBuffer());
 
@@ -388,7 +388,7 @@ void CBasicMeshDrawer::UploadPatchBorderGeometry(uint32_t n, uint32_t px, uint32
 		{
 			borderVAO.Bind();
 			borderVBO.Bind(GL_ARRAY_BUFFER);
-			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_DYNAMIC_DRAW);
+			borderVBO.New(lodVerts * sizeof(VA_TYPE_C) * 2, GL_STREAM_DRAW);
 
 			VA_TYPE_C* verts = reinterpret_cast<VA_TYPE_C*>(borderVBO.MapBuffer());
 
@@ -449,9 +449,9 @@ void CBasicMeshDrawer::UploadPatchIndices(uint32_t n) {
 		//   GL_STATIC_DRAW) is being copied/moved from VIDEO memory to HOST memory." unless USE_MAPPED_BUFFERS=0
 		squareIBO.Bind(GL_ELEMENT_ARRAY_BUFFER);
 		#if (USE_TRIANGLE_STRIPS == 0)
-		squareIBO.New((numPolys / (lodStep * lodStep)) * 3 * sizeof(uint16_t), GL_DYNAMIC_DRAW);
+		squareIBO.New((numPolys / (lodStep * lodStep)) * 3 * sizeof(uint16_t), GL_STREAM_DRAW);
 		#else
-		squareIBO.New(((lodQuads * 2 + 3) * lodQuads) * sizeof(uint16_t), GL_DYNAMIC_DRAW);
+		squareIBO.New(((lodQuads * 2 + 3) * lodQuads) * sizeof(uint16_t), GL_STREAM_DRAW);
 		#endif
 
 		uint16_t* indcs = reinterpret_cast<uint16_t*>(squareIBO.MapBuffer());
@@ -521,7 +521,7 @@ void CBasicMeshDrawer::UploadPatchIndices(uint32_t n) {
 	}
 	{
 		borderIBO.Bind(GL_ELEMENT_ARRAY_BUFFER);
-		borderIBO.New(((lodQuads * 2 + 3) * 1) * sizeof(uint16_t), GL_DYNAMIC_DRAW);
+		borderIBO.New(((lodQuads * 2 + 3) * 1) * sizeof(uint16_t), GL_STREAM_DRAW);
 
 		uint16_t* indcs = reinterpret_cast<uint16_t*>(borderIBO.MapBuffer());
 
