@@ -200,6 +200,8 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 	if (!SelectRenderState(DrawPass::TerrainDeferred)->CanDrawDeferred())
 		return;
 
+	GL::GeometryBuffer::LoadViewport();
+
 	{
 		geomBuffer.Bind();
 		geomBuffer.SetDepthRange(1.0f, 0.0f);
@@ -231,6 +233,8 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		geomBuffer.SetDepthRange(0.0f, 1.0f);
 		geomBuffer.UnBind();
 	}
+
+	globalRendering->LoadViewport();
 
 	#if 0
 	geomBuffer.DrawDebug(geomBuffer.GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_NORMTEX));

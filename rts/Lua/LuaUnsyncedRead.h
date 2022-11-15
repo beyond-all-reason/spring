@@ -32,6 +32,7 @@ class LuaUnsyncedRead {
 
 		static int GetNumDisplays(lua_State* L);
 		static int GetViewGeometry(lua_State* L);
+		static int GetDualViewGeometry(lua_State* L);
 		static int GetWindowGeometry(lua_State* L);
 		static int GetScreenGeometry(lua_State* L);
 		static int GetMiniMapGeometry(lua_State* L);

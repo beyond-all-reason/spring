@@ -86,9 +86,15 @@ public:
 	void ApplyConstraintsMatrix() const;
 
 protected:
+	enum MINIMAP_POSITION { MINIMAP_POSITION_LEFT, MINIMAP_POSITION_RIGHT, MINIMAP_POSITION_CENTER };
+
 	void ParseGeometry(const std::string& geostr);
 	void ToggleMaximized(bool maxspect);
 	void SetMaximizedGeometry();
+	void SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
+                              const float& viewPosX = 0, const float& viewPosY = 0,
+                              const MINIMAP_POSITION position = MINIMAP_POSITION_CENTER);
+	void LoadDualViewport() const;
 
 	void ConfigUpdate();
 
@@ -135,6 +141,7 @@ protected:
 	float unitSelectRadius = 0.0f;
 
 	bool minimapCanFlip = false;
+	bool aspectRatio = false;
 	bool fullProxy = false;
 	bool proxyMode = false;
 	bool selecting = false;

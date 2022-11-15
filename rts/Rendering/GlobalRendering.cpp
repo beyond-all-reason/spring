@@ -30,6 +30,7 @@
 #include "System/Platform/errorhandler.h"
 #include "System/ScopedResource.h"
 #include "System/creg/creg_cond.h"
+#include "Game/Game.h"
 
 #include <SDL_syswm.h>
 #include <SDL_rect.h>
@@ -140,6 +141,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(dualWindowOffsetY),
 	CR_IGNORED(winBorder),
 	CR_IGNORED(winChgFrame),
+	CR_IGNORED(gmeChgFrame),
 	CR_IGNORED(screenViewMatrix),
 	CR_IGNORED(screenProjMatrix),
 	CR_IGNORED(pixelX),
@@ -245,6 +247,7 @@ CGlobalRendering::CGlobalRendering()
 	, winBorder{ 0 }
 
 	, winChgFrame(0)
+	, gmeChgFrame(0)
 
 	, screenViewMatrix()
 	, screenProjMatrix()
@@ -1097,13 +1100,20 @@ void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& v
 	if (key == "DualScreenMode" || key == "DualScreenMiniMapOnLeft") {
 		SetDualScreenParams();
 		UpdateGLGeometry();
+
+		if (game != nullptr)
+			gmeChgFrame = drawFrame + 1; //need to do on next frame since config mutex is locked inside ConfigNotify
+
 		return;
 	}
-	winChgFrame = drawFrame + 1; //will happen on next frame
+	winChgFrame = drawFrame + 1; //need to do on next frame since config mutex is locked inside ConfigNotify
 }
 
 void CGlobalRendering::UpdateWindow()
 {
+	if (gmeChgFrame == drawFrame)
+		game->ResizeEvent();
+
 	if (winChgFrame != drawFrame)
 		return;
 
@@ -1539,7 +1549,7 @@ void CGlobalRendering::InitGLState()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glViewport(viewPosX, viewPosY, viewSizeX, viewSizeY);
+	LoadViewport();
 	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);
 
 	// this does not accomplish much
@@ -1842,4 +1852,14 @@ bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int
 	#endif
 
 	return true;
+}
+
+void CGlobalRendering::LoadViewport()
+{
+	glViewport(viewPosX, viewPosY, viewSizeX, viewSizeY);
+}
+
+void CGlobalRendering::LoadDualViewport()
+{
+	glViewport(dualViewPosX, dualViewPosY, dualViewSizeX, dualViewSizeY);
 }

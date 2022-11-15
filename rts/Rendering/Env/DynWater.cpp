@@ -467,7 +467,7 @@ void CDynWater::DrawReflection(const CGame* game)
 
 	{
 		curCam->CopyStateReflect(prvCam);
-		curCam->UpdateLoadViewPort(0, 0, 512, 512);
+		curCam->UpdateLoadViewport(0, 0, 512, 512);
 
 		reflectRight   = curCam->GetRight();
 		reflectUp      = curCam->GetUp();
@@ -479,7 +479,7 @@ void CDynWater::DrawReflection(const CGame* game)
 	CCameraHandler::SetActiveCamera(prvCam->GetCamType());
 
 	prvCam->Update();
-	prvCam->LoadViewPort();
+	prvCam->LoadViewport();
 }
 
 void CDynWater::DrawRefraction(const CGame* game)
@@ -511,7 +511,7 @@ void CDynWater::DrawRefraction(const CGame* game)
 
 	DrawRefractions(&clipPlaneEqs[0], true, true);
 
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 1);
 
 	sunLighting->modelDiffuseColor = oldsun;

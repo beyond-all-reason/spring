@@ -164,10 +164,10 @@ void CRadarTexture::Update()
 
 	if (losHandler->GetGlobalLOS(gu->myAllyTeam)) {
 		fbo.Bind();
-		glViewport(0,0, texSize.x, texSize.y);
+		glViewport(0, 0, texSize.x, texSize.y);
 		glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		globalRendering->LoadViewport();
 		FBO::Unbind();
 
 		glBindTexture(GL_TEXTURE_2D, texture);
@@ -202,7 +202,7 @@ void CRadarTexture::Update()
 
 	// do post-processing on the gpu (los-checking & scaling)
 	fbo.Bind();
-	glViewport(0,0, texSize.x, texSize.y);
+	glViewport(0, 0, texSize.x, texSize.y);
 	shader->Enable();
 	glDisable(GL_BLEND);
 	glActiveTexture(GL_TEXTURE2);
@@ -215,7 +215,7 @@ void CRadarTexture::Update()
 		glVertex2f(+1.f, -1.f);
 	glEnd();
 	shader->Disable();
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	FBO::Unbind();
 
 	// cleanup

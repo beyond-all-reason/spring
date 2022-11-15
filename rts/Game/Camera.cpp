@@ -259,10 +259,10 @@ void CCamera::UpdateViewPort(int px, int py, int sx, int sy)
 	viewport[3] = sy;
 }
 
-void CCamera::UpdateLoadViewPort(int px, int py, int sx, int sy)
+void CCamera::UpdateLoadViewport(int px, int py, int sx, int sy)
 {
 	UpdateViewPort(px, py, sx, sy);
-	LoadViewPort();
+	LoadViewport();
 }
 
 
@@ -275,7 +275,7 @@ void CCamera::LoadMatrices() const
 	glLoadMatrixf(&viewMatrix.m[0]);
 }
 
-void CCamera::LoadViewPort() const
+void CCamera::LoadViewport() const
 {
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }

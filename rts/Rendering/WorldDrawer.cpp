@@ -273,7 +273,7 @@ void CWorldDrawer::GenerateIBLTextures() const
 		FBO::Unbind();
 
 	// restore the normal active camera's VP
-	camera->LoadViewPort();
+	camera->LoadViewport();
 }
 
 void CWorldDrawer::ResetMVPMatrices() const

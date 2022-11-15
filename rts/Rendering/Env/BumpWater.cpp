@@ -572,7 +572,7 @@ void CBumpWater::UpdateWater(const CGame* game)
 	if (reflection > 0) DrawReflection(game);
 	if (reflection || refraction) {
 		FBO::Unbind();
-		glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		globalRendering->LoadViewport();
 	}
 	glPopAttrib();
 }
@@ -798,7 +798,7 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	glDeleteTextures(1, &coastUpdateTexture);
 	coastmapAtlasRects.clear();
 
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	glActiveTexture(GL_TEXTURE0);
 }
 
@@ -876,7 +876,7 @@ void CBumpWater::UpdateDynWaves(const bool initialize)
 		glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 
 	glPopAttrib();
 	dynWavesFBO.Unbind();
@@ -977,7 +977,7 @@ void CBumpWater::DrawRefraction(const CGame* game)
 
 	camera->Update();
 
-	glViewport(0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	const auto& sky = ISky::GetSky();
 	glClearColor(sky->fogColor.x, sky->fogColor.y, sky->fogColor.z, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1021,7 +1021,7 @@ void CBumpWater::DrawReflection(const CGame* game)
 
 	{
 		curCam->CopyStateReflect(prvCam);
-		curCam->UpdateLoadViewPort(0, 0, reflTexSize, reflTexSize);
+		curCam->UpdateLoadViewport(0, 0, reflTexSize, reflTexSize);
 
 		DrawReflections(&clipPlaneEqs[0], reflection > 1, true);
 	}

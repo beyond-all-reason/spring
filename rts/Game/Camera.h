@@ -165,8 +165,8 @@ public:
 	const float3& GetFrustumEdge (unsigned int i) const { return frustum.edges [i]; }
 
 	void LoadMatrices() const;
-	void LoadViewPort() const;
-	void UpdateLoadViewPort(int px, int py, int sx, int sy);
+	void LoadViewport() const;
+	void UpdateLoadViewport(int px, int py, int sx, int sy);
 
 	void SetVFOV(float angle);
 	void SetAspectRatio(float ar) { aspectRatio = ar; }

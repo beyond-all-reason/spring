@@ -1004,7 +1004,7 @@ void CGrassDrawer::CreateFarTex()
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);

@@ -404,9 +404,6 @@ void CProjectileDrawer::ViewResize()
 	glDrawBuffer(GL_NONE);
 	depthFBO->CheckStatus("PROJECTILE-DRAWER-DEPTHFBO");
 	depthFBO->Unbind();
-
-	fxShaders[1]->Enable();
-	fxShaders[1]->Disable();
 }
 
 bool CProjectileDrawer::CheckSoftenExt()
@@ -1137,7 +1134,7 @@ void CProjectileDrawer::UpdatePerlin() {
 	}
 
 	perlinFB.Unbind();
-	glViewport(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+	globalRendering->LoadViewport();
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
