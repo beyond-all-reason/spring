@@ -837,6 +837,7 @@ inline void TypedRenderBuffer<T>::AssertBoundShader() const
 template<typename T>
 inline void TypedRenderBuffer<T>::DrawArrays(uint32_t mode, bool rewind)
 {
+	assert((indcs.size() - eboStartIndex) == 0); //otherwise DrawArrays is an invalid submission type
 	AssertBoundShader();
 
 	UploadVBO();
@@ -867,8 +868,9 @@ inline void TypedRenderBuffer<T>::DrawElements(uint32_t mode, bool rewind)
 
 	size_t indcsCount = (indcs.size() - eboStartIndex);
 	size_t vertsCount = (verts.size() - vboStartIndex);
-	if (indcsCount <= 0)
+	if (indcsCount == 0) {
 		return;
+	}
 
 	#define BUFFER_OFFSET(T, n) (reinterpret_cast<void*>(sizeof(T) * (n)))
 #ifndef HEADLESS

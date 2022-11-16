@@ -252,7 +252,7 @@ void CGameInfo::Draw()
 	}
 	{
 		shader.Enable();
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 		shader.Disable();
 	}
 

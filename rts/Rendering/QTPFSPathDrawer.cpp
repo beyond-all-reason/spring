@@ -247,7 +247,7 @@ void QTPFSPathDrawer::DrawSearchIteration(unsigned int pathType, const std::vect
 			DrawNode(pushedNode = static_cast<const QTPFS::QTNode*>(nodeLayer.GetNode(hmx, hmz)), rb, &NODE_COLORS[2][0]);
 		}
 
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 	}
 	{
 		glLineWidth(2.0f);
@@ -276,13 +276,12 @@ void QTPFSPathDrawer::DrawNode(const QTPFS::QTNode* node, TypedRenderBuffer<VA_T
 	const float3 v2 = float3(xmaxw, CGround::GetHeightReal(xmaxw, zmaxw, false) + 4.0f, zmaxw);
 	const float3 v3 = float3(xminw, CGround::GetHeightReal(xminw, zmaxw, false) + 4.0f, zmaxw);
 
-	rb.SafeAppend({v0, color}); // tl
-	rb.SafeAppend({v1, color}); // tr
-	rb.SafeAppend({v2, color}); // br
-
-	rb.SafeAppend({v2, color}); // br
-	rb.SafeAppend({v3, color}); // bl
-	rb.SafeAppend({v0, color}); // tl
+	rb.AddQuadTriangles(
+		{ v0, color },
+		{ v1, color },
+		{ v2, color },
+		{ v3, color }
+	);
 }
 
 void QTPFSPathDrawer::DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color) const {
