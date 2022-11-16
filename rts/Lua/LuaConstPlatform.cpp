@@ -71,6 +71,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "osVersion", Platform::GetOSVersionStr());
 	LuaPushNamedString(L, "osFamily", Platform::GetOSFamilyStr());
 	LuaPushNamedString(L, "hwConfig", Platform::GetHardwareStr());
+	LuaPushNamedNumber(L, "cpuLogicalCores", Threading::GetLogicalCpuCores());
+	LuaPushNamedNumber(L, "cpuPhysicalCores", Threading::GetPhysicalCpuCores());
 
 	LuaPushNamedString(L, "sysInfoHash", Platform::GetSysInfoHash());
 	LuaPushNamedString(L, "macAddrHash", Platform::GetMacAddrHash());
