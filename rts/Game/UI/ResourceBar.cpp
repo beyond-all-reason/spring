@@ -118,7 +118,7 @@ void CResourceBar::Draw()
 	}
 	{
 		shader.Enable();
-		rb.Submit(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 		shader.Disable();
 	}
 

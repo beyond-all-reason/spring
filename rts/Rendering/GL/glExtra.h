@@ -34,11 +34,10 @@ extern void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSi
 extern void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCols);
 
 template<typename TQuad, typename TColor, typename TRenderBuffer> void gleDrawQuadC(const TQuad& quad, const TColor& color, TRenderBuffer& rb) {
-	rb.SafeAppend({ {quad.x1, quad.y1, 0.0f}, color }); // tl
-	rb.SafeAppend({ {quad.x1, quad.y2, 0.0f}, color }); // bl
-	rb.SafeAppend({ {quad.x2, quad.y2, 0.0f}, color }); // br
-
-	rb.SafeAppend({ {quad.x2, quad.y2, 0.0f}, color }); // br
-	rb.SafeAppend({ {quad.x2, quad.y1, 0.0f}, color }); // tr
-	rb.SafeAppend({ {quad.x1, quad.y1, 0.0f}, color }); // tl
+	rb.AddQuadTriangles(
+		{ {quad.x1, quad.y1, 0.0f}, color }, //tl
+		{ {quad.x2, quad.y1, 0.0f}, color }, //tr
+		{ {quad.x2, quad.y2, 0.0f}, color }, //br
+		{ {quad.x1, quad.y2, 0.0f}, color }  //bl
+	);
 }

@@ -643,7 +643,21 @@ void CommandDrawer::DrawDefaultCommand(const Command& c, const CUnit* owner) con
 			} else {
 				lineDrawer.DrawLineAndIcon(dd->cmdIconID, endPos, dd->color);
 				lineDrawer.Break(endPos, dd->color);
+<<<<<<< HEAD
 				glSurfaceCircle(endPos, c.GetParam(3), cmdCircleResolution);
+=======
+
+				//delete me
+				#ifdef _DEBUG
+				{
+					std::array<float, 4> currentColor;
+					glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
+					assert(memcmp(&dd->color[0], currentColor.data(), currentColor.size() * sizeof(float)) == 0);
+				}
+				#endif
+
+				glSurfaceCircle(endPos, c.GetParam(3), { dd->color }, cmdCircleResolution);
+>>>>>>> 5d409fbdef (Replace most of rb.DrawArrays(GL_TRIANGLES) with rb.DrawElements(GL_TRIANGLES) where it was appropriate)
 				lineDrawer.RestartWithColor(dd->color);
 			}
 
