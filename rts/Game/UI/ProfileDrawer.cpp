@@ -78,13 +78,13 @@ static void DrawBufferStats(const float2 pos)
 
 	// background
 	constexpr SColor bgColor = SColor{ 0.0f, 0.0f, 0.0f, 0.5f };
-	rb.SafeAppend({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TL
-	rb.SafeAppend({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BL
-	rb.SafeAppend({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BR
+	rb.AddVertex({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TL
+	rb.AddVertex({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BL
+	rb.AddVertex({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BR
 
-	rb.SafeAppend({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BR
-	rb.SafeAppend({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TR
-	rb.SafeAppend({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TL
+	rb.AddVertex({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.w + 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // BR
+	rb.AddVertex({{drawArea.z + 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TR
+	rb.AddVertex({{drawArea.x - 10.0f * globalRendering->pixelX, drawArea.y - 10.0f * globalRendering->pixelY, 0.0f}, bgColor }); // TL
 	rb.Submit(GL_TRIANGLES);
 
 	{
@@ -161,13 +161,13 @@ static void DrawTimeSlices(
 		x1 = drawArea.x + x1 * (drawArea.z - drawArea.x);
 		x2 = drawArea.x + x2 * (drawArea.z - drawArea.x);
 
-		rb.SafeAppend({{x1, y1, 0.0f}, sliceCol}); // tl
-		rb.SafeAppend({{x1, y2, 0.0f}, sliceCol}); // bl
-		rb.SafeAppend({{x2, y2, 0.0f}, sliceCol}); // br
+		rb.AddVertex({{x1, y1, 0.0f}, sliceCol}); // tl
+		rb.AddVertex({{x1, y2, 0.0f}, sliceCol}); // bl
+		rb.AddVertex({{x2, y2, 0.0f}, sliceCol}); // br
 
-		rb.SafeAppend({{x2, y2, 0.0f}, sliceCol}); // br
-		rb.SafeAppend({{x2, y1, 0.0f}, sliceCol}); // tr
-		rb.SafeAppend({{x1, y1, 0.0f}, sliceCol}); // tl
+		rb.AddVertex({{x2, y2, 0.0f}, sliceCol}); // br
+		rb.AddVertex({{x2, y1, 0.0f}, sliceCol}); // tr
+		rb.AddVertex({{x1, y1, 0.0f}, sliceCol}); // tl
 
 		const float mx1 = x1 + 3.0f * globalRendering->pixelX;
 		const float mx2 = x2 - 3.0f * globalRendering->pixelX;
@@ -175,13 +175,13 @@ static void DrawTimeSlices(
 		if (mx1 >= mx2)
 			continue;
 
-		rb.SafeAppend({{mx1, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // bl
-		rb.SafeAppend({{mx1, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tl
-		rb.SafeAppend({{mx2, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tr
+		rb.AddVertex({{mx1, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // bl
+		rb.AddVertex({{mx1, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tl
+		rb.AddVertex({{mx2, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tr
 
-		rb.SafeAppend({{mx2, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tr
-		rb.SafeAppend({{mx2, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // br
-		rb.SafeAppend({{mx1, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // bl
+		rb.AddVertex({{mx2, y2 - 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // tr
+		rb.AddVertex({{mx2, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // br
+		rb.AddVertex({{mx1, y1 + 3.0f * globalRendering->pixelX, 0.0f}, sliceCol}); // bl
 	}
 }
 
@@ -200,13 +200,13 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 	{
 		// background
-		rb.SafeAppend({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tl
-		rb.SafeAppend({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // bl
-		rb.SafeAppend({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // br
+		rb.AddVertex({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tl
+		rb.AddVertex({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // bl
+		rb.AddVertex({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // br
 
-		rb.SafeAppend({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // br
-		rb.SafeAppend({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tr
-		rb.SafeAppend({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tl
+		rb.AddVertex({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // br
+		rb.AddVertex({{drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tr
+		rb.AddVertex({{drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor}); // tl
 	}
 	{
 		// title
@@ -236,13 +236,13 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		const float r = (curTime % maxTime).toSecsf() / MAX_THREAD_HIST_TIME;
 		const float xf = drawArea[0] + r * (drawArea[2] - drawArea[0]);
 
-		rb.SafeAppend({{xf                                 , drawArea[1], 0.0f}, feederColor}); // tl
-		rb.SafeAppend({{xf                                 , drawArea[3], 0.0f}, feederColor}); // bl
-		rb.SafeAppend({{xf + 5.0f * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
+		rb.AddVertex({{xf                                 , drawArea[1], 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xf                                 , drawArea[3], 0.0f}, feederColor}); // bl
+		rb.AddVertex({{xf + 5.0f * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
 
-		rb.SafeAppend({{xf + 5.0f * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
-		rb.SafeAppend({{xf + 5.0f * globalRendering->pixelX, drawArea[1], 0.0f}, feederColor}); // tr
-		rb.SafeAppend({{xf                                 , drawArea[1], 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xf + 5.0f * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
+		rb.AddVertex({{xf + 5.0f * globalRendering->pixelX, drawArea[1], 0.0f}, feederColor}); // tr
+		rb.AddVertex({{xf                                 , drawArea[1], 0.0f}, feederColor}); // tl
 	}
 }
 
@@ -259,13 +259,13 @@ static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 	{
 		// background
-		rb.SafeAppend({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tl
-		rb.SafeAppend({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // bl
-		rb.SafeAppend({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // br
+		rb.AddVertex({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tl
+		rb.AddVertex({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // bl
+		rb.AddVertex({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // br
 
-		rb.SafeAppend({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // br
-		rb.SafeAppend({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tr
-		rb.SafeAppend({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tl
+		rb.AddVertex({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[3] + 20.0f * globalRendering->pixelY, 0.0f}, barColor }); // br
+		rb.AddVertex({ {drawArea[2] + 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tr
+		rb.AddVertex({ {drawArea[0] - 10.0f * globalRendering->pixelX, drawArea[1] - 10.0f * globalRendering->pixelY, 0.0f}, barColor }); // tl
 	}
 
 	// title and legend
@@ -290,26 +290,26 @@ static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		const float r = (curTime % maxTime).toSecsf() / MAX_FRAMES_HIST_TIME;
 		const float xf = drawArea[0] + r * (drawArea[2] - drawArea[0]);
 
-		rb.SafeAppend({{xf                               , drawArea[1], 0.0f}, feederColor}); // tl
-		rb.SafeAppend({{xf                               , drawArea[3], 0.0f}, feederColor}); // bl
-		rb.SafeAppend({{xf + 10 * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
+		rb.AddVertex({{xf                               , drawArea[1], 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xf                               , drawArea[3], 0.0f}, feederColor}); // bl
+		rb.AddVertex({{xf + 10 * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
 
-		rb.SafeAppend({{xf + 10 * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
-		rb.SafeAppend({{xf + 10 * globalRendering->pixelX, drawArea[1], 0.0f}, feederColor}); // tr
-		rb.SafeAppend({{xf                               , drawArea[1], 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xf + 10 * globalRendering->pixelX, drawArea[3], 0.0f}, feederColor}); // br
+		rb.AddVertex({{xf + 10 * globalRendering->pixelX, drawArea[1], 0.0f}, feederColor}); // tr
+		rb.AddVertex({{xf                               , drawArea[1], 0.0f}, feederColor}); // tl
 	}
 	{
 		// draw scale (horizontal bar that indicates 30FPS timing length)
 		const float xs1 = drawArea[2] - 1.0f / (30.0f * MAX_FRAMES_HIST_TIME) * (drawArea[2] - drawArea[0]);
 		const float xs2 = drawArea[2] + 0.0f                                  * (drawArea[2] - drawArea[0]);
 
-		rb.SafeAppend({{xs1, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tl
-		rb.SafeAppend({{xs1, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // bl
-		rb.SafeAppend({{xs2, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // br
+		rb.AddVertex({{xs1, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xs1, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // bl
+		rb.AddVertex({{xs2, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // br
 
-		rb.SafeAppend({{xs2, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // br
-		rb.SafeAppend({{xs2, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tr
-		rb.SafeAppend({{xs1, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tl
+		rb.AddVertex({{xs2, drawArea[3] + 10.0f * globalRendering->pixelY, 0.0f}, feederColor}); // br
+		rb.AddVertex({{xs2, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tr
+		rb.AddVertex({{xs1, drawArea[3] +  2.0f * globalRendering->pixelY, 0.0f}, feederColor}); // tl
 	}
 }
 
@@ -329,13 +329,13 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 	// draw the window background
 	{
-		rb.SafeAppend({{MIN_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tl
-		rb.SafeAppend({{MIN_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // bl
-		rb.SafeAppend({{MAX_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // br
+		rb.AddVertex({{MIN_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tl
+		rb.AddVertex({{MIN_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // bl
+		rb.AddVertex({{MAX_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // br
 
-		rb.SafeAppend({{MAX_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // br
-		rb.SafeAppend({{MAX_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tr
-		rb.SafeAppend({{MIN_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tl
+		rb.AddVertex({{MAX_X_COOR, MIN_Y_COOR +                         LINE_HEIGHT + 0.005f, 0.0f}, winColor}); // br
+		rb.AddVertex({{MAX_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tr
+		rb.AddVertex({{MIN_X_COOR, MIN_Y_COOR - sortedProfiles.size() * LINE_HEIGHT - 0.010f, 0.0f}, winColor}); // tl
 	}
 
 	// table header
@@ -394,23 +394,23 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			const SColor actColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 			// selection box
-			rb.SafeAppend({boxMat * float3(   0.0f, -i * LINE_HEIGHT          , 0.0f), selColor}); // tl
-			rb.SafeAppend({boxMat * float3(   0.0f, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // bl
-			rb.SafeAppend({boxMat * float3(boxSize, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // br
+			rb.AddVertex({boxMat * float3(   0.0f, -i * LINE_HEIGHT          , 0.0f), selColor}); // tl
+			rb.AddVertex({boxMat * float3(   0.0f, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // bl
+			rb.AddVertex({boxMat * float3(boxSize, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // br
 
-			rb.SafeAppend({boxMat * float3(boxSize, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // br
-			rb.SafeAppend({boxMat * float3(boxSize, -i * LINE_HEIGHT          , 0.0f), selColor}); // tr
-			rb.SafeAppend({boxMat * float3(   0.0f, -i * LINE_HEIGHT          , 0.0f), selColor}); // tl
+			rb.AddVertex({boxMat * float3(boxSize, -i * LINE_HEIGHT - boxSize, 0.0f), selColor}); // br
+			rb.AddVertex({boxMat * float3(boxSize, -i * LINE_HEIGHT          , 0.0f), selColor}); // tr
+			rb.AddVertex({boxMat * float3(   0.0f, -i * LINE_HEIGHT          , 0.0f), selColor}); // tl
 
 			// activated box
 			if (tr.showGraph) {
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tl
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // bl
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // br
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tl
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // bl
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // br
 
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // br
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tr
-				rb.SafeAppend({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tl
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT - boxSize + selOffset, 0.0f), actColor}); // br
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT + boxSize - selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tr
+				rb.AddVertex({boxMat * float3(LINE_HEIGHT +           selOffset, -i * LINE_HEIGHT -           selOffset, 0.0f), actColor}); // tl
 			}
 
 			i++;
@@ -445,7 +445,7 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			const float x = MIN_X_COOR + (a * steps_x);
 			const float y = 0.02f + (p * 0.96f);
 
-			rb.SafeAppend({{x, y, 0.0f}, c});
+			rb.AddVertex({{x, y, 0.0f}, c});
 		}
 
 		rb.Submit(GL_LINE_STRIP);
@@ -461,13 +461,13 @@ static void DrawInfoText(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 	// background
 
-	rb.SafeAppend({{             0.01f - 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tl
-	rb.SafeAppend({{             0.01f - 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // bl
-	rb.SafeAppend({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // br
+	rb.AddVertex({{             0.01f - 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tl
+	rb.AddVertex({{             0.01f - 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // bl
+	rb.AddVertex({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // br
 
-	rb.SafeAppend({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // br
-	rb.SafeAppend({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tr
-	rb.SafeAppend({{             0.01f - 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tl
+	rb.AddVertex({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.17f + 20.0f * globalRendering->pixelY, 0.0f}, bgColor}); // br
+	rb.AddVertex({{MIN_X_COOR - 0.05f + 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tr
+	rb.AddVertex({{             0.01f - 10.0f * globalRendering->pixelX, 0.02f - 10.0f * globalRendering->pixelY, 0.0f}, bgColor}); // tl
 
 
 	// print performance-related information (timings, particle-counts, etc)

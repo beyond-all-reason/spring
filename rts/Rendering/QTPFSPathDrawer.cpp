@@ -195,8 +195,8 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
 		p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
 
-		rb.SafeAppend({p0, PATH_COLOR});
-		rb.SafeAppend({p1, PATH_COLOR});
+		rb.AddVertex({p0, PATH_COLOR});
+		rb.AddVertex({p1, PATH_COLOR});
 	}
 
 	rb.Submit(GL_LINES);
@@ -290,10 +290,10 @@ void QTPFSPathDrawer::DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_
 	const float3 v2 = float3(xmaxw, CGround::GetHeightReal(xmaxw, zmaxw, false) + 4.0f, zmaxw);
 	const float3 v3 = float3(xminw, CGround::GetHeightReal(xminw, zmaxw, false) + 4.0f, zmaxw);
 
-	rb.SafeAppend({v0, color});
-	rb.SafeAppend({v1, color});
-	rb.SafeAppend({v2, color});
-	rb.SafeAppend({v3, color});
+	rb.AddVertex({v0, color});
+	rb.AddVertex({v1, color});
+	rb.AddVertex({v2, color});
+	rb.AddVertex({v3, color});
 }
 
 #undef xminw
@@ -313,8 +313,8 @@ void QTPFSPathDrawer::DrawNodeLink(const QTPFS::QTNode* pushedNode, const QTPFS:
 	if (!camera->InView(v0) && !camera->InView(v1))
 		return;
 
-	rb.SafeAppend({v0, LINK_COLOR});
-	rb.SafeAppend({v1, LINK_COLOR});
+	rb.AddVertex({v0, LINK_COLOR});
+	rb.AddVertex({v1, LINK_COLOR});
 
 	#undef xmidw
 	#undef zmidw
