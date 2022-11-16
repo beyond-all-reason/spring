@@ -86,16 +86,15 @@ void DefaultPathDrawer::DrawInMiniMap()
 	for (const int2& blkIdx: pe->GetUpdatedBlocks()) {
 		const float2 blkPos = {blkIdx.x * blkSize * 1.0f, blkIdx.y * blkSize * 1.0f};
 
-		rb.SafeAppend({{blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tl
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tr
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // br
-
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // br
-		rb.SafeAppend({{blkPos.x                 , blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // bl
-		rb.SafeAppend({{blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tl
+		rb.AddQuadTriangles(
+			{ {blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x + blkSize * 1.0f, blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} }
+		);
 	}
 
-	rb.DrawArrays(GL_TRIANGLES);
+	rb.DrawElements(GL_TRIANGLES);
 	sh.Disable();
 
 	glMatrixMode(GL_PROJECTION); glPopMatrix();

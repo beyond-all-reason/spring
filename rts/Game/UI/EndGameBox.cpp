@@ -247,7 +247,7 @@ void CEndGameBox::Draw()
 	{
 		// draw boxes
 		shaderC.Enable();
-		rbC.DrawArrays(GL_TRIANGLES);
+		rbC.DrawElements(GL_TRIANGLES);
 		shaderC.Disable();
 	}
 

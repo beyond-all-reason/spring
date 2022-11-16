@@ -465,7 +465,7 @@ void DebugDrawerAI::TexSet::Draw() {
 		);
 
 		sh.Enable();
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 		sh.Disable();
 
 		glBindTexture(GL_TEXTURE_2D, 0);

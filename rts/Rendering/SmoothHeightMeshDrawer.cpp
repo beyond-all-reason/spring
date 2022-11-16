@@ -119,7 +119,7 @@ void SmoothHeightMeshDrawer::Draw(float yoffset) {
 
 	sh.Enable();
 	sh.SetUniform("ucolor", 0.0f, 1.0f, 0.0f, 1.0f);
-	rb.DrawArrays(GL_TRIANGLES);
+	rb.DrawElements(GL_TRIANGLES);
 	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	sh.Disable();
 

@@ -231,7 +231,7 @@ void ShowSplashScreen(
 		);
 
 		sh.Enable();
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 		sh.Disable();
 
 		font->Begin();

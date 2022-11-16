@@ -177,7 +177,7 @@ void CShareBox::Draw()
 	}
 	{
 		shader.Enable();
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 
 		// show "share units" tickmark
 		if (shareUnits) {
