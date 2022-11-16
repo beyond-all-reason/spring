@@ -7,19 +7,19 @@ std::array<std::unique_ptr<RenderBuffer>, 13> RenderBuffer::typedRenderBuffers;
 void RenderBuffer::InitStatic()
 {
 	RenderBuffer::typedRenderBuffers = {
-		std::make_unique<TypedRenderBuffer<VA_TYPE_0   >>(1 << 16, 1 << 16),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_C   >>(1 << 20, 1 << 20),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_N   >>(1 << 10, 1 << 10),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_T   >>(1 << 20, 1 << 20),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_0   >>(1 << 16, 1 << 17),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_C   >>(1 << 20, 1 << 21),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_N   >>(1 << 10, 1 << 11),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_T   >>(1 << 20, 1 << 21),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_T4  >>(1 << 16, 1 << 18),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_TN  >>(1 << 16, 1 << 16),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_TC  >>(1 << 20, 1 << 20),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_PROJ>>(1 << 20, 1 << 20),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_TN  >>(1 << 16, 1 << 17),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_TC  >>(1 << 20, 1 << 21),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_PROJ>>(1 << 20, 1 << 21),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_TNT >>(0      , 0      ),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_2D0 >>(1 << 16, 1 << 16),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_2DC >>(1 << 16, 1 << 16),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_2DT >>(1 << 20, 1 << 20),
-		std::make_unique<TypedRenderBuffer<VA_TYPE_2DTC>>(1 << 20, 1 << 20)
+		std::make_unique<TypedRenderBuffer<VA_TYPE_2D0 >>(1 << 16, 1 << 17),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_2DC >>(1 << 16, 1 << 17),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_2DT >>(1 << 20, 1 << 21),
+		std::make_unique<TypedRenderBuffer<VA_TYPE_2DTC>>(1 << 20, 1 << 21)
 	};
 }
 

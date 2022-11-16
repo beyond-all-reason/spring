@@ -2,7 +2,7 @@
 
 
 #include "glExtra.h"
-#include "VertexArray.h"
+#include "RenderBuffers.h"
 #include "Map/Ground.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -13,65 +13,24 @@
 /**
  *  Draws a trigonometric circle in 'resolution' steps.
  */
-static void defSurfaceCircle(const float3& center, float radius, unsigned int res)
+void glSurfaceCircle(const float3& center, float radius,const SColor& col, uint32_t res)
 {
-	CVertexArray* va=GetVertexArray();
-	va->Initialize();
-	for (unsigned int i = 0; i < res; ++i) {
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
+
+	for (uint32_t i = 0; i < res; ++i) {
 		const float radians = math::TWOPI * (float)i / (float)res;
 		float3 pos;
 		pos.x = center.x + (fastmath::sin(radians) * radius);
 		pos.z = center.z + (fastmath::cos(radians) * radius);
 		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
-		va->AddVertex0(pos);
+		rb.AddVertex({ pos, col });
 	}
-	va->DrawArray0(GL_LINE_LOOP);
-}
 
-static void defSurfaceColoredCircle(const float3& center, float radius, const SColor& col, unsigned int res)
-{
-	CVertexArray* va = GetVertexArray();
-	va->Initialize();
-	for (unsigned int i = 0; i < res; ++i) {
-		const float radians = math::TWOPI * (float)i / (float)res;
-		float3 pos;
-		pos.x = center.x + (fastmath::sin(radians) * radius);
-		pos.z = center.z + (fastmath::cos(radians) * radius);
-		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
-		va->AddVertexC(pos, col);
-	}
-	va->DrawArrayC(GL_LINE_LOOP);
-}
-
-static void defSurfaceSquare(const float3& center, float xsize, float zsize)
-{
-	// FIXME: terrain contouring
-	const float3 p0 = center + float3(-xsize, 0.0f, -zsize);
-	const float3 p1 = center + float3( xsize, 0.0f, -zsize);
-	const float3 p2 = center + float3( xsize, 0.0f,  zsize);
-	const float3 p3 = center + float3(-xsize, 0.0f,  zsize);
-
-	CVertexArray* va=GetVertexArray();
-	va->Initialize();
-		va->AddVertex0(p0.x, CGround::GetHeightAboveWater(p0.x, p0.z, false), p0.z);
-		va->AddVertex0(p1.x, CGround::GetHeightAboveWater(p1.x, p1.z, false), p1.z);
-		va->AddVertex0(p2.x, CGround::GetHeightAboveWater(p2.x, p2.z, false), p2.z);
-		va->AddVertex0(p3.x, CGround::GetHeightAboveWater(p3.x, p3.z, false), p3.z);
-	va->DrawArray0(GL_LINE_LOOP);
-}
-
-
-SurfaceCircleFunc glSurfaceCircle = defSurfaceCircle;
-SurfaceColoredCircleFunc glSurfaceColoredCircle = defSurfaceColoredCircle;
-
-void setSurfaceCircleFunc(SurfaceCircleFunc func)
-{
-	glSurfaceCircle = (func == nullptr)? defSurfaceCircle: func;
-}
-
-void setSurfaceColoredCircleFunc(SurfaceColoredCircleFunc func)
-{
-	glSurfaceColoredCircle = (func == nullptr) ? defSurfaceColoredCircle : func;
+	sh.Enable();
+	rb.DrawArrays(GL_LINE_LOOP);
+	sh.Disable();
 }
 
 static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, float, float) = {
@@ -79,15 +38,12 @@ static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, f
 	CWeapon::GetLiveRange2D,
 };
 
-static void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, unsigned int resolution, const float3& center, const float3& params)
+static void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
 	constexpr int resDiv = 50;
 
-	CVertexArray* va = GetVertexArray();
-	va->Initialize();
-	va->EnlargeArrays(resolution, 0, VA_SIZE_0);
-
-	float3* vertices = va->GetTypedVertexArray<float3>(resolution);
+	std::vector<VA_TYPE_0> vertices;
+	vertices.resize(resolution);
 
 	const float radius = params.x;
 	const float slope = params.y;
@@ -138,24 +94,36 @@ static void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef,
 		pos.z = center.z + (cosR * posWeaponRange);
 		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
 
-		vertices[i] = pos;
+		vertices[i].pos = pos;
 	});
 
-	va->DrawArray0(GL_LINE_LOOP);
+	const float4 fColor = color;
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	rb.AssertSubmission();
+
+	rb.AddVertices(vertices);
+
+	auto& sh = rb.GetShader();
+	sh.Enable();
+	sh.SetUniform("ucolor", fColor.x, fColor.y, fColor.z, fColor.w);
+	rb.DrawArrays(GL_LINE_LOOP);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
 }
 
 
 /*
  *  Draws a trigonometric circle in 'resolution' steps, with a slope modifier
  */
-void glBallisticCircle(const CWeapon* weapon, unsigned int resolution, const float3& center, const float3& params)
+void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
-	glBallisticCircle(weapon, weapon->weaponDef, resolution, center, params);
+	glBallisticCircle(weapon, weapon->weaponDef, color, resolution, center, params);
 }
 
-void glBallisticCircle(const WeaponDef* weaponDef, unsigned int resolution, const float3& center, const float3& params)
+void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
-	glBallisticCircle(nullptr, weaponDef, resolution, center, params);
+	glBallisticCircle(nullptr, weaponDef, color, resolution, center, params);
 }
 
 
@@ -198,7 +166,7 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 
 /******************************************************************************/
 
-void glWireCube(unsigned int* listID) {
+void glWireCube(uint32_t* listID) {
 	static constexpr float3 vertices[8] = {
 		{ 0.5f,  0.5f,  0.5f},
 		{ 0.5f, -0.5f,  0.5f},
@@ -252,7 +220,7 @@ void glWireCube(unsigned int* listID) {
 	glEndList();
 }
 
-void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize) {
+void glWireCylinder(uint32_t* listID, uint32_t numDivs, float zSize) {
 	if ((*listID) != 0) {
 		glCallList(*listID);
 		return;
@@ -271,8 +239,8 @@ void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize) {
 	glBegin(GL_TRIANGLE_FAN);
 		glVertex3f(0.0f, 0.0f, 0.0f);
 
-		for (unsigned int n = 0; n <= numDivs; n++) {
-			const unsigned int i = n % numDivs;
+		for (uint32_t n = 0; n <= numDivs; n++) {
+			const uint32_t i = n % numDivs;
 
 			vertices[i].x = std::cos(i * (math::TWOPI / numDivs));
 			vertices[i].y = std::sin(i * (math::TWOPI / numDivs));
@@ -286,8 +254,8 @@ void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize) {
 	glBegin(GL_TRIANGLE_FAN);
 		glVertex3f(0.0f, 0.0f, zSize);
 
-		for (unsigned int n = 0; n <= numDivs; n++) {
-			const unsigned int i = n % numDivs;
+		for (uint32_t n = 0; n <= numDivs; n++) {
+			const uint32_t i = n % numDivs;
 
 			vertices[i + numDivs].x = vertices[i].x;
 			vertices[i + numDivs].y = vertices[i].y;
@@ -298,7 +266,7 @@ void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize) {
 	glEnd();
 
 	glBegin(GL_QUAD_STRIP);
-		for (unsigned int n = 0; n < numDivs; n++) {
+		for (uint32_t n = 0; n < numDivs; n++) {
 			glVertex3f(vertices[n          ].x, vertices[n          ].y, vertices[n          ].z);
 			glVertex3f(vertices[n + numDivs].x, vertices[n + numDivs].y, vertices[n + numDivs].z);
 		}
@@ -311,7 +279,7 @@ void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize) {
 	glEndList();
 }
 
-void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCols) {
+void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols) {
 	if ((*listID) != 0) {
 		glCallList(*listID);
 		return;
@@ -322,8 +290,8 @@ void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCo
 
 	std::vector<float3> vertices((numRows + 1) * numCols);
 
-	for (unsigned int row = 0; row <= numRows; row++) {
-		for (unsigned int col = 0; col < numCols; col++) {
+	for (uint32_t row = 0; row <= numRows; row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
 			const float a = (col * (math::TWOPI / numCols));
 			const float b = (row * (math::PI    / numRows));
 
@@ -346,8 +314,8 @@ void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCo
 	glBegin(GL_TRIANGLE_FAN);
 		glVertex3f(v0.x, v0.y, v0.z);
 
-		for (unsigned int col = 0; col <= numCols; col++) {
-			const unsigned int i = 1 * numCols + (col % numCols);
+		for (uint32_t col = 0; col <= numCols; col++) {
+			const uint32_t i = 1 * numCols + (col % numCols);
 			const float3& v = vertices[i];
 
 			glVertex3f(v.x, v.y, v.z);
@@ -358,18 +326,18 @@ void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCo
 	glBegin(GL_TRIANGLE_FAN);
 		glVertex3f(v1.x, v1.y, v1.z);
 
-		for (unsigned int col = 0; col <= numCols; col++) {
-			const unsigned int i = ((numRows - 1) * numCols) + (col % numCols);
+		for (uint32_t col = 0; col <= numCols; col++) {
+			const uint32_t i = ((numRows - 1) * numCols) + (col % numCols);
 			const float3& v = vertices[i];
 
 			glVertex3f(v.x, v.y, v.z);
 		}
 	glEnd();
 
-	for (unsigned int row = 1; row < numRows - 1; row++) {
+	for (uint32_t row = 1; row < numRows - 1; row++) {
 		glBegin(GL_QUAD_STRIP);
 
-		for (unsigned int col = 0; col < numCols; col++) {
+		for (uint32_t col = 0; col < numCols; col++) {
 			const float3& v0 = vertices[(row + 0) * numCols + col];
 			const float3& v1 = vertices[(row + 1) * numCols + col];
 

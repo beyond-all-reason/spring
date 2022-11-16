@@ -1811,9 +1811,13 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
 		const float   slope = luaL_checkfloat(L, 6);
 		const float gravity = luaL_optfloat(L, 7, mapInfo->map.gravity);
 
-		glBallisticCircle(wd, luaL_checkint(L, 5), pos, {radius, slope, gravity});
+		std::array<float,4> currentColor;
+		glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
+		glBallisticCircle(wd, { currentColor.data() }, luaL_checkint(L, 5), pos, { radius, slope, gravity });
 	} else {
-		glSurfaceCircle(pos, r, divs);
+		std::array<float, 4> currentColor;
+		glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
+		glSurfaceCircle(pos, r, { currentColor.data()}, divs);
 	}
 	return 0;
 }
