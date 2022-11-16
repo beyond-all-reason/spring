@@ -7,7 +7,7 @@
 #include "SplashScreen.hpp"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/float4.h"
@@ -148,7 +148,6 @@ void ShowSplashScreen(
 	const std::string& springVersionStr,
 	const std::function<bool()>& testDoneFunc
 ) {
-	CVertexArray* va = GetVertexArray();
 	CBitmap bmp;
 
 	VA_TYPE_2DT quadElems[] = {
@@ -212,6 +211,10 @@ void ShowSplashScreen(
 		textWidth[2] * globalRendering->pixelX * font->GetSize() * coors.z,
 	};
 
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
+
 	glPushAttrib(GL_ENABLE_BIT);
 	glEnable(GL_TEXTURE_2D);
 
@@ -219,12 +222,17 @@ void ShowSplashScreen(
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindTexture(GL_TEXTURE_2D, splashTex);
-		va->Initialize();
-		va->AddVertex2dT({quadElems[0].x, quadElems[0].y}, {quadElems[0].s, quadElems[0].t});
-		va->AddVertex2dT({quadElems[1].x, quadElems[1].y}, {quadElems[1].s, quadElems[1].t});
-		va->AddVertex2dT({quadElems[2].x, quadElems[2].y}, {quadElems[2].s, quadElems[2].t});
-		va->AddVertex2dT({quadElems[3].x, quadElems[3].y}, {quadElems[3].s, quadElems[3].t});
-		va->DrawArray2dT(GL_QUADS);
+
+		rb.AddQuadTriangles(
+			{ quadElems[0].x, quadElems[0].y, quadElems[0].s, quadElems[0].t },
+			{ quadElems[1].x, quadElems[1].y, quadElems[1].s, quadElems[1].t },
+			{ quadElems[2].x, quadElems[2].y, quadElems[2].s, quadElems[2].t },
+			{ quadElems[3].x, quadElems[3].y, quadElems[3].s, quadElems[3].t }
+		);
+
+		sh.Enable();
+		rb.DrawArrays(GL_TRIANGLES);
+		sh.Disable();
 
 		font->Begin();
 		font->SetTextColor(color.x, color.y, color.z, color.w);

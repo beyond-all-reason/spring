@@ -6,7 +6,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/bitops.h"
 
@@ -250,24 +250,29 @@ void DebugDrawerAI::Graph::Clear() {
 
 
 
-void DebugDrawerAI::Graph::Draw() {
-	unsigned char color[4];
-
-	CVertexArray* va = GetVertexArray();
+void DebugDrawerAI::Graph::Draw()
+{
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
 
 	{
-		color[0] = 0.25f * 255;
-		color[1] = 0.25f * 255;
-		color[2] = 0.25f * 255;
-		color[3] = 1.00f * 255;
+		SColor color = {
+			0.25f,
+			0.25f,
+			0.25f,
+			1.00f
+		};
 
 		// label-box
-		va->Initialize();
-		va->AddVertexC(pos,                                                                               color);
-		va->AddVertexC(pos + float3(-(((maxLabelWidth * 1.33f) / globalRendering->viewSizeX) * size.x),   0.0f, 0.0f), color);
-		va->AddVertexC(pos + float3(-(((maxLabelWidth * 1.33f) / globalRendering->viewSizeX) * size.x), size.y, 0.0f), color);
-		va->AddVertexC(pos + float3(                                                0.0f,  size.y, 0.0f), color);
-		va->DrawArrayC(GL_LINE_STRIP);
+		rb.AddVertex({ pos                                                                                           , color });
+		rb.AddVertex({ pos + float3(-(((maxLabelWidth * 1.33f) / globalRendering->viewSizeX) * size.x),   0.0f, 0.0f), color });
+		rb.AddVertex({ pos + float3(-(((maxLabelWidth * 1.33f) / globalRendering->viewSizeX) * size.x), size.y, 0.0f), color });
+		rb.AddVertex({ pos + float3(                                              0.0f,  size.y, 0.0f)               , color });
+
+		sh.Enable();
+		rb.DrawArrays(GL_LINE_STRIP);
+		sh.Disable();
 
 		if (scale.y > 0.0f && scale.x > 0.0f) {
 			font->Begin();
@@ -275,10 +280,12 @@ void DebugDrawerAI::Graph::Draw() {
 
 			// horizontal grid lines
 			for (float s = 0.0f; s <= (scale.y + 0.01f); s += (scale.y * 0.1f)) {
-				va->Initialize();
-				va->AddVertexC(pos + float3(  0.0f, (s / scale.y) * size.y, 0.0f), color);
-				va->AddVertexC(pos + float3(size.x, (s / scale.y) * size.y, 0.0f), color);
-				va->DrawArrayC(GL_LINES);
+				rb.AddVertex({ pos + float3(  0.0f, (s / scale.y) * size.y, 0.0f), color });
+				rb.AddVertex({ pos + float3(size.x, (s / scale.y) * size.y, 0.0f), color });
+
+				sh.Enable();
+				rb.DrawArrays(GL_LINES);
+				sh.Disable();
 
 				const float tx = (pos.x + size.x) + (size.x * 0.025f);
 				const float ty = pos.y + (s / scale.y) * size.y;
@@ -288,10 +295,12 @@ void DebugDrawerAI::Graph::Draw() {
 
 			// vertical grid lines
 			for (float s = 0.0f; s <= (scale.x + 0.01f); s += (scale.x * 0.1f)) {
-				va->Initialize();
-				va->AddVertexC(pos + float3((s / scale.x) * size.x,   0.0f, 0.0f), color);
-				va->AddVertexC(pos + float3((s / scale.x) * size.x, size.y, 0.0f), color);
-				va->DrawArrayC(GL_LINES);
+				rb.AddVertex({ pos + float3((s / scale.x) * size.x,   0.0f, 0.0f), color });
+				rb.AddVertex({ pos + float3((s / scale.x) * size.x, size.y, 0.0f), color });
+
+				sh.Enable();
+				rb.DrawArrays(GL_LINES);
+				sh.Disable();
 
 				const float tx = (pos.x + (s / scale.x) * size.x) - (size.x * 0.05f);
 				const float ty = pos.y - size.y * 0.1f;
@@ -325,13 +334,14 @@ void DebugDrawerAI::Graph::Draw() {
 				font->SetTextColor(line.lineColor.x, line.lineColor.y, line.lineColor.z, 1.0f);
 				font->glPrint(tx, ty, 1.0f, FONT_SCALE | FONT_NORM, line.lineLabel);
 
-				color[0] = line.lineColor.x * 255;
-				color[1] = line.lineColor.y * 255;
-				color[2] = line.lineColor.z * 255;
-				color[3] = 255;
+				SColor color = {
+					line.lineColor.x,
+					line.lineColor.y,
+					line.lineColor.z,
+					1.0f
+				};
 
 				glLineWidth(line.lineWidth);
-				va->Initialize();
 
 				for (auto pit = data.begin(); pit != data.end(); ++pit) {
 					auto npit = pit; ++npit;
@@ -341,11 +351,14 @@ void DebugDrawerAI::Graph::Draw() {
 					const float px2 = (npit == data.end()) ? px1 : ((npit->x - minScale.x) / scale.x) * size.x;
 					const float py2 = (npit == data.end()) ? py1 : ((npit->y - minScale.y) / scale.y) * size.y;
 
-					va->AddVertexC(pos + float3(px1, py1, 0.0f), color);
-					va->AddVertexC(pos + float3(px2, py2, 0.0f), color);
+					rb.AddVertex({ pos + float3(px1, py1, 0.0f), color });
+					rb.AddVertex({ pos + float3(px2, py2, 0.0f), color });
 				}
 
-				va->DrawArrayC(GL_LINE_STRIP);
+				sh.Enable();
+				rb.DrawArrays(GL_LINE_STRIP);
+				sh.Disable();
+
 				glLineWidth(1.0f);
 
 				lineNum += 1;
@@ -354,8 +367,6 @@ void DebugDrawerAI::Graph::Draw() {
 			font->End();
 		}
 	}
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 
@@ -431,24 +442,32 @@ void DebugDrawerAI::TexSet::Draw() {
 	if (textures.empty())
 		return;
 
-	glEnable(GL_TEXTURE_2D);
 	font->Begin();
 	font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-	CVertexArray* va = GetVertexArray();
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_T>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
 
+	glEnable(GL_TEXTURE_2D);
 	for (auto it = textures.begin(); it != textures.end(); ++it) {
 		const TexSet::Texture& tex = it->second;
 		const float3& pos = tex.GetPos();
 		const float3& size = tex.GetSize();
 
 		glBindTexture(GL_TEXTURE_2D, tex.GetID());
-		va->Initialize();
-		va->AddVertexT(pos,                                0.0f, 1.0f);
-		va->AddVertexT(pos + float3(size.x,   0.0f, 0.0f), 1.0f, 1.0f);
-		va->AddVertexT(pos + float3(size.x, size.y, 0.0f), 1.0f, 0.0f);
-		va->AddVertexT(pos + float3(  0.0f, size.y, 0.0f), 0.0f, 0.0f);
-		va->DrawArrayT(GL_QUADS);
+
+		rb.AddQuadTriangles(
+			{ pos,                                0.0f, 1.0f },
+			{ pos + float3(size.x,   0.0f, 0.0f), 1.0f, 1.0f },
+			{ pos + float3(size.x, size.y, 0.0f), 1.0f, 0.0f },
+			{ pos + float3(  0.0f, size.y, 0.0f), 0.0f, 0.0f }
+		);
+
+		sh.Enable();
+		rb.DrawArrays(GL_TRIANGLES);
+		sh.Disable();
+
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		const float tx = pos.x + size.x * 0.5f - ((tex.GetLabelWidth() * 0.5f) / globalRendering->viewSizeX) * size.x;
@@ -456,9 +475,9 @@ void DebugDrawerAI::TexSet::Draw() {
 
 		font->glFormat(tx, ty, 1.0f, FONT_SCALE | FONT_NORM, "%s", (tex.GetLabel()).c_str());
 	}
+	glDisable(GL_TEXTURE_2D);
 
 	font->End();
-	glDisable(GL_TEXTURE_2D);
 }
 
 

@@ -13,25 +13,18 @@
 class CWeapon;
 struct WeaponDef;
 
-typedef void (*SurfaceCircleFunc)(const float3& center, float radius, unsigned int res);
-typedef void (*SurfaceColoredCircleFunc)(const float3& center, float radius, const SColor&, unsigned int res);
-
-extern SurfaceCircleFunc glSurfaceCircle;
-extern SurfaceColoredCircleFunc glSurfaceColoredCircle;
+extern void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res);
 
 // params.x := radius, params.y := slope, params.z := gravity
-extern void glBallisticCircle(const CWeapon* weapon, unsigned int resolution, const float3& center, const float3& params);
-extern void glBallisticCircle(const WeaponDef* weaponDef, unsigned int resolution, const float3& center, const float3& params);
+extern void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params);
+extern void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params);
 
-extern void setSurfaceCircleFunc(SurfaceCircleFunc func);
-extern void setSurfaceColoredCircleFunc(SurfaceColoredCircleFunc func);
-
-typedef void (*DrawVolumeFunc)(const void* data);
+using DrawVolumeFunc = void (*)(const void* data);
 extern void glDrawVolume(DrawVolumeFunc drawFunc, const void* data);
 
-extern void glWireCube(unsigned int* listID);
-extern void glWireCylinder(unsigned int* listID, unsigned int numDivs, float zSize);
-extern void glWireSphere(unsigned int* listID, unsigned int numRows, unsigned int numCols);
+extern void glWireCube(uint32_t* listID);
+extern void glWireCylinder(uint32_t* listID, uint32_t numDivs, float zSize);
+extern void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols);
 
 template<typename TQuad, typename TColor, typename TRenderBuffer> void gleDrawQuadC(const TQuad& quad, const TColor& color, TRenderBuffer& rb) {
 	rb.SafeAppend({ {quad.x1, quad.y1, 0.0f}, color }); // tl

@@ -73,6 +73,7 @@ void DefaultPathDrawer::DrawInMiniMap()
 	const CPathEstimator* pe = pm->GetMedResPE();
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(minimap->GetProjMat(1));
@@ -337,7 +338,7 @@ void DefaultPathDrawer::Draw(const CPathFinderDef* pfd) const {
 		{1.0f, 1.0f, 0.0f, 1.0f}
 	};
 
-	glSurfaceColoredCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), colors[pfd->synced], 20);
+	glSurfaceCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), colors[pfd->synced], 20);
 }
 
 void DefaultPathDrawer::Draw(const CPathFinder* pf) const {
@@ -382,6 +383,7 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 		return;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	#if (PE_EXTRA_DEBUG_OVERLAYS == 1)

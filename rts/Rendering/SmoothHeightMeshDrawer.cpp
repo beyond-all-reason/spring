@@ -5,7 +5,7 @@
 #include "Game/UI/MiniMap.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "System/EventHandler.h"
@@ -94,9 +94,9 @@ void SmoothHeightMeshDrawer::Draw(float yoffset) {
 	const unsigned int numQuadsX = smoothGround.GetFMaxX() / quadSize;
 	const unsigned int numQuadsZ = smoothGround.GetFMaxY() / quadSize;
 
-	CVertexArray* va = GetVertexArray();
-	va->Initialize();
-	va->EnlargeArrays(numQuadsX * numQuadsZ * 4, 0, VA_SIZE_0);
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
 
 	for (unsigned int zq = 0; zq < numQuadsZ; zq++) {
 		for (unsigned int xq = 0; xq < numQuadsX; xq++) {
@@ -108,14 +108,20 @@ void SmoothHeightMeshDrawer::Draw(float yoffset) {
 			const float h3 = smoothGround.GetHeight(x + quadSize, z + quadSize) + yoffset;
 			const float h4 = smoothGround.GetHeight(x,            z + quadSize) + yoffset;
 
-			va->AddVertexQ0(float3(x,            h1, z           ));
-			va->AddVertexQ0(float3(x + quadSize, h2, z           ));
-			va->AddVertexQ0(float3(x + quadSize, h3, z + quadSize));
-			va->AddVertexQ0(float3(x,            h4, z + quadSize));
+			rb.AddQuadTriangles(
+				{ { x,            h1, z            } },
+				{ { x + quadSize, h2, z            } },
+				{ { x + quadSize, h3, z + quadSize } },
+				{ { x,            h4, z + quadSize } }
+			);
 		}
 	}
 
-	glColor4ub(0, 255, 0, 255); 
-	va->DrawArray0(GL_QUADS);
+	sh.Enable();
+	sh.SetUniform("ucolor", 0.0f, 1.0f, 0.0f, 1.0f);
+	rb.DrawArrays(GL_TRIANGLES);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }

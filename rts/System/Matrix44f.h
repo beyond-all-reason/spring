@@ -4,6 +4,7 @@
 #define MATRIX44F_H
 
 #include <cmath>
+#include <array>
 
 #include "System/float3.h"
 #include "System/float4.h"
@@ -125,9 +126,13 @@ public:
 	static CMatrix44f PerspProj(float l, float r, float b, float t, float zn, float zf);
 	static CMatrix44f OrthoProj(float l, float r, float b, float t, float zn, float zf);
 	static CMatrix44f ClipPerspProj(float aspect, float thfov, float zn, float zf, float cc) { return (ClipControl(cc) * PerspProj(aspect, thfov, zn, zf)); }
+	static CMatrix44f ClipPerspProj(float aspect, float thfov, float zn, float zf, bool cc)  { return (ClipControl(cc) * PerspProj(aspect, thfov, zn, zf)); }
 	static CMatrix44f ClipPerspProj(float l, float r, float b, float t, float zn, float zf, float cc) { return (ClipControl(cc) * PerspProj(l, r, b, t, zn, zf)); }
+	static CMatrix44f ClipPerspProj(float l, float r, float b, float t, float zn, float zf, bool cc)  { return (ClipControl(cc) * PerspProj(l, r, b, t, zn, zf)); }
 	static CMatrix44f ClipOrthoProj(float l, float r, float b, float t, float zn, float zf, float cc) { return (ClipControl(cc) * OrthoProj(l, r, b, t, zn, zf)); }
+	static CMatrix44f ClipOrthoProj(float l, float r, float b, float t, float zn, float zf, bool cc)  { return (ClipControl(cc) * OrthoProj(l, r, b, t, zn, zf)); }
 	static CMatrix44f ClipOrthoProj01(float cc) { return (ClipControl(cc) * OrthoProj(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f)); }
+	static CMatrix44f ClipOrthoProj01(bool cc)  { return (ClipControl(cc) * OrthoProj(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f)); }
 	static CMatrix44f ClipOrthoProj01();
 	static CMatrix44f ClipControl(float cc) {
 		CMatrix44f m;
@@ -136,7 +141,7 @@ public:
 		return m;
 	}
 	static CMatrix44f ClipControl(bool enabled) {
-		constexpr float cc[2] = {0.0f, 1.0f};
+		constexpr std::array cc = {0.0f, 1.0f};
 		return (ClipControl(cc[enabled]));
 	}
 	static CMatrix44f LookAtView(const float3& eye, const float3& center, const float3& up = UpVector);
