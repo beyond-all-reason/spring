@@ -118,13 +118,13 @@ void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IPro
 		pos1.y = CGround::GetHeightAboveWater(pos1.x, pos1.z, false);
 		pos2.y = CGround::GetHeightAboveWater(pos2.x, pos2.z, false);
 
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
 
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
 
 
 		pos1 = float3(bx + (a    ) * dx, 0.0f, by + dy * 10.0f);
@@ -132,13 +132,13 @@ void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IPro
 		pos1.y = CGround::GetHeightAboveWater(pos1.x, pos1.z, false);
 		pos2.y = CGround::GetHeightAboveWater(pos2.x, pos2.z, false);
 
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
 
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
 
 
 		pos1 = float3(bx, 0.0f, by + dy * (a    ));
@@ -146,13 +146,13 @@ void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IPro
 		pos1.y = CGround::GetHeightAboveWater(pos1.x, pos1.z, false);
 		pos2.y = CGround::GetHeightAboveWater(pos2.x, pos2.z, false);
 
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
 
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
 
 
 		pos1 = float3(bx + dx * 10.0f, 0.0f, by + dy * (a    ));
@@ -160,13 +160,13 @@ void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IPro
 		pos1.y = CGround::GetHeightAboveWater(pos1.x, pos1.z, false);
 		pos2.y = CGround::GetHeightAboveWater(pos2.x, pos2.z, false);
 
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
 
-		buffer->SafeAppend({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
-		buffer->SafeAppend({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos2 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1 + UpVector * 100.0f, {0.2f, 0.8f, 0.2f, 0.5f}});
+		buffer->AddVertex({pos1                    , {0.2f, 0.8f, 0.2f, 0.5f}});
 	}
 
 	shader->Enable();
