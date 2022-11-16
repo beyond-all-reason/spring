@@ -56,11 +56,24 @@ struct SColor
 	constexpr SColor operator* (float s) const {
 		return SColor(int(float(r) * s), int(float(g) * s), int(float(b) * s), int(float(a) * s));
 	}
+	template<std::size_t N>
+	constexpr SColor operator* (const float(&s)[N]) const {
+		return SColor(int(float(r) * s[0]), int(float(g) * s[1]), int(float(b) * s[2]), int(float(a) * s[3]));
+	}
 	constexpr SColor& operator*= (float s) {
 		r = uint8_t(float(r) * s);
 		g = uint8_t(float(g) * s);
 		b = uint8_t(float(b) * s);
 		a = uint8_t(float(a) * s);
+
+		return *this;
+	}
+	template<std::size_t N>
+	constexpr SColor& operator*= (const float(&s)[N]) {
+		r = uint8_t(float(r) * s[0]);
+		g = uint8_t(float(g) * s[1]);
+		b = uint8_t(float(b) * s[2]);
+		a = uint8_t(float(a) * s[3]);
 
 		return *this;
 	}
