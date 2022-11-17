@@ -269,17 +269,17 @@ void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewS
 		switch (position)
 		{
 			case (MINIMAP_POSITION_CENTER):
-			{
-				curPos.x = viewPosX + (viewSizeX - curDim.x) / 2;
-			} break;
+				{
+					curPos.x = viewPosX + (viewSizeX - curDim.x) / 2;
+				} break;
 			case (MINIMAP_POSITION_LEFT):
-			{
-				curPos.x = viewPosX;
-			} break;
+				{
+					curPos.x = viewPosX;
+				} break;
 			case (MINIMAP_POSITION_RIGHT):
-			{
-				curPos.x = viewPosX + (viewSizeX - curDim.x);
-			} break;
+				{
+					curPos.x = viewPosX + (viewSizeX - curDim.x);
+				} break;
 		}
 	}
 }
@@ -498,7 +498,11 @@ void CMiniMap::UpdateGeometry()
 	// in mouse coordinates
 	mapBox.xmin = curPos.x;
 	mapBox.xmax = mapBox.xmin + curDim.x - 1;
-	mapBox.ymin = globalRendering->viewSizeY - (curPos.y + curDim.y);
+	if (globalRendering->dualScreenMode) {
+		mapBox.ymin = globalRendering->winSizeY - (curPos.y + curDim.y) + std::max(globalRendering->viewWindowOffsetY, globalRendering->dualWindowOffsetY);
+	} else { // below should be equal to above regardless of dual screen, but we want to be safe
+		mapBox.ymin = globalRendering->viewSizeY - (curPos.y + curDim.y);
+	}
 	mapBox.ymax = mapBox.ymin + curDim.y - 1;
 
 	// FIXME:
@@ -1086,11 +1090,11 @@ void CMiniMap::UpdateTextureCache()
 	{
 		curPos = {0, 0};
 
-			glViewport(0, 0, minimapTexSize.x, minimapTexSize.y);
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
+		glViewport(0, 0, minimapTexSize.x, minimapTexSize.y);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-			DrawForReal(false, true, false);
+		DrawForReal(false, true, false);
 
 		curPos = tmpPos;
 	}
@@ -1538,7 +1542,7 @@ void CMiniMap::DrawButtons()
 		} else {
 			return;
 		}
-	}	else if (!mouseMove && !mouseResize &&
+	} else if (!mouseMove && !mouseResize &&
 	           !mapBox.Inside(x, y) && !buttonBox.Inside(x, y)) {
 		showButtons = false;
 		return;
