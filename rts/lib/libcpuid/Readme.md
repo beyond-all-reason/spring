@@ -105,6 +105,9 @@ Also, libcpuid is available for following systems in official repositories:
 * [Solus](https://packages.getsol.us/shannon/libc/libcpuid/): `eopkg install libcpuid libcpuid-devel`
 * [Ubuntu (since version 20.04 "Focal Fossa")](https://packages.ubuntu.com/source/focal/libcpuid) : `apt install cpuidtool libcpuid-dev`
 
+Below, the full lists of repositories:  
+[![Packaging status](https://repology.org/badge/vertical-allrepos/libcpuid.svg?exclude_unsupported=1)](https://repology.org/project/libcpuid/versions)
+
 #### Build tool
 
 * Vcpkg: `vcpkg install cpuid`

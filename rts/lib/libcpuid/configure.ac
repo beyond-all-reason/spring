@@ -1,4 +1,4 @@
-AC_INIT([libcpuid CPU Identification library], [0.6.0], [libcpuid-devel@lists.sourceforge.net], [libcpuid])
+AC_INIT([libcpuid CPU Identification library], [0.6.2], [libcpuid-devel@lists.sourceforge.net], [libcpuid])
 AC_CONFIG_SRCDIR([libcpuid/libcpuid.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -26,9 +26,11 @@ dnl 14:0:1   Version 0.4.1: DB updates, and a lot of rdmsr improvements
 dnl 15:0:0   Version 0.5.0: add one more field per cpu_raw_data_t (amd_fn8000001dh) and cpu_id_t l1_{data,instruction}_{assoc,cacheline}
 dnl 15:0:1   Version 0.5.1: DB updates
 dnl 16:0:0   Version 0.6.0: add more fields in cpu_id_t (cache instances), support for hybrid CPUs, DB updates
+dnl 16:0:1   Version 0.6.1: DB updates, fixes
+dnl 16:0:2   Version 0.6.2: DB updates, fix for single-core CPUs
 LIBCPUID_CURRENT=16
 LIBCPUID_AGE=0
-LIBCPUID_REVISION=0
+LIBCPUID_REVISION=2
 AC_SUBST([LIBCPUID_AGE])
 AC_SUBST([LIBCPUID_REVISION])
 AC_SUBST([LIBCPUID_CURRENT])

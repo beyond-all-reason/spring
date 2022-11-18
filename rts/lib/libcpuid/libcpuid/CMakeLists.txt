@@ -26,8 +26,8 @@ set_property(TARGET cpuid PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(cpuid SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 target_compile_definitions(cpuid PRIVATE VERSION="${PROJECT_VERSION}")
-set_target_properties(cpuid PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(cpuid PROPERTIES SOVERSION ${SOVERSION})
+set_target_properties(cpuid PROPERTIES VERSION "${LIBCPUID_CURRENT}.${LIBCPUID_AGE}.${LIBCPUID_REVISION}")
+set_target_properties(cpuid PROPERTIES SOVERSION "${LIBCPUID_CURRENT}")
 set_target_properties(cpuid PROPERTIES PUBLIC_HEADER "libcpuid.h;libcpuid_types.h;libcpuid_constants.h")
 
 # Documentation

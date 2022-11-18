@@ -942,7 +942,7 @@ static double get_info_bus_clock(struct msr_info_t *info)
 		PstateMaxVal is the the lowest-performance non-boosted P-state */
 		addr = get_amd_last_pstate_addr(info);
 		err  = cpu_rdmsr_range(info->handle, MSR_PSTATE_L, 6, 4, &reg);
-		err += get_amd_multipliers(info, addr - reg, &mult);
+		err += get_amd_multipliers(info, addr - (uint32_t) reg, &mult);
 		if (!err) return (double) info->cpu_clock / mult;
 	}
 

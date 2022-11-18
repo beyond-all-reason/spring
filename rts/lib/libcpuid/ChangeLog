@@ -122,3 +122,22 @@ Version 0.6.0 (2022-09-23):
 	* Support for more AMD Kabini (Sempron + Athlon)
 	* Improve msr_serialize_raw_data()
 	* Support for AMD Zen 2 custom APU for Steam Deck
+
+Version 0.6.1 (2022-10-23):
+	* Support for AMD Raphael
+	* Support for AMD Dali
+	* Support for AMD Van Gogh
+	* Fix stuck cpuid_tool due to set_cpu_affinity() on Windows (#172)
+	* Remove AMD Warhol from DB (Zen3+ cancelled)
+	* Fix physical core count computed by cpu_identify_all() when HT is disabled (#175)
+	* Fix shared library symlinks with CMake (#174)
+	* Support for Intel Raptor Lake-S
+
+Version 0.6.2 (2022-11-11):
+	* Fix segmentation fault in cpu_identify_all() for single-core CPUs
+	* Support for Intel Penryn L
+	* Support for Intel Tremont
+	* Support for AMD Mendocino
+	* Support for Intel Ice Lake (Xeon-D)
+	* Support for AMD Zen 2 Desktop Kit CPUs (4700S + 4800S)
+	* Support for AMD Athlon 64 Sherman

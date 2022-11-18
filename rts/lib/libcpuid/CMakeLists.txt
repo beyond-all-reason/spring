@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(VERSION "0.6.0")
-set(SOVERSION 16)
+set(VERSION "0.6.2")
+set(LIBCPUID_CURRENT 16)
+set(LIBCPUID_AGE 0)
+set(LIBCPUID_REVISION 2)
 project(
   cpuid
   LANGUAGES C CXX ASM_MASM
@@ -21,7 +23,7 @@ if(UNIX)
   set(exec_prefix "\${prefix}")
   set(libdir "\${exec_prefix}/lib")
   set(includedir "\${prefix}/include")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wuninitialized -Wstrict-prototypes -Wformat -Wformat-security")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wuninitialized -Wstrict-prototypes -Wformat -Wformat-security -Wunused-parameter")
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libcpuid.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/libcpuid.pc" ESCAPE_QUOTES
                  @ONLY)
   install(FILES "${PROJECT_BINARY_DIR}/libcpuid.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")

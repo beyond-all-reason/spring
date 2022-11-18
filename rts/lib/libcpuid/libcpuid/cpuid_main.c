@@ -103,6 +103,12 @@ static void apic_info_t_constructor(struct internal_apic_info_t* apic_info, logi
 	apic_info->logical_cpu = logical_cpu;
 }
 
+static void core_instances_t_constructor(struct internal_core_instances_t* data)
+{
+	data->instances = 0;
+	memset(data->htable, 0, sizeof(data->htable));
+}
+
 static void cache_instances_t_constructor(struct internal_cache_instances_t* data)
 {
 	memset(data->instances, 0, sizeof(data->instances));
@@ -192,8 +198,9 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 #if (_WIN32_WINNT >= 0x0601)
 	int groups = GetActiveProcessorGroupCount();
 	int total_processors = 0;
-	int group = -1;
+	int group = 0;
 	int number = 0;
+	int found = 0;
 	HANDLE thread = GetCurrentThread();
 	GROUP_AFFINITY groupAffinity;
 
@@ -202,14 +209,12 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 		if (total_processors + processors > logical_cpu) {
 			group = i;
 			number = logical_cpu - total_processors;
+			found = 1;
 			break;
 		}
 		total_processors += processors;
 	}
-
-	// Tarnished Knight: needed this check to avoid a infinite loop.
-	if (group < 0)
-		return false;
+	if (!found) return 0; // logical CPU # too large, does not exist
 
 	memset(&groupAffinity, 0, sizeof(groupAffinity));
 	groupAffinity.Group = (WORD) group;
@@ -770,6 +775,7 @@ static void make_list_from_string(const char* csv, struct cpu_list_t* list)
 
 static bool cpu_ident_apic_id(logical_cpu_t logical_cpu, struct cpu_raw_data_t* raw, struct internal_apic_info_t* apic_info)
 {
+	bool is_apic_id_supported = false;
 	uint8_t subleaf;
 	uint8_t level_type = 0;
 	uint8_t mask_core_shift = 0;
@@ -778,19 +784,20 @@ static bool cpu_ident_apic_id(logical_cpu_t logical_cpu, struct cpu_raw_data_t* 
 	char vendor_str[VENDOR_STR_MAX];
 
 	apic_info_t_constructor(apic_info, logical_cpu);
-	vendor = cpuid_vendor_identify(raw->basic_cpuid[0], vendor_str);
-	if (vendor == VENDOR_UNKNOWN) {
-		set_error(ERR_CPU_UNKN);
-		return false;
-	}
 
 	/* Only AMD and Intel x86 CPUs support Extended Processor Topology Eumeration */
+	vendor = cpuid_vendor_identify(raw->basic_cpuid[0], vendor_str);
 	switch (vendor) {
 		case VENDOR_INTEL:
 		case VENDOR_AMD:
+			is_apic_id_supported = true;
 			break;
+		case VENDOR_UNKNOWN:
+			set_error(ERR_CPU_UNKN);
+			/* Fall through */
 		default:
-			return false;
+			is_apic_id_supported = false;
+			break;
 	}
 
 	/* Documentation: Intel® 64 and IA-32 Architectures Software Developer’s Manual
@@ -800,8 +807,10 @@ static bool cpu_ident_apic_id(logical_cpu_t logical_cpu, struct cpu_raw_data_t* 
 	*/
 
 	/* Check if leaf 0Bh is supported and if number of logical processors at this level type is greater than 0 */
-	if ((raw->basic_cpuid[0][EAX] < 11) || (EXTRACTS_BITS(raw->basic_cpuid[11][EBX], 15, 0) == 0))
+	if (!is_apic_id_supported || (raw->basic_cpuid[0][EAX] < 11) || (EXTRACTS_BITS(raw->basic_cpuid[11][EBX], 15, 0) == 0)) {
+		warnf("Warning: APIC ID are not supported, core count can be wrong if SMT is disabled and cache instances count will not be available.\n");
 		return false;
+	}
 
 	/* Derive core mask offsets */
 	for (subleaf = 0; (raw->intel_fn11[subleaf][EAX] != 0x0) && (raw->intel_fn11[subleaf][EBX] != 0x0) && (subleaf < MAX_INTELFN11_LEVEL); subleaf++)
@@ -1010,9 +1019,28 @@ int cpu_identify(struct cpu_raw_data_t* raw, struct cpu_id_t* data)
 	return r;
 }
 
+static void update_core_instances(struct internal_core_instances_t* cores,
+                                   struct internal_apic_info_t* apic_info)
+{
+	uint32_t core_id_index = 0;
+
+	core_id_index = apic_info->core_id % CORES_HTABLE_SIZE;
+	if ((cores->htable[core_id_index].core_id == 0) || (cores->htable[core_id_index].core_id == apic_info->core_id)) {
+		if (cores->htable[core_id_index].num_logical_cpu == 0)
+			cores->instances++;
+		cores->htable[core_id_index].core_id = apic_info->core_id;
+		cores->htable[core_id_index].num_logical_cpu++;
+	}
+	else {
+		warnf("update_core_instances: collision at index %u (core ID is %i, not %i)\n",
+			core_id_index, cores->htable[core_id_index].core_id, apic_info->core_id);
+	}
+}
+
 static void update_cache_instances(struct internal_cache_instances_t* caches,
                                    struct internal_apic_info_t* apic_info,
-                                   struct internal_id_info_t* id_info)
+                                   struct internal_id_info_t* id_info,
+                                   bool debugf_is_needed)
 {
 	uint32_t cache_id_index = 0;
 	cache_type_t level;
@@ -1036,9 +1064,10 @@ static void update_cache_instances(struct internal_cache_instances_t* caches,
 		}
 	}
 
-	debugf(3, "Logical CPU %4u: APIC ID %4i, package ID %4i, core ID %4i, thread %i, L1I$ ID %4i, L1D$ ID %4i, L2$ ID %4i, L3$ ID %4i, L4$ ID %4i\n",
-		apic_info->logical_cpu, apic_info->apic_id, apic_info->package_id, apic_info->core_id, apic_info->smt_id,
-		apic_info->cache_id[L1I], apic_info->cache_id[L1D], apic_info->cache_id[L2], apic_info->cache_id[L3], apic_info->cache_id[L4]);
+	if (debugf_is_needed)
+		debugf(3, "Logical CPU %4u: APIC ID %4i, package ID %4i, core ID %4i, thread %i, L1I$ ID %4i, L1D$ ID %4i, L2$ ID %4i, L3$ ID %4i, L4$ ID %4i\n",
+			apic_info->logical_cpu, apic_info->apic_id, apic_info->package_id, apic_info->core_id, apic_info->smt_id,
+			apic_info->cache_id[L1I], apic_info->cache_id[L1D], apic_info->cache_id[L2], apic_info->cache_id[L3], apic_info->cache_id[L4]);
 }
 
 int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t* system)
@@ -1060,6 +1089,7 @@ int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t*
 	struct cpu_raw_data_array_t my_raw_array;
 	struct internal_id_info_t id_info;
 	struct internal_apic_info_t apic_info;
+	struct internal_core_instances_t cores_type;
 	struct internal_cache_instances_t caches_type, caches_all;
 
 	if (system == NULL)
@@ -1070,6 +1100,7 @@ int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t*
 		raw_array = &my_raw_array;
 	}
 	system_id_t_constructor(system);
+	core_instances_t_constructor(&cores_type);
 	cache_instances_t_constructor(&caches_type);
 	cache_instances_t_constructor(&caches_all);
 	if (raw_array->with_affinity)
@@ -1105,36 +1136,64 @@ int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t*
 			set_affinity_mask_bit(logical_cpu, &affinity_mask);
 			num_logical_cpus++;
 			if (is_apic_supported) {
-				update_cache_instances(&caches_type, &apic_info, &id_info);
-				update_cache_instances(&caches_all,  &apic_info, &id_info);
+				update_core_instances(&cores_type, &apic_info);
+				update_cache_instances(&caches_type, &apic_info, &id_info, true);
+				update_cache_instances(&caches_all,  &apic_info, &id_info, false);
 			}
 		}
 
-		/* Update logical and physical CPU counters in system->cpu_types on the last iteration or when purpose is different than previous core */
+		/* Update logical CPU counters, physical CPU counters and cache instance in system->cpu_types
+		   Note: we need to differenciate two events:
+		     - is_new_cpu_type (e.g. purpose was 'efficiency' during previous loop, and now purpose is 'performance')
+		     - is_last_item (i.e. this is the last iteration in raw_array->num_raw)
+		   In some cases, both events can occur during the same iteration, thus we have to update counters twice for the same logical_cpu.
+		   This occurs with single-core CPU type. For instance, Pentacore Lakefield CPU consists of:
+		     - 1 "big" Sunny Cove core
+		     - 4 "little" Tremont cores
+		   On the last iteration, there is no need to reset values for the next purpose.
+		*/
 		if (raw_array->with_affinity && (is_last_item || (is_new_cpu_type && (system->num_cpu_types > 1)))) {
-			cpu_type_index   = is_new_cpu_type ? system->num_cpu_types - 2 : system->num_cpu_types - 1;
-			is_smt_supported = (system->cpu_types[cpu_type_index].num_logical_cpus % system->cpu_types[cpu_type_index].num_cores) == 0;
-			smt_divisor      = is_smt_supported ? system->cpu_types[cpu_type_index].num_logical_cpus / system->cpu_types[cpu_type_index].num_cores : 1.0;
-			/* Save current values in system->cpu_types[cpu_type_index] and reset values for the next purpose */
-			system->cpu_types[cpu_type_index].num_cores        = num_logical_cpus / smt_divisor;
-			system->cpu_types[cpu_type_index].num_logical_cpus = num_logical_cpus;
-			num_logical_cpus                                   = 1;
-			copy_affinity_mask(&system->cpu_types[cpu_type_index].affinity_mask, &affinity_mask);
-			if (!is_last_item) {
-				init_affinity_mask(&affinity_mask);
-				set_affinity_mask_bit(logical_cpu, &affinity_mask);
-			}
-			if (is_apic_supported) {
-				system->cpu_types[cpu_type_index].l1_instruction_instances = caches_type.instances[L1I];
-				system->cpu_types[cpu_type_index].l1_data_instances        = caches_type.instances[L1D];
-				system->cpu_types[cpu_type_index].l2_instances             = caches_type.instances[L2];
-				system->cpu_types[cpu_type_index].l3_instances             = caches_type.instances[L3];
-				system->cpu_types[cpu_type_index].l4_instances             = caches_type.instances[L4];
-				if (!is_last_item) {
-					cache_instances_t_constructor(&caches_type);
-					update_cache_instances(&caches_type, &apic_info, &id_info);
-					update_cache_instances(&caches_all,  &apic_info, &id_info);
+			enum event_t {
+				EVENT_NEW_CPU_TYPE = 0,
+				EVENT_LAST_ITEM    = 1
+			};
+			const enum event_t first_event = is_new_cpu_type && (system->num_cpu_types > 1) ? EVENT_NEW_CPU_TYPE : EVENT_LAST_ITEM;
+			const enum event_t last_event  = is_last_item                                   ? EVENT_LAST_ITEM    : EVENT_NEW_CPU_TYPE;
+			for (enum event_t event = first_event; event <= last_event; event++) {
+				switch (event) {
+					case EVENT_NEW_CPU_TYPE: cpu_type_index = system->num_cpu_types - 2; break;
+					case EVENT_LAST_ITEM:    cpu_type_index = system->num_cpu_types - 1; break;
+					default: warnf("Warning: event %i in cpu_identify_all() not handled.\n", event); return set_error(ERR_NOT_IMP);
 				}
+				copy_affinity_mask(&system->cpu_types[cpu_type_index].affinity_mask, &affinity_mask);
+				if (event != EVENT_LAST_ITEM) {
+					init_affinity_mask(&affinity_mask);
+					set_affinity_mask_bit(logical_cpu, &affinity_mask);
+				}
+				if (is_apic_supported) {
+					system->cpu_types[cpu_type_index].num_cores                = cores_type.instances;
+					system->cpu_types[cpu_type_index].l1_instruction_instances = caches_type.instances[L1I];
+					system->cpu_types[cpu_type_index].l1_data_instances        = caches_type.instances[L1D];
+					system->cpu_types[cpu_type_index].l2_instances             = caches_type.instances[L2];
+					system->cpu_types[cpu_type_index].l3_instances             = caches_type.instances[L3];
+					system->cpu_types[cpu_type_index].l4_instances             = caches_type.instances[L4];
+					if (event != EVENT_LAST_ITEM) {
+						core_instances_t_constructor(&cores_type);
+						cache_instances_t_constructor(&caches_type);
+						update_core_instances(&cores_type, &apic_info);
+						update_cache_instances(&caches_type, &apic_info, &id_info, true);
+						update_cache_instances(&caches_all,  &apic_info, &id_info, false);
+					}
+				}
+				else {
+					/* Note: if SMT is disabled by BIOS, smt_divisor will no reflect the current state properly */
+					is_smt_supported = (system->cpu_types[cpu_type_index].num_logical_cpus % system->cpu_types[cpu_type_index].num_cores) == 0;
+					smt_divisor      = is_smt_supported ? system->cpu_types[cpu_type_index].num_logical_cpus / system->cpu_types[cpu_type_index].num_cores : 1.0;
+					system->cpu_types[cpu_type_index].num_cores = (int32_t) num_logical_cpus / smt_divisor;
+				}
+				/* Save current values in system->cpu_types[cpu_type_index] and reset values for the next purpose */
+				system->cpu_types[cpu_type_index].num_logical_cpus = num_logical_cpus;
+				num_logical_cpus = 1;
 			}
 		}
 		prev_package_id = cur_package_id;
@@ -1221,7 +1280,7 @@ char* affinity_mask_str_r(cpu_affinity_mask_t* affinity_mask, char* buffer, uint
 	logical_cpu_t str_index = 0;
 	bool do_print = false;
 
-	while (str_index + 1 < buffer_len) {
+	while (((uint32_t) str_index) + 1 < buffer_len) {
 		if (do_print || (mask_index < 4) || (affinity_mask->__bits[mask_index] != 0x00)) {
 			snprintf(&buffer[str_index], 3, "%02X", affinity_mask->__bits[mask_index]);
 			do_print = true;
