@@ -27,7 +27,7 @@ OGLDBInfo::OGLDBInfo(const std::string& glRenderer_, const std::string& myOS_)
 		try {
 			std::stringstream httpData;
 
-			spring::ScopedNullResource(
+			spring::ScopedNullResource scw(
 				[]() { CurlWrapper::InitCurl(); },
 				[]() { CurlWrapper::KillCurl(); }
 			);
