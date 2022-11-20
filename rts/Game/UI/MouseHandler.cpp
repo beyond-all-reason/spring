@@ -363,8 +363,13 @@ bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, 
 	if (gu->fpsMode)
 		return false;
 
+	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode())
+		return false;
+
 	const ButtonPressEvt& bp = buttons[SDL_BUTTON_LEFT];
 
+	if (!bp.pressed)
+		return false;
 	if (bp.chorded)
 		return false;
 	if (bp.movement <= dragSelectionThreshold)
@@ -552,14 +557,6 @@ void CMouseHandler::DrawSelectionBox() const
 	float3 btLeft, btRight, tpLeft, tpRight;
 
 	if (activeReceiver != nullptr)
-		return;
-
-	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode())
-		return;
-
-	const ButtonPressEvt& bp = buttons[SDL_BUTTON_LEFT];
-
-	if (!bp.pressed)
 		return;
 
 	if (!GetSelectionBoxVertices(btLeft, btRight, tpLeft, tpRight))
