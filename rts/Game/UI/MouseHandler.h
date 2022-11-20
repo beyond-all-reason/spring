@@ -36,6 +36,7 @@ public:
 
 	void Update();
 	void UpdateCursors();
+	void UpdateCursorCameraDir();
 
 	void HideMouse();
 	void ShowMouse();
@@ -43,7 +44,7 @@ public:
 	void CancelButtonMovement(int button) { buttons[button].movement = 0; }
 	void WarpMouse(int x, int y);
 
-	void DrawSelectionBox(); /// draw mousebox (selection box)
+	void DrawSelectionBox() const; /// draw mousebox (selection box)
 	void DrawCursor();
 
 	void MouseRelease(int x, int y, int button);

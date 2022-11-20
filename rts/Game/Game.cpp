@@ -1366,6 +1366,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		unitTracker.SetCam();
 
 	camera->Update();
+	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera
 	shadowHandler.Update();
 
 	//Update per-drawFrame UBO
