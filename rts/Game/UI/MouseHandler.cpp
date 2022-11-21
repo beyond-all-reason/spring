@@ -78,7 +78,10 @@ CMouseHandler::CMouseHandler()
 {
 	const int2 viewMouseCenter = GetViewMouseCenter();
 
-	dir = GetCursorCameraDir(lastx = viewMouseCenter.x, lasty = viewMouseCenter.y);
+	lastx = viewMouseCenter.x;
+	lasty = viewMouseCenter.y;
+
+	UpdateCursorCameraDir();
 
 #ifndef __APPLE__
 	hardwareCursor = configHandler->GetBool("HardwareCursor");
@@ -238,6 +241,8 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	// Origin for mousecursor on internal coordinates is top border of view screen
 	lasty = y - globalRendering->viewWindowOffsetY;
 
+	UpdateCursorCameraDir();
+
 	// switching to MMB-mode while user is moving mouse can generate
 	// a spurious event in the opposite direction (if cursor happens
 	// to pass the center pixel) which would cause a camera position
@@ -251,8 +256,6 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	// is not required when using relative motion mode, can add directly
 	scrollx += (dx * hideCursor);
 	scrolly += (dy * hideCursor);
-
-	dir = GetCursorCameraDir(x, lasty);
 
 	if (locked) {
 		camHandler->GetCurrentController().MouseMove(float3(dx, dy, invertMouse ? -1.0f : 1.0f));
@@ -360,8 +363,13 @@ bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, 
 	if (gu->fpsMode)
 		return false;
 
+	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode())
+		return false;
+
 	const ButtonPressEvt& bp = buttons[SDL_BUTTON_LEFT];
 
+	if (!bp.pressed)
+		return false;
 	if (bp.chorded)
 		return false;
 	if (bp.movement <= dragSelectionThreshold)
@@ -544,23 +552,12 @@ void CMouseHandler::MouseWheel(float delta)
 }
 
 
-void CMouseHandler::DrawSelectionBox()
+void CMouseHandler::DrawSelectionBox() const
 {
 	float3 btLeft, btRight, tpLeft, tpRight;
 
 	if (activeReceiver != nullptr)
 		return;
-
-	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode())
-		return;
-
-	const ButtonPressEvt& bp = buttons[SDL_BUTTON_LEFT];
-
-	if (!bp.pressed){
-		return;
-	}
-
-	dir = GetCursorCameraDir(lastx, lasty);
 
 	if (!GetSelectionBoxVertices(btLeft, btRight, tpLeft, tpRight))
 		return;
@@ -679,8 +676,11 @@ void CMouseHandler::Update()
 {
 	SetCursor(queuedCursorName);
 
-	if (!hideCursor)
+	if (!hideCursor) {
+		mouse->UpdateCursorCameraDir();
+
 		return;
+	}
 
 	const int2 viewMouseCenter = GetViewMouseCenter();
 
@@ -691,6 +691,8 @@ void CMouseHandler::Update()
 	scrolly *= 0.9f;
 	lastx = viewMouseCenter.x;
 	lasty = viewMouseCenter.y;
+
+	UpdateCursorCameraDir();
 
 	if (!globalRendering->active)
 		return;
@@ -823,6 +825,12 @@ void CMouseHandler::UpdateCursors()
 	for (const auto& element: cursorFileMap) {
 		loadedCursors[element.second].Update();
 	}
+}
+
+
+void CMouseHandler::UpdateCursorCameraDir()
+{
+	dir = GetCursorCameraDir(lastx, lasty);
 }
 
 

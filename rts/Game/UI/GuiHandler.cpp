@@ -3721,14 +3721,13 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 
 		if (buildeeDef != nullptr) {
 			if ((rayTraceDist = CGround::LineGroundWaterCol(tracePos, traceDir, maxTraceDist, buildeeDef->floatOnWater, false)) > 0.0f) {
-				const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
-				const float bpDist = CGround::LineGroundWaterCol(bp.camPos, bp.dir, maxTraceDist, buildeeDef->floatOnWater, false);
-
 				// get the build information
 				const float3 cPos = tracePos + traceDir * rayTraceDist;
-				const float3 bPos = bp.camPos + bp.dir * bpDist;
 
+				const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
 				if (GetQueueKeystate() && bp.pressed) {
+					const float bpDist = CGround::LineGroundWaterCol(bp.camPos, bp.dir, maxTraceDist, buildeeDef->floatOnWater, false);
+					const float3 bPos = bp.camPos + bp.dir * bpDist;
 					const BuildInfo cInfo = BuildInfo(buildeeDef, cPos, buildFacing);
 					const BuildInfo bInfo = BuildInfo(buildeeDef, bPos, buildFacing);
 
