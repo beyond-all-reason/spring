@@ -38,8 +38,8 @@ void CUnitDefHandler::Init(LuaParser* defsParser)
 	std::vector<std::string> unitDefNames;
 	rootTable.GetKeys(unitDefNames);
 
-	unitDefIDs.reserve(unitDefNames.size() + 1);
-	unitDefsVector.reserve(unitDefNames.size() + 1);
+	unitDefIDs.reserve(unitDefNames.size());
+	unitDefsVector.reserve(unitDefNames.size() + 1); // UnitDef ID's start with 1
 	unitDefsVector.emplace_back();
 
 	for (unsigned int a = 0; a < unitDefNames.size(); ++a) {

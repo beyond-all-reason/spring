@@ -253,6 +253,7 @@ static inline const MoveDef* getUnitDefMoveDefById(int skirmishAIId, int unitDef
 }
 
 static inline const WeaponDef* getWeaponDefById(int skirmishAIId, int weaponDefId) {
+	assert(weaponDefId > 0); // transitory assert for 0-index to 1-index weaponDefs change
 	return (weaponDefHandler->GetWeaponDefByID(weaponDefId));
 }
 

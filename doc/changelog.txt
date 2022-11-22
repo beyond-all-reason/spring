@@ -5,6 +5,11 @@ Spring changelog
 -- BAR105 --------------------------------------------------------
 
 BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
+ ! WeaponDefs now uses the same indexing as Unit and Feature Defs, i.e.:
+   WeaponDefs[0] == nil and WeaponDefs size was increased by 1.
+   This avoids a category of bugs due to game developers assuming a sane and
+   consistent indexing (for i=1, #WeaponDefs should work as expected now).
+
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
    To get back old behaviour, make sure to rebind them (remember "Any+", as in "Any+Alt")
 

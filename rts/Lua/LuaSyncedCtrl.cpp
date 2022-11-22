@@ -4693,7 +4693,10 @@ int LuaSyncedCtrl::SpawnProjectile(lua_State* L)
 {
 	ProjectileParams params;
 
-	if ((params.weaponDef = weaponDefHandler->GetWeaponDefByID(luaL_checkint(L, 1))) == nullptr)
+	const int weaponDefId = luaL_checkint(L, 1);
+	assert(weaponDefId > 0); // transitory assert for 0-index to 1-index weaponDefs change
+
+	if ((params.weaponDef = weaponDefHandler->GetWeaponDefByID(weaponDefId)) == nullptr)
 		return 0;
 
 	if (!ParseProjectileParams(L, params, 2, __func__))
@@ -4770,7 +4773,9 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 			}
 		} break;
 		case hashString("weaponDef"): {
-			params.weaponDef = weaponDefHandler->GetWeaponDefByID(lua_tofloat(L, index + 1));
+			const int weaponDefId = lua_tofloat(L, index + 1);
+			assert(weaponDefId > 0); // transitory assert for 0-index to 1-index weaponDefs change
+			params.weaponDef = weaponDefHandler->GetWeaponDefByID(weaponDefId);
 		} break;
 		case hashString("owner"): {
 			params.owner = ParseUnit(L, __func__, index + 1);

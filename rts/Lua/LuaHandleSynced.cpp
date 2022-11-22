@@ -363,9 +363,9 @@ bool CSyncedLuaHandle::Init(const std::string& code, const std::string& file)
 
 	watchUnitDefs.resize(unitDefHandler->NumUnitDefs() + 1, false);
 	watchFeatureDefs.resize(featureDefHandler->NumFeatureDefs() + 1, false);
-	watchExplosionDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
-	watchProjectileDefs.resize(weaponDefHandler->NumWeaponDefs() + 1, false); // last bit controls piece-projectiles
-	watchAllowTargetDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
+	watchExplosionDefs.resize(weaponDefHandler->NumWeaponDefs() + 1, false);
+	watchProjectileDefs.resize((weaponDefHandler->NumWeaponDefs() + 1) + 1, false); // last bit controls piece-projectiles
+	watchAllowTargetDefs.resize(weaponDefHandler->NumWeaponDefs() + 1, false);
 
 	// load the standard libraries
 	SPRING_LUA_OPEN_LIB(L, luaopen_base);
