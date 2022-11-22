@@ -816,6 +816,9 @@ void CSMFReadMap::ReloadTextures()
 
 void CSMFReadMap::UpdateShadingTexture()
 {
+	if (shadingTexUpdateProgress < 0)
+		return;
+
 	const int xsize = mapDims.mapx;
 	const int ysize = mapDims.mapy;
 	const int pixels = xsize * ysize;
@@ -823,9 +826,6 @@ void CSMFReadMap::UpdateShadingTexture()
 	// shading texture no longer has much use (minimap etc), limit its updaterate
 	//FIXME make configurable or FPS-dependent?
 	const int update_rate = (globalRendering->haveGLSL ? 64*64 : 64*128);
-
-	if (shadingTexUpdateProgress < 0)
-		return;
 
 	if (shadingTexUpdateProgress >= pixels) {
 		if (shadingTexUpdateNeeded) {

@@ -263,10 +263,10 @@ void CWorldDrawer::GenerateIBLTextures() const
 			SCOPED_TIMER("Draw::World::UpdateSkyTex");
 			ISky::GetSky()->UpdateSkyTexture();
 		}
-		{
-			SCOPED_TIMER("Draw::World::UpdateShadingTex");
-			readMap->UpdateShadingTexture();
-		}
+	}
+	{
+		SCOPED_TIMER("Draw::World::UpdateShadingTex");
+		readMap->UpdateShadingTexture();
 	}
 
 	if (FBO::IsSupported())
