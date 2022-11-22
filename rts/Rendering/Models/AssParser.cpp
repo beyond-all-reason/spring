@@ -510,16 +510,32 @@ void CAssParser::LoadPieceGeometry(SAssPiece* piece, const S3DModel* model, cons
 			// vertex normal
 			const aiVector3D& aiNormal = mesh->mNormals[vertexIndex];
 
-			if (!IS_QNAN(aiNormal))
+			if (IS_QNAN(aiNormal)) {
+				LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Malformed normal (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiNormal.x, aiNormal.y, aiNormal.z);
+				vertex.normal = float3{0.0f, 1.0f, 0.0f};
+			} else {
 				vertex.normal = (aiVectorToFloat3(aiNormal)).SafeANormalize();
+			}
 
 			// vertex tangent, x is positive in texture axis
 			if (mesh->HasTangentsAndBitangents()) {
 				const aiVector3D& aiTangent = mesh->mTangents[vertexIndex];
 				const aiVector3D& aiBitangent = mesh->mBitangents[vertexIndex];
 
-				vertex.sTangent = (aiVectorToFloat3(aiTangent)).SafeANormalize();
-				vertex.tTangent = (aiVectorToFloat3(aiBitangent)).SafeANormalize();
+				if (IS_QNAN(aiTangent.x) || IS_QNAN(aiTangent.y) || IS_QNAN(aiTangent.z)) {
+					LOG_SL(LOG_SECTION_PIECE, L_INFO, "Malformed tangent (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiTangent.x, aiTangent.y, aiTangent.z);
+					vertex.sTangent = float3{1.0f, 0.0f, 0.0f};
+				} else {
+					vertex.sTangent = (aiVectorToFloat3(aiTangent)).SafeANormalize();
+				}
+
+				if (IS_QNAN(aiBitangent.x) || IS_QNAN(aiBitangent.y) || IS_QNAN(aiBitangent.z)) {
+					LOG_SL(LOG_SECTION_PIECE, L_INFO, "Malformed bitangent (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiBitangent.x, aiBitangent.y, aiBitangent.z);
+					vertex.tTangent = vertex.normal.cross(vertex.sTangent);
+				} else {
+					vertex.tTangent = (aiVectorToFloat3(aiBitangent)).SafeANormalize();
+				}
+
 				vertex.tTangent *= -1.0f; // LH (assimp) to RH
 			}
 
