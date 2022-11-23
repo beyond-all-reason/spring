@@ -21,8 +21,8 @@ public:
 	virtual bool IsValid() const = 0;
 	virtual void GetStats(std::array<size_t, 8>& stats) const = 0;
 
-	static CglFontRenderer* CreateInstance();
-	static void DeleteInstance(CglFontRenderer*& instance);
+	static std::unique_ptr<CglFontRenderer> CreateInstance();
+	static void DeleteInstance(std::unique_ptr<CglFontRenderer>& instance);
 protected:
 	GLint currProgID = 0;
 

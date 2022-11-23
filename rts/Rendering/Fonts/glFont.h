@@ -140,7 +140,7 @@ public:
 		return allFonts;
 	}
 private:
-	CglFontRenderer* fontRenderer;
+	std::unique_ptr<CglFontRenderer> fontRenderer;
 
 	std::string fontPath;
 

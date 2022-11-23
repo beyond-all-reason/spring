@@ -308,27 +308,27 @@ void CglNoShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 }
 
 
-CglFontRenderer* CglFontRenderer::CreateInstance()
+std::unique_ptr<CglFontRenderer> CglFontRenderer::CreateInstance()
 {
 #ifndef HEADLESS
-	//return new CglNoShaderFontRenderer();
+	//return std::make_unique<CglNoShaderFontRenderer>();
 	if (globalRendering->amdHacks)
-		return new CglNoShaderFontRenderer();
+		return std::make_unique<CglNoShaderFontRenderer>();
 
-	auto* fr = new CglShaderFontRenderer();
+	auto fr = std::make_unique<CglShaderFontRenderer>();
 	if (fr->IsValid())
 		return fr;
 
-	delete fr;
-	return new CglNoShaderFontRenderer();
+	fr = nullptr;
+	return std::make_unique<CglNoShaderFontRenderer>();
 #else
-	return new CglNullFontRenderer();
+	return std::make_unique<CglNullFontRenderer>();
 #endif
 }
 
-void CglFontRenderer::DeleteInstance(CglFontRenderer*& instance)
+void CglFontRenderer::DeleteInstance(std::unique_ptr<CglFontRenderer>& instance)
 {
-	spring::SafeDelete(instance);
+	instance = nullptr;
 }
 
 void CglNullFontRenderer::GetStats(std::array<size_t, 8>& stats) const
