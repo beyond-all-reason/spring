@@ -144,14 +144,24 @@ void CglShaderFontRenderer::DrawTraingleElements()
 	primaryBufferTC.DrawElements(GL_TRIANGLES);
 }
 
-void CglShaderFontRenderer::PushGLState(const CglFont* fnt)
+void CglShaderFontRenderer::HandleTextureUpdate(CglFont& fnt)
+{
+	fnt.UpdateGlyphAtlasTexture();
+	GLint dl = 0;
+	glGetIntegerv(GL_LIST_INDEX, &dl);
+	if (dl == 0 || true) {
+		fnt.UploadGlyphAtlasTexture();
+	}
+}
+
+void CglShaderFontRenderer::PushGLState(const CglFont& fnt)
 {
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glBindTexture(GL_TEXTURE_2D, fnt->GetTexture());
+	glBindTexture(GL_TEXTURE_2D, fnt.GetTexture());
 
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgID);
 
@@ -248,7 +258,13 @@ void CglNoShaderFontRenderer::DrawTraingleElements()
 		i.clear();
 }
 
-void CglNoShaderFontRenderer::PushGLState(const CglFont* fnt)
+void CglNoShaderFontRenderer::HandleTextureUpdate(CglFont& fnt)
+{
+	fnt.UpdateGlyphAtlasTexture();
+	fnt.UploadGlyphAtlasTexture();
+}
+
+void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 {
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glDisable(GL_LIGHTING);
@@ -261,13 +277,13 @@ void CglNoShaderFontRenderer::PushGLState(const CglFont* fnt)
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
 	glLoadIdentity();
-	glScalef(1.0f / fnt->GetTextureWidth(), 1.0f / fnt->GetTextureHeight(), 1.0f);
+	glScalef(1.0f / fnt.GetTextureWidth(), 1.0f / fnt.GetTextureHeight(), 1.0f);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 
-	glBindTexture(GL_TEXTURE_2D, fnt->GetTexture());
+	glBindTexture(GL_TEXTURE_2D, fnt.GetTexture());
 }
 
 void CglNoShaderFontRenderer::PopGLState()

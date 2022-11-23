@@ -8,12 +8,13 @@
 class CglFont;
 class CglFontRenderer {
 public:
-	virtual ~CglFontRenderer() {}
+	virtual ~CglFontRenderer() = default;
 
 	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) = 0;
 	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) = 0;
 	virtual void DrawTraingleElements() = 0;
-	virtual void PushGLState(const CglFont* font) = 0;
+	virtual void HandleTextureUpdate(CglFont& font) = 0;
+	virtual void PushGLState(const CglFont& font) = 0;
 	virtual void PopGLState() = 0;
 
 	virtual bool IsLegacy() const = 0;
@@ -37,17 +38,18 @@ namespace Shader {
 class CglShaderFontRenderer final: public CglFontRenderer {
 public:
 	CglShaderFontRenderer();
-	virtual ~CglShaderFontRenderer() override;
+	~CglShaderFontRenderer() override;
 
-	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
-	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
-	virtual void DrawTraingleElements() override;
-	virtual void PushGLState(const CglFont* font) override;
-	virtual void PopGLState() override;
+	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
+	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
+	void DrawTraingleElements() override;
+	void HandleTextureUpdate(CglFont& font) override;
+	void PushGLState(const CglFont& font) override;
+	void PopGLState() override;
 
-	virtual bool IsLegacy() const override { return false; }
-	virtual bool IsValid() const override { return fontShader->IsValid(); }
-	virtual void GetStats(std::array<size_t, 8>& stats) const override;
+	bool IsLegacy() const override { return false; }
+	bool IsValid() const override { return fontShader->IsValid(); }
+	void GetStats(std::array<size_t, 8>& stats) const override;
 private:
 	TypedRenderBuffer<VA_TYPE_TC> primaryBufferTC;
 	TypedRenderBuffer<VA_TYPE_TC> outlineBufferTC;
@@ -59,17 +61,18 @@ private:
 class CglNoShaderFontRenderer final: public CglFontRenderer {
 public:
 	CglNoShaderFontRenderer();
-	virtual ~CglNoShaderFontRenderer() override;
+	~CglNoShaderFontRenderer() override;
 
-	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
-	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
-	virtual void DrawTraingleElements() override;
-	virtual void PushGLState(const CglFont* font) override;
-	virtual void PopGLState() override;
+	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
+	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
+	void DrawTraingleElements() override;
+	void HandleTextureUpdate(CglFont& font) override;
+	void PushGLState(const CglFont& font) override;
+	void PopGLState() override;
 
-	virtual bool IsLegacy() const override { return true; }
-	virtual bool IsValid() const override { return true; }
-	virtual void GetStats(std::array<size_t, 8>& stats) const override;
+	bool IsLegacy() const override { return true; }
+	bool IsValid() const override { return true; }
+	void GetStats(std::array<size_t, 8>& stats) const override;
 private:
 	void AddQuadTrianglesImpl(bool primary, VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl);
 
@@ -79,12 +82,13 @@ private:
 
 class CglNullFontRenderer final : public CglFontRenderer {
 	// Inherited via CglFontRenderer
-	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {};
-	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {};
-	virtual void DrawTraingleElements() override {};
-	virtual void PushGLState(const CglFont* font) override {};
-	virtual void PopGLState() override {};
-	virtual bool IsLegacy() const override { return true; };
-	virtual bool IsValid() const override { return true; };
-	virtual void GetStats(std::array<size_t, 8>& stats) const override;
+	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
+	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
+	void DrawTraingleElements() override {}
+	void HandleTextureUpdate(CglFont& font) override {}
+	void PushGLState(const CglFont& font) override {}
+	void PopGLState() override {}
+	bool IsLegacy() const override { return true; }
+	bool IsValid() const override { return true; }
+	void GetStats(std::array<size_t, 8>& stats) const override;
 };
