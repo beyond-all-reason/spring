@@ -841,7 +841,7 @@ size_t CGameHelper::GetEnemyUnitsNoLosTest(const float3& pos, float searchRadius
 
 namespace {
 	template <typename ExcludeCallable>
-	static void BuggerOffImpl(const float3& pos, float radius, bool spherical, bool forced, int teamId, ExcludeCallable test)
+	void BuggerOffImpl(const float3& pos, float radius, bool spherical, bool forced, int teamId, ExcludeCallable test)
 	{
 		// copy on purpose since BuggerOff can call risky stuff
 		QuadFieldQuery qfQuery;

@@ -302,8 +302,8 @@ static inline void DrawUnitColVol(const CUnit* u)
 
 				glPushMatrix();
 
-				float3 boDir = (f->boRelHeading == 0) ? static_cast<float3>(f->frontdir) : GetVectorFromHeading((f->heading + f->boRelHeading) % SPRING_MAX_HEADING);
-				float3 boPos = f->pos + boDir * f->boOffset;
+				float3 boRelDir = (f->boRelHeading == 0) ? FwdVector : GetVectorFromHeading(f->boRelHeading % SPRING_MAX_HEADING);
+				float3 boPos = f->pos + boRelDir * f->boOffset;
 
 				glTranslatef3(boPos - f->pos); //because of glMultMatrixf(u->GetTransformMatrix(false));
 
