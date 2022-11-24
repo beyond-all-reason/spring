@@ -178,7 +178,7 @@ void S3DModelVAO::UploadVBOs()
 	if (reinitVAO)
 		CreateVAO();
 
-	if (safeToDeleteVectors) {
+	if (safeToDeleteVectors && !vertData.empty()) {
 		// all models have been uploaded in the calls above
 		// safe to clear CPU copy of the data
 		vertData.clear();

@@ -40,7 +40,7 @@ public:
 	static S3DModelVAO& GetInstance() { assert(IsValid()); return *instance; }
 	static bool IsValid() { return instance != nullptr; }
 public:
-	static constexpr size_t VERT_SIZE0 = 1 << 18;
+	static constexpr size_t VERT_SIZE0 = 1 << 20;
 	static constexpr size_t INDX_SIZE0 = VERT_SIZE0 * 4;
 	static constexpr size_t INSTANCE_BUFFER_NUM_BATCHED = 2 << 15;
 	static constexpr size_t INSTANCE_BUFFER_NUM_IMMEDIATE = 2 << 10;
