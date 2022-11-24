@@ -1338,10 +1338,7 @@ int LuaOpenGL::Text(lua_State* L)
 		}
 	}
 
-	std::array<float, 4> currentColor;
-	glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
-	font->SetTextColor(SColor(currentColor.data()));
-
+	font->SetTextColor(SColor(color.data()));
 	font->glPrint(x, y, size, options, text);
 
 	return 0;
@@ -2499,13 +2496,11 @@ int LuaOpenGL::Color(lua_State* L)
 		luaL_error(L, "Incorrect arguments to gl.Color()");
 	}
 
-	float color[4];
-
 	if (args == 1) {
 		if (!lua_istable(L, 1)) {
 			luaL_error(L, "Incorrect arguments to gl.Color()");
 		}
-		const int count = LuaUtils::ParseFloatArray(L, -1, color, 4);
+		const int count = LuaUtils::ParseFloatArray(L, -1, color.data(), 4);
 		if (count < 3) {
 			luaL_error(L, "Incorrect arguments to gl.Color()");
 		}
@@ -2523,7 +2518,7 @@ int LuaOpenGL::Color(lua_State* L)
 		luaL_error(L, "Incorrect arguments to gl.Color()");
 	}
 
-	glColor4fv(color);
+	glColor4fv(color.data());
 
 	return 0;
 }

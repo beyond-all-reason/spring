@@ -136,6 +136,8 @@ class LuaOpenGL {
 		static void RevertWorldLighting();
 
 	private:
+		inline static std::array<float, 4> color;
+
 		static DrawMode drawMode;
 		static DrawMode prevDrawMode; // for minimap (when drawn in Screen mode)
 		static bool safeMode;
