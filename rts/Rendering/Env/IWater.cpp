@@ -63,12 +63,12 @@ void IWater::SetWater(int rendererMode)
 		if (water == nullptr) {
 			// just select
 			selectedRendererID = static_cast<WATER_RENDERER>(configHandler->GetInt("Water"));
-			if (allowedModes[selectedRendererID])
+			if (!allowedModes[selectedRendererID])
 				selectedRendererID = WATER_RENDERER_BASIC;
 		}
 		else {
 			// cycle
-			for (int i = 0; i < NUM_WATER_RENDERERS; ++i) {
+			for (int i = NUM_WATER_RENDERERS - 1; i >= 0; --i) {
 				selectedRendererID = static_cast<WATER_RENDERER>((static_cast<int>(water->GetID()) + 1 + i) % NUM_WATER_RENDERERS);
 				if (allowedModes[selectedRendererID])
 					break;
