@@ -174,9 +174,8 @@ void CGroundDecalHandler::LoadDecalShaders() {
 void CGroundDecalHandler::SunChanged() {
 	if (globalRendering->haveGLSL) {
 		decalShaders[DECAL_SHADER_GLSL]->Enable();
-		float3 ambientColor = sunLighting->groundAmbientColor * CGlobalRendering::SMF_INTENSITY_MULT;
-		decalShaders[DECAL_SHADER_GLSL]->SetUniform("groundAmbientColor", ambientColor.x, ambientColor.y, ambientColor.z);
-		decalShaders[DECAL_SHADER_GLSL]->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
+		float4 ambientColor = sunLighting->groundAmbientColor * CGlobalRendering::SMF_INTENSITY_MULT;
+		decalShaders[DECAL_SHADER_GLSL]->SetUniform("groundAmbientColor", ambientColor.x, ambientColor.y, ambientColor.z, 1.0f);
 		decalShaders[DECAL_SHADER_GLSL]->SetUniform("shadowDensity", sunLighting->groundShadowDensity);
 		decalShaders[DECAL_SHADER_GLSL]->Disable();
 	}
@@ -633,6 +632,7 @@ void CGroundDecalHandler::KillTextures()
 void CGroundDecalHandler::DrawDecals()
 {
 	decalShaders[DECAL_SHADER_CURR]->Enable();
+	decalShaders[DECAL_SHADER_GLSL]->SetUniformMatrix4x4<float>("shadowMatrix", false, shadowHandler.GetShadowMatrix());
 
 	// draw building decals
 	glPolygonOffset(-10, -200);
