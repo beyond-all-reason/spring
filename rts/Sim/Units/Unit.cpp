@@ -8,6 +8,7 @@
 #include "UnitMemPool.h"
 #include "UnitToolTipMap.hpp"
 #include "UnitTypes/Building.h"
+#include "UnitTypes/ExtractorBuilding.h"
 #include "Scripts/NullUnitScript.h"
 #include "Scripts/UnitScriptFactory.h"
 #include "Scripts/CobInstance.h" // for TAANG2RAD
@@ -1981,6 +1982,12 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			beingBuilt = true;
 			SetMetalStorage(0);
 			SetEnergyStorage(0);
+
+			// make sure neighbor extractors update
+			CExtractorBuilding* extractor = dynamic_cast<CExtractorBuilding*>(this);
+			if (extractor != nullptr)
+				extractor->ResetExtraction();
+
 			eventHandler.UnitReverseBuilt(this);
 		}
 
