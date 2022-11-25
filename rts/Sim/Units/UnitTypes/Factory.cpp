@@ -82,7 +82,7 @@ void CFactory::PreInit(const UnitLoadParams& params)
 
 	//radius is defined after CUnit::PreInit()
 	boOffset = radius * 0.5f;
-	boRadius = radius * 0.5f;
+	boRadius = radius * 1.5f;
 }
 
 
