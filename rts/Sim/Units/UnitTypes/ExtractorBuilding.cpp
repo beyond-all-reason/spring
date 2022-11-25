@@ -41,6 +41,9 @@ CExtractorBuilding::~CExtractorBuilding()
 /* resets the metalMap and notifies the neighbours */
 void CExtractorBuilding::ResetExtraction()
 {
+	metalExtract = 0;
+	script->ExtractionRateChanged(metalExtract);
+
 	// undo the extraction-area
 	for (auto si = metalAreaOfControl.begin(); si != metalAreaOfControl.end(); ++si) {
 		metalMap.RemoveExtraction(si->x, si->z, si->extractionDepth);
@@ -148,9 +151,11 @@ void CExtractorBuilding::ReCalculateMetalExtraction()
 	for (MetalSquareOfControl& msqr: metalAreaOfControl) {
 		metalMap.RemoveExtraction(msqr.x, msqr.z, msqr.extractionDepth);
 
-		// extraction is done in a cylinder
-		msqr.extractionDepth = metalMap.RequestExtraction(msqr.x, msqr.z, extractionDepth);
-		metalExtract += (msqr.extractionDepth * metalMap.GetMetalAmount(msqr.x, msqr.z));
+		if (activated) {
+			// extraction is done in a cylinder
+			msqr.extractionDepth = metalMap.RequestExtraction(msqr.x, msqr.z, extractionDepth);
+			metalExtract += (msqr.extractionDepth * metalMap.GetMetalAmount(msqr.x, msqr.z));
+		}
 	}
 
 	// set the new rotation-speed
@@ -158,9 +163,24 @@ void CExtractorBuilding::ReCalculateMetalExtraction()
 }
 
 
-/* Finds the amount of metal to extract and sets the rotationspeed when the extractor is built. */
-void CExtractorBuilding::FinishedBuilding(bool postInit)
+void CExtractorBuilding::Activate()
 {
+	if (activated)
+		return;
+
+	CBuilding::Activate();
+
+	/* Finds the amount of metal to extract and sets the rotationspeed when the extractor is built. */
 	SetExtractionRangeAndDepth(unitDef->extractRange, unitDef->extractsMetal);
-	CUnit::FinishedBuilding(postInit);
+}
+
+
+void CExtractorBuilding::Deactivate()
+{
+	if (!activated)
+		return;
+
+	CBuilding::Deactivate();
+
+	ResetExtraction();
 }
