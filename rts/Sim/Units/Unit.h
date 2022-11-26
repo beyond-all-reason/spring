@@ -104,8 +104,8 @@ public:
 	// negative amount=reclaim, return= true -> build power was successfully applied
 	bool AddBuildPower(CUnit* builder, float amount);
 
-	void Activate();
-	void Deactivate();
+	virtual void Activate();
+	virtual void Deactivate();
 
 	void ForcedMove(const float3& newPos);
 
