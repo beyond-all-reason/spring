@@ -1823,35 +1823,37 @@ static void _GL_APIENTRY glDebugMessageCallbackFunc(
 #endif
 
 
-bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int msgTypeIdx, unsigned int msgSevrIdx)
+bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int msgTypeIdx, unsigned int msgSevrIdx) const
 {
-	const static bool dbgTraces = configHandler->GetBool("DebugGLStacktraces");
+#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+	if (!(GLEW_ARB_debug_output || GLEW_KHR_debug))
+		return false;
 
-	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
 	if (glDebug) {
-		const char* msgSrceStr = glDebugMessageSourceName  (msgSrceEnums[msgSrceIdx %= msgSrceEnums.size()]);
-		const char* msgTypeStr = glDebugMessageTypeName    (msgTypeEnums[msgTypeIdx %= msgTypeEnums.size()]);
+		const char* msgSrceStr = glDebugMessageSourceName(msgSrceEnums[msgSrceIdx %= msgSrceEnums.size()]);
+		const char* msgTypeStr = glDebugMessageTypeName(msgTypeEnums[msgTypeIdx %= msgTypeEnums.size()]);
 		const char* msgSevrStr = glDebugMessageSeverityName(msgSevrEnums[msgSevrIdx %= msgSevrEnums.size()]);
 
+		const static bool dbgTraces = configHandler->GetBool("DebugGLStacktraces");
 		// install OpenGL debug message callback; typecast is a workaround
 		// for #4510 (change in callback function signature with GLEW 1.11)
 		// use SYNCHRONOUS output, we want our callback to run in the same
 		// thread as the bugged GL call (for proper stacktraces)
 		// CB userParam is const, but has to be specified sans qualifiers
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback((GLDEBUGPROC) &glDebugMessageCallbackFunc, (void*) &dbgTraces);
+		glDebugMessageCallback((GLDEBUGPROC)&glDebugMessageCallbackFunc, (void*)&dbgTraces);
 		glDebugMessageControl(msgSrceEnums[msgSrceIdx], msgTypeEnums[msgTypeIdx], msgSevrEnums[msgSevrIdx], 0, nullptr, GL_TRUE);
 
 		LOG("[GR::%s] OpenGL debug-message callback enabled (source=%s type=%s severity=%s)", __func__, msgSrceStr, msgTypeStr, msgSevrStr);
-	} else {
+	}
+	else {
 		glDebugMessageCallback(nullptr, nullptr);
 		glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
 		LOG("[GR::%s] OpenGL debug-message callback disabled", __func__);
 	}
 	configHandler->Set("DebugGL", globalRendering->glDebug);
-	#endif
-
+#endif
 	return true;
 }
 
