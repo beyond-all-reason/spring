@@ -1597,6 +1597,7 @@ void main()
 	auto testShader = std::make_unique<Shader::GLSLProgramObject>("[GL-TestShader]");
 	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
 	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
+	testShader->SetLogReporting(false); //no need to spam guinea pig shader errors
 	testShader->Link();
 	testShader->Enable();
 	testShader->Disable();

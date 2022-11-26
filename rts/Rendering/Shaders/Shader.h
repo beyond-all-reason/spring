@@ -27,14 +27,22 @@ struct fast_hash : public spring::unary_function<int, size_t>
 namespace Shader {
 	struct IShaderObject {
 	public:
-		IShaderObject(unsigned int shType, const std::string& shSrcFile, const std::string& shSrcDefs = ""):
-			objID(0), type(shType), valid(false), reloadRequested(false), srcFile(shSrcFile), rawDefStrs(shSrcDefs) {
+		IShaderObject(unsigned int shType, const std::string& shSrcFile, const std::string& shSrcDefs = "")
+			: objID(0)
+			, type(shType)
+			, logReporting(true)
+			, valid(false)
+			, reloadRequested(false)
+			, srcFile(shSrcFile)
+			, rawDefStrs(shSrcDefs) {
 		}
 
 		virtual ~IShaderObject() {}
 
 		virtual void Compile() {}
 		virtual void Release() {}
+
+		void SetLogReporting(bool b) { logReporting = b; }
 
 		bool ReloadFromDisk();
 		bool IsValid() const { return valid; }
@@ -53,6 +61,7 @@ namespace Shader {
 		unsigned int objID;
 		unsigned int type;
 
+		bool logReporting;
 		bool valid;
 		bool reloadRequested;
 
@@ -118,6 +127,8 @@ namespace Shader {
 		virtual void BindAttribLocation(const std::string& name, uint32_t index) {}
 		template<typename VAT>
 		void BindAttribLocations();
+
+		void SetLogReporting(bool b, bool shObjects = true);
 
 		virtual void Enable();
 		virtual void Disable();
@@ -262,6 +273,7 @@ namespace Shader {
 
 		unsigned int objID;
 
+		bool logReporting;
 		bool valid;
 		bool bound;
 

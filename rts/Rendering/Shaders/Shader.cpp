@@ -200,7 +200,7 @@ namespace Shader {
 		res->valid = glslIsValid(res->id);
 		res->log   = glslGetLog(res->id);
 
-		if (!res->valid) {
+		if (!res->valid && logReporting) {
 			const std::string& name = srcFile.find("void main()") != std::string::npos ? "unknown" : srcFile;
 			LOG_L(L_WARNING, "[GLSL-SO::%s] shader-object name: %s, compile-log:\n%s\n", __FUNCTION__, name.c_str(), res->log.c_str());
 			LOG_L(L_WARNING, "\n%s%s%s%s%s%s%s", sources[0], sources[1], sources[2], sources[3], sources[4], sources[5], sources[6]);
@@ -214,7 +214,22 @@ namespace Shader {
 
 	/*****************************************************************/
 
-	IProgramObject::IProgramObject(const std::string& poName): name(poName), objID(0), valid(false), bound(false) {
+	IProgramObject::IProgramObject(const std::string& poName)
+		: name(poName)
+		, objID(0)
+		, logReporting(true)
+		, valid(false)
+		, bound(false) {
+	}
+
+	void IProgramObject::SetLogReporting(bool b, bool shObjects)
+	{
+		logReporting = b;
+		if (shObjects) {
+			for (IShaderObject*& so : shaderObjs) {
+				so->SetLogReporting(b);
+			}
+		}
 	}
 
 	void IProgramObject::Release() {
@@ -576,7 +591,7 @@ namespace Shader {
 			valid = glslIsValid(objID);
 			log += glslGetLog(objID);
 
-			if (!IsValid()) {
+			if (!IsValid() && logReporting) {
 				LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, link-log:\n%s\n", __func__, name.c_str(), log.c_str());
 			}
 
