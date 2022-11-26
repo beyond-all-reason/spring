@@ -1004,11 +1004,11 @@ void CGlobalRendering::LogDisplayMode(SDL_Window* window) const
 	SDL_DisplayMode dmode;
 	SDL_GetWindowDisplayMode(window, &dmode);
 
-	constexpr const char* names[] = {
-		"windowed::decorated",
-		"windowed::borderless",
-		"fullscreen::decorated",
-		"fullscreen::borderless",
+	constexpr const std::array names = {
+		"windowed::decorated",       // fs=0,bl=0
+		"windowed::borderless",	     // fs=0,bl=1
+		"fullscreen::exclusive",     // fs=1,bl=0
+		"fullscreen::non-exclusive", // fs=1,bl=1
 	};
 
 	const int fs = fullScreen;
