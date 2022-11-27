@@ -40,8 +40,6 @@ namespace Shader {
 	struct IProgramObject;
 };
 
-class CglFontRenderer;
-
 class CglFont : public CTextWrap
 {
 public:
@@ -58,7 +56,6 @@ public:
 	static void ReallocSystemFontAtlases(bool pre);
 
 	CglFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight);
-	~CglFont() override;
 
 	void Begin();
 	void End();
@@ -140,8 +137,6 @@ public:
 		return allFonts;
 	}
 private:
-	std::unique_ptr<CglFontRenderer> fontRenderer;
-
 	std::string fontPath;
 
 	std::array<std::unique_ptr<spring::mutex_wrapper_concept>, 2> fontMutexes;

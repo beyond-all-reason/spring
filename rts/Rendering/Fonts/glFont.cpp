@@ -183,14 +183,6 @@ CglFont::CglFont(const std::string& fontFile, int size, int _outlineWidth, float
 		std::make_unique<spring::mutex_wrapper<spring::noop_mutex     >>(),
 		std::make_unique<spring::mutex_wrapper<spring::recursive_mutex>>()
 	};
-
-	fontRenderer = CglFontRenderer::CreateInstance();
-}
-
-CglFont::~CglFont() {
-#ifndef HEADLESS
-	CglFontRenderer::DeleteInstance(fontRenderer);
-#endif
 }
 
 #ifdef HEADLESS
@@ -613,12 +605,7 @@ void CglFont::End() {
 	inBeginEndBlock = false;
 
 	//without this, fonts textures are empty in display lists (probably GL commands in UploadGlyphAtlasTexture are get recorded as part of the list)
-	GLint dl = 0;
-	glGetIntegerv(GL_LIST_INDEX, &dl);
-	if (dl == 0) {
-		UpdateGlyphAtlasTexture();
-		UploadGlyphAtlasTexture();
-	}
+	fontRenderer->HandleTextureUpdate(*this, false);
 	fontRenderer->PushGLState(*this);
 	fontRenderer->DrawTraingleElements();
 	fontRenderer->PopGLState();

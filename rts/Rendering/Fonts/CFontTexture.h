@@ -94,7 +94,7 @@ struct GlyphInfo {
 	std::shared_ptr<FontFace> face;
 };
 
-
+class CglFontRenderer;
 
 /**
 This class just store glyphs and load new glyphs if requred
@@ -139,6 +139,7 @@ protected:
 	bool GlyphAtlasTextureNeedsUpload() const;
 	void UpdateGlyphAtlasTexture();
 	void UploadGlyphAtlasTexture();
+	void UploadGlyphAtlasTextureImpl();
 private:
 	void CreateTexture(const int width, const int height);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
@@ -167,6 +168,7 @@ protected:
 
 	unsigned int glyphAtlasTextureID = 0;
 
+	std::unique_ptr<CglFontRenderer> fontRenderer;
 private:
 	int curTextureUpdate = 0;
 #ifndef HEADLESS
