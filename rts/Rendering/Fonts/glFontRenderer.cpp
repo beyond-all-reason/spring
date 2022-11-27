@@ -144,13 +144,15 @@ void CglShaderFontRenderer::DrawTraingleElements()
 	primaryBufferTC.DrawElements(GL_TRIANGLES);
 }
 
-void CglShaderFontRenderer::HandleTextureUpdate(CglFont& fnt)
+void CglShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUpload)
 {
-	fnt.UpdateGlyphAtlasTexture();
+	if (!onlyUpload)
+		fnt.UpdateGlyphAtlasTexture();
+
 	GLint dl = 0;
 	glGetIntegerv(GL_LIST_INDEX, &dl);
-	if (dl == 0 || true) {
-		fnt.UploadGlyphAtlasTexture();
+	if (dl == 0) {
+		fnt.UploadGlyphAtlasTextureImpl();
 	}
 }
 
@@ -199,10 +201,15 @@ CglNoShaderFontRenderer::CglNoShaderFontRenderer()
 		v.reserve(NUM_TRI_BUFFER_VERTS);
 	for (auto& i : indcs)
 		i.reserve(NUM_TRI_BUFFER_ELEMS);
+
+	textureSpaceMatrix = glGenLists(1);
+	glNewList(textureSpaceMatrix, GL_COMPILE);
+	glEndList();
 }
 
 CglNoShaderFontRenderer::~CglNoShaderFontRenderer()
 {
+	glDeleteLists(textureSpaceMatrix, 1);
 }
 
 void CglNoShaderFontRenderer::AddQuadTrianglesImpl(bool primary, VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
@@ -258,10 +265,21 @@ void CglNoShaderFontRenderer::DrawTraingleElements()
 		i.clear();
 }
 
-void CglNoShaderFontRenderer::HandleTextureUpdate(CglFont& fnt)
+void CglNoShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUpload)
 {
-	fnt.UpdateGlyphAtlasTexture();
-	fnt.UploadGlyphAtlasTexture();
+	if (!onlyUpload)
+		fnt.UpdateGlyphAtlasTexture();
+
+	GLint dl = 0;
+	glGetIntegerv(GL_LIST_INDEX, &dl);
+	if (dl == 0) {
+		fnt.UploadGlyphAtlasTextureImpl();
+
+		// update texture space dlist (this affects already compiled dlists too!)
+		glNewList(textureSpaceMatrix, GL_COMPILE);
+		glScalef(1.0f / fnt.GetTextureWidth(), 1.0f / fnt.GetTextureHeight(), 1.0f);
+		glEndList();
+	}
 }
 
 void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
@@ -276,8 +294,8 @@ void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
-	glLoadIdentity();
-	glScalef(1.0f / fnt.GetTextureWidth(), 1.0f / fnt.GetTextureHeight(), 1.0f);
+	glPushMatrix();
+	glCallList(textureSpaceMatrix);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);

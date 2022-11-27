@@ -6,6 +6,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 
 class CglFont;
+class CFontTexture;
 class CglFontRenderer {
 public:
 	virtual ~CglFontRenderer() = default;
@@ -13,7 +14,7 @@ public:
 	virtual void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) = 0;
 	virtual void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) = 0;
 	virtual void DrawTraingleElements() = 0;
-	virtual void HandleTextureUpdate(CglFont& font) = 0;
+	virtual void HandleTextureUpdate(CFontTexture& font, bool onlyUpload) = 0;
 	virtual void PushGLState(const CglFont& font) = 0;
 	virtual void PopGLState() = 0;
 
@@ -43,7 +44,7 @@ public:
 	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
 	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
 	void DrawTraingleElements() override;
-	void HandleTextureUpdate(CglFont& font) override;
+	void HandleTextureUpdate(CFontTexture& font, bool onlyUpload) override;
 	void PushGLState(const CglFont& font) override;
 	void PopGLState() override;
 
@@ -66,7 +67,7 @@ public:
 	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
 	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override;
 	void DrawTraingleElements() override;
-	void HandleTextureUpdate(CglFont& font) override;
+	void HandleTextureUpdate(CFontTexture& font, bool onlyUpload) override;
 	void PushGLState(const CglFont& font) override;
 	void PopGLState() override;
 
@@ -78,6 +79,8 @@ private:
 
 	std::array<std::vector<VA_TYPE_TC>, 2> verts; // OL, PM
 	std::array<std::vector<uint16_t  >, 2> indcs; // OL, PM
+
+	uint32_t textureSpaceMatrix = 0u;
 };
 
 class CglNullFontRenderer final : public CglFontRenderer {
@@ -85,7 +88,7 @@ class CglNullFontRenderer final : public CglFontRenderer {
 	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
 	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
 	void DrawTraingleElements() override {}
-	void HandleTextureUpdate(CglFont& font) override {}
+	void HandleTextureUpdate(CFontTexture& font, bool onlyUpload) override {}
 	void PushGLState(const CglFont& font) override {}
 	void PopGLState() override {}
 	bool IsLegacy() const override { return true; }

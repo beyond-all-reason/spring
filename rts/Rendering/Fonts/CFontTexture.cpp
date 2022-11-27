@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "CFontTexture.h"
+#include "glFontRenderer.h"
 #include "FontLogSection.h"
 
 #include <cstring> // for memset, memcpy
@@ -1196,6 +1197,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	fontFamily = "unknown";
 	fontStyle  = "unknown";
 
+	fontRenderer = CglFontRenderer::CreateInstance();
 #ifndef HEADLESS
 
 	try {
@@ -1258,6 +1260,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 
 CFontTexture::~CFontTexture()
 {
+	CglFontRenderer::DeleteInstance(fontRenderer);
 #ifndef HEADLESS
 	glDeleteTextures(1, &glyphAtlasTextureID);
 	glyphAtlasTextureID = 0;
@@ -1700,6 +1703,11 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 }
 
 void CFontTexture::UploadGlyphAtlasTexture()
+{
+	fontRenderer->HandleTextureUpdate(*this, true);
+}
+
+void CFontTexture::UploadGlyphAtlasTextureImpl()
 {
 #ifndef HEADLESS
 	if (!GlyphAtlasTextureNeedsUpload())
