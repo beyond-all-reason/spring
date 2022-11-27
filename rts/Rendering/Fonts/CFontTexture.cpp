@@ -761,7 +761,15 @@ public:
 			std::string msg = fmt::sprintf("%s::FontConfigInit (version %d.%d.%d)", __func__, FC_MAJOR, FC_MINOR, FC_REVISION);
 			ScopedOnceTimer timer(msg);
 
-			FcInit();
+			try
+			{
+				FcInit();
+			} catch (const std::exception& e) {
+				LOG("FcInit() runtime error: \"%s\"", e.what());
+				config = nullptr;
+				return;
+			}
+
 			config = FcConfigCreate();
 			if (!config)
 				return;
