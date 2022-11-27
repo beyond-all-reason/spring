@@ -490,7 +490,8 @@ void CProjectileDrawer::LoadWeaponTextures() {
 	// post-process the synced weapon-defs to set unsynced fields
 	// (this requires CWeaponDefHandler to have been initialized)
 	for (WeaponDef& wd: const_cast<std::vector<WeaponDef>&>(weaponDefHandler->GetWeaponDefsVec())) {
-		assert(wd.id > 0); // transitory assert for 0-index to 1-index weaponDefs change
+		if (!weaponDefHandler->IsValidWeaponDefID(wd.id))
+			continue;
 
 		wd.visuals.texture1 = nullptr;
 		wd.visuals.texture2 = nullptr;
@@ -855,7 +856,7 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 {
 	// Method #1 here: https://wickedengine.net/2018/01/18/easy-transparent-shadow-maps/
 
-	// 1) Render opaque objects into depth stencil texture from light’s point of view - done elsewhere
+	// 1) Render opaque objects into depth stencil texture from lightÂ’s point of view - done elsewhere
 
 	// draw the model-less projectiles
 	DrawProjectilesSetShadow(modellessProjectiles);
