@@ -353,12 +353,12 @@ void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 			float y1 = iconPos.z + iconSizeY;
 
 			if (minimap->GetFlipped()) {
-				const float ty0 = mapDims.mapy * SQUARE_SIZE - y0;
-				const float ty1 = mapDims.mapy * SQUARE_SIZE - y1;
 				x0 = mapDims.mapx * SQUARE_SIZE - x0;
 				x1 = mapDims.mapx * SQUARE_SIZE - x1;
-				y0 = ty1;
-				y1 = ty0;
+				y0 = mapDims.mapy * SQUARE_SIZE - y0;
+				y1 = mapDims.mapy * SQUARE_SIZE - y1;
+				std::swap(x0, x1);
+				std::swap(y0, y1);
 			}
 
 			rb.AddQuadTriangles(
