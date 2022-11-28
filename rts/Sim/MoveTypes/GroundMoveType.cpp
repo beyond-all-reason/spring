@@ -146,6 +146,7 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(canReverse),
 	CR_MEMBER(useMainHeading),
 	CR_MEMBER(useRawMovement),
+	CR_MEMBER(pathingFailed),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetPreallocContainer)
