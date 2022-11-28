@@ -4,7 +4,7 @@
 #include "System/Log/ILog.h"
 #include "fmt/format.h"
 
-#ifndef HEADLESS
+#if !defined(HEADLESS) && defined(HAS_VULKAN)
 void VkInfo::PrintInfoImpl(const char* funcName)
 {
 	LOG("[VkInfo::%s]", funcName);
