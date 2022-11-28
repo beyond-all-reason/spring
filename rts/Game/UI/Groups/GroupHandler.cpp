@@ -67,20 +67,23 @@ void CGroupHandler::Update()
 
 bool CGroupHandler::GroupCommand(int num)
 {
+	bool error;
+
 	if (KeyInput::GetKeyModState(KMOD_CTRL))
-		return GroupCommand(num, (!KeyInput::GetKeyModState(KMOD_SHIFT))? "set": "add");
+		return GroupCommand(num, (!KeyInput::GetKeyModState(KMOD_SHIFT))? "set": "add", error);
 
 	if (KeyInput::GetKeyModState(KMOD_SHIFT))
-		return GroupCommand(num, "selectadd");
+		return GroupCommand(num, "selectadd", error);
 
 	if (KeyInput::GetKeyModState(KMOD_ALT))
-		return GroupCommand(num, "selecttoggle");
+		return GroupCommand(num, "selecttoggle", error);
 
-	return GroupCommand(num, "");
+	return GroupCommand(num, "", error);
 }
 
-bool CGroupHandler::GroupCommand(int num, const std::string& cmd)
+bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 {
+	error = false;
 	CGroup* group = GetGroup(num);
 
 	switch (hashString(cmd.c_str())) {
@@ -139,11 +142,14 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd)
 		// Selects or focuses camera on group.
 		case hashString(""): break;
 		// Unrecognized command
-		default: return false;
+		default: {
+			error = true;
+			return false;
+		}
 	}
 
 	if (group->units.empty())
-		return true;
+		return false;
 
 	if (selectedUnitsHandler.IsGroupSelected(num)) {
 		camHandler->CameraTransition(0.5f);

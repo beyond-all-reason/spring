@@ -38,7 +38,7 @@ public:
 	void Update();
 
 	bool GroupCommand(int num);
-	bool GroupCommand(int num, const std::string& cmd);
+	bool GroupCommand(int num, const std::string& cmd, bool& error);
 
 	// NOTE: only invoked by AI's, but can invalidate pointers
 	CGroup* CreateNewGroup();
