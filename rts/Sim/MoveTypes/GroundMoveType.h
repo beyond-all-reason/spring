@@ -110,6 +110,10 @@ public:
 		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
 	}
 	void SyncWaypoints() {
+		if (moveFailed){
+			Fail(false);
+			moveFailed = false;
+		}
 		// Synced vars trigger a checksum update on change, which is expensive so we should check
 		// that there has been a change before triggering an update to the checksum.
 		if (!currWayPoint.bitExactEquals(earlyCurrWayPoint))
@@ -247,6 +251,7 @@ private:
 
 	bool atGoal = false;
 	bool atEndOfPath = false;
+	bool moveFailed = false;
 
 	bool reversing = false;
 	bool idling = false;
