@@ -138,6 +138,7 @@ CR_REG_METADATA(CGroundMoveType, (
 
 	CR_MEMBER(atGoal),
 	CR_MEMBER(atEndOfPath),
+	CR_MEMBER(moveFailed),
 
 	CR_MEMBER(reversing),
 	CR_MEMBER(idling),
@@ -1797,7 +1798,8 @@ unsigned int CGroundMoveType::GetNewPath()
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, earlyCurrWayPoint);
 	} else {
-		Fail(false);
+		moveFailed = true;
+		//Fail(false);
 	}
 
 	// if (gs->frameNum == 459 && this->owner->id == 9744)
