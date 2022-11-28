@@ -685,38 +685,38 @@ struct TaskPool {
 template <typename F>
 static inline void for_mt(int start, int end, int step, F&& f)
 {
+	ThreadPool::inMultiThreadedSection = true;
+
 	if (!ThreadPool::HasThreads() || ((end - start) < step)) {
 		for (int i = start; i < end; i += step) {
 			f(i);
 		}
-		return;
 	}
+	else {
+		SCOPED_MT_TIMER("ThreadPool::AddTask");
 
-	SCOPED_MT_TIMER("ThreadPool::AddTask");
+		// static, so TaskGroup's are recycled
+		static TaskPool<ForTaskGroup, F> pool;
+		auto taskGroup = pool.GetTaskGroup();
 
-	ThreadPool::inMultiThreadedSection = true;
+		taskGroup->Enqueue(start, end, step, f);
+		taskGroup->UpdateId();
 
-	// static, so TaskGroup's are recycled
-	static TaskPool<ForTaskGroup, F> pool;
-	auto taskGroup = pool.GetTaskGroup();
+		assert(taskGroup->IsInJobQueue());
 
-	taskGroup->Enqueue(start, end, step, f);
-	taskGroup->UpdateId();
-
-	assert(taskGroup->IsInJobQueue());
-
-	#if 0
-	ThreadPool::PushTaskGroup(taskGroup);
-	#else
-	// store the group in all worker queues s.t. each executes a slice
-	for (size_t i = 1; i < ThreadPool::GetNumThreads(); ++i) {
-		taskGroup->wantedThread.store(i);
+		#if 0
 		ThreadPool::PushTaskGroup(taskGroup);
-	}
-	#endif
+		#else
+		// store the group in all worker queues s.t. each executes a slice
+		for (size_t i = 1; i < ThreadPool::GetNumThreads(); ++i) {
+			taskGroup->wantedThread.store(i);
+			ThreadPool::PushTaskGroup(taskGroup);
+		}
+		#endif
 
-	// make calling thread also run ExecuteLoop
-	ThreadPool::WaitForFinished(taskGroup);
+		// make calling thread also run ExecuteLoop
+		ThreadPool::WaitForFinished(taskGroup);
+	}
 
 	ThreadPool::inMultiThreadedSection = false;
 }
