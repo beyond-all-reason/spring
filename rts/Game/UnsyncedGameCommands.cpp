@@ -1086,6 +1086,9 @@ public:
 		if (parseFailure || !teamHandler.IsValidTeam(teamId))
 			return false;
 
+		if (gu->myTeam == teamId)
+			return true;
+
 		gu->myTeam = teamId;
 		gu->myAllyTeam = teamHandler.AllyTeam(teamId);
 
@@ -1093,6 +1096,13 @@ public:
 
 		// NOTE: unsynced event
 		eventHandler.PlayerChanged(gu->myPlayerNum);
+
+		const int specFVMode =
+			(gu->spectatingFullView   ? 1 : 0) +
+			(gu->spectatingFullSelect ? 2 : 0);
+
+		if (specFVMode == 0 || specFVMode == 2)
+			readMap->CopySyncedToUnsynced();
 
 		LOG("[SpecTeamAction] local client %d now spectating team %d and allyteam %d", gu->myPlayerNum, gu->myTeam, gu->myAllyTeam);
 		return true;
@@ -1113,6 +1123,10 @@ public:
 		if (!gu->spectating)
 			return false;
 
+		const int oldMode =
+			(gu->spectatingFullView   ? 1 : 0) +
+			(gu->spectatingFullSelect ? 2 : 0);
+
 		if (!action.GetArgs().empty()) {
 			const int mode = StringToInt(action.GetArgs());
 			gu->spectatingFullView   = !!(mode & 1);
@@ -1122,10 +1136,20 @@ public:
 			gu->spectatingFullSelect = gu->spectatingFullView;
 		}
 
+		const int newMode =
+			(gu->spectatingFullView   ? 1 : 0) +
+			(gu->spectatingFullSelect ? 2 : 0);
+
 		CLuaUI::UpdateTeams();
 
 		// NOTE: unsynced event
 		eventHandler.PlayerChanged(gu->myPlayerNum);
+		/*
+		from "View Chosen Player" (0) and "Select Any Unit"(2) to "View All"(1) and "View All & Select Any"(3)
+		if we are going from global view (for example "View All") there should be no need for such update
+		*/
+		if ((oldMode == 0 || oldMode == 2) && (newMode == 1 || newMode == 3))
+			readMap->CopySyncedToUnsynced();
 		return true;
 	}
 };

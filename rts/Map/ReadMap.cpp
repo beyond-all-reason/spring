@@ -1047,6 +1047,22 @@ void CReadMap::UpdateLOS(const SRectangle& hgtMapRect) {}
 void CReadMap::BecomeSpectator() {}
 #endif
 
+namespace {
+	template<typename T>
+	void CopySyncedToUnsyncedImpl(const std::vector<T>& src, std::vector<T>& dst) {
+		std::copy(src.begin(), src.end(), dst.begin());
+	};
+}
 
-bool CReadMap::HasVisibleWater() const { return (!mapRendering->voidWater && !IsAboveWater()); }
-bool CReadMap::HasOnlyVoidWater() const { return (mapRendering->voidWater && IsUnderWater()); }
+void CReadMap::CopySyncedToUnsynced()
+{
+#ifdef USE_UNSYNCED_HEIGHTMAP
+	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
+	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
+	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
+	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
+#endif
+}
+
+bool CReadMap::HasVisibleWater()  const { return (!mapRendering->voidWater && !IsAboveWater()); }
+bool CReadMap::HasOnlyVoidWater() const { return ( mapRendering->voidWater &&  IsUnderWater()); }
