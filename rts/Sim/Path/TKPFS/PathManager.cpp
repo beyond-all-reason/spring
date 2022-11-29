@@ -83,7 +83,7 @@ void CPathManager::InitStatic()
 
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
-	LOG("TK CPathManager::InitStatic: %d threads available", pathFinderGroups);
+	LOG("TK CPathManager::InitStatic: %d threads available (MT permitted %d)", pathFinderGroups, SupportsMultiThreadedRequests());
 
 	// pathFinders[i] = pfMemPool.alloc<CPathFinder>(true);
 
@@ -1013,6 +1013,10 @@ int2 CPathManager::GetNumQueuedUpdates() const {
 	}
 
 	return data;
+}
+
+bool CPathManager::SupportsMultiThreadedRequests() const {
+	return !modInfo.pfForceSingleThreaded;
 }
 
 }

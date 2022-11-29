@@ -246,7 +246,7 @@ private:
 	//bool IsFinalized() const { return (maxResPF != nullptr); }
 	bool IsFinalized() const { return finalized; }
 
-	bool SupportsMultiThreadedRequests() const { return true; }
+	bool SupportsMultiThreadedRequests() const; //{ return true; }
 	void SavePathCacheForPathId(int pathIdToSave) override;
 
 private:
