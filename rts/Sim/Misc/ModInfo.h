@@ -185,6 +185,7 @@ public:
 	// PFS
 	/// which pathfinder system (NOP, DEFAULT/legacy, or QT) the mod will use
 	int pathFinderSystem;
+	bool pfForceSingleThreaded;
 
 	float pfRawDistMult;
 	float pfUpdateRate;
