@@ -11,7 +11,6 @@
 
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/float4.h"
-#include "System/Threading/SpringThreading.h"
 #include "lru/LruClockCache.h"
 
 #undef GetCharWidth // winapi.h
@@ -130,16 +129,12 @@ private:
 	void ScanForWantedGlyphs(const std::u8string& str);
 	float GetTextWidth_(const std::u8string& text);
 	float GetTextHeight_(const std::u8string& text, float* descender = nullptr, int* numLines = nullptr);
-
-	spring::mutex_wrapper_concept* GetFontMutex() { return fontMutexes[threadSafety].get(); }
 public:
 	static auto GetLoadedFonts() -> const decltype(allFonts)& {
 		return allFonts;
 	}
 private:
 	std::string fontPath;
-
-	std::array<std::unique_ptr<spring::mutex_wrapper_concept>, 2> fontMutexes;
 
 	bool inBeginEndBlock = false; // implies bufferMutex is locked
 	bool autoOutlineColor = false; // auto-select outline color for in-text-colorcodes

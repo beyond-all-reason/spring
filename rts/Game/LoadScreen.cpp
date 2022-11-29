@@ -76,6 +76,8 @@ CLoadScreen::~CLoadScreen()
 
 bool CLoadScreen::Init()
 {
+	CFontTexture::sync.SetThreadSafety(true);
+
 	activeController = this;
 
 	// hide the cursor until we are ingame
@@ -104,14 +106,14 @@ bool CLoadScreen::Init()
 	return false;
 }
 
-void CLoadScreen::Kill()
+void CLoadScreen::Kill() const
 {
 	if (luaIntro != nullptr)
 		luaIntro->Shutdown();
 
 	CLuaIntro::FreeHandler();
 
-	CglFont::threadSafety = false;
+	CFontTexture::sync.SetThreadSafety(false);
 }
 
 

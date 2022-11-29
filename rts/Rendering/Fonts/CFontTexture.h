@@ -11,6 +11,7 @@
 #include "Rendering/Textures/RowAtlasAlloc.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
+#include "System/Threading/WrappedSync.h"
 
 
 struct FT_FaceRec_;
@@ -112,7 +113,7 @@ public:
 	static void KillFonts();
 	static void Update();
 
-	static inline bool threadSafety = false;
+	inline static spring::WrappedSyncRecursiveMutex sync = {};
 protected:
 	CFontTexture(const std::string& fontfile, int size, int outlinesize, float  outlineweight);
 	virtual ~CFontTexture();
@@ -167,6 +168,8 @@ protected:
 	int wantedTexHeight;
 
 	unsigned int glyphAtlasTextureID = 0;
+
+	inline static bool needThreadSafety = true;
 
 	std::unique_ptr<CglFontRenderer> fontRenderer;
 private:

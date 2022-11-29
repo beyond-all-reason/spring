@@ -22,7 +22,7 @@ public:
 	~CLoadScreen();
 
 	bool Init(); /// split from ctor; uses GetInstance()
-	void Kill(); /// split from dtor
+	void Kill() const; /// split from dtor
 
 public:
 	// singleton can potentially be null, but only when

@@ -178,11 +178,6 @@ CglFont::CglFont(const std::string& fontFile, int size, int _outlineWidth, float
 
 	viewMatrix = DefViewMatrix();
 	projMatrix = DefProjMatrix();
-
-	fontMutexes = {
-		std::make_unique<spring::mutex_wrapper<spring::noop_mutex     >>(),
-		std::make_unique<spring::mutex_wrapper<spring::recursive_mutex>>()
-	};
 }
 
 #ifdef HEADLESS
@@ -297,7 +292,7 @@ float CglFont::GetTextWidth_(const std::u8string& text)
 	if (text.empty())
 		return 0.0f;
 
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	ScanForWantedGlyphs(text);
 
@@ -376,7 +371,7 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 		return 0.0f;
 	}
 
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	ScanForWantedGlyphs(text);
 
@@ -538,7 +533,7 @@ std::deque<std::string> CglFont::SplitIntoLines(const std::u8string& text)
 
 void CglFont::SetAutoOutlineColor(bool enable)
 {
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	autoOutlineColor = enable;
 }
@@ -548,7 +543,7 @@ void CglFont::SetTextColor(const float4* color)
 	if (color == nullptr)
 		color = &white;
 
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	textColor = *color;
 }
@@ -558,7 +553,7 @@ void CglFont::SetOutlineColor(const float4* color)
 	if (color == nullptr)
 		color = ChooseOutlineColor(textColor);
 
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	outlineColor = *color;
 }
@@ -587,10 +582,10 @@ const float4* CglFont::ChooseOutlineColor(const float4& textColor)
 }
 
 void CglFont::Begin() {
-	GetFontMutex()->lock();
+	sync.Lock();
 
 	if (inBeginEndBlock) {
-		GetFontMutex()->unlock();
+		sync.Unlock();
 		return;
 	}
 
@@ -611,13 +606,13 @@ void CglFont::End() {
 	fontRenderer->PopGLState();
 
 	inBeginEndBlock = false;
-	GetFontMutex()->unlock();
+	sync.Unlock();
 }
 
 
 void CglFont::DrawBuffered()
 {
-	std::lock_guard lk(*GetFontMutex());
+	auto lock = sync.GetScopedLock();
 
 	UpdateGlyphAtlasTexture();
 	UploadGlyphAtlasTexture();
@@ -834,7 +829,7 @@ void CglFont::glPrint(float x, float y, float s, const int options, const std::s
 		Begin();
 	} else if (buffered) {
 		if (!inBeginEndBlock)
-			GetFontMutex()->lock();
+			sync.Lock();
 	}
 
 	// select correct decoration RenderString function
@@ -850,7 +845,7 @@ void CglFont::glPrint(float x, float y, float s, const int options, const std::s
 		End();
 	} else if (buffered) {
 		if (!inBeginEndBlock)
-			GetFontMutex()->unlock();
+			sync.Unlock();
 	}
 
 	// reset text & outline colors (if changed via in-text colorcodes)
