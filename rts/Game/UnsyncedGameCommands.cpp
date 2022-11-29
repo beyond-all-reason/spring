@@ -1214,6 +1214,9 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		if (action.IsRepeat())
+			return false;
+
 		const auto args = CSimpleParser::Tokenize(action.GetArgs());
 
 		if (args.size() == 0)
@@ -1245,11 +1248,15 @@ public:
 		// and we can go OOB.
 		if (groupId < 0 || groupId > 9)
 			return WrongSyntax("groupId must be single digit number");
+
 		// Finally, actually run the command.
-		if (!uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand))
+		bool error;
+		const bool halt = uiGroupHandlers[gu->myTeam].GroupCommand(groupId, subCommand, error);
+
+		if (error)
 			return WrongSyntax("subcommand " + subCommand + " not found");
 
-		return true;
+		return halt;
 	}
 };
 
@@ -1265,10 +1272,10 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		if (!action.IsRepeat())
-			return uiGroupHandlers[gu->myTeam].GroupCommand(groupId);
+		if (action.IsRepeat())
+			return false;
 
-		return false;
+		return uiGroupHandlers[gu->myTeam].GroupCommand(groupId);
 	}
 
 private:
