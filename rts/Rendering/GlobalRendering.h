@@ -198,6 +198,10 @@ public:
 	float pixelX;
 	float pixelY;
 
+	/// size of one pixel in full window coordinates, i.e. 1/winSizeX and 1/winSizeY
+	float winPixelX;
+	float winPixelY;
+
 	float minViewRange;
 	float maxViewRange;
 	/**

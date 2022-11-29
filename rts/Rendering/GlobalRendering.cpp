@@ -256,6 +256,8 @@ CGlobalRendering::CGlobalRendering()
 	// pixel geometry
 	, pixelX(0.01f)
 	, pixelY(0.01f)
+	, winPixelX(0.01f)
+	, winPixelY(0.01f)
 
 	// sane defaults
 	, minViewRange(MIN_ZNEAR_DIST * 8.0f)
@@ -1341,6 +1343,8 @@ void CGlobalRendering::UpdatePixelGeometry()
 {
 	pixelX = 1.0f / viewSizeX;
 	pixelY = 1.0f / viewSizeY;
+	winPixelX = 1.0f / winSizeX;
+	winPixelY = 1.0f / winSizeY;
 
 	aspectRatio = viewSizeX / float(viewSizeY);
 }
@@ -1860,12 +1864,17 @@ bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int
 	return true;
 }
 
-void CGlobalRendering::LoadViewport()
+void CGlobalRendering::LoadViewport() const
 {
 	glViewport(viewPosX, viewPosY, viewSizeX, viewSizeY);
 }
 
-void CGlobalRendering::LoadDualViewport()
+void CGlobalRendering::LoadDualViewport() const
 {
 	glViewport(dualViewPosX, dualViewPosY, dualViewSizeX, dualViewSizeY);
+}
+
+void CGlobalRendering::LoadWindowViewport() const
+{
+	glViewport(0, 0, winSizeX, winSizeY);
 }

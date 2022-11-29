@@ -211,7 +211,7 @@ bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 	return (IsValid());
 }
 
-float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2& winScale) const
+float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2& winScale, const bool fullWindow) const
 {
 	if (winCoors.z > 1.0f || frames.empty())
 		return { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -223,12 +223,15 @@ float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2&
 	const float  xs = image.xAlignedSize * qis;
 	const float  ys = image.yAlignedSize * qis;
 
-	const float rxs = xs * globalRendering->pixelX;
-	const float rys = ys * globalRendering->pixelY;
+	const float pixelX = fullWindow ? globalRendering->winPixelX : globalRendering->pixelX;
+	const float pixelY = fullWindow ? globalRendering->winPixelY : globalRendering->pixelY;
+
+	const float rxs = xs * pixelX;
+	const float rys = ys * pixelY;
 
 	// center on hotspot
-	const float xp = (winCoors.x - (xofs * qis)) * globalRendering->pixelX;
-	const float yp = (winCoors.y - winScale.y * (ys - (yofs * qis))) * globalRendering->pixelY;
+	const float xp = (winCoors.x - (xofs * qis)) * pixelX;
+	const float yp = (winCoors.y - winScale.y * (ys - (yofs * qis))) * pixelY;
 
 	return { xp, yp, rxs, rys };
 }
@@ -320,7 +323,7 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 
 	const float3 winCoors = { x * 1.0f, (globalRendering->viewSizeY - y) * 1.0f, 0.0f };
 	const float2 winScale = { std::max(scale, -scale), 1.0f };
-	const float4& matParams = CalcFrameMatrixParams(winCoors, winScale);
+	const float4& matParams = CalcFrameMatrixParams(winCoors, winScale, true);
 
 	CMatrix44f cursorMat;
 	cursorMat.Translate(matParams.x, matParams.y, 0.0f);
@@ -330,6 +333,9 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+
+	// Load full window viewport so cursor can be drawn outside main view (e.g. dualscreen)
+	globalRendering->LoadWindowViewport();
 	glLoadMatrixf(cursorMat);
 
 	glMatrixMode(GL_PROJECTION);
@@ -352,6 +358,8 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
+	// Restore main viewport
+	globalRendering->LoadViewport();
 	glPopMatrix();
 
 	glDisable(GL_BLEND);
