@@ -2586,8 +2586,8 @@ void CGroundMoveType::HandleUnitCollisions(
 		const bool alliedCollision =
 			teamHandler.Ally(collider->allyteam, collidee->allyteam) &&
 			teamHandler.Ally(collidee->allyteam, collider->allyteam);
-		const bool collideeYields = (collider->IsMoving() && !collidee->IsMoving());
-		const bool ignoreCollidee = (collideeYields && alliedCollision);
+		// const bool collideeYields = (collider->IsMoving() && !collidee->IsMoving());
+		// const bool ignoreCollidee = (collideeYields && alliedCollision);
 
 		crushCollidee |= (!alliedCollision || allowCAU);
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
@@ -2672,7 +2672,7 @@ void CGroundMoveType::HandleUnitCollisions(
 		// avoid deadlocks
 		const float colliderSlideSign = Sign( separationVect.dot(collider->rightdir));
 
-		const float3 colliderPushVec  =  colResponseVec * colliderMassScale * int(!ignoreCollidee);
+		const float3 colliderPushVec  =  colResponseVec * colliderMassScale; // * int(!ignoreCollidee);
 		const float3 colliderSlideVec = collider->rightdir * colliderSlideSign * (1.0f / penDistance) * r2;
 		const float3 colliderMoveVec  = colliderPushVec + colliderSlideVec;
 
