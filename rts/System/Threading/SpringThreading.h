@@ -106,10 +106,8 @@ namespace spring {
 
 	// updated as per https://rigtorp.se/spinlock/
 	class spinlock {
-	private:
-		std::atomic<bool> state = {false};
-
 	public:
+		using native_handle_type = uint32_t;
 		void lock()
 		{
 			// changed implementation from a test-and-set (TAS) to test and test-and-set (TTAS)
@@ -124,10 +122,19 @@ namespace spring {
 				}
 			}
 		}
+		bool try_lock() noexcept {
+			// First do a relaxed load to check if lock is free in order to prevent
+			// unnecessary cache misses if someone does while(!try_lock())
+			return !state.load(std::memory_order_relaxed) &&
+				!state.exchange(true, std::memory_order_acquire);
+		}
 		void unlock()
 		{
 			state.store(false, std::memory_order_release);
 		}
+		native_handle_type native_handle() { return native_handle_type{}; }
+	private:
+		std::atomic<bool> state = { false };
 	};
 
 

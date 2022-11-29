@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "ModelsMemStorageDefs.h"
+#include "ModelsLock.h"
 #include "System/Matrix44f.h"
 #include "System/MemPoolTypes.h"
 #include "System/FreeListMap.h"
@@ -25,40 +26,37 @@ public:
 	}
 
 	size_t Allocate(size_t numElems) override {
-		std::scoped_lock lock(mtx);
+		auto lock = CModelsLock::lock.GetScopedLock();
 		size_t res = StablePosAllocator<CMatrix44f>::Allocate(numElems);
 		dirtyMap.resize(GetSize(), BUFFERING);
 
 		return res;
 	}
 	void Free(size_t firstElem, size_t numElems, const CMatrix44f* T0 = nullptr) override {
-		std::scoped_lock lock(mtx);
+		auto lock = CModelsLock::lock.GetScopedLock();
 		StablePosAllocator<CMatrix44f>::Free(firstElem, numElems, T0);
 		dirtyMap.resize(GetSize(), BUFFERING);
 	}
 
 	const CMatrix44f& operator[](std::size_t idx) const override
 	{
-		std::scoped_lock lock(mtx);
+		auto lock = CModelsLock::lock.GetScopedLock();
 		return StablePosAllocator<CMatrix44f>::operator[](idx);
 	}
 	CMatrix44f& operator[](std::size_t idx) override
 	{
-		std::scoped_lock lock(mtx);
+		auto lock = CModelsLock::lock.GetScopedLock();
 		return StablePosAllocator<CMatrix44f>::operator[](idx);
 	}
 private:
-	mutable spring::mutex mtx;
 	std::vector<uint8_t> dirtyMap;
 public:
 	const decltype(dirtyMap)& GetDirtyMap() const
 	{
-		std::scoped_lock lock(mtx);
 		return dirtyMap;
 	}
 	decltype(dirtyMap)& GetDirtyMap()
 	{
-		std::scoped_lock lock(mtx);
 		return dirtyMap;
 	}
 
