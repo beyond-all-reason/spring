@@ -192,6 +192,9 @@ public:
 	const float3* GetSharedCenterNormals(bool synced) const { return sharedCenterNormals[synced]; }
 	const float* GetSharedSlopeMap(bool synced) const { return sharedSlopeMaps[synced]; }
 
+	// Misc
+	void CopySyncedToUnsynced();
+
 	/// if you modify the heightmap through these, call UpdateHeightMapSynced
 	float SetHeight(const int idx, const float h, const int add = 0);
 	float AddHeight(const int idx, const float a);
