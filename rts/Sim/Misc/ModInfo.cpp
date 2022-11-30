@@ -37,6 +37,9 @@ void CModInfo::ResetState()
 		maxCollisionPushMultiplier = std::numeric_limits<float>::infinity();
 		unitQuadPositionUpdateRate = 3;
 		groundUnitCollisionAvoidanceUpdateRate = 3;
+
+		forceCollisionsSingleThreaded = false;
+		forceCollisionAvoidanceSingleThreaded = false;
 	}
 	{
 		constructionDecay      = true;
@@ -176,6 +179,9 @@ void CModInfo::Init(const std::string& modFileName)
 		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
 		unitQuadPositionUpdateRate = Clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
 		groundUnitCollisionAvoidanceUpdateRate = Clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
+
+		forceCollisionsSingleThreaded = movementTbl.GetBool("forceCollisionsSingleThreaded", forceCollisionsSingleThreaded);
+		forceCollisionAvoidanceSingleThreaded = movementTbl.GetBool("forceCollisionAvoidanceSingleThreaded", forceCollisionAvoidanceSingleThreaded);
 	}
 
 	{
