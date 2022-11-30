@@ -1,6 +1,7 @@
-#ifdef HAS_VULKAN
+#if defined(HAS_VULKAN) && !defined(HEADLESS)
 
 #include <string_view>
+#include <SDL2/SDL_vulkan.h>
 
 #include "VkInit.h"
 #include "fmt/format.h"
@@ -25,9 +26,17 @@ bool VkPhysicalDevicesCompare(const vk::PhysicalDevice& lhs, const vk::PhysicalD
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 VkCoreObjects::VkCoreObjects()
 {
-	dl = std::make_unique<vk::DynamicLoader>();
+	vkInitialized = (SDL_Vulkan_LoadLibrary(nullptr) == 0);
 
-	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl->getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	if (!vkInitialized)
+		return;
+
+	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
+
+	vkInitialized &= (vkGetInstanceProcAddr != nullptr);
+	if (!vkInitialized)
+		return;
+
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 	// Determine what API version is available
@@ -80,7 +89,11 @@ bool VkCoreObjects::HasExtension(const std::vector<vk::ExtensionProperties>& es,
 
 VkCoreObjects::~VkCoreObjects()
 {
+	if (!vkInitialized)
+		return;
+
 	instance.destroy();
+	SDL_Vulkan_UnloadLibrary();
 }
 
 #endif

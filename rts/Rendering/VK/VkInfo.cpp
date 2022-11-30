@@ -10,6 +10,11 @@ void VkInfo::PrintInfoImpl(const char* funcName)
 	LOG("[VkInfo::%s]", funcName);
 
 	const auto& vkc = VkCoreObjects::GetInstance();
+	if (!vkc.IsValid()) {
+		LOG("[VkInfo::%s] Failed to create Vulkan instance", funcName);
+		VkCoreObjects::KillInstance();
+		return;
+	}
 
 	LOG("\tInstance VK API version : %s", vkc.GetVulkanAPI().c_str());
 

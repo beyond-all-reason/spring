@@ -1,5 +1,5 @@
 #pragma once
-#ifdef HAS_VULKAN
+#if defined(HAS_VULKAN) && !defined(HEADLESS)
 
 #include <vector>
 #include <memory>
@@ -30,10 +30,12 @@ public:
 		return *vkCoreObjects;
 	}
 	static void KillInstance() { vkCoreObjects = nullptr; }
+
+	bool IsValid() const { return vkInitialized; }
 private:
 	static inline std::unique_ptr<VkCoreObjects> vkCoreObjects = nullptr;
 
-	std::unique_ptr<vk::DynamicLoader> dl;
+	bool vkInitialized = false;
 
 	vk::Instance instance;
 	std::vector<vk::ExtensionProperties> instExtensionProperties;
