@@ -718,13 +718,20 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 	// FindOffset (threadsafe)
 	{
 		SCOPED_TIMER("Sim::Path::Estimator::FindOffset");
-		for_mt(0, consumedBlocks.size(), [&](const int n) {
-			// copy the next block in line
-			const SingleBlock sb = consumedBlocks[n];
-			const int blockN = BlockPosToIdx(sb.blockPos);
-			const MoveDef* currBlockMD = sb.moveDef;
-			blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
-		});
+
+		auto updateOffset = [&](const int n) {
+				// copy the next block in line
+				const SingleBlock sb = consumedBlocks[n];
+				const int blockN = BlockPosToIdx(sb.blockPos);
+				const MoveDef* currBlockMD = sb.moveDef;
+				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
+			};
+
+		if (modInfo.pfForceUpdateSingleThreaded) {
+			for(int i = 0; i < consumedBlocks.size(); ++i) { updateOffset(i); };
+		} else {
+			for_mt(0, consumedBlocks.size(), updateOffset);
+		}
 
 		// for (int n=0; n<consumedBlocks.size(); n++){
 		// 	const SingleBlock sb = consumedBlocks[n];
@@ -743,13 +750,19 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 		std::atomic<std::int64_t> updateCostBlockNum = consumedBlocks.size();
 		const size_t threadsUsed = std::min(consumedBlocks.size(), (size_t)ThreadPool::GetNumThreads());
 
-		for_mt(0, threadsUsed, [this, &updateCostBlockNum](int threadNum){
-			std::int64_t n;
-			while ((n = --updateCostBlockNum) >= 0){
-				//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
-				CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
-			}
-		});
+		auto updateVertexPathCosts = [this, &updateCostBlockNum](int threadNum){
+				std::int64_t n;
+				while ((n = --updateCostBlockNum) >= 0){
+					//LOG("TK PathingState::Update: PROC moveDef = %d %p (%p)", n, &consumedBlocks[n], consumedBlocks[n].moveDef);
+					CalcVertexPathCosts(*consumedBlocks[n].moveDef, consumedBlocks[n].blockPos, threadNum);
+				}
+			};
+
+		if (modInfo.pfForceUpdateSingleThreaded) {
+			updateVertexPathCosts(0);
+		} else {
+			for_mt(0, threadsUsed, updateVertexPathCosts);
+		}
 	}
 }
 
