@@ -12,6 +12,7 @@
 
 #include "CommandAI/BuilderCAI.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Path/IPathManager.h"
@@ -303,39 +304,67 @@ void CUnitHandler::UpdateUnitMoveTypes()
 {
 	SCOPED_TIMER("Sim::Unit::MoveType");
 
+	if (modInfo.forceCollisionAvoidanceSingleThreaded)
 	{
-	SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
-	for_mt(0, activeUnits.size(), [this](const int i){
-		CUnit* unit = activeUnits[i];
-		AMoveType* moveType = unit->moveType;
+		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsST");
+		std::size_t len = activeUnits.size();
+		for (std::size_t i=0; i<len; ++i) {
+			CUnit* unit = activeUnits[i];
+			AMoveType* moveType = unit->moveType;
 
-		unit->SanityCheck();
-		unit->PreUpdate();
+			unit->SanityCheck();
+			unit->PreUpdate();
 
-		moveType->UpdatePreCollisionsMt();
-	});
+			moveType->UpdatePreCollisionsMt();
+			moveType->UpdatePreCollisions();
+		}
+	} else {
+		{
+		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
+		for_mt(0, activeUnits.size(), [this](const int i){
+			CUnit* unit = activeUnits[i];
+			AMoveType* moveType = unit->moveType;
+
+			unit->SanityCheck();
+			unit->PreUpdate();
+
+			moveType->UpdatePreCollisionsMt();
+		});
+		}
+
+		{
+		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
+		std::size_t len = activeUnits.size();
+		for (std::size_t i=0; i<len; ++i) {
+			CUnit* unit = activeUnits[i];
+			AMoveType* moveType = unit->moveType;
+
+			moveType->UpdatePreCollisions();
+		}
+		}
 	}
 
-	{
-	SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
-	std::size_t len = activeUnits.size();
-	for (std::size_t i=0; i<len; ++i) {
-		CUnit* unit = activeUnits[i];
-		AMoveType* moveType = unit->moveType;
+	if (modInfo.forceCollisionsSingleThreaded) {
+		{
+		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionST");
+		for (int i = 0; i < activeUnits.size(); ++i) {
+			CUnit* unit = activeUnits[i];
+			AMoveType* moveType = unit->moveType;
 
-		moveType->UpdatePreCollisions();
-	}
-	}
+			moveType->UpdateCollisionDetections();
+		}
+		}
+	} else {
+		{
+		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionMT");
+		for_mt(0, activeUnits.size(), [this](const int i){
+			CUnit* unit = activeUnits[i];
+			AMoveType* moveType = unit->moveType;
 
-	{
-	SCOPED_TIMER("Sim::Unit::MoveType::3::UpdateMT");
-	for_mt(0, activeUnits.size(), [this](const int i){
-		CUnit* unit = activeUnits[i];
-		AMoveType* moveType = unit->moveType;
-
-		moveType->UpdateCollisionDetections();
-	}
-	);
+			moveType->UpdateCollisionDetections();
+		}
+		);
+		}
 	}
 
 	{
