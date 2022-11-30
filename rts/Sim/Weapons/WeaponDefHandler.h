@@ -24,11 +24,11 @@ public:
 	}
 
 	bool IsValidWeaponDefID(const int id) const {
-		return (id > 0) && (static_cast<size_t>(id) < weaponDefsVector.size());
+		return (id >= 0) && (static_cast<size_t>(id) < weaponDefsVector.size());
 	}
 
-	// id=0 is not a valid WeaponDef, hence the -1
-	unsigned int NumWeaponDefs() const { return (weaponDefsVector.size() - 1); }
+	// id=0 *is* a valid WeaponDef, hence no -1
+	unsigned int NumWeaponDefs() const { return (weaponDefsVector.size()); }
 
 	// NOTE: safe with unordered_map after Init
 	const WeaponDef* GetWeaponDef(std::string wdName) const;

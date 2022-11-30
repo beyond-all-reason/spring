@@ -255,7 +255,6 @@ void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& ino
 	callinArgs[2] = int(hitDir.x);
 
 	if (HasFunction(COBFN_HitByWeaponId)) {
-		assert(weaponDefId > 0); // transitory assert for 0-index to 1-index weaponDefs change
 		const WeaponDef* wd = weaponDefHandler->GetWeaponDefByID(weaponDefId);
 
 		callinArgs[0] = 4;

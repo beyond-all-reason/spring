@@ -27,13 +27,11 @@ void CWeaponDefHandler::Init(LuaParser* defsParser)
 	std::vector<std::string> weaponNames;
 	rootTable.GetKeys(weaponNames);
 
+	weaponDefsVector.reserve(weaponNames.size());
 	weaponDefIDs.reserve(weaponNames.size());
-	weaponDefsVector.reserve(weaponNames.size() + 1); // WeaponDef ID's start with 1
-	weaponDefsVector.emplace_back();
 
-	for (int nid = 0; nid < weaponNames.size(); nid++) {
-		const int wid = nid + 1;
-		const std::string& name = weaponNames[nid];
+	for (int wid = 0; wid < weaponNames.size(); wid++) {
+		const std::string& name = weaponNames[wid];
 		const LuaTable wdTable = rootTable.SubTable(name);
 		weaponDefsVector.emplace_back(wdTable, name, wid);
 		weaponDefIDs[name] = wid;

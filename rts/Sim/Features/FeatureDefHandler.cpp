@@ -25,8 +25,9 @@ void CFeatureDefHandler::Init(LuaParser* defsParser)
 	std::vector<std::string> keys;
 	rootTable.GetKeys(keys);
 
+	// FeatureDef ID's start with 1
 	featureDefIDs.reserve(keys.size());
-	featureDefsVector.reserve(keys.size() + 1); // FeatureDef ID's start with 1
+	featureDefsVector.reserve(keys.size());
 	featureDefsVector.emplace_back();
 
 	for (unsigned int i = 0; i < keys.size(); i++) {
