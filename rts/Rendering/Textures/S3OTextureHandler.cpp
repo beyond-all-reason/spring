@@ -9,6 +9,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Models/3DModel.h"
+#include "Rendering/Models/ModelsLock.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/StringUtil.h"
 #include "System/Exceptions.h"
@@ -64,7 +65,8 @@ void CS3OTextureHandler::Kill()
 
 void CS3OTextureHandler::Reload()
 {
-	cacheMutex.lock(); //needed?
+	auto lock = CModelsLock::lock.GetScopedLock(); //needed?
+
 	for (auto& [texName, texData] : textureCache) {
 		if (texData.texID == 0)
 			continue;
@@ -83,22 +85,21 @@ void CS3OTextureHandler::Reload()
 			assert(newTexId == texData.texID);
 		}
 	}
-	cacheMutex.unlock();
 }
 
 
 void CS3OTextureHandler::PreloadTexture(S3DModel* model, bool invertAxis, bool invertAlpha)
 {
-	cacheMutex.lock();
+	auto lock = CModelsLock::lock.GetScopedLock();
+
 	LoadAndCacheTexture(model, 0, invertAxis, invertAlpha, true);
 	LoadAndCacheTexture(model, 1, invertAxis,       false, true); // never invert alpha for tex2
-	cacheMutex.unlock();
 }
 
 
 void CS3OTextureHandler::LoadTexture(S3DModel* model)
 {
-	cacheMutex.lock();
+	auto lock = CModelsLock::lock.GetScopedLock();
 
 	const unsigned int tex1ID = LoadAndCacheTexture(model, 0, false, false, false);
 	const unsigned int tex2ID = LoadAndCacheTexture(model, 1, false, false, false);
@@ -112,8 +113,6 @@ void CS3OTextureHandler::LoadTexture(S3DModel* model)
 	} else {
 		model->textureType = texTableIter->second;
 	}
-
-	cacheMutex.unlock();
 }
 
 unsigned int CS3OTextureHandler::LoadAndCacheTexture(

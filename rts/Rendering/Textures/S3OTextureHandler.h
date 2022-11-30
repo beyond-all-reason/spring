@@ -71,8 +71,6 @@ private:
 	TextureTable textureTable; // stores (primary, secondary) texture-pairs by unique ident
 	BitmapCache bitmapCache;
 
-	spring::mutex cacheMutex;
-
 	std::vector<S3OTexMat> textures;
 };
 
