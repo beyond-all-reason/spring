@@ -23,7 +23,6 @@
 #include "Rendering/GL/VBO.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelsMemStorage.h"
-#include "Rendering/Models/ModelsLock.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -128,8 +127,6 @@ void MatrixUploader::UpdateDerived()
 
 	SCOPED_TIMER("MatrixUploader::Update");
 	ssbo->UnbindBufferRange(bindingIdx);
-
-	auto lock = CModelsLock::lock.GetScopedLock();
 
 	//resize
 	const uint32_t elemCount = GetElemsCount();
