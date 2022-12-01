@@ -629,7 +629,7 @@ void CGlobalRendering::PostInit() {
 	glewExperimental = true;
 	#endif
 
-	VkInfo::PrintInfo();
+	//VkInfo::PrintInfo();
 
 	glewInit();
 	// glewInit sets GL_INVALID_ENUM, get rid of it
