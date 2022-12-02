@@ -41,12 +41,7 @@ public:
 	const std::string& GetName() const { return name; }
 	const HotSpot GetHotSpot() const { return hotSpot; }
 
-	float4 CalcFrameMatrixParams(const float3& winCoors, const float2& winScale) const
-	{
-		return CalcFrameMatrixParams(winCoors, winScale, false);
-	}
-
-	float4 CalcFrameMatrixParams(const float3& winCoors, const float2& winScale, const bool fullWindow) const;
+	float4 CalcFrameMatrixParams(const float3& winCoors, const float2& winScale, const bool fullWindow = false) const;
 private:
 	struct ImageData;
 
