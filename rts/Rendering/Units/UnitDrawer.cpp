@@ -1171,6 +1171,7 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	const float3& pos = buildInfo.pos;
 
 	uint64_t hashKey = spring::LiteHash(pos);
+	hashKey = spring::hash_combine(spring::LiteHash(buildInfo.buildFacing), hashKey);
 	/*
 	for (const auto& cmd : commands) {
 		const BuildInfo bc(cmd);
