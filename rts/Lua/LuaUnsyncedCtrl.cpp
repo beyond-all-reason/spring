@@ -1295,6 +1295,9 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 			} break;
 		}
 	}
+	auto waterID = static_cast<int>(IWater::GetWater()->GetID());
+	IWater::KillWater();
+	IWater::SetWater(waterID);
 
 	return 0;
 }
