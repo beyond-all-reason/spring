@@ -906,6 +906,19 @@ float3 CGameHelper::Pos2BuildPos(const BuildInfo& buildInfo, bool synced)
 	return pos;
 }
 
+float4 CGameHelper::BuildPosToRect(const float3& midPoint, int facing, int xsize, int zsize)
+{
+	const auto xs = ((facing & 1) == 0) ? xsize : zsize;
+	const auto zs = ((facing & 1) == 1) ? xsize : zsize;
+
+	return float4{
+		midPoint.x - xs * (SQUARE_SIZE >> 1),
+		midPoint.z - zs * (SQUARE_SIZE >> 1),
+		midPoint.x + xs * (SQUARE_SIZE >> 1),
+		midPoint.z + zs * (SQUARE_SIZE >> 1)
+	};
+}
+
 int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int2& xrange, const int2& zrange)
 {
 	int yardX = yardPos.x - xrange.x;

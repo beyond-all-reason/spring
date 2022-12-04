@@ -9,6 +9,7 @@
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Game/GameHelper.h"
 #include "System/SpringMath.h"
 
 int CSolidObject::deletingRefID = -1;
@@ -220,54 +221,30 @@ void CSolidObject::Block()
 }
 
 bool CSolidObject::FootPrintOnGround() const {
-	const     float sdist = std::max(radius, CalcFootPrintMinExteriorRadius());
+	const float sdist = std::max(radius, CalcFootPrintMinExteriorRadius());
 
-	#if 0
-	constexpr float scale = SQUARE_SIZE * 0.5f;
-	float3 p = pos;
+	if ((pos.y - sdist) <= CGround::GetHeightAboveWater(pos.x, pos.z))
+		return true;
 
-	{
-		// middle; AboveWater means floating structures still block
-		// by itself can fail on steep slopes for units with high slope tolerance, as will IsOnGround()
-		// must sample at least the footprint corners or alternatively use the exterior bounding-sphere
-		// radius
-		if ((p.y - sdist) <= CGround::GetHeightAboveWater(p.x, p.z))
-			return true;
-	}
+	const auto fpr = CGameHelper::BuildPosToRect(pos, buildFacing, xsize, zsize);
+	SRectangle hmFpr = {
+		std::clamp(int(fpr.x) / SQUARE_SIZE, 0, mapDims.mapxm1),
+		std::clamp(int(fpr.y) / SQUARE_SIZE, 0, mapDims.mapxm1),
+		std::clamp(int(fpr.z) / SQUARE_SIZE, 0, mapDims.mapym1),
+		std::clamp(int(fpr.w) / SQUARE_SIZE, 0, mapDims.mapym1)
+	};
 
-	{
-		// top-left
-		p = pos + float3{-xsize * scale, 0.0f, -zsize * scale};
-
-		if ((p.y - sdist) <= CGround::GetHeightAboveWater(p.x, p.z))
-			return true;
-	}
-	{
-		// top-right
-		p = pos + float3{+xsize * scale, 0.0f, -zsize * scale};
-
-		if ((p.y - sdist) <= CGround::GetHeightAboveWater(p.x, p.z))
-			return true;
-	}
-	{
-		// bottom-right
-		p = pos + float3{+xsize * scale, 0.0f, +zsize * scale};
-
-		if ((p.y - sdist) <= CGround::GetHeightAboveWater(p.x, p.z))
-			return true;
-	}
-	{
-		// bottom-left
-		p = pos + float3{-xsize * scale, 0.0f, +zsize * scale};
-
-		if ((p.y - sdist) <= CGround::GetHeightAboveWater(p.x, p.z))
-			return true;
+	for (int z = hmFpr.z1; z <= hmFpr.z2; ++z) {
+		const float* hPtr = CGround::GetApproximateHeightUnsafePtr(hmFpr.x1, z, true);
+		for (int x = hmFpr.x1; x <= hmFpr.x2; ++x) {
+			const auto heightAboveWaterHere = std::max(*hPtr, 0.0f);
+			if ((pos.y - SQUARE_SIZE) <= heightAboveWaterHere)
+				return true;
+			hPtr++;
+		}
 	}
 
 	return false;
-	#else
-	return ((pos.y - sdist) <= CGround::GetHeightAboveWater(pos.x, pos.z));
-	#endif
 }
 
 

@@ -7,6 +7,7 @@
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/float3.h"
+#include "System/float4.h"
 #include "System/type2.h"
 
 #include <array>
@@ -78,6 +79,7 @@ public:
 	static void BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit);
 	static void BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit, const std::vector<const UnitDef*> excludeUnitDefs);
 	static float3 Pos2BuildPos(const BuildInfo& buildInfo, bool synced);
+	static float4 BuildPosToRect(const float3& midPoint, int facing, int xsize, int zsize);
 
 	static int GetYardMapIndex(int buildFacing,
 		const int2& yardPos,

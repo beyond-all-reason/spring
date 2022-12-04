@@ -441,6 +441,11 @@ float CGround::GetApproximateHeightUnsafe(int x, int z, bool synced)
 	return heightMap[z * mapDims.mapx + x];
 }
 
+const float* CGround::GetApproximateHeightUnsafePtr(int x, int z, bool synced)
+{
+	const float* heightMap = readMap->GetSharedCenterHeightMap(synced);
+	return &heightMap[z * mapDims.mapx + x];
+}
 
 float CGround::GetHeightAboveWater(float x, float z, bool synced)
 {
