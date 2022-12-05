@@ -1,0 +1,1614 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Spring Lua API documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Spring Lua API</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Tables">Tables</a></li>
+<li><a href="#Commands">Commands </a></li>
+<li><a href="#Explode">Explode </a></li>
+<li><a href="#EmitSfx">EmitSfx </a></li>
+<li><a href="#Get_Set">Get/Set </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/Callins.html">Callins</a></li>
+  <li><strong>Constants</strong></li>
+  <li><a href="../modules/ConstGL.html">ConstGL</a></li>
+  <li><a href="../modules/GL.html">GL</a></li>
+  <li><a href="../modules/Math.html">Math</a></li>
+  <li><a href="../modules/SyncedCtrl.html">SyncedCtrl</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>Constants</code></h1>
+<p>Global constants</p>
+<p>
+
+</p>
+
+
+<h2><a href="#Tables">Tables</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Platform">Platform</a></td>
+	<td class="summary">Platform specific information</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Engine">Engine</a></td>
+	<td class="summary">Engine specific information</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Game">Game</a></td>
+	<td class="summary">Game specific information</td>
+	</tr>
+</table>
+<h2><a href="#Commands">Commands </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#CMD">CMD</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CMDTYPE">CMDTYPE</a></td>
+	<td class="summary">Note, the CMDTYPE[] table is bidirectional.</td>
+	</tr>
+</table>
+<h2><a href="#Explode">Explode </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#SFX">SFX</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+<h2><a href="#EmitSfx">EmitSfx </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#SFX">SFX</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+<h2><a href="#Get_Set">Get/Set </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#COB">COB</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Tables"></a>Tables</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Platform"></a>
+    <strong>Platform</strong>
+    </dt>
+    <dd>
+    Platform specific information
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">gpu</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         full GPU device name
+        </li>
+        <li><span class="parameter">gpuVendor</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
+        </li>
+        <li><span class="parameter">glVersionShort</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         major.minor.buildNumber
+        </li>
+        <li><span class="parameter">glslVersionShort</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         major.minor
+        </li>
+        <li><span class="parameter">glVersion</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         full version
+        </li>
+        <li><span class="parameter">glVendor</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">glRenderer</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">glslVersion</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         full version
+        </li>
+        <li><span class="parameter">glewVersion</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">osName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         full name of the OS
+        </li>
+        <li><span class="parameter">osFamily</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
+        </li>
+        <li><span class="parameter">gpuMemorySize</span>
+            <span class="types"><span class="type">number</span></span>
+         size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+        </li>
+        <li><span class="parameter">sdlVersionCompiledMajor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">sdlVersionCompiledMinor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">sdlVersionCompiledPatch</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">sdlVersionLinkedMajor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">sdlVersionLinkedMinor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">sdlVersionLinkedPatch</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupportNonPowerOfTwoTex</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupportTextureQueryLOD</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupport24bitDepthBuffer</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupportRestartPrimitive</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupportClipSpaceControl</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">glSupportFragDepthLayout</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Engine"></a>
+    <strong>Engine</strong>
+    </dt>
+    <dd>
+    Engine specific information
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">version</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Returns the same as <code>spring --sync-version</code>, e.g. "92"
+        </li>
+        <li><span class="parameter">versionFull</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">versionPatchSet</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">buildFlags</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+        </li>
+        <li><span class="parameter">wordSize</span>
+            <span class="types"><span class="type">number</span></span>
+         indicates the build type and is either 32 or 64 (or 0 in synced code)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Game"></a>
+    <strong>Game</strong>
+    </dt>
+    <dd>
+    Game specific information
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">maxUnits</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">maxTeams</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">maxPlayers</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">squareSize</span>
+            <span class="types"><span class="type">number</span></span>
+         Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates
+        </li>
+        <li><span class="parameter">gameSpeed</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">startPosType</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ghostedBuildings</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapChecksum</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">modChecksum</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapDamage</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapDescription</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         = string Game.mapHumanName
+        </li>
+        <li><span class="parameter">mapHardness</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapX</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapY</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mapSizeX</span>
+            <span class="types"><span class="type">number</span></span>
+         in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+        </li>
+        <li><span class="parameter">mapSizeZ</span>
+            <span class="types"><span class="type">number</span></span>
+         in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+        </li>
+        <li><span class="parameter">gravity</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">tidal</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">windMin</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">windMax</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">extractorRadius</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">waterDamage</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">envDamageTypes</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Containing {def}IDs of environmental-damage sources
+        </li>
+        <li><span class="parameter">gameName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">gameShortName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">gameVersion</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">gameMutator</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">gameDesc</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">allowTeamColors</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">requireSonarUnderWater</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">transportAir</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">transportShip</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">transportHover</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">transportGround</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">fireAtKilled</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">fireAtCrashing</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">constructionDecay</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimAllowEnemies</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimAllowAllies</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">constructionDecayTime</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">constructionDecaySpeed</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">multiReclaim</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimMethod</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimUnitMethod</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimUnitEnergyCostFactor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimUnitEfficiency</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">reclaimFeatureEnergyCostFactor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">repairEnergyCostFactor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">resurrectEnergyCostFactor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">captureEnergyCostFactor</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">springCategories</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+
+<pre><code>example: {
+  ["vtol"]         = 0,  ["special"]      = 1,  ["noweapon"]     = 2,
+  ["notair"]       = 3,  ["notsub"]       = 4,  ["all"]          = 5,
+  ["weapon"]       = 6,  ["notship"]      = 7,  ["notland"]      = 8,
+  ["mobile"]       = 9,  ["kbot"]         = 10, ["antigator"]    = 11,
+  ["tank"]         = 12, ["plant"]        = 13, ["ship"]         = 14,
+  ["antiemg"]      = 15, ["antilaser"]    = 16, ["antiflame"]    = 17,
+  ["underwater"]   = 18, ["hover"]        = 19, ["phib"]         = 20,
+  ["constr"]       = 21, ["strategic"]    = 22, ["commander"]    = 23,
+  ["paral"]        = 24, ["jam"]          = 25, ["mine"]         = 26,
+  ["kamikaze"]     = 27, ["minelayer"]    = 28, ["notstructure"] = 29,
+  ["air"]          = 30
+}
+</code></pre>
+
+        </li>
+        <li><span class="parameter">armorTypes</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+<p> (bidirectional)</p>
+<pre><code>example: {
+  [1]  = amphibious,   [2] = anniddm,     [3] = antibomber,
+  [4]  = antifighter,  [5] = antiraider,  [6] = atl,
+  [7]  = blackhydra,   [8] = bombers,     [9] = commanders,
+  [10] = crawlingbombs, ...
+
+  ["amphibious"]   = 1, ["anniddm"]    = 2, ["antibomber"] = 3
+  ["antifighter"]  = 4, ["antiraider"] = 5, ["atl"]        = 6
+  ["blackhydra"]   = 7, ["bombers"]    = 8, ["commanders"] = 9
+  ["crawlingbombs"]= 10, ...
+}
+</code></pre>
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Commands"></a>Commands </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "CMD"></a>
+    <strong>CMD</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">FIRESTATE_NONE</span>
+         -1
+        </li>
+        <li><span class="parameter">MOVESTATE_NONE</span>
+         -1
+        </li>
+        <li><span class="parameter">STOP</span>
+         0
+        </li>
+        <li><span class="parameter">MOVESTATE_HOLDPOS</span>
+         0
+        </li>
+        <li><span class="parameter">FIRESTATE_HOLDFIRE</span>
+         0
+        </li>
+        <li><span class="parameter">INSERT</span>
+         1
+        </li>
+        <li><span class="parameter">MOVESTATE_MANEUVER</span>
+         1
+        </li>
+        <li><span class="parameter">FIRESTATE_RETURNFIRE</span>
+         1
+        </li>
+        <li><span class="parameter">WAITCODE_TIME</span>
+         1
+        </li>
+        <li><span class="parameter">WAITCODE_DEATH</span>
+         2
+        </li>
+        <li><span class="parameter">MOVESTATE_ROAM</span>
+         2
+        </li>
+        <li><span class="parameter">REMOVE</span>
+         2
+        </li>
+        <li><span class="parameter">FIRESTATE_FIREATWILL</span>
+         2
+        </li>
+        <li><span class="parameter">FIRESTATE_FIREATNEUTRAL</span>
+         3
+        </li>
+        <li><span class="parameter">WAITCODE_SQUAD</span>
+         3
+        </li>
+        <li><span class="parameter">OPT_META</span>
+         4
+        </li>
+        <li><span class="parameter">WAITCODE_GATHER</span>
+         4
+        </li>
+        <li><span class="parameter">WAIT</span>
+         5
+        </li>
+        <li><span class="parameter">TIMEWAIT</span>
+         6
+        </li>
+        <li><span class="parameter">DEATHWAIT</span>
+         7
+        </li>
+        <li><span class="parameter">OPT_INTERNAL</span>
+         8
+        </li>
+        <li><span class="parameter">SQUADWAIT</span>
+         8
+        </li>
+        <li><span class="parameter">GATHERWAIT</span>
+         9
+        </li>
+        <li><span class="parameter">MOVE</span>
+         10
+        </li>
+        <li><span class="parameter">PATROL</span>
+         15
+        </li>
+        <li><span class="parameter">FIGHT</span>
+         16
+        </li>
+        <li><span class="parameter">OPT_RIGHT</span>
+         16
+        </li>
+        <li><span class="parameter">LOOPBACKATTACK</span>
+         20
+        </li>
+        <li><span class="parameter">ATTACK</span>
+         20
+        </li>
+        <li><span class="parameter">AREA_ATTACK</span>
+         21
+        </li>
+        <li><span class="parameter">GUARD</span>
+         25
+        </li>
+        <li><span class="parameter">AISELECT</span>
+         30
+        </li>
+        <li><span class="parameter">OPT_SHIFT</span>
+         32
+        </li>
+        <li><span class="parameter">GROUPSELECT</span>
+         35
+        </li>
+        <li><span class="parameter">GROUPADD</span>
+         36
+        </li>
+        <li><span class="parameter">GROUPCLEAR</span>
+         37
+        </li>
+        <li><span class="parameter">REPAIR</span>
+         40
+        </li>
+        <li><span class="parameter">FIRE_STATE</span>
+         45
+        </li>
+        <li><span class="parameter">MOVE_STATE</span>
+         50
+        </li>
+        <li><span class="parameter">SETBASE</span>
+         55
+        </li>
+        <li><span class="parameter">INTERNAL</span>
+         60
+        </li>
+        <li><span class="parameter">OPT_CTRL</span>
+         64
+        </li>
+        <li><span class="parameter">SELFD</span>
+         65
+        </li>
+        <li><span class="parameter">SET_WANTED_MAX_SPEED</span>
+         70
+        </li>
+        <li><span class="parameter">LOAD_UNITS</span>
+         75
+        </li>
+        <li><span class="parameter">LOAD_ONTO</span>
+         76
+        </li>
+        <li><span class="parameter">UNLOAD_UNITS</span>
+         80
+        </li>
+        <li><span class="parameter">UNLOAD_UNIT</span>
+         81
+        </li>
+        <li><span class="parameter">ONOFF</span>
+         85
+        </li>
+        <li><span class="parameter">RECLAIM</span>
+         90
+        </li>
+        <li><span class="parameter">CLOAK</span>
+         95
+        </li>
+        <li><span class="parameter">STOCKPILE</span>
+         100
+        </li>
+        <li><span class="parameter">MANUALFIRE</span>
+         105
+        </li>
+        <li><span class="parameter">DGUN</span>
+         105
+        </li>
+        <li><span class="parameter">RESTORE</span>
+         110
+        </li>
+        <li><span class="parameter">REPEAT</span>
+         115
+        </li>
+        <li><span class="parameter">TRAJECTORY</span>
+         120
+        </li>
+        <li><span class="parameter">RESURRECT</span>
+         125
+        </li>
+        <li><span class="parameter">OPT_ALT</span>
+         128
+        </li>
+        <li><span class="parameter">CAPTURE</span>
+         130
+        </li>
+        <li><span class="parameter">AUTOREPAIRLEVEL</span>
+         135
+        </li>
+        <li><span class="parameter">IDLEMODE</span>
+         145
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "CMDTYPE"></a>
+    <strong>CMDTYPE</strong>
+    </dt>
+    <dd>
+    Note, the CMDTYPE[] table is bidirectional.  That means: CMDTYPE[CMDTYPE.ICON] := "CMDTYPE_ICON"
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">ICON</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 0 parameters in return
+        </li>
+        <li><span class="parameter">ICON_MODE</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (number selected mode)
+        </li>
+        <li><span class="parameter">ICON_MAP</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 3 parameters in return (mappos)
+        </li>
+        <li><span class="parameter">ICON_AREA</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 4 parameters in return (mappos+radius)
+        </li>
+        <li><span class="parameter">ICON_UNIT</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameters in return (unitid)
+        </li>
+        <li><span class="parameter">ICON_UNIT_OR_MAP</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
+        </li>
+        <li><span class="parameter">ICON_FRONT</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 3 or 6 parameters in return (middle and right side of front if a front was defined)
+        </li>
+        <li><span class="parameter">COMBO_BOX</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (number selected option)
+        </li>
+        <li><span class="parameter">ICON_UNIT_OR_AREA</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
+        </li>
+        <li><span class="parameter">ICON_UNIT_FEATURE_OR_AREA</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (unitid or Game.maxUnits+featureid) or 4 parameters in return (mappos+radius)
+        </li>
+        <li><span class="parameter">ICON_BUILDING</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 3 parameters in return (mappos)
+        </li>
+        <li><span class="parameter">ICON_UNIT_OR_RECTANGLE</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (unitid) or 3 parameters in return (mappos) or 6 parameters in return (startpos+endpos)
+        </li>
+        <li><span class="parameter">NUMBER</span>
+            <span class="types"><span class="type">number</span></span>
+         expect 1 parameter in return (number)
+        </li>
+        <li><span class="parameter">CUSTOM</span>
+            <span class="types"><span class="type">number</span></span>
+         used with CMD_INTERNAL
+        </li>
+        <li><span class="parameter">NEXT</span>
+            <span class="types"><span class="type">number</span></span>
+         next command page used with CMD_INTERNAL
+        </li>
+        <li><span class="parameter">PREV</span>
+            <span class="types"><span class="type">number</span></span>
+         previous command page used with CMD_INTERNAL
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Explode"></a>Explode </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "SFX"></a>
+    <strong>SFX</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">SHATTER</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">EXPLODE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">EXPLODE_ON_HIT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FALL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SMOKE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FIRE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">NONE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">NO_CEG_TRAIL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">NO_HEATCLOUD</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">RECURSIVE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="EmitSfx"></a>EmitSfx </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "SFX"></a>
+    <strong>SFX</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">VTOL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WAKE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">REVERSE_WAKE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WHITE_SMOKE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">BLACK_SMOKE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">BUBBLE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CEG</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FIRE_WEAPON</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">DETONATE_WEAPON</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">GLOBAL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Get_Set"></a>Get/Set </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "COB"></a>
+    <strong>COB</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">ACTIVATION</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">STANDINGMOVEORDERS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">STANDINGFIREORDERS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">HEALTH</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">INBUILDSTANCE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">BUSY</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">PIECE_XZ</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">PIECE_Y</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_XZ</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_Y</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_HEIGHT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">XZ_ATAN</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">XZ_HYPOT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ATAN</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">HYPOT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">GROUND_HEIGHT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">BUILD_PERCENT_LEFT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">YARD_OPEN</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">BUGGER_OFF</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ARMORED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">IN_WATER</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CURRENT_SPEED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">VETERAN_LEVEL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ON_ROAD</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">MAX_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">MY_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_TEAM</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_BUILD_PERCENT_LEFT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UNIT_ALLIED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">MAX_SPEED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CLOAKED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WANT_CLOAK</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">GROUND_WATER_HEIGHT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">UPRIGHT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">POW</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">PRINT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">HEADING</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">TARGET_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">LAST_ATTACKER_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">LOS_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">AIR_LOS_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">RADAR_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">JAMMER_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SONAR_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SONAR_JAM_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SEISMIC_RADIUS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">DO_SEISMIC_PING</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CURRENT_FUEL</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">TRANSPORT_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SHIELD_POWER</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">STEALTH</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CRASHING</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CHANGE_TARGET</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">CEG_DAMAGE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">COB_ID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">PLAY_SOUND</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">KILL_UNIT</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ALPHA_THRESHOLD</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SET_WEAPON_UNIT_TARGET</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SET_WEAPON_GROUND_TARGET</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">SONAR_STEALTH</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">REVERSING</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FLANK_B_MODE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FLANK_B_DIR</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FLANK_B_MOBILITY_ADD</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FLANK_B_MAX_DAMAGE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">FLANK_B_MIN_DAMAGE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_RELOADSTATE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_RELOADTIME</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_ACCURACY</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_SPRAY</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_RANGE</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">WEAPON_PROJECTILE_SPEED</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">MIN</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">MAX</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ABS</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">GAME_FRAME</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2022-12-06 07:09:48 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

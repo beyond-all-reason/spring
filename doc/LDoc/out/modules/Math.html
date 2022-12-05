@@ -1,0 +1,657 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Spring Lua API documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Spring Lua API</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/Callins.html">Callins</a></li>
+  <li><a href="../modules/Constants.html">Constants</a></li>
+  <li><a href="../modules/ConstGL.html">ConstGL</a></li>
+  <li><a href="../modules/GL.html">GL</a></li>
+  <li><strong>Math</strong></li>
+  <li><a href="../modules/SyncedCtrl.html">SyncedCtrl</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>Math</code></h1>
+<p>Extensions to <a href="https://www.lua.org/manual/5.1/manual.html#5.6">math</a></p>
+<p>
+
+<p> Note: there are no bit shift. Use those Lua functions instead for 24 bits bitshift
+ 24 bits because only the 24 bits of the mantissa can be easily used in a 32 bit float
+ bitshift functions (&lt;<, >> equivalent)</p>
+
+<p> shift left</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> lsh(value,shift)
+    <span class="keyword">return</span> (value*(<span class="number">2</span>^shift)) % <span class="number">2</span>^<span class="number">24</span>
+<span class="keyword">end</span>
+</pre>
+
+<p> shift right</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> rsh(value,shift)
+    <span class="keyword">return</span> <span class="global">math</span>.floor(value/<span class="number">2</span>^shift) % <span class="number">2</span>^<span class="number">24</span>
+<span class="keyword">end</span>
+</pre>
+
+</p>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#math.clamp">math.clamp ()</a></td>
+	<td class="summary">Returns x clamped to min and max boundaries.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.diag">math.diag (x1[, x2[, x3[, xn]]])</a></td>
+	<td class="summary">Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.erf">math.erf (x)</a></td>
+	<td class="summary">Returns erf(x).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.hypot">math.hypot (x, y)</a></td>
+	<td class="summary">Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x<em>x + y</em>y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.mix">math.mix (x, y, a)</a></td>
+	<td class="summary">Returns linear interpolation between x and y with ratio a (x+(y-x)*a).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.round">math.round (x, decimals)</a></td>
+	<td class="summary">Returns x rounded to n decimals, if n is omitted or &lt;=0, rounds to nearest integer.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.sgn">math.sgn (x)</a></td>
+	<td class="summary">Returns 0 if x ==0, 1 if x > 0, -1 if x &lt; 0 sgn(x).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.smoothstep">math.smoothstep (edge0, edge1, v)</a></td>
+	<td class="summary">Returns smoothstep(edge0, edge1, v).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.bit_and">math.bit_and (a1, a2[, a3[, an]])</a></td>
+	<td class="summary">Returns the bitwise AND of all arguments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.bit_or">math.bit_or (a1, a2[, a3[, an]])</a></td>
+	<td class="summary">Returns the bitwise OR of all arguments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.bit_xor">math.bit_xor (a1, a2[, a3[, an]])</a></td>
+	<td class="summary">Returns the bitwise XOR of all arguments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.bit_inv">math.bit_inv (a1)</a></td>
+	<td class="summary">Returns the bitwise NOT of the 24 bit integer argument.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#math.bit_bits">math.bit_bits (a1, a2[, a3[, an]])</a></td>
+	<td class="summary">Set each of the bits of a 24 bit integer.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "math.clamp"></a>
+    <strong>math.clamp ()</strong>
+    </dt>
+    <dd>
+    Returns x clamped to min and max boundaries.  ( number x, number min, number max )
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        clamped
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.diag"></a>
+    <strong>math.diag (x1[, x2[, x3[, xn]]])</strong>
+    </dt>
+    <dd>
+    Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector).  Rather quick method that does not handle intermediate overflows/underflows nor is made for numerical stability.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">x3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">xn</span>
+            <span class="types"><span class="type">number</span></span>
+         and so on
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        diagonal
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.erf"></a>
+    <strong>math.erf (x)</strong>
+    </dt>
+    <dd>
+    Returns erf(x).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        erf
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.hypot"></a>
+    <strong>math.hypot (x, y)</strong>
+    </dt>
+    <dd>
+    Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x<em>x + y</em>y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        sqrt(x<em>x+y</em>y)
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.mix"></a>
+    <strong>math.mix (x, y, a)</strong>
+    </dt>
+    <dd>
+    Returns linear interpolation between x and y with ratio a (x+(y-x)*a).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        (x+(y-x)*a)
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.round"></a>
+    <strong>math.round (x, decimals)</strong>
+    </dt>
+    <dd>
+    Returns x rounded to n decimals, if n is omitted or &lt;=0, rounds to nearest integer.  Note that Spring's Lua interpreter uses 32-bit floats for all numbers so max. precision is ~7 decimal digits.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">decimals</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        rounded
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.sgn"></a>
+    <strong>math.sgn (x)</strong>
+    </dt>
+    <dd>
+    Returns 0 if x ==0, 1 if x > 0, -1 if x &lt; 0 sgn(x).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        sign
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.smoothstep"></a>
+    <strong>math.smoothstep (edge0, edge1, v)</strong>
+    </dt>
+    <dd>
+    Returns smoothstep(edge0, edge1, v).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">edge0</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">edge1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">v</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        smoothstep
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.bit_and"></a>
+    <strong>math.bit_and (a1, a2[, a3[, an]])</strong>
+    </dt>
+    <dd>
+    Returns the bitwise AND of all arguments.  Only use up to 24 bit integers.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">an</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        i
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.bit_or"></a>
+    <strong>math.bit_or (a1, a2[, a3[, an]])</strong>
+    </dt>
+    <dd>
+    Returns the bitwise OR of all arguments.  Only use up to 24 bit integers.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">an</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        i
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.bit_xor"></a>
+    <strong>math.bit_xor (a1, a2[, a3[, an]])</strong>
+    </dt>
+    <dd>
+    Returns the bitwise XOR of all arguments.  Only use up to 24 bit integers.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">an</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        i
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.bit_inv"></a>
+    <strong>math.bit_inv (a1)</strong>
+    </dt>
+    <dd>
+    Returns the bitwise NOT of the 24 bit integer argument.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        i
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "math.bit_bits"></a>
+    <strong>math.bit_bits (a1, a2[, a3[, an]])</strong>
+    </dt>
+    <dd>
+    Set each of the bits of a 24 bit integer.  Returns result = result OR (1 &lt;< a1) OR (1 &lt;< a2) OR ...;)
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">a1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">a3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">an</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        i
+    </ol>
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2022-12-06 07:09:48 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

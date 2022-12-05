@@ -1,0 +1,3661 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Spring Lua API documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Spring Lua API</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Tables">Tables</a></li>
+<li><a href="#Common">Common </a></li>
+<li><a href="#Unsynced_Only">Unsynced Only </a></li>
+<li><a href="#Unsynced_Menu_Only">Unsynced Menu Only </a></li>
+<li><a href="#Synced___Unsynced_Shared">Synced - Unsynced Shared </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><strong>Callins</strong></li>
+  <li><a href="../modules/Constants.html">Constants</a></li>
+  <li><a href="../modules/ConstGL.html">ConstGL</a></li>
+  <li><a href="../modules/GL.html">GL</a></li>
+  <li><a href="../modules/Math.html">Math</a></li>
+  <li><a href="../modules/SyncedCtrl.html">SyncedCtrl</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>Callins</code></h1>
+<p>Functions called by the Engine</p>
+<p> This page is future looking to unified widget/gadget (aka "addon") handler, which may yet be some way off, c.f. the changelog.</p>
+
+<p> Related Sourcecode: <a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaHandle.cpp">LuaHandle.cpp</a></p>
+
+<p> For now, to use these addons in a widget, prepend widget: and, for a gadget, prepend gadget:. For example,</p>
+
+
+<pre>
+<span class="keyword">function</span> widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
+    ...
+<span class="keyword">end</span>
+</pre>
+
+<p> Some functions may differ between (synced) gadget and widgets; those are in the <a href="#Synced___Unsynced_Shared">Synced - Unsynced Shared</a> section. Essentially the reason is that all information should be available to synced (game logic controlling) gadgets, but restricted to unsynced gadget/widget (e.g. information about an enemy unit only detected via radar and not yet in LOS). In such cases the full (synced) param list is documented.</p>
+
+<p> Attention: some callins will only work on the unsynced portion of the gadget. Due to the type-unsafe nature of lua parsing, those callins not firing up might be hard to trace. This document will be continuously updated to properly alert about those situations.</p>
+
+
+<h2><a href="#Tables">Tables</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#cmdOpts">cmdOpts</a></td>
+	<td class="summary">Command Options</td>
+	</tr>
+</table>
+<h2><a href="#Common">Common </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Initialize">Initialize ()</a></td>
+	<td class="summary">Called when the addon is (re)loaded.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Shutdown">Shutdown ()</a></td>
+	<td class="summary">Called when the addon or the game is shutdown.</td>
+	</tr>
+</table>
+<h2><a href="#Unsynced_Only">Unsynced Only </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#DefaultCommand">DefaultCommand (type, id)</a></td>
+	<td class="summary">Used to set the default command when a unit is selected.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CommandNotify">CommandNotify (cmdID, cmdParams, cmdOpts)</a></td>
+	<td class="summary">Called when a command is issued.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CommandsChanged">CommandsChanged ()</a></td>
+	<td class="summary">Called when the command descriptions changed, e.g.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#WorldTooltip">WorldTooltip (ttType, data1[, data2[, data3]])</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnsyncedHeightMapUpdate">UnsyncedHeightMapUpdate ()</a></td>
+	<td class="summary">Called when the unsynced copy of the height-map is altered.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameProgress">GameProgress (serverFrameNum)</a></td>
+	<td class="summary">Called every 60 frames, calculating delta between GameFrame and GameProgress.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameSetup">GameSetup (state, playerStates)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#SunChanged">SunChanged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AddConsoleLine">AddConsoleLine (msg, priority)</a></td>
+	<td class="summary">Called when text is entered into the console (e.g.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RecvSkirmishAIMessage">RecvSkirmishAIMessage (aiTeam, dataStr)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RecvFromSynced">RecvFromSynced ()</a></td>
+	<td class="summary">Receives data sent via SendToUnsynced callout.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Save">Save (zip)</a></td>
+	<td class="summary">Called when a chat command '/save' or '/savegame' is received.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#LoadProgress">LoadProgress ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GroupChanged">GroupChanged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ConfigureLayout">ConfigureLayout ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#IsAbove">IsAbove ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GetTooltip">GetTooltip ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#KeyPress">KeyPress ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#KeyRelease">KeyRelease ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TextInput">TextInput ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#JoystickEvent">JoystickEvent ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#MousePress">MousePress ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#MouseRelease">MouseRelease ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#MouseWheel">MouseWheel ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#MouseMove">MouseMove ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#PlayerChanged">PlayerChanged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#PlayerAdded">PlayerAdded ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#PlayerRemoved">PlayerRemoved ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DownloadStarted">DownloadStarted ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DownloadFinished">DownloadFinished ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DownloadFailed">DownloadFailed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DownloadProgress">DownloadProgress ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ViewResize">ViewResize ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Update">Update ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawGenesis">DrawGenesis ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorldPreParticles">DrawWorldPreParticles ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorldPreUnit">DrawWorldPreUnit ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorld">DrawWorld ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorldShadow">DrawWorldShadow ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorldReflection">DrawWorldReflection ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawWorldRefraction">DrawWorldRefraction ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawGroundPreForward">DrawGroundPreForward ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawGroundPreDeferred">DrawGroundPreDeferred ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawGroundPostDeferred">DrawGroundPostDeferred ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawUnitsPostDeferred">DrawUnitsPostDeferred ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawFeaturesPostDeferred">DrawFeaturesPostDeferred ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawScreen">DrawScreen ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawScreenEffects">DrawScreenEffects ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawScreenPost">DrawScreenPost ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawLoadScreen">DrawLoadScreen ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawInMinimap">DrawInMinimap ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawInMinimapBackground">DrawInMinimapBackground ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawUnit">DrawUnit ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawFeature">DrawFeature ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawShield">DrawShield ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#DrawProjectile">DrawProjectile ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+<h2><a href="#Unsynced_Menu_Only">Unsynced Menu Only </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#AllowDraw">AllowDraw ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ActivateMenu">ActivateMenu ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ActivateGame">ActivateGame ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+<h2><a href="#Synced___Unsynced_Shared">Synced - Unsynced Shared </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#GotChatMsg">GotChatMsg ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameID">GameID ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GamePaused">GamePaused ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameOver">GameOver ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameFrame">GameFrame ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GamePreload">GamePreload ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameStart">GameStart ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TeamChanged">TeamChanged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TeamDied">TeamDied ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitCreated">UnitCreated ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitFinished">UnitFinished ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitFromFactory">UnitFromFactory ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitReverseBuilt">UnitReverseBuilt ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitGiven">UnitGiven ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitTaken">UnitTaken ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitDamaged">UnitDamaged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitDestroyed">UnitDestroyed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RenderUnitDestroyed">RenderUnitDestroyed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitStunned">UnitStunned ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitUnitCollision">UnitUnitCollision ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitFeatureCollision">UnitFeatureCollision ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitHarvestStorageFull">UnitHarvestStorageFull ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitCommand">UnitCommand ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitCmdDone">UnitCmdDone ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitLoaded">UnitLoaded ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitUnloaded">UnitUnloaded ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitExperience">UnitExperience ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitIdle">UnitIdle ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitCloaked">UnitCloaked ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitDecloaked">UnitDecloaked ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitMoved">UnitMoved ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitMoveFailed">UnitMoveFailed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StockpileChanged">StockpileChanged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitEnteredLos">UnitEnteredLos ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitLeftLos">UnitLeftLos ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitEnteredRadar">UnitEnteredRadar ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitLeftRadar">UnitLeftRadar ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitEnteredAir">UnitEnteredAir ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitLeftAir">UnitLeftAir ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitEnteredWater">UnitEnteredWater ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitLeftWater">UnitLeftWater ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitSeismicPing">UnitSeismicPing ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FeatureCreated">FeatureCreated ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FeatureDamaged">FeatureDamaged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FeatureDestroyed">FeatureDestroyed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FeatureMoved">FeatureMoved ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ProjectileCreated">ProjectileCreated ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ProjectileDestroyed">ProjectileDestroyed ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CommandFallback">CommandFallback ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowCommand">AllowCommand ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowUnitCreation">AllowUnitCreation ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowUnitTransfer">AllowUnitTransfer ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowUnitBuildStep">AllowUnitBuildStep ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowFeatureCreation">AllowFeatureCreation ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowFeatureBuildStep">AllowFeatureBuildStep ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowResourceLevel">AllowResourceLevel ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowResourceTransfer">AllowResourceTransfer ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowStartPosition">AllowStartPosition ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowDirectUnitControl">AllowDirectUnitControl ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowWeaponTargetCheck">AllowWeaponTargetCheck ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowWeaponTarget">AllowWeaponTarget ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowWeaponInterceptTarget">AllowWeaponInterceptTarget ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AllowBuilderHoldFire">AllowBuilderHoldFire ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Explosion">Explosion ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TerraformComplete">TerraformComplete ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#MoveCtrlNotify">MoveCtrlNotify ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RecvLuaMsg">RecvLuaMsg ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Load">Load ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#UnitPreDamaged">UnitPreDamaged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ShieldPreDamaged">ShieldPreDamaged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FeaturePreDamaged">FeaturePreDamaged ()</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Tables"></a>Tables</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "cmdOpts"></a>
+    <strong>cmdOpts</strong>
+    </dt>
+    <dd>
+    Command Options
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">coded</span>
+            <span class="types"><span class="type">int</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">alt</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ctrl</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">shift</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">right</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">meta</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">internal</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Common"></a>Common </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Initialize"></a>
+    <strong>Initialize ()</strong>
+    </dt>
+    <dd>
+    Called when the addon is (re)loaded.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Shutdown"></a>
+    <strong>Shutdown ()</strong>
+    </dt>
+    <dd>
+    Called when the addon or the game is shutdown.
+
+
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Unsynced_Only"></a>Unsynced Only </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "DefaultCommand"></a>
+    <strong>DefaultCommand (type, id)</strong>
+    </dt>
+    <dd>
+    Used to set the default command when a unit is selected.  First parameter is the type of the object pointed at (either "unit or "feature") and the second is its unitID or featureID respectively.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">type</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         "unit" | "feature"
+        </li>
+        <li><span class="parameter">id</span>
+            <span class="types"><span class="type">int</span></span>
+         unitID | featureID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "CommandNotify"></a>
+    <strong>CommandNotify (cmdID, cmdParams, cmdOpts)</strong>
+    </dt>
+    <dd>
+    Called when a command is issued.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">cmdID</span>
+            <span class="types"><span class="type">int</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">cmdParams</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">cmdOpts</span>
+            <span class="types"><a class="type" href="../modules/Callins.html#cmdOpts">cmdOpts</a></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Returning true deletes the command and does not send it through the network.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "CommandsChanged"></a>
+    <strong>CommandsChanged ()</strong>
+    </dt>
+    <dd>
+    Called when the command descriptions changed, e.g.  when selecting or deselecting a unit.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        ?
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "WorldTooltip"></a>
+    <strong>WorldTooltip (ttType, data1[, data2[, data3]])</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">ttType</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         "unit" | "feature" | "ground" | "selection"
+        </li>
+        <li><span class="parameter">data1</span>
+            <span class="types"><span class="type">number</span></span>
+         unitID | featureID | posX
+        </li>
+        <li><span class="parameter">data2</span>
+            <span class="types"><span class="type">number</span></span>
+         posY
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">data3</span>
+            <span class="types"><span class="type">number</span></span>
+         posZ
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        newTooltip
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnsyncedHeightMapUpdate"></a>
+    <strong>UnsyncedHeightMapUpdate ()</strong>
+    </dt>
+    <dd>
+    Called when the unsynced copy of the height-map is altered.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameProgress"></a>
+    <strong>GameProgress (serverFrameNum)</strong>
+    </dt>
+    <dd>
+    Called every 60 frames, calculating delta between GameFrame and GameProgress.
+ Can give an ETA about catching up with simulation for mid-game join players.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">serverFrameNum</span>
+            <span class="types"><span class="type">int</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameSetup"></a>
+    <strong>GameSetup (state, playerStates)</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">state</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">playerStates</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">bool</span></span>
+        success</li>
+        <li>
+           <span class="types"><span class="type">bool</span></span>
+        newReady</li>
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "SunChanged"></a>
+    <strong>SunChanged ()</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AddConsoleLine"></a>
+    <strong>AddConsoleLine (msg, priority)</strong>
+    </dt>
+    <dd>
+    Called when text is entered into the console (e.g.  Spring.Echo).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">msg</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">priority</span>
+            <span class="types"><span class="type">int</span></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RecvSkirmishAIMessage"></a>
+    <strong>RecvSkirmishAIMessage (aiTeam, dataStr)</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">aiTeam</span>
+            <span class="types"><span class="type">int</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">dataStr</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RecvFromSynced"></a>
+    <strong>RecvFromSynced ()</strong>
+    </dt>
+    <dd>
+    Receives data sent via SendToUnsynced callout.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Save"></a>
+    <strong>Save (zip)</strong>
+    </dt>
+    <dd>
+    Called when a chat command '/save' or '/savegame' is received.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">zip</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         a userdatum representing the savegame zip file. See Lua_SaveLoad.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "LoadProgress"></a>
+    <strong>LoadProgress ()</strong>
+    </dt>
+    <dd>
+    (message, replaceLastLine)</p>
+
+<pre><code> Only available to LuaIntro.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GroupChanged"></a>
+    <strong>GroupChanged ()</strong>
+    </dt>
+    <dd>
+    (groupID)</p>
+
+<pre><code> Called when a unit is added to or removed from a control group. Currently implemented for widgets only.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ConfigureLayout"></a>
+    <strong>ConfigureLayout ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ???
+</code></pre>
+
+
+<p> Input
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         ???
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "IsAbove"></a>
+    <strong>IsAbove ()</strong>
+    </dt>
+    <dd>
+    (x, y)</p>
+
+<pre><code> Called every Update. Must return true for Mouse* events and GetToolTip to be called.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean isAbove
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GetTooltip"></a>
+    <strong>GetTooltip ()</strong>
+    </dt>
+    <dd>
+    (x, y)</p>
+
+<pre><code> Called when IsAbove returns true.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         string tooltip
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "KeyPress"></a>
+    <strong>KeyPress ()</strong>
+    </dt>
+    <dd>
+    (key, mods, isRepeat)</p>
+
+<pre><code> Called repeatedly when a key is pressed down. If you want an action to occur only once check for isRepeat == false. The mods parameter is a table, with keys "alt", "ctrl", "meta" and "shift" each having a boolean value. Return true if you don't want other callins or the engine to also receive this keypress. A list of key codes can be seen at the SDL wiki.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean becomeOwner
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "KeyRelease"></a>
+    <strong>KeyRelease ()</strong>
+    </dt>
+    <dd>
+    (key)</p>
+
+<pre><code> Called when the key is released.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         bool
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TextInput"></a>
+    <strong>TextInput ()</strong>
+    </dt>
+    <dd>
+    (utf8char)</p>
+
+<pre><code> Called whenever a key press results in text input. Introduced in 97.0.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "JoystickEvent"></a>
+    <strong>JoystickEvent ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ???
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "MousePress"></a>
+    <strong>MousePress ()</strong>
+    </dt>
+    <dd>
+    (x, y, button)</p>
+
+<pre><code> Called when a mouse button is pressed. The button parameter supports up to 7 buttons. Must return true for MouseRelease and other functions to be called.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean becomeMouseOwner
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "MouseRelease"></a>
+    <strong>MouseRelease ()</strong>
+    </dt>
+    <dd>
+    (x, y, button)</p>
+
+<pre><code> Called when a mouse button is released. Please note that in order to have Spring call MouseRelease, you need to have a MousePress call-in in the same addon that returns true.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean becomeMouseOwner
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "MouseWheel"></a>
+    <strong>MouseWheel ()</strong>
+    </dt>
+    <dd>
+    (up, value)</p>
+
+<pre><code> Called when the mouse wheel is moved. The parameters indicate the direction and amount of travel.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "MouseMove"></a>
+    <strong>MouseMove ()</strong>
+    </dt>
+    <dd>
+    (x, y, dx, dy, button)</p>
+
+<pre><code> Called when the mouse is moved. The dx and dy parameters indicate the distance travelled, whereas the first two indicate the final position.
+</code></pre>
+
+
+<p> Players
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "PlayerChanged"></a>
+    <strong>PlayerChanged ()</strong>
+    </dt>
+    <dd>
+    (playerID)</p>
+
+<pre><code> Called whenever a player's status changes e.g. becoming a spectator.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "PlayerAdded"></a>
+    <strong>PlayerAdded ()</strong>
+    </dt>
+    <dd>
+    (playerID)</p>
+
+<pre><code> Called whenever a new player joins the game.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "PlayerRemoved"></a>
+    <strong>PlayerRemoved ()</strong>
+    </dt>
+    <dd>
+    (playerID, reason)</p>
+
+<pre><code> Called whenever a player is removed from the game.
+</code></pre>
+
+
+<p> Downloads
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DownloadStarted"></a>
+    <strong>DownloadStarted ()</strong>
+    </dt>
+    <dd>
+    (id)</p>
+
+<pre><code> Called when a Pr-downloader download is started via VFS.DownloadArchive.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DownloadFinished"></a>
+    <strong>DownloadFinished ()</strong>
+    </dt>
+    <dd>
+    (id)</p>
+
+<pre><code> Called when a Pr-downloader download finishes successfully.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DownloadFailed"></a>
+    <strong>DownloadFailed ()</strong>
+    </dt>
+    <dd>
+    (id, errorID)</p>
+
+<pre><code> Called when a Pr-downloader download fails to complete.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DownloadProgress"></a>
+    <strong>DownloadProgress ()</strong>
+    </dt>
+    <dd>
+    (id, downloaded, total)</p>
+
+<pre><code> Called incrementally during a Pr-downloader download.
+</code></pre>
+
+
+<p> Drawing
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ViewResize"></a>
+    <strong>ViewResize ()</strong>
+    </dt>
+    <dd>
+    (viewSizeX, viewSizeY)</p>
+
+<pre><code> Called whenever the window is resized.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Update"></a>
+    <strong>Update ()</strong>
+    </dt>
+    <dd>
+    (dt)</p>
+
+<pre><code> Called for every draw frame (including when the game is paused) and at least once per sim frame except when catching up. The parameter is the time since the last update.
+</code></pre>
+
+
+<p> Draw* Functions</p>
+
+<p> Inside the Draw* functions, you can use the Lua OpenGL Api to draw graphics.
+ Avoid doing heavy calculations inside these callins; ideally, do the calculations elsewhere and use Draw callins only for drawing.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawGenesis"></a>
+    <strong>DrawGenesis ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Doesn't render to screen! Use this callin to update textures, shaders, etc. Also available to LuaMenu.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorldPreParticles"></a>
+    <strong>DrawWorldPreParticles ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> ??? New in version 104.0
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorldPreUnit"></a>
+    <strong>DrawWorldPreUnit ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Spring draws units, features, some water types, cloaked units, and the sun.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorld"></a>
+    <strong>DrawWorld ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Spring draws command queues, 'map stuff', and map marks.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorldShadow"></a>
+    <strong>DrawWorldShadow ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> ???
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorldReflection"></a>
+    <strong>DrawWorldReflection ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> ???
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawWorldRefraction"></a>
+    <strong>DrawWorldRefraction ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> ???
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawGroundPreForward"></a>
+    <strong>DrawGroundPreForward ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Runs at the start of the forward pass when a custom map shader has been assigned via Spring.SetMapShader (convenient for setting uniforms).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawGroundPreDeferred"></a>
+    <strong>DrawGroundPreDeferred ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Runs at the start of the deferred pass when a custom map shader has been assigned via Spring.SetMapShader (convenient for setting uniforms).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawGroundPostDeferred"></a>
+    <strong>DrawGroundPostDeferred ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> This runs at the end of its respective deferred pass and allows proper frame compositing (with ground flashes/decals/foliage/etc, which are drawn between it and DrawWorldPreUnit) via gl.CopyToTexture.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawUnitsPostDeferred"></a>
+    <strong>DrawUnitsPostDeferred ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Runs at the end of the unit deferred pass to inform Lua code it should make use of the $model_gbuffer_* textures before another pass overwrites them (and to allow proper blending with e.g. cloaked objects which are drawn between these events and DrawWorld via gl.CopyToTexture). N.B. The *PostDeferred events are only sent (and only have a real purpose) if forward drawing is disabled.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawFeaturesPostDeferred"></a>
+    <strong>DrawFeaturesPostDeferred ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Runs at the end of the feature deferred pass to inform Lua code it should make use of the $model_gbuffer_* textures before another pass overwrites them (and to allow proper blending with e.g. cloaked objects which are drawn between these events and DrawWorld via gl.CopyToTexture). N.B. The *PostDeferred events are only sent (and only have a real purpose) if forward drawing is disabled.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawScreen"></a>
+    <strong>DrawScreen ()</strong>
+    </dt>
+    <dd>
+    (vsx, vsy)</p>
+
+<pre><code> ??? Also available to LuaMenu.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawScreenEffects"></a>
+    <strong>DrawScreenEffects ()</strong>
+    </dt>
+    <dd>
+    (vsx, vsy)</p>
+
+<pre><code> Where vsx, vsy are screen coordinates.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawScreenPost"></a>
+    <strong>DrawScreenPost ()</strong>
+    </dt>
+    <dd>
+    (vsx, vsy)</p>
+
+<pre><code> New in version 104.0 Similar to DrawScreenEffects, this can be used to alter the contents of a frame after it has been completely rendered (i.e. World, MiniMap, Menu, UI).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawLoadScreen"></a>
+    <strong>DrawLoadScreen ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> New in version 95.0 Only available to LuaIntro, draws custom load screens.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawInMinimap"></a>
+    <strong>DrawInMinimap ()</strong>
+    </dt>
+    <dd>
+    (sx, sy)</p>
+
+<pre><code> Where sx, sy are values relative to the minimap's position and scale.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawInMinimapBackground"></a>
+    <strong>DrawInMinimapBackground ()</strong>
+    </dt>
+    <dd>
+    (sx, sy)</p>
+
+<pre><code> Where sx, sy are values relative to the minimap's position and scale.
+</code></pre>
+
+
+<p> Custom Object Rendering</p>
+
+<p> For the following calls drawMode can be one of the following, notDrawing = 0, normalDraw = 1, shadowDraw = 2, reflectionDraw = 3, refractionDraw = 4, and finally gameDeferredDraw = 5 which was added in 102.0.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawUnit"></a>
+    <strong>DrawUnit ()</strong>
+    </dt>
+    <dd>
+    (unitID, drawMode)</p>
+
+<pre><code> For custom rendering of units, enabled here.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean suppressEngineDraw
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawFeature"></a>
+    <strong>DrawFeature ()</strong>
+    </dt>
+    <dd>
+    (unitID, drawMode)</p>
+
+<pre><code> For custom rendering of features, enabled here.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean suppressEngineDraw
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawShield"></a>
+    <strong>DrawShield ()</strong>
+    </dt>
+    <dd>
+    (unitID, weaponID, drawMode)</p>
+
+<pre><code> For custom rendering of shields.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean suppressEngineDraw
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "DrawProjectile"></a>
+    <strong>DrawProjectile ()</strong>
+    </dt>
+    <dd>
+    (projectileID, drawMode)</p>
+
+<pre><code> For custom rendering of weapon (&amp; other) projectiles, enabled here.
+</code></pre>
+
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean suppressEngineDraw
+    </ol>
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Unsynced_Menu_Only"></a>Unsynced Menu Only </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "AllowDraw"></a>
+    <strong>AllowDraw ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Enables Draw{Genesis,Screen,ScreenPost} callins if true is returned, otherwise they are called once every 30 seconds. Only active when a game isn't running.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allowDraw
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ActivateMenu"></a>
+    <strong>ActivateMenu ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Called whenever LuaMenu is on with no game loaded.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ActivateGame"></a>
+    <strong>ActivateGame ()</strong>
+    </dt>
+    <dd>
+
+<p>()</p>
+
+<pre><code> Called whenever LuaMenu is on with a game loaded.
+</code></pre>
+
+
+
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Synced___Unsynced_Shared"></a>Synced - Unsynced Shared </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "GotChatMsg"></a>
+    <strong>GotChatMsg ()</strong>
+    </dt>
+    <dd>
+    (msg, player)</p>
+
+<pre><code> Called when a player issues a UI command e.g. types /foo or /luarules foo.
+</code></pre>
+
+
+<p> Game
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameID"></a>
+    <strong>GameID ()</strong>
+    </dt>
+    <dd>
+    (gameID)</p>
+
+<pre><code> Called once to deliver the gameID. As of 101.0+ the string is encoded in hex.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GamePaused"></a>
+    <strong>GamePaused ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Called when the game is paused.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameOver"></a>
+    <strong>GameOver ()</strong>
+    </dt>
+    <dd>
+    (winningAllyTeams)</p>
+
+<pre><code> The parameter is a table list of winning allyTeams, if empty the game result was undecided (like when dropping from an host).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameFrame"></a>
+    <strong>GameFrame ()</strong>
+    </dt>
+    <dd>
+    (frame)</p>
+
+<pre><code> Called for every game simulation frame (30 per second). Starts at frame 0 in 101.0+ and 1 in previous versions.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GamePreload"></a>
+    <strong>GamePreload ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Called before the 0 gameframe. From 104.0 onwards, will not be called when a saved game is loaded.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameStart"></a>
+    <strong>GameStart ()</strong>
+    </dt>
+    <dd>
+    ()</p>
+
+<pre><code> Called upon the start of the game. From 104.0 onwards, will not be called when a saved game is loaded.
+</code></pre>
+
+
+<p> Teams
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TeamChanged"></a>
+    <strong>TeamChanged ()</strong>
+    </dt>
+    <dd>
+    (teamID)</p>
+
+<pre><code> ???
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TeamDied"></a>
+    <strong>TeamDied ()</strong>
+    </dt>
+    <dd>
+    (teamID)</p>
+
+<pre><code> Called when a team dies (see Spring.KillTeam).
+</code></pre>
+
+
+<p> Units
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitCreated"></a>
+    <strong>UnitCreated ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, builderID)</p>
+
+<pre><code> Called at the moment the unit is created.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitFinished"></a>
+    <strong>UnitFinished ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called at the moment the unit is completed.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitFromFactory"></a>
+    <strong>UnitFromFactory ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, factID, factDefID, userOrders)</p>
+
+<pre><code> Called when a factory finishes construction of a unit.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitReverseBuilt"></a>
+    <strong>UnitReverseBuilt ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called when a living unit becomes a nanoframe again.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitGiven"></a>
+    <strong>UnitGiven ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, newTeam, oldTeam)</p>
+
+<pre><code> Called when a unit is transferred between teams. This is called after UnitTaken and in that moment unit is assigned to the newTeam.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitTaken"></a>
+    <strong>UnitTaken ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, oldTeam, newTeam)</p>
+
+<pre><code> Called when a unit is transferred between teams. This is called before UnitGiven and in that moment unit is still assigned to the oldTeam.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitDamaged"></a>
+    <strong>UnitDamaged ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, damage, paralyzer, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)</p>
+
+<pre><code> Called when a unit is damaged (after UnitPreDamaged).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitDestroyed"></a>
+    <strong>UnitDestroyed ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)</p>
+
+<pre><code> Called when a unit is destroyed.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RenderUnitDestroyed"></a>
+    <strong>RenderUnitDestroyed ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called just before a unit is invalid, after it finishes its death animation. New in version 101.0
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitStunned"></a>
+    <strong>UnitStunned ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, stunned)</p>
+
+<pre><code> Called when a unit changes its stun status. New in version 99.0
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitUnitCollision"></a>
+    <strong>UnitUnitCollision ()</strong>
+    </dt>
+    <dd>
+    (colliderID, collideeID)</p>
+
+<pre><code> Called when two units collide. Both units must be registered with Script.SetWatchUnit.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitFeatureCollision"></a>
+    <strong>UnitFeatureCollision ()</strong>
+    </dt>
+    <dd>
+    (colliderID, collideeID)</p>
+
+<pre><code> Called when a unit collides with a feature. The unit must be registered with Script.SetWatchUnit and the feature registered with Script.SetWatchFeature.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitHarvestStorageFull"></a>
+    <strong>UnitHarvestStorageFull ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called when a unit's harvestStorage is full (according to its unitDef's entry).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitCommand"></a>
+    <strong>UnitCommand ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)</p>
+
+<pre><code> Called after when a unit accepts a command, after AllowCommand returns true.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitCmdDone"></a>
+    <strong>UnitCmdDone ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)</p>
+
+<pre><code> Called when a unit completes a command.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitLoaded"></a>
+    <strong>UnitLoaded ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, transportID, transportTeam)</p>
+
+<pre><code> Called when a unit is loaded by a transport.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitUnloaded"></a>
+    <strong>UnitUnloaded ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, transportID, transportTeam)</p>
+
+<pre><code> Called when a unit is unloaded by a transport.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitExperience"></a>
+    <strong>UnitExperience ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, experience, oldExperience)</p>
+
+<pre><code> Called when a unit gains experience greater or equal to the minimum limit set by calling Spring.SetExperienceGrade. Should be called more reliably with small values of experience grade in 104.0+.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitIdle"></a>
+    <strong>UnitIdle ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called when a unit is idle (empty command queue).
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitCloaked"></a>
+    <strong>UnitCloaked ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called when a unit cloaks.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitDecloaked"></a>
+    <strong>UnitDecloaked ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam)</p>
+
+<pre><code> Called when a unit decloaks.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitMoved"></a>
+    <strong>UnitMoved ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented in base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitMoveFailed"></a>
+    <strong>UnitMoveFailed ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented in base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StockpileChanged"></a>
+    <strong>StockpileChanged ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, weaponNum, oldCount, newCount)</p>
+
+<pre><code> Called when a units stockpile of weapons increases or decreases. See stockpile.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitEnteredLos"></a>
+    <strong>UnitEnteredLos ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitTeam, allyTeam, unitDefID)</p>
+
+<pre><code> Called when a unit enters LOS of an allyteam. Its called after the unit is in LOS, so you can query that unit. The allyTeam is who's LOS the unit entered.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitLeftLos"></a>
+    <strong>UnitLeftLos ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitTeam, allyTeam, unitDefID)</p>
+
+<pre><code> Called when a unit leaves LOS of an allyteam. For widgets, this one is called just before the unit leaves los, so you can still get the position of a unit that left los.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitEnteredRadar"></a>
+    <strong>UnitEnteredRadar ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitTeam, allyTeam, unitDefID)</p>
+
+<pre><code> Called when a unit enters radar of an allyteam. Also called when a unit enters LOS without any radar coverage.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitLeftRadar"></a>
+    <strong>UnitLeftRadar ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitTeam, allyTeam, unitDefID)</p>
+
+<pre><code> Called when a unit leaves radar of an allyteam. Also called when a unit leaves LOS without any radar coverage. For widgets, this is called just after a unit leaves radar coverage, so widgets cannot get the position of units that left their radar.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitEnteredAir"></a>
+    <strong>UnitEnteredAir ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented by base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitLeftAir"></a>
+    <strong>UnitLeftAir ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented by base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitEnteredWater"></a>
+    <strong>UnitEnteredWater ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented by base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitLeftWater"></a>
+    <strong>UnitLeftWater ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ??? Not implemented by base handler
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitSeismicPing"></a>
+    <strong>UnitSeismicPing ()</strong>
+    </dt>
+    <dd>
+    (x, y, z, strength, allyTeam, unitID, unitDefID)</p>
+
+<pre><code> Called when a unit emits a seismic ping. See seismicSignature.
+</code></pre>
+
+
+<p> Features
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FeatureCreated"></a>
+    <strong>FeatureCreated ()</strong>
+    </dt>
+    <dd>
+    (featureID, allyTeamID)</p>
+
+<pre><code> Called when a feature is created.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FeatureDamaged"></a>
+    <strong>FeatureDamaged ()</strong>
+    </dt>
+    <dd>
+    (featureID, featureDefID, featureTeam, damage, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)</p>
+
+<pre><code> Called when a feature is damaged.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FeatureDestroyed"></a>
+    <strong>FeatureDestroyed ()</strong>
+    </dt>
+    <dd>
+    (featureID, allyTeamID)</p>
+
+<pre><code> Called when a feature is destroyed.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FeatureMoved"></a>
+    <strong>FeatureMoved ()</strong>
+    </dt>
+    <dd>
+    (???)</p>
+
+<pre><code> ???
+</code></pre>
+
+
+<p> Projectiles</p>
+
+<p> The following Callins are only called for weaponDefIDs registered via Script.SetWatchWeapon.
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ProjectileCreated"></a>
+    <strong>ProjectileCreated ()</strong>
+    </dt>
+    <dd>
+    (proID, proOwnerID, weaponDefID)</p>
+
+<pre><code> Called when the projectile is created. Note that weaponDefID is missing if the projectile is spawned as part of a burst, but Spring.GetProjectileDefID and Spring.GetProjectileName still work in callin scope using proID.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ProjectileDestroyed"></a>
+    <strong>ProjectileDestroyed ()</strong>
+    </dt>
+    <dd>
+    (proID)</p>
+
+<pre><code> Called when the projectile is destroyed.
+</code></pre>
+
+
+<p> Synced Only
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "CommandFallback"></a>
+    <strong>CommandFallback ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag)</p>
+
+<pre><code> Called when the unit reaches an unknown command in its queue (i.e. one not handled by the engine). If no addon returns used as true the command is dropped, if an addon returns true, true the command is removed because it's done, with true, false it's kept in the queue and CommandFallback gets called again on the next slowupdate.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean used, boolean finished
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowCommand"></a>
+    <strong>AllowCommand ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced)</p>
+
+<pre><code> Called when the command is given, before the unit's queue is altered. The return value is whether it should be let into the queue. The queue remains untouched when a command is blocked, whether it would be queued or replace the queue.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowUnitCreation"></a>
+    <strong>AllowUnitCreation ()</strong>
+    </dt>
+    <dd>
+    (unitDefID, builderID, builderTeam, x, y, z, facing)</p>
+
+<pre><code> Called just before unit is created, the boolean return value determines whether or not the creation is permitted.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowUnitTransfer"></a>
+    <strong>AllowUnitTransfer ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, oldTeam, newTeam, capture)</p>
+
+<pre><code> Called just before a unit is transferred to a different team, the boolean return value determines whether or not the transfer is permitted.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowUnitBuildStep"></a>
+    <strong>AllowUnitBuildStep ()</strong>
+    </dt>
+    <dd>
+    (builderID, builderTeam, unitID, unitDefID, part)</p>
+
+<pre><code> Called just before a unit progresses its build percentage, the boolean return value determines whether or not the build makes progress.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowFeatureCreation"></a>
+    <strong>AllowFeatureCreation ()</strong>
+    </dt>
+    <dd>
+    (featureDefID, teamID, x, y, z)</p>
+
+<pre><code> Called just before feature is created, the boolean return value determines whether or not the creation is permitted.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowFeatureBuildStep"></a>
+    <strong>AllowFeatureBuildStep ()</strong>
+    </dt>
+    <dd>
+    (builderID, builderTeam, featureID, featureDefID, part)</p>
+
+<pre><code> Called just before a feature changes its build percentage, the boolean return value determines whether or not the change is permitted. Note that this is also called for resurrecting features, and for refilling features with resources before resurrection. On reclaim the part values are negative, and on refill and ressurect they are positive. Part is the percentage the feature be built or reclaimed per frame. Eg. for a 30 workertime builder, that's a build power of 1 per frame. For a 50 buildtime feature reclaimed by this builder, part will be 100/-50(/1) = -2%, or -0.02 numerically.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowResourceLevel"></a>
+    <strong>AllowResourceLevel ()</strong>
+    </dt>
+    <dd>
+    (teamID, res, level)</p>
+
+<pre><code> Called when a team sets the sharing level of a resource, the boolean return value determines whether or not the sharing level is permitted.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowResourceTransfer"></a>
+    <strong>AllowResourceTransfer ()</strong>
+    </dt>
+    <dd>
+    (oldTeamID, newTeamID, res, amount)</p>
+
+<pre><code> Called just before resources are transferred between players, the boolean return value determines whether or not the transfer is permitted.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowStartPosition"></a>
+    <strong>AllowStartPosition ()</strong>
+    </dt>
+    <dd>
+    (playerID, teamID, readyState, clampedX, clampedY, clampedZ, rawX, rawY, rawZ)</p>
+
+<pre><code> clamped{X,Y,Z} are the coordinates clamped into start-boxes, raw is where player tried to place their marker. The readyState can be any one of
+
+ 0 - player picked a position,
+ 1 - player clicked ready,
+ 2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied) or
+ 3 - the player failed to load.
+ New in version 95.0 the default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not have a startbox.
+</code></pre>
+
+<p> NB: The order of the parameters changed with the addition of teamID in 104.0. Previouly it was: clampedX, clampedY, clampedZ, playerID, readyState, rawX, rawY, rawZ
+
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowDirectUnitControl"></a>
+    <strong>AllowDirectUnitControl ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, playerID)</p>
+
+<pre><code> Determines if this unit can be controlled directly in FPS view.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allow
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowWeaponTargetCheck"></a>
+    <strong>AllowWeaponTargetCheck ()</strong>
+    </dt>
+    <dd>
+    (attackerID, attackerWeaponNum, attackerWeaponDefID)</p>
+
+<pre><code> Determines if this weapon can automatically generate targets itself. See also commandFire weaponDef tag. The ignoreCheck return value was added in 99.0 to allow ignoring the callin i.e. running normal engine check for this weapon.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allowCheck, boolean ignoreCheck
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowWeaponTarget"></a>
+    <strong>AllowWeaponTarget ()</strong>
+    </dt>
+    <dd>
+    (attackerID, targetID, attackerWeaponNum, attackerWeaponDefID, defPriority)</p>
+
+<pre><code> Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep. The second return value is the new priority for this target (if you don't want to change it, return defPriority). Lower priority targets are targeted first.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allowed, number newPriority
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowWeaponInterceptTarget"></a>
+    <strong>AllowWeaponInterceptTarget ()</strong>
+    </dt>
+    <dd>
+    (interceptorUnitID, interceptorWeaponID, targetProjectileID)</p>
+
+<pre><code> Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep. Only called for weaponDefIDs registered via Script.SetWatchWeapon.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean allowed
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "AllowBuilderHoldFire"></a>
+    <strong>AllowBuilderHoldFire ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, action)</p>
+
+<pre><code> New in version 98.0 5a82d750 Called when a construction unit wants to "use his nano beams".
+ action is one of following:
+
+ -1 Build
+ CMD.REPAIR Repair
+ CMD.RECLAIM Reclaim
+ CMD.RESTORE Restore
+ CMD.RESURRECT Resurrect
+ CMD.CAPTURE Capture
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean actionAllowed
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Explosion"></a>
+    <strong>Explosion ()</strong>
+    </dt>
+    <dd>
+    (weaponDefID, px, py, pz, AttackerID, ProjectileID)</p>
+
+<pre><code> Called when an explosion occurs. If it returns true then no graphical effects are drawn by the engine for this explosion.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean noGfx
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TerraformComplete"></a>
+    <strong>TerraformComplete ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, buildUnitID, buildUnitDefID, buildUnitTeam)</p>
+
+<pre><code> Called when pre-building terrain levelling terraforms are completed (c.f. levelGround). If the return value is true the current build order is terminated.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean stop
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "MoveCtrlNotify"></a>
+    <strong>MoveCtrlNotify ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, data)</p>
+
+<pre><code> Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in, data was supposed to indicate the type of notification but currently never has a value other than 1 ("unit hit the ground"). The return value determines whether or not the unit should remain script-controlled (false) or return to engine controlled movement (true).
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean moveCtrlComplete
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RecvLuaMsg"></a>
+    <strong>RecvLuaMsg ()</strong>
+    </dt>
+    <dd>
+    (msg, playerID)</p>
+
+<pre><code> Receives messages from unsynced sent via Spring.SendLuaRulesMsg or Spring.SendLuaUIMsg.
+</code></pre>
+<p>
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Load"></a>
+    <strong>Load ()</strong>
+    </dt>
+    <dd>
+
+<p>(zip)</p>
+
+<pre><code> Called after GamePreload and before GameStart. See Lua_SaveLoad.
+</code></pre>
+
+
+<p> Damage Controllers</p>
+
+<p> For the following callins, in addition to being a regular weapon, weaponDefID may be one of the following:</p>
+
+<pre><code> -1 - debris collision, also default of Spring.AddUnitDamage
+ -2 - ground collision
+ -3 - object collision
+ -4 - fire damage
+ -5 - water damage
+ -6 - kill damage
+ -7 - crush damage
+</code></pre>
+
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "UnitPreDamaged"></a>
+    <strong>UnitPreDamaged ()</strong>
+    </dt>
+    <dd>
+    (unitID, unitDefID, unitTeam, damage, paralyzer, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)</p>
+
+<pre><code> Called before damage is applied to the unit, allows fine control over how much damage and impulse is applied.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         number newDamage, number impulseMult
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ShieldPreDamaged"></a>
+    <strong>ShieldPreDamaged ()</strong>
+    </dt>
+    <dd>
+    (proID, shieldCarrier, boolBounceProjectile, beamEmitterWeaponNum, beamEmitterUnitID, startX, startY, startZ, hitX, hitY, hitZ)</p>
+
+<pre><code> Called before any engine shield-vs-projectile logic executes. If the return value is true the gadget handles the collision event and the engine does not remove the projectile. If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and beamEmitterUnitID are populated instead. The start and hit position arguments are provided from 104.0 onwards.
+</code></pre>
+<p>
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         boolean handleCollision
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FeaturePreDamaged"></a>
+    <strong>FeaturePreDamaged ()</strong>
+    </dt>
+    <dd>
+
+<p>(featureID, featureDefID, featureTeam, damage, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)</p>
+
+<pre><code> Called before damage is applied to the feature, allows fine control over how much damage and impulse is applied.
+</code></pre>
+
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+         number newDamage, number impulseMult
+    </ol>
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2022-12-06 07:09:48 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

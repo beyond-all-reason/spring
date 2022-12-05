@@ -1,0 +1,315 @@
+--- Global constants
+-- @module Constants
+
+--- Platform specific information
+-- @table Platform
+-- @string gpu full GPU device name
+-- @string gpuVendor one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
+-- @string glVersionShort major.minor.buildNumber
+-- @string glslVersionShort major.minor
+-- @string glVersion full version
+-- @string glVendor
+-- @string glRenderer
+-- @string glslVersion full version
+-- @string glewVersion
+-- @string osName full name of the OS
+-- @string osFamily one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
+-- @number gpuMemorySize size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+-- @number sdlVersionCompiledMajor
+-- @number sdlVersionCompiledMinor
+-- @number sdlVersionCompiledPatch
+-- @number sdlVersionLinkedMajor
+-- @number sdlVersionLinkedMinor
+-- @number sdlVersionLinkedPatch
+-- @bool glSupportNonPowerOfTwoTex
+-- @bool glSupportTextureQueryLOD
+-- @bool glSupport24bitDepthBuffer
+-- @bool glSupportRestartPrimitive
+-- @bool glSupportClipSpaceControl
+-- @bool glSupportFragDepthLayout
+
+--- Engine specific information
+-- @table Engine
+-- @string version Returns the same as `spring --sync-version`, e.g. "92"
+-- @string versionFull 
+-- @string versionPatchSet 
+-- @string buildFlags (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+-- @number wordSize indicates the build type and is either 32 or 64 (or 0 in synced code)
+
+--- Game specific information
+-- @table Game
+-- @number maxUnits
+-- @number maxTeams
+-- @number maxPlayers
+-- @number squareSize Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates
+-- @number gameSpeed
+-- @number startPosType
+-- @bool ghostedBuildings
+-- @string mapChecksum
+-- @string modChecksum
+-- @bool mapDamage
+-- @string mapName
+-- @string mapDescription = string Game.mapHumanName
+-- @number mapHardness
+-- @number mapX
+-- @number mapY
+-- @number mapSizeX in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+-- @number mapSizeZ in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+-- @number gravity
+-- @number tidal
+-- @number windMin
+-- @number windMax
+-- @number extractorRadius
+-- @number waterDamage
+-- @tparam table envDamageTypes Containing {def}IDs of environmental-damage sources
+-- @string gameName
+-- @string gameShortName
+-- @string gameVersion
+-- @string gameMutator
+-- @string gameDesc
+-- @bool allowTeamColors
+-- @bool requireSonarUnderWater
+-- @number transportAir
+-- @number transportShip
+-- @number transportHover
+-- @number transportGround
+-- @number fireAtKilled
+-- @number fireAtCrashing
+-- @bool constructionDecay
+-- @bool reclaimAllowEnemies
+-- @bool reclaimAllowAllies
+-- @number constructionDecayTime
+-- @number constructionDecaySpeed
+-- @number multiReclaim
+-- @number reclaimMethod
+-- @number reclaimUnitMethod
+-- @number reclaimUnitEnergyCostFactor
+-- @number reclaimUnitEfficiency
+-- @number reclaimFeatureEnergyCostFactor
+-- @number repairEnergyCostFactor
+-- @number resurrectEnergyCostFactor
+-- @number captureEnergyCostFactor
+-- @tparam table springCategories
+--    example: {
+--      ["vtol"]         = 0,  ["special"]      = 1,  ["noweapon"]     = 2,
+--      ["notair"]       = 3,  ["notsub"]       = 4,  ["all"]          = 5,
+--      ["weapon"]       = 6,  ["notship"]      = 7,  ["notland"]      = 8,
+--      ["mobile"]       = 9,  ["kbot"]         = 10, ["antigator"]    = 11,
+--      ["tank"]         = 12, ["plant"]        = 13, ["ship"]         = 14,
+--      ["antiemg"]      = 15, ["antilaser"]    = 16, ["antiflame"]    = 17,
+--      ["underwater"]   = 18, ["hover"]        = 19, ["phib"]         = 20,
+--      ["constr"]       = 21, ["strategic"]    = 22, ["commander"]    = 23,
+--      ["paral"]        = 24, ["jam"]          = 25, ["mine"]         = 26,
+--      ["kamikaze"]     = 27, ["minelayer"]    = 28, ["notstructure"] = 29,
+--      ["air"]          = 30
+--    }
+-- @tparam table armorTypes (bidirectional)
+--    example: {
+--      [1]  = amphibious,   [2] = anniddm,     [3] = antibomber,
+--      [4]  = antifighter,  [5] = antiraider,  [6] = atl,
+--      [7]  = blackhydra,   [8] = bombers,     [9] = commanders,
+--      [10] = crawlingbombs, ...
+--
+--      ["amphibious"]   = 1, ["anniddm"]    = 2, ["antibomber"] = 3
+--      ["antifighter"]  = 4, ["antiraider"] = 5, ["atl"]        = 6
+--      ["blackhydra"]   = 7, ["bombers"]    = 8, ["commanders"] = 9
+--      ["crawlingbombs"]= 10, ...
+--    }
+
+--- Commands
+-- @section commands
+
+--- @table CMD
+-- @param FIRESTATE_NONE -1
+-- @param MOVESTATE_NONE -1
+-- @param STOP 0
+-- @param MOVESTATE_HOLDPOS 0
+-- @param FIRESTATE_HOLDFIRE 0
+-- @param INSERT 1
+-- @param MOVESTATE_MANEUVER 1
+-- @param FIRESTATE_RETURNFIRE 1
+-- @param WAITCODE_TIME 1
+-- @param WAITCODE_DEATH 2
+-- @param MOVESTATE_ROAM 2
+-- @param REMOVE 2
+-- @param FIRESTATE_FIREATWILL 2
+-- @param FIRESTATE_FIREATNEUTRAL 3
+-- @param WAITCODE_SQUAD 3
+-- @param OPT_META 4
+-- @param WAITCODE_GATHER 4
+-- @param WAIT 5
+-- @param TIMEWAIT 6
+-- @param DEATHWAIT 7
+-- @param OPT_INTERNAL 8
+-- @param SQUADWAIT 8
+-- @param GATHERWAIT 9
+-- @param MOVE 10
+-- @param PATROL 15
+-- @param FIGHT 16
+-- @param OPT_RIGHT 16
+-- @param LOOPBACKATTACK 20
+-- @param ATTACK 20
+-- @param AREA_ATTACK 21
+-- @param GUARD 25
+-- @param AISELECT 30
+-- @param OPT_SHIFT 32
+-- @param GROUPSELECT 35
+-- @param GROUPADD 36
+-- @param GROUPCLEAR 37
+-- @param REPAIR 40
+-- @param FIRE_STATE 45
+-- @param MOVE_STATE 50
+-- @param SETBASE 55
+-- @param INTERNAL 60
+-- @param OPT_CTRL 64
+-- @param SELFD 65
+-- @param SET_WANTED_MAX_SPEED 70
+-- @param LOAD_UNITS 75
+-- @param LOAD_ONTO 76
+-- @param UNLOAD_UNITS 80
+-- @param UNLOAD_UNIT 81
+-- @param ONOFF 85
+-- @param RECLAIM 90
+-- @param CLOAK 95
+-- @param STOCKPILE 100
+-- @param MANUALFIRE 105
+-- @param DGUN 105
+-- @param RESTORE 110
+-- @param REPEAT 115
+-- @param TRAJECTORY 120
+-- @param RESURRECT 125
+-- @param OPT_ALT 128
+-- @param CAPTURE 130
+-- @param AUTOREPAIRLEVEL 135
+-- @param IDLEMODE 145 
+
+--- Note, the CMDTYPE[] table is bidirectional. That means: CMDTYPE[CMDTYPE.ICON] := "CMDTYPE_ICON"
+-- @table CMDTYPE
+-- @number ICON expect 0 parameters in return
+-- @number ICON_MODE expect 1 parameter in return (number selected mode)
+-- @number ICON_MAP expect 3 parameters in return (mappos)
+-- @number ICON_AREA expect 4 parameters in return (mappos+radius)
+-- @number ICON_UNIT expect 1 parameters in return (unitid)
+-- @number ICON_UNIT_OR_MAP expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
+-- @number ICON_FRONT expect 3 or 6 parameters in return (middle and right side of front if a front was defined)
+-- @number COMBO_BOX expect 1 parameter in return (number selected option)
+-- @number ICON_UNIT_OR_AREA expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
+-- @number ICON_UNIT_FEATURE_OR_AREA expect 1 parameter in return (unitid or Game.maxUnits+featureid) or 4 parameters in return (mappos+radius)
+-- @number ICON_BUILDING expect 3 parameters in return (mappos)
+-- @number ICON_UNIT_OR_RECTANGLE expect 1 parameter in return (unitid) or 3 parameters in return (mappos) or 6 parameters in return (startpos+endpos)
+-- @number NUMBER expect 1 parameter in return (number)
+-- @number CUSTOM used with CMD_INTERNAL
+-- @number NEXT next command page used with CMD_INTERNAL
+-- @number PREV previous command page used with CMD_INTERNAL
+
+--- Explode
+-- @section explode
+
+--- @table SFX
+-- @number SHATTER
+-- @number EXPLODE
+-- @number EXPLODE_ON_HIT
+-- @number FALL
+-- @number SMOKE
+-- @number FIRE
+-- @number NONE
+-- @number NO_CEG_TRAIL
+-- @number NO_HEATCLOUD
+-- @number RECURSIVE
+
+--- EmitSfx
+-- @section emitsfx
+
+--- @table SFX
+-- @number VTOL
+-- @number WAKE
+-- @number REVERSE_WAKE
+-- @number WHITE_SMOKE
+-- @number BLACK_SMOKE
+-- @number BUBBLE
+-- @number CEG
+-- @number FIRE_WEAPON
+-- @number DETONATE_WEAPON
+-- @number GLOBAL
+
+--- Get/Set
+-- @section getset
+
+--- @table COB
+-- @number ACTIVATION
+-- @number STANDINGMOVEORDERS
+-- @number STANDINGFIREORDERS
+-- @number HEALTH
+-- @number INBUILDSTANCE
+-- @number BUSY
+-- @number PIECE_XZ
+-- @number PIECE_Y
+-- @number UNIT_XZ
+-- @number UNIT_Y
+-- @number UNIT_HEIGHT
+-- @number XZ_ATAN
+-- @number XZ_HYPOT
+-- @number ATAN
+-- @number HYPOT
+-- @number GROUND_HEIGHT
+-- @number BUILD_PERCENT_LEFT
+-- @number YARD_OPEN
+-- @number BUGGER_OFF
+-- @number ARMORED
+-- @number IN_WATER
+-- @number CURRENT_SPEED
+-- @number VETERAN_LEVEL
+-- @number ON_ROAD
+-- @number MAX_ID
+-- @number MY_ID
+-- @number UNIT_TEAM
+-- @number UNIT_BUILD_PERCENT_LEFT
+-- @number UNIT_ALLIED
+-- @number MAX_SPEED
+-- @number CLOAKED
+-- @number WANT_CLOAK
+-- @number GROUND_WATER_HEIGHT
+-- @number UPRIGHT
+-- @number POW
+-- @number PRINT
+-- @number HEADING
+-- @number TARGET_ID
+-- @number LAST_ATTACKER_ID
+-- @number LOS_RADIUS
+-- @number AIR_LOS_RADIUS
+-- @number RADAR_RADIUS
+-- @number JAMMER_RADIUS
+-- @number SONAR_RADIUS
+-- @number SONAR_JAM_RADIUS
+-- @number SEISMIC_RADIUS
+-- @number DO_SEISMIC_PING
+-- @number CURRENT_FUEL
+-- @number TRANSPORT_ID
+-- @number SHIELD_POWER
+-- @number STEALTH
+-- @number CRASHING
+-- @number CHANGE_TARGET
+-- @number CEG_DAMAGE
+-- @number COB_ID
+-- @number PLAY_SOUND
+-- @number KILL_UNIT
+-- @number ALPHA_THRESHOLD
+-- @number SET_WEAPON_UNIT_TARGET
+-- @number SET_WEAPON_GROUND_TARGET
+-- @number SONAR_STEALTH
+-- @number REVERSING
+-- @number FLANK_B_MODE
+-- @number FLANK_B_DIR
+-- @number FLANK_B_MOBILITY_ADD
+-- @number FLANK_B_MAX_DAMAGE
+-- @number FLANK_B_MIN_DAMAGE
+-- @number WEAPON_RELOADSTATE
+-- @number WEAPON_RELOADTIME
+-- @number WEAPON_ACCURACY
+-- @number WEAPON_SPRAY
+-- @number WEAPON_RANGE
+-- @number WEAPON_PROJECTILE_SPEED
+-- @number MIN
+-- @number MAX
+-- @number ABS
+-- @number GAME_FRAME 

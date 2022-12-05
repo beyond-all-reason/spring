@@ -1,0 +1,1379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Spring Lua API documentation</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Spring Lua API</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#GLSL">GLSL </a></li>
+<li><a href="#FBO">FBO </a></li>
+<li><a href="#RBO">RBO </a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/Callins.html">Callins</a></li>
+  <li><a href="../modules/Constants.html">Constants</a></li>
+  <li><a href="../modules/ConstGL.html">ConstGL</a></li>
+  <li><strong>GL</strong></li>
+  <li><a href="../modules/Math.html">Math</a></li>
+  <li><a href="../modules/SyncedCtrl.html">SyncedCtrl</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>GL</code></h1>
+<p>OpenGL and drawing related</p>
+<p>
+
+</p>
+
+
+<h2><a href="#GLSL">GLSL </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#gl.CreateShader">gl.CreateShader (shaderParams)</a></td>
+	<td class="summary">Create a shader from shaderParams table:</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.DeleteShader">gl.DeleteShader (shaderID)</a></td>
+	<td class="summary">Deletes a shader identified by shaderID</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.ActiveShader">gl.ActiveShader (shaderID, func[, arg1[, arg2[, argn]]])</a></td>
+	<td class="summary">Binds a shader program identified by shaderID, and calls the Lua func with the specified arguments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.UseShader">gl.UseShader (shaderID)</a></td>
+	<td class="summary">Binds a shader program identified by shaderID.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.GetShaderLog">gl.GetShaderLog ()</a></td>
+	<td class="summary">Returns the shader compilation error log.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.SetGeometryShaderParameter">gl.SetGeometryShaderParameter (shaderID, param, number)</a></td>
+	<td class="summary">Sets the Geometry shader parameters for shaderID.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.SetTesselationShaderParameter">gl.SetTesselationShaderParameter (param, number)</a></td>
+	<td class="summary">Sets the tesselation shader parameters for shaderID.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.GetActiveUniforms">gl.GetActiveUniforms (shaderID)</a></td>
+	<td class="summary">Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.GetUniformLocation">gl.GetUniformLocation (shaderID, name)</a></td>
+	<td class="summary">Returns the locationID of a shaders uniform.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.Uniform">gl.Uniform (locationID, f1[, f2[, f3[, f4]]])</a></td>
+	<td class="summary">Sets the uniform float value at the locationID for the currently active shader.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.UniformInt">gl.UniformInt (locationID, int1[, int2[, int3[, int4]]])</a></td>
+	<td class="summary">Sets the uniform int value at the locationID for the currently active shader.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.UniformArray">gl.UniformArray (locationID, type, uniforms)</a></td>
+	<td class="summary">Sets the an array of uniform values at the locationID for the currently active shader.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.UniformMatrix">gl.UniformMatrix (locationID, m1[, m2[, mn[, m16]]])</a></td>
+	<td class="summary">Sets the a uniform mat4 locationID for the currently active shader.</td>
+	</tr>
+</table>
+<h2><a href="#FBO">FBO </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#attachment">attachment</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#fbo">fbo</a></td>
+	<td class="summary">User Data FBO</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.CreateFBO">gl.CreateFBO (data)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.DeleteFBO">gl.DeleteFBO (fbo)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.IsValidFBO">gl.IsValidFBO (fbo[, target])</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.ActiveFBO">gl.ActiveFBO (fbo[, target[, identities[, lua_function[, arg1[, arg2[, argn]]]]]])</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.UnsafeSetFBO">gl.UnsafeSetFBO (fbo[, target])</a></td>
+	<td class="summary">Binds a FBO like <a href="../modules/GL.html#gl.ActiveFBO">gl.ActiveFBO</a> does, but you have to unbind it yourself!</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.BlitFBO">gl.BlitFBO (x0Src, y0Src, x1Src, y1Src, x0Dst, y0Dst, x1Dst, y1Dst[, mask=GL_COLOR_BUFFER_BIT[, filter=GL_NEAREST]])</a></td>
+	<td class="summary">needs <code>GLEW_EXT_framebuffer_blit</code></td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.BlitFBO">gl.BlitFBO (fboSrc, x0Src, y0Src, x1Src, y1Src, fboDst, x0Dst, y0Dst, x1Dst, y1Dst[, mask=GL_COLOR_BUFFER_BIT[, filter=GL_NEAREST]])</a></td>
+	<td class="summary">needs <code>GLEW_EXT_framebuffer_blit</code></td>
+	</tr>
+</table>
+<h2><a href="#RBO">RBO </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#rbo">rbo</a></td>
+	<td class="summary">User Data RBO</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.CreateRBO">gl.CreateRBO (xsize, ysize, data)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#gl.DeleteRBO">gl.DeleteRBO (rbo)</a></td>
+	<td class="summary">
+
+</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header has-description"><a name="GLSL"></a>GLSL </h2>
+
+          <div class="section-description">
+           These functions are ONLY available if the graphics adapter supports GLSL.</p>
+
+<p> Please test in your scripts if one of them exists before you use them. In headless mode, the gl. callouts are nil.
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "gl.CreateShader"></a>
+    <strong>gl.CreateShader (shaderParams)</strong>
+    </dt>
+    <dd>
+    Create a shader from shaderParams table:  ( table shaderParams )
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderParams</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+
+<p> shaderID</p>
+
+<pre><code>({[ vertex   = "glsl code" ,]
+  [ tcs      = "glsl code" ,]
+  [ tes      = "glsl code" ,]
+  [ geometry = "glsl code" ,]
+  [ fragment = "glsl code" ,]
+  [ uniform       = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformInt    = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformFloat  = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformMatrix = { uniformName = number value, ...} ,]
+  [ geoInputType = number inType,]
+  [ geoOutputType = number outType,]
+  [ geoOutputVerts = number maxVerts,]
+  [ definitions = "string of shader #defines", ]
+})
+</code></pre>
+
+<ul>
+    <li>The "Vertex" or vertex-shader is your GLSL-Code as string, its written in a C-Dialect. This shader is busy deforming the geometry of a unit but it can not create new polygons. Use it for waves, wobbling surfaces etc.</li>
+    <li>The "Geometry" or Geometry-shader can create new vertices and vertice-stripes from points.</li>
+    <li>The "TCS" or Tesselation Control Shader controls how much tessellation a particular patch gets; it also defines the size of a patch, thus allowing it to augment data. It can also filter vertex data taken from the vertex shader. The main purpose of the TCS is to feed the tessellation levels to the Tessellation primitive generator stage, as well as to feed patch data (as its output values) to the Tessellation Evaluation Shader stage.</li>
+    <li>The "TES" or Tesselation Evaluation Shader takes the abstract patch generated by the tessellation primitive generation stage, as well as the actual vertex data for the entire patch, and generates a particular vertex from it. Each TES invocation generates a single vertex. It can also take per-patch data provided by the Tessellation Control Shader.</li>
+    <li>The "Fragment" or Fragment-shader (sometimes called pixel-Shader) is post processing the allready rendered picture (for example drawing stars on the sky)- remember textures are not always 2 dimensional pictures. They can contain information about the depth, or the third value marks areas and the strength at which these are processed.</li>
+    <li>The Uniforms are the values, you send along with the shader-program. To use them in the shader-program declare them like this: <code>uniform float frame;</code></li>
+</ul>
+
+<p> From 101.0 onwards, the engine will automatically fill in an appropriately named uniform for team colour if it is declared;</p>
+
+<pre><code>uniform vec4 teamColor;
+</code></pre>
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.DeleteShader"></a>
+    <strong>gl.DeleteShader (shaderID)</strong>
+    </dt>
+    <dd>
+    Deletes a shader identified by shaderID
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.ActiveShader"></a>
+    <strong>gl.ActiveShader (shaderID, func[, arg1[, arg2[, argn]]])</strong>
+    </dt>
+    <dd>
+    Binds a shader program identified by shaderID, and calls the Lua func with the specified arguments.
+ Can be used in NON-drawing events (to update uniforms etc.)!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">func</span>
+            <span class="types"><span class="type">func</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">arg1</span>
+            <span class="types"><span class="type">any</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">arg2</span>
+            <span class="types"><span class="type">any</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">argn</span>
+            <span class="types"><span class="type">any</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.UseShader"></a>
+    <strong>gl.UseShader (shaderID)</strong>
+    </dt>
+    <dd>
+    Binds a shader program identified by shaderID.  Pass 0 to disable the shader. Returns wether the shader was successfully bound.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        linked
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.GetShaderLog"></a>
+    <strong>gl.GetShaderLog ()</strong>
+    </dt>
+    <dd>
+    Returns the shader compilation error log.  This is empty if the shader linking failed, in that case, check your in/out blocks and ensure they match.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        infoLog
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.SetGeometryShaderParameter"></a>
+    <strong>gl.SetGeometryShaderParameter (shaderID, param, number)</strong>
+    </dt>
+    <dd>
+    Sets the Geometry shader parameters for shaderID.  Needed by geometry shader programs (check the opengl GL<em>ARB</em>geometry_shader4 extension for glProgramParameteri)
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">param</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">number</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.SetTesselationShaderParameter"></a>
+    <strong>gl.SetTesselationShaderParameter (param, number)</strong>
+    </dt>
+    <dd>
+    Sets the tesselation shader parameters for shaderID.  Needed by tesselation shader programs (check the opengl GL<em>ARB</em>tessellation_shader extension for glProgramParameteri)
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">param</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">number</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.GetActiveUniforms"></a>
+    <strong>gl.GetActiveUniforms (shaderID)</strong>
+    </dt>
+    <dd>
+    Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        <code>ActiveUniforms = { { name = &quot;name&quot;, type = &quot;type&quot;, length = number length, size = number size }, ...}</code>
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.GetUniformLocation"></a>
+    <strong>gl.GetUniformLocation (shaderID, name)</strong>
+    </dt>
+    <dd>
+    Returns the locationID of a shaders uniform.  Needed for changing uniform values with @function gl.Uniform.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">shaderID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        locationID
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.Uniform"></a>
+    <strong>gl.Uniform (locationID, f1[, f2[, f3[, f4]]])</strong>
+    </dt>
+    <dd>
+    Sets the uniform float value at the locationID for the currently active shader.  Shader must be activated before setting uniforms.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">locationID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">f1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">f2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">f3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">f4</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.UniformInt"></a>
+    <strong>gl.UniformInt (locationID, int1[, int2[, int3[, int4]]])</strong>
+    </dt>
+    <dd>
+    Sets the uniform int value at the locationID for the currently active shader.  Shader must be activated before setting uniforms.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">locationID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">int1</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">int2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">int3</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">int4</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.UniformArray"></a>
+    <strong>gl.UniformArray (locationID, type, uniforms)</strong>
+    </dt>
+    <dd>
+    Sets the an array of uniform values at the locationID for the currently active shader.  Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}. In 104.0 the maximum length of the uniforms table increased from 32 entries to 1024.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">locationID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">type</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">uniforms</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+
+
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.UniformMatrix"></a>
+    <strong>gl.UniformMatrix (locationID, m1[, m2[, mn[, m16]]])</strong>
+    </dt>
+    <dd>
+    Sets the a uniform mat4 locationID for the currently active shader.  Shader must be activated before setting uniforms. Can set one one common matrix like shadow, or by passing 16 additional numbers for the matrix.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">locationID</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">m1</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <span class="type">number</span></span>
+         "shadows" | "camera" | "caminv" | "camprj"
+        </li>
+        <li><span class="parameter">m2</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">mn</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">m16</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+
+
+    </ol>
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="FBO"></a>FBO </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "attachment"></a>
+    <strong>attachment</strong>
+    </dt>
+    <dd>
+     attachment ::= luaTex or RBO or nil or { luaTex [, num target [, num level ] ] }
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "fbo"></a>
+    <strong>fbo</strong>
+    </dt>
+    <dd>
+    User Data FBO
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">depth</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">stencil</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color0</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color1</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color2</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">colorn</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color15</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">drawbuffers</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         <code>{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}</code>
+        </li>
+        <li><span class="parameter">readbuffer</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         <code>GL_COLOR_ATTACHMENT0_EXT</code>
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.CreateFBO"></a>
+    <strong>gl.CreateFBO (data)</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">data</span>
+
+
+        <ul>
+        <li><span class="parameter">depth</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">stencil</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color0</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color1</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color2</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">colorn</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">color15</span>
+            <span class="types"><a class="type" href="../modules/GL.html#attachment">attachment</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">drawbuffers</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         <code>{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}</code>
+        </li>
+        </li></ul>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.DeleteFBO"></a>
+    <strong>gl.DeleteFBO (fbo)</strong>
+    </dt>
+    <dd>
+     This doesn't delete the attached objects!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fbo</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.IsValidFBO"></a>
+    <strong>gl.IsValidFBO (fbo[, target])</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fbo</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">target</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">bool</span></span>
+        valid</li>
+        <li>
+           <span class="types">optional <span class="type">number</span></span>
+        status</li>
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.ActiveFBO"></a>
+    <strong>gl.ActiveFBO (fbo[, target[, identities[, lua_function[, arg1[, arg2[, argn]]]]]])</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fbo</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">target</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">identities</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">lua_function</span>
+            <span class="types"><span class="type">func</span></span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">arg1</span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">arg2</span>
+
+
+
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">argn</span>
+
+
+
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.UnsafeSetFBO"></a>
+    <strong>gl.UnsafeSetFBO (fbo[, target])</strong>
+    </dt>
+    <dd>
+    Binds a FBO like <a href="../modules/GL.html#gl.ActiveFBO">gl.ActiveFBO</a> does, but you have to unbind it yourself!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fbo</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a> or <span class="type">nil</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">target</span>
+            <span class="types"><span class="type">number</span></span>
+         <code>GL_FRAMEBUFFER_EXT|fbo.target</code>
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.BlitFBO"></a>
+    <strong>gl.BlitFBO (x0Src, y0Src, x1Src, y1Src, x0Dst, y0Dst, x1Dst, y1Dst[, mask=GL_COLOR_BUFFER_BIT[, filter=GL_NEAREST]])</strong>
+    </dt>
+    <dd>
+    needs <code>GLEW_EXT_framebuffer_blit</code>
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x0Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y0Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x1Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y1Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x0Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y0Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x1Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y1Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mask</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>default</em> GL_COLOR_BUFFER_BIT)
+        </li>
+        <li><span class="parameter">filter</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>default</em> GL_NEAREST)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.BlitFBO"></a>
+    <strong>gl.BlitFBO (fboSrc, x0Src, y0Src, x1Src, y1Src, fboDst, x0Dst, y0Dst, x1Dst, y1Dst[, mask=GL_COLOR_BUFFER_BIT[, filter=GL_NEAREST]])</strong>
+    </dt>
+    <dd>
+    needs <code>GLEW_EXT_framebuffer_blit</code>
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fboSrc</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">x0Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y0Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x1Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y1Src</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">fboDst</span>
+            <span class="types"><a class="type" href="../modules/GL.html#fbo">fbo</a></span>
+
+
+
+        </li>
+        <li><span class="parameter">x0Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y0Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">x1Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">y1Dst</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">mask</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>default</em> GL_COLOR_BUFFER_BIT)
+        </li>
+        <li><span class="parameter">filter</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+         (<em>default</em> GL_NEAREST)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="RBO"></a>RBO </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "rbo"></a>
+    <strong>rbo</strong>
+    </dt>
+    <dd>
+    User Data RBO
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">target</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">format</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">xsize</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ysize</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">valid</span>
+            <span class="types"><span class="type">bool</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">samples</span>
+            <span class="types"><span class="type">number</span></span>
+         will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.CreateRBO"></a>
+    <strong>gl.CreateRBO (xsize, ysize, data)</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">xsize</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">ysize</span>
+            <span class="types"><span class="type">number</span></span>
+
+
+
+        </li>
+        <li><span class="parameter">data</span>
+
+
+        <ul>
+        <li><span class="parameter">target</span>
+            <span class="types"><span class="type">number</span></span>
+         <code>GL_RENDERBUFFER_EXT</code>
+        </li>
+        <li><span class="parameter">format</span>
+            <span class="types"><span class="type">number</span></span>
+         <code>GL_RGBA</code>
+        </li>
+        <li><span class="parameter">samples</span>
+            <span class="types"><span class="type">number</span></span>
+         any number here will result in creation of multisampled RBO
+         (<em>optional</em>)
+        </li>
+        </li></ul>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "gl.DeleteRBO"></a>
+    <strong>gl.DeleteRBO (rbo)</strong>
+    </dt>
+    <dd>
+
+
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">rbo</span>
+            <span class="types"><a class="type" href="../modules/GL.html#rbo">rbo</a></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2022-12-06 07:09:48 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
