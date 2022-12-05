@@ -271,6 +271,9 @@ bool CLuaUI::LoadCFunctions(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function ConfigureLayout
+ */
 bool CLuaUI::ConfigureLayout(const string& command)
 {
 	LUA_CALL_IN_CHECK(L, true);

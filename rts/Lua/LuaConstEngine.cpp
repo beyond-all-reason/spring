@@ -6,6 +6,22 @@
 #include "Game/GameVersion.h"
 #include "System/Platform/Misc.h"
 
+/******************************************************************************
+ * Engine constants
+ * @module Engine
+ * @see rts/Lua/LuaConstEngine.cpp
+******************************************************************************/
+
+/*** Engine specific information
+ *
+ * @table Engine
+ * @string version Returns the same as `spring  *sync-version`, e.g. "92"
+ * @string versionFull 
+ * @string versionPatchSet 
+ * @string buildFlags (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+ * @number wordSize indicates the build type and is either 32 or 64 (or 0 in synced code)
+ */
+
 bool LuaConstEngine::PushEntries(lua_State* L)
 {
 	LuaPushNamedString(L, "version"        ,                                    SpringVersion::GetSync()          );

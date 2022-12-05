@@ -20,6 +20,93 @@
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/StringUtil.h"
 
+/******************************************************************************
+ * Game constants
+ * @module Game
+ * @see rts/Lua/LuaConstGame.cpp
+******************************************************************************/
+
+/*** Game specific information
+ *
+ * @table Game
+ * @number maxUnits
+ * @number maxTeams
+ * @number maxPlayers
+ * @number squareSize Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates
+ * @number gameSpeed
+ * @number startPosType
+ * @bool ghostedBuildings
+ * @string mapChecksum
+ * @string modChecksum
+ * @bool mapDamage
+ * @string mapName
+ * @string mapDescription = string Game.mapHumanName
+ * @number mapHardness
+ * @number mapX
+ * @number mapY
+ * @number mapSizeX in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @number mapSizeZ in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @number gravity
+ * @number tidal
+ * @number windMin
+ * @number windMax
+ * @number extractorRadius
+ * @number waterDamage
+ * @tparam table envDamageTypes Containing {def}IDs of environmental-damage sources
+ * @string gameName
+ * @string gameShortName
+ * @string gameVersion
+ * @string gameMutator
+ * @string gameDesc
+ * @bool allowTeamColors
+ * @bool requireSonarUnderWater
+ * @number transportAir
+ * @number transportShip
+ * @number transportHover
+ * @number transportGround
+ * @number fireAtKilled
+ * @number fireAtCrashing
+ * @bool constructionDecay
+ * @bool reclaimAllowEnemies
+ * @bool reclaimAllowAllies
+ * @number constructionDecayTime
+ * @number constructionDecaySpeed
+ * @number multiReclaim
+ * @number reclaimMethod
+ * @number reclaimUnitMethod
+ * @number reclaimUnitEnergyCostFactor
+ * @number reclaimUnitEfficiency
+ * @number reclaimFeatureEnergyCostFactor
+ * @number repairEnergyCostFactor
+ * @number resurrectEnergyCostFactor
+ * @number captureEnergyCostFactor
+ * @tparam table springCategories
+ *     example: {
+ *       ["vtol"]         = 0,  ["special"]      = 1,  ["noweapon"]     = 2,
+ *       ["notair"]       = 3,  ["notsub"]       = 4,  ["all"]          = 5,
+ *       ["weapon"]       = 6,  ["notship"]      = 7,  ["notland"]      = 8,
+ *       ["mobile"]       = 9,  ["kbot"]         = 10, ["antigator"]    = 11,
+ *       ["tank"]         = 12, ["plant"]        = 13, ["ship"]         = 14,
+ *       ["antiemg"]      = 15, ["antilaser"]    = 16, ["antiflame"]    = 17,
+ *       ["underwater"]   = 18, ["hover"]        = 19, ["phib"]         = 20,
+ *       ["constr"]       = 21, ["strategic"]    = 22, ["commander"]    = 23,
+ *       ["paral"]        = 24, ["jam"]          = 25, ["mine"]         = 26,
+ *       ["kamikaze"]     = 27, ["minelayer"]    = 28, ["notstructure"] = 29,
+ *       ["air"]          = 30
+ *     }
+ * @tparam table armorTypes (bidirectional)
+ *     example: {
+ *       [1]  = amphibious,   [2] = anniddm,     [3] = antibomber,
+ *       [4]  = antifighter,  [5] = antiraider,  [6] = atl,
+ *       [7]  = blackhydra,   [8] = bombers,     [9] = commanders,
+ *       [10] = crawlingbombs, ...
+ *
+ *       ["amphibious"]   = 1, ["anniddm"]    = 2, ["antibomber"] = 3
+ *       ["antifighter"]  = 4, ["antiraider"] = 5, ["atl"]        = 6
+ *       ["blackhydra"]   = 7, ["bombers"]    = 8, ["commanders"] = 9
+ *       ["crawlingbombs"]= 10, ...
+ *     }
+ */
 
 bool LuaConstGame::PushEntries(lua_State* L)
 {
