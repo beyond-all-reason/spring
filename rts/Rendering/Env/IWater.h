@@ -43,7 +43,7 @@ public:
 
 	static void SetModelClippingPlane(const double* planeEq);
 
-	static void SetWater(int rendererMode);
+	static void SetWater(int rendererMode); // not enum on purpose, -1 means cycling 
 	static auto& GetWater() { return water; }
 	static void KillWater() { water = nullptr; }
 	static const char* GetWaterName(WATER_RENDERER wr) { return WaterNames[wr]; }
