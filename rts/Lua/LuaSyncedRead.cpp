@@ -333,6 +333,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(IsUnitInJammer);
 	REGISTER_LUA_CFUNC(GetClosestValidPosition);
 
+	REGISTER_LUA_CFUNC(GetModelPieceList);
+	REGISTER_LUA_CFUNC(GetModelPieceMap);
 	REGISTER_LUA_CFUNC(GetUnitPieceMap);
 	REGISTER_LUA_CFUNC(GetUnitPieceList);
 	REGISTER_LUA_CFUNC(GetUnitPieceInfo);
@@ -5670,6 +5672,49 @@ int LuaSyncedRead::GetClosestValidPosition(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+static int GetModelPieceMap(lua_State* L, const std::string& modelName)
+{
+	if (modelName.empty())
+		return 0;
+
+	const auto* model = modelLoader.LoadModel(modelName);
+	if (model == nullptr)
+		return 0;
+
+	lua_createtable(L, 0, model->numPieces);
+
+	// {"piece" = 123, ...}
+	for (size_t i = 0; i < model->numPieces; i++) {
+		const auto* p = model->pieceObjects[i];
+		lua_pushsstring(L, p->name);
+		lua_pushnumber(L, i + 1);
+		lua_rawset(L, -3);
+	}
+
+	return 1;
+}
+
+static int GetModelPieceList(lua_State* L, const std::string& modelName)
+{
+	if (modelName.empty())
+		return 0;
+
+	const auto* model = modelLoader.LoadModel(modelName);
+	if (model == nullptr)
+		return 0;
+
+	lua_createtable(L, 0, model->numPieces);
+
+	// {[1] = "piece", ...}
+	for (size_t i = 0; i < model->numPieces; i++) {
+		const auto* p = model->pieceObjects[i];
+		lua_pushsstring(L, p->name);
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
 static int GetSolidObjectPieceMap(lua_State* L, const CSolidObject* o)
 {
 	if (o == nullptr)
@@ -5850,8 +5895,12 @@ static int GetSolidObjectPieceMatrix(lua_State* L, const CSolidObject* o)
 	return 16;
 }
 
-
-
+int LuaSyncedRead::GetModelPieceMap(lua_State* L) {
+	return ::GetModelPieceMap(L, luaL_optsstring(L, 1, ""));
+}
+int LuaSyncedRead::GetModelPieceList(lua_State* L) {
+	return ::GetModelPieceList(L, luaL_optsstring(L, 1, ""));
+}
 int LuaSyncedRead::GetUnitPieceMap(lua_State* L) {
 	return (GetSolidObjectPieceMap(L, ParseTypedUnit(L, __func__, 1)));
 }
