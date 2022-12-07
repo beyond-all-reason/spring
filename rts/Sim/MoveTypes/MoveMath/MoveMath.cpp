@@ -239,13 +239,13 @@ bool CMoveMath::IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* col
 	// owner would need to be accessible, but the path-estimator
 	// defs are not tied to any collider instances
 	//
-	const bool colliderIsSub = colliderMD.isSubmarine;
-	const bool collideeIsSub = collidee->moveDef != nullptr && collidee->moveDef->isSubmarine;
+	const bool colliderIsUW = colliderMD.isSubmarine || colliderMD.followGround;
+	const bool collideeIsUW = collidee->moveDef != nullptr && (collidee->moveDef->isSubmarine || colliderMD.followGround);
 
-	if (colliderIsSub)
-		return (!collidee->IsUnderWater() && !collideeIsSub);
+	if (colliderIsUW)
+		return (!collidee->IsUnderWater() && !collideeIsUW);
 
-	return (collidee->IsUnderWater() || collideeIsSub);
+	return (collidee->IsUnderWater() || collideeIsUW);
 }
 
 bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const CSolidObject* collider)
