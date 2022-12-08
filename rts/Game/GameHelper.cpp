@@ -1095,6 +1095,9 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 			return y;
 	}
 
+	if (!unitdef->levelGround)
+		return CGround::GetHeightReal(pos.x, pos.z, synced);
+
 	const float* orgHeightMap = readMap->GetOriginalHeightMapSynced();
 	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
 
@@ -1302,6 +1305,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 
 	const int sqx = unsigned(pos.x) / SQUARE_SIZE;
 	const int sqz = unsigned(pos.z) / SQUARE_SIZE;
+
 	const float groundHeight = CGround::GetApproximateHeightUnsafe(sqx, sqz, synced);
 	const UnitDef* unitDef = buildInfo.def;
 
