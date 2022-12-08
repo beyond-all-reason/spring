@@ -5703,7 +5703,7 @@ static int GetModelPieceList(lua_State* L, const std::string& modelName)
 	if (model == nullptr)
 		return 0;
 
-	lua_createtable(L, 0, model->numPieces);
+	lua_createtable(L, model->numPieces, 0);
 
 	// {[1] = "piece", ...}
 	for (size_t i = 0; i < model->numPieces; i++) {
