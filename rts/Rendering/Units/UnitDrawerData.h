@@ -85,7 +85,7 @@ public:
 	float GetUnitIconScaleUI() const { return iconScale; }
 	float GetUnitIconFadeStart() const { return iconFadeStart; }
 	float GetUnitIconFadeVanish() const { return iconFadeVanish; }
-	void SetUnitIconScaleUI(float scale) { iconScale = std::clamp(scale, 0.5f, 2.0f); }
+	void SetUnitIconScaleUI(float scale) { iconScale = std::clamp(scale, 0.1f, 10.0f); }
 	void SetUnitIconFadeStart(float scale) { iconFadeStart = std::clamp(scale, 1.0f, 10000.0f); }
 	void SetUnitIconFadeVanish(float scale) { iconFadeVanish = std::clamp(scale, 1.0f, 10000.0f); }
 

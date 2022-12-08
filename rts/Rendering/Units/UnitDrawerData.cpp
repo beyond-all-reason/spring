@@ -89,7 +89,7 @@ CUnitDrawerData::~CUnitDrawerData()
 
 void CUnitDrawerData::Update()
 {
-	iconSizeBase = std::max(12.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
+	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		UpdateTempDrawUnits(tempOpaqueUnits[modelType]);
