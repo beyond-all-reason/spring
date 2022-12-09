@@ -30,10 +30,10 @@ CR_REG_METADATA(CProjectile,
 	CR_IGNORED(createMe),
 	CR_MEMBER(deleteMe),
 
-	CR_MEMBER(castShadow),
 	CR_MEMBER(drawSorted),
 
 	CR_MEMBER_BEGINFLAG(CM_Config),
+		CR_MEMBER(castShadow),
 		CR_MEMBER(dir),
 		CR_MEMBER(drawOrder),
 	CR_MEMBER_ENDFLAG(CM_Config),
@@ -180,6 +180,7 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 	if (CExpGenSpawnable::GetMemberInfo(memberInfo))
 		return true;
 
+	CHECK_MEMBER_INFO_BOOL(CProjectile, castShadow)
 	CHECK_MEMBER_INFO_FLOAT3(CProjectile, dir)
 	CHECK_MEMBER_INFO_INT(CProjectile, drawOrder)
 
