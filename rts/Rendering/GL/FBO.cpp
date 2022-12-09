@@ -45,14 +45,14 @@ GLint FBO::GetCurrentBoundFBO()
  */
 GLenum FBO::GetTextureTargetByID(const GLuint id, const unsigned int i)
 {
-	static constexpr GLenum _targets[4] = { GL_TEXTURE_2D, GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_1D, GL_TEXTURE_3D };
+	static constexpr std::array _targets = { GL_TEXTURE_2D, GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_1D, GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY };
 	GLint format;
 	glBindTexture(_targets[i], id);
 	glGetTexLevelParameteriv(_targets[i], 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
 
 	if (format != 1)
 		return _targets[i];
-	if (i < 3)
+	if (i < _targets.size() - 1)
 		return GetTextureTargetByID(id, i + 1);
 	return GL_INVALID_ENUM;
 }
@@ -131,6 +131,7 @@ void FBO::DownloadAttachment(const GLenum attachment)
 		bits = 32;
 
 	switch (target) {
+		case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 		case GL_TEXTURE_3D:
 			tex.pixels.resize(tex.xsize * tex.ysize * tex.zsize * (bits / 8));
 			glGetTexImage(tex.target, 0, /*FIXME*/GL_RGBA, /*FIXME*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
@@ -196,6 +197,7 @@ void FBO::GLContextReinit()
 
 			// TODO regen mipmaps?
 			switch (tex.target) {
+				case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 				case GL_TEXTURE_3D:
 					// glTexSubImage3D(tex.target, 0, 0,0,0, tex.xsize, tex.ysize, tex.zsize, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
 					glTexImage3D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, 0, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
@@ -422,8 +424,9 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
 		glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_1D, texId, mipLevel);
 	} else if (texTarget == GL_TEXTURE_3D) {
 		glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_3D, texId, mipLevel, zSlice);
-	} else if (texTarget == GL_TEXTURE_CUBE_MAP) {
-		if (GLEW_VERSION_3_2) glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
+	} else if (texTarget == GL_TEXTURE_CUBE_MAP || texTarget == GL_TEXTURE_2D_ARRAY) {
+		if (GLEW_VERSION_3_2)
+			glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
 	} else {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, texTarget, texId, mipLevel);
 	}

@@ -18,7 +18,7 @@ const spring::unordered_map<GLenum, GLenum> LuaTextures::Format2Query =
 	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D				   },
 	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D				   },
 //	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY			   },
-//	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY			   },
+	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY			   },
 //	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE			   },
 	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP			   },
 //	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER			   },
@@ -69,6 +69,7 @@ std::string LuaTextures::Create(const Texture& tex)
 		case GL_TEXTURE_2D: {
 			glTexImage2D(tex.target, 0, tex.format, tex.xsize, tex.ysize           , tex.border, dataFormat, dataType, nullptr);
 		} break;
+		case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 		case GL_TEXTURE_3D: {
 			glTexImage3D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, tex.border, dataFormat, dataType, nullptr);
 		} break;

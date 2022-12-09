@@ -315,6 +315,7 @@ void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLen
 	case GL_TEXTURE_2D_MULTISAMPLE:
 		glFramebufferTexture2DEXT(fboTarget, attachID, texTarget, texId, 0);
 		break;
+	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 	case GL_TEXTURE_CUBE_MAP: [[fallthrough]];
 	case GL_TEXTURE_3D: {
 		if (!GLEW_VERSION_3_2) {

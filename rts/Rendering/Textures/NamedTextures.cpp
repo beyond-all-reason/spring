@@ -284,6 +284,7 @@ namespace CNamedTextures {
 
 		#ifndef HEADLESS
 			switch (bitmap.textype) {
+				case GL_TEXTURE_2D_ARRAY:  { texInfo.texType = GL_TEXTURE_2D_ARRAY; } break;
 				case GL_TEXTURE_3D:        { texInfo.texType = GL_TEXTURE_3D;       } break;
 				case GL_TEXTURE_CUBE_MAP:  { texInfo.texType = GL_TEXTURE_CUBE_MAP; } break;
 				default:                   { texInfo.texType = GL_TEXTURE_2D;       } break;

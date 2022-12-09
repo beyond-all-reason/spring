@@ -660,6 +660,7 @@ GLuint LuaMatTexture::GetTextureTarget() const
 		case LUATEX_NAMED: {
 			switch (this->texType) {
 				case GL_TEXTURE_3D:       { texType = GL_TEXTURE_3D;       } break;
+				case GL_TEXTURE_2D_ARRAY: { texType = GL_TEXTURE_2D_ARRAY; } break;
 				case GL_TEXTURE_CUBE_MAP: { texType = GL_TEXTURE_CUBE_MAP; } break;
 				default:                  { texType = GL_TEXTURE_2D;       } break;
 			}
@@ -779,6 +780,7 @@ void LuaMatTexture::Bind() const
 		if (enable) {
 			switch (texType) {
 				case GL_TEXTURE_2D:           {   glEnable(texType);   } break;
+				case GL_TEXTURE_2D_ARRAY:     { /*glEnable(texType);*/ } break;
 				case GL_TEXTURE_3D:           { /*glEnable(texType);*/ } break;
 				case GL_TEXTURE_CUBE_MAP:     { /*glEnable(texType);*/ } break;
 				default:                      {                        } break;
@@ -789,6 +791,7 @@ void LuaMatTexture::Bind() const
 	else if (!enable) {
 		switch (texType) {
 			case GL_TEXTURE_2D:           {   glDisable(texType);   } break;
+			case GL_TEXTURE_2D_ARRAY:     { /*glDisable(texType);*/ } break;
 			case GL_TEXTURE_3D:           { /*glDisable(texType);*/ } break;
 			case GL_TEXTURE_CUBE_MAP:     { /*glDisable(texType);*/ } break;
 			default:                      {                         } break;
@@ -814,9 +817,9 @@ void LuaMatTexture::Unbind() const
 
 	switch (GetTextureTarget()) {
 		case GL_TEXTURE_2D:           {   glDisable(GL_TEXTURE_2D);             } break;
+		case GL_TEXTURE_2D_ARRAY:     {   glDisable(GL_TEXTURE_2D_ARRAY);       } break;
 		case GL_TEXTURE_3D:           {   glDisable(GL_TEXTURE_3D);             } break;
 		case GL_TEXTURE_CUBE_MAP:     {   glDisable(GL_TEXTURE_CUBE_MAP);       } break;
-		//case GL_TEXTURE_CUBE_MAP_ARB: { /*glDisable(GL_TEXTURE_CUBE_MAP_ARB);*/ } break;
 		default:                      {                                         } break;
 	}
 }
