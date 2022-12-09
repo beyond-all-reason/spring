@@ -1001,6 +1001,9 @@ void CMiniMap::Update()
 	if (spring_gettime() <= nextDrawScreen)
 		return;
 
+	/* Below the renderToTexture check above,
+	 * since that other rendering pipeline
+	 * does not support minimap flipping. */
 	if (minimapCanFlip) {
 		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
 		flipped = rotY > math::PI/2 && rotY <= 3 * math::PI/2;
