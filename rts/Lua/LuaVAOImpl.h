@@ -34,7 +34,7 @@ public:
 	void AttachIndexBuffer(const LuaVBOImplSP& luaVBO);
 
 	void DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt);
-	void DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt);
+	void DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt);
 
 	void ClearSubmission();
 	int AddUnitsToSubmission(int id);
@@ -50,7 +50,19 @@ public:
 
 	void Submit();
 private:
-	std::pair<GLsizei, GLsizei> DrawCheck(GLenum mode, sol::optional<GLsizei> drawCountOpt, sol::optional<int> instanceCountOpt, bool indexed);
+	template<typename T>
+	struct DrawCheckType {
+		DrawCheckType() = default;
+		T drawCount;
+		T baseVertex;
+		T baseIndex;
+		T instCount;
+		T baseInstance;
+	};
+	using DrawCheckInput  = DrawCheckType<sol::optional<int>>;
+	using DrawCheckResult = DrawCheckType<int>;
+
+	[[maybe_unused]] DrawCheckResult DrawCheck(GLenum mode, const DrawCheckInput& inputs, bool indexed);
 	void CondInitVAO();
 	void CheckDrawPrimitiveType(GLenum mode) const;
 	void AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std::shared_ptr<LuaVBOImpl>& thisLuaVBO, GLenum reqTarget);

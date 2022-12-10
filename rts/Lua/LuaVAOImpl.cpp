@@ -110,7 +110,15 @@ const SIndexAndCount LuaVAOImpl::GetDrawIndicesImpl(const TObj* obj)
 template<typename TObj>
 int LuaVAOImpl::AddObjectsToSubmissionImpl(int id)
 {
-	DrawCheck(GL_TRIANGLES, 0, submitCmds.size() + 1, true); //pair<indxCount,instCount>
+	DrawCheckInput inputs = {
+		submitCmds.size() + 1, // drawCount
+		std::nullopt,	       // baseVertex
+		std::nullopt,	       // baseIndex
+		std::nullopt,          // instCount
+		std::nullopt,          // baseInstance
+	};
+
+	DrawCheck(GL_TRIANGLES, inputs, true);
 	submitCmds.emplace_back(DrawObjectGetCmdImpl<TObj>(id));
 
 	return submitCmds.size() - 1;
@@ -120,7 +128,16 @@ template<typename TObj>
 int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 {
 	const std::size_t idsSize = ids.size(); //size() is very costly to do in the loop
-	DrawCheck(GL_TRIANGLES, 0, submitCmds.size() + idsSize, true); //pair<indxCount,instCount>
+
+	DrawCheckInput inputs = {
+		submitCmds.size() + idsSize, // drawCount
+		std::nullopt,	             // baseVertex
+		std::nullopt,	             // baseIndex
+		std::nullopt,                // instCount
+		std::nullopt,                // baseInstance
+	};
+
+	DrawCheck(GL_TRIANGLES, inputs, true);
 
 	constexpr auto defaultValue = static_cast<lua_Number>(0);
 	for (std::size_t i = 0u; i < idsSize; ++i) {
@@ -240,66 +257,102 @@ void LuaVAOImpl::CondInitVAO()
 	}
 }
 
-std::pair<GLsizei, GLsizei> LuaVAOImpl::DrawCheck(GLenum mode, sol::optional<GLsizei> drawCountOpt, sol::optional<int> instanceCountOpt, bool indexed)
+LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckInput& inputs, bool indexed)
 {
-	GLsizei drawCount;
+	LuaVAOImpl::DrawCheckResult result{};
 
 	if (indexed) {
 		if (!indxLuaVBO)
 			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you succesfully call vao:AttachIndexBuffer()?", __func__);
 
-		drawCount = drawCountOpt.value_or(indxLuaVBO->elementsCount);
-		if (drawCount <= 0)
-			drawCount = indxLuaVBO->elementsCount;
+		result.baseIndex  = std::max(inputs.baseIndex.value_or(0) , 0);
+		result.baseVertex = std::max(inputs.baseVertex.value_or(0), 0); //can't be checked easily
+
+		result.drawCount = inputs.drawCount.value_or(indxLuaVBO->elementsCount);
+		if (!inputs.drawCount.has_value() || inputs.drawCount.value() <= 0)
+			result.drawCount -= result.baseIndex; //adjust automatically
+
+		if (result.drawCount <= 0)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Non-positive number of draw elements %d is requested", __func__, result.drawCount);
+
+		if (result.drawCount > indxLuaVBO->elementsCount - result.baseIndex)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of elements %d with offset %d exceeds buffer size %u", __func__, result.drawCount, result.baseIndex, indxLuaVBO->elementsCount);
+
 	} else {
 		const GLsizei drawCountDef = vertLuaVBO ? vertLuaVBO->elementsCount : 1;
 
-		if (!vertLuaVBO && !drawCountOpt.has_value())
+		if (!vertLuaVBO && !inputs.drawCount.has_value())
 			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set explicitly", __func__);
 
-		drawCount = drawCountOpt.value_or(drawCountDef);
-		if (drawCount <= 0)
-			drawCount = drawCountDef;
+		result.drawCount = inputs.drawCount.value_or(drawCountDef);
+
+		if (result.drawCount <= 0)
+			result.drawCount = drawCountDef - result.baseIndex; //note baseIndex not baseVertex
+
+		if (result.drawCount > drawCountDef - result.baseIndex)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of vertices %d with offset %d exceeds buffer size %u", __func__, result.drawCount, result.baseIndex, drawCountDef);
 	}
 
-	const auto instanceCount = std::max(instanceCountOpt.value_or(0), 0); // 0 - forces ordinary version, while 1 - calls *Instanced()
-	if (instanceCount > 0 && !instLuaVBO)
-		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested rendering of [%d] instances, but no instance buffer is attached. Did you succesfully call vao:AttachInstanceBuffer()?", __func__, instanceCount);
+	result.baseInstance = std::max(inputs.baseInstance.value_or(0), 0);
+	result.instCount = std::max(inputs.instCount.value_or(0), 0); // 0 - forces ordinary version, while 1 - calls *Instanced()
+
+	if (result.instCount > 0) {
+		if (!instLuaVBO)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested rendering of [%d] instances, but no instance buffer is attached. Did you succesfully call vao:AttachInstanceBuffer()?", __func__, result.instCount);
+
+		if (result.instCount > instLuaVBO->elementsCount - result.baseInstance)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of instances %d with offset %d exceeds buffer size %u", __func__, result.instCount, result.baseInstance, instLuaVBO->elementsCount);
+	}
+	else {
+		if (result.baseInstance > 0)
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested baseInstance [%d] and but zero instance count", __func__, result.baseInstance);
+	}
 
 	CheckDrawPrimitiveType(mode);
 	CondInitVAO();
 
-	return std::make_pair(drawCount, instanceCount);
+	return result;
 }
 
 void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
 {
-	const auto [vertCount, instCount] = DrawCheck(mode, vertCountOpt, instanceCountOpt, false); //pair<vertCount,instCount>
+	DrawCheckInput inputs = {
+		vertCountOpt,	  // drawCount
+		std::nullopt,	  // baseVertex
+		vertexFirstOpt,	  // baseIndex
+		instanceCountOpt, // instCount
+		instanceFirstOpt, // baseInstance
+	};
 
-	const auto vertexFirst = std::max(vertexFirstOpt.value_or(0), 0);
-	const auto baseInstance = std::max(instanceFirstOpt.value_or(0), 0);
+	const auto result = DrawCheck(mode, inputs, false);
 
 	vao->Bind();
 
-	if (instCount == 0)
-		glDrawArrays(mode, vertexFirst, vertCount);
+	if (result.instCount == 0)
+		glDrawArrays(mode, result.baseIndex, result.drawCount);
 	else {
-		if (baseInstance > 0)
-			glDrawArraysInstancedBaseInstance(mode, vertexFirst, vertCount, instCount, baseInstance);
+		if (result.baseInstance > 0)
+			glDrawArraysInstancedBaseInstance(mode, result.baseIndex, result.drawCount, result.instCount, result.baseInstance);
 		else
-			glDrawArraysInstanced(mode, vertexFirst, vertCount, instCount);
+			glDrawArraysInstanced(mode, result.baseIndex, result.drawCount, result.instCount);
 	}
 
 	vao->Unbind();
 }
 
-void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt)
+void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt)
 {
-	const auto [indxCount, instCount] = DrawCheck(mode, indCountOpt, instanceCountOpt, true); //pair<indxCount,instCount>
+	DrawCheckInput inputs = {
+		indCountOpt,	  // drawCount
+		baseVertexOpt,	  // baseVertex
+		indElemOffsetOpt, // baseIndex
+		instanceCountOpt, // instCount
+		instanceFirstOpt, // baseInstance
+	};
 
-	const auto indElemOffset = std::max(indElemOffsetOpt.value_or(0), 0);
-	const auto indElemOffsetInBytes = indElemOffset * indxLuaVBO->elemSizeInBytes;
-	const auto baseVertex = std::max(baseVertexOpt.value_or(0), 0);
+	const auto result = DrawCheck(mode, inputs, true);
+
+	const auto indElemOffsetInBytes = result.baseIndex * indxLuaVBO->elemSizeInBytes;
 
 	const auto indexType = indxLuaVBO->bufferAttribDefsVec[0].second.type;
 
@@ -309,16 +362,20 @@ void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, s
 	vao->Bind();
 
 #define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
-	if (instCount == 0) {
-		if (baseVertex == 0)
-			glDrawElements(mode, indxCount, indexType, INT2PTR(indElemOffsetInBytes));
+	if (result.instCount == 0) {
+		if (result.baseVertex == 0)
+			glDrawElements(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes));
 		else
-			glDrawElementsBaseVertex(mode, indxCount, indexType, INT2PTR(indElemOffsetInBytes), baseVertex);
+			glDrawElementsBaseVertex(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes), result.baseVertex);
 	} else {
-		if (baseVertex == 0)
-			glDrawElementsInstanced(mode, indxCount, indexType, INT2PTR(indElemOffsetInBytes), instCount);
-		else
-			glDrawElementsInstancedBaseVertex(mode, indxCount, indexType, INT2PTR(indElemOffsetInBytes), instCount, baseVertex);
+		if (result.baseInstance > 0)
+			glDrawElementsInstancedBaseVertexBaseInstance(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes), result.instCount, result.baseVertex, result.baseInstance);
+		else {
+			if (result.baseVertex == 0)
+				glDrawElementsInstanced(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes), result.instCount);
+			else
+				glDrawElementsInstancedBaseVertex(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes), result.instCount, result.baseVertex);
+		}
 	}
 #undef INT2PTR
 
