@@ -1832,6 +1832,7 @@ void CLuaHandle::name()                       \
 DRAW_CALLIN(DrawGenesis)
 DRAW_CALLIN(DrawWorld)
 DRAW_CALLIN(DrawWorldPreUnit)
+DRAW_CALLIN(DrawPreDecals)
 DRAW_CALLIN(DrawWorldPreParticles)
 DRAW_CALLIN(DrawWorldShadow)
 DRAW_CALLIN(DrawWorldReflection)

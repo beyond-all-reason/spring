@@ -262,6 +262,7 @@ class CEventHandler
 		void DrawGenesis();
 		void DrawWorld();
 		void DrawWorldPreUnit();
+		void DrawPreDecals();
 		void DrawWorldPreParticles();
 		void DrawWorldShadow();
 		void DrawWorldReflection();

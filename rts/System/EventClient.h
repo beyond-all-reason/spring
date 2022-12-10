@@ -323,6 +323,7 @@ class CEventClient
 		virtual void DrawGenesis() {}
 		virtual void DrawWorld() {}
 		virtual void DrawWorldPreUnit() {}
+		virtual void DrawPreDecals() {}
 		virtual void DrawWorldPreParticles() {}
 		virtual void DrawWorldShadow() {}
 		virtual void DrawWorldReflection() {}

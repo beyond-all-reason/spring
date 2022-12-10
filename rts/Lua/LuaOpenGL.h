@@ -63,6 +63,7 @@ class LuaOpenGL {
 		static void ResetDrawWorldPreUnit();
 		static void DisableDrawWorldPreUnit();
 
+		NOOP_STATE_FUNCS(DrawPreDecals)
 		NOOP_STATE_FUNCS(DrawWorldPreParticles)
 
 		static void EnableDrawWorldShadow();

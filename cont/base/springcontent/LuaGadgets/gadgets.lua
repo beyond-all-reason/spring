@@ -1843,6 +1843,12 @@ function gadgetHandler:DrawWorldPreUnit()
   end
 end
 
+function gadgetHandler:DrawPreDecals()
+  for _,g in r_ipairs(self.DrawPreDecalsList) do
+    g:DrawPreDecals()
+  end
+end
+
 function gadgetHandler:DrawWorldPreParticles()
   for _,g in r_ipairs(self.DrawWorldPreParticlesList) do
     g:DrawWorldPreParticles()

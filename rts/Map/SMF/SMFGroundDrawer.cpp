@@ -53,6 +53,9 @@ CONFIG(int, ROAM)
 	.maximumValue(1)
 	.description("Use ROAM for terrain mesh rendering: 0 to disable, 1=VBO mode to enable.");
 
+CONFIG(bool, AlwaysSendDrawGroundEvents)
+	.defaultValue(false)
+	.description("Always send DrawGround{Pre,Post}{Forward,Deferred} events");
 
 namespace Shader {
 	struct IProgramObject;
@@ -63,6 +66,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	, meshDrawer(nullptr)
 	, geomBuffer{"GROUNDDRAWER-GBUFFER"}
 {
+	alwaysDispatchEvents = configHandler->GetBool("AlwaysSendDrawGroundEvents");
 	drawerMode = (configHandler->GetInt("ROAM") != 0)? SMF_MESHDRAWER_ROAM: SMF_MESHDRAWER_BASIC;
 	groundDetail = configHandler->GetInt("GroundDetail");
 
@@ -215,7 +219,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 			glAlphaFunc(GL_GREATER, mapInfo->map.voidAlphaMin);
 		}
 
-		if (HaveLuaRenderState())
+		if (alwaysDispatchEvents || HaveLuaRenderState())
 			eventHandler.DrawGroundPreDeferred();
 
 		meshDrawer->DrawMesh(drawPass);
@@ -264,7 +268,7 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 			glAlphaFunc(GL_GREATER, mapInfo->map.voidAlphaMin);
 		}
 
-		if (HaveLuaRenderState())
+		if (alwaysDispatchEvents || HaveLuaRenderState())
 			eventHandler.DrawGroundPreForward();
 
 		meshDrawer->DrawMesh(drawPass);
@@ -274,7 +278,7 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 		smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
 		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
 
-		if (HaveLuaRenderState())
+		if (alwaysDispatchEvents || HaveLuaRenderState())
 			eventHandler.DrawGroundPostForward();
 	}
 }

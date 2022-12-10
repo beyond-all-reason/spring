@@ -339,6 +339,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 			gd->Draw(DrawPass::Normal);
 		}
 		{
+			eventHandler.DrawPreDecals();
 			SCOPED_TIMER("Draw::World::Decals");
 			groundDecals->Draw();
 			projectileDrawer->DrawGroundFlashes();

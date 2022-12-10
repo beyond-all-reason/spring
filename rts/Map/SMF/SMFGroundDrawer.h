@@ -79,6 +79,7 @@ private:
 	bool HaveLuaRenderState() const;
 	bool UpdateGeometryBuffer(bool init);
 
+	bool alwaysDispatchEvents = false;
 protected:
 	CSMFReadMap* smfMap;
 	IMeshDrawer* meshDrawer;
