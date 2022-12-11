@@ -7,6 +7,12 @@ dbg_name=spring_bar_$tag_name-minimal-symbols.tgz
 ccache_dbg_name=ccache_dbg.tgz
 
 cd "${INSTALL_DIR}"
+
+# Compute md5 hashes of all files in archive. We additionally gzip it as gzip adds
+# checksum to the list itself. To validate just `zcat files.md5.gz | md5sum -c -`
+find . -type f ! -name '*.dbg' ! -name files.md5.gz -exec md5sum {} \; | gzip > files.md5.gz
+
+rm -f ../$bin_name
 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on ../$bin_name ./* -xr\!*.dbg
 # export github output variables
 echo "::set-output name=bin_name::${bin_name}"
