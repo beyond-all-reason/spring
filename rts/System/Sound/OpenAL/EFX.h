@@ -5,6 +5,9 @@
 
 #include <string>
 
+#ifdef PREFER_STATIC_LIBS
+#define AL_ALEXT_PROTOTYPES
+#endif
 #include <al.h>
 #include <alc.h>
 #include <efx.h>

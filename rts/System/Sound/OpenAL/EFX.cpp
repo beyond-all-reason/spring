@@ -4,7 +4,12 @@
 
 #include "ALShared.h"
 #include "EFXPresets.h"
+#ifdef PREFER_STATIC_LIBS
+#include <al.h>
+#include <efx.h>
+#else
 #include "EFXfuncs.h"
+#endif
 
 #include "System/Sound/SoundLog.h"
 #include "System/Config/ConfigHandler.h"

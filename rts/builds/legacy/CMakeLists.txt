@@ -16,16 +16,15 @@ if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
 	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
 endif()
 
-find_package(Vulkan)
-if    (Vulkan_FOUND)
-	list(APPEND engineIncludes ${Vulkan_INCLUDE_DIRS})
-	add_definitions(-DHAS_VULKAN)
-endif (Vulkan_FOUND)
+add_definitions(-DHAS_VULKAN)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL REQUIRED)
-find_package_static(GLEW 1.5.1 REQUIRED)
-list(APPEND engineLibraries ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARIES})
+find_package_static(GLEW REQUIRED)
+if    (NOT PREFER_STATIC_LIBS)
+	list(APPEND engineLibraries ${OPENGL_gl_LIBRARY})
+endif (NOT PREFER_STATIC_LIBS)
+list(APPEND engineLibraries ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARIES})
 list(APPEND engineIncludes ${GLEW_INCLUDE_DIR})
 
 find_package_static(FontConfig)
@@ -33,13 +32,13 @@ if    (FONTCONFIG_FOUND)
 	list(APPEND engineIncludes ${FONTCONFIG_INCLUDE_DIR})
 	list(APPEND engineLibraries ${FONTCONFIG_LIBRARIES})
 	add_definitions(-DUSE_FONTCONFIG)
-	if    (PREFER_STATIC_LIBS)
+	if    (PREFER_STATIC_LIBS AND UNIX)
 		prefer_static_libs()
 		find_library(EXPAT_LIBRARY expat)
 		find_library(LIBUUID_LIBRARY uuid)
 		unprefer_static_libs()
 		list(APPEND engineLibraries ${EXPAT_LIBRARY} ${LIBUUID_LIBRARY})
-	endif (PREFER_STATIC_LIBS)
+	endif (PREFER_STATIC_LIBS AND UNIX)
 endif (FONTCONFIG_FOUND)
 
 find_freetype_hack() # hack to find different named freetype.dll
@@ -49,10 +48,10 @@ foreach(f ${FREETYPE_INCLUDE_DIRS})
 endforeach(f)
 list(APPEND engineLibraries ${FREETYPE_LIBRARY})
 
-if    (UNIX)
+if    (UNIX AND NOT PREFER_STATIC_LIBS)
 	find_package(X11 REQUIRED)
 	list(APPEND engineLibraries ${X11_Xcursor_LIB} ${X11_X11_LIB})
-endif (UNIX)
+endif (UNIX AND NOT PREFER_STATIC_LIBS)
 
 if (APPLE)
 	find_library(COREFOUNDATION_LIBRARY Foundation)
@@ -80,7 +79,18 @@ include_directories(${engineIncludes})
 
 ### Build the executable
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
-target_link_libraries(engine-legacy ${engineLibraries})
+
+set(LINKER_COMMANDS "")
+
+if    (UNIX AND NOT PREFER_STATIC_LIBS)
+	list(APPEND LINKER_COMMANDS "-Wl,--disable-new-dtags -Wl,-rpath,'$$ORIGIN/lib'")
+endif (UNIX AND NOT PREFER_STATIC_LIBS)
+
+if    (PREFER_STATIC_LIBS)
+	list(APPEND LINKER_COMMANDS "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lzstd -lwayland-client -lwayland-cursor -lwayland-egl -l:libmng.a -lffi -lxkbcommon -liconv -ljbig -lbrotlidec-static -lbrotlicommon-static -laudio -lLercLib -l:libXau.a -lz -lwebp -ldeflate -l:libXcursor.a -l:libXfixes.a -l:libXrender.a -l:libX11.a -l:libxcb.a -l:libXdmcp.a -Wl,-Bdynamic -lGL -llcms2")
+endif (PREFER_STATIC_LIBS)
+
+target_link_libraries(engine-legacy ${engineLibraries} ${LINKER_COMMANDS})
 
 
 ### Install the executable

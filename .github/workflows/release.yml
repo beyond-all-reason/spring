@@ -23,33 +23,49 @@ jobs:
       - name: Install Build Dependencies (Common)
         run: |
           sudo apt-get update -y
-          sudo apt-get install --fix-missing -y curl unzip
+          sudo apt-get install --fix-missing -y curl unzip p7zip-full
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
+      #      - name: Setup tmate session
+      #        uses: mxschmitt/action-tmate@v3
 
       - name: Download Artifacts
         id: dl-artifacts
         run: |
-          get_code=$(curl -X GET -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/beyond-all-reason/spring/actions/runs/${{ github.event.inputs.wf-run-id }}")
+          get_code=$(curl -X GET -u '${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}' -s -o /dev/null -w '%{http_code}' 'https://api.github.com/repos/beyond-all-reason/spring/actions/runs/${{ github.event.inputs.wf-run-id }}')
           if [ $get_code != 200 ]; then
             exit 1
           fi
 
-          artifact_dl_urls=$(curl -X GET -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" -s "https://api.github.com/repos/beyond-all-reason/spring/actions/runs/${{ github.event.inputs.wf-run-id }}/artifacts" | jq ".artifacts[].archive_download_url" |  tr -d "\"")
+          artifact_dl_urls=$(curl -X GET -u '${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}' -s 'https://api.github.com/repos/beyond-all-reason/spring/actions/runs/${{ github.event.inputs.wf-run-id }}/artifacts' | jq '.artifacts[].archive_download_url' |  tr -d '\'')
 
           for adl in $artifact_dl_urls; do
-            curl -X GET -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" -L -s -o tmp.zip $adl
+            curl -X GET -u '${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}' -L -s -o tmp.zip $adl
             unzip tmp.zip
             rm tmp.zip
           done
 
-          if [ "${{ github.event.inputs.release-tag }}" == "" ]; then
+          #move files from headless and dedicated to legacy
+          for i in 'windows-64 .exe' 'linux-64 '; do
+            PLATFORM=${i[0]}
+            EXTENSION=${i[1]}
+            for BUILD_CONFIG in headless dedicated; do
+              7z e $(find -maxdepth 1 -name '*${PLATFORM}_${BUILD_CONFIG}*-portable*.7z') spring-${BUILD_CONFIG}${EXTENSION} -y
+              7z a $(find -maxdepth 1 -name '*${PLATFORM}_legacy*-portable*.7z') spring-${BUILD_CONFIG}${EXTENSION} -y
+              7z e $(find -maxdepth 1 -name '*${PLATFORM}_${BUILD_CONFIG}*-symbols*.7z') spring-${BUILD_CONFIG}.dbg -y
+              7z a $(find -maxdepth 1 -name '*${PLATFORM}_legacy*-symbols*.7z') spring-${BUILD_CONFIG}.dbg -y
+              find -maxdepth 1 -name '*_${BUILD_CONFIG}*.7z' -exec rm {} \;
+            done
+          done
+
+          #remove _legacy from name
+          find -maxdepth 1 -name '*_legacy*-portable*.7z' -exec sh -c 'for file do mv '${file}' '$(echo ${file} | sed s/'_legacy'//)'; done' sh {} \;
+
+          if [ '${{ github.event.inputs.release-tag }}' == '' ]; then
             filename=$(ls | grep spring | head -n 1)
             release_tag=$(echo $filename | cut -d'_' -f1,2,3)
-            echo "::set-output name=release_tag::$release_tag"
+            echo '::set-output name=release_tag::$release_tag'
           else
-            echo "::set-output name=release_tag::${{ github.event.inputs.release-tag }}"
+            echo '::set-output name=release_tag::${{ github.event.inputs.release-tag }}'
           fi
         shell: bash
 

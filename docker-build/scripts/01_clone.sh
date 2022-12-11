@@ -1,40 +1,11 @@
-set -e
+cd "${SPRING_DIR}/conan"
 
-if [ ! ${LOCAL_BUILD} ]; then
-    git config --global user.name  "Docker SpringRTS Build"
-    git config --global user.email "dockerbuild@beyondallreason.info"
+echo "Fetching Conan packages..."
 
-    rm -rf "${SPRING_DIR}"
-
-    echo "---------------------------------"
-    echo "Cloning SpringRTS from: ${SPRINGRTS_GIT_URL}"
-    echo "Using branch: ${BRANCH_NAME}"
-    echo "---------------------------------"
-
-    # Do not use git depth parameter cause git describe later will not work as expected
-    CMD="git clone "${SPRINGRTS_GIT_URL}" "${SPRING_DIR}""
-
-    echo "Command: ${CMD}"
-
-    ${CMD}
-
-    cd "${SPRING_DIR}"
-    git checkout "${BRANCH_NAME}"
-    git submodule update --init --recursive
-fi
-
-if [ "${PLATFORM}" == "windows-64" ]; then
-    LIBS_DIR="/mingwlibs64"
-    LIBS_BRANCH=master
-elif [ "${PLATFORM}" == "linux-64" ]; then
-    LIBS_DIR="/spring-static-libs"
-    LIBS_BRANCH=18.04
-fi
-
-if [ ! -d "${LIBS_DIR}/.git" ]; then
-    git clone "${SPRINGRTS_AUX_URL_PREFIX}${LIBS_DIR}.git" -b "${LIBS_BRANCH}" --depth 1 "$LIBS_DIR"
+CONAN_CMAKE_TOOLCHAIN_FILE="/scripts/${PLATFORM}.cmake"
+if [ "${MYBUILDTYPE}" == "DEBUG" ]; then
+    PROFILE_BUILDTYPE="DEBUG"
 else
-    cd "${LIBS_DIR}"
-    git pull
-    git checkout ${LIBS_BRANCH}
+    PROFILE_BUILDTYPE="RELEASE"
 fi
+conan install "./conanfile-${PLATFORM}.txt" --profile "./conanprofile-${PLATFORM}-${PROFILE_BUILDTYPE}"

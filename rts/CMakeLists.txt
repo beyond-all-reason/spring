@@ -40,7 +40,11 @@ if(DEBUG_GLSTATE)
 endif()
 
 ### give error when not found
-find_package_static(DevIL REQUIRED)
+if    (NOT WIN32)
+	find_package_static(DevIL REQUIRED)
+else  (NOT WIN32)
+	find_library(IL_LIBRARIES DevIL REQUIRED)
+endif (NOT WIN32)
 
 ### Assemble common incude dirs
 include_directories(BEFORE lib)
@@ -83,7 +87,6 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 endif (UNIX AND NOT MINGW)
 
-find_package_static(ZLIB REQUIRED)
 list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${GIF_LIBRARY})
 list(APPEND engineCommonLibraries 7zip ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY})
 list(APPEND engineCommonLibraries lua luasocket archives assimp gflags)
@@ -103,6 +106,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 else()
 	set(USE_TCMALLOC_DEFAULT TRUE)
 endif()
+
+if(PREFER_STATIC_LIBS)
+	add_definitions(-DIL_STATIC_LIB)
+endif ()
 
 find_package_static(TCMalloc)
 option(USE_TCMALLOC "use tcmalloc (part of google's perftools)" ${USE_TCMALLOC_DEFAULT})
