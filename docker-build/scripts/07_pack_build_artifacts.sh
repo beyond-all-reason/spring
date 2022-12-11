@@ -24,7 +24,7 @@ if [ -d /ccache_dbg ]; then
     echo "Packing ccache debug data..."
 
     echo "::set-output name=ccache_dbg::${ccache_dbg_name}"
-    tar cvfz "/publish/${ccache_dbg_name}" -C /ccache_dbg /ccache_dbg > /dev/null 2>&1
+    tar cvfz "${PUBLISH_DIR}/${ccache_dbg_name}" -C /ccache_dbg /ccache_dbg > /dev/null 2>&1
 else
     echo "No ccache debug data, so skipping packing it..."
 fi
