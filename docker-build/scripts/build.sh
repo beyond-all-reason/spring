@@ -31,7 +31,7 @@ echo "---------------------------------"
 . /scripts/03_compile.sh
 . /scripts/04_install.sh
 
-if [ ! ${LOCAL_BUILD} ]; then
+if [ ${PUBLISH_ARTIFACTS} ]; then
     if [ "${STRIP_SYMBOLS}" == "1" ]; then
         . /scripts/05_fill_debugsymbol_dir.sh
     fi

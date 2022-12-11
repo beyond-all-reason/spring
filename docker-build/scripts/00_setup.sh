@@ -6,6 +6,7 @@ DUMMY=
 ENABLE_CCACHE=1
 DEBUG_CCACHE=
 STRIP_SYMBOLS=1
+PUBLISH_ARTIFACTS=
 
 MYARCHTUNE=""
 MYCFLAGS=""
@@ -38,11 +39,12 @@ function print_usage() {
     echo "  -l      local build"
     echo "  -w      suppress outdated container warning"
     echo "  -o      disable headless and dedicated builds"
+    echo "  -k      pack and publish artifacts"
     echo "  -h      print this help"
     exit 1
 }
 
-while getopts :b:u:a:p:dc:ht:r:f:s:z:e:lwo flag
+while getopts :b:u:a:p:dc:ht:r:f:s:z:e:lwok flag
 do
     case "${flag}" in
         b) BRANCH_NAME=${OPTARG};;
@@ -61,6 +63,7 @@ do
         l) LOCAL_BUILD=true;;
         w) SUPPRESS_OUTDATED=true;;
         o) ONLY_LEGACY=true;;
+        k) PUBLISH_ARTIFACTS=true;;
         \:) printf "argument missing from -%s option\n" $OPTARG >&2
             exit 2
             ;;
@@ -88,6 +91,9 @@ if [ ${LOCAL_BUILD} ]; then
 
     BUILD_DIR="${BUILD_DIR}-${PLATFORM}-${MYBUILDTYPE}"
     INSTALL_DIR="${BUILD_DIR}/install"
+    PUBLISH_DIR="${BUILD_DIR}/publish"
+else
+    PUBLISH_ARTIFACTS=true
 fi
 
 if [ -z ${MYBUILDTYPEFLAGS+x} ]; then
