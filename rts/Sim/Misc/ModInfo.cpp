@@ -115,7 +115,6 @@ void CModInfo::ResetState()
 		quadFieldQuadSizeInElmos = 128;
 
 		allowTake = true;
-		dumpStateOnDesync = false;
 	}
 }
 
@@ -161,8 +160,6 @@ void CModInfo::Init(const std::string& modFileName)
 		quadFieldQuadSizeInElmos = Clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
 		allowTake = system.GetBool("allowTake", allowTake);
-
-		dumpStateOnDesync = system.GetBool("dumpStateOnDesync", dumpStateOnDesync);
 	}
 
 	{

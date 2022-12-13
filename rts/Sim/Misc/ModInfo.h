@@ -199,8 +199,6 @@ public:
 	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
-
-	bool dumpStateOnDesync;
 };
 
 extern CModInfo modInfo;
