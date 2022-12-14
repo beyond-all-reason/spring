@@ -1,8 +1,8 @@
-# BeyondAllReason RTS game engine
+# Coil RTS game engine
 
     git clone https://github.com/beyond-all-reason/spring -b BAR105
 
-BeyondAllReason is a fork of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring).
+Coil is a fork and continuation of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring) version 105.0
 
 Visit our [webpage](https://www.beyondallreason.info) for help, suggestions,
 bugs, community forum and everything spring related.
@@ -11,12 +11,12 @@ bugs, community forum and everything spring related.
 
 You can use a pre-compiled binary, usually, you want to use an installer or a package prepared for your OS:
 
-* <https://www.beyondallreason.info/download>
+* <https://github.com/beyond-all-reason/spring/releases>
 
 
 ### Compiling
 
-Detailed instructions for how to compile BeyondAllReason can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker)
+Detailed instructions for how to compile Coil can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker) or [here](https://github.com/beyond-all-reason/spring/wiki/SpringRTS-Build-Environment-(Docker))
 
 Don't use 'master' branch, it is quite old.
 
