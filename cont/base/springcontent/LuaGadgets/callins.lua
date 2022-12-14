@@ -140,6 +140,7 @@ CALLIN_LIST = {
 	"DrawAlphaFeaturesLua",
 	"DrawShadowUnitsLua",
 	"DrawShadowFeaturesLua",
+	"DrawPreDecals",
 	"DrawWorldPreParticles",
 	"DrawWorldShadow",
 	"DrawWorldReflection",
