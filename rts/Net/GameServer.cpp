@@ -593,8 +593,6 @@ void CGameServer::CheckSync()
 	while (outstandingSyncFrameIt != outstandingSyncFrames.end()) {
 		const signed outstandingSyncFrame = *outstandingSyncFrameIt;
 
-		LOG("Checking sync for frame: %d", outstandingSyncFrame);
-
 		unsigned correctChecksum = 0;
 		// maximum number of matched checksums
 		unsigned maxChecksumCount = 0;
