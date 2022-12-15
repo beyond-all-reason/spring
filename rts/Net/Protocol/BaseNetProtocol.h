@@ -118,6 +118,8 @@ public:
 	PacketType SendSdBlockresponse(uint8_t playerNum, std::vector<uint32_t> checksums);
 #endif
 
+	PacketType SendGameStateDump();
+
 private:
 	CBaseNetProtocol();
 

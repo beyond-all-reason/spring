@@ -36,6 +36,7 @@
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/Net/UnpackPacket.h"
 #include "System/Sound/ISound.h"
+#include "System/Sync/DumpState.h"
 
 CONFIG(bool, LogClientData).defaultValue(false);
 
@@ -1488,6 +1489,10 @@ void CGame::ClientReadNet()
 			case NETMSG_GAME_FRAME_PROGRESS: {
 			} break;
 
+			case NETMSG_GAMESTATE_DUMP:
+				LOG("Collecting current game state information.");
+				DumpState(gs->frameNum, gs->frameNum, 1, false, true);
+				break;
 
 			default: {
 #ifdef SYNCDEBUG

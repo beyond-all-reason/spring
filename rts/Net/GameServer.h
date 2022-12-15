@@ -255,6 +255,7 @@ private:
 
 	int syncErrorFrame = 0;
 	int syncWarningFrame = 0;
+	bool desyncHasOccurred = false;
 
 	int linkMinPacketSize = 1;
 
