@@ -112,7 +112,7 @@ public:
 	 * Whether the game state should be locally generated on all clients when
 	 * A desync is first detected.
 	 */
-	bool dumpGameStateOnDesync = true;
+	bool dumpGameStateOnDesync = false;
 
 
 	/**
