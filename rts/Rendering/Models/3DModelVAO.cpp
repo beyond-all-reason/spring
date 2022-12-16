@@ -162,6 +162,7 @@ void S3DModelVAO::UploadVBOs()
 		vertVBO.SetBufferSubData(vertUploadIndex * sizeof(SVertexData), (vertData.size() - vertUploadIndex) * sizeof(SVertexData), vertData.data() + vertUploadIndex);
 		vertVBO.Unbind();
 		vertUploadIndex = vertData.size();
+		vertUploadSize = vertUploadIndex;
 	}
 
 	if (indxData.size() > indxUploadIndex) {
@@ -173,6 +174,7 @@ void S3DModelVAO::UploadVBOs()
 		indxVBO.SetBufferSubData(indxUploadIndex * sizeof(   uint32_t), (indxData.size() - indxUploadIndex) * sizeof(   uint32_t), indxData.data() + indxUploadIndex);
 		indxVBO.Unbind();
 		indxUploadIndex = indxData.size();
+		indxUploadSize = indxUploadIndex;
 	}
 
 	if (reinitVAO)

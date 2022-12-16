@@ -111,10 +111,10 @@ template<typename TObj>
 int LuaVAOImpl::AddObjectsToSubmissionImpl(int id)
 {
 	DrawCheckInput inputs = {
-		submitCmds.size() + 1, // drawCount
+		std::nullopt,          // drawCount
 		std::nullopt,	       // baseVertex
 		std::nullopt,	       // baseIndex
-		std::nullopt,          // instCount
+		submitCmds.size() + 1, // instCount
 		std::nullopt,          // baseInstance
 	};
 
@@ -130,10 +130,10 @@ int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 	const std::size_t idsSize = ids.size(); //size() is very costly to do in the loop
 
 	DrawCheckInput inputs = {
-		submitCmds.size() + idsSize, // drawCount
+		std::nullopt,                // drawCount
 		std::nullopt,	             // baseVertex
 		std::nullopt,	             // baseIndex
-		std::nullopt,                // instCount
+		submitCmds.size() + idsSize, // instCount
 		std::nullopt,                // baseInstance
 	};
 
@@ -261,9 +261,14 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 {
 	LuaVAOImpl::DrawCheckResult result{};
 
+	if (vertLuaVBO)
+		vertLuaVBO->UpdateModelsVBOElementCount(); //need to update elements count because underlyiing VBO could have been updated
+
 	if (indexed) {
 		if (!indxLuaVBO)
 			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you succesfully call vao:AttachIndexBuffer()?", __func__);
+
+		indxLuaVBO->UpdateModelsVBOElementCount(); //need to update elements count because underlyiing VBO could have been updated
 
 		result.baseIndex  = std::max(inputs.baseIndex.value_or(0) , 0);
 		result.baseVertex = std::max(inputs.baseVertex.value_or(0), 0); //can't be checked easily
@@ -279,18 +284,21 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of elements %d with offset %d exceeds buffer size %u", __func__, result.drawCount, result.baseIndex, indxLuaVBO->elementsCount);
 
 	} else {
-		const GLsizei drawCountDef = vertLuaVBO ? vertLuaVBO->elementsCount : 1;
+		if (!vertLuaVBO) {
+			if (!inputs.drawCount.has_value())
+				LuaUtils::SolLuaError("[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set explicitly", __func__);
 
-		if (!vertLuaVBO && !inputs.drawCount.has_value())
-			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set explicitly", __func__);
+			result.drawCount = inputs.drawCount.value();
+		}
+		else {
+			result.drawCount = inputs.drawCount.value_or(vertLuaVBO->elementsCount);
 
-		result.drawCount = inputs.drawCount.value_or(drawCountDef);
+			if (!inputs.drawCount.has_value())
+				result.drawCount -= result.baseIndex; //note baseIndex not baseVertex
 
-		if (result.drawCount <= 0)
-			result.drawCount = drawCountDef - result.baseIndex; //note baseIndex not baseVertex
-
-		if (result.drawCount > drawCountDef - result.baseIndex)
-			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of vertices %d with offset %d exceeds buffer size %u", __func__, result.drawCount, result.baseIndex, drawCountDef);
+			if (result.drawCount > vertLuaVBO->elementsCount - result.baseIndex)
+				LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of vertices %d with offset %d exceeds buffer size %u", __func__, result.drawCount, result.baseIndex, vertLuaVBO->elementsCount);
+		}
 	}
 
 	result.baseInstance = std::max(inputs.baseInstance.value_or(0), 0);

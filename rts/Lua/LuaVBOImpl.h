@@ -67,6 +67,7 @@ private:
 	bool FillAttribsNumberImpl(const int numVec4Attribs);
 	bool DefineElementArray(const sol::optional<sol::object> attribDefArgOpt);
 private:
+	void UpdateModelsVBOElementCount();
 	size_t ModelsVBOImpl();
 
 	void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);

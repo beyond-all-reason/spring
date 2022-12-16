@@ -82,6 +82,9 @@ public:
 	      VBO* GetVertVBO()       { return &vertVBO; }
 	const VBO* GetIndxVBO() const { return &indxVBO; }
 	      VBO* GetIndxVBO()       { return &indxVBO; }
+
+	auto GetVertElemCount() const { return vertUploadSize; }
+	auto GetIndxElemCount() const { return indxUploadSize; }
 private:
 	template<typename TObj>
 	bool SubmitImmediatelyImpl(
@@ -113,6 +116,8 @@ private:
 
 	size_t vertUploadIndex = 0;
 	size_t indxUploadIndex = 0;
+	size_t vertUploadSize = 0;
+	size_t indxUploadSize = 0;
 
 	std::vector<SVertexData> vertData;
 	std::vector<uint32_t   > indxData;

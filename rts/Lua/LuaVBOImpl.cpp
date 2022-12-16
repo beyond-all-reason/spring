@@ -600,6 +600,25 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(sol::optional<int>
 	return sol::as_table(dataVec);
 }
 
+void LuaVBOImpl::UpdateModelsVBOElementCount()
+{
+	if (vboOwner)
+		return;
+
+	switch (defTarget) {
+	case GL_ARRAY_BUFFER: {
+		bufferSizeInBytes = vbo->GetSize();
+		elementsCount = S3DModelVAO::GetInstance().GetVertElemCount();
+	} break;
+	case GL_ELEMENT_ARRAY_BUFFER: {
+		bufferSizeInBytes = vbo->GetSize();
+		elementsCount = S3DModelVAO::GetInstance().GetIndxElemCount();
+	} break;
+	default:
+		assert(false);
+	}
+}
+
 /*
 	float3 pos;
 	float3 normal = UpVector;
@@ -685,7 +704,7 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 		this->attributesCount = 6;
 		this->elemSizeInBytes = sizeof(SVertexData);
 		this->bufferSizeInBytes = vbo->GetSize();
-		this->elementsCount = this->bufferSizeInBytes / this->elemSizeInBytes;
+		this->elementsCount = S3DModelVAO::GetInstance().GetVertElemCount();
 	};
 
 	const auto engineIndxAttribDefFunc = [this]() {
@@ -703,7 +722,8 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 		this->attributesCount = 1;
 		this->elemSizeInBytes = sizeof(uint32_t);
 		this->bufferSizeInBytes = vbo->GetSize();
-		this->elementsCount = this->bufferSizeInBytes / this->elemSizeInBytes;
+		this->elementsCount = S3DModelVAO::GetInstance().GetIndxElemCount();
+
 		this->primitiveRestartIndex = 0xffffff;
 	};
 

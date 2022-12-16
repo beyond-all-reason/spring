@@ -149,8 +149,9 @@ void CWorldDrawer::InitPost() const
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
+		auto& mv = S3DModelVAO::GetInstance();
 		if (preloadMode) {
-			S3DModelVAO::GetInstance().SetSafeToDeleteVectors();
+			mv.SetSafeToDeleteVectors();
 
 			const auto& mdlVec = modelLoader.GetModelsVec();
 			for (size_t i = 0; i < mdlVec.size(); ++i) {
