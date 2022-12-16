@@ -198,9 +198,21 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 
 	#ifdef DUMP_MODEL_DATA
 	if (gs->frameNum == gMinFrameNum) { //dump once
-		file << "\tmodels: " << activeUnits.size() << "\n";
-		for (const auto& m : modelLoader.GetModelsVec()) {
-			file << "\t\tID: " << m.id << " (name: " << m.name << ")\n";
+		// models no longer have same order and IDs across different runs due to MT preload.
+		// Need to sort them to ease comparison
+		std::map<std::string, size_t> sortedModelNames;
+		const auto& mv = modelLoader.GetModelsVec();
+		for (size_t i = 0; i < mv.size(); ++i) {
+			if (mv[i].id <= 0)
+				continue;
+
+			sortedModelNames.emplace(mv[i].name, i);
+		}
+
+		file << "\tloaded models: " << sortedModelNames.size() << "\n";
+		for (const auto& smn : sortedModelNames) {
+			const auto& m = mv[smn.second];
+			file << "\t\tname: " << m.name << "\n";
 			file << "\t\tnumPieces: " << m.numPieces << "\n";
 			file << "\t\ttextureType: " << m.textureType << "\n";
 			file << "\t\tmodelType: " << m.type << "\n";
