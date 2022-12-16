@@ -109,7 +109,7 @@ namespace {
 }
 
 
-void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool outputFloats)
+void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool outputFloats, bool serverRequest)
 {
 	onlyHash = !outputFloats;
 
@@ -121,7 +121,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 	const int oldMinFrameNum = gMinFrameNum;
 	const int oldMaxFrameNum = gMaxFrameNum;
 
-	if (!gs->cheatEnabled)
+	if (!gs->cheatEnabled && !serverRequest)
 		return;
 	// check if the range is valid
 	if (newMaxFrameNum < newMinFrameNum)

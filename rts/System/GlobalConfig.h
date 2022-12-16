@@ -106,6 +106,14 @@ public:
 	 */
 	bool vfsCacheArchiveFiles = true;
 
+	/**
+	 * @brief dumpGameStateOnDesync
+	 *
+	 * Whether the game state should be locally generated on all clients when
+	 * A desync is first detected.
+	 */
+	bool dumpGameStateOnDesync = false;
+
 
 	/**
 	 * @brief teamHighlight

@@ -66,6 +66,8 @@ enum NETMSG {
 	NETMSG_SD_RESET         = 45,
 #endif // SYNCDEBUG
 
+	NETMSG_GAMESTATE_DUMP	= 46, // no arguments
+
 	NETMSG_LOGMSG           = 49, // uint8_t playerNum, uint8_t logMsgLvl, std::string strData
 	NETMSG_LUAMSG           = 50, // /* uint16_t messageSize */, uint8_t playerNum, uint16_t script, uint8_t mode, std::vector<uint8_t> rawData
 

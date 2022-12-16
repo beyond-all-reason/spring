@@ -591,7 +591,7 @@ void CGameServer::CheckSync()
 	auto outstandingSyncFrameIt = outstandingSyncFrames.begin();
 
 	while (outstandingSyncFrameIt != outstandingSyncFrames.end()) {
-		const unsigned outstandingSyncFrame = *outstandingSyncFrameIt;
+		const signed outstandingSyncFrame = *outstandingSyncFrameIt;
 
 		unsigned correctChecksum = 0;
 		// maximum number of matched checksums
@@ -724,6 +724,14 @@ void CGameServer::CheckSync()
 				isPaused = true;
 				Broadcast(CBaseNetProtocol::Get().SendSdCheckrequest(serverFrameNum));
 			#endif
+
+				if (!desyncHasOccurred) {
+					if (globalConfig.dumpGameStateOnDesync) {
+						LOG("Desync detected. Requesting all clients to collect game state information.");
+						Broadcast(CBaseNetProtocol::Get().SendGameStateDump());
+					}
+					desyncHasOccurred = true;
+				}
 
 				#ifndef DEDICATED
 				// DS exit-codes are not used
@@ -1822,6 +1830,10 @@ void CGameServer::ProcessPacket(const unsigned playerNum, std::shared_ptr<const 
 			Broadcast(packet);
 			break;
 #endif
+		case NETMSG_GAMESTATE_DUMP:
+			LOG("Server broadcast game state collection request.");
+			Broadcast(packet);
+			break;
 		// CGameServer should never get these messages
 		//case NETMSG_GAMEID:
 		//case NETMSG_INTERNAL_SPEED:

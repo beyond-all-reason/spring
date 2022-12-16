@@ -605,6 +605,11 @@ PacketType CBaseNetProtocol::SendSdBlockresponse(uint8_t playerNum, std::vector<
 }
 #endif // SYNCDEBUG
 
+PacketType CBaseNetProtocol::SendGameStateDump()
+{
+	PackPacket* packet = new PackPacket(sizeof(uint8_t), NETMSG_GAMESTATE_DUMP);
+	return PacketType(packet);
+}
 
 CBaseNetProtocol::CBaseNetProtocol()
 {
@@ -674,5 +679,7 @@ CBaseNetProtocol::CBaseNetProtocol()
 	proto->AddType(NETMSG_SD_BLKREQUEST, 7);
 	proto->AddType(NETMSG_SD_BLKRESPONSE, -2);
 #endif // SYNCDEBUG
+
+	proto->AddType(NETMSG_GAMESTATE_DUMP, 1);
 }
 

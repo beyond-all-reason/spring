@@ -60,6 +60,8 @@ CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true);
 CONFIG(bool, LuaWritableConfigFile).defaultValue(true);
 CONFIG(bool, VFSCacheArchiveFiles).defaultValue(true);
 
+CONFIG(bool, DumpGameStateOnDesync).defaultValue(false);
+
 
 void GlobalConfig::Init()
 {
@@ -87,6 +89,8 @@ void GlobalConfig::Init()
 	useNetMessageSmoothingBuffer = configHandler->GetBool("UseNetMessageSmoothingBuffer");
 	luaWritableConfigFile = configHandler->GetBool("LuaWritableConfigFile");
 	vfsCacheArchiveFiles = configHandler->GetBool("VFSCacheArchiveFiles");
+
+	dumpGameStateOnDesync = configHandler->GetBool("DumpGameStateOnDesync");
 
 	teamHighlight = configHandler->GetInt("TeamHighlight");
 }
