@@ -49,7 +49,6 @@
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/NamedTextures.h"
-#include "Rendering/Models/ModelsLock.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaHandle.h"
 #include "Lua/LuaInputReceiver.h"
@@ -1310,14 +1309,13 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	lineDrawer.UpdateLineStipple();
 	{
-		auto lock = CModelsLock::lock.GetScopedLock();
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();
 		modelsUniformsUploader.Update();
-	}
 
-	CNamedTextures::Update();
-	//CFontTexture::Update();
+		CNamedTextures::Update();
+		//CFontTexture::Update();
+	}
 
 	// always update InfoTexture and SoundListener at <= 30Hz (even when paused)
 	if (newSimFrame || forceUpdate) {
