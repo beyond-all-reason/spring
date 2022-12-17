@@ -40,7 +40,7 @@
 
 #include <vector>
 
-CONFIG(int, LoadingMT).deprecated(true);
+CONFIG(int, LoadingMT).defaultValue(0).safemodeValue(0);
 
 
 CLoadScreen* CLoadScreen::singleton = nullptr;
@@ -51,12 +51,17 @@ CLoadScreen::CLoadScreen(std::string&& _mapFileName, std::string&& _modFileName,
 	, mapFileName(std::move(_mapFileName))
 	, modFileName(std::move(_modFileName))
 
+	, mtLoading(true)
 	, lastDrawTime(0)
 {
 }
 
 CLoadScreen::~CLoadScreen()
 {
+	// Kill() must have been called first, such that the loading
+	// thread can not access singleton while its dtor is running
+	assert(!gameLoadThread.joinable());
+
 	if (clientNet != nullptr)
 		clientNet->KeepUpdating(false);
 	if (netHeartbeatThread.joinable())
@@ -87,11 +92,37 @@ bool CLoadScreen::Init()
 	// and gu->myPlayerNum has to be set.
 	skirmishAIHandler.LoadPreGame();
 
+
+#ifdef HEADLESS
+	mtLoading = false;
+#else
+	const int mtCfg = configHandler->GetInt("LoadingMT");
+	// user override
+	mtLoading = (mtCfg > 0);
+	// runtime detect. disable for intel/mesa drivers, they crash at multithreaded OpenGL (date: Nov. 2011)
+	mtLoading |= (mtCfg < 0) && !globalRendering->haveMesa && !globalRendering->haveIntel;
+#endif
+
+
 	// Create a thread during the loading that pings the host/server, so it knows that this client is still alive/loading
 	clientNet->KeepUpdating(true);
 
 	netHeartbeatThread = std::move(spring::thread(Threading::CreateNewThread(std::bind(&CNetProtocol::UpdateLoop, clientNet))));
 	game = new CGame(mapFileName, modFileName, saveFile);
+
+	if ((CglFont::threadSafety = mtLoading)) {
+		try {
+			// create the game-loading thread; rebinds primary context to hidden window
+			gameLoadThread = std::move(COffscreenGLThread(std::bind(&CGame::Load, game, mapFileName)));
+
+			while (!Watchdog::HasThread(WDT_LOAD));
+		} catch (const opengl_error& gle) {
+			LOG_L(L_WARNING, "[LoadScreen::%s] offscreen GL context creation failed (error: \"%s\")", __func__, gle.what());
+
+			mtLoading = false;
+			CglFont::threadSafety = false;
+		}
+	}
 
 	// LuaIntro must be loaded and killed in the same thread (main)
 	// and bound context (secondary) that CLoadScreen::Draw runs in
@@ -101,6 +132,9 @@ bool CLoadScreen::Init()
 	// the global font), the latter will cause problems in GL4
 	CLuaIntro::LoadFreeHandler();
 
+	if (mtLoading)
+		return true;
+
 	LOG("[LoadScreen::%s] single-threaded", __func__);
 	game->Load(mapFileName);
 	return false;
@@ -108,10 +142,17 @@ bool CLoadScreen::Init()
 
 void CLoadScreen::Kill() const
 {
+	if (mtLoading && !gameLoadThread.joinable())
+		return;
+
 	if (luaIntro != nullptr)
 		luaIntro->Shutdown();
 
 	CLuaIntro::FreeHandler();
+
+	// at this point, gameLoadThread running CGame::Load
+	// has finished and deregistered itself from WatchDog
+	gameLoadThread.join();
 
 	CFontTexture::sync.SetThreadSafety(false);
 }
@@ -145,6 +186,7 @@ void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& 
 	if (CreateInstance(std::move(mapFileName), std::move(modFileName), saveFile))
 		return;
 
+	// not mtLoading, Game::Load has completed and we can go
 	DeleteInstance();
 	FinishedLoading();
 }
@@ -154,6 +196,7 @@ bool CLoadScreen::CreateInstance(std::string&& mapFileName, std::string&& modFil
 	assert(singleton == nullptr);
 	singleton = new CLoadScreen(std::move(mapFileName), std::move(modFileName), saveFile);
 
+	// returns true when mtLoading, false otherwise
 	return (singleton->Init());
 }
 
@@ -214,7 +257,9 @@ bool CLoadScreen::Update()
 		return true;
 	}
 
-	spring::UnfreezeSpring(WDT_LOAD);
+	// without this call the window manager would think the window is unresponsive and thus ask for hard kill
+	if (!mtLoading)
+		spring::UnfreezeSpring(WDT_LOAD);
 
 	return true;
 }
@@ -222,6 +267,20 @@ bool CLoadScreen::Update()
 
 bool CLoadScreen::Draw()
 {
+	// limit FPS via sleep to not lock a singlethreaded CPU from loading the game
+	if (mtLoading) {
+		const spring_time now = spring_gettime();
+		const unsigned diffTime = spring_tomsecs(now - lastDrawTime);
+
+		constexpr unsigned wantedFPS = 50;
+		constexpr unsigned minFrameTime = 1000 / wantedFPS;
+
+		if (diffTime < minFrameTime)
+			spring_sleep(spring_msecs(minFrameTime - diffTime));
+
+		lastDrawTime = now;
+	}
+
 	globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 	// let LuaMenu keep the lobby connection alive
 	if (luaMenu != nullptr)
@@ -234,7 +293,8 @@ bool CLoadScreen::Draw()
 		luaIntro->DrawLoadScreen();
 	}
 
-	globalRendering->SwapBuffers(true, false);
+	if (!mtLoading)
+		globalRendering->SwapBuffers(true, false);
 
 	return true;
 }
@@ -258,6 +318,9 @@ void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 	// external library might reset it (main thread state is checked
 	// in ::Update)
 	good_fpu_control_registers(text.c_str());
+
+	if (mtLoading)
+		return;
 
 	Update();
 	Draw();
