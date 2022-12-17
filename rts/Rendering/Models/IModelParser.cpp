@@ -7,6 +7,7 @@
 #include "S3OParser.h"
 #include "AssParser.h"
 #include "3DModelVAO.h"
+#include "ModelsLock.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Net/Protocol/NetProtocol.h" // NETLOG
@@ -238,7 +239,7 @@ void CModelLoader::LogErrors()
 
 	// block any preload threads from modifying <errors>
 	// doing the empty-check outside lock should be fine
-	std::scoped_lock lock(mutex);
+	auto lock = CModelsLock::GetScopedLock();
 
 	for (const auto& pair: errors) {
 		char buf[1024];
@@ -263,7 +264,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	bool load = false;
 	S3DModel* model = nullptr;
 	{
-		std::scoped_lock lock(mutex);
+		auto lock = CModelsLock::GetScopedLock();
 
 		std::string modelBaseName = FileSystem::GetBasename(FileSystem::GetFilename(name));
 		model = GetCachedModel(modelBaseName);
@@ -279,7 +280,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 		cv.notify_all();
 	}
 
-	std::unique_lock lock(mutex);
+	auto lock = CModelsLock::GetUniqueLock();
 	cv.wait(lock, [model]() {
 		return model->loadStatus == S3DModel::LoadStatus::LOADED;
 	});
@@ -379,7 +380,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 		parser->Load(model, path);
 	} catch (const content_error& ex) {
 		{
-			std::scoped_lock lock(mutex);
+			auto lock = CModelsLock::GetScopedLock();
 			errors.emplace_back(name, ex.what());
 		}
 
@@ -402,7 +403,7 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 		p->CreateShatterPieces();
 	}
 	{
-		std::scoped_lock lock(mutex); // working with S3DModelVAO needs locking
+		auto lock = CModelsLock::GetScopedLock(); // working with S3DModelVAO needs locking
 		auto& inst = S3DModelVAO::GetInstance();
 		inst.ProcessVertices(model);
 		inst.ProcessIndicies(model);

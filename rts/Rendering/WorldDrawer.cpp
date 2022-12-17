@@ -27,6 +27,7 @@
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Rendering/Models/3DModelVAO.h"
+#include "Rendering/Models/ModelsLock.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
@@ -77,6 +78,7 @@ void CWorldDrawer::InitPost() const
 {
 	char buf[512] = {0};
 
+	CModelsLock::SetThreadSafety(true);
 	const bool preloadMode = configHandler->GetBool("PreloadModels");
 	{
 		loadscreen->SetLoadMessage("Loading Models");
@@ -152,6 +154,7 @@ void CWorldDrawer::InitPost() const
 		auto& mv = S3DModelVAO::GetInstance();
 		if (preloadMode) {
 			mv.SetSafeToDeleteVectors();
+			CModelsLock::SetThreadSafety(false); //all models are already preloaded
 
 			const auto& mdlVec = modelLoader.GetModelsVec();
 			for (size_t i = 0; i < mdlVec.size(); ++i) {

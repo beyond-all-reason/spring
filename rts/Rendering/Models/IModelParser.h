@@ -57,8 +57,7 @@ private:
 	spring::unordered_map<std::string, unsigned int> cache; // "armflash.3do" --> id and idx at models
 	std::vector<std::pair<std::string, IModelParser*>> parsers;
 
-	std::mutex mutex;
-	std::condition_variable cv;
+	std::condition_variable_any cv;
 
 	//can't be weak_ptr here, because in that case there are no owners left for futures. preloadFutures needs to own futures
 	std::vector<std::shared_ptr<std::future<void>>> preloadFutures;
