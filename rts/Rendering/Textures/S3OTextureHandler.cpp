@@ -65,7 +65,7 @@ void CS3OTextureHandler::Kill()
 
 void CS3OTextureHandler::Reload()
 {
-	auto lock = CModelsLock::lock.GetScopedLock(); //needed?
+	auto lock = CModelsLock::GetScopedLock(); //needed?
 
 	for (auto& [texName, texData] : textureCache) {
 		if (texData.texID == 0)
@@ -90,7 +90,7 @@ void CS3OTextureHandler::Reload()
 
 void CS3OTextureHandler::PreloadTexture(S3DModel* model, bool invertAxis, bool invertAlpha)
 {
-	auto lock = CModelsLock::lock.GetScopedLock();
+	auto lock = CModelsLock::GetScopedLock();
 
 	LoadAndCacheTexture(model, 0, invertAxis, invertAlpha, true);
 	LoadAndCacheTexture(model, 1, invertAxis,       false, true); // never invert alpha for tex2
@@ -99,7 +99,7 @@ void CS3OTextureHandler::PreloadTexture(S3DModel* model, bool invertAxis, bool i
 
 void CS3OTextureHandler::LoadTexture(S3DModel* model)
 {
-	auto lock = CModelsLock::lock.GetScopedLock();
+	auto lock = CModelsLock::GetScopedLock();
 
 	const unsigned int tex1ID = LoadAndCacheTexture(model, 0, false, false, false);
 	const unsigned int tex2ID = LoadAndCacheTexture(model, 1, false, false, false);

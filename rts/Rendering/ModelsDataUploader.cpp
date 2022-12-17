@@ -129,7 +129,7 @@ void MatrixUploader::UpdateDerived()
 	SCOPED_TIMER("MatrixUploader::Update");
 	ssbo->UnbindBufferRange(bindingIdx);
 
-	auto lock = CModelsLock::lock.GetScopedLock();
+	auto lock = CModelsLock::GetScopedLock();
 
 	//resize
 	const uint32_t elemCount = GetElemsCount();

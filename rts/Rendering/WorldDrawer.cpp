@@ -78,7 +78,7 @@ void CWorldDrawer::InitPost() const
 {
 	char buf[512] = {0};
 
-	CModelsLock::lock.SetThreadSafety(true);
+	CModelsLock::SetThreadSafety(true);
 	const bool preloadMode = configHandler->GetBool("PreloadModels");
 	{
 		loadscreen->SetLoadMessage("Loading Models");
@@ -154,7 +154,7 @@ void CWorldDrawer::InitPost() const
 		auto& mv = S3DModelVAO::GetInstance();
 		if (preloadMode) {
 			mv.SetSafeToDeleteVectors();
-			CModelsLock::lock.SetThreadSafety(false); //all models are already preloaded
+			CModelsLock::SetThreadSafety(false); //all models are already preloaded
 
 			const auto& mdlVec = modelLoader.GetModelsVec();
 			for (size_t i = 0; i < mdlVec.size(); ++i) {
