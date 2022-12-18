@@ -84,9 +84,6 @@ bool CLoadScreen::Init()
 {
 	activeController = this;
 
-	// hide the cursor until we are ingame
-	SDL_ShowCursor(SDL_DISABLE);
-
 	// When calling this function, mod archives have to be loaded
 	// and gu->myPlayerNum has to be set.
 	skirmishAIHandler.LoadPreGame();
