@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "lib/streflop/streflop_cond.h" //! must happen before OffscreenGLContext.h, which includes agl.h
-#include "System/OffscreenGLContext.h"
+#include "System/GameLoadThread.h"
 
 #include <functional>
 
@@ -12,13 +12,13 @@
 #include "System/Threading/SpringThreading.h"
 
 
-COffscreenGLThread::COffscreenGLThread(std::function<void()> f)
+CGameLoadThread::CGameLoadThread(std::function<void()> f)
 {
-	thread = std::move(spring::thread(std::bind(&COffscreenGLThread::WrapFunc, this, f)));
+	thread = std::move(spring::thread(std::bind(&CGameLoadThread::WrapFunc, this, f)));
 }
 
 
-void COffscreenGLThread::join()
+void CGameLoadThread::join()
 {
 	if (!thread.joinable())
 		return;
@@ -28,9 +28,9 @@ void COffscreenGLThread::join()
 
 
 __FORCE_ALIGN_STACK__
-void COffscreenGLThread::WrapFunc(std::function<void()> f)
+void CGameLoadThread::WrapFunc(std::function<void()> f)
 {
-	Threading::SetThreadName("OffscreenGLThread");
+	Threading::SetThreadName("gameload");
 
 	// init streflop
 	// not needed to maintain sync (precision flags are

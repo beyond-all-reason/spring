@@ -111,7 +111,7 @@ bool CLoadScreen::Init()
 	if (mtLoading) {
 		try {
 			// create the game-loading thread; rebinds primary context to hidden window
-			gameLoadThread = std::move(COffscreenGLThread(std::bind(&CGame::Load, game, mapFileName)));
+			gameLoadThread = std::move(CGameLoadThread(std::bind(&CGame::Load, game, mapFileName)));
 
 			while (!Watchdog::HasThread(WDT_LOAD));
 		} catch (const opengl_error& gle) {

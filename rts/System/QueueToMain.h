@@ -4,6 +4,8 @@
 #include <vector>
 #include <type_traits>
 
+#include "TemplateUtils.hpp"
+
 namespace spring {
     template <typename R, typename... Args>
     class TypedQueuedFunction;

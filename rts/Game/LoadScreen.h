@@ -7,7 +7,7 @@
 
 #include "GameController.h"
 #include "System/LoadSave/LoadSaveHandler.h"
-#include "System/OffscreenGLContext.h"
+#include "System/GameLoadThread.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -54,7 +54,7 @@ private:
 
 	spring::recursive_mutex mutex;
 	spring::thread netHeartbeatThread;
-	COffscreenGLThread gameLoadThread;
+	CGameLoadThread gameLoadThread;
 
 	bool mtLoading;
 

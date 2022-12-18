@@ -9,21 +9,21 @@
 #include "System/Threading/SpringThreading.h"
 
 /**
- * @brief COffscreenGLThread
+ * @brief CGameLoadThread
  * Runs a std::bind in an additional thread with an offscreen OpenGL context.
  * (Don't try render to the 'screen' a.k.a. default framebuffer in that thread, the results will be undetermistic)
  */
-class COffscreenGLThread
+class CGameLoadThread
 {
 public:
-	COffscreenGLThread() = default;
-	COffscreenGLThread(std::function<void()> f);
-	~COffscreenGLThread() { join(); }
-	COffscreenGLThread(const COffscreenGLThread& t) = delete;
-	COffscreenGLThread(COffscreenGLThread&& t) { *this = std::move(t); }
+	CGameLoadThread() = default;
+	CGameLoadThread(std::function<void()> f);
+	~CGameLoadThread() { join(); }
+	CGameLoadThread(const CGameLoadThread& t) = delete;
+	CGameLoadThread(CGameLoadThread&& t) { *this = std::move(t); }
 
-	COffscreenGLThread& operator = (const COffscreenGLThread& t) = delete;
-	COffscreenGLThread& operator = (COffscreenGLThread&& t) {
+	CGameLoadThread& operator = (const CGameLoadThread& t) = delete;
+	CGameLoadThread& operator = (CGameLoadThread&& t) {
 		thread = std::move(t.thread);
 		return *this;
 	};
