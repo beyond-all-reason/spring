@@ -124,6 +124,7 @@
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/DumpState.h"
 #include "System/TimeProfiler.h"
+#include "System/LoadLock.h"
 
 
 #undef CreateDirectory
@@ -441,7 +442,10 @@ void CGame::Load(const std::string& mapFileName)
 		} else {
 			ENTER_SYNCED_CODE();
 			eventHandler.GamePreload();
-			eventHandler.CollectGarbage(true);
+			{
+				auto lock = CLoadLock::GetScopedLock();
+				eventHandler.CollectGarbage(true);
+			}
 
 			//needed in case pre-game terraform changed the map
 			readMap->UpdateHeightBounds();
@@ -550,6 +554,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 	{
 		loadscreen->SetLoadMessage("Loading Radar Icons");
+		auto lock = CLoadLock::GetScopedLock();
 		icon::iconHandler.Init();
 	}
 	{
@@ -657,6 +662,8 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 
 void CGame::PreLoadRendering()
 {
+	auto lock = CLoadLock::GetScopedLock();
+
 	geometricObjects = new CGeometricObjects();
 
 	// load components that need to exist before PostLoadSimulation
@@ -666,12 +673,16 @@ void CGame::PreLoadRendering()
 }
 
 void CGame::PostLoadRendering() {
+	auto lock = CLoadLock::GetScopedLock();
+
 	worldDrawer.InitPost();
 }
 
 
 void CGame::LoadInterface()
 {
+	auto lock = CLoadLock::GetScopedLock();
+
 	camHandler->Init();
 	mouse->ReloadCursors();
 
@@ -786,6 +797,7 @@ void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
 
 	if (!dryRun) {
 		loadscreen->SetLoadMessage("Loading LuaUI");
+		auto lock = CLoadLock::GetScopedLock();
 		CLuaUI::LoadFreeHandler();
 	}
 }

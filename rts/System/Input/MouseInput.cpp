@@ -157,7 +157,7 @@ public:
 	{
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
-		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info))
+		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info))
 			return;
 
 		wnd = info.info.win.window;
@@ -214,7 +214,7 @@ bool IMouseInput::SetPos(int2 pos)
 
 bool IMouseInput::WarpPos(int2 pos)
 {
-	SDL_WarpMouseInWindow(globalRendering->GetWindow(0), pos.x, pos.y);
+	SDL_WarpMouseInWindow(globalRendering->GetWindow(), pos.x, pos.y);
 
 	// SDL_WarpMouse generates SDL_MOUSEMOTION events
 	// in `middle click scrolling` those SDL generated ones would point into

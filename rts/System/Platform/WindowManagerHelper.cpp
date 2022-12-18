@@ -8,6 +8,8 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Log/ILog.h"
+#include "System/Platform/Threading.h"
+#include "System/QueueToMain.h"
 
 
 namespace WindowManagerHelper {
@@ -40,7 +42,7 @@ void SetIcon(CBitmap* bmp, bool forceResolution) {
 	}
 
 	// supplied bitmap is usable as icon, keep it
-	SetIconSurface(globalRendering->GetWindow(0), bmp);
+	SetIconSurface(globalRendering->GetWindow(), bmp);
 }
 
 
@@ -68,9 +70,17 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 	}
 
 	SDL_FreeSurface(windowIcon.surf);
-	SDL_SetWindowIcon(win, windowIcon.surf = surf);
+	static auto SetWindowIconImpl = [](SDL_Window* win, SDL_Surface* surf, CBitmap bmp) {
+		windowIcon.surf = surf;
+		SDL_SetWindowIcon(win, surf);
+		*(windowIcon.bmp) = std::move(bmp);
+	};
 
-	*(windowIcon.bmp) = std::move(*bmp);
+	if (Threading::IsMainThread())
+		SetWindowIconImpl(win, surf, *bmp);
+	else
+		spring::QueuedFunction::Enqueue<decltype(SetWindowIconImpl), SDL_Window*, SDL_Surface*, CBitmap>(SetWindowIconImpl, win, surf, *bmp);
+
 	return true;
 }
 

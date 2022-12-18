@@ -32,6 +32,7 @@
 #include "System/Platform/Threading.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
+#include "System/LoadLock.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 #include "System/Sound/OpenAL/EFX.h"
@@ -40,7 +41,7 @@
 
 #include <vector>
 
-CONFIG(int, LoadingMT).defaultValue(0).safemodeValue(0);
+CONFIG(int, LoadingMT).defaultValue(1).safemodeValue(0);
 
 
 CLoadScreen* CLoadScreen::singleton = nullptr;
@@ -81,8 +82,6 @@ CLoadScreen::~CLoadScreen()
 
 bool CLoadScreen::Init()
 {
-	CFontTexture::sync.SetThreadSafety(true);
-
 	activeController = this;
 
 	// hide the cursor until we are ingame
@@ -110,7 +109,9 @@ bool CLoadScreen::Init()
 	netHeartbeatThread = std::move(spring::thread(Threading::CreateNewThread(std::bind(&CNetProtocol::UpdateLoop, clientNet))));
 	game = new CGame(mapFileName, modFileName, saveFile);
 
-	if ((CglFont::threadSafety = mtLoading)) {
+	CglFont::sync.SetThreadSafety(mtLoading);
+	CLoadLock::SetThreadSafety(mtLoading);
+	if (mtLoading) {
 		try {
 			// create the game-loading thread; rebinds primary context to hidden window
 			gameLoadThread = std::move(COffscreenGLThread(std::bind(&CGame::Load, game, mapFileName)));
@@ -120,7 +121,8 @@ bool CLoadScreen::Init()
 			LOG_L(L_WARNING, "[LoadScreen::%s] offscreen GL context creation failed (error: \"%s\")", __func__, gle.what());
 
 			mtLoading = false;
-			CglFont::threadSafety = false;
+			CglFont::sync.SetThreadSafety(false);
+			CLoadLock::SetThreadSafety(false);
 		}
 	}
 
@@ -130,7 +132,10 @@ bool CLoadScreen::Init()
 	// note that it has access to gl.LoadFont (which creates a user
 	// data wrapping a local font) but also to gl.*Text (which uses
 	// the global font), the latter will cause problems in GL4
-	CLuaIntro::LoadFreeHandler();
+	{
+		auto lock = CLoadLock::GetScopedLock();
+		CLuaIntro::LoadFreeHandler();
+	}
 
 	if (mtLoading)
 		return true;
@@ -140,7 +145,7 @@ bool CLoadScreen::Init()
 	return false;
 }
 
-void CLoadScreen::Kill() const
+void CLoadScreen::Kill()
 {
 	if (mtLoading && !gameLoadThread.joinable())
 		return;
@@ -155,6 +160,9 @@ void CLoadScreen::Kill() const
 	gameLoadThread.join();
 
 	CFontTexture::sync.SetThreadSafety(false);
+	CLoadLock::SetThreadSafety(false);
+	// set last time and forever
+	globalRendering->MakeCurrentContext(false);
 }
 
 

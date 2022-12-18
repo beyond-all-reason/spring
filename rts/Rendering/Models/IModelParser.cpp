@@ -416,7 +416,7 @@ void CModelLoader::Upload(S3DModel* model) const {
 	if (model->uploaded) //already uploaded
 		return;
 
-	assert(Threading::IsMainThread());
+	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	S3DModelVAO::GetInstance().UploadVBOs();
 
