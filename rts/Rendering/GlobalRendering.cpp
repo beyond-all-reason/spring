@@ -374,12 +374,11 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 	const std::array aaLvls = {msaaLevel, msaaLevel / 2, msaaLevel / 4, msaaLevel / 8, msaaLevel / 16, msaaLevel / 32, 0};
 	const std::array zbBits = {24, 32, 16};
 
-	constexpr char* winName = "main";
 	const char* wpfName = "";
 
 	const char* frmts[2] = {
-		"[GR::%s] error \"%s\" using %dx anti-aliasing and %d-bit depth-buffer for %s window",
-		"[GR::%s] using %dx anti-aliasing and %d-bit depth-buffer (PF=\"%s\") for %s window",
+		"[GR::%s] error \"%s\" using %dx anti-aliasing and %d-bit depth-buffer for main window",
+		"[GR::%s] using %dx anti-aliasing and %d-bit depth-buffer (PF=\"%s\") for main window",
 	};
 
 	bool borderless_ = configHandler->GetBool("WindowBorderless");
@@ -413,11 +412,11 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 			SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, zbBits[j]);
 
 			if ((newWindow = SDL_CreateWindow(title, winPosX_, winPosY_, newRes.x, newRes.y, sdlFlags)) == nullptr) {
-				LOG_L(L_WARNING, frmts[0], __func__, SDL_GetError(), aaLvls[i], zbBits[j], winName);
+				LOG_L(L_WARNING, frmts[0], __func__, SDL_GetError(), aaLvls[i], zbBits[j]);
 				continue;
 			}
 
-			LOG(frmts[1], __func__, aaLvls[i], zbBits[j], wpfName = SDL_GetPixelFormatName(SDL_GetWindowPixelFormat(newWindow)), winName);
+			LOG(frmts[1], __func__, aaLvls[i], zbBits[j], wpfName = SDL_GetPixelFormatName(SDL_GetWindowPixelFormat(newWindow)));
 		}
 	}
 
@@ -447,13 +446,11 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 	if ((newContext = SDL_GL_CreateContext(sdlWindow)) != nullptr)
 		return newContext;
 
-	constexpr char* winName = "main";
-
-	const char* frmts[] = {"[GR::%s] error (\"%s\") creating %s GL%d.%d %s-context", "[GR::%s] created %s GL%d.%d %s-context"};
+	const char* frmts[] = {"[GR::%s] error (\"%s\") creating main GL%d.%d %s-context", "[GR::%s] created main GL%d.%d %s-context"};
 	const char* profs[] = {"compatibility", "core"};
 
 	char buf[1024] = {0};
-	SNPRINTF(buf, sizeof(buf), frmts[false], __func__, SDL_GetError(), winName, minCtx.x, minCtx.y, profs[forceCoreContext]);
+	SNPRINTF(buf, sizeof(buf), frmts[false], __func__, SDL_GetError(), minCtx.x, minCtx.y, profs[forceCoreContext]);
 
 	for (const int2 tmpCtx: glCtxs) {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, tmpCtx.x);
@@ -463,13 +460,13 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, mask);
 
 			if ((newContext = SDL_GL_CreateContext(sdlWindow)) == nullptr) {
-				LOG_L(L_WARNING, frmts[false], __func__, SDL_GetError(), winName, tmpCtx.x, tmpCtx.y, profs[mask == SDL_GL_CONTEXT_PROFILE_CORE]);
+				LOG_L(L_WARNING, frmts[false], __func__, SDL_GetError(), tmpCtx.x, tmpCtx.y, profs[mask == SDL_GL_CONTEXT_PROFILE_CORE]);
 			} else {
 				// save the lowest successfully created fallback compatibility-context
 				if (mask == SDL_GL_CONTEXT_PROFILE_COMPATIBILITY && cmpCtx.x == 0 && tmpCtx.x >= minCtx.x)
 					cmpCtx = tmpCtx;
 
-				LOG_L(L_WARNING, frmts[true], __func__, winName, tmpCtx.x, tmpCtx.y, profs[mask == SDL_GL_CONTEXT_PROFILE_CORE]);
+				LOG_L(L_WARNING, frmts[true], __func__, tmpCtx.x, tmpCtx.y, profs[mask == SDL_GL_CONTEXT_PROFILE_CORE]);
 			}
 
 			// accepts nullptr's
@@ -1035,6 +1032,7 @@ void CGlobalRendering::GetWindowPosSizeBounded(int& x, int& y, int& w, int& h) c
 void CGlobalRendering::SetWindowTitle(const std::string& title)
 {
 	// SDL_SetWindowTitle deadlocks in case it's called from non-main thread (during the MT loading).
+
 	static auto SetWindowTitleImpl = [](SDL_Window* sdlWindow, const std::string& title) {
 		SDL_SetWindowTitle(sdlWindow, title.c_str());
 	};

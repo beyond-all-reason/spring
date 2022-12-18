@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <type_traits>
 
 namespace spring {
     template <typename R, typename... Args>
@@ -12,12 +13,12 @@ namespace spring {
         virtual ~QueuedFunction() = default;
         virtual void Execute() const = 0;
 
-
-        template<typename F, typename... Args>
+        template<typename F, typename... Args, typename = typename std::enable_if_t<are_all_constructible<Args...>::type> >
         static void Enqueue(F f, Args&&... args) {
             using R = decltype(f(std::forward<Args>(args)...));
             functions.emplace_back(std::make_unique<TypedQueuedFunction<R, Args...>>(f, std::forward<Args>(args)...));
         }
+
         template<typename F, typename... Args>
         static void Enqueue(F f, Args... args) {
             using R = decltype(f(args...));

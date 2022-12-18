@@ -79,7 +79,7 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 	if (Threading::IsMainThread())
 		SetWindowIconImpl(win, surf, *bmp);
 	else
-		spring::QueuedFunction::Enqueue<decltype(SetWindowIconImpl), SDL_Window*, SDL_Surface*, CBitmap>(SetWindowIconImpl, win, surf, *bmp);
+		spring::QueuedFunction::Enqueue(SetWindowIconImpl, win, surf, *bmp);
 
 	return true;
 }
