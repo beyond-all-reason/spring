@@ -283,7 +283,7 @@ private:
 
 
 	/// If the server receives a command, it will forward it to clients if it is not in this set
-	static std::array<std::string, 25> commandBlacklist;
+	static std::array<std::string, 26> commandBlacklist;
 
 	std::unique_ptr<netcode::UDPListener> udpListener;
 	std::unique_ptr<CDemoReader> demoReader;

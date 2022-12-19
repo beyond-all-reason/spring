@@ -16,6 +16,7 @@
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaRules.h"
 #include "Lua/LuaUI.h"
+#include "Net/GameServer.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -429,7 +430,6 @@ public:
 };
 
 
-#ifdef DEBUG
 class DesyncActionExecutor : public ISyncedActionExecutor {
 public:
 	DesyncActionExecutor() : ISyncedActionExecutor(
@@ -446,13 +446,16 @@ public:
 		ASSERT_SYNCED((short)(gu->myPlayerNum * 123 + 123));
 		//ASSERT_SYNCED(float3(gu->myPlayerNum, gu->myPlayerNum, gu->myPlayerNum));
 
+		// Command comming from the server won't match any of the client IDs.
+		int actionPlayerID = (action.GetPlayerID()==SERVER_PLAYER) ? 0 : action.GetPlayerID();
+
 		for (int i = unitHandler.MaxUnits() - 1; i >= 0; --i) {
 			CUnit* u = unitHandler.GetUnit(i);
 
 			if (u == nullptr)
 				continue;
 
-			if (action.GetPlayerID() == gu->myPlayerNum) {
+			if (actionPlayerID == gu->myPlayerNum) {
 				++u->midPos.x; // and desync...
 				++u->midPos.x;
 			} else {
@@ -467,7 +470,6 @@ public:
 		return true;
 	}
 };
-#endif // defined DEBUG
 
 
 class AtmActionExecutor : public ISyncedActionExecutor {
@@ -580,9 +582,7 @@ void SyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<EditDefsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<LuaRulesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<LuaGaiaActionExecutor>());
-#ifdef DEBUG
 	AddActionExecutor(AllocActionExecutor<DesyncActionExecutor>());
-#endif // defined DEBUG
 	AddActionExecutor(AllocActionExecutor<AtmActionExecutor>());
 	if (modInfo.allowTake)
 		AddActionExecutor(AllocActionExecutor<TakeActionExecutor>());

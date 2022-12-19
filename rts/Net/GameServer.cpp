@@ -117,7 +117,7 @@ decltype(CGameServer::commandBlacklist) CGameServer::commandBlacklist{
 	"mute", "mutebynum",
 	"aictrl", "aictrlbynum",
 	"setminspeed", "setmaxspeed",
-	"nopause", "nohelp", "cheat", "godmode", "globallos",
+	"nopause", "nohelp", "cheat", "desync", "godmode", "globallos",
 	"nocost", "forcestart", "nospectatorchat", "nospecdraw",
 	"skip", "reloadcob", "reloadcegs", "devlua", "editdefs",
 	"singlestep", "spec", "specbynum"
