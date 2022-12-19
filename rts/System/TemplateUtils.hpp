@@ -1,8 +1,15 @@
 #include <functional>
 
 namespace spring {
-	// https://stackoverflow.com/questions/38067106/c-verify-callable-signature-of-template-type
+	template<bool...> struct bool_pack;
+	template<bool... bs>
+	using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
 
+	// check if parameters pack is constructible
+	template<class... Ts>
+	using are_all_constructible = all_true<std::is_constructible_v<std::decay_t<Ts>>...>;
+
+	// https://stackoverflow.com/questions/38067106/c-verify-callable-signature-of-template-type
 	template<typename, typename, typename = void>
 	struct is_signature : std::false_type {};
 

@@ -40,13 +40,13 @@ public:
 	 *
 	 * Sets SDL video mode options/settings
 	 */
-	bool CreateWindowAndContext(const char* title, bool hidden);
-	SDL_Window* CreateSDLWindow(const char* title, bool hidden) const;
-	SDL_GLContext CreateGLContext(const int2& minCtx, SDL_Window* targetWindow) const;
-	SDL_Window* GetWindow(size_t i) { return sdlWindows[i]; }
-	SDL_GLContext GetContext(size_t i) { return glContexts[i]; }
+	bool CreateWindowAndContext(const char* title);
+	SDL_Window* CreateSDLWindow(const char* title) const;
+	SDL_GLContext CreateGLContext(const int2& minCtx);
+	SDL_Window* GetWindow() { return sdlWindow; }
+	SDL_GLContext GetContext() { return glContext; }
 
-	void DestroyWindowAndContext(SDL_Window* window, SDL_GLContext context);
+	void DestroyWindowAndContext();
 	void KillSDL() const;
 	void PostInit();
 
@@ -55,7 +55,7 @@ public:
 	void SetGLTimeStamp(uint32_t queryIdx) const;
 	uint64_t CalcGLDeltaTime(uint32_t queryIdx0, uint32_t queryIdx1) const;
 
-	void MakeCurrentContext(bool hidden, bool secondary, bool clear) const;
+	void MakeCurrentContext(bool clear) const;
 
 	void CheckGLExtensions() const;
 	void SetGLSupportFlags();
@@ -68,7 +68,7 @@ public:
 
 	void GetWindowPosSizeBounded(int& x, int& y, int& w, int& h) const;
 
-	void SetWindowTitle(const std::string& title) const;
+	void SetWindowTitle(const std::string& title);
 	void SetWindowAttributes(SDL_Window* window);
 	void UpdateWindow();
 
@@ -362,9 +362,8 @@ public:
 	bool borderless;
 
 public:
-	// [0] := primary, [1] := secondary (hidden)
-	SDL_Window* sdlWindows[2];
-	SDL_GLContext glContexts[2];
+	SDL_Window* sdlWindow;
+	SDL_GLContext glContext;
 public:
 	/**
 	* @brief maximum texture unit number

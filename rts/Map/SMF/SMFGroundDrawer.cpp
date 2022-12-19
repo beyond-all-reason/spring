@@ -254,33 +254,31 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 	if (!SelectRenderState(drawPass)->CanDrawForward())
 		return;
 
-	{
-		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(drawPass);
-		smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
+	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(drawPass);
+	smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
 
-		glPushAttrib((GL_ENABLE_BIT * alphaTest) | (GL_POLYGON_BIT * wireframe));
+	glPushAttrib((GL_ENABLE_BIT * alphaTest) | (GL_POLYGON_BIT * wireframe));
 
-		if (wireframe)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		if (alphaTest) {
-			glEnable(GL_ALPHA_TEST);
-			glAlphaFunc(GL_GREATER, mapInfo->map.voidAlphaMin);
-		}
-
-		if (alwaysDispatchEvents || HaveLuaRenderState())
-			eventHandler.DrawGroundPreForward();
-
-		meshDrawer->DrawMesh(drawPass);
-
-		glPopAttrib();
-
-		smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
-
-		if (alwaysDispatchEvents || HaveLuaRenderState())
-			eventHandler.DrawGroundPostForward();
+	if (alphaTest) {
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, mapInfo->map.voidAlphaMin);
 	}
+
+	if (alwaysDispatchEvents || HaveLuaRenderState())
+		eventHandler.DrawGroundPreForward();
+
+	meshDrawer->DrawMesh(drawPass);
+
+	glPopAttrib();
+
+	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
+	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
+
+	if (alwaysDispatchEvents || HaveLuaRenderState())
+		eventHandler.DrawGroundPostForward();
 }
 
 void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)

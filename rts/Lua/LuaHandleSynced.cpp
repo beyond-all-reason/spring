@@ -49,6 +49,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
+#include "System/LoadLock.h"
 
 
 
@@ -1705,6 +1706,7 @@ bool CSplitLuaHandle::InitSynced(bool dryRun)
 		}
 	}
 
+	auto lock = CLoadLock::GetScopedLock(); // for loading of models
 	const bool haveSynced = syncedLuaHandle.Init(syncedCode, GetSyncedFileName());
 
 	if (!IsValid() || !haveSynced) {
@@ -1730,6 +1732,7 @@ bool CSplitLuaHandle::InitUnsynced()
 		return false;
 	}
 
+	auto lock = CLoadLock::GetScopedLock();
 	const bool haveUnsynced = unsyncedLuaHandle.Init(unsyncedCode, GetUnsyncedFileName());
 
 	if (!IsValid() || !haveUnsynced) {

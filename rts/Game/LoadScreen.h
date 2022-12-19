@@ -7,7 +7,7 @@
 
 #include "GameController.h"
 #include "System/LoadSave/LoadSaveHandler.h"
-#include "System/OffscreenGLContext.h"
+#include "System/GameLoadThread.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -22,7 +22,7 @@ public:
 	~CLoadScreen();
 
 	bool Init(); /// split from ctor; uses GetInstance()
-	void Kill() const; /// split from dtor
+	void Kill(); /// split from dtor
 
 public:
 	// singleton can potentially be null, but only when
@@ -54,6 +54,9 @@ private:
 
 	spring::recursive_mutex mutex;
 	spring::thread netHeartbeatThread;
+	CGameLoadThread gameLoadThread;
+
+	bool mtLoading;
 
 	spring_time lastDrawTime;
 };

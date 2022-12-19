@@ -26,6 +26,7 @@
 #include "System/SpringMath.h"
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
+#include "System/LoadLock.h"
 
 #define SSMF_UNCOMPRESSED_NORMALS 0
 
@@ -55,6 +56,8 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 	loadscreen->SetLoadMessage("Loading SMF");
 	eventHandler.AddClient(this);
 
+	//auto lock = CLoadLock::GetScopedLock();
+
 	mapFile.Close();
 	mapFile.Open(mapName);
 
@@ -78,17 +81,20 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 	LoadHeightMap();
 	CReadMap::Initialize();
 
-	LoadMinimap();
-
 	ConfigureTexAnisotropyLevels();
 	InitializeWaterHeightColors();
+	{
+		auto lock = CLoadLock::GetScopedLock();
 
-	CreateSpecularTex();
-	CreateSplatDetailTextures();
-	CreateGrassTex();
-	CreateDetailTex();
-	CreateShadingTex();
-	CreateNormalTex();
+		LoadMinimap();
+
+		CreateSpecularTex();
+		CreateSplatDetailTextures();
+		CreateGrassTex();
+		CreateDetailTex();
+		CreateShadingTex();
+		CreateNormalTex();
+	}
 
 	mapFile.ReadFeatureInfo();
 }

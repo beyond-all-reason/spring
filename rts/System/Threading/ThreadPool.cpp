@@ -6,7 +6,7 @@
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 #if (!defined(UNITSYNC) && !defined(UNIT_TEST))
-	#include "System/OffscreenGLContext.h"
+	#include "System/GameLoadThread.h"
 #endif
 #include "System/TimeProfiler.h"
 #include "System/StringUtil.h"
@@ -350,8 +350,8 @@ static void SpawnThreads(int wantedNumThreads, int curNumThreads)
 			for (int i = curNumThreads; i < wantedNumThreads; ++i) {
 				exitFlags[i] = false;
 
-				workerThreads[false].push_back(new COffscreenGLThread(std::bind(&WorkerLoop, i, false)));
-				workerThreads[ true].push_back(new COffscreenGLThread(std::bind(&WorkerLoop, i,  true)));
+				workerThreads[false].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i, false)));
+				workerThreads[ true].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i,  true)));
 			}
 		} catch (const opengl_error&) {
 			// shared gl context creation failed
@@ -386,8 +386,8 @@ static void KillThreads(int wantedNumThreads, int curNumThreads)
 
 	#ifndef UNITSYNC
 		if (glThreadSupport) {
-			{ auto th = reinterpret_cast<COffscreenGLThread*>(workerThreads[false].back()); th->join(); delete th; }
-			{ auto th = reinterpret_cast<COffscreenGLThread*>(workerThreads[ true].back()); th->join(); delete th; }
+			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[false].back()); th->join(); delete th; }
+			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[ true].back()); th->join(); delete th; }
 		} else
 	#endif
 		{

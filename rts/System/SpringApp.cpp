@@ -74,6 +74,7 @@
 #include "System/StartScriptGen.h"
 #include "System/TimeProfiler.h"
 #include "System/UriParser.h"
+#include "System/LoadLock.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/creg/creg_runtime_tests.h"
 #include "System/FileSystem/ArchiveScanner.h"
@@ -404,7 +405,7 @@ bool SpringApp::InitWindow(const char* title)
 	Threading::SetThreadName("gpu-driver");
 
 	// raises an error-prompt in case of failure
-	if (!globalRendering->CreateWindowAndContext(title, FLAGS_hidden))
+	if (!globalRendering->CreateWindowAndContext(title))
 		return false;
 
 	// Something in SDL_SetVideoMode (OpenGL drivers?) messes with the FPU control word.
@@ -821,6 +822,8 @@ bool SpringApp::Update()
 	#else
 	// sic; Update can set the controller to null
 	retc = (        activeController == nullptr || activeController->Update());
+
+	auto lock = CLoadLock::GetScopedLock();
 	swap = (retc && activeController != nullptr && activeController->Draw());
 	#endif
 

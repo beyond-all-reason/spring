@@ -216,7 +216,7 @@ IHardwareCursor* IHardwareCursor::Alloc(void* mem) {
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
 
-	if (SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info)) {
+	if (SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
 		switch (info.subsystem)
 		{
 		case SDL_SYSWM_X11:
@@ -580,7 +580,7 @@ void HardwareCursorX11::Kill()
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
 
-		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info)) {
+		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
 			LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 			return;
 		}
@@ -683,7 +683,7 @@ void HardwareCursorX11::Finish()
 
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
-	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info)) {
+	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
 		LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 		XcursorImagesDestroy(cis);
 		cimages.clear();
@@ -700,7 +700,7 @@ void HardwareCursorX11::Bind()
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
 
-	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(0), &info)) {
+	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
 		LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 		return;
 	}
