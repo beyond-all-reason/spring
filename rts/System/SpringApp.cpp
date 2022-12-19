@@ -823,7 +823,7 @@ bool SpringApp::Update()
 	// sic; Update can set the controller to null
 	retc = (        activeController == nullptr || activeController->Update());
 
-	auto lock = CLoadLock::GetScopedLock();
+	auto lock = CLoadLock::GetUniqueLock();
 	swap = (retc && activeController != nullptr && activeController->Draw());
 	#endif
 

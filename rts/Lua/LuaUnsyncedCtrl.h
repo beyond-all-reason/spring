@@ -7,6 +7,7 @@ struct lua_State;
 
 // MinGW defines this for a WINAPI function
 #undef SendMessage
+#undef Yield
 
 class LuaUnsyncedCtrl {
 	friend class CLuaIntro;
@@ -195,6 +196,8 @@ class LuaUnsyncedCtrl {
 		static int SetWindowGeometry(lua_State* L);
 		static int SetWindowMinimized(lua_State* L);
 		static int SetWindowMaximized(lua_State* L);
+
+		static int Yield(lua_State* L);
 };
 
 #endif /* LUA_UNSYNCED_CTRL_H */

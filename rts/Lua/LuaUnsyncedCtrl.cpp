@@ -88,6 +88,7 @@
 #include "System/Platform/Watchdog.h"
 #include "System/Platform/WindowManagerHelper.h"
 #include "System/Sync/HsiehHash.h"
+#include "System/LoadLock.h"
 
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
@@ -108,6 +109,7 @@
 // MinGW defines this for a WINAPI function
 #undef SendMessage
 #undef CreateDirectory
+#undef Yield
 
 
 /******************************************************************************/
@@ -294,6 +296,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetWindowGeometry);
 	REGISTER_LUA_CFUNC(SetWindowMinimized);
 	REGISTER_LUA_CFUNC(SetWindowMaximized);
+
+	REGISTER_LUA_CFUNC(Yield);
 
 	return true;
 }
@@ -3400,5 +3404,23 @@ int LuaUnsyncedCtrl::SetWindowMinimized(lua_State* L)
 int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 {
 	lua_pushboolean(L, globalRendering->SetWindowMaximized());
+	return 1;
+}
+
+int LuaUnsyncedCtrl::Yield(lua_State* L)
+{
+	if (CLoadLock::GetThreadSafety() == false) {
+		lua_pushboolean(L, false); //hint Lua might stop calling Yield
+		return 1;
+	}
+
+	const auto ms = luaL_optnumber(L, 1, 10);
+
+	auto& mtx = CLoadLock::GetMutex();
+	mtx.unlock();
+	spring_msecs(ms).sleep(true);
+	mtx.lock();
+
+	lua_pushboolean(L, true); //hint Lua should keep calling Yield
 	return 1;
 }

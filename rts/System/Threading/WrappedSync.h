@@ -23,7 +23,7 @@ namespace spring {
 
 		std::scoped_lock<spring::mutex_wrapper_concept> GetScopedLock() { return std::scoped_lock(*sync[needThreadSafety]); }
 		std::unique_lock<spring::mutex_wrapper_concept> GetUniqueLock() { return std::unique_lock(*sync[needThreadSafety]); }
-	private:
+	protected:
 		std::array<std::unique_ptr<spring::mutex_wrapper_concept>, 2> sync;
 		bool needThreadSafety = true;
 	};

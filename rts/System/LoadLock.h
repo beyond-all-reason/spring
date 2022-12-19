@@ -3,38 +3,45 @@
 #include <mutex>
 
 #include "System/Threading/SpringThreading.h"
+#include "System/Threading/WrappedSync.h"
 #include "System/ScopedResource.h"
 #include "Rendering/GlobalRendering.h"
 
-class CLoadLockImplUnsafe {
+class CLoadLockMtx {
 public:
-	static void Lock() {}
-	static void Unlock() {}
-};
+	using native_handle_type = uint32_t;
 
-class CLoadLockImplSafe {
-public:
-	static void Lock() {
-		lock = std::unique_lock(mtx);
+	void lock() {
+		mtx.lock();
 		globalRendering->MakeCurrentContext(false); //set
 	}
-	static void Unlock() {
-		globalRendering->MakeCurrentContext(true ); //clear		
-		lock = {};
+	void unlock() {
+		globalRendering->MakeCurrentContext(true ); //clear
+		mtx.unlock();
 	}
+	bool try_lock() { assert(false); return true; } // placeholder
+	native_handle_type native_handle() { return native_handle_type{}; } // placeholder
 private:
 	inline static std::recursive_mutex mtx = {};
-	inline static std::unique_lock<decltype(mtx)> lock = {};
+};
+
+class CLoadLockImpl : public spring::WrappedSync<CLoadLockMtx> {
+public:
+	auto& GetMutex() {
+		return *sync[needThreadSafety];
+	}
 };
 
 class CLoadLock {
 public:
-	static auto GetScopedLock() {
-		return spring::ScopedNullResource([]() { locks[threadSafety](); }, []() { unlocks[threadSafety](); });
+	static auto& GetMutex() {
+		return loadLockImpl.GetMutex();
 	}
-	static void SetThreadSafety(bool b) { threadSafety = b; }
+	static auto GetUniqueLock() {
+		return loadLockImpl.GetUniqueLock();
+	}
+	static void SetThreadSafety(bool b) { loadLockImpl.SetThreadSafety(b); }
+	static bool GetThreadSafety() { return loadLockImpl.GetThreadSafety(); }
 private:
-	inline static std::array<void(*)(), 2>   locks = { CLoadLockImplUnsafe::Lock  , CLoadLockImplSafe::Lock   };
-	inline static std::array<void(*)(), 2> unlocks = { CLoadLockImplUnsafe::Unlock, CLoadLockImplSafe::Unlock };
-	inline static bool threadSafety = false;
+	inline static CLoadLockImpl loadLockImpl;
 };

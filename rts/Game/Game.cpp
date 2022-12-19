@@ -443,7 +443,7 @@ void CGame::Load(const std::string& mapFileName)
 			ENTER_SYNCED_CODE();
 			eventHandler.GamePreload();
 			{
-				auto lock = CLoadLock::GetScopedLock();
+				auto lock = CLoadLock::GetUniqueLock();
 				eventHandler.CollectGarbage(true);
 			}
 
@@ -554,7 +554,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 	{
 		loadscreen->SetLoadMessage("Loading Radar Icons");
-		auto lock = CLoadLock::GetScopedLock();
+		auto lock = CLoadLock::GetUniqueLock();
 		icon::iconHandler.Init();
 	}
 	{
@@ -662,7 +662,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 
 void CGame::PreLoadRendering()
 {
-	auto lock = CLoadLock::GetScopedLock();
+	auto lock = CLoadLock::GetUniqueLock();
 
 	geometricObjects = new CGeometricObjects();
 
@@ -673,7 +673,7 @@ void CGame::PreLoadRendering()
 }
 
 void CGame::PostLoadRendering() {
-	auto lock = CLoadLock::GetScopedLock();
+	auto lock = CLoadLock::GetUniqueLock();
 
 	worldDrawer.InitPost();
 }
@@ -681,7 +681,7 @@ void CGame::PostLoadRendering() {
 
 void CGame::LoadInterface()
 {
-	auto lock = CLoadLock::GetScopedLock();
+	auto lock = CLoadLock::GetUniqueLock();
 
 	camHandler->Init();
 	mouse->ReloadCursors();
@@ -797,7 +797,7 @@ void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
 
 	if (!dryRun) {
 		loadscreen->SetLoadMessage("Loading LuaUI");
-		auto lock = CLoadLock::GetScopedLock();
+		auto lock = CLoadLock::GetUniqueLock();
 		CLuaUI::LoadFreeHandler();
 	}
 }

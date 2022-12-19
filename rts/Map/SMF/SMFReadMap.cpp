@@ -56,7 +56,7 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 	loadscreen->SetLoadMessage("Loading SMF");
 	eventHandler.AddClient(this);
 
-	//auto lock = CLoadLock::GetScopedLock();
+	//auto lock = CLoadLock::GetUniqueLock();
 
 	mapFile.Close();
 	mapFile.Open(mapName);
@@ -84,7 +84,7 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 	ConfigureTexAnisotropyLevels();
 	InitializeWaterHeightColors();
 	{
-		auto lock = CLoadLock::GetScopedLock();
+		auto lock = CLoadLock::GetUniqueLock();
 
 		LoadMinimap();
 

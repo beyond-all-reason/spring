@@ -133,7 +133,7 @@ bool CLoadScreen::Init()
 	// data wrapping a local font) but also to gl.*Text (which uses
 	// the global font), the latter will cause problems in GL4
 	{
-		auto lock = CLoadLock::GetScopedLock();
+		auto lock = CLoadLock::GetUniqueLock();
 		CLuaIntro::LoadFreeHandler();
 	}
 
@@ -313,7 +313,8 @@ bool CLoadScreen::Draw()
 
 void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 {
-	spring::UnfreezeSpring(WDT_LOAD);
+	if (!mtLoading)
+		spring::UnfreezeSpring(WDT_LOAD);
 
 	std::lock_guard<spring::recursive_mutex> lck(mutex);
 
