@@ -27,6 +27,9 @@ private:
 
 class CLoadLockImpl : public spring::WrappedSync<CLoadLockMtx> {
 public:
+	CLoadLockImpl() : spring::WrappedSync<CLoadLockMtx>() {
+		needThreadSafety = false;
+	}
 	auto& GetMutex() {
 		return *sync[needThreadSafety];
 	}
