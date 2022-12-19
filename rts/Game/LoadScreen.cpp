@@ -41,7 +41,10 @@
 
 #include <vector>
 
-CONFIG(int, LoadingMT).defaultValue(0).safemodeValue(0);
+CONFIG(int, LoadingMT)
+	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
+	.defaultValue(0)
+	.safemodeValue(0);
 
 
 CLoadScreen* CLoadScreen::singleton = nullptr;
