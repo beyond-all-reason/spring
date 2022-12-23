@@ -22,6 +22,15 @@ BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
    back old behaviour, change `0` to `false`.
+   
+ ! Spring.GetConfigInt, Spring.GetConfigFloat and Spring.GetConfigString now accept nil
+   as the second argument (what to return by default if not set). Previously it was treated
+   as 0 (Int and Float) or "" (String). To get back previous behaviour:
+ 
+   local originalGetConfigInt = Spring.GetConfigInt
+   Spring.GetConfigInt = function(key, def)
+     return originalGetConfigInt(key, def) or 0
+   end
 
 Lua:
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
