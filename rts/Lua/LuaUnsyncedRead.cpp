@@ -3141,19 +3141,40 @@ int LuaUnsyncedRead::GetConfigParams(lua_State* L)
 
 int LuaUnsyncedRead::GetConfigInt(lua_State* L)
 {
-	lua_pushinteger(L, configHandler->GetIntSafe(luaL_checkstring(L, 1), luaL_optint(L, 2, 0)));
+	const auto key = luaL_checkstring(L, 1);
+	if (!lua_isnoneornil(L, 2))
+		lua_pushinteger(L, configHandler->GetIntSafe(key, luaL_optint(L, 2, 0)));
+	else if (configHandler->IsSet(key))
+		lua_pushinteger(L, configHandler->GetInt(key));
+	else
+		lua_pushnil(L);
+
 	return 1;
 }
 
 int LuaUnsyncedRead::GetConfigFloat(lua_State* L)
 {
-	lua_pushnumber(L, configHandler->GetFloatSafe(luaL_checkstring(L, 1), luaL_optfloat(L, 2, 0.0f)));
+	const auto key = luaL_checkstring(L, 1);
+	if (!lua_isnoneornil(L, 2))
+		lua_pushnumber(L, configHandler->GetFloatSafe(key, luaL_optfloat(L, 2, 0.0f)));
+	else if (configHandler->IsSet(key))
+		lua_pushnumber(L, configHandler->GetFloat(key));
+	else
+		lua_pushnil(L);
+
 	return 1;
 }
 
 int LuaUnsyncedRead::GetConfigString(lua_State* L)
 {
-	lua_pushsstring(L, configHandler->GetStringSafe(luaL_checkstring(L, 1), luaL_optstring(L, 2, "")));
+	const auto key = luaL_checkstring(L, 1);
+	if (!lua_isnoneornil(L, 2))
+		lua_pushsstring(L, configHandler->GetStringSafe(key, luaL_optstring(L, 2, "")));
+	else if (configHandler->IsSet(key))
+		lua_pushsstring(L, configHandler->GetString(key));
+	else
+		lua_pushnil(L);
+
 	return 1;
 }
 
