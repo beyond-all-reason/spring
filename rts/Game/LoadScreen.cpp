@@ -43,7 +43,7 @@
 
 CONFIG(int, LoadingMT)
 	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
-	.defaultValue(0)
+	.defaultValue(1)
 	.safemodeValue(0);
 
 
@@ -98,8 +98,6 @@ bool CLoadScreen::Init()
 	const int mtCfg = configHandler->GetInt("LoadingMT");
 	// user override
 	mtLoading = (mtCfg > 0);
-	// runtime detect. disable for intel/mesa drivers, they crash at multithreaded OpenGL (date: Nov. 2011)
-	mtLoading |= (mtCfg < 0) && !globalRendering->haveMesa && !globalRendering->haveIntel;
 #endif
 
 

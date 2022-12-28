@@ -3414,7 +3414,7 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 		return 1;
 	}
 
-	const auto ms = luaL_optnumber(L, 1, 10);
+	const auto ms = luaL_optnumber(L, 1, 1);
 
 	auto& mtx = CLoadLock::GetMutex();
 	mtx.unlock();
