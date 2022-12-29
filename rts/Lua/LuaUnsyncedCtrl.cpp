@@ -3414,11 +3414,9 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 		return 1;
 	}
 
-	const auto ms = luaL_optnumber(L, 1, 1);
-
 	auto& mtx = CLoadLock::GetMutex();
 	mtx.unlock();
-	spring_msecs(ms).sleep(true);
+	std::this_thread::yield();
 	mtx.lock();
 
 	lua_pushboolean(L, true); //hint Lua should keep calling Yield
