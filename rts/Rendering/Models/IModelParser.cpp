@@ -207,7 +207,7 @@ std::string CModelLoader::FindModelPath(std::string name) const
 
 void CModelLoader::PreloadModel(const std::string& modelName)
 {
-	assert(Threading::IsMainThread());
+	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	//NB: do preload in any case
 	if (ThreadPool::HasThreads()) {
