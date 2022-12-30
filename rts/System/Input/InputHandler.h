@@ -21,7 +21,6 @@ public:
 	void PushEvents();
 
 	SignalType::connection_type AddHandler(SignalType::callback);
-	void RemoveAllHandlers() { sig.disconnect_all(); }
 
 private:
 	SignalType sig;

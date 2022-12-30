@@ -253,10 +253,8 @@ bool SpringApp::Init()
 
 	ClearScreen();
 
-	input.AddHandler(std::bind(&SpringApp::MainEventHandlerLite, this, std::placeholders::_1));
 	if (!InitFileSystem())
 		return false;
-	input.RemoveAllHandlers();
 
 	// Multithreading & Affinity
 	Threading::SetThreadName("spring-main"); // set default threadname for pstree
@@ -365,8 +363,6 @@ bool SpringApp::InitFileSystem()
 	// (employ all available threads, then switch to default)
 	ThreadPool::SetMaximumThreadCount();
 
-	const auto stopLambda = []() { return FileSystemInitializer::Initialized() || gu->globalQuit; };
-
 	// threaded initialization s.t. the window gets CPU time
 	// FileSystem is mostly self-contained, don't need locks
 	// (at this point neither the platform CWD nor data-dirs
@@ -375,13 +371,13 @@ bool SpringApp::InitFileSystem()
 	const std::string ssd = std::move(FileSystem::EnsurePathSepAtEnd(configHandler->GetString("SplashScreenDir")));
 
 	std::vector<std::string> splashScreenFiles(dataDirsAccess.FindFiles(FileSystem::IsAbsolutePath(ssd)? ssd: cwd + ssd, "*.{png,jpg}", 0));
-	spring::thread fsInitThread(FileSystemInitializer::InitializeThr, &ret, stopLambda);
+	spring::thread fsInitThread(FileSystemInitializer::InitializeThr, &ret);
 
 	#ifndef HEADLESS
 	if (!splashScreenFiles.empty()) {
-		ShowSplashScreen(splashScreenFiles[ guRNG.NextInt(splashScreenFiles.size()) ], SpringVersion::GetFull(), stopLambda);
+		ShowSplashScreen(splashScreenFiles[ guRNG.NextInt(splashScreenFiles.size()) ], SpringVersion::GetFull(), [&]() { return (FileSystemInitializer::Initialized()); });
 	} else {
-		ShowSplashScreen("", SpringVersion::GetFull(), stopLambda);
+		ShowSplashScreen("", SpringVersion::GetFull(), [&]() { return (FileSystemInitializer::Initialized()); });
 	}
 
 	// skip hangs while waiting for the popup to die and kill us
@@ -1194,22 +1190,6 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 
 		} break;
 	};
-
-	return false;
-}
-
-bool SpringApp::MainEventHandlerLite(const SDL_Event& event)
-{
-	if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE) {
-		gu->globalQuit = true;
-		//std::terminate();
-		return true;
-	}
-	else if (event.type == SDL_QUIT) {
-		//std::terminate();
-		gu->globalQuit = true;
-		return true;
-	}
 
 	return false;
 }

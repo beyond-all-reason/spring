@@ -56,7 +56,7 @@ void FileSystemInitializer::InitializeLogOutput(const std::string& filename)
 }
 
 
-bool FileSystemInitializer::Initialize(std::function<bool()> tf)
+bool FileSystemInitializer::Initialize()
 {
 	if (initSuccess)
 		return true;
@@ -69,10 +69,7 @@ bool FileSystemInitializer::Initialize(std::function<bool()> tf)
 		dataDirLocater.LocateDataDirs();
 		dataDirLocater.Check();
 
-		archiveScanner = new CArchiveScanner(tf);
-		if (tf())
-			return false;
-
+		archiveScanner = new CArchiveScanner();
 		CVFSHandler::SetGlobalInstance(new CVFSHandler("SpringVFS"));
 
 		initSuccess = true;

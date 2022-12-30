@@ -5,18 +5,14 @@
 
 #include <atomic>
 #include <string>
-#include <functional>
 
 class FileSystemInitializer {
 public:
 	/// call in defined order!
 	static void PreInitializeConfigHandler(const std::string& configSource = "", const std::string& configName = "", const bool safemode = false);
 	static void InitializeLogOutput(const std::string& filename = "");
-	static bool Initialize() {
-		return Initialize(([]() {return false; }));
-	}
-	static bool Initialize(std::function<bool()> tf);
-	static void InitializeThr(bool* retPtr, std::function<bool()> tf) { *retPtr = Initialize(tf); }
+	static bool Initialize();
+	static void InitializeThr(bool* retPtr) { *retPtr = Initialize(); }
 	static void Cleanup(bool deallocConfigHandler = true);
 	static void Reload();
 

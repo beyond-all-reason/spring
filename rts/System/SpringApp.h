@@ -44,7 +44,6 @@ private:
 	static void CleanFonts();
 	bool InitFileSystem();
 	bool MainEventHandler(const SDL_Event& ev);     //!< Handles SDL input events
-	bool MainEventHandlerLite(const SDL_Event& ev); //!< Handles SDL input events
 	bool Update();                                  //!< Run simulation and rendering
 
 	void ParseCmdLine(int argc, char* argv[]);      //!< Parse command line
