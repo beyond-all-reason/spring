@@ -384,7 +384,8 @@ static std::atomic<uint32_t> numScannedArchives{0};
  * CArchiveScanner
  */
 
-CArchiveScanner::CArchiveScanner()
+CArchiveScanner::CArchiveScanner(std::function<bool()> tf)
+	: shouldTerminate{ tf }
 {
 	Clear();
 	// the "cache" dir is created in DataDirLocater
@@ -462,7 +463,8 @@ void CArchiveScanner::ScanAllDirs()
 #endif
 
 	ScanDirs(scanDirs);
-	WriteCacheData(GetFilepath());
+	if (!shouldTerminate())
+		WriteCacheData(GetFilepath());
 }
 
 
@@ -477,6 +479,9 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 	for (const std::string& dir: scanDirs) {
 		if (!FileSystem::DirExists(dir))
 			continue;
+
+		if (shouldTerminate())
+			return;
 
 		LOG("Scanning: %s", dir.c_str());
 		ScanDir(dir, foundArchives);
@@ -500,6 +505,9 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 
 	// Create archiveInfos etc. if not in cache already
 	for (const std::string& archive: foundArchives) {
+		if (shouldTerminate())
+			return;
+
 		ScanArchive(archive, false);
 	#if !defined(DEDICATED) && !defined(UNITSYNC)
 		Watchdog::ClearTimer(WDT_MAIN);

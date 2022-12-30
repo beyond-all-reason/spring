@@ -7,6 +7,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <functional>
 
 #include "System/Info.h"
 #include "System/Sync/SHA512.hpp"
@@ -111,7 +112,7 @@ public:
 		std::vector<std::string> replaces;     /// This archive obsoletes these archives
 	};
 
-	CArchiveScanner();
+	CArchiveScanner(std::function<bool()> tf);
 	~CArchiveScanner();
 
 public:
@@ -237,6 +238,7 @@ private:
 	static bool CheckCompression(const IArchive* ar, const std::string& fullName, std::string& error);
 
 private:
+	std::function<bool()> shouldTerminate = nullptr;
 	spring::unordered_map<std::string, size_t> archiveInfosIndex;
 	spring::unordered_map<std::string, size_t> brokenArchivesIndex;
 

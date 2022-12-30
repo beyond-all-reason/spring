@@ -26,7 +26,8 @@ void CInfoConsole::InitStatic() {
 }
 
 void CInfoConsole::KillStatic() {
-	assert(infoConsole != nullptr);
+	// can be null in case FileSystem didn't initialized
+	//assert(infoConsole != nullptr);
 	spring::SafeDestruct(infoConsole);
 	// std::memset(infoConsoleMem, 0, sizeof(infoConsoleMem));
 	std::fill(infoConsoleMem, infoConsoleMem + sizeof(infoConsoleMem), 0);
