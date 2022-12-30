@@ -61,7 +61,8 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 		return false;
 	}
 
-	SDL_Surface* surf = bmp->CreateSDLSurface();
+	*(windowIcon.bmp) = std::move(*bmp);
+	SDL_Surface* surf = windowIcon.bmp->CreateSDLSurface();
 
 	if (surf == nullptr) {
 		// keep any previous surface in case of failure
@@ -69,17 +70,16 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 		return false;
 	}
 
-	SDL_FreeSurface(windowIcon.surf);
-	static auto SetWindowIconImpl = [](SDL_Window* win, SDL_Surface* surf, CBitmap bmp) {
-		windowIcon.surf = surf;
+	static auto SetWindowIconImpl = [](SDL_Window* win, SDL_Surface* surf) {
 		SDL_SetWindowIcon(win, surf);
-		*(windowIcon.bmp) = std::move(bmp);
+		SDL_FreeSurface(windowIcon.surf);
+		windowIcon.surf = surf;
 	};
 
 	if (Threading::IsMainThread())
-		SetWindowIconImpl(win, surf, *bmp);
+		SetWindowIconImpl(win, surf);
 	else
-		spring::QueuedFunction::Enqueue(SetWindowIconImpl, win, surf, *bmp);
+		spring::QueuedFunction::Enqueue(SetWindowIconImpl, win, surf);
 
 	return true;
 }
