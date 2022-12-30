@@ -14,6 +14,7 @@ public:
 	void lock() {
 		mtx.lock();
 		globalRendering->MakeCurrentContext(false); //set
+		inLoadingThread = Threading::IsGameLoadThread();
 	}
 	void unlock() {
 		globalRendering->MakeCurrentContext(true ); //clear
@@ -22,7 +23,8 @@ public:
 	bool try_lock() { assert(false); return true; } // placeholder
 	native_handle_type native_handle() { return native_handle_type{}; } // placeholder
 private:
-	inline static std::recursive_mutex mtx = {};
+	bool inLoadingThread = false;
+	std::recursive_mutex mtx = {};
 };
 
 class CLoadLockImpl : public spring::WrappedSync<CLoadLockMtx> {

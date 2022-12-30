@@ -43,7 +43,7 @@
 
 CONFIG(int, LoadingMT)
 	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
-	.defaultValue(1)
+	.defaultValue(0)
 	.safemodeValue(0);
 
 
