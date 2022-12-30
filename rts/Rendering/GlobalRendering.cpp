@@ -1129,7 +1129,17 @@ bool CGlobalRendering::GetWindowInputGrabbing()
 
 bool CGlobalRendering::SetWindowInputGrabbing(bool enable)
 {
-	SDL_SetWindowGrab(sdlWindow, enable? SDL_TRUE: SDL_FALSE);
+	// SDL_SetWindowGrab deadlocks in case it's called from non-main thread (during the MT loading).
+
+	static auto SetWindowGrabImpl = [](SDL_Window* sdlWindow, bool enable) {
+		SDL_SetWindowGrab(sdlWindow, enable ? SDL_TRUE : SDL_FALSE);
+	};
+
+	if (Threading::IsMainThread())
+		SetWindowGrabImpl(sdlWindow, enable);
+	else
+		spring::QueuedFunction::Enqueue(SetWindowGrabImpl, sdlWindow, enable);
+
 	return enable;
 }
 
