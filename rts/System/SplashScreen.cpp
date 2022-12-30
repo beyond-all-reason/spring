@@ -13,7 +13,7 @@
 #include "System/float4.h"
 #include "System/Matrix44f.h"
 #include "System/FileSystem/ArchiveScanner.h"
-#include "System/Misc/UnfreezeSpring.h"
+#include "System/Platform/Watchdog.h"
 
 static constexpr uint32_t LOGO_SIZE_X = 119;
 static constexpr uint32_t LOGO_SIZE_Y = 119;
@@ -245,7 +245,9 @@ void ShowSplashScreen(
 
 		// prevent WM's from assuming the window is unresponsive and
 		// generating a kill-request
-		spring::UnfreezeSpring();
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {}
+		Watchdog::ClearTimer(WDT_LOAD);
 	}
 
 	glPopAttrib();
