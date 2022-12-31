@@ -193,7 +193,7 @@ void CShareBox::Draw()
 		shader.Disable();
 	}
 
-
+	font->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
 	font->glPrint(box.x1 + (okBox.x1 + okBox.x2) * 0.5f, box.y1 + (okBox.y1 + okBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Ok");
 	font->glPrint(box.x1 + (applyBox.x1 + applyBox.x2) * 0.5f, box.y1 + (applyBox.y1 + applyBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Apply");
 	font->glPrint(box.x1 + (cancelBox.x1 + cancelBox.x2) * 0.5f, box.y1 + (cancelBox.y1 + cancelBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Cancel");
