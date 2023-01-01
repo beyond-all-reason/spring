@@ -1398,8 +1398,17 @@ public:
 		if (!action.GetArgs().empty()) {
 			auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-			if (args.size() > 0)
+			if (args.size() > 0) {
+				if (args[0] == "reset") {
+					ProfileDrawer::SetEnabled(false);
+					profiler.SetEnabled(false);
+					profiler.ResetState();
+					profiler.SetEnabled(globalRendering->drawDebug);
+					ProfileDrawer::SetEnabled(globalRendering->drawDebug);
+					return true;
+				}
 				drawDebug = StringToBool(args[0]);
+			}
 			if (args.size() > 1)
 				draw4Real = StringToBool(args[1]);
 		}
