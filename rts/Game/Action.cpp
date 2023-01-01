@@ -31,3 +31,26 @@ Action::Action(const std::string& l)
 
 	line = command + extra;
 }
+
+const Action::Comparison Action::compareByTriggerOrder = [](const Action& a, const Action& b) {
+	bool selfAnyMod = a.keyChain.back().AnyMod();
+	bool actionAnyMod = b.keyChain.back().AnyMod();
+
+	if (selfAnyMod == actionAnyMod)
+		return a.bindingIndex < b.bindingIndex;
+	else
+		return actionAnyMod;
+};
+
+const Action::Comparison Action::compareByBindingOrder = [](const Action& a, const Action& b) {
+	return (a.bindingIndex < b.bindingIndex);
+};
+
+// Returns true when Action a is a subcommand of b.
+// Example:
+//     compareBySubset(Action("somecommand"), Action("somecommand arg")) == false
+//     compareBySubset(Action("somecommand arg"), Action("somecommand")) == true
+//     compareBySubset(Action("somecommand arg"), Action("somecommand arg")) == true
+const Action::Comparison Action::compareBySubset = [](const Action& a, const Action& b) {
+	return b.line.find(a.line) == 0;
+};

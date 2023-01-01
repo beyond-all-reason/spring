@@ -37,22 +37,6 @@ struct DefaultBinding {
 	const char* action;
 };
 
-
-static const CKeyBindings::ActionComparison compareActionByTriggerOrder = [](const Action& a, const Action& b) {
-	bool selfAnyMod = a.keyChain.back().AnyMod();
-	bool actionAnyMod = b.keyChain.back().AnyMod();
-
-	if (selfAnyMod == actionAnyMod)
-		return a.bindingIndex < b.bindingIndex;
-	else
-		return actionAnyMod;
-};
-
-
-static const CKeyBindings::ActionComparison compareActionByBindingOrder = [](const Action& a, const Action& b) {
-  return (a.bindingIndex < b.bindingIndex);
-};
-
 const std::string CKeyBindings::DEFAULT_FILENAME = "uikeys.txt";
 
 static const DefaultBinding defaultBindings[] = {
@@ -385,7 +369,7 @@ void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& 
 	}
 
 	// Merge the two parts.
-	std::inplace_merge(std::next(std::begin(out), aBeginId), std::next(std::begin(out), aEndId), std::end(out), compareActionByTriggerOrder);
+	std::inplace_merge(std::next(std::begin(out), aBeginId), std::next(std::begin(out), aEndId), std::end(out), Action::compareByTriggerOrder);
 }
 
 
@@ -502,7 +486,7 @@ ActionList CKeyBindings::GetActionList() const
 		merged.insert(merged.end(), al.begin(), al.end());
 	}
 
-	std::sort(merged.begin(), merged.end(), compareActionByBindingOrder);
+	std::sort(merged.begin(), merged.end(), Action::compareByBindingOrder);
 
 	return merged;
 }
@@ -602,12 +586,13 @@ void CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 			return action.line == a.line;
 		});
 
-		// check if the command is already bound to the given keyset
-		if (it == std::end(al)) {
-			// not yet bound, push it
-			action.bindingIndex = ++bindingsCount;
-			al.push_back(action);
-		}
+		// return early if the command is already bound to the given keyset
+		if (it != std::end(al))
+			return;
+
+		// not yet bound, push it
+		action.bindingIndex = ++bindingsCount;
+		al.push_back(action);
 	}
 }
 
@@ -659,7 +644,7 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 		return false;
 
 	ActionList& al = it->second;
-	const bool success = RemoveCommandFromList(al, command);
+	const bool success = RemoveActionFromList(al, Action(command));
 
 	if (al.empty())
 		bindings.erase(it);
@@ -691,7 +676,7 @@ bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 }
 
 
-bool CKeyBindings::RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings)
+bool CKeyBindings::RemoveActionFromKeyMap(const Action& action, KeyMap& bindings)
 {
 	bool success = false;
 
@@ -700,7 +685,7 @@ bool CKeyBindings::RemoveActionFromKeyMap(const std::string& command, KeyMap& bi
 	while (it != bindings.end()) {
 		ActionList& al = it->second;
 
-		if (RemoveCommandFromList(al, command))
+		if (RemoveActionFromList(al, action))
 			success = true;
 
 		if (al.empty()) {
@@ -718,7 +703,11 @@ bool CKeyBindings::UnBindAction(const std::string& command)
 {
 	if (debugEnabled)
 		LOG("[CKeyBindings::%s] command=%s", __func__, command.c_str());
-	return RemoveActionFromKeyMap(command, codeBindings) || RemoveActionFromKeyMap(command, scanBindings);
+
+	const bool removedFromKeyCodeMap = RemoveActionFromKeyMap(command, codeBindings);
+	const bool removedFromScanCodeMap = RemoveActionFromKeyMap(command, scanBindings);
+
+	return removedFromKeyCodeMap || removedFromScanCodeMap;
 }
 
 
@@ -757,14 +746,15 @@ bool CKeyBindings::AddKeySymbol(const std::string& keysym, const std::string& co
 }
 
 
-bool CKeyBindings::RemoveCommandFromList(ActionList& al, const std::string& command)
+bool CKeyBindings::RemoveActionFromList(ActionList& al, const Action& action, const Action::Comparison& comparison)
 {
 	bool success = false;
 
 	auto it = al.begin();
 
 	while (it != al.end()) {
-		if (it->command == command) {
+		const auto a = it.base();
+		if (comparison(action, *a)) {
 			it = al.erase(it);
 			success = true;
 		} else {
@@ -890,7 +880,8 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		if (!UnBind(words[1], words[2])) { return false; }
 	}
 	else if ((command == "unbindaction") && (words.size() > 1)) {
-		if (!UnBindAction(words[1])) { return false; }
+		const std::string actionLine = words.size() > 2 ? words[1] + " " + words[2] : words[1];
+		if (!UnBindAction(actionLine)) { return false; }
 	}
 	else if ((command == "unbindkeyset") && (words.size() > 1)) {
 		if (!UnBindKeyset(words[1])) { return false; }

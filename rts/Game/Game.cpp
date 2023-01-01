@@ -1265,7 +1265,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was. 
 			drawsimratio = std::fmin(drawsimratio, 1.0);  // Clamp it otherwise we will accumulate delay when < 30 FPS
-			float oldCTO = globalRendering->timeOffset;
+			// float oldCTO = globalRendering->timeOffset;
 			float newCTO = globalRendering->timeOffset;
 
 			if (newSimFrame) { 

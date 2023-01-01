@@ -17,7 +17,6 @@ class CKeyBindings : public CommandReceiver
 {
 	public:
 		typedef std::vector<std::string> HotkeyList;
-		typedef std::function<bool (Action, Action)> ActionComparison;
 
 	protected:
 		struct KeySetHash {
@@ -61,7 +60,8 @@ class CKeyBindings : public CommandReceiver
 		void DebugActionList(const ActionList& actionList) const;
 
 		void AddActionToKeyMap(KeyMap& bindings, Action& action);
-		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
+		static bool RemoveActionFromKeyMap(const Action& command, KeyMap& bindings);
+		static bool RemoveActionFromList(ActionList& al, const Action& action, const Action::Comparison& comparison = Action::compareBySubset);
 
 		bool Bind(const std::string& keystring, const std::string& action);
 		bool UnBind(const std::string& keystring, const std::string& action);
@@ -69,8 +69,6 @@ class CKeyBindings : public CommandReceiver
 		bool UnBindAction(const std::string& action);
 		bool SetFakeMetaKey(const std::string& keystring);
 		bool AddKeySymbol(const std::string& keysym, const std::string& code);
-
-		static bool RemoveCommandFromList(ActionList& al, const std::string& command);
 
 		bool FileSave(FILE* file) const;
 

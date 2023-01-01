@@ -5,6 +5,16 @@ Spring changelog
 -- BAR105 --------------------------------------------------------
 
 BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
+ ! /unbind and /unbindaction now understand and operate on argument subsets.
+
+   /unbind key action arg1 arg2 now correctly removes the bindings that are bound to action
+   action and arguments "arg1 arg2.*". This is only breaking if you were relying on unbind
+   being noop when receiving action arguments.
+
+   /unbindaction action arg1 arg2 now correctly removes the bindings that are bound to action
+   action and arguments "arg1 arg2.*". This is only breaking if you relied on arguments being
+   ignored to unbind all keybindings bound to action.
+
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
    To get back old behaviour, make sure to rebind them (remember "Any+", as in "Any+Alt")
 
