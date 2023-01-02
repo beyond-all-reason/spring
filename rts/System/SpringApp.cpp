@@ -379,10 +379,6 @@ bool SpringApp::InitFileSystem()
 	} else {
 		ShowSplashScreen("", SpringVersion::GetFull(), [&]() { return (FileSystemInitializer::Initialized()); });
 	}
-
-	// skip hangs while waiting for the popup to die and kill us
-	if (!ret)
-		Watchdog::DeregisterThread(WDT_MAIN);
 	#endif
 
 	fsInitThread.join();
