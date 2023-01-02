@@ -62,7 +62,7 @@ public:
 	bool IsSynced() const { return synced_v; }
 
 	/**
-	 * Returns the command string that is unique for this executor.
+	 * Whether cheats are required for this executor
 	 */
 	bool IsCheatRequired() const { return cheatRequired; }
 

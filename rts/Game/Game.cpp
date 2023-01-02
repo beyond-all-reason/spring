@@ -22,6 +22,7 @@
 #include "SyncedGameCommands.h"
 #include "UnsyncedActionExecutor.h"
 #include "UnsyncedGameCommands.h"
+#include "UnsyncedGameReleaseCommands.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Game/UI/PlayerRoster.h"
@@ -274,6 +275,7 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	// after this, other components are able to register chat action-executors
 	SyncedGameCommands::CreateInstance();
 	UnsyncedGameCommands::CreateInstance();
+	UnsyncedGameReleaseCommands::CreateInstance();
 
 	// note: makes no sense to create this unless we have AI's
 	// (events will just go into the void otherwise) but it is
@@ -691,6 +693,7 @@ void CGame::LoadInterface()
 	// NB: these are also added to word-completion
 	syncedGameCommands->AddDefaultActionExecutors();
 	unsyncedGameCommands->AddDefaultActionExecutors();
+	unsyncedGameReleaseCommands->AddDefaultActionExecutors();
 
 	// interface components
 	cmdColors.LoadConfigFromFile("cmdcolors.txt");
@@ -909,6 +912,7 @@ void CGame::KillMisc()
 	LOG("[Game::%s][3]", __func__);
 	// TODO move these to the end of this dtor, once all action-executors are registered by their respective engine sub-parts
 	UnsyncedGameCommands::DestroyInstance(gu->globalReload);
+	UnsyncedGameReleaseCommands::DestroyInstance(gu->globalReload);
 	SyncedGameCommands::DestroyInstance(gu->globalReload);
 }
 

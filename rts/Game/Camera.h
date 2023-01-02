@@ -284,7 +284,7 @@ private:
 	// PROJTYPE_*
 	unsigned int projType = -1u;
 
-	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
+	bool movState[11]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
 };
 

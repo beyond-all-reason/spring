@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include "UnsyncedGameCommands.h"
+#include "UnsyncedGameReleaseCommands.h"
 
 #include "UnsyncedActionExecutor.h"
 #include "SyncedGameCommands.h"
@@ -3604,76 +3605,12 @@ private:
 // TODO CGame stuff in UnsyncedGameCommands: refactor (or move)
 bool CGame::ActionReleased(const Action& action)
 {
-	switch (hashString(action.command.c_str())) {
-		case hashString("drawinmap"): {
-			inMapDrawer->SetDrawMode(false);
-		} break;
+	const IUnsyncedActionExecutor* executor = unsyncedGameReleaseCommands->GetActionExecutor(action.command);
 
-		case hashString("moveforward"): {
-			camera->SetMovState(CCamera::MOVE_STATE_FWD, false);
-		} break;
-		case hashString("moveback"): {
-			camera->SetMovState(CCamera::MOVE_STATE_BCK, false);
-		} break;
-		case hashString("moveleft"): {
-			camera->SetMovState(CCamera::MOVE_STATE_LFT, false);
-		} break;
-		case hashString("moveright"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RGT, false);
-		} break;
-		case hashString("moveup"): {
-			camera->SetMovState(CCamera::MOVE_STATE_UP, false);
-		} break;
-		case hashString("movedown"): {
-			camera->SetMovState(CCamera::MOVE_STATE_DWN, false);
-		} break;
-
-		case hashString("movefast"): {
-			camera->SetMovState(CCamera::MOVE_STATE_FST, false);
-		} break;
-		case hashString("moveslow"): {
-			camera->SetMovState(CCamera::MOVE_STATE_SLW, false);
-		} break;
-		case hashString("movetilt"): {
-			camera->SetMovState(CCamera::MOVE_STATE_TLT, false);
-		} break;
-		case hashString("movereset"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RST, false);
-		} break;
-		case hashString("moverotate"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RTT, false);
-		} break;
-
-		case hashString("mouse1"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 1);
-		} break;
-		case hashString("mouse2"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 2);
-		} break;
-		case hashString("mouse3"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 3);
-		} break;
-
-		#if 0
-		// HACK   somehow weird things happen when MouseRelease is called for button 4 and 5.
-		// Note that SYS_WMEVENT on windows also only sends MousePress events for these buttons.
-		case hashString("mouse4"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 4);
-		} break;
-		case hashString("mouse5"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 5);
-		} break;
-		#endif
-
-		case hashString("mousestate"): {
-			mouse->ToggleMiddleClickScroll();
-		} break;
-		case hashString("gameinfoclose"): {
-			CGameInfo::Disable();
-		} break;
-
-		default: {
-		} break;
+	if (executor != nullptr) {
+		// an executor for that action was found
+		if (executor->ExecuteAction(UnsyncedAction(action, 0, false)))
+			return true;
 	}
 
 	return false;

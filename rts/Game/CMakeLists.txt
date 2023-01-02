@@ -73,6 +73,7 @@ make_global_var(sources_engine_Game
 		"${CMAKE_CURRENT_SOURCE_DIR}/UI/TooltipConsole.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/UI/UnitTracker.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/UnsyncedGameCommands.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/UnsyncedGameReleaseCommands.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/WaitCommandsAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/WordCompletion.cpp"
 	)
