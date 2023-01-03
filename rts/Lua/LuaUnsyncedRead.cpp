@@ -433,13 +433,23 @@ int LuaUnsyncedRead::GetProfilerTimeRecord(lua_State* L)
 {
 	const CTimeProfiler::TimeRecord& record = profiler.GetTimeRecord(lua_tostring(L, 1));
 
+	int numRet = 5;
 	lua_pushnumber(L, record.total.toMilliSecsf());
 	lua_pushnumber(L, record.current.toMilliSecsf());
-	// lua_pushnumber(L, record.frames[0].toMilliSecsf());
 	lua_pushnumber(L, record.stats.x); // max-dt
 	lua_pushnumber(L, record.stats.y); // time-%
 	lua_pushnumber(L, record.stats.z); // peak-%
-	return 5;
+
+	if (luaL_optboolean(L, 2, false)) {
+		for (size_t i = 0; i < record.frames.size(); i++) {
+			lua_pushnumber(L, i + 1); // key
+			lua_pushnumber(L, record.frames[i].toMilliSecsf()); // val
+			lua_rawset(L, -3);
+		}
+		++numRet;
+	}
+
+	return numRet;
 }
 
 int LuaUnsyncedRead::GetProfilerRecordNames(lua_State* L)
