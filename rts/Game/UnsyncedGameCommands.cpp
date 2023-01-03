@@ -1392,33 +1392,84 @@ public:
 	DebugActionExecutor() : IUnsyncedActionExecutor("Debug", "Enable/Disable debug rendering mode") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool drawDebug = !globalRendering->drawDebug;
-		bool draw4Real = drawDebug;
+		bool drawDebug = false;
+		bool draw4Real = false;
+		bool changeSorting = false;
 
-		if (!action.GetArgs().empty()) {
-			auto args = CSimpleParser::Tokenize(action.GetArgs());
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-			if (args.size() > 0) {
-				if (args[0] == "reset") {
-					ProfileDrawer::SetEnabled(false);
-					profiler.SetEnabled(false);
-					profiler.ResetState();
-					profiler.SetEnabled(globalRendering->drawDebug);
-					ProfileDrawer::SetEnabled(globalRendering->drawDebug);
-					return true;
-				}
-				drawDebug = StringToBool(args[0]);
-			}
-			if (args.size() > 1)
-				draw4Real = StringToBool(args[1]);
+		if (args.size() == 0) {
+			drawDebug = !globalRendering->drawDebug;
+			draw4Real = drawDebug;
 		}
+		if (args.size() > 0) {
+			if (args[0] == "reset") {
+				ProfileDrawer::SetEnabled(false);
+				profiler.SetEnabled(false);
+				profiler.ResetState();
+				profiler.SetEnabled(globalRendering->drawDebug);
+				ProfileDrawer::SetEnabled(globalRendering->drawDebug);
+				return true;
+			}
+			else if(args[0] == "sort") {
+				drawDebug = globalRendering->drawDebug;
+				draw4Real = drawDebug;
+				changeSorting = true;
+				profiler.SetSortingType(CTimeProfiler::SortType::ST_ALPHABETICAL); //default
+			}
+			else {
+				drawDebug = StringToBool(args[0]);
+				draw4Real = drawDebug;
+			}
+		}
+		if (args.size() > 1) {
+			if (changeSorting) {
+				StringToLowerInPlace(args[1]);
+				switch (hashString(args[1].c_str()))
+				{
+				case hashString("default"): [[fallthrough]];
+				case hashString("abc"): [[fallthrough]];
+				case hashString("alphabetical"): {
+					profiler.SetSortingType(CTimeProfiler::SortType::ST_ALPHABETICAL);
+				} break;
+				case hashString("totaltime"): [[fallthrough]];
+				case hashString("total"): {
+					profiler.SetSortingType(CTimeProfiler::SortType::ST_TOTALTIME);
+				} break;
+				case hashString("currenttime"): [[fallthrough]];
+				case hashString("curr"): [[fallthrough]];
+				case hashString("cur"): [[fallthrough]];
+				case hashString("current"): {
+					profiler.SetSortingType(CTimeProfiler::SortType::ST_CURRENTTIME);
+				} break;
+				case hashString("maxtime"): [[fallthrough]];
+				case hashString("max"): {
+					profiler.SetSortingType(CTimeProfiler::SortType::ST_MAXTIME);
+				} break;
+				case hashString("lag"): {
+					profiler.SetSortingType(CTimeProfiler::SortType::ST_LAG);
+				} break;
+				default: {} break;
+				}
+
+				return true;
+			}
+			else {
+				draw4Real = StringToBool(args[1]);
+			}
+		}
+
 
 		globalRendering->drawDebug = drawDebug;
 
-		if (draw4Real && globalRendering->drawDebug)
-			ProfileDrawer::SetEnabled(true );
-		else
-			ProfileDrawer::SetEnabled(false);
+		if (draw4Real && globalRendering->drawDebug) {
+			if (!ProfileDrawer::IsEnabled())
+				ProfileDrawer::SetEnabled(true);
+		}
+		else {
+			if (ProfileDrawer::IsEnabled())
+				ProfileDrawer::SetEnabled(false);
+		}
 
 		profiler.SetEnabled(globalRendering->drawDebug);
 		return true;

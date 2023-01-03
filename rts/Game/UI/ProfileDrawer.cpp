@@ -323,7 +323,7 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		profiler.RefreshProfiles();
 
 	constexpr SColor winColor = SColor{ 0.0f, 0.0f, 0.5f, 0.5f };
-	constexpr float textSize = 0.5f;
+	constexpr float textSize = 0.4f;
 
 	const auto& sortedProfiles = profiler.GetSortedProfiles();
 

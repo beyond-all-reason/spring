@@ -103,7 +103,6 @@ public:
 	static bool RegisterTimer(const char* name);
 	static bool UnRegisterTimer(const char* name);
 
-
 	struct TimeRecord {
 		TimeRecord() {
 			frames.fill(spring_time(0));
@@ -124,6 +123,19 @@ public:
 		bool showGraph = false;
 	};
 
+	enum SortType {
+		ST_ALPHABETICAL = 0,
+		ST_TOTALTIME    = 1,
+		ST_CURRENTTIME  = 2,
+		ST_MAXTIME      = 3,
+		ST_LAG          = 4,
+		ST_COUNT        = 5
+	};
+
+	using TimeRecordPair = std::pair<std::string, TimeRecord>;
+	using ProfileSortFunc = bool(*)(const TimeRecordPair&, const TimeRecordPair&);
+
+	static const std::array<ProfileSortFunc, SortType::ST_COUNT> SortingFunctions;
 public:
 	std::vector< std::pair<std::string, TimeRecord> >& GetSortedProfiles() { return sortedProfiles; }
 	std::vector< std::deque< std::pair<spring_time, spring_time> > >& GetThreadProfiles() { return threadProfiles; }
@@ -157,6 +169,11 @@ public:
 		ToggleLock(false);
 	}
 
+	void SetSortingType(SortType st) {
+		sortingType = st;
+		++resortProfiles;
+	}
+
 	void Update();
 	void UpdateRaw();
 
@@ -184,6 +201,7 @@ public:
 	);
 
 private:
+	SortType sortingType = SortType::ST_ALPHABETICAL;
 	spring::unordered_map<unsigned, TimeRecord> profiles;
 
 	std::vector< std::pair<std::string, TimeRecord> > sortedProfiles;

@@ -24,6 +24,14 @@ static spring::unordered_map<unsigned, int> refCounters;
 
 static CGlobalUnsyncedRNG profileColorRNG;
 
+const std::array<CTimeProfiler::ProfileSortFunc, CTimeProfiler::SortType::ST_COUNT> CTimeProfiler::SortingFunctions = {
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.first          < b.first         ); }, // ST_ALPHABETICAL = 0,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.total   > b.second.total  ); }, // ST_TOTALTIME    = 1,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.y > b.second.stats.y); }, // ST_CURRENTTIME  = 2,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.z > b.second.stats.z); }, // ST_MAXTIME      = 3,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.x > b.second.stats.x); }, // ST_LAG          = 4,
+};
+
 
 spring_time BasicTimer::GetDuration() const
 {
@@ -215,6 +223,9 @@ void CTimeProfiler::Update()
 	// FIXME: non-locking threadsafe
 	std::lock_guard<ProfileMutexType> lock(profileMutex);
 
+	if (sortingType != ST_ALPHABETICAL)
+		++resortProfiles;
+
 	UpdateRaw();
 	ResortProfilesRaw();
 	RefreshProfilesRaw();
@@ -268,11 +279,6 @@ void CTimeProfiler::ResortProfilesRaw()
 		sortedProfiles.clear();
 		sortedProfiles.reserve(profiles.size());
 
-		typedef std::pair<std::string, TimeRecord> TimeRecordPair;
-		typedef std::function<bool(const TimeRecordPair&, const TimeRecordPair&)> ProfileSortFunc;
-
-		const ProfileSortFunc sortFunc = [](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.first < b.first); };
-
 		// either caller already has lock, or we are disabled and thread-safe
 		{
 			std::lock_guard<HashNamMutexType> lock(hashToNameMutex);
@@ -291,6 +297,7 @@ void CTimeProfiler::ResortProfilesRaw()
 			}
 		}
 
+		const auto& sortFunc = SortingFunctions[sortingType];
 		std::sort(sortedProfiles.begin(), sortedProfiles.end(), sortFunc);
 	}
 }
