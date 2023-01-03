@@ -12,7 +12,7 @@ public:
 	Action() {}
 	Action(const std::string& line);
 
-	typedef std::function<bool (Action, Action)> Comparison;
+	typedef std::function<bool (const Action &, const Action &)> Comparison;
 
 	int         bindingIndex; ///< the order for the action trigger
 	std::string command;      ///< first word, lowercase
