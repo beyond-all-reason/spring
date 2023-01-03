@@ -753,8 +753,7 @@ bool CKeyBindings::RemoveActionFromList(ActionList& al, const Action& action, co
 	auto it = al.begin();
 
 	while (it != al.end()) {
-		const auto a = it.base();
-		if (comparison(action, *a)) {
+		if (comparison(action, *it)) {
 			it = al.erase(it);
 			success = true;
 		} else {
