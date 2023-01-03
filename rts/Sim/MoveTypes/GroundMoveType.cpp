@@ -1980,11 +1980,24 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		#endif
 
 		{
+			const float cwpDistSq = (cwp - pos).SqLength();
+			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
+
+			// path manager returns the first point beyond searchRadius, so add a little extra
+			// to the cut off limit to allow for that. 
+			const float radiusLimit = searchRadius + WAYPOINT_RADIUS*2;
+
+			// If the pathfinder determined that the path could be accessed in
+			// a straight line, it may have given a single distant goal waypoint.
+			// Limit how far to search for obstacles here, a square search doesn't
+			// make sense over anything, but a small distance here.
+			const float3 targetPos = (cwpDistSq <= Square(radiusLimit)) ? cwp : pos + (cwp - pos).SafeNormalize() * radiusLimit;
+
 			// check the rectangle between pos and cwp for obstacles
 			// if still further than SS elmos from waypoint, disallow skipping
 			// note: can somehow cause units to move in circles near obstacles
 			// (mantis3718) if rectangle is too generous in size
-			const bool rangeTest = owner->moveDef->TestMoveSquareRange(owner, float3::min(cwp, pos), float3::max(cwp, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
+			const bool rangeTest = owner->moveDef->TestMoveSquareRange(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
 			const bool allowSkip = ((cwp - pos).SqLength() <= Square(SQUARE_SIZE));
 
 			#ifdef PATHING_DEBUG
