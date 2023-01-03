@@ -312,8 +312,7 @@ bool CLoadScreen::Draw()
 
 void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 {
-	if (!mtLoading)
-		spring::UnfreezeSpring(WDT_LOAD);
+	spring::UnfreezeSpring(WDT_LOAD);
 
 	std::lock_guard<spring::recursive_mutex> lck(mutex);
 

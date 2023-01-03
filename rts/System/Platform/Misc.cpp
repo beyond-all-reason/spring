@@ -576,7 +576,7 @@ namespace Platform
 	bool Is32BitEmulation() { return false; }
 	#endif
 
-	bool IsRunningInGDB() {
+	bool IsRunningInDebugger() {
 		#ifndef _WIN32
 		char buf[1024];
 

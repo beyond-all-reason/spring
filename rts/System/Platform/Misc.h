@@ -93,7 +93,7 @@ namespace Platform
 
 	bool Is64Bit();
 	bool Is32BitEmulation();
-	bool IsRunningInGDB();
+	bool IsRunningInDebugger();
 
 	uint64_t FreeDiskSpace(const std::string& path);
 	uint32_t NativeWordSize(); // compiled process code

@@ -247,7 +247,7 @@ void ShowSplashScreen(
 		// generating a kill-request
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {}
-		Watchdog::ClearTimer(WDT_LOAD);
+		Watchdog::ClearTimer(WDT_MAIN);
 	}
 
 	glPopAttrib();

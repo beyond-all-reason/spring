@@ -3418,6 +3418,7 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 	mtx.unlock();
 	std::this_thread::yield();
 	mtx.lock();
+	Watchdog::ClearTimer(WDT_LOAD);
 
 	lua_pushboolean(L, true); //hint Lua should keep calling Yield
 	return 1;

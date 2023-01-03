@@ -21,7 +21,7 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
 
-CONFIG(int, HangTimeout).defaultValue(10).minimumValue(-1).maximumValue(600)
+CONFIG(int, HangTimeout).defaultValue(60).minimumValue(-1).maximumValue(600)
 		.description("Number of seconds that, if spent in the same code segment, indicate a hang; -1 to disable.");
 
 namespace Watchdog
@@ -374,7 +374,7 @@ namespace Watchdog
 		memset(threadSlots, 0, sizeof(threadSlots));
 
 		// disable if gdb is running
-		if (Platform::IsRunningInGDB()) {
+		if (Platform::IsRunningInDebugger()) {
 			LOG("[WatchDog::%s] disabled (gdb detected)", __func__);
 			return;
 		}

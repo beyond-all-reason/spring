@@ -368,7 +368,9 @@ void CGame::Load(const std::string& mapFileName)
 		LOG("[Game::%s][1] globalQuit=%d threaded=%d", __func__, globalQuit.load(), !Threading::IsMainThread());
 
 		LoadMap(mapFileName);
+		Watchdog::ClearTimer(WDT_LOAD);
 		LoadDefs(defsParser);
+		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
 		LOG_L(L_WARNING, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
 
@@ -384,7 +386,9 @@ void CGame::Load(const std::string& mapFileName)
 		LOG("[Game::%s][2] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 		PreLoadSimulation(defsParser);
+		Watchdog::ClearTimer(WDT_LOAD);
 		PreLoadRendering();
+		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
 		LOG_L(L_WARNING, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
@@ -394,7 +398,9 @@ void CGame::Load(const std::string& mapFileName)
 		LOG("[Game::%s][3] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 		PostLoadSimulation(defsParser);
+		Watchdog::ClearTimer(WDT_LOAD);
 		PostLoadRendering();
+		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
 		LOG_L(L_WARNING, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
@@ -404,6 +410,7 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][4] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadInterface();
+			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
@@ -415,6 +422,7 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][5] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadFinalize();
+			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
@@ -426,6 +434,7 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][6] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadLua(saveFileHandler != nullptr, false);
+			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
@@ -438,18 +447,24 @@ void CGame::Load(const std::string& mapFileName)
 		if (!globalQuit && saveFileHandler != nullptr) {
 			loadscreen->SetLoadMessage("Loading Saved Game");
 			saveFileHandler->LoadGame();
+			Watchdog::ClearTimer(WDT_LOAD);
 			LoadLua(false, true);
+			Watchdog::ClearTimer(WDT_LOAD);
 		} else {
 			ENTER_SYNCED_CODE();
 			eventHandler.GamePreload();
+			Watchdog::ClearTimer(WDT_LOAD);
 			{
 				auto lock = CLoadLock::GetUniqueLock();
 				eventHandler.CollectGarbage(true);
+				Watchdog::ClearTimer(WDT_LOAD);
 			}
 
 			//needed in case pre-game terraform changed the map
 			readMap->UpdateHeightBounds();
+			Watchdog::ClearTimer(WDT_LOAD);
 			pathManager->PostFinalizeRefresh();
+			Watchdog::ClearTimer(WDT_LOAD);
 			LEAVE_SYNCED_CODE();
 		}
 
@@ -469,6 +484,7 @@ void CGame::Load(const std::string& mapFileName)
 			LOG("[Game::%s][8] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
 			LoadSkirmishAIs();
+			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
 			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
