@@ -500,8 +500,8 @@ CBumpWater::CBumpWater()
 		waterShader->SetUniform("depthmap"      , 7 );
 		waterShader->SetUniform("coastmap"      , 6 );
 		waterShader->SetUniform("waverand"      , 8 );
-		waterShader->SetUniform("infotex"       , 1 );
 		waterShader->SetUniform("shadowmap"     , 9 );
+		waterShader->SetUniform("infotex"       , 10);
 		waterShader->SetUniform("shadowColorTex", 11);
 		waterShader->SetUniform("windVector"    , 15.0f, 15.0f);
 
