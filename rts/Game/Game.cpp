@@ -689,8 +689,6 @@ void CGame::PreLoadRendering()
 }
 
 void CGame::PostLoadRendering() {
-	auto lock = CLoadLock::GetUniqueLock();
-
 	worldDrawer.InitPost();
 }
 

@@ -48,6 +48,7 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/LoadLock.h"
 
 CONFIG(bool, PreloadModels).defaultValue(true).description("The engine will preload all models");
 
@@ -97,6 +98,7 @@ void CWorldDrawer::InitPost() const
 			}
 		}
 	}
+	auto lock = CLoadLock::GetUniqueLock();
 	{
 		loadscreen->SetLoadMessage("Creating ShadowHandler");
 		shadowHandler.Init();
@@ -148,6 +150,7 @@ void CWorldDrawer::InitPost() const
 	{
 		ISky::GetSky()->SetupFog();
 	}
+	lock = {}; //unlock, no point in locking it further
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);

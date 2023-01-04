@@ -14,7 +14,9 @@ public:
 	void lock() {
 		mtx.lock();
 		globalRendering->MakeCurrentContext(false); //set
+#ifdef _DEBUG
 		inLoadingThread = Threading::IsGameLoadThread();
+#endif
 	}
 	void unlock() {
 		globalRendering->MakeCurrentContext(true ); //clear
@@ -23,7 +25,9 @@ public:
 	bool try_lock() { assert(false); return true; } // placeholder
 	native_handle_type native_handle() { return native_handle_type{}; } // placeholder
 private:
+#ifdef _DEBUG
 	bool inLoadingThread = false;
+#endif
 	std::recursive_mutex mtx = {};
 };
 

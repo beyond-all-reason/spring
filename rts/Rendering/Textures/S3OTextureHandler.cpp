@@ -145,7 +145,7 @@ unsigned int CS3OTextureHandler::LoadAndCacheTexture(
 		assert(preloadCall);
 #endif
 
-		auto pair = bitmapCache.emplace(textureName, {});
+		auto pair = bitmapCache.emplace(textureName, CBitmap{});
 		auto iter = pair.first;
 
 		bitmap = &(iter->second);
@@ -165,6 +165,7 @@ unsigned int CS3OTextureHandler::LoadAndCacheTexture(
 	}
 
 	const unsigned int texID = preloadCall ? 0 : bitmap->CreateMipMapTexture();
+	assert(preloadCall || texID > 0);
 
 	if (textureIt != textureCache.end() && texID > 0) {
 		assert(!preloadCall);

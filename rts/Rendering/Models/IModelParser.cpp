@@ -21,6 +21,7 @@
 #include "System/SafeUtil.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/ContainerUtil.h"
+#include "System/LoadLock.h"
 #include "lib/assimp/include/assimp/Importer.hpp"
 
 
@@ -418,7 +419,12 @@ void CModelLoader::Upload(S3DModel* model) const {
 
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
-	S3DModelVAO::GetInstance().UploadVBOs();
+	{
+		auto lock = CLoadLock::GetUniqueLock(); //mostly needed to support calls from CFeatureHandler::LoadFeaturesFromMap()
+		S3DModelVAO::GetInstance().UploadVBOs();
+		// make sure textures (already preloaded) are fully loaded
+		textureHandlerS3O.LoadTexture(model);
+	}
 
 	for (auto* p : model->pieceObjects) {
 		p->ReleaseShatterIndices();
@@ -429,9 +435,6 @@ void CModelLoader::Upload(S3DModel* model) const {
 	// 3DO atlases are preloaded C3DOTextureHandler::Init()
 	if (model->type == MODELTYPE_3DO)
 		return;
-
-	// make sure textures (already preloaded) are fully loaded
-	textureHandlerS3O.LoadTexture(model);
 
 	// warn about models with bad normals (they break lighting)
 	// skip for 3DO's since those have auto-calculated normals
