@@ -13,21 +13,28 @@ public:
 
 	void lock() {
 		mtx.lock();
-		globalRendering->MakeCurrentContext(false); //set
-#ifdef _DEBUG
-		inLoadingThread = Threading::IsGameLoadThread();
-#endif
+
+		// hack to protect from multiple context acquisions in case of recursive lock
+		auto& thisThreadLocksCount = locksCount[Threading::IsGameLoadThread()];
+		++thisThreadLocksCount;
+		if (thisThreadLocksCount == 1)
+			globalRendering->MakeCurrentContext(false); //set
 	}
 	void unlock() {
-		globalRendering->MakeCurrentContext(true ); //clear
+
+		// hack to protect from multiple context clear in case of recursive lock
+		auto& thisThreadLocksCount = locksCount[Threading::IsGameLoadThread()];
+		--thisThreadLocksCount;
+
+		if (thisThreadLocksCount == 0)
+			globalRendering->MakeCurrentContext(true ); //clear
+
 		mtx.unlock();
 	}
 	bool try_lock() { assert(false); return true; } // placeholder
 	native_handle_type native_handle() { return native_handle_type{}; } // placeholder
 private:
-#ifdef _DEBUG
-	bool inLoadingThread = false;
-#endif
+	std::array<uint32_t, 2> locksCount = { 0 };
 	std::recursive_mutex mtx = {};
 };
 
