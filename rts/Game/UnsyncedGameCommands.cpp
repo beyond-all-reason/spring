@@ -1478,11 +1478,23 @@ public:
 
 class DebugCubeMapActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DebugCubeMapActionExecutor() : IUnsyncedActionExecutor("DebugCubeMap", "") {
+	DebugCubeMapActionExecutor() : IUnsyncedActionExecutor("DebugCubeMap", "Use debug cubemap texture instead of the sky") {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		globalRendering->drawDebugCubeMap = !globalRendering->drawDebugCubeMap;
+		ISky::SetSky();
+		return true;
+	}
+};
+
+class NoSkyActionExecutor : public IUnsyncedActionExecutor {
+public:
+	NoSkyActionExecutor() : IUnsyncedActionExecutor("NoSky", "Do not draw any sky (use NullSky)") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		globalRendering->drawNoSky = !globalRendering->drawNoSky;
 		ISky::SetSky();
 		return true;
 	}
@@ -3819,6 +3831,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<NoSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugColVolDrawerActionExecutor>());
