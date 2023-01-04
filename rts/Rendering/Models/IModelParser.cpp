@@ -422,22 +422,23 @@ void CModelLoader::Upload(S3DModel* model) const {
 	{
 		auto lock = CLoadLock::GetUniqueLock(); //mostly needed to support calls from CFeatureHandler::LoadFeaturesFromMap()
 		S3DModelVAO::GetInstance().UploadVBOs();
-		// make sure textures (already preloaded) are fully loaded
-		textureHandlerS3O.LoadTexture(model);
+
+		// 3DO atlases are preloaded C3DOTextureHandler::Init()
+		if (model->type != MODELTYPE_3DO) {
+			// make sure textures (already preloaded) are fully loaded
+			textureHandlerS3O.LoadTexture(model);
+		}
 	}
 
 	for (auto* p : model->pieceObjects) {
 		p->ReleaseShatterIndices();
 	}
 
-	model->uploaded = true;
-
-	// 3DO atlases are preloaded C3DOTextureHandler::Init()
-	if (model->type == MODELTYPE_3DO)
-		return;
-
 	// warn about models with bad normals (they break lighting)
 	// skip for 3DO's since those have auto-calculated normals
-	CheckPieceNormals(model, model->GetRootPiece());
+	if (model->type != MODELTYPE_3DO)
+		CheckPieceNormals(model, model->GetRootPiece());
+
+	model->uploaded = true;
 }
 
