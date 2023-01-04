@@ -1488,14 +1488,13 @@ public:
 	}
 };
 
-class NoSkyActionExecutor : public IUnsyncedActionExecutor {
+class DrawSkyActionExecutor : public IUnsyncedActionExecutor {
 public:
-	NoSkyActionExecutor() : IUnsyncedActionExecutor("NoSky", "Do not draw any sky (use NullSky)") {
+	DrawSkyActionExecutor() : IUnsyncedActionExecutor("DrawSky", "Whether to actually draw sky") {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		globalRendering->drawNoSky = !globalRendering->drawNoSky;
-		ISky::SetSky();
+		globalRendering->drawSky = !globalRendering->drawSky;
 		return true;
 	}
 };
@@ -3831,7 +3830,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<NoSkyActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DrawSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugColVolDrawerActionExecutor>());

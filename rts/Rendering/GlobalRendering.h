@@ -252,7 +252,6 @@ public:
 	bool drawDebug;
 	bool drawDebugTraceRay;
 	bool drawDebugCubeMap;
-	bool drawNoSky;
 
 	bool glDebug;
 	bool glDebugErrors;

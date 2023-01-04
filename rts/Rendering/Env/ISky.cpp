@@ -58,11 +58,6 @@ void ISky::SetSky()
 {
 	sky = nullptr; //break before make
 
-	if (globalRendering->drawNoSky) {
-		sky = std::make_unique<CNullSky>();
-		return;
-	}
-
 	try {
 		if (globalRendering->drawDebugCubeMap) {
 			int2 dims = debugCubeMapTexture.GetDimensions();
