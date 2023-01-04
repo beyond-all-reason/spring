@@ -48,7 +48,7 @@ RUN cd /; \
 # Main Image
 FROM ubuntu:18.04
 
-ARG cmake_version=3.16.*
+ARG cmake_version=3.25.*
 ARG ccache_version="v4.5.1"
 
 COPY --from=mxe /mxe /mxe
@@ -69,6 +69,8 @@ RUN apt-get update -y; \
         pigz \
         software-properties-common \
         python3-pip; \
+        pip3 install --upgrade pip; \
+        pip3 install scikit-build; \
         pip3 install cmake==$cmake_version; \
         apt purge python3-pip -y; apt auto-remove -y
 
