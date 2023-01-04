@@ -532,7 +532,9 @@ void CArchiveScanner::ScanDir(const std::string& curPath, std::deque<std::string
 	std::deque<std::string> subDirs = {curPath};
 
 	while (!subDirs.empty()) {
-		Watchdog::ClearTimer(WDT_VFSI);
+		#if !defined(DEDICATED) && !defined(UNITSYNC)
+			Watchdog::ClearTimer(WDT_VFSI);
+		#endif
 
 		const std::string& subDir = FileSystem::EnsurePathSepAtEnd(subDirs.front());
 		const std::vector<std::string>& foundFiles = dataDirsAccess.FindFiles(subDir, "*", FileQueryFlags::INCLUDE_DIRS);
