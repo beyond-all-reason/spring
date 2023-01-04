@@ -497,8 +497,8 @@ CBumpWater::CBumpWater()
 		waterShader->SetUniform("foam"          , 3 );
 		waterShader->SetUniform("reflection"    , 4 );
 		waterShader->SetUniform("refraction"    , 5 );
-		waterShader->SetUniform("depthmap"      , 7 );
 		waterShader->SetUniform("coastmap"      , 6 );
+		waterShader->SetUniform("depthmap"      , 7 );
 		waterShader->SetUniform("waverand"      , 8 );
 		waterShader->SetUniform("shadowmap"     , 9 );
 		waterShader->SetUniform("infotex"       , 10);
