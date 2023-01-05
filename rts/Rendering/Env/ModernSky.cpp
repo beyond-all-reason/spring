@@ -6,6 +6,8 @@
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Env/DebugCubeMapTexture.h"
 #include "Rendering/Env/WaterRendering.h"
+#include "System/StringUtil.h"
+#include "Game/Game.h"
 #include "Game/Camera.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Map/MapInfo.h"
@@ -13,23 +15,25 @@
 
 CModernSky::CModernSky()
 {
-#ifndef HEADLESS
-	skyShader  = shaderHandler->CreateProgramObject("[ModernSky]", "Sky");
-	skyShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModernSkyVS.glsl", "", GL_VERTEX_SHADER));
-	skyShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModernSkyFS.glsl", "", GL_FRAGMENT_SHADER));
-	skyShader->Link();
-	skyShader->Enable();
-	skyShader->Disable();
-	valid = skyShader->Validate();
-#else
 	valid = true;
+#ifndef HEADLESS
+	for (size_t i = 0; i < 2; ++i) {
+		skyShaders[i] = shaderHandler->CreateProgramObject("[ModernSky]", "Sky-" + IntToString(i));
+		skyShaders[i]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModernSkyVS.glsl", "", GL_VERTEX_SHADER));
+		skyShaders[i]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ModernSkyFS.glsl", "", GL_FRAGMENT_SHADER));
+		skyShaders[i]->SetFlag("SIMPLIFIED_RENDERING", static_cast<int>(i == 1));
+		skyShaders[i]->Link();
+		skyShaders[i]->Enable();
+		skyShaders[i]->Disable();
+		valid &= skyShaders[i]->Validate();
+	}
 #endif
 }
 
 CModernSky::~CModernSky()
 {
 #ifndef HEADLESS
-	shaderHandler->ReleaseProgramObject("[ModernSky]", "Sky");
+	shaderHandler->ReleaseProgramObjects("[ModernSky]");
 #endif
 }
 
@@ -61,6 +65,9 @@ void CModernSky::Draw()
 
 	vao.Bind();
 	//assert(skyShader->IsValid());
+
+	auto* skyShader = skyShaders[game->GetDrawMode() != CGame::GameDrawMode::gameNormalDraw];
+
 	skyShader->Enable();
 
 	const float3 midMap{ static_cast<float>(SQUARE_SIZE * mapDims.mapx >> 1), 0.0f, static_cast<float>(SQUARE_SIZE * mapDims.mapy >> 1) };

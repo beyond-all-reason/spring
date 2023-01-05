@@ -10,7 +10,7 @@ uniform vec3 fogColor;
 uniform vec4 planeColor; // .w signals if enabled
 uniform vec3 sunDir;
 
-const float cirrus1  = 0.8;
+const float cirrus1  = 0.9;
 const float cumulus1 = 1.8;
 
 out vec4 fragColor;
@@ -45,6 +45,7 @@ float Value3D( vec3 P )
 #define noise(x) (Value3D(x))
 
 const mat3 m = mat3(0.0, 1.60,  1.20, -1.6, 0.72, -0.96, -1.2, -0.96, 1.28);
+#if SIMPLIFIED_RENDERING == 0
 float fbm(vec3 p)
 {
 	float f = 0.0;
@@ -55,6 +56,17 @@ float fbm(vec3 p)
 	f += noise(p) / 24;
 	return f;
 }
+#else
+float fbm(vec3 p)
+{
+	float f = 0.0;
+	f += noise(p) / 2 ; p = m * p * 1.1;
+	f += noise(p) / 4 ; p = m * p * 2.2;
+	f += noise(p) / 12 ;
+	f *= 1.25;
+	return f;
+}
+#endif
 
 float csstep(float m0, float m1, float n0, float n1, float v)
 {
@@ -75,7 +87,6 @@ void main()
 	fragColor.rgb = mix(skyColor, planeColor.rgb, wpContrib);
 	fragColor.rgb = mix(fragColor.rgb, sunColor * 1.3, sunContrib);
 
-
     vec3 day_extinction = vec3(1.0);
     vec3 night_extinction = vec3(1.0 - exp(sunDir.y)) * 0.2;
     vec3 extinction = mix(day_extinction, night_extinction, -sunDir.y * 0.2 + 0.5);
@@ -85,6 +96,7 @@ void main()
 	fragColor.rgb = mix(fragColor.rgb, cloudInfo.rgb * extinction * 4.0, density * max(pos.y, 0.0));
 
 	// Cumulus Clouds
+	#if SIMPLIFIED_RENDERING == 0
 	for (int i = 0; i < 2; i++)
 	{
 		//vec3 cpos = pos; cpos.y = smoothstep(-0.5, 1.5, pos.y); cpos.xz /= cpos.y; cpos *= 2.0;
@@ -92,6 +104,15 @@ void main()
 		float density = smoothstep(1.0 - cumulus, 1.0, fbm((0.7 + float(i) * 0.01) * cpos + time * 0.3));
 		fragColor.rgb = mix(fragColor.rgb, cloudInfo.rgb * extinction * density * 5.0, min(density, 1.0) * (max(pos.y, 0.0)));
 	}
+	#else
+	{
+		//vec3 cpos = pos; cpos.y = smoothstep(-0.5, 1.5, pos.y); cpos.xz /= cpos.y; cpos *= 2.0;
+		vec3 cpos = pos; cpos.y = smoothstep(-0.5, 1.5, pos.y); cpos.xz /= cpos.y;
+		float density = smoothstep(1.0 - cumulus, 1.0, fbm((0.7) * cpos + time * 0.3));
+		fragColor.rgb = mix(fragColor.rgb, cloudInfo.rgb * extinction * density * 5.0, min(density, 1.0) * (max(pos.y, 0.0)));
+	}
+	#endif
+
 
 	fragColor.a = (0.5 - csstep(-0.8, -0.0, -0.5, 0.3, pos.y));
 }

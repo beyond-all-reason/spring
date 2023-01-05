@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "ISky.h"
 #include "Rendering/GL/VAO.h"
 #include "Rendering/GL/FBO.h"
@@ -26,6 +28,6 @@ public:
 	std::string GetName() const override { return "ModernSky"; }
 private:
 	VAO vao;
-	Shader::IProgramObject* skyShader  = nullptr;
+	std::array<Shader::IProgramObject*, 2> skyShaders = { nullptr };
 	bool valid = false;
 };
