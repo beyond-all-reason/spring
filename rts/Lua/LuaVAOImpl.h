@@ -78,11 +78,15 @@ private:
 	template <typename TObj>
 	static const SIndexAndCount GetDrawIndicesImpl(const TObj* obj);
 private:
-	VAO* vao = nullptr;
+	std::unique_ptr<VAO> vao = nullptr;
 
 	std::shared_ptr<LuaVBOImpl> vertLuaVBO;
 	std::shared_ptr<LuaVBOImpl> instLuaVBO;
 	std::shared_ptr<LuaVBOImpl> indxLuaVBO;
+
+	uint32_t oldVertVBOId = 0;
+	uint32_t oldInstVBOId = 0;
+	uint32_t oldIndxVBOId = 0;
 
 	uint32_t baseInstance;
 	std::vector<SDrawElementsIndirectCommand> submitCmds;

@@ -23,9 +23,7 @@ LuaVAOImpl::LuaVAOImpl()
 	, indxLuaVBO{nullptr}
 
 	, baseInstance{0u}
-{
-
-}
+{}
 
 void LuaVAOImpl::Delete()
 {
@@ -33,7 +31,7 @@ void LuaVAOImpl::Delete()
 	instLuaVBO = nullptr;
 	indxLuaVBO = nullptr;
 
-	spring::SafeDelete(vao);
+	vao = nullptr;
 }
 
 LuaVAOImpl::~LuaVAOImpl()
@@ -187,17 +185,25 @@ void LuaVAOImpl::CheckDrawPrimitiveType(GLenum mode) const
 
 void LuaVAOImpl::CondInitVAO()
 {
-	if (vao)
-		return; //already init
+	if (vao &&
+		(vertLuaVBO && vertLuaVBO->GetId() == oldVertVBOId) &&
+		(indxLuaVBO && indxLuaVBO->GetId() == oldIndxVBOId) &&
+		(instLuaVBO && instLuaVBO->GetId() == oldInstVBOId))
+		return; //already init and all VBOs still have same IDs
 
-	vao = new VAO();
+	vao = nullptr;
+	vao = std::make_unique<VAO>();
 	vao->Bind();
 
-	if (vertLuaVBO)
+	if (vertLuaVBO) {
 		vertLuaVBO->vbo->Bind(GL_ARRAY_BUFFER); //type is needed cause same buffer could have been rebounded as something else using LuaVBOs functions
+		oldVertVBOId = vertLuaVBO->GetId();
+	}
 
-	if (indxLuaVBO)
+	if (indxLuaVBO) {
 		indxLuaVBO->vbo->Bind(GL_ELEMENT_ARRAY_BUFFER);
+		oldIndxVBOId = indxLuaVBO->GetId();
+	}
 
 	#define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
 
@@ -226,6 +232,7 @@ void LuaVAOImpl::CondInitVAO()
 			vertLuaVBO->vbo->Unbind();
 
 		instLuaVBO->vbo->Bind(GL_ARRAY_BUFFER);
+		oldInstVBOId = instLuaVBO->GetId();
 
 		for (const auto& va : instLuaVBO->bufferAttribDefsVec) {
 			const auto& attr = va.second;

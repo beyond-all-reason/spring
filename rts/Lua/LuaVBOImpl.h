@@ -67,6 +67,8 @@ private:
 	bool FillAttribsNumberImpl(const int numVec4Attribs);
 	bool DefineElementArray(const sol::optional<sol::object> attribDefArgOpt);
 private:
+	uint32_t GetId() const { return vbo->GetIdRaw(); }
+
 	void UpdateModelsVBOElementCount();
 	size_t ModelsVBOImpl();
 
