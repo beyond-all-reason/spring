@@ -98,7 +98,6 @@ bool CLoadScreen::Init()
 	const int mtCfg = configHandler->GetInt("LoadingMT");
 	// user override
 	mtLoading = (mtCfg > 0);
-	mtLoading = true;
 #endif
 
 
