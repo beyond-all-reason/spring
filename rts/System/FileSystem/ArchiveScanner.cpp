@@ -502,7 +502,7 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 	for (const std::string& archive: foundArchives) {
 		ScanArchive(archive, false);
 	#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer(WDT_VFSI);
+		Watchdog::ClearTimer();
 	#endif
 	}
 
@@ -533,7 +533,7 @@ void CArchiveScanner::ScanDir(const std::string& curPath, std::deque<std::string
 
 	while (!subDirs.empty()) {
 		#if !defined(DEDICATED) && !defined(UNITSYNC)
-			Watchdog::ClearTimer(WDT_VFSI);
+			Watchdog::ClearTimer();
 		#endif
 
 		const std::string& subDir = FileSystem::EnsurePathSepAtEnd(subDirs.front());
