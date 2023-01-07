@@ -967,7 +967,7 @@ bool CCustomExplosionGenerator::Explosion(
 		lock.lock();
 	}
 	else {
-		assert(Threading::IsMainThread());
+		assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 	}
 
 	for (int a = 0; a < spawnInfo.size(); a++) {

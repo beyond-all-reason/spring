@@ -452,10 +452,10 @@ void CGame::Load(const std::string& mapFileName)
 			Watchdog::ClearTimer(WDT_LOAD);
 		} else {
 			ENTER_SYNCED_CODE();
-			eventHandler.GamePreload();
-			Watchdog::ClearTimer(WDT_LOAD);
 			{
 				auto lock = CLoadLock::GetUniqueLock();
+				eventHandler.GamePreload();
+				Watchdog::ClearTimer(WDT_LOAD);
 				eventHandler.CollectGarbage(true);
 				Watchdog::ClearTimer(WDT_LOAD);
 			}
