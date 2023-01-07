@@ -69,7 +69,7 @@ list(APPEND engineLibraries ${engineCommonLibraries})
 #list(APPEND engineLibraries engineaGui)
 list(APPEND engineLibraries ${SPRING_SIM_LIBRARIES})
 list(APPEND engineLibraries engineSim)
-list(APPEND engineLibraries pr-downloader_static)
+list(APPEND engineLibraries pr-downloader)
 
 ### Assemble external incude dirs
 list(APPEND engineIncludes ${OPENAL_INCLUDE_DIR})

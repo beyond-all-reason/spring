@@ -26,7 +26,7 @@ list(APPEND engineHeadlessLibraries ${engineCommonLibraries})
 #list(APPEND engineHeadlessLibraries engineaGui)
 list(APPEND engineHeadlessLibraries no-sound)
 list(APPEND engineHeadlessLibraries engineSim)
-list(APPEND engineHeadlessLibraries pr-downloader_static)
+list(APPEND engineHeadlessLibraries pr-downloader)
 
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/assimp/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
