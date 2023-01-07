@@ -802,6 +802,10 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	// StartMoving-->StartEngine will follow
 	StopEngine(callScript, hardStop);
 
+	// force goal to be set to prevent obscure conditions triggering a
+	// stationary unit to try moving due to obstacle collisions.
+	atGoal = true;
+
 	// force WantToStop to return true when useRawMovement is enabled
 	atEndOfPath |= useRawMovement;
 	// only a new StartMoving call can normally reset this
@@ -1016,11 +1020,6 @@ bool CGroundMoveType::FollowPath(int thread)
 					, static_cast<float>(waypointDir.x)
 					, static_cast<float>(waypointDir.y)
 					, static_cast<float>(waypointDir.z));
-
-				LOG("%s rawWantedDir (%f,%f,%f)", __func__
-					, static_cast<float>(rawWantedDir.x)
-					, static_cast<float>(rawWantedDir.y)
-					, static_cast<float>(rawWantedDir.z));
 
 				LOG("%s ffd (%f,%f,%f)", __func__
 					, static_cast<float>(ffd.x)
@@ -2309,7 +2308,7 @@ void CGroundMoveType::HandleObjectCollisions()
 		const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
 		
 		if (squareChange || checkAllowed) {
-			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, true, false, true, curThread);
+			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
 			if (requestPath)
 				ReRequestPath(PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_UPDATE_FULLPATH);
 		}

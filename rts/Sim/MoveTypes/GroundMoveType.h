@@ -249,8 +249,8 @@ private:
 	short wantedHeading = 0;
 	short minScriptChangeHeading = 0;       /// minimum required turn-angle before script->ChangeHeading is called
 
-	bool atGoal = false;
-	bool atEndOfPath = false;
+	bool atGoal = true;
+	bool atEndOfPath = true;
 	bool moveFailed = false;
 
 	bool reversing = false;
