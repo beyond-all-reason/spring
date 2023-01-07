@@ -99,7 +99,7 @@ uniform vec4 clipPlane2 = vec4(0.0, 0.0, 0.0, 1.0); //water clip plane
 uniform float teamColorAlpha = 1.0;
 
 out Data {
-	vec4 uvCoord;
+	centroid vec4 uvCoord;
 	vec4 teamCol;
 
 	vec4 worldPos;

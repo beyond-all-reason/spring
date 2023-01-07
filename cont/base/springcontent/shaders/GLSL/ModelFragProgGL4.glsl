@@ -43,7 +43,7 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 };
 
 in Data {
-	vec4 uvCoord;
+	centroid vec4 uvCoord;
 	vec4 teamCol;
 
 	vec4 worldPos;
