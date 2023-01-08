@@ -765,6 +765,9 @@ namespace Platform
 		for (ifaddrs* iter = ifap; iter != nullptr; iter = iter->ifa_next) {
 			const sockaddr_ll* sal = reinterpret_cast<sockaddr_ll*>(iter->ifa_addr);
 
+			// happens with VPN adapters
+			if (sal == nullptr)
+				continue;
 			if (sal->sll_family != AF_PACKET)
 				continue;
 			if (sal->sll_halen != macAddr.size())
