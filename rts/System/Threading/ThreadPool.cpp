@@ -615,7 +615,7 @@ void SetDefaultThreadCount()
 		};
 
 		const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
-		const std::uint32_t mainCoreAffinity = ~poolCoreAffinity;
+		const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
 
 		if (mainAffinity == 0)
 			mainAffinity = systemCores;

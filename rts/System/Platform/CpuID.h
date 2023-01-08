@@ -43,6 +43,7 @@ namespace springproc {
 		/** Total number of cores in the system. This excludes SMT/HT
 		    cores. */
 		int GetNumPhysicalCores() const { return numPhysicalCores; }
+		int GetNumLogicalCores() const { return numLogicalCores; }
 
 		/** Total number of physical processor dies in the system. */
 		int GetTotalNumPackages() const { return totalNumPackages; }

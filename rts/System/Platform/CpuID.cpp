@@ -151,7 +151,7 @@ namespace springproc {
 
 	void CPUID::SetDefault()
 	{
-		numLogicalCores = Threading::GetLogicalCpuCores();
+		numLogicalCores = spring::thread::hardware_concurrency();
 		numPhysicalCores = numLogicalCores >> 1; //In 2022 HyperThreading is likely more common rather than not
 		availableProceesorAffinityMask = 1;
 		totalNumPackages = 1;

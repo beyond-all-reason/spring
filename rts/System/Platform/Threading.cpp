@@ -193,7 +193,8 @@ namespace Threading {
 
 	int GetLogicalCpuCores() {
 		// auto-detect number of system threads (including hyperthreading)
-		return spring::thread::hardware_concurrency();
+		//return spring::thread::hardware_concurrency();
+		return springproc::CPUID::GetInstance().GetNumLogicalCores();
 	}
 
 	/** Function that returns the number of real cpu cores (not
