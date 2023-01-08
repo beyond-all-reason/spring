@@ -194,6 +194,8 @@ public:
 	CMatrix44f screenViewMatrix;
 	CMatrix44f screenProjMatrix;
 
+	spring_time grTime;
+
 	/// size of one pixel in viewport coordinates, i.e. 1/viewSizeX and 1/viewSizeY
 	float pixelX;
 	float pixelY;

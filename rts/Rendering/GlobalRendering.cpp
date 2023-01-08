@@ -146,6 +146,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(gmeChgFrame),
 	CR_IGNORED(screenViewMatrix),
 	CR_IGNORED(screenProjMatrix),
+	CR_MEMBER(grTime),
 	CR_IGNORED(pixelX),
 	CR_IGNORED(pixelY),
 
@@ -253,6 +254,8 @@ CGlobalRendering::CGlobalRendering()
 
 	, screenViewMatrix()
 	, screenProjMatrix()
+
+	, grTime()
 
 	// pixel geometry
 	, pixelX(0.01f)
@@ -626,6 +629,8 @@ void CGlobalRendering::PostInit() {
 	UniformConstants::GetInstance().Init();
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
+
+	grTime = spring_now();
 }
 
 void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
