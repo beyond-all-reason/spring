@@ -807,6 +807,7 @@ bool SpringApp::Update()
 
 	configHandler->Update();
 	globalRendering->UpdateWindow();
+	globalRendering->UpdateTimer();
 
 	#if 0
 	if (activeController == nullptr)

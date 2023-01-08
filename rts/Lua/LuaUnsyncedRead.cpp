@@ -212,6 +212,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFrameTimer);
 	REGISTER_LUA_CFUNC(DiffTimers);
 
+	REGISTER_LUA_CFUNC(GetDrawSeconds);
+
 	REGISTER_LUA_CFUNC(GetSoundStreamTime);
 	REGISTER_LUA_CFUNC(GetSoundEffectParams);
 
@@ -2208,6 +2210,12 @@ int LuaUnsyncedRead::DiffTimers(lua_State* L)
 			lua_pushnumber(L, dt.toSecsf());
 		}
 	}
+	return 1;
+}
+
+int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
+{
+	lua_pushnumber(L, spring_tomsecs(globalRendering->grTime) * 0.001f);
 	return 1;
 }
 

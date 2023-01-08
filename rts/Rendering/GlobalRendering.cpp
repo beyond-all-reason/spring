@@ -630,7 +630,7 @@ void CGlobalRendering::PostInit() {
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
 
-	grTime = spring_now();
+	UpdateTimer();
 }
 
 void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
@@ -1126,6 +1126,10 @@ void CGlobalRendering::UpdateWindow()
 	MakeCurrentContext(false);
 }
 
+void CGlobalRendering::UpdateTimer()
+{
+	grTime = spring_now();
+}
 
 bool CGlobalRendering::GetWindowInputGrabbing()
 {

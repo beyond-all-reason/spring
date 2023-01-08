@@ -71,6 +71,7 @@ public:
 	void SetWindowTitle(const std::string& title);
 	void SetWindowAttributes(SDL_Window* window);
 	void UpdateWindow();
+	void UpdateTimer();
 
 	void ConfigNotify(const std::string& key, const std::string& value);
 

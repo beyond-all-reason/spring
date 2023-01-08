@@ -129,6 +129,8 @@ class LuaUnsyncedRead {
 		static int GetFrameTimer(lua_State* L);
 		static int DiffTimers(lua_State* L);
 
+		static int GetDrawSeconds(lua_State* L);
+
 		static int GetSoundStreamTime(lua_State* L);
 		static int GetSoundEffectParams(lua_State* L);
 
