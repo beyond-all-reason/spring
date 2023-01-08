@@ -161,6 +161,7 @@ void CLoadScreen::Kill()
 	CLoadLock::SetThreadSafety(false);
 	// set last time and forever
 	globalRendering->MakeCurrentContext(false);
+	globalRendering->ToggleMultisampling();
 }
 
 

@@ -17,8 +17,10 @@ public:
 		// hack to protect from multiple context acquisions in case of recursive lock
 		auto& thisThreadLocksCount = locksCount[Threading::IsGameLoadThread()];
 		++thisThreadLocksCount;
-		if (thisThreadLocksCount == 1)
+		if (thisThreadLocksCount == 1) {
 			globalRendering->MakeCurrentContext(false); //set
+			globalRendering->ToggleMultisampling();
+		}
 	}
 	void unlock() {
 

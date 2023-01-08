@@ -1552,11 +1552,8 @@ void CGlobalRendering::InitGLState()
 	#endif
 
 	// MSAA rasterization
-	if ((msaaLevel *= CheckGLMultiSampling()) != 0) {
-		glEnable(GL_MULTISAMPLE);
-	} else {
-		glDisable(GL_MULTISAMPLE);
-	}
+	msaaLevel *= CheckGLMultiSampling();
+	ToggleMultisampling();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1567,6 +1564,12 @@ void CGlobalRendering::InitGLState()
 	// this does not accomplish much
 	// SwapBuffers(true, true);
 	LogDisplayMode(sdlWindow);
+}
+
+void CGlobalRendering::ToggleMultisampling() const
+{
+	static constexpr std::array<void(*)(), 2> ToggleFuncs = { []() { glDisable(GL_MULTISAMPLE); }, []() { glEnable(GL_MULTISAMPLE); } };
+	ToggleFuncs[msaaLevel > 0]();
 }
 
 bool CGlobalRendering::CheckShaderGL4() const

@@ -109,6 +109,7 @@ public:
 	bool CheckGLContextVersion(const int2& minCtx) const;
 	bool ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int msgTypeIdx, unsigned int msgSevrIdx) const;
 	void InitGLState();
+	void ToggleMultisampling() const;
 
 	bool CheckShaderGL4() const;
 public:
