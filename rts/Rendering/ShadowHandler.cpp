@@ -239,7 +239,7 @@ void CShadowHandler::LoadShadowGenShaders()
 
 		shadowGenProgs[i] = po;
 	}
-	{
+	if (globalRendering->haveGL4) {
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MODEL_GL4] + "GLSL");
 
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertProgGL4.glsl", shadowGenProgDefines[SHADOWGEN_PROGRAM_MODEL_GL4] + extraDefs, GL_VERTEX_SHADER));

@@ -11,6 +11,9 @@
 
 bool LuaVAOs::PushEntries(lua_State* L)
 {
+#if defined(__GNUG__) && defined(_DEBUG)
+	const int top = lua_gettop(L);
+#endif
 	REGISTER_LUA_CFUNC(GetVAO);
 
 	sol::state_view lua(L);
@@ -48,7 +51,10 @@ bool LuaVAOs::PushEntries(lua_State* L)
 		"Submit", &LuaVAOImpl::Submit
 	);
 
-	gl.set("VAO", sol::lua_nil); //because :)
+	gl.set("VAO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVAO
+#if defined(__GNUG__) && defined(_DEBUG)
+	lua_settop(L, top); //workaround for https://github.com/ThePhD/sol2/issues/1441, remove when fixed
+#endif
 
 	return true;
 }

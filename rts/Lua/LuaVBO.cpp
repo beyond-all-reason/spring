@@ -14,6 +14,9 @@
 
 bool LuaVBOs::PushEntries(lua_State* L)
 {
+#if defined(__GNUG__) && defined(_DEBUG)
+	const int top = lua_gettop(L);
+#endif
 	REGISTER_LUA_CFUNC(GetVBO);
 
 	sol::state_view lua(L);
@@ -57,7 +60,10 @@ bool LuaVBOs::PushEntries(lua_State* L)
 		"GetBufferSize", &LuaVBOImpl::GetBufferSize
 	);
 
-	gl.set("VBO", sol::lua_nil); //because :)
+	gl.set("VBO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVBO
+#if defined(__GNUG__) && defined(_DEBUG)
+	lua_settop(L, top); //workaround for https://github.com/ThePhD/sol2/issues/1441, remove when fixed
+#endif
 
 	return true;
 }

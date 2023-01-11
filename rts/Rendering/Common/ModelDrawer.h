@@ -436,24 +436,24 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4;
 
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(shadowGenProgram);
-	assert(po);
-	assert(po->IsValid());
-	po->Enable();
+	if (po && po->IsValid()) {
+		po->Enable();
 
-	// 3DO's have clockwise-wound faces and
-	// (usually) holes, so disable backface
-	// culling for them
-	// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
-		if (modelDrawerData->GetModelRenderer(modelType).empty())
-			continue;
+		// 3DO's have clockwise-wound faces and
+		// (usually) holes, so disable backface
+		// culling for them
+		// glDisable(GL_CULL_FACE); Draw(); glEnable(GL_CULL_FACE);
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; ++modelType) {
+			if (modelDrawerData->GetModelRenderer(modelType).empty())
+				continue;
 
-		if (modelType == MODELTYPE_3DO) glDisable(GL_CULL_FACE);
-		DrawObjectsShadow(modelType);
-		if (modelType == MODELTYPE_3DO) glEnable(GL_CULL_FACE);
+			if (modelType == MODELTYPE_3DO) glDisable(GL_CULL_FACE);
+			DrawObjectsShadow(modelType);
+			if (modelType == MODELTYPE_3DO) glEnable(GL_CULL_FACE);
+		}
+
+		po->Disable();
 	}
-
-	po->Disable();
 
 	DrawShadowObjectsLua();
 
