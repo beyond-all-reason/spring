@@ -212,7 +212,7 @@ void CShadowHandler::LoadShadowGenShaders()
 	};
 
 	// #version has to be added here because it is conditional
-	static const std::string versionDefs[2] = {
+	static const std::string versionDefs[3] = {
 		"#version 130\n",
 		"#version " + IntToString(globalRendering->supportFragDepthLayout? 420: 130) + "\n",
 	};
@@ -236,6 +236,17 @@ void CShadowHandler::LoadShadowGenShaders()
 		po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
 		po->Disable();
 		po->Validate();
+
+		if (!po->IsValid()) {
+			po->RemoveShaderObject(GL_FRAGMENT_SHADER);
+			po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl", versionDefs[0] + shadowGenProgDefines[i] + extraDefs, GL_FRAGMENT_SHADER));
+			po->Link();
+			po->Enable();
+			po->SetUniform("alphaMaskTex", 0);
+			po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
+			po->Disable();
+			po->Validate();
+		}
 
 		shadowGenProgs[i] = po;
 	}
