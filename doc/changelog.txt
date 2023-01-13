@@ -14,6 +14,42 @@ BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
    /unbindaction action arg1 arg2 now correctly removes the bindings that are bound to action
    action and arguments "arg1 arg2.*". This is only breaking if you relied on arguments being
    ignored to unbind all keybindings bound to action.
+   
+   To get back previous behaviours:
+
+   ```lua
+   local function unbind_back_compat(str)
+     local command, action, args = str:match("(%S+) ?(%S*) ?(.*)")
+     if command == "unbind" and args ~= "" then
+       return "" -- used to be no-op when args were provided
+     elseif command == "unbindaction" then
+       return "unbindaction " .. action -- used to remove all regardless of args
+     else
+       return str
+     end
+   end
+   
+   local function unbind_compat_table(t)
+     for i = 1, #t do
+       t[i] = unbind_back_compat(t[i])
+     end
+     return t
+   end
+ 
+   local originalSendCommands = Spring.SendCommands
+   Spring.SendCommands = function (param, ...)
+     local t
+     if type(param) == 'string' then
+       t = unbind_compat_table({...})
+       table.insert(t, 1, unbind_back_compat(param))
+     elseif type(param) == 'table' then
+       t = unbind_compat_table(param)
+     else
+       t = param
+     end
+     return originalSendCommands(t)
+   end
+   ```
 
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
    To get back old behaviour, make sure to rebind them (remember "Any+", as in "Any+Alt")
