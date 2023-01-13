@@ -3,8 +3,6 @@
 #include "lib/sol2/sol.hpp"
 
 #include "LuaVAOImpl.h"
-#include "LuaVBOImpl.h"
-
 #include "LuaUtils.h"
 
 ///////////////////////////////////////////////////////////
@@ -55,7 +53,6 @@ bool LuaVAOs::PushEntries(lua_State* L)
 #if defined(__GNUG__) && defined(_DEBUG)
 	lua_settop(L, top); //workaround for https://github.com/ThePhD/sol2/issues/1441, remove when fixed
 #endif
-
 	return true;
 }
 

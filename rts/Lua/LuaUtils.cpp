@@ -3,6 +3,7 @@
 //#include "System/Platform/Win/win32.h"
 
 #include <cstring>
+#include <cctype>
 
 #include "LuaUtils.h"
 #include "LuaConfig.h"
@@ -512,27 +513,6 @@ void* LuaUtils::GetUserData(lua_State* L, int index, const string& type)
 
 /******************************************************************************/
 /******************************************************************************/
-
-void LuaUtils::PrintStack(lua_State* L)
-{
-	for (int i = 1, top = lua_gettop(L); i <= top; i++) {
-		LOG_L(L_ERROR, "  %i: type = %s (%p)", i, luaL_typename(L, i), lua_topointer(L, i));
-
-		switch (lua_type(L, i)) {
-			case LUA_TSTRING:
-				LOG_L(L_ERROR, "\t\t%s", lua_tostring(L, i));
-				break;
-			case LUA_TNUMBER:
-				LOG_L(L_ERROR, "\t\t%f", lua_tonumber(L, i));
-				break;
-			case LUA_TBOOLEAN:
-				LOG_L(L_ERROR, "\t\t%s", lua_toboolean(L, i) ? "true" : "false");
-				break;
-			default: {}
-		}
-	}
-}
-
 
 int LuaUtils::IsEngineMinVersion(lua_State* L)
 {
@@ -1460,6 +1440,211 @@ void LuaUtils::PushCommandDesc(lua_State* L, const SCommandDescription& cd)
 	// CmdDesc["params"] = {[1] = "string1", [2] = "string2", ...}
 	lua_settable(L, -3);
 }
+
+void LuaUtils::LuaStackDumper::PrintStack(lua_State* L, int parseDepth)
+{
+	int n = lua_gettop(L);
+	buffer += fmt::sprintf("stack:");
+
+	for (int i = 1; i <= n; ++i) {
+		buffer += fmt::sprintf(" ");
+		ParseLuaItem(L, i, false, parseDepth);  // false --> as_key
+	}
+
+	if (n == 0)
+		buffer += fmt::sprintf(" <empty>");
+
+	buffer += fmt::sprintf("\n");
+
+	PrintBuffer();
+}
+
+void LuaUtils::LuaStackDumper::ParseTable(lua_State* L, int i, int parseDepth)
+{
+	static const auto isSeq = [](lua_State* L, int i) {
+		// stack = [..]
+		lua_pushnil(L);
+		// stack = [.., nil]
+		int keynum = 1;
+		while (lua_next(L, i)) {
+			// stack = [.., key, value]
+			lua_rawgeti(L, i, keynum);
+			// stack = [.., key, value, t[keynum]]
+			if (lua_isnil(L, -1)) {
+				lua_pop(L, 3);
+				// stack = [..]
+				return false;
+			}
+			lua_pop(L, 2);
+			// stack = [.., key]
+			keynum++;
+		}
+		// stack = [..]
+		return true;
+	};
+
+	static const auto PrintSeq = [](lua_State* L, int i, int parseDepth) {
+		buffer += fmt::sprintf("{");
+
+		int k;
+		for (k = 1;; ++k) {
+			// stack = [..]
+			lua_rawgeti(L, i, k);
+			// stack = [.., t[k]]
+			if (lua_isnil(L, -1))
+				break;
+
+			if (k > 1)
+				buffer += fmt::sprintf(", ");
+
+			ParseLuaItem(L, -1, 0, parseDepth);  // 0 --> as_key
+			lua_pop(L, 1);
+			// stack = [..]
+		}
+		// stack = [.., nil]
+		lua_pop(L, 1);
+		// stack = [..]
+
+		buffer += fmt::sprintf("}");
+	};
+
+	if (parseDepth <= 0) {
+		buffer += fmt::sprintf("<table>");
+		return;
+	}
+
+	// Ensure i is an absolute index as we'll be pushing/popping things after it.
+	if (i < 0) i = lua_gettop(L) + i + 1;
+
+	const char* prefix = "{";
+	if (isSeq(L, i)) {
+		PrintSeq(L, i, parseDepth);  // This case includes all empty tables.
+	}
+	else {
+		// stack = [..]
+		lua_pushnil(L);
+		// stack = [.., nil]
+		while (lua_next(L, i)) {
+			buffer += fmt::sprintf("%s", prefix);
+			// stack = [.., key, value]
+			ParseLuaItem(L, -2, 1, parseDepth);  // 1 --> as_key
+			buffer += fmt::sprintf(" = ");
+			ParseLuaItem(L, -1, 0, parseDepth);  // 0 --> as_key
+			lua_pop(L, 1);  // So the last-used key is on top.
+			// stack = [.., key]
+			prefix = ", ";
+		}
+		// stack = [..]
+		buffer += fmt::sprintf("}");
+	}
+}
+
+void LuaUtils::LuaStackDumper::ParseLuaItem(lua_State* L, int i, bool asKey, int parseDepth)
+{
+	static const auto GetFnName = [](lua_State* L, int i) -> std::string {
+		std::string fnName;
+
+		// Ensure i is an absolute index as we'll be pushing/popping things after it.
+		if (i < 0) i = lua_gettop(L) + i + 1;
+
+		// Check to see if the function has a global name.
+			// stack = [..]
+		lua_getglobal(L, "_G");
+		// stack = [.., _G]
+		lua_pushnil(L);
+		// stack = [.., _G, nil]
+		while (lua_next(L, -2)) {
+			// stack = [.., _G, key, value]
+			if (lua_rawequal(L, i, -1)) {
+				fnName = fmt::sprintf("function:%s", lua_tostring(L, -2));
+				lua_pop(L, 3);
+				// stack = [..]
+				return fnName;
+			}
+			// stack = [.., _G, key, value]
+			lua_pop(L, 1);
+			// stack = [.., _G, key]
+		}
+		// If we get here, the function didn't have a global name; print a pointer.
+			// stack = [.., _G]
+		lua_pop(L, 1);
+		// stack = [..]
+		fnName = fmt::sprintf("function:%p", lua_topointer(L, i));
+		return fnName;
+	};
+
+	static const auto IsIdentifier = [](const char* s) {
+		while (*s) {
+			if (!std::isalnum(*s) && *s != '_') return false;
+			++s;
+		}
+		return true;
+	};
+
+	int ltype = lua_type(L, i);
+	// Set up first, last and start and end delimiters.
+	const char* first = (asKey ? "[" : "");
+	const char* last = (asKey ? "]" : "");
+	switch (ltype) {
+
+	case LUA_TNIL:
+		buffer += fmt::sprintf("nil");  // This can't be a key, so we can ignore as_key here.
+		return;
+
+	case LUA_TNUMBER:
+		buffer += fmt::sprintf("%s%g%s", first, lua_tonumber(L, i), last);
+		return;
+
+	case LUA_TBOOLEAN:
+		buffer += fmt::sprintf("%s%s%s", first, lua_toboolean(L, i) ? "true" : "false", last);
+		return;
+
+	case LUA_TSTRING:
+	{
+		const char* s = lua_tostring(L, i);
+		if (IsIdentifier(s) && asKey) {
+			buffer += fmt::sprintf("%s", s);
+		}
+		else {
+			buffer += fmt::sprintf("%s'%s'%s", first, s, last);
+		}
+	}
+	return;
+
+	case LUA_TTABLE:
+		buffer += fmt::sprintf("%s", first);
+		ParseTable(L, i, --parseDepth);
+		buffer += fmt::sprintf("%s", last);
+		return;
+
+	case LUA_TFUNCTION:
+		buffer += fmt::sprintf("%s%s%s", first, GetFnName(L, i), last);
+		return;
+
+	case LUA_TUSERDATA:
+	case LUA_TLIGHTUSERDATA:
+		buffer += fmt::sprintf("%suserdata:", first);
+		break;
+
+	case LUA_TTHREAD:
+		buffer += fmt::sprintf("%sthread:", first);
+		break;
+
+	default:
+		buffer += fmt::sprintf("<internal_error_in_print_stack_item!>");
+		return;
+	}
+
+	// If we reach here, then we've got a type that we print as a pointer.
+	buffer += fmt::sprintf("%p%s", lua_topointer(L, i), last);
+}
+
+void LuaUtils::LuaStackDumper::PrintBuffer()
+{
+	LOG("%s", buffer.c_str());
+	buffer.clear();
+}
+
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 int LuaUtils::ParseAllegiance(lua_State* L, const char* caller, int index)

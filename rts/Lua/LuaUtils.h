@@ -61,6 +61,17 @@ class LuaUtils {
 			int errFuncIdx;
 		};
 
+		class LuaStackDumper {
+		public:
+			static void PrintStack(lua_State* L, int parseDepth = 1);
+		private:
+			static void ParseLuaItem(lua_State* L, int i, bool asKey, int parseDepth);
+			static void ParseTable(lua_State* L, int i, int parseDepth);
+			static void PrintBuffer();
+
+			inline static std::string buffer;
+		};
+
 	public:
 		struct DataDump {
 			int type;
@@ -126,8 +137,6 @@ class LuaUtils {
 		static void PushCurrentFuncEnv(lua_State* L, const char* caller);
 
 		static void* GetUserData(lua_State* L, int index, const string& type);
-
-		static void PrintStack(lua_State* L);
 
 		static int IsEngineMinVersion(lua_State* L);
 
