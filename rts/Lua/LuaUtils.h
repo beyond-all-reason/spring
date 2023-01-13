@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "lib/fmt/printf.h"
 
@@ -36,6 +37,10 @@
 
 struct SolidObjectDef;
 struct SCommandDescription;
+
+namespace Json{
+	class Value;
+};
 
 class LuaUtils {
 	public:
@@ -69,7 +74,8 @@ class LuaUtils {
 			static void ParseTable(lua_State* L, int i, int parseDepth);
 			static void PrintBuffer();
 
-			inline static std::string buffer;
+			static Json::Value root;
+			inline static Json::Value* currPtr = nullptr;
 		};
 
 	public:
