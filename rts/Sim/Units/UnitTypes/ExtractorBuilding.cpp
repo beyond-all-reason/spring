@@ -94,34 +94,38 @@ void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 		eb->AddNeighbour(this);
 	}
 
+	if (!activated) {
+		assert(metalExtract == 0); // when deactivated metalExtract should always be 0
+
+		return;
+	}
+
 	// calculate this extractor's area of control and metalExtract amount
 	metalExtract = 0;
 
-	if (activated) {
-		const int xBegin = std::max(                   0, (int) ((pos.x - extractionRange) / METAL_MAP_SQUARE_SIZE));
-		const int xEnd   = std::min(mapDims.mapx / 2 - 1, (int) ((pos.x + extractionRange) / METAL_MAP_SQUARE_SIZE));
-		const int zBegin = std::max(                   0, (int) ((pos.z - extractionRange) / METAL_MAP_SQUARE_SIZE));
-		const int zEnd   = std::min(mapDims.mapy / 2 - 1, (int) ((pos.z + extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int xBegin = std::max(                   0, (int) ((pos.x - extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int xEnd   = std::min(mapDims.mapx / 2 - 1, (int) ((pos.x + extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int zBegin = std::max(                   0, (int) ((pos.z - extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int zEnd   = std::min(mapDims.mapy / 2 - 1, (int) ((pos.z + extractionRange) / METAL_MAP_SQUARE_SIZE));
 
-		metalAreaOfControl.reserve((xEnd - xBegin + 1) * (zEnd - zBegin + 1));
+	metalAreaOfControl.reserve((xEnd - xBegin + 1) * (zEnd - zBegin + 1));
 
-		// go through the whole (x, z)-square
-		for (int x = xBegin; x <= xEnd; x++) {
-			for (int z = zBegin; z <= zEnd; z++) {
-				// center of metalsquare at (x, z)
-				const float3 msqrPos((x + 0.5f) * METAL_MAP_SQUARE_SIZE, pos.y,
-														 (z + 0.5f) * METAL_MAP_SQUARE_SIZE);
-				const float sqrCenterDistance = msqrPos.SqDistance2D(this->pos);
+	// go through the whole (x, z)-square
+	for (int x = xBegin; x <= xEnd; x++) {
+		for (int z = zBegin; z <= zEnd; z++) {
+			// center of metalsquare at (x, z)
+			const float3 msqrPos((x + 0.5f) * METAL_MAP_SQUARE_SIZE, pos.y,
+													 (z + 0.5f) * METAL_MAP_SQUARE_SIZE);
+			const float sqrCenterDistance = msqrPos.SqDistance2D(this->pos);
 
-				if (sqrCenterDistance < Square(extractionRange)) {
-					MetalSquareOfControl msqr;
-					msqr.x = x;
-					msqr.z = z;
-					// extraction is done in a cylinder of height <depth>
-					msqr.extractionDepth = metalMap.RequestExtraction(x, z, depth);
-					metalAreaOfControl.push_back(msqr);
-					metalExtract += msqr.extractionDepth * metalMap.GetMetalAmount(msqr.x, msqr.z);
-				}
+			if (sqrCenterDistance < Square(extractionRange)) {
+				MetalSquareOfControl msqr;
+				msqr.x = x;
+				msqr.z = z;
+				// extraction is done in a cylinder of height <depth>
+				msqr.extractionDepth = metalMap.RequestExtraction(x, z, depth);
+				metalAreaOfControl.push_back(msqr);
+				metalExtract += msqr.extractionDepth * metalMap.GetMetalAmount(msqr.x, msqr.z);
 			}
 		}
 	}
