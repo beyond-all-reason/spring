@@ -23,8 +23,8 @@
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
 #include "System/StringUtil.h"
-#include "../../tools/pr-downloader/src/lib/jsoncpp/include/json/writer.h"
-#include "../../tools/pr-downloader/src/lib/jsoncpp/include/json/json.h"
+#include <json/writer.h>
+#include <json/json.h>
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 	#include "System/TimeProfiler.h"
