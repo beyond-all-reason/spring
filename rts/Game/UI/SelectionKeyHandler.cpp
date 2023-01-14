@@ -111,6 +111,11 @@ namespace {
 
 
 	DECLARE_FILTER(Builder, unit->unitDef->IsBuilderUnit())
+	DECLARE_FILTER(Buildoptions, !unit->unitDef->buildOptions.empty())
+	DECLARE_FILTER(Resurrect, unit->unitDef->canResurrect)
+	DECLARE_FILTER(Stealth, unit->unitDef->stealth)
+	DECLARE_FILTER(Cloak, unit->unitDef->canCloak)
+	DECLARE_FILTER(Cloaked, unit->isCloaked)
 	DECLARE_FILTER(Building, unit->unitDef->IsBuildingUnit())
 	DECLARE_FILTER(Transport, unit->unitDef->IsTransportUnit())
 	DECLARE_FILTER(Aircraft, unit->unitDef->IsAirUnit())
