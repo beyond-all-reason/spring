@@ -278,6 +278,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GiveOrderToUnit);
 	REGISTER_LUA_CFUNC(GiveOrderToUnitMap);
 	REGISTER_LUA_CFUNC(GiveOrderToUnitArray);
+	REGISTER_LUA_CFUNC(GiveOrderArrayToUnit);
 	REGISTER_LUA_CFUNC(GiveOrderArrayToUnitMap);
 	REGISTER_LUA_CFUNC(GiveOrderArrayToUnitArray);
 
@@ -3755,6 +3756,40 @@ int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 	inGiveOrder--;
 
 	lua_pushnumber(L, count);
+	return 1;
+}
+
+
+int LuaSyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
+{
+	CheckAllowGameChanges(L);
+
+	CUnit* const unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		luaL_error(L, "[%s] invalid unitID", __func__);
+	if (!CanControlUnit(L, unit)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	std::vector<Command> commands;
+	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
+	if (commands.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	if (inGiveOrder >= MAX_CMD_RECURSION_DEPTH)
+		luaL_error(L, "[%s] recursion not permitted, max depth: %d", __func__, MAX_CMD_RECURSION_DEPTH);
+
+	inGiveOrder ++;
+
+	for (const Command& c: commands)
+		unit->commandAI->GiveCommand(c, -1, true, true);
+
+	inGiveOrder --;
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 

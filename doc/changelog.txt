@@ -33,6 +33,7 @@ BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
    end
 
 Lua:
+ - add `Spring.GiveOrderArrayToUnit(unitID, orderArray)`, a single-unitID version of `Spring.GiveOrderArrayToUnitArray`.
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
    Makes the erase happen locally, optionally as if done by given player,
    same as the existing interface for MarkerAddPoint and MarkerAddLine.

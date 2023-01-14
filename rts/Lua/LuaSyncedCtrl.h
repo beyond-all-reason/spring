@@ -58,6 +58,7 @@ class LuaSyncedCtrl
 		static int GiveOrderToUnit(lua_State* L);
 		static int GiveOrderToUnitMap(lua_State* L);
 		static int GiveOrderToUnitArray(lua_State* L);
+		static int GiveOrderArrayToUnit(lua_State* L);
 		static int GiveOrderArrayToUnitMap(lua_State* L);
 		static int GiveOrderArrayToUnitArray(lua_State* L);
 

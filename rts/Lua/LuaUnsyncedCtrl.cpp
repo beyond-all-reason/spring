@@ -210,6 +210,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GiveOrderToUnit);
 	REGISTER_LUA_CFUNC(GiveOrderToUnitMap);
 	REGISTER_LUA_CFUNC(GiveOrderToUnitArray);
+	REGISTER_LUA_CFUNC(GiveOrderArrayToUnit);
 	REGISTER_LUA_CFUNC(GiveOrderArrayToUnitMap);
 	REGISTER_LUA_CFUNC(GiveOrderArrayToUnitArray);
 
@@ -2631,6 +2632,33 @@ int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 
 	selectedUnitsHandler.SendCommandsToUnits(unitIDs, {LuaUtils::ParseCommand(L, __func__, 2)});
 
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const CUnit* const unit = ParseCtrlUnit(L, __func__, 1);
+	if (unit == nullptr || unit->noSelect) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	vector<int> unitIDs {unit->id};
+
+	vector<Command> commands;
+	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
+	if (commands.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	selectedUnitsHandler.SendCommandsToUnits(unitIDs, commands);
 	lua_pushboolean(L, true);
 	return 1;
 }
