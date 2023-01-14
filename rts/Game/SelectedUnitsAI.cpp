@@ -349,15 +349,22 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 
 	const float3 formationSideDir = (formationCenterPos - formationRightPos) * XZVector + (UpVector * groupFrontLength * 0.5f);
 
-
 	sortedUnitGroups.clear();
 	frontMoveCommands.clear();
 
 	CreateUnitOrder(sortedUnitPairs, playerNum);
 
+	mixedUnitTypes.clear();
+	mixedUnitTypes.reserve(sortedUnitPairs.size());
+	mixedUnitIDs.clear();
+	mixedUnitIDs.reserve(sortedUnitPairs.size());
+	allFrontMoveCommands.clear();
+	allFrontMoveCommands.reserve(sortedUnitPairs.size());
+	unassignedUnits.clear();
+	unassignedUnits.reserve(sortedUnitPairs.size());
+
 	for (size_t k = 0; k < sortedUnitPairs.size(); ) {
 		bool newFormationLine = false;
-
 
 		// convert flat vector of <priority, unitID> pairs
 		// to a vector of <priority, vector<unitID>> pairs
@@ -382,7 +389,6 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 
 
 		nextPos = MoveToPos(nextPos, formationSideDir, unitHandler.GetUnit(suPair.second), c, &frontMoveCommands, &newFormationLine);
-
 		if ((++k) < sortedUnitPairs.size()) {
 			MoveToPos(nextPos, formationSideDir, unitHandler.GetUnit(suPair.second), c, nullptr, &newFormationLine);
 
@@ -390,11 +396,8 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 				continue;
 		}
 
-		mixedUnitIDs.clear();
-		mixedUnitIDs.reserve(frontMoveCommands.size());
 		mixedGroupSizes.clear();
 		mixedGroupSizes.resize(sortedUnitGroups.size(), 0);
-
 
 		// mix units in each row to avoid weak flanks consisting solely of e.g. artillery
 		for (size_t j = 0; j < frontMoveCommands.size(); j++) {
@@ -424,18 +427,48 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 			const auto& groupPair = sortedUnitGroups[bestGroupNum];
 			const auto& groupUnitIDs = groupPair.second;
 
-			mixedUnitIDs.push_back(groupUnitIDs[unitIndex]);
+			const auto unit = unitHandler.GetUnit(groupUnitIDs[unitIndex]);
+			const auto unitDef = unit->GetDef();
+			unassignedUnits.emplace_back(groupUnitIDs[unitIndex], unitDef->id, unit->pos);
+			mixedUnitTypes.push_back( unitDef ? unitDef->id : -1 );
 		}
 
-		for (size_t i = 0; i < frontMoveCommands.size(); i++) {
-			CUnit* unit = unitHandler.GetUnit(mixedUnitIDs[i]);
-			CCommandAI* cai = unit->commandAI;
-
-			cai->GiveCommand(frontMoveCommands[i].second, playerNum, false, false);
-		}
+		allFrontMoveCommands.insert(std::end(allFrontMoveCommands), std::begin(frontMoveCommands), std::end(frontMoveCommands));
 
 		frontMoveCommands.clear();
 		sortedUnitGroups.clear();
+	}
+
+	// find closest unassigned unit to move for each move command
+	for (size_t i = 0; i < allFrontMoveCommands.size(); i++) {
+		size_t closestUnit = 0;
+		float closestDistSq = std::numeric_limits<float>::infinity();
+		const auto cmdPos = allFrontMoveCommands[i].second.GetPos(0);
+
+		// find closest unit of the unit type selected for this move comamnd
+		for (size_t j = 0; j < unassignedUnits.size(); j++) {
+			const auto& unit = unassignedUnits[j];
+			if (unit.unitDefId == mixedUnitTypes[i]){
+				float curDistSq = unit.pos.SqDistance(cmdPos);
+				if (curDistSq < closestDistSq) {
+					closestUnit = j;
+					closestDistSq = curDistSq;
+				}
+			}
+		}
+
+		mixedUnitIDs.emplace_back(unassignedUnits[closestUnit].unitId);
+
+		auto& selUnit = unassignedUnits[closestUnit];
+		selUnit = unassignedUnits.back();
+		unassignedUnits.pop_back();
+	}
+
+	for (size_t i = 0; i < allFrontMoveCommands.size(); i++) {
+		CUnit* unit = unitHandler.GetUnit(mixedUnitIDs[i]);
+		CCommandAI* cai = unit->commandAI;
+
+		cai->GiveCommand(allFrontMoveCommands[i].second, playerNum, false, false);
 	}
 }
 
