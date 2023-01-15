@@ -27,6 +27,7 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/SpringMath.h"
+#include "libktx/include/ktx.h"
 
 struct InitializeOpenIL {
 	InitializeOpenIL() { ilInit(); }
@@ -919,7 +920,7 @@ CBitmap::CBitmap()
 	, ysize(0)
 	, channels(4)
 	, dataType(0x1401)
-	, compressed(false)
+	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
 {}
 
 CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uint32_t reqDataType)
@@ -927,7 +928,7 @@ CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uin
 	, ysize(_ysize)
 	, channels(_channels)
 	, dataType(reqDataType == 0 ? 0x1401/*GL_UNSIGNED_BYTE*/ : reqDataType)
-	, compressed(false)
+	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
 {
 #ifndef HEADLESS
 	assert(GetMemSize() > 0);
@@ -952,7 +953,7 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 		ITexMemPool::texMemPool->Free(GetRawMem(), GetMemSize());
 
 		if (bmp.GetRawMem() != nullptr) {
-			assert(!bmp.compressed);
+			assert(bitmapType == BITMAP_TYPE::BITMAP_DEFAULT);
 #ifndef HEADLESS
 			assert(bmp.GetMemSize() != 0);
 #endif
@@ -970,7 +971,7 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 		ysize = bmp.ysize;
 		channels = bmp.channels;
 		dataType = bmp.dataType;
-		compressed = bmp.compressed;
+		bitmapType = bmp.bitmapType;
 
 		#ifndef HEADLESS
 		textype = bmp.textype;
@@ -992,7 +993,7 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 		std::swap(ysize, bmp.ysize);
 		std::swap(channels, bmp.channels);
 		std::swap(dataType, bmp.dataType);
-		std::swap(compressed, bmp.compressed);
+		std::swap(bitmapType, bmp.bitmapType);
 
 		#ifndef HEADLESS
 		std::swap(textype, bmp.textype);
@@ -1043,7 +1044,7 @@ void CBitmap::Alloc(int w, int h, int c, uint32_t glType)
 
 void CBitmap::AllocDummy(const SColor fill)
 {
-	compressed = false;
+	bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
 
 	Alloc(1, 1, sizeof(SColor), dataType);
 	Fill(fill);
@@ -1136,7 +1137,15 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 	// files ending in ".DDS" would appear upside-down if loaded by nv_dds
 	//
 	// const bool loadDDS = (filename.find(".dds") != std::string::npos || filename.find(".DDS") != std::string::npos);
-	const bool loadDDS = (FileSystem::GetExtension(filename) == "dds"); // always lower-case
+
+	// always lower-case
+	if (const auto ext = FileSystem::GetExtension(filename); ext == "dds")
+		bitmapType = BITMAP_TYPE::BITMAP_DDS;
+	else if (ext.find("ktx") != std::string::npos)
+		bitmapType = BITMAP_TYPE::BITMAP_KTX;
+	else
+		bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
+
 	const bool flipDDS = (filename.find("unitpics") == std::string::npos); // keep buildpics as-is
 
 	const size_t curMemSize = GetMemSize();
@@ -1146,9 +1155,9 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 	#define BITMAP_USE_NV_DDS
 	#ifdef BITMAP_USE_NV_DDS
-	if (loadDDS) {
+	if (bitmapType == BITMAP_TYPE::BITMAP_DDS) {
 		#ifndef HEADLESS
-		compressed = true;
+		bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
 		xsize = 0;
 		ysize = 0;
 		channels = 0;
@@ -1181,10 +1190,33 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 		return true;
 		#endif
 	}
+	else if (bitmapType == BITMAP_TYPE::BITMAP_KTX) {
+		CFileHandler file(filename);
+		std::vector<uint8_t> buffer;
 
-	compressed = false;
-	#else
-	compressed = loadDDS;
+		if (!file.FileExists()) {
+			AllocDummy();
+			return false;
+		}
+
+		if (!file.IsBuffered()) {
+			buffer.resize(file.FileSize(), 0);
+			file.Read(buffer.data(), buffer.size());
+		}
+		else {
+			// steal if file was loaded from VFS
+			buffer = std::move(file.GetBuffer());
+		}
+
+		ktxTexture* texture;
+		KTX_error_code result;
+		ktx_size_t offset;
+		ktx_uint8_t* image;
+		ktx_uint32_t level, layer, faceSlice;
+		result = ktxTexture_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+	}
+	else
+		bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
 	#endif
 
 
@@ -1210,7 +1242,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 		// do not preserve the image origin since IL does not
 		// vertically flip DDS images by default, unlike nv_dds
-		ilOriginFunc((loadDDS && flipDDS)? IL_ORIGIN_LOWER_LEFT: IL_ORIGIN_UPPER_LEFT);
+		ilOriginFunc((bitmapType == BITMAP_TYPE::BITMAP_DDS && flipDDS)? IL_ORIGIN_LOWER_LEFT: IL_ORIGIN_UPPER_LEFT);
 		ilEnable(IL_ORIGIN_SET);
 
 		ILuint imageID = 0;
@@ -1335,7 +1367,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 {
 	const size_t curMemSize = GetMemSize();
 
-	compressed = false;
+	bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
 	channels = 1;
 
 
@@ -1391,7 +1423,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 
 bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsigned quality) const
 {
-	if (compressed) {
+	if (bitmapType == BITMAP_TYPE::BITMAP_DDS) {
 		#ifndef HEADLESS
 		return ddsimage.save(filename);
 		#else
@@ -1511,7 +1543,7 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 
 bool CBitmap::SaveGrayScale(const std::string& filename) const
 {
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return false;
 
 	CBitmap bmp = *this;
@@ -1598,7 +1630,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 #ifndef HEADLESS
 unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const
 {
-	if (compressed)
+	if (bitmapType == BITMAP_TYPE::BITMAP_DDS)
 		return CreateDDSTexture(texID, aniso, lodBias, mipmaps);
 
 	if (GetMemSize() == 0)
@@ -1743,7 +1775,7 @@ unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lo
 void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1755,7 +1787,7 @@ void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1767,7 +1799,7 @@ void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 void CBitmap::Renormalize(const float3& newCol)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1778,7 +1810,7 @@ void CBitmap::Renormalize(const float3& newCol)
 void CBitmap::Blur(int iterations, float weight)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 
@@ -1791,7 +1823,7 @@ void CBitmap::Blur(int iterations, float weight)
 void CBitmap::Fill(const SColor& c)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1802,7 +1834,7 @@ void CBitmap::Fill(const SColor& c)
 void CBitmap::ReplaceAlpha(float a)
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1818,7 +1850,7 @@ void CBitmap::CopySubImage(const CBitmap& src, int xpos, int ypos)
 		return;
 	}
 
-	if (compressed || src.compressed) {
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT || src.bitmapType != BITMAP_TYPE::BITMAP_DEFAULT) {
 		LOG_L(L_WARNING, "CBitmap::CopySubImage can't copy compressed textures!");
 		return;
 	}
@@ -1883,7 +1915,7 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 	newy = std::max(1, newy);
 
 #ifndef HEADLESS
-	if (compressed) {
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT) {
 		LOG_L(L_WARNING, "CBitmap::CreateRescaled doesn't work with compressed textures!");
 		CBitmap bm;
 		bm.AllocDummy();
@@ -1910,7 +1942,7 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 void CBitmap::InvertColors()
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1922,7 +1954,7 @@ void CBitmap::InvertColors()
 void CBitmap::InvertAlpha()
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return; // Don't try to invert DDS
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1934,7 +1966,7 @@ void CBitmap::InvertAlpha()
 void CBitmap::MakeGrayScale()
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1945,7 +1977,7 @@ void CBitmap::MakeGrayScale()
 void CBitmap::Tint(const float tint[3])
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return;
 
 	auto action = BitmapAction::GetBitmapAction(this);
@@ -1957,7 +1989,7 @@ void CBitmap::Tint(const float tint[3])
 void CBitmap::ReverseYAxis()
 {
 #ifndef HEADLESS
-	if (compressed)
+	if (bitmapType != BITMAP_TYPE::BITMAP_DEFAULT)
 		return; // don't try to flip DDS
 
 	const auto dts = GetDataTypeSize();

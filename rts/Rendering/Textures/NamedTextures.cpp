@@ -223,7 +223,7 @@ namespace CNamedTextures {
 			return false;
 		}
 
-		if (bitmap.compressed) {
+		if (bitmap.bitmapType == CBitmap::BITMAP_TYPE::BITMAP_DDS) {
 			texID = bitmap.CreateDDSTexture(texID);
 		} else {
 			if (resize) bitmap = bitmap.CreateRescaled(resizeDimensions.x,resizeDimensions.y);

@@ -53,6 +53,7 @@ include_directories(${IL_INCLUDE_DIR})
 
 ### libcpuid
 list(APPEND engineCommonLibraries "cpuid")
+list(APPEND engineCommonLibraries "ktx_read")
 
 ### Assemble common libraries
 add_subdirectory(System/Sound)

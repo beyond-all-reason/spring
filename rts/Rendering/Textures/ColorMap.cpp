@@ -122,7 +122,7 @@ CColorMap::CColorMap(const std::string& fileName)
 		LOG_L(L_WARNING, "[ColorMap] could not load texture from file \"%s\"", fileName.c_str());
 	}
 
-	if (bitmap.compressed || (bitmap.channels != 4) || (bitmap.xsize < 2))
+	if (bitmap.bitmapType != CBitmap::BITMAP_TYPE::BITMAP_DEFAULT || (bitmap.channels != 4) || (bitmap.xsize < 2))
 		throw content_error("[ColorMap] unsupported bitmap format in file " + fileName);
 
 	xsize  = bitmap.xsize;

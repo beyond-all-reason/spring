@@ -117,7 +117,7 @@ size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& fil
 	}
 
 	// only suport RGBA for now
-	if (bitmap.channels != 4 || bitmap.compressed)
+	if (bitmap.channels != 4 || bitmap.bitmapType != CBitmap::BITMAP_TYPE::BITMAP_DEFAULT)
 		throw content_error("Unsupported bitmap format in file " + file);
 
 	return (files[lcFile] = AddTexFromMem(std::move(texName), bitmap.xsize, bitmap.ysize, RGBA32, bitmap.GetRawMem()));

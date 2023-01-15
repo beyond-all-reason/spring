@@ -107,7 +107,14 @@ public:
 	nv_dds::CDDSImage ddsimage;
 	#endif
 
-	bool compressed = false;
+	enum class BITMAP_TYPE {
+		BITMAP_DEFAULT = 0,
+		BITMAP_DDS     = 1,
+		BITMAP_KTX     = 2,
+		BITMAP_COUNT
+	};
+
+	BITMAP_TYPE bitmapType;
 };
 
 #endif // _BITMAP_H
