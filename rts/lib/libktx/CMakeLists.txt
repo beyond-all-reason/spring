@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.15)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/")
 
-set(KTX_VERSION 4.99.99)
+set(KTX_VERSION 4.1.0)
 project(KTX-Software
     VERSION ${KTX_VERSION}
     DESCRIPTION "Libraries and tools to create and read KTX image texture files."
@@ -15,7 +15,7 @@ project(KTX-Software
 
 set( KTX_FEATURE_STATIC_LIBRARY "Create static libraries (shared otherwise)" ON)
 
-set(BASISU_SUPPORT_SSE ON)
+set(BASISU_SUPPORT_SSE OFF)
 set(BASISU_SUPPORT_OPENCL OFF)
 
 set(KTX_EMBED_BITCODE OFF)

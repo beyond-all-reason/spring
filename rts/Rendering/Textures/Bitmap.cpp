@@ -913,7 +913,9 @@ CBitmap TBitmapAction<T, ch>::CreateRescaled(int newx, int newy)
 
 CBitmap::~CBitmap()
 {
+#ifndef HEADLESS
 	if (ktxTex) ktxTexture_Destroy(ktxTex);
+#endif
 	ITexMemPool::texMemPool->Free(GetRawMem(), GetMemSize());
 }
 
@@ -923,7 +925,6 @@ CBitmap::CBitmap()
 	, channels(4)
 	, dataType(0x1401)
 	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
-	, ktxTex(nullptr)
 {}
 
 CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uint32_t reqDataType)
@@ -932,7 +933,6 @@ CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uin
 	, channels(_channels)
 	, dataType(reqDataType == 0 ? 0x1401/*GL_UNSIGNED_BYTE*/ : reqDataType)
 	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
-	, ktxTex(nullptr)
 {
 #ifndef HEADLESS
 	assert(GetMemSize() > 0);

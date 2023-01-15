@@ -107,7 +107,7 @@ public:
 	int32_t textype = 0;
 	#ifndef HEADLESS
 	nv_dds::CDDSImage ddsimage;
-	ktxTexture* ktxTex;
+	ktxTexture* ktxTex = nullptr;
 	#endif
 
 	enum class BITMAP_TYPE {
