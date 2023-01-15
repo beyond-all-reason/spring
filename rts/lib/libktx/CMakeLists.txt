@@ -131,11 +131,6 @@ macro(commom_lib_settings lib write)
         SOVERSION ${PROJECT_VERSION_MAJOR}
         XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
     )
-    if(IOS)
-        set_target_properties(${lib} PROPERTIES
-            FRAMEWORK TRUE
-        )
-    endif()
 
     target_compile_definitions(
         ${lib}
@@ -314,6 +309,8 @@ set(KTX_BUILD_DIR "${CMAKE_BINARY_DIR}")
 
 commom_lib_settings(ktx 1)
 commom_lib_settings(ktx_read 0)
+
+set_target_properties(ktx PROPERTIES EXCLUDE_FROM_ALL TRUE) # can't build it without a generated version.h
 
 target_compile_definitions(
     ktx_read
