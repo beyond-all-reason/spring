@@ -976,11 +976,13 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 		channels = bmp.channels;
 		dataType = bmp.dataType;
 		bitmapType = bmp.bitmapType;
+		textype = bmp.textype;
+		numLayers = bmp.numLayers;
+		numDimensions = bmp.numDimensions;
 
 		#ifndef HEADLESS
-		textype = bmp.textype;
-
 		ddsimage = bmp.ddsimage;
+		ktxTex = bmp.ktxTex;
 		#endif
 	}
 
@@ -998,10 +1000,12 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 		std::swap(channels, bmp.channels);
 		std::swap(dataType, bmp.dataType);
 		std::swap(bitmapType, bmp.bitmapType);
+		std::swap(textype, bmp.textype);
+		std::swap(numLayers, bmp.numLayers);
+		std::swap(numDimensions, bmp.numDimensions);
 
 		#ifndef HEADLESS
 		std::swap(textype, bmp.textype);
-
 		std::swap(ddsimage, bmp.ddsimage);
 		#endif
 	}
