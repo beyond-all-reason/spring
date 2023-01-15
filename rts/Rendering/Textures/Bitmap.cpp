@@ -28,6 +28,7 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/SpringMath.h"
 #include "libktx/include/ktx.h"
+#include "libktx/lib/gl_format.h"
 
 struct InitializeOpenIL {
 	InitializeOpenIL() { ilInit(); }
@@ -912,6 +913,7 @@ CBitmap TBitmapAction<T, ch>::CreateRescaled(int newx, int newy)
 
 CBitmap::~CBitmap()
 {
+	if (ktxTex) ktxTexture_Destroy(ktxTex);
 	ITexMemPool::texMemPool->Free(GetRawMem(), GetMemSize());
 }
 
@@ -921,6 +923,7 @@ CBitmap::CBitmap()
 	, channels(4)
 	, dataType(0x1401)
 	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
+	, ktxTex(nullptr)
 {}
 
 CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uint32_t reqDataType)
@@ -929,6 +932,7 @@ CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uin
 	, channels(_channels)
 	, dataType(reqDataType == 0 ? 0x1401/*GL_UNSIGNED_BYTE*/ : reqDataType)
 	, bitmapType(BITMAP_TYPE::BITMAP_DEFAULT)
+	, ktxTex(nullptr)
 {
 #ifndef HEADLESS
 	assert(GetMemSize() > 0);
@@ -1131,6 +1135,10 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 	bool isValid  = false;
 	bool hasAlpha = false;
 
+	xsize = 0;
+	ysize = 0;
+	channels = 0;
+
 	// LHS is only true for "image.dds", "IMAGE.DDS" would be loaded by IL
 	// which does not vertically flip DDS images by default, unlike nv_dds
 	// most Spring games do not seem to store DDS buildpics pre-flipped so
@@ -1150,18 +1158,8 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 	const size_t curMemSize = GetMemSize();
 
-	channels = 4;
-	textype = GL_TEXTURE_2D;
-
-	#define BITMAP_USE_NV_DDS
-	#ifdef BITMAP_USE_NV_DDS
 	if (bitmapType == BITMAP_TYPE::BITMAP_DDS) {
-		#ifndef HEADLESS
-		bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
-		xsize = 0;
-		ysize = 0;
-		channels = 0;
-
+#ifndef HEADLESS
 		ddsimage.clear();
 		if (!ddsimage.load(filename, flipDDS))
 			return false;
@@ -1170,27 +1168,28 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 		ysize = ddsimage.get_height();
 		channels = ddsimage.get_components();
 		switch (ddsimage.get_type()) {
-			case nv_dds::TextureFlat :
-				textype = GL_TEXTURE_2D;
-				break;
-			case nv_dds::Texture3D :
-				textype = GL_TEXTURE_3D;
-				break;
-			case nv_dds::TextureCubemap :
-				textype = GL_TEXTURE_CUBE_MAP;
-				break;
-			case nv_dds::TextureNone :
-			default :
-				break;
+		case nv_dds::TextureFlat:
+			textype = GL_TEXTURE_2D;
+			break;
+		case nv_dds::Texture3D:
+			textype = GL_TEXTURE_3D;
+			break;
+		case nv_dds::TextureCubemap:
+			textype = GL_TEXTURE_CUBE_MAP;
+			break;
+		case nv_dds::TextureNone:
+		default:
+			break;
 		}
 		return true;
-		#else
+#else
 		// allocate a dummy texture, dds aren't supported in headless
 		AllocDummy();
 		return true;
-		#endif
+#endif
 	}
 	else if (bitmapType == BITMAP_TYPE::BITMAP_KTX) {
+#ifndef HEADLESS
 		CFileHandler file(filename);
 		std::vector<uint8_t> buffer;
 
@@ -1208,17 +1207,73 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			buffer = std::move(file.GetBuffer());
 		}
 
-		ktxTexture* texture;
 		KTX_error_code result;
-		ktx_size_t offset;
-		ktx_uint8_t* image;
-		ktx_uint32_t level, layer, faceSlice;
-		result = ktxTexture_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-	}
-	else
-		bitmapType = BITMAP_TYPE::BITMAP_DEFAULT;
-	#endif
+		result = ktxTexture_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTex);
 
+		if (ktxTex == nullptr)
+			return false;
+
+		if (result != KTX_SUCCESS)
+			return false;
+
+		if (ktxTex->classId != ktxTexture2_c)
+			return false;
+
+		const auto* ktx2Tex = reinterpret_cast<ktxTexture2*>(ktxTex);
+
+		xsize = ktx2Tex->baseWidth;
+		ysize = ktx2Tex->baseHeight;
+
+		const auto glInternalFormat = glGetInternalFormatFromVkFormat(static_cast<VkFormat>(ktx2Tex->vkFormat));
+		const auto glExternalFormat = glGetFormatFromInternalFormat(glInternalFormat);
+		channels = ExtFmtToChannels(glExternalFormat);
+
+		numDimensions = ktx2Tex->numDimensions;
+		if (ktx2Tex->isArray) {
+			numDimensions += 1;
+			if (ktx2Tex->numFaces == 6) {
+				/* ktxCheckHeader1_ should have caught this. */
+				assert(ktx2Tex->numDimensions == 2);
+				textype = GL_TEXTURE_CUBE_MAP_ARRAY;
+			} 
+			else {
+				switch (ktx2Tex->numDimensions) {
+				case 1: textype = GL_TEXTURE_1D_ARRAY; break;
+				case 2: textype = GL_TEXTURE_2D_ARRAY; break;
+					/* _ktxCheckHeader should have caught this. */
+				default: assert(false);
+				}
+			}
+			numLayers = ktx2Tex->numLayers;
+		}
+		else {
+			if (ktx2Tex->numFaces == 6) {
+				/* ktxCheckHeader1_ should have caught this. */
+				assert(ktx2Tex->numDimensions == 2);
+				textype = GL_TEXTURE_CUBE_MAP;
+			}
+			else {
+				switch (ktx2Tex->numDimensions) {
+				case 1: textype = GL_TEXTURE_1D; break;
+				case 2: textype = GL_TEXTURE_2D; break;
+				case 3: textype = GL_TEXTURE_3D; break;
+					/* _ktxCheckHeader shold have caught this. */
+				default: assert(false);
+				}
+			}
+			numLayers = 0;
+		}
+
+		return true;
+#else
+		// allocate a dummy texture, ktx isn't supported in headless
+		AllocDummy();
+		return true;
+#endif
+	}
+
+	channels = 4;
+	textype = GL_TEXTURE_2D;
 
 	CFileHandler file(filename);
 	std::vector<uint8_t> buffer;
