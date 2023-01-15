@@ -29,6 +29,7 @@
 #include "System/UnorderedMap.hpp"
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
+	#include "System/Misc/UnfreezeSpring.h"
 	#include "System/TimeProfiler.h"
 	#include "System/Platform/Watchdog.h"
 #endif
@@ -922,6 +923,8 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
  */
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
+	assert(Threading::IsMainThread());
+
 	// try to open an archive
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
@@ -932,7 +935,9 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
 	std::vector<std::string> fileNames;
 	std::vector<sha512::raw_digest> fileHashes;
-	std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
+	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
+	for (auto& fileBuffer : fileBuffers)
+		fileBuffer.clear();
 
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
@@ -951,14 +956,35 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end());
 
-	// compute hashes of the files
-	for_mt(0, fileNames.size(), [&](const int i) {
-		ar->CalcHash(ar->FindFile(fileNames[i]), fileHashes[i].data(), fileBuffers[ ThreadPool::GetThreadNum() ]);
+	const auto ComputeHashesTask = [&ar](const std::string& fileName, sha512::raw_digest& fileHash) -> void {
+		ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+	};
+#if !defined(DEDICATED) && !defined(UNITSYNC)
+	std::vector<std::shared_ptr<std::future<void>>> tasks;
+	tasks.reserve(fileNames.size());
 
-		#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer(WDT_MAIN);
-		#endif
+	for (size_t i = 0; i < fileNames.size(); ++i) {
+		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask, fileNames[i], fileHashes[i])));
+	}
+
+	const auto erasePredicate = [](decltype(tasks)::value_type item) {
+		using namespace std::chrono_literals;
+		return item->wait_for(0us) == std::future_status::ready;
+	};
+
+	while (!tasks.empty()) {
+		spring::VectorEraseAllIf(tasks, erasePredicate);
+		spring::UnfreezeSpring(WDT_MAIN);
+		spring_sleep(spring_msecs(10));
+	}
+#else
+	for_mt(0, fileNames.size(), [&](const int i) {
+		ComputeHashesTask(fileNames[i], fileHashes[i]);
 	});
+#endif
+
+	for (auto& fileBuffer : fileBuffers) //clean static buffers
+		fileBuffer.clear();
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
