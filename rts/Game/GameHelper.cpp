@@ -1088,11 +1088,10 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 	// (so we do not care about maxHeightDif constraints either)
 	// TODO: maybe respect waterline if <pos> is in water
 	if (!unitdef->IsImmobileUnit() || !unitdef->levelGround) {
-		const float y = CGround::GetHeightReal(pos.x, pos.z, synced);
 		if (unitdef->floatOnWater)
-			return std::max(pos.y, y);
+			return CGround::GetHeightAboveWater(pos.x, pos.z, synced);
 		else
-			return y;
+			return CGround::GetHeightReal(pos.x, pos.z, synced);
 	}
 
 	const float* orgHeightMap = readMap->GetOriginalHeightMapSynced();
