@@ -726,6 +726,8 @@ void CWeapon::DependentDied(CObject* o)
 	if (weaponDef->interceptor || weaponDef->isShield) {
 		spring::VectorErase(incomingProjectileIDs, static_cast<CWeaponProjectile*>(o)->id);
 	}
+
+	AutoTarget();
 }
 
 
