@@ -197,6 +197,8 @@ public:
 
 	float muzzleFlareSize;                  // size of muzzle flare if drawn
 
+	bool fastAutoRetargetingEnabled = true;
+
 protected:
 	SWeaponTarget currentTarget;
 	float3 currentTargetPos;

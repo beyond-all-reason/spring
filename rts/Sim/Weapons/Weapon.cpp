@@ -102,7 +102,9 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(currentTarget),
 	CR_MEMBER(currentTargetPos),
 
-	CR_MEMBER(incomingProjectileIDs)
+	CR_MEMBER(incomingProjectileIDs),
+
+	CR_MEMBER(fastAutoRetargetingEnabled)
 ))
 
 
@@ -284,6 +286,17 @@ void CWeapon::Update()
 	float3 newErrorVector = (errorVector + errorVectorAdd);
 	if (newErrorVector.SqLength() <= 1.0f)
 		errorVector = newErrorVector;
+
+	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
+	bool fastAutoRetargetRequired = fastAutoRetargetingEnabled && HaveTarget()
+									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
+	if (fastAutoRetargetRequired) {
+		// switch to unit's target if it has one - see next bit below
+		if (owner->curTarget.type != Target_None)
+			DropCurrentTarget();
+		else
+			AutoTarget();
+	}
 
 	// SlowUpdate() only generates targets when we are in range
 	// esp. for bombs this is often too late (SlowUpdate gets only called twice per second)
@@ -726,8 +739,6 @@ void CWeapon::DependentDied(CObject* o)
 	if (weaponDef->interceptor || weaponDef->isShield) {
 		spring::VectorErase(incomingProjectileIDs, static_cast<CWeaponProjectile*>(o)->id);
 	}
-
-	AutoTarget();
 }
 
 
