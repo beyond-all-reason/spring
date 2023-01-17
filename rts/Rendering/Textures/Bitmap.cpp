@@ -982,7 +982,12 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 
 		#ifndef HEADLESS
 		ddsimage = bmp.ddsimage;
-		ktxTex = bmp.ktxTex;
+		if (ktxTex) {
+			ktxTexture_Destroy(ktxTex);
+			ktxTex = nullptr;
+		}
+		if (bmp.ktxTex)
+			ktxTexture2_CreateCopy(bmp.ktxTex2, &ktxTex2);
 		#endif
 	}
 
@@ -1003,10 +1008,11 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 		std::swap(textype, bmp.textype);
 		std::swap(numLayers, bmp.numLayers);
 		std::swap(numDimensions, bmp.numDimensions);
+		std::swap(textype, bmp.textype);
 
 		#ifndef HEADLESS
-		std::swap(textype, bmp.textype);
 		std::swap(ddsimage, bmp.ddsimage);
+		std::swap(ktxTex, bmp.ktxTex);
 		#endif
 	}
 
@@ -1223,41 +1229,39 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 		if (ktxTex->classId != ktxTexture2_c)
 			return false;
 
-		const auto* ktx2Tex = reinterpret_cast<ktxTexture2*>(ktxTex);
+		xsize = ktxTex2->baseWidth;
+		ysize = ktxTex2->baseHeight;
 
-		xsize = ktx2Tex->baseWidth;
-		ysize = ktx2Tex->baseHeight;
-
-		const auto glInternalFormat = glGetInternalFormatFromVkFormat(static_cast<VkFormat>(ktx2Tex->vkFormat));
+		const auto glInternalFormat = glGetInternalFormatFromVkFormat(static_cast<VkFormat>(ktxTex2->vkFormat));
 		const auto glExternalFormat = glGetFormatFromInternalFormat(glInternalFormat);
 		channels = ExtFmtToChannels(glExternalFormat);
 
-		numDimensions = ktx2Tex->numDimensions;
-		if (ktx2Tex->isArray) {
+		numDimensions = ktxTex2->numDimensions;
+		if (ktxTex2->isArray) {
 			numDimensions += 1;
-			if (ktx2Tex->numFaces == 6) {
+			if (ktxTex2->numFaces == 6) {
 				/* ktxCheckHeader1_ should have caught this. */
-				assert(ktx2Tex->numDimensions == 2);
+				assert(ktxTex2->numDimensions == 2);
 				textype = GL_TEXTURE_CUBE_MAP_ARRAY;
 			} 
 			else {
-				switch (ktx2Tex->numDimensions) {
+				switch (ktxTex2->numDimensions) {
 				case 1: textype = GL_TEXTURE_1D_ARRAY; break;
 				case 2: textype = GL_TEXTURE_2D_ARRAY; break;
 					/* _ktxCheckHeader should have caught this. */
 				default: assert(false);
 				}
 			}
-			numLayers = ktx2Tex->numLayers;
+			numLayers = ktxTex2->numLayers;
 		}
 		else {
-			if (ktx2Tex->numFaces == 6) {
+			if (ktxTex2->numFaces == 6) {
 				/* ktxCheckHeader1_ should have caught this. */
-				assert(ktx2Tex->numDimensions == 2);
+				assert(ktxTex2->numDimensions == 2);
 				textype = GL_TEXTURE_CUBE_MAP;
 			}
 			else {
-				switch (ktx2Tex->numDimensions) {
+				switch (ktxTex2->numDimensions) {
 				case 1: textype = GL_TEXTURE_1D; break;
 				case 2: textype = GL_TEXTURE_2D; break;
 				case 3: textype = GL_TEXTURE_3D; break;

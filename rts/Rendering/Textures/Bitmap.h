@@ -16,6 +16,9 @@
 struct SDL_Surface;
 
 struct ktxTexture;
+struct ktxTexture1;
+struct ktxTexture2;
+
 class CBitmap {
 public:
 	CBitmap();
@@ -107,7 +110,13 @@ public:
 	int32_t textype = 0;
 	#ifndef HEADLESS
 	nv_dds::CDDSImage ddsimage;
-	ktxTexture* ktxTex = nullptr;
+
+	// in order to avoid reinterpret_casts
+	union {
+		ktxTexture*  ktxTex = nullptr;
+		ktxTexture1* ktxTex1;
+		ktxTexture2* ktxTex2;
+	};
 	#endif
 
 	enum class BITMAP_TYPE {
