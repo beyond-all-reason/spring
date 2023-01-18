@@ -84,8 +84,12 @@ using std::max;
 static const LuaHashString hs_n("n");
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Synced Read
+ *
+ * @module SyncedRead
+ * @see rts/Lua/LuaSyncedRead.cpp
+******************************************************************************/
 
 bool LuaSyncedRead::PushEntries(lua_State* L)
 {
@@ -706,12 +710,18 @@ static int GetRulesParam(lua_State* L, const char* caller, int index,
 }
 
 
-/******************************************************************************/
-/******************************************************************************/
-//
-// The call-outs
-//
+/******************************************************************************
+ * Game States
+ * @section gamestates
+******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.IsCheatingEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::IsCheatingEnabled(lua_State* L)
 {
 	lua_pushboolean(L, gs->cheatEnabled);
@@ -719,6 +729,12 @@ int LuaSyncedRead::IsCheatingEnabled(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsGodModeEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::IsGodModeEnabled(lua_State* L)
 {
 	lua_pushboolean(L, gs->godMode != 0);
@@ -728,6 +744,12 @@ int LuaSyncedRead::IsGodModeEnabled(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsDevLuaEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::IsDevLuaEnabled(lua_State* L)
 {
 	lua_pushboolean(L, CLuaHandle::GetDevMode());
@@ -735,18 +757,40 @@ int LuaSyncedRead::IsDevLuaEnabled(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsEditDefsEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::IsEditDefsEnabled(lua_State* L)
 {
 	lua_pushboolean(L, gs->editDefsEnabled);
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.IsNoCostEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::IsNoCostEnabled(lua_State* L)
 {
 	lua_pushboolean(L, unitDefHandler->GetNoCost());
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.GetGlobalLos
+ *
+ * @number[opt] teamID
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::GetGlobalLos(lua_State* L)
 {
 	const int allyTeam = luaL_optint(L, 1, CLuaHandle::GetHandleReadAllyTeam(L));
@@ -758,6 +802,12 @@ int LuaSyncedRead::GetGlobalLos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.AreHelperAIsEnabled
+ *
+ * @treturn bool enabled
+ */
 int LuaSyncedRead::AreHelperAIsEnabled(lua_State* L)
 {
 	lua_pushboolean(L, !gs->noHelperAIs);
@@ -765,6 +815,12 @@ int LuaSyncedRead::AreHelperAIsEnabled(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.FixedAllies
+ *
+ * @treturn bool|nil enabled
+ */
 int LuaSyncedRead::FixedAllies(lua_State* L)
 {
 	lua_pushboolean(L, gameSetup->fixedAllies);
@@ -772,6 +828,12 @@ int LuaSyncedRead::FixedAllies(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsGameOver
+ *
+ * @treturn bool isGameOver
+ */
 int LuaSyncedRead::IsGameOver(lua_State* L)
 {
 	if (game == nullptr)
@@ -782,16 +844,19 @@ int LuaSyncedRead::IsGameOver(lua_State* L)
 }
 
 
-int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
-{
-	if (!gs->useLuaGaia)
-		return 0;
-
-	lua_pushnumber(L, teamHandler.GaiaTeamID());
-	return 1;
-}
+/******************************************************************************
+ * Speed/Time
+ * @section speedtime
+******************************************************************************/
 
 
+/***
+ *
+ * @function Spring.GetGameFrame
+ *
+ * @treturn number t1 frameNum % dayFrames
+ * @treturn number t2 frameNum / dayFrames
+ */
 int LuaSyncedRead::GetGameFrame(lua_State* L)
 {
 	const int simFrames = gs->GetLuaSimFrame();
@@ -803,6 +868,12 @@ int LuaSyncedRead::GetGameFrame(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetGameSeconds
+ *
+ * @treturn number seconds
+ */
 int LuaSyncedRead::GetGameSeconds(lua_State* L)
 {
 	lua_pushnumber(L, gs->GetLuaSimFrame() / (1.0f * GAME_SPEED));
@@ -810,12 +881,31 @@ int LuaSyncedRead::GetGameSeconds(lua_State* L)
 }
 
 
+/******************************************************************************
+ * Environment
+ * @section environment
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.GetTidal
+ *
+ * @treturn number tidalStrength
+ */
 int LuaSyncedRead::GetTidal(lua_State* L)
 {
 	lua_pushnumber(L, envResHandler.GetCurrentTidalStrength());
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.GetWind
+ *
+ * @treturn number windStrength
+ */
 int LuaSyncedRead::GetWind(lua_State* L)
 {
 	lua_pushnumber(L, envResHandler.GetCurrentWindVec().x);
@@ -829,8 +919,22 @@ int LuaSyncedRead::GetWind(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Rules/Params
+ *
+ * @section environment
+ *
+ * The following functions allow to save data per game, team and unit.
+ * The advantage of it is that it can be read from anywhere (even from LuaUI and AIs!)
+******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.GetGameRulesParams
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
 int LuaSyncedRead::GetGameRulesParams(lua_State* L)
 {
 	// always readable for all
@@ -838,6 +942,116 @@ int LuaSyncedRead::GetGameRulesParams(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamRulesParams
+ *
+ * @tparam number teamID
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
+int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr || game == nullptr)
+		return 0;
+
+	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC;
+
+	if (LuaUtils::IsAlliedTeam(L, team->teamNum) || game->IsGameOver()) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	}
+	else if (teamHandler.AlliedTeams(team->teamNum, CLuaHandle::GetHandleReadTeam(L))) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
+	}
+
+	return PushRulesParams(L, __func__, team->modParams, losMask);
+}
+
+
+static int GetUnitRulesParamLosMask(lua_State* L, const CUnit* unit)
+{
+	if (LuaUtils::IsAllyUnit(L, unit) || game->IsGameOver())
+		return LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	if (teamHandler.AlliedTeams(unit->team, CLuaHandle::GetHandleReadTeam(L)))
+		return LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
+	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0)
+		return LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+
+	const auto losStatus = unit->losStatus[CLuaHandle::GetHandleReadAllyTeam(L)];
+	if (losStatus & LOS_INLOS)
+		return LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
+	if (losStatus & (LOS_PREVLOS | LOS_CONTRADAR))
+		return LuaRulesParams::RULESPARAMLOS_TYPED_MASK;
+	if (losStatus & LOS_INRADAR)
+		return LuaRulesParams::RULESPARAMLOS_INRADAR_MASK;
+
+	return LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+}
+
+
+/***
+ *
+ * @function Spring.GetUnitRulesParams
+ *
+ * @tparam number unitID
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
+int LuaSyncedRead::GetUnitRulesParams(lua_State* L)
+{
+	const CUnit* unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr || game == nullptr)
+		return 0;
+
+	return PushRulesParams(L, __func__, unit->modParams, GetUnitRulesParamLosMask(L, unit));
+}
+
+
+/***
+ *
+ * @function Spring.GetFeatureRulesParams
+ *
+ * @tparam number featureID
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
+int LuaSyncedRead::GetFeatureRulesParams(lua_State* L)
+{
+	const CFeature* feature = ParseFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+
+	if (LuaUtils::IsAlliedAllyTeam(L, feature->allyteam) || game->IsGameOver()) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	}
+	else if (teamHandler.AlliedTeams(feature->team, CLuaHandle::GetHandleReadTeam(L))) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
+	}
+	else if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
+		//! NoAccessTeam
+	}
+	else if (LuaUtils::IsFeatureVisible(L, feature)) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
+	}
+
+	const LuaRulesParams::Params&  params = feature->modParams;
+
+	return PushRulesParams(L, __func__, params, losMask);
+}
+
+
+/***
+ *
+ * @function Spring.GetGameRulesParam
+ *
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
 int LuaSyncedRead::GetGameRulesParam(lua_State* L)
 {
 	// always readable for all
@@ -845,8 +1059,111 @@ int LuaSyncedRead::GetGameRulesParam(lua_State* L)
 }
 
 
-/******************************************************************************/
+/***
+ *
+ * @function Spring.GetTeamRulesParam
+ *
+ * @number teamID
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
+int LuaSyncedRead::GetTeamRulesParam(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr || game == nullptr)
+		return 0;
 
+	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC;
+
+	if (LuaUtils::IsAlliedTeam(L, team->teamNum) || game->IsGameOver()) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	}
+	else if (teamHandler.AlliedTeams(team->teamNum, CLuaHandle::GetHandleReadTeam(L))) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
+	}
+
+	return GetRulesParam(L, __func__, 2, team->modParams, losMask);
+}
+
+
+/***
+ *
+ * @function Spring.GetUnitRulesParam
+ *
+ * @number unitID
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
+int LuaSyncedRead::GetUnitRulesParam(lua_State* L)
+{
+	const CUnit* unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr || game == nullptr)
+		return 0;
+
+	return GetRulesParam(L, __func__, 2, unit->modParams, GetUnitRulesParamLosMask(L, unit));
+}
+
+
+/***
+ *
+ * @function Spring.GetFeatureRulesParam
+ *
+ * @number featureID
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
+int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
+{
+	const CFeature* feature = ParseFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+
+	if (LuaUtils::IsAlliedAllyTeam(L, feature->allyteam) || game->IsGameOver()) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	}
+	else if (teamHandler.AlliedTeams(feature->team, CLuaHandle::GetHandleReadTeam(L))) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
+	}
+	else if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
+		//! NoAccessTeam
+	}
+	else if (LuaUtils::IsFeatureVisible(L, feature)) {
+		losMask |= LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
+	}
+
+	return GetRulesParam(L, __func__, 2, feature->modParams, losMask);
+}
+
+
+/******************************************************************************
+ * Mod and Map options
+ *
+ * @section modmapoptions
+ *
+ * *Warning*: boolean values are not transfered from C to Lua correctly.
+ * For this reason the respective option has to be converted to a number
+ * and checked accordingly via an IF statement as shown below:
+ *
+ *     if (tonumber(Spring.GetModOptions.exampleOption) == 1) then...end
+ *
+ * The following check therefore is insufficient!
+ *
+ *     if (Spring.GetModOptions.exampleOption) then...end
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.GetMapOptions
+ *
+ * @treturn {[string] = string,...} options map with options names as keys and values as values
+ */
 int LuaSyncedRead::GetMapOptions(lua_State* L)
 {
 	const auto& mapOpts = CGameSetup::GetMapOptions();
@@ -862,6 +1179,13 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.GetModOptions
+ *
+ * @treturn {[string] = string,...} options map with options names as keys and values as values
+ */
 int LuaSyncedRead::GetModOptions(lua_State* L)
 {
 	const auto& modOpts = CGameSetup::GetModOptions();
@@ -878,8 +1202,22 @@ int LuaSyncedRead::GetModOptions(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Vectors
+ *
+ * @section vectors
+******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.GetHeadingFromVector
+ *
+ * @number x
+ * @number z
+ *
+ * @treturn number heading
+ */
 int LuaSyncedRead::GetHeadingFromVector(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -890,6 +1228,15 @@ int LuaSyncedRead::GetHeadingFromVector(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetVectorFromHeading
+ *
+ * @number heading
+ *
+ * @treturn number x
+ * @treturn number z
+ */
 int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 {
 	const short int h = (short int)luaL_checknumber(L, 1);
@@ -900,8 +1247,53 @@ int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Sides and Factions
+ *
+ * @section sidesfactions
+******************************************************************************/
 
+
+/*** Side spec
+ *
+ * @table sideSpec
+ *
+ * Used when returning arrays of side specifications, is itself an array with
+ * positional values as below:
+ *
+ * @string sideName
+ * @string caseName
+ * @string startUnit
+ */
+
+
+/***
+ *
+ * @function Spring.GetSideData
+ *
+ * @string sideName
+ *
+ * @treturn nil|string startUnit
+ * @treturn string caseSensitiveSideName
+ */
+
+/***
+ *
+ * @function Spring.GetSideData
+ *
+ * @number sideID
+ *
+ * @treturn nil|string sideName
+ * @treturn string startUnit
+ * @treturn string caseSensitiveSideName
+ */
+
+/***
+ *
+ * @function Spring.GetSideData
+ *
+ * @treturn {[sideSpec],...} sideArray
+ */
 int LuaSyncedRead::GetSideData(lua_State* L)
 {
 	if (lua_israwstring(L, 1)) {
@@ -941,8 +1333,40 @@ int LuaSyncedRead::GetSideData(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Teams
+ *
+ * @section Teams
+******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.GetGaiaTeamID
+ *
+ * @treturn number teamID
+ */
+int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
+{
+	if (!gs->useLuaGaia)
+		return 0;
+
+	lua_pushnumber(L, teamHandler.GaiaTeamID());
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GetAllyTeamStartBox
+ *
+ * @number allyID
+ *
+ * @treturn[opt] number xMin
+ * @treturn[opt] number zMin
+ * @treturn[opt] number xMax
+ * @treturn[opt] number zMax
+ */
 int LuaSyncedRead::GetAllyTeamStartBox(lua_State* L)
 {
 	const std::vector<AllyTeam>& allyData = CGameSetup::GetAllyStartingData();
@@ -964,6 +1388,16 @@ int LuaSyncedRead::GetAllyTeamStartBox(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamStartPosition
+ *
+ * @number teamID
+ *
+ * @treturn[opt] number x
+ * @treturn[opt] number y
+ * @treturn[opt] number x
+ */
 int LuaSyncedRead::GetTeamStartPosition(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1258,44 +1692,6 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 	}
 
 	return 0;
-}
-
-
-int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
-{
-	const CTeam* team = ParseTeam(L, __func__, 1);
-	if (team == nullptr || game == nullptr)
-		return 0;
-
-	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC;
-
-	if (LuaUtils::IsAlliedTeam(L, team->teamNum) || game->IsGameOver()) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-	}
-	else if (teamHandler.AlliedTeams(team->teamNum, CLuaHandle::GetHandleReadTeam(L))) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
-	}
-
-	return PushRulesParams(L, __func__, team->modParams, losMask);
-}
-
-
-int LuaSyncedRead::GetTeamRulesParam(lua_State* L)
-{
-	const CTeam* team = ParseTeam(L, __func__, 1);
-	if (team == nullptr || game == nullptr)
-		return 0;
-
-	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC;
-
-	if (LuaUtils::IsAlliedTeam(L, team->teamNum) || game->IsGameOver()) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-	}
-	else if (teamHandler.AlliedTeams(team->teamNum, CLuaHandle::GetHandleReadTeam(L))) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
-	}
-
-	return GetRulesParam(L, __func__, 2, team->modParams, losMask);
 }
 
 
@@ -4478,47 +4874,6 @@ int LuaSyncedRead::GetRealBuildQueue(lua_State* L)
 }
 
 
-/******************************************************************************/
-
-static int GetUnitRulesParamLosMask(lua_State* L, const CUnit* unit)
-{
-	if (LuaUtils::IsAllyUnit(L, unit) || game->IsGameOver())
-		return LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-	if (teamHandler.AlliedTeams(unit->team, CLuaHandle::GetHandleReadTeam(L)))
-		return LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
-	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0)
-		return LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
-
-	const auto losStatus = unit->losStatus[CLuaHandle::GetHandleReadAllyTeam(L)];
-	if (losStatus & LOS_INLOS)
-		return LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
-	if (losStatus & (LOS_PREVLOS | LOS_CONTRADAR))
-		return LuaRulesParams::RULESPARAMLOS_TYPED_MASK;
-	if (losStatus & LOS_INRADAR)
-		return LuaRulesParams::RULESPARAMLOS_INRADAR_MASK;
-
-	return LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
-}
-
-int LuaSyncedRead::GetUnitRulesParams(lua_State* L)
-{
-	const CUnit* unit = ParseUnit(L, __func__, 1);
-	if (unit == nullptr || game == nullptr)
-		return 0;
-
-	return PushRulesParams(L, __func__, unit->modParams, GetUnitRulesParamLosMask(L, unit));
-}
-
-
-int LuaSyncedRead::GetUnitRulesParam(lua_State* L)
-{
-	const CUnit* unit = ParseUnit(L, __func__, 1);
-	if (unit == nullptr || game == nullptr)
-		return 0;
-
-	return GetRulesParam(L, __func__, 2, unit->modParams, GetUnitRulesParamLosMask(L, unit));
-}
-
 
 /******************************************************************************/
 
@@ -4826,60 +5181,6 @@ int LuaSyncedRead::GetFeatureCollisionVolumeData(lua_State* L)
 int LuaSyncedRead::GetFeaturePieceCollisionVolumeData(lua_State* L)
 {
 	return (PushPieceCollisionVolumeData(L, ParseFeature(L, __func__, 1)));
-}
-
-
-int LuaSyncedRead::GetFeatureRulesParams(lua_State* L)
-{
-	const CFeature* feature = ParseFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
-
-	if (LuaUtils::IsAlliedAllyTeam(L, feature->allyteam) || game->IsGameOver()) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-	}
-	else if (teamHandler.AlliedTeams(feature->team, CLuaHandle::GetHandleReadTeam(L))) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
-	}
-	else if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
-		//! NoAccessTeam
-	}
-	else if (LuaUtils::IsFeatureVisible(L, feature)) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
-	}
-
-	const LuaRulesParams::Params&  params = feature->modParams;
-
-	return PushRulesParams(L, __func__, params, losMask);
-}
-
-
-int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
-{
-	const CFeature* feature = ParseFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
-
-	if (LuaUtils::IsAlliedAllyTeam(L, feature->allyteam) || game->IsGameOver()) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-	}
-	else if (teamHandler.AlliedTeams(feature->team, CLuaHandle::GetHandleReadTeam(L))) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED_MASK;
-	}
-	else if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
-		//! NoAccessTeam
-	}
-	else if (LuaUtils::IsFeatureVisible(L, feature)) {
-		losMask |= LuaRulesParams::RULESPARAMLOS_INLOS_MASK;
-	}
-
-	return GetRulesParam(L, __func__, 2, feature->modParams, losMask);
 }
 
 /******************************************************************************/

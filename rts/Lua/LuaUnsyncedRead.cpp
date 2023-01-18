@@ -1432,10 +1432,10 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 		break;
 	default: {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			disqualifierFunc = [readTeam, allegiance](const CUnit* unit) -> bool { return unit->team != allegiance; };
+			disqualifierFunc = [allegiance](const CUnit* unit) -> bool { return unit->team != allegiance; };
 		}
 		else {
-			disqualifierFunc = [readTeam, allegiance, L](const CUnit* unit) -> bool {
+			disqualifierFunc = [allegiance, L](const CUnit* unit) -> bool {
 				if (unit->team != allegiance)
 					return true;
 

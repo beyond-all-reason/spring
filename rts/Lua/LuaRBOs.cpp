@@ -11,8 +11,11 @@
 #include "Rendering/GlobalRendering.h"
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * RBO
+ * @module RBO
+ * @see rts/Lua/LuaRBOs.cpp
+******************************************************************************/
 
 LuaRBOs::~LuaRBOs()
 {
@@ -134,6 +137,26 @@ int LuaRBOs::meta_newindex(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * User Data RBO
+ * @table rbo
+ * @number target
+ * @number format
+ * @number xsize
+ * @number ysize
+ * @bool valid
+ * @number samples will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+ */
+
+/***
+ * @function gl.CreateRBO
+ * @number xsize
+ * @number ysize
+ * @tparam table data
+ * @number data.target `GL_RENDERBUFFER_EXT`
+ * @number data.format `GL_RGBA`
+ * @number[opt] data.samples any number here will result in creation of multisampled RBO
+ */
 int LuaRBOs::CreateRBO(lua_State* L)
 {
 	RBO rbo;
@@ -203,6 +226,10 @@ int LuaRBOs::CreateRBO(lua_State* L)
 }
 
 
+/***
+ * @function gl.DeleteRBO
+ * @tparam rbo rbo
+ */
 int LuaRBOs::DeleteRBO(lua_State* L)
 {
 	if (lua_isnil(L, 1)) {

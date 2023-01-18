@@ -9,8 +9,77 @@
 #include "Sim/Units/CommandAI/Command.h"
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Command constants
+ * @module CMD
+ * @see rts/Lua/LuaConstCMD.cpp
+******************************************************************************/
+
+/*** @table CMD
+ *
+ * @param FIRESTATE_NONE -1
+ * @param MOVESTATE_NONE -1
+ * @param STOP 0
+ * @param MOVESTATE_HOLDPOS 0
+ * @param FIRESTATE_HOLDFIRE 0
+ * @param INSERT 1
+ * @param MOVESTATE_MANEUVER 1
+ * @param FIRESTATE_RETURNFIRE 1
+ * @param WAITCODE_TIME 1
+ * @param WAITCODE_DEATH 2
+ * @param MOVESTATE_ROAM 2
+ * @param REMOVE 2
+ * @param FIRESTATE_FIREATWILL 2
+ * @param FIRESTATE_FIREATNEUTRAL 3
+ * @param WAITCODE_SQUAD 3
+ * @param OPT_META 4
+ * @param WAITCODE_GATHER 4
+ * @param WAIT 5
+ * @param TIMEWAIT 6
+ * @param DEATHWAIT 7
+ * @param OPT_INTERNAL 8
+ * @param SQUADWAIT 8
+ * @param GATHERWAIT 9
+ * @param MOVE 10
+ * @param PATROL 15
+ * @param FIGHT 16
+ * @param OPT_RIGHT 16
+ * @param LOOPBACKATTACK 20
+ * @param ATTACK 20
+ * @param AREA_ATTACK 21
+ * @param GUARD 25
+ * @param AISELECT 30
+ * @param OPT_SHIFT 32
+ * @param GROUPSELECT 35
+ * @param GROUPADD 36
+ * @param GROUPCLEAR 37
+ * @param REPAIR 40
+ * @param FIRE_STATE 45
+ * @param MOVE_STATE 50
+ * @param SETBASE 55
+ * @param INTERNAL 60
+ * @param OPT_CTRL 64
+ * @param SELFD 65
+ * @param SET_WANTED_MAX_SPEED 70
+ * @param LOAD_UNITS 75
+ * @param LOAD_ONTO 76
+ * @param UNLOAD_UNITS 80
+ * @param UNLOAD_UNIT 81
+ * @param ONOFF 85
+ * @param RECLAIM 90
+ * @param CLOAK 95
+ * @param STOCKPILE 100
+ * @param MANUALFIRE 105
+ * @param DGUN 105
+ * @param RESTORE 110
+ * @param REPEAT 115
+ * @param TRAJECTORY 120
+ * @param RESURRECT 125
+ * @param OPT_ALT 128
+ * @param CAPTURE 130
+ * @param AUTOREPAIRLEVEL 135
+ * @param IDLEMODE 145 
+ */
 
 
 bool LuaConstCMD::PushEntries(lua_State* L)

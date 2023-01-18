@@ -11,10 +11,29 @@
 // spring's lua uses FLOATS as its number type which can only represent
 // integer values up to 1<<24 exactly
 const int mask = 0x00FFFFFF; // 2^24
+                             //
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * math bit extensions
+ * @module BitOps
+ *
+ * Note: there are no bit shift. Use those Lua functions instead for 24 bits bitshift
+ * 24 bits because only the 24 bits of the mantissa can be easily used in a 32 bit float
+ * bitshift functions (<<, >> equivalent)
+ *
+ *     -- left shit
+ *     local function lsh(value,shift)
+ *         return (value*(2^shift)) % 2^24
+ *     end
+ *
+ *     -- right shift
+ *     local function rsh(value,shift)
+ *         return math.floor(value/2^shift) % 2^24
+ *     end
+ *
+ * @see rts/Lua/LuaBitOps.cpp
+******************************************************************************/
 
 bool LuaBitOps::PushEntries(lua_State* L)
 {
@@ -36,6 +55,15 @@ static inline unsigned int luaL_checkuint(lua_State* L, int index)
 }
 
 
+/*** Returns the bitwise OR of all arguments. Only use up to 24 bit integers.
+ *
+ * @function math.bit_or
+ * @number a1
+ * @number a2
+ * @number[opt] a3
+ * @number[opt] an
+ * @treturn number i
+ */
 int LuaBitOps::bit_or(lua_State* L)
 {
 	unsigned int result = 0x00000000;
@@ -47,6 +75,15 @@ int LuaBitOps::bit_or(lua_State* L)
 }
 
 
+/*** Returns the bitwise AND of all arguments. Only use up to 24 bit integers.
+ *
+ * @function math.bit_and
+ * @number a1
+ * @number a2
+ * @number[opt] a3
+ * @number[opt] an
+ * @treturn number i
+ */
 int LuaBitOps::bit_and(lua_State* L)
 {
 	unsigned int result = 0xFFFFFFFF;
@@ -58,6 +95,15 @@ int LuaBitOps::bit_and(lua_State* L)
 }
 
 
+/*** Returns the bitwise XOR of all arguments. Only use up to 24 bit integers.
+ *
+ * @function math.bit_xor
+ * @number a1
+ * @number a2
+ * @number[opt] a3
+ * @number[opt] an
+ * @treturn number i
+ */
 int LuaBitOps::bit_xor(lua_State* L)
 {
 	unsigned int result = 0x00000000;
@@ -69,6 +115,12 @@ int LuaBitOps::bit_xor(lua_State* L)
 }
 
 
+/*** Returns the bitwise NOT of the 24 bit integer argument.
+ *
+ * @function math.bit_inv
+ * @number a1
+ * @treturn number i
+ */
 int LuaBitOps::bit_inv(lua_State* L)
 {
 	const unsigned int result = ~luaL_checkuint(L, 1);
@@ -77,6 +129,15 @@ int LuaBitOps::bit_inv(lua_State* L)
 }
 
 
+/*** Set each of the bits of a 24 bit integer. Returns result = result OR (1 << a1) OR (1 << a2) OR ...;)
+ *
+ * @function math.bit_bits
+ * @number a1
+ * @number a2
+ * @number[opt] a3
+ * @number[opt] an
+ * @treturn number i
+ */
 int LuaBitOps::bit_bits(lua_State* L)
 {
 	unsigned int result = 0x00000000;

@@ -112,8 +112,21 @@
 #undef Yield
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Callouts to set state
+ *
+ * @module UnsyncedCtrl
+ * @see rts/Lua/LuaUnsyncedCtrl.cpp
+******************************************************************************/
+
+
+/*** Color triple (RGB)
+ * @table rgb
+ * @number r
+ * @number g
+ * @number b
+ */
+
 
 bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 {
@@ -414,12 +427,20 @@ static inline CUnit* ParseSelectUnit(lua_State* L, const char* caller, int index
 
 
 
-/******************************************************************************/
-/******************************************************************************/
-//
-//  The call-outs
-//
+/******************************************************************************
+ * Ingame Console
+ * @section console
+******************************************************************************/
 
+
+/*** Send a ping request to the server
+ *
+ * @function Spring.Ping
+ *
+ * @number pingTag
+ *
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::Ping(lua_State* L)
 {
 	// pre-game ping would not be handled properly, send via GUI
@@ -430,15 +451,93 @@ int LuaUnsyncedCtrl::Ping(lua_State* L)
 	return 0;
 }
 
+
+/*** Useful for debugging.
+ *
+ * @function Spring.Echo
+ *
+ * @param arg1
+ * @param[opt] arg2
+ * @param[opt] argn
+ *
+ *  Prints values in the spring chat console.
+ *  Hint: the default print() writes to STDOUT.
+ *
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::Echo(lua_State* L)
 {
 	return LuaUtils::Echo(L);
 }
 
+
+/*** @function Spring.Log
+ * @string section
+ * @tparam ?number|string logLevel
+ *   Possible values for logLevel are:
+ *    "debug"   | LOG.DEBUG
+ *    "info"    | LOG.INFO
+ *    "notice"  | LOG.NOTICE (engine default) (new in Version 97)
+ *    "warning" | LOG.WARNING
+ *    "error"   | LOG.ERROR
+ *    "fatal"   | LOG.FATAL
+ * @string logMessage1
+ * @string[opt] logMessage2
+ * @string[opt] logMessagen
+ *
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::Log(lua_State* L)
 {
 	return LuaUtils::Log(L);
 }
+
+
+/*** @function Spring.SendCommands
+ * @tparam ?string|table command1 | { command1, command 2, ...}
+ * @string command2
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SendCommands(lua_State* L)
+{
+	if ((guihandler == nullptr) || gs->noHelperAIs)
+		return 0;
+
+	vector<string> cmds;
+
+	if (lua_istable(L, 1)) { // old style -- table
+		constexpr int tableIdx = 1;
+		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
+			if (lua_israwstring(L, -1)) {
+				string action = lua_tostring(L, -1);
+				if (action[0] != '@')
+					action = "@@" + action;
+
+				cmds.push_back(action);
+			}
+		}
+	}
+	else if (lua_israwstring(L, 1)) { // new style -- function parameters
+		for (int i = 1; lua_israwstring(L, i); i++) {
+			string action = lua_tostring(L, i);
+			if (action[0] != '@')
+				action = "@@" + action;
+
+			cmds.push_back(action);
+		}
+	}
+	else {
+		luaL_error(L, "Incorrect arguments to SendCommands()");
+	}
+
+	lua_settop(L, 0); // pop the input arguments
+
+	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
+	guihandler->RunCustomCommands(cmds, false);
+	configHandler->EnableWriting(true);
+	return 0;
+}
+
 
 static string ParseMessage(lua_State* L, const string& msg)
 {
@@ -473,12 +572,27 @@ static void PrintMessage(lua_State* L, const string& msg)
 }
 
 
+/******************************************************************************
+ * Messages
+ * @section messages
+******************************************************************************/
+
+
+/*** @function Spring.SendMessage
+ * @string message
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SendMessage(lua_State* L)
 {
 	PrintMessage(L, luaL_checksstring(L, 1));
 	return 0;
 }
 
+
+/*** @function Spring.SendMessageToSpectators
+ * @string message `<PLAYER#>` (with # being a playerid) inside the string will be replaced with the players name - i.e. : Spring.SendMessage ("`<PLAYER1>` did something") might display as "ProRusher did something"
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
 {
 	if (gu->spectating)
@@ -487,6 +601,12 @@ int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
 	return 0;
 }
 
+
+/*** @function Spring.SendMessageToPlayer
+ * @number playerID
+ * @string message
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SendMessageToPlayer(lua_State* L)
 {
 	if (luaL_checkint(L, 1) == gu->myPlayerNum)
@@ -495,6 +615,12 @@ int LuaUnsyncedCtrl::SendMessageToPlayer(lua_State* L)
 	return 0;
 }
 
+
+/*** @function Spring.SendMessageToTeam
+ * @number teamID
+ * @string message
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SendMessageToTeam(lua_State* L)
 {
 	if (luaL_checkint(L, 1) == gu->myTeam)
@@ -503,6 +629,12 @@ int LuaUnsyncedCtrl::SendMessageToTeam(lua_State* L)
 	return 0;
 }
 
+
+/*** @function Spring.SendMessageToAllyTeam
+ * @number allyID
+ * @string message
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SendMessageToAllyTeam(lua_State* L)
 {
 	if (luaL_checkint(L, 1) == gu->myAllyTeam)
@@ -512,8 +644,18 @@ int LuaUnsyncedCtrl::SendMessageToAllyTeam(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Sounds
+ * @section sounds
+******************************************************************************/
 
+
+/*** Loads a SoundDefs file, the format is the same as in `gamedata/sounds.lua`.
+ *
+ * @function Spring.LoadSoundDef
+ * @string soundfile
+ * @treturn ?nil|bool success
+ */
 int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
 {
 	LuaParser soundDefsParser(luaL_checksstring(L, 1), SPRING_VFS_ZIP_FIRST, SPRING_VFS_ZIP_FIRST);
@@ -525,6 +667,25 @@ int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
 	return 1;
 }
 
+
+/*** @function Spring.PlaySoundFile
+ * @string soundfile
+ * @number[opt=1.0] volume
+ * @number[opt] posx
+ * @number[opt] posy
+ * @number[opt] posz
+ * @number[opt] speedx
+ * @number[opt] speedy
+ * @number[opt] speedz
+ * @tparam[opt] ?number|string channel
+ *    Possible arguments for channel argument:
+ *    "general" || 0 || nil (default)
+ *    "battle" || "sfx" | 1
+ *    "unitreply" || "voice" || 2
+ *    "userinterface" || "ui" || 3
+ *
+ * @treturn ?nil|bool playSound
+ */
 int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 {
 	const int args = lua_gettop(L);
@@ -604,6 +765,18 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 }
 
 
+/*** Allows to play an Ogg Vorbis (.OGG) compressed sound file.
+ *
+ * @function Spring.PlaySoundStream
+ *
+ * Multiple sound streams may be played at once.
+ *
+ * @string oggfile
+ * @number[opt=1.0] volume
+ * @bool[opt] enqueue
+ *
+ * @treturn ?nil|bool success
+*/
 int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
 {
 	// file, volume, enqueue
@@ -615,16 +788,37 @@ int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
 	return 1;
 }
 
+
+/*** Terminates any SoundStream currently running.
+ *
+ * @function Spring.StopSoundStream
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::StopSoundStream(lua_State*)
 {
 	Channels::BGMusic->StreamStop();
 	return 0;
 }
+
+
+/*** Pause any SoundStream currently running.
+ *
+ * @function Spring.PauseSoundStream
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::PauseSoundStream(lua_State*)
 {
 	Channels::BGMusic->StreamPause();
 	return 0;
 }
+
+
+/*** Set volume for SoundStream
+ *
+ * @function Spring.SetSoundStreamVolume
+ * @number volume
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetSoundStreamVolume(lua_State* L)
 {
 	Channels::BGMusic->SetVolume(luaL_checkfloat(L, 1));
@@ -632,6 +826,8 @@ int LuaUnsyncedCtrl::SetSoundStreamVolume(lua_State* L)
 }
 
 
+/*** @function Spring.SetSoundEffectParams
+ */
 int LuaUnsyncedCtrl::SetSoundEffectParams(lua_State* L)
 {
 #if !defined(HEADLESS) && !defined(NO_SOUND)
@@ -784,6 +980,20 @@ int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.DrawUnitCommands
+ * @number unitID
+ * @treturn nil
+ */
+
+/***
+ *
+ * @function Spring.DrawUnitCommands
+ * @tparam table units array of unit ids
+ * @bool tableOrArray[opt=false] when true `units` is interpreted as a table in the format `{ [unitID] = arg1, ... }`
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
 {
 	if (lua_istable(L, 1)) {
@@ -816,8 +1026,35 @@ int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
 }
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Camera
+ * @section camera
+ *****************************************************************************/
+
+/*** Parameters for camera state
+ *
+ * @table camState
+ *
+ * Highly dependent on the type of the current camera controller
+ *
+ * @string name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
+ * @number mode the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
+ * @number fov
+ * @number px Position X of the ground point in screen center
+ * @number py Position Y of the ground point in screen center
+ * @number pz Position Z of the ground point in screen center
+ * @number dx Camera direction vector X
+ * @number dy Camera direction vector Y
+ * @number dz Camera direction vector Z
+ * @number rx Camera rotation angle on X axis (spring)
+ * @number ry Camera rotation angle on Y axis (spring)
+ * @number rz Camera rotation angle on Z axis (spring)
+ * @number angle Camera rotation angle on X axis (aka tilt/pitch) (ta)
+ * @number flipped -1 for when south is down, 1 for when north is down (ta)
+ * @number dist Camera distance from the ground (spring)
+ * @number height Camera distance from the ground (ta)
+ * @number oldHeight Camera distance from the ground, cannot be changed (rot)
+ */
 
 static CCameraController::StateMap ParseCamStateMap(lua_State* L, int tableIdx)
 {
@@ -841,6 +1078,16 @@ static CCameraController::StateMap ParseCamStateMap(lua_State* L, int tableIdx)
 }
 
 
+/*** For Spring Engine XZ represents horizontal, from north west corner of map and Y vertical, from water level and rising.
+ *
+ * @function Spring.SetCameraTarget
+ *
+ * @number x
+ * @number y
+ * @number z
+ * @number[opt] transTime
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 {
 	if (mouse == nullptr)
@@ -872,6 +1119,42 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 	return 0;
 }
 
+
+/***
+ *
+ * @function Spring.SetCameraTarget
+ *
+ * @number px[opt=0]
+ * @number py[opt=0]
+ * @number pz[opt=0]
+ * @number tx[opt=0]
+ * @number ty[opt=0]
+ * @number tz[opt=0]
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
+{
+	camera->posOffset.x = luaL_optfloat(L, 1, 0.0f);
+	camera->posOffset.y = luaL_optfloat(L, 2, 0.0f);
+	camera->posOffset.z = luaL_optfloat(L, 3, 0.0f);
+	camera->tiltOffset.x = luaL_optfloat(L, 4, 0.0f);
+	camera->tiltOffset.y = luaL_optfloat(L, 5, 0.0f);
+	camera->tiltOffset.z = luaL_optfloat(L, 6, 0.0f);
+
+	return 0;
+}
+
+
+/*** Sets camera state
+ *
+ * @function Spring.SetCameraState
+ *
+ * The fields in `camState` must be consistent with the name/mode and current/new camera mode
+ *
+ * @tparam camState camState
+ * @number camTime
+ * @treturn bool set
+ */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 {
 	// ??
@@ -895,8 +1178,10 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 }
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Unit Selection
+ * @section unit_selection
+******************************************************************************/
 
 int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
 {
@@ -943,6 +1228,1223 @@ int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 	return 0;
 }
 
+
+
+/******************************************************************************
+ * Lighting
+ * @section lighting
+******************************************************************************/
+
+/*** Parameters for lighting
+ * @table lightParams
+ * @tparam table position
+ * @number position.px
+ * @number position.py
+ * @number position.pz
+ * @tparam table direction
+ * @number direction.dx
+ * @number direction.dy
+ * @number direction.dz
+ * @tparam table ambientColor
+ * @number ambientColor.red
+ * @number ambientColor.green
+ * @number ambientColor.blue
+ * @tparam table diffuseColor
+ * @number diffuseColor.red
+ * @number diffuseColor.green
+ * @number diffuseColor.blue
+ * @tparam table specularColor
+ * @number specularColor.red
+ * @number specularColor.green
+ * @number specularColor.blue
+ * @tparam table intensityWeight
+ * @number intensityWeight.ambientWeight
+ * @number intensityWeight.diffuseWeight
+ * @number intensityWeight.specularWeight
+ * @tparam table ambientDecayRate per-frame decay of ambientColor (spread over TTL frames)
+ * @number ambientDecayRate.ambientRedDecay
+ * @number ambientDecayRate.ambientGreenDecay
+ * @number ambientDecayRate.ambientBlueDecay
+ * @tparam table diffuseDecayRate per-frame decay of diffuseColor (spread over TTL frames)
+ * @number diffuseDecayRate.diffuseRedDecay
+ * @number diffuseDecayRate.diffuseGreenDecay
+ * @number diffuseDecayRate.diffuseBlueDecay
+ * @tparam table specularDecayRate per-frame decay of specularColor (spread over TTL frames)
+ * @number specularDecayRate.specularRedDecay
+ * @number specularDecayRate.specularGreenDecay
+ * @number specularDecayRate.specularBlueDecay
+ * @tparam table decayFunctionType *DecayType = 0.0 -> interpret *DecayRate values as linear, else as exponential
+ * @number decayFunctionType.ambientDecayType
+ * @number decayFunctionType.diffuseDecayType
+ * @number decayFunctionType.specularDecayType
+ * @number radius
+ * @number fov
+ * @number ttl
+ * @number priority
+ * @bool   ignoreLOS
+ */
+
+static bool ParseLight(lua_State* L, GL::Light& light, const int tblIdx, const char* caller)
+{
+	if (!lua_istable(L, tblIdx)) {
+		luaL_error(L, "[%s] argument %d must be a table!", caller, tblIdx);
+		return false;
+	}
+
+	for (lua_pushnil(L); lua_next(L, tblIdx) != 0; lua_pop(L, 1)) {
+		if (!lua_israwstring(L, -2))
+			continue;
+
+		const char* key = lua_tostring(L, -2);
+
+		switch (lua_type(L, -1)) {
+			case LUA_TTABLE: {
+				float array[3] = {0.0f, 0.0f, 0.0f};
+
+				if (LuaUtils::ParseFloatArray(L, -1, array, 3) < 3)
+					continue;
+
+				switch (hashString(key)) {
+					case hashString("position"): {
+						light.SetPosition(array);
+					} break;
+					case hashString("direction"): {
+						light.SetDirection(array);
+					} break;
+
+					case hashString("ambientColor"): {
+						light.SetAmbientColor(array);
+					} break;
+					case hashString("diffuseColor"): {
+						light.SetDiffuseColor(array);
+					} break;
+					case hashString("specularColor"): {
+						light.SetSpecularColor(array);
+					} break;
+
+					case hashString("intensityWeight"): {
+						light.SetIntensityWeight(array);
+					} break;
+					case hashString("attenuation"): {
+						light.SetAttenuation(array);
+					} break;
+
+					case hashString("ambientDecayRate"): {
+						light.SetAmbientDecayRate(array);
+					} break;
+					case hashString("diffuseDecayRate"): {
+						light.SetDiffuseDecayRate(array);
+					} break;
+					case hashString("specularDecayRate"): {
+						light.SetSpecularDecayRate(array);
+					} break;
+					case hashString("decayFunctionType"): {
+						light.SetDecayFunctionType(array);
+					} break;
+
+					default: {
+					} break;
+				}
+
+				continue;
+			} break;
+
+			case LUA_TNUMBER: {
+				switch (hashString(key)) {
+					case hashString("radius"): {
+						light.SetRadius(std::max(1.0f, lua_tofloat(L, -1)));
+					} break;
+					case hashString("fov"): {
+						light.SetFOV(std::max(0.0f, std::min(180.0f, lua_tofloat(L, -1))));
+					} break;
+					case hashString("ttl"): {
+						light.SetTTL(lua_tofloat(L, -1));
+					} break;
+					case hashString("priority"): {
+						light.SetPriority(lua_tofloat(L, -1));
+					} break;
+					default: {
+					} break;
+				}
+
+				continue;
+			}
+
+			case LUA_TBOOLEAN: {
+				switch (hashString(key)) {
+					case hashString("ignoreLOS"): {
+						light.SetIgnoreLOS(lua_toboolean(L, -1));
+					} break;
+					case hashString("localSpace"): {
+						light.SetLocalSpace(lua_toboolean(L, -1));
+					} break;
+					default: {
+					} break;
+				}
+
+				continue;
+			}
+
+			default: {
+			} break;
+		}
+	}
+
+	return true;
+}
+
+
+/***
+ * @function Spring.AddMapLight
+ *
+ * requires MaxDynamicMapLights > 0
+ *
+ * @tparam lightParams lightParams
+ * @treturn number lightHandle
+ */
+int LuaUnsyncedCtrl::AddMapLight(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
+	GL::Light light;
+
+	unsigned int lightHandle = -1U;
+
+	if (lightHandler != nullptr && ParseLight(L, light, 1, __func__))
+		lightHandle = lightHandler->AddLight(light);
+
+	lua_pushnumber(L, lightHandle);
+	return 1;
+}
+
+
+/***
+ * @function Spring.AddModelLight
+ *
+ * requires MaxDynamicMapLights > 0
+ *
+ * @tparam lightParams lightParams
+ * @treturn number lightHandle
+ */
+int LuaUnsyncedCtrl::AddModelLight(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
+	GL::Light light;
+
+	unsigned int lightHandle = -1U;
+
+	if (lightHandler != nullptr && ParseLight(L, light, 1, __func__))
+		lightHandle = lightHandler->AddLight(light);
+
+	lua_pushnumber(L, lightHandle);
+	return 1;
+}
+
+
+/***
+ * @function Spring.UpdateMapLight
+ *
+ * @number lightHandle
+ * @tparam lightParams lightParams
+ * @treturn bool success
+ */
+int LuaUnsyncedCtrl::UpdateMapLight(lua_State* L)
+{
+	const unsigned int lightHandle = luaL_checkint(L, 1);
+
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
+	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
+
+	lua_pushboolean(L, (light != nullptr && ParseLight(L, *light, 2, __func__)));
+	return 1;
+}
+
+
+/***
+ * @function Spring.UpdateModelLight
+ *
+ * @number lightHandle
+ * @tparam lightParams lightParams
+ * @treturn bool success
+ */
+int LuaUnsyncedCtrl::UpdateModelLight(lua_State* L)
+{
+	const unsigned int lightHandle = luaL_checkint(L, 1);
+
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
+	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
+
+	lua_pushboolean(L, (light != nullptr && ParseLight(L, *light, 2, __func__)));
+	return 1;
+}
+
+
+/***
+ * @function Spring.AddLightTrackingTarget
+ */
+static bool AddLightTrackingTarget(lua_State* L, GL::Light* light, bool trackEnable, bool trackUnit, const char* caller)
+{
+	bool ret = false;
+
+	if (trackUnit) {
+		// interpret argument #2 as a unit ID
+		CUnit* unit = ParseAllyUnit(L, caller, 2);
+
+		if (unit != nullptr) {
+			if (trackEnable) {
+				if (light->GetTrackObject() == nullptr) {
+					light->AddDeathDependence(unit, DEPENDENCE_LIGHT);
+					light->SetTrackObject(unit);
+					light->SetTrackType(GL::Light::TRACK_TYPE_UNIT);
+					ret = true;
+				}
+			} else {
+				// assume <light> was tracking <unit>
+				if (light->GetTrackObject() == unit) {
+					light->DeleteDeathDependence(unit, DEPENDENCE_LIGHT);
+					light->SetTrackObject(nullptr);
+					ret = true;
+				}
+			}
+		}
+	} else {
+		// interpret argument #2 as a projectile ID
+		//
+		// only track synced projectiles (LuaSynced
+		// does not know about unsynced ID's anyway)
+		CProjectile* proj = ParseRawProjectile(L, caller, 2, true);
+
+		if (proj != nullptr) {
+			if (trackEnable) {
+				if (light->GetTrackObject() == nullptr) {
+					light->AddDeathDependence(proj, DEPENDENCE_LIGHT);
+					light->SetTrackObject(proj);
+					light->SetTrackType(GL::Light::TRACK_TYPE_PROJ);
+					ret = true;
+				}
+			} else {
+				// assume <light> was tracking <proj>
+				if (light->GetTrackObject() == proj) {
+					light->DeleteDeathDependence(proj, DEPENDENCE_LIGHT);
+					light->SetTrackObject(nullptr);
+					ret = true;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+/*** Set a map-illuminating light to start/stop tracking the position of a moving object (unit or projectile)
+ *
+ * @function Spring.SetMapLightTrackingState
+ *
+ * @number lightHandle
+ * @number unitOrProjectileID
+ * @bool enableTracking
+ * @bool unitOrProjectile
+ * @treturn bool success
+ */
+int LuaUnsyncedCtrl::SetMapLightTrackingState(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	if (!lua_isnumber(L, 2)) {
+		luaL_error(L, "[%s] 1st and 2nd arguments should be numbers, 3rd and 4th should be booleans", __func__);
+		return 0;
+	}
+
+	const unsigned int lightHandle = luaL_checkint(L, 1);
+	const bool trackEnable = luaL_optboolean(L, 3, true);
+	const bool trackUnit = luaL_optboolean(L, 4, true);
+
+	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
+	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
+
+	bool ret = false;
+
+	if (light != nullptr)
+		ret = AddLightTrackingTarget(L, light, trackEnable, trackUnit, __func__);
+
+	lua_pushboolean(L, ret);
+	return 1;
+}
+
+/*** Set a model-illuminating light to start/stop tracking the position of a moving object (unit or projectile)
+ *
+ * @function Spring.SetModelLightTrackingState
+ *
+ * @number lightHandle
+ * @number unitOrProjectileID
+ * @bool enableTracking
+ * @bool unitOrProjectile
+ * @treturn bool success
+ */
+int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
+		return 0;
+
+	if (!lua_isnumber(L, 2)) {
+		luaL_error(L, "[%s] 1st and 2nd arguments should be numbers, 3rd and 4th should be booleans", __func__);
+		return 0;
+	}
+
+	const unsigned int lightHandle = luaL_checkint(L, 1);
+	const bool trackEnable = luaL_optboolean(L, 3, true);
+	const bool trackUnit = luaL_optboolean(L, 4, true);
+
+	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
+	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
+	bool ret = false;
+
+	if (light != nullptr)
+		ret = AddLightTrackingTarget(L, light, trackEnable, trackUnit, __func__);
+
+	lua_pushboolean(L, ret);
+	return 1;
+}
+
+
+/******************************************************************************
+ * Ingame Console
+ * @section console
+******************************************************************************/
+
+
+/*** @function Spring.SetMapShader
+ *
+ * The ID's must refer to valid programs returned by `gl.CreateShader`.
+ * Passing in a value of 0 will cause the respective shader to revert back to its engine default.
+ * Custom map shaders that declare a uniform ivec2 named "texSquare" can sample from the default diffuse texture(s), which are always bound to TU 0.
+ *
+ * @number standardShaderID
+ * @number deferredShaderID
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	// SMF_RENDER_STATE_LUA only accepts GLSL shaders
+	if (!globalRendering->haveGLSL)
+		return 0;
+
+	const LuaShaders& shaders = CLuaHandle::GetActiveShaders(L);
+
+	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
+	LuaMapShaderData luaMapShaderData;
+
+	for (unsigned int i = 0; i < 2; i++) {
+		luaMapShaderData.shaderIDs[i] = shaders.GetProgramName(lua_tonumber(L, i + 1));
+	}
+
+	groundDrawer->SetLuaShader(&luaMapShaderData);
+	return 0;
+}
+
+
+/*** @function Spring.SetMapSquareTexture
+ * @number texSqrX
+ * @number texSqrY
+ * @string luaTexName
+ * @treturn bool success
+ */
+int LuaUnsyncedCtrl::SetMapSquareTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int texSquareX = luaL_checkint(L, 1);
+	const int texSquareY = luaL_checkint(L, 2);
+	const std::string& texName = luaL_checkstring(L, 3);
+
+	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
+	CBaseGroundTextures* groundTextures = groundDrawer->GetGroundTextures();
+
+	if (groundTextures == nullptr) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	if (texName.empty()) {
+		// restore default texture for this square
+		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, 0));
+		return 1;
+	}
+
+	const LuaTextures& luaTextures = CLuaHandle::GetActiveTextures(L);
+
+	const    LuaTextures::Texture*   luaTexture = nullptr;
+	const CNamedTextures::TexInfo* namedTexture = nullptr;
+
+	if ((luaTexture = luaTextures.GetInfo(texName)) != nullptr) {
+		if (luaTexture->xsize != luaTexture->ysize) {
+			// square textures only
+			lua_pushboolean(L, false);
+			return 1;
+		}
+
+		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, luaTexture->id));
+		return 1;
+	}
+
+	if ((namedTexture = CNamedTextures::GetInfo(texName)) != nullptr) {
+		if (namedTexture->xsize != namedTexture->ysize) {
+			// square textures only
+			lua_pushboolean(L, false);
+			return 1;
+		}
+
+		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, namedTexture->id));
+		return 1;
+	}
+
+	lua_pushboolean(L, false);
+	return 1;
+}
+
+
+static MapTextureData ParseLuaTextureData(lua_State* L, bool mapTex)
+{
+	MapTextureData luaTexData;
+
+	const std::string& texType = mapTex? luaL_checkstring(L, 1): "";
+	const std::string& texName = mapTex? luaL_checkstring(L, 2): luaL_checkstring(L, 1);
+
+	if (mapTex) {
+		// convert type=LUATEX_* to MAP_*
+		luaTexData.type = LuaOpenGLUtils::GetLuaMatTextureType(texType) - LuaMatTexture::LUATEX_SMF_GRASS;
+		// MAP_SSMF_SPLAT_NORMAL_TEX needs a num
+		luaTexData.num = luaL_optint(L, 3, 0);
+	}
+
+	// empty name causes a revert to default
+	if (!texName.empty()) {
+		const LuaTextures& luaTextures = CLuaHandle::GetActiveTextures(L);
+
+		const    LuaTextures::Texture*   luaTexture = nullptr;
+		const CNamedTextures::TexInfo* namedTexture = nullptr;
+
+		if ((luaTexData.id == 0) && ((luaTexture = luaTextures.GetInfo(texName)) != nullptr)) {
+			luaTexData.id     = luaTexture->id;
+			luaTexData.size.x = luaTexture->xsize;
+			luaTexData.size.y = luaTexture->ysize;
+		}
+		if ((luaTexData.id == 0) && ((namedTexture = CNamedTextures::GetInfo(texName)) != nullptr)) {
+			luaTexData.id     = namedTexture->id;
+			luaTexData.size.x = namedTexture->xsize;
+			luaTexData.size.y = namedTexture->ysize;
+		}
+	}
+
+	return luaTexData;
+}
+
+
+/*** @function Spring.SetMapShadingTexture
+ * @string texType
+ * @string texName
+ * @treturn bool success
+ * @usage Spring.SetMapShadingTexture("$ssmf_specular", "name_of_my_shiny_texture")
+ */
+int LuaUnsyncedCtrl::SetMapShadingTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	if (readMap != nullptr) {
+		lua_pushboolean(L, readMap->SetLuaTexture(ParseLuaTextureData(L, true)));
+	} else {
+		lua_pushboolean(L, false);
+	}
+
+	return 1;
+}
+
+
+/*** @function Spring.SetSkyBoxTexture
+ * @string texName
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	if (const auto& sky = ISky::GetSky(); sky != nullptr)
+		sky->SetLuaTexture(ParseLuaTextureData(L, false));
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * Unit custom rendering
+ * @section unitcustomrendering
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.SetUnitNoDraw
+ * @number unitID
+ * @bool noDraw
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitNoDraw(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->noDraw = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitEngineDrawMask
+ * @number unitID
+ * @number drawMask
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitEngineDrawMask(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->engineDrawMask = static_cast<uint8_t>(luaL_checkint(L, 2));
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitAlwaysUpdateMatrix
+ * @number unitID
+ * @bool alwaysUpdateMatrix
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitAlwaysUpdateMatrix(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->alwaysUpdateMat = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitNoMinimap
+ * @number unitID
+ * @bool unitNoMinimap
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->noMinimap = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitNoSelect
+ * @number unitID
+ * @bool unitNoSelect whether unit can be selected or not
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->noSelect = luaL_checkboolean(L, 2);
+
+	// deselect the unit if it's selected and shouldn't be
+	if (unit->noSelect) {
+		const auto& selUnits = selectedUnitsHandler.selectedUnits;
+
+		if (selUnits.find(unit->id) != selUnits.end()) {
+			selectedUnitsHandler.RemoveUnit(unit);
+		}
+	}
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitLeaveTracks
+ * @number unitID
+ * @bool unitLeaveTracks whether unit leaves tracks on movement
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->leaveTracks = lua_toboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitSelectionVolumeData
+ * @number unitID
+ * @number featureID
+ * @number scaleX
+ * @number scaleY
+ * @number scaleZ
+ * @number offsetX
+ * @number offsetY
+ * @number offsetZ
+ * @number vType
+ * @number tType
+ * @number Axis
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitSelectionVolumeData(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	return LuaUtils::ParseColVolData(L, 2, &unit->selectionVolume);
+}
+
+
+/******************************************************************************
+ * Features
+ * @section features
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.SetFeatureNoDraw
+ *
+ * @number featureID
+ * @bool noDraw
+ *
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
+{
+	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	feature->noDraw = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
+{
+	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	feature->engineDrawMask = static_cast<uint8_t>(luaL_checkint(L, 2));
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
+{
+	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	feature->alwaysUpdateMat = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/*** Control whether a feature will fade or not when zoomed out.
+ *
+ * @function Spring.SetFeatureFade
+ *
+ * @number featureID
+ * @bool allow
+ *
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetFeatureFade(lua_State* L)
+{
+	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+	feature->alphaFade = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetFeatureSelectionVolumeData
+ *
+ * @number featureID
+ * @number scaleX
+ * @number scaleY
+ * @number scaleZ
+ * @number offsetX
+ * @number offsetY
+ * @number offsetZ
+ * @number vType
+ * @number tType
+ * @number Axis
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
+{
+	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
+
+	if (feature == nullptr)
+		return 0;
+
+
+	return LuaUtils::ParseColVolData(L, 2, &feature->selectionVolume);
+}
+
+
+/******************************************************************************
+ * Unit Icons
+ * @section unit_icons
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.AddUnitIcon
+ *
+ * @string iconName
+ * @string texFile
+ * @number[opt] size
+ * @number[opt] dist
+ * @number[opt] radAdjust
+ *
+ * @treturn ?nil|bool added
+ */
+int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const string iconName  = luaL_checkstring(L, 1);
+	const string texName   = luaL_checkstring(L, 2);
+
+	const float  size      = luaL_optnumber(L, 3, 1.0f);
+	const float  dist      = luaL_optnumber(L, 4, 1.0f);
+
+	const bool   radAdjust = luaL_optboolean(L, 5, false);
+
+	lua_pushboolean(L, icon::iconHandler.AddIcon(iconName, texName, size, dist, radAdjust));
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.FreeUnitIcon
+ *
+ * @string iconName
+ *
+ * @treturn ?nil|bool freed
+ */
+int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	lua_pushboolean(L, icon::iconHandler.FreeIcon(luaL_checkstring(L, 1)));
+	return 1;
+}
+
+
+int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->drawIcon = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitDefIcon
+ *
+ * @number unitDefID
+ * @string iconName
+ *
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
+{
+	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
+
+	if (ud == nullptr)
+		return 0;
+
+	ud->iconType = icon::iconHandler.GetIcon(luaL_checksstring(L, 2));
+
+	// set decoys to the same icon
+	if (ud->decoyDef != nullptr)
+		ud->decoyDef->iconType = ud->iconType;
+
+	// spring::unordered_map<int, std::vector<int> >
+	const auto& decoyMap = unitDefHandler->GetDecoyDefIDs();
+	const auto decoyMapIt = decoyMap.find((ud->decoyDef != nullptr)? ud->decoyDef->id: ud->id);
+
+	if (decoyMapIt != decoyMap.end()) {
+		const auto& decoySet = decoyMapIt->second;
+
+		for (const int decoyDefID: decoySet) {
+			const UnitDef* decoyDef = unitDefHandler->GetUnitDefByID(decoyDefID);
+			decoyDef->iconType = ud->iconType;
+		}
+	}
+
+	unitDrawer->UpdateUnitDefMiniMapIcons(ud);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitDefImage
+ *
+ * @number unitDefID
+ * @string image luaTexture|texFile
+ *
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
+{
+	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
+
+	if (ud == nullptr)
+		return 0;
+
+	if (lua_isnoneornil(L, 2)) {
+		// reset to default texture
+		CUnitDrawer::SetUnitDefImage(ud, ud->buildPicName);
+		return 0;
+	}
+
+	if (!lua_israwstring(L, 2))
+		return 0;
+
+	const std::string& texName = lua_tostring(L, 2);
+
+	if (texName[0] != LuaTextures::prefix) { // '!'
+		CUnitDrawer::SetUnitDefImage(ud, texName);
+		return 0;
+	}
+
+	const LuaTextures& textures = CLuaHandle::GetActiveTextures(L);
+	const LuaTextures::Texture* tex = textures.GetInfo(texName);
+
+	if (tex == nullptr)
+		return 0;
+
+	CUnitDrawer::SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
+	return 0;
+}
+
+
+/******************************************************************************
+ * Virtual File System
+ * @section vfs
+ *
+ * Prefer using `VFS` whenever possible
+ ******************************************************************************/
+
+// TODO: move this to LuaVFS?
+
+/***
+ *
+ * @function Spring.ExtractModArchiveFile
+ * @string modfile
+ * @treturn bool extracted
+ */
+int LuaUnsyncedCtrl::ExtractModArchiveFile(lua_State* L)
+{
+	const string path = luaL_checkstring(L, 1);
+
+	CFileHandler vfsFile(path, SPRING_VFS_ZIP);
+	CFileHandler rawFile(path, SPRING_VFS_RAW);
+
+	if (!vfsFile.FileExists()) {
+		luaL_error(L, "file \"%s\" not found in mod archive", path.c_str());
+		return 0;
+	}
+
+	if (rawFile.FileExists()) {
+		luaL_error(L, "cannot extract file \"%s\": already exists", path.c_str());
+		return 0;
+	}
+
+
+	std::string dname = FileSystem::GetDirectory(path);
+	std::string fname = FileSystem::GetFilename(path);
+
+#ifdef _WIN32
+	const size_t s = dname.size();
+	// get rid of any trailing slashes (CreateDirectory()
+	// fails on at least XP and Vista if they are present,
+	// ie. it creates the dir but actually returns false)
+	if ((s > 0) && ((dname[s - 1] == '/') || (dname[s - 1] == '\\')))
+		dname = dname.substr(0, s - 1);
+#endif
+
+	if (!dname.empty() && !FileSystem::CreateDirectory(dname))
+		luaL_error(L, "Could not create directory \"%s\" for file \"%s\"", dname.c_str(), fname.c_str());
+
+
+	std::vector<uint8_t> buffer;
+	std::fstream fstr(path.c_str(), std::ios::out | std::ios::binary);
+
+	if (!vfsFile.IsBuffered()) {
+		buffer.resize(vfsFile.FileSize(), 0);
+		vfsFile.Read(buffer.data(), buffer.size());
+	} else {
+		buffer = std::move(vfsFile.GetBuffer());
+	}
+
+	fstr.write((const char*) buffer.data(), buffer.size());
+	fstr.close();
+
+	if (!dname.empty()) {
+		LOG("[%s] extracted file \"%s\" to directory \"%s\"", __func__, fname.c_str(), dname.c_str());
+	} else {
+		LOG("[%s] extracted file \"%s\"", __func__, fname.c_str());
+	}
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.CreateDir
+ * @string path
+ * @treturn ?nil|bool dirCreated
+ */
+int LuaUnsyncedCtrl::CreateDir(lua_State* L)
+{
+	const std::string& dir = luaL_checkstring(L, 1);
+
+	// keep directories within the Spring directory
+	if (dir[0] == '/' || dir[0] == '\\' || dir[0] == '~')
+		luaL_error(L, "[%s][1] invalid access: %s", __func__, dir.c_str());
+	if (dir[0] == ' ' || dir[0] == '\t')
+		luaL_error(L, "[%s][2] invalid access: %s", __func__, dir.c_str());
+
+	if (strstr(dir.c_str(), "..") != nullptr)
+		luaL_error(L, "[%s][3] invalid access: %s", __func__, dir.c_str());
+
+	if (dir.size() > 1 && dir[1] == ':')
+		luaL_error(L, "[%s][4] invalid access: %s", __func__, dir.c_str());
+
+	lua_pushboolean(L, FileSystem::CreateDirectory(dir));
+	return 1;
+}
+
+
+
+
+/******************************************************************************
+ * GUI
+ * @section gui
+******************************************************************************/
+
+
+static int SetActiveCommandByIndex(lua_State* L)
+{
+	if (guihandler == nullptr)
+		return 0;
+
+	const int args = lua_gettop(L); // number of arguments
+	const int cmdIndex = lua_toint(L, 1) - CMD_INDEX_OFFSET;
+	const int button = luaL_optint(L, 2, 1); // LMB
+
+	if (args <= 2) {
+		lua_pushboolean(L, guihandler->SetActiveCommand(cmdIndex, button != SDL_BUTTON_LEFT));
+		return 1;
+	}
+
+	const bool lmb   = luaL_checkboolean(L, 3);
+	const bool rmb   = luaL_checkboolean(L, 4);
+	const bool alt   = luaL_checkboolean(L, 5);
+	const bool ctrl  = luaL_checkboolean(L, 6);
+	const bool meta  = luaL_checkboolean(L, 7);
+	const bool shift = luaL_checkboolean(L, 8);
+
+	const bool success = guihandler->SetActiveCommand(cmdIndex, button, lmb, rmb, alt, ctrl, meta, shift);
+	lua_pushboolean(L, success);
+	return 1;
+}
+
+
+static int SetActiveCommandByAction(lua_State* L)
+{
+	if (guihandler == nullptr)
+		return 0;
+
+	const int args = lua_gettop(L); // number of arguments
+	const string text = lua_tostring(L, 1);
+	const Action action(text);
+
+	CKeySet ks;
+	if (args >= 2)
+		ks.Parse(lua_tostring(L, 2));
+
+	lua_pushboolean(L, guihandler->SetActiveCommand(action, ks, 0));
+	return 1;
+}
+
+
+/*** @function Spring.SetActiveCommand
+ * @string action
+ * @string[opt] actionExtra
+ * @treturn ?nil|bool commandSet
+ */
+
+/*** @function Spring.SetActiveCommand
+ * @number cmdIndex
+ * @number[opt=1] button
+ * @bool[opt] leftClick
+ * @tparam ?bool rightClick
+ * @tparam ?bool alt
+ * @tparam ?bool ctrl
+ * @tparam ?bool meta
+ * @tparam ?bool shift
+ * @treturn ?nil|bool commandSet
+ */
+int LuaUnsyncedCtrl::SetActiveCommand(lua_State* L)
+{
+	if (guihandler == nullptr)
+		return 0;
+
+	if (lua_gettop(L) < 1)
+		luaL_error(L, "[%s] one argument required", __func__);
+
+	if (lua_isnumber(L, 1))
+		return SetActiveCommandByIndex(L);
+
+	if (lua_isstring(L, 1))
+		return SetActiveCommandByAction(L);
+
+	luaL_error(L, "[%s] incorrect argument type", __func__);
+	return 0;
+}
+
+
+/*** @function Spring.LoadCmdColorsConfig
+ * @string config
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::LoadCmdColorsConfig(lua_State* L)
+{
+	cmdColors.LoadConfigFromString(luaL_checkstring(L, 1));
+	return 0;
+}
+
+
+/*** @function Spring.LoadCtrlPanelConfig
+ * @string config
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::LoadCtrlPanelConfig(lua_State* L)
+{
+	if (guihandler == nullptr)
+		return 0;
+
+	guihandler->ReloadConfigFromString(luaL_checkstring(L, 1));
+	return 0;
+}
+
+
+/*** @function Spring.ForceLayoutUpdate
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::ForceLayoutUpdate(lua_State* L)
+{
+	if (guihandler == nullptr)
+		return 0;
+
+	guihandler->ForceLayoutUpdate();
+	return 0;
+}
+
+
+/***  Disables the "Selected Units x" box in the GUI.
+ *
+ * @function Spring.SetDrawSelectionInfo
+ * @bool enable
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDrawSelectionInfo(lua_State* L)
+{
+	if (guihandler != nullptr)
+		guihandler->SetDrawSelectionInfo(luaL_checkboolean(L, 1));
+
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetBoxSelectionByEngine
+ * @bool state
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
 {
 	bool b = luaL_checkboolean(L, 1);
@@ -951,8 +2453,15 @@ int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
 }
 
 
-/******************************************************************************/
-
+/***
+ *
+ * @function Spring.SetTeamColor
+ * @number teamID
+ * @number r
+ * @number g
+ * @number b
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
 {
 	const int teamID = luaL_checkint(L, 1);
@@ -971,8 +2480,18 @@ int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
 }
 
 
-/******************************************************************************/
-
+/*** Changes/creates the cursor of a single CursorCmd.
+ *
+ * @function Spring.AssignMouseCursor
+ *
+ * @string cmdName
+ * @string iconFileName not the full filename, instead it is like this:
+ *     Wanted filename: Anims/cursorattack_0.bmp
+ *     => iconFileName: cursorattack
+ * @bool[opt=true] overwrite
+ * @bool[opt=false] hotSpotTopLeft
+ * @treturn ?nil|bool assigned
+ */
 int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
 {
 	const std::string& cmdName  = luaL_checksstring(L, 1);
@@ -988,6 +2507,14 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
 }
 
 
+/*** Mass replace all occurrences of the cursor in all CursorCmds.
+ *
+ * @function Spring.ReplaceMouseCursor
+ * @string oldFileName
+ * @string newFileName 
+ * @bool[opt=false] hotSpotTopLeft
+ * @treturn ?nil|bool assigned
+ */
 int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 {
 	const string oldName = luaL_checksstring(L, 1);
@@ -1004,8 +2531,14 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 	return 1;
 }
 
-/******************************************************************************/
 
+/*** Register your custom cmd so it gets visible in the unit's cmd queue
+ *
+ * @function Spring.SetCustomCommandDrawData
+ * @number cmdID
+ * @tparam[opt] string|number cmdReference iconname | cmdID_cloneIcon
+ * @treturn ?nil|bool assigned
+ */
 int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 {
 	const int cmdID = luaL_checkint(L, 1);
@@ -1038,21 +2571,1229 @@ int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 }
 
 
-/******************************************************************************/
+/******************************************************************************
+ * Mouse
+ * @section mouse
+******************************************************************************/
+
+
+/*** @function Spring.WarpMouse
+ * @number x
+ * @number y
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
+{
+	const int x = luaL_checkint(L, 1);
+	const int y = globalRendering->viewSizeY - luaL_checkint(L, 2) - 1;
+	mouse->WarpMouse(x, y);
+	return 0;
+}
+
+
+/*** @function Spring.SetMouseCursor
+ * @string cursorName
+ * @number[opt=1.0] cursorScale
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
+{
+	const std::string& cursorName = luaL_checkstring(L, 1);
+	const float cursorScale = luaL_optfloat(L, 2, 1.0f);
+
+	mouse->ChangeCursor(cursorName, cursorScale);
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * LOS Colors
+ * @section loscolors
+******************************************************************************/
+
+/*** @function Spring.SetLosViewColors
+ * @tparam table always {r,g,b}
+ * @tparam table LOS = {r,g,b}
+ * @tparam table radar = {r,g,b}
+ * @tparam table jam = {r,g,b}
+ * @tparam table radar2 = {r,g,b}
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
+{
+	float alwaysColor[3];
+	float losColor[3];
+	float radarColor[3];
+	float jamColor[3];
+	float radarColor2[3];
+
+	if ((LuaUtils::ParseFloatArray(L, 1, alwaysColor, 3) != 3) ||
+	    (LuaUtils::ParseFloatArray(L, 2, losColor, 3) != 3) ||
+	    (LuaUtils::ParseFloatArray(L, 3, radarColor, 3) != 3) ||
+		(LuaUtils::ParseFloatArray(L, 4, jamColor, 3) != 3) ||
+		(LuaUtils::ParseFloatArray(L, 5, radarColor2, 3) != 3)) {
+		luaL_error(L, "Incorrect arguments to SetLosViewColors()");
+	}
+	const int scale = CBaseGroundDrawer::losColorScale;
+
+	CBaseGroundDrawer* gd = readMap->GetGroundDrawer();
+	gd->alwaysColor[0]  = (int)(scale * alwaysColor[0]);
+	gd->alwaysColor[1]  = (int)(scale * alwaysColor[1]);
+	gd->alwaysColor[2]  = (int)(scale * alwaysColor[2]);
+	gd->losColor[0]     = (int)(scale * losColor[0]);
+	gd->losColor[1]     = (int)(scale * losColor[1]);
+	gd->losColor[2]     = (int)(scale * losColor[2]);
+	gd->radarColor[0]   = (int)(scale * radarColor[0]);
+	gd->radarColor[1]   = (int)(scale * radarColor[1]);
+	gd->radarColor[2]   = (int)(scale * radarColor[2]);
+	gd->jamColor[0]     = (int)(scale * jamColor[0]);
+	gd->jamColor[1]     = (int)(scale * jamColor[1]);
+	gd->jamColor[2]     = (int)(scale * jamColor[2]);
+	gd->radarColor2[0]  = (int)(scale * radarColor2[0]);
+	gd->radarColor2[1]  = (int)(scale * radarColor2[1]);
+	gd->radarColor2[2]  = (int)(scale * radarColor2[2]);
+	infoTextureHandler->SetMode(infoTextureHandler->GetMode());
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
+{
+	CNanoProjectile::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoProjectile::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoProjectile::rotAcc0 = luaL_optfloat(L, 3, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+
+	CNanoProjectile::rotValRng0 = luaL_optfloat(L, 4, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoProjectile::rotVelRng0 = luaL_optfloat(L, 5, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoProjectile::rotAccRng0 = luaL_optfloat(L, 6, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * Engine Config
+ *
+ * @section engineconfig
+ *
+ * The following functions read the engine configs saved in `Springsettings.cfg`, a version-ed instance of these or a custom file supplied on the command line.
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.SetConfigInt
+ * @string name
+ * @number value
+ * @bool[opt=false] useOverlay the value will only be set in memory, and not be restored for the next game.
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
+{
+	const std::string& key = luaL_checkstring(L, 1);
+
+	// don't allow to change a read-only variable
+	if (configHandler->IsReadOnly(key)) {
+		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
+		return 0;
+	}
+
+	const int val = luaL_checkint(L, 2);
+	const bool uo = luaL_optboolean(L, 3, false);
+
+	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
+	configHandler->Set(key, val, uo);
+	configHandler->EnableWriting(true);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetConfigFloat
+ * @string name
+ * @number value
+ * @bool[opt=false] useOverla the value will only be set in memory, and not be restored for the next game.y
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
+{
+	const std::string& key = luaL_checkstring(L, 1);
+
+	if (configHandler->IsReadOnly(key)) {
+		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
+		return 0;
+	}
+
+	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
+	configHandler->Set(key, luaL_checkfloat(L, 2), luaL_optboolean(L, 3, false));
+	configHandler->EnableWriting(true);
+	return 0;
+}
+
+/***
+ *
+ * @function Spring.SetConfigString
+ * @string name
+ * @number value
+ * @bool[opt=false] useOverlay the value will only be set in memory, and not be restored for the next game.
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetConfigString(lua_State* L)
+{
+	const std::string& key = luaL_checkstring(L, 1);
+	const std::string& val = luaL_checkstring(L, 2);
+
+	if (configHandler->IsReadOnly(key)) {
+		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
+		return 0;
+	}
+
+	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
+	configHandler->SetString(key, val, luaL_optboolean(L, 3, false));
+	configHandler->EnableWriting(true);
+	return 0;
+}
+
+
 /******************************************************************************/
 
+static int ReloadOrRestart(const std::string& springArgs, const std::string& scriptText, bool newProcess) {
+	const std::string springFullName = Platform::GetProcessExecutableFile();
+	const std::string scriptFullName = dataDirLocater.GetWriteDirPath() + "script.txt";
+
+	if (!newProcess) {
+		// signal SpringApp
+		gameSetup->reloadScript = scriptText;
+		gu->globalReload = true;
+
+		LOG("[%s] Spring \"%s\" should be reloading", __func__, springFullName.c_str());
+		return 0;
+	}
+
+	std::array<std::string, 32> processArgs;
+
+	processArgs[0] = springFullName;
+	processArgs[1] = " ";
+
+	#if 0
+	// arguments to Spring binary given by Lua code, if any
+	if (!springArgs.empty())
+		processArgs[1] = springArgs;
+	#endif
+
+	if (!scriptText.empty()) {
+		// create file 'script.txt' with contents given by Lua code
+		std::ofstream scriptFile(scriptFullName.c_str());
+
+		scriptFile.write(scriptText.c_str(), scriptText.size());
+		scriptFile.close();
+
+		processArgs[2] = scriptFullName;
+	}
+
+	#ifdef _WIN32
+	// else OpenAL crashes when using execvp
+	ISound::Shutdown(false);
+	#endif
+	// close local socket to avoid "bind: Address already in use"
+	spring::SafeDelete(gameServer);
+
+	LOG("[%s] Spring \"%s\" should be restarting", __func__, springFullName.c_str());
+	Platform::ExecuteProcess(processArgs, newProcess);
+
+	// only reached on execvp failure
+	return 1;
+}
+
+
+
+
+int LuaUnsyncedCtrl::Quit(lua_State* L)
+{
+	gu->globalQuit = true;
+	return 0;
+}
+
+/******************************************************************************
+ * Unit Group
+ * @section unitgroup
+******************************************************************************/
+
+/***
+ *
+ * @function Spring.SetUnitGroup
+ * @number unitID
+ * @number groupID the group number to be assigned, or -1 for deassignment
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitGroup(lua_State* L)
+{
+	if (gs->noHelperAIs)
+		return 0;
+
+	CUnit* unit = ParseRawUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const int groupID = luaL_checkint(L, 2);
+
+	if (groupID == -1) {
+		unit->SetGroup(nullptr);
+		return 0;
+	}
+
+	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
+		return 0;
+
+	CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+
+	if (group != nullptr)
+		unit->SetGroup(group);
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * Give Order
+ * @section giveorder
+******************************************************************************/
+
+static void ParseUnitMap(lua_State* L, const char* caller,
+                         int table, vector<int>& unitIDs)
+{
+	if (!lua_istable(L, table))
+		luaL_error(L, "%s(): error parsing unit map", caller);
+
+	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
+		if (lua_israwnumber(L, -2)) {
+			CUnit* unit = ParseCtrlUnit(L, __func__, -2); // the key
+
+			if (unit != nullptr && !unit->noSelect)
+				unitIDs.push_back(unit->id);
+		}
+	}
+}
+
+
+static void ParseUnitArray(lua_State* L, const char* caller,
+                           int table, vector<int>& unitIDs)
+{
+	if (!lua_istable(L, table))
+		luaL_error(L, "%s(): error parsing unit array", caller);
+
+	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
+		if (lua_israwnumber(L, -2) && lua_isnumber(L, -1)) {   // avoid 'n'
+			CUnit* unit = ParseCtrlUnit(L, __func__, -1); // the value
+
+			if (unit != nullptr && !unit->noSelect)
+				unitIDs.push_back(unit->id);
+		}
+	}
+}
+
+
+/******************************************************************************/
+
+static bool CanGiveOrders(const lua_State* L)
+{
+	if (gs->PreSimFrame())
+		return false;
+
+	if (gs->noHelperAIs)
+		return false;
+
+	const int ctrlTeam = CLuaHandle::GetHandleCtrlTeam(L);
+
+	if (gu->GetMyPlayer()->CanControlTeam(ctrlTeam))
+		return true;
+
+	// FIXME ? (correct? warning / error?)
+	return (!gu->spectating && (ctrlTeam == gu->myTeam) && (ctrlTeam >= 0));
+}
+
+
+/*** Command Options params
+ *
+ * @table cmdOpts
+ *
+ * Can be specified as a table, or as an array containing any of the keys
+ * below.
+ *
+ * @tparam bool right Right mouse key pressed
+ * @tparam bool alt Alt key pressed
+ * @tparam bool ctrl Ctrl key pressed
+ * @tparam bool shift Shift key pressed
+ * @tparam bool meta Meta (windows/mac/mod4) key pressed
+ */
+
+
+/***
+ *
+ * @function Spring.GiveOrder
+ * @number cmdID
+ * @tparam table params
+ * @tparam cmdOpts options
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
+{
+	if (!CanGiveOrders(L))
+		return 1;
+
+	selectedUnitsHandler.GiveCommand(LuaUtils::ParseCommand(L, __func__, 1));
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GiveOrderToUnit
+ * @number unitID
+ * @number cmdID
+ * @tparam table params
+ * @tparam cmdOpts options
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr || unit->noSelect) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const Command cmd = LuaUtils::ParseCommand(L, __func__, 2);
+
+	clientNet->Send(CBaseNetProtocol::Get().SendAICommand(gu->myPlayerNum, MAX_AIS, MAX_TEAMS, unit->id, cmd.GetID(false), cmd.GetID(true), cmd.GetTimeOut(), cmd.GetOpts(), cmd.GetNumParams(), cmd.GetParams()));
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GiveOrderToUnitMap
+ * @tparam table unitMap { [unitID] = arg1, ... }
+ * @number cmdID
+ * @tparam table params
+ * @tparam cmdOpts options
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	// unitIDs
+	vector<int> unitIDs;
+	ParseUnitMap(L, __func__, 1, unitIDs);
+
+	if (unitIDs.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	selectedUnitsHandler.SendCommandsToUnits(unitIDs, {LuaUtils::ParseCommand(L, __func__, 2)});
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GiveOrderToUnitArray
+ * @tparam {number,...} unitArray array of unit ids
+ * @number cmdID
+ * @tparam table params
+ * @tparam cmdOpts options
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	// unitIDs
+	vector<int> unitIDs;
+	ParseUnitArray(L, __func__, 1, unitIDs);
+
+	if (unitIDs.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	selectedUnitsHandler.SendCommandsToUnits(unitIDs, {LuaUtils::ParseCommand(L, __func__, 2)});
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/*** Command spec
+ *
+ * @table cmdSpec
+ *
+ * Used when assigning multiple commands at once
+ *
+ * @number cmdID
+ * @tparam table params
+ * @tparam cmdOpts options
+ */
+
+
+/***
+ *
+ * @function Spring.GiveOrderArrayToUnitMap
+ * @tparam table unitMap { [unitID] = arg1, ... }
+ * @tparam {cmdSpec,...} cmdArray
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	// unitIDs
+	vector<int> unitIDs;
+	ParseUnitMap(L, __func__, 1, unitIDs);
+
+	// commands
+	vector<Command> commands;
+	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
+
+	if (unitIDs.empty() || commands.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	selectedUnitsHandler.SendCommandsToUnits(unitIDs, commands);
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GiveOrderArrayToUnitArray
+ * @tparam {number,...} unitArray array of unit ids
+ * @tparam {cmdSpec,...} cmdArray
+ * @treturn nil|true
+ */
+int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
+{
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const int args = lua_gettop(L); // number of arguments
+
+	// unitIDs
+	vector<int> unitIDs;
+	ParseUnitArray(L, __func__, 1, unitIDs);
+
+	// commands
+	vector<Command> commands;
+	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
+
+	if (unitIDs.empty() || commands.empty()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	selectedUnitsHandler.SendCommandsToUnits(unitIDs, commands, (args >= 3 && lua_toboolean(L, 3)));
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.SetBuildSpacing
+ * @tparam number spacing
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetBuildSpacing(lua_State* L)
+{
+	if (guihandler != nullptr)
+		guihandler->SetBuildSpacing(luaL_checkinteger(L, 1));
+
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetBuildFacing
+ * @tparam number facing
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
+{
+	if (guihandler != nullptr)
+		guihandler->SetBuildFacing(luaL_checkint(L, 1));
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * UI
+ * @section ui
+ * Very important! (allows synced inter-lua-enviroment communications)
+******************************************************************************/
+
+
+/*** @function Spring.SendLuaUIMsg
+ * @string message
+ * @string mode "s"/"specs" | "a"/"allies"
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SendLuaUIMsg(lua_State* L)
+{
+	const std::string msg = luaL_checksstring(L, 1);
+	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
+
+	const char* mode = luaL_optstring(L, 2, "");
+
+	if (mode[0] != 0 && mode[0] != 'a' && mode[0] != 's')
+		luaL_error(L, "Unknown SendLuaUIMsg() mode");
+
+	try {
+		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_UI, mode[0], data));
+	} catch (const netcode::PackPacketException& ex) {
+		luaL_error(L, "SendLuaUIMsg() packet error: %s", ex.what());
+	}
+
+	return 0;
+}
+
+
+/*** @function Spring.SendLuaGaiaMsg
+ * @string message
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SendLuaGaiaMsg(lua_State* L)
+{
+	const std::string msg = luaL_checksstring(L, 1);
+	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
+
+	try {
+		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_GAIA, 0, data));
+	} catch (const netcode::PackPacketException& ex) {
+		luaL_error(L, "SendLuaGaiaMsg() packet error: %s", ex.what());
+	}
+
+	return 0;
+}
+
+
+/*** @function Spring.SendLuaRulesMsg
+ * @string message
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SendLuaRulesMsg(lua_State* L)
+{
+	const std::string msg = luaL_checksstring(L, 1);
+	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
+
+	try {
+		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_RULES, 0, data));
+	} catch (const netcode::PackPacketException& ex) {
+		luaL_error(L, "SendLuaRulesMsg() packet error: %s", ex.what());
+	}
+	return 0;
+}
+
+int LuaUnsyncedCtrl::SendLuaMenuMsg(lua_State* L)
+{
+	if (luaMenu != nullptr)
+		luaMenu->RecvLuaMsg(luaL_checksstring(L, 1), gu->myPlayerNum);
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * Sharing
+ * @section sharing
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.SetShareLevel
+ *
+ * @string resource metal | energy
+ * @number shareLevel
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
+{
+	if (gu->spectating || gs->noHelperAIs || gs->PreSimFrame())
+		return 0;
+
+
+	const char* shareType = lua_tostring(L, 1);
+	const float shareLevel = Clamp(luaL_checkfloat(L, 2), 0.0f, 1.0f);
+
+	if (shareType[0] == 'm') {
+		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, shareLevel, teamHandler.Team(gu->myTeam)->resShare.energy));
+		return 0;
+	}
+	if (shareType[0] == 'e') {
+		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, shareLevel));
+		return 0;
+	}
+
+	LOG_L(L_WARNING, "[%s] unknown resource-type \"%s\"", __func__, shareType);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.ShareResources
+ *
+ * @number teamID
+ * @string units
+ * @treturn nil
+ */
+
+/***
+ *
+ * @function Spring.ShareResources
+ *
+ * @number teamID
+ * @string resource metal | energy
+ * @number amount
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::ShareResources(lua_State* L)
+{
+	if (gu->spectating || gs->noHelperAIs || gs->PreSimFrame())
+		return 0;
+
+	const int args = lua_gettop(L); // number of arguments
+	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || ((args >= 3) && !lua_isnumber(L, 3)))
+		luaL_error(L, "Incorrect arguments to ShareResources()");
+
+	const int teamID = lua_toint(L, 1);
+	if (!teamHandler.IsValidTeam(teamID))
+		return 0;
+
+	const CTeam* team = teamHandler.Team(teamID);
+	if ((team == nullptr) || team->isDead)
+		return 0;
+
+	const char* type = lua_tostring(L, 2);
+	if (type[0] == 'u') {
+		// update the selection, and clear the unit command queues
+		selectedUnitsHandler.GiveCommand(Command(CMD_STOP), false);
+		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
+		selectedUnitsHandler.ClearSelected();
+		return 0;
+	}
+
+	if (args < 3)
+		return 0;
+
+	if (type[0] == 'm') {
+		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, lua_tofloat(L, 3), 0.0f));
+		return 0;
+	}
+	if (type[0] == 'e') {
+		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, 0.0f, lua_tofloat(L, 3)));
+		return 0;
+	}
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * UI
+ * @section ui
+******************************************************************************/
+
+
+/*** @function Spring.SetLastMessagePosition
+ * @number x
+ * @number y
+ * @number z
+ * @treturn nil 
+ */
+int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
+{
+	const float3 pos(luaL_checkfloat(L, 1),
+	                 luaL_checkfloat(L, 2),
+	                 luaL_checkfloat(L, 3));
+
+	eventHandler.LastMessagePosition(pos);
+	return 0;
+}
+
+
+/******************************************************************************
+ * Markers
+ * @section markers
+******************************************************************************/
+
+
+/*** @function Spring.MarkerAddPoint
+ * @number x
+ * @number y
+ * @number z
+ * @string[opt=""] text
+ * @bool[opt] localOnly
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
+{
+	if (inMapDrawer == nullptr)
+		return 0;
+
+	const float3 pos(luaL_checkfloat(L, 1),
+	                 luaL_checkfloat(L, 2),
+	                 luaL_checkfloat(L, 3));
+	const string text = luaL_optstring(L, 4, "");
+	const bool onlyLocal = luaL_optboolean(L, 5, true);
+
+	if (onlyLocal) {
+		inMapDrawerModel->AddPoint(pos, text, luaL_optnumber(L, 6, gu->myPlayerNum));
+	} else {
+		inMapDrawer->SendPoint(pos, text, true);
+	}
+
+	return 0;
+}
+
+
+/*** @function Spring.MarkerAddLine
+ * @number x1
+ * @number y1
+ * @number z1
+ * @number x2
+ * @number y2
+ * @number z2
+ * @bool[opt=false] localOnly
+ * @number[opt] playerId
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
+{
+	if (inMapDrawer == nullptr)
+		return 0;
+
+	const float3 pos1(luaL_checkfloat(L, 1),
+	                  luaL_checkfloat(L, 2),
+	                  luaL_checkfloat(L, 3));
+	const float3 pos2(luaL_checkfloat(L, 4),
+	                  luaL_checkfloat(L, 5),
+	                  luaL_checkfloat(L, 6));
+	const bool onlyLocal = luaL_optboolean(L, 7, false);
+
+	if (onlyLocal) {
+		inMapDrawerModel->AddLine(pos1, pos2, luaL_optnumber(L, 8, gu->myPlayerNum));
+	} else {
+		inMapDrawer->SendLine(pos1, pos2, true);
+	}
+
+	return 0;
+}
+
+
+/*** @function Spring.MarkerErasePosition
+ * @number x
+ * @number y
+ * @number z
+ * @param noop
+ * @bool[opt=false] localOnly
+ * @number[opt] playerId
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
+{
+	if (inMapDrawer == nullptr)
+		return 0;
+
+	const float3 pos(luaL_checkfloat(L, 1),
+	                 luaL_checkfloat(L, 2),
+	                 luaL_checkfloat(L, 3));
+
+	/* Argument 4 is going to be radius
+	 * after some future refactoring. */
+
+	const bool onlyLocal = luaL_optboolean(L, 5, false);
+	if (onlyLocal) {
+		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum));
+	} else {
+		inMapDrawer->SendErase(pos);
+	}
+
+	return 0;
+}
+
+
+/******************************************************************************
+ * Sun
+ * @section sun
+******************************************************************************/
+
+/*** It can be used to modify the following atmosphere parameters
+ *
+ * @function Spring.SetAtmosphere
+ * @tparam table params
+ * @number params.fogStart
+ * @number params.fogEnd
+ * @tparam rgb params.sunColor
+ * @tparam rgb params.skyColor
+ * @tparam rgb params.cloudColor
+ * @usage Spring.SetAtmosphere({ fogStart = 0, fogEnd = 0.5, fogColor = { 0.7, 0.2, 0.2, 1 }})
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "Incorrect arguments to SetAtmosphere()");
+
+	const auto& sky = ISky::GetSky();
+	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
+		if (!lua_israwstring(L, -2))
+			continue;
+
+		const char* key = lua_tostring(L, -2);
+
+		if (lua_istable(L, -1)) {
+			float4 color;
+			LuaUtils::ParseFloatArray(L, -1, &color[0], 4);
+
+			switch (hashString(key)) {
+				case hashString("fogColor"): {
+					sky->fogColor = color;
+				} break;
+				case hashString("skyColor"): {
+					sky->skyColor = color;
+				} break;
+				case hashString("skyDir"): {
+					// sky->skyDir = color;
+				} break;
+				case hashString("sunColor"): {
+					sky->sunColor = color;
+				} break;
+				case hashString("cloudColor"): {
+					sky->cloudColor = color;
+				} break;
+				default: {
+					luaL_error(L, "[%s] unknown array key %s", __func__, key);
+				} break;
+			}
+
+			continue;
+		}
+
+		if (lua_isnumber(L, -1)) {
+			switch (hashString(key)) {
+				case hashString("fogStart"): {
+					sky->fogStart = lua_tofloat(L, -1);
+				} break;
+				case hashString("fogEnd"): {
+					sky->fogEnd = lua_tofloat(L, -1);
+				} break;
+				default: {
+					luaL_error(L, "[%s] unknown scalar key %s", __func__, key);
+				} break;
+			}
+
+			continue;
+		}
+	}
+
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetSunDirection
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
+{
+	ISky::GetSky()->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
+	return 0;
+}
+
+
+/*** It can be used to modify the following sun lighting parameters
+ *
+ * @function Spring.SetSunLighting
+ * @tparam table params
+ * @tparam rgb params.groundAmbientColor
+ * @tparam rgb params.groundDiffuseColor
+ * @usage Spring.SetSunLighting({groundAmbientColor = {1, 0.1, 1}, groundDiffuseColor = {1, 0.1, 1} })
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "[%s] argument should be a table", __func__);
+
+	CSunLighting sl = *sunLighting;
+
+	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
+		if (!lua_israwstring(L, -2))
+			continue;
+
+		const char* key = lua_tostring(L, -2);
+
+		if (lua_istable(L, -1)) {
+			float4 color;
+			LuaUtils::ParseFloatArray(L, -1, &color[0], 4);
+
+			if (sl.SetValue(key, color))
+				continue;
+
+			luaL_error(L, "[%s] unknown array key %s", __func__, key);
+		}
+
+		if (lua_isnumber(L, -1)) {
+			if (sl.SetValue(key, lua_tofloat(L, -1)))
+				continue;
+
+			luaL_error(L, "[%s] unknown scalar key %s", __func__, key);
+		}
+	}
+
+	*sunLighting = sl;
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "[%s] incorrect arguments");
+
+	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
+		if (!lua_israwstring(L, -2))
+			continue;
+
+		const char* key = lua_tostring(L, -2);
+
+		if (lua_istable(L, -1)) {
+			float values[4];
+			const int size = LuaUtils::ParseFloatArray(L, -1, values, 4);
+
+			if (size < 4)
+				luaL_error(L, "[%s] unexpected size %d for array key \"%s\"", __func__, size, key);
+
+			switch (hashString(key)) {
+				case hashString("splatTexScales"): {
+					mapRendering->splatTexScales = values;
+				} break;
+				case hashString("splatTexMults"): {
+					mapRendering->splatTexMults = values;
+				} break;
+				default: {
+					luaL_error(L, "[%s] unknown array key \"%s\"", __func__, key);
+				} break;
+			}
+
+			continue;
+		}
+
+		if (lua_isboolean(L, -1)) {
+			const bool value = lua_toboolean(L, -1);
+
+			switch (hashString(key)) {
+				case hashString("voidWater"): {
+					mapRendering->voidWater = value;
+				} break;
+				case hashString("voidGround"): {
+					mapRendering->voidGround = value;
+				} break;
+				case hashString("splatDetailNormalDiffuseAlpha"): {
+					mapRendering->splatDetailNormalDiffuseAlpha = value;
+				} break;
+				default: {
+					luaL_error(L, "[%s] unknown boolean key \"%s\"", __func__, key);
+				} break;
+			}
+		}
+	}
+
+	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
+	groundDrawer->UpdateRenderState();
+
+	return 0;
+}
+
+
+int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
+{
+	CSMFGroundDrawer* smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
+
+	if (smfDrawer == nullptr) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	CRoamMeshDrawer* roamMeshDrawer = dynamic_cast<CRoamMeshDrawer*>(smfDrawer->GetMeshDrawer());
+	if (roamMeshDrawer == nullptr) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	CRoamMeshDrawer::ForceNextTesselation(
+		luaL_optboolean(L, 1, true ),
+		luaL_optboolean(L, 2, false)
+	);
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+
+/******************************************************************************
+ * AI
+ * @section ai
+******************************************************************************/
+
+
+/*** @function Spring.SendSkirmishAIMessage
+ * @number aiTeam
+ * @string message
+ * @treturn ?nil|bool ai_processed
+ */
+int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int aiTeam = luaL_checkint(L, 1);
+	const char* inData = luaL_checkstring(L, 2);
+
+	std::vector<const char*> outData;
+
+	luaL_checkstack(L, 2, __func__);
+	lua_pushboolean(L, eoh->SendLuaMessages(aiTeam, inData, outData));
+
+	// push the AI response(s)
+	lua_createtable(L, outData.size(), 0);
+	for (unsigned int n = 0; n < outData.size(); n++) {
+		lua_pushstring(L, outData[n]);
+		lua_rawseti(L, -2, n + 1);
+	}
+
+	return 2;
+}
+
+
+/******************************************************************************
+ * Developers
+ * @section developers
+******************************************************************************/
+
+
+/*** @function Spring.SetLogSectionFilterLevel
+ * @string sectionName
+ * @tparam ?string|number logLevel
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
+	const int loglevel = LuaUtils::ParseLogLevel(L, 2);
+
+	if (loglevel < 0)
+		return luaL_error(L, "Incorrect arguments to Spring.SetLogSectionFilterLevel(logsection, loglevel)");
+
+	log_frontend_register_runtime_section(loglevel, luaL_checkstring(L, 1));
+	return 0;
+}
+
+/*** @function Spring.GarbageCollectCtrl
+ *
+ * @int[opt] itersPerBatch
+ * @int[opt] numStepsPerIter
+ * @int[opt] minStepsPerIter
+ * @int[opt] maxStepsPerIter
+ * @number[opt] minLoopRunTime
+ * @number[opt] maxLoopRunTime
+ * @number[opt] baseRunTimeMult
+ * @number[opt] baseMemLoadMult
+ * @treturn nil
+ */
+
+int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
+	luaContextData* ctxData = GetLuaContextData(L);
+	SLuaGarbageCollectCtrl& gcCtrl = ctxData->gcCtrl;
+
+	gcCtrl.itersPerBatch = std::max(0, luaL_optint(L, 1, gcCtrl.itersPerBatch));
+
+	gcCtrl.numStepsPerIter = std::max(0, luaL_optint(L, 2, gcCtrl.numStepsPerIter));
+	gcCtrl.minStepsPerIter = std::max(0, luaL_optint(L, 3, gcCtrl.minStepsPerIter));
+	gcCtrl.maxStepsPerIter = std::max(0, luaL_optint(L, 4, gcCtrl.maxStepsPerIter));
+
+	gcCtrl.minLoopRunTime = std::max(0.0f, luaL_optfloat(L, 5, gcCtrl.minLoopRunTime));
+	gcCtrl.maxLoopRunTime = std::max(0.0f, luaL_optfloat(L, 6, gcCtrl.maxLoopRunTime));
+
+	gcCtrl.baseRunTimeMult = std::max(0.0f, luaL_optfloat(L, 7, gcCtrl.baseRunTimeMult));
+	gcCtrl.baseMemLoadMult = std::max(0.0f, luaL_optfloat(L, 8, gcCtrl.baseMemLoadMult));
+
+	return 0;
+}
+
+
+/*** @function Spring.SetDrawSky
+ * @bool drawSky
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetDrawSky(lua_State* L)
 {
 	globalRendering->drawSky = !!luaL_checkboolean(L, 1);
 	return 0;
 }
 
+
+/*** @function Spring.SetDrawWater
+ * @bool drawWater
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetDrawWater(lua_State* L)
 {
 	globalRendering->drawWater = !!luaL_checkboolean(L, 1);
 	return 0;
 }
 
+
+/*** @function Spring.SetDrawGround
+ * @bool drawGround
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetDrawGround(lua_State* L)
 {
 	globalRendering->drawGround = !!luaL_checkboolean(L, 1);
@@ -1060,6 +3801,11 @@ int LuaUnsyncedCtrl::SetDrawGround(lua_State* L)
 }
 
 
+/*** @function Spring.SetDrawGroundDeferred
+ * @bool drawGroundDeferred
+ * @bool[opt] drawGroundForward allows disabling of the forward pass
+ * treturn nil
+ */
 int LuaUnsyncedCtrl::SetDrawGroundDeferred(lua_State* L)
 {
 	CBaseGroundDrawer* gd = readMap->GetGroundDrawer();
@@ -1072,6 +3818,13 @@ int LuaUnsyncedCtrl::SetDrawGroundDeferred(lua_State* L)
 	return 2;
 }
 
+/*** @function Spring.SetDrawModelsDeferred
+ * @bool drawUnitsDeferred
+ * @bool drawFeaturesDeferred
+ * @bool[opt] drawUnitsForward allows disabling of the respective forward passes
+ * @bool[opt] drawFeaturesForward allows disabling of the respective forward passes
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetDrawModelsDeferred(lua_State* L)
 {
 	// NOTE the argument ordering
@@ -1089,12 +3842,23 @@ int LuaUnsyncedCtrl::SetDrawModelsDeferred(lua_State* L)
 }
 
 
+/*** This doesn't actually record the game in any way, it just regulates the framerate and interpolations.
+ *
+ * @function Spring.SetVideoCapturingMode
+ * @bool allowCaptureMode
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetVideoCapturingMode(lua_State* L)
 {
 	videoCapturing->SetAllowRecord(luaL_checkboolean(L, 1));
 	return 0;
 }
 
+
+/*** @function Spring.SetVideoCapturingTimeOffset
+ * @bool timeOffset
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetVideoCapturingTimeOffset(lua_State* L)
 {
 	videoCapturing->SetTimeOffset(luaL_checkfloat(L, 1));
@@ -1102,8 +3866,52 @@ int LuaUnsyncedCtrl::SetVideoCapturingTimeOffset(lua_State* L)
 }
 
 
-/******************************************************************************/
+/*** Water params
+ *
+ * @table waterParams
+ *
+ * @tparam rgb absorb
+ * @tparam rgb baseColor
+ * @tparam rgb minColor
+ * @tparam rgb surfaceColor
+ * @tparam rgb diffuseColor
+ * @tparam rgb specularColor
+ * @tparam rgb planeColor
+ * @string texture file
+ * @string foamTexture file
+ * @string normalTexture file
+ * @number damage
+ * @number repeatX
+ * @number repeatY
+ * @number surfaceAlpha
+ * @number ambientFactor
+ * @number diffuseFactor
+ * @number specularFactor
+ * @number specularPower
+ * @number fresnelMin
+ * @number fresnelMax
+ * @number fresnelPower
+ * @number reflectionDistortion
+ * @number blurBase
+ * @number blurExponent
+ * @number perlinStartFreq
+ * @number perlinLacunarity
+ * @number perlinAmplitude
+ * @number numTiles
+ * @bool shoreWaves
+ * @bool forceRendering
+ * @bool hasWaterPlane
+ */
 
+
+/*** @function Spring.SetWaterParams
+ *
+ *  Does not need cheating enabled.
+ *  Allows to change water params (mostly BumpWater ones) at runtime. You may want to set BumpWaterUseUniforms in your springrc to 1, then you don't even need to restart BumpWater via `/water 4`.
+ *
+ * @tparam waterParams waterParams
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 {
 	if (!lua_istable(L, 1))
@@ -1307,1898 +4115,20 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 }
 
 
-
-static bool ParseLight(lua_State* L, GL::Light& light, const int tblIdx, const char* caller)
-{
-	if (!lua_istable(L, tblIdx)) {
-		luaL_error(L, "[%s] argument %d must be a table!", caller, tblIdx);
-		return false;
-	}
-
-	for (lua_pushnil(L); lua_next(L, tblIdx) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
-			continue;
-
-		const char* key = lua_tostring(L, -2);
-
-		switch (lua_type(L, -1)) {
-			case LUA_TTABLE: {
-				float array[3] = {0.0f, 0.0f, 0.0f};
-
-				if (LuaUtils::ParseFloatArray(L, -1, array, 3) < 3)
-					continue;
-
-				switch (hashString(key)) {
-					case hashString("position"): {
-						light.SetPosition(array);
-					} break;
-					case hashString("direction"): {
-						light.SetDirection(array);
-					} break;
-
-					case hashString("ambientColor"): {
-						light.SetAmbientColor(array);
-					} break;
-					case hashString("diffuseColor"): {
-						light.SetDiffuseColor(array);
-					} break;
-					case hashString("specularColor"): {
-						light.SetSpecularColor(array);
-					} break;
-
-					case hashString("intensityWeight"): {
-						light.SetIntensityWeight(array);
-					} break;
-					case hashString("attenuation"): {
-						light.SetAttenuation(array);
-					} break;
-
-					case hashString("ambientDecayRate"): {
-						light.SetAmbientDecayRate(array);
-					} break;
-					case hashString("diffuseDecayRate"): {
-						light.SetDiffuseDecayRate(array);
-					} break;
-					case hashString("specularDecayRate"): {
-						light.SetSpecularDecayRate(array);
-					} break;
-					case hashString("decayFunctionType"): {
-						light.SetDecayFunctionType(array);
-					} break;
-
-					default: {
-					} break;
-				}
-
-				continue;
-			} break;
-
-			case LUA_TNUMBER: {
-				switch (hashString(key)) {
-					case hashString("radius"): {
-						light.SetRadius(std::max(1.0f, lua_tofloat(L, -1)));
-					} break;
-					case hashString("fov"): {
-						light.SetFOV(std::max(0.0f, std::min(180.0f, lua_tofloat(L, -1))));
-					} break;
-					case hashString("ttl"): {
-						light.SetTTL(lua_tofloat(L, -1));
-					} break;
-					case hashString("priority"): {
-						light.SetPriority(lua_tofloat(L, -1));
-					} break;
-					default: {
-					} break;
-				}
-
-				continue;
-			}
-
-			case LUA_TBOOLEAN: {
-				switch (hashString(key)) {
-					case hashString("ignoreLOS"): {
-						light.SetIgnoreLOS(lua_toboolean(L, -1));
-					} break;
-					case hashString("localSpace"): {
-						light.SetLocalSpace(lua_toboolean(L, -1));
-					} break;
-					default: {
-					} break;
-				}
-
-				continue;
-			}
-
-			default: {
-			} break;
-		}
-	}
-
-	return true;
-}
-
-
-int LuaUnsyncedCtrl::AddMapLight(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
-	GL::Light light;
-
-	unsigned int lightHandle = -1U;
-
-	if (lightHandler != nullptr && ParseLight(L, light, 1, __func__))
-		lightHandle = lightHandler->AddLight(light);
-
-	lua_pushnumber(L, lightHandle);
-	return 1;
-}
-
-int LuaUnsyncedCtrl::AddModelLight(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
-	GL::Light light;
-
-	unsigned int lightHandle = -1U;
-
-	if (lightHandler != nullptr && ParseLight(L, light, 1, __func__))
-		lightHandle = lightHandler->AddLight(light);
-
-	lua_pushnumber(L, lightHandle);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::UpdateMapLight(lua_State* L)
-{
-	const unsigned int lightHandle = luaL_checkint(L, 1);
-
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
-	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
-
-	lua_pushboolean(L, (light != nullptr && ParseLight(L, *light, 2, __func__)));
-	return 1;
-}
-
-int LuaUnsyncedCtrl::UpdateModelLight(lua_State* L)
-{
-	const unsigned int lightHandle = luaL_checkint(L, 1);
-
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
-	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
-
-	lua_pushboolean(L, (light != nullptr && ParseLight(L, *light, 2, __func__)));
-	return 1;
-}
-
-
-static bool AddLightTrackingTarget(lua_State* L, GL::Light* light, bool trackEnable, bool trackUnit, const char* caller)
-{
-	bool ret = false;
-
-	if (trackUnit) {
-		// interpret argument #2 as a unit ID
-		CUnit* unit = ParseAllyUnit(L, caller, 2);
-
-		if (unit != nullptr) {
-			if (trackEnable) {
-				if (light->GetTrackObject() == nullptr) {
-					light->AddDeathDependence(unit, DEPENDENCE_LIGHT);
-					light->SetTrackObject(unit);
-					light->SetTrackType(GL::Light::TRACK_TYPE_UNIT);
-					ret = true;
-				}
-			} else {
-				// assume <light> was tracking <unit>
-				if (light->GetTrackObject() == unit) {
-					light->DeleteDeathDependence(unit, DEPENDENCE_LIGHT);
-					light->SetTrackObject(nullptr);
-					ret = true;
-				}
-			}
-		}
-	} else {
-		// interpret argument #2 as a projectile ID
-		//
-		// only track synced projectiles (LuaSynced
-		// does not know about unsynced ID's anyway)
-		CProjectile* proj = ParseRawProjectile(L, caller, 2, true);
-
-		if (proj != nullptr) {
-			if (trackEnable) {
-				if (light->GetTrackObject() == nullptr) {
-					light->AddDeathDependence(proj, DEPENDENCE_LIGHT);
-					light->SetTrackObject(proj);
-					light->SetTrackType(GL::Light::TRACK_TYPE_PROJ);
-					ret = true;
-				}
-			} else {
-				// assume <light> was tracking <proj>
-				if (light->GetTrackObject() == proj) {
-					light->DeleteDeathDependence(proj, DEPENDENCE_LIGHT);
-					light->SetTrackObject(nullptr);
-					ret = true;
-				}
-			}
-		}
-	}
-
-	return ret;
-}
-
-// set a map-illuminating light to start/stop tracking
-// the position of a moving object (unit or projectile)
-int LuaUnsyncedCtrl::SetMapLightTrackingState(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	if (!lua_isnumber(L, 2)) {
-		luaL_error(L, "[%s] 1st and 2nd arguments should be numbers, 3rd and 4th should be booleans", __func__);
-		return 0;
-	}
-
-	const unsigned int lightHandle = luaL_checkint(L, 1);
-	const bool trackEnable = luaL_optboolean(L, 3, true);
-	const bool trackUnit = luaL_optboolean(L, 4, true);
-
-	GL::LightHandler* lightHandler = readMap->GetGroundDrawer()->GetLightHandler();
-	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
-
-	bool ret = false;
-
-	if (light != nullptr)
-		ret = AddLightTrackingTarget(L, light, trackEnable, trackUnit, __func__);
-
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
-// set a model-illuminating light to start/stop tracking
-// the position of a moving object (unit or projectile)
-int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L) || !CLuaHandle::GetHandleFullRead(L))
-		return 0;
-
-	if (!lua_isnumber(L, 2)) {
-		luaL_error(L, "[%s] 1st and 2nd arguments should be numbers, 3rd and 4th should be booleans", __func__);
-		return 0;
-	}
-
-	const unsigned int lightHandle = luaL_checkint(L, 1);
-	const bool trackEnable = luaL_optboolean(L, 3, true);
-	const bool trackUnit = luaL_optboolean(L, 4, true);
-
-	GL::LightHandler* lightHandler = unitDrawer->GetLightHandler();
-	GL::Light* light = (lightHandler != nullptr)? lightHandler->GetLight(lightHandle): nullptr;
-	bool ret = false;
-
-	if (light != nullptr)
-		ret = AddLightTrackingTarget(L, light, trackEnable, trackUnit, __func__);
-
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	// SMF_RENDER_STATE_LUA only accepts GLSL shaders
-	if (!globalRendering->haveGLSL)
-		return 0;
-
-	const LuaShaders& shaders = CLuaHandle::GetActiveShaders(L);
-
-	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
-	LuaMapShaderData luaMapShaderData;
-
-	for (unsigned int i = 0; i < 2; i++) {
-		luaMapShaderData.shaderIDs[i] = shaders.GetProgramName(lua_tonumber(L, i + 1));
-	}
-
-	groundDrawer->SetLuaShader(&luaMapShaderData);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetMapSquareTexture(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	const int texSquareX = luaL_checkint(L, 1);
-	const int texSquareY = luaL_checkint(L, 2);
-	const std::string& texName = luaL_checkstring(L, 3);
-
-	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
-	CBaseGroundTextures* groundTextures = groundDrawer->GetGroundTextures();
-
-	if (groundTextures == nullptr) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-	if (texName.empty()) {
-		// restore default texture for this square
-		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, 0));
-		return 1;
-	}
-
-	const LuaTextures& luaTextures = CLuaHandle::GetActiveTextures(L);
-
-	const    LuaTextures::Texture*   luaTexture = nullptr;
-	const CNamedTextures::TexInfo* namedTexture = nullptr;
-
-	if ((luaTexture = luaTextures.GetInfo(texName)) != nullptr) {
-		if (luaTexture->xsize != luaTexture->ysize) {
-			// square textures only
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, luaTexture->id));
-		return 1;
-	}
-
-	if ((namedTexture = CNamedTextures::GetInfo(texName)) != nullptr) {
-		if (namedTexture->xsize != namedTexture->ysize) {
-			// square textures only
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, namedTexture->id));
-		return 1;
-	}
-
-	lua_pushboolean(L, false);
-	return 1;
-}
-
-
-static MapTextureData ParseLuaTextureData(lua_State* L, bool mapTex)
-{
-	MapTextureData luaTexData;
-
-	const std::string& texType = mapTex? luaL_checkstring(L, 1): "";
-	const std::string& texName = mapTex? luaL_checkstring(L, 2): luaL_checkstring(L, 1);
-
-	if (mapTex) {
-		// convert type=LUATEX_* to MAP_*
-		luaTexData.type = LuaOpenGLUtils::GetLuaMatTextureType(texType) - LuaMatTexture::LUATEX_SMF_GRASS;
-		// MAP_SSMF_SPLAT_NORMAL_TEX needs a num
-		luaTexData.num = luaL_optint(L, 3, 0);
-	}
-
-	// empty name causes a revert to default
-	if (!texName.empty()) {
-		const LuaTextures& luaTextures = CLuaHandle::GetActiveTextures(L);
-
-		const    LuaTextures::Texture*   luaTexture = nullptr;
-		const CNamedTextures::TexInfo* namedTexture = nullptr;
-
-		if ((luaTexData.id == 0) && ((luaTexture = luaTextures.GetInfo(texName)) != nullptr)) {
-			luaTexData.id     = luaTexture->id;
-			luaTexData.size.x = luaTexture->xsize;
-			luaTexData.size.y = luaTexture->ysize;
-		}
-		if ((luaTexData.id == 0) && ((namedTexture = CNamedTextures::GetInfo(texName)) != nullptr)) {
-			luaTexData.id     = namedTexture->id;
-			luaTexData.size.x = namedTexture->xsize;
-			luaTexData.size.y = namedTexture->ysize;
-		}
-	}
-
-	return luaTexData;
-}
-
-
-int LuaUnsyncedCtrl::SetMapShadingTexture(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	if (readMap != nullptr) {
-		lua_pushboolean(L, readMap->SetLuaTexture(ParseLuaTextureData(L, true)));
-	} else {
-		lua_pushboolean(L, false);
-	}
-
-	return 1;
-}
-
-int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	if (const auto& sky = ISky::GetSky(); sky != nullptr)
-		sky->SetLuaTexture(ParseLuaTextureData(L, false));
-
-	return 0;
-}
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetUnitNoDraw(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->noDraw = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetUnitEngineDrawMask(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->engineDrawMask = static_cast<uint8_t>(luaL_checkint(L, 2));
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetUnitAlwaysUpdateMatrix(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->alwaysUpdateMat = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->noMinimap = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->noSelect = luaL_checkboolean(L, 2);
-
-	// deselect the unit if it's selected and shouldn't be
-	if (unit->noSelect) {
-		const auto& selUnits = selectedUnitsHandler.selectedUnits;
-
-		if (selUnits.find(unit->id) != selUnits.end()) {
-			selectedUnitsHandler.RemoveUnit(unit);
-		}
-	}
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->leaveTracks = lua_toboolean(L, 2);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetUnitSelectionVolumeData(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	return LuaUtils::ParseColVolData(L, 2, &unit->selectionVolume);
-}
-
-
-int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
-{
-	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	feature->noDraw = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
-{
-	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	feature->engineDrawMask = static_cast<uint8_t>(luaL_checkint(L, 2));
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
-{
-	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	feature->alwaysUpdateMat = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetFeatureFade(lua_State* L)
-{
-	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-	feature->alphaFade = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
-{
-	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
-
-	if (feature == nullptr)
-		return 0;
-
-
-	return LuaUtils::ParseColVolData(L, 2, &feature->selectionVolume);
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	const string iconName  = luaL_checkstring(L, 1);
-	const string texName   = luaL_checkstring(L, 2);
-
-	const float  size      = luaL_optnumber(L, 3, 1.0f);
-	const float  dist      = luaL_optnumber(L, 4, 1.0f);
-
-	const bool   radAdjust = luaL_optboolean(L, 5, false);
-
-	lua_pushboolean(L, icon::iconHandler.AddIcon(iconName, texName, size, dist, radAdjust));
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
-{
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	lua_pushboolean(L, icon::iconHandler.FreeIcon(luaL_checkstring(L, 1)));
-	return 1;
-}
-
-int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
-{
-	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	unit->drawIcon = luaL_checkboolean(L, 2);
-	return 0;
-}
-
-
-/******************************************************************************/
-
-// TODO: move this to LuaVFS?
-int LuaUnsyncedCtrl::ExtractModArchiveFile(lua_State* L)
-{
-	const string path = luaL_checkstring(L, 1);
-
-	CFileHandler vfsFile(path, SPRING_VFS_ZIP);
-	CFileHandler rawFile(path, SPRING_VFS_RAW);
-
-	if (!vfsFile.FileExists()) {
-		luaL_error(L, "file \"%s\" not found in mod archive", path.c_str());
-		return 0;
-	}
-
-	if (rawFile.FileExists()) {
-		luaL_error(L, "cannot extract file \"%s\": already exists", path.c_str());
-		return 0;
-	}
-
-
-	std::string dname = FileSystem::GetDirectory(path);
-	std::string fname = FileSystem::GetFilename(path);
-
-#ifdef _WIN32
-	const size_t s = dname.size();
-	// get rid of any trailing slashes (CreateDirectory()
-	// fails on at least XP and Vista if they are present,
-	// ie. it creates the dir but actually returns false)
-	if ((s > 0) && ((dname[s - 1] == '/') || (dname[s - 1] == '\\')))
-		dname = dname.substr(0, s - 1);
-#endif
-
-	if (!dname.empty() && !FileSystem::CreateDirectory(dname))
-		luaL_error(L, "Could not create directory \"%s\" for file \"%s\"", dname.c_str(), fname.c_str());
-
-
-	std::vector<uint8_t> buffer;
-	std::fstream fstr(path.c_str(), std::ios::out | std::ios::binary);
-
-	if (!vfsFile.IsBuffered()) {
-		buffer.resize(vfsFile.FileSize(), 0);
-		vfsFile.Read(buffer.data(), buffer.size());
-	} else {
-		buffer = std::move(vfsFile.GetBuffer());
-	}
-
-	fstr.write((const char*) buffer.data(), buffer.size());
-	fstr.close();
-
-	if (!dname.empty()) {
-		LOG("[%s] extracted file \"%s\" to directory \"%s\"", __func__, fname.c_str(), dname.c_str());
-	} else {
-		LOG("[%s] extracted file \"%s\"", __func__, fname.c_str());
-	}
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-//
-// moved from LuaUI
-//
-/******************************************************************************/
-/******************************************************************************/
-
-
-int LuaUnsyncedCtrl::SendCommands(lua_State* L)
-{
-	if ((guihandler == nullptr) || gs->noHelperAIs)
-		return 0;
-
-	vector<string> cmds;
-
-	if (lua_istable(L, 1)) { // old style -- table
-		constexpr int tableIdx = 1;
-		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (lua_israwstring(L, -1)) {
-				string action = lua_tostring(L, -1);
-				if (action[0] != '@')
-					action = "@@" + action;
-
-				cmds.push_back(action);
-			}
-		}
-	}
-	else if (lua_israwstring(L, 1)) { // new style -- function parameters
-		for (int i = 1; lua_israwstring(L, i); i++) {
-			string action = lua_tostring(L, i);
-			if (action[0] != '@')
-				action = "@@" + action;
-
-			cmds.push_back(action);
-		}
-	}
-	else {
-		luaL_error(L, "Incorrect arguments to SendCommands()");
-	}
-
-	lua_settop(L, 0); // pop the input arguments
-
-	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
-	guihandler->RunCustomCommands(cmds, false);
-	configHandler->EnableWriting(true);
-	return 0;
-}
-
-
-/******************************************************************************/
-
-static int SetActiveCommandByIndex(lua_State* L)
-{
-	if (guihandler == nullptr)
-		return 0;
-
-	const int args = lua_gettop(L); // number of arguments
-	const int cmdIndex = lua_toint(L, 1) - CMD_INDEX_OFFSET;
-	const int button = luaL_optint(L, 2, 1); // LMB
-
-	if (args <= 2) {
-		lua_pushboolean(L, guihandler->SetActiveCommand(cmdIndex, button != SDL_BUTTON_LEFT));
-		return 1;
-	}
-
-	const bool lmb   = luaL_checkboolean(L, 3);
-	const bool rmb   = luaL_checkboolean(L, 4);
-	const bool alt   = luaL_checkboolean(L, 5);
-	const bool ctrl  = luaL_checkboolean(L, 6);
-	const bool meta  = luaL_checkboolean(L, 7);
-	const bool shift = luaL_checkboolean(L, 8);
-
-	const bool success = guihandler->SetActiveCommand(cmdIndex, button, lmb, rmb, alt, ctrl, meta, shift);
-	lua_pushboolean(L, success);
-	return 1;
-}
-
-
-static int SetActiveCommandByAction(lua_State* L)
-{
-	if (guihandler == nullptr)
-		return 0;
-
-	const int args = lua_gettop(L); // number of arguments
-	const string text = lua_tostring(L, 1);
-	const Action action(text);
-
-	CKeySet ks;
-	if (args >= 2)
-		ks.Parse(lua_tostring(L, 2));
-
-	lua_pushboolean(L, guihandler->SetActiveCommand(action, ks, 0));
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::SetActiveCommand(lua_State* L)
-{
-	if (guihandler == nullptr)
-		return 0;
-
-	if (lua_gettop(L) < 1)
-		luaL_error(L, "[%s] one argument required", __func__);
-
-	if (lua_isnumber(L, 1))
-		return SetActiveCommandByIndex(L);
-
-	if (lua_isstring(L, 1))
-		return SetActiveCommandByAction(L);
-
-	luaL_error(L, "[%s] incorrect argument type", __func__);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::LoadCmdColorsConfig(lua_State* L)
-{
-	cmdColors.LoadConfigFromString(luaL_checkstring(L, 1));
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::LoadCtrlPanelConfig(lua_State* L)
-{
-	if (guihandler == nullptr)
-		return 0;
-
-	guihandler->ReloadConfigFromString(luaL_checkstring(L, 1));
-	return 0;
-}
-
-int LuaUnsyncedCtrl::ForceLayoutUpdate(lua_State* L)
-{
-	if (guihandler == nullptr)
-		return 0;
-
-	guihandler->ForceLayoutUpdate();
-	return 0;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
-{
-	const int x = luaL_checkint(L, 1);
-	const int y = globalRendering->viewSizeY - luaL_checkint(L, 2) - 1;
-	mouse->WarpMouse(x, y);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
-{
-	const std::string& cursorName = luaL_checkstring(L, 1);
-	const float cursorScale = luaL_optfloat(L, 2, 1.0f);
-
-	mouse->ChangeCursor(cursorName, cursorScale);
-
-	return 0;
-}
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
-{
-	SDL_SetClipboardText(luaL_checkstring(L, 1));
-	return 0;
-}
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
-{
-	camera->posOffset.x = luaL_optfloat(L, 1, 0.0f);
-	camera->posOffset.y = luaL_optfloat(L, 2, 0.0f);
-	camera->posOffset.z = luaL_optfloat(L, 3, 0.0f);
-	camera->tiltOffset.x = luaL_optfloat(L, 4, 0.0f);
-	camera->tiltOffset.y = luaL_optfloat(L, 5, 0.0f);
-	camera->tiltOffset.z = luaL_optfloat(L, 6, 0.0f);
-
-	return 0;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
-{
-	float alwaysColor[3];
-	float losColor[3];
-	float radarColor[3];
-	float jamColor[3];
-	float radarColor2[3];
-
-	if ((LuaUtils::ParseFloatArray(L, 1, alwaysColor, 3) != 3) ||
-	    (LuaUtils::ParseFloatArray(L, 2, losColor, 3) != 3) ||
-	    (LuaUtils::ParseFloatArray(L, 3, radarColor, 3) != 3) ||
-		(LuaUtils::ParseFloatArray(L, 4, jamColor, 3) != 3) ||
-		(LuaUtils::ParseFloatArray(L, 5, radarColor2, 3) != 3)) {
-		luaL_error(L, "Incorrect arguments to SetLosViewColors()");
-	}
-	const int scale = CBaseGroundDrawer::losColorScale;
-
-	CBaseGroundDrawer* gd = readMap->GetGroundDrawer();
-	gd->alwaysColor[0]  = (int)(scale * alwaysColor[0]);
-	gd->alwaysColor[1]  = (int)(scale * alwaysColor[1]);
-	gd->alwaysColor[2]  = (int)(scale * alwaysColor[2]);
-	gd->losColor[0]     = (int)(scale * losColor[0]);
-	gd->losColor[1]     = (int)(scale * losColor[1]);
-	gd->losColor[2]     = (int)(scale * losColor[2]);
-	gd->radarColor[0]   = (int)(scale * radarColor[0]);
-	gd->radarColor[1]   = (int)(scale * radarColor[1]);
-	gd->radarColor[2]   = (int)(scale * radarColor[2]);
-	gd->jamColor[0]     = (int)(scale * jamColor[0]);
-	gd->jamColor[1]     = (int)(scale * jamColor[1]);
-	gd->jamColor[2]     = (int)(scale * jamColor[2]);
-	gd->radarColor2[0]  = (int)(scale * radarColor2[0]);
-	gd->radarColor2[1]  = (int)(scale * radarColor2[1]);
-	gd->radarColor2[2]  = (int)(scale * radarColor2[2]);
-	infoTextureHandler->SetMode(infoTextureHandler->GetMode());
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
-{
-	CNanoProjectile::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
-	CNanoProjectile::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
-	CNanoProjectile::rotAcc0 = luaL_optfloat(L, 3, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
-
-	CNanoProjectile::rotValRng0 = luaL_optfloat(L, 4, 0.0f) * (math::DEG_TO_RAD                            );
-	CNanoProjectile::rotVelRng0 = luaL_optfloat(L, 5, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
-	CNanoProjectile::rotAccRng0 = luaL_optfloat(L, 6, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
-
-	return 0;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
-{
-	const std::string& key = luaL_checkstring(L, 1);
-
-	// don't allow to change a read-only variable
-	if (configHandler->IsReadOnly(key)) {
-		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
-		return 0;
-	}
-
-	const int val = luaL_checkint(L, 2);
-	const bool uo = luaL_optboolean(L, 3, false);
-
-	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
-	configHandler->Set(key, val, uo);
-	configHandler->EnableWriting(true);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
-{
-	const std::string& key = luaL_checkstring(L, 1);
-
-	if (configHandler->IsReadOnly(key)) {
-		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
-		return 0;
-	}
-
-	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
-	configHandler->Set(key, luaL_checkfloat(L, 2), luaL_optboolean(L, 3, false));
-	configHandler->EnableWriting(true);
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetConfigString(lua_State* L)
-{
-	const std::string& key = luaL_checkstring(L, 1);
-	const std::string& val = luaL_checkstring(L, 2);
-
-	if (configHandler->IsReadOnly(key)) {
-		LOG_L(L_ERROR, "[%s] key \"%s\" is read-only", __func__, key.c_str());
-		return 0;
-	}
-
-	configHandler->EnableWriting(globalConfig.luaWritableConfigFile);
-	configHandler->SetString(key, val, luaL_optboolean(L, 3, false));
-	configHandler->EnableWriting(true);
-	return 0;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::CreateDir(lua_State* L)
-{
-	const std::string& dir = luaL_checkstring(L, 1);
-
-	// keep directories within the Spring directory
-	if (dir[0] == '/' || dir[0] == '\\' || dir[0] == '~')
-		luaL_error(L, "[%s][1] invalid access: %s", __func__, dir.c_str());
-	if (dir[0] == ' ' || dir[0] == '\t')
-		luaL_error(L, "[%s][2] invalid access: %s", __func__, dir.c_str());
-
-	if (strstr(dir.c_str(), "..") != nullptr)
-		luaL_error(L, "[%s][3] invalid access: %s", __func__, dir.c_str());
-
-	if (dir.size() > 1 && dir[1] == ':')
-		luaL_error(L, "[%s][4] invalid access: %s", __func__, dir.c_str());
-
-	lua_pushboolean(L, FileSystem::CreateDirectory(dir));
-	return 1;
-}
-
-
-/******************************************************************************/
-
-static int ReloadOrRestart(const std::string& springArgs, const std::string& scriptText, bool newProcess) {
-	const std::string springFullName = Platform::GetProcessExecutableFile();
-	const std::string scriptFullName = dataDirLocater.GetWriteDirPath() + "script.txt";
-
-	if (!newProcess) {
-		// signal SpringApp
-		gameSetup->reloadScript = scriptText;
-		gu->globalReload = true;
-
-		LOG("[%s] Spring \"%s\" should be reloading", __func__, springFullName.c_str());
-		return 0;
-	}
-
-	std::array<std::string, 32> processArgs;
-
-	processArgs[0] = springFullName;
-	processArgs[1] = " ";
-
-	#if 0
-	// arguments to Spring binary given by Lua code, if any
-	if (!springArgs.empty())
-		processArgs[1] = springArgs;
-	#endif
-
-	if (!scriptText.empty()) {
-		// create file 'script.txt' with contents given by Lua code
-		std::ofstream scriptFile(scriptFullName.c_str());
-
-		scriptFile.write(scriptText.c_str(), scriptText.size());
-		scriptFile.close();
-
-		processArgs[2] = scriptFullName;
-	}
-
-	#ifdef _WIN32
-	// else OpenAL crashes when using execvp
-	ISound::Shutdown(false);
-	#endif
-	// close local socket to avoid "bind: Address already in use"
-	spring::SafeDelete(gameServer);
-
-	LOG("[%s] Spring \"%s\" should be restarting", __func__, springFullName.c_str());
-	Platform::ExecuteProcess(processArgs, newProcess);
-
-	// only reached on execvp failure
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::Reload(lua_State* L)
-{
-	return (ReloadOrRestart("", luaL_checkstring(L, 1), false));
-}
-
-int LuaUnsyncedCtrl::Restart(lua_State* L)
-{
-	// same as Reload now, cl-args are always ignored
-	return (ReloadOrRestart(luaL_checkstring(L, 1), luaL_checkstring(L, 2), false));
-}
-
-int LuaUnsyncedCtrl::Start(lua_State* L)
-{
-	if (ReloadOrRestart(luaL_checkstring(L, 1), luaL_checkstring(L, 2), true) != 0) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::Quit(lua_State* L)
-{
-	gu->globalQuit = true;
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetWMIcon(lua_State* L)
-{
-	const std::string iconFileName = luaL_checksstring(L, 1);
-	const bool forceResolution = luaL_optboolean(L, 2, false);
-
-	CBitmap iconTexture;
-
-	if (iconTexture.Load(iconFileName)) {
-		WindowManagerHelper::SetIcon(&iconTexture, forceResolution);
-	} else {
-		luaL_error(L, "Failed to load image from file \"%s\"", iconFileName.c_str());
-	}
-
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetWMCaption(lua_State* L)
-{
-	globalRendering->SetWindowTitle(luaL_checksstring(L, 1));
-	return 0;
-}
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
-{
-	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
-
-	if (ud == nullptr)
-		return 0;
-
-	ud->iconType = icon::iconHandler.GetIcon(luaL_checksstring(L, 2));
-
-	// set decoys to the same icon
-	if (ud->decoyDef != nullptr)
-		ud->decoyDef->iconType = ud->iconType;
-
-	// spring::unordered_map<int, std::vector<int> >
-	const auto& decoyMap = unitDefHandler->GetDecoyDefIDs();
-	const auto decoyMapIt = decoyMap.find((ud->decoyDef != nullptr)? ud->decoyDef->id: ud->id);
-
-	if (decoyMapIt != decoyMap.end()) {
-		const auto& decoySet = decoyMapIt->second;
-
-		for (const int decoyDefID: decoySet) {
-			const UnitDef* decoyDef = unitDefHandler->GetUnitDefByID(decoyDefID);
-			decoyDef->iconType = ud->iconType;
-		}
-	}
-
-	unitDrawer->UpdateUnitDefMiniMapIcons(ud);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
-{
-	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
-
-	if (ud == nullptr)
-		return 0;
-
-	if (lua_isnoneornil(L, 2)) {
-		// reset to default texture
-		CUnitDrawer::SetUnitDefImage(ud, ud->buildPicName);
-		return 0;
-	}
-
-	if (!lua_israwstring(L, 2))
-		return 0;
-
-	const std::string& texName = lua_tostring(L, 2);
-
-	if (texName[0] != LuaTextures::prefix) { // '!'
-		CUnitDrawer::SetUnitDefImage(ud, texName);
-		return 0;
-	}
-
-	const LuaTextures& textures = CLuaHandle::GetActiveTextures(L);
-	const LuaTextures::Texture* tex = textures.GetInfo(texName);
-
-	if (tex == nullptr)
-		return 0;
-
-	CUnitDrawer::SetUnitDefImage(ud, tex->id, tex->xsize, tex->ysize);
-	return 0;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetUnitGroup(lua_State* L)
-{
-	if (gs->noHelperAIs)
-		return 0;
-
-	CUnit* unit = ParseRawUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	const int groupID = luaL_checkint(L, 2);
-
-	if (groupID == -1) {
-		unit->SetGroup(nullptr);
-		return 0;
-	}
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0;
-
-	CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
-
-	if (group != nullptr)
-		unit->SetGroup(group);
-
-	return 0;
-}
-
-
-/******************************************************************************/
-
-static void ParseUnitMap(lua_State* L, const char* caller,
-                         int table, vector<int>& unitIDs)
-{
-	if (!lua_istable(L, table))
-		luaL_error(L, "%s(): error parsing unit map", caller);
-
-	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (lua_israwnumber(L, -2)) {
-			CUnit* unit = ParseCtrlUnit(L, __func__, -2); // the key
-
-			if (unit != nullptr && !unit->noSelect)
-				unitIDs.push_back(unit->id);
-		}
-	}
-}
-
-
-static void ParseUnitArray(lua_State* L, const char* caller,
-                           int table, vector<int>& unitIDs)
-{
-	if (!lua_istable(L, table))
-		luaL_error(L, "%s(): error parsing unit array", caller);
-
-	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (lua_israwnumber(L, -2) && lua_isnumber(L, -1)) {   // avoid 'n'
-			CUnit* unit = ParseCtrlUnit(L, __func__, -1); // the value
-
-			if (unit != nullptr && !unit->noSelect)
-				unitIDs.push_back(unit->id);
-		}
-	}
-}
-
-
-/******************************************************************************/
-
-static bool CanGiveOrders(const lua_State* L)
-{
-	if (gs->PreSimFrame())
-		return false;
-
-	if (gs->noHelperAIs)
-		return false;
-
-	const int ctrlTeam = CLuaHandle::GetHandleCtrlTeam(L);
-
-	if (gu->GetMyPlayer()->CanControlTeam(ctrlTeam))
-		return true;
-
-	// FIXME ? (correct? warning / error?)
-	return (!gu->spectating && (ctrlTeam == gu->myTeam) && (ctrlTeam >= 0));
-}
-
-
-int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
-{
-	if (!CanGiveOrders(L))
-		return 1;
-
-	selectedUnitsHandler.GiveCommand(LuaUtils::ParseCommand(L, __func__, 1));
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
-{
-	if (!CanGiveOrders(L)) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	const CUnit* unit = ParseCtrlUnit(L, __func__, 1);
-
-	if (unit == nullptr || unit->noSelect) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	const Command cmd = LuaUtils::ParseCommand(L, __func__, 2);
-
-	clientNet->Send(CBaseNetProtocol::Get().SendAICommand(gu->myPlayerNum, MAX_AIS, MAX_TEAMS, unit->id, cmd.GetID(false), cmd.GetID(true), cmd.GetTimeOut(), cmd.GetOpts(), cmd.GetNumParams(), cmd.GetParams()));
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
-{
-	if (!CanGiveOrders(L)) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	// unitIDs
-	vector<int> unitIDs;
-	ParseUnitMap(L, __func__, 1, unitIDs);
-
-	if (unitIDs.empty()) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	selectedUnitsHandler.SendCommandsToUnits(unitIDs, {LuaUtils::ParseCommand(L, __func__, 2)});
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
-{
-	if (!CanGiveOrders(L)) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	// unitIDs
-	vector<int> unitIDs;
-	ParseUnitArray(L, __func__, 1, unitIDs);
-
-	if (unitIDs.empty()) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	selectedUnitsHandler.SendCommandsToUnits(unitIDs, {LuaUtils::ParseCommand(L, __func__, 2)});
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
-{
-	if (!CanGiveOrders(L)) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	// unitIDs
-	vector<int> unitIDs;
-	ParseUnitMap(L, __func__, 1, unitIDs);
-
-	// commands
-	vector<Command> commands;
-	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
-
-	if (unitIDs.empty() || commands.empty()) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	selectedUnitsHandler.SendCommandsToUnits(unitIDs, commands);
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
-{
-	if (!CanGiveOrders(L)) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	const int args = lua_gettop(L); // number of arguments
-
-	// unitIDs
-	vector<int> unitIDs;
-	ParseUnitArray(L, __func__, 1, unitIDs);
-
-	// commands
-	vector<Command> commands;
-	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
-
-	if (unitIDs.empty() || commands.empty()) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	selectedUnitsHandler.SendCommandsToUnits(unitIDs, commands, (args >= 3 && lua_toboolean(L, 3)));
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SendLuaUIMsg(lua_State* L)
-{
-	const std::string msg = luaL_checksstring(L, 1);
-	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
-
-	const char* mode = luaL_optstring(L, 2, "");
-
-	if (mode[0] != 0 && mode[0] != 'a' && mode[0] != 's')
-		luaL_error(L, "Unknown SendLuaUIMsg() mode");
-
-	try {
-		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_UI, mode[0], data));
-	} catch (const netcode::PackPacketException& ex) {
-		luaL_error(L, "SendLuaUIMsg() packet error: %s", ex.what());
-	}
-
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SendLuaGaiaMsg(lua_State* L)
-{
-	const std::string msg = luaL_checksstring(L, 1);
-	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
-
-	try {
-		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_GAIA, 0, data));
-	} catch (const netcode::PackPacketException& ex) {
-		luaL_error(L, "SendLuaGaiaMsg() packet error: %s", ex.what());
-	}
-
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::SendLuaRulesMsg(lua_State* L)
-{
-	const std::string msg = luaL_checksstring(L, 1);
-	const std::vector<std::uint8_t> data(msg.begin(), msg.end());
-
-	try {
-		clientNet->Send(CBaseNetProtocol::Get().SendLuaMsg(gu->myPlayerNum, LUA_HANDLE_ORDER_RULES, 0, data));
-	} catch (const netcode::PackPacketException& ex) {
-		luaL_error(L, "SendLuaRulesMsg() packet error: %s", ex.what());
-	}
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SendLuaMenuMsg(lua_State* L)
-{
-	if (luaMenu != nullptr)
-		luaMenu->RecvLuaMsg(luaL_checksstring(L, 1), gu->myPlayerNum);
-
-	return 0;
-}
-
-
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
-{
-	if (gu->spectating || gs->noHelperAIs || gs->PreSimFrame())
-		return 0;
-
-
-	const char* shareType = lua_tostring(L, 1);
-	const float shareLevel = Clamp(luaL_checkfloat(L, 2), 0.0f, 1.0f);
-
-	if (shareType[0] == 'm') {
-		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, shareLevel, teamHandler.Team(gu->myTeam)->resShare.energy));
-		return 0;
-	}
-	if (shareType[0] == 'e') {
-		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, shareLevel));
-		return 0;
-	}
-
-	LOG_L(L_WARNING, "[%s] unknown resource-type \"%s\"", __func__, shareType);
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::ShareResources(lua_State* L)
-{
-	if (gu->spectating || gs->noHelperAIs || gs->PreSimFrame())
-		return 0;
-
-	const int args = lua_gettop(L); // number of arguments
-	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || ((args >= 3) && !lua_isnumber(L, 3)))
-		luaL_error(L, "Incorrect arguments to ShareResources()");
-
-	const int teamID = lua_toint(L, 1);
-	if (!teamHandler.IsValidTeam(teamID))
-		return 0;
-
-	const CTeam* team = teamHandler.Team(teamID);
-	if ((team == nullptr) || team->isDead)
-		return 0;
-
-	const char* type = lua_tostring(L, 2);
-	if (type[0] == 'u') {
-		// update the selection, and clear the unit command queues
-		selectedUnitsHandler.GiveCommand(Command(CMD_STOP), false);
-		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
-		selectedUnitsHandler.ClearSelected();
-		return 0;
-	}
-
-	if (args < 3)
-		return 0;
-
-	if (type[0] == 'm') {
-		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, lua_tofloat(L, 3), 0.0f));
-		return 0;
-	}
-	if (type[0] == 'e') {
-		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, 0.0f, lua_tofloat(L, 3)));
-		return 0;
-	}
-
-	return 0;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-
-int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
-{
-	const float3 pos(luaL_checkfloat(L, 1),
-	                 luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3));
-
-	eventHandler.LastMessagePosition(pos);
-	return 0;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
-{
-	if (inMapDrawer == nullptr)
-		return 0;
-
-	const float3 pos(luaL_checkfloat(L, 1),
-	                 luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3));
-	const string text = luaL_optstring(L, 4, "");
-	const bool onlyLocal = luaL_optboolean(L, 5, true);
-
-	if (onlyLocal) {
-		inMapDrawerModel->AddPoint(pos, text, luaL_optnumber(L, 6, gu->myPlayerNum));
-	} else {
-		inMapDrawer->SendPoint(pos, text, true);
-	}
-
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
-{
-	if (inMapDrawer == nullptr)
-		return 0;
-
-	const float3 pos1(luaL_checkfloat(L, 1),
-	                  luaL_checkfloat(L, 2),
-	                  luaL_checkfloat(L, 3));
-	const float3 pos2(luaL_checkfloat(L, 4),
-	                  luaL_checkfloat(L, 5),
-	                  luaL_checkfloat(L, 6));
-	const bool onlyLocal = luaL_optboolean(L, 7, false);
-
-	if (onlyLocal) {
-		inMapDrawerModel->AddLine(pos1, pos2, luaL_optnumber(L, 8, gu->myPlayerNum));
-	} else {
-		inMapDrawer->SendLine(pos1, pos2, true);
-	}
-
-	return 0;
-}
-
-
-int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
-{
-	if (inMapDrawer == nullptr)
-		return 0;
-
-	const float3 pos(luaL_checkfloat(L, 1),
-	                 luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3));
-
-	/* Argument 4 is going to be radius
-	 * after some future refactoring. */
-
-	const bool onlyLocal = luaL_optboolean(L, 5, false);
-	if (onlyLocal) {
-		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum));
-	} else {
-		inMapDrawer->SendErase(pos);
-	}
-
-	return 0;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetDrawSelectionInfo(lua_State* L)
-{
-	if (guihandler != nullptr)
-		guihandler->SetDrawSelectionInfo(luaL_checkboolean(L, 1));
-
-	return 0;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetBuildSpacing(lua_State* L)
-{
-	if (guihandler != nullptr)
-		guihandler->SetBuildSpacing(luaL_checkinteger(L, 1));
-
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
-{
-	if (guihandler != nullptr)
-		guihandler->SetBuildFacing(luaL_checkint(L, 1));
-
-	return 0;
-}
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
-{
-	if (!lua_istable(L, 1))
-		luaL_error(L, "Incorrect arguments to SetAtmosphere()");
-
-	const auto& sky = ISky::GetSky();
-	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
-			continue;
-
-		const char* key = lua_tostring(L, -2);
-
-		if (lua_istable(L, -1)) {
-			float4 color;
-			LuaUtils::ParseFloatArray(L, -1, &color[0], 4);
-
-			switch (hashString(key)) {
-				case hashString("fogColor"): {
-					sky->fogColor = color;
-				} break;
-				case hashString("skyColor"): {
-					sky->skyColor = color;
-				} break;
-				case hashString("skyDir"): {
-					// sky->skyDir = color;
-				} break;
-				case hashString("sunColor"): {
-					sky->sunColor = color;
-				} break;
-				case hashString("cloudColor"): {
-					sky->cloudColor = color;
-				} break;
-				default: {
-					luaL_error(L, "[%s] unknown array key %s", __func__, key);
-				} break;
-			}
-
-			continue;
-		}
-
-		if (lua_isnumber(L, -1)) {
-			switch (hashString(key)) {
-				case hashString("fogStart"): {
-					sky->fogStart = lua_tofloat(L, -1);
-				} break;
-				case hashString("fogEnd"): {
-					sky->fogEnd = lua_tofloat(L, -1);
-				} break;
-				default: {
-					luaL_error(L, "[%s] unknown scalar key %s", __func__, key);
-				} break;
-			}
-
-			continue;
-		}
-	}
-
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
-{
-	ISky::GetSky()->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
-{
-	if (!lua_istable(L, 1))
-		luaL_error(L, "[%s] argument should be a table", __func__);
-
-	CSunLighting sl = *sunLighting;
-
-	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
-			continue;
-
-		const char* key = lua_tostring(L, -2);
-
-		if (lua_istable(L, -1)) {
-			float4 color;
-			LuaUtils::ParseFloatArray(L, -1, &color[0], 4);
-
-			if (sl.SetValue(key, color))
-				continue;
-
-			luaL_error(L, "[%s] unknown array key %s", __func__, key);
-		}
-
-		if (lua_isnumber(L, -1)) {
-			if (sl.SetValue(key, lua_tofloat(L, -1)))
-				continue;
-
-			luaL_error(L, "[%s] unknown scalar key %s", __func__, key);
-		}
-	}
-
-	*sunLighting = sl;
-	return 0;
-}
-
-int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
-{
-	if (!lua_istable(L, 1))
-		luaL_error(L, "[%s] incorrect arguments");
-
-	for (lua_pushnil(L); lua_next(L, 1) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
-			continue;
-
-		const char* key = lua_tostring(L, -2);
-
-		if (lua_istable(L, -1)) {
-			float values[4];
-			const int size = LuaUtils::ParseFloatArray(L, -1, values, 4);
-
-			if (size < 4)
-				luaL_error(L, "[%s] unexpected size %d for array key \"%s\"", __func__, size, key);
-
-			switch (hashString(key)) {
-				case hashString("splatTexScales"): {
-					mapRendering->splatTexScales = values;
-				} break;
-				case hashString("splatTexMults"): {
-					mapRendering->splatTexMults = values;
-				} break;
-				default: {
-					luaL_error(L, "[%s] unknown array key \"%s\"", __func__, key);
-				} break;
-			}
-
-			continue;
-		}
-
-		if (lua_isboolean(L, -1)) {
-			const bool value = lua_toboolean(L, -1);
-
-			switch (hashString(key)) {
-				case hashString("voidWater"): {
-					mapRendering->voidWater = value;
-				} break;
-				case hashString("voidGround"): {
-					mapRendering->voidGround = value;
-				} break;
-				case hashString("splatDetailNormalDiffuseAlpha"): {
-					mapRendering->splatDetailNormalDiffuseAlpha = value;
-				} break;
-				default: {
-					luaL_error(L, "[%s] unknown boolean key \"%s\"", __func__, key);
-				} break;
-			}
-		}
-	}
-
-	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
-	groundDrawer->UpdateRenderState();
-
-	return 0;
-}
-
-int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
-{
-	CSMFGroundDrawer* smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
-
-	if (smfDrawer == nullptr) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	CRoamMeshDrawer* roamMeshDrawer = dynamic_cast<CRoamMeshDrawer*>(smfDrawer->GetMeshDrawer());
-	if (roamMeshDrawer == nullptr) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	CRoamMeshDrawer::ForceNextTesselation(
-		luaL_optboolean(L, 1, true ),
-		luaL_optboolean(L, 2, false)
-	);
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
-	if (CLuaHandle::GetHandleSynced(L))
-		return 0;
-
-	const int aiTeam = luaL_checkint(L, 1);
-	const char* inData = luaL_checkstring(L, 2);
-
-	std::vector<const char*> outData;
-
-	luaL_checkstack(L, 2, __func__);
-	lua_pushboolean(L, eoh->SendLuaMessages(aiTeam, inData, outData));
-
-	// push the AI response(s)
-	lua_createtable(L, outData.size(), 0);
-	for (unsigned int n = 0; n < outData.size(); n++) {
-		lua_pushstring(L, outData[n]);
-		lua_rawseti(L, -2, n + 1);
-	}
-
-	return 2;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
-	const int loglevel = LuaUtils::ParseLogLevel(L, 2);
-
-	if (loglevel < 0)
-		return luaL_error(L, "Incorrect arguments to Spring.SetLogSectionFilterLevel(logsection, loglevel)");
-
-	log_frontend_register_runtime_section(loglevel, luaL_checkstring(L, 1));
-	return 0;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-
-int LuaUnsyncedCtrl::ClearWatchDogTimer(lua_State* L) {
-	if (lua_gettop(L) == 0) {
-		// clear for current thread
-		Watchdog::ClearTimer();
-		return 0;
-	}
-
-	if (lua_isstring(L, 1)) {
-		Watchdog::ClearTimer(lua_tostring(L, 1), luaL_optboolean(L, 2, false));
-	} else {
-		Watchdog::ClearTimer("main", luaL_optboolean(L, 2, false));
-	}
-
-	return 0;
-}
-
-int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
-	luaContextData* ctxData = GetLuaContextData(L);
-	SLuaGarbageCollectCtrl& gcCtrl = ctxData->gcCtrl;
-
-	gcCtrl.itersPerBatch = std::max(0, luaL_optint(L, 1, gcCtrl.itersPerBatch));
-
-	gcCtrl.numStepsPerIter = std::max(0, luaL_optint(L, 2, gcCtrl.numStepsPerIter));
-	gcCtrl.minStepsPerIter = std::max(0, luaL_optint(L, 3, gcCtrl.minStepsPerIter));
-	gcCtrl.maxStepsPerIter = std::max(0, luaL_optint(L, 4, gcCtrl.maxStepsPerIter));
-
-	gcCtrl.minLoopRunTime = std::max(0.0f, luaL_optfloat(L, 5, gcCtrl.minLoopRunTime));
-	gcCtrl.maxLoopRunTime = std::max(0.0f, luaL_optfloat(L, 6, gcCtrl.maxLoopRunTime));
-
-	gcCtrl.baseRunTimeMult = std::max(0.0f, luaL_optfloat(L, 7, gcCtrl.baseRunTimeMult));
-	gcCtrl.baseMemLoadMult = std::max(0.0f, luaL_optfloat(L, 8, gcCtrl.baseMemLoadMult));
-
-	return 0;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-
+/******************************************************************************
+ * Preload
+ * @section preload
+******************************************************************************/
+
+
+/*** @function Spring.PreloadUnitDefModel
+ *
+ * Allow the engine to load the unit's model (and texture) in a background thread.
+ * Wreckages and buildOptions of a unit are automatically preloaded.
+ *
+ * @number unitDefID
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
 	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
 
@@ -3209,6 +4139,12 @@ int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
 	return 0;
 }
 
+
+/*** @function Spring.PreloadFeatureDefModel
+ *
+ * @number featureDefID
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::PreloadFeatureDefModel(lua_State* L) {
 	const FeatureDef* fd = featureDefHandler->GetFeatureDefByID(luaL_checkint(L, 1));
 
@@ -3220,6 +4156,11 @@ int LuaUnsyncedCtrl::PreloadFeatureDefModel(lua_State* L) {
 }
 
 
+/*** @function Spring.PreloadSoundItem
+ *
+ * @string name
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 {
 	// always push false in synced context
@@ -3230,6 +4171,12 @@ int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 	return 1;
 }
 
+
+/*** @function Spring.LoadModelTextures
+ *
+ * @string modelName
+ * @treturn ?nil|bool success
+ */
 int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 {
 	const std::string modelName = luaL_optstring(L, 1, "");
@@ -3254,8 +4201,12 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 	return 1;
 }
 
-/******************************************************************************/
-/******************************************************************************/
+
+/******************************************************************************
+ * Decals
+ * @section decals
+******************************************************************************/
+
 
 int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 {
@@ -3354,6 +4305,13 @@ int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 	return 0;
 }
 
+
+/******************************************************************************
+ * SDL Text
+ * @section sdltext
+******************************************************************************/
+
+
 int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 {
 	SDL_Rect textWindow;
@@ -3376,6 +4334,12 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 	SDL_StopTextInput();
 	return 0;
 }
+
+
+/******************************************************************************
+ * Window Management
+ * @section window
+******************************************************************************/
 
 int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 {
@@ -3407,6 +4371,148 @@ int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 	return 1;
 }
 
+
+/******************************************************************************
+ * Misc
+ * @section misc
+******************************************************************************/
+
+
+/*** @function Spring.Reload
+ * @string startScript the CONTENT of the script.txt spring should use to start.
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::Reload(lua_State* L)
+{
+	return (ReloadOrRestart("", luaL_checkstring(L, 1), false));
+}
+
+
+/*** @function Spring.Restart
+ *
+ * If this call returns, something went wrong
+ *
+ * @string commandline_args commandline arguments passed to spring executable.
+ * @string startScript
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::Restart(lua_State* L)
+{
+	// same as Reload now, cl-args are always ignored
+	return (ReloadOrRestart(luaL_checkstring(L, 1), luaL_checkstring(L, 2), false));
+}
+
+
+/*** Launches a new Spring instance without terminating the existing one.
+ *
+ * @function Spring.Start
+ *
+ * If this call returns, something went wrong
+ *
+ * @string commandline_args commandline arguments passed to spring executable.
+ * @string startScript the CONTENT of the script.txt spring should use to start (if empty, no start-script is added, you can still point spring to your custom script.txt when you add the file-path to commandline_args.
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::Start(lua_State* L)
+{
+	if (ReloadOrRestart(luaL_checkstring(L, 1), luaL_checkstring(L, 2), true) != 0) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	return 0;
+}
+
+
+/*** Sets the icon for the process which is seen in the OS task-bar and other places (default: spring-logo).
+ *
+ * @function Spring.SetWMIcon
+ *
+ * Note: has to be 24bit or 32bit.
+ * Note: on windows, it has to be 32x32 pixels in size (recommended for cross-platform)
+ * Note: *.bmp images have to be in BGR format (default for m$ ones).
+ * Note: *.ico images are not supported.
+ *
+ * @string iconFileName
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetWMIcon(lua_State* L)
+{
+	const std::string iconFileName = luaL_checksstring(L, 1);
+	const bool forceResolution = luaL_optboolean(L, 2, false);
+
+	CBitmap iconTexture;
+
+	if (iconTexture.Load(iconFileName)) {
+		WindowManagerHelper::SetIcon(&iconTexture, forceResolution);
+	} else {
+		luaL_error(L, "Failed to load image from file \"%s\"", iconFileName.c_str());
+	}
+
+	return 0;
+}
+
+
+/*** Sets the window title for the process (default: "Spring <version>").
+ *
+ * @function SetWMCaption
+ *
+ * The shortTitle is displayed in the OS task-bar (default: "Spring <version>").
+ *
+ * NOTE: shortTitle is only ever possibly used under X11 (Linux & OS X), but not with QT (KDE) and never under Windows.
+ *
+ * @string title
+ * @string[opt=title] titleShort
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetWMCaption(lua_State* L)
+{
+	globalRendering->SetWindowTitle(luaL_checksstring(L, 1));
+	return 0;
+}
+
+
+/*** @function Spring.ClearWatchDogTimer
+ * @string[opt=main] threadName
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::ClearWatchDogTimer(lua_State* L) {
+	if (lua_gettop(L) == 0) {
+		// clear for current thread
+		Watchdog::ClearTimer();
+		return 0;
+	}
+
+	if (lua_isstring(L, 1)) {
+		Watchdog::ClearTimer(lua_tostring(L, 1), luaL_optboolean(L, 2, false));
+	} else {
+		Watchdog::ClearTimer("main", luaL_optboolean(L, 2, false));
+	}
+
+	return 0;
+}
+
+
+/*** @function Spring.SetClipboard
+ * @string text
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
+{
+	SDL_SetClipboardText(luaL_checkstring(L, 1));
+	return 0;
+}
+
+
+/*** Relinquish control of the game loading thread and OpenGL context back to the UI (LuaIntro).
+ *
+ * @function Spring.Yield
+ *
+ * Should be called after each widget/unsynced gadget is loaded in widget/gadget handler. Use it to draw screen updates and process windows events.
+ *
+ * @number sleep time in milliseconds.
+ * @treturn bool when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.
+ */
 int LuaUnsyncedCtrl::Yield(lua_State* L)
 {
 	if (CLoadLock::GetThreadSafety() == false) {

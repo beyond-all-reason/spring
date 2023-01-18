@@ -18,8 +18,11 @@
 #include "fmt/format.h"
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * FBO
+ * @module FBO
+ * @see rts/Lua/LuaFBOs.cpp
+******************************************************************************/
 
 LuaFBOs::~LuaFBOs()
 {
@@ -388,6 +391,37 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @table attachment
+ * attachment ::= luaTex or `RBO.rbo` or nil or { luaTex [, num target [, num level ] ] }
+ */
+
+/***
+ * User Data FBO
+ * @table fbo
+ * @tparam attachment depth
+ * @tparam attachment stencil
+ * @tparam attachment color0
+ * @tparam attachment color1
+ * @tparam attachment color2
+ * @tparam attachment colorn
+ * @tparam attachment color15
+ * @tparam table drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @tparam table readbuffer `GL_COLOR_ATTACHMENT0_EXT`
+ */
+
+/***
+ * @function gl.CreateFBO
+ * @param data
+ * @tparam attachment data.depth
+ * @tparam attachment data.stencil
+ * @tparam attachment data.color0
+ * @tparam attachment data.color1
+ * @tparam attachment data.color2
+ * @tparam attachment data.colorn
+ * @tparam attachment data.color15
+ * @tparam table data.drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
 	FBO fbo;
@@ -458,6 +492,11 @@ int LuaFBOs::CreateFBO(lua_State* L)
 }
 
 
+/***
+ * @function gl.DeleteFBO
+ * This doesn't delete the attached objects!
+ * @tparam fbo fbo
+ */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
 	if (lua_isnil(L, 1))
@@ -469,6 +508,13 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 }
 
 
+/***
+ * @function gl.IsValidFBO
+ * @tparam fbo fbo
+ * @number[opt] target
+ * @treturn bool valid
+ * @treturn ?number status
+ */
 int LuaFBOs::IsValidFBO(lua_State* L)
 {
 	if (lua_isnil(L, 1) || !lua_isuserdata(L, 1)) {
@@ -504,6 +550,16 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 }
 
 
+/***
+ * @function gl.ActiveFBO
+ * @tparam fbo fbo
+ * @number[opt] target
+ * @bool[opt] identities
+ * @func[opt] lua_function
+ * @param[opt] arg1
+ * @param[opt] arg2
+ * @param[opt] argn
+ */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
@@ -566,6 +622,12 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 }
 
 
+/**
+ *gl.RawBindFBO
+ *
+ * ( nil [, number target = GL_FRAMEBUFFER_EXT ] [, number rawFboId = 0] ) -> nil (Bind default or specified via rawFboId numeric id of FBO)
+ * ( fbo [, number target = fbo.target ] ) -> number previouslyBoundRawFboId
+ */
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
 	//CheckDrawingEnabled(L, __func__);
@@ -592,6 +654,36 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 /******************************************************************************/
 
+/*** needs `GLEW_EXT_framebuffer_blit`
+ *
+ * @function gl.BlitFBO
+ * @number x0Src
+ * @number y0Src
+ * @number x1Src
+ * @number y1Src
+ * @number x0Dst
+ * @number y0Dst
+ * @number x1Dst
+ * @number y1Dst
+ * @number[opt=GL_COLOR_BUFFER_BIT] mask
+ * @number[opt=GL_NEAREST] filter
+ */
+/*** needs `GLEW_EXT_framebuffer_blit`
+ *
+ * @function gl.BlitFBO
+ * @tparam fbo fboSrc
+ * @number x0Src
+ * @number y0Src
+ * @number x1Src
+ * @number y1Src
+ * @tparam fbo fboDst
+ * @number x0Dst
+ * @number y0Dst
+ * @number x1Dst
+ * @number y1Dst
+ * @number[opt=GL_COLOR_BUFFER_BIT] mask
+ * @number[opt=GL_NEAREST] filter
+ */
 int LuaFBOs::BlitFBO(lua_State* L)
 {
 	if (lua_israwnumber(L, 1)) {

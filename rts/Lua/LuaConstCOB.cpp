@@ -9,13 +9,97 @@
 #include "Sim/Projectiles/PieceProjectile.h"
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * COB constants
+ * @module COB
+ * @see rts/Lua/LuaConstCOB.cpp
+******************************************************************************/
 
 
 bool LuaConstCOB::PushEntries(lua_State* L)
 {
 #define PUSH_COB(cmd) LuaPushNamedNumber(L, #cmd, cmd)
+
+	/*** @table COB
+	 *
+	 * @number ACTIVATION
+	 * @number STANDINGMOVEORDERS
+	 * @number STANDINGFIREORDERS
+	 * @number HEALTH
+	 * @number INBUILDSTANCE
+	 * @number BUSY
+	 * @number PIECE_XZ
+	 * @number PIECE_Y
+	 * @number UNIT_XZ
+	 * @number UNIT_Y
+	 * @number UNIT_HEIGHT
+	 * @number XZ_ATAN
+	 * @number XZ_HYPOT
+	 * @number ATAN
+	 * @number HYPOT
+	 * @number GROUND_HEIGHT
+	 * @number BUILD_PERCENT_LEFT
+	 * @number YARD_OPEN
+	 * @number BUGGER_OFF
+	 * @number ARMORED
+	 * @number IN_WATER
+	 * @number CURRENT_SPEED
+	 * @number VETERAN_LEVEL
+	 * @number ON_ROAD
+	 * @number MAX_ID
+	 * @number MY_ID
+	 * @number UNIT_TEAM
+	 * @number UNIT_BUILD_PERCENT_LEFT
+	 * @number UNIT_ALLIED
+	 * @number MAX_SPEED
+	 * @number CLOAKED
+	 * @number WANT_CLOAK
+	 * @number GROUND_WATER_HEIGHT
+	 * @number UPRIGHT
+	 * @number POW
+	 * @number PRINT
+	 * @number HEADING
+	 * @number TARGET_ID
+	 * @number LAST_ATTACKER_ID
+	 * @number LOS_RADIUS
+	 * @number AIR_LOS_RADIUS
+	 * @number RADAR_RADIUS
+	 * @number JAMMER_RADIUS
+	 * @number SONAR_RADIUS
+	 * @number SONAR_JAM_RADIUS
+	 * @number SEISMIC_RADIUS
+	 * @number DO_SEISMIC_PING
+	 * @number CURRENT_FUEL
+	 * @number TRANSPORT_ID
+	 * @number SHIELD_POWER
+	 * @number STEALTH
+	 * @number CRASHING
+	 * @number CHANGE_TARGET
+	 * @number CEG_DAMAGE
+	 * @number COB_ID
+	 * @number PLAY_SOUND
+	 * @number KILL_UNIT
+	 * @number ALPHA_THRESHOLD
+	 * @number SET_WEAPON_UNIT_TARGET
+	 * @number SET_WEAPON_GROUND_TARGET
+	 * @number SONAR_STEALTH
+	 * @number REVERSING
+	 * @number FLANK_B_MODE
+	 * @number FLANK_B_DIR
+	 * @number FLANK_B_MOBILITY_ADD
+	 * @number FLANK_B_MAX_DAMAGE
+	 * @number FLANK_B_MIN_DAMAGE
+	 * @number WEAPON_RELOADSTATE
+	 * @number WEAPON_RELOADTIME
+	 * @number WEAPON_ACCURACY
+	 * @number WEAPON_SPRAY
+	 * @number WEAPON_RANGE
+	 * @number WEAPON_PROJECTILE_SPEED
+	 * @number MIN
+	 * @number MAX
+	 * @number ABS
+	 * @number GAME_FRAME 
+	 */
 
 	PUSH_COB(ACTIVATION);
 	PUSH_COB(STANDINGMOVEORDERS);
@@ -117,7 +201,21 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 
 bool LuaConstSFX::PushEntries(lua_State* L)
 {
-	// Piece Flags for Spring.UnitScript.Explode
+	/*** Piece Flags for Spring.UnitScript.Explode
+	 *
+	 * @table SFX
+	 *
+	 * @number SHATTER
+	 * @number EXPLODE
+	 * @number EXPLODE_ON_HIT
+	 * @number FALL
+	 * @number SMOKE
+	 * @number FIRE
+	 * @number NONE
+	 * @number NO_CEG_TRAIL
+	 * @number NO_HEATCLOUD
+	 * @number RECURSIVE
+	 */
 	LuaPushNamedNumber(L, "SHATTER", PF_Shatter);
 	LuaPushNamedNumber(L, "EXPLODE", PF_Explode);
 	LuaPushNamedNumber(L, "EXPLODE_ON_HIT", PF_Explode);
@@ -129,7 +227,21 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "NO_HEATCLOUD", PF_NoHeatCloud);
 	LuaPushNamedNumber(L, "RECURSIVE", PF_Recursive);
 
-	// For Spring.UnitScript.EmitSfx
+	/*** For Spring.UnitScript.EmitSfx
+	 *
+	 * @table SFX
+	 *
+	 * @number VTOL
+	 * @number WAKE
+	 * @number REVERSE_WAKE
+	 * @number WHITE_SMOKE
+	 * @number BLACK_SMOKE
+	 * @number BUBBLE
+	 * @number CEG
+	 * @number FIRE_WEAPON
+	 * @number DETONATE_WEAPON
+	 * @number GLOBAL
+	 */
 	LuaPushNamedNumber(L, "VTOL",            SFX_VTOL);
 	LuaPushNamedNumber(L, "WAKE",            SFX_WAKE);
 	LuaPushNamedNumber(L, "REVERSE_WAKE",    SFX_REVERSE_WAKE);
