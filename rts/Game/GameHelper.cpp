@@ -650,6 +650,9 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 	const float secDamage = weaponDmg->GetDefault() * weapon->salvoSize / weapon->reloadTime * GAME_SPEED;
 	const float heightMod = weaponDef->heightmod;
 
+	const float3 worldMainDir = weapon->weaponDir;
+	const float weaponAimAdjustPriority = 1.0f;
+
 	const float  baseRange = weapon->range;
 	const float rangeBoost = weapon->autoTargetRangeBoost;
 	// find theoretical maximum range based on height above lowest point on map
@@ -706,10 +709,16 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				if (sqDist2D > Square(modRange))
 					continue;
 
+				const float3 worldTargetDir = (targetPos - ownerPos).SafeNormalize();
+				const float angleOffset =  (1.f - worldMainDir.dot(worldTargetDir)) * 2.f;
+				const float angleMod = angleOffset * weaponAimAdjustPriority + 1.f;
+				const float angleMul = angleMod*angleMod;
+
 				const float dist2D = math::sqrt(sqDist2D);
 				const float rangeMul = (dist2D * weaponDef->proximityPriority + modRange * 0.4f + 100.0f);
 				const float damageMul = weaponDmg->Get(targetUnit->armorType) * targetUnit->curArmorMultiple;
 
+				targetPriority *= angleMul;
 				targetPriority *= rangeMul;
 				targetPriority *= tgtPriorityMults[(dist2D > baseRange) * 6];
 

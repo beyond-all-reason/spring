@@ -278,7 +278,6 @@ float CWeapon::GetPredictedImpactTime(float3 p) const
 	return aimFromPos.distance(p) / projectileSpeed;
 }
 
-
 void CWeapon::Update()
 {
 	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
@@ -292,7 +291,11 @@ void CWeapon::Update()
 									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
-		if (owner->curTarget.type != Target_None)
+		// TODO: add global default
+		// TODO: add per weapondef setting
+		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead)
+								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
+		if (ownerTargetIsValid)
 			DropCurrentTarget();
 		else
 			AutoTarget();
@@ -622,7 +625,7 @@ bool CWeapon::AllowWeaponAutoTarget() const
 	if (currentTarget.isUserTarget)
 		return false;
 
-	return (gs->frameNum > (lastTargetRetry + 65));
+	return (gs->frameNum > (lastTargetRetry + 65)) || fastAutoRetargetingEnabled;
 }
 
 bool CWeapon::AutoTarget()

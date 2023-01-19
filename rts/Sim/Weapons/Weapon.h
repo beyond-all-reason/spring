@@ -95,6 +95,8 @@ public:
 	bool StopAttackingTargetIf(const std::function<bool(const SWeaponTarget&)>& pred);
 	bool StopAttackingAllyTeam(const int ally);
 
+	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargetingEnabled; }
+
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
 	virtual void UpdateWantedDir();
