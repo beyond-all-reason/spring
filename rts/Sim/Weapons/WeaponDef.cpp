@@ -6,6 +6,7 @@
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/DefinitionTag.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileTypes.h"
 #include "Sim/Units/Scripts/CobInstance.h" // TAANG2RAD
@@ -272,6 +273,9 @@ WeaponDef::WeaponDef()
 	noAutoTarget = false;
 	onlyForward = false;
 
+	fastAutoRetargetingEnabled = modInfo.fastAutoRetargetingEnabledByDefault;
+	weaponAimAdjustPriority = modInfo.weaponAimAdjustPriorityDefault;
+
 	damages.fromDef = true;
 
 	WeaponDefs.Load(this, {});
@@ -307,6 +311,9 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 	shieldArmorType = damageArrayHandler.GetTypeFromName(shieldArmorTypeName);
 	flighttime = int(wdTable.GetFloat("flighttime", 0.0f) * GAME_SPEED);
 	maxFireAngle = math::cos(wdTable.GetFloat("firetolerance", 3640.0f) * TAANG2RAD);
+
+	fastAutoRetargetingEnabled = wdTable.GetBool("fastAutoRetargetingEnabled", modInfo.fastAutoRetargetingEnabledByDefault);
+	weaponAimAdjustPriority = wdTable.GetFloat("weaponAimAdjustPriority", modInfo.weaponAimAdjustPriorityDefault);
 
 	//FIXME may be smarter to merge the collideXYZ tags with avoidXYZ and removing the collisionFlags tag (and move the code into CWeapon)?
 	collisionFlags = 0;

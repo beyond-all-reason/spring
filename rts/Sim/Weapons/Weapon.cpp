@@ -104,6 +104,7 @@ CR_REG_METADATA(CWeapon, (
 
 	CR_MEMBER(incomingProjectileIDs),
 
+	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargetingEnabled)
 ))
 
@@ -179,7 +180,10 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	errorVector(ZeroVector),
 	errorVectorAdd(ZeroVector),
 
-	muzzleFlareSize(1)
+	muzzleFlareSize(1),
+
+	weaponAimAdjustPriority(1.f),
+	fastAutoRetargetingEnabled(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -291,8 +295,6 @@ void CWeapon::Update()
 									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
-		// TODO: add global default
-		// TODO: add per weapondef setting
 		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead)
 								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
 		if (ownerTargetIsValid)
@@ -1067,6 +1069,9 @@ void CWeapon::Init()
 			owner->shieldWeapon = this;
 		}
 	}
+
+	fastAutoRetargetingEnabled = weaponDef->fastAutoRetargetingEnabled;
+	weaponAimAdjustPriority = weaponDef->weaponAimAdjustPriority;
 }
 
 

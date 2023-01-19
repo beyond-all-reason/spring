@@ -651,7 +651,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 	const float heightMod = weaponDef->heightmod;
 
 	const float3 worldMainDir = weapon->weaponDir;
-	const float weaponAimAdjustPriority = 1.0f;
+	const float weaponAimAdjustPriority = weapon->weaponAimAdjustPriority;
 
 	const float  baseRange = weapon->range;
 	const float rangeBoost = weapon->autoTargetRangeBoost;
