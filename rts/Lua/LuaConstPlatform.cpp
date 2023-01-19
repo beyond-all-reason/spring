@@ -6,6 +6,42 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 
+/******************************************************************************
+ * Platform constants
+ * @module Platform
+ * @see rts/Lua/LuaConstPlatform.cpp
+******************************************************************************/
+
+/*** Platform specific information
+ *
+ * @table Platform
+ * @string gpu full GPU device name
+ * @string gpuVendor one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
+ * @string glVersionShort major.minor.buildNumber
+ * @string glslVersionShort major.minor
+ * @string glVersion full version
+ * @string glVendor
+ * @string glRenderer
+ * @string glslVersion full version
+ * @string glewVersion
+ * @string osName full name of the OS
+ * @string osFamily one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
+ * @number numDisplays
+ * @number gpuMemorySize size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+ * @number sdlVersionCompiledMajor
+ * @number sdlVersionCompiledMinor
+ * @number sdlVersionCompiledPatch
+ * @number sdlVersionLinkedMajor
+ * @number sdlVersionLinkedMinor
+ * @number sdlVersionLinkedPatch
+ * @bool glSupportNonPowerOfTwoTex
+ * @bool glSupportTextureQueryLOD
+ * @bool glSupport24bitDepthBuffer
+ * @bool glSupportRestartPrimitive
+ * @bool glSupportClipSpaceControl
+ * @bool glSupportFragDepthLayout
+ */
+
 bool LuaConstPlatform::PushEntries(lua_State* L)
 {
 	LuaPushNamedString(L, "gpu", globalRenderingInfo.gpuName);

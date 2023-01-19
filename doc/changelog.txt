@@ -133,6 +133,8 @@ System:
  - Windows Vista is now longer supported, Windows 7 is now the minimum required Windows OS
 
 UI:
+ - Add Buildoptions, Cloak, Cloaked, Resurrect and Stealth selection filters. See
+   `doc/SelectionKeys.md' for further details
  - KeyPress and KeyRelease callins receive an additional actions
    7th argument
  - Allow minimap to receive MouseWheelPress events, controlled by

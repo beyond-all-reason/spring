@@ -85,7 +85,7 @@ endif (UNIX AND NOT MINGW)
 
 find_package_static(ZLIB REQUIRED)
 list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${GIF_LIBRARY})
-list(APPEND engineCommonLibraries 7zip ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY})
+list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY})
 list(APPEND engineCommonLibraries lua luasocket archives assimp gflags)
 if (ENABLE_STREFLOP)
 	list(APPEND engineCommonLibraries streflop)

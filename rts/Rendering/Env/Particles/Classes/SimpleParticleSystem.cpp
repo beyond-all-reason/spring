@@ -99,8 +99,8 @@ void CSimpleParticleSystem::Draw()
 	UpdateAnimParams();
 
 	std::array<float3, 4> bounds;
-
-	if (directional) {
+	const bool shadowPass = (camera->GetCamType() == CCamera::CAMTYPE_SHADOW);
+	if (directional && !shadowPass) {
 		for (int i = 0; i < numParticles; i++) {
 			const Particle* p = &particles[i];
 

@@ -328,13 +328,12 @@ void CModelLoader::FillModel(
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 {
-	using namespace std::chrono_literals;
-
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
-	const auto erasePredicate = [timeout = 100us](decltype(preloadFutures)::value_type item) {
-		return item->wait_for(timeout) == std::future_status::ready;
+	const auto erasePredicate = [](decltype(preloadFutures)::value_type item) {
+		using namespace std::chrono_literals;
+		return item->wait_for(0ms) == std::future_status::ready;
 	};
 
 	// collect completed futures
@@ -346,6 +345,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 	while (preloadFutures.size() > numAllowed) {
 		//drain queue until there are <= numAllowed items there
 		spring::VectorEraseAllIf(preloadFutures, erasePredicate);
+		spring_sleep(spring_msecs(100));
 	}
 }
 
