@@ -116,10 +116,6 @@ void CModInfo::ResetState()
 
 		allowTake = true;
 	}
-	{
-		fastAutoRetargetingEnabledByDefault = false;
-		weaponAimAdjustPriorityDefault = 1.0f;
-	}
 }
 
 void CModInfo::Init(const std::string& modFileName)
@@ -314,14 +310,6 @@ void CModInfo::Init(const std::string& modFileName)
 
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
-	}
-
-	{
-		// Weapons
-		const LuaTable& weaponsTbl = root.SubTable("weapons");
-
-		fastAutoRetargetingEnabledByDefault = weaponsTbl.GetBool("fastAutoRetargetingEnabledByDefault", fastAutoRetargetingEnabledByDefault);
-		weaponAimAdjustPriorityDefault = weaponsTbl.GetFloat("weaponAimAdjustPriorityDefault", weaponAimAdjustPriorityDefault);
 	}
 }
 

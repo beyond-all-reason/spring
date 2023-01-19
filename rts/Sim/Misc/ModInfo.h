@@ -199,10 +199,6 @@ public:
 	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
-
-	// Weapons
-	bool fastAutoRetargetingEnabledByDefault;
-	float weaponAimAdjustPriorityDefault;
 };
 
 extern CModInfo modInfo;

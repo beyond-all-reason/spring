@@ -1069,9 +1069,6 @@ void CWeapon::Init()
 			owner->shieldWeapon = this;
 		}
 	}
-
-	fastAutoRetargetingEnabled = weaponDef->fastAutoRetargetingEnabled;
-	weaponAimAdjustPriority = weaponDef->weaponAimAdjustPriority;
 }
 
 
