@@ -1055,16 +1055,9 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 /***
  * @function Spring.SetTeamResource
  * @number teamID
- * @string res
+ * @string res "m" = metal "e" = energy "ms" = metal storage "es" = energy storage
  * @number amount
  * @treturn nil
- *
- *     Possible values for res are:
- *     "m" = metal
- *     "e" = energy
- *     "ms" = metal storage
- *     "es" = energy storage
- *
  */
 int LuaSyncedCtrl::SetTeamResource(lua_State* L)
 {
@@ -1409,7 +1402,7 @@ static inline void ParseCobArgs(
 
 
 /***
- * @function Spring.CallCOBScript ( number unitID, number funcID | string funcName, number retArgs, COBArg1, COBArg2, ... )
+ * @function Spring.CallCOBScript
  * @number unitID
  * @tparam ?number|string funcName
  * @number retArgs
@@ -1514,18 +1507,20 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
 ******************************************************************************/
 
 /***
- * @function Spring.CreateUnit ( string "defName" | number unitDefID, number x, number y, number z, string "facing" | number facing, number teamID [, bool build = false [, bool flattenGround = true [, number builderID ]]] )
- * return: number unitID | nil (meaning unit was not created)
- * 
- *     Offmap positions are clamped! Use MoveCtrl to move to such positions.
- *     Possible values for facing are:
- *     "south" | "s" | 0
- *     "east" | "e" | 1
- *     "north" | "n" | 2
- *     "west" | "w" | 3
- * 
- *     If build is true, the unit is created in "being built" state with buildProgress = 0
- * 
+ * @function Spring.CreateUnit
+ *
+ * Offmap positions are clamped! Use MoveCtrl to move to such positions.
+ *
+ * @tparam string|number unitDef
+ * @number x
+ * @number y
+ * @number z
+ * @tparam string|number facing possible values for facing are: "south" | "s" | 0, "east" | "e" | 1, "north" | "n" | 2, "west" | "w" | 3
+ * @number teamID
+ * @bool[opt=false] build the unit is created in "being built" state with buildProgress = 0
+ * @bool[opt=true] flattenGround
+ * @number[opt] builderID
+ * @treturn number|nil unitID meaning unit was created
  */
 int LuaSyncedCtrl::CreateUnit(lua_State* L)
 {
@@ -1612,12 +1607,12 @@ int LuaSyncedCtrl::CreateUnit(lua_State* L)
 
 
 /***
- * @function Spring.DestroyUnit ( number unitID [, bool selfd = false [, bool reclaimed = false [, number attackerID ]]] )
+ * @function Spring.DestroyUnit
+ * @number unitID
+ * @bool[opt=false] selfd makes the unit act like it self-destructed.
+ * @bool[opt=false] reclaimed don't show any DeathSequences, don't leave a wreckage. This does not give back the resources to the team!
+ * @number[opt] attackerID
  * @treturn nil
- * 
- *     selfd := Makes the unit act like it self-destructed.
- *     reclaimed := Don't show any DeathSequences, don't leave a wreckage. This does not give back the resources to the team!
- * 
  */
 int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 {
@@ -1655,10 +1650,11 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 
 
 /***
- * @function Spring.TransferUnit ( number unitID, number newTeamID [, bool given = true ] )
+ * @function Spring.TransferUnit
+ * @number unitID
+ * @number newTeamID
+ * @bool[opt=true] given if false, the unit is captured.
  * @treturn nil
- *
- * If given=false, the unit is captured.
  */
 int LuaSyncedCtrl::TransferUnit(lua_State* L)
 {
@@ -1699,7 +1695,9 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 ******************************************************************************/
 
 /***
- * @function Spring.SetUnitCosts ( number unitID, { [ buildTime = number amount ], [ metalCost = number amount ], [ energyCost = number amount ] } )
+ * @function Spring.SetUnitCosts
+ * @number unitID
+ * @tparam {[number]=number,...} where keys and values are, respectively and in this order: buildTime=amount, metalCost=amount, energyCost=amount
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitCosts(lua_State* L)
@@ -1798,19 +1796,20 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
  * Unit Resourcing
  * @section unitresourcing
  */
+
 /***
- * @function Spring.SetUnitResourcing ( number unitID, string res, number amount )
+ * @function Spring.SetUnitResourcing
+ * @number unitID
+ * @string res
+ * @number amount
  * @treturn nil
  */
+
 /***
- * @function Spring.SetUnitResourcing ( number unitID, { res = number amount, ... } )
+ * @function Spring.SetUnitResourcing
+ * @number unitID
+ * @tparam {[string]=number,...} res keys are: "[u|c][u|m][m|e]" unconditional | conditional, use | make, metal | energy. Values are amounts
  * @treturn nil
- * 
- *     Possible values for res are: "[u|c][u|m][m|e]"
- *     unconditional | conditional
- *     use | make
- *     metal | energy
- * 
  */
 int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 {
@@ -1840,7 +1839,9 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 
 
 /***
- * @function Spring.SetUnitTooltip ( number unitID, string "tooltip" )
+ * @function Spring.SetUnitTooltip
+ * @number unitID
+ * @string tooltip
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
@@ -1862,7 +1863,9 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
 
 
 /***
- * @function Spring.SetUnitHealth ( number unitID, number health | { [ health = number health ], [ capture = number capture ], [ paralyze = number paralyze ], [ build = number build ] } )
+ * @function Spring.SetUnitHealth
+ * @number unitID
+ * @tparam number|{[string]=number,...} health where keys can be one of health|capture|paralyze|build and values are amounts
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
@@ -1934,7 +1937,10 @@ int LuaSyncedCtrl::SetUnitMaxHealth(lua_State* L)
 
 
 /***
- * @function Spring.SetUnitStockpile ( number unitID [, number stockpile [, number buildPercent ]] )
+ * @function Spring.SetUnitStockpile
+ * @number unitID
+ * @number[opt] stockpile
+ * @number[opt] buildPercent
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitStockpile(lua_State* L)
@@ -2389,22 +2395,28 @@ static unsigned char ParseLosBits(lua_State* L, int index, unsigned char bits)
 
 
 /***
- * @function Spring.SetUnitLosMask ( number unitID, number allyTeam, number los | table losTypes )
- * @treturn nil
- * 
- *     The 3rd argument is either the bit-and combination of the following numbers:
+ * @function Spring.SetUnitLosMask
+ *
+ * The 3rd argument is either the bit-and combination of the following numbers:
+ *
  *     LOS_INLOS = 1
  *     LOS_INRADAR = 2
  *     LOS_PREVLOS = 4
  *     LOS_CONTRADAR = 8
- * 
- *     or a table of the following form:
+ *
+ * or a table of the following form:
+ *
  *     losTypes = {
  *     [los = boolean,]
  *     [radar = boolean,]
  *     [prevLos = boolean,]
  *     [contRadar = boolean]
  *     }
+ *
+ * @number unitID
+ * @number allyTeam
+ * @tparam number|table losTypes
+ * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitLosMask(lua_State* L)
 {
@@ -4544,8 +4556,7 @@ int LuaSyncedCtrl::SetProjectileCollision(lua_State* L)
 }
 
 /***
- * @function Spring.SetProjectileTarget ( number projectileID, [ number targetID, number targetType ] | [ number posX = 0, number posY = 0, number posZ = 0 ] )
- * @treturn ?nil|bool validTarget
+ * @function Spring.SetProjectileTarget
  *
  * targetTypeStr can be one of: 
  *     'u' - unit
@@ -4556,6 +4567,12 @@ int LuaSyncedCtrl::SetProjectileCollision(lua_State* L)
  *     string.byte('u') := UNIT
  *     string.byte('f') := FEATURE
  *     string.byte('p') := PROJECTILE
+ *
+ * @number projectileID
+ * @number[opt=0] arg1 targetID or posX
+ * @number[opt=0] arg2 targetType or posY
+ * @number[opt=0] posZ
+ * @treturn ?nil|bool validTarget
  */
 int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 {
