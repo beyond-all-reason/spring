@@ -1508,17 +1508,19 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
 
 /***
  * @function Spring.CreateUnit
+ * @see Spring.DestroyUnit
  *
  * Offmap positions are clamped! Use MoveCtrl to move to such positions.
  *
- * @tparam string|number unitDef
+ * @tparam string|number unitDefName or unitDefID
  * @number x
  * @number y
  * @number z
  * @tparam string|number facing possible values for facing are: "south" | "s" | 0, "east" | "e" | 1, "north" | "n" | 2, "west" | "w" | 3
  * @number teamID
  * @bool[opt=false] build the unit is created in "being built" state with buildProgress = 0
- * @bool[opt=true] flattenGround
+ * @bool[opt=true] flattenGround the unit flattens ground, if it normally does so
+ * @number[opt] unitID requests specific unitID
  * @number[opt] builderID
  * @treturn number|nil unitID meaning unit was created
  */
@@ -1608,10 +1610,12 @@ int LuaSyncedCtrl::CreateUnit(lua_State* L)
 
 /***
  * @function Spring.DestroyUnit
+ * @see Spring.CreateUnit
  * @number unitID
  * @bool[opt=false] selfd makes the unit act like it self-destructed.
  * @bool[opt=false] reclaimed don't show any DeathSequences, don't leave a wreckage. This does not give back the resources to the team!
  * @number[opt] attackerID
+ * @bool[opt=false] cleanupImmediately stronger version of reclaimed, removes the unit unconditionally and makes its ID available for immediate reuse (otherwise it takes a few frames)
  * @treturn nil
  */
 int LuaSyncedCtrl::DestroyUnit(lua_State* L)
@@ -2290,9 +2294,10 @@ int LuaSyncedCtrl::SetUnitMaxRange(lua_State* L)
 
 /***
  * @function Spring.SetUnitExperience
+ * @see Spring.AddUnitExperience
+ * @see Spring.GetUnitExperience
  * @number unitID
  * @number experience
- * @number buildPercent
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitExperience(lua_State* L)
@@ -2306,6 +2311,14 @@ int LuaSyncedCtrl::SetUnitExperience(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.AddUnitExperience
+ * @see Spring.SetUnitExperience
+ * @see Spring.GetUnitExperience
+ * @number unitID
+ * @number deltaExperience Can be negative to subtract, but the unit will never have negative total afterwards
+ * @treturn nil
+ */
 int LuaSyncedCtrl::AddUnitExperience(lua_State* L)
 {
 	CUnit* unit = ParseUnit(L, __func__, 1);
@@ -2322,8 +2335,8 @@ int LuaSyncedCtrl::AddUnitExperience(lua_State* L)
 /***
  * @function Spring.SetUnitArmored
  * @number unitID
- * @bool armored
- * @number[opt] armorMultiple
+ * @bool[opt] armored
+ * @number[opt] armorMultiple Cannot be zero or less, clamped to 0.0001
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
