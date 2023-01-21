@@ -2,6 +2,7 @@
 
 
 #include <cmath>
+#include <string_view>
 
 #include "LuaVFS.h"
 #include "LuaInclude.h"
@@ -150,16 +151,21 @@ int LuaVFS::Include(lua_State* L, bool synced)
 	int loadCode = 0;
 	int luaError = 0;
 
-	if ((loadCode = LoadFileWithModes(fileName, fileData, GetModes(L, 3, synced))) != 1) {
+	const auto mode = GetModes(L, 3, synced);
+	if ((loadCode = LoadFileWithModes(fileName, fileData, mode)) != 1) {
+		std::string_view hint {""};
+		if (loadCode == -1) // magic value from VFSHandler
+			hint = "File not seen by VFS (missing or in different VFS mode)";
+
 		char buf[1024];
-		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadvfs] file=%s status=%d cenv=%d", __func__, synced, fileName.c_str(), loadCode, hasCustomEnv);
+		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadvfs] file=%s status=%d cenv=%d vfsmode=%s %s", __func__, synced, fileName.c_str(), loadCode, hasCustomEnv, mode.c_str(), hint.data());
 		lua_pushstring(L, buf);
  		lua_error(L);
 	}
 
 	if ((luaError = luaL_loadbuffer(L, fileData.c_str(), fileData.size(), fileName.c_str())) != 0) {
 		char buf[1024];
-		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadbuf] file=%s error=%i (%s) cenv=%d", __func__, synced, fileName.c_str(), luaError, lua_tostring(L, -1), hasCustomEnv);
+		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadbuf] file=%s error=%i (%s) cenv=%d vfsmode=%s", __func__, synced, fileName.c_str(), luaError, lua_tostring(L, -1), hasCustomEnv, mode.c_str());
 		lua_pushstring(L, buf);
 		lua_error(L);
 	}
