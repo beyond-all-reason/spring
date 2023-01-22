@@ -262,7 +262,7 @@ CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, co
 		// Essential Mathematics, page 467
 		const float angle = math::acos(cosTheta);
 		return CQuaternion(
-			(math::sin((1.0f - a) * angle) * q1.q + sin(a * angle) * q2.q) / sin(angle)
+			(math::sin((1.0f - a) * angle) * q1.q + math::sin(a * angle) * q2.q) / math::sin(angle)
 		);
 	}
 }
