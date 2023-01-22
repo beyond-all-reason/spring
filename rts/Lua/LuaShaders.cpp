@@ -305,7 +305,8 @@ namespace {
 				const auto iter = p.activeUniforms.find(uniformName);
 
 				if (iter == p.activeUniforms.end()) {
-					LOG_L(L_WARNING, "[%s] uniform \"%s\" from table \"%s\" not active in shader", __func__, uniformName, fieldName);
+					if (globalRendering->glDebug || globalRendering->glDebugErrors)
+						LOG_L(L_WARNING, "[%s] uniform \"%s\" from table \"%s\" not active in shader", __func__, uniformName, fieldName);
 					continue;
 				}
 
