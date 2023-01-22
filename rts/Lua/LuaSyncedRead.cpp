@@ -273,6 +273,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeatureHealth);
 	REGISTER_LUA_CFUNC(GetFeatureHeight);
 	REGISTER_LUA_CFUNC(GetFeatureRadius);
+	REGISTER_LUA_CFUNC(GetFeatureMoveCtrl);
 	REGISTER_LUA_CFUNC(GetFeaturePosition);
 	REGISTER_LUA_CFUNC(GetFeatureMass);
 	REGISTER_LUA_CFUNC(GetFeatureRotation);
@@ -5038,6 +5039,60 @@ int LuaSyncedRead::GetFeatureRadius(lua_State* L)
 int LuaSyncedRead::GetFeatureMass(lua_State* L)
 {
 	return (GetSolidObjectMass(L, ParseFeature(L, __func__, 1)));
+}
+
+/*** Gets feature's MoveCtrl parameters.
+ *
+ * @function Spring.GetFeatureMoveCtrl
+ * @number featureID
+ * @treturn nil | bool mcEnabled
+ * @treturn number mcVelX | number mcVelMaskX
+ * @treturn number mcVelY | number mcVelMaskY
+ * @treturn number mcVelZ | number mcVelMaskZ
+ * @treturn number mcAccX | number mcImpMaskX
+ * @treturn number mcAccY | number mcImpMaskY
+ * @treturn number mcAccZ | number mcImpMaskZ
+ * @treturn number mcMvmMaskX
+ * @treturn number mcMvmMaskX
+ * @treturn number mcMvmMaskX
+ */
+int LuaSyncedRead::GetFeatureMoveCtrl(lua_State* L)
+{
+	const auto* feature = ParseFeature(L, __func__, 1);
+	if (feature == nullptr)
+		return 0;
+
+	const CFeature::MoveCtrl& moveCtrl = feature->moveCtrl;
+
+	int numRets = 0;
+	lua_pushboolean(L, moveCtrl.enabled);
+	numRets++;
+
+	if (moveCtrl.enabled) {
+		for (int i = 0; i < 3; i++) {
+			lua_pushnumber(L, moveCtrl.velVector[i]);
+			numRets++;
+		}
+		for (int i = 0; i < 3; i++) {
+			lua_pushnumber(L, moveCtrl.accVector[i]);
+			numRets++;
+		}
+	}
+	else {
+		for (int i = 0; i < 3; i++) {
+			lua_pushnumber(L, moveCtrl.velocityMask[i]);
+			numRets++;
+		}
+		for (int i = 0; i < 3; i++) {
+			lua_pushnumber(L, moveCtrl.impulseMask[i]);
+			numRets++;
+		}
+		for (int i = 0; i < 3; i++) {
+			lua_pushnumber(L, moveCtrl.movementMask[i]);
+			numRets++;
+		}
+	}
+	return numRets;
 }
 
 int LuaSyncedRead::GetFeaturePosition(lua_State* L)

@@ -392,30 +392,33 @@ void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(h
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
 {
+	float3 fdir = frontdir;
+
 	updir    = GetWantedUpDir(useGroundNormal, useObjectNormal, dirSmoothing);
-	frontdir = GetVectorFromHeading(heading);
-	rightdir = (frontdir.cross(updir)).Normalize();
+	fdir     = mix(GetVectorFromHeading(heading), fdir, math::fabs(fdir.dot(UpVector)) >= 0.99f); // if frontdir is (anti)-parallel to world's up, heading value makes zero sense
+
+	const float fddotup = fdir.dot(updir);
+	fdir     = mix(fdir, -Sign(fddotup) * FwdVector, math::fabs(fddotup) >= 0.99f); //detect if fdir is (anti)-parallel to new updir, if so take -+FwdVector
+
+	rightdir = (fdir.cross(updir)).Normalize();
 	frontdir = updir.cross(rightdir);
 }
 
 
 
-void CSolidObject::ForcedSpin(const float3& newDir)
+void CSolidObject::ForcedSpin(const float3& zdir)
 {
 	// new front-direction should be normalized
-	assert(math::fabsf(newDir.SqLength() - 1.0f) <= float3::cmp_eps());
+	assert(math::fabsf(zdir.SqLength() - 1.0f) <= float3::cmp_eps());
 
-	// if zdir is parallel to world-y, use heading-vector
-	// (or its inverse) as auxiliary to avoid degeneracies
-	const float3 zdir = newDir;
-	const float3 udir = mix(UpVector, (frontdir * Sign(-zdir.y)), (math::fabs(zdir.dot(UpVector)) >= 0.99f));
+	const float zdotup = zdir.dot(UpVector);
+	const float3 udir = mix(UpVector, -Sign(zdotup) * FwdVector, math::fabs(zdotup) >= 0.99f);
 	const float3 xdir = (zdir.cross(udir)).Normalize();
 	const float3 ydir = (xdir.cross(zdir)).Normalize();
 
 	frontdir = zdir;
 	rightdir = xdir;
-	   updir = ydir;
-
+	updir = ydir;
 	SetHeadingFromDirection();
 	UpdateMidAndAimPos();
 }
