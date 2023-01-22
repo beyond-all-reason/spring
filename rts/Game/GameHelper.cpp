@@ -710,7 +710,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 					continue;
 
 				const float3 worldTargetDir = (targetPos - ownerPos).SafeNormalize();
-				const float angleOffset =  (1.f - worldMainDir.dot(worldTargetDir)) * 2.f;
+				const float angleOffset =  (1.f - worldMainDir.dot(worldTargetDir));
 				const float angleMod = angleOffset * weaponAimAdjustPriority + 1.f;
 				const float angleMul = angleMod*angleMod;
 
