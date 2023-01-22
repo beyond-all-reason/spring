@@ -34,7 +34,7 @@ public:
 	constexpr CQuaternion& Conjugate() { q.x = -q.x; q.y = -q.y; q.z = -q.z; return *this; };
 	CQuaternion& Inverse();
 
-	std::tuple<float, float3> ToRotation() const;
+	float4 ToAxisAndAngle() const;
 	CMatrix44f ToRotMatrix() const;
 public:
 	CQuaternion& operator= (const CQuaternion&) = default;

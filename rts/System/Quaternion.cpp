@@ -8,6 +8,7 @@
 //contains some code from
 // https://github.com/ilmola/gml/blob/master/include/gml/quaternion.hpp
 // https://github.com/ilmola/gml/blob/master/include/gml/mat.hpp
+// https://github.com/g-truc/glm/blob/master/glm/ext/quaternion_common.inl
 
 CR_BIND(CQuaternion, )
 CR_REG_METADATA(CQuaternion, CR_MEMBER(q))
@@ -85,6 +86,7 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 /// </summary>
 CQuaternion CQuaternion::MakeFrom(const CMatrix44f& mat)
 {
+	assert(mat.IsRotOrRotTranMatrix());
 	const float trace = mat.md[0][0] + mat.md[1][1] + mat.md[2][2];
 
 	if (trace > 0.0f) {
@@ -183,18 +185,18 @@ CQuaternion& CQuaternion::Normalize()
 }
 
 /// <summary>
-/// Find angle and axis from a quaternion
+/// Find axis and angle equivalent rotation from a quaternion
 /// </summary>
-std::tuple<float, float3> CQuaternion::ToRotation() const
+float4 CQuaternion::ToAxisAndAngle() const
 {
-	return std::make_tuple(
-		2.0f * math::acos(std::clamp(q.w, -1.0f, 1.0f)),
-		static_cast<float3>(q) * math::isqrt(std::max(0.0f, 1.0f - q.w * q.w))
+	return float4(
+		static_cast<float3>(q) * math::isqrt(std::max(0.0f, 1.0f - q.w * q.w)),
+		2.0f * math::acos(std::clamp(q.w, -1.0f, 1.0f))
 	);
 }
 
 /// <summary>
-/// Converts a quternion to rotational matrix
+/// Converts a quaternion to rotational matrix
 /// </summary>
 CMatrix44f CQuaternion::ToRotMatrix() const
 {

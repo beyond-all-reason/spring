@@ -119,7 +119,7 @@ struct float4 : public float3
 	operator const float* () const { return reinterpret_cast<const float*>(&x); }
 	operator       float* ()       { return reinterpret_cast<      float*>(&x); }
 };
-inline float4 operator*(const float f, const float4& v) {
+inline float4 operator*(float f, const float4& v) {
 	return v * f;
 }
 
