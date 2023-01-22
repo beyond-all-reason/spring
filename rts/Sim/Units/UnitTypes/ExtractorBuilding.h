@@ -18,6 +18,8 @@ public:
 	}
 	~CExtractorBuilding();
 
+	void PreInit(const UnitLoadParams& params) override;
+
 	void ResetExtraction();
 	void SetExtractionRangeAndDepth(float range, float depth);
 	void ReCalculateMetalExtraction();
