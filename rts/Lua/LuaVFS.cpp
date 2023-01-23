@@ -2,6 +2,7 @@
 
 
 #include <cmath>
+#include <string_view>
 
 #include "LuaVFS.h"
 #include "LuaInclude.h"
@@ -18,6 +19,7 @@
 #include "System/StringUtil.h"
 #include "System/TimeProfiler.h"
 #include "../tools/pr-downloader/src/pr-downloader.h"
+#include "fmt/format.h"
 
 
 /******************************************************************************/
@@ -150,17 +152,20 @@ int LuaVFS::Include(lua_State* L, bool synced)
 	int loadCode = 0;
 	int luaError = 0;
 
-	if ((loadCode = LoadFileWithModes(fileName, fileData, GetModes(L, 3, synced))) != 1) {
-		char buf[1024];
-		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadvfs] file=%s status=%d cenv=%d", __func__, synced, fileName.c_str(), loadCode, hasCustomEnv);
-		lua_pushstring(L, buf);
+	const auto mode = GetModes(L, 3, synced);
+	if ((loadCode = LoadFileWithModes(fileName, fileData, mode)) != 1) {
+		std::string_view hint {""};
+		if (loadCode == -1) // magic value from VFSHandler
+			hint = "File not seen by VFS (missing or in different VFS mode)";
+
+		const auto buf = fmt::format("[LuaVFS::{}(synced={})][loadvfs] file={} status={} cenv={} vfsmode={} {}", __func__, synced, fileName, loadCode, hasCustomEnv, mode, hint);
+		lua_pushlstring(L, buf.c_str(), buf.size());
  		lua_error(L);
 	}
 
 	if ((luaError = luaL_loadbuffer(L, fileData.c_str(), fileData.size(), fileName.c_str())) != 0) {
-		char buf[1024];
-		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][loadbuf] file=%s error=%i (%s) cenv=%d", __func__, synced, fileName.c_str(), luaError, lua_tostring(L, -1), hasCustomEnv);
-		lua_pushstring(L, buf);
+		const auto buf = fmt::format("[LuaVFS::{}(synced={})][loadbuf] file={} error={} ({}) cenv={} vfsmode={}", __func__, synced, fileName, luaError, lua_tostring(L, -1), hasCustomEnv, mode);
+		lua_pushlstring(L, buf.c_str(), buf.size());
 		lua_error(L);
 	}
 
@@ -182,9 +187,8 @@ int LuaVFS::Include(lua_State* L, bool synced)
 	const int paramTop = lua_gettop(L) - 1;
 
 	if ((luaError = lua_pcall(L, 0, LUA_MULTRET, 0)) != 0) {
-		char buf[1024];
-		SNPRINTF(buf, sizeof(buf), "[LuaVFS::%s(synced=%d)][pcall] file=%s error=%i (%s) ptop=%d cenv=%d", __func__, synced, fileName.c_str(), luaError, lua_tostring(L, -1), paramTop, hasCustomEnv);
-		lua_pushstring(L, buf);
+		const auto buf = fmt::format("[LuaVFS::{}(synced={})][pcall] file={} error={} ({}) ptop={} cenv={} vfsmode={}", __func__, synced, fileName, luaError, lua_tostring(L, -1), paramTop, hasCustomEnv, mode);
+		lua_pushlstring(L, buf.c_str(), buf.size());
 		lua_error(L);
 	}
 
