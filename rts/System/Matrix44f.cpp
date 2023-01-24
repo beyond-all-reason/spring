@@ -73,13 +73,8 @@ bool CMatrix44f::IsIdentity() const
 
 float CMatrix44f::Det3() const
 {
-	return
-		md[0][1] * md[1][2] * md[2][0] +
-		md[0][2] * md[1][0] * md[2][1] -
-		md[0][0] * md[1][2] * md[2][1] -
-		md[0][1] * md[1][0] * md[2][2] +
-		md[0][0] * md[1][1] * md[2][2] -
-		md[0][2] * md[1][1] * md[2][0];
+	// triple product == D
+	return col[0].dot(col[1].cross(col[2]));
 }
 
 float CMatrix44f::Det4() const
