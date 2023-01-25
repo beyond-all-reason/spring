@@ -1,4 +1,5 @@
 #include <limits>
+#include <tuple>
 
 #include "ExpGenSpawnableMemberInfo.h"
 #include "ExpGenSpawner.h"
@@ -18,6 +19,7 @@
 #include "Rendering/Env/Particles/Classes/TracerProjectile.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/Sync/HsiehHash.h"
+#include "System/TemplateUtils.hpp"
 #include "Sim/Misc/GlobalSynced.h"
 
 
@@ -109,67 +111,93 @@ TypedRenderBuffer<VA_TYPE_PROJ>& CExpGenSpawnable::GetPrimaryRenderBuffer()
 }
 
 
-#define CHECK_ALL_SPAWNABLES() \
-	CHECK_SPAWNABLE(CExpGenSpawner)         \
-	CHECK_SPAWNABLE(CStandardGroundFlash)   \
-	CHECK_SPAWNABLE(CSimpleGroundFlash)     \
-	CHECK_SPAWNABLE(CBitmapMuzzleFlame)     \
-	CHECK_SPAWNABLE(CDirtProjectile)        \
-	CHECK_SPAWNABLE(CExploSpikeProjectile)  \
-	CHECK_SPAWNABLE(CHeatCloudProjectile)   \
-	CHECK_SPAWNABLE(CNanoProjectile)        \
-	CHECK_SPAWNABLE(CSimpleParticleSystem)  \
-	CHECK_SPAWNABLE(CSphereParticleSpawner) \
-	CHECK_SPAWNABLE(CSmokeProjectile)       \
-	CHECK_SPAWNABLE(CSmokeProjectile2)      \
-	CHECK_SPAWNABLE(CSpherePartSpawner)     \
-	CHECK_SPAWNABLE(CTracerProjectile)      \
+#define MAKE_FUNCTIONS_TUPLE(Func) \
+std::make_tuple( \
+	Func<CExpGenSpawner        >, \
+	Func<CStandardGroundFlash  >, \
+	Func<CSimpleGroundFlash    >, \
+	Func<CBitmapMuzzleFlame    >, \
+	Func<CDirtProjectile       >, \
+	Func<CExploSpikeProjectile >, \
+	Func<CHeatCloudProjectile  >, \
+	Func<CNanoProjectile       >, \
+	Func<CSimpleParticleSystem >, \
+	Func<CSphereParticleSpawner>, \
+	Func<CSmokeProjectile      >, \
+	Func<CSmokeProjectile2     >, \
+	Func<CSpherePartSpawner    >, \
+	Func<CTracerProjectile     >  \
+)
 
-
-bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
+template<typename Spawnable>
+bool GetSpawnableMemberInfoImpl(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
 {
-#define CHECK_SPAWNABLE(spawnable) \
-	if (spawnableName == #spawnable) \
-		return spawnable::GetMemberInfo(memberInfo);
+	static const std::string typeName = Spawnable::StaticClass()->name;
 
-	CHECK_ALL_SPAWNABLES()
-
-#undef CHECK_SPAWNABLE
+	if (spawnableName == typeName)
+		return Spawnable::GetMemberInfo(memberInfo);
 
 	return false;
 }
+bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
+{
+	static auto funcTuple = MAKE_FUNCTIONS_TUPLE(GetSpawnableMemberInfoImpl);
+	bool ret = false;
+	std::apply([&spawnableName, &memberInfo, &ret](const auto&... func)
+	{
+		ret = ( func(spawnableName, memberInfo) || ... );
+	}, funcTuple);
 
+	return ret;
+}
 
+template<typename Spawnable>
+bool GetSpawnableIDImpl(const std::string& spawnableName, int& idx)
+{
+	static const std::string typeName = Spawnable::StaticClass()->name;
+
+	if (spawnableName == typeName)
+		return true;
+
+	++idx;
+	return false;
+}
 int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 {
-	int i = 0;
-#define CHECK_SPAWNABLE(spawnable)   \
-	if (spawnableName == #spawnable) \
-		return i;                    \
-	++i;
+	static auto funcTuple = MAKE_FUNCTIONS_TUPLE(GetSpawnableIDImpl);
 
-	CHECK_ALL_SPAWNABLES()
+	int idx = 0;
+	bool ret = false;
+	std::apply([&spawnableName, &idx, &ret](const auto&... func)
+		{
+			ret = (func(spawnableName, idx) || ...);
+		}, funcTuple);
 
-#undef CHECK_SPAWNABLE
-
-	return -1;
+	return ret ? idx : -1;
 }
 
 
+
+template<typename Spawnable>
+CExpGenSpawnable* CreateSpawnableImpl()
+{
+	return projMemPool.alloc<Spawnable>();
+}
 CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 {
-	int i = 0;
-#define CHECK_SPAWNABLE(spawnable)               \
-	if (spawnableID == i)                        \
-		return (projMemPool.alloc<spawnable>()); \
-	++i;
+	static auto funcTuple = MAKE_FUNCTIONS_TUPLE(CreateSpawnableImpl);
 
-	CHECK_ALL_SPAWNABLES()
+	if (spawnableID < 0 || spawnableID > std::tuple_size<decltype(funcTuple)>::value - 1)
+		return nullptr;
 
-#undef CHECK_SPAWNABLE
+	CExpGenSpawnable* spawnable = nullptr;
+	const auto Functor = [&spawnable](auto&& func) { spawnable = func(); };
+	spring::tuple_exec_at(spawnableID, funcTuple, Functor);
 
-	return nullptr;
+	return spawnable;
 }
+
+#undef MAKE_FUNCTIONS_TUPLE
 
 void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const
 {
