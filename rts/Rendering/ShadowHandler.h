@@ -112,6 +112,7 @@ public:
 	int shadowMapSize;
 	int shadowGenBits;
 	int shadowProMode;
+	int shadowColorMode;
 
 private:
 	bool shadowsLoaded = false;
