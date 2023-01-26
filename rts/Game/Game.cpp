@@ -446,8 +446,11 @@ void CGame::Load(const std::string& mapFileName)
 
 		if (!globalQuit && saveFileHandler != nullptr) {
 			loadscreen->SetLoadMessage("Loading Saved Game");
-			saveFileHandler->LoadGame();
-			Watchdog::ClearTimer(WDT_LOAD);
+			{
+				auto lock = CLoadLock::GetUniqueLock();
+				saveFileHandler->LoadGame();
+				Watchdog::ClearTimer(WDT_LOAD);
+			}
 			LoadLua(false, true);
 			Watchdog::ClearTimer(WDT_LOAD);
 		} else {
