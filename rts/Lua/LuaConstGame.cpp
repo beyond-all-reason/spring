@@ -33,7 +33,8 @@
  * @number maxUnits
  * @number maxTeams
  * @number maxPlayers
- * @number squareSize Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates
+ * @number squareSize Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
+ * @number metalMapSquareSize The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
  * @number gameSpeed
  * @number startPosType
  * @bool ghostedBuildings
