@@ -9,6 +9,7 @@
 #include "Game/TraceRay.h"
 #include "Map/MapDamage.h"
 #include "Map/MapInfo.h"
+#include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/CategoryHandler.h"
@@ -116,6 +117,7 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxPlayers", MAX_PLAYERS);
 		LuaPushNamedNumber(L, "gameSpeed" , GAME_SPEED );
 		LuaPushNamedNumber(L, "squareSize", SQUARE_SIZE);
+		LuaPushNamedNumber(L, "metalMapSquareSize", METAL_MAP_SQUARE_SIZE);
 	}
 
 	if (CGameSetup::ScriptLoaded()) {
