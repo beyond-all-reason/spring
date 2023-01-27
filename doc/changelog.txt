@@ -41,6 +41,7 @@ Lua:
  - Fix moveslow and movefast camera bindings not being respected in favor of
    hardcoded ones
  - Add `rotX, rotY, rotZ = Spring.GetCameraRotation` and `(0..2*PI) = Spring.GetMiniMapRotation()`
+ - Add `Game.metalMapSquareSize`, square size for metalmap functions (note, not the same as regular `squareSize`)
  - Add Spring.GetPressedScans, for new returns output similar to
    GetPressedKeys but with scancodes
  - Add minx, maxy, maxx, miny = Spring.GetSelectionBox() returning coordinates
