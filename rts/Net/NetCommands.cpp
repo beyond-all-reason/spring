@@ -523,7 +523,10 @@ void CGame::ClientReadNet()
 				const std::uint32_t playerCheckSum = *reinterpret_cast<const std::uint32_t*>(&inbuf[2]);
 				const std::uint32_t localCheckSum = pathManager->GetPathCheckSum();
 
-				const CPlayer* player = playerHandler.Player(playerNum);
+				CPlayer* player = playerHandler.Player(playerNum);
+				player->pathChecksum = playerCheckSum;
+
+				LOG("Player %s has assigned pathChecksum 0x%x", player->name.c_str(), playerCheckSum);
 
 				const char* pName = player->name.c_str();
 				const char* pType = player->IsSpectator()? "spectator": "player";
@@ -541,6 +544,10 @@ void CGame::ClientReadNet()
 						pathManager->RemoveCacheFiles();
 					}
 				}
+
+				// which player is the local player?
+				//auto myPlayer = gu->GetMyPlayer();
+				//myPlayer->pathChecksum
 			} break;
 
 			case NETMSG_KEYFRAME: {

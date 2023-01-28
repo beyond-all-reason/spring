@@ -7,6 +7,7 @@
 #include "PlayerStatistics.h"
 #include "Game/FPSUnitController.h"
 #include "System/creg/creg_cond.h"
+#include "System/Sync/SHA512.hpp"
 #include "System/UnorderedSet.hpp"
 
 #include <string>
@@ -62,6 +63,10 @@ public:
 
 	PlayerStatistics currentStats;
 	FPSUnitController fpsController;
+
+	int pathChecksum = 0;
+	sha512::raw_digest mapChecksum;
+	sha512::raw_digest modChecksum;
 
 private:
 	spring::unordered_set<int> controlledTeams;
