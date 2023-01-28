@@ -442,6 +442,8 @@ public:
 		return *this;
 	}
 
+	IndcType GetBaseVertex() const { return static_cast<IndcType>(verts.size()); }
+
 	void AddVertex(VertType&& v) {
 		if (readOnly)
 			return;
@@ -497,6 +499,14 @@ public:
 			verts.emplace(cnt + at, v);
 			++cnt;
 		}
+	}
+
+	void AddIndices(typename std::initializer_list<IndcType> newIndices, int32_t vertBias = 0) {
+		if (readOnly)
+			return;
+
+		const auto transformFunc = [vertBias](IndcType origIndex) { return origIndex + vertBias; };
+		std::transform(std::begin(newIndices), std::end(newIndices), std::back_inserter(indcs), transformFunc);
 	}
 
 	void AddIndices(typename std::vector<IndcType>::const_iterator begin, typename std::vector<IndcType>::const_iterator end, int32_t vertBias = 0) {

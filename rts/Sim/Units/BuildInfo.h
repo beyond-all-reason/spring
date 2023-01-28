@@ -51,9 +51,20 @@ struct BuildInfo
 		return cmd;
 	}
 
+	bool operator==(BuildInfo const& other) const {
+		return def == other.def && pos == other.pos && buildFacing == other.buildFacing;
+	};
+
 	const UnitDef* def;
 	float3 pos;
 	int buildFacing;
+};
+
+struct BuildInfoHash {
+	size_t operator() (const BuildInfo& bi) const {
+		size_t hash = spring::LiteHash(bi.pos, bi.buildFacing);
+		return reinterpret_cast<uintptr_t>(bi.def) ^ (hash << 32);
+	}
 };
 
 #endif /* BUILD_INFO_H */

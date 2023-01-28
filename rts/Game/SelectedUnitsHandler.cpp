@@ -621,15 +621,7 @@ void CSelectedUnitsHandler::Draw()
 
 		auto& shader = rb.GetShader();
 		shader.Enable();
-		//shader.SetUniformMatrix4x4("transformMatrix", false, camera->GetViewProjectionMatrix().m);
-		//glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadMatrixf(camera->GetViewMatrix());
-		//glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(camera->GetProjectionMatrix());
-
 		rb.DrawElements(GL_LINES);
-
-		///*glMatrixMode(GL_PROJECTION);*/ glPopMatrix();
-		//glMatrixMode(GL_MODELVIEW);      glPopMatrix();
-
 		shader.Disable();
 	}
 
@@ -642,29 +634,28 @@ void CSelectedUnitsHandler::Draw()
 					(guihandler->inCommand < int(guihandler->commands.size())) &&
 					(guihandler->commands[guihandler->inCommand].id < 0)))) {
 
-			bool myColor = true;
-			glColor4fv(cmdColors.buildBox);
+
+			commandDrawer->ClearQueuedBuildingSquaresCache();
+
+			auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+			rb.AssertSubmission();
 
 			for (const auto bi: unitHandler.GetBuilderCAIs()) {
 				const CBuilderCAI* builderCAI = bi.second;
 				const CUnit* builder = builderCAI->owner;
 
 				if (builder->team == gu->myTeam) {
-					if (!myColor) {
-						glColor4fv(cmdColors.buildBox);
-						myColor = true;
-					}
-					commandDrawer->DrawQuedBuildingSquares(builderCAI);
+					commandDrawer->DrawQueuedBuildingSquares(builderCAI, cmdColors.buildBox);
 				}
-
 				else if (teamHandler.AlliedTeams(builder->team, gu->myTeam)) {
-					if (myColor) {
-						glColor4fv(cmdColors.allyBuildBox);
-						myColor = false;
-					}
-					commandDrawer->DrawQuedBuildingSquares(builderCAI);
+					commandDrawer->DrawQueuedBuildingSquares(builderCAI, cmdColors.allyBuildBox);
 				}
 			}
+
+			auto& sh = rb.GetShader();
+			sh.Enable();
+			rb.DrawElements(GL_LINES);
+			sh.Disable();
 		}
 	}
 

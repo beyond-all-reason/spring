@@ -191,13 +191,16 @@ void CInMapDrawView::Draw()
 	drawer.rbl = &rbl;
 	drawer.rbp = &rbp;
 
+	readMap->GridVisibility(nullptr, &drawer, 1e9, CInMapDrawModel::DRAW_QUAD_SIZE);
+
+	if (visibleLabels.empty() && !rbl.ShouldSubmit() && !rbp.ShouldSubmit())
+		return;
+
 	glDepthMask(GL_FALSE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
-	readMap->GridVisibility(nullptr, &drawer, 1e9, CInMapDrawModel::DRAW_QUAD_SIZE);
-
-	{
+	if (rbl.ShouldSubmit()) {
 		glLineWidth(3.0f);
 		auto& sh = rbl.GetShader();
 		sh.Enable();
@@ -214,8 +217,7 @@ void CInMapDrawView::Draw()
 	}
 
 	// draw points
-
-	{
+	if (rbp.ShouldSubmit())	{
 		glBindTexture(GL_TEXTURE_2D, texture);
 		auto& sh = rbp.GetShader();
 		sh.Enable();

@@ -63,7 +63,7 @@ public:
 	bool IsInBuildRange(const float3& pos, const float radius) const;
 
 public:
-	spring::unordered_set<int> buildOptions;
+	std::vector<int> buildOptions;
 
 	static spring::unordered_set<int> reclaimers;
 	static spring::unordered_set<int> featureReclaimers;
