@@ -72,7 +72,7 @@ void CExpGenSpawnable::UpdateRotation()
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 	// rotParams.y is acceleration in angle per frame^2
 	rotVel = rotParams.x + rotParams.y * t;
-	rotVal = rotParams.z + rotVel * t;
+	rotVal = rotParams.z + rotVel      * t;
 }
 
 void CExpGenSpawnable::UpdateAnimParams()
@@ -83,7 +83,19 @@ void CExpGenSpawnable::UpdateAnimParams()
 	}
 
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
-	animProgress = math::fmod(t, animParams.z) / animParams.z;
+	const float animSpeed = math::fabs(animParams.z);
+	if (animParams.z < 0.0f) {
+		#if 0
+			animProgress = math::fmod(t, 2.0f * animSpeed) / animSpeed;
+			if (animProgress > 1.0)
+				animProgress = 2.0f - animProgress;
+		#else
+			animProgress = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
+		#endif
+	}
+	else {
+		animProgress = math::fmod(t, animSpeed) / animSpeed;
+	}
 }
 
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
