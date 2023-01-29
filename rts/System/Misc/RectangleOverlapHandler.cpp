@@ -36,7 +36,7 @@ size_t CRectangleOverlapHandler::GetTotalArea() const
 }
 
 
-void CRectangleOverlapHandler::Process()
+void CRectangleOverlapHandler::Process(bool noSplit)
 {
 	if (!needsUpdate)
 		return;
@@ -44,14 +44,28 @@ void CRectangleOverlapHandler::Process()
 	// FIXME: any rectangles left from the last update will be counted twice
 	statsTotalSize += GetTotalArea();
 
+	StageDedup();
 	StageMerge();
 	StageOverlap();
 	StageMerge();
-	StageSplitTooLarge();
+	if (!noSplit)
+		StageSplitTooLarge();
 
 	statsOptimSize += GetTotalArea();
 
 	needsUpdate = false;
+}
+
+void CRectangleOverlapHandler::StageDedup()
+{
+	for (size_t i = frontIdx, n = rectangles.size(); i < n; i++) {
+		for (size_t j = i + 1; j < n; j++) {
+			if (rectangles[i] == rectangles[j]) {
+				rectangles[j] = {};
+			}
+		}
+	}
+	RemoveEmptyRects();
 }
 
 void CRectangleOverlapHandler::StageMerge()
