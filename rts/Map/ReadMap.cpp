@@ -192,9 +192,6 @@ void CReadMap::Serialize(creg::ISerializer* s)
 	SerializeMapChangesBeforeMatch(s);
 	SerializeMapChangesDuringMatch(s);
 	SerializeTypeMap(s);
-
-	if (!s->IsWriting())
-		mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy);
 }
 
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)
@@ -413,7 +410,7 @@ void CReadMap::Initialize()
 
 	// not callable here because losHandler is still uninitialized, deferred to Game::PostLoadSim
 	// InitHeightMapDigestVectors();
-	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy}, true);
+	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy});
 
 	// FIXME: sky & skyLight aren't created yet (crashes in SMFReadMap.cpp)
 	// UpdateDraw(true);
@@ -494,7 +491,7 @@ void CReadMap::UpdateDraw(bool firstCall)
 		return;
 
 	//optimize layout
-	unsyncedHeightMapUpdates.Process();
+	unsyncedHeightMapUpdates.Process(firstCall);
 
 	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates.size()));
 
@@ -512,8 +509,10 @@ void CReadMap::UpdateDraw(bool firstCall)
 }
 
 
-void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool initialize)
+void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 {
+	const bool initialize = (hgtMapRect == SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
+
 	const int2 mins = {hgtMapRect.x1 - 1, hgtMapRect.z1 - 1};
 	const int2 maxs = {hgtMapRect.x2 + 1, hgtMapRect.z2 + 1};
 
