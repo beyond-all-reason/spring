@@ -153,6 +153,7 @@ class DynamicArrayType : public DynamicArrayBaseType
 public:
 	typedef typename VectorT::value_type ElemT;
 
+	DynamicArrayType(size_t sizeOverride) : DynamicArrayBaseType(DeduceType<ElemT>::Get(), sizeOverride) {}
 	DynamicArrayType() : DynamicArrayBaseType(DeduceType<ElemT>::Get(), sizeof(VectorT)) {}
 	~DynamicArrayType() {}
 
@@ -196,6 +197,7 @@ class BitArrayType : public DynamicArrayBaseType
 public:
 	typedef typename T::value_type ElemT;
 
+	BitArrayType(size_t sizeOverride) : DynamicArrayBaseType(DeduceType<ElemT>::Get(), sizeOverride) { }
 	BitArrayType() : DynamicArrayBaseType(DeduceType<ElemT>::Get(), sizeof(T)) { }
 	~BitArrayType() { }
 
@@ -226,8 +228,12 @@ public:
 template<>
 struct DeduceType<std::vector<bool>> {
 	static std::unique_ptr<IType> Get() {
-		return std::unique_ptr<IType>(new BitArrayType<std::vector<bool> >());
+		#ifndef _MSC_VER
+		static_assert(sizeof(std::vector<bool>) == GCC_VECTOR_BOOL_SIZE);
+		#endif
+		return std::unique_ptr<IType>(new BitArrayType<std::vector<bool>>(GCC_VECTOR_BOOL_SIZE));
 	}
+	static constexpr size_t GCC_VECTOR_BOOL_SIZE = 40;
 };
 
 // String type

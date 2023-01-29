@@ -13,6 +13,7 @@
 #include "System/UnorderedMap.hpp"
 #include "System/StringUtil.h"
 #include "System/Sync/HsiehHash.h"
+#include "System/Log/ILog.h"
 
 
 using namespace creg;
@@ -222,6 +223,10 @@ void Class::DeleteInstance(void* inst)
 void Class::CalculateChecksum(unsigned int& checksum)
 {
 	for (Member& m: members) {
+		if (m.type->GetName() == "ignored")
+			continue;
+
+		//LOG("[Class::CalculateChecksum] name=%s cs=%i, flg=%i size=%i", m.name, checksum, m.flags, int(m.type->GetSize()));
 		checksum += m.flags;
 		checksum = HsiehHash(m.name, strlen(m.name), checksum);
 		checksum = HsiehHash(m.type->GetName().data(), m.type->GetName().size(), checksum);

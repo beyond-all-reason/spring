@@ -26,8 +26,15 @@ namespace creg
 	class StringType : public DynamicArrayType<std::string>
 	{
 	public:
-		StringType() { }
+		StringType()
+			: DynamicArrayType<std::string>(GCC_STRING_SIZE)
+		{
+			#ifndef _MSC_VER
+			static_assert(sizeof(std::string) == GCC_STRING_SIZE);
+			#endif
+		}
 		std::string GetName() const;
+		static constexpr size_t GCC_STRING_SIZE = 32;
 	};
 
 }
