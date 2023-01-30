@@ -2833,7 +2833,8 @@ void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive
 */
 void CGroundMoveType::SetMainHeading() {
 	if (!useMainHeading || owner->weapons.empty()) {
-		ChangeHeading(owner->heading);
+		//ChangeHeading(owner->heading);
+		wantedHeading = owner->heading;
 		return;
 	}
 
