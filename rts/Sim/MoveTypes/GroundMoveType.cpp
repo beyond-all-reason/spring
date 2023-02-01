@@ -641,9 +641,6 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 
 	if (owner->UnderFirstPersonControl()) return;
 
-	earlyCurrWayPoint = currWayPoint;
-	earlyNextWayPoint = nextWayPoint;
-
 	// either follow user control input or pathfinder
 	// waypoints; change speed and heading as required
 	// if (owner->UnderFirstPersonControl()) {
@@ -816,6 +813,9 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 }
 
 void CGroundMoveType::UpdatePreCollisionsMt() {
+	earlyCurrWayPoint = currWayPoint;
+	earlyNextWayPoint = nextWayPoint;
+
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
 	if (owner->IsFalling()) return;
