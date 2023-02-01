@@ -5,6 +5,7 @@
 #include "System/MainDefines.h"
 #include "System/Platform/Threading.h"
 #include "System/Log/ILog.h"
+#include "System/ScopedResource.h"
 
 #ifdef _MSC_VER
 	#include <intrin.h>
@@ -14,6 +15,7 @@
 #include "System/UnorderedSet.hpp"
 
 #include <cassert>
+#include <tuple>
 
 
 namespace springproc {
@@ -115,17 +117,32 @@ namespace springproc {
 		numLogicalCores = 0;
 		numPhysicalCores = 0;
 
-		struct cpu_raw_data_array_t raw_array;
-		system_id_t system;
+		auto cpuID = spring::ScopedResource(
+			[]() {
+				cpu_raw_data_array_t raw_array;
+				system_id_t system;
 
-		{
-			bool badResult = (cpu_identify_all(NULL, &system) < 0);
-			Threading::SetAffinity(oldAffinity);
-			if (badResult) {
-				cpuid_free_system_id(&system);
-				LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
-				return;
+				bool badResult = false;
+				if (cpuid_get_all_raw_data(&raw_array) < 0) //necessary to call as it calls raw_array constructor
+					badResult = true;
+
+				if (cpu_identify_all(&raw_array, &system) < 0) //necessary to call as it calls system constructor
+					badResult = true;
+
+				return std::make_tuple(raw_array, system, badResult);
+			}(),
+			[](auto&& item) {
+				cpuid_free_raw_data_array(&std::get<0>(item));
+				cpuid_free_system_id(&std::get<1>(item));
 			}
+		);
+
+		auto& [raw_array, system, badResult] = cpuID.Get();
+
+		Threading::SetAffinity(oldAffinity);
+		if (badResult) {
+			LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
+			return;
 		}
 
 		for (int group = 0; group < system.num_cpu_types; ++group) {
@@ -145,8 +162,6 @@ namespace springproc {
 			// ignore case PURPOSE_EFFICIENCY:
 			}
 		}
-
-		cpuid_free_system_id(&system);
 	}
 
 	void CPUID::SetDefault()
