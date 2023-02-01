@@ -444,6 +444,12 @@ public:
 
 	IndcType GetBaseVertex() const { return static_cast<IndcType>(verts.size()); }
 
+	const auto& GetVertices() const { return verts; }
+	      auto& GetVertices()       { return verts; }
+
+	const auto& GetIndices() const { return indcs; }
+	      auto& GetIndices()       { return indcs; }
+
 	void AddVertex(VertType&& v) {
 		if (readOnly)
 			return;
@@ -467,6 +473,17 @@ public:
 			return;
 
 		verts.insert(verts.end(), vertices.begin(), vertices.end());
+	}
+
+	void ReplaceVertices(std::vector<VertType>&& newVertices) {
+		if (readOnly)
+			return;
+
+		assert(
+			(vboUploadIndex == 0) &&
+			(vboStartIndex  == 0)
+		);
+		verts = std::move(newVertices);
 	}
 	//106.0 compat
 	void SafeAppend(VertType&& v) { AddVertex(std::forward<VertType&&>(v)); }
@@ -515,6 +532,17 @@ public:
 
 		const auto transformFunc = [vertBias](IndcType origIndex) { return origIndex + vertBias; };
 		std::transform(begin, end, std::back_inserter(indcs), transformFunc);
+	}
+
+	void ReplaceIndices(std::vector<IndcType>&& newIndices) {
+		if (readOnly)
+			return;
+
+		assert(
+			(eboUploadIndex == 0) &&
+			(eboStartIndex  == 0)
+		);
+		indcs = std::move(newIndices);
 	}
 
 	void SetReadonly() { readOnly = true; }

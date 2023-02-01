@@ -1,22 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _LINE_DRAWER_H
-#define _LINE_DRAWER_H
+#pragma once
 
 #include <vector>
 #include <array>
+#include <memory>
 
 #include "Game/UI/CursorIcons.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+#include "Rendering/GL/RenderBuffersFwd.h"
+#include "Rendering/Colors.h"
 
 class CLineDrawer {
 	public:
-		CLineDrawer() {
-			for (auto& line : allLines) {
-				line.reserve(128);
-			}
-		}
-
+		CLineDrawer();
 		void Configure(bool useColorRestarts_, bool useRestartColor_, const float* restartColor_, float restartAlpha_) {
 			restartAlpha = restartAlpha_;
 			restartColor = restartColor_;
@@ -27,13 +25,13 @@ class CLineDrawer {
 		void SetupLineStipple();
 		void UpdateLineStipple();
 		               
-		void StartPath(const float3& pos, const float* color) {
+		void StartPath(const float3& pos, const SColor& color) {
 			lastPos = pos;
 			lastColor = color;
 			Restart();
 		}
 		void FinishPath() const {} // noop, left for compatibility
-		void DrawLine(const float3& endPos, const float* color);
+		void DrawLine(const float3& endPos, const SColor& color);
 		void DrawLineAndIcon(int cmdID, const float3& endPos, const float* color) {
 			cursorIcons.AddIcon(cmdID, endPos);
 			DrawLine(endPos, color);
@@ -53,7 +51,6 @@ class CLineDrawer {
 			Restart();
 		}
 		const float3& GetLastPos() const { return lastPos; }
-
 		void DrawAll();
 
 	private:
@@ -61,23 +58,14 @@ class CLineDrawer {
 		bool useColorRestarts = false;
 		bool useRestartColor = false;
 		float restartAlpha = 0.0f;
-		const float* restartColor = nullptr;
+		SColor restartColor = {};
 		
 		float3 lastPos = {};
-		const float* lastColor = nullptr;
+		SColor lastColor = {};
 		
 		float stippleTimer = 0.0f;
 
-		// queue all lines and draw them in one go later
-		struct LinePair {
-			GLenum type;
-			std::vector<GLfloat> verts;
-			std::vector<GLfloat> colors;
-		};
-
-		std::array<std::vector<LinePair>, 2> allLines; // [0] = solid, [1] = strippled
+		std::array<std::unique_ptr<TypedRenderBuffer<VA_TYPE_C>>, 4> rbs; // [0] = solid, [1] = strippled, [2] = solid && color-restart, [3] = strippled && color-restart
 };
 
 extern CLineDrawer lineDrawer;
-
-#endif // _LINE_DRAWER_H

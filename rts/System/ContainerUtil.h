@@ -98,6 +98,36 @@ namespace spring {
 		return true;
 	}
 
+	template<typename T, typename UniqPred>
+	static void VectorUnique(std::vector<T>& v) {
+		for (size_t i = 0; i < v.size(); i++) {
+			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
+				if (v[i] == v[j]) {
+					v[j] = std::move(v.back());
+					v.pop_back();
+				}
+				else {
+					j++;
+				}
+			}
+		}
+	}
+
+	template<typename T, typename UniqPred>
+	static void VectorUnique(std::vector<T>& v, UniqPred uniqPred) {
+		for (size_t i = 0; i < v.size(); i++) {
+			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
+				if (uniqPred(v[i], v[j])) {
+					v[j] = std::move(v.back());
+					v.pop_back();
+				}
+				else {
+					j++;
+				}
+			}
+		}
+	}
+
 	template<typename T, typename SortPred>
 	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred)
 	{
