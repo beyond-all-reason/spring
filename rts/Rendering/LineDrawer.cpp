@@ -7,32 +7,79 @@
 #include <cmath>
 
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Game/UI/CommandColors.h"
 
 CLineDrawer lineDrawer;
 
-
-CLineDrawer::CLineDrawer()
-	: lineStipple(false)
-	, useColorRestarts(false)
-	, useRestartColor(false)
-	, restartAlpha(0.0f)
-	, restartColor(NULL)
-	, lastPos(ZeroVector)
-	, lastColor(NULL)
-	, stippleTimer(0.0f)
+void CLineDrawer::DrawLine(const float3& endPos, const float* color)
 {
-	lines.reserve(32);
-	stippled.reserve(32);
+	LinePair& p = allLines[lineStipple].emplace_back();
+
+	if (!useColorRestarts) {
+		p.colors.push_back(color[0]);
+		p.colors.push_back(color[1]);
+		p.colors.push_back(color[2]);
+		p.colors.push_back(color[3]);
+		p.verts.push_back(endPos.x);
+		p.verts.push_back(endPos.y);
+		p.verts.push_back(endPos.z);
+	}
+	else {
+		if (useRestartColor) {
+			p.colors.push_back(restartColor[0]);
+			p.colors.push_back(restartColor[1]);
+			p.colors.push_back(restartColor[2]);
+			p.colors.push_back(restartColor[3]);
+		}
+		else {
+			p.colors.push_back(color[0]);
+			p.colors.push_back(color[1]);
+			p.colors.push_back(color[2]);
+			p.colors.push_back(color[3] * restartAlpha);
+		}
+		p.verts.push_back(lastPos.x);
+		p.verts.push_back(lastPos.y);
+		p.verts.push_back(lastPos.z);
+
+		p.colors.push_back(color[0]);
+		p.colors.push_back(color[1]);
+		p.colors.push_back(color[2]);
+		p.colors.push_back(color[3]);
+		p.verts.push_back(endPos.x);
+		p.verts.push_back(endPos.y);
+		p.verts.push_back(endPos.z);
+	}
+
+	lastPos = endPos;
+	lastColor = color;
 }
 
+
+void CLineDrawer::Restart()
+{
+	LinePair& p = allLines[lineStipple].emplace_back();
+
+	if (!useColorRestarts) {
+		p.type = GL_LINE_STRIP;
+		p.colors.push_back(lastColor[0]);
+		p.colors.push_back(lastColor[1]);
+		p.colors.push_back(lastColor[2]);
+		p.colors.push_back(lastColor[3]);
+		p.verts.push_back(lastPos[0]);
+		p.verts.push_back(lastPos[1]);
+		p.verts.push_back(lastPos[2]);
+	}
+	else {
+		p.type = GL_LINES;
+	}
+}
 
 void CLineDrawer::UpdateLineStipple()
 {
 	stippleTimer += (globalRendering->lastFrameTime * 0.001f * cmdColors.StippleSpeed());
 	stippleTimer = std::fmod(stippleTimer, (16.0f / 20.0f));
 }
-
 
 void CLineDrawer::SetupLineStipple()
 {
@@ -51,7 +98,7 @@ void CLineDrawer::SetupLineStipple()
 
 void CLineDrawer::DrawAll()
 {
-	if (lines.empty() && stippled.empty())
+	if (allLines[0].empty() && allLines[1].empty())
 		return;
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -62,12 +109,15 @@ void CLineDrawer::DrawAll()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LINE_STIPPLE);
 
-	for (int i = 0; i<lines.size(); ++i) {
-		int size = lines[i].colors.size();
+	auto& solid    = allLines[0];
+	auto& stippled = allLines[1];
+
+	for (int i = 0; i<solid.size(); ++i) {
+		int size = solid[i].colors.size();
 		if(size > 0) {
-			glColorPointer(4, GL_FLOAT, 0, &lines[i].colors[0]);
-			glVertexPointer(3, GL_FLOAT, 0, &lines[i].verts[0]);
-			glDrawArrays(lines[i].type, 0, size/4);
+			glColorPointer(4, GL_FLOAT, 0, &solid[i].colors[0]);
+			glVertexPointer(3, GL_FLOAT, 0, &solid[i].verts[0]);
+			glDrawArrays(solid[i].type, 0, size/4);
 		}
 	}
 
@@ -88,6 +138,6 @@ void CLineDrawer::DrawAll()
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glPopAttrib();
 
-	lines.clear();
+	solid.clear();
 	stippled.clear();
 }

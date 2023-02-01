@@ -23,6 +23,20 @@ namespace spring {
 		}
 	}
 
+	template<typename ForwardIt, typename T, typename Compare>
+	ForwardIt binary_search(ForwardIt first, ForwardIt last, const T& value, Compare comp)
+	{
+		first = std::lower_bound(first, last, value, comp);
+		return (!(first == last) && !(comp(value, *first))) ? first : last;
+	}
+
+	template<typename ForwardIt, typename T>
+	ForwardIt binary_search(ForwardIt first, ForwardIt last, const T& value)
+	{
+		first = std::lower_bound(first, last, value);
+		return (!(first == last) && !(value < *first)) ? first : last;
+	}
+
 	template<typename T, typename UnaryPredicate>
 	static bool VectorEraseAllIf(std::vector<T>& v, UnaryPredicate p)
 	{
@@ -84,6 +98,22 @@ namespace spring {
 		return true;
 	}
 
+	template<typename T, typename SortPred>
+	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred)
+	{
+		std::sort(v.begin(), v.end(), sortPred);
+		auto last = std::unique(v.begin(), v.end());
+		v.erase(last, v.end());
+	}
+
+	template<typename T, typename SortPred, typename UniqPred>
+	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred, UniqPred uniqPred)
+	{
+		std::sort(v.begin(), v.end(), sortPred);
+		auto last = std::unique(v.begin(), v.end(), uniqPred);
+		v.erase(last, v.end());
+	}
+
 	template<typename T>
 	static void VectorSortUnique(std::vector<T>& v)
 	{
@@ -105,10 +135,16 @@ namespace spring {
 		return true;
 	}
 
-	template<typename T, typename C>
-	static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, const C& c)
+	template< typename T, typename Pred >
+	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, const T& item, Pred pred)
 	{
-		const auto iter = std::lower_bound(v.begin(), v.end(), e, c);
+		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
+	}
+
+	template<typename T, typename Pred>
+	static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, Pred pred)
+	{
+		const auto iter = std::lower_bound(v.begin(), v.end(), e, pred);
 
 		if ((iter != v.end()) && (*iter == e))
 			return false;
@@ -116,7 +152,7 @@ namespace spring {
 		v.push_back(e);
 
 		for (size_t n = v.size() - 1; n > 0; n--) {
-			if (c(v[n - 1], v[n]))
+			if (pred(v[n - 1], v[n]))
 				break;
 
 			std::swap(v[n - 1], v[n]);
