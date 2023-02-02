@@ -4,48 +4,58 @@
 
 #include <cmath>
 #include <array>
+#include <algorithm>
 
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Game/UI/CommandColors.h"
+#include "System/SpringMath.h"
+#include "System/SpringHash.h"
 
 CLineDrawer lineDrawer;
 
-CLineDrawer::CLineDrawer()
-{
-	static constexpr size_t RESERVED_NUM_OF_VERTICES = 1 << 12;
-	for (auto& rb : rbs) {
-		rb = std::make_unique<TypedRenderBuffer<VA_TYPE_C>>(RESERVED_NUM_OF_VERTICES, 0u);
+struct LinePairHash {
+	uint64_t operator()(const CLineDrawer::LinePair& lp) const {
+		return static_cast<uint64_t>(spring::LiteHash(lp.p0)) << 32 | spring::LiteHash(lp.p1);
 	}
-}
+};
 
 void CLineDrawer::DrawLine(const float3& endPos, const SColor& color)
 {
-	const size_t arrayIndex = useColorRestarts * 2 + lineStipple * 1;
-	auto& rb = rbs[arrayIndex];
+	SColor beginColor;
 
-	if (useColorRestarts) {
-		auto beginColor = useRestartColor ? restartColor : SColor{ color.r, color.g, color.b, static_cast<uint8_t>(color.a * restartAlpha) };
-		rb->AddVertex({ lastPos, beginColor });
+	if (forceRestart)
+		beginColor = lastColor;
+	else if (useColorRestarts && !useRestartColor)
+		beginColor = SColor{ color.r, color.g, color.b, static_cast<uint8_t>(color.a * restartAlpha) };
+	else if (useColorRestarts &&  useRestartColor)
+		beginColor = restartColor;
+	else
+		beginColor = color;
+
+	LinePair lp;
+	LinePairHash lph;
+	lp.p0 = VA_TYPE_C{ lastPos, beginColor };
+	lp.p1 = VA_TYPE_C{ endPos ,      color };
+	lp.hash = lph(lp);
+
+	static auto sortPred = [](const LinePair& a, const LinePair& b) {
+		return (a.hash < b.hash);
+	};
+
+	auto& vertexCache = vertexCaches[lineStipple];
+
+	const auto it = spring::binary_search(vertexCache.begin(), vertexCache.end(), lp, sortPred);
+	//const auto it = std::find_if(vertexCache.begin(), vertexCache.end(), [hash = lp.hash](const LinePair& lp) { return hash == lp.hash; });
+	if (it == vertexCache.end()) {
+		//vertexCache.emplace_back(lp);
+		spring::VectorInsertSorted(vertexCache, lp, sortPred);
 	}
-
-	rb->AddVertex({ endPos, color });
 
 	lastPos = endPos;
 	lastColor = color;
-}
 
-
-void CLineDrawer::Restart()
-{
-	//will have to restart anyway in DrawLine
-	if (useColorRestarts)
-		return;
-
-	const size_t arrayIndex = /* useColorRestarts * 2 = 0*/ lineStipple * 1;
-	auto& rb = rbs[arrayIndex];
-
-	rb->AddVertex({ lastPos, lastColor });
+	forceRestart = false;
 }
 
 void CLineDrawer::UpdateLineStipple()
@@ -70,42 +80,37 @@ void CLineDrawer::SetupLineStipple()
 
 void CLineDrawer::DrawAll()
 {
-	std::array<bool, 5> draw = {false};
-	for (size_t i = 0; i < rbs.size(); ++i) {
-		draw[i]  = rbs[i]->ShouldSubmit(false);
-		draw[4] |= draw[i];
-	}
-
-	if (!draw[4])
+	if (vertexCaches[0].empty() && vertexCaches[1].empty())
 		return;
 	
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
 
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	auto& sh = TypedRenderBuffer<VA_TYPE_C>::GetShader();
 	sh.Enable();
 
-	if (draw[1] || draw[3]) { //strippled
+	if (!vertexCaches[1].empty()) { //strippled
+		for (auto& lp : vertexCaches[1]) {
+			rb.AddVertices({ std::move(lp.p0), std::move(lp.p1) });
+		}
+
 		glEnable(GL_LINE_STIPPLE);
-		if (draw[1]) { //strippled, no color restart
-			rbs[1]->DrawArrays(GL_LINE_STRIP);
-		}
-		if (draw[3]) { //strippled, color restart
-			rbs[3]->DrawArrays(GL_LINES);
-		}
+		rb.DrawArrays(GL_LINES);
 	}
-	if (draw[0] || draw[2]) { //solid
+	if (!vertexCaches[0].empty()) { //solid
+		for (auto& lp : vertexCaches[0]) {
+			rb.AddVertices({ std::move(lp.p0), std::move(lp.p1) });
+		}
+
 		glDisable(GL_LINE_STIPPLE);
-		if (draw[0]) { //solid, no color restart
-			rbs[0]->DrawArrays(GL_LINE_STRIP);
-		}
-		if (draw[2]) { //solid, color restart
-			rbs[2]->DrawArrays(GL_LINES);
-		}
+		rb.DrawArrays(GL_LINES);
 	}
 
 	sh.Disable();
-
 	glPopAttrib();
+
+	vertexCaches[0].clear();
+	vertexCaches[1].clear();
 }

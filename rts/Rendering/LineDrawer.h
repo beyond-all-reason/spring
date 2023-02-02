@@ -14,7 +14,12 @@
 
 class CLineDrawer {
 	public:
-		CLineDrawer();
+		struct LinePair {
+			size_t hash;
+			VA_TYPE_C p0;
+			VA_TYPE_C p1;
+		};
+	public:
 		void Configure(bool useColorRestarts_, bool useRestartColor_, const float* restartColor_, float restartAlpha_) {
 			restartAlpha = restartAlpha_;
 			restartColor = restartColor_;
@@ -43,7 +48,10 @@ class CLineDrawer {
 			lastPos = endPos;
 			lastColor = color;
 		}
-		void Restart();
+		void Restart() {
+			if (!useColorRestarts)
+				forceRestart = true;
+		}
 		/// now same as restart
 		void RestartSameColor() { Restart(); } //reportedly broken
 		void RestartWithColor(const float* color) {
@@ -55,8 +63,11 @@ class CLineDrawer {
 
 	private:
 		bool lineStipple = false;
+
+		bool forceRestart = false;
 		bool useColorRestarts = false;
 		bool useRestartColor = false;
+
 		float restartAlpha = 0.0f;
 		SColor restartColor = {};
 		
@@ -65,7 +76,7 @@ class CLineDrawer {
 		
 		float stippleTimer = 0.0f;
 
-		std::array<std::unique_ptr<TypedRenderBuffer<VA_TYPE_C>>, 4> rbs; // [0] = solid, [1] = strippled, [2] = solid && color-restart, [3] = strippled && color-restart
+		std::array<std::vector<LinePair>, 2> vertexCaches;
 };
 
 extern CLineDrawer lineDrawer;
