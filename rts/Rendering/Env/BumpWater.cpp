@@ -170,8 +170,8 @@ static TypedRenderBuffer<VA_TYPE_0> GenWaterPlaneBuffer(bool radial)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// (DE-)CONSTRUCTOR
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 CBumpWater::CBumpWater()
+
 	: CEventClient("[CBumpWater]", 271923, false)
 	, target(GL_TEXTURE_2D)
 	, screenTextureX(globalRendering->viewSizeX)
@@ -187,7 +187,16 @@ CBumpWater::CBumpWater()
 	, coastUpdateTexture(0)
 {
 	eventHandler.AddClient(this);
+}
 
+CBumpWater::~CBumpWater()
+{
+	FreeResources();
+	eventHandler.RemoveClient(this);
+}
+
+void CBumpWater::InitResources(bool loadShader)
+{
 	// LOAD USER CONFIGS
 	reflTexSize  = next_power_of_2(configHandler->GetInt("BumpWaterTexSizeReflection"));
 	reflection   = configHandler->GetInt("BumpWaterReflection");

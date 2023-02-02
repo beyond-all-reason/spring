@@ -110,16 +110,21 @@ void IWater::SetWater(int rendererMode)
 			assert(false);
 			break;
 		}
+		if (water)
+			water->InitResources();
 	} catch (const content_error& ex) {		
 		LOG_L(L_ERROR, "Loading \"%s\" water failed, error: %s", IWater::GetWaterName(selectedRendererID), ex.what());
-		water->FreeResources(); //destructor is not called for an object throwing exception in a constructor
+		if (water)
+			water->FreeResources(); //destructor is not called for an object throwing exception in a constructor
 		water = nullptr;
 	}
 
+	// set it here as user preference.
+	if (water)
+		configHandler->Set("Water", static_cast<int>(water->GetID()));
+
 	if (water == nullptr)
 		water = std::make_unique<CBasicWater>();
-
-	configHandler->Set("Water", static_cast<int>(water->GetID()));
 }
 
 

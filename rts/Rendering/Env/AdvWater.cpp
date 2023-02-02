@@ -17,7 +17,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CAdvWater::CAdvWater(bool loadShader)
+void CAdvWater::InitResources(bool loadShader)
 {
 	if (!FBO::IsSupported())
 		throw content_error("Water Error: missing FBO support");
