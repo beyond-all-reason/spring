@@ -165,16 +165,16 @@ namespace Threading {
 			LOG("[Threading] %s thread CPU affinity not set", threadName);
 			return;
 		}
-		if (cpuMask != affinity) {
-			LOG("[Threading] %s thread CPU affinity mask set: %d (config is %d)", threadName, cpuMask, affinity);
+		if (cpuMask == 0) {
+			LOG_L(L_ERROR, "[Threading] %s thread CPU affinity mask failed: %x", threadName, affinity);
 			return;
 		}
-		if (cpuMask == 0) {
-			LOG_L(L_ERROR, "[Threading] %s thread CPU affinity mask failed: %d", threadName, affinity);
+		if (cpuMask != affinity) {
+			LOG("[Threading] %s thread CPU affinity mask set: %x (config is %x)", threadName, cpuMask, affinity);
 			return;
 		}
 
-		LOG("[Threading] %s thread CPU affinity mask set: %d", threadName, cpuMask);
+		LOG("[Threading] %s thread CPU affinity mask set: %x", threadName, cpuMask);
 	}
 
 
