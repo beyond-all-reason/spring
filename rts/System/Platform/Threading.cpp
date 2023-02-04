@@ -55,7 +55,7 @@ namespace Threading {
 		DWORD_PTR curMask;
 		GetProcessAffinityMask(GetCurrentProcess(), &curMask, &cpusSystem);
 
-		LOG("%s: cpu mask %" PRIx64 "", __func__, cpusSystem);
+		LOG("%s: cpu mask %" PRIx64, __func__, cpusSystem);
 	#else
 		// Get the available cores
 		CPU_ZERO(&cpusSystem);
@@ -63,11 +63,11 @@ namespace Threading {
 
 		// std::uint64_t curMask = 0;
 		// std::uint32_t maskLimit = sizeof(curMask)*8;
-		// std::uint32_t nproc = Clamp(sysconf(_SC_NPROCESSORS_ONLN), 0, maskLimit);
+		// std::uint32_t nproc = std:min(sysconf(_SC_NPROCESSORS_ONLN), maskLimit);
 		// for (i=0; i<nproc; ++i) {
-		// 	curMask |= (CPU_ISSET(i, &cpusSystem) << i);
+		// 	curMask |= (static_cast<std::uint64_t>(CPU_ISSET(i, &cpusSystem)) << i);
 		// }
-		// LOG("%s: cpu mask %" PRIx64 "", __func__, curMask);
+		// LOG("%s: cpu mask %" PRIx64, __func__, curMask);
 	#endif
 
 		GetPhysicalCpuCores(); // (uses a static, too)
