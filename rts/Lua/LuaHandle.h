@@ -99,6 +99,7 @@ class CLuaHandle : public CEventClient
 		LuaRBOs& GetRBOs(const lua_State* L = nullptr) { return GetLuaContextData(L)->rbos; }
 		CLuaDisplayLists& GetDisplayLists(const lua_State* L = NULL) { return GetLuaContextData(L)->displayLists; }
 #endif
+		static bool CanReadUnit(const lua_State* L, const CUnit* unit, bool& knownDef);
 
 	public: // call-ins
 		bool WantsEvent(const std::string& name) override { return HasCallIn(L, name); }

@@ -235,6 +235,29 @@ bool CLuaHandle::AddEntriesToTable(lua_State* L, const char* name,
 /******************************************************************************/
 /******************************************************************************/
 
+bool CLuaHandle::CanReadUnit(const lua_State* L, const CUnit* unit, bool& knownDef)
+{
+	if (GetHandleFullRead(L)) {
+		knownDef = true;
+		return true;
+	}
+
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+
+	if (readAllyTeam < 0) {
+		knownDef = (readAllyTeam == CEventClient::AllAccessTeam);
+		return knownDef;
+	}
+
+	const auto losStatus = unit->losStatus[readAllyTeam];
+
+	constexpr int currMask = LOS_INLOS | LOS_INRADAR;
+	constexpr int prevMask = LOS_PREVLOS | LOS_CONTRADAR;
+
+	knownDef = ((losStatus & prevMask) == prevMask);
+	return (losStatus & currMask) > 0;
+}
+
 void CLuaHandle::CheckStack()
 {
 	if (!IsValid())
@@ -1031,9 +1054,12 @@ void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 	lua_pushnumber(L, unit->unitDef->id);
 	lua_pushnumber(L, unit->team);
 
-	if (GetHandleFullRead(L) && (attacker != nullptr)) {
+	if (bool knownDef; (attacker != nullptr) && CanReadUnit(L, attacker, knownDef)) {
 		lua_pushnumber(L, attacker->id);
-		lua_pushnumber(L, attacker->unitDef->id);
+		if (knownDef)
+			lua_pushnumber(L, attacker->unitDef->id);
+		else
+			lua_pushnil(L);
 		lua_pushnumber(L, attacker->team);
 	} else {
 		lua_pushnil(L);
@@ -1220,9 +1246,12 @@ void CLuaHandle::UnitDamaged(
 	lua_pushnumber(L, weaponDefID);
 	lua_pushnumber(L, projectileID);
 
-	if (attacker != nullptr && GetHandleFullRead(L)) {
+	if (bool knownDef; (attacker != nullptr) && CanReadUnit(L, attacker, knownDef)) {
 		lua_pushnumber(L, attacker->id);
-		lua_pushnumber(L, attacker->unitDef->id);
+		if (knownDef)
+			lua_pushnumber(L, attacker->unitDef->id);
+		else
+			lua_pushnil(L);
 		lua_pushnumber(L, attacker->team);
 		argCount += 3;
 	}
@@ -1866,9 +1895,12 @@ void CLuaHandle::FeatureDamaged(
 		lua_pushnumber(L, weaponDefID); argCount += 1;
 		lua_pushnumber(L, projectileID); argCount += 1;
 
-		if (attacker != nullptr) {
+		if (bool knownDef; (attacker != nullptr) && CanReadUnit(L, attacker, knownDef)) {
 			lua_pushnumber(L, attacker->id);
-			lua_pushnumber(L, attacker->unitDef->id);
+			if (knownDef)
+				lua_pushnumber(L, attacker->unitDef->id);
+			else
+				lua_pushnil(L);
 			lua_pushnumber(L, attacker->team);
 			argCount += 3;
 		}
