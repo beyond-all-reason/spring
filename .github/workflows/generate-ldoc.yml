@@ -1,8 +1,7 @@
-name: Publish Site
+name: Generate LDoc
 on:
-  push:
-    branches:
-      - BAR105
+  schedule:
+    - cron: "0 0 * * *"
 jobs:
   publish:
     name: Publish Site
@@ -16,6 +15,8 @@ jobs:
           sudo apt-get install --fix-missing -y lua-ldoc lua-markdown
       - name: Checkout Source Repository
         uses: actions/checkout@v2
+        with:
+          ref: BAR105
       - name: Run LDoc
         run: |
           ldoc -c doc/LDoc/config.ld .
