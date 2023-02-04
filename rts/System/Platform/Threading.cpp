@@ -16,6 +16,7 @@
 #elif defined(_WIN32)
 	#include <windows.h>
 #else
+	#include <unistd.h>
 	#if defined(__USE_GNU)
 		#include <sys/prctl.h>
 	#endif
