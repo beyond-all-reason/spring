@@ -1,7 +1,9 @@
-name: Generate LDoc
+name: Publish Site
 on:
   schedule:
     - cron: "0 0 * * *"
+on:
+  workflow_dispatch:
 jobs:
   publish:
     name: Publish Site
