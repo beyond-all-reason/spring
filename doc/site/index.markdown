@@ -44,18 +44,18 @@ Get the latest release [here](https://github.com/beyond-all-reason/spring/releas
 
 See the [Recoil Github Wiki] on how to build the engine locally or with Docker.
 
-### Contributing
+## Contributing
 
 When contributing to this repository, please first discuss the change you wish
 to make via [GitHub issues], our [Matrix Room] or any other method with the
 owners of this repository before making a change.
 
-#### Thank you to the contributors of Recoil!
+### Thank you to the contributors of Recoil!
 
 <ul class="list-style-none">
 {% for contributor in site.github.contributors %}
   <li class="d-inline-block mr-1">
-     <a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="32" height="32" alt="{{ contributor.login }}"></a>
+     <a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="48" height="48" alt="{{ contributor.login }}"></a>
   </li>
 {% endfor %}
 </ul>
