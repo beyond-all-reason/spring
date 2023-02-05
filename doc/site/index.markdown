@@ -50,7 +50,6 @@ When contributing to this repository, please first discuss the change you wish
 to make via [GitHub issues], our [Matrix Room] or any other method with the
 owners of this repository before making a change.
 
-{% comment %}
 #### Thank you to the contributors of Recoil!
 
 <ul class="list-style-none">
@@ -60,7 +59,6 @@ owners of this repository before making a change.
   </li>
 {% endfor %}
 </ul>
-{% endcomment %}
 
 [Recoil repo]: https://github.com/beyond-all-reason/spring
 [GitHub issues]: https://github.com/beyond-all-reason/spring/issues

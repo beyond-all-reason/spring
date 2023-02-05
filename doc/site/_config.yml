@@ -27,7 +27,7 @@ url: "https://beyond-all-reason.github.io" # the base hostname & protocol for yo
 #twitter_username: jekyllrb
 github_username: beyond-all-reason
 permalink: pretty
-# repository: beyond-all-reason/spring # for github-metadata
+repository: beyond-all-reason/spring # for github-metadata
 
 # Build settings
 #theme: minima
@@ -35,10 +35,10 @@ permalink: pretty
 remote_theme: just-the-docs/just-the-docs
 plugins:
   - jekyll-feed
+  - jekyll-github-metadata
   - jekyll-remote-theme
   - jekyll-sitemap
   - jekyll-seo-tag
-  # - jekyll-github-metadata
 
 # Aux links for the upper right navigation
 aux_links:
