@@ -7,6 +7,8 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include "Game/SelectedUnitsHandler.h"
+
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
 
@@ -85,6 +87,7 @@ bool CPathEstimator::SetStartBlock(
 )
 {
 	constexpr size_t maxBlocksToCheck = 9;
+	const float3 centreOffset(BLOCK_PIXEL_SIZE*.5f, 0, BLOCK_PIXEL_SIZE*.5f);
 
 	int2 nearestBlock;
 	nearestBlock.x = startPos.x / BLOCK_PIXEL_SIZE;
@@ -98,9 +101,24 @@ bool CPathEstimator::SetStartBlock(
 		return true;
 	}
 
-	auto buildBlock = [this, startPos](int2 blockPos) {
-			float3 realBlockPos = float3(blockPos.x, 0.f, blockPos.y) * BLOCK_PIXEL_SIZE * SQUARE_SIZE;
-			float distSq = startPos.SqDistance(realBlockPos);
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s: nearest block (%d, %d) start(%f, %f) owner(%f, %f)", __func__, nearestBlock.x, nearestBlock.y
+	// 		, startPos.x, startPos.z, owner->pos.x, owner->pos.z);
+    // }}
+
+	auto buildBlock = [this, startPos, owner, centreOffset](int2 blockPos) {
+			float3 realBlockPos = float3(blockPos.x, 0.f, blockPos.y) * BLOCK_PIXEL_SIZE + centreOffset;
+			float distSq = startPos.SqDistance2D(realBlockPos);
+
+			// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// if (printMoveInfo) {
+			// 	LOG("%s: adding block (%d, %d) [%d]: %f realblockpos(%f, %f)", __func__, blockPos.x, blockPos.y
+			// 		, BlockPosToIdx(blockPos), distSq, realBlockPos.x, realBlockPos.z);
+			// }}
+
 			return std::make_tuple(BlockPosToIdx(blockPos), distSq);
 		};
 	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
@@ -113,9 +131,25 @@ bool CPathEstimator::SetStartBlock(
 			{ return std::get<1>(lhv) < std::get<1>(rhv); };
 	std::stable_sort(blockIdsByDist.begin(), blockIdsByDist.end(), sortBlocksByDist);
 
+	// std::for_each(blockIdsByDist.begin(), blockIdsByDist.end(), [this, owner](const std::tuple<int, float>& blockByDist) {
+	// 			{bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+	// 			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+	// 		if (printMoveInfo) {
+	// 			LOG("%s: block added (%d) %f", __func__, std::get<0>(blockByDist), std::get<1>(blockByDist));
+	// 		}}
+	// });
+
 	auto unitCanReachBlock = [this, &moveDef = std::as_const(moveDef), &peDef = std::as_const(peDef), owner]
 		(const std::tuple<int, float>& blockByDist)
-			{ return TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist)); };
+			{ 
+				// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+				// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+				// if (printMoveInfo) {
+				// 	LOG("%s Block Size [%d] TestBlockReachability of block %d (%f)"
+				// 		, __func__, BLOCK_SIZE, std::get<0>(blockByDist), std::get<1>(blockByDist));
+				// }}
+				return TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist));
+				};
 
 	auto result = std::find_if(blockIdsByDist.begin(), blockIdsByDist.end(), unitCanReachBlock);
 	if (result != std::end(blockIdsByDist)){
@@ -179,6 +213,12 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
 	// 	LOG("Block Size [%d] search started", BLOCK_SIZE);
 	// }
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search started", __func__, BLOCK_SIZE);
+    // }}
 
 	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
 
@@ -269,6 +309,12 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 		// 	LOG("Closed off node %d [%x]", ob->nodeNum, blockStates.nodeMask[ob->nodeNum]);
 		// }
 	}
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search finished", __func__, BLOCK_SIZE);
+    // }}
 
 	// we found our goal
 	if (foundGoal)
@@ -361,6 +407,13 @@ bool CPathEstimator::TestBlock(
 	// 	LOG("Node Vertex %d Cost %f is infinity [%d]", testBlockIdx, testVertexCost, (int)infCostVertex);
 	// }
 
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+	// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+	// if (printMoveInfo) {
+	// 	LOG("%s Block Size [%d] infCostVertex = %d,  blockedSearch = %d, peDef.useVerifiedStartBlock = %d, testedBlocks = %d"
+	// 		, __func__, BLOCK_SIZE, (int)infCostVertex, (int)blockedSearch, (int)peDef.useVerifiedStartBlock, testedBlocks);
+	// }}
+
 	if (infCostVertex) {
 		// warning: we cannot naively set PATHOPT_BLOCKED here;
 		// vertexCosts[] depends on the direction and nodeMask
@@ -419,6 +472,13 @@ bool CPathEstimator::TestBlock(
 				// if (debugLoggingActive == ThreadPool::GetThreadNum()){
 				// 	LOG("Node %d block search to close out", testBlockIdx);
 				// }
+
+				// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+				// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+				// if (printMoveInfo) {
+				// 	LOG("%s Block Size [%d] Check goalpos of "
+				// 		, __func__, BLOCK_SIZE);
+				// }}
 
 				if (DoBlockSearch(owner, moveDef, sWorldPos, gWorldPos) != IPath::Ok) {
 					// we cannot set PATHOPT_BLOCKED here either, result

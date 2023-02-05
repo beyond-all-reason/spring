@@ -17,6 +17,8 @@
 #include "System/MathConstants.h"
 #include "System/TimeProfiler.h"
 
+#include "Game/SelectedUnitsHandler.h"
+
 namespace TKPFS {
 
 // extern bool TEST_ACTIVE;
@@ -138,6 +140,12 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	if (!moveDef.allowRawMovement)
 		return IPath::Error;
 
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] raw search started", __func__, BLOCK_SIZE);
+    // }}
+
 	const int2 strtBlk = BlockIdxToPos(mStartBlockIdx);
 	const int2 goalBlk = {int(pfDef.goalSquareX), int(pfDef.goalSquareZ)};
 	const int2 diffBlk = {std::abs(goalBlk.x - strtBlk.x), std::abs(goalBlk.y - strtBlk.y)};
@@ -216,6 +224,12 @@ IPath::SearchResult CPathFinder::DoSearch(
 ) {
 	bool foundGoal = false;
 	int curThread = ThreadPool::GetThreadNum();
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search started", __func__, BLOCK_SIZE);
+    // }}
 
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
 
