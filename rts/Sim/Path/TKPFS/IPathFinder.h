@@ -78,7 +78,6 @@ protected:
 	/// Clear things up from last search.
 	void ResetSearch();
 
-protected:
 	virtual IPath::SearchResult DoRawSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner) { return IPath::Error; }
 	virtual IPath::SearchResult DoSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner) = 0;
 
@@ -122,6 +121,13 @@ protected:
 		int pathType,
 		const bool synced
 	) = 0;
+
+	virtual bool SetStartBlock(
+		const MoveDef& moveDef,
+		const CPathFinderDef& peDef,
+		const CSolidObject* owner,
+		float3 startPos
+	);
 
 public:
 	// if larger than 1, this IPF is an estimator

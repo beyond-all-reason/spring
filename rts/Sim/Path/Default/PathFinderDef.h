@@ -55,6 +55,7 @@ public:
 	bool allowDefPath;
 	bool dirIndependent;
 	bool synced;
+	bool useVerifiedStartBlock;
 
 	// heightmap-coors
 	uint32_t startSquareX;

@@ -77,6 +77,58 @@ void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult
 	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
 
+bool CPathEstimator::SetStartBlock(
+	const MoveDef& moveDef,
+	const CPathFinderDef& peDef,
+	const CSolidObject* owner,
+	float3 startPos
+)
+{
+	constexpr size_t maxBlocksToCheck = 9;
+
+	int2 nearestBlock;
+	nearestBlock.x = startPos.x / BLOCK_PIXEL_SIZE;
+	nearestBlock.y = startPos.z / BLOCK_PIXEL_SIZE;
+
+	// support peDef.skipSubSearches - just take nearest point
+	if (peDef.skipSubSearches || !peDef.useVerifiedStartBlock) {
+		mStartBlock = nearestBlock;
+		mStartBlockIdx = BlockPosToIdx(nearestBlock);
+		mGoalBlockIdx = mStartBlockIdx;
+		return true;
+	}
+
+	auto buildBlock = [this, startPos](int2 blockPos) {
+			float3 realBlockPos = float3(blockPos.x, 0.f, blockPos.y) * BLOCK_PIXEL_SIZE * SQUARE_SIZE;
+			float distSq = startPos.SqDistance(realBlockPos);
+			return std::make_tuple(BlockPosToIdx(blockPos), distSq);
+		};
+	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
+	blockIdsByDist[0] = buildBlock(nearestBlock);
+
+	for (auto i = PATHDIR_LEFT; i < PATH_DIRECTIONS; ++i)
+		blockIdsByDist[i+1] = buildBlock(nearestBlock + PE_DIRECTION_VECTORS[i]);
+
+	auto sortBlocksByDist = [](const std::tuple<int, float>& lhv, const std::tuple<int, float>& rhv)
+			{ return std::get<1>(lhv) < std::get<1>(rhv); };
+	std::stable_sort(blockIdsByDist.begin(), blockIdsByDist.end(), sortBlocksByDist);
+
+	auto unitCanReachBlock = [this, &moveDef = std::as_const(moveDef), &peDef = std::as_const(peDef), owner]
+		(const std::tuple<int, float>& blockByDist)
+			{ return TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist)); };
+
+	auto result = std::find_if(blockIdsByDist.begin(), blockIdsByDist.end(), unitCanReachBlock);
+	if (result != std::end(blockIdsByDist)){
+		mStartBlockIdx = std::get<0>(*result);
+		mGoalBlockIdx = mStartBlockIdx;
+		mStartBlock = BlockIdxToPos(mStartBlockIdx);
+		return true;
+	}
+
+	return false;
+}
+
+
 
 IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const CSolidObject* owner,
@@ -302,7 +354,7 @@ bool CPathEstimator::TestBlock(
 	// is reachable from wsStartPos, which can disagree with reachability
 	// from openBlockSquare
 	const bool infCostVertex = (testVertexCost >= PATHCOST_INFINITY);
-	const bool baseSetVertex = (testedBlocks <= 8);
+	const bool baseSetVertex = (!peDef.useVerifiedStartBlock) && (testedBlocks <= 8);
 	const bool blockedSearch = (!baseSetVertex || peDef.skipSubSearches);
 
 	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
@@ -447,6 +499,32 @@ bool CPathEstimator::TestBlock(
 	dirtyBlocks.push_back(testBlockIdx);
 	return true;
 }
+
+
+
+/**
+ * Test the accessability of a block and its value,
+ * possibly also add it to the open-blocks pqueue.
+ */
+bool CPathEstimator::TestBlockReachability(
+	const MoveDef& moveDef,
+	const CPathFinderDef& peDef,
+	const CSolidObject* owner,
+	const unsigned int testBlockIdx
+) {
+	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
+	// 	LOG("Testing node open %d [%d]", testBlockIdx, blockStates.nodeMask[testBlockIdx]);
+	// }
+
+	assert(testBlockIdx < (*psBlockStates).peNodeOffsets[moveDef.pathType].size());
+	const int2 testBlockSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][testBlockIdx];
+
+	if (!peDef.WithinConstraints(testBlockSquare))
+		return false;
+
+	return (DoBlockSearch(owner, moveDef, peDef.wsStartPos, SquareToFloat3(testBlockSquare)) == IPath::Ok);
+}
+
 
 
 /**
