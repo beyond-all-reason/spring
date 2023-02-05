@@ -206,8 +206,10 @@ void CSMFReadMap::CreateSpecularTex()
 		CBitmap specularTexBM;
 
 		// maps wants specular lighting, but no moderation
-		if (!specularTexBM.Load(mapInfo->smf.specularTexName))
+		if (!specularTexBM.Load(mapInfo->smf.specularTexName)) {
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF specularTex %s. Creating fallback texture", __func__, mapInfo->smf.specularTexName.c_str());
 			specularTexBM.AllocDummy(SColor(255, 255, 255, 255));
+		}
 
 		specularTex.SetRawTexID(specularTexBM.CreateTexture());
 		specularTex.SetRawSize(int2(specularTexBM.xsize, specularTexBM.ysize));
@@ -262,8 +264,10 @@ void CSMFReadMap::CreateSplatDetailTextures()
 		// if a map supplies an intensity- AND a distribution-texture for
 		// detail-splat blending, the regular detail-texture is not used
 		// default detail-texture should be all-grey
-		if (!splatDetailTexBM.Load(mapInfo->smf.splatDetailTexName))
+		if (!splatDetailTexBM.Load(mapInfo->smf.splatDetailTexName)) {
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDetailTex %s. Creating fallback texture", __func__, mapInfo->smf.splatDetailTexName.c_str());
 			splatDetailTexBM.AllocDummy(SColor(127, 127, 127, 127));
+		}
 
 		splatDetailTex.SetRawTexID(splatDetailTexBM.CreateTexture(texAnisotropyLevels[true], 0.0f, true));
 		splatDetailTex.SetRawSize(int2(splatDetailTexBM.xsize, splatDetailTexBM.ysize));
@@ -272,8 +276,10 @@ void CSMFReadMap::CreateSplatDetailTextures()
 	{
 		CBitmap splatDistrTexBM;
 
-		if (!splatDistrTexBM.Load(mapInfo->smf.splatDistrTexName))
+		if (!splatDistrTexBM.Load(mapInfo->smf.splatDistrTexName)) {
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDistrTex %s. Creating fallback texture", __func__, mapInfo->smf.splatDistrTexName.c_str());
 			splatDistrTexBM.AllocDummy(SColor(255, 0, 0, 0));
+		}
 
 		splatDistrTex.SetRawTexID(splatDistrTexBM.CreateTexture(texAnisotropyLevels[true], 0.0f, true));
 		splatDistrTex.SetRawSize(int2(splatDistrTexBM.xsize, splatDistrTexBM.ysize));
@@ -324,8 +330,10 @@ void CSMFReadMap::CreateDetailTex()
 {
 	CBitmap detailTexBM;
 
-	if (!detailTexBM.Load(mapInfo->smf.detailTexName))
-		detailTexBM.AllocDummy();
+	if (!detailTexBM.Load(mapInfo->smf.detailTexName)) {
+		LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF detailTex %s. Creating fallback texture", __func__, mapInfo->smf.detailTexName.c_str());
+		detailTexBM.AllocDummy({127, 127, 127, 0});
+	}
 
 	detailTex.SetRawTexID(detailTexBM.CreateTexture(texAnisotropyLevels[false], 0.0f, true));
 	detailTex.SetRawSize(int2(detailTexBM.xsize, detailTexBM.ysize));
