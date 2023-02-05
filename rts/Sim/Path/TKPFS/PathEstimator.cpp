@@ -7,7 +7,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
-#include "Game/SelectedUnitsHandler.h"
+// #include "Game/SelectedUnitsHandler.h"
 
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
@@ -124,7 +124,7 @@ bool CPathEstimator::SetStartBlock(
 	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
 	blockIdsByDist[0] = buildBlock(nearestBlock);
 
-	for (auto i = PATHDIR_LEFT; i < PATH_DIRECTIONS; ++i)
+	for (std::uint32_t i = 0; i < PATH_DIRECTIONS; ++i)
 		blockIdsByDist[i+1] = buildBlock(nearestBlock + PE_DIRECTION_VECTORS[i]);
 
 	auto sortBlocksByDist = [](const std::tuple<int, float>& lhv, const std::tuple<int, float>& rhv)

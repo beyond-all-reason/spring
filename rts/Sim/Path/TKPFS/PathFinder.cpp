@@ -17,7 +17,7 @@
 #include "System/MathConstants.h"
 #include "System/TimeProfiler.h"
 
-#include "Game/SelectedUnitsHandler.h"
+// #include "Game/SelectedUnitsHandler.h"
 
 namespace TKPFS {
 
