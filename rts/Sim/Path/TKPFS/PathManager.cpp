@@ -777,12 +777,6 @@ void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int 
 	auto lowResPE = &pathingStates[PATH_LOW_RES];
 
 	medResPE->MapChanged(x1, z1, x2, z2);
-
-	// low-res PE will be informed via (medRes)PE::Update
-	// if (true && medResPE->nextPathEstimator != nullptr)
-	if (medResPE->nextPathState != nullptr)
-		return;
-
 	lowResPE->MapChanged(x1, z1, x2, z2);
 }
 

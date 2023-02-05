@@ -703,14 +703,6 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 			//LOG("TK PathingState::Update: moveDef = %d %p (%p)", consumedBlocks.size(), &consumedBlocks.back(), consumedBlocks.back().moveDef);
 		}
 
-		// inform dependent estimator that costs were updated and it should do the same
-		// FIXME?
-		//   adjacent med-res PE blocks will cause a low-res block to be updated twice
-		//   (in addition to the overlap that already exists because MapChanged() adds
-		//   boundary blocks)
-		if (true && nextPathState != nullptr)
-			nextPathState->MapChanged(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE);
-
 		updatedBlocks.pop_front(); // must happen _after_ last usage of the `pos` reference!
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
 	}
@@ -884,7 +876,7 @@ void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult r
 
 void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	const std::lock_guard<std::mutex> lock(cacheAccessLock);
+	//const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	//pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
