@@ -371,7 +371,7 @@ static bool CheckProjectileCollisionFlags(const CProjectile* p, const CUnit* u)
 
 	// only weapon-projectiles can have non-zero flags
 	if (collFlags == 0)
-		return false;
+		return true;
 
 	// disregard everything else when this bit is set
 	// (ground and feature flags are tested elsewhere)
