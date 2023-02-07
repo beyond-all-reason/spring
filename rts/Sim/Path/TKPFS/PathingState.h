@@ -171,9 +171,7 @@ private:
     int2 mapDimensionsInBlocks = {0, 0};
 	int2 nbrOfBlocks;
 
-    //IPathFinder* pathFinders = nullptr;
     std::vector<IPathFinder*> pathFinders; // InitEstimator helpers
-    //std::vector<spring::thread> threads;
 
     std::vector<float> maxSpeedMods;
     std::vector<float> vertexCosts;
@@ -189,9 +187,6 @@ private:
 
     std::vector<SingleBlock> consumedBlocks;
 	std::vector<SOffsetBlock> offsetBlocksSortedByCost;
-
-	// int updatedBlocksDelayTimeout = (-1);
-	// bool updatedBlocksDelayActive = false;
 };
 
 }

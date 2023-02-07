@@ -52,6 +52,19 @@ static constexpr unsigned int PATHDIR_LEFT_DOWN  = 7; // +x-z
 static constexpr unsigned int PATH_DIRECTIONS    = 8;
 
 
+// Directional flags for direction masking
+static constexpr unsigned int PATHDIR_LEFT_MASK       = 0x01; // +x (LEFT *TO* RIGHT)
+static constexpr unsigned int PATHDIR_LEFT_UP_MASK    = 0x02; // +x+z
+static constexpr unsigned int PATHDIR_UP_MASK         = 0x04; // +z (UP *TO* DOWN)
+static constexpr unsigned int PATHDIR_RIGHT_UP_MASK   = 0x08; // -x+z
+static constexpr unsigned int PATHDIR_RIGHT_MASK      = 0x10; // -x (RIGHT *TO* LEFT)
+static constexpr unsigned int PATHDIR_RIGHT_DOWN_MASK = 0x20; // -x-z
+static constexpr unsigned int PATHDIR_DOWN_MASK       = 0x40; // -z (DOWN *TO* UP)
+static constexpr unsigned int PATHDIR_LEFT_DOWN_MASK  = 0x80; // +x-z
+static constexpr unsigned int PATH_DIRECTIONS_MASK    = 0xff;
+static constexpr unsigned int PATH_DIRECTIONS_HALF_MASK = 0x0f;
+
+
 static constexpr unsigned int PATHDIR_CARDINALS[4] = {PATHDIR_LEFT, PATHDIR_RIGHT, PATHDIR_UP, PATHDIR_DOWN};
 static constexpr unsigned int PATH_DIRECTION_VERTICES = PATH_DIRECTIONS >> 1;
 static constexpr unsigned int PATH_NODE_SPACING = 2;

@@ -110,9 +110,6 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 		updatedBlocks.clear();
 		consumedBlocks.clear();
 		offsetBlocksSortedByCost.clear();
-
-		// updatedBlocksDelayTimeout = 0;
-		// updatedBlocksDelayActive = false;
 	}
 
 	PathingState*  childPE = this;
@@ -179,6 +176,7 @@ void PathingState::Terminate()
 		const int idx = BlockPosToIdx(pos);
 		updatedBlocks.pop_front();
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
+		blockStates.nodeLinksObsoleteFlags[idx] = 0;
 	}
 
 	// allow our PNSB to be reused across reloads
@@ -633,21 +631,12 @@ void PathingState::Update()
 
 	// determine how many blocks we should update
 	int blocksToUpdate = 0;
-	int consumeBlocks = 0;
 	{
-		const int progressiveUpdates = updatedBlocks.size() * numMoveDefs * modInfo.pfUpdateRate;
-		const int MIN_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, 4U);
-		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE << 1, MIN_BLOCKS_TO_UPDATE);
+		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<3)); // * numMoveDefs * modInfo.pfUpdateRate;
+		const int MIN_BLOCKS_TO_UPDATE = 1; //std::max<int>(BLOCKS_TO_UPDATE >> 4, 1U);
+		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, MIN_BLOCKS_TO_UPDATE);
 
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
-		blockUpdatePenalty = std::max(0, blockUpdatePenalty - blocksToUpdate);
-
-		if (blockUpdatePenalty > 0)
-			blocksToUpdate = std::max(0, blocksToUpdate - blockUpdatePenalty);
-
-		// we have to update blocks for all movedefs (PATHOPT_OBSOLETE applies per block, not per movedef)
-		consumeBlocks = int(progressiveUpdates != 0) * int(ceil(float(blocksToUpdate) / numMoveDefs)) * numMoveDefs;
-		blockUpdatePenalty += consumeBlocks;
+		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
 	}
 
 	//LOG("PathingState::Update blocksToUpdate %d", blocksToUpdate);
@@ -705,6 +694,7 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 
 		updatedBlocks.pop_front(); // must happen _after_ last usage of the `pos` reference!
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
+		blockStates.nodeLinksObsoleteFlags[idx] = 0;
 	}
 
 	// FindOffset (threadsafe)
@@ -771,21 +761,51 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	const int lowerX = Clamp(int(x1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.x - 1));
 	const int upperX = Clamp(int(x2 / BLOCK_SIZE) + 1, 0, int(mapDimensionsInBlocks.x - 1));
 	const int lowerZ = Clamp(int(z1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.y - 1));
-	const int upperZ = Clamp(int(z2 / BLOCK_SIZE) + 1, 0, int(mapDimensionsInBlocks.y - 1));
+	const int upperZ = Clamp(int(z2 / BLOCK_SIZE) + 0, 0, int(mapDimensionsInBlocks.y - 1));
+
+	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 
 	// mark the blocks inside the rectangle, enqueue them
 	// from upper to lower because of the placement of the
 	// bi-directional vertices
 	for (int z = upperZ; z >= lowerZ; z--) {
 		for (int x = upperX; x >= lowerX; x--) {
-			const int idx = BlockPosToIdx(int2(x, z));
-
-			//LOG("Map Changed [%d] at (%d, %d) obsolete==%d", idx, x, z, (blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0);
-
-			if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
+			// the upper left corner won't have any flags assigned
+			if (x==upperX && z==upperZ)
 				continue;
 
-			//LOG("Pushing update update blocks for size %d is %llu", BLOCK_SIZE, updatedBlocks.size());
+			const int idx = BlockPosToIdx(int2(x, z));
+
+			std::uint8_t blockOrigLinkFlags = blockStates.nodeLinksObsoleteFlags[idx];
+			if ((blockOrigLinkFlags & PATH_DIRECTIONS_HALF_MASK) == PATH_DIRECTIONS_HALF_MASK) 
+				continue;
+
+			//if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
+			//	continue;
+
+// [t=00:05:48.829407][f=0000630] [Path] MapChanged: clamped to [14, 43] -> [16, 44]
+// [t=00:05:48.829430][f=0000630] [Path] MapChanged: [15, 44] result is 0f
+// [t=00:05:48.829453][f=0000630] [Path] MapChanged: [14, 44] result is 01
+// [t=00:05:48.829463][f=0000630] [Path] MapChanged: [16, 43] result is 08
+// [t=00:05:48.829472][f=0000630] [Path] MapChanged: [15, 43] result is 04
+// [t=00:05:48.829482][f=0000630] [Path] MapChanged: [14, 43] result is 02
+
+			const bool leftUpSpecificIgnoreBlocks  = (x==upperX-1 & z==lowerZ) | (x==lowerX & z==upperZ);
+			const bool rightUpSpecificIgnoreBlocks = (x==lowerX+1 & z==lowerZ) /* | (x==upperX & z==upperZ)*/;
+
+			//LOG("%s: [%d, %d] start is %02x", __func__, x, z, blockOrigLinkFlags);
+
+			blockStates.nodeLinksObsoleteFlags[idx]
+				|=  (z > lowerZ) * (x < upperX)                   * PATHDIR_LEFT_MASK
+				 +  (x < upperX) * (!leftUpSpecificIgnoreBlocks)  * PATHDIR_LEFT_UP_MASK
+				 +  (x > lowerX) * (x < upperX)                   * PATHDIR_UP_MASK
+				 +  (x > lowerX) * (!rightUpSpecificIgnoreBlocks) * PATHDIR_RIGHT_UP_MASK;
+
+			//LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
+			//LOG("%s: [%d, %d] result is %02x", __func__, x, z, blockStates.nodeLinksObsoleteFlags[idx]);
+
+			if (blockOrigLinkFlags != 0)
+				continue;
 
 			updatedBlocks.emplace_back(x, z);
 			blockStates.nodeMask[idx] |= PATHOPT_OBSOLETE;
