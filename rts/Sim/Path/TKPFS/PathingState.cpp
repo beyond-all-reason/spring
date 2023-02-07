@@ -389,10 +389,18 @@ void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsig
 	// see GetBlockVertexOffset(); costs are bi-directional and only
 	// calculated for *half* the outgoing edges (while costs for the
 	// other four directions are stored at the adjacent vertices)
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
+	auto idx = BlockPosToIdx(block);
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_RIGHT_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
 }
 
 void PathingState::CalcVertexPathCost(
@@ -671,6 +679,9 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 
 	//LOG("PathingState::Update %d", updatedBlocks.size());
 
+	std::vector<int> blockIds;
+	blockIds.reserve(updatedBlocks.size());
+
 	// get blocks to update
 	while (!updatedBlocks.empty()) {
 		const int2& pos = updatedBlocks.front();
@@ -694,7 +705,7 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 
 		updatedBlocks.pop_front(); // must happen _after_ last usage of the `pos` reference!
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
-		blockStates.nodeLinksObsoleteFlags[idx] = 0;
+		blockIds.emplace_back(idx);
 	}
 
 	// FindOffset (threadsafe)
@@ -746,6 +757,8 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 			for_mt(0, threadsUsed, updateVertexPathCosts);
 		}
 	}
+
+	std::for_each(blockIds.begin(), blockIds.end(), [this](int idx){ blockStates.nodeLinksObsoleteFlags[idx] = 0; });
 }
 
 
