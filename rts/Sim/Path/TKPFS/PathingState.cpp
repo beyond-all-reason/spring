@@ -639,12 +639,24 @@ void PathingState::Update()
 
 	// determine how many blocks we should update
 	int blocksToUpdate = 0;
+	if (updatedBlocks.empty())
+		return;
+
 	{
-		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<3)); // * numMoveDefs * modInfo.pfUpdateRate;
+		auto rateAdjust{ [this](int progressiveUpdates){
+				if ((BLOCK_SIZE == 32) && (progressiveUpdates <= BLOCKS_TO_UPDATE<<3))
+					return int((gs->frameNum % 2) == 1);
+
+				return 1;
+			}
+		};
+
+		const float scaleMultiplier = 1.f - (float(BLOCK_SIZE == 32)*.5f);
+		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<3)) * scaleMultiplier; // * numMoveDefs * modInfo.pfUpdateRate;
 		const int MIN_BLOCKS_TO_UPDATE = 1; //std::max<int>(BLOCKS_TO_UPDATE >> 4, 1U);
 		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, MIN_BLOCKS_TO_UPDATE);
 
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
+		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs * rateAdjust(progressiveUpdates);
 	}
 
 	//LOG("PathingState::Update blocksToUpdate %d", blocksToUpdate);
@@ -653,10 +665,6 @@ void PathingState::Update()
 		return;
 
 	//LOG("PathingState::Update updatedBlocks.empty == %d", (int)updatedBlocks.empty());
-
-	if (updatedBlocks.empty())
-		return;
-
 	//LOG("PathingState::Update updatedBlocksDelayActive %d", (int)updatedBlocksDelayActive);
 
 	UpdateVertexPathCosts(blocksToUpdate);
