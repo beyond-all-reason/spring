@@ -156,6 +156,7 @@ UI:
  - Add GetScanSymbol(int scanCode)
 
 Fixes:
+ - Fix piece projectiles (flying parts from dead units) not colliding with units
  - Fix KeyChains not being respected for GuiHandler actions and allow games to
    handle them with new actions argument on KeyPress/KeyRelease
  - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
