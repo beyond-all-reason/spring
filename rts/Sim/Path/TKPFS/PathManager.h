@@ -231,7 +231,6 @@ private:
 		{
 			const std::lock_guard<std::mutex> lock(pathMapUpdate);
 			assignedId = ++nextPathID;
-			pathMap.reserve(assignedId);
 			pathMap[assignedId] = std::move(path);
 		}
 		return assignedId;
