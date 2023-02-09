@@ -62,6 +62,8 @@ static constexpr unsigned int PATHDIR_RIGHT_DOWN_MASK = 0x20; // -x-z
 static constexpr unsigned int PATHDIR_DOWN_MASK       = 0x40; // -z (DOWN *TO* UP)
 static constexpr unsigned int PATHDIR_LEFT_DOWN_MASK  = 0x80; // +x-z
 static constexpr unsigned int PATH_DIRECTIONS_MASK    = 0xff;
+
+// This mask covers the 4 directions used by path block updates.
 static constexpr unsigned int PATH_DIRECTIONS_HALF_MASK = 0x0f;
 
 
