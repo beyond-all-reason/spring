@@ -76,12 +76,7 @@ void CGame::SendClientProcUsage()
 
 		if (playing) {
 			const float simProcUsage = (profiler.GetTimePercentage("Sim"));
-
-			// Only consider the draw time for the minimum frames if it exceeds the amount already
-			// forcibly allocated by GetNetMessageProcessingTimeLimit();
-			const float minDrawUsage = (profiler.GetTimePercentage("Draw") / std::max(1.0f, globalRendering->FPS)) * CGlobalUnsynced::minDrawFPS;
-			const float drawProcUsage = std::max(0.f, minDrawUsage - CGlobalUnsynced::reconnectSimDrawBalance);
-
+			const float drawProcUsage = (profiler.GetTimePercentage("Draw") / std::max(1.0f, globalRendering->FPS)) * CGlobalUnsynced::minDrawFPS;
 			const float totalProcUsage = simProcUsage + drawProcUsage;
 
 			// take the minimum drawframes into account, too
