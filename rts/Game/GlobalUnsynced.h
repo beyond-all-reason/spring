@@ -45,11 +45,11 @@ public:
 	 * for simulation is minimum spend for
 	 * drawing.
 	 * This is important when reconnecting,
-	 * i.e. it means that 15% of the total
-	 * cpu time is spend for drawing and 85%
+	 * i.e. it means that 5% of the total
+	 * cpu time is spend for drawing and 95%
 	 * for reconnecting/simulation.
 	 */
-	static constexpr float reconnectSimDrawBalance = 0.15f;
+	static constexpr float reconnectSimDrawBalance = 0.05f;
 
 	/**
 	 * @brief simulation frames per second
