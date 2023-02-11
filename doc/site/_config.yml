@@ -42,6 +42,10 @@ plugins:
 
 # Aux links for the upper right navigation
 aux_links:
+  "<img width='32' src='/spring/assets/github-mark.svg' />":
+    - "https://github.com/beyond-all-reason/spring"
+  "<img width='32' src='/spring/assets/matrix-logo.svg' />":
+    - "https://matrix.to/#/#recoil-rts:matrix.org"
   "Lua API":
     - "/spring/ldoc"
 
@@ -51,7 +55,7 @@ aux_links:
 #    url: https://github.com/just-the-docs/just-the-docs
 
 # Makes Aux links open in a new tab. Default is false
-aux_links_new_tab: false
+aux_links_new_tab: true
 
 # For copy button on code
 enable_copy_code_button: true
