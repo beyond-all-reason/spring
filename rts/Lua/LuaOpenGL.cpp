@@ -3957,6 +3957,10 @@ int LuaOpenGL::AddAtlasTexture(lua_State* L)
 
 	const auto [texSizeX, texSizeY, texSizeZ] = luaTex.GetSize();
 
+	if (texSizeX <= 0 || texSizeY <= 0) {
+		luaL_error(L, "gl.%s() Requested Lua texture %s has invalid size {%d,%d}", __func__, luaTexStr.c_str(), texSizeX, texSizeY);
+	}
+
 	GLint currentBinding;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentBinding);
 
