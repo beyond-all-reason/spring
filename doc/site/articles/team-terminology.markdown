@@ -13,7 +13,7 @@ This article aims to explain Recoil's somewhat confusing terminology behind the 
 ### Allyteam vs team
 
 What most people would naturally call a team is called an *"allyteam"* in Recoil terminology.
-A *"team"* is a single element of an *"allyteam"*. *Teams* are pemanently bound to an *allyteam*.
+A *"team"* is a single element of an *"allyteam"*. *Teams* are permanently bound to an *allyteam*.
 
 For example, NATO would be an *allyteam* while USA and UK would be *teams*, because they are separate entities but are in the same alliance.
 For modders coming from Supreme Commander, the *team* is what SupCom calls an "army".

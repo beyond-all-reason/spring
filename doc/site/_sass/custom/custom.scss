@@ -1,0 +1,59 @@
+/* vendored from https://raw.githubusercontent.com/erikw/jekyll-glossary_tooltip/main/lib/jekyll-glossary_tooltip/jekyll-glossary_tooltip.css */
+.jekyll-glossary {
+  position: relative;
+  display: inline-block;
+  border-bottom: 2px dotted #0074bd;
+  cursor: help;
+}
+
+.jekyll-glossary .jekyll-glossary-tooltip {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  font-size: 0.5em;
+  padding: 5px;
+  border-radius: 6px;
+
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+
+  width: 160px;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -80px; /* Use half of the width to center the tooltip */
+
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.jekyll-glossary:hover .jekyll-glossary-tooltip {
+  visibility: visible;
+}
+
+/* Style the source link (if there is one provided in the glossary entry). */
+.jekyll-glossary-source-link:before {
+  content: "[source]";  // "(reference)", "<link>" or whatever you want.
+}
+
+/* Arrow created with borders. */
+.jekyll-glossary .jekyll-glossary-tooltip::after {
+  content: " ";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: black transparent transparent transparent;
+}
+
+/* Animation from invisible to visible on hover. */
+.jekyll-glossary .jekyll-glossary-tooltip {
+  opacity: 0;
+  transition: opacity 1s;
+}
+.jekyll-glossary:hover .jekyll-glossary-tooltip {
+  opacity: 1;
+}

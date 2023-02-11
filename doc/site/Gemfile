@@ -22,6 +22,8 @@ gem 'jekyll'
 group :jekyll_plugins do
   gem 'jekyll-feed', '~> 0.12'
   gem 'jekyll-github-metadata'
+  gem 'jekyll-glossary_tooltip'
+  gem 'jekyll-liquify'
   gem 'jekyll-remote-theme'
   gem 'jekyll-sitemap'
 end
