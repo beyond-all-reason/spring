@@ -3956,8 +3956,9 @@ int LuaOpenGL::AddAtlasTexture(lua_State* L)
 		luaL_error(L, "gl.%s() Atlas can only be of type GL_TEXTURE_2D", __func__);
 
 	const auto [texSizeX, texSizeY, texSizeZ] = luaTex.GetSize();
+	const auto texID = luaTex.GetTextureID();
 
-	if (texSizeX <= 0 || texSizeY <= 0) {
+	if (texID <= 0 || texSizeX <= 0 || texSizeY <= 0) {
 		luaL_error(L, "gl.%s() Requested Lua texture %s has invalid size {%d,%d}", __func__, luaTexStr.c_str(), texSizeX, texSizeY);
 	}
 
