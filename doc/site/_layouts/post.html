@@ -10,7 +10,12 @@ layout: default
 {% assign contributor = site.github.contributors | where: 'login', author.github %}
 <hr>
 <span class="fw-500">
-Written by: {% if contributor %} <a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="32" height="32" alt="{{ contributor.login }}"></a> {% endif %}
-<a href="https://github.com/{{author.github}}" target="_blank">{{author.short_name}}</a>
+Written by: <a href="https://github.com/{{author.github}}" target="_blank">{{author.short_name}}</a>
 </span>
+
+{% if contributor != nil and contributer != false %}
+<p>
+<a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="64" height="64" alt="{{ contributor.login }}"></a>
+</p>
+{% endif %}
 {% endif %}
