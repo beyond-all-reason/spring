@@ -13,9 +13,11 @@ layout: default
 Written by: <a href="https://github.com/{{author.github}}" target="_blank">{{author.short_name}}</a>
 </span>
 
+{% comment %}
 {% if contributor != nil and contributer != false %}
 <p>
 <a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="64" height="64" alt="{{ contributor.login }}"></a>
 </p>
 {% endif %}
+{% endcomment %}
 {% endif %}
