@@ -78,7 +78,7 @@ CUnsyncedLuaHandle::CUnsyncedLuaHandle(CSplitLuaHandle* _base, const std::string
 CUnsyncedLuaHandle::~CUnsyncedLuaHandle() = default;
 
 
-bool CUnsyncedLuaHandle::Init(const std::string& code, const std::string& file)
+bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 {
 	if (!IsValid())
 		return false;
@@ -151,7 +151,7 @@ bool CUnsyncedLuaHandle::Init(const std::string& code, const std::string& file)
 	}
 
 	lua_settop(L, 0);
-	if (!LoadCode(L, code, file)) {
+	if (!LoadCode(L, std::move(code), file)) {
 		KillLua();
 		return false;
 	}
@@ -416,7 +416,7 @@ CSyncedLuaHandle::~CSyncedLuaHandle()
 }
 
 
-bool CSyncedLuaHandle::Init(const std::string& code, const std::string& file)
+bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 {
 	if (!IsValid())
 		return false;
@@ -525,7 +525,7 @@ bool CSyncedLuaHandle::Init(const std::string& code, const std::string& file)
 	lua_settop(L, 0);
 	creg::AutoRegisterCFunctions(GetName(), L);
 
-	if (!LoadCode(L, code, file)) {
+	if (!LoadCode(L, std::move(code), file)) {
 		KillLua();
 		return false;
 	}
@@ -2124,7 +2124,7 @@ bool CSplitLuaHandle::InitSynced(bool dryRun)
 	}
 
 	auto lock = CLoadLock::GetUniqueLock(); // for loading of models
-	const bool haveSynced = syncedLuaHandle.Init(syncedCode, GetSyncedFileName());
+	const bool haveSynced = syncedLuaHandle.Init(std::move(syncedCode), GetSyncedFileName());
 
 	if (!IsValid() || !haveSynced) {
 		KillLua();
@@ -2143,14 +2143,14 @@ bool CSplitLuaHandle::InitUnsynced()
 		return false;
 	}
 
-	const std::string unsyncedCode = LoadFile(GetUnsyncedFileName(), GetInitFileModes());
+	std::string unsyncedCode = LoadFile(GetUnsyncedFileName(), GetInitFileModes());
 	if (unsyncedCode.empty()) {
 		KillLua();
 		return false;
 	}
 
 	auto lock = CLoadLock::GetUniqueLock();
-	const bool haveUnsynced = unsyncedLuaHandle.Init(unsyncedCode, GetUnsyncedFileName());
+	const bool haveUnsynced = unsyncedLuaHandle.Init(std::move(unsyncedCode), GetUnsyncedFileName());
 
 	if (!IsValid() || !haveUnsynced) {
 		KillLua();

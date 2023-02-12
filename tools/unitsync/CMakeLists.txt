@@ -48,6 +48,8 @@ include_directories(${ENGINE_SRC_ROOT}/lib/7zip)
 include_directories(${ENGINE_SRC_ROOT})
 include_directories(${CMAKE_BINARY_DIR}/src-generated/engine)
 
+# Just add include directories, but ENABLE_TRACY won't be defined so no linking issues
+include_directories(${ENGINE_SRC_ROOT}/lib/tracy/public)
 
 set(main_files
 	"${ENGINE_SRC_ROOT}/ExternalAI/LuaAIImplHandler.cpp"

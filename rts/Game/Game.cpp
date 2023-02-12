@@ -335,7 +335,7 @@ void CGame::AddTimedJobs()
 		JobDispatcher::Job j;
 
 		j.f = []() -> bool {
-			profiler.Update();
+			CTimeProfiler::GetInstance().Update();
 			return true;
 		};
 
@@ -355,6 +355,8 @@ void CGame::Load(const std::string& mapFileName)
 	//   when LoadingMT=1 (!!!)
 	Threading::SetGameLoadThread();
 	Watchdog::RegisterThread(WDT_LOAD);
+
+	ZoneScoped;
 
 	auto& globalQuit = gu->globalQuit;
 	bool  forcedQuit = false;
@@ -514,6 +516,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 	ENTER_SYNCED_CODE();
 
 	{
+		SCOPED_ONCE_TIMER("Game::LoadMap");
 		loadscreen->SetLoadMessage("Parsing Map Information");
 
 		waterRendering->Init();
@@ -537,7 +540,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	{
-		ScopedOnceTimer timer("Game::LoadDefs (GameData)");
+		SCOPED_ONCE_TIMER("Game::LoadDefs (GameData)");
 		loadscreen->SetLoadMessage("Loading GameData Definitions");
 
 		defsParser->SetupLua(true, true);
@@ -581,7 +584,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 		icon::iconHandler.Init();
 	}
 	{
-		ScopedOnceTimer timer("Game::LoadDefs (Sound)");
+		SCOPED_ONCE_TIMER("Game::LoadDefs (Sound)");
 		loadscreen->SetLoadMessage("Loading Sound Definitions");
 
 		LuaParser soundDefsParser("gamedata/sounds.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_MOD_BASE);
@@ -600,6 +603,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 void CGame::PreLoadSimulation(LuaParser* defsParser)
 {
+	ZoneScoped;
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
@@ -614,20 +618,21 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 
 void CGame::PostLoadSimulation(LuaParser* defsParser)
 {
+	ZoneScoped;
 	CommonDefHandler::InitStatic();
 
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (WeaponDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (WeaponDefs)");
 		loadscreen->SetLoadMessage("Loading Weapon Definitions");
 		weaponDefHandler->Init(defsParser);
 	}
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (UnitDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (UnitDefs)");
 		loadscreen->SetLoadMessage("Loading Unit Definitions");
 		unitDefHandler->Init(defsParser);
 	}
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (FeatureDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (FeatureDefs)");
 		loadscreen->SetLoadMessage("Loading Feature Definitions");
 		featureDefHandler->Init(defsParser);
 	}
@@ -685,6 +690,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 
 void CGame::PreLoadRendering()
 {
+	ZoneScoped;
 	auto lock = CLoadLock::GetUniqueLock();
 
 	geometricObjects = new CGeometricObjects();
@@ -696,12 +702,14 @@ void CGame::PreLoadRendering()
 }
 
 void CGame::PostLoadRendering() {
+	ZoneScoped;
 	worldDrawer.InitPost();
 }
 
 
 void CGame::LoadInterface()
 {
+	ZoneScoped;
 	auto lock = CLoadLock::GetUniqueLock();
 
 	camHandler->Init();
@@ -721,7 +729,7 @@ void CGame::LoadInterface()
 	keyBindings.Load();
 
 	{
-		ScopedOnceTimer timer("Game::LoadInterface (Console)");
+		SCOPED_ONCE_TIMER("Game::LoadInterface (Console)");
 
 		gameConsoleHistory.Init();
 		gameTextInput.ClearInput();
@@ -792,6 +800,7 @@ void CGame::LoadInterface()
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
 {
+	ZoneScoped;
 	assert(!(dryRun && onlyUnsynced));
 	// Lua components
 	ENTER_SYNCED_CODE();
@@ -837,7 +846,7 @@ void CGame::LoadSkirmishAIs()
 	if (localAIs.empty() && !IsSavedGame())
 		return;
 
-	ScopedOnceTimer timer(std::string("Game::") + __func__);
+	SCOPED_ONCE_TIMER("Game::LoadSkirmishAIs");
 	loadscreen->SetLoadMessage("Loading Skirmish AIs");
 
 	for (uint8_t localAI: localAIs)
@@ -853,6 +862,7 @@ void CGame::LoadSkirmishAIs()
 
 void CGame::LoadFinalize()
 {
+	ZoneScoped;
 	{
 		loadscreen->SetLoadMessage("[" + std::string(__func__) + "] finalizing PFS");
 
@@ -1017,7 +1027,7 @@ void CGame::ResizeEvent()
 	LOG("[Game::%s][1]", __func__);
 
 	{
-		ScopedOnceTimer timer("Game::ViewResize");
+		SCOPED_ONCE_TIMER("Game::ViewResize")
 
 		if (minimap != nullptr)
 			minimap->UpdateGeometry();
@@ -1031,7 +1041,7 @@ void CGame::ResizeEvent()
 	LOG("[Game::%s][2]", __func__);
 
 	{
-		ScopedOnceTimer timer("EventHandler::ViewResize");
+		SCOPED_ONCE_TIMER("EventHandler::ViewResize");
 
 		gameTextInput.ViewResize();
 		eventHandler.ViewResize();
@@ -1637,7 +1647,7 @@ void CGame::StartPlaying()
 		eventHandler.GameStart();
 }
 
-
+static const char* const tracingSimFrameName = "SimFrame";
 
 void CGame::SimFrame() {
 	ENTER_SYNCED_CODE();
@@ -1646,6 +1656,8 @@ void CGame::SimFrame() {
 	DumpRNG(-1, -1);
 
 	good_fpu_control_registers("CGame::SimFrame");
+
+	FrameMarkStart(tracingSimFrameName);
 
 	// note: starts at -1, first actual frame is 0
 	gs->frameNum += 1;
@@ -1743,6 +1755,8 @@ void CGame::SimFrame() {
 
 	eventHandler.DbgTimingInfo(TIMING_SIM, lastFrameTime, lastSimFrameTime);
 
+	FrameMarkEnd(tracingSimFrameName);
+
 	#ifdef HEADLESS
 	{
 		const float msecMaxSimFrameTime = 1000.0f / (GAME_SPEED * gs->wantedSpeedFactor);
@@ -1792,7 +1806,7 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 
 	CEndGameBox::Create(winningAllyTeams);
 #ifdef    HEADLESS
-	profiler.PrintProfilingInfo();
+	CTimeProfiler::GetInstance().PrintProfilingInfo();
 #endif // HEADLESS
 
 	CDemoRecorder* record = clientNet->GetDemoRecorder();

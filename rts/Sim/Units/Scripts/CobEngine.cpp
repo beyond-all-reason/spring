@@ -5,6 +5,8 @@
 #include "CobThread.h"
 #include "CobFile.h"
 
+#include <cstdint>
+#include <tracy/Tracy.hpp>
 
 CR_BIND(CCobEngine, )
 
@@ -29,6 +31,7 @@ CR_REG_METADATA(CCobEngine::SleepingThread, (
 	CR_MEMBER(wt)
 ))
 
+static const char* const numCobThreadsPlot = "CobThreads";
 
 int CCobEngine::AddThread(CCobThread&& thread)
 {
@@ -42,9 +45,34 @@ int CCobEngine::AddThread(CCobThread&& thread)
 	t = std::move(thread);
 	o->AddThreadID(t.GetID());
 
+	TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadInstances.size()));
+
 	return (t.GetID());
 }
 
+bool CCobEngine::RemoveThread(int threadID) {
+	const auto it = threadInstances.find(threadID);
+
+	if (it != threadInstances.end()) {
+		threadInstances.erase(it);
+		TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadInstances.size()));
+		return true;
+	}
+
+	return false;
+}
+
+void CCobEngine::AddQueuedThreads() {
+	ZoneScoped;
+	// move new threads spawned by START into threadInstances;
+	// their ID's will already have been scheduled into either
+	// waitingThreadIDs or sleepingThreadIDs
+	for (CCobThread& t: tickAddedThreads) {
+		AddThread(std::move(t));
+	}
+
+	tickAddedThreads.clear();
+}
 
 // a thread wants to continue running at a later time, and adds itself to the scheduler
 void CCobEngine::ScheduleThread(const CCobThread* thread)
@@ -90,6 +118,7 @@ void CCobEngine::TickThread(CCobThread* thread)
 
 void CCobEngine::WakeSleepingThreads()
 {
+	ZoneScoped;
 	// check on the sleeping threads, remove any whose owner died
 	while (!sleepingThreadIDs.empty()) {
 		CCobThread* zzzThread = GetThread((sleepingThreadIDs.top()).id);
@@ -124,8 +153,27 @@ void CCobEngine::WakeSleepingThreads()
 	}
 }
 
+void CCobEngine::TickRunningThreads()
+{
+	ZoneScoped;
+	// advance all currently running threads
+	for (const int threadID: runningThreadIDs) {
+		TickThread(GetThread(threadID));
+	}
+
+	// a thread can never go from running->running, so clear the list
+	// note: if preemption was to be added, this would no longer hold
+	// however, TA scripts can not run preemptively anyway since there
+	// aren't any synchronization methods available
+	runningThreadIDs.clear();
+
+	// prepare threads that will run next frame
+	std::swap(runningThreadIDs, waitingThreadIDs);
+}
+
 void CCobEngine::Tick(int deltaTime)
 {
+	ZoneScoped;
 	currentTime += deltaTime;
 
 	TickRunningThreads();

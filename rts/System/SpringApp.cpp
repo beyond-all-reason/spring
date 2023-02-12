@@ -773,7 +773,7 @@ void SpringApp::Reload(const std::string script)
 	// will be reconstructed from given script
 	gameSetup->ResetState();
 
-	profiler.ResetState();
+	CTimeProfiler::GetInstance().ResetState();
 	modInfo.ResetState();
 
 	LOG("[SpringApp::%s][11]", __func__);
@@ -1014,7 +1014,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 
 					if (globalRendering->numDisplays > 1 && globalRendering->dualScreenMode) {
 						{
-							ScopedOnceTimer timer("GlobalRendering::UpdateGL");
+							SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
 
 							globalRendering->UpdateGLConfigs();
 							globalRendering->UpdateGLGeometry();
@@ -1040,7 +1040,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 					Watchdog::ClearTimer(WDT_MAIN, true);
 
 					{
-						ScopedOnceTimer timer("GlobalRendering::UpdateGL");
+						SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
 
 						SaveWindowPosAndSize();
 						globalRendering->UpdateGLConfigs();
@@ -1049,7 +1049,7 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 						UpdateInterfaceGeometry();
 					}
 					{
-						ScopedOnceTimer timer("ActiveController::ResizeEvent");
+						SCOPED_ONCE_TIMER("ActiveController::ResizeEvent");
 
 						activeController->ResizeEvent();
 						mouseInput->InstallWndCallback();
@@ -1067,12 +1067,12 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 					globalRendering->active = true;
 
 					if (ISound::IsInitialized()) {
-						ScopedOnceTimer timer("Sound::Iconified");
+						SCOPED_ONCE_TIMER("Sound::Iconified");
 						sound->Iconified(false);
 					}
 
 					if (globalRendering->fullScreen) {
-						ScopedOnceTimer timer("FBO::GLContextReinit");
+						SCOPED_ONCE_TIMER("FBO::GLContextReinit");
 						FBO::GLContextReinit();
 					}
 
@@ -1087,12 +1087,12 @@ bool SpringApp::MainEventHandler(const SDL_Event& event)
 					globalRendering->active = false;
 
 					if (ISound::IsInitialized()) {
-						ScopedOnceTimer timer("Sound::Iconified");
+						SCOPED_ONCE_TIMER("Sound::Iconified");
 						sound->Iconified(true);
 					}
 
 					if (globalRendering->fullScreen) {
-						ScopedOnceTimer timer("FBO::GLContextLost");
+						SCOPED_ONCE_TIMER("FBO::GLContextLost");
 						FBO::GLContextLost();
 					}
 

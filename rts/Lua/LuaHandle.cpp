@@ -50,6 +50,8 @@
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyLua.hpp>
 
 #include <string>
 
@@ -140,6 +142,9 @@ CLuaHandle::CLuaHandle(const string& _name, int _order, bool _userMode, bool _sy
 
 	// prevent lua from calling c's exit()
 	lua_atpanic(L, handlepanic);
+
+	// register tracy functions in global scope
+	tracy::LuaRegister(L);
 }
 
 
@@ -475,12 +480,13 @@ bool CLuaHandle::RunCallInTraceback(lua_State* L, const LuaHashString& hs, int i
  *
  * @function LoadCode
  */
-bool CLuaHandle::LoadCode(lua_State* L, const string& code, const string& debug)
+bool CLuaHandle::LoadCode(lua_State* L, std::string code, const string& debug)
 {
 	lua_settop(L, 0);
 
 	const LuaUtils::ScopedDebugTraceBack traceBack(L);
 
+	tracy::LuaRemove(code.data());
 	const int error = luaL_loadbuffer(L, code.c_str(), code.size(), debug.c_str());
 
 	if (error != 0) {

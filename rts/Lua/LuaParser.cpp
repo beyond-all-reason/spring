@@ -27,6 +27,9 @@
 #include "System/ScopedFPUSettings.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyLua.hpp>
+
 LuaParser* GetLuaParser(lua_State* L) {
 	assert(GetLuaContextData(L)->parser != nullptr);
 	return GetLuaContextData(L)->parser;
@@ -233,6 +236,7 @@ bool LuaParser::Execute()
 	char errorBuf[4096] = {0};
 	int errorNum = 0;
 
+	tracy::LuaRemove(code.data());
 	if ((errorNum = luaL_loadbuffer(L, code.c_str(), code.size(), codeLabel.c_str())) != 0) {
 		SNPRINTF(errorBuf, sizeof(errorBuf), "[loadbuf] error %d (\"%s\") in %s", errorNum, lua_tostring(L, -1), codeLabel.c_str());
 		LUA_CLOSE(&L);
@@ -637,6 +641,7 @@ int LuaParser::Include(lua_State* L)
  		lua_error(L);
 	}
 
+	tracy::LuaRemove(code.data());
 	int error = luaL_loadbuffer(L, code.c_str(), code.size(), filename.c_str());
 	if (error != 0) {
 		char buf[1024];

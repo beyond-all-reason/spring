@@ -31,6 +31,8 @@
 #include "System/Sound/ISoundChannels.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED_POOL(CWeapon, CObject, , weaponMemPool.allocMem, weaponMemPool.freeMem)
 CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(owner),
@@ -284,6 +286,7 @@ float CWeapon::GetPredictedImpactTime(float3 p) const
 
 void CWeapon::Update()
 {
+	ZoneScoped;
 	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
 	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
 	float3 newErrorVector = (errorVector + errorVectorAdd);
@@ -323,6 +326,7 @@ void CWeapon::Update()
 
 void CWeapon::UpdateAim()
 {
+	ZoneScoped;
 	if (!HaveTarget())
 		return;
 
@@ -423,6 +427,7 @@ bool CWeapon::CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRe
 
 void CWeapon::UpdateFire()
 {
+	ZoneScoped;
 	if (!CanFire(false, false, false))
 		return;
 
@@ -471,6 +476,7 @@ void CWeapon::UpdateFire()
 
 bool CWeapon::UpdateStockpile()
 {
+	ZoneScoped;
 	if (!weaponDef->stockpile)
 		return true;
 
@@ -496,6 +502,7 @@ bool CWeapon::UpdateStockpile()
 
 void CWeapon::UpdateSalvo()
 {
+	ZoneScoped;
 	if (!salvoLeft || nextSalvo > gs->frameNum)
 		return;
 
@@ -529,6 +536,7 @@ void CWeapon::UpdateSalvo()
 
 bool CWeapon::Attack(const SWeaponTarget& newTarget)
 {
+	ZoneScoped;
 	if (newTarget == currentTarget)
 		return true;
 

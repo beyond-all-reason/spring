@@ -63,19 +63,19 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 		Channels::UserInterface = new (audioChannelMem[4]) AudioChannel();
 
 		if (!reload) {
-			ScopedOnceTimer timer("ISound::Init::New");
+			SCOPED_ONCE_TIMER("ISound::Init::New");
 			assert(singleton == nullptr);
 			singleton = new CSound();
 		}
 		{
-			ScopedOnceTimer timer("ISound::Init::Dev");
+			SCOPED_ONCE_TIMER("ISound::Init::Dev");
 
 			// sound device is initialized in a thread, must wait
 			// for it to finish (otherwise LoadSoundDefs can fail)
 			singleton->Init();
 
 			while (!singleton->CanLoadSoundDefs()) {
-				LOG("[ISound::%s] spawning sound-thread (%.1fms)", __func__, (timer.GetDuration()).toMilliSecsf());
+				LOG("[ISound::%s] spawning sound-thread (%.1fms)", __func__, (__timer.GetDuration()).toMilliSecsf());
 
 				if (singleton->SoundThreadQuit()) {
 					// no device or context found, fallback

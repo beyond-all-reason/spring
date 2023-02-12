@@ -63,7 +63,7 @@ ScopedTimer::~ScopedTimer()
 	assert(iter->second > 0);
 
 	if (--(iter->second) == 0) {
-		profiler.AddTime(nameHash, startTime, GetDuration(), autoShowGraph, specialTimer, false);
+		CTimeProfiler::GetInstance().AddTime(nameHash, startTime, GetDuration(), autoShowGraph, specialTimer, false);
 	}
 }
 
@@ -107,7 +107,7 @@ ScopedMtTimer::ScopedMtTimer(unsigned _nameHash, bool _autoShowGraph)
 
 ScopedMtTimer::~ScopedMtTimer()
 {
-	profiler.AddTime(nameHash, startTime, GetDuration(), autoShowGraph, false, true);
+	CTimeProfiler::GetInstance().AddTime(nameHash, startTime, GetDuration(), autoShowGraph, false, true);
 }
 
 

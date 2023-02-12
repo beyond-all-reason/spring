@@ -12,7 +12,7 @@ set(noSoundSources
 
 add_library(no-sound STATIC EXCLUDE_FROM_ALL ${noSoundSources})
 set_target_properties(no-sound PROPERTIES COMPILE_FLAGS "-DNO_SOUND")
-
+target_link_libraries(no-sound Tracy::TracyClient)
 
 # Define default sound implementation
 if    (NO_SOUND)
@@ -56,4 +56,5 @@ if    (NOT NO_SOUND)
 	add_library(sound STATIC EXCLUDE_FROM_ALL ${soundSources})
 	target_link_libraries(sound ${VORBISFILE_LIBRARY} ${VORBIS_LIBRARY} ${OGG_LIBRARY})
 	target_link_libraries(sound ${OPENAL_LIBRARY})
+	target_link_libraries(sound Tracy::TracyClient)
 endif (NOT NO_SOUND)

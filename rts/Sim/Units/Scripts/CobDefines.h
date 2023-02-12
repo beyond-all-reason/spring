@@ -105,8 +105,8 @@
 #define WEAPON_SPRAY             128 // get (with fake set)
 #define WEAPON_RANGE             129 // get (with fake set)
 #define WEAPON_PROJECTILE_SPEED  130 // get (with fake set)
-#define MIN                      131 // get
-#define MAX                      132 // get
+#define COB_MIN                  131 // get
+#define COB_MAX                  132 // get
 #define ABS                      133 // get
 #define GAME_FRAME               134 // get
 #define KSIN                     135 // get (kiloSine    : 1024*sin(x))

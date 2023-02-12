@@ -8,6 +8,8 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(CCobThread, )
 
 CR_REG_METADATA(CCobThread, (
@@ -383,6 +385,8 @@ bool CCobThread::Tick()
 
 	if (IsDead())
 		return false;
+
+	ZoneScoped;
 
 	state = Run;
 

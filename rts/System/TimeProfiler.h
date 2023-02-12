@@ -15,17 +15,20 @@
 #include "System/StringHash.h"
 #include "System/UnorderedMap.hpp"
 
+#include <tracy/Tracy.hpp>
+
 // disable these for minimal profiling; all special
 // timers contribute even when profiler is disabled
 // NB: names are assumed to be compile-time literals
-#define SCOPED_TIMER(      name)  static TimerNameRegistrar __tnr(name); ScopedTimer __scopedTimer(hashString(name));
-#define SCOPED_TIMER_NOREG(name)                                         ScopedTimer __scopedTimer(hashString(name));
+#define SCOPED_TIMER(      name)  ZoneScopedNC(name, tracy::Color::Goldenrod); static TimerNameRegistrar __tnr(name); ScopedTimer __scopedTimer(hashString(name));
+#define SCOPED_TIMER_NOREG(name)  ZoneScopedNC(name, tracy::Color::Goldenrod);                                        ScopedTimer __scopedTimer(hashString(name));
 
 #define SCOPED_SPECIAL_TIMER(      name)  static TimerNameRegistrar __stnr(name); ScopedTimer __scopedTimer(hashString(name), false, true);
 #define SCOPED_SPECIAL_TIMER_NOREG(name)                                          ScopedTimer __scopedTimer(hashString(name), false, true);
 
 #define SCOPED_MT_TIMER(name)  ScopedMtTimer __scopedTimer(hashString(name));
 
+#define SCOPED_ONCE_TIMER(name) ZoneScopedNC(name, tracy::Color::Purple); ScopedOnceTimer __timer(name);
 
 class BasicTimer : public spring::noncopyable
 {
@@ -225,7 +228,5 @@ public:
 		CTimeProfiler::RegisterTimer(timerName);
 	}
 };
-
-#define profiler (CTimeProfiler::GetInstance())
 
 #endif // TIME_PROFILER_H

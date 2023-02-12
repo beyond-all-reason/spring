@@ -16,7 +16,6 @@
 #include "System/creg/STL_Map.h"
 #include "System/Cpp11Compat.hpp"
 
-
 class CCobThread;
 class CCobInstance;
 class CCobFile;
@@ -79,32 +78,13 @@ public:
 		return &(it->second);
 	}
 
-	bool RemoveThread(int threadID) {
-		const auto it = threadInstances.find(threadID);
-
-		if (it != threadInstances.end()) {
-			threadInstances.erase(it);
-			return true;
-		}
-
-		return false;
-	}
-
+	bool RemoveThread(int threadID);
 	int AddThread(CCobThread&& thread);
 	int GenThreadID() { return (threadCounter++); }
 	int GetCurrentTime() const { return currentTime; }
 
 	void QueueAddThread(CCobThread&& thread) { tickAddedThreads.emplace_back(std::move(thread)); }
-	void AddQueuedThreads() {
-		// move new threads spawned by START into threadInstances;
-		// their ID's will already have been scheduled into either
-		// waitingThreadIDs or sleepingThreadIDs
-		for (CCobThread& t: tickAddedThreads) {
-			AddThread(std::move(t));
-		}
-
-		tickAddedThreads.clear();
-	}
+	void AddQueuedThreads();
 
 	void ScheduleThread(const CCobThread* thread);
 	void SanityCheckThreads(const CCobInstance* owner);
@@ -113,21 +93,7 @@ private:
 	void TickThread(CCobThread* thread);
 
 	void WakeSleepingThreads();
-	void TickRunningThreads() {
-		// advance all currently running threads
-		for (const int threadID: runningThreadIDs) {
-			TickThread(GetThread(threadID));
-		}
-
-		// a thread can never go from running->running, so clear the list
-		// note: if preemption was to be added, this would no longer hold
-		// however, TA scripts can not run preemptively anyway since there
-		// aren't any synchronization methods available
-		runningThreadIDs.clear();
-
-		// prepare threads that will run next frame
-		std::swap(runningThreadIDs, waitingThreadIDs);
-	}
+	void TickRunningThreads();
 
 private:
 	// registry of every thread across all script instances

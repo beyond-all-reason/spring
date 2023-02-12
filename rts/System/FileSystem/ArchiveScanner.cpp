@@ -459,7 +459,7 @@ void CArchiveScanner::ScanAllDirs()
 
 	// ArchiveCache has been parsed at this point --> archiveInfos is populated
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	ScopedOnceTimer foo("CArchiveScanner::ScanAllDirs");
+	SCOPED_ONCE_TIMER("CArchiveScanner::ScanAllDirs");
 #endif
 
 	ScanDirs(scanDirs);

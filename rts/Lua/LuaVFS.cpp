@@ -21,6 +21,8 @@
 #include "../tools/pr-downloader/src/pr-downloader.h"
 #include "fmt/format.h"
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyLua.hpp>
 
 /******************************************************************************
  * Virtual File System
@@ -168,6 +170,7 @@ int LuaVFS::Include(lua_State* L, bool synced)
  		lua_error(L);
 	}
 
+	tracy::LuaRemove(fileData.data());
 	if ((luaError = luaL_loadbuffer(L, fileData.c_str(), fileData.size(), fileName.c_str())) != 0) {
 		const auto buf = fmt::format("[LuaVFS::{}(synced={})][loadbuf] file={} error={} ({}) cenv={} vfsmode={}", __func__, synced, fileName, luaError, lua_tostring(L, -1), hasCustomEnv, mode);
 		lua_pushlstring(L, buf.c_str(), buf.size());

@@ -65,7 +65,7 @@ void ProfileDrawer::SetEnabled(bool enable)
 	instance = new ProfileDrawer();
 
 	// reset peak indicators each time the drawer is restarted
-	profiler.ResetPeaks();
+	CTimeProfiler::GetInstance().ResetPeaks();
 }
 
 
@@ -188,6 +188,7 @@ static void DrawTimeSlices(
 
 static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	auto& profiler = CTimeProfiler::GetInstance();
 	constexpr SColor    barColor = SColor{0.0f, 0.0f, 0.0f, 0.5f};
 	constexpr SColor feederColor = SColor{1.0f, 0.0f, 0.0f, 1.0f};
 
@@ -316,6 +317,7 @@ static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	auto& profiler = CTimeProfiler::GetInstance();
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// this locks a mutex, so don't call it every frame
@@ -585,6 +587,7 @@ void ProfileDrawer::DrawScreen()
 
 bool ProfileDrawer::MousePress(int x, int y, int button)
 {
+	auto& profiler = CTimeProfiler::GetInstance();
 	if (!IsAbove(x, y))
 		return false;
 
@@ -611,7 +614,7 @@ bool ProfileDrawer::IsAbove(int x, int y)
 	const float my = CInputReceiver::MouseY(y);
 
 	// check if a Timer selection box was hit
-	return (mx >= MIN_X_COOR && mx <= MAX_X_COOR && my >= (MIN_Y_COOR - profiler.GetNumSortedProfiles() * LINE_HEIGHT) && my <= MIN_Y_COOR);
+	return (mx >= MIN_X_COOR && mx <= MAX_X_COOR && my >= (MIN_Y_COOR - CTimeProfiler::GetInstance().GetNumSortedProfiles() * LINE_HEIGHT) && my <= MIN_Y_COOR);
 }
 
 

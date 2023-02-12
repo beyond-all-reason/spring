@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <common/TracyColor.hpp>
 #include <cstring>
 
 #include "ExternalAI/SkirmishAIHandler.h"
@@ -17,6 +18,8 @@
 	#include "System/Sync/SyncChecker.h"
 #endif
 
+const char* const tracingSpeedFactor = "SpeedFactor";
+const char* const tracingWantedSpeedFactor = "WantedSpeedFactor";
 
 /**
  * @brief global synced
@@ -66,9 +69,13 @@ void CGlobalSynced::ResetState() {
 	// reset checksum
 	CSyncChecker::NewFrame();
 #endif
+	TracyPlotConfig(tracingSpeedFactor, tracy::PlotFormatType::Number, true, false, tracy::Color::Aqua);
+	TracyPlotConfig(tracingWantedSpeedFactor, tracy::PlotFormatType::Number, true, false, tracy::Color::Aqua);
 
 	speedFactor       = 1.0f;
+	TracyPlot(tracingSpeedFactor, speedFactor);
 	wantedSpeedFactor = 1.0f;
+	TracyPlot(tracingWantedSpeedFactor, wantedSpeedFactor);
 
 	paused          = false;
 	cheatEnabled    = false;

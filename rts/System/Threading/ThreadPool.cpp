@@ -573,7 +573,7 @@ void SetMaximumThreadCount()
 		//   exists before any thread creates a timer that accesses
 		//   it on destruction
 		#ifndef UNIT_TEST
-		profiler.ResetState();
+		CTimeProfiler::GetInstance().ResetState();
 		#endif
 	}
 

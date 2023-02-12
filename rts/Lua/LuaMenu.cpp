@@ -56,7 +56,7 @@ CLuaMenu::CLuaMenu()
 
 	const bool luaSocketEnabled = configHandler->GetBool("LuaSocketEnabled");
 	const std::string file = "LuaMenu/main.lua";
-	const std::string code = LoadFile(file);
+	std::string code = LoadFile(file);
 
 	LOG("LuaMenu Entry Point: \"%s\"", file.c_str());
 	//LOG("LuaSocket Enabled: %s", (luaSocketEnabled ? "yes": "no" ));
@@ -130,7 +130,7 @@ CLuaMenu::CLuaMenu()
 
 	lua_settop(L, 0);
 	// note: this also runs the Initialize callin
-	if (!LoadCode(L, code, file)) {
+	if (!LoadCode(L, std::move(code), file)) {
 		KillLua();
 		return;
 	}
@@ -167,7 +167,7 @@ void CLuaMenu::InitLuaSocket(lua_State* L) {
 	LUA_OPEN_LIB(L, luaopen_socket_core);
 
 	if (f.LoadStringData(code)) {
-		LoadCode(L, code, filename);
+		LoadCode(L, std::move(code), filename);
 	} else {
 		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
 	}

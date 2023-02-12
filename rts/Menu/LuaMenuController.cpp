@@ -13,6 +13,8 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(std::string, DefaultLuaMenu).defaultValue("").description("Sets the default menu to be used when spring is started.");
 
 CLuaMenuController* luaMenuController = nullptr;
@@ -89,6 +91,8 @@ void CLuaMenuController::ResizeEvent()
 
 bool CLuaMenuController::Update()
 {
+	ZoneScoped;
+
 	// we should not become the active controller unless this holds (see ::Activate)
 	assert(luaMenu != nullptr);
 

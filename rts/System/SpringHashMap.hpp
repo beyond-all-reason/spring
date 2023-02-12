@@ -223,8 +223,9 @@ public:
 				_pairs[bucket].~PairT();
 			}
 		}
-		free(_states);
-		free(_pairs);
+
+		::operator delete(_states);
+		::operator delete(_pairs);
 	}
 
 	void swap(HashMap& other)
@@ -482,14 +483,8 @@ public:
 		size_t num_buckets = 4;
 		while (num_buckets < required_buckets) { num_buckets *= 2; }
 
-		auto new_states = (State*)malloc(num_buckets * sizeof(State));
-		auto new_pairs  = (PairT*)malloc(num_buckets * sizeof(PairT));
-
-		if (!new_states || !new_pairs) {
-			free(new_states);
-			free(new_pairs);
-			throw std::bad_alloc();
-		}
+		auto new_states = reinterpret_cast<State*>(::operator new(num_buckets * sizeof(State)));
+		auto new_pairs  = reinterpret_cast<PairT*>(::operator new(num_buckets * sizeof(PairT)));
 
 		//auto old_num_filled  = _num_filled;
 		auto old_num_buckets = _num_buckets;
@@ -523,8 +518,8 @@ public:
 
 		//DCHECK_EQ_F(old_num_filled, _num_filled);
 
-		free(old_states);
-		free(old_pairs);
+		::operator delete(old_states);
+		::operator delete(old_pairs);
 	}
 
 private:

@@ -184,8 +184,8 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 	PUSH_COB(WEAPON_SPRAY);
 	PUSH_COB(WEAPON_RANGE);
 	PUSH_COB(WEAPON_PROJECTILE_SPEED);
-	PUSH_COB(MIN);
-	PUSH_COB(MAX);
+	LuaPushNamedNumber(L, "MIN", COB_MIN);
+	LuaPushNamedNumber(L, "MAX", COB_MAX);
 	PUSH_COB(ABS);
 	PUSH_COB(GAME_FRAME);
 

@@ -143,13 +143,9 @@ public:
 	void Killed() override;
 	void WindChanged(float heading, float speed) override;
 	void ExtractionRateChanged(float speed) override;
-	void WorldRockUnit(const float3& rockDir) override {
-		RockUnit(unit->GetObjectSpaceVec(rockDir) * 500.0f);
-	}
+	void WorldRockUnit(const float3& rockDir) override;
 	void RockUnit(const float3& rockDir) override;
-	void WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage) override {
-		HitByWeapon(unit->GetObjectSpaceVec(hitDir) * 500.0f, weaponDefId, inoutDamage);
-	}
+	void WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage) override;
 	void HitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage) override;
 	void SetSFXOccupy(int curTerrainType) override;
 	void QueryLandingPads(std::vector<int>& out_pieces) override;

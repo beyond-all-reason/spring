@@ -54,6 +54,8 @@
 	#include "System/Sync/SyncDebugger.h"
 #endif
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(bool, DemoFromDemo).defaultValue(false);
 CONFIG(bool, LoadBadSaves).defaultValue(false);
@@ -193,6 +195,7 @@ bool CPreGame::Draw()
 
 bool CPreGame::Update()
 {
+	ZoneScoped;
 	ENTER_SYNCED_CODE();
 	good_fpu_control_registers("CPreGame::Update");
 	UpdateClientNet();
@@ -233,7 +236,7 @@ void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 void CPreGame::StartServer(const std::string& setupscript)
 {
 	assert(gameServer == nullptr);
-	ScopedOnceTimer timer("PreGame::StartServer");
+	SCOPED_ONCE_TIMER("PreGame::StartServer");
 
 	std::shared_ptr<GameData> startGameData(new GameData());
 	std::shared_ptr<CGameSetup> startGameSetup(new CGameSetup());
@@ -475,7 +478,7 @@ void CPreGame::StartServerForDemo(const std::string& demoName)
 
 void CPreGame::ReadDataFromDemo(const std::string& demoName)
 {
-	ScopedOnceTimer timer("PreGame::ReadDataFromDemo");
+	SCOPED_ONCE_TIMER("PreGame::ReadDataFromDemo");
 	assert(gameServer == nullptr);
 	LOG("[PreGame::%s] pre-scanning demo file \"%s\" for game data...", __func__, demoName.c_str());
 	CDemoReader scanner(demoName, 0.0f);
@@ -498,7 +501,7 @@ void CPreGame::ReadDataFromDemo(const std::string& demoName)
 
 void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet)
 {
-	ScopedOnceTimer timer("PreGame::GameDataReceived");
+	SCOPED_ONCE_TIMER("PreGame::GameDataReceived");
 
 	try {
 		// in demos, gameData is first new'ed in ReadDataFromDemo()

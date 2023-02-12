@@ -18,6 +18,9 @@ enum {
 	GODMODE_MAX_VAL = GODMODE_ATC_BIT | GODMODE_ETC_BIT, // full team control
 };
 
+extern const char* const tracingSpeedFactor;
+extern const char* const tracingWantedSpeedFactor;
+
 /**
  * @brief Global synced data
  *
