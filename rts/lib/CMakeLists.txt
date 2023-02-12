@@ -71,3 +71,6 @@ if    (NOT HEADLESS_SYSTEM)
 		ADD_SUBDIRECTORY(squish)
 	endif (USE_LIBSQUISH)
 endif (NOT HEADLESS_SYSTEM)
+
+option(TRACY_ENABLE "Enable tracy profiling" OFF)
+add_subdirectory(tracy)

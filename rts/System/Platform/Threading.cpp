@@ -27,7 +27,7 @@
 	#include "Linux/ThreadSupport.h"
 #endif
 
-
+#include <tracy/Tracy.hpp>
 
 namespace Threading {
 #ifndef _WIN32
@@ -356,6 +356,9 @@ namespace Threading {
 
 	void SetThreadName(const std::string& newname)
 	{
+	#if defined(TRACY_ENABLE)
+		tracy::SetThreadName(newname.c_str());
+	#endif
 	#if defined(__USE_GNU) && !defined(_WIN32)
 		//alternative: pthread_setname_np(pthread_self(), newname.c_str());
 		prctl(PR_SET_NAME, newname.c_str(), 0, 0, 0);
