@@ -261,8 +261,13 @@ private:
 
 	unsigned int nextPathID;
 
+	std::int32_t frameNumToRefreshPathStateWorkloadRatio = 0;
+	std::uint32_t pathStateWorkloadRatio = 0;
+
 	int pathFinderGroups = 0;
 
+	PathingState* highPriorityResPS;
+	PathingState* lowPriorityResPS;
 	CPathEstimator* medResPEs;
 	CPathEstimator* lowResPEs;
 	CPathFinder* maxResPFs;

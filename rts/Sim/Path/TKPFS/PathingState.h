@@ -141,6 +141,8 @@ private:
 	bool ReadFile(const std::string& peFileName, const std::string& mapFileName);
 	bool WriteFile(const std::string& peFileName, const std::string& mapFileName);
 
+	std::size_t getCountOfUpdates() const { return updatedBlocks.size(); }
+
 private:
 	friend class TKPFS::CPathEstimator;
 
