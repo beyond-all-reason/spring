@@ -335,7 +335,7 @@ void CGame::AddTimedJobs()
 		JobDispatcher::Job j;
 
 		j.f = []() -> bool {
-			profiler.Update();
+			CTimeProfiler::GetInstance().Update();
 			return true;
 		};
 
@@ -1792,7 +1792,7 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 
 	CEndGameBox::Create(winningAllyTeams);
 #ifdef    HEADLESS
-	profiler.PrintProfilingInfo();
+	CTimeProfiler::GetInstance().PrintProfilingInfo();
 #endif // HEADLESS
 
 	CDemoRecorder* record = clientNet->GetDemoRecorder();

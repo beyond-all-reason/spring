@@ -1392,6 +1392,7 @@ public:
 	DebugActionExecutor() : IUnsyncedActionExecutor("Debug", "Enable/Disable debug rendering mode") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto& profiler = CTimeProfiler::GetInstance();
 		bool drawDebug = false;
 		bool draw4Real = false;
 		bool changeSorting = false;
@@ -3553,7 +3554,7 @@ public:
 				sound->PrintDebugInfo();
 			} break;
 			case hashString("profiling"): {
-				profiler.PrintProfilingInfo();
+				CTimeProfiler::GetInstance().PrintProfilingInfo();
 			} break;
 			case hashString("cmddescrs"): {
 				commandDescriptionCache.Dump(true);

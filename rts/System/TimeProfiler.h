@@ -226,6 +226,4 @@ public:
 	}
 };
 
-#define profiler (CTimeProfiler::GetInstance())
-
 #endif // TIME_PROFILER_H

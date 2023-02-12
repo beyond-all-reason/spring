@@ -773,7 +773,7 @@ void SpringApp::Reload(const std::string script)
 	// will be reconstructed from given script
 	gameSetup->ResetState();
 
-	profiler.ResetState();
+	CTimeProfiler::GetInstance().ResetState();
 	modInfo.ResetState();
 
 	LOG("[SpringApp::%s][11]", __func__);

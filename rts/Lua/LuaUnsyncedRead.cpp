@@ -481,7 +481,7 @@ int LuaUnsyncedRead::GetMenuName(lua_State* L)
  */
 int LuaUnsyncedRead::GetProfilerTimeRecord(lua_State* L)
 {
-	const CTimeProfiler::TimeRecord& record = profiler.GetTimeRecord(lua_tostring(L, 1));
+	const CTimeProfiler::TimeRecord& record = CTimeProfiler::GetInstance().GetTimeRecord(lua_tostring(L, 1));
 
 	int numRet = 5;
 	lua_pushnumber(L, record.total.toMilliSecsf());
@@ -510,7 +510,7 @@ int LuaUnsyncedRead::GetProfilerTimeRecord(lua_State* L)
  */
 int LuaUnsyncedRead::GetProfilerRecordNames(lua_State* L)
 {
-	const auto& sortedProfiles = profiler.GetSortedProfiles();
+	const auto& sortedProfiles = CTimeProfiler::GetInstance().GetSortedProfiles();
 
 	lua_createtable(L, sortedProfiles.size(), 0);
 

@@ -69,6 +69,7 @@ void CGame::AddTraffic(int playerID, int packetCode, int length)
 
 void CGame::SendClientProcUsage()
 {
+	auto& profiler = CTimeProfiler::GetInstance();
 	static spring_time lastProcUsageUpdateTime = spring_gettime();
 
 	if ((spring_gettime() - lastProcUsageUpdateTime).toMilliSecsf() >= 1000.0f) {
