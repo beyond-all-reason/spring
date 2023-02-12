@@ -63,7 +63,11 @@ static constexpr unsigned int PATHDIR_DOWN_MASK       = 0x40; // -z (DOWN *TO* U
 static constexpr unsigned int PATHDIR_LEFT_DOWN_MASK  = 0x80; // +x-z
 static constexpr unsigned int PATH_DIRECTIONS_MASK    = 0xff;
 
-// This mask covers the 4 directions used by path block updates.
+// see GetBlockVertexOffset(); costs are bi-directional and only
+// calculated for *half* the outgoing edges (while costs for the
+// other four directions are stored at the adjacent vertices)
+// This mask covers the four outgoing edges any given block will
+// update during block vertex cost calculations.
 static constexpr unsigned int PATH_DIRECTIONS_HALF_MASK = 0x0f;
 
 
