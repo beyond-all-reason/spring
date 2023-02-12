@@ -36,6 +36,7 @@ remote_theme: just-the-docs/just-the-docs
 plugins:
   - jekyll-feed
   - jekyll-github-metadata
+  - jekyll-glossary_tooltip
   - jekyll-remote-theme
   - jekyll-sitemap
   - jekyll-seo-tag
