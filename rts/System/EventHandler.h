@@ -265,6 +265,7 @@ class CEventHandler
 		void DrawPreDecals();
 		void DrawWorldPreParticles();
 		void DrawWorldShadow();
+		void DrawShadowPassTransparent();
 		void DrawWorldReflection();
 		void DrawWorldRefraction();
 		void DrawGroundPreForward();

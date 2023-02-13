@@ -2392,6 +2392,11 @@ DRAW_CALLIN(DrawPreDecals)
  */
 DRAW_CALLIN(DrawWorldPreParticles)
 
+/*** @function DrawShadowPassTransparent
+ *
+ */
+DRAW_CALLIN(DrawShadowPassTransparent)
+
 /*** @function DrawWorldShadow
  *
  */
