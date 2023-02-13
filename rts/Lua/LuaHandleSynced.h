@@ -33,7 +33,7 @@ class CUnsyncedLuaHandle : public CLuaHandle
 		CUnsyncedLuaHandle(CSplitLuaHandle* base, const std::string& name, int order);
 		virtual ~CUnsyncedLuaHandle();
 
-		bool Init(const std::string& code, const std::string& file);
+		bool Init(std::string code, const std::string& file);
 
 		static CUnsyncedLuaHandle* GetUnsyncedHandle(lua_State* L) {
 			assert(dynamic_cast<CUnsyncedLuaHandle*>(CLuaHandle::GetHandle(L)) != nullptr);
@@ -123,7 +123,7 @@ class CSyncedLuaHandle : public CLuaHandle
 		CSyncedLuaHandle(CSplitLuaHandle* base, const std::string& name, int order);
 		virtual ~CSyncedLuaHandle();
 
-		bool Init(const std::string& code, const std::string& file);
+		bool Init(std::string code, const std::string& file);
 
 		static CSyncedLuaHandle* GetSyncedHandle(lua_State* L) {
 			assert(dynamic_cast<CSyncedLuaHandle*>(CLuaHandle::GetHandle(L)));

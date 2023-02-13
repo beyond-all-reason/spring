@@ -480,12 +480,13 @@ bool CLuaHandle::RunCallInTraceback(lua_State* L, const LuaHashString& hs, int i
  *
  * @function LoadCode
  */
-bool CLuaHandle::LoadCode(lua_State* L, const string& code, const string& debug)
+bool CLuaHandle::LoadCode(lua_State* L, std::string code, const string& debug)
 {
 	lua_settop(L, 0);
 
 	const LuaUtils::ScopedDebugTraceBack traceBack(L);
 
+	tracy::LuaRemove(code.data());
 	const int error = luaL_loadbuffer(L, code.c_str(), code.size(), debug.c_str());
 
 	if (error != 0) {

@@ -86,7 +86,7 @@ CLuaUI::CLuaUI()
 
 	const std::string mode = (CLuaHandle::GetDevMode()) ? SPRING_VFS_RAW_FIRST : SPRING_VFS_MOD;
 	const std::string file = (CFileHandler::FileExists("luaui.lua", mode) ? "luaui.lua": "LuaUI/main.lua");
-	const std::string code = LoadFile(file, mode);
+	std::string code = LoadFile(file, mode);
 
 	LOG("LuaUI Entry Point: \"%s\"", file.c_str());
 	LOG("LuaSocket Support: %s", (luaSocketEnabled? "enabled": "disabled"));
@@ -165,7 +165,7 @@ CLuaUI::CLuaUI()
 	}
 
 	lua_settop(L, 0);
-	if (!LoadCode(L, code, file)) {
+	if (!LoadCode(L, std::move(code), file)) {
 		KillLua();
 		return;
 	}
@@ -194,7 +194,7 @@ void CLuaUI::InitLuaSocket(lua_State* L) {
 	LUA_OPEN_LIB(L, luaopen_socket_core);
 
 	if (f.LoadStringData(code)) {
-		LoadCode(L, code, filename);
+		LoadCode(L, std::move(code), filename);
 	} else {
 		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
 	}

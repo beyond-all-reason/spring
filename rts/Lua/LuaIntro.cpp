@@ -53,7 +53,7 @@ CLuaIntro::CLuaIntro()
 		return;
 
 	const std::string file = "LuaIntro/main.lua";
-	const string code = LoadFile(file);
+	std::string code = LoadFile(file);
 
 	if (code.empty()) {
 		KillLua();
@@ -123,7 +123,7 @@ CLuaIntro::CLuaIntro()
 	RemoveSomeOpenGLFunctions(L);
 
 	lua_settop(L, 0);
-	if (!LoadCode(L, code, file)) {
+	if (!LoadCode(L, std::move(code), file)) {
 		KillLua();
 		return;
 	}
