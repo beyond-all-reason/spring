@@ -643,13 +643,14 @@ void PathingState::Update()
 	// determine how many blocks we should update
 	int blocksToUpdate = 0;
 	{
-		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<2)); // * numMoveDefs * modInfo.pfUpdateRate;
+		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<2)) * modInfo.pfUpdateRateScale;
 		const int MIN_BLOCKS_TO_UPDATE = 1;
 		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, MIN_BLOCKS_TO_UPDATE);
 
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;// * rateAdjust(progressiveUpdates);
+		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
 	
-		// LOG("[%d] blocksToUpdate=%d progressiveUpdates=%d", BLOCK_SIZE, blocksToUpdate, progressiveUpdates);
+		// LOG("[%d] blocksToUpdate=%d progressiveUpdates=%d [%f]"
+		// 		, BLOCK_SIZE, blocksToUpdate, progressiveUpdates, modInfo.pfUpdateRateScale);
 	}
 
 	//LOG("PathingState::Update blocksToUpdate %d", blocksToUpdate);
