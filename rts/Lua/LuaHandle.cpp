@@ -50,6 +50,8 @@
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyLua.hpp>
 
 #include <string>
 
@@ -140,6 +142,9 @@ CLuaHandle::CLuaHandle(const string& _name, int _order, bool _userMode, bool _sy
 
 	// prevent lua from calling c's exit()
 	lua_atpanic(L, handlepanic);
+
+	// register tracy functions in global scope
+	tracy::LuaRegister(L);
 }
 
 
