@@ -37,6 +37,7 @@
 #include <SDL_syswm.h>
 #include <SDL_rect.h>
 
+#include <tracy/Tracy.hpp>
 
 CONFIG(bool, DebugGL).defaultValue(false).description("Enables GL debug-context and output. (see GL_ARB_debug_output)");
 CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stacktrace when an OpenGL error occurs");
@@ -656,6 +657,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 		glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 
 		SDL_GL_SwapWindow(sdlWindow);
+		FrameMark;
 	}
 	// exclude debug from SCOPED_TIMER("Misc::SwapBuffers");
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());
