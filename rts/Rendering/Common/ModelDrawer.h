@@ -328,8 +328,8 @@ template<typename TDrawerData, typename TDrawer>
 template<bool legacy, LuaObjType lot>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawImpl(bool drawReflection, bool drawRefraction) const
 {
-	static const std::string methodName = std::string(className) + "::Draw";
-	SCOPED_TIMER(methodName.c_str());
+	constexpr static auto zone_name = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::Draw");
+	SCOPED_TIMER(zone_name.str);
 
 	if constexpr (legacy) {
 		glEnable(GL_ALPHA_TEST);
@@ -357,8 +357,8 @@ template<typename TDrawerData, typename TDrawer>
 template<LuaObjType lot>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const
 {
-	static const std::string methodName = std::string(className) + "::DrawOpaquePass";
-	SCOPED_TIMER(methodName.c_str());
+	constexpr static auto zone_name = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawOpaquePass");
+	SCOPED_TIMER(zone_name.str);
 
 	SetupOpaqueDrawing(deferredPass);
 
@@ -386,8 +386,8 @@ template<typename TDrawerData, typename TDrawer>
 template<LuaObjType lot>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawAlphaPassImpl(bool drawReflection, bool drawRefraction) const
 {
-	static const std::string methodName = std::string(className) + "::DrawAlphaPass";
-	SCOPED_TIMER(methodName.c_str());
+	constexpr static auto zone_name = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawAlphaPass");
+	SCOPED_TIMER(zone_name.str);
 
 	SetupAlphaDrawing(false);
 
@@ -415,8 +415,8 @@ template<typename TDrawerData, typename TDrawer>
 template<bool legacy, LuaObjType lot>
 inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 {
-	static const std::string methodName = std::string(className) + "::DrawShadowPass";
-	SCOPED_TIMER(methodName.c_str());
+	constexpr static auto zone_name = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawShadowPass");
+	SCOPED_TIMER(zone_name.str);
 
 	assert((CCameraHandler::GetActiveCamera())->GetCamType() == CCamera::CAMTYPE_SHADOW);
 

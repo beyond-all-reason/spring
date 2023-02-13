@@ -8,11 +8,22 @@
 // https://bitwizeshift.github.io/posts/2021/03/09/getting-an-unmangled-type-name-at-compile-time/
 
 namespace spring {
+	template <unsigned N>
+	struct CharN {
+		char str[N];
+	};
+
 	namespace impl {
 		template <std::size_t...Idxs>
-		constexpr auto substring_as_array(std::string_view str, std::index_sequence<Idxs...>)
+		constexpr auto substring_as_char_n(std::string_view str, std::index_sequence<Idxs...>) -> CharN<sizeof...(Idxs) + 1>
 		{
-			return std::array{ str[Idxs]..., '\0'};
+			constexpr unsigned N = sizeof...(Idxs);
+			CharN<N + 1> res = {};
+			res.str[N] = '\0';
+			for (unsigned i = 0; i < N; ++i) {
+				res.str[i] = str[i];
+			}
+			return res;
 		}
 
 		template <typename T>
@@ -47,9 +58,9 @@ namespace spring {
 			static_assert(begSp < name.size());
 
 			constexpr auto cleanName = name.substr(begSp); //remove "class "/"struct ", etc
-			return substring_as_array(cleanName, std::make_index_sequence<cleanName.size()>{});
+			return substring_as_char_n(cleanName, std::make_index_sequence<cleanName.size()>{});
 		#else
-			return substring_as_array(name, std::make_index_sequence<name.size()>{});
+			return substring_as_char_n(name, std::make_index_sequence<name.size()>{});
 		#endif
 		}
 
@@ -59,16 +70,36 @@ namespace spring {
 		};
 	}
 
+	template<unsigned ...Len>
+	constexpr auto Concat(const char (&...strings)[Len])
+	{
+		constexpr unsigned N = (... + Len) - sizeof...(Len);
+		CharN<N + 1> res = {};
+		res.str[N] = '\0';
+		unsigned i = 0;
+		for (const char* src : {strings...}) {
+			for (; *src != '\0'; src++) {
+				res.str[i++] = *src;
+			}
+		}
+		return res;
+	}
+
+	template <typename T>
+	constexpr auto TypeToCharN()
+	{
+		return impl::type_name_holder<T>::value;
+	}
+
 	template <typename T>
 	constexpr auto TypeToStr() -> std::string_view
 	{
-		constexpr auto& value = impl::type_name_holder<T>::value;
-		return std::string_view{ value.data(), value.size() };
+		return std::string_view{impl::type_name_holder<T>::value.str};
 	}
 
 	template <typename T>
 	constexpr auto TypeToCStr() -> const char*
 	{
-		return static_cast<const char*>(TypeToStr<T>().data());
+		return impl::type_name_holder<T>::value.str;
 	}
 }
