@@ -1131,9 +1131,9 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return weapon->Attack(SWeaponTarget(pos, userTarget)) ? 1 : 0;
 	} break;
 
-	case MIN:
+	case COB_MIN:
 		return std::min(p1, p2);
-	case MAX:
+	case COB_MAX:
 		return std::max(p1, p2);
 	case ABS:
 		return std::abs(p1);
