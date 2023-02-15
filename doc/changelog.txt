@@ -48,7 +48,7 @@ Fixes:
 
 -- BAR105 1544 ---------------------------------------------------
 
-BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
+BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
    To get back old behaviour, make sure to rebind them (remember "Any+", as in "Any+Alt")
 
@@ -76,6 +76,62 @@ BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
      return originalGetConfigInt(key, def) or 0
    end
 
+ ! paletted image files are no longer accepted. Convert your images not to be paletted.
+
+ ! hovercraft and ships brought out of water no longer forced to be upright.
+   To get back previous behaviour, put the `upright = true` tag in all unit defs
+   whose move def is of the hovercraft or ship type.
+
+ ! The return value from the UnitUnitCollision callin is now ignored
+   and there is only one event for each collision.
+   There is no way to get back the old behaviour for now,
+   but if someone needs it it could be arranged.
+
+ ! Rendering fonts now obeys GL color state. This means that sometimes text
+   will not be the same color as previously. To get back previous behaviour,
+   you might need to add `gl.Color` in front of `gl.Text` calls.
+
+ ! removed the following constants:
+     Platform.glSupport16bitDepthBuffer
+     Platform.glSupport24bitDepthBuffer
+     Platform.glSupport32bitDepthBuffer
+
+   To get back previous behaviour, replace with
+     Platform.glSupportDepthBufferBitDepth >= 16 -- or 24, or 32, respectively
+
+ ! removed LOD rendering (2D unit billboards when zoomed out far), including
+   the `/distdraw` command and the `UnitLodDist` springsettings entry
+
+ ! units with `useFootPrintCollisionVolume` but no `collisionVolumeScales` set
+   will now use the footprint volume (previously mistakenly used the model's sphere).
+   To keep the old hitvolume, set `useFootPrintCollisionVolume` to false for units
+   with no `collisionVolumeScales`. Assuming you apply `lowerkeys` to unit defs,
+   this can also be achieved by putting the following in unit defs post-processing:
+
+   for unitDefID, unitDef in pairs(UnitDefs) do
+     if not unitDef.collisionvolumescales then
+       unitDef.usefootprintcollisionvolume = nil
+     end
+   end
+
+ ! removed the `AdvSky` springsetting and the `/dynamicsky` command,
+   which made clouds move across the sky. You cannot easily get back
+   previous behaviour, though you can probably achieve something similar
+   by rendering moving clouds yourself.
+
+ ! tree feature defs `treetype0` through `treetype16` are now provided by the basecontent archive
+   instead of the engine. No known games ship their own basecontent and they would know what to do if so.
+
+ ! the `firestarter` weapon tag no longer capped at 10000 in defs (which
+   becomes 100 in Lua WeaponDefs after rescale), now uncapped. To get back
+   previous behaviour, put the following in weapon defs post-processing:
+
+   for weaponDefID, weaponDef in pairs(WeaponDefs) do
+     if weaponDef.firestarter then
+       weaponDef.firestarter = math.min(weaponDef.firestarter, 10000)
+     end
+   end
+
 Lua:
  - add `Spring.GiveOrderArrayToUnit(unitID, orderArray)`, a single-unitID version of `Spring.GiveOrderArrayToUnitArray`.
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
@@ -94,8 +150,6 @@ Lua:
  - Add Spring.GetKeyFromScanSymbol(scanSymbol) that receives a scancode and
    returns the users correspondent key in the current keyboard layout
  - allow empty argument for Spring.GetKeyBindings to return all keybindings
- - `firestarter` weapon tag no longer capped at 10000 in defs (which
-   becomes 100 in Lua after rescale). Now uncapped.
  - add modrule `reclaim.unitDrainHealth`, bool on whether reclaiming units drains health.
    To be used with the revert-to-nanoframe method (since the 'classic' method relies on health drain).
  - add Spring.AddUnitExperience(unitID, delta_xp). Can subtract, but the result cannot be negative.
