@@ -18,6 +18,8 @@
 #include "Sim/Units/UnitDef.h"
 #include "Net/Protocol/NetProtocol.h"
 
+#include <algorithm>
+
 static constexpr int CMDPARAM_MOVE_X = 0;
 static constexpr int CMDPARAM_MOVE_Y = 1;
 static constexpr int CMDPARAM_MOVE_Z = 2;
@@ -536,12 +538,11 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 	const std::vector<int>& netSelectedUnitIDs = selectedUnitsHandler.netSelected[playerNum];
 
 	const unsigned int targetsCount = targetUnitIDs.size();
-	const unsigned int selectedCount = netSelectedUnitIDs.size();
-	      unsigned int realCount = 0;
-
-	if (selectedCount == 0)
+	const unsigned int realCount = std::count_if(netSelectedUnitIDs.begin(), netSelectedUnitIDs.end(), [](int id) {
+		return unitHandler.GetUnit(id) != nullptr;
+	});
+	if (realCount == 0)
 		return ret;
-
 
 	Command attackCmd(CMD_ATTACK, cmd.GetOpts(), 0.0f);
 
@@ -583,12 +584,7 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 			continue;
 
 		midPos += (queueingCmd? LastQueuePosition(unit): float3(unit->midPos));
-
-		realCount++;
 	}
-
-	if (realCount == 0)
-		return ret;
 
 	midPos /= realCount;
 
