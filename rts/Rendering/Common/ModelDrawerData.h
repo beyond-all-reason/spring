@@ -58,7 +58,7 @@ protected:
 	void DelObject(const T* co, bool del);
 	void UpdateObject(const T* co, bool init);
 protected:
-	void UpdateCommon();
+	void UpdateCommon(T* o);
 	virtual void UpdateObjectDrawFlags(CSolidObject* o) const = 0;
 private:
 	void UpdateObjectSMMA(const T* o);
@@ -198,26 +198,14 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 }
 
 template<typename T>
-inline void CModelDrawerDataBase<T>::UpdateCommon()
+inline void CModelDrawerDataBase<T>::UpdateCommon(T* o)
 {
-	const auto updateBody = [this](int k) {
-		T* o = unsortedObjects[k];
-		o->previousDrawFlag = o->drawFlag;
-		UpdateObjectDrawFlags(o);
+	assert(o);
+	o->previousDrawFlag = o->drawFlag;
+	UpdateObjectDrawFlags(o);
 
-		if (o->alwaysUpdateMat || (o->drawFlag > DrawFlags::SO_NODRAW_FLAG && o->drawFlag < DrawFlags::SO_DRICON_FLAG))
-			this->UpdateObjectSMMA(o);
+	if (o->alwaysUpdateMat || (o->drawFlag > DrawFlags::SO_NODRAW_FLAG && o->drawFlag < DrawFlags::SO_DRICON_FLAG))
+		UpdateObjectSMMA(o);
 
-		this->UpdateObjectUniforms(o);
-	};
-
-	if (mtModelDrawer) {
-		for_mt_chunk(0, unsortedObjects.size(), [&updateBody](int k) {
-			updateBody(k);
-		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_SMMA);
-	}
-	else {
-		for (int k = 0; k < unsortedObjects.size(); ++k)
-			updateBody(k);
-	}
+	UpdateObjectUniforms(o);
 }

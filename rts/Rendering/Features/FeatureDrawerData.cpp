@@ -91,14 +91,15 @@ void CFeatureDrawerData::Update()
 		for_mt_chunk(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
 			UpdateDrawPos(f);
+			UpdateCommon(f);
 		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT);
 	}
 	else {
-		for (CFeature* f : unsortedObjects)
+		for (CFeature* f : unsortedObjects) {
 			UpdateDrawPos(f);
+			UpdateCommon(f);
+		}
 	}
-
-	UpdateCommon();
 }
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
