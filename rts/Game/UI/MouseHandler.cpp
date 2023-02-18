@@ -360,6 +360,9 @@ void CMouseHandler::MousePress(int x, int y, int button)
  */
 bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, float3& tr) const
 {
+	if (activeReceiver != nullptr)
+		return false;
+
 	if (gu->fpsMode)
 		return false;
 
@@ -555,9 +558,6 @@ void CMouseHandler::MouseWheel(float delta)
 void CMouseHandler::DrawSelectionBox() const
 {
 	float3 btLeft, btRight, tpLeft, tpRight;
-
-	if (activeReceiver != nullptr)
-		return;
 
 	if (!GetSelectionBoxVertices(btLeft, btRight, tpLeft, tpRight))
 		return;
