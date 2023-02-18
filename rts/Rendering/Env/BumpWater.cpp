@@ -267,6 +267,7 @@ void CBumpWater::InitResources(bool loadShader)
 			blurShader = shaderHandler->CreateProgramObject("[BumpWater]", "CoastBlurShader");
 			blurShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/BumpWaterCoastBlurVS.glsl", "", GL_VERTEX_SHADER));
 			blurShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/BumpWaterCoastBlurFS.glsl", "", GL_FRAGMENT_SHADER));
+			blurShader->BindAttribLocations<VA_TYPE_T4>();
 			blurShader->Link();
 
 			if (!blurShader->IsValid()) {
@@ -788,7 +789,7 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	glPopMatrix();
 
 	blurShader->Disable();
-	coastFBO.Detach(GL_COLOR_ATTACHMENT1_EXT);
+	coastFBO.Detach(GL_COLOR_ATTACHMENT0_EXT);
 	glPopAttrib();
 
 	// NB: not needed during init, but no reason to leave bound after ::Update

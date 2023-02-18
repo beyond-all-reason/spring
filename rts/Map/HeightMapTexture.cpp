@@ -44,9 +44,12 @@ void HeightMapTexture::Init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB,
+	constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
 		xSize, ySize, 0,
-		GL_LUMINANCE, GL_FLOAT, readMap->GetCornerHeightMapUnsynced());
+		GL_RED, GL_FLOAT, readMap->GetCornerHeightMapUnsynced());
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

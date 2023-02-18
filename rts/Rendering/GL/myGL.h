@@ -97,7 +97,7 @@ static constexpr  glFrustumFuncPtr  glFrustumFuncs[2] = {__spring_glFrustum_noCC
 void WorkaroundATIPointSizeBug();
 void SetTexGen(const float scaleX, const float scaleZ, const float offsetX, const float offsetZ);
 
-void glSaveTexture(const GLuint textureID, const char* filename);
+void glSaveTexture(const GLuint textureID, const char* filename, int level = 0);
 void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures);
 void glSpringTexStorage2D(const GLenum target, GLint levels, const GLint internalFormat, const GLsizei width, const GLsizei height);
 void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data);
