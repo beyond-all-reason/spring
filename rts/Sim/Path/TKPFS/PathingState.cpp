@@ -224,12 +224,18 @@ void PathingState::InitEstimator(const std::string& peFileName, const std::strin
 			loadscreen->SetLoadMessage(calcMsg);
 		}
 
+		// Mark block directions as dirty to ensure they get updated.
+		auto& nodeFlags = blockStates.nodeLinksObsoleteFlags;
+		std::for_each(nodeFlags.begin(), nodeFlags.end(), [](std::uint8_t& f){ f = PATH_DIRECTIONS_HALF_MASK; });
+
 		// note: only really needed if numExtraThreads > 0
 		spring::barrier pathBarrier(numThreads);
 
 		for_mt(0, numThreads, [this, &pathBarrier](int i) {
 			CalcOffsetsAndPathCosts(ThreadPool::GetThreadNum(), &pathBarrier);
 		});
+
+		std::for_each(nodeFlags.begin(), nodeFlags.end(), [](std::uint8_t& f){ f = 0; });
 
 		sprintf(calcMsg, fmtStrs[2], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
 		loadscreen->SetLoadMessage(calcMsg, true);
@@ -772,19 +778,24 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	assert(x2 >= x1);
 	assert(z2 >= z1);
 
+	const int lowerX = int(x1 / BLOCK_SIZE) - 1;
+	const int upperX = int(x2 / BLOCK_SIZE) + 1;
+	const int lowerZ = int(z1 / BLOCK_SIZE) - 1;
+	const int upperZ = int(z2 / BLOCK_SIZE) + 0;
+
 	// find the upper and lower corner of the rectangular area
-	const int lowerX = Clamp(int(x1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.x - 1));
-	const int upperX = Clamp(int(x2 / BLOCK_SIZE) + 1, 0, int(mapDimensionsInBlocks.x - 1));
-	const int lowerZ = Clamp(int(z1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.y - 1));
-	const int upperZ = Clamp(int(z2 / BLOCK_SIZE) + 0, 0, int(mapDimensionsInBlocks.y - 1));
+	const int startX = Clamp(lowerX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int endX   = Clamp(upperX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int startZ = Clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
+	const int endZ   = Clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
 
 	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 
 	// mark the blocks inside the rectangle, enqueue them
 	// from upper to lower because of the placement of the
 	// bi-directional vertices
-	for (int z = upperZ; z >= lowerZ; z--) {
-		for (int x = upperX; x >= lowerX; x--) {
+	for (int z = endZ; z >= startZ; z--) {
+		for (int x = endX; x >= startX; x--) {
 			// the upper left corner won't have any flags assigned
 			if (x==upperX && z==upperZ)
 				continue;
@@ -808,7 +819,7 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 			const bool leftUpSpecificIgnoreBlocks  = (x==upperX-1 & z==lowerZ) | (x==lowerX & z==upperZ);
 			const bool rightUpSpecificIgnoreBlocks = (x==lowerX+1 & z==lowerZ) /* | (x==upperX & z==upperZ)*/;
 
-			//LOG("%s: [%d, %d] start is %02x", __func__, x, z, blockOrigLinkFlags);
+			//LOG("%s: [%d, %d] lower is %02x", __func__, x, z, blockOrigLinkFlags);
 
 			blockStates.nodeLinksObsoleteFlags[idx]
 				|=  (z > lowerZ) * (x < upperX)                   * PATHDIR_LEFT_MASK
