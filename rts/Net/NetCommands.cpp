@@ -377,6 +377,7 @@ void CGame::ClientReadNet()
 			case NETMSG_INTERNAL_SPEED: {
 				ZoneScopedN("Net::InternalSpeed");
 				sound->PitchAdjust(gs->speedFactor = *reinterpret_cast<const float*>(&inbuf[1]));
+				TracyPlot(tracingSpeedFactor, gs->speedFactor);
 				AddTraffic(-1, packetCode, dataLength);
 			} break;
 
@@ -392,6 +393,7 @@ void CGame::ClientReadNet()
 				const char* pName = (playerNum == SERVER_PLAYER)? "server": playerHandler.Player(playerNum)->name.c_str();
 
 				gs->wantedSpeedFactor = *reinterpret_cast<const float*>(&inbuf[2]);
+				TracyPlot(tracingWantedSpeedFactor, gs->wantedSpeedFactor);
 
 				LOG("Speed set to %.1f [%s]", gs->wantedSpeedFactor, pName);
 				AddTraffic(playerNum, packetCode, dataLength);
@@ -579,6 +581,11 @@ void CGame::ClientReadNet()
 			case NETMSG_NEWFRAME: {
 				// This is alredy well covered in SimFrame so not adding scope.
 				// ZoneScopedN("Net::NewFrame");
+
+				// Just a checkpoint for the speed factors plots.
+				TracyPlot(tracingSpeedFactor, gs->speedFactor);
+				TracyPlot(tracingWantedSpeedFactor, gs->wantedSpeedFactor);
+				
 				msgProcTimeLeft -= 1000.0f;
 				lastSimFrameNetPacketTime = spring_gettime();
 
