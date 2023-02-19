@@ -69,6 +69,8 @@
 
 #undef near
 
+#include <tracy/Tracy.hpp>
+
 
 // See end of source for member bindings
 //////////////////////////////////////////////////////////////////////
@@ -659,6 +661,7 @@ void CUnit::Update()
 
 void CUnit::UpdateWeapons()
 {
+	ZoneScoped;
 	if (!CanUpdateWeapons())
 		return;
 
@@ -910,6 +913,7 @@ void CUnit::SetStunned(bool stun) {
 
 void CUnit::SlowUpdate()
 {
+	ZoneScoped;
 	UpdatePosErrorParams(false, true);
 
 	DoWaterDamage();
@@ -1044,6 +1048,7 @@ void CUnit::SlowUpdate()
 
 void CUnit::SlowUpdateWeapons()
 {
+	ZoneScoped;
 	if (!CanUpdateWeapons())
 		return;
 

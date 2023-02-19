@@ -1637,7 +1637,7 @@ void CGame::StartPlaying()
 		eventHandler.GameStart();
 }
 
-
+static const char* const tracingSimFrameName = "SimFrame";
 
 void CGame::SimFrame() {
 	ENTER_SYNCED_CODE();
@@ -1646,6 +1646,8 @@ void CGame::SimFrame() {
 	DumpRNG(-1, -1);
 
 	good_fpu_control_registers("CGame::SimFrame");
+
+	FrameMarkStart(tracingSimFrameName);
 
 	// note: starts at -1, first actual frame is 0
 	gs->frameNum += 1;
@@ -1742,6 +1744,8 @@ void CGame::SimFrame() {
 	gu->avgSimFrameTime = std::max(gu->avgSimFrameTime, 0.01f);
 
 	eventHandler.DbgTimingInfo(TIMING_SIM, lastFrameTime, lastSimFrameTime);
+
+	FrameMarkEnd(tracingSimFrameName);
 
 	#ifdef HEADLESS
 	{

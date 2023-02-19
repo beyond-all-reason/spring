@@ -16,6 +16,8 @@
 #include <cctype>
 #include <cstring>
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(LocalModelPiece, (nullptr))
 CR_REG_METADATA(LocalModelPiece, (
 	CR_MEMBER(pos),
@@ -354,6 +356,7 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 
 void LocalModel::UpdateBoundingVolume()
 {
+	ZoneScoped;
 	// bounding-box extrema (local space)
 	float3 bbMins = DEF_MIN_SIZE;
 	float3 bbMaxs = DEF_MAX_SIZE;

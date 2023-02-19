@@ -34,6 +34,7 @@
 #include "System/SpringMath.h"
 #include "System/Sound/ISoundChannels.h"
 
+#include <tracy/Tracy.hpp>
 
 /******************************************************************************/
 /******************************************************************************/
@@ -188,6 +189,7 @@ bool CCobInstance::HasTargetWeight(int weaponNum) const
 
 void CCobInstance::Create()
 {
+	ZoneScoped;
 	// calculate maximum reload-time of the available weapons
 	int maxReloadTime = 0;
 
@@ -206,6 +208,7 @@ void CCobInstance::Create()
 
 void CCobInstance::Killed()
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -218,6 +221,7 @@ void CCobInstance::Killed()
 
 void CCobInstance::WindChanged(float heading, float speed)
 {
+	ZoneScoped;
 	Call(COBFN_SetSpeed, int(speed * 3000.0f));
 	Call(COBFN_SetDirection, short(heading * RAD2TAANG));
 }
@@ -225,6 +229,7 @@ void CCobInstance::WindChanged(float heading, float speed)
 
 void CCobInstance::ExtractionRateChanged(float speed)
 {
+	ZoneScoped;
 	Call(COBFN_SetSpeed, int(speed * 500.0f));
 
 	if (!unit->activated)
@@ -233,9 +238,14 @@ void CCobInstance::ExtractionRateChanged(float speed)
 	Call(COBFN_Go);
 }
 
+void CCobInstance::WorldRockUnit(const float3& rockDir) 
+{
+	RockUnit(unit->GetObjectSpaceVec(rockDir) * 500.0f);
+}
 
 void CCobInstance::RockUnit(const float3& rockDir)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -245,9 +255,14 @@ void CCobInstance::RockUnit(const float3& rockDir)
 	Call(COBFN_RockUnit, callinArgs);
 }
 
+void CCobInstance::WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage)
+{
+	HitByWeapon(unit->GetObjectSpaceVec(hitDir) * 500.0f, weaponDefId, inoutDamage);
+}
 
 void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -274,12 +289,14 @@ void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& ino
 
 void CCobInstance::SetSFXOccupy(int curTerrainType)
 {
+	ZoneScoped;
 	Call(COBFN_SetSFXOccupy, curTerrainType);
 }
 
 
 void CCobInstance::QueryLandingPads(std::vector<int>& outPieces)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 1;
@@ -307,6 +324,7 @@ void CCobInstance::QueryLandingPads(std::vector<int>& outPieces)
 
 void CCobInstance::BeginTransport(const CUnit* unit)
 {
+	ZoneScoped;
 	// COB uses model height to identify units
 	Call(COBFN_BeginTransport, int(unit->model->height * 65536));
 }
@@ -314,6 +332,7 @@ void CCobInstance::BeginTransport(const CUnit* unit)
 
 int CCobInstance::QueryTransport(const CUnit* unit)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -327,6 +346,7 @@ int CCobInstance::QueryTransport(const CUnit* unit)
 
 void CCobInstance::TransportPickup(const CUnit* unit)
 {
+	ZoneScoped;
 	// here COB uses unitIDs instead of model height
 	Call(COBFN_TransportPickup, unit->id);
 }
@@ -334,6 +354,7 @@ void CCobInstance::TransportPickup(const CUnit* unit)
 
 void CCobInstance::TransportDrop(const CUnit* unit, const float3& pos)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -346,6 +367,7 @@ void CCobInstance::TransportDrop(const CUnit* unit, const float3& pos)
 
 void CCobInstance::StartBuilding(float heading, float pitch)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -358,6 +380,7 @@ void CCobInstance::StartBuilding(float heading, float pitch)
 
 int CCobInstance::QueryNanoPiece()
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] =  1;
@@ -370,6 +393,7 @@ int CCobInstance::QueryNanoPiece()
 
 int CCobInstance::QueryBuildInfo()
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] =  1;
@@ -382,6 +406,7 @@ int CCobInstance::QueryBuildInfo()
 
 int CCobInstance::QueryWeapon(int weaponNum)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] =  1;
@@ -394,6 +419,7 @@ int CCobInstance::QueryWeapon(int weaponNum)
 
 void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -406,6 +432,7 @@ void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
 
 void CCobInstance::AimShieldWeapon(CPlasmaRepulser* weapon)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -417,6 +444,7 @@ void CCobInstance::AimShieldWeapon(CPlasmaRepulser* weapon)
 
 int CCobInstance::AimFromWeapon(int weaponNum)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] =  1;
@@ -429,12 +457,14 @@ int CCobInstance::AimFromWeapon(int weaponNum)
 
 void CCobInstance::Shot(int weaponNum)
 {
+	ZoneScoped;
 	Call(COBFN_Shot + COBFN_Weapon_Funcs * weaponNum, 0); // why the 0 argument?
 }
 
 
 bool CCobInstance::BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 3;
@@ -450,6 +480,7 @@ bool CCobInstance::BlockShot(int weaponNum, const CUnit* targetUnit, bool userTa
 
 float CCobInstance::TargetWeight(int weaponNum, const CUnit* targetUnit)
 {
+	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
@@ -463,6 +494,7 @@ float CCobInstance::TargetWeight(int weaponNum, const CUnit* targetUnit)
 
 void CCobInstance::AnimFinished(AnimType type, int piece, int axis)
 {
+	ZoneScoped;
 	for (int threadID: threadIDs) {
 		CCobThread* t = cobEngine->GetThread(threadID);
 		t->AnimFinished(type, piece, axis);
@@ -470,20 +502,20 @@ void CCobInstance::AnimFinished(AnimType type, int piece, int axis)
 }
 
 
-void CCobInstance::Destroy() { Call(COBFN_Destroy); }
-void CCobInstance::StartMoving(bool reversing) { Call(COBFN_StartMoving, reversing); }
-void CCobInstance::StopMoving() { Call(COBFN_StopMoving); }
-void CCobInstance::StartUnload() { Call(COBFN_StartUnload); }
-void CCobInstance::EndTransport() { Call(COBFN_EndTransport); }
-void CCobInstance::StartBuilding() { Call(COBFN_StartBuilding); }
-void CCobInstance::StopBuilding() { Call(COBFN_StopBuilding); }
-void CCobInstance::Falling() { Call(COBFN_Falling); }
-void CCobInstance::Landed() { Call(COBFN_Landed); }
-void CCobInstance::Activate() { Call(COBFN_Activate); }
-void CCobInstance::Deactivate() { Call(COBFN_Deactivate); }
-void CCobInstance::MoveRate(int curRate) { Call(COBFN_MoveRate0 + curRate); }
-void CCobInstance::FireWeapon(int weaponNum) { Call(COBFN_FirePrimary + COBFN_Weapon_Funcs * weaponNum); }
-void CCobInstance::EndBurst(int weaponNum) { Call(COBFN_EndBurst + COBFN_Weapon_Funcs * weaponNum); }
+void CCobInstance::Destroy() { ZoneScoped; Call(COBFN_Destroy); }
+void CCobInstance::StartMoving(bool reversing) { ZoneScoped; Call(COBFN_StartMoving, reversing); }
+void CCobInstance::StopMoving() { ZoneScoped; Call(COBFN_StopMoving); }
+void CCobInstance::StartUnload() { ZoneScoped; Call(COBFN_StartUnload); }
+void CCobInstance::EndTransport() { ZoneScoped; Call(COBFN_EndTransport); }
+void CCobInstance::StartBuilding() { ZoneScoped; Call(COBFN_StartBuilding); }
+void CCobInstance::StopBuilding() { ZoneScoped; Call(COBFN_StopBuilding); }
+void CCobInstance::Falling() { ZoneScoped; Call(COBFN_Falling); }
+void CCobInstance::Landed() { ZoneScoped; Call(COBFN_Landed); }
+void CCobInstance::Activate() { ZoneScoped; Call(COBFN_Activate); }
+void CCobInstance::Deactivate() { ZoneScoped; Call(COBFN_Deactivate); }
+void CCobInstance::MoveRate(int curRate) { ZoneScoped; Call(COBFN_MoveRate0 + curRate); }
+void CCobInstance::FireWeapon(int weaponNum) { ZoneScoped; Call(COBFN_FirePrimary + COBFN_Weapon_Funcs * weaponNum); }
+void CCobInstance::EndBurst(int weaponNum) { ZoneScoped; Call(COBFN_EndBurst + COBFN_Weapon_Funcs * weaponNum); }
 
 
 /******************************************************************************/
