@@ -1,7 +1,12 @@
 
+if (TRACY_PROFILE_MEMORY)
+	set(memoryProfileSource "${CMAKE_CURRENT_SOURCE_DIR}/TraceMemory.cpp")
+endif()
+
 # This list was created using this *nix shell command:
 # > find . -name "*.cpp" -or -name "*.c" | sort
 # Then Sound/ stuff was removed, because it is now a separate static lib.
+
 make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/AIScriptHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Color.cpp"
@@ -66,6 +71,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/float4.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/SpringMath.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/SpringMem.cpp"
+		"${memoryProfileSource}"
 	)
 if    (NO_CREG)
 	make_global_var(sources_engine_System_creg )

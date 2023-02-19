@@ -95,7 +95,7 @@ void CPathManager::InitStatic()
 	const size_t medResPEsOffset = lowResPEsOffset + medLowResMem;
 	const size_t maxResPFsOffset = medResPEsOffset + medLowResMem;
 
-	char* baseAddr = reinterpret_cast<char*>( malloc(totalMem) );
+	char* baseAddr = reinterpret_cast<char*>(::operator new(totalMem));
 	lowResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + lowResPEsOffset );
 	medResPEs = reinterpret_cast<CPathEstimator*>( baseAddr + medResPEsOffset );
 	maxResPFs = reinterpret_cast<CPathFinder*>   ( baseAddr + maxResPFsOffset );
@@ -141,7 +141,7 @@ CPathManager::~CPathManager()
 	pathFinders.clear();
 
 	if (lowResPEs != nullptr) {
-		free(lowResPEs);
+		::operator delete(lowResPEs);
 		lowResPEs = nullptr;
 	}
 

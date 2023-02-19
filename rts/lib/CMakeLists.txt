@@ -73,4 +73,14 @@ if    (NOT HEADLESS_SYSTEM)
 endif (NOT HEADLESS_SYSTEM)
 
 option(TRACY_ENABLE "Enable tracy profiling" OFF)
+
+# On demand profiling is *slightly* more expensive, but it allows to run the
+# build with tracing like regular build and attach late in game, where regular
+# trace would just run out of memory because of size.
+option(TRACY_ON_DEMAND "Enable tracy profiling" ON)
+
+# Off by default because it's pretty expensive and because some places use
+# raw malloc have to be used with care.
+option(TRACY_PROFILE_MEMORY "Profile memory allocations" OFF)
+
 add_subdirectory(tracy)
