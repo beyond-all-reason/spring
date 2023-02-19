@@ -48,8 +48,10 @@ public:
 	 * i.e. it means that 5% of the total
 	 * cpu time is spend for drawing and 95%
 	 * for reconnecting/simulation.
+	 * Note: this isn't necessary because the
+	 * engine enforces minDrawFPS.
 	 */
-	static constexpr float reconnectSimDrawBalance = 0.05f;
+	static constexpr float reconnectSimDrawBalance = 0.00f;
 
 	/**
 	 * @brief simulation frames per second
