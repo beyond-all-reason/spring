@@ -79,8 +79,6 @@ CPathManager::CPathManager()
 
 void CPathManager::InitStatic()
 {
-	assert(ThreadPool::GetNumThreads() != 1);
-
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
 	LOG("TK CPathManager::InitStatic: %d threads available (MT requests=%d, MT updates=%d)", pathFinderGroups, SupportsMultiThreadedRequests(), !modInfo.pfForceUpdateSingleThreaded);

@@ -599,7 +599,7 @@ bool CGameSetup::Init(const std::string& buf)
 	file.GetDef(ghostedBuildings,    "1", "GAME\\ModOptions\\GhostedBuildings");
 
 	file.GetDef(maxSpeed, "20.", "GAME\\ModOptions\\MaxSpeed");
-	file.GetDef(minSpeed, "0.3", "GAME\\ModOptions\\MinSpeed");
+	file.GetDef(minSpeed, "0.1", "GAME\\ModOptions\\MinSpeed");
 
 	file.GetDef(fixedAllies, "1", "GAME\\ModOptions\\FixedAllies");
 
