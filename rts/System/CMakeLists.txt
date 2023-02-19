@@ -102,6 +102,7 @@ make_global_var(sources_engine_System_Log
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/FramePrefixer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/LogSinkHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/LogUtil.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Log/TracySink.cpp"
 	)
 make_global_var(sources_engine_System_Log_sinkStream
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/StreamSink.cpp"
