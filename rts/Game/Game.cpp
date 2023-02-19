@@ -537,7 +537,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	{
-		ScopedOnceTimer timer("Game::LoadDefs (GameData)");
+		SCOPED_ONCE_TIMER("Game::LoadDefs (GameData)");
 		loadscreen->SetLoadMessage("Loading GameData Definitions");
 
 		defsParser->SetupLua(true, true);
@@ -581,7 +581,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 		icon::iconHandler.Init();
 	}
 	{
-		ScopedOnceTimer timer("Game::LoadDefs (Sound)");
+		SCOPED_ONCE_TIMER("Game::LoadDefs (Sound)");
 		loadscreen->SetLoadMessage("Loading Sound Definitions");
 
 		LuaParser soundDefsParser("gamedata/sounds.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_MOD_BASE);
@@ -617,17 +617,17 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	CommonDefHandler::InitStatic();
 
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (WeaponDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (WeaponDefs)");
 		loadscreen->SetLoadMessage("Loading Weapon Definitions");
 		weaponDefHandler->Init(defsParser);
 	}
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (UnitDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (UnitDefs)");
 		loadscreen->SetLoadMessage("Loading Unit Definitions");
 		unitDefHandler->Init(defsParser);
 	}
 	{
-		ScopedOnceTimer timer("Game::PostLoadSim (FeatureDefs)");
+		SCOPED_ONCE_TIMER("Game::PostLoadSim (FeatureDefs)");
 		loadscreen->SetLoadMessage("Loading Feature Definitions");
 		featureDefHandler->Init(defsParser);
 	}
@@ -721,7 +721,7 @@ void CGame::LoadInterface()
 	keyBindings.Load();
 
 	{
-		ScopedOnceTimer timer("Game::LoadInterface (Console)");
+		SCOPED_ONCE_TIMER("Game::LoadInterface (Console)");
 
 		gameConsoleHistory.Init();
 		gameTextInput.ClearInput();
@@ -837,7 +837,7 @@ void CGame::LoadSkirmishAIs()
 	if (localAIs.empty() && !IsSavedGame())
 		return;
 
-	ScopedOnceTimer timer(std::string("Game::") + __func__);
+	SCOPED_ONCE_TIMER("Game::LoadSkirmishAIs");
 	loadscreen->SetLoadMessage("Loading Skirmish AIs");
 
 	for (uint8_t localAI: localAIs)
@@ -1017,7 +1017,7 @@ void CGame::ResizeEvent()
 	LOG("[Game::%s][1]", __func__);
 
 	{
-		ScopedOnceTimer timer("Game::ViewResize");
+		SCOPED_ONCE_TIMER("Game::ViewResize")
 
 		if (minimap != nullptr)
 			minimap->UpdateGeometry();
@@ -1031,7 +1031,7 @@ void CGame::ResizeEvent()
 	LOG("[Game::%s][2]", __func__);
 
 	{
-		ScopedOnceTimer timer("EventHandler::ViewResize");
+		SCOPED_ONCE_TIMER("EventHandler::ViewResize");
 
 		gameTextInput.ViewResize();
 		eventHandler.ViewResize();

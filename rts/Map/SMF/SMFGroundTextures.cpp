@@ -192,7 +192,7 @@ void CSMFGroundTextures::LoadSquareTextures(const int mipLevel)
 
 void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLevel)
 {
-	ScopedOnceTimer timer("CSMFGroundTextures::ConvolveHeightMap");
+	SCOPED_ONCE_TIMER("CSMFGroundTextures::ConvolveHeightMap");
 
 	const float* hdata = readMap->GetMIPHeightMapSynced(mipLevel);
 	const int mx = mapWidth >> mipLevel;

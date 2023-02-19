@@ -108,6 +108,7 @@ public:
 		{
 			std::string msg = fmt::sprintf("%s::FontConfigInit (version %d.%d.%d)", __func__, FC_MAJOR, FC_MINOR, FC_REVISION);
 			ScopedOnceTimer timer(msg);
+			ZoneScopedNC("FtLibraryHandler::FontConfigInit", tracy::Color::Purple);
 
 			try
 			{

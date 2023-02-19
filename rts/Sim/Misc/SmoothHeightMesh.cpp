@@ -597,7 +597,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 
 
 void SmoothHeightMesh::MakeSmoothMesh() {
-	ScopedOnceTimer timer("SmoothHeightMesh::MakeSmoothMesh");
+	SCOPED_ONCE_TIMER("SmoothHeightMesh::MakeSmoothMesh");
 
 	// A sliding window is used to reduce computational complexity
 	const int winSize = smoothRadius / resolution;
