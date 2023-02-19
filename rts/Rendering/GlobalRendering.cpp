@@ -1109,6 +1109,7 @@ void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& v
 
 void CGlobalRendering::UpdateWindow()
 {
+	ZoneScoped;
 	if (!spring::QueuedFunction::Empty()) {
 		for (const auto& qf : spring::QueuedFunction::GetQueuedFunctions()) {
 			qf->Execute();

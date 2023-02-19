@@ -38,6 +38,8 @@
 #include "System/Sound/ISound.h"
 #include "System/Sync/DumpState.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(bool, LogClientData).defaultValue(false);
 
 #define LOG_SECTION_NET "Net"
@@ -288,6 +290,7 @@ void CGame::ClientReadNet()
 
 		switch (packetCode) {
 			case NETMSG_QUIT: {
+				ZoneScopedN("Net::Quit");
 				try {
 					netcode::UnpackPacket pckt(packet, 3);
 					std::string message;
@@ -305,6 +308,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_PLAYERLEFT: {
+				ZoneScopedN("Net::PlayerLeft");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -319,6 +323,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_STARTPLAYING: {
+				ZoneScopedN("Net::StartPlaying");
 				const uint32_t timeToStart = *reinterpret_cast<const uint32_t*>(inbuf + 1);
 
 				if (timeToStart > 0) {
@@ -331,6 +336,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_PLAYERSTAT: {
+				ZoneScopedN("Net::PlayerStat");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -350,6 +356,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_PAUSE: {
+				ZoneScopedN("Net::Pause");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -368,11 +375,13 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_INTERNAL_SPEED: {
+				ZoneScopedN("Net::InternalSpeed");
 				sound->PitchAdjust(gs->speedFactor = *reinterpret_cast<const float*>(&inbuf[1]));
 				AddTraffic(-1, packetCode, dataLength);
 			} break;
 
 			case NETMSG_USER_SPEED: {
+				ZoneScopedN("Net::UserSpeed");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum) && playerNum != SERVER_PLAYER) {
@@ -389,11 +398,13 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_CPU_USAGE: {
+				ZoneScopedN("Net::CpuUsage");
 				LOG_L(L_WARNING, "[Game::%s][NETMSG_CPU_USAGE] clients should not get this", __func__);
 				AddTraffic(-1, packetCode, dataLength);
 			} break;
 
 			case NETMSG_PLAYERINFO: {
+				ZoneScopedN("Net::PlayerInfo");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -410,6 +421,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_PLAYERNAME: {
+				ZoneScopedN("Net::PlayerName");
 				try {
 					netcode::UnpackPacket pckt(packet, 2);
 
@@ -433,6 +445,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_CHAT: {
+				ZoneScopedN("Net::Chat");
 				try {
 					const ChatMessage msg(packet);
 
@@ -444,6 +457,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_SYSTEMMSG: {
+				ZoneScopedN("Net::SystemMsg");
 				try {
 					netcode::UnpackPacket pckt(packet, 4);
 					std::string sysMsg;
@@ -458,6 +472,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_STARTPOS: {
+				ZoneScopedN("Net::StartPos");
 				const uint8_t playerID = inbuf[1];
 				const uint8_t   teamID = inbuf[2];
 
@@ -489,11 +504,13 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_RANDSEED: {
+				ZoneScopedN("Net::RandSeed");
 				gsRNG.SetSeed(*((uint32_t*)&inbuf[1]), true);
 				AddTraffic(-1, packetCode, dataLength);
 			} break;
 
 			case NETMSG_GAMEID: {
+				ZoneScopedN("Net::GameId");
 				const uint8_t* p = &inbuf[1];
 				CDemoRecorder* record = clientNet->GetDemoRecorder();
 
@@ -512,6 +529,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_PATH_CHECKSUM: {
+				ZoneScopedN("Net::PathChecksum");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -545,6 +563,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_KEYFRAME: {
+				ZoneScopedN("Net::KeyFrame");
 				if (!gameOver) {
 					const int32_t serverFrameNum = *(int32_t*)(inbuf + 1);
 
@@ -558,6 +577,8 @@ void CGame::ClientReadNet()
 				}
 			}
 			case NETMSG_NEWFRAME: {
+				// This is alredy well covered in SimFrame so not adding scope.
+				// ZoneScopedN("Net::NewFrame");
 				msgProcTimeLeft -= 1000.0f;
 				lastSimFrameNetPacketTime = spring_gettime();
 
@@ -581,6 +602,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_SYNCRESPONSE: {
+				ZoneScopedN("Net::SyncResponse");
 #if (defined(SYNCCHECK))
 				if (haveServerDemo) {
 					// NOTE:
@@ -616,6 +638,7 @@ void CGame::ClientReadNet()
 
 
 			case NETMSG_COMMAND: {
+				ZoneScopedN("Net::Command");
 				try {
 					netcode::UnpackPacket pckt(packet, 1);
 
@@ -651,6 +674,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_SELECT: {
+				ZoneScopedN("Net::Select");
 				try {
 					netcode::UnpackPacket pckt(packet, 1);
 					std::vector<int32_t> selectedUnitIDs;
@@ -692,6 +716,7 @@ void CGame::ClientReadNet()
 
 			case NETMSG_AICOMMAND:
 			case NETMSG_AICOMMAND_TRACKED: {
+				ZoneScopedN("Net::AICommand");
 				try {
 					netcode::UnpackPacket pckt(packet, 1);
 
@@ -742,6 +767,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_AICOMMANDS: {
+				ZoneScopedN("Net::AICommands");
 				try {
 					netcode::UnpackPacket pckt(packet, 3);
 
@@ -826,6 +852,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_AISHARE: {
+				ZoneScopedN("Net::AIShare");
 				try {
 					netcode::UnpackPacket pckt(packet, 1);
 
@@ -900,6 +927,7 @@ void CGame::ClientReadNet()
 
 
 			case NETMSG_LOGMSG: {
+				ZoneScopedN("Net::LogMsg");
 				try {
 					netcode::UnpackPacket unpack(packet, sizeof(uint8_t));
 
@@ -938,6 +966,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_LUAMSG: {
+				ZoneScopedN("Net::LuaMsg");
 				try {
 					netcode::UnpackPacket unpack(packet, sizeof(uint8_t));
 
@@ -970,6 +999,7 @@ void CGame::ClientReadNet()
 
 
 			case NETMSG_SHARE: {
+				ZoneScopedN("Net::Share");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -1037,6 +1067,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_SETSHARE: {
+				ZoneScopedN("Net::SetShare");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -1065,6 +1096,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_MAPDRAW: {
+				ZoneScopedN("Net::MapDraw");
 				const int32_t playerNum = inMapDrawer->GotNetMsg(packet);
 
 				if (playerNum >= 0)
@@ -1073,6 +1105,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_TEAM: {
+				ZoneScopedN("Net::Team");
 				const uint8_t playerNum = inbuf[1];
 				const uint8_t teamAction = inbuf[2];
 
@@ -1178,6 +1211,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_GAMEOVER: {
+				ZoneScopedN("Net::GameOver");
 				// silently drop since we can calculate this ourselves, although useful to store in replays
 				AddTraffic(inbuf[1], packetCode, dataLength);
 			} break;
@@ -1187,6 +1221,7 @@ void CGame::ClientReadNet()
 
 
 			case NETMSG_AI_CREATED: {
+				ZoneScopedN("Net::AICreated");
 				try {
 					netcode::UnpackPacket pckt(packet, 2);
 					std::string aiName;
@@ -1244,6 +1279,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_AI_STATE_CHANGED: {
+				ZoneScopedN("Net::AIStateChanged");
 				const uint8_t playerNum = inbuf[1];
 				const uint8_t     aiNum = inbuf[2];
 
@@ -1313,6 +1349,7 @@ void CGame::ClientReadNet()
 
 
 			case NETMSG_ALLIANCE: {
+				ZoneScopedN("Net::Alliance");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -1357,6 +1394,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_CCOMMAND: {
+				ZoneScopedN("Net::Command");
 				try {
 					CommandMessage msg(packet);
 
@@ -1367,6 +1405,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_DIRECT_CONTROL: {
+				ZoneScopedN("Net::DirectControl");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -1385,6 +1424,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_DC_UPDATE: {
+				ZoneScopedN("Net::DCUpdate");
 				const uint8_t playerNum = inbuf[1];
 
 				if (!playerHandler.IsValidPlayer(playerNum)) {
@@ -1400,11 +1440,13 @@ void CGame::ClientReadNet()
 
 			case NETMSG_SETPLAYERNUM:
 			case NETMSG_ATTEMPTCONNECT: {
+				ZoneScopedN("Net::AttemptConnect");
 				AddTraffic(-1, packetCode, dataLength);
 			} break;
 
 			// server sends this second to let us know about new clients that join midgame
 			case NETMSG_CREATE_NEWPLAYER: {
+				ZoneScopedN("Net::CreateNewPlayer");
 				try {
 					netcode::UnpackPacket pckt(packet, 3);
 					std::string name;
@@ -1447,6 +1489,7 @@ void CGame::ClientReadNet()
 			} break;
 
 			case NETMSG_CLIENTDATA: {
+				ZoneScopedN("Net::ClientData");
 				if (!configHandler->GetBool("LogClientData"))
 					break;
 
@@ -1490,10 +1533,12 @@ void CGame::ClientReadNet()
 			case NETMSG_GAME_FRAME_PROGRESS: {
 			} break;
 
-			case NETMSG_GAMESTATE_DUMP:
+			case NETMSG_GAMESTATE_DUMP: {
+				ZoneScopedN("Net::GamestateDump");
 				LOG("Collecting current game state information.");
 				DumpState(gs->frameNum, gs->frameNum, 1, false, true);
 				break;
+			}
 
 			default: {
 #ifdef SYNCDEBUG

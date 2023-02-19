@@ -41,6 +41,8 @@
 
 #include <vector>
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(int, LoadingMT)
 	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
 	.defaultValue(0)
@@ -246,6 +248,8 @@ int CLoadScreen::KeyReleased(int keyCode, int scanCode)
 
 bool CLoadScreen::Update()
 {
+	ZoneScoped;
+
 	if (luaIntro != nullptr) {
 		// keep checking this while we are the active controller
 		std::lock_guard<spring::recursive_mutex> lck(mutex);

@@ -356,6 +356,8 @@ void CGame::Load(const std::string& mapFileName)
 	Threading::SetGameLoadThread();
 	Watchdog::RegisterThread(WDT_LOAD);
 
+	ZoneScoped;
+
 	auto& globalQuit = gu->globalQuit;
 	bool  forcedQuit = false;
 
@@ -514,6 +516,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 	ENTER_SYNCED_CODE();
 
 	{
+		SCOPED_ONCE_TIMER("Game::LoadMap");
 		loadscreen->SetLoadMessage("Parsing Map Information");
 
 		waterRendering->Init();
@@ -600,6 +603,7 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 void CGame::PreLoadSimulation(LuaParser* defsParser)
 {
+	ZoneScoped;
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
@@ -614,6 +618,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 
 void CGame::PostLoadSimulation(LuaParser* defsParser)
 {
+	ZoneScoped;
 	CommonDefHandler::InitStatic();
 
 	{
@@ -685,6 +690,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 
 void CGame::PreLoadRendering()
 {
+	ZoneScoped;
 	auto lock = CLoadLock::GetUniqueLock();
 
 	geometricObjects = new CGeometricObjects();
@@ -696,12 +702,14 @@ void CGame::PreLoadRendering()
 }
 
 void CGame::PostLoadRendering() {
+	ZoneScoped;
 	worldDrawer.InitPost();
 }
 
 
 void CGame::LoadInterface()
 {
+	ZoneScoped;
 	auto lock = CLoadLock::GetUniqueLock();
 
 	camHandler->Init();
@@ -792,6 +800,7 @@ void CGame::LoadInterface()
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
 {
+	ZoneScoped;
 	assert(!(dryRun && onlyUnsynced));
 	// Lua components
 	ENTER_SYNCED_CODE();
@@ -853,6 +862,7 @@ void CGame::LoadSkirmishAIs()
 
 void CGame::LoadFinalize()
 {
+	ZoneScoped;
 	{
 		loadscreen->SetLoadMessage("[" + std::string(__func__) + "] finalizing PFS");
 

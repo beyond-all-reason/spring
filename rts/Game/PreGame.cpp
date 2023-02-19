@@ -54,6 +54,8 @@
 	#include "System/Sync/SyncDebugger.h"
 #endif
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(bool, DemoFromDemo).defaultValue(false);
 CONFIG(bool, LoadBadSaves).defaultValue(false);
@@ -193,6 +195,7 @@ bool CPreGame::Draw()
 
 bool CPreGame::Update()
 {
+	ZoneScoped;
 	ENTER_SYNCED_CODE();
 	good_fpu_control_registers("CPreGame::Update");
 	UpdateClientNet();

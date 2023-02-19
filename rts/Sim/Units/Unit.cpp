@@ -192,6 +192,7 @@ void CUnit::SanityCheck() const
 
 void CUnit::PreInit(const UnitLoadParams& params)
 {
+	ZoneScoped;
 	// if this is < 0, UnitHandler will give us a random ID
 	id = params.unitID;
 	featureDefID = -1;
@@ -316,6 +317,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 void CUnit::PostInit(const CUnit* builder)
 {
+	ZoneScoped;
 	CWeaponLoader::LoadWeapons(this);
 	CWeaponLoader::InitWeapons(this);
 
