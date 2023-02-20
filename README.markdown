@@ -1,10 +1,12 @@
-# Recoil RTS game engine
+# Recoil is an open source real time strategy game engine
 
-    git clone https://github.com/beyond-all-reason/spring -b BAR105
+### Get the engine sources
 
-Recoil is a fork and continuation of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring) version 105.0
+    git clone https://github.com/beyond-all-reason/spring -b BAR105 --recursive
 
-Visit our [Discord](https://discord.gg/GUpRg6Wz3e) for help, suggestions, bugs, community forum and everything Recoil related.
+Recoil is a fork and continuation of an RTS [engine](https://github.com/spring/spring) version 105.0
+
+Visit our [Discord](https://discord.gg/GUpRg6Wz3e) or [Matrix](https://matrix.to/#/#beyond-all-reason-engine:matrix.org) for help, suggestions, bugs, community forum and everything Recoil related.
 
 ### Installation
 
