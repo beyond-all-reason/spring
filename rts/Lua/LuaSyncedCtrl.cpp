@@ -4272,13 +4272,13 @@ int LuaSyncedCtrl::SetFeatureVelocity(lua_State* L)
 /***
  * @function Spring.SetFeatureBlocking
  * @number featureID
- * @boolean isBlocking
- * @boolean isSolidObjectCollidable
- * @boolean isProjectileCollidable
- * @boolean isRaySegmentCollidable
- * @boolean crushable
- * @boolean blockEnemyPushing
- * @boolean blockHeightChanges
+ * @bool isBlocking
+ * @bool isSolidObjectCollidable
+ * @bool isProjectileCollidable
+ * @bool isRaySegmentCollidable
+ * @bool crushable
+ * @bool blockEnemyPushing
+ * @bool blockHeightChanges
  * @treturn nil
  */
 int LuaSyncedCtrl::SetFeatureBlocking(lua_State* L)

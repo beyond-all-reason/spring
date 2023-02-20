@@ -127,6 +127,14 @@
  * @number b
  */
 
+/*** Color quadruple (RGBA)
+ * @table rgba
+ * @number r
+ * @number g
+ * @number b
+ * @number a
+ */
+
 
 bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 {
@@ -937,6 +945,15 @@ int LuaUnsyncedCtrl::SetSoundEffectParams(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.AddWorldIcon
+ * @number cmdID
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::AddWorldIcon(lua_State* L)
 {
 	const int cmdID = luaL_checkint(L, 1);
@@ -948,6 +965,15 @@ int LuaUnsyncedCtrl::AddWorldIcon(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.AddWorldText
+ * @string text
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
 {
 	const string text = luaL_checksstring(L, 1);
@@ -959,6 +985,17 @@ int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.AddWorldUnit
+ * @number unitDefID
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number teamID
+ * @number facing
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 {
 	const int unitDefID = luaL_checkint(L, 1);
@@ -1184,6 +1221,14 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
  * @section unit_selection
 ******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.SelectUnitArray
+ * @tparam {[number],...} unitIDs
+ * @bool[opt=false] append append to current selection
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
 {
 	if (!lua_istable(L, 1))
@@ -1207,6 +1252,13 @@ int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SelectUnitMap
+ * @tparam {[number]=any,...} unitMap where keys are unitIDs
+ * @bool[opt=false] append append to current selection
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 {
 	if (!lua_istable(L, 1))
@@ -1976,6 +2028,13 @@ int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetFeatureEngineDrawMask
+ * @number featureID
+ * @number engineDrawMask
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
 {
 	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
@@ -1988,6 +2047,13 @@ int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetFeatureAlwaysUpdateMatrix
+ * @number featureID
+ * @number alwaysUpdateMat
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
 {
 	CFeature* feature = ParseCtrlFeature(L, __func__, 1);
@@ -2103,6 +2169,13 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.UnitIconSetDraw
+ * @number unitID
+ * @bool drawIcon
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 {
 	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
@@ -2659,6 +2732,17 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetNanoProjectileParams
+ * @number[opt=0] rotVal in degrees
+ * @number[opt=0] rotVel in degrees
+ * @number[opt=0] rotAcc in degrees
+ * @number[opt=0] rotValRng in degrees
+ * @number[opt=0] rotVelRng in degrees
+ * @number[opt=0] rotAccRng in degrees
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
 {
 	CNanoProjectile::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
@@ -2811,6 +2895,11 @@ static int ReloadOrRestart(const std::string& springArgs, const std::string& scr
 
 
 
+/*** Closes the application
+ *
+ * @function Spring.Quit
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::Quit(lua_State* L)
 {
 	gu->globalQuit = true;
@@ -3262,6 +3351,13 @@ int LuaUnsyncedCtrl::SendLuaRulesMsg(lua_State* L)
 	return 0;
 }
 
+
+/***
+ *
+ * @function Spring.SendLuaMenuMsg
+ *
+ * @string msg
+ */
 int LuaUnsyncedCtrl::SendLuaMenuMsg(lua_State* L)
 {
 	if (luaMenu != nullptr)
@@ -3636,6 +3732,24 @@ int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
 }
 
 
+/*** Map rendering params
+ *
+ * @table mapRenderingParams
+ *
+ * @tparam rgba splatTexMults
+ * @tparam rgba splatTexScales
+ * @bool voidWater
+ * @bool voidGround
+ * @bool splatDetailNormalDiffuseAlpha
+ */
+
+
+/*** Allows to change map rendering params at runtime.
+ *
+ * @function Spring.SetMapRenderingParams
+ * @tparam mapRenderingParams params
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
 {
 	if (!lua_istable(L, 1))
@@ -3696,6 +3810,13 @@ int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.ForceTesselationUpdate
+ * @bool[opt=true] normal
+ * @bool[opt=false] shadow
+ * @treturn bool updated
+ */
 int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
 {
 	CSMFGroundDrawer* smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
@@ -3788,7 +3909,6 @@ int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
  * @number[opt] baseMemLoadMult
  * @treturn nil
  */
-
 int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
 	luaContextData* ctxData = GetLuaContextData(L);
 	SLuaGarbageCollectCtrl& gcCtrl = ctxData->gcCtrl;
@@ -4249,6 +4369,11 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 ******************************************************************************/
 
 
+/***
+ *
+ * @function Spring.CreateDecal
+ * @treturn nil|number decalIndex
+ */
 int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4264,6 +4389,12 @@ int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.DestroyDecal
+ * @number decalIndex
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4276,6 +4407,15 @@ int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetDecalPos
+ * @number decalIndex
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @treturn bool decalSet
+ */
 int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4293,6 +4433,14 @@ int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetDecalSize
+ * @number decalIndex
+ * @number sizeX
+ * @number sizeY
+ * @treturn bool decalSet
+ */
 int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4308,6 +4456,13 @@ int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetDecalRotation
+ * @number decalIndex
+ * @number rot in radians
+ * @treturn nil|bool decalSet
+ */
 int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4321,6 +4476,13 @@ int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetDecalTexture
+ * @number decalIndex
+ * @string textureName
+ * @treturn nil|bool decalSet
+ */
 int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4334,6 +4496,13 @@ int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.SetDecalAlpha
+ * @number decalIndex
+ * @number alpha
+ * @treturn nil|bool decalSet
+ */
 int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 {
 	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
@@ -4353,6 +4522,15 @@ int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 ******************************************************************************/
 
 
+/***
+ *
+ * @function Spring.SDLSetTextInputRect
+ * @number x
+ * @number y
+ * @number width
+ * @number height
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 {
 	SDL_Rect textWindow;
@@ -4364,12 +4542,22 @@ int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.SDLStartTextInput
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
 {
 	SDL_StartTextInput();
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.SDLStopTextInput
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 {
 	SDL_StopTextInput();
@@ -4382,6 +4570,18 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  * @section window
 ******************************************************************************/
 
+/***
+ *
+ * @function Spring.SetWindowGeometry
+ * @number displayIndex
+ * @number winPosX
+ * @number winPosY
+ * @number winSizeX
+ * @number winSizeY
+ * @bool fullScreen
+ * @bool borderless
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 {
 	const int displayIndex = luaL_checkint(L, 1) - 1;
@@ -4400,12 +4600,22 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.SetWindowMinimized
+ * @treturn bool minimized
+ */
 int LuaUnsyncedCtrl::SetWindowMinimized(lua_State* L)
 {
 	lua_pushboolean(L, globalRendering->SetWindowMinimized());
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.SetWindowMaximized
+ * @treturn bool maximized
+ */
 int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 {
 	lua_pushboolean(L, globalRendering->SetWindowMaximized());
