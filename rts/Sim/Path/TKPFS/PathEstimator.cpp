@@ -7,6 +7,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+// #include "Game/SelectedUnitsHandler.h"
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
 
@@ -77,6 +78,82 @@ void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult
 	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
 
+bool CPathEstimator::SetStartBlock(
+	const MoveDef& moveDef,
+	const CPathFinderDef& peDef,
+	const CSolidObject* owner,
+	float3 startPos
+)
+{
+	constexpr size_t maxBlocksToCheck = 9;
+	const float3 centreOffset(BLOCK_PIXEL_SIZE*.5f, 0, BLOCK_PIXEL_SIZE*.5f);
+
+	int2 nearestBlock;
+	nearestBlock.x = startPos.x / BLOCK_PIXEL_SIZE;
+	nearestBlock.y = startPos.z / BLOCK_PIXEL_SIZE;
+
+	// support peDef.skipSubSearches - just take nearest point
+	if (peDef.skipSubSearches || !peDef.useVerifiedStartBlock) {
+		mStartBlock = nearestBlock;
+		mStartBlockIdx = BlockPosToIdx(nearestBlock);
+		mGoalBlockIdx = mStartBlockIdx;
+		return true;
+	}
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s: nearest block (%d, %d) start(%f, %f) owner(%f, %f)", __func__, nearestBlock.x, nearestBlock.y
+	// 		, startPos.x, startPos.z, owner->pos.x, owner->pos.z);
+    // }}
+
+	auto buildBlock = [this, startPos, owner, centreOffset](int2 blockPos) {
+			float3 realBlockPos = float3(blockPos.x, 0.f, blockPos.y) * BLOCK_PIXEL_SIZE + centreOffset;
+			float distSq = startPos.SqDistance2D(realBlockPos);
+
+			// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// if (printMoveInfo) {
+			// 	LOG("%s: adding block (%d, %d) [%d]: %f realblockpos(%f, %f)", __func__, blockPos.x, blockPos.y
+			// 		, BlockPosToIdx(blockPos), distSq, realBlockPos.x, realBlockPos.z);
+			// }}
+
+			return std::make_tuple(BlockPosToIdx(blockPos), distSq);
+		};
+	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
+	blockIdsByDist[0] = buildBlock(nearestBlock);
+
+	for (std::uint32_t i = 0; i < PATH_DIRECTIONS; ++i)
+		blockIdsByDist[i+1] = buildBlock(nearestBlock + PE_DIRECTION_VECTORS[i]);
+
+	auto sortBlocksByDist = [](const std::tuple<int, float>& lhv, const std::tuple<int, float>& rhv)
+			{ return std::get<1>(lhv) < std::get<1>(rhv); };
+	std::stable_sort(blockIdsByDist.begin(), blockIdsByDist.end(), sortBlocksByDist);
+
+	// std::for_each(blockIdsByDist.begin(), blockIdsByDist.end(), [this, owner](const std::tuple<int, float>& blockByDist) {
+	// 			{bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+	// 			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+	// 		if (printMoveInfo) {
+	// 			LOG("%s: block added (%d) %f", __func__, std::get<0>(blockByDist), std::get<1>(blockByDist));
+	// 		}}
+	// });
+
+	auto unitCanReachBlock = [this, &moveDef = std::as_const(moveDef), &peDef = std::as_const(peDef), owner]
+		(const std::tuple<int, float>& blockByDist)
+			{ return TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist)); };
+
+	auto result = std::find_if(blockIdsByDist.begin(), blockIdsByDist.end(), unitCanReachBlock);
+	if (result != std::end(blockIdsByDist)){
+		mStartBlockIdx = std::get<0>(*result);
+		mGoalBlockIdx = mStartBlockIdx;
+		mStartBlock = BlockIdxToPos(mStartBlockIdx);
+		return true;
+	}
+
+	return false;
+}
+
+
 
 IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const CSolidObject* owner,
@@ -124,9 +201,11 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 	const int2 goalSqrOffset = peDef.GoalSquareOffset(BLOCK_SIZE);
 	const float maxSpeedMod = pathingState->GetMaxSpeedMod(moveDef.pathType);
 
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Block Size [%d] search started", BLOCK_SIZE);
-	// }
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search started", __func__, BLOCK_SIZE);
+    // }}
 
 	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
 
@@ -150,11 +229,6 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 	// }
 
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
-
-		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-		// 	LOG("[%d:%d]", openBlockBuffer.GetSize(), maxBlocksToBeSearched);
-		// }
-
 		// get the open block with lowest cost
 		const PathNode* ob = openBlocks.top();
 		openBlocks.pop();
@@ -167,12 +241,6 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 		const int2 bSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][ob->nodeNum];
 		const int2 gSquare = ob->nodePos * BLOCK_SIZE + goalSqrOffset;
 
-		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-		// 	LOG("Node %d:%d bsquare (%d,%d) gSquare (%d,%d)", moveDef.pathType, ob->nodeNum
-		// 			, bSquare.x, bSquare.y
-		// 			, gSquare.x, gSquare.y);
-		// }
-
 		bool runBlkSearch = false;
 		bool canReachGoal =  true;
 
@@ -184,10 +252,6 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 		if (peDef.IsGoal(bSquare.x, bSquare.y) || (runBlkSearch = peDef.IsGoal(gSquare.x, gSquare.y))) {
 			if (runBlkSearch)
 				canReachGoal = (DoBlockSearch(owner, moveDef, bSquare, gSquare) == IPath::Ok);
-
-			// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-			// 	LOG("IsGoal (runBlkSearch %d) canReachGoal=%d", runBlkSearch, canReachGoal);
-			// }
 
 			if (canReachGoal) {
 				mGoalBlockIdx = ob->nodeNum;
@@ -212,11 +276,13 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 
 		// mark this block as closed
 		blockStates.nodeMask[ob->nodeNum] |= PATHOPT_CLOSED;
-
-		// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-		// 	LOG("Closed off node %d [%x]", ob->nodeNum, blockStates.nodeMask[ob->nodeNum]);
-		// }
 	}
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search finished", __func__, BLOCK_SIZE);
+    // }}
 
 	// we found our goal
 	if (foundGoal)
@@ -256,10 +322,6 @@ bool CPathEstimator::TestBlock(
 	const int2 testBlockPos = openBlockPos + PE_DIRECTION_VECTORS[pathDir];
 	const int2 goalBlockPos = {int(peDef.goalSquareX / BLOCK_SIZE), int(peDef.goalSquareZ / BLOCK_SIZE)};
 
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Bounds check node (%d, %d)", testBlockPos.x, testBlockPos.y);
-	// }
-
 	// bounds-check
 	if (static_cast<unsigned int>(testBlockPos.x) >= nbrOfBlocks.x)
 		return false;
@@ -269,10 +331,6 @@ bool CPathEstimator::TestBlock(
 	// read precached vertex costs
 	const unsigned int openBlockIdx = BlockPosToIdx(openBlockPos);
 	const unsigned int testBlockIdx = BlockPosToIdx(testBlockPos);
-
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Testing node open %d [%d]", testBlockIdx, blockStates.nodeMask[testBlockIdx]);
-	// }
 
 	// check if the block is unavailable
 	if (blockStates.nodeMask[testBlockIdx] & (PATHOPT_BLOCKED | PATHOPT_CLOSED))
@@ -302,12 +360,15 @@ bool CPathEstimator::TestBlock(
 	// is reachable from wsStartPos, which can disagree with reachability
 	// from openBlockSquare
 	const bool infCostVertex = (testVertexCost >= PATHCOST_INFINITY);
-	const bool baseSetVertex = (testedBlocks <= 8);
+	const bool baseSetVertex = (!peDef.useVerifiedStartBlock) && (testedBlocks <= 8);
 	const bool blockedSearch = (!baseSetVertex || peDef.skipSubSearches);
 
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Node Vertex %d Cost %f is infinity [%d]", testBlockIdx, testVertexCost, (int)infCostVertex);
-	// }
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+	// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+	// if (printMoveInfo) {
+	// 	LOG("%s Block Size [%d] infCostVertex = %d,  blockedSearch = %d, peDef.useVerifiedStartBlock = %d, testedBlocks = %d"
+	// 		, __func__, BLOCK_SIZE, (int)infCostVertex, (int)blockedSearch, (int)peDef.useVerifiedStartBlock, testedBlocks);
+	// }}
 
 	if (infCostVertex) {
 		// warning: we cannot naively set PATHOPT_BLOCKED here;
@@ -327,10 +388,6 @@ bool CPathEstimator::TestBlock(
 		if (!blockedSearch && DoBlockSearch(owner, moveDef, peDef.wsStartPos, SquareToFloat3(testBlockSquare)) != IPath::Ok)
 			return false;
 	}
-
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Node WithinConstraints checking %d", testBlockIdx);
-	// }
 
 	// check if the block is outside constraints
 	if (!peDef.WithinConstraints(testBlockSquare)) {
@@ -358,15 +415,14 @@ bool CPathEstimator::TestBlock(
 			const float3 sWorldPos = SquareToFloat3(testBlockSquare.x, testBlockSquare.y);
 			const float3 gWorldPos = peDef.wsGoalPos;
 
-			// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-			// 	LOG("World pos sqDist %f > sqGoalRadius check %f", sWorldPos.SqDistance2D(gWorldPos), peDef.sqGoalRadius);
-			// }
-
 			if (sWorldPos.SqDistance2D(gWorldPos) > peDef.sqGoalRadius) {
 
-				// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-				// 	LOG("Node %d block search to close out", testBlockIdx);
-				// }
+				// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+				// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+				// if (printMoveInfo) {
+				// 	LOG("%s Block Size [%d] Check goalpos of "
+				// 		, __func__, BLOCK_SIZE);
+				// }}
 
 				if (DoBlockSearch(owner, moveDef, sWorldPos, gWorldPos) != IPath::Ok) {
 					// we cannot set PATHOPT_BLOCKED here either, result
@@ -398,11 +454,6 @@ bool CPathEstimator::TestBlock(
 	const float gCost = parentOpenBlock->gCost + nodeCost;
 	const float hCost = peDef.Heuristic(testBlockSquare.x, testBlockSquare.y, BLOCK_SIZE) * maxSpeedMod;
 	const float fCost = gCost + hCost;
-
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Testing node %d [%d] hCost %f, [%d]"
-	// 	, testBlockIdx, BLOCK_SIZE, hCost, blockStates.nodeMask[testBlockIdx]);
-	// }
 
 	// already in the open set?
 	if (blockStates.nodeMask[testBlockIdx] & PATHOPT_OPEN) {
@@ -439,14 +490,31 @@ bool CPathEstimator::TestBlock(
 	blockStates.gCost[testBlockIdx] = gCost;
 	blockStates.nodeMask[testBlockIdx] |= (PathDir2PathOpt(pathDir) | PATHOPT_OPEN);
 
-	// if (debugLoggingActive == ThreadPool::GetThreadNum()){
-	// 	LOG("Recording node %d [%d] fCost %f, gCost %f [%d]"
-	// 	, testBlockIdx, BLOCK_SIZE, fCost, gCost, blockStates.nodeMask[testBlockIdx]);
-	// }
-
 	dirtyBlocks.push_back(testBlockIdx);
 	return true;
 }
+
+
+
+/**
+ * Test the accessability of a block and its value,
+ * possibly also add it to the open-blocks pqueue.
+ */
+bool CPathEstimator::TestBlockReachability(
+	const MoveDef& moveDef,
+	const CPathFinderDef& peDef,
+	const CSolidObject* owner,
+	const unsigned int testBlockIdx
+) {
+	assert(testBlockIdx < (*psBlockStates).peNodeOffsets[moveDef.pathType].size());
+	const int2 testBlockSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][testBlockIdx];
+
+	if (!peDef.WithinConstraints(testBlockSquare))
+		return false;
+
+	return (DoBlockSearch(owner, moveDef, peDef.wsStartPos, SquareToFloat3(testBlockSquare)) == IPath::Ok);
+}
+
 
 
 /**
