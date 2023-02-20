@@ -328,7 +328,7 @@ bool CWeapon::CheckAimingAngle() const
 bool CWeapon::CanCallAimingScript(bool validAngle) const {
 	constexpr float maxAimOffset = 0.93969262078590838405410927732473; // math::cos(20.0f * math::DEG_TO_RAD);
 
-	bool ret = (gs->frameNum >= (lastAimedFrame + reaimTime));math::cos(20.0f * math::DEG_TO_RAD);
+	bool ret = (gs->frameNum >= (lastAimedFrame + reaimTime));
 
 	ret |= (wantedDir.dot(lastRequestedDir) <= weaponDef->maxFireAngle);
 	ret |= (wantedDir.dot(lastRequestedDir) <= maxAimOffset);
