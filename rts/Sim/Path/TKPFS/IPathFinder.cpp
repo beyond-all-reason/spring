@@ -140,7 +140,6 @@ IPath::SearchResult IPathFinder::GetPath(
 	// 			, BLOCK_SIZE, debugLoggingActive);
 	// }
 
-	// MH TODO: don't cache vertex costs or MT unit moves?
 
 	const CPathCache::CacheItem& ci = GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 
