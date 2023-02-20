@@ -787,10 +787,6 @@ void CPathManager::Update()
 	SCOPED_TIMER("Sim::Path");
 	assert(IsFinalized());
 
-	// Because load is re-evaluated every GAME_SPEED frames, if pathStateWorkloadRatio is clamped
-	// to MAX_LOAD_RATIO then it means the other pathing state won't be updated during this second.
-	constexpr int MAX_LOAD_RATIO = GAME_SPEED+1;
-
 	//pathFlowMap->Update();
 	pathHeatMap->Update();
 
@@ -800,16 +796,17 @@ void CPathManager::Update()
 	if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
 		const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
 		const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
-		const auto ratio = medResUpdatesCount / lowResUpdatesCount;
+		const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, GAME_SPEED);
 
 		if (ratio < 1.f) {
 			highPriorityResPS = lowResPE;
 			lowPriorityResPS = medResPE;
-			pathStateWorkloadRatio = Clamp(int(1.f/ratio + .5f)+1, 1, MAX_LOAD_RATIO);
+			const auto invRatio = std::min(1.f / ratio, GAME_SPEED);
+			pathStateWorkloadRatio = std::max(int(invRatio + .5f)+1, 1);
 		} else {
 			highPriorityResPS = medResPE;
 			lowPriorityResPS = lowResPE;
-			pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, MAX_LOAD_RATIO);
+			pathStateWorkloadRatio = std::max(int(ratio + .5f)+1, 1);
 		}
 
 		// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
