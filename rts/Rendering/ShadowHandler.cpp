@@ -417,8 +417,10 @@ void CShadowHandler::DrawShadowPasses()
 		readMap->GetGroundDrawer()->DrawShadowPass();
 
 	//transparent pass, comes last
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0)
+	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
 		projectileDrawer->DrawShadowPassTransparent();
+		eventHandler.DrawShadowPassTransparent();
+	}
 
 	glPopAttrib();
 
