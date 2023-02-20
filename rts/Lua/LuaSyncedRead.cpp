@@ -1417,6 +1417,17 @@ int LuaSyncedRead::GetTeamStartPosition(lua_State* L)
 }
 
 
+/******************************************************************************
+ * Misc
+ *
+ * @section misc
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.GetMapStartPositions
+ */
 int LuaSyncedRead::GetMapStartPositions(lua_State* L)
 {
 	lua_createtable(L, MAX_TEAMS, 0);
@@ -1440,6 +1451,10 @@ int LuaSyncedRead::GetMapStartPositions(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetAllyTeamList
+ */
 int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 {
 	lua_createtable(L, teamHandler.ActiveAllyTeams(), 0);
@@ -1455,6 +1470,10 @@ int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamList
+ */
 int LuaSyncedRead::GetTeamList(lua_State* L)
 {
 	const int args = lua_gettop(L); // number of arguments
@@ -1490,6 +1509,10 @@ int LuaSyncedRead::GetTeamList(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetPlayerList
+ */
 int LuaSyncedRead::GetPlayerList(lua_State* L)
 {
 	int teamID = -1;
@@ -1539,6 +1562,10 @@ int LuaSyncedRead::GetPlayerList(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetTeamInfo
+ */
 int LuaSyncedRead::GetTeamInfo(lua_State* L)
 {
 	const int teamID = luaL_checkint(L, 1);
@@ -1575,6 +1602,10 @@ int LuaSyncedRead::GetTeamInfo(lua_State* L)
 	return 7 + getTeamOpts;
 }
 
+/***
+ *
+ * @function Spring.GetTeamAllyTeamID
+ */
 int LuaSyncedRead::GetTeamAllyTeamID(lua_State* L)
 {
 	const int teamID = luaL_checkint(L, 1);
@@ -1589,6 +1620,10 @@ int LuaSyncedRead::GetTeamAllyTeamID(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetTeamResources
+ */
 int LuaSyncedRead::GetTeamResources(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1633,6 +1668,10 @@ int LuaSyncedRead::GetTeamResources(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitStats
+ */
 int LuaSyncedRead::GetTeamUnitStats(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1657,6 +1696,10 @@ int LuaSyncedRead::GetTeamUnitStats(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamResourceStats
+ */
 int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1695,6 +1738,10 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamStatsHistory
+ */
 int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1780,6 +1827,10 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamLuaAI
+ */
 int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
 {
 	const CTeam* team = ParseTeam(L, __func__, 1);
@@ -1809,6 +1860,10 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetPlayerInfo
+ */
 int LuaSyncedRead::GetPlayerInfo(lua_State* L)
 {
 	const int playerID = luaL_checkint(L, 1);
@@ -1853,6 +1908,10 @@ int LuaSyncedRead::GetPlayerInfo(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetPlayerControlledUnit
+ */
 int LuaSyncedRead::GetPlayerControlledUnit(lua_State* L)
 {
 	const int playerID = luaL_checkint(L, 1);
@@ -1882,6 +1941,10 @@ int LuaSyncedRead::GetPlayerControlledUnit(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetAIInfo
+ */
 int LuaSyncedRead::GetAIInfo(lua_State* L)
 {
 	int numVals = 0;
@@ -1929,6 +1992,10 @@ int LuaSyncedRead::GetAIInfo(lua_State* L)
 	return numVals;
 }
 
+/***
+ *
+ * @function Spring.GetAllyTeamInfo
+ */
 int LuaSyncedRead::GetAllyTeamInfo(lua_State* L)
 {
 	const size_t allyteam = (size_t)luaL_checkint(L, -1);
@@ -1948,6 +2015,10 @@ int LuaSyncedRead::GetAllyTeamInfo(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.AreTeamsAllied
+ */
 int LuaSyncedRead::AreTeamsAllied(lua_State* L)
 {
 	const int teamId1 = (int)luaL_checkint(L, -1);
@@ -1961,6 +2032,10 @@ int LuaSyncedRead::AreTeamsAllied(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.ArePlayersAllied
+ */
 int LuaSyncedRead::ArePlayersAllied(lua_State* L)
 {
 	const int player1 = luaL_checkint(L, -1);
@@ -1989,6 +2064,10 @@ int LuaSyncedRead::ArePlayersAllied(lua_State* L)
 //  Grouped Unit Queries
 //
 
+/***
+ *
+ * @function Spring.GetAllUnits
+ */
 int LuaSyncedRead::GetAllUnits(lua_State* L)
 {
 	lua_createtable(L, (unitHandler.GetActiveUnits()).size(), 0);
@@ -2013,6 +2092,10 @@ int LuaSyncedRead::GetAllUnits(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnits
+ */
 int LuaSyncedRead::GetTeamUnits(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2123,6 +2206,10 @@ static inline void InsertSearchUnitDefs(const UnitDef* ud, bool allied)
 
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitsSorted
+ */
 int LuaSyncedRead::GetTeamUnitsSorted(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2213,6 +2300,10 @@ int LuaSyncedRead::GetTeamUnitsSorted(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitsCounts
+ */
 int LuaSyncedRead::GetTeamUnitsCounts(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2290,6 +2381,10 @@ int LuaSyncedRead::GetTeamUnitsCounts(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitsByDefs
+ */
 int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2349,6 +2444,10 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitDefCount
+ */
 int LuaSyncedRead::GetTeamUnitDefCount(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2403,6 +2502,10 @@ int LuaSyncedRead::GetTeamUnitDefCount(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTeamUnitCount
+ */
 int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) == CEventClient::NoAccessTeam)
@@ -2485,6 +2588,10 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 	if (!LuaUtils::IsUnitVisible(L, unit)) { continue; }
 
 
+/***
+ *
+ * @function Spring.GetUnitsInRectangle
+ */
 int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 {
 	const float xmin = luaL_checkfloat(L, 1);
@@ -2528,6 +2635,10 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitsInBox
+ */
 int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 {
 	const float xmin = luaL_checkfloat(L, 1);
@@ -2577,6 +2688,10 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitsInCylinder
+ */
 int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 {
 	const float x      = luaL_checkfloat(L, 1);
@@ -2627,6 +2742,10 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitsInSphere
+ */
 int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 {
 	const float x      = luaL_checkfloat(L, 1);
@@ -2699,6 +2818,10 @@ static inline bool UnitInPlanes(const CUnit* unit, const vector<Plane>& planes)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitsInPlanes
+ */
 int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 {
 	if (!lua_istable(L, 1)) {
@@ -2787,6 +2910,10 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetUnitNearestAlly
+ */
 int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -2805,6 +2932,10 @@ int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitNearestEnemy
+ */
 int LuaSyncedRead::GetUnitNearestEnemy(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -2862,6 +2993,10 @@ inline void ProcessFeatures(lua_State* L, const vector<CFeature*>& features) {
 	}
 }
 
+/***
+ *
+ * @function Spring.GetFeaturesInRectangle
+ */
 int LuaSyncedRead::GetFeaturesInRectangle(lua_State* L)
 {
 	const float xmin = luaL_checkfloat(L, 1);
@@ -2878,6 +3013,10 @@ int LuaSyncedRead::GetFeaturesInRectangle(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetFeaturesInSphere
+ */
 int LuaSyncedRead::GetFeaturesInSphere(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -2893,6 +3032,10 @@ int LuaSyncedRead::GetFeaturesInSphere(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetFeaturesInCylinder
+ */
 int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -2907,6 +3050,10 @@ int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectilesInRectangle
+ */
 int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 {
 	const float xmin = luaL_checkfloat(L, 1);
@@ -2975,6 +3122,10 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.ValidUnitID
+ */
 int LuaSyncedRead::ValidUnitID(lua_State* L)
 {
 	lua_pushboolean(L, lua_isnumber(L, 1) && ParseUnit(L, __func__, 1) != nullptr);
@@ -2982,6 +3133,10 @@ int LuaSyncedRead::ValidUnitID(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitStates
+ */
 int LuaSyncedRead::GetUnitStates(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3069,6 +3224,10 @@ int LuaSyncedRead::GetUnitStates(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitArmored
+ */
 int LuaSyncedRead::GetUnitArmored(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3081,6 +3240,10 @@ int LuaSyncedRead::GetUnitArmored(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsActive
+ */
 int LuaSyncedRead::GetUnitIsActive(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3092,6 +3255,10 @@ int LuaSyncedRead::GetUnitIsActive(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsCloaked
+ */
 int LuaSyncedRead::GetUnitIsCloaked(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3103,6 +3270,10 @@ int LuaSyncedRead::GetUnitIsCloaked(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitSelfDTime
+ */
 int LuaSyncedRead::GetUnitSelfDTime(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3114,6 +3285,10 @@ int LuaSyncedRead::GetUnitSelfDTime(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitStockpile
+ */
 int LuaSyncedRead::GetUnitStockpile(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3130,6 +3305,10 @@ int LuaSyncedRead::GetUnitStockpile(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitSensorRadius
+ */
 int LuaSyncedRead::GetUnitSensorRadius(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3166,6 +3345,10 @@ int LuaSyncedRead::GetUnitSensorRadius(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitPosErrorParams
+ */
 int LuaSyncedRead::GetUnitPosErrorParams(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3189,6 +3372,10 @@ int LuaSyncedRead::GetUnitPosErrorParams(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitTooltip
+ */
 int LuaSyncedRead::GetUnitTooltip(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -3223,6 +3410,10 @@ int LuaSyncedRead::GetUnitTooltip(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitDefID
+ */
 int LuaSyncedRead::GetUnitDefID(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -3242,6 +3433,10 @@ int LuaSyncedRead::GetUnitDefID(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitTeam
+ */
 int LuaSyncedRead::GetUnitTeam(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -3253,6 +3448,10 @@ int LuaSyncedRead::GetUnitTeam(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitAllyTeam
+ */
 int LuaSyncedRead::GetUnitAllyTeam(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -3264,6 +3463,10 @@ int LuaSyncedRead::GetUnitAllyTeam(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitNeutral
+ */
 int LuaSyncedRead::GetUnitNeutral(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -3275,6 +3478,10 @@ int LuaSyncedRead::GetUnitNeutral(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitHealth
+ */
 int LuaSyncedRead::GetUnitHealth(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3304,6 +3511,10 @@ int LuaSyncedRead::GetUnitHealth(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsDead
+ */
 int LuaSyncedRead::GetUnitIsDead(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -3315,6 +3526,10 @@ int LuaSyncedRead::GetUnitIsDead(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsStunned
+ */
 int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3328,6 +3543,10 @@ int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitResources
+ */
 int LuaSyncedRead::GetUnitResources(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3342,6 +3561,10 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitMetalExtraction
+ */
 int LuaSyncedRead::GetUnitMetalExtraction(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3356,6 +3579,10 @@ int LuaSyncedRead::GetUnitMetalExtraction(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitExperience
+ */
 int LuaSyncedRead::GetUnitExperience(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3368,6 +3595,10 @@ int LuaSyncedRead::GetUnitExperience(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitHeight
+ */
 int LuaSyncedRead::GetUnitHeight(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -3379,6 +3610,10 @@ int LuaSyncedRead::GetUnitHeight(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitRadius
+ */
 int LuaSyncedRead::GetUnitRadius(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -3389,21 +3624,37 @@ int LuaSyncedRead::GetUnitRadius(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitMass
+ */
 int LuaSyncedRead::GetUnitMass(lua_State* L)
 {
 	return (GetSolidObjectMass(L, ParseInLosUnit(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetUnitPosition
+ */
 int LuaSyncedRead::GetUnitPosition(lua_State* L)
 {
 	return (GetSolidObjectPosition(L, ParseUnit(L, __func__, 1), false));
 }
 
+/***
+ *
+ * @function Spring.GetUnitBasePosition
+ */
 int LuaSyncedRead::GetUnitBasePosition(lua_State* L)
 {
 	return (GetUnitPosition(L));
 }
 
+/***
+ *
+ * @function Spring.GetUnitVectors
+ */
 int LuaSyncedRead::GetUnitVectors(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3424,11 +3675,19 @@ int LuaSyncedRead::GetUnitVectors(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitRotation
+ */
 int LuaSyncedRead::GetUnitRotation(lua_State* L)
 {
 	return (GetSolidObjectRotation(L, ParseInLosUnit(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetUnitDirection
+ */
 int LuaSyncedRead::GetUnitDirection(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3443,6 +3702,10 @@ int LuaSyncedRead::GetUnitDirection(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitHeading
+ */
 int LuaSyncedRead::GetUnitHeading(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3454,12 +3717,20 @@ int LuaSyncedRead::GetUnitHeading(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitVelocity
+ */
 int LuaSyncedRead::GetUnitVelocity(lua_State* L)
 {
 	return (GetWorldObjectVelocity(L, ParseInLosUnit(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitBuildFacing
+ */
 int LuaSyncedRead::GetUnitBuildFacing(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3471,6 +3742,10 @@ int LuaSyncedRead::GetUnitBuildFacing(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsBuilding
+ */
 int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3496,6 +3771,10 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitCurrentBuildPower
+ */
 int LuaSyncedRead::GetUnitCurrentBuildPower(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3524,6 +3803,10 @@ int LuaSyncedRead::GetUnitCurrentBuildPower(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitHarvestStorage
+ */
 int LuaSyncedRead::GetUnitHarvestStorage(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3537,6 +3820,10 @@ int LuaSyncedRead::GetUnitHarvestStorage(lua_State* L)
 	return 2 * SResourcePack::MAX_RESOURCES;
 }
 
+/***
+ *
+ * @function Spring.GetUnitBuildParams
+ */
 int LuaSyncedRead::GetUnitBuildParams(lua_State* L)
 {
 	const CUnit * unit = ParseAllyUnit(L, __func__, 1);
@@ -3565,6 +3852,10 @@ int LuaSyncedRead::GetUnitBuildParams(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.GetUnitInBuildStance
+ */
 int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3581,6 +3872,10 @@ int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitNanoPieces
+ */
 int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3622,6 +3917,10 @@ int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitTransporter
+ */
 int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3636,6 +3935,10 @@ int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitIsTransporting
+ */
 int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3657,6 +3960,10 @@ int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitShieldState
+ */
 int LuaSyncedRead::GetUnitShieldState(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -3681,6 +3988,10 @@ int LuaSyncedRead::GetUnitShieldState(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitFlanking
+ */
 int LuaSyncedRead::GetUnitFlanking(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3735,6 +4046,10 @@ int LuaSyncedRead::GetUnitFlanking(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitMaxRange
+ */
 int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3746,6 +4061,10 @@ int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponState
+ */
 int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3921,6 +4240,10 @@ static inline int PushDamagesKey(lua_State* L, const DynDamageArray& damages, in
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponDamages
+ */
 int LuaSyncedRead::GetUnitWeaponDamages(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3955,6 +4278,10 @@ int LuaSyncedRead::GetUnitWeaponDamages(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponVectors
+ */
 int LuaSyncedRead::GetUnitWeaponVectors(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -3990,6 +4317,10 @@ int LuaSyncedRead::GetUnitWeaponVectors(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponTryTarget
+ */
 int LuaSyncedRead::GetUnitWeaponTryTarget(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4030,6 +4361,10 @@ int LuaSyncedRead::GetUnitWeaponTryTarget(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponTestTarget
+ */
 int LuaSyncedRead::GetUnitWeaponTestTarget(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4063,6 +4398,10 @@ int LuaSyncedRead::GetUnitWeaponTestTarget(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponTestRange
+ */
 int LuaSyncedRead::GetUnitWeaponTestRange(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4096,6 +4435,10 @@ int LuaSyncedRead::GetUnitWeaponTestRange(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitWeaponHaveFreeLineOfFire
+ */
 int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4157,6 +4500,10 @@ int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitWeaponCanFire
+ */
 int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4177,6 +4524,10 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitWeaponTarget
+ */
 int LuaSyncedRead::GetUnitWeaponTarget(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4226,6 +4577,10 @@ int LuaSyncedRead::GetUnitTravel(lua_State* L) { lua_pushnumber(L, 0.0f); lua_pu
 int LuaSyncedRead::GetUnitFuel(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // DEPRECATED
 
 
+/***
+ *
+ * @function Spring.GetUnitEstimatedPath
+ */
 int LuaSyncedRead::GetUnitEstimatedPath(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4241,6 +4596,10 @@ int LuaSyncedRead::GetUnitEstimatedPath(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitLastAttacker
+ */
 int LuaSyncedRead::GetUnitLastAttacker(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -4256,11 +4615,19 @@ int LuaSyncedRead::GetUnitLastAttacker(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitLastAttackedPiece
+ */
 int LuaSyncedRead::GetUnitLastAttackedPiece(lua_State* L)
 {
 	return (GetSolidObjectLastHitPiece(L, ParseAllyUnit(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetUnitCollisionVolumeData
+ */
 int LuaSyncedRead::GetUnitCollisionVolumeData(lua_State* L)
 {
 	const CUnit* unit = ParseInLosUnit(L, __func__, 1);
@@ -4277,6 +4644,10 @@ int LuaSyncedRead::GetUnitPieceCollisionVolumeData(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitSeparation
+ */
 int LuaSyncedRead::GetUnitSeparation(lua_State* L)
 {
 	const CUnit* unit1 = ParseUnit(L, __func__, 1);
@@ -4310,6 +4681,10 @@ int LuaSyncedRead::GetUnitSeparation(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetUnitFeatureSeparation
+ */
 int LuaSyncedRead::GetUnitFeatureSeparation(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -4340,6 +4715,10 @@ int LuaSyncedRead::GetUnitFeatureSeparation(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitDefDimensions
+ */
 int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 {
 	const int unitDefID = luaL_checkint(L, 1);
@@ -4369,6 +4748,10 @@ int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetCEGID
+ */
 int LuaSyncedRead::GetCEGID(lua_State* L)
 {
 	lua_pushnumber(L, explGenHandler.LoadCustomGeneratorID(luaL_checkstring(L, 1)));
@@ -4376,12 +4759,20 @@ int LuaSyncedRead::GetCEGID(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitBlocking
+ */
 int LuaSyncedRead::GetUnitBlocking(lua_State* L)
 {
 	return (GetSolidObjectBlocking(L, ParseTypedUnit(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitMoveTypeData
+ */
 int LuaSyncedRead::GetUnitMoveTypeData(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4602,6 +4993,10 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
 	}
 }
 
+/***
+ *
+ * @function Spring.GetUnitCurrentCommand
+ */
 int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4631,6 +5026,10 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 	return 3 + numParams;
 }
 
+/***
+ *
+ * @function Spring.GetUnitCommands
+ */
 int LuaSyncedRead::GetUnitCommands(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4657,6 +5056,10 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetFactoryCommands
+ */
 int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4685,6 +5088,11 @@ int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.GetFactoryBuggerOff
+ */
 int LuaSyncedRead::GetFactoryBuggerOff(lua_State* L)
 {
 	const CUnit* u = ParseUnit(L, __func__, 1);
@@ -4757,6 +5165,10 @@ static void PackFactoryCounts(lua_State* L,
 }
 
 
+/***
+ *
+ * @function Spring.GetFactoryCounts
+ */
 int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
@@ -4784,6 +5196,10 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetCommandQueue
+ */
 int LuaSyncedRead::GetCommandQueue(lua_State* L)
 {
 	return (GetUnitCommands(L));
@@ -4862,12 +5278,20 @@ static int PackBuildQueue(lua_State* L, bool canBuild, const char* caller)
 }
 
 
+/***
+ *
+ * @function Spring.GetFullBuildQueue
+ */
 int LuaSyncedRead::GetFullBuildQueue(lua_State* L)
 {
 	return PackBuildQueue(L, false, __func__);
 }
 
 
+/***
+ *
+ * @function Spring.GetRealBuildQueue
+ */
 int LuaSyncedRead::GetRealBuildQueue(lua_State* L)
 {
 	return PackBuildQueue(L, true, __func__);
@@ -4877,6 +5301,10 @@ int LuaSyncedRead::GetRealBuildQueue(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetUnitCmdDescs
+ */
 int LuaSyncedRead::GetUnitCmdDescs(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -4911,6 +5339,10 @@ int LuaSyncedRead::GetUnitCmdDescs(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.FindUnitCmdDesc
+ */
 int LuaSyncedRead::FindUnitCmdDesc(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -4933,6 +5365,10 @@ int LuaSyncedRead::FindUnitCmdDesc(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.ValidFeatureID
+ */
 int LuaSyncedRead::ValidFeatureID(lua_State* L)
 {
 	lua_pushboolean(L, lua_isnumber(L, 1) && ParseFeature(L, __func__, 1) != nullptr);
@@ -4940,6 +5376,10 @@ int LuaSyncedRead::ValidFeatureID(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetAllFeatures
+ */
 int LuaSyncedRead::GetAllFeatures(lua_State* L)
 {
 	int count = 0;
@@ -4964,6 +5404,10 @@ int LuaSyncedRead::GetAllFeatures(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureDefID
+ */
 int LuaSyncedRead::GetFeatureDefID(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -4975,6 +5419,10 @@ int LuaSyncedRead::GetFeatureDefID(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureTeam
+ */
 int LuaSyncedRead::GetFeatureTeam(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -4990,6 +5438,10 @@ int LuaSyncedRead::GetFeatureTeam(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureAllyTeam
+ */
 int LuaSyncedRead::GetFeatureAllyTeam(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5001,6 +5453,10 @@ int LuaSyncedRead::GetFeatureAllyTeam(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureHealth
+ */
 int LuaSyncedRead::GetFeatureHealth(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5014,6 +5470,10 @@ int LuaSyncedRead::GetFeatureHealth(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureHeight
+ */
 int LuaSyncedRead::GetFeatureHeight(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5025,6 +5485,10 @@ int LuaSyncedRead::GetFeatureHeight(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureRadius
+ */
 int LuaSyncedRead::GetFeatureRadius(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5035,16 +5499,28 @@ int LuaSyncedRead::GetFeatureRadius(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetFeatureMass
+ */
 int LuaSyncedRead::GetFeatureMass(lua_State* L)
 {
 	return (GetSolidObjectMass(L, ParseFeature(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetFeaturePosition
+ */
 int LuaSyncedRead::GetFeaturePosition(lua_State* L)
 {
 	return (GetSolidObjectPosition(L, ParseFeature(L, __func__, 1), true));
 }
 
+/***
+ *
+ * @function Spring.GetFeatureSeparation
+ */
 int LuaSyncedRead::GetFeatureSeparation(lua_State* L)
 {
 	const CFeature* feature1 = ParseFeature(L, __func__, 1);
@@ -5069,6 +5545,10 @@ int LuaSyncedRead::GetFeatureSeparation(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetFeatureRotation
+ */
 int LuaSyncedRead::GetFeatureRotation(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5078,6 +5558,10 @@ int LuaSyncedRead::GetFeatureRotation(lua_State* L)
 	return GetSolidObjectRotation(L, feature);
 }
 
+/***
+ *
+ * @function Spring.GetFeatureDirection
+ */
 int LuaSyncedRead::GetFeatureDirection(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5094,12 +5578,20 @@ int LuaSyncedRead::GetFeatureDirection(lua_State* L)
 	return 3;
 }
 
+/***
+ *
+ * @function Spring.GetFeatureVelocity
+ */
 int LuaSyncedRead::GetFeatureVelocity(lua_State* L)
 {
 	return (GetWorldObjectVelocity(L, ParseFeature(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureHeading
+ */
 int LuaSyncedRead::GetFeatureHeading(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5111,6 +5603,10 @@ int LuaSyncedRead::GetFeatureHeading(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureResources
+ */
 int LuaSyncedRead::GetFeatureResources(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5127,12 +5623,20 @@ int LuaSyncedRead::GetFeatureResources(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureBlocking
+ */
 int LuaSyncedRead::GetFeatureBlocking(lua_State* L)
 {
 	return (GetSolidObjectBlocking(L, ParseFeature(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureNoSelect
+ */
 int LuaSyncedRead::GetFeatureNoSelect(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5145,6 +5649,10 @@ int LuaSyncedRead::GetFeatureNoSelect(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureResurrect
+ */
 int LuaSyncedRead::GetFeatureResurrect(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5163,11 +5671,19 @@ int LuaSyncedRead::GetFeatureResurrect(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetFeatureLastAttackedPiece
+ */
 int LuaSyncedRead::GetFeatureLastAttackedPiece(lua_State* L)
 {
 	return (GetSolidObjectLastHitPiece(L, ParseFeature(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetFeatureCollisionVolumeData
+ */
 int LuaSyncedRead::GetFeatureCollisionVolumeData(lua_State* L)
 {
 	const CFeature* feature = ParseFeature(L, __func__, 1);
@@ -5178,6 +5694,10 @@ int LuaSyncedRead::GetFeatureCollisionVolumeData(lua_State* L)
 	return LuaUtils::PushColVolData(L, &feature->collisionVolume);
 }
 
+/***
+ *
+ * @function Spring.GetFeaturePieceCollisionVolumeData
+ */
 int LuaSyncedRead::GetFeaturePieceCollisionVolumeData(lua_State* L)
 {
 	return (PushPieceCollisionVolumeData(L, ParseFeature(L, __func__, 1)));
@@ -5186,6 +5706,10 @@ int LuaSyncedRead::GetFeaturePieceCollisionVolumeData(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetProjectilePosition
+ */
 int LuaSyncedRead::GetProjectilePosition(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5199,6 +5723,10 @@ int LuaSyncedRead::GetProjectilePosition(lua_State* L)
 	return 3;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileDirection
+ */
 int LuaSyncedRead::GetProjectileDirection(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5212,12 +5740,20 @@ int LuaSyncedRead::GetProjectileDirection(lua_State* L)
 	return 3;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileVelocity
+ */
 int LuaSyncedRead::GetProjectileVelocity(lua_State* L)
 {
 	return (GetWorldObjectVelocity(L, ParseProjectile(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetProjectileGravity
+ */
 int LuaSyncedRead::GetProjectileGravity(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5238,6 +5774,10 @@ int LuaSyncedRead::GetProjectileSpinVec(lua_State* L) {
 	return 3;
 } // DEPRECATED
 
+/***
+ *
+ * @function Spring.GetPieceProjectileParams
+ */
 int LuaSyncedRead::GetPieceProjectileParams(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5256,6 +5796,10 @@ int LuaSyncedRead::GetPieceProjectileParams(lua_State* L)
 	return (1 + 1 + 1 + 3);
 }
 
+/***
+ *
+ * @function Spring.GetProjectileTarget
+ */
 int LuaSyncedRead::GetProjectileTarget(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5296,6 +5840,10 @@ int LuaSyncedRead::GetProjectileTarget(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileIsIntercepted
+ */
 int LuaSyncedRead::GetProjectileIsIntercepted(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5309,6 +5857,10 @@ int LuaSyncedRead::GetProjectileIsIntercepted(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileTimeToLive
+ */
 int LuaSyncedRead::GetProjectileTimeToLive(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5322,6 +5874,10 @@ int LuaSyncedRead::GetProjectileTimeToLive(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileOwnerID
+ */
 int LuaSyncedRead::GetProjectileOwnerID(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5337,6 +5893,10 @@ int LuaSyncedRead::GetProjectileOwnerID(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileTeamID
+ */
 int LuaSyncedRead::GetProjectileTeamID(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5351,6 +5911,10 @@ int LuaSyncedRead::GetProjectileTeamID(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileAllyTeamID
+ */
 int LuaSyncedRead::GetProjectileAllyTeamID(lua_State* L)
 {
 	const CProjectile* const pro = ParseProjectile(L, __func__, 1);
@@ -5365,6 +5929,10 @@ int LuaSyncedRead::GetProjectileAllyTeamID(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileType
+ */
 int LuaSyncedRead::GetProjectileType(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5377,6 +5945,10 @@ int LuaSyncedRead::GetProjectileType(lua_State* L)
 	return 2;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileDefID
+ */
 int LuaSyncedRead::GetProjectileDefID(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5396,6 +5968,10 @@ int LuaSyncedRead::GetProjectileDefID(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectileDamages
+ */
 int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5412,6 +5988,10 @@ int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 	return PushDamagesKey(L, *wpro->damages, 2);
 }
 
+/***
+ *
+ * @function Spring.GetProjectileName
+ */
 int LuaSyncedRead::GetProjectileName(lua_State* L)
 {
 	const CProjectile* pro = ParseProjectile(L, __func__, 1);
@@ -5446,6 +6026,10 @@ int LuaSyncedRead::GetProjectileName(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetGroundHeight
+ */
 int LuaSyncedRead::GetGroundHeight(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -5455,6 +6039,10 @@ int LuaSyncedRead::GetGroundHeight(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetGroundOrigHeight
+ */
 int LuaSyncedRead::GetGroundOrigHeight(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -5464,6 +6052,10 @@ int LuaSyncedRead::GetGroundOrigHeight(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetGroundNormal
+ */
 int LuaSyncedRead::GetGroundNormal(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -5483,6 +6075,10 @@ int LuaSyncedRead::GetGroundNormal(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetGroundInfo
+ */
 int LuaSyncedRead::GetGroundInfo(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -5537,6 +6133,10 @@ static void ParseMapCoords(lua_State* L, const char* caller,
 }
 
 
+/***
+ *
+ * @function Spring.GetGroundBlocked
+ */
 int LuaSyncedRead::GetGroundBlocked(lua_State* L)
 {
 	if ((CLuaHandle::GetHandleReadAllyTeam(L) < 0) && !CLuaHandle::GetHandleFullRead(L))
@@ -5578,6 +6178,10 @@ int LuaSyncedRead::GetGroundBlocked(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetGroundExtremes
+ */
 int LuaSyncedRead::GetGroundExtremes(lua_State* L)
 {
 	lua_pushnumber(L, readMap->GetInitMinHeight());
@@ -5588,6 +6192,10 @@ int LuaSyncedRead::GetGroundExtremes(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetTerrainTypeData
+ */
 int LuaSyncedRead::GetTerrainTypeData(lua_State* L)
 {
 	const int tti = luaL_checkint(L, 1);
@@ -5598,6 +6206,10 @@ int LuaSyncedRead::GetTerrainTypeData(lua_State* L)
 	return (PushTerrainTypeData(L, &mapInfo->terrainTypes[tti], false));
 }
 
+/***
+ *
+ * @function Spring.GetGrass
+ */
 int LuaSyncedRead::GetGrass(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1), 0.0f, luaL_checkfloat(L, 2));
@@ -5607,6 +6219,10 @@ int LuaSyncedRead::GetGrass(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetSmoothMeshHeight
+ */
 int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
@@ -5620,6 +6236,10 @@ int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
 /******************************************************************************/
 
 
+/***
+ *
+ * @function Spring.TestMoveOrder
+ */
 int LuaSyncedRead::TestMoveOrder(lua_State* L)
 {
 	const int unitDefID = luaL_checkint(L, 1);
@@ -5660,6 +6280,10 @@ int LuaSyncedRead::TestMoveOrder(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.TestBuildOrder
+ */
 int LuaSyncedRead::TestBuildOrder(lua_State* L)
 {
 	const int unitDefID = luaL_checkint(L, 1);
@@ -5700,6 +6324,10 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.Pos2BuildPos
+ */
 int LuaSyncedRead::Pos2BuildPos(lua_State* L)
 {
 	const int unitDefID = luaL_checkint(L, 1);
@@ -5717,6 +6345,10 @@ int LuaSyncedRead::Pos2BuildPos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.ClosestBuildPos
+ */
 int LuaSyncedRead::ClosestBuildPos(lua_State* L)
 {
 	const int teamID = luaL_checkint(L, 1);
@@ -5766,6 +6398,10 @@ static int GetEffectiveLosAllyTeam(lua_State* L, int arg)
 }
 
 
+/***
+ *
+ * @function Spring.GetPositionLosState
+ */
 int LuaSyncedRead::GetPositionLosState(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1),
@@ -5794,6 +6430,10 @@ int LuaSyncedRead::GetPositionLosState(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsPosInLos
+ */
 int LuaSyncedRead::IsPosInLos(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1),
@@ -5811,6 +6451,10 @@ int LuaSyncedRead::IsPosInLos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsPosInRadar
+ */
 int LuaSyncedRead::IsPosInRadar(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1),
@@ -5828,6 +6472,10 @@ int LuaSyncedRead::IsPosInRadar(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsPosInAirLos
+ */
 int LuaSyncedRead::IsPosInAirLos(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1),
@@ -5845,6 +6493,10 @@ int LuaSyncedRead::IsPosInAirLos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetUnitLosState
+ */
 int LuaSyncedRead::GetUnitLosState(lua_State* L)
 {
 	const CUnit* unit = ParseUnit(L, __func__, 1);
@@ -5887,6 +6539,13 @@ int LuaSyncedRead::GetUnitLosState(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsUnitInLos
+ * @number unitID
+ * @number allyTeamID
+ * @treturn bool inLos
+ */
 int LuaSyncedRead::IsUnitInLos(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -5904,6 +6563,13 @@ int LuaSyncedRead::IsUnitInLos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsUnitInAirLos
+ * @number unitID
+ * @number allyTeamID
+ * @treturn bool inAirLos
+ */
 int LuaSyncedRead::IsUnitInAirLos(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -5921,6 +6587,13 @@ int LuaSyncedRead::IsUnitInAirLos(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsUnitInRadar
+ * @number unitID
+ * @number allyTeamID
+ * @treturn bool inRadar
+ */
 int LuaSyncedRead::IsUnitInRadar(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -5938,6 +6611,13 @@ int LuaSyncedRead::IsUnitInRadar(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.IsUnitInJammer
+ * @number unitID
+ * @number allyTeamID
+ * @treturn bool inJammer
+ */
 int LuaSyncedRead::IsUnitInJammer(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -5970,8 +6650,12 @@ int LuaSyncedRead::GetClosestValidPosition(lua_State* L)
 }
 
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Piece/Script
+ *
+ * @section piecescript
+******************************************************************************/
+
 
 static int GetModelPieceMap(lua_State* L, const std::string& modelName)
 {
@@ -6055,6 +6739,19 @@ static int GetSolidObjectPieceList(lua_State* L, const CSolidObject* o)
 	return 1;
 }
 
+
+/*** Piece spec
+ *
+ * @table pieceSpec
+ *
+ * @string name
+ * @string parent
+ * @tparam {[string],...} children names
+ * @bool empty
+ * @tparam {number,number,number} min (x,y,z)
+ * @tparam {number,number,number} max (x,y,z)
+ * @tparam {number,number,number} offset (x,y,z)
+ */
 
 
 static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
@@ -6196,59 +6893,248 @@ static int GetSolidObjectPieceMatrix(lua_State* L, const CSolidObject* o)
 	return 16;
 }
 
+
+/***
+ *
+ * @function Spring.GetModelPieceMap
+ * @string modelName
+ * @treturn nil|{[string]=number,...} pieceInfos where keys are piece names and values are indices
+ */
 int LuaSyncedRead::GetModelPieceMap(lua_State* L) {
 	return ::GetModelPieceMap(L, luaL_optsstring(L, 1, ""));
 }
+
+
+/***
+ *
+ * @function Spring.GetModelPieceList
+ * @string modelName
+ * @treturn nil|{[string],...} pieceNames
+ */
 int LuaSyncedRead::GetModelPieceList(lua_State* L) {
 	return ::GetModelPieceList(L, luaL_optsstring(L, 1, ""));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPieceMap
+ * @number unitID
+ * @treturn nil|{[string]=number,...} pieceInfos where keys are piece names and values are indices
+ */
 int LuaSyncedRead::GetUnitPieceMap(lua_State* L) {
 	return (GetSolidObjectPieceMap(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPieceList
+ * @number unitID
+ * @treturn {[string],...} pieceNames
+ */
 int LuaSyncedRead::GetUnitPieceList(lua_State* L) {
 	return (GetSolidObjectPieceList(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPieceInfo
+ * @number unitID
+ * @number pieceIndex
+ * @treturn nil|pieceSpec pieceInfo
+ */
 int LuaSyncedRead::GetUnitPieceInfo(lua_State* L) {
 	return (GetSolidObjectPieceInfo(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPiecePosDir
+ * @number unitID
+ * @number pieceIndex
+ * @treturn number|nil posX
+ * @treturn number     posY
+ * @treturn number     posZ
+ * @treturn number     dirX
+ * @treturn number     dirY
+ * @treturn number     dirZ
+ */
 int LuaSyncedRead::GetUnitPiecePosDir(lua_State* L) {
 	return (GetSolidObjectPiecePosDir(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPiecePosition
+ * @number unitID
+ * @number pieceIndex
+ * @treturn number|nil posX
+ * @treturn number     posY
+ * @treturn number     posZ
+ */
 int LuaSyncedRead::GetUnitPiecePosition(lua_State* L) {
 	return (GetSolidObjectPiecePosition(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPieceDirection
+ * @number unitID
+ * @number pieceIndex
+ * @treturn number|nil dirX
+ * @treturn number     dirY
+ * @treturn number     dirZ
+ */
 int LuaSyncedRead::GetUnitPieceDirection(lua_State* L) {
 	return (GetSolidObjectPieceDirection(L, ParseTypedUnit(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetUnitPieceMatrix
+ * @number unitID
+ * @treturn number|nil m11
+ * @treturn number m12
+ * @treturn number m13
+ * @treturn number m14
+ * @treturn number m21
+ * @treturn number m22
+ * @treturn number m23
+ * @treturn number m24
+ * @treturn number m31
+ * @treturn number m32
+ * @treturn number m33
+ * @treturn number m34
+ * @treturn number m41
+ * @treturn number m42
+ * @treturn number m43
+ * @treturn number m44
+ */
 int LuaSyncedRead::GetUnitPieceMatrix(lua_State* L) {
 	return (GetSolidObjectPieceMatrix(L, ParseTypedUnit(L, __func__, 1)));
 }
 
 
+/***
+ *
+ * @function Spring.GetFeaturePieceMap
+ * @number featureID
+ * @treturn {[string]=number,...} pieceInfos where keys are piece names and values are indices
+ */
 int LuaSyncedRead::GetFeaturePieceMap(lua_State* L) {
 	return (GetSolidObjectPieceMap(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePieceList
+ * @number featureID
+ * @treturn {[string],...} pieceNames
+ */
 int LuaSyncedRead::GetFeaturePieceList(lua_State* L) {
 	return (GetSolidObjectPieceList(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePieceInfo
+ * @number featureID
+ * @number pieceIndex
+ * @treturn nil|pieceSpec pieceInfo
+ */
 int LuaSyncedRead::GetFeaturePieceInfo(lua_State* L) {
 	return (GetSolidObjectPieceInfo(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePiecePosDir
+ * @number featureID
+ * @number pieceIndex
+ * @treturn number|nil posX
+ * @treturn number     posY
+ * @treturn number     posZ
+ * @treturn number     dirX
+ * @treturn number     dirY
+ * @treturn number     dirZ
+ */
 int LuaSyncedRead::GetFeaturePiecePosDir(lua_State* L) {
 	return (GetSolidObjectPiecePosDir(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePiecePosition
+ * @number featureID
+ * @number pieceIndex
+ * @treturn number|nil posX
+ * @treturn number     posY
+ * @treturn number     posZ
+ */
 int LuaSyncedRead::GetFeaturePiecePosition(lua_State* L) {
 	return (GetSolidObjectPiecePosition(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePieceDirection
+ * @number featureID
+ * @number pieceIndex
+ * @treturn number|nil dirX
+ * @treturn number     dirY
+ * @treturn number     dirZ
+ */
 int LuaSyncedRead::GetFeaturePieceDirection(lua_State* L) {
 	return (GetSolidObjectPieceDirection(L, ParseFeature(L, __func__, 1)));
 }
+
+
+/***
+ *
+ * @function Spring.GetFeaturePieceMatrix
+ * @number featureID
+ * @treturn number|nil m11
+ * @treturn number m12
+ * @treturn number m13
+ * @treturn number m14
+ * @treturn number m21
+ * @treturn number m22
+ * @treturn number m23
+ * @treturn number m24
+ * @treturn number m31
+ * @treturn number m32
+ * @treturn number m33
+ * @treturn number m34
+ * @treturn number m41
+ * @treturn number m42
+ * @treturn number m43
+ * @treturn number m44
+ */
 int LuaSyncedRead::GetFeaturePieceMatrix(lua_State* L) {
 	return (GetSolidObjectPieceMatrix(L, ParseFeature(L, __func__, 1)));
 }
 
 
-
+/***
+ *
+ * @function Spring.GetUnitScriptPiece
+ *
+ * @number unitID
+ * @number[opt] scriptPiece
+ *
+ * @treturn {number,...}|number pieceIndices when scriptPiece is not specified, pieceIndex otherwise
+ */
 int LuaSyncedRead::GetUnitScriptPiece(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -6279,6 +7165,15 @@ int LuaSyncedRead::GetUnitScriptPiece(lua_State* L)
 	return 1;
 }
 
+
+/***
+ *
+ * @function Spring.GetUnitScriptNames
+ *
+ * @number unitID
+ *
+ * @treturn {[string]=number,...} where keys are piece names and values are piece indices
+ */
 int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 {
 	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
@@ -6300,6 +7195,23 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 }
 
 
+/******************************************************************************
+ * Misc
+ *
+ * @section misc
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.GetRadarErrorParams
+ *
+ * @number allyTeamID
+ *
+ * @treturn nil|number radarErrorSize actual radar error size (when allyTeamID is allied to current team) or base radar error size
+ * @treturn number baseRadarErrorSize
+ * @treturn number baseRadarErrorMult
+ */
 int LuaSyncedRead::GetRadarErrorParams(lua_State* L)
 {
 	const int allyTeamID = lua_tonumber(L, 1);
