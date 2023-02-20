@@ -35,7 +35,6 @@
 // #define BlurExponent       float
 // #define PerlinStartFreq    float
 // #define PerlinLacunarity   float
-// #define PerlinAmp          float
 // #define WaveOffsetFactor   float
 // #define WaveLength         float
 // #define WaveFoamDistortion float
