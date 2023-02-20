@@ -4573,8 +4573,8 @@ int LuaSyncedRead::GetUnitWeaponTarget(lua_State* L)
 }
 
 
-int LuaSyncedRead::GetUnitTravel(lua_State* L) { lua_pushnumber(L, 0.0f); lua_pushnumber(L, 0.0f); return 2; } // DEPRECATED
-int LuaSyncedRead::GetUnitFuel(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // DEPRECATED
+int LuaSyncedRead::GetUnitTravel(lua_State* L) { lua_pushnumber(L, 0.0f); lua_pushnumber(L, 0.0f); return 2; } // FIXME: DELETE ME
+int LuaSyncedRead::GetUnitFuel(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
 
 
 /***
@@ -5765,14 +5765,14 @@ int LuaSyncedRead::GetProjectileGravity(lua_State* L)
 	return 1;
 }
 
-int LuaSyncedRead::GetProjectileSpinAngle(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // DEPRECATED
-int LuaSyncedRead::GetProjectileSpinSpeed(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // DEPRECATED
+int LuaSyncedRead::GetProjectileSpinAngle(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
+int LuaSyncedRead::GetProjectileSpinSpeed(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
 int LuaSyncedRead::GetProjectileSpinVec(lua_State* L) {
 	lua_pushnumber(L, 0.0f);
 	lua_pushnumber(L, 0.0f);
 	lua_pushnumber(L, 0.0f);
 	return 3;
-} // DEPRECATED
+} // FIXME: DELETE ME
 
 /***
  *
