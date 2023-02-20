@@ -5,6 +5,7 @@
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/VAO.h"
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
@@ -142,6 +143,9 @@ private:
 	void UploadIndices();
 	void UploadBorderVertices();
 
+	void InitMainVAO() const;
+	void InitBorderVAO() const;
+
 	// recursive functions
 	bool Split(TriTreeNode* tri);
 	void RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right, const int2 apex, const int varTreeIdx, const int curNodeIdx);
@@ -180,7 +184,6 @@ private:
 	// does the variance-tree need to be recalculated for this Patch?
 	bool isTesselated = false;
 	bool isDirty = true;
-	bool vboVerticesUploaded = false;
 	// Did the tesselation tree change from what we have stored in the VBO?
 	bool isChanged = false;
 
@@ -209,6 +212,9 @@ private:
 	VBO vertVBO;
 	VBO indxVBO;
 	VBO borderVBO;
+
+	VAO mainVAO;
+	VAO borderVAO;
 };
 
 #endif

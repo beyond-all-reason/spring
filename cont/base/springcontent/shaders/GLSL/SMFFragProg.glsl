@@ -28,7 +28,13 @@ const float SMF_DETAILTEX_RES           = 0.02;
 
 
 /***********************************************************************/
-// Uniforms + Varyings
+// Uniforms + Varyings + Output
+
+in vec3 halfDir;
+in float fogFactor;
+in vec4 vertexWorldPos;
+in vec2 diffuseTexCoords;
+
 
 uniform sampler2D diffuseTex;
 uniform sampler2D normalsTex;
@@ -46,11 +52,6 @@ uniform vec2 mapHeights; // min & max height on the map
 
 uniform vec4 lightDir;
 uniform vec3 cameraPos;
-
-varying vec3 halfDir;
-varying float fogFactor;
-varying vec4 vertexWorldPos;
-varying vec2 diffuseTexCoords;
 
 #ifdef HAVE_INFOTEX
 	uniform sampler2D infoTex;
@@ -105,6 +106,12 @@ varying vec2 diffuseTexCoords;
 
 #ifdef SMF_PARALLAX_MAPPING
 	uniform sampler2D parallaxHeightTex;
+#endif
+
+#ifdef DEFERRED_MODE
+	out vec4 fragData[GBUFFER_MISCTEX_IDX + 1];
+#else
+	out vec4 fragColor;
 #endif
 
 
@@ -417,8 +424,8 @@ void main() {
 		// GroundMaterialAmbientDiffuseColor * LightAmbientDiffuseColor
 		vec4 shadeInt = GetShadeInt(cosAngleDiffuse, shadowCoeff, diffuseCol.a);
 
-		gl_FragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * shadeInt.rgb;
-		gl_FragColor.a = shadeInt.a;
+		fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * shadeInt.rgb;
+		fragColor.a = shadeInt.a;
 	}
 	#endif
 
@@ -428,7 +435,7 @@ void main() {
 		emissionCol = texture2D(lightEmissionTex, specTexCoords);
 
 		#ifndef DEFERRED_MODE
-		gl_FragColor.rgb = gl_FragColor.rgb * (1.0 - emissionCol.a) + emissionCol.rgb;
+		fragColor.rgb = fragColor.rgb * (1.0 - emissionCol.a) + emissionCol.rgb;
 		#endif
 	}
 	#endif
@@ -453,25 +460,25 @@ void main() {
 		vec3  specularInt  = specularCol.rgb * specularPow;
 		      specularInt *= shadowCoeff;
 
-		gl_FragColor.rgb += specularInt;
+		fragColor.rgb += specularInt;
 
 		#if (MAX_DYNAMIC_MAP_LIGHTS > 0)
-			gl_FragColor.rgb += DynamicLighting(normal, diffuseCol.rgb, specularCol.rgb, specularExp);
+			fragColor.rgb += DynamicLighting(normal, diffuseCol.rgb, specularCol.rgb, specularExp);
 		#endif
 	#endif
 
 
 #ifdef DEFERRED_MODE
-	gl_FragData[GBUFFER_NORMTEX_IDX] = vec4((normal + vec3(1.0, 1.0, 1.0)) * 0.5, 1.0);
-	gl_FragData[GBUFFER_DIFFTEX_IDX] = diffuseCol + detailCol;
-	gl_FragData[GBUFFER_SPECTEX_IDX] = specularCol;
-	gl_FragData[GBUFFER_EMITTEX_IDX] = emissionCol;
-	gl_FragData[GBUFFER_MISCTEX_IDX] = vec4(0.0, 0.0, 0.0, 0.0);
+	fragData[GBUFFER_NORMTEX_IDX] = vec4((normal + vec3(1.0, 1.0, 1.0)) * 0.5, 1.0);
+	fragData[GBUFFER_DIFFTEX_IDX] = diffuseCol + detailCol;
+	fragData[GBUFFER_SPECTEX_IDX] = specularCol;
+	fragData[GBUFFER_EMITTEX_IDX] = emissionCol;
+	fragData[GBUFFER_MISCTEX_IDX] = vec4(0.0, 0.0, 0.0, 0.0);
 
 	// linearly transform the eye-space depths, might be more useful?
 	// gl_FragDepth = gl_FragCoord.z / gl_FragCoord.w;
 #else
-	gl_FragColor.rgb = mix(gl_Fog.color.rgb, gl_FragColor.rgb, fogFactor);
+	fragColor.rgb = mix(gl_Fog.color.rgb, fragColor.rgb, fogFactor);
 #endif
 }
 

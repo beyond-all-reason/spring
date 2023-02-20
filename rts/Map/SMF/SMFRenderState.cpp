@@ -24,9 +24,11 @@
 static constexpr float SMF_TEXSQUARE_SIZE = 1024.0f;
 
 
-ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders) {
-	ISMFRenderState* instance = nullptr;
+ISMFRenderState* ISMFRenderState::GetInstance(bool haveGLSL, bool luaShaders, bool noop) {
+	if (noop)
+		return new SMFRenderStateNOOP();
 
+	ISMFRenderState* instance = nullptr;
 	if (!haveGLSL)
 		instance = new SMFRenderStateFFP();
 	else
@@ -67,6 +69,7 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 			glslShaders[n] = shaderHandler->CreateProgramObject("[SMFGroundDrawer::VFS]", names[n]);
 			glslShaders[n]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFVertProg.glsl", defs, GL_VERTEX_SHADER));
 			glslShaders[n]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFFragProg.glsl", defs, GL_FRAGMENT_SHADER));
+			glslShaders[n]->BindAttribLocation("vertexPos", 0);
 		}
 	}
 

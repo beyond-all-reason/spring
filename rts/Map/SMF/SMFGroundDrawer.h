@@ -17,6 +17,10 @@ class CSMFReadMap;
 class IMeshDrawer;
 struct ISMFRenderState;
 
+namespace Shader {
+	struct IProgramObject;
+}
+
 enum {
 	SMF_MESHDRAWER_LEGACY = 0,
 	SMF_MESHDRAWER_BASIC  = 1,
@@ -95,6 +99,8 @@ protected:
 
 	GL::LightHandler lightHandler;
 	GL::GeometryBuffer geomBuffer;
+
+	Shader::IProgramObject* borderShader = nullptr;
 };
 
 #endif // _SMF_GROUND_DRAWER_H_

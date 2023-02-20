@@ -199,44 +199,84 @@ void Patch::UploadVertices()
 	}
 	vertVBO.SetBufferSubData(vertices);
 	vertVBO.Unbind();
-
-	vboVerticesUploaded = true;
 }
 
 namespace {
 	template<typename T>
-	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	void UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
 	{
+		if (vec.empty())
+			return;
+
 		static constexpr auto usage = GL_STREAM_DRAW;
 		vbo.Bind();
-		auto oldId = vbo.GetIdRaw();
 		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
 			// size the buffer down
 			vbo.Unbind();
-			vbo = { target, false, false };
+			vbo = VBO{ target, false, false };
 			vbo.Bind();
 			vbo.New(sz, usage, nullptr);
 		}
-		else if (vbo.GetSize() < sz) {
+		else if (sz > vbo.GetSize()) {
 			// size the buffer up
 			vbo.Resize(sz, usage);
 		}
 
 		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
-
-		return oldId != vbo.GetIdRaw();
 	}
 }
 
 void Patch::UploadIndices()
 {
 	UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2);
+	InitMainVAO();
 }
 
 void Patch::UploadBorderVertices()
 {
 	UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2);
+	InitBorderVAO();
+}
+
+void Patch::InitMainVAO() const
+{
+	mainVAO.Bind();
+
+	indxVBO.Bind();
+	vertVBO.Bind();
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
+
+	mainVAO.Unbind();
+
+	indxVBO.Unbind();
+	vertVBO.Unbind();
+
+	glDisableVertexAttribArray(0);
+}
+
+void Patch::InitBorderVAO() const
+{
+	borderVAO.Bind();
+	borderVBO.Bind();
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribDivisor(1, 0);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, true, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
+
+	borderVAO.Unbind();
+	borderVBO.Unbind();
+
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -603,38 +643,23 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 
 void Patch::Draw() const
 {
-	// enable VBOs
-	vertVBO.Bind();
-	indxVBO.Bind();
+	if (indices.empty())
+		return;
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_FLOAT, 0, nullptr); // last param is offset, not ptr
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
-	// disable VBO mode
-	vertVBO.Unbind();
-	indxVBO.Unbind();
+	mainVAO.Bind();
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+	mainVAO.Unbind();
 }
 
 
 void Patch::DrawBorder() const
 {
-	#define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
+	if (borderVertices.empty())
+		return;
 
-	borderVBO.Bind();
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-		glVertexPointer(3, GL_FLOAT        , sizeof(VA_TYPE_C), INT2PTR(offsetof(VA_TYPE_C, pos)));
-		glColorPointer( 4, GL_UNSIGNED_BYTE, sizeof(VA_TYPE_C), INT2PTR(offsetof(VA_TYPE_C, c  )));
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
-	borderVBO.Unbind();
-
-	#undef INT2PTR
+	borderVAO.Bind();
+	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(borderVertices.size()));
+	borderVAO.Unbind();
 }
 
 void Patch::RecursGenBorderVertices(
@@ -657,11 +682,11 @@ void Patch::RecursGenBorderVertices(
 
 		if ((depth.x & 1) == 0) {
 			borderVertices.push_back(VA_TYPE_C{ v2,                   {white}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v3.x,    v3.y, v3.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
 			return;
 		}
@@ -669,20 +694,20 @@ void Patch::RecursGenBorderVertices(
 		if (depth.y) {
 			// left child
 			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v2.x,    v2.y, v2.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -400.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v2                  , {white}});
 		} else {
 			// right child
 			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{{v1.x,    v1.y, v1.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -400.0f, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -400.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
 		}
 
@@ -732,12 +757,8 @@ void Patch::GenerateBorderVertices()
 
 void Patch::Upload()
 {
-	if (!vboVerticesUploaded)
-		UploadVertices();
-
 	UploadIndices();
 	UploadBorderVertices();
-
 	isChanged = false;
 }
 

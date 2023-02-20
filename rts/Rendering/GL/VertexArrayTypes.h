@@ -11,6 +11,8 @@
 #include <array>
 #include <string>
 
+#define VA_TYPE_OFFSET(T, m) reinterpret_cast<const void*>(offsetof(T, m))
+
 struct AttributeDef {
 	AttributeDef(uint32_t index_, uint32_t count_, uint32_t type_, uint32_t stride_, const void* data_, bool normalize_ = false, std::string name_ = "")
 		: name{ std::move(name_) }
