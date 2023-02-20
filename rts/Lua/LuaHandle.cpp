@@ -2392,9 +2392,10 @@ DRAW_CALLIN(DrawPreDecals)
  */
 DRAW_CALLIN(DrawWorldPreParticles)
 
-/*** This callin has z and color buffer of shadowmap bound via FBO as well as the FFP state to do "semi-transparent" shadows pass (traditionally only used to draw particles).
+/*** Invoked after semi-transparent shadows pass is about to conclude
  * @function DrawShadowPassTransparent
  *
+ * This callin has depth and color buffer of shadowmap bound via FBO as well as the FFP state to do "semi-transparent" shadows pass (traditionally only used to draw shadows of shadow casting semi-transparent particles). Can be used to draw nice colored shadows.
  */
 DRAW_CALLIN(DrawShadowPassTransparent)
 
