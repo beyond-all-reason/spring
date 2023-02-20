@@ -3461,12 +3461,16 @@ int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
 
 
 /*** @function Spring.MarkerErasePosition
+ *
+ * Issue an erase command for markers on the map.
+ *
  * @number x
  * @number y
  * @number z
  * @param noop
- * @bool[opt=false] localOnly
- * @number[opt] playerId
+ * @bool[opt=false] localOnly do not issue a network message, erase only for the current player
+ * @number[opt] playerId when not specified it uses the issuer playerId
+ * @bool[opt=false] alwaysErase erase any marker when `localOnly` and current player is spectating. Allows spectators to erase players markers locally
  * @treturn nil
  */
 int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
@@ -3483,7 +3487,9 @@ int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
 
 	const bool onlyLocal = luaL_optboolean(L, 5, false);
 	if (onlyLocal) {
-		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum));
+		// always erase if onlyLocal and current player is spectator
+		const bool alwaysErase = luaL_optboolean(L, 7, false) && gu->spectating;
+		inMapDrawerModel->EraseNear(pos, luaL_optnumber(L, 6, gu->myPlayerNum), alwaysErase);
 	} else {
 		inMapDrawer->SendErase(pos);
 	}
