@@ -30,7 +30,7 @@ struct FunctionArgs
 void TakeScreenshot(std::string type, unsigned quality)
 {
 	if (type.empty())
-		type = "jpg";
+		type = "png";
 
 	if (!FileSystem::CreateDirectory("screenshots"))
 		return;
