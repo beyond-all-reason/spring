@@ -79,8 +79,6 @@ CPathManager::CPathManager()
 
 void CPathManager::InitStatic()
 {
-	assert(ThreadPool::GetNumThreads() != 1);
-
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
 	LOG("TK CPathManager::InitStatic: %d threads available (MT requests=%d, MT updates=%d)", pathFinderGroups, SupportsMultiThreadedRequests(), !modInfo.pfForceUpdateSingleThreaded);
@@ -779,12 +777,6 @@ void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int 
 	auto lowResPE = &pathingStates[PATH_LOW_RES];
 
 	medResPE->MapChanged(x1, z1, x2, z2);
-
-	// low-res PE will be informed via (medRes)PE::Update
-	// if (true && medResPE->nextPathEstimator != nullptr)
-	if (medResPE->nextPathState != nullptr)
-		return;
-
 	lowResPE->MapChanged(x1, z1, x2, z2);
 }
 
@@ -801,8 +793,31 @@ void CPathManager::Update()
 	auto medResPE = &pathingStates[PATH_MED_RES];
 	auto lowResPE = &pathingStates[PATH_LOW_RES];
 
-	medResPE->Update();
-	lowResPE->Update();
+	if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
+		const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
+		const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
+		const auto ratio = medResUpdatesCount / lowResUpdatesCount;
+
+		if (ratio < 1.f) {
+			highPriorityResPS = lowResPE;
+			lowPriorityResPS = medResPE;
+			pathStateWorkloadRatio = Clamp(int(1.f/ratio + .5f)+1, 1, GAME_SPEED+1);
+		} else {
+			highPriorityResPS = medResPE;
+			lowPriorityResPS = lowResPE;
+			pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED+1);
+		}
+
+		// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
+		// 		, medResUpdatesCount, lowResUpdatesCount, ratio, pathStateWorkloadRatio);
+
+		frameNumToRefreshPathStateWorkloadRatio = gs->frameNum + GAME_SPEED;
+	}
+
+	if (gs->frameNum % pathStateWorkloadRatio)
+		highPriorityResPS->Update();
+	else
+		lowPriorityResPS->Update();
 }
 
 // used to deposit heat on the heat-map as a unit moves along its path

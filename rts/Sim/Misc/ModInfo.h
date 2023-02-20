@@ -192,7 +192,8 @@ public:
 	bool pfForceUpdateSingleThreaded;
 
 	float pfRawDistMult;
-	float pfUpdateRate;
+	float pfUpdateRate; // remove if Default PFS gets replaced/removed.
+	float pfUpdateRateScale;
 
 	bool enableSmoothMesh;
 

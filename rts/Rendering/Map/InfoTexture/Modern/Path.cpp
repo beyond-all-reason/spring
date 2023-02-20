@@ -210,7 +210,7 @@ void CPathTexture::Update()
 	// spread update across time
 	if (updateProcess >= texSize.y) updateProcess = 0;
 	int start = updateProcess;
-	const int updateLines = std::max((64*64) / texSize.x, ThreadPool::GetNumThreads());
+	const int updateLines = std::max((128*128) / texSize.x, ThreadPool::GetNumThreads());
 	updateProcess += updateLines;
 	updateProcess = std::min(updateProcess, texSize.y);
 
@@ -223,9 +223,8 @@ void CPathTexture::Update()
 	const bool losFullView = ((gu->spectating && gu->spectatingFullView) || losHandler->GetGlobalLOS(gu->myAllyTeam));
 
 	if (ud != nullptr) {
-		// CGameHelper::TestUnitBuildSquare accesses QuadField which is not re-entrant
-		// for_mt(start, updateProcess, [&](const int y) {
-		for (int y = start; y < updateProcess; y++) {
+		for_mt(start, updateProcess, [&](const int y) {
+			int currentThread = ThreadPool::GetThreadNum();
 			for (int x = 0; x < texSize.x; ++x) {
 				const float3 pos = float3(x << 1, 0.0f, y << 1) * SQUARE_SIZE;
 				const int idx = y * texSize.x + x;
@@ -236,7 +235,9 @@ void CPathTexture::Update()
 
 				CFeature* f = nullptr;
 
-				if (CGameHelper::TestUnitBuildSquare(bi, f, gu->myAllyTeam, false)) {
+				if (CGameHelper::TestUnitBuildSquare(
+						bi, f, gu->myAllyTeam, false, nullptr, nullptr, nullptr, nullptr, currentThread
+					)) {
 					if (f != nullptr) {
 						status = OBJECTBLOCKED;
 					}
@@ -246,7 +247,7 @@ void CPathTexture::Update()
 
 				infoTexMem[idx - offset] = GetBuildColor(status);
 			}
-		}
+		});
 	} else if (md != nullptr) {
 		for_mt(start, updateProcess, [&](const int y) {
 			for (int x = 0; x < texSize.x; ++x) {

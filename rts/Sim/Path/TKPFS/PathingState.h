@@ -141,6 +141,8 @@ private:
 	bool ReadFile(const std::string& peFileName, const std::string& mapFileName);
 	bool WriteFile(const std::string& peFileName, const std::string& mapFileName);
 
+	std::size_t getCountOfUpdates() const { return updatedBlocks.size(); }
+
 private:
 	friend class TKPFS::CPathEstimator;
 
@@ -171,9 +173,7 @@ private:
     int2 mapDimensionsInBlocks = {0, 0};
 	int2 nbrOfBlocks;
 
-    //IPathFinder* pathFinders = nullptr;
     std::vector<IPathFinder*> pathFinders; // InitEstimator helpers
-    //std::vector<spring::thread> threads;
 
     std::vector<float> maxSpeedMods;
     std::vector<float> vertexCosts;
@@ -189,9 +189,6 @@ private:
 
     std::vector<SingleBlock> consumedBlocks;
 	std::vector<SOffsetBlock> offsetBlocksSortedByCost;
-
-	// int updatedBlocksDelayTimeout = (-1);
-	// bool updatedBlocksDelayActive = false;
 };
 
 }

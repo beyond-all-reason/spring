@@ -462,7 +462,11 @@ void CGame::Load(const std::string& mapFileName)
 				eventHandler.CollectGarbage(true);
 				Watchdog::ClearTimer(WDT_LOAD);
 			}
-
+			LEAVE_SYNCED_CODE();
+		}
+		// Update height bounds and pathing after pregame or a saved game load.
+		{
+			ENTER_SYNCED_CODE();
 			//needed in case pre-game terraform changed the map
 			readMap->UpdateHeightBounds();
 			Watchdog::ClearTimer(WDT_LOAD);

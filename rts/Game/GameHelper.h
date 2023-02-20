@@ -114,7 +114,8 @@ public:
 		std::vector<float3>* canbuildpos = nullptr,
 		std::vector<float3>* featurepos = nullptr,
 		std::vector<float3>* nobuildpos = nullptr,
-		const std::vector<Command>* commands = nullptr
+		const std::vector<Command>* commands = nullptr,
+		int threadOwner = 0
 	);
 	static float GetBuildHeight(const float3& pos, const UnitDef* unitdef, bool synced = true);
 	static Command GetBuildCommand(const float3& pos, const float3& dir);
