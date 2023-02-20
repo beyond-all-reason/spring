@@ -796,12 +796,12 @@ void CPathManager::Update()
 	if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
 		const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
 		const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
-		const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, GAME_SPEED);
+		const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, float(GAME_SPEED));
 
 		if (ratio < 1.f) {
 			highPriorityResPS = lowResPE;
 			lowPriorityResPS = medResPE;
-			const auto invRatio = std::min(1.f / ratio, GAME_SPEED);
+			const auto invRatio = std::min(1.f / ratio, float(GAME_SPEED));
 			pathStateWorkloadRatio = std::max(int(invRatio + .5f)+1, 1);
 		} else {
 			highPriorityResPS = medResPE;
