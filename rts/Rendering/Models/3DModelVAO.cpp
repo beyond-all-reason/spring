@@ -155,10 +155,9 @@ void S3DModelVAO::UploadVBOs()
 
 	if (vertData.size() > vertUploadIndex) {
 		vertVBO.Bind();
-		auto vertVBOId = vertVBO.GetIdRaw();
 		const size_t reqSize = AlignUp(std::max(vertData.size(), S3DModelVAO::VERT_SIZE0) * sizeof(SVertexData), MEM_STEP);
+		reinitVAO |= (reqSize > vertVBO.GetSize());
 		vertVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
-		reinitVAO |= (vertVBO.GetIdRaw() != vertVBOId);
 		vertVBO.SetBufferSubData(vertUploadIndex * sizeof(SVertexData), (vertData.size() - vertUploadIndex) * sizeof(SVertexData), vertData.data() + vertUploadIndex);
 		vertVBO.Unbind();
 		vertUploadIndex = vertData.size();
@@ -167,10 +166,9 @@ void S3DModelVAO::UploadVBOs()
 
 	if (indxData.size() > indxUploadIndex) {
 		indxVBO.Bind();
-		auto indxVBOId = indxVBO.GetIdRaw();
 		const size_t reqSize = AlignUp(std::max(indxData.size(), S3DModelVAO::INDX_SIZE0) * sizeof(   uint32_t), MEM_STEP);
+		reinitVAO |= (reqSize > indxVBO.GetSize());
 		indxVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
-		reinitVAO |= (indxVBO.GetIdRaw() != indxVBOId);
 		indxVBO.SetBufferSubData(indxUploadIndex * sizeof(   uint32_t), (indxData.size() - indxUploadIndex) * sizeof(   uint32_t), indxData.data() + indxUploadIndex);
 		indxVBO.Unbind();
 		indxUploadIndex = indxData.size();
