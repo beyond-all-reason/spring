@@ -15,11 +15,11 @@ out vec2 vDiffuseUV;
 out vec2 vDetailsUV;
 
 void main() {
+	vVertPos = vertexPos;
+	vVertCol = vertexCol;
+
 	vec4 vertexPos4 = vec4(vertexPos, 1.0);
 
-	vVertPos = vertexPos4.xyz;
-	vVertCol = vertexCol;
-	
 	vDiffuseUV = (floor(vertexPos4.xz) * (1.0 / SMF_TEXSQR_SIZE)) - vec2(texSquare);
 
 	vDetailsUV = vec2(

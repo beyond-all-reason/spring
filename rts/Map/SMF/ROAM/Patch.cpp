@@ -203,12 +203,14 @@ void Patch::UploadVertices()
 
 namespace {
 	template<typename T>
-	void UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
 	{
 		if (vec.empty())
-			return;
+			return false;
 
 		static constexpr auto usage = GL_STREAM_DRAW;
+		bool vboUpdated = false;
+
 		vbo.Bind();
 		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
 			// size the buffer down
@@ -216,27 +218,31 @@ namespace {
 			vbo = VBO{ target, false, false };
 			vbo.Bind();
 			vbo.New(sz, usage, nullptr);
+			vboUpdated = true;
 		}
 		else if (sz > vbo.GetSize()) {
 			// size the buffer up
 			vbo.Resize(sz, usage);
+			vboUpdated = true;
 		}
 
 		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
+
+		return vboUpdated;
 	}
 }
 
 void Patch::UploadIndices()
 {
-	UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2);
-	InitMainVAO();
+	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2))
+		InitMainVAO();
 }
 
 void Patch::UploadBorderVertices()
 {
-	UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2);
-	InitBorderVAO();
+	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2))
+		InitBorderVAO();
 }
 
 void Patch::InitMainVAO() const
@@ -680,35 +686,37 @@ void Patch::RecursGenBorderVertices(
 		static constexpr unsigned char white[] = {255, 255, 255, 255};
 		static constexpr unsigned char trans[] = {255, 255, 255,   0};
 
-		if ((depth.x & 1) == 0) {
-			borderVertices.push_back(VA_TYPE_C{ v2,                   {white}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x,    v3.y, v3.z}, {white}});
+		const auto btm = std::min(readMap->GetInitMinHeight(), -500.0f);
 
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
+		if ((depth.x & 1) == 0) {
+			borderVertices.push_back(VA_TYPE_C{ v2,                {white}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, v3.y, v3.z}, {white}});
+
+			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v3               , {white}});
 			return;
 		}
 
 		if (depth.y) {
 			// left child
-			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x,    v2.y, v2.z}, {white}});
+			borderVertices.push_back(VA_TYPE_C{ v1               , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, v2.y, v2.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, -500.0f, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{ v2                  , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v2               , {white}});
 		} else {
 			// right child
-			borderVertices.push_back(VA_TYPE_C{ v3                  , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x,    v1.y, v1.z}, {white}});
+			borderVertices.push_back(VA_TYPE_C{ v3               , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, v1.y, v1.z}, {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v3.x, -500.0f, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, -500.0f, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{ v1                  , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v1               , {white}});
 		}
 
 		return;
@@ -744,7 +752,7 @@ void Patch::GenerateBorderVertices()
 	borderVertices.clear();
 	borderVertices.reserve((PATCH_SIZE + 1) * 2);
 
-	constexpr auto PS = PATCH_SIZE;
+	static constexpr auto PS = PATCH_SIZE;
 	// border vertices are always part of base-level triangles
 	// that have either no left or no right neighbor, i.e. are
 	// on the map edge
