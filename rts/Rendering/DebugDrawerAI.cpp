@@ -257,7 +257,7 @@ void DebugDrawerAI::Graph::Draw()
 	auto& sh = rb.GetShader();
 
 	{
-		SColor color = {
+		static constexpr SColor color = {
 			0.25f,
 			0.25f,
 			0.25f,
