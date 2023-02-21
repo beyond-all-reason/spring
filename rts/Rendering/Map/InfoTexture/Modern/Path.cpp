@@ -208,9 +208,11 @@ void CPathTexture::Update()
 	}
 
 	// spread update across time
+	constexpr int TEX_SIZE_TO_UPDATE_EACH_FRAME = 128*128;
 	if (updateProcess >= texSize.y) updateProcess = 0;
+
 	int start = updateProcess;
-	const int updateLines = std::max((128*128) / texSize.x, ThreadPool::GetNumThreads());
+	const int updateLines = std::max(TEX_SIZE_TO_UPDATE_EACH_FRAME / texSize.x, ThreadPool::GetNumThreads());
 	updateProcess += updateLines;
 	updateProcess = std::min(updateProcess, texSize.y);
 
