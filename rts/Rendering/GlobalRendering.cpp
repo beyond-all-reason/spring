@@ -965,6 +965,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tpersistent maps support   : %i (%i)", supportPersistentMapping, glewIsExtensionSupported("GL_ARB_buffer_storage"));
 	LOG("\texplicit attribs location : %i (%i)", supportExplicitAttribLoc, glewIsExtensionSupported("GL_ARB_explicit_attrib_location"));
 	LOG("\tmulti draw indirect       : %i (-)" , glewIsExtensionSupported("GL_ARB_multi_draw_indirect"));
+	LOG("\tarray textures            : %i (-)" , glewIsExtensionSupported("GL_EXT_texture_array"));
 
 	LOG("\t");
 	LOG("\tmax. FBO samples              : %i", FBO::GetMaxSamples());
