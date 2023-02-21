@@ -8,7 +8,7 @@
 #include "Map/Ground.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/CommandAI/Command.h"
@@ -203,8 +203,7 @@ void CommandDrawer::DrawAirCAICommands(const CAirCAI* cai, int queueDrawDepth) c
 				lineDrawer.DrawLineAndIcon(cmdID, endPos, cmdColors.attack);
 				lineDrawer.Break(endPos, cmdColors.attack);
 
-				glColor4fv(cmdColors.attack);
-				glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+				glSurfaceCircle(endPos, ci->GetParam(3), { cmdColors.attack }, cmdCircleResolution);
 
 				lineDrawer.RestartWithColor(cmdColors.attack);
 			} break;
@@ -267,8 +266,7 @@ void CommandDrawer::DrawBuilderCAICommands(const CBuilderCAI* cai, int queueDraw
 				// draw metal extraction range
 				if (bi.def->extractRange > 0.0f) {
 					lineDrawer.Break(bi.pos, cmdColors.build);
-					glColor4fv(cmdColors.rangeExtract);
-					glSurfaceCircle(bi.pos, bi.def->extractRange, 40.0f);
+					glSurfaceCircle(bi.pos, bi.def->extractRange, { cmdColors.rangeExtract }, 40.0f);
 					lineDrawer.Restart();
 				}
 			}
@@ -300,8 +298,7 @@ void CommandDrawer::DrawBuilderCAICommands(const CBuilderCAI* cai, int queueDraw
 				lineDrawer.DrawLineAndIcon(cmdID, endPos, cmdColors.restore);
 				lineDrawer.Break(endPos, cmdColors.restore);
 
-				glColor4fv(cmdColors.restore);
-				glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+				glSurfaceCircle(endPos, ci->GetParam(3), { cmdColors.restore }, cmdCircleResolution);
 
 				lineDrawer.RestartWithColor(cmdColors.restore);
 			} break;
@@ -335,8 +332,7 @@ void CommandDrawer::DrawBuilderCAICommands(const CBuilderCAI* cai, int queueDraw
 					lineDrawer.DrawLineAndIcon(cmdID, endPos, color);
 					lineDrawer.Break(endPos, color);
 
-					glColor4fv(color);
-					glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+					glSurfaceCircle(endPos, ci->GetParam(3), { color }, cmdCircleResolution);
 
 					lineDrawer.RestartWithColor(color);
 				} else {
@@ -370,8 +366,7 @@ void CommandDrawer::DrawBuilderCAICommands(const CBuilderCAI* cai, int queueDraw
 					lineDrawer.DrawLineAndIcon(cmdID, endPos, color);
 					lineDrawer.Break(endPos, color);
 
-					glColor4fv(color);
-					glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+					glSurfaceCircle(endPos, ci->GetParam(3), { color }, cmdCircleResolution);
 
 					lineDrawer.RestartWithColor(color);
 				} else {
@@ -491,8 +486,7 @@ void CommandDrawer::DrawFactoryCAICommands(const CFactoryCAI* cai, int queueDraw
 			// draw metal extraction range
 			if (bi.def->extractRange > 0.0f) {
 				lineDrawer.Break(bi.pos, cmdColors.build);
-				glColor4fv(cmdColors.rangeExtract);
-				glSurfaceCircle(bi.pos, bi.def->extractRange, 40.0f);
+				glSurfaceCircle(bi.pos, bi.def->extractRange, { cmdColors.rangeExtract }, 40.0f);
 				lineDrawer.Restart();
 			}
 		}
@@ -571,8 +565,7 @@ void CommandDrawer::DrawMobileCAICommands(const CMobileCAI* cai, int queueDrawDe
 					lineDrawer.DrawLineAndIcon(cmdID, endPos, cmdColors.load);
 					lineDrawer.Break(endPos, cmdColors.load);
 
-					glColor4fv(cmdColors.load);
-					glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+					glSurfaceCircle(endPos, ci->GetParam(3), { cmdColors.load }, cmdCircleResolution);
 
 					lineDrawer.RestartWithColor(cmdColors.load);
 				} else {
@@ -591,8 +584,7 @@ void CommandDrawer::DrawMobileCAICommands(const CMobileCAI* cai, int queueDrawDe
 					lineDrawer.DrawLineAndIcon(cmdID, endPos, cmdColors.unload);
 					lineDrawer.Break(endPos, cmdColors.unload);
 
-					glColor4fv(cmdColors.unload);
-					glSurfaceCircle(endPos, ci->GetParam(3), cmdCircleResolution);
+					glSurfaceCircle(endPos, ci->GetParam(3), { cmdColors.unload }, cmdCircleResolution);
 
 					lineDrawer.RestartWithColor(cmdColors.unload);
 				}
@@ -643,7 +635,7 @@ void CommandDrawer::DrawDefaultCommand(const Command& c, const CUnit* owner) con
 			} else {
 				lineDrawer.DrawLineAndIcon(dd->cmdIconID, endPos, dd->color);
 				lineDrawer.Break(endPos, dd->color);
-				glSurfaceCircle(endPos, c.GetParam(3), cmdCircleResolution);
+				glSurfaceCircle(endPos, c.GetParam(3), { dd->color }, cmdCircleResolution);
 				lineDrawer.RestartWithColor(dd->color);
 			}
 

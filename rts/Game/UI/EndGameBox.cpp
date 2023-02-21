@@ -247,7 +247,7 @@ void CEndGameBox::Draw()
 	{
 		// draw boxes
 		shaderC.Enable();
-		rbC.DrawArrays(GL_TRIANGLES);
+		rbC.DrawElements(GL_TRIANGLES);
 		shaderC.Disable();
 	}
 
@@ -342,13 +342,13 @@ void CEndGameBox::Draw()
 			FillTeamStats();
 
 
-		rbT.SafeAppend({{box.x1 + 0.15f, box.y1 + 0.08f, 0.0f}, 0.0f, 0.0f}); // tl
-		rbT.SafeAppend({{box.x1 + 0.69f, box.y1 + 0.08f, 0.0f}, 4.0f, 0.0f}); // tr
-		rbT.SafeAppend({{box.x1 + 0.69f, box.y1 + 0.62f, 0.0f}, 4.0f, 4.0f}); // br
+		rbT.AddVertex({{box.x1 + 0.15f, box.y1 + 0.08f, 0.0f}, 0.0f, 0.0f}); // tl
+		rbT.AddVertex({{box.x1 + 0.69f, box.y1 + 0.08f, 0.0f}, 4.0f, 0.0f}); // tr
+		rbT.AddVertex({{box.x1 + 0.69f, box.y1 + 0.62f, 0.0f}, 4.0f, 4.0f}); // br
 
-		rbT.SafeAppend({{box.x1 + 0.69f, box.y1 + 0.62f, 0.0f}, 4.0f, 4.0f}); // br
-		rbT.SafeAppend({{box.x1 + 0.15f, box.y1 + 0.62f, 0.0f}, 0.0f, 4.0f}); // bl
-		rbT.SafeAppend({{box.x1 + 0.15f, box.y1 + 0.08f, 0.0f}, 0.0f, 0.0f}); // tl
+		rbT.AddVertex({{box.x1 + 0.69f, box.y1 + 0.62f, 0.0f}, 4.0f, 4.0f}); // br
+		rbT.AddVertex({{box.x1 + 0.15f, box.y1 + 0.62f, 0.0f}, 0.0f, 4.0f}); // bl
+		rbT.AddVertex({{box.x1 + 0.15f, box.y1 + 0.08f, 0.0f}, 0.0f, 0.0f}); // tl
 
 		glBindTexture(GL_TEXTURE_2D, graphTex);
 		shaderT.Enable();
@@ -364,13 +364,13 @@ void CEndGameBox::Draw()
 		if (mx > bxmin && mx < bxmax && my > bymin && my < bymax) {
 			const float sel = math::floor(50.0f * -(my - box.y1 - 0.57f));
 
-			rbC.SafeAppend({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tl
-			rbC.SafeAppend({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // bl
-			rbC.SafeAppend({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // br
+			rbC.AddVertex({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tl
+			rbC.AddVertex({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // bl
+			rbC.AddVertex({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // br
 
-			rbC.SafeAppend({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // br
-			rbC.SafeAppend({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tr
-			rbC.SafeAppend({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tl
+			rbC.AddVertex({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f) + 0.02f , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // br
+			rbC.AddVertex({{box.x1 + 0.12f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tr
+			rbC.AddVertex({{box.x1 + 0.01f, box.y1 + 0.55f - (sel * 0.02f)         , 0.0f}, {0.7f, 0.2f, 0.2f, guiAlpha}}); // tl
 			shaderC.Enable();
 			rbC.Submit(GL_TRIANGLES);
 			shaderC.Disable();
@@ -408,13 +408,13 @@ void CEndGameBox::Draw()
 		font->glPrint(box.x1 + 0.55f, box.y1 + 0.65f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED,                 stats[stat1].name     );
 		font->glPrint(box.x1 + 0.55f, box.y1 + 0.63f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, (stat2 != -1) ? stats[stat2].name : "");
 
-		rbC.SafeAppend({{box.x1 + 0.50f, box.y1 + 0.66f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
-		rbC.SafeAppend({{box.x1 + 0.55f, box.y1 + 0.66f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
+		rbC.AddVertex({{box.x1 + 0.50f, box.y1 + 0.66f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
+		rbC.AddVertex({{box.x1 + 0.55f, box.y1 + 0.66f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
 
 		// no more stippling, minor sacrifice
 		// glLineStipple(3, 0x5555);
-		rbC.SafeAppend({{box.x1 + 0.50f, box.y1 + 0.64f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
-		rbC.SafeAppend({{box.x1 + 0.55f, box.y1 + 0.64f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
+		rbC.AddVertex({{box.x1 + 0.50f, box.y1 + 0.64f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
+		rbC.AddVertex({{box.x1 + 0.55f, box.y1 + 0.64f, 0.0f}, {1.0f, 1.0f, 1.0f, 0.8f}});
 
 
 		for (int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
@@ -439,8 +439,8 @@ void CEndGameBox::Draw()
 						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
 					}
 
-					rbC.SafeAppend({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.SafeAppend({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
+					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
+					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
 				}
 			}
 
@@ -462,8 +462,8 @@ void CEndGameBox::Draw()
 						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
 					}
 
-					rbC.SafeAppend({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.SafeAppend({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
+					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
+					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
 				}
 			}
 		}

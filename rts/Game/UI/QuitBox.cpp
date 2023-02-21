@@ -153,7 +153,7 @@ void CQuitBox::Draw()
 
 	{
 		shader.Enable();
-		rb.DrawArrays(GL_TRIANGLES);
+		rb.DrawElements(GL_TRIANGLES);
 		shader.Disable();
 	}
 

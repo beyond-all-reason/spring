@@ -29,7 +29,7 @@
 #include "Rendering/TKPFSPathDrawer.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
-#include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Map/InfoTexture/Legacy/LegacyInfoTextureHandler.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
@@ -331,19 +331,17 @@ void TKPFSPathDrawer::Draw() const {
 
 
 void TKPFSPathDrawer::Draw(const CPathFinderDef* pfd) const {
-	if (pfd->synced) {
-		glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
-	} else {
-		glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
-	}
-	glSurfaceCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), 20);
+	const auto color = pfd->synced ? SColor{1.0f, 1.0f, 0.0f, 1.0f} : SColor{0.0f, 1.0f, 1.0f, 1.0f};
+	glSurfaceCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), color, 20);
 }
 
 void TKPFSPathDrawer::Draw(const TKPFS::CPathFinder* pf) const {
-	glColor3f(0.7f, 0.2f, 0.2f);
+
 	glDisable(GL_TEXTURE_2D);
-	CVertexArray* va = GetVertexArray();
-	va->Initialize();
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
 
 	for (unsigned int idx = 0; idx < pf->openBlockBuffer.GetSize(); idx++) {
 		const PathNode* os = pf->openBlockBuffer.GetNode(idx);
@@ -364,11 +362,15 @@ void TKPFSPathDrawer::Draw(const TKPFS::CPathFinder* pf) const {
 		if (!camera->InView(p1) && !camera->InView(p2))
 			continue;
 
-		va->AddVertex0(p1);
-		va->AddVertex0(p2);
+		rb.AddVertex({ p1 });
+		rb.AddVertex({ p2 });
 	}
 
-	va->DrawArray0(GL_LINES);
+	sh.Enable();
+	sh.SetUniform("ucolor", 0.7f, 0.2f, 0.2f, 1.0f);
+	rb.DrawArrays(GL_LINES);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
 }
 
 
