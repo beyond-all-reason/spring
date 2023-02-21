@@ -47,6 +47,12 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	this->mainDir = weaponTable.GetFloat3("mainDir", FwdVector);
 	this->mainDir.SafeNormalize();
+
+	// multiplier weight applied to target selection based on how far the weapon has to turn to face the target.
+	weaponAimAdjustPriority = weaponTable.GetFloat("weaponAimAdjustPriority", weaponAimAdjustPriority);
+
+	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
+	fastAutoRetargetingEnabled = weaponTable.GetBool("fastAutoRetargetingEnabled", fastAutoRetargetingEnabled);
 }
 
 

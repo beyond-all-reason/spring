@@ -1147,17 +1147,6 @@ bool CMobileCAI::GenerateAttackCmd()
 			if (eventHandler.AllowWeaponTarget(owner->id, tgt->id, wpn->weaponNum, wpn->weaponDef->id, nullptr))
 				newAttackTargetId = tgt->id;
 	} else {
-		if ((tgt = owner->lastAttacker) != nullptr) {
-			if (owner->pos.SqDistance2D(tgt->pos) < Square(searchRadius)) {
-				const bool allowAttackerChase = !(owner->unitDef->noChaseCategory & tgt->category);
-				const bool  keepAttackingLast = (gs->frameNum < (owner->lastAttackFrame + GAME_SPEED * 7));
-				const bool allowAttackingLast = (allowAttackerChase && keepAttackingLast && eventHandler.AllowWeaponTarget(owner->id, tgt->id, wpn->weaponNum, wpn->weaponDef->id, nullptr));
-
-				if (allowAttackingLast)
-					newAttackTargetId = tgt->id;
-			}
-		}
-
 		if (newAttackTargetId < 0 && owner->fireState >= FIRESTATE_FIREATWILL && (gs->frameNum >= lastIdleCheck + 10)) {
 			// try getting target from weapons
 			for (CWeapon* w: owner->weapons) {
@@ -1200,7 +1189,7 @@ bool CMobileCAI::GenerateAttackCmd()
 
 bool CMobileCAI::CanWeaponAutoTarget(const CWeapon* weapon) const {
 	// check if the weapon actually targets the unit's order-target
-	return (!tempOrder || weapon->GetCurrentTarget() != owner->curTarget);
+	return (!tempOrder || weapon->GetCurrentTarget() != owner->curTarget || weapon->IsFastAutoRetargetingEnabled());
 }
 
 void CMobileCAI::StopSlowGuard() {

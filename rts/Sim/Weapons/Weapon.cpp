@@ -102,7 +102,10 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(currentTarget),
 	CR_MEMBER(currentTargetPos),
 
-	CR_MEMBER(incomingProjectileIDs)
+	CR_MEMBER(incomingProjectileIDs),
+
+	CR_MEMBER(weaponAimAdjustPriority),
+	CR_MEMBER(fastAutoRetargetingEnabled)
 ))
 
 
@@ -177,7 +180,10 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	errorVector(ZeroVector),
 	errorVectorAdd(ZeroVector),
 
-	muzzleFlareSize(1)
+	muzzleFlareSize(1),
+
+	weaponAimAdjustPriority(1.f),
+	fastAutoRetargetingEnabled(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -276,7 +282,6 @@ float CWeapon::GetPredictedImpactTime(float3 p) const
 	return aimFromPos.distance(p) / projectileSpeed;
 }
 
-
 void CWeapon::Update()
 {
 	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
@@ -284,6 +289,19 @@ void CWeapon::Update()
 	float3 newErrorVector = (errorVector + errorVectorAdd);
 	if (newErrorVector.SqLength() <= 1.0f)
 		errorVector = newErrorVector;
+
+	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
+	bool fastAutoRetargetRequired = fastAutoRetargetingEnabled && HaveTarget()
+									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
+	if (fastAutoRetargetRequired) {
+		// switch to unit's target if it has one - see next bit below
+		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead)
+								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
+		if (ownerTargetIsValid)
+			DropCurrentTarget();
+		else
+			AutoTarget();
+	}
 
 	// SlowUpdate() only generates targets when we are in range
 	// esp. for bombs this is often too late (SlowUpdate gets only called twice per second)
@@ -611,7 +629,7 @@ bool CWeapon::AllowWeaponAutoTarget() const
 	if (currentTarget.isUserTarget)
 		return false;
 
-	return (gs->frameNum > (lastTargetRetry + 65));
+	return (gs->frameNum > (lastTargetRetry + 65)) || fastAutoRetargetingEnabled;
 }
 
 bool CWeapon::AutoTarget()
