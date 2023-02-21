@@ -58,6 +58,9 @@ namespace spring {
 		operator const R&() const { return r; };
 		operator       R&()       { return r; };
 
+		const R& Get() const { return r; };
+		      R& Get()       { return r; };
+
 		MyType& operator=(std::nullptr_t) noexcept { Reset(); return *this; }
 		MyType& operator=(const MyType&) = delete;
 	private:

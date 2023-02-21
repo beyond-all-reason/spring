@@ -10,8 +10,8 @@
 class CBasicWater : public IWater
 {
 public:
-	CBasicWater();
 	~CBasicWater() override { FreeResources(); }
+	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void Draw() override;

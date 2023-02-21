@@ -73,6 +73,7 @@ void DefaultPathDrawer::DrawInMiniMap()
 	const CPathEstimator* pe = pm->GetMedResPE();
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(minimap->GetProjMat(1));
@@ -85,16 +86,15 @@ void DefaultPathDrawer::DrawInMiniMap()
 	for (const int2& blkIdx: pe->GetUpdatedBlocks()) {
 		const float2 blkPos = {blkIdx.x * blkSize * 1.0f, blkIdx.y * blkSize * 1.0f};
 
-		rb.SafeAppend({{blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tl
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tr
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // br
-
-		rb.SafeAppend({{blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // br
-		rb.SafeAppend({{blkPos.x                 , blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // bl
-		rb.SafeAppend({{blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f}}); // tl
+		rb.AddQuadTriangles(
+			{ {blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x + blkSize * 1.0f, blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x + blkSize * 1.0f, blkPos.y + blkSize * 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} },
+			{ {blkPos.x                 , blkPos.y                 , 0.0f}, {1.0f, 1.0f, 0.0f, 0.7f} }
+		);
 	}
 
-	rb.DrawArrays(GL_TRIANGLES);
+	rb.DrawElements(GL_TRIANGLES);
 	sh.Disable();
 
 	glMatrixMode(GL_PROJECTION); glPopMatrix();
@@ -302,17 +302,17 @@ void DefaultPathDrawer::Draw() const {
 
 		// draw low-res segments of <path> (green)
 		for (const float3& pos: multiPath.lowResPath.path) {
-			rb.SafeAppend({pos + UpVector * 5.0f, SColor(0, 0, 255, 255)});
+			rb.AddVertex({pos + UpVector * 5.0f, SColor(0, 0, 255, 255)});
 		}
 
 		// draw med-res segments of <path> (blue)
 		for (const float3& pos: multiPath.medResPath.path) {
-			rb.SafeAppend({pos + UpVector * 5.0f, SColor(0, 255, 0, 255)});
+			rb.AddVertex({pos + UpVector * 5.0f, SColor(0, 255, 0, 255)});
 		}
 
 		// draw max-res segments of <path> (red)
 		for (const float3& pos: multiPath.maxResPath.path) {
-			rb.SafeAppend({pos + UpVector * 5.0f, SColor(255, 0, 0, 255)});
+			rb.AddVertex({pos + UpVector * 5.0f, SColor(255, 0, 0, 255)});
 		}
 
 		rb.DrawArrays(GL_LINE_STRIP);
@@ -337,7 +337,7 @@ void DefaultPathDrawer::Draw(const CPathFinderDef* pfd) const {
 		{1.0f, 1.0f, 0.0f, 1.0f}
 	};
 
-	glSurfaceColoredCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), colors[pfd->synced], 20);
+	glSurfaceCircle(pfd->wsGoalPos, std::sqrt(pfd->sqGoalRadius), colors[pfd->synced], 20);
 }
 
 void DefaultPathDrawer::Draw(const CPathFinder* pf) const {
@@ -363,8 +363,8 @@ void DefaultPathDrawer::Draw(const CPathFinder* pf) const {
 		if (!camera->InView(p1) && !camera->InView(p2))
 			continue;
 
-		rb.SafeAppend({p1, SColor(0.7f, 0.2f, 0.2f, 1.0f)});
-		rb.SafeAppend({p2, SColor(0.7f, 0.2f, 0.2f, 1.0f)});
+		rb.AddVertex({p1, SColor(0.7f, 0.2f, 0.2f, 1.0f)});
+		rb.AddVertex({p2, SColor(0.7f, 0.2f, 0.2f, 1.0f)});
 	}
 
 	sh.Enable();
@@ -382,6 +382,7 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 		return;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	#if (PE_EXTRA_DEBUG_OVERLAYS == 1)
@@ -410,8 +411,8 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 				if (!camera->InView(p1))
 					continue;
 
-				rb.SafeAppend({p1                   , SColor(1.0f, 1.0f, 0.75f * drawLowResPE, 1.0f)});
-				rb.SafeAppend({p1 - UpVector * 10.0f, SColor(1.0f, 1.0f, 0.75f * drawLowResPE, 1.0f)});
+				rb.AddVertex({p1                   , SColor(1.0f, 1.0f, 0.75f * drawLowResPE, 1.0f)});
+				rb.AddVertex({p1 - UpVector * 10.0f, SColor(1.0f, 1.0f, 0.75f * drawLowResPE, 1.0f)});
 
 				for (int dir = 0; dir < PATH_DIRECTION_VERTICES; dir++) {
 					const int obx = x + PE_DIRECTION_VECTORS[dir].x;
@@ -436,8 +437,8 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 						p2.z = (blockStates.peNodeOffsets[md->pathType][obBlockNr].y) * SQUARE_SIZE;
 						p2.y = CGround::GetHeightAboveWater(p2.x, p2.z, false) + 10.0f;
 
-					rb.SafeAppend({p1, SColor(1.0f / std::sqrt(nrmCost), 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f)});
-					rb.SafeAppend({p2, SColor(1.0f / std::sqrt(nrmCost), 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f)});
+					rb.AddVertex({p1, SColor(1.0f / std::sqrt(nrmCost), 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f)});
+					rb.AddVertex({p2, SColor(1.0f / std::sqrt(nrmCost), 1.0f / nrmCost, 0.75f * drawLowResPE, 1.0f)});
 				}
 			}
 		}
@@ -529,8 +530,8 @@ void DefaultPathDrawer::Draw(const CPathEstimator* pe) const {
 			if (!camera->InView(p1) && !camera->InView(p2))
 				continue;
 
-			rb.SafeAppend({p1, color});
-			rb.SafeAppend({p2, color});
+			rb.AddVertex({p1, color});
+			rb.AddVertex({p2, color});
 		}
 
 		sh.Enable();

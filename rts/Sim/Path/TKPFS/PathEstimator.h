@@ -95,9 +95,23 @@ protected: // IPathFinder impl
 		const bool synced
 	) override;
 
+	bool SetStartBlock(
+		const MoveDef& moveDef,
+		const CPathFinderDef& peDef,
+		const CSolidObject* owner,
+		float3 startPos
+	) override;
+
 private:
 	void InitEstimator();
 	void InitBlocks();
+
+	bool TestBlockReachability(
+		const MoveDef& moveDef,
+		const CPathFinderDef& peDef,
+		const CSolidObject* owner,
+		const unsigned int testBlockIdx
+	);
 
 	std::uint32_t CalcHash(const char* caller) const;
 

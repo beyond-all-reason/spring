@@ -610,7 +610,10 @@ void SetDefaultThreadCount()
 			const std::uint32_t workerCore = FindWorkerThreadCore(i - 1, workerAvailCores, mainAffinity);
 			// const std::uint32_t workerCore = workerAvailCores;
 
-			Threading::SetAffinity(workerCore);
+			char threadName[20];
+			std::snprintf(threadName, sizeof(threadName), "Worker %d", i);
+
+			Threading::SetAffinityHelper(threadName, workerCore);
 			return workerCore;
 		};
 

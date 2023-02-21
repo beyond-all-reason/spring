@@ -1,11 +1,12 @@
-# Coil RTS game engine
+# Recoil is an open source real time strategy game engine
 
-    git clone https://github.com/beyond-all-reason/spring -b BAR105
+### Get the engine sources
 
-Coil is a fork and continuation of [Open Source Real Time Strategy game engine](https://github.com/spring/spring) (formerly Spring/TASpring) version 105.0
+    git clone https://github.com/beyond-all-reason/spring -b BAR105 --recursive
 
-Visit our [webpage](https://www.beyondallreason.info) for help, suggestions,
-bugs, community forum and everything spring related.
+Recoil is a fork and continuation of an RTS [engine](https://github.com/spring/spring) version 105.0
+
+Visit our [Discord](https://discord.gg/GUpRg6Wz3e) or [Matrix](https://matrix.to/#/#beyond-all-reason-engine:matrix.org) for help, suggestions, bugs, community forum and everything Recoil related.
 
 ### Installation
 
@@ -16,9 +17,9 @@ You can use a pre-compiled binary, usually, you want to use an installer or a pa
 
 ### Compiling
 
-Detailed instructions for how to compile Coil can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker) or [here](https://github.com/beyond-all-reason/spring/wiki/SpringRTS-Build-Environment-(Docker))
+Detailed instructions for how to compile Recoil can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker) or [here](https://github.com/beyond-all-reason/spring/wiki/SpringRTS-Build-Environment-(Docker))
 
-Don't use 'master' branch, it is quite old.
+Use `BAR105` as the primary branch.
 
 You need to check our tags:
 

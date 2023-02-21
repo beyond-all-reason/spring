@@ -162,10 +162,17 @@ bool CUnsyncedLuaHandle::Init(const std::string& code, const std::string& file)
 }
 
 
-//
-// Call-Ins
-//
+/******************************************************************************
+ * Callins, functions called by the Engine (Synced)
+ *
+ * @module LuaHandleSynced
+ * @see rts/Lua/LuaHandleSynced.cpp
+ */
 
+/*** Receives data sent via `SendToUnsynced` callout.
+ *
+ * @function RecvFromSynced
+ */
 void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 {
 	if (!IsValid())
@@ -185,7 +192,18 @@ void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 	RunCallIn(L, cmdStr, args, 0);
 }
 
+/*** Custom Object Rendering
+ *
+ * For the following calls drawMode can be one of the following, notDrawing = 0, normalDraw = 1, shadowDraw = 2, reflectionDraw = 3, refractionDraw = 4, and finally gameDeferredDraw = 5 which was added in 102.0.
+ *
+ * @section custom_object
+ */
 
+/*** For custom rendering of units, enabled here.
+ *
+ * @function DrawUnit(unitID, drawMode)
+ * @return boolean suppressEngineDraw
+ */
 bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 {
 	LUA_CALL_IN_CHECK(L, false);
@@ -213,6 +231,12 @@ bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 }
 
 
+
+/*** For custom rendering of features, enabled here.
+ *
+ * @function DrawFeature(unitID, drawMode)
+ * @return boolean suppressEngineDraw
+ */
 bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 {
 	LUA_CALL_IN_CHECK(L, false);
@@ -240,6 +264,11 @@ bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 }
 
 
+/*** For custom rendering of shields.
+ *
+ * @function DrawShield(unitID, weaponID, drawMode)
+ * @return boolean suppressEngineDraw
+ */
 bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 {
 	LUA_CALL_IN_CHECK(L, false);
@@ -269,6 +298,11 @@ bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 }
 
 
+/*** For custom rendering of weapon (& other) projectiles, enabled here.
+ *
+ * @function DrawProjectile(projectileID, drawMode)
+ * @return boolean suppressEngineDraw
+ */
 bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 {
 	assert(projectile->weapon || projectile->piece);
@@ -496,6 +530,13 @@ bool CSyncedLuaHandle::SyncedActionFallback(const std::string& msg, int playerID
 }
 
 
+/*** Called when the unit reaches an unknown command in its queue (i.e. one not handled by the engine).
+ *
+ * If no addon returns used as true the command is dropped, if an addon returns true, true the command is removed because it's done, with true, false it's kept in the queue and CommandFallback gets called again on the next slowupdate.
+ *
+ * @function CommandFallback(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag)
+ * @return boolean used, boolean finished
+ */
 bool CSyncedLuaHandle::CommandFallback(const CUnit* unit, const Command& cmd)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -517,6 +558,13 @@ bool CSyncedLuaHandle::CommandFallback(const CUnit* unit, const Command& cmd)
 }
 
 
+/*** Called when the command is given, before the unit's queue is altered.
+ *
+ * The queue remains untouched when a command is blocked, whether it would be queued or replace the queue.
+ *
+ * @function AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced)
+ * @return boolean allow whether it should be let into the queue.
+ */
 bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -543,6 +591,11 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
 }
 
 
+/*** Called just before unit is created.
+ *
+ * @function AllowUnitCreation(unitDefID, builderID, builderTeam, x, y, z, facing)
+ * @return boolean allow whether or not the creation is permitted.
+ */
 bool CSyncedLuaHandle::AllowUnitCreation(
 	const UnitDef* unitDef,
 	const CUnit* builder,
@@ -577,7 +630,11 @@ bool CSyncedLuaHandle::AllowUnitCreation(
 }
 
 
-
+/*** Called just before a unit is transferred to a different team.
+ *
+ * @function AllowUnitTransfer(unitID, unitDefID, oldTeam, newTeam, capture)
+ * @return boolean allow whether or not the transfer is permitted.
+ */
 bool CSyncedLuaHandle::AllowUnitTransfer(const CUnit* unit, int newTeam, bool capture)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -604,6 +661,11 @@ bool CSyncedLuaHandle::AllowUnitTransfer(const CUnit* unit, int newTeam, bool ca
 }
 
 
+/*** Called just before a unit progresses its build percentage.
+ *
+ * @function AllowUnitBuildStep(builderID, builderTeam, unitID, unitDefID, part)
+ * @return boolean allow whether or not the build makes progress.
+ */
 bool CSyncedLuaHandle::AllowUnitBuildStep(const CUnit* builder, const CUnit* unit, float part)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -830,6 +892,11 @@ bool CSyncedLuaHandle::AllowUnitKamikaze(const CUnit* unit, const CUnit* target,
 }
 
 
+/*** Called just before feature is created.
+ *
+ * @function AllowFeatureCreation(featureDefID, teamID, x, y, z)
+ * @return boolean allow whether or not the creation is permitted.
+ */
 bool CSyncedLuaHandle::AllowFeatureCreation(const FeatureDef* featureDef, int teamID, const float3& pos)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -856,6 +923,17 @@ bool CSyncedLuaHandle::AllowFeatureCreation(const FeatureDef* featureDef, int te
 }
 
 
+/*** Called just before a feature changes its build percentage.
+ *
+ * Note that this is also called for resurrecting features, and for refilling features with resources before resurrection.
+ * On reclaim the part values are negative, and on refill and ressurect they are positive.
+ * Part is the percentage the feature be built or reclaimed per frame.
+ * Eg. for a 30 workertime builder, that's a build power of 1 per frame.
+ * For a 50 buildtime feature reclaimed by this builder, part will be 100/-50(/1) = -2%, or -0.02 numerically.
+ *
+ * @function AllowFeatureBuildStep(builderID, builderTeam, featureID, featureDefID, part)
+ * @return boolean allow whether or not the change is permitted.
+ */
 bool CSyncedLuaHandle::AllowFeatureBuildStep(const CUnit* builder, const CFeature* feature, float part)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -882,6 +960,11 @@ bool CSyncedLuaHandle::AllowFeatureBuildStep(const CUnit* builder, const CFeatur
 }
 
 
+/*** Called when a team sets the sharing level of a resource.
+ *
+ * @function AllowResourceLevel(teamID, res, level)
+ * @return boolean allow whether or not the sharing level is permitted.
+ */
 bool CSyncedLuaHandle::AllowResourceLevel(int teamID, const std::string& type, float level)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -906,6 +989,11 @@ bool CSyncedLuaHandle::AllowResourceLevel(int teamID, const std::string& type, f
 }
 
 
+/*** Called just before resources are transferred between players.
+ *
+ * @function AllowResourceTransfer(oldTeamID, newTeamID, res, amount)
+ * @return boolean allow whether or not the transfer is permitted.
+ */
 bool CSyncedLuaHandle::AllowResourceTransfer(int oldTeam, int newTeam, const char* type, float amount)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -931,6 +1019,11 @@ bool CSyncedLuaHandle::AllowResourceTransfer(int oldTeam, int newTeam, const cha
 }
 
 
+/*** Determines if this unit can be controlled directly in FPS view.
+ *
+ * @function AllowDirectUnitControl(unitID, unitDefID, unitTeam, playerID)
+ * @return boolean allow
+ */
 bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -956,6 +1049,20 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
 }
 
 
+/*** Called when a construction unit wants to "use his nano beams".
+ *
+ *     action is one of following:
+ *
+ *     -1 Build
+ *     CMD.REPAIR Repair
+ *     CMD.RECLAIM Reclaim
+ *     CMD.RESTORE Restore
+ *     CMD.RESURRECT Resurrect
+ *     CMD.CAPTURE Capture
+ *
+ * @function AllowBuilderHoldFire(unitID, unitDefID, action)
+ * @return boolean actionAllowed
+ */
 bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -980,6 +1087,23 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
 }
 
 
+/*** Whether a start position should be allowed
+ *
+ * clamped{X,Y,Z} are the coordinates clamped into start-boxes, raw is where player tried to place their marker.
+ *
+ * The readyState can be any one of:
+ *
+ *     0 - player picked a position,
+ *     1 - player clicked ready,
+ *     2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied) or
+ *     3 - the player failed to load.
+ *     The default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not have a startbox.
+ *
+ * NB: The order of the parameters changed with the addition of teamID in 104.0. Previouly it was: clampedX, clampedY, clampedZ, playerID, readyState, rawX, rawY, rawZ
+ *
+ * @function AllowStartPosition(playerID, teamID, readyState, clampedX, clampedY, clampedZ, rawX, rawY, rawZ)
+ * @return boolean allow
+ */
 bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned char readyState, const float3& clampedPos, const float3& rawPickPos)
 {
 	LUA_CALL_IN_CHECK(L, true);
@@ -1011,6 +1135,13 @@ bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned cha
 }
 
 
+/*** Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in.
+ *
+ * data was supposed to indicate the type of notification but currently never has a value other than 1 ("unit hit the ground").
+ *
+ * @function MoveCtrlNotify(unitID, unitDefID, unitTeam, data)
+ * @return boolean moveCtrlComplete whether or not the unit should remain script-controlled (false) or return to engine controlled movement (true).
+ */
 bool CSyncedLuaHandle::MoveCtrlNotify(const CUnit* unit, int data)
 {
 	LUA_CALL_IN_CHECK(L, false);
@@ -1037,6 +1168,11 @@ bool CSyncedLuaHandle::MoveCtrlNotify(const CUnit* unit, int data)
 }
 
 
+/*** Called when pre-building terrain levelling terraforms are completed (c.f. levelGround)
+ *
+ * @function TerraformComplete(unitID, unitDefID, unitTeam, buildUnitID, buildUnitDefID, buildUnitTeam)
+ * @treturn boolean stop if true the current build order is terminated.
+ */
 bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
 {
 	LUA_CALL_IN_CHECK(L, false);
@@ -1069,14 +1205,30 @@ bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
 }
 
 
+/***
+ * Damage Controllers
+ *
+ * For the following callins, in addition to being a regular weapon, weaponDefID may be one of the following:
+ *
+ *     -1 - debris collision, also default of Spring.AddUnitDamage
+ *     -2 - ground collision
+ *     -3 - object collision
+ *     -4 - fire damage
+ *     -5 - water damage
+ *     -6 - kill damage
+ *     -7 - crush damage
+ */
 
-/**
- * called after every damage modification (even HitByWeaponId)
- * but before the damage is applied
+/*** Called before damage is applied to the unit, allows fine control over how much damage and impulse is applied.
+ *
+ * Called after every damage modification (even `HitByWeaponId`) but before the damage is applied
  *
  * expects two numbers returned by lua code:
  * 1st is stored under *newDamage if newDamage != NULL
  * 2nd is stored under *impulseMult if impulseMult != NULL
+ *
+ * @function UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)
+ * @return number newDamage, number impulseMult
  */
 bool CSyncedLuaHandle::UnitPreDamaged(
 	const CUnit* unit,
@@ -1149,6 +1301,11 @@ bool CSyncedLuaHandle::UnitPreDamaged(
 	return (*newDamage == 0.0f && *impulseMult == 0.0f);
 }
 
+
+/*** Called before damage is applied to the feature, allows fine control over how much damage and impulse is applied.
+ * @function FeaturePreDamaged(featureID, featureDefID, featureTeam, damage, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)
+ * @return number newDamage, number impulseMult
+ */
 bool CSyncedLuaHandle::FeaturePreDamaged(
 	const CFeature* feature,
 	const CUnit* attacker,
@@ -1213,6 +1370,13 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
 	return (*newDamage == 0.0f && *impulseMult == 0.0f);
 }
 
+/*** Called before any engine shield-vs-projectile logic executes.
+ *
+ * If the return value is true the gadget handles the collision event and the engine does not remove the projectile. If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and beamEmitterUnitID are populated instead. The start and hit position arguments are provided from 104.0 onwards.
+ *
+ * @function ShieldPreDamaged(proID, shieldCarrier, boolBounceProjectile, beamEmitterWeaponNum, beamEmitterUnitID, startX, startY, startZ, hitX, hitY, hitZ)
+ * @return boolean handleCollision
+ */
 bool CSyncedLuaHandle::ShieldPreDamaged(
 	const CProjectile* projectile,
 	const CWeapon* shieldEmitter,
@@ -1272,6 +1436,13 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
 }
 
 
+/*** Determines if this weapon can automatically generate targets itself. See also commandFire weaponDef tag.
+ *
+ * The ignoreCheck return value was added in 99.0 to allow ignoring the callin i.e. running normal engine check for this weapon.
+ *
+ * @function AllowWeaponTargetCheck(attackerID, attackerWeaponNum, attackerWeaponDefID)
+ * @return boolean allowCheck, boolean ignoreCheck
+ */
 int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned int attackerWeaponNum, unsigned int attackerWeaponDefID)
 {
 	int ret = -1;
@@ -1302,6 +1473,13 @@ int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned i
 }
 
 
+/*** Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep.
+ *
+ * The second return value is the new priority for this target (if you don't want to change it, return defPriority). Lower priority targets are targeted first.
+ *
+ * @function AllowWeaponTarget(attackerID, targetID, attackerWeaponNum, attackerWeaponDefID, defPriority)
+ * @return boolean allowed, number newPriority
+ */
 bool CSyncedLuaHandle::AllowWeaponTarget(
 	unsigned int attackerID,
 	unsigned int targetID,
@@ -1353,6 +1531,13 @@ bool CSyncedLuaHandle::AllowWeaponTarget(
 }
 
 
+/*** Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep.
+ *
+ * Only called for weaponDefIDs registered via Script.SetWatchWeapon.
+ *
+ * @function AllowWeaponInterceptTarget(interceptorUnitID, interceptorWeaponID, targetProjectileID)
+ * @return boolean allowed
+ */
 bool CSyncedLuaHandle::AllowWeaponInterceptTarget(
 	const CUnit* interceptorUnit,
 	const CWeapon* interceptorWeapon,

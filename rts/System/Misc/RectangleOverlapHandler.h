@@ -23,7 +23,7 @@ public:
 	CRectangleOverlapHandler() { clear(); }
 	~CRectangleOverlapHandler();
 
-	void Process();
+	void Process(bool noSplit);
 
 	size_t GetTotalArea() const;
 
@@ -87,6 +87,7 @@ public:
 	iterator end() { return (rectangles.end()); }
 
 private:
+	void StageDedup();
 	void StageMerge();
 	void StageOverlap();
 	void StageSplitTooLarge();

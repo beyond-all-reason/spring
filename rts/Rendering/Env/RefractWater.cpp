@@ -10,10 +10,9 @@
 #include "Map/ReadMap.h"
 #include "System/bitops.h"
 
-CRefractWater::CRefractWater()
-	: CAdvWater(false)
-	, subSurfaceTex(0)
+void CRefractWater::InitResources(bool loadShader)
 {
+	CAdvWater::InitResources(false);
 	LoadGfx();
 }
 

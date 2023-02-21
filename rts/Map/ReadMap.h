@@ -101,7 +101,7 @@ public:
 	 * calculates derived heightmap information
 	 * such as normals, centerheightmap and slopemap
 	 */
-	void UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool initialize = false);
+	void UpdateHeightMapSynced(const SRectangle& hgtMapRect);
 	void UpdateLOS(const SRectangle& hgtMapRect);
 	void BecomeSpectator();
 	void UpdateDraw(bool firstCall);

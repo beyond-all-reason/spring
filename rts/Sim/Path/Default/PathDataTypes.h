@@ -86,6 +86,7 @@ struct PathNodeStateBuffer {
 		gCost = std::move(pnsb.gCost);
 
 		nodeMask = std::move(pnsb.nodeMask);
+		nodeLinksObsoleteFlags = std::move(pnsb.nodeLinksObsoleteFlags);
 		peNodeOffsets = std::move(pnsb.peNodeOffsets);
 
 		extraCosts[ true] = std::move(pnsb.extraCosts[ true]);
@@ -121,6 +122,7 @@ struct PathNodeStateBuffer {
 		fCost.resize(br.x * br.y, PATHCOST_INFINITY);
 		gCost.resize(br.x * br.y, PATHCOST_INFINITY);
 		nodeMask.resize(br.x * br.y, 0);
+		nodeLinksObsoleteFlags.resize(br.x * br.y, 0);
 
 		// created on-demand
 		// extraCosts[ true].resize(br.x * br.y, 0.0f);
@@ -138,6 +140,7 @@ struct PathNodeStateBuffer {
 		gCost.clear();
 
 		nodeMask.clear();
+		nodeLinksObsoleteFlags.clear();
 		peNodeOffsets.clear();
 
 		extraCosts[ true].clear();
@@ -173,10 +176,10 @@ struct PathNodeStateBuffer {
 		if (!peNodeOffsets.empty())
 			memFootPrint += (peNodeOffsets.size() * (sizeof(std::vector<short2>) + peNodeOffsets[0].size() * sizeof(short2)));
 
-		memFootPrint += (nodeMask.size() * sizeof(std::uint8_t));
-		memFootPrint += ((fCost.size() + gCost.size()) * sizeof(float));
+		memFootPrint += (nodeMask.size() * sizeof(decltype(nodeMask)::value_type));
+		memFootPrint += (nodeLinksObsoleteFlags.size() * sizeof(decltype(nodeLinksObsoleteFlags)::value_type));
+		memFootPrint += ((fCost.size() + gCost.size()) * sizeof(decltype(fCost)::value_type));
 		memFootPrint += ((extraCosts[true].size() + extraCosts[false].size()) * sizeof(float));
-
 		return memFootPrint;
 	}
 
@@ -227,6 +230,9 @@ public:
 
 	/// bitmask of PATHOPT_{OPEN, ..., OBSOLETE} flags
 	std::vector<std::uint8_t> nodeMask;
+
+	/// Flag certain node directions as obsolete
+	std::vector<std::uint8_t> nodeLinksObsoleteFlags;
 
 	/// for the PE, maintains an array of the best accessible
 	/// offset (from a block's center position) per path-type

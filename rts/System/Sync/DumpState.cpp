@@ -326,7 +326,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 
 		for (const Command& c: cq) {
 			file << "\t\t\t\t\tcommandID: " << c.GetID() << "\n";
-			file << "\t\t\t\t\ttag: " << c.GetTag() << ", options: " << c.GetOpts() << "\n";
+			file << "\t\t\t\t\ttag: " << c.GetTag() << ", options: " << +c.GetOpts() << "\n";
 			file << "\t\t\t\t\tparams: " << c.GetNumParams() << "\n";
 
 			for (unsigned int n = 0; n < c.GetNumParams(); n++) {

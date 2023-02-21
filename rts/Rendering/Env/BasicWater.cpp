@@ -16,7 +16,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CBasicWater::CBasicWater()
+void CBasicWater::InitResources(bool loadShader)
 {
 	CBitmap waterTexBM;
 	if (!waterTexBM.Load(waterRendering->texture)) {

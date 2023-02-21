@@ -311,22 +311,24 @@ bool MoveDef::TestMoveSquareRange(
 
 	bool retTestMove = true;
 
-	for (int z = zmin; retTestMove && z <= zmax; z += 1) {
-		for (int x = xmin; retTestMove && x <= xmax; x += 1) {
-			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
+	if (testTerrain) {
+		for (int z = zmin; retTestMove && z <= zmax; ++z) {
+			for (int x = xmin; retTestMove && x <= xmax; ++x) {
+				const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
 
-			minSpeedMod  = std::min(minSpeedMod, speedMod);
-			retTestMove &= (!testTerrain || (speedMod > 0.0f));
+				minSpeedMod = std::min(minSpeedMod, speedMod);
+				retTestMove = (speedMod > 0.0f);
+			}
 		}
 	}
 
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
-	if (retTestMove) {
+	if (testObjects && retTestMove) {
 		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
 
-		maxBlockBit |= blockBits;
-		retTestMove &= (!testObjects || (blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+		maxBlockBit = blockBits;
+		retTestMove = ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 	}
 
 	// don't use std::min or |= because the ptr values might be garbage

@@ -71,7 +71,8 @@ void CGenericParticleProjectile::Draw()
 {
 	float3 dir1 = camera->GetRight();
 	float3 dir2 = camera->GetUp();
-	if (directional) {
+	const bool shadowPass = (camera->GetCamType() == CCamera::CAMTYPE_SHADOW);
+	if (directional && !shadowPass) {
 		float3 dif(pos - camera->GetPos());
 		dif.ANormalize();
 		dir1 = dif.cross(speed).ANormalize();

@@ -70,6 +70,8 @@ class LuaOpenGL {
 		static void ResetDrawWorldShadow();
 		static void DisableDrawWorldShadow();
 
+		NOOP_STATE_FUNCS(DrawShadowPassTransparent)
+
 		static void EnableDrawWorldReflection();
 		static void ResetDrawWorldReflection();
 		static void DisableDrawWorldReflection();

@@ -20,9 +20,9 @@ public:
 		WATER_RENDERER_BUMPMAPPED = 4,
 		NUM_WATER_RENDERERS       = 5,
 	};
-
 	IWater();
 	virtual ~IWater() = default;
+	virtual void InitResources(bool loadShader = true) = 0;
 	virtual void FreeResources() = 0;
 
 	virtual void Draw() {}

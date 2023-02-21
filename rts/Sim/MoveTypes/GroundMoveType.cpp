@@ -641,9 +641,6 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 
 	if (owner->UnderFirstPersonControl()) return;
 
-	earlyCurrWayPoint = currWayPoint;
-	earlyNextWayPoint = nextWayPoint;
-
 	// either follow user control input or pathfinder
 	// waypoints; change speed and heading as required
 	// if (owner->UnderFirstPersonControl()) {
@@ -816,6 +813,9 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 }
 
 void CGroundMoveType::UpdatePreCollisionsMt() {
+	earlyCurrWayPoint = currWayPoint;
+	earlyNextWayPoint = nextWayPoint;
+
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
 	if (owner->IsFalling()) return;
@@ -1287,7 +1287,8 @@ void CGroundMoveType::UpdateSkid()
 
 			UseHeading(true);
 			// update wanted-heading after coming to a stop
-			ChangeHeading(owner->heading);
+			// ChangeHeading(owner->heading);
+			wantedHeading = owner->heading;
 		} else {
 			constexpr float speedReduction = 0.35f;
 
@@ -2833,7 +2834,8 @@ void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive
 */
 void CGroundMoveType::SetMainHeading() {
 	if (!useMainHeading || owner->weapons.empty()) {
-		ChangeHeading(owner->heading);
+		// ChangeHeading(owner->heading);
+		wantedHeading = owner->heading;
 		return;
 	}
 

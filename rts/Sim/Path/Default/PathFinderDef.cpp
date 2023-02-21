@@ -34,6 +34,7 @@ CPathFinderDef::CPathFinderDef(const float3& startPos, const float3& goalPos, fl
 , allowDefPath(true)
 , dirIndependent(false)
 , synced(true)
+, useVerifiedStartBlock(false)
 {
 	startSquareX = wsStartPos.x / SQUARE_SIZE;
 	startSquareZ = wsStartPos.z / SQUARE_SIZE;

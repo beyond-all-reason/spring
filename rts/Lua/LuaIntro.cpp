@@ -317,6 +317,10 @@ string CLuaIntro::LoadFile(const string& filename) const
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Draws custom load screens.
+ *
+ * @function DrawLoadScreen()
+ */
 void CLuaIntro::DrawLoadScreen()
 {
 	LUA_CALL_IN_CHECK(L);
@@ -338,6 +342,9 @@ void CLuaIntro::DrawLoadScreen()
 }
 
 
+/***
+ * @function LoadProgress(message, replaceLastLine)
+ */
 void CLuaIntro::LoadProgress(const std::string& msg, const bool replace_lastline)
 {
 	LUA_CALL_IN_CHECK(L);

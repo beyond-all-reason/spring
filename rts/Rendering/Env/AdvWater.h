@@ -10,8 +10,8 @@
 class CAdvWater : public IWater
 {
 public:
-	explicit CAdvWater(bool loadShader = true);
 	~CAdvWater() override { FreeResources(); }
+	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_REFLECTIVE; }
 

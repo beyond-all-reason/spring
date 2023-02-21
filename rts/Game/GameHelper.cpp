@@ -1175,7 +1175,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	std::vector<float3>* canbuildpos,
 	std::vector<float3>* featurepos,
 	std::vector<float3>* nobuildpos,
-	const std::vector<Command>* commands
+	const std::vector<Command>* commands,
+	int threadOwner
 ) {
 	feature = nullptr;
 
@@ -1191,7 +1192,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const int2 zrange = int2(z1, z2);
 
 	const MoveDef* moveDef = (buildInfo.def->pathType != -1U) ? moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType) : nullptr;
-	/*const S3DModel* model =*/ buildInfo.def->LoadModel();
 
 	// const float buildHeight = GetBuildHeight(testPos, buildInfo.def, synced);
 	// const float modelHeight = (model != nullptr) ? math::fabs(model->height) : 10.0f;
@@ -1204,6 +1204,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		testStatus = BUILDSQUARE_BLOCKED;
 
 		QuadFieldQuery qfQuery;
+		qfQuery.threadOwner = threadOwner;
 		quadField.GetFeaturesExact(qfQuery, testPos, std::max(xsize, zsize) * 6);
 
 		const int mindx = xsize * (SQUARE_SIZE >> 1) - (SQUARE_SIZE >> 1);

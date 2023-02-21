@@ -88,6 +88,8 @@ void CProjectileHandler::Init()
 	projectiles[true ].SeedFreeKeys(0, 1 << 14, true); //seed only synced free ids.
 	projectiles[false].reserve(static_cast<size_t>(maxParticles) * 2);
 
+	CExpGenSpawnable::InitSpawnables();
+
 	// register ConfigNotify()
 	configHandler->NotifyOnChange(this, {"MaxParticles", "MaxNanoParticles"});
 }

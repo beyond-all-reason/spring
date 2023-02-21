@@ -50,10 +50,27 @@ private:
 	std::vector< std::pair<float, int> > sortedUnitPairs; // <priority, unitID>
 	std::vector< std::pair<float, std::vector<int>> > sortedUnitGroups;
 	std::vector< std::pair<int, Command> > frontMoveCommands;
+	std::vector< std::pair<int, Command> > allFrontMoveCommands;
 
 	std::vector<size_t> mixedUnitIDs;
 	std::vector<size_t> mixedGroupSizes;
+	std::vector<size_t> mixedUnitTypes;
 
+	struct UnitReference {
+		UnitReference(int _unitId, int _unitDefId, float3& _pos)
+			: unitId(_unitId)
+			, unitDefId(_unitDefId)
+			, pos(_pos)
+		{}
+
+		UnitReference()	{};
+
+		int unitId = -1;
+		int unitDefId = -1;
+		float3 pos;
+	};
+
+	std::vector<UnitReference> unassignedUnits;
 
 	std::vector<int> targetUnitIDs;
 };

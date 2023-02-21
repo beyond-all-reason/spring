@@ -108,6 +108,7 @@ void CModInfo::ResetState()
 		pathFinderSystem = NOPFS_TYPE;
 		pfRawDistMult    = 1.25f;
 		pfUpdateRate     = 0.007f;
+		pfUpdateRateScale = 1.f;
 		pfForceSingleThreaded = false;
 		pfForceUpdateSingleThreaded = false;
 
@@ -152,6 +153,7 @@ void CModInfo::Init(const std::string& modFileName)
 		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
+		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
 		pfForceSingleThreaded = system.GetBool("pfForceSingleThreaded", pfForceSingleThreaded);
 		pfForceUpdateSingleThreaded = system.GetBool("pfForceUpdateSingleThreaded", pfForceUpdateSingleThreaded);
 

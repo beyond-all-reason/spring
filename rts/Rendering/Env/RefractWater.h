@@ -8,8 +8,8 @@
 class CRefractWater : public CAdvWater 
 {
 public:
-	CRefractWater();
 	~CRefractWater() override { FreeResources(); }
+	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void LoadGfx();
@@ -19,9 +19,9 @@ public:
 protected:
 	void SetupWaterDepthTex();
 
-	unsigned int target;
+	unsigned int target = 0;
 	/// the screen is copied into this texture and used for water rendering
-	GLuint subSurfaceTex;
+	GLuint subSurfaceTex = 0;
 };
 
 #endif // REFRACTED_WATER_H

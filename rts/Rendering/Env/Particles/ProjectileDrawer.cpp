@@ -278,6 +278,7 @@ void CProjectileDrawer::Init() {
 
 		fsShadowShader->SetUniform("atlasTex", 0);
 		fsShadowShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
+		fsShadowShader->SetUniform("shadowColorMode", shadowHandler.shadowColorMode > 0 ? 1.0f : 0.0f);
 
 		fsShadowShader->Disable();
 		fsShadowShader->Validate();
@@ -881,6 +882,7 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 	// 6) Render transparents in arbitrary order
 	textureAtlas->BindTexture();
 	fsShadowShader->Enable();
+	fsShadowShader->SetUniform("shadowColorMode", shadowHandler.shadowColorMode > 0 ? 1.0f : 0.0f);
 
 	rb.DrawElements(GL_TRIANGLES);
 

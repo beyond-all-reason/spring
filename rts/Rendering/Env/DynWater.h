@@ -13,8 +13,8 @@ class CCamera;
 class CDynWater : public IWater
 {
 public:
-	CDynWater();
 	~CDynWater() override { FreeResources(); }
+	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void Draw() override;
@@ -70,8 +70,8 @@ private:
 	GLuint boatShape;
 	GLuint hoverShape;
 
-	int lastWaveFrame;
-	bool firstDraw;
+	int lastWaveFrame = 0;
+	bool firstDraw = true;
 
 	unsigned int waterFP;
 	unsigned int waterVP;
@@ -91,8 +91,8 @@ private:
 	float3 oldCamPosBig;
 	float3 camPosBig2;
 
-	int camPosX;
-	int camPosZ;
+	int camPosX = 0;
+	int camPosZ = 0;
 
 	struct Explosion {
 		Explosion(const float3& pos, float strength, float radius)

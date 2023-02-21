@@ -38,6 +38,14 @@ CExtractorBuilding::~CExtractorBuilding()
 	ResetExtraction();
 }
 
+void CExtractorBuilding::PreInit(const UnitLoadParams& params)
+{
+	CBuilding::PreInit(params);
+
+	extractionRange = unitDef->extractRange;
+	extractionDepth = unitDef->extractsMetal;
+}
+
 /* resets the metalMap and notifies the neighbours */
 void CExtractorBuilding::ResetExtraction()
 {
@@ -178,7 +186,7 @@ void CExtractorBuilding::Activate()
 	CBuilding::Activate();
 
 	/* Finds the amount of metal to extract and sets the rotationspeed when the extractor is built. */
-	SetExtractionRangeAndDepth(unitDef->extractRange, unitDef->extractsMetal);
+	SetExtractionRangeAndDepth(extractionRange, extractionDepth);
 }
 
 

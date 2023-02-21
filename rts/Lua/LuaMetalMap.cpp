@@ -8,8 +8,11 @@
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
 
-/******************************************************************************/
-/******************************************************************************/
+/******************************************************************************
+ * Metal Map Lua API
+ * @module MetalMap
+ * @see rts/Lua/LuaMetalMap.cpp
+******************************************************************************/
 
 bool LuaMetalMap::PushReadEntries(lua_State* L)
 {
@@ -41,6 +44,15 @@ int LuaMetalMap::GetMetalAmount(lua_State* L)
 	return 1;
 }
 
+/***
+ * @function Spring.SetMetalAmount
+ * @number x in worldspace/16.
+ * @number z in worldspace/16.
+ * @number metalAmount must be between 0 and 255*maxMetal (with maxMetal from the .smd or mapinfo.lua).
+ * @treturn nil
+ *
+ *
+ */
 int LuaMetalMap::SetMetalAmount(lua_State* L)
 {
 	const int x = luaL_checkint(L, 1);

@@ -41,15 +41,19 @@ public:
 	/**
 	 * @brief simulation drawing balance
 	 *
-	 * Defines how much percent of the time
-	 * for simulation is minimum spend for
-	 * drawing.
-	 * This is important when reconnecting,
-	 * i.e. it means that 15% of the total
-	 * cpu time is spend for drawing and 85%
-	 * for reconnecting/simulation.
+	 * Defines how much percent of the time for simulation is minimum spend for
+	 * drawing. This is important when reconnecting,
+	 * 
+	 * For example: if set to 0.05 then 5% of the total cpu time is exclusively
+	 * reserved for drawing and the remaining 95% for reconnecting/simulation.
+	 * 
+	 * Note that it is currently set to 0 for this isn't necessary because the
+	 * engine enforces minDrawFPS, which is the minimum number of rendering
+	 * frames to always carry out every second, no matter the sim load. As a
+	 * result, unless an issue or reason crops up soon, this will be removed in
+	 * a future update. #TODO
 	 */
-	static constexpr float reconnectSimDrawBalance = 0.15f;
+	static constexpr float reconnectSimDrawBalance = 0.00f;
 
 	/**
 	 * @brief simulation frames per second

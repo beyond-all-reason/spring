@@ -109,55 +109,59 @@ void CSmokeTrailProjectile::Draw()
 	const float age = gs->frameNum + globalRendering->timeOffset - creationTime;
 	const float invLifeTime = (1.0f / lifeTime);
 
-	const float3 dif1  = (pos1 - camera->GetPos()).ANormalize();
-	const float3 dif2  = (pos2 - camera->GetPos()).ANormalize();
+	const bool shadowPass = (camera->GetCamType() == CCamera::CAMTYPE_SHADOW);
+
+	const float3 dif1 = shadowPass ? camera->GetForward() : (pos1 - camera->GetPos()).ANormalize();
+	const float3 dif2 = shadowPass ? camera->GetForward() : (pos2 - camera->GetPos()).ANormalize();
+
 	const float3 odir1 = (dif1.cross(dir1)).ANormalize();
 	const float3 odir2 = (dif2.cross(dir2)).ANormalize();
 
-	const SColor colBase(color, color, color, 1.0f);
+	const float t1 = (age                    ) * invLifeTime;
+	const float tm = (age + 0.5f * lifePeriod) * invLifeTime;
+	const float t2 = (age +        lifePeriod) * invLifeTime;
 
-	float a1 = lastSegment ?  0.0f : (1.0f - (age             ) * invLifeTime) * (0.7f + std::fabs(dif1.dot(dir1)));
-	const float alpha1 = Clamp(a1, 0.f, 1.f);
-	const SColor col = colBase * alpha1;
+	const float lerp1 = ((1.0f - t1) * (0.7f + std::fabs(dif1.dot(dir1)))) * (1 - lastSegment );
+	const float lerp2 = ((1.0f - t2) * (0.7f + std::fabs(dif2.dot(dir2)))) * (1 - firstSegment);
 
-	float a2 = firstSegment ? 0.0f : (1.0f - (age + lifePeriod) * invLifeTime) * (0.7f + std::fabs(dif2.dot(dir2)));
-	const float alpha2 = Clamp(a2, 0.0f, 1.0f);
-	const SColor col2 = colBase * alpha2;
+	const float size1 = 1.0f + t1 * origSize;
+	const float size2 = 1.0f + t2 * origSize;
 
-	const float size1 = 1.0f + ((age             ) * invLifeTime) * origSize;
-	const float size2 = 1.0f + ((age + lifePeriod) * invLifeTime) * origSize;
+
+	const SColor colBase = { color, color, color, 1.0f };
+	const SColor col1 = colBase * std::clamp(lerp1, 0.0f, 1.0f);
+	const SColor col2 = colBase * std::clamp(lerp2, 0.0f, 1.0f);
 
 	if (drawSegmented) {
-		const float t = (age + 0.5f * lifePeriod) * invLifeTime;
-		const float3 dif3 = (midpos - camera->GetPos()).ANormalize();
-		const float3 odir3 = (dif3.cross(middir)).ANormalize();
-		const float size3 = (0.2f + t) * origSize;
 
-		const float a2 = (1.0f - t) * (0.7f + std::fabs(dif3.dot(middir)));
-		const float alpha = Clamp(a2, 0.0f, 1.0f);
-		const SColor col3 = colBase * alpha;
+		const float3 difm = shadowPass ? camera->GetForward() : (midpos - camera->GetPos()).ANormalize();
+		const float3 odirm = (difm.cross(middir)).ANormalize();
 
+		const float lerpm = (1.0f - tm) * (0.7f + std::fabs(difm.dot(middir)));
+		const float sizem = (0.2f + tm) * origSize;
 		const float midtexx = mix(texture->xstart, texture->xend, 0.5f);
 
+		const SColor colm = colBase * std::clamp(lerpm, 0.0f, 1.0f);
+
 		AddEffectsQuad(
-			{ pos1   - (odir1 * size1), texture->xstart, texture->ystart, col  },
-			{ midpos - (odir3 * size3), midtexx        , texture->ystart, col3 },
-			{ midpos + (odir3 * size3), midtexx        , texture->yend  , col3 },
-			{ pos1   + (odir1 * size1), texture->xstart, texture->yend  , col  }
+			{ pos1   - (odir1 * size1), texture->xstart, texture->ystart, col1  },
+			{ midpos - (odirm * sizem), midtexx        , texture->ystart, colm },
+			{ midpos + (odirm * sizem), midtexx        , texture->yend  , colm },
+			{ pos1   + (odir1 * size1), texture->xstart, texture->yend  , col1  }
 		);
 
 		AddEffectsQuad(
-			{ midpos - (odir3 * size3), midtexx      ,   texture->ystart, col3 },
+			{ midpos - (odirm * sizem), midtexx      ,   texture->ystart, colm },
 			{ pos2   - (odir2 * size2), texture->xend,   texture->ystart, col2 },
 			{ pos2   + (odir2 * size2), texture->xend,   texture->yend  , col2 },
-			{ midpos + (odir3 * size3), midtexx      ,   texture->yend  , col3 }
+			{ midpos + (odirm * sizem), midtexx      ,   texture->yend  , colm }
 		);
 	} else {
 		AddEffectsQuad(
-			{ pos1 - (odir1 * size1), texture->xstart, texture->ystart, col  },
+			{ pos1 - (odir1 * size1), texture->xstart, texture->ystart, col1 },
 			{ pos2 - (odir2 * size2), texture->xend  , texture->ystart, col2 },
 			{ pos2 + (odir2 * size2), texture->xend  , texture->yend  , col2 },
-			{ pos1 + (odir1 * size1), texture->xstart, texture->yend  , col  }
+			{ pos1 + (odir1 * size1), texture->xstart, texture->yend  , col1 }
 		);
 	}
 }

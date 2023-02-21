@@ -31,6 +31,7 @@
 CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemodeValue(-1).description("Sets whether shadows are rendered.\n-1:=forceoff, 0:=off, 1:=full, 2:=fast (skip terrain)"); //FIXME document bitmask
 CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
 CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
+CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
 
 CShadowHandler shadowHandler;
 
@@ -39,17 +40,19 @@ void CShadowHandler::Reload(const char* argv)
 	int nextShadowConfig = (shadowConfig + 1) & 0xF;
 	int nextShadowMapSize = shadowMapSize;
 	int nextShadowProMode = shadowProMode;
+	int nextShadowColorMode = shadowColorMode;
 
 	if (argv != nullptr)
-		(void) sscanf(argv, "%i %i %i", &nextShadowConfig, &nextShadowMapSize, &nextShadowProMode);
+		(void) sscanf(argv, "%i %i %i %i", &nextShadowConfig, &nextShadowMapSize, &nextShadowProMode, &nextShadowColorMode);
 
 	// do nothing without a parameter change
-	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize && nextShadowProMode == shadowProMode)
+	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize && nextShadowProMode == shadowProMode && nextShadowColorMode == shadowColorMode)
 		return;
 
 	configHandler->Set("Shadows", nextShadowConfig & 0xF);
 	configHandler->Set("ShadowMapSize", Clamp(nextShadowMapSize, int(MIN_SHADOWMAP_SIZE), int(MAX_SHADOWMAP_SIZE)));
 	configHandler->Set("ShadowProjectionMode", Clamp(nextShadowProMode, int(SHADOWPROMODE_MAP_CENTER), int(SHADOWPROMODE_MIX_CAMMAP)));
+	configHandler->Set("ShadowColorMode", static_cast<bool>(nextShadowColorMode));
 
 	Kill();
 	Init();
@@ -63,8 +66,9 @@ void CShadowHandler::Init()
 	shadowConfig  = configHandler->GetInt("Shadows");
 	shadowMapSize = configHandler->GetInt("ShadowMapSize");
 	// disabled; other option usually produces worse resolution
-	// shadowProMode = configHandler->GetInt("ShadowProjectionMode");
-	shadowProMode = SHADOWPROMODE_CAM_CENTER;
+	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
+	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
+	shadowColorMode = configHandler->GetInt("ShadowColorMode");
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
@@ -324,11 +328,28 @@ bool CShadowHandler::InitFBOAndTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //no mips
 
-		// Store full color here, so special effects can cast nice color shadow.
-		if (GLEW_EXT_packed_float)
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, shadowMapSize, shadowMapSize, 0, GL_RGB, GL_FLOAT, nullptr);
-		else
+		if (static_cast<bool>(shadowColorMode)) {
+			// Store full color here, so special effects can cast nice color shadow.
+#if 0
+			if (GLEW_EXT_packed_float)
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, shadowMapSize, shadowMapSize, 0, GL_RGB, GL_FLOAT, nullptr);
+			else
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, shadowMapSize, shadowMapSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+#else
+			// seems like GL_RGB8 has enough precision
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, shadowMapSize, shadowMapSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+#endif
+			constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
+			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+		}
+		else {
+			// Conserve VRAM
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, shadowMapSize, shadowMapSize, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+			constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+		}
+
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -396,8 +417,10 @@ void CShadowHandler::DrawShadowPasses()
 		readMap->GetGroundDrawer()->DrawShadowPass();
 
 	//transparent pass, comes last
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0)
+	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
 		projectileDrawer->DrawShadowPassTransparent();
+		eventHandler.DrawShadowPassTransparent();
+	}
 
 	glPopAttrib();
 

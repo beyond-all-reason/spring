@@ -4,6 +4,8 @@
 #define EXP_GEN_SPAWNABLE_H
 
 #include <memory>
+#include <array>
+#include <tuple>
 
 #include "Sim/Objects/WorldObject.h"
 #include "System/Threading/ThreadPool.h"
@@ -16,6 +18,10 @@ class CExpGenSpawnable : public CWorldObject
 {
 	CR_DECLARE(CExpGenSpawnable)
 public:
+	using AllocFunc = CExpGenSpawnable*(*)();
+	using GetMemberInfoFunc = bool(*)(SExpGenSpawnableMemberInfo&);
+	using SpawnableTuple = std::tuple<std::string, GetMemberInfoFunc, AllocFunc>;
+
 	CExpGenSpawnable(const float3& pos, const float3& spd);
 
 	~CExpGenSpawnable() override;
@@ -23,6 +29,8 @@ public:
 
 	static bool GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo);
 	static int GetSpawnableID(const std::string& spawnableName);
+
+	static void InitSpawnables();
 
 	//Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
@@ -47,6 +55,8 @@ protected:
 	float rotVel;
 
 	int createFrame;
+
+	static std::array<SpawnableTuple, 14> spawnables;
 };
 
 #endif //EXP_GEN_SPAWNABLE_H

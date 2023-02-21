@@ -116,10 +116,8 @@ IPath::SearchResult IPathFinder::GetPath(
 		maxBlocksToBeSearched = std::min(MAX_SEARCHED_NODES_PF - 8U, maxNodes);
 	}
 
-	mStartBlock.x  = startPos.x / BLOCK_PIXEL_SIZE;
-	mStartBlock.y  = startPos.z / BLOCK_PIXEL_SIZE;
-	mStartBlockIdx = BlockPosToIdx(mStartBlock);
-	mGoalBlockIdx  = mStartBlockIdx;
+	if (!SetStartBlock(moveDef, pfDef, owner, startPos))
+		return IPath::SearchResult::Error;
 
 	assert(static_cast<unsigned int>(mStartBlock.x) < nbrOfBlocks.x);
 	assert(static_cast<unsigned int>(mStartBlock.y) < nbrOfBlocks.y);
@@ -141,6 +139,7 @@ IPath::SearchResult IPathFinder::GetPath(
 	// 			, pfDef.sqGoalRadius, moveDef.pathType
 	// 			, BLOCK_SIZE, debugLoggingActive);
 	// }
+
 
 	const CPathCache::CacheItem& ci = GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 
@@ -301,6 +300,21 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 	// not get closer and should return CGC *unless* the caller requested a
 	// raw search only
 	return results[IPF + ((!allowRawPath || allowDefPath) && (!isStartGoal || startInGoal))];
+}
+
+bool IPathFinder::SetStartBlock(
+	const MoveDef& moveDef,
+	const CPathFinderDef& peDef,
+	const CSolidObject* owner,
+	float3 startPos
+)
+{
+	mStartBlock.x  = startPos.x / BLOCK_PIXEL_SIZE;
+	mStartBlock.y  = startPos.z / BLOCK_PIXEL_SIZE;
+	mStartBlockIdx = BlockPosToIdx(mStartBlock);
+	mGoalBlockIdx  = mStartBlockIdx;
+
+	return true;
 }
 
 }

@@ -3317,8 +3317,7 @@ void CGuiHandler::DrawOptionLEDs(const IconInfo& icon)
 static inline void DrawSensorRange(int radius, const float* color, const float3& pos)
 {
 	if (radius > 0) {
-		glColor4fv(color);
-		glSurfaceCircle(pos, (float)radius, 40);
+		glSurfaceCircle(pos, (float)radius, { color }, 40);
 	}
 }
 
@@ -3329,14 +3328,12 @@ static void DrawUnitDefRanges(const CUnit* unit, const UnitDef* unitdef, const f
 	if (unitdef->builder) {
 		const float radius = unitdef->buildDistance;
 		if (radius > 0.0f) {
-			glColor4fv(cmdColors.rangeBuild);
-			glSurfaceCircle(pos, radius, 40);
+			glSurfaceCircle(pos, radius, { cmdColors.rangeBuild }, 40);
 		}
 	}
 	// draw shield range for immobile units
 	if (unitdef->shieldWeaponDef) {
-		glColor4fv(cmdColors.rangeShield);
-		glSurfaceCircle(pos, unitdef->shieldWeaponDef->shieldRadius, 40);
+		glSurfaceCircle(pos, unitdef->shieldWeaponDef->shieldRadius, { cmdColors.rangeShield }, 40);
 	}
 	// draw sensor and jammer ranges
 	if (unitdef->onoffable || unitdef->activateWhenBuilt) {
@@ -3356,14 +3353,12 @@ static void DrawUnitDefRanges(const CUnit* unit, const UnitDef* unitdef, const f
 	}
 	// draw self destruct and damage distance
 	if (unitdef->kamikazeDist > 0) {
-		glColor4fv(cmdColors.rangeKamikaze);
-		glSurfaceCircle(pos, unitdef->kamikazeDist, 40);
+		glSurfaceCircle(pos, unitdef->kamikazeDist, { cmdColors.rangeKamikaze }, 40);
 
 		const WeaponDef* wd = unitdef->selfdExpWeaponDef;
 
 		if (wd != nullptr) {
-			glColor4fv(cmdColors.rangeSelfDestruct);
-			glSurfaceCircle(pos, wd->damages.damageAreaOfEffect, 40);
+			glSurfaceCircle(pos, wd->damages.damageAreaOfEffect, { cmdColors.rangeSelfDestruct }, 40);
 		}
 	}
 
@@ -3649,8 +3644,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 			// draw (primary) weapon range
 			if (!unit->weapons.empty()) {
 				glDisable(GL_DEPTH_TEST);
-				glColor4fv(cmdColors.rangeAttack);
-				glBallisticCircle(unit->weapons[0], 40, unit->pos, {unit->maxRange, 0.0f, mapInfo->map.gravity});
+				glBallisticCircle(unit->weapons[0], { cmdColors.rangeAttack }, 40, unit->pos, {unit->maxRange, 0.0f, mapInfo->map.gravity});
 				glEnable(GL_DEPTH_TEST);
 			}
 			// draw decloak distance
@@ -3666,7 +3660,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					gluDeleteQuadric(q);
 					glPopMatrix();
 				} else { // cylindrical
-					glSurfaceCircle(unit->pos, unit->decloakDistance, 40);
+					glSurfaceCircle(unit->pos, unit->decloakDistance, { cmdColors.rangeDecloak }, 40);
 				}
 			}
 
@@ -3679,13 +3673,11 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					w = nullptr;
 
 				// shows as on if enemy, a non-stockpiled weapon, or if the stockpile has a missile
-				if (!enemyUnit || (w == nullptr) || w->numStockpiled) {
-					glColor4fv(cmdColors.rangeInterceptorOn);
-				} else {
-					glColor4fv(cmdColors.rangeInterceptorOff);
-				}
+				const SColor rangeInterceptorColor = (!enemyUnit || (w == nullptr) || w->numStockpiled) ?
+					SColor{ cmdColors.rangeInterceptorOn  }:
+					SColor{ cmdColors.rangeInterceptorOff };
 
-				glSurfaceCircle(unit->pos, unitdef->maxCoverage, 40);
+				glSurfaceCircle(unit->pos, unitdef->maxCoverage, rangeInterceptorColor, 40);
 			}
 		}
 	}
@@ -3706,12 +3698,12 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 
 				if (!builderDef->canmove || selectedUnitsHandler.IsUnitSelected(builder)) {
 					const float radius = builderDef->buildDistance;
-					const float* color = cmdColors.rangeBuild;
+					static constexpr float mult[] = {1.0f, 1.0f, 1.0f, 0.3333f};
+					SColor color = SColor{ cmdColors.rangeBuild } * mult;
 
 					if (radius > 0.0f) {
 						glDisable(GL_TEXTURE_2D);
-						glColor4f(color[0], color[1], color[2], color[3] * 0.333f);
-						glSurfaceCircle(builder->pos, radius, 40);
+						glSurfaceCircle(builder->pos, radius, color, 40);
 					}
 				}
 			}
@@ -3749,22 +3741,19 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					// draw (primary) weapon range
 					if (buildeeDef->HasWeapons()) {
 						glDisable(GL_DEPTH_TEST);
-						glColor4fv(cmdColors.rangeAttack);
-						glBallisticCircle(buildeeDef->weapons[0].def, 40, buildPos, {buildeeDef->weapons[0].def->range, buildeeDef->weapons[0].def->heightmod, mapInfo->map.gravity});
+						glBallisticCircle(buildeeDef->weapons[0].def, { cmdColors.rangeAttack }, 40, buildPos, { buildeeDef->weapons[0].def->range, buildeeDef->weapons[0].def->heightmod, mapInfo->map.gravity });
 						glEnable(GL_DEPTH_TEST);
 					}
 
 					// draw extraction range
 					if (buildeeDef->extractRange > 0.0f) {
-						glColor4fv(cmdColors.rangeExtract);
-						glSurfaceCircle(buildPos, buildeeDef->extractRange, 40);
+						glSurfaceCircle(buildPos, buildeeDef->extractRange, { cmdColors.rangeExtract }, 40);
 					}
 
 					// draw interceptor range
 					const WeaponDef* wd = buildeeDef->stockpileWeaponDef;
 					if ((wd != nullptr) && wd->interceptor) {
-						glColor4fv(cmdColors.rangeInterceptorOn);
-						glSurfaceCircle(buildPos, wd->coverageRange, 40);
+						glSurfaceCircle(buildPos, wd->coverageRange, { cmdColors.rangeInterceptorOn }, 40);
 					}
 
 					if (GetQueueKeystate()) {
@@ -3834,8 +3823,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					continue;
 
 				glDisable(GL_DEPTH_TEST);
-				glColor4fv(cmdColors.rangeAttack);
-				glBallisticCircle(unit->weapons[0], 40, unit->pos, {unit->maxRange, 0.0f, mapInfo->map.gravity});
+				glBallisticCircle(unit->weapons[0], { cmdColors.rangeAttack }, 40, unit->pos, { unit->maxRange, 0.0f, mapInfo->map.gravity });
 				glEnable(GL_DEPTH_TEST);
 
 				if (!drawWeaponArcs)

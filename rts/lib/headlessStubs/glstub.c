@@ -504,6 +504,7 @@ GLAPI void APIENTRY glCompressedTexImage2D(GLenum target, GLint level, GLenum in
 GLAPI void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param) {}
 GLAPI void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
 GLAPI void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat *params) {}
+GLAPI void APIENTRY glTexParameteriv(GLenum target, GLenum pname, const GLint* params) {}
 
 GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level,
                                     GLint internalFormat,

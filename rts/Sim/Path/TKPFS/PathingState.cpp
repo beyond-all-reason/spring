@@ -110,9 +110,6 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 		updatedBlocks.clear();
 		consumedBlocks.clear();
 		offsetBlocksSortedByCost.clear();
-
-		// updatedBlocksDelayTimeout = 0;
-		// updatedBlocksDelayActive = false;
 	}
 
 	PathingState*  childPE = this;
@@ -179,6 +176,7 @@ void PathingState::Terminate()
 		const int idx = BlockPosToIdx(pos);
 		updatedBlocks.pop_front();
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
+		blockStates.nodeLinksObsoleteFlags[idx] = 0;
 	}
 
 	// allow our PNSB to be reused across reloads
@@ -226,12 +224,18 @@ void PathingState::InitEstimator(const std::string& peFileName, const std::strin
 			loadscreen->SetLoadMessage(calcMsg);
 		}
 
+		// Mark block directions as dirty to ensure they get updated.
+		auto& nodeFlags = blockStates.nodeLinksObsoleteFlags;
+		std::for_each(nodeFlags.begin(), nodeFlags.end(), [](std::uint8_t& f){ f = PATH_DIRECTIONS_HALF_MASK; });
+
 		// note: only really needed if numExtraThreads > 0
 		spring::barrier pathBarrier(numThreads);
 
 		for_mt(0, numThreads, [this, &pathBarrier](int i) {
 			CalcOffsetsAndPathCosts(ThreadPool::GetThreadNum(), &pathBarrier);
 		});
+
+		std::for_each(nodeFlags.begin(), nodeFlags.end(), [](std::uint8_t& f){ f = 0; });
 
 		sprintf(calcMsg, fmtStrs[2], __func__, BLOCK_SIZE, peFileName.c_str(), fileHashCode);
 		loadscreen->SetLoadMessage(calcMsg, true);
@@ -391,10 +395,18 @@ void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsig
 	// see GetBlockVertexOffset(); costs are bi-directional and only
 	// calculated for *half* the outgoing edges (while costs for the
 	// other four directions are stored at the adjacent vertices)
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
-	CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
+	auto idx = BlockPosToIdx(block);
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
+
+	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_RIGHT_UP_MASK)
+		CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
 }
 
 void PathingState::CalcVertexPathCost(
@@ -631,23 +643,20 @@ void PathingState::Update()
 	if (numMoveDefs == 0)
 		return;
 
+	if (updatedBlocks.empty())
+		return;
+
 	// determine how many blocks we should update
 	int blocksToUpdate = 0;
-	int consumeBlocks = 0;
 	{
-		const int progressiveUpdates = updatedBlocks.size() * numMoveDefs * modInfo.pfUpdateRate;
-		const int MIN_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, 4U);
-		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE << 1, MIN_BLOCKS_TO_UPDATE);
+		const int progressiveUpdates = updatedBlocks.size() * (1.f / (BLOCKS_TO_UPDATE<<2)) * modInfo.pfUpdateRateScale;
+		const int MIN_BLOCKS_TO_UPDATE = 1;
+		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, MIN_BLOCKS_TO_UPDATE);
 
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
-		blockUpdatePenalty = std::max(0, blockUpdatePenalty - blocksToUpdate);
-
-		if (blockUpdatePenalty > 0)
-			blocksToUpdate = std::max(0, blocksToUpdate - blockUpdatePenalty);
-
-		// we have to update blocks for all movedefs (PATHOPT_OBSOLETE applies per block, not per movedef)
-		consumeBlocks = int(progressiveUpdates != 0) * int(ceil(float(blocksToUpdate) / numMoveDefs)) * numMoveDefs;
-		blockUpdatePenalty += consumeBlocks;
+		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
+	
+		// LOG("[%d] blocksToUpdate=%d progressiveUpdates=%d [%f]"
+		// 		, BLOCK_SIZE, blocksToUpdate, progressiveUpdates, modInfo.pfUpdateRateScale);
 	}
 
 	//LOG("PathingState::Update blocksToUpdate %d", blocksToUpdate);
@@ -656,10 +665,6 @@ void PathingState::Update()
 		return;
 
 	//LOG("PathingState::Update updatedBlocks.empty == %d", (int)updatedBlocks.empty());
-
-	if (updatedBlocks.empty())
-		return;
-
 	//LOG("PathingState::Update updatedBlocksDelayActive %d", (int)updatedBlocksDelayActive);
 
 	UpdateVertexPathCosts(blocksToUpdate);
@@ -682,6 +687,9 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 
 	//LOG("PathingState::Update %d", updatedBlocks.size());
 
+	std::vector<int> blockIds;
+	blockIds.reserve(updatedBlocks.size());
+
 	// get blocks to update
 	while (!updatedBlocks.empty()) {
 		const int2& pos = updatedBlocks.front();
@@ -703,16 +711,9 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 			//LOG("TK PathingState::Update: moveDef = %d %p (%p)", consumedBlocks.size(), &consumedBlocks.back(), consumedBlocks.back().moveDef);
 		}
 
-		// inform dependent estimator that costs were updated and it should do the same
-		// FIXME?
-		//   adjacent med-res PE blocks will cause a low-res block to be updated twice
-		//   (in addition to the overlap that already exists because MapChanged() adds
-		//   boundary blocks)
-		if (true && nextPathState != nullptr)
-			nextPathState->MapChanged(pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE, pos.x * BLOCK_SIZE, pos.y * BLOCK_SIZE);
-
 		updatedBlocks.pop_front(); // must happen _after_ last usage of the `pos` reference!
 		blockStates.nodeMask[idx] &= ~PATHOPT_OBSOLETE;
+		blockIds.emplace_back(idx);
 	}
 
 	// FindOffset (threadsafe)
@@ -764,6 +765,8 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 			for_mt(0, threadsUsed, updateVertexPathCosts);
 		}
 	}
+
+	std::for_each(blockIds.begin(), blockIds.end(), [this](int idx){ blockStates.nodeLinksObsoleteFlags[idx] = 0; });
 }
 
 
@@ -775,25 +778,60 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	assert(x2 >= x1);
 	assert(z2 >= z1);
 
+	const int lowerX = int(x1 / BLOCK_SIZE) - 1;
+	const int upperX = int(x2 / BLOCK_SIZE) + 1;
+	const int lowerZ = int(z1 / BLOCK_SIZE) - 1;
+	const int upperZ = int(z2 / BLOCK_SIZE) + 0;
+
 	// find the upper and lower corner of the rectangular area
-	const int lowerX = Clamp(int(x1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.x - 1));
-	const int upperX = Clamp(int(x2 / BLOCK_SIZE) + 1, 0, int(mapDimensionsInBlocks.x - 1));
-	const int lowerZ = Clamp(int(z1 / BLOCK_SIZE) - 1, 0, int(mapDimensionsInBlocks.y - 1));
-	const int upperZ = Clamp(int(z2 / BLOCK_SIZE) + 1, 0, int(mapDimensionsInBlocks.y - 1));
+	const int startX = Clamp(lowerX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int endX   = Clamp(upperX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int startZ = Clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
+	const int endZ   = Clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
+
+	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 
 	// mark the blocks inside the rectangle, enqueue them
 	// from upper to lower because of the placement of the
 	// bi-directional vertices
-	for (int z = upperZ; z >= lowerZ; z--) {
-		for (int x = upperX; x >= lowerX; x--) {
-			const int idx = BlockPosToIdx(int2(x, z));
-
-			//LOG("Map Changed [%d] at (%d, %d) obsolete==%d", idx, x, z, (blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0);
-
-			if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
+	for (int z = endZ; z >= startZ; z--) {
+		for (int x = endX; x >= startX; x--) {
+			// the upper left corner won't have any flags assigned
+			if (x==upperX && z==upperZ)
 				continue;
 
-			//LOG("Pushing update update blocks for size %d is %llu", BLOCK_SIZE, updatedBlocks.size());
+			const int idx = BlockPosToIdx(int2(x, z));
+
+			std::uint8_t blockOrigLinkFlags = blockStates.nodeLinksObsoleteFlags[idx];
+			if ((blockOrigLinkFlags & PATH_DIRECTIONS_HALF_MASK) == PATH_DIRECTIONS_HALF_MASK) 
+				continue;
+
+			//if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
+			//	continue;
+
+// [t=00:05:48.829407][f=0000630] [Path] MapChanged: clamped to [14, 43] -> [16, 44]
+// [t=00:05:48.829430][f=0000630] [Path] MapChanged: [15, 44] result is 0f
+// [t=00:05:48.829453][f=0000630] [Path] MapChanged: [14, 44] result is 01
+// [t=00:05:48.829463][f=0000630] [Path] MapChanged: [16, 43] result is 08
+// [t=00:05:48.829472][f=0000630] [Path] MapChanged: [15, 43] result is 04
+// [t=00:05:48.829482][f=0000630] [Path] MapChanged: [14, 43] result is 02
+
+			const bool leftUpSpecificIgnoreBlocks  = (x==upperX-1 & z==lowerZ) | (x==lowerX & z==upperZ);
+			const bool rightUpSpecificIgnoreBlocks = (x==lowerX+1 & z==lowerZ) /* | (x==upperX & z==upperZ)*/;
+
+			//LOG("%s: [%d, %d] lower is %02x", __func__, x, z, blockOrigLinkFlags);
+
+			blockStates.nodeLinksObsoleteFlags[idx]
+				|=  (z > lowerZ) * (x < upperX)                   * PATHDIR_LEFT_MASK
+				 +  (x < upperX) * (!leftUpSpecificIgnoreBlocks)  * PATHDIR_LEFT_UP_MASK
+				 +  (x > lowerX) * (x < upperX)                   * PATHDIR_UP_MASK
+				 +  (x > lowerX) * (!rightUpSpecificIgnoreBlocks) * PATHDIR_RIGHT_UP_MASK;
+
+			//LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
+			//LOG("%s: [%d, %d] result is %02x", __func__, x, z, blockStates.nodeLinksObsoleteFlags[idx]);
+
+			if (blockOrigLinkFlags != 0)
+				continue;
 
 			updatedBlocks.emplace_back(x, z);
 			blockStates.nodeMask[idx] |= PATHOPT_OBSOLETE;
@@ -884,7 +922,7 @@ void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult r
 
 void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	const std::lock_guard<std::mutex> lock(cacheAccessLock);
+	//const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	//pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 

@@ -111,6 +111,8 @@ void CUnitDrawerData::Update()
 			UpdateUnitIconStateScreen(u);
 		else
 			UpdateUnitIconState(u);
+
+		UpdateCommon(u);
 	};
 
 	if (mtModelDrawer) {
@@ -134,8 +136,6 @@ void CUnitDrawerData::Update()
 
 		sqCamDistToGroundForIcons = overGround * overGround;
 	}
-
-	UpdateCommon();
 }
 
 void CUnitDrawerData::UpdateGhostedBuildings()

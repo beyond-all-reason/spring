@@ -170,8 +170,8 @@ static TypedRenderBuffer<VA_TYPE_0> GenWaterPlaneBuffer(bool radial)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// (DE-)CONSTRUCTOR
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 CBumpWater::CBumpWater()
+
 	: CEventClient("[CBumpWater]", 271923, false)
 	, target(GL_TEXTURE_2D)
 	, screenTextureX(globalRendering->viewSizeX)
@@ -187,7 +187,16 @@ CBumpWater::CBumpWater()
 	, coastUpdateTexture(0)
 {
 	eventHandler.AddClient(this);
+}
 
+CBumpWater::~CBumpWater()
+{
+	FreeResources();
+	eventHandler.RemoveClient(this);
+}
+
+void CBumpWater::InitResources(bool loadShader)
+{
 	// LOAD USER CONFIGS
 	reflTexSize  = next_power_of_2(configHandler->GetInt("BumpWaterTexSizeReflection"));
 	reflection   = configHandler->GetInt("BumpWaterReflection");
@@ -258,6 +267,7 @@ CBumpWater::CBumpWater()
 			blurShader = shaderHandler->CreateProgramObject("[BumpWater]", "CoastBlurShader");
 			blurShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/BumpWaterCoastBlurVS.glsl", "", GL_VERTEX_SHADER));
 			blurShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/BumpWaterCoastBlurFS.glsl", "", GL_FRAGMENT_SHADER));
+			blurShader->BindAttribLocations<VA_TYPE_T4>();
 			blurShader->Link();
 
 			if (!blurShader->IsValid()) {
@@ -612,7 +622,7 @@ void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect)
 void CBumpWater::UploadCoastline(const bool forceFull)
 {
 	// optimize update area (merge overlapping areas etc.)
-	heightmapUpdates.Process();
+	heightmapUpdates.Process(forceFull);
 
 	// limit the to be updated areas
 	unsigned int currentPixels = 0;
@@ -779,7 +789,7 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	glPopMatrix();
 
 	blurShader->Disable();
-	coastFBO.Detach(GL_COLOR_ATTACHMENT1_EXT);
+	coastFBO.Detach(GL_COLOR_ATTACHMENT0_EXT);
 	glPopAttrib();
 
 	// NB: not needed during init, but no reason to leave bound after ::Update

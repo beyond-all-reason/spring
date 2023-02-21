@@ -43,15 +43,11 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_DYN_WATER)
 #define WF_SIZE 4096
 #define WH_SIZE 2048
 */
-CDynWater::CDynWater()
-	: camPosX(0)
-	, camPosZ(0)
+void CDynWater::InitResources(bool loadShader)
 {
 	if (!FBO::IsSupported())
 		throw content_error("DynWater Error: missing FBO support");
 
-	lastWaveFrame = 0;
-	firstDraw = true;
 	camPosBig = float3(2048, 0, 2048);
 	refractSize = (globalRendering->viewSizeY >= 1024) ? 1024 : 512;
 

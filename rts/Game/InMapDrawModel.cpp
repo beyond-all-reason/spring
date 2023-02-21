@@ -133,21 +133,23 @@ bool CInMapDrawModel::AddLine(const float3& constPos1, const float3& constPos2, 
 }
 
 
-void CInMapDrawModel::EraseNear(const float3& constPos, int playerID)
+void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool alwaysErase)
 {
 	if (!playerHandler.IsValidPlayer(playerID))
 		return;
 
-	const CPlayer* sender = playerHandler.Player(playerID);
+	const CPlayer* sender;
+
+	if (!alwaysErase) // we don't need to check sender if we always erase regardless of sender
+		sender = playerHandler.Player(playerID);
 
 	float3 pos = constPos;
 	pos.ClampInBounds();
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 2.0f;
 
-	if (AllowedMsg(sender) && eventHandler.MapDrawCmd(playerID, MAPDRAW_ERASE, &pos, nullptr, nullptr)) {
+	if ((alwaysErase || AllowedMsg(sender)) && eventHandler.MapDrawCmd(playerID, MAPDRAW_ERASE, &pos, nullptr, nullptr)) {
 		return;
 	}
-
 
 	const float radius = 100.0f;
 	const int maxY = drawQuadsY - 1;
@@ -164,7 +166,7 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID)
 			// use explicit indexing, MSVC chokes on iterator manipulation
 			for (size_t pii = 0; pii < dq->points.size(); /* none */) {
 				auto pi = &dq->points[pii];
-				if (pi->GetPos().SqDistance2D(pos) < (radius*radius) && (pi->IsBySpectator() == sender->spectator)) {
+				if (pi->GetPos().SqDistance2D(pos) < (radius*radius) && (alwaysErase || (pi->IsBySpectator() == sender->spectator))) {
 					*pi = dq->points.back();
 					dq->points.pop_back();
 					numPoints--;
@@ -177,7 +179,7 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID)
 			for (size_t lii = 0; lii < dq->lines.size(); /* none */) {
 				auto li = &dq->lines[lii];
 				// TODO maybe erase on pos2 too?
-				if (li->GetPos1().SqDistance2D(pos) < (radius*radius) && (li->IsBySpectator() == sender->spectator)) {
+				if (li->GetPos1().SqDistance2D(pos) < (radius*radius) && (alwaysErase || (li->IsBySpectator() == sender->spectator))) {
 					*li = dq->lines.back();
 					dq->lines.pop_back();
 					numLines--;

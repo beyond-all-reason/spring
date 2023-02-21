@@ -28,7 +28,8 @@ public:
 
 public:
 	CBumpWater();
-	~CBumpWater() override { FreeResources(); }
+	~CBumpWater() override;
+	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void Update() override;

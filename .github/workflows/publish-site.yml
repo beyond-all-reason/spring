@@ -1,0 +1,44 @@
+name: Publish Site
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+jobs:
+  publish:
+    name: Publish Site
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Install LDoc
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install --fix-missing -y lua-ldoc lua-markdown
+      - name: Checkout Source Repository
+        uses: actions/checkout@v2
+        with:
+          ref: BAR105
+      - name: Run LDoc
+        run: |
+          ldoc -c doc/LDoc/config.ld .
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -f doc/site/ldoc
+          git commit -m "Update doc/site/ldoc"
+      - name: Check if gh-pages exists
+        id: check-ghpages
+        run: |
+          git fetch origin gh-pages
+          git ls-remote --exit-code . origin/gh-pages && (echo "exists=true" > $GITHUB_OUTPUT) || (echo "exists=false" > $GITHUB_OUTPUT)
+      - name: Check changes to doc/site
+        id: site-changes
+        if: steps.check-ghpages.outputs.exists == 'true'
+        run: |
+          git diff --stat origin/gh-pages BAR105:doc/site
+          git diff --quiet origin/gh-pages BAR105:doc/site && (echo "modified=false" > $GITHUB_OUTPUT) || (echo "modified=true" > $GITHUB_OUTPUT)
+      - name: Push gh-pages # Only push gh-pages if doc/site/ was changed or ldoc did changes
+        if: steps.check-ghpages.outputs.exists == 'false' || steps.site-changes.outputs.modified == 'true'
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git subtree split --prefix=doc/site --rejoin -b gh-pages
+          git push origin gh-pages --force

@@ -16,6 +16,7 @@
 #elif defined(_WIN32)
 	#include <windows.h>
 #else
+	#include <unistd.h>
 	#if defined(__USE_GNU)
 		#include <sys/prctl.h>
 	#endif
@@ -54,10 +55,19 @@ namespace Threading {
 		DWORD_PTR curMask;
 		GetProcessAffinityMask(GetCurrentProcess(), &curMask, &cpusSystem);
 
+		LOG("%s: cpu mask %" PRIx64, __func__, cpusSystem);
 	#else
 		// Get the available cores
 		CPU_ZERO(&cpusSystem);
 		sched_getaffinity(0, sizeof(cpu_set_t), &cpusSystem);
+
+		// std::uint64_t curMask = 0;
+		// std::uint32_t maskLimit = sizeof(curMask)*8;
+		// std::uint32_t nproc = std:min(sysconf(_SC_NPROCESSORS_ONLN), maskLimit);
+		// for (i=0; i<nproc; ++i) {
+		// 	curMask |= (static_cast<std::uint64_t>(CPU_ISSET(i, &cpusSystem)) << i);
+		// }
+		// LOG("%s: cpu mask %" PRIx64, __func__, curMask);
 	#endif
 
 		GetPhysicalCpuCores(); // (uses a static, too)
@@ -165,16 +175,16 @@ namespace Threading {
 			LOG("[Threading] %s thread CPU affinity not set", threadName);
 			return;
 		}
-		if (cpuMask != affinity) {
-			LOG("[Threading] %s thread CPU affinity mask set: %d (config is %d)", threadName, cpuMask, affinity);
+		if (cpuMask == 0) {
+			LOG_L(L_ERROR, "[Threading] %s thread CPU affinity mask failed: 0x%x", threadName, affinity);
 			return;
 		}
-		if (cpuMask == 0) {
-			LOG_L(L_ERROR, "[Threading] %s thread CPU affinity mask failed: %d", threadName, affinity);
+		if (cpuMask != affinity) {
+			LOG("[Threading] %s thread CPU affinity mask set: 0x%x (config is %x)", threadName, cpuMask, affinity);
 			return;
 		}
 
-		LOG("[Threading] %s thread CPU affinity mask set: %d", threadName, cpuMask);
+		LOG("[Threading] %s thread CPU affinity mask set: 0x%x", threadName, cpuMask);
 	}
 
 

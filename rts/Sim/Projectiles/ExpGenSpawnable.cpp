@@ -18,6 +18,7 @@
 #include "Rendering/Env/Particles/Classes/TracerProjectile.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/Sync/HsiehHash.h"
+#include "System/TemplateUtils.hpp"
 #include "Sim/Misc/GlobalSynced.h"
 
 
@@ -32,6 +33,8 @@ CR_REG_METADATA(CExpGenSpawnable, (
 	CR_MEMBER_ENDFLAG(CM_Config),
 	CR_IGNORED(animProgress)
 ))
+
+std::array<CExpGenSpawnable::SpawnableTuple, 14> CExpGenSpawnable::spawnables = {};
 
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	: CWorldObject(pos, spd)
@@ -69,7 +72,7 @@ void CExpGenSpawnable::UpdateRotation()
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 	// rotParams.y is acceleration in angle per frame^2
 	rotVel = rotParams.x + rotParams.y * t;
-	rotVal = rotParams.z + rotVel * t;
+	rotVal = rotParams.z + rotVel      * t;
 }
 
 void CExpGenSpawnable::UpdateAnimParams()
@@ -80,7 +83,19 @@ void CExpGenSpawnable::UpdateAnimParams()
 	}
 
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
-	animProgress = math::fmod(t, animParams.z) / animParams.z;
+	const float animSpeed = math::fabs(animParams.z);
+	if (animParams.z < 0.0f) {
+		#if 0
+			animProgress = math::fmod(t, 2.0f * animSpeed) / animSpeed;
+			if (animProgress > 1.0)
+				animProgress = 2.0f - animProgress;
+		#else
+			animProgress = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
+		#endif
+	}
+	else {
+		animProgress = math::fmod(t, animSpeed) / animSpeed;
+	}
 }
 
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
@@ -108,67 +123,81 @@ TypedRenderBuffer<VA_TYPE_PROJ>& CExpGenSpawnable::GetPrimaryRenderBuffer()
 	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_PROJ>();
 }
 
+template<typename Spawnable>
+CExpGenSpawnable::SpawnableTuple GetSpawnableEntryImpl()
+{
+	CExpGenSpawnable::SpawnableTuple entry{};
 
-#define CHECK_ALL_SPAWNABLES() \
-	CHECK_SPAWNABLE(CExpGenSpawner)         \
-	CHECK_SPAWNABLE(CStandardGroundFlash)   \
-	CHECK_SPAWNABLE(CSimpleGroundFlash)     \
-	CHECK_SPAWNABLE(CBitmapMuzzleFlame)     \
-	CHECK_SPAWNABLE(CDirtProjectile)        \
-	CHECK_SPAWNABLE(CExploSpikeProjectile)  \
-	CHECK_SPAWNABLE(CHeatCloudProjectile)   \
-	CHECK_SPAWNABLE(CNanoProjectile)        \
-	CHECK_SPAWNABLE(CSimpleParticleSystem)  \
-	CHECK_SPAWNABLE(CSphereParticleSpawner) \
-	CHECK_SPAWNABLE(CSmokeProjectile)       \
-	CHECK_SPAWNABLE(CSmokeProjectile2)      \
-	CHECK_SPAWNABLE(CSpherePartSpawner)     \
-	CHECK_SPAWNABLE(CTracerProjectile)      \
+	return std::make_tuple(
+		std::string{ Spawnable::StaticClass()->name },
+		[](SExpGenSpawnableMemberInfo& memberInfo) { return Spawnable::GetMemberInfo(memberInfo); },
+		[]() { return static_cast<CExpGenSpawnable*>(projMemPool.alloc<Spawnable>()); }
+	);
+}
 
+#define MAKE_FUNCTIONS_TUPLE(Func) \
+std::make_tuple( \
+	Func<CExpGenSpawner        >, \
+	Func<CStandardGroundFlash  >, \
+	Func<CSimpleGroundFlash    >, \
+	Func<CBitmapMuzzleFlame    >, \
+	Func<CDirtProjectile       >, \
+	Func<CExploSpikeProjectile >, \
+	Func<CHeatCloudProjectile  >, \
+	Func<CNanoProjectile       >, \
+	Func<CSimpleParticleSystem >, \
+	Func<CSphereParticleSpawner>, \
+	Func<CSmokeProjectile      >, \
+	Func<CSmokeProjectile2     >, \
+	Func<CSpherePartSpawner    >, \
+	Func<CTracerProjectile     >  \
+)
+
+void CExpGenSpawnable::InitSpawnables()
+{
+	auto funcTuple = MAKE_FUNCTIONS_TUPLE(GetSpawnableEntryImpl);
+	static_assert(std::tuple_size<decltype(funcTuple)>::value == spawnables.size());
+
+	for (size_t i = 0; i < spawnables.size(); ++i) {
+		CExpGenSpawnable::SpawnableTuple entry;
+		const auto Functor = [&entry](auto&& func) { entry = func(); };
+		spring::tuple_exec_at(i, funcTuple, Functor);
+		spawnables[i] = entry;
+	}
+}
+
+#undef MAKE_FUNCTIONS_TUPLE
 
 bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
 {
-#define CHECK_SPAWNABLE(spawnable) \
-	if (spawnableName == #spawnable) \
-		return spawnable::GetMemberInfo(memberInfo);
+	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
+		return std::get<0>(entry) == spawnableName;
+	});
 
-	CHECK_ALL_SPAWNABLES()
+	if (it == spawnables.end())
+		return false;
 
-#undef CHECK_SPAWNABLE
-
-	return false;
+	return std::get<1>(*it)(memberInfo);
 }
-
 
 int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 {
-	int i = 0;
-#define CHECK_SPAWNABLE(spawnable)   \
-	if (spawnableName == #spawnable) \
-		return i;                    \
-	++i;
+	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
+		return std::get<0>(entry) == spawnableName;
+	});
 
-	CHECK_ALL_SPAWNABLES()
+	if (it == spawnables.end())
+		return -1;
 
-#undef CHECK_SPAWNABLE
-
-	return -1;
+	return static_cast<int>(std::distance(spawnables.begin(), it));
 }
-
 
 CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 {
-	int i = 0;
-#define CHECK_SPAWNABLE(spawnable)               \
-	if (spawnableID == i)                        \
-		return (projMemPool.alloc<spawnable>()); \
-	++i;
+	if (spawnableID < 0 || spawnableID > spawnables.size() - 1)
+		return nullptr;
 
-	CHECK_ALL_SPAWNABLES()
-
-#undef CHECK_SPAWNABLE
-
-	return nullptr;
+	return std::get<2>(spawnables[spawnableID])();
 }
 
 void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const

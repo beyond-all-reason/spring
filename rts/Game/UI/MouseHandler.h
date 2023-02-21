@@ -91,8 +91,8 @@ private:
 	int2 GetViewMouseCenter() const;
 	void SetCursor(const std::string& cmdName, const bool forceRebind = false);
 
-	void DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb);
-	void DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb);
+	void DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
+	void DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
 
 	static void GetSelectionBoxCoeff(
 		const float3& pos1,

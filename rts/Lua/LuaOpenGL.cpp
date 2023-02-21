@@ -1811,9 +1811,21 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
 		const float   slope = luaL_checkfloat(L, 6);
 		const float gravity = luaL_optfloat(L, 7, mapInfo->map.gravity);
 
-		glBallisticCircle(wd, luaL_checkint(L, 5), pos, {radius, slope, gravity});
+#if 0
+		std::array<float,4> currentColor;
+		glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
+#else
+		const std::array<float, 4>& currentColor = color;
+#endif
+		glBallisticCircle(wd, { currentColor.data() }, luaL_checkint(L, 5), pos, { radius, slope, gravity });
 	} else {
-		glSurfaceCircle(pos, r, divs);
+#if 0
+		std::array<float, 4> currentColor;
+		glGetFloatv(GL_CURRENT_COLOR, currentColor.data());
+#else
+		const std::array<float, 4>& currentColor = color;
+#endif
+		glSurfaceCircle(pos, r, { currentColor.data()}, divs);
 	}
 	return 0;
 }
@@ -3956,6 +3968,11 @@ int LuaOpenGL::AddAtlasTexture(lua_State* L)
 		luaL_error(L, "gl.%s() Atlas can only be of type GL_TEXTURE_2D", __func__);
 
 	const auto [texSizeX, texSizeY, texSizeZ] = luaTex.GetSize();
+	const auto texID = luaTex.GetTextureID();
+
+	if (texID <= 0 || texSizeX <= 0 || texSizeY <= 0) {
+		luaL_error(L, "gl.%s() Requested Lua texture %s has invalid size {%d,%d}", __func__, luaTexStr.c_str(), texSizeX, texSizeY);
+	}
 
 	GLint currentBinding;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentBinding);

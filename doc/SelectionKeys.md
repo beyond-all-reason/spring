@@ -51,6 +51,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   
   Keep only units and buildings that can construct. This means Factories, Construction Turrets, Constructors, but not Rezzers.
 
+### `Buildoptions`
+
+  Keep only units that can build other units or buildings.
+
 ### `Building`
   
   Keep only buildings, not mobile units.
@@ -58,6 +62,14 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 ### `Category_<category>`
   
   Keep only units of category `<category>`
+
+### `Cloak`
+
+  Keep only units that can cloak.
+
+### `Cloaked`
+
+  Keep only units that are currently cloaked.
 
 ### `Guarding`
   
@@ -99,6 +111,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   
   Keep only units that have a radar or sonar radius greater than 0.
 
+### `Resurrect`
+
+  Keep only units that can resurrect other units.
+
 ### `RelativeHealth_<float>`
 
   Keep only units that have health greater than `<float>` percent.
@@ -109,6 +125,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 ### `RulesParamEquals_<string>_<integer>`
 
   Keep only units where the `<string>` rules parameter has the exact value `<integer>`.
+
+### `Stealth`
+
+  Keep only units that are stealthy.
 
 ### `Transport`
   

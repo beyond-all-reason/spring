@@ -486,7 +486,7 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 
 void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 {
-	for (Patch* p: borderPatches[drawPass == DrawPass::Shadow]) {
+	for (const Patch* p: borderPatches[drawPass == DrawPass::Shadow]) {
 		if (!p->IsVisible(CCameraHandler::GetActiveCamera()))
 			continue;
 

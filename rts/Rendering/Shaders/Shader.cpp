@@ -463,44 +463,83 @@ namespace Shader {
 		// append the validation-log
 		log += glslGetLog(objID);
 
-	#ifdef _DEBUG
-		// check if there are unset uniforms left
-		GLsizei numUniforms, maxUniformNameLength;
-		glGetProgramiv(objID, GL_ACTIVE_UNIFORMS, &numUniforms);
-		glGetProgramiv(objID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
-
-		if (maxUniformNameLength <= 0)
+		const auto ReturnHelper = [this](const char* fn) -> bool {
+			if (!valid && logReporting)
+				LOG_L(L_ERROR, "[GLSL-PO::%s] program-object name: %s is not valid", fn, name.c_str());
 			return valid;
+		};
 
-		std::string bufname(maxUniformNameLength, 0);
-		for (uint32_t i = 0; i < numUniforms; ++i) {
-			GLsizei nameLength = 0;
-			GLint size = 0;
-			GLint blockIdx = -1;
-			GLenum type = 0;
-			glGetActiveUniform(objID, i, maxUniformNameLength, &nameLength, &size, &type, &bufname[0]);
-			bufname[nameLength] = 0;
+	#ifdef _DEBUG
+		{
+			// check if there are unset uniforms left
+			GLsizei numUniforms, maxUniformNameLength;
+			glGetProgramiv(objID, GL_ACTIVE_UNIFORMS, &numUniforms);
+			glGetProgramiv(objID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
 
-			glGetActiveUniformsiv(objID, 1, &i, GL_UNIFORM_BLOCK_INDEX, &blockIdx);
+			if (maxUniformNameLength <= 0)
+				return ReturnHelper(__func__);
 
-			if (nameLength == 0)
-				continue;
+			std::string bufname(maxUniformNameLength, 0);
+			for (uint32_t i = 0; i < numUniforms; ++i) {
+				GLsizei nameLength = 0;
+				GLint size = 0;
+				GLint blockIdx = -1;
+				GLenum type = 0;
+				glGetActiveUniform(objID, i, maxUniformNameLength, &nameLength, &size, &type, &bufname[0]);
+				bufname[nameLength] = 0;
 
-			if (strncmp(&bufname[0], "gl_", 3) == 0)
-				continue;
+				glGetActiveUniformsiv(objID, 1, &i, GL_UNIFORM_BLOCK_INDEX, &blockIdx);
 
-			if (uniformStates.find(hashString(&bufname[0])) != uniformStates.end())
-				continue;
+				if (nameLength == 0)
+					continue;
 
-			if (blockIdx >= 0) //ignore UBO
-				continue;
+				if (strncmp(&bufname[0], "gl_", 3) == 0)
+					continue;
 
-			LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, unset uniform: %s", __FUNCTION__, name.c_str(), &bufname[0]);
-			//assert(false);
+				if (uniformStates.find(hashString(&bufname[0])) != uniformStates.end())
+					continue;
+
+				if (blockIdx >= 0) //ignore UBO
+					continue;
+
+				if (logReporting)
+					LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, unset uniform: %s", __func__, name.c_str(), &bufname[0]);
+			}
+		}
+		{
+			GLsizei numAttributes, maxNameLength = 0;
+			glGetProgramiv(objID, GL_ACTIVE_ATTRIBUTES, &numAttributes);
+			glGetProgramiv(objID, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxNameLength);
+
+			if (maxNameLength <= 0)
+				return ReturnHelper(__func__);
+
+			std::string bufname(maxNameLength, 0);
+			for (int i = 0; i < numAttributes; ++i) {
+				GLsizei nameLength = 0;
+				GLint size = 0;
+				GLenum type = 0;
+				glGetActiveAttrib(objID, i, maxNameLength, &nameLength, &size, &type, &bufname[0]);
+				bufname[maxNameLength - 1] = 0;
+
+				if (nameLength == 0)
+					continue;
+
+				if (strncmp(&bufname[0], "gl_", 3) == 0)
+					continue;
+
+				GLint loc = glGetAttribLocation(objID, &bufname[0]);
+
+				if (loc < 0) {
+					if (logReporting)
+						LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, atttrib: %s has undefined location", __func__, name.c_str(), &bufname[0]);
+					valid = false;
+				}
+			}
 		}
 	#endif
 
-		return valid;
+		return ReturnHelper(__func__);
 	}
 
 	void GLSLProgramObject::Release() {

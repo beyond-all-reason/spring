@@ -40,6 +40,22 @@ namespace spring {
 		typedef std::remove_cv_t<std::remove_reference_t<T>> type;
 	};
 
+	// https://stackoverflow.com/questions/8194227/how-to-get-the-i-th-element-from-an-stdtuple-when-i-isnt-know-at-compile-time
+	template<std::size_t I = 0, typename FuncT, typename... Tp>
+	inline typename std::enable_if<I == sizeof...(Tp), void>::type
+		tuple_exec_at(int, std::tuple<Tp...>&, FuncT)
+	{}
+
+	template<std::size_t I = 0, typename FuncT, typename... Tp>
+	inline typename std::enable_if < I < sizeof...(Tp), void>::type
+		tuple_exec_at(int index, std::tuple<Tp...>& t, FuncT f)
+	{
+		if (index == 0)
+			f(std::get<I>(t));
+
+		tuple_exec_at<I + 1, FuncT, Tp...>(index - 1, t, f);
+	}
+
 	template<typename T>
 	struct return_type { using type = T; };
 
