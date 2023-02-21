@@ -712,6 +712,10 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				const float3 worldTargetDir = (targetPos - ownerPos).SafeNormalize();
 				const float angleOffset =  (1.f - worldMainDir.dot(worldTargetDir));
 				const float angleMod = angleOffset * weaponAimAdjustPriority + 1.f;
+
+				// Strengthen focus towards the front, desire should weaken quadratically rather
+				// than linearly otherwise target distance can too easily cause units to chose a
+				// target that requires turning around to fire at.
 				const float angleMul = angleMod*angleMod;
 
 				const float dist2D = math::sqrt(sqDist2D);
