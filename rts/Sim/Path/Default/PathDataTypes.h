@@ -176,11 +176,10 @@ struct PathNodeStateBuffer {
 		if (!peNodeOffsets.empty())
 			memFootPrint += (peNodeOffsets.size() * (sizeof(std::vector<short2>) + peNodeOffsets[0].size() * sizeof(short2)));
 
-		memFootPrint += (nodeMask.size() * sizeof(std::uint8_t));
-		memFootPrint += (nodeLinksObsoleteFlags.size() * sizeof(std::uint8_t));
-		memFootPrint += ((fCost.size() + gCost.size()) * sizeof(float));
+		memFootPrint += (nodeMask.size() * sizeof(decltype(nodeMask)::value_type));
+		memFootPrint += (nodeLinksObsoleteFlags.size() * sizeof(decltype(nodeLinksObsoleteFlags)::value_type));
+		memFootPrint += ((fCost.size() + gCost.size()) * sizeof(decltype(fCost)::value_type));
 		memFootPrint += ((extraCosts[true].size() + extraCosts[false].size()) * sizeof(float));
-
 		return memFootPrint;
 	}
 
