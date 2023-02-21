@@ -714,7 +714,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				const float angleMod = angleOffset * weaponAimAdjustPriority + 1.f;
 
 				// Strengthen focus towards the front, desire should weaken quadratically rather
-				// than linearly otherwise target distance can too easily cause units to chose a
+				// than linearly otherwise target distance can too easily cause units to choose a
 				// target that requires turning around to fire at.
 				const float angleMul = angleMod*angleMod;
 
