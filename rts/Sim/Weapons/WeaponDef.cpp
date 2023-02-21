@@ -104,8 +104,6 @@ WEAPONTAG(float, turnrate).defaultValue(0.0f).scaleValue(float(TAANG2RAD) / GAME
 WEAPONTAG(float, heightBoostFactor).defaultValue(-1.0f);
 WEAPONTAG(float, proximityPriority).defaultValue(1.0f);
 WEAPONTAG(bool, allowNonBlockingAim).defaultValue(false).description("When false, the weapon is blocked from firing until AimWeapon() returns.");
-WEAPONTAG(float, weaponAimAdjustPriority).defaultValue(1.f).description("multiplier weight applied to target selection based on how far the weapon has to turn to face the target.");
-WEAPONTAG(bool, fastAutoRetargetingEnabled).defaultValue(false).description("allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.");
 
 // Target Error
 TAGFUNCTION(AccuracyToSin, float, math::sin(x * math::PI / 0xafff)) // should really be tan but TA seem to cap it somehow, should also be 7fff or ffff theoretically but neither seems good
@@ -274,9 +272,6 @@ WeaponDef::WeaponDef()
 	isShield = false;
 	noAutoTarget = false;
 	onlyForward = false;
-
-	fastAutoRetargetingEnabled = false;
-	weaponAimAdjustPriority = 1.f;
 
 	damages.fromDef = true;
 

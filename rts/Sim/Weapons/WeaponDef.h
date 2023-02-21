@@ -120,9 +120,6 @@ public:
 	bool noAutoTarget;          ///< cant target stuff (for antinuke,dgun)
 	bool manualfire;            ///< if true, slave us to the ManualFire button
 
-	bool fastAutoRetargetingEnabled;	///< pick new targets as soon as possible, don't wait for slow update
-	float weaponAimAdjustPriority;		///< relative importance of picking enemy targets that are in front
-
 	bool sweepFire;
 	bool canAttackGround;
 
