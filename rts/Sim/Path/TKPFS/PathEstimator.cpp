@@ -85,7 +85,26 @@ bool CPathEstimator::SetStartBlock(
 	float3 startPos
 )
 {
+	/* Set this to determine how many of the nearest blocks to attempt to path to.
+	 *
+	 * The first nerest block is the one that the startPos is in, but the reference point may not
+	 * be reachable. If not then the eight blocks around the start block should be checked in
+	 * order of proximitimity to the startPos.
+	 * 
+	 * [ ][ ][ ][ ][ ]
+	 * [ ][x][x][x][ ]
+	 * [ ][x][x][x][ ]
+	 * [ ][x][x][x][ ]
+	 * [ ][ ][ ][ ][ ]
+	 * 
+	 * If maxBlocksToCheck is changed, it will affect the number of nearest blocks checked before
+	 * giving up. Using more than 9 won't work because searchs are constrained (for performance
+	 * reasons) to just the starting and ending block areas.
+	 * 
+	 * Fewer can be used, but makes it more likely for a unit to get stuck.
+	 */
 	constexpr size_t maxBlocksToCheck = 9;
+
 	const float3 centreOffset(BLOCK_PIXEL_SIZE*.5f, 0, BLOCK_PIXEL_SIZE*.5f);
 
 	int2 nearestBlock;
