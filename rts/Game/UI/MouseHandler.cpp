@@ -834,7 +834,7 @@ void CMouseHandler::UpdateCursorCameraDir()
 }
 
 
-void CMouseHandler::DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb)
+void CMouseHandler::DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 {
 	const float scaleL = math::fabs(std::min(0.0f, scrollx)) * crossMoveScale + 1.0f;
 	const float scaleT = math::fabs(std::min(0.0f, scrolly)) * crossMoveScale + 1.0f;
@@ -890,7 +890,7 @@ void CMouseHandler::DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb)
 }
 
 
-void CMouseHandler::DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb)
+void CMouseHandler::DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 {
 	constexpr int stepNumHalf = 2;
 
