@@ -7,7 +7,7 @@ nav_order: 5
 
 # Migrating from Spring
 
-While ReCoil is mostly compatible with Spring 105 some divergences naturally
+While Recoil is mostly compatible with Spring 105 some divergences naturally
 developed over time.
 
 Here we list the most relevant breaking changes and how to fix them when
@@ -17,8 +17,8 @@ migrating from Spring.
 
 The following keyboard modifiers were unhardcoded from engine:
 
-- On spring camera: rotating on the y axis (yaw) with ALT and middle mouse
-button pressed while moving the cursor.
+- On spring camera: rotating on the x (pitch) or y (yaw) axis with ALT and
+middle mouse button pressed while moving the cursor.
 - Resetting camera settings on ALT pressed and mousewheelscroll down.
 - Rotating on the x axis (pitch) with CTRL pressed and mousewheelscroll.
 

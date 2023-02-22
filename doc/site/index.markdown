@@ -46,8 +46,8 @@ See the [Recoil Github Wiki] on how to build the engine locally or with Docker.
 
 ## Contributing
 
-See [Development]({% link development.markdown %}) for guides on how to build and develop
-Recoil.
+See [Development](development.markdown) for guides on how to build and
+develop Recoil.
 
 When contributing to this repository, please first discuss the change you wish
 to make via [GitHub issues], our [Matrix Room] or any other method with the
