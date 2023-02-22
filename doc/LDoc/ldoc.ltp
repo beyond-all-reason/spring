@@ -1,35 +1,45 @@
+# local localurl = module and module.name and ldoc.ref_to_module(module) or ("../" .. ldoc.output .. ".html")
+# localurl = localurl:gsub("%.%./", "ldoc/")
+# modname = module and module.name or "Home"
+---
+title: Recoil API: $(modname)
+permalink: $(localurl)
+parent: API
+---
+
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <link rel="stylesheet" href="/spring/assets/css/just-the-docs-default.css">
-    <script src="/spring/assets/js/vendor/lunr.min.js"></script>
-    <script src="/spring/assets/js/just-the-docs.js"></script>
+    <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/just-the-docs-default.css">
+    <script src="{{ site.baseurl }}/assets/js/vendor/lunr.min.js"></script>
+    <script src="{{ site.baseurl }}/assets/js/just-the-docs.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>$(ldoc.title) | Recoil</title>
-    <meta name="generator" content="Jekyll v3.9.3" />
-    <meta property="og:title" content="Home" />
+    <title>{{ page.title }}</title>
+    <meta name="generator" content="LDoc $(ldoc.version)" />
+    <meta property="og:title" content="{{ page.title }}" />
     <meta property="og:locale" content="en_US" />
     <meta name="description" content="Recoil is an RTS engine designed for game flexibility and large scale." />
     <meta property="og:description" content="Recoil is an RTS engine designed for game flexibility and large scale." />
-    <link rel="canonical" href="https://beyond-all-reason.github.io/spring/" />
-    <meta property="og:url" content="https://beyond-all-reason.github.io/spring/" />
+    <link rel="canonical" href="{{ page.url | absolute_url }}" />
+    <meta property="og:url" content="{{ page.url | absolute_url }}" />
     <meta property="og:site_name" content="Recoil" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
-    <meta property="twitter:title" content="Home" />
+    <meta property="twitter:title" content="{{ page.title }}" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "description": "Recoil is an RTS engine designed for game flexibility and large scale.",
-        "headline": "Home",
-        "name": "$(ldoc.title)",
-        "url": "https://beyond-all-reason.github.io/spring/"
+        "headline": "{{ page.title }}",
+        "name": "{{ page.title }}",
+        "url": "{{ page.url | absolute_url }}"
       }
     </script>
   </head>
+{% raw %}
   <body>
     <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
       <symbol id="svg-link" viewBox="0 0 24 24">
@@ -430,3 +440,4 @@
     </div> <!-- id="container" -->
   </body>
 </html>
+{% endraw %}
