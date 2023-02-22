@@ -222,16 +222,16 @@
 # -- bang out the tables of item types for this module (e.g Functions, Tables, etc)
 # for kind,items in module.kinds() do
           <h2><a href="#$(no_spaces(kind))">$(kind)</a></h2>
-          <ul>
+          <dl class="big-dt">
 #  for item in items() do
-            <li>
-              <a href="#$(item.name)">$(display_name(item))</a>
-            </li>
-            <p>
+            <dt>
+              <a href="#$(item.name)">$(item.name)</a>
+            </dt>
+            <dd>
               $(M(item.summary,item))
-            </p>
+            </dd>
 #  end -- for items
-          </ul>
+          </dl>
 #end -- for kinds
 
 #end -- if not no_summary

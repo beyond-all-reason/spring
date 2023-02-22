@@ -57,3 +57,8 @@
 .jekyll-glossary:hover .jekyll-glossary-tooltip {
   opacity: 1;
 }
+
+/* Enlarged dt inside dl */
+.main-content dl.big-dt {
+  grid-template: auto / 20em 1fr;
+}
