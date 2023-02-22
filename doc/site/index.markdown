@@ -40,10 +40,6 @@ References:
 
 Get the latest release [here](https://github.com/beyond-all-reason/spring/releases/tag/spring_bar_%7BBAR105%7D105.1.1-1354-g72b2d55).
 
-## Building the Engine
-
-See the [Recoil Github Wiki] on how to build the engine locally or with Docker.
-
 ## Contributing
 
 See [Development](development.markdown) for guides on how to build and
