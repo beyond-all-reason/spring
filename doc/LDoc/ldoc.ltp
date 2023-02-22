@@ -273,9 +273,10 @@
 #  end
               <strong>$(display_name(item))</strong>
             </h3>
+            <p>$(item.summary)</p>
             <div class="code-example">
             <p>
-              $(M(ldoc.descript(item),item))
+              $(item.description)
             </p>
 
 #   if ldoc.custom_tags then
