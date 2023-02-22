@@ -941,7 +941,7 @@ int LuaUnsyncedRead::GetMiniMapDualScreen(lua_State* L)
 }
 
 
-/***
+/*** Get vertices from currently active selection box
  *
  * @function Spring.GetSelectionBox
  *
@@ -1079,51 +1079,6 @@ int LuaUnsyncedRead::GetVideoCapturingMode(lua_State* L)
 }
 
 
-/***
- *
- * @function Spring.IsAABBInView
- * @number minX
- * @number minY
- * @number minZ
- * @number maxX
- * @number maxY
- * @number maxZ
- * @treturn bool inView
- */
-int LuaUnsyncedRead::IsAABBInView(lua_State* L)
-{
-	float3 mins = float3(luaL_checkfloat(L, 1),
-	                     luaL_checkfloat(L, 2),
-	                     luaL_checkfloat(L, 3));
-	float3 maxs = float3(luaL_checkfloat(L, 4),
-	                     luaL_checkfloat(L, 5),
-	                     luaL_checkfloat(L, 6));
-	lua_pushboolean(L, camera->InView(mins, maxs));
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.IsSphereInView
- * @number posX
- * @number posY
- * @number posZ
- * @number[opt=0] radius
- * @treturn bool inView
- */
-int LuaUnsyncedRead::IsSphereInView(lua_State* L)
-{
-	const float3 pos(luaL_checkfloat(L, 1),
-	                 luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3));
-	const float radius = lua_israwnumber(L, 4) ? lua_tofloat(L, 4) : 0.0f;
-
-	lua_pushboolean(L, camera->InView(pos, radius));
-	return 1;
-}
-
-
 /******************************************************************************
  * Unit attributes
  * @section unitattributes
@@ -1150,84 +1105,6 @@ int LuaUnsyncedRead::IsUnitAllied(lua_State* L)
 		lua_pushboolean(L, unit->allyteam == CLuaHandle::GetHandleReadAllyTeam(L));
 	}
 
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.IsUnitInView
- * @number unitID
- * @treturn nil|bool inView nil when unitID cannot be parsed
- */
-int LuaUnsyncedRead::IsUnitInView(lua_State* L)
-{
-	CUnit* unit = ParseUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	lua_pushboolean(L, camera->InView(unit->midPos, unit->radius));
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.IsUnitVisible
- * @number unitID
- * @number[opt] radius unitRadius when not specified
- * @bool checkIcon
- * @treturn nil|bool isVisible nil when unitID cannot be parsed
- */
-int LuaUnsyncedRead::IsUnitVisible(lua_State* L)
-{
-	CUnit* unit = ParseUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	const float radius = luaL_optnumber(L, 2, unit->radius);
-	const bool checkIcon = lua_toboolean(L, 3);
-
-	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
-
-	if (readAllyTeam < 0) {
-		if (!CLuaHandle::GetHandleFullRead(L)) {
-			lua_pushboolean(L, false);
-		} else {
-			lua_pushboolean(L,
-				(!checkIcon || !unit->GetIsIcon()) &&
-				camera->InView(unit->midPos, radius));
-		}
-	}
-	else {
-		if ((unit->losStatus[readAllyTeam] & LOS_INLOS) == 0) {
-			lua_pushboolean(L, false);
-		} else {
-			lua_pushboolean(L,
-				(!checkIcon || !unit->GetIsIcon()) &&
-				camera->InView(unit->midPos, radius));
-		}
-	}
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.IsUnitIcon
- * @number unitID
- * @treturn nil|bool isUnitIcon nil when unitID cannot be parsed
- */
-int LuaUnsyncedRead::IsUnitIcon(lua_State* L)
-{
-	CUnit* unit = ParseUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	lua_pushboolean(L, unit->GetIsIcon());
 	return 1;
 }
 
@@ -1558,6 +1435,135 @@ int LuaUnsyncedRead::GetUnitTransformMatrix(lua_State* L) { return (GetObjectTra
  * @treturn number m44
  */
 int LuaUnsyncedRead::GetFeatureTransformMatrix(lua_State* L) { return (GetObjectTransformMatrix(ParseFeature(L, __func__, 1), L)); }
+
+
+/******************************************************************************
+ * Inview
+ * @section inview
+******************************************************************************/
+
+
+/***
+ *
+ * @function Spring.IsUnitInView
+ * @number unitID
+ * @treturn nil|bool inView nil when unitID cannot be parsed
+ */
+int LuaUnsyncedRead::IsUnitInView(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, camera->InView(unit->midPos, unit->radius));
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.IsUnitVisible
+ * @number unitID
+ * @number[opt] radius unitRadius when not specified
+ * @bool checkIcon
+ * @treturn nil|bool isVisible nil when unitID cannot be parsed
+ */
+int LuaUnsyncedRead::IsUnitVisible(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const float radius = luaL_optnumber(L, 2, unit->radius);
+	const bool checkIcon = lua_toboolean(L, 3);
+
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+
+	if (readAllyTeam < 0) {
+		if (!CLuaHandle::GetHandleFullRead(L)) {
+			lua_pushboolean(L, false);
+		} else {
+			lua_pushboolean(L,
+				(!checkIcon || !unit->GetIsIcon()) &&
+				camera->InView(unit->midPos, radius));
+		}
+	}
+	else {
+		if ((unit->losStatus[readAllyTeam] & LOS_INLOS) == 0) {
+			lua_pushboolean(L, false);
+		} else {
+			lua_pushboolean(L,
+				(!checkIcon || !unit->GetIsIcon()) &&
+				camera->InView(unit->midPos, radius));
+		}
+	}
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.IsUnitIcon
+ * @number unitID
+ * @treturn nil|bool isUnitIcon nil when unitID cannot be parsed
+ */
+int LuaUnsyncedRead::IsUnitIcon(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->GetIsIcon());
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.IsAABBInView
+ * @number minX
+ * @number minY
+ * @number minZ
+ * @number maxX
+ * @number maxY
+ * @number maxZ
+ * @treturn bool inView
+ */
+int LuaUnsyncedRead::IsAABBInView(lua_State* L)
+{
+	float3 mins = float3(luaL_checkfloat(L, 1),
+	                     luaL_checkfloat(L, 2),
+	                     luaL_checkfloat(L, 3));
+	float3 maxs = float3(luaL_checkfloat(L, 4),
+	                     luaL_checkfloat(L, 5),
+	                     luaL_checkfloat(L, 6));
+	lua_pushboolean(L, camera->InView(mins, maxs));
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.IsSphereInView
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt=0] radius
+ * @treturn bool inView
+ */
+int LuaUnsyncedRead::IsSphereInView(lua_State* L)
+{
+	const float3 pos(luaL_checkfloat(L, 1),
+	                 luaL_checkfloat(L, 2),
+	                 luaL_checkfloat(L, 3));
+	const float radius = lua_israwnumber(L, 4) ? lua_tofloat(L, 4) : 0.0f;
+
+	lua_pushboolean(L, camera->InView(pos, radius));
+	return 1;
+}
 
 
 /***
@@ -2027,6 +2033,7 @@ int LuaUnsyncedRead::GetRenderFeaturesDrawFlagChanged(lua_State* L)
 /***
  *
  * @function Spring.ClearUnitsPreviousDrawFlag
+ * @treturn nil
  */
 int LuaUnsyncedRead::ClearUnitsPreviousDrawFlag(lua_State* L)
 {
@@ -2037,6 +2044,7 @@ int LuaUnsyncedRead::ClearUnitsPreviousDrawFlag(lua_State* L)
 /***
  *
  * @function Spring.ClearFeaturesPreviousDrawFlag
+ * @treturn nil
  */
 int LuaUnsyncedRead::ClearFeaturesPreviousDrawFlag(lua_State* L)
 {
@@ -2044,9 +2052,15 @@ int LuaUnsyncedRead::ClearFeaturesPreviousDrawFlag(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Get units inside a rectangle area on the map
  *
  * @function Spring.GetUnitsInScreenRectangle
+ * @number left
+ * @number top
+ * @number right
+ * @number bottom
+ * @number[opt=-1] allegiance teamID when > 0, when < 0 one of AllUnits = -1, MyUnits = -2, AllyUnits = -3, EnemyUnits = -4
+ * @treturn nil|{[number],...} unitIDs
  */
 int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 {
@@ -2227,6 +2241,7 @@ static std::vector< std::pair<int, int> > ggucCountMap;
 /***
  *
  * @function Spring.GetSelectedUnitsSorted
+ * @treturn {[number] = { [number],... }, ...} where keys are unitDefIDs and values are unitIDs
  */
 int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
 {
@@ -2328,9 +2343,14 @@ int LuaUnsyncedRead::GetSelectedUnitsCount(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Get if selection box is handled by engine
  *
  * @function Spring.GetBoxSelectionByEngine
+ *
+ * @treturn bool when true engine won't select units inside selection box when released
+ *
+ * @see Spring.GetSelectionBox
+ * @see Spring.SetBoxSelectionByEngine
  */
 int LuaUnsyncedRead::GetBoxSelectionByEngine(lua_State* L)
 {
@@ -2399,6 +2419,7 @@ int LuaUnsyncedRead::GetWaterMode(lua_State* L)
 /***
  *
  * @function Spring.GetMapDrawMode
+ * @treturn nil|string "normal"|"height"|"metal"|"pathTraversability"|"los"
  */
 int LuaUnsyncedRead::GetMapDrawMode(lua_State* L)
 {
@@ -2427,6 +2448,11 @@ int LuaUnsyncedRead::GetMapDrawMode(lua_State* L)
 /***
  *
  * @function Spring.GetMapSquareTexture
+ * @number texSquareX
+ * @number texSquareY
+ * @number texMipLevel
+ * @string luaTexName
+ * @treturn nil|bool success
  */
 int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 {
@@ -2475,11 +2501,18 @@ int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 }
 
 
-/******************************************************************************/
+/*** Color triple (RGB)
+ * @table rgb
+ * @number r
+ * @number g
+ * @number b
+ */
+
 
 /***
  *
  * @function Spring.GetLosViewColors
+ * @treturn { always=rgb, LOS=rgb, radar=rgb, jam=rgb, radar2=rgb }
  */
 int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 {
@@ -2525,11 +2558,10 @@ int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
 }
 
 
-/******************************************************************************/
-
-/***
+/*** Get available cameras
  *
  * @function Spring.GetCameraNames
+ * @treturn {[string] = number} where keys are names and values are indices
  */
 int LuaUnsyncedRead::GetCameraNames(lua_State* L)
 {
@@ -2546,9 +2578,40 @@ int LuaUnsyncedRead::GetCameraNames(lua_State* L)
 	return 1;
 }
 
+
+/*** Parameters for camera state
+ *
+ * @table camState
+ *
+ * Highly dependent on the type of the current camera controller
+ *
+ * @string name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
+ * @number mode the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
+ * @number fov
+ * @number px Position X of the ground point in screen center
+ * @number py Position Y of the ground point in screen center
+ * @number pz Position Z of the ground point in screen center
+ * @number dx Camera direction vector X
+ * @number dy Camera direction vector Y
+ * @number dz Camera direction vector Z
+ * @number rx Camera rotation angle on X axis (spring)
+ * @number ry Camera rotation angle on Y axis (spring)
+ * @number rz Camera rotation angle on Z axis (spring)
+ * @number angle Camera rotation angle on X axis (aka tilt/pitch) (ta)
+ * @number flipped -1 for when south is down, 1 for when north is down (ta)
+ * @number dist Camera distance from the ground (spring)
+ * @number height Camera distance from the ground (ta)
+ * @number oldHeight Camera distance from the ground, cannot be changed (rot)
+ */
+
+
 /***
  *
  * @function Spring.GetCameraState
+ * @bool[opt=true] useReturns when true return multiple values instead of table
+ * @treturn any|camState ret1
+ * @treturn any|nil ret2
+ * @treturn any|nil retn
  */
 int LuaUnsyncedRead::GetCameraState(lua_State* L)
 {
@@ -2672,9 +2735,19 @@ int LuaUnsyncedRead::GetCameraFOV(lua_State* L)
 	return 2;
 }
 
+
+/*** Cartesian triple (XYZ)
+ * @table xyz
+ * @number x
+ * @number y
+ * @number z
+ */
+
+
 /***
  *
  * @function Spring.GetCameraVectors
+ * @treturn { forward = xyz, up = xyz, right = xyz, topFrustumPlane = xyz, botFrustumPlane = xyz, lftFrustumPlane = xyz, rgtFrustumPlane = xyz }
  */
 int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
 {
@@ -2722,9 +2795,29 @@ int LuaUnsyncedRead::WorldToScreenCoords(lua_State* L)
 }
 
 
-/***
+/*** Get information about a ray traced from screen to world position
  *
  * @function Spring.TraceScreenRay
+ *
+ * Extended to allow a custom plane, parameters are (0, 1, 0, D=0) where D is the offset D can be specified in the third argument (if all the bools are false) or in the seventh (as shown).
+ *
+ * Intersection coordinates are returned in t[4],t[5],t[6] when the ray goes offmap and includeSky is true), or when no unit or feature is hit (or onlyCoords is true).
+ *
+ * This will only work for units & objects with the default collission sphere. Per Piece collission and custom collission objects are not supported.
+ *
+ * The unit must be selectable, to appear to a screen trace ray.
+ *
+ * @number screenX position on x axis in mouse coordinates (origin on left border of view)
+ * @number screenY position on y axis in mouse coordinates (origin on top border of view)
+ * @bool[opt=false] onlyCoords return only description (1st return value) and coordinates (2nd return value)
+ * @bool[opt=false] useMinimap if position arguments are contained by minimap, use the minimap corresponding world position
+ * @bool[opt=false] includeSky
+ * @bool[opt=false] ignoreWater
+ * @number[opt=0] heightOffset
+ * @treturn nil|string description of traced position
+ * @treturn nil|number|string|xyz unitID or feature, position triple when onlyCoords=true
+ * @treturn nil|number|string featureID or ground
+ * @treturn nil|xyz coords
  */
 int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 {
@@ -3421,8 +3514,8 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 
 
 /******************************************************************************
- * Misc
- * @section misc
+ * Text
+ * @section text
 ******************************************************************************/
 
 
@@ -3441,12 +3534,29 @@ int LuaUnsyncedRead::GetClipboard(lua_State* L)
 	return 1;
 }
 
-/******************************************************************************/
+
+/***
+ *
+ * @function Spring.IsUserWriting
+ * @treturn bool
+ */
+int LuaUnsyncedRead::IsUserWriting(lua_State* L)
+{
+	lua_pushboolean(L, gameTextInput.userWriting);
+	return 1;
+}
+
+
+/******************************************************************************
+ * Console
+ * @section console
+******************************************************************************/
+
 
 /***
  *
  * @function Spring.GetLastMessagePositions
- * @treturn {[{number, number, number}],...} messagePositions an array of position triples
+ * @treturn {xyz,...} message positions
  */
 int LuaUnsyncedRead::GetLastMessagePositions(lua_State* L)
 {
@@ -3465,11 +3575,12 @@ int LuaUnsyncedRead::GetLastMessagePositions(lua_State* L)
 	return 1;
 }
 
-/******************************************************************************/
 
 /***
  *
  * @function Spring.GetConsoleBuffer
+ * @number maxLines
+ * @treturn nil|{{text=string,priority=number},...} pair array of (text, priority)
  */
 int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 {
@@ -3510,17 +3621,6 @@ int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 int LuaUnsyncedRead::GetCurrentTooltip(lua_State* L)
 {
 	lua_pushsstring(L, mouse->GetCurrentTooltip());
-	return 1;
-}
-
-/***
- *
- * @function Spring.IsUserWriting
- * @treturn bool
- */
-int LuaUnsyncedRead::IsUserWriting(lua_State* L)
-{
-	lua_pushboolean(L, gameTextInput.userWriting);
 	return 1;
 }
 
