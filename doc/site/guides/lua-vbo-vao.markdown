@@ -27,7 +27,7 @@ Interleaved means that data of different types go one after another forming an e
 
 After the first element comes second element structured in the same way, etc. See:
 
-![image](assets/guides/lua-vbo-vao-1.png)
+![image]({{ site.baseurl }}/assets/guides/lua-vbo-vao-1.png)
 
 ### What types of VBO exist:
 
@@ -39,7 +39,7 @@ One canonical example of the use of index buffer is drawing of rectangle.
 
 Rectangles have 4 vertices, but since GPU draws with triangles, rectangle needs to broken down into triangles. In this case triangles are specified as list of indices referencing vertex buffer to render the rectangle:
 
-![image](assets/guides/lua-vbo-vao-2.png)
+![image]({{ site.baseurl }}/assets/guides/lua-vbo-vao-2.png)
 
 {: .note }
 Use of index buffer is optional, you can skip it, but you will have to duplicate vertex data instead to produce the same two triangles, which is often not desired, especially if you have big geometry.
@@ -52,7 +52,7 @@ For example you might want to draw exactly the same complex shape N times in N d
 
 As said, in Recoil instancing is done by means of instance buffer (alternative implementations are possible by out of scope of this basic tutorial):
 
-![image](assets/guides/lua-vbo-vao-3.png)
+![image]({{ site.baseurl }}/assets/guides/lua-vbo-vao-3.png)
 
 Here in the example we use instance buffer to offset instances of rectangle in screen space, other possibilities exist too: rotate, re-color, etc.
 
@@ -64,7 +64,7 @@ Usually you want something like position, color, texture coordinates, but you ca
 
 Below the schematic of what VAO is to VBOs:
 
-![image](assets/guides/lua-vbo-vao-4.png)
+![image]({{ site.baseurl }}/assets/guides/lua-vbo-vao-4.png)
 
 There can be up to 16 input attributes, this number is shared between vertex attributes (mandatory most of the time) and instance attributes (optional).
 
