@@ -271,7 +271,7 @@
 #   if ldoc.prettify_files and ldoc.is_file_prettified[item.module.file.filename] then
               <a style="float:right;" href="$(ldoc.source_ref(item))">line $(item.lineno)</a>
 #  end
-              <strong>$(display_name(item))</strong>
+              $(display_name(item))
             </h3>
             <p>$(item.summary)</p>
             <div class="code-example">

@@ -60,5 +60,5 @@
 
 /* Enlarged dt inside dl */
 .main-content dl.big-dt {
-  grid-template: auto / 20em 1fr;
+  grid-template: auto / fit-content(20em) 1fr;
 }
