@@ -2,7 +2,49 @@ Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
 
+
+
 -- BAR105 NEXT ---------------------------------------------------
+
+(since release 1544)
+
+Lua:
+ 
+
+Misc:
+ 
+
+Sim:
+ - Improved performance of long-range path finding requests (TKPFS)
+ - Path data updates faster in response to map changes and can increase the rate dynamically as the
+   number of map changes becomes larger (TKPFS)
+ - Path data update scaling rate can be adjusted by the new modrule
+  `system.pathFinderUpdateRateScale` (default: 1.0) (TKPFS)
+ - Path data updates per sim frame loading is better balanced to reduce impact on jitter caused by
+   sim frame time variations. (TKPFS)
+ - Reduced number of pathing blocks updated on map changes. (TKPFS)
+ - Improve performance of path data updates by only updating the pathing block-to-block links that
+   are impacted by map changes (previously all links were updated.) (TKPFS)
+ - Engine-driven formation move commands now try to match units to nearest appropriate move targets
+   so as to have units adopt formations without having to run across each other.
+
+System:
+ - Simulation will use up to ~100% CPU time to catch up.
+ - Set default min sim speed for commands to 0.1 (previous limit was 0.3.)
+
+UI:
+ - Increase the rate at which the traversability view map is updated by x4
+
+Fixes:
+ - Fix a pathfinding bug where the unit may try to force it's way through obstacles rather than
+   walk around them.
+ - Fixed issue where Unit Weapon aiming angle checks would recalculate cos(20) every call - it is
+   now a constant expression.
+ - Fixed TestMoveSquareRange() so that it only runs the required tests.
+ - Fixed issue where units standing still would recalculate their facing direction every frame even
+   though they are not moving.
+
+
 
 -- BAR105 1544 ---------------------------------------------------
 
