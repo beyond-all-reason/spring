@@ -2,7 +2,9 @@ Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
 
--- BAR105 --------------------------------------------------------
+-- BAR105 NEXT ---------------------------------------------------
+
+-- BAR105 1544 ---------------------------------------------------
 
 BREAKING CHANGES & HOW TO GET BACK OLD BEHAVIOURS:
  ! Add movetilt and movereset for previously hardcoded ALT and CTRL camera bindings.
@@ -103,6 +105,9 @@ Misc:
    (CameraMoveFastMult, CameraMoveSlowMult) and scaling factors for specific
    cameras (CamSpringFastScaleMouseMove, CamSpringFastScaleMousewheelMove,
    CamOverheadFastScale).
+ - Added spring settings boolean flag DumpGameStateOnDesync. When set to true on the server, the
+   server will request all clients to produce a local copy of the current game state (effectively
+   calling `/dumpstate.`)
 
 Sim:
  - Added a new 'b' designator for yardmaps to declare an area that is buildable, but is not
@@ -125,6 +130,18 @@ Sim:
  - Multi-threaded GroundMoveType heading and accelaration planning
  - GroundMoveType checks whether waypoints have changed before updating synced waypoint vars.
    This avoids unnecessary expensive checksum updates.
+ - Limited max push velocity from ground/sea unit collisions to avoid heavy slow units being pushed
+   quickly by several small and fast units.
+ - Unit collision avoidance steering update rate is now configurable via new modrule
+   `movement.groundUnitCollisionAvoidanceUpdateRate`. Default value is 3 for cycling through all
+   units over 3 sim frames.
+ - Added `system.pfForceSingleThreaded` to force pathing requests to be sent single threaded.
+ - Added `system.pfForceUpdateSingleThreaded` to force pathing vertex updates to be processed single
+   threaded.
+ - Added `movement.forceCollisionsSingleThreaded` to force collisions system to use only a single
+   thread.
+ - Added `movement.forceCollisionAvoidanceSingleThreaded` to force collision avoidance system to use
+   only a single thread.
 
 System:
  - Improved spinlocks by reducing their impact on the CPU, changed implementation from a
@@ -132,6 +149,8 @@ System:
    processor
  - Correct thread assignment for Intel 12th gen processors (Alder Lake)
  - Windows Vista is now longer supported, Windows 7 is now the minimum required Windows OS
+ - Support added for Intel Alder Lake (12th gen core) CPUs
+ - Updated logging around CPU affinity to provide better information.
 
 UI:
  - Add Buildoptions, Cloak, Cloaked, Resurrect and Stealth selection filters. See
@@ -171,6 +190,11 @@ Fixes:
    e.g. if actions bound to m,n and b,n both would be
    returned on `GetKeyBindings('n')` regardless of the previously pressed key
  - Fix server pause that happens when a spectator or player leaves the match
+ - Fix issue where desyncs could not be detected before the 300th sim frame (10 seconds)
+ - Fix corner case issue where units could start moving on their own if they haven't moved yet and
+   collide with something.
+ - Fix unit movement performance issue where pathfind results return an effective raw move result
+   over a long distance.
 
 -- 105.0 --------------------------------------------------------
 Sim:
