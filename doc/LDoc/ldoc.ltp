@@ -1,443 +1,240 @@
 # local localurl = module and module.name and ldoc.ref_to_module(module) or ("../" .. ldoc.output .. ".html")
 # localurl = localurl:gsub("%.%./", "ldoc/")
 # modname = module and module.name or "Home"
+# local function M(txt,item) return ldoc.markup(txt,item,ldoc.plain) end
 ---
-title: Recoil API: $(modname)
+layout: default
+title: $(modname)
 permalink: $(localurl)
-parent: API
+description: $(module and M(module.summary,module) or "")
+parent: Lua API
+# -- do not publish if index page
+$(module or "published: false")
 ---
 
-<!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/just-the-docs-default.css">
-    <script src="{{ site.baseurl }}/assets/js/vendor/lunr.min.js"></script>
-    <script src="{{ site.baseurl }}/assets/js/just-the-docs.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ page.title }}</title>
-    <meta name="generator" content="LDoc $(ldoc.version)" />
-    <meta property="og:title" content="{{ page.title }}" />
-    <meta property="og:locale" content="en_US" />
-    <meta name="description" content="Recoil is an RTS engine designed for game flexibility and large scale." />
-    <meta property="og:description" content="Recoil is an RTS engine designed for game flexibility and large scale." />
-    <link rel="canonical" href="{{ page.url | absolute_url }}" />
-    <meta property="og:url" content="{{ page.url | absolute_url }}" />
-    <meta property="og:site_name" content="Recoil" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
-    <meta property="twitter:title" content="{{ page.title }}" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "description": "Recoil is an RTS engine designed for game flexibility and large scale.",
-        "headline": "{{ page.title }}",
-        "name": "{{ page.title }}",
-        "url": "{{ page.url | absolute_url }}"
-      }
-    </script>
-  </head>
 {% raw %}
-  <body>
-    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-      <symbol id="svg-link" viewBox="0 0 24 24">
-        <title>Link</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-        </svg>
-      </symbol>
-      <symbol id="svg-menu" viewBox="0 0 24 24">
-        <title>Menu</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </symbol>
-      <symbol id="svg-arrow-right" viewBox="0 0 24 24">
-        <title>Expand</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </symbol>
-      <symbol id="svg-external-link" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link">
-        <title id="svg-external-link-title">(external link)</title>
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-        <polyline points="15 3 21 3 21 9"></polyline>
-        <line x1="10" y1="14" x2="21" y2="3"></line>
-      </symbol>
-      <symbol id="svg-doc" viewBox="0 0 24 24">
-        <title>Document</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
-          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-          <polyline points="13 2 13 9 20 9"></polyline>
-        </svg>
-      </symbol>
-      <symbol id="svg-search" viewBox="0 0 24 24">
-        <title>Search</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </symbol>
-      <symbol id="svg-copy" viewBox="0 0 16 16">
-        <title>Copy</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
-          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
-        </svg>
-      </symbol>
-      <symbol id="svg-copied" viewBox="0 0 16 16">
-        <title>Copied</title>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard-check-fill" viewBox="0 0 16 16">
-          <path d="M6.5 0A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3Zm3 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3Z" />
-          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1A2.5 2.5 0 0 1 9.5 5h-3A2.5 2.5 0 0 1 4 2.5v-1Zm6.854 7.354-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L7.5 10.793l2.646-2.647a.5.5 0 0 1 .708.708Z" />
-        </svg>
-      </symbol>
-    </svg>
-#   local no_spaces = ldoc.no_spaces
-#   local display_name = ldoc.display_name
-#   local iter = ldoc.modules.iter
-#   local function M(txt,item) return ldoc.markup(txt,item,ldoc.plain) end
-#   local nowrap = ldoc.wrap and '' or 'nowrap'
-    <div class="side-bar">
-      <div class="site-header">
-        <a href="/spring/" class="site-title lh-tight">$(ldoc.project)</a>
-        <a href="#" id="menu-button" class="site-button">
-          <svg viewBox="0 0 24 24" class="icon">
-            <use xlink:href="#svg-menu"></use>
-          </svg>
-        </a>
-      </div>
-
-      <nav aria-label="Main" id="site-nav" class="site-nav">
-#       if not ldoc.single and module then -- reference back to project index
-          <a href="../$(ldoc.output).html">Index</a>
-#       end
-
-# --------- contents of module -------------
-#      if module and not ldoc.no_summary and#module.items > 0 then
-         <h2>Contents</h2>
-         <ul class="nav-list">
-#          for kind,items in module.kinds() do
-             <li class="nav-list-item">
-               <a href="#$(no_spaces(kind))">$(kind)</a>
-             </li>
-#          end
-         </ul>
-
-         <hr>
-#      end
-
-
-#      if ldoc.no_summary and module and not ldoc.one then -- bang out the functions on the side
-#        for kind, items in module.kinds() do
-           <h2>$(kind)</h2>
-           <ul class="nav-list">
-#            for item in items() do
-               <li class="nav-list-item"><a href="#$(item.name)">$(display_name(item))</a></li>
-#            end
-           </ul>
-#        end
-#      end
-# -------- contents of project ----------
-# local this_mod = module and module.name
-# for kind, mods, type in ldoc.kinds() do
-#  if ldoc.allowed_in_contents(type,module) then
-        <h2>$(kind)</h2>
-        <ul class="nav-list">
-#  for mod in mods() do local name = display_name(mod)
-#   if mod.name == this_mod then
-          <li class="nav-list-item"><strong>$(name)</strong></li>
-#   else
-          <li class="nav-list-item"><a href="$(ldoc.ref_to_module(mod))">$(name)</a></li>
-#   end
-#  end
-# end
-        </ul>
-# end
-      </nav>
-    </div>
-
-    <div id="top" class="main">
-      <div id="main-header" class="main-header">
-        <div class="search">
-          <div class="search-input-wrap">
-            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Recoil" aria-label="Search Recoil" autocomplete="off">
-            <label for="search-input" class="search-label">
-              <svg viewBox="0 0 24 24" class="search-icon">
-                <use xlink:href="#svg-search"></use>
-              </svg>
-            </label>
-          </div>
-          <div id="search-results" class="search-results"></div>
-        </div>
-        <nav aria-label="Auxiliary" class="aux-nav">
-          <ul class="aux-nav-list">
-            <li class="aux-nav-list-item">
-              <a href="https://github.com/beyond-all-reason/spring" class="site-button" target="_blank" rel="noopener noreferrer">
-                <img width='32' src='/spring/assets/github-mark.svg' />
-              </a>
-            <li class="aux-nav-list-item">
-              <a href="https://matrix.to/#/#recoil-rts:matrix.org" class="site-button" target="_blank" rel="noopener noreferrer">
-                <img width='32' src='/spring/assets/matrix-logo.svg' />
-              </a>
-            <li class="aux-nav-list-item">
-              <a href="/spring/ldoc" class="site-button" target="_blank" rel="noopener noreferrer"> Lua API </a>
-          </ul>
-        </nav>
-      </div>
-      <div id="main-content-wrap" class="main-content-wrap">
-        <div id="main-content" class="main-content" role="main">
-
+# local no_spaces = ldoc.no_spaces
+# local display_name = ldoc.display_name
+# local iter = ldoc.modules.iter
+# local nowrap = ldoc.wrap and '' or 'nowrap'
 # if ldoc.body then -- verbatim HTML as contents; 'non-code' entries
-          $(ldoc.body)
+    $(ldoc.body)
 # elseif module then -- module documentation
-          <h1>$(ldoc.module_typename(module)) <code>$(module.name)</code></h1>
-          <p>$(M(module.summary,module))</p>
-          <p>$(M(module.description,module))</p>
+    <h1>$(ldoc.module_typename(module)) <code>$(module.name)</code></h1>
+    <p>$(M(module.summary,module))</p>
+    <p>$(M(module.description,module))</p>
 #   if module.tags.include then
-          $(M(ldoc.include_file(module.tags.include)))
+      $(M(ldoc.include_file(module.tags.include)))
 #   end
 #   if module.see then
-          <h3>See also:</h3>
-          <ul>
-#           for see in iter(module.see) do
-              <li><a href="$(ldoc.href(see))">$(see.label)</a></li>
-#           end
-          </ul>
+      <h3>See also:</h3>
+      <ul>
+#       for see in iter(module.see) do
+          <li><a href="$(ldoc.href(see))">$(see.label)</a></li>
+#       end
+      </ul>
 #   end -- if see
 #   if module.usage then
-          <h3>Usage:</h3>
-          <ul>
+      <h3>Usage:</h3>
+      <ul>
 #     for usage in iter(module.usage) do
         <li><pre class="example">$(ldoc.escape(usage))</pre></li>
 #     end -- for
-          </ul>
+      </ul>
 #   end -- if usage
 #   if module.info then
-          <h3>Info:</h3>
-          <ul>
+      <h3>Info:</h3>
+      <ul>
 #     for tag, value in module.info:iter() do
-            <li><strong>$(tag)</strong>: $(M(value,module))</li>
+        <li><strong>$(tag)</strong>: $(M(value,module))</li>
 #     end
-          </ul>
+      </ul>
 #   end -- if module.info
 
-
-# if not ldoc.no_summary then
-# -- bang out the tables of item types for this module (e.g Functions, Tables, etc)
-# for kind,items in module.kinds() do
-          <h2><a href="#$(no_spaces(kind))">$(kind)</a></h2>
-          <dl class="big-dt">
-#  for item in items() do
+#   if not ldoc.no_summary then
+#   -- bang out the tables of item types for this module (e.g Functions, Tables, etc)
+#     for kind,items in module.kinds() do
+        <h2><a href="#$(no_spaces(kind))">$(kind)</a></h2>
+        <dl class="big-dt">
+#         for item in items() do
             <dt>
               <a href="#$(item.name)">$(item.name)</a>
             </dt>
             <dd>
               $(M(item.summary,item))
             </dd>
-#  end -- for items
-          </dl>
-#end -- for kinds
+#         end -- for items
+        </dl>
+#     end -- for kinds
+#   end -- if not no_summary
 
-#end -- if not no_summary
-
-# --- currently works for both Functions and Tables. The params field either contains
-# --- function parameters or table fields.
-# local show_return = not ldoc.no_return_or_parms
-# local show_parms = show_return
-# for kind, items in module.kinds() do
-#   local kitem = module.kinds:get_item(kind)
-#   local has_description = kitem and ldoc.descript(kitem) ~= ""
-          <h2 id="$(no_spaces(kind))" class="section-header $(has_description and 'has-description')">
-            <a href="#$(no_spaces(kind))" class="anchor-heading" aria-labelledby="$(no_spaces(kind))">
-              <svg viewBox="0 0 16 16" aria-hidden="true">
-                <use xlink:href="#svg-link"></use>
-              </svg>
-            </a>
-            $(kind)
-          </h2>
-          $(M(module.kinds:get_section_description(kind),nil))
-#   if kitem then
+#   --- currently works for both Functions and Tables. The params field either contains
+#   --- function parameters or table fields.
+#   local show_return = not ldoc.no_return_or_parms
+#   local show_parms = show_return
+#   for kind, items in module.kinds() do
+#     local kitem = module.kinds:get_item(kind)
+#     local has_description = kitem and ldoc.descript(kitem) ~= ""
+      <h2 id="$(no_spaces(kind))" class="section-header $(has_description and 'has-description')">
+        <a href="#$(no_spaces(kind))" class="anchor-heading" aria-labelledby="$(no_spaces(kind))">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <use xlink:href="#svg-link"></use>
+          </svg>
+        </a>
+        $(kind)
+      </h2>
+      $(M(module.kinds:get_section_description(kind),nil))
+#     if kitem then
 #       if has_description then
-          <p>$(M(ldoc.descript(kitem),kitem))</p>
+        <p>$(M(ldoc.descript(kitem),kitem))</p>
 #       end
 #       if kitem.usage then
-          <h3>Usage:</h3>
-          <pre class="example">$(ldoc.prettify(kitem.usage[1]))</pre>
+        <h3>Usage:</h3>
+        <pre class="example">$(ldoc.prettify(kitem.usage[1]))</pre>
 #        end
-#   end
-#  for item in items() do
-            <h3 id="$(item.name)">
-              <a href="#$(item.name)" class="anchor-heading" aria-labelledby="$(item.name)">
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <use xlink:href="#svg-link"></use>
-                </svg>
-              </a>
-#   if ldoc.prettify_files and ldoc.is_file_prettified[item.module.file.filename] then
-              <a style="float:right;" href="$(ldoc.source_ref(item))">line $(item.lineno)</a>
-#  end
-              $(display_name(item))
-            </h3>
-            <p>$(item.summary)</p>
-            <div class="code-example">
-            <p>
-              $(item.description)
-            </p>
+#     end
+#     for item in items() do
+        <h3 id="$(item.name)">
+          <a href="#$(item.name)" class="anchor-heading" aria-labelledby="$(item.name)">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <use xlink:href="#svg-link"></use>
+            </svg>
+          </a>
+#         if ldoc.prettify_files and ldoc.is_file_prettified[item.module.file.filename] then
+          <a style="float:right;" href="$(ldoc.source_ref(item))">line $(item.lineno)</a>
+#         end
+          $(display_name(item))
+        </h3>
+        <p>$(item.summary)</p>
+        <div class="code-example">
+        <p>
+          $(item.description)
+        </p>
 
-#   if ldoc.custom_tags then
-#    for custom in iter(ldoc.custom_tags) do
-#     local tag = item.tags[custom[1]]
-#     if tag and not custom.hidden then
-              <h4>$(custom.title or custom[1]):</h4>
-              <ul>
-#      for value in iter(tag) do
-                <li>$(custom.format and custom.format(value) or M(value))</li>
-#      end -- for
-#     end -- if tag
-              </ul>
-#    end -- iter tags
-#   end
-
-#  if show_parms and item.params and#item.params > 0 then
-#    local subnames = module.kinds:type_of(item).subnames
-#    if subnames then
-              <h4>$(subnames):</h4>
+#      if ldoc.custom_tags then
+#        for custom in iter(ldoc.custom_tags) do
+#        local tag = item.tags[custom[1]]
+#        if tag and not custom.hidden then
+           <h4>$(custom.title or custom[1]):</h4>
+           <ul>
+#          for value in iter(tag) do
+             <li>$(custom.format and custom.format(value) or M(value))</li>
+#          end -- for
+#        end -- if tag
+           </ul>
+#      end -- iter tags
 #    end
-              <ol>
-#   for parm in iter(item.params) do
-#     local param,sublist = item:subparam(parm)
-#     if sublist then
-                <li><span class="parameter">$(sublist)</span>$(M(item.params.map[sublist],item))
-                  <ul>
-#     end
-#     for p in iter(param) do
-#        local name,tp,def = item:display_name_of(p), ldoc.typename(item:type_of_param(p)), item:default_of_param(p)
-                    <li>
-                      <code>$(name)</code>
-#       if tp ~= '' then
-                      <strong>$(tp)</strong>
-#       end
-                      $(M(item.params.map[p],item))
-#       if def == true then
-                      (<em>optional</em>)
-#      elseif def then
-                      (<em>default</em> $(def))
-#       end
-#       if item:readonly(p) then
-                      <em>readonly</em>
-#       end
-                    </li>
-#     end
-#     if sublist then
-                </li></ul>
-#     end
-#   end -- for
-              </ol>
-#   end -- if params
 
-#  if show_return and item.retgroups then local groups = item.retgroups
-              <h4>Returns:</h4>
-#   for i,group in ldoc.ipairs(groups) do
-              <ol>
-#   for r in group:iter() do local type, ctypes = item:return_type(r); local rt = ldoc.typename(type)
-                <li>
-#     if rt ~= '' then
-                <strong>$(rt)</strong>
+#   if show_parms and item.params and#item.params > 0 then
+#     local subnames = module.kinds:type_of(item).subnames
+#     if subnames then
+           <h4>$(subnames):</h4>
 #     end
-                $(M(r.text,item))</li>
-#    if ctypes then
+           <ol>
+#    for parm in iter(item.params) do
+#      local param,sublist = item:subparam(parm)
+#      if sublist then
+             <li><span class="parameter">$(sublist)</span>$(M(item.params.map[sublist],item))
+               <ul>
+#      end
+#      for p in iter(param) do
+#         local name,tp,def = item:display_name_of(p), ldoc.typename(item:type_of_param(p)), item:default_of_param(p)
+                 <li>
+                   <code>$(name)</code>
+#        if tp ~= '' then
+                   <strong>$(tp)</strong>
+#        end
+                   $(M(item.params.map[p],item))
+#        if def == true then
+                   (<em>optional</em>)
+#       elseif def then
+                   (<em>default</em> $(def))
+#        end
+#        if item:readonly(p) then
+                   <em>readonly</em>
+#        end
+                 </li>
+#      end
+#      if sublist then
+             </li></ul>
+#      end
+#    end -- for
+           </ol>
+#    end -- if params
+
+#   if show_return and item.retgroups then local groups = item.retgroups
+      <h4>Returns:</h4>
+#       for i,group in ldoc.ipairs(groups) do
+          <ol>
+#           for r in group:iter() do local type, ctypes = item:return_type(r); local rt = ldoc.typename(type)
+              <li>
+#             if rt ~= '' then
+                <strong>$(rt)</strong>
+#             end
+              $(M(r.text,item))</li>
+#             if ctypes then
                 <ul>
-#    for c in ctypes:iter() do
-                  <li><strong>$(c.name)</strong>
+#                 for c in ctypes:iter() do
+                    <li><strong>$(c.name)</strong>
                     <code>$(ldoc.typename(c.type))</code>
                     $(M(c.comment,item))</li>
-#     end
+#                 end
                 </ul>
-#    end -- if ctypes
-#     end -- for r
-              </ol>
-#   if i <#groups then
-              <h4>Or</h4>
-#   end
-#   end -- for group
-#   end -- if returns
+#             end -- if ctypes
+#           end -- for r
+          </ol>
+#         if i <#groups then
+           <h4>Or</h4>
+#         end
+#         end -- for group
+#       end -- if returns
 
-#   if show_return and item.raise then
-              <h4>Raises:</h4>
-              $(M(item.raise,item))
-#   end
-
-#   if item.see then
-              <h4>See also:</h4>
-              <ul>
-#     for see in iter(item.see) do
-                <li><a href="$(ldoc.href(see))">$(see.label)</a></li>
-#    end -- for
-              </ul>
-#   end -- if see
-
-#   if item.usage then
-              <h4>Usage:</h4>
-              <ul>
-#     for usage in iter(item.usage) do
-                <li><pre class="example">$(ldoc.prettify(usage))</pre></li>
-#     end -- for
-              </ul>
-#   end -- if usage
-          </div>
-          <hr>
-# end -- for items
-# end -- for kinds
-
-# else -- if module; project-level contents
-
-# if ldoc.description then
-          <h2>$(M(ldoc.description,nil))</h2>
-# end
-#       if ldoc.full_description then
-          <p>$(M(ldoc.full_description,nil))</p>
+#       if show_return and item.raise then
+          <h4>Raises:</h4>
+          $(M(item.raise,item))
 #       end
 
-#       for kind, mods in ldoc.kinds() do
-          <h2>$(kind)</h2>
-#         kind = kind:lower()
-          <table class="module_list">
-#           for m in mods() do
-              <tr>
-                <td class="name"  $(nowrap)><a href="$(no_spaces(kind))/$(m.name).html">$(m.name)</a></td>
-                <td class="summary">$(M(ldoc.strip_header(m.summary),m))</td>
-              </tr>
-#           end -- for modules
-          </table>
-#       end -- for kinds
-#     end -- if module
+#       if item.see then
+          <h4>See also:</h4>
+          <ul>
+#           for see in iter(item.see) do
+              <li><a href="$(ldoc.href(see))">$(see.label)</a></li>
+#           end -- for
+          </ul>
+#       end -- if see
 
-      </div> <!-- id="content" -->
-      <footer>
-        <p>
-          <a href="#top" id="back-to-top">Back to top</a>
-        </p>
-        <p class="text-small text-grey-dk-100 mb-0">
-          generated by <a href="http://github.com/stevedonovan/LDoc">LDoc $(ldoc.version)</a>
-#         if false and ldoc.updatetime and ldoc.updatetime ~= "" then
-            Last updated $(ldoc.updatetime)
-#         end
-        </p>
-        <p class="text-small text-grey-dk-100 mb-0">
-          Copyright &copy; 2022 Recoil team. Distributed by an <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html#SEC1">GPL2 license.</a>
-        </p>
-        <div class="d-flex mt-2">
-          <p class="text-small text-grey-dk-000 mb-0">
-            <a href="https://github.com/beyond-all-reason/spring/tree/BAR105/doc/site/index.markdown" id="edit-this-page">Edit this page on GitHub</a>
-          </p>
+#       if item.usage then
+          <h4>Usage:</h4>
+          <ul>
+#         for usage in iter(item.usage) do
+            <li><pre class="example">$(ldoc.prettify(usage))</pre></li>
+#         end -- for
+          </ul>
+#       end -- if usage
         </div>
-      </footer>
-    </div> <!-- id="container" -->
-  </body>
-</html>
+        <hr>
+#     end -- for items
+#   end -- for kinds
+
+# else -- if module; project-level contents
+#   if ldoc.description then
+      <h2>$(M(ldoc.description,nil))</h2>
+#   end
+#   if ldoc.full_description then
+      <p>$(M(ldoc.full_description,nil))</p>
+#   end
+
+#   for kind, mods in ldoc.kinds() do
+      <h2>$(kind)</h2>
+#     kind = kind:lower()
+      <table class="module_list">
+#       for m in mods() do
+          <tr>
+            <td class="name"  $(nowrap)><a href="$(no_spaces(kind))/$(m.name).html">$(m.name)</a></td>
+            <td class="summary">$(M(ldoc.strip_header(m.summary),m))</td>
+          </tr>
+#       end -- for modules
+      </table>
+#   end -- for kinds
+# end -- if module
 {% endraw %}

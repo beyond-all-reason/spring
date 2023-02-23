@@ -2669,13 +2669,11 @@ void CLuaHandle::Pong(uint8_t pingTag, const spring_time pktSendTime, const spri
 }
 
 
-/*** Called repeatedly when a key is pressed down.
+/*** Called when the keymap changes
  *
- * If you want an action to occur only once check for isRepeat == false. The mods parameter is a table, with keys "alt", "ctrl", "meta" and "shift" each having a boolean value. Return true if you don't want other callins or the engine to also receive this keypress. A list of key codes can be seen at the SDL wiki.
+ * @function KeyMapChanged
  *
- * @function KeyPress(key, mods, isRepeat)
- * @number keyCode
- * @treturn boolean becomeOwner
+ * Can be caused due to a change in language or keyboard
  */
 bool CLuaHandle::KeyMapChanged()
 {
