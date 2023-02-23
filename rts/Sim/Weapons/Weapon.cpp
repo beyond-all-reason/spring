@@ -105,7 +105,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(incomingProjectileIDs),
 
 	CR_MEMBER(weaponAimAdjustPriority),
-	CR_MEMBER(fastAutoRetargetingEnabled)
+	CR_MEMBER(fastAutoRetargeting)
 ))
 
 
@@ -183,7 +183,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	muzzleFlareSize(1),
 
 	weaponAimAdjustPriority(1.f),
-	fastAutoRetargetingEnabled(false)
+	fastAutoRetargeting(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -291,7 +291,7 @@ void CWeapon::Update()
 		errorVector = newErrorVector;
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
-	bool fastAutoRetargetRequired = fastAutoRetargetingEnabled && HaveTarget()
+	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
 									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
@@ -629,7 +629,7 @@ bool CWeapon::AllowWeaponAutoTarget() const
 	if (currentTarget.isUserTarget)
 		return false;
 
-	return (gs->frameNum > (lastTargetRetry + 65)) || fastAutoRetargetingEnabled;
+	return (gs->frameNum > (lastTargetRetry + 65)) || fastAutoRetargeting;
 }
 
 bool CWeapon::AutoTarget()

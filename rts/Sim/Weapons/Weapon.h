@@ -95,7 +95,7 @@ public:
 	bool StopAttackingTargetIf(const std::function<bool(const SWeaponTarget&)>& pred);
 	bool StopAttackingAllyTeam(const int ally);
 
-	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargetingEnabled; }
+	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargeting; }
 
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
@@ -200,7 +200,7 @@ public:
 	float muzzleFlareSize;                  // size of muzzle flare if drawn
 
 	float weaponAimAdjustPriority;
-	bool fastAutoRetargetingEnabled;
+	bool fastAutoRetargeting;
 
 protected:
 	SWeaponTarget currentTarget;

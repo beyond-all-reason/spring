@@ -52,7 +52,7 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	weaponAimAdjustPriority = weaponTable.GetFloat("weaponAimAdjustPriority", weaponAimAdjustPriority);
 
 	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
-	fastAutoRetargetingEnabled = weaponTable.GetBool("fastAutoRetargetingEnabled", fastAutoRetargetingEnabled);
+	fastAutoRetargeting = weaponTable.GetBool("fastAutoRetargeting", fastAutoRetargeting);
 }
 
 

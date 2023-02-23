@@ -179,6 +179,6 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 	owner->maxRange = std::max(weapon->range, owner->maxRange);
 
 	weapon->weaponAimAdjustPriority = defWeapon->weaponAimAdjustPriority;
-	weapon->fastAutoRetargetingEnabled = defWeapon->fastAutoRetargetingEnabled;
+	weapon->fastAutoRetargeting = defWeapon->fastAutoRetargeting;
 }
 
