@@ -1,0 +1,20 @@
+---
+---
+
+{% if site.logo %}
+$logo: "{{ site.logo | relative_url }}";
+{% endif %}
+@import "./support/support";
+@import "./custom/setup";
+
+@import "./color_schemes/light";
+@import "./modules";
+{% include css/callouts.scss.liquid color_scheme = "light" %}
+
+html[data-theme="dark"] {
+@import "./color_schemes/dark";
+@import "./modules-nocharset";
+{% include css/callouts.scss.liquid color_scheme = "dark" %}
+}
+
+{% include css/custom.scss.liquid %}
