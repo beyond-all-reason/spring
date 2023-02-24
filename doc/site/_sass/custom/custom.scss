@@ -166,19 +166,31 @@
  }
 }
 
+/***************************/
+/***** Custom Stuff ********/
+/***************************/
+
 // unvendored do not remove
 html[data-theme="dark"] button.theme-toggle, button.theme-toggle {
   height: 100%;
   margin: 0 1rem;
 }
 
-/***************************/
-/***** Custom Stuff ********/
-/***************************/
-
 /* Enlarged dt inside dl */
 .main-content dl.big-dt {
   grid-template: auto / fit-content(20em) 1fr;
+}
+
+.aux-nav, html[data-theme="dark"] .aux-nav {
+  padding-right: 0;
+}
+
+.aux-nav-img img {
+  filter: invert(27%) sepia(14%) saturate(463%) hue-rotate(166deg) brightness(93%) contrast(85%);
+}
+
+.aux-nav-list-item:hover .aux-nav-img img {
+  filter: invert(13%) sepia(6%) saturate(958%) hue-rotate(169deg) brightness(96%) contrast(95%);
 }
 
 html:not(data-theme) .aux-nav-matrix img, html[data-theme="light"] .aux-nav-matrix img {
