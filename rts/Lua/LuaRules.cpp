@@ -76,6 +76,14 @@ int CLuaRules::GetInitSelectTeam() const
 }
 
 
+/******************************************************************************
+ * Lua Rules
+ * @module LuaRules
+ *
+ * @see rts/Lua/LuaRules.cpp
+******************************************************************************/
+
+
 bool CLuaRules::AddSyncedCode(lua_State* L)
 {
 	lua_getglobal(L, "Script");

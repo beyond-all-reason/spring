@@ -5306,13 +5306,14 @@ static inline void ParseMapParams(lua_State* L, const char* caller,
  * Note that x & z coords are in worldspace (Game.mapSizeX/Z), still the heightmap resolution is Game.squareSize.
 ******************************************************************************/
 
-/***
+/*** Set a certain height to a point or rectangle area on the world
+ *
  * @function Spring.LevelHeightMap
  * @number x1
  * @number z1
- * @number[opt] x2
+ * @number x2_height if y2 and height are nil then this parameter is the height
  * @number[opt] z2
- * @number height
+ * @number[opt] height
  * @treturn nil
  */
 int LuaSyncedCtrl::LevelHeightMap(lua_State* L)
@@ -5335,17 +5336,15 @@ int LuaSyncedCtrl::LevelHeightMap(lua_State* L)
 }
 
 
-/***
+/*** Add a certain height to a point or rectangle area on the world
+ *
  * @function Spring.AdjustHeightMap
  * @number x1
- * @number z1
- * @number[opt] x2
- * @number[opt] z2
- * @number height
+ * @number y1
+ * @number x2_height if y2 and height are nil then this parameter is the height
+ * @number[opt] y2
+ * @number[opt] height
  * @treturn nil
- *
- *     (heightmap[x][z] += height;)
- *
  */
 int LuaSyncedCtrl::AdjustHeightMap(lua_State* L)
 {
@@ -5369,13 +5368,14 @@ int LuaSyncedCtrl::AdjustHeightMap(lua_State* L)
 }
 
 
-/***
+/*** Restore original map height to a point or rectangle area on the world
+ *
  * @function Spring.RevertHeightMap
  * @number x1
- * @number z1
- * @number[opt] x2
- * @number[opt] z2
- * @number origFactor
+ * @number y1
+ * @number x2_factor if y2 and factor are nil then this parameter is the factor
+ * @number[opt] y2
+ * @number[opt] factor
  * @treturn nil
  */
 int LuaSyncedCtrl::RevertHeightMap(lua_State* L)
@@ -5584,9 +5584,15 @@ int LuaSyncedCtrl::SetHeightMapFunc(lua_State* L)
  * @section heightmap
 ******************************************************************************/
 
-/***
+/*** Set a height to a point or rectangle area to the original map height cache
  *
  * @function Spring.LevelOriginalHeightMap
+ * @number x1
+ * @number y1
+ * @number x2_height if y2 and height are nil then this parameter is the height
+ * @number[opt] y2
+ * @number[opt] height
+ * @treturn nil
  */
 int LuaSyncedCtrl::LevelOriginalHeightMap(lua_State* L)
 {
@@ -5607,9 +5613,15 @@ int LuaSyncedCtrl::LevelOriginalHeightMap(lua_State* L)
 }
 
 
-/***
+/*** Add height to a point or rectangle area to the original map height cache
  *
  * @function Spring.AdjustOriginalHeightMap
+ * @number x1
+ * @number y1
+ * @number x2_height if y2 and height are nil then this parameter is the height
+ * @number[opt] y2
+ * @number[opt] height
+ * @treturn nil
  */
 int LuaSyncedCtrl::AdjustOriginalHeightMap(lua_State* L)
 {
@@ -5632,9 +5644,15 @@ int LuaSyncedCtrl::AdjustOriginalHeightMap(lua_State* L)
 }
 
 
-/***
+/*** Restore original map height cache to a point or rectangle area on the world
  *
  * @function Spring.RevertOriginalHeightMap
+ * @number x1
+ * @number y1
+ * @number x2_factor if y2 and factor are nil then this parameter is the factor
+ * @number[opt] y2
+ * @number[opt] factor
+ * @treturn nil
  */
 int LuaSyncedCtrl::RevertOriginalHeightMap(lua_State* L)
 {
@@ -5676,6 +5694,13 @@ int LuaSyncedCtrl::RevertOriginalHeightMap(lua_State* L)
 /***
  *
  * @function Spring.AddOriginalHeightMap
+ *
+ * Can only be called in `Spring.SetOriginalHeightMapFunc`
+ *
+ * @number x
+ * @number y
+ * @number height
+ * @treturn nil
  */
 int LuaSyncedCtrl::AddOriginalHeightMap(lua_State* L)
 {
@@ -5711,6 +5736,14 @@ int LuaSyncedCtrl::AddOriginalHeightMap(lua_State* L)
 /***
  *
  * @function Spring.SetOriginalHeightMap
+ *
+ * Can only be called in `Spring.SetOriginalHeightMapFunc`
+ *
+ * @number x
+ * @number y
+ * @number height
+ * @number[opt] factor
+ * @treturn nil
  */
 int LuaSyncedCtrl::SetOriginalHeightMap(lua_State* L)
 {
@@ -5755,6 +5788,11 @@ int LuaSyncedCtrl::SetOriginalHeightMap(lua_State* L)
 /***
  *
  * @function Spring.SetOriginalHeightMapFunc
+ *
+ * Cannot recurse on itself
+ *
+ * @func heightMapFunc
+ * @treturn nil
  */
 int LuaSyncedCtrl::SetOriginalHeightMapFunc(lua_State* L)
 {
