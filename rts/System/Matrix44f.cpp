@@ -58,7 +58,10 @@ bool CMatrix44f::IsOrthoNormal() const
 	constexpr float3 epsd = {float3::cmp_eps() *  8.0f, float3::cmp_eps() *  8.0f, float3::cmp_eps() *  8.0f};
 	constexpr float3 epsl = {float3::cmp_eps() * 16.0f, float3::cmp_eps() * 16.0f, float3::cmp_eps() * 16.0f};
 
-	return (dots.equals(ZeroVector, epsd)) && (lens.equals(OnesVector, epsl));
+	bool on  = dots.equals(ZeroVector, epsd);
+	     on &= lens.equals(OnesVector, epsl);
+
+	return on;
 }
 
 bool CMatrix44f::IsIdentity() const

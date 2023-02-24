@@ -174,6 +174,7 @@ public:
 	// (unlike ForcedSpin which updates from given <updir>)
 	// NOTE: movetypes call this directly
 	void UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing);
+	void UpdateDirVectors(const float3& uDir);
 
 	CMatrix44f ComposeMatrix(const float3& p) const { return (CMatrix44f(p, -rightdir, updir, frontdir)); }
 	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const = 0;

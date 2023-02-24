@@ -383,13 +383,42 @@ public:
 				(x * f.y) - (y * f.x));
 	}
 
-	float3 rotate(float angle, const float3& axis) {
+	float3 rotate(float angle, const float3& axis) const {
 		const float ca = math::cos(angle);
 		const float sa = math::sin(angle);
 
 		//Rodrigues' rotation formula
 		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 		return (*this) * ca + axis.cross(*this) * sa + axis * axis.dot(*this) * (1.0f - ca);
+	}
+
+	float3 rotateByUpVector(const float3& newUpDir, const float3& rotAxis) const {
+		// Use special case of Rodrigues' formula where sin and cos are replaced with ||cross|| and dot products and new up direction is used to rotate the point. Also requires normal vector used as a rotation axis
+		// rotAxis can be all zeros in case of singlularity rotation
+
+		const float& px = this->x;
+		const float& py = this->y;
+		const float& pz = this->z;
+
+		const float& yx = newUpDir.x;
+		const float& yy = newUpDir.y;
+		const float& yz = newUpDir.z;
+
+		const float& nx = rotAxis.x;
+		const float& ny = rotAxis.y;
+		const float& nz = rotAxis.z;
+
+		const float3 cm = float3{
+			yy,
+			math::sqrt(yx * yx + yz * yz),
+			(nx * px + ny * py + nz * pz)* (1.0f - yy)
+		};
+
+		return float3{
+			cm.dot(float3{px, (ny * pz - nz * py), nx}),
+			cm.dot(float3{py, (nz * px - nx * pz), ny}),
+			cm.dot(float3{pz, (nx * py - ny * px), nz})
+		};
 	}
 
 	/**

@@ -213,6 +213,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitVelocity);
 	REGISTER_LUA_CFUNC(SetUnitRotation);
 	REGISTER_LUA_CFUNC(SetUnitDirection);
+	REGISTER_LUA_CFUNC(SetUnitHeadingAndUpDir);
 
 	REGISTER_LUA_CFUNC(SetFactoryBuggerOff);
 	REGISTER_LUA_CFUNC(BuggerOff);
@@ -244,6 +245,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetFeatureVelocity);
 	REGISTER_LUA_CFUNC(SetFeatureRotation);
 	REGISTER_LUA_CFUNC(SetFeatureDirection);
+	REGISTER_LUA_CFUNC(SetFeatureHeadingAndUpDir);
 
 	REGISTER_LUA_CFUNC(SetFeatureBlocking);
 	REGISTER_LUA_CFUNC(SetFeatureNoSelect);
@@ -601,6 +603,27 @@ static int SetSolidObjectRotation(lua_State* L, CSolidObject* o, bool isFeature)
 	// not a hack: ForcedSpin() and CalculateTransform() calculate a
 	// transform based only on frontdir and assume the helper y-axis
 	// points up
+	if (isFeature)
+		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
+
+	return 0;
+}
+
+static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isFeature)
+{
+	if (o == nullptr)
+		return 0;
+
+	const auto heading = spring::SafeCast<short>(luaL_optint(L, 2, o->heading));
+	const float3 newUpDir = float3(luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5)).SafeNormalize();
+	if (math::fabsf(newUpDir.SqLength() - 1.0f) > float3::cmp_eps())
+		luaL_error(L, "[%s] Invalid upward-direction (%f, %f, %f), id = %d, model = %s, teamID = %d", __func__, newUpDir.x, newUpDir.y, newUpDir.z, o->id, o->model ? o->model->name.c_str() : "nullptr", o->team);
+
+	o->heading = heading;
+	o->UpdateDirVectors(newUpDir);
+	o->SetFacingFromHeading();
+	o->UpdateMidAndAimPos();
+
 	if (isFeature)
 		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
 
@@ -3543,6 +3566,20 @@ int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 	return (SetSolidObjectDirection(L, ParseUnit(L, __func__, 1)));
 }
 
+/***
+ * @function Spring.SetUnitHeadingAndUpDir
+ * @number unitID
+ * @number heading
+ * @number upx
+ * @number upy
+ * @number upz
+ * @treturn nil
+ * Use this call to set up unit direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) unit orientation if unit was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
+ */
+int LuaSyncedCtrl::SetUnitHeadingAndUpDir(lua_State* L)
+{
+	return SetSolidObjectHeadingAndUpDir(L, ParseUnit(L, __func__, 1), false);
+}
 
 /***
  * @function Spring.SetUnitVelocity
@@ -4347,6 +4384,20 @@ int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 	return (SetSolidObjectDirection(L, ParseFeature(L, __func__, 1)));
 }
 
+/***
+ * @function Spring.SetFeatureHeadingAndUpDir
+ * @number featureID
+ * @number heading
+ * @number upx
+ * @number upy
+ * @number upz
+ * @treturn nil
+ * Use this call to set up feature direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) feature orientation if feature was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
+ */
+int LuaSyncedCtrl::SetFeatureHeadingAndUpDir(lua_State* L)
+{
+	return SetSolidObjectHeadingAndUpDir(L, ParseFeature(L, __func__, 1), true);
+}
 
 /***
  * @function Spring.SetFeatureVelocity
