@@ -41,13 +41,6 @@ plugins:
   - jekyll-sitemap
   - jekyll-seo-tag
 
-# Aux links for the upper right navigation
-aux_links:
-  "<img width='32' src='/spring/assets/github-mark.svg' />":
-    - "https://github.com/beyond-all-reason/spring"
-  "<img width='32' src='/spring/assets/matrix-logo.svg' />":
-    - "https://matrix.to/#/#recoil-rts:matrix.org"
-
 search:
   # Split pages into sections that can be searched individually
   # Supports 1 - 6, default: 2
