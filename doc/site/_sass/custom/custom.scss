@@ -181,7 +181,7 @@ html[data-theme="dark"] button.theme-toggle, button.theme-toggle {
   grid-template: auto / fit-content(20em) 1fr;
 }
 
-html[data-theme="light"] .aux-nav-matrix img {
+html:not(data-theme) .aux-nav-matrix img, html[data-theme="light"] .aux-nav-matrix img {
   background-image: url("/spring/assets/matrix-logo.svg");
 }
 
@@ -189,7 +189,7 @@ html[data-theme="dark"] .aux-nav-matrix img {
   background-image: url("/spring/assets/matrix-logo-white.svg");
 }
 
-html[data-theme="light"] .aux-nav-github img {
+html:not(data-theme) .aux-nav-github img, html[data-theme="light"] .aux-nav-github img {
   background-image: url("/spring/assets/github-mark.svg");
 }
 
