@@ -18,14 +18,14 @@ public:
 	struct SAtlasEntry
 	{
 		SAtlasEntry() : data(nullptr) {}
-		SAtlasEntry(const int2 _size, const std::string& name, void* _data = nullptr)
+		SAtlasEntry(const int2 _size, std::string _name, void* _data = nullptr)
 			: size(_size)
-			, strHash(hashString(name.c_str()))
+			, name(std::move(_name))
 			, data(_data)
 		{}
 
 		int2 size;
-		uint32_t strHash;
+		std::string name;
 		float4 texCoords;
 		void* data;
 	};

@@ -22,8 +22,8 @@ inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntr
 	if (tex2->size.x > tex1->size.x) return false;
 
 	// silly but will help stabilizing the placement on reload
-	if (tex1->strHash > tex2->strHash) return true;
-	if (tex2->strHash > tex1->strHash) return false;
+	if (tex1->name > tex2->name) return true;
+	if (tex2->name > tex1->name) return false;
 
 	return false;
 }
