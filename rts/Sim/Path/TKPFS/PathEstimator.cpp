@@ -103,7 +103,8 @@ bool CPathEstimator::SetStartBlock(
 	 * 
 	 * Fewer can be used, but makes it more likely for a unit to get stuck.
 	 */
-	constexpr size_t maxBlocksToCheck = 9;
+	constexpr size_t maxBlocksToCheck = PATH_DIRECTIONS + 1;
+	size_t blocksToCheck = 0;
 
 	const float3 centreOffset(BLOCK_PIXEL_SIZE*.5f, 0, BLOCK_PIXEL_SIZE*.5f);
 
@@ -139,11 +140,16 @@ bool CPathEstimator::SetStartBlock(
 
 			return std::make_tuple(BlockPosToIdx(blockPos), distSq);
 		};
-	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
-	blockIdsByDist[0] = buildBlock(nearestBlock);
+	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist{ std::make_tuple(std::numeric_limits<int>::max(), std::numeric_limits<float>::infinity()) };
+	blockIdsByDist[blocksToCheck++] = buildBlock(nearestBlock);
 
-	for (std::uint32_t i = 0; i < PATH_DIRECTIONS; ++i)
-		blockIdsByDist[i+1] = buildBlock(nearestBlock + PE_DIRECTION_VECTORS[i]);
+	for (std::uint32_t i = 0; i < PATH_DIRECTIONS; ++i){
+		int2 blockPos(nearestBlock + PE_DIRECTION_VECTORS[i]);
+		bool inBounds = (blockPos.x >= 0) & (blockPos.x < nbrOfBlocks.x)
+					  & (blockPos.y >= 0) & (blockPos.y < nbrOfBlocks.y);
+		if (inBounds)
+			blockIdsByDist[blocksToCheck++] = buildBlock(blockPos);
+	}
 
 	auto sortBlocksByDist = [](const std::tuple<int, float>& lhv, const std::tuple<int, float>& rhv)
 			{ return std::get<1>(lhv) < std::get<1>(rhv); };
@@ -159,7 +165,8 @@ bool CPathEstimator::SetStartBlock(
 
 	auto unitCanReachBlock = [this, &moveDef = std::as_const(moveDef), &peDef = std::as_const(peDef), owner]
 		(const std::tuple<int, float>& blockByDist)
-			{ return TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist)); };
+			{ return (std::get<1>(blockByDist) < std::numeric_limits<float>::infinity())
+					&& TestBlockReachability(moveDef, peDef, owner, std::get<0>(blockByDist)); };
 
 	auto result = std::find_if(blockIdsByDist.begin(), blockIdsByDist.end(), unitCanReachBlock);
 	if (result != std::end(blockIdsByDist)){
