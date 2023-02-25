@@ -629,7 +629,7 @@ bool CWeapon::AllowWeaponAutoTarget() const
 	if (currentTarget.isUserTarget)
 		return false;
 
-	return (gs->frameNum > (lastTargetRetry + 65)) || fastAutoRetargeting;
+	return (gs->frameNum > (lastTargetRetry + 65));
 }
 
 bool CWeapon::AutoTarget()
