@@ -49,6 +49,8 @@ void COverviewController::GetState(StateMap& sm) const
 
 bool COverviewController::SetState(const StateMap& sm)
 {
-	CCameraController::SetState(sm);
+	// this camera is unique per map so we don't want to restore its settings
+	// from previous one
+	// CCameraController::SetState(sm);
 	return true;
 }
