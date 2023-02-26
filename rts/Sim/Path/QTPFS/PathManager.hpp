@@ -12,11 +12,15 @@
 #include "System/UnorderedMap.hpp"
 
 struct MoveDef;
-//struct SRectangle;
+struct SRectangle;
 class CSolidObject;
 
 #ifdef QTPFS_ENABLE_THREADED_UPDATE
-#include "System/Threading/SpringThreading.h"
+namespace spring {
+	class mutex;
+	class thread;
+	class condition_variable;
+};
 #endif
 
 namespace QTPFS {

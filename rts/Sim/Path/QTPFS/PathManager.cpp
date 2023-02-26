@@ -1,14 +1,14 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#include "PathManager.hpp"
 
 #include <chrono>
 #include <cinttypes>
 #include <functional>
-#include <mutex>
 
 #include "System/Threading/ThreadPool.h"
+#include "System/Threading/SpringThreading.h"
 
 #include "PathDefines.hpp"
+#include "PathManager.hpp"
 
 #include "Game/GameSetup.h"
 #include "Game/LoadScreen.h"
@@ -166,9 +166,9 @@ std::int64_t QTPFS::PathManager::Finalize() {
 		pmLoadScreen.Show(&PathManager::Load, this);
 
 		#ifdef QTPFS_ENABLE_THREADED_UPDATE
-		// mutexThreadUpdate = spring::mutex();
-		// condThreadUpdate = spring::condition_variable();
-		// condThreadUpdated = spring::condition_variable();
+		mutexThreadUpdate = spring::mutex();
+		condThreadUpdate = spring::condition_variable();
+		condThreadUpdated = spring::condition_variable();
 		updateThread = spring::thread(std::bind(&PathManager::ThreadUpdate, this));
 		#endif
 	}
@@ -670,12 +670,12 @@ void QTPFS::PathManager::Update() {
 	streflop::streflop_init<streflop::Simple>();
 
 	std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
+
 	// allow ThreadUpdate to run one iteration
 	condThreadUpdate.notify_one();
 
 	// wait for the ThreadUpdate iteration to finish
-	// condThreadUpdated.wait(lock);
-	condThreadUpdated.wait(mutexThreadUpdate);
+	condThreadUpdated.wait(lock);
 
 	streflop::streflop_init<streflop::Simple>();
 	#else
@@ -690,8 +690,7 @@ void QTPFS::PathManager::ThreadUpdate() {
 		std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
 
 		// wait for green light from Update
-		// condThreadUpdate.wait(lock);
-		condThreadUpdate.wait(mutexThreadUpdate);
+		condThreadUpdate.wait(lock);
 
 		// if we were notified from the destructor, then structures
 		// are no longer valid and there is no point to finish this
