@@ -35,6 +35,7 @@
 #define NUL_RECTANGLE SRectangle(0, 0,             0,            0)
 #define MAP_RECTANGLE SRectangle(0, 0,  mapDims.mapx, mapDims.mapy)
 
+CONFIG(int, PathingThreadCount).defaultValue(0).safemodeValue(1).minimumValue(0);
 
 namespace QTPFS {
 	struct PMLoadScreen {
