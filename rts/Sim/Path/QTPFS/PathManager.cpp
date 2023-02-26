@@ -7,8 +7,8 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/Threading/SpringThreading.h"
 
-#include "PathDefines.hpp"
-#include "PathManager.hpp"
+#include "PathDefines.h"
+#include "PathManager.h"
 
 #include "Game/GameSetup.h"
 #include "Game/LoadScreen.h"

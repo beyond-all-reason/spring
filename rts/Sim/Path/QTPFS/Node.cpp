@@ -5,10 +5,10 @@
 
 #include "lib/streflop/streflop_cond.h"
 
-#include "Node.hpp"
-#include "NodeLayer.hpp"
-#include "PathDefines.hpp"
-#include "PathManager.hpp"
+#include "Node.h"
+#include "NodeLayer.h"
+#include "PathDefines.h"
+#include "PathManager.h"
 
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"

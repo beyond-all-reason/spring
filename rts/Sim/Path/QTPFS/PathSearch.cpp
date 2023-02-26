@@ -3,10 +3,10 @@
 #include <cassert>
 #include <limits>
 
-#include "PathSearch.hpp"
-#include "Path.hpp"
-#include "PathCache.hpp"
-#include "NodeLayer.hpp"
+#include "PathSearch.h"
+#include "Path.h"
+#include "PathCache.h"
+#include "NodeLayer.h"
 #include "Sim/Misc/GlobalConstants.h"
 
 #ifdef QTPFS_TRACE_PATH_SEARCHES

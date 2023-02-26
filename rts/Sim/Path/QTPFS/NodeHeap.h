@@ -5,7 +5,7 @@
 
 #include <limits>
 #include <vector>
-#include "PathDefines.hpp"
+#include "PathDefines.h"
 
 #define NODE_CMP_EQ(a, b) (a->operator==(b))
 #define NODE_CMP_LT(a, b) (a->operator< (b))

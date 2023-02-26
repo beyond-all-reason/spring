@@ -8,8 +8,8 @@
 #include <fstream>
 #include <cinttypes>
 
-#include "PathEnums.hpp"
-#include "PathDefines.hpp"
+#include "PathEnums.h"
+#include "PathDefines.h"
 
 #include "System/float3.h"
 #include "System/Rectangle.h"

@@ -5,9 +5,9 @@
 
 #include <vector>
 
-#include "PathDefines.hpp"
-#include "Node.hpp"
-#include "NodeHeap.hpp"
+#include "PathDefines.h"
+#include "Node.h"
+#include "NodeHeap.h"
 
 #include "System/float3.h"
 

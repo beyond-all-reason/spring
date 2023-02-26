@@ -2,8 +2,8 @@
 
 #include <cassert>
 
-#include "PathCache.hpp"
-#include "PathDefines.hpp"
+#include "PathCache.h"
+#include "PathDefines.h"
 
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/CollisionHandler.h"

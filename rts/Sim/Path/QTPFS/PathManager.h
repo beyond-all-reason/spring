@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "Sim/Path/IPathManager.h"
-#include "NodeLayer.hpp"
-#include "PathCache.hpp"
-#include "PathSearch.hpp"
+#include "NodeLayer.h"
+#include "PathCache.h"
+#include "PathSearch.h"
 #include "System/UnorderedMap.hpp"
 
 struct MoveDef;

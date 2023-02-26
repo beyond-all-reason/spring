@@ -10,11 +10,11 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 
-#include "Sim/Path/QTPFS/Path.hpp"
-#include "Sim/Path/QTPFS/Node.hpp"
-#include "Sim/Path/QTPFS/NodeLayer.hpp"
-#include "Sim/Path/QTPFS/PathCache.hpp"
-#include "Sim/Path/QTPFS/PathManager.hpp"
+#include "Sim/Path/QTPFS/Path.h"
+#include "Sim/Path/QTPFS/Node.h"
+#include "Sim/Path/QTPFS/NodeLayer.h"
+#include "Sim/Path/QTPFS/PathCache.h"
+#include "Sim/Path/QTPFS/PathManager.h"
 
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"

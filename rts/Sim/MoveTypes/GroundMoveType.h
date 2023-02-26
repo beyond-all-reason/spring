@@ -7,7 +7,7 @@
 #include <tuple>
 
 #include "MoveType.h"
-#include "Sim/Path/IPathController.hpp"
+#include "Sim/Path/IPathController.h"
 #include "System/Sync/SyncedFloat3.h"
 
 struct UnitDef;

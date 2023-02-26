@@ -2,9 +2,9 @@
 
 #include <limits>
 
-#include "NodeLayer.hpp"
-#include "PathManager.hpp"
-#include "Node.hpp"
+#include "NodeLayer.h"
+#include "PathManager.h"
+#include "Node.h"
 
 #include "Map/MapInfo.h"
 #include "Sim/Misc/GlobalSynced.h"
