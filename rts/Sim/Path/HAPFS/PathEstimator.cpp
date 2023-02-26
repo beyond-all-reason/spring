@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "PathEstimator.h"
-// #include "Sim/Path/Default/PathFinder.h"
-#include "Sim/Path/Default/PathFinderDef.h"
-#include "Sim/Path/Default/PathLog.h"
+// #include "PathFinder.h"
+#include "PathFinderDef.h"
+#include "PathLog.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
@@ -13,7 +13,7 @@
 
 //#define ENABLE_NETLOG_CHECKSUM 1
 
-namespace TKPFS {
+namespace HAPFS {
 
 // PCMemPool pcMemPool;
 // PEMemPool peMemPool;

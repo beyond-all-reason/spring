@@ -5,10 +5,9 @@
 
 enum {
 	NOPFS_TYPE  = -1, // for editors
-	TKPFS_TYPE  =  0, // default w/ multi-thread request support
+	HAPFS_TYPE  =  0,
 	QTPFS_TYPE  =  1,
-	HAPFS_TYPE  =  2, // original HPA
-	PFS_TYPE_MAX = HAPFS_TYPE,
+	PFS_TYPE_MAX = 1,
 };
 
 #endif

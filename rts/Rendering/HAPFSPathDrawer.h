@@ -1,14 +1,14 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef TKPFS_PATHDRAWER_HDR
-#define TKPFS_PATHDRAWER_HDR
+#ifndef HAPFS_PATHDRAWER_HDR
+#define HAPFS_PATHDRAWER_HDR
 
 #include "IPathDrawer.h"
 
 class CPathFinderDef;
 struct UnitDef;
 
-namespace TKPFS {
+namespace HAPFS {
 
 class CPathManager;
 class CPathFinder;
@@ -16,9 +16,9 @@ class CPathEstimator;
 
 }
 
-struct TKPFSPathDrawer: public IPathDrawer {
+struct HAPFSPathDrawer: public IPathDrawer {
 public:
-	TKPFSPathDrawer();
+	HAPFSPathDrawer();
 
 	void DrawAll() const;
 	void DrawInMiniMap();
@@ -34,11 +34,11 @@ public:
 private:
 	void Draw() const;
 	void Draw(const CPathFinderDef*) const;
-	void Draw(const TKPFS::CPathFinder*) const;
-	void Draw(const TKPFS::CPathEstimator*) const;
+	void Draw(const HAPFS::CPathFinder*) const;
+	void Draw(const HAPFS::CPathEstimator*) const;
 
 private:
-	TKPFS::CPathManager* pm;
+	HAPFS::CPathManager* pm;
 };
 
 #endif

@@ -25,7 +25,7 @@
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
 
-#include "Sim/Path/TKPFS/PathGlobal.h"
+#include "Sim/Path/HAPFS/PathGlobal.h"
 
 CR_BIND(CUnitHandler, )
 CR_REG_METADATA(CUnitHandler, (

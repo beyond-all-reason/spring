@@ -38,7 +38,7 @@
 // #define PATHING_DEBUG
 
 #ifdef PATHING_DEBUG
-#include <sim/Path/TKPFS/PathGlobal.h>
+#include <sim/Path/HAPFS/PathGlobal.h>
 #include "System/Threading/ThreadPool.h"
 #endif
 
@@ -1787,7 +1787,7 @@ unsigned int CGroundMoveType::GetNewPath()
 		return newPathID;
 
 	// if (gs->frameNum == 459 && this->owner->id == 9744)
-	// 	TKPFS::debugLoggingActive = ThreadPool::GetThreadNum();
+	// 	HAPFS::debugLoggingActive = ThreadPool::GetThreadNum();
 
 	if ((newPathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true)) != 0) {
 		atGoal = false;
@@ -1804,7 +1804,7 @@ unsigned int CGroundMoveType::GetNewPath()
 	}
 
 	// if (gs->frameNum == 459 && this->owner->id == 9744)
-	// 	TKPFS::debugLoggingActive = -1;
+	// 	HAPFS::debugLoggingActive = -1;
 
 	return newPathID;
 }

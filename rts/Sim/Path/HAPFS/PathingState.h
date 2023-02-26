@@ -1,22 +1,22 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef TKPFS_PATHINGSTATESYSTEM_H
-#define TKPFS_PATHINGSTATESYSTEM_H
+#ifndef HAPFS_PATHINGSTATESYSTEM_H
+#define HAPFS_PATHINGSTATESYSTEM_H
 
 #include <atomic>
 #include <string>
 #include <vector>
 
 #include "IPathFinder.h"
-#include "Sim/Path/Default/PathDataTypes.h"
+#include "PathDataTypes.h"
 #include "System/Threading/SpringThreading.h"
 
-#include "Sim/Path/TKPFS/PathEstimator.h"
-#include "Sim/Path/TKPFS/PathManager.h"
+#include "Sim/Path/HAPFS/PathEstimator.h"
+#include "Sim/Path/HAPFS/PathManager.h"
 
-struct TKPFSPathDrawer;
+struct HAPFSPathDrawer;
 
-namespace TKPFS {
+namespace HAPFS {
 
 class CPathEstimator;
 class CPathFinder;
@@ -124,8 +124,8 @@ public:
 	PathNodeStateBuffer& GetNodeStateBuffer() { return blockStates; }
 
 private:
-	friend class TKPFS::CPathManager;
-	friend struct ::TKPFSPathDrawer;
+	friend class HAPFS::CPathManager;
+	friend struct ::HAPFSPathDrawer;
 
     void InitEstimator(const std::string& peFileName, const std::string& mapFileName);
     void InitBlocks();
@@ -144,7 +144,7 @@ private:
 	std::size_t getCountOfUpdates() const { return updatedBlocks.size(); }
 
 private:
-	friend class TKPFS::CPathEstimator;
+	friend class HAPFS::CPathEstimator;
 
     unsigned int BLOCK_SIZE = 0;
 	unsigned int BLOCK_PIXEL_SIZE = 0;

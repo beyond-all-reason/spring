@@ -1,22 +1,24 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PATH_HEATMAP_HDR
-#define PATH_HEATMAP_HDR
+#ifndef HAPFS_PATH_HEATMAP_HDR
+#define HAPFS_PATH_HEATMAP_HDR
 
 #include <vector>
 #include "System/type2.h"
 
-class CPathManager;
+
 class CSolidObject;
 struct MoveDef;
 
+namespace HAPFS {
+
+class CPathManager;
 /**
  * Heat mapping makes the pathfinder favor unused paths more. 
  * Less path overlap should make units behave more intelligently.
  */
 class PathHeatMap {
 public:
-	static PathHeatMap* GetInstance();
 	static void FreeInstance(PathHeatMap*);
 
 	void Init(unsigned int sizex, unsigned int sizez);
@@ -59,5 +61,9 @@ private:
 	// heatmap values are relative to this
 	unsigned int heatMapOffset = 0;
 };
+
+extern PathHeatMap gPathHeatMap;
+
+}
 
 #endif

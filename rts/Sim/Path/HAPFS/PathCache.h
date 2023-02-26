@@ -1,13 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PATHCACHE_H
-#define PATHCACHE_H
+#ifndef HAPFS_PATHCACHE_H
+#define HAPFS_PATHCACHE_H
 
 #include <deque>
+#include <unordered_map>
 
 #include "IPath.h"
 #include "System/type2.h"
 #include "System/UnorderedMap.hpp"
+
+namespace HAPFS {
 
 class CPathCache
 {
@@ -87,5 +90,7 @@ private:
 	std::uint32_t numCacheMisses;
 	std::uint32_t numHashCollisions;
 };
+
+}
 
 #endif

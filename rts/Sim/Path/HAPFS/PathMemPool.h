@@ -8,13 +8,17 @@
 #include "PathFinder.h"
 #include "System/MemPoolTypes.h"
 
+namespace HAPFS {
+
 typedef DynMemPool<sizeof(CPathCache    )> PCMemPool;
-typedef DynMemPool<sizeof(CPathEstimator)> PEMemPool;
+//typedef DynMemPool<sizeof(CPathEstimator)> PEMemPool;
 typedef DynMemPool<sizeof(CPathFinder   )> PFMemPool;
 
 extern PCMemPool pcMemPool;
-extern PEMemPool peMemPool;
+//extern PEMemPool peMemPool;
 extern PFMemPool pfMemPool;
+
+}
 
 #endif
 

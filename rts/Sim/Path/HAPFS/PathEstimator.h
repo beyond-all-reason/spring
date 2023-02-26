@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef TKPFS_PATHESTIMATOR_H
-#define TKPFS_PATHESTIMATOR_H
+#ifndef HAPFS_PATHESTIMATOR_H
+#define HAPFS_PATHESTIMATOR_H
 
 #include <atomic>
 #include <cinttypes>
@@ -11,10 +11,10 @@
 
 #include "PathingState.h"
 
-#include "Sim/Path/Default/IPath.h"
+#include "IPath.h"
 #include "IPathFinder.h"
 #include "PathConstants.h"
-#include "Sim/Path/Default/PathDataTypes.h"
+#include "PathDataTypes.h"
 #include "System/float3.h"
 //#include "System/Threading/SpringThreading.h"
 
@@ -24,9 +24,9 @@ class CPathEstimatorDef;
 class CPathFinderDef;
 class CPathCache;
 class CSolidObject;
-struct TKPFSPathDrawer;
+struct HAPFSPathDrawer;
 
-namespace TKPFS {
+namespace HAPFS {
 
 class PathingState;
 class CPathFinder;
@@ -117,7 +117,7 @@ private:
 
 private:
 	friend class CPathManager;
-	friend struct ::TKPFSPathDrawer;
+	friend struct ::HAPFSPathDrawer;
 
 	unsigned int BLOCKS_TO_UPDATE = 0;
 
