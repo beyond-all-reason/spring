@@ -4,18 +4,25 @@
 #include "OverviewController.h"
 
 #include "Map/Ground.h"
-#include "Map/ReadMap.h"
 #include "Game/UI/MiniMap.h"
 #include "Game/UI/MouseHandler.h"
-#include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
+
+static float fit_cam_height_to_map(float map_x, float map_y, float fov) {
+    const auto extra_margin = 1.037;
+    const auto fov_coefficient = 1.0/math::tan(fov * math::DEG_TO_RAD) * extra_margin;
+    const auto max_height = 25000.0;
+    return std::min(CGround::GetHeightAboveWater(map_x, map_y, false) +
+                    (fov_coefficient * std::max(map_x / globalRendering->aspectRatio, map_y)),
+                    max_height);
+}
 
 COverviewController::COverviewController()
 {
 	enabled = false;
 	minimizeMinimap = false;
 
-	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + (2.5f * std::max(pos.x / globalRendering->aspectRatio, pos.z));
+	pos.y = fit_cam_height_to_map(pos.x, pos.z, fov/2.0);
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
 }
 
@@ -49,8 +56,9 @@ void COverviewController::GetState(StateMap& sm) const
 
 bool COverviewController::SetState(const StateMap& sm)
 {
-	// this camera is unique per map so we don't want to restore its settings
-	// from previous one
 	// CCameraController::SetState(sm);
+	// always centered, allow only for FOV change
+	SetStateFloat(sm, "fov", fov);
+	pos.y = fit_cam_height_to_map(pos.x, pos.z, fov/2.0);
 	return true;
 }
