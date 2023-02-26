@@ -9,8 +9,8 @@
 #include <cinttypes>
 
 #include "System/Rectangle.h"
-#include "Node.hpp"
-#include "PathDefines.hpp"
+#include "Node.h"
+#include "PathDefines.h"
 
 struct MoveDef;
 

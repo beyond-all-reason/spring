@@ -6,7 +6,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Path/HAPFS/PathManager.h"
-#include "Sim/Path/QTPFS/PathManager.hpp"
+#include "Sim/Path/QTPFS/PathManager.h"
 #include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"

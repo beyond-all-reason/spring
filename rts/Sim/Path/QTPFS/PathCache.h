@@ -5,8 +5,8 @@
 
 #include <vector>
 
-#include "PathEnums.hpp"
-#include "Path.hpp"
+#include "PathEnums.h"
+#include "Path.h"
 #include "System/UnorderedMap.hpp"
 
 #ifdef GetTempPath
