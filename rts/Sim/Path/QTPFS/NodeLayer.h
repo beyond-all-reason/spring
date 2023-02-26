@@ -29,13 +29,6 @@ namespace QTPFS {
 	#endif
 
 	struct NodeLayer {
-
-		struct MapChangeTrack {
-			std::vector<bool> damageMap;
-			int width = 0;
-			int height = 0;
-		};
-
 	public:
 		typedef unsigned char SpeedModType;
 		typedef unsigned char SpeedBinType;
@@ -136,13 +129,8 @@ namespace QTPFS {
 			return memFootPrint;
 		}
 
-		void MapChanged(int x1, int z1, int x2, int z2);
-
 	private:
 		std::vector<INode*> nodeGrid;
-
-		static constexpr unsigned int DAMAGE_MAP_BLOCK_SIZE = 16;
-		MapChangeTrack mapChangeTrack;
 
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;

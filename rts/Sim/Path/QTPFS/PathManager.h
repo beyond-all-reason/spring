@@ -79,6 +79,15 @@ namespace QTPFS {
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
 	private:
+		struct MapChangeTrack {
+			std::vector<bool> damageMap;
+			std::deque<int> damageQueue;
+			int width = 0;
+			int height = 0;
+		};
+		static constexpr unsigned int DAMAGE_MAP_BLOCK_SIZE = 16;
+		void MapChanged(int x1, int z1, int x2, int z2);
+
 		void ThreadUpdate();
 		void Load();
 
@@ -161,6 +170,8 @@ namespace QTPFS {
 
 		std::vector<unsigned int> numCurrExecutedSearches;
 		std::vector<unsigned int> numPrevExecutedSearches;
+
+		MapChangeTrack mapChangeTrack;
 
 		static unsigned int LAYERS_PER_UPDATE;
 		static unsigned int MAX_TEAM_SEARCHES;
