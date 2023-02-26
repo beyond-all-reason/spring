@@ -28,9 +28,6 @@ CR_REG_METADATA(CCobThread, (
 	CR_MEMBER(waitAxis),
 	CR_MEMBER(waitPiece),
 
-	CR_MEMBER(callStackSize),
-	CR_MEMBER(dataStackSize),
-
 	CR_IGNORED(errorCounter),
 
 	CR_MEMBER(cbType),
@@ -49,16 +46,44 @@ CR_REG_METADATA_SUB(CCobThread, CallInfo,(
 	CR_MEMBER(stackTop)
 ))
 
+std::vector<decltype(CCobThread::dataStack)> CCobThread::freeDataStacks;
+std::vector<decltype(CCobThread::callStack)> CCobThread::freeCallStacks;
 
 CCobThread::CCobThread(CCobInstance* _cobInst)
 	: cobInst(_cobInst)
 	, cobFile(_cobInst->cobFile)
 {
+	// If there are any free data and call stacks available, reuse them by 
+	// moving them to the current thread's data and call stack variables to
+	// amortize memory allocations.
+	if (!freeDataStacks.empty()) {
+		assert(freeDataStacks.size() == freeCallStacks.size());
+		dataStack = std::move(freeDataStacks.back());
+		freeDataStacks.pop_back();
+		callStack = std::move(freeCallStacks.back());
+		freeCallStacks.pop_back();
+	} else {
+    	// These reservation sizes were experimentally obtained from a few
+    	// games in BAR, but regardless of the game being played, the size of
+    	// all stacks in use will over time converge to the max size because we
+    	// are reusing vectors from older threads.
+		dataStack.reserve(16);
+		callStack.reserve(4);
+	}
 	memset(&luaArgs[0], 0, MAX_LUA_COB_ARGS * sizeof(luaArgs[0]));
-	callStack.fill({});
-	dataStack.fill(0);
 }
 
+CCobThread::~CCobThread()
+{
+	Stop();
+
+	if (dataStack.capacity() > 0) {
+		dataStack.clear();
+		freeDataStacks.emplace_back(std::move(dataStack));
+		callStack.clear();
+		freeCallStacks.emplace_back(std::move(callStack));
+	}
+}
 
 CCobThread& CCobThread::operator = (CCobThread&& t) {
 	id = t.id;
@@ -73,13 +98,10 @@ CCobThread& CCobThread::operator = (CCobThread&& t) {
 	waitAxis = t.waitAxis;
 	waitPiece = t.waitPiece;
 
-	callStackSize = t.callStackSize;
-	dataStackSize = t.dataStackSize;
-
 	std::memcpy(luaArgs, t.luaArgs, sizeof(luaArgs));
 
-	std::memcpy(callStack.data(), t.callStack.data(), callStackSize * sizeof(callStack[0]));
-	std::memcpy(dataStack.data(), t.dataStack.data(), dataStackSize * sizeof(dataStack[0]));
+	callStack = std::move(t.callStack);
+	dataStack = std::move(t.dataStack);
 	// execTrace = std::move(t.execTrace);
 
 	state = t.state;
@@ -103,13 +125,10 @@ CCobThread& CCobThread::operator = (const CCobThread& t) {
 	waitAxis = t.waitAxis;
 	waitPiece = t.waitPiece;
 
-	callStackSize = t.callStackSize;
-	dataStackSize = t.dataStackSize;
-
 	std::memcpy(luaArgs, t.luaArgs, sizeof(luaArgs));
 
-	std::memcpy(callStack.data(), t.callStack.data(), callStackSize * sizeof(callStack[0]));
-	std::memcpy(dataStack.data(), t.dataStack.data(), dataStackSize * sizeof(dataStack[0]));
+	callStack = t.callStack;
+	dataStack = t.dataStack;
 	// execTrace = t.execTrace;
 
 	state = t.state;
@@ -123,7 +142,7 @@ CCobThread& CCobThread::operator = (const CCobThread& t) {
 
 void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MAX_COB_ARGS>& args, bool schedule)
 {
-	assert(callStackSize == 0);
+	assert(callStack.size() == 0);
 
 	state = Run;
 	pc = cobFile->scriptOffsets[functionId];
@@ -139,8 +158,10 @@ void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MA
 	// copy arguments; args[0] holds the count
 	// handled by InitStack if thread has a parent that STARTs it,
 	// in which case args[0] is 0 and stack already contains data
-	if (paramCount > 0)
-		std::memcpy(dataStack.data(), args.data() + 1, (dataStackSize = paramCount) * sizeof(args[0]));
+	if (paramCount > 0) {
+		dataStack.resize(paramCount);
+		dataStack.assign(args.begin() + 1, args.begin() + 1 + paramCount);
+	}
 
 	// add to scheduler
 	if (schedule)
@@ -171,7 +192,7 @@ const std::string& CCobThread::GetName()
 
 int CCobThread::CheckStack(unsigned int size, bool warn)
 {
-	if (size <= dataStackSize)
+	if (size <= dataStack.size())
 		return size;
 
 	if (warn) {
@@ -180,17 +201,16 @@ int CCobThread::CheckStack(unsigned int size, bool warn)
 			"stack-size mismatch: need %u but have %d arguments "
 			"(too many passed to function or too few returned?)";
 
-		SNPRINTF(msg, sizeof(msg), fmt, size, dataStackSize);
+		SNPRINTF(msg, sizeof(msg), fmt, size, dataStack.size());
 		ShowError(msg);
 	}
 
-	return dataStackSize;
+	return dataStack.size();
 }
 
 void CCobThread::InitStack(unsigned int n, CCobThread* t)
 {
-	assert(dataStackSize == 0);
-	dataStack.fill(0);
+	assert(dataStack.size() == 0);
 
 	// move n arguments from caller's stack onto our own
 	for (unsigned int i = 0; i < n; ++i) {
@@ -435,8 +455,10 @@ bool CCobThread::Tick()
 
 				// return to caller
 				pc = LocalReturnAddr();
-				dataStackSize = std::min(dataStackSize, LocalStackFrame());
-				callStackSize -= 1;
+				if (dataStack.size() > LocalStackFrame())
+					dataStack.resize(LocalStackFrame());
+
+				callStack.pop_back();
 			} break;
 
 
@@ -479,7 +501,7 @@ bool CCobThread::Tick()
 				CallInfo& ci = PushCallStackRef();
 				ci.functionId = r1;
 				ci.returnAddr = pc;
-				ci.stackTop = dataStackSize - r2;
+				ci.stackTop = dataStack.size() - r2;
 
 				paramCount = r2;
 
@@ -872,7 +894,7 @@ void CCobThread::ShowError(const char* msg)
 	if ((errorCounter = std::max(errorCounter - 1, 0)) == 0)
 		return;
 
-	if (callStackSize == 0) {
+	if (callStack.size() == 0) {
 		LOG_L(L_ERROR, "[COBThread::%s] %s outside script execution (?)", __func__, msg);
 		return;
 	}
@@ -890,7 +912,7 @@ void CCobThread::LuaCall()
 	const int r2 = GET_LONG_PC(); // arg count
 
 	// setup the parameter array
-	const int size = dataStackSize;
+	const int size = static_cast<int>(dataStack.size());
 	const int argCount = std::min(r2, MAX_LUA_COB_ARGS);
 	const int start = std::max(0, size - r2);
 	const int end = std::min(size, start + argCount);
@@ -900,9 +922,9 @@ void CCobThread::LuaCall()
 	}
 
 	if (r2 >= size) {
-		dataStackSize = 0;
+		dataStack.clear();
 	} else {
-		dataStackSize = size - r2;
+		dataStack.resize(size - r2);
 	}
 
 	if (!luaRules) {
