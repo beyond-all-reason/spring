@@ -80,7 +80,7 @@ LuaVAOs::~LuaVAOs()
  * @treturn nil|VAO the VAO ref on success, else nil
  * @usage
  * local myVAO = gl.GetVAO()
- * if myVAO == nil then Spring.Echo(“Failed to get VAO”) end
+ * if myVAO == nil then Spring.Echo("Failed to get VAO") end
  */
 int LuaVAOs::GetVAO(lua_State* L)
 {

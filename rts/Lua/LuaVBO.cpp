@@ -134,7 +134,7 @@ LuaVBOs::~LuaVBOs()
  * @see GL.OpenGL_Buffer_Types
  * @usage
  * local myVBO = gl.GetVBO()
- * if myVBO == nil then Spring.Echo(“Failed to get VBO”) end
+ * if myVBO == nil then Spring.Echo("Failed to get VBO") end
  */
 int LuaVBOs::GetVBO(lua_State* L)
 {

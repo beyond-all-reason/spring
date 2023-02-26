@@ -1283,7 +1283,7 @@ size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const sol::stack_table& ids, int a
  * @number attrID
  * @number[opt] teamIdOpt
  * @number[opt] elementOffset
- * @treturn {number, ...} matDataVec
+ * @treturn {number, ...} matDataVec 4x4 matrix
  * @treturn number elemOffset
  * @treturn number|{number,number,number,number} attrID
  */
