@@ -371,3 +371,29 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsign
 	}
 }
 
+void QTPFS::NodeLayer::MapChanged(int x1, int y1, int x2, int y2) {
+	// const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
+	const int res = mapChangeTrack.damageMap.size();
+	const int w = mapChangeTrack.width;
+	const int h = mapChangeTrack.height;
+
+	const int2 min  { std::max(x1 / res, 0)
+					, std::max(y1 / res, 0)};
+	const int2 max  { std::min(x2 / res, (w-1))
+					, std::min(y2 / res, (h-1))};
+
+	for (int y = min.y; y <= max.y; ++y) {
+		int i = min.x + y*w;
+		for (int x = min.x; x <= max.x; ++x, ++i) {
+			if (!mapChangeTrack.damageMap[i]) {
+				mapChangeTrack.damageMap[i] = true;
+				mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].push(i);
+			}
+		}	
+	}
+
+	// const bool queueWasUpdated = !mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
+
+	// if (queueWasEmpty && queueWasUpdated)
+	// 	mapChangeTrack.queueReleaseOnFrame = gs->frameNum + SMOOTH_MESH_UPDATE_DELAY;
+}
