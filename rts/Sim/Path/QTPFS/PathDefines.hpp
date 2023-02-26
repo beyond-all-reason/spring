@@ -1,6 +1,8 @@
 #ifndef QTPFS_DEFINES_HDR
 #define QTPFS_DEFINES_HDR
 
+#include <limits>
+
 // #define QTPFS_NO_LOADSCREEN
 // #define QTPFS_IGNORE_DEAD_PATHS
 #define QTPFS_LIMIT_TEAM_SEARCHES

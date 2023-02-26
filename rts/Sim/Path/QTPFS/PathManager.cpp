@@ -651,7 +651,7 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 	// defer layer-updates to ::Update so we can stagger them
 	// this may or may not be more efficient than updating all
 	// layers right away, depends on many factors
-	QueueNodeLayerUpdates(SRectangle(x1, z1,  x2, z2));
+	QueueNodeLayerUpdates(SRectangle(static_cast<int>(x1), static_cast<int>(z1),  static_cast<int>(x2), static_cast<int>(z2)));
 	#else
 	// update all layers right now for this change-event
 	UpdateNodeLayersThreaded(SRectangle(x1, z1,  x2, z2));
