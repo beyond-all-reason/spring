@@ -7,7 +7,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Objects/SolidObject.h"
 
-namespace TKPFS {
+namespace HAPFS {
 
 PathHeatMap gPathHeatMap;
 

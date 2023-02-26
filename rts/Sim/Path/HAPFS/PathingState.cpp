@@ -13,11 +13,11 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "PathFinder.h"
-#include "Sim/Path/Default/IPath.h"
+#include "IPath.h"
 #include "PathConstants.h"
-#include "Sim/Path/Default/PathFinderDef.h"
-#include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/TKPFS/PathGlobal.h"
+#include "PathFinderDef.h"
+#include "PathLog.h"
+#include "Sim/Path/HAPFS/PathGlobal.h"
 #include "PathMemPool.h"
 
 #include "System/Config/ConfigHandler.h"
@@ -34,7 +34,7 @@
 
 static constexpr int BLOCK_UPDATE_DELAY_FRAMES = GAME_SPEED / 2;
 
-namespace TKPFS {
+namespace HAPFS {
 
 bool TEST_ACTIVE = false;
 

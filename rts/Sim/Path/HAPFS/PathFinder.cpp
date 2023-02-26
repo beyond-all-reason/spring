@@ -6,7 +6,7 @@
 #include "PathFinder.h"
 #include "PathFinderDef.h"
 #include "PathFlowMap.hpp"
-#include "PathHeatMap.hpp"
+#include "PathHeatMap.h"
 #include "PathLog.h"
 #include "PathMemPool.h"
 #include "Map/Ground.h"
@@ -15,7 +15,13 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "System/MathConstants.h"
+#include "System/TimeProfiler.h"
 
+// #include "Game/SelectedUnitsHandler.h"
+
+namespace HAPFS {
+
+// extern bool TEST_ACTIVE;
 
 #define ENABLE_PATH_DEBUG 0
 #define ENABLE_DIAG_TESTS 1
@@ -134,6 +140,12 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	if (!moveDef.allowRawMovement)
 		return IPath::Error;
 
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] raw search started", __func__, BLOCK_SIZE);
+    // }}
+
 	const int2 strtBlk = BlockIdxToPos(mStartBlockIdx);
 	const int2 goalBlk = {int(pfDef.goalSquareX), int(pfDef.goalSquareZ)};
 	const int2 diffBlk = {std::abs(goalBlk.x - strtBlk.x), std::abs(goalBlk.y - strtBlk.y)};
@@ -143,6 +155,7 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	if ((Square(diffBlk.x) + Square(diffBlk.y)) > Square(pfDef.maxRawPathLen))
 		return IPath::Error;
 
+	int curThread = ThreadPool::GetThreadNum();
 
 	const/*expr*/ auto StepFunc = [](const int2& dir, const int2& dif, int2& pos, int2& err) {
 		pos.x += (dir.x * (err.y >= 0));
@@ -160,6 +173,9 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	int2 fwdTestBlk = strtBlk;
 	int2 revTestBlk = goalBlk;
 
+	int2 prevFwdTestBlk = {-1, -1};
+	int2 prevRevTestBlk = {-1, -1};
+
 	// test bidirectionally so bad goal-squares cause early exits
 	// NOTE:
 	//   no need for integration with backtracking in FinishSearch
@@ -168,14 +184,14 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	//   goal until owner reaches it
 	for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
 		{
-			if ((blockCheckFunc(moveDef, fwdTestBlk.x, fwdTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevFwdTestBlk, fwdTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
 				return IPath::Error;
 			if (CMoveMath::GetPosSpeedMod(moveDef, fwdTestBlk.x, fwdTestBlk.y) <= pfDef.minRawSpeedMod)
 				return IPath::Error;
 		}
 
 		{
-			if ((blockCheckFunc(moveDef, revTestBlk.x, revTestBlk.y, owner) & MMBT::BLOCK_STRUCTURE) != 0)
+			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevRevTestBlk, revTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
 				return IPath::Error;
 			if (CMoveMath::GetPosSpeedMod(moveDef, revTestBlk.x, revTestBlk.y) <= pfDef.minRawSpeedMod)
 				return IPath::Error;
@@ -184,6 +200,9 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 		// NOTE: for odd-length paths, center square is tested twice
 		if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
 			break;
+
+		prevFwdTestBlk = fwdTestBlk;
+		prevRevTestBlk = revTestBlk;
 
 		StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
 		StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
@@ -204,11 +223,24 @@ IPath::SearchResult CPathFinder::DoSearch(
 	const CSolidObject* owner
 ) {
 	bool foundGoal = false;
+	int curThread = ThreadPool::GetThreadNum();
+
+	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
+    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+    // if (printMoveInfo) {
+    //     LOG("%s Block Size [%d] search started", __func__, BLOCK_SIZE);
+    // }}
 
 	while (!openBlocks.empty() && (openBlockBuffer.GetSize() < maxBlocksToBeSearched)) {
+
 		// get the open square with lowest expected path-cost
 		const PathNode* openSquare = openBlocks.top();
 		openBlocks.pop();
+
+		// if (TEST_ACTIVE){
+		// 	LOG("TK CPathFinder::DoSearch - iterate (%d, %d : %f) (nCount %d) "
+		// 		, openSquare->nodePos.x, openSquare->nodePos.y, openSquare->fCost, testedNeighbours);
+		// }
 
 		// check if this PathNode has become obsolete
 		if (blockStates.fCost[openSquare->nodeNum] != openSquare->fCost)
@@ -228,7 +260,7 @@ IPath::SearchResult CPathFinder::DoSearch(
 			continue;
 		}
 
-		TestNeighborSquares(moveDef, pfDef, openSquare, owner);
+		TestNeighborSquares(moveDef, pfDef, openSquare, owner, curThread);
 	}
 
 	if (foundGoal)
@@ -250,7 +282,8 @@ void CPathFinder::TestNeighborSquares(
 	const MoveDef& moveDef,
 	const CPathFinderDef& pfDef,
 	const PathNode* square,
-	const CSolidObject* owner
+	const CSolidObject* owner,
+	int thread
 ) {
 	struct SquareState {
 		CMoveMath::BlockType blockMask = MMBT::BLOCK_IMPASSABLE;
@@ -283,7 +316,8 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 
 		// IsBlockedNoSpeedModCheck; very expensive call but with a ~20% (?) chance of early-out
-		if ((sqState.blockMask = blockCheckFunc(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, owner)) & MMBT::BLOCK_STRUCTURE) {
+		sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner, thread);
+		if (sqState.blockMask & MMBT::BLOCK_STRUCTURE) {
 			blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 			dirtyBlocks.push_back(ngbSquareIdx);
 			continue;
@@ -423,7 +457,7 @@ bool CPathFinder::TestBlock(
 		}
 	}
 
-	const float heatCost  = (pfDef.testMobile) ? (PathHeatMap::GetInstance())->GetHeatCost(square.x, square.y, moveDef, ((owner != nullptr)? owner->id: -1U)) : 0.0f;
+	const float heatCost  = (pfDef.testMobile) ? gPathHeatMap.GetHeatCost(square.x, square.y, moveDef, ((owner != nullptr)? owner->id: -1U)) : 0.0f;
 	//const float flowCost  = (pfDef.testMobile) ? (PathFlowMap::GetInstance())->GetFlowCost(square.x, square.y, moveDef, pathOptDir) : 0.0f;
 	const float extraCost = blockStates.GetNodeExtraCost(square.x, square.y, pfDef.synced);
 
@@ -605,4 +639,6 @@ void CPathFinder::AdjustFoundPath(
 
 		break;
 	}
+}
+
 }

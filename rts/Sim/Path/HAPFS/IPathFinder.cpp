@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IPathFinder.h"
-#include "Sim/Path/Default/PathFinderDef.h"
-#include "Sim/Path/Default/PathLog.h"
-#include "Sim/Path/TKPFS/PathGlobal.h"
+#include "PathFinderDef.h"
+#include "PathLog.h"
+#include "Sim/Path/HAPFS/PathGlobal.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
@@ -13,7 +13,7 @@
 
 // #include <mutex>
 
-namespace TKPFS {
+namespace HAPFS {
 
 static std::vector<PathNodeStateBuffer> nodeStateBuffers;
 static std::vector<IPathFinder*> pathFinderInstances;

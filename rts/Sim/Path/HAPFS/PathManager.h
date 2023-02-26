@@ -1,22 +1,30 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PATHMANAGER_H
-#define PATHMANAGER_H
+#ifndef HAPFS_PATHMANAGER_H
+#define HAPFS_PATHMANAGER_H
 
 #include <cinttypes>
 
 #include "Sim/Path/IPathManager.h"
 #include "IPath.h"
+#include "IPathFinder.h"
 #include "PathFinderDef.h"
 #include "System/UnorderedMap.hpp"
 
+#include <mutex>
+
 class CSolidObject;
-class CPathFinder;
-class CPathEstimator;
 class PathFlowMap;
-class PathHeatMap;
+
 class CPathFinderDef;
 struct MoveDef;
+
+namespace HAPFS {
+
+class CPathEstimator;
+class PathHeatMap;
+class PathingState;
+class CPathFinder;
 
 class CPathManager: public IPathManager {
 public:
@@ -30,10 +38,29 @@ public:
 			, caller(nullptr)
 		{}
 
-		MultiPath(const MultiPath& mp) = delete;
+		//MultiPath(const MultiPath& mp) = delete;
+		MultiPath(const MultiPath& mp) {
+			*this = mp;
+		}
 		MultiPath(MultiPath&& mp) { *this = std::move(mp); }
 
-		MultiPath& operator = (const MultiPath& mp) = delete;
+		//MultiPath& operator = (const MultiPath& mp) = delete;
+		MultiPath& operator = (const MultiPath& mp) {
+			lowResPath = mp.lowResPath;
+			medResPath = mp.medResPath;
+			maxResPath = mp.maxResPath;
+
+			searchResult = mp.searchResult;
+
+			start = mp.start;
+			finalGoal = mp.finalGoal;
+
+			peDef   = mp.peDef;
+			moveDef = mp.moveDef;
+			caller  = mp.caller;
+
+			return *this;
+		}
 		MultiPath& operator = (MultiPath&& mp) {
 			lowResPath = std::move(mp.lowResPath);
 			medResPath = std::move(mp.medResPath);
@@ -88,13 +115,15 @@ public:
 	void DeletePath(unsigned int pathID) override {
 		if (pathID == 0)
 			return;
+		{
+			const std::lock_guard<std::mutex> lock(pathMapUpdate);
+			const auto pi = pathMap.find(pathID);
 
-		const auto pi = pathMap.find(pathID);
+			if (pi == pathMap.end())
+				return;
 
-		if (pi == pathMap.end())
-			return;
-
-		pathMap.erase(pi);
+			pathMap.erase(pi);
+		}
 	}
 
 
@@ -146,17 +175,22 @@ public:
 
 	int2 GetNumQueuedUpdates() const override;
 
-
-	const CPathFinder* GetMaxResPF() const { return maxResPF; }
-	const CPathEstimator* GetMedResPE() const { return medResPE; }
-	const CPathEstimator* GetLowResPE() const { return lowResPE; }
+	const CPathFinder* GetMaxResPF() const;
+	const CPathEstimator* GetMedResPE() const;
+	const CPathEstimator* GetLowResPE() const;
+	const PathingState* GetMedResPS() const;
+	const PathingState* GetLowResPS() const;
 
 	const PathFlowMap* GetPathFlowMap() const { return pathFlowMap; }
 	const PathHeatMap* GetPathHeatMap() const { return pathHeatMap; }
+	int GetPathFinderGroups() const { return pathFinderGroups; }
 
 	const spring::unordered_map<unsigned int, MultiPath>& GetPathMap() const { return pathMap; }
 
 private:
+
+	void InitStatic();
+
 	IPath::SearchResult ArrangePath(
 		MultiPath* newPath,
 		const MoveDef* moveDef,
@@ -165,9 +199,27 @@ private:
 		CSolidObject* caller
 	) const;
 
-	MultiPath* GetMultiPath(int pathID) { return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
+	MultiPath* GetMultiPath(int pathID) {return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
+
+	// Used by MT code - a copy must be taken
+	MultiPath GetMultiPathMT(int pathID) const {
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const auto pi = pathMap.find(pathID);
+		if (pi == pathMap.end())
+			return MultiPath();
+		return pi->second;
+	}
+
+	// Used by MT code
+	void UpdateMultiPathMT(int pathID, MultiPath& updatedPath) {
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const auto pi = pathMap.find(pathID);
+		if (pi != pathMap.end())
+			pi->second = updatedPath;
+	}
 
 	const MultiPath* GetMultiPathConst(int pathID) const {
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
 		const auto pi = pathMap.find(pathID);
 		if (pi == pathMap.end())
 			return nullptr;
@@ -175,8 +227,13 @@ private:
 	}
 
 	unsigned int Store(MultiPath& path) {
-		pathMap[++nextPathID] = std::move(path);
-		return nextPathID;
+		unsigned int assignedId = 0;
+		{
+			const std::lock_guard<std::mutex> lock(pathMapUpdate);
+			assignedId = ++nextPathID;
+			pathMap[assignedId] = std::move(path);
+		}
+		return assignedId;
 	}
 
 
@@ -185,12 +242,17 @@ private:
 	void LowRes2MedRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
 	void MedRes2MaxRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
 
-	bool IsFinalized() const { return (maxResPF != nullptr); }
+	//bool IsFinalized() const { return (maxResPF != nullptr); }
+	bool IsFinalized() const { return finalized; }
+
+	bool SupportsMultiThreadedRequests() const; //{ return true; }
+	void SavePathCacheForPathId(int pathIdToSave) override;
 
 private:
-	CPathFinder* maxResPF;
-	CPathEstimator* medResPE;
-	CPathEstimator* lowResPE;
+	mutable std::mutex pathMapUpdate;
+
+
+	bool finalized = false;
 
 	PathFlowMap* pathFlowMap;
 	PathHeatMap* pathHeatMap;
@@ -198,6 +260,21 @@ private:
 	spring::unordered_map<unsigned int, MultiPath> pathMap;
 
 	unsigned int nextPathID;
+
+	std::int32_t frameNumToRefreshPathStateWorkloadRatio = 0;
+	std::uint32_t pathStateWorkloadRatio = 0;
+
+	int pathFinderGroups = 0;
+
+	PathingState* highPriorityResPS;
+	PathingState* lowPriorityResPS;
+	CPathEstimator* medResPEs;
+	CPathEstimator* lowResPEs;
+	CPathFinder* maxResPFs;
+
+	std::vector<IPathFinder*> pathFinders;
 };
+
+}
 
 #endif

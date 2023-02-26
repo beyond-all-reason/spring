@@ -509,9 +509,6 @@ static void DrawInfoText(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			case NOPFS_TYPE: {
 				font->glFormat(0.01f, 0.12f, 0.5f, DBG_FONT_FLAGS | FONT_BUFFERED, pfsFmtStr, "NO", pfsUpdates.x, pfsUpdates.y);
 			} break;
-			case TKPFS_TYPE: {
-				font->glFormat(0.01f, 0.12f, 0.5f, DBG_FONT_FLAGS | FONT_BUFFERED, pfsFmtStr, "TK", pfsUpdates.x, pfsUpdates.y);
-			} break;
 			case HAPFS_TYPE: {
 				font->glFormat(0.01f, 0.12f, 0.5f, DBG_FONT_FLAGS | FONT_BUFFERED, pfsFmtStr, "HA", pfsUpdates.x, pfsUpdates.y);
 			} break;

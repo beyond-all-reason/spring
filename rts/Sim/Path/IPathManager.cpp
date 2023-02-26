@@ -1,9 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IPathManager.h"
-#include "Default/PathManager.h"
 #include "QTPFS/PathManager.hpp"
-#include "TKPFS/PathManager.h"
+#include "HAPFS/PathManager.h"
 #include "System/Log/ILog.h"
 
 IPathManager nullPathManager;
@@ -15,10 +14,9 @@ IPathManager* IPathManager::GetInstance(int type) {
 		const char* typeStr = "";
 
 		switch (type) {
-			case NOPFS_TYPE: { typeStr = "NO";                                         } break;
-			case HAPFS_TYPE: { typeStr = "HA"; pathManager = new       CPathManager(); } break;
-			case QTPFS_TYPE: { typeStr = "QT"; pathManager = new QTPFS::PathManager(); } break;
-			case TKPFS_TYPE: { typeStr = "TK"; pathManager = new TKPFS::CPathManager(); } break;
+			case NOPFS_TYPE: { typeStr = "NO";                                          } break;
+			case HAPFS_TYPE: { typeStr = "HA"; pathManager = new HAPFS::CPathManager(); } break;
+			case QTPFS_TYPE: { typeStr = "QT"; pathManager = new QTPFS::PathManager();  } break;
 		}
 
 		LOG(fmtStr, __func__, typeStr);

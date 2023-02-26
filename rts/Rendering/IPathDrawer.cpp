@@ -1,14 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "IPathDrawer.h"
-#include "DefaultPathDrawer.h"
 #include "QTPFSPathDrawer.h"
-#include "TKPFSPathDrawer.h"
+#include "HAPFSPathDrawer.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Path/IPathManager.h"
-#include "Sim/Path/Default/PathManager.h"
+#include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Path/QTPFS/PathManager.hpp"
-#include "Sim/Path/TKPFS/PathManager.h"
+#include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
@@ -21,11 +20,8 @@ IPathDrawer* IPathDrawer::GetInstance() {
 		if (dynamic_cast<QTPFS::PathManager*>(pathManager) != nullptr)
 			return (pathDrawer = new QTPFSPathDrawer());
 
-		if (dynamic_cast<CPathManager*>(pathManager) != nullptr)
-			return (pathDrawer = new DefaultPathDrawer());
-
-		if (dynamic_cast<TKPFS::CPathManager*>(pathManager) != nullptr)
-			return (pathDrawer = new TKPFSPathDrawer());
+		if (dynamic_cast<HAPFS::CPathManager*>(pathManager) != nullptr)
+			return (pathDrawer = new HAPFSPathDrawer());
 
 		pathDrawer = new IPathDrawer();
 	}

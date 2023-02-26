@@ -11,7 +11,7 @@
 #define MAX_PATH_LIFETIME_SECS   6
 #define USE_NONCOLLIDABLE_HASH   1
 
-namespace TKPFS {
+namespace HAPFS {
 
 CPathCache::CPathCache(int blocksX, int blocksZ)
 	: numBlocksX(blocksX)
