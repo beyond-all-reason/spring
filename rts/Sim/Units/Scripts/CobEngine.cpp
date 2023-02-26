@@ -62,8 +62,16 @@ bool CCobEngine::RemoveThread(int threadID) {
 	return false;
 }
 
-void CCobEngine::AddQueuedThreads() {
+void CCobEngine::ProcessQueuedThreads() {
 	ZoneScoped;
+
+	// Remove threads killed during Tick by other thread (SIGNAL), we do it
+	// here as nothing is actively referencing any thread's memory here.
+	for (int threadID: tickRemovedThreads) {
+		RemoveThread(threadID);
+	}
+	tickRemovedThreads.clear();
+
 	// move new threads spawned by START into threadInstances;
 	// their ID's will already have been scheduled into either
 	// waitingThreadIDs or sleepingThreadIDs
@@ -177,10 +185,10 @@ void CCobEngine::Tick(int deltaTime)
 	currentTime += deltaTime;
 
 	TickRunningThreads();
-	AddQueuedThreads();
+	ProcessQueuedThreads();
 
 	WakeSleepingThreads();
-	AddQueuedThreads();
+	ProcessQueuedThreads();
 }
 
 

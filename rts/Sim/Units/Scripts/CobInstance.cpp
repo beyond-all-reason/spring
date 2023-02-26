@@ -590,7 +590,7 @@ int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& ar
 	}
 
 	// handle any spawned threads
-	cobEngine->AddQueuedThreads();
+	cobEngine->ProcessQueuedThreads();
 	return ret;
 }
 
@@ -708,6 +708,7 @@ void CCobInstance::Signal(int signal)
 			continue;
 
 		t->SetState(CCobThread::Dead);
+		cobEngine->QueueRemoveThread(t->GetID());
 	}
 }
 
