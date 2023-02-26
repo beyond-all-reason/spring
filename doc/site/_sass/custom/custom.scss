@@ -173,11 +173,11 @@
 // unvendored do not remove
 html[data-theme="dark"] button.theme-toggle, button.theme-toggle {
   height: 100%;
-  margin: 0 1rem;
+  margin: 0 0 0 1rem;
 }
 
 /* Enlarged dt inside dl */
-.main-content dl.big-dt {
+.main-content dl.big-dt, html[data-theme="dark"] dl.big-dt {
   grid-template: auto / fit-content(20em) 1fr;
 }
 
