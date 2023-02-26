@@ -506,7 +506,25 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(PATCH_DEFAULT_OUTER_LEVEL);
 	PUSH_GL(PATCH_DEFAULT_INNER_LEVEL);
 
-	// Modern OpenGL data types
+	/***
+	 * OpenGL Data Types
+	 * @section OpenGL_Data_Types
+	 */
+
+	/***
+	 * @table GL
+	 * @number BYTE
+	 * @number UNSIGNED_BYTE
+	 * @number SHORT
+	 * @number UNSIGNED_SHORT
+	 * @number INT
+	 * @number UNSIGNED_INT
+	 * @number FLOAT
+	 * @number FLOAT_VEC4
+	 * @number INT_VEC4
+	 * @number UNSIGNED_INT_VEC4
+	 * @number FLOAT_MAT4
+	 */
 	PUSH_GL(BYTE);
 	PUSH_GL(UNSIGNED_BYTE);
 	PUSH_GL(SHORT);
@@ -519,7 +537,19 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(UNSIGNED_INT_VEC4);
 	PUSH_GL(FLOAT_MAT4);
 
-	//Modern OpenGL buffer types
+	/***
+	 * OpenGL Buffer Types
+	 * @section OpenGL_Buffer_Types
+	 */
+
+	/***
+	 * @table GL
+	 * @number ELEMENT_ARRAY_BUFFER
+	 * @number ARRAY_BUFFER
+	 * @number UNIFORM_BUFFER
+	 * @number SHADER_STORAGE_BUFFER
+	 *
+	 */
 	PUSH_GL(ELEMENT_ARRAY_BUFFER);
 	PUSH_GL(ARRAY_BUFFER);
 	PUSH_GL(UNIFORM_BUFFER);

@@ -15,6 +15,16 @@
 
 #include "LuaUtils.h"
 
+
+/******************************************************************************
+ * Vertex Array Object
+ * @classmod VAO
+ *
+ * @see LuaVAO.GetVAO
+ * @see rts/Lua/LuaVAOImpl.cpp
+******************************************************************************/
+
+
 LuaVAOImpl::LuaVAOImpl()
 	: vao{nullptr}
 
@@ -25,6 +35,12 @@ LuaVAOImpl::LuaVAOImpl()
 	, baseInstance{0u}
 {}
 
+
+/***
+ *
+ * @function VAO:Delete
+ * @treturn nil
+ */
 void LuaVAOImpl::Delete()
 {
 	vertLuaVBO = nullptr;
@@ -73,16 +89,37 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 	}
 }
 
+
+/*** Attachs a VBO to be used as a vertex buffer
+ *
+ * @function VAO:AttachVertexBuffer
+ * @tparam VBO vbo
+ * @treturn nil
+ */
 void LuaVAOImpl::AttachVertexBuffer(const LuaVBOImplSP& luaVBO)
 {
 	AttachBufferImpl(luaVBO, vertLuaVBO, GL_ARRAY_BUFFER);
 }
 
+
+/*** Attachs a VBO to be used as an instance buffer
+ *
+ * @function VAO:AttachInstanceBuffer
+ * @tparam VBO vbo
+ * @treturn nil
+ */
 void LuaVAOImpl::AttachInstanceBuffer(const LuaVBOImplSP& luaVBO)
 {
 	AttachBufferImpl(luaVBO, instLuaVBO, GL_ARRAY_BUFFER);
 }
 
+
+/*** Attachs a VBO to be used as an index buffer
+ *
+ * @function VAO:AttachIndexBuffer
+ * @tparam VBO vbo
+ * @treturn nil
+ */
 void LuaVAOImpl::AttachIndexBuffer(const LuaVBOImplSP& luaVBO)
 {
 	AttachBufferImpl(luaVBO, indxLuaVBO, GL_ELEMENT_ARRAY_BUFFER);
@@ -329,6 +366,18 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 	return result;
 }
 
+
+/***
+ *
+ * @function VAO:DrawArrays
+ * @number glEnum primitivesMode
+ * @number[opt] numVertices
+ * @number[opt] vertexCount
+ * @number[opt] vertexFirst
+ * @number[opt] instanceCount
+ * @number[opt] instanceFirst
+ * @treturn nil
+ */
 void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
 {
 	DrawCheckInput inputs = {
@@ -355,6 +404,18 @@ void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, so
 	vao->Unbind();
 }
 
+
+/***
+ *
+ * @function VAO:DrawElements
+ * @number glEnum primitivesMode
+ * @number[opt] drawCount
+ * @number[opt] baseIndex
+ * @number[opt] instanceCount
+ * @number[opt] baseVertex
+ * @number[opt] baseInstance
+ * @treturn nil
+ */
 void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt)
 {
 	DrawCheckInput inputs = {
@@ -405,18 +466,53 @@ void LuaVAOImpl::ClearSubmission()
 	submitCmds.clear();
 }
 
+
+/***
+ *
+ * @function VAO:AddUnitsToSubmission
+ * @tparam number|{number,...} unitIDs
+ * @treturn number submittedCount
+ */
 int LuaVAOImpl::AddUnitsToSubmission(int id) { return AddObjectsToSubmissionImpl<CUnit>(id); }
 int LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids) { return  AddObjectsToSubmissionImpl<CUnit>(ids); }
 
+
+/***
+ *
+ * @function VAO:AddFeaturesToSubmission
+ * @tparam number|{number,...} featureIDs
+ * @treturn number submittedCount
+ */
 int LuaVAOImpl::AddFeaturesToSubmission(int id) { return AddObjectsToSubmissionImpl<CFeature>(id); }
 int LuaVAOImpl::AddFeaturesToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<CFeature>(ids); }
 
+
+/***
+ *
+ * @function VAO:AddUnitDefsToSubmission
+ * @tparam number|{number,...} unitDefIDs
+ * @treturn number submittedCount
+ */
 int LuaVAOImpl::AddUnitDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<UnitDef>(id); }
 int LuaVAOImpl::AddUnitDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<UnitDef>(ids); }
 
+
+/***
+ *
+ * @function VAO:AddFeatureDefsToSubmission
+ * @tparam number|{number,...} featureDefIDs
+ * @treturn number submittedCount
+ */
 int LuaVAOImpl::AddFeatureDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<FeatureDef>(id); }
 int LuaVAOImpl::AddFeatureDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<FeatureDef>(ids); }
 
+
+/***
+ *
+ * @function VAO:RemoveFromSubmission
+ * @tparam number index
+ * @treturn nil
+ */
 void LuaVAOImpl::RemoveFromSubmission(int idx)
 {
 	if (idx < 0 || idx >= submitCmds.size()) {
@@ -433,6 +529,12 @@ void LuaVAOImpl::RemoveFromSubmission(int idx)
 	}
 }
 
+
+/***
+ *
+ * @function VAO:Submit
+ * @treturn nil
+ */
 void LuaVAOImpl::Submit()
 {
 	glEnable(GL_PRIMITIVE_RESTART);

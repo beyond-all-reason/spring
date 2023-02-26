@@ -7,8 +7,7 @@
 
 
 /******************************************************************************
- * Vertex Array Objects
- * @module VAO
+ * @module LuaVAO
  *
  * @see rts/Lua/LuaVAO.cpp
 ******************************************************************************/
@@ -74,6 +73,15 @@ LuaVAOs::~LuaVAOs()
 	luaVAOs.clear();
 }
 
+
+/***
+ *
+ * @function gl.GetVAO
+ * @treturn nil|VAO the VAO ref on success, else nil
+ * @usage
+ * local myVAO = gl.GetVAO()
+ * if myVAO == nil then Spring.Echo(“Failed to get VAO”) end
+ */
 int LuaVAOs::GetVAO(lua_State* L)
 {
 	if (!LuaVAOImpl::Supported()) {
