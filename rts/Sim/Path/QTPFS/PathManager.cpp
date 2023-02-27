@@ -301,7 +301,6 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	char loadMsg[512] = {'\0'};
 	const char* fmtString = "[PathManager::%s] using %u threads for %u node-layers (%s)";
 
-	#ifdef QTPFS_OPENMP_ENABLED
 	{
 		sprintf(loadMsg, fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size(), (haveCacheDir? "cached": "uncached"));
 		pmLoadScreen.AddMessage(loadMsg);
@@ -336,55 +335,8 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			#endif
 		});
 	}
-	#else
-	{
-		sprintf(loadMsg, fmtString, __func__, GetNumThreads(), nodeLayers.size(), (haveCacheDir? "cached": "uncached"));
-		pmLoadScreen.AddMessage(loadMsg);
-
-		SpawnSpringThreads(&PathManager::InitNodeLayersThread, rect);
-	}
-	#endif
 
 	streflop::streflop_init<streflop::Simple>();
-}
-
-__FORCE_ALIGN_STACK__
-void QTPFS::PathManager::InitNodeLayersThread(
-	unsigned int threadNum,
-	unsigned int numThreads,
-	const SRectangle& rect
-) {
-	const unsigned int layersPerThread = (nodeLayers.size() / numThreads);
-	const unsigned int numExcessLayers = (threadNum == (numThreads - 1))?
-		(nodeLayers.size() % numThreads): 0;
-
-	const unsigned int minLayer = threadNum * layersPerThread;
-	const unsigned int maxLayer = minLayer + layersPerThread + numExcessLayers;
-
-	#ifndef NDEBUG
-	char loadMsg[512] = {'\0'};
-	const char* preFmtStr = "  initializing node-layer %u (thread %u)";
-	const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
-	#endif
-
-	for (unsigned int layerNum = minLayer; layerNum < maxLayer; layerNum++) {
-		#ifndef NDEBUG
-		sprintf(loadMsg, preFmtStr, layerNum, threadNum);
-		pmLoadScreen.AddMessage(loadMsg);
-		#endif
-
-		InitNodeLayer(layerNum, rect);
-		UpdateNodeLayer(layerNum, rect);
-
-		const QTNode* tree = nodeTrees[layerNum];
-		const NodeLayer& layer = nodeLayers[layerNum];
-		const unsigned int mem = (tree->GetMemFootPrint(layer) + layer.GetMemFootPrint()) / (1024 * 1024);
-
-		#ifndef NDEBUG
-		sprintf(loadMsg, pstFmtStr, layerNum, mem, layer.GetNumLeafNodes(), layer.GetNodeRatio());
-		pmLoadScreen.AddMessage(loadMsg);
-		#endif
-	}
 }
 
 void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& r) {
@@ -474,70 +426,6 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 		#endif
 	}
 }
-
-
-
-#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-void QTPFS::PathManager::QueueNodeLayerUpdates(const SRectangle& r) {
-	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
-		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
-
-		SRectangle mr;
-		// SRectangle ur;
-
-		mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
-		mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
-		mr.x2 = std::min((r.x2 + md->xsizeh) + int(QTNode::MinSizeX() >> 1), mapDims.mapx);
-		mr.z2 = std::min((r.z2 + md->zsizeh) + int(QTNode::MinSizeZ() >> 1), mapDims.mapy);
-
-		nodeLayers[layerNum].QueueUpdate(mr, md);
-	}
-}
-
-void QTPFS::PathManager::ExecQueuedNodeLayerUpdates(unsigned int layerNum, bool flushQueue) {
-	// flush this layer's entire update-queue if necessary
-	// (otherwise eat through 5 percent of it s.t. updates
-	// do not pile up faster than we consume them)
-	//
-	// called at run-time only, not load-time so we always
-	// *want* (as opposed to need) a tesselation pass here
-	//
-	unsigned int maxExecutedUpdates = nodeLayers[layerNum].NumQueuedUpdates() * 0.05f;
-	unsigned int numExecutedUpdates = 0;
-
-	while (nodeLayers[layerNum].HaveQueuedUpdate()) {
-		const LayerUpdate& lu = nodeLayers[layerNum].GetQueuedUpdate();
-		const SRectangle& mr = lu.rectangle;
-
-		SRectangle ur = mr;
-
-		if (nodeLayers[layerNum].ExecQueuedUpdate()) {
-			nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], mr, ur, 0);
-			pathCaches[layerNum].MarkDeadPaths(mr);
-
-			#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-			// NOTE:
-			//   since any terrain changes have already happened when we start eating
-			//   through the queue for this layer, <numTerrainChanges> would have the
-			//   same value for each queued update we consume and is not useful here:
-			//   in case queue-item j referenced some or all of the same nodes as item
-			//   i (j > i), it could cause nodes updated during processing of i to not
-			//   be updated again when j gets processed --> dangling neighbor pointers
-			//
-			nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, lu.counter);
-			#endif
-		}
-
-		nodeLayers[layerNum].PopQueuedUpdate();
-
-		if ((!flushQueue) && ((numExecutedUpdates += 1) >= maxExecutedUpdates)) {
-			// no pending searches this frame, stop flushing
-			break;
-		}
-	}
-}
-#endif
-
 
 
 std::string QTPFS::PathManager::GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const {
@@ -655,16 +543,6 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 	// maximum depth automatically
 	numTerrainChanges += 1;
 
-	// #ifdef QTPFS_STAGGERED_LAYER_UPDATES
-	// // defer layer-updates to ::Update so we can stagger them
-	// // this may or may not be more efficient than updating all
-	// // layers right away, depends on many factors
-	// QueueNodeLayerUpdates(SRectangle(static_cast<int>(x1), static_cast<int>(z1),  static_cast<int>(x2), static_cast<int>(z2)));
-	// #else
-	// // update all layers right now for this change-event
-	// UpdateNodeLayersThreaded(SRectangle(x1, z1,  x2, z2));
-	// #endif
-
 	MapChanged(x1, z1, x2, z2);
 }
 
@@ -711,28 +589,34 @@ void QTPFS::PathManager::Update() {
 	// #else
 	// ThreadUpdate();
 	// #endif
+	{
+		SCOPED_TIMER("Sim::Path::Requests");
+		ThreadUpdate();
+	}
 
-	ThreadUpdate();
+	{
+		// start off with simple update
+		if (mapChangeTrack.damageQueue.empty()) return;
 
-	// start off with simple update
-	if (mapChangeTrack.damageQueue.empty()) return;
+		SCOPED_TIMER("Sim::Path::MapUpdates");
 
-	const int sectorId = mapChangeTrack.damageQueue.front();
-	const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-	const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-	SRectangle rect
-		( blockIdxX
-		, blockIdxY
-		, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
-		, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
-		);
+		const int sectorId = mapChangeTrack.damageQueue.front();
+		const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+		SRectangle rect
+			( blockIdxX
+			, blockIdxY
+			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+			);
 
-	for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
-		UpdateNodeLayer(layerNum, rect);
-	});
+		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
+			UpdateNodeLayer(layerNum, rect);
+		});
 
-	mapChangeTrack.damageMap[sectorId] = false;
-	mapChangeTrack.damageQueue.pop_front();
+		mapChangeTrack.damageMap[sectorId] = false;
+		mapChangeTrack.damageQueue.pop_front();
+	}
 }
 
 __FORCE_ALIGN_STACK__
@@ -765,16 +649,13 @@ void QTPFS::PathManager::ThreadUpdate() {
 		sharedPaths.clear();
 
 		for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
+		//for_mt(minPathTypeUpdate, maxPathTypeUpdate, [this](unsigned int pathTypeUpdate){
 			#ifndef QTPFS_IGNORE_DEAD_PATHS
 			QueueDeadPathSearches(pathTypeUpdate);
 			#endif
 
-			#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-			// NOTE: *must* be called between QueueDeadPathSearches and ExecuteQueuedSearches
-			ExecQueuedNodeLayerUpdates(pathTypeUpdate, !pathSearches[pathTypeUpdate].empty());
-			#endif
-
 			ExecuteQueuedSearches(pathTypeUpdate);
+		//});
 		}
 
 		std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
@@ -806,13 +687,13 @@ void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
 	std::vector<IPathSearch*>& searches = pathSearches[pathType];
 	std::vector<IPathSearch*>::iterator searchesIt = searches.begin();
 
-	if (!searches.empty()) {
-		// execute pending searches collected via
-		// RequestPath and QueueDeadPathSearches
-		while (searchesIt != searches.end()) {
-			if (ExecuteSearch(searches, searchesIt, nodeLayer, pathCache, pathType)) {
-				searchStateOffset += NODE_STATE_OFFSET;
-			}
+	if (searches.empty()) return;
+
+	// execute pending searches collected via
+	// RequestPath and QueueDeadPathSearches
+	while (searchesIt != searches.end()) {
+		if (ExecuteSearch(searches, searchesIt, nodeLayer, pathCache, pathType)) {
+			searchStateOffset += NODE_STATE_OFFSET;
 		}
 	}
 }
@@ -1197,14 +1078,8 @@ void QTPFS::PathManager::GetPathWayPoints(
 int2 QTPFS::PathManager::GetNumQueuedUpdates() const {
 	int2 data;
 
-	#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-	if (IsFinalized()) {
-		for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
-			data.x += (nodeLayers[layerNum].HaveQueuedUpdate());
-			data.y += (nodeLayers[layerNum].NumQueuedUpdates());
-		}
-	}
-	#endif
+	data.x = 1;
+	data.y = mapChangeTrack.damageQueue.size();
 
 	return data;
 }

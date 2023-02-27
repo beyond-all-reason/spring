@@ -66,52 +66,7 @@ void QTPFS::NodeLayer::Clear() {
 	oldSpeedMods.clear();
 	oldSpeedBins.clear();
 	curSpeedBins.clear();
-
-	#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-	layerUpdates.clear();
-	#endif
 }
-
-
-
-#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-void QTPFS::NodeLayer::QueueUpdate(const SRectangle& r, const MoveDef* md) {
-	layerUpdates.emplace_back();
-	LayerUpdate& layerUpdate = layerUpdates.back();
-
-	// the first update MUST have a non-zero counter
-	// since all nodes are at 0 after initialization
-	layerUpdate.rectangle = r;
-	layerUpdate.speedMods.resize(r.GetArea());
-	layerUpdate.blockBits.resize(r.GetArea());
-	layerUpdate.counter = ++updateCounter;
-
-	// make a snapshot of the terrain-state within <r>
-	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
-		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
-			const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
-
-			const unsigned int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const unsigned int chmz = Clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
-
-			layerUpdate.speedMods[recIdx] = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
-			layerUpdate.blockBits[recIdx] = CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr);
-			// layerUpdate.blockBits[recIdx] = CMoveMath::SquareIsBlocked(*md, hmx, hmz, nullptr);
-		}
-	}
-}
-
-bool QTPFS::NodeLayer::ExecQueuedUpdate() {
-	const LayerUpdate& layerUpdate = layerUpdates.front();
-	const SRectangle& rectangle = layerUpdate.rectangle;
-
-	const std::vector<float>* speedMods = &layerUpdate.speedMods;
-	const std::vector<  int>* blockBits = &layerUpdate.blockBits;
-
-	return (Update(rectangle, moveDefHandler.GetMoveDefByPathType(layerNumber), speedMods, blockBits));
-}
-#endif
-
 
 
 bool QTPFS::NodeLayer::Update(

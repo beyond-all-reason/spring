@@ -17,17 +17,6 @@ struct MoveDef;
 namespace QTPFS {
 	struct INode;
 
-	#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-	struct LayerUpdate {
-		SRectangle rectangle;
-
-		std::vector<float> speedMods;
-		std::vector<int  > blockBits;
-
-		unsigned int counter;
-	};
-	#endif
-
 	struct NodeLayer {
 	public:
 		typedef unsigned char SpeedModType;
@@ -45,15 +34,6 @@ namespace QTPFS {
 
 		void Init(unsigned int layerNum);
 		void Clear();
-
-		#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-		void QueueUpdate(const SRectangle& r, const MoveDef* md);
-		void PopQueuedUpdate() { layerUpdates.pop_front(); }
-		bool ExecQueuedUpdate();
-		bool HaveQueuedUpdate() const { return (!layerUpdates.empty()); }
-		const LayerUpdate& GetQueuedUpdate() const { return (layerUpdates.front()); }
-		unsigned int NumQueuedUpdates() const { return (layerUpdates.size()); }
-		#endif
 
 		bool Update(
 			const SRectangle& r,
@@ -139,10 +119,6 @@ namespace QTPFS {
 		std::vector<SpeedModType> oldSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
 		std::vector<SpeedBinType> oldSpeedBins;
-
-		#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-		std::deque<LayerUpdate> layerUpdates;
-		#endif
 
 		// root lives outside pool s.t. all four children of a given node are always in one chunk
 		QTNode rootNode;

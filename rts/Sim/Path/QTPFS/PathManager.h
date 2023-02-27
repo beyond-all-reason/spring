@@ -115,11 +115,6 @@ namespace QTPFS {
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void UpdateNodeLayersThreaded(const SRectangle& rect);
-		void InitNodeLayersThread(
-			unsigned int threadNum,
-			unsigned int numThreads,
-			const SRectangle& rect
-		);
 		void UpdateNodeLayersThread(
 			unsigned int threadNum,
 			unsigned int numThreads,
@@ -127,11 +122,6 @@ namespace QTPFS {
 		);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
-
-		#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-		void QueueNodeLayerUpdates(const SRectangle& r);
-		void ExecQueuedNodeLayerUpdates(unsigned int layerNum, bool flushQueue);
-		#endif
 
 		void ExecuteQueuedSearches(unsigned int pathType);
 		void QueueDeadPathSearches(unsigned int pathType);
