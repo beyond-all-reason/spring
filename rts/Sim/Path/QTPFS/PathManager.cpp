@@ -712,6 +712,8 @@ void QTPFS::PathManager::Update() {
 	// ThreadUpdate();
 	// #endif
 
+	ThreadUpdate();
+
 	// start off with simple update
 	if (mapChangeTrack.damageQueue.empty()) return;
 
@@ -754,7 +756,7 @@ void QTPFS::PathManager::ThreadUpdate() {
 		//     (N / LAYERS_PER_UPDATE) sim-frames before its request
 		//     executes at a minimum
 		const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
-		const unsigned int numPathTypeUpdates = std::min(static_cast<unsigned int>(nodeLayers.size()), layersPerUpdateTmp);
+		const unsigned int numPathTypeUpdates = nodeLayers.size();
 
 		// NOTE: thread-safe (only ONE thread ever accesses these)
 		static unsigned int minPathTypeUpdate = 0;
