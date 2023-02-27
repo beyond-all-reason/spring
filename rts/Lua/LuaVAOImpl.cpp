@@ -349,10 +349,7 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 	result.instCount = std::max(inputs.instCount.value_or(0), 0); // 0 - forces ordinary version, while 1 - calls *Instanced()
 
 	if (result.instCount > 0) {
-		if (!instLuaVBO)
-			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested rendering of [%d] instances, but no instance buffer is attached. Did you succesfully call vao:AttachInstanceBuffer()?", __func__, result.instCount);
-
-		if (result.instCount > instLuaVBO->elementsCount - result.baseInstance)
+		if (instLuaVBO && (result.instCount > instLuaVBO->elementsCount - result.baseInstance))
 			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Requested number of instances %d with offset %d exceeds buffer size %u", __func__, result.instCount, result.baseInstance, instLuaVBO->elementsCount);
 	}
 	else {
