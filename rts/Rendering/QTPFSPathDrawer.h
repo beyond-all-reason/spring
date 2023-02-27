@@ -29,6 +29,7 @@ public:
 
 	void DrawAll() const override;
 	void UpdateExtraTexture(int, int, int, int, unsigned char*) const override;
+	void DrawInMiniMap();
 
 private:
 	void DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes) const;

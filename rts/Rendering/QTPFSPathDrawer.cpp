@@ -3,6 +3,7 @@
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/UI/MiniMap.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -390,4 +391,42 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 #else
 void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int offset, unsigned char* texMem) const {}
 #endif
+
+void QTPFSPathDrawer::DrawInMiniMap()
+{
+	auto mct = pm->GetMapChangeTrack();
+
+	if (!IsEnabled() || (!gs->cheatEnabled && !gu->spectatingFullView))
+		return;
+
+	glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
+		minimap->ApplyConstraintsMatrix();
+	glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		glTranslatef3(UpVector);
+		glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
+
+	glDisable(GL_TEXTURE_2D);
+	glColor4f(1.0f, 1.0f, 0.0f, 0.7f);
+
+	const int blockSize = QTPFS::PathManager::DAMAGE_MAP_BLOCK_SIZE;
+
+	for (auto i: mct.damageQueue) {
+		const int blockIdxX = (i % mct.width) * blockSize;
+		const int blockIdxY = (i / mct.width) * blockSize;
+		glRectf(blockIdxX, blockIdxY, blockIdxX + blockSize, blockIdxY + blockSize);
+	}
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable(GL_TEXTURE_2D);
+
+	glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+}
 

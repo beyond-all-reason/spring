@@ -146,6 +146,8 @@ QTPFS::PathManager::~PathManager() {
 	pathSearches.clear();
 	pathTypes.clear();
 	pathTraces.clear();
+	mapChangeTrack.damageMap.clear();
+	mapChangeTrack.damageQueue.clear();
 
 	numCurrExecutedSearches.clear();
 	numPrevExecutedSearches.clear();
@@ -197,6 +199,10 @@ void QTPFS::PathManager::Load() {
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
 	pathCaches.resize(moveDefHandler.GetNumMoveDefs());
 	pathSearches.resize(moveDefHandler.GetNumMoveDefs());
+
+	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
+	mapChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
+	mapChangeTrack.damageMap.resize(mapChangeTrack.width*mapChangeTrack.height);
 
 	// add one extra element for object-less requests
 	numCurrExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
@@ -444,24 +450,24 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 
 	// adjust the borders so we are not left with "rims" of
 	// impassable squares when eg. a structure is reclaimed
-	SRectangle mr;
-	SRectangle ur;
+	// SRectangle mr;
+	SRectangle ur(r);
 
-	mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
-	mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
-	mr.x2 = std::min((r.x2 + md->xsizeh) + int(QTNode::MinSizeX() >> 1), mapDims.mapx);
-	mr.z2 = std::min((r.z2 + md->zsizeh) + int(QTNode::MinSizeZ() >> 1), mapDims.mapy);
-	ur.x1 = mr.x1;
-	ur.z1 = mr.z1;
-	ur.x2 = mr.x2;
-	ur.z2 = mr.z2;
+	// mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
+	// mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
+	// mr.x2 = std::min((r.x2 + md->xsizeh) + int(QTNode::MinSizeX() >> 1), mapDims.mapx);
+	// mr.z2 = std::min((r.z2 + md->zsizeh) + int(QTNode::MinSizeZ() >> 1), mapDims.mapy);
+	// ur.x1 = mr.x1;
+	// ur.z1 = mr.z1;
+	// ur.x2 = mr.x2;
+	// ur.z2 = mr.z2;
 
 	const bool wantTesselation = (layersInited || !haveCacheDir);
-	const bool needTesselation = nodeLayers[layerNum].Update(mr, md);
+	const bool needTesselation = nodeLayers[layerNum].Update(r, md);
 
 	if (needTesselation && wantTesselation) {
-		nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], mr, ur, 0);
-		pathCaches[layerNum].MarkDeadPaths(mr);
+		nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
+		pathCaches[layerNum].MarkDeadPaths(r);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
@@ -649,26 +655,29 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 	// maximum depth automatically
 	numTerrainChanges += 1;
 
-	#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-	// defer layer-updates to ::Update so we can stagger them
-	// this may or may not be more efficient than updating all
-	// layers right away, depends on many factors
-	QueueNodeLayerUpdates(SRectangle(static_cast<int>(x1), static_cast<int>(z1),  static_cast<int>(x2), static_cast<int>(z2)));
-	#else
-	// update all layers right now for this change-event
-	UpdateNodeLayersThreaded(SRectangle(x1, z1,  x2, z2));
-	#endif
+	// #ifdef QTPFS_STAGGERED_LAYER_UPDATES
+	// // defer layer-updates to ::Update so we can stagger them
+	// // this may or may not be more efficient than updating all
+	// // layers right away, depends on many factors
+	// QueueNodeLayerUpdates(SRectangle(static_cast<int>(x1), static_cast<int>(z1),  static_cast<int>(x2), static_cast<int>(z2)));
+	// #else
+	// // update all layers right now for this change-event
+	// UpdateNodeLayersThreaded(SRectangle(x1, z1,  x2, z2));
+	// #endif
+
+	MapChanged(x1, z1, x2, z2);
 }
 
 void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
-	const int res = mapChangeTrack.damageMap.size();
+	const int res = DAMAGE_MAP_BLOCK_SIZE;
 	const int w = mapChangeTrack.width;
 	const int h = mapChangeTrack.height;
 
-	const int2 min  { std::max(x1 / res, 0)
-					, std::max(y1 / res, 0)};
-	const int2 max  { std::min(x2 / res, (w-1))
-					, std::min(y2 / res, (h-1))};
+	// TODO: add dynamic boundary to calculations
+	const int2 min  { std::max((x1-4) / res, 0)
+					, std::max((y1-4) / res, 0)};
+	const int2 max  { std::min((x2+4) / res, (w-1))
+					, std::min((y2+4) / res, (h-1))};
 
 	for (int y = min.y; y <= max.y; ++y) {
 		int i = min.x + y*w;
@@ -687,21 +696,41 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 void QTPFS::PathManager::Update() {
 	SCOPED_TIMER("Sim::Path");
 
-	#ifdef QTPFS_ENABLE_THREADED_UPDATE
-	streflop::streflop_init<streflop::Simple>();
+	// #ifdef QTPFS_ENABLE_THREADED_UPDATE
+	// streflop::streflop_init<streflop::Simple>();
 
-	std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
+	// std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
 
-	// allow ThreadUpdate to run one iteration
-	condThreadUpdate.notify_one();
+	// // allow ThreadUpdate to run one iteration
+	// condThreadUpdate.notify_one();
 
-	// wait for the ThreadUpdate iteration to finish
-	condThreadUpdated.wait(lock);
+	// // wait for the ThreadUpdate iteration to finish
+	// condThreadUpdated.wait(lock);
 
-	streflop::streflop_init<streflop::Simple>();
-	#else
-	ThreadUpdate();
-	#endif
+	// streflop::streflop_init<streflop::Simple>();
+	// #else
+	// ThreadUpdate();
+	// #endif
+
+	// start off with simple update
+	if (mapChangeTrack.damageQueue.empty()) return;
+
+	const int sectorId = mapChangeTrack.damageQueue.front();
+	const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+	const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+	SRectangle rect
+		( blockIdxX
+		, blockIdxY
+		, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+		, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+		);
+
+	for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
+		UpdateNodeLayer(layerNum, rect);
+	});
+
+	mapChangeTrack.damageMap[sectorId] = false;
+	mapChangeTrack.damageQueue.pop_front();
 }
 
 __FORCE_ALIGN_STACK__
@@ -1000,9 +1029,6 @@ unsigned int QTPFS::PathManager::RequestPath(
 	float radius,
 	bool synced
 ) {
-	// in misc since it is called from many points
-	SCOPED_TIMER("Misc::Path::RequestPath");
-
 	if (!IsFinalized())
 		return 0;
 
