@@ -8,13 +8,13 @@
 #include "Game/UI/MouseHandler.h"
 #include "System/Log/ILog.h"
 
-static float fit_cam_height_to_map(float map_x, float map_y, float fov) {
-    const auto extra_margin = 1.037;
-    const auto fov_coefficient = 1.0/math::tan(fov * math::DEG_TO_RAD) * extra_margin;
-    const auto max_height = 25000.0;
-    return std::min(CGround::GetHeightAboveWater(map_x, map_y, false) +
-                    (fov_coefficient * std::max(map_x / globalRendering->aspectRatio, map_y)),
-                    max_height);
+static float getCamHeightToFitMapInView(float mapx, float mapy, float fov) {
+    static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
+    static constexpr float maxHeight = 25000.0f;
+    const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
+    return std::min(CGround::GetHeightAboveWater(mapx, mapy, false) +
+                    (fovCoefficient * std::max(mapx / globalRendering->aspectRatio, mapy)),
+                    maxHeight);
 }
 
 COverviewController::COverviewController()
@@ -22,7 +22,7 @@ COverviewController::COverviewController()
 	enabled = false;
 	minimizeMinimap = false;
 
-	pos.y = fit_cam_height_to_map(pos.x, pos.z, fov/2.0);
+	pos.y = getCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
 }
 
@@ -59,6 +59,6 @@ bool COverviewController::SetState(const StateMap& sm)
 	// CCameraController::SetState(sm);
 	// always centered, allow only for FOV change
 	SetStateFloat(sm, "fov", fov);
-	pos.y = fit_cam_height_to_map(pos.x, pos.z, fov/2.0);
+	pos.y = getCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
 	return true;
 }
