@@ -66,10 +66,10 @@ template<typename t> struct itype2 : public type2<t> {
 	operator type2<int> () const { return (type2<int>(type2<t>::x, type2<t>::y)); }
 };
 
-
-typedef type2<  int>   int2;
-typedef type2<float> float2;
-typedef itype2<short> short2;
-typedef itype2<unsigned short> ushort2;
+using int2 = type2<int32_t>;
+using uint2 = type2<uint32_t>;
+using float2 = type2<float>;
+using short2 = type2<int16_t>;
+using ushort2 = type2<uint16_t>;
 
 #endif
