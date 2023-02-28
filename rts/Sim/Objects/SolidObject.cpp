@@ -368,7 +368,7 @@ float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, 
 	const float3 curUpDir = float3{updir};
 	const float3 objectUp = mix(UpVector, curUpDir, useObjectNormal);
 	const float3 targetUp = mix(objectUp, groundUp, useGroundNormal);
-	const float3 wantedUp = mix(targetUp, curUpDir, dirSmoothing);
+	const float3 wantedUp = mix(targetUp, curUpDir, dirSmoothing).Normalize();
 
 	return wantedUp;
 }
@@ -392,23 +392,36 @@ void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(h
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
 {
-	updir    = GetWantedUpDir(useGroundNormal, useObjectNormal, dirSmoothing);
-	frontdir = GetVectorFromHeading(heading);
-	rightdir = (frontdir.cross(updir)).Normalize();
-	frontdir = updir.cross(rightdir);
+	const float3 uDir = GetWantedUpDir(useGroundNormal, useObjectNormal, dirSmoothing);
+	UpdateDirVectors(uDir);
 }
 
+void CSolidObject::UpdateDirVectors(const float3& uDir)
+{
+	// set initial rotation of the object around updir=UpVector first
+	const float3 fDir = GetVectorFromHeading(heading);
 
+	if (likely(1.0f - math::fabs(uDir.y) >= 1e-6f)) {
+		const float3 norm = float3{ uDir.z, 0.0f, -uDir.x }.Normalize(); //same as UpVector.cross(uDir) to obtain normal vector, which will serve as a rotation axis
+		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
+	}
+	else {
+		frontdir = fDir;
+	}
+	rightdir = (frontdir.cross(uDir)).Normalize();
+	updir = uDir;
+}
 
-void CSolidObject::ForcedSpin(const float3& newDir)
+void CSolidObject::ForcedSpin(const float3& zdir)
 {
 	// new front-direction should be normalized
-	assert(math::fabsf(newDir.SqLength() - 1.0f) <= float3::cmp_eps());
+	assert(math::fabsf(zdir.SqLength() - 1.0f) <= float3::cmp_eps());
 
 	// if zdir is parallel to world-y, use heading-vector
 	// (or its inverse) as auxiliary to avoid degeneracies
-	const float3 zdir = newDir;
-	const float3 udir = mix(UpVector, (frontdir * Sign(-zdir.y)), (math::fabs(zdir.dot(UpVector)) >= 0.99f));
+
+	const float zdotup = zdir.dot(UpVector);
+	const float3 udir = mix(UpVector, -FwdVector, math::fabs(zdotup) >= 0.999f);
 	const float3 xdir = (zdir.cross(udir)).Normalize();
 	const float3 ydir = (xdir.cross(zdir)).Normalize();
 
