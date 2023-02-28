@@ -102,20 +102,24 @@ void QTPFS::PathCache::DelPath(unsigned int pathID) {
 		tempPaths.erase(it);
 		return;
 	}
-	if ((it = livePaths.find(pathID)) != livePaths.end()) {
-		assert(deadPaths.find(pathID) == deadPaths.end());
-		delete (it->second);
-		livePaths.erase(it);
+	if (ReleaseLivePath(pathID))
 		return;
-	}
+
 	if ((it = deadPaths.find(pathID)) != deadPaths.end()) {
 		delete (it->second);
 		deadPaths.erase(it);
 	}
 }
 
-
-
+bool QTPFS::PathCache::ReleaseLivePath(unsigned int pathID) {
+	PathMapIt it = livePaths.find(pathID);
+	if (it != livePaths.end()) {
+		assert(deadPaths.find(pathID) != deadPaths.end()); // must be in deadPaths or else memory will leak!
+		livePaths.erase(it);
+		return true;
+	}
+	return false;
+}
 
 bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
 	#ifdef QTPFS_IGNORE_DEAD_PATHS
@@ -134,10 +138,13 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
 	// "mark" any live path crossing the area of a terrain
 	// deformation, for which some or all of its waypoints
 	// might now be invalid and need to be recomputed
-	std::vector<PathMapIt> livePathIts;
-	livePathIts.reserve(livePaths.size());
+	// TODO: remove this - may hold an 'good' list instead? ...
+	// std::vector<PathMapIt> livePathIts;
+	// livePathIts.reserve(livePaths.size());
 
 	for (PathMapIt it = livePaths.begin(); it != livePaths.end(); ++it) {
+		if (deadPaths.contains(it->first)) continue; // ... so we don't need this
+
 		IPath* path = it->second;
 
 		const float3& pathMins = path->GetBoundingBoxMins();
@@ -184,15 +191,15 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
 			if (havePointInRect || edgeCrossesRect) {
 				assert(tempPaths.find(path->GetID()) == tempPaths.end());
 				deadPaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
-				livePathIts.push_back(it);
+				// livePathIts.push_back(it);
 				break;
 			}
 		}
 	}
 
-	for (auto it = livePathIts.begin(); it != livePathIts.end(); ++it) {
-		livePaths.erase(*it);
-	}
+	// for (auto it = livePathIts.begin(); it != livePathIts.end(); ++it) {
+	// 	livePaths.erase(*it);
+	// }
 
 	return true;
 }

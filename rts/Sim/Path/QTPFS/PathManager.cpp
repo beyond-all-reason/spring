@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <algorithm>
 #include <chrono>
 #include <cinttypes>
 #include <functional>
@@ -194,6 +195,9 @@ void QTPFS::PathManager::Load() {
 	numTerrainChanges = 0;
 	numPathRequests   = 0;
 	maxNumLeafNodes   = 0;
+
+	deadPathsToUpdatePerFrame = 1;
+	recalcDeadPathUpdateRateOnFrame = 0;
 
 	nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
@@ -527,11 +531,6 @@ void QTPFS::PathManager::Serialize(const std::string& cacheFileDir) {
 	}
 }
 
-
-
-
-
-
 // note that this is called twice per object:
 // height-map changes, then blocking-map does
 void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) {
@@ -568,32 +567,12 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 	}
 }
 
-
-
-
 void QTPFS::PathManager::Update() {
 	SCOPED_TIMER("Sim::Path");
-
-	// #ifdef QTPFS_ENABLE_THREADED_UPDATE
-	// streflop::streflop_init<streflop::Simple>();
-
-	// std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
-
-	// // allow ThreadUpdate to run one iteration
-	// condThreadUpdate.notify_one();
-
-	// // wait for the ThreadUpdate iteration to finish
-	// condThreadUpdated.wait(lock);
-
-	// streflop::streflop_init<streflop::Simple>();
-	// #else
-	// ThreadUpdate();
-	// #endif
 	{
 		SCOPED_TIMER("Sim::Path::Requests");
 		ThreadUpdate();
 	}
-
 	{
 		// start off with simple update
 		if (mapChangeTrack.damageQueue.empty()) return;
@@ -621,61 +600,50 @@ void QTPFS::PathManager::Update() {
 
 __FORCE_ALIGN_STACK__
 void QTPFS::PathManager::ThreadUpdate() {
-	#ifdef QTPFS_ENABLE_THREADED_UPDATE
-	while (!nodeLayers.empty()) {
-		std::lock_guard<spring::mutex> lock(mutexThreadUpdate);
+	// NOTE:
+	//     for a mod with N move-types, any unit will be waiting
+	//     (N / LAYERS_PER_UPDATE) sim-frames before its request
+	//     executes at a minimum
+	const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
+	const unsigned int numPathTypeUpdates = nodeLayers.size();
 
-		// wait for green light from Update
-		condThreadUpdate.wait(lock);
+	// NOTE: thread-safe (only ONE thread ever accesses these)
+	static unsigned int minPathTypeUpdate = 0;
+	static unsigned int maxPathTypeUpdate = numPathTypeUpdates;
 
-		// if we were notified from the destructor, then structures
-		// are no longer valid and there is no point to finish this
-		// iteration --> break early to avoid crashing
-		if (nodeTrees.empty())
-			break;
-	#endif
+	if (gs->frameNum >= recalcDeadPathUpdateRateOnFrame){
+		recalcDeadPathUpdateRateOnFrame = gs->frameNum + GAME_SPEED;
+		size_t totalDeadPaths = 0;
+		for (auto& pathCache : pathCaches)
+			totalDeadPaths += pathCache.GetDeadPaths().size();
 
-		// NOTE:
-		//     for a mod with N move-types, any unit will be waiting
-		//     (N / LAYERS_PER_UPDATE) sim-frames before its request
-		//     executes at a minimum
-		const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
-		const unsigned int numPathTypeUpdates = nodeLayers.size();
-
-		// NOTE: thread-safe (only ONE thread ever accesses these)
-		static unsigned int minPathTypeUpdate = 0;
-		static unsigned int maxPathTypeUpdate = numPathTypeUpdates;
-
-		sharedPaths.clear();
-
-		for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
-		//for_mt(minPathTypeUpdate, maxPathTypeUpdate, [this](unsigned int pathTypeUpdate){
-			#ifndef QTPFS_IGNORE_DEAD_PATHS
-			QueueDeadPathSearches(pathTypeUpdate);
-			#endif
-
-			ExecuteQueuedSearches(pathTypeUpdate);
-		//});
-		}
-
-		std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
-
-		minPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
-		maxPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
-
-		if (minPathTypeUpdate >= nodeLayers.size()) {
-			minPathTypeUpdate = 0;
-			maxPathTypeUpdate = numPathTypeUpdates;
-		}
-		if (maxPathTypeUpdate >= nodeLayers.size()) {
-			maxPathTypeUpdate = nodeLayers.size();
-		}
-
-	#ifdef QTPFS_ENABLE_THREADED_UPDATE
-		// tell Update we are finished with this iteration
-		condThreadUpdated.notify_one();
+		deadPathsToUpdatePerFrame = std::max(int(totalDeadPaths / GAME_SPEED), 1);
 	}
-	#endif
+
+	sharedPaths.clear();
+
+	for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
+	//for_mt(minPathTypeUpdate, maxPathTypeUpdate, [this](unsigned int pathTypeUpdate){
+		#ifndef QTPFS_IGNORE_DEAD_PATHS
+		QueueDeadPathSearches(pathTypeUpdate);
+		#endif
+
+		ExecuteQueuedSearches(pathTypeUpdate);
+	//});
+	}
+
+	std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
+
+	minPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
+	maxPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
+
+	if (minPathTypeUpdate >= nodeLayers.size()) {
+		minPathTypeUpdate = 0;
+		maxPathTypeUpdate = numPathTypeUpdates;
+	}
+	if (maxPathTypeUpdate >= nodeLayers.size()) {
+		maxPathTypeUpdate = nodeLayers.size();
+	}
 }
 
 
@@ -778,18 +746,32 @@ void QTPFS::PathManager::QueueDeadPathSearches(unsigned int pathType) {
 	PathCache& pathCache = pathCaches[pathType];
 	PathCache::PathMap::const_iterator deadPathsIt;
 
-	const PathCache::PathMap& deadPaths = pathCache.GetDeadPaths();
+	PathCache::PathMap& deadPaths = const_cast<PathCache::PathMap&>(pathCache.GetDeadPaths());
+	PathCache::PathMap& livePaths = const_cast<PathCache::PathMap&>(pathCache.GetLivePaths());
+	
 	const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(pathType);
 
-	if (!deadPaths.empty()) {
-		// re-request LIVE paths that were marked as DEAD by a TerrainChange
-		// for each of these now-dead paths, reset the active point-idx to 0
-		for (deadPathsIt = deadPaths.begin(); deadPathsIt != deadPaths.end(); ++deadPathsIt) {
-			QueueSearch(deadPathsIt->second, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
-		}
+	if (deadPaths.empty()) return;
 
-		pathCache.KillDeadPaths();
+	std::vector<PathCache::PathMapIt> deadPathsToRemove;
+	deadPathsToRemove.reserve(deadPathsToUpdatePerFrame);
+
+	// re-request LIVE paths that were marked as DEAD by a TerrainChange
+	// for each of these now-dead paths, reset the active point-idx to 0
+	//std::for_each_n(deadPaths.begin(), deadPathsToUpdatePerFrame, [=, &moveDef, &pathCache, &deadPathsToRemove](PathCache::PathMapIt deadPathsIt) mutable {
+	for (PathCache::PathMapIt deadPathsIt = deadPaths.begin(); deadPathsIt != deadPaths.end(); ++deadPathsIt) {
+		pathCache.ReleaseLivePath(deadPathsIt->first);
+		QueueSearch(deadPathsIt->second, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
+		deadPathsToRemove.push_back(deadPathsIt);
 	}
+	//	});
+
+	for (auto it = deadPathsToRemove.begin(); it != deadPathsToRemove.end(); ++it) {
+		delete ((*it)->second);
+		deadPaths.erase(*it);
+	}
+
+	// pathCache.KillDeadPaths();
 }
 
 unsigned int QTPFS::PathManager::QueueSearch(

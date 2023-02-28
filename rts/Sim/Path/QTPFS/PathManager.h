@@ -166,6 +166,9 @@ namespace QTPFS {
 
 		MapChangeTrack mapChangeTrack;
 
+		int deadPathsToUpdatePerFrame = 1;
+		int recalcDeadPathUpdateRateOnFrame = 0;
+
 		static unsigned int LAYERS_PER_UPDATE;
 		static unsigned int MAX_TEAM_SEARCHES;
 
@@ -178,13 +181,6 @@ namespace QTPFS {
 
 		bool layersInited;
 		bool haveCacheDir;
-
-		#ifdef QTPFS_ENABLE_THREADED_UPDATE
-		spring::thread updateThread;
-		spring::mutex mutexThreadUpdate;
-		spring::condition_variable condThreadUpdate;
-		spring::condition_variable condThreadUpdated;
-		#endif
 	};
 }
 

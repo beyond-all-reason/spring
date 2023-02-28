@@ -41,6 +41,9 @@ namespace QTPFS {
 
 		void DelPath(unsigned int pathID);
 
+		// must be in deadPaths if calling this
+		bool ReleaseLivePath(unsigned int pathID);
+
 		const PathMap& GetTempPaths() const { return tempPaths; }
 		const PathMap& GetLivePaths() const { return livePaths; }
 		const PathMap& GetDeadPaths() const { return deadPaths; }
