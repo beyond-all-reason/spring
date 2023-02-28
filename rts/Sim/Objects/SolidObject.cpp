@@ -421,17 +421,13 @@ void CSolidObject::ForcedSpin(const float3& zdir)
 	// (or its inverse) as auxiliary to avoid degeneracies
 
 	const float zdotup = zdir.dot(UpVector);
-	if (math::fabs(zdotup) >= 0.999f) {}
 	const float3 udir = mix(UpVector, -FwdVector, math::fabs(zdotup) >= 0.999f);
-	//const float3 udir = mix(UpVector, (frontdir * Sign(-zdir.y)), (math::fabs(zdir.dot(UpVector)) >= 0.99f));
 	const float3 xdir = (zdir.cross(udir)).Normalize();
 	const float3 ydir = (xdir.cross(zdir)).Normalize();
 
 	frontdir = zdir;
 	rightdir = xdir;
 	   updir = ydir;
-
-	//LOG("fd{%f,%f,%f}, rd{%f,%f,%f}, ud{%f,%f,%f}", zdir.x, zdir.y, zdir.z, xdir.x, xdir.y, xdir.z, ydir.x, ydir.y, ydir.z);
 
 	SetHeadingFromDirection();
 	UpdateMidAndAimPos();

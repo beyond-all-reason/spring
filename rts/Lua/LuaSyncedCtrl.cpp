@@ -3568,13 +3568,13 @@ int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 
 /***
  * @function Spring.SetUnitHeadingAndUpDir
+ * Use this call to set up unit direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) unit orientation if unit was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
  * @number unitID
  * @number heading
  * @number upx
  * @number upy
  * @number upz
  * @treturn nil
- * Use this call to set up unit direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) unit orientation if unit was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
  */
 int LuaSyncedCtrl::SetUnitHeadingAndUpDir(lua_State* L)
 {
@@ -4386,13 +4386,13 @@ int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 
 /***
  * @function Spring.SetFeatureHeadingAndUpDir
+ * Use this call to set up feature direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) feature orientation if feature was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
  * @number featureID
  * @number heading
  * @number upx
  * @number upy
  * @number upz
  * @treturn nil
- * Use this call to set up feature direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) feature orientation if feature was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
  */
 int LuaSyncedCtrl::SetFeatureHeadingAndUpDir(lua_State* L)
 {
