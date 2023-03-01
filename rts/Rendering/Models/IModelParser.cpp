@@ -295,8 +295,10 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 {
 	// caller has lock
-	if (modelID + 1 == MAX_MODEL_OBJECTS)
+	if (modelID + 1 == MAX_MODEL_OBJECTS) {
+		LOG_L(L_ERROR, "[CModelLoader::%s] Model pool of size %is is exhausted. Cannot load model %s", __func__, MAX_MODEL_OBJECTS, name.c_str());
 		return &models[0]; //dummy model
+	}
 
 	const auto ci = cache.find(name);
 
