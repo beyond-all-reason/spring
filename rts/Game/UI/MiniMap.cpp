@@ -571,12 +571,15 @@ void CMiniMap::SelectUnits(int x, int y)
 	const CUnit *_lastClicked = lastClicked;
 	lastClicked = nullptr;
 
-	if (!KeyInput::GetKeyModState(KMOD_SHIFT) && !KeyInput::GetKeyModState(KMOD_CTRL))
-		selectedUnitsHandler.ClearSelected();
-
 	CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
 
 	if (fullProxy && (bp.movement > mouse->dragSelectionThreshold)) {
+		if (!mouse->GetSelectionBoxFromEngineAllowed(bp.x, bp.y, x, y)) {
+			bp.lastRelease = gu->gameTime;
+
+			return;
+		}
+
 		// use a selection box
 		const float3 newMapPos = GetMapPosition(x, y);
 		const float3 oldMapPos = GetMapPosition(bp.x, bp.y);

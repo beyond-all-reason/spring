@@ -446,6 +446,14 @@ void CMouseHandler::GetSelectionBoxCoeff(
 }
 
 
+bool CMouseHandler::GetSelectionBoxFromEngineAllowed(int x1, int y1, int x2, int y2) const
+{
+	// 1. Lua Client does not want to take control of selection (returned false)
+	// 2. Client specified it does not want engine to control selection
+	return !eventHandler.BoxSelection(x1, y1, x2, y2) && selectedUnitsHandler.GetBoxSelectionHandledByEngine();
+}
+
+
 void CMouseHandler::MouseRelease(int x, int y, int button)
 {
 	const CUnit *_lastClicked = lastClicked;
@@ -495,10 +503,13 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 	if ((button == SDL_BUTTON_LEFT) && !buttons[button].chorded) {
 		ButtonPressEvt& bp = buttons[SDL_BUTTON_LEFT];
 
-		if (!KeyInput::GetKeyModState(KMOD_SHIFT) && !KeyInput::GetKeyModState(KMOD_CTRL) && selectedUnitsHandler.GetBoxSelectionHandledByEngine())
-			selectedUnitsHandler.ClearSelected();
+		if (bp.movement > dragSelectionThreshold) {
+			if (!GetSelectionBoxFromEngineAllowed(bp.x, bp.y, x, y)) {
+				bp.lastRelease = gu->gameTime;
 
-		if (bp.movement > dragSelectionThreshold && selectedUnitsHandler.GetBoxSelectionHandledByEngine()) {
+				return;
+			}
+
 			// select box
 			float2 topright;
 			float2 bttmleft;

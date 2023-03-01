@@ -267,6 +267,11 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 	int minTeam = gu->myTeam;
 	int maxTeam = gu->myTeam;
 
+	// If shift is held we want to append to selection (hence we dont want to clear)
+	// If ctrl is held we want to remove from selection (hence we dont want to clear)
+	if (!KeyInput::GetKeyModState(KMOD_SHIFT) && !KeyInput::GetKeyModState(KMOD_CTRL))
+		selectedUnitsHandler.ClearSelected();
+
 	// any team's units can be *selected*; whether they can
 	// be given orders depends on our ability to play god
 	if (gu->spectatingFullSelect || gs->godMode != 0) {
@@ -315,6 +320,11 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 
 void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doInViewTest, bool selectType)
 {
+	// If shift is held we want to append to selection (hence we dont want to clear)
+	// If ctrl is held we want to remove from selection (hence we dont want to clear)
+	if (!KeyInput::GetKeyModState(KMOD_SHIFT) && !KeyInput::GetKeyModState(KMOD_CTRL))
+		selectedUnitsHandler.ClearSelected();
+
 	//FIXME make modular?
 	if (unit == nullptr)
 		return;

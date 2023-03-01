@@ -832,6 +832,13 @@ bool CEventHandler::IsAbove(int x, int y)
 }
 
 
+bool CEventHandler::BoxSelection(int x1, int y1, int x2, int y2)
+{
+	ZoneScoped;
+	return ControlReverseIterateDefTrue(listBoxSelection, &CEventClient::BoxSelection, x1, y1, x2, y2);
+}
+
+
 std::string CEventHandler::GetTooltip(int x, int y)
 {
 	ZoneScoped;

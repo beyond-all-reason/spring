@@ -223,6 +223,7 @@ class CEventHandler
 		bool MousePress(int x, int y, int button);
 		void MouseRelease(int x, int y, int button);
 		bool MouseWheel(bool up, float value);
+		bool BoxSelection(int x1, int y1, int x2, int y2);
 		bool IsAbove(int x, int y);
 
 		std::string GetTooltip(int x, int y);

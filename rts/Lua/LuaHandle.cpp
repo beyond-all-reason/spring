@@ -3020,6 +3020,46 @@ bool CLuaHandle::MouseWheel(bool up, float value)
 	return retval;
 }
 
+
+/*** Called when box selection is released.
+ *
+ * @function BoxSelection
+ *
+ * This is intended for games that want to implement lua side selection logic.
+ *
+ * @number x1 mouse coordinates for the anchor of selection (mousepress)
+ * @number y1 mouse coordinates for the anchor of selection (mousepress)
+ * @number x2 mouse coordinates for the pivot of selection (mouserelease)
+ * @number y2 mouse coordinates for the pivot of selection (mouserelease)
+ * @treturn boolean if true, invalidates engine selection
+ * @see UnsyncedCtrl.SetBoxSelectionByEngine
+ * @see UnsyncedCtrl.SelectUnitArray
+ * @see UnsyncedRead.GetBoxSelectionByEngine
+ * @see UnsyncedRead.GetUnitsInScreenRectangle
+ */
+bool CLuaHandle::BoxSelection(int x1, int y1, int x2, int y2)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return false;
+
+	lua_pushnumber(L, x1);
+	lua_pushnumber(L, y1);
+	lua_pushnumber(L, x2);
+	lua_pushnumber(L, y2);
+
+	// call the function
+	if (!RunCallIn(L, cmdStr, 4, 1))
+		return false;
+
+	const bool retval = luaL_optboolean(L, -1, false);
+	lua_pop(L, 1);
+	return retval;
+}
+
+
 /*** Called every `Update`.
  *
  * @function IsAbove

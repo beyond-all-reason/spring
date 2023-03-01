@@ -285,6 +285,8 @@ class CEventClient
 		virtual void MouseRelease(int x, int y, int button);
 		virtual bool MouseWheel(bool up, float value);
 
+		virtual bool BoxSelection(int x1, int y1, int x2, int y2);
+
 		virtual void DownloadQueued(int ID, const string& archiveName, const string& archiveType);
 		virtual void DownloadStarted(int ID);
 		virtual void DownloadFinished(int ID);

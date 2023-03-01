@@ -200,6 +200,7 @@ class CLuaHandle : public CEventClient
 		void MouseRelease(int x, int y, int button) override;
 		bool MouseWheel(bool up, float value) override;
 		bool IsAbove(int x, int y) override;
+		bool BoxSelection(int x1, int y1, int x2, int y2) override;
 		std::string GetTooltip(int x, int y) override;
 
 		bool DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd) override;

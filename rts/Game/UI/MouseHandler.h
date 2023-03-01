@@ -86,6 +86,7 @@ public:
 	void ConfigUpdate();
 
 	bool GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, float3& tr) const;
+	bool GetSelectionBoxFromEngineAllowed(int x1, int y1, int x2, int y2) const;
 
 private:
 	int2 GetViewMouseCenter() const;

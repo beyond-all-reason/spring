@@ -70,6 +70,7 @@ bool CEventClient::MouseMove(int x, int y, int dx, int dy, int button) { return 
 bool CEventClient::MousePress(int x, int y, int button) { return false; }
 void CEventClient::MouseRelease(int x, int y, int button) { }
 bool CEventClient::MouseWheel(bool up, float value) { return false; }
+bool CEventClient::BoxSelection(int x1, int y1, int x2, int y2) { return false; }
 
 void CEventClient::DownloadQueued(int ID, const string& archiveName, const string& archiveType) {}
 void CEventClient::DownloadStarted(int ID) {}
