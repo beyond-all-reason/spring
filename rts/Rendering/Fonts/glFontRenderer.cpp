@@ -294,7 +294,6 @@ void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
-	glPushMatrix();
 	glCallList(textureSpaceMatrix);
 
 	glEnableClientState(GL_VERTEX_ARRAY);

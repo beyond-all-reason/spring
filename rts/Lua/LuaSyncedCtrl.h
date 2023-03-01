@@ -121,6 +121,7 @@ class LuaSyncedCtrl
 		static int SetUnitPosition(lua_State* L);
 		static int SetUnitRotation(lua_State* L);
 		static int SetUnitDirection(lua_State* L);
+		static int SetUnitHeadingAndUpDir(lua_State* L);
 		static int SetUnitVelocity(lua_State* L);
 
 		static int SetFactoryBuggerOff(lua_State* L);
@@ -152,6 +153,7 @@ class LuaSyncedCtrl
 		static int SetFeaturePosition(lua_State* L);
 		static int SetFeatureRotation(lua_State* L);
 		static int SetFeatureDirection(lua_State* L);
+		static int SetFeatureHeadingAndUpDir(lua_State* L);
 		static int SetFeatureVelocity(lua_State* L);
 
 		static int SetFeatureBlocking(lua_State* L);

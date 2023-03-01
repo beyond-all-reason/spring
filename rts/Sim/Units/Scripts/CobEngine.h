@@ -84,7 +84,8 @@ public:
 	int GetCurrentTime() const { return currentTime; }
 
 	void QueueAddThread(CCobThread&& thread) { tickAddedThreads.emplace_back(std::move(thread)); }
-	void AddQueuedThreads();
+	void QueueRemoveThread(int threadID) { tickRemovedThreads.emplace_back(threadID); }
+	void ProcessQueuedThreads();
 
 	void ScheduleThread(const CCobThread* thread);
 	void SanityCheckThreads(const CCobInstance* owner);
@@ -100,6 +101,8 @@ private:
 	spring::unordered_map<int, CCobThread> threadInstances;
 	// threads that are spawned during Tick
 	std::vector<CCobThread> tickAddedThreads;
+	// threads that are killed during Tick
+	std::vector<int> tickRemovedThreads;
 
 	std::vector<int> runningThreadIDs;
 	std::vector<int> waitingThreadIDs;

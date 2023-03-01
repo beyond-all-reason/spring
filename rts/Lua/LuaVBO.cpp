@@ -12,8 +12,7 @@
 
 
 /******************************************************************************
- * Vertex Buffer Objects
- * @module VBO
+ * @module LuaVBO
  *
  * @see rts/Lua/LuaVBO.cpp
 ******************************************************************************/
@@ -120,6 +119,23 @@ LuaVBOs::~LuaVBOs()
 	luaVBOs.clear();
 }
 
+
+/***
+ *
+ * @function gl.GetVBO
+ * @number[opt=GL.ARRAY_BUFFER] bufferType one of [`GL.ARRAY_BUFFER`,
+ * `GL.ELEMENT_ARRAY_BUFFER`, `GL.UNIFORM_BUFFER`, `GL.SHADER_STORAGE_BUFFER`].
+ *
+ * Defaults to `GL.ARRAY_BUFFER`, which you should use for vertex data, and
+ * `GL.ELEMENT_ARRAY_BUFFER` should be used for vertex indices.
+ * @bool[opt=true] freqUpdated whether should be updated frequently, when false
+ * will be updated only once
+ * @treturn nil|VBO the VBO ref on success, nil if not supported/or other error
+ * @see GL.OpenGL_Buffer_Types
+ * @usage
+ * local myVBO = gl.GetVBO()
+ * if myVBO == nil then Spring.Echo("Failed to get VBO") end
+ */
 int LuaVBOs::GetVBO(lua_State* L)
 {
 	unsigned int target = luaL_optint(L, 1, GL_ARRAY_BUFFER);

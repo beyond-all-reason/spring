@@ -223,8 +223,10 @@ float CGame::GetNetMessageProcessingTimeLimit() const
 	//  -> try to spend minimum 20% of the time in drawing
 	//  -> use remaining 80% for reconnecting
 	// (maxSimFPS / minDrawFPS) is desired number of simframes per drawframe
-	const float maxSimFPS    = (1.0f - CGlobalUnsynced::reconnectSimDrawBalance) * 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
-	const float minDrawFPS   =         CGlobalUnsynced::reconnectSimDrawBalance  * 1000.0f / std::max(0.01f, gu->avgDrawFrameTime);
+	// const float maxSimFPS    = (1.0f - CGlobalUnsynced::reconnectSimDrawBalance) * 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
+	// const float minDrawFPS   =         CGlobalUnsynced::reconnectSimDrawBalance  * 1000.0f / std::max(0.01f, gu->avgDrawFrameTime);
+	const float maxSimFPS    = 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
+	const float minDrawFPS   = CGlobalUnsynced::minDrawFPS;
 	const float simDrawRatio = maxSimFPS / minDrawFPS;
 
 	return Clamp(simDrawRatio * gu->avgSimFrameTime, 5.0f, 1000.0f / CGlobalUnsynced::minDrawFPS);
