@@ -80,7 +80,7 @@ SS3OPiece* CS3OParser::AllocPiece()
 	// this way games using only one model-type do not
 	// cause redundant allocation
 	if (piecePool.empty())
-		piecePool.resize(MAX_MODEL_OBJECTS * 16);
+		piecePool.resize(MAX_MODEL_OBJECTS * AVG_MODEL_PIECES);
 
 	if (numPoolPieces >= piecePool.size()) {
 		throw std::bad_alloc();
