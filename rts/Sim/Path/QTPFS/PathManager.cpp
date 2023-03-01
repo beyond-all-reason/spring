@@ -39,6 +39,8 @@
 
 CONFIG(int, PathingThreadCount).defaultValue(0).safemodeValue(1).minimumValue(0);
 
+constexpr int MemoryPageSizeBytes = 4096;
+
 namespace QTPFS {
 	struct PMLoadScreen {
 	public:
@@ -115,6 +117,7 @@ namespace QTPFS {
 	std::vector<QTNode*> PathManager::nodeTrees;
 	std::vector<PathCache> PathManager::pathCaches;
 	std::vector< std::vector<IPathSearch*> > PathManager::pathSearches;
+	std::vector< binary_heap<INode*> > PathManager::pathSearchOpenNodeCaches;
 }
 
 
@@ -153,7 +156,9 @@ QTPFS::PathManager::~PathManager() {
 	numCurrExecutedSearches.clear();
 	numPrevExecutedSearches.clear();
 
-	PathSearch::FreeGlobalQueue();
+	// PathSearch::FreeGlobalQueue();
+	for (auto threadPathSearch : pathSearchOpenNodeCaches) threadPathSearch.clear();
+	pathSearchOpenNodeCaches.clear();
 
 	#ifdef QTPFS_ENABLE_THREADED_UPDATE
 	// at this point the thread is waiting, so notify it
@@ -169,13 +174,6 @@ std::int64_t QTPFS::PathManager::Finalize() {
 
 	{
 		pmLoadScreen.Show(&PathManager::Load, this);
-
-		#ifdef QTPFS_ENABLE_THREADED_UPDATE
-		mutexThreadUpdate = spring::mutex();
-		condThreadUpdate = spring::condition_variable();
-		condThreadUpdated = spring::condition_variable();
-		updateThread = spring::thread(std::bind(&PathManager::ThreadUpdate, this));
-		#endif
 	}
 
 	const spring_time t1 = spring_gettime();
@@ -259,7 +257,11 @@ void QTPFS::PathManager::Load() {
 
 		{ SyncedUint tmp(pfsCheckSum); }
 
-		PathSearch::InitGlobalQueue(maxNumLeafNodes);
+		// PathSearch::InitGlobalQueue(maxNumLeafNodes);
+		int threads = ThreadPool::GetNumThreads();
+		pathSearchOpenNodeCaches.reserve(threads);
+		while (threads-- > 0)
+			pathSearchOpenNodeCaches.emplace_back(binary_heap<INode*>(maxNumLeafNodes));
 	}
 
 	{
@@ -653,17 +655,23 @@ void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
 	PathCache& pathCache = pathCaches[pathType];
 
 	std::vector<IPathSearch*>& searches = pathSearches[pathType];
-	std::vector<IPathSearch*>::iterator searchesIt = searches.begin();
+	// std::vector<IPathSearch*>::iterator searchesIt = searches.begin();
 
 	if (searches.empty()) return;
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	while (searchesIt != searches.end()) {
+	// while (searchesIt != searches.end()) {
+	for (auto searchesIt = searches.begin(); searchesIt != searches.end(); searchesIt++) {
 		if (ExecuteSearch(searches, searchesIt, nodeLayer, pathCache, pathType)) {
 			searchStateOffset += NODE_STATE_OFFSET;
 		}
 	}
+
+	for (auto search : searches) {
+		delete search;
+	}
+	searches.clear();
 }
 
 bool QTPFS::PathManager::ExecuteSearch(
@@ -676,27 +684,31 @@ bool QTPFS::PathManager::ExecuteSearch(
 	IPathSearch* search = *searchesIt;
 	IPath* path = pathCache.GetTempPath(search->GetID());
 
+	int currentThread = ThreadPool::GetThreadNum();
+
 	assert(search != nullptr);
 	assert(path != nullptr);
 
-	const auto DeleteSearch = [](IPathSearch* s, PathSearchVect& v, PathSearchVectIt& it) {
-		// ordering of still-queued searches is not relevant
-		*it = v.back();
-		v.pop_back();
-		delete s;
-	};
+	// const auto DeleteSearch = [](IPathSearch* s, PathSearchVect& v, PathSearchVectIt& it) {
+	// 	// ordering of still-queued searches is not relevant
+	// 	*it = v.back();
+	// 	v.pop_back();
+	// 	delete s;
+	// };
 
 	// temp-path might have been removed already via
 	// DeletePath before we got a chance to process it
 	if (path->GetID() == 0) {
-		DeleteSearch(search, searches, searchesIt);
+		// DeleteSearch(search, searches, searchesIt);
 		return false;
 	}
 
 	assert(search->GetID() != 0);
 	assert(path->GetID() == search->GetID());
 
-	search->Initialize(&nodeLayer, &pathCache, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE);
+	search->Initialize(&nodeLayer, &pathCache
+			, path->GetSourcePoint(), path->GetTargetPoint()
+			, MAP_RECTANGLE, &pathSearchOpenNodeCaches[currentThread]);
 	path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
 
 	{
@@ -705,7 +717,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 
 		if (sharedPathsIt != sharedPaths.end()) {
 			if (search->SharedFinalize(sharedPathsIt->second, path)) {
-				DeleteSearch(search, searches, searchesIt);
+				// DeleteSearch(search, searches, searchesIt);
 				return false;
 			}
 		}
@@ -738,7 +750,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 		DeletePath(path->GetID());
 	}
 
-	DeleteSearch(search, searches, searchesIt);
+	// DeleteSearch(search, searches, searchesIt);
 	return true;
 }
 

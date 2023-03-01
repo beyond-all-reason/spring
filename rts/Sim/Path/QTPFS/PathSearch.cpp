@@ -15,7 +15,7 @@
 
 #include "System/float3.h"
 
-QTPFS::binary_heap<QTPFS::INode*> QTPFS::PathSearch::openNodes;
+// QTPFS::binary_heap<QTPFS::INode*> QTPFS::PathSearch::openNodes;
 
 
 
@@ -24,7 +24,8 @@ void QTPFS::PathSearch::Initialize(
 	PathCache* cache,
 	const float3& sourcePoint,
 	const float3& targetPoint,
-	const SRectangle& searchArea
+	const SRectangle& searchArea,
+	QTPFS::binary_heap<QTPFS::INode *>* nodeRefCache
 ) {
 	srcPoint = sourcePoint; srcPoint.ClampInBounds();
 	tgtPoint = targetPoint; tgtPoint.ClampInBounds();
@@ -40,6 +41,8 @@ void QTPFS::PathSearch::Initialize(
 	curNode = nullptr;
 	nxtNode = nullptr;
 	minNode = srcNode;
+
+	openNodes = nodeRefCache;
 }
 
 bool QTPFS::PathSearch::Execute(
@@ -81,7 +84,7 @@ bool QTPFS::PathSearch::Execute(
 	ResetState(srcNode);
 	UpdateNode(srcNode, nullptr, 0);
 
-	while (!openNodes.empty()) {
+	while (!(*openNodes).empty()) {
 		IterateNodes(nodeLayer->GetNodes());
 
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
@@ -93,7 +96,7 @@ bool QTPFS::PathSearch::Execute(
 		havePartPath = (minNode != srcNode);
 
 		if (haveFullPath)
-			openNodes.reset();
+			(*openNodes).reset();
 	}
 
 	if (srcNode->GetMoveCost() == 0.0f)
@@ -136,8 +139,8 @@ void QTPFS::PathSearch::ResetState(INode* node) {
 		hCosts[i] = 0.0f;
 	}
 
-	openNodes.reset();
-	openNodes.push(node);
+	(*openNodes).reset();
+	(*openNodes).push(node);
 }
 
 void QTPFS::PathSearch::UpdateNode(INode* nextNode, INode* prevNode, unsigned int netPointIdx) {
@@ -153,7 +156,7 @@ void QTPFS::PathSearch::UpdateNode(INode* nextNode, INode* prevNode, unsigned in
 }
 
 void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
-	curNode = openNodes.top();
+	curNode = (*openNodes).top();
 	curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	#ifdef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 	// in the non-conservative case, this is done from
@@ -161,8 +164,7 @@ void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
 	curNode->SetMagicNumber(searchMagic);
 	#endif
 
-	openNodes.pop();
-	openNodes.check_heap_property(0);
+	(*openNodes).pop();
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 	searchIter.SetPoppedNodeIdx(curNode->zmin() * mapDims.mapx + curNode->xmin());
@@ -267,8 +269,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		if (!isCurrent) {
 			UpdateNode(nxtNode, curNode, netPointIdx);
 
-			openNodes.push(nxtNode);
-			openNodes.check_heap_property(0);
+			(*openNodes).push(nxtNode);
 
 			#ifdef QTPFS_TRACE_PATH_SEARCHES
 			searchIter.AddPushedNodeIdx(nxtNode->zmin() * mapDims.mapx + nxtNode->xmin());
@@ -279,7 +280,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		if (gCosts[netPointIdx] >= nxtNode->GetPathCost(NODE_PATH_COST_G))
 			continue;
 		if (isClosed)
-			openNodes.push(nxtNode);
+			(*openNodes).push(nxtNode);
 
 		UpdateNode(nxtNode, curNode, netPointIdx);
 
@@ -287,8 +288,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		// (changing the f-cost of an OPEN node messes up the
 		// queue's internal consistency; a pushed node remains
 		// OPEN until it gets popped)
-		openNodes.resort(nxtNode);
-		openNodes.check_heap_property(0);
+		(*openNodes).resort(nxtNode);
 	}
 }
 

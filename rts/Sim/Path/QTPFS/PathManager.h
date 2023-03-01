@@ -154,6 +154,7 @@ namespace QTPFS {
 		static std::vector<QTNode*> nodeTrees;
 		static std::vector<PathCache> pathCaches;
 		static std::vector< std::vector<IPathSearch*> > pathSearches;
+		static std::vector< binary_heap<INode*> > pathSearchOpenNodeCaches;
 
 		spring::unordered_map<unsigned int, unsigned int> pathTypes;
 		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;

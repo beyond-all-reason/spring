@@ -3,6 +3,7 @@
 #ifndef QTPFS_PATHSEARCH_HDR
 #define QTPFS_PATHSEARCH_HDR
 
+#include <queue>
 #include <vector>
 
 #include "PathDefines.h"
@@ -89,7 +90,8 @@ namespace QTPFS {
 			PathCache* cache,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea
+			const SRectangle& searchArea,
+			QTPFS::binary_heap<QTPFS::INode *>* nodeRefCache
 		) = 0;
 		virtual bool Execute(
 			unsigned int searchStateOffset = 0,
@@ -131,16 +133,18 @@ namespace QTPFS {
 			, hCostMult(0.0f)
 			, haveFullPath(false)
 			, havePartPath(false)
+			, openNodes(nullptr)
 			{}
-		~PathSearch() { openNodes.reset(); }
+		~PathSearch() { if(openNodes != nullptr) openNodes->reset(); }
 
 		void Initialize(
 			NodeLayer* layer,
 			PathCache* cache,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea
-		);
+			const SRectangle& searchArea,
+			QTPFS::binary_heap<QTPFS::INode *>* nodeRefCache
+		) override;
 		bool Execute(
 			unsigned int searchStateOffset = 0,
 			unsigned int searchMagicNumber = 0
@@ -151,8 +155,10 @@ namespace QTPFS {
 
 		const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const;
 
-		static void InitGlobalQueue(unsigned int n) { openNodes.reserve(n); }
-		static void FreeGlobalQueue() { openNodes.clear(); }
+		// static void InitGlobalQueue(unsigned int n) { openNodes->reserve(n); }
+		// static void FreeGlobalQueue() { openNodes->clear(); }
+
+		void SetOpenNodesQueue(binary_heap<INode*>* queue) { openNodes = queue; };
 
 	private:
 		void ResetState(INode* node);
@@ -167,7 +173,9 @@ namespace QTPFS {
 
 		// global queue: allocated once, re-used by all searches without clear()'s
 		// this relies on INode::operator< to sort the INode*'s by increasing f-cost
-		static binary_heap<INode*> openNodes;
+		// static binary_heap<INode*> openNodes;
+
+		binary_heap<INode*>* openNodes;
 
 		NodeLayer* nodeLayer;
 		PathCache* pathCache;
