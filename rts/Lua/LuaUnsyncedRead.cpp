@@ -2238,10 +2238,11 @@ static std::vector< std::pair<int, std::vector<const CUnit*> > > ggusUnitDefMap;
 static std::vector< std::pair<int, int> > ggucCountMap;
 
 
-/***
+/*** Get selected units aggregated by unitDefID
  *
  * @function Spring.GetSelectedUnitsSorted
- * @treturn {[number] = { [number],... }, ...} where keys are unitDefIDs and values are unitIDs
+ * @treturn {[number]={number,...},...} where keys are unitDefIDs and values are unitIDs
+ * @treturn n the number of unitDefIDs
  */
 int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
 {
@@ -2283,19 +2284,18 @@ int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
 		numDefKeys += 1;
 	}
 
-	// UnitDef ID keys are not necessarily consecutive
-	HSTR_PUSH_NUMBER(L, "n", numDefKeys);
-	return 1;
+	lua_pushnumber(L, numDefKeys);
+
+	return 2;
 }
 
 
-/***
+/*** Get an aggregate count of selected units per unitDefID
  *
  * @function Spring.GetSelectedUnitsCounts
  *
- * Note: return table might contain `n` key with value number of unitDefIDs
- *
  * @treturn {[number]=number,...} unitsCounts where keys are unitDefIDs and values are counts
+ * @treturn n the number of unitDefIDs
  */
 int LuaUnsyncedRead::GetSelectedUnitsCounts(lua_State* L)
 {
@@ -2326,13 +2326,13 @@ int LuaUnsyncedRead::GetSelectedUnitsCounts(lua_State* L)
 		numDefKeys += 1;
 	}
 
-	// UnitDef ID keys are not necessarily consecutive
-	HSTR_PUSH_NUMBER(L, "n", numDefKeys);
-	return 1;
+	lua_pushnumber(L, numDefKeys);
+
+	return 2;
 }
 
 
-/***
+/*** Returns the amount of selected units
  *
  * @function Spring.GetSelectedUnitsCount
  * @treturn number selectedUnitsCount
