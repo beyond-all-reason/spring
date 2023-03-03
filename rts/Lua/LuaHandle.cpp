@@ -619,7 +619,7 @@ bool CLuaHandle::UpdateCallIn(lua_State* L, const string& name)
  *
  * Is not called when a saved game is loaded.
  *
- * @function GamePreload()
+ * @function GamePreload
  */
 void CLuaHandle::GamePreload()
 {
@@ -1379,7 +1379,7 @@ void CLuaHandle::LosCallIn(const LuaHashString& hs,
 
 /*** Called when a unit enters radar of an allyteam.
  *
- * @function UnitEnteredRadar(unitID, unitTeam, allyTeam, unitDefID)
+ * @function UnitEnteredRadar
  *
  * Also called when a unit enters LOS without any radar coverage.
  *
@@ -1615,7 +1615,7 @@ void CLuaHandle::UnitDecloaked(const CUnit* unit)
 
 /*** Called when two units collide.
  *
- * @function UnitUnitCollision(colliderID, collideeID)
+ * @function UnitUnitCollision
  *
  * Both units must be registered with `Script.SetWatchUnit`.
  *
@@ -1666,7 +1666,7 @@ bool CLuaHandle::UnitUnitCollision(const CUnit* collider, const CUnit* collidee)
 
 /*** Called when a unit collides with a feature.
  *
- * @function UnitFeatureCollision(colliderID, collideeID)
+ * @function UnitFeatureCollision
  *
  * The unit must be registered with `Script.SetWatchUnit` and the feature registered with `Script.SetWatchFeature`.
  *
@@ -1776,7 +1776,7 @@ void CLuaHandle::RenderUnitDestroyed(const CUnit* unit)
 
 /*** Called when a feature is created.
  *
- * @function FeatureCreated(featureID, allyTeamID)
+ * @function FeatureCreated
  *
  * @number featureID
  * @number allyTeamID

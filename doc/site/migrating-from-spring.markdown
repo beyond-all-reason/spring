@@ -13,6 +13,75 @@ developed over time.
 Here we list the most relevant breaking changes and how to fix them when
 migrating from Spring.
 
+## General
+
+- Paletted image files are no longer accepted. Convert your images not to be paletted.
+- The return value from the
+[`UnitUnitCollision`](https://beyond-all-reason.github.io/spring/ldoc/modules/LuaHandle.html#UnitUnitCollision)
+callin is now ignored and there is only one event for each collision.
+There is no way to get back the old behaviour for now,
+but if someone needs it it could be arranged.
+- Rendering fonts now obeys GL color state. This means that sometimes text
+will not be the same color as previously. To get back previous behaviour,
+you might need to add
+[`gl.Color`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Text)
+in front of
+[`gl.Text`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Color)
+calls.
+- Removed the following constants:
+  - `Platform.glSupport16bitDepthBuffer`
+  - `Platform.glSupport24bitDepthBuffer`
+  - `Platform.glSupport32bitDepthBuffer`
+
+  To get back previous behaviour, replace with
+  ```lua
+  Platform.glSupportDepthBufferBitDepth >= 16 -- or 24, or 32, respectively
+  ```
+- Removed LOD rendering (2D unit billboards when zoomed out far), including the
+`/distdraw` command and the `UnitLodDist` springsettings entry
+- Removed the `AdvSky` springsetting and the `/dynamicsky` command,
+which made clouds move across the sky. You cannot easily get back
+previous behaviour, though you can probably achieve something similar
+by rendering moving clouds yourself.
+
+## Defs
+
+- Hovercraft and ships brought out of water no longer forced to be upright.
+To get back previous behaviour, put the `upright = true` tag in all unit defs
+whose move def is of the hovercraft or ship type.
+- Units with `useFootPrintCollisionVolume` but no `collisionVolumeScales` set
+will now use the footprint volume (previously mistakenly used the model's sphere).
+
+  To keep the old hitvolume, set `useFootPrintCollisionVolume` to false for units
+  with no `collisionVolumeScales`. Assuming you apply `lowerkeys` to unit defs,
+  this can also be achieved by putting the following in unit defs post-processing:
+
+  ```lua
+  for unitDefID, unitDef in pairs(UnitDefs) do
+    if not unitDef.collisionvolumescales then
+      unitDef.usefootprintcollisionvolume = nil
+    end
+  end
+  ```
+- Tree feature defs `treetype0` through `treetype16` are now provided by the
+basecontent archive instead of the engine.
+
+  No known games ship their own basecontent and they would know what to do if so.
+
+- The `firestarter` weapon tag no longer capped at 10000 in defs (which
+becomes 100 in Lua WeaponDefs after rescale), now uncapped.
+
+  To get back previous behaviour, put the following in weapon defs
+  post-processing:
+
+  ```lua
+  for weaponDefID, weaponDef in pairs(WeaponDefs) do
+    if weaponDef.firestarter then
+      weaponDef.firestarter = math.min(weaponDef.firestarter, 10000)
+    end
+  end
+  ```
+
 ## Camera modifiers
 
 The following keyboard modifiers were unhardcoded from engine:
