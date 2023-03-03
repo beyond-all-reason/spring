@@ -82,8 +82,15 @@
 CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
 
-/******************************************************************************/
-/******************************************************************************/
+
+/******************************************************************************
+ * Lua OpenGL API
+ *
+ * @module OpenGL
+ *
+ * @see rts/Lua/LuaOpenGL.cpp
+******************************************************************************/
+
 
 void (*LuaOpenGL::resetMatrixFunc)() = nullptr;
 
@@ -1269,11 +1276,11 @@ int LuaOpenGL::DrawMiniMap(lua_State* L)
 }
 
 
-/******************************************************************************/
-/******************************************************************************/
-//
-//  Font Renderer
-//
+/******************************************************************************
+ * Text
+ * @section text
+******************************************************************************/
+
 
 int LuaOpenGL::BeginText(lua_State* L)
 {
@@ -1290,6 +1297,34 @@ int LuaOpenGL::EndText(lua_State* L)
 	return 0;
 }
 
+
+/***
+ *
+ * @function gl.Text
+ * @string text
+ * @number x
+ * @number y
+ * @number size
+ * @string[opt] options concatenated string of option characters.
+ *
+ *   - horizontal alignment:
+ *     - 'c' = center
+ *     - 'r' = right
+ *   - vertical alignment:
+ *     - 'a' = ascender
+ *     - 't' = top
+ *     - 'v' = vertical center
+ *     - 'x' = baseline
+ *     - 'b' = bottom
+ *     - 'd' = descender
+ *   - decorations:
+ *     - 'o' = black outline
+ *     - 'O' = white outline
+ *     - 's' = shadow
+ *   - other:
+ *     - 'n' = don't round vertex coords to nearest integer (font may get blurry)
+ * @treturn nil
+ */
 int LuaOpenGL::Text(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
@@ -2495,9 +2530,21 @@ int LuaOpenGL::MemoryBarrier(lua_State* L)
 }
 
 
+/******************************************************************************
+ * Draw Basics
+ * @section draw_basics
+******************************************************************************/
 
-/******************************************************************************/
-
+/***
+ *
+ * @function gl.Color
+ * @tparam number|{number,number,number,number} r red when number, rgba
+ * quadruple or rgb triple otherwise
+ * @number[opt] g
+ * @number[opt] b
+ * @number[opt] a
+ * @treturn nil
+ */
 int LuaOpenGL::Color(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
