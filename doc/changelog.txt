@@ -132,6 +132,14 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
      end
    end
 
+  ! the tables returned by Spring.GetSelectedUnitsSorted and
+    Spring.GetSelectedUnitsCounts no longer have an additional `n` key with
+    corresponding value containining the number of unitdefs.
+
+    Instead use the second return value, e.g.:
+
+        local counts, unitDefsCount = Spring.GetSelectedUnitsCounts()
+
 Lua:
  - add `Spring.GiveOrderArrayToUnit(unitID, orderArray)`, a single-unitID version of `Spring.GiveOrderArrayToUnitArray`.
  - add 5th and 6th params to Spring.MarkerErasePosition, onlyLocal and playerID.
