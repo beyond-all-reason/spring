@@ -14,7 +14,7 @@
 #include "Game/GameSetup.h"
 #include "Game/LoadScreen.h"
 #include "Map/MapInfo.h"
-#include "Map/MapDimensions.h"
+
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -38,8 +38,6 @@
 #define MAP_RECTANGLE SRectangle(0, 0,  mapDims.mapx, mapDims.mapy)
 
 CONFIG(int, PathingThreadCount).defaultValue(0).safemodeValue(1).minimumValue(0);
-
-constexpr int MemoryPageSizeBytes = 4096;
 
 namespace QTPFS {
 	struct PMLoadScreen {
@@ -116,8 +114,7 @@ namespace QTPFS {
 	std::vector<NodeLayer> PathManager::nodeLayers;
 	std::vector<QTNode*> PathManager::nodeTrees;
 	std::vector<PathCache> PathManager::pathCaches;
-	std::vector< std::vector<IPathSearch*> > PathManager::pathSearches;
-	std::vector< binary_heap<INode*> > PathManager::pathSearchOpenNodeCaches;
+	std::vector< std::vector<PathSearch*> > PathManager::pathSearches; // per layer??? - TODO: single list
 }
 
 
@@ -157,8 +154,7 @@ QTPFS::PathManager::~PathManager() {
 	numPrevExecutedSearches.clear();
 
 	// PathSearch::FreeGlobalQueue();
-	for (auto threadPathSearch : pathSearchOpenNodeCaches) threadPathSearch.clear();
-	pathSearchOpenNodeCaches.clear();
+	searchThreadData.clear();
 
 	#ifdef QTPFS_ENABLE_THREADED_UPDATE
 	// at this point the thread is waiting, so notify it
@@ -259,9 +255,9 @@ void QTPFS::PathManager::Load() {
 
 		// PathSearch::InitGlobalQueue(maxNumLeafNodes);
 		int threads = ThreadPool::GetNumThreads();
-		pathSearchOpenNodeCaches.reserve(threads);
+		searchThreadData.reserve(threads);
 		while (threads-- > 0)
-			pathSearchOpenNodeCaches.emplace_back(binary_heap<INode*>(maxNumLeafNodes));
+			searchThreadData.emplace_back(SearchThreadData(maxNumLeafNodes /*NodeLayer::POOL_TOTAL_SIZE*/));
 	}
 
 	{
@@ -654,8 +650,8 @@ void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
 	NodeLayer& nodeLayer = nodeLayers[pathType];
 	PathCache& pathCache = pathCaches[pathType];
 
-	std::vector<IPathSearch*>& searches = pathSearches[pathType];
-	// std::vector<IPathSearch*>::iterator searchesIt = searches.begin();
+	std::vector<PathSearch*>& searches = pathSearches[pathType];
+	// std::vector<PathSearch*>::iterator searchesIt = searches.begin();
 
 	if (searches.empty()) return;
 
@@ -668,9 +664,16 @@ void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
 		}
 	}
 
-	for (auto search : searches) {
+	const auto CleanUpSearch = [=, &pathCache](QTPFS::PathSearch *search){
+		IPath* path = pathCache.GetTempPath(search->GetID());
+		if (search->PathWasFound())
+			pathCache.AddLivePath(path);
+		else
+			DeletePath(path->GetID());
 		delete search;
-	}
+	};
+
+	std::for_each(searches.begin(), searches.end(), CleanUpSearch);
 	searches.clear();
 }
 
@@ -681,7 +684,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	PathCache& pathCache,
 	unsigned int pathType
 ) {
-	IPathSearch* search = *searchesIt;
+	PathSearch* search = *searchesIt;
 	IPath* path = pathCache.GetTempPath(search->GetID());
 
 	int currentThread = ThreadPool::GetThreadNum();
@@ -689,7 +692,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	assert(search != nullptr);
 	assert(path != nullptr);
 
-	// const auto DeleteSearch = [](IPathSearch* s, PathSearchVect& v, PathSearchVectIt& it) {
+	// const auto DeleteSearch = [](PathSearch* s, PathSearchVect& v, PathSearchVectIt& it) {
 	// 	// ordering of still-queued searches is not relevant
 	// 	*it = v.back();
 	// 	v.pop_back();
@@ -708,7 +711,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 
 	search->Initialize(&nodeLayer, &pathCache
 			, path->GetSourcePoint(), path->GetTargetPoint()
-			, MAP_RECTANGLE, &pathSearchOpenNodeCaches[currentThread]);
+			, MAP_RECTANGLE, &searchThreadData[currentThread]);
 	path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
 
 	{
@@ -721,17 +724,6 @@ bool QTPFS::PathManager::ExecuteSearch(
 				return false;
 			}
 		}
-		#endif
-
-		#ifdef QTPFS_LIMIT_TEAM_SEARCHES
-		const unsigned int numCurrSearches = numCurrExecutedSearches[search->GetTeam()];
-		const unsigned int numPrevSearches = numPrevExecutedSearches[search->GetTeam()];
-
-		if ((numCurrSearches - numPrevSearches) >= MAX_TEAM_SEARCHES) {
-			++searchesIt; return false;
-		}
-
-		numCurrExecutedSearches[search->GetTeam()] += 1;
 		#endif
 	}
 
@@ -746,9 +738,12 @@ bool QTPFS::PathManager::ExecuteSearch(
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		pathTraces[path->GetID()] = search->GetExecutionTrace();
 		#endif
-	} else {
-		DeletePath(path->GetID());
 	}
+
+	//  else {
+	// 	DeletePath(path->GetID()); // TODO: record a do outside of threading!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// 	// maybe in search object? have a result
+	// }
 
 	// DeleteSearch(search, searches, searchesIt);
 	return true;
@@ -810,7 +805,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	//     calls DeletePath, which ensures any path is removed
 	//     from its cache before we get to ExecuteSearch
 	IPath* newPath = new IPath();
-	IPathSearch* newSearch = new PathSearch(PATH_SEARCH_ASTAR);
+	PathSearch* newSearch = new PathSearch(PATH_SEARCH_ASTAR);
 
 	assert(newPath != nullptr);
 	assert(newSearch != nullptr);

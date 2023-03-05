@@ -10,6 +10,8 @@
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Rectangle.h"
 
+static QTPFS::IPath dummyPath; // dummy
+
 static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v, float3& rm) {
 	float3 vScales;
 
@@ -31,7 +33,6 @@ static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v,
 
 
 const QTPFS::IPath* QTPFS::PathCache::GetConstPath(unsigned int pathID, unsigned int pathType) const {
-	static IPath path; // dummy
 	const PathMap* map;
 
 	switch (pathType) {
@@ -42,7 +43,7 @@ const QTPFS::IPath* QTPFS::PathCache::GetConstPath(unsigned int pathID, unsigned
 	}
 
 	if (map == NULL)
-		return &path;
+		return &dummyPath;
 
 	const PathMap::const_iterator it = map->find(pathID);
 
@@ -50,17 +51,17 @@ const QTPFS::IPath* QTPFS::PathCache::GetConstPath(unsigned int pathID, unsigned
 		return it->second;
 	}
 
-	return &path;
+	return &dummyPath;
 }
 
 QTPFS::IPath* QTPFS::PathCache::GetPath(unsigned int pathID, unsigned int pathType) {
 	IPath* path = const_cast<IPath*>(GetConstPath(pathID, pathType));
 
-	if (path->GetID() != 0) {
-		numCacheHits[pathType] += 1;
-	} else {
-		numCacheMisses[pathType] += 1;
-	}
+	// if (path->GetID() != 0) {
+	// 	numCacheHits[pathType] += 1;
+	// } else {
+	// 	numCacheMisses[pathType] += 1;
+	// }
 
 	return path;
 }

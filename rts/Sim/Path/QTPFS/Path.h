@@ -64,6 +64,7 @@ namespace QTPFS {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
 			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
 
+			// TODO: do this with SSE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 			for (unsigned int n = 0; n < points.size(); n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
 				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);

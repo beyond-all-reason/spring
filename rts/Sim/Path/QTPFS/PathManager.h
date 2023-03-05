@@ -108,8 +108,8 @@ namespace QTPFS {
 		typedef spring::unordered_map<std::uint64_t, IPath*> SharedPathMap;
 		typedef spring::unordered_map<std::uint64_t, IPath*>::iterator SharedPathMapIt;
 
-		typedef std::vector<IPathSearch*> PathSearchVect;
-		typedef std::vector<IPathSearch*>::iterator PathSearchVectIt;
+		typedef std::vector<PathSearch*> PathSearchVect;
+		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
 
 		void SpawnSpringThreads(MemberFunc f, const SRectangle& r);
 
@@ -153,8 +153,9 @@ namespace QTPFS {
 		static std::vector<NodeLayer> nodeLayers;
 		static std::vector<QTNode*> nodeTrees;
 		static std::vector<PathCache> pathCaches;
-		static std::vector< std::vector<IPathSearch*> > pathSearches;
-		static std::vector< binary_heap<INode*> > pathSearchOpenNodeCaches;
+		static std::vector< std::vector<PathSearch*> > pathSearches;
+
+		std::vector<SearchThreadData> searchThreadData;
 
 		spring::unordered_map<unsigned int, unsigned int> pathTypes;
 		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;

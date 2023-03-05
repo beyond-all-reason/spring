@@ -55,7 +55,7 @@ namespace QTPFS {
 		      INode* GetPoolNode(unsigned int i)       { return &poolNodes[i / POOL_CHUNK_SIZE][i % POOL_CHUNK_SIZE]; }
 
 		INode* AllocRootNode(const INode* parent, unsigned int nn,  unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
-			rootNode.Init(parent, nn, x1, z1, x2, z2);
+			rootNode.Init(parent, nn, x1, z1, x2, z2, -1);
 			return &rootNode;
 		}
 
@@ -68,7 +68,7 @@ namespace QTPFS {
 			if (poolNodes[(idx = nodeIndcs.back()) / POOL_CHUNK_SIZE].empty())
 				poolNodes[idx / POOL_CHUNK_SIZE].resize(POOL_CHUNK_SIZE);
 
-			poolNodes[idx / POOL_CHUNK_SIZE][idx % POOL_CHUNK_SIZE].Init(parent, nn, x1, z1, x2, z2);
+			poolNodes[idx / POOL_CHUNK_SIZE][idx % POOL_CHUNK_SIZE].Init(parent, nn, x1, z1, x2, z2, idx);
 			nodeIndcs.pop_back();
 
 			return idx;
@@ -123,9 +123,12 @@ namespace QTPFS {
 		// root lives outside pool s.t. all four children of a given node are always in one chunk
 		QTNode rootNode;
 
+public:
 		static constexpr unsigned int NUM_POOL_CHUNKS = sizeof(poolNodes) / sizeof(poolNodes[0]);
 		static constexpr unsigned int POOL_TOTAL_SIZE = (1024 * 1024) / 2;
 		static constexpr unsigned int POOL_CHUNK_SIZE = POOL_TOTAL_SIZE / NUM_POOL_CHUNKS;
+
+private:
 
 		// NOTE:
 		//   we need a fixed range that does not become wider / narrower

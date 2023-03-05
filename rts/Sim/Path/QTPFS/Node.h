@@ -22,19 +22,22 @@
 
 namespace QTPFS {
 	struct NodeLayer;
+	struct SearchNode;
+
 	struct INode {
+			friend SearchNode;
 	public:
 		void SetNodeNumber(unsigned int n) { nodeNumber = n; }
-		void SetHeapIndex(unsigned int n) { heapIndex = n; }
+		// void SetHeapIndex(unsigned int n) { heapIndex = n; }
 		unsigned int GetNodeNumber() const { return nodeNumber; }
-		unsigned int GetHeapIndex() const { return heapIndex; }
-		float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
+		// unsigned int GetHeapIndex() const { return heapIndex; }
+		// float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
 
-		bool operator <  (const INode* n) const { return (fCost <  n->fCost); }
-		bool operator >  (const INode* n) const { return (fCost >  n->fCost); }
-		bool operator == (const INode* n) const { return (fCost == n->fCost); }
-		bool operator <= (const INode* n) const { return (fCost <= n->fCost); }
-		bool operator >= (const INode* n) const { return (fCost >= n->fCost); }
+		// bool operator <  (const INode* n) const { return (fCost <  n->fCost); }
+		// bool operator >  (const INode* n) const { return (fCost >  n->fCost); }
+		// bool operator == (const INode* n) const { return (fCost == n->fCost); }
+		// bool operator <= (const INode* n) const { return (fCost <= n->fCost); }
+		// bool operator >= (const INode* n) const { return (fCost >= n->fCost); }
 
 		#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
 		virtual void Serialize(std::fstream&, NodeLayer&, unsigned int*, unsigned int, bool) = 0;
@@ -77,20 +80,23 @@ namespace QTPFS {
 		virtual unsigned int GetMagicNumber() const = 0;
 		#endif
 
-		void SetPathCosts(float g, float h) { fCost = g + h; gCost = g; hCost = h; }
-		void SetPathCost(unsigned int type, float cost);
-		const float* GetPathCosts() const { return &fCost; }
-		float GetPathCost(unsigned int type) const;
+		// void SetPathCosts(float g, float h) { fCost = g + h; gCost = g; hCost = h; }
+		// void SetPathCost(unsigned int type, float cost);
+		// const float* GetPathCosts() const { return &fCost; }
+		// float GetPathCost(unsigned int type) const;
 
-		void SetPrevNode(INode* n) { prevNode = n; }
-		INode* GetPrevNode() { return prevNode; }
+		// void SetPrevNode(INode* n) { prevNode = n; }
+		// INode* GetPrevNode() { return prevNode; }
+
+		unsigned int GetIndex() { return index; }
 
 	protected:
 		// NOTE:
 		//     storing the heap-index is an *UGLY* break of abstraction,
 		//     but the only way to keep the cost of resorting acceptable
 		unsigned int nodeNumber = -1u;
-		unsigned int heapIndex = -1u;
+		// unsigned int heapIndex = -1u;
+		unsigned int index = 0;
 
 		float fCost = 0.0f;
 		float gCost = 0.0f;
@@ -122,7 +128,8 @@ namespace QTPFS {
 			const QTNode* parent,
 			unsigned int nn,
 			unsigned int x1, unsigned int z1,
-			unsigned int x2, unsigned int z2
+			unsigned int x2, unsigned int z2,
+			unsigned int idx
 		);
 
 		// NOTE:
@@ -167,12 +174,12 @@ namespace QTPFS {
 		bool AllSquaresImpassable() const { return (moveCostAvg == QTPFS_POSITIVE_INFINITY); }
 
 		void SetMoveCost(float cost) { moveCostAvg = cost; }
-		void SetSearchState(unsigned int state) { searchState = state; }
+		//void SetSearchState(unsigned int state) { searchState = state; }
 		void SetMagicNumber(unsigned int number) { currMagicNum = number; }
 
 		float GetSpeedMod() const { return speedModAvg; }
 		float GetMoveCost() const { return moveCostAvg; }
-		unsigned int GetSearchState() const { return searchState; }
+		// unsigned int GetSearchState() const { return searchState; }
 		unsigned int GetMagicNumber() const { return currMagicNum; }
 		unsigned int GetChildBaseIndex() const { return childBaseIndex; }
 
@@ -201,7 +208,7 @@ namespace QTPFS {
 		float speedModAvg =  0.0f;
 		float moveCostAvg = -1.0f;
 
-		unsigned int searchState = 0;
+		// unsigned int searchState = 0;
 		unsigned int currMagicNum = 0;
 		unsigned int prevMagicNum = -1u;
 
@@ -209,6 +216,81 @@ namespace QTPFS {
 
 		std::vector<INode*> neighbors;
 		std::vector<float2> netpoints;
+	};
+
+
+	struct SearchNode {
+
+		SearchNode() {}
+
+		SearchNode(INode& srcNode)
+			: nodeNumber(srcNode.nodeNumber)
+			, index(srcNode.index)
+			, prevNode(nullptr)
+			// , netpoints(srcNode.netpoints)
+			{}
+
+		SearchNode(INode* srcNode)
+			: nodeNumber(srcNode->nodeNumber)
+			, index(srcNode->index)
+			, prevNode(nullptr)
+			// , netpoints(srcNode->netpoints)
+			{}
+
+		SearchNode(const SearchNode& other) { operator=(other); }
+
+		SearchNode& operator=(const SearchNode& other) {
+			nodeNumber = other.nodeNumber;
+			fCost = QTPFS_POSITIVE_INFINITY;
+			gCost = QTPFS_POSITIVE_INFINITY;
+			hCost = QTPFS_POSITIVE_INFINITY;
+			index = other.index;
+			prevNode = other.prevNode;
+			// netpoints = other.netpoints;
+			// heapIndex = other.heapIndex;
+			searchState = other.searchState;
+			return *this;
+		}
+
+		void SetNodeNumber(unsigned int n) { nodeNumber = n; }
+		// void SetHeapIndex(unsigned int n) { heapIndex = n; }
+		unsigned int GetNodeNumber() const { return nodeNumber; }
+		// unsigned int GetHeapIndex() const { return heapIndex; }
+		float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
+		unsigned int GetSearchState() const { return searchState; }
+
+		bool operator <  (const SearchNode* n) const { return (fCost <  n->fCost); }
+		bool operator >  (const SearchNode* n) const { return (fCost >  n->fCost); }
+		bool operator == (const SearchNode* n) const { return (fCost == n->fCost); }
+		bool operator <= (const SearchNode* n) const { return (fCost <= n->fCost); }
+		bool operator >= (const SearchNode* n) const { return (fCost >= n->fCost); }
+
+		void SetPathCosts(float g, float h) { fCost = g + h; gCost = g; hCost = h; }
+		const float* GetPathCosts() const { return &fCost; }
+		float GetPathCost(unsigned int type) const;
+
+		void SetPrevNode(SearchNode* n) { prevNode = n; }
+		SearchNode* GetPrevNode() const { return prevNode; }
+
+		unsigned int GetIndex() const { return index; }
+		void SetSearchState(unsigned int state) { searchState = state; }
+
+		void SetNeighborEdgeTransitionPoint(const float2& point) { selectedNetpoint = point; }
+		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
+
+		unsigned int nodeNumber = -1u;
+		// unsigned int heapIndex = -1u;
+		unsigned int index = 0;
+		unsigned int searchState = 0;
+
+		float fCost = QTPFS_POSITIVE_INFINITY;
+		float gCost = QTPFS_POSITIVE_INFINITY;
+		float hCost = QTPFS_POSITIVE_INFINITY;
+
+		// points back to previous node in path
+		SearchNode* prevNode = nullptr;
+
+		float2 selectedNetpoint;
 	};
 }
 

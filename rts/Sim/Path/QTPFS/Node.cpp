@@ -20,42 +20,50 @@ unsigned int QTPFS::QTNode::MAX_DEPTH;
 
 
 
-void QTPFS::INode::SetPathCost(unsigned int type, float cost) {
-	#ifndef QTPFS_ENABLE_MICRO_OPTIMIZATION_HACKS
-	switch (type) {
-		case NODE_PATH_COST_F: { fCost = cost; return; } break;
-		case NODE_PATH_COST_G: { gCost = cost; return; } break;
-		case NODE_PATH_COST_H: { hCost = cost; return; } break;
-	}
+// void QTPFS::INode::SetPathCost(unsigned int type, float cost) {
+// 	#ifndef QTPFS_ENABLE_MICRO_OPTIMIZATION_HACKS
+// 	switch (type) {
+// 		case NODE_PATH_COST_F: { fCost = cost; return; } break;
+// 		case NODE_PATH_COST_G: { gCost = cost; return; } break;
+// 		case NODE_PATH_COST_H: { hCost = cost; return; } break;
+// 	}
 
-	assert(false);
-	#else
-	assert(&gCost == &fCost + 1);
-	assert(&hCost == &gCost + 1);
-	assert(type <= NODE_PATH_COST_H);
+// 	assert(false);
+// 	#else
+// 	assert(&gCost == &fCost + 1);
+// 	assert(&hCost == &gCost + 1);
+// 	assert(type <= NODE_PATH_COST_H);
 
-	*(&fCost + type) = cost;
-	#endif
-}
+// 	*(&fCost + type) = cost;
+// 	#endif
+// }
 
-float QTPFS::INode::GetPathCost(unsigned int type) const {
-	#ifndef QTPFS_ENABLE_MICRO_OPTIMIZATION_HACKS
-	switch (type) {
-		case NODE_PATH_COST_F: { return fCost; } break;
-		case NODE_PATH_COST_G: { return gCost; } break;
-		case NODE_PATH_COST_H: { return hCost; } break;
-	}
-
-	assert(false);
-	return 0.0f;
-	#else
+float QTPFS::SearchNode::GetPathCost(unsigned int type) const {
 	assert(&gCost == &fCost + 1);
 	assert(&hCost == &gCost + 1);
 	assert(type <= NODE_PATH_COST_H);
 
 	return *(&fCost + type);
-	#endif
 }
+
+// float QTPFS::INode::GetPathCost(unsigned int type) const {
+// 	#ifndef QTPFS_ENABLE_MICRO_OPTIMIZATION_HACKS
+// 	switch (type) {
+// 		case NODE_PATH_COST_F: { return fCost; } break;
+// 		case NODE_PATH_COST_G: { return gCost; } break;
+// 		case NODE_PATH_COST_H: { return hCost; } break;
+// 	}
+
+// 	assert(false);
+// 	return 0.0f;
+// 	#else
+// 	assert(&gCost == &fCost + 1);
+// 	assert(&hCost == &gCost + 1);
+// 	assert(type <= NODE_PATH_COST_H);
+
+// 	return *(&fCost + type);
+// 	#endif
+// }
 
 float QTPFS::INode::GetDistance(const INode* n, unsigned int type) const {
 	const float dx = float(xmid() * SQUARE_SIZE) - float(n->xmid() * SQUARE_SIZE);
@@ -192,15 +200,16 @@ void QTPFS::QTNode::Init(
 	const QTNode* /*parent*/,
 	unsigned int nn,
 	unsigned int x1, unsigned int z1,
-	unsigned int x2, unsigned int z2
+	unsigned int x2, unsigned int z2,
+	unsigned int idx
 ) {
 	assert(MIN_SIZE_X > 0);
 	assert(MIN_SIZE_Z > 0);
 
 	nodeNumber = nn;
-	heapIndex = -1u;
+	// heapIndex = -1u;
 
-	searchState  =   0;
+	// searchState  =   0;
 	currMagicNum =   0;
 	prevMagicNum = -1u;
 
@@ -223,10 +232,12 @@ void QTPFS::QTNode::Init(
 	speedModAvg =  0.0f;
 	moveCostAvg = -1.0f;
 
+	index = idx;
+
 	prevNode = nullptr;
 
 	neighbors.clear();
-	netpoints.clear();
+	// netpoints.clear();
 }
 
 
@@ -236,7 +247,7 @@ std::uint64_t QTPFS::QTNode::GetMemFootPrint(const NodeLayer& nl) const {
 
 	if (IsLeaf()) {
 		memFootPrint += (neighbors.size() * sizeof(decltype(neighbors)::value_type));
-		memFootPrint += (netpoints.size() * sizeof(decltype(netpoints)::value_type));
+		// memFootPrint += (netpoints.size() * sizeof(decltype(netpoints)::value_type));
 	} else {
 		for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
 			memFootPrint += (nl.GetPoolNode(childBaseIndex + i)->GetMemFootPrint(nl));
@@ -331,7 +342,7 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	childBaseIndex = childIndices[0];
 
 	neighbors.clear();
-	netpoints.clear();
+	// netpoints.clear();
 
 	nl.SetNumLeafNodes(nl.GetNumLeafNodes() + (4 - 1));
 	assert(!IsLeaf());

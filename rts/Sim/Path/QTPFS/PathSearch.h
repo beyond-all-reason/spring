@@ -9,6 +9,7 @@
 #include "PathDefines.h"
 #include "Node.h"
 #include "NodeHeap.h"
+#include "PathThreads.h"
 
 #include "System/float3.h"
 
@@ -75,33 +76,33 @@ namespace QTPFS {
 	// NOTE:
 	//     with time-sliced execution, {src,tgt,cur,nxt}Node can become
 	//     dangling
-	struct IPathSearch {
-		IPathSearch(unsigned int pathSearchType)
-			: searchID(0)
-			, searchTeam(0)
-			, searchType(pathSearchType)
-			, searchState(0)
-			, searchMagic(0)
-			{}
-		virtual ~IPathSearch() {}
+	struct PathSearch {
+		// PathSearch(unsigned int pathSearchType)
+		// 	: searchID(0)
+		// 	, searchTeam(0)
+		// 	, searchType(pathSearchType)
+		// 	, searchState(0)
+		// 	, searchMagic(0)
+		// 	{}
+		// virtual ~PathSearch() {}
 
-		virtual void Initialize(
-			NodeLayer* layer,
-			PathCache* cache,
-			const float3& sourcePoint,
-			const float3& targetPoint,
-			const SRectangle& searchArea,
-			QTPFS::binary_heap<QTPFS::INode *>* nodeRefCache
-		) = 0;
-		virtual bool Execute(
-			unsigned int searchStateOffset = 0,
-			unsigned int searchMagicNumber = 0
-		) = 0;
-		virtual void Finalize(IPath* path) = 0;
-		virtual bool SharedFinalize(const IPath* srcPath, IPath* dstPath) { return false; }
-		virtual PathSearchTrace::Execution* GetExecutionTrace() { return NULL; }
+		// virtual void Initialize(
+		// 	NodeLayer* layer,
+		// 	PathCache* cache,
+		// 	const float3& sourcePoint,
+		// 	const float3& targetPoint,
+		// 	const SRectangle& searchArea,
+		// 	SearchThreadData* threadData
+		// ) = 0;
+		// virtual bool Execute(
+		// 	unsigned int searchStateOffset = 0,
+		// 	unsigned int searchMagicNumber = 0
+		// ) = 0;
+		// virtual void Finalize(IPath* path) = 0;
+		// virtual bool SharedFinalize(const IPath* srcPath, IPath* dstPath) { return false; }
+		// virtual PathSearchTrace::Execution* GetExecutionTrace() { return NULL; }
 
-		virtual const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const = 0;
+		// virtual const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const = 0;
 
 		void SetID(unsigned int n) { searchID = n; }
 		void SetTeam(unsigned int n) { searchTeam = n; }
@@ -115,27 +116,34 @@ namespace QTPFS {
 		unsigned int searchType;   // indicates if Dijkstra (h==0) or A* (h!=0) search is employed
 		unsigned int searchState;  // offset that identifies nodes as part of current search
 		unsigned int searchMagic;  // used to signal nodes they should update their neighbor-set
-	};
+	// };
 
 
-	struct PathSearch: public IPathSearch {
+	// struct PathSearch: public PathSearch {
 	public:
-		PathSearch(unsigned int pathSearchType)
-			: IPathSearch(pathSearchType)
-			, nodeLayer(NULL)
+		PathSearch()
+			: nodeLayer(NULL)
 			, pathCache(NULL)
 			, searchExec(NULL)
-			, srcNode(NULL)
-			, tgtNode(NULL)
-			, curNode(NULL)
-			, nxtNode(NULL)
-			, minNode(NULL)
+			// , srcNode(NULL)
+			// , tgtNode(NULL)
+			// , curNode(NULL)
+			// , nxtNode(NULL)
+			// , minNode(NULL)
 			, hCostMult(0.0f)
 			, haveFullPath(false)
 			, havePartPath(false)
 			, openNodes(nullptr)
+			, searchID(0)
+			, searchTeam(0)
+			, searchType(0)
+			, searchState(0)
+			, searchMagic(0)
 			{}
-		~PathSearch() { if(openNodes != nullptr) openNodes->reset(); }
+		PathSearch(unsigned int pathSearchType)
+			: PathSearch()
+			{ searchType = pathSearchType; }
+		~PathSearch() { /* openNodes->reset(); */ }
 
 		void Initialize(
 			NodeLayer* layer,
@@ -143,8 +151,8 @@ namespace QTPFS {
 			const float3& sourcePoint,
 			const float3& targetPoint,
 			const SRectangle& searchArea,
-			QTPFS::binary_heap<QTPFS::INode *>* nodeRefCache
-		) override;
+			SearchThreadData* threadData
+		);
 		bool Execute(
 			unsigned int searchStateOffset = 0,
 			unsigned int searchMagicNumber = 0
@@ -158,11 +166,13 @@ namespace QTPFS {
 		// static void InitGlobalQueue(unsigned int n) { openNodes->reserve(n); }
 		// static void FreeGlobalQueue() { openNodes->clear(); }
 
-		void SetOpenNodesQueue(binary_heap<INode*>* queue) { openNodes = queue; };
+		//void SetOpenNodesQueue(binary_heap<SearchNode>* queue) { openNodes = queue; };
+
+		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
 	private:
-		void ResetState(INode* node);
-		void UpdateNode(INode* nextNode, INode* prevNode, unsigned int netPointIdx);
+		void ResetState(SearchNode* node);
+		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
 
 		void IterateNodes(const std::vector<INode*>& allNodes);
 		void IterateNodeNeighbors(const std::vector<INode*>& nxtNodes);
@@ -175,7 +185,9 @@ namespace QTPFS {
 		// this relies on INode::operator< to sort the INode*'s by increasing f-cost
 		// static binary_heap<INode*> openNodes;
 
-		binary_heap<INode*>* openNodes;
+		QTPFS::SearchThreadData* searchThreadData;
+		//binary_heap<SearchQueueNode>* openNodes;
+		SearchPriorityQueue* openNodes;
 
 		NodeLayer* nodeLayer;
 		PathCache* pathCache;
@@ -186,9 +198,13 @@ namespace QTPFS {
 
 		SRectangle searchRect;
 
-		INode *srcNode, *tgtNode;
-		INode *curNode, *nxtNode;
-		INode *minNode;
+		// INode *srcNode, *tgtNode;
+		// INode *curNode, *nxtNode;
+		// INode *minNode;
+
+		SearchNode *srcSearchNode, *tgtSearchNode;
+		SearchNode *curSearchNode, *nextSearchNode;
+		SearchNode *minSearchNode;
 
 		float3 srcPoint;
 		float3 tgtPoint;
