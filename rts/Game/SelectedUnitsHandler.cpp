@@ -258,6 +258,70 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 }
 
 
+void CSelectedUnitsHandler::HandleUnitBoxSelection(const float3& mins, const float3& maxs)
+{
+	CUnit* unit = nullptr;
+	const CPlayer* myPlayer = gu->GetMyPlayer();
+
+	AABB aabb;
+	aabb.mins = mins;
+	aabb.maxs = maxs;
+
+	int numUnits = 0;
+	int minTeam = gu->myTeam;
+	int maxTeam = gu->myTeam;
+
+	// any team's units can be *selected*; whether they can
+	// be given orders depends on our ability to play god
+	if (gu->spectatingFullSelect || gs->godMode != 0) {
+		minTeam = 0;
+		maxTeam = teamHandler.ActiveTeams() - 1;
+	}
+
+	const float cotHalfFovSq = 1.0f/(camera->tanHalfFov * camera->tanHalfFov);
+	const float viewSizeFactorSq = globalRendering->viewSizeY * globalRendering->viewSizeY / 4.0;
+
+	for (int team = minTeam; team <= maxTeam; team++) {
+		if (!gu->spectatingFullSelect && !myPlayer->CanControlTeam(team))
+			continue;
+
+		for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {
+			const auto vpPos = camera->CalcViewPortCoordinates(u->midPos);
+			const auto selectionVolume = &u->selectionVolume;
+			const float radiusSq = selectionVolume->HasCustomType() ? u->sqRadius : selectionVolume->GetHScaleSq(0);
+			// Get projection of sphere radius to screen plane:
+			//   d: distance between the eye and the center of the sphere
+			//   r: radius of the sphere
+			// pr = cot(fovy / 2) * (r / sqrt(d^2 - r^2))
+			// pr *= viewHeight / 2
+			const float screenRadiusSq = cotHalfFovSq * radiusSq / (camera->GetPos().SqDistance(u->midPos) - radiusSq);
+
+			if (!aabb.Intersects(float3(vpPos.x, 0, vpPos.y), viewSizeFactorSq * screenRadiusSq))
+				continue;
+
+			if (KeyInput::GetKeyModState(KMOD_CTRL) && (selectedUnits.find(u->id) != selectedUnits.end())) {
+				RemoveUnit(u);
+				continue;
+			}
+
+			AddUnit(unit = u);
+			numUnits++;
+		}
+	}
+
+	switch (numUnits) {
+		case 0: {
+		} break;
+		case 1: {
+			Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
+		} break;
+		default: {
+			Channels::UserInterface->PlaySample(soundMultiselID);
+		} break;
+	}
+}
+
+
 void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom)
 {
 	CUnit* unit = nullptr;

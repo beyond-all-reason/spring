@@ -3,6 +3,8 @@
 #ifndef AABB_H
 #define AABB_H
 
+#include "System/Sync/Logger.h"
+#include "System/Log/ILog.h"
 #include "System/float3.h"
 #include "System/type2.h"
 #include "System/Matrix44f.h"
@@ -28,6 +30,26 @@ public:
 		n += RangeOverlap({mins.z, maxs.z}, {b.mins.z, b.maxs.z});
 
 		return (n == 3);
+	}
+
+	bool Intersects(const float3& center, const float radiusSq) const {
+		//point on rectangle closest to circle 
+		//(snaps the point to the rectangle, pretty much, 
+		//if the circle center is inside the rectangle there isn't snapping, 
+		//but this is fine since it will detect a collision as a result)
+		float3 pt = center;
+
+		LOG_L(L_ERROR, "1. center.x = %f, center.z = %f, mins.x = %f, mins.y = %f, maxs.x = %f, maxs.y = %f", center.x, center.z, mins.x, mins.y, maxs.x, maxs.y);
+
+		if(pt.x > maxs.x) pt.x = maxs.x;
+		if(pt.x < mins.x) pt.x = mins.x;
+		if(pt.z > maxs.y) pt.z = maxs.y;
+		if(pt.z < mins.y) pt.z = mins.y;
+
+		LOG_L(L_ERROR, "2. pt.x = %f, pt.z = %f, mins.x = %f, mins.y = %f, maxs.x = %f, maxs.y = %f", pt.x, pt.z, mins.x, mins.y, maxs.x, maxs.y);
+		LOG_L(L_ERROR, "3. dist = %f, radiusSq = %f, diff = %f, intersect = %i", pt.SqDistance2D(center), radiusSq, radiusSq - pt.SqDistance2D(center), (pt.SqDistance2D(center) < radiusSq));
+
+		return pt.SqDistance2D(center) < radiusSq;
 	}
 
 	bool Contains(const float3& p) const {
