@@ -41,18 +41,23 @@ static constexpr unsigned int ASS_POSTPROCESS_OPTIONS =
 	| aiProcess_SortByPType
 	| aiProcess_JoinIdenticalVertices
 	//| aiProcess_ImproveCacheLocality // FIXME crashes in an assert in VertexTriangleAdjancency.h (date 04/2011)
-	| aiProcess_SplitLargeMeshes;
+	| aiProcess_LimitBoneWeights
+	| aiProcess_SplitLargeMeshes
+	;
 
 static constexpr unsigned int ASS_IMPORTER_OPTIONS =
-	aiComponent_CAMERAS |
-	aiComponent_LIGHTS |
-	aiComponent_TEXTURES |
-	aiComponent_ANIMATIONS;
+	  aiComponent_CAMERAS
+	| aiComponent_LIGHTS
+	| aiComponent_TEXTURES
+	| aiComponent_ANIMATIONS
+	| aiComponent_MATERIALS
+	;
 static constexpr unsigned int ASS_LOGGING_OPTIONS =
-	Assimp::Logger::Debugging |
-	Assimp::Logger::Info |
-	Assimp::Logger::Err |
-	Assimp::Logger::Warn;
+	  Assimp::Logger::Debugging
+	| Assimp::Logger::Info
+	| Assimp::Logger::Err
+	| Assimp::Logger::Warn
+	;
 
 
 
