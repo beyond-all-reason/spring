@@ -70,7 +70,7 @@ bool QTPFS::PathSearch::Execute(
 	unsigned int searchStateOffset,
 	unsigned int searchMagicNumber
 ) {
-	searchState = searchStateOffset; // starts at NODE_STATE_OFFSET
+	// searchState = searchStateOffset; // starts at NODE_STATE_OFFSET
 	searchMagic = searchMagicNumber; // starts at numTerrainChanges
 
 	haveFullPath = (srcSearchNode == tgtSearchNode);
@@ -184,7 +184,7 @@ void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, u
 	//   associated with it --> paths will be "nearly optimal"
 	nextNode->SetPrevNode(prevNode);
 	nextNode->SetPathCosts(gCosts[netPointIdx], hCosts[netPointIdx]);
-	nextNode->SetSearchState(searchState | NODE_STATE_OPEN);
+	// nextNode->SetSearchState(searchState | NODE_STATE_OPEN);
 	nextNode->SetNeighborEdgeTransitionPoint(netPoints[netPointIdx]);
 }
 
@@ -192,7 +192,7 @@ void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
 	SearchQueueNode curOpenNode = (*openNodes).top();
 	// curNode = allNodes[curOpenNode.nodeIndex];
 	curSearchNode = &searchThreadData->allSearchedNodes[curOpenNode.nodeIndex];
-	curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
+	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	#ifdef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 	// in the non-conservative case, this is done from

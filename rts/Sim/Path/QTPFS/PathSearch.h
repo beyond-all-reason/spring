@@ -66,44 +66,7 @@ namespace QTPFS {
 		};
 	}
 
-
-	// NOTE:
-	//     we could support "time-sliced" execution, but we would have
-	//     to isolate each query from modifying another's INode members
-	//     (*Cost, nodeState, etc.) --> memory-intensive
-	//     also, terrain changes could invalidate partial paths without
-	//     buffering the *entire* heightmap each frame --> not efficient
-	// NOTE:
-	//     with time-sliced execution, {src,tgt,cur,nxt}Node can become
-	//     dangling
 	struct PathSearch {
-		// PathSearch(unsigned int pathSearchType)
-		// 	: searchID(0)
-		// 	, searchTeam(0)
-		// 	, searchType(pathSearchType)
-		// 	, searchState(0)
-		// 	, searchMagic(0)
-		// 	{}
-		// virtual ~PathSearch() {}
-
-		// virtual void Initialize(
-		// 	NodeLayer* layer,
-		// 	PathCache* cache,
-		// 	const float3& sourcePoint,
-		// 	const float3& targetPoint,
-		// 	const SRectangle& searchArea,
-		// 	SearchThreadData* threadData
-		// ) = 0;
-		// virtual bool Execute(
-		// 	unsigned int searchStateOffset = 0,
-		// 	unsigned int searchMagicNumber = 0
-		// ) = 0;
-		// virtual void Finalize(IPath* path) = 0;
-		// virtual bool SharedFinalize(const IPath* srcPath, IPath* dstPath) { return false; }
-		// virtual PathSearchTrace::Execution* GetExecutionTrace() { return NULL; }
-
-		// virtual const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const = 0;
-
 		void SetID(unsigned int n) { searchID = n; }
 		void SetTeam(unsigned int n) { searchTeam = n; }
 		unsigned int GetID() const { return searchID; }
@@ -116,20 +79,12 @@ namespace QTPFS {
 		unsigned int searchType;   // indicates if Dijkstra (h==0) or A* (h!=0) search is employed
 		unsigned int searchState;  // offset that identifies nodes as part of current search
 		unsigned int searchMagic;  // used to signal nodes they should update their neighbor-set
-	// };
 
-
-	// struct PathSearch: public PathSearch {
 	public:
 		PathSearch()
 			: nodeLayer(NULL)
 			, pathCache(NULL)
 			, searchExec(NULL)
-			// , srcNode(NULL)
-			// , tgtNode(NULL)
-			// , curNode(NULL)
-			// , nxtNode(NULL)
-			// , minNode(NULL)
 			, hCostMult(0.0f)
 			, haveFullPath(false)
 			, havePartPath(false)
@@ -170,6 +125,9 @@ namespace QTPFS {
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
+		void SetPathType(int newPathType) { pathType = newPathType; }
+		int GetPathType() const { return pathType; }
+
 	private:
 		void ResetState(SearchNode* node);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
@@ -190,6 +148,7 @@ namespace QTPFS {
 		SearchPriorityQueue* openNodes;
 
 		NodeLayer* nodeLayer;
+		int pathType;
 		PathCache* pathCache;
 
 		// not used unless QTPFS_TRACE_PATH_SEARCHES is defined

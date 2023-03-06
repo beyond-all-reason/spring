@@ -15,13 +15,6 @@ struct MoveDef;
 struct SRectangle;
 class CSolidObject;
 
-#ifdef QTPFS_ENABLE_THREADED_UPDATE
-namespace spring {
-	class mutex;
-	class thread;
-	class condition_variable;
-};
-#endif
 
 namespace QTPFS {
 	struct QTNode;
@@ -123,7 +116,7 @@ namespace QTPFS {
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
 
-		void ExecuteQueuedSearches(unsigned int pathType);
+		void ExecuteQueuedSearches();
 		void QueueDeadPathSearches(unsigned int pathType);
 
 		unsigned int QueueSearch(
@@ -137,8 +130,9 @@ namespace QTPFS {
 		);
 
 		bool ExecuteSearch(
-			PathSearchVect& searches,
-			PathSearchVectIt& searchesIt,
+			// PathSearchVect& searches,
+			// PathSearchVectIt& searchesIt,
+			PathSearch* search,
 			NodeLayer& nodeLayer,
 			PathCache& pathCache,
 			unsigned int pathType
@@ -153,7 +147,8 @@ namespace QTPFS {
 		static std::vector<NodeLayer> nodeLayers;
 		static std::vector<QTNode*> nodeTrees;
 		static std::vector<PathCache> pathCaches;
-		static std::vector< std::vector<PathSearch*> > pathSearches;
+		// static std::vector< std::vector<PathSearch*> > pathSearches;
+		static std::vector<PathSearch*> pathSearches;
 
 		std::vector<SearchThreadData> searchThreadData;
 

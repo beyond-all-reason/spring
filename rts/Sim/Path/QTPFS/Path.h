@@ -102,8 +102,12 @@ namespace QTPFS {
 
 		const std::vector<float3>& GetPoints() const { return points; }
 
+		void SetPathType(int newPathType) { pathType = newPathType; }
+		int GetPathType() const { return pathType; }
+
 	protected:
 		unsigned int pathID;
+		int pathType;
 
 		unsigned int nextPointIndex; // index of the next waypoint to be visited
 		unsigned int numPathUpdates; // number of times this path was invalidated

@@ -114,7 +114,9 @@ namespace QTPFS {
 	std::vector<NodeLayer> PathManager::nodeLayers;
 	std::vector<QTNode*> PathManager::nodeTrees;
 	std::vector<PathCache> PathManager::pathCaches;
-	std::vector< std::vector<PathSearch*> > PathManager::pathSearches; // per layer??? - TODO: single list
+	// std::vector< std::vector<PathSearch*> > PathManager::pathSearches; // per layer??? - TODO: single list
+
+	std::vector<PathSearch*> PathManager::pathSearches;
 }
 
 
@@ -129,16 +131,13 @@ QTPFS::PathManager::~PathManager() {
 	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 		nodeTrees[layerNum]->Merge(nodeLayers[layerNum]);
 		nodeLayers[layerNum].Clear();
-
-		for (auto searchesIt = pathSearches[layerNum].begin(); searchesIt != pathSearches[layerNum].end(); ++searchesIt) {
-			delete (*searchesIt);
-		}
-
-		pathSearches[layerNum].clear();
 	}
-	for (auto tracesIt = pathTraces.begin(); tracesIt != pathTraces.end(); ++tracesIt) {
-		delete (tracesIt->second);
-	}
+	std::for_each(pathTraces.begin(), pathTraces.end(), [](std::pair<unsigned int, QTPFS::PathSearchTrace::Execution*>& t){delete t.second;} );
+	std::for_each(pathSearches.begin(), pathSearches.end(), [](PathSearch* p){delete p;});
+
+	// for (auto tracesIt = pathTraces.begin(); tracesIt != pathTraces.end(); ++tracesIt) {
+	// 	delete (tracesIt->second);
+	// }
 
 	nodeTrees.clear();
 	// reuse layer pools when reloading
@@ -153,16 +152,7 @@ QTPFS::PathManager::~PathManager() {
 	numCurrExecutedSearches.clear();
 	numPrevExecutedSearches.clear();
 
-	// PathSearch::FreeGlobalQueue();
 	searchThreadData.clear();
-
-	#ifdef QTPFS_ENABLE_THREADED_UPDATE
-	// at this point the thread is waiting, so notify it
-	// (nodeTrees has been cleared already, guaranteeing
-	// that no "final" iteration shall execute)
-	condThreadUpdate.notify_one();
-	updateThread.join();
-	#endif
 }
 
 std::int64_t QTPFS::PathManager::Finalize() {
@@ -196,7 +186,7 @@ void QTPFS::PathManager::Load() {
 	nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
 	pathCaches.resize(moveDefHandler.GetNumMoveDefs());
-	pathSearches.resize(moveDefHandler.GetNumMoveDefs());
+	pathSearches.reserve(200);
 
 	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
@@ -625,10 +615,10 @@ void QTPFS::PathManager::ThreadUpdate() {
 		#ifndef QTPFS_IGNORE_DEAD_PATHS
 		QueueDeadPathSearches(pathTypeUpdate);
 		#endif
-
-		ExecuteQueuedSearches(pathTypeUpdate);
 	//});
 	}
+
+	ExecuteQueuedSearches();
 
 	std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
 
@@ -646,25 +636,23 @@ void QTPFS::PathManager::ThreadUpdate() {
 
 
 
-void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
-	NodeLayer& nodeLayer = nodeLayers[pathType];
-	PathCache& pathCache = pathCaches[pathType];
+void QTPFS::PathManager::ExecuteQueuedSearches() {
 
-	std::vector<PathSearch*>& searches = pathSearches[pathType];
-	// std::vector<PathSearch*>::iterator searchesIt = searches.begin();
-
-	if (searches.empty()) return;
+	if (pathSearches.empty()) return;
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	// while (searchesIt != searches.end()) {
-	for (auto searchesIt = searches.begin(); searchesIt != searches.end(); searchesIt++) {
-		if (ExecuteSearch(searches, searchesIt, nodeLayer, pathCache, pathType)) {
-			searchStateOffset += NODE_STATE_OFFSET;
-		}
-	}
+	for_mt(0, pathSearches.size(), [this](int i){
+		PathSearch* search = pathSearches[i];
+		int pathType = search->GetPathType();
+		NodeLayer& nodeLayer = nodeLayers[pathType];
+		PathCache& pathCache = pathCaches[pathType];
+		ExecuteSearch(search, nodeLayer, pathCache, pathType);
+	});
 
-	const auto CleanUpSearch = [=, &pathCache](QTPFS::PathSearch *search){
+	const auto CleanUpSearch = [this](QTPFS::PathSearch *search){
+		int pathType = search->GetPathType();
+		PathCache& pathCache = pathCaches[pathType];
 		IPath* path = pathCache.GetTempPath(search->GetID());
 		if (search->PathWasFound())
 			pathCache.AddLivePath(path);
@@ -673,18 +661,17 @@ void QTPFS::PathManager::ExecuteQueuedSearches(unsigned int pathType) {
 		delete search;
 	};
 
-	std::for_each(searches.begin(), searches.end(), CleanUpSearch);
-	searches.clear();
+	std::for_each(pathSearches.begin(), pathSearches.end(), CleanUpSearch);
+	pathSearches.clear();
 }
 
 bool QTPFS::PathManager::ExecuteSearch(
-	PathSearchVect& searches,
-	PathSearchVectIt& searchesIt,
+	PathSearch* search,
 	NodeLayer& nodeLayer,
 	PathCache& pathCache,
 	unsigned int pathType
 ) {
-	PathSearch* search = *searchesIt;
+	// PathSearch* search = *searchesIt;
 	IPath* path = pathCache.GetTempPath(search->GetID());
 
 	int currentThread = ThreadPool::GetThreadNum();
@@ -853,9 +840,12 @@ unsigned int QTPFS::PathManager::QueueSearch(
 
 	assert((pathCaches[moveDef->pathType].GetTempPath(newPath->GetID()))->GetID() == 0);
 
+	newPath->SetPathType(moveDef->pathType);
+	newSearch->SetPathType(moveDef->pathType);
+
 	// map the path-ID to the index of the cache that stores it
 	pathTypes[newPath->GetID()] = moveDef->pathType;
-	pathSearches[moveDef->pathType].push_back(newSearch);
+	pathSearches.push_back(newSearch);
 	pathCaches[moveDef->pathType].AddTempPath(newPath);
 
 	return (newPath->GetID());
