@@ -29,6 +29,10 @@
 #include "System/TimeProfiler.h"
 #include "System/StringUtil.h"
 
+#include "Components/Path.h"
+#include "Components/PathSearch.h"
+#include "Registry.h"
+
 #ifdef GetTempPath
 #undef GetTempPath
 #undef GetTempPathA
@@ -113,9 +117,7 @@ namespace QTPFS {
 
 	std::vector<NodeLayer> PathManager::nodeLayers;
 	std::vector<QTNode*> PathManager::nodeTrees;
-	std::vector<PathCache> PathManager::pathCaches;
-	// std::vector< std::vector<PathSearch*> > PathManager::pathSearches; // per layer??? - TODO: single list
-
+	// std::vector<PathCache> PathManager::pathCaches;
 	std::vector<PathSearch*> PathManager::pathSearches;
 }
 
@@ -142,7 +144,7 @@ QTPFS::PathManager::~PathManager() {
 	nodeTrees.clear();
 	// reuse layer pools when reloading
 	// nodeLayers.clear();
-	pathCaches.clear();
+	// pathCaches.clear();
 	pathSearches.clear();
 	pathTypes.clear();
 	pathTraces.clear();
@@ -185,7 +187,6 @@ void QTPFS::PathManager::Load() {
 
 	nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
-	pathCaches.resize(moveDefHandler.GetNumMoveDefs());
 	pathSearches.reserve(200);
 
 	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
@@ -302,7 +303,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 		const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
 		#endif
 
-		for_mt(0, nodeLayers.size(), [&,loadMsg](const int layerNum){
+		for_mt(0, nodeLayers.size(), [=,&loadMsg, &rect](const int layerNum){
 			#ifndef NDEBUG
 			sprintf(loadMsg, preFmtStr, layerNum, ThreadPool::GetThreadNum());
 			pmLoadScreen.AddMessage(loadMsg);
@@ -411,7 +412,7 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 
 	if (needTesselation && wantTesselation) {
 		nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
-		pathCaches[layerNum].MarkDeadPaths(r);
+		pathCaches.MarkDeadPaths(r, layerNum);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
@@ -592,77 +593,92 @@ void QTPFS::PathManager::ThreadUpdate() {
 	//     for a mod with N move-types, any unit will be waiting
 	//     (N / LAYERS_PER_UPDATE) sim-frames before its request
 	//     executes at a minimum
-	const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
-	const unsigned int numPathTypeUpdates = nodeLayers.size();
+	// const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
+	// const unsigned int numPathTypeUpdates = nodeLayers.size();
 
 	// NOTE: thread-safe (only ONE thread ever accesses these)
-	static unsigned int minPathTypeUpdate = 0;
-	static unsigned int maxPathTypeUpdate = numPathTypeUpdates;
+	// static unsigned int minPathTypeUpdate = 0;
+	// static unsigned int maxPathTypeUpdate = numPathTypeUpdates;
 
-	if (gs->frameNum >= recalcDeadPathUpdateRateOnFrame){
-		recalcDeadPathUpdateRateOnFrame = gs->frameNum + GAME_SPEED;
-		size_t totalDeadPaths = 0;
-		for (auto& pathCache : pathCaches)
-			totalDeadPaths += pathCache.GetDeadPaths().size();
+	// if (gs->frameNum >= recalcDeadPathUpdateRateOnFrame){
+	// 	recalcDeadPathUpdateRateOnFrame = gs->frameNum + GAME_SPEED;
+	// 	size_t totalDeadPaths = 0;
+	// 	for (auto& pathCache : pathCaches)
+	// 		totalDeadPaths += pathCache.GetDeadPaths().size();
 
-		deadPathsToUpdatePerFrame = std::max(int(totalDeadPaths / GAME_SPEED), 1);
-	}
+	// 	deadPathsToUpdatePerFrame = std::max(int(totalDeadPaths / GAME_SPEED), 1);
+	// }
 
 	sharedPaths.clear();
 
-	for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
-	//for_mt(minPathTypeUpdate, maxPathTypeUpdate, [this](unsigned int pathTypeUpdate){
-		#ifndef QTPFS_IGNORE_DEAD_PATHS
-		QueueDeadPathSearches(pathTypeUpdate);
-		#endif
-	//});
-	}
+	// for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
+	// 	#ifndef QTPFS_IGNORE_DEAD_PATHS
+	// 	QueueDeadPathSearches(pathTypeUpdate);
+	// 	#endif
+	// }
 
+	QueueDeadPathSearches();
 	ExecuteQueuedSearches();
 
-	std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
+	// std::copy(numCurrExecutedSearches.begin(), numCurrExecutedSearches.end(), numPrevExecutedSearches.begin());
 
-	minPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
-	maxPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
+	// minPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
+	// maxPathTypeUpdate = (minPathTypeUpdate + numPathTypeUpdates);
 
-	if (minPathTypeUpdate >= nodeLayers.size()) {
-		minPathTypeUpdate = 0;
-		maxPathTypeUpdate = numPathTypeUpdates;
-	}
-	if (maxPathTypeUpdate >= nodeLayers.size()) {
-		maxPathTypeUpdate = nodeLayers.size();
-	}
+	// if (minPathTypeUpdate >= nodeLayers.size()) {
+	// 	minPathTypeUpdate = 0;
+	// 	maxPathTypeUpdate = numPathTypeUpdates;
+	// }
+	// if (maxPathTypeUpdate >= nodeLayers.size()) {
+	// 	maxPathTypeUpdate = nodeLayers.size();
+	// }
 }
 
 
 
 void QTPFS::PathManager::ExecuteQueuedSearches() {
 
-	if (pathSearches.empty()) return;
+	//if (pathSearches.empty()) return;
+
+	auto pathView = registry.view<PathSearch>();
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	for_mt(0, pathSearches.size(), [this](int i){
-		PathSearch* search = pathSearches[i];
+	// for_mt(0, pathSearches.size(), [this](int i){
+		// PathSearch* search = pathSearches[i];
+	// for_each_mt(pathView.begin(), pathView.end(), [this, &pathView](entt::entity i){
+	for_mt(0, pathView.size(), [this, &pathView](int i){
+		entt::entity pathSearchEntity = pathView[i];
+		PathSearch* search = &pathView.get<PathSearch>(pathSearchEntity);
 		int pathType = search->GetPathType();
 		NodeLayer& nodeLayer = nodeLayers[pathType];
-		PathCache& pathCache = pathCaches[pathType];
+		PathCache& pathCache = pathCaches;
 		ExecuteSearch(search, nodeLayer, pathCache, pathType);
 	});
 
-	const auto CleanUpSearch = [this](QTPFS::PathSearch *search){
-		int pathType = search->GetPathType();
-		PathCache& pathCache = pathCaches[pathType];
-		IPath* path = pathCache.GetTempPath(search->GetID());
-		if (search->PathWasFound())
-			pathCache.AddLivePath(path);
-		else
-			DeletePath(path->GetID());
-		delete search;
-	};
+	// const auto CleanUpSearch = [this](QTPFS::PathSearch *search){
+	for (auto pathSearchEntity : pathView) {
+		// int pathType = search->GetPathType();
+		// PathCache& pathCache = pathCaches;
+		// IPath* path = pathCache.GetTempPath(search->GetID());
+		PathSearch* search = &pathView.get<PathSearch>(pathSearchEntity);
+		entt::entity pathEntity = (entt::entity)search->GetID();
+		IPath* path = registry.try_get<IPath>(pathEntity);
 
-	std::for_each(pathSearches.begin(), pathSearches.end(), CleanUpSearch);
-	pathSearches.clear();
+		if (!search->PathWasFound()) {
+			registry.remove<PathIsTemp>(pathEntity);
+			registry.remove<PathIsDirty>(pathEntity);
+			// pathCache.AddLivePath(path);
+		} else {
+			DeletePath(path->GetID());
+		}
+		// delete search;
+		registry.destroy(pathSearchEntity);
+	}
+	// };
+
+	// std::for_each(pathSearches.begin(), pathSearches.end(), CleanUpSearch);
+	// pathSearches.clear();
 }
 
 bool QTPFS::PathManager::ExecuteSearch(
@@ -672,26 +688,18 @@ bool QTPFS::PathManager::ExecuteSearch(
 	unsigned int pathType
 ) {
 	// PathSearch* search = *searchesIt;
-	IPath* path = pathCache.GetTempPath(search->GetID());
+	// IPath* path = pathCache.GetTempPath(search->GetID());
+	IPath* path = &registry.get<IPath>((entt::entity)search->GetID());
 
 	int currentThread = ThreadPool::GetThreadNum();
 
 	assert(search != nullptr);
 	assert(path != nullptr);
 
-	// const auto DeleteSearch = [](PathSearch* s, PathSearchVect& v, PathSearchVectIt& it) {
-	// 	// ordering of still-queued searches is not relevant
-	// 	*it = v.back();
-	// 	v.pop_back();
-	// 	delete s;
-	// };
-
 	// temp-path might have been removed already via
 	// DeletePath before we got a chance to process it
-	if (path->GetID() == 0) {
-		// DeleteSearch(search, searches, searchesIt);
+	if (path->GetID() == 0)
 		return false;
-	}
 
 	assert(search->GetID() != 0);
 	assert(path->GetID() == search->GetID());
@@ -727,45 +735,60 @@ bool QTPFS::PathManager::ExecuteSearch(
 		#endif
 	}
 
-	//  else {
-	// 	DeletePath(path->GetID()); // TODO: record a do outside of threading!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// 	// maybe in search object? have a result
-	// }
-
-	// DeleteSearch(search, searches, searchesIt);
 	return true;
 }
 
-void QTPFS::PathManager::QueueDeadPathSearches(unsigned int pathType) {
-	PathCache& pathCache = pathCaches[pathType];
-	PathCache::PathMap::const_iterator deadPathsIt;
+void QTPFS::PathManager::QueueDeadPathSearches() {
+	// PathCache& pathCache = pathCaches[pathType];
+	// PathCache::PathMap::const_iterator deadPathsIt;
 
-	PathCache::PathMap& deadPaths = const_cast<PathCache::PathMap&>(pathCache.GetDeadPaths());
-	PathCache::PathMap& livePaths = const_cast<PathCache::PathMap&>(pathCache.GetLivePaths());
+	// PathCache::PathMap& deadPaths = const_cast<PathCache::PathMap&>(pathCache.GetDeadPaths());
+	// PathCache::PathMap& livePaths = const_cast<PathCache::PathMap&>(pathCache.GetLivePaths());
 	
-	const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(pathType);
+	// const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(pathType);
 
-	if (deadPaths.empty()) return;
+	// if (deadPaths.empty()) return;
 
-	std::vector<PathCache::PathMapIt> deadPathsToRemove;
-	deadPathsToRemove.reserve(deadPathsToUpdatePerFrame);
+	auto dirtyPaths = registry.view<IPath, PathIsDirty>();
+	for (auto entity : dirtyPaths) {
+		IPath* path = &dirtyPaths.get<IPath>(entity);
+		const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(path->GetPathType());
+		QueueSearch(path, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
+	}
+
+
+	// auto& deadPaths = pathCaches.dirtyPaths;
+	// if (deadPaths.empty()) return;
+
+	// std::stable_sort(deadPaths.begin(), deadPaths.end(), [](const PathCache::DirtyPath& lv, const PathCache::DirtyPath& rv){
+	// 	return lv.pathType < rv.pathType;
+	// });
+
+	// std::for_each(deadPaths.begin(), deadPaths.end(), [this](PathCache::DirtyPath& dirtyPath){
+	// 	IPath* path = &pathCaches.allPaths[dirtyPath.pathId];
+	// 	const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(dirtyPath.pathType);
+	// 	QueueSearch(path, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
+	// });
+
+	// deadPaths.clear();
+
+	// std::vector<PathCache::PathMapIt> deadPathsToRemove;
+	// deadPathsToRemove.reserve(deadPathsToUpdatePerFrame);
 
 	// re-request LIVE paths that were marked as DEAD by a TerrainChange
 	// for each of these now-dead paths, reset the active point-idx to 0
 	//std::for_each_n(deadPaths.begin(), deadPathsToUpdatePerFrame, [=, &moveDef, &pathCache, &deadPathsToRemove](PathCache::PathMapIt deadPathsIt) mutable {
-	for (PathCache::PathMapIt deadPathsIt = deadPaths.begin(); deadPathsIt != deadPaths.end(); ++deadPathsIt) {
-		pathCache.ReleaseLivePath(deadPathsIt->first);
-		QueueSearch(deadPathsIt->second, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
-		deadPathsToRemove.push_back(deadPathsIt);
-	}
+	// for (PathCache::PathMapIt deadPathsIt = deadPaths.begin(); deadPathsIt != deadPaths.end(); ++deadPathsIt) {
+	// 	pathCache.ReleaseLivePath(deadPathsIt->first);
+	// 	QueueSearch(deadPathsIt->second, nullptr, moveDef, ZeroVector, ZeroVector, -1.0f, true);
+	// 	deadPathsToRemove.push_back(deadPathsIt);
+	// }
 	//	});
 
-	for (auto it = deadPathsToRemove.begin(); it != deadPathsToRemove.end(); ++it) {
-		delete ((*it)->second);
-		deadPaths.erase(*it);
-	}
-
-	// pathCache.KillDeadPaths();
+	// for (auto it = deadPathsToRemove.begin(); it != deadPathsToRemove.end(); ++it) {
+	// 	delete ((*it)->second);
+	// 	deadPaths.erase(*it);
+	// }
 }
 
 unsigned int QTPFS::PathManager::QueueSearch(
@@ -791,8 +814,15 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	//     dangling (even with delayed execution) because ~GMT
 	//     calls DeletePath, which ensures any path is removed
 	//     from its cache before we get to ExecuteSearch
-	IPath* newPath = new IPath();
-	PathSearch* newSearch = new PathSearch(PATH_SEARCH_ASTAR);
+	// IPath* newPath = new IPath();
+	// PathSearch* newSearch = new PathSearch(PATH_SEARCH_ASTAR);
+
+
+	entt::entity pathEntity = (oldPath != nullptr) ? (entt::entity)oldPath->GetID() : registry.create();
+	IPath* newPath = &registry.get_or_emplace<IPath>(pathEntity);
+	
+	entt::entity searchEntity = registry.create();
+	PathSearch* newSearch = &registry.emplace<PathSearch>(searchEntity, PATH_SEARCH_ASTAR);
 
 	assert(newPath != nullptr);
 	assert(newSearch != nullptr);
@@ -808,26 +838,28 @@ unsigned int QTPFS::PathManager::QueueSearch(
 		const CSolidObject* obj = oldPath->GetOwner();
 		const float3& pos = (obj != nullptr)? obj->pos: oldPath->GetSourcePoint();
 
-		newPath->SetID(oldPath->GetID());
+		newPath->SetHash(-1);
+		// newPath->SetID(oldPath->GetID());
 		newPath->SetNextPointIndex(0);
 		newPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
-		newPath->SetRadius(oldPath->GetRadius());
-		newPath->SetSynced(oldPath->GetSynced());
+		// newPath->SetRadius(oldPath->GetRadius());
+		// newPath->SetSynced(oldPath->GetSynced());
 
 		// start re-request from the current point
 		// along the path, not the original source
 		// (oldPath->GetSourcePoint())
 		newPath->AllocPoints(2);
-		newPath->SetOwner(oldPath->GetOwner());
+		// newPath->SetOwner(oldPath->GetOwner());
 		newPath->SetSourcePoint(pos);
-		newPath->SetTargetPoint(oldPath->GetTargetPoint());
-		newSearch->SetID(oldPath->GetID());
+		// newPath->SetTargetPoint(oldPath->GetTargetPoint());
+		// newSearch->SetID(oldPath->GetID());
 		newSearch->SetTeam(teamHandler.ActiveTeams());
 	} else {
 		// NOTE:
 		//     the unclamped end-points are temporary
 		//     zero is a reserved ID, so pre-increment
-		newPath->SetID(++numPathRequests);
+		// newPath->SetID(++numPathRequests);
+		newPath->SetID((int)pathEntity);
 		newPath->SetRadius(radius);
 		newPath->SetSynced(synced);
 		newPath->AllocPoints(2);
@@ -836,46 +868,51 @@ unsigned int QTPFS::PathManager::QueueSearch(
 		newPath->SetTargetPoint(targetPoint);
 		newSearch->SetID(newPath->GetID());
 		newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
+
+		registry.emplace<PathIsTemp>(pathEntity);
 	}
 
-	assert((pathCaches[moveDef->pathType].GetTempPath(newPath->GetID()))->GetID() == 0);
+	// assert((pathCaches[moveDef->pathType].GetTempPath(newPath->GetID()))->GetID() == 0);
 
 	newPath->SetPathType(moveDef->pathType);
 	newSearch->SetPathType(moveDef->pathType);
 
 	// map the path-ID to the index of the cache that stores it
 	pathTypes[newPath->GetID()] = moveDef->pathType;
-	pathSearches.push_back(newSearch);
-	pathCaches[moveDef->pathType].AddTempPath(newPath);
+	// pathSearches.push_back(newSearch);
+	// pathCaches[moveDef->pathType].AddTempPath(newPath);
 
 	return (newPath->GetID());
 }
 
-
-
 void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID) {
-	const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
+	// const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 
-	if (pathTypeIt != pathTypes.end()) {
-		PathCache& pathCache = pathCaches[pathTypeIt->second];
-		IPath* livePath = pathCache.GetLivePath(pathID);
+	// if (pathTypeIt != pathTypes.end()) {
+		// PathCache& pathCache = pathCaches[pathTypeIt->second];
+		// IPath* livePath = pathCache.GetLivePath(pathID);
+
+		entt::entity pathEntity = (entt::entity)pathID;
+		IPath* livePath = &registry.get<IPath>(pathEntity);
 
 		if (livePath->GetID() != 0) {
 			assert(owner == livePath->GetOwner());
 		}
-	}
+	// }
 }
 
 void QTPFS::PathManager::DeletePath(unsigned int pathID) {
-	const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
+	// const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 	const PathTraceMapIt pathTraceIt = pathTraces.find(pathID);
 
-	if (pathTypeIt != pathTypes.end()) {
-		PathCache& pathCache = pathCaches[pathTypeIt->second];
-		pathCache.DelPath(pathID);
+	// if (pathTypeIt != pathTypes.end()) {
+	// 	PathCache& pathCache = pathCaches;
+	// 	pathCache.DelPath(pathID);
 
-		pathTypes.erase(pathTypeIt);
-	}
+	// 	pathTypes.erase(pathTypeIt);
+	// }
+
+	pathCaches.DelPath(pathID);
 
 	if (pathTraceIt != pathTraces.end()) {
 		delete (pathTraceIt->second);
@@ -905,8 +942,11 @@ bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
 	if (pathTypeIt == pathTypes.end())
 		return false;
 
-	PathCache& pathCache = pathCaches[pathTypeIt->second];
-	IPath* livePath = pathCache.GetLivePath(pathID);
+	// PathCache& pathCache = pathCaches[pathTypeIt->second];
+	// IPath* livePath = pathCache.GetLivePath(pathID);
+
+	entt::entity pathEntity = (entt::entity)pathID;
+	IPath* livePath = &registry.get<IPath>(pathEntity);
 
 	if (livePath->GetID() == 0)
 		return false;
@@ -944,10 +984,14 @@ float3 QTPFS::PathManager::NextWayPoint(
 	if (pathTypeIt == pathTypes.end())
 		return noPathPoint;
 
-	IPath* tempPath = pathCaches[pathTypeIt->second].GetTempPath(pathID);
-	IPath* livePath = pathCaches[pathTypeIt->second].GetLivePath(pathID);
+	// IPath* tempPath = pathCaches[pathTypeIt->second].GetTempPath(pathID);
+	// IPath* livePath = pathCaches[pathTypeIt->second].GetLivePath(pathID);
 
-	if (tempPath->GetID() != 0) {
+	entt::entity pathEntity = (entt::entity)pathID;
+	IPath* livePath = &registry.get<IPath>(pathEntity);
+
+	// if (tempPath->GetID() != 0) {
+	if (!registry.all_of<PathIsTemp>(pathEntity)) {
 		// path-request has not yet been processed (so ID still maps to
 		// a temporary path); just set the unit off toward its target to
 		// hide latency
@@ -964,11 +1008,13 @@ float3 QTPFS::PathManager::NextWayPoint(
 		//     make the y-coordinate -1 to indicate these are temporary
 		//     waypoints to GMT and should not be followed religiously
 		const float3& sourcePoint = point;
-		const float3& targetPoint = tempPath->GetTargetPoint();
+		// const float3& targetPoint = tempPath->GetTargetPoint();
+		const float3& targetPoint = livePath->GetTargetPoint();
 		const float3  targetDirec = (targetPoint - sourcePoint).SafeNormalize() * SQUARE_SIZE;
 		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
 	}
-	if (livePath->GetID() == 0) {
+	// if (livePath->GetID() == 0) {
+	if (registry.all_of<PathIsDirty>(pathEntity)) {
 		// the request WAS processed but then immediately undone by a
 		// TerrainChange --> MarkDeadPaths event in the same frame as
 		// NextWayPoint (so pathID is only in deadPaths)
@@ -1039,8 +1085,10 @@ void QTPFS::PathManager::GetPathWayPoints(
 	if (pathTypeIt == pathTypes.end())
 		return;
 
-	const PathCache& cache = pathCaches[pathTypeIt->second];
-	const IPath* path = cache.GetLivePath(pathID);
+	// PathCache& pathCache = pathCaches[pathTypeIt->second];
+	// const IPath* path = cache.GetLivePath(pathID);
+	entt::entity pathEntity = (entt::entity)pathID;
+	const IPath* path = &registry.get<IPath>(pathEntity);
 
 	if (path->GetID() == 0)
 		return;

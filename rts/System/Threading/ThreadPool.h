@@ -68,6 +68,8 @@ static inline auto parallel_reduce(F&& f, G&& g) -> typename std::result_of<F()>
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
+#include "System/Log/ILog.h"
+
 #include  <array>
 #include <vector>
 #include <numeric>
@@ -640,6 +642,52 @@ private:
 #endif
 
 
+template<typename F, typename T>
+class ForEachTaskGroup: public ITaskGroup
+{
+public:
+	// typedef  TTaskGroup<F, void, int>  ChildTaskType;
+
+	ForEachTaskGroup(bool pooled) : ITaskGroup(false, pooled) {}
+
+	void Enqueue(T begin, T end, const int /*step*/, F& func)
+	{
+		int limit = std::distance(begin, end);
+		remainingTasks.store(limit);
+		// ctr.store(0);
+
+		this->current = begin;
+		this->end   = end;
+		this->func  = func;
+	}
+
+	bool IsSliceTask() const override { return true; }
+	bool ExecuteStep() override
+	{
+		lock.lock();
+		auto it = (current != end) ? current++: end;
+		lock.unlock();
+
+		// auto it = std::advance(begin, ctr.fetch_add(1, std::memory_order_relaxed));
+
+		if (it != end) {
+			func(*it);
+			remainingTasks -= 1;
+			return true;
+		}
+
+		return false;
+	}
+
+private:
+	// std::atomic<int> ctr;
+	std::function<void(typename T::reference)> func;
+	spring::spinlock lock;
+
+	T end;
+	T current;
+};
+
 
 
 
@@ -675,11 +723,83 @@ struct TaskPool {
 	}
 };
 
+template <typename F, typename T>
+struct TaskPoolIteration {
+	typedef ForEachTaskGroup<F, T> FuncTaskGroup;
+	typedef std::shared_ptr<FuncTaskGroup> FuncTaskGroupPtr;
+
+	// more than 256 nested for_mt's or parallel's should be uncommon
+	std::array<FuncTaskGroupPtr, 256> tgPool;
+	std::atomic_int pos = {0};
+
+	TaskPoolIteration() {
+		for (size_t i = 0; i < tgPool.size(); ++i) {
+			tgPool[i] = FuncTaskGroupPtr(new FuncTaskGroup(true));
+		}
+	}
+
+
+	FuncTaskGroupPtr GetTaskGroup() {
+		auto tg = tgPool[pos.fetch_add(1) % tgPool.size()];
+
+		assert(tg->IsFinished());
+		assert(tg->IsInTaskPool());
+		assert(!tg->IsInJobQueue());
+		assert(!tg->IsInPoolUse());
+
+		tg->ResetState(true, true, true);
+		return tg;
+	}
+};
 
 
 
 
 
+
+
+
+template <typename F, typename T>
+static inline void for_each_mt(T begin, T end, F&& f)
+{
+	ThreadPool::inMultiThreadedSection = true;
+
+	if (begin == end) { return; }
+
+	int entries = std::distance(begin, end);
+	if (!ThreadPool::HasThreads() || (entries < 2)) {
+		for (T& i = begin; i != end; ++i) {
+			f(*i);
+		}
+	}
+	else {
+		SCOPED_MT_TIMER("ThreadPool::AddTask");
+
+		// static, so TaskGroup's are recycled
+		static TaskPoolIteration<F, T> pool;
+		auto taskGroup = pool.GetTaskGroup();
+
+		taskGroup->Enqueue(begin, end, f);
+		taskGroup->UpdateId();
+
+		assert(taskGroup->IsInJobQueue());
+
+		#if 0
+		ThreadPool::PushTaskGroup(taskGroup);
+		#else
+		// store the group in all worker queues s.t. each executes a slice
+		for (size_t i = 1; i < ThreadPool::GetNumThreads(); ++i) {
+			taskGroup->wantedThread.store(i);
+			ThreadPool::PushTaskGroup(taskGroup);
+		}
+		#endif
+
+		// make calling thread also run ExecuteLoop
+		ThreadPool::WaitForFinished(taskGroup);
+	}
+
+	ThreadPool::inMultiThreadedSection = false;
+}
 
 
 template <typename F>

@@ -17,6 +17,10 @@
 #include "Sim/Path/QTPFS/PathCache.h"
 #include "Sim/Path/QTPFS/PathManager.h"
 
+#include "Sim/Path/QTPFS/Components/Path.h"
+#include "Sim/Path/QTPFS/Components/PathSearch.h"
+#include "Sim/Path/QTPFS/Registry.h"
+
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/QTPFSPathDrawer.h"
@@ -138,13 +142,18 @@ void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::Node
 
 void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>& rb) const {
 	const QTPFS::PathCache& pathCache = pm->GetPathCache(md->pathType);
-	const QTPFS::PathCache::PathMap& paths = pathCache.GetLivePaths();
+	// const QTPFS::PathCache::PathMap& paths = pathCache.GetLivePaths();
+	const auto pathView = QTPFS::registry.view<QTPFS::IPath>();
 
 	glLineWidth(4.0f);
 
 	{
-		for (const auto& pair: paths) {
-			DrawPath(pair.second, rb);
+		// for (const auto& pair: paths) {
+		// 	DrawPath(pair.second, rb);
+		// }
+		for (const auto& pathEntity : pathView) {
+			const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
+			DrawPath(path, rb);
 		}
 	}
 

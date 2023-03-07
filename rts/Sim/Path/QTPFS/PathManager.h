@@ -74,7 +74,7 @@ namespace QTPFS {
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
 		const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
-		const PathCache& GetPathCache(unsigned int pathType) const { return pathCaches[pathType]; }
+		const PathCache& GetPathCache(unsigned int pathType) const { return pathCaches; }
 
 		const MapChangeTrack& GetMapChangeTrack() const { return mapChangeTrack; };
 
@@ -117,7 +117,7 @@ namespace QTPFS {
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
 
 		void ExecuteQueuedSearches();
-		void QueueDeadPathSearches(unsigned int pathType);
+		void QueueDeadPathSearches();
 
 		unsigned int QueueSearch(
 			const IPath* oldPath,
@@ -146,8 +146,7 @@ namespace QTPFS {
 
 		static std::vector<NodeLayer> nodeLayers;
 		static std::vector<QTNode*> nodeTrees;
-		static std::vector<PathCache> pathCaches;
-		// static std::vector< std::vector<PathSearch*> > pathSearches;
+		PathCache pathCaches;
 		static std::vector<PathSearch*> pathSearches;
 
 		std::vector<SearchThreadData> searchThreadData;
