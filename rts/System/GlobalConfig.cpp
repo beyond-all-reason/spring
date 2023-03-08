@@ -14,11 +14,11 @@ CONFIG(int, NetworkLossFactor)
 
 CONFIG(int, InitialNetworkTimeout)
 	.defaultValue(30)
-	.minimumValue(10);
+	.minimumValue(10).description("Time to wait for the initial connection to the game server.";
 
 CONFIG(int, NetworkTimeout)
 	.defaultValue(120)
-	.minimumValue(0);
+	.minimumValue(0).description("Number of seconds before connection to game server is considered lost.");
 
 CONFIG(int, ReconnectTimeout)
 	.defaultValue(15)
@@ -55,12 +55,12 @@ CONFIG(int, TeamHighlight)
 	.minimumValue(CTeamHighlight::HIGHLIGHT_FIRST)
 	.maximumValue(CTeamHighlight::HIGHLIGHT_LAST);
 
-CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true);
+CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true).description("Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.");
 
 CONFIG(bool, LuaWritableConfigFile).defaultValue(true);
 CONFIG(bool, VFSCacheArchiveFiles).defaultValue(true);
 
-CONFIG(bool, DumpGameStateOnDesync).defaultValue(false);
+CONFIG(bool, DumpGameStateOnDesync).defaultValue(false).description("Enable writing clientgamestate and servergamestate dumps when a desync is detected");
 
 
 void GlobalConfig::Init()
