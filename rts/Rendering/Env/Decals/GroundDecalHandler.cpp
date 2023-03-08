@@ -52,7 +52,7 @@ static std::vector<int> usedScarIDs;
 
 
 
-CONFIG(int, GroundScarAlphaFade).defaultValue(0);
+CONFIG(int, GroundScarAlphaFade).defaultValue(0).description("How fast ground scars like explosion scars and tracks fade out.");
 
 CGroundDecalHandler::CGroundDecalHandler(): CEventClient("[CGroundDecalHandler]", 314159, false)
 {
