@@ -500,11 +500,9 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 
 		if (bp.movement > dragSelectionThreshold && selectedUnitsHandler.GetBoxSelectionHandledByEngine()) {
 			// select box
-			float2 topright;
-			float2 bttmleft;
+			float2 tr, bl;
 
-			GetSelectionBoxCoeff(bp.camPos, bp.dir, camera->GetPos(), dir, topright, bttmleft);
-
+			GetSelectionBoxCoeff(bp.camPos, bp.dir, camera->GetPos(), dir, tr, bl);
 			// GetSelectionBoxCoeff returns us the corner pos, but we want to do a inview frustum check.
 			// To do so we need the frustum planes (= plane normal + plane offset).
 			float3 norm1 =  camera->GetUp();
@@ -513,17 +511,35 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 			float3 norm4 = -camera->GetRight();
 
 			#define signf(x) ((x > 0.0f) ? 1.0f : -1.0f)
-			if (topright.y != 0.0f) norm1 = (camera->GetDir() * signf(-topright.y)) + (camera->GetUp()    / math::fabs(topright.y));
-			if (bttmleft.y != 0.0f) norm2 = (camera->GetDir() * signf( bttmleft.y)) - (camera->GetUp()    / math::fabs(bttmleft.y));
-			if (topright.x != 0.0f) norm3 = (camera->GetDir() * signf(-topright.x)) + (camera->GetRight() / math::fabs(topright.x));
-			if (bttmleft.x != 0.0f) norm4 = (camera->GetDir() * signf( bttmleft.x)) - (camera->GetRight() / math::fabs(bttmleft.x));
+			if (tr.y != 0.0f) norm1 = (camera->GetDir() * signf(-tr.y)) + (camera->GetUp()    / math::fabs(tr.y));
+			if (bl.y != 0.0f) norm2 = (camera->GetDir() * signf( bl.y)) - (camera->GetUp()    / math::fabs(bl.y));
+			if (tr.x != 0.0f) norm3 = (camera->GetDir() * signf(-tr.x)) + (camera->GetRight() / math::fabs(tr.x));
+			if (bl.x != 0.0f) norm4 = (camera->GetDir() * signf( bl.x)) - (camera->GetRight() / math::fabs(bl.x));
 
 			const float4 plane1(norm1, -(norm1.dot(camera->GetPos())));
 			const float4 plane2(norm2, -(norm2.dot(camera->GetPos())));
 			const float4 plane3(norm3, -(norm3.dot(camera->GetPos())));
 			const float4 plane4(norm4, -(norm4.dot(camera->GetPos())));
 
-			selectedUnitsHandler.HandleUnitBoxSelection(plane1, plane2, plane3, plane4);
+			// do not let the rectangle verts be clipped
+			const float dirScale = camera->GetFarPlaneDist() * 1.4f;
+
+			const float3 xmin  = camera->GetRight() * bl.x;
+			const float3 xmax  = camera->GetRight() * tr.x;
+			const float3 ymin  = camera->GetUp()    * bl.y;
+			const float3 ymax  = camera->GetUp()    * tr.y;
+
+			const float3 Bl = xmin + ymin + camera->GetForward();
+			const float3 Tl = xmin + ymax + camera->GetForward();
+			const float3 Tr = xmax + ymax + camera->GetForward();
+			const float3 Br = xmax + ymin + camera->GetForward();
+
+			const float3 farBl = camera->GetPos() + Bl * CGround::LineGroundCol(camera->GetPos(), Bl, dirScale, false);
+			const float3 farTl = camera->GetPos() + Tl * CGround::LineGroundCol(camera->GetPos(), Tl, dirScale, false);
+			const float3 farTr = camera->GetPos() + Tr * CGround::LineGroundCol(camera->GetPos(), Tr, dirScale, false);
+			const float3 farBr = camera->GetPos() + Br * CGround::LineGroundCol(camera->GetPos(), Br, dirScale, false);
+
+			selectedUnitsHandler.HandleUnitBoxSelection(plane1, plane2, plane3, plane4, farBl, farTl, farTr, farBr);
 		} else {
 			const CUnit* unit = nullptr;
 			const CFeature* feature = nullptr;

@@ -258,6 +258,274 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 }
 
 
+float distPointTriangleSq(float3 point, std::array<float3, 3> triangle)
+{
+	constexpr float zero = 0.0f;
+	constexpr float one = 1.0f;
+	constexpr float two = 2.0f;
+	float3 diff = triangle[0] - point;
+	const float3 edge0 = triangle[1] - triangle[0];
+	const float3 edge1 = triangle[2] - triangle[0];
+	const float a00 = edge0.dot(edge0);
+	const float a01 = edge0.dot(edge1);
+	const float a11 = edge1.dot(edge1);
+	const float b0 =  diff.dot(edge0);
+	const float b1 =  diff.dot(edge1);
+	const float det = std::max(a00 * a11 - a01 * a01, zero);
+	float s = a01 * b1 - a11 * b0;
+	float t = a01 * b0 - a00 * b1;
+
+	if (s + t <= det)
+	{
+		if (s < zero)
+		{
+			if (t < zero)  // region 4
+			{
+				if (b0 < zero)
+				{
+					t = zero;
+					if (-b0 >= a00)
+					{
+						s = one;
+					}
+					else
+					{
+						s = -b0 / a00;
+					}
+				}
+				else
+				{
+					s = zero;
+					if (b1 >= zero)
+					{
+						t = zero;
+					}
+					else if (-b1 >= a11)
+					{
+						t = one;
+					}
+					else
+					{
+						t = -b1 / a11;
+					}
+				}
+			}
+			else  // region 3
+			{
+				s = zero;
+				if (b1 >= zero)
+				{
+					t = zero;
+				}
+				else if (-b1 >= a11)
+				{
+					t = one;
+				}
+				else
+				{
+					t = -b1 / a11;
+				}
+			}
+		}
+		else if (t < zero)  // region 5
+		{
+			t = zero;
+			if (b0 >= zero)
+			{
+				s = zero;
+			}
+			else if (-b0 >= a00)
+			{
+				s = one;
+			}
+			else
+			{
+				s = -b0 / a00;
+			}
+		}
+		else  // region 0
+		{
+			// minimum at interior point
+			s /= det;
+			t /= det;
+		}
+	}
+	else
+	{
+		float tmp0, tmp1, numer, denom;
+
+		if (s < zero)  // region 2
+		{
+			tmp0 = a01 + b0;
+			tmp1 = a11 + b1;
+			if (tmp1 > tmp0)
+			{
+				numer = tmp1 - tmp0;
+				denom = a00 - two * a01 + a11;
+				if (numer >= denom)
+				{
+					s = one;
+					t = zero;
+				}
+				else
+				{
+					s = numer / denom;
+					t = one - s;
+				}
+			}
+			else
+			{
+				s = zero;
+				if (tmp1 <= zero)
+				{
+					t = one;
+				}
+				else if (b1 >= zero)
+				{
+					t = zero;
+				}
+				else
+				{
+					t = -b1 / a11;
+				}
+			}
+		}
+		else if (t < zero)  // region 6
+		{
+			tmp0 = a01 + b1;
+			tmp1 = a00 + b0;
+			if (tmp1 > tmp0)
+			{
+				numer = tmp1 - tmp0;
+				denom = a00 - two * a01 + a11;
+				if (numer >= denom)
+				{
+					t = one;
+					s = zero;
+				}
+				else
+				{
+					t = numer / denom;
+					s = one - t;
+				}
+			}
+			else
+			{
+				t = zero;
+				if (tmp1 <= zero)
+				{
+					s = one;
+				}
+				else if (b0 >= zero)
+				{
+					s = zero;
+				}
+				else
+				{
+					s = -b0 / a00;
+				}
+			}
+		}
+		else  // region 1
+		{
+			numer = a11 + b1 - a01 - b0;
+			if (numer <= zero)
+			{
+				s = zero;
+				t = one;
+			}
+			else
+			{
+				denom = a00 - two * a01 + a11;
+				if (numer >= denom)
+				{
+					s = one;
+					t = zero;
+				}
+				else
+				{
+					s = numer / denom;
+					t = one - s;
+				}
+			}
+		}
+	}
+
+	diff = point - (triangle[0] + s * edge0 + t * edge1);
+
+	return diff.dot(diff);
+}
+
+void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom, const float3& farBl, const float3& farTl, const float3& farTr, const float3& farBr)
+{
+	CUnit* unit = nullptr;
+	const CPlayer* myPlayer = gu->GetMyPlayer();
+
+	int numUnits = 0;
+	int minTeam = gu->myTeam;
+	int maxTeam = gu->myTeam;
+
+	// any team's units can be *selected*; whether they can
+	// be given orders depends on our ability to play god
+	if (gu->spectatingFullSelect || gs->godMode != 0) {
+		minTeam = 0;
+		maxTeam = teamHandler.ActiveTeams() - 1;
+	}
+
+	for (int team = minTeam; team <= maxTeam; team++) {
+		if (!gu->spectatingFullSelect && !myPlayer->CanControlTeam(team))
+			continue;
+
+		for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {
+			// TODO: Cheap check that unit is inside outermost frustum
+
+			const float4 vec(u->midPos, 1.0f);
+
+			// midpos is not inside selection frustum, check for intersection between selection sphere and frustum faces
+			if (vec.dot4(planeRight) >= 0.0f || vec.dot4(planeLeft) >= 0.0f || vec.dot4(planeTop) >= 0.0f || vec.dot4(planeBottom) >= 0.0f) {
+				const auto pos = u->midPos;
+				// TODO: Check why hscalesq(0) is worse than u->sqRadius for armvadert4 on BAR
+				// const float radiusSq = selectionVolume->HasCustomType() ? u->sqRadius : selectionVolume->GetHScaleSq(0);
+				const float radiusSq = u->sqRadius;
+
+				// bl-tl
+				std::array<float3, 3> triangle { camera->GetPos(), farBl, farTl };
+				if (distPointTriangleSq(pos, triangle) > radiusSq) {
+					// bl-br
+					triangle[2] = farBr;
+					if (distPointTriangleSq(pos, triangle) > radiusSq) {
+
+						// tr-br
+						triangle[1] = farTr;
+						if (distPointTriangleSq(pos, triangle) > radiusSq) {
+
+							// tr-tl
+							triangle[2] = farTl;
+							if (distPointTriangleSq(pos, triangle) > radiusSq)
+								continue; // failed intersection with all selection fustrum faces, try next
+						}
+					}
+				}
+			}
+
+			AddUnit(unit = u);
+			numUnits++;
+		}
+	}
+
+	switch (numUnits) {
+		case 0: {
+		} break;
+		case 1: {
+			Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
+		} break;
+		default: {
+			Channels::UserInterface->PlaySample(soundMultiselID);
+		} break;
+	}
+}
+
+
 void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom)
 {
 	CUnit* unit = nullptr;
