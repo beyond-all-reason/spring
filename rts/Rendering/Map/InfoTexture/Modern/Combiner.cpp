@@ -11,7 +11,7 @@
 #include "System/Log/ILog.h"
 
 
-CONFIG(bool, HighResInfoTexture).defaultValue(true);
+CONFIG(bool, HighResInfoTexture).defaultValue(true).description("Use full heightmap resolution info texture (true), or half resolution (false)");
 
 
 CInfoTextureCombiner::CInfoTextureCombiner()
