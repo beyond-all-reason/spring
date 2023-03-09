@@ -1291,15 +1291,15 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 
 void LuaUtils::PushAttackerInfo(lua_State* L, const CUnit* const attacker)
 {
-	if (attacker == nullptr || !IsUnitVisible(L, attacker)) {
-		lua_pushnil(L);
-		lua_pushnil(L);
-		lua_pushnil(L);
+	if (attacker && IsUnitTyped(L, attacker)) {
+		lua_pushnumber(L, attacker->id);
+		lua_pushnumber(L, EffectiveUnitDef(L, attacker)->id);
+		lua_pushnumber(L, attacker->team);
 	}
 	else {
-		lua_pushnumber(L, attacker->id);
-		lua_pushnumber(L, LuaUtils::EffectiveUnitDef(L, attacker)->id);
-		lua_pushnumber(L, attacker->team);
+		lua_pushnil(L);
+		lua_pushnil(L);
+		lua_pushnil(L);
 	}
 }
 
