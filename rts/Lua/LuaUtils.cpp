@@ -1289,6 +1289,14 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 	return true;
 }
 
+void LuaUtils::PushAttackerDef(lua_State* L, const CUnit* const attacker)
+{
+	if (attacker == nullptr || !LuaUtils::IsUnitTyped(L, attacker))
+		lua_pushnil(L);
+	else
+		lua_pushnumber(L, LuaUtils::EffectiveUnitDef(L, attacker)->id);
+}
+
 int LuaUtils::ParseLogLevel(lua_State* L, int index)
 {
 	if (lua_israwnumber(L, index))
@@ -1673,7 +1681,6 @@ int LuaUtils::ParseAllegiance(lua_State* L, const char* caller, int index)
 
 	return teamID;
 }
-
 
 bool LuaUtils::IsAlliedTeam(lua_State* L, int team)
 {

@@ -159,6 +159,8 @@ class LuaUtils {
 
 		static bool PushCustomBaseFunctions(lua_State* L);
 
+		static void PushAttackerDef(lua_State* L, const CUnit* const attacker);
+
 		static int ParseIntArray(lua_State* L, int tableIndex,
 		                         int* array, int arraySize);
 		static int ParseFloatArray(lua_State* L, int tableIndex,
