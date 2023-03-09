@@ -24,7 +24,9 @@ and [Metal Factions].
 ---
 
 {: .warning }
-> Recoil is a recent hard fork of [Spring] from the [105 tree], many references to it might and will be present. Overall most documented Spring API and tutorials are compatible with Recoil since they are based on the [105 tree].
+> Recoil is a recent hard fork of [Spring] from the [105 tree], many references
+to it might and will be present. Overall most documented Spring API and
+tutorials are compatible with Recoil since they are based on the [105 tree].
 
 ## Getting started
 
@@ -38,7 +40,17 @@ References:
 - [Recoil Lua API]
 - [Recoil Github Wiki]
 
-Get the latest release [here](https://github.com/beyond-all-reason/spring/releases/tag/spring_bar_%7BBAR105%7D105.1.1-1354-g72b2d55).
+### Download
+
+The latest stable release is `{{site.data.latest_release.name}}` available at:
+
+{% assign releases = site.data.latest_release.assets | where_exp: "asset", "asset.browser_download_url contains 'minimal-portable'" %}
+
+{% for rel in releases %}
+- [{{rel.name}}]({{rel.browser_download_url}})
+{% endfor %}
+
+See the [release page]({{site.data.latest_release.html_url}}) for more options.
 
 ## Contributing
 
@@ -59,8 +71,8 @@ owners of this repository before making a change.
 {% endfor %}
 </ul>
 
-[Recoil repo]: https://github.com/beyond-all-reason/spring
-[GitHub issues]: https://github.com/beyond-all-reason/spring/issues
+[Recoil repo]: {{site.gh_edit_repository}}
+[GitHub issues]: {{site.gh_edit_repository}}/issues
 [Beyond All Reason]: https://beyondallreason.info
 [ZeroK]: https://zero-k.info
 [Spring]: https://github.com/spring/spring
@@ -69,5 +81,5 @@ owners of this repository before making a change.
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
 [Matrix Room]: https://matrix.to/#/#recoil-rts:matrix.org
 [Spring Wiki]: https://springrts.com/wiki/Main_Page
-[Recoil Lua API]: /spring/ldoc
-[Recoil Github Wiki]: https://github.com/beyond-all-reason/spring/wiki
+[Recoil Lua API]: {{site.baseurl}}{% link lua-api.md %}
+[Recoil Github Wiki]: {{site.gh_edit_repository}}/issues
