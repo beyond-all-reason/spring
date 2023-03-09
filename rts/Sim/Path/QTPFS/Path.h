@@ -12,34 +12,48 @@ class CSolidObject;
 
 namespace QTPFS {
 	struct IPath {
-		IPath() {
-			pathID  = 0;
+		IPath() {}
+		IPath(const IPath& other) { *this = other; }
+		IPath& operator = (const IPath& other) {
+			if (this == &other) return *this;
 
-			nextPointIndex = 0;
-			numPathUpdates = 0;
+			pathID = other.pathID;
+			pathType = other.pathType;
 
-			hash   = -1u;
-			radius = 0.0f;
-			synced = true;
+			nextPointIndex = other.nextPointIndex;
+			numPathUpdates = other.numPathUpdates;
 
-			owner = NULL;
+			hash   = other.hash;
+			radius = other.radius;
+			synced = other.synced;
+			points = other.points;
+
+			boundingBoxMins = other.boundingBoxMins;
+			boundingBoxMaxs = other.boundingBoxMaxs;
+
+			owner = other.owner;
+			return *this;
 		}
-		IPath(const IPath& p) { *this = p; }
-		IPath& operator = (const IPath& p) {
-			pathID = p.GetID();
+		IPath(IPath&& other) { *this = std::move(other); }
+		IPath& operator = (IPath&& other) {
+			if (this == &other) return *this;
 
-			nextPointIndex = p.GetNextPointIndex();
-			numPathUpdates = p.GetNumPathUpdates();
+			pathID = other.pathID;
+			pathType = other.pathType;
 
-			hash   = p.GetHash();
-			radius = p.GetRadius();
-			synced = p.GetSynced();
-			points = p.GetPoints();
+			nextPointIndex = other.nextPointIndex;
+			numPathUpdates = other.numPathUpdates;
 
-			boundingBoxMins = p.GetBoundingBoxMins();
-			boundingBoxMaxs = p.GetBoundingBoxMaxs();
+			hash   = other.hash;
+			radius = other.radius;
+			synced = other.synced;
+			points = std::move(other.points);
 
-			owner = p.GetOwner();
+			boundingBoxMins = other.boundingBoxMins;
+			boundingBoxMaxs = other.boundingBoxMaxs;
+
+			owner = other.owner;
+
 			return *this;
 		}
 		~IPath() { points.clear(); }
@@ -106,15 +120,15 @@ namespace QTPFS {
 		int GetPathType() const { return pathType; }
 
 	protected:
-		unsigned int pathID;
-		int pathType;
+		unsigned int pathID = 0;
+		int pathType = 0;
 
-		unsigned int nextPointIndex; // index of the next waypoint to be visited
-		unsigned int numPathUpdates; // number of times this path was invalidated
+		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
+		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
-		std::uint64_t hash;
-		float radius;
-		bool synced;
+		std::uint64_t hash = -1;
+		float radius = 0.f;
+		bool synced = true;
 
 		std::vector<float3> points;
 
@@ -123,7 +137,7 @@ namespace QTPFS {
 		float3 boundingBoxMaxs;
 
 		// object that requested this path (NULL if none)
-		const CSolidObject* owner;
+		const CSolidObject* owner = nullptr;
 	};
 }
 

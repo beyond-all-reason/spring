@@ -224,9 +224,9 @@ void QTPFS::QTNode::Init(
 	assert(xsize() != 0);
 	assert(zsize() != 0);
 
-	fCost = 0.0f;
-	gCost = 0.0f;
-	hCost = 0.0f;
+	// fCost = 0.0f;
+	// gCost = 0.0f;
+	// hCost = 0.0f;
 
 	speedModSum =  0.0f;
 	speedModAvg =  0.0f;
@@ -234,7 +234,7 @@ void QTPFS::QTNode::Init(
 
 	index = idx;
 
-	prevNode = nullptr;
+	// prevNode = nullptr;
 
 	neighbors.clear();
 	// netpoints.clear();
@@ -262,7 +262,7 @@ std::uint64_t QTPFS::QTNode::GetCheckSum(const NodeLayer& nl) const {
 
 	{
 		const unsigned char* minByte = reinterpret_cast<const unsigned char*>(&nodeNumber);
-		const unsigned char* maxByte = reinterpret_cast<const unsigned char*>(&hCost) + sizeof(hCost);
+		const unsigned char* maxByte = reinterpret_cast<const unsigned char*>(&childBaseIndex) + sizeof(childBaseIndex);
 
 		assert(minByte < maxByte);
 

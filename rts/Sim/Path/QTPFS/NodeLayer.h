@@ -19,7 +19,7 @@ namespace QTPFS {
 
 	struct NodeLayer {
 	public:
-		typedef unsigned char SpeedModType;
+		typedef unsigned char  SpeedModType;
 		typedef unsigned char SpeedBinType;
 
 		static void InitStatic();

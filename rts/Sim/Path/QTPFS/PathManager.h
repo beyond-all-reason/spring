@@ -78,7 +78,7 @@ namespace QTPFS {
 
 		const MapChangeTrack& GetMapChangeTrack() const { return mapChangeTrack; };
 
-		const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
+		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
 	private:
@@ -151,7 +151,7 @@ namespace QTPFS {
 
 		std::vector<SearchThreadData> searchThreadData;
 
-		spring::unordered_map<unsigned int, unsigned int> pathTypes;
+		// spring::unordered_map<unsigned int, unsigned int> pathTypes;
 		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;
 
 		// maps "hashes" of executed searches to the found paths

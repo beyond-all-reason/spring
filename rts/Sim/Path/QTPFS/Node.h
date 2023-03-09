@@ -98,12 +98,12 @@ namespace QTPFS {
 		// unsigned int heapIndex = -1u;
 		unsigned int index = 0;
 
-		float fCost = 0.0f;
-		float gCost = 0.0f;
-		float hCost = 0.0f;
+		// float fCost = 0.0f;
+		// float gCost = 0.0f;
+		// float hCost = 0.0f;
 
 		// points back to previous node in path
-		INode* prevNode = nullptr;
+		// INode* prevNode = nullptr;
 
 	#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
 	};

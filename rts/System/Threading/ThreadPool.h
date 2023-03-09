@@ -650,7 +650,7 @@ public:
 
 	ForEachTaskGroup(bool pooled) : ITaskGroup(false, pooled) {}
 
-	void Enqueue(T begin, T end, const int /*step*/, F& func)
+	void Enqueue(T begin, T end /*, const int step*/, F& func)
 	{
 		int limit = std::distance(begin, end);
 		remainingTasks.store(limit);
