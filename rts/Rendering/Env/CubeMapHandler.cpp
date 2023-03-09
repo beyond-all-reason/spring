@@ -16,9 +16,9 @@
 #include "Rendering/Env/CubeMapHandler.h"
 #include "System/Config/ConfigHandler.h"
 
-CONFIG(int, CubeTexSizeSpecular).defaultValue(128).minimumValue(1);
-CONFIG(int, CubeTexSizeReflection).defaultValue(128).minimumValue(1);
-CONFIG(bool, CubeTexGenerateMipMaps).defaultValue(false);
+CONFIG(int, CubeTexSizeSpecular).defaultValue(128).minimumValue(1).description("The square resolution of each face of the specular cubemap.");
+CONFIG(int, CubeTexSizeReflection).defaultValue(128).minimumValue(1).description("The square resolution of each face of the environment reflection cubemap.");
+CONFIG(bool, CubeTexGenerateMipMaps).defaultValue(false).description("Generate mipmaps for the reflection and specular cubemap textures, useful for efficient subsampling and blurring.");
 
 CubeMapHandler cubeMapHandler;
 

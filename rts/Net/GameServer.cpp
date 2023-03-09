@@ -66,8 +66,8 @@
 using netcode::RawPacket;
 
 
-CONFIG(int, AutohostPort).defaultValue(0);
-CONFIG(int, ServerSleepTime).defaultValue(5).description("number of milliseconds to sleep per tick");
+CONFIG(int, AutohostPort).defaultValue(0).description("Which port should the engine listen on for Autohost interfact connections.");
+CONFIG(int, ServerSleepTime).defaultValue(5).description("Number of milliseconds to sleep per tick for the server thread. Lower values have marginally higher CPU load, while high values can introduce additional latency.");
 CONFIG(int, SpeedControl).defaultValue(1).minimumValue(1).maximumValue(2)
 	.description("Sets how server adjusts speed according to player's load (CPU), 1: use average, 2: use highest");
 CONFIG(bool, AllowSpectatorJoin).defaultValue(true).dedicatedValue(false).description("allow any unauthenticated clients to join as spectator with any name, name will be prefixed with ~");
