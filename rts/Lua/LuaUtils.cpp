@@ -1291,12 +1291,12 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 
 void LuaUtils::PushAttackerDef(lua_State* L, const CUnit* const attacker)
 {
-	if (attacker && LuaUtils::IsUnitTyped(L, attacker)) {
-		lua_pushnumber(L, LuaUtils::EffectiveUnitDef(L, attacker)->id);
+	if (attacker == nullptr) {
+		lua_pushnil(L);
 		return;
 	}
 
-	lua_pushnil(L);
+	PushAttackerDef(L, *attacker);
 }
 
 void LuaUtils::PushAttackerDef(lua_State* L, const CUnit& attacker)
