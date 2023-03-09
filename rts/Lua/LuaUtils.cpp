@@ -1289,12 +1289,18 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 	return true;
 }
 
-void LuaUtils::PushAttackerDef(lua_State* L, const CUnit* const attacker)
+void LuaUtils::PushAttackerInfo(lua_State* L, const CUnit* const attacker)
 {
-	if (attacker == nullptr || !LuaUtils::IsUnitTyped(L, attacker))
+	if (attacker == nullptr || !IsUnitVisible(L, attacker)) {
 		lua_pushnil(L);
-	else
+		lua_pushnil(L);
+		lua_pushnil(L);
+	}
+	else {
+		lua_pushnumber(L, attacker->id);
 		lua_pushnumber(L, LuaUtils::EffectiveUnitDef(L, attacker)->id);
+		lua_pushnumber(L, attacker->team);
+	}
 }
 
 int LuaUtils::ParseLogLevel(lua_State* L, int index)

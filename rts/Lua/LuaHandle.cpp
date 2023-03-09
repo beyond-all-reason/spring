@@ -1031,15 +1031,7 @@ void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 	lua_pushnumber(L, unit->unitDef->id);
 	lua_pushnumber(L, unit->team);
 
-	if (attacker != nullptr) {
-		lua_pushnumber(L, attacker->id);
-		LuaUtils::PushAttackerDef(L, attacker);
-		lua_pushnumber(L, attacker->team);
-	} else {
-		lua_pushnil(L);
-		lua_pushnil(L);
-		lua_pushnil(L);
-	}
+	LuaUtils::PushAttackerInfo(L, attacker);
 
 	// call the routine
 	RunCallInTraceback(L, cmdStr, argCount, 0, traceBack.GetErrFuncIdx(), false);
@@ -1209,7 +1201,7 @@ void CLuaHandle::UnitDamaged(
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
-	int argCount = 7;
+	static constexpr int argCount = 7 + 3;
 
 	lua_pushnumber(L, unit->id);
 	lua_pushnumber(L, unit->unitDef->id);
@@ -1220,12 +1212,7 @@ void CLuaHandle::UnitDamaged(
 	lua_pushnumber(L, weaponDefID);
 	lua_pushnumber(L, projectileID);
 
-	if (attacker != nullptr) {
-		lua_pushnumber(L, attacker->id);
-		LuaUtils::PushAttackerDef(L, attacker);
-		lua_pushnumber(L, attacker->team);
-		argCount += 3;
-	}
+	LuaUtils::PushAttackerInfo(L, attacker);
 
 	// call the routine
 	RunCallInTraceback(L, cmdStr, argCount, 0, traceBack.GetErrFuncIdx(), false);
@@ -1855,24 +1842,18 @@ void CLuaHandle::FeatureDamaged(
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
-	int argCount = 4;
+	int argCount = 6 + 3;
 
 	lua_pushnumber(L, feature->id);
 	lua_pushnumber(L, feature->def->id);
 	lua_pushnumber(L, feature->team);
 	lua_pushnumber(L, damage);
 
-	if (GetHandleFullRead(L)) {
-		lua_pushnumber(L, weaponDefID); argCount += 1;
-		lua_pushnumber(L, projectileID); argCount += 1;
+	// these two do not count as information leaks
+	lua_pushnumber(L, weaponDefID);
+	lua_pushnumber(L, projectileID);
 
-		if (attacker != nullptr) {
-			lua_pushnumber(L, attacker->id);
-			LuaUtils::PushAttackerDef(L, attacker);
-			lua_pushnumber(L, attacker->team);
-			argCount += 3;
-		}
-	}
+	LuaUtils::PushAttackerInfo(L, attacker);
 
 	// call the routine
 	RunCallInTraceback(L, cmdStr, argCount, 0, traceBack.GetErrFuncIdx(), false);
