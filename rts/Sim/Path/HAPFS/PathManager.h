@@ -203,7 +203,7 @@ private:
 
 	// Used by MT code - a copy must be taken
 	MultiPath GetMultiPathMT(int pathID) const {
-		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		std::lock_guard<std::mutex> lock(pathMapUpdate);
 		const auto pi = pathMap.find(pathID);
 		if (pi == pathMap.end())
 			return MultiPath();
@@ -212,14 +212,14 @@ private:
 
 	// Used by MT code
 	void UpdateMultiPathMT(int pathID, MultiPath& updatedPath) {
-		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		std::lock_guard<std::mutex> lock(pathMapUpdate);
 		const auto pi = pathMap.find(pathID);
 		if (pi != pathMap.end())
 			pi->second = updatedPath;
 	}
 
 	const MultiPath* GetMultiPathConst(int pathID) const {
-		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		assert(!ThreadPool::inMultiThreadedSection);
 		const auto pi = pathMap.find(pathID);
 		if (pi == pathMap.end())
 			return nullptr;
@@ -229,7 +229,7 @@ private:
 	unsigned int Store(MultiPath& path) {
 		unsigned int assignedId = 0;
 		{
-			const std::lock_guard<std::mutex> lock(pathMapUpdate);
+			std::lock_guard<std::mutex> lock(pathMapUpdate);
 			assignedId = ++nextPathID;
 			pathMap[assignedId] = std::move(path);
 		}

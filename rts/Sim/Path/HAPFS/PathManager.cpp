@@ -833,7 +833,8 @@ void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 
 void CPathManager::SavePathCacheForPathId(int pathIdToSave)
 {
-	MultiPath& mpath = pathMap[pathIdToSave];
+	const MultiPath& mpath = *GetMultiPathConst(pathIdToSave);
+	if (mpath.moveDef == nullptr) { return; }
 
 	if (!mpath.lowResPath.path.empty()) {
 		pathingStates[PATH_LOW_RES].PromotePathForCurrentFrame
