@@ -165,10 +165,11 @@ void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, con
 	auto* vaVertices = va->GetTypedVertexArray<VA_TYPE_C>(resolution);
 
 	for (auto&& vert : vertices) {
-		*(vaVertices++) = VA_TYPE_C {
+		*vaVertices = VA_TYPE_C {
 			std::forward<float3>(vert.pos),
 			color
 		};
+		vaVertices++;
 	}
 
 	va->DrawArrayC(GL_LINE_LOOP);
