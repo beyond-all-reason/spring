@@ -14,10 +14,13 @@ class CWeapon;
 struct WeaponDef;
 
 extern void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res);
+extern void glSurfaceCircleLua(const float3& center, float radius, const SColor& col, uint32_t res);
 
 // params.x := radius, params.y := slope, params.z := gravity
 extern void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params);
 extern void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params);
+extern void glBallisticCircleLua(const CWeapon* weapon, const SColor& color, uint32_t resolution, const float3& center, const float3& params);
+extern void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params);
 
 using DrawVolumeFunc = void (*)(const void* data);
 extern void glDrawVolume(DrawVolumeFunc drawFunc, const void* data);
