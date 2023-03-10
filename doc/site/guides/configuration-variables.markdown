@@ -24,7 +24,7 @@ Here we provide a list of them:
     {% assign row_data = row[1] %}
     <tr>
       <td>
-        <a id="#{{ row[0] }}" href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">{{ row[0] }}</a>
+        <a id="{{ row[0] }}" href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">{{ row[0] }}</a>
         {% if row_data["deprecated"] %} <em>deprecated</em> {% endif %}
       </td>
       <td>
