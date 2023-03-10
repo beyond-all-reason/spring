@@ -74,7 +74,7 @@ namespace QTPFS {
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
 		const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
-		const PathCache& GetPathCache(unsigned int pathType) const { return pathCaches; }
+		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 
 		const MapChangeTrack& GetMapChangeTrack() const { return mapChangeTrack; };
 
@@ -104,15 +104,15 @@ namespace QTPFS {
 		typedef std::vector<PathSearch*> PathSearchVect;
 		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
 
-		void SpawnSpringThreads(MemberFunc f, const SRectangle& r);
+		// void SpawnSpringThreads(MemberFunc f, const SRectangle& r);
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
-		void UpdateNodeLayersThreaded(const SRectangle& rect);
-		void UpdateNodeLayersThread(
-			unsigned int threadNum,
-			unsigned int numThreads,
-			const SRectangle& rect
-		);
+		// void UpdateNodeLayersThreaded(const SRectangle& rect);
+		// void UpdateNodeLayersThread(
+		// 	unsigned int threadNum,
+		// 	unsigned int numThreads,
+		// 	const SRectangle& rect
+		// );
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
 
@@ -146,7 +146,7 @@ namespace QTPFS {
 
 		static std::vector<NodeLayer> nodeLayers;
 		static std::vector<QTNode*> nodeTrees;
-		PathCache pathCaches;
+		PathCache pathCache;
 		static std::vector<PathSearch*> pathSearches;
 
 		std::vector<SearchThreadData> searchThreadData;

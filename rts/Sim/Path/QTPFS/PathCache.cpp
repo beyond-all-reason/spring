@@ -1,4 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+#undef NDEBUG
 
 #include <cassert>
 
@@ -123,15 +124,9 @@ void QTPFS::PathCache::DelPath(unsigned int pathID) {
 	// 	deadPaths.erase(it);
 	// }
 
-	// auto& path = allPaths[pathID];
-	// if (path.GetID() != 0) {
-	// 	path.~IPath();
-	// 	path.SetID(0);
-	// 	spareIds.emplace_back(pathID);
-	// }
-
 	entt::entity entity = (entt::entity)pathID;
-	registry.destroy(entity);
+	if (registry.valid(entity))
+		registry.destroy(entity);
 }
 
 // bool QTPFS::PathCache::ReleaseLivePath(unsigned int pathID) {
@@ -231,14 +226,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
 				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
-
-				// deadPaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
-
-				// This is going to be sorted later to avoid desyncs.
-				dirtyPathsLock.lock();
-				// dirtyPaths.emplace_back(path->GetID(), pathType);
-				registry.emplace<PathIsDirty>(entity);
-				dirtyPathsLock.unlock();
+				dirtyPaths[pathType].emplace_back(entity);
 
 				// remove the entry from clean paths.
 				// *it = nodeLayerCleanPaths[pathType].back();

@@ -10,6 +10,8 @@
 #include "System/UnorderedMap.hpp"
 #include "System/Threading/SpringThreading.h"
 
+#include "Registry.h"
+
 #ifdef GetTempPath
 #undef GetTempPath
 #undef GetTempPathA
@@ -22,10 +24,6 @@ namespace QTPFS {
 		PathCache() {
 			numCacheHits.resize(PATH_TYPE_DEAD + 1, 0);
 			numCacheMisses.resize(PATH_TYPE_DEAD + 1, 0);
-		// 	spareIds.reserve(200);
-		// 	allPaths.reserve(200);
-		// 	dirtyPaths.reserve(200);
-		// 	initPaths.reserve(200);
 		}
 
 		typedef spring::unordered_map<unsigned int, IPath*> PathMap;
@@ -44,6 +42,15 @@ namespace QTPFS {
 		void AddTempPath(IPath* path);
 		void AddLivePath(IPath* path);
 
+		void Init(int pathTypes) {
+			dirtyPaths.clear();
+			dirtyPaths.resize(pathTypes);
+		}
+
+		void SetLayerPathCount(int pathType, int paths) {
+			dirtyPaths[pathType].reserve(paths);
+		}
+
 		void DelPath(unsigned int pathID);
 
 		// must be in deadPaths if calling this
@@ -56,21 +63,17 @@ namespace QTPFS {
 		// std::vector<IPath> allPaths;
 		// std::vector<int> spareIds;
 
-		struct DirtyPath {
-			DirtyPath(int newPathId, int newPathType)
-				: pathId(newPathId)
-				, pathType(newPathType)
-				{}
+		// struct DirtyPath {
+		// 	DirtyPath(int newPathId, int newPathType)
+		// 		: pathId(newPathId)
+		// 		, pathType(newPathType)
+		// 		{}
 
-			int pathId;
-			int pathType;
-		};
+		// 	int pathId;
+		// 	int pathType;
+		// };
 
-		spring::spinlock dirtyPathsLock;
-		// std::vector<DirtyPath> dirtyPaths;
-
-		// std::vector<int> initPaths;
-		// std::vector< std::vector<int> > nodeLayerCleanPaths;
+		std::vector< std::vector<entt::entity> > dirtyPaths;
 
 	private:
 		const IPath* GetConstPath(unsigned int pathID, unsigned int pathType) const;

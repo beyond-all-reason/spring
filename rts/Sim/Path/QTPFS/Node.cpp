@@ -520,9 +520,9 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	bool& wantSplit,
 	bool& needSplit
 ) {
-	const std::vector<NodeLayer::SpeedBinType>& oldSpeedBins = nl.GetOldSpeedBins();
+	// const std::vector<NodeLayer::SpeedBinType>& oldSpeedBins = nl.GetOldSpeedBins();
 	const std::vector<NodeLayer::SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
-	const std::vector<NodeLayer::SpeedModType>& oldSpeedMods = nl.GetOldSpeedMods();
+	// const std::vector<NodeLayer::SpeedModType>& oldSpeedMods = nl.GetOldSpeedMods();
 	const std::vector<NodeLayer::SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
 
 	const NodeLayer::SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
@@ -549,18 +549,20 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		const unsigned int minz = std::max(r.z1, int(zmin()));
 		const unsigned int maxz = std::min(r.z2, int(zmax()));
 
+		speedModSum = 0.0f;
+
 		for (unsigned int hmz = minz; hmz < maxz; hmz++) {
 			for (unsigned int hmx = minx; hmx < maxx; hmx++) {
 				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
 
-				const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
+				// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
 				const NodeLayer::SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
 
-				numNewBinSquares += int(curSpeedBin != oldSpeedBin);
+				// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
 				numDifBinSquares += int(curSpeedBin != refSpeedBin);
 				numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
 
-				speedModSum -= (oldSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
+				// speedModSum -= (oldSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
 				speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
 
 				assert(speedModSum >= 0.0f);
@@ -573,10 +575,10 @@ bool QTPFS::QTNode::UpdateMoveCost(
 			for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
 				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
 
-				const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
+				// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
 				const NodeLayer::SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
 
-				numNewBinSquares += int(curSpeedBin != oldSpeedBin);
+				// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
 				numDifBinSquares += int(curSpeedBin != refSpeedBin);
 				numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
 

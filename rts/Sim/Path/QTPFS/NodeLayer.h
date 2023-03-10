@@ -12,6 +12,8 @@
 #include "Node.h"
 #include "PathDefines.h"
 
+#include "Registry.h"
+
 struct MoveDef;
 
 namespace QTPFS {
@@ -77,9 +79,9 @@ namespace QTPFS {
 		void FreePoolNode(unsigned int nodeIndex) { nodeIndcs.push_back(nodeIndex); }
 
 
-		const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
+		// const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
-		const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
+		// const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
 		std::vector<INode*>& GetNodes() { return nodeGrid; }
@@ -97,11 +99,10 @@ namespace QTPFS {
 		std::uint64_t GetMemFootPrint() const {
 			std::uint64_t memFootPrint = sizeof(NodeLayer);
 			memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
-			memFootPrint += (oldSpeedMods.size() * sizeof(SpeedModType));
+			// memFootPrint += (oldSpeedMods.size() * sizeof(SpeedModType));
 			memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
-			memFootPrint += (oldSpeedBins.size() * sizeof(SpeedBinType));
+			// memFootPrint += (oldSpeedBins.size() * sizeof(SpeedBinType));
 			memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
-			// memFootPrint += (poolNodes.size() * sizeof(decltype(poolNodes)::value_type));
 			for (size_t i = 0, n = NUM_POOL_CHUNKS; i < n; i++) {
 				memFootPrint += (poolNodes[i].size() * sizeof(QTNode));
 			}
@@ -116,9 +117,9 @@ namespace QTPFS {
 		std::vector<unsigned int> nodeIndcs;
 
 		std::vector<SpeedModType> curSpeedMods;
-		std::vector<SpeedModType> oldSpeedMods;
+		// std::vector<SpeedModType> oldSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
-		std::vector<SpeedBinType> oldSpeedBins;
+		// std::vector<SpeedBinType> oldSpeedBins;
 
 		// root lives outside pool s.t. all four children of a given node are always in one chunk
 		QTNode rootNode;

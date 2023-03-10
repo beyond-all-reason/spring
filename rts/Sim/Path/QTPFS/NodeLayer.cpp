@@ -54,8 +54,8 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 	}
 
 	curSpeedMods.resize(xsize * zsize,  0);
-	oldSpeedMods.resize(xsize * zsize,  0);
-	oldSpeedBins.resize(xsize * zsize, -1);
+	// oldSpeedMods.resize(xsize * zsize,  0);
+	// oldSpeedBins.resize(xsize * zsize, -1);
 	curSpeedBins.resize(xsize * zsize, -1);
 }
 
@@ -63,8 +63,8 @@ void QTPFS::NodeLayer::Clear() {
 	nodeGrid.clear();
 
 	curSpeedMods.clear();
-	oldSpeedMods.clear();
-	oldSpeedBins.clear();
+	// oldSpeedMods.clear();
+	// oldSpeedBins.clear();
 	curSpeedBins.clear();
 }
 
@@ -77,7 +77,7 @@ bool QTPFS::NodeLayer::Update(
 ) {
 	assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
-	unsigned int numNewBinSquares = 0;
+	// unsigned int numNewBinSquares = 0;
 	unsigned int numClosedSquares = 0;
 
 	const bool globalUpdate =
@@ -119,20 +119,20 @@ bool QTPFS::NodeLayer::Update(
 			const float tmpAbsSpeedMod = Clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
 			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
 			const float newRelSpeedMod = Clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
-			const float curRelSpeedMod = Clamp(curSpeedMods[sqrIdx] / float(MaxSpeedModTypeValue()), 0.0f, 1.0f);
+			// const float curRelSpeedMod = Clamp(curSpeedMods[sqrIdx] / float(MaxSpeedModTypeValue()), 0.0f, 1.0f);
 			#undef NL
 
 			const SpeedBinType newSpeedModBin = GetSpeedModBin(newAbsSpeedMod, newRelSpeedMod);
-			const SpeedBinType curSpeedModBin = curSpeedBins[sqrIdx];
+			// const SpeedBinType curSpeedModBin = curSpeedBins[sqrIdx];
 
-			numNewBinSquares += int(newSpeedModBin != curSpeedModBin);
+			// numNewBinSquares += int(newSpeedModBin != curSpeedModBin);
 			numClosedSquares += int(newSpeedModBin == QTPFS::NodeLayer::NUM_SPEEDMOD_BINS);
 
 			// need to keep track of these for Tesselate
-			oldSpeedMods[sqrIdx] = curRelSpeedMod * float(MaxSpeedModTypeValue());
+			// oldSpeedMods[sqrIdx] = curRelSpeedMod * float(MaxSpeedModTypeValue());
 			curSpeedMods[sqrIdx] = newRelSpeedMod * float(MaxSpeedModTypeValue());
 
-			oldSpeedBins[sqrIdx] = curSpeedModBin;
+			// oldSpeedBins[sqrIdx] = curSpeedModBin;
 			curSpeedBins[sqrIdx] = newSpeedModBin;
 
 			if (globalUpdate && newRelSpeedMod > 0.0f) {
@@ -155,7 +155,7 @@ bool QTPFS::NodeLayer::Update(
 	// but we might NOT need to split it (ex. if the map is 100% flat)
 	// if each square happened to change to the SAME bin
 	//
-	return (numNewBinSquares > 0);
+	return true; //(numNewBinSquares > 0);
 }
 
 
