@@ -3,6 +3,7 @@
 
 #include "glExtra.h"
 #include "RenderBuffers.h"
+#include "VertexArray.h"
 #include "Map/Ground.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -13,24 +14,49 @@
 /**
  *  Draws a trigonometric circle in 'resolution' steps.
  */
-void glSurfaceCircle(const float3& center, float radius,const SColor& col, uint32_t res)
+namespace {
+	template<typename Func>
+	void glSurfaceCircleImpl(const float3& center, float radius, const SColor& col, uint32_t res, Func&& func)
+	{
+		for (uint32_t i = 0; i < res; ++i) {
+			const float radians = math::TWOPI * (float)i / (float)res;
+			float3 pos;
+			pos.x = center.x + (fastmath::sin(radians) * radius);
+			pos.z = center.z + (fastmath::cos(radians) * radius);
+			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+			func(std::forward<float3>(pos), col);
+		}
+	}
+}
+void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res)
 {
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
-	for (uint32_t i = 0; i < res; ++i) {
-		const float radians = math::TWOPI * (float)i / (float)res;
-		float3 pos;
-		pos.x = center.x + (fastmath::sin(radians) * radius);
-		pos.z = center.z + (fastmath::cos(radians) * radius);
-		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
-		rb.AddVertex({ pos, col });
-	}
+	const auto addFunc = [&rb](auto&& pos, const auto& col) {
+		rb.AddVertex({ std::forward<float3>(pos), col });
+	};
+
+	glSurfaceCircleImpl(center, radius, col, res, addFunc);
 
 	sh.Enable();
 	rb.DrawArrays(GL_LINE_LOOP);
 	sh.Disable();
+}
+
+void glSurfaceCircleLua(const float3& center, float radius, const SColor& col, uint32_t res)
+{
+	CVertexArray* va = GetVertexArray();
+	va->Initialize();
+
+	const auto addFunc = [va](auto&& pos, const auto& col) {
+		va->AddVertexC(pos, col);
+	};
+
+	glSurfaceCircleImpl(center, radius, col, res, addFunc);
+
+	va->DrawArrayC(GL_LINE_LOOP);
 }
 
 static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, float, float) = {
@@ -38,70 +64,87 @@ static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, f
 	CWeapon::GetLiveRange2D,
 };
 
-static void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
-{
-	constexpr int resDiv = 50;
+namespace {
+	std::vector<VA_TYPE_0> glBallisticCircleImpl(const CWeapon* weapon, const WeaponDef* weaponDef, uint32_t resolution, const float3& center, const float3& params)
+	{
+		static constexpr int resDiv = 50;
 
-	std::vector<VA_TYPE_0> vertices;
-	vertices.resize(resolution);
+		std::vector<VA_TYPE_0> vertices;
+		vertices.resize(resolution);
 
-	const float radius = params.x;
-	const float slope = params.y;
+		const float radius = params.x;
+		const float slope = params.y;
 
-	const float wdHeightMod = weaponDef->heightmod;
-	const float wdProjGravity = mix(params.z, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+		const float wdHeightMod = weaponDef->heightmod;
+		const float wdProjGravity = mix(params.z, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
 
-	for_mt(0, resolution, [&](const int i) {
-		const float radians = math::TWOPI * (float)i / (float)resolution;
+		for_mt(0, resolution, [&](const int i) {
+			const float radians = math::TWOPI * (float)i / (float)resolution;
 
-		const float sinR = fastmath::sin(radians);
-		const float cosR = fastmath::cos(radians);
+			const float sinR = fastmath::sin(radians);
+			const float cosR = fastmath::cos(radians);
 
-		float maxWeaponRange = radius;
+			float maxWeaponRange = radius;
 
-		float3 pos;
-		pos.x = center.x + (sinR * maxWeaponRange);
-		pos.z = center.z + (cosR * maxWeaponRange);
-		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
-
-		float posHeightDelta = (pos.y - center.y) * 0.5f;
-		float posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta * wdHeightMod, wdProjGravity);
-		float rangeIncrement = (maxWeaponRange -= (posHeightDelta * slope)) * 0.5f;
-		float ydiff = 0.0f;
-
-		// "binary search" for the maximum positional range per angle, accounting for terrain height
-		for (int j = 0; j < resDiv && (std::fabs(posWeaponRange - maxWeaponRange) + ydiff) > (0.01f * maxWeaponRange); j++) {
-			if (posWeaponRange > maxWeaponRange) {
-				maxWeaponRange += rangeIncrement;
-			} else {
-				// overshot, reduce step-size
-				maxWeaponRange -= rangeIncrement;
-				rangeIncrement *= 0.5f;
-			}
-
+			float3 pos;
 			pos.x = center.x + (sinR * maxWeaponRange);
 			pos.z = center.z + (cosR * maxWeaponRange);
+			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 
-			const float newY = CGround::GetHeightAboveWater(pos.x, pos.z, false);
-			ydiff = std::fabs(pos.y - newY);
-			pos.y = newY;
+			float posHeightDelta = (pos.y - center.y) * 0.5f;
+			float posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta* wdHeightMod, wdProjGravity);
+			float rangeIncrement = (maxWeaponRange -= (posHeightDelta * slope)) * 0.5f;
+			float ydiff = 0.0f;
 
-			posHeightDelta = pos.y - center.y;
-			posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta * wdHeightMod, wdProjGravity);
-		}
+			// "binary search" for the maximum positional range per angle, accounting for terrain height
+			for (int j = 0; j < resDiv && (std::fabs(posWeaponRange - maxWeaponRange) + ydiff) >(0.01f * maxWeaponRange); j++) {
+				if (posWeaponRange > maxWeaponRange) {
+					maxWeaponRange += rangeIncrement;
+				}
+				else {
+					// overshot, reduce step-size
+					maxWeaponRange -= rangeIncrement;
+					rangeIncrement *= 0.5f;
+				}
 
-		pos.x = center.x + (sinR * posWeaponRange);
-		pos.z = center.z + (cosR * posWeaponRange);
-		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+				pos.x = center.x + (sinR * maxWeaponRange);
+				pos.z = center.z + (cosR * maxWeaponRange);
 
-		vertices[i].pos = pos;
-	});
+				const float newY = CGround::GetHeightAboveWater(pos.x, pos.z, false);
+				ydiff = std::fabs(pos.y - newY);
+				pos.y = newY;
 
+				posHeightDelta = pos.y - center.y;
+				posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta* wdHeightMod, wdProjGravity);
+			}
+
+			pos.x = center.x + (sinR * posWeaponRange);
+			pos.z = center.z + (cosR * posWeaponRange);
+			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+
+			vertices[i].pos = std::move(pos);
+		});
+
+		return vertices;
+	}
+}
+
+/*
+ *  Draws a trigonometric circle in 'resolution' steps, with a slope modifier
+ */
+
+void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+{
 	const float4 fColor = color;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
 	rb.AssertSubmission();
 
+	const auto addFunc = [&rb](auto&& vertices, const auto& col) {
+		rb.AddVertex(std::forward<std::vector<VA_TYPE_0>>(vertices));
+	};
+
+	auto vertices = glBallisticCircleImpl(weapon, weaponDef, resolution, center, params);
 	rb.AddVertices(vertices);
 
 	auto& sh = rb.GetShader();
@@ -112,10 +155,25 @@ static void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef,
 	sh.Disable();
 }
 
+void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+{
+	CVertexArray* va = GetVertexArray();
+	va->Initialize();
+	va->EnlargeArrays(resolution, 0, VA_SIZE_C);
 
-/*
- *  Draws a trigonometric circle in 'resolution' steps, with a slope modifier
- */
+	auto vertices = glBallisticCircleImpl(weapon, weaponDef, resolution, center, params);
+	auto* vaVertices = va->GetTypedVertexArray<VA_TYPE_C>(resolution);
+
+	for (auto&& vert : vertices) {
+		*(vaVertices++) = VA_TYPE_C {
+			std::forward<float3>(vert.pos),
+			color
+		};
+	}
+
+	va->DrawArrayC(GL_LINE_LOOP);
+}
+
 void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
 	glBallisticCircle(weapon, weapon->weaponDef, color, resolution, center, params);
@@ -124,6 +182,16 @@ void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t
 void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
 	glBallisticCircle(nullptr, weaponDef, color, resolution, center, params);
+}
+
+void glBallisticCircleLua(const CWeapon* weapon, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+{
+	glBallisticCircleLua(weapon, weapon->weaponDef, color, resolution, center, params);
+}
+
+void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+{
+	glBallisticCircleLua(nullptr, weaponDef, color, resolution, center, params);
 }
 
 
