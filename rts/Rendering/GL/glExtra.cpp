@@ -30,18 +30,22 @@ namespace {
 }
 void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res)
 {
-	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	const float4 fColor = col;
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
 	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
 	const auto addFunc = [&rb](auto&& pos, const auto& col) {
-		rb.AddVertex({ std::forward<float3>(pos), col });
+		rb.AddVertex({ std::forward<float3>(pos) });
 	};
 
 	glSurfaceCircleImpl(center, radius, col, res, addFunc);
 
 	sh.Enable();
+	sh.SetUniform("ucolor", fColor.x, fColor.y, fColor.z, fColor.w);
 	rb.DrawArrays(GL_LINE_LOOP);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	sh.Disable();
 }
 
