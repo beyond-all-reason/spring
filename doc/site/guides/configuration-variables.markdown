@@ -23,12 +23,19 @@ Here we provide a list of them:
   {% for row in site.data.configs %}
     {% assign row_data = row[1] %}
     <tr>
-      <td>
-        <a name="{{ row[0] }}" href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">{{ row[0] }}</a>
-        {% if row_data["deprecated"] %} <em>deprecated</em> {% endif %}
+      <td id="{{ row[0] }}">
+        <a href="#{{ row[0] }}">
+          {{ row[0] }}
+        </a>
+        {% if row_data["deprecated"] %} <p class="label label-red">Deprecated</p> {% endif %}
       </td>
       <td>
-        <b>{{ row_data["type"] }}</b> {{ row_data["description"] }}
+        <b>{{ row_data["type"] | replace: "std::", "" }}</b> {{ row_data["description"] }}
+        <em>
+          <a href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">
+            (source)
+          </a>
+        </em>
       </td>
       <td>
         {% if row_data["defaultValue"] %} Default: <code>{{ row_data["defaultValue"] }}</code> <br> {% endif %}

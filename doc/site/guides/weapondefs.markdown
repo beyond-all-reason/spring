@@ -18,12 +18,14 @@ Here we provide a list of engine defined weapondefs:
   {% for row in site.data.weapondefs["WeaponDefs"] %}
     {% assign row_data = row[1] %}
     <tr>
-      <td>
-        <a name="{{ row[0] }}">{{ row[0] }}</a>
-        {% if row_data["deprecated"] %} <em>deprecated</em> {% endif %}
+      <td id="{{ row[0] }}">
+        <a href="#{{ row[0] }}">
+          {{ row[0] }}
+        </a>
+        {% if row_data["deprecated"] %} <p class="label label-red">Deprecated</p> {% endif %}
       </td>
       <td>
-        <b>{{ row_data["type"] | xml_escape | textilize }}</b> {{ row_data["description"] }}
+        <b>{{ row_data["type"] | replace: "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >", "string" | xml_escape | textilize }}</b> {{ row_data["description"] }}
       </td>
       <td>
         {% if row_data["fallbackName"] %} Fallback: <code>{{ row_data["fallbackName"] }}</code> <br> {% endif %}
