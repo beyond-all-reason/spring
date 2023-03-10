@@ -19,19 +19,19 @@ Here we provide a list of engine defined weapondefs:
     {% assign row_data = row[1] %}
     <tr>
       <td>
-        {{ row[0] }}
+        <a name="{{ row[0] }}">{{ row[0] }}</a>
         {% if row_data["deprecated"] %} <em>deprecated</em> {% endif %}
       </td>
       <td>
         <b>{{ row_data["type"] | xml_escape | textilize }}</b> {{ row_data["description"] }}
       </td>
       <td>
-        {% if row_data["fallbackName"] %} Fallback: {{ row_data["fallbackName"] }} <br> {% endif %}
-        {% if row_data["defaultValue"] %} Default: {{ row_data["defaultValue"] }} <br> {% endif %}
-        {% if row_data["minimumValue"] %} Min: {{ row_data["minimumValue"] }} <br> {% endif %}
-        {% if row_data["maximumValue"] %} Max: {{ row_data["maximumValue"] }} <br> {% endif %}
-        {% if row_data["scaleValue"] %} Scale Value: {{ row_data["scaleValue"] }} <br> {% endif %}
-        {% if row_data["scaleValueString"] %} Scale String: {{ row_data["scaleValueString"] }} <br> {% endif %}
+        {% if row_data["fallbackName"] %} Fallback: <code>{{ row_data["fallbackName"] }}</code> <br> {% endif %}
+        {% if row_data["defaultValue"] %} Default: <code>{{ row_data["defaultValue"] | join: ", " }}</code> <br> {% endif %}
+        {% if row_data["minimumValue"] %} Min: <code>{{ row_data["minimumValue"] }}</code> <br> {% endif %}
+        {% if row_data["maximumValue"] %} Max: <code>{{ row_data["maximumValue"] }}</code> <br> {% endif %}
+        {% if row_data["scaleValue"] %} Scale Value: <code>{{ row_data["scaleValue"] }}</code> <br> {% endif %}
+        {% if row_data["scaleValueString"] %} Scale String: <code>{{ row_data["scaleValueString"] }}</code> <br> {% endif %}
       </td>
     </tr>
   {% endfor %}

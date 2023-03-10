@@ -24,18 +24,18 @@ Here we provide a list of them:
     {% assign row_data = row[1] %}
     <tr>
       <td>
-        <a id="{{ row[0] }}" href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">{{ row[0] }}</a>
+        <a name="{{ row[0] }}" href="{{ site.gh_edit_repository }}/{{ site.gh_edit_view_mode }}/{{ site.gh_edit_branch }}/{{ row_data["declarationFile"]  | remove: "/spring/" }}#L{{ row_data["declarationLine"] }}">{{ row[0] }}</a>
         {% if row_data["deprecated"] %} <em>deprecated</em> {% endif %}
       </td>
       <td>
         <b>{{ row_data["type"] }}</b> {{ row_data["description"] }}
       </td>
       <td>
-        {% if row_data["defaultValue"] %} Default: {{ row_data["defaultValue"] }} <br> {% endif %}
-        {% if row_data["minimumValue"] %} Min: {{ row_data["minimumValue"] }} <br> {% endif %}
-        {% if row_data["maximumValue"] %} Max: {{ row_data["maximumValue"] }} <br> {% endif %}
-        {% if row_data["safemodeValue"] %} Safe Mode: {{ row_data["safemodeValue"] }} <br> {% endif %}
-        {% if row_data["headlessValue"] %} Headless: {{ row_data["safemodeValue"] }} {% endif %}
+        {% if row_data["defaultValue"] %} Default: <code>{{ row_data["defaultValue"] }}</code> <br> {% endif %}
+        {% if row_data["minimumValue"] %} Min: <code>{{ row_data["minimumValue"] }}</code> <br> {% endif %}
+        {% if row_data["maximumValue"] %} Max: <code>{{ row_data["maximumValue"] }}</code> <br> {% endif %}
+        {% if row_data["safemodeValue"] %} Safe Mode: <code>{{ row_data["safemodeValue"] }}</code> <br> {% endif %}
+        {% if row_data["headlessValue"] %} Headless: <code>{{ row_data["safemodeValue"] }}</code> {% endif %}
       </td>
     </tr>
   {% endfor %}
