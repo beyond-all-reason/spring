@@ -19,4 +19,4 @@ curl -L $DOWNLOAD_URL -o engine.7z
 echo "> writing config data to $CONFIG_FILE"
 
 rm -f $CONFIG_FILE
-./spring --list-def-tags | grep -v "^\[t=" > $CONFIG_FILE
+./spring --list-config-vars | grep -v "^\[t=" > $CONFIG_FILE
