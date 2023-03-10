@@ -2,7 +2,7 @@
 layout: default
 title: Weapon Defs
 parent: Guides
-permalink: /guides/configuration-variables/
+permalink: /guides/weapon-defs/
 ---
 
 # Weapon Defs
