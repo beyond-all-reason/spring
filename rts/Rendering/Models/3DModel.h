@@ -14,6 +14,7 @@
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
+#include "System/float4.h"
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
 
@@ -48,8 +49,16 @@ struct SVertexData {
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
 		pieceIndex = uint32_t(-1);
+		SetBoneWeights();
 	}
-	SVertexData(const float3& p, const float3& n, const float3& s, const float3& t, const float2& uv0, const float2& uv1)
+	SVertexData(
+		const float3& p,
+		const float3& n,
+		const float3& s,
+		const float3& t,
+		const float2& uv0,
+		const float2& uv1,
+		const float4& w)
 	{
 		pos = p;
 		normal = n;
@@ -59,19 +68,25 @@ struct SVertexData {
 		texCoords[1] = uv1;
 		// pieceIndex is initialized afterwards
 		pieceIndex = uint32_t(-1);
+		SetBoneWeights(w);
 	}
 
 	float3 pos;
 	float3 normal;
 	float3 sTangent;
 	float3 tTangent;
-
-	// TODO:
-	//   with pieceIndex this struct is no longer 64 bytes in size which ATI's prefer
-	//   support an arbitrary number of channels, would be easy but overkill (for now)
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-
 	uint32_t pieceIndex;
+	uint32_t boneWeights;
+
+private:
+	void SetBoneWeights(const float4& w = { 1.0f, 0.0f, 0.0f, 0.0f }) {
+		boneWeights =
+			(static_cast<uint8_t>(w[3] * 255)      ) |
+			(static_cast<uint8_t>(w[2] * 255) << 8 ) |
+			(static_cast<uint8_t>(w[1] * 255) << 16) |
+			(static_cast<uint8_t>(w[0] * 255) << 24) ;
+	}
 };
 
 

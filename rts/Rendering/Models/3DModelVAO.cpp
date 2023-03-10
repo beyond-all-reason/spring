@@ -272,7 +272,7 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 	if (matIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
-	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs amd model. Don't check for validity
+	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs and models. Don't check for validity
 
 	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
 	modelInstanceData.emplace_back(SInstanceData(matIndex, teamID, drawFlags, uniIndex));
