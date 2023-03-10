@@ -57,7 +57,7 @@
 #include <tracy/Tracy.hpp>
 
 
-CONFIG(bool, DemoFromDemo).defaultValue(false);
+CONFIG(bool, DemoFromDemo).defaultValue(false).description("Enable recording a demo while playing back a demo.");
 CONFIG(bool, LoadBadSaves).defaultValue(false);
 
 static char mapChecksumMsgBuf[1024] = {0};

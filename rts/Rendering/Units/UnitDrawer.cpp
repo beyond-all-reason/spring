@@ -570,13 +570,7 @@ void CUnitDrawerLegacy::DrawObjectsShadow(int modelType) const
 		if (mdlRenderer.GetObjectBin(i).empty())
 			continue;
 
-		// only need to bind the atlas once for 3DO's, but KISS
-		assert((modelType != MODELTYPE_3DO) || (mdlRenderer.GetObjectBinKey(i) == 0));
-
-		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
-		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
-
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 		for (auto* o : mdlRenderer.GetObjectBin(i)) {
 			DrawUnitShadow(o);
 		}
@@ -1400,9 +1394,7 @@ void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 		if (mdlRenderer.GetObjectBin(i).empty())
 			continue;
 
-		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
-
+		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
 		static vector<const ObjType*> beingBuilt;

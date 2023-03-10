@@ -38,12 +38,12 @@ CONFIG(bool, MapBorder).defaultValue(true).description("Draws a solid border at 
 
 CONFIG(int, MaxDynamicMapLights)
 	.defaultValue(1)
-	.minimumValue(0);
+	.minimumValue(0).description("Maximum number of map-global dynamic lights that will be rendered at once. High numbers of lights cost performance, as they affect every map fragment.");
 
 CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
-CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false);
-CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false);
-CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false);
+CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false).description("Enable rendering the map to the map deferred buffers.");
+CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false).description("Enable DrawMapPostDeferred Lua callins.");
+CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false).description("Enable DrawMapDeferred Lua callins.");
 
 
 CONFIG(int, ROAM)
@@ -356,11 +356,11 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	//glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 

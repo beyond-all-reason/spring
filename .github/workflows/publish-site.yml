@@ -10,21 +10,26 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Install LDoc
+      - name: Install Dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install --fix-missing -y lua-ldoc lua-markdown
+          sudo apt-get install --fix-missing -y lua-ldoc lua-markdown jq p7zip-full libsdl2-2.0-0 libopenal1
       - name: Checkout Source Repository
         uses: actions/checkout@v2
         with:
           ref: BAR105
+      - name: Generate Dynamic Content
+        run: |
+          bash doc/site/_scripts/get_release_data.sh
+          bash doc/site/_scripts/get_engine_data.sh
+          git add -f doc/site/_data
       - name: Run LDoc
         run: |
           ldoc -c doc/LDoc/config.ld .
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add -f doc/site/ldoc
-          git commit -m "Update doc/site/ldoc"
+          git commit -m "Update doc/site"
       - name: Check if gh-pages exists
         id: check-ghpages
         run: |

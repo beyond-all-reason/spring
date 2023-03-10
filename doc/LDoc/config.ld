@@ -17,6 +17,7 @@ file={
   '../../rts/Lua/LuaVAOImpl.cpp',
   '../../rts/Lua/LuaVBO.cpp',
   '../../rts/Lua/LuaVBOImpl.cpp',
+  '../../rts/Lua/LuaOpenGL.cpp',
   '../../rts/Lua/LuaZip.cpp',
   '../../rts/Lua/LuaRules.cpp',
   '../../rts/Lua/LuaMetalMap.cpp',

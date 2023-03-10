@@ -6,12 +6,126 @@ nav_order: 5
 ---
 
 # Migrating from Spring
+{: .no_toc }
 
 While Recoil is mostly compatible with Spring 105 some divergences naturally
 developed over time.
 
 Here we list the most relevant breaking changes and how to fix them when
 migrating from Spring.
+
+<details open markdown="block">
+  <summary>
+    Table of contents
+  </summary>
+  {: .text-delta }
+- TOC
+{:toc}
+</details>
+
+## Callouts
+
+### Font rendering
+
+Rendering fonts now obeys GL color state. This means that sometimes text will
+not be the same color as previously. To get back previous behaviour, you might
+need to add
+[`gl.Color`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Text)
+in front of
+[`gl.Text`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Color)
+calls.
+
+### Spring.Marker usage
+
+All three [Spring.Marker] functions (Point, Line, Erase) no longer accept
+numerical 0 as false for `onlyLocal` (now follows regular Lua language rules
+where 0 is true). To get back old behaviour, change `0` to `false`, e.g.:
+
+```diff
+-Spring.MarkerAddPoint(x, y, z, text, 0)
++Spring.MarkerAddPoint(x, y, z, text, false)
+```
+
+```diff
+-Spring.MarkerAddLine(x1, y1, z1, x2, y2, z2, 0, playerId)
++Spring.MarkerAddLine(x1, y1, z1, x2, y2, z2, false, playerId)
+```
+
+```diff
+-Spring.MarkerErasePosition(x, y, z, noop, 0, playerId)
++Spring.MarkerErasePosition(x, y, z, noop, false, playerId)
+```
+
+### Spring.GetConfig usage
+
+[`Spring.GetConfigInt`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetConfigInt),
+[`Spring.GetConfigFloat`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetConfigFloat) and
+[`Spring.GetConfigString`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetConfigString)
+now accept nil as the second argument (what to return by default if not set).
+Previously it was treated as 0 (Int and Float) or "" (String).
+To get back previous behaviour:
+
+```lua
+local originalGetConfigInt = Spring.GetConfigInt
+Spring.GetConfigInt = function(key, def)
+ return originalGetConfigInt(key, def) or 0
+end
+```
+
+### Spring.GetSelectedUnits{Sorted,Counts}
+
+The tables returned by
+[`Spring.GetSelectedUnitsSorted`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetSelectedUnitsSorted) and
+[`Spring.GetSelectedUnitsCounts`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetSelectedUnitsCounts)
+no longer have an additional `n` key with corresponding value containining the
+number of unitdefs.
+
+Instead use the second return value, e.g.:
+
+```diff
+- local counts = Spring.GetSelectedUnitsCounts()
+- local unitDefsCount = counts.n
+- counts.n = nil
++ local counts, unitDefsCount = Spring.GetSelectedUnitsCounts()
+```
+
+## Defs
+
+- Hovercraft and ships brought out of water no longer forced to be upright.
+To get back previous behaviour, put the `upright = true` tag in all unit defs
+whose move def is of the hovercraft or ship type.
+- Units with `useFootPrintCollisionVolume` but no `collisionVolumeScales` set
+will now use the footprint volume (previously mistakenly used the model's sphere).
+
+  To keep the old hitvolume, set `useFootPrintCollisionVolume` to false for units
+  with no `collisionVolumeScales`. Assuming you apply `lowerkeys` to unit defs,
+  this can also be achieved by putting the following in unit defs post-processing:
+
+  ```lua
+  for unitDefID, unitDef in pairs(UnitDefs) do
+    if not unitDef.collisionvolumescales then
+      unitDef.usefootprintcollisionvolume = nil
+    end
+  end
+  ```
+- Tree feature defs `treetype0` through `treetype16` are now provided by the
+basecontent archive instead of the engine.
+
+  No known games ship their own basecontent and they would know what to do if so.
+
+- The `firestarter` weapon tag no longer capped at 10000 in defs (which
+becomes 100 in Lua WeaponDefs after rescale), now uncapped.
+
+  To get back previous behaviour, put the following in weapon defs
+  post-processing:
+
+  ```lua
+  for weaponDefID, weaponDef in pairs(WeaponDefs) do
+    if weaponDef.firestarter then
+      weaponDef.firestarter = math.min(weaponDef.firestarter, 10000)
+    end
+  end
+  ```
 
 ## Camera modifiers
 
@@ -45,39 +159,28 @@ function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
 end
 ```
 
-## Spring.Marker usage
+## General
 
-All three [Spring.Marker] functions (Point, Line, Erase) no longer accept
-numerical 0 as false for `onlyLocal` (now follows regular Lua language rules
-where 0 is true). To get back old behaviour, change `0` to `false`, e.g.:
+- Paletted image files are no longer accepted. Convert your images not to be paletted.
+- The return value from the
+[`UnitUnitCollision`](https://beyond-all-reason.github.io/spring/ldoc/modules/LuaHandle.html#UnitUnitCollision)
+callin is now ignored and there is only one event for each collision.
+There is no way to get back the old behaviour for now,
+but if someone needs it it could be arranged.
+- Removed the following constants:
+  - `Platform.glSupport16bitDepthBuffer`
+  - `Platform.glSupport24bitDepthBuffer`
+  - `Platform.glSupport32bitDepthBuffer`
 
-```diff
--Spring.MarkerAddPoint(x, y, z, text, 0)
-+Spring.MarkerAddPoint(x, y, z, text, false)
-```
-
-```diff
--Spring.MarkerAddLine(x1, y1, z1, x2, y2, z2, 0, playerId)
-+Spring.MarkerAddLine(x1, y1, z1, x2, y2, z2, false, playerId)
-```
-
-```diff
--Spring.MarkerErasePosition(x, y, z, noop, 0, playerId)
-+Spring.MarkerErasePosition(x, y, z, noop, false, playerId)
-```
-
-## Spring.GetConfig usage
-
-`Spring.GetConfigInt`, `Spring.GetConfigFloat` and `Spring.GetConfigString` now
-accept nil as the second argument (what to return by default if not set).
-Previously it was treated as 0 (Int and Float) or "" (String).
-To get back previous behaviour:
-
-```lua
-local originalGetConfigInt = Spring.GetConfigInt
-Spring.GetConfigInt = function(key, def)
- return originalGetConfigInt(key, def) or 0
-end
-```
+  To get back previous behaviour, replace with
+  ```lua
+  Platform.glSupportDepthBufferBitDepth >= 16 -- or 24, or 32, respectively
+  ```
+- Removed LOD rendering (2D unit billboards when zoomed out far), including the
+`/distdraw` command and the `UnitLodDist` springsettings entry
+- Removed the `AdvSky` springsetting and the `/dynamicsky` command,
+which made clouds move across the sky. You cannot easily get back
+previous behaviour, though you can probably achieve something similar
+by rendering moving clouds yourself.
 
 [Spring.Marker]: https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedCtrl.html#Markers

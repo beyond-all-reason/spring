@@ -19,8 +19,8 @@
 
 #include <cstring>
 
-CONFIG(int, MaxTextureAtlasSizeX).defaultValue(2048).minimumValue(512).maximumValue(32768);
-CONFIG(int, MaxTextureAtlasSizeY).defaultValue(2048).minimumValue(512).maximumValue(32768);
+CONFIG(int, MaxTextureAtlasSizeX).defaultValue(2048).minimumValue(512).maximumValue(32768).description("The max X size of the projectile and Lua texture atlasses");
+CONFIG(int, MaxTextureAtlasSizeY).defaultValue(2048).minimumValue(512).maximumValue(32768).description("The max Y size of the projectile and Lua texture atlasses");
 
 CR_BIND(AtlasedTexture, )
 CR_REG_METADATA(AtlasedTexture, (CR_IGNORED(x), CR_IGNORED(y), CR_IGNORED(z), CR_IGNORED(w)))

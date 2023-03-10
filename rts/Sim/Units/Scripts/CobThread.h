@@ -26,7 +26,7 @@ public:
 	CCobThread(CCobThread&& t) { *this = std::move(t); }
 	CCobThread(const CCobThread& t) { *this = t; }
 
-	~CCobThread() { Stop(); }
+	~CCobThread();
 
 	CCobThread& operator = (CCobThread&& t);
 	CCobThread& operator = (const CCobThread& t);
@@ -107,31 +107,21 @@ protected:
 
 	void LuaCall();
 
-	bool PushCallStack(CallInfo v) { return (callStackSize < callStack.size() && PushCallStackRaw(v)); }
-	bool PushDataStack(     int v) { return (dataStackSize < dataStack.size() && PushDataStackRaw(v)); }
+	void PushCallStack(CallInfo v) { callStack.push_back(v); }
+	void PushDataStack(int v) { dataStack.push_back(v); }
+	CallInfo& PushCallStackRef() { return callStack.emplace_back(); }
 
-	bool PushCallStackRaw(CallInfo v) { assert(callStackSize < callStack.size()); callStack[callStackSize++] = v; return true; }
-	bool PushDataStackRaw(     int v) { assert(dataStackSize < dataStack.size()); dataStack[dataStackSize++] = v; return true; }
-
-	CallInfo& PushCallStackRef() {
-		if (callStackSize < callStack.size())
-			return (PushCallStackRefRaw());
-		return callStack[0];
-	}
-	CallInfo& PushCallStackRefRaw() {
-		assert(callStackSize < callStack.size());
-		return callStack[callStackSize++];
-	}
-
-	int LocalFunctionID() const { return callStack[callStackSize - (callStackSize > 0)].functionId; }
-	int LocalReturnAddr() const { return callStack[callStackSize - (callStackSize > 0)].returnAddr; }
-	int LocalStackFrame() const { return callStack[callStackSize - (callStackSize > 0)].stackTop  ; }
+	int LocalFunctionID() const { return callStack.back().functionId; }
+	int LocalReturnAddr() const { return callStack.back().returnAddr; }
+	int LocalStackFrame() const { return callStack.back().stackTop; }
 
 	int PopDataStack() {
-		if (dataStackSize > 0)
-			return dataStack[--dataStackSize];
-
-		return 0;
+		if (dataStack.empty()) {
+			return 0;
+		}
+		int ret = dataStack.back();
+		dataStack.pop_back();
+		return ret;
 	}
 
 protected:
@@ -147,21 +137,23 @@ protected:
 	int waitAxis = -1;
 	int waitPiece = -1;
 
-	int callStackSize = 0;
-	int dataStackSize = 0;
-
 	int errorCounter = 100;
 
 	int luaArgs[MAX_LUA_COB_ARGS] = {0};
 
 
-	std::array<CallInfo, 64> callStack;
-	std::array<int, 1024> dataStack;
+	std::vector<CallInfo> callStack;
+	std::vector<int> dataStack;
 	// std::vector<int> execTrace;
 
 	State state = Init;
 
 	CCobInstance::ThreadCallbackType cbType = CCobInstance::CBNone;
+
+	// Hold references to the stacks from destructed threads working as a
+	// memory pool to speed up thread creation.
+	static std::vector<decltype(dataStack)> freeDataStacks;
+	static std::vector<decltype(callStack)> freeCallStacks;
 };
 
 #endif // COB_THREAD_H
