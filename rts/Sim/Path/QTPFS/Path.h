@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "Sim/MoveTypes/MoveDefHandler.h"
+
 #include "System/float3.h"
 
 class CSolidObject;
@@ -116,9 +118,10 @@ namespace QTPFS {
 
 		const std::vector<float3>& GetPoints() const { return points; }
 
-		void SetPathType(int newPathType) { pathType = newPathType; }
+#undef NDEBUG
+		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
-
+#define NDEBUG
 	protected:
 		unsigned int pathID = 0;
 		int pathType = 0;

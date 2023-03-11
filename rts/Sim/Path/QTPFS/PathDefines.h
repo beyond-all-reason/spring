@@ -32,5 +32,7 @@
 #define QTPFS_POSITIVE_INFINITY (std::numeric_limits<float>::infinity())
 #define QTPFS_CLOSED_NODE_COST (1 << 24)
 
+#define QTPFS_LAST_FRAME (std::numeric_limits<int>::max())
+
 #endif
 

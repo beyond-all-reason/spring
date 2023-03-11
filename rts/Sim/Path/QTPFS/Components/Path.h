@@ -23,6 +23,7 @@ struct PathBoundingBox {
 
 VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
+VOID_COMPONENT(PathIsToBeUpdated);
 
 ALIAS_COMPONENT(PathOwnerId, int);
 ALIAS_COMPONENT(PathHash, std::uint64_t);

@@ -153,14 +153,14 @@ void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>&
 		// }
 		for (const auto& pathEntity : pathView) {
 			const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
-			LOG("%s: [%x:%x] %s - %d (%p) == %d", __func__
-				, (int)pathEntity
-				, path->GetID()
-				, ((CUnit*)path->GetOwner())->unitDef->name.c_str()
-				, path->GetPathType()
-				, path
-				, md->pathType
-				);
+			// LOG("%s: [%x:%x] %s - %d (%p) == %d", __func__
+			// 	, (int)pathEntity
+			// 	, path->GetID()
+			// 	, ((CUnit*)path->GetOwner())->unitDef->name.c_str()
+			// 	, path->GetPathType()
+			// 	, path
+			// 	, md->pathType
+			// 	);
 			if (path->GetPathType() == md->pathType)
 				DrawPath(path, rb);
 		}

@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 
@@ -9,6 +9,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
+#include "System/Log/ILog.h"
 #include "System/Rectangle.h"
 
 #include "Registry.h"
@@ -160,6 +161,8 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 	GetRectangleCollisionVolume(r, rv, rm);
 
+	// LOG("%s: pathType %d has %d entires at start", __func__, pathType, (int)dirtyPaths[pathType].size());
+
 	// "mark" any live path crossing the area of a terrain
 	// deformation, for which some or all of its waypoints
 	// might now be invalid and need to be recomputed
@@ -174,7 +177,9 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 	for (auto entity : pathView) {
 		// if (deadPaths.contains(it->first)) continue; // ... so we don't need this
 
-		if (!registry.all_of<PathIsDirty>(entity)) continue;
+		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
+
+		if (registry.all_of<PathIsDirty>(entity)) continue;
 
 		// IPath* path = it->second;
 		// IPath* path = &allPaths[*it];
@@ -182,6 +187,8 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 		IPath* path = &pathView.get<IPath>(entity);
 
 		if (path->GetPathType() != pathType) { continue; }
+
+		// LOG("%s: %x is processing", __func__, (int)entity);
 
 		const float3& pathMins = path->GetBoundingBoxMins();
 		const float3& pathMaxs = path->GetBoundingBoxMaxs();
@@ -223,10 +230,15 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 				(xRangeInRect && zRangeExRect) ||
 				CCollisionHandler::IntersectBox(&rv, p0 - rm, p1 - rm, NULL);
 
+			// LOG("%s: %x havePointInRect=%d edgeCrossesRect=%d", __func__, (int)entity
+			// 		, (int)havePointInRect, (int)edgeCrossesRect);
+
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
 				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
 				dirtyPaths[pathType].emplace_back(entity);
+
+				LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
 
 				// remove the entry from clean paths.
 				// *it = nodeLayerCleanPaths[pathType].back();
@@ -235,6 +247,8 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 			}
 		}
 	}
+
+	// LOG("%s: pathType %d has %d entires at end", __func__, pathType, (int)dirtyPaths[pathType].size());
 
 	return true;
 }

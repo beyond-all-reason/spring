@@ -104,15 +104,7 @@ namespace QTPFS {
 		typedef std::vector<PathSearch*> PathSearchVect;
 		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
 
-		// void SpawnSpringThreads(MemberFunc f, const SRectangle& r);
-
 		void InitNodeLayersThreaded(const SRectangle& rect);
-		// void UpdateNodeLayersThreaded(const SRectangle& rect);
-		// void UpdateNodeLayersThread(
-		// 	unsigned int threadNum,
-		// 	unsigned int numThreads,
-		// 	const SRectangle& rect
-		// );
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
 
@@ -120,13 +112,16 @@ namespace QTPFS {
 		void QueueDeadPathSearches();
 
 		unsigned int QueueSearch(
-			const IPath* oldPath,
 			const CSolidObject* object,
 			const MoveDef* moveDef,
 			const float3& sourcePoint,
 			const float3& targetPoint,
 			const float radius,
 			const bool synced
+		);
+
+		unsigned int RequeueSearch(
+			IPath* oldPath
 		);
 
 		bool ExecuteSearch(
@@ -172,6 +167,10 @@ namespace QTPFS {
 		unsigned int numTerrainChanges;
 		unsigned int numPathRequests;
 		unsigned int maxNumLeafNodes;
+
+		std::int32_t refreshDirtyPathRateFrame = QTPFS_LAST_FRAME;
+		std::int32_t updateDirtyPathRate = 0;
+		std::int32_t updateDirtyPathRemainder = 0;
 
 		std::uint32_t pfsCheckSum;
 
