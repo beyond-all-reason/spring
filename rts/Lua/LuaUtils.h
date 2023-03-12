@@ -190,6 +190,11 @@ class LuaUtils {
 		static const UnitDef* EffectiveUnitDef(lua_State* L, const CUnit* unit);
 		static bool IsFeatureVisible(lua_State* L, const CFeature* feature);
 		static bool IsProjectileVisible(lua_State* L, const CProjectile* pro);
+
+		// Push helpers dependant on the above
+		static void PushAttackerDef(lua_State* L, const CUnit& attacker);
+		static void PushAttackerDef(lua_State* L, const CUnit* const attacker);
+		static void PushAttackerInfo(lua_State* L, const CUnit* const attacker);
 #endif
 
 		template<typename ...Args>

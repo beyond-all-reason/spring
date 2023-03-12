@@ -1674,7 +1674,6 @@ int LuaUtils::ParseAllegiance(lua_State* L, const char* caller, int index)
 	return teamID;
 }
 
-
 bool LuaUtils::IsAlliedTeam(lua_State* L, int team)
 {
 	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0)
@@ -1752,5 +1751,39 @@ bool LuaUtils::IsProjectileVisible(lua_State* L, const CProjectile* pro)
 
 	return !((CLuaHandle::GetHandleReadAllyTeam(L) != pro->GetAllyteamID()) &&
 		(!losHandler->InLos(pro->pos, CLuaHandle::GetHandleReadAllyTeam(L))));
+}
+
+void LuaUtils::PushAttackerDef(lua_State* L, const CUnit* const attacker)
+{
+	if (attacker == nullptr) {
+		lua_pushnil(L);
+		return;
+	}
+
+	PushAttackerDef(L, *attacker);
+}
+
+void LuaUtils::PushAttackerDef(lua_State* L, const CUnit& attacker)
+{
+	if (LuaUtils::IsUnitTyped(L, &attacker)) {
+		lua_pushnumber(L, LuaUtils::EffectiveUnitDef(L, &attacker)->id);
+		return;
+	}
+
+	lua_pushnil(L);
+}
+
+void LuaUtils::PushAttackerInfo(lua_State* L, const CUnit* const attacker)
+{
+	if (attacker && IsUnitVisible(L, attacker)) {
+		lua_pushnumber(L, attacker->id);
+		PushAttackerDef(L, *attacker);
+		lua_pushnumber(L, attacker->team);
+		return;
+	}
+
+	lua_pushnil(L);
+	lua_pushnil(L);
+	lua_pushnil(L);
 }
 #endif
