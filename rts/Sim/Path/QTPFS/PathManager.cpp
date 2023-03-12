@@ -1,4 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
+// #undef NDEBUG
+
+#include <assert.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cinttypes>
@@ -31,6 +36,8 @@
 #include "Components/Path.h"
 #include "Components/PathSearch.h"
 #include "Registry.h"
+
+#include <assert.h>
 
 #ifdef GetTempPath
 #undef GetTempPath
@@ -120,15 +127,43 @@ namespace QTPFS {
 	std::vector<PathSearch*> PathManager::pathSearches;
 }
 
-
-
 QTPFS::PathManager::PathManager() {
 	QTNode::InitStatic();
 	NodeLayer::InitStatic();
 	PathManager::InitStatic();
+
+	assert(registry.alive() == 0);
+
+	registry.clear();
+	systemEntity = registry.create();
 }
 
 QTPFS::PathManager::~PathManager() {
+	registry.destroy(systemEntity);
+
+	// print out anything still left in the registry - there should be nothing
+	registry.each([this](auto entity) {
+		bool isPath = registry.all_of<IPath>(entity);
+		bool isSearch = registry.all_of<PathSearch>(entity);
+		if (isPath) {
+			const IPath& path = registry.get<IPath>(entity);
+			LOG("path [%d] type=%d, owner=%p, hash=" PRIx64, entt::to_integral(entity)
+					, path.GetPathType()
+					, path.GetOwner()
+					, path.GetHash()
+					);
+		}
+		if (isSearch) {
+			const PathSearch& search = registry.get<PathSearch>(entity);
+			LOG("search [%d] type=%d, id=%d", entt::to_integral(entity)
+					, search.GetPathType()
+					, search.GetID()
+					);
+			registry.destroy(entity);
+		}
+	});
+	LOG("%s: %d entities still active!", __func__, (int)registry.alive());
+
 	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 		nodeTrees[layerNum]->Merge(nodeLayers[layerNum]);
 		nodeLayers[layerNum].Clear();
@@ -154,6 +189,10 @@ QTPFS::PathManager::~PathManager() {
 	numPrevExecutedSearches.clear();
 
 	searchThreadData.clear();
+
+	assert(registry.alive() == 0);
+
+	registry.clear();
 }
 
 std::int64_t QTPFS::PathManager::Finalize() {
@@ -346,8 +385,6 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	nl.RegisterNode(nodeTrees[layerNum] = nl.AllocRootNode(nullptr, 0,  r.x1, r.z1,  r.x2, r.z2));
 }
 
-#undef NDEBUG
-
 
 
 // __FORCE_ALIGN_STACK__
@@ -532,8 +569,6 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 		}	
 	}
 }
-
-#undef NDEBUG
 
 void QTPFS::PathManager::Update() {
 	SCOPED_TIMER("Sim::Path");
@@ -783,12 +818,12 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 
 	auto pathUpdatesView = registry.view<IPath, PathIsToBeUpdated>();
 	if (pathUpdatesView.size_hint() == 0 && gs->frameNum >= refreshDirtyPathRateFrame) {
-		LOG("%s: pathUpdatesView=%d,frame=%d>%d", __func__
-				, (int)pathUpdatesView.size_hint(), gs->frameNum, refreshDirtyPathRateFrame
-				);
+		// LOG("%s: pathUpdatesView=%d,frame=%d>%d", __func__
+		// 		, (int)pathUpdatesView.size_hint(), gs->frameNum, refreshDirtyPathRateFrame
+		// 		);
 		auto dirtyView = registry.view<PathIsDirty>();
 		auto pathsToUpdate = dirtyView.size();
-		LOG("%s: dirtyView=%d", __func__, (int)pathsToUpdate);
+		// LOG("%s: dirtyView=%d", __func__, (int)pathsToUpdate);
 		if (pathsToUpdate > 0) {
 			for (auto path : dirtyView) {
 				assert(!registry.any_of<PathIsToBeUpdated>(path));
@@ -796,9 +831,9 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 			}
 			updateDirtyPathRate = pathsToUpdate / GAME_SPEED;
 			updateDirtyPathRemainder = pathsToUpdate % GAME_SPEED;
-			LOG("%s: updateDirtyPathRate=%d,updateDirtyPathRemainder=%d", __func__
-					, updateDirtyPathRate, updateDirtyPathRemainder
-					);
+			// LOG("%s: updateDirtyPathRate=%d,updateDirtyPathRemainder=%d", __func__
+			// 		, updateDirtyPathRate, updateDirtyPathRemainder
+			// 		);
 		}
 		refreshDirtyPathRateFrame = QTPFS_LAST_FRAME;
 	}
@@ -858,6 +893,7 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
+#include "Sim/MoveTypes/GroundMoveType.h"
 
 unsigned int QTPFS::PathManager::QueueSearch(
 	// const IPath* oldPath,
@@ -885,8 +921,6 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	// IPath* newPath = new IPath();
 	// PathSearch* newSearch = new PathSearch(PATH_SEARCH_ASTAR);
 
-	// Always create the search object first to ensure pathEntity can never be 0 (which is
-	// considered a non-path)
 	entt::entity searchEntity = registry.create();
 	PathSearch* newSearch = &registry.emplace<PathSearch>(searchEntity, PATH_SEARCH_ASTAR);
 
@@ -894,8 +928,15 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	IPath* newPath = &(registry.get_or_emplace<IPath>(pathEntity));
 	// LOG("%s: newPath %p", __func__, newPath);
 
+	auto unit = dynamic_cast<const CUnit*>(object);
+	auto groundMoveType = dynamic_cast<const CGroundMoveType*>(unit->moveType);
+	assert(groundMoveType->pathID == 0);
+
 	assert(newPath != nullptr);
 	assert(newSearch != nullptr);
+
+	// 0 is considered a null path. Entity id 0 should have been taken by the pathing system itself.
+	assert(pathEntity != (entt::entity)0);
 
 	// const CUnit* unit = dynamic_cast<const CUnit*>(object);
 
@@ -925,6 +966,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(newPath->GetPathType());
 
+
 	// if (moveDef->pathType == 2) {
 	// 	// LOG("%s: com path", __func__);
 	// 	newPath->SetPathType(moveDef->pathType);
@@ -941,6 +983,9 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	// 		, (oldPath != nullptr) ? oldPath->GetPathType() : -1
 	// 		, moveDef->pathType
 	// 		);
+
+	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, newPath->GetPathType()
+	// 		, sourcePoint.x, sourcePoint.z, targetPoint.x, targetPoint.z);
 
 	return (newPath->GetID());
 }
@@ -960,6 +1005,10 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	const CSolidObject* obj = oldPath->GetOwner();
 	const float3& pos = (obj != nullptr)? obj->pos: oldPath->GetSourcePoint();
+
+	auto unit = dynamic_cast<const CUnit*>(obj);
+	auto groundMoveType = dynamic_cast<const CGroundMoveType*>(unit->moveType);
+	assert(groundMoveType->pathID == oldPath->GetID());
 
 	const auto targetPoint = oldPath->GetTargetPoint();
 
@@ -988,6 +1037,9 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
 
+	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
+	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);
+
 	return (oldPath->GetID());
 }
 
@@ -1010,6 +1062,8 @@ void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int path
 void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 	// const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
 	const PathTraceMapIt pathTraceIt = pathTraces.find(pathID);
+
+	// LOG("%s: Delete Requested for path %x", __func__, pathID);
 
 	// if (pathTypeIt != pathTypes.end()) {
 	// 	PathCache& pathCache = pathCaches;

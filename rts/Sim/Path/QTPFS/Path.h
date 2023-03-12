@@ -118,10 +118,9 @@ namespace QTPFS {
 
 		const std::vector<float3>& GetPoints() const { return points; }
 
-#undef NDEBUG
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
-#define NDEBUG
+
 	protected:
 		unsigned int pathID = 0;
 		int pathType = 0;

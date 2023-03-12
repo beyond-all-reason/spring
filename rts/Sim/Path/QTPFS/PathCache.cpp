@@ -238,7 +238,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
 				dirtyPaths[pathType].emplace_back(entity);
 
-				LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
+				// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
 
 				// remove the entry from clean paths.
 				// *it = nodeLayerCleanPaths[pathType].back();

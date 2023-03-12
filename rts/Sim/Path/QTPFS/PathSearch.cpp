@@ -108,11 +108,11 @@ bool QTPFS::PathSearch::Execute(
 	ResetState(srcSearchNode);
 	UpdateNode(srcSearchNode, nullptr, 0);
 
-	LOG("%s: [%p] Beginning search from %d to %d", __func__
-			, nodeLayer
-			, srcSearchNode->GetIndex()
-			, tgtSearchNode->GetIndex()
-			);
+	// LOG("%s: [%p] Beginning search from %d to %d", __func__
+	// 		, nodeLayer
+	// 		, srcSearchNode->GetIndex()
+	// 		, tgtSearchNode->GetIndex()
+	// 		);
 
 	while (!(*openNodes).empty()) {
 		IterateNodes(nodeLayer->GetNodes());
@@ -356,10 +356,10 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 
 void QTPFS::PathSearch::Finalize(IPath* path) {
 
-	LOG("%s: [%p : %d] Finialize search.", __func__
-			, &nodeLayer[path->GetPathType()]
-			, path->GetPathType()
-			);
+	// LOG("%s: [%p : %d] Finialize search.", __func__
+	// 		, &nodeLayer[path->GetPathType()]
+	// 		, path->GetPathType()
+	// 		);
 
 	TracePath(path);
 

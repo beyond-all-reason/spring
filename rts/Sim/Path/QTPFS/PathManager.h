@@ -174,6 +174,8 @@ namespace QTPFS {
 
 		std::uint32_t pfsCheckSum;
 
+		entt::entity systemEntity = entt::null;
+
 		bool layersInited;
 		bool haveCacheDir;
 	};
