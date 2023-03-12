@@ -16,6 +16,15 @@ struct aiNode;
 struct aiScene;
 class LuaTable;
 
+struct SAssPieceInfo {
+	std::string name;
+	CMatrix44f bakedMatrix;
+	uint32_t pieceNum;
+
+	bool isBone;
+	bool hasGeometry;
+};
+
 struct SAssPiece: public S3DModelPiece
 {
 	SAssPiece() = default;

@@ -48,8 +48,8 @@ struct SVertexData {
 		tTangent = float3{};
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
-		pieceIndex = uint32_t(-1);
-		SetBoneWeights();
+		boneIDs = uint32_t(-1);
+		boneWeights = 255;
 	}
 	SVertexData(
 		const float3& p,
@@ -57,8 +57,7 @@ struct SVertexData {
 		const float3& s,
 		const float3& t,
 		const float2& uv0,
-		const float2& uv1,
-		const float4& w)
+		const float2& uv1)
 	{
 		pos = p;
 		normal = n;
@@ -66,9 +65,9 @@ struct SVertexData {
 		tTangent = t;
 		texCoords[0] = uv0;
 		texCoords[1] = uv1;
-		// pieceIndex is initialized afterwards
-		pieceIndex = uint32_t(-1);
-		SetBoneWeights(w);
+		// boneIDs is initialized afterwards
+		boneIDs = uint32_t(-1);
+		boneWeights = 255;
 	}
 
 	float3 pos;
@@ -76,16 +75,23 @@ struct SVertexData {
 	float3 sTangent;
 	float3 tTangent;
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-	uint32_t pieceIndex;
+	uint32_t boneIDs;
 	uint32_t boneWeights;
 
-private:
-	void SetBoneWeights(const float4& w = { 1.0f, 0.0f, 0.0f, 0.0f }) {
+public:
+	void SetBones(const std::vector<std::pair<uint8_t, float>> bi) {
+		assert(bi.size() == 4);
+		boneIDs =
+			(bi[0].first      ) |
+			(bi[1].first << 8 ) |
+			(bi[2].first << 16) |
+			(bi[3].first << 24) ;
+
 		boneWeights =
-			(static_cast<uint8_t>(w[3] * 255)      ) |
-			(static_cast<uint8_t>(w[2] * 255) << 8 ) |
-			(static_cast<uint8_t>(w[1] * 255) << 16) |
-			(static_cast<uint8_t>(w[0] * 255) << 24) ;
+			(static_cast<uint8_t>(bi[0].second * 255)      ) |
+			(static_cast<uint8_t>(bi[1].second * 255) << 8 ) |
+			(static_cast<uint8_t>(bi[2].second * 255) << 16) |
+			(static_cast<uint8_t>(bi[3].second * 255) << 24) ;
 	}
 };
 

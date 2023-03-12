@@ -236,8 +236,9 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 	if (!HasGeometryData())
 		return;
 
-	for (auto& v : vertices)
-		v.pieceIndex = pieceIndex;
+	#pragma message TODO
+	//for (auto& v : vertices)
+		//v.boneIDs = pieceIndex;
 }
 
 void S3DModelPiece::DrawElements(GLuint prim) const

@@ -155,6 +155,187 @@ void CAssParser::Kill()
 	numPoolPieces = 0;
 }
 
+namespace {
+	enum NodeType {
+		PIECE
+	};
+
+	using Meshes = std::vector<std::tuple<std::string ,std::vector<SVertexData>, std::vector<uint32_t>, uint32_t>>;
+	using BonesInfo = std::unordered_map<std::string, std::pair<uint8_t, CMatrix44f>>;
+
+	Meshes LoadAllMeshes(const aiScene* scene, const BonesInfo& bonesInfo) {
+		std::vector<uint32_t> meshVertexMapping;
+		Meshes meshes;
+
+		for (uint32_t m = 0; m < scene->mNumMeshes; ++m) {
+			const aiMesh* mesh = scene->mMeshes[m];
+
+			std::vector<SVertexData> verts;
+			std::vector<uint32_t   > indcs;
+			uint32_t numUVs = 0;
+
+			/*
+			LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Fetching mesh %d from scene", meshIndex);
+			LOG_SL(LOG_SECTION_PIECE, L_DEBUG,
+				"Processing vertices for mesh %d (%d vertices)",
+				meshIndex, mesh->mNumVertices);
+			LOG_SL(LOG_SECTION_PIECE, L_DEBUG,
+				"Normals: %s Tangents/Bitangents: %s TexCoords: %s",
+				(mesh->HasNormals() ? "Y" : "N"),
+				(mesh->HasTangentsAndBitangents() ? "Y" : "N"),
+				(mesh->HasTextureCoords(0) ? "Y" : "N"));
+			*/
+			verts.reserve(mesh->mNumVertices);
+			indcs.reserve(mesh->mNumFaces * 3);
+
+			meshVertexMapping.clear();
+			meshVertexMapping.reserve(mesh->mNumVertices);
+
+			//bones info
+			std::vector<std::vector<std::pair<uint8_t, float>>> vertexWeights(mesh->mNumVertices);
+
+			for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; boneIndex++) {
+				const aiBone* bone = mesh->mBones[boneIndex];
+				for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; weightIndex++) {
+					const auto& vertIndex = bone->mWeights[weightIndex].mVertexId;
+					const auto& vertWeight = bone->mWeights[weightIndex].mWeight;
+					const auto it = bonesInfo.find(std::string(bone->mName.data));
+					assert(it != bonesInfo.end());
+					uint8_t boneID = it->second.first;
+					vertexWeights[vertIndex].emplace_back(boneID, vertWeight);
+				}
+			}
+
+			for (auto& vertexWeight : vertexWeights) {
+				std::stable_sort(vertexWeight.begin(), vertexWeight.end(), [](auto&& lhs, auto&& rhs) {
+					if (lhs.first < rhs.first) return true;
+					if (rhs.first < lhs.first) return false;
+
+					if (lhs.second < rhs.second) return true;
+					if (rhs.second < lhs.second) return false;
+
+					return false;
+				});
+				vertexWeight.resize(4, std::make_pair(255, 0.0f));
+			}
+
+			// extract vertex data per mesh
+			for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex) {
+				const aiVector3D& aiVertex = mesh->mVertices[vertexIndex];
+
+				SVertexData vertex;
+
+				// bones info
+				vertex.SetBones(vertexWeights[vertexIndex]);
+
+				// vertex coordinates
+				vertex.pos = aiVectorToFloat3(aiVertex);
+
+				// update piece min/max extents
+				// TODO
+				//piece->mins = float3::min(piece->mins, vertex.pos);
+				//piece->maxs = float3::max(piece->maxs, vertex.pos);
+
+				// vertex normal
+				const aiVector3D& aiNormal = mesh->mNormals[vertexIndex];
+
+				if (IS_QNAN(aiNormal)) {
+					//LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Malformed normal (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiNormal.x, aiNormal.y, aiNormal.z);
+					vertex.normal = float3{ 0.0f, 1.0f, 0.0f };
+				}
+				else {
+					vertex.normal = (aiVectorToFloat3(aiNormal)).SafeANormalize();
+				}
+
+				// vertex tangent, x is positive in texture axis
+				if (mesh->HasTangentsAndBitangents()) {
+					const aiVector3D& aiTangent = mesh->mTangents[vertexIndex];
+					const aiVector3D& aiBitangent = mesh->mBitangents[vertexIndex];
+
+					if (IS_QNAN(aiTangent.x) || IS_QNAN(aiTangent.y) || IS_QNAN(aiTangent.z)) {
+						//LOG_SL(LOG_SECTION_PIECE, L_INFO, "Malformed tangent (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiTangent.x, aiTangent.y, aiTangent.z);
+						vertex.sTangent = float3{ 1.0f, 0.0f, 0.0f };
+					}
+					else {
+						vertex.sTangent = (aiVectorToFloat3(aiTangent)).SafeANormalize();
+					}
+
+					if (IS_QNAN(aiBitangent.x) || IS_QNAN(aiBitangent.y) || IS_QNAN(aiBitangent.z)) {
+						//LOG_SL(LOG_SECTION_PIECE, L_INFO, "Malformed bitangent (model->name=\"%s\" piece->name=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), piece->name.c_str(), vertexIndex, aiBitangent.x, aiBitangent.y, aiBitangent.z);
+						vertex.tTangent = vertex.normal.cross(vertex.sTangent);
+					}
+					else {
+						vertex.tTangent = (aiVectorToFloat3(aiBitangent)).SafeANormalize();
+					}
+
+					vertex.tTangent *= -1.0f; // LH (assimp) to RH
+				}
+
+				// vertex tex-coords per channel
+				for (uint32_t uvChanIndex = 0; uvChanIndex < NUM_MODEL_UVCHANNS; uvChanIndex++) {
+					if (!mesh->HasTextureCoords(uvChanIndex))
+						break;
+
+					numUVs = uvChanIndex + 1;
+
+					vertex.texCoords[uvChanIndex].x = mesh->mTextureCoords[uvChanIndex][vertexIndex].x;
+					vertex.texCoords[uvChanIndex].y = mesh->mTextureCoords[uvChanIndex][vertexIndex].y;
+				}
+
+
+				meshVertexMapping.push_back(verts.size());
+				verts.push_back(vertex);
+			}
+
+			// extract face data
+			//LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Processing faces for mesh %d (%d faces)", meshIndex, mesh->mNumFaces);
+
+			/*
+			 * since aiProcess_SortByPType is being used,
+			 * we're sure we'll get only 1 type here,
+			 * so combination check isn't needed, also
+			 * anything more complex than triangles is
+			 * being split thanks to aiProcess_Triangulate
+			 */
+			for (unsigned faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
+				const aiFace& face = mesh->mFaces[faceIndex];
+
+				// some models contain lines (mNumIndices == 2) which
+				// we cannot render and they would need a 2nd drawcall)
+				if (face.mNumIndices != 3)
+					continue;
+
+				for (unsigned vertexListID = 0; vertexListID < face.mNumIndices; ++vertexListID) {
+					const unsigned int vertexFaceIdx = face.mIndices[vertexListID];
+					const unsigned int vertexDrawIdx = meshVertexMapping[vertexFaceIdx];
+					indcs.push_back(vertexDrawIdx);
+				}
+			}
+
+			meshes.emplace_back(std::string(mesh->mName.data), verts, indcs, numUVs);
+		}
+
+		return meshes;
+	}
+
+	//void EnumerateNodes();
+
+	Meshes BlaBla(const aiScene* scene) {
+		BonesInfo bonesInfo;
+
+		uint8_t boneIndex = 0;
+		for (size_t m = 0; m < scene->mNumMeshes; ++m) {
+			for (size_t b = 0; b < scene->mMeshes[m]->mNumBones; ++b) {
+				std::string boneName(scene->mMeshes[m]->mBones[b]->mName.data);
+				auto it = bonesInfo.find(boneName);
+				if (it == bonesInfo.end())
+					bonesInfo.emplace(boneName, std::make_pair(boneIndex++, aiMatrixToMatrix(scene->mMeshes[m]->mBones[b]->mOffsetMatrix)));
+			}
+		}
+
+		return LoadAllMeshes(scene, bonesInfo);
+	}
+};
 
 void CAssParser::Load(S3DModel& model, const std::string& modelFilePath)
 {
@@ -236,6 +417,8 @@ void CAssParser::Load(S3DModel& model, const std::string& modelFilePath)
 
 	model.name = modelFilePath;
 	model.type = MODELTYPE_ASS;
+
+	auto mesh = BlaBla(scene);
 
 	// Load textures
 	FindTextures(&model, scene, modelTable, modelPath, modelName);

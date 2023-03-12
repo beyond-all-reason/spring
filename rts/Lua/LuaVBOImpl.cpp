@@ -805,12 +805,12 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 		// uint32_t pieceIndex
 		this->bufferAttribDefs[5] = {
 			GL_UNSIGNED_INT, //type
-			1, //size
+			2, //size
 			GL_FALSE, //normalized
-			"pieceIndex", //name
-			offsetof(SVertexData, pieceIndex), //pointer
+			"bonesInfo", //name
+			offsetof(SVertexData, boneIDs), //pointer
 			sizeof(uint32_t), //typeSizeInBytes
-			1 * sizeof(uint32_t) //strideSizeInBytes
+			2 * sizeof(uint32_t) //strideSizeInBytes
 		};
 
 		this->attributesCount = 6;
