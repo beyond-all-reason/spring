@@ -5,7 +5,7 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec3 T;
 layout (location = 3) in vec3 B;
 layout (location = 4) in vec4 uv;
-layout (location = 5) in uint pieceIndex;
+layout (location = 5) in uvec2 bonesInfo; //boneIDs, boneWeights
 
 layout (location = 6) in uvec4 instData;
 // u32 matOffset
@@ -114,6 +114,9 @@ void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
 
 
 #line 1116
+
+//extract the bone with the biggest weight (first one)
+#define pieceIndex (bonesInfo.x & 0x000000ffu)
 
 void main(void)
 {

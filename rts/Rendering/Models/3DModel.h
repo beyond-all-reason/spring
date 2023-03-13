@@ -79,7 +79,7 @@ struct SVertexData {
 	uint32_t boneWeights;
 
 public:
-	void SetBones(const std::vector<std::pair<uint8_t, float>> bi) {
+	void SetBones(const std::vector<std::pair<uint8_t, float>>& bi) {
 		assert(bi.size() == 4);
 		boneIDs =
 			(bi[0].first      ) |
@@ -92,6 +92,24 @@ public:
 			(static_cast<uint8_t>(bi[1].second * 255) << 8 ) |
 			(static_cast<uint8_t>(bi[2].second * 255) << 16) |
 			(static_cast<uint8_t>(bi[3].second * 255) << 24) ;
+	}
+
+	std::array<uint8_t, 4> GetBoneWeightsInt() const {
+		return std::array<uint8_t, 4> {
+			static_cast<uint8_t>(boneWeights      ),
+			static_cast<uint8_t>(boneWeights >> 8 ),
+			static_cast<uint8_t>(boneWeights >> 16),
+			static_cast<uint8_t>(boneWeights >> 24)
+		};
+	}
+
+	std::array<uint8_t, 4> GetBoneIDs() const {
+		return std::array<uint8_t, 4> {
+			static_cast<uint8_t>((boneIDs & 0x000000ff)      ),
+			static_cast<uint8_t>((boneIDs & 0x0000ff00) >> 8 ),
+			static_cast<uint8_t>((boneIDs & 0x00ff0000) >> 16),
+			static_cast<uint8_t>((boneIDs & 0xff000000) >> 24)
+		};
 	}
 };
 
@@ -325,6 +343,10 @@ struct S3DModel
 
 		return *this;
 	}
+
+	      S3DModelPiece* FindPiece(const std::string& name);
+	const S3DModelPiece* FindPiece(const std::string& name) const;
+	size_t FindPieceOffset(const std::string& name) const;
 
 	S3DModelPiece* GetPiece(size_t i) const { assert(i < pieceObjects.size()); return pieceObjects[i]; }
 	S3DModelPiece* GetRootPiece() const { return (GetPiece(0)); }
