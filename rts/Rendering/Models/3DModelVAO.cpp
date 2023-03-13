@@ -274,8 +274,30 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 
 	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs and models. Don't check for validity
 
+	uint8_t numPieces = 0;
+	size_t bposeIndex = 0;
+	if constexpr (std::is_same<TObj, S3DModel>::value) {
+		numPieces = static_cast<uint8_t>(obj->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj);
+	}
+	else {
+		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj->model);
+	}
+
+	if (bposeIndex == MatricesMemStorage::INVALID_INDEX)
+		return false;
+
 	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
-	modelInstanceData.emplace_back(SInstanceData(matIndex, teamID, drawFlags, uniIndex));
+	modelInstanceData.emplace_back(SInstanceData(
+		static_cast<uint32_t>(matIndex),
+		teamID,
+		drawFlags,
+		numPieces,
+		static_cast<uint32_t>(uniIndex),
+		static_cast<uint32_t>(bposeIndex)
+	));
+
 	return true;
 }
 
@@ -373,7 +395,18 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs. Don't check for validity
 
-	SInstanceData instanceData(static_cast<uint32_t>(matIndex), teamID, drawFlags, uniIndex);
+	uint8_t numPieces = 0;
+	size_t bposeIndex = 0;
+	if constexpr (std::is_same<TObj, S3DModel>::value) {
+		numPieces = static_cast<uint8_t>(obj->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj);
+	}
+	else {
+		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj->model);
+	}
+
+	SInstanceData instanceData(static_cast<uint32_t>(matIndex), teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 	const uint32_t immediateBaseInstanceAbs = INSTANCE_BUFFER_NUM_BATCHED + immediateBaseInstance;
 	SDrawElementsIndirectCommand scmd{
 		indexCount,

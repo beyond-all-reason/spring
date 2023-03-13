@@ -379,6 +379,9 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 
 	try {
 		parser->Load(model, path);
+		if (model.numPieces > 254)
+			throw content_error("A model has too many pieces (>254)" + path);
+
 	} catch (const content_error& ex) {
 		{
 			auto lock = CModelsLock::GetScopedLock();

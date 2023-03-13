@@ -75,9 +75,14 @@ struct SVertexData {
 	float3 sTangent;
 	float3 tTangent;
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-	uint32_t boneIDs;
-	uint32_t boneWeights;
-
+	union {
+		uint32_t boneIDs;
+		std::array<uint8_t, 4> aBoneIds;
+	};
+	union {
+		uint32_t boneWeights;
+		std::array<uint8_t, 4> aBoneWeights;
+	};
 public:
 	void SetBones(const std::vector<std::pair<uint8_t, float>>& bi) {
 		assert(bi.size() == 4);
@@ -160,6 +165,7 @@ struct S3DModelPiece {
 		colvol = {};
 
 		bposeMatrix.LoadIdentity();
+		bposeInvMatrix.LoadIdentity();
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -199,6 +205,7 @@ public:
 
 	void SetPieceMatrix(const CMatrix44f& m) {
 		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
+		bposeInvMatrix = bposeMatrix.InvertAffine();
 
 		for (S3DModelPiece* c: children) {
 			c->SetPieceMatrix(bposeMatrix);
@@ -251,6 +258,7 @@ public:
 	CollisionVolume colvol;
 
 	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
+	CMatrix44f bposeInvMatrix;   /// Inverse of bind-pose transform, including baked rots
 	CMatrix44f bakedMatrix;      /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
@@ -366,10 +374,17 @@ struct S3DModel
 	void SetPieceMatrices() {
 		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
 
-		//use this occasion and copy bpos matrices
-		for (int i = 0; i < pieceObjects.size(); ++i) {
+		// use this occasion and copy bpose matrices
+		for (size_t i = 0; i < pieceObjects.size(); ++i) {
 			const auto* po = pieceObjects[i];
-			matAlloc[i] = po->bposeMatrix;
+			matAlloc[0         + i] = po->bposeMatrix;
+		}
+
+		// use this occasion and copy inverse bpose matrices
+		// store them right after all bind pose matrices
+		for (size_t i = 0; i < pieceObjects.size(); ++i) {
+			const auto* po = pieceObjects[i];
+			matAlloc[numPieces + i] = po->bposeInvMatrix;
 		}
 	}
 
@@ -381,7 +396,7 @@ struct S3DModel
 
 		// force mutex just in case this is called from modelLoader.ProcessVertices()
 		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
-		matAlloc = ScopedMatricesMemAlloc(numPieces);
+		matAlloc = ScopedMatricesMemAlloc(2 * numPieces);
 
 		std::vector<S3DModelPiece*> stack = { root };
 
