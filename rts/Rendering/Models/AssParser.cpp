@@ -26,6 +26,7 @@
 
 #include <regex>
 #include <algorithm>
+#include <numeric>
 
 
 #define IS_QNAN(f) (f != f)
@@ -793,11 +794,11 @@ const std::vector<CAssParser::MeshData> CAssParser::GetModelSpaceMeshes(const ai
 
 		for (auto& vertexWeight : vertexWeights) {
 			std::stable_sort(vertexWeight.begin(), vertexWeight.end(), [](auto&& lhs, auto&& rhs) {
-				if (lhs.first < rhs.first) return true;
-				if (rhs.first < lhs.first) return false;
+				if (lhs.second > rhs.second) return true;
+				if (rhs.second > lhs.second) return false;
 
-				if (lhs.second < rhs.second) return true;
-				if (rhs.second < lhs.second) return false;
+				if (lhs.first > rhs.first) return true;
+				if (rhs.first > lhs.first) return false;
 
 				return false;
 			});
@@ -910,10 +911,9 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 
 			for (size_t vi = 0; vi < 3; ++vi) {
 				const auto& vert = verts[indcs[trID * 3 + vi]];
-				const auto weights = vert.GetBoneWeightsInt();
-				const auto boneIDs = vert.GetBoneIDs();
+
 				for (size_t wi = 0; wi < 4; ++wi) {
-					boneWeights[boneIDs[wi]] += weights[wi];
+					boneWeights[vert.boneIDs[wi]] += vert.boneWeights[wi];
 				}
 			}
 
@@ -927,7 +927,7 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 			maxWeightedPiece->SetNumTexCoorChannels(std::max(maxWeightedPiece->GetNumTexCoorChannels(), numUVs));
 
 			for (size_t vi = 0; vi < 3; ++vi) {
-				auto& targVert = verts[indcs[trID * 3 + vi]];
+				auto  targVert = verts[indcs[trID * 3 + vi]]; //copy
 				auto& pieceVerts = maxWeightedPiece->vertices;
 				auto& pieceIndcs = maxWeightedPiece->indices;
 
@@ -938,8 +938,33 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 
 				// new vertex
 				if (it == pieceVerts.end()) {
+					// make sure maxWeightedBoneID comes first. It's a must, even if it doesn't exist in targVert.boneIDs!
+					if (targVert.boneIDs[0] != maxWeightedBoneID) {
+						auto it = std::find(targVert.boneIDs.begin() + 1, targVert.boneIDs.end(), maxWeightedBoneID);
+						if (it != targVert.boneIDs.end()) {
+							// swap maxWeightedBoneID so it comes first in the boneIDs array
+							const size_t itPos = std::distance(targVert.boneIDs.begin(), it);
+							std::swap(targVert.boneIDs[0], targVert.boneIDs[itPos]);
+							std::swap(targVert.boneWeights[0], targVert.boneWeights[itPos]);
+						}
+						else {
+							// maxWeightedBoneID doesn't even exist in this targVert
+							// replace the bone with the least weight with maxWeightedBoneID and swap it be first
+							targVert.boneIDs[3] = maxWeightedBoneID;
+							targVert.boneWeights[3] = 0;
+							std::swap(targVert.boneIDs[0], targVert.boneIDs[3]);
+							std::swap(targVert.boneWeights[0], targVert.boneWeights[3]);
+
+							// renormalize weights (optional but nice for debugging)
+							const float sumWeights = static_cast<float>(std::reduce(targVert.boneWeights.begin(), targVert.boneWeights.end())) / 255.0;
+							for (auto& bw : targVert.boneWeights) {
+								bw = static_cast<uint8_t>(math::roundf(static_cast<float>(bw) / 255.0f / sumWeights));
+							}
+						}
+					}
+
 					pieceIndcs.emplace_back(static_cast<uint32_t>(pieceVerts.size()));
-					pieceVerts.emplace_back(targVert);
+					pieceVerts.emplace_back(std::move(targVert));
 				}
 				else {
 					pieceIndcs.emplace_back(static_cast<uint32_t>(std::distance(

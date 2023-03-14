@@ -48,8 +48,8 @@ struct SVertexData {
 		tTangent = float3{};
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
-		boneIDs = uint32_t(-1);
-		boneWeights = 255;
+		boneIDs = DEFAULT_BONEIDS;
+		boneWeights = DEFAULT_BONEWEIGHTS;
 	}
 	SVertexData(
 		const float3& p,
@@ -66,8 +66,8 @@ struct SVertexData {
 		texCoords[0] = uv0;
 		texCoords[1] = uv1;
 		// boneIDs is initialized afterwards
-		boneIDs = uint32_t(-1);
-		boneWeights = 255;
+		boneIDs = DEFAULT_BONEIDS;
+		boneWeights = DEFAULT_BONEWEIGHTS;
 	}
 
 	float3 pos;
@@ -75,45 +75,26 @@ struct SVertexData {
 	float3 sTangent;
 	float3 tTangent;
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-	union {
-		uint32_t boneIDs;
-		std::array<uint8_t, 4> aBoneIds;
-	};
-	union {
-		uint32_t boneWeights;
-		std::array<uint8_t, 4> aBoneWeights;
-	};
-public:
+	std::array<uint8_t, 4> boneIDs;
+	std::array<uint8_t, 4> boneWeights;
+
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS     = { 255, 255, 255, 255 };
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEWEIGHTS = { 255,   0,   0,   0 };
+
 	void SetBones(const std::vector<std::pair<uint8_t, float>>& bi) {
 		assert(bi.size() == 4);
-		boneIDs =
-			(bi[0].first      ) |
-			(bi[1].first << 8 ) |
-			(bi[2].first << 16) |
-			(bi[3].first << 24) ;
-
-		boneWeights =
-			(static_cast<uint8_t>(bi[0].second * 255)      ) |
-			(static_cast<uint8_t>(bi[1].second * 255) << 8 ) |
-			(static_cast<uint8_t>(bi[2].second * 255) << 16) |
-			(static_cast<uint8_t>(bi[3].second * 255) << 24) ;
-	}
-
-	std::array<uint8_t, 4> GetBoneWeightsInt() const {
-		return std::array<uint8_t, 4> {
-			static_cast<uint8_t>(boneWeights      ),
-			static_cast<uint8_t>(boneWeights >> 8 ),
-			static_cast<uint8_t>(boneWeights >> 16),
-			static_cast<uint8_t>(boneWeights >> 24)
+		boneIDs = {
+			bi[0].first,
+			bi[1].first,
+			bi[2].first,
+			bi[3].first
 		};
-	}
 
-	std::array<uint8_t, 4> GetBoneIDs() const {
-		return std::array<uint8_t, 4> {
-			static_cast<uint8_t>((boneIDs & 0x000000ff)      ),
-			static_cast<uint8_t>((boneIDs & 0x0000ff00) >> 8 ),
-			static_cast<uint8_t>((boneIDs & 0x00ff0000) >> 16),
-			static_cast<uint8_t>((boneIDs & 0xff000000) >> 24)
+		boneWeights = {
+			(static_cast<uint8_t>(math::roundf(bi[0].second * 255.0f))),
+			(static_cast<uint8_t>(math::roundf(bi[1].second * 255.0f))),
+			(static_cast<uint8_t>(math::roundf(bi[2].second * 255.0f))),
+			(static_cast<uint8_t>(math::roundf(bi[3].second * 255.0f)))
 		};
 	}
 };

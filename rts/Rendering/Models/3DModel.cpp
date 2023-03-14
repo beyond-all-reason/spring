@@ -236,9 +236,10 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 	if (!HasGeometryData())
 		return;
 
+
 	for (auto& v : vertices)
-		if (v.boneIDs == uint32_t(-1))
-			v.boneIDs = pieceIndex;
+		if (v.boneIDs == SVertexData::DEFAULT_BONEIDS)
+			v.boneIDs = { static_cast<uint8_t>(pieceIndex), 255, 255, 255 };
 }
 
 void S3DModelPiece::DrawElements(GLuint prim) const
