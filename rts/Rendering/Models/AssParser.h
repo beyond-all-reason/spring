@@ -119,6 +119,11 @@ private:
 		const std::vector<MeshData>& meshes
 	);
 
+	static void ReparentCompleteMeshesToBones(
+		S3DModel* model,
+		const std::vector<MeshData>& meshes
+	);
+
 	SAssPiece* AllocPiece();
 	SAssPiece* LoadPiece(
 		S3DModel* model,
