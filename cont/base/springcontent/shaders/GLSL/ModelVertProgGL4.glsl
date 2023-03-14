@@ -128,10 +128,6 @@ void TransformPlayerCamStaticMat(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
 }
 
-//extract the bone with the biggest weight (first one)
-#define pieceIndex (bonesInfo.x & 0x000000FFu)
-#define GetPieceMatrix(sm) (mat[instData.x + pieceIndex + uint(!sm)])
-
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
@@ -192,8 +188,6 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 
 	msPosition /= wSum;
 	msNormal   /= wSum;
-
-	//msPosition.w = 1.0;
 }
 
 void main(void)
