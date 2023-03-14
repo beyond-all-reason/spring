@@ -167,14 +167,12 @@ public:
 		mdCounter = 0;
 		mdChecksum = 0;
 	}
-#undef NDEBUG
+
 	MoveDef* GetMoveDefByPathType(unsigned int pathType) { assert(pathType < mdCounter); return &moveDefs[pathType]; }
 	MoveDef* GetMoveDefByName(const std::string& name);
 
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
 	unsigned int GetCheckSum() const { return mdChecksum; }
-
-#define NDEBUG
 
 private:
 	std::array<MoveDef, 256> moveDefs;

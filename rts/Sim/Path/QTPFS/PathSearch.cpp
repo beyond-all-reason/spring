@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include <cassert>
 #include <limits>
 
@@ -10,14 +12,13 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
 
+#include "Map/ReadMap.h"
+
 #ifdef QTPFS_TRACE_PATH_SEARCHES
 #include "Sim/Misc/GlobalSynced.h"
 #endif
 
 #include "System/float3.h"
-
-// QTPFS::binary_heap<QTPFS::INode*> QTPFS::PathSearch::openNodes;
-
 
 
 void QTPFS::PathSearch::Initialize(
@@ -39,6 +40,11 @@ void QTPFS::PathSearch::Initialize(
 
 	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
 	INode* tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
+
+	assert(srcPoint.x / SQUARE_SIZE >= 0);
+	assert(srcPoint.z / SQUARE_SIZE >= 0);
+	assert(srcPoint.x / SQUARE_SIZE < mapDims.mapx);
+	assert(srcPoint.z / SQUARE_SIZE < mapDims.mapy);
 	// curNode = nullptr;
 	// nxtNode = nullptr;
 	// minNode = srcNode;
@@ -267,6 +273,9 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		// 		, nxtNode->GetIndex()
 		// 		);
 
+		assert(curNode->GetNeighborRelation(nxtNode) != 0);
+		assert(nxtNode->GetNeighborRelation(curNode) != 0);
+
 		if (nxtNode->AllSquaresImpassable())
 			continue;
 
@@ -379,12 +388,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 	if (srcSearchNode != tgtSearchNode) {
 
-		// const SearchNode* srcSearchNode = &searchThreadData->allSearchedNodes[srcNode->GetIndex()];
-		// const SearchNode* tgtSearchNode = &searchThreadData->allSearchedNodes[tgtNode->GetIndex()];
-
-		// const int srcIndex = srcNode->GetIndex();
-		// const int tgtIndex = tgtNode->GetIndex();
-
 		const SearchNode* tmpNode = tgtSearchNode;
 		const SearchNode* prvNode = tmpNode->GetPrevNode();
 
@@ -393,6 +396,11 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		while ((prvNode != nullptr) && (tmpNode != srcSearchNode)) {
 			const float2& tmpPoint2 = tmpNode->GetNeighborEdgeTransitionPoint();
 			const float3  tmpPoint  = {tmpPoint2.x, 0.0f, tmpPoint2.y};
+
+			assert(tmpPoint.x >= 0.f);
+			assert(tmpPoint.z >= 0.f);
+			assert(tmpPoint.x / SQUARE_SIZE < mapDims.mapx);
+			assert(tmpPoint.z / SQUARE_SIZE < mapDims.mapy);
 
 			assert(!math::isinf(tmpPoint.x) && !math::isinf(tmpPoint.z));
 			assert(!math::isnan(tmpPoint.x) && !math::isnan(tmpPoint.z));
@@ -429,6 +437,14 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	// set waypoints with indices [1, N - 2] (if any)
 	while (!points.empty()) {
 		path->SetPoint((path->NumPoints() - points.size()) - 1, points.front());
+		// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
+		// 		, path->GetHash()
+		// 		, path->GetPathType()
+		// 		, (int)points.size()
+		// 		, points.front().x
+		// 		, points.front().y
+		// 		, points.front().z
+		// 		);
 		points.pop_front();
 	}
 
@@ -440,12 +456,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 void QTPFS::PathSearch::SmoothPath(IPath* path) const {
 	if (path->NumPoints() == 2)
 		return;
-
-	// SearchNode* srcSearchNode = &searchThreadData->allSearchedNodes[srcNode->GetIndex()];
-	// SearchNode* tgtSearchNode = &searchThreadData->allSearchedNodes[tgtNode->GetIndex()];
-
-	// const int srcIndex = srcNode->GetIndex();
-	// const int tgtIndex = tgtNode->GetIndex();
 
 	assert(srcSearchNode->GetPrevNode() == NULL);
 
@@ -576,6 +586,14 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 
 				assert(!math::isinf(pi.x) && !math::isinf(pi.z));
 				assert(!math::isnan(pi.x) && !math::isnan(pi.z));
+				// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
+				// 		, path->GetHash()
+				// 		, path->GetPathType()
+				// 		, ni - 1
+				// 		, pi.x
+				// 		, pi.y
+				// 		, pi.z
+				// 		);
 				path->SetPoint(ni - 1, pi);
 				continue;
 			}
@@ -609,11 +627,11 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 			const float  dot1 = e1p0.dot(p2e1);
 
 			// if neither end-point is an improvement, skip
-			if (dot > std::max(dot0, dot1))
+			if (dot >= std::max(dot0, dot1))
 				continue;
 
 			if (dot0 > std::max(dot1, dot)) { pi = e0; }
-			if (dot1 > std::max(dot0, dot)) { pi = e1; }
+			if (dot1 >= std::max(dot0, dot)) { pi = e1; }
 
 			nm += ((pi - p1).SqLength2D() > Square(0.05f));
 

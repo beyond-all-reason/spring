@@ -118,11 +118,6 @@ namespace QTPFS {
 
 		const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const;
 
-		// static void InitGlobalQueue(unsigned int n) { openNodes->reserve(n); }
-		// static void FreeGlobalQueue() { openNodes->clear(); }
-
-		//void SetOpenNodesQueue(binary_heap<SearchNode>* queue) { openNodes = queue; };
-
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
 		void SetPathType(int newPathType) { pathType = newPathType; }
@@ -144,7 +139,6 @@ namespace QTPFS {
 		// static binary_heap<INode*> openNodes;
 
 		QTPFS::SearchThreadData* searchThreadData;
-		//binary_heap<SearchQueueNode>* openNodes;
 		SearchPriorityQueue* openNodes;
 
 		NodeLayer* nodeLayer;
@@ -156,10 +150,6 @@ namespace QTPFS {
 		PathSearchTrace::Iteration searchIter;
 
 		SRectangle searchRect;
-
-		// INode *srcNode, *tgtNode;
-		// INode *curNode, *nxtNode;
-		// INode *minNode;
 
 		SearchNode *srcSearchNode, *tgtSearchNode;
 		SearchNode *curSearchNode, *nextSearchNode;

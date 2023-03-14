@@ -10,6 +10,8 @@
 
 #include "System/float3.h"
 
+#include "Map/ReadMap.h"
+
 class CSolidObject;
 
 namespace QTPFS {
@@ -87,18 +89,31 @@ namespace QTPFS {
 				boundingBoxMaxs.x = std::max(boundingBoxMaxs.x, points[n].x);
 				boundingBoxMaxs.z = std::max(boundingBoxMaxs.z, points[n].z);
 			}
+
+			checkPointInBounds(boundingBoxMins);
+			checkPointInBounds(boundingBoxMaxs);
 		}
 
 		const float3& GetBoundingBoxMins() const { return boundingBoxMins; }
 		const float3& GetBoundingBoxMaxs() const { return boundingBoxMaxs; }
 
-		void SetPoint(unsigned int i, const float3& p) { points[std::min(i, NumPoints() - 1)] = p; }
+		void SetPoint(unsigned int i, const float3& p) {
+			checkPointInBounds(p);
+			points[std::min(i, NumPoints() - 1)] = p;
+		}
 		const float3& GetPoint(unsigned int i) const { return points[std::min(i, NumPoints() - 1)]; }
 
-		void SetSourcePoint(const float3& p) { assert(points.size() >= 2); points[                0] = p; }
-		void SetTargetPoint(const float3& p) { assert(points.size() >= 2); points[points.size() - 1] = p; }
+		void SetSourcePoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[                0] = p; }
+		void SetTargetPoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[points.size() - 1] = p; }
 		const float3& GetSourcePoint() const { return points[                0]; }
 		const float3& GetTargetPoint() const { return points[points.size() - 1]; }
+
+		void checkPointInBounds(const float3& p) {
+			assert(p.x >= 0.f);
+			assert(p.z >= 0.f);
+			assert(p.x / SQUARE_SIZE < mapDims.mapx);
+			assert(p.z / SQUARE_SIZE < mapDims.mapy);
+		}
 
 		void SetOwner(const CSolidObject* o) { owner = o; }
 		const CSolidObject* GetOwner() const { return owner; }
@@ -116,7 +131,7 @@ namespace QTPFS {
 			}
 		}
 
-		const std::vector<float3>& GetPoints() const { return points; }
+		// const std::vector<float3>& GetPoints() const { return points; }
 
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }

@@ -28,65 +28,13 @@ namespace QTPFS {
 			friend SearchNode;
 	public:
 		void SetNodeNumber(unsigned int n) { nodeNumber = n; }
-		// void SetHeapIndex(unsigned int n) { heapIndex = n; }
 		unsigned int GetNodeNumber() const { return nodeNumber; }
-		// unsigned int GetHeapIndex() const { return heapIndex; }
-		// float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
-
-		// bool operator <  (const INode* n) const { return (fCost <  n->fCost); }
-		// bool operator >  (const INode* n) const { return (fCost >  n->fCost); }
-		// bool operator == (const INode* n) const { return (fCost == n->fCost); }
-		// bool operator <= (const INode* n) const { return (fCost <= n->fCost); }
-		// bool operator >= (const INode* n) const { return (fCost >= n->fCost); }
-
-		#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
-		virtual void Serialize(std::fstream&, NodeLayer&, unsigned int*, unsigned int, bool) = 0;
-		virtual unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&) = 0;
-		virtual const std::vector<INode*>& GetNeighbors(const std::vector<INode*>& v) = 0;
-		virtual bool UpdateNeighborCache(const std::vector<INode*>& nodes) = 0;
-
-		virtual void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) = 0;
-		virtual const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const = 0;
-		#endif
 
 		unsigned int GetNeighborRelation(const INode* ngb) const;
 		unsigned int GetRectangleRelation(const SRectangle& r) const;
 		float GetDistance(const INode* n, unsigned int type) const;
 		float2 GetNeighborEdgeTransitionPoint(const INode* ngb, const float3& pos, float alpha) const;
 		SRectangle ClipRectangle(const SRectangle& r) const;
-
-		#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
-		virtual unsigned int xmin() const = 0;
-		virtual unsigned int zmin() const = 0;
-		virtual unsigned int xmax() const = 0;
-		virtual unsigned int zmax() const = 0;
-		virtual unsigned int xmid() const = 0;
-		virtual unsigned int zmid() const = 0;
-		virtual unsigned int xsize() const = 0;
-		virtual unsigned int zsize() const = 0;
-		virtual unsigned int area() const = 0;
-
-		virtual bool AllSquaresAccessible() const = 0;
-		virtual bool AllSquaresImpassable() const = 0;
-
-		virtual float GetSpeedMod() const = 0;
-		virtual float GetMoveCost() const = 0;
-
-		virtual void SetMoveCost(float cost) = 0;
-		virtual void SetSearchState(unsigned int) = 0;
-		virtual void SetMagicNumber(unsigned int) = 0;
-
-		virtual unsigned int GetSearchState() const = 0;
-		virtual unsigned int GetMagicNumber() const = 0;
-		#endif
-
-		// void SetPathCosts(float g, float h) { fCost = g + h; gCost = g; hCost = h; }
-		// void SetPathCost(unsigned int type, float cost);
-		// const float* GetPathCosts() const { return &fCost; }
-		// float GetPathCost(unsigned int type) const;
-
-		// void SetPrevNode(INode* n) { prevNode = n; }
-		// INode* GetPrevNode() { return prevNode; }
 
 		unsigned int GetIndex() { return index; }
 
@@ -105,15 +53,6 @@ namespace QTPFS {
 		// points back to previous node in path
 		// INode* prevNode = nullptr;
 
-	#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
-	};
-	#endif
-
-
-
-	#ifdef QTPFS_VIRTUAL_NODE_FUNCTIONS
-	struct QTNode: public INode {
-	#endif
 	public:
 		QTNode() = default;
 		QTNode(const QTNode& n) = delete;
@@ -186,6 +125,14 @@ namespace QTPFS {
 		static unsigned int MinSizeX() { return MIN_SIZE_X; }
 		static unsigned int MinSizeZ() { return MIN_SIZE_Z; }
 
+
+		const std::vector<INode*>& GetNeighbours() const {
+			return neighbors;
+		}
+		const std::vector<float2>& GetNetPoints() const {
+			return netpoints;
+		}
+
 	private:
 		bool UpdateMoveCost(
 			const NodeLayer& nl,
@@ -208,7 +155,6 @@ namespace QTPFS {
 		float speedModAvg =  0.0f;
 		float moveCostAvg = -1.0f;
 
-		// unsigned int searchState = 0;
 		unsigned int currMagicNum = 0;
 		unsigned int prevMagicNum = -1u;
 

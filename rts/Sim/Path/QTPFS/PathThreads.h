@@ -68,6 +68,15 @@ namespace QTPFS {
             assert(i < sparseIndex.size());
             return (sparseIndex[i] != 0);
         }
+
+        std::size_t GetMemFootPrint() const {
+            std::size_t memFootPrint = sizeof(SparseData);
+
+            memFootPrint += sparseIndex.size() * sizeof(typename decltype(sparseIndex)::value_type);
+            memFootPrint += denseData.size() * sizeof(typename decltype(denseData)::value_type);
+
+            return memFootPrint;
+        }
     };
 
     struct SearchQueueNode {
@@ -110,6 +119,14 @@ namespace QTPFS {
 			allSearchedNodes.Reset(sparseSize);
             ResetQueue();
 		}
+
+        std::size_t GetMemFootPrint() {
+            std::size_t memFootPrint = sizeof(SearchThreadData);
+
+            memFootPrint += allSearchedNodes.GetMemFootPrint();
+
+            return memFootPrint;
+        }
 	};
 
 }

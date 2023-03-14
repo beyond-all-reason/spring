@@ -330,10 +330,10 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	unsigned int childIndices[QTNODE_CHILD_COUNT];
 
 	// silently refuse to split further if pool is exhausted
-	if ((childIndices[0] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_TL),  xmin(), zmin(),  xmid(), zmid())) == -1u) return false;
-	if ((childIndices[1] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_TR),  xmid(), zmin(),  xmax(), zmid())) == -1u) return false;
-	if ((childIndices[2] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_BR),  xmid(), zmid(),  xmax(), zmax())) == -1u) return false;
-	if ((childIndices[3] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_BL),  xmin(), zmid(),  xmid(), zmax())) == -1u) return false;
+	if ((childIndices[NODE_IDX_TL] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_TL),  xmin(), zmin(),  xmid(), zmid())) == -1u) return false;
+	if ((childIndices[NODE_IDX_TR] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_TR),  xmid(), zmin(),  xmax(), zmid())) == -1u) return false;
+	if ((childIndices[NODE_IDX_BL] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_BL),  xmin(), zmid(),  xmid(), zmax())) == -1u) return false;
+	if ((childIndices[NODE_IDX_BR] = nl.AllocPoolNode(this, GetChildID(NODE_IDX_BR),  xmid(), zmid(),  xmax(), zmax())) == -1u) return false;
 
 	assert(childIndices[1] == (childIndices[0] + 1));
 	assert(childIndices[2] == (childIndices[1] + 1));
@@ -721,7 +721,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes) {
 	assert(IsLeaf());
 	assert(!nodes.empty());
 
-	if (prevMagicNum != currMagicNum) {
+	// if (prevMagicNum != currMagicNum) {
 		prevMagicNum = currMagicNum;
 
 		unsigned int ngbRels = 0;
@@ -886,7 +886,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes) {
 		}
 
 		return true;
-	}
+	// }
 
 	return false;
 }

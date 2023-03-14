@@ -1,3 +1,5 @@
+// #undef NDEBUG
+
 #include <limits>
 #include <memory>
 
@@ -207,6 +209,11 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 	for (unsigned int n = 0; n < path->NumPoints() - 1; n++) {
 		float3 p0 = path->GetPoint(n + 0);
 		float3 p1 = path->GetPoint(n + 1);
+
+		assert(p1.x >= 0.f);
+		assert(p1.z >= 0.f);
+		assert(p1.x / SQUARE_SIZE < mapDims.mapx);
+		assert(p1.z / SQUARE_SIZE < mapDims.mapy);
 
 		if (!camera->InView(p0) && !camera->InView(p1))
 			continue;

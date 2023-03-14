@@ -3,6 +3,8 @@
 #ifndef QTPFS_NODELAYER_HDR
 #define QTPFS_NODELAYER_HDR
 
+// #undef NDEBUG
+
 #include <limits>
 #include <vector>
 #include <deque>
@@ -11,6 +13,8 @@
 #include "System/Rectangle.h"
 #include "Node.h"
 #include "PathDefines.h"
+
+#include "System/Log/ILog.h"
 
 #include "Registry.h"
 
@@ -48,10 +52,27 @@ namespace QTPFS {
 		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum);
 
 		float GetNodeRatio() const { return (numLeafNodes / std::max(1.0f, float(xsize * zsize))); }
-		const INode* GetNode(unsigned int x, unsigned int z) const { return nodeGrid[z * xsize + x]; }
-		      INode* GetNode(unsigned int x, unsigned int z)       { return nodeGrid[z * xsize + x]; }
-		const INode* GetNode(unsigned int i) const { return nodeGrid[i]; }
-		      INode* GetNode(unsigned int i)       { return nodeGrid[i]; }
+		// const INode* GetNode(unsigned int x, unsigned int z) const { return nodeGrid[z * xsize + x]; }
+		    //   INode* GetNode(unsigned int x, unsigned int z)       { return nodeGrid[z * xsize + x]; }
+		// const INode* GetNode(unsigned int i) const { return nodeGrid[i]; }
+		//       INode* GetNode(unsigned int i)       { return nodeGrid[i]; }
+
+		const INode* GetNode(unsigned int x, unsigned int z) const {
+			const INode* curNode = &rootNode;
+			while (!curNode->IsLeaf()) {
+				bool isRight = x >= curNode->xmid(); // TODO: do these on CPU, don't reference memory !!!!!!!!!!!!!1
+				bool isDown = z >= curNode->zmid();
+				int offset = 1*(isRight) + 2*(isDown);
+				int nextIndex = curNode->GetChildBaseIndex() + offset;
+				curNode = GetPoolNode(nextIndex);
+			}
+			assert(curNode == nodeGrid[z * xsize + x]);
+			return curNode;
+		}
+		INode* GetNode(unsigned int x, unsigned int z) {
+			const auto* cthis = this;
+			return const_cast<INode*>(cthis->GetNode(x, z));
+		}
 
 		const INode* GetPoolNode(unsigned int i) const { return &poolNodes[i / POOL_CHUNK_SIZE][i % POOL_CHUNK_SIZE]; }
 		      INode* GetPoolNode(unsigned int i)       { return &poolNodes[i / POOL_CHUNK_SIZE][i % POOL_CHUNK_SIZE]; }
@@ -73,10 +94,14 @@ namespace QTPFS {
 			poolNodes[idx / POOL_CHUNK_SIZE][idx % POOL_CHUNK_SIZE].Init(parent, nn, x1, z1, x2, z2, idx);
 			nodeIndcs.pop_back();
 
+			// LOG("%s: [%p] alloc'ed id=%d", __func__, &poolNodes, idx);
+
 			return idx;
 		}
 
-		void FreePoolNode(unsigned int nodeIndex) { nodeIndcs.push_back(nodeIndex); }
+		void FreePoolNode(unsigned int nodeIndex) {
+			//LOG("%s: [%p] free'ed id=%d", __func__, &poolNodes, nodeIndex);
+			nodeIndcs.push_back(nodeIndex); }
 
 
 		// const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
@@ -105,7 +130,16 @@ namespace QTPFS {
 			memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
 			for (size_t i = 0, n = NUM_POOL_CHUNKS; i < n; i++) {
 				memFootPrint += (poolNodes[i].size() * sizeof(QTNode));
+
+				for (size_t j = poolNodes[i].size(); j > 0; --j) {
+					int32_t nodeIndex = j - 1;
+					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbours();
+					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(neighbours)>::value_type);
+					const auto& netPoints = poolNodes[i][nodeIndex].GetNetPoints();
+					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(netPoints)>::value_type);
+				}
 			}
+
 			memFootPrint += (nodeIndcs.size() * sizeof(decltype(nodeIndcs)::value_type));
 			return memFootPrint;
 		}
