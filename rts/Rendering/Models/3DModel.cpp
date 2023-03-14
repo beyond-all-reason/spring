@@ -236,8 +236,10 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 	if (!HasGeometryData())
 		return;
 
+
 	for (auto& v : vertices)
-		v.pieceIndex = pieceIndex;
+		if (v.boneIDs == SVertexData::DEFAULT_BONEIDS)
+			v.boneIDs = { static_cast<uint8_t>(pieceIndex), 255, 255, 255 };
 }
 
 void S3DModelPiece::DrawElements(GLuint prim) const
@@ -554,3 +556,37 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 
 /******************************************************************************/
 /******************************************************************************/
+
+S3DModelPiece* S3DModel::FindPiece(const std::string& name)
+{
+	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
+		return piece->name == name;
+	});
+	if (it == pieceObjects.end())
+		return nullptr;
+
+	return *it;
+}
+
+const S3DModelPiece* S3DModel::FindPiece(const std::string& name) const
+{
+	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
+		return piece->name == name;
+		});
+	if (it == pieceObjects.end())
+		return nullptr;
+
+	return *it;
+}
+
+size_t S3DModel::FindPieceOffset(const std::string& name) const
+{
+	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
+		return piece->name == name;
+	});
+
+	if (it == pieceObjects.end())
+		return size_t(-1);
+
+	return std::distance(pieceObjects.begin(), it);
+}

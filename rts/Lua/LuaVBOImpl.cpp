@@ -805,12 +805,12 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 		// uint32_t pieceIndex
 		this->bufferAttribDefs[5] = {
 			GL_UNSIGNED_INT, //type
-			1, //size
+			2, //size
 			GL_FALSE, //normalized
-			"pieceIndex", //name
-			offsetof(SVertexData, pieceIndex), //pointer
+			"bonesInfo", //name
+			offsetof(SVertexData, boneIDs), //pointer
 			sizeof(uint32_t), //typeSizeInBytes
-			1 * sizeof(uint32_t) //strideSizeInBytes
+			2 * sizeof(uint32_t) //strideSizeInBytes
 		};
 
 		this->attributesCount = 6;
@@ -968,19 +968,30 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 	uint32_t teamID = defTeamID;
 
 	const TObj* obj = LuaUtils::SolIdToObject<TObj>(id, __func__);
-	const uint32_t matOffset = static_cast<uint32_t>(MatrixUploader::GetInstance().GetElemOffset(obj));
+	const uint32_t matOffset = static_cast<uint32_t>(matrixUploader.GetElemOffset(obj));
 	const uint32_t uniIndex  = static_cast<uint32_t>(modelsUniformsStorage.GetObjOffset(obj)); //doesn't need to exist for defs and model. Don't check for validity
 
 	uint8_t drawFlags = 0u;
-	if   constexpr (std::is_same_v<TObj, CUnit> || std::is_same_v<TObj, CFeature>) {
+	if constexpr (std::is_same_v<TObj, CUnit> || std::is_same_v<TObj, CFeature>) {
 		teamID = obj->team;
 		drawFlags = obj->drawFlag;
+	}
+
+	uint8_t numPieces = 0;
+	size_t bposeIndex = 0;
+	if constexpr (std::is_same<TObj, S3DModel>::value) {
+		numPieces = static_cast<uint8_t>(obj->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj);
+	}
+	else {
+		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		bposeIndex = matrixUploader.GetElemOffset(obj->model);
 	}
 
 	if (matOffset == ~0u) {
 		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
 	}
-	return SInstanceData(matOffset, teamID, drawFlags, uniIndex);
+	return SInstanceData(matOffset, teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 }
 
 template<typename TObj>

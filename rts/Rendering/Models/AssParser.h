@@ -15,6 +15,7 @@
 struct aiNode;
 struct aiScene;
 class LuaTable;
+struct SPseudoAssPiece;
 
 struct SAssPiece: public S3DModelPiece
 {
@@ -51,8 +52,9 @@ public:
 class CAssParser: public IModelParser
 {
 public:
-	typedef spring::unordered_map<std::string, S3DModelPiece*> ModelPieceMap;
-	typedef spring::unordered_map<std::string, std::string> ParentNameMap;
+	using ModelPieceMap = spring::unordered_map<std::string, S3DModelPiece*>;
+	using ParentNameMap = spring::unordered_map<std::string, std::string>;
+	using MeshData = std::tuple<std::vector<SVertexData>, std::vector<uint32_t>, uint32_t>;
 
 	void Init() override;
 	void Kill() override;
@@ -61,6 +63,7 @@ public:
 private:
 	static void PreProcessFileBuffer(std::vector<unsigned char>& fileBuffer);
 
+	static void UpdatePiecesMinMaxExtents(S3DModel* model);
 	static void SetPieceName(
 		SAssPiece* piece,
 		const S3DModel* model,
@@ -80,11 +83,42 @@ private:
 		const aiNode* pieceNode,
 		const LuaTable& pieceTable
 	);
+	static void LoadPieceTransformations(
+		SPseudoAssPiece* piece,
+		const S3DModel* model,
+		const aiNode* pieceNode,
+		const LuaTable& pieceTable
+	);
 	static void LoadPieceGeometry(
 		SAssPiece* piece,
 		const S3DModel* model,
 		const aiNode* pieceNode,
 		const aiScene* scene
+	);
+
+	static const std::vector<std::string> GetBoneNames(const aiScene* scene);
+	static const std::vector<std::string> GetMeshNames(const aiScene* scene);
+	static const aiNode* FindNode(const aiScene* scene, const aiNode* node, const std::string& name);
+	static const std::vector<CMatrix44f> GetMeshBoneMatrices(
+		const aiScene* scene,
+		const S3DModel* model,
+		std::vector<SPseudoAssPiece>& meshPPs
+	);
+
+	static const std::vector<MeshData> GetModelSpaceMeshes(
+		const aiScene* scene,
+		const S3DModel* model,
+		const std::vector<CMatrix44f>& meshBoneMatrices
+	);
+
+	static void ReparentMeshesTrianglesToBones(
+		S3DModel* model,
+		const std::vector<MeshData>& meshes
+	);
+
+	static void ReparentCompleteMeshesToBones(
+		S3DModel* model,
+		const std::vector<MeshData>& meshes
 	);
 
 	SAssPiece* AllocPiece();
@@ -93,6 +127,7 @@ private:
 		const aiNode* pieceNode,
 		const aiScene* scene,
 		const LuaTable& modelTable,
+		const std::vector<std::string>& skipList,
 		ModelPieceMap& pieceMap,
 		ParentNameMap& parentMap
 	);

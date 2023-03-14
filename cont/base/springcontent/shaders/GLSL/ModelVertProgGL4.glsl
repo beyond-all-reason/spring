@@ -5,13 +5,13 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec3 T;
 layout (location = 3) in vec3 B;
 layout (location = 4) in vec4 uv;
-layout (location = 5) in uint pieceIndex;
+layout (location = 5) in uvec2 bonesInfo; //boneIDs, boneWeights
 
 layout (location = 6) in uvec4 instData;
 // u32 matOffset
 // u32 uniOffset
-// u32 {teamIdx, drawFlag, unused, unused}
-// u32 unused
+// u32 {teamIdx, drawFlag, unused, numPieces}
+// u32 bposeMatOffset
 
 layout(std140, binding = 0) uniform UniformMatrixBuffer {
 	mat4 screenView;
@@ -114,7 +114,7 @@ out Data {
 };
 out float gl_ClipDistance[3];
 
-#line 1115
+#line 1117
 
 void TransformPlayerCam(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
@@ -128,29 +128,80 @@ void TransformPlayerCamStaticMat(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
 }
 
-#define GetPieceMatrix(sm) (mat[instData.x + pieceIndex + uint(!sm)])
+uint GetUnpackedValue(uint packedValue, uint byteNum) {
+	return (packedValue >> (8u * byteNum)) & 0xFFu;
+}
+
+void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
+{
+	bool staticModel = (matrixMode > 0);
+
+	vec4 piecePos = vec4(pos, 1.0);
+
+	vec4 weights = vec4(
+		float(GetUnpackedValue(bonesInfo.y, 0)) / 255.0,
+		float(GetUnpackedValue(bonesInfo.y, 1)) / 255.0,
+		float(GetUnpackedValue(bonesInfo.y, 2)) / 255.0,
+		float(GetUnpackedValue(bonesInfo.y, 3)) / 255.0
+	);
+
+	uint b0 = GetUnpackedValue(bonesInfo.x, 0); //first boneID
+	mat4 b0BoneMat = mat[instData.x + b0 + uint(!staticModel)];
+	mat3 b0NormMat = mat3(b0BoneMat);
+
+	weights[0] *= b0BoneMat[3][3];
+
+	msPosition = b0BoneMat * piecePos;
+	msNormal   = b0NormMat * normal;
+
+	if (staticModel || weights[0] == 1.0)
+		return;
+
+	float wSum = 0.0;
+
+	msPosition *= weights[0];
+	msNormal   *= weights[0];
+	wSum       += weights[0];
+
+	uint numPieces = GetUnpackedValue(instData.z, 3);
+	mat4 bposeMat    = mat[instData.w + b0];
+
+	// Vertex[ModelSpace,BoneX] = PieceMat[BoneX] * InverseBindPosMat[BoneX] * BindPosMat[Bone0] * Vertex[Bone0]
+	for (uint bi = 1; bi < 3; ++bi) {
+		uint bID = GetUnpackedValue(bonesInfo.x, bi);
+
+		if (bID == 0xFFu || weights[bi] == 0.0)
+			continue;
+
+		mat4 bposeInvMat = mat[instData.w + numPieces + bID];
+		mat4 boneMat     = mat[instData.x +        1u + bID];
+
+		weights[bi] *= boneMat[3][3];
+
+		mat4 skinMat = boneMat * bposeInvMat * bposeMat;
+		mat3 normMat = mat3(skinMat);
+
+		msPosition += skinMat * piecePos * weights[bi];
+		msNormal   += normMat * normal   * weights[bi];
+		wSum       += weights[bi];
+	}
+
+	msPosition /= wSum;
+	msNormal   /= wSum;
+}
 
 void main(void)
 {
 	bool staticModel = (matrixMode > 0);
 
-	mat4 pieceMatrix = GetPieceMatrix(staticModel);
 	mat4 worldMatrix = staticModel ? staticModelMatrix : mat[instData.x]; //don't cover ARRAY_MATMODE yet
 
-	mat4 worldPieceMatrix = worldMatrix * pieceMatrix; // for the below
+	vec4 modelPos;
+	vec3 modelNormal;
+	GetModelSpaceVertex(modelPos, modelNormal);
 
-	#if 0
-		mat3 normalMatrix = mat3(transpose(inverse(worldPieceMatrix)));
-	#else
-		mat3 normalMatrix = mat3(worldPieceMatrix);
-	#endif
-
-
-	vec4 piecePos = vec4(pos, 1.0);
-	vec4 modelPos = pieceMatrix * piecePos;
-	vec4 worldPos = worldPieceMatrix * piecePos;
-
-	worldNormal = normalMatrix * normal;
+	worldPos = worldMatrix * modelPos;
+	worldNormal = mat3(worldMatrix) * modelNormal;
 
 	gl_ClipDistance[0] = dot(modelPos, clipPlane0); //upper construction clip plane
 	gl_ClipDistance[1] = dot(modelPos, clipPlane1); //lower construction clip plane
