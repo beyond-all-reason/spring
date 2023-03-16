@@ -80,7 +80,7 @@ int LuaMathExtra::clamp(lua_State* L) {
 }
 
 
-/*** Returns 0 if x ==0, 1 if x > 0, -1 if x < 0 sgn(x).
+/*** Returns 0 if x == 0, 1 if x > 0, -1 if x < 0
  *
  * @function math.sgn
  * @number x
@@ -147,7 +147,7 @@ int LuaMathExtra::round(lua_State* L) {
 }
 
 
-/*** Returns erf(x).
+/*** Returns erf(x), the Gauss error function, between -1 and 1.
  *
  * @function math.erf
  * @number x
@@ -159,7 +159,8 @@ int LuaMathExtra::erf(lua_State* L) {
 }
 
 
-/*** Returns smoothstep(edge0, edge1, v).
+/*** Clamps and rescales v to a value between [0; 1] based on the edges and then applies the smoothstep function.
+ * For example math.smoothstep(10, 25, 15) is 0.259, because 15 is 0.333 of the way from 10 to 25, and smoothstep(0.333) is 0.259
  *
  * @function math.smoothstep
  * @number edge0
