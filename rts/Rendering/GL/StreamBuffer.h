@@ -48,6 +48,10 @@ public:
 	uint32_t GetTarget() const { return target; }
 	uint32_t GetByteSize() const { return byteSize; }
 
+	void SetBufferUsageHint(uint32_t newUsageHint = GL_STREAM_DRAW) {
+		usageHint = newUsageHint;
+	}
+
 	virtual IStreamBufferConcept::Types GetBufferImplementation() const = 0;
 protected:
 	void CreateBuffer(uint32_t byteBufferSize, uint32_t newUsage);
@@ -64,6 +68,7 @@ protected:
 	uint32_t allocIdx;
 	uint32_t mapElemOffet;
 	uint32_t mapElemCount;
+	uint32_t usageHint = GL_STREAM_DRAW;
 protected:
 	inline static bool reportType = false;
 	inline static std::vector<GLsync*> lockList = {};
@@ -128,7 +133,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->usageHint);
 	}
 
 	void Kill(bool deleteBuffer) override {
@@ -166,7 +171,7 @@ public:
 			this->target,
 			(this->mapElemOffet + this->mapElemCount) * sizeof(T),
 			buffer,
-			GL_STREAM_DRAW
+			this->usageHint
 		);
 
 		this->Unbind();
@@ -194,7 +199,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->usageHint);
 	}
 
 	void Kill(bool deleteBuffer) override {
@@ -258,7 +263,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->usageHint);
 	}
 
 	void Kill(bool deleteBuffer) override {

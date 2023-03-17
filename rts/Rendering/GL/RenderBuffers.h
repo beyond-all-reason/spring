@@ -70,6 +70,8 @@ public:
 	std::array<size_t, 2> GetSubmitNum() const { return numSubmits; }
 	std::array<size_t, 2> GetMaxSize()   const { return maxSize;    }
 	std::array<size_t, 2> GetInitialCapacity()   const { return initCapacity; }
+
+	virtual void SetBufferUsageHint(uint32_t vertexHint = GL_STREAM_DRAW, uint32_t indexHint = GL_STREAM_DRAW) = 0;
 protected:
 	// [0] := non-indexed, [1] := indexed
 	std::array<size_t, 2> numSubmits = { 0, 0 };
@@ -410,6 +412,11 @@ public:
 		return std::array{ verts.capacity(), indcs.capacity() };
 	}
 
+	void SetBufferUsageHint(uint32_t vertexHint = GL_STREAM_DRAW, uint32_t indexHint = GL_STREAM_DRAW)  override {
+		vboUsageHint = vertexHint;
+		eboUsageHint = indexHint;
+	}
+
 	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
 	TypedRenderBuffer<T>(TypedRenderBuffer<T>&& trdb) noexcept { *this = std::move(trdb); }
 
@@ -669,27 +676,29 @@ private:
 		if (readOnly)
 			return;
 
-		const IndcType baseIndex = static_cast<IndcType>(verts.size_t());
+		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 		float ratio;
 
-		for (int y = 0; y < yDiv; ++y) {
+		for (int y = 0; y <= yDiv; ++y) {
 			ratio = static_cast<float>(y) / static_cast<float>(yDiv);
 			const VertType ml = mix(tl, bl, ratio);
 			const VertType mr = mix(tr, br, ratio);
-			for (int x = 0; y < xDiv; ++x) {
+			for (int x = 0; x <= xDiv; ++x) {
 				ratio = static_cast<float>(x) / static_cast<float>(xDiv);
 
 				verts.emplace_back(mix(ml, mr, ratio));
 			}
 		}
 
-		for (int y = 0; y < yDiv - 1; ++y)
-			for (int x = 0; y < xDiv - 1; ++x) {
-				const IndcType tli = xDiv * (y + 0) + (x + 0) + baseIndex;
-				const IndcType tri = xDiv * (y + 0) + (x + 1) + baseIndex;
-				const IndcType bli = xDiv * (y + 1) + (x + 0) + baseIndex;
-				const IndcType bri = xDiv * (y + 1) + (x + 1) + baseIndex;
+		for (int y = 0; y <= yDiv - 1; ++y)
+			for (int x = 0; x <= xDiv - 1; ++x) {
+				const IndcType tli = (xDiv + 1) * (y + 0) + (x + 0) + baseIndex;
+				const IndcType tri = (xDiv + 1) * (y + 0) + (x + 1) + baseIndex;
+				const IndcType bli = (xDiv + 1) * (y + 1) + (x + 0) + baseIndex;
+				const IndcType bri = (xDiv + 1) * (y + 1) + (x + 1) + baseIndex;
 
+				// This was wrong as it represents CW winding and the default is CCW for front face
+				/*
 				//triangle 1 {tl, tr, bl}
 				indcs.emplace_back(tli);
 				indcs.emplace_back(tri);
@@ -698,6 +707,16 @@ private:
 				//triangle 2 {bl, tr, br}
 				indcs.emplace_back(bli);
 				indcs.emplace_back(tri);
+				indcs.emplace_back(bri);
+				*/
+				//triangle 1 {tl, bl, tr}
+				indcs.emplace_back(tli);
+				indcs.emplace_back(bli);
+				indcs.emplace_back(tri);
+
+				//triangle 2 {tr, bl, br}
+				indcs.emplace_back(tri);
+				indcs.emplace_back(bli);
 				indcs.emplace_back(bri);
 			}
 	}
@@ -745,6 +764,9 @@ private:
 
 	size_t vboUploadIndex = 0;
 	size_t eboUploadIndex = 0;
+
+	uint32_t vboUsageHint = GL_STREAM_DRAW;
+	uint32_t eboUsageHint = GL_STREAM_DRAW;
 
 	bool readOnly = false;
 
@@ -925,11 +947,15 @@ inline void TypedRenderBuffer<T>::CondInit()
 	if (vao.GetIdRaw() > 0)
 		return;
 
-	if (vertCount0 > 0)
-		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER        , static_cast<uint32_t>(vertCount0), std::string(vboTypeName), bufferType);
+	if (vertCount0 > 0) {
+		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER, static_cast<uint32_t>(vertCount0), std::string(vboTypeName), bufferType);
+		vbo->SetBufferUsageHint(vboUsageHint);
+	}
 
-	if (elemCount0 > 0)
+	if (elemCount0 > 0) {
 		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, static_cast<uint32_t>(elemCount0), std::string(vboTypeName), bufferType);
+		ebo->SetBufferUsageHint(eboUsageHint);
+	}
 
 	InitVAO();
 }

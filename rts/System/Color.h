@@ -53,6 +53,36 @@ struct SColor
 		static_assert(N == 4);
 	}
 
+	constexpr SColor operator+ (const SColor& o) const {
+		return {
+			r + o.r,
+			g + o.g,
+			b + o.b,
+			a + o.a
+		};
+	}
+	constexpr SColor operator- (const SColor& o) const {
+		return {
+			r - o.r,
+			g - o.g,
+			b - o.b,
+			a - o.a
+		};
+	}
+	constexpr SColor operator+= (const SColor& o) {
+		r += o.r;
+		g += o.g;
+		b += o.b;
+		a += o.a;
+		return *this;
+	}
+	constexpr SColor operator-= (const SColor& o) {
+		r -= o.r;
+		g -= o.g;
+		b -= o.b;
+		a -= o.a;
+		return *this;
+	}
 	constexpr SColor operator* (float s) const {
 		return SColor(int(float(r) * s), int(float(g) * s), int(float(b) * s), int(float(a) * s));
 	}

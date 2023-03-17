@@ -37,25 +37,47 @@ struct AttributeDef {
 };
 
 struct VA_TYPE_0 {
+	using MY_VA_TYPE = VA_TYPE_0;
 	float3 pos;
 
-	VA_TYPE_0 operator* (float t) const {
-		VA_TYPE_0 v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.pos *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 1> attributeDefs;
 };
 struct VA_TYPE_N {
+	using MY_VA_TYPE = VA_TYPE_N;
 	float3 pos;
 	float3 n;
 
-	VA_TYPE_N operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.n += o.n; v.n.ANormalize();
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.n -= o.n; v.n.ANormalize();
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_N v = *this;
 		v.pos *= t;
-
 		v.n *= t; v.n.ANormalize();
 
 		return v;
@@ -64,198 +86,348 @@ struct VA_TYPE_N {
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_C {
+	using MY_VA_TYPE = VA_TYPE_C;
 	float3 pos;
 	SColor c;
 
-	VA_TYPE_C operator* (float t) const {
-		VA_TYPE_C v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.pos *= t;
-
 		v.c *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_T {
+	using MY_VA_TYPE = VA_TYPE_T;
 	float3 pos;
 	float  s, t;
 
-	VA_TYPE_T operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.s += o.s;
+		v.t += o.t;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.s -= o.s;
+		v.t -= o.t;
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_T v = *this;
 		v.pos *= t;
-
 		v.s *= t;
 		v.t *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_T4 {
+	using MY_VA_TYPE = VA_TYPE_T4;
 	float3 pos;
 	float4 uv;
 
-	VA_TYPE_T4 operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.uv += o.uv;		
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.uv -= o.uv;
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_T4 v = *this;
 		v.pos *= t;
 		v.uv *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_TN {
+	using MY_VA_TYPE = VA_TYPE_TN;
 	float3 pos;
 	float  s, t;
 	float3 n;
 
-	VA_TYPE_TN operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.s += o.s;
+		v.t += o.t;
+		v.n += o.n; v.n.ANormalize();
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.n -= o.n; v.n.ANormalize();
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_TN v = *this;
 		v.pos *= t;
-
 		v.s *= t;
 		v.t *= t;
-
 		v.n *= t; v.n.ANormalize();
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 3> attributeDefs;
 };
 struct VA_TYPE_TC {
+	using MY_VA_TYPE = VA_TYPE_TC;
 	float3 pos;
 	float  s, t;
 	SColor c;
 
-	VA_TYPE_TC operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.s += o.s;
+		v.t += o.t;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_TC v = *this;
 		v.pos *= t;
-
 		v.s *= t;
 		v.t *= t;
-
 		v.c *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 3> attributeDefs;
 };
 struct VA_TYPE_PROJ {
+	using MY_VA_TYPE = VA_TYPE_PROJ;
 	float3 pos;
 	float3 uvw;
 	float4 uvInfo;
 	float3 aparams;
 	SColor c;
 
-	VA_TYPE_PROJ operator* (float t) const {
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.uvw += o.uvw;
+		v.uvInfo += o.uvInfo;
+		v.aparams += o.aparams;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.uvw -= o.uvw;
+		v.uvInfo -= o.uvInfo;
+		v.aparams -= o.aparams;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
 		VA_TYPE_PROJ v = *this;
 		v.pos *= t;
-
 		v.uvw *= t;
-
 		v.uvInfo *= t;
-
 		v.aparams *= t;
-
 		v.c *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 5> attributeDefs;
 };
 struct VA_TYPE_TNT {
+	using MY_VA_TYPE = VA_TYPE_TNT;
 	float3 pos;
 	float  s, t;
 	float3 n;
 	float3 uv1;
 	float3 uv2;
 
-	VA_TYPE_TNT operator* (float t) const {
-		VA_TYPE_TNT v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.s += o.s;
+		v.t += o.t;
+		v.n += o.n; v.n.ANormalize();
+		v.uv1 += o.uv1;
+		v.uv2 += o.uv2;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.n -= o.n; v.n.ANormalize();
+		v.uv1 -= o.uv1;
+		v.uv2 -= o.uv2;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.pos *= t;
-
 		v.s *= t;
 		v.t *= t;
-
-		v.n *= t;   v.n.ANormalize();
-
-		v.uv1 *= t; v.uv1.ANormalize();
-
-		v.uv2 *= t; v.uv2.ANormalize();
-
+		v.n *= t; v.n.ANormalize();
+		v.uv1 *= t;
+		v.uv2 *= t;
 		return v;
 	}
 
 	static std::array<AttributeDef, 5> attributeDefs;
 };
 struct VA_TYPE_2D0 {
+	using MY_VA_TYPE = VA_TYPE_2D0;
 	float x, y;
 
-	VA_TYPE_2D0 operator* (float t) const {
-		VA_TYPE_2D0 v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x += o.x;
+		v.y += o.y;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x -= o.x;
+		v.y -= o.y;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.x *= t;
 		v.y *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 1> attributeDefs;
 };
 struct VA_TYPE_2DC {
+	using MY_VA_TYPE = VA_TYPE_2DC;
 	float x, y;
 	SColor c;
 
-	VA_TYPE_2DC operator* (float t) const {
-		VA_TYPE_2DC v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x += o.x;
+		v.y += o.y;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x -= o.x;
+		v.y -= o.y;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.x *= t;
 		v.y *= t;
-
 		v.c *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_2DT {
+	using MY_VA_TYPE = VA_TYPE_2DT;
 	float x, y;
 	float s, t;
 
-	VA_TYPE_2DT operator* (float t) const {
-		VA_TYPE_2DT v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x += o.x;
+		v.y += o.y;
+		v.s += o.s;
+		v.t += o.t;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x -= o.x;
+		v.y -= o.y;
+		v.s -= o.s;
+		v.t -= o.t;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.x *= t;
 		v.y *= t;
-
 		v.s *= t;
 		v.t *= t;
-
 		return v;
 	}
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_2DTC {
+	using MY_VA_TYPE = VA_TYPE_2DTC;
 	float  x, y;
 	float  s, t;
 	SColor c;
 
-	VA_TYPE_2DTC operator* (float t) const {
-		VA_TYPE_2DTC v = *this;
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x += o.x;
+		v.y += o.y;
+		v.s += o.s;
+		v.t += o.t;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x -= o.x;
+		v.y -= o.y;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
 		v.x *= t;
 		v.y *= t;
-
 		v.s *= t;
 		v.t *= t;
-
 		v.c *= t;
-
 		return v;
 	}
 

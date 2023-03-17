@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PATCH_H
-#define PATCH_H
+#pragma once
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+#include "Map/MapDrawPassTypes.h"
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
-#include "Rendering/GL/VertexArrayTypes.h"
+
 
 #include <array>
 #include <vector>
@@ -135,7 +136,7 @@ public:
 	void Upload();
 	void Draw() const;
 	void DrawBorder() const;
-	void SetSquareTexture() const;
+	void SetSquareTexture(const DrawPass::e& drawPass) const;
 
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
@@ -216,5 +217,3 @@ private:
 	VAO mainVAO;
 	VAO borderVAO;
 };
-
-#endif

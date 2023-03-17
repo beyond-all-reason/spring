@@ -770,9 +770,9 @@ void Patch::Upload()
 	isChanged = false;
 }
 
-void Patch::SetSquareTexture() const
+void Patch::SetSquareTexture(const DrawPass::e& drawPass) const
 {
-	smfGroundDrawer->SetupBigSquare(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE);
+	smfGroundDrawer->SetupBigSquare(drawPass, coors.x / PATCH_SIZE, coors.y / PATCH_SIZE);
 }
 
 

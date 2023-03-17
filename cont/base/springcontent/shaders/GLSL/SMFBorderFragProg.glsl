@@ -3,7 +3,6 @@
 uniform sampler2D diffuseTex;
 uniform sampler2D detailsTex;
 
-in vec3 vVertPos;
 in vec4 vVertCol;
 in vec2 vDiffuseUV;
 in vec2 vDetailsUV;

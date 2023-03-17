@@ -32,7 +32,7 @@
 
 using std::max;
 
-CONFIG(bool, GroundNormalTextureHighPrecision).defaultValue(false);
+CONFIG(bool, GroundNormalTextureHighPrecision).deprecated(true);
 CONFIG(float, SMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
 CONFIG(float, SSMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
 
@@ -365,13 +365,6 @@ void CSMFReadMap::CreateShadingTex()
 
 void CSMFReadMap::CreateNormalTex()
 {
-#if (SSMF_UNCOMPRESSED_NORMALS == 0)
-	GLenum texFormat = GL_LUMINANCE_ALPHA16F_ARB;
-
-	if (configHandler->GetBool("GroundNormalTextureHighPrecision"))
-		texFormat = GL_LUMINANCE_ALPHA32F_ARB;
-#endif
-
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	if (!globalRendering->supportNonPowerOfTwoTex)
@@ -383,11 +376,8 @@ void CSMFReadMap::CreateNormalTex()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#if (SSMF_UNCOMPRESSED_NORMALS == 1)
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_RGBA, GL_FLOAT, nullptr);
-#else
-	glTexImage2D(GL_TEXTURE_2D, 0, texFormat, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_LUMINANCE_ALPHA, GL_FLOAT, nullptr);
-#endif
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA16F_ARB, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_LUMINANCE_ALPHA, GL_FLOAT, nullptr);
 }
 
 
@@ -631,39 +621,23 @@ void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 	// Note, it doesn't make sense to use a PBO here.
 	// Cause the upstreamed float32s need to be transformed to float16s, which seems to happen on the CPU!
 
-#if (SSMF_UNCOMPRESSED_NORMALS == 1)
-	normalPixels.clear();
-	normalPixels.resize(xsize * zsize * 4, 0.0f);
-#else
 	normalPixels.clear();
 	normalPixels.resize(xsize * zsize * 2, 0.0f);
-#endif
 
 	for (int z = minz; z <= maxz; z++) {
 		for (int x = minx; x <= maxx; x++) {
 			const float3& vertNormal = vvn[z * mapDims.mapxp1 + x];
 
-		#if (SSMF_UNCOMPRESSED_NORMALS == 1)
-			normalPixels[((z - minz) * xsize + (x - minx)) * 4 + 0] = vertNormal.x;
-			normalPixels[((z - minz) * xsize + (x - minx)) * 4 + 1] = vertNormal.y;
-			normalPixels[((z - minz) * xsize + (x - minx)) * 4 + 2] = vertNormal.z;
-			normalPixels[((z - minz) * xsize + (x - minx)) * 4 + 3] = 1.0f;
-		#else
 			// note: y-coord is regenerated in the shader via "sqrt(1 - x*x - z*z)",
 			//   this gives us 2 solutions but we know that the y-coord always points
 			//   upwards, so we can reconstruct it in the shader.
 			normalPixels[((z - minz) * xsize + (x - minx)) * 2 + 0] = vertNormal.x;
 			normalPixels[((z - minz) * xsize + (x - minx)) * 2 + 1] = vertNormal.z;
-		#endif
 		}
 	}
 
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
-#if (SSMF_UNCOMPRESSED_NORMALS == 1)
-	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_RGBA, GL_FLOAT, &normalPixels[0]);
-#else
 	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_LUMINANCE_ALPHA, GL_FLOAT, &normalPixels[0]);
-#endif
 }
 
 
