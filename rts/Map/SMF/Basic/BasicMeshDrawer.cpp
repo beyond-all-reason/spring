@@ -63,9 +63,8 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 		const uint32_t lodStep = 1 << lod;
 		const size_t numVert = Square(PATCH_SIZE / lodStep + 1);
 		const size_t numIndx = Square(PATCH_SIZE / lodStep    ) * 6;
-		meshRenderBuffer = std::make_unique<MeshRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA);
+		meshRenderBuffer = std::make_unique<MeshRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
 		UploadPatchSquareGeometry(meshRenderBuffer, lodStep);
-		meshRenderBuffer->SetBufferUsageHint(GL_STATIC_DRAW, GL_STATIC_DRAW);
 		meshRenderBuffer->SetReadonly();
 		lod++;
 	}
@@ -76,9 +75,8 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 		const size_t numIndx = (PATCH_SIZE / lodStep    ) * 6;
 		for (uint32_t b = MAP_BORDER_L; b < MAP_BORDER_C; b++) {
 			auto& borderRenderBuffer = borderRenderBuffers[lod * static_cast<uint32_t>(MAP_BORDER_C) + static_cast<uint32_t>(b)];
-			borderRenderBuffer = std::make_unique<BordRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA);
+			borderRenderBuffer = std::make_unique<BordRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
 			UploadPatchBorderGeometry(borderRenderBuffer, static_cast<MAP_BORDERS>(b), lodStep);
-			borderRenderBuffer->SetBufferUsageHint(GL_STATIC_DRAW, GL_STATIC_DRAW);
 			borderRenderBuffer->SetReadonly();
 		}
 	}

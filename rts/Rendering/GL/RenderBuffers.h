@@ -70,8 +70,6 @@ public:
 	std::array<size_t, 2> GetSubmitNum() const { return numSubmits; }
 	std::array<size_t, 2> GetMaxSize()   const { return maxSize;    }
 	std::array<size_t, 2> GetInitialCapacity()   const { return initCapacity; }
-
-	virtual void SetBufferUsageHint(uint32_t vertexHint = GL_STREAM_DRAW, uint32_t indexHint = GL_STREAM_DRAW) = 0;
 protected:
 	// [0] := non-indexed, [1] := indexed
 	std::array<size_t, 2> numSubmits = { 0, 0 };
@@ -358,12 +356,14 @@ public:
 		, vertCount0{ 0 }
 		, elemCount0{ 0 }
 		, bufferType{ bufferTypeDefault }
+		, optimizeForStreaming{ true }
 	{}
-	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault)
+	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault, bool optimizeForStreaming_ = true)
 		: RenderBuffer({ vertCount0_, elemCount0_ })
 		, vertCount0 { vertCount0_ }
 		, elemCount0 { elemCount0_ }
 		, bufferType { bufferType_ }
+		, optimizeForStreaming{ optimizeForStreaming_ }
 	{
 		verts.reserve(vertCount0);
 		indcs.reserve(elemCount0);
@@ -410,11 +410,6 @@ public:
 
 	std::array<size_t, 2> GetBuffersCapacity() const override {
 		return std::array{ verts.capacity(), indcs.capacity() };
-	}
-
-	void SetBufferUsageHint(uint32_t vertexHint = GL_STREAM_DRAW, uint32_t indexHint = GL_STREAM_DRAW)  override {
-		vboUsageHint = vertexHint;
-		eboUsageHint = indexHint;
 	}
 
 	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
@@ -765,10 +760,8 @@ private:
 	size_t vboUploadIndex = 0;
 	size_t eboUploadIndex = 0;
 
-	uint32_t vboUsageHint = GL_STREAM_DRAW;
-	uint32_t eboUsageHint = GL_STREAM_DRAW;
-
 	bool readOnly = false;
+	bool optimizeForStreaming = true;
 
 	inline static RenderBufferShader<T> shader;
 
@@ -948,13 +941,25 @@ inline void TypedRenderBuffer<T>::CondInit()
 		return;
 
 	if (vertCount0 > 0) {
-		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER, static_cast<uint32_t>(vertCount0), std::string(vboTypeName), bufferType);
-		vbo->SetBufferUsageHint(vboUsageHint);
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_ARRAY_BUFFER;
+		p.numElems = static_cast<uint32_t>(vertCount0);
+		p.name = std::string(vboTypeName);
+		p.type = bufferType;
+		p.optimizeForStreaming = optimizeForStreaming;
+
+		vbo = IStreamBuffer<VertType>::CreateInstance(p);
 	}
 
 	if (elemCount0 > 0) {
-		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, static_cast<uint32_t>(elemCount0), std::string(vboTypeName), bufferType);
-		ebo->SetBufferUsageHint(eboUsageHint);
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_ELEMENT_ARRAY_BUFFER;
+		p.numElems = static_cast<uint32_t>(elemCount0);
+		p.name = std::string(vboTypeName);
+		p.type = bufferType;
+		p.optimizeForStreaming = optimizeForStreaming;
+
+		ebo = IStreamBuffer<IndcType>::CreateInstance(p);
 	}
 
 	InitVAO();
