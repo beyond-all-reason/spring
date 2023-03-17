@@ -58,14 +58,34 @@ namespace QTPFS {
 		//       INode* GetNode(unsigned int i)       { return nodeGrid[i]; }
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
-			const INode* curNode = &rootNode;
+			const INode* curNode = GetPoolNode(0);
+			int length = curNode->xsize(); // width/height is forced to be the same.
+			// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
+			// int ix = (x / length) + (int(x % length > 0));
+			int iz = (z / length) * xRootNodes;
+			int ix = (x / length);
+			int i = iz + ix;
+
+			curNode = GetPoolNode(i);
+
+			assert (curNode->xmin() <= x);
+			assert (curNode->xmax() >= x);
+			assert (curNode->zmin() <= z);
+			assert (curNode->zmax() >= z);
+
 			while (!curNode->IsLeaf()) {
-				bool isRight = x >= curNode->xmid(); // TODO: do these on CPU, don't reference memory !!!!!!!!!!!!!1
+				bool isRight = x >= curNode->xmid();
 				bool isDown = z >= curNode->zmid();
 				int offset = 1*(isRight) + 2*(isDown);
 				int nextIndex = curNode->GetChildBaseIndex() + offset;
 				curNode = GetPoolNode(nextIndex);
 			}
+			//TODO: need the layer number!!!
+			// LOG("%s: [%d,%d] found %d, registered %d", __func__
+			// 		, x, z
+			// 		, curNode->GetIndex()
+			// 		, nodeGrid[z * xsize + x]->GetIndex()
+			// 		);
 			assert(curNode == nodeGrid[z * xsize + x]);
 			return curNode;
 		}
@@ -109,7 +129,7 @@ namespace QTPFS {
 		// const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
-		std::vector<INode*>& GetNodes() { return nodeGrid; }
+		// std::vector<INode*>& GetNodes() { return nodeGrid; }
 
 		void RegisterNode(INode* n);
 
@@ -127,7 +147,7 @@ namespace QTPFS {
 			// memFootPrint += (oldSpeedMods.size() * sizeof(SpeedModType));
 			memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
 			// memFootPrint += (oldSpeedBins.size() * sizeof(SpeedBinType));
-			memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
+			// memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
 			for (size_t i = 0, n = NUM_POOL_CHUNKS; i < n; i++) {
 				memFootPrint += (poolNodes[i].size() * sizeof(QTNode));
 
@@ -142,6 +162,20 @@ namespace QTPFS {
 
 			memFootPrint += (nodeIndcs.size() * sizeof(decltype(nodeIndcs)::value_type));
 			return memFootPrint;
+		}
+
+		void SetRootNodeCountAndDimensions(int numRoots, int xsize, int zside) {
+			numRootNodes = numRoots;
+			xRootNodes = xsize;
+			zRootNodes = zside;
+		} 
+
+		int GetRootNodeCount() const {
+			return numRootNodes;
+		}
+
+		int GetNodelayer() const {
+			return layerNumber;
 		}
 
 	private:
@@ -163,6 +197,9 @@ public:
 		static constexpr unsigned int POOL_TOTAL_SIZE = (1024 * 1024) / 2;
 		static constexpr unsigned int POOL_CHUNK_SIZE = POOL_TOTAL_SIZE / NUM_POOL_CHUNKS;
 
+		void SetRootMask(uint32_t newMask) { rootMask = newMask; }
+		uint32_t GetRootMask() const { return rootMask; }
+
 private:
 
 		// NOTE:
@@ -176,6 +213,11 @@ private:
 		unsigned int layerNumber = 0;
 		unsigned int numLeafNodes = 0;
 		unsigned int updateCounter = 0;
+
+		int32_t numRootNodes = 0;
+		int32_t xRootNodes = 0;
+		int32_t zRootNodes = 0;
+		uint32_t rootMask = 0;
 
 		unsigned int xsize = 0;
 		unsigned int zsize = 0;

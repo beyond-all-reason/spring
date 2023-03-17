@@ -122,7 +122,7 @@ namespace QTPFS {
 	unsigned int PathManager::MAX_TEAM_SEARCHES;
 
 	std::vector<NodeLayer> PathManager::nodeLayers;
-	std::vector<QTNode*> PathManager::nodeTrees;
+	// std::vector<QTNode*> PathManager::nodeTrees;
 	// std::vector<PathCache> PathManager::pathCaches;
 	std::vector<PathSearch*> PathManager::pathSearches;
 }
@@ -139,6 +139,8 @@ QTPFS::PathManager::PathManager() {
 }
 
 QTPFS::PathManager::~PathManager() {
+	isFinalized = false;
+
 	registry.destroy(systemEntity);
 
 	// print out anything still left in the registry - there should be nothing
@@ -147,10 +149,9 @@ QTPFS::PathManager::~PathManager() {
 		bool isSearch = registry.all_of<PathSearch>(entity);
 		if (isPath) {
 			const IPath& path = registry.get<IPath>(entity);
-			LOG("path [%d] type=%d, owner=%p, hash=%" PRIx64, entt::to_integral(entity)
+			LOG("path [%d] type=%d, owner=%p", entt::to_integral(entity)
 					, path.GetPathType()
 					, path.GetOwner()
-					, path.GetHash()
 					);
 		}
 		if (isSearch) {
@@ -165,7 +166,14 @@ QTPFS::PathManager::~PathManager() {
 	LOG("%s: %d entities still active!", __func__, (int)registry.alive());
 
 	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
-		nodeTrees[layerNum]->Merge(nodeLayers[layerNum]);
+		// nodeTrees[layerNum]->Merge(nodeLayers[layerNum]);
+
+		auto& nodeLayer = nodeLayers[layerNum];
+		for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+			auto curRootNode = nodeLayer.GetPoolNode(i);
+			curRootNode->Merge(nodeLayers[layerNum]);
+		}
+
 		nodeLayers[layerNum].Clear();
 	}
 	std::for_each(pathTraces.begin(), pathTraces.end(), [](std::pair<unsigned int, QTPFS::PathSearchTrace::Execution*>& t){delete t.second;} );
@@ -175,7 +183,7 @@ QTPFS::PathManager::~PathManager() {
 	// 	delete (tracesIt->second);
 	// }
 
-	nodeTrees.clear();
+	// nodeTrees.clear();
 	// reuse layer pools when reloading
 	// nodeLayers.clear();
 	// pathCaches.clear();
@@ -224,13 +232,15 @@ void QTPFS::PathManager::Load() {
 	recalcDeadPathUpdateRateOnFrame = 0;
 
 	pathCache.Init(moveDefHandler.GetNumMoveDefs());
-	nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
+	// nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
 	pathSearches.reserve(200);
 
 	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrack.damageMap.resize(mapChangeTrack.width*mapChangeTrack.height);
+
+	isFinalized = true;
 
 	// add one extra element for object-less requests
 	// numCurrExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
@@ -249,7 +259,8 @@ void QTPFS::PathManager::Load() {
 
 		{
 			layersInited = false;
-			haveCacheDir = FileSystem::DirExists(cacheDirName);
+			// haveCacheDir = FileSystem::DirExists(cacheDirName);
+			haveCacheDir = false;
 
 			InitNodeLayersThreaded(MAP_RECTANGLE);
 			// Serialize(cacheDirName);
@@ -271,13 +282,18 @@ void QTPFS::PathManager::Load() {
 
 		for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 			#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-			if (haveCacheDir) {
-				// if cache-dir exists, must set node relations after de-serializing its trees
-				nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(MAP_RECTANGLE, numTerrainChanges);
-			}
+			// if (haveCacheDir) {
+			// 	// if cache-dir exists, must set node relations after de-serializing its trees
+			// 	nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(MAP_RECTANGLE, numTerrainChanges);
+			// }
 			#endif
 
-			pfsCheckSum ^= nodeTrees[layerNum]->GetCheckSum(nodeLayers[layerNum]);
+			auto& nodeLayer = nodeLayers[layerNum];
+			for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+				auto curRootNode = nodeLayer.GetPoolNode(i);
+				pfsCheckSum ^= curRootNode->GetCheckSum(nodeLayers[layerNum]);
+			}
+			// pfsCheckSum ^= nodeTrees[layerNum]->GetCheckSum(nodeLayers[layerNum]);
 			maxNumLeafNodes = std::max(nodeLayers[layerNum].GetNumLeafNodes(), maxNumLeafNodes);
 		}
 
@@ -312,7 +328,13 @@ std::uint64_t QTPFS::PathManager::GetMemFootPrint() const {
 
 	for (unsigned int i = 0; i < nodeLayers.size(); i++) {
 		memFootPrint += nodeLayers[i].GetMemFootPrint();
-		memFootPrint += nodeTrees[i]->GetMemFootPrint(nodeLayers[i]);
+		// memFootPrint += nodeTrees[i]->GetMemFootPrint(nodeLayers[i]);
+
+		auto& nodeLayer = nodeLayers[i];
+		for (int j = 0; j < nodeLayer.GetRootNodeCount(); ++j){
+			auto curRootNode = nodeLayer.GetPoolNode(j);
+			memFootPrint += curRootNode->GetMemFootPrint(nodeLayer);
+		}
 	}
 
 	// convert to megabytes
@@ -365,12 +387,22 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			// NOTE:
 			//     silently assumes trees either ALL exist or ALL do not
 			//     (if >= 1 are missing for some player in MP, we desync)
+
+			numTerrainChanges++;
+
 			InitNodeLayer(layerNum, rect);
 			UpdateNodeLayer(layerNum, rect);
 
-			const QTNode* tree = nodeTrees[layerNum];
+			// const QTNode* tree = nodeTrees[layerNum];
 			const NodeLayer& layer = nodeLayers[layerNum];
-			const unsigned int mem = (tree->GetMemFootPrint(layer) + layer.GetMemFootPrint()) / (1024 * 1024);
+			// const unsigned int mem = (tree->GetMemFootPrint(layer) + layer.GetMemFootPrint()) / (1024 * 1024);
+
+			int rootMem = 0;
+			for (int i = 0; i < layer.GetRootNodeCount(); ++i){
+				auto curRootNode = layer.GetPoolNode(i);
+				rootMem += curRootNode->GetMemFootPrint(layer);
+			}
+			const unsigned int mem = (rootMem + layer.GetMemFootPrint()) / (1024 * 1024);
 
 			// #ifndef NDEBUG
 			// sprintf(loadMsg, pstFmtStr, layerNum, mem, layer.GetNumLeafNodes(), layer.GetNodeRatio());
@@ -386,7 +418,73 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	NodeLayer& nl = nodeLayers[layerNum];
 
 	nl.Init(layerNum);
-	nl.RegisterNode(nodeTrees[layerNum] = nl.AllocRootNode(nullptr, 0,  r.x1, r.z1,  r.x2, r.z2));
+
+	// auto rootNode = nl.AllocRootNode(nullptr, 0,  r.x1, r.z1,  r.x2, r.z2);
+	// nodeTrees[layerNum] = rootNode;
+	// nl.RegisterNode(rootNode);
+
+	// setup the root node system
+	// TODO: make sure resources are released on game end.
+	int width = r.x2 - r.x1;
+	int height = r.z2 - r.z1;
+	LOG("%s: map root size is (%d, %d)", __func__, width, height);
+
+	// Optimal function of QTPFS relies on power of 2 squares. Find the largest 2^x squares that
+	// fit the map. I recall the map system won't allow map sizes below 32m increments, so start
+	// there.
+	int rootSize = 32;
+	int limit = std::min(width, height);
+	for (int factor = rootSize<<1; factor <= limit; factor <<= 1) {
+		if (width % factor == 0 && height % factor == 0)
+			rootSize = factor;
+	}
+	LOG("%s: root node size is set to: %d", __func__, rootSize);
+
+	// TODO: reduce max levels based on number of root nodes - find a suitable limit?
+	// TODO: id handling for root nodes
+	// TODO: prevent too big a size being picked due to 15 levels? 2^(steps -1) (steps=(bits-2)/2)
+	constexpr float maxNodeLevels = ((sizeof(uint32_t)*4)-2);
+	uint32_t maxNodeSize = math::pow(2.f, maxNodeLevels);
+	rootSize = rootSize > maxNodeSize ? maxNodeSize : rootSize;
+
+	// TODO: partial zones just in case %32 != 0? need to check tessalation off map is okay.
+	int numRootCount = 0;
+	int zRootNodes = 0;
+	for (int z = r.z1; z < r.z2; z += rootSize) {
+		for (int x = r.x1; x < r.x2; x += rootSize) {
+			int idx = nl.AllocPoolNode(nullptr, -1, x, z, x + rootSize, z + rootSize);
+			nl.RegisterNode(nl.GetPoolNode(idx));
+
+			LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
+					, idx, x, z, x + rootSize, z + rootSize);
+
+			assert(idx == numRootCount);
+			numRootCount++;
+		}
+		zRootNodes++;
+	}
+	
+	uint32_t rootShift = 30;
+	for (int factor = 4; factor < numRootCount; factor <<= 2) {
+		rootShift -= 2;
+	}
+	QTNode::MAX_DEPTH = rootShift>>1; // std::min(rootShift>>1, QTNode::MAX_DEPTH);
+	uint32_t rootMask = (~0) << rootShift;
+	nl.SetRootMask(rootMask);
+
+	LOG("rootShift = %d, maxDepth = %d", rootShift, rootMask);
+	LOG("%s: %d root nodes allocated (%d x %d) mask: 0x%08x.", __func__
+			, numRootCount, (numRootCount/zRootNodes), zRootNodes, rootMask);
+
+	for (int i=0; i<numRootCount; ++i) {
+		nl.GetPoolNode(i)->SetNodeNumber(i << rootShift);
+		LOG("check %x (%x) == %x (%x)", i, i << rootShift
+			, (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift
+			, nl.GetPoolNode(i)->GetNodeNumber()
+			);
+		assert(i == (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift);
+	}
+	nl.SetRootNodeCountAndDimensions(numRootCount, (numRootCount/zRootNodes), zRootNodes);
 }
 
 
@@ -397,6 +495,8 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 // layer update scheme and during initialization; see ::TerrainChange
 void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
+
+	// LOG("%s: Starting update for %d", __func__, layerNum);
 
 	if (!IsFinalized())
 		return;
@@ -412,7 +512,6 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	// adjust the borders so we are not left with "rims" of
 	// impassable squares when eg. a structure is reclaimed
 	// SRectangle mr;
-	SRectangle ur(r);
 
 	// mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
 	// mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
@@ -426,8 +525,19 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	const bool wantTesselation = (layersInited || !haveCacheDir);
 	const bool needTesselation = nodeLayers[layerNum].Update(r, md);
 
+	// process the affected root nodes.
+
+	// LOG("%s: [%d] needTesselation=%d, wantTesselation=%d", __func__, layerNum, (int)needTesselation, (int)wantTesselation);
+
 	if (needTesselation && wantTesselation) {
-		nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
+		SRectangle ur(r.x1, r.z1, r.x2, r.z2);
+		auto& nodeLayer = nodeLayers[layerNum];
+		for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+			auto curRootNode = nodeLayer.GetPoolNode(i);
+			curRootNode->PreTesselate(nodeLayers[layerNum], r, ur, 0);
+		}
+
+		// nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
 
 		pathCache.SetLayerPathCount(layerNum, 200); // TODO sort out placeholder.
 		pathCache.MarkDeadPaths(r, layerNum);
@@ -455,87 +565,89 @@ std::string QTPFS::PathManager::GetCacheDirName(const std::string& mapCheckSumHe
 }
 
 void QTPFS::PathManager::Serialize(const std::string& cacheFileDir) {
-	std::vector<std::string> fileNames(nodeTrees.size(), "");
-	std::vector<std::fstream*> fileStreams(nodeTrees.size(), nullptr);
-	std::vector<unsigned int> fileSizes(nodeTrees.size(), 0);
+	// TODO: is this worth bothering with?
 
-	if (!haveCacheDir) {
-		FileSystem::CreateDirectory(cacheFileDir);
-		assert(FileSystem::DirExists(cacheFileDir));
-	}
+	// std::vector<std::string> fileNames(nodeTrees.size(), "");
+	// std::vector<std::fstream*> fileStreams(nodeTrees.size(), nullptr);
+	// std::vector<unsigned int> fileSizes(nodeTrees.size(), 0);
 
-	#ifndef NDEBUG
-	char loadMsg[512] = {'\0'};
-	const char* fmtString = "[PathManager::%s] serializing node-tree %u (%s)";
-	#endif
+	// if (!haveCacheDir) {
+	// 	FileSystem::CreateDirectory(cacheFileDir);
+	// 	assert(FileSystem::DirExists(cacheFileDir));
+	// }
 
-	// TODO: compress the tree cache-files?
-	for (unsigned int i = 0; i < nodeTrees.size(); i++) {
-		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
+	// #ifndef NDEBUG
+	// char loadMsg[512] = {'\0'};
+	// const char* fmtString = "[PathManager::%s] serializing node-tree %u (%s)";
+	// #endif
 
-		fileNames[i] = cacheFileDir + "tree" + IntToString(i, "%02x") + "-" + md->name;
-		fileStreams[i] = new std::fstream();
+	// // TODO: compress the tree cache-files?
+	// for (unsigned int i = 0; i < nodeTrees.size(); i++) {
+	// 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
 
-		if (haveCacheDir) {
-			#ifdef QTPFS_CACHE_XACCESS
-			{
-				// FIXME: lock fileNames[i] instead of doing this
-				// fstreams can not be easily locked however, see
-				// http://stackoverflow.com/questions/839856/
-				while (!FileSystem::FileExists(fileNames[i] + "-tmp")) {
-					spring::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
-				while (FileSystem::GetFileSize(fileNames[i] + "-tmp") != sizeof(unsigned int)) {
-					spring::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
+	// 	fileNames[i] = cacheFileDir + "tree" + IntToString(i, "%02x") + "-" + md->name;
+	// 	fileStreams[i] = new std::fstream();
 
-				fileStreams[i]->open((fileNames[i] + "-tmp").c_str(), std::ios::in | std::ios::binary);
-				fileStreams[i]->read(reinterpret_cast<char*>(&fileSizes[i]), sizeof(unsigned int));
-				fileStreams[i]->close();
+	// 	if (haveCacheDir) {
+	// 		#ifdef QTPFS_CACHE_XACCESS
+	// 		{
+	// 			// FIXME: lock fileNames[i] instead of doing this
+	// 			// fstreams can not be easily locked however, see
+	// 			// http://stackoverflow.com/questions/839856/
+	// 			while (!FileSystem::FileExists(fileNames[i] + "-tmp")) {
+	// 				spring::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// 			}
+	// 			while (FileSystem::GetFileSize(fileNames[i] + "-tmp") != sizeof(unsigned int)) {
+	// 				spring::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// 			}
 
-				while (!FileSystem::FileExists(fileNames[i])) {
-					spring::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
-				while (FileSystem::GetFileSize(fileNames[i]) != fileSizes[i]) {
-					spring::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
-			}
+	// 			fileStreams[i]->open((fileNames[i] + "-tmp").c_str(), std::ios::in | std::ios::binary);
+	// 			fileStreams[i]->read(reinterpret_cast<char*>(&fileSizes[i]), sizeof(unsigned int));
+	// 			fileStreams[i]->close();
 
-			#else
-			assert(FileSystem::FileExists(fileNames[i]));
-			#endif
+	// 			while (!FileSystem::FileExists(fileNames[i])) {
+	// 				spring::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// 			}
+	// 			while (FileSystem::GetFileSize(fileNames[i]) != fileSizes[i]) {
+	// 				spring::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// 			}
+	// 		}
 
-			// read fileNames[i] into nodeTrees[i]
-			fileStreams[i]->open(fileNames[i].c_str(), std::ios::in | std::ios::binary);
-			assert(fileStreams[i]->good());
-			assert(nodeTrees[i]->IsLeaf());
-		} else {
-			// write nodeTrees[i] into fileNames[i]
-			fileStreams[i]->open(fileNames[i].c_str(), std::ios::out | std::ios::binary);
-		}
+	// 		#else
+	// 		assert(FileSystem::FileExists(fileNames[i]));
+	// 		#endif
 
-		#ifndef NDEBUG
-		sprintf(loadMsg, fmtString, __func__, i, md->name.c_str());
-		pmLoadScreen.AddMessage(loadMsg);
-		#endif
+	// 		// read fileNames[i] into nodeTrees[i]
+	// 		fileStreams[i]->open(fileNames[i].c_str(), std::ios::in | std::ios::binary);
+	// 		assert(fileStreams[i]->good());
+	// 		assert(nodeTrees[i]->IsLeaf());
+	// 	} else {
+	// 		// write nodeTrees[i] into fileNames[i]
+	// 		fileStreams[i]->open(fileNames[i].c_str(), std::ios::out | std::ios::binary);
+	// 	}
 
-		nodeTrees[i]->Serialize(*fileStreams[i], nodeLayers[i], &fileSizes[i], 0, haveCacheDir);
+	// 	#ifndef NDEBUG
+	// 	sprintf(loadMsg, fmtString, __func__, i, md->name.c_str());
+	// 	pmLoadScreen.AddMessage(loadMsg);
+	// 	#endif
 
-		fileStreams[i]->flush();
-		fileStreams[i]->close();
+	// 	nodeTrees[i]->Serialize(*fileStreams[i], nodeLayers[i], &fileSizes[i], 0, haveCacheDir);
 
-		#ifdef QTPFS_CACHE_XACCESS
-		if (!haveCacheDir) {
-			// signal any other (concurrently loading) Spring processes; needed for validation-tests
-			fileStreams[i]->open((fileNames[i] + "-tmp").c_str(), std::ios::out | std::ios::binary);
-			fileStreams[i]->write(reinterpret_cast<const char*>(&fileSizes[i]), sizeof(unsigned int));
-			fileStreams[i]->flush();
-			fileStreams[i]->close();
-		}
-		#endif
+	// 	fileStreams[i]->flush();
+	// 	fileStreams[i]->close();
 
-		delete fileStreams[i];
-	}
+	// 	#ifdef QTPFS_CACHE_XACCESS
+	// 	if (!haveCacheDir) {
+	// 		// signal any other (concurrently loading) Spring processes; needed for validation-tests
+	// 		fileStreams[i]->open((fileNames[i] + "-tmp").c_str(), std::ios::out | std::ios::binary);
+	// 		fileStreams[i]->write(reinterpret_cast<const char*>(&fileSizes[i]), sizeof(unsigned int));
+	// 		fileStreams[i]->flush();
+	// 		fileStreams[i]->close();
+	// 	}
+	// 	#endif
+
+	// 	delete fileStreams[i];
+	// }
 }
 
 // note that this is called twice per object:
@@ -547,7 +659,7 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 	// if type is TERRAINCHANGE_OBJECT_INSERTED or TERRAINCHANGE_OBJECT_INSERTED_YM,
 	// this rectangle covers the yardmap of a CSolidObject* and will be tesselated to
 	// maximum depth automatically
-	numTerrainChanges += 1;
+	// numTerrainChanges += 1;
 
 	MapChanged(x1, z1, x2, z2);
 }
@@ -595,6 +707,8 @@ void QTPFS::PathManager::Update() {
 			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
 			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 			);
+
+		numTerrainChanges++;
 
 		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
 			UpdateNodeLayer(layerNum, rect);
@@ -720,7 +834,6 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 			if (search->PathWasFound()) {
 				registry.remove<PathIsTemp>(pathEntity);
 				registry.remove<PathIsDirty>(pathEntity);
-				// pathCache.AddLivePath(path);
 			} else {
 				DeletePath(path->GetID());
 			}
@@ -839,10 +952,6 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 		});
 	}
 }
-
-#include "Sim/Units/Unit.h"
-#include "Sim/Units/UnitDef.h"
-#include "Sim/MoveTypes/GroundMoveType.h"
 
 unsigned int QTPFS::PathManager::QueueSearch(
 	// const IPath* oldPath,

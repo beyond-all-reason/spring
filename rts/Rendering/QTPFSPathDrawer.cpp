@@ -66,7 +66,13 @@ void QTPFSPathDrawer::DrawAll() const {
 	visibleNodes.clear();
 	visibleNodes.reserve(256);
 
-	GetVisibleNodes(pm->GetNodeTree(md->pathType), pm->GetNodeLayer(md->pathType), visibleNodes);
+	auto& nodeLayer = pm->GetNodeLayer(md->pathType);
+	for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+		auto curRootNode = nodeLayer.GetPoolNode(i);
+		GetVisibleNodes(curRootNode, nodeLayer, visibleNodes);
+	}
+
+	// GetVisibleNodes(pm->GetNodeTree(md->pathType), pm->GetNodeLayer(md->pathType), visibleNodes);
 
 	if (!visibleNodes.empty()) {
 		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
@@ -108,11 +114,13 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 	for (const QTPFS::QTNode* node: nodes) {
 		const float3 pos = {xmidw * 1.0f, CGround::GetHeightReal(xmidw, zmidw, false) + 4.0f, zmidw * 1.0f};
 
-		if (pos.SqDistance(camera->GetPos()) >= Square(1000.0f))
+		// if (pos.SqDistance(camera->GetPos()) >= Square(1000.0f))
+		if (pos.SqDistance(camera->GetPos()) >= Square(10000.0f))
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
-		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		// font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
 	}
 
 	font->DrawWorldBuffered();

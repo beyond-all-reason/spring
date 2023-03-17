@@ -36,7 +36,7 @@ namespace QTPFS {
 		float2 GetNeighborEdgeTransitionPoint(const INode* ngb, const float3& pos, float alpha) const;
 		SRectangle ClipRectangle(const SRectangle& r) const;
 
-		unsigned int GetIndex() { return index; }
+		unsigned int GetIndex() const { return index; }
 
 	protected:
 		// NOTE:
@@ -74,8 +74,13 @@ namespace QTPFS {
 		// NOTE:
 		//     root-node identifier is always 0
 		//     <i> is a NODE_IDX index in [0, 3]
-		unsigned int GetChildID(unsigned int i) const { return (nodeNumber << 2) + (i + 1); }
-		unsigned int GetParentID() const { return ((nodeNumber - 1) >> 2); }
+		unsigned int GetChildID(unsigned int i, uint32_t rootMask) const {
+			uint32_t rootId = rootMask & nodeNumber;
+			uint32_t nodeId = ((~rootMask) & nodeNumber);
+			return rootId | ((nodeId << 2) + (i + 1));
+			// return (nodeNumber << 2) + (i + 1);
+		}
+		// unsigned int GetParentID() const { return ((nodeNumber - 1) >> 2); }
 
 		std::uint64_t GetMemFootPrint(const NodeLayer& nl) const;
 		std::uint64_t GetCheckSum(const NodeLayer& nl) const;
@@ -92,8 +97,8 @@ namespace QTPFS {
 
 		unsigned int GetMaxNumNeighbors() const;
 		unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&);
-		const std::vector<INode*>& GetNeighbors(const std::vector<INode*>&);
-		bool UpdateNeighborCache(const std::vector<INode*>& nodes);
+		const std::vector<INode*>& GetNeighbors(/*const std::vector<INode*>&*/);
+		bool UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer);
 
 		void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) { netpoints[ngbIdx] = point; }
 		const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const { return netpoints[ngbIdx]; }
@@ -125,7 +130,6 @@ namespace QTPFS {
 		static unsigned int MinSizeX() { return MIN_SIZE_X; }
 		static unsigned int MinSizeZ() { return MIN_SIZE_Z; }
 
-
 		const std::vector<INode*>& GetNeighbours() const {
 			return neighbors;
 		}
@@ -146,8 +150,11 @@ namespace QTPFS {
 
 		static unsigned int MIN_SIZE_X;
 		static unsigned int MIN_SIZE_Z;
+
+	public:
 		static unsigned int MAX_DEPTH;
 
+	private:
 		unsigned int _xminxmax = 0;
 		unsigned int _zminzmax = 0;
 
@@ -163,7 +170,6 @@ namespace QTPFS {
 		std::vector<INode*> neighbors;
 		std::vector<float2> netpoints;
 	};
-
 
 	struct SearchNode {
 

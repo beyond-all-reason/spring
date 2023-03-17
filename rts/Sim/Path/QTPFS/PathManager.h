@@ -73,7 +73,7 @@ namespace QTPFS {
 
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
-		const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
+		// const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
 		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 
 		const MapChangeTrack& GetMapChangeTrack() const { return mapChangeTrack; };
@@ -133,14 +133,15 @@ namespace QTPFS {
 			unsigned int pathType
 		);
 
-		bool IsFinalized() const { return (!nodeTrees.empty()); }
+		bool IsFinalized() const { return isFinalized; }
+			// return (!nodeTrees.empty()); }
 
 
 		std::string GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const;
 		void Serialize(const std::string& cacheFileDir);
 
 		static std::vector<NodeLayer> nodeLayers;
-		static std::vector<QTNode*> nodeTrees;
+		// static std::vector<QTNode*> nodeTrees;
 		PathCache pathCache;
 		static std::vector<PathSearch*> pathSearches;
 
@@ -178,6 +179,7 @@ namespace QTPFS {
 
 		bool layersInited;
 		bool haveCacheDir;
+		bool isFinalized = false;
 	};
 }
 

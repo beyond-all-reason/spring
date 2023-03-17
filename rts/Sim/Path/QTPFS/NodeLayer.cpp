@@ -304,6 +304,9 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsign
 
 	INode* n = nullptr;
 
+	// if (gs->frameNum > -1 && layerNumber == 2)
+	// 	LOG("%s: [%d] (%d,%d:%d,%d)", __func__, layerNumber, xmin, zmin, xmax, zmax);
+
 	for (int z = zmin; z < zmax; ) {
 		unsigned int zspan = zsize;
 
@@ -319,9 +322,49 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsign
 			//   during initialization, currMagicNum == 0 which nodes start with already 
 			//   (does not matter because prevMagicNum == -1, so updates are not no-ops)
 			n->SetMagicNumber(currMagicNum);
-			n->UpdateNeighborCache(nodeGrid);
+			n->UpdateNeighborCache(nodeGrid, layerNumber);
 		}
 
 		z += zspan;
 	}
+
+	// ------------------------------------------------------
+	// find all leaf nodes
+	// go through each level - check for children in area.
+	// std::vector<INode*> nodeGrid;
+	// nodeGrid.resize(ur.GetArea(), nullptr);
+
+	// std::vector<INode*> openNodes;
+	// std::vector<INode*> selectedNodes;
+	// openNodes.reserve(200);
+	// selectedNodes.reserve(200);
+	// openNodes.emplace_back(&rootNode);
+	// while (!openNodes.empty()) {
+	// 	INode* curNode = openNodes.back();
+	// 	openNodes.pop_back();
+
+	// 	if (curNode->IsLeaf()) {
+	// 		for (unsigned int hmz = curNode->zmin(); hmz < curNode->zmax(); hmz++) {
+	// 			for (unsigned int hmx = curNode->xmin(); hmx < curNode->xmax(); hmx++) {
+	// 				nodeGrid[hmz * xsize + hmx] = n;
+	// 			}
+	// 		}
+	// 		selectedNodes.emplace_back(curNode);
+	// 		continue;
+	// 	}
+
+	// 	for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
+	// 		int childIndex = curNode->GetChildBaseIndex() + i;
+	// 		INode* childNode = GetPoolNode(childIndex);
+
+	// 		if (xmax <= childNode->xmin()) { continue; }
+	// 		if (xmin >= childNode->xmax()) { continue; }
+	// 		if (zmax <= childNode->zmin()) { continue; }
+	// 		if (zmin >= childNode->zmax()) { continue; }
+
+	// 		openNodes.emplace_back();
+	// 	}
+	// }
+
+	// // now update the selected nodes
 }

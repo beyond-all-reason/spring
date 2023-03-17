@@ -127,7 +127,7 @@ namespace QTPFS {
 		void ResetState(SearchNode* node);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
 
-		void IterateNodes(const std::vector<INode*>& allNodes);
+		void IterateNodes();
 		void IterateNodeNeighbors(const std::vector<INode*>& nxtNodes);
 
 		void TracePath(IPath* path);

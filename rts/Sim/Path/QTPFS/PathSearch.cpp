@@ -121,7 +121,7 @@ bool QTPFS::PathSearch::Execute(
 	// 		);
 
 	while (!(*openNodes).empty()) {
-		IterateNodes(nodeLayer->GetNodes());
+		IterateNodes();
 
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		searchExec->AddIteration(searchIter);
@@ -195,9 +195,8 @@ void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, u
 	nextNode->SetNeighborEdgeTransitionPoint(netPoints[netPointIdx]);
 }
 
-void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
+void QTPFS::PathSearch::IterateNodes() {
 	SearchQueueNode curOpenNode = (*openNodes).top();
-	// curNode = allNodes[curOpenNode.nodeIndex];
 	curSearchNode = &searchThreadData->allSearchedNodes[curOpenNode.nodeIndex];
 	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
@@ -239,7 +238,7 @@ void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
 		minSearchNode = curSearchNode;
 	#endif
 
-	IterateNodeNeighbors(curNode->GetNeighbors(allNodes));
+	IterateNodeNeighbors(curNode->GetNeighbors());
 }
 
 void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes) {
