@@ -7,7 +7,7 @@
 #
 # Accepts input like this:
 # [code]
-# 	bool allowTeamColors;
+# 	bool requireSonarUnderWater;
 # 
 # 	// construction related fields
 # 	/// Should constructions without builders decay?
