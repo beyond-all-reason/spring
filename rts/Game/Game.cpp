@@ -1350,6 +1350,12 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	// set camera
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
 
+	if (unitTracker.Enabled())
+		unitTracker.SetCam();
+
+	camera->Update();
+	shadowHandler.Update();
+
 	lineDrawer.UpdateLineStipple();
 	{
 		worldDrawer.Update(newSimFrame);
@@ -1404,13 +1410,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		eventHandler.Update();
 	}
 
-	//TODO figure out the right order of operations
-	if (unitTracker.Enabled())
-		unitTracker.SetCam();
-
-	camera->Update();
 	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera
-	shadowHandler.Update();
 
 	//Update per-drawFrame UBO
 	UniformConstants::GetInstance().Update();
