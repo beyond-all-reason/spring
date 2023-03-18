@@ -33,7 +33,7 @@
 #include "System/FileSystem/VFSHandler.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 #include "System/SafeUtil.h"

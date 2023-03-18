@@ -33,7 +33,7 @@
 #include "System/TimeProfiler.h"
 #include "System/type2.h"
 #include "System/Sound/ISoundChannels.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 // #define PATHING_DEBUG
 
@@ -84,8 +84,8 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 
 #define MAXREVERSESPEED_MEMBER_IDX 7
 
-#define MEMBER_CHARPTR_HASH(memberName) HsiehHash(memberName, strlen(memberName),     0)
-#define MEMBER_LITERAL_HASH(memberName) HsiehHash(memberName, sizeof(memberName) - 1, 0)
+#define MEMBER_CHARPTR_HASH(memberName) spring::LiteHash(memberName, strlen(memberName),     0)
+#define MEMBER_LITERAL_HASH(memberName) spring::LiteHash(memberName, sizeof(memberName) - 1, 0)
 
 CR_BIND_DERIVED(CGroundMoveType, AMoveType, (nullptr))
 CR_REG_METADATA(CGroundMoveType, (

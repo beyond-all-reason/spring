@@ -12,7 +12,7 @@
 #include "creg_cond.h"
 #include "System/UnorderedMap.hpp"
 #include "System/StringUtil.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 
 using namespace creg;
@@ -223,8 +223,8 @@ void Class::CalculateChecksum(unsigned int& checksum)
 {
 	for (Member& m: members) {
 		checksum += m.flags;
-		checksum = HsiehHash(m.name, strlen(m.name), checksum);
-		checksum = HsiehHash(m.type->GetName().data(), m.type->GetName().size(), checksum);
+		checksum = spring::LiteHash(m.name, strlen(m.name), checksum);
+		checksum = spring::LiteHash(m.type->GetName().data(), m.type->GetName().size(), checksum);
 		checksum += m.type->GetSize();
 	}
 	if (base())

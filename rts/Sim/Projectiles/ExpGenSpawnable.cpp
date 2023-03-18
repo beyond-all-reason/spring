@@ -17,7 +17,7 @@
 #include "Rendering/Env/Particles/Classes/SpherePartProjectile.h"
 #include "Rendering/Env/Particles/Classes/TracerProjectile.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/TemplateUtils.hpp"
 #include "Sim/Misc/GlobalSynced.h"
 
@@ -101,10 +101,10 @@ void CExpGenSpawnable::UpdateAnimParams()
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	static const unsigned int memberHashes[] = {
-		HsiehHash(          "pos",  sizeof(          "pos") - 1, 0),
-		HsiehHash(        "speed",  sizeof(        "speed") - 1, 0),
-		HsiehHash(    "useairlos",  sizeof(    "useairlos") - 1, 0),
-		HsiehHash("alwaysvisible",  sizeof("alwaysvisible") - 1, 0),
+		spring::LiteHash(          "pos",  sizeof(          "pos") - 1, 0),
+		spring::LiteHash(        "speed",  sizeof(        "speed") - 1, 0),
+		spring::LiteHash(    "useairlos",  sizeof(    "useairlos") - 1, 0),
+		spring::LiteHash("alwaysvisible",  sizeof("alwaysvisible") - 1, 0),
 	};
 
 	CHECK_MEMBER_INFO_FLOAT3_HASH(CExpGenSpawnable, pos          , memberHashes[0])

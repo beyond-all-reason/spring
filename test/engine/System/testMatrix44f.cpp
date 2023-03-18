@@ -7,7 +7,7 @@
 #include "System/TimeProfiler.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 
 #define CATCH_CONFIG_MAIN
@@ -175,7 +175,7 @@ _noinline static int TestMMSpring()
 	for (int i = 0; i < testRuns; ++i) {
 		m1 = m1 * m;
 	}
-	return HsiehHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(m44), 0);
 }
 
 _noinline static int TestMMFpu()
@@ -185,7 +185,7 @@ _noinline static int TestMMFpu()
 	for (int i = 0; i < testRuns; ++i) {
 		MatrixMultSoft(&m1, m);
 	}
-	return HsiehHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(m44), 0);
 }
 
 _noinline static int TestMMSpring2()
@@ -195,7 +195,7 @@ _noinline static int TestMMSpring2()
 	for (int i = 0; i < testRuns; ++i) {
 		m1 <<= m;
 	}
-	return HsiehHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(m44), 0);
 }
 
 _noinline static int TestMMSSE()
@@ -205,7 +205,7 @@ _noinline static int TestMMSSE()
 	for (int i = 0; i < testRuns; ++i) {
 		MatrixMatrixMultiply(&m1, m);
 	}
-	return HsiehHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(m44), 0);
 }
 
 _noinline static int TestSpring()
@@ -216,7 +216,7 @@ _noinline static int TestSpring()
 		v_f += m * v_in;
 		v_in+= v_f;
 	}
-	return HsiehHash(&v_f, sizeof(float4), 0);
+	return spring::LiteHash(&v_f, sizeof(float4), 0);
 }
 
 _noinline static int TestFPU1()
@@ -228,7 +228,7 @@ _noinline static int TestFPU1()
 		v_f += v_out;
 		v_in+= v_f;
 	}
-	return HsiehHash(&v_f, sizeof(float4), 0);
+	return spring::LiteHash(&v_f, sizeof(float4), 0);
 }
 
 _noinline static int TestFPU2()
@@ -240,7 +240,7 @@ _noinline static int TestFPU2()
 		v_f += v_out;
 		v_in+= v_f;
 	}
-	return HsiehHash(&v_f, sizeof(float4), 0);
+	return spring::LiteHash(&v_f, sizeof(float4), 0);
 }
 
 _noinline static int TestSSE()
@@ -252,7 +252,7 @@ _noinline static int TestSSE()
 		v_f += v_out;
 		v_in+= v_f;
 	}
-	return HsiehHash(&v_f, sizeof(float4), 0);
+	return spring::LiteHash(&v_f, sizeof(float4), 0);
 }
 
 

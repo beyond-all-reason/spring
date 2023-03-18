@@ -5,11 +5,7 @@
 
 #ifdef SYNCCHECK
 
-#ifdef SYNC_HSIEH
-	#include "HsiehHash.h"
-#else
-	#include "System/SpringHash.h"
-#endif
+#include "System/SpringHash.h"
 
 #include <assert.h>
 
@@ -42,11 +38,7 @@ class CSyncChecker {
 #endif
 			// most common cases first, make it easy for compiler to optimize for it
 			// simple xor is not enough to detect multiple zeroes, e.g.
-#ifdef SYNC_HSIEH
-			g_checksum = HsiehHash((const char*)p, size, g_checksum);
-#else
-			g_checksum = spring::LiteHash((const char*)p, size, g_checksum);
-#endif
+			g_checksum = spring::LiteHash(p, size, g_checksum);
 			//LOG("[Sync::Checker] chksum=%u\n", g_checksum);
 		}
 

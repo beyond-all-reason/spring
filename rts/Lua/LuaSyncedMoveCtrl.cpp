@@ -18,7 +18,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/SpringMath.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 #include <cctype>
 
@@ -520,7 +520,7 @@ template<typename ValueType>
 static bool SetMoveTypeValue(AMoveType* mt, const char* key, ValueType val)
 {
 	// NOTE: only supports floats and bools, callee MUST reinterpret &val as float* or bool*
-	return (mt->SetMemberValue(HsiehHash(key, strlen(key), 0), &val));
+	return (mt->SetMemberValue(spring::LiteHash(key, strlen(key), 0), &val));
 }
 
 static inline bool SetMoveTypeValue(lua_State* L, AMoveType* moveType, int keyIdx, int valIdx)

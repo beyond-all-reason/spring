@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Rendering/Shaders/ShaderStates.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/UnorderedSet.hpp"
 
 
@@ -97,16 +97,16 @@ namespace Shader {
 		unsigned int hash = 997;
 
 		for (const auto& p: bitFlags) {
-			hash = HsiehHash(p.first.c_str(), p.first.size(), hash);
-			hash = HsiehHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
+			hash = spring::LiteHash(p.first.c_str(), p.first.size(), hash);
+			hash = spring::LiteHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
 		}
 		for (const auto& p: intFlags) {
-			hash = HsiehHash(p.first.c_str(), p.first.size(), hash);
-			hash = HsiehHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
+			hash = spring::LiteHash(p.first.c_str(), p.first.size(), hash);
+			hash = spring::LiteHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
 		}
 		for (const auto& p: fltFlags) {
-			hash = HsiehHash(p.first.c_str(), p.first.size(), hash);
-			hash = HsiehHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
+			hash = spring::LiteHash(p.first.c_str(), p.first.size(), hash);
+			hash = spring::LiteHash(reinterpret_cast<const uint8_t*>(&p.second), sizeof(p.second), hash);
 		}
 
 		assert(hash != 0);

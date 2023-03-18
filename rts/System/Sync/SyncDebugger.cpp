@@ -174,7 +174,7 @@ void CSyncDebugger::Backtrace(int index, const char* prefix) const
 
 unsigned CSyncDebugger::GetBacktraceChecksum(int index) const
 {
-	return HsiehHash((char *)historybt[index].bt, sizeof(void*) * historybt[index].bt_size, 0xf00dcafe);
+	return spring::LiteHash((char *)historybt[index].bt, sizeof(void*) * historybt[index].bt_size, 0xf00dcafe);
 }
 
 
@@ -300,9 +300,9 @@ void CSyncDebugger::ClientSendChecksumResponse()
 		unsigned checksum = 123456789;
 		for (unsigned j = 0; j < BLOCK_SIZE; ++j) {
 			if (historybt) {
-				checksum = HsiehHash((char*)&historybt[BLOCK_SIZE * i + j].data, sizeof(historybt[0].data), checksum);
+				checksum = spring::LiteHash((char*)&historybt[BLOCK_SIZE * i + j].data, sizeof(historybt[0].data), checksum);
 			} else {
-				checksum = HsiehHash((char*)&history[BLOCK_SIZE * i + j].data, sizeof(history[0].data), checksum);
+				checksum = spring::LiteHash((char*)&history[BLOCK_SIZE * i + j].data, sizeof(history[0].data), checksum);
 			}
 		}
 		checksums.push_back(checksum);

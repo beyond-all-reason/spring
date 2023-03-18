@@ -13,7 +13,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Platform/byteorder.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 
 
@@ -311,7 +311,7 @@ void S3DOPiece::GetPrimitives(
 		std::copy(sp.indices.begin(), sp.indices.end(), sortedVerts.begin());
 		std::sort(sortedVerts.begin(), sortedVerts.end());
 
-		const int vertHash = HsiehHash(&sortedVerts[0], sortedVerts.size() * sizeof(sortedVerts[0]), 0x123456);
+		const int vertHash = spring::LiteHash(&sortedVerts[0], sortedVerts.size() * sizeof(sortedVerts[0]), 0x123456);
 
 		const auto phi = prevHashes.find(vertHash);
 		if (phi != prevHashes.end()) {

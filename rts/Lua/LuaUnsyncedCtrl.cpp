@@ -87,7 +87,7 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Platform/WindowManagerHelper.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/LoadLock.h"
 
 
