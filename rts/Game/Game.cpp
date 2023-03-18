@@ -1350,21 +1350,9 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	// set camera
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
 
-	if (unitTracker.Enabled())
-		unitTracker.SetCam();
-
-	camera->Update();
-	shadowHandler.Update();
-
 	lineDrawer.UpdateLineStipple();
-	{
-		worldDrawer.Update(newSimFrame);
-		matrixUploader.Update();
-		modelsUniformsUploader.Update();
 
-		CNamedTextures::Update();
-		//CFontTexture::Update();
-	}
+	CNamedTextures::Update();
 
 	// always update InfoTexture and SoundListener at <= 30Hz (even when paused)
 	if (newSimFrame || forceUpdate) {
@@ -1408,6 +1396,17 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	{
 		SCOPED_TIMER("Update::EventHandler");
 		eventHandler.Update();
+	}
+
+	if (unitTracker.Enabled())
+		unitTracker.SetCam();
+
+	camera->Update();
+	shadowHandler.Update();
+	{
+		worldDrawer.Update(newSimFrame);
+		matrixUploader.Update();
+		modelsUniformsUploader.Update();
 	}
 
 	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera
