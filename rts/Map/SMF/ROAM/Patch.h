@@ -194,6 +194,7 @@ private:
 	// world-coordinate offsets of this patch
 	int2 coors = {-1, -1};
 
+	int sumAffectedArea = 0;
 
 	TriTreeNode baseLeft;  // left base-triangle tree node
 	TriTreeNode baseRight; // right base-triangle tree node

@@ -71,7 +71,7 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 
 	for (uint32_t lod = 0; lod < LOD_LEVELS; lod++) {
 		const uint32_t lodStep = 1 << lod;
-		const size_t numVert = (PATCH_SIZE / lodStep + 1);
+		const size_t numVert = (PATCH_SIZE / lodStep + 1) * 2;
 		const size_t numIndx = (PATCH_SIZE / lodStep    ) * 6;
 		for (uint32_t b = MAP_BORDER_L; b < MAP_BORDER_C; b++) {
 			auto& borderRenderBuffer = borderRenderBuffers[lod * static_cast<uint32_t>(MAP_BORDER_C) + static_cast<uint32_t>(b)];

@@ -18,6 +18,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/ThreadPool.h"
+#include "xsimd/xsimd.hpp"
 
 #include <climits>
 #include <array>
@@ -169,23 +170,23 @@ void Patch::Reset()
 
 void Patch::UpdateHeightMap(const SRectangle& rect)
 {
+	sumAffectedArea += (rect.GetWidth() + 1) * (rect.GetHeight() + 1);
+
+	if (sumAffectedArea * 5 < Square(PATCH_SIZE + 1))
+		return;
+
+	// consider X * 5 == 20% of area affected by heightmap changes to be enough to warrant midPos.y recalc
+
+	sumAffectedArea = 0;
+
+	float sumHeight = 0.0f;
 	const float* hMap = readMap->GetCornerHeightMapUnsynced();
-
-	float averageHeight = 0;
-
-	for (int z = rect.z1; z <= rect.z2; z++) {
-		for (int x = rect.x1; x <= rect.x2; x++) {
-			const int vindex = (z * (PATCH_SIZE + 1) + x) * 3;
-
-			const int xw = x + coors.x;
-			const int zw = z + coors.y;
-
-			const float height = hMap[zw * mapDims.mapxp1 + xw];
-			averageHeight += height;
-		}
+	for (int z = 0; z <= PATCH_SIZE; z++) {
+		const int zw = z + coors.y;
+		sumHeight += xsimd::reduce(&hMap[zw * mapDims.mapxp1 + coors.x], &hMap[zw * mapDims.mapxp1 + coors.x + PATCH_SIZE + 1], 0.0f);
 	}
 
-	midPos.y = averageHeight/((PATCH_SIZE+1)*(PATCH_SIZE+1));
+	midPos.y = sumHeight / Square(PATCH_SIZE + 1);
 	isDirty = true;
 }
 
@@ -447,14 +448,14 @@ void Patch::RecursRender(const TriTreeNode* tri, const int2 left, const int2 rig
 			const int2 baseNeighborApex = left + right - apex;
 
 			if (baseNeighborApex.x >= 0 && baseNeighborApex.y >= 0 && baseNeighborApex.x < PATCH_SIZE + 1 && baseNeighborApex.y < PATCH_SIZE + 1) {
-				const float apexHeight = vertices[apexIndex].y;
-				const float leftHeight = vertices[leftIndex].y;
-				const float rightHeight = vertices[rightIndex].y;
+				const float apexHeight = GetHeight(apex);
+				const float leftHeight = GetHeight(left);
+				const float rightHeight = GetHeight(right);
 
 				float heightDiff = std::abs(leftHeight - rightHeight);
 
 				const int baseNeighborApexIndex = baseNeighborApex.x + baseNeighborApex.y * (PATCH_SIZE + 1);
-				const float baseNeighborApexHeight = vertices[baseNeighborApexIndex].y;
+				const float baseNeighborApexHeight = GetHeight(baseNeighborApex);
 
 				float heightDiff2 = std::abs(apexHeight - baseNeighborApexHeight);
 
@@ -489,8 +490,8 @@ void Patch::GenerateIndices()
 
 float Patch::GetHeight(int2 pos)
 {
-	const int vindex = (pos.y * (PATCH_SIZE + 1) + pos.x);
-	return readMap->GetCornerHeightMapUnsynced()[(coors.y + pos.y) * mapDims.mapxp1 + (coors.x + pos.x)];
+	const auto* uhm = readMap->GetCornerHeightMapUnsynced();
+	return uhm[(coors.y + pos.y) * mapDims.mapxp1 + (coors.x + pos.x)];
 }
 
 // ---------------------------------------------------------------------
