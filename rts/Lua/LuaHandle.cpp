@@ -2379,6 +2379,11 @@ DRAW_CALLIN(DrawPreDecals)
  */
 DRAW_CALLIN(DrawWorldPreParticles)
 
+/***
+ * @function DrawWaterPost
+ */
+DRAW_CALLIN(DrawWaterPost)
+
 /*** Invoked after semi-transparent shadows pass is about to conclude
  * @function DrawShadowPassTransparent
  *

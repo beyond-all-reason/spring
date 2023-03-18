@@ -65,6 +65,7 @@ class LuaOpenGL {
 
 		NOOP_STATE_FUNCS(DrawPreDecals)
 		NOOP_STATE_FUNCS(DrawWorldPreParticles)
+		NOOP_STATE_FUNCS(DrawWaterPost)
 
 		static void EnableDrawWorldShadow();
 		static void ResetDrawWorldShadow();

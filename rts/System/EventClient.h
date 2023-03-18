@@ -325,6 +325,7 @@ class CEventClient
 		virtual void DrawWorldPreUnit() {}
 		virtual void DrawPreDecals() {}
 		virtual void DrawWorldPreParticles() {}
+		virtual void DrawWaterPost() {}
 		virtual void DrawWorldShadow() {}
 		virtual void DrawShadowPassTransparent() {}
 		virtual void DrawWorldReflection() {}

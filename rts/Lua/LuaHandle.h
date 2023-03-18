@@ -237,6 +237,7 @@ class CLuaHandle : public CEventClient
 		void DrawWorldPreUnit() override;
 		void DrawPreDecals() override;
 		void DrawWorldPreParticles() override;
+		void DrawWaterPost() override;
 		void DrawWorldShadow() override;
 		void DrawShadowPassTransparent() override;
 		void DrawWorldReflection() override;
