@@ -8,7 +8,7 @@
 
 #include <array>
 #include <string>
-
+#include <cassert>
 
 template<class TActionExecutor>
 class IGameCommands
