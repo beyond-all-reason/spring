@@ -19,7 +19,7 @@
 #include "System/SpringMath.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS  = 2560;
+constexpr int MAX_MODEL_OBJECTS  = 3840;
 constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
