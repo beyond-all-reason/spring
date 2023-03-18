@@ -44,7 +44,7 @@ public:
 
 	static void PutBufferLocks();
 
-	IStreamBufferConcept(StreamBufferCreationParams p, std::string_view bufferTypeName);
+	IStreamBufferConcept(IStreamBufferConcept::StreamBufferCreationParams p, std::string_view bufferTypeName);
 	virtual ~IStreamBufferConcept() {}
 
 	uint32_t GetAlignedByteSize(uint32_t byteSizeRaw);
@@ -86,9 +86,9 @@ public:
 template<typename T>
 class IStreamBuffer : public IStreamBufferConcept {
 public:
-	static std::unique_ptr<IStreamBuffer<T>> CreateInstance(StreamBufferCreationParams p);
+	static std::unique_ptr<IStreamBuffer<T>> CreateInstance(IStreamBufferConcept::StreamBufferCreationParams p);
 public:
-	IStreamBuffer(StreamBufferCreationParams p, std::string_view bufferTypeName)
+	IStreamBuffer(IStreamBufferConcept::StreamBufferCreationParams p, std::string_view bufferTypeName)
 		: IStreamBufferConcept(p, bufferTypeName)
 	{}
 
@@ -128,7 +128,7 @@ public:
 template<typename T>
 class BufferDataImpl : public IStreamBuffer<T> {
 public:
-	BufferDataImpl(StreamBufferCreationParams p)
+	BufferDataImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, clientMem { false }
 		, buffer{ nullptr }
@@ -194,7 +194,7 @@ private:
 template<typename T>
 class BufferSubDataImpl : public IStreamBuffer<T> {
 public:
-	BufferSubDataImpl(StreamBufferCreationParams p)
+	BufferSubDataImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, clientMem{ false }
 		, buffer{ nullptr }
@@ -259,7 +259,7 @@ private:
 template<typename T>
 class MapAndOrphanImpl : public IStreamBuffer<T> {
 public:
-	MapAndOrphanImpl(StreamBufferCreationParams p)
+	MapAndOrphanImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 	{
 		Init();
@@ -317,7 +317,7 @@ private:
 template<typename T>
 class MapAndSyncImpl : public IStreamBuffer<T> {
 public:
-	MapAndSyncImpl(StreamBufferCreationParams p)
+	MapAndSyncImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, numBuffers{ p.numBuffers }
 		, coherent{ p.coherent }
@@ -394,7 +394,7 @@ private:
 template<typename T>
 class PersistentMapImpl : public IStreamBuffer<T> {
 public:
-	PersistentMapImpl(StreamBufferCreationParams p)
+	PersistentMapImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, numBuffers{ p.numBuffers }
 		, ptrBase{ nullptr }
@@ -485,7 +485,7 @@ private:
 template<typename T>
 class PinnedMemoryAMDImpl : public IStreamBuffer<T> {
 public:
-	PinnedMemoryAMDImpl(StreamBufferCreationParams p)
+	PinnedMemoryAMDImpl(IStreamBufferConcept::StreamBufferCreationParams p)
 		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, numBuffers{ p.numBuffers }
 	{
@@ -556,7 +556,7 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template<typename T>
-inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(StreamBufferCreationParams p)
+inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(IStreamBufferConcept::StreamBufferCreationParams p)
 {
 	IStreamBufferConcept::reportType = (p.type == SB_AUTODETECT);
 
