@@ -140,7 +140,9 @@ bool CPathEstimator::SetStartBlock(
 
 			return std::make_tuple(BlockPosToIdx(blockPos), distSq);
 		};
-	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist{ std::make_tuple(std::numeric_limits<int>::max(), std::numeric_limits<float>::infinity()) };
+	std::array< std::tuple<int, float>, maxBlocksToCheck > blockIdsByDist;
+	blockIdsByDist.fill( std::make_tuple(std::numeric_limits<int>::max(), std::numeric_limits<float>::infinity()) );
+
 	blockIdsByDist[blocksToCheck++] = buildBlock(nearestBlock);
 
 	for (std::uint32_t i = 0; i < PATH_DIRECTIONS; ++i){
