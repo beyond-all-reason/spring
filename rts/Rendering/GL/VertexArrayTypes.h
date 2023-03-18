@@ -11,7 +11,9 @@
 #include <array>
 #include <string>
 
-#define VA_TYPE_OFFSET(T, m) reinterpret_cast<const void*>(offsetof(T, m))
+// Workaround
+// warning: 'offsetof' within non-standard-layout type 'VA_TYPE_**' is conditionally-supported [-Winvalid-offsetof]
+#define VA_TYPE_OFFSET(T, m) (reinterpret_cast<const void*>( &(reinterpret_cast<const T*>(0)->m) ))
 
 struct AttributeDef {
 	AttributeDef(uint32_t index_, uint32_t count_, uint32_t type_, uint32_t stride_, const void* data_, bool normalize_ = false, std::string name_ = "")
