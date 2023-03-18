@@ -139,7 +139,6 @@ bool QTPFS::PathSearch::Execute(
 	// if (srcNode->GetMoveCost() == 0.0f)
 	// 	srcNode->SetMoveCost(QTPFS_POSITIVE_INFINITY);
 
-
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result
 	// NOTE:

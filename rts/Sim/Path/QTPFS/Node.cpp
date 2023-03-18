@@ -532,7 +532,7 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	if (!registerNode)
 		return;
 
-	nl.RegisterNode(this);
+	// nl.RegisterNode(this);
 }
 
 bool QTPFS::QTNode::UpdateMoveCost(
@@ -699,7 +699,7 @@ void QTPFS::QTNode::Serialize(std::fstream& fStream, NodeLayer& nodeLayer, unsig
 			Split(nodeLayer, depth, true);
 		} else {
 			// node was a leaf in an earlier life, register it
-			nodeLayer.RegisterNode(this);
+			// nodeLayer.RegisterNode(this);
 		}
 	} else {
 		fStream.write(reinterpret_cast<const char*>(&nodeNumber), sizeof(unsigned int));
@@ -741,9 +741,10 @@ const std::vector<QTPFS::INode*>& QTPFS::QTNode::GetNeighbors(/*const std::vecto
 // this is *either* called from ::GetNeighbors when the conservative
 // update-scheme is enabled, *or* from PM::ExecQueuedNodeLayerUpdates
 // (never both)
-bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer) {
+// bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer) {
+bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 	assert(IsLeaf());
-	assert(!nodes.empty());
+	// assert(!nodes.empty());
 	// if (gs->frameNum > -1 && nodeLayer == 2)
 	// 	LOG("%s: [%d] %d != %d", __func__, index, prevMagicNum, currMagicNum);
 	if (prevMagicNum != currMagicNum) {
@@ -773,7 +774,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 
 				// walk along EDGE_L (west) neighbors
 				for (unsigned int hmz = zmin(); hmz < zmax(); ) {
-					ngb = nodes[hmz * mapDims.mapx + hmx];
+					// ngb = nodes[hmz * mapDims.mapx + hmx];
+					ngb = nodeLayer.GetNode(hmx, hmz);
 					hmz = ngb->zmax();
 
 					neighbors.push_back(ngb);
@@ -801,7 +803,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 
 				// walk along EDGE_R (east) neighbors
 				for (unsigned int hmz = zmin(); hmz < zmax(); ) {
-					ngb = nodes[hmz * mapDims.mapx + hmx];
+					// ngb = nodes[hmz * mapDims.mapx + hmx];
+					ngb = nodeLayer.GetNode(hmx, hmz);
 					hmz = ngb->zmax();
 
 					neighbors.push_back(ngb);
@@ -830,7 +833,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 
 				// walk along EDGE_T (north) neighbors
 				for (unsigned int hmx = xmin(); hmx < xmax(); ) {
-					ngb = nodes[hmz * mapDims.mapx + hmx];
+					// ngb = nodes[hmz * mapDims.mapx + hmx];
+					ngb = nodeLayer.GetNode(hmx, hmz);
 					hmx = ngb->xmax();
 
 					neighbors.push_back(ngb);
@@ -858,7 +862,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 
 				// walk along EDGE_B (south) neighbors
 				for (unsigned int hmx = xmin(); hmx < xmax(); ) {
-					ngb = nodes[hmz * mapDims.mapx + hmx];
+					// ngb = nodes[hmz * mapDims.mapx + hmx];
+					ngb = nodeLayer.GetNode(hmx, hmz);
 					hmx = ngb->xmax();
 
 					neighbors.push_back(ngb);
@@ -886,9 +891,13 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 			// top- and bottom-left corners
 			if ((ngbRels & REL_NGB_EDGE_L) != 0) {
 				if ((ngbRels & REL_NGB_EDGE_T) != 0) {
-					const INode* ngbL = nodes[(zmin() + 0) * mapDims.mapx + (xmin() - 1)];
-					const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmin() + 0)];
-						  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmin() - 1)];
+					// const INode* ngbL = nodes[(zmin() + 0) * mapDims.mapx + (xmin() - 1)];
+					// const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmin() + 0)];
+					// 	  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmin() - 1)];
+
+					const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmin() + 0);
+					const INode* ngbT = nodeLayer.GetNode(xmin() + 0, zmin() - 1);
+						  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmin() - 1);
 
 					// VERT_TL ngb must be distinct from EDGE_L and EDGE_T ngbs
 					if (ngbC != ngbL && ngbC != ngbT) {
@@ -909,9 +918,13 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 					}
 				}
 				if ((ngbRels & REL_NGB_EDGE_B) != 0) {
-					const INode* ngbL = nodes[(zmax() - 1) * mapDims.mapx + (xmin() - 1)];
-					const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmin() + 0)];
-						  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmin() - 1)];
+					// const INode* ngbL = nodes[(zmax() - 1) * mapDims.mapx + (xmin() - 1)];
+					// const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmin() + 0)];
+					// 	  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmin() - 1)];
+
+					const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmax() - 1);
+					const INode* ngbB = nodeLayer.GetNode(xmin() + 0, zmax() + 0);
+						  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmax() + 0);
 
 					// VERT_BL ngb must be distinct from EDGE_L and EDGE_B ngbs
 					if (ngbC != ngbL && ngbC != ngbB) {
@@ -936,9 +949,13 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 			// top- and bottom-right corners
 			if ((ngbRels & REL_NGB_EDGE_R) != 0) {
 				if ((ngbRels & REL_NGB_EDGE_T) != 0) {
-					const INode* ngbR = nodes[(zmin() + 0) * mapDims.mapx + (xmax() + 0)];
-					const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmax() - 1)];
-						  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmax() + 0)];
+					// const INode* ngbR = nodes[(zmin() + 0) * mapDims.mapx + (xmax() + 0)];
+					// const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmax() - 1)];
+					// 	  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmax() + 0)];
+
+					const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmin() + 0);
+					const INode* ngbT = nodeLayer.GetNode(xmax() - 1, zmin() - 1);
+						  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmin() - 1);
 
 					// VERT_TR ngb must be distinct from EDGE_R and EDGE_T ngbs
 					if (ngbC != ngbR && ngbC != ngbT) {
@@ -959,9 +976,13 @@ bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int no
 					}
 				}
 				if ((ngbRels & REL_NGB_EDGE_B) != 0) {
-					const INode* ngbR = nodes[(zmax() - 1) * mapDims.mapx + (xmax() + 0)];
-					const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmax() - 1)];
-						  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmax() + 0)];
+					// const INode* ngbR = nodes[(zmax() - 1) * mapDims.mapx + (xmax() + 0)];
+					// const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmax() - 1)];
+					// 	  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmax() + 0)];
+
+					const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmax() - 1);
+					const INode* ngbB = nodeLayer.GetNode(xmax() - 1, zmax() + 0);
+						  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmax() + 0);
 
 					// VERT_BR ngb must be distinct from EDGE_R and EDGE_B ngbs
 					if (ngbC != ngbR && ngbC != ngbB) {

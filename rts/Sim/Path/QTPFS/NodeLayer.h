@@ -15,6 +15,7 @@
 #include "PathDefines.h"
 
 #include "System/Log/ILog.h"
+#include "System/Rectangle.h"
 
 #include "Registry.h"
 
@@ -86,7 +87,7 @@ namespace QTPFS {
 			// 		, curNode->GetIndex()
 			// 		, nodeGrid[z * xsize + x]->GetIndex()
 			// 		);
-			assert(curNode == nodeGrid[z * xsize + x]);
+			// assert(curNode == nodeGrid[z * xsize + x]);
 			return curNode;
 		}
 		INode* GetNode(unsigned int x, unsigned int z) {
@@ -131,7 +132,7 @@ namespace QTPFS {
 
 		// std::vector<INode*>& GetNodes() { return nodeGrid; }
 
-		void RegisterNode(INode* n);
+		// void RegisterNode(INode* n);
 
 		void SetNumLeafNodes(unsigned int n) { numLeafNodes = n; }
 		unsigned int GetNumLeafNodes() const { return numLeafNodes; }
@@ -178,8 +179,12 @@ namespace QTPFS {
 			return layerNumber;
 		}
 
+		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
+
+		void UpdateNeighborCache(INode* node, int sidesToUpData);
+
 	private:
-		std::vector<INode*> nodeGrid;
+		// std::vector<INode*> nodeGrid;
 
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;

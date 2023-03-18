@@ -453,7 +453,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	for (int z = r.z1; z < r.z2; z += rootSize) {
 		for (int x = r.x1; x < r.x2; x += rootSize) {
 			int idx = nl.AllocPoolNode(nullptr, -1, x, z, x + rootSize, z + rootSize);
-			nl.RegisterNode(nl.GetPoolNode(idx));
+			// nl.RegisterNode(nl.GetPoolNode(idx));
 
 			LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
 					, idx, x, z, x + rootSize, z + rootSize);

@@ -24,13 +24,13 @@ void QTPFS::NodeLayer::InitStatic() {
 	MAX_SPEEDMOD_VALUE = std::min(8.0f, mapInfo->pfs.qtpfs_constants.maxSpeedModVal);
 }
 
-void QTPFS::NodeLayer::RegisterNode(INode* n) {
-	for (unsigned int hmz = n->zmin(); hmz < n->zmax(); hmz++) {
-		for (unsigned int hmx = n->xmin(); hmx < n->xmax(); hmx++) {
-			nodeGrid[hmz * xsize + hmx] = n;
-		}
-	}
-}
+// void QTPFS::NodeLayer::RegisterNode(INode* n) {
+// 	for (unsigned int hmz = n->zmin(); hmz < n->zmax(); hmz++) {
+// 		for (unsigned int hmx = n->xmin(); hmx < n->xmax(); hmx++) {
+// 			nodeGrid[hmz * xsize + hmx] = n;
+// 		}
+// 	}
+// }
 
 void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 	assert((QTPFS::NodeLayer::NUM_SPEEDMOD_BINS + 1) <= MaxSpeedBinTypeValue());
@@ -42,7 +42,7 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 	xsize = mapDims.mapx;
 	zsize = mapDims.mapy;
 
-	nodeGrid.resize(xsize * zsize, nullptr);
+	// nodeGrid.resize(xsize * zsize, nullptr);
 
 	{
 		// chunks are reserved OTF
@@ -60,7 +60,7 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 }
 
 void QTPFS::NodeLayer::Clear() {
-	nodeGrid.clear();
+	// nodeGrid.clear();
 
 	curSpeedMods.clear();
 	// oldSpeedMods.clear();
@@ -295,76 +295,122 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, un
 #endif
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum) {
-	assert(!nodeGrid.empty());
+	// assert(!nodeGrid.empty());
 
 	// account for the rim of nodes around the bounding box
 	// (whose neighbors also changed during re-tesselation)
 	const int xmin = std::max(ur.x1 - 1, 0), xmax = std::min(ur.x2 + 1, mapDims.mapx);
 	const int zmin = std::max(ur.z1 - 1, 0), zmax = std::min(ur.z2 + 1, mapDims.mapy);
 
-	INode* n = nullptr;
+	// INode* n = nullptr;
 
 	// if (gs->frameNum > -1 && layerNumber == 2)
 	// 	LOG("%s: [%d] (%d,%d:%d,%d)", __func__, layerNumber, xmin, zmin, xmax, zmax);
 
-	for (int z = zmin; z < zmax; ) {
-		unsigned int zspan = zsize;
+	// for (int z = zmin; z < zmax; ) {
+	// 	unsigned int zspan = zsize;
 
-		for (int x = xmin; x < xmax; ) {
-			n = nodeGrid[z * xsize + x];
-			x = n->xmax();
+	// 	for (int x = xmin; x < xmax; ) {
+	// 		n = nodeGrid[z * xsize + x];
+	// 		x = n->xmax();
 
-			// calculate largest safe z-increment along this row
-			zspan = std::min(zspan, n->zmax() - z);
-			zspan = std::max(zspan, 1u);
+	// 		// calculate largest safe z-increment along this row
+	// 		zspan = std::min(zspan, n->zmax() - z);
+	// 		zspan = std::max(zspan, 1u);
 
-			// NOTE:
-			//   during initialization, currMagicNum == 0 which nodes start with already 
-			//   (does not matter because prevMagicNum == -1, so updates are not no-ops)
-			n->SetMagicNumber(currMagicNum);
-			n->UpdateNeighborCache(nodeGrid, layerNumber);
-		}
+	// 		// NOTE:
+	// 		//   during initialization, currMagicNum == 0 which nodes start with already 
+	// 		//   (does not matter because prevMagicNum == -1, so updates are not no-ops)
+	// 		n->SetMagicNumber(currMagicNum);
+	// 		n->UpdateNeighborCache(nodeGrid, layerNumber);
+	// 	}
 
-		z += zspan;
-	}
+	// 	z += zspan;
+	// }
 
 	// ------------------------------------------------------
 	// find all leaf nodes
 	// go through each level - check for children in area.
-	// std::vector<INode*> nodeGrid;
-	// nodeGrid.resize(ur.GetArea(), nullptr);
+	// TODO: move this to per thread struct to reduce memory allocations.
+	std::vector<INode*> selectedNodes;
+	selectedNodes.reserve(200);
 
-	// std::vector<INode*> openNodes;
-	// std::vector<INode*> selectedNodes;
-	// openNodes.reserve(200);
-	// selectedNodes.reserve(200);
-	// openNodes.emplace_back(&rootNode);
-	// while (!openNodes.empty()) {
-	// 	INode* curNode = openNodes.back();
-	// 	openNodes.pop_back();
+	SRectangle searchArea(xmin, zmin, xmax, zmax);
+	GetNodesInArea(searchArea, selectedNodes);
 
-	// 	if (curNode->IsLeaf()) {
-	// 		for (unsigned int hmz = curNode->zmin(); hmz < curNode->zmax(); hmz++) {
-	// 			for (unsigned int hmx = curNode->xmin(); hmx < curNode->xmax(); hmx++) {
-	// 				nodeGrid[hmz * xsize + hmx] = n;
-	// 			}
-	// 		}
-	// 		selectedNodes.emplace_back(curNode);
-	// 		continue;
-	// 	}
+	// TODO: nodes on the outer edges of the change only need to update a limited set of points.
+	// now update the selected nodes
+	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, currMagicNum](INode* curNode){
+		// const int xmin = std::max((int)curNode->xmin() - 1, 0), xmax = std::min((int)curNode->xmax() + 1, mapDims.mapx);
+		// const int zmin = std::max((int)curNode->zmin() - 1, 0), zmax = std::min((int)curNode->zmax() + 1, mapDims.mapy);
+		curNode->SetMagicNumber(currMagicNum);
+		curNode->UpdateNeighborCache(*this);
+		// UpdateNeighborCache(curNode, 0xfff);
+	});
+}
 
-	// 	for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
-	// 		int childIndex = curNode->GetChildBaseIndex() + i;
-	// 		INode* childNode = GetPoolNode(childIndex);
+void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound) {
+	std::vector<INode*> openNodes;
+	openNodes.reserve(200);
+	openNodes.clear();
 
-	// 		if (xmax <= childNode->xmin()) { continue; }
-	// 		if (xmin >= childNode->xmax()) { continue; }
-	// 		if (zmax <= childNode->zmin()) { continue; }
-	// 		if (zmin >= childNode->zmax()) { continue; }
+	nodesFound.clear();
 
-	// 		openNodes.emplace_back();
-	// 	}
-	// }
+	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
+	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
 
-	// // now update the selected nodes
+	for (int i = 0; i<numRootNodes; ++i) {
+		INode* curNode = GetPoolNode(i);
+
+		if (xmax <= curNode->xmin()) { continue; }
+		if (xmin >= curNode->xmax()) { continue; }
+		if (zmax <= curNode->zmin()) { continue; }
+		if (zmin >= curNode->zmax()) { continue; }
+
+		openNodes.emplace_back(curNode);
+
+		// if (layerNumber == 2)
+			// LOG("%s: [%d] added node %08x", __func__, layerNumber, curNode->GetNodeNumber());
+	}
+
+	while (!openNodes.empty()) {
+		INode* curNode = openNodes.back();
+		openNodes.pop_back();
+
+		// if (layerNumber == 2)
+			// LOG("%s: [%d] processing node %08x", __func__, layerNumber, curNode->GetNodeNumber());
+
+		if (curNode->IsLeaf()) {
+			nodesFound.emplace_back(curNode);
+			continue;
+		}
+
+		for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
+			int childIndex = curNode->GetChildBaseIndex() + i;
+			INode* childNode = GetPoolNode(childIndex);
+
+			if (xmax <= childNode->xmin()) { continue; }
+			if (xmin >= childNode->xmax()) { continue; }
+			if (zmax <= childNode->zmin()) { continue; }
+			if (zmin >= childNode->zmax()) { continue; }
+
+			openNodes.emplace_back(childNode);
+
+			// if (layerNumber == 2)
+				// LOG("%s: [%d] added child node %08x", __func__, layerNumber, childNode->GetNodeNumber());
+		}
+	}
+}
+
+void QTPFS::NodeLayer::UpdateNeighborCache(INode* node, int sidesToUpData) {
+	// node->GetNeighborRelation();
+
+	if ((node->xmin() > 0) && (sidesToUpData & REL_NGB_EDGE_L)) {
+		int hmx = node->xmin() - 1;
+		for (int hmz = node->zmin(); hmz < node->zmax(); ) {
+			INode* nn = GetNode(hmx, hmz);
+
+			hmz = nn->zmax();
+		}
+	}
 }

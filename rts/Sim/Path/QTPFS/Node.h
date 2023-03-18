@@ -98,7 +98,8 @@ namespace QTPFS {
 		unsigned int GetMaxNumNeighbors() const;
 		unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&);
 		const std::vector<INode*>& GetNeighbors(/*const std::vector<INode*>&*/);
-		bool UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer);
+		// bool UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer);
+		bool UpdateNeighborCache(NodeLayer& nodeLayer);
 
 		void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) { netpoints[ngbIdx] = point; }
 		const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const { return netpoints[ngbIdx]; }
