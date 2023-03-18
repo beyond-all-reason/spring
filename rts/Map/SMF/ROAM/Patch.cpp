@@ -115,8 +115,7 @@ Patch::~Patch()
 
 void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 {
-	coors.x = patchX;
-	coors.y = patchZ;
+	coors = { patchX, patchZ };
 
 	smfGroundDrawer = _drawer;
 
@@ -124,20 +123,22 @@ void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 	indxVBO   = { GL_ELEMENT_ARRAY_BUFFER, false, false };
 	borderVBO = { GL_ARRAY_BUFFER        , false, false };
 
-	vertices.resize(3 * (PATCH_SIZE + 1) * (PATCH_SIZE + 1));
-	unsigned int index = 0;
+	vertices.resize((PATCH_SIZE + 1) * (PATCH_SIZE + 1));
 
 	// initialize vertices
-	for (int z = coors.y; z <= (coors.y + PATCH_SIZE); z++) {
-		for (int x = coors.x; x <= (coors.x + PATCH_SIZE); x++) {
-			vertices[index++] = x * SQUARE_SIZE;
-			vertices[index++] = 0.0f;
-			vertices[index++] = z * SQUARE_SIZE;
+	unsigned int index = 0;
+	for (int z = 0; z <= PATCH_SIZE; z++) {
+		for (int x = 0; x <= PATCH_SIZE; x++) {
+			vertices[index].x = x * SQUARE_SIZE;
+			vertices[index].y = 0.0f;
+			vertices[index].z = z * SQUARE_SIZE;
+			index++;
 		}
 	}
 
 	Reset();
 	UpdateHeightMap();
+	UploadVertices();
 }
 
 void Patch::Reset()
@@ -159,10 +160,10 @@ void Patch::Reset()
 
 
 	//Reset camera
-	lastCameraPosition.x = -10000000.0f;
-	lastCameraPosition.y = -10000000.0f;
-	lastCameraPosition.z = -10000000.0f;
-	camDistanceLastTesselation = 10000000.0f;
+	lastCameraPosition.x = std::numeric_limits<float>::lowest();
+	lastCameraPosition.y = std::numeric_limits<float>::lowest();
+	lastCameraPosition.z = std::numeric_limits<float>::lowest();
+	camDistanceLastTesselation = std::numeric_limits<float>::max();
 }
 
 
@@ -180,13 +181,11 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 			const int zw = z + coors.y;
 
 			const float height = hMap[zw * mapDims.mapxp1 + xw];
-			vertices[vindex + 1] = height;
 			averageHeight += height;
 		}
 	}
 
 	midPos.y = averageHeight/((PATCH_SIZE+1)*(PATCH_SIZE+1));
-	UploadVertices();
 	isDirty = true;
 }
 
@@ -194,10 +193,7 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 void Patch::UploadVertices()
 {
 	vertVBO.Bind();
-	if (vertVBO.GetSize() < vertices.size() * sizeof(float)) {
-		vertVBO.Resize(vertices.size() * sizeof(float), GL_STATIC_DRAW);
-	}
-	vertVBO.SetBufferSubData(vertices);
+	vertVBO.New(vertices, GL_STATIC_DRAW);
 	vertVBO.Unbind();
 }
 
@@ -451,14 +447,14 @@ void Patch::RecursRender(const TriTreeNode* tri, const int2 left, const int2 rig
 			const int2 baseNeighborApex = left + right - apex;
 
 			if (baseNeighborApex.x >= 0 && baseNeighborApex.y >= 0 && baseNeighborApex.x < PATCH_SIZE + 1 && baseNeighborApex.y < PATCH_SIZE + 1) {
-				const float apexHeight = vertices[apexIndex * 3 + 1];
-				const float leftHeight = vertices[leftIndex * 3 + 1];
-				const float rightHeight = vertices[rightIndex * 3 + 1];
+				const float apexHeight = vertices[apexIndex].y;
+				const float leftHeight = vertices[leftIndex].y;
+				const float rightHeight = vertices[rightIndex].y;
 
 				float heightDiff = std::abs(leftHeight - rightHeight);
 
 				const int baseNeighborApexIndex = baseNeighborApex.x + baseNeighborApex.y * (PATCH_SIZE + 1);
-				const float baseNeighborApexHeight = vertices[baseNeighborApexIndex * 3 + 1];
+				const float baseNeighborApexHeight = vertices[baseNeighborApexIndex].y;
 
 				float heightDiff2 = std::abs(apexHeight - baseNeighborApexHeight);
 
@@ -493,9 +489,8 @@ void Patch::GenerateIndices()
 
 float Patch::GetHeight(int2 pos)
 {
-	const int vindex = (pos.y * (PATCH_SIZE + 1) + pos.x) * 3 + 1;
-	assert(readMap->GetCornerHeightMapUnsynced()[(coors.y + pos.y) * mapDims.mapxp1 + (coors.x + pos.x)] == vertices[vindex]);
-	return vertices[vindex];
+	const int vindex = (pos.y * (PATCH_SIZE + 1) + pos.x);
+	return readMap->GetCornerHeightMapUnsynced()[(coors.y + pos.y) * mapDims.mapxp1 + (coors.x + pos.x)];
 }
 
 // ---------------------------------------------------------------------
@@ -679,44 +674,42 @@ void Patch::RecursGenBorderVertices(
 		return;
 
 	if (tri->IsLeaf()) {
-		const float3& v1 = *(float3*) &vertices[(apex.x + apex.y * (PATCH_SIZE + 1)) * 3];
-		const float3& v2 = *(float3*) &vertices[(left.x + left.y * (PATCH_SIZE + 1)) * 3];
-		const float3& v3 = *(float3*) &vertices[(rght.x + rght.y * (PATCH_SIZE + 1)) * 3];
+		const float3& v1 = vertices[(apex.x + apex.y * (PATCH_SIZE + 1))];
+		const float3& v2 = vertices[(left.x + left.y * (PATCH_SIZE + 1))];
+		const float3& v3 = vertices[(rght.x + rght.y * (PATCH_SIZE + 1))];
 
 		static constexpr unsigned char white[] = {255, 255, 255, 255};
 		static constexpr unsigned char trans[] = {255, 255, 255,   0};
 
-		const auto btm = std::min(readMap->GetInitMinHeight(), -500.0f);
-
 		if ((depth.x & 1) == 0) {
-			borderVertices.push_back(VA_TYPE_C{ v2,                {white}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x, v3.y, v3.z}, {white}});
+			borderVertices.push_back(VA_TYPE_C{ v2,                 {white}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -1.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v3                , {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{ v3               , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -1.0f, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -1.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v3                , {white}});
 			return;
 		}
 
 		if (depth.y) {
 			// left child
-			borderVertices.push_back(VA_TYPE_C{ v1               , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x, v2.y, v2.z}, {white}});
+			borderVertices.push_back(VA_TYPE_C{ v1                , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -1.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v2                , {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v2.x,  btm, v2.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -1.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v2.x, -1.0f, v2.z}, {trans}});
 			borderVertices.push_back(VA_TYPE_C{ v2               , {white}});
 		} else {
 			// right child
-			borderVertices.push_back(VA_TYPE_C{ v3               , {white}});
-			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x, v1.y, v1.z}, {white}});
+			borderVertices.push_back(VA_TYPE_C{ v3                , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -1.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v1                , {white}});
 
-			borderVertices.push_back(VA_TYPE_C{{v3.x,  btm, v3.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{{v1.x,  btm, v1.z}, {trans}});
-			borderVertices.push_back(VA_TYPE_C{ v1               , {white}});
+			borderVertices.push_back(VA_TYPE_C{{v3.x, -1.0f, v3.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{{v1.x, -1.0f, v1.z}, {trans}});
+			borderVertices.push_back(VA_TYPE_C{ v1                , {white}});
 		}
 
 		return;

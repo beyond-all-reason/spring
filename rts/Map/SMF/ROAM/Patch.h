@@ -109,7 +109,7 @@ public:
 	Patch& operator=(const Patch&) = delete;
 	Patch& operator=(Patch&&) = default;
 
-	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ); //FIXME move this into the ctor
+	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ);
 	void Reset();
 
 	TriTreeNode* GetBaseLeft()  { return &baseLeft;  }
@@ -200,7 +200,7 @@ private:
 
 	std::array<float, 1 << VARIANCE_DEPTH> varianceTrees[2];
 
-	std::vector<float> vertices;
+	std::vector<float3> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<VA_TYPE_C> borderVertices;
 
