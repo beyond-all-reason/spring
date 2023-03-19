@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PATCH_H
-#define PATCH_H
+#pragma once
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+#include "Map/MapDrawPassTypes.h"
 #include "Game/Camera.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
-#include "Rendering/GL/VertexArrayTypes.h"
+
 
 #include <array>
 #include <vector>
@@ -108,7 +109,7 @@ public:
 	Patch& operator=(const Patch&) = delete;
 	Patch& operator=(Patch&&) = default;
 
-	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ); //FIXME move this into the ctor
+	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ);
 	void Reset();
 
 	TriTreeNode* GetBaseLeft()  { return &baseLeft;  }
@@ -135,7 +136,7 @@ public:
 	void Upload();
 	void Draw() const;
 	void DrawBorder() const;
-	void SetSquareTexture() const;
+	void SetSquareTexture(const DrawPass::e& drawPass) const;
 
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
@@ -193,13 +194,14 @@ private:
 	// world-coordinate offsets of this patch
 	int2 coors = {-1, -1};
 
+	int sumAffectedArea = 0;
 
 	TriTreeNode baseLeft;  // left base-triangle tree node
 	TriTreeNode baseRight; // right base-triangle tree node
 
 	std::array<float, 1 << VARIANCE_DEPTH> varianceTrees[2];
 
-	std::vector<float> vertices;
+	std::vector<float3> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<VA_TYPE_C> borderVertices;
 
@@ -216,5 +218,3 @@ private:
 	VAO mainVAO;
 	VAO borderVAO;
 };
-
-#endif

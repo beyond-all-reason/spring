@@ -44,7 +44,17 @@ void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint
 
 	assert(bindingIdx < -1u);
 
-	ssbo = IStreamBuffer<T>::CreateInstance(GL_SHADER_STORAGE_BUFFER, elemCount0, std::string(className), static_cast<IStreamBufferConcept::Types>(type), true, coherent, numBuffers);
+	IStreamBufferConcept::StreamBufferCreationParams p;
+	p.target = GL_SHADER_STORAGE_BUFFER;
+	p.numElems = elemCount0;
+	p.name = std::string(className);
+	p.type = static_cast<IStreamBufferConcept::Types>(type);
+	p.resizeAble = true;
+	p.coherent = coherent;
+	p.numBuffers = numBuffers;
+	p.optimizeForStreaming = true;
+
+	ssbo = IStreamBuffer<T>::CreateInstance(p);
 	ssbo->BindBufferRange(bindingIdx);
 }
 

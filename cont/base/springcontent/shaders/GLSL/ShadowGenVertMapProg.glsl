@@ -1,20 +1,18 @@
-#version 130
+#if (GL_FRAGMENT_PRECISION_HIGH == 1)
+// ancient GL3 ATI drivers confuse GLSL for GLSL-ES and require this
+precision highp float;
+#else
+precision mediump float;
+#endif
 
 in vec3 vertexPos;
-in vec4 vertexCol;
 
 uniform sampler2D heightMapTex;
 uniform float borderMinHeight;
-uniform ivec2 texSquare; //TODO convert to texture array
+uniform ivec2 texSquare;
 uniform vec4 mapSize; // mapSize, 1.0/mapSize
 
 const float SMF_TEXSQR_SIZE = 1024.0;
-const vec4 detailPlaneS = vec4(0.005, 0.000, 0.005, 0.5);
-const vec4 detailPlaneT = vec4(0.000, 0.005, 0.000, 0.5);
-
-out vec4 vVertCol;
-out vec2 vDiffuseUV;
-out vec2 vDetailsUV;
 
 float HeightAtWorldPos(vec2 wxz){
 	// Some texel magic to make the heightmap tex perfectly align:
@@ -37,14 +35,13 @@ void main() {
 	else
 		vertexWorldPos.y = borderMinHeight;
 	*/
+	vec4 lightVertexPos = gl_ModelViewMatrix * vertexWorldPos;
 
-	vVertCol = vertexCol;
-	vDiffuseUV = (vertexWorldPos.xz * (1.0 / SMF_TEXSQR_SIZE)) - vec2(texSquare);
-	vDetailsUV = vec2(
-		dot(vertexWorldPos, detailPlaneS),
-		dot(vertexWorldPos, detailPlaneT)
-	);
+	lightVertexPos.xy += vec2(0.5);
+	//lightVertexPos.z  -= 2e-3; // glEnable(GL_POLYGON_OFFSET_FILL); is in use
 
-	gl_Position = gl_ModelViewProjectionMatrix * vertexWorldPos;
+	gl_Position = gl_ProjectionMatrix * lightVertexPos;
+
+	gl_ClipVertex  = vertexWorldPos;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
-

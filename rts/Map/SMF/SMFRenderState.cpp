@@ -5,6 +5,7 @@
 #include "SMFReadMap.h"
 #include "Game/Camera.h"
 #include "Map/MapInfo.h"
+#include "Map/HeightMapTexture.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Env/CubeMapHandler.h"
@@ -151,6 +152,7 @@ void SMFRenderStateGLSL::Update(
 
 			// tex1 (shadingTex) is not used by SMFFragProg
 			glslShaders[n]->SetUniform("diffuseTex",             0);
+			glslShaders[n]->SetUniform("heightMapTex",           1);
 			glslShaders[n]->SetUniform("detailTex",              2);
 			glslShaders[n]->SetUniform("shadowTex",              4);
 			glslShaders[n]->SetUniform("normalsTex",             5);
@@ -388,6 +390,7 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 		glActiveTexture(GL_TEXTURE19); glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
 
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
 	glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, smfMap->GetNormalsTexture());
 	glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, smfMap->GetSpecularTexture());

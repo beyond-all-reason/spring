@@ -121,8 +121,18 @@ void UniformConstants::Init()
 		return;
 	}
 
-	umbSBT = IStreamBuffer<UniformMatricesBuffer>::CreateInstance(GL_UNIFORM_BUFFER, 1, "UniformMatricesBuffer");
-	upbSBT = IStreamBuffer<UniformParamsBuffer  >::CreateInstance(GL_UNIFORM_BUFFER, 1, "UniformParamsBuffer"  , IStreamBufferConcept::Types::SB_BUFFERSUBDATA);
+	{
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_UNIFORM_BUFFER;
+		p.numElems = 1;
+		p.type = IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
+
+		p.name = "UniformMatricesBuffer";
+		umbSBT = IStreamBuffer<UniformMatricesBuffer>::CreateInstance(p);
+
+		p.name = "UniformParamsBuffer";
+		upbSBT = IStreamBuffer<UniformParamsBuffer  >::CreateInstance(p);
+	}
 
 	glslDefinitions[0] = SetGLSLDefinition<UniformMatricesBuffer>(UBO_MATRIX_IDX);
 	glslDefinitions[1] = SetGLSLDefinition<UniformParamsBuffer  >(UBO_PARAMS_IDX);

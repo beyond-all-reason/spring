@@ -6,6 +6,7 @@
 #include "SMFRenderState.h"
 #include "Game/Camera.h"
 #include "Map/MapInfo.h"
+#include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
 #include "Map/SMF/Basic/BasicMeshDrawer.h"
 #include "Map/SMF/ROAM/RoamMeshDrawer.h"
@@ -86,8 +87,13 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	borderShader->Link();
 
 	borderShader->Enable();
-	borderShader->SetUniform("diffuseTex", 0);
-	borderShader->SetUniform("detailsTex", 2);
+	borderShader->SetUniform("diffuseTex"  , 0);
+	borderShader->SetUniform("heightMapTex", 1);
+	borderShader->SetUniform("detailsTex"  , 2);
+	borderShader->SetUniform("mapSize",
+		static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
+					1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+	);
 	borderShader->Disable();
 
 	borderShader->Validate();
@@ -340,9 +346,11 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	glActiveTexture(GL_TEXTURE2);
-	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE2); glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
+
+	glActiveTexture(GL_TEXTURE1); glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 
 	//for CSMFGroundTextures::BindSquareTexture()
 	glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D);
@@ -350,6 +358,7 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
 	borderShader->Enable();
+	borderShader->SetUniform("borderMinHeight", std::min(readMap->GetInitMinHeight(), -500.0f));
 	meshDrawer->DrawBorderMesh(drawPass);
 	borderShader->Disable();
 
@@ -357,6 +366,10 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 
@@ -378,18 +391,27 @@ void CSMFGroundDrawer::DrawShadowPass()
 	if (readMap->HasOnlyVoidWater())
 		return;
 
-	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_MAP);
-
+	shadowShader = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_MAP);
+	assert(shadowShader);
 	glEnable(GL_POLYGON_OFFSET_FILL);
+
+	//#pragma message "REMOVE ME, WHEN NOT NEEDED"
+	//glDisable(GL_CULL_FACE);
+
 	glPolygonOffset(spPolygonOffsetScale, spPolygonOffsetUnits); // dz*s + r*u
 
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
+	shadowShader->Enable();
+	shadowShader->SetUniform("borderMinHeight", std::min(readMap->GetInitMinHeight(), -500.0f));
+		meshDrawer->DrawMesh(DrawPass::Shadow);
 		// also render the border geometry to prevent light-visible backfaces
-		po->Enable();
-			meshDrawer->DrawMesh(DrawPass::Shadow);
-			meshDrawer->DrawBorderMesh(DrawPass::Shadow);
-		po->Disable();
+		meshDrawer->DrawBorderMesh(DrawPass::Shadow);
+	shadowShader->Disable();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
 
 	glDisable(GL_POLYGON_OFFSET_FILL);
+	//glEnable(GL_CULL_FACE);
 }
 
 
@@ -399,14 +421,21 @@ void CSMFGroundDrawer::SetLuaShader(const LuaMapShaderData* luaMapShaderData)
 	smfRenderStates[RENDER_STATE_LUA]->Update(this, luaMapShaderData);
 }
 
-void CSMFGroundDrawer::SetupBigSquare(const int bigSquareX, const int bigSquareY)
+void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int bigSquareX, const int bigSquareY)
 {
-	groundTextures->BindSquareTexture(bigSquareX, bigSquareY);
-	smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY);
+	if (drawPass != DrawPass::Shadow) {
+		groundTextures->BindSquareTexture(bigSquareX, bigSquareY);
+		smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY);
 
-	//ugly but w/e
-	if (borderShader->IsBound())
-		borderShader->SetUniform("texSquare", bigSquareX, bigSquareY);
+		if (borderShader && borderShader->IsBound()) {
+			borderShader->SetUniform("texSquare", bigSquareX, bigSquareY);
+		}
+	}
+	else {
+		if (shadowShader && shadowShader->IsBound()) {
+			shadowShader->SetUniform("texSquare", bigSquareX, bigSquareY);
+		}
+	}
 }
 
 

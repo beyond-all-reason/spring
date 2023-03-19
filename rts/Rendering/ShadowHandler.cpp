@@ -229,6 +229,9 @@ void CShadowHandler::LoadShadowGenShaders()
 		if (i == SHADOWGEN_PROGRAM_MODEL_GL4)
 			continue; //special path
 
+		if (i == SHADOWGEN_PROGRAM_MAP)
+			continue; //special path
+
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[i] + "GLSL");
 
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertProg.glsl", versionDefs[0] + shadowGenProgDefines[i] + extraDefs, GL_VERTEX_SHADER));
@@ -254,6 +257,44 @@ void CShadowHandler::LoadShadowGenShaders()
 
 		shadowGenProgs[i] = po;
 	}
+	{
+		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MAP] + "GLSL");
+
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertMapProg.glsl", versionDefs[0] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_VERTEX_SHADER));
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl"   , versionDefs[1] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_FRAGMENT_SHADER));
+		po->BindAttribLocation("vertexPos", 0);
+		po->Link();
+		po->Enable();
+		po->SetUniform("alphaMaskTex", 0);
+		po->SetUniform("heightMapTex", 1);
+		po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
+		po->SetUniform("mapSize",
+			static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
+					   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+		);
+		po->SetUniform("texSquare", 0, 0);
+		po->Disable();
+		po->Validate();
+
+		if (!po->IsValid()) {
+			po->RemoveShaderObject(GL_FRAGMENT_SHADER);
+			po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl", versionDefs[0] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_FRAGMENT_SHADER));
+			po->Link();
+			po->Enable();
+			po->SetUniform("alphaMaskTex", 0);
+			po->SetUniform("heightMapTex", 1);
+			po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
+			po->SetUniform("mapSize",
+				static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
+						   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+			);
+			po->SetUniform("texSquare", 0, 0);
+			po->Disable();
+			po->Validate();
+		}
+
+		shadowGenProgs[SHADOWGEN_PROGRAM_MAP] = po;
+	}
 	if (globalRendering->haveGL4) {
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MODEL_GL4] + "GLSL");
 
@@ -261,7 +302,6 @@ void CShadowHandler::LoadShadowGenShaders()
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProgGL4.glsl", shadowGenProgDefines[SHADOWGEN_PROGRAM_MODEL_GL4] + extraDefs, GL_FRAGMENT_SHADER));
 		po->Link();
 		po->Enable();
-		po->SetUniform("cameraMode", 1);
 		po->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
 		po->Disable();
 		po->Validate();

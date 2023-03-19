@@ -56,7 +56,7 @@ public:
 		}
 	}
 
-	void SetupBigSquare(const int bigSquareX, const int bigSquareY);
+	void SetupBigSquare(const DrawPass::e& drawPass, int bigSquareX, int bigSquareY);
 
 
 	void IncreaseDetail() { SetDetail(groundDetail + 1); }
@@ -101,6 +101,7 @@ protected:
 	GL::GeometryBuffer geomBuffer;
 
 	Shader::IProgramObject* borderShader = nullptr;
+	Shader::IProgramObject* shadowShader = nullptr;
 };
 
 #endif // _SMF_GROUND_DRAWER_H_

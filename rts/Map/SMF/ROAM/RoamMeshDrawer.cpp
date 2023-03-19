@@ -475,10 +475,7 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 			if (!p.IsVisible(CCameraHandler::GetActiveCamera()))
 				continue;
 
-			// do not need textures in the SP
-			if (drawPass != DrawPass::Shadow)
-				p.SetSquareTexture();
-
+			p.SetSquareTexture(drawPass);
 			p.Draw();
 		}
 	}
@@ -490,9 +487,7 @@ void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 		if (!p->IsVisible(CCameraHandler::GetActiveCamera()))
 			continue;
 
-		if (drawPass != DrawPass::Shadow)
-			p->SetSquareTexture();
-
+		p->SetSquareTexture(drawPass);
 		p->DrawBorder();
 	}
 }
