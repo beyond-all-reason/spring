@@ -4976,7 +4976,7 @@ int LuaSyncedCtrl::SetProjectileCEG(lua_State* L)
 
 	unsigned int cegID = CExplosionGeneratorHandler::EXPGEN_ID_INVALID;
 
-	if (lua_isstring(L, 2)) {
+	if (lua_israwstring(L, 2)) {
 		cegID = explGenHandler.LoadCustomGeneratorID(lua_tostring(L, 2));
 	} else {
 		cegID = luaL_checknumber(L, 2);
