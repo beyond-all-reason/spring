@@ -94,7 +94,7 @@ public:
 
 public:
 	static constexpr size_t MIN_ALLOC_SIZE = sizeof(void*);
-	static constexpr size_t MAX_ALLOC_SIZE = 1 << 26;
+	static constexpr size_t MAX_ALLOC_SIZE = 1 << 26; // Because poolPtrs[26] = NewPool<26>(); is the last allocated pool
 	// static constexpr size_t MAX_ALLOC_SIZE = (1024 * 1024) - 1;
 
 	static bool enabled;
