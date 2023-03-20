@@ -164,7 +164,8 @@ void CModInfo::Init(const std::string& modFileName)
 
 		quadFieldQuadSizeInElmos = Clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
-		SLuaAllocLimit::MAX_ALLOC_BYTES = system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u) << 20u; // Specify in megabytes: 1 << 20 = (1024 * 1024)
+		// Specify in megabytes: 1 << 20 = (1024 * 1024)
+		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
 
 		allowTake = system.GetBool("allowTake", allowTake);
 	}
