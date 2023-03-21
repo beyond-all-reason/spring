@@ -54,7 +54,7 @@ $(module or "published: false")
 #   if not ldoc.no_summary then
 #   -- bang out the tables of item types for this module (e.g Functions, Tables, etc)
 #     for kind,items in module.kinds() do
-        <h2><a href="#$(no_spaces(kind))">$(kind)</a></h2>
+        <h2 class="no_anchor"><a href="#$(no_spaces(kind))">$(kind)</a></h2>
         <dl class="big-dt">
 #         for item in items() do
             <dt>
@@ -76,11 +76,6 @@ $(module or "published: false")
 #     local kitem = module.kinds:get_item(kind)
 #     local has_description = kitem and ldoc.descript(kitem) ~= ""
       <h2 id="$(no_spaces(kind))" class="section-header $(has_description and 'has-description')">
-        <a href="#$(no_spaces(kind))" class="anchor-heading" aria-labelledby="$(no_spaces(kind))">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <use xlink:href="#svg-link"></use>
-          </svg>
-        </a>
         $(kind)
       </h2>
       $(M(module.kinds:get_section_description(kind),nil))
@@ -95,11 +90,6 @@ $(module or "published: false")
 #     end
 #     for item in items() do
         <h3 id="$(item.name)">
-          <a href="#$(item.name)" class="anchor-heading" aria-labelledby="$(item.name)">
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <use xlink:href="#svg-link"></use>
-            </svg>
-          </a>
 #         if ldoc.prettify_files and ldoc.is_file_prettified[item.module.file.filename] then
           <a style="float:right;" href="$(ldoc.source_ref(item))">line $(item.lineno)</a>
 #         end
@@ -115,7 +105,7 @@ $(module or "published: false")
 #        for custom in iter(ldoc.custom_tags) do
 #        local tag = item.tags[custom[1]]
 #        if tag and not custom.hidden then
-           <h4>$(custom.title or custom[1]):</h4>
+           <h4 class="no_anchor">$(custom.title or custom[1]):</h4>
            <ul>
 #          for value in iter(tag) do
              <li>$(custom.format and custom.format(value) or M(value))</li>
@@ -128,7 +118,7 @@ $(module or "published: false")
 #   if show_parms and item.params and#item.params > 0 then
 #     local subnames = module.kinds:type_of(item).subnames
 #     if subnames then
-           <h4>$(subnames):</h4>
+           <h4 class="no_anchor">$(subnames):</h4>
 #     end
            <ol>
 #    for parm in iter(item.params) do
@@ -163,7 +153,7 @@ $(module or "published: false")
 #    end -- if params
 
 #   if show_return and item.retgroups then local groups = item.retgroups
-      <h4>Returns:</h4>
+      <h4 class="no_anchor">Returns:</h4>
 #       for i,group in ldoc.ipairs(groups) do
           <ol>
 #           for r in group:iter() do local type, ctypes = item:return_type(r); local rt = ldoc.typename(type)
@@ -184,18 +174,18 @@ $(module or "published: false")
 #           end -- for r
           </ol>
 #         if i <#groups then
-           <h4>Or</h4>
+           <h4 class="no_anchor">Or</h4>
 #         end
 #         end -- for group
 #       end -- if returns
 
 #       if show_return and item.raise then
-          <h4>Raises:</h4>
+          <h4 class="no_anchor">Raises:</h4>
           $(M(item.raise,item))
 #       end
 
 #       if item.see then
-          <h4>See also:</h4>
+          <h4 class="no_anchor">See also:</h4>
           <ul>
 #           for see in iter(item.see) do
               <li><a href="$(ldoc.href(see))">$(see.label)</a></li>
@@ -204,7 +194,7 @@ $(module or "published: false")
 #       end -- if see
 
 #       if item.usage then
-          <h4>Usage:</h4>
+          <h4 class="no_anchor">Usage:</h4>
           <ul>
 #         for usage in iter(item.usage) do
             <li><pre class="example">$(ldoc.prettify(usage))</pre></li>
@@ -212,7 +202,6 @@ $(module or "published: false")
           </ul>
 #       end -- if usage
         </div>
-        <hr>
 #     end -- for items
 #   end -- for kinds
 
