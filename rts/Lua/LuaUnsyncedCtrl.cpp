@@ -1190,7 +1190,20 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  * The fields in `camState` must be consistent with the name/mode and current/new camera mode
  *
  * @tparam camState camState
- * @number camTime
+ * @number[opt=0] transitionTime in nanoseconds
+ *
+ * @number[opt] transitionTimeFactor
+ * multiplicative factor applied to this and all subsequent transition times for
+ * this camera mode.
+ *
+ * Defaults to "CamTimeFactor" springsetting unless set previously.
+ *
+ * @number[opt] transitionTimeExponent
+ * tween factor applied to this and all subsequent transitions for this camera
+ * mode.
+ *
+ * Defaults to "CamTimeExponent" springsetting unless set previously.
+ *
  * @treturn bool set
  */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
