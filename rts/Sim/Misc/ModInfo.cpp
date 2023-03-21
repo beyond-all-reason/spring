@@ -5,6 +5,7 @@
 
 #include "Lua/LuaParser.h"
 #include "Lua/LuaSyncedRead.h"
+#include "Lua/LuaAllocState.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Exceptions.h"
@@ -115,6 +116,8 @@ void CModInfo::ResetState()
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
 
+		SLuaAllocLimit::MAX_ALLOC_BYTES = SLuaAllocLimit::MAX_ALLOC_BYTES_DEFAULT;
+
 		allowTake = true;
 	}
 }
@@ -160,6 +163,9 @@ void CModInfo::Init(const std::string& modFileName)
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
 		quadFieldQuadSizeInElmos = Clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
+
+		// Specify in megabytes: 1 << 20 = (1024 * 1024)
+		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
 
 		allowTake = system.GetBool("allowTake", allowTake);
 	}
