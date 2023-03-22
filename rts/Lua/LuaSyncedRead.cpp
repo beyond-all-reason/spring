@@ -6154,6 +6154,9 @@ int LuaSyncedRead::GetFeaturePieceCollisionVolumeData(lua_State* L)
  *
  * @function Spring.GetProjectilePosition
  * @number projectileID
+ * @treturn nil|number posX
+ * @treturn number posY
+ * @treturn number posZ
  */
 int LuaSyncedRead::GetProjectilePosition(lua_State* L)
 {
@@ -6172,6 +6175,9 @@ int LuaSyncedRead::GetProjectilePosition(lua_State* L)
  *
  * @function Spring.GetProjectileDirection
  * @number projectileID
+ * @treturn nil|number dirX
+ * @treturn number dirY
+ * @treturn number dirZ
  */
 int LuaSyncedRead::GetProjectileDirection(lua_State* L)
 {
@@ -6190,6 +6196,10 @@ int LuaSyncedRead::GetProjectileDirection(lua_State* L)
  *
  * @function Spring.GetProjectileVelocity
  * @number projectileID
+ * @treturn nil|number velX
+ * @treturn number velY
+ * @treturn number velZ
+ * @treturn number velW
  */
 int LuaSyncedRead::GetProjectileVelocity(lua_State* L)
 {
@@ -6201,6 +6211,7 @@ int LuaSyncedRead::GetProjectileVelocity(lua_State* L)
  *
  * @function Spring.GetProjectileGravity
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileGravity(lua_State* L)
 {
@@ -6227,6 +6238,12 @@ int LuaSyncedRead::GetProjectileSpinVec(lua_State* L) {
  *
  * @function Spring.GetPieceProjectileParams
  * @number projectileID
+ * @treturn nil|number explosionFlags encoded bitwise with SHATTER = 1, EXPLODE = 2, EXPLODE_ON_HIT = 2, FALL = 4, SMOKE = 8, FIRE = 16, NONE = 32, NO_CEG_TRAIL = 64, NO_HEATCLOUD = 128
+ * @treturn number spinAngle
+ * @treturn number spinSpeed
+ * @treturn number spinVectorX
+ * @treturn number spinVectorY
+ * @treturn number spinVectorZ
  */
 int LuaSyncedRead::GetPieceProjectileParams(lua_State* L)
 {
@@ -6251,6 +6268,12 @@ int LuaSyncedRead::GetPieceProjectileParams(lua_State* L)
  *
  * @function Spring.GetProjectileTarget
  * @number projectileID
+ * @treturn nil|number targetTypeInt where
+ * string.byte('g') := GROUND
+ * string.byte('u') := UNIT
+ * string.byte('f') := FEATURE
+ * string.byte('p') := PROJECTILE
+ * @treturn number|xyz target targetID or targetPos when targetTypeInt == string.byte('g')
  */
 int LuaSyncedRead::GetProjectileTarget(lua_State* L)
 {
@@ -6297,6 +6320,7 @@ int LuaSyncedRead::GetProjectileTarget(lua_State* L)
  *
  * @function Spring.GetProjectileIsIntercepted
  * @number projectileID
+ * @treturn nil|bool
  */
 int LuaSyncedRead::GetProjectileIsIntercepted(lua_State* L)
 {
@@ -6316,6 +6340,7 @@ int LuaSyncedRead::GetProjectileIsIntercepted(lua_State* L)
  *
  * @function Spring.GetProjectileTimeToLive
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileTimeToLive(lua_State* L)
 {
@@ -6335,6 +6360,7 @@ int LuaSyncedRead::GetProjectileTimeToLive(lua_State* L)
  *
  * @function Spring.GetProjectileOwnerID
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileOwnerID(lua_State* L)
 {
@@ -6356,6 +6382,7 @@ int LuaSyncedRead::GetProjectileOwnerID(lua_State* L)
  *
  * @function Spring.GetProjectileTeamID
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileTeamID(lua_State* L)
 {
@@ -6376,6 +6403,7 @@ int LuaSyncedRead::GetProjectileTeamID(lua_State* L)
  *
  * @function Spring.GetProjectileAllyTeamID
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileAllyTeamID(lua_State* L)
 {
@@ -6396,6 +6424,8 @@ int LuaSyncedRead::GetProjectileAllyTeamID(lua_State* L)
  *
  * @function Spring.GetProjectileType
  * @number projectileID
+ * @treturn nil|bool weapon
+ * @treturn bool piece
  */
 int LuaSyncedRead::GetProjectileType(lua_State* L)
 {
@@ -6413,7 +6443,11 @@ int LuaSyncedRead::GetProjectileType(lua_State* L)
 /***
  *
  * @function Spring.GetProjectileDefID
+ *
+ * Using this to get a weaponDefID is HIGHLY preferred to indexing WeaponDefNames via GetProjectileName
+ *
  * @number projectileID
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileDefID(lua_State* L)
 {
@@ -6439,6 +6473,23 @@ int LuaSyncedRead::GetProjectileDefID(lua_State* L)
  *
  * @function Spring.GetProjectileDamages
  * @number projectileID
+ * @string tag one of:
+ *     "paralyzeDamageTime"
+ *     "impulseFactor"
+ *     "impulseBoost"
+ *     "craterMult"
+ *     "craterBoost"
+ *     "dynDamageExp"
+ *     "dynDamageMin"
+ *     "dynDamageRange"
+ *     "dynDamageInverted"
+ *     "craterAreaOfEffect"
+ *     "damageAreaOfEffect"
+ *     "edgeEffectiveness"
+ *     "explosionSpeed"
+ *     - or -
+ *     an armor type index to get the damage against it.
+ * @treturn nil|number
  */
 int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 {
@@ -6460,7 +6511,13 @@ int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 /***
  *
  * @function Spring.GetProjectileName
+ *
+ * It is recommended to rather use GetProjectileDefID for indexing purposes.
+ *
  * @number projectileID
+ * @treturn nil|string
+ *
+ * @see Spring.GetProjectileDefID
  */
 int LuaSyncedRead::GetProjectileName(lua_State* L)
 {
@@ -6503,6 +6560,9 @@ int LuaSyncedRead::GetProjectileName(lua_State* L)
 /***
  *
  * @function Spring.GetGroundHeight
+ * @number x
+ * @number z
+ * @treturn number
  */
 int LuaSyncedRead::GetGroundHeight(lua_State* L)
 {
@@ -6516,6 +6576,9 @@ int LuaSyncedRead::GetGroundHeight(lua_State* L)
 /***
  *
  * @function Spring.GetGroundOrigHeight
+ * @number x
+ * @number z
+ * @treturn number
  */
 int LuaSyncedRead::GetGroundOrigHeight(lua_State* L)
 {
@@ -6529,6 +6592,13 @@ int LuaSyncedRead::GetGroundOrigHeight(lua_State* L)
 /***
  *
  * @function Spring.GetGroundNormal
+ * @number x
+ * @number z
+ * @bool[opt=false] smoothed raw or smoothed center normal
+ * @treturn number normalX
+ * @treturn number normalY
+ * @treturn number normalZ
+ * @treturn number slope
  */
 int LuaSyncedRead::GetGroundNormal(lua_State* L)
 {
@@ -6552,6 +6622,19 @@ int LuaSyncedRead::GetGroundNormal(lua_State* L)
 /***
  *
  * @function Spring.GetGroundInfo
+ * @number x
+ * @number z
+ * @treturn number ix
+ * @treturn number iz
+ * @treturn number terrainTypeIndex
+ * @treturn string name
+ * @treturn number metalExtraction
+ * @treturn number hardness
+ * @treturn number tankSpeed
+ * @treturn number kbotSpeed
+ * @treturn number hoverSpeed
+ * @treturn number shipSpeed
+ * @treturn bool receiveTracks
  */
 int LuaSyncedRead::GetGroundInfo(lua_State* L)
 {
@@ -6655,6 +6738,10 @@ int LuaSyncedRead::GetGroundBlocked(lua_State* L)
 /***
  *
  * @function Spring.GetGroundExtremes
+ * @treturn number initMinHeight
+ * @treturn number initMaxHeight
+ * @treturn number currMinHeight
+ * @treturn number currMaxHeight
  */
 int LuaSyncedRead::GetGroundExtremes(lua_State* L)
 {
@@ -6669,6 +6756,15 @@ int LuaSyncedRead::GetGroundExtremes(lua_State* L)
 /***
  *
  * @function Spring.GetTerrainTypeData
+ * @number terrainTypeInfo
+ * @treturn number index
+ * @treturn string name
+ * @treturn number hardness
+ * @treturn number tankSpeed
+ * @treturn number kbotSpeed
+ * @treturn number hoverSpeed
+ * @treturn number shipSpeed
+ * @treturn bool receiveTracks
  */
 int LuaSyncedRead::GetTerrainTypeData(lua_State* L)
 {
@@ -6680,9 +6776,13 @@ int LuaSyncedRead::GetTerrainTypeData(lua_State* L)
 	return (PushTerrainTypeData(L, &mapInfo->terrainTypes[tti], false));
 }
 
+
 /***
  *
  * @function Spring.GetGrass
+ * @number x
+ * @number z
+ * @treturn number
  */
 int LuaSyncedRead::GetGrass(lua_State* L)
 {
@@ -6696,6 +6796,9 @@ int LuaSyncedRead::GetGrass(lua_State* L)
 /***
  *
  * @function Spring.GetSmoothMeshHeight
+ * @number x
+ * @number z
+ * @treturn number height
  */
 int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
 {
@@ -6717,6 +6820,17 @@ int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
 /***
  *
  * @function Spring.TestMoveOrder
+ * @number unitDefID
+ * @number pos.x
+ * @number pos.y
+ * @number pos.z
+ * @number[opt=0] dir.x
+ * @number[opt=0] dir.y
+ * @number[opt=0] dir.z
+ * @bool[opt=true] testTerrain
+ * @bool[opt=true] testObjects
+ * @bool[opt=false] centerOnly
+ * @treturn bool
  */
 int LuaSyncedRead::TestMoveOrder(lua_State* L)
 {
@@ -6761,6 +6875,13 @@ int LuaSyncedRead::TestMoveOrder(lua_State* L)
 /***
  *
  * @function Spring.TestBuildOrder
+ * @number unitDefID
+ * @number x
+ * @number y
+ * @number z
+ * @tparam number|string facing one of: 0-s,1-e,2-n,3-w
+ * @treturn number blocking one of: 0 = blocked, 1 = mobile unit on the way, 2 = reclaimable, 3 = open
+ * @treturn nil|featureID when there's a reclaimable feature on the way
  */
 int LuaSyncedRead::TestBuildOrder(lua_State* L)
 {
@@ -6805,6 +6926,14 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 /***
  *
  * @function Spring.Pos2BuildPos
+ * @number unitDefID
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt=0] buildFacing one of SOUTH = 0, EAST = 1, NORTH = 2, WEST  = 3
+ * @treturn number buildPosX
+ * @treturn number buildPosY
+ * @treturn number buildPosZ
  */
 int LuaSyncedRead::Pos2BuildPos(lua_State* L)
 {
@@ -6826,6 +6955,17 @@ int LuaSyncedRead::Pos2BuildPos(lua_State* L)
 /***
  *
  * @function Spring.ClosestBuildPos
+ * @number teamID
+ * @number unitDefID
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number searchRadius
+ * @number minDistance
+ * @number buildFacing one of SOUTH = 0, EAST = 1, NORTH = 2, WEST  = 3
+ * @treturn number buildPosX
+ * @treturn number buildPosY
+ * @treturn number buildPosZ
  */
 int LuaSyncedRead::ClosestBuildPos(lua_State* L)
 {
@@ -6883,6 +7023,14 @@ static int GetEffectiveLosAllyTeam(lua_State* L, int arg)
 /***
  *
  * @function Spring.GetPositionLosState
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt] allyTeamID
+ * @treturn bool inLosOrRadar
+ * @treturn inLos
+ * @treturn inRadar
+ * @treturn inJammer
  */
 int LuaSyncedRead::GetPositionLosState(lua_State* L)
 {
@@ -6915,6 +7063,11 @@ int LuaSyncedRead::GetPositionLosState(lua_State* L)
 /***
  *
  * @function Spring.IsPosInLos
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt] allyTeamID
+ * @treturn bool
  */
 int LuaSyncedRead::IsPosInLos(lua_State* L)
 {
@@ -6936,6 +7089,11 @@ int LuaSyncedRead::IsPosInLos(lua_State* L)
 /***
  *
  * @function Spring.IsPosInRadar
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt] allyTeamID
+ * @treturn bool
  */
 int LuaSyncedRead::IsPosInRadar(lua_State* L)
 {
@@ -6957,6 +7115,11 @@ int LuaSyncedRead::IsPosInRadar(lua_State* L)
 /***
  *
  * @function Spring.IsPosInAirLos
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number[opt] allyTeamID
+ * @treturn bool
  */
 int LuaSyncedRead::IsPosInAirLos(lua_State* L)
 {
@@ -6978,6 +7141,18 @@ int LuaSyncedRead::IsPosInAirLos(lua_State* L)
 /***
  *
  * @function Spring.GetUnitLosState
+ * @number unitID
+ * @number[opt] allyTeamID
+ * @bool[opt=false] raw
+ * @treturn nil|number|{los=bool,radar=bool,typed=bool} los
+ *
+ * Raw is only available in gadgets and when raw parameter is true.
+ *
+ * RAW returns an bitmask integer, where the bits are:
+ * 1: LOS_INLOS, the unit is currently in the los of the allyteam,
+ * 2: LOS_INRADAR the unit is currently in radar from the allyteam,
+ * 4: LOS_PREVLOS the unit has previously been in los from the allyteam,
+ * 8: LOS_CONTRADAR the unit has continuously been in radar since it was last inlos by the allyteam
  */
 int LuaSyncedRead::GetUnitLosState(lua_State* L)
 {
