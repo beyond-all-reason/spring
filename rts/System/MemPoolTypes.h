@@ -35,8 +35,6 @@ public:
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 	void* allocMem(size_t size) {
-		if (size <= INTERNAL_ALLOC_SIZE)
-			size = ((size + 15) >> 4) * BUCKET_STEP;
 		return _sm_malloc(space, size, BUCKET_STEP);
 	}
 
@@ -51,8 +49,6 @@ public:
 	}
 
 	void* reAllocMem(void* p, size_t size) {
-		if (size <= INTERNAL_ALLOC_SIZE)
-			size = ((size + 15) >> 4) * BUCKET_STEP;
 		return _sm_realloc(space, p, size, BUCKET_STEP);
 	}
 
