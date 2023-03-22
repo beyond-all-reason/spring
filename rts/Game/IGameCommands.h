@@ -5,10 +5,14 @@
 
 #include "System/StringUtil.h"
 #include "System/UnorderedMap.hpp"
+#include "Game/UnsyncedActionExecutor.h"
+#include "Game/SyncedActionExecutor.h"
 
 #include <array>
 #include <string>
 #include <cassert>
+#include <json/writer.h>
+#include <json/json.h>
 
 template<class TActionExecutor>
 class IGameCommands
@@ -71,6 +75,25 @@ public:
 
 		std::sort(sortedExecutors.begin(), sortedExecutors.end(), [](const P& a, const P& b) { return (a.first < b.first); });
 		return sortedExecutors;
+	}
+
+	std::string JsonOutput() {
+		Json::Value root;
+
+		const auto actions = GetSortedActionExecutors();
+
+		for (const auto& [name, actionExecutor]: actions) {
+			Json::Value node;
+
+			node["command"] = actionExecutor->GetCommand();
+			node["description"] = actionExecutor->GetDescription();
+			node["cheatRequired"] = Json::Value(actionExecutor->IsCheatRequired());
+
+			root[name] = node;
+		}
+
+		Json::StyledWriter writer;
+		return writer.write(root).c_str();
 	}
 
 private:

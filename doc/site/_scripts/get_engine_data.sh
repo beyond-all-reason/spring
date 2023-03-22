@@ -6,6 +6,8 @@ DATA_FILE="$DATA_DIR/latest_release.json"
 WORK_DIR="$SCRIPT_DIR/tmp"
 CONFIG_FILE="$DATA_DIR/configs.json"
 WDEFS_FILE="$DATA_DIR/weapondefs.json"
+COMMANDS_FILE="$DATA_DIR/unsynced_commands.json"
+SYNCED_COMMANDS_FILE="$DATA_DIR/synced_commands.json"
 
 DOWNLOAD_URL=$(jq -r '.assets[] | select(.name | contains("_linux-64-minimal-portable")).browser_download_url' $DATA_FILE)
 
@@ -24,3 +26,11 @@ rm -f $CONFIG_FILE
 echo "> writing $WDEFS_FILE"
 rm -f $WDEFS_FILE
 ./spring --list-def-tags | grep -v "^\[t=" > $WDEFS_FILE
+
+echo "> writing $COMMANDS_FILE"
+rm -f $COMMANDS_FILE
+./spring --list-unsynced-commands | grep -v "^\[t=" > $COMMANDS_FILE
+
+echo "> writing $SYNCED_COMMANDS_FILE"
+rm -f $SYNCED_COMMANDS_FILE
+./spring --list-synced-commands | grep -v "^\[t=" > $SYNCED_COMMANDS_FILE
