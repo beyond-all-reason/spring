@@ -77,13 +77,7 @@
 
 #ifdef SMMALLOC_ENABLE_ASSERTS
 #include <assert.h>
-//#define SM_ASSERT(x) assert(x)
-#define SM_ASSERT(cond)                                                                                                                    \
-    do                                                                                                                                     \
-    {                                                                                                                                      \
-        if (!(cond))                                                                                                                       \
-            __debugbreak();                                                                                                                \
-    } while (0)
+#define SM_ASSERT(x) assert(x)
 #else
 #define SM_ASSERT(x)
 #endif
