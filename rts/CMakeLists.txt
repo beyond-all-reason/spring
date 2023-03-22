@@ -49,6 +49,9 @@ include_directories(${IL_INCLUDE_DIR})
 ### libcpuid
 list(APPEND engineCommonLibraries "cpuid")
 
+### smmalloc
+list(APPEND engineCommonLibraries "smmalloc")
+
 ### Assemble common libraries
 add_subdirectory(System/Sound)
 if    (NO_SOUND)
