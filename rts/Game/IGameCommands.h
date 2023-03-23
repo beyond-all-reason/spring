@@ -80,7 +80,7 @@ public:
 	std::string JsonOutput() {
 		Json::Value root;
 
-		const auto actions = GetSortedActionExecutors();
+		const auto actions = GetActionExecutors();
 
 		for (const auto& [name, actionExecutor]: actions) {
 			Json::Value node;
@@ -88,6 +88,13 @@ public:
 			node["command"] = actionExecutor->GetCommand();
 			node["description"] = actionExecutor->GetDescription();
 			node["cheatRequired"] = Json::Value(actionExecutor->IsCheatRequired());
+
+			Json::Value args = Json::objectValue;
+			for (const auto& [argName, argDesc]: actionExecutor->GetArguments()) {
+				args[argName] = argDesc;
+			}
+
+			node["arguments"] = args;
 
 			root[name] = node;
 		}

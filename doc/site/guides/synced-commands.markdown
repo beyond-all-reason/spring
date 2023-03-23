@@ -16,6 +16,7 @@ Here we provide a list of them, some commands require cheats enabled ("/cheat"):
   <tr>
     <th>Name</th>
     <th>Description</th>
+    <th>Arguments</th>
   </tr>
   {% for row in site.data.synced_commands %}
     {% assign row_data = row[1] %}
@@ -27,7 +28,19 @@ Here we provide a list of them, some commands require cheats enabled ("/cheat"):
         </a>
       </td>
       <td>
-        <b>{{ row_data["type"] | replace: "std::", "" }}</b> {{ row_data["description"] }}
+        {{ row_data["description"] | xml_escape | textilize }}
+      </td>
+      <td>
+        <dl class="dl-auto">
+        {% for arg in args %}
+          <dt>
+            <code>{{ arg[0] | xml_escape | textilize }}</code>
+          </dt>
+          <dd>
+            {{ arg[1] | xml_escape | textilize }}
+          </dd>
+        {% endfor %}
+        </dl>
       </td>
     </tr>
   {% endfor %}
