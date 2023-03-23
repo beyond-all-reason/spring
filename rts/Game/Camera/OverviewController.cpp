@@ -7,6 +7,13 @@
 #include "Game/UI/MiniMap.h"
 #include "Game/UI/MouseHandler.h"
 #include "System/Log/ILog.h"
+#include "System/Config/ConfigHandler.h"
+
+
+CONFIG(bool, OverviewRotation)
+	.defaultValue(false)
+	.headlessValue(false)
+	.description("Set Overview camera controller to follow camera rotation instead of default orientation");
 
 static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov) {
     static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
@@ -23,9 +30,29 @@ COverviewController::COverviewController()
 	minimizeMinimap = false;
 
 	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
-	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
+	dir = DIR_UP;
+
+	configHandler->NotifyOnChange(this, {"OverviewRotation"});
+	ConfigUpdate();
 }
 
+COverviewController::~COverviewController()
+{
+	configHandler->RemoveObserver(this);
+}
+
+void COverviewController::ConfigUpdate()
+{
+	followRotation = configHandler->GetBool("OverviewRotation");
+
+	if (!followRotation)
+		dir = DIR_UP;
+}
+
+void COverviewController::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
+}
 
 float3 COverviewController::SwitchFrom() const
 {
@@ -59,6 +86,22 @@ bool COverviewController::SetState(const StateMap& sm)
 	// CCameraController::SetState(sm);
 	// always centered, allow only for FOV change
 	SetStateFloat(sm, "fov", fov);
-	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
+
+	// allow dir change so if previous camera on high rotY transition is not jarring
+	if (followRotation) {
+		SetStateFloat(sm, "dx", dir.x);
+		SetStateFloat(sm, "dy", dir.y);
+		SetStateFloat(sm, "dz", dir.z);
+	}
+
+	float mapx = pos.x;
+	float mapz = pos.z;
+
+	if (followRotation && (dir == DIR_LEFT || dir == DIR_RIGHT)) {
+		mapx = pos.z;
+		mapz = pos.x;
+	}
+
+	pos.y = GetCamHeightToFitMapInView(mapx, mapz, fov/2.0);
 	return true;
 }
