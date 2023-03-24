@@ -176,9 +176,14 @@ html[data-theme="dark"] button.theme-toggle, button.theme-toggle {
   margin: 0 0 0 1rem;
 }
 
-/* Enlarged dt inside dl */
+/* Enlarged dt */
 .main-content dl.big-dt, html[data-theme="dark"] dl.big-dt {
   grid-template: auto / fit-content(20em) 1fr;
+}
+
+/* dt allowed to expand/contract */
+.main-content dl.dl-auto, html[data-theme="dark"] dl.dl-auto {
+  grid-template: auto / auto 1fr;
 }
 
 .aux-nav, html[data-theme="dark"] .aux-nav {
