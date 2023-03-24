@@ -44,4 +44,6 @@ add_subdirectory(springcontent)
 add_subdirectory(maphelper)
 add_subdirectory(cursors)
 
+install(FILES "RecoilEngine_4K.png" DESTINATION "${DATADIR}/base")
+
 #install(FILES "fontscache.bmp" DESTINATION "${DATADIR}/base")
