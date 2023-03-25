@@ -956,15 +956,19 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end());
 
-	const auto ComputeHashesTask = [&ar](const std::string& fileName, sha512::raw_digest& fileHash) -> void {
-		ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-	};
+
 #if !defined(DEDICATED) && !defined(UNITSYNC)
 	std::vector<std::shared_ptr<std::future<void>>> tasks;
 	tasks.reserve(fileNames.size());
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
-		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask, fileNames[i], fileHashes[i])));
+		const auto& fileName = fileNames[i];
+		      auto& fileHash = fileHashes[i];
+
+		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
+			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		};
+		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
 	}
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
@@ -979,7 +983,12 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		ComputeHashesTask(fileNames[i], fileHashes[i]);
+		const auto& fileName = fileNames[i];
+		      auto& fileHash = fileHashes[i];
+		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
+			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		};
+		ComputeHashesTask();
 	});
 #endif
 
