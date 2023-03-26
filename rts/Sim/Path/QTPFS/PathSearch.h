@@ -7,16 +7,17 @@
 #include <vector>
 
 #include "PathDefines.h"
-#include "Node.h"
-#include "NodeHeap.h"
+// #include "Node.h"
+// #include "NodeHeap.h"
 #include "PathThreads.h"
 
 #include "System/float3.h"
 
 namespace QTPFS {
-	struct PathCache;
-	struct NodeLayer;
 	struct IPath;
+	struct NodeLayer;
+	struct PathCache;
+	struct SearchNode;
 
 	namespace PathSearchTrace {
 		struct Iteration {

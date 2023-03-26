@@ -2,13 +2,17 @@
 #define PATH_THREADS_H__
 
 #include <cstddef>
+#include <functional>
+#include <queue>
+#include <vector>
 
 #include "Node.h"
-#include "NodeHeap.h"
 
-#include <queue>
+#include "System/Rectangle.h"
 
 namespace QTPFS {
+    typedef unsigned char SpeedModType;
+    typedef unsigned char SpeedBinType;
 
     // per thread
     template<typename T>
@@ -102,17 +106,12 @@ namespace QTPFS {
 	struct SearchThreadData {
 		SparseData<SearchNode> allSearchedNodes;
         SearchPriorityQueue openNodes;
-		//binary_heap<SearchQueueNode> openNodes;
 
 		SearchThreadData(size_t nodeCount)
 			: allSearchedNodes(nodeCount)
 			{}
 
-        void ResetQueue() {
-            //openNodes.clear();
-            while (!openNodes.empty())
-                openNodes.pop();
-        }
+        void ResetQueue() { while (!openNodes.empty()) openNodes.pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
@@ -129,6 +128,34 @@ namespace QTPFS {
         }
 	};
 
+    struct UpdateThreadData {
+		std::vector<SpeedModType> curSpeedMods;
+		std::vector<SpeedBinType> curSpeedBins;
+        SRectangle areaUpdated;
+
+		void InitUpdate(const SRectangle& area)
+		{
+            areaUpdated = area;
+            curSpeedMods.reserve(area.GetArea());
+            curSpeedBins.reserve(area.GetArea());
+        }
+
+        void Reset() {
+            areaUpdated = SRectangle(0, 0, 0, 0);
+            curSpeedMods.resize(0);
+            curSpeedMods.shrink_to_fit();
+            curSpeedBins.resize(0);
+            curSpeedBins.shrink_to_fit();
+        }
+
+        // std::size_t GetMemFootPrint() {
+        //     std::size_t memFootPrint = sizeof(SearchThreadData);
+
+        //     memFootPrint += allSearchedNodes.GetMemFootPrint();
+
+        //     return memFootPrint;
+        // }
+    };
 }
 
 #endif

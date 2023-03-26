@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -11,6 +11,10 @@
 #include "NodeLayer.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
+
+#include "Components/PathSearch.h"
+#include "Systems/PathSearchSystem.h"
+#include "System/Ecs/Utils/SystemGlobalUtils.h"
 
 #include "Map/ReadMap.h"
 
@@ -90,6 +94,8 @@ bool QTPFS::PathSearch::Execute(
 	searchExec = new PathSearchTrace::Execution(gs->frameNum);
 	#endif
 
+	auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
+
 	// be as optimistic as possible: assume the remainder of our path will
 	// cover only flat terrain with maximum speed-modifier between nxtPoint
 	// and tgtPoint
@@ -97,8 +103,20 @@ bool QTPFS::PathSearch::Execute(
 	// a way as to increase the maximum speedmod beyond the current layer's
 	// cached maximum value
 	switch (searchType) {
-		case PATH_SEARCH_ASTAR:    { hCostMult = 1.0f / nodeLayer->GetMaxRelSpeedMod(); } break;
-		case PATH_SEARCH_DIJKSTRA: { hCostMult = 0.0f;                                  } break;
+		// This guarantees the best path, but overestimates distance costs considerabily.
+		// case PATH_SEARCH_ASTAR:    { hCostMult = 1.0f / nodeLayer->GetMaxRelSpeedMod(); } break;
+		case PATH_SEARCH_ASTAR:
+			hCostMult = 1.0f / ( comp.maxRelSpeedMod[nodeLayer->GetNodelayer()] );
+			break;
+		case PATH_SEARCH_DIJKSTRA:
+			hCostMult = 0.0f;
+			break;
+	}
+
+
+	if (nodeLayer->GetNodelayer() == 2) {
+		LOG("%s: maxRelSpeedMod = %f, hCostMult = %f", __func__
+				, comp.maxRelSpeedMod[nodeLayer->GetNodelayer()], hCostMult);
 	}
 
 	// allow the search to start from an impassable node (because single
@@ -319,7 +337,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
 				curNode->GetMoveCost() * gDists[j] +
-				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
+				nxtNode->GetMoveCost() * hDists[j] * int(isTarget); // why is this here??????????????????????
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
 
 			if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {

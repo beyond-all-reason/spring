@@ -48,6 +48,7 @@ public:
 	{
 		return (GetPosSpeedMod(moveDef, pos.x / SQUARE_SIZE, pos.z / SQUARE_SIZE, moveDir));
 	}
+	static float GetPosSpeedMod(const MoveDef& moveDef, unsigned squareIndex);
 
 	// tells whether a position is blocked (inaccessable for a given object's MoveDef)
 	static inline BlockType IsBlocked(const MoveDef& moveDef, const float3& pos, const CSolidObject* collider);

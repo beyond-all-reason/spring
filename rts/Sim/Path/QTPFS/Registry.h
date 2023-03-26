@@ -3,10 +3,12 @@
 
 #include "System/Ecs/EcsMain.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
+#include "System/Ecs/Utils/SystemUtils.h"
 
 namespace QTPFS {
     extern entt::registry registry;
     extern SystemGlobals::SystemGlobal systemGlobals;
+    extern SystemUtils::SystemUtils systemUtils;
 }
 
 #endif

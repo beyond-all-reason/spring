@@ -3,7 +3,7 @@
 #ifndef QTPFS_NODELAYER_HDR
 #define QTPFS_NODELAYER_HDR
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <limits>
 #include <vector>
@@ -13,6 +13,7 @@
 #include "System/Rectangle.h"
 #include "Node.h"
 #include "PathDefines.h"
+#include "PathThreads.h"
 
 #include "System/Log/ILog.h"
 #include "System/Rectangle.h"
@@ -26,8 +27,7 @@ namespace QTPFS {
 
 	struct NodeLayer {
 	public:
-		typedef unsigned char  SpeedModType;
-		typedef unsigned char SpeedBinType;
+
 
 		static void InitStatic();
 		static size_t MaxSpeedModTypeValue() { return (std::numeric_limits<SpeedModType>::max()); }
@@ -45,8 +45,9 @@ namespace QTPFS {
 		bool Update(
 			const SRectangle& r,
 			const MoveDef* md,
-			const std::vector<float>* luSpeedMods = nullptr,
-			const std::vector<  int>* luBlockBits = nullptr
+			// const std::vector<float>* luSpeedMods = nullptr,
+			// const std::vector<  int>* luBlockBits = nullptr,
+			UpdateThreadData& threadData
 		);
 
 		void ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, unsigned int currMagicNum);
@@ -115,20 +116,27 @@ namespace QTPFS {
 			poolNodes[idx / POOL_CHUNK_SIZE][idx % POOL_CHUNK_SIZE].Init(parent, nn, x1, z1, x2, z2, idx);
 			nodeIndcs.pop_back();
 
+			if (idx >= maxNodesAlloced) { maxNodesAlloced = idx + 1; }
+
 			// LOG("%s: [%p] alloc'ed id=%d", __func__, &poolNodes, idx);
 
 			return idx;
 		}
 
+		int GetMaxNodesAlloced() const { return maxNodesAlloced; }
+
 		void FreePoolNode(unsigned int nodeIndex) {
 			//LOG("%s: [%p] free'ed id=%d", __func__, &poolNodes, nodeIndex);
-			nodeIndcs.push_back(nodeIndex); }
+			nodeIndcs.push_back(nodeIndex);
+			// auto* curNode = GetPoolNode(nodeIndex);
+			// curNode->DeactivateNode();
+		}
 
 
 		// const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
-		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
+		// const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		// const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
-		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
+		// const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
 		// std::vector<INode*>& GetNodes() { return nodeGrid; }
 
@@ -137,16 +145,16 @@ namespace QTPFS {
 		void SetNumLeafNodes(unsigned int n) { numLeafNodes = n; }
 		unsigned int GetNumLeafNodes() const { return numLeafNodes; }
 
-		float GetMaxRelSpeedMod() const { return maxRelSpeedMod; }
-		float GetAvgRelSpeedMod() const { return avgRelSpeedMod; }
+		// float GetMaxRelSpeedMod() const { return maxRelSpeedMod; }
+		// float GetAvgRelSpeedMod() const { return avgRelSpeedMod; }
 
 		SpeedBinType GetSpeedModBin(float absSpeedMod, float relSpeedMod) const;
 
 		std::uint64_t GetMemFootPrint() const {
 			std::uint64_t memFootPrint = sizeof(NodeLayer);
-			memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
+			// memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
 			// memFootPrint += (oldSpeedMods.size() * sizeof(SpeedModType));
-			memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
+			// memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
 			// memFootPrint += (oldSpeedBins.size() * sizeof(SpeedBinType));
 			// memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
 			for (size_t i = 0, n = NUM_POOL_CHUNKS; i < n; i++) {
@@ -180,6 +188,7 @@ namespace QTPFS {
 		}
 
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
+		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
 		void UpdateNeighborCache(INode* node, int sidesToUpData);
 
@@ -189,9 +198,9 @@ namespace QTPFS {
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
 
-		std::vector<SpeedModType> curSpeedMods;
+		// std::vector<SpeedModType> curSpeedMods;
 		// std::vector<SpeedModType> oldSpeedMods;
-		std::vector<SpeedBinType> curSpeedBins;
+		// std::vector<SpeedBinType> curSpeedBins;
 		// std::vector<SpeedBinType> oldSpeedBins;
 
 		// root lives outside pool s.t. all four children of a given node are always in one chunk
@@ -205,7 +214,7 @@ public:
 		void SetRootMask(uint32_t newMask) { rootMask = newMask; }
 		uint32_t GetRootMask() const { return rootMask; }
 
-private:
+public:
 
 		// NOTE:
 		//   we need a fixed range that does not become wider / narrower
@@ -215,10 +224,12 @@ private:
 		static float        MIN_SPEEDMOD_VALUE;
 		static float        MAX_SPEEDMOD_VALUE;
 
+private:
 		unsigned int layerNumber = 0;
 		unsigned int numLeafNodes = 0;
 		unsigned int updateCounter = 0;
 
+		int32_t maxNodesAlloced = 0;
 		int32_t numRootNodes = 0;
 		int32_t xRootNodes = 0;
 		int32_t zRootNodes = 0;

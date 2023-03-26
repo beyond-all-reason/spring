@@ -15,11 +15,11 @@ public:
     {}
 
     template<class T>
-    void CreateSystemComponent() {
+    T& CreateSystemComponent() {
         if (! registry.valid(systemGlobalsEntity))
             systemGlobalsEntity = registry.create();
 
-        registry.emplace_or_replace<T>(systemGlobalsEntity);
+        return registry.emplace_or_replace<T>(systemGlobalsEntity);
     };
 
     template<class T>

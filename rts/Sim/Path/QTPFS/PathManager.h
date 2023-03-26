@@ -106,7 +106,7 @@ namespace QTPFS {
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
-		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
+		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
 
 		void ExecuteQueuedSearches();
 		void QueueDeadPathSearches();
@@ -140,12 +140,16 @@ namespace QTPFS {
 		std::string GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const;
 		void Serialize(const std::string& cacheFileDir);
 
+	public:
 		static std::vector<NodeLayer> nodeLayers;
-		// static std::vector<QTNode*> nodeTrees;
+
+	private:
 		PathCache pathCache;
 		static std::vector<PathSearch*> pathSearches;
 
+		// per thread data
 		std::vector<SearchThreadData> searchThreadData;
+		std::vector<UpdateThreadData> updateThreadData;
 
 		// spring::unordered_map<unsigned int, unsigned int> pathTypes;
 		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;

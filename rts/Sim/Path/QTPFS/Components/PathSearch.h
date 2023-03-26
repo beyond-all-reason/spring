@@ -13,10 +13,32 @@ namespace QTPFS {
 
 class INode;
 
-// std::queue<INode*> openNodes; << per thread.
 struct PathSearchSystemComponent {
 	static constexpr std::size_t page_size = 1;
 	std::vector< std::deque<INode*> > openNodes;
+};
+
+struct NodeLayerMaxSpeedSweep {
+	static constexpr std::size_t page_size = 256;
+	int maxNodesThisSweep = 0;
+	float curMaxSpeed = 0.f;
+	int layerNum = -1;
+};
+
+// std::queue<INode*> openNodes; << per thread.
+struct PathMaxSpeedModSystemComponent {
+	static constexpr std::size_t page_size = 1;
+	std::array<float, 256> maxRelSpeedMod; // TODO: get the non-magic number
+	int refreshTimeInFrames = 0;
+	int startRefreshOnFrame = 0;
+
+	enum STATES {
+		STATE_INIT,
+		STATE_READY,
+		STATE_UPDATING,
+	};
+
+	int state = STATE_INIT;
 };
 
 struct _PathSearch {

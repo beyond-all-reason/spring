@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <assert.h>
 
@@ -35,6 +35,7 @@
 
 #include "Components/Path.h"
 #include "Components/PathSearch.h"
+#include "Systems/PathMaxSpeedModSystem.h"
 #include "Registry.h"
 
 #include <assert.h>
@@ -141,6 +142,8 @@ QTPFS::PathManager::PathManager() {
 QTPFS::PathManager::~PathManager() {
 	isFinalized = false;
 
+	PathMaxSpeedModSystem::Shutdown();
+
 	registry.destroy(systemEntity);
 
 	// print out anything still left in the registry - there should be nothing
@@ -183,7 +186,6 @@ QTPFS::PathManager::~PathManager() {
 	// 	delete (tracesIt->second);
 	// }
 
-	// nodeTrees.clear();
 	// reuse layer pools when reloading
 	// nodeLayers.clear();
 	// pathCaches.clear();
@@ -197,6 +199,9 @@ QTPFS::PathManager::~PathManager() {
 	// numPrevExecutedSearches.clear();
 
 	searchThreadData.clear();
+	updateThreadData.clear();
+
+	systemGlobals.ClearComponents();
 
 	assert(registry.alive() == 0);
 
@@ -242,6 +247,14 @@ void QTPFS::PathManager::Load() {
 
 	isFinalized = true;
 
+	int threads = ThreadPool::GetNumThreads();
+	searchThreadData.reserve(threads);
+	updateThreadData.reserve(threads);
+	while (threads-- > 0) {
+		searchThreadData.emplace_back(SearchThreadData(maxNumLeafNodes));
+		updateThreadData.emplace_back(UpdateThreadData());
+	}
+
 	// add one extra element for object-less requests
 	// numCurrExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
 	// numPrevExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
@@ -266,6 +279,8 @@ void QTPFS::PathManager::Load() {
 			// Serialize(cacheDirName);
 
 			layersInited = true;
+
+			PathMaxSpeedModSystem::Init();
 		}
 
 		// NOTE:
@@ -300,10 +315,6 @@ void QTPFS::PathManager::Load() {
 		{ SyncedUint tmp(pfsCheckSum); }
 
 		// PathSearch::InitGlobalQueue(maxNumLeafNodes);
-		int threads = ThreadPool::GetNumThreads();
-		searchThreadData.reserve(threads);
-		while (threads-- > 0)
-			searchThreadData.emplace_back(SearchThreadData(maxNumLeafNodes /*NodeLayer::POOL_TOTAL_SIZE*/));
 	}
 
 	{
@@ -326,9 +337,10 @@ std::uint64_t QTPFS::PathManager::GetMemFootPrint() const {
 		memFootPrint += threadData.GetMemFootPrint();
 	}
 
+	// std::for_each(updateThreadData.begin(), updateThreadData.end(),[](const auto& d){ d.GetMemFootPrint(); });
+
 	for (unsigned int i = 0; i < nodeLayers.size(); i++) {
 		memFootPrint += nodeLayers[i].GetMemFootPrint();
-		// memFootPrint += nodeTrees[i]->GetMemFootPrint(nodeLayers[i]);
 
 		auto& nodeLayer = nodeLayers[i];
 		for (int j = 0; j < nodeLayer.GetRootNodeCount(); ++j){
@@ -388,13 +400,36 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			//     silently assumes trees either ALL exist or ALL do not
 			//     (if >= 1 are missing for some player in MP, we desync)
 
+			NodeLayer& layer = nodeLayers[layerNum];
+
 			numTerrainChanges++;
 
 			InitNodeLayer(layerNum, rect);
-			UpdateNodeLayer(layerNum, rect);
+
+			INode* rootNode = layer.GetPoolNode(0);
+
+			std::vector<SRectangle> rootRects;
+			rootRects.reserve(layer.GetRootNodeCount());
+
+			int rootXMax = rootNode->xmax();
+			int rootZMax = rootNode->zmax();
+			for (int hmz = rect.z1; hmz < rect.z2; hmz += rootZMax) {
+				assert(hmz + rootZMax <= rect.z2);
+				for (int hmx = rect.x1; hmx < rect.x2; hmx += rootXMax) {
+					assert(hmx + rootXMax <= rect.x2);
+					rootRects.emplace_back(hmx, hmz, hmx + rootXMax, hmz + rootZMax);
+				}
+			}
+			
+			std::for_each(rootRects.begin(), rootRects.end(), [this, layerNum, currentThread](auto &rect){
+				UpdateNodeLayer(layerNum, rect, currentThread);
+			});
+
+			// Full map-wide allocations have been made, we shouldn't need that much memory in future.
+			updateThreadData[currentThread].Reset();
 
 			// const QTNode* tree = nodeTrees[layerNum];
-			const NodeLayer& layer = nodeLayers[layerNum];
+			// const NodeLayer& layer = nodeLayers[layerNum];
 			// const unsigned int mem = (tree->GetMemFootPrint(layer) + layer.GetMemFootPrint()) / (1024 * 1024);
 
 			int rootMem = 0;
@@ -430,15 +465,26 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	LOG("%s: map root size is (%d, %d)", __func__, width, height);
 
 	// Optimal function of QTPFS relies on power of 2 squares. Find the largest 2^x squares that
-	// fit the map. I recall the map system won't allow map sizes below 32m increments, so start
-	// there.
-	int rootSize = 32;
+	// fit the map. 64 is the smallest as understood by map makers. So use 32 here to detect a map
+	// that falls below that threshold.
+	int rootSize = 64;
 	int limit = std::min(width, height);
 	for (int factor = rootSize<<1; factor <= limit; factor <<= 1) {
 		if (width % factor == 0 && height % factor == 0)
 			rootSize = factor;
 	}
+	// Don't allow the root size to get too big to limit memory usage. (sizes given with 60 movetypes and 6 threads)
+	// Nine Metal Islands could have gone to 2048x2048 root node (2880MB)
+	// Nine Metal Islands has 512x512 nodes in each corner (180MB)
+	// 256x256 (45MB)
+	// Quick Silver has 128x128 nodes in corners (11.25 MB)
+	int maxRootSize = 256;
+	rootSize = rootSize > maxRootSize ? maxRootSize : rootSize;
 	LOG("%s: root node size is set to: %d", __func__, rootSize);
+
+	assert(rootSize != 64);
+	if (rootSize == 64)
+		LOG("%s: Warning! Map width and height are supposed to be multiples of 1024 elmos.", __func__);
 
 	// TODO: reduce max levels based on number of root nodes - find a suitable limit?
 	// TODO: id handling for root nodes
@@ -493,7 +539,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
-void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r) {
+void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -513,6 +559,9 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	// impassable squares when eg. a structure is reclaimed
 	// SRectangle mr;
 
+	
+	// TODO: do this at the map changed stage!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 	// mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
 	// mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
 	// mr.x2 = std::min((r.x2 + md->xsizeh) + int(QTNode::MinSizeX() >> 1), mapDims.mapx);
@@ -522,25 +571,39 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	// ur.x2 = mr.x2;
 	// ur.z2 = mr.z2;
 
+	// TODO expand r to correct size - i.e. size of smallest node that contains the area
+	// TODO: stop r expansion in tessalate - it isn't needed
+
+	INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
+	SRectangle re(containingNode->xmin(), containingNode->zmin(), containingNode->xmax(), containingNode->zmax());
+
+	assert(re.x1 <= r.x1);
+	assert(re.z1 <= r.z1);
+	assert(re.x2 >= r.x2);
+	assert(re.z2 >= r.z2);
+
+	updateThreadData[currentThread].InitUpdate(re);
 	const bool wantTesselation = (layersInited || !haveCacheDir);
-	const bool needTesselation = nodeLayers[layerNum].Update(r, md);
+	const bool needTesselation = nodeLayers[layerNum].Update(re, md, updateThreadData[currentThread]);
 
 	// process the affected root nodes.
 
 	// LOG("%s: [%d] needTesselation=%d, wantTesselation=%d", __func__, layerNum, (int)needTesselation, (int)wantTesselation);
 
 	if (needTesselation && wantTesselation) {
-		SRectangle ur(r.x1, r.z1, r.x2, r.z2);
+		SRectangle ur(re.x1, re.z1, re.x2, re.z2);
 		auto& nodeLayer = nodeLayers[layerNum];
-		for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
-			auto curRootNode = nodeLayer.GetPoolNode(i);
-			curRootNode->PreTesselate(nodeLayers[layerNum], r, ur, 0);
-		}
+		// for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+		// 	auto curRootNode = nodeLayer.GetPoolNode(i);
+		// 	curRootNode->PreTesselate(nodeLayers[layerNum], r, ur, 0, &updateThreadData[currentThread]);
+		// }
+
+		containingNode->PreTesselate(nodeLayers[layerNum], re, ur, 0, &updateThreadData[currentThread]);
 
 		// nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
 
 		pathCache.SetLayerPathCount(layerNum, 200); // TODO sort out placeholder.
-		pathCache.MarkDeadPaths(r, layerNum);
+		pathCache.MarkDeadPaths(re, layerNum);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
@@ -689,6 +752,9 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 void QTPFS::PathManager::Update() {
 	SCOPED_TIMER("Sim::Path");
 	{
+		systemUtils.NotifyUpdate();
+	}
+	{
 		SCOPED_TIMER("Sim::Path::Requests");
 		ThreadUpdate();
 	}
@@ -711,7 +777,7 @@ void QTPFS::PathManager::Update() {
 		numTerrainChanges++;
 
 		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
-			UpdateNodeLayer(layerNum, rect);
+			UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum());
 		});
 
 		// Mark all dirty paths so that they can be recalculated
@@ -735,6 +801,8 @@ void QTPFS::PathManager::Update() {
 		assert(sectorId < mapChangeTrack.damageMap.size());
 		mapChangeTrack.damageMap[sectorId] = false;
 		mapChangeTrack.damageQueue.pop_front();
+
+		systemUtils.NotifyUpdate();
 	}
 }
 
@@ -761,12 +829,6 @@ void QTPFS::PathManager::ThreadUpdate() {
 	// }
 
 	sharedPaths.clear();
-
-	// for (unsigned int pathTypeUpdate = minPathTypeUpdate; pathTypeUpdate < maxPathTypeUpdate; pathTypeUpdate++) {
-	// 	#ifndef QTPFS_IGNORE_DEAD_PATHS
-	// 	QueueDeadPathSearches(pathTypeUpdate);
-	// 	#endif
-	// }
 
 	QueueDeadPathSearches();
 	ExecuteQueuedSearches();

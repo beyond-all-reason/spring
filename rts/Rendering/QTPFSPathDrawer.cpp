@@ -119,8 +119,8 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
-		// font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
-		font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
+		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
 	}
 
 	font->DrawWorldBuffered();
@@ -366,7 +366,10 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 			if (md != nullptr) {
 				const QTPFS::NodeLayer& nl = pm->GetNodeLayer(md->pathType);
 
-				const float smr = 1.0f / nl.GetMaxRelSpeedMod();
+				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathMaxSpeedModSystemComponent>();
+
+				// const float smr = 1.0f / nl.GetMaxRelSpeedMod();
+				const float smr = 1.0f / ( speedModComp.maxRelSpeedMod[nl.GetNodelayer()] );
 				const bool los = (gs->cheatEnabled || gu->spectating);
 
 				for (int ty = starty; ty < endy; ++ty) {

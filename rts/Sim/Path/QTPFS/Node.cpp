@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -11,6 +11,7 @@
 #include "NodeLayer.h"
 #include "PathDefines.h"
 #include "PathManager.h"
+#include "PathThreads.h"
 
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
@@ -417,7 +418,7 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 
 #else
 
-	void QTPFS::QTNode::PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth) {
+	void QTPFS::QTNode::PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth, const UpdateThreadData* threadData) {
 		const unsigned int rel = GetRectangleRelation(r);
 
 		// LOG("%s: [%d:%d]", __func__, nl.GetNodelayer(), depth);
@@ -443,15 +444,17 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 		// LOG("%s: [%d:%d] leaf=%d !cont=%d", __func__, nl.GetNodelayer(), depth, (int)leaf, (int)!cont);
 
 		if (leaf || !cont) {
+			// TODO: this expansion is no longer needed due to power of 2 squares
 			// extend a bounding box around every
 			// node modified during re-tesselation
-			ur.x1 = std::min(ur.x1, int(xmin()));
-			ur.z1 = std::min(ur.z1, int(zmin()));
-			ur.x2 = std::max(ur.x2, int(xmax()));
-			ur.z2 = std::max(ur.z2, int(zmax()));
+			// ur.x1 = std::min(ur.x1, int(xmin()));
+			// ur.z1 = std::min(ur.z1, int(zmin()));
+			// ur.x2 = std::max(ur.x2, int(xmax()));
+			// ur.z2 = std::max(ur.z2, int(zmax()));
 
 			Merge(nl);
-			Tesselate(nl, cr, depth);
+			// Tesselate(nl, cr, depth, threadData);
+			Tesselate(nl, r, depth, threadData);
 			return;
 		}
 
@@ -465,7 +468,8 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 		// 	);
 
 		for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
-			nl.GetPoolNode(childBaseIndex + i)->PreTesselate(nl, cr, ur, depth + 1);
+			// nl.GetPoolNode(childBaseIndex + i)->PreTesselate(nl, cr, ur, depth + 1, threadData);
+			nl.GetPoolNode(childBaseIndex + i)->PreTesselate(nl, r, ur, depth + 1, threadData);
 		}
 	}
 
@@ -473,13 +477,13 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 
 
 
-void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth) {
+void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData) {
 	unsigned int numNewBinSquares = 0; // nr. of squares in <r> that changed bin after deformation
 	unsigned int numDifBinSquares = 0; // nr. of different bin-types across all squares within <r>
 	unsigned int numClosedSquares = 0;
 
 	// if true, we are at the bottom of the recursion
-	bool registerNode = true;
+	// bool registerNode = true;
 	bool wantSplit = false;
 	bool needSplit = false;
 
@@ -515,28 +519,30 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	// technically required whenever numRefBinSquares is zero, ie.
 	// when ALL squares in <r> changed bins in unison
 	//
-	UpdateMoveCost(nl, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
+	UpdateMoveCost(threadData, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
 
 	if ((wantSplit && Split(nl, depth, false)) || (needSplit && Split(nl, depth, true))) {
-		registerNode = false;
+		// registerNode = false;
 
 		for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
 			QTNode* cn = nl.GetPoolNode(childBaseIndex + i);
-			SRectangle cr = cn->ClipRectangle(r);
+			//SRectangle cr = cn->ClipRectangle(r);
 
-			cn->Tesselate(nl, cr, depth + 1);
+			//cn->Tesselate(nl, cr, depth + 1, threadData);
+			cn->Tesselate(nl, r, depth + 1, threadData);
 			assert(cn->GetMoveCost() != -1.0f);
 		}
 	}
 
-	if (!registerNode)
-		return;
+	// if (!registerNode)
+	// 	return;
 
 	// nl.RegisterNode(this);
 }
 
 bool QTPFS::QTNode::UpdateMoveCost(
-	const NodeLayer& nl,
+	const UpdateThreadData* threadData,
+	// const NodeLayer& nl,
 	const SRectangle& r,
 	unsigned int& numNewBinSquares,
 	unsigned int& numDifBinSquares,
@@ -545,11 +551,30 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	bool& needSplit
 ) {
 	// const std::vector<NodeLayer::SpeedBinType>& oldSpeedBins = nl.GetOldSpeedBins();
-	const std::vector<NodeLayer::SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
+	// const std::vector<SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
 	// const std::vector<NodeLayer::SpeedModType>& oldSpeedMods = nl.GetOldSpeedMods();
-	const std::vector<NodeLayer::SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
+	// const std::vector<SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
 
-	const NodeLayer::SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
+	const std::vector<SpeedBinType>& curSpeedBins = threadData->curSpeedBins;
+	const std::vector<SpeedModType>& curSpeedMods = threadData->curSpeedMods;
+	const int areaWidth = r.GetWidth(); // threadData->areaUpdated.GetWidth();
+
+	// const int minx = int(xmin()) - r.x1;
+	// const int maxx = int(xmax()) - r.x1;
+	// const int minz = int(zmin()) - r.z1;
+	// const int maxz = int(zmax()) - r.z1;
+
+	assert(int(xmin()) >= r.x1);
+	assert(int(xmax()) <= r.x2);
+	assert(int(zmin()) >= r.z1);
+	assert(int(zmax()) <= r.z2);
+
+	// const SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
+	const unsigned int refIdx = (zmin() - r.z1) * areaWidth + (xmin() - r.x1);
+	const SpeedBinType refSpeedBin = curSpeedBins[refIdx];
+
+	assert(refIdx >= 0);
+	assert(refIdx < curSpeedBins.size());
 
 	// <this> can either just have been merged or added as
 	// new child of split parent; in the former case we can
@@ -558,49 +583,56 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	// in <r> with a single reference point outside it)
 	assert(moveCostAvg == -1.0f || moveCostAvg > 0.0f);
 
-	if (false && moveCostAvg > 0.0f) {
-		// just merged, so <r> is fully inside <this>
-		//
-		// the reference-square (xmin, zmin) MUST lie
-		// outside <r> when <r> does not cover <this>
-		// 100%, otherwise we would find a value of 0
-		// for numDifBinSquares in some situations
-		assert((r.x2 - r.x1) >= 0);
-		assert((r.z2 - r.z1) >= 0);
+	// if (false && moveCostAvg > 0.0f) {
+	// 	// just merged, so <r> is fully inside <this>
+	// 	//
+	// 	// the reference-square (xmin, zmin) MUST lie
+	// 	// outside <r> when <r> does not cover <this>
+	// 	// 100%, otherwise we would find a value of 0
+	// 	// for numDifBinSquares in some situations
+	// 	assert((r.x2 - r.x1) >= 0);
+	// 	assert((r.z2 - r.z1) >= 0);
 
-		const unsigned int minx = std::max(r.x1, int(xmin()));
-		const unsigned int maxx = std::min(r.x2, int(xmax()));
-		const unsigned int minz = std::max(r.z1, int(zmin()));
-		const unsigned int maxz = std::min(r.z2, int(zmax()));
+	// 	// const unsigned int minx = std::max(r.x1, int(xmin()));
+	// 	// const unsigned int maxx = std::min(r.x2, int(xmax()));
+	// 	// const unsigned int minz = std::max(r.z1, int(zmin()));
+	// 	// const unsigned int maxz = std::min(r.z2, int(zmax()));
 
-		speedModSum = 0.0f;
+	// 	speedModSum = 0.0f;
 
-		for (unsigned int hmz = minz; hmz < maxz; hmz++) {
-			for (unsigned int hmx = minx; hmx < maxx; hmx++) {
-				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+	// 	for (unsigned int hmz = minz; hmz < maxz; hmz++) {
+	// 		for (unsigned int hmx = minx; hmx < maxx; hmx++) {
+	// 			// const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+	// 			const unsigned int sqrIdx = hmz * areaWidth + hmx;
 
-				// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
-				const NodeLayer::SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
+	// 			// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
+	// 			const SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
 
-				// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
-				numDifBinSquares += int(curSpeedBin != refSpeedBin);
-				numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
+	// 			// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
+	// 			// numDifBinSquares += int(curSpeedBin != refSpeedBin);
+	// 			numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
 
-				// speedModSum -= (oldSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
-				speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
+	// 			// speedModSum -= (oldSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
+	// 			speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
 
-				assert(speedModSum >= 0.0f);
-			}
-		}
-	} else {
+	// 			assert(speedModSum >= 0.0f);
+	// 		}
+	// 	}
+	// } else {
 		speedModSum = 0.0f;
 
 		for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
 			for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
-				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+				// const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+				// const unsigned int sqrIdx = hmz * areaWidth + hmx;
+				const unsigned int sqrIdx = (hmz - r.z1) * areaWidth + (hmx - r.x1);
+
+				assert(sqrIdx >= 0);
+				assert(sqrIdx < curSpeedBins.size());
+				assert(sqrIdx < curSpeedMods.size());
 
 				// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
-				const NodeLayer::SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
+				const SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
 
 				// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
 				numDifBinSquares += int(curSpeedBin != refSpeedBin);
@@ -609,7 +641,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 				speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
 			}
 		}
-	}
+	// }
 
 	// (re-)calculate the average cost of this node
 	assert(speedModSum >= 0.0f);

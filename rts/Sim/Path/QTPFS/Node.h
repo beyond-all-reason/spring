@@ -23,6 +23,7 @@
 namespace QTPFS {
 	struct NodeLayer;
 	struct SearchNode;
+	struct UpdateThreadData;
 
 	struct INode {
 			friend SearchNode;
@@ -42,16 +43,8 @@ namespace QTPFS {
 		// NOTE:
 		//     storing the heap-index is an *UGLY* break of abstraction,
 		//     but the only way to keep the cost of resorting acceptable
-		unsigned int nodeNumber = -1u;
-		// unsigned int heapIndex = -1u;
+		unsigned int nodeNumber = -1u; // TODO: maybe remove? only used for hash (to match searches) could be quick enough to build on demand?
 		unsigned int index = 0;
-
-		// float fCost = 0.0f;
-		// float gCost = 0.0f;
-		// float hCost = 0.0f;
-
-		// points back to previous node in path
-		// INode* prevNode = nullptr;
 
 	public:
 		QTNode() = default;
@@ -85,8 +78,8 @@ namespace QTPFS {
 		std::uint64_t GetMemFootPrint(const NodeLayer& nl) const;
 		std::uint64_t GetCheckSum(const NodeLayer& nl) const;
 
-		void PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth);
-		void Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth);
+		void PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth, const UpdateThreadData* threadData);
+		void Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData);
 		void Serialize(std::fstream& fStream, NodeLayer& nodeLayer, unsigned int* streamSize, unsigned int depth, bool readMode);
 
 		bool IsLeaf() const { return (childBaseIndex == -1u); }
@@ -114,6 +107,12 @@ namespace QTPFS {
 		unsigned int zsize() const { return (zmax() - zmin()); }
 		unsigned int area() const { return (xsize() * zsize()); }
 
+		bool RectIsInside(const SRectangle& rect) const {
+			return
+				xmin() <= rect.x1 && zmin() <= rect.y1 &&
+				xmax() >= rect.x2 && zmax() >= rect.y2;
+		}
+
 		// true iff this node is fully open (partially open nodes have larger but non-infinite cost)
 		bool AllSquaresAccessible() const { return (moveCostAvg < (QTPFS_CLOSED_NODE_COST / float(area()))); }
 		bool AllSquaresImpassable() const { return (moveCostAvg == QTPFS_POSITIVE_INFINITY); }
@@ -138,9 +137,14 @@ namespace QTPFS {
 			return netpoints;
 		}
 
+		void DeactivateNode() { _xminxmax = -1; }
+
+		bool NodeDeactivated() const { return (_xminxmax == -1); }
+
 	private:
 		bool UpdateMoveCost(
-			const NodeLayer& nl,
+			// const NodeLayer& nl,
+			const UpdateThreadData* threadData,
 			const SRectangle& r,
 			unsigned int& numNewBinSquares,
 			unsigned int& numDifBinSquares,
@@ -156,20 +160,20 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
-		unsigned int _xminxmax = 0;
-		unsigned int _zminzmax = 0;
+		unsigned int _xminxmax = 0; // TODO: split into shorts
+		unsigned int _zminzmax = 0; // TODO: split into shorts
 
-		float speedModSum =  0.0f;
-		float speedModAvg =  0.0f;
-		float moveCostAvg = -1.0f;
+		float speedModSum =  0.0f; // TODO: remove
+		float speedModAvg =  0.0f; // TODO: remove
+		float moveCostAvg = -1.0f; // TODO: consider char length? Probably not...
 
-		unsigned int currMagicNum = 0;
-		unsigned int prevMagicNum = -1u;
+		unsigned int currMagicNum = 0;   // TODO: remove
+		unsigned int prevMagicNum = -1u; // TODO: remove
 
 		unsigned int childBaseIndex = -1u;
 
-		std::vector<INode*> neighbors;
-		std::vector<float2> netpoints;
+		std::vector<INode*> neighbors; // TODO: reduce number of elements
+		std::vector<float2> netpoints; // TODO: reduce number of elements
 	};
 
 	struct SearchNode {

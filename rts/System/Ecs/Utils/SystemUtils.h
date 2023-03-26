@@ -1,15 +1,12 @@
 #ifndef SYSTEM_UTILS_H__
 #define SYSTEM_UTILS_H__
 
-#include "Sim/Ecs/EcsMain.h"
+#include "System/Ecs/EcsMain.h"
 
 namespace SystemUtils {
 
 class SystemUtils {
 public:
-
-    void InitSystems();
-
     void NotifyUpdate() {
         update.publish();
     }
@@ -34,13 +31,11 @@ public:
         return entt::sink{postLoad};
     }
 
-private:
+protected:
     entt::sigh<void()> update{};
     entt::sigh<void()> preLoad{};
     entt::sigh<void()> postLoad{};
 };
-
-extern SystemUtils systemUtils;
 
 }
 
