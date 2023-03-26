@@ -24,9 +24,10 @@ public:
 	void IncRef() { (refCount++); }
 	bool DecRef() { return ((refCount--) > 1); }
 	const S3DModel* GetModel() const;
+	void PostLoad();
 public:
 	SolidObjectGroundDecal* decal; //FIXME defined in legacy decal handler with a lot legacy stuff
-	uint32_t modelId;
+	std::string modelName;
 
 	float3 pos;
 	float3 dir;

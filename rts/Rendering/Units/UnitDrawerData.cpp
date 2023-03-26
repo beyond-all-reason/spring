@@ -32,10 +32,10 @@ static FixedDynMemPool<sizeof(GhostSolidObject), MAX_UNITS / 1000, MAX_UNITS / 3
 
 ///////////////////////////
 
-CR_BIND(GhostSolidObject, )
+CR_BIND_POOL(GhostSolidObject, ,ghostMemPool.allocMem, ghostMemPool.freeMem)
 CR_REG_METADATA(GhostSolidObject, (
 	CR_IGNORED(decal),
-	CR_MEMBER(modelId),
+	CR_MEMBER(modelName),
 
 	CR_MEMBER(pos),
 	CR_MEMBER(dir),
@@ -45,7 +45,9 @@ CR_REG_METADATA(GhostSolidObject, (
 	CR_MEMBER(refCount),
 	CR_MEMBER(lastDrawFrame),
 
-	CR_IGNORED(model)
+	CR_IGNORED(model),
+
+	CR_POSTLOAD(PostLoad)
 ))
 
 CR_BIND(CUnitDrawerData::TempDrawUnit, )
@@ -75,10 +77,18 @@ CR_REG_METADATA(CUnitDrawerData::SavedData, (
 
 ///////////////////////////
 
+
+void GhostSolidObject::PostLoad()
+{
+	decal = nullptr;
+	model = nullptr;
+	GetModel();
+}
+
 const S3DModel* GhostSolidObject::GetModel() const
 {
 	if (!model)
-		model = modelLoader.GetModelPtr(modelId);
+		model = modelLoader.LoadModel(modelName);
 
 	return model;
 }
@@ -568,7 +578,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 				gso = ghostMemPool.alloc<GhostSolidObject>();
 
 				gso->pos = u->pos;
-				gso->modelId = gsoModel->id;
+				gso->modelName = gsoModel->name;
 				gso->decal = nullptr;
 				gso->facing = u->buildFacing;
 				gso->dir = u->frontdir;
