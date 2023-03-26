@@ -174,6 +174,7 @@ private:
 	ModelDrawerTypes mdType = ModelDrawerTypes::MODEL_DRAWER_CNT;
 public:
 	inline static TDrawer* modelDrawer = nullptr;
+	inline static TDrawerData* modelDrawerData = nullptr; //public for creg
 protected:
 	inline static int preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //no preference
 	inline static bool mtModelDrawer = true;
@@ -185,7 +186,6 @@ protected:
 	inline static bool drawForward = true;
 	inline static bool drawDeferred = true;
 
-	inline static TDrawerData* modelDrawerData = nullptr;
 	inline static IModelDrawerState* modelDrawerState = nullptr;
 	inline static std::array<TDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> modelDrawers = {};
 

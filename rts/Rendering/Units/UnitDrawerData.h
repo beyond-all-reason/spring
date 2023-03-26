@@ -9,6 +9,7 @@
 struct SolidObjectGroundDecal;
 struct S3DModel;
 class CUnitDrawer;
+class UnitDef;
 
 namespace icon {
 	class CIconData;
@@ -17,14 +18,15 @@ namespace GL {
 	struct GeometryBuffer;
 }
 
-struct GhostSolidObject {
+class GhostSolidObject {
+	CR_DECLARE(GhostSolidObject)
 public:
 	void IncRef() { (refCount++); }
 	bool DecRef() { return ((refCount--) > 1); }
-
+	const S3DModel* GetModel() const;
 public:
 	SolidObjectGroundDecal* decal; //FIXME defined in legacy decal handler with a lot legacy stuff
-	S3DModel* model;
+	uint32_t modelId;
 
 	float3 pos;
 	float3 dir;
@@ -33,6 +35,8 @@ public:
 	uint8_t team;
 	int refCount;
 	int lastDrawFrame;
+private:
+	mutable const S3DModel* model;
 };
 
 class CUnitDrawerData : public CUnitDrawerDataBase {
@@ -59,8 +63,11 @@ public:
 
 	void PlayerChanged(int playerNum) override;
 public:
-	struct TempDrawUnit {
-		const UnitDef* unitDef;
+	class TempDrawUnit {
+		CR_DECLARE_STRUCT(TempDrawUnit)
+	public:
+		const UnitDef* GetUnitDef() const;
+		int unitDefId;
 
 		int team;
 		int facing;
@@ -71,6 +78,21 @@ public:
 
 		bool drawAlpha;
 		bool drawBorder;
+	private:
+		mutable const UnitDef* unitDef;
+	};
+	struct SavedData {
+		CR_DECLARE_STRUCT(SavedData)
+
+		/// AI unit ghosts
+		std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
+		std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempAlphaUnits;
+
+		/// buildings that were in LOS_PREVLOS when they died and not in LOS since
+		std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
+
+		/// buildings that left LOS but are still alive
+		std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
 	};
 public:
 	CUnitDrawerData(bool& mtModelDrawer_);
@@ -105,17 +127,20 @@ public:
 	const std::vector<UnitDefImage>& GetUnitDefImages() const { return unitDefImages; }
 	      std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }
 
-	const std::vector<TempDrawUnit>& GetTempOpaqueDrawUnits(int modelType) const { return tempOpaqueUnits[modelType]; }
-	const std::vector<TempDrawUnit>& GetTempAlphaDrawUnits(int modelType) const { return  tempAlphaUnits[modelType]; }
+	const std::vector<TempDrawUnit>& GetTempOpaqueDrawUnits(int modelType) const { return savedData.tempOpaqueUnits[modelType]; }
+	const std::vector<TempDrawUnit>& GetTempAlphaDrawUnits(int modelType) const { return  savedData.tempAlphaUnits[modelType]; }
 
 	const std::vector<GhostSolidObject*>& GetDeadGhostBuildings(int allyTeam, int modelType) const {
-		assert((unsigned)gu->myAllyTeam < deadGhostBuildings.size());
-		return deadGhostBuildings[allyTeam][modelType];
+		assert((unsigned)gu->myAllyTeam < savedData.deadGhostBuildings.size());
+		return savedData.deadGhostBuildings[allyTeam][modelType];
 	}
 	const std::vector<CUnit*           >& GetLiveGhostBuildings(int allyTeam, int modelType) const {
-		assert((unsigned)gu->myAllyTeam < liveGhostBuildings.size());
-		return liveGhostBuildings[allyTeam][modelType];
+		assert((unsigned)gu->myAllyTeam < savedData.liveGhostBuildings.size());
+		return savedData.liveGhostBuildings[allyTeam][modelType];
 	}
+
+	auto*       GetSavedData()       { return &savedData; }
+	const auto* GetSavedData() const { return &savedData; }
 
 	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
 protected:
@@ -149,14 +174,7 @@ public:
 	float iconFadeStart = 3000.0f;
 	float iconFadeVanish = 1000.0f;
 private:
-	/// AI unit ghosts
-	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempOpaqueUnits;
-	std::array< std::vector<TempDrawUnit>, MODELTYPE_CNT> tempAlphaUnits;
-
-	/// buildings that were in LOS_PREVLOS when they died and not in LOS since
-	std::vector<std::array<std::vector<GhostSolidObject*>, MODELTYPE_CNT>> deadGhostBuildings;
-	/// buildings that left LOS but are still alive
-	std::vector<std::array<std::vector<CUnit*>, MODELTYPE_CNT>> liveGhostBuildings;
+	SavedData savedData;
 
 	spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> > unitsByIcon;
 

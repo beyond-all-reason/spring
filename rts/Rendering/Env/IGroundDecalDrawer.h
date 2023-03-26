@@ -4,7 +4,7 @@
 #define IGROUND_DECAL_DRAWER_H
 
 class CSolidObject;
-struct GhostSolidObject;
+class GhostSolidObject;
 
 
 class IGroundDecalDrawer

@@ -661,15 +661,15 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 
 	// buildings that died while ghosted
 	for (GhostSolidObject* dgb : deadGhostedBuildings) {
-		if (camera->InView(dgb->pos, dgb->model->GetDrawRadius())) {
+		if (camera->InView(dgb->pos, dgb->GetModel()->GetDrawRadius())) {
 			glPushMatrix();
 			glTranslatef3(dgb->pos);
 			glRotatef(dgb->facing * 90.0f, 0, 1, 0);
 
-			CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType);
+			CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->GetModel()->textureType);
 			SetTeamColor(dgb->team, IModelDrawerState::alphaValues.y);
 
-			dgb->model->DrawStatic();
+			dgb->GetModel()->DrawStatic();
 			glPopMatrix();
 			dgb->lastDrawFrame = globalRendering->drawFrame;
 		}
@@ -760,7 +760,7 @@ void CUnitDrawerLegacy::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& un
 	glTranslatef3(unit.pos);
 	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
 
-	const UnitDef* def = unit.unitDef;
+	const UnitDef* def = unit.GetUnitDef();
 	const S3DModel* mdl = def->model;
 
 	assert(mdl != nullptr);
@@ -778,7 +778,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& uni
 	glTranslatef3(unit.pos);
 	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
 
-	const UnitDef* def = unit.unitDef;
+	const UnitDef* def = unit.GetUnitDef();
 	const S3DModel* mdl = def->model;
 
 	assert(mdl != nullptr);
@@ -797,7 +797,7 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 
 	SetTeamColor(unit.team, IModelDrawerState::alphaValues.w);
 
-	const BuildInfo buildInfo(unit.unitDef, unit.pos, unit.facing);
+	const BuildInfo buildInfo(unit.GetUnitDef(), unit.pos, unit.facing);
 	const float3 buildPos = CGameHelper::Pos2BuildPos(buildInfo, false);
 
 	const float xsize = buildInfo.GetXSize() * (SQUARE_SIZE >> 1);
@@ -1519,7 +1519,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 		int prevModelType = -1;
 		int prevTexType = -1;
 		for (const auto* dgb : deadGhostBuildings) {
-			if (!camera->InView(dgb->pos, dgb->model->GetDrawRadius()))
+			if (!camera->InView(dgb->pos, dgb->GetModel()->GetDrawRadius()))
 				continue;
 
 			static CMatrix44f staticWorldMat;
@@ -1529,13 +1529,13 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 
 			staticWorldMat.RotateY(math::DEG_TO_RAD * 90.0f);
 
-			if (prevModelType != modelType || prevTexType != dgb->model->textureType) {
-				prevModelType = modelType; prevTexType = dgb->model->textureType;
-				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->model->textureType); //ineficient rendering, but w/e
+			if (prevModelType != modelType || prevTexType != dgb->GetModel()->textureType) {
+				prevModelType = modelType; prevTexType = dgb->GetModel()->textureType;
+				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->GetModel()->textureType); //ineficient rendering, but w/e
 			}
 
 			modelDrawerState->SetStaticModelMatrix(staticWorldMat);
-			smv.SubmitImmediately(dgb->model, dgb->team, DrawFlags::SO_ALPHAF_FLAG); //need to submit immediately every model because of static per-model matrix
+			smv.SubmitImmediately(dgb->GetModel(), dgb->team, DrawFlags::SO_ALPHAF_FLAG); //need to submit immediately every model because of static per-model matrix
 		}
 	}
 
@@ -1630,7 +1630,7 @@ void CUnitDrawerGL4::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) 
 
 	auto& smv = S3DModelVAO::GetInstance(); //bound already
 
-	const UnitDef* def = unit.unitDef;
+	const UnitDef* def = unit.GetUnitDef();
 	const S3DModel* mdl = def->model;
 
 	assert(mdl != nullptr);
@@ -1675,7 +1675,7 @@ void CUnitDrawerGL4::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit)
 
 	auto& smv = S3DModelVAO::GetInstance(); //bound already
 
-	const UnitDef* def = unit.unitDef;
+	const UnitDef* def = unit.GetUnitDef();
 	const S3DModel* mdl = def->model;
 
 	assert(mdl != nullptr);

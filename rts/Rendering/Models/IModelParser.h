@@ -37,6 +37,7 @@ public:
 
 	void DrainPreloadFutures(uint32_t numAllowed = 0);
 
+	const S3DModel* GetModelPtr(uint32_t modelID) const { return &models[modelID]; }
 	const std::vector<S3DModel>& GetModelsVec() const { return models; }
 	      std::vector<S3DModel>& GetModelsVec()       { return models; }
 private:
