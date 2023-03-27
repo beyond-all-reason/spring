@@ -562,21 +562,17 @@ void CGroundMoveType::UpdatePreCollisions()
 }
 
 void CGroundMoveType::UpdateCollisionDetections() {
+	earlyCurrWayPoint = currWayPoint;
+	earlyNextWayPoint = nextWayPoint;
+
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
 	if (owner->IsFalling()) return;
-
-	earlyCurrWayPoint = currWayPoint;
-	earlyNextWayPoint = nextWayPoint;
 
 	HandleObjectCollisions();
 }
 
 void CGroundMoveType::ProcessCollisionEvents() {
-	if (owner->GetTransporter() != nullptr) return;
-	if (owner->IsSkidding()) return;
-	if (owner->IsFalling()) return;
-
 	SyncWaypoints();
 
 	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
@@ -604,11 +600,6 @@ bool CGroundMoveType::Update()
 		owner->requestRemoveUnloadTransportId = false;
 	}
 
-	// do nothing at all if we are inside a transport
-	if (owner->GetTransporter() != nullptr) return false;
-	if (owner->IsSkidding()) return false;
-	if (owner->IsFalling()) return false;
-
 	for (auto collision: moveFeatures) {
 		auto collidee = std::get<0>(collision);
 		auto moveVec = std::get<1>(collision);
@@ -617,6 +608,11 @@ bool CGroundMoveType::Update()
 		quadField.AddFeature(collidee);
 	}
 	moveFeatures.clear();
+
+	// do nothing at all if we are inside a transport
+	if (owner->GetTransporter() != nullptr) return false;
+	if (owner->IsSkidding()) return false;
+	if (owner->IsFalling()) return false;
 	
 	if (resultantForces.SqLength() > 0.f)
 		owner->Move(resultantForces, true);
