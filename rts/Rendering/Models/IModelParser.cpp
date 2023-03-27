@@ -267,8 +267,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	{
 		auto lock = CModelsLock::GetScopedLock();
 
-		std::string modelBaseName = FileSystem::GetBasename(FileSystem::GetFilename(name));
-		model = GetCachedModel(modelBaseName);
+		model = GetCachedModel(name);
 
 		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
 		if (load)
