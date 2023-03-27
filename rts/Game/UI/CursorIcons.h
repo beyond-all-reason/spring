@@ -100,7 +100,9 @@ class CCursorIcons
 		struct BuildIcon {
 			BuildIcon(int c, const float3& p, int t, int f) : pos(p), cmd(c), team(t), facing(f) {}
 
-			bool operator == (const BuildIcon& i) const { return (!((*this) < i) && !(i < (*this))); }
+			bool operator == (const BuildIcon& i) const {
+				return pos == i.pos && cmd == i.cmd && team == i.team && facing == i.facing;
+			}
 			bool operator <  (const BuildIcon& i) const
 			{
 				if (cmd > i.cmd) return true;

@@ -5,6 +5,7 @@
 #include "Game/GameHelper.h"
 #include "Game/UI/CommandColors.h"
 #include "Game/WaitCommandsAI.h"
+#include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/myGL.h"
@@ -22,6 +23,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "System/SpringMath.h"
+#include "System/Color.h"
 #include "System/Log/ILog.h"
 
 static const CUnit* GetTrackableUnit(const CUnit* caiOwner, const CUnit* cmdUnit)
@@ -254,7 +256,10 @@ void CommandDrawer::DrawBuilderCAICommands(const CBuilderCAI* cai, int queueDraw
 		const int cmdID = ci->GetID();
 
 		if (cmdID < 0) {
-			if (cai->buildOptions.find(cmdID) != cai->buildOptions.end()) {
+			#if 0
+			if (std::find(cai->buildOptions.begin(), cai->buildOptions.end(), cmdID) != cai->buildOptions.end())
+			#endif
+			{
 				BuildInfo bi;
 
 				if (!bi.Parse(*ci))
@@ -652,54 +657,44 @@ void CommandDrawer::DrawDefaultCommand(const Command& c, const CUnit* owner) con
 	lineDrawer.DrawLineAndIcon(dd->cmdIconID, unit->GetObjDrawErrorPos(owner->allyteam), dd->color);
 }
 
-void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
+void CommandDrawer::ClearQueuedBuildingSquaresCache() { biCache.clear(); }
+
+void CommandDrawer::DrawQueuedBuildingSquares(const CBuilderCAI* cai, const SColor& color)
 {
 	const CCommandQueue& commandQue = cai->commandQue;
 	const auto& buildOptions = cai->buildOptions;
 
-	unsigned int  buildCommands = 0;
-	unsigned int uwaterCommands = 0;
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 
-	for (const Command& c: commandQue) {
-		if (buildOptions.find(c.GetID()) == buildOptions.end())
+	for (const Command& c : commandQue) {
+		#if 0
+		if (std::find(buildOptions.begin(), buildOptions.end(), c.GetID()) == buildOptions.end())
 			continue;
+		#endif
 
 		BuildInfo bi;
 
 		if (!bi.Parse(c))
 			continue;
 
-		bi.pos = CGameHelper::Pos2BuildPos(bi, false);
+		//already drawn by other builder
+		BuildInfoHash biHasher; size_t biHash = biHasher(bi);
+		auto it = std::find_if(biCache.begin(), biCache.end(), [biHash, &bi](const auto& item) {
+			return (biHash == item.first) && (bi == item.second);
+		});
 
-		buildCommands += 1;
-		uwaterCommands += (bi.pos.y < 0.0f);
-	}
-
-	// worst case - 2 squares per building (when underwater) - 8 vertices * 3 floats
-	std::vector<GLfloat>   quadVerts(buildCommands * 12);
-	std::vector<GLfloat> uwquadVerts(buildCommands * 12); // underwater
-	// 4 vertical lines
-	std::vector<GLfloat> lineVerts(uwaterCommands * 24);
-	// colors for lines
-	std::vector<GLfloat> lineColors(uwaterCommands * 48);
-
-	unsigned int   quadcounter = 0;
-	unsigned int uwquadcounter = 0;
-	unsigned int   linecounter = 0;
-
-	for (const Command& c: commandQue) {
-		if (buildOptions.find(c.GetID()) == buildOptions.end())
+		if (it != biCache.end())
 			continue;
 
-		BuildInfo bi;
-
-		if (!bi.Parse(c))
-			continue;
+		biCache.emplace_back(biHash, bi);
 
 		bi.pos = CGameHelper::Pos2BuildPos(bi, false);
-
 		const float xsize = bi.GetXSize() * (SQUARE_SIZE >> 1);
 		const float zsize = bi.GetZSize() * (SQUARE_SIZE >> 1);
+		const float radius = math::sqrt(xsize * xsize + zsize * zsize);
+
+		if (!camera->InView(bi.pos, radius))
+			continue;
 
 		const float h = bi.pos.y;
 		const float x1 = bi.pos.x - xsize;
@@ -707,94 +702,38 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 		const float x2 = bi.pos.x + xsize;
 		const float z2 = bi.pos.z + zsize;
 
-		quadVerts[quadcounter++] = x1;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z1;
-		quadVerts[quadcounter++] = x1;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z2;
-		quadVerts[quadcounter++] = x2;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z2;
-		quadVerts[quadcounter++] = x2;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z1;
+		if (bi.pos.y < 0.0f) {
 
-		if (bi.pos.y >= 0.0f)
-			continue;
+			static constexpr SColor begColor = { 0.0f, 0.0f, 1.0f, 0.5f };
+			static constexpr SColor endColor = { 0.0f, 0.5f, 1.0f, 1.0f };
 
-		const float col[8] = {
-			0.0f, 0.0f, 1.0f, 0.5f, // start color
-			0.0f, 0.5f, 1.0f, 1.0f, // end color
-		};
+			// water-plane verts
+			rb.AddQuadLines(
+				{ float3{x1, 0.0f, z1}, endColor },
+				{ float3{x2, 0.0f, z1}, endColor },
+				{ float3{x2, 0.0f, z2}, endColor },
+				{ float3{x1, 0.0f, z2}, endColor }
+			);
 
-		uwquadVerts[uwquadcounter++] = x1;
-		uwquadVerts[uwquadcounter++] = 0.0f;
-		uwquadVerts[uwquadcounter++] = z1;
-		uwquadVerts[uwquadcounter++] = x1;
-		uwquadVerts[uwquadcounter++] = 0.0f;
-		uwquadVerts[uwquadcounter++] = z2;
-		uwquadVerts[uwquadcounter++] = x2;
-		uwquadVerts[uwquadcounter++] = 0.0f;
-		uwquadVerts[uwquadcounter++] = z2;
-		uwquadVerts[uwquadcounter++] = x2;
-		uwquadVerts[uwquadcounter++] = 0.0f;
-		uwquadVerts[uwquadcounter++] = z1;
-
-		for (int i = 0; i < 4; ++i) {
-			std::copy(col, col + 8, lineColors.begin() + linecounter * 2 + i * 8);
+			for (const auto& x : { x1, x2 }) {
+				for (const auto& z : { z1, z2 }) {
+					const auto baseVert = rb.GetBaseVertex();
+					rb.AddVertices({
+						{float3{x, h, z}, begColor},
+						{float3{x, 0, z}, endColor}
+					});
+					rb.AddIndices({ 0, 1 }, baseVert);
+				}
+			}
 		}
 
-		lineVerts[linecounter++] = x1;
-		lineVerts[linecounter++] = h;
-		lineVerts[linecounter++] = z1;
-		lineVerts[linecounter++] = x1;
-		lineVerts[linecounter++] = 0.0f;
-		lineVerts[linecounter++] = z1;
-
-		lineVerts[linecounter++] = x2;
-		lineVerts[linecounter++] = h;
-		lineVerts[linecounter++] = z1;
-		lineVerts[linecounter++] = x2;
-		lineVerts[linecounter++] = 0.0f;
-		lineVerts[linecounter++] = z1;
-
-		lineVerts[linecounter++] = x2;
-		lineVerts[linecounter++] = h;
-		lineVerts[linecounter++] = z2;
-		lineVerts[linecounter++] = x2;
-		lineVerts[linecounter++] = 0.0f;
-		lineVerts[linecounter++] = z2;
-
-		lineVerts[linecounter++] = x1;
-		lineVerts[linecounter++] = h;
-		lineVerts[linecounter++] = z2;
-		lineVerts[linecounter++] = x1;
-		lineVerts[linecounter++] = 0.0f;
-		lineVerts[linecounter++] = z2;
-	}
-
-	if (quadcounter > 0) {
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glVertexPointer(3, GL_FLOAT, 0, &quadVerts[0]);
-		glDrawArrays(GL_QUADS, 0, quadcounter / 3);
-
-		if (linecounter > 0) {
-			glPushAttrib(GL_CURRENT_BIT);
-			glColor4f(0.0f, 0.5f, 1.0f, 1.0f); // same as end color of lines
-			glVertexPointer(3, GL_FLOAT, 0, &uwquadVerts[0]);
-			glDrawArrays(GL_QUADS, 0, uwquadcounter / 3);
-			glPopAttrib();
-
-			glEnableClientState(GL_COLOR_ARRAY);
-			glColorPointer(4, GL_FLOAT, 0, &lineColors[0]);
-			glVertexPointer(3, GL_FLOAT, 0, &lineVerts[0]);
-			glDrawArrays(GL_LINES, 0, linecounter / 3);
-			glDisableClientState(GL_COLOR_ARRAY);
-		}
-
-		glDisableClientState(GL_VERTEX_ARRAY);
+		// above-water verts
+		rb.AddQuadLines(
+			{ float3{x1, h + 1.0f, z1}, color },
+			{ float3{x2, h + 1.0f, z1}, color },
+			{ float3{x2, h + 1.0f, z2}, color },
+			{ float3{x1, h + 1.0f, z2}, color }
+		);
 	}
 }
 

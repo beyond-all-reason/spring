@@ -208,10 +208,11 @@ CBuilderCAI::CBuilderCAI(CUnit* owner):
 			c.mouseicon = c.name;
 			c.tooltip   = GetUnitDefBuildOptionToolTip(ud, c.disabled = (ud->maxThisUnit <= 0));
 
-			buildOptions.insert(c.id);
+			buildOptions.emplace_back(c.id);
 			possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
 		}
 	}
+	spring::VectorSortUnique(buildOptions);
 
 	unitHandler.AddBuilderCAI(this);
 }
@@ -235,8 +236,9 @@ void CBuilderCAI::PostLoad()
 {
 	for (const SCommandDescription* cd: possibleCommands) {
 		if (cd->id < 0)
-			buildOptions.insert(cd->id);
+			buildOptions.emplace_back(cd->id);
 	}
+	spring::VectorSortUnique(buildOptions);
 	if (commandQue.empty())
 		return;
 
@@ -244,7 +246,7 @@ void CBuilderCAI::PostLoad()
 
 	const Command& c = commandQue.front();
 
-	if (buildOptions.find(c.GetID()) != buildOptions.end()) {
+	if (std::find(buildOptions.begin(), buildOptions.end(),c.GetID()) != buildOptions.end()) {
 		build.Parse(c);
 		build.pos = CGameHelper::Pos2BuildPos(build, true);
 	}
@@ -465,7 +467,7 @@ void CBuilderCAI::GiveCommandReal(const Command& c, bool fromSynced)
 		}
 	}
 
-	if (buildOptions.find(c.GetID()) != buildOptions.end()) {
+	if (std::find(buildOptions.begin(), buildOptions.end(), c.GetID()) != buildOptions.end()) {
 		if (c.GetNumParams() < 3)
 			return;
 
@@ -581,7 +583,7 @@ void CBuilderCAI::ExecuteStop(Command& c)
 
 void CBuilderCAI::ExecuteBuildCmd(Command& c)
 {
-	if (buildOptions.find(c.GetID()) == buildOptions.end())
+	if (std::find(buildOptions.begin(), buildOptions.end(), c.GetID()) == buildOptions.end())
 		return;
 
 	if (!inCommand) {

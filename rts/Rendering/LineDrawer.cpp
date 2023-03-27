@@ -1,38 +1,68 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// TODO: move this out of Sim, this is rendering code!
-
 #include "LineDrawer.h"
 
 #include <cmath>
+#include <array>
+#include <algorithm>
 
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Game/UI/CommandColors.h"
+#include "System/SpringMath.h"
+#include "System/SpringHash.h"
 
 CLineDrawer lineDrawer;
 
+struct LinePairHash {
+	uint64_t operator()(const CLineDrawer::LinePair& lp) const {
+		return static_cast<uint64_t>(spring::LiteHash(lp.p0)) << 32 | spring::LiteHash(lp.p1);
+	}
+};
 
-CLineDrawer::CLineDrawer()
-	: lineStipple(false)
-	, useColorRestarts(false)
-	, useRestartColor(false)
-	, restartAlpha(0.0f)
-	, restartColor(NULL)
-	, lastPos(ZeroVector)
-	, lastColor(NULL)
-	, stippleTimer(0.0f)
+void CLineDrawer::DrawLine(const float3& endPos, const SColor& color)
 {
-	lines.reserve(32);
-	stippled.reserve(32);
-}
+	SColor beginColor;
 
+	if (forceRestart)
+		beginColor = lastColor;
+	else if (useColorRestarts && !useRestartColor)
+		beginColor = SColor{ color.r, color.g, color.b, static_cast<uint8_t>(color.a * restartAlpha) };
+	else if (useColorRestarts &&  useRestartColor)
+		beginColor = restartColor;
+	else
+		beginColor = color;
+
+	LinePair lp;
+	LinePairHash lph;
+	lp.p0 = VA_TYPE_C{ lastPos, beginColor };
+	lp.p1 = VA_TYPE_C{ endPos ,      color };
+	lp.hash = lph(lp);
+
+	static auto sortPred = [](const LinePair& a, const LinePair& b) {
+		return (a.hash < b.hash);
+	};
+
+	auto& vertexCache = vertexCaches[lineStipple];
+
+	const auto it = spring::binary_search(vertexCache.begin(), vertexCache.end(), lp, sortPred);
+	//const auto it = std::find_if(vertexCache.begin(), vertexCache.end(), [hash = lp.hash](const LinePair& lp) { return hash == lp.hash; });
+	if (it == vertexCache.end()) {
+		//vertexCache.emplace_back(lp);
+		spring::VectorInsertSorted(vertexCache, lp, sortPred);
+	}
+
+	lastPos = endPos;
+	lastColor = color;
+
+	forceRestart = false;
+}
 
 void CLineDrawer::UpdateLineStipple()
 {
 	stippleTimer += (globalRendering->lastFrameTime * 0.001f * cmdColors.StippleSpeed());
 	stippleTimer = std::fmod(stippleTimer, (16.0f / 20.0f));
 }
-
 
 void CLineDrawer::SetupLineStipple()
 {
@@ -48,46 +78,39 @@ void CLineDrawer::SetupLineStipple()
 	glLineStipple(cmdColors.StippleFactor(), (fullPat >> shiftBits));
 }
 
-
 void CLineDrawer::DrawAll()
 {
-	if (lines.empty() && stippled.empty())
+	if (vertexCaches[0].empty() && vertexCaches[1].empty())
 		return;
 	
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LINE_STIPPLE);
 
-	for (int i = 0; i<lines.size(); ++i) {
-		int size = lines[i].colors.size();
-		if(size > 0) {
-			glColorPointer(4, GL_FLOAT, 0, &lines[i].colors[0]);
-			glVertexPointer(3, GL_FLOAT, 0, &lines[i].verts[0]);
-			glDrawArrays(lines[i].type, 0, size/4);
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	auto& sh = TypedRenderBuffer<VA_TYPE_C>::GetShader();
+	sh.Enable();
+
+	if (!vertexCaches[1].empty()) { //strippled
+		for (auto& lp : vertexCaches[1]) {
+			rb.AddVertices({ std::move(lp.p0), std::move(lp.p1) });
 		}
-	}
 
-	if (!stippled.empty()) {
 		glEnable(GL_LINE_STIPPLE);
-		for (int i = 0; i<stippled.size(); ++i) {
-			int size = stippled[i].colors.size();
-			if(size > 0) {
-				glColorPointer(4, GL_FLOAT, 0, &stippled[i].colors[0]);
-				glVertexPointer(3, GL_FLOAT, 0, &stippled[i].verts[0]);
-				glDrawArrays(stippled[i].type, 0, size/4);
-			}
+		rb.DrawArrays(GL_LINES);
+	}
+	if (!vertexCaches[0].empty()) { //solid
+		for (auto& lp : vertexCaches[0]) {
+			rb.AddVertices({ std::move(lp.p0), std::move(lp.p1) });
 		}
+
 		glDisable(GL_LINE_STIPPLE);
+		rb.DrawArrays(GL_LINES);
 	}
 
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
+	sh.Disable();
 	glPopAttrib();
 
-	lines.clear();
-	stippled.clear();
+	vertexCaches[0].clear();
+	vertexCaches[1].clear();
 }

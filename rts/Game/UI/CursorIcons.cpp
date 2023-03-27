@@ -68,10 +68,14 @@ void CCursorIcons::Sort()
 {
 	// sort to minimize the number of texture bindings, and to
 	// avoid overdraw from multiple units with the same command
+	const auto& camPos = camera->GetPos();
+	const auto BuildIconsSortPred = [&camPos](auto&& lhs, auto&& rhs) {
+		return camPos.SqDistance(lhs.pos) > camPos.SqDistance(rhs.pos);
+	};
 
 	spring::VectorSortUnique(icons);
 	spring::VectorSortUnique(texts);
-	spring::VectorSortUnique(buildIcons);
+	spring::VectorSortUnique(buildIcons, BuildIconsSortPred);
 }
 
 void CCursorIcons::DrawCursors() const
@@ -169,7 +173,7 @@ void CCursorIcons::DrawTexts() const
 
 void CCursorIcons::DrawBuilds() const
 {
-	unitDrawer->DrawBuildIcons(buildIcons);
+	//unitDrawer->DrawBuildIcons(buildIcons);
 }
 
 

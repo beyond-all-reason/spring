@@ -3,7 +3,9 @@
 #ifndef COMMAND_DRAWER_H
 #define COMMAND_DRAWER_H
 
+#include <vector>
 #include "System/UnorderedSet.hpp"
+#include "Sim/Units/BuildInfo.h"
 
 struct Command;
 class CCommandAI;
@@ -12,6 +14,7 @@ class CBuilderCAI;
 class CFactoryCAI;
 class CMobileCAI;
 class CUnit;
+struct SColor;
 
 struct CommandDrawer {
 public:
@@ -22,7 +25,8 @@ public:
 
 	void Draw(const CCommandAI*, int queueDrawDepth = -1) const;
 	void DrawLuaQueuedUnitSetCommands() const;
-	void DrawQuedBuildingSquares(const CBuilderCAI*) const;
+	void ClearQueuedBuildingSquaresCache();
+	void DrawQueuedBuildingSquares(const CBuilderCAI*, const SColor& color);
 
 	void AddLuaQueuedUnit(const CUnit* unit, int queueDrawDepth = 0);
 
@@ -37,6 +41,8 @@ private:
 	void DrawDefaultCommand(const Command&, const CUnit*) const;
 
 private:
+	using BuildInfoCacheType = std::vector<std::pair<size_t, BuildInfo>>;
+	BuildInfoCacheType biCache;
 	spring::unordered_set<std::pair<int, int>> luaQueuedUnitSet; //unitID, queueDepth (if > 0)
 	static constexpr uint32_t cmdCircleResolution = 100;
 };
