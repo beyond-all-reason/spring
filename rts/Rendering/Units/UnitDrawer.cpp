@@ -490,6 +490,8 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 	sh.Enable();
 	sh.SetUniform("alphaCtrl", 0.05f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.05
 
+	const auto allyTeam = gu->myAllyTeam;
+
 	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
 	{
 		if (icon == nullptr)
@@ -502,6 +504,10 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 		for (const CUnit* unit : units)
 		{
 			if (!unit->drawIcon)
+				continue;
+
+			const bool cantSee = !(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_CONTRADAR)) && (unit->losStatus[allyTeam] & (LOS_PREVLOS));
+			if (cantSee)
 				continue;
 
 			assert(unit->myIcon == icon);
@@ -698,7 +704,7 @@ void CUnitDrawerLegacy::DrawUnitShadow(CUnit* unit) const
 
 void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, uint8_t thisPassMask, bool drawGhostBuildingsPass) const
 {
-	if (!ShouldDrawAlphaUnit(unit, thisPassMask))
+	if (!drawGhostBuildingsPass && !ShouldDrawAlphaUnit(unit, thisPassMask))
 		return;
 
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
@@ -1527,7 +1533,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 			staticWorldMat.LoadIdentity();
 			staticWorldMat.Translate(dgb->pos);
 
-			staticWorldMat.RotateY(math::DEG_TO_RAD * 90.0f);
+			staticWorldMat.RotateY(-dgb->facing * math::DEG_TO_RAD * 90.0f);
 
 			if (prevModelType != modelType || prevTexType != dgb->GetModel()->textureType) {
 				prevModelType = modelType; prevTexType = dgb->GetModel()->textureType;
