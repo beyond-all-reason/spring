@@ -42,7 +42,7 @@ public:
 private:
 	void ParseModel(S3DModel& model, const std::string& name, const std::string& path);
 	void FillModel(S3DModel& model, const std::string& name, const std::string& path);
-	S3DModel* GetCachedModel(const std::string& name);
+	S3DModel* GetCachedModel(std::string name);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
 

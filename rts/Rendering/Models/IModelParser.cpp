@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <chrono>
+#include <string_view>
 
 #include "IModelParser.h"
 #include "3DOParser.h"
@@ -291,10 +292,18 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	return model;
 }
 
-S3DModel* CModelLoader::GetCachedModel(const std::string& name)
+S3DModel* CModelLoader::GetCachedModel(std::string name)
 {
-	static auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
 	// caller has mutex lock
+
+	static const auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
+
+	static constexpr std::string_view O3D = "objects3d/";
+	if (auto oi = name.find(O3D); oi != std::string::npos) {
+		assert(oi == 0u);
+		name.erase(0, O3D.size());
+	}
+
 	auto key = std::make_pair(name, uint32_t(-1));
 	const auto ci = spring::BinarySearch(cache.begin(), cache.end(), key, CompPred);
 	if (ci != cache.end()) {
