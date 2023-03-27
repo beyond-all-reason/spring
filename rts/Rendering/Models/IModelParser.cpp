@@ -293,9 +293,12 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 
 S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 {
+	static auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
 	// caller has mutex lock
-	const auto ci = cache.find(name);
+	auto key = std::make_pair(name, uint32_t(-1));
+	const auto ci = spring::BinarySearch(cache.begin(), cache.end(), key, CompPred);
 	if (ci != cache.end()) {
+		assert(name == ci->first);
 		return &models[ci->second];
 	}
 
@@ -305,7 +308,8 @@ S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 	}
 
 	models[modelID].id = ++modelID;
-	cache[name] = modelID;
+	cache.emplace_back(name, modelID);
+	std::sort(cache.begin(), cache.end(), CompPred);
 
 	return &models[modelID];
 }
