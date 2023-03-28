@@ -317,8 +317,7 @@ S3DModel* CModelLoader::GetCachedModel(std::string name)
 	}
 
 	models[modelID].id = ++modelID;
-	cache.emplace_back(name, modelID);
-	std::sort(cache.begin(), cache.end(), CompPred);
+	spring::VectorInsertSorted(cache, std::make_pair(name, modelID), CompPred);
 
 	return &models[modelID];
 }

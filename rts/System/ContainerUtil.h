@@ -165,10 +165,16 @@ namespace spring {
 		return true;
 	}
 
-	template< typename T, typename Pred >
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, const T& item, Pred pred)
+	template<typename T, typename Pred>
+	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item, Pred pred)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
+	}
+
+	template<typename T>
+	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
+	{
+		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
 
 	template<typename T, typename Pred>
