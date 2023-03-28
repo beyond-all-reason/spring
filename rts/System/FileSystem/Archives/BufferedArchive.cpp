@@ -48,7 +48,7 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 			cacheSize += fb.data.size();
 			fileCount += fb.exists;
 		}
-		else {
+		else { // most files are only accessed once, don't bother with those
 			ret = GetFileImpl(fid, buffer);
 			return (ret == 1);
 		}
