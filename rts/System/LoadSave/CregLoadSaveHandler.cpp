@@ -18,6 +18,7 @@
 #include "Lua/LuaRules.h"
 #include "Net/GameServer.h"
 #include "Rendering/Textures/ColorMap.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -104,6 +105,8 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	s->SerializeObjectInstance(eoh, eoh->GetClass());
 	std::unique_ptr<creg::IType> mapType = creg::DeduceType<decltype(CSplitLuaHandle::gameParams)>::Get();
 	mapType->Serialize(s, &CSplitLuaHandle::gameParams);
+
+	s->SerializeObjectInstance(CUnitDrawer::modelDrawerData->GetSavedData(), CUnitDrawer::modelDrawerData->GetSavedData()->GetClass());
 }
 
 

@@ -1076,14 +1076,15 @@ void CAICallback::DrawUnit(
 	bool drawBorder,
 	int facing
 ) {
-	CUnitDrawerData::TempDrawUnit tdu;
-	tdu.unitDef = unitDefHandler->GetUnitDefByName(unitName);
+	const auto* unitDef = unitDefHandler->GetUnitDefByName(unitName);
 
-	if (tdu.unitDef == nullptr) {
+	if (unitDef == nullptr) {
 		LOG_L(L_WARNING, "Unknown unit in CAICallback::DrawUnit %s", unitName);
 		return;
 	}
 
+	CUnitDrawerData::TempDrawUnit tdu;
+	tdu.unitDefId = unitDef->id;
 	tdu.team = teamId;
 	tdu.facing = facing;
 	tdu.timeout = gs->frameNum + lifetime;

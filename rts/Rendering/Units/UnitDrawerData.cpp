@@ -13,6 +13,7 @@
 #include "Game/UI/MiniMap.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Models/IModelParser.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/IconHandler.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -28,6 +29,77 @@
 #include "Map/ReadMap.h"
 
 static FixedDynMemPool<sizeof(GhostSolidObject), MAX_UNITS / 1000, MAX_UNITS / 32> ghostMemPool;
+
+///////////////////////////
+
+CR_BIND_POOL(GhostSolidObject, ,ghostMemPool.allocMem, ghostMemPool.freeMem)
+CR_REG_METADATA(GhostSolidObject, (
+	CR_IGNORED(decal),
+	CR_MEMBER(modelName),
+
+	CR_MEMBER(pos),
+	CR_MEMBER(dir),
+
+	CR_MEMBER(facing),
+	CR_MEMBER(team),
+	CR_MEMBER(refCount),
+	CR_MEMBER(lastDrawFrame),
+
+	CR_IGNORED(model),
+
+	CR_POSTLOAD(PostLoad)
+))
+
+CR_BIND(CUnitDrawerData::TempDrawUnit, )
+CR_REG_METADATA(CUnitDrawerData::TempDrawUnit, (
+	CR_MEMBER(unitDefId),
+
+	CR_MEMBER(team),
+	CR_MEMBER(facing),
+	CR_MEMBER(timeout),
+
+	CR_MEMBER(pos),
+	CR_MEMBER(rotation),
+
+	CR_MEMBER(drawAlpha),
+	CR_MEMBER(drawBorder),
+
+	CR_IGNORED(unitDef)
+))
+
+CR_BIND(CUnitDrawerData::SavedData, )
+CR_REG_METADATA(CUnitDrawerData::SavedData, (
+	CR_MEMBER(tempOpaqueUnits),
+	CR_MEMBER(tempAlphaUnits),
+	CR_MEMBER(deadGhostBuildings),
+	CR_MEMBER(liveGhostBuildings)
+))
+
+///////////////////////////
+
+
+void GhostSolidObject::PostLoad()
+{
+	decal = nullptr;
+	model = nullptr;
+	GetModel();
+}
+
+const S3DModel* GhostSolidObject::GetModel() const
+{
+	if (!model)
+		model = modelLoader.LoadModel(modelName);
+
+	return model;
+}
+
+const UnitDef* CUnitDrawerData::TempDrawUnit::GetUnitDef() const
+{
+	if (!unitDef)
+		unitDef = unitDefHandler->GetUnitDefByID(unitDefId);
+
+	return unitDef;
+}
 
 ///////////////////////////
 
@@ -49,8 +121,8 @@ CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
 	unitDefImages.clear();
 	unitDefImages.resize(unitDefHandler->NumUnitDefs() + 1);
 
-	deadGhostBuildings.resize(teamHandler.ActiveAllyTeams());
-	liveGhostBuildings.resize(teamHandler.ActiveAllyTeams());
+	savedData.deadGhostBuildings.resize(teamHandler.ActiveAllyTeams());
+	savedData.liveGhostBuildings.resize(teamHandler.ActiveAllyTeams());
 }
 
 CUnitDrawerData::~CUnitDrawerData()
@@ -63,10 +135,10 @@ CUnitDrawerData::~CUnitDrawerData()
 		img.Free();
 	}
 
-	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
+	for (int allyTeam = 0; allyTeam < savedData.deadGhostBuildings.size(); ++allyTeam) {
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-			auto& lgb = liveGhostBuildings[allyTeam][modelType];
-			auto& dgb = deadGhostBuildings[allyTeam][modelType];
+			auto& lgb = savedData.liveGhostBuildings[allyTeam][modelType];
+			auto& dgb = savedData.deadGhostBuildings[allyTeam][modelType];
 
 			for (auto it = dgb.begin(); it != dgb.end(); ++it) {
 				GhostSolidObject* gso = *it;
@@ -92,8 +164,8 @@ void CUnitDrawerData::Update()
 	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-		UpdateTempDrawUnits(tempOpaqueUnits[modelType]);
-		UpdateTempDrawUnits(tempAlphaUnits[modelType]);
+		UpdateTempDrawUnits(savedData.tempOpaqueUnits[modelType]);
+		UpdateTempDrawUnits(savedData.tempAlphaUnits[modelType]);
 	}
 
 	const float3 camPos = (camHandler->GetCurrentController()).GetPos();
@@ -140,9 +212,9 @@ void CUnitDrawerData::Update()
 
 void CUnitDrawerData::UpdateGhostedBuildings()
 {
-	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
+	for (int allyTeam = 0; allyTeam < savedData.deadGhostBuildings.size(); ++allyTeam) {
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-			auto& dgb = deadGhostBuildings[allyTeam][modelType];
+			auto& dgb = savedData.deadGhostBuildings[allyTeam][modelType];
 
 			for (int i = 0; i < dgb.size(); /*no-op*/) {
 				GhostSolidObject* gso = dgb[i];
@@ -447,14 +519,14 @@ uint32_t CUnitDrawerData::GetUnitDefImage(const UnitDef* unitDef)
 
 void CUnitDrawerData::AddTempDrawUnit(const TempDrawUnit& tdu)
 {
-	const UnitDef* unitDef = tdu.unitDef;
+	const UnitDef* unitDef = tdu.GetUnitDef();
 	const S3DModel* model = unitDef->LoadModel();
 
 	if (tdu.drawAlpha) {
-		tempAlphaUnits[model->type].push_back(tdu);
+		savedData.tempAlphaUnits[model->type].push_back(tdu);
 	}
 	else {
-		tempOpaqueUnits[model->type].push_back(tdu);
+		savedData.tempOpaqueUnits[model->type].push_back(tdu);
 	}
 }
 
@@ -498,7 +570,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 	// FIXME -- adjust decals for decoys? gets weird?
 	S3DModel* gsoModel = (decoyDef == nullptr) ? u->model : decoyDef->LoadModel();
 
-	for (int allyTeam = 0; allyTeam < deadGhostBuildings.size(); ++allyTeam) {
+	for (int allyTeam = 0; allyTeam < savedData.deadGhostBuildings.size(); ++allyTeam) {
 		const bool canSeeGhost = !(u->losStatus[allyTeam] & (LOS_INLOS | LOS_CONTRADAR)) && (u->losStatus[allyTeam] & (LOS_PREVLOS));
 
 		if (addNewGhost && canSeeGhost) {
@@ -506,24 +578,25 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 				gso = ghostMemPool.alloc<GhostSolidObject>();
 
 				gso->pos = u->pos;
-				gso->model = gsoModel;
+				gso->modelName = gsoModel->name;
 				gso->decal = nullptr;
 				gso->facing = u->buildFacing;
 				gso->dir = u->frontdir;
 				gso->team = u->team;
 				gso->refCount = 0;
 				gso->lastDrawFrame = 0;
+				gso->GetModel();
 
 				groundDecals->GhostCreated(u, gso);
 			}
 
 			// <gso> can be inserted for multiple allyteams
 			// (the ref-counter saves us come deletion time)
-			deadGhostBuildings[allyTeam][gsoModel->type].push_back(gso);
+			savedData.deadGhostBuildings[allyTeam][gsoModel->type].push_back(gso);
 			gso->IncRef();
 		}
 
-		spring::VectorErase(liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
+		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
 	}
 
 	DelObject(unit, true);
@@ -545,7 +618,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
-		spring::VectorErase(liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
+		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
 
 	if (allyTeam != gu->myAllyTeam)
 		return;
@@ -558,7 +631,7 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
-		spring::VectorInsertUnique(liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u, true);
+		spring::VectorInsertUnique(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u, true);
 
 	if (allyTeam != gu->myAllyTeam)
 		return;
