@@ -144,58 +144,72 @@ void CCamera::Update(const UpdateParams& p)
 
 void CCamera::UpdateFrustum()
 {
+	const auto& matrix = viewProjectionMatrix;
+
+	frustum.planes[FRUSTUM_PLANE_LFT].x = matrix.col[0].w + matrix.col[0].x;
+	frustum.planes[FRUSTUM_PLANE_LFT].y = matrix.col[1].w + matrix.col[1].x;
+	frustum.planes[FRUSTUM_PLANE_LFT].z = matrix.col[2].w + matrix.col[2].x;
+	frustum.planes[FRUSTUM_PLANE_LFT].w = matrix.col[3].w + matrix.col[3].x;
+
+	frustum.planes[FRUSTUM_PLANE_RGT].x = matrix.col[0].w - matrix.col[0].x;
+	frustum.planes[FRUSTUM_PLANE_RGT].y = matrix.col[1].w - matrix.col[1].x;
+	frustum.planes[FRUSTUM_PLANE_RGT].z = matrix.col[2].w - matrix.col[2].x;
+	frustum.planes[FRUSTUM_PLANE_RGT].w = matrix.col[3].w - matrix.col[3].x;
+
+	frustum.planes[FRUSTUM_PLANE_BOT].x = matrix.col[0].w + matrix.col[0].y;
+	frustum.planes[FRUSTUM_PLANE_BOT].y = matrix.col[1].w + matrix.col[1].y;
+	frustum.planes[FRUSTUM_PLANE_BOT].z = matrix.col[2].w + matrix.col[2].y;
+	frustum.planes[FRUSTUM_PLANE_BOT].w = matrix.col[3].w + matrix.col[3].y;
+
+	frustum.planes[FRUSTUM_PLANE_TOP].x = matrix.col[0].w - matrix.col[0].y;
+	frustum.planes[FRUSTUM_PLANE_TOP].y = matrix.col[1].w - matrix.col[1].y;
+	frustum.planes[FRUSTUM_PLANE_TOP].z = matrix.col[2].w - matrix.col[2].y;
+	frustum.planes[FRUSTUM_PLANE_TOP].w = matrix.col[3].w - matrix.col[3].y;
+
+	frustum.planes[FRUSTUM_PLANE_BCK].x = matrix.col[0].w + matrix.col[0].z;
+	frustum.planes[FRUSTUM_PLANE_BCK].y = matrix.col[1].w + matrix.col[1].z;
+	frustum.planes[FRUSTUM_PLANE_BCK].z = matrix.col[2].w + matrix.col[2].z;
+	frustum.planes[FRUSTUM_PLANE_BCK].w = matrix.col[3].w + matrix.col[3].z;
+
+	frustum.planes[FRUSTUM_PLANE_FRN].x = matrix.col[0].w - matrix.col[0].z;
+	frustum.planes[FRUSTUM_PLANE_FRN].y = matrix.col[1].w - matrix.col[1].z;
+	frustum.planes[FRUSTUM_PLANE_FRN].z = matrix.col[2].w - matrix.col[2].z;
+	frustum.planes[FRUSTUM_PLANE_FRN].w = matrix.col[3].w - matrix.col[3].z;
+
+	for (auto& plane : frustum.planes)
+	{
+		plane /= plane.Length(); //note Length() only covers x,y,z components
+	}
+
 	// scale-factors for {x,y}-axes
 	float2 nAxisScales;
 	float2 fAxisScales;
 
-	switch (projType) {
-		case PROJTYPE_PERSP: {
-			// NOTE: "-" because we want normals
-			const float3 forwardy = (-forward *                         tanHalfFov );
-			const float3 forwardx = (-forward * math::tan(aspectRatio *    halfFov));
-
-			const float2 tanHalfFOVs = {math::tan(GetHFOV() * 0.5f * math::DEG_TO_RAD), tanHalfFov}; // horz, vert
-
-			frustum.planes[FRUSTUM_PLANE_TOP] = (forwardy +    up).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_BOT] = (forwardy -    up).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_RGT] = (forwardx + right).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_LFT] = (forwardx - right).UnsafeANormalize();
-
-			nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y}; // x, y
-			fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y}; // x, y
-		} break;
-		case PROJTYPE_ORTHO: {
-			frustum.planes[FRUSTUM_PLANE_TOP] =     up;
-			frustum.planes[FRUSTUM_PLANE_BOT] =    -up;
-			frustum.planes[FRUSTUM_PLANE_RGT] =  right;
-			frustum.planes[FRUSTUM_PLANE_LFT] = -right;
-
-			nAxisScales = {frustum.scales.x, frustum.scales.y};
-			fAxisScales = {frustum.scales.x, frustum.scales.y};
-		} break;
-		default: {
-			assert(false);
-		} break;
+	assert(projType <= PROJTYPE_ORTHO);
+	if (projType == PROJTYPE_PERSP) {
+		const float2 tanHalfFOVs = {math::tan(GetHFOV() * 0.5f * math::DEG_TO_RAD), tanHalfFov}; // horz, vert
+		nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y}; // x, y
+		fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y}; // x, y
+	} else { //PROJTYPE_ORTHO
+		nAxisScales = {frustum.scales.x, frustum.scales.y};
+		fAxisScales = {frustum.scales.x, frustum.scales.y};
 	}
 
-	frustum.planes[FRUSTUM_PLANE_FRN] = -forward;
-	frustum.planes[FRUSTUM_PLANE_BCK] =  forward;
+	frustum.verts[FRUSTUM_POINT_NTL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up *  nAxisScales.y); // ntl
+	frustum.verts[FRUSTUM_POINT_NTR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up *  nAxisScales.y); // ntr
+	frustum.verts[FRUSTUM_POINT_NBR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up * -nAxisScales.y); // nbr
+	frustum.verts[FRUSTUM_POINT_NBL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
+	frustum.verts[FRUSTUM_POINT_FTL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up *  fAxisScales.y); // ftl
+	frustum.verts[FRUSTUM_POINT_FTR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up *  fAxisScales.y); // ftr
+	frustum.verts[FRUSTUM_POINT_FBR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up * -fAxisScales.y); // fbr
+	frustum.verts[FRUSTUM_POINT_FBL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
 
-	frustum.verts[0] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up *  nAxisScales.y); // ntl
-	frustum.verts[1] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up *  nAxisScales.y); // ntr
-	frustum.verts[2] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up * -nAxisScales.y); // nbr
-	frustum.verts[3] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
-	frustum.verts[4] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up *  fAxisScales.y); // ftl
-	frustum.verts[5] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up *  fAxisScales.y); // ftr
-	frustum.verts[6] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up * -fAxisScales.y); // fbr
-	frustum.verts[7] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
-
-	frustum.edges[0] = (frustum.verts[1] - frustum.verts[0]).UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
-	frustum.edges[1] = (frustum.verts[0] - frustum.verts[3]).UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
-	frustum.edges[2] = (frustum.verts[4] - frustum.verts[0]).UnsafeANormalize(); // ftl - ntl
-	frustum.edges[3] = (frustum.verts[5] - frustum.verts[1]).UnsafeANormalize(); // ftr - ntr
-	frustum.edges[4] = (frustum.verts[6] - frustum.verts[2]).UnsafeANormalize(); // fbr - nbr
-	frustum.edges[5] = (frustum.verts[7] - frustum.verts[3]).UnsafeANormalize(); // fbl - nbl
+	frustum.edges[FRUSTUM_EDGE_NTR_NTL] = (frustum.verts[FRUSTUM_POINT_NTR] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
+	frustum.edges[FRUSTUM_EDGE_NTL_NBL] = (frustum.verts[FRUSTUM_POINT_NTL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
+	frustum.edges[FRUSTUM_EDGE_FTL_NTL] = (frustum.verts[FRUSTUM_POINT_FTL] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ftl - ntl
+	frustum.edges[FRUSTUM_EDGE_FTR_NTR] = (frustum.verts[FRUSTUM_POINT_FTR] - frustum.verts[FRUSTUM_POINT_NTR]).UnsafeANormalize(); // ftr - ntr
+	frustum.edges[FRUSTUM_EDGE_FBR_NBR] = (frustum.verts[FRUSTUM_POINT_FBR] - frustum.verts[FRUSTUM_POINT_NBR]).UnsafeANormalize(); // fbr - nbr
+	frustum.edges[FRUSTUM_EDGE_FBL_NBL] = (frustum.verts[FRUSTUM_POINT_FBL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // fbl - nbl
 
 	if (camType == CAMTYPE_VISCUL)
 		return;
@@ -746,36 +760,25 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 
 
 
-bool CCamera::Frustum::IntersectSphere(const float3& cp, const float4& sp) const
+bool CCamera::Frustum::IntersectSphere(float3 p, float radius) const
 {
-	// need a vector since planes do not carry origin-distance
-	const float3 vec = float3(sp) - cp;
+	const float4 p4 = { p, 1.0f };
 
-	// use arrays because neither float2 nor float4 have an operator[]
-	const float xyPlaneOffsets[2] = {scales.x, scales.y};
-	const float zwPlaneOffsets[2] = {scales.z, scales.w};
-
-	static_assert(FRUSTUM_PLANE_LFT == 0, "");
-	static_assert(FRUSTUM_PLANE_FRN == 4, "");
-
-	#if 0
-	// test if <sp> is in front of the near-plane
-	if (vec.dot(planes[FRUSTUM_PLANE_FRN]) > (zwPlaneOffsets[0] + sp.w))
-		return false;
-	#endif
-
-	// test if <sp> is in front of a side-plane (LRTB)
-	for (unsigned int i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FRN; i++) {
-		if (vec.dot(planes[i]) > (xyPlaneOffsets[i >> 1] + sp.w))
-			return false;
+	for (const auto& plane : planes) {
+		const float dist = plane.dot4(p4);
+		if (dist < -radius)
+			return false; // outside
+		else if (dist < radius)
+			return true;  // intersect
 	}
 
-	// test if <sp> is behind the far-plane
-	return !(vec.dot(planes[FRUSTUM_PLANE_BCK]) > (zwPlaneOffsets[1] + sp.w));
+	return true; // inside
 }
 
 bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
+	return true;
+
 	// edge axes and normals are identical for AABBs
 	constexpr float3 aabbPlanes[3] = {
 		RgtVector,

@@ -1,10 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _CAMERA_H
-#define _CAMERA_H
+#pragma once
+
+#include <array>
 
 #include "System/AABB.hpp"
 #include "System/float3.h"
+#include "System/float4.h"
 #include "System/Matrix44f.h"
 
 
@@ -29,11 +31,31 @@ public:
 	enum {
 		FRUSTUM_PLANE_LFT = 0,
 		FRUSTUM_PLANE_RGT = 1,
-		FRUSTUM_PLANE_TOP = 2,
-		FRUSTUM_PLANE_BOT = 3,
-		FRUSTUM_PLANE_FRN = 4, // near
-		FRUSTUM_PLANE_BCK = 5, // far
+		FRUSTUM_PLANE_BOT = 2,
+		FRUSTUM_PLANE_TOP = 3,
+		FRUSTUM_PLANE_BCK = 4,
+		FRUSTUM_PLANE_FRN = 5,
 		FRUSTUM_PLANE_CNT = 6,
+	};
+	enum {
+		FRUSTUM_POINT_NTL = 0,
+		FRUSTUM_POINT_NTR = 1,
+		FRUSTUM_POINT_NBR = 2,
+		FRUSTUM_POINT_NBL = 3,
+		FRUSTUM_POINT_FTL = 4,
+		FRUSTUM_POINT_FTR = 5,
+		FRUSTUM_POINT_FBR = 6,
+		FRUSTUM_POINT_FBL = 7,
+		FRUSTUM_POINT_CNT = 8,
+	};
+	enum {
+		FRUSTUM_EDGE_NTR_NTL = 0,
+		FRUSTUM_EDGE_NTL_NBL = 1,
+		FRUSTUM_EDGE_FTL_NTL = 2,
+		FRUSTUM_EDGE_FTR_NTR = 3,
+		FRUSTUM_EDGE_FBR_NBR = 4,
+		FRUSTUM_EDGE_FBL_NBL = 5,
+		FRUSTUM_EDGE_CNT     = 6,
 	};
 	enum {
 		FRUSTUM_SIDE_POS = 0,
@@ -56,16 +78,16 @@ public:
 
 	struct Frustum {
 	public:
-		bool IntersectSphere(const float3& cp, const float4& sp) const;
+		bool IntersectSphere(float3 p, float radius) const;
 		bool IntersectAABB(const AABB& b) const;
 
 	public:
 		// corners
-		float3 verts[8];
-		// normals
-		float3 planes[FRUSTUM_PLANE_CNT];
+		std::array<float3, FRUSTUM_POINT_CNT> verts;
+		// plane equations
+		std::array<float4, FRUSTUM_PLANE_CNT> planes;
 		// ntr - ntl, ntl - nbl, ftl - ntl, ftr - ntr, fbr - nbr, fbl - nbl
-		float3 edges[6];
+		std::array<float3, FRUSTUM_EDGE_CNT> edges;
 
 		// xy-scales (for orthographic cameras only), .z := znear, .w := zfar
 		float4 scales;
@@ -119,7 +141,7 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f) const { return (frustum.IntersectSphere(pos, {point, radius})); }
+	bool InView(const float3& point, float radius = 0.0f) const { return frustum.IntersectSphere(point, radius); }
 	bool InView(const float3& mins, const float3& maxs) const { return (InView(AABB{mins, maxs})); }
 	bool InView(const AABB& aabb) const { return (InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb)); }
 
@@ -289,5 +311,3 @@ private:
 };
 
 #define camera (CCamera::GetActive())
-#endif // _CAMERA_H
-
