@@ -56,6 +56,7 @@ private:
 	bool cursorZoomOut;
 	bool doRotate;
 	bool lockCardinalDirections;
+	bool trackMapHeight;
 };
 
 #endif // _SPRING_CONTROLLER_H
