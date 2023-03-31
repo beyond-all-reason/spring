@@ -3235,7 +3235,12 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
  * @function Spring.GiveOrderArrayToUnitArray
  * @tparam {number,...} unitArray array of unit ids
  * @tparam {cmdSpec,...} cmdArray
- * @treturn nil|true
+ * @tparam[opt=false] bool pairwise Assign commands according to index between units and cmds arrays.
+ *
+ * If unitArray is smaller than cmdArray only length(cmdArray) units will
+ * receive commands.
+ *
+ * @treturn nil|bool
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {
