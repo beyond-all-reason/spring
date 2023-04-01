@@ -33,19 +33,19 @@ public:
 		FRUSTUM_PLANE_RGT = 1,
 		FRUSTUM_PLANE_BOT = 2,
 		FRUSTUM_PLANE_TOP = 3,
-		FRUSTUM_PLANE_BCK = 4,
-		FRUSTUM_PLANE_FRN = 5,
+		FRUSTUM_PLANE_NEA = 4,
+		FRUSTUM_PLANE_FAR = 5,
 		FRUSTUM_PLANE_CNT = 6,
 	};
 	enum {
-		FRUSTUM_POINT_NTL = 0,
-		FRUSTUM_POINT_NTR = 1,
-		FRUSTUM_POINT_NBR = 2,
-		FRUSTUM_POINT_NBL = 3,
-		FRUSTUM_POINT_FTL = 4,
-		FRUSTUM_POINT_FTR = 5,
-		FRUSTUM_POINT_FBR = 6,
-		FRUSTUM_POINT_FBL = 7,
+		FRUSTUM_POINT_NBL = 0,
+		FRUSTUM_POINT_NBR = 1,
+		FRUSTUM_POINT_NTR = 2,
+		FRUSTUM_POINT_NTL = 3,
+		FRUSTUM_POINT_FBL = 4,
+		FRUSTUM_POINT_FBR = 5,
+		FRUSTUM_POINT_FTR = 6,
+		FRUSTUM_POINT_FTL = 7,
 		FRUSTUM_POINT_CNT = 8,
 	};
 	enum {
@@ -78,8 +78,8 @@ public:
 
 	struct Frustum {
 	public:
-		bool IntersectSphere(float3 p, float radius) const;
-		bool IntersectAABB(const AABB& b) const;
+		bool IntersectSphere(float3 p, float radius, uint8_t testMask) const;
+		bool IntersectAABB(const AABB& b, uint8_t testMask = 0x3F) const;
 
 	public:
 		// corners
@@ -141,9 +141,9 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f) const { return frustum.IntersectSphere(point, radius); }
-	bool InView(const float3& mins, const float3& maxs) const { return (InView(AABB{mins, maxs})); }
-	bool InView(const AABB& aabb) const { return (InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb)); }
+	bool InView(const float3& point, float radius = 0.0f, uint8_t testMask = 0x3F) const { return frustum.IntersectSphere(point, radius, testMask); }
+	bool InView(const float3& mins, const float3& maxs, uint8_t testMask = 0x3F) const { return InView(AABB{mins, maxs}, testMask); }
+	bool InView(const AABB& aabb, uint8_t testMask = 0x3F) const { return InView(aabb.CalcCenter(), aabb.CalcRadius(), testMask) && frustum.IntersectAABB(aabb, testMask); }
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(

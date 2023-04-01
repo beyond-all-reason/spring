@@ -788,7 +788,7 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
 			};
 
-			if (!cam->InView(aabb))
+			if (!cam->InView(aabb, cam->GetCamType() == CCamera::CAMTYPE_SHADOW ? 0xF : 0x3F))
 				continue;
 
 			patches[z * numPatchesX + x].lastDrawFrames[cam->GetCamType()] = globalRendering->drawFrame;

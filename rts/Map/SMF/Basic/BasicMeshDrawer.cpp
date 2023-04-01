@@ -91,7 +91,7 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
 			};
 
-			if (!activeCam->InView(aabb))
+			if (!activeCam->InView(aabb, drawPass == DrawPass::Shadow ? 0xF : 0x3F));
 				continue;
 
 			meshVisPatches[z * numPatchesX + x].visUpdateFrames[activeCam->GetCamType()] = globalRendering->drawFrame;
