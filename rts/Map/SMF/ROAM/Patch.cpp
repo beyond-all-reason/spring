@@ -781,6 +781,9 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 	const int drawQuadsX = mapDims.mapx / PATCH_SIZE;
 	const int drawQuadsZ = mapDims.mapy / PATCH_SIZE;
 
+	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
+	const uint8_t inViewPlanesMask = (cam->GetCamType() == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
+
 	for (int x = 0; x < drawQuadsX; ++x) {
 		for (int z = 0; z < drawQuadsZ; ++z) {
 			AABB aabb{
@@ -788,7 +791,7 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
 			};
 
-			if (!cam->InView(aabb, cam->GetCamType() == CCamera::CAMTYPE_SHADOW ? 0xF : 0x3F))
+			if (!cam->InView(aabb, inViewPlanesMask))
 				continue;
 
 			patches[z * numPatchesX + x].lastDrawFrames[cam->GetCamType()] = globalRendering->drawFrame;
