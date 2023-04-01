@@ -10,6 +10,7 @@ Spring changelog
 
 Lua:
  - removed `Game.allowTeamColors` (was deprecated and always `true`)
+ - allow shallow recursion in `Spring.TransferUnit`
  
 
 Misc:

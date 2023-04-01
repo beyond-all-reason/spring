@@ -120,7 +120,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 		inCreateFeature = 0;
 		inDestroyFeature = 0;
 		inGiveOrder = 0;
-		inTransferUnit = false;
+		inTransferUnit = 0;
 		inHeightMap = false;
 		inSmoothMesh = false;
 
@@ -1704,16 +1704,16 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 	if (FullCtrl(L) && lua_isboolean(L, 3))
 		given = lua_toboolean(L, 3);
 
-	if (inTransferUnit)
-		luaL_error(L, "TransferUnit() recursion is not permitted");
+	if (inTransferUnit >= MAX_CMD_RECURSION_DEPTH)
+		luaL_error(L, "TransferUnit() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
 
-	inTransferUnit = true;
+	++ inTransferUnit;
 	ASSERT_SYNCED(unit->id);
 	ASSERT_SYNCED((int)newTeam);
 	ASSERT_SYNCED(given);
 	unit->ChangeTeam(newTeam, given ? CUnit::ChangeGiven
 	                                : CUnit::ChangeCaptured);
-	inTransferUnit = false;
+	-- inTransferUnit;
 	return 0;
 }
 
