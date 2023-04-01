@@ -39,6 +39,7 @@ CONFIG(int, CamFrameTimeCorrection)
 CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 	: camType(cameraType)
 	, projType(projectionType)
+	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
 {
 	assert(cameraType < CAMTYPE_COUNT);
 
@@ -327,7 +328,15 @@ void CCamera::UpdateViewRange()
 	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
 }
 
+bool CCamera::InView(const float3& point, float radius) const
+{
+	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
+}
 
+bool CCamera::InView(const AABB& aabb) const
+{
+	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
+}
 
 #if 0
 // axis-aligned bounding box test (AABB)

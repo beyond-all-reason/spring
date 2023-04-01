@@ -83,7 +83,6 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 
 	const int drawQuadsX = mapDims.mapx / PATCH_SIZE;
 	const int drawQuadsZ = mapDims.mapy / PATCH_SIZE;
-	const uint8_t inViewPlanesMask = (drawPass == DrawPass::Shadow) ? 0xF : 0x3F;
 
 	for (int x = 0; x < drawQuadsX; ++x) {
 		for (int z = 0; z < drawQuadsZ; ++z) {
@@ -92,7 +91,7 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
 			};
 
-			if (!activeCam->InView(aabb, inViewPlanesMask))
+			if (!activeCam->InView(aabb))
 				continue;
 
 			meshVisPatches[z * numPatchesX + x].visUpdateFrames[activeCam->GetCamType()] = globalRendering->drawFrame;

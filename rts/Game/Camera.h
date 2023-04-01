@@ -141,9 +141,9 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f, uint8_t testMask = 0x3F) const { return frustum.IntersectSphere(point, radius, testMask); }
-	bool InView(const float3& mins, const float3& maxs, uint8_t testMask = 0x3F) const { return InView(AABB{mins, maxs}, testMask); }
-	bool InView(const AABB& aabb, uint8_t testMask = 0x3F) const { return InView(aabb.CalcCenter(), aabb.CalcRadius(), testMask) && frustum.IntersectAABB(aabb, testMask); }
+	bool InView(const float3& point, float radius = 0.0f) const;
+	bool InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
+	bool InView(const AABB& aabb) const;
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
@@ -305,6 +305,8 @@ private:
 	unsigned int camType = -1u;
 	// PROJTYPE_*
 	unsigned int projType = -1u;
+
+	const uint8_t inViewPlanesMask;
 
 	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
