@@ -183,7 +183,7 @@ void CCamera::UpdateFrustum()
 		const float3 u = v1 - v2;
 		const float3 v = v3 - v2;
 
-		const float3 n = v.cross(u).SafeANormalize();
+		const float3 n = v.cross(u).UnsafeANormalize();
 		const float  d = -n.dot(v2);
 		frustum.planes[i] = float4(n, d);
 	};
@@ -602,9 +602,10 @@ void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	frustumLines[FRUSTUM_SIDE_POS][4].sign = 0;
 	frustumLines[FRUSTUM_SIDE_NEG][4].sign = 0;
 
-	// note: order does not matter
+	// Note: order does not matter
 	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_FAR; i++) {
-		CalcFrustumLine(frustum.planes[i], planeOffsets[i],  isectParams, side);
+		// Note: CalcFrustumLine expects normals to point outwards relative to frustum shape, frustum.planes normals point inwards
+		CalcFrustumLine(-1.0f * frustum.planes[i], planeOffsets[i],  isectParams, side);
 	}
 
 	assert(!neg || frustumLines[FRUSTUM_SIDE_NEG][4].sign == 4);
@@ -618,7 +619,6 @@ void CCamera::CalcFrustumLine(
 ) {
 	FrustumLine line;
 
-	/*
 	// compose an orthonormal axis-system around the frustum plane normal
 	// top plane normal can point straight up if camera is angled downward
 	const float3 aux = (std::fabs(normal.dot(UpVector)) > 0.995f)? -forward: UpVector;
@@ -633,12 +633,6 @@ void CCamera::CalcFrustumLine(
 	xdir.z *= (std::fabs(xdir.z) > 0.001f);
 	xdir.z = std::max(std::fabs(xdir.z), 0.001f) * std::copysign(1.0f, xdir.z);
 	ydir.y = -std::fabs(ydir.y);
-	*/
-	const float a = 1.0f / (1.0f + normal.z);
-	const float b = -normal.x * normal.y * a;
-	float3 xdir = float3(1.0f - normal.x * normal.x * a, b, -normal.x);
-	float3 ydir = float3(b, 1.0f - normal.y * normal.y * a, -normal.y);
-	float3 pInt;
 
 	if (ydir.y != 0.0f) {
 		const float py = params[normal.y <= 0.0f];
