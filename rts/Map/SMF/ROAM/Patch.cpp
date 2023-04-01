@@ -769,41 +769,31 @@ void Patch::SetSquareTexture(const DrawPass::e& drawPass) const
 	smfGroundDrawer->SetupBigSquare(drawPass, coors.x / PATCH_SIZE, coors.y / PATCH_SIZE);
 }
 
-
-// ---------------------------------------------------------------------
-// Visibility Update Functions
-//
-class CPatchInViewChecker : public CReadMap::IQuadDrawer
-{
-public:
-	void ResetState() override {}
-	void ResetState(CCamera* c = nullptr, Patch* p = nullptr, int xsize = 0) {
-		testCamera = c;
-		patchArray = p;
-		numPatchesX = xsize;
-	}
-
-	void DrawQuad(int x, int y) override {
-		patchArray[y * numPatchesX + x].lastDrawFrames[testCamera->GetCamType()] = globalRendering->drawFrame;
-	}
-
-private:
-	CCamera* testCamera;
-	Patch* patchArray;
-
-	int numPatchesX;
-};
-
-
 void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX)
 {
-	static CPatchInViewChecker checker;
-
 	assert(cam->GetCamType() < CCamera::CAMTYPE_VISCUL);
-	checker.ResetState(cam, &patches[0], numPatchesX);
 
-	cam->CalcFrustumLines(readMap->GetCurrMinHeight() - 100.0f, readMap->GetCurrMaxHeight() + 100.0f, SQUARE_SIZE);
-	readMap->GridVisibility(cam, &checker, 1e9, PATCH_SIZE);
+	const float minHeight = readMap->GetCurrMinHeight() - 100.0f;
+	const float maxHeight = readMap->GetCurrMaxHeight() + 100.0f;
+
+	static constexpr float wsEdge = PATCH_SIZE * SQUARE_SIZE;
+
+	const int drawQuadsX = mapDims.mapx / PATCH_SIZE;
+	const int drawQuadsZ = mapDims.mapy / PATCH_SIZE;
+
+	for (int x = 0; x < drawQuadsX; ++x) {
+		for (int z = 0; z < drawQuadsZ; ++z) {
+			AABB aabb{
+				{ (x + 0) * wsEdge, minHeight, (z + 0) * wsEdge },
+				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
+			};
+
+			if (!cam->InView(aabb))
+				continue;
+
+			patches[z * numPatchesX + x].lastDrawFrames[cam->GetCamType()] = globalRendering->drawFrame;
+		}
+	}
 }
 
 bool Patch::IsVisible(const CCamera* cam) const {

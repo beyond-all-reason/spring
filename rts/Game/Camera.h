@@ -1,10 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _CAMERA_H
-#define _CAMERA_H
+#pragma once
+
+#include <array>
 
 #include "System/AABB.hpp"
 #include "System/float3.h"
+#include "System/float4.h"
 #include "System/Matrix44f.h"
 
 
@@ -29,11 +31,31 @@ public:
 	enum {
 		FRUSTUM_PLANE_LFT = 0,
 		FRUSTUM_PLANE_RGT = 1,
-		FRUSTUM_PLANE_TOP = 2,
-		FRUSTUM_PLANE_BOT = 3,
-		FRUSTUM_PLANE_FRN = 4, // near
-		FRUSTUM_PLANE_BCK = 5, // far
+		FRUSTUM_PLANE_BOT = 2,
+		FRUSTUM_PLANE_TOP = 3,
+		FRUSTUM_PLANE_NEA = 4,
+		FRUSTUM_PLANE_FAR = 5,
 		FRUSTUM_PLANE_CNT = 6,
+	};
+	enum {
+		FRUSTUM_POINT_NBL = 0,
+		FRUSTUM_POINT_NBR = 1,
+		FRUSTUM_POINT_NTR = 2,
+		FRUSTUM_POINT_NTL = 3,
+		FRUSTUM_POINT_FBL = 4,
+		FRUSTUM_POINT_FBR = 5,
+		FRUSTUM_POINT_FTR = 6,
+		FRUSTUM_POINT_FTL = 7,
+		FRUSTUM_POINT_CNT = 8,
+	};
+	enum {
+		FRUSTUM_EDGE_NTR_NTL = 0,
+		FRUSTUM_EDGE_NTL_NBL = 1,
+		FRUSTUM_EDGE_FTL_NTL = 2,
+		FRUSTUM_EDGE_FTR_NTR = 3,
+		FRUSTUM_EDGE_FBR_NBR = 4,
+		FRUSTUM_EDGE_FBL_NBL = 5,
+		FRUSTUM_EDGE_CNT     = 6,
 	};
 	enum {
 		FRUSTUM_SIDE_POS = 0,
@@ -56,16 +78,16 @@ public:
 
 	struct Frustum {
 	public:
-		bool IntersectSphere(const float3& cp, const float4& sp) const;
-		bool IntersectAABB(const AABB& b) const;
+		bool IntersectSphere(float3 p, float radius, uint8_t testMask) const;
+		bool IntersectAABB(const AABB& b, uint8_t testMask = 0x3F) const;
 
 	public:
 		// corners
-		float3 verts[8];
-		// normals
-		float3 planes[FRUSTUM_PLANE_CNT];
+		std::array<float3, FRUSTUM_POINT_CNT> verts;
+		// plane equations
+		std::array<float4, FRUSTUM_PLANE_CNT> planes;
 		// ntr - ntl, ntl - nbl, ftl - ntl, ftr - ntr, fbr - nbr, fbl - nbl
-		float3 edges[6];
+		std::array<float3, FRUSTUM_EDGE_CNT> edges;
 
 		// xy-scales (for orthographic cameras only), .z := znear, .w := zfar
 		float4 scales;
@@ -89,7 +111,7 @@ public:
 	};
 
 public:
-	CCamera(unsigned int cameraType = CAMTYPE_PLAYER, unsigned int projectionType = PROJTYPE_PERSP);
+	CCamera(uint32_t cameraType = CAMTYPE_PLAYER, uint32_t projectionType = PROJTYPE_PERSP);
 
 	void CopyState(const CCamera*);
 	void CopyStateReflect(const CCamera*);
@@ -119,16 +141,16 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f) const { return (frustum.IntersectSphere(pos, {point, radius})); }
-	bool InView(const float3& mins, const float3& maxs) const { return (InView(AABB{mins, maxs})); }
-	bool InView(const AABB& aabb) const { return (InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb)); }
+	bool InView(const float3& point, float radius = 0.0f) const;
+	bool InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
+	bool InView(const AABB& aabb) const;
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
 		const float3& normal,
 		const float3& offset,
 		const float3& params,
-		unsigned int side
+		uint32_t side
 	);
 
 	void ClipFrustumLines(const float zmin, const float zmax, bool neg);
@@ -160,9 +182,9 @@ public:
 	const CMatrix44f& GetBillBoardMatrix() const { return billboardMatrix; }
 	const CMatrix44f& GetClipControlMatrix() const { return clipControlMatrix; }
 
-	const float3& GetFrustumVert (unsigned int i) const { return frustum.verts [i]; }
-	const float3& GetFrustumPlane(unsigned int i) const { return frustum.planes[i]; }
-	const float3& GetFrustumEdge (unsigned int i) const { return frustum.edges [i]; }
+	const float3& GetFrustumVert (uint32_t i) const { return frustum.verts [i]; }
+	const float3& GetFrustumPlane(uint32_t i) const { return frustum.planes[i]; }
+	const float3& GetFrustumEdge (uint32_t i) const { return frustum.edges [i]; }
 
 	void LoadMatrices() const;
 	void LoadViewport() const;
@@ -208,17 +230,17 @@ public:
 	}
 	*/
 
-	unsigned int GetCamType() const { return camType; }
-	unsigned int GetProjType() const { return projType; }
-	unsigned int SetCamType(unsigned int ct) { return (camType = ct); }
-	unsigned int SetProjType(unsigned int pt) { return (projType = pt); }
+	uint32_t GetCamType() const { return camType; }
+	uint32_t GetProjType() const { return projType; }
+	void SetCamType(uint32_t ct);
+	void SetProjType(uint32_t pt) { projType = pt; }
 	void InitConfigNotify();
 	void RemoveConfigNotify();
 
 public:
 	void UpdateViewRange();
 	void UpdateFrustum();
-	void UpdateMatrices(unsigned int vsx, unsigned int vsy, float var);
+	void UpdateMatrices(uint32_t vsx, uint32_t vsy, float var);
 	void UpdateViewPort(int px, int py, int sx, int sy);
 
 	void ConfigNotify(const std::string& key, const std::string& value);
@@ -280,14 +302,14 @@ private:
 	FrustumLine frustumLines[2][4 + 1];
 
 	// CAMTYPE_*
-	unsigned int camType = -1u;
+	uint32_t camType = -1u;
 	// PROJTYPE_*
-	unsigned int projType = -1u;
+	uint32_t projType = -1u;
+
+	uint8_t inViewPlanesMask;
 
 	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
 };
 
 #define camera (CCamera::GetActive())
-#endif // _CAMERA_H
-

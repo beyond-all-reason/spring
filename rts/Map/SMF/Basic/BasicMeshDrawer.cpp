@@ -11,31 +11,6 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/EventHandler.h"
 
-using MeshVisPatch = CBasicMeshDrawer::MeshVisPatch;
-
-class MeshPatchVisTestDrawer: public CReadMap::IQuadDrawer {
-public:
-	void ResetState() override {}
-	void ResetState(CCamera* c, MeshVisPatch* p, uint32_t xsize) {
-		testCamera = c;
-		patchArray = p;
-		numPatches = xsize;
-	}
-
-	void DrawQuad(int px, int py) override {
-		patchArray[py * numPatches + px].visUpdateFrames[testCamera->GetCamType()] = globalRendering->drawFrame;
-	}
-
-private:
-	CCamera* testCamera;
-	MeshVisPatch* patchArray;
-
-	uint32_t numPatches;
-};
-
-static MeshPatchVisTestDrawer patchVisTestDrawer;
-
-
 
 CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 	: CEventClient("[CBasicMeshDrawer]", 717171, false)
@@ -100,12 +75,28 @@ CBasicMeshDrawer::~CBasicMeshDrawer()
 void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 {
 	CCamera* activeCam = CCameraHandler::GetActiveCamera();
-	auto* meshVisPatch = &meshVisPatches[0];
 
-	patchVisTestDrawer.ResetState(activeCam, meshVisPatch, numPatchesX);
+	const float minHeight = readMap->GetCurrMinHeight() - 100.0f;
+	const float maxHeight = readMap->GetCurrMaxHeight() + 100.0f;
 
-	activeCam->CalcFrustumLines(readMap->GetCurrMinHeight() - 100.0f, readMap->GetCurrMaxHeight() + 100.0f, SQUARE_SIZE);
-	readMap->GridVisibility(activeCam, &patchVisTestDrawer, 1e9, PATCH_SIZE);
+	static constexpr float wsEdge = PATCH_SIZE * SQUARE_SIZE;
+
+	const int drawQuadsX = mapDims.mapx / PATCH_SIZE;
+	const int drawQuadsZ = mapDims.mapy / PATCH_SIZE;
+
+	for (int x = 0; x < drawQuadsX; ++x) {
+		for (int z = 0; z < drawQuadsZ; ++z) {
+			AABB aabb {
+				{ (x + 0) * wsEdge, minHeight, (z + 0) * wsEdge },
+				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
+			};
+
+			if (!activeCam->InView(aabb))
+				continue;
+
+			meshVisPatches[z * numPatchesX + x].visUpdateFrames[activeCam->GetCamType()] = globalRendering->drawFrame;
+		}
+	}
 
 	drawPassLOD = CalcDrawPassLOD(activeCam, drawPass);
 }

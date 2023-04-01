@@ -313,7 +313,7 @@ void CRoamMeshDrawer::Update()
 
 	int actualTesselations = 0;
 	int actualUploads = 0;
-	totalCameraDistanceRatioInv = totalCameraDistanceRatioInv / numPatchesVisible;
+	totalCameraDistanceRatioInv = totalCameraDistanceRatioInv / std::max(numPatchesVisible, static_cast<size_t>(1));
 
 	if (totalCameraDistanceRatioInv > MAGIC_TOTAL_CAMDIST_RETESSELATE) {
 		forceNextTesselation[shadowPass] = true;

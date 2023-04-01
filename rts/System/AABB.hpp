@@ -61,6 +61,8 @@ public:
 	float CalcRadiusSq() const { return (CalcScales().SqLength()); }
 	float CalcRadius() const { return (CalcScales().Length()); }
 
+	float3 GetVertexP(const float3& normal) const;
+	float3 GetVertexN(const float3& normal) const;
 public:
 	float3 mins;
 	float3 maxs;
