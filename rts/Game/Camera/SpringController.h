@@ -42,6 +42,8 @@ private:
 	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& scaledMode);
 	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
+	void SmoothCamHeight(float3 prevPos);
+
 private:
 	float3 rot;
 
@@ -56,7 +58,7 @@ private:
 	bool cursorZoomOut;
 	bool doRotate;
 	bool lockCardinalDirections;
-	bool trackMapHeight;
+	int trackMapHeight;
 };
 
 #endif // _SPRING_CONTROLLER_H

@@ -15,6 +15,13 @@
 #include "System/Input/KeyInput.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 
+namespace {
+    enum HeightTracking : int {
+        Disabled = 0,
+        Terrain,
+        Smooth,
+    };
+}
 
 CONFIG(bool,  CamSpringEnabled).defaultValue(true).headlessValue(false);
 CONFIG(int,   CamSpringScrollSpeed).defaultValue(10);
@@ -25,7 +32,7 @@ CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
-CONFIG(bool, CamSpringTrackMapHeight).defaultValue(true).description("Camera height is influenced by terrain height");
+CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smooth");
 
 static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
@@ -45,7 +52,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-    configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeight"});
+    configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
 	ConfigUpdate();
 }
 
@@ -65,7 +72,7 @@ void CSpringController::ConfigUpdate()
 	fastScaleMousewheel = configHandler->GetFloat("CamSpringFastScaleMousewheelMove");
 	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
-	trackMapHeight = configHandler->GetBool("CamSpringTrackMapHeight");
+	trackMapHeight = configHandler->GetInt("CamSpringTrackMapHeightMode");
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
@@ -73,6 +80,37 @@ void CSpringController::ConfigNotify(const std::string & key, const std::string 
 	ConfigUpdate();
 }
 
+void CSpringController::SmoothCamHeight(float3 prevPos) {
+	if (!pos.IsInBounds()) {
+		return;
+	}
+
+	float camHeightChange = 0.0f;
+
+	if (trackMapHeight == HeightTracking::Smooth) {
+		const float prevAirMeshHeight = smoothGround.GetHeight(prevPos.x, prevPos.z);
+		const float newAirMeshHeight = smoothGround.GetHeight(pos.x, pos.z);
+		camHeightChange = newAirMeshHeight - prevAirMeshHeight;
+	}
+
+	if (trackMapHeight != HeightTracking::Terrain) {
+		pos.y += camHeightChange;
+		float3 camPos = GetPos(); // previous frame camera height smoothed by camHeightChange
+		camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
+
+		// FIXME camera focus is now first ground intersection which is not what we want
+		// when there's a hill blocking the view
+		auto distToGround =  CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
+		auto newGroundPos = camPos + dir * distToGround;
+		if (distToGround > 0.0 && newGroundPos.IsInBounds())        {
+			curDist = distToGround;
+			pos = newGroundPos;
+		} else {
+			// can't find new ground position. cancel the operation
+			pos.y -= camHeightChange;
+		}
+	}
+}
 
 void CSpringController::KeyMove(float3 move)
 {
@@ -87,17 +125,13 @@ void CSpringController::KeyMove(float3 move)
 		return;
 	}
 
-	auto prevAirMeshHeight = smoothGround.GetHeight(pos.x, pos.z);
+	const float3 prevPos = pos;
 
 	move *= 200.0f;
 	const float3 flatForward = (dir * XZVector).ANormalize();
 	pos += (camera->GetRight() * move.x + flatForward * move.y) * pixelSize * 2.0f * scrollSpeed;
 
-	if (trackMapHeight) {
-		auto newAirMeshHeight = smoothGround.GetHeight(pos.x, pos.z);
-		auto height_diff = newAirMeshHeight - prevAirMeshHeight;
-		pos.y += height_diff;
-	}
+	SmoothCamHeight(prevPos);
 
 	Update();
 }
@@ -258,13 +292,7 @@ void CSpringController::Update()
 {
 	pos.ClampInMap();
 
-	// normalize pos.y and curDist so the actual camera height is not changed
-	// and focus remains on the surface of the ground
-	auto camPos = GetPos();
-	camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
-	float groundDist = DistanceToGround(camPos, dir);
-	curDist = groundDist;
-	pos = camPos + dir * groundDist;
+	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
 
 	rot.x = Clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
