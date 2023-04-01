@@ -36,7 +36,7 @@ CONFIG(int, CamFrameTimeCorrection)
 	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 
-CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
+CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
 	: camType(cameraType)
 	, projType(projectionType)
 	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
@@ -52,6 +52,13 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 
 	SetVFOV(45.0f);
 	UpdateFrustum();
+}
+
+void CCamera::SetCamType(uint32_t ct)
+{
+	camType = ct;
+	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
+	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
 void CCamera::InitConfigNotify(){
@@ -211,7 +218,7 @@ void CCamera::UpdateFrustum()
 	visCam->CopyState(curCam);
 }
 
-void CCamera::UpdateMatrices(unsigned int vsx, unsigned int vsy, float var)
+void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 {
 	// recalculate the projection transform
 	switch (projType) {
@@ -371,10 +378,10 @@ bool CCamera::InView(const AABB& aabb) const
 
 	{
 		// test box planes
-		for (unsigned int i = 0; i < 6; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = 0; i < 6; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (boxFaces[i * 2 + 1].dot(frustum.verts[j] - boxFaces[i * 2 + 0]) > 0.0f);
 			}
 
@@ -384,10 +391,10 @@ bool CCamera::InView(const AABB& aabb) const
 	}
 	{
 		// test cam planes (LRTB)
-		for (unsigned int i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FAR; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FAR; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (frustum.planes[i].dot(boxVerts[j] - pos) > xyPlaneOffsets[i >> 1]);
 			}
 
@@ -398,10 +405,10 @@ bool CCamera::InView(const AABB& aabb) const
 	}
 	{
 		// test cam planes (NF)
-		for (unsigned int i = FRUSTUM_PLANE_FAR; i < FRUSTUM_PLANE_CNT; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = FRUSTUM_PLANE_FAR; i < FRUSTUM_PLANE_CNT; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (frustum.planes[i].dot(boxVerts[j] - (pos + forward * zwPlaneOffsets[i & 1])) > 0.0f);
 			}
 
@@ -410,8 +417,8 @@ bool CCamera::InView(const AABB& aabb) const
 		}
 	}
 	{
-		for (unsigned int i = 0; i < 6; i++) {
-			for (unsigned int j = 0; j < 6; j++) {
+		for (uint32_t i = 0; i < 6; i++) {
+			for (uint32_t j = 0; j < 6; j++) {
 				if (boxFaces[i * 2 + 1] == frustum.planes[j])
 					continue;
 
@@ -422,7 +429,7 @@ bool CCamera::InView(const AABB& aabb) const
 				float2 frustAxisDists = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()}; // .x=min,.y=max
 				float4  projAxisDists;
 
-				for (unsigned int k = 0; k < 8; k++) {
+				for (uint32_t k = 0; k < 8; k++) {
 					boxAxisDists.x = std::min(boxAxisDists.x, boxVerts[k].dot(testAxisN));
 					boxAxisDists.y = std::max(boxAxisDists.y, boxVerts[k].dot(testAxisN));
 
@@ -596,7 +603,7 @@ void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	frustumLines[FRUSTUM_SIDE_NEG][4].sign = 0;
 
 	// note: order does not matter
-	for (unsigned int i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_FAR; i++) {
+	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_FAR; i++) {
 		CalcFrustumLine(frustum.planes[i], planeOffsets[i],  isectParams, side);
 	}
 
@@ -607,7 +614,7 @@ void CCamera::CalcFrustumLine(
 	const float3& normal,
 	const float3& offset,
 	const float3& params,
-	unsigned int side
+	uint32_t side
 ) {
 	FrustumLine line;
 
@@ -825,8 +832,8 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 	if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
 		return false;
 
-	for (unsigned int i = 0; i < 3; i++) {
-		for (unsigned int j = 0; j < 6; j++) {
+	for (uint32_t i = 0; i < 3; i++) {
+		for (uint32_t j = 0; j < 6; j++) {
 			crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
 		}
 	}

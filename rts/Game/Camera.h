@@ -111,7 +111,7 @@ public:
 	};
 
 public:
-	CCamera(unsigned int cameraType = CAMTYPE_PLAYER, unsigned int projectionType = PROJTYPE_PERSP);
+	CCamera(uint32_t cameraType = CAMTYPE_PLAYER, uint32_t projectionType = PROJTYPE_PERSP);
 
 	void CopyState(const CCamera*);
 	void CopyStateReflect(const CCamera*);
@@ -150,7 +150,7 @@ public:
 		const float3& normal,
 		const float3& offset,
 		const float3& params,
-		unsigned int side
+		uint32_t side
 	);
 
 	void ClipFrustumLines(const float zmin, const float zmax, bool neg);
@@ -182,9 +182,9 @@ public:
 	const CMatrix44f& GetBillBoardMatrix() const { return billboardMatrix; }
 	const CMatrix44f& GetClipControlMatrix() const { return clipControlMatrix; }
 
-	const float3& GetFrustumVert (unsigned int i) const { return frustum.verts [i]; }
-	const float3& GetFrustumPlane(unsigned int i) const { return frustum.planes[i]; }
-	const float3& GetFrustumEdge (unsigned int i) const { return frustum.edges [i]; }
+	const float3& GetFrustumVert (uint32_t i) const { return frustum.verts [i]; }
+	const float3& GetFrustumPlane(uint32_t i) const { return frustum.planes[i]; }
+	const float3& GetFrustumEdge (uint32_t i) const { return frustum.edges [i]; }
 
 	void LoadMatrices() const;
 	void LoadViewport() const;
@@ -230,17 +230,17 @@ public:
 	}
 	*/
 
-	unsigned int GetCamType() const { return camType; }
-	unsigned int GetProjType() const { return projType; }
-	unsigned int SetCamType(unsigned int ct) { return (camType = ct); }
-	unsigned int SetProjType(unsigned int pt) { return (projType = pt); }
+	uint32_t GetCamType() const { return camType; }
+	uint32_t GetProjType() const { return projType; }
+	void SetCamType(uint32_t ct);
+	void SetProjType(uint32_t pt) { projType = pt; }
 	void InitConfigNotify();
 	void RemoveConfigNotify();
 
 public:
 	void UpdateViewRange();
 	void UpdateFrustum();
-	void UpdateMatrices(unsigned int vsx, unsigned int vsy, float var);
+	void UpdateMatrices(uint32_t vsx, uint32_t vsy, float var);
 	void UpdateViewPort(int px, int py, int sx, int sy);
 
 	void ConfigNotify(const std::string& key, const std::string& value);
@@ -302,11 +302,11 @@ private:
 	FrustumLine frustumLines[2][4 + 1];
 
 	// CAMTYPE_*
-	unsigned int camType = -1u;
+	uint32_t camType = -1u;
 	// PROJTYPE_*
-	unsigned int projType = -1u;
+	uint32_t projType = -1u;
 
-	const uint8_t inViewPlanesMask;
+	uint8_t inViewPlanesMask;
 
 	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
