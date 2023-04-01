@@ -758,8 +758,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-
-
+// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
 bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
 {
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
@@ -836,6 +835,7 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 }
 */
 
+// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
 bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
 {
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
