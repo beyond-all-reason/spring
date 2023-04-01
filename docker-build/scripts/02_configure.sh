@@ -22,8 +22,8 @@ if [ "${PLATFORM}" == "linux-64" ]; then
 elif [ "${PLATFORM}" == "windows-64" ]; then
     EXTRA_CMAKE_ARGS+=(
         -DMINGWLIBS=${LIBS_DIR}
-		-DVulkan_INCLUDE_DIR=/vulkan-sdk/x86_64/include
-		-DVulkan_LIBRARY=/vulkan-sdk/x86_64/lib
+        -DVulkan_INCLUDE_DIR=/vulkan-sdk/x86_64/include
+        -DVulkan_LIBRARY=/vulkan-sdk/x86_64/lib
     )
 fi
 
@@ -49,5 +49,6 @@ cmake \
     -DINSTALL_PORTABLE=ON \
     -DWITH_MAPCOMPILER=OFF \
     -DAI_EXCLUDE_REGEX="^CppTestAI$" \
+    "${MYCMAKEFLAGS}" \
     "${EXTRA_CMAKE_ARGS[@]}" \
     "${SPRING_DIR}"
