@@ -26,8 +26,8 @@ class LuaSyncedCtrl
 		inline static int inCreateFeature = 0;
 		inline static int inDestroyFeature = 0;
 		inline static int inGiveOrder = 0;
+		inline static int inTransferUnit = 0;
 
-		inline static bool inTransferUnit = false;
 		inline static bool inHeightMap = false;
 		inline static bool inOriginalHeightMap = false;
 		inline static bool inSmoothMesh = false;
