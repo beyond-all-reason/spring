@@ -17,11 +17,11 @@
 #include "Sim/Misc/ModInfo.h"
 
 namespace {
-    enum HeightTracking : int {
-        Disabled = 0,
-        Terrain,
-        Smooth,
-    };
+	enum HeightTracking : int {
+		Disabled = 0,
+		Terrain,
+		Smooth,
+	};
 }
 
 CONFIG(bool,  CamSpringEnabled).defaultValue(true).headlessValue(false);
@@ -99,21 +99,19 @@ void CSpringController::SmoothCamHeight(float3 prevPos) {
 		camHeightChange = newAirMeshHeight - prevAirMeshHeight;
 	}
 
-	if (trackMapHeight != HeightTracking::Terrain) {
-		pos.y += camHeightChange;
-		float3 camPos = GetPos(); // previous frame camera height smoothed by camHeightChange
+	if (trackMapHeight == HeightTracking::Smooth || trackMapHeight == HeightTracking::Disabled) {
+		float3 camPos = GetPos(); // new camera pos with height from previous frame
 		camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
 
+		// raycast to ground to simulate camera movement and find new point of focus
+		auto distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
 		// FIXME camera focus is now first ground intersection which is not what we want
 		// when there's a hill blocking the view
-		auto distToGround =  CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
 		auto newGroundPos = camPos + dir * distToGround;
-		if (distToGround > 0.0 && newGroundPos.IsInBounds())        {
+		if (distToGround > 0.0 && newGroundPos.IsInBounds()) {
 			curDist = distToGround;
 			pos = newGroundPos;
-		} else {
-			// can't find new ground position. cancel the operation
-			pos.y -= camHeightChange;
+			curDist += (dir * camHeightChange).Length() * Sign(camHeightChange);
 		}
 	}
 }
