@@ -52,7 +52,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-    configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
 	ConfigUpdate();
 }
 
@@ -293,7 +293,6 @@ void CSpringController::Update()
 	pos.ClampInMap();
 
 	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
-
 	rot.x = Clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
 	// camera->SetRot(float3(rot.x, GetAzimuth(), rot.z));
