@@ -621,7 +621,7 @@ void CCamera::CalcFrustumLine(
 
 	// compose an orthonormal axis-system around the frustum plane normal
 	// top plane normal can point straight up if camera is angled downward
-	const float3 aux = (std::fabs(normal.dot(UpVector)) > 0.995f)? -forward: UpVector;
+	const float3 aux = (std::fabs(normal.dot(UpVector)) > 0.995f) ? forward : UpVector;
 
 	float3 xdir = (normal.cross( aux)).UnsafeANormalize();
 	float3 ydir = (normal.cross(xdir)).UnsafeANormalize();
