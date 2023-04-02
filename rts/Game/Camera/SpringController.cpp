@@ -14,6 +14,7 @@
 #include "System/SpringMath.h"
 #include "System/Input/KeyInput.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
+#include "Sim/Misc/ModInfo.h"
 
 namespace {
     enum HeightTracking : int {
@@ -73,6 +74,11 @@ void CSpringController::ConfigUpdate()
 	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
 	trackMapHeight = configHandler->GetInt("CamSpringTrackMapHeightMode");
+
+	if (trackMapHeight == HeightTracking::Smooth && !modInfo.enableSmoothMesh) {
+		LOG_L(L_ERROR, "Smooth mesh disabled");
+		trackMapHeight = HeightTracking::Terrain;
+	}
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
