@@ -591,11 +591,11 @@ inline void CCamera::glOrthoScaledSpring(
 void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	const float3 isectParams = {miny, maxy, 1.0f / scale};
 	// only non-zero for orthographic cameras
-	const float3 planeOffsets[FRUSTUM_PLANE_FAR] = {
+	const float3 planeOffsets[FRUSTUM_PLANE_NEA] = {
 		-right * frustum.scales.x,
 		 right * frustum.scales.x,
-		    up * frustum.scales.y,
 		   -up * frustum.scales.y,
+		    up * frustum.scales.y,
 	};
 
 	// reset counts per side
@@ -603,7 +603,7 @@ void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	frustumLines[FRUSTUM_SIDE_NEG][4].sign = 0;
 
 	// Note: order does not matter
-	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_FAR; i++) {
+	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_NEA; i++) {
 		// Note: CalcFrustumLine expects normals to point outwards relative to frustum shape, frustum.planes normals point inwards
 		CalcFrustumLine(-1.0f * frustum.planes[i], planeOffsets[i],  isectParams, side);
 	}
