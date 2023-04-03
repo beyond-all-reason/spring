@@ -39,19 +39,25 @@ in vec2 diffuseTexCoords;
 uniform sampler2D diffuseTex;
 uniform sampler2D normalsTex;
 uniform sampler2D detailTex;
-uniform vec2 normalTexGen;   // either 1.0/mapSize (when NPOT are supported) or 1.0/mapSizePO2
+#ifndef SMF_ADV_SHADING
+	uniform sampler2D shadingTex;
+#endif
+
 uniform vec2 specularTexGen; // 1.0/mapSize
 
-uniform vec3 groundAmbientColor;
-uniform vec3 groundDiffuseColor;
-uniform vec3 groundSpecularColor;
-uniform float groundSpecularExponent;
-uniform float groundShadowDensity;
+#ifdef SMF_ADV_SHADING
+	uniform vec2 normalTexGen;   // either 1.0/mapSize (when NPOT are supported) or 1.0/mapSizePO2
+	uniform vec3 groundAmbientColor;
+	uniform vec3 groundDiffuseColor;
+	uniform vec3 groundSpecularColor;
+	uniform float groundSpecularExponent;
+	uniform float groundShadowDensity;
 
-uniform vec2 mapHeights; // min & max height on the map
+	uniform vec2 mapHeights; // min & max height on the map
 
-uniform vec4 lightDir;
-uniform vec3 cameraPos;
+	uniform vec4 lightDir;
+	uniform vec3 cameraPos;
+#endif
 
 #ifdef HAVE_INFOTEX
 	uniform sampler2D infoTex;

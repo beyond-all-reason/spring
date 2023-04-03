@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SMF_RENDERSTATE_H
-#define SMF_RENDERSTATE_H
+#pragma once
 
 #include <array>
 #include "Map/MapDrawPassTypes.h"
@@ -15,18 +14,17 @@ namespace Shader {
 }
 
 enum {
-	RENDER_STATE_FFP = 0, // fixed-function path
-	RENDER_STATE_SSP = 1, // standard-shader path (ARB/GLSL)
-	RENDER_STATE_LUA = 2, // Lua-shader path
-	RENDER_STATE_NOP = 3, // NO-OP path
-	RENDER_STATE_SEL = 4, // selected path
-	RENDER_STATE_CNT = 5,
+	RENDER_STATE_SSP = 0, // standard-shader path (GLSL)
+	RENDER_STATE_LUA = 1, // Lua-shader path
+	RENDER_STATE_NOP = 2, // NO-OP path
+	RENDER_STATE_SEL = 3, // selected path
+	RENDER_STATE_CNT = 4,
 };
 
 
 struct ISMFRenderState {
 public:
-	static ISMFRenderState* GetInstance(bool haveGLSL, bool luaShader, bool noop);
+	static ISMFRenderState* GetInstance(bool luaShader, bool noop);
 	static void FreeInstance(ISMFRenderState* state) { delete state; }
 
 	virtual ~ISMFRenderState() {}
@@ -38,7 +36,6 @@ public:
 	) = 0;
 
 	virtual bool HasValidShader(const DrawPass::e& drawPass) const = 0;
-	virtual bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
 	virtual bool CanDrawForward() const = 0;
 	virtual bool CanDrawDeferred() const = 0;
 
@@ -47,7 +44,7 @@ public:
 
 	virtual void SetSquareTexGen(const int sqx, const int sqy) const = 0;
 	virtual void SetCurrentShader(const DrawPass::e& drawPass) = 0;
-	virtual void UpdateCurrentShaderSky(const ISkyLight* skyLight) const = 0;
+	virtual void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) = 0;
 };
 
 
@@ -62,7 +59,6 @@ public:
 	) override {}
 
 	bool HasValidShader(const DrawPass::e& drawPass) const override { return true; }
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override { return true; }
 	bool CanDrawForward() const override { return false; }
 	bool CanDrawDeferred() const override { return false; }
 
@@ -71,35 +67,18 @@ public:
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override {}
 	void SetCurrentShader(const DrawPass::e& drawPass) override {}
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override {}
-};
-
-
-struct SMFRenderStateFFP: public ISMFRenderState {
-public:
-	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override { return false; }
-	void Kill() override {}
-	void Update(
-		const CSMFGroundDrawer* smfGroundDrawer,
-		const LuaMapShaderData* luaMapShaderData
-	) override {}
-
-	bool HasValidShader(const DrawPass::e& drawPass) const override { return false; }
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override;
-	bool CanDrawForward() const override { return true; }
-	bool CanDrawDeferred() const override { return false; }
-
-	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
-	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
-
-	void SetSquareTexGen(const int sqx, const int sqy) const override;
-	void SetCurrentShader(const DrawPass::e& drawPass) override {}
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override {};
+	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override {}
 };
 
 struct SMFRenderStateGLSL: public ISMFRenderState {
 public:
-	explicit SMFRenderStateGLSL(bool lua): useLuaShaders(lua) { glslShaders.fill(nullptr); }
+	explicit SMFRenderStateGLSL(bool lua)
+		: useLuaShaders(lua)
+		, updateSkyUniforms(true)
+	{
+		glslShaders.fill(nullptr);
+	}
+
 	~SMFRenderStateGLSL() override { glslShaders.fill(nullptr); }
 
 	bool Init(const CSMFGroundDrawer* smfGroundDrawer) override;
@@ -110,7 +89,6 @@ public:
 	) override;
 
 	bool HasValidShader(const DrawPass::e& drawPass) const override;
-	bool CanEnable(const CSMFGroundDrawer* smfGroundDrawer) const override;
 	bool CanDrawForward() const override { return true; }
 	bool CanDrawDeferred() const override { return true; }
 
@@ -119,7 +97,7 @@ public:
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override;
 	void SetCurrentShader(const DrawPass::e& drawPass) override;
-	void UpdateCurrentShaderSky(const ISkyLight* skyLight) const override;
+	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override { updateSkyUniforms = true; }
 
 	enum {
 		GLSL_SHADER_STANDARD = 0,
@@ -136,7 +114,5 @@ private:
 
 	// if true, shader programs for this state are Lua-defined
 	bool useLuaShaders;
+	bool updateSkyUniforms;
 };
-
-#endif
-

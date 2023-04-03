@@ -74,10 +74,9 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	meshDrawer = SwitchMeshDrawer(drawerMode);
 
 	smfRenderStates = { nullptr };
-	smfRenderStates[RENDER_STATE_FFP] = ISMFRenderState::GetInstance(                    false, false, false);
-	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(globalRendering->haveGLSL, false, false);
-	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance(                     true,  true, false);
-	smfRenderStates[RENDER_STATE_NOP] = ISMFRenderState::GetInstance(                    false, false,  true);
+	smfRenderStates[RENDER_STATE_SSP] = ISMFRenderState::GetInstance(false, false);
+	smfRenderStates[RENDER_STATE_LUA] = ISMFRenderState::GetInstance( true, false);
+	smfRenderStates[RENDER_STATE_NOP] = ISMFRenderState::GetInstance(false,  true);
 
 	borderShader = shaderHandler->CreateProgramObject("[SMFGroundDrawer]", "Border");
 	borderShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFBorderVertProg.glsl", "", GL_VERTEX_SHADER));
@@ -133,7 +132,6 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	// remember which ROAM-mode was enabled (if any)
 	configHandler->Set("ROAM", (dynamic_cast<CRoamMeshDrawer*>(meshDrawer) != nullptr)? 1: 0);
 
-	smfRenderStates[RENDER_STATE_FFP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_FFP]);
 	smfRenderStates[RENDER_STATE_SSP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_SSP]);
 	smfRenderStates[RENDER_STATE_LUA]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_LUA]);
 	smfRenderStates[RENDER_STATE_NOP]->Kill(); ISMFRenderState::FreeInstance(smfRenderStates[RENDER_STATE_NOP]);
@@ -187,8 +185,6 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 	for (unsigned int n = 0; n < 2; n++) {
 		ISMFRenderState* state = smfRenderStates[ stateEnums[n] ];
 
-		if (!state->CanEnable(this))
-			continue;
 		if (!state->HasValidShader(drawPass))
 			continue;
 
@@ -196,7 +192,7 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 	}
 
 	// fallback
-	return (smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_FFP]);
+	return (smfRenderStates[RENDER_STATE_SEL] = smfRenderStates[RENDER_STATE_NOP]);
 }
 
 bool CSMFGroundDrawer::HaveLuaRenderState() const
@@ -466,7 +462,7 @@ void CSMFGroundDrawer::SunChanged() {
 
 	// always update, SSMF shader needs current sundir even when shadows are disabled
 	// note: only the active state is notified of a given change
-	smfRenderStates[RENDER_STATE_SEL]->UpdateCurrentShaderSky(ISky::GetSky()->GetLight());
+	smfRenderStates[RENDER_STATE_SEL]->UpdateCurrentShaderSky(this);
 }
 
 
