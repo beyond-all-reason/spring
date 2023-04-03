@@ -93,7 +93,6 @@ void SMFRenderStateGLSL::Update(
 		assert(luaMapShaderData == nullptr);
 
 		const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
-		const GL::LightHandler* lightHandler = smfGroundDrawer->GetLightHandler();
 
 		const int2 normTexSize = smfMap->GetTextureSize(MAP_BASE_NORMALS_TEX);
 		// const int2 specTexSize = smfMap->GetTextureSize(MAP_SSMF_SPECULAR_TEX);
@@ -114,9 +113,6 @@ void SMFRenderStateGLSL::Update(
 				glslShaders[n]->SetFlag("SMF_BLEND_NORMALS",                    smfMap->GetBlendNormalsTexture() != 0);
 				glslShaders[n]->SetFlag("SMF_LIGHT_EMISSION",                   smfMap->GetLightEmissionTexture() != 0);
 				glslShaders[n]->SetFlag("SMF_PARALLAX_MAPPING",                 smfMap->GetParallaxHeightTexture() != 0);
-
-				glslShaders[n]->SetFlag("BASE_DYNAMIC_MAP_LIGHT", lightHandler->GetBaseLight());
-				glslShaders[n]->SetFlag("MAX_DYNAMIC_MAP_LIGHTS", lightHandler->GetMaxLights());
 			}
 
 			// both are runtime set in ::Enable, but AMD drivers need values from the beginning
@@ -215,8 +211,6 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	const bool isAdv = smfGroundDrawer->UseAdvShading();
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
-	const GL::LightHandler* cLightHandler = smfGroundDrawer->GetLightHandler();
-	GL::LightHandler* mLightHandler = const_cast<GL::LightHandler*>(cLightHandler); // XXX
 
 	if (isAdv)
 		glslShaders[GLSL_SHADER_CURRENT]->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
@@ -243,8 +237,6 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	// already on the MV stack at this point
 	glLoadIdentity();
-	if (isAdv)
-		mLightHandler->Update(glslShaders[GLSL_SHADER_CURRENT]);
 	glMultMatrixf(camera->GetViewMatrix());
 
 	if (isAdv && shadowHandler.ShadowsLoaded()) {

@@ -91,14 +91,11 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	borderShader->SetUniform("detailsTex"  , 2);
 	borderShader->SetUniform("mapSize",
 		static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
-					1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+				   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
 	);
 	borderShader->Disable();
 
 	borderShader->Validate();
-
-	// LH must be initialized before render-state is initialized
-	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicMapLights"));
 
 	drawForward = true;
 	drawDeferred = geomBuffer.Valid();

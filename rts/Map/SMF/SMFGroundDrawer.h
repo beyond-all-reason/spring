@@ -66,8 +66,6 @@ public:
 
 	const CSMFReadMap* GetReadMap() const { return smfMap; }
 	      CSMFReadMap* GetReadMap()       { return smfMap; }
-	const GL::LightHandler* GetLightHandler() const { return &lightHandler; }
-	      GL::LightHandler* GetLightHandler()       { return &lightHandler; }
 
 	const GL::GeometryBuffer* GetGeometryBuffer() const { return &geomBuffer; }
 	      GL::GeometryBuffer* GetGeometryBuffer()       { return &geomBuffer; }
@@ -97,7 +95,6 @@ protected:
 	// [3] := currently selected state (shared by deferred pass)
 	std::array<ISMFRenderState*, RENDER_STATE_CNT> smfRenderStates;
 
-	GL::LightHandler lightHandler;
 	GL::GeometryBuffer geomBuffer;
 
 	Shader::IProgramObject* borderShader = nullptr;

@@ -3,8 +3,6 @@
 #ifdef NOSPRING
 	#define SMF_INTENSITY_MULT (210.0 / 255.0)
 	#define SMF_TEXSQUARE_SIZE 1024.0
-	#define MAX_DYNAMIC_MAP_LIGHTS 4
-	#define BASE_DYNAMIC_MAP_LIGHT 0
 	#define GBUFFER_NORMTEX_IDX 0
 	#define GBUFFER_DIFFTEX_IDX 1
 	#define GBUFFER_SPECTEX_IDX 2
@@ -41,6 +39,7 @@ uniform sampler2D normalsTex;
 uniform sampler2D detailTex;
 #ifndef SMF_ADV_SHADING
 	uniform sampler2D shadingTex;
+	uniform vec2 shadingTexGen;
 #endif
 
 uniform vec2 specularTexGen; // 1.0/mapSize
@@ -257,55 +256,6 @@ vec4 GetShadeInt(float groundLightInt, vec3 groundShadowCoeff, float groundDiffu
 #endif
 }
 
-
-vec3 DynamicLighting(vec3 normal, vec3 diffuseCol, vec3 specularCol, float specularExp) {
-	vec3 light = vec3(0.0);
-
-	#ifndef SMF_SPECULAR_LIGHTING
-		// non-zero default specularity on non-SSMF maps
-		specularCol = vec3(0.5, 0.5, 0.5);
-	#endif
-
-	for (int i = 0; i < MAX_DYNAMIC_MAP_LIGHTS; i++) {
-		vec3 lightVec = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].position.xyz - vertexWorldPos.xyz;
-		vec3 halfVec = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].halfVector.xyz;
-
-		float lightRadius = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].constantAttenuation;
-		float lightDistance = length(lightVec);
-		float lightScale = float(lightDistance <= lightRadius);
-		float lightCosAngDiff = clamp(dot(normal, lightVec / lightDistance), 0.0, 1.0);
-		//clamp lightCosAngSpec from 0.001 because this will later be in a power function
-		//results are undefined if x==0 or if x==0 and y==0.
-		float lightCosAngSpec = clamp(dot(normal, normalize(halfVec)), 0.001, 1.0);
-	#ifdef OGL_SPEC_ATTENUATION
-		float lightAttenuation =
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].constantAttenuation) +
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].linearAttenuation * lightDistance) +
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].quadraticAttenuation * lightDistance * lightDistance);
-
-		lightAttenuation = 1.0 / max(lightAttenuation, 1.0);
-	#else
-		float lightAttenuation = 1.0 - min(1.0, ((lightDistance * lightDistance) / (lightRadius * lightRadius)));
-	#endif
-
-		float vectorDot = -dot((lightVec / lightDistance), gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].spotDirection);
-		float cutoffDot = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].spotCosCutoff;
-
-		float lightSpecularPow = 0.0;
-	#ifdef SMF_SPECULAR_LIGHTING
-		lightSpecularPow = max(0.0, pow(lightCosAngSpec, specularExp));
-	#endif
-
-		lightScale *= float(vectorDot >= cutoffDot);
-
-		light += (lightScale *                                       gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].ambient.rgb);
-		light += (lightScale * lightAttenuation * (diffuseCol.rgb *  gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].diffuse.rgb * lightCosAngDiff));
-		light += (lightScale * lightAttenuation * (specularCol.rgb * gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].specular.rgb * lightSpecularPow));
-	}
-
-	return light;
-}
-
 /***********************************************************************/
 // main()
 
@@ -467,10 +417,6 @@ void main() {
 		      specularInt *= shadowCoeff;
 
 		fragColor.rgb += specularInt;
-
-		#if (MAX_DYNAMIC_MAP_LIGHTS > 0)
-			fragColor.rgb += DynamicLighting(normal, diffuseCol.rgb, specularCol.rgb, specularExp);
-		#endif
 	#endif
 
 
@@ -485,6 +431,7 @@ void main() {
 	// gl_FragDepth = gl_FragCoord.z / gl_FragCoord.w;
 #else
 	fragColor.rgb = mix(gl_Fog.color.rgb, fragColor.rgb, fogFactor);
+	fragColor.rgb = vec3(1.0);
 #endif
 }
 
