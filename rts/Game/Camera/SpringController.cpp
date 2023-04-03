@@ -86,32 +86,28 @@ void CSpringController::ConfigNotify(const std::string & key, const std::string 
 	ConfigUpdate();
 }
 
-void CSpringController::SmoothCamHeight(float3 prevPos) {
+void CSpringController::SmoothCamHeight(const float3& prevPos) {
 	if (!pos.IsInBounds()) {
 		return;
 	}
 
-	float camHeightChange = 0.0f;
-
-	if (trackMapHeight == HeightTracking::Smooth) {
-		const float prevAirMeshHeight = smoothGround.GetHeight(prevPos.x, prevPos.z);
-		const float newAirMeshHeight = smoothGround.GetHeight(pos.x, pos.z);
-		camHeightChange = newAirMeshHeight - prevAirMeshHeight;
-	}
+	const float camHeightDiff = (trackMapHeight == HeightTracking::Smooth) ?
+		smoothGround.GetHeight(pos.x, pos.z) - smoothGround.GetHeight(prevPos.x, prevPos.z) :
+		0.0f;
 
 	if (trackMapHeight == HeightTracking::Smooth || trackMapHeight == HeightTracking::Disabled) {
 		float3 camPos = GetPos(); // new camera pos with height from previous frame
 		camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
 
 		// raycast to ground to simulate camera movement and find new point of focus
-		auto distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
+		const float distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
 		// FIXME camera focus is now first ground intersection which is not what we want
 		// when there's a hill blocking the view
-		auto newGroundPos = camPos + dir * distToGround;
-		if (distToGround > 0.0 && newGroundPos.IsInBounds()) {
+		const float3 newGroundPos = camPos + dir * distToGround;
+		if (distToGround > 0.0f && newGroundPos.IsInBounds()) {
 			curDist = distToGround;
 			pos = newGroundPos;
-			curDist += (dir * camHeightChange).Length() * Sign(camHeightChange);
+			curDist += (dir * camHeightDiff).Length() * Sign(camHeightDiff);
 		}
 	}
 }
