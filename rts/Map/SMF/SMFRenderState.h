@@ -43,7 +43,7 @@ public:
 	virtual void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 
 	virtual void SetSquareTexGen(const int sqx, const int sqy) const = 0;
-	virtual void SetCurrentShader(const DrawPass::e& drawPass) = 0;
+	virtual void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 	virtual void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) = 0;
 };
 
@@ -66,7 +66,7 @@ public:
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override {}
-	void SetCurrentShader(const DrawPass::e& drawPass) override {}
+	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override {}
 };
 
@@ -96,21 +96,19 @@ public:
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override;
-	void SetCurrentShader(const DrawPass::e& drawPass) override;
+	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override { updateSkyUniforms = true; }
 
 	enum {
-		GLSL_SHADER_STANDARD = 0,
-		GLSL_SHADER_DEFERRED = 1,
-		GLSL_SHADER_CURRENT  = 2,
-		GLSL_SHADER_COUNT    = 3,
+		GLSL_SHADER_FWD_STD = 0,
+		GLSL_SHADER_FWD_ADV = 1,
+		GLSL_SHADER_DFR_ADV = 2,
+		GLSL_SHADER_COUNT   = 3,
 	};
 
 private:
-	// [0] := standard version
-	// [1] := deferred version (not used unless AllowDeferredMapRendering)
-	// [2] := currently active GLSL shader {0, 1}
 	std::array<Shader::IProgramObject*, GLSL_SHADER_COUNT> glslShaders;
+	Shader::IProgramObject* currShader = nullptr;
 
 	// if true, shader programs for this state are Lua-defined
 	bool useLuaShaders;

@@ -33,9 +33,10 @@ ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders, bool noop) {
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
-	const std::string names[GLSL_SHADER_COUNT - 1] = {
-		"SMFShaderGLSL-Standard",
-		"SMFShaderGLSL-Deferred",
+	const std::string names[GLSL_SHADER_COUNT] = {
+		"SMFShaderGLSL-Forward-Std",
+		"SMFShaderGLSL-Forward-Adv",
+		"SMFShaderGLSL-Deferred-Adv"
 	};
 	const std::string defs =
 		("#define SMF_TEXSQUARE_SIZE " + FloatToString(                  SMF_TEXSQUARE_SIZE) + "\n") +
@@ -43,13 +44,13 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 
 
 	if (useLuaShaders) {
-		for (unsigned int n = GLSL_SHADER_STANDARD; n <= GLSL_SHADER_DEFERRED; n++) {
+		for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
 			glslShaders[n] = shaderHandler->CreateProgramObject("[SMFGroundDrawer::Lua]", names[n] + "-Lua");
 			// release ID created by GLSLProgramObject's ctor; should be 0
 			glslShaders[n]->Release();
 		}
 	} else {
-		for (unsigned int n = GLSL_SHADER_STANDARD; n <= GLSL_SHADER_DEFERRED; n++) {
+		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
 			// load from VFS files
 			glslShaders[n] = shaderHandler->CreateProgramObject("[SMFGroundDrawer::VFS]", names[n]);
 			glslShaders[n]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFVertProg.glsl", defs, GL_VERTEX_SHADER));
@@ -58,14 +59,14 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 		}
 	}
 
-	glslShaders[GLSL_SHADER_CURRENT] = glslShaders[GLSL_SHADER_STANDARD];
+	currShader = glslShaders[smfGroundDrawer->UseAdvShading() ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
 	return true;
 }
 
 void SMFRenderStateGLSL::Kill() {
 	if (useLuaShaders) {
 		// make sure SH deletes only the wrapper objects; programs are managed by LuaShaders
-		for (unsigned int n = GLSL_SHADER_STANDARD; n <= GLSL_SHADER_DEFERRED; n++) {
+		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
 			if (glslShaders[n] != nullptr) {
 				glslShaders[n]->LoadFromID(0);
 			}
@@ -86,8 +87,8 @@ void SMFRenderStateGLSL::Update(
 
 		// load from LuaShader ID; should be a linked and valid program (or 0)
 		// NOTE: only non-custom shaders get to have engine flags and uniforms!
-		for (unsigned int n = GLSL_SHADER_STANDARD; n <= GLSL_SHADER_DEFERRED; n++) {
-			glslShaders[n]->LoadFromID(luaMapShaderData->shaderIDs[n]);
+		for (uint32_t n = GLSL_SHADER_FWD_ADV; n <= GLSL_SHADER_DFR_ADV; n++) {
+			glslShaders[n]->LoadFromID(luaMapShaderData->shaderIDs[n - 1]);
 		}
 	} else {
 		assert(luaMapShaderData == nullptr);
@@ -97,8 +98,8 @@ void SMFRenderStateGLSL::Update(
 		const int2 normTexSize = smfMap->GetTextureSize(MAP_BASE_NORMALS_TEX);
 		// const int2 specTexSize = smfMap->GetTextureSize(MAP_SSMF_SPECULAR_TEX);
 
-		for (unsigned int n = GLSL_SHADER_STANDARD; n <= GLSL_SHADER_DEFERRED; n++) {
-			const bool isAdv = smfGroundDrawer->UseAdvShading();
+		for (uint32_t n = GLSL_SHADER_FWD_STD; n <= GLSL_SHADER_DFR_ADV; n++) {
+			const bool isAdv = (n != GLSL_SHADER_FWD_STD);
 
 			if (isAdv) {
 				glslShaders[n]->SetFlag("SMF_ADV_SHADING",                      true);
@@ -119,14 +120,15 @@ void SMFRenderStateGLSL::Update(
 			glslShaders[n]->SetFlag("HAVE_SHADOWS", false);
 			glslShaders[n]->SetFlag("HAVE_INFOTEX", false);
 
-			// used to strip down the shader for the deferred pass
-			glslShaders[n]->SetFlag("DEFERRED_MODE", (n == GLSL_SHADER_DEFERRED));
-			glslShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
-			glslShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
-			glslShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
-			glslShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
-			glslShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
-			glslShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
+			if (n == GLSL_SHADER_DFR_ADV) {
+				glslShaders[n]->SetFlag("DEFERRED_MODE", true);
+				glslShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
+				glslShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
+				glslShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
+				glslShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
+				glslShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
+				glslShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
+			}
 
 			glslShaders[n]->Link();
 			glslShaders[n]->Enable();
@@ -134,6 +136,7 @@ void SMFRenderStateGLSL::Update(
 			glslShaders[n]->SetUniform("diffuseTex",             0);
 			glslShaders[n]->SetUniform("heightMapTex",           1);
 			glslShaders[n]->SetUniform("detailTex",              2);
+			glslShaders[n]->SetUniform("infoTex",               14);
 			if (isAdv) {
 				glslShaders[n]->SetUniform("shadowTex", 4);
 				glslShaders[n]->SetUniform("normalsTex", 5);
@@ -145,7 +148,6 @@ void SMFRenderStateGLSL::Update(
 				glslShaders[n]->SetUniform("blendNormalsTex", 11);
 				glslShaders[n]->SetUniform("lightEmissionTex", 12);
 				glslShaders[n]->SetUniform("parallaxHeightTex", 13);
-				glslShaders[n]->SetUniform("infoTex", 14);
 				glslShaders[n]->SetUniform("splatDetailNormalTex1", 15);
 				glslShaders[n]->SetUniform("splatDetailNormalTex2", 16);
 				glslShaders[n]->SetUniform("splatDetailNormalTex3", 17);
@@ -170,15 +172,13 @@ void SMFRenderStateGLSL::Update(
 				glslShaders[n]->SetUniform4v("splatTexScales", &mapRendering->splatTexScales[0]);
 				glslShaders[n]->SetUniform4v("splatTexMults", &mapRendering->splatTexMults[0]);
 
-				glslShaders[n]->SetUniform("normalTexGen", 1.0f / ((normTexSize.x - 1) * SQUARE_SIZE), 1.0f / ((normTexSize.y - 1) * SQUARE_SIZE));
-				glslShaders[n]->SetUniform("infoTexGen"  , 1.0f / (mapDims.pwr2mapx * SQUARE_SIZE)   , 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE));
+				glslShaders[n]->SetUniform("normalTexGen", 1.0f / ((normTexSize.x - 1) * SQUARE_SIZE), 1.0f / ((normTexSize.y - 1) * SQUARE_SIZE));				
 			}
 			else {
-				const auto shadingTexSize = smfMap->GetTextureSize(MAP_BASE_SHADING_TEX);
 				glslShaders[n]->SetUniform("shadingTex", 3);
-				glslShaders[n]->SetUniform("shadingTexGen", 1.0f / shadingTexSize.x, 1.0f / shadingTexSize.y);
 			}
 
+			glslShaders[n]->SetUniform("infoTexGen", 1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE));
 			glslShaders[n]->SetUniform("infoTexIntensityMul", 1.0f);
 			glslShaders[n]->SetUniform("specularTexGen", 1.0f / (mapDims.mapx * SQUARE_SIZE), 1.0f / (mapDims.mapy * SQUARE_SIZE));
 
@@ -189,20 +189,14 @@ void SMFRenderStateGLSL::Update(
 }
 
 bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
-	Shader::IProgramObject* shader = nullptr;
-
-	switch (drawPass) {
-		case DrawPass::TerrainDeferred: { shader = glslShaders[GLSL_SHADER_DEFERRED]; } break;
-		default:                        { shader = glslShaders[GLSL_SHADER_CURRENT ]; } break;
-	}
-
+	Shader::IProgramObject* shader = (drawPass == DrawPass::TerrainDeferred) ? glslShaders[GLSL_SHADER_DFR_ADV] : currShader;
 	return (shader != nullptr && shader->IsValid());
 }
 
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
-		glslShaders[GLSL_SHADER_CURRENT]->EnableRaw();
+		currShader->EnableRaw();
 		// diffuse textures are always bound (SMFGroundDrawer::SetupBigSquare)
 		glActiveTexture(GL_TEXTURE0);
 		return;
@@ -213,24 +207,24 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
 
 	if (isAdv)
-		glslShaders[GLSL_SHADER_CURRENT]->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
+		currShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
 
-	glslShaders[GLSL_SHADER_CURRENT]->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
+	currShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
 
-	glslShaders[GLSL_SHADER_CURRENT]->Enable();
-	glslShaders[GLSL_SHADER_CURRENT]->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
-	glslShaders[GLSL_SHADER_CURRENT]->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
+	currShader->Enable();
+	currShader->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
+	currShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
 
 	if (isAdv) {
-		glslShaders[GLSL_SHADER_CURRENT]->SetUniform3v("cameraPos", &camera->GetPos()[0]);
-		glslShaders[GLSL_SHADER_CURRENT]->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
+		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
+		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
 		
 		if (updateSkyUniforms) {
-			glslShaders[GLSL_SHADER_CURRENT]->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
-			glslShaders[GLSL_SHADER_CURRENT]->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);
-			glslShaders[GLSL_SHADER_CURRENT]->SetUniform3v("groundAmbientColor", &sunLighting->groundAmbientColor[0]);
-			glslShaders[GLSL_SHADER_CURRENT]->SetUniform3v("groundDiffuseColor", &sunLighting->groundDiffuseColor[0]);
-			glslShaders[GLSL_SHADER_CURRENT]->SetUniform3v("groundSpecularColor", &sunLighting->groundSpecularColor[0]);
+			currShader->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
+			currShader->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);
+			currShader->SetUniform3v("groundAmbientColor", &sunLighting->groundAmbientColor[0]);
+			currShader->SetUniform3v("groundDiffuseColor", &sunLighting->groundDiffuseColor[0]);
+			currShader->SetUniform3v("groundSpecularColor", &sunLighting->groundSpecularColor[0]);
 			updateSkyUniforms = false;
 		}
 	}
@@ -246,6 +240,7 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
+	glActiveTexture(GL_TEXTURE14); glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());
 	if (isAdv) {
 		glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, smfMap->GetNormalsTexture());
 		glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, smfMap->GetSpecularTexture());
@@ -256,7 +251,6 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 		glActiveTexture(GL_TEXTURE11); glBindTexture(GL_TEXTURE_2D, smfMap->GetBlendNormalsTexture());
 		glActiveTexture(GL_TEXTURE12); glBindTexture(GL_TEXTURE_2D, smfMap->GetLightEmissionTexture());
 		glActiveTexture(GL_TEXTURE13); glBindTexture(GL_TEXTURE_2D, smfMap->GetParallaxHeightTexture());
-		glActiveTexture(GL_TEXTURE14); glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());
 
 		for (int i = 0; i < CSMFReadMap::NUM_SPLAT_DETAIL_NORMALS; i++) {
 			if (smfMap->GetSplatNormalTexture(i) != 0) {
@@ -271,31 +265,31 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	glActiveTexture(GL_TEXTURE0);
 }
 
-void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer*, const DrawPass::e&) {
+void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
 	if (useLuaShaders) {
 		glActiveTexture(GL_TEXTURE0);
-		glslShaders[GLSL_SHADER_CURRENT]->DisableRaw();
+		currShader->DisableRaw();
 		return;
 	}
 
-	if (shadowHandler.ShadowsLoaded()) {
+	if (smfGroundDrawer->UseAdvShading() && shadowHandler.ShadowsLoaded()) {
 		glActiveTexture(GL_TEXTURE4);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
-	glslShaders[GLSL_SHADER_CURRENT]->Disable();
+	currShader->Disable();
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
 	// needs to be set even for Lua shaders, is unknowable otherwise
 	// (works because SMFGroundDrawer::SetupBigSquare always calls us)
-	glslShaders[GLSL_SHADER_CURRENT]->SetUniform("texSquare", sqx, sqy);
+	currShader->SetUniform("texSquare", sqx, sqy);
 }
 
-void SMFRenderStateGLSL::SetCurrentShader(const DrawPass::e& drawPass) {
-	switch (drawPass) {
-		case DrawPass::TerrainDeferred: { glslShaders[GLSL_SHADER_CURRENT] = glslShaders[GLSL_SHADER_DEFERRED]; } break;
-		default:                        { glslShaders[GLSL_SHADER_CURRENT] = glslShaders[GLSL_SHADER_STANDARD]; } break;
-	}
+void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	if (drawPass == DrawPass::TerrainDeferred)
+		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
+	else
+		currShader = glslShaders[smfGroundDrawer->UseAdvShading() ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
 }

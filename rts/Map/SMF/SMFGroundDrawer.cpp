@@ -226,7 +226,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		geomBuffer.SetDepthRange(1.0f, 0.0f);
 		geomBuffer.Clear();
 
-		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::TerrainDeferred);
+		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, DrawPass::TerrainDeferred);
 		smfRenderStates[RENDER_STATE_SEL]->Enable(this, DrawPass::TerrainDeferred);
 
 		if (alphaTest) {
@@ -244,7 +244,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		}
 
 		smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
+		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, DrawPass::Normal);
 
 		if (deferredEvents)
 			eventHandler.DrawGroundDeferred();
@@ -269,7 +269,7 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 	if (!SelectRenderState(drawPass)->CanDrawForward())
 		return;
 
-	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(drawPass);
+	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, drawPass);
 	smfRenderStates[RENDER_STATE_SEL]->Enable(this, drawPass);
 
 	glPushAttrib((GL_ENABLE_BIT * alphaTest) | (GL_POLYGON_BIT * wireframe));
@@ -290,7 +290,7 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 	glPopAttrib();
 
 	smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
-	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(DrawPass::Normal);
+	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, DrawPass::Normal);
 
 	if (alwaysDispatchEvents || HaveLuaRenderState())
 		eventHandler.DrawGroundPostForward();
