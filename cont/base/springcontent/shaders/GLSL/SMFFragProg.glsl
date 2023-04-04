@@ -3,8 +3,6 @@
 #ifdef NOSPRING
 	#define SMF_INTENSITY_MULT (210.0 / 255.0)
 	#define SMF_TEXSQUARE_SIZE 1024.0
-	#define MAX_DYNAMIC_MAP_LIGHTS 4
-	#define BASE_DYNAMIC_MAP_LIGHT 0
 	#define GBUFFER_NORMTEX_IDX 0
 	#define GBUFFER_DIFFTEX_IDX 1
 	#define GBUFFER_SPECTEX_IDX 2
@@ -39,19 +37,25 @@ in vec2 diffuseTexCoords;
 uniform sampler2D diffuseTex;
 uniform sampler2D normalsTex;
 uniform sampler2D detailTex;
-uniform vec2 normalTexGen;   // either 1.0/mapSize (when NPOT are supported) or 1.0/mapSizePO2
+#ifndef SMF_ADV_SHADING
+	uniform sampler2D shadingTex;
+#endif
+
 uniform vec2 specularTexGen; // 1.0/mapSize
 
-uniform vec3 groundAmbientColor;
-uniform vec3 groundDiffuseColor;
-uniform vec3 groundSpecularColor;
-uniform float groundSpecularExponent;
-uniform float groundShadowDensity;
+#ifdef SMF_ADV_SHADING
+	uniform vec2 normalTexGen;   // either 1.0/mapSize (when NPOT are supported) or 1.0/mapSizePO2
+	uniform vec3 groundAmbientColor;
+	uniform vec3 groundDiffuseColor;
+	uniform vec3 groundSpecularColor;
+	uniform float groundSpecularExponent;
+	uniform float groundShadowDensity;
 
-uniform vec2 mapHeights; // min & max height on the map
+	uniform vec2 mapHeights; // min & max height on the map
 
-uniform vec4 lightDir;
-uniform vec3 cameraPos;
+	uniform vec4 lightDir;
+	uniform vec3 cameraPos;
+#endif
 
 #ifdef HAVE_INFOTEX
 	uniform sampler2D infoTex;
@@ -139,17 +143,15 @@ vec2 GetParallaxUVOffset(vec2 uv, vec3 dir) {
 }
 #endif
 
-vec3 GetFragmentNormal(vec2 uv) {
-	vec3 normal;
-#ifdef SSMF_UNCOMPRESSED_NORMALS
-	normal = normalize(texture2D(normalsTex, uv).xyz);
-#else
-	normal.xz = texture2D(normalsTex, uv).ra;
-	normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
-#endif
-	return normal;
-}
 
+#ifdef SMF_ADV_SHADING
+	vec3 GetFragmentNormal(vec2 uv) {
+		vec3 normal;
+		normal.xz = texture2D(normalsTex, uv).ra;
+		normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
+		return normal;
+	}
+#endif // SMF_ADV_SHADING
 
 #ifndef SMF_DETAIL_NORMAL_TEXTURE_SPLATTING
 vec4 GetDetailTextureColor(vec2 uv) {
@@ -198,119 +200,74 @@ vec4 GetSplatDetailTextureNormal(vec2 uv, out vec2 splatDetailStrength) {
 }
 #endif
 
+#ifdef SMF_ADV_SHADING
+	vec4 GetShadeInt(float groundLightInt, vec3 groundShadowCoeff, float groundDiffuseAlpha) {
+		vec4 groundShadeInt = vec4(0.0, 0.0, 0.0, 1.0);
 
-vec4 GetShadeInt(float groundLightInt, vec3 groundShadowCoeff, float groundDiffuseAlpha) {
-	vec4 groundShadeInt = vec4(0.0, 0.0, 0.0, 1.0);
+		groundShadeInt.rgb = groundAmbientColor + groundDiffuseColor * (groundLightInt * groundShadowCoeff);
+		groundShadeInt.rgb *= vec3(SMF_INTENSITY_MULT);
 
-	groundShadeInt.rgb = groundAmbientColor + groundDiffuseColor * (groundLightInt * groundShadowCoeff);
-	groundShadeInt.rgb *= vec3(SMF_INTENSITY_MULT);
-
-#ifdef SMF_VOID_WATER
-	// cut out all underwater fragments indiscriminately
-	groundShadeInt.a = float(vertexWorldPos.y >= 0.0);
-#endif
-
-#ifdef SMF_VOID_GROUND
-	// assume the map(per)'s diffuse texture provides sensible alphas
-	// note that voidground overrides voidwater if *both* are enabled
-	// (limiting it to just above-water fragments would be arbitrary)
-	groundShadeInt.a = groundDiffuseAlpha;
-#endif
-
-#ifdef SMF_WATER_ABSORPTION
-	// use alpha of groundShadeInt cause:
-	// allow voidground maps to create holes in the seabed
-	// (SMF_WATER_ABSORPTION == 1 implies voidwater is not
-	// enabled but says nothing about the voidground state)
-	vec4 waterShadeInt = vec4(waterBaseColor.rgb, groundShadeInt.a);
-	if (mapHeights.x <= 0.0) {
-		float waterShadeAlpha  = abs(vertexWorldPos.y) * SMF_SHALLOW_WATER_DEPTH_INV;
-		float waterShadeDecay  = 0.2 + (waterShadeAlpha * 0.1);
-		float vertexStepHeight = min(1023.0, -vertexWorldPos.y);
-		float waterLightInt    = min(groundLightInt * 2.0 + 0.4, 1.0);
-
-		// vertex below shallow water depth --> alpha=1
-		// vertex above shallow water depth --> alpha=waterShadeAlpha
-		waterShadeAlpha = min(1.0, waterShadeAlpha + float(vertexWorldPos.y <= -SMF_SHALLOW_WATER_DEPTH));
-
-		waterShadeInt.rgb -= (waterAbsorbColor.rgb * vertexStepHeight);
-		waterShadeInt.rgb  = max(waterMinColor.rgb, waterShadeInt.rgb);
-		waterShadeInt.rgb *= vec3(SMF_INTENSITY_MULT * waterLightInt);
-
-		// make shadowed areas darker over deeper water
-		waterShadeInt.rgb *= (1.0 - waterShadeDecay * (vec3(1.0) - groundShadowCoeff));
-
-		// if depth is greater than _SHALLOW_ depth, select waterShadeInt
-		// otherwise interpolate between groundShadeInt and waterShadeInt
-		// (both are already cosine-weighted)
-		waterShadeInt.rgb = mix(groundShadeInt.rgb, waterShadeInt.rgb, waterShadeAlpha);
-	}
-	return mix(groundShadeInt, waterShadeInt, float(vertexWorldPos.y < 0.0));
-#else
-	return groundShadeInt;
-#endif
-}
-
-
-vec3 DynamicLighting(vec3 normal, vec3 diffuseCol, vec3 specularCol, float specularExp) {
-	vec3 light = vec3(0.0);
-
-	#ifndef SMF_SPECULAR_LIGHTING
-		// non-zero default specularity on non-SSMF maps
-		specularCol = vec3(0.5, 0.5, 0.5);
+	#ifdef SMF_VOID_WATER
+		// cut out all underwater fragments indiscriminately
+		groundShadeInt.a = float(vertexWorldPos.y >= 0.0);
 	#endif
 
-	for (int i = 0; i < MAX_DYNAMIC_MAP_LIGHTS; i++) {
-		vec3 lightVec = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].position.xyz - vertexWorldPos.xyz;
-		vec3 halfVec = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].halfVector.xyz;
+	#ifdef SMF_VOID_GROUND
+		// assume the map(per)'s diffuse texture provides sensible alphas
+		// note that voidground overrides voidwater if *both* are enabled
+		// (limiting it to just above-water fragments would be arbitrary)
+		groundShadeInt.a = groundDiffuseAlpha;
+	#endif
 
-		float lightRadius = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].constantAttenuation;
-		float lightDistance = length(lightVec);
-		float lightScale = float(lightDistance <= lightRadius);
-		float lightCosAngDiff = clamp(dot(normal, lightVec / lightDistance), 0.0, 1.0);
-		//clamp lightCosAngSpec from 0.001 because this will later be in a power function
-		//results are undefined if x==0 or if x==0 and y==0.
-		float lightCosAngSpec = clamp(dot(normal, normalize(halfVec)), 0.001, 1.0);
-	#ifdef OGL_SPEC_ATTENUATION
-		float lightAttenuation =
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].constantAttenuation) +
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].linearAttenuation * lightDistance) +
-			(gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].quadraticAttenuation * lightDistance * lightDistance);
+	#ifdef SMF_WATER_ABSORPTION
+		// use alpha of groundShadeInt cause:
+		// allow voidground maps to create holes in the seabed
+		// (SMF_WATER_ABSORPTION == 1 implies voidwater is not
+		// enabled but says nothing about the voidground state)
+		vec4 waterShadeInt = vec4(waterBaseColor.rgb, groundShadeInt.a);
+		if (mapHeights.x <= 0.0) {
+			float waterShadeAlpha  = abs(vertexWorldPos.y) * SMF_SHALLOW_WATER_DEPTH_INV;
+			float waterShadeDecay  = 0.2 + (waterShadeAlpha * 0.1);
+			float vertexStepHeight = min(1023.0, -vertexWorldPos.y);
+			float waterLightInt    = min(groundLightInt * 2.0 + 0.4, 1.0);
 
-		lightAttenuation = 1.0 / max(lightAttenuation, 1.0);
+			// vertex below shallow water depth --> alpha=1
+			// vertex above shallow water depth --> alpha=waterShadeAlpha
+			waterShadeAlpha = min(1.0, waterShadeAlpha + float(vertexWorldPos.y <= -SMF_SHALLOW_WATER_DEPTH));
+
+			waterShadeInt.rgb -= (waterAbsorbColor.rgb * vertexStepHeight);
+			waterShadeInt.rgb  = max(waterMinColor.rgb, waterShadeInt.rgb);
+			waterShadeInt.rgb *= vec3(SMF_INTENSITY_MULT * waterLightInt);
+
+			// make shadowed areas darker over deeper water
+			waterShadeInt.rgb *= (1.0 - waterShadeDecay * (vec3(1.0) - groundShadowCoeff));
+
+			// if depth is greater than _SHALLOW_ depth, select waterShadeInt
+			// otherwise interpolate between groundShadeInt and waterShadeInt
+			// (both are already cosine-weighted)
+			waterShadeInt.rgb = mix(groundShadeInt.rgb, waterShadeInt.rgb, waterShadeAlpha);
+		}
+		return mix(groundShadeInt, waterShadeInt, float(vertexWorldPos.y < 0.0));
 	#else
-		float lightAttenuation = 1.0 - min(1.0, ((lightDistance * lightDistance) / (lightRadius * lightRadius)));
+		return groundShadeInt;
 	#endif
-
-		float vectorDot = -dot((lightVec / lightDistance), gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].spotDirection);
-		float cutoffDot = gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].spotCosCutoff;
-
-		float lightSpecularPow = 0.0;
-	#ifdef SMF_SPECULAR_LIGHTING
-		lightSpecularPow = max(0.0, pow(lightCosAngSpec, specularExp));
-	#endif
-
-		lightScale *= float(vectorDot >= cutoffDot);
-
-		light += (lightScale *                                       gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].ambient.rgb);
-		light += (lightScale * lightAttenuation * (diffuseCol.rgb *  gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].diffuse.rgb * lightCosAngDiff));
-		light += (lightScale * lightAttenuation * (specularCol.rgb * gl_LightSource[BASE_DYNAMIC_MAP_LIGHT + i].specular.rgb * lightSpecularPow));
 	}
-
-	return light;
-}
+#endif // SMF_ADV_SHADING
 
 /***********************************************************************/
 // main()
 
+#line 10260
 void main() {
 	vec2 diffTexCoords = diffuseTexCoords;
 	vec2 specTexCoords = vertexWorldPos.xz * specularTexGen;
-	vec2 normTexCoords = vertexWorldPos.xz * normalTexGen;
+	#ifdef SMF_ADV_SHADING
+		vec2 normTexCoords = vertexWorldPos.xz * normalTexGen;
 
-	// not calculated in the vertex shader to save varying components (OpenGL2.0 allows just 32)
-	vec3 cameraDir = vertexWorldPos.xyz - cameraPos;
-	vec3 normal = GetFragmentNormal(normTexCoords);
+		// not calculated in the vertex shader to save varying components (OpenGL2.0 allows just 32)
+		vec3 cameraDir = vertexWorldPos.xyz - cameraPos;
+		vec3 normal = GetFragmentNormal(normTexCoords);
+	#endif
 
 	#if defined(SMF_BLEND_NORMALS) || defined(SMF_PARALLAX_MAPPING) || defined(SMF_DETAIL_NORMAL_TEXTURE_SPLATTING)
 		// detail-normals are (assumed to be) defined within STN space
@@ -349,10 +306,8 @@ void main() {
 	}
 	#endif
 
-
 	vec4 detailCol;
-
-	#ifndef SMF_DETAIL_NORMAL_TEXTURE_SPLATTING
+	#if !defined(SMF_DETAIL_NORMAL_TEXTURE_SPLATTING) || !defined(SMF_ADV_SHADING)
 	{
 		detailCol = GetDetailTextureColor(specTexCoords);
 	}
@@ -374,8 +329,7 @@ void main() {
 	}
 	#endif
 
-
-#ifndef DEFERRED_MODE
+#if !defined(DEFERRED_MODE) && defined(SMF_ADV_SHADING)
 	float cosAngleDiffuse = clamp(dot(lightDir.xyz, normal), 0.0, 1.0);
 	float cosAngleSpecular = clamp(dot(normalize(halfDir), normal), 0.001, 1.0);
 #endif
@@ -420,14 +374,21 @@ void main() {
 	#endif
 
 	#ifndef DEFERRED_MODE
-	{
-		// GroundMaterialAmbientDiffuseColor * LightAmbientDiffuseColor
-		vec4 shadeInt = GetShadeInt(cosAngleDiffuse, shadowCoeff, diffuseCol.a);
+		#ifdef SMF_ADV_SHADING
+		{
+			// GroundMaterialAmbientDiffuseColor * LightAmbientDiffuseColor
+			vec4 shadeInt = GetShadeInt(cosAngleDiffuse, shadowCoeff, diffuseCol.a);
 
-		fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * shadeInt.rgb;
-		fragColor.a = shadeInt.a;
-	}
-	#endif
+			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * shadeInt.rgb;
+			fragColor.a = shadeInt.a;
+		}
+		#else // SMF_ADV_SHADING
+		{
+			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * texture2D(shadingTex, specTexCoords).rgb;
+			fragColor.a = diffuseCol.a;
+		}
+		#endif // SMF_ADV_SHADING
+	#endif // DEFERRED_MODE
 
 	#ifdef SMF_LIGHT_EMISSION
 	{
@@ -440,32 +401,28 @@ void main() {
 	}
 	#endif
 
-#ifdef SMF_SPECULAR_LIGHTING
-	specularCol = texture2D(specularTex, specTexCoords);
-#else
-	specularCol = vec4(groundSpecularColor, 1.0);
-#endif
-
-	#ifndef DEFERRED_MODE
-		// sun specular lighting contribution
+	#ifdef SMF_ADV_SHADING
 		#ifdef SMF_SPECULAR_LIGHTING
-			float specularExp  = specularCol.a * 16.0;
+			specularCol = texture2D(specularTex, specTexCoords);
 		#else
-			float specularExp  = groundSpecularExponent;
-		#endif
+			specularCol = vec4(groundSpecularColor, 1.0);
+		#endif // SMF_SPECULAR_LIGHTING
 
+		#ifndef DEFERRED_MODE
+			// sun specular lighting contribution
+			#ifdef SMF_SPECULAR_LIGHTING
+				float specularExp  = specularCol.a * 16.0;
+			#else
+				float specularExp  = groundSpecularExponent;
+			#endif
+			float specularPow  = pow(cosAngleSpecular, specularExp);
 
-		float specularPow  = pow(cosAngleSpecular, specularExp);
+			vec3  specularInt  = specularCol.rgb * specularPow;
+				  specularInt *= shadowCoeff;
 
-		vec3  specularInt  = specularCol.rgb * specularPow;
-		      specularInt *= shadowCoeff;
-
-		fragColor.rgb += specularInt;
-
-		#if (MAX_DYNAMIC_MAP_LIGHTS > 0)
-			fragColor.rgb += DynamicLighting(normal, diffuseCol.rgb, specularCol.rgb, specularExp);
-		#endif
-	#endif
+			fragColor.rgb += specularInt;
+		#endif // DEFERRED_MODE
+	#endif // SMF_ADV_SHADING
 
 
 #ifdef DEFERRED_MODE
