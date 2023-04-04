@@ -218,14 +218,6 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	if (isAdv) {
 		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
 		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
-		if (updateSkyUniforms) {
-			currShader->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
-			currShader->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);
-			currShader->SetUniform3v("groundAmbientColor", &sunLighting->groundAmbientColor[0]);
-			currShader->SetUniform3v("groundDiffuseColor", &sunLighting->groundDiffuseColor[0]);
-			currShader->SetUniform3v("groundSpecularColor", &sunLighting->groundSpecularColor[0]);
-			updateSkyUniforms = false;
-		}
 	}
 
 	// already on the MV stack at this point
@@ -291,4 +283,19 @@ void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawe
 		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
 	else
 		currShader = glslShaders[smfGroundDrawer->UseAdvShading() ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
+}
+
+void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
+{
+	assert(currShader && !currShader->IsBound());
+
+	for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
+		glslShaders[n]->Enable();
+		glslShaders[n]->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
+		glslShaders[n]->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);
+		glslShaders[n]->SetUniform3v("groundAmbientColor", &sunLighting->groundAmbientColor[0]);
+		glslShaders[n]->SetUniform3v("groundDiffuseColor", &sunLighting->groundDiffuseColor[0]);
+		glslShaders[n]->SetUniform3v("groundSpecularColor", &sunLighting->groundSpecularColor[0]);
+		glslShaders[n]->Disable();
+	}
 }

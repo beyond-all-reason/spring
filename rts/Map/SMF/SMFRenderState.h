@@ -44,7 +44,7 @@ public:
 
 	virtual void SetSquareTexGen(const int sqx, const int sqy) const = 0;
 	virtual void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
-	virtual void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) = 0;
+	virtual void UpdateShaderSkyUniforms() = 0;
 };
 
 
@@ -67,14 +67,13 @@ public:
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override {}
 	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
-	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override {}
+	void UpdateShaderSkyUniforms() override {}
 };
 
 struct SMFRenderStateGLSL: public ISMFRenderState {
 public:
 	explicit SMFRenderStateGLSL(bool lua)
 		: useLuaShaders(lua)
-		, updateSkyUniforms(true)
 	{
 		glslShaders.fill(nullptr);
 	}
@@ -97,7 +96,7 @@ public:
 
 	void SetSquareTexGen(const int sqx, const int sqy) const override;
 	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
-	void UpdateCurrentShaderSky(const CSMFGroundDrawer* smfGroundDrawer) override { updateSkyUniforms = true; }
+	void UpdateShaderSkyUniforms() override;
 
 	enum {
 		GLSL_SHADER_FWD_STD = 0,
@@ -112,5 +111,4 @@ private:
 
 	// if true, shader programs for this state are Lua-defined
 	bool useLuaShaders;
-	bool updateSkyUniforms;
 };
