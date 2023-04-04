@@ -216,8 +216,13 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 
 	// deferred pass must be executed with GLSL shaders
 	// if the FFP or ARB state was selected, bail early
-	if (!SelectRenderState(DrawPass::TerrainDeferred)->CanDrawDeferred())
+	if (!SelectRenderState(DrawPass::TerrainDeferred)->CanDrawDeferred(this)) {
+		geomBuffer.Bind();
+		geomBuffer.SetDepthRange(1.0f, 0.0f);
+		geomBuffer.Clear();
+		geomBuffer.UnBind();
 		return;
+	}
 
 	GL::GeometryBuffer::LoadViewport();
 
@@ -266,7 +271,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 
 void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTest)
 {
-	if (!SelectRenderState(drawPass)->CanDrawForward())
+	if (!SelectRenderState(drawPass)->CanDrawForward(this))
 		return;
 
 	smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, drawPass);
@@ -457,8 +462,6 @@ void CSMFGroundDrawer::SunChanged() {
 	if (HaveLuaRenderState())
 		return;
 
-	// always update, SSMF shader needs current sundir even when shadows are disabled
-	// note: only the active state is notified of a given change
 	smfRenderStates[RENDER_STATE_SEL]->UpdateShaderSkyUniforms();
 }
 

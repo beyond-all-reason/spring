@@ -36,8 +36,8 @@ public:
 	) = 0;
 
 	virtual bool HasValidShader(const DrawPass::e& drawPass) const = 0;
-	virtual bool CanDrawForward() const = 0;
-	virtual bool CanDrawDeferred() const = 0;
+	virtual bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
+	virtual bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
 
 	virtual void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 	virtual void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
@@ -59,8 +59,8 @@ public:
 	) override {}
 
 	bool HasValidShader(const DrawPass::e& drawPass) const override { return true; }
-	bool CanDrawForward() const override { return false; }
-	bool CanDrawDeferred() const override { return false; }
+	bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const override { return false; }
+	bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const override { return false; }
 
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
@@ -88,8 +88,8 @@ public:
 	) override;
 
 	bool HasValidShader(const DrawPass::e& drawPass) const override;
-	bool CanDrawForward() const override { return true; }
-	bool CanDrawDeferred() const override { return true; }
+	bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const override { return true; }
+	bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const override;
 
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
