@@ -25,6 +25,7 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
+//Basic, ROAM
 static constexpr int MIN_GROUND_DETAIL[] = {                               0,   4};
 static constexpr int MAX_GROUND_DETAIL[] = {CBasicMeshDrawer::LOD_LEVELS - 1, 200};
 
@@ -480,11 +481,11 @@ bool CSMFGroundDrawer::UpdateGeometryBuffer(bool init)
 
 void CSMFGroundDrawer::SetDetail(int newGroundDetail)
 {
-	const int minGroundDetail = MIN_GROUND_DETAIL[drawerMode != SMF_MESHDRAWER_BASIC];
-	const int maxGroundDetail = MAX_GROUND_DETAIL[drawerMode != SMF_MESHDRAWER_BASIC];
+	const int minGroundDetail = MIN_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
+	const int maxGroundDetail = MAX_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
 
 	configHandler->Set("GroundDetail", groundDetail = Clamp(newGroundDetail, minGroundDetail, maxGroundDetail));
-	LOG("GroundDetail%s set to %i", ((drawerMode == SMF_MESHDRAWER_BASIC)? "[Bias]": ""), groundDetail);
+	LOG("GroundDetail%s set to %i", ((drawerMode != SMF_MESHDRAWER_ROAM)? "[Bias]": ""), groundDetail);
 }
 
 
