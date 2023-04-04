@@ -172,7 +172,7 @@ void SMFRenderStateGLSL::Update(
 				glslShaders[n]->SetUniform4v("splatTexScales", &mapRendering->splatTexScales[0]);
 				glslShaders[n]->SetUniform4v("splatTexMults", &mapRendering->splatTexMults[0]);
 
-				glslShaders[n]->SetUniform("normalTexGen", 1.0f / ((normTexSize.x - 1) * SQUARE_SIZE), 1.0f / ((normTexSize.y - 1) * SQUARE_SIZE));				
+				glslShaders[n]->SetUniform("normalTexGen", 1.0f / ((normTexSize.x - 1) * SQUARE_SIZE), 1.0f / ((normTexSize.y - 1) * SQUARE_SIZE));
 			}
 			else {
 				glslShaders[n]->SetUniform("shadingTex", 3);
@@ -218,7 +218,6 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	if (isAdv) {
 		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
 		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
-		
 		if (updateSkyUniforms) {
 			currShader->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 			currShader->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);

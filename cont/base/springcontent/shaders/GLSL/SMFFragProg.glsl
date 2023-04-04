@@ -421,7 +421,7 @@ void main() {
 				  specularInt *= shadowCoeff;
 
 			fragColor.rgb += specularInt;
-		#endif // DEFERRED_MODE	
+		#endif // DEFERRED_MODE
 	#endif // SMF_ADV_SHADING
 
 
