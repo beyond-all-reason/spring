@@ -3297,7 +3297,17 @@ public:
 	}
 };
 
+class DebugShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	DebugShadowFrustum() : IUnsyncedActionExecutor("DebugShadowFrustum", "Enable/Disable drawing of shadow frustum shape") {
+	}
 
+	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(shadowHandler.DebugFrustumRef(), action.GetArgs());
+		LogSystemStatus("shadow frustum debug rendering mode", shadowHandler.DebugFrustumRef());
+		return true;
+	}
+};
 
 class CrashActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -3878,6 +3888,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugColVolDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugPathDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<MuteActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());

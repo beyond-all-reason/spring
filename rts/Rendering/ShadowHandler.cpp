@@ -19,6 +19,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
@@ -161,6 +162,41 @@ void CShadowHandler::SaveShadowMapTextures() const
 {
 	glSaveTexture(shadowDepthTexture, fmt::format("smDepth_{}.png", globalRendering->drawFrame).c_str());
 	glSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
+}
+
+void CShadowHandler::DrawFrustumDebug() const
+{
+	if (!debugFrustum)
+		return;
+
+	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	rb.AssertSubmission();
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(1) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(2) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(1) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(2) } });
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(4) }, { shadCam->GetFrustumVert(5) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(4) }, { shadCam->GetFrustumVert(6) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(7) }, { shadCam->GetFrustumVert(5) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(7) }, { shadCam->GetFrustumVert(6) } });
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(4) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(1) }, { shadCam->GetFrustumVert(5) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(7) } });
+	rb.AddVertices({ { shadCam->GetFrustumVert(2) }, { shadCam->GetFrustumVert(6) } });
+
+	auto& sh = rb.GetShader();
+	glLineWidth(2.0f);
+	sh.Enable();
+	sh.SetUniform("ucolor", 0.0f, 0.0f, 1.0f, 1.0f);
+	rb.DrawArrays(GL_LINES);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+	glLineWidth(1.0f);
 }
 
 void CShadowHandler::FreeFBOAndTextures() {

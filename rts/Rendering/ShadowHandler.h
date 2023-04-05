@@ -90,6 +90,9 @@ public:
 	bool InShadowPass() const { return inShadowPass; }
 
 	void SaveShadowMapTextures() const;
+	void DrawFrustumDebug() const;
+
+	bool& DebugFrustumRef() { return debugFrustum; }
 private:
 	void FreeFBOAndTextures();
 	bool InitFBOAndTextures();
@@ -117,6 +120,7 @@ public:
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
+	bool debugFrustum = false;
 
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;

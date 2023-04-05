@@ -27,6 +27,7 @@
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
 #include "Rendering/LineDrawer.h"
+#include "Rendering/ShadowHandler.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -1880,6 +1881,8 @@ void CMiniMap::DrawWorldStuff() const
 	if (drawProjectiles) {
 		projectileDrawer->DrawProjectilesMiniMap();
 	}
+
+	shadowHandler.DrawFrustumDebug();
 
 	{
 		// draw the queued commands
