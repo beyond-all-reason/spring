@@ -105,12 +105,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	deferredEvents = configHandler->GetBool("AllowDrawMapDeferredEvents");
 
 
-	// NOTE:
-	//   advShading can NOT change at runtime if initially false
-	//   (see AdvMapShadingActionExecutor), so we will always use
-	//   states[FFP] (in ::Draw) in that special case and it does
-	//   not matter whether states[SSP] is initialized
-	if ((advShading = smfRenderStates[RENDER_STATE_SSP]->Init(this)))
+	if (smfRenderStates[RENDER_STATE_SSP]->Init(this))
 		smfRenderStates[RENDER_STATE_SSP]->Update(this, nullptr);
 
 	// always initialize this state; defer Update (allows re-use)
@@ -221,6 +216,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		geomBuffer.Bind();
 		geomBuffer.SetDepthRange(1.0f, 0.0f);
 		geomBuffer.Clear();
+		geomBuffer.SetDepthRange(0.0f, 1.0f);
 		geomBuffer.UnBind();
 		return;
 	}
