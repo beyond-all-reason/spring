@@ -127,10 +127,8 @@ void CSMFReadMap::LoadHeightMap()
 
 	cornerHeightMapSynced.clear();
 	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1)); //mapDims.mapxp1, mapDims.mapyp1 are not available here
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	cornerHeightMapUnsynced.clear();
 	cornerHeightMapUnsynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
-	#endif
 
 	heightMapSyncedPtr   = &cornerHeightMapSynced;
 	heightMapUnsyncedPtr = &cornerHeightMapUnsynced;
@@ -384,10 +382,8 @@ void CSMFReadMap::CreateNormalTex()
 
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
-#ifdef USE_UNSYNCED_HEIGHTMAP
 	UpdateVertexNormalsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
-#endif
 	UpdateNormalTexture(update);
 	UpdateShadingTexture(update);
 }

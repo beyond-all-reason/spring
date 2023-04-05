@@ -11,9 +11,7 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h"
-#ifdef USE_UNSYNCED_HEIGHTMAP
-	#include "Game/GlobalUnsynced.h" // for myAllyTeam
-#endif
+#include "Game/GlobalUnsynced.h" // for myAllyTeam
 
 constexpr float LOS_BONUS_HEIGHT = 5.0f;
 
@@ -406,10 +404,6 @@ void CLosTableHelper::Debug(const LosTable& losRays, const std::vector<int2>& po
 
 void CLosMap::AddCircle(SLosInstance* instance, int amount)
 {
-#ifdef USE_UNSYNCED_HEIGHTMAP
-	//only AddRaycast supports UnsyncedHeightMap updates
-#endif
-
 	MidpointCircleAlgoPerLine(instance->radius, [&](int width, int y) {
 		const unsigned y_ = instance->basePos.y + y;
 
@@ -432,7 +426,6 @@ void CLosMap::AddRaycast(SLosInstance* instance, int amount)
 	if (losSquares.empty() || losSquares[0].length == SLosInstance::EMPTY_RLE.length)
 		return;
 
-#ifdef USE_UNSYNCED_HEIGHTMAP
 	// inform ReadMap when squares enter LoS
 	const bool visibleInstanceSquares = (instance->allyteam >= 0 && (instance->allyteam == gu->myAllyTeam || gu->spectatingFullView));
 	const bool updateUnsyncedHeightMap = sendReadmapEvents && visibleInstanceSquares;
@@ -457,7 +450,6 @@ void CLosMap::AddRaycast(SLosInstance* instance, int amount)
 
 		return;
 	}
-#endif
 
 	for (const SLosInstance::RLE rle: losSquares) {
 		for (int idx = rle.start, len = rle.length; len > 0; --len, ++idx) {
