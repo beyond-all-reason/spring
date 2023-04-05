@@ -166,7 +166,7 @@ void CShadowHandler::SaveShadowMapTextures() const
 
 void CShadowHandler::DrawFrustumDebug() const
 {
-	if (!debugFrustum)
+	if (!debugFrustum || !shadowsLoaded)
 		return;
 
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
