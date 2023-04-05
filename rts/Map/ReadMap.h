@@ -15,7 +15,6 @@
 #include "System/creg/creg_cond.h"
 #include "System/Misc/RectangleOverlapHandler.h"
 
-#define USE_UNSYNCED_HEIGHTMAP
 #define USE_HEIGHTMAP_DIGESTS
 
 class CCamera;
@@ -288,14 +287,12 @@ private:
 	const float3* sharedCenterNormals[2];
 	const float* sharedSlopeMaps[2];
 
-#ifdef USE_UNSYNCED_HEIGHTMAP
 	/// these are not "digests", just simple rolling counters
 	/// for each LOS-map square the counter value indicates how many times
 	/// the synced heightmap block of squares corresponding to it has been
 	/// changed, s.t. UHM updates are only pushed when necessary
 	static std::vector<uint8_t>   syncedHeightMapDigests;
 	static std::vector<uint8_t> unsyncedHeightMapDigests;
-#endif
 
 	unsigned int mapChecksum = 0;
 

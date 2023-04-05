@@ -1110,12 +1110,10 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 	const float* orgHeightMap = readMap->GetOriginalHeightMapSynced();
 	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
 
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	if (!synced) {
 		orgHeightMap = readMap->GetCornerHeightMapUnsynced();
 		curHeightMap = readMap->GetCornerHeightMapUnsynced();
 	}
-	#endif
 
 	const float maxDifHgt = unitdef->maxHeightDif;
 

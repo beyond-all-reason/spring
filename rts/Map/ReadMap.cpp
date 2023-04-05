@@ -24,11 +24,8 @@
 #include "System/SpringHash.h"
 #include "System/SafeUtil.h"
 #include "System/TimeProfiler.h"
-
-#ifdef USE_UNSYNCED_HEIGHTMAP
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/LosHandler.h"
-#endif
 
 static constexpr size_t MAX_UHM_RECTS_PER_FRAME = 128;
 
@@ -96,10 +93,8 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(unsyncedHeightMapUpdates),
 
 	/*
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	CR_IGNORED(  syncedHeightMapDigests),
 	CR_IGNORED(unsyncedHeightMapDigests),
-	#endif
 	*/
 
 	CR_POSTLOAD(PostLoad),
@@ -128,11 +123,8 @@ std::vector<float> CReadMap::slopeMap;
 std::vector<uint8_t> CReadMap::typeMap;
 std::vector<float3> CReadMap::centerNormals2D;
 
-#ifdef USE_UNSYNCED_HEIGHTMAP
 std::vector<uint8_t> CReadMap::  syncedHeightMapDigests;
 std::vector<uint8_t> CReadMap::unsyncedHeightMapDigests;
-#endif
-
 
 
 MapTexture::~MapTexture() {
@@ -260,10 +252,6 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 
 void CReadMap::PostLoad()
 {
-	#ifndef USE_UNSYNCED_HEIGHTMAP
-	heightMapUnsyncedPtr = heightMapSyncedPtr;
-	#endif
-
 	sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
 	sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
 
@@ -375,18 +363,11 @@ void CReadMap::Initialize()
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
-	// note: if USE_UNSYNCED_HEIGHTMAP is false, then
-	// heightMapUnsyncedPtr points to an empty vector
-	// for SMF maps so indexing it is forbidden (!)
 	assert(heightMapSyncedPtr != nullptr);
 	assert(heightMapUnsyncedPtr != nullptr);
 	assert(originalHeightMapPtr != nullptr);
 
 	{
-		#ifndef USE_UNSYNCED_HEIGHTMAP
-		heightMapUnsyncedPtr = heightMapSyncedPtr;
-		#endif
-
 		sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
 		sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
 
@@ -529,7 +510,6 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 	UpdateFaceNormals(centerRect, initialize);
 	UpdateSlopemap(centerRect, initialize); // must happen after UpdateFaceNormals()!
 
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	// push the unsynced update; initial one without LOS check
 	if (initialize) {
 		unsyncedHeightMapUpdates.push_back(cornerRect);
@@ -553,9 +533,6 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 
 		HeightMapUpdateLOSCheck(cornerRect);
 	}
-	#else
-	unsyncedHeightMapUpdates.push_back(cornerRect);
-	#endif
 }
 
 
@@ -869,13 +846,11 @@ void CReadMap::UpdateFaceNormals(const SRectangle& rect, bool initialize)
 			centerNormalsSynced[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize();
 			centerNormals2D[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize2D();
 
-			#ifdef USE_UNSYNCED_HEIGHTMAP
 			if (initialize) {
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2    ] = faceNormalsSynced[(y * mapDims.mapx + x) * 2    ];
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2 + 1] = faceNormalsSynced[(y * mapDims.mapx + x) * 2 + 1];
 				centerNormalsUnsynced[y * mapDims.mapx + x] = centerNormalsSynced[y * mapDims.mapx + x];
 			}
-			#endif
 		}
 	}, -64);
 }
@@ -953,7 +928,6 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 		for (int lmx = losMapRect.x1; lmx <= losMapRect.x2; ++lmx) {
 			hmx = lmx * losSqrSize;
 
-			#ifdef USE_UNSYNCED_HEIGHTMAP
 			// NB:
 			//   LosHandler expects positions in center-heightmap bounds, but hgtMapRect is a corner-rectangle
 			//   as such hmx and hmz have to be clamped by CenterSqrToPos before the center-height is accessed
@@ -961,7 +935,6 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 				PushRect(subRect, hmx, hmz);
 				continue;
 			}
-			#endif
 
 			if (!HasHeightMapViewChanged({lmx, lmz})) {
 				PushRect(subRect, hmx, hmz);
@@ -979,7 +952,7 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 
 void CReadMap::InitHeightMapDigestVectors(const int2 losMapSize)
 {
-#if (defined(USE_HEIGHTMAP_DIGESTS) && defined(USE_UNSYNCED_HEIGHTMAP))
+#if defined(USE_HEIGHTMAP_DIGESTS)
 	assert(losHandler != nullptr);
 	assert(syncedHeightMapDigests.empty());
 
@@ -996,7 +969,7 @@ void CReadMap::InitHeightMapDigestVectors(const int2 losMapSize)
 
 bool CReadMap::HasHeightMapViewChanged(const int2 losMapPos)
 {
-#if (defined(USE_HEIGHTMAP_DIGESTS) && defined(USE_UNSYNCED_HEIGHTMAP))
+#if defined(USE_HEIGHTMAP_DIGESTS)
 	const int2 losMapSize = losHandler->los.size;
 	const int losMapIdx = losMapPos.x + losMapPos.y * (losMapSize.x + 1);
 
@@ -1013,8 +986,6 @@ bool CReadMap::HasHeightMapViewChanged(const int2 losMapPos)
 #endif
 }
 
-
-#ifdef USE_UNSYNCED_HEIGHTMAP
 void CReadMap::UpdateLOS(const SRectangle& hgtMapRect)
 {
 	if (gu->spectatingFullView)
@@ -1041,10 +1012,6 @@ void CReadMap::BecomeSpectator()
 {
 	HeightMapUpdateLOSCheck({0, 0, mapDims.mapx, mapDims.mapy});
 }
-#else
-void CReadMap::UpdateLOS(const SRectangle& hgtMapRect) {}
-void CReadMap::BecomeSpectator() {}
-#endif
 
 namespace {
 	template<typename T>
@@ -1055,12 +1022,10 @@ namespace {
 
 void CReadMap::CopySyncedToUnsynced()
 {
-#ifdef USE_UNSYNCED_HEIGHTMAP
 	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
 	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
 	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
 	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
-#endif
 }
 
 bool CReadMap::HasVisibleWater()  const { return (!mapRendering->voidWater && !IsAboveWater()); }
