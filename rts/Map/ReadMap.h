@@ -73,6 +73,7 @@ protected:
 	void Initialize();
 
 	virtual void UpdateHeightMapUnsynced(const SRectangle&) = 0;
+	virtual void UpdateHeightMapUnsyncedPost() = 0;
 public:
 	//OK since it's loaded with SerializeObjectInstance
 	CR_DECLARE_STRUCT(CReadMap)
@@ -243,7 +244,7 @@ private:
 public:
 	/// number of heightmap mipmaps, including full resolution
 	static constexpr int numHeightMipMaps = 7;
-
+	static constexpr int32_t PATCH_SIZE = 128;
 protected:
 	// these point to the actual heightmap data
 	// which is allocated by subclass instances
@@ -278,6 +279,8 @@ protected:
 
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
+
+	std::vector<float2> unsyncedHeightBounds; // per 128x128 HM patch
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced

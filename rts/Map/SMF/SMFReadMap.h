@@ -34,6 +34,7 @@ public:
 
 	void UpdateShadingTexture() override;
 	void UpdateHeightMapUnsynced(const SRectangle&) override;
+	void UpdateHeightMapUnsyncedPost() override;
 
 public:
 	bool SetLuaTexture(const MapTextureData& td) override;
@@ -160,6 +161,7 @@ private:
 	void CreateNormalTex();
 
 	void UpdateVertexNormalsUnsynced(const SRectangle& update);
+	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
 	void UpdateNormalTexture(const SRectangle& update);
 	void UpdateShadingTexture(const SRectangle& update);
