@@ -60,7 +60,7 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(initHeightBounds),
 	CR_IGNORED(tempHeightBounds),
 	CR_IGNORED(currHeightBounds),
-	CR_IGNORED(unsyncedHeightBounds),
+	CR_IGNORED(unsyncedHeightInfo),
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
@@ -394,6 +394,14 @@ void CReadMap::Initialize()
 	// InitHeightMapDigestVectors();
 	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy});
 
+	unsyncedHeightInfo.resize(
+		(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
+		float3{
+			std::numeric_limits<float>::max(),
+			std::numeric_limits<float>::lowest(),
+			0.0f
+		}
+	);
 	// FIXME: sky & skyLight aren't created yet (crashes in SMFReadMap.cpp)
 	// UpdateDraw(true);
 }
@@ -469,16 +477,6 @@ void CReadMap::UpdateDraw(bool firstCall)
 {
 	SCOPED_TIMER("Update::ReadMap::UHM");
 
-	if (firstCall) {
-		unsyncedHeightBounds.resize(
-			(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
-			float2{
-				std::numeric_limits<float>::max(),
-				std::numeric_limits<float>::lowest()
-			}
-		);
-	}
-
 	if (unsyncedHeightMapUpdates.empty())
 		return;
 
@@ -490,6 +488,7 @@ void CReadMap::UpdateDraw(bool firstCall)
 	for (int i = 0; i < N; i++) {
 		UpdateHeightMapUnsynced(*(unsyncedHeightMapUpdates.begin() + i));
 	};
+	UpdateHeightMapUnsyncedPost();
 
 	for (int i = 0; i < N; i++) {
 		eventHandler.UnsyncedHeightMapUpdate(*(unsyncedHeightMapUpdates.begin() + i));
@@ -498,8 +497,6 @@ void CReadMap::UpdateDraw(bool firstCall)
 	for (int i = 0; i < N; i++) {
 		unsyncedHeightMapUpdates.pop_front();
 	}
-
-	UpdateHeightMapUnsyncedPost();
 }
 
 

@@ -76,9 +76,6 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 {
 	CCamera* activeCam = CCameraHandler::GetActiveCamera();
 
-	const float minHeight = readMap->GetCurrMinHeight() - 100.0f;
-	const float maxHeight = readMap->GetCurrMaxHeight() + 100.0f;
-
 	static constexpr float wsEdge = PATCH_SIZE * SQUARE_SIZE;
 
 	const int drawQuadsX = mapDims.mapx / PATCH_SIZE;
@@ -86,9 +83,11 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 
 	for (int x = 0; x < drawQuadsX; ++x) {
 		for (int z = 0; z < drawQuadsZ; ++z) {
+			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x, z);
+
 			AABB aabb {
-				{ (x + 0) * wsEdge, minHeight, (z + 0) * wsEdge },
-				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
+				{ (x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge },
+				{ (x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge }
 			};
 
 			if (!activeCam->InView(aabb))

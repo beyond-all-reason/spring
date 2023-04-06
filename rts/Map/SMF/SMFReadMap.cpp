@@ -411,26 +411,33 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 
 	for (uint32_t pz = 0; pz < numBigTexY; ++pz) {
 		for (uint32_t px = 0; px < numBigTexX; ++px) {
-			if (unsyncedHeightBounds[pz * numBigTexX + px].x != std::numeric_limits<float>::max())
+			if (unsyncedHeightInfo[pz * numBigTexX + px].x != std::numeric_limits<float>::max())
 				continue;
 
 			for (uint32_t vz = 0; vz <= bigSquareSize; ++vz) {
 				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
 				const size_t idx1 = idx0 + bigSquareSize + 1;
 
-				unsyncedHeightBounds[pz * numBigTexX + px].x = xsimd::reduce(
+				unsyncedHeightInfo[pz * numBigTexX + px].x = xsimd::reduce(
 					cornerHeightMapUnsynced.data() + idx0,
 					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightBounds[pz * numBigTexX + px].x,
+					unsyncedHeightInfo[pz * numBigTexX + px].x,
 					MinOp{}
 				);
-				unsyncedHeightBounds[pz * numBigTexX + px].y = xsimd::reduce(
+				unsyncedHeightInfo[pz * numBigTexX + px].y = xsimd::reduce(
 					cornerHeightMapUnsynced.data() + idx0,
 					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightBounds[pz * numBigTexX + px].y,
+					unsyncedHeightInfo[pz * numBigTexX + px].y,
 					MaxOp{}
 				);
+				unsyncedHeightInfo[pz * numBigTexX + px].z = xsimd::reduce(
+					cornerHeightMapUnsynced.data() + idx0,
+					cornerHeightMapUnsynced.data() + idx1,
+					unsyncedHeightInfo[pz * numBigTexX + px].z,
+					xsimd::detail::plus{}
+				);
 			}
+			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);
 		}
 	}
 }
@@ -536,9 +543,10 @@ void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 
 	for (uint32_t pz = minPatchZ; pz <= maxPatchZ; ++pz) {
 		for (uint32_t px = minPatchX; px <= maxPatchX; ++px) {
-			unsyncedHeightBounds[pz * numBigTexX + px] = {
+			unsyncedHeightInfo[pz * numBigTexX + px] = {
 				std::numeric_limits<float>::max(),
-				std::numeric_limits<float>::lowest()
+				std::numeric_limits<float>::lowest(),
+				0.0f
 			};
 		}
 	}

@@ -225,6 +225,7 @@ public:
 
 	bool GetHeightMapUpdated() const { return hmUpdated; }
 
+	virtual const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const = 0;
 private:
 	void InitHeightBounds();
 	void LoadOriginalHeightMapAndChecksum();
@@ -280,7 +281,7 @@ protected:
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
 
-	std::vector<float2> unsyncedHeightBounds; // per 128x128 HM patch
+	std::vector<float3> unsyncedHeightInfo; // per 128x128 HM patch
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced

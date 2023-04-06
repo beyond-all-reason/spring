@@ -33,9 +33,7 @@ public:
 	void ReloadTextures() override;
 
 	void UpdateShadingTexture() override;
-	void UpdateHeightMapUnsynced(const SRectangle&) override;
-	void UpdateHeightMapUnsyncedPost() override;
-
+	const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const override { return unsyncedHeightInfo[patchZ * numBigTexX + patchX]; }
 public:
 	bool SetLuaTexture(const MapTextureData& td) override;
 
@@ -149,6 +147,9 @@ public:
 	}
 
 private:
+	void UpdateHeightMapUnsynced(const SRectangle&) override;
+	void UpdateHeightMapUnsyncedPost() override;
+
 	void ParseHeader();
 	void LoadHeightMap();
 	void LoadMinimap();
