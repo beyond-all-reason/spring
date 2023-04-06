@@ -503,14 +503,33 @@ void CShadowHandler::DrawShadowPasses()
 	inShadowPass = false;
 }
 
-static CMatrix44f ComposeLightMatrix(const ISkyLight* light)
+static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* light)
 {
 	CMatrix44f lightMatrix;
 
 	// sun direction is in world-space, invert it
-	lightMatrix.SetZ(-float3(light->GetLightDir()));
-	lightMatrix.SetX(((lightMatrix.GetZ()).cross(   UpVector       )).ANormalize());
-	lightMatrix.SetY(((lightMatrix.GetX()).cross(lightMatrix.GetZ())).ANormalize());
+	float3 zDir = -float3(light->GetLightDir());
+
+	// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
+
+	// find the most orthogonal vector to zDir and call it xDir
+	float minDot = 1.0f;
+	float3 xDir;
+	for (const auto* dir : { &playerCam->forward, &playerCam->right, &playerCam->up }) {
+		const float dp = zDir.dot(*dir);
+		if (math::fabs(dp) < minDot) {
+			xDir = std::copysign(1.0f, dp) * (*dir);
+			minDot = math::fabs(dp);
+		}
+	}
+
+	// orthonormalize
+	xDir = (xDir - xDir.dot(zDir) * zDir).ANormalize();
+	float3 yDir = xDir.cross(zDir).ANormalize();
+
+	lightMatrix.SetZ(zDir);
+	lightMatrix.SetY(yDir);
+	lightMatrix.SetX(xDir);
 
 	return lightMatrix;
 }
@@ -523,7 +542,7 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
-	const CMatrix44f lightMatrix = ComposeLightMatrix(ISky::GetSky()->GetLight());
+	const CMatrix44f lightMatrix = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
 	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix));
 
 	// KISS; define only the world-to-light transform (P[CULLING] is unused anyway)
