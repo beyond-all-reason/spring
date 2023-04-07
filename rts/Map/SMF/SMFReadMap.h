@@ -33,6 +33,7 @@ public:
 	void ReloadTextures() override;
 
 	void UpdateShadingTexture() override;
+	int2 GetPatch(int hmx, int hmz) const override;
 	const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const override { return unsyncedHeightInfo[patchZ * numBigTexX + patchX]; }
 public:
 	bool SetLuaTexture(const MapTextureData& td) override;

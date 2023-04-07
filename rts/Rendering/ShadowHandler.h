@@ -105,7 +105,7 @@ private:
 	void SetShadowCamera(CCamera* shadowCam);
 
 	float4 GetShadowProjectionScales(CCamera*, const CMatrix44f&);
-	float3 CalcShadowProjectionPos(CCamera*, float3*);
+	float3 CalcShadowProjectionPos(CCamera*, std::array<float3, 8>&);
 
 	float GetOrthoProjectedMapRadius(const float3&, float3&);
 	float GetOrthoProjectedFrustumRadius(CCamera*, const CMatrix44f&, float3&);

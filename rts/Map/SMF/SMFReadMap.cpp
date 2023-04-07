@@ -909,6 +909,14 @@ void CSMFReadMap::UpdateShadingTexture()
 	shadingTexUpdateProgress += update_rate;
 }
 
+int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
+{
+	return int2 {
+		Clamp(hmx, 0, numBigTexX - 1),
+		Clamp(hmz, 0, numBigTexY - 1)
+	};
+}
+
 void CSMFReadMap::BindMiniMapTextures() const
 {
 	// tc (0,0) - (1,1)

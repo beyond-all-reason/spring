@@ -397,9 +397,9 @@ void CReadMap::Initialize()
 	unsyncedHeightInfo.resize(
 		(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
 		float3{
-			std::numeric_limits<float>::max(),
-			std::numeric_limits<float>::lowest(),
-			0.0f
+			initHeightBounds.x,
+			initHeightBounds.y,
+			(initHeightBounds.y + initHeightBounds.x) * 0.5f
 		}
 	);
 	// FIXME: sky & skyLight aren't created yet (crashes in SMFReadMap.cpp)

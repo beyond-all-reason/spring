@@ -5,6 +5,7 @@
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/GameVersion.h"
+#include "Game/TraceRay.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
@@ -543,7 +544,8 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
 	const CMatrix44f lightMatrix = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
-	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix));
+	shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix);
+	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales);
 
 	// KISS; define only the world-to-light transform (P[CULLING] is unused anyway)
 	//
@@ -683,7 +685,7 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 
 
 
-float4 CShadowHandler::GetShadowProjectionScales(CCamera* cam, const CMatrix44f& projMat) {
+float4 CShadowHandler::GetShadowProjectionScales(CCamera* playerCam, const CMatrix44f& lightMat) {
 	float4 projScales;
 	float2 projRadius;
 
@@ -709,14 +711,14 @@ float4 CShadowHandler::GetShadowProjectionScales(CCamera* cam, const CMatrix44f&
 	//
 	switch (shadowProMode) {
 		case SHADOWPROMODE_CAM_CENTER: {
-			projScales.x = GetOrthoProjectedFrustumRadius(cam, projMat, projMidPos[2]);
+			projScales.x = GetOrthoProjectedFrustumRadius(playerCam, lightMat, projMidPos[2]);
 		} break;
 		case SHADOWPROMODE_MAP_CENTER: {
-			projScales.x = GetOrthoProjectedMapRadius(-projMat.GetZ(), projMidPos[2]);
+			projScales.x = GetOrthoProjectedMapRadius(-lightMat.GetZ(), projMidPos[2]);
 		} break;
 		case SHADOWPROMODE_MIX_CAMMAP: {
-			projRadius.x = GetOrthoProjectedFrustumRadius(cam, projMat, projMidPos[0]);
-			projRadius.y = GetOrthoProjectedMapRadius(-projMat.GetZ(), projMidPos[1]);
+			projRadius.x = GetOrthoProjectedFrustumRadius(playerCam, lightMat, projMidPos[0]);
+			projRadius.y = GetOrthoProjectedMapRadius(-lightMat.GetZ(), projMidPos[1]);
 			projScales.x = std::min(projRadius.x, projRadius.y);
 
 			// pick the center position (0 or 1) for which radius is smallest
@@ -791,38 +793,23 @@ float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& p
 	return curMapDiameter;
 }
 
-float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* cam, const CMatrix44f& projMat, float3& projPos) {
-	float3 frustumPoints[8];
-
-	#if 0
+float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const CMatrix44f& lightMat, float3& projPos) {
+	std::array<float3, 8> frustumPoints;
 	{
-		float sqRadius = 0.0f;
-		projPos = CalcShadowProjectionPos(cam, &frustumPoints[0]);
+		projPos = CalcShadowProjectionPos(playerCam, frustumPoints);
 
-		// calculate radius of the minimally-bounding sphere around projected frustum
-		for (unsigned int n = 0; n < 8; n++) {
-			sqRadius = std::max(sqRadius, (frustumPoints[n] - projPos).SqLength());
-		}
-
-		const float maxMapDiameter = readMap->GetBoundingRadius() * 2.0f;
-		const float frustumDiameter = std::sqrt(sqRadius) * 2.0f;
-
-		return (std::min(maxMapDiameter, frustumDiameter));
-	}
-	#else
-	{
-		CMatrix44f frustumProjMat;
-		frustumProjMat.SetX(projMat.GetX());
-		frustumProjMat.SetY(projMat.GetY());
-		frustumProjMat.SetZ(projMat.GetZ());
-		frustumProjMat.SetPos(projPos = CalcShadowProjectionPos(cam, &frustumPoints[0]));
+		CMatrix44f lightCenterMat;
+		lightCenterMat.SetX(lightMat.GetX());
+		lightCenterMat.SetY(lightMat.GetY());
+		lightCenterMat.SetZ(lightMat.GetZ());
+		lightCenterMat.SetPos(projPos);
 
 		// find projected width along {x,z}-axes (.x := min, .y := max)
 		float2 xbounds = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
 		float2 zbounds = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
 
 		for (unsigned int n = 0; n < 8; n++) {
-			frustumPoints[n] = frustumProjMat * frustumPoints[n];
+			frustumPoints[n] = lightCenterMat * frustumPoints[n];
 
 			xbounds.x = std::min(xbounds.x, frustumPoints[n].x);
 			xbounds.y = std::max(xbounds.y, frustumPoints[n].x);
@@ -833,11 +820,11 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* cam, const CMatrix
 		// factor in z-bounds to prevent clipping
 		return (std::min(readMap->GetBoundingRadius() * 2.0f, std::max(xbounds.y - xbounds.x, zbounds.y - zbounds.x)));
 	}
-	#endif
 }
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* cam, float3* frustumPoints)
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints)
 {
+#if 0
 	const auto ClipByPlanes = [](const float3& p0, float3& p, const std::initializer_list<float4>& clipPlanes) {
 		float tMin = 1.0f;
 		float3 rayMin;
@@ -903,4 +890,50 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* cam, float3* frustumPoin
 	projPos *= 0.125f;
 
 	return projPos;
+#else
+	const CUnit* unit = nullptr;
+	const CFeature* feature = nullptr;
+
+	const float rawRange = playerCam->GetFarPlaneDist() * 1.4f;
+	const float badRange = rawRange - 300.0f;
+
+	static constexpr std::array FrustumInfo = {
+		std::pair{ CCamera::FRUSTUM_EDGE_FTL_NTL, CCamera::FRUSTUM_POINT_FTL },
+		std::pair{ CCamera::FRUSTUM_EDGE_FTR_NTR, CCamera::FRUSTUM_POINT_FTR },
+		std::pair{ CCamera::FRUSTUM_EDGE_FBR_NBR, CCamera::FRUSTUM_POINT_FBR },
+		std::pair{ CCamera::FRUSTUM_EDGE_FBL_NBL, CCamera::FRUSTUM_POINT_FBL },
+	};
+
+	const float3 camPos  = playerCam->GetPos();
+	const float nearDist = playerCam->GetFrustumScales().z;
+
+	float3 projPos = {};
+	for (const auto& fi : FrustumInfo) {
+		const float3 dir = playerCam->GetFrustumEdge(fi.first);
+		const float traceDist = TraceRay::GuiTraceRay(camPos, dir, rawRange, nullptr, unit, feature, true, true, true);
+		float3 farPoint = camPos + dir * traceDist;
+		if (traceDist < 0.0f || traceDist > badRange) {
+			farPoint = camPos + dir * rawRange;
+			ClampRayInMap(camPos, farPoint); // clip XZ, doesn't change dir
+
+			auto patch = readMap->GetPatch(
+				static_cast<int>(farPoint.x) / (SQUARE_SIZE),
+				static_cast<int>(farPoint.z) / (SQUARE_SIZE)
+			);
+
+			const auto& ushi = readMap->GetUnsyncedHeightInfo(patch.x, patch.y);
+
+			farPoint.y = Clamp(farPoint.y, ushi.x, ushi.y + 100.0f); // clamp Y, might change dir
+		}
+		projPos += farPoint;
+		frustumPoints[fi.second - 0] = farPoint;
+
+		float3 nearPoint = camPos + dir * std::min(nearDist, traceDist);
+		projPos += nearPoint;
+		frustumPoints[fi.second - 4] = nearPoint;
+	}
+	projPos *= 0.125f;
+
+	return projPos;
+#endif
 }
