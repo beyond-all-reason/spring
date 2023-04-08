@@ -798,6 +798,10 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const C
 	{
 		projPos = CalcShadowProjectionPos(playerCam, lightMat, frustumPoints);
 
+		projPos.x = math::ceil(projPos.x * 16.0f) / 16.0f;
+		projPos.y = math::ceil(projPos.y * 16.0f) / 16.0f;
+		projPos.z = math::ceil(projPos.z * 16.0f) / 16.0f;
+
 		CMatrix44f lightCenterMat;
 		lightCenterMat.SetX(lightMat.GetX());
 		lightCenterMat.SetY(lightMat.GetY());
@@ -822,57 +826,127 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const C
 	}
 }
 
+struct VisPatchesQuadDrawer : public CReadMap::IQuadDrawer
+{
+	static constexpr uint32_t SUBDIV = 2;
+
+	std::vector<bool> visiblePatches;
+	int numPatchesX = 0;
+	int numPatchesZ = 0;
+	void ResetState() {
+		numPatchesX = mapDims.mapx / (CReadMap::PATCH_SIZE >> SUBDIV);
+		numPatchesZ = mapDims.mapy / (CReadMap::PATCH_SIZE >> SUBDIV);
+		visiblePatches.resize(numPatchesX * numPatchesZ);
+		std::fill(visiblePatches.begin(), visiblePatches.end(), false);
+	}
+	void DrawQuad(int x, int z) {
+		visiblePatches[z * numPatchesX + x] = true;
+	}
+};
+
 float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix44f& lightMat, std::array<float3, 8>& frustumPoints)
 {
-	static constexpr uint32_t SUBDIV = 3;
-	static constexpr float wsEdge = (CReadMap::PATCH_SIZE >> SUBDIV) * SQUARE_SIZE ;
+	static constexpr std::array FrustumInfo = {
+		std::pair{ CCamera::FRUSTUM_EDGE_FTL_NTL, CCamera::FRUSTUM_POINT_FTL },
+		std::pair{ CCamera::FRUSTUM_EDGE_FTR_NTR, CCamera::FRUSTUM_POINT_FTR },
+		std::pair{ CCamera::FRUSTUM_EDGE_FBR_NBR, CCamera::FRUSTUM_POINT_FBR },
+		std::pair{ CCamera::FRUSTUM_EDGE_FBL_NBL, CCamera::FRUSTUM_POINT_FBL },
+	};
 
-	const int patchQuadsX = mapDims.mapx / (CReadMap::PATCH_SIZE >> SUBDIV);
-	const int patchQuadsZ = mapDims.mapy / (CReadMap::PATCH_SIZE >> SUBDIV);
+	const float3& camPos = playerCam->GetPos();
+	const float nearDist = playerCam->GetFrustumScales().z;
+	const float  farDist = playerCam->GetFrustumScales().w;
 
-	CCamera testCam; testCam.CopyState(playerCam);
+	static constexpr float VLV = 200.0f;
+	static constexpr float HLV = 100.0f;
 
-	const float3 lightDir = lightMat.GetZ();
+	const std::array<float4, 6> clipPlanes {
+		float4{ RgtVector, HLV },
+		float4{ UpVector , -readMap->GetCurrMinHeight() },
+		float4{ FwdVector, HLV },
+		float4{-RgtVector, float3::maxxpos + HLV },
+		float4{-UpVector , readMap->GetCurrMaxHeight() + HLV },
+		float4{-FwdVector, float3::maxzpos + HLV },
+	};
 
-	float3 minF = float3{ std::numeric_limits<float>::max()    };
-	float3 maxF = float3{ std::numeric_limits<float>::lowest() };
+	float3 projPos = {};
+	/*
+	for (const auto& fi : FrustumInfo) {
+		const float3& dir = playerCam->GetFrustumEdge(fi.first);
+		float3 farPoint = playerCam->GetFrustumVert(fi.second);
 
-	for (int x = 0; x < patchQuadsX; ++x) {
-		for (int z = 0; z < patchQuadsZ; ++z) {
-			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x >> SUBDIV, z >> SUBDIV);
+		size_t xi = dir.x < 0.0f ? 0 : 3;
+		size_t yi = dir.y < 0.0f ? 1 : 4;
+		size_t zi = dir.z < 0.0f ? 2 : 5;
 
-			AABB aabb{
-				{ (x + 0) * wsEdge, uhmi.x + 100.0f, (z + 0) * wsEdge },
-				{ (x + 1) * wsEdge, uhmi.y +   0.0f, (z + 1) * wsEdge }
+		ClipRayByPlanes(camPos, farPoint, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
+		frustumPoints[fi.second - 0] = farPoint;
+
+		float3 nearPoint = camPos + dir * nearDist;
+		frustumPoints[fi.second - 4] = nearPoint;
+	}
+	{
+		const float3& dir = playerCam->forward;
+		size_t xi = dir.x < 0.0f ? 0 : 3;
+		size_t yi = dir.y < 0.0f ? 1 : 4;
+		size_t zi = dir.z < 0.0f ? 2 : 5;
+		float3 cntPointN = camPos + dir * nearDist;
+		float3 cntPointF = camPos + dir * farDist;
+		ClipRayByPlanes(camPos, cntPointF, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
+		projPos = (cntPointF + cntPointN) * 0.5f;
+	}
+	*/
+	static VisPatchesQuadDrawer vpqd;
+	vpqd.ResetState();
+	readMap->GridVisibility(nullptr, &vpqd, 1e9, CReadMap::PATCH_SIZE >> VisPatchesQuadDrawer::SUBDIV);
+
+	static constexpr float wsEdge = (CReadMap::PATCH_SIZE >> VisPatchesQuadDrawer::SUBDIV) * SQUARE_SIZE;
+
+	AABB aabb;
+
+	//int numPoints = 0;
+	for (int x = 0; x < vpqd.numPatchesX; ++x) {
+		for (int z = 0; z < vpqd.numPatchesZ; ++z) {
+			if (!vpqd.visiblePatches[z * vpqd.numPatchesX + x])
+				continue;
+
+			/*
+			for (int c = 0; c < 8; ++c) {
+				const float3& dir = playerCam->forward;
+
+				size_t xi = dir.x < 0.0f ? 0 : 3;
+				size_t yi = dir.y < 0.0f ? 1 : 4;
+				size_t zi = dir.z < 0.0f ? 2 : 5;
+
+				float3 cntPointN = camPos + dir * nearDist;
+				float3 cntPointF = camPos + dir * farDist;
+				ClipRayByPlanes(camPos, cntPointF, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
+
+				projPos += cntPointN;
+				projPos += cntPointF;
+				numPoints += 2;
+			}
+			*/
+
+			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x >> VisPatchesQuadDrawer::SUBDIV, z >> VisPatchesQuadDrawer::SUBDIV);
+			AABB aabbPatch = {
+				float3{ (x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge },
+				float3{ (x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge }
 			};
 
-			// check if this terrain cuboid is already seen by camera
-			if (playerCam->InView(aabb)) {
-				minF = float3::min(minF, aabb.mins);
-				maxF = float3::max(maxF, aabb.maxs);
-			}
-			// try to project the cuboid along the light ray to the point closest to camera position
-			else {
-				float3 midP = aabb.CalcCenter();
-				aabb.mins -= midP; //make relative
-				aabb.maxs -= midP; //make relative
+			if (!playerCam->InView(aabbPatch))
+				continue;
 
-				float3 projMidP;
-				if (ClosestPointOnRay(midP, lightDir, playerCam->GetPos(), projMidP)) {
-					aabb.mins += projMidP;
-					aabb.maxs += projMidP;
 
-					if (playerCam->InView(aabb)) {
-						minF = float3::min(minF, aabb.mins);
-						maxF = float3::max(maxF, aabb.maxs);
-					}
-				}
-			}
+			aabb.mins = float3::min(aabb.mins, aabbPatch.mins);
+			aabb.maxs = float3::max(aabb.maxs, aabbPatch.maxs);
 		}
 	}
 
-	AABB aabb{ minF, maxF };
 	aabb.CalcCorners(frustumPoints);
+	return aabb.CalcCenter();
 
-	return (minF + maxF) * 0.5f;
+	//projPos /= numPoints;
+
+	//return projPos;
 }
