@@ -57,11 +57,9 @@ uniform vec2 specularTexGen; // 1.0/mapSize
 	uniform vec3 cameraPos;
 #endif
 
-#ifdef HAVE_INFOTEX
-	uniform sampler2D infoTex;
-	uniform float infoTexIntensityMul;
-	uniform vec2 infoTexGen;     // 1.0/(pwr2map{x,z} * SQUARE_SIZE)
-#endif
+uniform sampler2D infoTex;
+uniform float infoTexIntensityMul;
+uniform vec2 infoTexGen;     // 1.0/(pwr2map{x,z} * SQUARE_SIZE)
 
 #ifdef SMF_SPECULAR_LIGHTING
 	uniform sampler2D specularTex;
@@ -257,10 +255,12 @@ vec4 GetSplatDetailTextureNormal(vec2 uv, out vec2 splatDetailStrength) {
 /***********************************************************************/
 // main()
 
-#line 10260
+#line 10257
+
 void main() {
 	vec2 diffTexCoords = diffuseTexCoords;
 	vec2 specTexCoords = vertexWorldPos.xz * specularTexGen;
+	vec2 infoTexCoords = vertexWorldPos.xz * infoTexGen;
 	#ifdef SMF_ADV_SHADING
 		vec2 normTexCoords = vertexWorldPos.xz * normalTexGen;
 
@@ -352,7 +352,6 @@ void main() {
 	{
 		// increase contrast and brightness for the overlays
 		// TODO: make the multiplier configurable by users?
-		vec2 infoTexCoords = vertexWorldPos.xz * infoTexGen;
 		diffuseCol.rgb += (texture2D(infoTex, infoTexCoords).rgb * infoTexIntensityMul);
 		diffuseCol.rgb -= (vec3(0.5, 0.5, 0.5) * float(infoTexIntensityMul == 1.0));
 	}
@@ -384,7 +383,7 @@ void main() {
 		}
 		#else // SMF_ADV_SHADING
 		{
-			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * texture2D(shadingTex, specTexCoords).rgb;
+			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * texture2D(shadingTex, infoTexCoords).rgb;
 			fragColor.a = diffuseCol.a;
 		}
 		#endif // SMF_ADV_SHADING
