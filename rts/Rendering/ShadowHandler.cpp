@@ -794,9 +794,9 @@ float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& p
 }
 
 float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const CMatrix44f& lightMat, float3& projPos) {
-	std::array<float3, 8> frustumPoints;
+	std::array<float3, 8> wsLightBounds;
 	{
-		projPos = CalcShadowProjectionPos(playerCam, lightMat, frustumPoints);
+		projPos = CalcShadowProjectionPos(playerCam, lightMat, wsLightBounds);
 
 		projPos.x = math::ceil(projPos.x * 16.0f) / 16.0f;
 		projPos.y = math::ceil(projPos.y * 16.0f) / 16.0f;
@@ -813,12 +813,12 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const C
 		float2 zbounds = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
 
 		for (unsigned int n = 0; n < 8; n++) {
-			frustumPoints[n] = lightCenterMat * frustumPoints[n];
+			wsLightBounds[n] = lightCenterMat * wsLightBounds[n];
 
-			xbounds.x = std::min(xbounds.x, frustumPoints[n].x);
-			xbounds.y = std::max(xbounds.y, frustumPoints[n].x);
-			zbounds.x = std::min(zbounds.x, frustumPoints[n].z);
-			zbounds.y = std::max(zbounds.y, frustumPoints[n].z);
+			xbounds.x = std::min(xbounds.x, wsLightBounds[n].x);
+			xbounds.y = std::max(xbounds.y, wsLightBounds[n].x);
+			zbounds.x = std::min(zbounds.x, wsLightBounds[n].z);
+			zbounds.y = std::max(zbounds.y, wsLightBounds[n].z);
 		}
 
 		// factor in z-bounds to prevent clipping
@@ -844,58 +844,11 @@ struct VisPatchesQuadDrawer : public CReadMap::IQuadDrawer
 	}
 };
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix44f& lightMat, std::array<float3, 8>& frustumPoints)
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix44f& lightMat, std::array<float3, 8>& wsLightBounds)
 {
-	static constexpr std::array FrustumInfo = {
-		std::pair{ CCamera::FRUSTUM_EDGE_FTL_NTL, CCamera::FRUSTUM_POINT_FTL },
-		std::pair{ CCamera::FRUSTUM_EDGE_FTR_NTR, CCamera::FRUSTUM_POINT_FTR },
-		std::pair{ CCamera::FRUSTUM_EDGE_FBR_NBR, CCamera::FRUSTUM_POINT_FBR },
-		std::pair{ CCamera::FRUSTUM_EDGE_FBL_NBL, CCamera::FRUSTUM_POINT_FBL },
-	};
-
-	const float3& camPos = playerCam->GetPos();
-	const float nearDist = playerCam->GetFrustumScales().z;
-	const float  farDist = playerCam->GetFrustumScales().w;
-
 	static constexpr float VLV = 200.0f;
 	static constexpr float HLV = 100.0f;
 
-	const std::array<float4, 6> clipPlanes {
-		float4{ RgtVector, HLV },
-		float4{ UpVector , -readMap->GetCurrMinHeight() },
-		float4{ FwdVector, HLV },
-		float4{-RgtVector, float3::maxxpos + HLV },
-		float4{-UpVector , readMap->GetCurrMaxHeight() + HLV },
-		float4{-FwdVector, float3::maxzpos + HLV },
-	};
-
-	float3 projPos = {};
-	/*
-	for (const auto& fi : FrustumInfo) {
-		const float3& dir = playerCam->GetFrustumEdge(fi.first);
-		float3 farPoint = playerCam->GetFrustumVert(fi.second);
-
-		size_t xi = dir.x < 0.0f ? 0 : 3;
-		size_t yi = dir.y < 0.0f ? 1 : 4;
-		size_t zi = dir.z < 0.0f ? 2 : 5;
-
-		ClipRayByPlanes(camPos, farPoint, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
-		frustumPoints[fi.second - 0] = farPoint;
-
-		float3 nearPoint = camPos + dir * nearDist;
-		frustumPoints[fi.second - 4] = nearPoint;
-	}
-	{
-		const float3& dir = playerCam->forward;
-		size_t xi = dir.x < 0.0f ? 0 : 3;
-		size_t yi = dir.y < 0.0f ? 1 : 4;
-		size_t zi = dir.z < 0.0f ? 2 : 5;
-		float3 cntPointN = camPos + dir * nearDist;
-		float3 cntPointF = camPos + dir * farDist;
-		ClipRayByPlanes(camPos, cntPointF, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
-		projPos = (cntPointF + cntPointN) * 0.5f;
-	}
-	*/
 	static VisPatchesQuadDrawer vpqd;
 	vpqd.ResetState();
 	readMap->GridVisibility(nullptr, &vpqd, 1e9, CReadMap::PATCH_SIZE >> VisPatchesQuadDrawer::SUBDIV);
@@ -904,29 +857,10 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix
 
 	AABB aabb;
 
-	//int numPoints = 0;
 	for (int x = 0; x < vpqd.numPatchesX; ++x) {
 		for (int z = 0; z < vpqd.numPatchesZ; ++z) {
 			if (!vpqd.visiblePatches[z * vpqd.numPatchesX + x])
 				continue;
-
-			/*
-			for (int c = 0; c < 8; ++c) {
-				const float3& dir = playerCam->forward;
-
-				size_t xi = dir.x < 0.0f ? 0 : 3;
-				size_t yi = dir.y < 0.0f ? 1 : 4;
-				size_t zi = dir.z < 0.0f ? 2 : 5;
-
-				float3 cntPointN = camPos + dir * nearDist;
-				float3 cntPointF = camPos + dir * farDist;
-				ClipRayByPlanes(camPos, cntPointF, { clipPlanes[xi], clipPlanes[yi], clipPlanes[zi] });
-
-				projPos += cntPointN;
-				projPos += cntPointF;
-				numPoints += 2;
-			}
-			*/
 
 			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x >> VisPatchesQuadDrawer::SUBDIV, z >> VisPatchesQuadDrawer::SUBDIV);
 			AABB aabbPatch = {
@@ -943,10 +877,6 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix
 		}
 	}
 
-	aabb.CalcCorners(frustumPoints);
+	aabb.CalcCorners(wsLightBounds);
 	return aabb.CalcCenter();
-
-	//projPos /= numPoints;
-
-	//return projPos;
 }
