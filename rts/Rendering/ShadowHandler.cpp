@@ -788,6 +788,10 @@ float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& p
 		projPos.x = (mapDims.mapx * SQUARE_SIZE) * 0.5f;
 		projPos.z = (mapDims.mapy * SQUARE_SIZE) * 0.5f;
 		projPos.y = CGround::GetHeightReal(projPos.x, projPos.z, false);
+
+		projPos.x = math::ceil(projPos.x * 16.0f) / 16.0f;
+		projPos.y = math::ceil(projPos.y * 16.0f) / 16.0f;
+		projPos.z = math::ceil(projPos.z * 16.0f) / 16.0f;
 	}
 
 	return curMapDiameter;
