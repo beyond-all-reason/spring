@@ -101,6 +101,18 @@ float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p)
 }
 
 
+bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3& px)
+{
+	const float3 pdir(p - p0);
+	const float pdist = ray.dot(pdir);
+	if (pdist < 0.0f)
+		return false;
+
+	px = p0 + ray * pdist;
+	return true;
+}
+
+
 /**
  * calculates the two intersection points ON the ray
  * as scalar multiples of `dir` starting from `start`;
@@ -143,6 +155,33 @@ float2 GetMapBoundaryIntersectionPoints(const float3 start, const float3 dir)
 	return {near, far};
 }
 
+bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray)
+{
+	float3 px;
+	if (!ClosestPointOnRay(p0, ray, sphere.xyz, px))
+		return false;
+
+	return px.distance(sphere.xyz) <= sphere.w;
+}
+
+bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& plane, bool directional, float3& px)
+{
+	const float3 ray = p1 - p0;
+	const float denom = plane.dot(ray);
+
+	if (directional && denom > 0.0f)
+		return false;
+
+	if (std::fabs(denom) < 1e-4)
+		return false;
+
+	const float t = -(plane.dot(p0) + plane.w) / denom;
+	if (t < 0.0f || t > 1.0f)
+		return false;
+
+	px = p0 + ray * t;
+	return true;
+}
 
 bool ClampLineInMap(float3& start, float3& end)
 {
@@ -192,6 +231,63 @@ bool ClampRayInMap(const float3 start, float3& end)
 	}
 
 	return false;
+}
+
+void ClipRayByPlanes(const float3& p0, float3& p, const std::initializer_list<float4>& clipPlanes)
+{
+	float3 minPx = p;
+	float dMin = p.SqDistance(p0);
+	for (const auto& clipPlane : clipPlanes) {
+		float3 px;
+		if (RayAndPlaneIntersection(p0, p, clipPlane, true, px)) {
+			const float dx = px.SqDistance(p0);
+			if (dx < dMin) {
+				minPx = px;
+				dMin = dx;
+			}
+		}
+	}
+	p = minPx;
+}
+
+float3 GetTriangleBarycentric(const float3& p0, const float3& p1, const float3& p2, const float3& p)
+{
+	const float3 v0 = p2 - p0;
+	const float3 v1 = p1 - p0;
+	const float3 v2 = p - p0;
+
+	const float dot00 = v0.dot(v0);
+	const float dot01 = v0.dot(v1);
+	const float dot02 = v0.dot(v2);
+	const float dot11 = v1.dot(v1);
+	const float dot12 = v1.dot(v2);
+
+	const float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+
+	const float s = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	const float t = (dot00 * dot12 - dot01 * dot02) * invDenom;
+	const float q = 1.0 - s - t;
+	return float3(s, t, q);
+}
+
+bool PointInsideTriangle(const float3& v0, const float3& v1, const float3& v2, const float3& vx)
+{
+#if 0
+	float s1 = std::copysignf(1.0f, v2.dot(v0.cross(v1)) );
+	float s2 = std::copysignf(1.0f, v2.dot(vx.cross(v1)) );
+	float s3 = std::copysignf(1.0f, v2.dot(v0.cross(vx)) );
+	float s4 = std::copysignf(1.0f, vx.dot(v0.cross(v1)) );
+
+	return s2 == s1 && s3 == s1 && s4 == s1;
+#else
+	const float3 bary = GetTriangleBarycentric(v0, v1, v2, vx);
+	return bary.x >= 0.0f && bary.y >= 0.0f && bary.z >= 0.0f;
+#endif
+}
+
+bool PointInsideQuadrilateral(const float3& p0, const float3& p1, const float3& p2, const float3& p3, const float3& px)
+{
+	return PointInsideTriangle(p0, p1, p2, px) || PointInsideTriangle(p2, p3, p0, px);
 }
 
 

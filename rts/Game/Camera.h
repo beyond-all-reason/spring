@@ -182,9 +182,11 @@ public:
 	const CMatrix44f& GetBillBoardMatrix() const { return billboardMatrix; }
 	const CMatrix44f& GetClipControlMatrix() const { return clipControlMatrix; }
 
+	const Frustum& GetFrustum() const { return frustum; }
 	const float3& GetFrustumVert (uint32_t i) const { return frustum.verts [i]; }
 	const float3& GetFrustumPlane(uint32_t i) const { return frustum.planes[i]; }
 	const float3& GetFrustumEdge (uint32_t i) const { return frustum.edges [i]; }
+	const float4& GetFrustumScales() const { return frustum.scales; }
 
 	void LoadMatrices() const;
 	void LoadViewport() const;
