@@ -796,7 +796,7 @@ float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& p
 float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const CMatrix44f& lightMat, float3& projPos) {
 	std::array<float3, 8> frustumPoints;
 	{
-		projPos = CalcShadowProjectionPos(playerCam, frustumPoints);
+		projPos = CalcShadowProjectionPos(playerCam, lightMat, frustumPoints);
 
 		CMatrix44f lightCenterMat;
 		lightCenterMat.SetX(lightMat.GetX());
@@ -822,118 +822,57 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const C
 	}
 }
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints)
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix44f& lightMat, std::array<float3, 8>& frustumPoints)
 {
-#if 0
-	const auto ClipByPlanes = [](const float3& p0, float3& p, const std::initializer_list<float4>& clipPlanes) {
-		float tMin = 1.0f;
-		float3 rayMin;
+	static constexpr uint32_t SUBDIV = 3;
+	static constexpr float wsEdge = (CReadMap::PATCH_SIZE >> SUBDIV) * SQUARE_SIZE ;
 
-		for (const auto& clipPlane : clipPlanes) {
-			const float3 ray = (p - p0);
+	const int patchQuadsX = mapDims.mapx / (CReadMap::PATCH_SIZE >> SUBDIV);
+	const int patchQuadsZ = mapDims.mapy / (CReadMap::PATCH_SIZE >> SUBDIV);
 
-			float denom = clipPlane.dot(ray);
-			if (std::fabs(denom) < 1e-4)
-				continue;
+	CCamera testCam; testCam.CopyState(playerCam);
 
-			float t = (clipPlane.w - clipPlane.dot(p0)) / denom;
-			if (t < 0.0f || t > 1.0f)
-				continue;
+	const float3 lightDir = lightMat.GetZ();
 
-			if (t < tMin) {
-				tMin = t;
-				rayMin = ray;
+	float3 minF = float3{ std::numeric_limits<float>::max()    };
+	float3 maxF = float3{ std::numeric_limits<float>::lowest() };
+
+	for (int x = 0; x < patchQuadsX; ++x) {
+		for (int z = 0; z < patchQuadsZ; ++z) {
+			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x >> SUBDIV, z >> SUBDIV);
+
+			AABB aabb{
+				{ (x + 0) * wsEdge, uhmi.x + 100.0f, (z + 0) * wsEdge },
+				{ (x + 1) * wsEdge, uhmi.y +   0.0f, (z + 1) * wsEdge }
+			};
+
+			// check if this terrain cuboid is already seen by camera
+			if (playerCam->InView(aabb)) {
+				minF = float3::min(minF, aabb.mins);
+				maxF = float3::max(maxF, aabb.maxs);
+			}
+			// try to project the cuboid along the light ray to the point closest to camera position
+			else {
+				float3 midP = aabb.CalcCenter();
+				aabb.mins -= midP; //make relative
+				aabb.maxs -= midP; //make relative
+
+				float3 projMidP;
+				if (ClosestPointOnRay(midP, lightDir, playerCam->GetPos(), projMidP)) {
+					aabb.mins += projMidP;
+					aabb.maxs += projMidP;
+
+					if (playerCam->InView(aabb)) {
+						minF = float3::min(minF, aabb.mins);
+						maxF = float3::max(maxF, aabb.maxs);
+					}
+				}
 			}
 		}
-
-		if (tMin < 1.0f)
-			p = p0 + rayMin * tMin;
-	};
-
-	static constexpr float T1 = 100.0f;
-	static constexpr float T2 = 200.0f;
-
-	float3 projPos;
-	for (int i = 0; i < 8; ++i)
-		frustumPoints[i] = cam->GetFrustumVert(i);
-
-	const std::initializer_list<float4> nearClipPlanes = {
-		float4{ UpVector, readMap->GetCurrMaxHeight() + T1 },
-		//float4{ RgtVector, -T2 },
-		//float4{ RgtVector, mapDims.mapx * SQUARE_SIZE + T2 },
-		//float4{ FwdVector, -T2 },
-		//float4{ FwdVector, mapDims.mapy * SQUARE_SIZE + T2 }
-	};
-	const std::initializer_list<float4> farClipPlanes = {
-		float4{ UpVector, readMap->GetCurrMinHeight() - T1 },
-		//float4{ RgtVector, -T2 },
-		//float4{ RgtVector, mapDims.mapx * SQUARE_SIZE + T2 },
-		//float4{ FwdVector, -T2 },
-		//float4{ FwdVector, mapDims.mapy * SQUARE_SIZE + T2 }
-	};
-
-	for (int i = 0; i < 4; ++i) {
-		//near quadrilateral
-		ClipByPlanes(frustumPoints[4 + i], frustumPoints[i], nearClipPlanes);
-		//far quadrilateral
-		ClipByPlanes(frustumPoints[i], frustumPoints[4 + i],  farClipPlanes);
-
-		//hard clamp xz
-		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, -T2, mapDims.mapx * SQUARE_SIZE + T2);
-		frustumPoints[    i].z = std::clamp(frustumPoints[    i].z, -T2, mapDims.mapy * SQUARE_SIZE + T2);
-		frustumPoints[4 + i].x = std::clamp(frustumPoints[4 + i].x, -T2, mapDims.mapx * SQUARE_SIZE + T2);
-		frustumPoints[4 + i].z = std::clamp(frustumPoints[4 + i].z, -T2, mapDims.mapy * SQUARE_SIZE + T2);
-
-		projPos += frustumPoints[i] + frustumPoints[4 + i];
 	}
 
-	projPos *= 0.125f;
+	AABB aabb{ minF, maxF };
+	aabb.CalcCorners(frustumPoints);
 
-	return projPos;
-#else
-	const CUnit* unit = nullptr;
-	const CFeature* feature = nullptr;
-
-	const float rawRange = playerCam->GetFarPlaneDist() * 1.4f;
-	const float badRange = rawRange - 300.0f;
-
-	static constexpr std::array FrustumInfo = {
-		std::pair{ CCamera::FRUSTUM_EDGE_FTL_NTL, CCamera::FRUSTUM_POINT_FTL },
-		std::pair{ CCamera::FRUSTUM_EDGE_FTR_NTR, CCamera::FRUSTUM_POINT_FTR },
-		std::pair{ CCamera::FRUSTUM_EDGE_FBR_NBR, CCamera::FRUSTUM_POINT_FBR },
-		std::pair{ CCamera::FRUSTUM_EDGE_FBL_NBL, CCamera::FRUSTUM_POINT_FBL },
-	};
-
-	const float3 camPos  = playerCam->GetPos();
-	const float nearDist = playerCam->GetFrustumScales().z;
-
-	float3 projPos = {};
-	for (const auto& fi : FrustumInfo) {
-		const float3 dir = playerCam->GetFrustumEdge(fi.first);
-		const float traceDist = TraceRay::GuiTraceRay(camPos, dir, rawRange, nullptr, unit, feature, true, true, true);
-		float3 farPoint = camPos + dir * traceDist;
-		if (traceDist < 0.0f || traceDist > badRange) {
-			farPoint = camPos + dir * rawRange;
-			ClampRayInMap(camPos, farPoint); // clip XZ, doesn't change dir
-
-			auto patch = readMap->GetPatch(
-				static_cast<int>(farPoint.x) / (SQUARE_SIZE),
-				static_cast<int>(farPoint.z) / (SQUARE_SIZE)
-			);
-
-			const auto& ushi = readMap->GetUnsyncedHeightInfo(patch.x, patch.y);
-
-			farPoint.y = Clamp(farPoint.y, ushi.x, ushi.y + 100.0f); // clamp Y, might change dir
-		}
-		projPos += farPoint;
-		frustumPoints[fi.second - 0] = farPoint;
-
-		float3 nearPoint = camPos + dir * std::min(nearDist, traceDist);
-		projPos += nearPoint;
-		frustumPoints[fi.second - 4] = nearPoint;
-	}
-	projPos *= 0.125f;
-
-	return projPos;
-#endif
+	return (minF + maxF) * 0.5f;
 }
