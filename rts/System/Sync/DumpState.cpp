@@ -355,7 +355,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const float3& zdir = f->frontdir;
 
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
-		file << "\t\t\tpos: " << TapFloats(f->pos);
+		file << "\t\t\tpos: " << TapFloats(pos);
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
