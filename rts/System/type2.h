@@ -3,6 +3,7 @@
 #ifndef TYPE2_H
 #define TYPE2_H
 
+#include <array>
 #include "lib/streflop/streflop_cond.h"
 #include "System/creg/creg_cond.h"
 #include "System/FastMath.h"
@@ -41,8 +42,13 @@ template<typename t> struct type2 {
 		return t(math::sqrt(dx*dx + dy*dy));
 	}
 
-	t x;
-	t y;
+	union {
+		struct {
+			t x;
+			t y;
+		};
+		std::array<t, 2> xy;
+	};
 };
 
 template<typename t> struct itype2 : public type2<t> {

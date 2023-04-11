@@ -390,21 +390,6 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 	UpdateShadingTexture(update);
 }
 
-namespace {
-	struct MinOp
-	{
-		auto operator()(float x, float y) { return std::min(x, y); }
-		template<typename SimdType>
-		auto operator()(SimdType&& x, SimdType&& y) { return xsimd::min(std::forward<SimdType>(x), std::forward<SimdType>(y)); }
-	};
-	struct MaxOp
-	{
-		auto operator()(float x, float y) { return std::max(x, y); }
-		template<typename SimdType>
-		auto operator()(SimdType&& x, SimdType&& y) { return xsimd::max(std::forward<SimdType>(x), std::forward<SimdType>(y)); }
-	};
-}
-
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 {
 	static_assert(bigSquareSize == PATCH_SIZE, "");
@@ -418,23 +403,11 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
 				const size_t idx1 = idx0 + bigSquareSize + 1;
 
-				unsyncedHeightInfo[pz * numBigTexX + px].x = xsimd::reduce(
+				unsyncedHeightInfo[pz * numBigTexX + px].arr = xsimd::reduce(
 					cornerHeightMapUnsynced.data() + idx0,
 					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfo[pz * numBigTexX + px].x,
-					MinOp{}
-				);
-				unsyncedHeightInfo[pz * numBigTexX + px].y = xsimd::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfo[pz * numBigTexX + px].y,
-					MaxOp{}
-				);
-				unsyncedHeightInfo[pz * numBigTexX + px].z = xsimd::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfo[pz * numBigTexX + px].z,
-					xsimd::detail::plus{}
+					unsyncedHeightInfo[pz * numBigTexX + px].arr,
+					MinOp{}, MaxOp{}, PlusOp{}
 				);
 			}
 			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);

@@ -574,41 +574,12 @@ void CReadMap::UpdateHeightBounds(int syncFrame)
 
 void CReadMap::UpdateTempHeightBoundsSIMD(size_t idxBeg, size_t idxEnd)
 {
-	const size_t indCnt = idxEnd - idxBeg;
-
-	using SIMDVfloat = xsimd::simd_type<float>;
-
-	// size is adjusted based on SIMD extensions supported
-	// SIMD extensions are conditionally enabled based on compiler flags
-	constexpr std::size_t simdSize = SIMDVfloat::size;
-
-	// size for which the vectorization is possible
-	std::size_t vecSize = indCnt - indCnt % simdSize;
-
-	SIMDVfloat smin(tempHeightBounds.x);
-	SIMDVfloat smax(tempHeightBounds.y);
-
-	// SIMD vectorized loop
-	for (size_t idxRel = 0; idxRel < vecSize; idxRel += simdSize) {
-		SIMDVfloat simdVec = xsimd::load_unaligned(&(*heightMapSyncedPtr)[idxBeg + idxRel]);
-		smin = xsimd::min(simdVec, smin);
-		smax = xsimd::max(simdVec, smax);
-	}
-
-	// Scalar part
-	for (size_t i = 0; i < simdSize; ++i) {
-		tempHeightBounds.x = std::min(smin[i], tempHeightBounds.x);
-		tempHeightBounds.y = std::max(smax[i], tempHeightBounds.y);
-	}
-
-	// Remaining part that cannot be vectorized
-	for (size_t idxRel = vecSize; idxRel < indCnt; ++idxRel)
-	{
-		float h = (*heightMapSyncedPtr)[idxBeg + idxRel];
-
-		tempHeightBounds.x = std::min(h, tempHeightBounds.x);
-		tempHeightBounds.y = std::max(h, tempHeightBounds.y);
-	}
+	tempHeightBounds.xy = xsimd::reduce(
+		heightMapSyncedPtr->begin() + idxBeg,
+		heightMapSyncedPtr->begin() + idxEnd,
+		tempHeightBounds.xy,
+		MinOp{}, MaxOp{}
+	);
 }
 
 void CReadMap::UpdateHeightBounds()
