@@ -171,8 +171,26 @@ namespace spring {
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
 	}
 
+	template<
+		typename T, typename Pred,
+		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
+	>
+	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item, Pred pred)
+	{
+		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
+	}
+
 	template<typename T>
 	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
+	{
+		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
+	}
+
+	template<
+		typename T,
+		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
+	>
+	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
