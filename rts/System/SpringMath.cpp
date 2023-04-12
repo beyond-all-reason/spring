@@ -183,6 +183,90 @@ bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& p
 	return true;
 }
 
+
+float3 SolveIntersectingPoint(size_t zeroIdx, size_t i0, size_t i1, const float4& plane1, const float4& plane2)
+{
+	const float a1 =  plane1[i0];
+	const float b1 =  plane1[i1];
+	const float d1 = -plane1.w;
+
+	const float a2 =  plane2[i0];
+	const float b2 =  plane2[i1];
+	const float d2 = -plane2.w;
+
+	float3 point;
+
+	point[zeroIdx] = 0.0f;
+	point[i0] = (b2 * d1 - b1 * d2) / (a1 * b2 - a2 * b1);
+	point[i1] = (a1 * d2 - a2 * d1) / (a1 * b2 - a2 * b1);
+
+	return point;
+}
+
+// This method helps finding a point on the intersection between two planes.
+// Depending on the orientation of the planes, the problem could solve for the
+// zero point on either the x, y or z axis
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3>& line)
+{
+	// the cross product gives us the direction of the line at the intersection
+	// of the two planes, and gives us an easy way to check if the two planes
+	// are parallel - the cross product will have zero magnitude
+	line.first = plane1.cross(plane2);
+
+	if (const float magnitude = line.first.Length(); magnitude > float3::nrm_eps()) {
+		line.first *= (1.0f / magnitude);
+	}
+	else {
+		return false;
+	}
+
+	// now find a point on the intersection. We choose which coordinate
+	// to set as zero by seeing which has the largest absolute value in the
+	// direction vector
+	const float x = math::fabs(line.first.x);
+	const float y = math::fabs(line.first.y);
+	const float z = math::fabs(line.first.z);
+
+	if (z >= x && z >= y) {
+		line.second = SolveIntersectingPoint(2, 0, 1, plane1, plane2); // 'z', 'x', 'y'
+	}
+	else if (y >= z && y >= x) {
+		line.second = SolveIntersectingPoint(1, 2, 0, plane1, plane2); // 'y', 'z', 'x'
+	}
+	else {
+		line.second = SolveIntersectingPoint(0, 1, 2, plane1, plane2); // 'x', 'y', 'z'
+	}
+
+	return true;
+}
+
+// https://math.stackexchange.com/questions/2213165/find-shortest-distance-between-lines-in-3d/2217845#2217845
+bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair<float3, float3>& l2, float3& px)
+{
+	const float3 n = l2.first.cross(l1.first);
+	const float n2 = n.dot(n);
+
+	if (n2 < float3::nrm_eps())
+		return false; // parallel
+
+	const float3 p21 = l2.second - l1.second;
+
+	if (const float d = n.dot(p21) / math::sqrt(n2); math::fabs(d) > float3::cmp_eps())
+		return false; // do not intersect
+
+	const float t1 = p21.dot(l2.first.cross(n)) / n2;
+	px = l1.second + t1 * l1.first;
+
+	/*
+	const float t2 = p21.dot(l1.first.cross(n)) / n2;
+	px = l2.second + t2 * l2.first;
+	*/
+
+	return true;
+}
+
+
+
 bool ClampLineInMap(float3& start, float3& end)
 {
 	const float3 dir = end - start;

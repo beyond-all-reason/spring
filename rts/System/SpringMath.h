@@ -76,6 +76,17 @@ bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray) _pure
 bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& plane, bool directional, float3& px);
 
 /**
+ * @brief Returns the line result of the intersection of two planes
+ * @param plane1 float4 the first plane
+ * @param plane2 float4 the second plane plane
+ * @param line <direction,point> std::pair<float3,float3> the direction and a point on the line
+ * @return bool whether planes intersect
+ */
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3>& line);
+
+bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair<float3, float3>& l2, float3& px);
+
+/**
  * @brief Returns the intersection points of a ray with the map boundary (2d only)
  * @param start float3 the start point of the line
  * @param dir float3 direction of the ray
