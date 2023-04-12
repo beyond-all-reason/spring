@@ -1981,9 +1981,12 @@ int LuaSyncedRead::GetPlayerInfo(lua_State* L)
 			lua_pushsstring(L, pair.second);
 			lua_rawset(L, -3);
 		}
+	} else {
+		lua_pushnil(L);
 	}
+	lua_pushboolean(L, player->desynced);
 
-	return 10 + getPlayerOpts;
+	return 12;
 }
 
 
