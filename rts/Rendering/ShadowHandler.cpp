@@ -543,6 +543,8 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
+	SCOPED_TIMER("CShadowHandler::SetShadowMatrix");
+
 	const CMatrix44f lightMatrix = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
 	shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix);
 	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales);
@@ -853,6 +855,10 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix
 	static constexpr float VLV = 200.0f;
 	static constexpr float HLV = 100.0f;
 
+	//float4 scales = playerCam->GetFrustumScales();
+	//playerCam->SetFrustumScales({scales.x, scales.y, scales.z, 100.0f});
+	//playerCam->UpdateFrustum();
+
 	static VisPatchesQuadDrawer vpqd;
 	vpqd.ResetState();
 	readMap->GridVisibility(nullptr, &vpqd, 1e9, CReadMap::PATCH_SIZE >> VisPatchesQuadDrawer::SUBDIV);
@@ -863,23 +869,39 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const CMatrix
 
 	for (int x = 0; x < vpqd.numPatchesX; ++x) {
 		for (int z = 0; z < vpqd.numPatchesZ; ++z) {
-			if (!vpqd.visiblePatches[z * vpqd.numPatchesX + x])
+			const bool forceInspectPatch = (x == 0) || (z == 0) || (x == vpqd.numPatchesX - 1) || (z == vpqd.numPatchesZ - 1);
+
+			if (!vpqd.visiblePatches[z * vpqd.numPatchesX + x] && !forceInspectPatch)
 				continue;
 
 			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x >> VisPatchesQuadDrawer::SUBDIV, z >> VisPatchesQuadDrawer::SUBDIV);
 			AABB aabbPatch = {
-				float3{ (x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge },
-				float3{ (x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge }
+				float3{ (x + 0) * wsEdge, uhmi.x + 0.0f, (z + 0) * wsEdge },
+				float3{ (x + 1) * wsEdge, uhmi.y + VLV , (z + 1) * wsEdge }
 			};
+
+			if (x == 0)
+				aabbPatch.mins.x -= HLV;
+
+			if (z == 0)
+				aabbPatch.mins.z -= HLV;
+
+			if (x == vpqd.numPatchesX - 1)
+				aabbPatch.maxs.x += HLV;
+
+			if (z == vpqd.numPatchesZ - 1)
+				aabbPatch.maxs.z += HLV;
 
 			if (!playerCam->InView(aabbPatch))
 				continue;
-
 
 			aabb.mins = float3::min(aabb.mins, aabbPatch.mins);
 			aabb.maxs = float3::max(aabb.maxs, aabbPatch.maxs);
 		}
 	}
+
+	//playerCam->SetFrustumScales(scales);
+	//playerCam->UpdateFrustum();
 
 	aabb.CalcCorners(wsLightBounds);
 	return aabb.CalcCenter();
