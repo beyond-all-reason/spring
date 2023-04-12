@@ -37,7 +37,10 @@ WEAPONDUMMYTAG(bool, collideEnemy).defaultValue(true);
 WEAPONDUMMYTAG(bool, collideFriendly).defaultValue(true);
 WEAPONDUMMYTAG(bool, collideFeature).defaultValue(true);
 WEAPONDUMMYTAG(bool, collideNeutral).defaultValue(true);
+WEAPONDUMMYTAG(bool, collideFireBase).defaultValue(false);
+WEAPONDUMMYTAG(bool, collideNonTarget).defaultValue(true);
 WEAPONDUMMYTAG(bool, collideGround).defaultValue(true);
+WEAPONDUMMYTAG(bool, collideCloaked).defaultValue(true);
 
 // Damaging
 WEAPONDUMMYTAG(table, damage);
