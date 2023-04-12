@@ -447,9 +447,9 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 			if (modelDrawerData->GetModelRenderer(modelType).empty())
 				continue;
 
-			if (modelType == MODELTYPE_3DO) glDisable(GL_CULL_FACE);
+			CModelDrawerHelper::PushModelRenderState(modelType);
 			DrawObjectsShadow(modelType);
-			if (modelType == MODELTYPE_3DO) glEnable(GL_CULL_FACE);
+			CModelDrawerHelper::PopModelRenderState(modelType);
 		}
 
 		po->Disable();

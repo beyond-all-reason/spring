@@ -179,20 +179,24 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 {
 	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
+	const auto thisModelType = piece->GetParentModel()->type;
+
 	if (prev == nullptr) {
 		CUnitDrawer::SetTeamColor(team);
 
 		if (texture != -1)
-			CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
+			CModelDrawerHelper::BindModelTypeTexture(thisModelType, texture);
 
 		return;
 	}
 
+	const auto prevModelType = piece->GetParentModel()->type;
+
 	if (team != prev->team)
 		CUnitDrawer::SetTeamColor(team);
 
-	if (texture != prev->texture && texture != -1)
-		CModelDrawerHelper::BindModelTypeTexture(MODELTYPE_S3O, texture);
+	if (texture != -1 && (thisModelType != prevModelType || texture != prev->texture))
+		CModelDrawerHelper::BindModelTypeTexture(thisModelType, texture);
 }
 
 
@@ -206,6 +210,8 @@ void FlyingPiece::EndDraw()
 {
 	glEnable(GL_CULL_FACE);
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
+
+	CModelDrawerHelper::UnbindModelTypeTexture(MODELTYPE_S3O); // all model types do the same thing
 }
 
 
