@@ -223,6 +223,7 @@ public:
 
 	bool HasGeometryData() const { return indices.size() >= 3; }
 	void SetParentModel(S3DModel* model_) { model = model_; }
+	const S3DModel* GetParentModel() const { return model; }
 
 	void ReleaseShatterIndices();
 
