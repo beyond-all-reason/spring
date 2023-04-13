@@ -157,8 +157,7 @@ void Patch::Reset()
 	baseRight.parentPatch = this;
 	midPos.x = (coors.x + PATCH_SIZE / 2) * SQUARE_SIZE;
 	midPos.z = (coors.y + PATCH_SIZE / 2) * SQUARE_SIZE;
-	midPos.y = readMap->GetCurrAvgHeight();
-
+	midPos.y = readMap->GetUnsyncedHeightInfo(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE).z;
 
 	//Reset camera
 	lastCameraPosition.x = std::numeric_limits<float>::lowest();
@@ -170,24 +169,10 @@ void Patch::Reset()
 
 void Patch::UpdateHeightMap(const SRectangle& rect)
 {
-	sumAffectedArea += (rect.GetWidth() + 1) * (rect.GetHeight() + 1);
-
-	if (sumAffectedArea * 5 < Square(PATCH_SIZE + 1))
-		return;
-
-	// consider X * 5 == 20% of area affected by heightmap changes to be enough to warrant midPos.y recalc
-
-	sumAffectedArea = 0;
-
-	float sumHeight = 0.0f;
-	const float* hMap = readMap->GetCornerHeightMapUnsynced();
-	for (int z = 0; z <= PATCH_SIZE; z++) {
-		const int zw = z + coors.y;
-		sumHeight += xsimd::reduce(&hMap[zw * mapDims.mapxp1 + coors.x], &hMap[zw * mapDims.mapxp1 + coors.x + PATCH_SIZE + 1], 0.0f);
-	}
-
-	midPos.y = sumHeight / Square(PATCH_SIZE + 1);
-	isDirty = true;
+	static constexpr float DIRTY_THRESHOLD = 20.0f;
+	float newAvgHeight = readMap->GetUnsyncedHeightInfo(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE).z;
+	isDirty = (math::fabs(newAvgHeight - midPos.y) > DIRTY_THRESHOLD);
+	midPos.y = newAvgHeight;
 }
 
 
@@ -783,9 +768,11 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 
 	for (int x = 0; x < drawQuadsX; ++x) {
 		for (int z = 0; z < drawQuadsZ; ++z) {
+			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x, z);
+
 			AABB aabb{
-				{ (x + 0) * wsEdge, minHeight, (z + 0) * wsEdge },
-				{ (x + 1) * wsEdge, maxHeight, (z + 1) * wsEdge }
+				{ (x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge },
+				{ (x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge }
 			};
 
 			if (!cam->InView(aabb))
@@ -799,4 +786,3 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 bool Patch::IsVisible(const CCamera* cam) const {
 	return (lastDrawFrames[cam->GetCamType()] >= globalRendering->drawFrame);
 }
-

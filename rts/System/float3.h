@@ -4,6 +4,7 @@
 #define FLOAT3_H
 
 #include <cassert>
+#include <array>
 
 #include "System/BranchPrediction.h"
 #include "lib/streflop/streflop_cond.h"
@@ -771,8 +772,12 @@ public:
 		struct { float s,t,p; };
 		struct { float xstart, ystart, xend; };
 		struct { float xyz[3]; };
+		std::array<float, 3> arr;
 	};
 };
+
+static_assert(sizeof(float3) == 3 * sizeof(float));
+static_assert(alignof(float3) == alignof(float));
 
 inline float3 operator*(float f, const float3& v) {
 	return v * f;

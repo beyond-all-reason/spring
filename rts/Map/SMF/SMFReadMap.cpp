@@ -2,6 +2,7 @@
 
 #include <cstring> // mem{set,cpy}
 
+#include "xsimd/xsimd.hpp"
 #include "SMFReadMap.h"
 #include "SMFGroundTextures.h"
 #include "SMFGroundDrawer.h"
@@ -27,6 +28,7 @@
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
 #include "System/LoadLock.h"
+#include "System/XSimdOps.hpp"
 
 #define SSMF_UNCOMPRESSED_NORMALS 0
 
@@ -383,9 +385,35 @@ void CSMFReadMap::CreateNormalTex()
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
 	UpdateVertexNormalsUnsynced(update);
+	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
 	UpdateNormalTexture(update);
 	UpdateShadingTexture(update);
+}
+
+void CSMFReadMap::UpdateHeightMapUnsyncedPost()
+{
+	static_assert(bigSquareSize == PATCH_SIZE, "");
+
+	for (uint32_t pz = 0; pz < numBigTexY; ++pz) {
+		for (uint32_t px = 0; px < numBigTexX; ++px) {
+			if (unsyncedHeightInfo[pz * numBigTexX + px].x != std::numeric_limits<float>::max())
+				continue;
+
+			for (uint32_t vz = 0; vz <= bigSquareSize; ++vz) {
+				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
+				const size_t idx1 = idx0 + bigSquareSize + 1;
+
+				unsyncedHeightInfo[pz * numBigTexX + px].arr = xsimd::reduce(
+					cornerHeightMapUnsynced.data() + idx0,
+					cornerHeightMapUnsynced.data() + idx1,
+					unsyncedHeightInfo[pz * numBigTexX + px].arr,
+					MinOp{}, MaxOp{}, PlusOp{}
+				);
+			}
+			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);
+		}
+	}
 }
 
 
@@ -477,6 +505,25 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 			vvn[vIdxTL] = vn.ANormalize();
 		}
 	});
+}
+
+
+void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
+{
+	const uint32_t minPatchX = std::max(update.x1 / bigSquareSize, (0             ));
+	const uint32_t minPatchZ = std::max(update.z1 / bigSquareSize, (0             ));
+	const uint32_t maxPatchX = std::min(update.x2 / bigSquareSize, (numBigTexX - 1));
+	const uint32_t maxPatchZ = std::min(update.z2 / bigSquareSize, (numBigTexY - 1));
+
+	for (uint32_t pz = minPatchZ; pz <= maxPatchZ; ++pz) {
+		for (uint32_t px = minPatchX; px <= maxPatchX; ++px) {
+			unsyncedHeightInfo[pz * numBigTexX + px] = {
+				std::numeric_limits<float>::max(),
+				std::numeric_limits<float>::lowest(),
+				0.0f
+			};
+		}
+	}
 }
 
 
@@ -834,6 +881,14 @@ void CSMFReadMap::UpdateShadingTexture()
 	});
 
 	shadingTexUpdateProgress += update_rate;
+}
+
+int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
+{
+	return int2 {
+		Clamp(hmx, 0, numBigTexX - 1),
+		Clamp(hmz, 0, numBigTexY - 1)
+	};
 }
 
 void CSMFReadMap::BindMiniMapTextures() const
