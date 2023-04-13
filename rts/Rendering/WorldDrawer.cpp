@@ -225,7 +225,6 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
-	DebugVisibilityDrawer::Update();
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();

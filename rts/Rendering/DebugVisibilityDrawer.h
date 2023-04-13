@@ -8,7 +8,6 @@ class DebugVisibilityDrawer
 {
 public:
 	static inline bool enable = false;
-	static void Update();
 	static void DrawWorld();
 	static void DrawMinimap();
 

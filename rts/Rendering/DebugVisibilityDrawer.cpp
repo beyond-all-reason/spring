@@ -36,19 +36,13 @@ struct CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
 
 CDebugVisibilityDrawer DebugVisibilityDrawer::drawer = CDebugVisibilityDrawer{};
 
-void DebugVisibilityDrawer::Update()
+void DebugVisibilityDrawer::DrawWorld()
 {
 	if (!enable)
 		return;
 
 	drawer.ResetState();
 	readMap->GridVisibility(nullptr, &drawer, 1e9, HM_SQUARE_SIZE);
-}
-
-void DebugVisibilityDrawer::DrawWorld()
-{
-	if (!enable)
-		return;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
 	auto& sh = rb.GetShader();
