@@ -77,10 +77,9 @@ class CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
 			glPushMatrix();
 			const float qx = (x + 0.5) * CQuadField::BASE_QUAD_SIZE;
 			const float qz = (y + 0.5) * CQuadField::BASE_QUAD_SIZE;
-			const float3 normal = CGround::GetNormal(qx, qz, false);
 			const float3 mid = float3(qx, CGround::GetHeightReal(qx, qz, false), qz);
 			glTranslatef3(mid);
-			glRotatef(asin(normal.Length())*180/math::PI, normal.x, normal.y, normal.z);
+			//glRotatef(asin(normal.Length())*180/math::PI, normal.x, normal.y, normal.z);
 			glScalef(CQuadField::BASE_QUAD_SIZE, CQuadField::BASE_QUAD_SIZE / 4.0f, CQuadField::BASE_QUAD_SIZE);
 			glWireCubeFill(&volumeDisplayListIDs[0]);
 			glPopMatrix();
