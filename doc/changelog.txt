@@ -11,6 +11,9 @@ Spring changelog
 Lua:
  - removed `Game.allowTeamColors` (was deprecated and always `true`)
  - allow shallow recursion in `Spring.TransferUnit`
+ - add `Spring.SelectUnit(unitID, bool append = false) -> nil`, single-unit
+   version of SelectUnit{Array,Map} that doesn't require a table
+ - add `Spring.DeselectUnit(unitID) -> nil`, deselects a unit
  
 
 Misc:
