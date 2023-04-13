@@ -838,31 +838,6 @@ float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* cam, const CMatrix
 
 float3 CShadowHandler::CalcShadowProjectionPos(CCamera* cam, float3* frustumPoints)
 {
-	const auto ClipByPlanes = [](const float3& p0, float3& p, const std::initializer_list<float4>& clipPlanes) {
-		float tMin = 1.0f;
-		float3 rayMin;
-
-		for (const auto& clipPlane : clipPlanes) {
-			const float3 ray = (p - p0);
-
-			float denom = clipPlane.dot(ray);
-			if (std::fabs(denom) < 1e-4)
-				continue;
-
-			float t = (clipPlane.w - clipPlane.dot(p0)) / denom;
-			if (t < 0.0f || t > 1.0f)
-				continue;
-
-			if (t < tMin) {
-				tMin = t;
-				rayMin = ray;
-			}
-		}
-
-		if (tMin < 1.0f)
-			p = p0 + rayMin * tMin;
-	};
-
 	static constexpr float T1 = 100.0f;
 	static constexpr float T2 = 200.0f;
 
@@ -870,26 +845,16 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* cam, float3* frustumPoin
 	for (int i = 0; i < 8; ++i)
 		frustumPoints[i] = cam->GetFrustumVert(i);
 
-	const std::initializer_list<float4> nearClipPlanes = {
-		float4{ UpVector, readMap->GetCurrMaxHeight() + T1 },
-		//float4{ RgtVector, -T2 },
-		//float4{ RgtVector, mapDims.mapx * SQUARE_SIZE + T2 },
-		//float4{ FwdVector, -T2 },
-		//float4{ FwdVector, mapDims.mapy * SQUARE_SIZE + T2 }
-	};
-	const std::initializer_list<float4> farClipPlanes = {
-		float4{ UpVector, readMap->GetCurrMinHeight() - T1 },
-		//float4{ RgtVector, -T2 },
-		//float4{ RgtVector, mapDims.mapx * SQUARE_SIZE + T2 },
-		//float4{ FwdVector, -T2 },
-		//float4{ FwdVector, mapDims.mapy * SQUARE_SIZE + T2 }
+	const std::initializer_list<float4> clipPlanes = {
+		float4{-UpVector,  (readMap->GetCurrMaxHeight() + T1) },
+		float4{ UpVector, -(readMap->GetCurrMinHeight() - T1) },
 	};
 
 	for (int i = 0; i < 4; ++i) {
 		//near quadrilateral
-		ClipByPlanes(frustumPoints[4 + i], frustumPoints[i], nearClipPlanes);
+		ClipRayByPlanes(frustumPoints[4 + i], frustumPoints[i], clipPlanes);
 		//far quadrilateral
-		ClipByPlanes(frustumPoints[i], frustumPoints[4 + i],  farClipPlanes);
+		ClipRayByPlanes(frustumPoints[i], frustumPoints[4 + i], clipPlanes);
 
 		//hard clamp xz
 		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, -T2, mapDims.mapx * SQUARE_SIZE + T2);
