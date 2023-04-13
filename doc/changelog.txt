@@ -45,6 +45,8 @@ Fixes:
  - Fixed TestMoveSquareRange() so that it only runs the required tests.
  - Fixed issue where units standing still would recalculate their facing direction every frame even
    though they are not moving.
+ - Fix issues where the ground and other visibility features would not render or return expected
+   features when looking at certain oblique angles
 
 
 
