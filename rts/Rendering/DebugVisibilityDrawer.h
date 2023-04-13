@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef DEBUGVISIBILITYDRAWER_H_
-#define DEBUGVISIBILITYDRAWER_H_
+#pragma once
 
+struct CDebugVisibilityDrawer;
 
-namespace DebugVisibilityDrawer
+class DebugVisibilityDrawer
 {
-	extern bool enable;
+public:
+	static inline bool enable = false;
+	static void Update();
+	static void DrawWorld();
+	static void DrawMinimap();
 
-	void Draw();
-}
-
-
-#endif /* DEBUGVISIBILITYDRAWER_H_ */
+	static CDebugVisibilityDrawer drawer;
+};

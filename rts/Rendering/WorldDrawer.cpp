@@ -225,6 +225,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
+	DebugVisibilityDrawer::Update();
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();
@@ -366,9 +367,11 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		SCOPED_TIMER("Draw::World::Models::Opaque");
 		unitDrawer->Draw(false);
 		featureDrawer->Draw(false);
-
+	}
+	{
+		SCOPED_TIMER("Draw::OpaqueObjects::Debug");
 		DebugColVolDrawer::Draw();
-		DebugVisibilityDrawer::Draw();
+		DebugVisibilityDrawer::DrawWorld();
 		pathDrawer->DrawAll();
 	}
 }

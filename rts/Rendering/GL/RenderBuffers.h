@@ -442,29 +442,28 @@ public:
 		return *this;
 	}
 
+	IndcType GetBaseVertex() const {
+		return static_cast<IndcType>(verts.size());
+	}
+
 	void AddVertex(VertType&& v) {
 		if (readOnly)
 			return;
 
 		verts.emplace_back(v);
 	}
-	void AddVertices(const std::vector<VertType>& vertices) {
-		if (readOnly)
-			return;
-
-		verts.insert(verts.end(), vertices.begin(), vertices.end());
-	}
-	void AddVertices(typename std::vector<VertType>::const_iterator begin, typename std::vector<VertType>::const_iterator end) {
+	template<typename Iterator>
+	void AddVertices(Iterator begin, Iterator end) {
 		if (readOnly)
 			return;
 
 		verts.insert(verts.end(), begin, end);
 	}
 	void AddVertices(std::initializer_list<VertType>&& vertices) {
-		if (readOnly)
-			return;
-
-		verts.insert(verts.end(), vertices.begin(), vertices.end());
+		AddVertices(vertices.begin(), vertices.end());
+	}
+	void AddVertices(const std::vector<VertType>& vertices) {
+		AddVertices(vertices.begin(), vertices.end());
 	}
 	//106.0 compat
 	void SafeAppend(VertType&& v) { AddVertex(std::forward<VertType&&>(v)); }
@@ -499,12 +498,19 @@ public:
 		}
 	}
 
-	void AddIndices(typename std::vector<IndcType>::const_iterator begin, typename std::vector<IndcType>::const_iterator end, int32_t vertBias = 0) {
+	template<typename Iterator>
+	void AddIndices(Iterator begin, Iterator end, int32_t vertBias = 0) {
 		if (readOnly)
 			return;
 
 		const auto transformFunc = [vertBias](IndcType origIndex) { return origIndex + vertBias; };
 		std::transform(begin, end, std::back_inserter(indcs), transformFunc);
+	}
+	void AddIndices(const std::vector<IndcType>& indices, int32_t vertBias = 0) {
+		AddIndices(indices.begin(), indices.end(), vertBias);
+	}
+	void AddIndices(std::initializer_list<IndcType>& indices, int32_t vertBias = 0) {
+		AddIndices(indices.begin(), indices.end(), vertBias);
 	}
 
 	void SetReadonly() { readOnly = true; }

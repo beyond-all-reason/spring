@@ -6,118 +6,167 @@
 #include "Map/ReadMap.h"
 #include "Map/Ground.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/RenderBuffers.h"
+#include "System/Color.h"
 #include "Sim/Misc/QuadField.h"
 
-static constexpr float4 DEFAULT_QUAD_COLOR = float4(0.00f, 0.75f, 0.00f, 0.45f);
-static unsigned int volumeDisplayListIDs[] = {0, 0, 0};
-static const float squareSize = float(CQuadField::BASE_QUAD_SIZE) / SQUARE_SIZE;
+static constexpr float4 PASS_QUAD_COLOR = float4(0.00f, 0.75f, 0.00f, 0.45f);
+static constexpr float4 CULL_QUAD_COLOR = float4(0.75f, 0.00f, 0.00f, 0.45f);
 
-static const void glWireCubeFill(uint32_t* listID) {
-	static constexpr float3 vertices[8] = {
-		{ 0.5f,  0.5f,  0.5f},
-		{ 0.5f, -0.5f,  0.5f},
-		{-0.5f, -0.5f,  0.5f},
-		{-0.5f,  0.5f,  0.5f},
+static constexpr float HM_SQUARE_SIZE = float(CQuadField::BASE_QUAD_SIZE) / SQUARE_SIZE;
+static constexpr float WM_SQUARE_SIZE = HM_SQUARE_SIZE * SQUARE_SIZE;
 
-		{ 0.5f,  0.5f, -0.5f},
-		{ 0.5f, -0.5f, -0.5f},
-		{-0.5f, -0.5f, -0.5f},
-		{-0.5f,  0.5f, -0.5f},
-	};
-
-	if ((*listID) != 0) {
-		glCallList(*listID);
-		return;
-	}
-
-	glNewList(((*listID) = glGenLists(1)), GL_COMPILE);
-	glPushAttrib(GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_POLYGON);
-
-	glBegin(GL_QUADS);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-		glVertex3f(vertices[1].x, vertices[1].y, vertices[1].z);
-		glVertex3f(vertices[2].x, vertices[2].y, vertices[2].z);
-		glVertex3f(vertices[3].x, vertices[3].y, vertices[3].z);
-
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[5].x, vertices[5].y, vertices[5].z);
-		glVertex3f(vertices[6].x, vertices[6].y, vertices[6].z);
-		glVertex3f(vertices[7].x, vertices[7].y, vertices[7].z);
-	glEnd();
-	glBegin(GL_QUAD_STRIP);
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-
-		glVertex3f(vertices[5].x, vertices[5].y, vertices[5].z);
-		glVertex3f(vertices[1].x, vertices[1].y, vertices[1].z);
-
-		glVertex3f(vertices[6].x, vertices[6].y, vertices[6].z);
-		glVertex3f(vertices[2].x, vertices[2].y, vertices[2].z);
-
-		glVertex3f(vertices[7].x, vertices[7].y, vertices[7].z);
-		glVertex3f(vertices[3].x, vertices[3].y, vertices[3].z);
-
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-	glEnd();
-
-	glPopAttrib();
-	glEndList();
-}
-
-class CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
+struct CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
 	public:
-		void ResetState() {}
-
-		void DrawQuad(int x, int y) {
-			glEnable(GL_DEPTH_TEST);
-
-			glColorf4(DEFAULT_QUAD_COLOR);
-			glPushMatrix();
-			const float qx = (x + 0.5) * CQuadField::BASE_QUAD_SIZE;
-			const float qz = (y + 0.5) * CQuadField::BASE_QUAD_SIZE;
-			const float3 mid = float3(qx, CGround::GetHeightReal(qx, qz, false), qz);
-			glTranslatef3(mid);
-			//glRotatef(asin(normal.Length())*180/math::PI, normal.x, normal.y, normal.z);
-			glScalef(CQuadField::BASE_QUAD_SIZE, CQuadField::BASE_QUAD_SIZE / 4.0f, CQuadField::BASE_QUAD_SIZE);
-			glWireCubeFill(&volumeDisplayListIDs[0]);
-			glPopMatrix();
+		int numQuadsX;
+		int numQuadsZ;
+		std::vector<bool> visibleQuads;
+		void ResetState() {
+			numQuadsX = static_cast<size_t>(mapDims.mapx * SQUARE_SIZE / WM_SQUARE_SIZE);
+			numQuadsZ = static_cast<size_t>(mapDims.mapy * SQUARE_SIZE / WM_SQUARE_SIZE);
+			visibleQuads.resize(numQuadsX * numQuadsZ);
+			std::fill(visibleQuads.begin(), visibleQuads.end(), false);
+		}
+		void DrawQuad(int x, int z) {
+			assert(x < numQuadsX);
+			assert(z < numQuadsZ);
+			visibleQuads[z * numQuadsX + x] = true;
 		}
 };
 
-namespace DebugVisibilityDrawer {
-	bool enable = false;
+CDebugVisibilityDrawer DebugVisibilityDrawer::drawer = CDebugVisibilityDrawer{};
 
-	void Draw() {
-		if (!enable)
-			return;
+void DebugVisibilityDrawer::Update()
+{
+	if (!enable)
+		return;
 
-		glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-		glDisable(GL_LIGHTING);
-		glDisable(GL_LIGHT0);
-		glDisable(GL_LIGHT1);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_TEXTURE_2D);
-		// glDisable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_FOG);
-		glDisable(GL_CLIP_PLANE0);
-		glDisable(GL_CLIP_PLANE1);
+	drawer.ResetState();
+	readMap->GridVisibility(nullptr, &drawer, 1e9, HM_SQUARE_SIZE);
+}
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+void DebugVisibilityDrawer::DrawWorld()
+{
+	if (!enable)
+		return;
 
-		glLineWidth(2.0f);
-		glDepthMask(GL_TRUE);
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	auto& sh = rb.GetShader();
+	rb.AssertSubmission();
 
-		static CDebugVisibilityDrawer drawer;
+	for (int z = 0; z < drawer.numQuadsZ; ++z) {
+		for (int x = 0; x < drawer.numQuadsX; ++x) {
+			if (!drawer.visibleQuads[z * drawer.numQuadsX + x])
+				continue;
 
-		drawer.ResetState();
-		readMap->GridVisibility(nullptr, &drawer, 1e9, squareSize);
+			AABB aabbPatch = {
+				float3{ (x + 0) * WM_SQUARE_SIZE, 0.0f, (z + 0) * WM_SQUARE_SIZE },
+				float3{ (x + 1) * WM_SQUARE_SIZE, 0.0f, (z + 1) * WM_SQUARE_SIZE },
+			};
+			float3 c = aabbPatch.CalcCenter();
+			float h = CGround::GetHeightReal(c.x, c.z, false);
+			aabbPatch.mins.y = h + 1.0f;
+			aabbPatch.maxs.y = aabbPatch.mins.y + 50.0f;
 
-		glLineWidth(1.0f);
-		glPopAttrib();
+			std::array<float3, 8> pcs;
+			aabbPatch.CalcCorners(pcs);
+			// bottom
+			// mmm, mmM, Mmm, MmM
+			// top
+			// mMm, mMM, MMm, MMM
+
+			const int32_t baseVert = rb.GetBaseVertex();
+
+			rb.AddVertex({ pcs[1] }); //0
+			rb.AddVertex({ pcs[3] }); //1
+			rb.AddVertex({ pcs[2] }); //2
+			rb.AddVertex({ pcs[0] }); //3
+
+			rb.AddVertex({ pcs[5] }); //4
+			rb.AddVertex({ pcs[7] }); //5
+			rb.AddVertex({ pcs[6] }); //6
+			rb.AddVertex({ pcs[4] }); //7
+
+			rb.AddIndices({
+				// bottom cap
+				3, 0, 1,
+				3, 1, 2,
+
+				// top cap
+				7, 4, 5,
+				7, 5, 6,
+
+				// sides
+				3, 7, 4,
+				3, 4, 0,
+
+				2, 6, 5,
+				2, 5, 1,
+
+				0, 4, 5,
+				0, 5, 1,
+
+				3, 7, 6,
+				3, 6, 2
+			}, baseVert);
+		}
 	}
 
-} // namespace DebugVisibilityDrawer
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
+	sh.Enable();
+	sh.SetUniform4v("ucolor", &PASS_QUAD_COLOR[0]);
+	rb.DrawElements(GL_TRIANGLES);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+}
+
+void DebugVisibilityDrawer::DrawMinimap()
+{
+	if (!enable)
+		return;
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	auto& sh = rb.GetShader();
+	rb.AssertSubmission();
+
+	for (int z = 0; z < drawer.numQuadsZ; ++z) {
+		for (int x = 0; x < drawer.numQuadsX; ++x) {
+			SColor currCol = SColor(drawer.visibleQuads[z * drawer.numQuadsX + x] ? &PASS_QUAD_COLOR.r : &CULL_QUAD_COLOR.r);
+			
+			AABB aabbPatch = {
+				float3{ (x + 0) * WM_SQUARE_SIZE, 0.0f, (z + 0) * WM_SQUARE_SIZE },
+				float3{ (x + 1) * WM_SQUARE_SIZE, 0.0f, (z + 1) * WM_SQUARE_SIZE },
+			};
+			float3 c = aabbPatch.CalcCenter();
+			const auto& uhmi = readMap->GetUnsyncedHeightInfo(c.x / (SQUARE_SIZE * WM_SQUARE_SIZE), c.z / (SQUARE_SIZE * WM_SQUARE_SIZE));
+			aabbPatch.mins.y = uhmi.y + 1.0f;
+
+			std::array<float3, 8> pcs;
+			aabbPatch.CalcCorners(pcs);
+
+			rb.AddQuadTriangles(
+				{ pcs[1], currCol},
+				{ pcs[3], currCol},
+				{ pcs[2], currCol},
+				{ pcs[0], currCol}
+			);
+		}
+	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
+	sh.Enable();
+	rb.DrawElements(GL_TRIANGLES);
+	sh.Disable();
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+}
