@@ -403,6 +403,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 		const auto& water = IWater::GetWater();
 		water->UpdateWater(game);
 		water->Draw();
+		eventHandler.DrawWaterPost();
 	}
 
 	{

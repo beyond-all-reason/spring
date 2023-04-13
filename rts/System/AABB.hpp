@@ -40,6 +40,7 @@ public:
 		return (n == 3);
 	};
 
+	void CalcCorners(std::array<float3, 8>& verts) const { CalcCorners(CMatrix44f::Identity(), verts); }
 	void CalcCorners(float3 verts[8]) const { CalcCorners(CMatrix44f::Identity(), verts); }
 	void CalcCorners(const CMatrix44f& mat, float3 verts[8]) const {
 		// bottom
@@ -53,6 +54,18 @@ public:
 		verts[6] = mat * float3{maxs.x, maxs.y, mins.z};
 		verts[7] = mat * float3{maxs.x, maxs.y, maxs.z};
 	}
+	void CalcCorners(const CMatrix44f& mat, std::array<float3, 8>& verts) const {
+		// bottom
+		verts[0] = mat * float3{ mins.x, mins.y, mins.z };
+		verts[1] = mat * float3{ mins.x, mins.y, maxs.z };
+		verts[2] = mat * float3{ maxs.x, mins.y, mins.z };
+		verts[3] = mat * float3{ maxs.x, mins.y, maxs.z };
+		// top
+		verts[4] = mat * float3{ mins.x, maxs.y, mins.z };
+		verts[5] = mat * float3{ mins.x, maxs.y, maxs.z };
+		verts[6] = mat * float3{ maxs.x, maxs.y, mins.z };
+		verts[7] = mat * float3{ maxs.x, maxs.y, maxs.z };
+	}
 
 	float3 CalcCenter(const CMatrix44f& mat) const { return (mat * CalcCenter()); }
 	float3 CalcCenter() const { return ((maxs + mins) * 0.5f); }
@@ -61,9 +74,21 @@ public:
 	float CalcRadiusSq() const { return (CalcScales().SqLength()); }
 	float CalcRadius() const { return (CalcScales().Length()); }
 
+	float3 GetVertexP(const float3& normal) const;
+	float3 GetVertexN(const float3& normal) const;
+
+	void AddPoint(const float3& p) {
+		mins = float3::min(mins, p);
+		maxs = float3::max(maxs, p);
+	}
+
+	void Reset() {
+		mins = float3{ std::numeric_limits<float>::max()    };
+		maxs = float3{ std::numeric_limits<float>::lowest() };
+	}
 public:
-	float3 mins;
-	float3 maxs;
+	float3 mins = float3{ std::numeric_limits<float>::max()    };
+	float3 maxs = float3{ std::numeric_limits<float>::lowest() };
 };
 
 #endif

@@ -46,7 +46,7 @@ void C3DOTextureHandler::Init()
 
 	// NOTE: most Intels report maxTextureSize=2048, some even 1024 (!)
 	atlasAlloc->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
-	atlasAlloc->SetMaxSize(std::min(globalRendering->maxTextureSize, 2048), std::min(globalRendering->maxTextureSize, 2048));
+	atlasAlloc->SetMaxSize(std::min(globalRendering->maxTextureSize, 4096), std::min(globalRendering->maxTextureSize, 4096));
 
 	// default for 3DO primitives that point to non-existing textures
 	textures["___dummy___"] = UnitTexture(0.0f, 0.0f, 1.0f, 1.0f);

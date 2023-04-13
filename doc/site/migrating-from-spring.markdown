@@ -182,5 +182,6 @@ but if someone needs it it could be arranged.
 which made clouds move across the sky. You cannot easily get back
 previous behaviour, though you can probably achieve something similar
 by rendering moving clouds yourself.
+- The deprecated `Game.allowTeamColors`, whose value was always `true`, has been removed.
 
 [Spring.Marker]: https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedCtrl.html#Markers

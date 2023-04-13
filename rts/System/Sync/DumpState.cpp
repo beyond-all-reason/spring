@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 
+#include "fmt/format.h"
+
 #include "DumpState.h"
 
 #include "Game/GameSetup.h"
@@ -20,6 +22,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/MoveTypes/MoveType.h"
+#include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -42,8 +45,7 @@ namespace {
 			str << reinterpret_cast<const uint32_t&>(v) << "\n";
 		}
 		else {
-			str << reinterpret_cast<const uint32_t&>(v) << " <"
-				<< v << ">\n";
+			str << reinterpret_cast<const uint32_t&>(v) << fmt::format(" <{}>\n", v);
 		}
 
 		return str.str();
@@ -54,10 +56,7 @@ namespace {
 			str << spring::LiteHash(v) << "\n";
 		}
 		else {
-			str << spring::LiteHash(v) << " <"
-				<< v.x << ", "
-				<< v.y << ", "
-				<< v.z << ">\n";
+			str << spring::LiteHash(v) << fmt::format(" <{},{},{}>\n", v.x, v.y, v.z);
 		}
 
 
@@ -69,11 +68,7 @@ namespace {
 			str << spring::LiteHash(v) << "\n";
 		}
 		else {
-			str << spring::LiteHash(v) << " <"
-				<< v.x << ", "
-				<< v.y << ", "
-				<< v.z << ", "
-				<< v.w << ">\n";
+			str << spring::LiteHash(v) << fmt::format(" <{},{},{},{}>\n", v.x, v.y, v.z, v.w);
 		}
 
 
@@ -85,23 +80,8 @@ namespace {
 			str << spring::LiteHash(v) << "\n";
 		}
 		else {
-			str << spring::LiteHash(v) << " <"
-				<< v[0] << ", "
-				<< v[1] << ", "
-				<< v[2] << ", "
-				<< v[3] << "; "
-				<< v[4] << ", "
-				<< v[5] << ", "
-				<< v[6] << ", "
-				<< v[7] << "; "
-				<< v[8] << ", "
-				<< v[9] << ", "
-				<< v[10] << ", "
-				<< v[11] << "; "
-				<< v[12] << ", "
-				<< v[13] << ", "
-				<< v[14] << ", "
-				<< v[15] << ">\n";
+			str << spring::LiteHash(v) << fmt::format(" <{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}>\n",
+				v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
 		}
 
 		return str.str();
@@ -109,9 +89,10 @@ namespace {
 }
 
 
-void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool outputFloats, bool serverRequest)
+void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::optional<bool> outputFloats, bool serverRequest)
 {
-	onlyHash = !outputFloats;
+	if (outputFloats.has_value())
+		onlyHash = !outputFloats.value();
 
 	static std::fstream file;
 	static int gMinFrameNum = -1;
@@ -264,7 +245,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 		const LocalModel& lm = u->localModel;
 		const std::vector<LocalModelPiece>& pieces = lm.pieces;
 
-		const float3& pos = u->pos;
+		const float3& pos  = u->pos;
 		const float3& xdir = u->rightdir;
 		const float3& ydir = u->updir;
 		const float3& zdir = u->frontdir;
@@ -274,6 +255,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
+		file << "\t\t\trelAimPos: " << TapFloats(u->relMidPos);
+		file << "\t\t\trelAimPos: " << TapFloats(u->relAimPos);
+		file << "\t\t\trelAimPos: " << TapFloats(u->midPos);
 		file << "\t\t\theading: " << int(u->heading) << ", mapSquare: " << u->mapSquare << "\n";
 		file << "\t\t\thealth: " << TapFloats(u->health);
 		file << "\t\t\texperience: " << TapFloats(u->experience);
@@ -348,6 +332,13 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 		file << "\t\t\t\tmaxSpeed: " << TapFloats(amt->GetMaxSpeed());
 		file << "\t\t\t\tmaxWantedSpeed: " << TapFloats(amt->GetMaxWantedSpeed());
 		file << "\t\t\t\tprogressState: " << amt->progressState << "\n";
+
+		if (const auto* gmt = dynamic_cast<const CGroundMoveType*>(amt)) {
+			file << "\t\t\t\tCGroundMoveType:\n";
+			file << "\t\t\t\t\tcurrWayPoint: " << TapFloats(gmt->GetCurrWayPoint());
+			file << "\t\t\t\t\tnextWayPoint: " << TapFloats(gmt->GetNextWayPoint());
+		}
+
 		#endif
 	}
 	#endif
@@ -358,8 +349,19 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, bool 
 	for (const int featureID: activeFeatureIDs) {
 		const CFeature* f = featureHandler.GetFeature(featureID);
 
+		const float3& pos  = f->pos;
+		const float3& xdir = f->rightdir;
+		const float3& ydir = f->updir;
+		const float3& zdir = f->frontdir;
+
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
-		file << "\t\t\tpos: " << TapFloats(f->pos);
+		file << "\t\t\tpos: " << TapFloats(pos);
+		file << "\t\t\txdir: " << TapFloats(xdir);
+		file << "\t\t\tydir: " << TapFloats(ydir);
+		file << "\t\t\tzdir: " << TapFloats(zdir);
+		file << "\t\t\trelAimPos: " << TapFloats(f->relMidPos);
+		file << "\t\t\trelAimPos: " << TapFloats(f->relAimPos);
+		file << "\t\t\trelAimPos: " << TapFloats(f->midPos);
 		file << "\t\t\thealth: " << TapFloats(f->health);
 		file << "\t\t\treclaimLeft: " << TapFloats(f->reclaimLeft);
 	}

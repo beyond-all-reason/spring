@@ -42,7 +42,7 @@ public:
 private:
 	void ParseModel(S3DModel& model, const std::string& name, const std::string& path);
 	void FillModel(S3DModel& model, const std::string& name, const std::string& path);
-	S3DModel* GetCachedModel(const std::string& name);
+	S3DModel* GetCachedModel(std::string name);
 
 	IModelParser* GetFormatParser(const std::string& pathExt);
 
@@ -54,7 +54,7 @@ private:
 	void Upload(S3DModel* o) const;
 
 private:
-	spring::unordered_map<std::string, unsigned int> cache; // "armflash.3do" --> id and idx at models
+	std::vector<std::pair<std::string, uint32_t>> cache; // "<fullpath>/armflash.3do" --> idx at models
 	std::vector<std::pair<std::string, IModelParser*>> parsers;
 
 	std::condition_variable_any cv;

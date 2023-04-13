@@ -14,13 +14,13 @@ CBaseGroundDrawer::CBaseGroundDrawer()
 	LODScaleReflection = configHandler->GetFloat("GroundLODScaleReflection");
 	LODScaleRefraction = configHandler->GetFloat("GroundLODScaleRefraction");
 	LODScaleTerrainReflection = configHandler->GetFloat("GroundLODScaleTerrainReflection");
+	advShading = configHandler->GetBool("AdvMapShading");
 
 	drawForward = true;
 	drawDeferred = false;
 	drawMapEdges = false;
 
 	wireframe = false;
-	advShading = false;
 
 	jamColor[0] = (int)(losColorScale * 0.1f);
 	jamColor[1] = (int)(losColorScale * 0.0f);

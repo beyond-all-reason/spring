@@ -6,6 +6,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/type2.h"
 #include "System/float3.h"
+#include "System/float4.h"
 #include "System/MathConstants.h"
 
 #include <cmath> // std::fabs
@@ -60,6 +61,19 @@ float3 CalcBeizer(const float i, const float3 p1, const float3 p2, const float3 
 
 float LinePointDist(const float3 l1, const float3 l2, const float3 p) _pure _warn_unused_result;
 float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p) _pure _warn_unused_result;
+bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3& px) _pure _warn_unused_result;
+bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray) _pure _warn_unused_result;
+
+/**
+ * @brief Returns the intersection points of a ray with a plane, defined by the canonical plane equation
+ * @param p0 float3 the start point of the ray
+ * @param p1 float3 the end point of the ray
+ * @param plane the canonical plane equation Ax + By + Cy + D = 0
+ * @param directional if the plane should be considered directional (intersection happens only when plane.n dot ray is negative)
+ * @param px the intersection point
+ * @return true if px is valid and the intersection point has been found, false otherwise
+ */
+bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& plane, bool directional, float3& px);
 
 /**
  * @brief Returns the intersection points of a ray with the map boundary (2d only)
@@ -85,6 +99,12 @@ bool ClampLineInMap(float3& start, float3& end);
  */
 bool ClampRayInMap(const float3 start, float3& end);
 
+
+void ClipRayByPlanes(const float3& p0, float3& p, const std::initializer_list<float4>& clipPlanes);
+
+float3 GetTriangleBarycentric(const float3& p0, const float3& p1, const float3& p2, const float3& p);
+bool PointInsideTriangle(const float3& p0, const float3& p1, const float3& p2, const float3& p);
+bool PointInsideQuadrilateral(const float3& p0, const float3& p1, const float3& p2, const float3& p3, const float3& px);
 
 float smoothstep(const float edge0, const float edge1, const float value) _pure _warn_unused_result;
 float3 smoothstep(const float edge0, const float edge1, float3 vec) _pure _warn_unused_result;

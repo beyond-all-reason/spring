@@ -32,12 +32,13 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ROAM)
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_ROAM
 
-
-#define RETESSELLATE_TO_FREE_INVISIBLE_PATCHES 50
-#define MAGIC_RETESSELATE_CAMERA_RATIO 1.5f
-#define MAGIC_TOTAL_CAMDIST_RETESSELATE 2.5f
-#define CAMERA_CHANGE_TRESHOLD 16.0f
 #define TESSELATION_DEBUG 0
+
+static constexpr int RETESSELLATE_TO_FREE_INVISIBLE_PATCHES = 50;
+static constexpr float MAGIC_RETESSELATE_CAMERA_RATIO = 1.5f;
+static constexpr float MAGIC_TOTAL_CAMDIST_RETESSELATE = 2.5f;
+static constexpr float CAMERA_CHANGE_TRESHOLD = 16.0f;
+
 
 bool CRoamMeshDrawer::forceNextTesselation[MESH_COUNT] = {false, false};
 
@@ -192,12 +193,14 @@ void CRoamMeshDrawer::Update()
 
 	Patch::UpdateVisibility(cam, patches, numPatchesX);
 
+	const bool gldUpdated = smfGroundDrawer->GetGroundDetail() != lastGroundDetail[shadowPass];
+
 	//Early bailout conditions:
 	if ((!forceNextTesselation[shadowPass]) &&
 		(cam->GetPos().distance(lastCamPos[shadowPass]) < CAMERA_CHANGE_TRESHOLD) &&
 		(cam->GetDir().distance(lastCamDir[shadowPass]) < CAMERA_CHANGE_TRESHOLD * 0.001f) &&
 		(heightMapChanged == false) &&
-		(smfGroundDrawer->GetGroundDetail() == lastGroundDetail[shadowPass])) {
+		!gldUpdated) {
 		return;
 	}
 
@@ -213,7 +216,7 @@ void CRoamMeshDrawer::Update()
 	float3 playerCameraPosition = playerCamera->GetPos();
 	float totalCameraDistanceRatioInv = 0.0f;
 	std::vector<bool> patchesToTesselate(numPatches);
-	std::fill(patchesToTesselate.begin(), patchesToTesselate.end(),0);
+	std::fill(patchesToTesselate.begin(), patchesToTesselate.end(), gldUpdated);
 
 #if TESSELATION_DEBUG
 	if (tesselMesh)
@@ -313,9 +316,9 @@ void CRoamMeshDrawer::Update()
 
 	int actualTesselations = 0;
 	int actualUploads = 0;
-	totalCameraDistanceRatioInv = totalCameraDistanceRatioInv / numPatchesVisible;
+	totalCameraDistanceRatioInv = totalCameraDistanceRatioInv / std::max(numPatchesVisible, static_cast<size_t>(1));
 
-	if (totalCameraDistanceRatioInv > MAGIC_TOTAL_CAMDIST_RETESSELATE) {
+	if (totalCameraDistanceRatioInv > MAGIC_TOTAL_CAMDIST_RETESSELATE || gldUpdated) {
 		forceNextTesselation[shadowPass] = true;
 
 	#if TESSELATION_DEBUG
@@ -475,10 +478,7 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 			if (!p.IsVisible(CCameraHandler::GetActiveCamera()))
 				continue;
 
-			// do not need textures in the SP
-			if (drawPass != DrawPass::Shadow)
-				p.SetSquareTexture();
-
+			p.SetSquareTexture(drawPass);
 			p.Draw();
 		}
 	}
@@ -490,9 +490,7 @@ void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 		if (!p->IsVisible(CCameraHandler::GetActiveCamera()))
 			continue;
 
-		if (drawPass != DrawPass::Shadow)
-			p->SetSquareTexture();
-
+		p->SetSquareTexture(drawPass);
 		p->DrawBorder();
 	}
 }

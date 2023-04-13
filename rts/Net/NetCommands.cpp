@@ -1545,7 +1545,7 @@ void CGame::ClientReadNet()
 			case NETMSG_GAMESTATE_DUMP: {
 				ZoneScopedN("Net::GamestateDump");
 				LOG("Collecting current game state information.");
-				DumpState(gs->frameNum, gs->frameNum, 1, false, true);
+				DumpState(gs->frameNum, gs->frameNum, 1, true, true);
 				break;
 			}
 

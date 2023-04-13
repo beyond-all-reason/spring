@@ -11,7 +11,7 @@
 #include "System/Cpp11Compat.hpp"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/RapidHandler.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/Log/ILog.h"
 
 #include <algorithm>
@@ -255,7 +255,7 @@ void CGameSetup::LoadStartPositions(bool withoutMap)
 	if (startPosType == StartPos_Random) {
 		// Server syncs these later, so we can use unsynced rng
 		CGlobalUnsyncedRNG rng;
-		rng.Seed(HsiehHash(setupText.c_str(), setupText.length(), 1234567));
+		rng.Seed(spring::LiteHash(setupText.c_str(), setupText.length(), 1234567));
 		spring::random_shuffle(teamStartNums.begin(), teamStartNums.begin() + teamStartingData.size(), rng);
 	}
 

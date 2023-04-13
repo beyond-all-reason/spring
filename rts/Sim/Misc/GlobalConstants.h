@@ -3,6 +3,9 @@
 #ifndef _GLOBAL_CONSTANTS_H
 #define _GLOBAL_CONSTANTS_H
 
+#include <cstdint>
+#include <limits>
+
 /**
  * @brief footprint scale
  *
@@ -83,9 +86,8 @@ static constexpr int MAX_AIS = 255;
  * at any time.
  *
  * NOTE:
- * MAX_UNITS must be LEQ SHORT_MAX (32767) because current network code
- * transmits unit IDs as signed shorts. The effective global unit limit
- * is stored in UnitHandler::maxUnits, and always clamped to this value.
+ * The effective global unit limit is stored in UnitHandler::maxUnits,
+ * and always clamped to this value.
  *
  * All types of IDs are also passed to Lua callins, while feature IDs are
  * additionally transmitted as (32-bit) floating-point command parameters
@@ -95,6 +97,9 @@ static constexpr int MAX_AIS = 255;
 static constexpr int MAX_UNITS       =  32000;
 static constexpr int MAX_FEATURES    =  32000;
 static constexpr int MAX_PROJECTILES = 128000;
+
+static_assert(MAX_UNITS + MAX_FEATURES < std::numeric_limits<uint16_t>::max(),
+	"MAX_UNITS + MAX_FEATURES must fit in a 16-bit type because the network protocol packs them both there");
 
 /**
  * @brief max weapons per unit

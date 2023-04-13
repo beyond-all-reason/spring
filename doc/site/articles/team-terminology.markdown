@@ -24,7 +24,8 @@ For modders coming from Supreme Commander, the *team* is what SupCom calls an "a
  * resources
  * colour
  * starting point
- * extra traits, such as faction (the engine does not natively recognize the concept of factions but it's easy to add them)
+ * faction (aka side)
+ * any other custom extra traits you add.
 
 *Teams* in the same *allyteam* always share some traits (meaning that, these operate on the level of *allyteams*):
  * visibility (this includes sight, other sensors such as radar, but also reading of various unit traits that aren't readable by enemies even in sight, for example mana if a game wants to implement that)

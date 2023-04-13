@@ -10,7 +10,7 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/Log/ILog.h"
 
 #include "System/Config/ConfigHandler.h"
@@ -107,9 +107,9 @@ namespace Shader {
 
 	unsigned int IShaderObject::GetHash() const {
 		unsigned int hash = 127;
-		hash = HsiehHash((const void*)   srcText.data(),    srcText.size(), hash); // srcTextHash is not worth it, only called on reload
-		hash = HsiehHash((const void*)modDefStrs.data(), modDefStrs.size(), hash);
-		hash = HsiehHash((const void*)rawDefStrs.data(), rawDefStrs.size(), hash); // rawDefStrsHash is not worth it, only called on reload
+		hash = spring::LiteHash((const void*)   srcText.data(),    srcText.size(), hash); // srcTextHash is not worth it, only called on reload
+		hash = spring::LiteHash((const void*)modDefStrs.data(), modDefStrs.size(), hash);
+		hash = spring::LiteHash((const void*)rawDefStrs.data(), rawDefStrs.size(), hash); // rawDefStrsHash is not worth it, only called on reload
 		return hash;
 	}
 

@@ -31,9 +31,20 @@ public:
 		SB_AUTODETECT    = 6,
 	};
 
+	struct StreamBufferCreationParams {
+		uint32_t target = 0;
+		uint32_t numElems = 0;
+		std::string name = "";
+		IStreamBufferConcept::Types type = IStreamBufferConcept::Types::SB_AUTODETECT;
+		uint32_t numBuffers = IStreamBufferConcept::DEFAULT_NUM_BUFFERS;
+		bool resizeAble = false;
+		bool coherent = false;
+		bool optimizeForStreaming = true;
+	};
+
 	static void PutBufferLocks();
 
-	IStreamBufferConcept(uint32_t target_, uint32_t numElements_, const std::string& name_, const std::string_view& bufferTypeName);
+	IStreamBufferConcept(IStreamBufferConcept::StreamBufferCreationParams p, std::string_view bufferTypeName);
 	virtual ~IStreamBufferConcept() {}
 
 	uint32_t GetAlignedByteSize(uint32_t byteSizeRaw);
@@ -64,19 +75,21 @@ protected:
 	uint32_t allocIdx;
 	uint32_t mapElemOffet;
 	uint32_t mapElemCount;
+	bool optimizeForStreaming;
 protected:
 	inline static bool reportType = false;
 	inline static std::vector<GLsync*> lockList = {};
+public:
 	static constexpr uint32_t DEFAULT_NUM_BUFFERS = 3;
 };
 
 template<typename T>
 class IStreamBuffer : public IStreamBufferConcept {
 public:
-	static std::unique_ptr<IStreamBuffer<T>> CreateInstance(uint32_t target, uint32_t numElems, const std::string& name = "", Types type = SB_AUTODETECT, bool resizeAble = false, bool coherent = false, uint32_t numBuffers = DEFAULT_NUM_BUFFERS);
+	static std::unique_ptr<IStreamBuffer<T>> CreateInstance(IStreamBufferConcept::StreamBufferCreationParams p);
 public:
-	IStreamBuffer(uint32_t target_, uint32_t numElems, const std::string& name_, const std::string_view& bufferTypeName_)
-		: IStreamBufferConcept(target_, numElems, name_, bufferTypeName_)
+	IStreamBuffer(IStreamBufferConcept::StreamBufferCreationParams p, std::string_view bufferTypeName)
+		: IStreamBufferConcept(p, bufferTypeName)
 	{}
 
 	virtual T* Map(const T* clientPtr = nullptr, uint32_t elemOffset = 0, uint32_t elemCount = 0) {
@@ -115,8 +128,8 @@ public:
 template<typename T>
 class BufferDataImpl : public IStreamBuffer<T> {
 public:
-	BufferDataImpl(GLenum target, uint32_t numElems, const std::string& name_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
+	BufferDataImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, clientMem { false }
 		, buffer{ nullptr }
 	{
@@ -128,7 +141,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->optimizeForStreaming ? GL_STREAM_DRAW : GL_STATIC_DRAW);
 	}
 
 	void Kill(bool deleteBuffer) override {
@@ -166,7 +179,7 @@ public:
 			this->target,
 			(this->mapElemOffet + this->mapElemCount) * sizeof(T),
 			buffer,
-			GL_STREAM_DRAW
+			this->optimizeForStreaming ? GL_STREAM_DRAW : GL_STATIC_DRAW
 		);
 
 		this->Unbind();
@@ -181,8 +194,8 @@ private:
 template<typename T>
 class BufferSubDataImpl : public IStreamBuffer<T> {
 public:
-	BufferSubDataImpl(GLenum target, uint32_t numElems, const std::string& name_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
+	BufferSubDataImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 		, clientMem{ false }
 		, buffer{ nullptr }
 	{
@@ -194,7 +207,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->optimizeForStreaming ? GL_STREAM_DRAW : GL_STATIC_DRAW);
 	}
 
 	void Kill(bool deleteBuffer) override {
@@ -246,8 +259,8 @@ private:
 template<typename T>
 class MapAndOrphanImpl : public IStreamBuffer<T> {
 public:
-	MapAndOrphanImpl(GLenum target, uint32_t numElems, const std::string& name_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
+	MapAndOrphanImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
 	{
 		Init();
 		mapUnsyncedBit = GL_MAP_UNSYNCHRONIZED_BIT * (1 - globalRendering->haveAMD);
@@ -258,7 +271,7 @@ public:
 
 	void Init() override {
 		this->byteSize = this->GetAlignedByteSize(this->numElements * sizeof(T));;
-		this->CreateBuffer(this->byteSize, GL_STREAM_DRAW);
+		this->CreateBuffer(this->byteSize, this->optimizeForStreaming ? GL_STREAM_DRAW : GL_STATIC_DRAW);
 	}
 
 	void Kill(bool deleteBuffer) override {
@@ -304,10 +317,10 @@ private:
 template<typename T>
 class MapAndSyncImpl : public IStreamBuffer<T> {
 public:
-	MapAndSyncImpl(GLenum target, uint32_t numElems, uint32_t numBuffers_, const std::string& name_, bool coherent_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
-		, numBuffers{ numBuffers_ }
-		, coherent{ coherent_ }
+	MapAndSyncImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
+		, numBuffers{ p.numBuffers }
+		, coherent{ p.coherent }
 	{
 		Init();
 	}
@@ -381,11 +394,11 @@ private:
 template<typename T>
 class PersistentMapImpl : public IStreamBuffer<T> {
 public:
-	PersistentMapImpl(GLenum target, uint32_t numElems, uint32_t numBuffers_, const std::string& name_, bool coherent_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
-		, numBuffers{ numBuffers_ }
+	PersistentMapImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
+		, numBuffers{ p.numBuffers }
 		, ptrBase{ nullptr }
-		, coherent{ coherent_ }
+		, coherent{ p.coherent }
 	{
 		Init();
 	}
@@ -472,9 +485,9 @@ private:
 template<typename T>
 class PinnedMemoryAMDImpl : public IStreamBuffer<T> {
 public:
-	PinnedMemoryAMDImpl(GLenum target, uint32_t numElems, uint32_t numBuffers_, const std::string& name_)
-		: IStreamBuffer<T>(target, numElems, name_, spring::TypeToCStr<decltype(*this)>())
-		, numBuffers{ numBuffers_ }
+	PinnedMemoryAMDImpl(IStreamBufferConcept::StreamBufferCreationParams p)
+		: IStreamBuffer<T>(p, spring::TypeToCStr<decltype(*this)>())
+		, numBuffers{ p.numBuffers }
 	{
 		Init();
 	}
@@ -543,40 +556,47 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template<typename T>
-inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(uint32_t target, uint32_t numElems, const std::string& name, Types type, bool resizeAble, bool coherent, uint32_t numBuffers)
+inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(IStreamBufferConcept::StreamBufferCreationParams p)
 {
-	IStreamBufferConcept::reportType = (type == SB_AUTODETECT);
+	IStreamBufferConcept::reportType = (p.type == SB_AUTODETECT);
 
-	switch (type) {
+	switch (p.type) {
 	case SB_BUFFERDATA:
-		return std::make_unique<BufferDataImpl<T>>(target, numElems, name);
+		return std::make_unique<BufferDataImpl<T>>(p);
 	case SB_BUFFERSUBDATA:
-		return std::make_unique<BufferSubDataImpl<T>>(target, numElems, name);
+		return std::make_unique<BufferSubDataImpl<T>>(p);
 	case SB_MAPANDORPHAN:
-		return std::make_unique<MapAndOrphanImpl<T>>(target, numElems, name);
+		return std::make_unique<MapAndOrphanImpl<T>>(p);
 	case SB_MAPANDSYNC:
-		return std::make_unique<MapAndSyncImpl<T>>(target, numElems, numBuffers, name, coherent);
+		return std::make_unique<MapAndSyncImpl<T>>(p);
 	case SB_PERSISTENTMAP:
-		return std::make_unique<PersistentMapImpl<T>>(target, numElems, numBuffers, name, coherent);
+		return std::make_unique<PersistentMapImpl<T>>(p);
 	case SB_PINNEDMEMAMD:
-		return std::make_unique<PinnedMemoryAMDImpl<T>>(target, numElems, numBuffers, name);
+		return std::make_unique<PinnedMemoryAMDImpl<T>>(p);
 	default: {} break;
 	}
 
-	if (resizeAble || target == GL_UNIFORM_BUFFER) {
-		return CreateInstance(target, numElems, name, SB_BUFFERSUBDATA, numBuffers); //almost certainly best
+	if (p.resizeAble || p.target == GL_UNIFORM_BUFFER) {
+		p.type = SB_BUFFERSUBDATA; //almost certainly best
+		return CreateInstance(p);
 	}
 
 	if (GLEW_ARB_sync) {
-		if (globalRendering->haveAMD)
-			return CreateInstance(target, numElems, name, SB_PINNEDMEMAMD, numBuffers);
+		if (globalRendering->haveAMD) {
+			p.type = SB_PINNEDMEMAMD;
+			return CreateInstance(p);
+		}
 
-		if (GLEW_ARB_buffer_storage) //core in OpenGL 4.4 or extension
-			return CreateInstance(target, numElems, name, SB_PERSISTENTMAP, numBuffers);
+		if (GLEW_ARB_buffer_storage) { //core in OpenGL 4.4 or extension
+			p.type = SB_PERSISTENTMAP;
+			return CreateInstance(p);
+		}
 
-		return CreateInstance(target, numElems, name, SB_MAPANDSYNC, numBuffers);
+		p.type = SB_MAPANDSYNC;
+		return CreateInstance(p);
 	}
 
 	//seems like sensible default
-	return CreateInstance(target, numElems, name, SB_BUFFERSUBDATA, numBuffers);
+	p.type = SB_BUFFERSUBDATA;
+	return CreateInstance(p);
 }

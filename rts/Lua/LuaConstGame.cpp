@@ -60,7 +60,6 @@
  * @string gameVersion
  * @string gameMutator
  * @string gameDesc
- * @bool allowTeamColors
  * @bool requireSonarUnderWater
  * @number transportAir
  * @number transportShip
@@ -212,11 +211,6 @@ bool LuaConstGame::PushEntries(lua_State* L)
 
 		LuaPushNamedString(L, "mapChecksum", mapHexDigest.data());
 		LuaPushNamedString(L, "modChecksum", modHexDigest.data());
-	}
-
-	{
-		// deprecated nonsense
-		LuaPushNamedBool(L, "allowTeamColors", true);
 	}
 
 	{

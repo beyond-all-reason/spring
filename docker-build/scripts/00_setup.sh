@@ -10,6 +10,7 @@ PUBLISH_ARTIFACTS=
 
 MYARCHTUNE=""
 MYCFLAGS=""
+MYCMAKEFLAGS=""
 MYBUILDTYPE="RELWITHDEBINFO"
 RELWITHDEBINFOFLAGS="-O3 -g -DNDEBUG"
 DEBUGFLAGS="-Og -g -DDEBUG -D_DEBUG -DNO_CATCH_EXCEPTIONS"
@@ -31,6 +32,7 @@ function print_usage() {
     echo "  -d      dummy mode"
     echo "  -e      enable ccache"
     echo "  -c      archtune flags"
+    echo "  -C      cmake flags"
     echo "  -t      build type: RELWITHDEBINFO (default), DEBUG, RELEASE, PROFILE"
     echo "  -r      build type flags override"
     echo "  -f      c/c++ flags"
@@ -44,7 +46,7 @@ function print_usage() {
     exit 1
 }
 
-while getopts :b:u:a:p:dc:ht:r:f:s:z:e:lwok flag
+while getopts :b:u:a:p:dc:ht:r:f:s:z:e:C:lwok flag
 do
     case "${flag}" in
         b) BRANCH_NAME=${OPTARG};;
@@ -58,6 +60,7 @@ do
         t) MYBUILDTYPE=${OPTARG};;
         r) MYBUILDTYPEFLAGS=${OPTARG};;
         f) MYCFLAGS=${OPTARG};;
+        C) MYCMAKEFLAGS=${OPTARG};;
         s) STRIP_SYMBOLS=${OPTARG};;
         z) DEBUG_CCACHE=${OPTARG};;
         l) LOCAL_BUILD=true;;
@@ -118,6 +121,7 @@ echo "Build type: ${MYBUILDTYPE}"
 echo "${MYBUILDTYPE} compilation flags: ${MYBUILDTYPEFLAGS}"
 echo "Archtune flags: ${MYARCHTUNE}"
 echo "Extra compilation flags: ${MYCFLAGS}"
+echo "Extra cmake flags: ${MYCMAKEFLAGS}"
 echo "Dummy mode: ${DUMMY}"
 echo "Enable ccache: ${ENABLE_CCACHE}"
 echo "Debug ccache: ${DEBUG_CCACHE}"

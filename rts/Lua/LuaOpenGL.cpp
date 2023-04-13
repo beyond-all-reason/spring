@@ -1852,7 +1852,7 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
 #else
 		const std::array<float, 4>& currentColor = color;
 #endif
-		glBallisticCircle(wd, { currentColor.data() }, luaL_checkint(L, 5), pos, { radius, slope, gravity });
+		glBallisticCircleLua(wd, { currentColor.data() }, luaL_checkint(L, 5), pos, { radius, slope, gravity });
 	} else {
 #if 0
 		std::array<float, 4> currentColor;
@@ -1860,7 +1860,7 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
 #else
 		const std::array<float, 4>& currentColor = color;
 #endif
-		glSurfaceCircle(pos, r, { currentColor.data()}, divs);
+		glSurfaceCircleLua(pos, r, { currentColor.data()}, divs);
 	}
 	return 0;
 }

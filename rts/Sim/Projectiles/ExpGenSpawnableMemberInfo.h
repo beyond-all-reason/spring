@@ -4,7 +4,7 @@
 #define EXP_GEN_SPAWNABLE_MEMBER_INFO_H
 
 #include "System/StringUtil.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 #include <functional>
 
@@ -14,7 +14,7 @@
 
 
 // slow, use the CHECK_MEMBER_INFO_*_HASH macros instead
-#define STRING_HASH(memberName) HsiehHash(memberName.c_str(), memberName.size(), 0)
+#define STRING_HASH(memberName) spring::LiteHash(memberName.c_str(), memberName.size(), 0)
 #define MEMBER_NAME(member)     StringToLower(#member)
 #define MEMBER_HASH(member)     STRING_HASH(std::move(MEMBER_NAME(member)))
 

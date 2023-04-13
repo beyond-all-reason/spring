@@ -27,6 +27,9 @@ list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
 list(APPEND engineDedicatedLibraries ${LIBUNWIND_LIBRARIES})
 list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
 
+### smmalloc
+list(APPEND engineDedicatedLibraries "smmalloc")
+
 if (WIN32)
 	list(APPEND engineDedicatedLibraries ${WINMM_LIBRARY})
 endif (WIN32)

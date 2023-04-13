@@ -128,6 +128,7 @@
 	SETUP_EVENT(DrawWorldPreUnit,          MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawPreDecals,             MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorldPreParticles,     MANAGED_BIT | UNSYNCED_BIT)
+	SETUP_EVENT(DrawWaterPost,             MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorldShadow,           MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawShadowPassTransparent, MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorldReflection,       MANAGED_BIT | UNSYNCED_BIT)

@@ -1,0 +1,1164 @@
+{
+   "advmapshading" : {
+      "arguments" : {
+         "" : "Toggles advanced map shading mode",
+         "<on|off>" : "Set advanced map shading mode <on|off>"
+      },
+      "cheatRequired" : false,
+      "command" : "AdvMapShading",
+      "description" : "Control advanced map shading mode"
+   },
+   "advmodelshading" : {
+      "arguments" : {
+         "" : "Toggles advanced model shading mode",
+         "<on|off>" : "Set advanced model shading mode <on|off>"
+      },
+      "cheatRequired" : false,
+      "command" : "AdvModelShading",
+      "description" : "Control advanced model shading mode"
+   },
+   "aicontrol" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "AIControl",
+      "description" : "Creates a new instance of a Skirmish AI, to let it control a specific team"
+   },
+   "aikill" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "AIKill",
+      "description" : "Kills the Skirmish AI controlling a specified team"
+   },
+   "ailist" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "AIList",
+      "description" : "Prints a list of all currently active Skirmish AIs"
+   },
+   "aireload" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "AIReload",
+      "description" : "Reloads the Skirmish AI controlling a specified team"
+   },
+   "airmesh" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "airmesh",
+      "description" : "Show/Hide the smooth air-mesh map overlay"
+   },
+   "allmapmarks" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "AllMapMarks",
+      "description" : "Show/Hide all map marks drawn so far"
+   },
+   "ally" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Ally",
+      "description" : "Starts/Ends alliance of the local player's ally-team with another ally-team"
+   },
+   "atm" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ATM",
+      "description" : "Redirects command /ATM to its synced processor"
+   },
+   "buffertext" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "BufferText",
+      "description" : "Write the argument string(s) directly to the console history"
+   },
+   "chat" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Chat",
+      "description" : "Starts waiting for intput to be sent to "
+   },
+   "chatall" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ChatAll",
+      "description" : "Starts waiting for intput to be sent to All"
+   },
+   "chatally" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ChatAlly",
+      "description" : "Starts waiting for intput to be sent to Ally"
+   },
+   "chatspec" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ChatSpec",
+      "description" : "Starts waiting for intput to be sent to Spec"
+   },
+   "clearmapmarks" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ClearMapMarks",
+      "description" : "Remove all map marks drawn so far"
+   },
+   "clock" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Clock",
+      "description" : "Shows a small digital clock indicating the local time"
+   },
+   "cmdcolors" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "CmdColors",
+      "description" : "Reloads cmdcolors.txt"
+   },
+   "commandhelp" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "CommandHelp",
+      "description" : "Prints info about a specific chat command"
+   },
+   "commandlist" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "CommandList",
+      "description" : "Prints all the available chat commands with description (if available) to the console"
+   },
+   "console" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Console",
+      "description" : "Enables/Disables the in-game console"
+   },
+   "controlunit" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ControlUnit",
+      "description" : "Start to first-person-control a unit"
+   },
+   "crash" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Crash",
+      "description" : "Invoke an artificial crash through a NULL-pointer dereference (SIGSEGV)"
+   },
+   "createvideo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "CreateVideo",
+      "description" : "Start/Stop capturing a video of the game in progress"
+   },
+   "cross" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Cross",
+      "description" : "Allows one to exchange and modify the appearance of the cross/mouse-pointer in first-person-control view"
+   },
+   "ctrlpanel" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "CtrlPanel",
+      "description" : "Reloads GUI config"
+   },
+   "debug" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Debug",
+      "description" : "Enable/Disable debug rendering mode"
+   },
+   "debugcolvol" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugColVol",
+      "description" : "Enable/Disable drawing of collision volumes"
+   },
+   "debugcubemap" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugCubeMap",
+      "description" : "Use debug cubemap texture instead of the sky"
+   },
+   "debugdrawai" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugDrawAI",
+      "description" : "Enables/Disables debug drawing for AIs"
+   },
+   "debuggl" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugGL",
+      "description" : "Enable/Disable OpenGL debug-context output"
+   },
+   "debugglerrors" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugGLErrors",
+      "description" : "Enable/Disable OpenGL debug-errors"
+   },
+   "debuginfo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugInfo",
+      "description" : "Print debug info to the chat/log-file about either sound, profiling, or command-descriptions"
+   },
+   "debugpath" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugPath",
+      "description" : "Enable/Disable drawing of pathfinder debug-data"
+   },
+   "debugtraceray" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugTraceRay",
+      "description" : "Enable/Disable drawing of traceray debug-data"
+   },
+   "decguiopacity" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DecGUIOpacity",
+      "description" : "Decreases the the opacity(see-through-ness) of GUI elements"
+   },
+   "decreaseviewradius" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DecreaseViewRadius",
+      "description" : "Decrease the view radius (higher performance, uglier view)"
+   },
+   "deselect" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Deselect",
+      "description" : "Deselects all currently selected units"
+   },
+   "destroy" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Destroy",
+      "description" : "Destroys one or multiple units by unit-ID, instantly"
+   },
+   "desync" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Desync",
+      "description" : "Redirects command /Desync to its synced processor"
+   },
+   "disticon" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DistIcon",
+      "description" : "Set the distance between units and camera, at which they turn into icons (Graphic setting)"
+   },
+   "distsortprojectiles" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DistSortProjectiles",
+      "description" : "Enable/Disable sorting drawn projectiles by camera distance"
+   },
+   "divbyzero" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "DivByZero",
+      "description" : "Invoke an artificial crash by performing a division-by-zero"
+   },
+   "drawinmap" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DrawInMap",
+      "description" : "Enables drawing on the map"
+   },
+   "drawlabel" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DrawLabel",
+      "description" : "Draws a label on the map at the current mouse-pointer position"
+   },
+   "draworderparticles" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DrawOrderParticles",
+      "description" : "Enable/Disable particles draw order: 0=disabled, 1=enabled"
+   },
+   "drawsky" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DrawSky",
+      "description" : "Whether to actually draw sky"
+   },
+   "dumpatlas" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DumpAtlas",
+      "description" : "Save Some Atlases"
+   },
+   "dumprng" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DumpRNG",
+      "description" : "dump SyncedRNG-state to file"
+   },
+   "dumpshadows" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DumpShadows",
+      "description" : "Save shadow map textures to files"
+   },
+   "dumpstate" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DumpState",
+      "description" : "dump game-state to file"
+   },
+   "echo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Echo",
+      "description" : "Write a string to the log file"
+   },
+   "endgraph" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "EndGraph",
+      "description" : "Enables/Disables the statistics graphs shown at the end of the game"
+   },
+   "exception" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Exception",
+      "description" : "Invoke an artificial crash by throwing an std::runtime_error"
+   },
+   "featuredrawdistance" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "FeatureDrawDistance",
+      "description" : ""
+   },
+   "featuredrawer" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "FeatureDrawer",
+      "description" : "Forces particular Feature drawer type"
+   },
+   "featurefadedistance" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "FeatureFadeDistance",
+      "description" : ""
+   },
+   "font" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Font",
+      "description" : "Reloads default or custom fonts"
+   },
+   "fps" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "FPS",
+      "description" : "Shows/Hides the frames-per-second indicator"
+   },
+   "fpshud" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "FPSHud",
+      "description" : "Enables/Disables HUD (GUI interface) shown in first-person-control mode"
+   },
+   "fullscreen" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Fullscreen",
+      "description" : "Switches fullscreen mode"
+   },
+   "gameinfo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "GameInfo",
+      "description" : "Enables/Disables game-info panel rendering"
+   },
+   "gathermode" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "GatherMode",
+      "description" : "Enter/Leave gather-wait command mode"
+   },
+   "give" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Give",
+      "description" : "Places one or multiple units of a single or multiple types on the map, instantly; by default to your own team"
+   },
+   "grabinput" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "GrabInput",
+      "description" : "Prevents/Enables the mouse from leaving the game window (windowed mode only)"
+   },
+   "grounddecals" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "GroundDecals",
+      "description" : "Enable/Disable ground-decal rendering."
+   },
+   "grounddetail" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "GroundDetail",
+      "description" : "Set the level of ground detail"
+   },
+   "group" : {
+      "arguments" : {
+         "<n>" : "Select group <n>",
+         "add <n>" : "Add current selected units to group <n>",
+         "selectadd <n>" : "Add members from group <n> to currently selected units",
+         "selectclear <n>" : "Remove members from group <n> from currently selected units",
+         "selecttoggle <n>" : "Toggle members from group <n> from currently selected units",
+         "set <n>" : "Set current selected units as group <n>",
+         "unset" : "Deassign control group for currently selected units"
+      },
+      "cheatRequired" : false,
+      "command" : "Group",
+      "description" : "Manage control groups"
+   },
+   "group0" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group0",
+      "description" : "Allows modifying the members of group 0"
+   },
+   "group1" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group1",
+      "description" : "Allows modifying the members of group 1"
+   },
+   "group2" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group2",
+      "description" : "Allows modifying the members of group 2"
+   },
+   "group3" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group3",
+      "description" : "Allows modifying the members of group 3"
+   },
+   "group4" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group4",
+      "description" : "Allows modifying the members of group 4"
+   },
+   "group5" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group5",
+      "description" : "Allows modifying the members of group 5"
+   },
+   "group6" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group6",
+      "description" : "Allows modifying the members of group 6"
+   },
+   "group7" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group7",
+      "description" : "Allows modifying the members of group 7"
+   },
+   "group8" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group8",
+      "description" : "Allows modifying the members of group 8"
+   },
+   "group9" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Group9",
+      "description" : "Allows modifying the members of group 9"
+   },
+   "hang" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Hang",
+      "description" : "Invoke an artificial hang"
+   },
+   "hardwarecursor" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "HardwareCursor",
+      "description" : "Enables/Disables hardware mouse-cursor support"
+   },
+   "hideinterface" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "HideInterface",
+      "description" : "Hide/Show the GUI controlls"
+   },
+   "iconfadestart" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IconFadeStart",
+      "description" : "Set the distance where unit icons became completely opaque at"
+   },
+   "iconfadevanish" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IconFadeVanish",
+      "description" : "Set the distance where unit icons fade out at"
+   },
+   "iconsasui" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IconsAsUI",
+      "description" : "Set whether unit icons are drawn as an UI element (true) or old LOD-like style (false, default)."
+   },
+   "iconscaleui" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IconScaleUI",
+      "description" : "Set the multiplier for the size of the UI unit icons"
+   },
+   "iconshidewithui" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IconsHideWithUI",
+      "description" : "Set whether unit icons are hidden when UI is hidden."
+   },
+   "incguiopacity" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IncGUIOpacity",
+      "description" : "Increases the the opacity(see-through-ness) of GUI elements"
+   },
+   "increaseviewradius" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "IncreaseViewRadius",
+      "description" : "Increase terrain tessellation level"
+   },
+   "info" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Info",
+      "description" : "Shows/Hides the player roster"
+   },
+   "inputtextgeo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "InputTextGeo",
+      "description" : "Move and/or resize the input-text field (the \"Say: \" thing)"
+   },
+   "lastmsgpos" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LastMsgPos",
+      "description" : "Moves the camera to show the position of the last message"
+   },
+   "lodscale" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LODScale",
+      "description" : "Set the scale for either of: LOD (level-of-detail), shadow-LOD, reflection-LOD, refraction-LOD"
+   },
+   "luagaia" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaGaia",
+      "description" : "Redirects command /LuaGaia to its synced processor"
+   },
+   "luagccontrol" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaGCControl",
+      "description" : "Toggle between 1/f and 30/s Lua garbage collection rate"
+   },
+   "luamenu" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaMenu",
+      "description" : "Allows one to reload or disable LuaMenu, or alternatively to send a chat message to LuaMenu"
+   },
+   "luarules" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaRules",
+      "description" : "Redirects command /LuaRules to its synced processor"
+   },
+   "luasave" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaSave",
+      "description" : "Save the game state to a specific file, add -y to overwrite when file is already present"
+   },
+   "luaui" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaUI",
+      "description" : "Allows one to reload or disable LuaUI, or alternatively to send a chat message to LuaUI"
+   },
+   "mapborder" : {
+      "arguments" : {
+         "" : "Toggles map-border rendering",
+         "<on|off>" : "Set map-border rendering <on|off>"
+      },
+      "cheatRequired" : false,
+      "command" : "MapBorder",
+      "description" : "Control map-border rendering"
+   },
+   "mapmarks" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MapMarks",
+      "description" : "Enables/Disables map marks rendering"
+   },
+   "mapmeshdrawer" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "mapmeshdrawer",
+      "description" : "Switch map-mesh rendering modes: 0=GCM, 1=HLOD, 2=ROAM"
+   },
+   "mapshadowpolyoffset" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MapShadowPolyOffset",
+      "description" : ""
+   },
+   "maxnanoparticles" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MaxNanoParticles",
+      "description" : "Set the maximum number of nano-particles (Graphic setting)"
+   },
+   "maxparticles" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MaxParticles",
+      "description" : "Set the maximum number of particles (Graphics setting)"
+   },
+   "maxviewrange" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MaxViewRange",
+      "description" : "Set maximum view-distance"
+   },
+   "minimap" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MiniMap",
+      "description" : "FIXME document subcommands"
+   },
+   "minviewrange" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MinViewRange",
+      "description" : "Set minimum view-distance"
+   },
+   "mouse1" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Mouse1",
+      "description" : "Simulates a press of mouse-button 1"
+   },
+   "mouse2" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Mouse2",
+      "description" : "Simulates a press of mouse-button 2"
+   },
+   "mouse3" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Mouse3",
+      "description" : "Simulates a press of mouse-button 3"
+   },
+   "mouse4" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Mouse4",
+      "description" : "Simulates a press of mouse-button 4"
+   },
+   "mouse5" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Mouse5",
+      "description" : "Simulates a press of mouse-button 5"
+   },
+   "mousecancelselectionrectangle" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MouseCancelSelectionRectangle",
+      "description" : ""
+   },
+   "moveback" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveBack",
+      "description" : "Moves the camera Back a bit"
+   },
+   "movedown" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveDown",
+      "description" : "Moves the camera Down a bit"
+   },
+   "movefast" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveFast",
+      "description" : "Moves the camera Fast a bit"
+   },
+   "moveforward" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveForward",
+      "description" : "Moves the camera Forward a bit"
+   },
+   "moveleft" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveLeft",
+      "description" : "Moves the camera Left a bit"
+   },
+   "movereset" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveReset",
+      "description" : "Moves the camera Reset a bit"
+   },
+   "moveright" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveRight",
+      "description" : "Moves the camera Right a bit"
+   },
+   "moverotate" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveRotate",
+      "description" : "Moves the camera Rotate a bit"
+   },
+   "moveslow" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveSlow",
+      "description" : "Moves the camera Slow a bit"
+   },
+   "movetilt" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveTilt",
+      "description" : "Moves the camera Tilt a bit"
+   },
+   "moveup" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MoveUp",
+      "description" : "Moves the camera Up a bit"
+   },
+   "mutesound" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "MuteSound",
+      "description" : "Mute/Unmute the current sound system"
+   },
+   "netmsgsmoothing" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NetMsgSmoothing",
+      "description" : "Toggles whether client will use net-message smoothing; better for unstable connections"
+   },
+   "netping" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NetPing",
+      "description" : "Send a ping request to the server"
+   },
+   "noluadraw" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NoLuaDraw",
+      "description" : "Allow/Disallow Lua to draw on the map"
+   },
+   "pastetext" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "PasteText",
+      "description" : "Paste either the argument string(s) or the content of the clip-board to chat input"
+   },
+   "pause" : {
+      "arguments" : {
+         "" : "Toggles tracking",
+         "<on|off>" : "Set tracking <on|off>"
+      },
+      "cheatRequired" : false,
+      "command" : "Pause",
+      "description" : "Pause/Unpause the game"
+   },
+   "quitforce" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "QuitForce",
+      "description" : "Exits game to system"
+   },
+   "quitmenu" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "QuitMenu",
+      "description" : "Opens the quit-menu, if it is not already open"
+   },
+   "quitmessage" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "QuitMessage",
+      "description" : "Deprecated, see /Quit instead (was used to quit the game immediately)"
+   },
+   "reloadforce" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ReloadForce",
+      "description" : "Exits game to menu"
+   },
+   "reloadshaders" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ReloadShaders",
+      "description" : "Reloads all engine shaders"
+   },
+   "reloadtextures" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ReloadTextures",
+      "description" : "Reloads textures"
+   },
+   "resbar" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ResBar",
+      "description" : "Shows/Hides team resource storage indicator bar"
+   },
+   "resync" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Resync",
+      "description" : "Redirects command /Resync to its synced processor"
+   },
+   "safegl" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SafeGL",
+      "description" : "Enables/Disables OpenGL safe-mode"
+   },
+   "save" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Save",
+      "description" : "Save the game state to a specific file, add -y to overwrite when file is already present"
+   },
+   "say" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Say",
+      "description" : "Say something in (public) chat"
+   },
+   "screenshot" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ScreenShot",
+      "description" : "Take a screen-shot of the current view"
+   },
+   "select" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Select",
+      "description" : "<chat command description: Select>"
+   },
+   "selectcycle" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SelectCycle",
+      "description" : "<chat command description: SelectUnits>"
+   },
+   "selectunits" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SelectUnits",
+      "description" : "<chat command description: SelectUnits>"
+   },
+   "send" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Send",
+      "description" : "Send a string as raw network message to the game host (for debugging only)"
+   },
+   "set" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Set",
+      "description" : "Set a config key=value pair"
+   },
+   "setspeed" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SetSpeed",
+      "description" : "Set the simulation speed to any positive value, bounded by the minimum and maximum game speed settings."
+   },
+   "shadows" : {
+      "arguments" : {
+         "-1" : "Disabled",
+         "0" : "Off",
+         "1" : "Full shadows",
+         "2" : "Skip terrain shadows"
+      },
+      "cheatRequired" : false,
+      "command" : "Shadows",
+      "description" : "Control shadow rendering"
+   },
+   "sharedialog" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShareDialog",
+      "description" : "Opens the share dialog for sending units and resources to other players"
+   },
+   "showelevation" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShowElevation",
+      "description" : "Enable rendering of the auxiliary height-map overlay"
+   },
+   "showmetalmap" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShowMetalMap",
+      "description" : "Enable rendering of the auxiliary metal-map overlay"
+   },
+   "showpathcost" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "ShowPathCost",
+      "description" : "Enable rendering of the path cost-map overlay"
+   },
+   "showpathflow" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "ShowPathFlow",
+      "description" : "Enable/Disable rendering of the path flow-map overlay"
+   },
+   "showpathheat" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "ShowPathHeat",
+      "description" : "Enable/Disable rendering of the path heat-map overlay"
+   },
+   "showpathtraversability" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShowPathTraversability",
+      "description" : "Enable rendering of the path traversability-map overlay"
+   },
+   "showpathtype" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShowPathType",
+      "description" : "Shows path traversability for a given MoveDefName, MoveDefID or UnitDefName"
+   },
+   "showstandard" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ShowStandard",
+      "description" : "Disable rendering of all auxiliary map overlays"
+   },
+   "slowdown" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SlowDown",
+      "description" : "Decreases the simulation speed. The engine will try to simulate less frames per second"
+   },
+   "softparticles" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SoftParticles",
+      "description" : "Enable/Disable particles softening: 0=disabled, 1=enabled"
+   },
+   "soundchannelenable" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SoundChannelEnable",
+      "description" : "Enable/Disable specific sound channels: UnitReply, General, Battle, UserInterface, Music"
+   },
+   "sounddevice" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SoundDevice",
+      "description" : "Switch the sound output system (currently only OpenAL / NullAudio)"
+   },
+   "specfullview" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SpecFullView",
+      "description" : "Sets or toggles between full LOS or ally-team LOS if the local user is a spectator"
+   },
+   "spectator" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Spectator",
+      "description" : "Lets the local user give up control over a team and start spectating"
+   },
+   "specteam" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SpecTeam",
+      "description" : "Lets the local user specify the team to follow if he is a spectator"
+   },
+   "speed" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Speed",
+      "description" : "Shows/Hides the simulation speed indicator"
+   },
+   "speedcontrol" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SpeedControl",
+      "description" : "Sets how server adjusts speed according to player's CPU load, 1: use average, 0: use highest"
+   },
+   "speedup" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "SpeedUp",
+      "description" : "Increases the simulation speed. The engine will try to simulate more frames per second"
+   },
+   "take" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Take",
+      "description" : "Redirects command /Take to its synced processor"
+   },
+   "team" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Team",
+      "description" : "Lets the local user change to another team"
+   },
+   "teamhighlight" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "TeamHighlight",
+      "description" : "Enables/Disables uncontrolled team blinking"
+   },
+   "toggleinfo" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ToggleInfo",
+      "description" : "Toggles current info texture view"
+   },
+   "togglelos" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ToggleLOS",
+      "description" : "Enable rendering of the auxiliary LOS-map overlay"
+   },
+   "tooltip" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ToolTip",
+      "description" : "Enables/Disables the general tool-tips, displayed when hovering over units. features or the map"
+   },
+   "track" : {
+      "arguments" : {
+         "" : "Toggles tracking",
+         "<on|off>" : "Set tracking <on|off>"
+      },
+      "cheatRequired" : false,
+      "command" : "Track",
+      "description" : "Start/stop following the selected unit(s) with the camera"
+   },
+   "trackmode" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "TrackMode",
+      "description" : "Shift through different ways of following selected unit(s)"
+   },
+   "tset" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "TSet",
+      "description" : "Set a config key=value pair in the overlay, meaning it will not be persisted for future games"
+   },
+   "unitdrawer" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "UnitDrawer",
+      "description" : "Forces particular Unit drawer type"
+   },
+   "viewselection" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "ViewSelection",
+      "description" : "Moves the camera to the center of the currently selected units"
+   },
+   "vsync" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "VSync",
+      "description" : "Enables/Disables vertical-sync (Graphics setting)"
+   },
+   "w" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "W",
+      "description" : "Say something in private to a specific player, by player-name"
+   },
+   "water" : {
+      "arguments" : {
+         "0" : "Basic",
+         "1" : "Reflective",
+         "2" : "Dynamic",
+         "3" : "Reflective & Refractive",
+         "4" : "Bump-mapped"
+      },
+      "cheatRequired" : false,
+      "command" : "Water",
+      "description" : "Set water rendering mode"
+   },
+   "wbynum" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WByNum",
+      "description" : "Say something in private to a specific player, by player-ID"
+   },
+   "windowborderless" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WindowBorderless",
+      "description" : "Switches borderless/decorated mode"
+   },
+   "wiremap" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WireMap",
+      "description" : "Toggle wireframe-mode drawing of map geometry"
+   },
+   "wiremodel" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WireModel",
+      "description" : "Toggle wireframe-mode drawing of model geometry"
+   },
+   "wiresky" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WireSky",
+      "description" : "Toggle wireframe-mode drawing of skydome geometry"
+   },
+   "wirewater" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "WireWater",
+      "description" : "Toggle wireframe-mode drawing of water geometry"
+   }
+}

@@ -169,6 +169,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ClearFeaturesPreviousDrawFlag);
 
 	REGISTER_LUA_CFUNC(GetUnitsInScreenRectangle);
+	REGISTER_LUA_CFUNC(GetFeaturesInScreenRectangle);
 
 	REGISTER_LUA_CFUNC(GetTeamColor);
 	REGISTER_LUA_CFUNC(GetTeamOrigColor);
@@ -2151,6 +2152,58 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 	return 1;
 }
 
+/*** Get features inside a rectangle area on the map
+	*
+	* @function Spring.GetFeaturesInScreenRectangle
+	* @number left
+	* @number top
+	* @number right
+	* @number bottom
+	* @treturn nil|{[number],...} featureIDs
+	*/
+int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
+{
+	float l = luaL_checkfloat(L, 1);
+	float t = luaL_checkfloat(L, 2);
+	float r = luaL_checkfloat(L, 3);
+	float b = luaL_checkfloat(L, 4);
+
+	if (l > r) std::swap(l, r);
+	if (t > b) std::swap(t, b);
+
+	static CVisFeatureQuadDrawer featureQuadIter;
+
+	featureQuadIter.ResetState();
+	readMap->GridVisibility(nullptr, &featureQuadIter, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
+
+	const int tempNum = gs->GetTempNum();
+	lua_createtable(L, featureQuadIter.GetObjectCount(), 0);
+
+	uint32_t count = 0;
+	for (auto visFeatureList : featureQuadIter.GetObjectLists()) {
+		for ( CFeature* feature : *visFeatureList ) {
+			if (feature->tempNum == tempNum)
+				continue;
+
+			feature->tempNum = tempNum;
+			const float3 vpPos = camera->CalcViewPortCoordinates(feature->drawPos);
+
+			if (vpPos.x > r || vpPos.x < l)
+				continue;
+
+			if (vpPos.y > b || vpPos.y < t)
+				continue;
+
+			if (vpPos.z > 1.0f || vpPos.z < 0.0f)
+				continue;
+
+			lua_pushnumber(L, feature->id);
+			lua_rawseti(L, -2, ++count);
+		}
+	}
+
+	return 1;
+}
 
 /******************************************************************************/
 /******************************************************************************/

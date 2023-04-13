@@ -281,7 +281,10 @@ public:
 
 class MapBorderActionExecutor : public IUnsyncedActionExecutor {
 public:
-	MapBorderActionExecutor() : IUnsyncedActionExecutor("MapBorder", "Set or toggle map-border rendering") {
+	MapBorderActionExecutor() : IUnsyncedActionExecutor("MapBorder", "Control map-border rendering", false, {
+			{"", "Toggles map-border rendering"},
+			{"<on|off>", "Set map-border rendering <on|off>"},
+			}) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
@@ -310,7 +313,14 @@ class ShadowsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	ShadowsActionExecutor() : IUnsyncedActionExecutor(
 		"Shadows",
-		"Disables/Enables shadows rendering: -1=disabled, 0=off, 1=full shadows, 2=skip terrain shadows"
+		"Control shadow rendering",
+		false,
+		{
+			{"-1", "Disabled"},
+			{"0", "Off"},
+			{"1", "Full shadows"},
+			{"2", "Skip terrain shadows"},
+		}
 	) {
 	}
 
@@ -367,7 +377,15 @@ class WaterActionExecutor : public IUnsyncedActionExecutor {
 public:
 	WaterActionExecutor() : IUnsyncedActionExecutor(
 		"Water",
-		"Set water rendering mode: 0=basic, 1=reflective, 2=dynamic, 3=reflective&refractive, 4=bump-mapped"
+		"Set water rendering mode",
+		false,
+		{
+			{"0", "Basic"},
+			{"1", "Reflective"},
+			{"2", "Dynamic"},
+			{"3", "Reflective & Refractive"},
+			{"4", "Bump-mapped"},
+		}
 	) {
 	}
 
@@ -388,7 +406,11 @@ public:
 class AdvModelShadingActionExecutor : public IUnsyncedActionExecutor {
 public:
 	AdvModelShadingActionExecutor() : IUnsyncedActionExecutor("AdvModelShading",
-			"Set or toggle advanced model shading mode") {}
+			"Control advanced model shading mode",
+			false, {
+			{"", "Toggles advanced model shading mode"},
+			{"<on|off>", "Set advanced model shading mode <on|off>"},
+			}) {}
 
 	bool Execute(const UnsyncedAction& action) const {
 		static bool canUseShaders = unitDrawer->UseAdvShading();
@@ -407,7 +429,11 @@ public:
 class AdvMapShadingActionExecutor : public IUnsyncedActionExecutor {
 public:
 	AdvMapShadingActionExecutor() : IUnsyncedActionExecutor("AdvMapShading",
-			"Set or toggle advanced map shading mode") {}
+			"Control advanced map shading mode",
+			false, {
+			{"", "Toggles advanced map shading mode"},
+			{"<on|off>", "Set advanced map shading mode <on|off>"},
+			}) {}
 
 	bool Execute(const UnsyncedAction& action) const {
 
@@ -1205,7 +1231,15 @@ public:
 
 class GroupActionExecutor : public IUnsyncedActionExecutor {
 public:
-	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Allows modifying the members of a group") {
+	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Manage control groups", false, {
+			{"<n>", "Select group <n>"},
+			{"set <n>", "Set current selected units as group <n>"},
+			{"add <n>", "Add current selected units to group <n>"},
+			{"unset", "Deassign control group for currently selected units"},
+			{"selectadd <n>", "Add members from group <n> to currently selected units"},
+			{"selectclear <n>", "Remove members from group <n> from currently selected units"},
+			{"selecttoggle <n>", "Toggle members from group <n> from currently selected units"},
+			}) {
 	}
 
 	bool WrongSyntax(std::string description = "wrong syntax") const {
@@ -1338,7 +1372,10 @@ private:
 class TrackActionExecutor : public IUnsyncedActionExecutor {
 public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
-			"Start/stop following the selected unit(s) with the camera") {}
+			"Start/stop following the selected unit(s) with the camera", false, {
+			{"", "Toggles tracking"},
+			{"<on|off>", "Set tracking <on|off>"},
+			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		bool enableTracking = unitTracker.Enabled();
@@ -1369,7 +1406,11 @@ public:
 class PauseActionExecutor : public IUnsyncedActionExecutor {
 public:
 	PauseActionExecutor() : IUnsyncedActionExecutor("Pause",
-			"Pause/Unpause the game") {}
+			"Pause/Unpause the game",
+			false, {
+			{"", "Toggles tracking"},
+			{"<on|off>", "Set tracking <on|off>"},
+			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		// disallow pausing prior to start of game proper
@@ -3256,7 +3297,17 @@ public:
 	}
 };
 
+class DebugShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	DebugShadowFrustum() : IUnsyncedActionExecutor("DebugShadowFrustum", "Enable/Disable drawing of shadow frustum shape") {
+	}
 
+	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(shadowHandler.DebugFrustumRef(), action.GetArgs());
+		LogSystemStatus("shadow frustum debug rendering mode", shadowHandler.DebugFrustumRef());
+		return true;
+	}
+};
 
 class CrashActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -3406,6 +3457,7 @@ public:
 		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
 		switch (args.size()) {
+			case 1: { DumpState(StringToInt(args[0]), StringToInt(args[0]),                    1,                 false); } break;
 			case 2: { DumpState(StringToInt(args[0]), StringToInt(args[1]),                    1,                 false); } break;
 			case 3: { DumpState(StringToInt(args[0]), StringToInt(args[1]), StringToInt(args[2]),                 false); } break;
 			case 4: { DumpState(StringToInt(args[0]), StringToInt(args[1]), StringToInt(args[2]), StringToBool(args[3])); } break;
@@ -3837,6 +3889,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugColVolDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugPathDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<MuteActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());

@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <chrono>
+#include <string_view>
 
 #include "IModelParser.h"
 #include "3DOParser.h"
@@ -267,8 +268,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	{
 		auto lock = CModelsLock::GetScopedLock();
 
-		std::string modelBaseName = FileSystem::GetBasename(FileSystem::GetFilename(name));
-		model = GetCachedModel(modelBaseName);
+		model = GetCachedModel(name);
 
 		load = (model->loadStatus == S3DModel::LoadStatus::NOTLOADED);
 		if (load)
@@ -292,11 +292,22 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	return model;
 }
 
-S3DModel* CModelLoader::GetCachedModel(const std::string& name)
+S3DModel* CModelLoader::GetCachedModel(std::string name)
 {
 	// caller has mutex lock
-	const auto ci = cache.find(name);
+
+	static const auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
+
+	static constexpr std::string_view O3D = "objects3d/";
+	if (auto oi = name.find(O3D); oi != std::string::npos) {
+		assert(oi == 0u);
+		name.erase(0, O3D.size());
+	}
+
+	auto key = std::make_pair(name, uint32_t(-1));
+	const auto ci = spring::BinarySearch(cache.begin(), cache.end(), key, CompPred);
 	if (ci != cache.end()) {
+		assert(name == ci->first);
 		return &models[ci->second];
 	}
 
@@ -306,7 +317,7 @@ S3DModel* CModelLoader::GetCachedModel(const std::string& name)
 	}
 
 	models[modelID].id = ++modelID;
-	cache[name] = modelID;
+	spring::VectorInsertSorted(cache, std::make_pair(name, modelID), CompPred);
 
 	return &models[modelID];
 }
@@ -379,6 +390,9 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 
 	try {
 		parser->Load(model, path);
+		if (model.numPieces > 254)
+			throw content_error("A model has too many pieces (>254)" + path);
+
 	} catch (const content_error& ex) {
 		{
 			auto lock = CModelsLock::GetScopedLock();

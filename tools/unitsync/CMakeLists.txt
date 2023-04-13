@@ -15,6 +15,9 @@ list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives)
 list(APPEND unitsync_libs ${ZLIB_LIBRARY})
 list(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
 
+### smmalloc
+list(APPEND unitsync_libs "smmalloc")
+
 if (WIN32)
 	list(APPEND unitsync_libs ${IPHLPAPI_LIBRARY})
 	list(APPEND unitsync_libs ${WINMM_LIBRARY})

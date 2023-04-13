@@ -617,7 +617,17 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
 
-	sortedProjectiles[drawSorted && pro->drawSorted].push_back(pro);
+
+	using PushProjectileFunctorsT = void (*)(CProjectileDrawer*, CProjectile*);
+	static PushProjectileFunctorsT PushProjectileFunctors[] = {
+		[](CProjectileDrawer* pd, CProjectile* pro) -> void {
+			pd->sortedProjectiles[0].emplace_back(pro);
+		},
+		[](CProjectileDrawer* pd, CProjectile* pro) -> void {
+			spring::VectorInsertSorted(pd->sortedProjectiles[1], pro, pd->GetSortingPredicate());
+		}
+	};
+	PushProjectileFunctors[drawSorted && pro->drawSorted](this, pro);
 }
 
 
@@ -766,9 +776,6 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
 		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
-
-		// empty if !drawSorted
-		std::sort(sortedProjectiles[1].begin(), sortedProjectiles[1].end(), sortingPredicate);
 
 		for (auto p : sortedProjectiles[1]) {
 			p->Draw();

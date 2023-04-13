@@ -36,9 +36,10 @@ CONFIG(int, CamFrameTimeCorrection)
 	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 
-CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
+CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
 	: camType(cameraType)
 	, projType(projectionType)
+	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
 {
 	assert(cameraType < CAMTYPE_COUNT);
 
@@ -51,6 +52,13 @@ CCamera::CCamera(unsigned int cameraType, unsigned int projectionType)
 
 	SetVFOV(45.0f);
 	UpdateFrustum();
+}
+
+void CCamera::SetCamType(uint32_t ct)
+{
+	camType = ct;
+	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
+	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
 void CCamera::InitConfigNotify(){
@@ -148,54 +156,51 @@ void CCamera::UpdateFrustum()
 	float2 nAxisScales;
 	float2 fAxisScales;
 
-	switch (projType) {
-		case PROJTYPE_PERSP: {
-			// NOTE: "-" because we want normals
-			const float3 forwardy = (-forward *                         tanHalfFov );
-			const float3 forwardx = (-forward * math::tan(aspectRatio *    halfFov));
-
-			const float2 tanHalfFOVs = {math::tan(GetHFOV() * 0.5f * math::DEG_TO_RAD), tanHalfFov}; // horz, vert
-
-			frustum.planes[FRUSTUM_PLANE_TOP] = (forwardy +    up).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_BOT] = (forwardy -    up).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_RGT] = (forwardx + right).UnsafeANormalize();
-			frustum.planes[FRUSTUM_PLANE_LFT] = (forwardx - right).UnsafeANormalize();
-
-			nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y}; // x, y
-			fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y}; // x, y
-		} break;
-		case PROJTYPE_ORTHO: {
-			frustum.planes[FRUSTUM_PLANE_TOP] =     up;
-			frustum.planes[FRUSTUM_PLANE_BOT] =    -up;
-			frustum.planes[FRUSTUM_PLANE_RGT] =  right;
-			frustum.planes[FRUSTUM_PLANE_LFT] = -right;
-
-			nAxisScales = {frustum.scales.x, frustum.scales.y};
-			fAxisScales = {frustum.scales.x, frustum.scales.y};
-		} break;
-		default: {
-			assert(false);
-		} break;
+	assert(projType <= PROJTYPE_ORTHO);
+	if (projType == PROJTYPE_PERSP) {
+		const float2 tanHalfFOVs = {math::tan(GetHFOV() * 0.5f * math::DEG_TO_RAD), tanHalfFov}; // horz, vert
+		nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y}; // x, y
+		fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y}; // x, y
+	} else { //PROJTYPE_ORTHO
+		nAxisScales = {frustum.scales.x, frustum.scales.y};
+		fAxisScales = {frustum.scales.x, frustum.scales.y};
 	}
 
-	frustum.planes[FRUSTUM_PLANE_FRN] = -forward;
-	frustum.planes[FRUSTUM_PLANE_BCK] =  forward;
+	frustum.verts[FRUSTUM_POINT_NBL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
+	frustum.verts[FRUSTUM_POINT_NBR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up * -nAxisScales.y); // nbr
+	frustum.verts[FRUSTUM_POINT_NTR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up *  nAxisScales.y); // ntr
+	frustum.verts[FRUSTUM_POINT_NTL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up *  nAxisScales.y); // ntl
+	frustum.verts[FRUSTUM_POINT_FBL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
+	frustum.verts[FRUSTUM_POINT_FBR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up * -fAxisScales.y); // fbr
+	frustum.verts[FRUSTUM_POINT_FTR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up *  fAxisScales.y); // ftr
+	frustum.verts[FRUSTUM_POINT_FTL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up *  fAxisScales.y); // ftl
 
-	frustum.verts[0] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up *  nAxisScales.y); // ntl
-	frustum.verts[1] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up *  nAxisScales.y); // ntr
-	frustum.verts[2] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up * -nAxisScales.y); // nbr
-	frustum.verts[3] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
-	frustum.verts[4] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up *  fAxisScales.y); // ftl
-	frustum.verts[5] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up *  fAxisScales.y); // ftr
-	frustum.verts[6] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up * -fAxisScales.y); // fbr
-	frustum.verts[7] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
+	const auto SetFrustumPlane = [this](uint32_t i, uint32_t v1i, uint32_t v2i, uint32_t v3i) {
+		const auto& v1 = frustum.verts[v1i];
+		const auto& v2 = frustum.verts[v2i];
+		const auto& v3 = frustum.verts[v3i];
 
-	frustum.edges[0] = (frustum.verts[1] - frustum.verts[0]).UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
-	frustum.edges[1] = (frustum.verts[0] - frustum.verts[3]).UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
-	frustum.edges[2] = (frustum.verts[4] - frustum.verts[0]).UnsafeANormalize(); // ftl - ntl
-	frustum.edges[3] = (frustum.verts[5] - frustum.verts[1]).UnsafeANormalize(); // ftr - ntr
-	frustum.edges[4] = (frustum.verts[6] - frustum.verts[2]).UnsafeANormalize(); // fbr - nbr
-	frustum.edges[5] = (frustum.verts[7] - frustum.verts[3]).UnsafeANormalize(); // fbl - nbl
+		const float3 u = v1 - v2;
+		const float3 v = v3 - v2;
+
+		const float3 n = v.cross(u).UnsafeANormalize();
+		const float  d = -n.dot(v2);
+		frustum.planes[i] = float4(n, d);
+	};
+
+	SetFrustumPlane(FRUSTUM_PLANE_LFT, FRUSTUM_POINT_NTL, FRUSTUM_POINT_NBL, FRUSTUM_POINT_FBL);
+	SetFrustumPlane(FRUSTUM_PLANE_RGT, FRUSTUM_POINT_NBR, FRUSTUM_POINT_NTR, FRUSTUM_POINT_FBR);
+	SetFrustumPlane(FRUSTUM_PLANE_BOT, FRUSTUM_POINT_NBL, FRUSTUM_POINT_NBR, FRUSTUM_POINT_FBR);
+	SetFrustumPlane(FRUSTUM_PLANE_TOP, FRUSTUM_POINT_NTR, FRUSTUM_POINT_NTL, FRUSTUM_POINT_FTL);
+	SetFrustumPlane(FRUSTUM_PLANE_NEA, FRUSTUM_POINT_NTL, FRUSTUM_POINT_NTR, FRUSTUM_POINT_NBR);
+	SetFrustumPlane(FRUSTUM_PLANE_FAR, FRUSTUM_POINT_FTR, FRUSTUM_POINT_FTL, FRUSTUM_POINT_FBL);
+
+	frustum.edges[FRUSTUM_EDGE_NTR_NTL] = (frustum.verts[FRUSTUM_POINT_NTR] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
+	frustum.edges[FRUSTUM_EDGE_NTL_NBL] = (frustum.verts[FRUSTUM_POINT_NTL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
+	frustum.edges[FRUSTUM_EDGE_FTL_NTL] = (frustum.verts[FRUSTUM_POINT_FTL] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ftl - ntl
+	frustum.edges[FRUSTUM_EDGE_FTR_NTR] = (frustum.verts[FRUSTUM_POINT_FTR] - frustum.verts[FRUSTUM_POINT_NTR]).UnsafeANormalize(); // ftr - ntr
+	frustum.edges[FRUSTUM_EDGE_FBR_NBR] = (frustum.verts[FRUSTUM_POINT_FBR] - frustum.verts[FRUSTUM_POINT_NBR]).UnsafeANormalize(); // fbr - nbr
+	frustum.edges[FRUSTUM_EDGE_FBL_NBL] = (frustum.verts[FRUSTUM_POINT_FBL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // fbl - nbl
 
 	if (camType == CAMTYPE_VISCUL)
 		return;
@@ -213,7 +218,7 @@ void CCamera::UpdateFrustum()
 	visCam->CopyState(curCam);
 }
 
-void CCamera::UpdateMatrices(unsigned int vsx, unsigned int vsy, float var)
+void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 {
 	// recalculate the projection transform
 	switch (projType) {
@@ -330,7 +335,15 @@ void CCamera::UpdateViewRange()
 	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
 }
 
+bool CCamera::InView(const float3& point, float radius) const
+{
+	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
+}
 
+bool CCamera::InView(const AABB& aabb) const
+{
+	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
+}
 
 #if 0
 // axis-aligned bounding box test (AABB)
@@ -365,10 +378,10 @@ bool CCamera::InView(const AABB& aabb) const
 
 	{
 		// test box planes
-		for (unsigned int i = 0; i < 6; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = 0; i < 6; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (boxFaces[i * 2 + 1].dot(frustum.verts[j] - boxFaces[i * 2 + 0]) > 0.0f);
 			}
 
@@ -378,10 +391,10 @@ bool CCamera::InView(const AABB& aabb) const
 	}
 	{
 		// test cam planes (LRTB)
-		for (unsigned int i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FRN; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FAR; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (frustum.planes[i].dot(boxVerts[j] - pos) > xyPlaneOffsets[i >> 1]);
 			}
 
@@ -392,10 +405,10 @@ bool CCamera::InView(const AABB& aabb) const
 	}
 	{
 		// test cam planes (NF)
-		for (unsigned int i = FRUSTUM_PLANE_FRN; i < FRUSTUM_PLANE_CNT; i++) {
-			unsigned int n = 0;
+		for (uint32_t i = FRUSTUM_PLANE_FAR; i < FRUSTUM_PLANE_CNT; i++) {
+			uint32_t n = 0;
 
-			for (unsigned int j = 0; j < 8; j++) {
+			for (uint32_t j = 0; j < 8; j++) {
 				n += (frustum.planes[i].dot(boxVerts[j] - (pos + forward * zwPlaneOffsets[i & 1])) > 0.0f);
 			}
 
@@ -404,8 +417,8 @@ bool CCamera::InView(const AABB& aabb) const
 		}
 	}
 	{
-		for (unsigned int i = 0; i < 6; i++) {
-			for (unsigned int j = 0; j < 6; j++) {
+		for (uint32_t i = 0; i < 6; i++) {
+			for (uint32_t j = 0; j < 6; j++) {
 				if (boxFaces[i * 2 + 1] == frustum.planes[j])
 					continue;
 
@@ -416,7 +429,7 @@ bool CCamera::InView(const AABB& aabb) const
 				float2 frustAxisDists = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()}; // .x=min,.y=max
 				float4  projAxisDists;
 
-				for (unsigned int k = 0; k < 8; k++) {
+				for (uint32_t k = 0; k < 8; k++) {
 					boxAxisDists.x = std::min(boxAxisDists.x, boxVerts[k].dot(testAxisN));
 					boxAxisDists.y = std::max(boxAxisDists.y, boxVerts[k].dot(testAxisN));
 
@@ -578,20 +591,21 @@ inline void CCamera::glOrthoScaledSpring(
 void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	const float3 isectParams = {miny, maxy, 1.0f / scale};
 	// only non-zero for orthographic cameras
-	const float3 planeOffsets[FRUSTUM_PLANE_FRN] = {
+	const float3 planeOffsets[FRUSTUM_PLANE_NEA] = {
 		-right * frustum.scales.x,
 		 right * frustum.scales.x,
-		    up * frustum.scales.y,
 		   -up * frustum.scales.y,
+		    up * frustum.scales.y,
 	};
 
 	// reset counts per side
 	frustumLines[FRUSTUM_SIDE_POS][4].sign = 0;
 	frustumLines[FRUSTUM_SIDE_NEG][4].sign = 0;
 
-	// note: order does not matter
-	for (unsigned int i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_FRN; i++) {
-		CalcFrustumLine(frustum.planes[i], planeOffsets[i],  isectParams, side);
+	// Note: order does not matter
+	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_NEA; i++) {
+		// Note: CalcFrustumLine expects normals to point outwards relative to frustum shape, frustum.planes normals point inwards
+		CalcFrustumLine(-1.0f * frustum.planes[i], planeOffsets[i],  isectParams, side);
 	}
 
 	assert(!neg || frustumLines[FRUSTUM_SIDE_NEG][4].sign == 4);
@@ -601,7 +615,7 @@ void CCamera::CalcFrustumLine(
 	const float3& normal,
 	const float3& offset,
 	const float3& params,
-	unsigned int side
+	uint32_t side
 ) {
 	FrustumLine line;
 
@@ -744,38 +758,31 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-
-
-bool CCamera::Frustum::IntersectSphere(const float3& cp, const float4& sp) const
+// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
+bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
 {
-	// need a vector since planes do not carry origin-distance
-	const float3 vec = float3(sp) - cp;
+	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
+		if ((testMask & (1 << i)) == 0)
+			continue;
 
-	// use arrays because neither float2 nor float4 have an operator[]
-	const float xyPlaneOffsets[2] = {scales.x, scales.y};
-	const float zwPlaneOffsets[2] = {scales.z, scales.w};
-
-	static_assert(FRUSTUM_PLANE_LFT == 0, "");
-	static_assert(FRUSTUM_PLANE_FRN == 4, "");
-
-	#if 0
-	// test if <sp> is in front of the near-plane
-	if (vec.dot(planes[FRUSTUM_PLANE_FRN]) > (zwPlaneOffsets[0] + sp.w))
-		return false;
-	#endif
-
-	// test if <sp> is in front of a side-plane (LRTB)
-	for (unsigned int i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_FRN; i++) {
-		if (vec.dot(planes[i]) > (xyPlaneOffsets[i >> 1] + sp.w))
-			return false;
+		const auto& plane = planes[i];
+		const float dist = plane.dot(p) + plane.w;
+		if (dist < -radius)
+			return false; // outside
+		/*
+		else if (dist < radius)
+			return true;  // intersect
+		*/
 	}
 
-	// test if <sp> is behind the far-plane
-	return !(vec.dot(planes[FRUSTUM_PLANE_BCK]) > (zwPlaneOffsets[1] + sp.w));
+	return true; // inside or intersect
 }
 
+/*
 bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
+	return true;
+
 	// edge axes and normals are identical for AABBs
 	constexpr float3 aabbPlanes[3] = {
 		RgtVector,
@@ -818,12 +825,30 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 	if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
 		return false;
 
-	for (unsigned int i = 0; i < 3; i++) {
-		for (unsigned int j = 0; j < 6; j++) {
+	for (uint32_t i = 0; i < 3; i++) {
+		for (uint32_t j = 0; j < 6; j++) {
 			crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
 		}
 	}
 
 	return (std::find_if(&crossAxes[0], &crossAxes[0] + 3 * 6, AxisTestPred) == (&crossAxes[0] + 3 * 6));
 }
+*/
 
+// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
+bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
+{
+	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
+		if ((testMask & (1 << i)) == 0)
+			continue;
+
+		const auto& plane = planes[i];
+		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
+			return false; // outside
+		/*
+		else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
+			return true;  // intersects
+		*/
+	}
+	return true; // inside or intersect
+}

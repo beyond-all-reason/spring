@@ -1351,14 +1351,8 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
 
 	lineDrawer.UpdateLineStipple();
-	{
-		worldDrawer.Update(newSimFrame);
-		matrixUploader.Update();
-		modelsUniformsUploader.Update();
 
-		CNamedTextures::Update();
-		//CFontTexture::Update();
-	}
+	CNamedTextures::Update();
 
 	// always update InfoTexture and SoundListener at <= 30Hz (even when paused)
 	if (newSimFrame || forceUpdate) {
@@ -1404,13 +1398,18 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		eventHandler.Update();
 	}
 
-	//TODO figure out the right order of operations
 	if (unitTracker.Enabled())
 		unitTracker.SetCam();
 
 	camera->Update();
-	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera
 	shadowHandler.Update();
+	{
+		worldDrawer.Update(newSimFrame);
+		matrixUploader.Update();
+		modelsUniformsUploader.Update();
+	}
+
+	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera
 
 	//Update per-drawFrame UBO
 	UniformConstants::GetInstance().Update();
@@ -1771,7 +1770,7 @@ void CGame::SimFrame() {
 	#endif
 
 	// useful for desync-debugging (enter instead of -1 start & end frame of the range you want to debug)
-	DumpState(-1, -1, 1, false);
+	DumpState(-1, -1, 1, std::nullopt);
 
 	ASSERT_SYNCED(gsRNG.GetGenState());
 	LEAVE_SYNCED_CODE();

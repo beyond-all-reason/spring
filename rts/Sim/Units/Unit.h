@@ -47,23 +47,23 @@ namespace icon {
 }
 
 // LOS state bits
-#define LOS_INLOS      (1 << 0)  // the unit is currently in the los of the allyteam
-#define LOS_INRADAR    (1 << 1)  // the unit is currently in radar from the allyteam
-#define LOS_PREVLOS    (1 << 2)  // the unit has previously been in los from the allyteam
-#define LOS_CONTRADAR  (1 << 3)  // the unit has continuously been in radar since it was last inlos by the allyteam
+static constexpr uint8_t LOS_INLOS     = (1 << 0);  // the unit is currently in the los of the allyteam
+static constexpr uint8_t LOS_INRADAR   = (1 << 1);  // the unit is currently in radar from the allyteam
+static constexpr uint8_t LOS_PREVLOS   = (1 << 2);  // the unit has previously been in los from the allyteam
+static constexpr uint8_t LOS_CONTRADAR = (1 << 3);  // the unit has continuously been in radar since it was last inlos by the allyteam
 
-#define LOS_MASK_SHIFT 4
+static constexpr uint8_t LOS_MASK_SHIFT = 4;
 
 // LOS mask bits  (masked bits are not automatically updated)
-#define LOS_INLOS_MASK     (LOS_INLOS << LOS_MASK_SHIFT)   // do not update LOS_INLOS
-#define LOS_INRADAR_MASK   (LOS_INRADAR << LOS_MASK_SHIFT)   // do not update LOS_INRADAR
-#define LOS_PREVLOS_MASK   (LOS_PREVLOS << LOS_MASK_SHIFT)  // do not update LOS_PREVLOS
-#define LOS_CONTRADAR_MASK (LOS_CONTRADAR << LOS_MASK_SHIFT)  // do not update LOS_CONTRADAR
+static constexpr uint8_t LOS_INLOS_MASK     = (LOS_INLOS     << LOS_MASK_SHIFT);  // do not update LOS_INLOS
+static constexpr uint8_t LOS_INRADAR_MASK   = (LOS_INRADAR   << LOS_MASK_SHIFT);  // do not update LOS_INRADAR
+static constexpr uint8_t LOS_PREVLOS_MASK   = (LOS_PREVLOS   << LOS_MASK_SHIFT);  // do not update LOS_PREVLOS
+static constexpr uint8_t LOS_CONTRADAR_MASK = (LOS_CONTRADAR << LOS_MASK_SHIFT);  // do not update LOS_CONTRADAR
 
-#define LOS_ALL_BITS \
-	(LOS_INLOS      | LOS_INRADAR      | LOS_PREVLOS      | LOS_CONTRADAR)
-#define LOS_ALL_MASK_BITS \
-	(LOS_INLOS_MASK | LOS_INRADAR_MASK | LOS_PREVLOS_MASK | LOS_CONTRADAR_MASK)
+static constexpr uint8_t LOS_ALL_BITS = \
+	(LOS_INLOS      | LOS_INRADAR      | LOS_PREVLOS      | LOS_CONTRADAR);
+static constexpr uint8_t LOS_ALL_MASK_BITS = \
+	(LOS_INLOS_MASK | LOS_INRADAR_MASK | LOS_PREVLOS_MASK | LOS_CONTRADAR_MASK);
 
 
 class CUnit : public CSolidObject
@@ -336,9 +336,9 @@ public:
 
 	// indicates the los/radar status each allyteam has on this unit
 	// should technically be MAX_ALLYTEAMS, but #allyteams <= #teams
-	std::array<unsigned char, /*MAX_TEAMS*/ 255> losStatus{{0}};
+	std::array<uint8_t, /*MAX_TEAMS*/ 255> losStatus{{0}};
 	// bit-mask indicating which allyteams see this unit with positional error
-	std::array<unsigned  int, /*MAX_TEAMS/32*/ 8> posErrorMask{{1}};
+	std::array<uint32_t, /*MAX_TEAMS/32*/ 8> posErrorMask{{1}};
 
 	// quads the unit is part of
 	std::vector<int> quads;

@@ -9,7 +9,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/creg/STL_Deque.h"
 #include "System/EventHandler.h"
 #include "System/SafeUtil.h"
@@ -468,9 +468,9 @@ inline SLosInstance::TLosStatus ILosType::OptimizeInstanceUpdate(SLosInstance* l
 inline int ILosType::GetHashNum(const int allyteam, const int2 baseLos, const float radius) const
 {
 	std::uint32_t hash = 0;
-	hash = HsiehHash(&allyteam, sizeof(allyteam), hash);
-	hash = HsiehHash(&baseLos,  sizeof(baseLos),  hash);
-	hash = HsiehHash(&radius,   sizeof(radius),   hash);
+	hash = spring::LiteHash(&allyteam, sizeof(allyteam), hash);
+	hash = spring::LiteHash(&baseLos,  sizeof(baseLos),  hash);
+	hash = spring::LiteHash(&radius,   sizeof(radius),   hash);
 	return hash;
 }
 

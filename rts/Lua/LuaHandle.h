@@ -99,7 +99,6 @@ class CLuaHandle : public CEventClient
 		LuaRBOs& GetRBOs(const lua_State* L = nullptr) { return GetLuaContextData(L)->rbos; }
 		CLuaDisplayLists& GetDisplayLists(const lua_State* L = NULL) { return GetLuaContextData(L)->displayLists; }
 #endif
-
 	public: // call-ins
 		bool WantsEvent(const std::string& name) override { return HasCallIn(L, name); }
 		virtual bool HasCallIn(lua_State* L, const std::string& name) const;
@@ -238,6 +237,7 @@ class CLuaHandle : public CEventClient
 		void DrawWorldPreUnit() override;
 		void DrawPreDecals() override;
 		void DrawWorldPreParticles() override;
+		void DrawWaterPost() override;
 		void DrawWorldShadow() override;
 		void DrawShadowPassTransparent() override;
 		void DrawWorldReflection() override;

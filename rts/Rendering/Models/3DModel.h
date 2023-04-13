@@ -14,10 +14,12 @@
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
+#include "System/float4.h"
 #include "System/SafeUtil.h"
+#include "System/SpringMath.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS  = 2560;
+constexpr int MAX_MODEL_OBJECTS  = 3840;
 constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
 constexpr int NUM_MODEL_TEXTURES = 2;
 constexpr int NUM_MODEL_UVCHANNS = 2;
@@ -47,9 +49,16 @@ struct SVertexData {
 		tTangent = float3{};
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
-		pieceIndex = uint32_t(-1);
+		boneIDs = DEFAULT_BONEIDS;
+		boneWeights = DEFAULT_BONEWEIGHTS;
 	}
-	SVertexData(const float3& p, const float3& n, const float3& s, const float3& t, const float2& uv0, const float2& uv1)
+	SVertexData(
+		const float3& p,
+		const float3& n,
+		const float3& s,
+		const float3& t,
+		const float2& uv0,
+		const float2& uv1)
 	{
 		pos = p;
 		normal = n;
@@ -57,21 +66,38 @@ struct SVertexData {
 		tTangent = t;
 		texCoords[0] = uv0;
 		texCoords[1] = uv1;
-		// pieceIndex is initialized afterwards
-		pieceIndex = uint32_t(-1);
+		// boneIDs is initialized afterwards
+		boneIDs = DEFAULT_BONEIDS;
+		boneWeights = DEFAULT_BONEWEIGHTS;
 	}
 
 	float3 pos;
 	float3 normal;
 	float3 sTangent;
 	float3 tTangent;
-
-	// TODO:
-	//   with pieceIndex this struct is no longer 64 bytes in size which ATI's prefer
-	//   support an arbitrary number of channels, would be easy but overkill (for now)
 	float2 texCoords[NUM_MODEL_UVCHANNS];
+	std::array<uint8_t, 4> boneIDs;
+	std::array<uint8_t, 4> boneWeights;
 
-	uint32_t pieceIndex;
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS     = { 255, 255, 255, 255 };
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEWEIGHTS = { 255,   0,   0,   0 };
+
+	void SetBones(const std::vector<std::pair<uint8_t, float>>& bi) {
+		assert(bi.size() == 4);
+		boneIDs = {
+			bi[0].first,
+			bi[1].first,
+			bi[2].first,
+			bi[3].first
+		};
+
+		boneWeights = {
+			(static_cast<uint8_t>(math::round(bi[0].second * 255.0f))),
+			(static_cast<uint8_t>(math::round(bi[1].second * 255.0f))),
+			(static_cast<uint8_t>(math::round(bi[2].second * 255.0f))),
+			(static_cast<uint8_t>(math::round(bi[3].second * 255.0f)))
+		};
+	}
 };
 
 
@@ -121,6 +147,7 @@ struct S3DModelPiece {
 		colvol = {};
 
 		bposeMatrix.LoadIdentity();
+		bposeInvMatrix.LoadIdentity();
 		bakedMatrix.LoadIdentity();
 
 		offset = ZeroVector;
@@ -160,6 +187,7 @@ public:
 
 	void SetPieceMatrix(const CMatrix44f& m) {
 		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
+		bposeInvMatrix = bposeMatrix.InvertAffine();
 
 		for (S3DModelPiece* c: children) {
 			c->SetPieceMatrix(bposeMatrix);
@@ -212,6 +240,7 @@ public:
 	CollisionVolume colvol;
 
 	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
+	CMatrix44f bposeInvMatrix;   /// Inverse of bind-pose transform, including baked rots
 	CMatrix44f bakedMatrix;      /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
@@ -305,6 +334,10 @@ struct S3DModel
 		return *this;
 	}
 
+	      S3DModelPiece* FindPiece(const std::string& name);
+	const S3DModelPiece* FindPiece(const std::string& name) const;
+	size_t FindPieceOffset(const std::string& name) const;
+
 	S3DModelPiece* GetPiece(size_t i) const { assert(i < pieceObjects.size()); return pieceObjects[i]; }
 	S3DModelPiece* GetRootPiece() const { return (GetPiece(0)); }
 
@@ -323,10 +356,17 @@ struct S3DModel
 	void SetPieceMatrices() {
 		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
 
-		//use this occasion and copy bpos matrices
-		for (int i = 0; i < pieceObjects.size(); ++i) {
+		// use this occasion and copy bpose matrices
+		for (size_t i = 0; i < pieceObjects.size(); ++i) {
 			const auto* po = pieceObjects[i];
-			matAlloc[i] = po->bposeMatrix;
+			matAlloc[0         + i] = po->bposeMatrix;
+		}
+
+		// use this occasion and copy inverse bpose matrices
+		// store them right after all bind pose matrices
+		for (size_t i = 0; i < pieceObjects.size(); ++i) {
+			const auto* po = pieceObjects[i];
+			matAlloc[numPieces + i] = po->bposeInvMatrix;
 		}
 	}
 
@@ -338,7 +378,7 @@ struct S3DModel
 
 		// force mutex just in case this is called from modelLoader.ProcessVertices()
 		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
-		matAlloc = ScopedMatricesMemAlloc(numPieces);
+		matAlloc = ScopedMatricesMemAlloc(2 * numPieces);
 
 		std::vector<S3DModelPiece*> stack = { root };
 

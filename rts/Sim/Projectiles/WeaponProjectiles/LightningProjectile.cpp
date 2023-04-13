@@ -15,7 +15,7 @@ CR_BIND_DERIVED(CLightningProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CLightningProjectile,(
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(color),
-	CR_MEMBER(displacements),
+	CR_MEMBER(displacements1),
 	CR_MEMBER(displacements2)
 ))
 
@@ -30,11 +30,11 @@ CLightningProjectile::CLightningProjectile(const ProjectileParams& params): CWea
 		color = weaponDef->visuals.color;
 	}
 
-	displacements [0] = 0.0f;
+	displacements1[0] = 0.0f;
 	displacements2[0] = 0.0f;
 
 	for (size_t d = 1; d < displacements_size; ++d) {
-		displacements[d]  = (gsRNG.NextFloat() - 0.5f) * drawRadius * 0.05f;
+		displacements1[d] = (gsRNG.NextFloat() - 0.5f) * drawRadius * 0.05f;
 		displacements2[d] = (gsRNG.NextFloat() - 0.5f) * drawRadius * 0.05f;
 	}
 }
@@ -44,11 +44,11 @@ void CLightningProjectile::Update()
 	if (--ttl <= 0) {
 		deleteMe = true;
 	} else {
-		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, displacements[0], 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, displacements1[0], 0.0f, owner(), nullptr);
 	}
 
 	for (size_t d = 1; d < displacements_size; ++d) {
-		displacements[d]  += (gsRNG.NextFloat() - 0.5f) * 0.3f;
+		displacements1[d] += (gsRNG.NextFloat() - 0.5f) * 0.3f;
 		displacements2[d] += (gsRNG.NextFloat() - 0.5f) * 0.3f;
 	}
 
@@ -71,36 +71,23 @@ void CLightningProjectile::Draw()
 	const float3 dif  = (startPos - camera->GetPos()).Normalize();
 	const float3 dir1 = (dif.cross(ddir)).Normalize();
 
-	float3 tempPos = startPos;
-	for (size_t d = 1; d < displacements_size - 1; ++d) {
-		float f = (d + 1) * 0.111f;
-		const float3 tempPosO = tempPos;
-		tempPos  = (startPos * (1.0f - f)) + (targetPos * f);
+	const float* displacements[] = { displacements1, displacements2 };
 
-		#define WDV (&weaponDef->visuals)
-		AddEffectsQuad(
-			{ tempPosO + (dir1 * (displacements[d    ] + WDV->thickness)), WDV->texture1->xstart, WDV->texture1->ystart, col },
-			{ tempPos  + (dir1 * (displacements[d + 1] + WDV->thickness)), WDV->texture1->xend,   WDV->texture1->ystart, col },
-			{ tempPos  + (dir1 * (displacements[d + 1] - WDV->thickness)), WDV->texture1->xend,   WDV->texture1->yend,   col },
-			{ tempPosO + (dir1 * (displacements[d    ] - WDV->thickness)), WDV->texture1->xstart, WDV->texture1->yend,   col }
-		);
-		#undef WDV
-	}
+	for (auto* displacement : displacements) {
+		float3 tempPos = startPos;
+		for (size_t d = 1; d < displacements_size - 1; ++d) {
+			float f = (d + 1) * 0.111f;
+			const float3 tempPosO = tempPos;
+			tempPos  = (startPos * (1.0f - f)) + (targetPos * f);
 
-	tempPos = startPos;
-	for (size_t d = 1; d < displacements_size - 1; ++d) {
-		float f = (d + 1) * 0.111f;
-		const float3 tempPosO = tempPos;
-		tempPos = startPos * (1.0f - f) + targetPos * f;
-
-		#define WDV (&weaponDef->visuals)
-		AddEffectsQuad(
-			{ tempPosO + dir1 * (displacements2[d    ] + WDV->thickness), WDV->texture1->xstart, WDV->texture1->ystart, col },
-			{ tempPos  + dir1 * (displacements2[d + 1] + WDV->thickness), WDV->texture1->xend,   WDV->texture1->ystart, col },
-			{ tempPos  + dir1 * (displacements2[d + 1] - WDV->thickness), WDV->texture1->xend,   WDV->texture1->yend,   col },
-			{ tempPosO + dir1 * (displacements2[d    ] - WDV->thickness), WDV->texture1->xstart, WDV->texture1->yend,   col }
-		);
-		#undef WDV
+			const auto& WDV = weaponDef->visuals;
+			AddEffectsQuad(
+				{ tempPosO + (dir1 * (displacement[d    ] + WDV.thickness)), WDV.texture1->xstart, WDV.texture1->ystart, col },
+				{ tempPos  + (dir1 * (displacement[d + 1] + WDV.thickness)), WDV.texture1->xend,   WDV.texture1->ystart, col },
+				{ tempPos  + (dir1 * (displacement[d + 1] - WDV.thickness)), WDV.texture1->xend,   WDV.texture1->yend,   col },
+				{ tempPosO + (dir1 * (displacement[d    ] - WDV.thickness)), WDV.texture1->xstart, WDV.texture1->yend,   col }
+			);
+		}
 	}
 }
 

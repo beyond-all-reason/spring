@@ -36,10 +36,12 @@ class IActionExecutor
 {
 protected:
 	IActionExecutor(const std::string& command,
-			const std::string& description, bool cheatRequired = false)
+			const std::string& description, bool cheatRequired = false,
+			std::vector<std::pair<std::string, std::string>> arguments = {})
 		: command(command)
 		, description(description)
 		, cheatRequired(cheatRequired)
+		, arguments(arguments)
 	{}
 	virtual ~IActionExecutor() {}
 
@@ -55,6 +57,12 @@ public:
 	 * This text will eventually be shown to end-users of the engine (gamers).
 	 */
 	const std::string& GetDescription() const { return description; }
+
+	/**
+	 * Returns a list of string pairs describing each argument for the action
+	 * in the form of <arg, description>.
+	 */
+	const std::vector<std::pair<std::string, std::string>>& GetArguments() const { return arguments; }
 
 	/**
 	 * Returns whether this executor handles synced or unsynced commands.
@@ -86,6 +94,7 @@ private:
 	std::string command;
 	std::string description;
 	bool cheatRequired;
+	std::vector<std::pair<std::string, std::string>> arguments;
 };
 
 

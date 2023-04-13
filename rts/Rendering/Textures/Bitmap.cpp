@@ -1275,8 +1275,6 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 				break;
 			}
 
-			hasAlpha &= !forceReplaceAlpha;
-
 			// FPU control word has to be restored as well
 			streflop::streflop_init<streflop::Simple>();
 		}
@@ -1324,7 +1322,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 		return false;
 	}
 
-	if (!hasAlpha)
+	if (!hasAlpha || forceReplaceAlpha)
 		ReplaceAlpha(defaultAlpha);
 
 	return true;

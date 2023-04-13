@@ -9,6 +9,7 @@ Spring changelog
 (since release 1544)
 
 Lua:
+ - removed `Game.allowTeamColors` (was deprecated and always `true`)
  
 
 Misc:

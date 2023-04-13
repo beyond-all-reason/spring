@@ -87,7 +87,7 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Platform/WindowManagerHelper.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/LoadLock.h"
 
 
@@ -1190,7 +1190,20 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  * The fields in `camState` must be consistent with the name/mode and current/new camera mode
  *
  * @tparam camState camState
- * @number camTime
+ * @number[opt=0] transitionTime in nanoseconds
+ *
+ * @number[opt] transitionTimeFactor
+ * multiplicative factor applied to this and all subsequent transition times for
+ * this camera mode.
+ *
+ * Defaults to "CamTimeFactor" springsetting unless set previously.
+ *
+ * @number[opt] transitionTimeExponent
+ * tween factor applied to this and all subsequent transitions for this camera
+ * mode.
+ *
+ * Defaults to "CamTimeExponent" springsetting unless set previously.
+ *
  * @treturn bool set
  */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
@@ -3222,7 +3235,14 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
  * @function Spring.GiveOrderArrayToUnitArray
  * @tparam {number,...} unitArray array of unit ids
  * @tparam {cmdSpec,...} cmdArray
- * @treturn nil|true
+ * @tparam[opt=false] bool pairwise When false, assign all commands to each unit.
+ *
+ * When true, assign commands according to index between units and cmds arrays.
+ *
+ * If len(unitArray) < len(cmdArray) only the first len(unitArray) commands
+ * will be assigned, and vice-versa.
+ *
+ * @treturn nil|bool
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {

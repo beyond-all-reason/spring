@@ -5,7 +5,7 @@
 
 #include "CommandDescription.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/creg/STL_Pair.h"
 
 CR_BIND(SCommandDescription, )
@@ -125,21 +125,21 @@ int CCommandDescriptionCache::CalcHash(const SCommandDescription& cd) const
 {
 	int hash = 0;
 
-	hash = HsiehHash(&cd.id             , sizeof(cd.id)         , hash);
-	hash = HsiehHash(&cd.type           , sizeof(cd.type)       , hash);
-	hash = HsiehHash(&cd.queueing       , sizeof(cd.queueing)   , hash);
-	hash = HsiehHash(&cd.hidden         , sizeof(cd.hidden)     , hash);
-	hash = HsiehHash(&cd.disabled       , sizeof(cd.disabled)   , hash);
-	hash = HsiehHash(&cd.showUnique     , sizeof(cd.showUnique) , hash);
-	hash = HsiehHash(&cd.onlyTexture    , sizeof(cd.onlyTexture), hash);
-	hash = HsiehHash(cd.name.data()     , cd.name.size()        , hash);
-	hash = HsiehHash(cd.action.data()   , cd.action.size()      , hash);
-	hash = HsiehHash(cd.iconname.data() , cd.iconname.size()    , hash);
-	hash = HsiehHash(cd.mouseicon.data(), cd.mouseicon.size()   , hash);
-	hash = HsiehHash(cd.tooltip.data()  , cd.tooltip.size()     , hash);
+	hash = spring::LiteHash(&cd.id             , sizeof(cd.id)         , hash);
+	hash = spring::LiteHash(&cd.type           , sizeof(cd.type)       , hash);
+	hash = spring::LiteHash(&cd.queueing       , sizeof(cd.queueing)   , hash);
+	hash = spring::LiteHash(&cd.hidden         , sizeof(cd.hidden)     , hash);
+	hash = spring::LiteHash(&cd.disabled       , sizeof(cd.disabled)   , hash);
+	hash = spring::LiteHash(&cd.showUnique     , sizeof(cd.showUnique) , hash);
+	hash = spring::LiteHash(&cd.onlyTexture    , sizeof(cd.onlyTexture), hash);
+	hash = spring::LiteHash(cd.name.data()     , cd.name.size()        , hash);
+	hash = spring::LiteHash(cd.action.data()   , cd.action.size()      , hash);
+	hash = spring::LiteHash(cd.iconname.data() , cd.iconname.size()    , hash);
+	hash = spring::LiteHash(cd.mouseicon.data(), cd.mouseicon.size()   , hash);
+	hash = spring::LiteHash(cd.tooltip.data()  , cd.tooltip.size()     , hash);
 
 	for (const std::string& s: cd.params) {
-		hash = HsiehHash(s.data(), s.size(), hash);
+		hash = spring::LiteHash(s.data(), s.size(), hash);
 	}
 
 	return hash;

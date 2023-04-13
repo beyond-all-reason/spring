@@ -98,6 +98,8 @@
 #include "System/Sync/FPUCheck.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "Game/UnsyncedGameCommands.h"
+#include "Game/SyncedGameCommands.h"
 #include "lib/luasocket/src/restrictions.h"
 
 
@@ -123,12 +125,14 @@ DEFINE_bool     (nocolor,                                  false, "Disables colo
 DEFINE_string   (server,                                   "",    "Set listening IP for server");
 DEFINE_bool     (textureatlas,                             false, "Dump each finalized textureatlas in textureatlasN.tga");
 
-DEFINE_bool_EX  (list_ai_interfaces, "list-ai-interfaces", false, "Dump a list of available AI Interfaces to stdout");
-DEFINE_bool_EX  (list_skirmish_ais,  "list-skirmish-ais",  false, "Dump a list of available Skirmish AIs to stdout");
-DEFINE_bool_EX  (list_config_vars,   "list-config-vars",   false, "Dump a list of config vars and meta data to stdout");
-DEFINE_bool_EX  (list_def_tags,      "list-def-tags",      false, "Dump a list of all unitdef-, weapondef-, ... tags and meta data to stdout");
-DEFINE_bool_EX  (list_ceg_classes,   "list-ceg-classes",   false, "Dump a list of available projectile classes to stdout");
-DEFINE_bool_EX  (test_creg,          "test-creg",          false, "Test if all CREG classes are completed");
+DEFINE_bool_EX  (list_ai_interfaces,     "list-ai-interfaces",     false, "Dump a list of available AI Interfaces to stdout");
+DEFINE_bool_EX  (list_skirmish_ais,      "list-skirmish-ais",      false, "Dump a list of available Skirmish AIs to stdout");
+DEFINE_bool_EX  (list_config_vars,       "list-config-vars",       false, "Dump a list of config vars and meta data to stdout");
+DEFINE_bool_EX  (list_def_tags,          "list-def-tags",          false, "Dump a list of all unitdef-, weapondef-, ... tags and meta data to stdout");
+DEFINE_bool_EX  (list_unsynced_commands, "list-unsynced-commands", false, "Dump a list of all unsynced commands to stdout");
+DEFINE_bool_EX  (list_synced_commands,   "list-synced-commands",   false, "Dump a list of all synced commands to stdout");
+DEFINE_bool_EX  (list_ceg_classes,       "list-ceg-classes",       false, "Dump a list of available projectile classes to stdout");
+DEFINE_bool_EX  (test_creg,              "test-creg",              false, "Test if all CREG classes are completed");
 
 DEFINE_bool     (safemode,                                 false, "Turns off many things that are known to cause problems (i.e. on PC/Mac's with lower-end graphic cards)");
 
@@ -370,7 +374,13 @@ bool SpringApp::InitFileSystem()
 	const std::string cwd = std::move(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd()));
 	const std::string ssd = std::move(FileSystem::EnsurePathSepAtEnd(configHandler->GetString("SplashScreenDir")));
 
-	std::vector<std::string> splashScreenFiles(dataDirsAccess.FindFiles(FileSystem::IsAbsolutePath(ssd)? ssd: cwd + ssd, "*.{png,jpg}", 0));
+	std::vector<std::string> splashScreenFiles = dataDirsAccess.FindFiles(FileSystem::IsAbsolutePath(ssd)? ssd: cwd + ssd, "*.{png,jpg}", 0);
+
+	if (splashScreenFiles.empty()) {
+		auto logoPath = FileSystem::EnsurePathSepAtEnd(FileSystem::GetNormalizedPath(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetSpringExecutableDir()) + "base"));
+		splashScreenFiles = dataDirsAccess.FindFiles(logoPath, "*.{png,jpg}", 0);
+	}
+
 	spring::thread fsInitThread(FileSystemInitializer::InitializeThr, &ret);
 
 	#ifndef HEADLESS
@@ -493,6 +503,18 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	}
 	if (FLAGS_list_def_tags) {
 		DefType::OutputTagMap();
+		exit(spring::EXIT_CODE_SUCCESS);
+	}
+	if (FLAGS_list_unsynced_commands) {
+		UnsyncedGameCommands::CreateInstance();
+		unsyncedGameCommands->AddDefaultActionExecutors();
+		std::cout << unsyncedGameCommands->JsonOutput();
+		exit(spring::EXIT_CODE_SUCCESS);
+	}
+	if (FLAGS_list_synced_commands) {
+		SyncedGameCommands::CreateInstance();
+		syncedGameCommands->AddDefaultActionExecutors();
+		std::cout << syncedGameCommands->JsonOutput();
 		exit(spring::EXIT_CODE_SUCCESS);
 	}
 	if (FLAGS_list_ceg_classes)

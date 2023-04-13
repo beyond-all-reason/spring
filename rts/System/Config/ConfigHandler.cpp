@@ -188,7 +188,7 @@ void ConfigHandlerImpl::RemoveDeprecated()
 		if (fcSrc == nullptr)
 			continue;
 
-		for (const auto dv : deprecatedVars) {
+		for (const auto& dv : deprecatedVars) {
 			fcSrc->Delete(dv);
 		}
 	}

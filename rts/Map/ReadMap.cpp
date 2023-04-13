@@ -21,7 +21,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 #include "System/SafeUtil.h"
 #include "System/TimeProfiler.h"
 
@@ -443,10 +443,10 @@ void CReadMap::LoadOriginalHeightMapAndChecksum()
 		initHeightBounds.x = std::min(initHeightBounds.x, heightmap[i]);
 		initHeightBounds.y = std::max(initHeightBounds.y, heightmap[i]);
 
-		checksum = HsiehHash(&heightmap[i], sizeof(heightmap[i]), checksum);
+		checksum = spring::LiteHash(&heightmap[i], sizeof(heightmap[i]), checksum);
 	}
 
-	mapChecksum = HsiehHash(mapInfo->map.name.c_str(), mapInfo->map.name.size(), checksum);
+	mapChecksum = spring::LiteHash(mapInfo->map.name.c_str(), mapInfo->map.name.size(), checksum);
 
 	currHeightBounds.x = initHeightBounds.x;
 	currHeightBounds.y = initHeightBounds.y;
@@ -463,20 +463,20 @@ unsigned int CReadMap::CalcHeightmapChecksum()
 	unsigned int checksum = 0;
 
 	for (int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); ++i) {
-		checksum = HsiehHash(&heightmap[i], sizeof(heightmap[i]), checksum);
+		checksum = spring::LiteHash(&heightmap[i], sizeof(heightmap[i]), checksum);
 	}
 
-	return HsiehHash(mapInfo->map.name.c_str(), mapInfo->map.name.size(), checksum);
+	return spring::LiteHash(mapInfo->map.name.c_str(), mapInfo->map.name.size(), checksum);
 }
 
 
 unsigned int CReadMap::CalcTypemapChecksum()
 {
-	unsigned int checksum = HsiehHash(&typeMap[0], typeMap.size() * sizeof(typeMap[0]), 0);
+	unsigned int checksum = spring::LiteHash(&typeMap[0], typeMap.size() * sizeof(typeMap[0]), 0);
 
 	for (const CMapInfo::TerrainType& tt : mapInfo->terrainTypes) {
-		checksum = HsiehHash(tt.name.c_str(), tt.name.size(), checksum);
-		checksum = HsiehHash(&tt.hardness, offsetof(CMapInfo::TerrainType, receiveTracks) - offsetof(CMapInfo::TerrainType, hardness), checksum);
+		checksum = spring::LiteHash(tt.name.c_str(), tt.name.size(), checksum);
+		checksum = spring::LiteHash(&tt.hardness, offsetof(CMapInfo::TerrainType, receiveTracks) - offsetof(CMapInfo::TerrainType, hardness), checksum);
 	}
 
 	return checksum;

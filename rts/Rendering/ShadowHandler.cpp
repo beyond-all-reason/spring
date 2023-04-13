@@ -19,6 +19,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
@@ -163,6 +164,41 @@ void CShadowHandler::SaveShadowMapTextures() const
 	glSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
 }
 
+void CShadowHandler::DrawFrustumDebug() const
+{
+	if (!debugFrustum || !shadowsLoaded)
+		return;
+
+	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
+	rb.AssertSubmission();
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(1) } }); // NBL - NBR
+	rb.AddVertices({ { shadCam->GetFrustumVert(1) }, { shadCam->GetFrustumVert(2) } }); // NBR - NTR
+	rb.AddVertices({ { shadCam->GetFrustumVert(2) }, { shadCam->GetFrustumVert(3) } }); // NTR - NTL
+	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(0) } }); // NTL - NBL
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(7) } }); // NTL - FTL
+	rb.AddVertices({ { shadCam->GetFrustumVert(2) }, { shadCam->GetFrustumVert(6) } }); // NTR - FTR
+	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(4) } }); // NBL - FBL
+	rb.AddVertices({ { shadCam->GetFrustumVert(1) }, { shadCam->GetFrustumVert(5) } }); // NBR - FBR
+
+	rb.AddVertices({ { shadCam->GetFrustumVert(4) }, { shadCam->GetFrustumVert(5) } }); // FBL - FBR
+	rb.AddVertices({ { shadCam->GetFrustumVert(5) }, { shadCam->GetFrustumVert(6) } }); // FBR - FTR
+	rb.AddVertices({ { shadCam->GetFrustumVert(6) }, { shadCam->GetFrustumVert(7) } }); // FTR - FTL
+	rb.AddVertices({ { shadCam->GetFrustumVert(7) }, { shadCam->GetFrustumVert(4) } }); // FTL - FBL
+
+	auto& sh = rb.GetShader();
+	glLineWidth(2.0f);
+	sh.Enable();
+	sh.SetUniform("ucolor", 0.0f, 0.0f, 1.0f, 1.0f);
+	rb.DrawArrays(GL_LINES);
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+	glLineWidth(1.0f);
+}
+
 void CShadowHandler::FreeFBOAndTextures() {
 	if (smOpaqFBO.IsValid()) {
 		smOpaqFBO.Bind();
@@ -229,6 +265,9 @@ void CShadowHandler::LoadShadowGenShaders()
 		if (i == SHADOWGEN_PROGRAM_MODEL_GL4)
 			continue; //special path
 
+		if (i == SHADOWGEN_PROGRAM_MAP)
+			continue; //special path
+
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[i] + "GLSL");
 
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertProg.glsl", versionDefs[0] + shadowGenProgDefines[i] + extraDefs, GL_VERTEX_SHADER));
@@ -254,6 +293,44 @@ void CShadowHandler::LoadShadowGenShaders()
 
 		shadowGenProgs[i] = po;
 	}
+	{
+		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MAP] + "GLSL");
+
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertMapProg.glsl", versionDefs[0] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_VERTEX_SHADER));
+		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl"   , versionDefs[1] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_FRAGMENT_SHADER));
+		po->BindAttribLocation("vertexPos", 0);
+		po->Link();
+		po->Enable();
+		po->SetUniform("alphaMaskTex", 0);
+		po->SetUniform("heightMapTex", 1);
+		po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
+		po->SetUniform("mapSize",
+			static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
+					   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+		);
+		po->SetUniform("texSquare", 0, 0);
+		po->Disable();
+		po->Validate();
+
+		if (!po->IsValid()) {
+			po->RemoveShaderObject(GL_FRAGMENT_SHADER);
+			po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl", versionDefs[0] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_FRAGMENT_SHADER));
+			po->Link();
+			po->Enable();
+			po->SetUniform("alphaMaskTex", 0);
+			po->SetUniform("heightMapTex", 1);
+			po->SetUniform("alphaParams", mapInfo->map.voidAlphaMin, 0.0f);
+			po->SetUniform("mapSize",
+				static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
+						   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
+			);
+			po->SetUniform("texSquare", 0, 0);
+			po->Disable();
+			po->Validate();
+		}
+
+		shadowGenProgs[SHADOWGEN_PROGRAM_MAP] = po;
+	}
 	if (globalRendering->haveGL4) {
 		Shader::IProgramObject* po = sh->CreateProgramObject("[ShadowHandler]", shadowGenProgHandles[SHADOWGEN_PROGRAM_MODEL_GL4] + "GLSL");
 
@@ -261,7 +338,6 @@ void CShadowHandler::LoadShadowGenShaders()
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProgGL4.glsl", shadowGenProgDefines[SHADOWGEN_PROGRAM_MODEL_GL4] + extraDefs, GL_FRAGMENT_SHADER));
 		po->Link();
 		po->Enable();
-		po->SetUniform("cameraMode", 1);
 		po->SetUniform("alphaCtrl", 0.5f, 1.0f, 0.0f, 0.0f); // test > 0.5
 		po->Disable();
 		po->Validate();
@@ -427,14 +503,33 @@ void CShadowHandler::DrawShadowPasses()
 	inShadowPass = false;
 }
 
-static CMatrix44f ComposeLightMatrix(const ISkyLight* light)
+static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* light)
 {
 	CMatrix44f lightMatrix;
 
 	// sun direction is in world-space, invert it
-	lightMatrix.SetZ(-float3(light->GetLightDir()));
-	lightMatrix.SetX(((lightMatrix.GetZ()).cross(   UpVector       )).ANormalize());
-	lightMatrix.SetY(((lightMatrix.GetX()).cross(lightMatrix.GetZ())).ANormalize());
+	float3 zDir = -float3(light->GetLightDir());
+
+	// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
+
+	// find the most orthogonal vector to zDir and call it xDir
+	float minDot = 1.0f;
+	float3 xDir;
+	for (const auto* dir : { &playerCam->forward, &playerCam->right, &playerCam->up }) {
+		const float dp = zDir.dot(*dir);
+		if (math::fabs(dp) < minDot) {
+			xDir = std::copysign(1.0f, dp) * (*dir);
+			minDot = math::fabs(dp);
+		}
+	}
+
+	// orthonormalize
+	xDir = (xDir - xDir.dot(zDir) * zDir).ANormalize();
+	float3 yDir = xDir.cross(zDir).ANormalize();
+
+	lightMatrix.SetZ(zDir);
+	lightMatrix.SetY(yDir);
+	lightMatrix.SetX(xDir);
 
 	return lightMatrix;
 }
@@ -447,7 +542,7 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
-	const CMatrix44f lightMatrix = ComposeLightMatrix(ISky::GetSky()->GetLight());
+	const CMatrix44f lightMatrix = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
 	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix));
 
 	// KISS; define only the world-to-light transform (P[CULLING] is unused anyway)

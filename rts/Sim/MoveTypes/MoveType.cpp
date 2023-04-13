@@ -11,7 +11,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/SpringMath.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 #include "System/TimeProfiler.h"
 
@@ -38,8 +38,8 @@ CR_REG_METADATA(AMoveType, (
 
 
 
-#define MEMBER_CHARPTR_HASH(memberName) HsiehHash(memberName, strlen(memberName),     0)
-#define MEMBER_LITERAL_HASH(memberName) HsiehHash(memberName, sizeof(memberName) - 1, 0)
+#define MEMBER_CHARPTR_HASH(memberName) spring::LiteHash(memberName, strlen(memberName),     0)
+#define MEMBER_LITERAL_HASH(memberName) spring::LiteHash(memberName, sizeof(memberName) - 1, 0)
 
 static const unsigned int BOOL_MEMBER_HASHES[] = {
 	MEMBER_LITERAL_HASH("useWantedSpeed[0]"), // individual

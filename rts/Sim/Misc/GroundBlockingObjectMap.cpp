@@ -7,7 +7,7 @@
 #include "Map/ReadMap.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/ContainerUtil.h"
-#include "System/Sync/HsiehHash.h"
+#include "System/SpringHash.h"
 
 CGroundBlockingObjectMap groundBlockingObjectMap;
 
@@ -217,7 +217,7 @@ unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 
 	for (unsigned int i = 0; i < arrCells.size(); ++i) {
 		if (!arrCells[i].Empty())
-			checksum = HsiehHash(&i, sizeof(i), checksum);
+			checksum = spring::LiteHash(&i, sizeof(i), checksum);
 	}
 
 	return checksum;

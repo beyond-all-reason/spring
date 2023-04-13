@@ -356,12 +356,14 @@ public:
 		, vertCount0{ 0 }
 		, elemCount0{ 0 }
 		, bufferType{ bufferTypeDefault }
+		, optimizeForStreaming{ true }
 	{}
-	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault)
+	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault, bool optimizeForStreaming_ = true)
 		: RenderBuffer({ vertCount0_, elemCount0_ })
 		, vertCount0 { vertCount0_ }
 		, elemCount0 { elemCount0_ }
 		, bufferType { bufferType_ }
+		, optimizeForStreaming{ optimizeForStreaming_ }
 	{
 		verts.reserve(vertCount0);
 		indcs.reserve(elemCount0);
@@ -669,27 +671,29 @@ private:
 		if (readOnly)
 			return;
 
-		const IndcType baseIndex = static_cast<IndcType>(verts.size_t());
+		const IndcType baseIndex = static_cast<IndcType>(verts.size());
 		float ratio;
 
-		for (int y = 0; y < yDiv; ++y) {
+		for (int y = 0; y <= yDiv; ++y) {
 			ratio = static_cast<float>(y) / static_cast<float>(yDiv);
 			const VertType ml = mix(tl, bl, ratio);
 			const VertType mr = mix(tr, br, ratio);
-			for (int x = 0; y < xDiv; ++x) {
+			for (int x = 0; x <= xDiv; ++x) {
 				ratio = static_cast<float>(x) / static_cast<float>(xDiv);
 
 				verts.emplace_back(mix(ml, mr, ratio));
 			}
 		}
 
-		for (int y = 0; y < yDiv - 1; ++y)
-			for (int x = 0; y < xDiv - 1; ++x) {
-				const IndcType tli = xDiv * (y + 0) + (x + 0) + baseIndex;
-				const IndcType tri = xDiv * (y + 0) + (x + 1) + baseIndex;
-				const IndcType bli = xDiv * (y + 1) + (x + 0) + baseIndex;
-				const IndcType bri = xDiv * (y + 1) + (x + 1) + baseIndex;
+		for (int y = 0; y <= yDiv - 1; ++y)
+			for (int x = 0; x <= xDiv - 1; ++x) {
+				const IndcType tli = (xDiv + 1) * (y + 0) + (x + 0) + baseIndex;
+				const IndcType tri = (xDiv + 1) * (y + 0) + (x + 1) + baseIndex;
+				const IndcType bli = (xDiv + 1) * (y + 1) + (x + 0) + baseIndex;
+				const IndcType bri = (xDiv + 1) * (y + 1) + (x + 1) + baseIndex;
 
+				// This was wrong as it represents CW winding and the default is CCW for front face
+				/*
 				//triangle 1 {tl, tr, bl}
 				indcs.emplace_back(tli);
 				indcs.emplace_back(tri);
@@ -698,6 +702,16 @@ private:
 				//triangle 2 {bl, tr, br}
 				indcs.emplace_back(bli);
 				indcs.emplace_back(tri);
+				indcs.emplace_back(bri);
+				*/
+				//triangle 1 {tl, bl, tr}
+				indcs.emplace_back(tli);
+				indcs.emplace_back(bli);
+				indcs.emplace_back(tri);
+
+				//triangle 2 {tr, bl, br}
+				indcs.emplace_back(tri);
+				indcs.emplace_back(bli);
 				indcs.emplace_back(bri);
 			}
 	}
@@ -747,6 +761,7 @@ private:
 	size_t eboUploadIndex = 0;
 
 	bool readOnly = false;
+	bool optimizeForStreaming = true;
 
 	inline static RenderBufferShader<T> shader;
 
@@ -925,11 +940,27 @@ inline void TypedRenderBuffer<T>::CondInit()
 	if (vao.GetIdRaw() > 0)
 		return;
 
-	if (vertCount0 > 0)
-		vbo = IStreamBuffer<VertType>::CreateInstance(GL_ARRAY_BUFFER        , static_cast<uint32_t>(vertCount0), std::string(vboTypeName), bufferType);
+	if (vertCount0 > 0) {
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_ARRAY_BUFFER;
+		p.numElems = static_cast<uint32_t>(vertCount0);
+		p.name = std::string(vboTypeName);
+		p.type = bufferType;
+		p.optimizeForStreaming = optimizeForStreaming;
 
-	if (elemCount0 > 0)
-		ebo = IStreamBuffer<IndcType>::CreateInstance(GL_ELEMENT_ARRAY_BUFFER, static_cast<uint32_t>(elemCount0), std::string(vboTypeName), bufferType);
+		vbo = IStreamBuffer<VertType>::CreateInstance(p);
+	}
+
+	if (elemCount0 > 0) {
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_ELEMENT_ARRAY_BUFFER;
+		p.numElems = static_cast<uint32_t>(elemCount0);
+		p.name = std::string(vboTypeName);
+		p.type = bufferType;
+		p.optimizeForStreaming = optimizeForStreaming;
+
+		ebo = IStreamBuffer<IndcType>::CreateInstance(p);
+	}
 
 	InitVAO();
 }

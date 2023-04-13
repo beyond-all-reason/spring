@@ -31,15 +31,16 @@ void IStreamBufferConcept::PutBufferLocks()
 	lockList.clear();
 }
 
-IStreamBufferConcept::IStreamBufferConcept(uint32_t target_, uint32_t numElements_, const std::string& name_, const std::string_view& bufferTypeName)
-	: name{ name_ }
-	, target{ target_ }
+IStreamBufferConcept::IStreamBufferConcept(StreamBufferCreationParams p, std::string_view bufferTypeName)
+	: name{ p.name }
+	, target{ p.target }
 	, id{ 0 }
-	, numElements { numElements_ }
+	, numElements { p.numElems }
 	, byteSize{ 0 }
 	, allocIdx{ 0 }
 	, mapElemOffet{ 0 }
 	, mapElemCount{ 0 }
+	, optimizeForStreaming{ p.optimizeForStreaming }
 {
 	if (reportType)
 		LOG_L(L_INFO, "[StreamBuffer::%s] Created StreamBuffer name %s type %s", __func__, name.c_str(), bufferTypeName.data());
