@@ -13,6 +13,7 @@ Lua:
  
 
 Misc:
+ - Add `/debugvisibility` command for debugging the visible quadfield quads
  
 
 Sim:

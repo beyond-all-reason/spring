@@ -15,6 +15,7 @@
 #include "Rendering/Env/IWater.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/DebugColVolDrawer.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
@@ -367,6 +368,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		featureDrawer->Draw(false);
 
 		DebugColVolDrawer::Draw();
+		DebugVisibilityDrawer::Draw();
 		pathDrawer->DrawAll();
 	}
 }
