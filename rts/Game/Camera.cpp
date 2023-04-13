@@ -590,57 +590,37 @@ inline void CCamera::glOrthoScaledSpring(
 
 void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	const float3 isectParams = {miny, maxy, 1.0f / scale};
-	// only non-zero for orthographic cameras
-	const float3 planeOffsets[FRUSTUM_PLANE_NEA] = {
-		-right * frustum.scales.x,
-		 right * frustum.scales.x,
-		   -up * frustum.scales.y,
-		    up * frustum.scales.y,
-	};
 
 	// reset counts per side
 	frustumLines[FRUSTUM_SIDE_POS][4].sign = 0;
 	frustumLines[FRUSTUM_SIDE_NEG][4].sign = 0;
 
 	// Note: order does not matter
-	for (uint32_t i = FRUSTUM_PLANE_LFT, side = neg? FRUSTUM_SIDE_NEG: FRUSTUM_SIDE_POS; i < FRUSTUM_PLANE_NEA; i++) {
-		// Note: CalcFrustumLine expects normals to point outwards relative to frustum shape, frustum.planes normals point inwards
-		CalcFrustumLine(-1.0f * frustum.planes[i], planeOffsets[i],  isectParams, side);
+	for (uint32_t i = FRUSTUM_PLANE_LFT; i < FRUSTUM_PLANE_NEA; i++) {
+		CalcFrustumLine(frustum.planes[i], isectParams, neg ? FRUSTUM_SIDE_NEG : FRUSTUM_SIDE_POS);
 	}
 
 	assert(!neg || frustumLines[FRUSTUM_SIDE_NEG][4].sign == 4);
 }
 
 void CCamera::CalcFrustumLine(
-	const float3& normal,
-	const float3& offset,
+	const float4& face,
 	const float3& params,
 	uint32_t side
 ) {
-	FrustumLine line;
 
-	// compose an orthonormal axis-system around the frustum plane normal
-	// top plane normal can point straight up if camera is angled downward
-	const float3 aux = (std::fabs(normal.dot(UpVector)) > 0.995f)? -forward: UpVector;
+	std::pair<float3, float3> iLine;
+	const float4 xzPlane = { 0, 1, 0, -params[face.y > 0.0f] };
 
-	float3 xdir = (normal.cross( aux)).UnsafeANormalize();
-	float3 ydir = (normal.cross(xdir)).UnsafeANormalize();
-	// intersection of vector from <pos> along <ydir> with xz-plane
-	// (on <miny> if <normal> is angled toward the sky, else <maxy>)
-	float3 pInt;
+	if (!IntersectPlanes(xzPlane, face, iLine))
+		return;
+
+	float3& xdir = iLine.first;
+	const float3& pInt = iLine.second;
 
 	// prevent DIV0 when calculating line.dir
-	xdir.z *= (std::fabs(xdir.z) > 0.001f);
-	xdir.z = std::max(std::fabs(xdir.z), 0.001f) * std::copysign(1.0f, xdir.z);
-	ydir.y = -std::fabs(ydir.y);
-
-	if (ydir.y != 0.0f) {
-		const float py = params[normal.y <= 0.0f];
-		const float dy = pos.y + offset.y - py;
-
-		pInt = (pos + offset) - ydir * (dy / ydir.y);
-	}
-
+	xdir.z *= (std::fabs(xdir.z) > 0.0001f);
+	xdir.z = std::max(std::fabs(xdir.z), 0.0001f) * std::copysign(1.0f, xdir.z);
 
 	// <line.dir> is the direction coefficient (0 ==> parallel to z-axis, inf ==> parallel to x-axis)
 	// in the xz-plane; <line.base> is the x-coordinate at which line intersects x-axis; <line.sign>
@@ -649,9 +629,11 @@ void CCamera::CalcFrustumLine(
 	//   (b.x / b.z) is actually the reciprocal of the DC (ie. the number of steps along +x for
 	//   one step along +y); the world z-axis is inverted wrt. a regular Carthesian grid, so the
 	//   DC is also inverted
+	FrustumLine line;
+
 	line.sign = Sign(int(xdir.z <= 0.0f));
 	line.dir  = (xdir.x / xdir.z);
-	line.base = (pInt.x * params.z) - ((pInt.z * params.z) * line.dir);
+	line.base = (pInt.x - pInt.z * line.dir) * params.z;
 
 	line.minz = (                      0.0f) - (mapDims.mapy);
 	line.maxz = (mapDims.mapy * SQUARE_SIZE) + (mapDims.mapy);

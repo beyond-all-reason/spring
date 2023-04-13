@@ -147,8 +147,7 @@ public:
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
-		const float3& normal,
-		const float3& offset,
+		const float4& face,
 		const float3& params,
 		uint32_t side
 	);

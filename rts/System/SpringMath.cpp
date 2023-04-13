@@ -109,6 +109,67 @@ bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3
 		return false;
 
 	px = p0 + ray * pdist;
+
+	return true;
+}
+
+
+// Credit:
+// - https://stackoverflow.com/a/38437831/7351594
+// - Practical Geometry Algorithms - Daniel Sunday
+// We use the 'Direct Linear Equation' method described in the book above
+float3 SolveIntersectingPoint(int zeroCoord, int coord1, int coord2, const float4& plane1, const float4& plane2)
+{
+	const float a1 = plane1[coord1];
+	const float b1 = plane1[coord2];
+	const float d1 = -plane1[3];
+
+	const float a2 = plane2[coord1];
+	const float b2 = plane2[coord2];
+	const float d2 = -plane2[3];
+
+	float3 point;
+
+	point[zeroCoord] = 0;
+	point[coord1] = (b2 * d1 - b1 * d2) / (a1 * b2 - a2 * b1);
+	point[coord2] = (a1 * d2 - a2 * d1) / (a1 * b2 - a2 * b1);
+
+	return point;
+}
+
+
+// This method helps finding a point on the intersection between two planes.
+// Depending on the orientation of the planes, the problem could solve for the
+// zero point on either the x, y or z axis
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3> &line)
+{
+	// the cross product gives us the direction of the line at the intersection
+	// of the two planes, and gives us an easy way to check if the two planes
+	// are parallel - the cross product will have zero magnitude
+	line.first = plane1.cross(plane2);
+
+	if (const float magnitude = line.first.Length(); magnitude > float3::nrm_eps()) {
+		line.first *= (1.0f / magnitude);
+	}
+	else {
+		return false;
+	}
+
+	// now find a point on the intersection. We choose which coordinate
+	// to set as zero by seeing which has the largest absolute value in the
+	// directional vector
+	const float x = fabs(line.first.x);
+	const float y = fabs(line.first.y);
+	const float z = fabs(line.first.z);
+
+	if (z >= x && z >= y) {
+		line.second = SolveIntersectingPoint(2, 0, 1, plane1, plane2); // 'z', 'x', 'y'
+	} else if (y >= z && y >= x) {
+		line.second = SolveIntersectingPoint(1, 2, 0, plane1, plane2); // 'y', 'z', 'x'
+	} else {
+		line.second = SolveIntersectingPoint(0, 1, 2, plane1, plane2); // 'x', 'y', 'z'
+	}
+
 	return true;
 }
 
