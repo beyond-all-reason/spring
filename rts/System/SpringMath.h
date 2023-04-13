@@ -86,6 +86,15 @@ bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& p
 bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3> &line);
 
 /**
+ * @brief Returns the line result of the intersection of two lines
+ * @param l1 <direction,point> std::pair<float3,float3> the first line
+ * @param l2 <direction,point> std::pair<float3,float3> the second line
+ * @param px float3 the intersection point
+ * @return bool whether lines intersect
+ */
+bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair<float3, float3>& l2, float3& px);
+
+/**
  * @brief Returns the a point in the line intersection of two planes
  * @param zeroCoord int the axis to be pinned to
  */

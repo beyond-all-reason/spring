@@ -173,6 +173,31 @@ bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float
 	return true;
 }
 
+// https://math.stackexchange.com/questions/2213165/find-shortest-distance-between-lines-in-3d/2217845#2217845
+bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair<float3, float3>& l2, float3& px)
+{
+	const float3 n = l2.first.cross(l1.first);
+	const float n2 = n.dot(n);
+
+	if (n2 < float3::nrm_eps())
+		return false; // parallel
+
+	const float3 p21 = l2.second - l1.second;
+
+	if (const float d = n.dot(p21) / math::sqrt(n2); math::fabs(d) > float3::cmp_eps())
+		return false; // do not intersect
+
+	const float t1 = p21.dot(l2.first.cross(n)) / n2;
+	px = l1.second + t1 * l1.first;
+
+	/*
+	const float t2 = p21.dot(l1.first.cross(n)) / n2;
+	px = l2.second + t2 * l2.first;
+	*/
+
+	return true;
+}
+
 
 /**
  * calculates the two intersection points ON the ray
