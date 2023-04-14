@@ -33,7 +33,7 @@ CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
-CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smooth");
+CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
 
 static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
@@ -91,24 +91,21 @@ void CSpringController::SmoothCamHeight(const float3& prevPos) {
 		return;
 	}
 
-	const float camHeightDiff = (trackMapHeight == HeightTracking::Smooth) ?
-		smoothGround.GetHeight(pos.x, pos.z) - smoothGround.GetHeight(prevPos.x, prevPos.z) :
-		0.0f;
+	float3 camPos = GetPos(); // new camera pos with height from previous frame
+	camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
 
-	if (trackMapHeight == HeightTracking::Smooth || trackMapHeight == HeightTracking::Disabled) {
-		float3 camPos = GetPos(); // new camera pos with height from previous frame
-		camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
+	// raycast to ground to simulate camera movement and find new point of focus
+	const float distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
+	// FIXME camera focus is now first ground intersection which is not what we want
+	// when there's a hill blocking the view
+	const float3 newGroundPos = camPos + dir * distToGround;
+	if (distToGround > 0.0f && newGroundPos.IsInBounds()) {
+		const float camHeightDiff = (trackMapHeight == HeightTracking::Smooth) ?
+			smoothGround.GetHeight(pos.x, pos.z) - smoothGround.GetHeight(prevPos.x, prevPos.z) :
+			0.0f;
 
-		// raycast to ground to simulate camera movement and find new point of focus
-		const float distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
-		// FIXME camera focus is now first ground intersection which is not what we want
-		// when there's a hill blocking the view
-		const float3 newGroundPos = camPos + dir * distToGround;
-		if (distToGround > 0.0f && newGroundPos.IsInBounds()) {
-			curDist = distToGround;
-			pos = newGroundPos;
-			curDist += (dir * camHeightDiff).Length() * Sign(camHeightDiff);
-		}
+		pos = newGroundPos;
+		curDist = distToGround + (dir * camHeightDiff).Length() * Sign(camHeightDiff);
 	}
 }
 
@@ -131,7 +128,21 @@ void CSpringController::KeyMove(float3 move)
 	const float3 flatForward = (dir * XZVector).ANormalize();
 	pos += (camera->GetRight() * move.x + flatForward * move.y) * pixelSize * 2.0f * scrollSpeed;
 
-	SmoothCamHeight(prevPos);
+	switch (trackMapHeight) {
+	case HeightTracking::Terrain:
+		// this is the default behavior as camera pos is based on:
+		// - 'pos'      point of focus on the ground
+		// - 'curDist'  camera distance
+		break;
+	case HeightTracking::Disabled:
+		// freezing camera height requires raycasting from current
+		// camera position and recalculating
+		// point of focus and distance
+		[[fallthrough]];
+	case HeightTracking::Smooth:
+		SmoothCamHeight(prevPos);
+		break;
+	}
 
 	Update();
 }
