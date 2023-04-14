@@ -477,6 +477,17 @@ endif()
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 ################################################################################
+### AllocationStrategy
+        set(test_name AllocationStrategy)
+        set(test_src
+                        "${CMAKE_CURRENT_SOURCE_DIR}/other/testAllocationStrategy.cpp"
+                )
+
+        set(test_libs
+                        "benchmark"
+                )
+
+        add_spring_test(${test_name} "${test_src}" "${test_libs}" "")
 
 
 add_subdirectory(headercheck)
