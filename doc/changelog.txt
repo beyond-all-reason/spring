@@ -10,6 +10,8 @@ Spring changelog
 
 Lua:
  - removed `Game.allowTeamColors` (was deprecated and always `true`)
+ - `Spring.SetActiveCommand()` or passing explicit `nil` now cancels the command.
+   The previous method to pass `-1` still works.
  - allow shallow recursion in `Spring.TransferUnit`
  
 
