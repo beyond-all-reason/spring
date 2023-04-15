@@ -25,6 +25,14 @@ CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camer
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
 
+static float DistanceToGround(float3 from, float3 dir, float fallback_xz_plane_height) {
+	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
+
+	if (newGroundDist <= 0.0f) // if the direction is not pointing towards the map we use provided xz plane as heuristic
+		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallback_xz_plane_height);
+
+	return newGroundDist;
+}
 
 CSpringController::CSpringController()
 	: rot(2.677f, 0.0f, 0.0f)
@@ -168,10 +176,7 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	if (!cursorZoomIn)
 		return 0.25f;
 
-	float curGroundDist = CGround::LineGroundCol(curCamPos, curCamPos + newDir * 150000.0f, false);
-
-	if (curGroundDist <= 0.0f)
-		curGroundDist = CGround::LinePlaneCol(curCamPos, newDir, 150000.0f, readMap->GetCurrAvgHeight());
+	float curGroundDist = DistanceToGround(curCamPos, newDir, pos.y);
 	if (curGroundDist <= 0.0f)
 		return 0.25f;
 
@@ -182,12 +187,8 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	const float3 wantedPos = curCamPos + cursorVec * (1.0f - scaledMode);
 
 	// figure out how far we will end up from the ground at new wanted point
-	float newGroundDist = CGround::LineGroundCol(wantedPos, wantedPos + dir * 150000.0f, false);
-
-	if (newGroundDist <= 0.0f)
-		newGroundDist = CGround::LinePlaneCol(wantedPos, dir, 150000.0f, readMap->GetCurrAvgHeight());
-
-	pos = wantedPos + dir * (curDist = newGroundDist);
+	curDist = DistanceToGround(wantedPos, dir, pos.y);
+	pos = wantedPos + dir * curDist;
 
 	return 0.25f;
 }
