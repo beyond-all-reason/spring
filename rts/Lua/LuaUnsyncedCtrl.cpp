@@ -2459,8 +2459,10 @@ int LuaUnsyncedCtrl::SetActiveCommand(lua_State* L)
 	if (guihandler == nullptr)
 		return 0;
 
-	if (lua_gettop(L) < 1)
-		luaL_error(L, "[%s] one argument required", __func__);
+	if (lua_isnoneornil(L, 1)) {
+		lua_pushboolean(L, guihandler->SetActiveCommand(-1, false));
+		return 1;
+	}
 
 	if (lua_isnumber(L, 1))
 		return SetActiveCommandByIndex(L);
