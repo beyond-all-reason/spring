@@ -7,14 +7,29 @@
 #include "Game/UI/MiniMap.h"
 #include "Game/UI/MouseHandler.h"
 #include "System/Log/ILog.h"
+#include "Game/Camera.h"
+#include "System/Config/ConfigHandler.h"
 
-static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov) {
-    static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
-    static constexpr float maxHeight = 25000.0f;
-    const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
+CONFIG(bool, CamOverviewDynamicRotation).defaultValue(false).description("Transition from different camera preserves rotation");
+
+static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool cameraSideways) {
+	static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
+	static constexpr float maxHeight = 25000.0f;
+	const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
+	const float aspectRatio = cameraSideways ?
+		std::max(mapy / globalRendering->aspectRatio, mapx) :
+		std::max(mapx / globalRendering->aspectRatio, mapy);
     return std::min(CGround::GetHeightAboveWater(mapx, mapy, false) +
-                    (fovCoefficient * std::max(mapx / globalRendering->aspectRatio, mapy)),
-                    maxHeight);
+			fovCoefficient * aspectRatio,
+			maxHeight);
+}
+
+static float GetClosestRightAngle(float angle) {
+	return std::round(angle/math::HALFPI) * math::HALFPI;
+}
+
+static bool CameraPointingSideways(float angle) {
+	return std::lround(angle/math::HALFPI) % 2;
 }
 
 COverviewController::COverviewController()
@@ -22,10 +37,16 @@ COverviewController::COverviewController()
 	enabled = false;
 	minimizeMinimap = false;
 
-	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
+
+	configHandler->NotifyOnChange(this, {"CamOverviewDynamicRotation"});
+	ConfigUpdate();
 }
 
+COverviewController::~COverviewController()
+{
+	configHandler->RemoveObserver(this);
+}
 
 float3 COverviewController::SwitchFrom() const
 {
@@ -38,6 +59,22 @@ float3 COverviewController::SwitchFrom() const
 	return rpos;
 }
 
+float3 COverviewController::GetPos() const {
+	bool cameraSideways = CameraPointingSideways(GetRot().y);
+	float pos_y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0, cameraSideways);
+	return {pos.x, pos_y, pos.z};
+}
+
+float3 COverviewController::GetRot() const {
+	const float3 defaultRot = CCameraController::GetRot();
+	if (!this->dynamicRotation)
+	{
+		return defaultRot;
+	}
+
+	return {defaultRot.x, GetClosestRightAngle(camRotY), defaultRot.z};
+}
+
 void COverviewController::SwitchTo(const int oldCam, const bool showText)
 {
 	if (showText)
@@ -47,6 +84,8 @@ void COverviewController::SwitchTo(const int oldCam, const bool showText)
 		minimizeMinimap = minimap->GetMinimized();
 		minimap->SetMinimized(true);
 	}
+
+	camRotY = CCamera::GetActive()->GetRot().y;
 }
 
 void COverviewController::GetState(StateMap& sm) const
@@ -59,6 +98,15 @@ bool COverviewController::SetState(const StateMap& sm)
 	// CCameraController::SetState(sm);
 	// always centered, allow only for FOV change
 	SetStateFloat(sm, "fov", fov);
-	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0);
 	return true;
+}
+
+void COverviewController::ConfigUpdate()
+{
+	dynamicRotation = configHandler->GetBool("CamOverviewDynamicRotation");
+}
+
+void COverviewController::ConfigNotify(const std::string & key, const std::string & value)
+{
+	ConfigUpdate();
 }

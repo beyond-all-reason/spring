@@ -9,6 +9,7 @@ class COverviewController : public CCameraController
 {
 public:
 	COverviewController();
+	~COverviewController();
 
 	const std::string GetName() const { return "ov"; }
 
@@ -17,6 +18,9 @@ public:
 	void ScreenEdgeMove(float3 move) override {}
 	void MouseWheelMove(float move) override {}
 	void MouseWheelMove(float move, const float3& newDir) override { }
+
+	float3 GetRot() const override;
+	float3 GetPos() const override;
 
 	void SetPos(const float3& newPos) override {}
 	void SetDir(const float3& newDir) override {}
@@ -27,8 +31,13 @@ public:
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
 
+	void ConfigNotify(const std::string& key, const std::string& value);
+	void ConfigUpdate();
+
 private:
 	bool minimizeMinimap;
+	bool dynamicRotation;
+	float camRotY;
 };
 
 #endif // _OV_CONTROLLER_H
