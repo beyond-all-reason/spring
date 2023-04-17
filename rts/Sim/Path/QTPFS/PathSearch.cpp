@@ -114,10 +114,10 @@ bool QTPFS::PathSearch::Execute(
 	}
 
 
-	if (nodeLayer->GetNodelayer() == 2) {
-		LOG("%s: maxRelSpeedMod = %f, hCostMult = %f", __func__
-				, comp.maxRelSpeedMod[nodeLayer->GetNodelayer()], hCostMult);
-	}
+	// if (nodeLayer->GetNodelayer() == 2) {
+	// 	LOG("%s: maxRelSpeedMod = %f, hCostMult = %f", __func__
+	// 			, comp.maxRelSpeedMod[nodeLayer->GetNodelayer()], hCostMult);
+	// }
 
 	// allow the search to start from an impassable node (because single
 	// nodes can represent many terrain squares, some of which can still

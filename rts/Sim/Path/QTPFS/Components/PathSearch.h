@@ -20,10 +20,15 @@ struct PathSearchSystemComponent {
 
 struct NodeLayerMaxSpeedSweep {
 	static constexpr std::size_t page_size = 256;
-	int maxNodesThisSweep = 0;
-	float curMaxSpeed = 0.f;
+	int updateMaxNodes = 0;
+	float updateCurMaxSpeed = 0.f;
 	int layerNum = -1;
+
+	bool requestUpdate = false;
+	bool updateInProgress = false;
 };
+
+constexpr int NEXT_FRAME_NEVER = std::numeric_limits<decltype(NEXT_FRAME_NEVER)>::max();
 
 // std::queue<INode*> openNodes; << per thread.
 struct PathMaxSpeedModSystemComponent {
@@ -31,6 +36,7 @@ struct PathMaxSpeedModSystemComponent {
 	std::array<float, 256> maxRelSpeedMod; // TODO: get the non-magic number
 	int refreshTimeInFrames = 0;
 	int startRefreshOnFrame = 0;
+	int refeshDelayInFrames = 0;
 
 	enum STATES {
 		STATE_INIT,

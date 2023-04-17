@@ -169,7 +169,7 @@ namespace QTPFS {
 		static unsigned int MAX_TEAM_SEARCHES;
 
 		unsigned int searchStateOffset;
-		unsigned int numTerrainChanges;
+		// unsigned int numTerrainChanges;
 		unsigned int numPathRequests;
 		unsigned int maxNumLeafNodes;
 

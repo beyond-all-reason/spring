@@ -29,7 +29,7 @@
 using namespace SystemGlobals;
 using namespace QTPFS;
 
-constexpr int NEXT_FRAME_NEVER = std::numeric_limits<decltype(NEXT_FRAME_NEVER)>::max();
+
 
 // void ScanForPathMaxSpeedMod(int dataChunk) {
 //     auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
@@ -69,40 +69,50 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     if (frameModulus <= 0) {
         layersView.each([&layersView, pm](entt::entity entity){
             auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-            auto& nodeLayer = pm->GetNodeLayer(layer.layerNum);
-            layer.curMaxSpeed = (-std::numeric_limits<float>::infinity());
-            layer.maxNodesThisSweep = nodeLayer.GetMaxNodesAlloced();
+           // if (layer.requestUpdate) {
+                auto& nodeLayer = pm->GetNodeLayer(layer.layerNum);
+                layer.updateCurMaxSpeed = (-std::numeric_limits<float>::infinity());
+                layer.updateMaxNodes = nodeLayer.GetMaxNodesAlloced();
+                layer.updateInProgress = true;
+                layer.requestUpdate = false;
+           // }
             });
         dataChunk = 0;
     }
     
+    // TODO: setup at beginning and attach to component - only needs to be done once at the beginning of each sweep.
     // Prepare list of entity IDs for MT section.
     entt::entity entities[layersView.size()];
+    int layersToUpdateCount = 0;
     {
-        int i = 0;
-        layersView.each([&entities, &i](entt::entity entity){ entities[i++] = entity; });
+        layersView.each([&entities, &layersToUpdateCount, &layersView](entt::entity entity){
+                auto layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
+                if (layer.updateInProgress)
+                    entities[layersToUpdateCount++] = entity;
+            });
     }
 
     // One thread per layer: get maximum speed mod from the nodes walked thus far.
-    for_mt(0, layersView.size(), [&layersView, &comp, dataChunk, pm, &entities](int idx){
+    for_mt(0, layersToUpdateCount, [&layersView, &comp, dataChunk, pm, &entities](int idx){
+    // for (int idx = 0; idx < layersToUpdateCount; idx++) {
         entt::entity entity = entities[idx];
         auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
 
-        const int idxBeg = ((dataChunk + 0) * layer.maxNodesThisSweep) / comp.refreshTimeInFrames;
-	    const int idxEnd = ((dataChunk + 1) * layer.maxNodesThisSweep) / comp.refreshTimeInFrames;
+        const int idxBeg = ((dataChunk + 0) * layer.updateMaxNodes) / comp.refreshTimeInFrames;
+	    const int idxEnd = ((dataChunk + 1) * layer.updateMaxNodes) / comp.refreshTimeInFrames;
 
-        if (layer.layerNum == 2) {
-            LOG("Searching %d: %d/%d", dataChunk, layer.maxNodesThisSweep, comp.refreshTimeInFrames);
-        }
+        // if (layer.layerNum == 2) {
+        //     LOG("Searching %d: %d/%d", dataChunk, layer.updateMaxNodes, comp.refreshTimeInFrames);
+        // }
 
         auto& nodeLayer = pm->GetNodeLayer(layer.layerNum);
         for (int i = idxBeg; i < idxEnd; ++i) {
             auto* curNode = nodeLayer.GetPoolNode(i);
-            layer.curMaxSpeed = std::max(layer.curMaxSpeed, curNode->GetSpeedMod());
+            layer.updateCurMaxSpeed = std::max(layer.updateCurMaxSpeed, curNode->GetSpeedMod() * curNode->IsLeaf());
 
-            if (layer.layerNum == 2) {
-                LOG("node: %d max(%f,%f)", i, layer.curMaxSpeed, curNode->GetSpeedMod());
-            }
+            // if (layer.layerNum == 2) {
+            //     LOG("node: %d max(%f,%f)", i, layer.updateCurMaxSpeed, curNode->GetSpeedMod());
+            // }
         }
     });
 
@@ -110,19 +120,16 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     if (dataChunk == comp.refreshTimeInFrames + (-1))
         layersView.each([&comp, &layersView](entt::entity entity){
             auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-            comp.maxRelSpeedMod[layer.layerNum] = layer.curMaxSpeed;
+            comp.maxRelSpeedMod[layer.layerNum] = layer.updateCurMaxSpeed;
+            layer.updateInProgress = false;
 
-            if (layer.layerNum == 2) {
-                LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
-            }
+            // if (layer.layerNum == 2) {
+            //     LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
+            // }
             });
 }
 
-void PathMaxSpeedModSystem::Init()
-{
-    auto& comp = systemGlobals.CreateSystemComponent<PathMaxSpeedModSystemComponent>();
-    auto pm = dynamic_cast<QTPFS::PathManager*>(IPathManager::GetInstance(QTPFS_TYPE));
-
+void InitLayers() {
     std::vector<entt::entity> layers((size_t)moveDefHandler.GetNumMoveDefs());
     QTPFS::registry.create<decltype(layers)::iterator>(layers.begin(), layers.end());
 
@@ -130,9 +137,18 @@ void PathMaxSpeedModSystem::Init()
     std::for_each(layers.begin(), layers.end(), [&counter](entt::entity entity){
         auto& layer = QTPFS::registry.emplace<NodeLayerMaxSpeedSweep>(entity);
         layer.layerNum = counter++;
-        layer.curMaxSpeed = 0.f;
-        LOG("%s: added %x:%x entity", __func__, entt::to_integral(entity), entt::to_version(entity));
+        layer.updateCurMaxSpeed = 0.f;
+        layer.requestUpdate = true;
+        // LOG("%s: added %x:%x entity", __func__, entt::to_integral(entity), entt::to_version(entity));
     });
+}
+
+void PathMaxSpeedModSystem::Init()
+{
+    auto& comp = systemGlobals.CreateSystemComponent<PathMaxSpeedModSystemComponent>();
+    auto pm = dynamic_cast<QTPFS::PathManager*>(IPathManager::GetInstance(QTPFS_TYPE));
+
+    InitLayers();
 
     systemUtils.OnUpdate().connect<&PathMaxSpeedModSystem::Update>();
 
@@ -140,8 +156,11 @@ void PathMaxSpeedModSystem::Init()
     comp.refreshTimeInFrames = 1;
     ScanForPathMaxSpeedMod(-1);
 
-    comp.refreshTimeInFrames = GAME_SPEED * 10;
+    comp.refreshTimeInFrames = GAME_SPEED * 30;
     comp.startRefreshOnFrame = NEXT_FRAME_NEVER;
+    comp.refeshDelayInFrames = GAME_SPEED;
+
+    comp.state = PathMaxSpeedModSystemComponent::STATE_READY;
 }
 
 void PathMaxSpeedModSystem::Update()

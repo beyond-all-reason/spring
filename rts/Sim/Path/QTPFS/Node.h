@@ -92,7 +92,7 @@ namespace QTPFS {
 		unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&);
 		const std::vector<INode*>& GetNeighbors(/*const std::vector<INode*>&*/);
 		// bool UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer);
-		bool UpdateNeighborCache(NodeLayer& nodeLayer);
+		bool UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData);
 
 		void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) { netpoints[ngbIdx] = point; }
 		const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const { return netpoints[ngbIdx]; }
@@ -113,18 +113,25 @@ namespace QTPFS {
 				xmax() >= rect.x2 && zmax() >= rect.y2;
 		}
 
+		bool RectIntersects(const SRectangle& rect) const {
+			return  !( xmin() >= rect.x2
+					|| xmax() <= rect.x1
+					|| zmin() >= rect.z2
+					|| zmax() <= rect.z1);
+		}
+
 		// true iff this node is fully open (partially open nodes have larger but non-infinite cost)
 		bool AllSquaresAccessible() const { return (moveCostAvg < (QTPFS_CLOSED_NODE_COST / float(area()))); }
 		bool AllSquaresImpassable() const { return (moveCostAvg == QTPFS_POSITIVE_INFINITY); }
 
 		void SetMoveCost(float cost) { moveCostAvg = cost; }
 		//void SetSearchState(unsigned int state) { searchState = state; }
-		void SetMagicNumber(unsigned int number) { currMagicNum = number; }
+		// void SetMagicNumber(unsigned int number) { currMagicNum = number; }
 
 		float GetSpeedMod() const { return speedModAvg; }
 		float GetMoveCost() const { return moveCostAvg; }
 		// unsigned int GetSearchState() const { return searchState; }
-		unsigned int GetMagicNumber() const { return currMagicNum; }
+		// unsigned int GetMagicNumber() const { return currMagicNum; }
 		unsigned int GetChildBaseIndex() const { return childBaseIndex; }
 
 		static unsigned int MinSizeX() { return MIN_SIZE_X; }
@@ -165,10 +172,10 @@ namespace QTPFS {
 
 		float speedModSum =  0.0f; // TODO: remove
 		float speedModAvg =  0.0f; // TODO: remove
-		float moveCostAvg = -1.0f; // TODO: consider char length? Probably not...
+		float moveCostAvg = -1.0f;
 
-		unsigned int currMagicNum = 0;   // TODO: remove
-		unsigned int prevMagicNum = -1u; // TODO: remove
+		// unsigned int currMagicNum = 0;   // TODO: remove
+		// unsigned int prevMagicNum = -1u; // TODO: remove
 
 		unsigned int childBaseIndex = -1u;
 

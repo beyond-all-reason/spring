@@ -50,8 +50,10 @@ namespace QTPFS {
 			UpdateThreadData& threadData
 		);
 
-		void ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, unsigned int currMagicNum);
-		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum);
+		// void ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, unsigned int currMagicNum);
+		// void ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum);
+
+		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData);
 
 		float GetNodeRatio() const { return (numLeafNodes / std::max(1.0f, float(xsize * zsize))); }
 		// const INode* GetNode(unsigned int x, unsigned int z) const { return nodeGrid[z * xsize + x]; }
@@ -128,8 +130,8 @@ namespace QTPFS {
 		void FreePoolNode(unsigned int nodeIndex) {
 			//LOG("%s: [%p] free'ed id=%d", __func__, &poolNodes, nodeIndex);
 			nodeIndcs.push_back(nodeIndex);
-			// auto* curNode = GetPoolNode(nodeIndex);
-			// curNode->DeactivateNode();
+			auto* curNode = GetPoolNode(nodeIndex);
+			curNode->DeactivateNode();
 		}
 
 
@@ -190,13 +192,15 @@ namespace QTPFS {
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
-		void UpdateNeighborCache(INode* node, int sidesToUpData);
-
 	private:
 		// std::vector<INode*> nodeGrid;
 
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
+
+		// TODO: Move the tread storage
+		std::vector<INode*> selectedNodes;
+		std::vector<INode*> openNodes;
 
 		// std::vector<SpeedModType> curSpeedMods;
 		// std::vector<SpeedModType> oldSpeedMods;

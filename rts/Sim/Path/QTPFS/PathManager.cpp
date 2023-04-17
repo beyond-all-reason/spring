@@ -15,6 +15,8 @@
 #include "PathDefines.h"
 #include "PathManager.h"
 
+#include "Utils/PathMaxSpeedModSystemUtils.h"
+
 #include "Game/GameSetup.h"
 #include "Game/LoadScreen.h"
 #include "Map/MapInfo.h"
@@ -229,7 +231,7 @@ void QTPFS::PathManager::InitStatic() {
 void QTPFS::PathManager::Load() {
 	// NOTE: offset *must* start at a non-zero value
 	searchStateOffset = NODE_STATE_OFFSET;
-	numTerrainChanges = 0;
+	// numTerrainChanges = 0;
 	numPathRequests   = 0;
 	maxNumLeafNodes   = 0;
 
@@ -385,6 +387,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 		#endif
 
 		for_mt(0, nodeLayers.size(), [=,&loadMsg, &rect](const int layerNum){
+		//for (int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 			int currentThread = ThreadPool::GetThreadNum();
 			#ifndef NDEBUG
 			if (currentThread == 0) {
@@ -402,7 +405,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 
 			NodeLayer& layer = nodeLayers[layerNum];
 
-			numTerrainChanges++;
+			// numTerrainChanges++;
 
 			InitNodeLayer(layerNum, rect);
 
@@ -443,7 +446,8 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			// sprintf(loadMsg, pstFmtStr, layerNum, mem, layer.GetNumLeafNodes(), layer.GetNodeRatio());
 			// pmLoadScreen.AddMessage(loadMsg);
 			// #endif
-		});
+		}
+		);
 	}
 
 	streflop::streflop_init<streflop::Simple>();
@@ -606,7 +610,8 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 		pathCache.MarkDeadPaths(re, layerNum);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
+		// nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
+		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, updateThreadData[currentThread]);
 		#endif
 	}
 }
@@ -774,7 +779,9 @@ void QTPFS::PathManager::Update() {
 			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 			);
 
-		numTerrainChanges++;
+		// numTerrainChanges++;
+
+		RequestMaxSpeedModRefreshForlayer(0);
 
 		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
 			UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum());
@@ -801,8 +808,6 @@ void QTPFS::PathManager::Update() {
 		assert(sectorId < mapChangeTrack.damageMap.size());
 		mapChangeTrack.damageMap[sectorId] = false;
 		mapChangeTrack.damageQueue.pop_front();
-
-		systemUtils.NotifyUpdate();
 	}
 }
 
@@ -891,13 +896,15 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		assert(registry.valid(pathSearchEntity));
 		PathSearch* search = &pathView.get<PathSearch>(pathSearchEntity);
 		entt::entity pathEntity = (entt::entity)search->GetID();
-		IPath* path = registry.try_get<IPath>(pathEntity);
-		if (path != nullptr) {
-			if (search->PathWasFound()) {
-				registry.remove<PathIsTemp>(pathEntity);
-				registry.remove<PathIsDirty>(pathEntity);
-			} else {
-				DeletePath(path->GetID());
+		if (registry.valid(pathEntity)) {
+			IPath* path = registry.try_get<IPath>(pathEntity);
+			if (path != nullptr) {
+				if (search->PathWasFound()) {
+					registry.remove<PathIsTemp>(pathEntity);
+					registry.remove<PathIsDirty>(pathEntity);
+				} else {
+					DeletePath(path->GetID());
+				}
 			}
 		}
 		// delete search;
@@ -957,7 +964,8 @@ bool QTPFS::PathManager::ExecuteSearch(
 	}
 
 	// removes path from temp-paths, adds it to live-paths
-	if (search->Execute(searchStateOffset, numTerrainChanges)) {
+	// if (search->Execute(searchStateOffset, numTerrainChanges)) {
+	if (search->Execute(searchStateOffset)) {
 		search->Finalize(path);
 
 		#ifdef QTPFS_SEARCH_SHARED_PATHS

@@ -154,7 +154,6 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& system = root.SubTable("system");
 
 		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
-		pathFinderSystem = QTPFS_TYPE;
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);

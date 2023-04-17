@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef QTPFS_PATH_HDR
-#define QTPFS_PATH_HDR
+#ifndef QTPFS_PATH_H_
+#define QTPFS_PATH_H_
 
 #include <algorithm>
 #include <vector>

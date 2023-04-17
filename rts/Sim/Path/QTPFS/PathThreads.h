@@ -8,6 +8,7 @@
 
 #include "Node.h"
 
+#include "Map/ReadMap.h"
 #include "System/Rectangle.h"
 
 namespace QTPFS {
@@ -131,21 +132,33 @@ namespace QTPFS {
     struct UpdateThreadData {
 		std::vector<SpeedModType> curSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
+        std::vector<INode*> relinkNodeGrid; 
         SRectangle areaUpdated;
+        SRectangle areaRelinked;
 
 		void InitUpdate(const SRectangle& area)
 		{
             areaUpdated = area;
+            areaRelinked = SRectangle(area.x1 - 1, area.z1 - 1, area.x2 + 1, area.z2 + 1);
+            areaRelinked.ClampIn(MapToRectangle());
             curSpeedMods.reserve(area.GetArea());
             curSpeedBins.reserve(area.GetArea());
+            relinkNodeGrid.reserve(areaRelinked.GetArea());
+        }
+
+        SRectangle MapToRectangle() {
+            return SRectangle(0, 0, mapDims.mapx, mapDims.mapy);
         }
 
         void Reset() {
             areaUpdated = SRectangle(0, 0, 0, 0);
+            areaRelinked = areaUpdated;
             curSpeedMods.resize(0);
             curSpeedMods.shrink_to_fit();
             curSpeedBins.resize(0);
             curSpeedBins.shrink_to_fit();
+            relinkNodeGrid.resize(0);
+            relinkNodeGrid.shrink_to_fit();
         }
 
         // std::size_t GetMemFootPrint() {

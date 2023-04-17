@@ -213,8 +213,8 @@ void QTPFS::QTNode::Init(
 	// heapIndex = -1u;
 
 	// searchState  =   0;
-	currMagicNum =   0;
-	prevMagicNum = -1u;
+	// currMagicNum =   0;
+	// prevMagicNum = -1u;
 
 	// for leafs, all children remain NULL
 	childBaseIndex = -1u;
@@ -275,8 +275,10 @@ std::uint64_t QTPFS::QTNode::GetCheckSum(const NodeLayer& nl) const {
 		}
 	}
 	{
-		const unsigned char* minByte = reinterpret_cast<const unsigned char*>(&_xminxmax);
-		const unsigned char* maxByte = reinterpret_cast<const unsigned char*>(&prevMagicNum) + sizeof(prevMagicNum);
+		const unsigned char* minByte = reinterpret_cast<const unsigned char*>(&nodeNumber);
+		const unsigned char* maxByte = reinterpret_cast<const unsigned char*>(&moveCostAvg) + sizeof(moveCostAvg);
+		// const unsigned char* minByte = reinterpret_cast<const unsigned char*>(&_xminxmax);
+		// const unsigned char* maxByte = reinterpret_cast<const unsigned char*>(&prevMagicNum) + sizeof(prevMagicNum);
 
 		assert(minByte < maxByte);
 
@@ -774,13 +776,17 @@ const std::vector<QTPFS::INode*>& QTPFS::QTNode::GetNeighbors(/*const std::vecto
 // update-scheme is enabled, *or* from PM::ExecQueuedNodeLayerUpdates
 // (never both)
 // bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer) {
-bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
+bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData) {
 	assert(IsLeaf());
 	// assert(!nodes.empty());
 	// if (gs->frameNum > -1 && nodeLayer == 2)
 	// 	LOG("%s: [%d] %d != %d", __func__, index, prevMagicNum, currMagicNum);
-	if (prevMagicNum != currMagicNum) {
-		prevMagicNum = currMagicNum;
+	// if (prevMagicNum != currMagicNum) {
+	// 	prevMagicNum = currMagicNum;
+
+		// if (nodeLayer.GetNodelayer() == 2) {
+		//     LOG("Processing node %x [idx=%d] [%d,%d:%d,%d]", nodeNumber, index, xmin(), zmin(), xmax(), zmax());
+		// }
 
 		unsigned int ngbRels = 0;
 		unsigned int maxNgbs = GetMaxNumNeighbors();
@@ -790,24 +796,65 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 
 		// regenerate our neighbor cache
 		if (maxNgbs > 0) {
-			neighbors.clear();
-			neighbors.reserve(maxNgbs + 4);
 
-			netpoints.clear();
+			// Build Map Area
+			SRectangle& r = threadData.areaRelinked;
+			int rWidth = r.GetWidth();
+
+			SRectangle relinkArea(xmin() - 1, zmin() - 1, xmax() + 1, zmax() + 1);
+			relinkArea.ClampIn(r);
+
+			SRectangle nodeArea(xmin(), zmin(), xmax(), zmax());
+			nodeArea.ClampIn(threadData.areaUpdated);
+
+			if (RectIntersects(threadData.areaUpdated)) {
+				neighbors.clear();
+				netpoints.clear();
+			} else {
+				for (int ni = neighbors.size(); ni-- > 0;) {
+					auto curNode = neighbors[ni];
+					if (curNode->NodeDeactivated()
+						|| !curNode->IsLeaf()
+						|| curNode->RectIntersects(threadData.areaUpdated)
+						//|| (GetNeighborRelation(curNode) == 0)
+					) {
+						neighbors[ni] = neighbors.back();
+						neighbors.pop_back();
+
+						int npi_end = 1 + ni * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE;
+						int npi_begin = 1 + ni * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE;
+						for (int pi = npi_end; pi-- > npi_begin;) {
+							netpoints[pi] = netpoints.back();
+							netpoints.pop_back();
+						}
+					}
+				}
+			}
+
+			neighbors.reserve(maxNgbs + 4);
 			netpoints.reserve(1 + maxNgbs * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE + 4);
 			// NOTE: caching ETP's breaks QTPFS_ORTHOPROJECTED_EDGE_TRANSITIONS
 			// NOTE: [0] is a reserved index and must always be valid
-			netpoints.emplace_back();
+			if (netpoints.empty())
+				netpoints.emplace_back();
 
-			INode* ngb = nullptr;
 
-			if (xmin() > 0) {
+			// if (xmin() > 0) {
+			if (xmin() > relinkArea.x1) {
+				INode* ngb = nullptr;
 				const unsigned int hmx = xmin() - 1;
 
 				// walk along EDGE_L (west) neighbors
-				for (unsigned int hmz = zmin(); hmz < zmax(); ) {
+				// for (unsigned int hmz = zmin(); hmz < zmax(); ) {
+				for (unsigned int hmz = nodeArea.z1; hmz < nodeArea.z2; ) {
 					// ngb = nodes[hmz * mapDims.mapx + hmx];
-					ngb = nodeLayer.GetNode(hmx, hmz);
+					// ngb = nodeLayer.GetNode(hmx, hmz);
+					int relinkNodeindex = (hmz - r.z1) * rWidth + (hmx - r.x1);
+					ngb = threadData.relinkNodeGrid[relinkNodeindex];
+					
+					// if (nodeLayer.GetNodelayer() == 2) {
+					// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
+					// }
 					hmz = ngb->zmax();
 
 					neighbors.push_back(ngb);
@@ -828,15 +875,25 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					}
 				}
 
-				ngbRels |= REL_NGB_EDGE_L;
+				int insideEdge = !(nodeArea.z1 == nodeArea.z2 && xmin() == nodeArea.x1);
+				ngbRels |= REL_NGB_EDGE_L * insideEdge;
 			}
-			if (xmax() < static_cast<unsigned int>(mapDims.mapx)) {
+			// if (xmax() < static_cast<unsigned int>(mapDims.mapx)) {
+			if (xmax() < relinkArea.x2) {
+				INode* ngb = nullptr;
 				const unsigned int hmx = xmax() + 0;
 
 				// walk along EDGE_R (east) neighbors
-				for (unsigned int hmz = zmin(); hmz < zmax(); ) {
+				// for (unsigned int hmz = zmin(); hmz < zmax(); ) {
+				for (unsigned int hmz = nodeArea.z1; hmz < nodeArea.z2; ) {
 					// ngb = nodes[hmz * mapDims.mapx + hmx];
-					ngb = nodeLayer.GetNode(hmx, hmz);
+					// ngb = nodeLayer.GetNode(hmx, hmz);
+					int relinkNodeindex = (hmz - r.z1) * rWidth + (hmx - r.x1);
+					ngb = threadData.relinkNodeGrid[relinkNodeindex];
+					
+					// if (nodeLayer.GetNodelayer() == 2) {
+					// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
+					// }
 					hmz = ngb->zmax();
 
 					neighbors.push_back(ngb);
@@ -857,16 +914,26 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					}
 				}
 
-				ngbRels |= REL_NGB_EDGE_R;
+				int insideEdge = !(nodeArea.z1 == nodeArea.z2 && xmax() == nodeArea.x2);
+				ngbRels |= REL_NGB_EDGE_R * insideEdge;
 			}
 
-			if (zmin() > 0) {
+			// if (zmin() > 0) {
+			if (zmin() > relinkArea.z1) {
+				INode* ngb = nullptr;
 				const unsigned int hmz = zmin() - 1;
 
 				// walk along EDGE_T (north) neighbors
-				for (unsigned int hmx = xmin(); hmx < xmax(); ) {
+				// for (unsigned int hmx = xmin(); hmx < xmax(); ) {
+				for (unsigned int hmx = nodeArea.x1; hmx < nodeArea.x2; ) {
 					// ngb = nodes[hmz * mapDims.mapx + hmx];
-					ngb = nodeLayer.GetNode(hmx, hmz);
+					// ngb = nodeLayer.GetNode(hmx, hmz);
+					int relinkNodeindex = (hmz - r.z1) * rWidth + (hmx - r.x1);
+					ngb = threadData.relinkNodeGrid[relinkNodeindex];
+
+					// if (nodeLayer.GetNodelayer() == 2) {
+					// 	LOG("Linking z %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
+					// }
 					hmx = ngb->xmax();
 
 					neighbors.push_back(ngb);
@@ -887,15 +954,25 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					}
 				}
 
-				ngbRels |= REL_NGB_EDGE_T;
+				int insideEdge = !(nodeArea.x1 == nodeArea.x2 && zmin() == nodeArea.z1);
+				ngbRels |= REL_NGB_EDGE_T * insideEdge;
 			}
-			if (zmax() < static_cast<unsigned int>(mapDims.mapy)) {
+			// if (zmax() < static_cast<unsigned int>(mapDims.mapy)) {
+			if (zmax() < relinkArea.z2) {
+				INode* ngb = nullptr;
 				const unsigned int hmz = zmax() + 0;
 
 				// walk along EDGE_B (south) neighbors
-				for (unsigned int hmx = xmin(); hmx < xmax(); ) {
+				// for (unsigned int hmx = xmin(); hmx < xmax(); ) {
+				for (unsigned int hmx = nodeArea.x1; hmx < nodeArea.x2; ) {
 					// ngb = nodes[hmz * mapDims.mapx + hmx];
-					ngb = nodeLayer.GetNode(hmx, hmz);
+					// ngb = nodeLayer.GetNode(hmx, hmz);
+					int relinkNodeindex = (hmz - r.z1) * rWidth + (hmx - r.x1);
+					ngb = threadData.relinkNodeGrid[relinkNodeindex];
+
+					// if (nodeLayer.GetNodelayer() == 2) {
+					// 	LOG("Linking %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
+					// }
 					hmx = ngb->xmax();
 
 					neighbors.push_back(ngb);
@@ -916,7 +993,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					}
 				}
 
-				ngbRels |= REL_NGB_EDGE_B;
+				int insideEdge = !(nodeArea.x1 == nodeArea.x2 && zmax() == nodeArea.z2);
+				ngbRels |= REL_NGB_EDGE_B * insideEdge;
 			}
 
 			#ifdef QTPFS_CORNER_CONNECTED_NODES
@@ -927,18 +1005,24 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					// const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmin() + 0)];
 					// 	  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmin() - 1)];
 
-					const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmin() + 0);
-					const INode* ngbT = nodeLayer.GetNode(xmin() + 0, zmin() - 1);
-						  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmin() - 1);
+					// const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmin() + 0);
+					// const INode* ngbT = nodeLayer.GetNode(xmin() + 0, zmin() - 1);
+					// 	  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmin() - 1);
+
+					const unsigned int hmx = xmin() - r.x1;
+					const unsigned int hmz = zmin() - r.z1;
+					const INode* ngbL = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
+					const INode* ngbT = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
+						  INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
 
 					// VERT_TL ngb must be distinct from EDGE_L and EDGE_T ngbs
 					if (ngbC != ngbL && ngbC != ngbT) {
 						if (ngbL->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							neighbors.push_back(ngbC);
 
-							assert(GetNeighborRelation(ngb) != 0);
-							assert(ngb->GetNeighborRelation(this) != 0);
-							assert(ngb->IsLeaf());
+							assert(GetNeighborRelation(ngbC) != 0);
+							assert(ngbC->GetNeighborRelation(this) != 0);
+							assert(ngbC->IsLeaf());
 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
@@ -954,18 +1038,24 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					// const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmin() + 0)];
 					// 	  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmin() - 1)];
 
-					const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmax() - 1);
-					const INode* ngbB = nodeLayer.GetNode(xmin() + 0, zmax() + 0);
-						  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmax() + 0);
+					// const INode* ngbL = nodeLayer.GetNode(xmin() - 1, zmax() - 1);
+					// const INode* ngbB = nodeLayer.GetNode(xmin() + 0, zmax() + 0);
+					// 	  INode* ngbC = nodeLayer.GetNode(xmin() - 1, zmax() + 0);
+
+					const unsigned int hmx = xmin() - r.x1;
+					const unsigned int hmz = zmax() - r.z1;
+					const INode* ngbL = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
+					const INode* ngbB = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
+						  INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
 
 					// VERT_BL ngb must be distinct from EDGE_L and EDGE_B ngbs
 					if (ngbC != ngbL && ngbC != ngbB) {
 						if (ngbL->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							neighbors.push_back(ngbC);
 
-							assert(GetNeighborRelation(ngb) != 0);
-							assert(ngb->GetNeighborRelation(this) != 0);
-							assert(ngb->IsLeaf());
+							assert(GetNeighborRelation(ngbC) != 0);
+							assert(ngbC->GetNeighborRelation(this) != 0);
+							assert(ngbC->IsLeaf());
 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
@@ -985,18 +1075,24 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					// const INode* ngbT = nodes[(zmin() - 1) * mapDims.mapx + (xmax() - 1)];
 					// 	  INode* ngbC = nodes[(zmin() - 1) * mapDims.mapx + (xmax() + 0)];
 
-					const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmin() + 0);
-					const INode* ngbT = nodeLayer.GetNode(xmax() - 1, zmin() - 1);
-						  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmin() - 1);
+					// const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmin() + 0);
+					// const INode* ngbT = nodeLayer.GetNode(xmax() - 1, zmin() - 1);
+					// 	  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmin() - 1);
+
+					const unsigned int hmx = xmax() - r.x1;
+					const unsigned int hmz = zmin() - r.z1;
+					const INode* ngbR = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
+					const INode* ngbT = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
+						  INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
 
 					// VERT_TR ngb must be distinct from EDGE_R and EDGE_T ngbs
 					if (ngbC != ngbR && ngbC != ngbT) {
 						if (ngbR->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							neighbors.push_back(ngbC);
 
-							assert(GetNeighborRelation(ngb) != 0);
-							assert(ngb->GetNeighborRelation(this) != 0);
-							assert(ngb->IsLeaf());
+							assert(GetNeighborRelation(ngbC) != 0);
+							assert(ngbC->GetNeighborRelation(this) != 0);
+							assert(ngbC->IsLeaf());
 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
@@ -1012,18 +1108,24 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 					// const INode* ngbB = nodes[(zmax() + 0) * mapDims.mapx + (xmax() - 1)];
 					// 	  INode* ngbC = nodes[(zmax() + 0) * mapDims.mapx + (xmax() + 0)];
 
-					const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmax() - 1);
-					const INode* ngbB = nodeLayer.GetNode(xmax() - 1, zmax() + 0);
-						  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmax() + 0);
+					// const INode* ngbR = nodeLayer.GetNode(xmax() + 0, zmax() - 1);
+					// const INode* ngbB = nodeLayer.GetNode(xmax() - 1, zmax() + 0);
+					// 	  INode* ngbC = nodeLayer.GetNode(xmax() + 0, zmax() + 0);
+
+					const unsigned int hmx = xmax() - r.x1;
+					const unsigned int hmz = zmax() - r.z1;
+					const INode* ngbR = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
+					const INode* ngbB = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
+						  INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
 
 					// VERT_BR ngb must be distinct from EDGE_R and EDGE_B ngbs
 					if (ngbC != ngbR && ngbC != ngbB) {
 						if (ngbR->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							neighbors.push_back(ngbC);
 
-							assert(GetNeighborRelation(ngb) != 0);
-							assert(ngb->GetNeighborRelation(this) != 0);
-							assert(ngb->IsLeaf());
+							assert(GetNeighborRelation(ngbC) != 0);
+							assert(ngbC->GetNeighborRelation(this) != 0);
+							assert(ngbC->IsLeaf());
 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
@@ -1038,11 +1140,22 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer) {
 			#endif
 		}
 
+		// for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
+		// 	for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
+		// 		assert(neighbors[nRefI] != neighbors[nChkI]);
+		// 	}
+		// }
+		// for (int ri = 1; ri < netpoints.size(); ri++) {
+		// 	for (int ci = ri + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; ci < netpoints.size(); ci++) {
+		// 		assert(netpoints[ri] != netpoints[ci]);
+		// 	}
+		// }
+
 		return true;
-	}
+	// }
 
 	// LOG("%s: [%d] neighbors = %d, netpoints = %d", __func__, index, neighbors.size(), netpoints.size());
 
-	return false;
+	// return false;
 }
 

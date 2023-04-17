@@ -28,6 +28,9 @@ void QTPFS::NodeLayer::InitStatic() {
 void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 	assert((QTPFS::NodeLayer::NUM_SPEEDMOD_BINS + 1) <= MaxSpeedBinTypeValue());
 
+	openNodes.reserve(200); // TODO: remove magic numbers
+	selectedNodes.reserve(200);
+
 	// pre-count the root
 	numLeafNodes = 1;
 	layerNumber = layerNum;
@@ -288,7 +291,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, un
 #endif
 #endif
 
-void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum) {
+void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
 	// assert(!nodeGrid.empty());
 
 	// account for the rim of nodes around the bounding box
@@ -325,29 +328,45 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsign
 	// ------------------------------------------------------
 	// find all leaf nodes
 	// go through each level - check for children in area.
-	// TODO: move this to per thread struct to reduce memory allocations.
-	std::vector<INode*> selectedNodes;
-	selectedNodes.reserve(200);
-
 	SRectangle searchArea(xmin, zmin, xmax, zmax);
 	GetNodesInArea(searchArea, selectedNodes);
 
+	threadData.relinkNodeGrid.clear();
+	threadData.relinkNodeGrid.resize(threadData.areaRelinked.GetArea(), nullptr);
+
+	// Build grid with selected nodes.
+	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode *curNode){
+		SRectangle& r = threadData.areaRelinked;
+		SRectangle nodeArea(curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax());
+		nodeArea.ClampIn(r);
+		int width = r.GetWidth();
+		for (int z = nodeArea.z1; z < nodeArea.z2; ++z) {
+			int zoff = (z - r.z1) * width;
+			for (int x = nodeArea.x1; x < nodeArea.x2; ++x) {
+				unsigned int index = zoff + (x - r.x1);
+				assert(index < threadData.relinkNodeGrid.size());
+				threadData.relinkNodeGrid[index] = curNode;
+			}
+		}
+	});
+
+	// if (GetNodelayer() == 2) {
+	// 	LOG("Search Area [%d,%d:%d,%d]", searchArea.x1, searchArea.z1, searchArea.x2, searchArea.z2);
+	// }
+
 	// TODO: nodes on the outer edges of the change only need to update a limited set of points.
 	// now update the selected nodes
-	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, currMagicNum](INode* curNode){
+	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode* curNode){
 		// const int xmin = std::max((int)curNode->xmin() - 1, 0), xmax = std::min((int)curNode->xmax() + 1, mapDims.mapx);
 		// const int zmin = std::max((int)curNode->zmin() - 1, 0), zmax = std::min((int)curNode->zmax() + 1, mapDims.mapy);
-		curNode->SetMagicNumber(currMagicNum);
-		curNode->UpdateNeighborCache(*this);
+		// curNode->SetMagicNumber(currMagicNum);
+		curNode->UpdateNeighborCache(*this, threadData);
 		// UpdateNeighborCache(curNode, 0xfff);
 	});
 }
 
 void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound) {
-	std::vector<INode*> openNodes;
-	openNodes.reserve(200);
 	openNodes.clear();
-
 	nodesFound.clear();
 
 	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
@@ -421,17 +440,4 @@ QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangl
 	assert(selectedNode != nullptr);
 
 	return selectedNode;
-}
-
-void QTPFS::NodeLayer::UpdateNeighborCache(INode* node, int sidesToUpData) {
-	// node->GetNeighborRelation();
-
-	if ((node->xmin() > 0) && (sidesToUpData & REL_NGB_EDGE_L)) {
-		int hmx = node->xmin() - 1;
-		for (int hmz = node->zmin(); hmz < node->zmax(); ) {
-			INode* nn = GetNode(hmx, hmz);
-
-			hmz = nn->zmax();
-		}
-	}
 }
