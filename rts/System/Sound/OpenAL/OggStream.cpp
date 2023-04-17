@@ -11,60 +11,13 @@
 #include "VorbisShared.h"
 
 
-namespace VorbisCallbacks {
-	// NOTE:
-	//   this buffer gets recycled by each new stream, across *all* audio-channels
-	//   as a result streams are limited to only ever being played within a single
-	//   channel (currently BGMusic), but cause far less memory fragmentation
-	// TODO:
-	//   can easily be fixed if necessary by giving each channel its own index and
-	//   passing that along to the callbacks via COggStream{::Play}
-	// CFileHandler fileBuffers[NUM_AUDIO_CHANNELS];
-	CFileHandler fileBuffer("", "");
-
-	size_t VorbisStreamReadCB(void* ptr, size_t size, size_t nmemb, void* datasource)
-	{
-		assert(datasource == &fileBuffer);
-		return fileBuffer.Read(ptr, size * nmemb);
-	}
-
-	int VorbisStreamCloseCB(void* datasource)
-	{
-		assert(datasource == &fileBuffer);
-		fileBuffer.Close();
-		return 0;
-	}
-
-	int VorbisStreamSeekCB(void* datasource, ogg_int64_t offset, int whence)
-	{
-		assert(datasource == &fileBuffer);
-
-		switch (whence) {
-			case SEEK_SET: { fileBuffer.Seek(offset, std::ios_base::beg); } break;
-			case SEEK_CUR: { fileBuffer.Seek(offset, std::ios_base::cur); } break;
-			case SEEK_END: { fileBuffer.Seek(offset, std::ios_base::end); } break;
-			default: {} break;
-		}
-
-		return 0;
-	}
-
-	long VorbisStreamTellCB(void* datasource)
-	{
-		assert(datasource == &fileBuffer);
-		return (fileBuffer.GetPos());
-	}
-}
-
-
-
 COggStream::COggStream(ALuint _source)
-	: vorbisInfo(nullptr)
-	, pcmDecodeBuffer(nullptr)
+	: pcmDecodeBuffer(nullptr)
 	, source(_source)
 	, format(AL_FORMAT_MONO16)
 	, stopped(true)
 	, paused(false)
+	, decoder(OggDecoder())
 {
 	std::fill(buffers.begin(), buffers.end(), 0);
 }
@@ -83,9 +36,6 @@ COggStream& COggStream::operator=(COggStream&& rhs) noexcept
 		pcmDecodeBuffer = rhs.pcmDecodeBuffer;
 		rhs.pcmDecodeBuffer = nullptr;
 
-		ovFile = rhs.ovFile;
-		vorbisInfo = rhs.vorbisInfo;
-
 		for (auto i = 0; i < buffers.size(); ++i) {
 			std::swap(buffers[i], rhs.buffers[i]);
 		}
@@ -99,8 +49,7 @@ COggStream& COggStream::operator=(COggStream&& rhs) noexcept
 		std::swap(msecsPlayed, rhs.msecsPlayed);
 		std::swap(lastTick, rhs.lastTick);
 
-		std::swap(vorbisTags, rhs.vorbisTags);
-		std::swap(vendor, rhs.vendor);
+		std::swap(decoder, rhs.decoder);
 	}
 
 	return *this;
@@ -113,44 +62,12 @@ void COggStream::Play(const std::string& path, float volume)
 	if (!stopped)
 		return;
 
-	vorbisTags.clear();
-
-	ov_callbacks vorbisCallbacks;
-	vorbisCallbacks.read_func  = VorbisCallbacks::VorbisStreamReadCB;
-	vorbisCallbacks.close_func = VorbisCallbacks::VorbisStreamCloseCB;
-	vorbisCallbacks.seek_func  = VorbisCallbacks::VorbisStreamSeekCB;
-	vorbisCallbacks.tell_func  = VorbisCallbacks::VorbisStreamTellCB;
-
-	VorbisCallbacks::fileBuffer.Open(path);
-
-	const int result = ov_open_callbacks(&VorbisCallbacks::fileBuffer, &ovFile, nullptr, 0, vorbisCallbacks);
-
-	if (result < 0) {
-		LOG_L(L_WARNING, "Could not open Ogg stream (reason: %s).", ErrorString(result).c_str());
-		VorbisCallbacks::fileBuffer.Close();
+	auto loaded = std::visit([&](auto&& d) { return d.LoadFile(path); }, decoder);
+	if (!loaded) {
 		return;
 	}
 
-
-	vorbisInfo = ov_info(&ovFile, -1);
-
-	{
-		vorbis_comment* vorbisComment = ov_comment(&ovFile, -1);
-		vorbisTags.resize(vorbisComment->comments);
-
-		for (unsigned i = 0; i < vorbisComment->comments; ++i) {
-			vorbisTags[i] = std::string(vorbisComment->user_comments[i], vorbisComment->comment_lengths[i]);
-		}
-
-		vendor = std::string(vorbisComment->vendor);
-		// DisplayInfo();
-	}
-
-	if (vorbisInfo->channels == 1) {
-		format = AL_FORMAT_MONO16;
-	} else {
-		format = AL_FORMAT_STEREO16;
-	}
+	format = std::visit([&](auto&& d) { return d.GetFormat(); }, decoder);
 
 	alGenBuffers(2, buffers.data());
 	CheckError("[COggStream::Play][1]");
@@ -159,7 +76,7 @@ void COggStream::Play(const std::string& path, float volume)
 		ReleaseBuffers();
 	} else {
 		stopped = false;
-		paused = false;
+		paused  = false;
 	}
 
 	CheckError("[COggStream::Play][2]");
@@ -178,39 +95,20 @@ void COggStream::Stop()
 
 	source = 0;
 	format = 0;
-	vorbisInfo = nullptr;
+
+	std::visit([&](auto&& d) {
+			return d.Stop();
+			}, decoder);
 
 	assert(!Valid());
 }
 
-
 float COggStream::GetTotalTime()
 {
-	return ov_time_total(&ovFile, -1);
+	return std::visit([&](auto&& d) {
+			return d.GetTotalTime();
+			}, decoder);
 }
-
-
-
-// display Ogg info and comments
-void COggStream::DisplayInfo()
-{
-	LOG("[OggStream::%s]", __func__);
-	LOG("\tversion:           %d", vorbisInfo->version);
-	LOG("\tchannels:          %d", vorbisInfo->channels);
-	LOG("\ttime (sec):        %lf", ov_time_total(&ovFile, -1));
-	LOG("\trate (Hz):         %ld", vorbisInfo->rate);
-	LOG("\tbitrate (upper):   %ld", vorbisInfo->bitrate_upper);
-	LOG("\tbitrate (nominal): %ld", vorbisInfo->bitrate_nominal);
-	LOG("\tbitrate (lower):   %ld", vorbisInfo->bitrate_lower);
-	LOG("\tbitrate (window):  %ld", vorbisInfo->bitrate_window);
-	LOG("\tvendor:            %s", vendor.c_str());
-	LOG("\ttags:              %lu", static_cast<unsigned long>(vorbisTags.size()));
-
-	for (const std::string& s: vorbisTags) {
-		LOG("\t\t%s", s.c_str());
-	}
-}
-
 
 // clean up the OpenAL resources
 void COggStream::ReleaseBuffers()
@@ -218,22 +116,24 @@ void COggStream::ReleaseBuffers()
 	stopped = true;
 	paused = false;
 
-	#if 0
+#if 0
 	EmptyBuffers();
-	#else
+#else
 	// alDeleteBuffers fails with AL_INVALID_OPERATION if either buffer
 	// is still bound to source, while alSourceUnqueueBuffers sometimes
 	// generates an AL_INVALID_VALUE but doesn't appear to be necessary
 	// since we can just detach both of them directly
 	alSourcei(source, AL_BUFFER, AL_NONE);
 	CheckError("[COggStream::ReleaseBuffers][1]");
-	#endif
+#endif
 
 	alDeleteBuffers(2, buffers.data());
 	CheckError("[COggStream::ReleaseBuffers][2]");
 	std::fill(buffers.begin(), buffers.end(), 0);
 
-	ov_clear(&ovFile);
+	std::visit([&](auto&& d) {
+			d.ReleaseBuffers();
+			}, decoder);
 }
 
 
@@ -339,7 +239,9 @@ bool COggStream::DecodeStream(ALuint buffer)
 	int result = 0;
 
 	while (size < BUFFER_SIZE) {
-		result = ov_read(&ovFile, pcmDecodeBuffer + size, BUFFER_SIZE - size, 0, 2, 1, &section);
+		result = std::visit([&](auto&& d) {
+				return d.Read(pcmDecodeBuffer + size, BUFFER_SIZE - size, 0, 2, 1, &section);
+				}, decoder);
 
 		if (result > 0) {
 			size += result;
@@ -357,7 +259,8 @@ bool COggStream::DecodeStream(ALuint buffer)
 	if (size == 0)
 		return false;
 
-	alBufferData(buffer, format, pcmDecodeBuffer, size, vorbisInfo->rate);
+	long rate = std::visit([&](auto&& d) { return d.GetRate(); }, decoder);
+	alBufferData(buffer, format, pcmDecodeBuffer, size, rate);
 	return (CheckError("[COggStream::DecodeStream]"));
 }
 
@@ -367,7 +270,7 @@ void COggStream::EmptyBuffers()
 {
 	assert(source != 0);
 
-	#if 1
+#if 1
 	int queuedBuffers = 0;
 
 	alGetSourcei(source, AL_BUFFERS_QUEUED, &queuedBuffers);
@@ -381,10 +284,14 @@ void COggStream::EmptyBuffers()
 		// done by caller
 		// alDeleteBuffers(1, &buffer);
 	}
-	#else
+#else
 	// assumes both are still pending
 	alSourceUnqueueBuffers(source, 2, buffers);
 	CheckError("[COggStream::EmptyBuffers]");
-	#endif
+#endif
 }
 
+bool COggStream::Valid() const
+{
+	return (source != 0 && std::visit([&](auto&& d) { return d.Valid(); }, decoder));
+}

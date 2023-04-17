@@ -4,6 +4,7 @@
 #define OGG_STREAM_H
 
 #include "System/Misc/SpringTime.h"
+#include "System/Sound/OpenAL/SoundDecoders.h"
 
 #include <al.h>
 #include <ogg/ogg.h>
@@ -34,13 +35,10 @@ public:
 	float GetTotalTime();
 
 	bool TogglePause();
-	bool Valid() const { return (source != 0 && vorbisInfo != nullptr); }
+	bool Valid() const;
 	bool IsFinished() { return !Valid() || (GetPlayTime() >= GetTotalTime()); }
 
-	const std::vector<std::string>& VorbisTags() const { return vorbisTags; }
-
 private:
-	void DisplayInfo();
 	bool IsPlaying();
 	bool StartPlaying();
 
@@ -54,9 +52,6 @@ private:
 	 *   (check for IsPlaying() whether the complete stream was played)
 	 */
 	bool UpdateBuffers();
-
-	OggVorbis_File ovFile;
-	vorbis_info* vorbisInfo;
 
 	static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 	static constexpr unsigned int NUM_BUFFERS = 2;
@@ -73,8 +68,7 @@ private:
 	spring_time msecsPlayed;
 	spring_time lastTick;
 
-	std::vector<std::string> vorbisTags;
-	std::string vendor;
+	std::variant<OggDecoder> decoder;
 };
 
 #endif // OGG_STREAM_H
