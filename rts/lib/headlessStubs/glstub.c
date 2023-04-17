@@ -267,6 +267,7 @@ GLAPI void APIENTRY glCopyBufferSubData(GLenum readtarget, GLenum writetarget, G
 GLAPI void APIENTRY glBindBufferBase(GLenum target, GLuint index, GLuint buffer) {}
 GLAPI void APIENTRY glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size) {}
 GLAPI GLboolean APIENTRY glIsBuffer(GLuint buffer) { return GL_TRUE; }
+GLAPI void APIENTRY glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params) { *params = 0; }
 
 GLAPI void APIENTRY glTexStorage3D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) {}
 
