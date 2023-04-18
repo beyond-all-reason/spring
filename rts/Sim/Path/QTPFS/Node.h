@@ -4,9 +4,11 @@
 #define QTPFS_NODE_HDR
 
 #include <array>
-#include <vector>
-#include <fstream>
 #include <cinttypes>
+#include <fstream>
+#include <limits>
+#include <vector>
+
 
 #include "PathEnums.h"
 #include "PathDefines.h"
@@ -97,10 +99,10 @@ namespace QTPFS {
 		void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) { netpoints[ngbIdx] = point; }
 		const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const { return netpoints[ngbIdx]; }
 
-		unsigned int xmin() const { return (_xminxmax  & 0xFFFF); }
-		unsigned int zmin() const { return (_zminzmax  & 0xFFFF); }
-		unsigned int xmax() const { return (_xminxmax >>     16); }
-		unsigned int zmax() const { return (_zminzmax >>     16); }
+		unsigned int xmin() const { return _xmin /*(_xminxmax  & 0xFFFF)*/; }
+		unsigned int zmin() const { return _zmin /*(_zminzmax  & 0xFFFF)*/; }
+		unsigned int xmax() const { return _xmax /*(_xminxmax >>     16)*/; }
+		unsigned int zmax() const { return _zmax /*(_zminzmax >>     16)*/; }
 		unsigned int xmid() const { return ((xmin() + xmax()) >> 1); }
 		unsigned int zmid() const { return ((zmin() + zmax()) >> 1); }
 		unsigned int xsize() const { return (xmax() - xmin()); }
@@ -144,9 +146,9 @@ namespace QTPFS {
 			return netpoints;
 		}
 
-		void DeactivateNode() { _xminxmax = -1; }
+		void DeactivateNode() { _xmin = std::numeric_limits<decltype(_xmin)>::max(); }
 
-		bool NodeDeactivated() const { return (_xminxmax == -1); }
+		bool NodeDeactivated() const { return (_xmin == std::numeric_limits<decltype(_xmin)>::max()); }
 
 	private:
 		bool UpdateMoveCost(
@@ -167,8 +169,12 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
-		unsigned int _xminxmax = 0; // TODO: split into shorts
-		unsigned int _zminzmax = 0; // TODO: split into shorts
+		// unsigned int _xminxmax = 0; // TODO: split into shorts
+		// unsigned int _zminzmax = 0; // TODO: split into shorts
+		unsigned short _xmin = 0;
+		unsigned short _xmax = 0;
+		unsigned short _zmin = 0;
+		unsigned short _zmax = 0;
 
 		float speedModSum =  0.0f; // TODO: remove
 		float speedModAvg =  0.0f; // TODO: remove

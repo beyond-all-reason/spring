@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -214,6 +214,7 @@ void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, u
 
 void QTPFS::PathSearch::IterateNodes() {
 	SearchQueueNode curOpenNode = (*openNodes).top();
+	assert(searchThreadData->allSearchedNodes.isSet(curOpenNode.nodeIndex));
 	curSearchNode = &searchThreadData->allSearchedNodes[curOpenNode.nodeIndex];
 	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
@@ -254,6 +255,8 @@ void QTPFS::PathSearch::IterateNodes() {
 	if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < minSearchNode->GetPathCost(NODE_PATH_COST_H))
 		minSearchNode = curSearchNode;
 	#endif
+
+	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
 	IterateNodeNeighbors(curNode->GetNeighbors());
 }

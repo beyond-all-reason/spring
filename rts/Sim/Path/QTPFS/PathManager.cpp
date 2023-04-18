@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <assert.h>
 
@@ -41,6 +41,7 @@
 #include "Registry.h"
 
 #include <assert.h>
+#include <tracy/Tracy.hpp>
 
 #ifdef GetTempPath
 #undef GetTempPath
@@ -544,6 +545,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
 void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread) {
+	ZoneScoped;
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -586,7 +588,7 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	assert(re.x2 >= r.x2);
 	assert(re.z2 >= r.z2);
 
-	updateThreadData[currentThread].InitUpdate(re);
+	updateThreadData[currentThread].InitUpdate(re, *md, currentThread);
 	const bool wantTesselation = (layersInited || !haveCacheDir);
 	const bool needTesselation = nodeLayers[layerNum].Update(re, md, updateThreadData[currentThread]);
 

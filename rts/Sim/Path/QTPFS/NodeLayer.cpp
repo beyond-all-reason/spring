@@ -12,6 +12,8 @@
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 unsigned int QTPFS::NodeLayer::NUM_SPEEDMOD_BINS;
 float        QTPFS::NodeLayer::MIN_SPEEDMOD_VALUE;
 float        QTPFS::NodeLayer::MAX_SPEEDMOD_VALUE;
@@ -64,6 +66,7 @@ bool QTPFS::NodeLayer::Update(
 	// const std::vector<  int>* luBlockBits,
 	UpdateThreadData& threadData
 ) {
+	ZoneScoped;
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	// unsigned int numNewBinSquares = 0;
@@ -80,9 +83,33 @@ bool QTPFS::NodeLayer::Update(
 
 	threadData.curSpeedMods.resize(r.GetArea(), 0);
 	threadData.curSpeedBins.resize(r.GetArea(), -1);
+	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
 
 	auto &curSpeedMods = threadData.curSpeedMods;
 	auto &curSpeedBins = threadData.curSpeedBins;
+	auto &blockRect = threadData.areaMaxBlockBits;
+	auto &blockBits = threadData.maxBlockBits;
+
+	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
+		ZoneScopedN("localRangeIsBlocked");
+		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
+		const int zmin = (chmz - md.zsizeh) - blockRect.z1;
+		const int xmax = (chmx + md.xsizeh) - blockRect.x1;
+		const int zmax = (chmz + md.zsizeh) - blockRect.z1;
+		const int blockRectWidth = blockRect.GetWidth();
+		int ret = 0;
+		
+		// footprints are point-symmetric around <xSquare, zSquare>
+		for (int z = zmin; z <= zmax; z += 2/*FOOTPRINT_ZSTEP*/) {
+			for (int x = xmin; x <= xmax; x += 2/*FOOTPRINT_XSTEP*/) {
+				ret |= blockBits[z * blockRectWidth + x];
+				if ((ret & CMoveMath::BLOCK_STRUCTURE) != 0)
+					return ret;
+			}
+		}
+
+		return ret;
+	};
 
 	// divide speed-modifiers into bins
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
@@ -91,13 +118,20 @@ bool QTPFS::NodeLayer::Update(
 			const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
-			const unsigned int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const unsigned int chmz = Clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
+			const int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
+			const int chmz = Clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
 
 			// const float minSpeedMod = (luSpeedMods == nullptr)? CMoveMath::GetPosSpeedMod(*md, hmx, hmz): (*luSpeedMods)[recIdx];
 			// const   int maxBlockBit = (luBlockBits == nullptr)? CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr): (*luBlockBits)[recIdx];
 			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
-			const   int maxBlockBit = CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr);
+			// const   int maxBlockBit = CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr);
+			// const int xmin = std::max(chmx - (*md).xsizeh,                0);
+			// const int zmin = std::max(chmz - (*md).zsizeh,                0);
+			// const int xmax = std::min(chmx + (*md).xsizeh, mapDims.mapx - 1);
+			// const int zmax = std::min(chmz + (*md).zsizeh, mapDims.mapy - 1);
+			// const   int maxBlockBit = CMoveMath::RangeIsBlockedMt(*md, xmin, xmax, zmin, zmax, nullptr, threadData.threadId);
+			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
+
 			// NOTE:
 			//   movetype code checks ONLY the *CENTER* square of a unit's footprint
 			//   to get the current speedmod affecting it, and the default pathfinder
@@ -158,6 +192,7 @@ bool QTPFS::NodeLayer::Update(
 
 
 QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float relSpeedMod) const {
+	ZoneScoped;
 	// NOTE:
 	//     bins N and N+1 are reserved for modifiers <= min and >= max
 	//     respectively; blocked squares MUST be in their own category
@@ -292,6 +327,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, un
 #endif
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
+	ZoneScoped;
 	// assert(!nodeGrid.empty());
 
 	// account for the rim of nodes around the bounding box
@@ -335,7 +371,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 	threadData.relinkNodeGrid.resize(threadData.areaRelinked.GetArea(), nullptr);
 
 	// Build grid with selected nodes.
-	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode *curNode){
+	std::for_each(selectedNodes.begin(), selectedNodes.end(), [&threadData](INode *curNode){
 		SRectangle& r = threadData.areaRelinked;
 		SRectangle nodeArea(curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax());
 		nodeArea.ClampIn(r);
@@ -354,7 +390,6 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 	// 	LOG("Search Area [%d,%d:%d,%d]", searchArea.x1, searchArea.z1, searchArea.x2, searchArea.z2);
 	// }
 
-	// TODO: nodes on the outer edges of the change only need to update a limited set of points.
 	// now update the selected nodes
 	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode* curNode){
 		// const int xmin = std::max((int)curNode->xmin() - 1, 0), xmax = std::min((int)curNode->xmax() + 1, mapDims.mapx);
@@ -416,6 +451,7 @@ void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vecto
 }
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
+	ZoneScoped;
 	INode* selectedNode = nullptr;
 	INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 	int length = curNode->xsize(); // width/height is forced to be the same.

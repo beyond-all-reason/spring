@@ -12,6 +12,8 @@
 #include "Sim/Units/Unit.h"
 #include "System/Platform/Threading.h"
 
+#include <tracy/Tracy.hpp>
+
 bool CMoveMath::noHoverWaterMove = false;
 float CMoveMath::waterDamageCost = 0.0f;
 
@@ -48,6 +50,7 @@ float CMoveMath::yLevel(const MoveDef& moveDef, const float3& pos)
 /* calculate the local speed-modifier for this MoveDef */
 float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsigned zSquare)
 {
+	ZoneScoped;
 	if (xSquare >= mapDims.mapx || zSquare >= mapDims.mapy)
 		return 0.0f;
 
@@ -364,6 +367,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmi
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread)
 {
+	ZoneScoped;
 	BlockType ret = BLOCK_NONE;
 
 	const int tempNum = gs->GetMtTempNum(thread);
@@ -392,5 +396,32 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmi
 	}
 
 	return ret;
+}
+
+void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results)
+{
+	ZoneScoped;
+	results.resize(areaToSample.GetArea(), 0);
+
+	int curIndex = 0;
+	for (int z = areaToSample.z1; z < areaToSample.z2; ++z) {
+		const int zOffset = z * mapDims.mapx;
+
+		for (int x = areaToSample.x1; x < areaToSample.x2; ++x) {
+			const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zOffset + x);
+			BlockType ret = BLOCK_NONE;
+
+			for (size_t i = 0, n = cell.size(); i < n; i++) {
+				CSolidObject* collidee = cell[i];
+
+				ret |= ObjectBlockType(moveDef, collidee, collider);
+
+				if ((ret & BLOCK_STRUCTURE) != 0)
+					break;
+			}
+
+			results[curIndex++] = ret;
+		}
+	}
 }
 

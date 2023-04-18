@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -16,6 +16,8 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
+
+#include <tracy/Tracy.hpp>
 
 unsigned int QTPFS::QTNode::MIN_SIZE_X;
 unsigned int QTPFS::QTNode::MIN_SIZE_Z;
@@ -219,8 +221,12 @@ void QTPFS::QTNode::Init(
 	// for leafs, all children remain NULL
 	childBaseIndex = -1u;
 
-	_xminxmax = (x2 << 16) | (x1 << 0);
-	_zminzmax = (z2 << 16) | (z1 << 0);
+	//_xminxmax = (x2 << 16) | (x1 << 0);
+	//_zminzmax = (z2 << 16) | (z1 << 0);
+	_xmin = x1;
+	_xmax = x2;
+	_zmin = z1;
+	_zmax = z2;
 
 	assert(x2 < (1 << 16));
 	assert(z2 < (1 << 16));
@@ -355,6 +361,7 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 }
 
 bool QTPFS::QTNode::Merge(NodeLayer& nl) {
+	ZoneScoped;
 	if (IsLeaf())
 		return false;
 
@@ -421,6 +428,7 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 #else
 
 	void QTPFS::QTNode::PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth, const UpdateThreadData* threadData) {
+		ZoneScoped;
 		const unsigned int rel = GetRectangleRelation(r);
 
 		// LOG("%s: [%d:%d]", __func__, nl.GetNodelayer(), depth);
@@ -480,6 +488,7 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 
 
 void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData) {
+	ZoneScoped;
 	unsigned int numNewBinSquares = 0; // nr. of squares in <r> that changed bin after deformation
 	unsigned int numDifBinSquares = 0; // nr. of different bin-types across all squares within <r>
 	unsigned int numClosedSquares = 0;
@@ -777,6 +786,8 @@ const std::vector<QTPFS::INode*>& QTPFS::QTNode::GetNeighbors(/*const std::vecto
 // (never both)
 // bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer) {
 bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData) {
+	ZoneScoped;
+
 	assert(IsLeaf());
 	// assert(!nodes.empty());
 	// if (gs->frameNum > -1 && nodeLayer == 2)
@@ -1141,6 +1152,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 		}
 
 		// for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
+		// 	assert(GetNeighborRelation(neighbors[nRefI]) != 0);
 		// 	for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
 		// 		assert(neighbors[nRefI] != neighbors[nChkI]);
 		// 	}

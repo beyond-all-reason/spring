@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 
@@ -15,6 +15,8 @@
 #include "Registry.h"
 #include "Components/Path.h"
 #include "Components/PathSearch.h"
+
+#include <tracy/Tracy.hpp>
 
 static QTPFS::IPath dummyPath; // dummy
 
@@ -141,6 +143,7 @@ void QTPFS::PathCache::DelPath(unsigned int pathID) {
 // }
 
 bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
+	ZoneScoped;
 	#ifdef QTPFS_IGNORE_DEAD_PATHS
 	return false;
 	#endif

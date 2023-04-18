@@ -9,6 +9,7 @@
 #include "Node.h"
 
 #include "Map/ReadMap.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "System/Rectangle.h"
 
 namespace QTPFS {
@@ -132,18 +133,29 @@ namespace QTPFS {
     struct UpdateThreadData {
 		std::vector<SpeedModType> curSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
-        std::vector<INode*> relinkNodeGrid; 
+        std::vector<std::uint8_t> maxBlockBits;
+        std::vector<INode*> relinkNodeGrid;
         SRectangle areaUpdated;
         SRectangle areaRelinked;
+        SRectangle areaMaxBlockBits;
+        int threadId = 0;
 
-		void InitUpdate(const SRectangle& area)
+		void InitUpdate(const SRectangle& area, const MoveDef& md, int newThreadId)
 		{
+            auto mapRect = MapToRectangle();
+            
             areaUpdated = area;
             areaRelinked = SRectangle(area.x1 - 1, area.z1 - 1, area.x2 + 1, area.z2 + 1);
-            areaRelinked.ClampIn(MapToRectangle());
+            areaMaxBlockBits = SRectangle(area.x1 - md.xsizeh, area.z1 - md.zsizeh, area.x2 + md.xsizeh, area.z2 + md.zsizeh);
+            areaRelinked.ClampIn(mapRect);
+            areaMaxBlockBits.ClampIn(mapRect);
+
             curSpeedMods.reserve(area.GetArea());
             curSpeedBins.reserve(area.GetArea());
+            maxBlockBits.reserve(areaMaxBlockBits.GetArea());
             relinkNodeGrid.reserve(areaRelinked.GetArea());
+
+            threadId = newThreadId;
         }
 
         SRectangle MapToRectangle() {
