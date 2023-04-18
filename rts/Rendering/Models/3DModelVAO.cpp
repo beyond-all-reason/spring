@@ -154,6 +154,7 @@ void S3DModelVAO::UploadVBOs()
 	bool reinitVAO = (vao.GetIdRaw() == 0);
 
 	if (vertData.size() > vertUploadIndex) {
+		assert(!safeToDeleteVectors);
 		vertVBO.Bind();
 		const size_t reqSize = AlignUp(std::max(vertData.size(), S3DModelVAO::VERT_SIZE0) * sizeof(SVertexData), MEM_STEP);
 		reinitVAO |= (reqSize > vertVBO.GetSize());
@@ -165,6 +166,7 @@ void S3DModelVAO::UploadVBOs()
 	}
 
 	if (indxData.size() > indxUploadIndex) {
+		assert(!safeToDeleteVectors);
 		indxVBO.Bind();
 		const size_t reqSize = AlignUp(std::max(indxData.size(), S3DModelVAO::INDX_SIZE0) * sizeof(   uint32_t), MEM_STEP);
 		reinitVAO |= (reqSize > indxVBO.GetSize());
