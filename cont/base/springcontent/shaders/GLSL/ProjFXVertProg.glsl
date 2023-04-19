@@ -8,7 +8,7 @@ in vec3 aparams;
 in vec4 color;
 
 out vec4 vCol;
-out vec4 vUV;
+centroid out vec4 vUV;
 out float vLayer;
 out float vBF;
 #ifdef SMOOTH_PARTICLES

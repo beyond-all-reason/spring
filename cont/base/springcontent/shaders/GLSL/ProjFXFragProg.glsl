@@ -9,7 +9,7 @@ uniform sampler2D atlasTex;
 uniform vec4 alphaCtrl = vec4(0.0, 0.0, 0.0, 1.0); //always pass
 
 in vec4 vCol;
-in vec4 vUV;
+centroid in vec4 vUV;
 in float vLayer; //for sampler2Darray (future)
 in float vBF;
 #ifdef SMOOTH_PARTICLES
