@@ -118,6 +118,8 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "gameSpeed" , GAME_SPEED );
 		LuaPushNamedNumber(L, "squareSize", SQUARE_SIZE);
 		LuaPushNamedNumber(L, "metalMapSquareSize", METAL_MAP_SQUARE_SIZE);
+		LuaPushNamedNumber(L, "buildSquareSize", BUILD_SQUARE_SIZE);
+		LuaPushNamedNumber(L, "footprintScale", SPRING_FOOTPRINT_SCALE);
 	}
 
 	if (CGameSetup::ScriptLoaded()) {

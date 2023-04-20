@@ -9,6 +9,8 @@ Spring changelog
 (since release 1544)
 
 Lua:
+ - add `Game.footprintScale`, the footprint multiplier compared to defs
+ - add `Game.buildSquareSize`, the building alignment grid size
  - removed `Game.allowTeamColors` (was deprecated and always `true`)
  - `Spring.SetActiveCommand()` or passing explicit `nil` now cancels the command.
    The previous method to pass `-1` still works.
