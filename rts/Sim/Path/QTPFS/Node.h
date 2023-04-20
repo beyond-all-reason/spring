@@ -122,7 +122,7 @@ namespace QTPFS {
 		//void SetSearchState(unsigned int state) { searchState = state; }
 		// void SetMagicNumber(unsigned int number) { currMagicNum = number; }
 
-		float GetSpeedMod() const { return speedModAvg; }
+		float GetSpeedMod() const { return 1.0f / moveCostAvg /*speedModAvg*/; }
 		float GetMoveCost() const { return moveCostAvg; }
 		// unsigned int GetSearchState() const { return searchState; }
 		// unsigned int GetMagicNumber() const { return currMagicNum; }
@@ -171,8 +171,8 @@ namespace QTPFS {
 		unsigned short _zmin = 0;
 		unsigned short _zmax = 0;
 
-		float speedModSum =  0.0f; // TODO: remove
-		float speedModAvg =  0.0f; // TODO: remove
+		// float speedModSum =  0.0f; // TODO: remove
+		// float speedModAvg =  0.0f; // TODO: remove
 		float moveCostAvg = -1.0f;
 
 		// unsigned int currMagicNum = 0;   // TODO: remove

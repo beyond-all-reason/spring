@@ -242,7 +242,7 @@ private:
 		unsigned int xsize = 0;
 		unsigned int zsize = 0;
 
-		float maxRelSpeedMod = 0.0f;
+		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
 	};
 }

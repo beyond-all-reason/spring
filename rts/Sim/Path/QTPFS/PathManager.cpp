@@ -128,7 +128,7 @@ namespace QTPFS {
 	std::vector<NodeLayer> PathManager::nodeLayers;
 	// std::vector<QTNode*> PathManager::nodeTrees;
 	// std::vector<PathCache> PathManager::pathCaches;
-	std::vector<PathSearch*> PathManager::pathSearches;
+	// std::vector<PathSearch*> PathManager::pathSearches;
 }
 
 QTPFS::PathManager::PathManager() {
@@ -183,7 +183,7 @@ QTPFS::PathManager::~PathManager() {
 		nodeLayers[layerNum].Clear();
 	}
 	std::for_each(pathTraces.begin(), pathTraces.end(), [](std::pair<unsigned int, QTPFS::PathSearchTrace::Execution*>& t){delete t.second;} );
-	std::for_each(pathSearches.begin(), pathSearches.end(), [](PathSearch* p){delete p;});
+	// std::for_each(pathSearches.begin(), pathSearches.end(), [](PathSearch* p){delete p;});
 
 	// for (auto tracesIt = pathTraces.begin(); tracesIt != pathTraces.end(); ++tracesIt) {
 	// 	delete (tracesIt->second);
@@ -192,7 +192,7 @@ QTPFS::PathManager::~PathManager() {
 	// reuse layer pools when reloading
 	// nodeLayers.clear();
 	// pathCaches.clear();
-	pathSearches.clear();
+	// pathSearches.clear();
 	// pathTypes.clear();
 	pathTraces.clear();
 	mapChangeTrack.damageMap.clear();
@@ -242,7 +242,7 @@ void QTPFS::PathManager::Load() {
 	pathCache.Init(moveDefHandler.GetNumMoveDefs());
 	// nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
-	pathSearches.reserve(200);
+	// pathSearches.reserve(200);
 
 	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);

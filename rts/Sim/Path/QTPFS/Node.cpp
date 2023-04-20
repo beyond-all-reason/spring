@@ -237,8 +237,8 @@ void QTPFS::QTNode::Init(
 	// gCost = 0.0f;
 	// hCost = 0.0f;
 
-	speedModSum =  0.0f;
-	speedModAvg =  0.0f;
+	// speedModSum =  0.0f;
+	// speedModAvg =  0.0f;
 	moveCostAvg = -1.0f;
 
 	index = idx;
@@ -632,7 +632,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	// 		}
 	// 	}
 	// } else {
-		speedModSum = 0.0f;
+		float speedModSum = 0.0f;
 
 		for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
 			for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
@@ -659,7 +659,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	// (re-)calculate the average cost of this node
 	assert(speedModSum >= 0.0f);
 
-	speedModAvg = speedModSum / area();
+	float speedModAvg = speedModSum / area();
 	moveCostAvg = (speedModAvg <= 0.001f)? QTPFS_POSITIVE_INFINITY: (1.0f / speedModAvg);
 
 	// no node can have ZERO traversal cost
@@ -734,8 +734,8 @@ void QTPFS::QTNode::Serialize(std::fstream& fStream, NodeLayer& nodeLayer, unsig
 		fStream.read(reinterpret_cast<char*>(&numChildren), sizeof(unsigned int));
 		fStream.read(reinterpret_cast<char*>(&childBaseIndex), sizeof(unsigned int));
 
-		fStream.read(reinterpret_cast<char*>(&speedModAvg), sizeof(float));
-		fStream.read(reinterpret_cast<char*>(&speedModSum), sizeof(float));
+		// fStream.read(reinterpret_cast<char*>(&speedModAvg), sizeof(float));
+		// fStream.read(reinterpret_cast<char*>(&speedModSum), sizeof(float));
 		fStream.read(reinterpret_cast<char*>(&moveCostAvg), sizeof(float));
 
 		if (numChildren > 0) {
@@ -751,8 +751,8 @@ void QTPFS::QTNode::Serialize(std::fstream& fStream, NodeLayer& nodeLayer, unsig
 		fStream.write(reinterpret_cast<const char*>(&numChildren), sizeof(unsigned int));
 		fStream.write(reinterpret_cast<const char*>(&childBaseIndex), sizeof(unsigned int));
 
-		fStream.write(reinterpret_cast<const char*>(&speedModAvg), sizeof(float));
-		fStream.write(reinterpret_cast<const char*>(&speedModSum), sizeof(float));
+		// fStream.write(reinterpret_cast<const char*>(&speedModAvg), sizeof(float));
+		// fStream.write(reinterpret_cast<const char*>(&speedModSum), sizeof(float));
 		fStream.write(reinterpret_cast<const char*>(&moveCostAvg), sizeof(float));
 	}
 
@@ -824,6 +824,11 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			if (RectIntersects(threadData.areaRelinkedInner)) {
 				neighbors.clear();
 				netpoints.clear();
+
+				// if (neighbors.capacity() > (maxNgbs << 3)) {
+				// 	neighbors.shrink_to_fit();
+				// 	netpoints.shrink_to_fit();
+				// }
 			} else {
 				for (int ni = neighbors.size(); ni-- > 0;) {
 					auto curNode = neighbors[ni];
@@ -846,8 +851,15 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				}
 			}
 
+			// TODO: use indicies for neighbor ids, then highest bot could indicate corner node,
+			//       which also us to reduce netpoints to 1 for those
+			// As quads become larger, they are less likely to be linked to a huge number of tiny
+			// quads all around, so scale down the pre-allocated number of neighbours relatively
+			// as the quads get bigger.
+			maxNgbs >>= 1 * (maxNgbs >= 8*4) + 1 * (maxNgbs >= 32*4) + 1 * (maxNgbs >= 128*4);
 			neighbors.reserve(maxNgbs + 4);
-			netpoints.reserve(1 + maxNgbs * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE + 4);
+			netpoints.reserve(1 + (maxNgbs + 4) * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE);
+			
 			// NOTE: caching ETP's breaks QTPFS_ORTHOPROJECTED_EDGE_TRANSITIONS
 			// NOTE: [0] is a reserved index and must always be valid
 			if (netpoints.empty())
@@ -1153,17 +1165,17 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			}
 			#endif
 
-			for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
-				assert(GetNeighborRelation(neighbors[nRefI]) != 0);
-				for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
-					assert(neighbors[nRefI] != neighbors[nChkI]);
-				}
-			}
-			for (int ri = 1; ri < netpoints.size(); ri++) {
-				for (int ci = ri + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; ci < netpoints.size(); ci++) {
-					assert(netpoints[ri] != netpoints[ci]);
-				}
-			}
+			// for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
+			// 	assert(GetNeighborRelation(neighbors[nRefI]) != 0);
+			// 	for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
+			// 		assert(neighbors[nRefI] != neighbors[nChkI]);
+			// 	}
+			// }
+			// for (int ri = 1; ri < netpoints.size(); ri++) {
+			// 	for (int ci = ri + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; ci < netpoints.size(); ci++) {
+			// 		assert(netpoints[ri] != netpoints[ci]);
+			// 	}
+			// }
 		}
 
 		return true;

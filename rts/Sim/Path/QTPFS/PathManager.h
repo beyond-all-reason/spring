@@ -145,7 +145,7 @@ namespace QTPFS {
 
 	private:
 		PathCache pathCache;
-		static std::vector<PathSearch*> pathSearches;
+		// static std::vector<PathSearch*> pathSearches;
 
 		// per thread data
 		std::vector<SearchThreadData> searchThreadData;

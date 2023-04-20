@@ -105,6 +105,7 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
         //     LOG("Searching %d: %d/%d", dataChunk, layer.updateMaxNodes, comp.refreshTimeInFrames);
         // }
 
+        // TODO: store speed mods in a separate component? Allows for SSE perhaps?
         auto& nodeLayer = pm->GetNodeLayer(layer.layerNum);
         for (int i = idxBeg; i < idxEnd; ++i) {
             auto* curNode = nodeLayer.GetPoolNode(i);
