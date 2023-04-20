@@ -164,7 +164,7 @@ namespace QTPFS {
 
 				for (size_t j = poolNodes[i].size(); j > 0; --j) {
 					int32_t nodeIndex = j - 1;
-					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbours();
+					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbors();
 					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(neighbours)>::value_type);
 					const auto& netPoints = poolNodes[i][nodeIndex].GetNetPoints();
 					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(netPoints)>::value_type);

@@ -83,8 +83,9 @@ namespace QTPFS {
 		bool Merge(NodeLayer& nl);
 
 		unsigned int GetMaxNumNeighbors() const;
-		unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&);
-		const std::vector<INode*>& GetNeighbors(/*const std::vector<INode*>&*/);
+		// unsigned int GetNeighbors(const std::vector<INode*>&, std::vector<INode*>&);
+		unsigned int GetNeighbors(const std::vector<int>&, std::vector<int>&);
+		// const std::vector<INode*>& GetNeighbors(/*const std::vector<INode*>&*/);
 		// bool UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer);
 		bool UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData);
 
@@ -131,9 +132,11 @@ namespace QTPFS {
 		static unsigned int MinSizeX() { return MIN_SIZE_X; }
 		static unsigned int MinSizeZ() { return MIN_SIZE_Z; }
 
-		const std::vector<INode*>& GetNeighbours() const {
-			return neighbors;
+		// const std::vector<INode*>& GetNeighbors() const {
+		const std::vector<int>& GetNeighbors() const {
+			return neighbours;
 		}
+		const std::vector<int>& GetNeighbors() { return neighbours; }
 		const std::vector<float2>& GetNetPoints() const {
 			return netpoints;
 		}
@@ -180,7 +183,8 @@ namespace QTPFS {
 
 		unsigned int childBaseIndex = -1u;
 
-		std::vector<INode*> neighbors;
+		// std::vector<INode*> neighbors; // TODO: switch to indicies
+		std::vector<int> neighbours;
 		std::vector<float2> netpoints;
 	};
 

@@ -258,15 +258,18 @@ void QTPFS::PathSearch::IterateNodes() {
 
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
-	IterateNodeNeighbors(curNode->GetNeighbors());
+	// IterateNodeNeighbors(curNode->GetNeighbors());
+	IterateNodeNeighbors(curNode);
 }
 
-void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes) {
+// void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes) {
+void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 	// if curNode equals srcNode, this is just the original srcPoint
-	auto *curNode = nodeLayer->GetPoolNode(curSearchNode->GetIndex());
+	// auto *curNode = nodeLayer->GetPoolNode(curSearchNode->GetIndex());
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
+	const std::vector<int>& nxtNodes = curNode->GetNeighbors();
 	for (unsigned int i = 0; i < nxtNodes.size(); i++) {
 		// NOTE:
 		//   this uses the actual distance that edges of the final path will cover,
@@ -285,7 +288,8 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		//   in the first case we would explore many more nodes than necessary (CPU
 		//   nightmare), while in the second we would get low-quality paths (player
 		//   nightmare)
-		auto* nxtNode = nxtNodes[i];
+		// auto* nxtNode = nxtNodes[i];
+		auto* nxtNode = nodeLayer->GetPoolNode(nxtNodes[i]);
 		
 		// LOG("%s: target node search from %d to %d", __func__
 		// 		, curNode->GetIndex()
