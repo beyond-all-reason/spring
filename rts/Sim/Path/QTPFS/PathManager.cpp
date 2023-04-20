@@ -781,7 +781,7 @@ void QTPFS::PathManager::Update() {
 			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 			);
 
-		RequestMaxSpeedModRefreshForlayer(0);
+		RequestMaxSpeedModRefreshForLayer(0);
 
 		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
 			UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum());

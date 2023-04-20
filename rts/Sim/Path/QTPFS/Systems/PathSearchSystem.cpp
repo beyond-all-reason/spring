@@ -2,6 +2,7 @@
 
 #include "PathSearchSystem.h"
 
+#include "Sim/Path/QTPFS/PathSearch.h"
 #include "Sim/Path/QTPFS/Components/PathSearch.h"
 #include "Sim/Path/QTPFS/Registry.h"
 

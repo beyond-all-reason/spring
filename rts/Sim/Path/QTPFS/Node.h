@@ -180,8 +180,8 @@ namespace QTPFS {
 
 		unsigned int childBaseIndex = -1u;
 
-		std::vector<INode*> neighbors; // TODO: reduce number of elements
-		std::vector<float2> netpoints; // TODO: reduce number of elements
+		std::vector<INode*> neighbors;
+		std::vector<float2> netpoints;
 	};
 
 	struct SearchNode {

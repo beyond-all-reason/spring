@@ -824,11 +824,6 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			if (RectIntersects(threadData.areaRelinkedInner)) {
 				neighbors.clear();
 				netpoints.clear();
-
-				// if (neighbors.capacity() > (maxNgbs << 3)) {
-				// 	neighbors.shrink_to_fit();
-				// 	netpoints.shrink_to_fit();
-				// }
 			} else {
 				for (int ni = neighbors.size(); ni-- > 0;) {
 					auto curNode = neighbors[ni];
@@ -855,7 +850,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			//       which also us to reduce netpoints to 1 for those
 			// As quads become larger, they are less likely to be linked to a huge number of tiny
 			// quads all around, so scale down the pre-allocated number of neighbours relatively
-			// as the quads get bigger.
+			// as the quads get bigger. The *4 is because quads have four sides.
 			maxNgbs >>= 1 * (maxNgbs >= 8*4) + 1 * (maxNgbs >= 32*4) + 1 * (maxNgbs >= 128*4);
 			neighbors.reserve(maxNgbs + 4);
 			netpoints.reserve(1 + (maxNgbs + 4) * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE);
