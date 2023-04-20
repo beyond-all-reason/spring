@@ -131,27 +131,40 @@ namespace QTPFS {
 	};
 
     struct UpdateThreadData {
-		std::vector<SpeedModType> curSpeedMods;
-		std::vector<SpeedBinType> curSpeedBins;
+		// std::vector<SpeedModType> curSpeedMods;
+		// std::vector<SpeedBinType> curSpeedBins;
         std::vector<std::uint8_t> maxBlockBits;
         std::vector<INode*> relinkNodeGrid;
         SRectangle areaUpdated;
+        SRectangle areaRelinkedInner;
         SRectangle areaRelinked;
         SRectangle areaMaxBlockBits;
+        const MoveDef* moveDef;
         int threadId = 0;
 
-		void InitUpdate(const SRectangle& area, const MoveDef& md, int newThreadId)
+		void InitUpdate(const SRectangle& area, const INode& topNode, const MoveDef& md, int newThreadId)
 		{
+            moveDef = &md;
             auto mapRect = MapToRectangle();
             
             areaUpdated = area;
-            areaRelinked = SRectangle(area.x1 - 1, area.z1 - 1, area.x2 + 1, area.z2 + 1);
-            areaMaxBlockBits = SRectangle(area.x1 - md.xsizeh, area.z1 - md.zsizeh, area.x2 + md.xsizeh, area.z2 + md.zsizeh);
+            areaRelinkedInner = SRectangle  ( topNode.xmin()
+                                            , topNode.zmin()
+                                            , topNode.xmax()
+                                            , topNode.zmax());
+            areaRelinked = SRectangle   ( topNode.xmin() - 1
+                                        , topNode.zmin() - 1
+                                        , topNode.xmax() + 1
+                                        , topNode.zmax() + 1);
+            areaMaxBlockBits = SRectangle   ( area.x1 - md.xsizeh
+                                            , area.z1 - md.zsizeh
+                                            , area.x2 + md.xsizeh
+                                            , area.z2 + md.zsizeh);
             areaRelinked.ClampIn(mapRect);
             areaMaxBlockBits.ClampIn(mapRect);
 
-            curSpeedMods.reserve(area.GetArea());
-            curSpeedBins.reserve(area.GetArea());
+            // curSpeedMods.reserve(area.GetArea());
+            // curSpeedBins.reserve(area.GetArea());
             maxBlockBits.reserve(areaMaxBlockBits.GetArea());
             relinkNodeGrid.reserve(areaRelinked.GetArea());
 
@@ -165,12 +178,17 @@ namespace QTPFS {
         void Reset() {
             areaUpdated = SRectangle(0, 0, 0, 0);
             areaRelinked = areaUpdated;
-            curSpeedMods.resize(0);
-            curSpeedMods.shrink_to_fit();
-            curSpeedBins.resize(0);
-            curSpeedBins.shrink_to_fit();
+            areaMaxBlockBits = areaUpdated;
+            areaRelinkedInner = areaUpdated;
+            // curSpeedMods.resize(0);
+            // curSpeedMods.shrink_to_fit();
+            // curSpeedBins.resize(0);
+            // curSpeedBins.shrink_to_fit();
             relinkNodeGrid.resize(0);
             relinkNodeGrid.shrink_to_fit();
+            maxBlockBits.resize(0);
+            maxBlockBits.shrink_to_fit();
+            moveDef = nullptr;
         }
 
         // std::size_t GetMemFootPrint() {

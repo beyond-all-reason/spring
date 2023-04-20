@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef QTPFS_NODELAYER_HDR
-#define QTPFS_NODELAYER_HDR
+#ifndef QTPFS_NODELAYER_H_
+#define QTPFS_NODELAYER_H_
 
 // #undef NDEBUG
 
@@ -43,8 +43,8 @@ namespace QTPFS {
 		void Clear();
 
 		bool Update(
-			const SRectangle& r,
-			const MoveDef* md,
+			// const SRectangle& r,
+			// const MoveDef* md,
 			// const std::vector<float>* luSpeedMods = nullptr,
 			// const std::vector<  int>* luBlockBits = nullptr,
 			UpdateThreadData& threadData
@@ -136,9 +136,9 @@ namespace QTPFS {
 
 
 		// const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
-		// const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
+		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		// const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
-		// const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
+		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
 		// std::vector<INode*>& GetNodes() { return nodeGrid; }
 
@@ -202,9 +202,9 @@ namespace QTPFS {
 		std::vector<INode*> selectedNodes;
 		std::vector<INode*> openNodes;
 
-		// std::vector<SpeedModType> curSpeedMods;
+		std::vector<SpeedModType> curSpeedMods;
 		// std::vector<SpeedModType> oldSpeedMods;
-		// std::vector<SpeedBinType> curSpeedBins;
+		std::vector<SpeedBinType> curSpeedBins;
 		// std::vector<SpeedBinType> oldSpeedBins;
 
 		// root lives outside pool s.t. all four children of a given node are always in one chunk

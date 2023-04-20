@@ -41,14 +41,6 @@ namespace QTPFS {
 
 		unsigned int GetIndex() const { return index; }
 
-	protected:
-		// NOTE:
-		//     storing the heap-index is an *UGLY* break of abstraction,
-		//     but the only way to keep the cost of resorting acceptable
-		unsigned int nodeNumber = -1u; // TODO: maybe remove? only used for hash (to match searches) could be quick enough to build on demand?
-		unsigned int index = 0;
-
-	public:
 		QTNode() = default;
 		QTNode(const QTNode& n) = delete;
 		QTNode(QTNode&& n) = default;
@@ -152,8 +144,8 @@ namespace QTPFS {
 
 	private:
 		bool UpdateMoveCost(
-			// const NodeLayer& nl,
 			const UpdateThreadData* threadData,
+			const NodeLayer& nl,
 			const SRectangle& r,
 			unsigned int& numNewBinSquares,
 			unsigned int& numDifBinSquares,
@@ -169,6 +161,9 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
+		unsigned int nodeNumber = -1u; // TODO: maybe remove? only used for hash (to match searches) could be quick enough to build on demand?
+		unsigned int index = 0;
+
 		// unsigned int _xminxmax = 0; // TODO: split into shorts
 		// unsigned int _zminzmax = 0; // TODO: split into shorts
 		unsigned short _xmin = 0;

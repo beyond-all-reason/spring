@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include <limits>
 
 #include "NodeLayer.h"
@@ -49,19 +51,19 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 		std::reverse(nodeIndcs.begin(), nodeIndcs.end());
 	}
 
-	// curSpeedMods.resize(xsize * zsize,  0);
-	// curSpeedBins.resize(xsize * zsize, -1);
+	curSpeedMods.resize(xsize * zsize,  0);
+	curSpeedBins.resize(xsize * zsize, -1);
 }
 
 void QTPFS::NodeLayer::Clear() {
-	// curSpeedMods.clear();
-	// curSpeedBins.clear();
+	curSpeedMods.clear();
+	curSpeedBins.clear();
 }
 
 
 bool QTPFS::NodeLayer::Update(
-	const SRectangle& r,
-	const MoveDef* md,
+	// const SRectangle& r,
+	// const MoveDef* md,
 	// const std::vector<float>* luSpeedMods,
 	// const std::vector<  int>* luBlockBits,
 	UpdateThreadData& threadData
@@ -71,6 +73,8 @@ bool QTPFS::NodeLayer::Update(
 
 	// unsigned int numNewBinSquares = 0;
 	unsigned int numClosedSquares = 0;
+	const SRectangle& r = threadData.areaUpdated;
+	const MoveDef* md = threadData.moveDef;
 
 	// const bool globalUpdate =
 	// 	((r.x1 == 0 && r.x2 == mapDims.mapx) &&
@@ -81,17 +85,16 @@ bool QTPFS::NodeLayer::Update(
 	// 	avgRelSpeedMod = 0.0f;
 	// }
 
-	threadData.curSpeedMods.resize(r.GetArea(), 0);
-	threadData.curSpeedBins.resize(r.GetArea(), -1);
+	// threadData.curSpeedMods.resize(r.GetArea(), 0);
+	// threadData.curSpeedBins.resize(r.GetArea(), -1);
 	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
 
-	auto &curSpeedMods = threadData.curSpeedMods;
-	auto &curSpeedBins = threadData.curSpeedBins;
+	// auto &curSpeedMods = threadData.curSpeedMods;
+	// auto &curSpeedBins = threadData.curSpeedBins;
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
 
 	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
-		ZoneScopedN("localRangeIsBlocked");
 		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
 		const int zmin = (chmz - md.zsizeh) - blockRect.z1;
 		const int xmax = (chmx + md.xsizeh) - blockRect.x1;
@@ -115,7 +118,8 @@ bool QTPFS::NodeLayer::Update(
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
 			// const unsigned int sqrIdx = hmz * xsize + hmx;
-			const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
+			// const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
+			const unsigned int recIdx = hmz * xsize + hmx;
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
@@ -125,11 +129,6 @@ bool QTPFS::NodeLayer::Update(
 			// const   int maxBlockBit = (luBlockBits == nullptr)? CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr): (*luBlockBits)[recIdx];
 			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
 			// const   int maxBlockBit = CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr);
-			// const int xmin = std::max(chmx - (*md).xsizeh,                0);
-			// const int zmin = std::max(chmz - (*md).zsizeh,                0);
-			// const int xmax = std::min(chmx + (*md).xsizeh, mapDims.mapx - 1);
-			// const int zmax = std::min(chmz + (*md).zsizeh, mapDims.mapy - 1);
-			// const   int maxBlockBit = CMoveMath::RangeIsBlockedMt(*md, xmin, xmax, zmin, zmax, nullptr, threadData.threadId);
 			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
@@ -472,8 +471,6 @@ QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangl
 		int nextIndex = curNode->GetChildBaseIndex() + offset;
 		curNode = GetPoolNode(nextIndex);
 	}
-
 	assert(selectedNode != nullptr);
-
 	return selectedNode;
 }

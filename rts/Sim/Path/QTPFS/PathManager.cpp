@@ -586,11 +586,11 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	assert(re.x1 <= r.x1);
 	assert(re.z1 <= r.z1);
 	assert(re.x2 >= r.x2);
-	assert(re.z2 >= r.z2);
+	assert(re.z2 >= r.z2); // TODO: re can be dropped
 
-	updateThreadData[currentThread].InitUpdate(re, *md, currentThread);
+	updateThreadData[currentThread].InitUpdate(r, *containingNode, *md, currentThread);
 	const bool wantTesselation = (layersInited || !haveCacheDir);
-	const bool needTesselation = nodeLayers[layerNum].Update(re, md, updateThreadData[currentThread]);
+	const bool needTesselation = nodeLayers[layerNum].Update(/* r, md, */updateThreadData[currentThread]);
 
 	// process the affected root nodes.
 
@@ -780,8 +780,6 @@ void QTPFS::PathManager::Update() {
 			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
 			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 			);
-
-		// numTerrainChanges++;
 
 		RequestMaxSpeedModRefreshForlayer(0);
 

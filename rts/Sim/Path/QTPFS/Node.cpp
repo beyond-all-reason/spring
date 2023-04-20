@@ -453,6 +453,8 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 
 		// LOG("%s: [%d:%d] leaf=%d !cont=%d", __func__, nl.GetNodelayer(), depth, (int)leaf, (int)!cont);
 
+		// TODO: re-merge back up the root node if necessary
+
 		if (leaf || !cont) {
 			// TODO: this expansion is no longer needed due to power of 2 squares
 			// extend a bounding box around every
@@ -530,7 +532,7 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	// technically required whenever numRefBinSquares is zero, ie.
 	// when ALL squares in <r> changed bins in unison
 	//
-	UpdateMoveCost(threadData, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
+	UpdateMoveCost(threadData, nl, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
 
 	if ((wantSplit && Split(nl, depth, false)) || (needSplit && Split(nl, depth, true))) {
 		// registerNode = false;
@@ -553,7 +555,7 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 
 bool QTPFS::QTNode::UpdateMoveCost(
 	const UpdateThreadData* threadData,
-	// const NodeLayer& nl,
+	const NodeLayer& nl,
 	const SRectangle& r,
 	unsigned int& numNewBinSquares,
 	unsigned int& numDifBinSquares,
@@ -562,13 +564,13 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	bool& needSplit
 ) {
 	// const std::vector<NodeLayer::SpeedBinType>& oldSpeedBins = nl.GetOldSpeedBins();
-	// const std::vector<SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
+	const std::vector<SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
 	// const std::vector<NodeLayer::SpeedModType>& oldSpeedMods = nl.GetOldSpeedMods();
-	// const std::vector<SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
+	const std::vector<SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
 
-	const std::vector<SpeedBinType>& curSpeedBins = threadData->curSpeedBins;
-	const std::vector<SpeedModType>& curSpeedMods = threadData->curSpeedMods;
-	const int areaWidth = r.GetWidth(); // threadData->areaUpdated.GetWidth();
+	// const std::vector<SpeedBinType>& curSpeedBins = threadData->curSpeedBins;
+	// const std::vector<SpeedModType>& curSpeedMods = threadData->curSpeedMods;
+	// const int areaWidth = r.GetWidth(); // threadData->areaUpdated.GetWidth();
 
 	// const int minx = int(xmin()) - r.x1;
 	// const int maxx = int(xmax()) - r.x1;
@@ -580,12 +582,12 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	assert(int(zmin()) >= r.z1);
 	assert(int(zmax()) <= r.z2);
 
-	// const SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
-	const unsigned int refIdx = (zmin() - r.z1) * areaWidth + (xmin() - r.x1);
-	const SpeedBinType refSpeedBin = curSpeedBins[refIdx];
+	const SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
+	// const unsigned int refIdx = (zmin() - r.z1) * areaWidth + (xmin() - r.x1);
+	// const SpeedBinType refSpeedBin = curSpeedBins[refIdx];
 
-	assert(refIdx >= 0);
-	assert(refIdx < curSpeedBins.size());
+	// assert(refIdx >= 0);
+	// assert(refIdx < curSpeedBins.size());
 
 	// <this> can either just have been merged or added as
 	// new child of split parent; in the former case we can
@@ -634,9 +636,9 @@ bool QTPFS::QTNode::UpdateMoveCost(
 
 		for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
 			for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
-				// const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
 				// const unsigned int sqrIdx = hmz * areaWidth + hmx;
-				const unsigned int sqrIdx = (hmz - r.z1) * areaWidth + (hmx - r.x1);
+				// const unsigned int sqrIdx = (hmz - r.z1) * areaWidth + (hmx - r.x1);
 
 				assert(sqrIdx >= 0);
 				assert(sqrIdx < curSpeedBins.size());
@@ -816,9 +818,10 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			relinkArea.ClampIn(r);
 
 			SRectangle nodeArea(xmin(), zmin(), xmax(), zmax());
-			nodeArea.ClampIn(threadData.areaUpdated);
+			nodeArea.ClampIn(threadData.areaRelinkedInner);
+			// nodeArea.ClampIn(threadData.areaUpdated);
 
-			if (RectIntersects(threadData.areaUpdated)) {
+			if (RectIntersects(threadData.areaRelinkedInner)) {
 				neighbors.clear();
 				netpoints.clear();
 			} else {
@@ -826,7 +829,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					auto curNode = neighbors[ni];
 					if (curNode->NodeDeactivated()
 						|| !curNode->IsLeaf()
-						|| curNode->RectIntersects(threadData.areaUpdated)
+						|| curNode->RectIntersects(threadData.areaRelinkedInner)
+						// || curNode->RectIntersects(threadData.areaUpdated)
 						//|| (GetNeighborRelation(curNode) == 0)
 					) {
 						neighbors[ni] = neighbors.back();
@@ -848,7 +852,6 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			// NOTE: [0] is a reserved index and must always be valid
 			if (netpoints.empty())
 				netpoints.emplace_back();
-
 
 			// if (xmin() > 0) {
 			if (xmin() > relinkArea.x1) {
@@ -1149,19 +1152,19 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				}
 			}
 			#endif
-		}
 
-		// for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
-		// 	assert(GetNeighborRelation(neighbors[nRefI]) != 0);
-		// 	for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
-		// 		assert(neighbors[nRefI] != neighbors[nChkI]);
-		// 	}
-		// }
-		// for (int ri = 1; ri < netpoints.size(); ri++) {
-		// 	for (int ci = ri + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; ci < netpoints.size(); ci++) {
-		// 		assert(netpoints[ri] != netpoints[ci]);
-		// 	}
-		// }
+			for (int nRefI = 0; nRefI < neighbors.size(); nRefI++) {
+				assert(GetNeighborRelation(neighbors[nRefI]) != 0);
+				for (int nChkI = nRefI + 1; nChkI < neighbors.size(); nChkI++) {
+					assert(neighbors[nRefI] != neighbors[nChkI]);
+				}
+			}
+			for (int ri = 1; ri < netpoints.size(); ri++) {
+				for (int ci = ri + QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; ci < netpoints.size(); ci++) {
+					assert(netpoints[ri] != netpoints[ci]);
+				}
+			}
+		}
 
 		return true;
 	// }
