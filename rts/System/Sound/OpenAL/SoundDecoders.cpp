@@ -52,23 +52,11 @@ namespace VorbisCallbacks {
 	}
 }
 
-
-bool OggDecoder::Valid() const
-{
-	return vorbisInfo != nullptr;
-}
-
 long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream) {
 	return ov_read(&ovFile, buffer, length, bigendianp, word, sgned, bitstream);
 }
 
-void OggDecoder::Stop() {
-	vorbisInfo = nullptr;
-}
-
 bool OggDecoder::LoadFile(const std::string& path) {
-	vorbisTags.clear();
-
 	ov_callbacks vorbisCallbacks;
 	vorbisCallbacks.read_func  = VorbisCallbacks::VorbisStreamReadCB;
 	vorbisCallbacks.close_func = VorbisCallbacks::VorbisStreamCloseCB;
@@ -87,17 +75,7 @@ bool OggDecoder::LoadFile(const std::string& path) {
 
 	vorbisInfo = ov_info(&ovFile, -1);
 
-	{
-		vorbis_comment* vorbisComment = ov_comment(&ovFile, -1);
-		vorbisTags.resize(vorbisComment->comments);
-
-		for (unsigned i = 0; i < vorbisComment->comments; ++i) {
-			vorbisTags[i] = std::string(vorbisComment->user_comments[i], vorbisComment->comment_lengths[i]);
-		}
-
-		vendor = std::string(vorbisComment->vendor);
 		// DisplayInfo();
-	}
 	return true;
 }
 
@@ -122,6 +100,16 @@ float OggDecoder::GetTotalTime()
 // display Ogg info and comments
 void OggDecoder::DisplayInfo()
 {
+	std::vector<std::string> vorbisTags;
+
+	vorbis_comment* vorbisComment = ov_comment(&ovFile, -1);
+	vorbisTags.resize(vorbisComment->comments);
+
+	for (unsigned i = 0; i < vorbisComment->comments; ++i) {
+		vorbisTags[i] = std::string(vorbisComment->user_comments[i], vorbisComment->comment_lengths[i]);
+	}
+
+	const std::string vendor = std::string(vorbisComment->vendor);
 	LOG("[OggStream::%s]", __func__);
 	LOG("\tversion:           %d", vorbisInfo->version);
 	LOG("\tchannels:          %d", vorbisInfo->channels);
@@ -139,8 +127,9 @@ void OggDecoder::DisplayInfo()
 	}
 }
 
-void OggDecoder::ReleaseBuffers()
-{
-	ov_clear(&ovFile);
+void OggDecoder::Clear() {
+	if (vorbisInfo) {
+		ov_clear(&ovFile);
+		vorbisInfo = 0;
+	}
 }
-

@@ -4,12 +4,12 @@
 
 #include "OggStream.h"
 
-#include "System/FileSystem/FileHandler.h"
 #include "System/Sound/SoundLog.h"
 #include "System/SafeUtil.h"
 #include "ALShared.h"
 #include "VorbisShared.h"
 
+static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 
 COggStream::COggStream(ALuint _source)
 	: pcmDecodeBuffer(nullptr)
@@ -62,12 +62,15 @@ void COggStream::Play(const std::string& path, float volume)
 	if (!stopped)
 		return;
 
-	auto loaded = std::visit([&](auto&& d) { return d.LoadFile(path); }, decoder);
+	const bool loaded = std::visit([&](auto&& d) { return d.LoadFile(path); }, decoder);
 	if (!loaded) {
+		source = 0; // invalidate
+		assert(!Valid());
 		return;
 	}
 
 	format = std::visit([&](auto&& d) { return d.GetFormat(); }, decoder);
+	totalTime = std::visit([&](auto&& d) { return d.GetTotalTime(); }, decoder);
 
 	alGenBuffers(2, buffers.data());
 	CheckError("[COggStream::Play][1]");
@@ -95,19 +98,9 @@ void COggStream::Stop()
 
 	source = 0;
 	format = 0;
-
-	std::visit([&](auto&& d) {
-			return d.Stop();
-			}, decoder);
+	totalTime = 0.0f;
 
 	assert(!Valid());
-}
-
-float COggStream::GetTotalTime()
-{
-	return std::visit([&](auto&& d) {
-			return d.GetTotalTime();
-			}, decoder);
 }
 
 // clean up the OpenAL resources
@@ -131,9 +124,7 @@ void COggStream::ReleaseBuffers()
 	CheckError("[COggStream::ReleaseBuffers][2]");
 	std::fill(buffers.begin(), buffers.end(), 0);
 
-	std::visit([&](auto&& d) {
-			d.ReleaseBuffers();
-			}, decoder);
+	std::visit([&](auto&& d) { return d.Clear(); }, decoder);
 }
 
 
@@ -289,9 +280,4 @@ void COggStream::EmptyBuffers()
 	alSourceUnqueueBuffers(source, 2, buffers);
 	CheckError("[COggStream::EmptyBuffers]");
 #endif
-}
-
-bool COggStream::Valid() const
-{
-	return (source != 0 && std::visit([&](auto&& d) { return d.Valid(); }, decoder));
 }

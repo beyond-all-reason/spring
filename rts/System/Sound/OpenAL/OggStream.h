@@ -10,9 +10,9 @@
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 
-#include <string>
-#include <vector>
 #include <array>
+#include <string>
+#include <variant>
 
 
 class COggStream
@@ -32,10 +32,10 @@ public:
 	void Update();
 
 	float GetPlayTime() const { return (msecsPlayed.toSecsf()); }
-	float GetTotalTime();
+	float GetTotalTime() const { return totalTime; }
 
 	bool TogglePause();
-	bool Valid() const;
+	bool Valid() const { return source != 0; }
 	bool IsFinished() { return !Valid() || (GetPlayTime() >= GetTotalTime()); }
 
 private:
@@ -53,7 +53,6 @@ private:
 	 */
 	bool UpdateBuffers();
 
-	static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 	static constexpr unsigned int NUM_BUFFERS = 2;
 
 	char* pcmDecodeBuffer;
@@ -67,6 +66,7 @@ private:
 
 	spring_time msecsPlayed;
 	spring_time lastTick;
+	float totalTime;
 
 	std::variant<OggDecoder> decoder;
 };
