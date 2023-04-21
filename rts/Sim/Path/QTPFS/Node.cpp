@@ -806,6 +806,11 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 		unsigned int ngbRels = 0;
 		unsigned int maxNgbs = GetMaxNumNeighbors();
 
+		int newNeighbors = 0;
+		std::array<INode*, 256*4> neighborCache;
+
+		// TODO: prepopulated max list to grab all neighbours and then that sets exact reserve
+
 		// if (gs->frameNum > -1 && nodeLayer == 2)
 		// 	LOG("%s: [%d] maxNgbs = %d", __func__, index, maxNgbs);
 
@@ -821,7 +826,6 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 			SRectangle nodeArea(xmin(), zmin(), xmax(), zmax());
 			nodeArea.ClampIn(threadData.areaRelinkedInner);
-			// nodeArea.ClampIn(threadData.areaUpdated);
 
 			if (RectIntersects(threadData.areaRelinkedInner)) {
 				neighbours.clear();
@@ -833,8 +837,6 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					if (curNode->NodeDeactivated()
 						|| !curNode->IsLeaf()
 						|| curNode->RectIntersects(threadData.areaRelinkedInner)
-						// || curNode->RectIntersects(threadData.areaUpdated)
-						//|| (GetNeighborRelation(curNode) == 0)
 					) {
 						neighbours[ni] = neighbours.back();
 						neighbours.pop_back();
@@ -854,9 +856,11 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			// As quads become larger, they are less likely to be linked to a huge number of tiny
 			// quads all around, so scale down the pre-allocated number of neighbours relatively
 			// as the quads get bigger. The *4 is because quads have four sides.
-			maxNgbs >>= 1 * (maxNgbs >= 8*4) + 1 * (maxNgbs >= 32*4) + 1 * (maxNgbs >= 128*4);
-			neighbours.reserve(maxNgbs + 4);
-			netpoints.reserve(1 + (maxNgbs + 4) * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE);
+
+			// TODO: also limit reserve based on number nodes found in the areas?
+			// maxNgbs >>= 1 * (maxNgbs >= 8*4) + 1 * (maxNgbs >= 32*4) + 1 * (maxNgbs >= 128*4);
+			// neighbours.reserve(maxNgbs + 4);
+			// netpoints.reserve(1 + (maxNgbs + 4) * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE);
 			
 			// NOTE: caching ETP's breaks QTPFS_ORTHOPROJECTED_EDGE_TRANSITIONS
 			// NOTE: [0] is a reserved index and must always be valid
@@ -882,7 +886,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					hmz = ngb->zmax();
 
 					// neighbours.push_back(ngb);
-					neighbours.push_back(ngb->GetIndex());
+					// neighbours.push_back(ngb->GetIndex());
+					neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -895,9 +900,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					// if (gs->frameNum > -1 && nodeLayer == 2)
 					//  	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-					for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-						netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-					}
+					// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+					// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+					// }
 				}
 
 				int insideEdge = !(nodeArea.z1 == nodeArea.z2 && xmin() == nodeArea.x1);
@@ -922,7 +927,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					hmz = ngb->zmax();
 
 					// neighbours.push_back(ngb);
-					neighbours.push_back(ngb->GetIndex());
+					// neighbours.push_back(ngb->GetIndex());
+					neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -935,9 +941,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					// if (gs->frameNum > -1 && nodeLayer == 2)
 					//  	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-					for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-						netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-					}
+					// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+					// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+					// }
 				}
 
 				int insideEdge = !(nodeArea.z1 == nodeArea.z2 && xmax() == nodeArea.x2);
@@ -963,7 +969,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					hmx = ngb->xmax();
 
 					// neighbours.push_back(ngb);
-					neighbours.push_back(ngb->GetIndex());
+					// neighbours.push_back(ngb->GetIndex());
+					neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -976,9 +983,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					// if (gs->frameNum > -1 && nodeLayer == 2)
 					//  	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-					for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-						netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-					}
+					// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+					// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+					// }
 				}
 
 				int insideEdge = !(nodeArea.x1 == nodeArea.x2 && zmin() == nodeArea.z1);
@@ -1003,7 +1010,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					hmx = ngb->xmax();
 
 					// neighbours.push_back(ngb);
-					neighbours.push_back(ngb->GetIndex());
+					// neighbours.push_back(ngb->GetIndex());
+					neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -1016,9 +1024,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					// if (gs->frameNum > -1 && nodeLayer == 2)
 					//  	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-					for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-						netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-					}
+					// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+					// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+					// }
 				}
 
 				int insideEdge = !(nodeArea.x1 == nodeArea.x2 && zmax() == nodeArea.z2);
@@ -1047,7 +1055,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					if (ngbC != ngbL && ngbC != ngbT) {
 						if (ngbL->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
-							neighbours.push_back(ngbC->GetIndex());
+							// neighbours.push_back(ngbC->GetIndex());
+							neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1056,9 +1065,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-							for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-								netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-							}
+							// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+							// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+							// }
 						}
 					}
 				}
@@ -1081,7 +1090,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					if (ngbC != ngbL && ngbC != ngbB) {
 						if (ngbL->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
-							neighbours.push_back(ngbC->GetIndex());
+							// neighbours.push_back(ngbC->GetIndex());
+							neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1090,9 +1100,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-							for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-								netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-							}
+							// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+							// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+							// }
 						}
 					}
 				}
@@ -1119,7 +1129,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					if (ngbC != ngbR && ngbC != ngbT) {
 						if (ngbR->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
-							neighbours.push_back(ngbC->GetIndex());
+							// neighbours.push_back(ngbC->GetIndex());
+							neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1128,9 +1139,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-							for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-								netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-							}
+							// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+							// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+							// }
 						}
 					}
 				}
@@ -1153,7 +1164,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 					if (ngbC != ngbR && ngbC != ngbB) {
 						if (ngbR->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
-							neighbours.push_back(ngbC->GetIndex());
+							// neighbours.push_back(ngbC->GetIndex());
+							neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1162,9 +1174,9 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 							// if (gs->frameNum > -1 && nodeLayer == 2)
 							// 	LOG("%s: [%x] linked neighbour %x", __func__, nodeNumber, ngb->GetNodeNumber());
 
-							for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
-								netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
-							}
+							// for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+							// 	netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngbC, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+							// }
 						}
 					}
 				}
@@ -1182,6 +1194,18 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			// 		assert(netpoints[ri] != netpoints[ci]);
 			// 	}
 			// }
+
+			maxNgbs = neighbours.size() + newNeighbors;
+			neighbours.reserve(maxNgbs);
+			netpoints.reserve(1 + maxNgbs * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE);
+
+			for (int i = 0; i < newNeighbors; i++) {
+				INode* ngb = neighborCache[i];
+				neighbours.push_back(ngb->GetIndex());
+				for (unsigned int i = 0; i < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; i++) {
+					netpoints.push_back(INode::GetNeighborEdgeTransitionPoint(ngb, {}, QTPFS_NETPOINT_EDGE_SPACING_SCALE * (i + 1)));
+				}
+			}
 		}
 
 		return true;
