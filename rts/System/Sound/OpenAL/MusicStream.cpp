@@ -1,15 +1,33 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-
-#include <cstring> //memset
-
 #include "MusicStream.h"
 
+#include "System/FileSystem/FileHandler.h"
 #include "System/Sound/SoundLog.h"
 #include "System/SafeUtil.h"
 #include "ALShared.h"
 #include "VorbisShared.h"
+#include "System/Sound/OpenAL/OggDecoder.h"
+#include "System/Sound/OpenAL/Mp3Decoder.h"
 
+#include <cstring> //memset
+#include <filesystem>
+#include <string_view>
+
+// NOTE:
+//   this buffer gets recycled by each new stream, across *all* audio-channels
+//   as a result streams are limited to only ever being played within a single
+//   channel (currently BGMusic), but cause far less memory fragmentation
+// TODO:
+//   can easily be fixed if necessary by giving each channel its own index and
+//   passing that along to the callbacks via COggStream{::Play}
+// CFileHandler fileBuffers[NUM_AUDIO_CHANNELS];
+static CFileHandler fileBuffer("", "");
+
+// FIXME these parts of MusicStream are outside the class because every instance
+// of CSoundSource has a copy of MusicStream class but only one is ever active
 static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
+static char pcmDecodeBuffer[BUFFER_SIZE];
+
 
 MusicStream::MusicStream(ALuint _source)
 	: pcmDecodeBuffer(nullptr)
@@ -62,8 +80,19 @@ void MusicStream::Play(const std::string& path, float volume)
 	if (!stopped)
 		return;
 
-	const bool loaded = std::visit([&](auto&& d) { return d.LoadFile(path); }, decoder);
+	fileBuffer.Close();
+	fileBuffer.Open(path);
+
+	if (!fileBuffer.FileExists()) {
+		LOG_L(L_ERROR, "[MusicStream::Play] File doesn't exist: %s", path.c_str());
+		return;
+	}
+
+	const bool loaded = std::visit([&](auto&& d) {
+			return d.LoadData(fileBuffer.GetBuffer().data(), fileBuffer.FileSize());
+			} , decoder);
 	if (!loaded) {
+		LOG_L(L_ERROR, "[MusicStream::Play] Could not load file: %s", path.c_str());
 		source = 0; // invalidate
 		assert(!Valid());
 		return;

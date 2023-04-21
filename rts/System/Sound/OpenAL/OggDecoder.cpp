@@ -1,3 +1,5 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 #include "System/Sound/OpenAL/OggDecoder.h"
 
 #include <cstring> //memset
@@ -7,38 +9,27 @@
 #include "System/Sound/SoundLog.h"
 #include "VorbisShared.h"
 
-namespace VorbisCallbacks {
-	// NOTE:
-	//   this buffer gets recycled by each new stream, across *all* audio-channels
-	//   as a result streams are limited to only ever being played within a single
-	//   channel (currently BGMusic), but cause far less memory fragmentation
-	// TODO:
-	//   can easily be fixed if necessary by giving each channel its own index and
-	//   passing that along to the callbacks via COggStream{::Play}
-	// CFileHandler fileBuffers[NUM_AUDIO_CHANNELS];
-	CFileHandler fileBuffer("", "");
 
+namespace {
+namespace VorbisCallbacks {
 	size_t VorbisStreamReadCB(void* ptr, size_t size, size_t nmemb, void* datasource)
 	{
-		assert(datasource == &fileBuffer);
-		return fileBuffer.Read(ptr, size * nmemb);
+		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
+		return mem->Read(ptr, size * nmemb);
 	}
 
 	int VorbisStreamCloseCB(void* datasource)
 	{
-		assert(datasource == &fileBuffer);
-		fileBuffer.Close();
 		return 0;
 	}
 
 	int VorbisStreamSeekCB(void* datasource, ogg_int64_t offset, int whence)
 	{
-		assert(datasource == &fileBuffer);
-
+		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
 		switch (whence) {
-			case SEEK_SET: { fileBuffer.Seek(offset, std::ios_base::beg); } break;
-			case SEEK_CUR: { fileBuffer.Seek(offset, std::ios_base::cur); } break;
-			case SEEK_END: { fileBuffer.Seek(offset, std::ios_base::end); } break;
+			case SEEK_SET: { mem->Seek(offset); } break;
+			case SEEK_CUR: { mem->Seek(offset + mem->GetPos()); } break;
+			case SEEK_END: { mem->Seek(offset + mem->size); } break;
 			default: {} break;
 		}
 
@@ -47,17 +38,18 @@ namespace VorbisCallbacks {
 
 	long VorbisStreamTellCB(void* datasource)
 	{
-		assert(datasource == &fileBuffer);
-		return (fileBuffer.GetPos());
+		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
+		return (mem->GetPos());
 	}
+}
 }
 
 long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream) {
 	return ov_read(&ovFile, buffer, length, bigendianp, word, sgned, bitstream);
 }
 
-bool OggDecoder::LoadFile(const std::string& path) {
-	Clear();
+bool OggDecoder::LoadData(uint8_t* mem, size_t len) {
+	stream = CStreamBuffer(mem, len);
 
 	ov_callbacks vorbisCallbacks;
 	vorbisCallbacks.read_func  = VorbisCallbacks::VorbisStreamReadCB;
@@ -65,13 +57,10 @@ bool OggDecoder::LoadFile(const std::string& path) {
 	vorbisCallbacks.seek_func  = VorbisCallbacks::VorbisStreamSeekCB;
 	vorbisCallbacks.tell_func  = VorbisCallbacks::VorbisStreamTellCB;
 
-	VorbisCallbacks::fileBuffer.Open(path);
-
-	const int result = ov_open_callbacks(&VorbisCallbacks::fileBuffer, &ovFile, nullptr, 0, vorbisCallbacks);
+	const int result = ov_open_callbacks(&stream, &ovFile, nullptr, 0, vorbisCallbacks);
 
 	if (result < 0) {
 		LOG_L(L_WARNING, "Could not open Ogg stream (reason: %s).", ErrorString(result).c_str());
-		VorbisCallbacks::fileBuffer.Close();
 		return false;
 	}
 
@@ -134,4 +123,15 @@ void OggDecoder::Clear() {
 		ov_clear(&ovFile);
 		vorbisInfo = 0;
 	}
+}
+
+OggDecoder::~OggDecoder() {
+	Clear();
+}
+
+OggDecoder& OggDecoder::operator = (OggDecoder&& src) noexcept {
+	std::swap(ovFile, src.ovFile);
+	std::swap(vorbisInfo, src.vorbisInfo);
+	std::swap(stream, src.stream);
+	return *this;
 }

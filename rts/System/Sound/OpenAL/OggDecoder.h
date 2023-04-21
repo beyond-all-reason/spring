@@ -8,12 +8,21 @@
 #include <al.h>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
+#include "VorbisShared.h"
 
 
 class OggDecoder {
 public:
+	OggDecoder() = default;
+	~OggDecoder();
+
+	OggDecoder(OggDecoder&& src) noexcept { *this = std::move(src); }
+	OggDecoder(const OggDecoder& src) = delete;
+	OggDecoder& operator = (OggDecoder&& src) noexcept;
+	OggDecoder& operator = (const OggDecoder& src) = delete;
+
 	long Read(char *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
-	bool LoadFile(const std::string& path);
+	bool LoadData(uint8_t* mem, size_t len);
 	ALenum GetFormat() const;
 	long GetRate() const;
 	float GetTotalTime();
@@ -21,8 +30,10 @@ public:
 private:
 	void Clear();
 	void DisplayInfo();
+
 	OggVorbis_File ovFile;
 	vorbis_info* vorbisInfo = nullptr;
+	CStreamBuffer stream;
 };
 
 #endif // OGGDECODER_H
