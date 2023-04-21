@@ -1,4 +1,4 @@
-#include "System/Sound/OpenAL/SoundDecoders.h"
+#include "System/Sound/OpenAL/OggDecoder.h"
 
 #include <cstring> //memset
 #include <cassert>
@@ -57,6 +57,8 @@ long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned
 }
 
 bool OggDecoder::LoadFile(const std::string& path) {
+	Clear();
+
 	ov_callbacks vorbisCallbacks;
 	vorbisCallbacks.read_func  = VorbisCallbacks::VorbisStreamReadCB;
 	vorbisCallbacks.close_func = VorbisCallbacks::VorbisStreamCloseCB;
@@ -75,7 +77,7 @@ bool OggDecoder::LoadFile(const std::string& path) {
 
 	vorbisInfo = ov_info(&ovFile, -1);
 
-		// DisplayInfo();
+	// DisplayInfo();
 	return true;
 }
 

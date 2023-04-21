@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef OGG_STREAM_H
-#define OGG_STREAM_H
+#ifndef MUSIC_STREAM_H
+#define MUSIC_STREAM_H
 
 #include "System/Misc/SpringTime.h"
-#include "System/Sound/OpenAL/SoundDecoders.h"
+#include "System/Sound/OpenAL/OggDecoder.h"
 
 #include <al.h>
 #include <ogg/ogg.h>
@@ -15,17 +15,17 @@
 #include <variant>
 
 
-class COggStream
+class MusicStream
 {
 public:
-	COggStream(ALuint _source = 0);
-	~COggStream();
+	MusicStream(ALuint _source = 0);
+	~MusicStream();
 
-	COggStream(const COggStream& rhs) = delete;
-	COggStream& operator=(const COggStream& rhs) = delete;
+	MusicStream(const MusicStream& rhs) = delete;
+	MusicStream& operator=(const MusicStream& rhs) = delete;
 
-	COggStream(COggStream&& rhs) noexcept { *this = std::move(rhs); }
-	COggStream& operator=(COggStream&& rhs) noexcept;
+	MusicStream(MusicStream&& rhs) noexcept { *this = std::move(rhs); }
+	MusicStream& operator=(MusicStream&& rhs) noexcept;
 
 	void Play(const std::string& path, float volume);
 	void Stop();
@@ -71,4 +71,4 @@ private:
 	std::variant<OggDecoder> decoder;
 };
 
-#endif // OGG_STREAM_H
+#endif // MUSIC_STREAM_H

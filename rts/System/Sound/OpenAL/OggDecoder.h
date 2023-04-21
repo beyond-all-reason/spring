@@ -1,5 +1,7 @@
-#ifndef SOUNDDECODERS_H
-#define SOUNDDECODERS_H
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
+#ifndef OGGDECODER_H
+#define OGGDECODER_H
 
 #include <string>
 
@@ -12,15 +14,15 @@ class OggDecoder {
 public:
 	long Read(char *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
 	bool LoadFile(const std::string& path);
-	void Clear();
 	ALenum GetFormat() const;
 	long GetRate() const;
 	float GetTotalTime();
 
 private:
+	void Clear();
 	void DisplayInfo();
 	OggVorbis_File ovFile;
 	vorbis_info* vorbisInfo = nullptr;
 };
 
-#endif // SOUNDDECODERS_H
+#endif // OGGDECODER_H

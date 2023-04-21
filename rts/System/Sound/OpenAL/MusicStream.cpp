@@ -2,7 +2,7 @@
 
 #include <cstring> //memset
 
-#include "OggStream.h"
+#include "MusicStream.h"
 
 #include "System/Sound/SoundLog.h"
 #include "System/SafeUtil.h"
@@ -11,7 +11,7 @@
 
 static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 
-COggStream::COggStream(ALuint _source)
+MusicStream::MusicStream(ALuint _source)
 	: pcmDecodeBuffer(nullptr)
 	, source(_source)
 	, format(AL_FORMAT_MONO16)
@@ -22,14 +22,14 @@ COggStream::COggStream(ALuint _source)
 	std::fill(buffers.begin(), buffers.end(), 0);
 }
 
-COggStream::~COggStream()
+MusicStream::~MusicStream()
 {
 	Stop();
 	spring::SafeDeleteArray(pcmDecodeBuffer);
 }
 
 
-COggStream& COggStream::operator=(COggStream&& rhs) noexcept
+MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
 {
 	if (this != &rhs) {
 		spring::SafeDeleteArray(pcmDecodeBuffer);
@@ -56,7 +56,7 @@ COggStream& COggStream::operator=(COggStream&& rhs) noexcept
 }
 
 // open an Ogg stream from a given file and start playing it
-void COggStream::Play(const std::string& path, float volume)
+void MusicStream::Play(const std::string& path, float volume)
 {
 	// we're already playing another stream
 	if (!stopped)
@@ -73,7 +73,7 @@ void COggStream::Play(const std::string& path, float volume)
 	totalTime = std::visit([&](auto&& d) { return d.GetTotalTime(); }, decoder);
 
 	alGenBuffers(2, buffers.data());
-	CheckError("[COggStream::Play][1]");
+	CheckError("[MusicStream::Play][1]");
 
 	if (!StartPlaying()) {
 		ReleaseBuffers();
@@ -82,11 +82,11 @@ void COggStream::Play(const std::string& path, float volume)
 		paused  = false;
 	}
 
-	CheckError("[COggStream::Play][2]");
+	CheckError("[MusicStream::Play][2]");
 }
 
 // stops the currently playing stream
-void COggStream::Stop()
+void MusicStream::Stop()
 {
 	if (stopped)
 		return;
@@ -104,7 +104,7 @@ void COggStream::Stop()
 }
 
 // clean up the OpenAL resources
-void COggStream::ReleaseBuffers()
+void MusicStream::ReleaseBuffers()
 {
 	stopped = true;
 	paused = false;
@@ -117,20 +117,18 @@ void COggStream::ReleaseBuffers()
 	// generates an AL_INVALID_VALUE but doesn't appear to be necessary
 	// since we can just detach both of them directly
 	alSourcei(source, AL_BUFFER, AL_NONE);
-	CheckError("[COggStream::ReleaseBuffers][1]");
+	CheckError("[MusicStream::ReleaseBuffers][1]");
 #endif
 
 	alDeleteBuffers(2, buffers.data());
-	CheckError("[COggStream::ReleaseBuffers][2]");
+	CheckError("[MusicStream::ReleaseBuffers][2]");
 	std::fill(buffers.begin(), buffers.end(), 0);
-
-	std::visit([&](auto&& d) { return d.Clear(); }, decoder);
 }
 
 
 // returns true if both buffers were
 // filled with data from the stream
-bool COggStream::StartPlaying()
+bool MusicStream::StartPlaying()
 {
 	msecsPlayed = spring_nulltime;
 	lastTick = spring_gettime();
@@ -143,16 +141,16 @@ bool COggStream::StartPlaying()
 	alSourceQueueBuffers(source, 2, buffers.data());
 
 	// CheckError returns true if *no* error occurred
-	if (!CheckError("[COggStream::StartPlaying][1]"))
+	if (!CheckError("[MusicStream::StartPlaying][1]"))
 		return false;
 
 	alSourcePlay(source);
-	return (CheckError("[COggStream::StartPlaying][2]"));
+	return (CheckError("[MusicStream::StartPlaying][2]"));
 }
 
 
 // returns true if we're still playing
-bool COggStream::IsPlaying()
+bool MusicStream::IsPlaying()
 {
 	ALenum state = 0;
 	alGetSourcei(source, AL_SOURCE_STATE, &state);
@@ -160,7 +158,7 @@ bool COggStream::IsPlaying()
 	return (state == AL_PLAYING);
 }
 
-bool COggStream::TogglePause()
+bool MusicStream::TogglePause()
 {
 	if (!stopped)
 		paused = !paused;
@@ -171,7 +169,7 @@ bool COggStream::TogglePause()
 
 // pop the processed buffers from the queue,
 // refill them, and push them back in line
-bool COggStream::UpdateBuffers()
+bool MusicStream::UpdateBuffers()
 {
 	int buffersProcessed = 0;
 	bool active = true;
@@ -182,20 +180,20 @@ bool COggStream::UpdateBuffers()
 		ALuint buffer;
 
 		alSourceUnqueueBuffers(source, 1, &buffer);
-		CheckError("[COggStream::UpdateBuffers][1]");
+		CheckError("[MusicStream::UpdateBuffers][1]");
 
 		// false if we've reached end of stream
 		if ((active = DecodeStream(buffer))) {
 			alSourceQueueBuffers(source, 1, &buffer);
-			CheckError("[COggStream::UpdateBuffers][2]");
+			CheckError("[MusicStream::UpdateBuffers][2]");
 		}
 	}
 
-	return (active && CheckError("[COggStream::UpdateBuffers][3]"));
+	return (active && CheckError("[MusicStream::UpdateBuffers][3]"));
 }
 
 
-void COggStream::Update()
+void MusicStream::Update()
 {
 	if (stopped)
 		return;
@@ -217,7 +215,7 @@ void COggStream::Update()
 
 
 // read decoded data from audio stream into PCM buffer
-bool COggStream::DecodeStream(ALuint buffer)
+bool MusicStream::DecodeStream(ALuint buffer)
 {
 	if (!pcmDecodeBuffer) { //defer buffer allocation
 		pcmDecodeBuffer = new char[BUFFER_SIZE] {0};
@@ -252,12 +250,12 @@ bool COggStream::DecodeStream(ALuint buffer)
 
 	long rate = std::visit([&](auto&& d) { return d.GetRate(); }, decoder);
 	alBufferData(buffer, format, pcmDecodeBuffer, size, rate);
-	return (CheckError("[COggStream::DecodeStream]"));
+	return (CheckError("[MusicStream::DecodeStream]"));
 }
 
 
 // dequeue any buffers pending on source (unused, see ReleaseBuffers)
-void COggStream::EmptyBuffers()
+void MusicStream::EmptyBuffers()
 {
 	assert(source != 0);
 
@@ -265,19 +263,19 @@ void COggStream::EmptyBuffers()
 	int queuedBuffers = 0;
 
 	alGetSourcei(source, AL_BUFFERS_QUEUED, &queuedBuffers);
-	CheckError("[COggStream::EmptyBuffers][1]");
+	CheckError("[MusicStream::EmptyBuffers][1]");
 
 	while (queuedBuffers-- > 0) {
 		ALuint buffer;
 
 		alSourceUnqueueBuffers(source, 1, &buffer);
-		CheckError("[COggStream::EmptyBuffers][2]");
+		CheckError("[MusicStream::EmptyBuffers][2]");
 		// done by caller
 		// alDeleteBuffers(1, &buffer);
 	}
 #else
 	// assumes both are still pending
 	alSourceUnqueueBuffers(source, 2, buffers);
-	CheckError("[COggStream::EmptyBuffers]");
+	CheckError("[MusicStream::EmptyBuffers]");
 #endif
 }
