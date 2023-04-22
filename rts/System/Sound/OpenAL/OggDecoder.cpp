@@ -44,11 +44,13 @@ namespace VorbisCallbacks {
 }
 }
 
-long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream) {
+long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
+{
 	return ov_read(&ovFile, buffer, length, bigendianp, word, sgned, bitstream);
 }
 
-bool OggDecoder::LoadData(uint8_t* mem, size_t len) {
+bool OggDecoder::LoadData(const uint8_t* mem, size_t len)
+{
 	stream = CStreamBuffer(mem, len);
 
 	ov_callbacks vorbisCallbacks;
@@ -70,22 +72,21 @@ bool OggDecoder::LoadData(uint8_t* mem, size_t len) {
 	return true;
 }
 
-ALenum OggDecoder::GetFormat() const {
-	if (vorbisInfo->channels == 1) {
-		return AL_FORMAT_MONO16;
-	} else {
-		return AL_FORMAT_STEREO16;
-	}
+int OggDecoder::GetChannels() const
+{
+	return vorbisInfo->channels;
 }
 
-long OggDecoder::GetRate() const {
+long OggDecoder::GetRate() const
+{
 	return vorbisInfo->rate;
 }
 
-
 float OggDecoder::GetTotalTime()
 {
-	return ov_time_total(&ovFile, -1);
+	// for non-seekable streams, ov_time_total returns OV_EINVAL (-131) while
+	// ov_time_tell always[?] returns the decoding time offset relative to EOS
+	return (ov_seekable(&ovFile) == 0) ? ov_time_tell(&ovFile): ov_time_total(&ovFile, -1);
 }
 
 // display Ogg info and comments
@@ -118,18 +119,21 @@ void OggDecoder::DisplayInfo()
 	}
 }
 
-void OggDecoder::Clear() {
+void OggDecoder::Clear()
+{
 	if (vorbisInfo) {
 		ov_clear(&ovFile);
 		vorbisInfo = 0;
 	}
 }
 
-OggDecoder::~OggDecoder() {
+OggDecoder::~OggDecoder()
+{
 	Clear();
 }
 
-OggDecoder& OggDecoder::operator = (OggDecoder&& src) noexcept {
+OggDecoder& OggDecoder::operator = (OggDecoder&& src) noexcept
+{
 	std::swap(ovFile, src.ovFile);
 	std::swap(vorbisInfo, src.vorbisInfo);
 	std::swap(stream, src.stream);

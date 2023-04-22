@@ -11,7 +11,7 @@ class Mp3Decoder
 public:
 	long Read(char *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
 	bool LoadData(uint8_t* mem, size_t len);
-	ALenum GetFormat() const;
+	int GetChannels() const;
 	long GetRate() const;
 	float GetTotalTime();
 

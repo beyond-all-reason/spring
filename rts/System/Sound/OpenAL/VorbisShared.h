@@ -12,7 +12,7 @@ std::string ErrorString(int code);
 struct CStreamBuffer {
 	CStreamBuffer() = default;
 
-	CStreamBuffer(uint8_t* addr, size_t length)
+	CStreamBuffer(const uint8_t* addr, size_t length)
 		: begin(addr)
 		, pos(0)
 		, size(length) { }
@@ -30,7 +30,7 @@ struct CStreamBuffer {
 
 	size_t GetPos() const { return pos; }
 
-	uint8_t* begin = nullptr;
+	const uint8_t* begin = nullptr;
 	size_t   pos   = 0;
 	size_t   size  = 0;
 };

@@ -5,39 +5,14 @@
 
 #include "System/Sound/SoundLog.h"
 #include "ALShared.h"
-#include "VorbisShared.h"
 #include "System/Platform/byteorder.h"
+#include "OggDecoder.h"
 
 #include <vorbis/vorbisfile.h>
 #include <ogg/ogg.h>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-
-namespace
-{
-
-struct VorbisInputBuffer
-{
-	const std::uint8_t* data;
-	size_t pos;
-	size_t size;
-};
-
-size_t VorbisRead(void* ptr, size_t size, size_t nmemb, void* datasource)
-{
-	VorbisInputBuffer* buffer = static_cast<VorbisInputBuffer*>(datasource);
-	const size_t maxRead = std::min(size * nmemb, buffer->size - buffer->pos);
-	memcpy(ptr, buffer->data + buffer->pos, maxRead);
-	buffer->pos += maxRead;
-	return maxRead;
-}
-
-int	VorbisClose(void* datasource)
-{
-	return 0; // nothing to be done here
-}
-}
 
 
 SoundBuffer::bufferMapT SoundBuffer::bufferMap;
@@ -149,34 +124,19 @@ bool SoundBuffer::LoadWAV(const std::string& file, const std::vector<std::uint8_
 
 bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uint8_t>& buffer)
 {
-	VorbisInputBuffer buf;
-	buf.data = &buffer[0];
-	buf.pos = 0;
-	buf.size = buffer.size();
-
-	ov_callbacks vorbisCallbacks;
-	vorbisCallbacks.read_func  = VorbisRead;
-	vorbisCallbacks.close_func = VorbisClose;
-	vorbisCallbacks.seek_func  = nullptr;
-	vorbisCallbacks.tell_func  = nullptr;
-
-	OggVorbis_File oggStream;
-	const int result = ov_open_callbacks(&buf, &oggStream, nullptr, 0, vorbisCallbacks);
-	if (result < 0) {
-		LOG_L(L_WARNING, "[%s(%s)] could not open Ogg stream (%s)", __func__, file.c_str(), ErrorString(result).c_str());
+	OggDecoder decoder;
+	const bool loaded = decoder.LoadData(buffer.data(), buffer.size());
+	if (!loaded) {
 		return false;
 	}
 
-	const vorbis_info* vorbisInfo = ov_info(&oggStream, -1);
-	// const vorbis_comment* vorbisComment = ov_comment(&oggStream, -1);
-
 	ALenum format;
 
-	switch (vorbisInfo->channels) {
+	switch (decoder.GetChannels()) {
 		case  1: { format = AL_FORMAT_MONO16  ; } break;
 		case  2: { format = AL_FORMAT_STEREO16; } break;
 		default: {
-			LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), vorbisInfo->channels);
+			LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
 			return false;
 		}
 	}
@@ -185,15 +145,13 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 	int section = 0;
 	long read = 0;
 
-	decodeBuffer.clear();
 	decodeBuffer.resize(512 * 1024); // 512kb read buffer
 
 	do {
 		// enlarge buffer so ov_read has enough space
 		if ((4 * pos) > (3 * decodeBuffer.size()))
 			decodeBuffer.resize(decodeBuffer.size() * 2);
-
-		switch ((read = ov_read(&oggStream, (char*)&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 2, 1, &section))) {
+		switch ((read = decoder.Read((char*)&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 2, 1, &section))) {
 			case OV_HOLE:
 				LOG_L(L_WARNING, "[%s(%s)] garbage or corrupt page in stream (non-fatal)", __func__, file.c_str());
 				continue; // read next
@@ -210,14 +168,12 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 		pos += read;
 	} while (read > 0); // read == 0 indicated EOF, read < 0 is error
 
-	if (!AlGenBuffer(file, format, &decodeBuffer[0], pos, vorbisInfo->rate))
+	if (!AlGenBuffer(file, format, &decodeBuffer[0], pos, decoder.GetRate()))
 		LOG_L(L_WARNING, "[%s(%s)] failed generating buffer", __func__, file.c_str());
 
-	// for non-seekable streams, ov_time_total returns OV_EINVAL (-131) while
-	// ov_time_tell always[?] returns the decoding time offset relative to EOS
 	filename = file;
-	channels = vorbisInfo->channels;
-	length   = (ov_seekable(&oggStream) == 0)? ov_time_tell(&oggStream): ov_time_total(&oggStream, -1);
+	channels = decoder.GetChannels();
+	length   = decoder.GetTotalTime();
 	return true;
 }
 

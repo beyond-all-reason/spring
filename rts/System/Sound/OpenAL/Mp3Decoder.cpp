@@ -8,14 +8,11 @@
 #include "System/Sound/SoundLog.h"
 
 
-ALenum Mp3Decoder::GetFormat() const
+int Mp3Decoder::GetChannels() const
 {
-	if (data.channels == 1) {
-		return AL_FORMAT_MONO16;
-	} else {
-		return AL_FORMAT_STEREO16;
-	}
+	return data.channels;
 }
+
 long Mp3Decoder::GetRate() const
 {
 	return data.sampleRate;

@@ -12,6 +12,7 @@
 #include <cstring> //memset
 #include <filesystem>
 #include <string_view>
+#include <variant>
 
 // NOTE:
 //   this buffer gets recycled by each new stream, across *all* audio-channels
@@ -101,7 +102,9 @@ void MusicStream::Play(const std::string& path, float volume)
 		return;
 	}
 
-	format = std::visit([&](auto&& d) { return d.GetFormat(); }, decoder);
+	int channels = std::visit([&](auto&& d) { return d.GetChannels(); }, decoder);
+	format = (channels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+
 	totalTime = std::visit([&](auto&& d) { return d.GetTotalTime(); }, decoder);
 
 	alGenBuffers(2, buffers.data());
