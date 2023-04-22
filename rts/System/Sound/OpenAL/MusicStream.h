@@ -4,7 +4,6 @@
 #define MUSIC_STREAM_H
 
 #include "System/Misc/SpringTime.h"
-#include "System/Sound/OpenAL/OggDecoder.h"
 
 #include <al.h>
 #include <ogg/ogg.h>
@@ -12,7 +11,6 @@
 
 #include <array>
 #include <string>
-#include <variant>
 
 
 class MusicStream
@@ -67,8 +65,6 @@ private:
 	spring_time msecsPlayed;
 	spring_time lastTick;
 	float totalTime;
-
-	std::variant<OggDecoder> decoder;
 };
 
 #endif // MUSIC_STREAM_H

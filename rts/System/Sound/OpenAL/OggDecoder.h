@@ -5,7 +5,6 @@
 
 #include <string>
 
-#include <al.h>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 #include "VorbisShared.h"

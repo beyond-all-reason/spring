@@ -34,6 +34,7 @@ if    (NOT NO_SOUND)
 			OpenAL/EFXPresets.cpp
 			OpenAL/AudioChannel.cpp
 			OpenAL/OggDecoder.cpp
+			OpenAL/Mp3Decoder.cpp
 			OpenAL/MusicStream.cpp
 			OpenAL/Sound.cpp
 			OpenAL/SoundChannels.cpp

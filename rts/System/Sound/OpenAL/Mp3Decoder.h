@@ -1,0 +1,22 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
+#ifndef MP3DECODER_H
+#define MP3DECODER_H
+
+#include "lib/dr_mp3/dr_mp3.h"
+#include <cstdint>
+
+class Mp3Decoder
+{
+public:
+	long Read(char *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
+	bool LoadData(uint8_t* mem, size_t len);
+	ALenum GetFormat() const;
+	long GetRate() const;
+	float GetTotalTime();
+
+private:
+	drmp3 data;
+};
+
+#endif // MP3DECODER_H

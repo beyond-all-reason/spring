@@ -26,7 +26,7 @@ static CFileHandler fileBuffer("", "");
 // FIXME these parts of MusicStream are outside the class because every instance
 // of CSoundSource has a copy of MusicStream class but only one is ever active
 static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
-static char pcmDecodeBuffer[BUFFER_SIZE];
+static std::variant<OggDecoder, Mp3Decoder> decoder;
 
 
 MusicStream::MusicStream(ALuint _source)
@@ -35,7 +35,6 @@ MusicStream::MusicStream(ALuint _source)
 	, format(AL_FORMAT_MONO16)
 	, stopped(true)
 	, paused(false)
-	, decoder(OggDecoder())
 {
 	std::fill(buffers.begin(), buffers.end(), 0);
 }
@@ -66,8 +65,6 @@ MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
 
 		std::swap(msecsPlayed, rhs.msecsPlayed);
 		std::swap(lastTick, rhs.lastTick);
-
-		std::swap(decoder, rhs.decoder);
 	}
 
 	return *this;
@@ -86,6 +83,12 @@ void MusicStream::Play(const std::string& path, float volume)
 	if (!fileBuffer.FileExists()) {
 		LOG_L(L_ERROR, "[MusicStream::Play] File doesn't exist: %s", path.c_str());
 		return;
+	}
+
+	if (fileBuffer.GetFileExt() == std::string_view{"mp3"}) {
+		decoder = Mp3Decoder();
+	} else {
+		decoder = OggDecoder();
 	}
 
 	const bool loaded = std::visit([&](auto&& d) {
