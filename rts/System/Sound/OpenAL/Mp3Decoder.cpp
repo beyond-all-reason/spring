@@ -18,7 +18,7 @@ long Mp3Decoder::GetRate() const
 	return data.sampleRate;
 }
 
-long Mp3Decoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
+long Mp3Decoder::Read(uint8_t *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
 {
 	auto bytesToFrames = sizeof(drmp3_int16) / sizeof(*buffer);
 	return drmp3_read_pcm_frames_s16(&data, length / bytesToFrames / data.channels,
@@ -30,7 +30,7 @@ float Mp3Decoder::GetTotalTime()
 	return 1.0f * drmp3_get_pcm_frame_count(&data) / data.sampleRate; // linear complexity
 }
 
-bool Mp3Decoder::LoadData(uint8_t* mem, size_t len)
+bool Mp3Decoder::LoadData(const uint8_t* mem, size_t len)
 {
 	if (!drmp3_init_memory(&data, mem, len, NULL)) {
 		LOG_L(L_ERROR, "[Mp3Decoder::LoadFile] Failed to load");

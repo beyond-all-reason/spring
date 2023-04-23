@@ -20,7 +20,7 @@ public:
 	OggDecoder& operator = (OggDecoder&& src) noexcept;
 	OggDecoder& operator = (const OggDecoder& src) = delete;
 
-	long Read(char *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
+	long Read(uint8_t *buffer, int length, int bigendianp, int word, int sgned, int *bitstream);
 	bool LoadData(const uint8_t* mem, size_t len);
 	int GetChannels() const;
 	long GetRate() const;

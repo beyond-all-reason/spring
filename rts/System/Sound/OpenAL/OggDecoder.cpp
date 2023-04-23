@@ -44,9 +44,9 @@ namespace VorbisCallbacks {
 }
 }
 
-long OggDecoder::Read(char *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
+long OggDecoder::Read(uint8_t *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
 {
-	return ov_read(&ovFile, buffer, length, bigendianp, word, sgned, bitstream);
+	return ov_read(&ovFile, reinterpret_cast<char*>(buffer), length, bigendianp, word, sgned, bitstream);
 }
 
 bool OggDecoder::LoadData(const uint8_t* mem, size_t len)

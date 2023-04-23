@@ -7,6 +7,7 @@
 #include "ALShared.h"
 #include "System/Platform/byteorder.h"
 #include "OggDecoder.h"
+#include "Mp3Decoder.h"
 
 #include <vorbis/vorbisfile.h>
 #include <ogg/ogg.h>
@@ -151,7 +152,7 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 		// enlarge buffer so ov_read has enough space
 		if ((4 * pos) > (3 * decodeBuffer.size()))
 			decodeBuffer.resize(decodeBuffer.size() * 2);
-		switch ((read = decoder.Read((char*)&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 2, 1, &section))) {
+		switch ((read = decoder.Read(&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 2, 1, &section))) {
 			case OV_HOLE:
 				LOG_L(L_WARNING, "[%s(%s)] garbage or corrupt page in stream (non-fatal)", __func__, file.c_str());
 				continue; // read next
@@ -177,6 +178,50 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 	return true;
 }
 
+bool SoundBuffer::LoadMp3(const std::string& file, const std::vector<std::uint8_t>& buffer)
+{
+	auto decoder = Mp3Decoder();
+	const bool loaded = decoder.LoadData(buffer.data(), buffer.size());
+	if (!loaded) {
+		return false;
+	}
+
+	ALenum format;
+
+	switch (decoder.GetChannels()) {
+		case  1: { format = AL_FORMAT_MONO16  ; } break;
+		case  2: { format = AL_FORMAT_STEREO16; } break;
+		default: {
+			LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
+			return false;
+		}
+	}
+
+	size_t pos = 0;
+	long read = 0;
+
+	decodeBuffer.resize(512 * 1024); // 512kb read buffer
+
+	do {
+		if ((4 * pos) > (3 * decodeBuffer.size()))
+			decodeBuffer.resize(decodeBuffer.size() * 2);
+		read = decoder.Read(&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 0, 0, 0);
+		if (read < 0) {
+			LOG_L(L_WARNING, "[%s(%s)] corrupt page in stream: %ld", __func__, file.c_str(), read);
+			return false; // abort
+		}
+
+		pos += read;
+	} while (read > 0); // read == 0 indicated EOF, read < 0 is error
+
+	if (!AlGenBuffer(file, format, &decodeBuffer[0], pos, decoder.GetRate()))
+		LOG_L(L_WARNING, "[%s(%s)] failed generating buffer", __func__, file.c_str());
+
+	filename = file;
+	channels = decoder.GetChannels();
+	length   = decoder.GetTotalTime();
+	return true;
+}
 
 bool SoundBuffer::AlGenBuffer(const std::string& file, ALenum format, const std::uint8_t* data, size_t datalength, int rate)
 {

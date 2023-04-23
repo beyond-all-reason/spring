@@ -955,6 +955,7 @@ size_t CSound::LoadSoundBuffer(const std::string& path)
 	switch (soundExt[0]) {
 		case 'w': { soundBuf.LoadWAV   (path, loadBuffer); } break; // wav
 		case 'o': { soundBuf.LoadVorbis(path, loadBuffer); } break; // ogg
+		case 'm': { soundBuf.LoadMp3   (path, loadBuffer); } break; // mp3
 		default : {
 			LOG_L(L_WARNING, "[%s] unknown audio format \"%s\"", __func__, soundExt.c_str());
 		} break;

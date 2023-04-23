@@ -253,7 +253,7 @@ void MusicStream::Update()
 bool MusicStream::DecodeStream(ALuint buffer)
 {
 	if (!pcmDecodeBuffer) { //defer buffer allocation
-		pcmDecodeBuffer = new char[BUFFER_SIZE] {0};
+		pcmDecodeBuffer = new uint8_t[BUFFER_SIZE] {0};
 	}
 
 	memset(pcmDecodeBuffer, 0, BUFFER_SIZE);
