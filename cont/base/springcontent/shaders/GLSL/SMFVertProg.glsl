@@ -2,7 +2,7 @@
 
 in vec3 vertexPos;
 
-uniform ivec2 texSquare;
+uniform ivec4 texSquare;
 uniform vec3 cameraPos;
 uniform vec4 lightDir;       // mapInfo->light.sunDir
 uniform vec2 specularTexGen; // 1.0/mapSize

@@ -33,8 +33,8 @@ in float fogFactor;
 in vec4 vertexWorldPos;
 in vec2 diffuseTexCoords;
 
-
-uniform sampler2D diffuseTex;
+uniform ivec4 texSquare;
+uniform sampler2DArray diffuseTex;
 uniform sampler2D normalsTex;
 uniform sampler2D detailTex;
 #ifndef SMF_ADV_SHADING
@@ -255,7 +255,7 @@ vec4 GetSplatDetailTextureNormal(vec2 uv, out vec2 splatDetailStrength) {
 /***********************************************************************/
 // main()
 
-#line 10257
+#line 10258
 
 void main() {
 	vec2 diffTexCoords = diffuseTexCoords;
@@ -334,7 +334,7 @@ void main() {
 	float cosAngleSpecular = clamp(dot(normalize(halfDir), normal), 0.001, 1.0);
 #endif
 
-	vec4 diffuseCol = texture2D(diffuseTex, diffTexCoords);
+	vec4 diffuseCol  = textureLod(diffuseTex, vec3(diffTexCoords, texSquare.z), texSquare.w);
 	vec4 specularCol = vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 emissionCol = vec4(0.0, 0.0, 0.0, 0.0);
 

@@ -277,10 +277,10 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const 
 	currShader->Disable();
 }
 
-void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
+void SMFRenderStateGLSL::SetSquareTexGen(int sqx, int sqy, int nsx, int mip) const {
 	// needs to be set even for Lua shaders, is unknowable otherwise
 	// (works because SMFGroundDrawer::SetupBigSquare always calls us)
-	currShader->SetUniform("texSquare", sqx, sqy);
+	currShader->SetUniform("texSquare", sqx, sqy, sqy * nsx + sqx, mip);
 }
 
 void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {

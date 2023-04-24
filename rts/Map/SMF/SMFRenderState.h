@@ -42,7 +42,7 @@ public:
 	virtual void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 	virtual void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 
-	virtual void SetSquareTexGen(const int sqx, const int sqy) const = 0;
+	virtual void SetSquareTexGen(int sqx, int sqy, int nsx, int mip) const = 0;
 	virtual void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 	virtual void UpdateShaderSkyUniforms() = 0;
 };
@@ -65,7 +65,7 @@ public:
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 
-	void SetSquareTexGen(const int sqx, const int sqy) const override {}
+	void SetSquareTexGen(int sqx, int sqy, int nsx, int mip) const override {}
 	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 	void UpdateShaderSkyUniforms() override {}
 };
@@ -94,7 +94,7 @@ public:
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 
-	void SetSquareTexGen(const int sqx, const int sqy) const override;
+	void SetSquareTexGen(int sqx, int sqy, int nsx, int mip) const override;
 	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void UpdateShaderSkyUniforms() override;
 

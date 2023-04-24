@@ -5,7 +5,7 @@ in vec4 vertexCol;
 
 uniform sampler2D heightMapTex;
 uniform float borderMinHeight;
-uniform ivec2 texSquare; //TODO convert to texture array
+uniform ivec4 texSquare;
 uniform vec4 mapSize; // mapSize, 1.0/mapSize
 
 const float SMF_TEXSQR_SIZE = 1024.0;
@@ -19,7 +19,7 @@ out vec2 vDetailsUV;
 float HeightAtWorldPos(vec2 wxz){
 	// Some texel magic to make the heightmap tex perfectly align:
 	const vec2 HM_TEXEL = vec2(8.0, 8.0);
-	wxz +=  -HM_TEXEL * (wxz * mapSize.zw) + 0.5 * HM_TEXEL;
+	wxz += -HM_TEXEL * (wxz * mapSize.zw) + 0.5 * HM_TEXEL;
 
 	vec2 uvhm = clamp(wxz, HM_TEXEL, mapSize.xy - HM_TEXEL);
 	uvhm *= mapSize.zw;
@@ -29,7 +29,7 @@ float HeightAtWorldPos(vec2 wxz){
 
 void main() {
 	vec4 vertexWorldPos = vec4(vertexPos, 1.0);
-	vertexWorldPos.xz += vec2(texSquare) * SMF_TEXSQR_SIZE;
+	vertexWorldPos.xz += vec2(texSquare.xy) * SMF_TEXSQR_SIZE;
 	vertexWorldPos.y = mix(borderMinHeight, HeightAtWorldPos(vertexWorldPos.xz), float(vertexWorldPos.y == 0.0));
 	/*
 	if (vertexWorldPos.y == 0.0)
@@ -39,7 +39,7 @@ void main() {
 	*/
 
 	vVertCol = vertexCol;
-	vDiffuseUV = (vertexWorldPos.xz * (1.0 / SMF_TEXSQR_SIZE)) - vec2(texSquare);
+	vDiffuseUV = (vertexWorldPos.xz * (1.0 / SMF_TEXSQR_SIZE)) - vec2(texSquare.xy);
 	vDetailsUV = vec2(
 		dot(vertexWorldPos, detailPlaneS),
 		dot(vertexWorldPos, detailPlaneT)

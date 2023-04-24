@@ -311,6 +311,8 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
+	groundTextures->BindSquareTextureArray();
+
 	if (drawDeferred) {
 		// do the deferred pass first, will allow us to re-use
 		// its output at some future point and eventually draw
@@ -321,6 +323,8 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 	if (drawForward) {
 		DrawForwardPass(drawPass, mapRendering->voidGround || (mapRendering->voidWater && drawPass != DrawPass::WaterReflection));
 	}
+
+	groundTextures->UnBindSquareTextureArray();
 
 	glDisable(GL_CULL_FACE);
 
@@ -348,7 +352,8 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 
 	//for CSMFGroundTextures::BindSquareTexture()
-	glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D);
+	// glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D) // set in BindSquareTextureArray;
+	groundTextures->BindSquareTextureArray();
 
 	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
@@ -368,9 +373,9 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_TEXTURE_2D);
+	// glActiveTexture(GL_TEXTURE0); // set in UnBindSquareTextureArray;
+	groundTextures->UnBindSquareTextureArray();
+	// glDisable(GL_TEXTURE_2D); // set in UnBindSquareTextureArray;
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -418,17 +423,19 @@ void CSMFGroundDrawer::SetLuaShader(const LuaMapShaderData* luaMapShaderData)
 
 void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int bigSquareX, const int bigSquareY)
 {
+	const int sqrIdx = bigSquareY * smfMap->numBigTexX + bigSquareX;
+	const int sqrMip = groundTextures->GetSquareMipLevel(sqrIdx);
+
 	if (drawPass != DrawPass::Shadow) {
-		groundTextures->BindSquareTexture(bigSquareX, bigSquareY);
-		smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY);
+		smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY, smfMap->numBigTexX, sqrMip);
 
 		if (borderShader && borderShader->IsBound()) {
-			borderShader->SetUniform("texSquare", bigSquareX, bigSquareY);
+			borderShader->SetUniform("texSquare", bigSquareX, bigSquareY, smfMap->numBigTexX, sqrMip);
 		}
 	}
 	else {
 		if (shadowShader && shadowShader->IsBound()) {
-			shadowShader->SetUniform("texSquare", bigSquareX, bigSquareY);
+			shadowShader->SetUniform("texSquare", bigSquareX, bigSquareY, smfMap->numBigTexX, sqrMip);
 		}
 	}
 }
