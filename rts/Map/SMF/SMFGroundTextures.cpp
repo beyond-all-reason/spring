@@ -217,7 +217,7 @@ void CSMFGroundTextures::LoadSquareTextures(const int minLevel, const int maxLev
 
 void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLevel)
 {
-	ScopedOnceTimer timer("CSMFGroundTextures::ConvolveHeightMap");
+	SCOPED_ONCE_TIMER("CSMFGroundTextures::ConvolveHeightMap");
 
 	const float* hdata = readMap->GetMIPHeightMapSynced(mipLevel);
 	const int mx = mapWidth >> mipLevel;
@@ -308,7 +308,7 @@ bool CSMFGroundTextures::RecompressTilesIfNeeded()
 	for_mt(0, tiles.size() / 8, [&](const int i) {
 		squish::u8 rgba[64]; // 4x4 pixels * 4 * 1byte channels = 64byte
 		squish::Decompress(rgba, &tiles[i * 8], squish::kDxt1);
-		rg_etc1::pack_etc1_block(&tiles[i * 8], (const unsigned int*)rgba, pack_params);
+		rg_etc1::pack_etc1_block(&tiles[i * 8], (const uint32_t*)rgba, pack_params);
 	});
 
 	return true;
@@ -539,10 +539,9 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 	glCompressedTexSubImage3D(
 		ttarget,
 		level,
-
-		0, 0, y * smfMap->numBigTexX + x, // xoffset, yoffset, zoffset=slice
-		mipSqSize, mipSqSize, 1, // width, height, depth
-
+		0, 0,						// xoffset, yoffset
+		y * smfMap->numBigTexX + x,	// zoffset=slice
+		mipSqSize, mipSqSize, 1,	// width, height, depth
 		tileTexFormat,
 		numSqBytes,
 		pbo.GetPtr()
