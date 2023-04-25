@@ -146,7 +146,7 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 	int section = 0;
 	long read = 0;
 
-	decodeBuffer.resize(512 * 1024); // 512kb read buffer
+	decodeBuffer.resize(DECODE_BUFFER_SIZE);
 
 	do {
 		// enlarge buffer so ov_read has enough space
@@ -200,7 +200,7 @@ bool SoundBuffer::LoadMp3(const std::string& file, const std::vector<std::uint8_
 	size_t pos = 0;
 	long read = 0;
 
-	decodeBuffer.resize(512 * 1024); // 512kb read buffer
+	decodeBuffer.resize(DECODE_BUFFER_SIZE);
 
 	do {
 		if ((4 * pos) > (3 * decodeBuffer.size()))

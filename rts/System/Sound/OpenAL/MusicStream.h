@@ -53,7 +53,7 @@ private:
 
 	static constexpr unsigned int NUM_BUFFERS = 2;
 
-	uint8_t* pcmDecodeBuffer;
+	std::vector<uint8_t> pcmDecodeBuffer;
 
 	std::array<ALuint, NUM_BUFFERS> buffers;
 	ALuint source;

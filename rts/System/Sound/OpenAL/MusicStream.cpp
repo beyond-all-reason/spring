@@ -26,13 +26,11 @@ static CFileHandler fileBuffer("", "");
 
 // FIXME these parts of MusicStream are outside the class because every instance
 // of CSoundSource has a copy of MusicStream class but only one is ever active
-static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 static std::variant<OggDecoder, Mp3Decoder> decoder;
 
 
 MusicStream::MusicStream(ALuint _source)
-	: pcmDecodeBuffer(nullptr)
-	, source(_source)
+	: source(_source)
 	, format(AL_FORMAT_MONO16)
 	, stopped(true)
 	, paused(false)
@@ -43,16 +41,13 @@ MusicStream::MusicStream(ALuint _source)
 MusicStream::~MusicStream()
 {
 	Stop();
-	spring::SafeDeleteArray(pcmDecodeBuffer);
 }
 
 
 MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
 {
 	if (this != &rhs) {
-		spring::SafeDeleteArray(pcmDecodeBuffer);
-		pcmDecodeBuffer = rhs.pcmDecodeBuffer;
-		rhs.pcmDecodeBuffer = nullptr;
+		std::swap(pcmDecodeBuffer, rhs.pcmDecodeBuffer);
 
 		for (auto i = 0; i < buffers.size(); ++i) {
 			std::swap(buffers[i], rhs.buffers[i]);
@@ -253,19 +248,15 @@ void MusicStream::Update()
 // read decoded data from audio stream into PCM buffer
 bool MusicStream::DecodeStream(ALuint buffer)
 {
-	if (!pcmDecodeBuffer) { //defer buffer allocation
-		pcmDecodeBuffer = new uint8_t[BUFFER_SIZE] {0};
-	}
-
-	memset(pcmDecodeBuffer, 0, BUFFER_SIZE);
+	pcmDecodeBuffer.resize(DECODE_BUFFER_SIZE);
 
 	int size = 0;
 	int section = 0;
 	int result = 0;
 
-	while (size < BUFFER_SIZE) {
+	while (size < static_cast<int>(pcmDecodeBuffer.size())) {
 		result = std::visit([&](auto&& d) {
-				return d.Read(pcmDecodeBuffer + size, BUFFER_SIZE - size, 0, 2, 1, &section);
+				return d.Read(pcmDecodeBuffer.data() + size, pcmDecodeBuffer.size() - size, 0, 2, 1, &section);
 				}, decoder);
 
 		if (result > 0) {
@@ -285,7 +276,7 @@ bool MusicStream::DecodeStream(ALuint buffer)
 		return false;
 
 	long rate = std::visit([&](auto&& d) { return d.GetRate(); }, decoder);
-	alBufferData(buffer, format, pcmDecodeBuffer, size, rate);
+	alBufferData(buffer, format, pcmDecodeBuffer.data(), size, rate);
 	return (CheckError("[MusicStream::DecodeStream]"));
 }
 

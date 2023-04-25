@@ -7,4 +7,6 @@
 
 bool CheckError(const char* msg);
 
+static constexpr unsigned int DECODE_BUFFER_SIZE = 512 * 1024; // 512KB
+
 #endif // _AL_SHARED_H_
