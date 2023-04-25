@@ -154,6 +154,16 @@ template<class T> inline T argmax(const T v1, const T v2) { return std::max(v1, 
 template<> inline float3 argmin(const float3 v1, const float3 v2) { return float3::min(v1, v2); }
 template<> inline float3 argmax(const float3 v1, const float3 v2) { return float3::max(v1, v2); }
 
+// multiple arguments option
+template<typename T>
+inline T argmin(const T v1) { return v1; }
+template<typename T>
+inline T argmax(const T v1) { return v1; }
+template<typename T, typename ...Ts>
+inline T argmin(const T v1, const Ts... vs) { return argmin(v1, argmin(vs...)); }
+template<typename T, typename ...Ts>
+inline T argmax(const T v1, const Ts... vs) { return argmax(v1, argmax(vs...)); }
+
 // template<class T> T mix(const T v1, const T v2, const float a) { return (v1 * (1.0f - a) + v2 * a); }
 template<class T, typename T2> constexpr T mix(const T v1, const T v2, const T2 a) { return (v1 + (v2 - v1) * a); }
 

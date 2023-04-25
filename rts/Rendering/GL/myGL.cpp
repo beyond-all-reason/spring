@@ -20,6 +20,7 @@
 #include "System/Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
+#include "System/SpringMath.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Platform/MessageBox.h"
@@ -338,25 +339,53 @@ void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
 }
 
 
-void glSpringTexStorage2D(const GLenum target, GLint levels, const GLint internalFormat, const GLsizei width, const GLsizei height)
+void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
 {
-#ifdef GLEW_ARB_texture_storage
 	if (levels < 0)
-		levels = std::ceil(std::log((float)(std::max(width, height) + 1)));
+		levels = std::floor(math::log2(static_cast<float>(argmax(width, height)))) + 1;
 
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage2D(target, levels, internalFormat, width, height);
-	} else
-#endif
-	{
+	} else {
 		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
 		switch (internalFormat) {
-			case GL_RGBA8: format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
-			case GL_RGB8:  format = GL_RGB;  type = GL_UNSIGNED_BYTE; break;
-			default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
+		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
+		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
 			break;
 		}
-		glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, nullptr);
+		for (int level = 0; level < levels; level)
+			glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
+
+		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
+		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
+	}
+}
+
+void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
+{
+	if (levels < 0)
+		levels = std::floor(math::log2(static_cast<float>(argmax(width, height, depth)))) + 1;
+
+	if (GLEW_ARB_texture_storage) {
+		glTexStorage3D(target, levels, internalFormat, width, height, depth);
+	} else {
+		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
+		switch (internalFormat) {
+		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
+		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
+		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
+			break;
+		}
+		for (int level = 0; level < levels; level)
+			glTexImage3D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), std::max(depth >> level, 1), 0, format, type, nullptr);
+
+		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
+		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 	}
 }
 
