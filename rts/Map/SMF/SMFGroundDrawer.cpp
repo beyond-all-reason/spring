@@ -352,7 +352,7 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 
 	//for CSMFGroundTextures::BindSquareTexture()
-	// glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D) // set in BindSquareTextureArray;
+	// glActiveTexture(GL_TEXTURE0); // set in BindSquareTextureArray;
 	groundTextures->BindSquareTextureArray();
 
 	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
@@ -375,7 +375,6 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 
 	// glActiveTexture(GL_TEXTURE0); // set in UnBindSquareTextureArray;
 	groundTextures->UnBindSquareTextureArray();
-	// glDisable(GL_TEXTURE_2D); // set in UnBindSquareTextureArray;
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);

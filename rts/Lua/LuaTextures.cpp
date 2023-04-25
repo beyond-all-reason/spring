@@ -11,21 +11,6 @@
 
 #include "fmt/format.h"
 
-
-const spring::unordered_map<GLenum, GLenum> LuaTextures::Format2Query =
-{
-	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D				   },
-	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D				   },
-	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D				   },
-//	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY			   },
-	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY			   },
-//	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE			   },
-	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP			   },
-//	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER			   },
-	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE	   },
-//	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
-};
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -33,12 +18,12 @@ std::string LuaTextures::Create(const Texture& tex)
 {
 	GLint currentBinding = 0;
 
-	if (Format2Query.find(tex.target) == Format2Query.end()) {
+	if (FormatToQuery.find(tex.target) == FormatToQuery.end()) {
 		LOG_L(L_ERROR, "[LuaTextures::%s] texture-target %d is not supported", __func__, tex.target);
 		return "";
 	}
 
-	glGetIntegerv(Format2Query.find(tex.target)->second, &currentBinding);
+	glGetIntegerv(FormatToQuery.find(tex.target)->second, &currentBinding);
 
 	GLuint texID;
 	glGenTextures(1, &texID);

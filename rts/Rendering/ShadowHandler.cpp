@@ -308,7 +308,7 @@ void CShadowHandler::LoadShadowGenShaders()
 			static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
 					   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
 		);
-		po->SetUniform("texSquare", 0, 0);
+		po->SetUniform("texSquare", 0, 0, 0, 0);
 		po->Disable();
 		po->Validate();
 
@@ -324,7 +324,7 @@ void CShadowHandler::LoadShadowGenShaders()
 				static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
 						   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
 			);
-			po->SetUniform("texSquare", 0, 0);
+			po->SetUniform("texSquare", 0, 0, 0, 0);
 			po->Disable();
 			po->Validate();
 		}

@@ -14,7 +14,6 @@
 #include "SMFGroundTextures.h"
 #include "SMFFormat.h"
 #include "SMFReadMap.h"
-#include "Rendering/GL/PBO.h"
 #include "Rendering/GlobalRendering.h"
 #include "Map/MapInfo.h"
 #include "Game/Camera.h"
@@ -30,8 +29,6 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Threading/ThreadPool.h" // for_mt
-
-using std::sprintf;
 
 #define LOG_SECTION_SMF_GROUND_TEXTURES "CSMFGroundTextures"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_SMF_GROUND_TEXTURES)
@@ -52,17 +49,6 @@ std::vector<char> CSMFGroundTextures::tiles;
 std::vector<float> CSMFGroundTextures::heightMaxima;
 std::vector<float> CSMFGroundTextures::heightMinima;
 std::vector<float> CSMFGroundTextures::stretchFactors;
-
-
-
-CSMFGroundTextures::GroundSquare::~GroundSquare()
-{
-	glDeleteTextures(1, &textureIDs[RAW_TEX_IDX]);
-
-	textureIDs[RAW_TEX_IDX] = 0;
-	textureIDs[LUA_TEX_IDX] = 0;
-}
-
 
 
 CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
@@ -352,14 +338,14 @@ void CSMFGroundTextures::DrawUpdate()
 			GroundSquare* square = &squares[y * smfMap->numBigTexX + x];
 
 			// no deletion or mip-level selection
-			if (square->HasLuaTexture())
+			if (square->luaTextureID != 0)
 				continue;
 
 			if (!TexSquareInView(x, y)) {
-				if ((square->GetMipLevel() < 3) && ((globalRendering->drawFrame - square->GetDrawFrame()) > 120)) {
+				if ((square->texMipLevel < 3) && ((globalRendering->drawFrame - square->texDrawFrame) > 120)) {
 					// `unload` texture (load lowest mip-map) if
 					// the square wasn't visible for 120 vframes
-					square->SetMipLevel(3);
+					square->texMipLevel = 3;
 				}
 
 				continue;
@@ -412,7 +398,7 @@ void CSMFGroundTextures::DrawUpdate()
 			if (stretchFactors[y * smfMap->numBigTexX + x] > 16000 && wantedLevel > 0)
 				wantedLevel--;
 
-			square->SetMipLevel(wantedLevel);
+			square->texMipLevel = wantedLevel;
 		}
 	}
 }
@@ -420,28 +406,33 @@ void CSMFGroundTextures::DrawUpdate()
 
 
 bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int texID) {
-	#if 0
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX)
 		return false;
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY)
 		return false;
 
-	GroundSquare* square = &squares[texSquareY * smfMap->numBigTexX + texSquareX];
+	const auto idx = texSquareY * smfMap->numBigTexX + texSquareX;
+	GroundSquare* square = &squares[idx];
+	square->luaTextureID = texID;
 
-	if (texID != 0) {
-		// free up some memory while the Lua texture is around
-		glDeleteTextures(1, square->GetTextureIDPtr());
-		square->SetRawTexture(0);
+	// restore
+	if (square->luaTextureID == 0) {
+		for (int lod = 0; lod <= 3; lod++) {
+			LoadSquareTexture(texSquareX, texSquareY, lod);
+		}
+		return false;
 	}
 
-	square->SetLuaTexture(texID);
-	return (square->HasLuaTexture());
-	#endif
-	return false;
+	// replace with Lua texture
+	const int bts = smfMap->bigTexSize;
+	return glSpringBlitImages(
+		square->luaTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
+		tileArrayTex, GL_TEXTURE_2D_ARRAY, 0, 0, 0, idx,
+		bts, bts, 1
+	);
 }
 
 bool CSMFGroundTextures::GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int texMipLevel) {
-	#if 0
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX)
 		return false;
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY)
@@ -455,15 +446,15 @@ bool CSMFGroundTextures::GetSquareLuaTexture(int texSquareX, int texSquareY, int
 	if (texSizeY != (smfMap->bigTexSize >> texMipLevel))
 		return false;
 
-	constexpr GLenum ttarget = GL_TEXTURE_2D;
-	constexpr GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
+	static constexpr GLenum ttarget = GL_TEXTURE_2D;
+	static constexpr GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
 
 	const int mipSqSize = smfMap->bigTexSize >> texMipLevel;
 	const int numSqBytes = (mipSqSize * mipSqSize) / 2;
 
 	pbo.Bind();
 	pbo.New(numSqBytes);
-	ExtractSquareTiles(texSquareX, texSquareY, texMipLevel, (GLint*) pbo.MapBuffer(0, pbo.bufSize, access | pbo.mapUnsyncedBit));
+	ExtractSquareTiles(texSquareX, texSquareY, texMipLevel, (GLint*) pbo.MapBuffer(0, pbo.GetSize(), access | pbo.mapUnsyncedBit));
 	pbo.UnmapBuffer();
 
 	glBindTexture(ttarget, texID);
@@ -472,8 +463,6 @@ bool CSMFGroundTextures::GetSquareLuaTexture(int texSquareX, int texSquareY, int
 
 	pbo.Invalidate();
 	pbo.Unbind();
-	#endif
-	return false;
 }
 
 
@@ -527,9 +516,8 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 	const int numSqBytes = (mipSqSize * mipSqSize) / 2;
 
 	GroundSquare* square = &squares[y * smfMap->numBigTexX + x];
-	square->SetMipLevel(level);
-	assert(!square->HasLuaTexture());
-
+	square->texMipLevel = level;
+	assert(square->luaTextureID == 0);
 
 	pbo.Bind();
 	pbo.New(numSqBytes);
@@ -551,8 +539,8 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 	pbo.Unbind();
 }
 
-void CSMFGroundTextures::BindSquareTextureArray()   const { glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D_ARRAY) ; glBindTexture(GL_TEXTURE_2D_ARRAY, tileArrayTex); }
-void CSMFGroundTextures::UnBindSquareTextureArray() const { glActiveTexture(GL_TEXTURE0); glDisable(GL_TEXTURE_2D_ARRAY); glBindTexture(GL_TEXTURE_2D_ARRAY,            0); }
+void CSMFGroundTextures::BindSquareTextureArray()   const { glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D_ARRAY, tileArrayTex); }
+void CSMFGroundTextures::UnBindSquareTextureArray() const { glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D_ARRAY,            0); }
 
 void CSMFGroundTextures::DrawUpdateSquare(int texSquareX, int texSquareY)
 {
@@ -564,5 +552,5 @@ void CSMFGroundTextures::DrawUpdateSquare(int texSquareX, int texSquareY)
 	if (game->GetDrawMode() != CGame::gameNormalDraw)
 		return;
 
-	squares[texSquareY * smfMap->numBigTexX + texSquareX].SetDrawFrame(globalRendering->drawFrame);
+	squares[texSquareY * smfMap->numBigTexX + texSquareX].texDrawFrame = globalRendering->drawFrame;
 }

@@ -1748,7 +1748,7 @@ int LuaUnsyncedCtrl::SetMapSquareTexture(lua_State* L)
 	}
 	if (texName.empty()) {
 		// restore default texture for this square
-		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY, 0));
+		lua_pushboolean(L, groundTextures->SetSquareLuaTexture(texSquareX, texSquareY));
 		return 1;
 	}
 

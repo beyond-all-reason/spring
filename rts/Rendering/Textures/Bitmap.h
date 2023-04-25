@@ -41,9 +41,13 @@ public:
 
 	int32_t GetIntFmt() const;
 	int32_t GetExtFmt() const { return GetExtFmt(channels); }
+	uint32_t GetDataTypeSize() const { return GetDataTypeSize(dataType); }
+
+	static uint32_t GetDataTypeSize(uint32_t dataType);
+	static uint32_t IntFmtToExtFmt(uint32_t intFmt);
+	static uint32_t IntFmtToType(uint32_t intFmt);
 	static int32_t GetExtFmt(uint32_t ch);
 	static int32_t ExtFmtToChannels(int32_t extFmt);
-	uint32_t GetDataTypeSize() const;
 
 	/// Load data from a file on the VFS
 	bool Load(std::string const& filename, float defaultAlpha = 1.0f, uint32_t reqChannel = 4, uint32_t reqDataType = 0x1401/*GL_UNSIGNED_BYTE*/, bool forceReplaceAlpha = false);

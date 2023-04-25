@@ -73,8 +73,6 @@ public:
 
 	const Texture* GetInfo(const std::string& name) const { return (GetInfo(GetIdx(name))); }
 	      Texture* GetInfo(const std::string& name)       { return (GetInfo(GetIdx(name))); }
-public:
-	static const spring::unordered_map<GLenum, GLenum> Format2Query;
 private:
 	int lastCode;
 

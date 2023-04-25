@@ -26,7 +26,7 @@ public:
 	void BindSquareTextureArray() const override;
 	void UnBindSquareTextureArray() const override;
 
-	uint32_t GetSquareMipLevel(uint32_t i) const override { return squares[i].GetMipLevel(); }
+	uint32_t GetSquareMipLevel(uint32_t i) const override { return squares[i].texMipLevel; }
 
 protected:
 	void LoadTiles(CSMFMapFile& file);
@@ -42,28 +42,13 @@ protected:
 
 private:
 	struct GroundSquare {
-		enum {
-			RAW_TEX_IDX = 0,
-			LUA_TEX_IDX = 1,
-		};
+		GroundSquare()
+			: luaTextureID(0)
+			, texMipLevel(0)
+			, texDrawFrame(1)
+		{}
 
-		GroundSquare(): textureIDs{0, 0}, texMipLevel(0), texDrawFrame(1) {}
-		~GroundSquare();
-
-		bool HasLuaTexture() const { return (textureIDs[LUA_TEX_IDX] != 0); }
-
-		void SetRawTexture(uint32_t id) { textureIDs[RAW_TEX_IDX] = id; }
-		void SetLuaTexture(uint32_t id) { textureIDs[LUA_TEX_IDX] = id; }
-		void SetMipLevel(uint32_t l) { texMipLevel = l; }
-		void SetDrawFrame(uint32_t f) { texDrawFrame = f; }
-
-		uint32_t* GetTextureIDPtr() { return &textureIDs[RAW_TEX_IDX]; }
-		uint32_t GetTextureID() const { return textureIDs[HasLuaTexture()]; }
-		uint32_t GetMipLevel() const { return texMipLevel; }
-		uint32_t GetDrawFrame() const { return texDrawFrame; }
-
-	private:
-		uint32_t textureIDs[2];
+		uint32_t luaTextureID;
 		uint32_t texMipLevel;
 		uint32_t texDrawFrame;
 	};

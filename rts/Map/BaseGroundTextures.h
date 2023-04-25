@@ -9,7 +9,7 @@ public:
 	virtual void DrawUpdate() {}
 	virtual void DrawUpdateSquare(int x, int y) {}
 
-	virtual bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID) { return false; }
+	virtual bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID = 0) { return false; }
 	virtual bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int texMipLevel) { return false; }
 
 	virtual void BindSquareTextureArray() const {}
