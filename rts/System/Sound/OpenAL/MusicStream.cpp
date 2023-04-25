@@ -89,6 +89,7 @@ void MusicStream::Play(const std::string& path, float volume)
 	if (fileBuffer.GetFileExt() == std::string_view{"mp3"}) {
 		decoder = Mp3Decoder();
 	} else {
+		assert(fileBuffer.GetFileExt() == "ogg");
 		decoder = OggDecoder();
 	}
 
