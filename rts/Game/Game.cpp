@@ -1573,7 +1573,7 @@ void CGame::DrawInterfaceWidgets()
 	#define INF_FONT_FLAGS (FONT_RIGHT | FONT_SCALE | FONT_NORM | (FONT_OUTLINE * guihandler->GetOutlineFonts()))
 
 	if (showClock) {
-		const float4 white(0.9f, 0.9f, 0.9f, 1.0f);
+		static constexpr float4 white(0.9f, 0.9f, 0.9f, 1.0f);
 		smallFont->SetColors(&white, NULL);
 
 		const int seconds = (gs->frameNum / GAME_SPEED);
@@ -1585,7 +1585,7 @@ void CGame::DrawInterfaceWidgets()
 	}
 
 	if (showFPS) {
-		const float4 yellow(1.0f, 1.0f, 0.25f, 1.0f);
+		static constexpr float4 yellow(1.0f, 1.0f, 0.25f, 1.0f);
 		smallFont->SetColors(&yellow,NULL);
 		smallFont->glFormat(0.99f, 0.92f, 1.0f, INF_FONT_FLAGS, "%.0f", globalRendering->FPS);
 	}
