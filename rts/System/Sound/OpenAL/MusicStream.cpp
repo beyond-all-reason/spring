@@ -71,7 +71,7 @@ MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
 	return *this;
 }
 
-// open an Ogg stream from a given file and start playing it
+// open a music stream from a given file and start playing it
 void MusicStream::Play(const std::string& path, float volume)
 {
 	// we're already playing another stream
