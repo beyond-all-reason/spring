@@ -16,6 +16,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Rendering/GL/VBO.h"
 #include "System/Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
@@ -250,49 +251,71 @@ void WorkaroundATIPointSizeBug()
 
 /******************************************************************************/
 
-void glSaveTexture(const GLuint textureID, const char* filename, int level)
+void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
 {
-	const GLenum target = GL_TEXTURE_2D;
-	int sizeX, sizeY;
-
-	int bits = 0;
-	int chNum = 0;
-	bool depthTex = false;
-
 	GLint currentBinding;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentBinding);
+	const auto it = FormatToQuery.find(target);
+	assert(it != FormatToQuery.end());
+	glGetIntegerv(it->second, &currentBinding);
 
 	glBindTexture(target, textureID);
 
-	glGetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH , &sizeX);
-	glGetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &sizeY);
+	glGetTexLevelParameteriv(target, level, GL_TEXTURE_INTERNAL_FORMAT, &tp.intFmt);
+	glGetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &tp.sizeX);
+	glGetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &tp.sizeY);
+	glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH, &tp.sizeZ);
 
+	tp.isDepth = false;
+	tp.bpp = 0;
+	tp.chNum = 0;
 	{
 		GLint _cbits;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_RED_SIZE  , &_cbits); bits += _cbits; if (_cbits > 0) chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_GREEN_SIZE, &_cbits); bits += _cbits; if (_cbits > 0) chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_BLUE_SIZE , &_cbits); bits += _cbits; if (_cbits > 0) chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_ALPHA_SIZE, &_cbits); bits += _cbits; if (_cbits > 0) chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); bits += _cbits; if (_cbits > 0) { chNum++; depthTex = true; }
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_RED_SIZE  , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_GREEN_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_BLUE_SIZE , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_ALPHA_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) { tp.chNum++; tp.isDepth = true; }
 	}
 
+	{
+		GLint isCompressed;
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_COMPRESSED, &isCompressed);
+		tp.isCompressed = isCompressed;
+		if (isCompressed) {
+			glGetTexLevelParameteriv(target, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &tp.imageSize);
+		}
+		else {
+			tp.imageSize =
+				std::max(tp.sizeX, 1) *
+				std::max(tp.sizeY, 1) *
+				std::max(tp.sizeZ, 1) *
+				(tp.bpp >> 3);
+		}
+	}
+
+	glBindTexture(target, currentBinding);
+}
+
+void glSaveTexture(const GLuint textureID, const char* filename, int level)
+{
+	TextureParameters params;
+	glSpringGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
+
 	CBitmap bmp;
-	GLenum extFormat = depthTex ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(chNum);
-	GLenum dataType = depthTex ? GL_FLOAT : GL_UNSIGNED_BYTE;
+	GLenum extFormat = params.isDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
+	GLenum dataType = params.isDepth ? GL_FLOAT : GL_UNSIGNED_BYTE;
 
-	bmp.Alloc(sizeX, sizeY, chNum, dataType);
-	glGetTexImage(target, level, extFormat, dataType, bmp.GetRawMem());
+	bmp.Alloc(params.sizeX, params.sizeY, params.chNum, dataType);
+	glGetTexImage(GL_TEXTURE_2D, level, extFormat, dataType, bmp.GetRawMem());
 
-	if (depthTex) {
+	if (params.isDepth) {
 		//doesn't work, TODO: fix
 		bmp.SaveFloat(filename);
 	}
 	else {
-		assert(bits >= 24);
-		bmp.Save(filename, bits < 32);
+		assert(params.bpp >= 24);
+		bmp.Save(filename, params.bpp < 32);
 	}
-
-	glBindTexture(target, currentBinding);
 }
 
 
@@ -374,6 +397,123 @@ void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei wid
 	} else {
 		gluBuild2DMipmaps(target, internalFormat, width, height, format, type, data);
 	}
+}
+
+bool glSpringBlitImages(
+	GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,
+	GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ,
+	GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
+{
+	TextureParameters srcTexParams;
+	TextureParameters dstTexParams;
+	glSpringGetTexParams(srcTarget, srcName, srcLevel, srcTexParams);
+	glSpringGetTexParams(dstTarget, dstName, dstLevel, dstTexParams);
+	const bool sameIntFormat = (srcTexParams.intFmt == dstTexParams.intFmt);
+	const bool fineDims = (srcWidth <= dstTexParams.sizeX && srcHeight <= dstTexParams.sizeY);
+
+	if (GLEW_ARB_copy_image && fineDims && sameIntFormat) {
+		glCopyImageSubData(
+			srcName, srcTarget, srcLevel, srcX, srcY, srcZ,
+			dstName, dstTarget, dstLevel, dstX, dstY, dstZ,
+			srcWidth, srcHeight, srcDepth
+		);
+		return true;
+	}
+
+	if (dstTexParams.isCompressed) //can't be rendered into
+		return false;
+
+	if (!GLEW_EXT_framebuffer_blit || !GLEW_EXT_texture_array)
+		return false;
+
+	bool result = true;
+
+	GLint currDrawFBO;
+	GLint currReadFBO;
+
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &currDrawFBO);
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &currReadFBO);
+
+	GLuint newDrawFBO;
+	GLuint newReadFBO;
+	glGenFramebuffersEXT(1, &newDrawFBO);
+	glGenFramebuffersEXT(1, &newReadFBO);
+
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, newDrawFBO);
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, newReadFBO);
+
+	const GLenum blitfilter = (srcWidth == dstTexParams.sizeX && srcHeight == dstTexParams.sizeY) ? GL_NEAREST : GL_LINEAR;
+	for (int z = 0; result && z < srcDepth; z++) {
+		// GL_READ_FRAMEBUFFER
+		{
+			switch (srcTarget)
+			{
+			case GL_TEXTURE_1D:
+				glFramebufferTexture1DEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, srcTarget, srcName, srcLevel);
+				break;
+			case GL_TEXTURE_2D:
+				glFramebufferTexture2DEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, srcTarget, srcName, srcLevel);
+				break;
+			case GL_TEXTURE_3D:
+				glFramebufferTexture3DEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, srcTarget, srcName, srcLevel, srcZ + z);
+				break;
+			case GL_TEXTURE_1D_ARRAY: [[fallthrough]];
+			case GL_TEXTURE_2D_ARRAY:
+				glFramebufferTextureLayerEXT(GL_READ_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, srcName, srcLevel, srcZ + z);
+				break;
+			default:
+				result = false;
+				assert(false);
+				break;
+			}
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			const auto fbStatus = glCheckFramebufferStatusEXT(GL_READ_FRAMEBUFFER_EXT);
+			result &= (fbStatus == GL_FRAMEBUFFER_COMPLETE_EXT);
+		}
+
+		// GL_DRAW_FRAMEBUFFER
+		if (result)
+		{
+			switch (dstTarget)
+			{
+			case GL_TEXTURE_1D:
+				glFramebufferTexture1DEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, dstTarget, dstName, dstLevel);
+				break;
+			case GL_TEXTURE_2D:
+				glFramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, dstTarget, dstName, dstLevel);
+				break;
+			case GL_TEXTURE_3D:
+				glFramebufferTexture3DEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, dstTarget, dstName, dstLevel, dstZ + z);
+				break;
+			case GL_TEXTURE_1D_ARRAY: [[fallthrough]];
+			case GL_TEXTURE_2D_ARRAY:
+				glFramebufferTextureLayerEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, dstName, dstLevel, dstZ + z);
+				break;
+
+			default:
+				result = false;
+				assert(false);
+				break;
+			}
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			const auto fbStatus = glCheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER);
+			result &= (fbStatus == GL_FRAMEBUFFER_COMPLETE_EXT);
+		}
+
+		if (result) {
+			glBlitFramebufferEXT(srcX, srcY, srcX + srcWidth, srcY + srcHeight, dstX, dstY, dstX + srcWidth, dstY + srcHeight, GL_COLOR_BUFFER_BIT, blitfilter);
+		}
+	}
+
+	if (currDrawFBO)
+		glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, currDrawFBO);
+	if (currReadFBO)
+		glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, currReadFBO);
+
+	glDeleteFramebuffersEXT(1, &newDrawFBO);
+	glDeleteFramebuffersEXT(1, &newReadFBO);
+
+	return result;
 }
 
 
