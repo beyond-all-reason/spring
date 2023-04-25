@@ -32,7 +32,7 @@ float Mp3Decoder::GetTotalTime()
 
 bool Mp3Decoder::LoadData(const uint8_t* mem, size_t len)
 {
-	if (!drmp3_init_memory(&data, mem, len, NULL)) {
+	if (!drmp3_init_memory(&data, mem, len, nullptr)) {
 		LOG_L(L_ERROR, "[Mp3Decoder::LoadFile] Failed to load");
 		return false;
 	}
