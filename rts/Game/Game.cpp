@@ -1573,6 +1573,9 @@ void CGame::DrawInterfaceWidgets()
 	#define INF_FONT_FLAGS (FONT_RIGHT | FONT_SCALE | FONT_NORM | (FONT_OUTLINE * guihandler->GetOutlineFonts()))
 
 	if (showClock) {
+		const float4 white(0.9f, 0.9f, 0.9f, 1.0f);
+		smallFont->SetColors(&white, NULL);
+
 		const int seconds = (gs->frameNum / GAME_SPEED);
 		if (seconds < 3600) {
 			smallFont->glFormat(0.99f, 0.94f, 1.0f, INF_FONT_FLAGS, "%02i:%02i", seconds / 60, seconds % 60);
