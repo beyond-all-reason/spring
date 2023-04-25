@@ -27,7 +27,8 @@ long Mp3Decoder::Read(uint8_t *buffer,int length, int bigendianp,int word,int sg
 
 float Mp3Decoder::GetTotalTime()
 {
-	return 1.0f * drmp3_get_pcm_frame_count(&data) / data.sampleRate; // linear complexity
+	// linear complexity, but is cached in MusicStream
+	return 1.0f * drmp3_get_pcm_frame_count(&data) / data.sampleRate; 
 }
 
 bool Mp3Decoder::LoadData(const uint8_t* mem, size_t len)
