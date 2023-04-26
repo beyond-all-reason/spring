@@ -197,6 +197,7 @@ QTPFS::PathManager::~PathManager() {
 	pathTraces.clear();
 	mapChangeTrack.damageMap.clear();
 	mapChangeTrack.damageQueue.clear();
+	sharedPaths.clear();
 
 	// numCurrExecutedSearches.clear();
 	// numPrevExecutedSearches.clear();
@@ -545,7 +546,6 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
 void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread) {
-	ZoneScoped;
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -797,6 +797,7 @@ void QTPFS::PathManager::Update() {
 				// LOG("%s: alreadyDirty=%d, pathEntity=%x", __func__, (int)registry.all_of<PathIsDirty>(pathEntity)
 				// 		, (int)pathEntity);
 				registry.emplace<PathIsDirty>(pathEntity);
+				RemovePathFromShared(pathEntity);
 				pathsMarkedDirty++;
 			}
 			layerDirtyPaths.clear();
@@ -813,28 +814,6 @@ void QTPFS::PathManager::Update() {
 
 __FORCE_ALIGN_STACK__
 void QTPFS::PathManager::ThreadUpdate() {
-	// NOTE:
-	//     for a mod with N move-types, any unit will be waiting
-	//     (N / LAYERS_PER_UPDATE) sim-frames before its request
-	//     executes at a minimum
-	// const unsigned int layersPerUpdateTmp = LAYERS_PER_UPDATE;
-	// const unsigned int numPathTypeUpdates = nodeLayers.size();
-
-	// NOTE: thread-safe (only ONE thread ever accesses these)
-	// static unsigned int minPathTypeUpdate = 0;
-	// static unsigned int maxPathTypeUpdate = numPathTypeUpdates;
-
-	// if (gs->frameNum >= recalcDeadPathUpdateRateOnFrame){
-	// 	recalcDeadPathUpdateRateOnFrame = gs->frameNum + GAME_SPEED;
-	// 	size_t totalDeadPaths = 0;
-	// 	for (auto& pathCache : pathCaches)
-	// 		totalDeadPaths += pathCache.GetDeadPaths().size();
-
-	// 	deadPathsToUpdatePerFrame = std::max(int(totalDeadPaths / GAME_SPEED), 1);
-	// }
-
-	sharedPaths.clear();
-
 	QueueDeadPathSearches();
 	ExecuteQueuedSearches();
 
@@ -852,8 +831,54 @@ void QTPFS::PathManager::ThreadUpdate() {
 	// }
 }
 
-void QTPFS::PathManager::ExecuteQueuedSearches() {
 
+		// TODO:
+		// - don't clear path very frame [DONE]
+		// - clear on clear [DONE]
+		// - on remove path, switch shared path [DONE]
+		// - on invalidate [DONE]
+		// - on invalidate, remove path -- actually all paths
+		//   - make sure loop can handle that
+		//   - in fact all linked paths can take answer of the first
+		// - on running through paths check on shared.
+		//   - if head is set then copy it [DONE]
+		//   - if head is unset [DONE]
+		//     - if current is head, do query, propogate to all unsets [DONE]
+		//     - otherwise skip [DONE]
+		//   - return states for searches need updating [DONE]
+		//   - sharedFinalize needs checking and fixing [DONE]
+
+
+void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
+	ZoneScoped;
+	assert(registry.all_of<PathSearch>(searchEntity));
+	PathSearch* search = &registry.get<PathSearch>(searchEntity);
+	int pathType = search->GetPathType();
+
+	assert(pathType < nodeLayers.size());
+	NodeLayer& nodeLayer = nodeLayers[pathType];
+
+	entt::entity pathEntity = (entt::entity)search->GetID();
+	if (registry.valid(pathEntity)) {
+		registry.emplace<PathSearchRef>(pathEntity, searchEntity);
+
+		assert(registry.all_of<IPath>(pathEntity));
+		IPath* path = &registry.get<IPath>(pathEntity);
+		search->Initialize(&nodeLayer, &pathCache, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE);
+		path->SetHash(search->GetHash());
+
+		SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+		if (sharedPathsIt == sharedPaths.end()) {
+			registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
+			sharedPaths[path->GetHash()] = pathEntity;
+		} else {
+			linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+		}
+	}
+}
+
+void QTPFS::PathManager::ExecuteQueuedSearches() {
+	ZoneScoped;
 	//if (pathSearches.empty()) return;
 
 	auto pathView = registry.view<PathSearch>();
@@ -865,26 +890,21 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		auto curIt = pathView.begin();
 		for (int i = 0; i < pathView.size(); ++i, ++curIt){
 			assert(curIt != pathView.end());
-			if (curIt == pathView.end())
-				pathSearches[i] = entt::null;
-			else
-				pathSearches[i] = *curIt;
+			InitializeSearch(*curIt);
+			pathSearches[i] = *curIt;
 		}
 	}
 
-	// for_each_mt(pathView.begin(), pathView.end(), [this, &pathView](entt::entity pathSearchEntity){
-	// for_mt(0, pathView.size(), [this, &pathView](int i){
 	for_mt(0, pathView.size(), [this, &pathView, &pathSearches](int i){
 		// entt::entity pathSearchEntity = pathView[i];
 		entt::entity pathSearchEntity = pathSearches[i];
-		if (pathSearchEntity == entt::null) { return; }
+		// if (pathSearchEntity == entt::null) { return; }
 
 		assert(registry.valid(pathSearchEntity));
+		assert(registry.all_of<PathSearch>(pathSearchEntity));
 		PathSearch* search = &pathView.get<PathSearch>(pathSearchEntity);
 		int pathType = search->GetPathType();
-		assert(pathType < nodeLayers.size());
 		NodeLayer& nodeLayer = nodeLayers[pathType];
-		PathCache& pathCache = pathCache;
 		ExecuteSearch(search, nodeLayer, pathCache, pathType);
 	});
 
@@ -894,6 +914,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		// PathCache& pathCache = pathCaches;
 		// IPath* path = pathCache.GetTempPath(search->GetID());
 		assert(registry.valid(pathSearchEntity));
+		assert(registry.all_of<PathSearch>(pathSearchEntity));
 		PathSearch* search = &pathView.get<PathSearch>(pathSearchEntity);
 		entt::entity pathEntity = (entt::entity)search->GetID();
 		if (registry.valid(pathEntity)) {
@@ -902,6 +923,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 				if (search->PathWasFound()) {
 					registry.remove<PathIsTemp>(pathEntity);
 					registry.remove<PathIsDirty>(pathEntity);
+					registry.remove<PathSearchRef>(pathEntity);
 				} else {
 					DeletePath(path->GetID());
 				}
@@ -911,7 +933,6 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		// LOG("%s: %x", __func__, (int)pathSearchEntity);
 		registry.destroy(pathSearchEntity);
 	}
-	// };
 
 	// std::for_each(pathSearches.begin(), pathSearches.end(), CleanUpSearch);
 	// pathSearches.clear();
@@ -923,6 +944,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	PathCache& pathCache,
 	unsigned int pathType
 ) {
+	ZoneScoped;
 	// PathSearch* search = *searchesIt;
 	// IPath* path = pathCache.GetTempPath(search->GetID());
 	entt::entity pathEntity = (entt::entity)search->GetID();
@@ -945,22 +967,33 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// assert(search->GetID() != 0);
 	assert(path->GetID() == search->GetID());
 
-	search->Initialize(&nodeLayer, &pathCache
-			, path->GetSourcePoint(), path->GetTargetPoint()
-			, MAP_RECTANGLE, &searchThreadData[currentThread]);
-	path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
+	// search->Initialize(&nodeLayer, &pathCache
+	// 		, path->GetSourcePoint(), path->GetTargetPoint()
+	// 		, MAP_RECTANGLE, &searchThreadData[currentThread]);
+	// path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
+	search->InitializeThread(&searchThreadData[currentThread]);
 
+	entt::entity chainHeadEntity = entt::null;
 	{
-		#ifdef QTPFS_SEARCH_SHARED_PATHS
+		ZoneScopedN("pre-check shared path");
+		// #ifdef QTPFS_SEARCH_SHARED_PATHS
 		SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+		assert (sharedPathsIt != sharedPaths.end());
 
-		if (sharedPathsIt != sharedPaths.end()) {
-			if (search->SharedFinalize(sharedPathsIt->second, path)) {
-				// DeleteSearch(search, searches, searchesIt);
-				return false;
+		chainHeadEntity = sharedPathsIt->second;
+		if (chainHeadEntity != pathEntity){
+			bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
+			if (pathIsCopyable) {
+				auto& headChainPath = registry.get<IPath>(chainHeadEntity);
+				search->SharedFinalize(&headChainPath, path);
+				// if (search->SharedFinalize(&headChainPath, path)) {
+					// DeleteSearch(search, searches, searchesIt);
+				// 	return false;
+				// }
 			}
+			return false;
 		}
-		#endif
+		// #endif
 	}
 
 	// removes path from temp-paths, adds it to live-paths
@@ -972,6 +1005,23 @@ bool QTPFS::PathManager::ExecuteSearch(
 		sharedPaths[path->GetHash()] = path;
 		#endif
 
+		if (chainHeadEntity == pathEntity){
+			ZoneScopedN("post-check shared path");
+			// TODO: walk chain backwards and stop early?
+			// copy results to all applicable paths
+			linkedListHelper.ForEachInChain<SharedPathChain>(chainHeadEntity, [this, path, chainHeadEntity](entt::entity next) {
+				if (next == chainHeadEntity) { return; }
+
+				auto* linkedPath = &registry.get<IPath>(next);
+				auto* searchRef = registry.try_get<PathSearchRef>(next);
+				if (searchRef == nullptr) { return; }
+
+				assert(registry.all_of<PathSearch>(searchRef->value));
+				auto& chainSearch = registry.get<PathSearch>(searchRef->value);
+				chainSearch.SharedFinalize(path, linkedPath);
+			});
+		}
+
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		pathTraces[path->GetID()] = search->GetExecutionTrace();
 		#endif
@@ -981,6 +1031,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 }
 
 void QTPFS::PathManager::QueueDeadPathSearches() {
+	ZoneScoped;
 	auto pathUpdatesView = registry.view<IPath, PathIsToBeUpdated>();
 	if (pathUpdatesView.size_hint() == 0 && gs->frameNum >= refreshDirtyPathRateFrame) {
 		// LOG("%s: pathUpdatesView=%d,frame=%d>%d", __func__
@@ -1198,12 +1249,34 @@ void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 	// }
 
 	// LOG("%s: %x", __func__, pathID);
+	RemovePathFromShared((entt::entity)pathID);
 	pathCache.DelPath(pathID);
 
 	if (pathTraceIt != pathTraces.end()) {
 		delete (pathTraceIt->second);
 		pathTraces.erase(pathTraceIt);
 	}
+}
+
+void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
+	if (!registry.valid(entity)) return;
+	if (!registry.all_of<SharedPathChain>(entity)) return;
+
+	IPath* path = &registry.get<IPath>(entity);
+	auto iter = sharedPaths.find(path->GetHash());
+	assert(iter != sharedPaths.end());
+	if (iter->second == entity) {
+		auto& chain = registry.get<SharedPathChain>(entity);
+		if (chain.next == entity) {
+			sharedPaths.erase(path->GetHash());
+			// LOG("%s: shared path %lld head is now empty", __func__, path->GetHash());
+		} else {
+			sharedPaths[path->GetHash()] = chain.next;
+			// LOG("%s: shared path %lld head is now %x", __func__, path->GetHash(), entt::to_integral(chain.next));
+		}
+	}
+
+	linkedListHelper.RemoveChain<SharedPathChain>(entity);
 }
 
 unsigned int QTPFS::PathManager::RequestPath(

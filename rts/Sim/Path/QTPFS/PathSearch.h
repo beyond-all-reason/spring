@@ -106,9 +106,9 @@ namespace QTPFS {
 			PathCache* cache,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea,
-			SearchThreadData* threadData
+			const SRectangle& searchArea
 		);
+		void InitializeThread(SearchThreadData* threadData);
 		bool Execute(
 			unsigned int searchStateOffset = 0,
 			unsigned int searchMagicNumber = 0
@@ -117,7 +117,7 @@ namespace QTPFS {
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }
 
-		const std::uint64_t GetHash(std::uint64_t N, std::uint32_t k) const;
+		const std::uint64_t GetHash() const { return pathSearchHash; };
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
@@ -136,12 +136,17 @@ namespace QTPFS {
 		void SmoothPath(IPath* path) const;
 		bool SmoothPathIter(IPath* path) const;
 
+		// const std::uint64_t GenerateHash(std::uint64_t N, std::uint32_t k) const;
+		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
+
 		// global queue: allocated once, re-used by all searches without clear()'s
 		// this relies on INode::operator< to sort the INode*'s by increasing f-cost
 		// static binary_heap<INode*> openNodes;
 
 		QTPFS::SearchThreadData* searchThreadData;
 		SearchPriorityQueue* openNodes;
+
+		std::uint64_t pathSearchHash;
 
 		NodeLayer* nodeLayer;
 		int pathType;

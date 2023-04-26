@@ -107,26 +107,6 @@ void QTPFS::PathCache::AddLivePath(IPath* path) {
 }
 
 void QTPFS::PathCache::DelPath(unsigned int pathID) {
-	// if pathID is in xPaths, then yPaths and zPaths are guaranteed not
-	// to contain it (*only* exception is that deadPaths briefly overlaps
-	// tempPaths between QueueDeadPathSearches and KillDeadPaths)
-	// PathMapIt it;
-
-	// if ((it = tempPaths.find(pathID)) != tempPaths.end()) {
-	// 	assert(livePaths.find(pathID) == livePaths.end());
-	// 	assert(deadPaths.find(pathID) == deadPaths.end());
-	// 	delete (it->second);
-	// 	tempPaths.erase(it);
-	// 	return;
-	// }
-	// if (ReleaseLivePath(pathID))
-	// 	return;
-
-	// if ((it = deadPaths.find(pathID)) != deadPaths.end()) {
-	// 	delete (it->second);
-	// 	deadPaths.erase(it);
-	// }
-
 	entt::entity entity = (entt::entity)pathID;
 	if (registry.valid(entity))
 		registry.destroy(entity);
@@ -143,7 +123,6 @@ void QTPFS::PathCache::DelPath(unsigned int pathID) {
 // }
 
 bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
-	ZoneScoped;
 	#ifdef QTPFS_IGNORE_DEAD_PATHS
 	return false;
 	#endif

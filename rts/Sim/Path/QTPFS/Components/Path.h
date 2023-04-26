@@ -21,9 +21,21 @@ struct PathBoundingBox {
 	float3 boundingBoxMaxs;
 };
 
+struct SharedPathChain {
+	SharedPathChain() {}
+
+	SharedPathChain(entt::entity initPrev, entt::entity initNext)
+		: prev(initPrev), next(initNext) {}
+
+    entt::entity prev{entt::null};
+    entt::entity next{entt::null};
+};
+
 VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
 VOID_COMPONENT(PathIsToBeUpdated);
+
+ALIAS_COMPONENT(PathSearchRef, entt::entity);
 
 ALIAS_COMPONENT(PathOwnerId, int);
 ALIAS_COMPONENT(PathHash, std::uint64_t);

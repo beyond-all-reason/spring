@@ -361,7 +361,6 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 }
 
 bool QTPFS::QTNode::Merge(NodeLayer& nl) {
-	ZoneScoped;
 	if (IsLeaf())
 		return false;
 
@@ -428,7 +427,6 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 #else
 
 	void QTPFS::QTNode::PreTesselate(NodeLayer& nl, const SRectangle& r, SRectangle& ur, unsigned int depth, const UpdateThreadData* threadData) {
-		ZoneScoped;
 		const unsigned int rel = GetRectangleRelation(r);
 
 		// LOG("%s: [%d:%d]", __func__, nl.GetNodelayer(), depth);
@@ -490,7 +488,6 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 
 
 void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData) {
-	ZoneScoped;
 	unsigned int numNewBinSquares = 0; // nr. of squares in <r> that changed bin after deformation
 	unsigned int numDifBinSquares = 0; // nr. of different bin-types across all squares within <r>
 	unsigned int numClosedSquares = 0;
@@ -790,8 +787,6 @@ unsigned int QTPFS::QTNode::GetNeighbors(const std::vector<int>& nodes, std::vec
 // (never both)
 // bool QTPFS::QTNode::UpdateNeighborCache(const std::vector<INode*>& nodes, int nodeLayer) {
 bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData) {
-	ZoneScoped;
-
 	assert(IsLeaf());
 	// assert(!nodes.empty());
 	// if (gs->frameNum > -1 && nodeLayer == 2)

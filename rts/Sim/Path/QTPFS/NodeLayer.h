@@ -62,6 +62,7 @@ namespace QTPFS {
 		//       INode* GetNode(unsigned int i)       { return nodeGrid[i]; }
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
+			ZoneScoped;
 			const INode* curNode = GetPoolNode(0);
 			int length = curNode->xsize(); // width/height is forced to be the same.
 			// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
@@ -198,7 +199,7 @@ namespace QTPFS {
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
 
-		// TODO: Move the tread storage
+		// TODO: Move to tread storage
 		std::vector<INode*> selectedNodes;
 		std::vector<INode*> openNodes;
 

@@ -68,7 +68,6 @@ bool QTPFS::NodeLayer::Update(
 	// const std::vector<  int>* luBlockBits,
 	UpdateThreadData& threadData
 ) {
-	ZoneScoped;
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	// unsigned int numNewBinSquares = 0;
@@ -191,7 +190,6 @@ bool QTPFS::NodeLayer::Update(
 
 
 QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float relSpeedMod) const {
-	ZoneScoped;
 	// NOTE:
 	//     bins N and N+1 are reserved for modifiers <= min and >= max
 	//     respectively; blocked squares MUST be in their own category
@@ -326,7 +324,6 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, un
 #endif
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
-	ZoneScoped;
 	// assert(!nodeGrid.empty());
 
 	// account for the rim of nodes around the bounding box
@@ -450,7 +447,6 @@ void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vecto
 }
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
-	ZoneScoped;
 	INode* selectedNode = nullptr;
 	INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 	int length = curNode->xsize(); // width/height is forced to be the same.

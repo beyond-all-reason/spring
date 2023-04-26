@@ -33,7 +33,7 @@ constexpr int NEXT_FRAME_NEVER = std::numeric_limits<decltype(NEXT_FRAME_NEVER)>
 // std::queue<INode*> openNodes; << per thread.
 struct PathMaxSpeedModSystemComponent {
 	static constexpr std::size_t page_size = 1;
-	std::array<float, 256> maxRelSpeedMod; // TODO: get the non-magic number
+	std::array<float, 256> maxRelSpeedMod; // TODO: get the non-magic number - mac number of movetypes
 	int refreshTimeInFrames = 0;
 	int startRefreshOnFrame = 0;
 	int refeshDelayInFrames = 0;

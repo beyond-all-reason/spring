@@ -25,7 +25,10 @@ namespace QTPFS {
         SparseData(size_t sparseSize) { Reset(sparseSize); }
 
         void Reset(size_t sparseSize) {
+            {
+                ZoneScopedN("sparseIndex.assign");
             sparseIndex.assign(sparseSize, 0);
+            }
             denseData.clear();
             denseData.emplace_back(T()); // 0-th element represents a dummy record.
         }
@@ -113,7 +116,7 @@ namespace QTPFS {
 			: allSearchedNodes(nodeCount)
 			{}
 
-        void ResetQueue() { while (!openNodes.empty()) openNodes.pop(); }
+        void ResetQueue() { ZoneScoped; while (!openNodes.empty()) openNodes.pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record

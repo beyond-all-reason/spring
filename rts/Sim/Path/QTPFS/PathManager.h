@@ -98,8 +98,8 @@ namespace QTPFS {
 		typedef spring::unordered_map<unsigned int, unsigned int>::iterator PathTypeMapIt;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*> PathTraceMap;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*>::iterator PathTraceMapIt;
-		typedef spring::unordered_map<std::uint64_t, IPath*> SharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, IPath*>::iterator SharedPathMapIt;
+		typedef spring::unordered_map<std::uint64_t, entt::entity> SharedPathMap;
+		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator SharedPathMapIt;
 
 		typedef std::vector<PathSearch*> PathSearchVect;
 		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
@@ -107,6 +107,9 @@ namespace QTPFS {
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
+
+		void InitializeSearch(entt::entity searchEntity);
+		void RemovePathFromShared(entt::entity entity);
 
 		void ExecuteQueuedSearches();
 		void QueueDeadPathSearches();
@@ -152,10 +155,12 @@ namespace QTPFS {
 		std::vector<UpdateThreadData> updateThreadData;
 
 		// spring::unordered_map<unsigned int, unsigned int> pathTypes;
-		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;
+		// spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;
+		PathTraceMap pathTraces;
 
 		// maps "hashes" of executed searches to the found paths
-		spring::unordered_map<std::uint64_t, IPath*> sharedPaths;
+		// spring::unordered_map<std::uint64_t, IPath*> sharedPaths;
+		SharedPathMap sharedPaths;
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;
