@@ -235,7 +235,7 @@ void QTPFS::PathManager::Load() {
 	searchStateOffset = NODE_STATE_OFFSET;
 	// numTerrainChanges = 0;
 	numPathRequests   = 0;
-	maxNumLeafNodes   = 0;
+	int maxAllocedNodes   = 0;
 
 	deadPathsToUpdatePerFrame = 1;
 	recalcDeadPathUpdateRateOnFrame = 0;
@@ -250,15 +250,15 @@ void QTPFS::PathManager::Load() {
 	mapChangeTrack.damageMap.resize(mapChangeTrack.width*mapChangeTrack.height);
 
 	isFinalized = true;
-
-	int threads = ThreadPool::GetNumThreads();
-	searchThreadData.reserve(threads);
-	updateThreadData.reserve(threads);
-	while (threads-- > 0) {
-		searchThreadData.emplace_back(SearchThreadData(maxNumLeafNodes));
-		updateThreadData.emplace_back(UpdateThreadData());
+	{
+		int threads = ThreadPool::GetNumThreads();
+		// searchThreadData.reserve(threads);
+		updateThreadData.reserve(threads);
+		while (threads-- > 0) {
+			// searchThreadData.emplace_back(SearchThreadData(maxAllocedNodes));
+			updateThreadData.emplace_back(UpdateThreadData());
+		}
 	}
-
 	// add one extra element for object-less requests
 	// numCurrExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
 	// numPrevExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
@@ -313,12 +313,18 @@ void QTPFS::PathManager::Load() {
 				pfsCheckSum ^= curRootNode->GetCheckSum(nodeLayers[layerNum]);
 			}
 			// pfsCheckSum ^= nodeTrees[layerNum]->GetCheckSum(nodeLayers[layerNum]);
-			maxNumLeafNodes = std::max(nodeLayers[layerNum].GetNumLeafNodes(), maxNumLeafNodes);
+			maxAllocedNodes = std::max(nodeLayers[layerNum].GetMaxNodesAlloced(), maxAllocedNodes);
 		}
 
 		{ SyncedUint tmp(pfsCheckSum); }
 
-		// PathSearch::InitGlobalQueue(maxNumLeafNodes);
+		// PathSearch::InitGlobalQueue(maxAllocedNodes);
+
+		int threads = ThreadPool::GetNumThreads();
+		searchThreadData.reserve(threads);
+		while (threads-- > 0) {
+			searchThreadData.emplace_back(SearchThreadData(maxAllocedNodes));
+		}
 	}
 
 	{

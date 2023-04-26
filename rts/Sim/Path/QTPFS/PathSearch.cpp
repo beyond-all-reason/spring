@@ -71,7 +71,9 @@ void QTPFS::PathSearch::Initialize(
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	ZoneScoped;
 	searchThreadData = threadData;
-	searchThreadData->Init(NodeLayer::POOL_TOTAL_SIZE, nodeLayer->GetNumLeafNodes());
+	// searchThreadData->Init(NodeLayer::POOL_TOTAL_SIZE, nodeLayer->GetNumLeafNodes());
+
+	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
 	openNodes = &searchThreadData->openNodes;
 
 	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);

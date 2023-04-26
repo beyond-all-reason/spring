@@ -176,7 +176,7 @@ namespace QTPFS {
 		unsigned int searchStateOffset;
 		// unsigned int numTerrainChanges;
 		unsigned int numPathRequests;
-		unsigned int maxNumLeafNodes;
+		// unsigned int maxNumLeafNodes;
 
 		std::int32_t refreshDirtyPathRateFrame = QTPFS_LAST_FRAME;
 		std::int32_t updateDirtyPathRate = 0;

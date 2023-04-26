@@ -215,8 +215,6 @@ namespace QTPFS {
 			hCost = QTPFS_POSITIVE_INFINITY;
 			index = other.index;
 			prevNode = other.prevNode;
-			// netpoints = other.netpoints;
-			// heapIndex = other.heapIndex;
 			searchState = other.searchState;
 			return *this;
 		}
@@ -248,7 +246,6 @@ namespace QTPFS {
 		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
 
 		unsigned int nodeNumber = -1u;
-		// unsigned int heapIndex = -1u;
 		unsigned int index = 0;
 		unsigned int searchState = 0;
 
