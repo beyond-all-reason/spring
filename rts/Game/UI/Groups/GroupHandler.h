@@ -50,6 +50,14 @@ public:
 
 		return &groups[iter->second];
 	}
+	int GetUnitGroupNum(int unitID) {
+		const auto iter = unitGroups.find(unitID);
+
+		if (iter == unitGroups.end())
+			return -1;
+
+		return iter->second;
+	}
 
 	const CGroup* GetGroup(int groupID) const { return &groups[groupID]; }
 	      CGroup* GetGroup(int groupID)       { return &groups[groupID]; }
