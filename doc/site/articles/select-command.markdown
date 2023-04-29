@@ -1,3 +1,10 @@
+---
+layout: default
+title: The select command
+parent: Articles
+permalink: /articles/select-command/
+---
+
 # The `select` command
 
 You can bind the command `select` to a key, in order to define custom selection commands. After select, you can specify a **selector**, that defines *which* units will be selected.
