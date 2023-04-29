@@ -9,6 +9,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/UI/MouseHandler.h"
+#include "Game/UI/Groups/GroupHandler.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -188,6 +189,14 @@ namespace {
 			cat = CCategoryHandler::Instance()->GetCategory(value);
 		},
 		cat = 0;
+	)
+
+	DECLARE_FILTER_EX(InGroup, 1, uiGroupHandlers[gu->myTeam].GetUnitGroupNum(unit->id) == groupNum,
+		int groupNum;
+		void SetParam(int index, const std::string& value) override {
+			groupNum = atoi(value.c_str());
+		},
+		groupNum = -1;
 	)
 //FIXME: std::strtof is in C99 which M$ doesn't bother to support.
 #ifdef _MSC_VER

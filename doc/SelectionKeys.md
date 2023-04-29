@@ -19,15 +19,17 @@ For example, `AllMap+_Builder+_SelectAll+` is a valid selector, where:
 Note that there is an **underscore** (`_`) between each element, even if there is already a plus sign (`+`), for hysterical raisins...
 
 ## Source
+
 The *SOURCE* describes the set of units that you want to filter and pick a selection from. For players, these are restricted your team. It can be one of
 
 - `AllMap`: All active units on the entire map.
 - `Visible`: All active units that are currently visible.
-- `FromMouse_<float>`: all units that are at most a distance of `<float>` away from the mouse cursor. 
-- `FromMouseC_<float>`: same as above, but using a vertical cylinder instead of a sphere. This is good for selecting airplanes or ships on deep water.
-- `PrevSelection`: the previous selection; that is, the one active before you hit the selection key 
+- `PrevSelection`: All units present in previous selection; that is, the one active before you hit the selection key.
+- `FromMouse_<float>`: All units that are at most a distance of `<float>` away from the mouse cursor.
+- `FromMouseC_<float>`: Same as above, but using a vertical cylinder instead of a sphere. This is good for selecting airplanes or ships on deep water.
 
 ## Filter
+
 The *FILTER* is an arbitrarily long list of filters. 
 
 Here are the filters. Note that "units" generally means both buildings and mobile units. Typing both got old real quick.
@@ -35,20 +37,20 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 ### `Not`
 
   Every filter can be preceded by `Not` to negate it. You have to use a `_` to separate the `Not` from the filter, as in `Not_Builder`.
-  
+
 ### `AbsoluteHealth_<float>`
 
   Keep only units that have an absolute health greater than `<float>` points.
-  
+
   - `AbsoluteHealth_100`: Keep only units that have **more** than 100 health points left.
   - `Not_AbsoluteHealth_100`: Keep only units that have **less** than 101 health points left.
 
 ### `Aircraft`
-  
+
   Keep only units that can fly.
 
 ### `Builder`
-  
+
   Keep only units and buildings that can construct. This means Factories, Construction Turrets, Constructors, but not Rezzers.
 
 ### `Buildoptions`
@@ -56,11 +58,11 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   Keep only units that can build other units or buildings.
 
 ### `Building`
-  
+
   Keep only buildings, not mobile units.
 
 ### `Category_<category>`
-  
+
   Keep only units of category `<category>`
 
 ### `Cloak`
@@ -72,31 +74,36 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   Keep only units that are currently cloaked.
 
 ### `Guarding`
-  
+
   Keep only units that currently have a **Guard** order.
 
 ### `IdMatches_<string>`
 
   Keep only units whose internal name (unitDef name) matches `<string>` **exactly**.
-  
+
   - `IdMatches_armcom`: keep only Armada Commanders (internally named `armcom`).
 
 ### `Idle`
-  
+
   Keep only units that are currently idle, i.e. do not have any active order.
 
-### `InHotkeyGroup`
-  
-  Keep only units that are in any hotkey group.
+### `InGroup_<int>`
+  Keep only units that are in control group `<int>`.
 
-  - `Not_InHotkeyGroup`: keep all units that are **not** currently in any hotkey group.
+  - `Not_InGroup_<int>`: keep all units that are **not** currently in control group `<int>`.
+
+### `InHotkeyGroup`
+
+  Keep only units that are in any control group.
+
+  - `Not_InHotkeyGroup`: keep all units that are **not** currently in any control group.
 
 ### `InPrevSel`
-  
+
   Keep only units of the same type (unitDefID) as any unit in the selection before this `select` command was run.
 
 ### `Jammer`
-  
+
   Keep only units that have a jammer radius greater than 0.
 
 ### `ManualFireUnit`:
@@ -104,11 +111,11 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   Keep only units that have a weapon that requires manual firing (currently only the commanders and Armada Thor).
 
 ### `NameContain_<string>`
-  
+
   Keep only units whose name contains the `<string>`.
 
 ### `Radar`
-  
+
   Keep only units that have a radar or sonar radius greater than 0.
 
 ### `Resurrect`
@@ -118,7 +125,7 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 ### `RelativeHealth_<float>`
 
   Keep only units that have health greater than `<float>` percent.
-  
+
   Example:
     - `Not_RelativeHealth_10`: Keep only units that have less than 10% health.
 
@@ -131,24 +138,24 @@ Here are the filters. Note that "units" generally means both buildings and mobil
   Keep only units that are stealthy.
 
 ### `Transport`
-  
+
   Keep only units that can transport other units.
 
 ### `Waiting`
-  
+
   Keep only units that currently have a **Wait** order.
 
 ### `WeaponRange_<float>`
-  
+
   Keep only units that have a maximum weapon range greater than `<float>`.
 
 ### `Weapons`
-  
+
   Keep only units that have any weapons.
 
 
-
 ## Conclusion
+
 The *CONCLUSION* specifies what to do with the units that are left from the source after running through all the filters.
 
 If the *CONCLUSION* starts with `_ClearSelection`, your new selection will replace the old one; otherwise, it will just add to it. It must be followed by exactly one of:
