@@ -198,12 +198,6 @@ namespace {
 		},
 		groupNum = -1;
 	)
-//FIXME: std::strtof is in C99 which M$ doesn't bother to support.
-#ifdef _MSC_VER
-	#define STRTOF strtod
-#else
-	#define STRTOF strtof
-#endif
 
 	DECLARE_FILTER_EX(RulesParamEquals, 2, unit->modParams.find(param) != unit->modParams.end() &&
 			((wantedValueStr.empty()) ? unit->modParams.find(param)->second.valueInt == wantedValue
@@ -221,7 +215,7 @@ namespace {
 				case 1: {
 					const char* cstr = value.c_str();
 					char* endNumPos = nullptr;
-					wantedValue = STRTOF(cstr, &endNumPos);
+					wantedValue = strtof(cstr, &endNumPos);
 					if (endNumPos == cstr) wantedValueStr = value;
 				} break;
 			}
@@ -240,7 +234,7 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 {
 	selection.clear();
 
-	std::string s = std::move(ReadToken(selectString));
+	std::string s = ReadToken(selectString);
 
 	switch (hashString(s.c_str())) {
 		case hashString("AllMap"): {
@@ -353,19 +347,19 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 	ReadDelimiter(selectString);
 
 	while (true) {
-		std::string filter = std::move(ReadDelimiter(selectString));
+		std::string filter = ReadDelimiter(selectString);
 
 		if (filter == "+")
 			break;
 
-		filter = std::move(ReadToken(selectString));
+		filter = ReadToken(selectString);
 
 		bool _not = false;
 
 		if (filter == "Not") {
 			_not = true;
 			ReadDelimiter(selectString);
-			filter = std::move(ReadToken(selectString));
+			filter = ReadToken(selectString);
 		}
 
 
@@ -402,7 +396,7 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 	}
 
 	ReadDelimiter(selectString);
-	s = std::move(ReadToken(selectString));
+	s = ReadToken(selectString);
 
 	if (s == "ClearSelection") {
 		selectedUnitsHandler.ClearSelected();
