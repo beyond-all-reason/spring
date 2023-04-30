@@ -17,7 +17,6 @@ void IInfoTextureHandler::Create()
 	if (
 		globalRendering->haveGLSL &&
 		globalRendering->supportNonPowerOfTwoTex &&
-		globalRendering->supportTextureQueryLOD &&
 		FBO::IsSupported() &&
 		glewIsSupported("GL_VERSION_3_0")
 	) {

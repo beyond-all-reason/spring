@@ -1,7 +1,4 @@
 return {
-	definitions = {
-		Spring.GetConfigInt("HighResInfoTexture") and "#define HIGH_QUALITY" or "",
-	},
 	vertex = [[#version 130
 		varying vec2 texCoord;
 
@@ -11,9 +8,9 @@ return {
 		}
 	]],
 	fragment = [[#version 130
-	#ifdef HIGH_QUALITY
-	#extension GL_ARB_texture_query_lod : enable
-	#endif
+		#extension GL_ARB_texture_query_lod : enable
+		#extension GL_EXT_gpu_shader4_1 : enable
+
 		uniform sampler2D tex0;
 		uniform sampler2D tex1;
 		varying vec2 texCoord;
@@ -21,7 +18,13 @@ return {
 		mat4 COLORMATRIX0 = mat4(0.00,3.00,1.80,1.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,1.0);
 		mat4 COLORMATRIX1 = mat4(0.90,0.00,0.00,1.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,1.0);
 
-	#ifdef HIGH_QUALITY
+		#if GL_ARB_texture_query_lod == 0
+			#define TEXTURE_QUERY_LOD textureQueryLOD
+		#elif GL_EXT_gpu_shader4_1 == 1
+			#define TEXTURE_QUERY_LOD textureQueryLod
+		#else
+			#define TEXTURE_QUERY_LOD FIXME
+		#endif
 
 		//! source: http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
 		float rand(vec2 n)
@@ -32,7 +35,7 @@ return {
 		//! source: http://www.iquilezles.org/www/articles/texture/texture.htm
 		vec4 getTexel(sampler2D tex, vec2 p)
 		{
-			int lod = int(textureQueryLOD(tex, p).x);
+			int lod = int(TEXTURE_QUERY_LOD(tex, p).x);
 			vec2 texSize = vec2(textureSize(tex, lod)) * 0.5;
 			p = p * texSize + 0.5;
 
@@ -58,9 +61,6 @@ return {
 
 			return c * 0.15;
 		}
-	#else
-		#define getTexel texture2D
-	#endif
 
 		void main() {
 			gl_FragColor  = vec4(0.0, 0.0, 0.0, 1.0);

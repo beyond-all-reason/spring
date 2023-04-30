@@ -1,7 +1,4 @@
 return {
-	definitions = {
-		Spring.GetConfigInt("HighResInfoTexture") and "#define HIGH_QUALITY" or "",
-	},
 	vertex = [[#version 130
 		varying vec2 texCoord;
 
@@ -11,19 +8,24 @@ return {
 		}
 	]],
 	fragment = [[#version 130
-	#ifdef HIGH_QUALITY
-	#extension GL_ARB_texture_query_lod : enable
-	#endif
+		#extension GL_ARB_texture_query_lod : enable
+		#extension GL_EXT_gpu_shader4_1 : enable
 
 		uniform sampler2D tex0;
 		varying vec2 texCoord;
 
-	#ifdef HIGH_QUALITY
+		#if GL_ARB_texture_query_lod == 0
+			#define TEXTURE_QUERY_LOD textureQueryLOD
+		#elif GL_EXT_gpu_shader4_1 == 1
+			#define TEXTURE_QUERY_LOD textureQueryLod
+		#else
+			#define TEXTURE_QUERY_LOD FIXME
+		#endif
 
 		//! source: http://www.iquilezles.org/www/articles/texture/texture.htm
 		vec4 getTexel(sampler2D tex, vec2 p)
 		{
-			int lod = int(textureQueryLOD(tex, p).x);
+			int lod = int(TEXTURE_QUERY_LOD(tex, p).x);
 			vec2 texSize = vec2(textureSize(tex, lod));
 			p = p * texSize + 0.5;
 
@@ -36,9 +38,6 @@ return {
 			p = (p - 0.5) / texSize;
 			return texture2D(tex, p);
 		}
-	#else
-		#define getTexel texture2D
-	#endif
 
 		void main() {
 			gl_FragColor = getTexel(tex0, texCoord);
