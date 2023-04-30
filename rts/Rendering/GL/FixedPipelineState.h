@@ -197,7 +197,7 @@ namespace GL {
 			DumpState(fullTuple);
 			HashState(fullTuple);
 
-			namedStates.emplace(std::string(funcName), std::move(NamedSingleState(func, argsTuple)));
+			namedStates.emplace(std::string(funcName), NamedSingleState(func, argsTuple));
 			return *this;
 		}
 
@@ -239,7 +239,7 @@ namespace GL {
 	template<typename ...T>
 	inline void FixedPipelineState::HashState(const std::tuple<T...>& tuple)
 	{
-		const auto lambda = [this](auto&&... args) -> uint64_t {
+		const auto lambda = [](auto&&... args) -> uint64_t {
 			return ((hashString(reinterpret_cast<const char*>(&args), sizeof(args)) * 65521) + ...);
 		};
 		stateHash += std::apply(lambda, tuple);

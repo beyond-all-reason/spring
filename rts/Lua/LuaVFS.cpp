@@ -508,7 +508,7 @@ int LuaVFS::ZlibCompress(lua_State* L)
 	size_t inSize = 0;
 	const std::uint8_t* inData = reinterpret_cast<const std::uint8_t*>(luaL_checklstring(L, 1, &inSize));
 
-	const std::vector<std::uint8_t> compressed = std::move(zlib::deflate(inData, inSize));
+	const std::vector<std::uint8_t> compressed = zlib::deflate(inData, inSize);
 
 	if (!compressed.empty()) {
 		lua_pushlstring(L, reinterpret_cast<const char*>(compressed.data()), compressed.size());
@@ -523,7 +523,7 @@ int LuaVFS::ZlibDecompress(lua_State* L)
 	size_t inSize = 0;
 	const std::uint8_t* inData = reinterpret_cast<const std::uint8_t*>(luaL_checklstring(L, 1, &inSize));
 
-	const std::vector<std::uint8_t> uncompressed = std::move(zlib::inflate(inData, inSize));
+	const std::vector<std::uint8_t> uncompressed = zlib::inflate(inData, inSize);
 
 	if (!uncompressed.empty()) {
 		lua_pushlstring(L, reinterpret_cast<const char*>(uncompressed.data()), uncompressed.size());

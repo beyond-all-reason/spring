@@ -220,11 +220,9 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 		// preload worker might be down in FillModel modifying it
 		// at the same time
 		preloadFutures.emplace_back(
-			std::move(
-				ThreadPool::Enqueue([modelName]() {
-					modelLoader.LoadModel(modelName, true);
-				})
-			)
+			ThreadPool::Enqueue([modelName]() {
+				modelLoader.LoadModel(modelName, true);
+			})
 		);
 	}
 	else {

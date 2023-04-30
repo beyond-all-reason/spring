@@ -600,7 +600,7 @@ void UDPConnection::ProcessRawPacket(Packet& incoming)
 			continue;
 		}
 
-		waitingPackets.emplace_back(c->chunkNumber, std::move(RawPacket(&c->data[0], c->data.size())));
+		waitingPackets.emplace_back(c->chunkNumber, RawPacket(&c->data[0], c->data.size()));
 		incomingChunkNums.insert(c->chunkNumber);
 	}
 
@@ -677,7 +677,7 @@ void UDPConnection::ProcessRawPacket(Packet& incoming)
 			} else {
 				if (pktLength >= 0) {
 					// partial packet in buffer
-					fragmentBuffer = std::move(RawPacket(bufp, msgLength));
+					fragmentBuffer = RawPacket(bufp, msgLength);
 					break;
 				}
 

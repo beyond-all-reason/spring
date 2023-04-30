@@ -359,7 +359,7 @@ bool CFileHandler::InsertRawFiles(
 	const string& pattern
 ) {
 #ifndef TOOLS
-	std::vector<string> found = std::move(dataDirsAccess.FindFiles(path, pattern));
+	std::vector<string> found = dataDirsAccess.FindFiles(path, pattern);
 
 	fileSet.reserve(fileSet.size() + found.size());
 
@@ -395,7 +395,7 @@ bool CFileHandler::InsertVFSFiles(
 		if (!spring::regex_match(f, regexpattern))
 			continue;
 
-		fileSet.emplace_back(std::move(prefix + f));
+		fileSet.emplace_back(prefix + f);
 	}
 #endif
 
@@ -440,7 +440,7 @@ bool CFileHandler::InsertRawDirs(
 #ifndef TOOLS
 	const spring::regex regexpattern{FileSystem::ConvertGlobToRegex(pattern), spring::regex::icase};
 
-	std::vector<string> found = std::move(dataDirsAccess.FindFiles(path, pattern, FileQueryFlags::ONLY_DIRS));
+	std::vector<string> found = dataDirsAccess.FindFiles(path, pattern, FileQueryFlags::ONLY_DIRS);
 
 	dirSet.reserve(dirSet.size() + found.size());
 
@@ -478,7 +478,7 @@ bool CFileHandler::InsertVFSDirs(
 		if (!spring::regex_match(f, regexpattern))
 			continue;
 
-		dirSet.emplace_back(std::move(prefix + f));
+		dirSet.emplace_back(prefix + f);
 	}
 #endif
 

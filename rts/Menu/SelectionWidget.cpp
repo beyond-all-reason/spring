@@ -100,8 +100,8 @@ void SelectionWidget::ShowDemoList(const std::function<void(const std::string&)>
 	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectDemo, this, std::placeholders::_1));
 	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
 
-	const std::string cwd = std::move(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd()));
-	const std::string dir = std::move(FileSystem::EnsurePathSepAtEnd("demos"));
+	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
+	const std::string dir = FileSystem::EnsurePathSepAtEnd("demos");
 
 	// FIXME: names overflow the box
 	for (const std::string& demo: dataDirsAccess.FindFiles(cwd + dir, "*.sdfz", 0)) {
@@ -120,8 +120,8 @@ void SelectionWidget::ShowSavegameList(const std::function<void(const std::strin
 	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectSavegame, this, std::placeholders::_1));
 	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
 
-	const std::string cwd = std::move(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd()));
-	const std::string dir = std::move(FileSystem::EnsurePathSepAtEnd("Saves"));
+	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
+	const std::string dir = FileSystem::EnsurePathSepAtEnd("Saves");
 
 	// FIXME: names overflow the box
 	/*
@@ -154,7 +154,7 @@ void SelectionWidget::ShowModList()
 	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectMod, this, std::placeholders::_1));
 	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
 
-	std::vector<CArchiveScanner::ArchiveData> found = std::move(archiveScanner->GetPrimaryMods());
+	std::vector<CArchiveScanner::ArchiveData> found = archiveScanner->GetPrimaryMods();
 	std::sort(found.begin(), found.end(), [](const CArchiveScanner::ArchiveData& a, const CArchiveScanner::ArchiveData& b) {
 		return (doj::alphanum_less<std::string>()(a.GetNameVersioned(), b.GetNameVersioned()));
 	});
@@ -175,7 +175,7 @@ void SelectionWidget::ShowMapList()
 	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectMap, this, std::placeholders::_1));
 	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
 
-	std::vector<std::string> arFound = std::move(archiveScanner->GetMaps());
+	std::vector<std::string> arFound = archiveScanner->GetMaps();
 	std::sort(arFound.begin(), arFound.end(), doj::alphanum_less<std::string>());
 
 	for (const std::string& arName: arFound) {

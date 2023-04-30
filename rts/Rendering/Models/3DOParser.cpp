@@ -233,7 +233,7 @@ C3DOTextureHandler::UnitTexture* S3DOPiece::GetTexture(
 
 	if (p->OffsetToTextureName != 0) {
 		int unused;
-		texName = std::move(StringToLower(GET_TEXT(p->OffsetToTextureName, fileBuf, unused)));
+		texName = StringToLower(GET_TEXT(p->OffsetToTextureName, fileBuf, unused));
 
 		if (teamTextures.find(texName) == teamTextures.end()) {
 			texName += "00";
@@ -356,7 +356,7 @@ S3DOPiece* C3DOParser::LoadPiece(S3DModel* model, S3DOPiece* parent, const std::
 
 	S3DOPiece* piece = AllocPiece();
 
-	piece->name = std::move(StringToLower(GET_TEXT(me.OffsetToObjectName, buf, curOffset)));
+	piece->name = StringToLower(GET_TEXT(me.OffsetToObjectName, buf, curOffset));
 	piece->parent = parent;
 	piece->SetParentModel(model);
 	piece->offset.x =  me.XFromParent * SCALE_FACTOR_3DO;

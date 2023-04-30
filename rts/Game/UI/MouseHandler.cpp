@@ -619,7 +619,7 @@ std::string CMouseHandler::GetCurrentTooltip() const
 		std::string s;
 
 		if (luaInputReceiver->IsAbove(lastx, lasty)) {
-			s = std::move(luaInputReceiver->GetTooltip(lastx, lasty));
+			s = luaInputReceiver->GetTooltip(lastx, lasty);
 
 			if (!s.empty())
 				return s;
@@ -631,7 +631,7 @@ std::string CMouseHandler::GetCurrentTooltip() const
 			if (!recv->IsAbove(lastx, lasty))
 				continue;
 
-			s = std::move(recv->GetTooltip(lastx, lasty));
+			s = recv->GetTooltip(lastx, lasty);
 
 			if (!s.empty())
 				return s;
@@ -660,7 +660,7 @@ std::string CMouseHandler::GetCurrentTooltip() const
 		if (feature != nullptr) return CTooltipConsole::MakeFeatureString(feature);
 	}
 
-	const string selTip = std::move(selectedUnitsHandler.GetTooltip());
+	const string selTip = selectedUnitsHandler.GetTooltip();
 
 	if (!selTip.empty())
 		return selTip;
