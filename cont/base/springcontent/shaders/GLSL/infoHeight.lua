@@ -18,7 +18,7 @@ return {
 		uniform sampler2D tex0;
 		varying vec2 texCoord;
 
-	#ifdef HIGH_QUALITY
+	#if defined(HIGH_QUALITY) && (GL_ARB_texture_query_lod == 1)
 
 		//! source: http://www.iquilezles.org/www/articles/texture/texture.htm
 		vec4 getTexel(sampler2D tex, vec2 p)

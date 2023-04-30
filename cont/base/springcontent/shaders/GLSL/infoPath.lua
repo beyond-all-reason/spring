@@ -20,7 +20,7 @@ return {
 
 		mat4 COLORMATRIX0 = mat4(0.80,0.00,0.00,1.0, 0.00,0.80,0.20,1.0, 1.0,0.6,0.0,1.0, 0.0,0.0,0.0,1.0);
 
-	#ifdef HIGH_QUALITY
+	#if defined(HIGH_QUALITY) && (GL_ARB_texture_query_lod == 1)
 
 		//! source: http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
 		float rand(vec2 n)
