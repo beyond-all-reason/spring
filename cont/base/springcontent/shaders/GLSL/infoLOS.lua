@@ -1,4 +1,7 @@
 return {
+	definitions = {
+		Spring.GetConfigInt("HighResInfoTexture") and "#define HIGH_QUALITY" or "",
+	},
 	vertex = [[#version 130
 		varying vec2 texCoord;
 
@@ -8,9 +11,9 @@ return {
 		}
 	]],
 	fragment = [[#version 130
-		#extension GL_ARB_texture_query_lod : enable
-		#extension GL_EXT_gpu_shader4_1 : enable
-
+	#ifdef HIGH_QUALITY
+	#extension GL_ARB_texture_query_lod : enable
+	#endif
 		uniform float time;
 
 		uniform vec4 alwaysColor;
@@ -24,13 +27,7 @@ return {
 		uniform sampler2D tex2;
 		varying vec2 texCoord;
 
-		#if GL_ARB_texture_query_lod == 0
-			#define TEXTURE_QUERY_LOD textureQueryLOD
-		#elif GL_EXT_gpu_shader4_1 == 1
-			#define TEXTURE_QUERY_LOD textureQueryLod
-		#else
-			#define TEXTURE_QUERY_LOD FIXME
-		#endif
+	#ifdef HIGH_QUALITY
 
 		//! source: http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
 		float rand(const in vec2 n)
@@ -40,7 +37,7 @@ return {
 
 		vec4 getTexel(in sampler2D tex, in vec2 p)
 		{
-			int lod = int(TEXTURE_QUERY_LOD(tex, p).x);
+			int lod = int(textureQueryLOD(tex, p).x);
 			vec2 texSize = vec2(textureSize(tex, lod));
 			vec2 off = vec2(time);
 			vec4 c = vec4(0.0);
@@ -53,6 +50,9 @@ return {
 
 			return smoothstep(0.5, 1.0, c);
 		}
+	#else
+		#define getTexel texture2D
+	#endif
 
 		void main() {
 			gl_FragColor  = vec4(0.0);
@@ -62,13 +62,13 @@ return {
 			gl_FragColor += jamColor * radarJammer.g;
 			gl_FragColor += radarColor2 * step(0.8, radarJammer.r) * radarJammer.r;
 			gl_FragColor.rgb = fract(gl_FragColor.rgb);
-
+			
 			float los = getTexel(tex0, texCoord).r;
 			float airlos = getTexel(tex1, texCoord).r;
 			gl_FragColor += losColor * ((los + airlos) * 0.5);
-
+			
 			gl_FragColor += radarColor * step(0.2, fract(1 - radarJammer.r));
-
+			
 			gl_FragColor += alwaysColor;
 			gl_FragColor.a = 0.05;
 		}

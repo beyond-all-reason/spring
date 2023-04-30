@@ -125,7 +125,9 @@ void CInfoTextureHandler::Update()
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 
-	for (auto& [name, tex] : infoTextures) {
+	for (auto& p: infoTextures) {
+		CPboInfoTexture* tex = p.second;
+
 		// force first update except for combiner; hides visible uninitialized texmem
 		if ((firstUpdate && tex != infoTex) || tex->IsUpdateNeeded())
 			tex->Update();

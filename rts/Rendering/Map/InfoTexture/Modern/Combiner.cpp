@@ -11,14 +11,15 @@
 #include "System/Log/ILog.h"
 
 
-CONFIG(bool, HighResInfoTexture).deprecated(true);
+CONFIG(bool, HighResInfoTexture).defaultValue(true).description("Use full heightmap resolution info texture (true), or half resolution (false)");
 
 
 CInfoTextureCombiner::CInfoTextureCombiner()
 : CPboInfoTexture("info")
 , disabled(true)
 {
-	texSize = int2(mapDims.pwr2mapx, mapDims.pwr2mapy);
+	texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(mapDims.pwr2mapx, mapDims.pwr2mapy) : int2(mapDims.pwr2mapx >> 1, mapDims.pwr2mapy >> 1);
+	//texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(512, 512) : int2(256, 256);
 	texChannels = 4;
 
 	glGenTextures(1, &texture);
