@@ -27,7 +27,7 @@ return {
 		uniform sampler2D tex2;
 		varying vec2 texCoord;
 
-	#ifdef HIGH_QUALITY
+	#if defined(HIGH_QUALITY) && (GL_ARB_texture_query_lod == 1)
 
 		//! source: http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
 		float rand(const in vec2 n)
