@@ -85,6 +85,7 @@ public:
 
 public:
 	virtual ~ConfigHandler() {}
+	virtual void FinalizeLoad() = 0;
 
 	/**
 	 * @brief Set string config value

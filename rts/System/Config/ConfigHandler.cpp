@@ -31,6 +31,7 @@ class ConfigHandlerImpl : public ConfigHandler
 public:
 	ConfigHandlerImpl(const std::vector<std::string>& locations, bool safemode);
 	~ConfigHandlerImpl() override;
+	void FinalizeLoad() override;
 
 	void SetString(const std::string& key, const std::string& value, bool useOverlay, bool notify) override;
 	std::string GetString(const std::string& key) const override;
@@ -119,10 +120,6 @@ ConfigHandlerImpl::ConfigHandlerImpl(const std::vector<std::string>& locations, 
 	sources.push_back(new DefaultConfigSource());
 
 	assert(sources.size() <= sources_num);
-
-	// Perform migrations that need to happen on every load.
-	RemoveDefaults();
-	RemoveDeprecated();
 }
 
 ConfigHandlerImpl::~ConfigHandlerImpl()
@@ -134,6 +131,14 @@ ConfigHandlerImpl::~ConfigHandlerImpl()
 	for (ReadOnlyConfigSource* s: sources) {
 		delete s;
 	}
+}
+
+void ConfigHandlerImpl::FinalizeLoad()
+{
+	if (!GetBool("StoreDefaultSettings"))
+		RemoveDefaults();
+
+	RemoveDeprecated();
 }
 
 /**
@@ -418,6 +423,7 @@ void ConfigHandler::Instantiate(const std::string configSource, const bool safem
 	}
 
 	configHandler = new ConfigHandlerImpl(locations, safemode);
+	configHandler->FinalizeLoad();
 
 	//assert(configHandler->GetString("test") == "x y z");
 }
