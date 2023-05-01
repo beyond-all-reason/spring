@@ -15,6 +15,8 @@
 
 #include <stdexcept>
 
+CONFIG(bool, StoreDefaultSettings).defaultValue(false).description("springsettings.cfg will save the settings values, if they match the implicit defaults and were set by a user explicitly");
+
 /******************************************************************************/
 
 typedef std::map<std::string, std::string> StringMap;
@@ -310,16 +312,18 @@ void ConfigHandlerImpl::SetString(const std::string& key, const std::string& val
 		++it; // skip writableSource
 
 		bool deleted = false;
-
-		for (; it != sources.end(); ++it) {
-			if ((*it)->IsSet(key)) {
-				if ((*it)->GetString(key) == value) {
-					// key is being set to the default value,
-					// delete the key instead of setting it.
-					writableSource->Delete(key);
-					deleted = true;
+		// try to delete key/value pair if "StoreDefaultSettings" is false and the value is set to the default value
+		if (!configHandler->GetBool("StoreDefaultSettings")) {
+			for (; it != sources.end(); ++it) {
+				if ((*it)->IsSet(key)) {
+					if ((*it)->GetString(key) == value) {
+						// key is being set to the default value,
+						// delete the key instead of setting it.
+						writableSource->Delete(key);
+						deleted = true;
+					}
+					break;
 				}
-				break;
 			}
 		}
 
