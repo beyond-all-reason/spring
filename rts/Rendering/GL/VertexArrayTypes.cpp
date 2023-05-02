@@ -75,5 +75,4 @@ std::array<AttributeDef, 3> VA_TYPE_2DTC::attributeDefs = {
 	VA_ATTR_DEF(VA_TYPE_2DTC, 2, 4, GL_UNSIGNED_BYTE, c, true, "color")
 };
 
-#undef VA_TYPE_OFFSET
 #undef VA_ATTR_DEF
