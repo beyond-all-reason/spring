@@ -242,7 +242,7 @@ void LuaVAOImpl::CondInitVAO()
 		oldIndxVBOId = indxLuaVBO->GetId();
 	}
 
-	#define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
+	#define INT2PTR(x) (reinterpret_cast<void*>(static_cast<intptr_t>(x)))
 
 	GLenum indMin = ~0u;
 	GLenum indMax =  0u;
@@ -434,7 +434,7 @@ void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, s
 
 	vao->Bind();
 
-#define INT2PTR(x) ((void*)static_cast<intptr_t>(x))
+	#define INT2PTR(x) (reinterpret_cast<void*>(static_cast<intptr_t>(x)))
 	if (result.instCount == 0) {
 		if (result.baseVertex == 0)
 			glDrawElements(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes));
@@ -450,7 +450,7 @@ void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, s
 				glDrawElementsInstancedBaseVertex(mode, result.drawCount, indexType, INT2PTR(indElemOffsetInBytes), result.instCount, result.baseVertex);
 		}
 	}
-#undef INT2PTR
+	#undef INT2PTR
 
 	vao->Unbind();
 

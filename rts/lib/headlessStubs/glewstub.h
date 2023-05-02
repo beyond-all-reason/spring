@@ -104,6 +104,8 @@ extern "C" {
 #define GLEW_ARB_texture_storage GL_FALSE
 #define GLEW_ARB_copy_image GL_FALSE
 #define GLEW_EXT_texture_array GL_FALSE
+#define GLEW_ARB_draw_indirect GL_FALSE
+#define GLEW_ARB_base_instance GL_FALSE
 
 #define GLXEW_SGI_video_sync GL_FALSE
 
