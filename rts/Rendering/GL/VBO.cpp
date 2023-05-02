@@ -262,7 +262,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 
 		const GLenum err = glGetError();
 		if (err != GL_NO_ERROR) {
-			LOG_L(L_ERROR, "[VBO::%s(rbsize=%lu,wbsize=%lu,rbglsize=%lu,wbglsize=%lu,usage=%u)] id=%u tgt=0x%x err=0x%x",
+			LOG_L(L_ERROR, "[VBO::%s(rbsize=%u,wbsize=%u,rbglsize=%u,wbglsize=%u,usage=%u)] id=%u tgt=0x%x err=0x%x",
 				__func__,
 				static_cast<uint32_t>(oldSize),
 				static_cast<uint32_t>(bufSize),
