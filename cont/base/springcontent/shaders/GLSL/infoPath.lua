@@ -2,17 +2,20 @@ return {
 	definitions = {
 		Spring.GetConfigInt("HighResInfoTexture") and "#define HIGH_QUALITY" or "",
 	},
-	vertex = [[#version 130
-		varying vec2 texCoord;
+	vertex = [[
+	#version 130
+	varying vec2 texCoord;
 
-		void main() {
-			texCoord = gl_MultiTexCoord0.st;
-			gl_Position = vec4(gl_Vertex.xyz, 1.0);
-		}
+	void main() {
+		texCoord = gl_MultiTexCoord0.st;
+		gl_Position = vec4(gl_Vertex.xyz, 1.0);
+	}
 	]],
-	fragment = [[#version 130
+	fragment = [[
+	#version 130
 	#ifdef HIGH_QUALITY
-	#extension GL_ARB_texture_query_lod : enable
+		#extension GL_ARB_texture_query_lod : enable
+		#extension GL_EXT_gpu_shader4_1 : enable
 	#endif
 		uniform sampler2D tex0;
 		uniform sampler2D tex1;
@@ -20,12 +23,20 @@ return {
 
 		mat4 COLORMATRIX0 = mat4(0.80,0.00,0.00,1.0, 0.00,0.80,0.20,1.0, 1.0,0.6,0.0,1.0, 0.0,0.0,0.0,1.0);
 
-	#if defined(HIGH_QUALITY) && (GL_ARB_texture_query_lod == 1)
+	#ifdef HIGH_QUALITY
+		#if GL_ARB_texture_query_lod == 1
+			#define GET_TEXLOD(tex, p) (int(textureQueryLOD(tex, p).x))
+		#elif GL_EXT_gpu_shader4_1 == 1
+			#define GET_TEXLOD(tex, p) (int(textureQueryLod(tex, p).x))
+		#else
+			#define GET_TEXLOD(tex, p) (0)
+		#endif
 
-		//! source: http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
-		float rand(vec2 n)
-		{
-			return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
+		#define HASHSCALE1 443.8975
+		float rand(vec2 p) {
+			vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);
+			p3 += dot(p3, p3.yzx + 19.19);
+			return fract((p3.x + p3.y) * p3.z);
 		}
 
 		//! source: http://www.iquilezles.org/www/articles/texture/texture.htm
@@ -37,7 +48,7 @@ return {
 
 			vec2 i = floor(p);
 			vec2 f = p - i;
-			vec2 ff = f*f;
+			vec2 ff = f * f;
 			f = ff * f * ((ff * 6.0 - f * 15.0) + 10.0);
 			p = i + f;
 
@@ -61,18 +72,18 @@ return {
 		#define getTexel texture2D
 	#endif
 
-		void main() {
-			vec4 null = vec4(0.5,0.5,0.5,1.0);
+	void main() {
+		vec4 null = vec4(0.5,0.5,0.5,1.0);
 
-			vec4 pathData = texture2D(tex0, texCoord);
-			gl_FragColor = COLORMATRIX0 * pathData;
+		vec4 pathData = texture2D(tex0, texCoord);
+		gl_FragColor = COLORMATRIX0 * pathData;
 
-			gl_FragColor.r -= smoothstep(0.75, 1.0, pathData.r) * 0.3;
-			gl_FragColor.b += smoothstep(0.75, 1.0, pathData.r) * 1.0;
+		gl_FragColor.r -= smoothstep(0.75, 1.0, pathData.r) * 0.3;
+		gl_FragColor.b += smoothstep(0.75, 1.0, pathData.r) * 1.0;
 
-			gl_FragColor = mix(vec4(1.0), gl_FragColor, getTexel(tex1, texCoord).r * 0.35 + 0.7);
-			gl_FragColor.a = 0.3;
-		}
+		gl_FragColor = mix(vec4(1.0), gl_FragColor, getTexel(tex1, texCoord).r * 0.35 + 0.7);
+		gl_FragColor.a = 0.3;
+	}
 	]],
 	uniformInt = {
 		tex0 = 0,
