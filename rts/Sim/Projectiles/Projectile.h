@@ -92,7 +92,7 @@ public:
 	// UNSYNCED ONLY
 	CMatrix44f GetTransformMatrix(bool offsetPos) const;
 
-	float GetSortDist() const { return sortDist; }
+	const float& GetSortDist() const { return sortDist; }
 	void SetSortDist(float d) { sortDist = d + sortDistOffset; }
 public:
 	bool synced = false;           // is this projectile part of the simulation?

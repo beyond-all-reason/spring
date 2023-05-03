@@ -167,23 +167,9 @@ private:
 	/// projectiles with a model
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
-	/// {[0] := unsorted, [1] := distance-sorted} projectiles;
 	/// used to render particle effects in back-to-front order
-	std::vector<CProjectile*> sortedProjectiles[2];
-
-	auto GetSortingPredicate() const {
-		auto sp = [this](const CProjectile* p1, const CProjectile* p2)
-		{
-			if (wantDrawOrder && p1->drawOrder != p2->drawOrder)
-				return (p1->drawOrder < p2->drawOrder);
-
-			if (p1->GetSortDist() != p2->GetSortDist()) // strict ordering required
-				return (p1->GetSortDist() > p2->GetSortDist());
-
-			return (p1 > p2);
-		};
-		return sp;
-	}
+	std::vector<CProjectile*> sortedProjectiles;
+	std::vector<CProjectile*> unsortedProjectiles;
 
 	bool drawSorted = true;
 

@@ -8,7 +8,6 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/LoadScreen.h"
 #include "Lua/LuaParser.h"
-#include "Map/MapInfo.h"
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
@@ -17,9 +16,7 @@
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Shaders/Shader.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/ColorMap.h"
-#include "Rendering/Textures/S3OTextureHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -33,15 +30,25 @@
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Platform/Misc.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
+#include <tuple>
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
+
+
+static bool CProjectileDrawOrderSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
+	return std::tie(p2->drawOrder, p1->GetSortDist(), p1) > std::tie(p1->drawOrder, p2->GetSortDist(), p2);
+}
+
+static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
+	return std::tie(p1->GetSortDist(), p1) > std::tie(p2->GetSortDist(), p2);
+};
+
 
 CProjectileDrawer* projectileDrawer = nullptr;
 
@@ -327,8 +334,8 @@ void CProjectileDrawer::Kill() {
 	smokeTextures.clear();
 
 	modellessProjectiles.clear();
-	sortedProjectiles[0].clear();
-	sortedProjectiles[1].clear();
+	sortedProjectiles.clear();
+	unsortedProjectiles.clear();
 
 	perlinFB.Kill();
 
@@ -617,17 +624,12 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
 
+	if (drawSorted && pro->drawSorted) {
+		sortedProjectiles.emplace_back(pro);
+	} else {
+		unsortedProjectiles.emplace_back(pro);
+	}
 
-	using PushProjectileFunctorsT = void (*)(CProjectileDrawer*, CProjectile*);
-	static PushProjectileFunctorsT PushProjectileFunctors[] = {
-		[](CProjectileDrawer* pd, CProjectile* pro) -> void {
-			pd->sortedProjectiles[0].emplace_back(pro);
-		},
-		[](CProjectileDrawer* pd, CProjectile* pro) -> void {
-			spring::VectorInsertSorted(pd->sortedProjectiles[1], pro, pd->GetSortingPredicate());
-		}
-	};
-	PushProjectileFunctors[drawSorted && pro->drawSorted](this, pro);
 }
 
 
@@ -756,8 +758,9 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 	ISky::GetSky()->SetupFog();
 
-	sortedProjectiles[0].clear();
-	sortedProjectiles[1].clear();
+
+	sortedProjectiles.clear();
+	unsortedProjectiles.clear();
 
 	{
 		{
@@ -777,11 +780,16 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// only z-sorted (if the projectiles indicate they want to be)
 		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
-		for (auto p : sortedProjectiles[1]) {
+		if (wantDrawOrder)
+			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+		else
+			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+
+		for (auto p : sortedProjectiles) {
 			p->Draw();
 		}
 
-		for (auto p : sortedProjectiles[0]) {
+		for (auto p : unsortedProjectiles) {
 			p->Draw();
 		}
 	}
