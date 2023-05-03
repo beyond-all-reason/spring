@@ -73,6 +73,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	searchThreadData = threadData;
 	// searchThreadData->Init(NodeLayer::POOL_TOTAL_SIZE, nodeLayer->GetNumLeafNodes());
 
+	// TODO: do this a little later - after shared map has been checked
 	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
 	openNodes = &searchThreadData->openNodes;
 

@@ -199,9 +199,8 @@ namespace QTPFS {
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
 
-		// TODO: Move to tread storage
-		// std::vector<INode*> selectedNodes;
-		// std::vector<INode*> openNodes;
+		std::vector<INode*> selectedNodes;
+		std::vector<INode*> openNodes;
 
 		std::vector<SpeedModType> curSpeedMods;
 		// std::vector<SpeedModType> oldSpeedMods;

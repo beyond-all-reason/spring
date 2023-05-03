@@ -977,12 +977,9 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// 		, path->GetSourcePoint(), path->GetTargetPoint()
 	// 		, MAP_RECTANGLE, &searchThreadData[currentThread]);
 	// path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
-	search->InitializeThread(&searchThreadData[currentThread]);
 
 	entt::entity chainHeadEntity = entt::null;
 	{
-		ZoneScopedN("pre-check shared path");
-		// #ifdef QTPFS_SEARCH_SHARED_PATHS
 		SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
 		assert (sharedPathsIt != sharedPaths.end());
 
@@ -992,18 +989,13 @@ bool QTPFS::PathManager::ExecuteSearch(
 			if (pathIsCopyable) {
 				auto& headChainPath = registry.get<IPath>(chainHeadEntity);
 				search->SharedFinalize(&headChainPath, path);
-				// if (search->SharedFinalize(&headChainPath, path)) {
-					// DeleteSearch(search, searches, searchesIt);
-				// 	return false;
-				// }
 			}
 			return false;
 		}
-		// #endif
 	}
 
-	// removes path from temp-paths, adds it to live-paths
-	// if (search->Execute(searchStateOffset, numTerrainChanges)) {
+	search->InitializeThread(&searchThreadData[currentThread]);
+
 	if (search->Execute(searchStateOffset)) {
 		search->Finalize(path);
 
