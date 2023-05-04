@@ -594,18 +594,18 @@ void CProjectileDrawer::DrawProjectilesSet(const std::vector<CProjectile*>& proj
 	}
 }
 
-bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, const CSolidObject* owner)
+bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 {
 	auto& th = teamHandler;
 	auto& lh = losHandler;
-	return (gu->spectatingFullView || (owner != nullptr && th.Ally(owner->allyteam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
+	return (gu->spectatingFullView || (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
 }
 
 void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
 	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
 
-	if (!CanDrawProjectile(pro, pro->owner()))
+	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
 		return;
 
 
@@ -655,7 +655,7 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
-	if (CanDrawProjectile(p, p->owner())) {
+	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();
 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
@@ -685,7 +685,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 			const auto& projectileBin = mdlRenderer.GetObjectBin(i);
 
 			for (CProjectile* p: projectileBin) {
-				if (!CanDrawProjectile(p, p->owner()))
+				if (!CanDrawProjectile(p, p->GetAllyteamID()))
 					continue;
 
 				p->DrawOnMinimap();
@@ -695,7 +695,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 
 	if (!modellessProjectiles.empty()) {
 		for (CProjectile* p: modellessProjectiles) {
-			if (!CanDrawProjectile(p, p->owner()))
+			if (!CanDrawProjectile(p, p->GetAllyteamID()))
 				continue;
 
 			p->DrawOnMinimap();

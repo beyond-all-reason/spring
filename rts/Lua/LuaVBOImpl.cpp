@@ -947,7 +947,7 @@ size_t LuaVBOImpl::MatrixDataFromProjectileIDsImpl(const Iterable& ids, int attr
 		const CWeaponProjectile* wp = p->weapon ? static_cast<const CWeaponProjectile*>(p) : nullptr;
 		const bool doOffset = wp && wp->GetProjectileType() == WEAPON_MISSILE_PROJECTILE;
 
-		const CMatrix44f trMat = projectileDrawer->CanDrawProjectile(p, /*p->owner()*/ nullptr) ?
+		const CMatrix44f trMat = projectileDrawer->CanDrawProjectile(p, -1) ?
 			p->GetTransformMatrix(doOffset) :
 			CMatrix44f::Zero();
 

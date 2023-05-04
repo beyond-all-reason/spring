@@ -124,7 +124,7 @@ public:
 
 	AtlasedTexture* seismictex = nullptr;
 public:
-	static bool CanDrawProjectile(const CProjectile* pro, const CSolidObject* owner);
+	static bool CanDrawProjectile(const CProjectile* pro, int allyTeam);
 private:
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
