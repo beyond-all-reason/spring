@@ -356,7 +356,7 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
 			break;
 		}
-		for (int level = 0; level < levels; level)
+		for (int level = 0; level < levels; ++level)
 			glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
 
 		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
@@ -381,7 +381,7 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
 			break;
 		}
-		for (int level = 0; level < levels; level)
+		for (int level = 0; level < levels; ++level)
 			glTexImage3D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), std::max(depth >> level, 1), 0, format, type, nullptr);
 
 		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
