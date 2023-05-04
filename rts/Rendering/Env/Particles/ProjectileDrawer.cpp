@@ -42,11 +42,11 @@ CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften 
 
 
 static bool CProjectileDrawOrderSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::tie(p2->drawOrder, p1->GetSortDist(), p1) > std::tie(p1->drawOrder, p2->GetSortDist(), p2);
+	return std::make_tuple(p2->drawOrder, p1->GetSortDist(), p1) > std::make_tuple(p1->drawOrder, p2->GetSortDist(), p2);
 }
 
 static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::tie(p1->GetSortDist(), p1) > std::tie(p2->GetSortDist(), p2);
+	return std::make_tuple(p1->GetSortDist(), p1) > std::make_tuple(p2->GetSortDist(), p2);
 };
 
 
