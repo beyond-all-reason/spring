@@ -506,8 +506,8 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 			if (!unit->drawIcon)
 				continue;
 
-			const bool cantSee = !(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_CONTRADAR)) && (unit->losStatus[allyTeam] & (LOS_PREVLOS));
-			if (cantSee)
+			const bool canSee = gu->spectatingFullView || (unit->losStatus[gu->myAllyTeam] && (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS) == (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS));
+			if (!canSee)
 				continue;
 
 			assert(unit->myIcon == icon);
