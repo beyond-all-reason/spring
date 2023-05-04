@@ -79,8 +79,22 @@ void CGame::SendClientProcUsage()
 
 		if (playing) {
 			const float simProcUsage = (profiler.GetTimePercentage("Sim"));
-			const float drawProcUsage = (profiler.GetTimePercentage("Draw") / std::max(1.0f, globalRendering->FPS)) * CGlobalUnsynced::minDrawFPS;
-			const float totalProcUsage = simProcUsage + drawProcUsage;
+			const float drawProcUsage = (profiler.GetTimePercentage("Draw") / std::max(1.0f, globalRendering->FPS)) * globalConfig.minDrawFPS;
+			// const float totalProcUsage = simProcUsage + drawProcUsage;
+
+			// Gradually apply the time required for the minimum frames to the CPU report if the
+			// sim CPU usage is not leaving enough time for drawing frames. Doing this allows
+			// for minDrawFPS to be configurable and reduce the impact on sim performance if
+			// set to a value greater than 2.
+			//
+			// For example: if 5% of CPU time is need for minimum draw frames, then:
+			//   Apply 1% to the CPU report if the available time is 14%
+			//   Apply the full 5% to CPU report if the available time is 10% or less
+			const float cpuUsageAdjust = std::min(std::max((drawProcUsage*3.f) - (1.f - simProcUsage), 0.f), drawProcUsage);
+			const float totalProcUsage = std::min(simProcUsage + cpuUsageAdjust, 1.f);
+
+			// LOG("%s: simProcUsage=%f, drawProcUsage=%f, maxCpuAdjust=%f, totalProcUsage=%f"
+			// 		, __func__, simProcUsage, drawProcUsage, cpuUsageAdjust, totalProcUsage);
 
 			// take the minimum drawframes into account, too
 			clientNet->Send(CBaseNetProtocol::Get().SendCPUUsage(totalProcUsage));
@@ -212,7 +226,7 @@ void CGame::UpdateNetMessageProcessingTimeLeft()
 	} else {
 		// ensure ClientReadNet returns at least every 15 simframes
 		// so CGame can process keyboard input, and render etc.
-		msgProcTimeLeft = (GAME_SPEED / float(CGlobalUnsynced::minDrawFPS) * gs->wantedSpeedFactor) * 1000.0f;
+		msgProcTimeLeft = (GAME_SPEED / float(globalConfig.minDrawFPS) * gs->wantedSpeedFactor) * 1000.0f;
 	}
 }
 
@@ -223,13 +237,11 @@ float CGame::GetNetMessageProcessingTimeLimit() const
 	//  -> try to spend minimum 20% of the time in drawing
 	//  -> use remaining 80% for reconnecting
 	// (maxSimFPS / minDrawFPS) is desired number of simframes per drawframe
-	// const float maxSimFPS    = (1.0f - CGlobalUnsynced::reconnectSimDrawBalance) * 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
-	// const float minDrawFPS   =         CGlobalUnsynced::reconnectSimDrawBalance  * 1000.0f / std::max(0.01f, gu->avgDrawFrameTime);
-	const float maxSimFPS    = 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
-	const float minDrawFPS   = CGlobalUnsynced::minDrawFPS;
+	const float maxSimFPS    = (1.0f - globalConfig.minSimDrawBalance) * 1000.0f / std::max(0.01f, gu->avgSimFrameTime);
+	const float minDrawFPS   =         globalConfig.minSimDrawBalance  * 1000.0f / std::max(0.01f, gu->avgDrawFrameTime);
 	const float simDrawRatio = maxSimFPS / minDrawFPS;
 
-	return Clamp(simDrawRatio * gu->avgSimFrameTime, 5.0f, 1000.0f / CGlobalUnsynced::minDrawFPS);
+	return Clamp(simDrawRatio * gu->avgSimFrameTime, 5.0f, 1000.0f / globalConfig.minDrawFPS);
 }
 
 void CGame::ClientReadNet()

@@ -941,7 +941,7 @@ void CGameServer::LagProtection()
 #ifndef DEDICATED
 		// in non-dedicated hosting, we'll add an additional safeguard to make sure the host can keep up with the game's speed
 		// adjust game speed to localclient's (:= host) maximum SimFrame rate
-		const float invSimDrawFract = 1.0f - CGlobalUnsynced::reconnectSimDrawBalance;
+		const float invSimDrawFract = 1.0f - globalConfig.minSimDrawBalance;
 		const float maxSimFrameRate = (1000.0f / gu->avgSimFrameTime) * invSimDrawFract;
 
 		newSpeed = Clamp(newSpeed, 0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
