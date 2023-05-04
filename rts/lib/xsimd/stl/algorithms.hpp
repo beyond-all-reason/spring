@@ -197,6 +197,76 @@ namespace xsimd
         return init;
     }
 
+    template <class Iterator1, class Iterator2, class InitArray, class ...BinaryFunction, size_t N = sizeof...(BinaryFunction)>
+    InitArray reduce(Iterator1 first, Iterator2 last, InitArray init, BinaryFunction&& ... binfun)
+    {
+        using value_type = typename std::decay<decltype(*first)>::type;
+        using traits = simd_traits<value_type>;
+        using batch_type = typename traits::type;
+
+        std::size_t size = static_cast<std::size_t>(std::distance(first, last));
+        constexpr std::size_t simd_size = traits::size;
+
+        if(size < simd_size)
+        {
+            while(first != last)
+            {
+                size_t fi = 0;
+                ((init[fi++] = binfun(init[fi], *first++)), ...);
+            }
+            return init;
+        }
+
+        const auto* const ptr_begin = &(*first);
+
+        std::size_t align_begin = xsimd::get_alignment_offset(ptr_begin, size, simd_size);
+        std::size_t align_end = align_begin + ((size - align_begin) & ~(simd_size - 1));
+
+        // reduce initial unaligned part
+        for (std::size_t i = 0; i < align_begin; ++i)
+        {
+            size_t fi = 0;
+            ((init[fi++] = binfun(init[fi], first[i])), ...);
+        }
+
+        // reduce aligned part
+        std::array<batch_type, N> batch_init;
+        batch_type batch;
+
+        auto ptr = ptr_begin + align_begin;
+
+        for (size_t i = 0; i < N; ++i)
+            xsimd::load_aligned(ptr, batch_init[i]);
+
+        ptr += simd_size;
+        for (auto const end = ptr_begin + align_end; ptr < end; ptr += simd_size)
+        {
+            xsimd::load_aligned(ptr, batch);
+            size_t fi = 0;
+            ((batch_init[fi++] = binfun(batch_init[fi], batch)), ...);
+        }
+
+        // reduce across batch
+        alignas(batch_type) std::array<value_type, simd_size> arr;
+        const auto ReduceAcross = [&arr, &init, &batch_init, first, align_end, size](auto&& binFunScalar, size_t fi) {
+            xsimd::store_aligned(arr.data(), batch_init[fi]);
+
+            for (auto x : arr)
+                init[fi] = binFunScalar(init[fi], x);
+
+            // reduce final unaligned part
+            for (std::size_t i = align_end; i < size; ++i)
+            {
+                init[fi] = binFunScalar(init[fi], first[i]);
+            }
+        };
+        {
+            size_t fi = 0;
+            ((ReduceAcross(binfun, fi++)), ...);
+        }
+
+        return init;
+    }
 }
 
 #endif

@@ -220,14 +220,17 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 	if (isSupported) {
 		glClearErrors("VBO", __func__, globalRendering->glDebugErrors);
 		const GLenum oldBoundTarget = curBoundTarget;
+		GLint rbglsize = 0;
+		GLint wbglsize = 0;
+		glGetBufferParameteriv(curBoundTarget, GL_BUFFER_SIZE, &rbglsize);
 
-	#ifdef GLEW_ARB_copy_buffer
 		if (GLEW_ARB_copy_buffer) {
 			VBO vbo(GL_COPY_WRITE_BUFFER, immutableStorage);
 
 			vbo.Bind(GL_COPY_WRITE_BUFFER);
 			vbo.New(bufSize, usage);
 
+			glGetBufferParameteriv(GL_COPY_WRITE_BUFFER, GL_BUFFER_SIZE, &wbglsize);
 			// gpu internal copy (fast)
 			if (oldSize > 0)
 				glCopyBufferSubData(curBoundTarget, GL_COPY_WRITE_BUFFER, 0, 0, oldSize);
@@ -236,15 +239,16 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 			Unbind();
 			*this = std::move(vbo);
 			Bind(oldBoundTarget);
-		} else
-	#endif
-		{
+		} else {
 			void* memsrc = MapBuffer(GL_READ_ONLY);
 			Unbind();
 
 			VBO vbo(oldBoundTarget, immutableStorage);
 			vbo.Bind(oldBoundTarget);
 			vbo.New(bufSize, GL_STREAM_DRAW);
+
+			glGetBufferParameteriv(oldBoundTarget, GL_BUFFER_SIZE, &wbglsize);
+
 			void* memdst = vbo.MapBuffer(GL_WRITE_ONLY);
 
 			// cpu download & copy (slow)
@@ -258,7 +262,17 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 
 		const GLenum err = glGetError();
 		if (err != GL_NO_ERROR) {
-			LOG_L(L_ERROR, "[VBO::%s(size=%lu,usage=%u)] id=%u tgt=0x%x err=0x%x", __func__, (unsigned long) bufSize, usage, vboId, curBoundTarget, err);
+			LOG_L(L_ERROR, "[VBO::%s(rbsize=%u,wbsize=%u,rbglsize=%u,wbglsize=%u,usage=%u)] id=%u tgt=0x%x err=0x%x",
+				__func__,
+				static_cast<uint32_t>(oldSize),
+				static_cast<uint32_t>(bufSize),
+				static_cast<uint32_t>(rbglsize),
+				static_cast<uint32_t>(wbglsize),
+				usage,
+				vboId,
+				curBoundTarget,
+				err
+			);
 			Unbind();
 
 			// disable VBO and fallback to VA/sysmem

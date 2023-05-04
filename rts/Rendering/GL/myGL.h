@@ -23,6 +23,7 @@
 #include "System/float3.h"
 #include "System/float4.h"
 #include "System/type2.h"
+#include "System/UnorderedMap.hpp"
 
 #include "glStateDebug.h"
 
@@ -42,6 +43,30 @@
 	#define GL_INVALID_INDEX -1
 #endif
 
+static const spring::unordered_map<GLenum, GLenum> FormatToQuery {
+	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D                   },
+	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D                   },
+	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D                   },
+	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY             },
+	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY             },
+	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE            },
+	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP             },
+	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER               },
+	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE       },
+	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
+};
+
+struct TextureParameters {
+	GLint intFmt;
+	GLint sizeX;
+	GLint sizeY;
+	GLint sizeZ;
+	GLint bpp;
+	GLint chNum;
+	GLint imageSize;
+	GLboolean isDepth;
+	GLboolean isCompressed;
+};
 
 static inline void glVertexf3(const float3& v)    { glVertex3f(v.r, v.g, v.b); }
 static inline void glColorf3(const float3& v)     { glColor3f(v.r, v.g, v.b); }
@@ -97,10 +122,16 @@ static constexpr  glFrustumFuncPtr  glFrustumFuncs[2] = {__spring_glFrustum_noCC
 void WorkaroundATIPointSizeBug();
 void SetTexGen(const float scaleX, const float scaleZ, const float offsetX, const float offsetZ);
 
+void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& textureParameters);
 void glSaveTexture(const GLuint textureID, const char* filename, int level = 0);
 void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures);
-void glSpringTexStorage2D(const GLenum target, GLint levels, const GLint internalFormat, const GLsizei width, const GLsizei height);
+void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
 void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data);
+bool glSpringBlitImages(
+	GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,
+	GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ,
+	GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth
+);
 
 void glSpringMatrix2dProj(const int sizex, const int sizey);
 

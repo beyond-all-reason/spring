@@ -75,6 +75,31 @@ bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray) _pure
  */
 bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& plane, bool directional, float3& px);
 
+
+/**
+ * @brief Returns the line result of the intersection of two planes
+ * @param plane1 float4 the first plane
+ * @param plane2 float4 the second plane
+ * @param line <direction,point> std::pair<float3,float3> the direction and a point on the line
+ * @return bool whether planes intersect
+ */
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3> &line);
+
+/**
+ * @brief Returns the line result of the intersection of two lines
+ * @param l1 <direction,point> std::pair<float3,float3> the first line
+ * @param l2 <direction,point> std::pair<float3,float3> the second line
+ * @param px float3 the intersection point
+ * @return bool whether lines intersect
+ */
+bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair<float3, float3>& l2, float3& px);
+
+/**
+ * @brief Returns the a point in the line intersection of two planes
+ * @param zeroCoord int the axis to be pinned to
+ */
+float3 SolveIntersectingPoint(int zeroCoord, int coord1, int coord2, const float4& plane1, const float4& plane2);
+
 /**
  * @brief Returns the intersection points of a ray with the map boundary (2d only)
  * @param start float3 the start point of the line
@@ -128,6 +153,16 @@ template<class T> inline T argmin(const T v1, const T v2) { return std::min(v1, 
 template<class T> inline T argmax(const T v1, const T v2) { return std::max(v1, v2); }
 template<> inline float3 argmin(const float3 v1, const float3 v2) { return float3::min(v1, v2); }
 template<> inline float3 argmax(const float3 v1, const float3 v2) { return float3::max(v1, v2); }
+
+// multiple arguments option
+template<typename T>
+inline T argmin(const T v1) { return v1; }
+template<typename T>
+inline T argmax(const T v1) { return v1; }
+template<typename T, typename ...Ts>
+inline T argmin(const T v1, const Ts... vs) { return argmin(v1, argmin(vs...)); }
+template<typename T, typename ...Ts>
+inline T argmax(const T v1, const Ts... vs) { return argmax(v1, argmax(vs...)); }
 
 // template<class T> T mix(const T v1, const T v2, const float a) { return (v1 * (1.0f - a) + v2 * a); }
 template<class T, typename T2> constexpr T mix(const T v1, const T v2, const T2 a) { return (v1 + (v2 - v1) * a); }

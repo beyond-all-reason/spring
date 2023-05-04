@@ -24,11 +24,9 @@
 #include "System/SpringHash.h"
 #include "System/SafeUtil.h"
 #include "System/TimeProfiler.h"
-
-#ifdef USE_UNSYNCED_HEIGHTMAP
+#include "System/XSimdOps.hpp"
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/LosHandler.h"
-#endif
 
 static constexpr size_t MAX_UHM_RECTS_PER_FRAME = 128;
 
@@ -63,6 +61,7 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(initHeightBounds),
 	CR_IGNORED(tempHeightBounds),
 	CR_IGNORED(currHeightBounds),
+	CR_IGNORED(unsyncedHeightInfo),
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
@@ -96,10 +95,8 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(unsyncedHeightMapUpdates),
 
 	/*
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	CR_IGNORED(  syncedHeightMapDigests),
 	CR_IGNORED(unsyncedHeightMapDigests),
-	#endif
 	*/
 
 	CR_POSTLOAD(PostLoad),
@@ -128,11 +125,8 @@ std::vector<float> CReadMap::slopeMap;
 std::vector<uint8_t> CReadMap::typeMap;
 std::vector<float3> CReadMap::centerNormals2D;
 
-#ifdef USE_UNSYNCED_HEIGHTMAP
 std::vector<uint8_t> CReadMap::  syncedHeightMapDigests;
 std::vector<uint8_t> CReadMap::unsyncedHeightMapDigests;
-#endif
-
 
 
 MapTexture::~MapTexture() {
@@ -260,10 +254,6 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 
 void CReadMap::PostLoad()
 {
-	#ifndef USE_UNSYNCED_HEIGHTMAP
-	heightMapUnsyncedPtr = heightMapSyncedPtr;
-	#endif
-
 	sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
 	sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
 
@@ -375,18 +365,11 @@ void CReadMap::Initialize()
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
-	// note: if USE_UNSYNCED_HEIGHTMAP is false, then
-	// heightMapUnsyncedPtr points to an empty vector
-	// for SMF maps so indexing it is forbidden (!)
 	assert(heightMapSyncedPtr != nullptr);
 	assert(heightMapUnsyncedPtr != nullptr);
 	assert(originalHeightMapPtr != nullptr);
 
 	{
-		#ifndef USE_UNSYNCED_HEIGHTMAP
-		heightMapUnsyncedPtr = heightMapSyncedPtr;
-		#endif
-
 		sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
 		sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
 
@@ -412,6 +395,14 @@ void CReadMap::Initialize()
 	// InitHeightMapDigestVectors();
 	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy});
 
+	unsyncedHeightInfo.resize(
+		(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
+		float3{
+			initHeightBounds.x,
+			initHeightBounds.y,
+			(initHeightBounds.y + initHeightBounds.x) * 0.5f
+		}
+	);
 	// FIXME: sky & skyLight aren't created yet (crashes in SMFReadMap.cpp)
 	// UpdateDraw(true);
 }
@@ -498,6 +489,7 @@ void CReadMap::UpdateDraw(bool firstCall)
 	for (int i = 0; i < N; i++) {
 		UpdateHeightMapUnsynced(*(unsyncedHeightMapUpdates.begin() + i));
 	};
+	UpdateHeightMapUnsyncedPost();
 
 	for (int i = 0; i < N; i++) {
 		eventHandler.UnsyncedHeightMapUpdate(*(unsyncedHeightMapUpdates.begin() + i));
@@ -529,7 +521,6 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 	UpdateFaceNormals(centerRect, initialize);
 	UpdateSlopemap(centerRect, initialize); // must happen after UpdateFaceNormals()!
 
-	#ifdef USE_UNSYNCED_HEIGHTMAP
 	// push the unsynced update; initial one without LOS check
 	if (initialize) {
 		unsyncedHeightMapUpdates.push_back(cornerRect);
@@ -553,9 +544,6 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 
 		HeightMapUpdateLOSCheck(cornerRect);
 	}
-	#else
-	unsyncedHeightMapUpdates.push_back(cornerRect);
-	#endif
 }
 
 
@@ -582,173 +570,17 @@ void CReadMap::UpdateHeightBounds(int syncFrame)
 
 	const int idxBeg = (dataChunk + 0) * mapDims.mapxp1 * mapDims.mapyp1 / PACING_PERIOD;
 	const int idxEnd = (dataChunk + 1) * mapDims.mapxp1 * mapDims.mapyp1 / PACING_PERIOD;
-#if 1
 	UpdateTempHeightBoundsSIMD(idxBeg, idxEnd);
-#elif 0
-	// Reference implementation for future uses of MT on small tasks
-	// By Tarnished Knight
-
-	static const int chunkSize = 16; // 64 / sizeof(float)
-	int minChunksForCacheLine = indCnt / chunkSize;
-	minChunksForCacheLine = indCnt % chunkSize ? minChunksForCacheLine + 1 : minChunksForCacheLine;
-
-	int maxThreads = ThreadPool::GetMaxThreads();
-	int chunksPerThread = 1;
-	int usingThreads = minChunksForCacheLine;
-
-	if (minChunksForCacheLine > maxThreads) {
-		chunksPerThread = minChunksForCacheLine / maxThreads;
-		chunksPerThread = minChunksForCacheLine % maxThreads ? chunksPerThread + 1 : chunksPerThread;
-		usingThreads = maxThreads;
-	}
-
-	std::array<float2, ThreadPool::MAX_THREADS> threadResults;
-
-	for_mt(0, usingThreads, [this, chunksPerThread, &threadResults, idxBeg, idxEnd](const int jobId) {
-
-		int startIdx = idxBeg + jobId * chunksPerThread * chunkSize;
-		int endIdx = startIdx + chunksPerThread * chunkSize;
-		endIdx = endIdx > idxEnd ? idxEnd : endIdx;
-
-		float2 result;
-		result.x = std::numeric_limits<float>::max();
-		result.y = std::numeric_limits<float>::lowest();
-
-		for (int idx = startIdx; idx < endIdx; ++idx) {
-			float h = (*heightMapSyncedPtr)[idx];
-
-			result.x = std::min(h, result.x);
-			result.y = std::max(h, result.y);
-		}
-
-		threadResults[jobId] = result;
-	});
-
-	for (int idx = 0; idx < usingThreads; ++idx) {
-		tempHeightBounds.x = std::min(threadResults[idx].x, tempHeightBounds.x);
-		tempHeightBounds.y = std::max(threadResults[idx].y, tempHeightBounds.y);
-	}
-#else
-	// Reference implementation for future uses of MT+SIMD on small tasks
-	// By Tarnished Knight
-
-	static const int chunkSize = 16; // 64 / sizeof(float)
-	int minChunksForCacheLine = indCnt / chunkSize;
-	minChunksForCacheLine = indCnt % chunkSize ? minChunksForCacheLine + 1 : minChunksForCacheLine;
-
-	int maxThreads = ThreadPool::GetMaxThreads();
-	int chunksPerThread = 1;
-	int usingThreads = minChunksForCacheLine;
-
-	if (minChunksForCacheLine > maxThreads) {
-		chunksPerThread = minChunksForCacheLine / maxThreads;
-		chunksPerThread = minChunksForCacheLine % maxThreads ? chunksPerThread + 1 : chunksPerThread;
-		usingThreads = maxThreads;
-	}
-
-	std::array<float2, ThreadPool::MAX_THREADS> threadResults;
-
-	for_mt(0, usingThreads, [this, chunksPerThread, &threadResults, idxBeg, idxEnd](const int jobId) {
-
-		int startSection = idxBeg + jobId * chunksPerThread * chunkSize;
-		int endSection = startSection + chunksPerThread * chunkSize;
-		endSection = endSection > idxEnd ? idxEnd : endSection;
-
-		float2 result;
-		result.x = std::numeric_limits<float>::max();
-		result.y = std::numeric_limits<float>::lowest();
-
-		__m128 bestMin = _mm_loadu_ps(&(*heightMapSyncedPtr)[startSection]);
-		__m128 bestMax = _mm_shuffle_ps(bestMin, bestMin, _MM_SHUFFLE(3, 2, 1, 0));
-
-		int startIdx = startSection + 4; // skip first four since they are already loaded.
-		int endIdx = endSection - 4; // done to ensure main loop cannot go past end of assigned data
-
-		for (int idx = startIdx; idx < endIdx; idx += 4) {
-			__m128 nextVals = _mm_loadu_ps(&(*heightMapSyncedPtr)[idx]);
-
-			bestMin = _mm_min_ps(bestMin, nextVals);
-			bestMax = _mm_max_ps(bestMax, nextVals);
-		}
-
-		// last round: load last four entries (may overlap with last iteration of the main loop)
-		{
-			__m128 nextVals = _mm_loadu_ps(&(*heightMapSyncedPtr)[endIdx]);
-
-			bestMin = _mm_min_ps(bestMin, nextVals);
-			bestMax = _mm_max_ps(bestMax, nextVals);
-		}
-
-		// resolve function horizontally for min
-		{
-			// split the four values into sets of two and compare
-			__m128 bestAlt = _mm_movehl_ps(bestMin, bestMin);
-			bestMin = _mm_min_ps(bestMin, bestAlt);
-
-			// split the two values and compare
-			bestAlt = _mm_shuffle_ps(bestMin, bestMin, _MM_SHUFFLE(0, 0, 0, 1));
-			bestMin = _mm_min_ss(bestMin, bestAlt);
-			_mm_store_ss(&result.x, bestMin);
-}
-		// resolve function horizontally for max
-		{
-			// split the four values into sets of two and compare
-			__m128 bestAlt = _mm_movehl_ps(bestMax, bestMax);
-			bestMax = _mm_max_ps(bestMax, bestAlt);
-
-			// split the two values and compare
-			bestAlt = _mm_shuffle_ps(bestMax, bestMax, _MM_SHUFFLE(0, 0, 0, 1));
-			bestMax = _mm_max_ss(bestMax, bestAlt);
-			_mm_store_ss(&result.y, bestMax);
-		}
-
-		threadResults[jobId] = result;
-	});
-
-	for (int idx = 0; idx < usingThreads; ++idx) {
-		tempHeightBounds.x = std::min(threadResults[idx].x, tempHeightBounds.x);
-		tempHeightBounds.y = std::max(threadResults[idx].y, tempHeightBounds.y);
-	}
-#endif
 }
 
 void CReadMap::UpdateTempHeightBoundsSIMD(size_t idxBeg, size_t idxEnd)
 {
-	const size_t indCnt = idxEnd - idxBeg;
-
-	using SIMDVfloat = xsimd::simd_type<float>;
-
-	// size is adjusted based on SIMD extensions supported
-	// SIMD extensions are conditionally enabled based on compiler flags
-	constexpr std::size_t simdSize = SIMDVfloat::size;
-
-	// size for which the vectorization is possible
-	std::size_t vecSize = indCnt - indCnt % simdSize;
-
-	SIMDVfloat smin(tempHeightBounds.x);
-	SIMDVfloat smax(tempHeightBounds.y);
-
-	// SIMD vectorized loop
-	for (size_t idxRel = 0; idxRel < vecSize; idxRel += simdSize) {
-		SIMDVfloat simdVec = xsimd::load_unaligned(&(*heightMapSyncedPtr)[idxBeg + idxRel]);
-		smin = xsimd::min(simdVec, smin);
-		smax = xsimd::max(simdVec, smax);
-	}
-
-	// Scalar part
-	for (size_t i = 0; i < simdSize; ++i) {
-		tempHeightBounds.x = std::min(smin[i], tempHeightBounds.x);
-		tempHeightBounds.y = std::max(smax[i], tempHeightBounds.y);
-	}
-
-	// Remaining part that cannot be vectorized
-	for (size_t idxRel = vecSize; idxRel < indCnt; ++idxRel)
-	{
-		float h = (*heightMapSyncedPtr)[idxBeg + idxRel];
-
-		tempHeightBounds.x = std::min(h, tempHeightBounds.x);
-		tempHeightBounds.y = std::max(h, tempHeightBounds.y);
-	}
+	tempHeightBounds.xy = xsimd::reduce(
+		heightMapSyncedPtr->begin() + idxBeg,
+		heightMapSyncedPtr->begin() + idxEnd,
+		tempHeightBounds.xy,
+		MinOp{}, MaxOp{}
+	);
 }
 
 void CReadMap::UpdateHeightBounds()
@@ -869,13 +701,11 @@ void CReadMap::UpdateFaceNormals(const SRectangle& rect, bool initialize)
 			centerNormalsSynced[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize();
 			centerNormals2D[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize2D();
 
-			#ifdef USE_UNSYNCED_HEIGHTMAP
 			if (initialize) {
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2    ] = faceNormalsSynced[(y * mapDims.mapx + x) * 2    ];
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2 + 1] = faceNormalsSynced[(y * mapDims.mapx + x) * 2 + 1];
 				centerNormalsUnsynced[y * mapDims.mapx + x] = centerNormalsSynced[y * mapDims.mapx + x];
 			}
-			#endif
 		}
 	}, -64);
 }
@@ -953,7 +783,6 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 		for (int lmx = losMapRect.x1; lmx <= losMapRect.x2; ++lmx) {
 			hmx = lmx * losSqrSize;
 
-			#ifdef USE_UNSYNCED_HEIGHTMAP
 			// NB:
 			//   LosHandler expects positions in center-heightmap bounds, but hgtMapRect is a corner-rectangle
 			//   as such hmx and hmz have to be clamped by CenterSqrToPos before the center-height is accessed
@@ -961,7 +790,6 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 				PushRect(subRect, hmx, hmz);
 				continue;
 			}
-			#endif
 
 			if (!HasHeightMapViewChanged({lmx, lmz})) {
 				PushRect(subRect, hmx, hmz);
@@ -979,7 +807,7 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 
 void CReadMap::InitHeightMapDigestVectors(const int2 losMapSize)
 {
-#if (defined(USE_HEIGHTMAP_DIGESTS) && defined(USE_UNSYNCED_HEIGHTMAP))
+#if defined(USE_HEIGHTMAP_DIGESTS)
 	assert(losHandler != nullptr);
 	assert(syncedHeightMapDigests.empty());
 
@@ -996,7 +824,7 @@ void CReadMap::InitHeightMapDigestVectors(const int2 losMapSize)
 
 bool CReadMap::HasHeightMapViewChanged(const int2 losMapPos)
 {
-#if (defined(USE_HEIGHTMAP_DIGESTS) && defined(USE_UNSYNCED_HEIGHTMAP))
+#if defined(USE_HEIGHTMAP_DIGESTS)
 	const int2 losMapSize = losHandler->los.size;
 	const int losMapIdx = losMapPos.x + losMapPos.y * (losMapSize.x + 1);
 
@@ -1013,8 +841,6 @@ bool CReadMap::HasHeightMapViewChanged(const int2 losMapPos)
 #endif
 }
 
-
-#ifdef USE_UNSYNCED_HEIGHTMAP
 void CReadMap::UpdateLOS(const SRectangle& hgtMapRect)
 {
 	if (gu->spectatingFullView)
@@ -1041,10 +867,6 @@ void CReadMap::BecomeSpectator()
 {
 	HeightMapUpdateLOSCheck({0, 0, mapDims.mapx, mapDims.mapy});
 }
-#else
-void CReadMap::UpdateLOS(const SRectangle& hgtMapRect) {}
-void CReadMap::BecomeSpectator() {}
-#endif
 
 namespace {
 	template<typename T>
@@ -1055,12 +877,10 @@ namespace {
 
 void CReadMap::CopySyncedToUnsynced()
 {
-#ifdef USE_UNSYNCED_HEIGHTMAP
 	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
 	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
 	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
 	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
-#endif
 }
 
 bool CReadMap::HasVisibleWater()  const { return (!mapRendering->voidWater && !IsAboveWater()); }

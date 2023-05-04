@@ -326,6 +326,7 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
+	SetTeamColor(0, 1.0f);
 	modelDrawerState->SetColorMultiplier();
 
 	auto& smv = S3DModelVAO::GetInstance();
@@ -361,7 +362,9 @@ void CFeatureDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, boo
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	modelDrawerState->SetColorMultiplier(IModelDrawerState::alphaValues.x);
+	modelDrawerState->SetTeamColor(0, IModelDrawerState::alphaValues.x); //teamID doesn't matter here
+	modelDrawerState->SetColorMultiplier();
+
 	//main cloaked alpha pass
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		if (mdlRenderer.GetObjectBin(i).empty())

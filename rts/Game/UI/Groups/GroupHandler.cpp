@@ -105,6 +105,25 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 			}
 		} break;
 
+		case hashString("select"): {
+			if (group->units.empty())
+				return false;
+
+			selectedUnitsHandler.SelectGroup(num);
+
+			return true;
+		} break;
+
+		case hashString("focus"): {
+			if (group->units.empty())
+				return false;
+
+			camHandler->CameraTransition(0.5f);
+			camHandler->GetCurrentController().SetPos(group->CalculateCenter());
+
+			return true;
+		} break;
+
 		case hashString("selectadd"): {
 			// do not select the group, just add its members to the current selection
 			for (const int unitID: group->units) {

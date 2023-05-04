@@ -63,6 +63,7 @@
 #include "Net/Protocol/NetProtocol.h"
 
 #include "Rendering/DebugColVolDrawer.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
@@ -3274,6 +3275,18 @@ public:
 };
 
 
+class DebugVisibilityDrawerActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DebugVisibilityDrawerActionExecutor(): IUnsyncedActionExecutor("DebugVisibility", "Enable/Disable drawing of visible terrain") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(DebugVisibilityDrawer::enable, action.GetArgs());
+		return true;
+	}
+};
+
+
 class DebugPathDrawerActionExecutor : public IUnsyncedActionExecutor {
 public:
 	DebugPathDrawerActionExecutor(): IUnsyncedActionExecutor("DebugPath", "Enable/Disable drawing of pathfinder debug-data") {
@@ -3887,6 +3900,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugColVolDrawerActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugVisibilityDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugPathDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());

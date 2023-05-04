@@ -13,6 +13,7 @@ class CModelDrawerHelper {
 public:
 	// Render States Push/Pop
 	static void BindModelTypeTexture(int mdlType, int texType);
+	static void UnbindModelTypeTexture(int mdlType);
 
 	static void PushModelRenderState(int mdlType);
 	static void PushModelRenderState(const S3DModel* m);
@@ -59,8 +60,8 @@ public:
 	// Inherited via CModelDrawerHelper
 	void PushRenderState() const override;
 	void PopRenderState() const override;
-	void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override {/*handled in PushRenderState()*/ }
-	void UnbindOpaqueTex() const override {/*handled in PushRenderState()*/ }
+	void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
+	void UnbindOpaqueTex() const override;
 	void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
 	void UnbindShadowTex() const override;
 };

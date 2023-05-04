@@ -9,10 +9,16 @@ Spring changelog
 (since release 1544)
 
 Lua:
+ - add `Game.footprintScale`, the footprint multiplier compared to defs
+ - add `Game.buildSquareSize`, the building alignment grid size
  - removed `Game.allowTeamColors` (was deprecated and always `true`)
+ - `Spring.SetActiveCommand()` or passing explicit `nil` now cancels the command.
+   The previous method to pass `-1` still works.
+ - allow shallow recursion in `Spring.TransferUnit`
  
 
 Misc:
+ - Add `/debugvisibility` command for debugging the visible quadfield quads
  
 
 Sim:
@@ -44,6 +50,8 @@ Fixes:
  - Fixed TestMoveSquareRange() so that it only runs the required tests.
  - Fixed issue where units standing still would recalculate their facing direction every frame even
    though they are not moving.
+ - Fix issues where the ground and other visibility features would not render or return expected
+   features when looking at certain oblique angles
 
 
 

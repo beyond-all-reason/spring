@@ -15,6 +15,8 @@
 
 #include <stdexcept>
 
+CONFIG(bool, StoreDefaultSettings).defaultValue(false).description("springsettings.cfg will save the settings values, if they match the implicit defaults and were set by a user explicitly");
+
 /******************************************************************************/
 
 typedef std::map<std::string, std::string> StringMap;
@@ -29,6 +31,7 @@ class ConfigHandlerImpl : public ConfigHandler
 public:
 	ConfigHandlerImpl(const std::vector<std::string>& locations, bool safemode);
 	~ConfigHandlerImpl() override;
+	void FinalizeLoad() override;
 
 	void SetString(const std::string& key, const std::string& value, bool useOverlay, bool notify) override;
 	std::string GetString(const std::string& key) const override;
@@ -117,10 +120,6 @@ ConfigHandlerImpl::ConfigHandlerImpl(const std::vector<std::string>& locations, 
 	sources.push_back(new DefaultConfigSource());
 
 	assert(sources.size() <= sources_num);
-
-	// Perform migrations that need to happen on every load.
-	RemoveDefaults();
-	RemoveDeprecated();
 }
 
 ConfigHandlerImpl::~ConfigHandlerImpl()
@@ -132,6 +131,14 @@ ConfigHandlerImpl::~ConfigHandlerImpl()
 	for (ReadOnlyConfigSource* s: sources) {
 		delete s;
 	}
+}
+
+void ConfigHandlerImpl::FinalizeLoad()
+{
+	if (!GetBool("StoreDefaultSettings"))
+		RemoveDefaults();
+
+	RemoveDeprecated();
 }
 
 /**
@@ -310,16 +317,18 @@ void ConfigHandlerImpl::SetString(const std::string& key, const std::string& val
 		++it; // skip writableSource
 
 		bool deleted = false;
-
-		for (; it != sources.end(); ++it) {
-			if ((*it)->IsSet(key)) {
-				if ((*it)->GetString(key) == value) {
-					// key is being set to the default value,
-					// delete the key instead of setting it.
-					writableSource->Delete(key);
-					deleted = true;
+		// try to delete key/value pair if "StoreDefaultSettings" is false and the value is set to the default value
+		if (!configHandler->GetBool("StoreDefaultSettings")) {
+			for (; it != sources.end(); ++it) {
+				if ((*it)->IsSet(key)) {
+					if ((*it)->GetString(key) == value) {
+						// key is being set to the default value,
+						// delete the key instead of setting it.
+						writableSource->Delete(key);
+						deleted = true;
+					}
+					break;
 				}
-				break;
 			}
 		}
 
@@ -414,6 +423,7 @@ void ConfigHandler::Instantiate(const std::string configSource, const bool safem
 	}
 
 	configHandler = new ConfigHandlerImpl(locations, safemode);
+	configHandler->FinalizeLoad();
 
 	//assert(configHandler->GetString("test") == "x y z");
 }

@@ -28,6 +28,7 @@
 #include "Rendering/IconHandler.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/ShadowHandler.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -1883,6 +1884,7 @@ void CMiniMap::DrawWorldStuff() const
 	}
 
 	shadowHandler.DrawFrustumDebug();
+	DebugVisibilityDrawer::DrawMinimap();
 
 	{
 		// draw the queued commands

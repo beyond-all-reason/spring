@@ -1541,6 +1541,11 @@ int LuaUnsyncedRead::IsAABBInView(lua_State* L)
 	float3 maxs = float3(luaL_checkfloat(L, 4),
 	                     luaL_checkfloat(L, 5),
 	                     luaL_checkfloat(L, 6));
+
+	if (mins.x > maxs.x) std::swap(mins.x, maxs.x);
+	if (mins.y > maxs.y) std::swap(mins.y, maxs.y);
+	if (mins.z > maxs.z) std::swap(mins.z, maxs.z);
+
 	lua_pushboolean(L, camera->InView(mins, maxs));
 	return 1;
 }

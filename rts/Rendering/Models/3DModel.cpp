@@ -29,6 +29,7 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_MEMBER(lmodelPieceIndex),
 	CR_MEMBER(scriptPieceIndex),
 	CR_MEMBER(parent),
+	CR_MEMBER(localModel),
 	CR_MEMBER(children),
 
 	// reload
@@ -45,8 +46,9 @@ CR_BIND(LocalModel, )
 CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(pieces),
 
-	CR_IGNORED(boundingVolume),
-	CR_IGNORED(luaMaterialData)
+	CR_MEMBER(boundingVolume),
+	CR_IGNORED(luaMaterialData),
+	CR_MEMBER(needsBoundariesRecalc)
 ))
 
 
@@ -341,6 +343,7 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 
 	lmpParent->SetLModelPieceIndex(pieces.size() - 1);
 	lmpParent->SetScriptPieceIndex(pieces.size() - 1);
+	lmpParent->SetLocalModel(this);
 
 	// the mapping is 1:1 for Lua scripts, but not necessarily for COB
 	// CobInstance::MapScriptToModelPieces does the remapping (if any)
@@ -359,6 +362,10 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 void LocalModel::UpdateBoundingVolume()
 {
 	ZoneScoped;
+
+	if (!needsBoundariesRecalc)
+		return;
+
 	// bounding-box extrema (local space)
 	float3 bbMins = DEF_MIN_SIZE;
 	float3 bbMaxs = DEF_MAX_SIZE;
@@ -397,6 +404,8 @@ void LocalModel::UpdateBoundingVolume()
 
 	// note: offset is relative to object->pos
 	boundingVolume.InitBox(bbMaxs - bbMins, (bbMaxs + bbMins) * 0.5f);
+
+	needsBoundariesRecalc = false;
 }
 
 /** ****************************************************************************************************
@@ -448,8 +457,11 @@ bool LocalModelPiece::SetGetCustomDirty(bool cd) const
 void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	if (blockScriptAnims)
 		return;
-	if (!dirty && !dst.same(src))
+	if (!dirty && !dst.same(src)) {
 		SetDirty();
+		assert(localModel);
+		localModel->SetBoundariesNeedsRecalc();
+	}
 
 	dst = src;
 }

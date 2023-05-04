@@ -122,6 +122,25 @@ public:
 	 * problems.
 	 */
 	int teamHighlight = 1;
+
+	/**
+	 * @brief simulation drawing balance
+	 *
+	 * Defines how much percent of the time for simulation is minimum spend for
+	 * drawing. This is important when reconnecting,
+	 * 
+	 * For example: if set to 0.15 then 15% of the total cpu time is exclusively
+	 * reserved for drawing and the remaining 85% for reconnecting/simulation.
+	 */
+	float minSimDrawBalance;
+
+	/**
+	 * @brief minimum Frames Per Second
+	 *
+	 * Defines how many frames per second should minimally be
+	 * rendered. To reach this number we will delay simframes.
+	 */
+	int minDrawFPS;
 };
 
 extern GlobalConfig globalConfig;

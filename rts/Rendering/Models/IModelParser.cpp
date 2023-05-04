@@ -292,32 +292,47 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	return model;
 }
 
-S3DModel* CModelLoader::GetCachedModel(std::string name)
+S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 {
 	// caller has mutex lock
 
 	static const auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
 
 	static constexpr std::string_view O3D = "objects3d/";
-	if (auto oi = name.find(O3D); oi != std::string::npos) {
+	if (auto oi = fullName.find(O3D); oi != std::string::npos) {
 		assert(oi == 0u);
-		name.erase(0, O3D.size());
+		fullName.erase(0, O3D.size());
 	}
 
-	auto key = std::make_pair(name, uint32_t(-1));
-	const auto ci = spring::BinarySearch(cache.begin(), cache.end(), key, CompPred);
+	auto keyFull = std::make_pair(fullName, uint32_t(-1));
+	const auto ci = spring::BinarySearch(cache.begin(), cache.end(), keyFull, CompPred);
 	if (ci != cache.end()) {
-		assert(name == ci->first);
+		assert(keyFull.first == ci->first);
 		return &models[ci->second];
 	}
 
+	auto keyName = std::pair<std::string, uint32_t>("", uint32_t(-1));
+	if (const auto ext = FileSystem::GetExtension(fullName); !ext.empty()) {
+		keyName.first = fullName.substr(0, fullName.size() - ext.size() - 1);
+		const auto ci = spring::BinarySearch(cache.begin(), cache.end(), keyName, CompPred);
+		if (ci != cache.end()) {
+			assert(keyName.first == ci->first);
+			return &models[ci->second];
+		}
+	}
+
 	if (modelID + 1 == MAX_MODEL_OBJECTS) {
-		LOG_L(L_ERROR, "[CModelLoader::%s] Model pool of size %i is exhausted. Cannot load model %s", __func__, MAX_MODEL_OBJECTS, name.c_str());
+		LOG_L(L_ERROR, "[CModelLoader::%s] Model pool of size %i is exhausted. Cannot load model %s", __func__, MAX_MODEL_OBJECTS, fullName.c_str());
 		return &models[0]; //dummy model
 	}
 
 	models[modelID].id = ++modelID;
-	spring::VectorInsertSorted(cache, std::make_pair(name, modelID), CompPred);
+	keyFull.second = models[modelID].id;
+	keyName.second = models[modelID].id;
+
+	spring::VectorInsertSorted(cache, std::move(keyFull), CompPred);
+	if (!keyName.first.empty())
+		spring::VectorInsertSorted(cache, std::move(keyName), CompPred);
 
 	return &models[modelID];
 }

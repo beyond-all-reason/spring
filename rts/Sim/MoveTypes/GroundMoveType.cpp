@@ -1782,9 +1782,6 @@ unsigned int CGroundMoveType::GetNewPath()
 	if ((owner->pos - goalPos).SqLength2D() <= Square(goalRadius + extraRadius))
 		return newPathID;
 
-	// if (gs->frameNum == 459 && this->owner->id == 9744)
-	// 	HAPFS::debugLoggingActive = ThreadPool::GetThreadNum();
-
 	if ((newPathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true)) != 0) {
 		atGoal = false;
 		atEndOfPath = false;
@@ -1798,9 +1795,6 @@ unsigned int CGroundMoveType::GetNewPath()
 		moveFailed = true;
 		//Fail(false);
 	}
-
-	// if (gs->frameNum == 459 && this->owner->id == 9744)
-	// 	HAPFS::debugLoggingActive = -1;
 
 	return newPathID;
 }

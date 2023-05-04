@@ -4,6 +4,7 @@
 set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/AVIGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugColVolDrawer.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/DebugVisibilityDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugDrawerAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/QTPFSPathDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/HAPFSPathDrawer.cpp"

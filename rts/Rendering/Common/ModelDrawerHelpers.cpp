@@ -146,6 +146,14 @@ void CModelDrawerHelper::BindModelTypeTexture(int mdlType, int texType)
 		modelDrawerHelpers[mdlType]->BindOpaqueTex(texMat);
 }
 
+void CModelDrawerHelper::UnbindModelTypeTexture(int mdlType)
+{
+	if (shadowHandler.InShadowPass())
+		modelDrawerHelpers[mdlType]->UnbindShadowTex();
+	else
+		modelDrawerHelpers[mdlType]->UnbindOpaqueTex();
+}
+
 void CModelDrawerHelper::PushModelRenderState(int mdlType)
 {
 	assert(CModelDrawerHelper::modelDrawerHelpers[mdlType]);
@@ -181,18 +189,24 @@ const std::array<const CModelDrawerHelper*, MODELTYPE_CNT> CModelDrawerHelper::m
 
 void CModelDrawerHelper3DO::PushRenderState() const
 {
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex1ID());
-
 	glDisable(GL_CULL_FACE);
 }
 
 void CModelDrawerHelper3DO::PopRenderState() const
 {
 	glEnable(GL_CULL_FACE);
+}
 
+void CModelDrawerHelper3DO::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
+{
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex1ID());
+}
+
+void CModelDrawerHelper3DO::UnbindOpaqueTex() const
+{
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);

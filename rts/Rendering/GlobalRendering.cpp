@@ -968,6 +968,9 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\texplicit attribs location : %i (%i)", supportExplicitAttribLoc, glewIsExtensionSupported("GL_ARB_explicit_attrib_location"));
 	LOG("\tmulti draw indirect       : %i (-)" , glewIsExtensionSupported("GL_ARB_multi_draw_indirect"));
 	LOG("\tarray textures            : %i (-)" , glewIsExtensionSupported("GL_EXT_texture_array"));
+	LOG("\tbuffer copy support       : %i (-)" , glewIsExtensionSupported("GL_ARB_copy_buffer"));
+	LOG("\tindirect draw             : %i (-)" , glewIsExtensionSupported("GL_ARB_draw_indirect"));
+	LOG("\tbase instance             : %i (-)" , glewIsExtensionSupported("GL_ARB_base_instance"));
 
 	LOG("\t");
 	LOG("\tmax. FBO samples              : %i", FBO::GetMaxSamples());

@@ -15,6 +15,7 @@
 #include "Rendering/Env/IWater.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/DebugColVolDrawer.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
@@ -156,20 +157,9 @@ void CWorldDrawer::InitPost() const
 		modelLoader.DrainPreloadFutures(0);
 		auto& mv = S3DModelVAO::GetInstance();
 		if (preloadMode) {
+			mv.UploadVBOs();
 			mv.SetSafeToDeleteVectors();
 			CModelsLock::SetThreadSafety(false); //all models are already preloaded
-
-			const auto& mdlVec = modelLoader.GetModelsVec();
-			for (size_t i = 0; i < mdlVec.size(); ++i) {
-				const auto& model = mdlVec[i];
-				if (model.id == -1)
-					continue;
-
-				if (model.loadStatus != S3DModel::LoadStatus::LOADED) {
-					const std::string err = fmt::format("ML Error. ModelName {}, ModelID {}, numPieces {}, LS {}", model.name, model.id, model.numPieces, static_cast<uint32_t>(model.loadStatus));
-					throw std::runtime_error(err);
-				}
-			}
 		}
 	}
 }
@@ -365,8 +355,11 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		SCOPED_TIMER("Draw::World::Models::Opaque");
 		unitDrawer->Draw(false);
 		featureDrawer->Draw(false);
-
+	}
+	{
+		SCOPED_TIMER("Draw::OpaqueObjects::Debug");
 		DebugColVolDrawer::Draw();
+		DebugVisibilityDrawer::DrawWorld();
 		pathDrawer->DrawAll();
 	}
 }

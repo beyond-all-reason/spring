@@ -223,6 +223,7 @@ public:
 
 	bool HasGeometryData() const { return indices.size() >= 3; }
 	void SetParentModel(S3DModel* model_) { model = model_; }
+	const S3DModel* GetParentModel() const { return model; }
 
 	void ReleaseShatterIndices();
 
@@ -454,6 +455,7 @@ struct LocalModelPiece
 	void AddChild(LocalModelPiece* c) { children.push_back(c); }
 	void RemoveChild(LocalModelPiece* c) { children.erase(std::find(children.begin(), children.end(), c)); }
 	void SetParent(LocalModelPiece* p) { parent = p; }
+	void SetLocalModel(LocalModel* lm) { localModel = lm; }
 
 	void SetLModelPieceIndex(unsigned int idx) { lmodelPieceIndex = idx; }
 	void SetScriptPieceIndex(unsigned int idx) { scriptPieceIndex = idx; }
@@ -537,6 +539,7 @@ public:
 
 	const S3DModelPiece* original;
 	LocalModelPiece* parent;
+	LocalModel* localModel;
 
 	std::vector<LocalModelPiece*> children;
 	std::vector<unsigned int> lodDispLists;
@@ -609,7 +612,7 @@ struct LocalModel
 		verts[9] = bbMaxs;
 	}
 
-
+	void SetBoundariesNeedsRecalc() { needsBoundariesRecalc = true; }
 private:
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);
 
@@ -625,6 +628,8 @@ private:
 
 	// custom Lua-set material this model should be rendered with
 	LuaObjectMaterialData luaMaterialData;
+
+	bool needsBoundariesRecalc = true;
 };
 
 #endif /* _3DMODEL_H */

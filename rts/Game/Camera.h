@@ -147,8 +147,7 @@ public:
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
-		const float3& normal,
-		const float3& offset,
+		const float4& face,
 		const float3& params,
 		uint32_t side
 	);
@@ -184,7 +183,7 @@ public:
 
 	const Frustum& GetFrustum() const { return frustum; }
 	const float3& GetFrustumVert (uint32_t i) const { return frustum.verts [i]; }
-	const float3& GetFrustumPlane(uint32_t i) const { return frustum.planes[i]; }
+	const float4& GetFrustumPlane(uint32_t i) const { return frustum.planes[i]; }
 	const float3& GetFrustumEdge (uint32_t i) const { return frustum.edges [i]; }
 	const float4& GetFrustumScales() const { return frustum.scales; }
 
