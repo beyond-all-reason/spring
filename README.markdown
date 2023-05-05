@@ -21,25 +21,38 @@ Detailed instructions for how to compile Recoil can be found [here](https://gith
 
 Use `BAR105` as the primary branch.
 
-You need to check our tags:
+Verify you're seeing tags:
 
-	git tag
-	spring_bar_{BAR105}105.0-430-g2727993
-	spring_bar_{BAR105}105.1.1-1005-ga7ea1cc
-	spring_bar_{BAR105}105.1.1-1011-g325620e
-	spring_bar_{BAR105}105.1.1-1032-gf4d6126
-	spring_bar_{BAR105}105.1.1-1039-g895d540
-	spring_bar_{BAR105}105.1.1-1050-g5075cc0
-	...
+```bash
+>>> git tag
+spring_bar_{BAR105}105.0-430-g2727993
+spring_bar_{BAR105}105.1.1-1005-ga7ea1cc
+spring_bar_{BAR105}105.1.1-1011-g325620e
+spring_bar_{BAR105}105.1.1-1032-gf4d6126
+spring_bar_{BAR105}105.1.1-1039-g895d540
+spring_bar_{BAR105}105.1.1-1050-g5075cc0
+...
+```
 
-And also the BAR105 branch in this case:
+If you aren't seeeing these (often, when you've cloned your fork of the repository and not the upstream version), try the following:
 
-	git checkout origin/BAR105 -b BAR105
+```bash
+git remote add upstream git@github.com:beyond-all-reason/spring.git
+git fetch --all --tags
+```
+
+Check out the BAR105 branch in this case:
+
+```bash
+git checkout origin/BAR105 -b BAR105
+```
 
 The most simple set of commands will be:
 
-	cmake .
-	make
+```bash
+cmake .
+make
+```
 
 ### License
 
