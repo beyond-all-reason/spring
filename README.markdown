@@ -44,7 +44,7 @@ git fetch --all --tags
 Check out the BAR105 branch in this case:
 
 ```bash
-git checkout origin/BAR105 -b BAR105
+git checkout upstream/BAR105 -b BAR105
 ```
 
 The most simple set of commands will be:
