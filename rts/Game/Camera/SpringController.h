@@ -46,7 +46,7 @@ private:
 	float3 rot;
 
 	float curDist; // current zoom-out distance
-	float maxDist; // maximum zoom-out distance
+	const float maxDist; // maximum zoom-out distance
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;

@@ -225,6 +225,13 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 
 	const float newDist = CGround::LineGroundCol(wantedCamPos, wantedCamPos + dir * 150000.0f, false);
 
+	// don't move above the limit as translation loses precision
+	// and zooming-in to the same point is not possible
+	if (newDist > maxDist) {
+		curDist = curDistPre;
+		return 0.25f;
+	}
+
 	if (newDist > 0.0f)
 		pos = wantedCamPos + dir * (curDist = newDist);
 
