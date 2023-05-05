@@ -25,11 +25,12 @@ CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camer
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
 
-static float DistanceToGround(float3 from, float3 dir, float fallback_xz_plane_height) {
+static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
 
-	if (newGroundDist <= 0.0f) // if the direction is not pointing towards the map we use provided xz plane as heuristic
-		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallback_xz_plane_height);
+	// if the direction is not pointing towards the map we use provided xz plane as heuristic
+	if (newGroundDist <= 0.0f)
+		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallbackPlaneHeight);
 
 	return newGroundDist;
 }
