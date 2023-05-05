@@ -96,6 +96,8 @@ void CGame::SendClientProcUsage()
 			// space should be created to smooth out the transition of a large number being applied
 			// or not. Hence the 0.8 ceiling for the min threshold, so there's at least a 10%
 			// transition space.
+			// These numbers are somewhat arbitrary and were determined empirically,
+			// so there may well be room for improvement if measurements say so.
 			// 
 			const float lowThreshold = std::min(0.65f, 0.8f - drawProcUsage);
 			const float highThreshold = std::max(lowThreshold + 0.001f, 0.9f - drawProcUsage);
