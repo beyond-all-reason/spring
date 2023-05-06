@@ -1399,14 +1399,16 @@ void CGame::ClientReadNet()
 					// FIXME NETMSG_ALLIANCE need a call-in for AIs
 					teamHandler.SetAlly(fromAllyTeam, whichAllyTeam, allied);
 
-					// inform the players
+					// inform the players (do integer promotion because uint8 gets printed as char)
 					std::ostringstream msg;
 					if (fromAllyTeam == gu->myAllyTeam) {
-						msg << "Alliance: you have " << (allied ? "allied" : "unallied") << " allyteam " << whichAllyTeam << ".";
+						msg << "Alliance: you have " << (allied ? "allied" : "unallied") << " allyteam " << +whichAllyTeam << ".";
 					} else if (whichAllyTeam == gu->myAllyTeam) {
-						msg << "Alliance: allyteam " << whichAllyTeam << " has " << (allied ? "allied" : "unallied") <<  " with you.";
+						msg << "Alliance: allyteam " << +whichAllyTeam << " has " << (allied ? "allied" : "unallied") <<  " with you.";
 					} else {
-						msg << "Alliance: allyteam " << whichAllyTeam << " has " << (allied ? "allied" : "unallied") <<  " with allyteam " << fromAllyTeam << ".";
+						/* Don't print other alliances, it is up to the game whether they should be revealed.
+						 * The two messages above would ideally also not be printed, but most games would
+						 * likely want them and, more importantly, there aren't good standard wupgets yet. */
 					}
 					LOG("%s", msg.str().c_str());
 
