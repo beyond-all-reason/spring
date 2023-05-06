@@ -39,7 +39,7 @@ return {
 
 		//! source: http://www.iquilezles.org/www/articles/texture/texture.htm
 		vec4 getTexel(sampler2D tex, vec2 p) {
-			int lod = int(textureQueryLOD(tex, p).x);
+			int lod = GET_TEXLOD(tex, p);
 			vec2 texSize = vec2(textureSize(tex, lod));
 			p = p * texSize + 0.5;
 
