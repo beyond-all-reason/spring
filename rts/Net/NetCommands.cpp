@@ -78,28 +78,34 @@ void CGame::SendClientProcUsage()
 		lastProcUsageUpdateTime = spring_gettime();
 
 		if (playing) {
-			const float realDrawUsage = (profiler.GetTimePercentage("Draw"));
 			const float simProcUsage = (profiler.GetTimePercentage("Sim"));
-			const float drawProcUsage = (realDrawUsage / std::max(1.0f, globalRendering->FPS)) * globalConfig.minDrawFPS;
+			const float drawProcUsage = (profiler.GetTimePercentage("Draw") / std::max(1.0f, globalRendering->FPS)) * globalConfig.minDrawFPS;
 			// const float totalProcUsage = simProcUsage + drawProcUsage;
 
 			// SendCPUUsage(totalProcUsage) gets used by the lag protector to adjust the sim speed.
 			// We don't need drawProcUsage to impact sim speed unless the sim CPU usage is not
 			// leaving enough time for drawing frames.
 			//
-			// Apply drawProcUsage (or some of it) to totalProcUsage if the realDrawUsage falls
-			// below a threshold. In this case drawProcUsage*3% - we need a buffer before 
-			// realDrawUsage <= drawProcUsage to attempt to get the lag protector to adjust sim
-			// speed more aggressively to avoid sim trying to take too much CPU time.
-			//
-			// For example: if 5% of CPU time is need for minimum draw frames, then:
-			//   Add 1% to totalProcUsage if the available time is 14%
-			//   Add the full 5% to totalProcUsage if the available time is 10% or less
-			const float cpuUsageAdjust = std::min(std::max((drawProcUsage*3.f) - realDrawUsage, 0.f), drawProcUsage);
+			// Apply drawProcUsage (or some of it) to totalProcUsage if the simProcUsage exceeds
+			// a minimum threshold. Generally we want that to be a little more than the typical sim
+			// CPU target of 60% (if it has been set to 75% that's rather high and the threshold
+			// should start to kick in before that point.)
+			// 
+			// Max threshold needs to kick in before CPU can hit 100%. Hence the ceiling of 0.9
+			// Min threshold may need to kick in sooner than 65% if it is especially large. A small
+			// space should be created to smooth out the transition of a large number being applied
+			// or not. Hence the 0.8 ceiling for the min threshold, so there's at least a 10%
+			// transition space.
+			// These numbers are somewhat arbitrary and were determined empirically,
+			// so there may well be room for improvement if measurements say so.
+			// 
+			const float lowThreshold = std::min(0.65f, 0.8f - drawProcUsage);
+			const float highThreshold = std::max(lowThreshold + 0.001f, 0.9f - drawProcUsage);
+			const float cpuUsageAdjust = linearstep(lowThreshold, highThreshold, simProcUsage) * drawProcUsage;
 			const float totalProcUsage = std::min(simProcUsage + cpuUsageAdjust, 1.f);
 
-			// LOG("%s: simProcUsage=%f, drawProcUsage=%f, maxCpuAdjust=%f, totalProcUsage=%f"
-			// 		, __func__, simProcUsage, drawProcUsage, cpuUsageAdjust, totalProcUsage);
+			// LOG("%s: simProcUsage=%f, drawProcUsage=%f, maxCpuAdjust=%f, totalProcUsage=%f, lowThreshold=%f, highThreshold=%f"
+			// 		, __func__, simProcUsage, drawProcUsage, cpuUsageAdjust, totalProcUsage, lowThreshold, highThreshold);
 
 			// take the minimum drawframes into account, too
 			clientNet->Send(CBaseNetProtocol::Get().SendCPUUsage(totalProcUsage));

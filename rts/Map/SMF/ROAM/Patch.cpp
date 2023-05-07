@@ -169,10 +169,8 @@ void Patch::Reset()
 
 void Patch::UpdateHeightMap(const SRectangle& rect)
 {
-	static constexpr float DIRTY_THRESHOLD = 20.0f;
-	float newAvgHeight = readMap->GetUnsyncedHeightInfo(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE).z;
-	isDirty = (math::fabs(newAvgHeight - midPos.y) > DIRTY_THRESHOLD);
-	midPos.y = newAvgHeight;
+	midPos.y = readMap->GetUnsyncedHeightInfo(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE).z;
+	isDirty = true;
 }
 
 

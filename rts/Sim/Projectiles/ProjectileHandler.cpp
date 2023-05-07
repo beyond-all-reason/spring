@@ -153,8 +153,9 @@ static void MAPPOS_SANITY_CHECK(const float3 v)
 template<bool synced>
 void CProjectileHandler::UpdateProjectilesImpl()
 {
-	auto& pc = projectiles[synced];
+	SCOPED_TIMER("Sim::Projectiles::Update");
 
+	auto& pc = projectiles[synced];
 	// WARNING:
 	//   we can't use iterators here because ProjectileCreated
 	//   and ProjectileDestroyed events may add new projectiles
@@ -181,8 +182,6 @@ void CProjectileHandler::UpdateProjectilesImpl()
 		// neither
 		++i;
 	}
-
-	SCOPED_TIMER("Sim::Projectiles::Update");
 
 	// WARNING: same as above but for p->Update()
 	if constexpr (synced) {
