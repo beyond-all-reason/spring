@@ -3,7 +3,7 @@ layout: post
 title: Headless and dedicated
 parent: Guides
 permalink: guides/headless-and-dedi
-author: Sprung
+author: sprunk
 ---
 
 ## Overview
