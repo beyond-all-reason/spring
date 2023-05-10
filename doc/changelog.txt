@@ -60,6 +60,82 @@ System:
 UI:
  - Increase the rate at which the traversability view map is updated by x4
 
+Unit def files and `UnitDefs` unification:
+
+ The following unit def keys now accept the same spelling as the ones exposed via UnitDefs.
+ The old spelling still works (old → new).
+   * metalUse → metalUpkeep
+   * energyUse → energyUpkeep
+   * buildCostMetal → metalCost
+   * buildCostEnergy → energyCost
+   * unitRestricted → maxThisUnit
+   * name → humanName
+
+ These two also accept a new spelling, and both the old and new spellings are in elmo/frame.
+ However, migrate to the new spellings ASAP because the original spellings will be changed
+ to use elmo/s sometime in the future.
+   ! acceleration → maxAcc
+   ! brakeRate → maxDec
+
+ The following unit def keys now accept a spelling and measurement unit
+ as the one exposed via UnitDefs (old → new). The old spelling still works,
+ and is still in the old unit.
+   * maxVelocity (elmo/frame) → speed (elmo/second)
+   * maxReverseVelocity (elmo/frame) → rSpeed (elmo/second)
+
+ The following UnitDefs keys now accept the same spelling as the ones
+ accepted for unit def files. The old spelling still works (old → new).
+   * tooltip → description
+   * wreckName → corpse
+   * buildpicname → buildPic
+   * canSelfD → canSelfDestruct
+   * selfDCountdown → selfDestructCountdown
+   * losRadius → sightDistance
+   * airLosRadius → airSightDistance
+   * radarRadius → radarDistance
+   * jammerRadius → radarDistanceJam
+   * sonarRadius → sonarDistance
+   * sonarJamRadius → sonarDistanceJam
+   * seismicRadius → seismicDistance
+   * kamikazeDist → kamikazeDistance
+   * targfac → isTargetingUpgrade
+
+ The following keys receive a new unified spelling for both unit defs
+ and UnitDefs (unit def, UnitDefs → unified). Old spellings still work.
+   * losEmitHeight, losHeight → sightEmitHeight
+   * cruiseAlt, wantedHeight → cruiseAltitude
+
+ Added the missing 'radarEmitHeight' to UnitDefs.
+ The unit def file key was also already 'radarEmitHeight'.
+
+ Changes to unit def validity checks:
+   * negative values for health, (reverse) speed, and metal/energy/buildtime
+     now cause the unit def to be rejected, previously each was clamped to 0.1
+   * negative values for acceleration and brake rate now cause the unit def to
+     be rejected, previously the absolute value was taken
+   * values (0; 0.1) now allowed for health and buildtime (0 still prohibited)
+   * values [0; 0.1) now allowed for metal cost (0 now allowed)
+   * undefined metal cost now defaults to 0 instead of 1
+   * undefined health and buildtime now each default to 100 instead of 0.1
+
+ All deprecated UnitDefs keys have been removed, listed below:
+   * techLevel
+   * harvestStorage
+   * extractSquare
+   * minx
+   * canHover
+   * drag
+   * isAirBase
+   * cloakTimeout
+   * miny
+   * minz
+   * maxx
+   * maxy
+   * maxz
+   * midx
+   * midy
+   * midz
+
 Fixes:
  - Fix direct hits doing X damage sometimes failing to kill an X health target
  - Fix a pathfinding bug where the unit may try to force it's way through obstacles rather than
