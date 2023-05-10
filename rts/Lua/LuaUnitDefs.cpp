@@ -579,7 +579,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_DEPRECATED_FUNCTION("type", ud, ReturnEmptyString);
 	ADD_DEPRECATED_FUNCTION("maxSlope", ud, ReturnMinusOne);
 
-	///!!! ADD_DEPRECATED_LUADEF_KEY("totalEnergyOut");
 	ADD_FLOAT("totalEnergyOut", ud.energyMake);
 
 	ADD_FUNCTION("modCategories",      ud.categoryString,  CategorySetFromString);
@@ -620,33 +619,69 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FUNCTION("height", ud, ModelHeight);
 	ADD_FUNCTION("radius", ud, ModelRadius);
 
-	ADD_DEPRECATED_LUADEF_KEY("minx");
-	ADD_DEPRECATED_LUADEF_KEY("miny");
-	ADD_DEPRECATED_LUADEF_KEY("minz");
-	ADD_DEPRECATED_LUADEF_KEY("maxx");
-	ADD_DEPRECATED_LUADEF_KEY("maxy");
-	ADD_DEPRECATED_LUADEF_KEY("maxz");
-	ADD_DEPRECATED_LUADEF_KEY("midx");
-	ADD_DEPRECATED_LUADEF_KEY("midy");
-	ADD_DEPRECATED_LUADEF_KEY("midz");
-
-
 	ADD_INT("id", ud.id);
 	ADD_INT("cobID", ud.cobID);
 
+	/* Note: input 'name' is actually 'humanName' here,
+	 * which means the modern/legacy thing (see below)
+	 * is harder to do seamlessly here. Besides, the
+	 * internal name is too fundamental to mess with. */
 	ADD_STRING("name",      ud.name);
 	ADD_STRING("humanName", ud.humanName);
 
+	/* Entries in this block are the "legacy" ones,
+	 * they don't match what unit defs accept as input.
+	 * At some point it would probably be good to mark
+	 * them deprecated so that two wupget standards don't
+	 * proliferate in parallel, but we're in no hurry. */
 	ADD_STRING("tooltip", ud.tooltip);
-
 	ADD_STRING("wreckName", ud.wreckName);
+	ADD_STRING("buildpicname", ud.buildPicName);
+	ADD_BOOL("canSelfD", ud.canSelfD);
+	ADD_INT("selfDCountdown", ud.selfDCountdown);
+	ADD_FLOAT("losHeight", ud.losHeight);
+	// radarHeight was missing, enumerating it here alongside other sensors for completeness
+	ADD_FLOAT("losRadius", ud.losRadius);
+	ADD_FLOAT("airLosRadius", ud.airLosRadius);
+	ADD_INT("radarRadius", ud.radarRadius);
+	ADD_INT("sonarRadius", ud.sonarRadius);
+	ADD_INT("jammerRadius", ud.jammerRadius);
+	ADD_INT("sonarJamRadius", ud.sonarJamRadius);
+	ADD_INT("seismicRadius", ud.seismicRadius);
+	ADD_BOOL("targfac", ud.targfac);
+	ADD_FLOAT("kamikazeDist", ud.kamikazeDist);
+	ADD_FLOAT("wantedHeight", ud.wantedHeight);
+	ADD_FLOAT("maxAcc", ud.maxAcc);
+	ADD_FLOAT("maxDec", ud.maxDec);
+
+	/* Entries in this block are the "modern" ones, with
+	 * keys matching what's read from def input files.
+	 * Here they are listed in the same order as above
+	 * for easy comparison. */
+	ADD_STRING("description", ud.tooltip);
+	ADD_STRING("corpse", ud.wreckName);
+	ADD_STRING("buildPic", ud.buildPicName);
+	ADD_BOOL("canSelfDestruct", ud.canSelfD);
+	ADD_INT("selfDestructCountdown", ud.selfDCountdown);
+	ADD_FLOAT("sightEmitHeight", ud.losHeight);
+	ADD_FLOAT("radarEmitHeight", ud.radarHeight);
+	ADD_FLOAT("sightDistance", ud.losRadius);
+	ADD_FLOAT("airSightDistance", ud.airLosRadius);
+	ADD_INT("radarDistance", ud.radarRadius);
+	ADD_INT("sonarDistance", ud.sonarRadius);
+	ADD_INT("radarDistanceJam", ud.jammerRadius);
+	ADD_INT("sonarDistanceJam", ud.sonarJamRadius);
+	ADD_INT("seismicDistance", ud.seismicRadius);
+	ADD_BOOL("isTargetingUpgrade", ud.targfac);
+	ADD_FLOAT("kamikazeDistance", ud.kamikazeDist);
+	ADD_FLOAT("cruiseAltitude", ud.wantedHeight);
+	// acceleration missing on purpose: waiting for units of measurement change
+	// deceleration missing on purpose: waiting for units of measurement change
+
 
 	ADD_FUNCTION("deathExplosion", ud.deathExpWeaponDef, WeaponDefToName);
 	ADD_FUNCTION("selfDExplosion", ud.selfdExpWeaponDef, WeaponDefToName);
 
-	ADD_STRING("buildpicname", ud.buildPicName);
-
-	ADD_DEPRECATED_LUADEF_KEY("techLevel");
 	ADD_INT("maxThisUnit", ud.maxThisUnit);
 
 	ADD_FLOAT("metalUpkeep",    ud.metalUpkeep);
@@ -664,22 +699,15 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("metalStorage",   ud.metalStorage);
 	ADD_FLOAT("energyStorage",  ud.energyStorage);
 
-	ADD_DEPRECATED_LUADEF_KEY("harvestStorage");
 	ADD_FLOAT("harvestMetalStorage", ud.harvestMetalStorage);
 	ADD_FLOAT("harvestEnergyStorage", ud.harvestEnergyStorage);
-
-	ADD_DEPRECATED_LUADEF_KEY("extractSquare");
 
 	ADD_FLOAT("power", ud.power);
 
 	ADD_FLOAT("health",       ud.health);
 	ADD_FLOAT("autoHeal",     ud.autoHeal);
 	ADD_FLOAT("idleAutoHeal", ud.idleAutoHeal);
-
 	ADD_INT("idleTime", ud.idleTime);
-
-	ADD_BOOL("canSelfD", ud.canSelfD);
-	ADD_INT("selfDCountdown", ud.selfDCountdown);
 
 	ADD_FLOAT("speed",    ud.speed);
 	ADD_FLOAT("rSpeed",    ud.rSpeed);
@@ -690,18 +718,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_BOOL("upright", ud.upright);
 	ADD_BOOL("collide", ud.collide);
 
-	ADD_FLOAT("losHeight",     ud.losHeight);
-	ADD_FLOAT("losRadius",     ud.losRadius);
-	ADD_FLOAT("airLosRadius",  ud.airLosRadius);
-
-	ADD_INT("radarRadius",    ud.radarRadius);
-	ADD_INT("sonarRadius",    ud.sonarRadius);
-	ADD_INT("jammerRadius",   ud.jammerRadius);
-	ADD_INT("sonarJamRadius", ud.sonarJamRadius);
-	ADD_INT("seismicRadius",  ud.seismicRadius);
-
 	ADD_FLOAT("seismicSignature", ud.seismicSignature);
-
 	ADD_BOOL("stealth",      ud.stealth);
 	ADD_BOOL("sonarStealth", ud.sonarStealth);
 
@@ -748,8 +765,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_BOOL("onOffable",         ud.onoffable);
 	ADD_BOOL("activateWhenBuilt", ud.activateWhenBuilt);
 
-	ADD_DEPRECATED_LUADEF_KEY("canHover");
-
 	ADD_BOOL("reclaimable", ud.reclaimable);
 	ADD_BOOL("capturable",  ud.capturable);
 	ADD_BOOL("repairable",  ud.repairable);
@@ -777,7 +792,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_BOOL("factoryHeadingTakeoff", ud.factoryHeadingTakeoff);
 
 	//aircraft stuff
-	ADD_DEPRECATED_LUADEF_KEY("drag");
 	ADD_FLOAT("wingDrag",     ud.wingDrag);
 	ADD_FLOAT("wingAngle",    ud.wingAngle);
 	ADD_FLOAT("crashDrag",    ud.crashDrag);
@@ -789,7 +803,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("maxBank",      ud.maxBank);
 	ADD_FLOAT("maxPitch",     ud.maxPitch);
 	ADD_FLOAT("turnRadius",   ud.turnRadius);
-	ADD_FLOAT("wantedHeight", ud.wantedHeight);
 	ADD_BOOL("hoverAttack",   ud.hoverAttack);
 	ADD_BOOL("airStrafe",     ud.airStrafe);
 	ADD_BOOL("bankingAllowed",ud.bankingAllowed);
@@ -801,8 +814,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	//	bool DontLand (") { return dlHoverFactor >= 0.0f; }
 
-	ADD_FLOAT("maxAcc",      ud.maxAcc);
-	ADD_FLOAT("maxDec",      ud.maxDec);
 	ADD_FLOAT("maxAileron",  ud.maxAileron);
 	ADD_FLOAT("maxElevator", ud.maxElevator);
 	ADD_FLOAT("maxRudder",   ud.maxRudder);
@@ -819,8 +830,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("transportMass",         ud.transportMass);
 	ADD_FLOAT("loadingRadius",         ud.loadingRadius);
 
-	ADD_DEPRECATED_LUADEF_KEY("isAirBase");
-
 	ADD_BOOL( "isFirePlatform",        ud.isFirePlatform);
 	ADD_BOOL( "holdSteady",            ud.holdSteady);
 	ADD_BOOL( "releaseHeld",           ud.releaseHeld);
@@ -836,13 +845,9 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("decloakDistance",  ud.decloakDistance);
 	ADD_BOOL( "decloakSpherical", ud.decloakSpherical);
 	ADD_BOOL( "decloakOnFire",    ud.decloakOnFire);
-	ADD_DEPRECATED_LUADEF_KEY("cloakTimeout");
 
 	ADD_BOOL( "canKamikaze",    ud.canKamikaze);
-	ADD_FLOAT("kamikazeDist",   ud.kamikazeDist);
 	ADD_BOOL( "kamikazeUseLOS", ud.kamikazeUseLOS);
-
-	ADD_BOOL("targfac", ud.targfac);
 
 	ADD_BOOL("needGeo",   ud.needGeo);
 	ADD_BOOL("isFeature", ud.isFeature);
