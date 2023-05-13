@@ -596,35 +596,35 @@ void SetDefaultThreadCount()
 
 	SetThreadCount(GetDefaultNumWorkers());
 
-	{
-		// parallel_reduce now folds over shared_ptrs to futures
-		// const auto ReduceFunc = [](std::uint32_t a, std::future<std::uint32_t>& b) -> std::uint32_t { return (a | b.get()); };
-		const auto ReduceFunc = [](std::uint32_t a, std::shared_ptr< std::future<std::uint32_t> >& b) -> std::uint32_t { return (a | (b.get())->get()); };
-		const auto AffinityFunc = [&]() -> std::uint32_t {
-			const int i = ThreadPool::GetThreadNum();
+	// {
+	// 	// parallel_reduce now folds over shared_ptrs to futures
+	// 	// const auto ReduceFunc = [](std::uint32_t a, std::future<std::uint32_t>& b) -> std::uint32_t { return (a | b.get()); };
+	// 	const auto ReduceFunc = [](std::uint32_t a, std::shared_ptr< std::future<std::uint32_t> >& b) -> std::uint32_t { return (a | (b.get())->get()); };
+	// 	const auto AffinityFunc = [&]() -> std::uint32_t {
+	// 		const int i = ThreadPool::GetThreadNum();
 
-			// 0 is the source thread, skip
-			if (i == 0)
-				return 0;
+	// 		// 0 is the source thread, skip
+	// 		if (i == 0)
+	// 			return 0;
 
-			const std::uint32_t workerCore = FindWorkerThreadCore(i - 1, workerAvailCores, mainAffinity);
-			// const std::uint32_t workerCore = workerAvailCores;
+	// 		const std::uint32_t workerCore = FindWorkerThreadCore(i - 1, workerAvailCores, mainAffinity);
+	// 		// const std::uint32_t workerCore = workerAvailCores;
 
-			char threadName[20];
-			std::snprintf(threadName, sizeof(threadName), "Worker %d", i);
+	// 		char threadName[20];
+	// 		std::snprintf(threadName, sizeof(threadName), "Worker %d", i);
 
-			Threading::SetAffinityHelper(threadName, workerCore);
-			return workerCore;
-		};
+	// 		Threading::SetAffinityHelper(threadName, workerCore);
+	// 		return workerCore;
+	// 	};
 
-		const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
-		const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
+	// 	const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
+	// 	const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
 
-		if (mainAffinity == 0)
-			mainAffinity = systemCores;
+	// 	if (mainAffinity == 0)
+	// 		mainAffinity = systemCores;
 
-		Threading::SetAffinityHelper("Main", mainAffinity & mainCoreAffinity);
-	}
+	// 	Threading::SetAffinityHelper("Main", mainAffinity & mainCoreAffinity);
+	// }
 }
 
 
