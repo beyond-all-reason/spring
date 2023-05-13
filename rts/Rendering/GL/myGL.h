@@ -154,6 +154,7 @@ class CVertexArray;
 CVertexArray* GetVertexArray();
 
 struct SDrawElementsIndirectCommand {
+	SDrawElementsIndirectCommand() = default;
 	SDrawElementsIndirectCommand(uint32_t indexCount_, uint32_t instanceCount_, uint32_t firstIndex_, uint32_t baseVertex_, uint32_t baseInstance_)
 		: indexCount{ indexCount_ }
 		, instanceCount{ instanceCount_ }

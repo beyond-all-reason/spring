@@ -1161,11 +1161,17 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 	if (owner->GetTransporter() != nullptr)
 		return;
 
+	wantedHeading = newHeading;
+	if (wantedHeading == owner->heading) {
+		turnSpeed *= owner->IsInAir(); // this is the side effect from GetDeltaHeading() that needs to be applied here.
+		return;
+	}
+
 	#if (MODEL_TURN_INERTIA == 0)
-	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, (wantedHeading = newHeading), owner->heading, turnRate);
+	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate);
 	#else
 	// model rotational inertia (more realistic for ships)
-	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, (wantedHeading = newHeading), owner->heading, turnRate, turnAccel, BrakingDistance(turnSpeed, turnAccel), &turnSpeed);
+	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate, turnAccel, BrakingDistance(turnSpeed, turnAccel), &turnSpeed);
 	#endif
 	const short absDeltaHeading = rawDeltaHeading * Sign(rawDeltaHeading);
 
@@ -1283,8 +1289,7 @@ void CGroundMoveType::UpdateSkid()
 
 			UseHeading(true);
 			// update wanted-heading after coming to a stop
-			// ChangeHeading(owner->heading);
-			wantedHeading = owner->heading;
+			ChangeHeading(owner->heading);
 		} else {
 			constexpr float speedReduction = 0.35f;
 
@@ -2824,8 +2829,7 @@ void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive
 */
 void CGroundMoveType::SetMainHeading() {
 	if (!useMainHeading || owner->weapons.empty()) {
-		// ChangeHeading(owner->heading);
-		wantedHeading = owner->heading;
+		ChangeHeading(owner->heading);
 		return;
 	}
 

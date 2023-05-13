@@ -410,7 +410,9 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	SInstanceData instanceData(static_cast<uint32_t>(matIndex), teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 	const uint32_t immediateBaseInstanceAbs = INSTANCE_BUFFER_NUM_BATCHED + immediateBaseInstance;
-	SDrawElementsIndirectCommand scmd{
+
+	static SDrawElementsIndirectCommand scmd;
+	scmd = {
 		indexCount,
 		1,
 		indexStart,
@@ -427,31 +429,18 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 	if (bindUnbind)
 		Bind();
 
-	bool result = true;
-	if (GLEW_ARB_draw_indirect && !globalRendering->amdHacks) {
-		// As of 01.05.2023 AMD Windows drivers do not support baseInstance field of SDrawElementsIndirectCommand
-		glDrawElementsIndirect(mode, GL_UNSIGNED_INT, &scmd);
-	}
-	else if (GLEW_ARB_base_instance) {
-		#define INT2PTR(x) (reinterpret_cast<void*>(static_cast<intptr_t>(x)))
-		glDrawElementsInstancedBaseInstance(
-			mode,
-			scmd.indexCount,
-			GL_UNSIGNED_INT,
-			INT2PTR(scmd.firstIndex * sizeof(uint32_t)),
-			scmd.instanceCount,
-			scmd.baseInstance
-		);
-		#undef INT2PTR
-	}
-	else {
-		result = false;
-	}
+	// As of 01.05.2023 AMD Windows drivers do not support baseInstance field of SDrawElementsIndirectCommand
+	// therefore can't use glDrawElementsIndirect
+	// At the same time AMD Windows drivers sometimes crash on glDrawElementsInstancedBaseInstance
+	// can't use it either
+	// Revert to glMultiDrawElementsIndirect as it works reliably
+
+	glMultiDrawElementsIndirect(mode, GL_UNSIGNED_INT, &scmd, 1u, sizeof(SDrawElementsIndirectCommand));
 
 	if (bindUnbind)
 		Unbind();
 
-	return result;
+	return true;
 }
 
 bool S3DModelVAO::SubmitImmediately(const S3DModel* model, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)

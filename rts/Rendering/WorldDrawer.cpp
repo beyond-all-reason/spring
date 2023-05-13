@@ -151,13 +151,16 @@ void CWorldDrawer::InitPost() const
 	{
 		ISky::GetSky()->SetupFog();
 	}
-	lock = {}; //unlock, no point in locking it further
+	lock = {}; //unlock
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
 		auto& mv = S3DModelVAO::GetInstance();
 		if (preloadMode) {
-			mv.UploadVBOs();
+			{
+				auto lock = CLoadLock::GetUniqueLock();
+				mv.UploadVBOs();
+			}
 			mv.SetSafeToDeleteVectors();
 			CModelsLock::SetThreadSafety(false); //all models are already preloaded
 		}
