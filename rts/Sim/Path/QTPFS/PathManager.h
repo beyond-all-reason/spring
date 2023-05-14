@@ -76,7 +76,7 @@ namespace QTPFS {
 		// const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
 		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 
-		const MapChangeTrack& GetMapChangeTrack() const { return mapChangeTrack; };
+		const std::vector<MapChangeTrack>& GetMapChangeTrack() const { return mapChangeTrack; };
 
 		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
@@ -165,7 +165,7 @@ namespace QTPFS {
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;
 
-		MapChangeTrack mapChangeTrack;
+		std::vector<MapChangeTrack> mapChangeTrack;
 
 		int deadPathsToUpdatePerFrame = 1;
 		int recalcDeadPathUpdateRateOnFrame = 0;

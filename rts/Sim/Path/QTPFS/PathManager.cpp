@@ -195,8 +195,13 @@ QTPFS::PathManager::~PathManager() {
 	// pathSearches.clear();
 	// pathTypes.clear();
 	pathTraces.clear();
-	mapChangeTrack.damageMap.clear();
-	mapChangeTrack.damageQueue.clear();
+	std::for_each(mapChangeTrack.begin(), mapChangeTrack.end(), [](auto& track){
+		track.damageMap.clear();
+		track.damageQueue.clear();
+	});
+	mapChangeTrack.clear();
+	// mapChangeTrack.damageMap.clear();
+	// mapChangeTrack.damageQueue.clear();
 	sharedPaths.clear();
 
 	// numCurrExecutedSearches.clear();
@@ -240,14 +245,22 @@ void QTPFS::PathManager::Load() {
 	deadPathsToUpdatePerFrame = 1;
 	recalcDeadPathUpdateRateOnFrame = 0;
 
-	pathCache.Init(moveDefHandler.GetNumMoveDefs());
+	const int numMoveDefs = moveDefHandler.GetNumMoveDefs();
+
+	pathCache.Init(numMoveDefs);
 	// nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
-	nodeLayers.resize(moveDefHandler.GetNumMoveDefs());
+	nodeLayers.resize(numMoveDefs);
 	// pathSearches.reserve(200);
 
-	mapChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
-	mapChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
-	mapChangeTrack.damageMap.resize(mapChangeTrack.width*mapChangeTrack.height);
+	mapChangeTrack.clear();
+	mapChangeTrack.reserve(numMoveDefs);
+	for (int i = 0; i < numMoveDefs; ++i) {
+		MapChangeTrack newChangeTrack;
+		newChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
+		newChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
+		newChangeTrack.damageMap.resize(newChangeTrack.width*newChangeTrack.height);
+		mapChangeTrack.emplace_back(newChangeTrack);
+	}
 
 	isFinalized = true;
 	{
@@ -551,7 +564,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
-void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread) {
+void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& rect, int currentThread) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -585,6 +598,28 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 
 	// TODO expand r to correct size - i.e. size of smallest node that contains the area
 	// TODO: stop r expansion in tessalate - it isn't needed
+
+	SRectangle r(rect);
+	if (rect.x1 == 0 && rect.x2 == 0) {
+
+		// No more damaged areas. Finish up.
+		if (mapChangeTrack[layerNum].damageQueue.size() == 0) { return; }
+
+		const int sectorId = mapChangeTrack[layerNum].damageQueue.front();
+		const int blockIdxX = (sectorId % mapChangeTrack[layerNum].width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int blockIdxY = (sectorId / mapChangeTrack[layerNum].width) * DAMAGE_MAP_BLOCK_SIZE;
+
+		assert(sectorId < mapChangeTrack[layerNum].damageMap.size());
+		mapChangeTrack[layerNum].damageMap[sectorId] = false;
+		mapChangeTrack[layerNum].damageQueue.pop_front();
+
+		r = SRectangle
+			( blockIdxX
+			, blockIdxY
+			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+			);
+	}
 
 	INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
 	SRectangle re(containingNode->xmin(), containingNode->zmin(), containingNode->xmax(), containingNode->zmax());
@@ -742,24 +777,46 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 
 void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 	const int res = DAMAGE_MAP_BLOCK_SIZE;
-	const int w = mapChangeTrack.width;
-	const int h = mapChangeTrack.height;
+
+	const auto layers = nodeLayers.size();
+	for (int i = 0; i < layers; ++i) {
+		const int w = mapChangeTrack[i].width;
+		const int h = mapChangeTrack[i].height;
+
+		auto* moveDef = moveDefHandler.GetMoveDefByPathType(i);
+		int xsizeh = moveDef->xsizeh;
+		int zsizeh = moveDef->zsizeh;
+		const int2 min  { std::max((x1-xsizeh) / res, 0)
+						, std::max((y1-zsizeh) / res, 0)};
+		const int2 max  { std::min((x2+xsizeh) / res, (w-1))
+						, std::min((y2+zsizeh) / res, (h-1))};
+
+		for (int y = min.y; y <= max.y; ++y) {
+			int quad = min.x + y*w;
+			for (int x = min.x; x <= max.x; ++x, ++quad) {
+				if (!mapChangeTrack[i].damageMap[quad]) {
+					mapChangeTrack[i].damageMap[quad] = true;
+					mapChangeTrack[i].damageQueue.emplace_back(quad);
+				}
+			}	
+		}
+	}
 
 	// TODO: add dynamic boundary to calculations
-	const int2 min  { std::max((x1-4) / res, 0)
-					, std::max((y1-4) / res, 0)};
-	const int2 max  { std::min((x2+4) / res, (w-1))
-					, std::min((y2+4) / res, (h-1))};
+	// const int2 min  { std::max((x1-4) / res, 0)
+	// 				, std::max((y1-4) / res, 0)};
+	// const int2 max  { std::min((x2+4) / res, (w-1))
+	// 				, std::min((y2+4) / res, (h-1))};
 
-	for (int y = min.y; y <= max.y; ++y) {
-		int i = min.x + y*w;
-		for (int x = min.x; x <= max.x; ++x, ++i) {
-			if (!mapChangeTrack.damageMap[i]) {
-				mapChangeTrack.damageMap[i] = true;
-				mapChangeTrack.damageQueue.emplace_back(i);
-			}
-		}	
-	}
+	// for (int y = min.y; y <= max.y; ++y) {
+	// 	int i = min.x + y*w;
+	// 	for (int x = min.x; x <= max.x; ++x, ++i) {
+	// 		if (!mapChangeTrack.damageMap[i]) {
+	// 			mapChangeTrack.damageMap[i] = true;
+	// 			mapChangeTrack.damageQueue.emplace_back(i);
+	// 		}
+	// 	}	
+	// }
 }
 
 void QTPFS::PathManager::Update() {
@@ -773,22 +830,23 @@ void QTPFS::PathManager::Update() {
 	}
 	{
 		// start off with simple update
-		if (mapChangeTrack.damageQueue.empty()) return;
+		// if (mapChangeTrack.damageQueue.empty()) return;
 
 		SCOPED_TIMER("Sim::Path::MapUpdates");
 
-		const int sectorId = mapChangeTrack.damageQueue.front();
-		const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-		const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-		SRectangle rect
-			( blockIdxX
-			, blockIdxY
-			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
-			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
-			);
+		// const int sectorId = mapChangeTrack.damageQueue.front();
+		// const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+		// const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
+		// SRectangle rect
+		// 	( blockIdxX
+		// 	, blockIdxY
+		// 	, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+		// 	, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+		// 	);
 
 		RequestMaxSpeedModRefreshForLayer(0);
 
+		SRectangle rect(0,0,0,0);
 		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
 			UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum());
 		});
@@ -812,9 +870,9 @@ void QTPFS::PathManager::Update() {
 		if (refreshDirtyPathRateFrame == QTPFS_LAST_FRAME && pathsMarkedDirty > 0)
 			refreshDirtyPathRateFrame = gs->frameNum + GAME_SPEED;
 
-		assert(sectorId < mapChangeTrack.damageMap.size());
-		mapChangeTrack.damageMap[sectorId] = false;
-		mapChangeTrack.damageQueue.pop_front();
+		// assert(sectorId < mapChangeTrack.damageMap.size());
+		// mapChangeTrack.damageMap[sectorId] = false;
+		// mapChangeTrack.damageQueue.pop_front();
 	}
 }
 
