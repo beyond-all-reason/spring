@@ -3506,6 +3506,22 @@ int LuaSyncedRead::GetUnitIsCloaked(lua_State* L)
 
 /***
  *
+ * @function Spring.GetUnitSeismicSignature
+ * @number unitID
+ * @treturn nil|number
+ */
+int LuaSyncedRead::GetUnitSeismicSignature(lua_State* L)
+{
+	const CUnit* const unit = ParseAllyUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->seismicSignature);
+	return 1;
+}
+
+/***
+ *
  * @function Spring.GetUnitSelfDTime
  * @number unitID
  * @treturn nil|number

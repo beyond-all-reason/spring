@@ -87,6 +87,7 @@ class LuaSyncedCtrl
 		static int SetUnitCloak(lua_State* L);
 		static int SetUnitStealth(lua_State* L);
 		static int SetUnitSonarStealth(lua_State* L);
+		static int SetUnitSeismicSignature(lua_State* L);
 		static int SetUnitAlwaysVisible(lua_State* L);
 		static int SetUnitUseAirLos(lua_State* L);
 		static int SetUnitResourcing(lua_State* L);
