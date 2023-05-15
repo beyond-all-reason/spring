@@ -178,6 +178,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitCloak);
 	REGISTER_LUA_CFUNC(SetUnitStealth);
 	REGISTER_LUA_CFUNC(SetUnitSonarStealth);
+	REGISTER_LUA_CFUNC(SetUnitSeismicSignature);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysVisible);
 	REGISTER_LUA_CFUNC(SetUnitUseAirLos);
 	REGISTER_LUA_CFUNC(SetUnitMetalExtraction);
@@ -2599,6 +2600,21 @@ int LuaSyncedCtrl::SetUnitSonarStealth(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetUnitSeismicSignature
+ * @number unitID
+ * @number seismicSignature
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
+{
+	CUnit* const unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	unit->seismicSignature = luaL_checkfloat(L, 2);
+	return 0;
+}
 
 /***
  * @function Spring.SetUnitAlwaysVisible
