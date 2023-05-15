@@ -195,11 +195,11 @@ QTPFS::PathManager::~PathManager() {
 	// pathSearches.clear();
 	// pathTypes.clear();
 	pathTraces.clear();
-	std::for_each(mapChangeTrack.begin(), mapChangeTrack.end(), [](auto& track){
+	std::for_each(mapChangeTrackPerLayer.nodeLayerTrackers.begin(), mapChangeTrackPerLayer.nodeLayerTrackers.end(), [](auto& track){
 		track.damageMap.clear();
 		track.damageQueue.clear();
 	});
-	mapChangeTrack.clear();
+	mapChangeTrackPerLayer.nodeLayerTrackers.clear();
 	// mapChangeTrack.damageMap.clear();
 	// mapChangeTrack.damageQueue.clear();
 	sharedPaths.clear();
@@ -252,14 +252,14 @@ void QTPFS::PathManager::Load() {
 	nodeLayers.resize(numMoveDefs);
 	// pathSearches.reserve(200);
 
-	mapChangeTrack.clear();
-	mapChangeTrack.reserve(numMoveDefs);
+	mapChangeTrackPerLayer.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
+	mapChangeTrackPerLayer.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
+	mapChangeTrackPerLayer.nodeLayerTrackers.clear();
+	mapChangeTrackPerLayer.nodeLayerTrackers.reserve(numMoveDefs);
 	for (int i = 0; i < numMoveDefs; ++i) {
 		MapChangeTrack newChangeTrack;
-		newChangeTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
-		newChangeTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
-		newChangeTrack.damageMap.resize(newChangeTrack.width*newChangeTrack.height);
-		mapChangeTrack.emplace_back(newChangeTrack);
+		newChangeTrack.damageMap.resize(mapChangeTrackPerLayer.width*mapChangeTrackPerLayer.height);
+		mapChangeTrackPerLayer.nodeLayerTrackers.emplace_back(newChangeTrack);
 	}
 
 	isFinalized = true;
@@ -601,17 +601,18 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 
 	SRectangle r(rect);
 	if (rect.x1 == 0 && rect.x2 == 0) {
+		auto& nlChangeTracker = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum];
 
 		// No more damaged areas. Finish up.
-		if (mapChangeTrack[layerNum].damageQueue.size() == 0) { return; }
+		if (nlChangeTracker.damageQueue.size() == 0) { return; }
 
-		const int sectorId = mapChangeTrack[layerNum].damageQueue.front();
-		const int blockIdxX = (sectorId % mapChangeTrack[layerNum].width) * DAMAGE_MAP_BLOCK_SIZE;
-		const int blockIdxY = (sectorId / mapChangeTrack[layerNum].width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int sectorId = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum].damageQueue.front();
+		const int blockIdxX = (sectorId % mapChangeTrackPerLayer.width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int blockIdxY = (sectorId / mapChangeTrackPerLayer.width) * DAMAGE_MAP_BLOCK_SIZE;
 
-		assert(sectorId < mapChangeTrack[layerNum].damageMap.size());
-		mapChangeTrack[layerNum].damageMap[sectorId] = false;
-		mapChangeTrack[layerNum].damageQueue.pop_front();
+		assert(sectorId < nlChangeTracker.damageMap.size());
+		nlChangeTracker.damageMap[sectorId] = false;
+		nlChangeTracker.damageQueue.pop_front();
 
 		r = SRectangle
 			( blockIdxX
@@ -780,8 +781,9 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 
 	const auto layers = nodeLayers.size();
 	for (int i = 0; i < layers; ++i) {
-		const int w = mapChangeTrack[i].width;
-		const int h = mapChangeTrack[i].height;
+		auto& nlChangeTracker = mapChangeTrackPerLayer.nodeLayerTrackers[i];
+		const int w = mapChangeTrackPerLayer.width;
+		const int h = mapChangeTrackPerLayer.height;
 
 		auto* moveDef = moveDefHandler.GetMoveDefByPathType(i);
 		int xsizeh = moveDef->xsizeh;
@@ -794,9 +796,9 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 		for (int y = min.y; y <= max.y; ++y) {
 			int quad = min.x + y*w;
 			for (int x = min.x; x <= max.x; ++x, ++quad) {
-				if (!mapChangeTrack[i].damageMap[quad]) {
-					mapChangeTrack[i].damageMap[quad] = true;
-					mapChangeTrack[i].damageQueue.emplace_back(quad);
+				if (!nlChangeTracker.damageMap[quad]) {
+					nlChangeTracker.damageMap[quad] = true;
+					nlChangeTracker.damageQueue.emplace_back(quad);
 				}
 			}	
 		}

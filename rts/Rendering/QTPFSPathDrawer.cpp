@@ -451,14 +451,14 @@ void QTPFSPathDrawer::DrawInMiniMap()
 
 	const int blockSize = QTPFS::PathManager::DAMAGE_MAP_BLOCK_SIZE;
 
-	auto width = mct[0].width;
-	auto height = mct[0].height;
-	float maxStrength = mct.size();
+	auto width = mct.width;
+	auto height = mct.height;
+	float maxStrength = mct.nodeLayerTrackers.size();
 
 	std::vector<float> mapDamageStrength;
 	mapDamageStrength.resize(width*height, 0.f);
 
-	for (auto& track : mct) {
+	for (auto& track : mct.nodeLayerTrackers) {
 		for (auto mapQuad: track.damageQueue) {
 			assert(mapQuad < mapDamageStrength.size());
 			mapDamageStrength[mapQuad]++;
@@ -471,7 +471,7 @@ void QTPFSPathDrawer::DrawInMiniMap()
 		// const int blockIdxY = (i / mct.width) * blockSize;
 		const int blockIdxX = (i % width) * blockSize;
 		const int blockIdxY = (i / width) * blockSize;
-		const float drawStrength = 0.3f + 0.4f*(mapDamageStrength[i] / maxStrength);
+		const float drawStrength = 0.2f + 0.55f*(mapDamageStrength[i] / maxStrength);
 		glColor4f(1.0f, 1.0f, 0.0f, /*0.7f*/ drawStrength);
 		glRectf(blockIdxX, blockIdxY, blockIdxX + blockSize, blockIdxY + blockSize);
 	}
