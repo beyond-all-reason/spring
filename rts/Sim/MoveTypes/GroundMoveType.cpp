@@ -450,6 +450,7 @@ void CGroundMoveType::PostLoad()
 		return;
 
 	ReRequestPath(PATH_REQUEST_TIMING_IMMEDIATE|PATH_REQUEST_UPDATE_FULLPATH);
+	DelayedReRequestPath();
 }
 
 bool CGroundMoveType::OwnerMoved(const short oldHeading, const float3& posDif, const float3& cmpEps) {
