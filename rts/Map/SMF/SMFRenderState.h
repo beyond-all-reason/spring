@@ -98,7 +98,7 @@ public:
 	void SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void UpdateShaderSkyUniforms() override;
 
-	enum {
+	enum ShaderStage {
 		GLSL_SHADER_FWD_STD = 0,
 		GLSL_SHADER_FWD_ADV = 1,
 		GLSL_SHADER_DFR_ADV = 2,
@@ -106,6 +106,8 @@ public:
 	};
 
 private:
+	bool CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const;
+
 	std::array<Shader::IProgramObject*, GLSL_SHADER_COUNT> glslShaders;
 	Shader::IProgramObject* currShader = nullptr;
 
