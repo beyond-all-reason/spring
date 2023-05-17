@@ -59,7 +59,7 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 		}
 	}
 
-	currShader = glslShaders[smfGroundDrawer->UseAdvShading() ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
+	currShader = glslShaders[CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_FWD_ADV) ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
 	return true;
 }
 
@@ -195,10 +195,10 @@ bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
 
 bool SMFRenderStateGLSL::CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const
 {
-	return smfGroundDrawer->UseAdvShading();
+	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV);
 }
 
-void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
+void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
 		currShader->EnableRaw();
@@ -207,7 +207,8 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 		return;
 	}
 
-	const bool isAdv = smfGroundDrawer->UseAdvShading();
+	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
+	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
 
@@ -261,14 +262,17 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	glActiveTexture(GL_TEXTURE0);
 }
 
-void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e&) {
+void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
 	if (useLuaShaders) {
 		glActiveTexture(GL_TEXTURE0);
 		currShader->DisableRaw();
 		return;
 	}
 
-	if (smfGroundDrawer->UseAdvShading() && shadowHandler.ShadowsLoaded()) {
+	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
+	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
+
+	if (isAdv && shadowHandler.ShadowsLoaded()) {
 		glActiveTexture(GL_TEXTURE4);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 	}
@@ -284,10 +288,15 @@ void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
 }
 
 void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
-	if (drawPass == DrawPass::TerrainDeferred)
+	if (drawPass == DrawPass::TerrainDeferred) {
 		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
+		return;
+	}
+
+	if (CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_FWD_ADV))
+		currShader = glslShaders[GLSL_SHADER_FWD_ADV];
 	else
-		currShader = glslShaders[smfGroundDrawer->UseAdvShading() ? GLSL_SHADER_FWD_ADV : GLSL_SHADER_FWD_STD];
+		currShader = glslShaders[GLSL_SHADER_FWD_STD];
 }
 
 void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
@@ -303,4 +312,9 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 		glslShaders[n]->SetUniform3v("groundSpecularColor", &sunLighting->groundSpecularColor[0]);
 		glslShaders[n]->Disable();
 	}
+}
+
+bool SMFRenderStateGLSL::CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const
+{
+	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage]->IsValid();
 }

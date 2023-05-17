@@ -465,7 +465,7 @@ namespace Shader {
 
 		const auto ReturnHelper = [this](const char* fn) -> bool {
 			if (!valid && logReporting)
-				LOG_L(L_ERROR, "[GLSL-PO::%s] program-object name: %s is not valid", fn, name.c_str());
+				LOG_L(L_ERROR, "[GLSL-PO::%s] program-object name: %s is not valid. Log:\n%s", fn, name.c_str(), log.c_str());
 			return valid;
 		};
 
@@ -680,7 +680,7 @@ namespace Shader {
 		}
 
 		// FIXME: fails on ATI, see https://springrts.com/mantis/view.php?id=4715
-		if (validate && !globalRendering->haveAMD)
+		if (validate && (!globalRendering->haveAMD && !globalRendering->haveIntel))
 			Validate();
 
 		// copy full program state from old to new program (uniforms etc.)
