@@ -680,7 +680,7 @@ namespace Shader {
 		}
 
 		// FIXME: fails on ATI, see https://springrts.com/mantis/view.php?id=4715
-		if (validate && !globalRendering->haveAMD)
+		if (validate && (!globalRendering->haveAMD && !globalRendering->haveIntel))
 			Validate();
 
 		// copy full program state from old to new program (uniforms etc.)
