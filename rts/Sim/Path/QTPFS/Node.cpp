@@ -691,6 +691,14 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		}
 	}
 
+	// Impassable squares don't impact search performance, but the larger they are the bigger the
+	// impact on updating. For example, sea units will often have large impassable areas for the
+	// land and we'll be recalculating across these larger areas every time those areas are damaged
+	// despite it not changing the impassability as far as ships are concerned. So make these areas
+	// as small as possible (i.e. same size as the damage quads) to minimize update performance
+	// impact.
+	wantSplit |= (AllSquaresImpassable() && xsize() > 16); // TODO: magic number for size of damage quads
+
 	return (wantSplit || needSplit);
 }
 

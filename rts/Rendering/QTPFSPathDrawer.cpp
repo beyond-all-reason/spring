@@ -447,7 +447,6 @@ void QTPFSPathDrawer::DrawInMiniMap()
 		glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
 
 	glDisable(GL_TEXTURE_2D);
-	// glColor4f(1.0f, 1.0f, 0.0f, 0.7f);
 
 	const int blockSize = QTPFS::PathManager::DAMAGE_MAP_BLOCK_SIZE;
 
@@ -467,12 +466,10 @@ void QTPFSPathDrawer::DrawInMiniMap()
 
 	for (int i = 0; i < mapDamageStrength.size(); ++i) {
 		if (mapDamageStrength[i] == 0.f) { continue; }
-		// const int blockIdxX = (i % mct.width) * blockSize;
-		// const int blockIdxY = (i / mct.width) * blockSize;
 		const int blockIdxX = (i % width) * blockSize;
 		const int blockIdxY = (i / width) * blockSize;
 		const float drawStrength = 0.2f + 0.55f*(mapDamageStrength[i] / maxStrength);
-		glColor4f(1.0f, 1.0f, 0.0f, /*0.7f*/ drawStrength);
+		glColor4f(1.0f, 1.0f, 0.0f, drawStrength);
 		glRectf(blockIdxX, blockIdxY, blockIdxX + blockSize, blockIdxY + blockSize);
 	}
 
