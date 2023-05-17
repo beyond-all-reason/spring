@@ -310,8 +310,10 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		assert(curNode->GetNeighborRelation(nxtNode) != 0);
 		assert(nxtNode->GetNeighborRelation(curNode) != 0);
 
-		if (nxtNode->AllSquaresImpassable())
-			continue;
+		// Nodes are no longer linked to impassible nodes.
+		// The removal of this check allows units to try to escape from an "impassible node"
+		// if (nxtNode->AllSquaresImpassable())
+		// 	continue;
 
 		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNode);
 
