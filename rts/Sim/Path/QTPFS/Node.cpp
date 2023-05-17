@@ -890,7 +890,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 					// neighbours.push_back(ngb);
 					// neighbours.push_back(ngb->GetIndex());
-					neighborCache[newNeighbors++] = ngb;
+					if (!ngb->AllSquaresImpassable())
+						neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -931,7 +932,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 					// neighbours.push_back(ngb);
 					// neighbours.push_back(ngb->GetIndex());
-					neighborCache[newNeighbors++] = ngb;
+					if (!ngb->AllSquaresImpassable())
+						neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -973,7 +975,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 					// neighbours.push_back(ngb);
 					// neighbours.push_back(ngb->GetIndex());
-					neighborCache[newNeighbors++] = ngb;
+					if (!ngb->AllSquaresImpassable())
+						neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -1014,7 +1017,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 					// neighbours.push_back(ngb);
 					// neighbours.push_back(ngb->GetIndex());
-					neighborCache[newNeighbors++] = ngb;
+					if (!ngb->AllSquaresImpassable())
+						neighborCache[newNeighbors++] = ngb;
 
 					assert(GetNeighborRelation(ngb) != 0);
 					assert(ngb->GetNeighborRelation(this) != 0);
@@ -1059,7 +1063,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 						if (ngbL->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
 							// neighbours.push_back(ngbC->GetIndex());
-							neighborCache[newNeighbors++] = ngbC;
+							if (!ngbC->AllSquaresImpassable())
+								neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1094,7 +1099,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 						if (ngbL->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
 							// neighbours.push_back(ngbC->GetIndex());
-							neighborCache[newNeighbors++] = ngbC;
+							if (!ngbC->AllSquaresImpassable())
+								neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1133,7 +1139,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 						if (ngbR->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
 							// neighbours.push_back(ngbC->GetIndex());
-							neighborCache[newNeighbors++] = ngbC;
+							if (!ngbC->AllSquaresImpassable())
+								neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
@@ -1168,7 +1175,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 						if (ngbR->AllSquaresAccessible() && ngbB->AllSquaresAccessible()) {
 							// neighbours.push_back(ngbC);
 							// neighbours.push_back(ngbC->GetIndex());
-							neighborCache[newNeighbors++] = ngbC;
+							if (!ngbC->AllSquaresImpassable())
+								neighborCache[newNeighbors++] = ngbC;
 
 							assert(GetNeighborRelation(ngbC) != 0);
 							assert(ngbC->GetNeighborRelation(this) != 0);
