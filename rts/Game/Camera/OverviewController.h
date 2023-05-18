@@ -9,8 +9,17 @@ class COverviewController : public CCameraController
 {
 public:
 	COverviewController();
+	~COverviewController();
+
+	constexpr static float3 DIR_UP = float3(0.0f, -0.999999500000375f, -0.000999999500000375f); // -90 deg
+	constexpr static float3 DIR_LEFT = float3(0.000999999500000375f, -0.999999500000375f, 0.0f); // -90 deg
+	constexpr static float3 DIR_BOTTOM = float3(0.0f, -0.999999500000375f, 0.000999999500000375f); // 90 deg
+	constexpr static float3 DIR_RIGHT = float3(-0.000999999500000375f, -0.999999500000375f, 0.0f); // -90 deg
 
 	const std::string GetName() const { return "ov"; }
+
+	void ConfigNotify(const std::string& key, const std::string& value);
+	void ConfigUpdate();
 
 	void KeyMove(float3 move) override {}
 	void MouseMove(float3 move) override {}
@@ -29,6 +38,7 @@ public:
 
 private:
 	bool minimizeMinimap;
+	bool followRotation;
 };
 
 #endif // _OV_CONTROLLER_H

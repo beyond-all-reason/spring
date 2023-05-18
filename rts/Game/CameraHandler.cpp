@@ -428,6 +428,34 @@ void CCameraHandler::ToggleOverviewCamera()
 
 	if (controllerStack.empty()) {
 		PushMode();
+
+		// Set overview camera direction according to rotation of current camera
+		// controller. This way we avoid jarring transitions.
+		if (configHandler->GetBool("OverviewRotation")) {
+			const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), math::TWOPI);
+			float3 dir = COverviewController::DIR_UP;
+
+			static constexpr float three_quarters_pi = math::HALFPI + math::QUARTERPI;
+			static constexpr float five_quarters_pi = math::PI + math::QUARTERPI;
+			static constexpr float seven_quarters_pi = five_quarters_pi + math::HALFPI;
+
+			if (rotY < math::QUARTERPI) {
+			} else if (rotY < three_quarters_pi) {
+				dir = COverviewController::DIR_LEFT;
+			} else if (rotY < five_quarters_pi) {
+				dir = COverviewController::DIR_BOTTOM;
+			} else if (rotY < seven_quarters_pi) {
+				dir = COverviewController::DIR_RIGHT;
+			}
+
+			CCameraController::StateMap sm;
+			camControllers[CAMERA_MODE_OVERVIEW]->GetState(sm);
+			sm["dx"] = dir.x;
+			sm["dy"] = dir.y;
+			sm["dz"] = dir.z;
+			camControllers[CAMERA_MODE_OVERVIEW]->SetState(sm);
+		}
+
 		SetCameraMode(CAMERA_MODE_OVERVIEW);
 	} else {
 		PopMode();
