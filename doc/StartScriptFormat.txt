@@ -30,7 +30,6 @@
 	GameStartDelay=4;   // optional, in seconds (unsigned int), default: 4
 	                    // The number of seconds till the game starts,
 	                    // counting from the moment when all players are connected and ready.
-	ScriptName=Commanders;
 	StartPosType=x;     // 0 fixed, 1 random, 2 choose in game, 3 choose before game (see StartPosX)
 
 	DemoFile=demo.sdfz; // if set this game is a multiplayer demo replay
