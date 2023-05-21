@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <cassert>
 
@@ -89,22 +89,22 @@ QTPFS::IPath* QTPFS::PathCache::GetPath(unsigned int pathID, unsigned int pathTy
 // 	tempPaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
 // }
 
-void QTPFS::PathCache::AddLivePath(IPath* path) {
-	// assert(path->GetID() != 0);
-	assert(path->NumPoints() >= 2);
+// void QTPFS::PathCache::AddLivePath(IPath* path) {
+// 	// assert(path->GetID() != 0);
+// 	assert(path->NumPoints() >= 2);
 
-	// assert(tempPaths.find(path->GetID()) != tempPaths.end());
-	// assert(livePaths.find(path->GetID()) == livePaths.end());
-	// assert(deadPaths.find(path->GetID()) == deadPaths.end());
+// 	// assert(tempPaths.find(path->GetID()) != tempPaths.end());
+// 	// assert(livePaths.find(path->GetID()) == livePaths.end());
+// 	// assert(deadPaths.find(path->GetID()) == deadPaths.end());
 
-	// promote a path from temporary- to live-status (no deletion)
-	// tempPaths.erase(path->GetID());
-	// livePaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
+// 	// promote a path from temporary- to live-status (no deletion)
+// 	// tempPaths.erase(path->GetID());
+// 	// livePaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
 
-	auto pathEntity = registry.create();
-	path->SetID((int)pathEntity);
-	registry.emplace_or_replace<IPath>(pathEntity);
-}
+// 	auto pathEntity = registry.create();
+// 	path->SetID((int)pathEntity);
+// 	registry.emplace<IPath>(pathEntity);
+// }
 
 void QTPFS::PathCache::DelPath(unsigned int pathID) {
 	entt::entity entity = (entt::entity)pathID;
@@ -218,6 +218,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
 				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
+				assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
 				dirtyPaths[pathType].emplace_back(entity);
 
 				// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);

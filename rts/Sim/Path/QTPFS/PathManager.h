@@ -157,6 +157,7 @@ namespace QTPFS {
 		// per thread data
 		std::vector<SearchThreadData> searchThreadData;
 		std::vector<UpdateThreadData> updateThreadData;
+		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
 
 		// spring::unordered_map<unsigned int, unsigned int> pathTypes;
 		// spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;

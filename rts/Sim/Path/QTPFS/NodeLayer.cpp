@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <limits>
 
@@ -205,38 +205,10 @@ QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float re
 }
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
-	// assert(!nodeGrid.empty());
-
 	// account for the rim of nodes around the bounding box
 	// (whose neighbors also changed during re-tesselation)
 	const int xmin = std::max(ur.x1 - 1, 0), xmax = std::min(ur.x2 + 1, mapDims.mapx);
 	const int zmin = std::max(ur.z1 - 1, 0), zmax = std::min(ur.z2 + 1, mapDims.mapy);
-
-	// INode* n = nullptr;
-
-	// if (gs->frameNum > -1 && layerNumber == 2)
-	// 	LOG("%s: [%d] (%d,%d:%d,%d)", __func__, layerNumber, xmin, zmin, xmax, zmax);
-
-	// for (int z = zmin; z < zmax; ) {
-	// 	unsigned int zspan = zsize;
-
-	// 	for (int x = xmin; x < xmax; ) {
-	// 		n = nodeGrid[z * xsize + x];
-	// 		x = n->xmax();
-
-	// 		// calculate largest safe z-increment along this row
-	// 		zspan = std::min(zspan, n->zmax() - z);
-	// 		zspan = std::max(zspan, 1u);
-
-	// 		// NOTE:
-	// 		//   during initialization, currMagicNum == 0 which nodes start with already 
-	// 		//   (does not matter because prevMagicNum == -1, so updates are not no-ops)
-	// 		n->SetMagicNumber(currMagicNum);
-	// 		n->UpdateNeighborCache(nodeGrid, layerNumber);
-	// 	}
-
-	// 	z += zspan;
-	// }
 
 	// ------------------------------------------------------
 	// find all leaf nodes

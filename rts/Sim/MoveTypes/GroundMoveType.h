@@ -99,16 +99,16 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	void DelayedReRequestPath() {
-		earlyCurrWayPoint = currWayPoint;
-		earlyNextWayPoint = nextWayPoint;
+	// void DelayedReRequestPath() {
+	// 	earlyCurrWayPoint = currWayPoint;
+	// 	earlyNextWayPoint = nextWayPoint;
 
-		PathRequestType curRepath = wantRepath;
-		wantRepath = PATH_REQUEST_NONE;
+	// 	PathRequestType curRepath = wantRepath;
+	// 	wantRepath = PATH_REQUEST_NONE;
 
-		if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
-		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
-	}
+	// 	if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
+	// 	else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
+	// }
 	void SyncWaypoints() {
 		if (moveFailed){
 			Fail(false);
@@ -140,9 +140,9 @@ private:
 
 	void SetNextWayPoint(int thread = 0);
 	bool CanSetNextWayPoint(int thread = 0);
-	void DoSetNextWaypoint();
-	void ReRequestPath(PathRequestType requestType);
-	void DoReRequestPath();
+	// void DoSetNextWaypoint();
+	void ReRequestPath(bool forceRequest);
+	// void DoReRequestPath();
 
 	void StartEngine(bool callScript);
 	void StopEngine(bool callScript, bool hardStop = false);
@@ -254,6 +254,7 @@ private:
 
 	bool atGoal = true;
 	bool atEndOfPath = true;
+	bool wantRepath = false;
 	bool moveFailed = false;
 
 	bool reversing = false;

@@ -40,7 +40,7 @@ namespace QTPFS {
 		//       IPath* GetDeadPath(unsigned int pathID)       { return (GetPath(pathID, PATH_TYPE_DEAD)); }
 
 		void AddTempPath(IPath* path);
-		void AddLivePath(IPath* path);
+		//void AddLivePath(IPath* path);
 
 		void Init(int pathTypes) {
 			dirtyPaths.clear();

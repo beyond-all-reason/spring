@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <assert.h>
 
@@ -22,6 +22,7 @@
 #include "Map/MapInfo.h"
 
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
@@ -171,6 +172,7 @@ QTPFS::PathManager::~PathManager() {
 	});
 	LOG("%s: %d entities still active!", __func__, (int)registry.alive());
 
+	nodeLayerUpdatePriorityOrder.clear();
 	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 		// nodeTrees[layerNum]->Merge(nodeLayers[layerNum]);
 
@@ -252,6 +254,8 @@ void QTPFS::PathManager::Load() {
 	nodeLayers.resize(numMoveDefs);
 	// pathSearches.reserve(200);
 
+	nodeLayerUpdatePriorityOrder.resize(numMoveDefs);
+
 	mapChangeTrackPerLayer.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrackPerLayer.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
 	mapChangeTrackPerLayer.nodeLayerTrackers.clear();
@@ -260,6 +264,16 @@ void QTPFS::PathManager::Load() {
 		MapChangeTrack newChangeTrack;
 		newChangeTrack.damageMap.resize(mapChangeTrackPerLayer.width*mapChangeTrackPerLayer.height);
 		mapChangeTrackPerLayer.nodeLayerTrackers.emplace_back(newChangeTrack);
+		nodeLayerUpdatePriorityOrder[i] = i;
+	}
+
+	std::stable_sort(nodeLayerUpdatePriorityOrder.begin(), nodeLayerUpdatePriorityOrder.end(), [](int a, int b){
+		return (moveDefHandler.GetMoveDefByPathType(a)->xsize > moveDefHandler.GetMoveDefByPathType(b)->xsize);
+	});
+
+	for (int i=0; i < nodeLayerUpdatePriorityOrder.size(); ++i) {
+		LOG("%s: %d [priority %d] xsize = %d", __func__, nodeLayerUpdatePriorityOrder[i], i
+				, moveDefHandler.GetMoveDefByPathType(nodeLayerUpdatePriorityOrder[i])->xsize);
 	}
 
 	isFinalized = true;
@@ -375,20 +389,6 @@ std::uint64_t QTPFS::PathManager::GetMemFootPrint() const {
 	// convert to megabytes
 	return (memFootPrint / (1024 * 1024));
 }
-
-
-
-// void QTPFS::PathManager::SpawnSpringThreads(MemberFunc f, const SRectangle& r) {
-// 	static std::vector<spring::thread*> threads(std::min(GetNumThreads(), nodeLayers.size()), nullptr);
-
-// 	for (unsigned int threadNum = 0; threadNum < threads.size(); threadNum++) {
-// 		threads[threadNum] = new spring::thread(std::bind(f, this, threadNum, threads.size(), r));
-// 	}
-
-// 	for (unsigned int threadNum = 0; threadNum < threads.size(); threadNum++) {
-// 		threads[threadNum]->join(); delete threads[threadNum];
-// 	}
-// }
 
 
 
@@ -583,9 +583,6 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	// adjust the borders so we are not left with "rims" of
 	// impassable squares when eg. a structure is reclaimed
 	// SRectangle mr;
-
-	
-	// TODO: do this at the map changed stage!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
 	// mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
@@ -849,8 +846,22 @@ void QTPFS::PathManager::Update() {
 		RequestMaxSpeedModRefreshForLayer(0);
 
 		SRectangle rect(0,0,0,0);
-		for_mt(0, nodeLayers.size(), [this, &rect](const int layerNum) {
-			UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum());
+		for_mt(0, nodeLayers.size(), [this, &rect](const int index) {
+			int layerNum = nodeLayerUpdatePriorityOrder[index];
+			int blocksToUpdate = 0;
+			int updatedBlocks = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum].damageQueue.size();
+			{
+				constexpr int BLOCKS_TO_UPDATE = 16;
+				const int progressiveUpdates = std::ceil(updatedBlocks * (1.f / (BLOCKS_TO_UPDATE<<3)) * modInfo.pfUpdateRateScale);
+				constexpr int MIN_BLOCKS_TO_UPDATE = 0;
+				constexpr int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE, MIN_BLOCKS_TO_UPDATE);
+
+				blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
+			
+				// LOG("[%d] blocksToUpdate=%d updatedBlocks=%d [%f]"
+				// 		, layerNum, blocksToUpdate, updatedBlocks, modInfo.pfUpdateRateScale);
+			}
+			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum()); }
 		});
 
 		// Mark all dirty paths so that they can be recalculated
@@ -860,8 +871,8 @@ void QTPFS::PathManager::Update() {
 			for (auto pathEntity : layerDirtyPaths) {
 				assert(registry.valid(pathEntity));
 				assert(!registry.all_of<PathIsDirty>(pathEntity));
-				// LOG("%s: alreadyDirty=%d, pathEntity=%x", __func__, (int)registry.all_of<PathIsDirty>(pathEntity)
-				// 		, (int)pathEntity);
+				LOG("%s: alreadyDirty=%d, pathEntity=%x", __func__, (int)registry.all_of<PathIsDirty>(pathEntity)
+						, (int)pathEntity);
 				registry.emplace<PathIsDirty>(pathEntity);
 				RemovePathFromShared(pathEntity);
 				pathsMarkedDirty++;
@@ -1160,7 +1171,8 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	PathSearch* newSearch = &registry.emplace<PathSearch>(searchEntity, PATH_SEARCH_ASTAR);
 
 	entt::entity pathEntity = registry.create();
-	IPath* newPath = &(registry.get_or_emplace<IPath>(pathEntity));
+	assert(!registry.all_of<IPath>(pathEntity));
+	IPath* newPath = &(registry.emplace<IPath>(pathEntity));
 	// LOG("%s: newPath %p", __func__, newPath);
 
 	assert(object->pos.x == sourcePoint.x);
