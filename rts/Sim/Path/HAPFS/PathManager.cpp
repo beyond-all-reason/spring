@@ -9,6 +9,8 @@
 #include "PathHeatMap.h"
 #include "PathLog.h"
 #include "PathMemPool.h"
+#include "PathSearch.h"
+#include "Registry.h"
 #include "Map/MapInfo.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Objects/SolidObject.h"
@@ -395,9 +397,35 @@ unsigned int CPathManager::RequestPath(
 	float goalRadius,
 	bool synced
 ) {
+	unsigned int pathId = 0;
+
 	if (!IsFinalized())
 		return 0;
 
+	if (synced) {
+		MultiPath newPath = MultiPath(moveDef, startPos, goalPos, goalRadius);
+		newPath.searchResult = IPath::SearchResult::Unitialized;
+		pathId = Store(newPath);
+
+		entt::entity searchEntity = registry.create();
+		registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
+	}
+	else {
+		MultiPath newPath = IssuePathRequest(caller, moveDef, startPos, goalPos, goalRadius, synced);
+		pathId = Store(newPath);
+	}
+
+	return pathId;
+}
+
+CPathManager::MultiPath CPathManager::IssuePathRequest(
+	CSolidObject* caller,
+	const MoveDef* moveDef,
+	float3 startPos,
+	float3 goalPos,
+	float goalRadius,
+	bool synced
+) {
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::RequestPath");
 	//SCOPED_MT_TIMER("Misc::Path::RequestPath");
@@ -449,7 +477,7 @@ unsigned int CPathManager::RequestPath(
 	// 	}
 	// }
 
-	unsigned int pathID = 0;
+	// unsigned int pathID = 0;
 
 	if (result != IPath::Error) {
 		if (newPath.maxResPath.path.empty()) {
@@ -470,16 +498,18 @@ unsigned int CPathManager::RequestPath(
 		}
 
 		FinalizePath(&newPath, startPos, goalPos, result == IPath::CantGetCloser);
-		newPath.searchResult = result;
+		// newPath.searchResult = result;
 
-		pathID = Store(newPath);
+		// pathID = Store(newPath);
 	}
+	newPath.searchResult = result;
 
 	// MH Note: for MT approach this will have to go
 	//if (caller != nullptr)
 	//	caller->Block();
 
-	return pathID;
+	// return pathID;
+	return newPath;
 }
 
 
@@ -572,6 +602,7 @@ void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, c
 
 /*
 Removes and return the next waypoint in the multipath corresponding to given id.
+* TODO: get updates via multi-threading
 */
 float3 CPathManager::NextWayPoint(
 	const CSolidObject* owner,
@@ -595,6 +626,17 @@ float3 CPathManager::NextWayPoint(
 
 	// find corresponding multipath entry
 	MultiPath localMultiPath = GetMultiPathMT(pathID);
+
+	if (localMultiPath.searchResult == IPath::SearchResult::Unitialized) {
+		const float3& sourcePoint = callerPos;
+		const float3& targetPoint = localMultiPath.peDef.wsGoalPos;
+		const float3  targetDirec = (targetPoint - sourcePoint).SafeNormalize() * SQUARE_SIZE;
+		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
+	}
+	else if (localMultiPath.searchResult == IPath::SearchResult::Error) {
+		return noPathPoint;
+	}
+
 	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
 
 	if (multiPath == nullptr)
@@ -784,41 +826,73 @@ void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int 
 
 void CPathManager::Update()
 {
-	SCOPED_TIMER("Sim::Path");
-	assert(IsFinalized());
+	{
+		SCOPED_TIMER("Sim::PathUpdates");
+		assert(IsFinalized());
 
-	//pathFlowMap->Update();
-	pathHeatMap->Update();
+		//pathFlowMap->Update();
+		pathHeatMap->Update();
 
-	auto medResPE = &pathingStates[PATH_MED_RES];
-	auto lowResPE = &pathingStates[PATH_LOW_RES];
+		auto medResPE = &pathingStates[PATH_MED_RES];
+		auto lowResPE = &pathingStates[PATH_LOW_RES];
 
-	if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
-		const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
-		const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
-		const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, float(std::numeric_limits<int>::max()));
+		if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
+			const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
+			const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
+			const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, float(std::numeric_limits<int>::max()));
 
-		if (ratio < 1.f) {
-			highPriorityResPS = lowResPE;
-			lowPriorityResPS = medResPE;
-			const auto invRatio = std::min(1.f / ratio, float(std::numeric_limits<int>::max()));
-			pathStateWorkloadRatio = Clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
-		} else {
-			highPriorityResPS = medResPE;
-			lowPriorityResPS = lowResPE;
-			pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
+			if (ratio < 1.f) {
+				highPriorityResPS = lowResPE;
+				lowPriorityResPS = medResPE;
+				const auto invRatio = std::min(1.f / ratio, float(std::numeric_limits<int>::max()));
+				pathStateWorkloadRatio = Clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
+			} else {
+				highPriorityResPS = medResPE;
+				lowPriorityResPS = lowResPE;
+				pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
+			}
+
+			// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
+			// 		, medResUpdatesCount, lowResUpdatesCount, ratio, pathStateWorkloadRatio);
+
+			frameNumToRefreshPathStateWorkloadRatio = gs->frameNum + GAME_SPEED;
 		}
 
-		// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
-		// 		, medResUpdatesCount, lowResUpdatesCount, ratio, pathStateWorkloadRatio);
-
-		frameNumToRefreshPathStateWorkloadRatio = gs->frameNum + GAME_SPEED;
+		if (gs->frameNum % pathStateWorkloadRatio)
+			highPriorityResPS->Update();
+		else
+			lowPriorityResPS->Update();
 	}
+	{
+		SCOPED_TIMER("Sim::PathRequests");
 
-	if (gs->frameNum % pathStateWorkloadRatio)
-		highPriorityResPS->Update();
-	else
-		lowPriorityResPS->Update();
+		auto pathSearchView = registry.view<PathSearch>();
+		entt::entity entities[pathSearchView.size()];
+		int searchCount = 0;
+
+		pathSearchView.each([&entities, &searchCount](entt::entity entity){
+			entities[searchCount++] = entity;
+		});
+
+		for_mt(0, searchCount, [this, &entities, &pathSearchView](int idx){
+			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
+			MultiPath newPath = IssuePathRequest
+						( pathSearch.caller
+						, pathSearch.moveDef
+						, pathSearch.startPos
+						, pathSearch.goalPos
+						, pathSearch.goalRadius
+						, false);
+			UpdateMultiPathMT(pathSearch.pathId, newPath);
+
+			// LOG("%s: ent = %x, pathId = %d, result = %d, steps = %d", __func__
+			// 		, entt::to_integral(entities[idx]), pathSearch.pathId, newPath.searchResult
+			// 		, (int)newPath.maxResPath.path.size());
+		});
+
+		// Clear out the search entities.
+		pathSearchView.each([](entt::entity ent){ registry.destroy(ent); });
+	}
 }
 
 // used to deposit heat on the heat-map as a unit moves along its path

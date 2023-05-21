@@ -9,6 +9,7 @@
 #include "IPath.h"
 #include "IPathFinder.h"
 #include "PathFinderDef.h"
+#include "Registry.h"
 #include "System/UnorderedMap.hpp"
 
 #include <mutex>
@@ -190,6 +191,15 @@ public:
 private:
 
 	void InitStatic();
+
+	MultiPath IssuePathRequest(
+		CSolidObject* caller,
+		const MoveDef* moveDef,
+		float3 startPos,
+		float3 goalPos,
+		float goalRadius,
+		bool synced
+	);
 
 	IPath::SearchResult ArrangePath(
 		MultiPath* newPath,
