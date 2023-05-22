@@ -245,11 +245,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const LocalModel& lm = u->localModel;
 		const std::vector<LocalModelPiece>& pieces = lm.pieces;
 
-		const float3& pos  = u->pos;
-		const float3& xdir = u->rightdir;
-		const float3& ydir = u->updir;
-		const float3& zdir = u->frontdir;
-		const float3& speed = u->speed;
+		const auto& pos  = u->pos;
+		const auto& xdir = u->rightdir;
+		const auto& ydir = u->updir;
+		const auto& zdir = u->frontdir;
+		const auto& speed = u->speed;
 
 		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
@@ -257,9 +257,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
-		file << "\t\t\trelAimPos: " << TapFloats(u->relMidPos);
+		file << "\t\t\trelMidPos: " << TapFloats(u->relMidPos);
 		file << "\t\t\trelAimPos: " << TapFloats(u->relAimPos);
-		file << "\t\t\trelAimPos: " << TapFloats(u->midPos);
+		file << "\t\t\tmidPos: " << TapFloats(u->midPos);
 		file << "\t\t\theading: " << int(u->heading) << ", mapSquare: " << u->mapSquare << "\n";
 		file << "\t\t\thealth: " << TapFloats(u->health);
 		file << "\t\t\texperience: " << TapFloats(u->experience);
@@ -351,11 +351,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	for (const int featureID: activeFeatureIDs) {
 		const CFeature* f = featureHandler.GetFeature(featureID);
 
-		const float3& pos  = f->pos;
-		const float3& xdir = f->rightdir;
-		const float3& ydir = f->updir;
-		const float3& zdir = f->frontdir;
-		const float3& speed = f->speed;
+		const auto& pos  = f->pos;
+		const auto& xdir = f->rightdir;
+		const auto& ydir = f->updir;
+		const auto& zdir = f->frontdir;
+		const auto& speed = f->speed;
 
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
@@ -363,9 +363,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
-		file << "\t\t\trelAimPos: " << TapFloats(f->relMidPos);
+		file << "\t\t\trelMidPos: " << TapFloats(f->relMidPos);
 		file << "\t\t\trelAimPos: " << TapFloats(f->relAimPos);
-		file << "\t\t\trelAimPos: " << TapFloats(f->midPos);
+		file << "\t\t\tmidPos: " << TapFloats(f->midPos);
 		file << "\t\t\thealth: " << TapFloats(f->health);
 		file << "\t\t\treclaimLeft: " << TapFloats(f->reclaimLeft);
 	}
