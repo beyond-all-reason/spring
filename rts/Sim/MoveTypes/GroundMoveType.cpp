@@ -1808,55 +1808,6 @@ unsigned int CGroundMoveType::GetNewPath()
 	return newPathID;
 }
 
-// void CGroundMoveType::ReRequestPath(PathRequestType requestType) {
-// 	#ifdef PATHING_DEBUG
-// 	if (DEBUG_DRAWING_ENABLED) {
-// 		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-// 			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-// 		if (printMoveInfo) {
-// 			LOG("%s want <- request (%d <- %d)", __func__, wantRepath, requestType);
-// 		}
-// 	}
-// 	#endif
-
-// 	if (wantRepath == PATH_REQUEST_NONE){
-// 		wantRepath = requestType;
-// 		return;
-// 	}
-
-// 	int requestPriority = (requestType & PATH_REQUEST_TIMING_BITMASK);
-// 	int currentPriority = (wantRepath & PATH_REQUEST_TIMING_BITMASK);
-
-// 	if (requestPriority > currentPriority){
-// 		wantRepath = requestType;
-// 		return;
-// 	}
-// 	if (requestPriority < currentPriority)
-// 		return;
-
-// 	int requestScope = (requestType & PATH_REQUEST_UPDATE_BITMASK);
-// 	int currentScope = (wantRepath & PATH_REQUEST_UPDATE_BITMASK);
-
-// 	if (requestScope > currentScope)
-// 		wantRepath = requestType;
-
-// 	#ifdef PATHING_DEBUG
-// 	if (DEBUG_DRAWING_ENABLED) {
-// 		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-// 			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-// 		if (printMoveInfo) {
-// 			LOG("%s fin: want <- request (%d <- %d)", __func__, wantRepath, requestType);
-// 		}
-// 	}
-// 	#endif
-// }
-
-// void CGroundMoveType::DoReRequestPath() {
-// 	//LOG("%s activated", __func__);
-// 	StopEngine(false);
-// 	StartEngine(false);
-// }
-
 void CGroundMoveType::ReRequestPath(bool forceRequest) {
 	if (forceRequest) {
 		StopEngine(false);
@@ -1867,7 +1818,6 @@ void CGroundMoveType::ReRequestPath(bool forceRequest) {
 
 	wantRepath = true;
 }
-
 
 bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	assert(!useRawMovement);

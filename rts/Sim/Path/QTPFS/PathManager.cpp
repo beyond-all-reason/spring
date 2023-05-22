@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <assert.h>
 
@@ -156,14 +156,14 @@ QTPFS::PathManager::~PathManager() {
 		bool isSearch = registry.all_of<PathSearch>(entity);
 		if (isPath) {
 			const IPath& path = registry.get<IPath>(entity);
-			LOG("path [%d] type=%d, owner=%p", entt::to_integral(entity)
+			LOG("path [%x] type=%d, owner=%p", entt::to_integral(entity)
 					, path.GetPathType()
 					, path.GetOwner()
 					);
 		}
 		if (isSearch) {
 			const PathSearch& search = registry.get<PathSearch>(entity);
-			LOG("search [%d] type=%d, id=%d", entt::to_integral(entity)
+			LOG("search [%x] type=%d, id=%x", entt::to_integral(entity)
 					, search.GetPathType()
 					, search.GetID()
 					);
@@ -870,9 +870,13 @@ void QTPFS::PathManager::Update() {
 			// LOG("%s: start: %d", __func__, (int)layerDirtyPaths.size());
 			for (auto pathEntity : layerDirtyPaths) {
 				assert(registry.valid(pathEntity));
-				assert(!registry.all_of<PathIsDirty>(pathEntity));
-				LOG("%s: alreadyDirty=%d, pathEntity=%x", __func__, (int)registry.all_of<PathIsDirty>(pathEntity)
-						, (int)pathEntity);
+				// assert(!registry.all_of<PathIsDirty>(pathEntity));
+				// LOG("%s: alreadyDirty=%d, pathEntity=%x", __func__, (int)registry.all_of<PathIsDirty>(pathEntity)
+				// 		, (int)pathEntity);
+
+				// TODO: perhaps not mark paths multiple times if multiple blocks are updated?
+				if (registry.all_of<PathIsDirty>(pathEntity)) { continue; }
+
 				registry.emplace<PathIsDirty>(pathEntity);
 				RemovePathFromShared(pathEntity);
 				pathsMarkedDirty++;
@@ -1007,7 +1011,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 			}
 		}
 		// delete search;
-		// LOG("%s: %x", __func__, (int)pathSearchEntity);
+		// LOG("%s: delete search %x", __func__, entt::to_integral(pathSearchEntity));
 		registry.destroy(pathSearchEntity);
 	}
 
@@ -1152,6 +1156,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	const float radius,
 	const bool synced
 ) {
+	assert(!ThreadPool::inMultiThreadedSection);
 	// TODO:
 	//     introduce synced and unsynced path-caches;
 	//     somehow support extra-cost overlays again
@@ -1247,7 +1252,6 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	// considered a non-path)
 	entt::entity searchEntity = registry.create();
 	PathSearch* newSearch = &registry.emplace<PathSearch>(searchEntity, PATH_SEARCH_ASTAR);
-
 	assert(oldPath != nullptr);
 	assert(newSearch != nullptr);
 	assert(oldPath->GetID() != 0);

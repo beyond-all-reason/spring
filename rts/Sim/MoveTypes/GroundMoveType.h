@@ -99,16 +99,6 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	// void DelayedReRequestPath() {
-	// 	earlyCurrWayPoint = currWayPoint;
-	// 	earlyNextWayPoint = nextWayPoint;
-
-	// 	PathRequestType curRepath = wantRepath;
-	// 	wantRepath = PATH_REQUEST_NONE;
-
-	// 	if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
-	// 	else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
-	// }
 	void SyncWaypoints() {
 		if (moveFailed){
 			Fail(false);

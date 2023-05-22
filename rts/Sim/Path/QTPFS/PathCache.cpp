@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 
@@ -107,6 +107,7 @@ QTPFS::IPath* QTPFS::PathCache::GetPath(unsigned int pathID, unsigned int pathTy
 // }
 
 void QTPFS::PathCache::DelPath(unsigned int pathID) {
+	assert(!ThreadPool::inMultiThreadedSection);
 	entt::entity entity = (entt::entity)pathID;
 	if (registry.valid(entity))
 		registry.destroy(entity);
@@ -218,7 +219,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
 				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
-				assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
+				// assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
 				dirtyPaths[pathType].emplace_back(entity);
 
 				// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);

@@ -3,7 +3,7 @@
 #ifndef QTPFS_NODELAYER_H_
 #define QTPFS_NODELAYER_H_
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <limits>
 #include <vector>
