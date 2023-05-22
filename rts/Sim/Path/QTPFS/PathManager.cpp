@@ -1385,7 +1385,8 @@ bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
 	if (livePath->GetNumPathUpdates() == 0)
 		return false;
 
-	livePath->SetNumPathUpdates(livePath->GetNumPathUpdates() - 1);
+	// livePath->SetNumPathUpdates(livePath->GetNumPathUpdates() - 1);
+	livePath->SetNumPathUpdates(0);
 	return true;
 }
 

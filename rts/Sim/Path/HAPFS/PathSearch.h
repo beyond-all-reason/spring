@@ -24,12 +24,24 @@ namespace HAPFS {
 			, pathId(pathId)
 			{}
 
+		
+
 		CSolidObject* caller;
 		const MoveDef* moveDef;
 		float3 startPos;
 		float3 goalPos;
 		float goalRadius;
 		unsigned int pathId;
+	};
+
+	enum class ExtendPathResType { EXTEND_MAX_RES, EXTEND_MED_RES };
+
+	struct PathExtension {
+		PathExtension() {}
+		PathExtension(ExtendPathResType pathResToExtend)
+			: pathResToExtend(pathResToExtend)
+			{}
+		ExtendPathResType pathResToExtend = ExtendPathResType::EXTEND_MED_RES;
 	};
 }
 

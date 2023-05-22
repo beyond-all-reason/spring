@@ -60,6 +60,8 @@ public:
 			moveDef = mp.moveDef;
 			caller  = mp.caller;
 
+			updated = mp.updated;
+
 			return *this;
 		}
 		MultiPath& operator = (MultiPath&& mp) {
@@ -78,6 +80,9 @@ public:
 
 			mp.moveDef = nullptr;
 			mp.caller  = nullptr;
+
+			updated = mp.updated;
+			
 			return *this;
 		}
 
@@ -98,6 +103,8 @@ public:
 
 		// additional information
 		CSolidObject* caller;
+
+		bool updated = false;
 	};
 
 public:
@@ -145,6 +152,8 @@ public:
 		float goalRadius,
 		bool synced
 	) override;
+
+	bool PathUpdated(unsigned int pathID) override;
 
 	/**
 	 * Returns waypoints of the max-resolution path segments.
@@ -199,6 +208,15 @@ private:
 		float3 goalPos,
 		float goalRadius,
 		bool synced
+	);
+
+	MultiPath ExpandCurrentPath(
+		const CSolidObject* owner,
+		unsigned int pathID,
+		unsigned int numRetries,
+		float3 callerPos,
+		float radius,
+		bool extendMedResPath
 	);
 
 	IPath::SearchResult ArrangePath(

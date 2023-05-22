@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include "PathManager.h"
 #include "PathingState.h"
 #include "PathConstants.h"
@@ -403,6 +405,7 @@ unsigned int CPathManager::RequestPath(
 		return 0;
 
 	if (synced) {
+		assert(!ThreadPool::inMultiThreadedSection);
 		MultiPath newPath = MultiPath(moveDef, startPos, goalPos, goalRadius);
 		newPath.searchResult = IPath::SearchResult::Unitialized;
 		pathId = Store(newPath);
@@ -512,6 +515,15 @@ CPathManager::MultiPath CPathManager::IssuePathRequest(
 	return newPath;
 }
 
+bool CPathManager::PathUpdated(unsigned int pathID) {
+	MultiPath localMultiPath = GetMultiPathMT(pathID);
+	if (!localMultiPath.updated) return false;
+
+	localMultiPath.updated = false;
+	UpdateMultiPathMT(pathID, localMultiPath);
+	return true;
+}
+
 
 // converts part of a med-res path into a max-res path
 void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const
@@ -602,7 +614,7 @@ void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, c
 
 /*
 Removes and return the next waypoint in the multipath corresponding to given id.
-* TODO: get updates via multi-threading
+* TODO: get updates via multi-threading (just like QTPFS?)
 */
 float3 CPathManager::NextWayPoint(
 	const CSolidObject* owner,
@@ -627,36 +639,35 @@ float3 CPathManager::NextWayPoint(
 	// find corresponding multipath entry
 	MultiPath localMultiPath = GetMultiPathMT(pathID);
 
-	if (localMultiPath.searchResult == IPath::SearchResult::Unitialized) {
-		const float3& sourcePoint = callerPos;
-		const float3& targetPoint = localMultiPath.peDef.wsGoalPos;
+	auto createTempWaypoint = [](const float3& sourcePoint, const float3& targetPoint){
 		const float3  targetDirec = (targetPoint - sourcePoint).SafeNormalize() * SQUARE_SIZE;
 		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
+	};
+
+	if (localMultiPath.searchResult == IPath::SearchResult::Unitialized) {
+		return createTempWaypoint(callerPos, localMultiPath.peDef.wsGoalPos);
 	}
 	else if (localMultiPath.searchResult == IPath::SearchResult::Error) {
 		return noPathPoint;
 	}
 
 	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
-
-	if (multiPath == nullptr)
+	if (multiPath->moveDef == nullptr)
 		return noPathPoint;
 
-	// if (DEBUG_DRAWING_ENABLED) {
-	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-	// 		LOG("%s: numRetries=%d", __func__, numRetries);
-	// 	}
-	// }
-
-	if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
-		return (multiPath->finalGoal);
+	// if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
+	// 	return (multiPath->finalGoal);
 
 	IPath::Path& maxResPath = multiPath->maxResPath;
 	IPath::Path& medResPath = multiPath->medResPath;
 	IPath::Path& lowResPath = multiPath->lowResPath;
 
-	if ((callerPos == ZeroVector) && !maxResPath.path.empty())
-		callerPos = maxResPath.path.back();
+	if (callerPos == ZeroVector) {
+		if (owner != nullptr)
+			callerPos = owner->pos;
+		else if (!maxResPath.path.empty())
+			callerPos = maxResPath.path.back();
+	}
 
 	assert(multiPath->peDef.synced == synced);
 
@@ -674,24 +685,21 @@ float3 CPathManager::NextWayPoint(
 	// recursive refinement of its lower-resolution segments
 	// if so, check if the med-res path also needs extending
 	if (extendMaxResPath) {
-
-		// if (DEBUG_DRAWING_ENABLED) {
-		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-		// 		LOG("%s extendMaxResPath == true", __func__);
-		// 	}
-		// }
-		//if (multiPath->caller != nullptr)
-		//	multiPath->caller->UnBlock();
-
-		if (extendMedResPath)
-			LowRes2MedRes(*multiPath, callerPos, owner, synced);
-
-		MedRes2MaxRes(*multiPath, callerPos, owner, synced);
-
-		//if (multiPath->caller != nullptr)
-		//	multiPath->caller->Block();
-
-		FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
+		if (synced) {
+			std::lock_guard<std::mutex> lock(pathMapUpdate);
+			entt::entity pathExtendEntity = registry.create();
+			registry.emplace<PathSearch>(pathExtendEntity
+					, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
+					, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
+			registry.emplace<PathExtension>(pathExtendEntity,
+				(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
+		} else {
+			assert(!ThreadPool::inMultiThreadedSection);
+			if (extendMedResPath)
+				LowRes2MedRes(*multiPath, callerPos, owner, synced);
+			MedRes2MaxRes(*multiPath, callerPos, owner, synced);
+			FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
+		}
 	}
 
 	float3 waypoint = noPathPoint;
@@ -706,28 +714,9 @@ float3 CPathManager::NextWayPoint(
 		// the way to it (ie. a GoalOutOfRange result)
 		// OR we are stuck on an impassable square
 		if (maxResPath.path.empty()) {
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s maxres empty", __func__);
-			// 	}
-			// }
 			if (lowResPath.path.empty() && medResPath.path.empty()) {
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s lowResPath.path.empty() && medResPath.path.empty()", __func__);
-				// 	}
-				// }
-
 				if (multiPath->searchResult == IPath::Ok)
 					waypoint = multiPath->finalGoal;
-
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s waypoint for final goal (%f,%f,%f) [%d]", __func__
-				// 				, waypoint.x, waypoint.y, waypoint.z
-				// 				, multiPath->searchResult);
-				// 	}
-				// }
 
 				// [else]
 				// reached in the CantGetCloser case for any max-res searches
@@ -736,77 +725,77 @@ float3 CPathManager::NextWayPoint(
 				// this so waypoint will have been set to it (during previous
 				// iteration) if we end up here
 			} else {
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s calling NextWayPoint again", __func__);
-				// 	}
-				// }
-				waypoint = NextWayPoint(owner, pathID, numRetries + 1, callerPos, radius, synced);
+				if (!synced) {
+					waypoint = NextWayPoint(owner, pathID, numRetries + 1, callerPos, radius, synced);
+					break;
+				}
+				// direct to the nearest lower-res waypoint as a fallback until the path can be expanded.
+				// this creates the next step, so it will be checked very regulary until the path is
+				// extended.
+				if (waypoint == noPathPoint) {
+					auto createTempWaypointFromLowerRes = [&createTempWaypoint, &callerPos, radius](IPath::Path& path) {
+						float3 waypoint = createTempWaypoint(callerPos, path.path.back());
+						if ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != path.pathGoal))
+							path.path.pop_back();
+						return waypoint;
+					};
+
+					if (!medResPath.path.empty()) {
+						waypoint = createTempWaypointFromLowerRes(medResPath);
+					} else
+						waypoint = createTempWaypointFromLowerRes(lowResPath);
+				}
 			}
 
 			break;
 		} else {
-
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s maxres next point (%f,%f,%f)", __func__
-			// 				, maxResPath.path.back().x, maxResPath.path.back().y, maxResPath.path.back().z);
-			// 	}
-			// }
-
-			waypoint = maxResPath.path.back();
+			// y=0 indicates this is not a temporary waypoint
+			waypoint = maxResPath.path.back() * XZVector;
 			maxResPath.path.pop_back();
-
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s waypoint (%f,%f,%f)", __func__
-			// 				, waypoint.x, waypoint.y, waypoint.z);
-			// 	}
-			// }
 		}
-		// if (DEBUG_DRAWING_ENABLED) {
-		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-		// 		LOG("%s callerPos.SqDistance2D(waypoint) [%f] < Square(radius) [%f] && (waypoint != maxResPath.pathGoal) [%d]", __func__
-		// 				, callerPos.SqDistance2D(waypoint)
-		// 				, Square(radius)
-		// 				, (int)(waypoint != maxResPath.pathGoal));
-		// 	}
-		// }
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
 
 	UpdateMultiPathMT(pathID, localMultiPath);
+	return waypoint;
+}
+
+
+CPathManager::MultiPath CPathManager::ExpandCurrentPath(
+		const CSolidObject* owner,
+		unsigned int pathID,
+		unsigned int numRetries,
+		float3 callerPos,
+		float radius,
+		bool extendMedResPath
+) {
+	// in misc since it is called from many points
+	//SCOPED_TIMER("Misc::Path::NextWayPoint");
+
+	// find corresponding multipath entry
+	MultiPath localMultiPath = GetMultiPathMT(pathID);
+	MultiPath* multiPath = &localMultiPath;
+
+	if (!IsFinalized())
+		return localMultiPath;
+
+	// This position is used to resolve maxres query start points.
+	// In longer paths, if this isn't updated to the caller's current
+	// position, then the query will produce incorrect results.
+	multiPath->peDef.wsStartPos = callerPos;
 
 	// if (DEBUG_DRAWING_ENABLED) {
 	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-
-	// 		LOG("Start Position (%f, %f, %f)", localMultiPath.start.x, localMultiPath.start.y, localMultiPath.start.z);
-	// 		LOG("Final  Position (%f, %f, %f)", localMultiPath.finalGoal.x, localMultiPath.finalGoal.y, localMultiPath.finalGoal.z);
-	// 		LOG("Goal Radius %f", radius);
-
-	// 		std::array<IPath::Path*, PATH_ALL_LEVELS> paths;
-	// 		paths[PATH_LOW_RES] = &localMultiPath.lowResPath;
-	// 		paths[PATH_MED_RES] = &localMultiPath.medResPath;
-	// 		paths[PATH_MAX_RES] = &localMultiPath.maxResPath;
-
-	// 		for (int i = 0; i<PATH_ALL_LEVELS; i++){
-	// 			LOG("Path Resolution level %d (cost: %f)", i, paths[i]->pathCost);
-	// 			LOG("Desired Goal (%f, %f, %f)", paths[i]->desiredGoal.x, paths[i]->desiredGoal.y, paths[i]->desiredGoal.z);
-	// 			LOG("Path Goal (%f, %f, %f)", paths[i]->pathGoal.x, paths[i]->pathGoal.y, paths[i]->pathGoal.z);
-				
-	// 			for (int j = 0; j<paths[i]->path.size(); j++){
-	// 				LOG("Path Step %d (%f, %f, %f)", j, paths[i]->path[j].x, paths[i]->path[j].y, paths[i]->path[j].z);
-	// 			}
-	// 			for (int j = 0; j<paths[i]->squares.size(); j++){
-	// 				LOG("Square Step %d (%d, %d)", j, paths[i]->squares[j].x, paths[i]->squares[j].y);
-	// 			}
-	// 		}
+	// 		LOG("%s extendMaxResPath == true", __func__);
 	// 	}
 	// }
+	if (extendMedResPath)
+		LowRes2MedRes(*multiPath, callerPos, owner, false);
 
+	MedRes2MaxRes(*multiPath, callerPos, owner, false);
+	FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
 
-	// y=0 indicates this is not a temporary waypoint
-	// (the default PFS does not queue path-requests) // MH TODO: review
-	return (waypoint * XZVector);
+	localMultiPath.updated = true;
+	return localMultiPath;
 }
 
 
@@ -876,13 +865,24 @@ void CPathManager::Update()
 
 		for_mt(0, searchCount, [this, &entities, &pathSearchView](int idx){
 			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
-			MultiPath newPath = IssuePathRequest
+			PathExtension* pathExtend = registry.try_get<PathExtension>( entities[idx] );
+
+			MultiPath newPath = (pathExtend == nullptr) ?
+					IssuePathRequest
 						( pathSearch.caller
 						, pathSearch.moveDef
 						, pathSearch.startPos
 						, pathSearch.goalPos
 						, pathSearch.goalRadius
-						, false);
+						, true)
+					: ExpandCurrentPath
+						( pathSearch.caller
+						, pathSearch.pathId
+						, 0
+						, pathSearch.startPos
+						, pathSearch.goalRadius
+						, pathExtend->pathResToExtend == ExtendPathResType::EXTEND_MED_RES);
+
 			UpdateMultiPathMT(pathSearch.pathId, newPath);
 
 			// LOG("%s: ent = %x, pathId = %d, result = %d, steps = %d", __func__

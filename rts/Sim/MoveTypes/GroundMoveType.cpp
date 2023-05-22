@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include "GroundMoveType.h"
 #include "MoveDefHandler.h"
 #include "ExternalAI/EngineOutHandler.h"
@@ -1799,8 +1801,8 @@ unsigned int CGroundMoveType::GetNewPath()
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, currWayPoint);
 	} else {
-		moveFailed = true;
-		//Fail(false);
+		// moveFailed = true;
+		Fail(false);
 	}
 
 	return newPathID;
@@ -1894,7 +1896,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		      float3& nwp = earlyNextWayPoint;
 
 		// QTPFS ONLY PATH
-		if (pathManager->PathUpdated(pathID)) { // MT Safe????
+		if (pathManager->PathUpdated(pathID)) {
 			// path changed while we were following it (eg. due
 			// to terrain deformation) in between two waypoints
 			// but still has the same ID; in this case (which is
@@ -2095,19 +2097,6 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 
 		earlyCurrWayPoint = earlyNextWayPoint;
 		earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		// ReRequestPath(PATH_REQUEST_TIMING_IMMEDIATE|PATH_REQUEST_UPDATE_EXISTING);
-		// return;
-		//DoSetNextWaypoint();
-
-		// --------- in new function --------
-		// pathController.SetTempGoalPosition(pathID, nextWayPoint);
-
-		// // NOTE:
-		// //   pathfinder implementation should ensure waypoints are not equal
-		// //   waypoint consumption radius has to at least equal current speed
-		// currWayPoint = nextWayPoint;
-		// nextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		// -----------------------------------
 	}
 
 	if (earlyNextWayPoint.x == -1.0f && earlyNextWayPoint.z == -1.0f) {
@@ -2234,6 +2223,7 @@ No more trials will be done before a new goal is given.
 */
 void CGroundMoveType::Fail(bool callScript)
 {
+	assert(!ThreadPool::inMultiThreadedSection);
 	LOG_L(L_DEBUG, "[%s] unit %i failed", __func__, owner->id);
 
 	StopEngine(callScript);
