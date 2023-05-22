@@ -249,9 +249,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const float3& xdir = u->rightdir;
 		const float3& ydir = u->updir;
 		const float3& zdir = u->frontdir;
+		const float3& speed = u->speed;
 
 		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
+		file << "\t\t\tspeed: " << TapFloats(speed);
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
@@ -353,9 +355,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const float3& xdir = f->rightdir;
 		const float3& ydir = f->updir;
 		const float3& zdir = f->frontdir;
+		const float3& speed = f->speed;
 
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
+		file << "\t\t\tspeed: " << TapFloats(speed);
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
