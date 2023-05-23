@@ -220,6 +220,7 @@ std::int64_t CPathManager::PostFinalizeRefresh()
 
 void CPathManager::FinalizePath(MultiPath* path, const float3 startPos, const float3 goalPos, const bool cantGetCloser)
 {
+	ZoneScoped;
 	IPath::Path* sp = &path->lowResPath;
 	IPath::Path* ep = &path->maxResPath;
 
@@ -429,6 +430,7 @@ CPathManager::MultiPath CPathManager::IssuePathRequest(
 	float goalRadius,
 	bool synced
 ) {
+	ZoneScoped;
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::RequestPath");
 	//SCOPED_MT_TIMER("Misc::Path::RequestPath");
@@ -528,6 +530,7 @@ bool CPathManager::PathUpdated(unsigned int pathID) {
 // converts part of a med-res path into a max-res path
 void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const
 {
+	ZoneScoped;
 	assert(IsFinalized());
 
 	IPath::Path& maxResPath = multiPath.maxResPath;
@@ -573,6 +576,7 @@ void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, c
 // converts part of a low-res path into a med-res path
 void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const
 {
+	ZoneScoped;
 	assert(IsFinalized());
 
 	IPath::Path& medResPath = multiPath.medResPath;
@@ -626,6 +630,7 @@ float3 CPathManager::NextWayPoint(
 ) {
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::NextWayPoint");
+	ZoneScoped;
 
 	const float3 noPathPoint = -XZVector;
 
@@ -768,6 +773,7 @@ CPathManager::MultiPath CPathManager::ExpandCurrentPath(
 		float radius,
 		bool extendMedResPath
 ) {
+	ZoneScoped;
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::NextWayPoint");
 
