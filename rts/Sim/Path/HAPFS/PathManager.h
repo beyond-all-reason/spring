@@ -120,19 +120,19 @@ public:
 	void RemoveCacheFiles() override;
 	void Update() override;
 	void UpdatePath(const CSolidObject*, unsigned int) override;
-	void DeletePath(unsigned int pathID) override {
-		if (pathID == 0)
-			return;
-		{
-			const std::lock_guard<std::mutex> lock(pathMapUpdate);
-			const auto pi = pathMap.find(pathID);
+	void DeletePath(unsigned int pathID) override;// {
+	// 	if (pathID == 0)
+	// 		return;
+	// 	{
+	// 		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+	// 		const auto pi = pathMap.find(pathID);
 
-			if (pi == pathMap.end())
-				return;
+	// 		if (pi == pathMap.end())
+	// 			return;
 
-			pathMap.erase(pi);
-		}
-	}
+	// 		pathMap.erase(pi);
+	// 	}
+	// }
 
 
 	float3 NextWayPoint(

@@ -388,6 +388,27 @@ IPath::SearchResult CPathManager::ArrangePath(
 	return bestResult;
 }
 
+void CPathManager::DeletePath(unsigned int pathID) {
+	if (pathID == 0)
+		return;
+	{
+		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const auto pi = pathMap.find(pathID);
+
+		if (pi == pathMap.end())
+			return;
+
+		pathMap.erase(pi);
+
+		PathSearch* existingSearch = nullptr;
+		auto searchView = registry.view<PathSearch>();
+		searchView.each([&searchView, pathID](entt::entity entity){
+			auto& search = searchView.get<PathSearch>(entity);
+			if (search.pathId == pathID)
+				registry.destroy(entity);
+		});
+	}
+}
 
 /*
 Request a new multipath, store the result and return a handle-id to it.
@@ -407,12 +428,30 @@ unsigned int CPathManager::RequestPath(
 
 	if (synced) {
 		assert(!ThreadPool::inMultiThreadedSection);
+
+		PathSearch* existingSearch = nullptr;
+		auto searchView = registry.view<PathSearch>();
+		for ( entt::entity entity : searchView ) {
+			auto& search = searchView.get<PathSearch>(entity);
+			if (search.caller == caller) {
+				existingSearch = &search;
+				break;
+			}
+		}
+
 		MultiPath newPath = MultiPath(moveDef, startPos, goalPos, goalRadius);
 		newPath.searchResult = IPath::SearchResult::Unitialized;
-		pathId = Store(newPath);
 
-		entt::entity searchEntity = registry.create();
-		registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
+		if (existingSearch == nullptr) {
+			pathId = Store(newPath);
+			entt::entity searchEntity = registry.create();
+			registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
+		}
+		else {
+			MultiPath* curMultiPath = GetMultiPath(existingSearch->pathId);
+			*curMultiPath = std::move(newPath);
+			*existingSearch = std::move(PathSearch(caller, moveDef, startPos, goalPos, goalRadius, pathId));
+		}
 	}
 	else {
 		MultiPath newPath = IssuePathRequest(caller, moveDef, startPos, goalPos, goalRadius, synced);
@@ -692,12 +731,27 @@ float3 CPathManager::NextWayPoint(
 	if (extendMaxResPath) {
 		if (synced) {
 			std::lock_guard<std::mutex> lock(pathMapUpdate);
-			entt::entity pathExtendEntity = registry.create();
-			registry.emplace<PathSearch>(pathExtendEntity
-					, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
-					, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
-			registry.emplace<PathExtension>(pathExtendEntity,
-				(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
+
+			PathSearch* existingSearch = nullptr;
+			auto searchView = registry.view<PathSearch>();
+			for ( entt::entity entity : searchView ) {
+				auto& search = searchView.get<PathSearch>(entity);
+				if (search.caller == owner) {
+					existingSearch = &search;
+					break;
+				}
+			}
+
+			// if found then a full path search is underway, so don't mess with it.
+			// Or an extension has been requested, but that doesn't need to be done twice in a row.
+			if (existingSearch == nullptr) {
+				entt::entity pathExtendEntity = registry.create();
+				registry.emplace<PathSearch>(pathExtendEntity
+						, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
+						, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
+				registry.emplace<PathExtension>(pathExtendEntity,
+					(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
+			}
 		} else {
 			assert(!ThreadPool::inMultiThreadedSection);
 			if (extendMedResPath)

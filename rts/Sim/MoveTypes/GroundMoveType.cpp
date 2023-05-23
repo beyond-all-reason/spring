@@ -2047,6 +2047,9 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 
 		earlyCurrWayPoint = earlyNextWayPoint;
 		earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		
+		// should prevent delay repaths since 
+		wantRepath = false;
 	}
 
 	if (earlyNextWayPoint.x == -1.0f && earlyNextWayPoint.z == -1.0f) {
