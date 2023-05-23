@@ -36,7 +36,7 @@ private:
 	struct CCobThreadComp: public spring::binary_function<const SleepingThread&, const SleepingThread&, bool> {
 	public:
 		bool operator() (const SleepingThread& a, const SleepingThread& b) const {
-			return (a.wt > b.wt);
+			return a.wt > b.wt || (a.wt == b.wt && a.id < b.id);
 		}
 	};
 
