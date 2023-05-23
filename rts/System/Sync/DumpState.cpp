@@ -26,6 +26,7 @@
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/Scripts/CobEngine.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
@@ -167,6 +168,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	#define DUMP_UNIT_WEAPON_DATA
 	#define DUMP_UNIT_COMMANDAI_DATA
 	#define DUMP_UNIT_MOVETYPE_DATA
+	#define DUMP_UNIT_SCRIPT_DATA
 	#define DUMP_FEATURE_DATA
 	#define DUMP_PROJECTILE_DATA
 	#define DUMP_TEAM_DATA
@@ -342,6 +344,36 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		}
 
 		#endif
+	}
+	#endif
+	#ifdef DUMP_UNIT_SCRIPT_DATA
+	{
+		file << "\tCobEngine:\n";
+		file << "\t\tCobThreads: " << cobEngine->GetThreadInstances().size() << "\n";
+		for (const auto& [tid, thread] : cobEngine->GetThreadInstances()) {
+			auto ownerID = thread.cobInst->GetUnit() ? thread.cobInst->GetUnit()->id : -1;
+			file << "\t\t\tid: " << tid << " t.id " << thread.GetID() << " t.wt " << thread.GetWakeTime()
+				 << " owner " << ownerID
+				 << " t.state " << +thread.GetState() << " t.sigmask " << thread.GetSignalMask()
+				 << " t.retc " << thread.GetRetCode()
+				 << " dead|gargage|waiting " << thread.IsDead() << "|" << thread.IsGarbage() << "|" << thread.IsWaiting() << "\n";
+		}
+		file << "\t\tWaitingThreads: " << cobEngine->GetWaitingThreadIDs().size();
+		file << "\t\t\tids:";
+		for (const auto id : cobEngine->GetWaitingThreadIDs()) {
+			file << " " << id;
+		}
+		file << "\n";
+
+		auto zzzThreads = cobEngine->GetSleepingThreadIDs(); //copied on purpose
+		file << "\t\tSleepingThreads: " << zzzThreads.size();
+		file << "\t\t\twts|ids:";
+		while (!zzzThreads.empty()) {
+			const auto& zt = zzzThreads.top();
+			file << " " << zt.wt << "|" << zt.id;
+			zzzThreads.pop();
+		}
+		file << "\n";
 	}
 	#endif
 
