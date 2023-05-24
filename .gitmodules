@@ -21,3 +21,6 @@
 [submodule "rts/lib/tracy"]
 	path = rts/lib/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "rts/lib/gflags"]
+	path = rts/lib/gflags
+	url = https://github.com/gflags/gflags
