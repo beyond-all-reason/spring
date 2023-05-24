@@ -68,23 +68,15 @@
 		#define CALLING_CONV SPRING_CALLING_CONVENTION_2
 	#elif __GNUC__
 		#define CALLING_CONV __attribute__ ((SPRING_CALLING_CONVENTION))
-	#elif __INTEL_COMPILER
-		#define CALLING_CONV __attribute__ ((SPRING_CALLING_CONVENTION))
 	#else // defined _WIN64 ...
 		#define CALLING_CONV SPRING_CALLING_CONVENTION_2
 	#endif // defined _WIN64 ...
 #endif // CALLING_CONV
 
-// Intel Compiler compatibility fix for non-Windows
 // Is used when assigning function pointers, for example in:
 // ExternalAI/AIInterfaceLibrary.cpp
-#ifndef CALLING_CONV_FUNC_POINTER
-	#if !defined(_WIN32) && defined(__INTEL_COMPILER)
-		#define CALLING_CONV_FUNC_POINTER
-	#else
-		#define CALLING_CONV_FUNC_POINTER CALLING_CONV
-	#endif
-#endif // CALLING_CONV_FUNC_POINTER
+// Originally implemented as a fix for Intel compiler
+#define CALLING_CONV_FUNC_POINTER CALLING_CONV
 
 #define EXPORT(type) SHARED_EXPORT type CALLING_CONV
 
