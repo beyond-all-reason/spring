@@ -73,11 +73,6 @@
 	#endif // defined _WIN64 ...
 #endif // CALLING_CONV
 
-// Is used when assigning function pointers, for example in:
-// ExternalAI/AIInterfaceLibrary.cpp
-// Originally implemented as a fix for Intel compiler
-#define CALLING_CONV_FUNC_POINTER CALLING_CONV
-
 #define EXPORT(type) SHARED_EXPORT type CALLING_CONV
 
 
