@@ -195,20 +195,30 @@ void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>&
 	glLineWidth(1.0f);
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
-	const auto& pathTypes = pm->GetPathTypes();
+	// const auto& pathTypes = pm->GetPathTypes();
 	const auto& pathTraces = pm->GetPathTraces();
 
-	for (const auto& pair: paths) {
-		const auto typeIt = pathTypes.find(pair.first);
-		const auto traceIt = pathTraces.find(pair.first);
+	// for (const auto& pair: paths) {
+	// 	const auto typeIt = pathTypes.find(pair.first);
+	// 	const auto traceIt = pathTraces.find(pair.first);
+	// 	if (typeIt == pathTypes.end() || traceIt == pathTraces.end())
+	// 		continue;
+	// 	// this only happens if source-node was equal to target-node
+	// 	if (traceIt->second == nullptr)
+	// 		continue;
 
-		if (typeIt == pathTypes.end() || traceIt == pathTraces.end())
+	// 	DrawSearchExecution(typeIt->second, traceIt->second, rdb, wla);
+	for (const auto& pathEntity : pathView) {
+		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
+		const auto traceIt = pathTraces.find(entt::to_integral(pathEntity));
+
+		if (traceIt == pathTraces.end())
 			continue;
 		// this only happens if source-node was equal to target-node
 		if (traceIt->second == nullptr)
 			continue;
 
-		DrawSearchExecution(typeIt->second, traceIt->second, rdb, wla);
+		DrawSearchExecution(path->GetPathType(), traceIt->second, rb);
 	}
 	#endif
 }

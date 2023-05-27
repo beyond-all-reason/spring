@@ -238,7 +238,10 @@ void QTPFS::PathSearch::IterateNodes() {
 	(*openNodes).pop();
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
+	{
+	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 	searchIter.SetPoppedNodeIdx(curNode->zmin() * mapDims.mapx + curNode->xmin());
+	}
 	#endif
 
 	// LOG("%s: continuing search from %d to %d", __func__
