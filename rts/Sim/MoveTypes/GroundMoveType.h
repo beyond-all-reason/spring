@@ -128,8 +128,8 @@ private:
 
 	unsigned int GetNewPath();
 
-	void SetNextWayPoint(int thread = 0);
-	bool CanSetNextWayPoint(int thread = 0);
+	void SetNextWayPoint(int thread);
+	bool CanSetNextWayPoint(int thread);
 	// void DoSetNextWaypoint();
 	void ReRequestPath(bool forceRequest);
 	// void DoReRequestPath();
@@ -184,7 +184,7 @@ private:
 	void UpdateOwnerPos(const float3&, const float3&);
 	bool UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw);
 	bool OwnerMoved(const short, const float3&, const float3&);
-	bool FollowPath(int thread = 0);
+	bool FollowPath(int thread);
 	bool WantReverse(const float3& wpDir, const float3& ffDir) const;
 
 private:

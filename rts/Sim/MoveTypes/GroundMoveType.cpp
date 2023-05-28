@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include "GroundMoveType.h"
 #include "MoveDefHandler.h"
@@ -948,7 +948,7 @@ bool CGroundMoveType::FollowPath(int thread)
 
 		// atEndOfPath never becomes true when useRawMovement, except via StopMoving
 		if (!atEndOfPath && !useRawMovement) {
-			SetNextWayPoint();
+			SetNextWayPoint(thread);
 		} else {
 			if (atGoal){
 				#ifdef PATHING_DEBUG
@@ -1760,6 +1760,7 @@ float CGroundMoveType::Distance2D(CSolidObject* object1, CSolidObject* object2, 
 // Creates a path to the goal.
 unsigned int CGroundMoveType::GetNewPath()
 {
+	assert(!ThreadPool::inMultiThreadedSection);
 	unsigned int newPathID = 0;
 
 	#ifdef PATHING_DEBUG
@@ -1810,6 +1811,7 @@ unsigned int CGroundMoveType::GetNewPath()
 
 void CGroundMoveType::ReRequestPath(bool forceRequest) {
 	if (forceRequest) {
+		assert(!ThreadPool::inMultiThreadedSection);
 		StopEngine(false);
 		StartEngine(false);
 		wantRepath = false;
