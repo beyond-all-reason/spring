@@ -19,6 +19,7 @@
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/FileSystem/ArchiveScanner.h"
+#include "System/FileSystem/FileSystem.h"
 #include "System/StringUtil.h"
 
 /******************************************************************************
@@ -126,6 +127,10 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		// game-setup
 		LuaPushNamedNumber(L, "startPosType"    , gameSetup->startPosType);
 		LuaPushNamedBool(L,   "ghostedBuildings", gameSetup->ghostedBuildings);
+		if (gameSetup->hostDemo)
+			LuaPushNamedString(L, "demoPlayName", FileSystem::GetBasename(gameSetup->demoName));
+		else
+			LuaPushNamedNil(L, "demoPlayName");
 	}
 
 	if (unitHandler.MaxUnits() > 0) {
