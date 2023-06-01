@@ -3700,11 +3700,14 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
  * @number dirX
  * @number dirY
  * @number dirZ
+ * @number[opt=true] intensity
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
 {
-	ISky::GetSky()->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
+	auto dir = float3(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	auto intensity = luaL_optfloat(L, 4, 1.0f); // seems broken atm, only toggles shadows off when set to 0
+	ISky::GetSky()->GetLight()->SetLightDir(float4(dir.SafeNormalize(), intensity));
 	return 0;
 }
 
