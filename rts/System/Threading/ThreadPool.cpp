@@ -25,6 +25,7 @@
 
 #include <utility>
 #include <functional>
+#include <cinttypes>
 
 #define USE_TASK_STATS_TRACKING
 
@@ -459,9 +460,9 @@ void SetThreadCount(int wantedNumThreads)
 
 	constexpr const char* fmts[] = {
 		"[ThreadPool::%s][1] wanted=%d current=%d maximum=%d (init=%d)",
-		"[ThreadPool::%s][2] workers=%lu",
-		"\t[async=%d] threads=%d tasks=%lu {sum,avg}{exec,wait}time={{%.3f, %.3f}, {%.3f, %.3f}}ms",
-		"\t\tthread=%d tasks=%lu {sum,min,max,avg}{exec,wait}time={{%.3f, %.3f, %.3f, %.3f}, {%.3f, %.3f, %.3f, %.3f}}ms",
+		"[ThreadPool::%s][2] workers=%u",
+		"\t[async=%d] threads=%d tasks=%" PRIu64 " {sum,avg}{exec,wait}time={{%.3f, %.3f}, {%.3f, %.3f}}ms",
+		"\t\tthread=%d tasks=%" PRIu64 " {sum,min,max,avg}{exec,wait}time={{%.3f, %.3f, %.3f, %.3f}, {%.3f, %.3f, %.3f, %.3f}}ms",
 	};
 
 	// total number of tasks executed by pool; total time spent in DoTask
@@ -559,7 +560,7 @@ void SetThreadCount(int wantedNumThreads)
 	}
 	#endif
 
-	LOG(fmts[1], __func__, workerThreads[false].size());
+	LOG(fmts[1], __func__, static_cast <uint32_t> (workerThreads[false].size()));
 }
 
 void SetMaximumThreadCount()
