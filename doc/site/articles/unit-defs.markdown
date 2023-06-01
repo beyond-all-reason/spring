@@ -16,6 +16,10 @@ This is similar to other RTS engines.
 For example, a default Starcraft2 marine has 45 health.
 Specific marines can actually have 55 health (after an upgrade), or 22 health (with 50% difficulty handicap), or 200 health (if they're the special campaign marine Jim Raynor).
 But marines, as a generalized type, have 45 health.
+Note that the **type itself cannot be modified at runtime**, though you can still easily apply a modified value to every unit of a type.
+
+The **set of unit types is static**.
+You **cannot dynamically add new types**, though you **can generate them beforehand**, including via code.
 
 The information about a unit type is usually called a **unit def** (from "definition"), and sometimes the type itself is referred to by "unit def" as well.
 This article will talk about and compare the two ways that unit defs are often dealt with that are often confused.
