@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <assert.h>
 
@@ -638,20 +638,13 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	if (needTesselation && wantTesselation) {
 		SRectangle ur(re.x1, re.z1, re.x2, re.z2);
 		auto& nodeLayer = nodeLayers[layerNum];
-		// for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
-		// 	auto curRootNode = nodeLayer.GetPoolNode(i);
-		// 	curRootNode->PreTesselate(nodeLayers[layerNum], r, ur, 0, &updateThreadData[currentThread]);
-		// }
 
 		containingNode->PreTesselate(nodeLayers[layerNum], re, ur, 0, &updateThreadData[currentThread]);
-
-		// nodeTrees[layerNum]->PreTesselate(nodeLayers[layerNum], r, ur, 0);
 
 		pathCache.SetLayerPathCount(layerNum, 200); // TODO sort out placeholder.
 		pathCache.MarkDeadPaths(re, layerNum);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-		// nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, numTerrainChanges);
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, updateThreadData[currentThread]);
 		#endif
 	}

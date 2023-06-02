@@ -299,13 +299,13 @@ void HAPFSPathDrawer::Draw() const {
 
 		glBegin(GL_LINE_STRIP);
 
-			// draw low-res segments of <path> (green)
+			// draw low-res segments of <path> (blue)
 			glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
 			for (auto pvi = multiPath.lowResPath.path.begin(); pvi != multiPath.lowResPath.path.end(); ++pvi) {
 				float3 pos = *pvi; pos.y += 5; glVertexf3(pos);
 			}
 
-			// draw med-res segments of <path> (blue)
+			// draw med-res segments of <path> (green)
 			glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
 			for (auto pvi = multiPath.medResPath.path.begin(); pvi != multiPath.medResPath.path.end(); ++pvi) {
 				float3 pos = *pvi; pos.y += 5; glVertexf3(pos);
@@ -470,7 +470,6 @@ void HAPFSPathDrawer::Draw(const HAPFS::CPathEstimator* pe) const {
 		font->DrawWorldBuffered();
 
 		// Draw connecting routes
-		// TK PathingState::CalcVertexPathCost parent 483, child 511 PathCost 15.770721 (result: 0)
 		for (int z = 0; z < peNumBlocks.y; z++) {
 			for (int x = 0; x < peNumBlocks.x; x++) {
 				const int blockNr = ps->BlockPosToIdx(int2(x, z));

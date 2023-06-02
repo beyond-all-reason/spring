@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <fstream>
 #include <limits>
+#include <variant>
 #include <vector>
 
 
@@ -41,12 +42,53 @@ namespace QTPFS {
 
 		unsigned int GetIndex() const { return index; }
 
-		QTNode() = default;
+		// ~QTNode() = default;
+		//  {
+		// 	if (childBaseIndex == -1u) {
+		// 		netpoints.~vector();
+		// 	}
+		// 	else {
+		// 		moveCosts.~vector();
+		// 	}
+		// }
+		~QTNode() {
+			moveCosts.~vector();
+		}
+
+		// QTNode() = default;
+		QTNode()
+			: moveCosts()
+		{
+			assert(moveCostAvg == -1.0f);
+		}
 		QTNode(const QTNode& n) = delete;
-		QTNode(QTNode&& n) = default;
+		// QTNode(QTNode&& n) = default;
+		QTNode(QTNode&& n) {
+			*this = std::move(n);
+		}
 
 		QTNode& operator = (const QTNode& n) = delete;
-		QTNode& operator = (QTNode&& n) = default;
+		// QTNode& operator = (QTNode&& n) = default;
+		QTNode& operator = (QTNode&& n) {
+			this->nodeNumber = n.nodeNumber;
+			this->index = n.index;
+			this->_xmax = n._xmax;
+			this->_xmin = n._xmin;
+			this->_zmax = n._zmax;
+			this->_zmin = n._zmin;
+			
+			this->neighbours = std::move(n.neighbours);
+			this->childBaseIndex = n.childBaseIndex;
+			// if (this->childBaseIndex == -1u) {
+			// 	this->moveCostAvg = n.moveCostAvg;
+			// 	this->netpoints = std::move(n.netpoints);
+			// } else {
+				this->referenceNodeIndex = n.referenceNodeIndex;
+				this->moveCosts = std::move(n.moveCosts);
+			// }
+
+			return *this;
+		}
 
 		static void InitStatic();
 
@@ -164,28 +206,32 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
-		unsigned int nodeNumber = -1u; // TODO: maybe remove? only used for hash (to match searches) could be quick enough to build on demand?
+		unsigned int nodeNumber = -1u;
 		unsigned int index = 0;
 
-		// unsigned int _xminxmax = 0; // TODO: split into shorts
-		// unsigned int _zminzmax = 0; // TODO: split into shorts
 		unsigned short _xmin = 0;
 		unsigned short _xmax = 0;
 		unsigned short _zmin = 0;
 		unsigned short _zmax = 0;
 
-		// float speedModSum =  0.0f; // TODO: remove
-		// float speedModAvg =  0.0f; // TODO: remove
-		float moveCostAvg = -1.0f;
+		union {
+			float moveCostAvg = -1.0f;
+			unsigned int referenceNodeIndex; // reference for moveCosts calcs
+		};
 
-		// unsigned int currMagicNum = 0;   // TODO: remove
-		// unsigned int prevMagicNum = -1u; // TODO: remove
+		// float moveCostAvg = -1.0f;
 
 		unsigned int childBaseIndex = -1u;
-
-		// std::vector<INode*> neighbors; // TODO: switch to indicies
 		std::vector<int> neighbours;
-		std::vector<float2> netpoints;
+
+		union {
+			std::vector<float2> netpoints;
+			std::vector<float> moveCosts;
+		};
+		// std::vector<float> netpoints; // switch to loading floats individually
+
+		// imposes an additional int on size...
+		// std::variant<std::vector<float2>, std::vector<float>> x = std::vector<float2>();
 	};
 
 	struct SearchNode {

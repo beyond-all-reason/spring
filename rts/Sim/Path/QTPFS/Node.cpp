@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -452,18 +452,8 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 		// LOG("%s: [%d:%d] leaf=%d !cont=%d", __func__, nl.GetNodelayer(), depth, (int)leaf, (int)!cont);
 
 		// TODO: re-merge back up the root node if necessary
-
 		if (leaf || !cont) {
-			// TODO: this expansion is no longer needed due to power of 2 squares
-			// extend a bounding box around every
-			// node modified during re-tesselation
-			// ur.x1 = std::min(ur.x1, int(xmin()));
-			// ur.z1 = std::min(ur.z1, int(zmin()));
-			// ur.x2 = std::max(ur.x2, int(xmax()));
-			// ur.z2 = std::max(ur.z2, int(zmax()));
-
 			Merge(nl);
-			// Tesselate(nl, cr, depth, threadData);
 			Tesselate(nl, r, depth, threadData);
 			return;
 		}
@@ -532,22 +522,12 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	UpdateMoveCost(threadData, nl, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
 
 	if ((wantSplit && Split(nl, depth, false)) || (needSplit && Split(nl, depth, true))) {
-		// registerNode = false;
-
 		for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
 			QTNode* cn = nl.GetPoolNode(childBaseIndex + i);
-			//SRectangle cr = cn->ClipRectangle(r);
-
-			//cn->Tesselate(nl, cr, depth + 1, threadData);
 			cn->Tesselate(nl, r, depth + 1, threadData);
 			assert(cn->GetMoveCost() != -1.0f);
 		}
 	}
-
-	// if (!registerNode)
-	// 	return;
-
-	// nl.RegisterNode(this);
 }
 
 bool QTPFS::QTNode::UpdateMoveCost(
@@ -560,19 +540,8 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	bool& wantSplit,
 	bool& needSplit
 ) {
-	// const std::vector<NodeLayer::SpeedBinType>& oldSpeedBins = nl.GetOldSpeedBins();
 	const std::vector<SpeedBinType>& curSpeedBins = nl.GetCurSpeedBins();
-	// const std::vector<NodeLayer::SpeedModType>& oldSpeedMods = nl.GetOldSpeedMods();
 	const std::vector<SpeedModType>& curSpeedMods = nl.GetCurSpeedMods();
-
-	// const std::vector<SpeedBinType>& curSpeedBins = threadData->curSpeedBins;
-	// const std::vector<SpeedModType>& curSpeedMods = threadData->curSpeedMods;
-	// const int areaWidth = r.GetWidth(); // threadData->areaUpdated.GetWidth();
-
-	// const int minx = int(xmin()) - r.x1;
-	// const int maxx = int(xmax()) - r.x1;
-	// const int minz = int(zmin()) - r.z1;
-	// const int maxz = int(zmax()) - r.z1;
 
 	assert(int(xmin()) >= r.x1);
 	assert(int(xmax()) <= r.x2);
@@ -580,11 +549,6 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	assert(int(zmax()) <= r.z2);
 
 	const SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
-	// const unsigned int refIdx = (zmin() - r.z1) * areaWidth + (xmin() - r.x1);
-	// const SpeedBinType refSpeedBin = curSpeedBins[refIdx];
-
-	// assert(refIdx >= 0);
-	// assert(refIdx < curSpeedBins.size());
 
 	// <this> can either just have been merged or added as
 	// new child of split parent; in the former case we can
@@ -593,71 +557,34 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	// in <r> with a single reference point outside it)
 	assert(moveCostAvg == -1.0f || moveCostAvg > 0.0f);
 
-	// if (false && moveCostAvg > 0.0f) {
-	// 	// just merged, so <r> is fully inside <this>
-	// 	//
-	// 	// the reference-square (xmin, zmin) MUST lie
-	// 	// outside <r> when <r> does not cover <this>
-	// 	// 100%, otherwise we would find a value of 0
-	// 	// for numDifBinSquares in some situations
-	// 	assert((r.x2 - r.x1) >= 0);
-	// 	assert((r.z2 - r.z1) >= 0);
+	float speedModSum = 0.0f;
 
-	// 	// const unsigned int minx = std::max(r.x1, int(xmin()));
-	// 	// const unsigned int maxx = std::min(r.x2, int(xmax()));
-	// 	// const unsigned int minz = std::max(r.z1, int(zmin()));
-	// 	// const unsigned int maxz = std::min(r.z2, int(zmax()));
+	for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
+		for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
+			const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+			// const unsigned int sqrIdx = hmz * areaWidth + hmx;
+			// const unsigned int sqrIdx = (hmz - r.z1) * areaWidth + (hmx - r.x1);
 
-	// 	speedModSum = 0.0f;
+			assert(sqrIdx >= 0);
+			assert(sqrIdx < curSpeedBins.size());
+			assert(sqrIdx < curSpeedMods.size());
 
-	// 	for (unsigned int hmz = minz; hmz < maxz; hmz++) {
-	// 		for (unsigned int hmx = minx; hmx < maxx; hmx++) {
-	// 			// const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
-	// 			const unsigned int sqrIdx = hmz * areaWidth + hmx;
+			// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
+			const SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
 
-	// 			// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
-	// 			const SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
+			// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
+			numDifBinSquares += int(curSpeedBin != refSpeedBin);
+			numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
 
-	// 			// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
-	// 			// numDifBinSquares += int(curSpeedBin != refSpeedBin);
-	// 			numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
-
-	// 			// speedModSum -= (oldSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
-	// 			speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
-
-	// 			assert(speedModSum >= 0.0f);
-	// 		}
-	// 	}
-	// } else {
-		float speedModSum = 0.0f;
-
-		for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
-			for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
-				const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
-				// const unsigned int sqrIdx = hmz * areaWidth + hmx;
-				// const unsigned int sqrIdx = (hmz - r.z1) * areaWidth + (hmx - r.x1);
-
-				assert(sqrIdx >= 0);
-				assert(sqrIdx < curSpeedBins.size());
-				assert(sqrIdx < curSpeedMods.size());
-
-				// const NodeLayer::SpeedBinType oldSpeedBin = oldSpeedBins[sqrIdx];
-				const SpeedBinType curSpeedBin = curSpeedBins[sqrIdx];
-
-				// numNewBinSquares += int(curSpeedBin != oldSpeedBin);
-				numDifBinSquares += int(curSpeedBin != refSpeedBin);
-				numClosedSquares += int(curSpeedMods[sqrIdx] <= 0);
-
-				speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
-			}
+			speedModSum += (curSpeedMods[sqrIdx] / float(NodeLayer::MaxSpeedModTypeValue()));
 		}
-	// }
+	}
 
 	// (re-)calculate the average cost of this node
 	assert(speedModSum >= 0.0f);
 
 	float speedModAvg = speedModSum / area();
-	moveCostAvg = (speedModAvg <= 0.001f)? QTPFS_POSITIVE_INFINITY: (1.0f / speedModAvg);
+	moveCostAvg = (speedModAvg <= 0.001f) ? QTPFS_POSITIVE_INFINITY : (1.0f / speedModAvg);
 
 	// no node can have ZERO traversal cost
 	assert(moveCostAvg > 0.0f);
