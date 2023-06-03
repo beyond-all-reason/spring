@@ -61,6 +61,7 @@ MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
 
 		std::swap(msecsPlayed, rhs.msecsPlayed);
 		std::swap(lastTick, rhs.lastTick);
+		std::swap(totalTime, rhs.totalTime);
 	}
 
 	return *this;
