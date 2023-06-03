@@ -106,8 +106,13 @@ void CDemoRecorder::WriteDemoFile()
 void CDemoRecorder::WriteSetupText(const std::string& text)
 {
 	int length = text.length();
-	while (text[length - 1] == '\0') {
+	while (length > 0 && text[length - 1] == '\0') {
 		--length;
+	}
+
+	if (length <= 0) {
+		LOG_L(L_ERROR, "[CDemoRecorder::%s] Invalid game setup text (len %d):\n%s", __func__, static_cast<int32_t>(text.length()), text.c_str());
+		throw std::runtime_error("Invalid game setup text");
 	}
 
 	fileHeader.scriptSize = length;
