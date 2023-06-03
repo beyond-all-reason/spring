@@ -127,14 +127,10 @@ bool CUnitScript::MoveToward(float& cur, float dest, float speed)
  */
 bool CUnitScript::TurnToward(float& cur, float dest, float speed)
 {
-	float delta = dest - cur;
+	assert(dest < math::TWOPI);
+	assert(cur  < math::TWOPI);
 
-	// clamp: -pi .. 0 .. +pi (fmod(x,TWOPI) would do the same but is slower due to streflop)
-	if (delta > math::PI) {
-		delta -= math::TWOPI;
-	} else if (delta <= -math::PI) {
-		delta += math::TWOPI;
-	}
+	float delta = math::fmod(dest - cur + math::THREEPI, math::TWOPI) - math::PI;
 
 	if (math::fabsf(delta) <= speed) {
 		cur = dest;
@@ -410,6 +406,7 @@ void CUnitScript::TurnNow(int piece, int axis, float destination)
 		ShowUnitScriptError("[US::TurnNow] invalid script piece index");
 		return;
 	}
+	destination = math::fmod(destination, math::TWOPI);
 
 	LocalModelPiece* p = pieces[piece];
 

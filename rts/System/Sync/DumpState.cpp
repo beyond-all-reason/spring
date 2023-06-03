@@ -189,6 +189,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		TAP_MATH_CONST(INVPI);
 		TAP_MATH_CONST(INVPI2);
 		TAP_MATH_CONST(TWOPI);
+		TAP_MATH_CONST(THREEPI);
 		TAP_MATH_CONST(SQRPI);
 		TAP_MATH_CONST(PIU4);
 		TAP_MATH_CONST(PISUN4);
