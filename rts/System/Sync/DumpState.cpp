@@ -162,6 +162,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	file << "frame: " << gs->frameNum << ", seed: " << gsRNG.GetLastSeed() << "\n";
 
+	#define DUMP_MATH_CONST
 	#define DUMP_MODEL_DATA
 	#define DUMP_UNIT_DATA
 	#define DUMP_UNIT_PIECE_DATA
@@ -178,6 +179,32 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	#define DUMP_HEIGHTMAP_CHECKSUM
 	//#define DUMP_SMOOTHMESH
 	#define DUMP_SMOOTHMESH_CHECKSUM
+
+	#ifdef DUMP_MATH_CONST
+	if (gs->frameNum == gMinFrameNum) { //dump once
+		file << "\tmath constants:\n";
+		#define TAP_MATH_CONST(name) file << "\t\t" << #name << ": " << TapFloats(math::name)
+		TAP_MATH_CONST(PI);
+		TAP_MATH_CONST(INVPI);
+		TAP_MATH_CONST(INVPI);
+		TAP_MATH_CONST(INVPI2);
+		TAP_MATH_CONST(TWOPI);
+		TAP_MATH_CONST(SQRPI);
+		TAP_MATH_CONST(PIU4);
+		TAP_MATH_CONST(PISUN4);
+
+		TAP_MATH_CONST(HALFPI);
+		TAP_MATH_CONST(QUARTERPI);
+		TAP_MATH_CONST(NEGHALFPI);
+
+		TAP_MATH_CONST(SQRT2);
+		TAP_MATH_CONST(HALFSQRT2);
+
+		TAP_MATH_CONST(RAD_TO_DEG);
+		TAP_MATH_CONST(DEG_TO_RAD);
+		#undef TAP_MATH_CONST
+	}
+	#endif
 
 	#ifdef DUMP_MODEL_DATA
 	if (gs->frameNum == gMinFrameNum) { //dump once
