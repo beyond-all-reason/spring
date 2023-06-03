@@ -144,7 +144,7 @@ inline int2 IdxToCoord(unsigned x, unsigned array_width)
 
 inline float ClampRad(float f)
 {
-	f  = math::fmod(f, math::TWOPI);
+	f  = math::fmodf(f, math::TWOPI);
 	f += (math::TWOPI * (f < 0.0f));
 	return f;
 }
