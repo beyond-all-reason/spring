@@ -164,8 +164,11 @@ VFS is also available, **as a game dev you can expose interfaces for modders** o
 A unitDef is a proxy table with the `__index` meta-method.
 **According to measurements** this makes it somewhat **slower than a plain Lua table**, so it might be worth **caching if a wupget mostly uses a single field** from it.
 
-There is a defs-editing dev mode where you can edit defs.
-This is done by just assigning to a unitDef, which isn't normally possible.
+There is a **defs-editing dev mode where you can edit defs**, toggled via `/editdefs` (requires cheats).
+In this mode, changes are done by just **assigning to a unitDef in Lua code**, which **isn't normally possible**.
+Keep in mind that there is **no standard widget** yet to allow easy editing, and that **editing the def files will do nothing**
+(of course unless you make your editing widget read them, but remember the caveat where the keys and values differ between
+unit defs and `UnitDefs`). This mode is **not usable for game logic** and will desync if used in multiplayer.
 
 There's three **minor differences between `WeaponDefs` and `UnitDefs`/`FeatureDefs`**:
  * `WeaponDefs` are 0-indexed while the others are 1-indexed. Beware of `for i = 1, #WeaponDefs do`, this is incorrect!
