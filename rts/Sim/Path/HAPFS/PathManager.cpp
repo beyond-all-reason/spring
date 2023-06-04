@@ -118,6 +118,8 @@ void CPathManager::InitStatic()
 	}
 
 	pathFinders = std::move(newPathFinders);
+	// TODO: magic number - reserve one memory page.
+	pathSearches.reserve( 4096 / sizeof(decltype(pathSearches)::value_type) );
 
 	//finalized = true;
 }
@@ -143,6 +145,7 @@ CPathManager::~CPathManager()
 	}
 
 	pathFinders.clear();
+	pathSearches.clear();
 
 	if (lowResPEs != nullptr) {
 		::operator delete(lowResPEs);
@@ -916,14 +919,16 @@ void CPathManager::Update()
 		SCOPED_TIMER("Sim::PathRequests");
 
 		auto pathSearchView = registry.view<PathSearch>();
-		entt::entity entities[pathSearchView.size()];
-		int searchCount = 0;
+		pathSearches.clear();
+		pathSearches.reserve(pathSearchView.size());
+		auto& entities = pathSearches;
 
-		pathSearchView.each([&entities, &searchCount](entt::entity entity){
-			entities[searchCount++] = entity;
+		pathSearchView.each([&entities](entt::entity entity){
+			// entities[searchCount++] = entity;
+			entities.emplace_back(entity);
 		});
 
-		for_mt(0, searchCount, [this, &entities, &pathSearchView](int idx){
+		for_mt(0, pathSearchView.size(), [this, &entities, &pathSearchView](int idx){
 			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
 			PathExtension* pathExtend = registry.try_get<PathExtension>( entities[idx] );
 

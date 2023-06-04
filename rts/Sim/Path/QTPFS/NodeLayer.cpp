@@ -4,6 +4,21 @@
 
 #include <limits>
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+// visual c
+inline int __bsfd (int mask)
+{
+	unsigned long index;
+	_BitScanForward(&index, mask);
+	return index;
+}
+#elif defined(__GNUC__)
+#include <x86intrin.h>
+#else
+#error no bsfd intrinsic currently set
+#endif
+
 #include "NodeLayer.h"
 #include "PathManager.h"
 #include "Node.h"
@@ -204,6 +219,63 @@ QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float re
 	return speedModBin;
 }
 
+
+// void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
+// 	// account for the rim of nodes around the bounding box
+// 	// (whose neighbors also changed during re-tesselation)
+// 	const int xmin = std::max(ur.x1 - 1, 0), xmax = std::min(ur.x2 + 1, mapDims.mapx);
+// 	const int zmin = std::max(ur.z1 - 1, 0), zmax = std::min(ur.z2 + 1, mapDims.mapy);
+
+// 	// TODO: ur is concerning...
+
+// 	// ------------------------------------------------------
+// 	// find all leaf nodes
+// 	// go through each level - check for children in area.
+// 	uint32_t smallestNode = 256;
+// 	SRectangle searchArea(xmin, zmin, xmax, zmax);
+// 	GetNodesInArea(searchArea, selectedNodes, smallestNode);
+
+// 	assert(smallestNode != 0);
+// 	uint32_t gridShift = __bsfd(smallestNode);
+// 	SRectangle resizedRelinkArea = (threadData.areaRelinkedInner >> gridShift)
+// 								 + (threadData.areaRelinked - threadData.areaRelinkedInner);
+// 	size_t relinkNodeGridArea = resizedRelinkArea.GetArea();
+// 	threadData.relinkNodeGrid.clear();
+// 	// threadData.relinkNodeGrid.resize(threadData.areaRelinked.GetArea(), nullptr);
+// 	threadData.relinkNodeGrid.resize(relinkNodeGridArea, nullptr);
+
+// 	// Build grid with selected nodes.
+// 	int step = 1 << gridShift;
+// 	std::for_each(selectedNodes.begin(), selectedNodes.end(), [&threadData, step, gridShift](INode *curNode){
+// 		SRectangle& r = threadData.areaRelinked;
+// 		SRectangle nodeArea(curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax());
+// 		nodeArea.ClampIn(r);
+// 		nodeArea >>= gridShift; // this isn't going to work...
+// 		int width = r.GetWidth() >> gridShift;
+// 		for (int z = nodeArea.z1; z < nodeArea.z2; ++z) {
+// 			int zoff = (z - r.z1) * width;
+// 			for (int x = nodeArea.x1; x < nodeArea.x2; ++x) {
+// 				unsigned int index = zoff + (x - r.x1);
+// 				assert(index < threadData.relinkNodeGrid.size());
+// 				threadData.relinkNodeGrid[index] = curNode;
+// 			}
+// 		}
+// 	});
+
+// 	// if (GetNodelayer() == 2) {
+// 	// 	LOG("Search Area [%d,%d:%d,%d]", searchArea.x1, searchArea.z1, searchArea.x2, searchArea.z2);
+// 	// }
+
+// 	// now update the selected nodes
+// 	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode* curNode){
+// 		// const int xmin = std::max((int)curNode->xmin() - 1, 0), xmax = std::min((int)curNode->xmax() + 1, mapDims.mapx);
+// 		// const int zmin = std::max((int)curNode->zmin() - 1, 0), zmax = std::min((int)curNode->zmax() + 1, mapDims.mapy);
+// 		// curNode->SetMagicNumber(currMagicNum);
+// 		curNode->UpdateNeighborCache(*this, threadData);
+// 		// UpdateNeighborCache(curNode, 0xfff);
+// 	});
+// }
+
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
 	// account for the rim of nodes around the bounding box
 	// (whose neighbors also changed during re-tesselation)
@@ -249,13 +321,17 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 	});
 }
 
+// void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound, uint32_t& smallestNode) {
 void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound) {
 	openNodes.clear();
 	nodesFound.clear();
+	// TODO: use a const var for root node size;
+	// smallestNode = 256;
 
 	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
 	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
 
+	// TODO: use just one root node? power of 2 sizes below root node size won't span multiple root nodes.
 	for (int i = 0; i<numRootNodes; ++i) {
 		INode* curNode = GetPoolNode(i);
 
@@ -278,6 +354,7 @@ void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vecto
 			// LOG("%s: [%d] processing node %08x", __func__, layerNumber, curNode->GetNodeNumber());
 
 		if (curNode->IsLeaf()) {
+			// smallestNode = std::min(curNode->xsize(), smallestNode);
 			nodesFound.emplace_back(curNode);
 			continue;
 		}

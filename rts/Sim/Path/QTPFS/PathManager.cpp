@@ -211,6 +211,7 @@ QTPFS::PathManager::~PathManager() {
 
 	searchThreadData.clear();
 	updateThreadData.clear();
+	pathSearches.clear();
 
 	systemGlobals.ClearComponents();
 
@@ -252,7 +253,8 @@ void QTPFS::PathManager::Load() {
 	pathCache.Init(numMoveDefs);
 	// nodeTrees.resize(moveDefHandler.GetNumMoveDefs(), nullptr);
 	nodeLayers.resize(numMoveDefs);
-	// pathSearches.reserve(200);
+	// TODO: magic number - reserve one memory page.
+	pathSearches.reserve( 4096 / sizeof(decltype(pathSearches)::value_type) );
 
 	nodeLayerUpdatePriorityOrder.resize(numMoveDefs);
 
@@ -959,17 +961,19 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	entt::entity pathSearches[pathView.size()];
+	pathSearches.clear();
+	pathSearches.reserve(pathView.size());
 	{
 		auto curIt = pathView.begin();
 		for (int i = 0; i < pathView.size(); ++i, ++curIt){
 			assert(curIt != pathView.end());
 			InitializeSearch(*curIt);
-			pathSearches[i] = *curIt;
+			// pathSearches[i] = *curIt;
+			pathSearches.emplace_back(*curIt);
 		}
 	}
 
-	for_mt(0, pathView.size(), [this, &pathView, &pathSearches](int i){
+	for_mt(0, pathView.size(), [this, &pathView](int i){
 		// entt::entity pathSearchEntity = pathView[i];
 		entt::entity pathSearchEntity = pathSearches[i];
 		// if (pathSearchEntity == entt::null) { return; }

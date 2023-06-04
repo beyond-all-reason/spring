@@ -160,6 +160,8 @@ class MoveDefHandler
 {
 	CR_DECLARE_STRUCT(MoveDefHandler)
 public:
+	constexpr static size_t MAX_MOVE_DEFS = 256;
+
 	void Init(LuaParser* defsParser);
 	void Kill() {
 		nameMap.clear(); // never iterated
@@ -175,7 +177,7 @@ public:
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
 private:
-	std::array<MoveDef, 256> moveDefs;
+	std::array<MoveDef, MAX_MOVE_DEFS> moveDefs;
 	spring::unordered_map<unsigned int, int> nameMap;
 
 	unsigned int mdCounter = 0;

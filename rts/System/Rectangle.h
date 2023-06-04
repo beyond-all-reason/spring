@@ -70,6 +70,40 @@ struct SRectangle {
 		return x1 == other.x1 && z1 == other.z1 && x2 == other.x2 && z2 == other.z2;
 	}
 
+	// TODO: version without return?
+
+	SRectangle& operator += (const SRectangle& other) {
+		x1 + other.x1; x2 + other.x2;
+		z1 + other.z1; z2 + other.z2;
+		return *this;
+	}
+
+	SRectangle operator + (const SRectangle& other) const {
+		SRectangle ret(*this);
+		return ret += other;
+	}
+
+	SRectangle& operator -= (const SRectangle& other) {
+		x1 - other.x1; x2 - other.x2;
+		z1 - other.z1; z2 - other.z2;
+		return *this;
+	}
+
+	SRectangle operator - (const SRectangle& other) const {
+		SRectangle ret(*this);
+		return ret -= other;
+	}
+
+	SRectangle& operator >>= (uint32_t shift) {
+		x1 >>= shift; x2 >>= shift; z1 >>= shift; z2 >>= shift;
+		return *this;
+	}
+
+	SRectangle operator >> (uint32_t shift) const {
+		SRectangle ret(*this);
+		return ret >>= shift;
+	}
+
 	template<typename T>
 	SRectangle operator* (const T v) const {
 		return SRectangle(

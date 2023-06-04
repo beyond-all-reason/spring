@@ -65,6 +65,8 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     auto pm = dynamic_cast<QTPFS::PathManager*>(pathManager);
     int dataChunk = frameModulus;
 
+    assert(layersView.size() <= MoveDefHandler::MAX_MOVE_DEFS);
+
     // Initialization
     if (frameModulus <= 0) {
         layersView.each([&layersView, pm](entt::entity entity){
@@ -82,7 +84,7 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     
     // TODO: setup at beginning and attach to component - only needs to be done once at the beginning of each sweep.
     // Prepare list of entity IDs for MT section.
-    entt::entity entities[layersView.size()];
+    entt::entity entities[MoveDefHandler::MAX_MOVE_DEFS];
     int layersToUpdateCount = 0;
     {
         layersView.each([&entities, &layersToUpdateCount, &layersView](entt::entity entity){
