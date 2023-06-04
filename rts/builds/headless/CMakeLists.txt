@@ -36,6 +36,7 @@ include_directories(${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 ### Build the executable
 add_executable(engine-headless ${engineSources} ${ENGINE_ICON})
 target_link_libraries(engine-headless no-sound ${engineHeadlessLibraries} no-sound)
+set_property(TARGET engine-headless PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 
 if    (MINGW)
 	# To enable console output/force a console window to open

@@ -18,6 +18,7 @@ option(WITH_MAPCOMPILER "Include map compiler" TRUE)
 # dummy so that qtcreator shows all files (even those of windows)
 if(CMAKE_VERSION VERSION_GREATER 3.1.2)
 	add_library(platform_sources EXCLUDE_FROM_ALL "")
+	set_property(TARGET platform_sources PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 endif()
 
 # includes rts/build/cmake/Util.cmake & rts/build/cmake/PreferStaticLibs.cmake
@@ -184,7 +185,9 @@ endif (UNIX AND NOT MINGW)
 # (next two are relative to CMAKE_INSTALL_PREFIX)
 set(AI_LIBS_DIR "${DATADIR}"     CACHE STRING "Where to install Skirmish AI libraries")
 set(AI_DATA_DIR "${AI_LIBS_DIR}" CACHE STRING "Where to install Skirmish AI additional files (eg. configuration)")
-set(AI_TYPES    "ALL"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
+
+# NATIVE to avoid Java dependency by default (to avoid cmake config Could NOT find JNI (missing: JAVA_INCLUDE_PATH JAVA_INCLUDE_PATH2 AWT JVM)
+set(AI_TYPES    "NATIVE"         CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
 
 ## DataDirs
 set(BUILTIN_DATADIRS "")
@@ -657,3 +660,5 @@ if (INSTALL_PORTABLE)
 	file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/springsettings_portable.cfg)  # empty settings file for portable install
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/springsettings_portable.cfg DESTINATION . RENAME springsettings.cfg)
 endif (INSTALL_PORTABLE)
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT engine-legacy)

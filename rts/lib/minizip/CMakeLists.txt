@@ -1,7 +1,7 @@
 # Spring supplied CMake build file
 
 set(MINIZIP_FIND_QUIETLY TRUE)
-FIND_PACKAGE_STATIC(MiniZip)
+FIND_PACKAGE_STATIC(minizip)
 
 if     (MINIZIP_FOUND)
 	# Use the system supplied MiniZip library
@@ -13,9 +13,9 @@ else   (MINIZIP_FOUND)
 	# Build our own minizip library
 	
 	set(miniZipSources
-			"unzip"
-			"zip"
-			"ioapi"
+			"unzip.c"
+			"zip.c"
+			"ioapi.c"
 		)
 
 	add_definitions(-DNOCRYPT -DNOUNCRYPT)

@@ -4,6 +4,7 @@
 # which makes testing spring in the builddir easier, eg. like this:
 # cd build-dir
 # SPRING_DATADIR=$(pwd) ./spring
+cmake_minimum_required(VERSION 3.6)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
@@ -82,8 +83,13 @@ include_directories(${engineIncludes})
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
 target_link_libraries(engine-legacy ${engineLibraries})
 
+if (MSVC)
+	add_custom_command(TARGET engine-legacy PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${PROJECT_SOURCE_DIR}/vclibs64/dll/" ${PROJECT_BINARY_DIR}/$(Configuration))
+endif (MSVC)
 
 ### Install the executable
 install(TARGETS engine-legacy DESTINATION ${BINDIR})
 
 create_engine_build_and_install_target(legacy)
+
+set_property(TARGET install-spring-legacy PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)

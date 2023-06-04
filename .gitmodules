@@ -21,3 +21,6 @@
 [submodule "rts/lib/tracy"]
 	path = rts/lib/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "vclibs64"]
+	path = vclibs64
+	url = https://github.com/beyond-all-reason/vclibs64

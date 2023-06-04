@@ -160,7 +160,7 @@ add_executable(engine-dedicated
 		${sources_engine_System_Log_sinkFile}
 		${sources_engine_System_Log_sinkOutputDebugString}
 		${ENGINE_ICON}
-		main
+		main.cpp
 	)
 target_link_libraries(engine-dedicated ${engineDedicatedLibraries})
 if    (MINGW)
@@ -168,6 +168,7 @@ if    (MINGW)
 endif (MINGW)
 if    (MSVC)
 	target_link_libraries(engine-dedicated ${DBGHELP_LIBRARY})
+	set_property(TARGET engine-dedicated PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 endif (MSVC)
 add_dependencies(engine-dedicated generateVersionFiles)
 

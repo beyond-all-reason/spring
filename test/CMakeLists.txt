@@ -68,6 +68,7 @@ macro (add_spring_test target sources libraries flags)
 	target_link_libraries(test_${target} ${libraries} ${test_common_libraries})
 	set_target_properties(test_${target} PROPERTIES COMPILE_FLAGS "${flags}")
 	#install(TARGETS test_${target} DESTINATION ${BINDIR})
+	set_property(TARGET test_${target} PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 endmacro()
 
 ################################################################################
@@ -244,6 +245,7 @@ endif()
 	# positive tests (should compile fine)
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "")
 	add_dependencies(tests test_BitwiseEnum)
+	set_property(TARGET test_BitwiseEnum PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 
 	# negative tests (must not compile)
 	spring_test_compile_fail(testBitwiseEnum_fail1 ${test_src} "-DTEST1")

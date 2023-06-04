@@ -37,7 +37,7 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
 )
 
-add_executable(demotool EXCLUDE_FROM_ALL DemoTool ${demoToolSpringSources})
+add_executable(demotool EXCLUDE_FROM_ALL DemoTool.cpp ${demoToolSpringSources})
 if (MINGW)
 	# To enable console output/force a console window to open
 	set_target_properties(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
@@ -48,3 +48,4 @@ target_link_libraries(demotool
 		gflags
 	)
 add_dependencies(demotool generateVersionFiles)
+set_property(TARGET demotool PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
