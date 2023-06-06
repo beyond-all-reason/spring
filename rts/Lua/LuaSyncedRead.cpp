@@ -214,6 +214,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitVelocity);
 	REGISTER_LUA_CFUNC(GetUnitBuildFacing);
 	REGISTER_LUA_CFUNC(GetUnitIsBuilding);
+	REGISTER_LUA_CFUNC(GetUnitWorkerTask);
 	REGISTER_LUA_CFUNC(GetUnitCurrentBuildPower);
 	REGISTER_LUA_CFUNC(GetUnitHarvestStorage);
 	REGISTER_LUA_CFUNC(GetUnitBuildParams);
@@ -4111,6 +4112,57 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.GetUnitWorkerTask
+ * @number unitID
+ * @treturn number cmdID of the relevant command
+ * @treturn number ID of the target, if applicable
+ */
+int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto builder = dynamic_cast <const CBuilder*> (unit);
+	if (builder == nullptr)
+		return 0;
+
+	if (builder->curBuild) {
+		lua_pushnumber(L, builder->curBuild->beingBuilt
+			? -builder->curBuild->unitDef->id
+			: CMD_REPAIR
+		);
+		lua_pushnumber(L, builder->curBuild->id);
+		return 2;
+	} else if (builder->curCapture) {
+		lua_pushnumber(L, CMD_CAPTURE);
+		lua_pushnumber(L, builder->curCapture->id);
+		return 2;
+	} else if (builder->curResurrect) {
+		lua_pushnumber(L, CMD_RESURRECT);
+		lua_pushnumber(L, builder->curResurrect->id + unitHandler.MaxUnits());
+		return 2;
+	} else if (builder->curReclaim) {
+		lua_pushnumber(L, CMD_RECLAIM);
+		if (builder->reclaimingUnit) {
+			const auto reclaimee = dynamic_cast <const CUnit*> (builder->curReclaim);
+			assert(reclaimee);
+			lua_pushnumber(L, reclaimee->id);
+		} else {
+			const auto reclaimee = dynamic_cast <const CFeature*> (builder->curReclaim);
+			assert(reclaimee);
+			lua_pushnumber(L, reclaimee->id + unitHandler.MaxUnits());
+		}
+		return 2;
+	} else if (builder->helpTerraform || builder->terraforming) {
+		lua_pushnumber(L, CMD_RESTORE); // FIXME: could also be leveling ground before construction
+		return 1;
+	} else {
+		return 0;
+	}
+}
 
 /***
  *

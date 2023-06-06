@@ -127,6 +127,7 @@ class LuaSyncedRead {
 		static int GetUnitVelocity(lua_State* L);
 		static int GetUnitBuildFacing(lua_State* L);
 		static int GetUnitIsBuilding(lua_State* L);
+		static int GetUnitWorkerTask(lua_State* L);
 		static int GetUnitCurrentBuildPower(lua_State* L);
 		static int GetUnitHarvestStorage(lua_State* L);
 		static int GetUnitBuildParams(lua_State* L);
