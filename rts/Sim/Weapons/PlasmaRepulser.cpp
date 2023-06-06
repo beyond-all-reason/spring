@@ -229,7 +229,10 @@ bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hit
 
 	// kill the projectile
 	if (owner->UseEnergy(weaponDef->shieldEnergyUse)) {
-		curPower -= (shieldDamage * (weaponDef->shieldPower != 0.0f));
+		if (weaponDef->shieldPower != 0.0f) {
+			curPower -= shieldDamage;
+			curPower = std::min(weaponDef->shieldPower, curPower); // damage can be negative
+		}
 
 		p->Collision();
 

@@ -132,7 +132,13 @@ void CGameHelper::DoExplosionDamage(
 
 	// expMod will also be in [0, 1], no negatives
 	// TODO: damage attenuation for underwater units from surface explosions?
-	const float expDistanceMod = (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim);
+
+	// avoid float calculations when not needed, these can introduce
+	// tiny errors where a unit then survives on 0.0001 health
+	const float expDistanceMod = expEdgeEffect == 1.0f || expDist < 1.0f
+		? 1.0f
+		: (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim)
+	;
 	const float modImpulseScale = CalcImpulseScale(damages, expDistanceMod);
 
 	// NOTE: if an explosion occurs right underneath a
@@ -182,7 +188,10 @@ void CGameHelper::DoExplosionDamage(
 
 	assert(expRadius >= expRim);
 
-	const float expDistanceMod = (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim);
+	const float expDistanceMod = expEdgeEffect == 1.0f || expDist < 1.0f
+		? 1.0f
+		: (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim)
+	;
 	const float modImpulseScale = CalcImpulseScale(damages, expDistanceMod);
 
 	const float3 impulseDir = (volPos - expPos).SafeNormalize();
@@ -720,7 +729,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 
 				const float dist2D = math::sqrt(sqDist2D);
 				const float rangeMul = (dist2D * weaponDef->proximityPriority + modRange * 0.4f + 100.0f);
-				const float damageMul = weaponDmg->Get(targetUnit->armorType) * targetUnit->curArmorMultiple;
+				const float damageMul = std::max(0.0001f, weaponDmg->Get(targetUnit->armorType) * targetUnit->curArmorMultiple);
 
 				targetPriority *= angleMul;
 				targetPriority *= rangeMul;

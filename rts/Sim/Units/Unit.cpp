@@ -266,7 +266,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	cost.metal = unitDef->metal;
 	cost.energy = unitDef->energy;
 	buildTime = unitDef->buildTime;
-	armoredMultiple = std::max(0.0001f, unitDef->armoredMultiple); // armored multiple of 0 will crash spring
+	armoredMultiple = unitDef->armoredMultiple;
 	armorType = unitDef->armorType;
 	category = unitDef->category;
 	leaveTracks = unitDef->decalDef.leaveTrackDecals;
