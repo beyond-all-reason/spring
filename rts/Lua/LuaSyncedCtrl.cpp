@@ -2167,7 +2167,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		const unsigned armType = lua_toint(L, index);
 
 		if (armType < damages->GetNumTypes())
-			damages->Set(armType, std::max(value, 0.0001f));
+			damages->Set(armType, value);
 
 		return 0;
 	}
@@ -2214,7 +2214,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			damages->edgeEffectiveness = std::min(value, 0.999f);
+			damages->edgeEffectiveness = std::min(value, 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			damages->explosionSpeed = value;
@@ -2369,7 +2369,7 @@ int LuaSyncedCtrl::AddUnitExperience(lua_State* L)
  * @function Spring.SetUnitArmored
  * @number unitID
  * @bool[opt] armored
- * @number[opt] armorMultiple Cannot be zero or less, clamped to 0.0001
+ * @number[opt] armorMultiple
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
@@ -2382,8 +2382,7 @@ int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
 	if (lua_isboolean(L, 2))
 		unit->armoredState = lua_toboolean(L, 2);
 
-	// armored multiple of 0 will crash spring
-	unit->armoredMultiple = std::max(0.0001f, luaL_optfloat(L, 3, unit->armoredMultiple));
+	unit->armoredMultiple = luaL_optfloat(L, 3, unit->armoredMultiple);
 
 	if (lua_toboolean(L, 2)) {
 		unit->curArmorMultiple = unit->armoredMultiple;
@@ -6447,7 +6446,7 @@ static int SetSingleDamagesKey(lua_State* L, DamageArray& damages, int index)
 	if (lua_isnumber(L, index)) {
 		const unsigned armType = lua_toint(L, index);
 		if (armType < damages.GetNumTypes())
-			damages.Set(armType, std::max(value, 0.0001f));
+			damages.Set(armType, value);
 		return 0;
 	}
 
@@ -6490,7 +6489,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 					}
 				}
 			} else {
-				damages.SetDefaultDamage(std::max(lua_tofloat(L, index + 1), 0.0001f));
+				damages.SetDefaultDamage(lua_tofloat(L, index + 1));
 			}
 		} break;
 		case hashString("weaponDef"): {
@@ -6515,7 +6514,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			params.edgeEffectiveness = lua_tofloat(L, index + 1);
+			params.edgeEffectiveness = std::min(lua_tofloat(L, index + 1), 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			params.explosionSpeed = lua_tofloat(L, index + 1);
@@ -6621,7 +6620,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 
 		params.craterAreaOfEffect = luaL_optfloat(L,  8, 0.0f);
 		params.damageAreaOfEffect = luaL_optfloat(L,  9, 0.0f);
-		params.edgeEffectiveness  = luaL_optfloat(L, 10, 0.0f);
+		params.edgeEffectiveness  = std::min(luaL_optfloat(L, 10, 0.0f), 1.0f);
 		params.explosionSpeed     = luaL_optfloat(L, 11, 0.0f);
 		params.gfxMod             = luaL_optfloat(L, 12, 0.0f);
 

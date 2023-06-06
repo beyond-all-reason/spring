@@ -47,6 +47,11 @@ Sim:
    are impacted by map changes (previously all links were updated.) (TKPFS)
  - Engine-driven formation move commands now try to match units to nearest appropriate move targets
    so as to have units adopt formations without having to run across each other.
+ - edgeEffectiveness can now be 1 (previously capped at 0.999)
+ - armor multiplier (aka damageModifier) can now be 0 (previously capped at 0.0001)
+ - damage in unit defs can now be 0 (previously capped at 0.0001)
+ - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but keep in mind weapons
+   will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.
@@ -56,6 +61,7 @@ UI:
  - Increase the rate at which the traversability view map is updated by x4
 
 Fixes:
+ - Fix direct hits doing X damage sometimes failing to kill an X health target
  - Fix a pathfinding bug where the unit may try to force it's way through obstacles rather than
    walk around them.
  - Fixed issue where Unit Weapon aiming angle checks would recalculate cos(20) every call - it is
@@ -63,6 +69,7 @@ Fixes:
  - Fixed TestMoveSquareRange() so that it only runs the required tests.
  - Fixed issue where units standing still would recalculate their facing direction every frame even
    though they are not moving.
+ - Fix some Lua interfaces being able to set edgeEffectiveness above 1
  - Fix issues where the ground and other visibility features would not render or return expected
    features when looking at certain oblique angles
 
