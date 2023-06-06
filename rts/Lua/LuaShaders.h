@@ -84,6 +84,7 @@ class LuaShaders {
 		static int UniformSubroutine(lua_State* L);
 
 		static int GetEngineUniformBufferDef(lua_State* L);
+		static int GetEngineModelUniformDataDef(lua_State* L);
 
 		static int SetUnitBufferUniforms(lua_State* L);
 		static int SetFeatureBufferUniforms(lua_State* L);

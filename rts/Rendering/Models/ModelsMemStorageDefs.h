@@ -1,13 +1,12 @@
 #pragma once
 
-#include <array>
-
-#include "System/MemPoolTypes.h"
 #include "System/float4.h"
 #include "Sim/Misc/GlobalConstants.h"
 
-struct alignas(4) ModelUniformData {
-	constexpr static int MAX_MODEL_UD_UNIFORMS = 20;
+class alignas(4) ModelUniformData {
+public:
+	CR_DECLARE_STRUCT(ModelUniformData)
+	static constexpr int MAX_MODEL_UD_UNIFORMS = 16;
 
 	union {
 		uint32_t composite;
@@ -27,9 +26,16 @@ struct alignas(4) ModelUniformData {
 	float unused5;
 	float unused6;
 
+	float4 drawPos;
 	float4 speed;
 
-	std::array<float, MAX_MODEL_UD_UNIFORMS> userDefined;
+	float userDefined[MAX_MODEL_UD_UNIFORMS];
+public:
+	static void Init() { SetGLSLDefinition(1); }
+	static const std::string& GetGLSLDefinition() { return glslDefinition; }
+private:
+	static void SetGLSLDefinition(int binding);
+	static inline std::string glslDefinition;
 };
 
 static_assert(sizeof(ModelUniformData) == 128, "");
