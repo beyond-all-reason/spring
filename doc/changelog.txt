@@ -16,6 +16,11 @@ Lua:
    The previous method to pass `-1` still works.
  - add `Spring.GetUnitSeismicSignature(unitID) -> number seismicSignature`
  - add `Spring.SetUnitSeismicSignature(unitID, seismicSignature) -> nil`
+ - add `Spring.GetUnitWorkerTask(unitID) -> cmdID, targetID`. Returns a worker's current
+   task, represented via commandID. Note that it differs from `Spring.GetUnitCurrentCommand`
+   in that a unit may be working without having the relevant order in front of the queue,
+   for example via Guard, or alternatively, it may not be working despite having it (for
+   example it's not yet in range). It also resolves Repair vs Build commands.
  - allow shallow recursion in `Spring.TransferUnit`
  
 
@@ -68,11 +73,20 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
 
  ! Resurrecting units no longer overrides their health to 5%. To get back the old behaviour:
 
+   -- if migrating in steps to 1544
    function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
-     if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
+     if builderID and (Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT or Spring.GetUnitCurrentCommand(builderID) == CMD.GUARD) then
        Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
      end
    end
+
+   -- if migrating to a newer engine with `Spring.GetUnitWorkerTask`
+   function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
+     if builderID and Spring.GetUnitWorkerTask(builderID) == CMD.RESURRECT then
+       Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
+     end
+   end
+
 
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
