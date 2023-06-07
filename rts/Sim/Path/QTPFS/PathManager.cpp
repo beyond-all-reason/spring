@@ -196,12 +196,16 @@ QTPFS::PathManager::~PathManager() {
 	// pathCaches.clear();
 	// pathSearches.clear();
 	// pathTypes.clear();
-	pathTraces.clear();
-	std::for_each(mapChangeTrackPerLayer.nodeLayerTrackers.begin(), mapChangeTrackPerLayer.nodeLayerTrackers.end(), [](auto& track){
+	auto clearTrackers = [](auto& track){
 		track.damageMap.clear();
 		track.damageQueue.clear();
-	});
-	mapChangeTrackPerLayer.nodeLayerTrackers.clear();
+	};
+
+	pathTraces.clear();
+	std::for_each(nodeLayersMapTrackers.mapDamageTrackers.begin(), nodeLayersMapTrackers.mapDamageTrackers.end(), clearTrackers);
+	std::for_each(nodeLayersMapTrackers.quadTreeUpdatesTrackers.begin(), nodeLayersMapTrackers.quadTreeUpdatesTrackers.end(), clearTrackers);
+	nodeLayersMapTrackers.mapDamageTrackers.clear();
+	nodeLayersMapTrackers.quadTreeUpdatesTrackers.clear();
 	// mapChangeTrack.damageMap.clear();
 	// mapChangeTrack.damageQueue.clear();
 	sharedPaths.clear();
@@ -258,14 +262,23 @@ void QTPFS::PathManager::Load() {
 
 	nodeLayerUpdatePriorityOrder.resize(numMoveDefs);
 
-	mapChangeTrackPerLayer.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
-	mapChangeTrackPerLayer.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
-	mapChangeTrackPerLayer.nodeLayerTrackers.clear();
-	mapChangeTrackPerLayer.nodeLayerTrackers.reserve(numMoveDefs);
+	nodeLayersMapTrackers.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0);
+	nodeLayersMapTrackers.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
+	nodeLayersMapTrackers.mapDamageTrackers.clear();
+	nodeLayersMapTrackers.quadTreeUpdatesTrackers.clear();
+	nodeLayersMapTrackers.mapDamageTrackers.reserve(numMoveDefs);
+	nodeLayersMapTrackers.quadTreeUpdatesTrackers.reserve(numMoveDefs);
 	for (int i = 0; i < numMoveDefs; ++i) {
-		MapChangeTrack newChangeTrack;
-		newChangeTrack.damageMap.resize(mapChangeTrackPerLayer.width*mapChangeTrackPerLayer.height);
-		mapChangeTrackPerLayer.nodeLayerTrackers.emplace_back(newChangeTrack);
+		{
+			MapChangeTrack newChangeTrack;
+			newChangeTrack.damageMap.resize(nodeLayersMapTrackers.width*nodeLayersMapTrackers.height);
+			nodeLayersMapTrackers.mapDamageTrackers.emplace_back(newChangeTrack);
+		}
+		{
+			MapChangeTrack newChangeTrack;
+			newChangeTrack.damageMap.resize(nodeLayersMapTrackers.width*nodeLayersMapTrackers.height);
+			nodeLayersMapTrackers.quadTreeUpdatesTrackers.emplace_back(newChangeTrack);
+		}
 		nodeLayerUpdatePriorityOrder[i] = i;
 	}
 
@@ -448,7 +461,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			}
 			
 			std::for_each(rootRects.begin(), rootRects.end(), [this, layerNum, currentThread](auto &rect){
-				UpdateNodeLayer(layerNum, rect, currentThread);
+				UpdateNodeLayerHighRes(layerNum, rect, currentThread);
 			});
 
 			// Full map-wide allocations have been made, we shouldn't need that much memory in future.
@@ -566,7 +579,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
-void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& rect, int currentThread) {
+void QTPFS::PathManager::UpdateNodeLayerHighRes(unsigned int layerNum, const SRectangle& rect, int currentThread) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -600,18 +613,18 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 
 	SRectangle r(rect);
 	if (rect.x1 == 0 && rect.x2 == 0) {
-		auto& nlChangeTracker = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum];
+		auto& nlMapDmgTracker = nodeLayersMapTrackers.mapDamageTrackers[layerNum];
 
 		// No more damaged areas. Finish up.
-		if (nlChangeTracker.damageQueue.size() == 0) { return; }
+		if (nlMapDmgTracker.damageQueue.size() == 0) { return; }
 
-		const int sectorId = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum].damageQueue.front();
-		const int blockIdxX = (sectorId % mapChangeTrackPerLayer.width) * DAMAGE_MAP_BLOCK_SIZE;
-		const int blockIdxY = (sectorId / mapChangeTrackPerLayer.width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int sectorId = nodeLayersMapTrackers.mapDamageTrackers[layerNum].damageQueue.front();
+		const int blockIdxX = (sectorId % nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+		const int blockIdxY = (sectorId / nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
 
-		assert(sectorId < nlChangeTracker.damageMap.size());
-		nlChangeTracker.damageMap[sectorId] = false;
-		nlChangeTracker.damageQueue.pop_front();
+		assert(sectorId < nlMapDmgTracker.damageMap.size());
+		nlMapDmgTracker.damageMap[sectorId] = false;
+		nlMapDmgTracker.damageQueue.pop_front();
 
 		r = SRectangle
 			( blockIdxX
@@ -619,6 +632,13 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 			, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
 			, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 			);
+		
+		// mark cleared section as updated so the high level updater knows about it
+		auto& nlQuadUpdateTracker = nodeLayersMapTrackers.quadTreeUpdatesTrackers[layerNum];
+		if (!nlQuadUpdateTracker.damageMap[sectorId]) {
+			nlQuadUpdateTracker.damageMap[sectorId] = true;
+			nlQuadUpdateTracker.damageQueue.push_back(sectorId);
+		}
 	}
 
 	INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
@@ -652,6 +672,45 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	}
 }
 
+void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread) {
+	auto& nlQuadUpdateTracker = nodeLayersMapTrackers.quadTreeUpdatesTrackers[layerNum];
+	auto& queue = nlQuadUpdateTracker.damageQueue;
+	auto& map = nlQuadUpdateTracker.damageMap;
+
+	while (!queue.empty()) {
+		const int sectorId = queue.front();
+		assert(sectorId < map.size());
+
+		if (map[sectorId] == true) {
+			const int blockIdxX = (sectorId % nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+			const int blockIdxY = (sectorId / nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+			SRectangle r = SRectangle
+				( blockIdxX
+				, blockIdxY
+				, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+				, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+				);
+
+			INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
+			if (containingNode->xsize() > 16) {
+				const int minBlockX = containingNode->xmin() / DAMAGE_MAP_BLOCK_SIZE;
+				const int minBlockY = containingNode->zmin() / DAMAGE_MAP_BLOCK_SIZE;
+				const int maxBlockX = containingNode->xmax() / DAMAGE_MAP_BLOCK_SIZE;
+				const int maxBlockY = containingNode->zmax() / DAMAGE_MAP_BLOCK_SIZE;
+
+				for (int y = minBlockY; y < maxBlockY; y++) {
+					for (int x = minBlockX; x < maxBlockX; x++) {
+						int curSectorId = y * nodeLayersMapTrackers.width + x;
+						map[curSectorId] = false;
+					}
+				}
+			} else {
+				map[sectorId] = false;
+			}
+		}
+		queue.pop_front();
+	}
+}
 
 std::string QTPFS::PathManager::GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const {
 	const std::string ver = IntToString(QTPFS_CACHE_VERSION, "%04x");
@@ -773,9 +832,9 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 
 	const auto layers = nodeLayers.size();
 	for (int i = 0; i < layers; ++i) {
-		auto& nlChangeTracker = mapChangeTrackPerLayer.nodeLayerTrackers[i];
-		const int w = mapChangeTrackPerLayer.width;
-		const int h = mapChangeTrackPerLayer.height;
+		auto& nlChangeTracker = nodeLayersMapTrackers.mapDamageTrackers[i];
+		const int w = nodeLayersMapTrackers.width;
+		const int h = nodeLayersMapTrackers.height;
 
 		auto* moveDef = moveDefHandler.GetMoveDefByPathType(i);
 		int xsizeh = moveDef->xsizeh;
@@ -795,22 +854,6 @@ void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
 			}	
 		}
 	}
-
-	// TODO: add dynamic boundary to calculations
-	// const int2 min  { std::max((x1-4) / res, 0)
-	// 				, std::max((y1-4) / res, 0)};
-	// const int2 max  { std::min((x2+4) / res, (w-1))
-	// 				, std::min((y2+4) / res, (h-1))};
-
-	// for (int y = min.y; y <= max.y; ++y) {
-	// 	int i = min.x + y*w;
-	// 	for (int x = min.x; x <= max.x; ++x, ++i) {
-	// 		if (!mapChangeTrack.damageMap[i]) {
-	// 			mapChangeTrack.damageMap[i] = true;
-	// 			mapChangeTrack.damageQueue.emplace_back(i);
-	// 		}
-	// 	}	
-	// }
 }
 
 void QTPFS::PathManager::Update() {
@@ -828,23 +871,11 @@ void QTPFS::PathManager::Update() {
 
 		SCOPED_TIMER("Sim::Path::MapUpdates");
 
-		// const int sectorId = mapChangeTrack.damageQueue.front();
-		// const int blockIdxX = (sectorId % mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-		// const int blockIdxY = (sectorId / mapChangeTrack.width) * DAMAGE_MAP_BLOCK_SIZE;
-		// SRectangle rect
-		// 	( blockIdxX
-		// 	, blockIdxY
-		// 	, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
-		// 	, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
-		// 	);
-
 		RequestMaxSpeedModRefreshForLayer(0);
 
-		SRectangle rect(0,0,0,0);
-		for_mt(0, nodeLayers.size(), [this, &rect](const int index) {
-			int layerNum = nodeLayerUpdatePriorityOrder[index];
+		auto numBlocksToUpdate = [this](int layerNum) {
 			int blocksToUpdate = 0;
-			int updatedBlocks = mapChangeTrackPerLayer.nodeLayerTrackers[layerNum].damageQueue.size();
+			int updatedBlocks = nodeLayersMapTrackers.mapDamageTrackers[layerNum].damageQueue.size();
 			{
 				constexpr int BLOCKS_TO_UPDATE = 16;
 				const int progressiveUpdates = std::ceil(updatedBlocks * (1.f / (BLOCKS_TO_UPDATE<<3)) * modInfo.pfUpdateRateScale);
@@ -856,7 +887,16 @@ void QTPFS::PathManager::Update() {
 				// LOG("[%d] blocksToUpdate=%d updatedBlocks=%d [%f]"
 				// 		, layerNum, blocksToUpdate, updatedBlocks, modInfo.pfUpdateRateScale);
 			}
-			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayer(layerNum, rect, ThreadPool::GetThreadNum()); }
+			return blocksToUpdate;
+		};
+
+		SRectangle rect(0,0,0,0);
+		for_mt(0, nodeLayers.size(), [this, &rect, &numBlocksToUpdate](const int index) {
+			int curThread = ThreadPool::GetThreadNum();
+			int layerNum = nodeLayerUpdatePriorityOrder[index];
+			int blocksToUpdate = numBlocksToUpdate(layerNum);
+			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayerHighRes(layerNum, rect, curThread); }
+			UpdateNodeLayerLowRes(layerNum, curThread);
 		});
 
 		// Mark all dirty paths so that they can be recalculated
@@ -963,20 +1003,13 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 	// RequestPath and QueueDeadPathSearches
 	pathSearches.clear();
 	pathSearches.reserve(pathView.size());
-	{
-		auto curIt = pathView.begin();
-		for (int i = 0; i < pathView.size(); ++i, ++curIt){
-			assert(curIt != pathView.end());
-			InitializeSearch(*curIt);
-			// pathSearches[i] = *curIt;
-			pathSearches.emplace_back(*curIt);
-		}
-	}
+	pathView.each([this](entt::entity entity){
+			InitializeSearch(entity);
+			pathSearches.emplace_back(entity);
+		});
 
 	for_mt(0, pathView.size(), [this, &pathView](int i){
-		// entt::entity pathSearchEntity = pathView[i];
 		entt::entity pathSearchEntity = pathSearches[i];
-		// if (pathSearchEntity == entt::null) { return; }
 
 		assert(registry.valid(pathSearchEntity));
 		assert(registry.all_of<PathSearch>(pathSearchEntity));

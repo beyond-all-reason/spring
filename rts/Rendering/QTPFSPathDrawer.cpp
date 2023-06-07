@@ -462,12 +462,13 @@ void QTPFSPathDrawer::DrawInMiniMap()
 
 	auto width = mct.width;
 	auto height = mct.height;
-	float maxStrength = mct.nodeLayerTrackers.size();
+	float maxStrength = mct.mapDamageTrackers.size();
 
 	std::vector<float> mapDamageStrength;
 	mapDamageStrength.resize(width*height, 0.f);
 
-	for (auto& track : mct.nodeLayerTrackers) {
+	// for (auto& track : mct.mapDamageTrackers) {
+	for (auto& track : mct.quadTreeUpdatesTrackers) {
 		for (auto mapQuad: track.damageQueue) {
 			assert(mapQuad < mapDamageStrength.size());
 			mapDamageStrength[mapQuad]++;

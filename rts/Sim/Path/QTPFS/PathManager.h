@@ -27,7 +27,8 @@ namespace QTPFS {
 			std::deque<int> damageQueue;
 		};
 		struct NodeLayersChangeTrack {
-			std::vector<MapChangeTrack> nodeLayerTrackers;
+			std::vector<MapChangeTrack> mapDamageTrackers;
+			std::vector<MapChangeTrack> quadTreeUpdatesTrackers;
 			int width = 0;
 			int height = 0;
 		};
@@ -80,7 +81,7 @@ namespace QTPFS {
 		// const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
 		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 
-		const NodeLayersChangeTrack& GetMapChangeTrack() const { return mapChangeTrackPerLayer; };
+		const NodeLayersChangeTrack& GetMapChangeTrack() const { return nodeLayersMapTrackers; };
 
 		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
@@ -110,7 +111,8 @@ namespace QTPFS {
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
-		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
+		void UpdateNodeLayerHighRes(unsigned int layerNum, const SRectangle& r, int currentThread);
+		void UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread);
 
 		void InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
@@ -172,7 +174,7 @@ namespace QTPFS {
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;
 
-		NodeLayersChangeTrack mapChangeTrackPerLayer;
+		NodeLayersChangeTrack nodeLayersMapTrackers;
 
 		int deadPathsToUpdatePerFrame = 1;
 		int recalcDeadPathUpdateRateOnFrame = 0;

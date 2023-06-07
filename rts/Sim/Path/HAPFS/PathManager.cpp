@@ -922,11 +922,7 @@ void CPathManager::Update()
 		pathSearches.clear();
 		pathSearches.reserve(pathSearchView.size());
 		auto& entities = pathSearches;
-
-		pathSearchView.each([&entities](entt::entity entity){
-			// entities[searchCount++] = entity;
-			entities.emplace_back(entity);
-		});
+		pathSearchView.each([&entities](entt::entity entity){ entities.emplace_back(entity); });
 
 		for_mt(0, pathSearchView.size(), [this, &entities, &pathSearchView](int idx){
 			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
