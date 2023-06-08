@@ -14,6 +14,7 @@
 #include "System/Exceptions.h"
 #include "System/GlobalConfig.h"
 #include "System/GlobalRNG.h"
+#include "System/GflagsExt.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/DataDirLocater.h"
 #include "System/FileSystem/FileSystemInitializer.h"
@@ -29,8 +30,6 @@
 #include "System/Platform/CrashHandler.h"
 #include "System/Platform/errorhandler.h"
 #include "System/Platform/Threading.h"
-
-#include <gflags/gflags.h>
 
 #define LOG_SECTION_DEDICATED_SERVER "DedicatedServer"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_DEDICATED_SERVER)

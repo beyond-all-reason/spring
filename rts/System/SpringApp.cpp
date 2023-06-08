@@ -7,7 +7,7 @@
 #include <chrono>
 
 #include <SDL.h>
-#include <gflags/gflags.h>
+#include <System/GflagsExt.h>
 
 #ifdef _WIN32
 //windows workarrounds
@@ -167,7 +167,10 @@ static void ConsolePrintInitialize(const std::string& configSource, bool safemod
 	LOG_ENABLE();
 }
 
-
+static void FlushExit()
+{
+	std::fflush(stdout);
+}
 
 /**
  * Initializes SpringApp variables
@@ -177,6 +180,7 @@ static void ConsolePrintInitialize(const std::string& configSource, bool safemod
  */
 SpringApp::SpringApp(int argc, char** argv)
 {
+	std::atexit(FlushExit);
 	// NB
 	//   {--,/}help overrides all other flags and causes exit(),
 	//   even in the unusual event it is not given as first arg
