@@ -200,6 +200,7 @@ public:
 	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
+	bool allowEnginePlayerlist;
 };
 
 extern CModInfo modInfo;
