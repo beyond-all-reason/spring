@@ -116,7 +116,7 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	std::string funcName = "getLevelOfSupportFor";
 	void* funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV_FUNC_POINTER *)(
+	skirmishAILibrary->getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV *)(
 		const char* aiShortName,
 		const char* aiVersion,
 		const char* engineVersionString,
@@ -134,7 +134,7 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	funcName = "init";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->init = (int (CALLING_CONV_FUNC_POINTER *)(
+	skirmishAILibrary->init = (int (CALLING_CONV *)(
 		int skirmishAIId,
 		const SSkirmishAICallback*
 	)) funcAddr;
@@ -149,7 +149,7 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	funcName = "release";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->release = (int (CALLING_CONV_FUNC_POINTER *)(
+	skirmishAILibrary->release = (int (CALLING_CONV *)(
 		int skirmishAIId
 	)) funcAddr;
 
@@ -163,7 +163,7 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	funcName = "handleEvent";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->handleEvent = (int (CALLING_CONV_FUNC_POINTER *)(
+	skirmishAILibrary->handleEvent = (int (CALLING_CONV *)(
 		int skirmishAIId,
 		int topicId,
 		const void* data
