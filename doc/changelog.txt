@@ -32,6 +32,9 @@ Lua:
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
+ - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
+   the built-in `/info` playerlist won't display. Use for anonymous modes
+   in conjunction with `Spring.GetPlayerInfo` poisoning.
  
 
 Sim:

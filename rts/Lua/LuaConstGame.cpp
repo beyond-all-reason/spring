@@ -207,6 +207,8 @@ bool LuaConstGame::PushEntries(lua_State* L)
 
 		LuaPushNamedBool  (L, "paralyzeOnMaxHealth", modInfo.paralyzeOnMaxHealth);
 		LuaPushNamedNumber(L, "paralyzeDeclineRate", modInfo.paralyzeDeclineRate);
+
+		LuaPushNamedBool  (L, "allowEnginePlayerlist", modInfo.allowEnginePlayerlist);
 	}
 
 	if (archiveScanner != nullptr && mapInfo != nullptr) {
