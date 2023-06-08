@@ -774,7 +774,7 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 }
 
 
-/*** Allows to play an Ogg Vorbis (.OGG) compressed sound file.
+/*** Allows to play an Ogg Vorbis (.OGG) and mp3 compressed sound file.
  *
  * @function Spring.PlaySoundStream
  *
