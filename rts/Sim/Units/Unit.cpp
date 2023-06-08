@@ -1755,8 +1755,9 @@ void CUnit::DependentDied(CObject* o)
 
 void CUnit::UpdatePhysicalState(float eps)
 {
-	const bool inAir   = IsInAir();
-	const bool inWater = IsInWater();
+	const bool inAir      = IsInAir();
+	const bool inWater    = IsInWater();
+	const bool underWater = IsUnderWater();
 
 	CSolidObject::UpdatePhysicalState(eps);
 
@@ -1772,6 +1773,13 @@ void CUnit::UpdatePhysicalState(float eps)
 			eventHandler.UnitEnteredWater(this);
 		} else {
 			eventHandler.UnitLeftWater(this);
+		}
+	}
+	if (IsUnderWater() != underWater) {
+		if (underWater) {
+			eventHandler.UnitLeftUnderwater(this);
+		} else {
+			eventHandler.UnitEnteredUnderwater(this);
 		}
 	}
 }

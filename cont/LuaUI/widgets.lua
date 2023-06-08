@@ -135,8 +135,10 @@ local flexCallIns = {
   'UnitEnteredLos',
   'UnitLeftRadar',
   'UnitLeftLos',
+  'UnitEnteredUnderwater',
   'UnitEnteredWater',
   'UnitEnteredAir',
+  'UnitLeftUnderwater',
   'UnitLeftWater',
   'UnitLeftAir',
   'UnitSeismicPing',
@@ -1951,6 +1953,13 @@ function widgetHandler:UnitLeftLos(unitID, unitTeam)
 end
 
 
+function widgetHandler:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  for _,w in ipairs(self.UnitEnteredUnderwaterList) do
+    w:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  end
+  return
+end
+
 function widgetHandler:UnitEnteredWater(unitID, unitDefID, unitTeam)
   for _,w in ipairs(self.UnitEnteredWaterList) do
     w:UnitEnteredWater(unitID, unitDefID, unitTeam)
@@ -1966,6 +1975,13 @@ function widgetHandler:UnitEnteredAir(unitID, unitDefID, unitTeam)
   return
 end
 
+
+function widgetHandler:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+  for _,w in ipairs(self.UnitLeftUnderwaterList) do
+    w:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+  end
+  return
+end
 
 function widgetHandler:UnitLeftWater(unitID, unitDefID, unitTeam)
   for _,w in ipairs(self.UnitLeftWaterList) do

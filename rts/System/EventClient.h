@@ -151,8 +151,10 @@ class CEventClient
 		virtual void UnitLeftRadar(const CUnit* unit, int allyTeam) {}
 		virtual void UnitLeftLos(const CUnit* unit, int allyTeam) {}
 
+		virtual void UnitEnteredUnderwater(const CUnit* unit) {}
 		virtual void UnitEnteredWater(const CUnit* unit) {}
 		virtual void UnitEnteredAir(const CUnit* unit) {}
+		virtual void UnitLeftUnderwater(const CUnit* unit) {}
 		virtual void UnitLeftWater(const CUnit* unit) {}
 		virtual void UnitLeftAir(const CUnit* unit) {}
 
