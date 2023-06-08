@@ -25,6 +25,9 @@ Lua:
  - add `Spring.SelectUnit(unitID, bool append = false) -> nil`, single-unit
    version of SelectUnit{Array,Map} that doesn't require a table
  - add `Spring.DeselectUnit(unitID) -> nil`, deselects a unit
+ - add `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID)`. Works very similar
+   to the existing Water callins, but EnteredWater applies when the unit dips its toes in water
+   while EnteredUnderwater applies when the unit is completely submerged.
  
 
 Misc:

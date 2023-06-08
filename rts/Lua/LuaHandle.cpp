@@ -1513,6 +1513,20 @@ void CLuaHandle::UnitUnloaded(const CUnit* unit, const CUnit* transport)
 
 /***
  *
+ * @function UnitEnteredUnderwater
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ */
+void CLuaHandle::UnitEnteredUnderwater(const CUnit* unit)
+{
+	static const LuaHashString cmdStr(__func__);
+	UnitCallIn(cmdStr, unit);
+}
+
+
+/***
+ *
  * @function UnitEnteredWater
  * @number unitID
  * @number unitDefID
@@ -1539,6 +1553,20 @@ void CLuaHandle::UnitEnteredAir(const CUnit* unit)
 	UnitCallIn(cmdStr, unit);
 }
 
+
+/***
+ *
+ * @function UnitLeftUnderwater
+ *
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ */
+void CLuaHandle::UnitLeftUnderwater(const CUnit* unit)
+{
+	static const LuaHashString cmdStr(__func__);
+	UnitCallIn(cmdStr, unit);
+}
 
 /***
  *
