@@ -273,7 +273,7 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 	if (!cursorZoomOut)
 		return 0.25f;
 
-	const float zoomInDist = CGround::LineGroundCol(curCamPos, curCamPos + newDir * 150000.0f, false);
+	const float zoomInDist = DistanceToGround(curCamPos, newDir, pos.y);
 
 	if (zoomInDist <= 0.0f)
 		return 0.25f;
@@ -284,8 +284,6 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 
 	const float newDist = CGround::LineGroundCol(wantedCamPos, wantedCamPos + dir * 150000.0f, false);
 
-	// don't move above the limit as translation loses precision
-	// and zooming-in to the same point is not possible
 	if (newDist > maxDist) {
 		curDist = curDistPre;
 		return 0.25f;
