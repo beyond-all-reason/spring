@@ -149,6 +149,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetGameRulesParam);
 	REGISTER_LUA_CFUNC(SetTeamRulesParam);
+	REGISTER_LUA_CFUNC(SetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(SetUnitRulesParam);
 	REGISTER_LUA_CFUNC(SetFeatureRulesParam);
 
@@ -1338,6 +1339,28 @@ int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)
 		return 0;
 
 	SetRulesParam(L, __func__, 1, team->modParams);
+	return 0;
+}
+
+/***
+ * @function Spring.SetPlayerRulesParam
+ * @number playerID
+ * @string paramName
+ * @tparam ?number|string paramValue numeric paramValues in quotes will be converted to number.
+ * @tparam[opt] losAccess losAccess
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetPlayerRulesParam(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || !IsPlayerSynced(player))
+		return 0;
+
+	SetRulesParam(L, __func__, 1, player->modParams);
 	return 0;
 }
 
