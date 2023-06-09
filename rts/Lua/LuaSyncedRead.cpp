@@ -17,6 +17,7 @@
 #include "Game/GameSetup.h"
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
+#include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Map/Ground.h"
@@ -969,6 +970,53 @@ int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
 	return PushRulesParams(L, __func__, team->modParams, losMask);
 }
 
+/***
+ *
+ * @function Spring.GetPlayerRulesParams
+ *
+ * @tparam number playerID
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
+int LuaSyncedRead::GetPlayerRulesParams(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || IsPlayerUnsynced(L, player))
+		return 0;
+
+	int losMask;
+	if (CLuaHandle::GetHandleSynced(L)) {
+		/* We're using GetHandleSynced even though other RulesParams don't,
+		 * because handles don't have the concept of "being a player" while
+		 * they do have the concept of "being a team" via `Script.CallAsTeam`.
+		 * So there is no way to limit their perspective in a good way yet. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+
+	} else if (playerID == gu->myPlayerNum || CLuaHandle::GetHandleFullRead(L) || game->IsGameOver()) {
+		/* The FullRead check is not redundant, for example
+		 * `/specfullview 1` is not synced but has full read. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+
+	} else {
+		/* Currently private rulesparams can only be read by that player, not
+		 * even the other players on their team (commsharing, not allyteam).
+		 * This is purposefully different from how other rules params work as
+		 * perhaps games where you switch teams often enough to warrant Player
+		 * rules params instead of Team may also want some secrecy.
+		 *
+		 * Also, perhaps the 'allied' visibility level could be made to grant
+		 * visibility to the team/allyteam, but that would require some thought
+		 * since normally it means 'different allyteam with dynamic alliance'. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+	}
+
+	return PushRulesParams(L, __func__, player->modParams, losMask);
+}
+
 
 static int GetUnitRulesParamLosMask(lua_State* L, const CUnit* unit)
 {
@@ -1085,6 +1133,37 @@ int LuaSyncedRead::GetTeamRulesParam(lua_State* L)
 	}
 
 	return GetRulesParam(L, __func__, 2, team->modParams, losMask);
+}
+
+
+/***
+ *
+ * @function Spring.GetPlayerRulesParam
+ *
+ * @number playerID
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
+int LuaSyncedRead::GetPlayerRulesParam(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || IsPlayerUnsynced(L, player))
+		return 0;
+
+	int losMask; // see `GetPlayerRulesParams` (plural) above for commentary
+	if (CLuaHandle::GetHandleSynced(L))
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	else if (playerID == gu->myPlayerNum || CLuaHandle::GetHandleFullRead(L) || game->IsGameOver())
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	else
+		losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+
+	return GetRulesParam(L, __func__, 2, player->modParams, losMask);
 }
 
 

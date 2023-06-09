@@ -51,6 +51,7 @@ class LuaSyncedCtrl
 
 		static int SetGameRulesParam(lua_State* L);
 		static int SetTeamRulesParam(lua_State* L);
+		static int SetPlayerRulesParam(lua_State* L);
 		static int SetUnitRulesParam(lua_State* L);
 		static int SetFeatureRulesParam(lua_State* L);
 

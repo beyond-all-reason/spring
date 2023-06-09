@@ -28,6 +28,10 @@ Lua:
  - add `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID)`. Works very similar
    to the existing Water callins, but EnteredWater applies when the unit dips its toes in water
    while EnteredUnderwater applies when the unit is completely submerged.
+ - add `Spring.{Set,Get}PlayerRulesParam(s)`, similar to other rules params. There's currently
+   two visibility levels, public and private. A notable difference is that the private level is
+   only visible to that player, not his allyteam, and not even his (comsharing) team; this is
+   partially for technical reasons and can be changed if need be. Synced and specs see everything.
  
 
 Misc:
