@@ -134,6 +134,8 @@ public:
 	int lastSelectedCommandPage;
 
 protected:
+	bool HandleBuildOptionInsertion(int cmdId);
+	bool HandleBuildOptionRemoval(int cmdId);
 	// return true by default so non-AirCAI's trigger FinishCommand
 	virtual bool SelectNewAreaAttackTargetOrPos(const Command& ac) { return true; }
 
