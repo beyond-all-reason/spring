@@ -190,6 +190,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitBlocking);
 	REGISTER_LUA_CFUNC(SetUnitCrashing);
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
+	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
@@ -2925,6 +2926,42 @@ int LuaSyncedCtrl::SetUnitShieldState(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetUnitShieldRechargeDelay
+ * @number unitID
+ * @number[opt] weaponID (optional if the unit only has one shield)
+ * @number[opt] rechargeTime (in seconds; emulates a regular hit if nil)
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitShieldRechargeDelay(lua_State* L)
+{
+	const auto unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	auto shield = static_cast <CPlasmaRepulser*> (unit->shieldWeapon);
+	if (lua_isnumber(L, 2)) {
+		const size_t index = lua_tointeger(L, 2) - LUA_WEAPON_BASE_INDEX;
+		if (index < unit->weapons.size())
+			shield = dynamic_cast <CPlasmaRepulser*> (unit->weapons[index]);
+	}
+	if (shield == nullptr)
+		return 0;
+
+	if (lua_isnumber(L, 3)) {
+		const auto seconds = lua_tofloat(L, 3);
+		const auto frames = static_cast <int> (seconds * GAME_SPEED);
+		shield->SetRechargeDelay(frames, true);
+	} else {
+		/* Note, overwrite set to false on purpose. This is to emulate a regular
+		 * weapon hit. This lets a sophisticated shield handler gadget coexist
+		 * with a basic "emulate hits" gadget without the latter having to care.
+		 * You can put the weaponDef value explicitly if you want to overwrite. */
+		shield->SetRechargeDelay(shield->weaponDef->shieldRechargeDelay, false);
+	}
+
+	return 0;
+}
 
 /***
  * @function Spring.SetUnitFlanking

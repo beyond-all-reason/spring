@@ -25,6 +25,11 @@ Lua:
  - add `Spring.SelectUnit(unitID, bool append = false) -> nil`, single-unit
    version of SelectUnit{Array,Map} that doesn't require a table
  - add `Spring.DeselectUnit(unitID) -> nil`, deselects a unit
+ - add `Spring.SetUnitShieldRechargeDelay(unitID, [weaponNum], [seconds]) -> nil`. Resets a unit's
+   shield regeneration delay. The weapon number is optional if the unit has a single shield. The
+   timer value is also optional, if you leave it nil it will emulate a weapon hit. Note that a
+   weapon hit (both via nil here, and "real" hits) will never decrease the remaining timer, though
+   it can increase it. An explicit numerical value always sets the timer to that many seconds.
  - add `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID)`. Works very similar
    to the existing Water callins, but EnteredWater applies when the unit dips its toes in water
    while EnteredUnderwater applies when the unit is completely submerged.

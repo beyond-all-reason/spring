@@ -25,6 +25,7 @@ public:
 
 
 	void SetEnabled(bool b) { isEnabled = b; }
+	void SetRechargeDelay(int delay, bool overwrite);
 	void SetCurPower(float p) { curPower = p; }
 
 	bool IsEnabled() const { return isEnabled; }

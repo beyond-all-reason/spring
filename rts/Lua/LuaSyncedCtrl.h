@@ -99,6 +99,7 @@ class LuaSyncedCtrl
 		static int SetUnitBlocking(lua_State* L);
 		static int SetUnitCrashing(lua_State* L);
 		static int SetUnitShieldState(lua_State* L);
+		static int SetUnitShieldRechargeDelay(lua_State* L);
 		static int SetUnitFlanking(lua_State* L);
 		static int SetUnitTravel(lua_State* L);
 		static int SetUnitFuel(lua_State* L);
