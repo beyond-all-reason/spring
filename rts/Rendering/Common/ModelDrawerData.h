@@ -191,7 +191,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 
 	if (gu->spectatingFullView || o->IsInLosForAllyTeam(gu->myAllyTeam)) {
 		uni.id = o->id;
-		uni.drawPos = o->drawPos;
+		uni.drawPos = float4{ o->drawPos, o->heading * math::PI / SPRING_MAX_HEADING };
 		uni.speed = o->speed;
 		uni.maxHealth = o->maxHealth;
 		uni.health = o->health;
