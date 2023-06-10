@@ -165,11 +165,18 @@ void CPlasmaRepulser::Update()
 	sscPool.UpdateCollection(this);
 }
 
+void CPlasmaRepulser::SetRechargeDelay(int delay, bool overwrite)
+{
+	if (overwrite)
+		rechargeDelay = delay;
+	else
+		rechargeDelay = std::max(rechargeDelay, delay);
+}
+
 // Returns true if the projectile is destroyed.
 bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hitPos)
 {
 	const int defHitFrames = weaponDef->visibleShieldHitFrames;
-	const int defRechargeDelay = weaponDef->shieldRechargeDelay;
 
 	// gadget handles the collision event, don't touch the projectile
 	// start-pos only makes sense for beams, pass current p->pos here
@@ -187,7 +194,7 @@ bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hit
 	if (teamHandler.Team(owner->team)->res.energy < weaponDef->shieldEnergyUse)
 		return false;
 
-	rechargeDelay = defRechargeDelay;
+	SetRechargeDelay(weaponDef->shieldRechargeDelay, false);
 
 	if (weaponDef->shieldRepulser) {
 		// bounce the projectile
