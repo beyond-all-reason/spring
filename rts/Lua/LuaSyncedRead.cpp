@@ -191,6 +191,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitHealth);
 	REGISTER_LUA_CFUNC(GetUnitIsDead);
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
+	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
@@ -3897,9 +3898,9 @@ int LuaSyncedRead::GetUnitIsDead(lua_State* L)
  *
  * @function Spring.GetUnitIsStunned
  * @number unitID
- * @treturn nil|bool stunnedOrBuilt true if unit is still being built
- * @treturn bool stunned
- * @treturn bool beingBuilt
+ * @treturn nil|bool stunnedOrBuilt unit is stunned either via EMP or being under construction
+ * @treturn bool stunned unit is stunned via EMP
+ * @treturn bool beingBuilt unit is stunned via being under construction
  */
 int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 {
@@ -3913,6 +3914,24 @@ int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 	return 3;
 }
 
+
+/***
+ *
+ * @function Spring.GetUnitIsBeingBuilt
+ * @number unitID
+ * @treturn bool beingBuilt
+ * @treturn number buildProgress
+ */
+int LuaSyncedRead::GetUnitIsBeingBuilt(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->beingBuilt);
+	lua_pushnumber(L, unit->buildProgress);
+	return 2;
+}
 
 /***
  *
