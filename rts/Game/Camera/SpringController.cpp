@@ -273,19 +273,28 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 	if (!cursorZoomOut)
 		return 0.25f;
 
-	const float zoomInDist = CGround::LineGroundCol(curCamPos, curCamPos + newDir * 150000.0f, false);
+	const float zoomInDist = DistanceToGround(curCamPos, newDir, pos.y);
 
 	if (zoomInDist <= 0.0f)
 		return 0.25f;
 
 	// same logic as ZoomIn, but in opposite direction
-	const float3 zoomedCamPos =    curCamPos + newDir * zoomInDist;
-	const float3 wantedCamPos = zoomedCamPos - newDir * zoomInDist * scaledMode;
+	const float3 cursorVec = newDir * zoomInDist;
 
-	const float newDist = CGround::LineGroundCol(wantedCamPos, wantedCamPos + dir * 150000.0f, false);
+	auto extrapolate_position = [&] (float scale) {
+		const float3 wantedCamPos = curCamPos + cursorVec * (1.0f - scaledMode) * scale;
+		const float newDist = DistanceToGround(wantedCamPos, dir, pos.y);
+		return std::pair{wantedCamPos, newDist};
+	};
 
-	// don't move above the limit as translation loses precision
-	// and zooming-in to the same point is not possible
+	auto [wantedCamPos, newDist] = extrapolate_position(1.0);
+	// don't move above the limit as camera height will be trimmed and the 
+	// transition will not appear smooth
+	if (newDist > maxDist) {
+		// try to get as close as possible to the height limit
+		std::tie(wantedCamPos, newDist) = extrapolate_position(0.5);
+	}
+
 	if (newDist > maxDist) {
 		curDist = curDistPre;
 		return 0.25f;
