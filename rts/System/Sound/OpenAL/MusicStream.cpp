@@ -34,6 +34,9 @@ MusicStream::MusicStream(ALuint _source)
 	, format(AL_FORMAT_MONO16)
 	, stopped(true)
 	, paused(false)
+	, msecsPlayed(spring_nulltime)
+	, lastTick(spring_nulltime)
+	, totalTime(0.0f)
 {
 	std::fill(buffers.begin(), buffers.end(), 0);
 }
@@ -87,6 +90,13 @@ void MusicStream::Play(const std::string& path, float volume)
 	} else {
 		assert(fileBuffer.GetFileExt() == "ogg");
 		decoder = OggDecoder();
+	}
+
+	if (!fileBuffer.IsBuffered()) {
+		// TODO move buffer to class scope
+		auto& buf = fileBuffer.GetBuffer();
+		buf.resize(fileBuffer.FileSize());
+		fileBuffer.Read(buf.data(), fileBuffer.FileSize());
 	}
 
 	const bool loaded = std::visit([&](auto&& d) {
