@@ -20,7 +20,6 @@ public:
 	void MouseWheelMove(float move, const float3& newDir) override { }
 
 	float3 GetRot() const override;
-	float3 GetPos() const override;
 
 	void SetPos(const float3& newPos) override {}
 	void SetDir(const float3& newDir) override {}
