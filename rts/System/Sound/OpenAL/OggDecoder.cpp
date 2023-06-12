@@ -49,6 +49,7 @@ long OggDecoder::Read(uint8_t *buffer,int length, int bigendianp,int word,int sg
 	return ov_read(&ovFile, reinterpret_cast<char*>(buffer), length, bigendianp, word, sgned, bitstream);
 }
 
+// TODO make this function accept FileHandler
 bool OggDecoder::LoadData(const uint8_t* mem, size_t len)
 {
 	stream = CStreamBuffer(mem, len);
