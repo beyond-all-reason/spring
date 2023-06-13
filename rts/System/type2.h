@@ -42,6 +42,12 @@ template<typename t> struct type2 {
 		return t(math::sqrt(dx*dx + dy*dy));
 	}
 
+	t distanceSq(const type2<t>& f) const {
+		const t dx = x - f.x;
+		const t dy = y - f.y;
+		return t(dx*dx + dy*dy);
+	}
+
 	union {
 		struct {
 			t x;

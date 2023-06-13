@@ -111,6 +111,7 @@ namespace QTPFS {
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
+		void InitRootSize(const SRectangle& r);
 		void UpdateNodeLayerHighRes(unsigned int layerNum, const SRectangle& r, int currentThread);
 		void UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread);
 
@@ -178,14 +179,13 @@ namespace QTPFS {
 
 		int deadPathsToUpdatePerFrame = 1;
 		int recalcDeadPathUpdateRateOnFrame = 0;
+		int rootSize = 0;
 
 		static unsigned int LAYERS_PER_UPDATE;
 		static unsigned int MAX_TEAM_SEARCHES;
 
 		unsigned int searchStateOffset;
-		// unsigned int numTerrainChanges;
 		unsigned int numPathRequests;
-		// unsigned int maxNumLeafNodes;
 
 		std::int32_t refreshDirtyPathRateFrame = QTPFS_LAST_FRAME;
 		std::int32_t updateDirtyPathRate = 0;

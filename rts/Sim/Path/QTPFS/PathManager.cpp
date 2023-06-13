@@ -422,6 +422,8 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 		const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
 		#endif
 
+		InitRootSize(rect);
+
 		for_mt(0, nodeLayers.size(), [=,&loadMsg, &rect](const int layerNum){
 		//for (int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 			int currentThread = ThreadPool::GetThreadNum();
@@ -440,8 +442,6 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			//     (if >= 1 are missing for some player in MP, we desync)
 
 			NodeLayer& layer = nodeLayers[layerNum];
-
-			// numTerrainChanges++;
 
 			InitNodeLayer(layerNum, rect);
 
@@ -489,15 +489,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	streflop::streflop_init<streflop::Simple>();
 }
 
-void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& r) {
-	NodeLayer& nl = nodeLayers[layerNum];
-
-	nl.Init(layerNum);
-
-	// auto rootNode = nl.AllocRootNode(nullptr, 0,  r.x1, r.z1,  r.x2, r.z2);
-	// nodeTrees[layerNum] = rootNode;
-	// nl.RegisterNode(rootNode);
-
+void QTPFS::PathManager::InitRootSize(const SRectangle& r) {
 	// setup the root node system
 	// TODO: make sure resources are released on game end.
 	int width = r.x2 - r.x1;
@@ -507,7 +499,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	// Optimal function of QTPFS relies on power of 2 squares. Find the largest 2^x squares that
 	// fit the map. 64 is the smallest as understood by map makers. So use 32 here to detect a map
 	// that falls below that threshold.
-	int rootSize = 64;
+	rootSize = 64;
 	int limit = std::min(width, height);
 	for (int factor = rootSize<<1; factor <= limit; factor <<= 1) {
 		if (width % factor == 0 && height % factor == 0)
@@ -527,13 +519,18 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 		LOG("%s: Warning! Map width and height are supposed to be multiples of 1024 elmos.", __func__);
 
 	// TODO: reduce max levels based on number of root nodes - find a suitable limit?
-	// TODO: id handling for root nodes
 	// TODO: prevent too big a size being picked due to 15 levels? 2^(steps -1) (steps=(bits-2)/2)
 	constexpr float maxNodeLevels = ((sizeof(uint32_t)*4)-2);
 	uint32_t maxNodeSize = math::pow(2.f, maxNodeLevels);
 	rootSize = rootSize > maxNodeSize ? maxNodeSize : rootSize;
+}
 
-	// TODO: partial zones just in case %32 != 0? need to check tessalation off map is okay.
+void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& r) {
+	NodeLayer& nl = nodeLayers[layerNum];
+
+	nl.Init(layerNum);
+
+	// TODO: partial zones just in case %64 != 0? need to check tessalation off map is okay.
 	int numRootCount = 0;
 	int zRootNodes = 0;
 	for (int z = r.z1; z < r.z2; z += rootSize) {
@@ -570,7 +567,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 			);
 		assert(i == (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift);
 	}
-	nl.SetRootNodeCountAndDimensions(numRootCount, (numRootCount/zRootNodes), zRootNodes);
+	nl.SetRootNodeCountAndDimensions(numRootCount, (numRootCount/zRootNodes), zRootNodes, rootSize);
 }
 
 
@@ -691,7 +688,50 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 				, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
 				);
 
+			// New get function for node.
+
+			// Go and setup the Hierachy Nodes
+			std::function<void(SRectangle r)> setupCoarseNodes;
+			setupCoarseNodes = [this, layerNum](SRectangle r){
+				// TODO: encasing node is needed - not the rectangle
+				auto nodeData = nodeLayers[layerNum].GetDataForArea(r);
+
+				// 2+ closed nodes can potnetially cause multiple islands in a node
+				bool review = (nodeData.openNodeCount > 0 && nodeData.closedNodeCount > 1);
+				bool stop = (nodeData.openNodeCount == 0);
+				bool select = !review && !stop;
+				bool refine = false;
+
+				if (stop) return;
+
+				if (review) {
+					// 1 island
+					select = true;
+
+					// 2+ islands
+					refine = true;
+				}
+
+				if (select) {
+					// add to list?
+					// mark node .
+				}
+
+				if (refine) {
+					// break down into quads
+					// call this function again for each.
+
+					// Note: maybe get counts here to eliminate bad quads
+					// .
+				}
+			};
+
+			// hierachy version of nodes
 			INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
+
+			// Go do awesome.
+
+
 			if (containingNode->xsize() > 16) {
 				const int minBlockX = containingNode->xmin() / DAMAGE_MAP_BLOCK_SIZE;
 				const int minBlockY = containingNode->zmin() / DAMAGE_MAP_BLOCK_SIZE;

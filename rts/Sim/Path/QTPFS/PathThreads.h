@@ -165,9 +165,6 @@ namespace QTPFS {
                                             , area.z2 + md.zsizeh);
             areaRelinked.ClampIn(mapRect);
             areaMaxBlockBits.ClampIn(mapRect);
-
-            // curSpeedMods.reserve(area.GetArea());
-            // curSpeedBins.reserve(area.GetArea());
             maxBlockBits.reserve(areaMaxBlockBits.GetArea());
             relinkNodeGrid.reserve(areaRelinked.GetArea());
 

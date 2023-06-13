@@ -113,22 +113,27 @@ struct SRectangle {
 	}
 
 	union {
-		int x1;
-		int left;
-	};
-	union {
-		int z1;
-		int y1;
-		int top;
-	};
-	union {
-		int x2;
-		int right;
-	};
-	union {
-		int z2;
-		int y2;
-		int bottom;
+		struct {
+			union {
+				int x1;
+				int left;
+			};
+			union {
+				int z1;
+				int y1;
+				int top;
+			};
+			union {
+				int x2;
+				int right;
+			};
+			union {
+				int z2;
+				int y2;
+				int bottom;
+			};
+		};
+		std::array<int, 4> points;
 	};
 };
 

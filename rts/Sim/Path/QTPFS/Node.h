@@ -143,6 +143,8 @@ namespace QTPFS {
 		unsigned int xsize() const { return (xmax() - xmin()); }
 		unsigned int zsize() const { return (zmax() - zmin()); }
 		unsigned int area() const { return (xsize() * zsize()); }
+		unsigned int point(int i) const { return points[i]; }
+
 
 		bool RectIsInside(const SRectangle& rect) const {
 			return
@@ -209,10 +211,15 @@ namespace QTPFS {
 		unsigned int nodeNumber = -1u;
 		unsigned int index = 0;
 
-		unsigned short _xmin = 0;
-		unsigned short _xmax = 0;
-		unsigned short _zmin = 0;
-		unsigned short _zmax = 0;
+		union {
+			struct {
+				unsigned short _xmin;
+				unsigned short _xmax;
+				unsigned short _zmin;
+				unsigned short _zmax;
+			};
+			std::array<unsigned short, 4> points = {};
+		};
 
 		union {
 			float moveCostAvg = -1.0f;

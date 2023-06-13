@@ -76,13 +76,7 @@ void QTPFS::NodeLayer::Clear() {
 }
 
 
-bool QTPFS::NodeLayer::Update(
-	// const SRectangle& r,
-	// const MoveDef* md,
-	// const std::vector<float>* luSpeedMods,
-	// const std::vector<  int>* luBlockBits,
-	UpdateThreadData& threadData
-) {
+bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	// unsigned int numNewBinSquares = 0;
@@ -202,6 +196,82 @@ bool QTPFS::NodeLayer::Update(
 	return true; //(numNewBinSquares > 0);
 }
 
+bool QTPFS::NodeLayer::UpdateCoarse(UpdateThreadData& threadData) {
+	// Go and setup the Hierachy Nodes
+	// get root node
+	// request
+	// open count/closed count
+
+	return true;
+}
+
+static int2 cornerPoints[] =
+	{ {0, 2}
+	, {1, 2}
+	, {0, 3}
+	, {1, 3}
+	};
+
+QTPFS::NodeLayer::areaQueryResults QTPFS::NodeLayer::GetDataForArea(const SRectangle& areaToSearch) const {
+	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
+	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
+	const int xcentre = (areaToSearch.x2 - areaToSearch.x1) >> 1;
+	const int zcentre = (areaToSearch.z2 - areaToSearch.z1) >> 1;
+	int2 centre(xcentre, zcentre);
+
+	areaQueryResults areaQueryResults;
+
+	const int rootNodeId = (xmin / rootXsize) + (zmin / rootZsize)*rootXsize;
+
+	// call expects area to reside in a single root node.
+	assert( rootNodeId == (xmax / rootXsize) + (zmax / rootZsize)*rootXsize );
+	assert(rootNodeSize*rootNodeSize*2 < (uint32_t)(-1)>>2);
+
+	auto getNodeScore = [centre](const INode* curNode) -> uint64_t {
+		int2 midRef(curNode->xmid(), curNode->zmid());
+		int midDist = centre.distanceSq(midRef);
+		int closePointDist = midDist;
+		int bestIndex = 0;
+		for (int i = 0; i < 4; ++i) {
+			int2 ref(curNode->point(cornerPoints[i].x), curNode->point(cornerPoints[i].y));
+			int dist = centre.distanceSq(ref);
+			if (dist < closePointDist) {
+				closePointDist = dist;
+				bestIndex = i;
+			}
+		}
+		return ((uint64_t)closePointDist << 32) + ((uint64_t)midDist << 2) + (uint64_t)bestIndex;
+	};
+
+	std::function<void(const INode*)> searchFunction;
+	searchFunction = [this, &areaQueryResults, searchFunction, getNodeScore, xmin, xmax, zmin, zmax](const INode* curNode) {
+		if (curNode->IsLeaf()) {
+			// smallestNode = std::min(curNode->xsize(), smallestNode);
+			areaQueryResults.closedNodeCount += curNode->AllSquaresImpassable();
+			areaQueryResults.openNodeCount += !curNode->AllSquaresImpassable();
+
+			// use node corner closest to centre point.
+			uint64_t curNodeScore = getNodeScore(curNode);
+			if (curNodeScore > areaQueryResults.bestNodeScore) {
+				areaQueryResults.bestNodeScore = curNodeScore;
+				areaQueryResults.centralLeafNode = curNode;
+			}
+			return;
+		}
+
+		for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
+			int childIndex = curNode->GetChildBaseIndex() + i;
+			const INode* childNode = GetPoolNode(childIndex);
+
+			if (xmax <= childNode->xmin()) { continue; }
+			if (xmin >= childNode->xmax()) { continue; }
+			if (zmax <= childNode->zmin()) { continue; }
+			if (zmin >= childNode->zmax()) { continue; }
+
+			searchFunction(childNode);
+		}
+	};
+}
 
 
 QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float relSpeedMod) const {

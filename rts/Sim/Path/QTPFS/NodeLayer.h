@@ -27,8 +27,6 @@ namespace QTPFS {
 
 	struct NodeLayer {
 	public:
-
-
 		static void InitStatic();
 		static size_t MaxSpeedModTypeValue() { return (std::numeric_limits<SpeedModType>::max()); }
 		static size_t MaxSpeedBinTypeValue() { return (std::numeric_limits<SpeedBinType>::max()); }
@@ -42,13 +40,9 @@ namespace QTPFS {
 		void Init(unsigned int layerNum);
 		void Clear();
 
-		bool Update(
-			// const SRectangle& r,
-			// const MoveDef* md,
-			// const std::vector<float>* luSpeedMods = nullptr,
-			// const std::vector<  int>* luBlockBits = nullptr,
-			UpdateThreadData& threadData
-		);
+		bool Update(UpdateThreadData& threadData);
+
+		bool UpdateCoarse(UpdateThreadData& threadData);
 
 		// void ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, unsigned int currMagicNum);
 		// void ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum);
@@ -176,10 +170,11 @@ namespace QTPFS {
 			return memFootPrint;
 		}
 
-		void SetRootNodeCountAndDimensions(int numRoots, int xsize, int zside) {
+		void SetRootNodeCountAndDimensions(int numRoots, int xsize, int zside, int maxNodeSize) {
 			numRootNodes = numRoots;
 			xRootNodes = xsize;
 			zRootNodes = zside;
+			rootNodeSize = maxNodeSize;
 		} 
 
 		int GetRootNodeCount() const {
@@ -193,9 +188,16 @@ namespace QTPFS {
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
-	private:
-		// std::vector<INode*> nodeGrid;
+		struct areaQueryResults {
+			int openNodeCount = 0;
+			int closedNodeCount = 0;
+			const INode *centralLeafNode = nullptr;
+			uint64_t bestNodeScore = 0;
+		};
 
+		areaQueryResults GetDataForArea(const SRectangle& areaToEncase) const;
+	
+	private:
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
 
@@ -203,9 +205,7 @@ namespace QTPFS {
 		std::vector<INode*> openNodes;
 
 		std::vector<SpeedModType> curSpeedMods;
-		// std::vector<SpeedModType> oldSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
-		// std::vector<SpeedBinType> oldSpeedBins;
 
 		// root lives outside pool s.t. all four children of a given node are always in one chunk
 		QTNode rootNode;
@@ -237,7 +237,11 @@ private:
 		int32_t numRootNodes = 0;
 		int32_t xRootNodes = 0;
 		int32_t zRootNodes = 0;
+		int32_t rootNodeSize = 0;
 		uint32_t rootMask = 0;
+
+		unsigned int rootXsize = 0;
+		unsigned int rootZsize = 0;
 
 		unsigned int xsize = 0;
 		unsigned int zsize = 0;
