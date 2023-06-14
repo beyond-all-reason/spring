@@ -44,6 +44,9 @@ Lua:
  - add `Spring.GetUnitIsBeingBuilt(unitID) -> bool beingBuilt, number buildProgress`. Note that this
    doesn't bring new capability because `buildProgress` was already available from `GetUnitHealth`,
    and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
+ - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
+   of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
+   and run in the order they were added, just before that frame's GameFrame call-in.
  
 
 Misc:
