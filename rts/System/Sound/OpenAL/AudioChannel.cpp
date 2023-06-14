@@ -5,6 +5,7 @@
 #include "ALShared.h"
 #include "SoundItem.h"
 #include "SoundSource.h"
+#include "MusicStream.h"
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Objects/WorldObject.h"
@@ -16,7 +17,7 @@
 
 extern spring::recursive_mutex soundMutex;
 
-
+AudioChannel::AudioChannel() = default;
 
 void AudioChannel::SetVolume(float newVolume)
 {
@@ -192,9 +193,12 @@ void AudioChannel::StreamPlay(const std::string& filepath, float volume, bool en
 	if (curStreamSrc == nullptr)
 		return;
 
+	if (!musicStream)
+		musicStream = std::make_unique<MusicStream>();
+
 	// insert first, PlayStream may invoke Stop immediately thus setting curStreamSrc to NULL
 	curSources.insert(curStreamSrc);
-	curStreamSrc->PlayStream(this, filepath, volume);
+	curStreamSrc->PlayStream(this, musicStream.get(), filepath, volume);
 }
 
 void AudioChannel::StreamPause()

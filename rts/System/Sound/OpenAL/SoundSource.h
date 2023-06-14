@@ -10,10 +10,10 @@
 #include "System/Misc/NonCopyable.h"
 #include "System/Misc/SpringTime.h"
 #include "System/float3.h"
-#include "MusicStream.h"
 
 class IAudioChannel;
 class SoundItem;
+class MusicStream;
 
 /**
  * @brief One soundsource wich can play some sounds
@@ -46,7 +46,7 @@ public:
 	/// will stop a currently playing sound, if any
 	void Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative = false);
 	void PlayAsync(IAudioChannel* channel, size_t id, float3 pos, float3 velocity, float volume, float priority, bool relative = false);
-	void PlayStream(IAudioChannel* channel, const std::string& stream, float volume);
+	void PlayStream(IAudioChannel* channel, MusicStream* stream, const std::string& file, float volume);
 	void StreamStop();
 	void StreamPause();
 	float GetStreamTime();
@@ -95,7 +95,7 @@ private:
 	AsyncSoundItemData asyncPlayItem;
 
 	IAudioChannel* curChannel;
-	MusicStream curStream;
+	MusicStream*   curStream;
 
 	float curVolume;
 	spring_time loopStop;

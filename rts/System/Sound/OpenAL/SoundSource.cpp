@@ -34,6 +34,7 @@ float CSoundSource::heightRolloffModifier = 1.0f;
 
 CSoundSource::CSoundSource()
 	: curChannel(nullptr)
+	, curStream(nullptr)
 	, curVolume(1.0f)
 	, loopStop(1e9)
 	, in3D(false)
@@ -80,11 +81,11 @@ void CSoundSource::Update()
 			Stop();
 	}
 
-	if (curStream.Valid()) {
-		if (curStream.IsFinished()) {
+	if (curStream) {
+		if (curStream->IsFinished()) {
 			Stop();
 		} else {
-			curStream.Update();
+			curStream->Update();
 			CheckError("CSoundSource::Update");
 		}
 	}
@@ -109,13 +110,12 @@ void CSoundSource::Delete()
 	CheckError("CSoundSource::Delete");
 }
 
-
 int CSoundSource::GetCurrentPriority() const
 {
 	if (asyncPlayItem.id != 0)
 		return asyncPlayItem.priority;
 
-	if (curStream.Valid())
+	if (curStream)
 		return INT_MAX;
 
 	if (curPlayingItem.id == 0)
@@ -126,7 +126,7 @@ int CSoundSource::GetCurrentPriority() const
 
 bool CSoundSource::IsPlaying(const bool checkOpenAl) const
 {
-	if (curStream.Valid())
+	if (curStream)
 		return true;
 
 	if (asyncPlayItem.id != 0)
@@ -168,8 +168,10 @@ void CSoundSource::Stop()
 		curPlayingItem = {};
 	}
 
-	if (curStream.Valid())
-		curStream.Stop();
+	if (curStream) {
+		curStream->Stop();
+		curStream = nullptr;
+	}
 
 	if (curChannel != nullptr) {
 		IAudioChannel* oldChannel = curChannel;
@@ -181,7 +183,7 @@ void CSoundSource::Stop()
 
 void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative)
 {
-	assert(!curStream.Valid());
+	assert(!curStream);
 	assert(channel);
 
 	if (!item->PlayNow())
@@ -283,13 +285,12 @@ void CSoundSource::PlayAsync(IAudioChannel* channel, size_t id, float3 pos, floa
 }
 
 
-void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, float volume)
+void CSoundSource::PlayStream(IAudioChannel* channel, MusicStream* stream, const std::string& file, float volume)
 {
 	// stop any current playback
 	Stop();
 
-	if (!curStream.Valid())
-		curStream = MusicStream(id);
+	curStream = stream;
 
 	// OpenAL params
 	curChannel = channel;
@@ -312,14 +313,14 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 
 	// COggStreams only appends buffers, giving errors when a buffer of another format is still assigned
 	alSourcei(id, AL_BUFFER, AL_NONE);
-	curStream.Play(file, volume);
-	curStream.Update();
+	curStream->Play(file, volume, id);
+	curStream->Update();
 	CheckError("CSoundSource::Update");
 }
 
 void CSoundSource::StreamStop()
 {
-	if (!curStream.Valid())
+	if (!curStream)
 		return;
 
 	Stop();
@@ -327,10 +328,10 @@ void CSoundSource::StreamStop()
 
 void CSoundSource::StreamPause()
 {
-	if (!curStream.Valid())
+	if (!curStream)
 		return;
 
-	if (curStream.TogglePause())
+	if (curStream->TogglePause())
 		alSourcePause(id);
 	else
 		alSourcePlay(id);
@@ -338,12 +339,12 @@ void CSoundSource::StreamPause()
 
 float CSoundSource::GetStreamTime()
 {
-	return (curStream.Valid())? curStream.GetTotalTime() : 0.0f;
+	return (curStream) ? curStream->GetTotalTime() : 0.0f;
 }
 
 float CSoundSource::GetStreamPlayTime()
 {
-	return (curStream.Valid())? curStream.GetPlayTime() : 0.0f;
+	return (curStream) ? curStream->GetPlayTime() : 0.0f;
 }
 
 void CSoundSource::UpdateVolume()
@@ -351,7 +352,7 @@ void CSoundSource::UpdateVolume()
 	if (curChannel == nullptr)
 		return;
 
-	if (curStream.Valid()) {
+	if (curStream) {
 		alSourcef(id, AL_GAIN, curVolume * curChannel->volume);
 		return;
 	}

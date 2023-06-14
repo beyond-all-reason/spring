@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <cstring>
+#include <memory>
 
 #include "System/Sound/IAudioChannel.h"
 #include "System/UnorderedSet.hpp"
@@ -12,6 +13,7 @@
 struct GuiSoundSet;
 class CSoundSource;
 class CWorldObject;
+class MusicStream;
 
 /**
  * @brief Channel for playing sounds
@@ -24,6 +26,7 @@ private:
 	typedef std::pair<std::string, float> StreamQueueItem;
 
 public:
+	AudioChannel();
 	void Enable(bool newState);
 	void SetVolume(float newVolume);
 
@@ -58,6 +61,7 @@ private:
 	std::deque<StreamQueueItem> streamQueue;
 
 	CSoundSource* curStreamSrc = nullptr;
+	std::unique_ptr<MusicStream> musicStream;
 
 	static constexpr size_t MAX_STREAM_QUEUESIZE = 10;
 };
