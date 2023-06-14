@@ -160,7 +160,7 @@ public:
 public:
 	static constexpr size_t INVALID_INDEX = 0;
 private:
-	inline static ModelUniformData dummy = {0};
+	inline static ModelUniformData dummy = {};
 
 	std::unordered_map<CWorldObject*, size_t> objectsMap;
 	spring::FreeListMap<ModelUniformData> storage;

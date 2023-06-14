@@ -58,6 +58,7 @@ bool LuaShaders::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(UniformSubroutine);
 
 	REGISTER_LUA_CFUNC(GetEngineUniformBufferDef);
+	REGISTER_LUA_CFUNC(GetEngineModelUniformDataDef);
 
 	REGISTER_LUA_CFUNC(SetUnitBufferUniforms);
 	REGISTER_LUA_CFUNC(SetFeatureBufferUniforms);
@@ -973,7 +974,7 @@ namespace {
 			return 1;
 		}
 
-		std::copy(floatArray.cbegin(), floatArray.cbegin() + size, uni.userDefined.begin() + offset);
+		std::copy(floatArray.cbegin(), floatArray.cbegin() + size, std::begin(uni.userDefined) + offset);
 
 		lua_pushnumber(L, size);
 		return 1;
@@ -1242,6 +1243,14 @@ int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 	return 1;
 }
 
+int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
+{
+	if (!globalRendering->haveGL4)
+		return 0;
+
+	lua_pushstring(L, ModelUniformData::GetGLSLDefinition().c_str());
+	return 1;
+}
 
 /*** Sets the Geometry shader parameters for shaderID. Needed by geometry shader programs (check the opengl GL_ARB_geometry_shader4 extension for glProgramParameteri)
  *

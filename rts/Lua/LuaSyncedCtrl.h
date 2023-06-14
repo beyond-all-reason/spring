@@ -51,6 +51,7 @@ class LuaSyncedCtrl
 
 		static int SetGameRulesParam(lua_State* L);
 		static int SetTeamRulesParam(lua_State* L);
+		static int SetPlayerRulesParam(lua_State* L);
 		static int SetUnitRulesParam(lua_State* L);
 		static int SetFeatureRulesParam(lua_State* L);
 
@@ -87,6 +88,7 @@ class LuaSyncedCtrl
 		static int SetUnitCloak(lua_State* L);
 		static int SetUnitStealth(lua_State* L);
 		static int SetUnitSonarStealth(lua_State* L);
+		static int SetUnitSeismicSignature(lua_State* L);
 		static int SetUnitAlwaysVisible(lua_State* L);
 		static int SetUnitUseAirLos(lua_State* L);
 		static int SetUnitResourcing(lua_State* L);
@@ -98,6 +100,7 @@ class LuaSyncedCtrl
 		static int SetUnitBlocking(lua_State* L);
 		static int SetUnitCrashing(lua_State* L);
 		static int SetUnitShieldState(lua_State* L);
+		static int SetUnitShieldRechargeDelay(lua_State* L);
 		static int SetUnitFlanking(lua_State* L);
 		static int SetUnitTravel(lua_State* L);
 		static int SetUnitFuel(lua_State* L);

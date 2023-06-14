@@ -26,6 +26,7 @@
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/Scripts/CobEngine.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
@@ -161,12 +162,14 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	file << "frame: " << gs->frameNum << ", seed: " << gsRNG.GetLastSeed() << "\n";
 
+	#define DUMP_MATH_CONST
 	#define DUMP_MODEL_DATA
 	#define DUMP_UNIT_DATA
 	#define DUMP_UNIT_PIECE_DATA
 	#define DUMP_UNIT_WEAPON_DATA
 	#define DUMP_UNIT_COMMANDAI_DATA
 	#define DUMP_UNIT_MOVETYPE_DATA
+	#define DUMP_UNIT_SCRIPT_DATA
 	#define DUMP_FEATURE_DATA
 	#define DUMP_PROJECTILE_DATA
 	#define DUMP_TEAM_DATA
@@ -176,6 +179,33 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	#define DUMP_HEIGHTMAP_CHECKSUM
 	//#define DUMP_SMOOTHMESH
 	#define DUMP_SMOOTHMESH_CHECKSUM
+
+	#ifdef DUMP_MATH_CONST
+	if (gs->frameNum == gMinFrameNum) { //dump once
+		file << "\tmath constants:\n";
+		#define TAP_MATH_CONST(name) file << "\t\t" << #name << ": " << TapFloats(math::name)
+		TAP_MATH_CONST(PI);
+		TAP_MATH_CONST(INVPI);
+		TAP_MATH_CONST(INVPI);
+		TAP_MATH_CONST(INVPI2);
+		TAP_MATH_CONST(TWOPI);
+		TAP_MATH_CONST(THREEPI);
+		TAP_MATH_CONST(SQRPI);
+		TAP_MATH_CONST(PIU4);
+		TAP_MATH_CONST(PISUN4);
+
+		TAP_MATH_CONST(HALFPI);
+		TAP_MATH_CONST(QUARTERPI);
+		TAP_MATH_CONST(NEGHALFPI);
+
+		TAP_MATH_CONST(SQRT2);
+		TAP_MATH_CONST(HALFSQRT2);
+
+		TAP_MATH_CONST(RAD_TO_DEG);
+		TAP_MATH_CONST(DEG_TO_RAD);
+		#undef TAP_MATH_CONST
+	}
+	#endif
 
 	#ifdef DUMP_MODEL_DATA
 	if (gs->frameNum == gMinFrameNum) { //dump once
@@ -245,19 +275,21 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const LocalModel& lm = u->localModel;
 		const std::vector<LocalModelPiece>& pieces = lm.pieces;
 
-		const float3& pos  = u->pos;
-		const float3& xdir = u->rightdir;
-		const float3& ydir = u->updir;
-		const float3& zdir = u->frontdir;
+		const auto& pos  = u->pos;
+		const auto& xdir = u->rightdir;
+		const auto& ydir = u->updir;
+		const auto& zdir = u->frontdir;
+		const auto& speed = u->speed;
 
 		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
+		file << "\t\t\tspeed: " << TapFloats(speed);
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
-		file << "\t\t\trelAimPos: " << TapFloats(u->relMidPos);
+		file << "\t\t\trelMidPos: " << TapFloats(u->relMidPos);
 		file << "\t\t\trelAimPos: " << TapFloats(u->relAimPos);
-		file << "\t\t\trelAimPos: " << TapFloats(u->midPos);
+		file << "\t\t\tmidPos: " << TapFloats(u->midPos);
 		file << "\t\t\theading: " << int(u->heading) << ", mapSquare: " << u->mapSquare << "\n";
 		file << "\t\t\thealth: " << TapFloats(u->health);
 		file << "\t\t\texperience: " << TapFloats(u->experience);
@@ -342,6 +374,36 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		#endif
 	}
 	#endif
+	#ifdef DUMP_UNIT_SCRIPT_DATA
+	{
+		file << "\tCobEngine:\n";
+		file << "\t\tCobThreads: " << cobEngine->GetThreadInstances().size() << "\n";
+		for (const auto& [tid, thread] : cobEngine->GetThreadInstances()) {
+			auto ownerID = thread.cobInst->GetUnit() ? thread.cobInst->GetUnit()->id : -1;
+			file << "\t\t\tid: " << tid << " t.id " << thread.GetID() << " t.wt " << thread.GetWakeTime()
+				 << " owner " << ownerID
+				 << " t.state " << +thread.GetState() << " t.sigmask " << thread.GetSignalMask()
+				 << " t.retc " << thread.GetRetCode()
+				 << " dead|gargage|waiting " << thread.IsDead() << "|" << thread.IsGarbage() << "|" << thread.IsWaiting() << "\n";
+		}
+		file << "\t\tWaitingThreads: " << cobEngine->GetWaitingThreadIDs().size();
+		file << "\t\t\tids:";
+		for (const auto id : cobEngine->GetWaitingThreadIDs()) {
+			file << " " << id;
+		}
+		file << "\n";
+
+		auto zzzThreads = cobEngine->GetSleepingThreadIDs(); //copied on purpose
+		file << "\t\tSleepingThreads: " << zzzThreads.size();
+		file << "\t\t\twts|ids:";
+		while (!zzzThreads.empty()) {
+			const auto& zt = zzzThreads.top();
+			file << " " << zt.wt << "|" << zt.id;
+			zzzThreads.pop();
+		}
+		file << "\n";
+	}
+	#endif
 
 	file << "\tfeatures: " << activeFeatureIDs.size() << "\n";
 
@@ -349,19 +411,21 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	for (const int featureID: activeFeatureIDs) {
 		const CFeature* f = featureHandler.GetFeature(featureID);
 
-		const float3& pos  = f->pos;
-		const float3& xdir = f->rightdir;
-		const float3& ydir = f->updir;
-		const float3& zdir = f->frontdir;
+		const auto& pos  = f->pos;
+		const auto& xdir = f->rightdir;
+		const auto& ydir = f->updir;
+		const auto& zdir = f->frontdir;
+		const auto& speed = f->speed;
 
 		file << "\t\tfeatureID: " << f->id << " (name: " << f->def->name << ")\n";
 		file << "\t\t\tpos: " << TapFloats(pos);
+		file << "\t\t\tspeed: " << TapFloats(speed);
 		file << "\t\t\txdir: " << TapFloats(xdir);
 		file << "\t\t\tydir: " << TapFloats(ydir);
 		file << "\t\t\tzdir: " << TapFloats(zdir);
-		file << "\t\t\trelAimPos: " << TapFloats(f->relMidPos);
+		file << "\t\t\trelMidPos: " << TapFloats(f->relMidPos);
 		file << "\t\t\trelAimPos: " << TapFloats(f->relAimPos);
-		file << "\t\t\trelAimPos: " << TapFloats(f->midPos);
+		file << "\t\t\tmidPos: " << TapFloats(f->midPos);
 		file << "\t\t\thealth: " << TapFloats(f->health);
 		file << "\t\t\treclaimLeft: " << TapFloats(f->reclaimLeft);
 	}

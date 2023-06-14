@@ -149,6 +149,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetGameRulesParam);
 	REGISTER_LUA_CFUNC(SetTeamRulesParam);
+	REGISTER_LUA_CFUNC(SetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(SetUnitRulesParam);
 	REGISTER_LUA_CFUNC(SetFeatureRulesParam);
 
@@ -178,6 +179,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitCloak);
 	REGISTER_LUA_CFUNC(SetUnitStealth);
 	REGISTER_LUA_CFUNC(SetUnitSonarStealth);
+	REGISTER_LUA_CFUNC(SetUnitSeismicSignature);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysVisible);
 	REGISTER_LUA_CFUNC(SetUnitUseAirLos);
 	REGISTER_LUA_CFUNC(SetUnitMetalExtraction);
@@ -189,6 +191,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitBlocking);
 	REGISTER_LUA_CFUNC(SetUnitCrashing);
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
+	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
@@ -1339,6 +1342,28 @@ int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetPlayerRulesParam
+ * @number playerID
+ * @string paramName
+ * @tparam ?number|string paramValue numeric paramValues in quotes will be converted to number.
+ * @tparam[opt] losAccess losAccess
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetPlayerRulesParam(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || !IsPlayerSynced(player))
+		return 0;
+
+	SetRulesParam(L, __func__, 1, player->modParams);
+	return 0;
+}
+
 
 /***
  *
@@ -2166,7 +2191,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		const unsigned armType = lua_toint(L, index);
 
 		if (armType < damages->GetNumTypes())
-			damages->Set(armType, std::max(value, 0.0001f));
+			damages->Set(armType, value);
 
 		return 0;
 	}
@@ -2213,7 +2238,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			damages->edgeEffectiveness = std::min(value, 0.999f);
+			damages->edgeEffectiveness = std::min(value, 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			damages->explosionSpeed = value;
@@ -2368,7 +2393,7 @@ int LuaSyncedCtrl::AddUnitExperience(lua_State* L)
  * @function Spring.SetUnitArmored
  * @number unitID
  * @bool[opt] armored
- * @number[opt] armorMultiple Cannot be zero or less, clamped to 0.0001
+ * @number[opt] armorMultiple
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
@@ -2381,8 +2406,7 @@ int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
 	if (lua_isboolean(L, 2))
 		unit->armoredState = lua_toboolean(L, 2);
 
-	// armored multiple of 0 will crash spring
-	unit->armoredMultiple = std::max(0.0001f, luaL_optfloat(L, 3, unit->armoredMultiple));
+	unit->armoredMultiple = luaL_optfloat(L, 3, unit->armoredMultiple);
 
 	if (lua_toboolean(L, 2)) {
 		unit->curArmorMultiple = unit->armoredMultiple;
@@ -2599,6 +2623,21 @@ int LuaSyncedCtrl::SetUnitSonarStealth(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetUnitSeismicSignature
+ * @number unitID
+ * @number seismicSignature
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
+{
+	CUnit* const unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	unit->seismicSignature = luaL_checkfloat(L, 2);
+	return 0;
+}
 
 /***
  * @function Spring.SetUnitAlwaysVisible
@@ -2910,6 +2949,42 @@ int LuaSyncedCtrl::SetUnitShieldState(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetUnitShieldRechargeDelay
+ * @number unitID
+ * @number[opt] weaponID (optional if the unit only has one shield)
+ * @number[opt] rechargeTime (in seconds; emulates a regular hit if nil)
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitShieldRechargeDelay(lua_State* L)
+{
+	const auto unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	auto shield = static_cast <CPlasmaRepulser*> (unit->shieldWeapon);
+	if (lua_isnumber(L, 2)) {
+		const size_t index = lua_tointeger(L, 2) - LUA_WEAPON_BASE_INDEX;
+		if (index < unit->weapons.size())
+			shield = dynamic_cast <CPlasmaRepulser*> (unit->weapons[index]);
+	}
+	if (shield == nullptr)
+		return 0;
+
+	if (lua_isnumber(L, 3)) {
+		const auto seconds = lua_tofloat(L, 3);
+		const auto frames = static_cast <int> (seconds * GAME_SPEED);
+		shield->SetRechargeDelay(frames, true);
+	} else {
+		/* Note, overwrite set to false on purpose. This is to emulate a regular
+		 * weapon hit. This lets a sophisticated shield handler gadget coexist
+		 * with a basic "emulate hits" gadget without the latter having to care.
+		 * You can put the weaponDef value explicitly if you want to overwrite. */
+		shield->SetRechargeDelay(shield->weaponDef->shieldRechargeDelay, false);
+	}
+
+	return 0;
+}
 
 /***
  * @function Spring.SetUnitFlanking
@@ -6431,7 +6506,7 @@ static int SetSingleDamagesKey(lua_State* L, DamageArray& damages, int index)
 	if (lua_isnumber(L, index)) {
 		const unsigned armType = lua_toint(L, index);
 		if (armType < damages.GetNumTypes())
-			damages.Set(armType, std::max(value, 0.0001f));
+			damages.Set(armType, value);
 		return 0;
 	}
 
@@ -6474,7 +6549,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 					}
 				}
 			} else {
-				damages.SetDefaultDamage(std::max(lua_tofloat(L, index + 1), 0.0001f));
+				damages.SetDefaultDamage(lua_tofloat(L, index + 1));
 			}
 		} break;
 		case hashString("weaponDef"): {
@@ -6499,7 +6574,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			params.edgeEffectiveness = lua_tofloat(L, index + 1);
+			params.edgeEffectiveness = std::min(lua_tofloat(L, index + 1), 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			params.explosionSpeed = lua_tofloat(L, index + 1);
@@ -6605,7 +6680,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 
 		params.craterAreaOfEffect = luaL_optfloat(L,  8, 0.0f);
 		params.damageAreaOfEffect = luaL_optfloat(L,  9, 0.0f);
-		params.edgeEffectiveness  = luaL_optfloat(L, 10, 0.0f);
+		params.edgeEffectiveness  = std::min(luaL_optfloat(L, 10, 0.0f), 1.0f);
 		params.explosionSpeed     = luaL_optfloat(L, 11, 0.0f);
 		params.gfxMod             = luaL_optfloat(L, 12, 0.0f);
 

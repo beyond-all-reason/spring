@@ -159,6 +159,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraState);
 	REGISTER_LUA_CFUNC(SetCameraTarget);
 
+	REGISTER_LUA_CFUNC(DeselectUnit);
+	REGISTER_LUA_CFUNC(SelectUnit);
 	REGISTER_LUA_CFUNC(SelectUnitMap);
 	REGISTER_LUA_CFUNC(SelectUnitArray);
 	REGISTER_LUA_CFUNC(SetBoxSelectionByEngine);
@@ -774,7 +776,7 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 }
 
 
-/*** Allows to play an Ogg Vorbis (.OGG) compressed sound file.
+/*** Allows to play an Ogg Vorbis (.OGG) and mp3 compressed sound file.
  *
  * @function Spring.PlaySoundStream
  *
@@ -1234,6 +1236,43 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
  * @section unit_selection
 ******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.SelectUnit
+ * @number unitID
+ * @bool[opt=false] append append to current selection
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
+{
+	CUnit* const unit = ParseSelectUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	if (!luaL_optboolean(L, 2, false))
+		selectedUnitsHandler.ClearSelected();
+	selectedUnitsHandler.AddUnit(unit);
+
+	return 0;
+}
+
+/***
+ *
+ * @function Spring.DeselectUnit
+ * @number unitID
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::DeselectUnit(lua_State* L)
+{
+	CUnit* const unit = ParseSelectUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	selectedUnitsHandler.RemoveUnit(unit);
+
+	return 0;
+}
 
 /***
  *
@@ -3700,11 +3739,14 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
  * @number dirX
  * @number dirY
  * @number dirZ
+ * @number[opt=true] intensity
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
 {
-	ISky::GetSky()->GetLight()->SetLightDir(float4(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_optfloat(L, 4, 1.0f)));
+	auto dir = float3(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	auto intensity = luaL_optfloat(L, 4, 1.0f); // seems broken atm, only toggles shadows off when set to 0
+	ISky::GetSky()->GetLight()->SetLightDir(float4(dir.SafeNormalize(), intensity));
 	return 0;
 }
 

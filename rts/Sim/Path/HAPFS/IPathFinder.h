@@ -129,6 +129,8 @@ protected:
 		float3 startPos
 	);
 
+	virtual float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const = 0;
+
 public:
 	// if larger than 1, this IPF is an estimator
 	unsigned int BLOCK_SIZE = 0;

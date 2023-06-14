@@ -149,8 +149,10 @@ class CLuaHandle : public CEventClient
 		void UnitLeftRadar(const CUnit* unit, int allyTeam) override;
 		void UnitLeftLos(const CUnit* unit, int allyTeam) override;
 
+		void UnitEnteredUnderwater(const CUnit* unit) override;
 		void UnitEnteredWater(const CUnit* unit) override;
 		void UnitEnteredAir(const CUnit* unit) override;
+		void UnitLeftUnderwater(const CUnit* unit) override;
 		void UnitLeftWater(const CUnit* unit) override;
 		void UnitLeftAir(const CUnit* unit) override;
 

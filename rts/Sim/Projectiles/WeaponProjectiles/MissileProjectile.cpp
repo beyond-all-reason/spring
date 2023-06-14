@@ -337,7 +337,7 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 void CMissileProjectile::Draw()
 {
-	if (!validTextures[0])
+	if (!validTextures[1])
 		return;
 
 	// rocket flare

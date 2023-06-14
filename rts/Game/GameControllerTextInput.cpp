@@ -91,6 +91,7 @@ void GameControllerTextInput::Draw() {
 	font->SetColors(textColor, nullptr);
 	font->glPrint(inputTextPosX, inputTextPosY, fontSize, FONT_DESCENDER | (FONT_OUTLINE * guihandler->GetOutlineFonts()) | FONT_NORM, userString);
 	font->End();
+	font->SetColors(nullptr, nullptr);
 }
 
 

@@ -101,8 +101,10 @@ class CEventHandler
 		void UnitLeftRadar(const CUnit* unit, int allyTeam);
 		void UnitLeftLos(const CUnit* unit, int allyTeam);
 
+		void UnitEnteredUnderwater(const CUnit* unit);
 		void UnitEnteredWater(const CUnit* unit);
 		void UnitEnteredAir(const CUnit* unit);
+		void UnitLeftUnderwater(const CUnit* unit);
 		void UnitLeftWater(const CUnit* unit);
 		void UnitLeftAir(const CUnit* unit);
 
@@ -428,8 +430,10 @@ UNIT_CALLIN_NO_PARAM(UnitReverseBuilt);
 UNIT_CALLIN_NO_PARAM(UnitFinished)
 UNIT_CALLIN_NO_PARAM(UnitIdle)
 UNIT_CALLIN_NO_PARAM(UnitMoveFailed)
+UNIT_CALLIN_NO_PARAM(UnitEnteredUnderwater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredWater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredAir)
+UNIT_CALLIN_NO_PARAM(UnitLeftUnderwater)
 UNIT_CALLIN_NO_PARAM(UnitLeftWater)
 UNIT_CALLIN_NO_PARAM(UnitLeftAir)
 UNIT_CALLIN_NO_PARAM(UnitMoved)

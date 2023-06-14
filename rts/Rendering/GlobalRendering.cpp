@@ -628,6 +628,7 @@ void CGlobalRendering::PostInit() {
 	ToggleGLDebugOutput(0, 0, 0);
 
 	UniformConstants::GetInstance().Init();
+	ModelUniformData::Init();
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
 
