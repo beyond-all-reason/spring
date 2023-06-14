@@ -3,7 +3,7 @@
 #ifndef LUA_SYNCED_TABLE_H
 #define LUA_SYNCED_TABLE_H
 
-// Adds UNSYNCED table, snext(), spairs(), and sipairs()
+// Adds the `SYNCED` proxy table
 
 struct lua_State;
 
