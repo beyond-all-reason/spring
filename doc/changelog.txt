@@ -164,6 +164,7 @@ Fixes:
  - Fix issues where the ground and other visibility features would not render or return expected
    features when looking at certain oblique angles
  - Fix using Set<Any>RulesParam with an incorrect type leaving that param set with a value of 0.
+ - Fix COB SetMaxReloadTime receiving a value 10% smaller than it should
 
 
 
