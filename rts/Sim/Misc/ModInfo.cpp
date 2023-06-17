@@ -32,7 +32,7 @@ void CModInfo::ResetState()
 		allowUnitCollisionDamage   = false;
 		allowUnitCollisionOverlap  = true;
 		allowSepAxisCollisionTest  = false;
-		allowGroundUnitGravity     = true;
+		allowGroundUnitGravity     = false;
 		allowHoverUnitStrafing     = true;
 
 		maxCollisionPushMultiplier = std::numeric_limits<float>::infinity();
