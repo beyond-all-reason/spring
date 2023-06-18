@@ -1747,8 +1747,16 @@ void CGame::SimFrame() {
 		projectileHandler.Update();
 		featureHandler.Update();
 		{
+			/* The default GAME_SPEED is 30, which doesn't divide 1000 well,
+			 * so scripts will perceive 990ms per second. But this is fine,
+			 * since doing "29th February" style of extra counting would be
+			 * disruptive to sleeps that assume a constant tick length while
+			 * not being otherwise perceptible since most animations don't
+			 * run that long. */
+			static constexpr int tickMs = 1000 / GAME_SPEED;
+
 			SCOPED_TIMER("Sim::Script");
-			unitScriptEngine->Tick(33);
+			unitScriptEngine->Tick(tickMs);
 		}
 		envResHandler.Update();
 		losHandler->Update();
