@@ -380,7 +380,7 @@ void CTeam::SlowUpdate()
 	}
 
 	// make sure the stats update is always in a SlowUpdate
-	assert(((TeamStatistics::statsPeriod * GAME_SPEED) % TEAM_SLOWUPDATE_RATE) == 0);
+	static_assert(((TeamStatistics::statsPeriod * GAME_SPEED) % TEAM_SLOWUPDATE_RATE) == 0);
 
 	if (nextHistoryEntry <= gs->frameNum) {
 		currentStats.frame = gs->frameNum;
