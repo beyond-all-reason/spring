@@ -127,6 +127,11 @@ becomes 100 in Lua WeaponDefs after rescale), now uncapped.
   end
   ```
 
+- It is heavily recommended to replace `acceleration` and `brakeRate`
+with `maxAcc` and `maxDec` respectively (possibly in post-processing).
+While the old spelling still works the way it always did, at some point
+in the future it will be changed from elmo/frame to elmo/second.
+
 ## Camera modifiers
 
 The following keyboard modifiers were unhardcoded from engine:
@@ -153,7 +158,7 @@ To get back the old behaviour define a gadget with the following callin:
 
 ```lua
 function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
-  if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
+  if builderID and Spring.GetUnitWorkerTask(builderID) == CMD.RESURRECT then
     Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
   end
 end
