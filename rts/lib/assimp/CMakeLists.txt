@@ -263,12 +263,6 @@ SET( ASSIMP_INCLUDE_INSTALL_DIR "include" CACHE STRING
 SET( ASSIMP_BIN_INSTALL_DIR "bin" CACHE STRING
   "Path the tool executables are installed to." )
 
-#IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
-#  SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "Debug Postfix for lib, samples and tools")
-#ELSE()
-#  SET(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Debug Postfix for lib, samples and tools")
-#ENDIF()
-
 # Only generate this target if no higher-level project already has
 # IF (NOT TARGET uninstall)
   # # add make uninstall capability
