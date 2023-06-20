@@ -449,6 +449,9 @@ void CGroundMoveType::PostLoad()
 	if (pathID == 0)
 		return;
 
+	// There isn't a path to clear (we've just loaded a saved game), so we must now clear pathID
+	// before requesting our new path; otherwise, a valid path for another unit could be deleted.
+	pathID = 0;
 	ReRequestPath(PATH_REQUEST_TIMING_IMMEDIATE|PATH_REQUEST_UPDATE_FULLPATH);
 	DelayedReRequestPath();
 }
