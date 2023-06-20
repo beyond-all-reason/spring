@@ -690,6 +690,8 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 
 			// New get function for node.
 
+			// TODO: Get Nodes and then split arrays for sub node analysis
+
 			// Go and setup the Hierachy Nodes
 			std::function<void(SRectangle r)> setupCoarseNodes;
 			setupCoarseNodes = [this, layerNum](SRectangle r){
