@@ -4,6 +4,7 @@
 #define LUA_RULESPARAMS_H
 
 #include <string>
+#include <variant>
 
 #include "System/UnorderedMap.hpp"
 #include "System/creg/creg_cond.h"
@@ -31,8 +32,7 @@ namespace LuaRulesParams
 		CR_DECLARE_STRUCT(Param)
 
 		int   los = RULESPARAMLOS_PRIVATE;
-		float valueInt = 0.0f;
-		std::string valueString;
+		std::variant <bool, float, std::string> value;
 	};
 
 	typedef spring::unordered_map<std::string, Param> Params;

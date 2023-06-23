@@ -215,10 +215,19 @@ namespace {
 				return false;
 
 			const auto& param = it->second;
-			if (wantedValueStr.empty())
-				return param.valueInt == wantedValueNum;
-			else
-				return param.valueString == wantedValueStr;
+			if (!wantedValueStr.empty()) {
+				if (std::holds_alternative <std::string> (param.value))
+					return std::get <std::string> (param.value) == wantedValueStr;
+				else
+					return false;
+			} else {
+				if (std::holds_alternative <float> (param.value))
+					return std::get <float> (param.value) == wantedValueNum;
+				else if (std::holds_alternative <bool> (param.value))
+					return (std::get <bool> (param.value) ? 1.0f : 0.0f) == wantedValueNum;
+				else
+					return false;
+			}
 		}
 
 		void SetParam(int index, const std::string& value) override {

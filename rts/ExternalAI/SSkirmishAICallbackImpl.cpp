@@ -215,7 +215,12 @@ static float getRulesParamFloatValueByName(
 	if (!modParamIsVisible(param, losMask))
 		return defaultValue;
 
-	return param.valueInt;
+	if (std::holds_alternative <std::string> (param.value))
+		return defaultValue;
+	else if (std::holds_alternative <bool> (param.value))
+		return std::get <bool> (param.value) ? 1.0f : 0.0f;
+	else
+		return std::get <float> (param.value);
 }
 
 static const char* getRulesParamStringValueByName(
@@ -233,7 +238,10 @@ static const char* getRulesParamStringValueByName(
 	if (!modParamIsVisible(it->second, losMask))
 		return defaultValue;
 
-	return param.valueString.c_str();
+	if (!std::holds_alternative <std::string> (param.value))
+		return defaultValue;
+
+	return std::get <std::string> (param.value).c_str();
 }
 
 
