@@ -163,6 +163,7 @@ Fixes:
  - Fix some Lua interfaces being able to set edgeEffectiveness above 1
  - Fix issues where the ground and other visibility features would not render or return expected
    features when looking at certain oblique angles
+ - Fix using Set<Any>RulesParam with an incorrect type leaving that param set with a value of 0.
 
 
 

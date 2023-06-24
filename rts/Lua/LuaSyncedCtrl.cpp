@@ -1276,6 +1276,7 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
 		params.erase(key);
 		return; //no need to set los if param was erased
 	} else {
+		params.erase(key);
 		luaL_error(L, "Incorrect arguments to %s()", caller);
 	}
 
