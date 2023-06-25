@@ -417,6 +417,8 @@ int LuaVFS::MapArchive(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
+	luaL_error(L, "VFS.MapArchive is temporarily disabled! Please use VFS.UseArchive instead");
+
 	const int args = lua_gettop(L); // number of arguments
 
 	const std::string& archiveName = luaL_checkstring(L, 1);
@@ -449,6 +451,8 @@ int LuaVFS::UnmapArchive(lua_State* L)
 	// only from unsynced
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
+
+	luaL_error(L, "VFS.UnmapArchive is temporarily disabled! Please use VFS.UseArchive instead");
 
 	const std::string& archiveName = luaL_checkstring(L, 1);
 	const CArchiveScanner::ArchiveData& archiveData = archiveScanner->GetArchiveData(archiveName);
