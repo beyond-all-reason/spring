@@ -22,6 +22,8 @@
 
 CR_BIND(CGameSetup,)
 CR_REG_METADATA(CGameSetup, (
+	CR_IGNORED(initBlank),
+
 	CR_IGNORED(fixedAllies),
 	CR_IGNORED(useLuaGaia),
 	CR_IGNORED(luaDevMode),
@@ -36,7 +38,6 @@ CR_REG_METADATA(CGameSetup, (
 
 	CR_IGNORED(dsMapHash),
 	CR_IGNORED(dsModHash),
-	CR_IGNORED(mapSeed),
 
 	CR_IGNORED(gameStartDelay),
 
@@ -165,6 +166,8 @@ const std::vector<AllyTeam>& CGameSetup::GetAllyStartingData()
 
 void CGameSetup::ResetState()
 {
+	initBlank = false;
+
 	fixedAllies = true;
 	useLuaGaia = true;
 	luaDevMode = false;
@@ -179,7 +182,6 @@ void CGameSetup::ResetState()
 
 	std::memset(dsMapHash, 0, sizeof(dsMapHash));
 	std::memset(dsModHash, 0, sizeof(dsModHash));
-	mapSeed = 0;
 
 	gameStartDelay = 0;
 	numDemoPlayers = 0;
@@ -580,7 +582,7 @@ bool CGameSetup::Init(const std::string& buf)
 	}
 	#endif
 
-	file.GetTDef(mapSeed, unsigned(0), "GAME\\MapSeed");
+	file.GetDef(initBlank, "0", "GAME\\InitBlank");
 
 	gameID      = file.SGetValueDef("",  "GAME\\GameID");
 	modName     = file.SGetValueDef("",  "GAME\\Gametype");

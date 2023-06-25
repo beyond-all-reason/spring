@@ -19,7 +19,7 @@
 #include "Game/Players/PlayerHandler.h"
 #include "UI/InfoConsole.h"
 #include "ExternalAI/SkirmishAIHandler.h"
-#include "Map/Generation/SimpleMapGenerator.h"
+#include "Map/Generation/BlankMapGenerator.h"
 #include "Menu/LuaMenuController.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
@@ -247,8 +247,8 @@ void CPreGame::StartServer(const std::string& setupscript)
 	if (startGameSetup->mapName.empty())
 		throw content_error("No map selected in startscript");
 
-	if (startGameSetup->mapSeed != 0) {
-		CSimpleMapGenerator gen(startGameSetup.get());
+	if (startGameSetup->initBlank) {
+		CBlankMapGenerator gen(startGameSetup.get());
 		gen.Generate();
 	}
 
