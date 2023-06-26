@@ -50,7 +50,8 @@
 	NumTeams=y;         // same here, set this to check if the script is right
 	NumAllyTeams=z;     // see above
 
-	FixedSeed = 1; //Initialize the synced RNG with a specific seed for reproducible benchmarking runs only
+	FixedSeed = 1; // Initialize the synced RNG with a specific seed for reproducible runs, eg. for benchmarking or cutscenes.
+                       // Default value 0 will generate a random seed.
 
 	// A player (controlls a team, player 0 is the host only if IsHost is not set)
 	[PLAYER0]
