@@ -163,7 +163,11 @@ int main(int argc, char* argv[])
 		const uint32_t randSeed = time(nullptr) % ((spring_gettime().toNanoSecsi() + 1) * 9007);
 
 		rng.Seed(randSeed);
-		dsGameData->SetRandomSeed(rng.NextInt());
+		if (dsGameData->fixedSeed == 0) {
+			dsGameData->SetRandomSeed(rng.NextInt());
+		} else {
+			dsGameData->SetRandomSeed(dsGameData->fixedSeed);
+		}
 
 		{
 			sha512::raw_digest dsMapChecksum;
