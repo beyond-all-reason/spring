@@ -44,7 +44,7 @@ public:
 		std::copy(gs.dsMapHash, gs.dsMapHash + sizeof(dsMapHash), dsMapHash);
 		std::copy(gs.dsModHash, gs.dsModHash + sizeof(dsModHash), dsModHash);
 		mapSeed = gs.mapSeed;
-		fixedSeed = gs.fixedSeed;
+		fixedRNGSeed = gs.fixedRNGSeed;
 
 		gameStartDelay = gs.gameStartDelay;
 
@@ -175,7 +175,7 @@ public:
 		StartPos_Last             = 3  // last entry in enum (for user input check)
 	};
 
-	uint32_t fixedSeed;
+	uint32_t fixedRNGSeed;
 
 	bool fixedAllies;
 	bool useLuaGaia;

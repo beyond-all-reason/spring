@@ -37,7 +37,7 @@ CR_REG_METADATA(CGameSetup, (
 	CR_IGNORED(dsMapHash),
 	CR_IGNORED(dsModHash),
 	CR_IGNORED(mapSeed),
-	CR_IGNORED(fixedSeed),
+	CR_IGNORED(fixedRNGSeed),
 
 	CR_IGNORED(gameStartDelay),
 
@@ -181,7 +181,7 @@ void CGameSetup::ResetState()
 	std::memset(dsMapHash, 0, sizeof(dsMapHash));
 	std::memset(dsModHash, 0, sizeof(dsModHash));
 	mapSeed = 0;
-	fixedSeed = 0;
+	fixedRNGSeed = 0;
 
 	gameStartDelay = 0;
 	numDemoPlayers = 0;
@@ -584,7 +584,7 @@ bool CGameSetup::Init(const std::string& buf)
 
 	file.GetTDef(mapSeed, unsigned(0), "GAME\\MapSeed");
 
-	file.GetTDef(fixedSeed, unsigned(0), "GAME\\FixedSeed"); // 0 means use random seed
+	file.GetTDef(fixedRNGSeed, unsigned(0), "GAME\\FixedRNGSeed"); // 0 means use random seed
 	gameID      = file.SGetValueDef("",  "GAME\\GameID");
 	modName     = file.SGetValueDef("",  "GAME\\Gametype");
 	mapName     = file.SGetValueDef("",  "GAME\\MapName");

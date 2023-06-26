@@ -242,10 +242,10 @@ void CPreGame::StartServer(const std::string& setupscript)
 	std::shared_ptr<CGameSetup> startGameSetup(new CGameSetup());
 
 	startGameSetup->Init(setupscript);
-	if (startGameSetup->fixedSeed == 0) {
+	if (startGameSetup->fixedRNGSeed == 0) {
 		startGameData->SetRandomSeed(static_cast<unsigned>(guRNG.NextInt()));
 	} else {
-		startGameData->SetRandomSeed(startGameSetup->fixedSeed);
+		startGameData->SetRandomSeed(startGameSetup->fixedRNGSeed);
 	}
 
 	if (startGameSetup->mapName.empty())
