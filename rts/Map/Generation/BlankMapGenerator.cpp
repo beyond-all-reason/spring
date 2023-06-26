@@ -97,7 +97,7 @@ void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 	//--- Make SMFHeader ---
 	std::strcpy(smfHeader.magic, "spring map file");
 	smfHeader.version = 1;
-	smfHeader.mapid = 0; //just a random value, could be anything at this point
+	smfHeader.mapid = 0; // just an arbitrary value, could be anything at this point
 
 	//Set settings
 	smfHeader.mapx = mapSize.x * CSMFReadMap::bigSquareSize;
