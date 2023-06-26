@@ -268,8 +268,8 @@ void CGameServer::Initialize()
 	streflop::streflop_init<streflop::Simple>();
 
 	if (!demoReader) {
+		GenerateAndSendGameID();
 		if (myGameSetup->fixedSeed == 0) {
-			GenerateAndSendGameID();
 			rng.Seed(gameID.intArray[0] ^ gameID.intArray[1] ^ gameID.intArray[2] ^ gameID.intArray[3]);
 			Broadcast(CBaseNetProtocol::Get().SendRandSeed(rng()));
 		} else {
