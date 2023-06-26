@@ -163,10 +163,10 @@ int main(int argc, char* argv[])
 		const uint32_t randSeed = time(nullptr) % ((spring_gettime().toNanoSecsi() + 1) * 9007);
 
 		rng.Seed(randSeed);
-		if (dsGameData->fixedSeed == 0) {
+		if (dsGameSetup->fixedSeed == 0) {
 			dsGameData->SetRandomSeed(rng.NextInt());
 		} else {
-			dsGameData->SetRandomSeed(dsGameData->fixedSeed);
+			dsGameData->SetRandomSeed(dsGameSetup->fixedSeed);
 		}
 
 		{
