@@ -208,7 +208,7 @@ namespace spring {
 	}
 
 	template<typename T>
-	static T VectorBackPop(std::vector<T>& v) { T e = v.back(); v.pop_back(); return e; }
+	static T VectorBackPop(std::vector<T>& v) { T e = std::move(v.back()); v.pop_back(); return e; }
 };
 
 #endif
