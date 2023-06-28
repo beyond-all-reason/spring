@@ -203,15 +203,7 @@ namespace spring {
 		if ((iter != v.end()) && (*iter == e))
 			return false;
 
-		v.push_back(e);
-
-		for (size_t n = v.size() - 1; n > 0; n--) {
-			if (pred(v[n - 1], v[n]))
-				break;
-
-			std::swap(v[n - 1], v[n]);
-		}
-
+		v.insert(iter, e);
 		return true;
 	}
 
