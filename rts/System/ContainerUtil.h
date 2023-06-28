@@ -212,7 +212,7 @@ namespace spring {
 	static T& VectorEmplaceBack(std::vector<T>& v, A&&... a) { v.emplace_back(std::forward<A>(a)...); return (v.back()); }
 
 	template<typename T>
-	static const T& VectorBackPop(std::vector<T>& v) { const T& e = v.back(); v.pop_back(); return e; }
+	static T VectorBackPop(std::vector<T>& v) { T e = v.back(); v.pop_back(); return e; }
 };
 
 #endif
