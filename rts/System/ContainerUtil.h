@@ -203,24 +203,12 @@ namespace spring {
 		if ((iter != v.end()) && (*iter == e))
 			return false;
 
-		v.push_back(e);
-
-		for (size_t n = v.size() - 1; n > 0; n--) {
-			if (pred(v[n - 1], v[n]))
-				break;
-
-			std::swap(v[n - 1], v[n]);
-		}
-
+		v.insert(iter, e);
 		return true;
 	}
 
-	// emulate C++17's emplace_back
-	template<typename T, typename... A>
-	static T& VectorEmplaceBack(std::vector<T>& v, A&&... a) { v.emplace_back(std::forward<A>(a)...); return (v.back()); }
-
 	template<typename T>
-	static const T& VectorBackPop(std::vector<T>& v) { const T& e = v.back(); v.pop_back(); return e; }
+	static T VectorBackPop(std::vector<T>& v) { T e = std::move(v.back()); v.pop_back(); return e; }
 };
 
 #endif
