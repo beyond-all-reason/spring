@@ -99,8 +99,10 @@ bool LuaVFS::PushUnsynced(lua_State* L)
 
 	HSTR_PUSH_CFUNC(L, "UseArchive",     UseArchive);
 	HSTR_PUSH_CFUNC(L, "CompressFolder", CompressFolder);
-	HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
-	HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
+
+	// Removed due to sync unsafety, see commit 0ee88788931f9f0b195eb5f895f1092fde4211c0
+	// HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
+	// HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
 
 	return true;
 }
@@ -417,8 +419,6 @@ int LuaVFS::MapArchive(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
-	luaL_error(L, "VFS.MapArchive is temporarily disabled! Please use VFS.UseArchive instead");
-
 	const int args = lua_gettop(L); // number of arguments
 
 	const std::string& archiveName = luaL_checkstring(L, 1);
@@ -451,8 +451,6 @@ int LuaVFS::UnmapArchive(lua_State* L)
 	// only from unsynced
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
-
-	luaL_error(L, "VFS.UnmapArchive is temporarily disabled! Please use VFS.UseArchive instead");
 
 	const std::string& archiveName = luaL_checkstring(L, 1);
 	const CArchiveScanner::ArchiveData& archiveData = archiveScanner->GetArchiveData(archiveName);

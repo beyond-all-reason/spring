@@ -164,6 +164,12 @@ function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
 end
 ```
 
+## VFS mapping API
+
+`Spring.MapArchive` and `Spring.UnmapArchive` have been temporarily removed due to sync unsafety.
+In the meantime, use `Spring.UseArchive`. These functions are going to come back at some point,
+but there is no concrete timeline for that yet.
+
 ## General
 
 - Paletted image files are no longer accepted. Convert your images not to be paletted.

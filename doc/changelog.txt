@@ -37,6 +37,8 @@ Lua:
    two visibility levels, public and private. A notable difference is that the private level is
    only visible to that player, not his allyteam, and not even his (comsharing) team; this is
    partially for technical reasons and can be changed if need be. Synced and specs see everything.
+ - `Spring.MapArchive` and `Spring.UnmapArchive` have been temporarily removed due to sync safety.
+   They will come back at some point, but there is no timeline yet. Use `Spring.UseArchive` meanwhile.
  - add `Spring.GetUnitIsBeingBuilt(unitID) -> bool beingBuilt, number buildProgress`. Note that this
    doesn't bring new capability because `buildProgress` was already available from `GetUnitHealth`,
    and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
