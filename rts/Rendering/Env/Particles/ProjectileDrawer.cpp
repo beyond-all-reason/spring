@@ -41,13 +41,19 @@
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
 
-static bool CProjectileDrawOrderSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::make_tuple(p2->drawOrder, p1->GetSortDist(), p1) > std::make_tuple(p1->drawOrder, p2->GetSortDist(), p2);
+static bool CProjectileDrawOrderSortingPredicate(
+        const CProjectileDrawer::SortedProjT& p1, const CProjectileDrawer::SortedProjT& p2) noexcept {
+	return p1 > p2;
 }
 
-static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::make_tuple(p1->GetSortDist(), p1) > std::make_tuple(p2->GetSortDist(), p2);
+static bool CProjectileSortingPredicate(
+        const CProjectileDrawer::SortedProjT& p1, const CProjectileDrawer::SortedProjT& p2) noexcept {
+	return std::make_tuple(std::get<1>(p1), std::get<2>(p1)) > std::make_tuple(std::get<1>(p1), std::get<2>(p1));
 };
+
+static bool isSortable(const CProjectile* pro, bool drawSorted) {
+    return pro->drawSorted && drawSorted;
+}
 
 
 CProjectileDrawer* projectileDrawer = nullptr;
@@ -264,7 +270,6 @@ void CProjectileDrawer::Init() {
 	}
 
 
-	modellessProjectiles.reserve(projectileHandler.maxParticles + projectileHandler.maxNanoParticles);
 	for (auto& mr : modelRenderers) { mr.Clear(); }
 
 	LoadWeaponTextures();
@@ -321,6 +326,8 @@ void CProjectileDrawer::Init() {
 	}
 	ViewResize();
 	EnableSoften(configHandler->GetInt("SoftParticles"));
+    
+    //drawSorted = false;
 }
 
 void CProjectileDrawer::Kill() {
@@ -333,7 +340,6 @@ void CProjectileDrawer::Kill() {
 
 	smokeTextures.clear();
 
-	modellessProjectiles.clear();
 	sortedProjectiles.clear();
 	unsortedProjectiles.clear();
 
@@ -576,22 +582,40 @@ void CProjectileDrawer::LoadWeaponTextures() {
 
 void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool drawRefraction)
 {
-	const auto& mdlRenderer = modelRenderers[modelType];
+	auto& mdlRenderer = modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
-		DrawProjectilesSet(mdlRenderer.GetObjectBin(i), drawReflection, drawRefraction);
+        auto& objs = mdlRenderer.GetObjectBin(i);
+		size_t visible = PreprocessProjectilesSet(objs, drawReflection, drawRefraction);
+        for (size_t j = 0; j < visible; ++j) {
+            DrawProjectileModel(objs[j]);
+            // objs[j]->Draw();
+        }
 	}
 
 	DrawFlyingPieces(modelType);
 }
 
-void CProjectileDrawer::DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction)
-{
-	for (CProjectile* p: projectiles) {
-		DrawProjectileNow(p, drawReflection, drawRefraction);
-	}
+size_t CProjectileDrawer::PreprocessProjectilesSet(std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction)
+{	
+    auto it = std::partition(projectiles.begin(), projectiles.end(), [&](auto& p) {
+        return GetProjectileDistance(p, drawReflection, drawRefraction);
+    });
+    return std::distance(projectiles.begin(), it);
+}
+
+size_t CProjectileDrawer::PreprocessSortedProjectilesSet(SortedProjTs& projectiles, bool drawReflection, bool drawRefraction)
+{	
+    auto it = std::partition(projectiles.begin(), projectiles.end(), [&](auto& p) {
+        auto order = GetProjectileDistance(std::get<2>(p), drawReflection, drawRefraction);
+        if (order) {
+            std::get<1>(p) = *order;
+        }
+        return order;
+    });
+    return std::distance(projectiles.begin(), it);
 }
 
 bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
@@ -601,35 +625,24 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 	return (gu->spectatingFullView || (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
 }
 
-void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
+std::optional<float> CProjectileDrawer::GetProjectileDistance(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
 	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
 
 	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
-		return;
-
+        return {};
 
 	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
-		return;
+		return {};
 	// removed this to fix AMD particle drawing
 	//if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(pro->drawPos, camera->GetPos(), pro->GetDrawRadius()))
 	//	return;
 
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
 	if (!cam->InView(pro->drawPos, pro->GetDrawRadius()))
-		return;
+        return {};
 
-	// no-op if no model
-	DrawProjectileModel(pro);
-
-	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
-
-	if (drawSorted && pro->drawSorted) {
-		sortedProjectiles.emplace_back(pro);
-	} else {
-		unsortedProjectiles.emplace_back(pro);
-	}
-
+	return cam->ProjectedDistance(pro->pos) + pro->sortDistOffset;
 }
 
 
@@ -657,7 +670,7 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
 	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();
-		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
+ 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
 		if (!p->castShadow)
@@ -691,16 +704,23 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 				p->DrawOnMinimap();
 			}
 		}
-	}
+	}   
 
-	if (!modellessProjectiles.empty()) {
-		for (CProjectile* p: modellessProjectiles) {
-			if (!CanDrawProjectile(p, p->GetAllyteamID()))
-				continue;
+    for (CProjectile* p: unsortedProjectiles) {
+        if (!CanDrawProjectile(p, p->GetAllyteamID()))
+            continue;
 
-			p->DrawOnMinimap();
-		}
-	}
+        p->DrawOnMinimap();
+    }
+
+    
+    for (auto& e: sortedProjectiles) {
+        CProjectile* p = std::get<2>(e);
+        if (!CanDrawProjectile(p, p->GetAllyteamID()))
+            continue;
+
+        p->DrawOnMinimap();
+    }
 
 	auto& sh = TypedRenderBuffer<VA_TYPE_C>::GetShader();
 
@@ -759,8 +779,10 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	ISky::GetSky()->SetupFog();
 
 
-	sortedProjectiles.clear();
-	unsortedProjectiles.clear();
+	// sortedProjectiles.clear();
+	// unsortedProjectiles.clear();
+    
+    // LOG("s %d ns %d", sortedProjectiles.size(), unsortedProjectiles.size());
 
 	{
 		{
@@ -776,21 +798,29 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 			unitDrawer->ResetOpaqueDrawing(false);
 		}
 
-		// note: model-less projectiles are NOT drawn by this call but
-		// only z-sorted (if the projectiles indicate they want to be)
-		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
+        auto visibleSorted = PreprocessSortedProjectilesSet(sortedProjectiles, drawReflection, drawRefraction);
+        auto visibleUnsorted = PreprocessProjectilesSet(unsortedProjectiles, drawReflection, drawRefraction);
 
 		if (wantDrawOrder)
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+			std::sort(sortedProjectiles.begin(), sortedProjectiles.begin() + visibleSorted, CProjectileDrawOrderSortingPredicate);
 		else
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+			std::sort(sortedProjectiles.begin(), sortedProjectiles.begin() + visibleSorted, CProjectileSortingPredicate);
 
-		for (auto p : sortedProjectiles) {
-			p->Draw();
+        size_t pos = 0;
+		for (auto e : sortedProjectiles) {
+            auto& p = std::get<2>(e);
+            if (pos < visibleSorted) {
+                p->Draw();
+            }
+            p->SetRenderIndex(pos++);
 		}
 
-		for (auto p : unsortedProjectiles) {
-			p->Draw();
+        pos = 0;
+		for (auto p : unsortedProjectiles) {			
+            if (pos < visibleUnsorted) {
+                p->Draw();
+            }
+            p->SetRenderIndex(pos++);
 		}
 	}
 
@@ -872,7 +902,10 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles
-	DrawProjectilesSetShadow(modellessProjectiles);
+    for (auto& p: sortedProjectiles) {
+		DrawProjectileShadow(std::get<2>(p));
+	}
+    DrawProjectilesSetShadow(unsortedProjectiles);
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 	if (!rb.ShouldSubmit())
@@ -1181,7 +1214,7 @@ void CProjectileDrawer::GenerateNoiseTex(unsigned int tex)
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, perlinBlendTexSize, perlinBlendTexSize, GL_RGBA, GL_UNSIGNED_BYTE, &mem[0]);
 }
 
-
+static spring::unordered_map<const CProjectile*, uint32_t> idmap;
 
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
@@ -1189,10 +1222,16 @@ void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 		modelRenderers[MDL_TYPE(p)].AddObject(p);
 		return;
 	}
-
-	const_cast<CProjectile*>(p)->SetRenderIndex(modellessProjectiles.size());
-	modellessProjectiles.push_back(const_cast<CProjectile*>(p));
-}
+    
+    if (isSortable(p, drawSorted)) {
+        const_cast<CProjectile*>(p)->SetRenderIndex(sortedProjectiles.size());     
+        sortedProjectiles.push_back({- p->drawOrder, 0.0, const_cast<CProjectile*>(p)});
+    } else {
+        const_cast<CProjectile*>(p)->SetRenderIndex(unsortedProjectiles.size());     
+        unsortedProjectiles.push_back(const_cast<CProjectile*>(p));
+    }
+}    
+    
 
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
@@ -1202,15 +1241,19 @@ void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 	}
 
 	const unsigned int idx = p->GetRenderIndex();
-
-	if (idx >= modellessProjectiles.size()) {
-		assert(false);
-		return;
-	}
-
-	modellessProjectiles[idx] = modellessProjectiles.back();
-	modellessProjectiles[idx]->SetRenderIndex(idx);
-
-	modellessProjectiles.pop_back();
+    
+    if (idx < unsortedProjectiles.size() && p == unsortedProjectiles[idx]) {
+        auto& e = unsortedProjectiles[idx] = unsortedProjectiles.back();
+        e->SetRenderIndex(idx);
+        unsortedProjectiles.pop_back();
+    } else {     
+        if (idx >= sortedProjectiles.size()) {
+            assert(false);
+            return;
+        }
+        
+        auto& e = sortedProjectiles[idx] = sortedProjectiles.back();
+        std::get<2>(e)->SetRenderIndex(idx);
+        sortedProjectiles.pop_back();
+    }
 }
-

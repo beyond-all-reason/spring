@@ -113,6 +113,7 @@ public:
 	unsigned int GetObjectBinKey(unsigned int idx) const { return keys[idx]; }
 
 	const ObjectBin& GetObjectBin(unsigned int idx) const { return bins[idx]; }
+    ObjectBin& GetObjectBin(unsigned int idx) { return bins[idx]; }
 };
 
 #endif

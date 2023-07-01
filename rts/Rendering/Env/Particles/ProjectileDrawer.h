@@ -4,6 +4,7 @@
 #define PROJECTILE_DRAWER_HDR
 
 #include <array>
+#include <optional>
 
 #include "Sim/Projectiles/Projectile.h"
 #include "Rendering/GL/myGL.h"
@@ -123,19 +124,23 @@ public:
 	AtlasedTexture* groundringtex = nullptr;
 
 	AtlasedTexture* seismictex = nullptr;
+    
+    using SortedProjT = std::tuple<int, float, CProjectile*>;
+    using SortedProjTs = std::vector<SortedProjT>;    
 public:
 	static bool CanDrawProjectile(const CProjectile* pro, int allyTeam);
-private:
+private:    
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
 	void DrawProjectiles(int modelType, bool drawReflection, bool drawRefraction);
 	void DrawProjectilesShadow(int modelType);
 	void DrawFlyingPieces(int modelType) const;
 
-	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
+	size_t PreprocessProjectilesSet(std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
+    size_t PreprocessSortedProjectilesSet(SortedProjTs& projectiles, bool drawReflection, bool drawRefraction);
 	static void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
 
-	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
+	std::optional<float> GetProjectileDistance(CProjectile* projectile, bool drawReflection, bool drawRefraction);
 
 	static void DrawProjectileShadow(CProjectile* projectile);
 	static bool DrawProjectileModel(const CProjectile* projectile);
@@ -143,7 +148,7 @@ private:
 	void UpdatePerlin();
 	static void GenerateNoiseTex(unsigned int tex);
 
-private:
+private:    
 	static constexpr int perlinBlendTexSize = 16;
 	static constexpr int perlinTexSize = 128;
 
@@ -162,13 +167,13 @@ private:
 
 	std::vector<const AtlasedTexture*> smokeTextures;
 
-	/// projectiles without a model, e.g. nano-particles
-	std::vector<CProjectile*> modellessProjectiles;
+	
 	/// projectiles with a model
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
+	/// projectiles without a model, e.g. nano-particles
 	/// used to render particle effects in back-to-front order
-	std::vector<CProjectile*> sortedProjectiles;
+	SortedProjTs sortedProjectiles;
 	std::vector<CProjectile*> unsortedProjectiles;
 
 	bool drawSorted = true;
