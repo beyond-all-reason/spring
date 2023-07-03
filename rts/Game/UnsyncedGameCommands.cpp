@@ -3827,9 +3827,27 @@ private:
 
 
 
+bool UnsyncedGameCommands::ActionPressed(const Action& action, bool isRepeat)
+{
+	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
-// TODO CGame stuff in UnsyncedGameCommands: refactor (or move)
-bool CGame::ActionReleased(const Action& action)
+	if (executor != nullptr) {
+		// an executor for that action was found
+		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
+			return true;
+	}
+
+	if (CGameServer::IsServerCommand(action.command)) {
+		CommandMessage pckt(action, gu->myPlayerNum);
+		clientNet->Send(pckt.Pack());
+		return true;
+	}
+
+	return (gameCommandConsole.ExecuteAction(action));
+}
+
+
+bool UnsyncedGameCommands::ActionReleased(const Action& action)
 {
 	switch (hashString(action.command.c_str())) {
 		case hashString("drawinmap"): {

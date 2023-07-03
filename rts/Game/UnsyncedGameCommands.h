@@ -20,6 +20,9 @@ public:
 	static void DestroyInstance(bool reload);
 
 	void AddDefaultActionExecutors() override;
+
+	bool ActionPressed(const Action& action, bool isRepeat);
+	bool ActionReleased(const Action& action);
 };
 
 #define unsyncedGameCommands UnsyncedGameCommands::GetInstance()

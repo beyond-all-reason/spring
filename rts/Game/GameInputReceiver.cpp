@@ -10,6 +10,7 @@
 #include "Game/UI/KeyCodes.h"
 #include "Game/UI/KeySet.h"
 #include "Game/UI/ScanCodes.h"
+#include "Game/UnsyncedGameCommands.h"
 #include "Lua/LuaInputReceiver.h"
 #include "Lua/LuaMenu.h"
 #include "Lua/LuaUI.h"
@@ -78,7 +79,7 @@ bool CGameInputReceiver::KeyReleased(int keyCode, int scanCode)
 	}
 
 	for (const Action& action: lastActionList) {
-		if (game->ActionReleased(action))
+		if (unsyncedGameCommands->ActionReleased(action))
 			return false;
 	}
 
@@ -113,7 +114,7 @@ void CGameInputReceiver::MouseRelease(int x, int y, int button)
 	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
 
 	for (const Action& action: lastActionList) {
-		if (game->ActionReleased(action))
+		if (unsyncedGameCommands->ActionReleased(action))
 			return;
 	}
 
@@ -124,7 +125,7 @@ bool CGameInputReceiver::TryOnPressActions(int keyCode, int scanCode, bool isRep
 {
 	// try our list of actions
 	for (const Action& action: lastActionList) {
-		if (game->ActionPressed(action, isRepeat)) {
+		if (unsyncedGameCommands->ActionPressed(action, isRepeat)) {
 			return true;
 		}
 	}
