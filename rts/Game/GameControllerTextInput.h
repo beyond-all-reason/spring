@@ -73,10 +73,10 @@ public:
 private:
 	void PasteClipboard();
 
-	bool HandleChatCommand(int key, const std::string& command);
-	bool HandleEditCommand(int keyCode, int scanCode, const std::string& command);
-	bool HandlePasteCommand(int key, const std::string& rawLine);
-	bool ProcessKeyPressAction(int keyCode, int scanCode, const Action& action);
+	bool HandleChatCommand(const std::string& command);
+	bool HandleEditCommand(const std::string& command);
+	bool HandlePasteCommand(const std::string& rawLine);
+	bool ProcessKeyPressAction(const Action& action);
 
 public:
 	/// current writing/editing positions
