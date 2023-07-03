@@ -38,7 +38,21 @@ protected:
 	}
 
 public:
+	bool ExecuteActionRelease(const UnsyncedAction& action) const {
+		if (IsCheatRequired() && !gs->cheatEnabled) {
+			LOG_L(L_WARNING, "Chat command /%s (%s) cannot be executed (release) (cheats required)!",
+					GetCommand().c_str(),
+					(IsSynced() ? "synced" : "unsynced"));
+			return false;
+		} else {
+			return ExecuteRelease(action);
+		}
+	}
+
 	virtual ~IUnsyncedActionExecutor() {}
+
+private:
+	virtual bool ExecuteRelease(const UnsyncedAction& action) const { return false; }
 };
 
 #endif // UNSYNCED_ACTION_EXECUTOR_H
