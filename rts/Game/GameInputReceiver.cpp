@@ -124,7 +124,7 @@ bool CGameInputReceiver::TryOnPressActions(int keyCode, int scanCode, bool isRep
 {
 	// try our list of actions
 	for (const Action& action: lastActionList) {
-		if (game->ActionPressed(keyCode, scanCode, action, isRepeat)) {
+		if (game->ActionPressed(action, isRepeat)) {
 			return true;
 		}
 	}

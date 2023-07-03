@@ -162,7 +162,7 @@ void GameControllerTextInput::PasteClipboard() {
 }
 
 
-bool GameControllerTextInput::HandleChatCommand(int key, const std::string& command) {
+bool GameControllerTextInput::HandleChatCommand(const std::string& command) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(command.c_str())) {
 		case hashString("chatswitchall"): {
@@ -222,7 +222,7 @@ bool GameControllerTextInput::HandleChatCommand(int key, const std::string& comm
 
 
 // can only be called by CGame (via ConsumePressedKey)
-bool GameControllerTextInput::HandleEditCommand(int keyCode, int scanCode, const std::string& command) {
+bool GameControllerTextInput::HandleEditCommand(const std::string& command) {
 	switch (hashString(command.c_str())) {
 		case hashString("edit_return"): {
 			userWriting = false;
@@ -237,7 +237,7 @@ bool GameControllerTextInput::HandleEditCommand(int keyCode, int scanCode, const
 					cmd = userInput;
 				}
 
-				if (game->ProcessCommandText(keyCode, scanCode, cmd)) {
+				if (game->ProcessCommandText(cmd)) {
 					// execute an action
 					gameConsoleHistory.AddLine(cmd);
 					ClearInput();
@@ -371,7 +371,7 @@ bool GameControllerTextInput::HandleEditCommand(int keyCode, int scanCode, const
 }
 
 
-bool GameControllerTextInput::HandlePasteCommand(int key, const std::string& rawLine) {
+bool GameControllerTextInput::HandlePasteCommand(const std::string& rawLine) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// we cannot use extra commands because tokenization strips multiple
 	// spaces or even trailing spaces, the text should be copied verbatim
@@ -392,22 +392,22 @@ bool GameControllerTextInput::CheckHandlePasteCommand(const std::string& rawLine
 	if (!userWriting)
 		return false;
 
-	return (HandlePasteCommand(0, rawLine));
+	return (HandlePasteCommand(rawLine));
 }
 
 
-bool GameControllerTextInput::ProcessKeyPressAction(int keyCode, int scanCode, const Action& action) {
+bool GameControllerTextInput::ProcessKeyPressAction(const Action& action) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(userWriting);
 
 	if (action.command == "pastetext")
-		return (HandlePasteCommand(keyCode, action.rawline));
+		return (HandlePasteCommand(action.rawline));
 
 	if (action.command.find("edit_") == 0)
-		return (HandleEditCommand(keyCode, scanCode, action.command));
+		return (HandleEditCommand(action.command));
 
 	if (action.command.find("chatswitch") == 0)
-		return (HandleChatCommand(keyCode, action.command));
+		return (HandleChatCommand(action.command));
 
 	return false;
 }
@@ -419,7 +419,7 @@ bool GameControllerTextInput::ConsumePressedKey(int keyCode, int scanCode, const
 		return false;
 
 	for (const Action& action: actions) {
-		if (!ProcessKeyPressAction(keyCode, scanCode, action))
+		if (!ProcessKeyPressAction(action))
 			continue;
 
 		// the key was used, ignore it (ex: alt+a)

@@ -87,8 +87,8 @@ public:
 	/// Send a message to other players (allows prefixed messages with e.g. "a:...")
 	void SendNetChat(std::string message, int destination = -1);
 
-	bool ProcessCommandText(int keyCode, int scanCode, const std::string& command);
-	bool ProcessAction(const Action& action, int keyCode = -1, int scanCode = -1, bool isRepeat = false);
+	bool ProcessCommandText(const std::string& command);
+	bool ProcessAction(const Action& action, bool isRepeat = false);
 
 	void ReloadCOB(const std::string& msg, int player);
 	void ReloadCEGs(const std::string& tag);
@@ -105,7 +105,7 @@ public:
 	void SetDrawMode(GameDrawMode mode) { gameDrawMode = mode; }
 	GameDrawMode GetDrawMode() const { return gameDrawMode; }
 
-	bool ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat);
+	bool ActionPressed(const Action& action, bool isRepeat);
 	bool ActionReleased(const Action& action);
 
 	const ActionList& GetLastActionList();
