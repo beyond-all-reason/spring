@@ -13,16 +13,10 @@ class Action;
 class UnsyncedAction : public IAction
 {
 public:
-	UnsyncedAction(const Action& action, int key, bool repeat)
+	UnsyncedAction(const Action& action, bool repeat)
 		: IAction(action)
-		, key(key)
 		, repeat(repeat)
 	{}
-
-	/**
-	 * Returns the normalized key symbol.
-	 */
-	unsigned int GetKey() const { return key; }
 
 	/**
 	 * Returns whether the action is to be executed repeatedly.
@@ -30,7 +24,6 @@ public:
 	bool IsRepeat() const { return repeat; }
 
 private:
-	int key;
 	bool repeat;
 };
 
