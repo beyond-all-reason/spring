@@ -1077,7 +1077,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	// try our list of actions
 	for (const Action& action: lastActionList) {
-		if (ActionPressed(keyCode, scanCode, action, isRepeat)) {
+		if (ActionPressed(action, isRepeat)) {
 			return 0;
 		}
 	}
@@ -2074,22 +2074,22 @@ void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 
 
 
-bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& command) {
+bool CGame::ProcessCommandText(const std::string& command) {
 	if (command.size() <= 2)
 		return false;
 
 	if ((command[0] == '/') && (command[1] != '/')) {
 		// strip the '/'
-		ProcessAction(Action(command.substr(1)), keyCode, scanCode, false);
+		ProcessAction(Action(command.substr(1)), false);
 		return true;
 	}
 
 	return false;
 }
 
-bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool isRepeat)
+bool CGame::ProcessAction(const Action& action, bool isRepeat)
 {
-	if (ActionPressed(keyCode, scanCode, action, isRepeat))
+	if (ActionPressed(action, isRepeat))
 		return true;
 
 	// maybe a widget is interested?
@@ -2118,7 +2118,7 @@ void CGame::ActionReceived(const Action& action, int playerID)
 	}
 }
 
-bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat)
+bool CGame::ActionPressed(const Action& action, bool isRepeat)
 {
 	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
