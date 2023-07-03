@@ -1077,7 +1077,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	// try our list of actions
 	for (const Action& action: lastActionList) {
-		if (ActionPressed(action, isRepeat)) {
+		if (unsyncedGameCommands->ActionPressed(action, isRepeat)) {
 			return 0;
 		}
 	}
@@ -1118,7 +1118,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	}
 
 	for (const Action& action: lastActionList) {
-		if (ActionReleased(action))
+		if (unsyncedGameCommands->ActionReleased(action))
 			return 0;
 	}
 
@@ -2089,7 +2089,7 @@ bool CGame::ProcessCommandText(const std::string& command) {
 
 bool CGame::ProcessAction(const Action& action, bool isRepeat)
 {
-	if (ActionPressed(action, isRepeat))
+	if (unsyncedGameCommands->ActionPressed(action, isRepeat))
 		return true;
 
 	// maybe a widget is interested?
@@ -2116,23 +2116,4 @@ void CGame::ActionReceived(const Action& action, int playerID)
 		eventHandler.SyncedActionFallback(action.rawline, playerID);
 		//FIXME add unsynced one?
 	}
-}
-
-bool CGame::ActionPressed(const Action& action, bool isRepeat)
-{
-	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
-
-	if (executor != nullptr) {
-		// an executor for that action was found
-		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
-			return true;
-	}
-
-	if (CGameServer::IsServerCommand(action.command)) {
-		CommandMessage pckt(action, gu->myPlayerNum);
-		clientNet->Send(pckt.Pack());
-		return true;
-	}
-
-	return (gameCommandConsole.ExecuteAction(action));
 }

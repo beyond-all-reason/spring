@@ -129,8 +129,6 @@ private:
 	int TextInput(const std::string& utf8Text) override;
 	int TextEditing(const std::string& utf8Text, unsigned int start, unsigned int length) override;
 
-	bool ActionPressed(const Action& action, bool isRepeat);
-	bool ActionReleased(const Action& action);
 	/// synced actions (received from server) go in here
 	void ActionReceived(const Action& action, int playerID);
 
