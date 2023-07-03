@@ -2166,7 +2166,7 @@ bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool 
 
 	if (executor != nullptr) {
 		// an executor for that action was found
-		if (executor->ExecuteAction(UnsyncedAction(action, keyCode, isRepeat)))
+		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
 			return true;
 	}
 
