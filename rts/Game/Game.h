@@ -16,6 +16,8 @@
 #include "System/creg/creg_cond.h"
 #include "System/Misc/SpringTime.h"
 
+#include "Game/UI/KeyBindings.h"
+
 class LuaParser;
 class ILoadSaveHandler;
 class ChatMessage;
@@ -164,7 +166,7 @@ public:
 	spring_time lastUnsyncedUpdateTime;
 	spring_time skipLastDrawTime;
 
-	ActionList lastActionList;
+	CKeyBindings::KeyBindingList lastKeyBindingList;
 
 	float updateDeltaSeconds = 0.0f;
 	/// Time in seconds, stops at game end

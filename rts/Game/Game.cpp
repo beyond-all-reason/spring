@@ -1060,9 +1060,11 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
 	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
 
-	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+	lastKeyBindingList = keyBindings.GetKeyBindingList(curKeyCodeChain, curScanCodeChain);
 
-	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
+	ActionList convertedActionList = CKeyBindings::KeyBindingListToActionList(lastKeyBindingList);
+
+	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, convertedActionList))
 		return 0;
 
 	if (luaInputReceiver->KeyPressed(keyCode, scanCode, isRepeat))
@@ -1076,7 +1078,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	}
 
 	// try our list of actions
-	for (const Action& action: lastActionList) {
+	for (const Action& action: convertedActionList) {
 		if (unsyncedGameCommands->ActionPressed(action, isRepeat)) {
 			return 0;
 		}
@@ -1084,13 +1086,13 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	// maybe a widget is interested?
 	if (luaUI != nullptr) {
-		for (const Action& action: lastActionList) {
+		for (const Action& action: convertedActionList) {
 			luaUI->GotChatMsg(action.rawline, false);
 		}
 	}
 
 	if (luaMenu != nullptr) {
-		for (const Action& action: lastActionList) {
+		for (const Action& action: convertedActionList) {
 			luaMenu->GotChatMsg(action.rawline, false);
 		}
 	}
@@ -1105,7 +1107,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 		return 0;
 
 	// update actionlist for lua consumer
-	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+	lastKeyBindingList = keyBindings.GetKeyBindingList(keyCode, scanCode);
 
 	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
 		return 0;
@@ -1117,7 +1119,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 		}
 	}
 
-	for (const Action& action: lastActionList) {
+	for (const Action& action: CKeyBindings::KeyBindingListToActionList(lastKeyBindingList)) {
 		if (unsyncedGameCommands->ActionReleased(action))
 			return 0;
 	}
