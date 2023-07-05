@@ -62,8 +62,8 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 	if (projectileSpeed == 0.0f)
 		return true;
 
-	float3 launchDir = CalcWantedDir(tgtPos - srcPos);
-	float3 targetVec = (tgtPos - srcPos) * XZVector;
+	float3 launchDir = CalcWantedDir(tgtPos - weaponMuzzlePos);
+	float3 targetVec = (tgtPos - weaponMuzzlePos) * XZVector;
 
 	if (launchDir.SqLength() == 0.0f)
 		return false;
@@ -71,17 +71,15 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 		return true;
 
 	// pick launchDir[0] if .x != 0, otherwise launchDir[2]
-	const unsigned int dirIdx = 2 - 2 * (launchDir.x != 0.0f);
 
 	const float xzTargetDist = targetVec.LengthNormalize();
-	const float xzCoeffRatio = targetVec[dirIdx] / launchDir[dirIdx];
 
-	// targetVec is normalized in the xz-plane while launchDir is xyz
-	// therefore the linear parabolic coefficient has to be scaled by
-	// their ratio or tested heights will fall short of those reached
-	// by projectiles
-	const float linCoeff = launchDir.y * xzCoeffRatio;
-	const float qdrCoeff = (gravity * 0.5f) / (projectileSpeed * projectileSpeed);
+	// linear parabolic coefficient is the ratio of vertical velocity to horizontal velocity, with slight adjustment due to acceleration being applied in discrete steps.
+	// quadratic parabolic coefficient is the ratio of gravity to (horizontal velocity)^2
+	const float projectileSpeedHorizontal = projectileSpeed * launchDir.Length2D();
+	const float projectileSpeedVertical = projectileSpeed * launchDir.y;
+	const float linCoeff = (projectileSpeedVertical + (gravity * 0.5f) ) / projectileSpeedHorizontal; //(gravity * 0.5f) is factor due to discrete acceleration steps
+	const float qdrCoeff = (gravity * 0.5f) / (projectileSpeedHorizontal * projectileSpeedHorizontal);
 
 	// CGround::SimTrajectoryGroundColDist(weaponMuzzlePos, launchDir, UpVector * gravity, {projectileSpeed, xzTargetDist - 10.0f})
 	const float groundDist = ((avoidFlags & Collision::NOGROUND) == 0)?
@@ -93,7 +91,7 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 		return false;
 
 	// TODO: add a forcedUserTarget mode (enabled with meta key e.g.) and skip this test accordingly
-	return (!TraceRay::TestTrajectoryCone(srcPos, targetVec, xzTargetDist, linCoeff, qdrCoeff, angleSpread, owner->allyteam, avoidFlags, owner));
+	return (!TraceRay::TestTrajectoryCone(weaponMuzzlePos, targetVec, xzTargetDist, linCoeff, qdrCoeff, angleSpread, owner->allyteam, avoidFlags, owner));
 }
 
 void CCannon::FireImpl(const bool scriptCall)
