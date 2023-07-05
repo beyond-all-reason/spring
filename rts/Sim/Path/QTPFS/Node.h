@@ -42,53 +42,36 @@ namespace QTPFS {
 
 		unsigned int GetIndex() const { return index; }
 
-		// ~QTNode() = default;
-		//  {
-		// 	if (childBaseIndex == -1u) {
-		// 		netpoints.~vector();
-		// 	}
-		// 	else {
-		// 		moveCosts.~vector();
-		// 	}
-		// }
-		~QTNode() {
-			moveCosts.~vector();
-		}
-
-		// QTNode() = default;
-		QTNode()
-			: moveCosts()
-		{
-			assert(moveCostAvg == -1.0f);
-		}
+		~QTNode() = default;
+		QTNode() = default;
 		QTNode(const QTNode& n) = delete;
-		// QTNode(QTNode&& n) = default;
-		QTNode(QTNode&& n) {
-			*this = std::move(n);
-		}
+		QTNode(QTNode&& n) = default;
+		// QTNode(QTNode&& n) {
+		// 	*this = std::move(n);
+		// }
 
 		QTNode& operator = (const QTNode& n) = delete;
-		// QTNode& operator = (QTNode&& n) = default;
-		QTNode& operator = (QTNode&& n) {
-			this->nodeNumber = n.nodeNumber;
-			this->index = n.index;
-			this->_xmax = n._xmax;
-			this->_xmin = n._xmin;
-			this->_zmax = n._zmax;
-			this->_zmin = n._zmin;
+		QTNode& operator = (QTNode&& n) = default;
+		// QTNode& operator = (QTNode&& n) {
+		// 	this->nodeNumber = n.nodeNumber;
+		// 	this->index = n.index;
+		// 	this->_xmax = n._xmax;
+		// 	this->_xmin = n._xmin;
+		// 	this->_zmax = n._zmax;
+		// 	this->_zmin = n._zmin;
 			
-			this->neighbours = std::move(n.neighbours);
-			this->childBaseIndex = n.childBaseIndex;
-			// if (this->childBaseIndex == -1u) {
-			// 	this->moveCostAvg = n.moveCostAvg;
-			// 	this->netpoints = std::move(n.netpoints);
-			// } else {
-				this->referenceNodeIndex = n.referenceNodeIndex;
-				this->moveCosts = std::move(n.moveCosts);
-			// }
+		// 	this->neighbours = std::move(n.neighbours);
+		// 	this->childBaseIndex = n.childBaseIndex;
+		// 	// if (this->childBaseIndex == -1u) {
+		// 	// 	this->moveCostAvg = n.moveCostAvg;
+		// 	// 	this->netpoints = std::move(n.netpoints);
+		// 	// } else {
+		// 		this->referenceNodeIndex = n.referenceNodeIndex;
+		// 		this->moveCosts = std::move(n.moveCosts);
+		// 	// }
 
-			return *this;
-		}
+		// 	return *this;
+		// }
 
 		static void InitStatic();
 
@@ -107,7 +90,6 @@ namespace QTPFS {
 			uint32_t rootId = rootMask & nodeNumber;
 			uint32_t nodeId = ((~rootMask) & nodeNumber);
 			return rootId | ((nodeId << 2) + (i + 1));
-			// return (nodeNumber << 2) + (i + 1);
 		}
 		// unsigned int GetParentID() const { return ((nodeNumber - 1) >> 2); }
 
@@ -221,25 +203,27 @@ namespace QTPFS {
 			std::array<unsigned short, 4> points = {};
 		};
 
-		union {
-			float moveCostAvg = -1.0f;
-			unsigned int referenceNodeIndex; // reference for moveCosts calcs
-		};
-
-		// float moveCostAvg = -1.0f;
+		float moveCostAvg = -1.0f;
 
 		unsigned int childBaseIndex = -1u;
 		std::vector<int> neighbours;
+		std::vector<float2> netpoints;
 
-		union {
-			std::vector<float2> netpoints;
-			std::vector<float> moveCosts;
-		};
-		// std::vector<float> netpoints; // switch to loading floats individually
-
-		// imposes an additional int on size...
-		// std::variant<std::vector<float2>, std::vector<float>> x = std::vector<float2>();
+		/*
+		 * Component Node 16 bytes + 4
+		 * Component HierachalNode 4 bytes + 4
+		 * Component LeafNode 52 bytes + 4
+		 * Component CoarseLeafNode 52 bytes + 4
+		 */
 	};
+
+	struct CoarseLeafNode {
+		unsigned int referenceNodeIndex; // reference for moveCosts calcs
+		std::vector<int> neighbours;
+		std::vector<float> moveCosts;
+	};
+
+	struct NodeSearched {};
 
 	struct SearchNode {
 

@@ -669,54 +669,129 @@ void QTPFS::PathManager::UpdateNodeLayerHighRes(unsigned int layerNum, const SRe
 	}
 }
 
+static bool done = false;
+
 void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread) {
 	auto& nlQuadUpdateTracker = nodeLayersMapTrackers.quadTreeUpdatesTrackers[layerNum];
 	auto& queue = nlQuadUpdateTracker.damageQueue;
 	auto& map = nlQuadUpdateTracker.damageMap;
+	// if (layerNum != 2) return;
 
 	while (!queue.empty()) {
 		const int sectorId = queue.front();
 		assert(sectorId < map.size());
 
+		// if (done) break;
+		// done = true;
+
+		// LOG("%s", __func__);
+
 		if (map[sectorId] == true) {
+			// const int blockIdxX = (sectorId % nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+			// const int blockIdxY = (sectorId / nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+
+			// // TODO: get root node, do search from there, clear out flags for all blocks in root node's area
+			// // why bother with 16x16 blocks? just mark root nodes?
+
+			// SRectangle r = SRectangle
+			// 	( blockIdxX
+			// 	, blockIdxY
+			// 	, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
+			// 	, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+			// 	);
+
+			NodeLayer& nl = nodeLayers[layerNum];
+
 			const int blockIdxX = (sectorId % nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
 			const int blockIdxY = (sectorId / nodeLayersMapTrackers.width) * DAMAGE_MAP_BLOCK_SIZE;
+
+			const INode* rootNode = nl.GetRootNode(blockIdxX, blockIdxY);
+
 			SRectangle r = SRectangle
-				( blockIdxX
-				, blockIdxY
-				, blockIdxX + DAMAGE_MAP_BLOCK_SIZE
-				, blockIdxY + DAMAGE_MAP_BLOCK_SIZE
+				( rootNode->xmin()
+				, rootNode->zmin()
+				, rootNode->xmax()
+				, rootNode->zmax()
 				);
 
 			// New get function for node.
 
 			// TODO: Get Nodes and then split arrays for sub node analysis
 
+			std::vector<int> nodesToSearch;
+			auto scanLinkedNodes = [&nl, &nodesToSearch](QTPFS::NodeLayer::areaQueryResults& nodeData, SRectangle constraint) {
+				int linkedNodeCount = 0;
+				nodesToSearch.clear();
+				nodesToSearch.reserve(nodeData.openNodeCount);
+
+				const INode* curNode = nodeData.centralLeafNode;
+				nl.quadTreeRegistry.emplace<NodeSearched>(entt::entity(curNode->GetIndex()));
+				bool nodeToReview = false;
+				do {
+					linkedNodeCount++;
+					assert(!curNode->AllSquaresImpassable());
+					auto& neighbours = curNode->GetNeighbors();
+					// blocked nodes are no longer neighbours to open nodes
+					for (auto n : neighbours) {
+						bool isOpenNode = !nl.quadTreeRegistry.all_of<NodeSearched>(entt::entity(n));
+						if (isOpenNode) {
+							nl.quadTreeRegistry.emplace<NodeSearched>(entt::entity(n));
+							nodesToSearch.emplace_back(n);
+						}
+					}
+					nodeToReview = false;
+					while (!nodesToSearch.empty()) {
+						curNode = nl.GetPoolNode( nodesToSearch.back() );
+						nodesToSearch.pop_back();
+
+						// TODO node to rectangle???
+						SRectangle nodeArea( curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax() );
+						if (constraint.Inside(nodeArea)) { nodeToReview = true; break; }
+					}
+				} while (nodeToReview);
+
+				nl.quadTreeRegistry.clear<NodeSearched>();
+
+				return linkedNodeCount;
+			};
+
 			// Go and setup the Hierachy Nodes
 			std::function<void(SRectangle r)> setupCoarseNodes;
-			setupCoarseNodes = [this, layerNum](SRectangle r){
+			setupCoarseNodes = [this, layerNum, &setupCoarseNodes, &scanLinkedNodes](SRectangle r){
 				// TODO: encasing node is needed - not the rectangle
 				auto nodeData = nodeLayers[layerNum].GetDataForArea(r);
+				//lastQueryResults = nodeData;
 
-				// 2+ closed nodes can potnetially cause multiple islands in a node
-				bool review = (nodeData.openNodeCount > 0 && nodeData.closedNodeCount > 1);
+				// LOG("%s: open %d closed %d, score %x, bestLeaf %d", "setupCoarseNodes"
+				// 	, nodeData.openNodeCount, nodeData.closedNodeCount
+				// 	, (int)(nodeData.bestNodeScore>>32), nodeData.centralLeafNode ? nodeData.centralLeafNode->GetIndex() : -1);
+
+				// 2+ closed nodes can potentially cause multiple islands in a node
+				bool review = (nodeData.openNodeCount > 1 && nodeData.closedNodeCount > 1);
 				bool stop = (nodeData.openNodeCount == 0);
-				bool select = !review && !stop;
+				bool select = !review & !stop;
 				bool refine = false;
 
 				if (stop) return;
 
 				if (review) {
+					int linkedOpenNodes = scanLinkedNodes(nodeData, r);
 					// 1 island
-					select = true;
+					select = ( linkedOpenNodes == nodeData.openNodeCount );
 
 					// 2+ islands
-					refine = true;
+					refine = !select;
 				}
 
 				if (select) {
-					// add to list?
-					// mark node .
+					// TODO: this should be passed down sensibly rather than searched each time
+					entt::registry& qtRegistry = nodeLayers[layerNum].quadTreeRegistry;
+					INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
+					entt::entity coarseLeafNodeEntity = entt::entity(containingNode->GetIndex());
+					CoarseLeafNode& coarseLeafNode = qtRegistry.get_or_emplace<CoarseLeafNode>(coarseLeafNodeEntity);
+					coarseLeafNode.referenceNodeIndex = nodeData.centralLeafNode->GetIndex();
+
+					// LOG("Select node %d (%d)", containingNode->GetIndex(), entt::to_integral(coarseLeafNodeEntity));
 				}
 
 				if (refine) {
@@ -725,13 +800,26 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 
 					// Note: maybe get counts here to eliminate bad quads
 					// .
+					const int quadrants = 4;
+					const int width = r.GetWidth() >> 1;
+					const int2 offs[quadrants] = {{0,0},{1,0},{0,1},{1,1}};
+
+					for (int i = 0; i<quadrants; ++i) {
+						const int minx = r.x1 + offs[i].x * width;
+						const int minz = r.z1 + offs[i].y * width;
+						SRectangle sr(minx, minz, minx + width, minz + width);
+						setupCoarseNodes(sr);
+					};
 				}
 			};
 
 			// hierachy version of nodes
 			INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
+			// auto nodeData = nodeLayers[layerNum].GetDataForArea(r);
+			// lastQueryResults = nodeData;
 
 			// Go do awesome.
+			setupCoarseNodes(r);
 
 
 			if (containingNode->xsize() > 16) {

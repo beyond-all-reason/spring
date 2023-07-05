@@ -86,6 +86,9 @@ namespace QTPFS {
 		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
+		// TODO: temporary var - remove later
+		QTPFS::NodeLayer::areaQueryResults lastQueryResults;
+
 	private:
 		void MapChanged(int x1, int z1, int x2, int z2);
 

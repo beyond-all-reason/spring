@@ -220,43 +220,50 @@ QTPFS::NodeLayer::areaQueryResults QTPFS::NodeLayer::GetDataForArea(const SRecta
 	int2 centre(xcentre, zcentre);
 
 	areaQueryResults areaQueryResults;
+	areaQueryResults.bestNodeScore = std::numeric_limits<uint64_t>::max();
+	areaQueryResults.centralLeafNode = nullptr;
 
-	const int rootNodeId = (xmin / rootXsize) + (zmin / rootZsize)*rootXsize;
+	const int rootNodeId = (xmin / rootNodeSize) + (zmin / rootNodeSize)*xRootNodes;
 
 	// call expects area to reside in a single root node.
-	assert( rootNodeId == (xmax / rootXsize) + (zmax / rootZsize)*rootXsize );
+	assert( rootNodeId == ((xmax - 1) / rootNodeSize) + ((zmax - 1) / rootNodeSize)*xRootNodes );
 	assert(rootNodeSize*rootNodeSize*2 < (uint32_t)(-1)>>2);
+	assert( rootNodeId < xRootNodes*zRootNodes );
 
 	auto getNodeScore = [centre](const INode* curNode) -> uint64_t {
 		int2 midRef(curNode->xmid(), curNode->zmid());
 		int midDist = centre.distanceSq(midRef);
-		int closePointDist = midDist;
+		int closestPointDist = midDist;
 		int bestIndex = 0;
 		for (int i = 0; i < 4; ++i) {
 			int2 ref(curNode->point(cornerPoints[i].x), curNode->point(cornerPoints[i].y));
 			int dist = centre.distanceSq(ref);
-			if (dist < closePointDist) {
-				closePointDist = dist;
+			if (dist < closestPointDist) {
+				closestPointDist = dist;
 				bestIndex = i;
 			}
 		}
-		return ((uint64_t)closePointDist << 32) + ((uint64_t)midDist << 2) + (uint64_t)bestIndex;
+		return ((uint64_t)closestPointDist << 32) + ((uint64_t)midDist << 2) + (uint64_t)bestIndex;
 	};
 
-	std::function<void(const INode*)> searchFunction;
-	searchFunction = [this, &areaQueryResults, searchFunction, getNodeScore, xmin, xmax, zmin, zmax](const INode* curNode) {
+	std::function<int(const INode*)> searchFunction;
+	searchFunction = [this, &areaQueryResults, &searchFunction, getNodeScore, xmin, xmax, zmin, zmax](const INode* curNode) -> int {
 		if (curNode->IsLeaf()) {
 			// smallestNode = std::min(curNode->xsize(), smallestNode);
-			areaQueryResults.closedNodeCount += curNode->AllSquaresImpassable();
-			areaQueryResults.openNodeCount += !curNode->AllSquaresImpassable();
+			bool nodeOpen = !curNode->AllSquaresImpassable();
+
+			areaQueryResults.closedNodeCount += !nodeOpen;
+			areaQueryResults.openNodeCount += nodeOpen;
 
 			// use node corner closest to centre point.
-			uint64_t curNodeScore = getNodeScore(curNode);
-			if (curNodeScore > areaQueryResults.bestNodeScore) {
-				areaQueryResults.bestNodeScore = curNodeScore;
-				areaQueryResults.centralLeafNode = curNode;
+			if (nodeOpen) {
+				uint64_t curNodeScore = getNodeScore(curNode);
+				if (curNodeScore < areaQueryResults.bestNodeScore) {
+					areaQueryResults.bestNodeScore = curNodeScore;
+					areaQueryResults.centralLeafNode = curNode;
+				}
 			}
-			return;
+			return 0;
 		}
 
 		for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
@@ -270,7 +277,12 @@ QTPFS::NodeLayer::areaQueryResults QTPFS::NodeLayer::GetDataForArea(const SRecta
 
 			searchFunction(childNode);
 		}
+		return 0;
 	};
+
+	searchFunction(GetPoolNode(rootNodeId));
+
+	return areaQueryResults;
 }
 
 
@@ -448,14 +460,13 @@ void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vecto
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
 	INode* selectedNode = nullptr;
-	INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
-	int length = curNode->xsize(); // width/height is forced to be the same.
-	// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
-	// int ix = (x / length) + (int(x % length > 0));
+	// INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+	// int length = curNode->xsize(); // width/height is forced to be the same.
+	int length = rootNodeSize;
 	int iz = (areaToEncase.z1 / length) * xRootNodes;
 	int ix = (areaToEncase.x1 / length);
 	int i = iz + ix;
-	curNode = GetPoolNode(i);
+	INode* curNode = GetPoolNode(i);
 
 	while (curNode->RectIsInside(areaToEncase)) {
 		selectedNode = curNode;
@@ -467,6 +478,33 @@ QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangl
 		int nextIndex = curNode->GetChildBaseIndex() + offset;
 		curNode = GetPoolNode(nextIndex);
 	}
+	assert(selectedNode != nullptr);
+	return selectedNode;
+}
+
+QTPFS::INode* QTPFS::NodeLayer::GetCoarseNodeThatEncasesArea(const SRectangle& areaToEncase) {
+	INode* selectedNode = nullptr;
+	INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+	int length = curNode->xsize(); // width/height is forced to be the same.
+	int iz = (areaToEncase.z1 / length) * xRootNodes;
+	int ix = (areaToEncase.x1 / length);
+	int i = iz + ix;
+	curNode = GetPoolNode(i);
+
+	// while (curNode->RectIsInside(areaToEncase)) {
+		selectedNode = curNode;
+	// 	if (curNode->IsLeaf()) { break; }
+
+	// 	entt::entity nodeEntity = entt::entity(curNode->GetIndex());
+	// 	bool isCoarseLeafNode = quadTreeRegistry.all_of<CoarseLeafNode>(nodeEntity);
+	// 	if (isCoarseLeafNode) { break; }
+		
+	// 	bool isRight = areaToEncase.x1 >= curNode->xmid();
+	// 	bool isDown = areaToEncase.z1 >= curNode->zmid();
+	// 	int offset = 1*(isRight) + 2*(isDown);
+	// 	int nextIndex = curNode->GetChildBaseIndex() + offset;
+	// 	curNode = GetPoolNode(nextIndex);
+	// }
 	assert(selectedNode != nullptr);
 	return selectedNode;
 }

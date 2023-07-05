@@ -44,16 +44,8 @@ namespace QTPFS {
 
 		bool UpdateCoarse(UpdateThreadData& threadData);
 
-		// void ExecNodeNeighborCacheUpdate(unsigned int currFrameNum, unsigned int currMagicNum);
-		// void ExecNodeNeighborCacheUpdates(const SRectangle& ur, unsigned int currMagicNum);
-
 		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData);
-
 		float GetNodeRatio() const { return (numLeafNodes / std::max(1.0f, float(xsize * zsize))); }
-		// const INode* GetNode(unsigned int x, unsigned int z) const { return nodeGrid[z * xsize + x]; }
-		    //   INode* GetNode(unsigned int x, unsigned int z)       { return nodeGrid[z * xsize + x]; }
-		// const INode* GetNode(unsigned int i) const { return nodeGrid[i]; }
-		//       INode* GetNode(unsigned int i)       { return nodeGrid[i]; }
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
 			ZoneScoped;
@@ -117,6 +109,9 @@ namespace QTPFS {
 
 			// LOG("%s: [%p] alloc'ed id=%d", __func__, &poolNodes, idx);
 
+			entt::entity entity = quadTreeRegistry.create(entt::entity(idx));
+			assert(entt::to_integral(entity) == idx);
+
 			return idx;
 		}
 
@@ -127,6 +122,8 @@ namespace QTPFS {
 			nodeIndcs.push_back(nodeIndex);
 			auto* curNode = GetPoolNode(nodeIndex);
 			curNode->DeactivateNode();
+
+			quadTreeRegistry.destroy(entt::entity(nodeIndex));
 		}
 
 
@@ -187,6 +184,7 @@ namespace QTPFS {
 
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
+		INode* GetCoarseNodeThatEncasesArea(const SRectangle& areaToEncase);
 
 		struct areaQueryResults {
 			int openNodeCount = 0;
@@ -218,6 +216,14 @@ public:
 		void SetRootMask(uint32_t newMask) { rootMask = newMask; }
 		uint32_t GetRootMask() const { return rootMask; }
 
+		QTNode* GetRootNode(int x, int z) {
+			int iz = (z / rootNodeSize) * xRootNodes;
+			int ix = (x / rootNodeSize);
+			int i = iz + ix;
+
+			return GetPoolNode(i);
+		}
+
 public:
 
 		// NOTE:
@@ -240,14 +246,17 @@ private:
 		int32_t rootNodeSize = 0;
 		uint32_t rootMask = 0;
 
-		unsigned int rootXsize = 0;
-		unsigned int rootZsize = 0;
+		// unsigned int rootXsize = 0;
+		// unsigned int rootZsize = 0;
 
 		unsigned int xsize = 0;
 		unsigned int zsize = 0;
 
 		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
+
+public:
+		entt::registry quadTreeRegistry; // per layer quad tree ECS registry
 	};
 }
 
