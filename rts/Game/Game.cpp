@@ -100,6 +100,7 @@
 #include "UI/InfoConsole.h"
 #include "UI/KeyBindings.h"
 #include "UI/MiniMap.h"
+#include "UI/MouseBindings.h"
 #include "UI/MouseHandler.h"
 #include "UI/ResourceBar.h"
 #include "UI/SelectionKeyHandler.h"
@@ -724,6 +725,8 @@ void CGame::LoadInterface()
 	// interface components
 	cmdColors.LoadConfigFromFile("cmdcolors.txt");
 
+	mouseBindings.Init();
+	
 	keyBindings.Init();
 	keyBindings.LoadDefaults();
 	keyBindings.Load();

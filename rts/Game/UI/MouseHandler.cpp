@@ -33,11 +33,13 @@
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/FastMath.h"
+#include "System/Misc/SpringTime.h"
 #include "System/SpringMath.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
+#include "Game/UnsyncedGameCommands.h"
 
 #include <algorithm>
 
@@ -123,6 +125,9 @@ void CMouseHandler::InitStatic()
 
 	mouseInput = IMouseInput::GetInstance(configHandler->GetBool("MouseRelativeModeWarp"));
 	mouse = new CMouseHandler();
+
+	for (int i = 1; i <= NUM_BUTTONS; i++)
+		mouse->actionOwner[i] = 0;
 }
 
 void CMouseHandler::KillStatic()
@@ -269,6 +274,15 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	if (game != nullptr && !game->IsGameOver())
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mousePixels += movedPixels;
 
+	for (int i = 1; i <= NUM_BUTTONS; i++) {
+		if (actionOwner[i] == 1)
+			luaInputReceiver->MouseMove(x, lasty, dx, dy, i);
+		else if (actionOwner[i] == 2)
+			unsyncedGameCommands->ActionPressed(lastActionPressed[i], true);
+	}
+
+	return;
+
 	if (activeReceiver != nullptr)
 		activeReceiver->MouseMove(x, lasty, dx, dy, activeButtonIdx);
 
@@ -282,6 +296,73 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	}
 }
 
+
+
+// bool CandidatePassesFilter(std::vector<CMouseBindings::MousePress>& candidate) {
+bool CMouseHandler::CandidatePassesFilter(CMouseBindings::MouseBinding& candidate) {
+	if (candidate.pressChain.size() < mouseChainCache.size()) {
+		if (mouseBindings.GetDebugEnabled())
+			LOG("[MouseHandler] Candidate too small to pass filter!");
+		return false;
+	}
+
+	for (int i = 0; i < mouseChainCache.size(); i++) {
+		if (candidate.pressChain[i].modifiers.raw != mouseChainCache[i].modifiers.raw || candidate.pressChain[i].mouseButton != mouseChainCache[i].mouseButton) {
+			if (mouseBindings.GetDebugEnabled())
+				LOG("[MouseHandler] Candidate %s did not match modifiers (%i vs %i) or button (%i vs %i) at index %i!", candidate.rawChain.c_str(), candidate.pressChain[i].modifiers.raw, mouseChainCache[i].modifiers.raw, candidate.pressChain[i].mouseButton, mouseChainCache[i].mouseButton, i);
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+void CMouseHandler::FilterCandidateBindings() {
+	int countRemoved = 0;
+    for (int i = 0; i < candidateBindings.size(); i++) {
+        if (CandidatePassesFilter(candidateBindings[i])) {
+			candidateBindings[i - countRemoved] = candidateBindings[i];
+			if (mouseBindings.GetDebugEnabled())
+				LOG("[MouseHandler] Moved candidate %s from %i to %i, candidate now at new position: %s", candidateBindings[i].rawChain.c_str(), i, i - countRemoved, candidateBindings[i - countRemoved].rawChain.c_str());
+		} else {
+			if (mouseBindings.GetDebugEnabled())
+				LOG("[MouseHandler] Removing candidate %s", candidateBindings[i - countRemoved].rawChain.c_str());
+			countRemoved++;
+		}
+		// std::move(candidateBindings.begin() + i, candidateBindings.begin() + i - countRemoved);
+	}
+	candidateBindings.resize(candidateBindings.size() - countRemoved);
+}
+bool CMouseHandler::AllCandidatesEqualCacheLength() {
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler::AllCandidatesEqualCacheLength] mouseChainCache.size(): %i", (int) mouseChainCache.size());
+	for (auto candidate : candidateBindings) {
+		if (mouseBindings.GetDebugEnabled())
+			LOG("[MouseHandler::AllCandidatesEqualCacheLength] candidate.rawChain: %s, candidate.pressChain.size(): %i", candidate.rawChain.c_str(), (int) candidate.pressChain.size());
+		if (candidate.pressChain.size() != mouseChainCache.size())
+			return false;
+	}
+	return true;
+}
+
+bool CMouseHandler::TryBinding(CMouseBindings::MouseBinding& binding) {
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler] Trying action %s, extra: %s!", binding.action.command.c_str(), binding.action.extra.c_str());
+	
+	if (unsyncedGameCommands->ActionPressed(binding.action, false)) {
+		const int mouseButton = binding.pressChain[binding.pressChain.size() - 1].mouseButton;
+
+		lastActionPressed[mouseButton] = binding.action;
+		actionOwner[mouseButton] == 2;
+
+		if (mouseBindings.GetDebugEnabled())
+			LOG("[MouseHandler] Action received!");
+
+		return true;
+	} else {
+		return false;
+	}
+}
 
 void CMouseHandler::MousePress(int x, int y, int button)
 {
@@ -303,6 +384,77 @@ void CMouseHandler::MousePress(int x, int y, int button)
 	bp.camPos   = camera->GetPos();
 	bp.dir      = (dir = GetCursorCameraDir(x, y));
 	bp.movement = 0;
+
+	lastPressTimer = spring_now();
+
+	if (actionOwner[button] == 1) {
+		luaInputReceiver->MouseRelease(x, y, button);
+	} else if (actionOwner[button] == 2) {
+		unsyncedGameCommands->ActionReleased(lastActionPressed[button]);
+	}
+	actionOwner[button] = 0;
+
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler] Mouse button %i pressed at %i, %i", button, x, y);
+
+	if (luaInputReceiver->MousePress(x, y, button)) {
+		actionOwner[button] = 1;
+		mouseChainCache.clear();
+		candidateBindings = mouseBindings.GetBindingList();
+		return;
+	}
+
+	if (mouseChainCache.empty())
+		candidateBindings = mouseBindings.GetBindingList();
+
+	mouseChainCache.push_back(CMouseBindings::MousePress(
+		CMouseBindings::BindingModifiers(
+			KeyInput::GetKeyModState(KMOD_ALT),
+			KeyInput::GetKeyModState(KMOD_CTRL),
+			KeyInput::GetKeyModState(KMOD_GUI),
+			KeyInput::GetKeyModState(KMOD_SHIFT),
+			false
+		),
+		button
+	));
+
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler] %i entries in the mouseChainCache", (int) mouseChainCache.size());
+
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler] %i candidates before filter!", (int) candidateBindings.size());
+
+	FilterCandidateBindings();
+
+	if (mouseBindings.GetDebugEnabled())
+		LOG("[MouseHandler] %i candidates after filter!", (int) candidateBindings.size());
+
+	while (candidateBindings.size() == 0 && mouseChainCache.size() > 0) {
+		if (mouseBindings.GetDebugEnabled()) 
+			LOG("[MouseHandler] No candidates, trimming cache!");	
+		mouseChainCache.erase(mouseChainCache.begin());
+		candidateBindings = mouseBindings.GetBindingList();
+		FilterCandidateBindings();
+	}
+
+	if (mouseChainCache.size() == 0) {
+		if (mouseBindings.GetDebugEnabled()) {
+			LOG("[MouseHandler] Cache flushed!");
+		}
+		return;
+	}
+
+	if (AllCandidatesEqualCacheLength()) {
+		for (auto candidate	: candidateBindings) {
+			if (TryBinding(candidate)) {
+				mouseChainCache.clear();
+				candidateBindings = mouseBindings.GetBindingList();
+				return;
+			}
+		}
+	}
+
+	return;
 
 	if (activeReceiver != nullptr && activeReceiver->MousePress(x, y, button))
 		return;
@@ -460,6 +612,16 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 	dir = GetCursorCameraDir(x, y);
 
 	buttons[button].pressed = false;
+
+	if (actionOwner[button] == 1) {
+		luaInputReceiver->MouseRelease(x, y, button);
+	} else if (actionOwner[button] == 2) {
+		unsyncedGameCommands->ActionReleased(lastActionPressed[button]);
+	}
+
+	actionOwner[button] = 0;
+
+	return;
 
 	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode()) {
 		inMapDrawer->MouseRelease(x, y, button);
@@ -671,10 +833,27 @@ std::string CMouseHandler::GetCurrentTooltip() const
 	return "";
 }
 
-
 void CMouseHandler::Update()
 {
 	SetCursor(queuedCursorName);
+
+	if (!mouseChainCache.empty()) {
+		auto duration = spring_diffmsecs(spring_now(), lastPressTimer);
+		if (duration > 200) {
+			if (mouseBindings.GetDebugEnabled())
+				LOG("[MouseHandler] Binding timeout expired!");
+			for (auto candidate : candidateBindings) {
+				if (candidate.pressChain.size() == mouseChainCache.size()) {
+					if (TryBinding(candidate)) {
+						break;
+					}
+				}
+			}
+
+			candidateBindings = mouseBindings.GetBindingList();
+			mouseChainCache.clear();
+		}
+	}
 
 	if (!hideCursor) {
 		mouse->UpdateCursorCameraDir();
