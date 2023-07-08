@@ -79,26 +79,38 @@ struct SRectangle {
 
 	// TODO: version without return?
 
+	SRectangle operator / (int divisor) const {
+		return SRectangle(
+			x1 / divisor, z1 / divisor, x2 / divisor, z2 / divisor
+		);
+	}
+
 	SRectangle& operator += (const SRectangle& other) {
-		x1 + other.x1; x2 + other.x2;
-		z1 + other.z1; z2 + other.z2;
+		x1 += other.x1; x2 += other.x2;
+		z1 += other.z1; z2 += other.z2;
 		return *this;
 	}
 
 	SRectangle operator + (const SRectangle& other) const {
-		SRectangle ret(*this);
-		return ret += other;
+		// SRectangle ret(*this);
+		// return ret += other;
+		return SRectangle(
+			x1 + other.x1, z1 + other.z1, x2 + other.x2, z2 + other.z2
+		);
 	}
 
 	SRectangle& operator -= (const SRectangle& other) {
-		x1 - other.x1; x2 - other.x2;
-		z1 - other.z1; z2 - other.z2;
+		x1 -= other.x1; x2 -= other.x2;
+		z1 -= other.z1; z2 -= other.z2;
 		return *this;
 	}
 
 	SRectangle operator - (const SRectangle& other) const {
-		SRectangle ret(*this);
-		return ret -= other;
+		// SRectangle ret(*this);
+		// return ret -= other;
+		return SRectangle(
+			x1 - other.x1, z1 - other.z1, x2 - other.x2, z2 - other.z2
+		);
 	}
 
 	SRectangle& operator >>= (uint32_t shift) {
@@ -107,8 +119,11 @@ struct SRectangle {
 	}
 
 	SRectangle operator >> (uint32_t shift) const {
-		SRectangle ret(*this);
-		return ret >>= shift;
+		// SRectangle ret(*this);
+		// return ret >>= shift;
+		return SRectangle(
+			x1 >> shift, z1 >> shift, x2 >> shift, z2 >> shift
+		);
 	}
 
 	template<typename T>

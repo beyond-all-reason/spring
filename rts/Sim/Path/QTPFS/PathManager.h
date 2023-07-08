@@ -27,10 +27,11 @@ namespace QTPFS {
 			std::deque<int> damageQueue;
 		};
 		struct NodeLayersChangeTrack {
-			std::vector<MapChangeTrack> mapDamageTrackers;
-			std::vector<MapChangeTrack> quadTreeUpdatesTrackers;
+			std::vector<MapChangeTrack> mapChangeTrackers;
+			// std::vector<MapChangeTrack> quadTreeUpdatesTrackers;
 			int width = 0;
 			int height = 0;
+			int cellSize = 0;
 		};
 
 		PathManager();
@@ -81,7 +82,8 @@ namespace QTPFS {
 		// const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
 		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 
-		const NodeLayersChangeTrack& GetMapChangeTrack() const { return nodeLayersMapTrackers; };
+		const NodeLayersChangeTrack& GetMapDamageTrack() const { return nodeLayersMapDamageTrack; };
+		const NodeLayersChangeTrack& GetCoarseUpdateTrack() const { return nodeLayersCoarseMapUpdateTrack; };
 
 		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
@@ -178,7 +180,8 @@ namespace QTPFS {
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;
 
-		NodeLayersChangeTrack nodeLayersMapTrackers;
+		NodeLayersChangeTrack nodeLayersMapDamageTrack;
+		NodeLayersChangeTrack nodeLayersCoarseMapUpdateTrack;
 
 		int deadPathsToUpdatePerFrame = 1;
 		int recalcDeadPathUpdateRateOnFrame = 0;

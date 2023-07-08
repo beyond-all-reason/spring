@@ -3,7 +3,7 @@
 #ifndef QTPFS_NODELAYER_H_
 #define QTPFS_NODELAYER_H_
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <limits>
 #include <vector>
@@ -183,8 +183,8 @@ namespace QTPFS {
 		}
 
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
+		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
-		INode* GetCoarseNodeThatEncasesArea(const SRectangle& areaToEncase);
 
 		struct areaQueryResults {
 			int openNodeCount = 0;
@@ -220,6 +220,8 @@ public:
 			int iz = (z / rootNodeSize) * xRootNodes;
 			int ix = (x / rootNodeSize);
 			int i = iz + ix;
+
+			assert(i < numRootNodes);
 
 			return GetPoolNode(i);
 		}

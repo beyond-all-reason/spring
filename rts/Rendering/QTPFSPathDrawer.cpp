@@ -101,7 +101,7 @@ void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vec
 		bool isCoarse = nodeLayer.quadTreeRegistry.all_of<QTPFS::CoarseLeafNode>(entt::entity(node->GetIndex()));
 		if (isCoarse)
 			DrawNodeW(node, rb, &NODE_COLORS[2][0], (-2.f));
-		if (node->IsLeaf() && node->AllSquaresImpassable())
+		if (node->IsLeaf())// && node->AllSquaresImpassable())
 			DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
 	}
 
@@ -452,7 +452,7 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 
 void QTPFSPathDrawer::DrawInMiniMap()
 {
-	auto mct = pm->GetMapChangeTrack();
+	auto mct = pm->GetMapDamageTrack();
 
 	if (!IsEnabled() || (!gs->cheatEnabled && !gu->spectatingFullView))
 		return;
@@ -474,13 +474,12 @@ void QTPFSPathDrawer::DrawInMiniMap()
 
 	auto width = mct.width;
 	auto height = mct.height;
-	float maxStrength = mct.mapDamageTrackers.size();
+	float maxStrength = mct.mapChangeTrackers.size();
 
 	std::vector<float> mapDamageStrength;
 	mapDamageStrength.resize(width*height, 0.f);
 
-	// for (auto& track : mct.mapDamageTrackers) {
-	for (auto& track : mct.quadTreeUpdatesTrackers) {
+	for (auto& track : mct.mapChangeTrackers) {
 		for (auto mapQuad: track.damageQueue) {
 			assert(mapQuad < mapDamageStrength.size());
 			mapDamageStrength[mapQuad]++;

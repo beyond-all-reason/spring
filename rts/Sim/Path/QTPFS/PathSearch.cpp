@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <cassert>
 #include <limits>
@@ -79,6 +79,21 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 
 	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
 	INode* tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
+
+	// TODO: into function
+	if (tgtNode->AllSquaresImpassable()) {
+		// find nearest acceptable node because this will otherwise trigger a full walk off every pathable node.
+		INode* altTgtNode = nodeLayer->GetNearestNodeInArea
+			( SRectangle
+					( std::max(int(tgtNode->xmin()) - 16, 0)
+					, std::max(int(tgtNode->zmin()) - 16, 0)
+					, std::min(int(tgtNode->xmax()) + 16, mapDims.mapx)
+					, std::min(int(tgtNode->zmax()) + 16, mapDims.mapy)
+					)
+			, int2(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE)
+		);
+		tgtNode = (altTgtNode != nullptr) ? altTgtNode : tgtNode;
+	}
 
 	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
 	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
@@ -253,8 +268,9 @@ void QTPFS::PathSearch::IterateNodes() {
 		return;
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
-	if (curNode->AllSquaresImpassable()) // TODO: special case for first node
-		return;
+	// nodes don't link to impassible nodes so this can go.
+	// if (curNode->AllSquaresImpassable()) // TODO: special case for first node
+	// 	return;
 	// Check if this node has already been processed already
 	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
 		return;

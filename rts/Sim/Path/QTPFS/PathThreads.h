@@ -109,6 +109,7 @@ namespace QTPFS {
     typedef std::priority_queue<SearchQueueNode, std::vector<SearchQueueNode>, std::greater<SearchQueueNode>> SearchPriorityQueue;
 
 	struct SearchThreadData {
+        // std::vector<INode *> searchNodeResults;
 		SparseData<SearchNode> allSearchedNodes;
         SearchPriorityQueue openNodes;
 
@@ -121,6 +122,7 @@ namespace QTPFS {
 		void Init(size_t sparseSize, size_t denseSize) {
             allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
 			allSearchedNodes.Reset(sparseSize);
+            // searchNodeResults.reserve(100); // TODO: magic number
             ResetQueue();
 		}
 
