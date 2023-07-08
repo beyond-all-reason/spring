@@ -700,21 +700,6 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 			const int blockIdxX = (sectorId % nodeLayersCoarseMapUpdateTrack.width) * nodeLayersCoarseMapUpdateTrack.cellSize;
 			const int blockIdxY = (sectorId / nodeLayersCoarseMapUpdateTrack.width) * nodeLayersCoarseMapUpdateTrack.cellSize;
 
-			// const INode* rootNode = nl.GetRootNode(blockIdxX, blockIdxY);
-
-			// LOG("%s: sectorId=%d (%d,%d) cellSize=%d, rootNodeId=%d", __func__
-			// 		, sectorId
-			// 		, blockIdxX, blockIdxY
-			// 		, nodeLayersCoarseMapUpdateTrack.cellSize
-			// 		, rootNode->GetIndex());
-
-			// SRectangle r = SRectangle
-			// 	( rootNode->xmin()
-			// 	, rootNode->zmin()
-			// 	, rootNode->xmax()
-			// 	, rootNode->zmax()
-			// 	);
-
 			SRectangle r = SRectangle
 				( blockIdxX
 				, blockIdxY
@@ -824,30 +809,8 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 				}
 			};
 
-			// hierachy version of nodes
-			// INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
-			// auto nodeData = nodeLayers[layerNum].GetDataForArea(r);
-			// lastQueryResults = nodeData;
-
-			// Go do awesome.
 			setupCoarseNodes(r);
-
-
-			// if (containingNode->xsize() > 16) {
-			// 	const int minBlockX = containingNode->xmin() / DAMAGE_MAP_BLOCK_SIZE;
-			// 	const int minBlockY = containingNode->zmin() / DAMAGE_MAP_BLOCK_SIZE;
-			// 	const int maxBlockX = containingNode->xmax() / DAMAGE_MAP_BLOCK_SIZE;
-			// 	const int maxBlockY = containingNode->zmax() / DAMAGE_MAP_BLOCK_SIZE;
-
-			// 	for (int y = minBlockY; y < maxBlockY; y++) {
-			// 		for (int x = minBlockX; x < maxBlockX; x++) {
-			// 			int curSectorId = y * nodeLayersMapDamageTrack.width + x;
-			// 			map[curSectorId] = false;
-			// 		}
-			// 	}
-			// } else {
-				map[sectorId] = false;
-			// }
+			map[sectorId] = false;
 		}
 		queue.pop_front();
 	}

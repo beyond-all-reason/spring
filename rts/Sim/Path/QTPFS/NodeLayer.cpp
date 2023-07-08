@@ -38,7 +38,7 @@ float        QTPFS::NodeLayer::MAX_SPEEDMOD_VALUE;
 
 
 void QTPFS::NodeLayer::InitStatic() {
-	NUM_SPEEDMOD_BINS  = 1u;// std::max(  1u, mapInfo->pfs.qtpfs_constants.numSpeedModBins);
+	NUM_SPEEDMOD_BINS  = std::max(  1u, mapInfo->pfs.qtpfs_constants.numSpeedModBins);
 	MIN_SPEEDMOD_VALUE = std::max(0.0f, mapInfo->pfs.qtpfs_constants.minSpeedModVal);
 	MAX_SPEEDMOD_VALUE = std::min(8.0f, mapInfo->pfs.qtpfs_constants.maxSpeedModVal);
 
@@ -82,26 +82,12 @@ void QTPFS::NodeLayer::Clear() {
 bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
-	// unsigned int numNewBinSquares = 0;
 	unsigned int numClosedSquares = 0;
 	const SRectangle& r = threadData.areaUpdated;
 	const MoveDef* md = threadData.moveDef;
 
-	// const bool globalUpdate =
-	// 	((r.x1 == 0 && r.x2 == mapDims.mapx) &&
-	// 	 (r.z1 == 0 && r.z2 == mapDims.mapy));
-
-	// if (globalUpdate) {
-	// 	maxRelSpeedMod = 0.0f;
-	// 	avgRelSpeedMod = 0.0f;
-	// }
-
-	// threadData.curSpeedMods.resize(r.GetArea(), 0);
-	// threadData.curSpeedBins.resize(r.GetArea(), -1);
 	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
 
-	// auto &curSpeedMods = threadData.curSpeedMods;
-	// auto &curSpeedBins = threadData.curSpeedBins;
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
 
@@ -135,11 +121,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
 			const int chmz = Clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
-
-			// const float minSpeedMod = (luSpeedMods == nullptr)? CMoveMath::GetPosSpeedMod(*md, hmx, hmz): (*luSpeedMods)[recIdx];
-			// const   int maxBlockBit = (luBlockBits == nullptr)? CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr): (*luBlockBits)[recIdx];
 			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
-			// const   int maxBlockBit = CMoveMath::IsBlockedNoSpeedModCheck(*md, chmx, chmz, nullptr);
 			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
@@ -160,50 +142,16 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const float tmpAbsSpeedMod = Clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
 			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
 			const float newRelSpeedMod = Clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
-			// const float curRelSpeedMod = Clamp(curSpeedMods[sqrIdx] / float(MaxSpeedModTypeValue()), 0.0f, 1.0f);
 			#undef NL
 
 			const SpeedBinType newSpeedModBin = GetSpeedModBin(newAbsSpeedMod, newRelSpeedMod);
-			// const SpeedBinType curSpeedModBin = curSpeedBins[sqrIdx];
-
-			// numNewBinSquares += int(newSpeedModBin != curSpeedModBin);
 			numClosedSquares += int(newSpeedModBin == QTPFS::NodeLayer::NUM_SPEEDMOD_BINS);
 
 			// need to keep track of these for Tesselate
-			// oldSpeedMods[sqrIdx] = curRelSpeedMod * float(MaxSpeedModTypeValue());
 			curSpeedMods[recIdx] = newRelSpeedMod * float(MaxSpeedModTypeValue());
-
-			// oldSpeedBins[sqrIdx] = curSpeedModBin;
 			curSpeedBins[recIdx] = newSpeedModBin;
-
-			// if (globalUpdate && newRelSpeedMod > 0.0f) {
-			// 	// only count open squares toward the maximum and average
-			// 	maxRelSpeedMod  = std::max(maxRelSpeedMod, newRelSpeedMod);
-			// 	avgRelSpeedMod += newRelSpeedMod;
-			// }
 		}
 	}
-
-	// if at least one open square, set the new average
-	// if (globalUpdate && maxRelSpeedMod > 0.0f)
-	// 	avgRelSpeedMod /= ((xsize * zsize) - numClosedSquares);
-
-	// if at least one square changed bin, we need to re-tesselate
-	// all nodes in the subtree of the deepest-level node that fully
-	// contains <r>
-	//
-	// during initialization of the root this is true for ALL squares,
-	// but we might NOT need to split it (ex. if the map is 100% flat)
-	// if each square happened to change to the SAME bin
-	//
-	return true; //(numNewBinSquares > 0);
-}
-
-bool QTPFS::NodeLayer::UpdateCoarse(UpdateThreadData& threadData) {
-	// Go and setup the Hierachy Nodes
-	// get root node
-	// request
-	// open count/closed count
 
 	return true;
 }
@@ -336,17 +284,9 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 		}
 	});
 
-	// if (GetNodelayer() == 2) {
-	// 	LOG("Search Area [%d,%d:%d,%d]", searchArea.x1, searchArea.z1, searchArea.x2, searchArea.z2);
-	// }
-
 	// now update the selected nodes
 	std::for_each(selectedNodes.begin(), selectedNodes.end(), [this, &threadData](INode* curNode){
-		// const int xmin = std::max((int)curNode->xmin() - 1, 0), xmax = std::min((int)curNode->xmax() + 1, mapDims.mapx);
-		// const int zmin = std::max((int)curNode->zmin() - 1, 0), zmax = std::min((int)curNode->zmax() + 1, mapDims.mapy);
-		// curNode->SetMagicNumber(currMagicNum);
 		curNode->UpdateNeighborCache(*this, threadData);
-		// UpdateNeighborCache(curNode, 0xfff);
 	});
 }
 

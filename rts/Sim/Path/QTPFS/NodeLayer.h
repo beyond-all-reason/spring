@@ -42,8 +42,6 @@ namespace QTPFS {
 
 		bool Update(UpdateThreadData& threadData);
 
-		bool UpdateCoarse(UpdateThreadData& threadData);
-
 		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData);
 		float GetNodeRatio() const { return (numLeafNodes / std::max(1.0f, float(xsize * zsize))); }
 

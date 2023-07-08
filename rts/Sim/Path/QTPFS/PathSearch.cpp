@@ -50,22 +50,6 @@ void QTPFS::PathSearch::Initialize(
 	assert(srcPoint.z / SQUARE_SIZE < mapDims.mapy);
 
 	pathSearchHash = GenerateHash(srcNode, tgtNode);
-
-	// curNode = nullptr;
-	// nxtNode = nullptr;
-	// minNode = srcNode;
-
-	// LOG("%s: index %d gives node with index %d", __func__
-	// 	, (srcPoint.z / SQUARE_SIZE) * nodeLayer->xsize + (srcPoint.x / SQUARE_SIZE)
-	// 	, srcNode->GetIndex()
-	// 	);
-
-	// LOG("%s: sparse(%d) dense(%d) [%d]->[%d]", __func__
-	// 		, (int)searchThreadData->allSearchedNodes.sparseIndex.size()
-	// 		, (int)searchThreadData->allSearchedNodes.denseData.size()
-	// 		, srcNode->GetIndex()
-	// 		, searchThreadData->allSearchedNodes.sparseIndex[srcNode->GetIndex()]
-	// 		);
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -80,9 +64,8 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
 	INode* tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
 
-	// TODO: into function
 	if (tgtNode->AllSquaresImpassable()) {
-		// find nearest acceptable node because this will otherwise trigger a full walk off every pathable node.
+		// find nearest acceptable node because this will otherwise trigger a full walk of every pathable node.
 		INode* altTgtNode = nodeLayer->GetNearestNodeInArea
 			( SRectangle
 					( std::max(int(tgtNode->xmin()) - 16, 0)
