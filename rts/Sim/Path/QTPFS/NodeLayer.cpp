@@ -274,12 +274,29 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 		SRectangle nodeArea(curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax());
 		nodeArea.ClampIn(r);
 		int width = r.GetWidth();
+		int zlast = nodeArea.z2 - 1;
 		for (int z = nodeArea.z1; z < nodeArea.z2; ++z) {
 			int zoff = (z - r.z1) * width;
-			for (int x = nodeArea.x1; x < nodeArea.x2; ++x) {
-				unsigned int index = zoff + (x - r.x1);
-				assert(index < threadData.relinkNodeGrid.size());
-				threadData.relinkNodeGrid[index] = curNode;
+			if (z == nodeArea.z1 || z == zlast){
+				for (int x = nodeArea.x1; x < nodeArea.x2; ++x) {
+					unsigned int index = zoff + (x - r.x1);
+					assert(index < threadData.relinkNodeGrid.size());
+					threadData.relinkNodeGrid[index] = curNode;
+				}
+			} else {
+				// only fill edges, inner body is never consulted.
+				{
+					int x = nodeArea.x1;
+					unsigned int index = zoff + (x - r.x1);
+					assert(index < threadData.relinkNodeGrid.size());
+					threadData.relinkNodeGrid[index] = curNode;
+				}
+				{
+					int x = nodeArea.x2 - 1;
+					unsigned int index = zoff + (x - r.x1);
+					assert(index < threadData.relinkNodeGrid.size());
+					threadData.relinkNodeGrid[index] = curNode;
+				}
 			}
 		}
 	});

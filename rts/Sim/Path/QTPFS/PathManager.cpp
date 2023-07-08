@@ -685,7 +685,6 @@ void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int curren
 	auto& nlQuadUpdateTracker = nodeLayersCoarseMapUpdateTrack.mapChangeTrackers[layerNum];
 	auto& queue = nlQuadUpdateTracker.damageQueue;
 	auto& map = nlQuadUpdateTracker.damageMap;
-	// if (layerNum != 2) return;
 
 	while (!queue.empty()) {
 		const int sectorId = queue.front();
