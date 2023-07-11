@@ -142,9 +142,7 @@ inline static bool TestTrajectoryConeHelper(
 	}
 
 	if (globalRendering->drawDebugTraceRay) {
-		// FIXME? seems to under-estimate gravity near edge of range
-		// (place objects along trajectory of a cannon to visualize)
-		// Should be fixed now?
+
 		#define go geometricObjects
 
 		if (ret) {
@@ -153,6 +151,9 @@ inline static bool TestTrajectoryConeHelper(
 			// blue lines showing chord checks
 			go->SetColor(go->AddLine(tstPos, hitPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
 			go->SetColor(go->AddLine(hitPos, endPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
+			// While using this debug, on SlowUpdate Frames, CWeapon::TryTargetHeading will assume the unit chassis rotates to face the target, 
+			// so the tstPos will not be lined up with any part of the unit. 
+			// resulting in two visible debug lines. One from the weaponmuzzle, one from the rotated weaponmuzzle
 		} else {
 			// green line pointing to hitPos
 			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 0, GAME_SPEED), 0.0f, 1.0f, 0.0f, 1.0f);
