@@ -133,12 +133,18 @@ inline static bool TestTrajectoryConeHelper(
 
 	CollisionQuery cq;
 	// chord check from muzzle to hitPos
-	if (CCollisionHandler::DetectHit(obj, obj->GetTransformMatrix(true), tstPos, hitPos, &cq, true)) {
-		ret = true;
+	const CMatrix44f objTransform = obj->GetTransformMatrix(true);
+	// chord check from muzzle to hitPos
+	// use heuristic to choose which chord to check
+	if ((hitPos.y - tstPos.y) / cvRelDst > (hitPos.y - endPos.y) / (length - cvRelDst)) {
+		if (CCollisionHandler::DetectHit(obj, objTransform, tstPos, hitPos, &cq, true)) {
+			ret = true;
+		}
 	}
-	// chord check from hitPos to target
-	if (CCollisionHandler::DetectHit(obj, obj->GetTransformMatrix(true), hitPos, endPos, &cq, true)) {
-		ret = true;
+	else {
+		if (CCollisionHandler::DetectHit(obj, objTransform, hitPos, endPos, &cq, true)) {
+			ret = true;
+		}
 	}
 
 	if (globalRendering->drawDebugTraceRay) {
