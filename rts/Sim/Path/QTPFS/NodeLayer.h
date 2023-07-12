@@ -109,10 +109,6 @@ namespace QTPFS {
 
 			// LOG("%s: [%p] alloc'ed id=%d", __func__, &poolNodes, idx);
 
-			// entt::entity entity = quadTreeRegistry.create(entt::entity(idx));
-			// LOG("%s: entity %x (%x) == id %x", __func__, entt::to_entity(entity), entt::to_integral(entity), idx);
-			// assert(entt::to_entity(entity) == idx);
-
 			return idx;
 		}
 
@@ -123,8 +119,6 @@ namespace QTPFS {
 			nodeIndcs.push_back(nodeIndex);
 			auto* curNode = GetPoolNode(nodeIndex);
 			curNode->DeactivateNode();
-
-			// quadTreeRegistry.destroy(entt::entity(nodeIndex));
 		}
 
 
@@ -257,9 +251,6 @@ private:
 
 		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
-
-public:
-		entt::registry quadTreeRegistry; // per layer quad tree ECS registry
 	};
 }
 

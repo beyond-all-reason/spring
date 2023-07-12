@@ -208,19 +208,6 @@ namespace QTPFS {
 		unsigned int childBaseIndex = -1u;
 		std::vector<int> neighbours;
 		std::vector<float2> netpoints;
-
-		/*
-		 * Component Node 16 bytes + 4
-		 * Component HierachalNode 4 bytes + 4
-		 * Component LeafNode 52 bytes + 4
-		 * Component CoarseLeafNode 52 bytes + 4
-		 */
-	};
-
-	struct CoarseLeafNode {
-		unsigned int referenceNodeIndex; // reference for moveCosts calcs
-		std::vector<int> neighbours;
-		std::vector<float> moveCosts;
 	};
 
 	struct NodeSearched {};

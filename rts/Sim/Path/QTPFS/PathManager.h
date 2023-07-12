@@ -117,8 +117,7 @@ namespace QTPFS {
 		void InitNodeLayersThreaded(const SRectangle& rect);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
 		void InitRootSize(const SRectangle& r);
-		void UpdateNodeLayerHighRes(unsigned int layerNum, const SRectangle& r, int currentThread);
-		void UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread);
+		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
 
 		void InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);

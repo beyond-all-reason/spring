@@ -456,7 +456,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 			}
 			
 			std::for_each(rootRects.begin(), rootRects.end(), [this, layerNum, currentThread](auto &rect){
-				UpdateNodeLayerHighRes(layerNum, rect, currentThread);
+				UpdateNodeLayer(layerNum, rect, currentThread);
 			});
 
 			// Full map-wide allocations have been made, we shouldn't need that much memory in future.
@@ -571,7 +571,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 
 // called in the non-staggered (#ifndef QTPFS_STAGGERED_LAYER_UPDATES)
 // layer update scheme and during initialization; see ::TerrainChange
-void QTPFS::PathManager::UpdateNodeLayerHighRes(unsigned int layerNum, const SRectangle& rect, int currentThread) {
+void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& rect, int currentThread) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
 	// LOG("%s: Starting update for %d", __func__, layerNum);
@@ -668,140 +668,6 @@ void QTPFS::PathManager::UpdateNodeLayerHighRes(unsigned int layerNum, const SRe
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, updateThreadData[currentThread]);
 		#endif
-	}
-}
-
-void QTPFS::PathManager::UpdateNodeLayerLowRes(unsigned int layerNum, int currentThread) {
-	auto& nlQuadUpdateTracker = nodeLayersCoarseMapUpdateTrack.mapChangeTrackers[layerNum];
-	auto& queue = nlQuadUpdateTracker.damageQueue;
-	auto& map = nlQuadUpdateTracker.damageMap;
-
-	while (!queue.empty()) {
-		const int sectorId = queue.front();
-		assert(sectorId < map.size());
-
-		if (map[sectorId] == true) {
-			// TODO: get root node, do search from there, clear out flags for all blocks in root node's area
-			// why bother with 16x16 blocks? just mark root nodes?
-
-			NodeLayer& nl = nodeLayers[layerNum];
-
-			const int blockIdxX = (sectorId % nodeLayersCoarseMapUpdateTrack.width) * nodeLayersCoarseMapUpdateTrack.cellSize;
-			const int blockIdxY = (sectorId / nodeLayersCoarseMapUpdateTrack.width) * nodeLayersCoarseMapUpdateTrack.cellSize;
-
-			SRectangle r = SRectangle
-				( blockIdxX
-				, blockIdxY
-				, blockIdxX + nodeLayersCoarseMapUpdateTrack.cellSize
-				, blockIdxY + nodeLayersCoarseMapUpdateTrack.cellSize
-				);
-
-			// New get function for node.
-
-			// TODO: Get Nodes and then split arrays for sub node analysis
-			// TODO: change grid level to that of root nodes?
-
-			std::vector<int> nodesToSearch;
-			auto scanLinkedNodes = [&nl, &nodesToSearch](QTPFS::NodeLayer::areaQueryResults& nodeData, SRectangle constraint) {
-				int linkedNodeCount = 0;
-				nodesToSearch.clear();
-				nodesToSearch.reserve(nodeData.openNodeCount);
-
-				const INode* curNode = nodeData.centralLeafNode;
-				nl.quadTreeRegistry.emplace<NodeSearched>(entt::entity(curNode->GetIndex()));
-				bool nodeToReview = false;
-				do {
-					linkedNodeCount++;
-					assert(!curNode->AllSquaresImpassable());
-					auto& neighbours = curNode->GetNeighbors();
-					// blocked nodes are no longer neighbours to open nodes
-					for (auto n : neighbours) {
-						bool isOpenNode = !nl.quadTreeRegistry.all_of<NodeSearched>(entt::entity(n));
-						if (isOpenNode) {
-							nl.quadTreeRegistry.emplace<NodeSearched>(entt::entity(n));
-							nodesToSearch.emplace_back(n);
-						}
-					}
-					nodeToReview = false;
-					while (!nodesToSearch.empty()) {
-						curNode = nl.GetPoolNode( nodesToSearch.back() );
-						nodesToSearch.pop_back();
-
-						// TODO node to rectangle???
-						SRectangle nodeArea( curNode->xmin(), curNode->zmin(), curNode->xmax(), curNode->zmax() );
-						if (constraint.Inside(nodeArea)) { nodeToReview = true; break; }
-					}
-				} while (nodeToReview);
-
-				nl.quadTreeRegistry.clear<NodeSearched>();
-
-				return linkedNodeCount;
-			};
-
-			// Go and setup the Hierachy Nodes
-			std::function<void(SRectangle r)> setupCoarseNodes;
-			setupCoarseNodes = [this, layerNum, &setupCoarseNodes, &scanLinkedNodes](SRectangle r){
-				// TODO: encasing node is needed - not the rectangle
-				auto nodeData = nodeLayers[layerNum].GetDataForArea(r);
-				//lastQueryResults = nodeData;
-
-				// LOG("%s: open %d closed %d, score %x, bestLeaf %d", "setupCoarseNodes"
-				// 	, nodeData.openNodeCount, nodeData.closedNodeCount
-				// 	, (int)(nodeData.bestNodeScore>>32), nodeData.centralLeafNode ? nodeData.centralLeafNode->GetIndex() : -1);
-
-				// 2+ closed nodes can potentially cause multiple islands in a node
-				bool review = (nodeData.openNodeCount > 1 && nodeData.closedNodeCount > 1);
-				bool stop = (nodeData.openNodeCount == 0);
-				bool select = !review & !stop;
-				bool refine = false;
-
-				if (stop) return;
-
-				if (review) {
-					int linkedOpenNodes = scanLinkedNodes(nodeData, r);
-					// 1 island
-					select = ( linkedOpenNodes == nodeData.openNodeCount );
-
-					// 2+ islands
-					refine = !select;
-
-					//select = true;
-				}
-
-				if (select) {
-					// TODO: this should be passed down sensibly rather than searched each time
-					entt::registry& qtRegistry = nodeLayers[layerNum].quadTreeRegistry;
-					INode* containingNode = nodeLayers[layerNum].GetNodeThatEncasesPowerOfTwoArea(r);
-					entt::entity coarseLeafNodeEntity = entt::entity(containingNode->GetIndex());
-					CoarseLeafNode& coarseLeafNode = qtRegistry.get_or_emplace<CoarseLeafNode>(coarseLeafNodeEntity);
-					coarseLeafNode.referenceNodeIndex = nodeData.centralLeafNode->GetIndex();
-
-					// LOG("Select node %d (%d)", containingNode->GetIndex(), entt::to_integral(coarseLeafNodeEntity));
-				}
-
-				else if (refine) {
-					// break down into quads
-					// call this function again for each.
-
-					// Note: maybe get counts here to eliminate bad quads
-					// .
-					const int quadrants = 4;
-					const int width = r.GetWidth() >> 1;
-					const int2 offs[quadrants] = {{0,0},{1,0},{0,1},{1,1}};
-
-					for (int i = 0; i<quadrants; ++i) {
-						const int minx = r.x1 + offs[i].x * width;
-						const int minz = r.z1 + offs[i].y * width;
-						SRectangle sr(minx, minz, minx + width, minz + width);
-						setupCoarseNodes(sr);
-					};
-				}
-			};
-
-			setupCoarseNodes(r);
-			map[sectorId] = false;
-		}
-		queue.pop_front();
 	}
 }
 
@@ -988,7 +854,7 @@ void QTPFS::PathManager::Update() {
 			int curThread = ThreadPool::GetThreadNum();
 			int layerNum = nodeLayerUpdatePriorityOrder[index];
 			int blocksToUpdate = numBlocksToUpdate(layerNum);
-			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayerHighRes(layerNum, rect, curThread); }
+			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayer(layerNum, rect, curThread); }
 			// UpdateNodeLayerLowRes(layerNum, curThread);
 		});
 

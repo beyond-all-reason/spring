@@ -72,9 +72,6 @@ void QTPFSPathDrawer::DrawAll() const {
 		auto curRootNode = nodeLayer.GetPoolNode(i);
 		GetVisibleNodes(curRootNode, nodeLayer, visibleNodes);
 	}
-		// nodeLayer.quadTreeRegistry.each([](entt::entity ent){
-		// 	LOG("coarse node (%d)", entt::to_integral(ent));
-		// });
 
 	// GetVisibleNodes(pm->GetNodeTree(md->pathType), pm->GetNodeLayer(md->pathType), visibleNodes);
 
@@ -98,9 +95,6 @@ void QTPFSPathDrawer::DrawAll() const {
 
 void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
 	for (const QTPFS::QTNode* node: nodes) {
-		bool isCoarse = nodeLayer.quadTreeRegistry.all_of<QTPFS::CoarseLeafNode>(entt::entity(node->GetIndex()));
-		if (isCoarse)
-			DrawNodeW(node, rb, &NODE_COLORS[2][0], (-2.f));
 		if (node->IsLeaf())// && node->AllSquaresImpassable())
 			DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
 	}
@@ -139,13 +133,6 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 
 
 void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::NodeLayer& nl, std::vector<const QTPFS::QTNode*>& nodes) const {
-	//if (nt->IsLeaf()) {
-	assert(nl.quadTreeRegistry.valid(entt::entity(nt->GetIndex())));
-	auto isCoarseNode = nl.quadTreeRegistry.all_of<QTPFS::CoarseLeafNode>(entt::entity(nt->GetIndex()));
-	// LOG("%s: coarse node (%d) = %p, isLeaf = %d", __func__, nt->GetIndex(), coarseNode, (int)nt->IsLeaf());
-	if (isCoarseNode || nt->IsLeaf())
-		nodes.push_back(nt);
-
 	if (nt->IsLeaf()) return;
 
 	for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
