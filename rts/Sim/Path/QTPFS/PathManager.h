@@ -175,7 +175,7 @@ namespace QTPFS {
 
 		// maps "hashes" of executed searches to the found paths
 		// spring::unordered_map<std::uint64_t, IPath*> sharedPaths;
-		SharedPathMap sharedPaths;
+		SharedPathMap sharedPaths[2];
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;

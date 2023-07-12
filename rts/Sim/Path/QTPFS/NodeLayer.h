@@ -3,7 +3,7 @@
 #ifndef QTPFS_NODELAYER_H_
 #define QTPFS_NODELAYER_H_
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <limits>
 #include <vector>
@@ -30,6 +30,8 @@ namespace QTPFS {
 		static void InitStatic();
 		static size_t MaxSpeedModTypeValue() { return (std::numeric_limits<SpeedModType>::max()); }
 		static size_t MaxSpeedBinTypeValue() { return (std::numeric_limits<SpeedBinType>::max()); }
+
+		~NodeLayer() { registry.clear(); }
 
 		NodeLayer() = default;
 		NodeLayer(NodeLayer&& nl) = default;
@@ -107,8 +109,9 @@ namespace QTPFS {
 
 			// LOG("%s: [%p] alloc'ed id=%d", __func__, &poolNodes, idx);
 
-			entt::entity entity = quadTreeRegistry.create(entt::entity(idx));
-			assert(entt::to_integral(entity) == idx);
+			// entt::entity entity = quadTreeRegistry.create(entt::entity(idx));
+			// LOG("%s: entity %x (%x) == id %x", __func__, entt::to_entity(entity), entt::to_integral(entity), idx);
+			// assert(entt::to_entity(entity) == idx);
 
 			return idx;
 		}
@@ -121,7 +124,7 @@ namespace QTPFS {
 			auto* curNode = GetPoolNode(nodeIndex);
 			curNode->DeactivateNode();
 
-			quadTreeRegistry.destroy(entt::entity(nodeIndex));
+			// quadTreeRegistry.destroy(entt::entity(nodeIndex));
 		}
 
 

@@ -1083,7 +1083,7 @@ void CPathManager::GetPathWayPoints(
 
 bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) {
 	if (!IsFinalized())
-		return 0.0f;
+		return false;
 
 	if (x >= mapDims.mapx) { return false; }
 	if (z >= mapDims.mapy) { return false; }
@@ -1107,7 +1107,7 @@ bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, 
 
 bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) {
 	if (!IsFinalized())
-		return 0.0f;
+		return false;
 
 	if (sizex < 1 || sizex > mapDims.mapx) { return false; }
 	if (sizez < 1 || sizez > mapDims.mapy) { return false; }

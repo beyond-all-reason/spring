@@ -34,6 +34,7 @@ struct SharedPathChain {
 VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
 VOID_COMPONENT(PathIsToBeUpdated);
+VOID_COMPONENT(PathIsUnsynced);
 
 ALIAS_COMPONENT(PathSearchRef, entt::entity);
 

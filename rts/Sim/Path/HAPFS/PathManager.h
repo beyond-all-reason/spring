@@ -270,10 +270,9 @@ private:
 	void LowRes2MedRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
 	void MedRes2MaxRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
 
-	//bool IsFinalized() const { return (maxResPF != nullptr); }
 	bool IsFinalized() const { return finalized; }
 
-	bool SupportsMultiThreadedRequests() const; //{ return true; }
+	bool SupportsMultiThreadedRequests() const;
 	void SavePathCacheForPathId(int pathIdToSave) override;
 
 private:

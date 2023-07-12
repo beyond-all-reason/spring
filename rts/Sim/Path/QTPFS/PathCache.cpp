@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <cassert>
 
@@ -162,7 +162,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
 
-		if (registry.all_of<PathIsDirty>(entity)) continue;
+		if (registry.any_of<PathIsDirty, PathIsUnsynced>(entity)) continue;
 
 		// IPath* path = it->second;
 		// IPath* path = &allPaths[*it];
