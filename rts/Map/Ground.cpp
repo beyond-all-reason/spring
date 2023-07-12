@@ -7,9 +7,6 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/SpringMath.h"
 
-#include "Rendering/GlobalRendering.h"
-#include "Sim/Misc/GeometricObjects.h"
-
 #include <cassert>
 #include <limits>
 
@@ -591,27 +588,12 @@ float CGround::TrajectoryGroundCol(const float3& trajStartPos, const float3& tra
 		const float3 pos = (trajStartPos + dir * dist) + (alt * dist * dist);
 
 		#if 1
-		if (GetApproximateHeight(pos) > pos.y) {
-			if (globalRendering->drawDebugTraceRay) {
-
-				#define go geometricObjects
-
-				// red line pointing to hitPos
-				go->SetColor(go->AddLine(pos, trajStartPos, 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
-				// blue lines showing chord checks
-				// While using this debug, on SlowUpdate Frames, CWeapon::TryTargetHeading will assume the unit chassis rotates to face the target, 
-				// so the tstPos will not be lined up with any part of the unit. 
-				// resulting in two visible debug lines. One from the weaponmuzzle, one from the rotated weaponmuzzle
-
-				#undef go
-			}
+		if (GetApproximateHeight(pos) > pos.y)
 			return dist;
-		}
 		#else
 		if (GetHeightReal(pos) > pos.y)
 			return dist;
 		#endif
-		
 	}
 
 	return -1.0f;
