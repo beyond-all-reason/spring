@@ -1,6 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 #include <SDL.h>
 
@@ -989,6 +991,47 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\t");
 	LOG("\tenable AMD-hacks : %i", amdHacks);
 	LOG("\tcompress MIP-maps: %i", compressTextures);
+
+	GLint numberOfTextureFormats = 0;
+	glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numberOfTextureFormats);
+	std::vector<GLint> textureFormats; textureFormats.resize(numberOfTextureFormats);
+	glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, textureFormats.data());
+
+	#define EnumToString(arg) { arg, #arg }
+	std::unordered_map<GLenum, std::string> compressedEnumToString = {
+		EnumToString(GL_COMPRESSED_RED_RGTC1),
+		EnumToString(GL_COMPRESSED_SIGNED_RED_RGTC1),
+		EnumToString(GL_COMPRESSED_RG_RGTC2),
+		EnumToString(GL_COMPRESSED_SIGNED_RG_RGTC2),
+		EnumToString(GL_COMPRESSED_RGBA_BPTC_UNORM),
+		EnumToString(GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM),
+		EnumToString(GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT),
+		EnumToString(GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT),
+		EnumToString(GL_COMPRESSED_RGB8_ETC2),
+		EnumToString(GL_COMPRESSED_SRGB8_ETC2),
+		EnumToString(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+		EnumToString(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+		EnumToString(GL_COMPRESSED_RGBA8_ETC2_EAC),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC),
+		EnumToString(GL_COMPRESSED_R11_EAC),
+		EnumToString(GL_COMPRESSED_SIGNED_R11_EAC),
+		EnumToString(GL_COMPRESSED_RG11_EAC),
+		EnumToString(GL_COMPRESSED_SIGNED_RG11_EAC),
+	};
+	#undef EnumToString
+
+	LOG("\tNumber of compressed texture formats: %i", numberOfTextureFormats);
+	std::ostringstream ss;
+	for (auto tf : textureFormats) {
+		auto it = compressedEnumToString.find(tf);
+		if (it != compressedEnumToString.end())
+			ss << it->second << ", ";
+		else
+			ss << "0x" << std::hex << tf << ", ";
+	}
+	ss.seekp(-2, std::ios_base::end);
+	ss << ".";
+	LOG("\tCompressed texture formats: %s", ss.str().c_str());
 }
 
 void CGlobalRendering::LogDisplayMode(SDL_Window* window) const
