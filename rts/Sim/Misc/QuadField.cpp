@@ -510,9 +510,8 @@ void CQuadField::MovedProjectile(CProjectile* p)
 
 void CQuadField::AddProjectile(CProjectile* p)
 {
-	assert(p->synced);
-
 	if (p->hitscan) {
+		assert(p->synced);
 		QuadFieldQuery qfQuery;
 		GetQuadsOnRay(qfQuery, p->pos, p->dir, p->speed.w);
 
@@ -523,17 +522,27 @@ void CQuadField::AddProjectile(CProjectile* p)
 		p->quads = std::move(*qfQuery.quads);
 	} else {
 		int newQuad = WorldPosToQuadFieldIdx(p->pos);
+		if (!p->synced) {
+			spring::VectorInsertUnique(baseQuads[newQuad].particles, p, false);
+			p->quads.clear();
+			p->quads.push_back(newQuad);
+			return;
+		}
+
 		spring::VectorInsertUnique(baseQuads[newQuad].projectiles, p, false);
 		p->quads.clear();
 		p->quads.push_back(newQuad);
+
 	}
 }
 
 void CQuadField::RemoveProjectile(CProjectile* p)
 {
-	assert(p->synced);
 
 	for (const int qi: p->quads) {
+		if (!p->synced)
+			spring::VectorErase(baseQuads[qi].particles, p);
+		else
 		spring::VectorErase(baseQuads[qi].projectiles, p);
 	}
 

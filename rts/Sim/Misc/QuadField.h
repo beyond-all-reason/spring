@@ -191,6 +191,7 @@ public:
 			features = std::move(q.features);
 			projectiles = std::move(q.projectiles);
 			repulsers = std::move(q.repulsers);
+			particles = std::move(q.particles); // TODO make default operator
 			return *this;
 		}
 
@@ -206,6 +207,7 @@ public:
 			features.clear();
 			projectiles.clear();
 			repulsers.clear();
+			particles.clear();
 		}
 
 	public:
@@ -213,6 +215,7 @@ public:
 		std::vector< std::vector<CUnit*> > teamUnits;
 		std::vector<CFeature*> features;
 		std::vector<CProjectile*> projectiles;
+		std::vector<CProjectile*> particles;
 		std::vector<CPlasmaRepulser*> repulsers;
 	};
 

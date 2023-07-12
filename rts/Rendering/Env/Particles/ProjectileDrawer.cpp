@@ -52,10 +52,54 @@ static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile
 
 CProjectileDrawer* projectileDrawer = nullptr;
 
+#include "Sim/Misc/QuadField.h"
+extern bool DRAW_ONLY_VISIBLE_PARTICLE;
+
 // can not be a CProjectileDrawer; destruction in global
 // scope might happen after ~EventHandler (referenced by
 // ~EventClient)
 static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
+
+// TODO move to class scope
+static std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> visibleModels;
+static std::vector<CProjectile*> visibleParticles;
+
+namespace {
+
+class QuadFinder: public CReadMap::IQuadDrawer {
+public:
+	void DrawQuad(int x, int y) override {
+		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
+		// TODO we could just copy pointer to q.projectiles but then how to split into modelles particles
+		// or find duplicates between quads?
+		for (auto* p : q.projectiles) {
+			if (p->model) {
+				visibleModels[MDL_TYPE(p)].AddObject(p);
+			} else
+				visibleParticles.push_back(p);
+		}
+		for (auto* p : q.particles) {
+			if (p->model)
+				visibleModels[MDL_TYPE(p)].AddObject(p);
+			else
+				visibleParticles.push_back(p);
+		}
+	}
+
+	virtual void ResetState() override {
+		visibleParticles.clear();
+		for (auto& bucket : visibleModels)
+			bucket.Clear();
+	}
+};
+
+} // unnamed namespace
+
+static void refreshVisibleProjectiles() {
+	static QuadFinder projQuadIter;
+	projQuadIter.ResetState();
+	readMap->GridVisibility(nullptr, &projQuadIter, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
+}
 
 
 void CProjectileDrawer::InitStatic() {
@@ -576,7 +620,7 @@ void CProjectileDrawer::LoadWeaponTextures() {
 
 void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool drawRefraction)
 {
-	const auto& mdlRenderer = modelRenderers[modelType];
+	const auto& mdlRenderer = (DRAW_ONLY_VISIBLE_PARTICLE) ? visibleModels[modelType] : modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -636,7 +680,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 void CProjectileDrawer::DrawProjectilesShadow(int modelType)
 {
-	const auto& mdlRenderer = modelRenderers[modelType];
+	const auto& mdlRenderer = (DRAW_ONLY_VISIBLE_PARTICLE) ? visibleModels[modelType] : modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -693,6 +737,9 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		}
 	}
 
+	// TODO "visibleParticles" has only camera visible particles
+	// if we remove modellessProjectiles we can get all projectiles from:
+	// "projectileHandler->GetActiveProjectiles()"
 	if (!modellessProjectiles.empty()) {
 		for (CProjectile* p: modellessProjectiles) {
 			if (!CanDrawProjectile(p, p->GetAllyteamID()))
@@ -778,6 +825,10 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
+		if (DRAW_ONLY_VISIBLE_PARTICLE) {
+			DrawProjectilesSet(visibleParticles, drawReflection, drawRefraction);
+		}
+		else
 		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
 		if (wantDrawOrder)
@@ -872,6 +923,9 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles
+	if (DRAW_ONLY_VISIBLE_PARTICLE) {
+		DrawProjectilesSetShadow(visibleParticles);
+	} else
 	DrawProjectilesSetShadow(modellessProjectiles);
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
@@ -1063,6 +1117,8 @@ void CProjectileDrawer::DrawGroundFlashes()
 
 
 void CProjectileDrawer::UpdateTextures() {
+	// FIXME find a better place for this. in update() or in draw() but before shadows are drawed
+	refreshVisibleProjectiles();
 	if (perlinTexObjects > 0 && drawPerlinTex)
 		UpdatePerlin();
 }
@@ -1183,6 +1239,7 @@ void CProjectileDrawer::GenerateNoiseTex(unsigned int tex)
 
 
 
+// TODO remove
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
 	if (p->model != nullptr) {
@@ -1194,6 +1251,7 @@ void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 	modellessProjectiles.push_back(const_cast<CProjectile*>(p));
 }
 
+// TODO remove
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
 	if (p->model != nullptr) {
