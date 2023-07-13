@@ -73,8 +73,6 @@ void QTPFSPathDrawer::DrawAll() const {
 		GetVisibleNodes(curRootNode, nodeLayer, visibleNodes);
 	}
 
-	// GetVisibleNodes(pm->GetNodeTree(md->pathType), pm->GetNodeLayer(md->pathType), visibleNodes);
-
 	if (!visibleNodes.empty()) {
 		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 		auto& sh = rb.GetShader();
@@ -95,8 +93,7 @@ void QTPFSPathDrawer::DrawAll() const {
 
 void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
 	for (const QTPFS::QTNode* node: nodes) {
-		if (node->IsLeaf())// && node->AllSquaresImpassable())
-			DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
+		DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
 	}
 
 	glLineWidth(2.0f);
@@ -133,7 +130,10 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 
 
 void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::NodeLayer& nl, std::vector<const QTPFS::QTNode*>& nodes) const {
-	if (nt->IsLeaf()) return;
+	if (nt->IsLeaf()) {
+		nodes.push_back(nt);
+		return;
+	}
 
 	for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
 		const QTPFS::QTNode* cn = nl.GetPoolNode(nt->GetChildBaseIndex() + i);
