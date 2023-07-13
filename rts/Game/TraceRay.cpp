@@ -136,9 +136,7 @@ inline static bool TestTrajectoryConeHelper(
 	const CMatrix44f objTransform = obj->GetTransformMatrix(true);
 	// chord check from muzzle to hitPos
 	// use heuristic to choose which chord to check
-	// if projectile is traveling upwards, check from muzzle to position
-	// if projectile is traveling downwards, check from position to target
-	if ( (2 * quadratic * cvRelDst + linear) > 0) {
+	if ((hitPos.y - tstPos.y) / cvRelDst > (hitPos.y - endPos.y) / (length - cvRelDst)) {
 		if (CCollisionHandler::DetectHit(obj, objTransform, tstPos, hitPos, &cq, true)) {
 			ret = true;
 		}
@@ -157,12 +155,8 @@ inline static bool TestTrajectoryConeHelper(
 			// red line pointing to hitPos
 			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
 			// blue lines showing chord checks
-			if ((2 * quadratic * cvRelDst + linear) > 0) {
-				go->SetColor(go->AddLine(tstPos, hitPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
-			}
-			else {
-				go->SetColor(go->AddLine(hitPos, endPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
-			}
+			go->SetColor(go->AddLine(tstPos, hitPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
+			go->SetColor(go->AddLine(hitPos, endPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
 			// While using this debug, on SlowUpdate Frames, CWeapon::TryTargetHeading will assume the unit chassis rotates to face the target, 
 			// so the tstPos will not be lined up with any part of the unit. 
 			// resulting in two visible debug lines. One from the weaponmuzzle, one from the rotated weaponmuzzle

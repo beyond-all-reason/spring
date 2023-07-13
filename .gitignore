@@ -168,13 +168,3 @@ Spring.VC.VC.opendb
 toolchain
 compile_commands.json
 build-*
-/dev_engine
-/fontcache
-/.gitignore
-/blueprints_temp.txt
-/CMakeLists.txt
-/ef9c9ad8cc5857eb63cb3660bc8bd202-le64.cache-7
-/loadprogress_cached.lua
-/lups.cfg
-/_script.txt
-/.gitignore
