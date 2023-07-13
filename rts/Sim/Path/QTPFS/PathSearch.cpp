@@ -203,8 +203,6 @@ void QTPFS::PathSearch::ResetState(SearchNode* node) {
 		hCosts[i] = 0.0f;
 	}
 
-	//(*openNodes).reset();
-	//(*openNodes).push(node);
 	searchThreadData->ResetQueue();
 	(*openNodes).emplace(node->GetIndex(), 0.f);
 }
@@ -359,7 +357,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
 				curNode->GetMoveCost() * gDists[j] +
-				nxtNode->GetMoveCost() * hDists[j] * int(isTarget); // why is this here??????????????????????
+				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
 
 			if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {

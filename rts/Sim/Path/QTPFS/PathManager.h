@@ -88,8 +88,12 @@ namespace QTPFS {
 		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
-		// TODO: temporary var - remove later
-		QTPFS::NodeLayer::areaQueryResults lastQueryResults;
+		bool SetNodeExtraCost(unsigned int, unsigned int, float, bool) override;
+		bool SetNodeExtraCosts(const float*, unsigned int, unsigned int, bool) override;
+		float GetNodeExtraCost(unsigned int, unsigned int, bool) const override;
+		const float* GetNodeExtraCosts(bool) const override;
+
+		float GetNodeExtraCostFast(unsigned int, unsigned int, bool) const;
 
 	private:
 		void MapChanged(int x1, int z1, int x2, int z2);
@@ -148,8 +152,6 @@ namespace QTPFS {
 		);
 
 		bool IsFinalized() const { return isFinalized; }
-			// return (!nodeTrees.empty()); }
-
 
 		std::string GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const;
 		void Serialize(const std::string& cacheFileDir);
@@ -159,21 +161,20 @@ namespace QTPFS {
 
 	private:
 		PathCache pathCache;
-		// static std::vector<PathSearch*> pathSearches;
 
 		// per thread data
 		std::vector<SearchThreadData> searchThreadData;
 		std::vector<UpdateThreadData> updateThreadData;
 		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
 
+
+		std::vector<float> extraCosts[2];
+		const float* extraCostsOverlay[2];
+		int2 er[2]; ///< extraCosts resolution
+
 		std::vector<entt::entity> pathSearches;
 
-		// spring::unordered_map<unsigned int, unsigned int> pathTypes;
-		// spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;
 		PathTraceMap pathTraces;
-
-		// maps "hashes" of executed searches to the found paths
-		// spring::unordered_map<std::uint64_t, IPath*> sharedPaths;
 		SharedPathMap sharedPaths[2];
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
