@@ -642,53 +642,6 @@ private:
 #endif
 
 
-template<typename F, typename T>
-class ForEachTaskGroup: public ITaskGroup
-{
-public:
-	// typedef  TTaskGroup<F, void, int>  ChildTaskType;
-
-	ForEachTaskGroup(bool pooled) : ITaskGroup(false, pooled) {}
-
-	void Enqueue(T begin, T end /*, const int step*/, F& func)
-	{
-		int limit = std::distance(begin, end);
-		remainingTasks.store(limit);
-		// ctr.store(0);
-
-		this->current = begin;
-		this->end   = end;
-		this->func  = func;
-	}
-
-	bool IsSliceTask() const override { return true; }
-	bool ExecuteStep() override
-	{
-		lock.lock();
-		auto it = (current != end) ? current++: end;
-		lock.unlock();
-
-		// auto it = std::advance(begin, ctr.fetch_add(1, std::memory_order_relaxed));
-
-		if (it != end) {
-			func(*it);
-			remainingTasks -= 1;
-			return true;
-		}
-
-		return false;
-	}
-
-private:
-	// std::atomic<int> ctr;
-	std::function<void(typename T::reference)> func;
-	spring::spinlock lock;
-
-	T end;
-	T current;
-};
-
-
 template <template<typename> class TG, typename F>
 struct TaskPool {
 	typedef TG<F> FuncTaskGroup;
