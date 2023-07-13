@@ -191,10 +191,6 @@ SRectangle QTPFS::INode::ClipRectangle(const SRectangle& r) const {
 }
 
 
-
-
-
-
 void QTPFS::QTNode::InitStatic() {
 	MIN_SIZE_X = std::max(1u, mapInfo->pfs.qtpfs_constants.minNodeSizeX);
 	MIN_SIZE_Z = std::max(1u, mapInfo->pfs.qtpfs_constants.minNodeSizeZ);
@@ -212,17 +208,10 @@ void QTPFS::QTNode::Init(
 	assert(MIN_SIZE_Z > 0);
 
 	nodeNumber = nn;
-	// heapIndex = -1u;
-
-	// searchState  =   0;
-	// currMagicNum =   0;
-	// prevMagicNum = -1u;
 
 	// for leafs, all children remain NULL
 	childBaseIndex = -1u;
 
-	//_xminxmax = (x2 << 16) | (x1 << 0);
-	//_zminzmax = (z2 << 16) | (z1 << 0);
 	_xmin = x1;
 	_xmax = x2;
 	_zmin = z1;
@@ -233,20 +222,11 @@ void QTPFS::QTNode::Init(
 	assert(xsize() != 0);
 	assert(zsize() != 0);
 
-	// fCost = 0.0f;
-	// gCost = 0.0f;
-	// hCost = 0.0f;
-
-	// speedModSum =  0.0f;
-	// speedModAvg =  0.0f;
 	moveCostAvg = -1.0f;
-
 	index = idx;
 
-	// prevNode = nullptr;
-
 	neighbours.clear();
-	// netpoints.clear();
+	netpoints.clear();
 }
 
 

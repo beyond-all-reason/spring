@@ -301,7 +301,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 	unsigned int bestSearch = -1u; // index
 
-	pfDef->useVerifiedStartBlock = ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
+	pfDef->useVerifiedStartBlock = true; // ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
 
 	{
 		if (heurGoalDist2D <= (MAXRES_SEARCH_DISTANCE * modInfo.pfRawDistMult)) {
