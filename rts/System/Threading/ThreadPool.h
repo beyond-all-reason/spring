@@ -68,8 +68,6 @@ static inline auto parallel_reduce(F&& f, G&& g) -> typename std::result_of<F()>
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
-#include "System/Log/ILog.h"
-
 #include  <array>
 #include <vector>
 #include <numeric>

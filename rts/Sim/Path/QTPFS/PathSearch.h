@@ -79,7 +79,6 @@ namespace QTPFS {
 
 		unsigned int searchType;   // indicates if Dijkstra (h==0) or A* (h!=0) search is employed
 		unsigned int searchState;  // offset that identifies nodes as part of current search
-		unsigned int searchMagic;  // used to signal nodes they should update their neighbor-set
 
 	public:
 		PathSearch()
@@ -94,7 +93,6 @@ namespace QTPFS {
 			, searchTeam(0)
 			, searchType(0)
 			, searchState(0)
-			, searchMagic(0)
 			{}
 		PathSearch(unsigned int pathSearchType)
 			: PathSearch()
@@ -109,10 +107,7 @@ namespace QTPFS {
 			const SRectangle& searchArea
 		);
 		void InitializeThread(SearchThreadData* threadData);
-		bool Execute(
-			unsigned int searchStateOffset = 0,
-			unsigned int searchMagicNumber = 0
-		);
+		bool Execute(unsigned int searchStateOffset = 0);
 		void Finalize(IPath* path);
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }

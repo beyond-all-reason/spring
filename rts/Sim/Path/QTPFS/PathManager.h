@@ -28,7 +28,6 @@ namespace QTPFS {
 		};
 		struct NodeLayersChangeTrack {
 			std::vector<MapChangeTrack> mapChangeTrackers;
-			// std::vector<MapChangeTrack> quadTreeUpdatesTrackers;
 			int width = 0;
 			int height = 0;
 			int cellSize = 0;
@@ -79,13 +78,9 @@ namespace QTPFS {
 
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
-		// const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
 		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
-
 		const NodeLayersChangeTrack& GetMapDamageTrack() const { return nodeLayersMapDamageTrack; };
-		const NodeLayersChangeTrack& GetCoarseUpdateTrack() const { return nodeLayersCoarseMapUpdateTrack; };
 
-		// const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
 	private:
@@ -136,8 +131,6 @@ namespace QTPFS {
 		);
 
 		bool ExecuteSearch(
-			// PathSearchVect& searches,
-			// PathSearchVectIt& searchesIt,
 			PathSearch* search,
 			NodeLayer& nodeLayer,
 			PathCache& pathCache,
@@ -145,9 +138,6 @@ namespace QTPFS {
 		);
 
 		bool IsFinalized() const { return isFinalized; }
-
-		std::string GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const;
-		void Serialize(const std::string& cacheFileDir);
 
 	public:
 		static std::vector<NodeLayer> nodeLayers;
@@ -169,7 +159,6 @@ namespace QTPFS {
 		// std::vector<unsigned int> numPrevExecutedSearches;
 
 		NodeLayersChangeTrack nodeLayersMapDamageTrack;
-		NodeLayersChangeTrack nodeLayersCoarseMapUpdateTrack;
 
 		int deadPathsToUpdatePerFrame = 1;
 		int recalcDeadPathUpdateRateOnFrame = 0;
@@ -189,8 +178,6 @@ namespace QTPFS {
 
 		entt::entity systemEntity = entt::null;
 
-		bool layersInited;
-		bool haveCacheDir;
 		bool isFinalized = false;
 	};
 }

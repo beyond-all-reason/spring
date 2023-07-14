@@ -85,13 +85,8 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	minSearchNode = srcSearchNode;
 }
 
-bool QTPFS::PathSearch::Execute(
-	unsigned int searchStateOffset,
-	unsigned int searchMagicNumber
-) {
+bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	// searchState = searchStateOffset; // starts at NODE_STATE_OFFSET
-	searchMagic = searchMagicNumber; // starts at numTerrainChanges
-
 	haveFullPath = (srcSearchNode == tgtSearchNode);
 	havePartPath = false;
 
@@ -225,11 +220,6 @@ void QTPFS::PathSearch::IterateNodes() {
 	curSearchNode = &searchThreadData->allSearchedNodes[curOpenNode.nodeIndex];
 	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
-	#ifdef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-	// in the non-conservative case, this is done from
-	// NodeLayer::ExecNodeNeighborCacheUpdates instead
-	curNode->SetMagicNumber(searchMagic);
-	#endif
 
 	(*openNodes).pop();
 
