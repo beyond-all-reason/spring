@@ -93,6 +93,7 @@ void CProjectileHandler::Init()
 
 	// register ConfigNotify()
 	configHandler->NotifyOnChange(this, {"MaxParticles", "MaxNanoParticles"});
+	ConfigNotify({}, {});
 }
 
 void CProjectileHandler::Kill()

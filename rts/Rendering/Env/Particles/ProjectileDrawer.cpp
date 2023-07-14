@@ -900,6 +900,12 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 void CProjectileDrawer::DrawShadowPassOpaque()
 {
+	// FIXME find a better place for this.
+	// if it's in update() context then paused game won't render new projectiles when camera moves
+	// it can be in render() context as it's cheap pointer copying without dereferencing
+	if (DRAW_ONLY_VISIBLE_PARTICLE)
+		refreshVisibleProjectiles();
+
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_PROJECTILE);
 
 	glPushAttrib(GL_ENABLE_BIT);
@@ -1117,8 +1123,6 @@ void CProjectileDrawer::DrawGroundFlashes()
 
 
 void CProjectileDrawer::UpdateTextures() {
-	// FIXME find a better place for this. in update() or in draw() but before shadows are drawed
-	refreshVisibleProjectiles();
 	if (perlinTexObjects > 0 && drawPerlinTex)
 		UpdatePerlin();
 }
