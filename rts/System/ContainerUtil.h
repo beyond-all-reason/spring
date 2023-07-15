@@ -64,7 +64,7 @@ namespace spring {
 		if (it == v.end())
 			return false;
 
-		*it = v.back();
+		*it = std::move(v.back());
 		v.pop_back();
 		return true;
 	}
@@ -77,7 +77,7 @@ namespace spring {
 		if (it == v.end())
 			return false;
 
-		*it = v.back();
+		*it = std::move(v.back());
 		v.pop_back();
 		return true;
 	}
