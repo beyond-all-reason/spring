@@ -74,6 +74,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 					, std::min(int(tgtNode->zmax()) + 16, mapDims.mapy)
 					)
 			, int2(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE)
+			, searchThreadData->tmpNodesStore
 		);
 		tgtNode = (altTgtNode != nullptr) ? altTgtNode : tgtNode;
 	}

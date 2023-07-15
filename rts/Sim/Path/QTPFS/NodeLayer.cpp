@@ -353,8 +353,12 @@ void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vecto
 	}
 }
 
-QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint) {
-	openNodes.clear();
+QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
+		( const SRectangle& areaToSearch
+		, int2 referencePoint
+		, std::vector<INode*>& tmpNodes
+		) {
+	tmpNodes.clear();
 	INode* bestNode = nullptr;
 	uint64_t bestDistScore = std::numeric_limits<uint64_t>::max();
 
@@ -372,7 +376,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea(const SRectangle& areaToSea
 		int i = z * xRootNodes;
 		for (int x = rootNodes.x1; x <= rootNodes.x2; ++x) {
 			INode* curNode = GetPoolNode(i + x);
-			openNodes.emplace_back(curNode);
+			tmpNodes.emplace_back(curNode);
 		}
 	}
 
@@ -392,9 +396,9 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea(const SRectangle& areaToSea
 		return ((uint64_t)closestPointDist << 32) + ((uint64_t)midDist << 2) + (uint64_t)bestIndex;
 	};
 
-	while (!openNodes.empty()) {
-		INode* curNode = openNodes.back();
-		openNodes.pop_back();
+	while (!tmpNodes.empty()) {
+		INode* curNode = tmpNodes.back();
+		tmpNodes.pop_back();
 
 		if (curNode->IsLeaf()) {
 			uint64_t curDistScore = getNodeScore(curNode);
@@ -415,7 +419,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea(const SRectangle& areaToSea
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
 
-			openNodes.emplace_back(childNode);
+			tmpNodes.emplace_back(childNode);
 		}
 	}
 

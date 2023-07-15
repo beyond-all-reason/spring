@@ -153,7 +153,7 @@ namespace QTPFS {
 		std::vector<entt::entity> pathSearches;
 
 		PathTraceMap pathTraces;
-		SharedPathMap sharedPaths[2];
+		SharedPathMap sharedPaths;
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;

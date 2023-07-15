@@ -178,7 +178,7 @@ namespace QTPFS {
 		}
 
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
-		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint);
+		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
 		struct areaQueryResults {

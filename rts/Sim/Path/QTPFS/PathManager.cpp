@@ -190,8 +190,8 @@ QTPFS::PathManager::~PathManager() {
 	nodeLayersMapDamageTrack.mapChangeTrackers.clear();
 	// mapChangeTrack.damageMap.clear();
 	// mapChangeTrack.damageQueue.clear();
-	sharedPaths[false].clear();
-	sharedPaths[true].clear();
+	sharedPaths.clear();
+	sharedPaths.clear();
 
 	// numCurrExecutedSearches.clear();
 	// numPrevExecutedSearches.clear();
@@ -760,13 +760,14 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		search->Initialize(&nodeLayer, &pathCache, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE);
 		path->SetHash(search->GetHash());
 
-		bool synced = path->GetSynced();
-		SharedPathMap::iterator sharedPathsIt = sharedPaths[synced].find(path->GetHash());
-		if (sharedPathsIt == sharedPaths[synced].end()) {
-			registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
-			sharedPaths[synced][path->GetHash()] = pathEntity;
-		} else {
-			linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[synced][path->GetHash()], pathEntity);
+		if (path->GetSynced() == true) {
+			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+			if (sharedPathsIt == sharedPaths.end()) {
+				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
+				sharedPaths[path->GetHash()] = pathEntity;
+			} else {
+				linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+			}
 		}
 	}
 }
@@ -864,9 +865,10 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// path->SetHash(search->GetHash(mapDims.mapx * mapDims.mapy, pathType));
 
 	entt::entity chainHeadEntity = entt::null;
+	if (synced)
 	{
-		SharedPathMap::const_iterator sharedPathsIt = sharedPaths[synced].find(path->GetHash());
-		assert (sharedPathsIt != sharedPaths[synced].end());
+		SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+		assert(sharedPathsIt != sharedPaths.end());
 
 		chainHeadEntity = sharedPathsIt->second;
 		// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
@@ -1148,15 +1150,15 @@ void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
 
 	IPath* path = &registry.get<IPath>(entity);
 	bool synced = path->GetSynced();
-	auto iter = sharedPaths[synced].find(path->GetHash());
-	assert(iter != sharedPaths[synced].end());
+	auto iter = sharedPaths.find(path->GetHash());
+	assert(iter != sharedPaths.end());
 	if (iter->second == entity) {
 		auto& chain = registry.get<SharedPathChain>(entity);
 		if (chain.next == entity) {
-			sharedPaths[synced].erase(path->GetHash());
+			sharedPaths.erase(path->GetHash());
 			// LOG("%s: shared path %lld head is now empty", __func__, path->GetHash());
 		} else {
-			sharedPaths[synced][path->GetHash()] = chain.next;
+			sharedPaths[path->GetHash()] = chain.next;
 			// LOG("%s: shared path %lld head is now %x", __func__, path->GetHash(), entt::to_integral(chain.next));
 		}
 	}
