@@ -96,14 +96,16 @@ namespace Impl {
 			case GL_RGBA32F:
 			case GL_RG32F:
 			case GL_R32F:
+			case GL_DEPTH_COMPONENT32:
+				// internally, GL_DEPTH_COMPONENT32 is the same value as GL_DEPTH_COMPONENT32F
+				// as the correspondence must be one-to-one, GL_FLOAT representation is preferred
 			case GL_DEPTH_COMPONENT32F: {
 				dataType = GL_FLOAT;
 			} break;
 			case GL_RGBA32UI:
 			case GL_RG32UI:
 			case GL_R32UI:
-			case GL_DEPTH_COMPONENT24:
-			case GL_DEPTH_COMPONENT32: {
+			case GL_DEPTH_COMPONENT24: {
 				dataType = GL_UNSIGNED_INT;
 			} break;
 			case GL_RGBA16:
