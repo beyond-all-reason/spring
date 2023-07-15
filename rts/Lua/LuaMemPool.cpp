@@ -208,6 +208,6 @@ void LuaMemPool::LogStats(const char* handle, const char* lctype)
 		avgAllocTimeF,
 		avgAllocTimeE
 	);
-	LOG(msg.c_str());
+	LOG("%s", msg.c_str());
 	allocStats = {};
 }
