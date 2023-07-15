@@ -90,11 +90,7 @@ namespace spring {
 		if ((iter == v.end()) || (*iter != e))
 			return false;
 
-		for (size_t n = (iter - v.begin()); n < (v.size() - 1); n++) {
-			std::swap(v[n], v[n + 1]);
-		}
-
-		v.pop_back();
+		v.erase(iter);
 		return true;
 	}
 
