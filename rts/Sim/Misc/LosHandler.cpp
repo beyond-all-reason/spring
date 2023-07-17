@@ -650,7 +650,7 @@ void ILosType::UpdateHeightMapSynced(SRectangle rect)
 //////////////////////////////////////////////////////////////////////
 
 // CLosHandler is an EventClient, can not construct in global scope
-alignas(CLosHandler) static uint8_t losHandlerMem[sizeof(CLosHandler)];
+alignas(CLosHandler) static std::byte losHandlerMem[sizeof(CLosHandler)];
 
 CLosHandler* losHandler = nullptr;
 

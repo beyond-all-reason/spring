@@ -44,9 +44,9 @@ CONFIG(std::string, snd_device).defaultValue("").description("Sets the used outp
 
 #ifndef NO_SOUND
 // [0] := Music, [1] := General, [2] := Battle, [3] := UnitReply, [4] := UserInterface
-alignas(AudioChannel) static uint8_t audioChannelMem[5][sizeof(AudioChannel)];
+alignas(AudioChannel) static std::byte audioChannelMem[5][sizeof(AudioChannel)];
 #else
-alignas(NullAudioChannel) static uint8_t audioChannelMem[5][sizeof(NullAudioChannel)];
+alignas(NullAudioChannel) static std::byte audioChannelMem[5][sizeof(NullAudioChannel)];
 #endif
 
 

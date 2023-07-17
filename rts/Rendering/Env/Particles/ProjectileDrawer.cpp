@@ -55,7 +55,7 @@ CProjectileDrawer* projectileDrawer = nullptr;
 // can not be a CProjectileDrawer; destruction in global
 // scope might happen after ~EventHandler (referenced by
 // ~EventClient)
-alignas(CProjectileDrawer) static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
+alignas(CProjectileDrawer) static std::byte projectileDrawerMem[sizeof(CProjectileDrawer)];
 
 
 void CProjectileDrawer::InitStatic() {

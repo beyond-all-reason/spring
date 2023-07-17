@@ -41,9 +41,9 @@
 
 static DynMemPool<sizeof(CCustomExplosionGenerator)> egMemPool;
 
-alignas(LuaParser) static uint8_t exploParserMem[sizeof(LuaParser)];
-alignas(LuaParser) static uint8_t aliasParserMem[sizeof(LuaParser)];
-alignas(LuaTable) static uint8_t explTblRootMem[sizeof(LuaTable )];
+alignas(LuaParser) static std::byte exploParserMem[sizeof(LuaParser)];
+alignas(LuaParser) static std::byte aliasParserMem[sizeof(LuaParser)];
+alignas(LuaTable) static std::byte explTblRootMem[sizeof(LuaTable )];
 
 static constexpr size_t CEG_PREFIX_STRLEN = sizeof(CEG_PREFIX_STRING) - 1;
 

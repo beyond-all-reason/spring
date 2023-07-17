@@ -15,7 +15,7 @@ CONFIG(std::string, InfoConsoleGeometry).defaultValue("0.26 0.96 0.41 0.205");
 
 CInfoConsole* infoConsole = nullptr;
 
-alignas(CInfoConsole) static uint8_t infoConsoleMem[sizeof(CInfoConsole)];
+alignas(CInfoConsole) static std::byte infoConsoleMem[sizeof(CInfoConsole)];
 
 
 
@@ -28,8 +28,7 @@ void CInfoConsole::InitStatic() {
 void CInfoConsole::KillStatic() {
 	assert(infoConsole != nullptr);
 	spring::SafeDestruct(infoConsole);
-	// std::memset(infoConsoleMem, 0, sizeof(infoConsoleMem));
-	std::fill(infoConsoleMem, infoConsoleMem + sizeof(infoConsoleMem), 0);
+	std::fill(std::begin(infoConsoleMem), std::end(infoConsoleMem), std::byte{0});
 }
 
 
