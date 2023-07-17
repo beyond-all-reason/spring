@@ -51,7 +51,7 @@ public:
 
 	CFeature* LoadFeature(const FeatureLoadParams& params);
 	CFeature* CreateWreckage(const FeatureLoadParams& params);
-	CFeature* GetFeature(int id) { return ((id - FEATURE_BASE_ID >= 0 && id - FEATURE_BASE_ID < features.size())? features[id - FEATURE_BASE_ID]: nullptr); }
+	CFeature* GetFeature(int id) { return IsValidFeatureID(id) ? features[id - FEATURE_BASE_ID] : nullptr; }
 
 	void Update();
 
@@ -68,6 +68,7 @@ public:
 	const spring::unordered_set<int>& GetActiveFeatureIDs() const { return activeFeatureIDs; }
 
 private:
+	inline bool IsValidFeatureID(int id) const { return (id - FEATURE_BASE_ID >= 0 && id - FEATURE_BASE_ID < features.size()); }
 	bool CanAddFeature(int id) const {
 		// do we want to be assigned a random ID and are any left in pool?
 		if (id < 0)

@@ -114,7 +114,7 @@ void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 {
 	idPool.AssignID(feature);
 
-	assert(feature->id - FEATURE_BASE_ID < features.size());
+	assert(IsValidFeatureID(feature->id));
 	assert(features[feature->id - FEATURE_BASE_ID] == nullptr);
 
 	activeFeatureIDs.insert(feature->id);
@@ -202,6 +202,7 @@ bool CFeatureHandler::TryFreeFeatureID(int id)
 		return false;
 	}
 
+	assert(IsValidFeatureID(id));
 	assert(features[id - FEATURE_BASE_ID] == nullptr);
 	idPool.FreeID(id, true);
 
