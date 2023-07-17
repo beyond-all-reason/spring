@@ -177,7 +177,7 @@ void* LuaMemPool::Realloc(void* ptr, size_t nsize, size_t osize)
 void LuaMemPool::Free(void* ptr, size_t size)
 {
 	if (!LuaMemPool::enabled) {
-		spring::SafeDelete(ptr);
+		::operator delete(ptr);
 		return;
 	}
 
