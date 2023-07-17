@@ -69,8 +69,8 @@ CCameraHandler* camHandler = nullptr;
 // cameras[ACTIVE] is just used to store which of the others is active
 static CCamera cameras[CCamera::CAMTYPE_COUNT];
 
-static uint8_t camControllerMem[CCameraHandler::CAMERA_MODE_LAST][sizeof(CFreeController)];
-static uint8_t camHandlerMem[sizeof(CCameraHandler)];
+alignas (CFreeController) static uint8_t camControllerMem[CCameraHandler::CAMERA_MODE_LAST][sizeof(CFreeController)];
+alignas (CCameraHandler) static uint8_t camHandlerMem[sizeof(CCameraHandler)];
 
 
 void CCameraHandler::SetActiveCamera(unsigned int camType) { cameras[CCamera::CAMTYPE_ACTIVE].SetCamType(camType); }

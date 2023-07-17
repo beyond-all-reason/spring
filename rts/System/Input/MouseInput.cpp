@@ -189,9 +189,9 @@ public:
 CWin32MouseInput* CWin32MouseInput::inst = nullptr;
 
 
-static uint8_t mouseInputMem[sizeof(CWin32MouseInput)];
+alignas(CWin32MouseInput) static uint8_t mouseInputMem[sizeof(CWin32MouseInput)];
 #else
-static uint8_t mouseInputMem[sizeof(IMouseInput)];
+alignas(IMouseInput) static uint8_t mouseInputMem[sizeof(IMouseInput)];
 #endif
 
 

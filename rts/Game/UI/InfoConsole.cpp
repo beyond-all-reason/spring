@@ -15,7 +15,7 @@ CONFIG(std::string, InfoConsoleGeometry).defaultValue("0.26 0.96 0.41 0.205");
 
 CInfoConsole* infoConsole = nullptr;
 
-static uint8_t infoConsoleMem[sizeof(CInfoConsole)];
+alignas(CInfoConsole) static uint8_t infoConsoleMem[sizeof(CInfoConsole)];
 
 
 
