@@ -667,6 +667,8 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
+	if (!IsInVisibleQuad(p->drawPos))
+		return;
 	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();
 		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
