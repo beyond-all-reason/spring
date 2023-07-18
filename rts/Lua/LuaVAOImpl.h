@@ -53,6 +53,13 @@ private:
 	template<typename T>
 	struct DrawCheckType {
 		DrawCheckType() = default;
+		DrawCheckType(T drawCount_, T baseVertex_, T baseIndex_, T instCount_, T baseInstance_)
+			: drawCount{ drawCount_ }
+			, baseVertex{ baseVertex_ }
+			, baseIndex{ baseIndex_ }
+			, instCount{ instCount_ }
+			, baseInstance{ baseInstance_ }
+		{};
 		T drawCount;
 		T baseVertex;
 		T baseIndex;

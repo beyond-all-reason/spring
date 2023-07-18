@@ -145,12 +145,13 @@ const SIndexAndCount LuaVAOImpl::GetDrawIndicesImpl(const TObj* obj)
 template<typename TObj>
 int LuaVAOImpl::AddObjectsToSubmissionImpl(int id)
 {
-	DrawCheckInput inputs = {};
-	inputs.drawCount    = std::nullopt;
-	inputs.baseVertex   = std::nullopt;
-	inputs.baseIndex    = std::nullopt;
-	inputs.instCount    = submitCmds.size() + 1;
-	inputs.baseInstance = std::nullopt;
+	DrawCheckInput inputs{
+		std::nullopt,
+		std::nullopt,
+		std::nullopt,
+		static_cast<int>(submitCmds.size() + 1),
+		std::nullopt
+	};
 
 	DrawCheck(GL_TRIANGLES, inputs, true);
 	submitCmds.emplace_back(DrawObjectGetCmdImpl<TObj>(id));
@@ -163,12 +164,13 @@ int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 {
 	const std::size_t idsSize = ids.size(); //size() is very costly to do in the loop
 
-	DrawCheckInput inputs = {};
-	inputs.drawCount    = std::nullopt;
-	inputs.baseVertex   = std::nullopt;
-	inputs.baseIndex    = std::nullopt;
-	inputs.instCount    = submitCmds.size() + idsSize;
-	inputs.baseInstance = std::nullopt;
+	DrawCheckInput inputs{
+		std::nullopt,
+		std::nullopt,
+		std::nullopt,
+		static_cast<int>(submitCmds.size() + idsSize),
+		std::nullopt
+	};
 
 	DrawCheck(GL_TRIANGLES, inputs, true);
 
@@ -375,12 +377,13 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
  */
 void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::optional<int> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
 {
-	DrawCheckInput inputs = {};
-	inputs.drawCount    = vertCountOpt;
-	inputs.baseVertex   = std::nullopt;
-	inputs.baseIndex    = vertexFirstOpt;
-	inputs.instCount    = instanceCountOpt;
-	inputs.baseInstance = instanceFirstOpt;
+	DrawCheckInput inputs{
+		vertCountOpt,
+		std::nullopt,
+		vertexFirstOpt,
+		instanceCountOpt,
+		instanceFirstOpt
+	};
 
 	const auto result = DrawCheck(mode, inputs, false);
 
@@ -412,12 +415,13 @@ void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::o
  */
 void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt)
 {
-	DrawCheckInput inputs = {};
-	inputs.drawCount    = indCountOpt;
-	inputs.baseVertex   = baseVertexOpt;
-	inputs.baseIndex    = indElemOffsetOpt;
-	inputs.instCount    = instanceCountOpt;
-	inputs.baseInstance = instanceFirstOpt;
+	DrawCheckInput inputs{
+		indCountOpt,
+		baseVertexOpt,
+		indElemOffsetOpt,
+		instanceCountOpt,
+		instanceFirstOpt
+	};
 
 	const auto result = DrawCheck(mode, inputs, true);
 
