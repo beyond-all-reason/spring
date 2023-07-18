@@ -54,11 +54,11 @@ private:
 	struct DrawCheckType {
 		DrawCheckType() = default;
 		DrawCheckType(T drawCount_, T baseVertex_, T baseIndex_, T instCount_, T baseInstance_)
-			: drawCount{ drawCount_ }
-			, baseVertex{ baseVertex_ }
-			, baseIndex{ baseIndex_ }
-			, instCount{ instCount_ }
-			, baseInstance{ baseInstance_ }
+			: drawCount{ std::move(drawCount_) }
+			, baseVertex{ std::move(baseVertex_) }
+			, baseIndex{ std::move(baseIndex_) }
+			, instCount{ std::move(instCount_) }
+			, baseInstance{ std::move(baseInstance_) }
 		{};
 		T drawCount;
 		T baseVertex;
