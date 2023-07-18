@@ -22,10 +22,12 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Misc/QuadField.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -52,7 +54,6 @@ static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile
 
 CProjectileDrawer* projectileDrawer = nullptr;
 
-#include "Sim/Misc/QuadField.h"
 extern bool DRAW_ONLY_VISIBLE_PARTICLE;
 
 // can not be a CProjectileDrawer; destruction in global
@@ -60,72 +61,12 @@ extern bool DRAW_ONLY_VISIBLE_PARTICLE;
 // ~EventClient)
 static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
 
-// TODO move to class scope
-using ModelsT = std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT>;
-using ModellessT = std::vector<CProjectile*>;
-static ModelsT visibleModels;
-static ModellessT visibleParticles;
-
-namespace {
-
-class VisibleProjectileFinder: public CReadMap::IQuadDrawer {
-public:
-	VisibleProjectileFinder(ModelsT& models, ModellessT& modelless) :
-		models{models}, modelless{modelless} {}
-
-	void DrawQuad(int x, int y) override {
-		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
-		AddProjectiles(q.projectiles);
-		AddProjectiles(q.particles);
+static bool IsInVisibleQuad(const float3& pos) {
+	if (DRAW_ONLY_VISIBLE_PARTICLE) {
+		auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
+		return DebugVisibilityDrawer::quads.visibleQuads[quadId];
 	}
-
-	virtual void ResetState() override {
-		visibleParticles.clear();
-		searchId = gs->GetTempNum();
-		for (auto& bucket : visibleModels)
-			bucket.Clear();
-	}
-private:
-	void AddProjectile(CProjectile* p) {
-		if (!MarkUniqueProjectile(p)) {
-			return;
-		}
-
-		if (p->model)
-			models[MDL_TYPE(p)].AddObject(p);
-		else
-			modelless.push_back(p);
-	}
-
-	void AddProjectiles(const std::vector<CProjectile*> projectiles) {
-		std::for_each(projectiles.begin(), projectiles.end(), [&] (auto* p) {
-			AddProjectile(p);
-		});
-	}
-
-	bool MarkUniqueProjectile(CProjectile* p) const {
-		if (likely(p->quads.size() <= 1)) {
-			return true;
-		}
-		if (unlikely(p->tempNum == searchId)) {
-			// belongs to multiple tiles, but already marked
-			return false;
-		}
-		p->tempNum = searchId;
-		return true;
-	}
-
-	int searchId=0;
-	ModelsT& models;
-	ModellessT& modelless;
-};
-
-} // unnamed namespace
-
-static void refreshVisibleProjectiles() {
-	VisibleProjectileFinder projQuadIter{visibleModels, visibleParticles};
-	projQuadIter.ResetState();
-	readMap->GridVisibility(nullptr, &projQuadIter, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
+	return true;
 }
 
 
@@ -647,7 +588,7 @@ void CProjectileDrawer::LoadWeaponTextures() {
 
 void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool drawRefraction)
 {
-	const auto& mdlRenderer = (DRAW_ONLY_VISIBLE_PARTICLE) ? visibleModels[modelType] : modelRenderers[modelType];
+	const auto& mdlRenderer = modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -674,11 +615,11 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
-	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
-
+	if (!IsInVisibleQuad(pro->pos))
+		return;
 	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
 		return;
-
+	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
 
 	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
 		return;
@@ -707,7 +648,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 void CProjectileDrawer::DrawProjectilesShadow(int modelType)
 {
-	const auto& mdlRenderer = (DRAW_ONLY_VISIBLE_PARTICLE) ? visibleModels[modelType] : modelRenderers[modelType];
+	const auto& mdlRenderer = modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -764,9 +705,6 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		}
 	}
 
-	// TODO "visibleParticles" has only camera visible particles
-	// if we remove modellessProjectiles we can get all projectiles from:
-	// "projectileHandler->GetActiveProjectiles()"
 	if (!modellessProjectiles.empty()) {
 		for (CProjectile* p: modellessProjectiles) {
 			if (!CanDrawProjectile(p, p->GetAllyteamID()))
@@ -852,10 +790,6 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
-		if (DRAW_ONLY_VISIBLE_PARTICLE) {
-			DrawProjectilesSet(visibleParticles, drawReflection, drawRefraction);
-		}
-		else
 		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
 		if (wantDrawOrder)
@@ -927,12 +861,6 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 void CProjectileDrawer::DrawShadowPassOpaque()
 {
-	// FIXME find a better place for this.
-	// if it's in update() context then paused game won't render new projectiles when camera moves
-	// it can be in render() context as it's cheap pointer copying without dereferencing
-	if (DRAW_ONLY_VISIBLE_PARTICLE)
-		refreshVisibleProjectiles();
-
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_PROJECTILE);
 
 	glPushAttrib(GL_ENABLE_BIT);
@@ -956,9 +884,6 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles
-	if (DRAW_ONLY_VISIBLE_PARTICLE) {
-		DrawProjectilesSetShadow(visibleParticles);
-	} else
 	DrawProjectilesSetShadow(modellessProjectiles);
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
@@ -1270,7 +1195,6 @@ void CProjectileDrawer::GenerateNoiseTex(unsigned int tex)
 
 
 
-// TODO remove
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
 	if (p->model != nullptr) {
@@ -1282,7 +1206,6 @@ void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 	modellessProjectiles.push_back(const_cast<CProjectile*>(p));
 }
 
-// TODO remove
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
 	if (p->model != nullptr) {

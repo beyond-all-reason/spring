@@ -235,11 +235,11 @@ public:
 	int GetQuadSizeX() const { return quadSizeX; }
 	int GetQuadSizeZ() const { return quadSizeZ; }
 
+	int WorldPosToQuadFieldIdx(const float3 p) const;
 	constexpr static unsigned int BASE_QUAD_SIZE = 128;
 
 private:
 	int2 WorldPosToQuadField(const float3 p) const;
-	int WorldPosToQuadFieldIdx(const float3 p) const;
 
 private:
 	std::vector<Quad> baseQuads;
