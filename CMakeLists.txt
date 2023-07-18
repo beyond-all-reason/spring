@@ -359,6 +359,7 @@ if(MSVC)
 else (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX17_FLAGS}")
 endif(MSVC)
+#set_property(TARGET tgt PROPERTY CXX_STANDARD 11)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 
