@@ -357,7 +357,7 @@ message(STATUS "Compiling with C++17")
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20 /permissive- /Zc:__cplusplus")
 else (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 ${CXX20_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 endif(MSVC)
 #set_property(TARGET tgt PROPERTY CXX_STANDARD 20)
 
