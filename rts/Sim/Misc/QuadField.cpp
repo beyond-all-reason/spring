@@ -511,6 +511,7 @@ void CQuadField::MovedProjectile(CProjectile* p)
 void CQuadField::AddProjectile(CProjectile* p)
 {
 	assert(p->synced);
+
 	if (p->hitscan) {
 		QuadFieldQuery qfQuery;
 		GetQuadsOnRay(qfQuery, p->pos, p->dir, p->speed.w);
