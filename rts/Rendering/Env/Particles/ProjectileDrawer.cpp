@@ -671,10 +671,11 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 		return;
 	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();
-		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
-			return;
 
 		if (!p->castShadow)
+			return;
+
+		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
 		// if this returns false, then projectile is
