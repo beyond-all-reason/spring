@@ -320,9 +320,6 @@ void CWeapon::Update()
 	if (!UpdateStockpile())
 		return;
 
-	if (fastQueryPointUpdate)
-		UpdateWeaponPieces(false);
-
 	UpdateAim();
 	UpdateFire();
 	UpdateSalvo();
@@ -435,6 +432,10 @@ void CWeapon::UpdateFire()
 	ZoneScoped;
 	if (!CanFire(false, false, false))
 		return;
+
+	if (fastQueryPointUpdate)
+		UpdateWeaponPieces(false);
+		UpdateWeaponVectors();
 
 	if (!TryTarget(currentTargetPos, currentTarget, true))
 		return;
