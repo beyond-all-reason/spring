@@ -39,7 +39,7 @@ CR_REG_METADATA_SUB(CQuadField, Quad, (
 	CR_MEMBER(units),
 	CR_IGNORED(teamUnits),
 	CR_MEMBER(features),
-	CR_MEMBER(syncedProjectiles),
+	CR_MEMBER(projectiles),
 	CR_MEMBER(repulsers),
 
 	CR_POSTLOAD(PostLoad)
@@ -516,20 +516,20 @@ void CQuadField::AddProjectile(CProjectile* p)
 		GetQuadsOnRay(qfQuery, p->pos, p->dir, p->speed.w);
 
 		for (const int qi: *qfQuery.quads) {
-			spring::VectorInsertUnique(baseQuads[qi].syncedProjectiles, p, false);
+			spring::VectorInsertUnique(baseQuads[qi].projectiles, p, false);
 		}
 
 		p->quads = std::move(*qfQuery.quads);
 	} else {
 		int newQuad = WorldPosToQuadFieldIdx(p->pos);
 		if (!p->synced) {
-			spring::VectorInsertUnique(baseQuads[newQuad].unsyncedProjectiles, p, false);
+			spring::VectorInsertUnique(baseQuads[newQuad].particles, p, false);
 			p->quads.clear();
 			p->quads.push_back(newQuad);
 			return;
 		}
 
-		spring::VectorInsertUnique(baseQuads[newQuad].syncedProjectiles, p, false);
+		spring::VectorInsertUnique(baseQuads[newQuad].projectiles, p, false);
 		p->quads.clear();
 		p->quads.push_back(newQuad);
 
@@ -541,9 +541,9 @@ void CQuadField::RemoveProjectile(CProjectile* p)
 
 	for (const int qi: p->quads) {
 		if (!p->synced)
-			spring::VectorErase(baseQuads[qi].unsyncedProjectiles, p);
+			spring::VectorErase(baseQuads[qi].particles, p);
 		else
-		spring::VectorErase(baseQuads[qi].syncedProjectiles, p);
+		spring::VectorErase(baseQuads[qi].projectiles, p);
 	}
 
 	p->quads.clear();
@@ -709,7 +709,7 @@ void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& pos, flo
 	qfq.projectiles = tempProjectiles.ReserveVector();
 
 	for (const int qi: *qfQuery.quads) {
-		for (CProjectile* p: baseQuads[qi].syncedProjectiles) {
+		for (CProjectile* p: baseQuads[qi].projectiles) {
 			if (p->tempNum == tempNum)
 				continue;
 
@@ -733,7 +733,7 @@ void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& mins, co
 	qfq.projectiles = tempProjectiles.ReserveVector();
 
 	for (const int qi: *qfQuery.quads) {
-		for (CProjectile* p: baseQuads[qi].syncedProjectiles) {
+		for (CProjectile* p: baseQuads[qi].projectiles) {
 			if (p->tempNum == tempNum)
 				continue;
 
