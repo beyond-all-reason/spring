@@ -75,8 +75,8 @@ public:
 
 	void DrawQuad(int x, int y) override {
 		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
-		AddProjectiles(q.projectiles);
-		AddProjectiles(q.particles);
+		AddProjectiles(q.syncedProjectiles);
+		AddProjectiles(q.unsyncedProjectiles);
 	}
 
 	virtual void ResetState() override {

@@ -189,9 +189,9 @@ public:
 			units = std::move(q.units);
 			teamUnits = std::move(q.teamUnits);
 			features = std::move(q.features);
-			projectiles = std::move(q.projectiles);
+			syncedProjectiles = std::move(q.syncedProjectiles);
 			repulsers = std::move(q.repulsers);
-			particles = std::move(q.particles); // TODO make default operator
+			unsyncedProjectiles = std::move(q.unsyncedProjectiles); // TODO make default operator
 			return *this;
 		}
 
@@ -205,17 +205,17 @@ public:
 				v.clear();
 			}
 			features.clear();
-			projectiles.clear();
+			syncedProjectiles.clear();
 			repulsers.clear();
-			particles.clear();
+			unsyncedProjectiles.clear();
 		}
 
 	public:
 		std::vector<CUnit*> units;
 		std::vector< std::vector<CUnit*> > teamUnits;
 		std::vector<CFeature*> features;
-		std::vector<CProjectile*> projectiles;
-		std::vector<CProjectile*> particles;
+		std::vector<CProjectile*> syncedProjectiles;
+		std::vector<CProjectile*> unsyncedProjectiles;
 		std::vector<CPlasmaRepulser*> repulsers;
 	};
 

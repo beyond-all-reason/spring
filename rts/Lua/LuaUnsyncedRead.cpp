@@ -1660,7 +1660,7 @@ class CVisProjectileQuadDrawer: public CWorldObjectQuadDrawer<CProjectile> {
 public:
 	void DrawQuad(int x, int y) override {
 		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
-		const ObjectList* o = &q.projectiles;
+		const ObjectList* o = &q.syncedProjectiles;
 
 		AddObjectList(o);
 	}
