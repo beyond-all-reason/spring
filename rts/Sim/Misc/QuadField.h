@@ -182,17 +182,10 @@ public:
 
 		Quad() = default;
 		Quad(const Quad& q) = delete;
-		Quad(Quad&& q) { *this = std::move(q); }
+		Quad(Quad&& q) = default;
 
 		Quad& operator = (const Quad& q) = delete;
-		Quad& operator = (Quad&& q) {
-			units = std::move(q.units);
-			teamUnits = std::move(q.teamUnits);
-			features = std::move(q.features);
-			projectiles = std::move(q.projectiles);
-			repulsers = std::move(q.repulsers);
-			return *this;
-		}
+		Quad& operator = (Quad&& q) = default;
 
 		void PostLoad();
 		void Resize(int numAllyTeams) { teamUnits.resize(numAllyTeams); }
