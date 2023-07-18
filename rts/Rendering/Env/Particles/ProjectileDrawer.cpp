@@ -61,42 +61,69 @@ extern bool DRAW_ONLY_VISIBLE_PARTICLE;
 static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
 
 // TODO move to class scope
-static std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> visibleModels;
-static std::vector<CProjectile*> visibleParticles;
+using ModelsT = std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT>;
+using ModellessT = std::vector<CProjectile*>;
+static ModelsT visibleModels;
+static ModellessT visibleParticles;
 
 namespace {
 
-class QuadFinder: public CReadMap::IQuadDrawer {
+class VisibleProjectileFinder: public CReadMap::IQuadDrawer {
 public:
+	VisibleProjectileFinder(ModelsT& models, ModellessT& modelless) :
+		models{models}, modelless{modelless} {}
+
 	void DrawQuad(int x, int y) override {
 		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
-		// TODO we could just copy pointer to q.projectiles but then how to split into modelles particles
-		// or find duplicates between quads?
-		for (auto* p : q.projectiles) {
-			if (p->model) {
-				visibleModels[MDL_TYPE(p)].AddObject(p);
-			} else
-				visibleParticles.push_back(p);
-		}
-		for (auto* p : q.particles) {
-			if (p->model)
-				visibleModels[MDL_TYPE(p)].AddObject(p);
-			else
-				visibleParticles.push_back(p);
-		}
+		AddProjectiles(q.projectiles);
+		AddProjectiles(q.particles);
 	}
 
 	virtual void ResetState() override {
 		visibleParticles.clear();
+		searchId = gs->GetTempNum();
 		for (auto& bucket : visibleModels)
 			bucket.Clear();
 	}
+private:
+	void AddProjectile(CProjectile* p) {
+		if (!MarkUniqueProjectile(p)) {
+			return;
+		}
+
+		if (p->model)
+			models[MDL_TYPE(p)].AddObject(p);
+		else
+			modelless.push_back(p);
+	}
+
+	void AddProjectiles(const std::vector<CProjectile*> projectiles) {
+		std::for_each(projectiles.begin(), projectiles.end(), [&] (auto* p) {
+			AddProjectile(p);
+		});
+	}
+
+	bool MarkUniqueProjectile(CProjectile* p) const {
+		if (likely(p->quads.size() <= 1)) {
+			return true;
+		}
+		if (unlikely(p->tempNum == searchId)) {
+			// belongs to multiple tiles, but already marked
+			return false;
+		}
+		p->tempNum = searchId;
+		return true;
+	}
+
+	int searchId=0;
+	ModelsT& models;
+	ModellessT& modelless;
 };
 
 } // unnamed namespace
 
 static void refreshVisibleProjectiles() {
-	static QuadFinder projQuadIter;
+	VisibleProjectileFinder projQuadIter{visibleModels, visibleParticles};
 	projQuadIter.ResetState();
 	readMap->GridVisibility(nullptr, &projQuadIter, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
 }
