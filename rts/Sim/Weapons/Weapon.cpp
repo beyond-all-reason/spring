@@ -8,6 +8,7 @@
 #include "Game/Players/Player.h"
 #include "Lua/LuaConfig.h"
 #include "Map/Ground.h"
+#include "Map/MapInfo.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -107,7 +108,8 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(incomingProjectileIDs),
 
 	CR_MEMBER(weaponAimAdjustPriority),
-	CR_MEMBER(fastAutoRetargeting)
+	CR_MEMBER(fastAutoRetargeting),
+	CR_MEMBER(accurateLeading)
 ))
 
 
@@ -185,7 +187,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	muzzleFlareSize(1),
 
 	weaponAimAdjustPriority(1.f),
-	fastAutoRetargeting(false)
+	fastAutoRetargeting(false),
+	accurateLeading(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -1268,53 +1271,55 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 	return aimPos;
 }
 
-#include "Map/MapInfo.h"
-#include<iostream>
-#include<string>
+// debug print includes
+//#include<iostream>
+//#include<string>
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 
-	std::cout << "weapon type = " << weaponDef->projectileType << " " << WEAPON_EXPLOSIVE_PROJECTILE << std::endl;
-	if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
-		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
-		std::cout << "weapon gravity = " << gravity << std::endl;
+	if (accurateLeading == true) {
+		if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
+			const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+			//std::cout << "weapon gravity = " << gravity << std::endl;
 
-		if (gravity < 0) {
-			// precise target leading
-			// newton iterations are too unstable, due to impossible to intercept targets
-			// use fixed point iterations
-			float3 dist = unit->pos - weaponMuzzlePos;
-			//const float aa = dist.dot(dist);
-			//const float bb = 2 * dist.dot(unit->speed);
-			//const float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed)
-			//	+ (weaponDef->projectilespeed) * (weaponDef->myGravity)
-			//	+ (unit->speed).dot(unit->speed);
-			//const float dd = (unit->speed).y * (weaponDef->myGravity);
-			//const float ee = 0.25f * (weaponDef->myGravity) * (weaponDef->myGravity);
+			if (gravity < 0) {
+				// precise target leading
+				// newton iterations are too unstable, due to impossible to intercept targets
+				// use fixed point iterations
+				// At most 32 are allowed, but mostly just 2 iterations are needed, and the most I have seen is 10
+				float3 dist = unit->pos - weaponMuzzlePos;
 
-			const float ee = 0.25f * (gravity) * (gravity);
-
-			//float t0 = 0.0f;
-			float t1 = 1.0f;
-			for (int ii = 0; ii < 32; ii++) {
-				std::cout << "Precision calcs = " << ii << std::endl;
-				float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed) - dist.y * (gravity);
-				if ((4 * dist.dot(dist) * ee) >= (cc * cc)) {
-					break;
-				}
-				t1 = math::sqrt((-cc - math::sqrt((cc * cc) - (4 * dist.dot(dist) * ee))) / (2 * ee));
-				if (std::abs(t1 - predictTime) < 1) {
+				const float ee = 0.25f * (gravity) * (gravity);
+				float t1 = 1.0f;
+				float temp1 = 1.0f;
+				float temp2 = 1.0f;
+				float cc = 1.0f;
+				for (int ii = 0; ii < 32; ii++) {
+					//std::cout << "Precision calcs = " << ii << std::endl;
+					cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed) - dist.y * (gravity);
+					temp1 = (4 * dist.dot(dist) * ee);
+					temp2 = (cc * cc);
+					if (temp1 >= temp2) { 
+						// this triggers if the target cannot be intercepted
+						// units can get out of range before the slow projectile can hit it
+						break;
+					}
+					t1 = math::sqrt((-cc - math::sqrt(temp2 - temp1)) / (2 * ee));
+					//std::cout << "P time = " << t1 << std::endl;
+					if (std::abs(t1 - predictTime) < 1) {
+						// we just need a 1 frame tolerance
+						predictTime = t1;
+						break;
+					}
 					predictTime = t1;
-					break;
+					// use new time estimate to get new estimate target location
+					dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
 				}
-				predictTime = t1;
-				dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
 			}
 		}
-
 	}
 
 	float3 lead = unit->speed * predictTime * predictMult;

@@ -53,6 +53,10 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
 	fastAutoRetargeting = weaponTable.GetBool("fastAutoRetargeting", fastAutoRetargeting);
+
+	// allow weapon to perform additional iterations when calculating target leading on a moving target, for better accuracy
+	// stops undershooting when firing at approaching enemies, and stops overshooting when firing at retreating enemies
+	accurateLeading = weaponTable.GetBool("accurateLeading", accurateLeading);
 }
 
 

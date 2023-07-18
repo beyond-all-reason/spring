@@ -201,6 +201,7 @@ public:
 
 	float weaponAimAdjustPriority;
 	bool fastAutoRetargeting;
+	bool accurateLeading;
 
 protected:
 	SWeaponTarget currentTarget;
