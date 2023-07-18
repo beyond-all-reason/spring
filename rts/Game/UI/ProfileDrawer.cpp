@@ -90,7 +90,7 @@ static void DrawBufferStats(const float2 pos)
 	{
 		std::array<size_t, 4> lfMetrics = {0};
 		std::array<size_t, 8> tfMetrics = {0};
-		for (const auto ft : CglFont::GetLoadedFonts()) {
+		for (const auto& ft : CglFont::GetLoadedFonts()) {
 			if (ft.expired())
 				continue;
 

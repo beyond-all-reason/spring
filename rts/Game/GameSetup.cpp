@@ -309,7 +309,7 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 
 		// expects lines of form team=x rather than team=TEAMx
 		// team field is relocated in RemapTeams
-		for (auto it: file.GetAllValues(section))
+		for (const auto& it: file.GetAllValues(section))
 			playerBase.SetValue(it.first, it.second);
 
 		// do checks for sanity

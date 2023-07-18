@@ -91,7 +91,7 @@ CONFIG(bool, ForceDisableShaders).deprecated(true);
  *
  * Global instance of CGlobalRendering
  */
-static uint8_t globalRenderingMem[sizeof(CGlobalRendering)];
+alignas(CGlobalRendering) static std::byte globalRenderingMem[sizeof(CGlobalRendering)];
 
 CGlobalRendering* globalRendering = nullptr;
 GlobalRenderingInfo globalRenderingInfo;
