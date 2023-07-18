@@ -7,7 +7,6 @@
 #include "System/SafeUtil.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/LogSinkHandler.h"
-#include <concepts>
 
 static constexpr int IC_BORDER = 7;
 
