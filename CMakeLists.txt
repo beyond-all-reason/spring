@@ -355,11 +355,11 @@ endif (LDGOLD_FOUND)
 
 message(STATUS "Compiling with C++17")
 if(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /Zc:__cplusplus")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20 /permissive- /Zc:__cplusplus")
 else (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX17_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX20_FLAGS}")
 endif(MSVC)
-#set_property(TARGET tgt PROPERTY CXX_STANDARD 11)
+#set_property(TARGET tgt PROPERTY CXX_STANDARD 20)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 

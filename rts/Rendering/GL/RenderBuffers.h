@@ -166,7 +166,7 @@ public:
 	}
 private:
 	static const std::string TypeToString(const AttributeDef& ad) {
-		static const char* fmtString = "{type}{count}";
+		static constexpr const char* fmtString = "{type}{count}";
 
 		std::string type;
 
