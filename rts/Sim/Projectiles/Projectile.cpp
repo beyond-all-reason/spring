@@ -93,6 +93,9 @@ CProjectile::CProjectile(
 
 CProjectile::~CProjectile()
 {
+	if (!synced)
+		return;
+
 	quadField.RemoveProjectile(this);
 }
 
@@ -119,7 +122,7 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 	if (!weapon && !piece)
 		projectileHandler.AddProjectile(this);
 
-	if (/*synced &&*/ !weapon)
+	if (synced && !weapon)
 		quadField.AddProjectile(this);
 }
 

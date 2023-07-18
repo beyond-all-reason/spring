@@ -38,10 +38,9 @@
 #define HIGH_NANO_PRIO 1.0f
 
 
-CONFIG(int, MaxParticles).defaultValue(50000).headlessValue(0).minimumValue(0);
+CONFIG(int, MaxParticles).defaultValue(10000).headlessValue(0).minimumValue(0);
 CONFIG(int, MaxNanoParticles).defaultValue(2000).headlessValue(0).minimumValue(0);
 
-bool DRAW_ONLY_VISIBLE_PARTICLE = false;
 
 CR_BIND(CProjectileHandler, )
 CR_REG_METADATA(CProjectileHandler, (
@@ -93,7 +92,6 @@ void CProjectileHandler::Init()
 
 	// register ConfigNotify()
 	configHandler->NotifyOnChange(this, {"MaxParticles", "MaxNanoParticles"});
-	ConfigNotify({}, {});
 }
 
 void CProjectileHandler::Kill()
@@ -136,9 +134,6 @@ void CProjectileHandler::ConfigNotify(const std::string& key, const std::string&
 {
 	maxParticles     = configHandler->GetInt("MaxParticles");
 	maxNanoParticles = configHandler->GetInt("MaxNanoParticles");
-
-	DRAW_ONLY_VISIBLE_PARTICLE = maxParticles % 2;
-	LOG("DRAW_ONLY_VISIBLE_PARTICLE %b", DRAW_ONLY_VISIBLE_PARTICLE);
 
 	projectiles[false].reserve(static_cast<size_t>(maxParticles) * 2);
 }

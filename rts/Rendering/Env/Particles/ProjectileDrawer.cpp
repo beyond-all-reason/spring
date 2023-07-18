@@ -54,19 +54,14 @@ static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile
 
 CProjectileDrawer* projectileDrawer = nullptr;
 
-extern bool DRAW_ONLY_VISIBLE_PARTICLE;
-
 // can not be a CProjectileDrawer; destruction in global
 // scope might happen after ~EventHandler (referenced by
 // ~EventClient)
 static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
 
 static bool IsInVisibleQuad(const float3& pos) {
-	if (DRAW_ONLY_VISIBLE_PARTICLE) {
-		auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
-		return DebugVisibilityDrawer::quads.visibleQuads[quadId];
-	}
-	return true;
+	auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
+	return DebugVisibilityDrawer::quads.visibleQuads[quadId];
 }
 
 
