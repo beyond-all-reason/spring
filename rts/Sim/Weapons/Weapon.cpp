@@ -1268,43 +1268,53 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 	return aimPos;
 }
 
+#include "Map/MapInfo.h"
+#include<iostream>
+#include<string>
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 
-	if (weaponDef->myGravity > 0) {
-		// precise target leading
-		// newton iterations are too unstable, due to impossible to intercept targets
-		// use fixed point iterations
-		float3 dist = unit->pos - weaponMuzzlePos;
-		//const float aa = dist.dot(dist);
-		//const float bb = 2 * dist.dot(unit->speed);
-		//const float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed)
-		//	+ (weaponDef->projectilespeed) * (weaponDef->myGravity)
-		//	+ (unit->speed).dot(unit->speed);
-		//const float dd = (unit->speed).y * (weaponDef->myGravity);
-		//const float ee = 0.25f * (weaponDef->myGravity) * (weaponDef->myGravity);
+	std::cout << "weapon type = " << weaponDef->projectileType << " " << WEAPON_EXPLOSIVE_PROJECTILE << std::endl;
+	if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
+		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+		std::cout << "weapon gravity = " << gravity << std::endl;
 
-		const float ee = 0.25f * (weaponDef->myGravity) * (weaponDef->myGravity);
+		if (gravity < 0) {
+			// precise target leading
+			// newton iterations are too unstable, due to impossible to intercept targets
+			// use fixed point iterations
+			float3 dist = unit->pos - weaponMuzzlePos;
+			//const float aa = dist.dot(dist);
+			//const float bb = 2 * dist.dot(unit->speed);
+			//const float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed)
+			//	+ (weaponDef->projectilespeed) * (weaponDef->myGravity)
+			//	+ (unit->speed).dot(unit->speed);
+			//const float dd = (unit->speed).y * (weaponDef->myGravity);
+			//const float ee = 0.25f * (weaponDef->myGravity) * (weaponDef->myGravity);
 
-		//float t0 = 0.0f;
-		float t1 = 1.0f;
-		for (int ii = 0; ii < 32; ii++) {
-			float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed) - dist.y * (weaponDef->myGravity);
-			if ((4 * dist.dot(dist) * ee) >= (cc * cc)) {
-				break;
-			}
-			t1 = math::sqrt((-cc - math::sqrt((cc * cc) - (4 * dist.dot(dist) * ee))) / (2 * ee));
-			if (std::abs(t1 - predictTime) < 1) {
+			const float ee = 0.25f * (gravity) * (gravity);
+
+			//float t0 = 0.0f;
+			float t1 = 1.0f;
+			for (int ii = 0; ii < 32; ii++) {
+				std::cout << "Precision calcs = " << ii << std::endl;
+				float cc = -(weaponDef->projectilespeed) * (weaponDef->projectilespeed) - dist.y * (gravity);
+				if ((4 * dist.dot(dist) * ee) >= (cc * cc)) {
+					break;
+				}
+				t1 = math::sqrt((-cc - math::sqrt((cc * cc) - (4 * dist.dot(dist) * ee))) / (2 * ee));
+				if (std::abs(t1 - predictTime) < 1) {
+					predictTime = t1;
+					break;
+				}
 				predictTime = t1;
-				break;
+				dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
 			}
-			predictTime = t1;
-			dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
-
 		}
+
 	}
 
 	float3 lead = unit->speed * predictTime * predictMult;
