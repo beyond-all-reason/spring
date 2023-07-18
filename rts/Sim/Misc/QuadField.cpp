@@ -493,8 +493,10 @@ void CQuadField::RemoveFeature(CFeature* feature)
 
 
 
+extern bool DRAW_ONLY_VISIBLE_PARTICLE;
 void CQuadField::MovedProjectile(CProjectile* p)
 {
+	if (!DRAW_ONLY_VISIBLE_PARTICLE)
 	if (!p->synced)
 		return;
 	// hit-scan projectiles do NOT move!

@@ -209,6 +209,9 @@ void CProjectileHandler::UpdateProjectilesImpl()
 
 			MAPPOS_SANITY_CHECK(p->pos);
 			p->Update();
+			// FIXME should call quadField.MovedProjectile(p);
+			// to make ProjectileDrawer read it from current quad
+			// but we are in MT context
 			MAPPOS_SANITY_CHECK(p->pos);
 		});
 	}
