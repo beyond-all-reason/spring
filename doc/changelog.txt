@@ -49,6 +49,12 @@ Lua:
    and run in the order they were added, just before that frame's GameFrame call-in.
  
 
+Game Setup:
+ - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
+   blank via 'initBlank' parameter (either 1 or 0) and specifying `blank_map_x`, `blank_map_y`,
+   `blank_map_height` map options.
+
+
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
  - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
