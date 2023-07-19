@@ -353,11 +353,11 @@ else  (LDGOLD_FOUND)
 	message(WARNING "You are using ld.bfd, it's much slower than ld.gold.")
 endif (LDGOLD_FOUND)
 
-message(STATUS "Compiling with C++20")
+message(STATUS "Compiling with C++17")
 if(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20 /permissive- /Zc:__cplusplus")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /permissive- /Zc:__cplusplus")
 else (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif(MSVC)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
