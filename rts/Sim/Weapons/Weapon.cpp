@@ -433,9 +433,10 @@ void CWeapon::UpdateFire()
 	if (!CanFire(false, false, false))
 		return;
 
-	if (fastQueryPointUpdate)
+	if (fastQueryPointUpdate) {
 		UpdateWeaponPieces(false);
 		UpdateWeaponVectors();
+	} 
 
 	if (!TryTarget(currentTargetPos, currentTarget, true))
 		return;
