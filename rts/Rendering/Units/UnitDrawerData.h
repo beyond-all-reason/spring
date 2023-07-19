@@ -9,7 +9,7 @@
 struct SolidObjectGroundDecal;
 struct S3DModel;
 class CUnitDrawer;
-class UnitDef;
+struct UnitDef;
 
 namespace icon {
 	class CIconData;

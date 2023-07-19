@@ -10,7 +10,9 @@
 #include "LuaHashString.h"
 #include "lib/lua/include/LuaInclude.h" //FIXME needed for GetLuaContextData
 
+#include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #define LUA_HANDLE_ORDER_RULES            100
@@ -326,6 +328,9 @@ class CLuaHandle : public CEventClient
 
 		std::string killMsg;
 
+		std::map <int, std::vector <std::pair <int, std::vector <int>>>> delayedCallsByFrame;
+		void RunDelayedFunctions(int frameNum);
+
 		std::vector<bool> watchUnitDefs;        // callin masks for Unit*Collision, UnitMoveFailed
 		std::vector<bool> watchFeatureDefs;     // callin masks for UnitFeatureCollision
 		std::vector<bool> watchProjectileDefs;  // callin masks for Projectile*
@@ -347,6 +352,7 @@ class CLuaHandle : public CEventClient
 		static int CallOutGetCallInList(lua_State* L);
 		static int CallOutUpdateCallIn(lua_State* L);
 		static int CallOutIsEngineMinVersion(lua_State* L);
+		static int CallOutDelayByFrames(lua_State* L);
 
 	public: // static
 #if (!defined(UNITSYNC) && !defined(DEDICATED))

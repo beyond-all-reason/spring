@@ -162,6 +162,7 @@ void CWorldDrawer::InitPost() const
 				mv.UploadVBOs();
 			}
 			mv.SetSafeToDeleteVectors();
+			modelLoader.LogErrors();
 			CModelsLock::SetThreadSafety(false); //all models are already preloaded
 		}
 	}

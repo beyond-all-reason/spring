@@ -120,6 +120,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetGameRulesParam);
 	REGISTER_LUA_CFUNC(GetGameRulesParams);
 
+	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
+	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
+
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOptions);
 

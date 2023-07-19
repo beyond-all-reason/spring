@@ -56,7 +56,5 @@ set(sources_engine_Lua
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaVAOImpl.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaVBO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaVBOImpl.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/LuaMatrix.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/LuaMatrixImpl.cpp"
 		PARENT_SCOPE
 	)

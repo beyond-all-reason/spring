@@ -38,6 +38,7 @@ CR_REG_METADATA(CGameSetup, (
 
 	CR_IGNORED(dsMapHash),
 	CR_IGNORED(dsModHash),
+	CR_IGNORED(fixedRNGSeed),
 
 	CR_IGNORED(gameStartDelay),
 
@@ -182,6 +183,7 @@ void CGameSetup::ResetState()
 
 	std::memset(dsMapHash, 0, sizeof(dsMapHash));
 	std::memset(dsModHash, 0, sizeof(dsModHash));
+	fixedRNGSeed = 0;
 
 	gameStartDelay = 0;
 	numDemoPlayers = 0;
@@ -309,7 +311,7 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 
 		// expects lines of form team=x rather than team=TEAMx
 		// team field is relocated in RemapTeams
-		for (auto it: file.GetAllValues(section))
+		for (const auto& it: file.GetAllValues(section))
 			playerBase.SetValue(it.first, it.second);
 
 		// do checks for sanity
@@ -584,6 +586,7 @@ bool CGameSetup::Init(const std::string& buf)
 
 	file.GetDef(initBlank, "0", "GAME\\InitBlank");
 
+	file.GetTDef(fixedRNGSeed, unsigned(0), "GAME\\FixedRNGSeed"); // 0 means use random seed
 	gameID      = file.SGetValueDef("",  "GAME\\GameID");
 	modName     = file.SGetValueDef("",  "GAME\\Gametype");
 	mapName     = file.SGetValueDef("",  "GAME\\MapName");

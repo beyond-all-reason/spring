@@ -3,6 +3,7 @@
 #ifndef VORBIS_SHARED
 #define VORBIS_SHARED
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
