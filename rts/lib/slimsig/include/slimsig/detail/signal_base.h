@@ -116,7 +116,7 @@ public:
     using std::swap;
     using std::back_inserter;
     using std::copy_if;
-    using std::not1;
+    //using std::not1;
     if (this != &rhs) {
     #if !defined(NDEBUG) || (defined(SLIMSIG_SWAP_GUARD) && SLIMSIG_SWAP_GUARD)
       if (is_running() || rhs.is_running())

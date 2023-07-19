@@ -166,7 +166,7 @@ public:
 	}
 private:
 	static const std::string TypeToString(const AttributeDef& ad) {
-		static const char* fmtString = "{type}{count}";
+		static constexpr const char* fmtString = "{type}{count}";
 
 		std::string type;
 
@@ -351,14 +351,14 @@ public:
 	using VertType = T;
 	using IndcType = uint32_t;
 
-	TypedRenderBuffer<T>()
+	TypedRenderBuffer()
 		: RenderBuffer()
 		, vertCount0{ 0 }
 		, elemCount0{ 0 }
 		, bufferType{ bufferTypeDefault }
 		, optimizeForStreaming{ true }
 	{}
-	TypedRenderBuffer<T>(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault, bool optimizeForStreaming_ = true)
+	TypedRenderBuffer(size_t vertCount0_, size_t elemCount0_, IStreamBufferConcept::Types bufferType_ = bufferTypeDefault, bool optimizeForStreaming_ = true)
 		: RenderBuffer({ vertCount0_, elemCount0_ })
 		, vertCount0 { vertCount0_ }
 		, elemCount0 { elemCount0_ }
@@ -369,7 +369,7 @@ public:
 		indcs.reserve(elemCount0);
 	}
 
-	~TypedRenderBuffer<T>() override {
+	~TypedRenderBuffer() override {
 		verts = {};
 		indcs = {};
 		vbo = {};
@@ -412,8 +412,8 @@ public:
 		return std::array{ verts.capacity(), indcs.capacity() };
 	}
 
-	TypedRenderBuffer<T>(const TypedRenderBuffer<T>& trdb) = delete;
-	TypedRenderBuffer<T>(TypedRenderBuffer<T>&& trdb) noexcept { *this = std::move(trdb); }
+	TypedRenderBuffer(const TypedRenderBuffer<T>& trdb) = delete;
+	TypedRenderBuffer(TypedRenderBuffer<T>&& trdb) noexcept { *this = std::move(trdb); }
 
 	TypedRenderBuffer<T>& operator = (const TypedRenderBuffer<T>& rhs) = delete;
 	TypedRenderBuffer<T>& operator = (TypedRenderBuffer<T>&& rhs) noexcept {
