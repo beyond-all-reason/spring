@@ -1268,10 +1268,11 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
 
 	// set the value of the parameter
 	if (lua_israwnumber(L, valIndex)) {
-		param.valueInt = lua_tofloat(L, valIndex);
-		param.valueString.resize(0);
+		param.value.emplace <float> (lua_tofloat(L, valIndex));
+	} else if (lua_israwboolean(L, valIndex)) {
+		param.value.emplace <bool> (lua_toboolean(L, valIndex));
 	} else if (lua_isstring(L, valIndex)) {
-		param.valueString = lua_tostring(L, valIndex);
+		param.value.emplace <std::string> (lua_tostring(L, valIndex));
 	} else if (lua_isnoneornil(L, valIndex)) {
 		params.erase(key);
 		return; //no need to set los if param was erased

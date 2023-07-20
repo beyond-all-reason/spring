@@ -77,6 +77,7 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
+#include <type_traits>
 
 
 using std::min;
@@ -675,17 +676,21 @@ static int PushRulesParams(lua_State* L, const char* caller,
 {
 	lua_createtable(L, 0, params.size());
 
-	for (auto& it: params) {
+	for (const auto& it: params) {
 		const std::string& name = it.first;
 		const LuaRulesParams::Param& param = it.second;
 		if (!(param.los & losStatus))
 			continue;
 
-		if (!param.valueString.empty()) {
-			LuaPushNamedString(L, name, param.valueString);
-		} else {
-			LuaPushNamedNumber(L, name, param.valueInt);
-		}
+		std::visit ([L, &name](auto&& value) {
+			using T = std::decay_t <decltype(value)>;
+			if constexpr (std::is_same_v <T, float>)
+				LuaPushNamedNumber(L, name, value);
+			else if constexpr (std::is_same_v <T, bool>)
+				LuaPushNamedBool(L, name, value);
+			else if constexpr (std::is_same_v <T, std::string>)
+				LuaPushNamedString(L, name, value);
+		}, param.value);
 	}
 
 	return 1;
@@ -702,17 +707,20 @@ static int GetRulesParam(lua_State* L, const char* caller, int index,
 		return 0;
 
 	const LuaRulesParams::Param& param = it->second;
+	if (!(param.los & losStatus))
+		return 0;
 
-	if (param.los & losStatus) {
-		if (!param.valueString.empty()) {
-			lua_pushsstring(L, param.valueString);
-		} else {
-			lua_pushnumber(L, param.valueInt);
-		}
-		return 1;
-	}
+	std::visit ([L](auto&& value) {
+		using T = std::decay_t <decltype(value)>;
+		if constexpr (std::is_same_v <T, float>)
+			lua_pushnumber(L, value);
+		else if constexpr (std::is_same_v <T, bool>)
+			lua_pushboolean(L, value);
+		else if constexpr (std::is_same_v <T, std::string>)
+			lua_pushsstring(L, value);
+	}, param.value);
 
-	return 0;
+	return 1;
 }
 
 
