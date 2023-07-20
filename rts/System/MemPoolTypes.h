@@ -162,8 +162,7 @@ public:
 	void* allocMem(size_t size) {
 		uint8_t* ptr = nullptr;
 
-		if (free_page_count == 0) {
-			assert(free_page_index = -1);
+		if (indcs.empty()) {
 			// pool is full
 			if (num_chunks == N)
 				return ptr;
@@ -171,29 +170,21 @@ public:
 			assert(chunks[num_chunks] == nullptr);
 			chunks[num_chunks].reset(new t_chunk_mem());
 
-			free_page_count = NUM_PAGES();
-			free_page_index = num_chunks * NUM_PAGES();
-
 			// reserve new indices; in reverse order since each will be popped from the back
-			uint32_t incIdx = free_page_index;
-			for (auto& chunk : *chunks[num_chunks]) {
-				chunk.index = ++incIdx;
+			indcs.reserve(K);
+
+			for (size_t j = 0; j < K; j++) {
+				indcs.push_back(static_cast<uint32_t>((num_chunks + 1) * K - j - 1));
 			}
-			chunks[num_chunks]->back().index = -1;
+
 			num_chunks += 1;
 		}
 
-		assert(free_page_count);
-		assert(free_page_index != -1);
-		
-		--free_page_count;
-		page_index = free_page_index;	
-		Chunk* chunk = get_chunk(page_index);		
-		free_page_index = chunk->index;
-				
+		const uint32_t idx = spring::VectorBackPop(indcs);
+
 		assert(size <= PAGE_SIZE());
-		chunk->index = page_index;
-		return chunk->data;
+		memcpy(ptr = page_mem(page_index = idx), &idx, sizeof(idx));
+		return (ptr + sizeof(idx));
 	}
 
 
@@ -211,30 +202,23 @@ public:
 
 		// zero-fill page
 		assert(idx < (N * K));
-		memset(page_mem(idx), 0, sizeof(Chunk));
+		memset(page_mem(idx), 0, sizeof(idx) + S);
 
-		auto* chunk = get_chunk(idx);
-		chunk->index = free_page_index;
-		free_page_index = idx;
-		++free_page_count;
+		indcs.push_back(idx);
 	}
 
 
-	void reserve(size_t n) { }
+	void reserve(size_t n) { indcs.reserve(n); }
 	void clear() {
-		free_page_count = num_chunks * NUM_PAGES();
-		free_page_index = (num_chunks > 0) ? 0 : -1;
+		indcs.clear();
+
 		// for every allocated chunk, add back all indices
 		// (objects are assumed to have already been freed)
-		
-		uint32_t free_index = 0;		
-		for (auto i = 0; i < num_chunks; ++i) {
-			for (auto& chunk : *chunks[i]) {
-				chunk.index = ++free_index;				
+		for (size_t i = 0; i < num_chunks; i++) {
+			for (size_t j = 0; j < K; j++) {
+				indcs.push_back(static_cast<uint32_t>((i + 1) * K - j - 1));
 			}
 		}
-        if (num_chunks)
-            chunks[num_chunks-1]->back().index = -1;
 
 		page_index = 0;
 	}
@@ -247,50 +231,39 @@ public:
 	const uint8_t* page_mem(size_t idx, size_t ofs = 0) const {
 		const t_chunk_ptr& chunk_ptr = chunks[idx / K];
 		const t_chunk_mem& chunk_mem = *chunk_ptr;
-		return (reinterpret_cast<const uint8_t*>(&chunk_mem[idx % K]) + ofs);
+		return (&chunk_mem[idx % K][0] + ofs);
 	}
 	uint8_t* page_mem(size_t idx, size_t ofs = 0) {
 		t_chunk_ptr& chunk_ptr = chunks[idx / K];
 		t_chunk_mem& chunk_mem = *chunk_ptr;
-		return (reinterpret_cast<uint8_t*>(&chunk_mem[idx % K]) + ofs);
+		return (&chunk_mem[idx % K][0] + ofs);
 	}
 
 	uint32_t page_idx(void* ptr) const {
 		const uint8_t* raw_ptr = reinterpret_cast<const uint8_t*>(ptr);
-		const Chunk* chunk = reinterpret_cast<const Chunk*>(raw_ptr - sizeof(Chunk::index));
+		const uint8_t* idx_ptr = raw_ptr - sizeof(uint32_t);
 
-		return chunk->index;
+		return (*reinterpret_cast<const uint32_t*>(idx_ptr));
 	}
 
 	size_t alloc_size() const { return (num_chunks * NUM_PAGES() * PAGE_SIZE()); } // size of total number of pages added over the pool's lifetime
-	size_t freed_size() const { return (free_page_count * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
+	size_t freed_size() const { return (indcs.size() * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
 
 	bool mapped(void* ptr) const { return ((page_idx(ptr) < (num_chunks * K)) && (page_mem(page_idx(ptr), sizeof(uint32_t)) == ptr)); }
 	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index, sizeof(uint32_t)) == ptr)); }
-	bool can_alloc() const { return num_chunks < N || free_page_count > 0; }
-	bool can_free() const { return free_page_count < (NUM_CHUNKS() * NUM_PAGES()); }
+	bool can_alloc() const { return num_chunks < N || !indcs.empty() ; }
+	bool can_free() const { return indcs.size() < (NUM_CHUNKS() * NUM_PAGES()); }
 
 private:
-	#pragma pack()
-	struct Chunk {
-		uint32_t index;
-		uint8_t data[S];
-	};	
-	
-	Chunk* get_chunk(size_t idx) {
-		return reinterpret_cast<Chunk*>(page_mem(idx));
-	}
-	
 	// first sizeof(uint32_t) bytes are reserved for index
-	typedef std::array<Chunk, K> t_chunk_mem;
+	typedef std::array<uint8_t[sizeof(uint32_t) + S], K> t_chunk_mem;
 	typedef std::unique_ptr<t_chunk_mem> t_chunk_ptr;
 
 	std::array<t_chunk_ptr, N> chunks;
+	std::vector<uint32_t> indcs;
 
 	size_t num_chunks = 0;
-	size_t page_index = 0; // idx of last allocated page
-	size_t free_page_count = 0;
-	size_t free_page_index = -1;
+	size_t page_index = 0;
 };
 
 
