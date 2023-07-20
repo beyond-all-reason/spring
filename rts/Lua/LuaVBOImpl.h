@@ -73,8 +73,8 @@ private:
 	void UpdateModelsVBOElementCount();
 	size_t ModelsVBOImpl();
 
-	void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);
-	void InstanceBufferCheck(int attrID, const char* func);
+	inline void InstanceBufferCheck(int attrID, const char* func);
+	inline void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);
 
 	template<typename TObj>
 	static SInstanceData InstanceDataFromGetData(int id, int attrID, uint8_t defTeamID);

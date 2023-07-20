@@ -80,6 +80,32 @@ namespace {
 	}
 }
 
+inline void LuaVBOImpl::InstanceBufferCheck(int attrID, const char* func)
+{
+	VBOExistenceCheck(vbo, func);
+	/*
+	if (defTarget != GL_ARRAY_BUFFER) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Target type (%u) is not GL_ARRAY_BUFFER(%u)", func, defTarget, GL_ARRAY_BUFFER);
+	}
+	*/
+	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
+	}
+}
+
+inline void LuaVBOImpl::InstanceBufferCheckAndFormatCheck(int attrID, const char* func)
+{
+	InstanceBufferCheck(attrID, func);
+
+	const BufferAttribDef& bad = bufferAttribDefs[attrID];
+	if (bad.type != GL_UNSIGNED_INT) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
+	}
+	if (bad.size != 4) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
+	}
+}
+
 /***
  *
  * @function VBO:Delete
@@ -727,7 +753,13 @@ void LuaVBOImpl::Clear()
 	VBOExistenceCheck(vbo, __func__);
 
 	GLubyte val = 0;
-	glClearNamedBufferData(GetId(), GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
+	if (GLEW_ARB_direct_state_access) {
+		glClearNamedBufferData(GetId(), GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
+	} else {
+		vbo->Bind();
+		glClearBufferData(defTarget, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
+		vbo->Unbind();
+	}
 }
 
 void LuaVBOImpl::UpdateModelsVBOElementCount()
@@ -875,32 +907,6 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 	vboOwner = false;
 
 	return bufferSizeInBytes;
-}
-
-void LuaVBOImpl::InstanceBufferCheckAndFormatCheck(int attrID, const char* func)
-{
-	InstanceBufferCheck(attrID, func);
-
-	const BufferAttribDef& bad = bufferAttribDefs[attrID];
-	if (bad.type != GL_UNSIGNED_INT) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
-	}
-	if (bad.size != 4) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
-	}
-}
-
-void LuaVBOImpl::InstanceBufferCheck(int attrID, const char* func)
-{
-	VBOExistenceCheck(vbo, func);
-	/*
-	if (defTarget != GL_ARRAY_BUFFER) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Target type (%u) is not GL_ARRAY_BUFFER(%u)", func, defTarget, GL_ARRAY_BUFFER);
-	}
-	*/
-	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
-	}
 }
 
 template<typename Iterable>
