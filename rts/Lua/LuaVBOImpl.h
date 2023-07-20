@@ -32,6 +32,7 @@ public:
 
 	size_t Upload(const sol::stack_table& luaTblData, sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> luaStartIndexOpt, sol::optional<int> luaFinishIndexOpt);
 	sol::as_table_t<std::vector<lua_Number>> Download(sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> elemCountOpt, sol::optional<bool> forceGPUReadOpt);
+	void Clear();
 
 	size_t ModelsVBO();
 
