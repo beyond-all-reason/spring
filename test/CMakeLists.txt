@@ -498,7 +498,7 @@ endif()
 		)
 
 	# add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
-	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
+	# target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 
 ################################################################################
 
