@@ -477,6 +477,16 @@ endif()
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 ################################################################################
+### MemPoolTypes
+	set(test_name MemPoolTypes)
+	set(test_src
+			"${CMAKE_CURRENT_SOURCE_DIR}/other/testMemPoolTypes.cpp"
+			${test_Log_sources}
+		)
+	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
+
+################################################################################
 
 
 add_subdirectory(headercheck)

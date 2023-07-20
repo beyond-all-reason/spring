@@ -251,6 +251,8 @@ public:
 
 	bool mapped(void* ptr) const { return ((page_idx(ptr) < (num_chunks * K)) && (page_mem(page_idx(ptr), sizeof(uint32_t)) == ptr)); }
 	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index, sizeof(uint32_t)) == ptr)); }
+	bool can_alloc() const { return num_chunks < N || !indcs.empty() ; }
+	bool can_free() const { return indcs.size() < (NUM_CHUNKS() * NUM_PAGES()); }
 
 private:
 	// first sizeof(uint32_t) bytes are reserved for index
@@ -282,10 +284,13 @@ public:
 		if (free_page_count == 0) {
 			i = used_page_count++;
 		} else {
-			i = indcs[--free_page_count];
+			assert(free_page_index != -1);
+			i = free_page_index;
+			free_page_index = pages[free_page_index].next_free;
+			--free_page_count;
 		}
 
-		return (pages[curr_page_index = i].data());
+		return pages[curr_page_index = i].data;
 	}
 
 
@@ -301,7 +306,10 @@ public:
 		std::memset(m, 0, PAGE_SIZE());
 
 		// mark page as free
-		indcs[free_page_count++] = base_offset(m) / PAGE_SIZE();
+		free_page_count++;
+		size_t idx = base_offset(m) / PAGE_SIZE();
+		pages[idx].next_free = free_page_index;
+		free_page_index = idx;
 	}
 
 
@@ -320,10 +328,10 @@ public:
 	size_t alloc_size() const { return (used_page_count * PAGE_SIZE()); } // size of total number of pages added over the pool's lifetime
 	size_t freed_size() const { return (free_page_count * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
 	size_t total_size() const { return (NUM_PAGES() * PAGE_SIZE()); }
-	size_t base_offset(const void* p) const { return (reinterpret_cast<const uint8_t*>(p) - reinterpret_cast<const uint8_t*>(pages[0].data())); }
+	size_t base_offset(const void* p) const { return (reinterpret_cast<const uint8_t*>(p) - reinterpret_cast<const uint8_t*>(pages[0].data)); }
 
 	bool mapped(const void* p) const { return (((base_offset(p) / PAGE_SIZE()) < total_size()) && ((base_offset(p) % PAGE_SIZE()) == 0)); }
-	bool alloced(const void* p) const { return (pages[curr_page_index].data() == p); }
+	bool alloced(const void* p) const { return (pages[curr_page_index].data == p); }
 
 	bool can_alloc() const { return (used_page_count < NUM_PAGES() || free_page_count > 0); }
 	bool can_free() const { return (free_page_count < NUM_PAGES()); }
@@ -331,20 +339,24 @@ public:
 	void reserve(size_t) {} // no-op
 	void clear() {
 		std::memset(pages.data(), 0, total_size());
-		std::memset(indcs.data(), 0, NUM_PAGES());
 
 		used_page_count = 0;
 		free_page_count = 0;
 		curr_page_index = 0;
+		free_page_index = -1;
 	}
 
 private:
-	std::array<std::array<uint8_t, S>, N> pages;
-	std::array<size_t, N> indcs;
+	union Page {
+		uint8_t data[S];
+		size_t next_free;
+	};
+	std::array<Page, N> pages;
 
 	size_t used_page_count = 0;
 	size_t free_page_count = 0; // indcs[fpc-1] is the last recycled page
 	size_t curr_page_index = 0;
+	size_t free_page_index = -1; // next free page
 };
 
 
