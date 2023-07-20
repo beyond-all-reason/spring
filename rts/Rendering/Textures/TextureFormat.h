@@ -3,7 +3,7 @@
 #ifndef TEXTURE_FORMAT_H
 #define TEXTURE_FORMAT_H
 
-namespace Texture
+namespace GL
 {
 	GLenum GetInternalFormatDataFormat(GLenum internalFormat) {
 		GLenum dataFormat;
