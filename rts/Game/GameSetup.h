@@ -29,6 +29,8 @@ public:
 
 	CGameSetup& operator = (const CGameSetup& gs) = delete;
 	CGameSetup& operator = (CGameSetup&& gs) noexcept {
+		initBlank = gs.initBlank;
+
 		fixedAllies = gs.fixedAllies;
 		useLuaGaia = gs.useLuaGaia;
 		luaDevMode = gs.luaDevMode;
@@ -43,7 +45,6 @@ public:
 
 		std::copy(gs.dsMapHash, gs.dsMapHash + sizeof(dsMapHash), dsMapHash);
 		std::copy(gs.dsModHash, gs.dsModHash + sizeof(dsModHash), dsModHash);
-		mapSeed = gs.mapSeed;
 		fixedRNGSeed = gs.fixedRNGSeed;
 
 		gameStartDelay = gs.gameStartDelay;
@@ -177,6 +178,8 @@ public:
 
 	uint32_t fixedRNGSeed;
 
+	bool initBlank;
+
 	bool fixedAllies;
 	bool useLuaGaia;
 	bool luaDevMode;
@@ -192,7 +195,6 @@ public:
 
 	uint8_t dsMapHash[64];
 	uint8_t dsModHash[64];
-	uint32_t mapSeed;
 
 	/**
 	 * Number of seconds until the game starts, counting
