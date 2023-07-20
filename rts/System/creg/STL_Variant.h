@@ -3,67 +3,90 @@
 
 #include "creg_cond.h"
 #include <variant>
+#include <functional>
+#include <sstream>
 
 #ifdef USING_CREG
 
+namespace {
+	// Calls your func with Variant element.
+	// Updated https://stackoverflow.com/a/58674921/9819318
+	template <typename Func, typename Variant, size_t N = 0>
+	void runtime_get(Func&& func, Variant& var, size_t idx) {
+		if (N == idx) {
+			std::invoke(func, std::get<N>(var));
+			return;
+		}
+
+		if constexpr (N + 1 < std::variant_size_v<Variant>) {
+			return runtime_get<Func, Variant, N + 1>(func, var, idx);
+		}
+	}
+	template <typename Func, typename Variant, size_t N = 0>
+	void runtime_set(Func&& func, Variant& var, size_t idx) {
+		if (N == idx) {
+			using T = std::variant_alternative_t<N, Variant>;
+			T input;
+			std::invoke(func, var, input);
+			return;
+		}
+
+		if constexpr (N + 1 < std::variant_size_v<Variant>) {
+			return runtime_set<Func, Variant, N + 1>(func, var, idx);
+		}
+	}
+}
+
 namespace creg
 {
-	template <typename T0, typename T1, typename T2>
-	class Variant3Type : public IType
+	template <typename ... Ts>
+	class VariantType : public IType
 	{
 	public:
-		using VT = std::variant<T0,T1,T2>;
-		Variant3Type() : IType(sizeof(VT)) { }
-		~Variant3Type() { }
+		using VT = std::variant<Ts...>;
+		VariantType() : IType(sizeof(VT)) { }
+		~VariantType() { }
 
 		void Serialize(ISerializer* s, void* instance)
 		{
 			VT& p = *(VT*)instance;
 			if (s->IsWriting()) {
-				int index = p.index();
-				s->SerializeInt(&index, sizeof(int));
-				switch (index) {
-					case 0: DeduceType<T0>::Get()->Serialize(s, (void*) &(std::get<0>(p))); break;
-					case 1: DeduceType<T1>::Get()->Serialize(s, (void*) &(std::get<1>(p))); break;
-					case 2: DeduceType<T2>::Get()->Serialize(s, (void*) &(std::get<2>(p))); break;
-				}
+				auto index = p.index();
+				s->SerializeInt(&index, sizeof(index));
+
+				const auto SerializeType = [s](auto&& value) {
+					using T = std::decay_t<decltype(value)>;
+					DeduceType<T>::Get()->Serialize(s, static_cast<void*>(&value));
+				};
+				runtime_get(SerializeType, p, index);
 			} else {
-				int index;
-				s->SerializeInt(&index, sizeof(int));
-				switch (index) {
-					case 0: {
-						T0 x;
-						DeduceType<T0>::Get()->Serialize(s, (void*) &x);
-						p = std::move(x); // neither `p.emplace <T0>` nor `<0>` worked; still, should be safe
-					} break;
-					case 1: {
-						T1 x;
-						DeduceType<T1>::Get()->Serialize(s, (void*) &x);
-						p = std::move(x);
-					} break;
-					case 2: {
-						T2 x;
-						DeduceType<T2>::Get()->Serialize(s, (void*) &x);
-						p = std::move(x);
-					} break;
-				}
+				std::size_t index;
+				s->SerializeInt(&index, sizeof(index));
+				const auto SerializeType = [s](VT& p, auto&& input) {
+					using T = std::decay_t<decltype(input)>;
+					DeduceType<T>::Get()->Serialize(s, static_cast<void*>(&input));
+					p = std::move(input);
+				};
+				runtime_set(SerializeType, p, index);
 			}
 		}
-		std::string GetName() const { return "variant<"
-			+ DeduceType<T0>::Get()->GetName() + ","
-			+ DeduceType<T1>::Get()->GetName() + ","
-			+ DeduceType<T2>::Get()->GetName() + ">";
+		std::string GetName() const {
+			std::ostringstream ss;
+			ss << "variant<";
+			((ss << DeduceType<Ts>::Get()->GetName() + ","), ...);
+			ss.seekp(-1, ss.cur);
+			ss << ">";
+			return ss.str();
 		}
 	};
 
-	/* FIXME: ideally this would support arbitrary variants, but that involves some
-	 * recursive variadic template bullshit. Three just happened to be the first use case. */
-	template<typename T0, typename T1, typename T2>
-	struct DeduceType<std::variant<T0,T1,T2> > {
+	template<typename ... Ts>
+	struct DeduceType<std::variant<Ts ...> > {
 		static std::unique_ptr<IType> Get() {
-			return std::unique_ptr<IType>(new Variant3Type<T0,T1,T2>());
+			return std::unique_ptr<IType>(new VariantType<Ts ...>());
 		}
 	};
+
 }
 
 #endif // USING_CREG
