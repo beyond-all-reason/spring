@@ -602,6 +602,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(RG8_SNORM);
 	PUSH_GL(R16_SNORM);
 	PUSH_GL(R8_SNORM);
+	PUSH_GL(DEPTH_COMPONENT16);
+	PUSH_GL(DEPTH_COMPONENT24);
+	PUSH_GL(DEPTH_COMPONENT32);
+	PUSH_GL(DEPTH_COMPONENT32F);
 
 	//access specifiers
 	PUSH_GL(READ_ONLY);
@@ -702,12 +706,6 @@ bool LuaConstGL::PushEntries(lua_State* L)
 /// @field GL_RGBA32F_ARB 0x8814
 
 /// @field GL_DEPTH_COMPONENT 0x1902
-
-/// @field GL_DEPTH_COMPONENT16 0x81A5
-
-/// @field GL_DEPTH_COMPONENT24 0x81A6
-
-/// @field GL_DEPTH_COMPONENT32 0x81A7
 
 /******************************************************************************
  * Not included, but useful RBO Formats

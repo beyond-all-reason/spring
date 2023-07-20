@@ -716,7 +716,7 @@ void BlenderImporter::BuildMaterials(ConversionData& conv_data)
 
     BuildDefaultMaterial(conv_data);
 
-    for(std::shared_ptr<Material> mat : conv_data.materials_raw) {
+    for(std::shared_ptr<Material>& mat : conv_data.materials_raw) {
 
         // reset per material global counters
         for (size_t i = 0; i < sizeof(conv_data.next_texture)/sizeof(conv_data.next_texture[0]);++i) {

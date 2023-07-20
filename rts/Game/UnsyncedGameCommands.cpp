@@ -4031,7 +4031,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 }
 
 
-static uint8_t ugcSingletonMem[sizeof(UnsyncedGameCommands)];
+alignas(UnsyncedGameCommands) static std::byte ugcSingletonMem[sizeof(UnsyncedGameCommands)];
 
 void UnsyncedGameCommands::CreateInstance() {
 	UnsyncedGameCommands*& singleton = GetInstance();

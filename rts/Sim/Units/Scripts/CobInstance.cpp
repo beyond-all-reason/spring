@@ -190,18 +190,15 @@ bool CCobInstance::HasTargetWeight(int weaponNum) const
 void CCobInstance::Create()
 {
 	ZoneScoped;
-	// calculate maximum reload-time of the available weapons
-	int maxReloadTime = 0;
 
-	for (const CWeapon* w: unit->weapons) {
-		maxReloadTime = std::max(maxReloadTime, w->reloadTime);
-	}
+	int maxReloadFrames = 0;
+	for (const auto* w: unit->weapons)
+		maxReloadFrames = std::max(maxReloadFrames, w->reloadTime);
 
-	// convert ticks to milliseconds
-	maxReloadTime *= GAME_SPEED;
+	const int maxReloadMs = 1000 * maxReloadFrames / GAME_SPEED;
 
 	Call(COBFN_Create);
-	Call(COBFN_SetMaxReloadTime, maxReloadTime);
+	Call(COBFN_SetMaxReloadTime, maxReloadMs);
 }
 
 

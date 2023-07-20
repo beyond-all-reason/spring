@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaTextures.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/FBO.h"
 #include "System/SpringMath.h"
@@ -46,21 +47,8 @@ std::string LuaTextures::Create(const Texture& tex)
 
 	glClearErrors("LuaTex", __func__, globalRendering->glDebugErrors);
 
-	GLenum dataFormat = GL_RGBA;
-	GLenum dataType   = GL_UNSIGNED_BYTE;
-
-	switch (tex.format) {
-		case GL_DEPTH_COMPONENT:
-		case GL_DEPTH_COMPONENT16:
-		case GL_DEPTH_COMPONENT24:
-		case GL_DEPTH_COMPONENT32:
-		case GL_DEPTH_COMPONENT32F: {
-			dataFormat = GL_DEPTH_COMPONENT;
-			dataType = GL_FLOAT;
-		} break;
-		default: {
-		} break;
-	}
+	GLenum dataFormat = GL::GetInternalFormatDataFormat(tex.format);
+	GLenum dataType   = GL::GetInternalFormatDataType(tex.format);
 
 	switch (tex.target) {
 		case GL_TEXTURE_1D: {

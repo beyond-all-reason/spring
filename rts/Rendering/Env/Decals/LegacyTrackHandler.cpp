@@ -481,7 +481,7 @@ int LegacyTrackHandler::GetTrackType(const std::string& name)
 	const std::string& lowerName = StringToLower(name);
 
 	unsigned int a = 0;
-	for (auto tt: trackTypes) {
+	for (auto& tt: trackTypes) {
 		if (tt.name == lowerName)
 			return a;
 		++a;

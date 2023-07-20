@@ -257,6 +257,24 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 	}
 }
 
+static bool CanISelectTeam(const CPlayer* myPlayer, int teamID)
+{
+	/* Not redundant with the check below, because
+	 * spectators cannot control the team they view. */
+	if (gu->myTeam == teamID)
+		return true;
+
+	/* Not redundant with the check above, because
+	 * players can control other teams with godmode.
+	 * Also, ideally this would be a feature (#567). */
+	if (myPlayer->CanControlTeam(teamID))
+		return true;
+
+	if (gu->spectatingFullSelect)
+		return true;
+
+	return false;
+}
 
 void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom)
 {
@@ -275,7 +293,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 	}
 
 	for (int team = minTeam; team <= maxTeam; team++) {
-		if (!gu->spectatingFullSelect && !myPlayer->CanControlTeam(team))
+		if (!CanISelectTeam(myPlayer, team))
 			continue;
 
 		for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {
@@ -318,7 +336,9 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 	//FIXME make modular?
 	if (unit == nullptr)
 		return;
-	if (unit->team != gu->myTeam && !gu->spectatingFullSelect && gs->godMode == 0)
+
+	const CPlayer* myPlayer = gu->GetMyPlayer();
+	if (!CanISelectTeam(myPlayer, unit->team))
 		return;
 
 	if (!selectType) {
@@ -328,7 +348,6 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 			AddUnit(unit);
 		}
 	} else {
-		const CPlayer* myPlayer = gu->GetMyPlayer();
 
 		// double click, select all units of same type (on screen, unless CTRL is pressed)
 		int minTeam = gu->myTeam;
@@ -340,7 +359,7 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 		}
 
 		for (int team = minTeam; team <= maxTeam; team++) {
-			if (!gu->spectatingFullSelect && !myPlayer->CanControlTeam(team))
+			if (!CanISelectTeam(myPlayer, team))
 				continue;
 
 			for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {

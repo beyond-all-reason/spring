@@ -250,6 +250,7 @@ void CModelLoader::LogErrors()
 		LOG_L(L_ERROR, "%s", buf);
 		CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, buf);
 	}
+	assert(false);
 
 	errors.clear();
 }

@@ -820,7 +820,7 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 	};
 
 	const auto engineIndxAttribDefFunc = [this]() {
-		// float3 pos
+		// uint index
 		this->bufferAttribDefs[0] = {
 			GL_UNSIGNED_INT, //type
 			1, //size

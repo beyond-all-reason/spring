@@ -99,8 +99,10 @@ bool LuaVFS::PushUnsynced(lua_State* L)
 
 	HSTR_PUSH_CFUNC(L, "UseArchive",     UseArchive);
 	HSTR_PUSH_CFUNC(L, "CompressFolder", CompressFolder);
-	HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
-	HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
+
+	// Removed due to sync unsafety, see commit 0ee88788931f9f0b195eb5f895f1092fde4211c0
+	// HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
+	// HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
 
 	return true;
 }

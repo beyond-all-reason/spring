@@ -52,7 +52,7 @@ private:
 		word() : width(0.0f), text(""), isSpace(false), isLineBreak(false), isColorCode(false), numSpaces(0), pos(0) {};
 
 		float width;
-		std::u8string text;
+		spring::u8string text;
 		bool isSpace;
 		bool isLineBreak;
 		bool isColorCode;
@@ -70,15 +70,15 @@ private:
 
 	word SplitWord(word& w, float wantedWidth, bool smart = true);
 
-	void SplitTextInWords(const std::u8string& text, std::list<word>* words, std::list<colorcode>* colorcodes);
+	void SplitTextInWords(const spring::u8string& text, std::list<word>* words, std::list<colorcode>* colorcodes);
 	void RemergeColorCodes(std::list<word>* words, std::list<colorcode>& colorcodes) const;
 
 	void AddEllipsis(std::list<line>& lines, std::list<word>& words, float maxWidth);
 
 	void WrapTextConsole(std::list<word>& words, float maxWidth, float maxHeight);
 
-	int WrapInPlace(std::u8string& text, float fontSize,  float maxWidth, float maxHeight = MAX_HEIGHT_DEFAULT);
-	std::u8string Wrap(const std::u8string& text, float fontSize, float maxWidth, float maxHeight = MAX_HEIGHT_DEFAULT);
+	int WrapInPlace(spring::u8string& text, float fontSize,  float maxWidth, float maxHeight = MAX_HEIGHT_DEFAULT);
+	spring::u8string Wrap(const spring::u8string& text, float fontSize, float maxWidth, float maxHeight = MAX_HEIGHT_DEFAULT);
 };
 
 // wrappers

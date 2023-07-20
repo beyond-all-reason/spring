@@ -44,8 +44,8 @@ CONFIG(int, MaxDynamicMapLights)
 
 CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
 CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false).description("Enable rendering the map to the map deferred buffers.");
-CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false).description("Enable DrawMapPostDeferred Lua callins.");
-CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false).description("Enable DrawMapDeferred Lua callins.");
+CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false).description("Enable DrawGroundPostDeferred Lua callin.");
+CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false).description("Enable DrawGroundDeferred Lua callin.");
 
 
 CONFIG(int, ROAM)

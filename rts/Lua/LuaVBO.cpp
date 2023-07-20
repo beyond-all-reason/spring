@@ -110,7 +110,7 @@ bool LuaVBOs::CheckAndReportSupported(lua_State* L, const unsigned int target) {
 
 LuaVBOs::~LuaVBOs()
 {
-	for (auto lvb : luaVBOs) {
+	for (auto& lvb : luaVBOs) {
 		if (lvb.expired())
 			continue; //destroyed already
 
