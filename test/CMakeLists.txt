@@ -487,6 +487,20 @@ endif()
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 
 ################################################################################
+### BenchmarkMemPoolTypes
+	set(test_name benchmarkMemPoolTypes)
+	set(test_src
+			"${CMAKE_CURRENT_SOURCE_DIR}/other/benchmarkMemPoolTypes.cpp"
+			${test_Log_sources}
+		)
+	set(test_libs
+			benchmark
+		)
+
+	# add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
+
+################################################################################
 
 
 add_subdirectory(headercheck)
