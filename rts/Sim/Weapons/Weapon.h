@@ -109,6 +109,7 @@ protected:
 	void UpdateWeaponPieces(const bool updateAimFrom = true);
 	void UpdateWeaponVectors();
 	float3 GetLeadVec(const CUnit* unit) const;
+	float GetAccuratePredictedImpactTime(const CUnit* unit) const;
 
 private:
 	void UpdateAim();

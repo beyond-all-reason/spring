@@ -1272,103 +1272,158 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 }
 
 // debug print includes
-#include<iostream>
-#include<string>
+//#include<iostream>
+//#include<string>
 
-float3 CWeapon::GetLeadVec(const CUnit* unit) const
+float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 {
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 
-	if (accurateLeading == true) {
-		if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
-			const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
-			//std::cout << "weapon gravity = " << gravity << std::endl;
+	if (weaponDef->type == "Cannon") {
+		//if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
+		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+		//std::cout << "weapon gravity = " << gravity << std::endl;
 
-			if (gravity < 0) {
-				// precise target leading
-				// newton iterations of the raw quartic are too unstable, due to impossible to intercept targets, 
-				// and existence of low and high trajectory solutions
-				// if reformulated as a fixed point iteration, odd coefficients drop so the equation becomes biquadratic. 
-				// https://en.wikipedia.org/wiki/Fixed-point_iteration
-				// f(t_n) = t_n+1
-				// in our case, assuming a source position of [0, 0, 0], target position at time T, and projectile properties
-				// we can calculate time to intercept, f(t_n)
-				// a + c*T^2 + e*T^4 = 0
-				// a = distance to target at time t_n
-				// c = -(projectile speed)^2 - (target vertical distance)*(gravity)
-				// e = 0.25*(gravity)^2
-				// we use the new intercept time, t_n+1, to calculate an updated target position,
-				// and updated intercept time f(t_n+1)
-				// newton iterations of this fixed point intercept formula are stable
-				// f(t) - t = 0
-				// t_n+1 = t_n - (f(t_n) - t_n)/(df(t_n) - 1)
-				// providing quadratic convergence instead of the naive fixed point linear convergence
-				// df(t_n) is a lot of divisions, a secant approximation is perfectly acceptable
-				// exact df(t_n), for reference
-				// const float vy = unit->speed.y;
-				// const float ddist = unit->speed.dot(unit->pos - weaponMuzzlePos);
-				// const float vt = unit->speed.dot(unit->speed);
-				// float temp3 = 1.0f;
-				// temp3 = math::sqrt(temp2 - temp1);
-				// dt1 = (1 / t1) * (1 / gg)
-				//	* (vy * (gravity)
-				//		- (1 / (temp3)) * (ps2 * vy * (gravity) + predictTime * vy * vy * gg
-				//			- gg * (ddist + predictTime * vt)));
-				// At most 32 iterations are allowed, but mostly just 2 iterations are needed.
+		if (gravity < 0) {
+			// precise target leading
+			// newton iterations of the raw quartic are too unstable, due to impossible to intercept targets, 
+			// and existence of low and high trajectory solutions
+			// if reformulated as a fixed point iteration, odd coefficients drop so the equation becomes biquadratic. 
+			// https://en.wikipedia.org/wiki/Fixed-point_iteration
+			// f(t_n) = t_n+1
+			// in our case, assuming a source position of [0, 0, 0], target position at time T, and projectile properties
+			// we can calculate time to intercept, f(t_n)
+			// a + c*T^2 + e*T^4 = 0
+			// a = distance to target at time t_n
+			// c = -(projectile speed)^2 - (target vertical distance)*(gravity)
+			// e = 0.25*(gravity)^2
+			// we use the new intercept time, t_n+1, to calculate an updated target position,
+			// and updated intercept time f(t_n+1)
+			// newton iterations of this fixed point intercept formula are stable
+			// f(t) - t = 0
+			// t_n+1 = t_n - (f(t_n) - t_n)/(df(t_n) - 1)
+			// providing quadratic convergence instead of the naive fixed point linear convergence
+			// df(t_n) is a lot of divisions, a secant approximation is perfectly acceptable
+			// exact df(t_n), for reference
+			// const float vy = unit->speed.y;
+			// const float ddist = unit->speed.dot(unit->pos - weaponMuzzlePos);
+			// const float vt = unit->speed.dot(unit->speed);
+			// float temp3 = 1.0f;
+			// temp3 = math::sqrt(temp2 - temp1);
+			// dt1 = (1 / t1) * (1 / gg)
+			//	* (vy * (gravity)
+			//		- (1 / (temp3)) * (ps2 * vy * (gravity) + predictTime * vy * vy * gg
+			//			- gg * (ddist + predictTime * vt)));
+			// At most 32 iterations are allowed, but mostly just 2 iterations are needed.
 
-				float3 dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
-				const float gg = (gravity) * (gravity);
-				const float ps2 = (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
-				float t1 = 1.0f;
-				float dt1 = 1.0f;
-				float temp1 = 1.0f;
-				float temp2 = 1.0f;
-				float cc = 1.0f;
-				float deltatime = predictTime;
-				//predictTime = 0.0f;
-				for (int ii = 0; ii < 32; ii++) {
-					//std::cout << "Precision calcs = " << ii << std::endl;
-					//std::cout << "gravity = " << gravity << std::endl;
-					//std::cout << "projectile velocity = " << weaponDef->projectilespeed << std::endl;
-					//std::cout << "dist = " << dist.x << " " << dist.y << " " << dist.z << std::endl;
-					//std::cout << "speed = " << unit->speed.x << " " << unit->speed.y << " " << unit->speed.z << std::endl;
-					cc = -ps2 - dist.y * (gravity);
-					temp1 = (dist.dot(dist) * gg);
-					temp2 = (cc * cc);
-					if (temp1 >= temp2) { 
-						// this triggers if the target cannot be intercepted
-						// units can get out of range before the slow projectile can hit it
-						break;
-					}
-					//f(t_n)
-					t1 = math::sqrt((-cc - math::sqrt(temp2 - temp1)) / (0.5f * gg));
-
-					// secant approximation of df(t_n)
-					dt1 = (t1 - predictTime) / deltatime;
-
-					//std::cout << "t1 = " << t1 << std::endl;
-					//std::cout << "dt = " << dt1 << std::endl;
-					if (std::abs(dt1 < 1)) {
-						// abs(dt1) less than 1 means newton iteration is stable, and can be used
-						t1 = predictTime - (t1 - predictTime) / (dt1 - 1);
-					}
-					//std::cout << "P time = " << t1 << std::endl;
-					if (std::abs(t1 - predictTime) < 1) {
-						// we just need a 1 frame tolerance
-						predictTime = t1;
-						break;
-					}
-					deltatime = t1 - predictTime;
-					predictTime = t1;
-					// use new time estimate to get new estimate target location
-					dist = unit->pos + unit->speed * predictTime - weaponMuzzlePos;
+			float3 dist = unit->pos + unit->speed * predictMult * predictTime - weaponMuzzlePos;
+			const float gg = (gravity) * (gravity);
+			const float ps2 = (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+			float t1 = 1.0f;
+			float dt1 = 1.0f;
+			float temp1 = 1.0f;
+			float temp2 = 1.0f;
+			float cc = 1.0f;
+			float deltatime = predictTime;
+			//predictTime = 0.0f;
+			for (int ii = 0; ii < 32; ii++) {
+				//std::cout << "Precision calcs = " << ii << std::endl;
+				//std::cout << "predictMult = " << predictMult << std::endl;
+				//std::cout << "predictTime = " << predictMult << std::endl;
+				//std::cout << "gravity = " << gravity << std::endl;
+				//std::cout << "projectile velocity = " << weaponDef->projectilespeed << std::endl;
+				//std::cout << "dist = " << dist.x << " " << dist.y << " " << dist.z << std::endl;
+				//std::cout << "speed = " << unit->speed.x << " " << unit->speed.y << " " << unit->speed.z << std::endl;
+				cc = -ps2 - dist.y * (gravity);
+				temp1 = (dist.dot(dist) * gg);
+				temp2 = (cc * cc);
+				if (temp1 >= temp2) {
+					// this triggers if the target cannot be intercepted
+					// units can get out of range before the slow projectile can hit it
+					break;
 				}
+				//f(t_n)
+				t1 = math::sqrt((-cc - math::sqrt(temp2 - temp1)) / (0.5f * gg));
+
+				// secant approximation of df(t_n)
+				dt1 = (t1 - predictTime) / deltatime;
+
+				//std::cout << "t1 = " << t1 << std::endl;
+				//std::cout << "dt = " << dt1 << std::endl;
+				if (std::abs(dt1 < 1)) {
+					// abs(dt1) less than 1 means newton iteration is stable, and can be used
+					t1 = predictTime - (t1 - predictTime) / (dt1 - 1);
+				}
+				//std::cout << "P time = " << t1 << std::endl;
+				if (std::abs(t1 - predictTime) < 1) {
+					// we just need a 1 frame tolerance
+					predictTime = t1;
+					break;
+				}
+				deltatime = t1 - predictTime;
+				predictTime = t1;
+				// use new time estimate to get new estimate target location
+				dist = unit->pos + unit->speed * predictMult * predictTime - weaponMuzzlePos;
 			}
+		} else {
+			// cannon has no gravity
+			// non-parabolic projectiles are much easier
+			// simple quadratic equation
+			float3 unitSpeed = unit->speed * predictMult;
+			float3 dist = unit->pos - weaponMuzzlePos;
+			float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+			float bb = 2 * (dist.dot(unitSpeed));
+			float cc = dist.dot(dist);
+			float temp1 = 4 * aa * cc;
+			float temp2 = (bb * bb);
+			if (temp1 >= temp2) {
+				// this triggers if the target cannot be intercepted
+				// units can get out of range before the slow projectile can hit it
+				return predictTime;
+			}
+			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
 		}
 	}
+	else {
 
-	float3 lead = unit->speed * predictTime * predictMult;
+		// non-parabolic projectiles are much easier
+		// simple quadratic equation
+		float3 unitSpeed = unit->speed * predictMult;
+		float3 dist = unit->pos - weaponMuzzlePos;
+		float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+		float bb = 2 * (dist.dot(unitSpeed));
+		float cc = dist.dot(dist);
+		float temp1 = 4 * aa * cc;
+		float temp2 = (bb * bb);
+		if (temp1 >= temp2) {
+			// this triggers if the target cannot be intercepted
+			// units can get out of range before the slow projectile can hit it
+			return predictTime;
+		}
+		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+		//std::cout << "basic check = " << predictTime << std::endl;
+
+	}
+
+	return predictTime;
+}
+
+
+float3 CWeapon::GetLeadVec(const CUnit* unit) const
+{
+	//float predictTime = GetPredictedImpactTime(unit->pos);
+	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
+	float3 lead = unit->speed;
+	if (accurateLeading == true) {
+		float predictTime = GetAccuratePredictedImpactTime(unit);
+		lead = unit->speed * predictTime * predictMult;
+	} else {
+		float predictTime = GetPredictedImpactTime(unit->pos);
+		lead = unit->speed * predictTime * predictMult;
+	}
+
+	//float3 lead = unit->speed * predictTime * predictMult;
 
 	if (weaponDef->leadLimit < 0.0f)
 		return lead;
