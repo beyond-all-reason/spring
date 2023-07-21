@@ -35,6 +35,7 @@ bool LuaVBOs::PushEntries(lua_State* L)
 		"Define", &LuaVBOImpl::Define,
 		"Upload", &LuaVBOImpl::Upload,
 		"Download", &LuaVBOImpl::Download,
+		"Clear", &LuaVBOImpl::Clear,
 
 		"ModelsVBO", &LuaVBOImpl::ModelsVBO,
 

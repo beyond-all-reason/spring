@@ -66,6 +66,46 @@ LuaVBOImpl::~LuaVBOImpl()
 }
 
 
+/***********************/
+//
+//  Validity Checks
+//
+
+namespace {
+	inline void VBOExistenceCheck(const VBO* vbo, const char* func)
+	{
+		if (!vbo) {
+			LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", func);
+		}
+	}
+}
+
+inline void LuaVBOImpl::InstanceBufferCheck(int attrID, const char* func)
+{
+	VBOExistenceCheck(vbo, func);
+	/*
+	if (defTarget != GL_ARRAY_BUFFER) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Target type (%u) is not GL_ARRAY_BUFFER(%u)", func, defTarget, GL_ARRAY_BUFFER);
+	}
+	*/
+	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
+	}
+}
+
+inline void LuaVBOImpl::InstanceBufferCheckAndFormatCheck(int attrID, const char* func)
+{
+	InstanceBufferCheck(attrID, func);
+
+	const BufferAttribDef& bad = bufferAttribDefs[attrID];
+	if (bad.type != GL_UNSIGNED_INT) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
+	}
+	if (bad.size != 4) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
+	}
+}
+
 /***
  *
  * @function VBO:Delete
@@ -557,9 +597,7 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
  */
 size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> luaStartIndexOpt, sol::optional<int> luaFinishIndexOpt)
 {
-	if (!vbo) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define() or :ShapeFromUnitDefID/ShapeFromFeatureDefID()?", __func__);
-	}
+	VBOExistenceCheck(vbo, __func__);
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	if (elemOffset >= elementsCount) {
@@ -615,9 +653,7 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(sol::optional<int>
 {
 	std::vector<lua_Number> dataVec;
 
-	if (!vbo) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid VBO. Did you call :Define()?", __func__);
-	}
+	VBOExistenceCheck(vbo, __func__);
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	const uint32_t elemCount = static_cast<uint32_t>(std::clamp(elemCountOpt.value_or(elementsCount), 1, static_cast<int>(elementsCount)));
@@ -710,6 +746,16 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(sol::optional<int>
 		vbo->Unbind();
 	}
 	return sol::as_table(dataVec);
+}
+
+void LuaVBOImpl::Clear()
+{
+	VBOExistenceCheck(vbo, __func__);
+
+	GLubyte val = 0;
+	vbo->Bind();
+	glClearBufferData(defTarget, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
+	vbo->Unbind();
 }
 
 void LuaVBOImpl::UpdateModelsVBOElementCount()
@@ -857,34 +903,6 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 	vboOwner = false;
 
 	return bufferSizeInBytes;
-}
-
-void LuaVBOImpl::InstanceBufferCheckAndFormatCheck(int attrID, const char* func)
-{
-	InstanceBufferCheck(attrID, func);
-
-	const BufferAttribDef& bad = bufferAttribDefs[attrID];
-	if (bad.type != GL_UNSIGNED_INT) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a type of GL_UNSIGNED_INT", func, attrID);
-	}
-	if (bad.size != 4) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Instance VBO attribute %d must have a size of 4", func, attrID);
-	}
-}
-
-void LuaVBOImpl::InstanceBufferCheck(int attrID, const char* func)
-{
-	if (!vbo) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Did you call :Define() succesfully?", func);
-	}
-	/*
-	if (defTarget != GL_ARRAY_BUFFER) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid instance VBO. Target type (%u) is not GL_ARRAY_BUFFER(%u)", func, defTarget, GL_ARRAY_BUFFER);
-	}
-	*/
-	if (bufferAttribDefs.find(attrID) == bufferAttribDefs.cend()) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] No instance attribute definition %d found", func, attrID);
-	}
 }
 
 template<typename Iterable>
@@ -1321,9 +1339,7 @@ size_t LuaVBOImpl::MatrixDataFromProjectileIDs(const sol::stack_table& ids, int 
 
 int LuaVBOImpl::BindBufferRangeImpl(GLuint bindingIndex,  const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt, bool bind)
 {
-	if (!vbo) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
-	}
+	VBOExistenceCheck(vbo, __func__);
 
 	const uint32_t elemOffset = static_cast<uint32_t>(std::max(elemOffsetOpt.value_or(0), 0));
 	const uint32_t elemCount = static_cast<uint32_t>(std::clamp(elemCountOpt.value_or(elementsCount), 1, static_cast<int>(elementsCount)));
@@ -1414,9 +1430,7 @@ int LuaVBOImpl::UnbindBufferRange(const GLuint index, const sol::optional<int> e
  */
 void LuaVBOImpl::DumpDefinition()
 {
-	if (!vbo) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", __func__);
-	}
+	VBOExistenceCheck(vbo, __func__);
 
 	std::ostringstream ss;
 	ss << fmt::format("Definition information on LuaVBOs. OpenGL Buffer ID={}:\n", vbo->GetId());
