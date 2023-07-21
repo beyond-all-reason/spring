@@ -264,6 +264,7 @@ GLAPI void APIENTRY glBufferStorage(GLenum target, GLsizeiptr size, const void* 
 GLAPI void APIENTRY glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) {}
 GLAPI void APIENTRY glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data) {}
 GLAPI void APIENTRY glCopyBufferSubData(GLenum readtarget, GLenum writetarget, GLintptr readoffset, GLintptr writeoffset, GLsizeiptr size) {}
+GLAPI void APIENTRY glClearBufferData(GLenum target, GLenum internalformat, GLenum format, GLenum type, const void* data) {}
 GLAPI void APIENTRY glBindBufferBase(GLenum target, GLuint index, GLuint buffer) {}
 GLAPI void APIENTRY glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size) {}
 GLAPI GLboolean APIENTRY glIsBuffer(GLuint buffer) { return GL_TRUE; }
