@@ -431,7 +431,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 	assert(piece != nullptr);
 
 	pos = piece->offset;
-	dir = piece->GetEmitDir();
+	dir = piece->GetEmitDir(); // warning investigated, seems fake
 
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
 
