@@ -753,13 +753,9 @@ void LuaVBOImpl::Clear()
 	VBOExistenceCheck(vbo, __func__);
 
 	GLubyte val = 0;
-	if (GLEW_ARB_direct_state_access) {
-		glClearNamedBufferData(GetId(), GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
-	} else {
-		vbo->Bind();
-		glClearBufferData(defTarget, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
-		vbo->Unbind();
-	}
+	vbo->Bind();
+	glClearBufferData(defTarget, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &val);
+	vbo->Unbind();
 }
 
 void LuaVBOImpl::UpdateModelsVBOElementCount()
