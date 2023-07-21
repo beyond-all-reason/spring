@@ -56,6 +56,17 @@ namespace spring {
 		tuple_exec_at<I + 1, FuncT, Tp...>(index - 1, t, f);
 	}
 
+	// https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/
+	template <std::size_t... Idx>
+	auto make_index_dispatcher(std::index_sequence<Idx...>) {
+		return [](auto&& f) { (f(std::integral_constant<std::size_t, Idx>{}), ...); };
+	}
+
+	template <std::size_t N>
+	auto make_index_dispatcher() {
+		return make_index_dispatcher(std::make_index_sequence<N>{});
+	}
+
 	template<typename T>
 	struct return_type { using type = T; };
 

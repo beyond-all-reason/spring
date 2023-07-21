@@ -5,21 +5,9 @@
 #include <tuple>
 #include <functional>
 #include <sstream>
+#include "../TemplateUtils.hpp"
 
 #ifdef USING_CREG
-
-namespace {
-	// https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/
-	template <std::size_t... Idx>
-	auto make_index_dispatcher(std::index_sequence<Idx...>) {
-		return [](auto&& f) { (f(std::integral_constant<std::size_t, Idx>{}), ...); };
-	}
-
-	template <std::size_t N>
-	auto make_index_dispatcher() {
-		return make_index_dispatcher(std::make_index_sequence<N>{});
-	}
-}
 
 namespace creg
 {
@@ -35,7 +23,7 @@ namespace creg
 		void Serialize(ISerializer* s, void* instance)
 		{
 			TT& t = *(TT*)instance;
-			auto IndexDispatcher = make_index_dispatcher<TTs>();
+			auto IndexDispatcher = spring::make_index_dispatcher<TTs>();
 			// same code for IsWriting() and !IsWriting()
 			const auto SerializeType = [s](auto&& value) {
 				using T = std::decay_t<decltype(value)>;
