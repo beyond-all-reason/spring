@@ -445,9 +445,6 @@ bool CFileHandler::InsertRawDirs(
 	dirSet.reserve(dirSet.size() + found.size());
 
 	for (std::string& dir: found) {
-		if (!spring::regex_match(dir, regexpattern))
-			continue;
-
 		dirSet.emplace_back(std::move(dir));
 	}
 #endif
