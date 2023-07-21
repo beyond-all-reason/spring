@@ -165,6 +165,8 @@ CR_REG_METADATA(CGame, (
 	CR_IGNORED(lastUnsyncedUpdateTime),
 	CR_IGNORED(skipLastDrawTime),
 
+	CR_IGNORED(lastActionList), //IGNORED?
+
 	CR_IGNORED(updateDeltaSeconds),
 	CR_MEMBER(totalGameTime),
 

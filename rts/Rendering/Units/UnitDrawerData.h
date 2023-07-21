@@ -19,7 +19,7 @@ namespace GL {
 }
 
 class GhostSolidObject {
-	CR_DECLARE(GhostSolidObject)
+	CR_DECLARE_STRUCT(GhostSolidObject)
 public:
 	void IncRef() { (refCount++); }
 	bool DecRef() { return ((refCount--) > 1); }

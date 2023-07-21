@@ -36,6 +36,7 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_IGNORED(original),
 
 	CR_IGNORED(dirty),
+	CR_IGNORED(customDirty),
 	CR_IGNORED(modelSpaceMat),
 	CR_IGNORED(pieceSpaceMat),
 
