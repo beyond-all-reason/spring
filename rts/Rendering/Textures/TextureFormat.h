@@ -5,7 +5,7 @@
 
 namespace GL
 {
-	GLenum GetInternalFormatDataFormat(GLenum internalFormat) {
+	inline GLenum GetInternalFormatDataFormat(GLenum internalFormat) {
 		GLenum dataFormat;
 		switch (internalFormat) {
 			case GL_R8UI:
@@ -60,7 +60,7 @@ namespace GL
 		return dataFormat;
 	}
 
-	GLenum GetInternalFormatDataType(GLenum internalFormat) {
+	inline GLenum GetInternalFormatDataType(GLenum internalFormat) {
 		GLenum dataType;
 		switch (internalFormat) {
 			case GL_RGBA16F:
