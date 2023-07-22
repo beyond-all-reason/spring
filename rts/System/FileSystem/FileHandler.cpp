@@ -438,8 +438,6 @@ bool CFileHandler::InsertRawDirs(
 	const string& pattern
 ) {
 #ifndef TOOLS
-	const spring::regex regexpattern{FileSystem::ConvertGlobToRegex(pattern), spring::regex::icase};
-
 	std::vector<string> found = std::move(dataDirsAccess.FindFiles(path, pattern, FileQueryFlags::ONLY_DIRS));
 
 	dirSet.reserve(dirSet.size() + found.size());
