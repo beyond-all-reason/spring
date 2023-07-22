@@ -17,6 +17,7 @@
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/glHelpers.h"
 #include "System/Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
@@ -254,12 +255,7 @@ void WorkaroundATIPointSizeBug()
 
 void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
 {
-	GLint currentBinding;
-	const auto it = FormatToQuery.find(target);
-	assert(it != FormatToQuery.end());
-	glGetIntegerv(it->second, &currentBinding);
-
-	glBindTexture(target, textureID);
+	GLint currentBinding = glTempBindTexture(target, textureID);
 
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_INTERNAL_FORMAT, &tp.intFmt);
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &tp.sizeX);

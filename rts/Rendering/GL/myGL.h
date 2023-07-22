@@ -43,19 +43,6 @@
 	#define GL_INVALID_INDEX -1
 #endif
 
-static const spring::unordered_map<GLenum, GLenum> FormatToQuery {
-	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D                   },
-	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D                   },
-	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D                   },
-	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY             },
-	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY             },
-	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE            },
-	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP             },
-	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER               },
-	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE       },
-	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
-};
-
 struct TextureParameters {
 	GLint intFmt;
 	GLint sizeX;
