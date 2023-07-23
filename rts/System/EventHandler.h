@@ -10,6 +10,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Projectiles/Projectile.h"
+#include "Game/UI/MouseHandler.h"
 
 class CWeapon;
 struct Command;
@@ -345,7 +346,7 @@ class CEventHandler
 		void ListRemove(EventClientList& ciList, CEventClient* ec);
 
 	private:
-		CEventClient* mouseOwner;
+		CEventClient* mouseOwner[NUM_BUTTONS + 1];
 
 	private:
 		EventMap eventMap;

@@ -33,7 +33,9 @@ CEventHandler::CEventHandler()
 
 void CEventHandler::ResetState()
 {
-	mouseOwner = nullptr;
+	for (int i = 1; i <= NUM_BUTTONS; i++) {
+		mouseOwner[i] = nullptr;
+	}
 
 	eventMap.clear();
 	eventMap.reserve(64);
@@ -78,8 +80,11 @@ void CEventHandler::AddClient(CEventClient* ec)
 
 void CEventHandler::RemoveClient(CEventClient* ec)
 {
-	if (mouseOwner == ec)
-		mouseOwner = nullptr;
+	for (int i = 1; i <= NUM_BUTTONS; i++) {
+		if (mouseOwner[i] == ec)
+			mouseOwner[i] = nullptr;
+	}
+	
 
 	ListRemove(handles, ec);
 
@@ -789,8 +794,11 @@ bool CEventHandler::MousePress(int x, int y, int button)
 		CEventClient* ec = listMousePress[listMousePress.size() - 1 - i];
 
 		if (ec->MousePress(x, y, button)) {
-			if (mouseOwner == nullptr)
-				mouseOwner = ec;
+			if (mouseOwner[button] != nullptr)
+				mouseOwner[button]->MouseRelease(x, y, button);
+				
+			
+			mouseOwner[button] = ec;
 
 			return true;
 		}
@@ -802,21 +810,21 @@ bool CEventHandler::MousePress(int x, int y, int button)
 void CEventHandler::MouseRelease(int x, int y, int button)
 {
 	ZoneScoped;
-	if (mouseOwner == nullptr)
+	if (mouseOwner[button] == nullptr)
 		return;
 
-	mouseOwner->MouseRelease(x, y, button);
-	mouseOwner = nullptr;
+	mouseOwner[button]->MouseRelease(x, y, button);
+	mouseOwner[button] = nullptr;
 }
 
 
 bool CEventHandler::MouseMove(int x, int y, int dx, int dy, int button)
 {
 	ZoneScoped;
-	if (mouseOwner == nullptr)
+	if (mouseOwner[button] == nullptr)
 		return false;
 
-	return mouseOwner->MouseMove(x, y, dx, dy, button);
+	return mouseOwner[button]->MouseMove(x, y, dx, dy, button);
 }
 
 bool CEventHandler::MouseWheel(bool up, float value)
