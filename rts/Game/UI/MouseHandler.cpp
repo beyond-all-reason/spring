@@ -298,7 +298,6 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 
 
 
-// bool CandidatePassesFilter(std::vector<CMouseBindings::MousePress>& candidate) {
 bool CMouseHandler::CandidatePassesFilter(CMouseBindings::MouseBinding& candidate) {
 	if (candidate.pressChain.size() < mouseChainCache.size()) {
 		if (mouseBindings.GetDebugEnabled())
@@ -333,17 +332,6 @@ void CMouseHandler::FilterCandidateBindings() {
 	}
 	candidateBindings.resize(candidateBindings.size() - countRemoved);
 }
-bool CMouseHandler::AllCandidatesEqualCacheLength() {
-	if (mouseBindings.GetDebugEnabled())
-		LOG("[MouseHandler::AllCandidatesEqualCacheLength] mouseChainCache.size(): %i", (int) mouseChainCache.size());
-	for (auto candidate : candidateBindings) {
-		if (mouseBindings.GetDebugEnabled())
-			LOG("[MouseHandler::AllCandidatesEqualCacheLength] candidate.rawChain: %s, candidate.pressChain.size(): %i", candidate.rawChain.c_str(), (int) candidate.pressChain.size());
-		if (candidate.pressChain.size() != mouseChainCache.size())
-			return false;
-	}
-	return true;
-}
 
 bool CMouseHandler::TryBinding(CMouseBindings::MouseBinding& binding) {
 	if (mouseBindings.GetDebugEnabled())
@@ -363,6 +351,8 @@ bool CMouseHandler::TryBinding(CMouseBindings::MouseBinding& binding) {
 		return false;
 	}
 }
+
+
 
 void CMouseHandler::MousePress(int x, int y, int button)
 {
@@ -444,13 +434,10 @@ void CMouseHandler::MousePress(int x, int y, int button)
 		return;
 	}
 
-	if (AllCandidatesEqualCacheLength()) {
-		for (auto candidate	: candidateBindings) {
-			if (TryBinding(candidate)) {
-				mouseChainCache.clear();
-				candidateBindings = mouseBindings.GetBindingList();
-				return;
-			}
+	for (auto candidate	: candidateBindings) {
+		if (candidate.pressChain.size() == mouseChainCache.size()) {
+			if (TryBinding(candidate))
+				return; // Should we also flush the cache if there are no longer candidates?
 		}
 	}
 
@@ -842,13 +829,6 @@ void CMouseHandler::Update()
 		if (duration > 200) {
 			if (mouseBindings.GetDebugEnabled())
 				LOG("[MouseHandler] Binding timeout expired!");
-			for (auto candidate : candidateBindings) {
-				if (candidate.pressChain.size() == mouseChainCache.size()) {
-					if (TryBinding(candidate)) {
-						break;
-					}
-				}
-			}
 
 			candidateBindings = mouseBindings.GetBindingList();
 			mouseChainCache.clear();

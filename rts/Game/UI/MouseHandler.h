@@ -177,7 +177,6 @@ private:
 private:
 	bool CandidatePassesFilter(CMouseBindings::MouseBinding& candidate);
 	void FilterCandidateBindings();
-	bool AllCandidatesEqualCacheLength();
 
 	bool TryBinding(CMouseBindings::MouseBinding& binding);
 
