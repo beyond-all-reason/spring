@@ -9,8 +9,8 @@
 
 template <size_t T>
 struct ArrayData {
-    char Data[T-8];
-    size_t idx=0;
+	char Data[T-8];
+	size_t idx=0;
 };
 
 template <typename TMempool>
@@ -18,20 +18,20 @@ static void BenchStaticMemPoolAllocation(benchmark::State& state) {
 	static TMempool mempool;
 	mempool.clear();
 
-    constexpr size_t page_size = mempool.PAGE_SIZE();
-    using AD = ArrayData<page_size>;
+	constexpr size_t page_size = mempool.PAGE_SIZE();
+	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-    size_t idx =0;
+	size_t idx =0;
 	for (auto _ : state) {
 		if (!mempool.can_alloc()) {
-            state.PauseTiming();
+			state.PauseTiming();
 			mempool.clear();
-            allocated.clear();
-            state.ResumeTiming();
+			allocated.clear();
+			state.ResumeTiming();
 		}
 		auto* obj = mempool.template alloc<AD>();
-        obj->idx = ++idx;
+		obj->idx = ++idx;
 		benchmark::DoNotOptimize(obj);
 		allocated.push_back(obj);
 		benchmark::ClobberMemory();
@@ -54,20 +54,20 @@ static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
 	static TMempool mempool;
 	mempool.clear();
 
-    constexpr size_t page_size = mempool.PAGE_SIZE();
-    using AD = ArrayData<page_size>;
+	constexpr size_t page_size = mempool.PAGE_SIZE();
+	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-    size_t idx =0;
+	size_t idx =0;
 	for (auto _ : state) {
 		if (!mempool.can_alloc()) {
-            for (auto* obj : allocated) {
-                mempool.free(obj);
-            }
-            allocated.clear();
+			for (auto* obj : allocated) {
+				mempool.free(obj);
+			}
+			allocated.clear();
 		}
 		auto* obj = mempool.template alloc<AD>();
-        obj->idx = ++idx;
+		obj->idx = ++idx;
 		benchmark::DoNotOptimize(obj);
 		allocated.push_back(obj);
 		benchmark::ClobberMemory();
