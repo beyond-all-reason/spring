@@ -76,7 +76,7 @@ namespace QTPFS {
 
 		float GetRadius() const { return radius; }
 		std::uint64_t GetHash() const { return hash; }
-		bool GetSynced() const { return synced; }
+		bool IsSynced() const { return synced; }
 
 		void SetBoundingBox() {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
@@ -136,7 +136,7 @@ namespace QTPFS {
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
 
-	protected:
+	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
 

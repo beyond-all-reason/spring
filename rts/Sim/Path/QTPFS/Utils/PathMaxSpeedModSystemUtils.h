@@ -18,15 +18,6 @@ namespace QTPFS {
         auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
         if (comp.startRefreshOnFrame == NEXT_FRAME_NEVER)
             comp.startRefreshOnFrame = gs->frameNum + comp.refeshDelayInFrames;
-        
-        // auto layersView = registry.view<NodeLayerMaxSpeedSweep>();
-        // for(auto entity : layersView){
-        //     auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-        //     if (layer.layerNum == layerNum) {
-        //         layer.requestUpdate = true;
-        //         break;
-        //     }
-        // }
     }
 
 }

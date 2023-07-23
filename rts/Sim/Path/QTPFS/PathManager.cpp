@@ -760,7 +760,7 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		search->Initialize(&nodeLayer, &pathCache, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE);
 		path->SetHash(search->GetHash());
 
-		if (path->GetSynced() == true) {
+		if (path->IsSynced()) {
 			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
 			if (sharedPathsIt == sharedPaths.end()) {
 				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
@@ -857,7 +857,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// assert(search->GetID() != 0);
 	assert(path->GetID() == search->GetID());
 
-	bool synced = path->GetSynced();
+	bool synced = path->IsSynced();
 
 	// search->Initialize(&nodeLayer, &pathCache
 	// 		, path->GetSourcePoint(), path->GetTargetPoint()
@@ -897,12 +897,17 @@ bool QTPFS::PathManager::ExecuteSearch(
 			linkedListHelper.ForEachInChain<SharedPathChain>(chainHeadEntity, [this, path, chainHeadEntity](entt::entity next) {
 				if (next == chainHeadEntity) { return; }
 
+				assert(registry.valid(next));
+
 				auto* linkedPath = &registry.get<IPath>(next);
+				assert(linkedPath != nullptr);
+				
 				auto* searchRef = registry.try_get<PathSearchRef>(next);
 				if (searchRef == nullptr) { return; }
 
 				assert(registry.all_of<PathSearch>(searchRef->value));
 				auto& chainSearch = registry.get<PathSearch>(searchRef->value);
+
 				chainSearch.SharedFinalize(path, linkedPath);
 			});
 		}
@@ -1098,6 +1103,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->SetPathType(oldPath->GetPathType());
 
 	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
+	registry.emplace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
 
 	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
 	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);
@@ -1149,7 +1155,6 @@ void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
 	if (!registry.all_of<SharedPathChain>(entity)) return;
 
 	IPath* path = &registry.get<IPath>(entity);
-	bool synced = path->GetSynced();
 	auto iter = sharedPaths.find(path->GetHash());
 	assert(iter != sharedPaths.end());
 	if (iter->second == entity) {

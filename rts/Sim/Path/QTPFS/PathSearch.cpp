@@ -13,7 +13,6 @@
 #include "System/Log/ILog.h"
 
 #include "Components/PathSearch.h"
-#include "Systems/PathSearchSystem.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
 
 #include "Map/ReadMap.h"

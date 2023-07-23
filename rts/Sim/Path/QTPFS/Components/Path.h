@@ -10,17 +10,6 @@
 
 namespace QTPFS {
 
-struct Path {
-	std::vector<float3> points;
-	int nextPointIndex;
-};
-
-// corners of the bounding-box containing all our points
-struct PathBoundingBox {
-	float3 boundingBoxMins;
-	float3 boundingBoxMaxs;
-};
-
 struct SharedPathChain {
 	SharedPathChain() {}
 

@@ -13,18 +13,13 @@ namespace QTPFS {
 
 class INode;
 
-struct PathSearchSystemComponent {
-	static constexpr std::size_t page_size = 1;
-	std::vector< std::deque<INode*> > openNodes;
-};
-
 struct NodeLayerMaxSpeedSweep {
 	static constexpr std::size_t page_size = 256;
 	int updateMaxNodes = 0;
 	float updateCurMaxSpeed = 0.f;
 	int layerNum = -1;
 
-	bool requestUpdate = false;
+	// bool requestUpdate = false;
 	bool updateInProgress = false;
 };
 
@@ -45,13 +40,6 @@ struct PathMaxSpeedModSystemComponent {
 	};
 
 	int state = STATE_INIT;
-};
-
-struct _PathSearch {
-	int pathType;
-	SRectangle searchRect;
-	float3 srcPoint;
-	float3 tgtPoint;
 };
 
 }

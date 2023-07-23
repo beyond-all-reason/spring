@@ -30,35 +30,6 @@ using namespace SystemGlobals;
 using namespace QTPFS;
 
 
-
-// void ScanForPathMaxSpeedMod(int dataChunk) {
-//     auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
-
-//     const int idxBeg = ((dataChunk + 0) * mapDims.mapx * mapDims.mapy) / comp.refreshTimeInFrames;
-// 	const int idxEnd = ((dataChunk + 1) * mapDims.mapx * mapDims.mapy) / comp.refreshTimeInFrames;
-
-//     for_mt(0, moveDefHandler.GetNumMoveDefs(), [idxBeg, idxEnd, &comp](int layerNum){
-//         auto* md = moveDefHandler.GetMoveDefByPathType(layerNum);
-//         for (int i = idxBeg; i < idxEnd; ++i) {
-//             const int x = i % mapDims.mapx;
-//             const int z = i / mapDims.mapx;
-
-//             const unsigned int cx = Clamp(int(x), md->xsizeh, mapDims.mapx - md->xsizeh - 1);
-//             const unsigned int cz = Clamp(int(z), md->zsizeh, mapDims.mapy - md->zsizeh - 1);
-
-//             const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, x, z);
-//             const   int maxBlockBit = CMoveMath::IsBlockedNoSpeedModCheck(*md, cx, cz, nullptr);
-
-//             #define NL QTPFS::NodeLayer
-//             const float tmpAbsSpeedMod = Clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
-//             const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
-//             const float newRelSpeedMod = Clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
-//             #undef NL
-
-//             comp.maxRelSpeedMod[0] = std::max(comp.maxRelSpeedMod[0], newRelSpeedMod);
-//         }});
-// }
-
 void ScanForPathMaxSpeedMod(int frameModulus) {
     auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
     auto layersView = registry.view<NodeLayerMaxSpeedSweep>();
@@ -76,7 +47,7 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
                 layer.updateCurMaxSpeed = (-std::numeric_limits<float>::infinity());
                 layer.updateMaxNodes = nodeLayer.GetMaxNodesAlloced();
                 layer.updateInProgress = true;
-                layer.requestUpdate = false;
+                // layer.requestUpdate = false;
            // }
             });
         dataChunk = 0;
@@ -141,7 +112,7 @@ void InitLayers() {
         auto& layer = QTPFS::registry.emplace<NodeLayerMaxSpeedSweep>(entity);
         layer.layerNum = counter++;
         layer.updateCurMaxSpeed = 0.f;
-        layer.requestUpdate = true;
+        // layer.requestUpdate = true;
         // LOG("%s: added %x:%x entity", __func__, entt::to_integral(entity), entt::to_version(entity));
     });
 }
