@@ -189,15 +189,15 @@ end
 
 
 function hHookFuncs.MousePress(x, y, button)
-	local mo = handler.mouseOwner
-	if (mo and mo.MousePress__) then
-		SafeCallAddon(mo, "MousePress__", x, y, button)
-		return true  --// already have an active press
+	local mo = handler.mouseOwners[button]
+	if (mo and mo.MouseRelease__) then
+		SafeCallAddon(mo, "MouseRelease__", x, y, button)
+		handler.mouseOwners[button] = nil
 	end
 
 	for it,f in hCallInLists.MousePress:iter() do
 		if f(x, y, button) then
-			handler.mouseOwner = it.owner
+			handler.mouseOwners[button] = it.owner
 			return true
 		end
 	end
@@ -208,7 +208,7 @@ end
 function hHookFuncs.MouseMove(x, y, dx, dy, button)
 	--FIXME send this event to all widgets (perhaps via a new callin PassiveMouseMove?)
 
-	local mo = handler.mouseOwner
+	local mo = handler.mouseOwners[button]
 	if (mo) then
 		return SafeCallAddon(mo, "MouseMove__", x, y, dx, dy, button)
 	end
@@ -216,16 +216,14 @@ end
 
 
 function hHookFuncs.MouseRelease(x, y, button)
-	local mo = handler.mouseOwner
-	local mx, my, lmb, mmb, rmb = Spring.GetMouseState()
-	if (not (lmb or mmb or rmb)) then
-		handler.mouseOwner = nil
-	end
+	local mo = handler.mouseOwners[button]
 
 	if (not mo) then
 		return -1
 	end
-
+	
+	handler.mouseOwners[button] = nil
+	
 	return SafeCallAddon(mo, "MouseRelease__", x, y, button) or -1
 end
 

@@ -80,7 +80,7 @@ gadgetHandler = {
   yViewSizeOld = 1,
 
   actionHandler = actionHandler,
-  mouseOwner = nil,
+  mouseOwners = {},
 }
 
 
@@ -336,12 +336,29 @@ function gadgetHandler:NewGadget()
   end
 
   -- for proxied call-ins
-  gh.IsMouseOwner = function (_)
-    return (self.mouseOwner == gadget)
+  gh.IsMouseOwner = function (button)
+    if button then
+      return (self.mouseOwners[button] == gadget)
+    else
+      for i = 1, 10 do
+        if self.mouseOwners[i] == gadget then
+          return true
+        end
+      end
+    end
+    return (self.mouseOwners[button] == gadget)
   end
-  gh.DisownMouse  = function (_)
-    if (self.mouseOwner == gadget) then
-      self.mouseOwner = nil
+  gh.DisownMouse = function (button)
+    if button then
+      if self.mouseOwners[button] == gadget then
+        self.mouseOwners[button] = nil
+      end
+    else
+      for i = 1, 10 do
+        if self.mouseOwners[i] == gadget then
+          self.mouseOwners[i] = nil
+        end
+      end
     end
   end
 
@@ -2043,14 +2060,14 @@ end
 
 
 function gadgetHandler:MousePress(x, y, button)
-  local mo = self.mouseOwner
-  if (mo) then
-    mo:MousePress(x, y, button)
-    return true  --  already have an active press
+  local mo = self.mouseOwners[button]
+  if (mo and mo.MouseRelease) then -- This shouldn't occur, but we'll code it in anyway.
+    mo:MouseRelease(x, y, button)
+    self.mouseOwners[button] = nil
   end
   for _,g in r_ipairs(self.MousePressList) do
     if (g:MousePress(x, y, button)) then
-      self.mouseOwner = g
+      self.mouseOwners[button] = g
       return true
     end
   end
@@ -2059,7 +2076,7 @@ end
 
 
 function gadgetHandler:MouseMove(x, y, dx, dy, button)
-  local mo = self.mouseOwner
+  local mo = self.mouseOwners[button]
   if (mo and mo.MouseMove) then
     return mo:MouseMove(x, y, dx, dy, button)
   end
@@ -2067,11 +2084,10 @@ end
 
 
 function gadgetHandler:MouseRelease(x, y, button)
-  local mo = self.mouseOwner
-  local mx, my, lmb, mmb, rmb = Spring.GetMouseState()
-  if (not (lmb or mmb or rmb)) then
-    self.mouseOwner = nil
-  end
+  local mo = self.mouseOwners[button]
+
+  self.mouseOwners[button] = nil
+
   if (mo and mo.MouseRelease) then
     return mo:MouseRelease(x, y, button)
   end
