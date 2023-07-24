@@ -67,7 +67,6 @@ void QTPFSPathDrawer::DrawAll() const {
 	visibleNodes.reserve(256);
 
 	auto& nodeLayer = pm->GetNodeLayer(md->pathType);
-	// LOG("%s: nodeLayer is %d", __func__, md->pathType);
 	for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
 		auto curRootNode = nodeLayer.GetPoolNode(i);
 		GetVisibleNodes(curRootNode, nodeLayer, visibleNodes);
@@ -113,8 +112,7 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 	for (const QTPFS::QTNode* node: nodes) {
 		const float3 pos = {xmidw * 1.0f, CGround::GetHeightReal(xmidw, zmidw, false) + 4.0f, zmidw * 1.0f};
 
-		// if (pos.SqDistance(camera->GetPos()) >= Square(1000.0f))
-		if (pos.SqDistance(camera->GetPos()) >= Square(10000.0f))
+		if (pos.SqDistance(camera->GetPos()) >= Square(1000.0f))
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -147,66 +145,39 @@ void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::Node
 	}
 }
 
-#include "Sim/Units/UnitDef.h"
 
 void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>& rb) const {
 	const QTPFS::PathCache& pathCache = pm->GetPathCache(md->pathType);
-	// const QTPFS::PathCache::PathMap& paths = pathCache.GetLivePaths();
 	const auto pathView = QTPFS::registry.view<QTPFS::IPath>();
 
 	glLineWidth(4.0f);
 
-	{
-		// for (const auto& pair: paths) {
-		// 	DrawPath(pair.second, rb);
-		// }
-		for (const auto& pathEntity : pathView) {
-			const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
-			// LOG("%s: [%x:%x] %s - %d (%p) == %d", __func__
-			// 	, (int)pathEntity
-			// 	, path->GetID()
-			// 	, ((CUnit*)path->GetOwner())->unitDef->name.c_str()
-			// 	, path->GetPathType()
-			// 	, path
-			// 	, md->pathType
-			// 	);
-			if (path->GetPathType() == md->pathType)
-				DrawPath(path, rb);
-		}
+	for (const auto& pathEntity : pathView) {
+		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
+		if (path->GetPathType() == md->pathType)
+			DrawPath(path, rb);
 	}
 
 	{
 		#ifdef QTPFS_DRAW_WAYPOINT_GROUND_CIRCLES
-		constexpr float4 color = {0.0f, 0.0f, 1.0f, 1.0f};
+		constexpr SColor color = {0.0f, 0.0f, 1.0f, 1.0f};
 
-		for (const auto& pair: paths) {
-			const QTPFS::IPath* path = pair.second;
+		for (const auto& pathEntity : pathView) {
+			const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
 
 			for (unsigned int n = 0; n < path->NumPoints(); n++) {
-				glSurfaceCircleW(wla, {path->GetPoint(n), path->GetRadius()}, color, 16);
+				glSurfaceCircle(path->GetPoint(n), path->GetRadius(), color, 16);
+				// glSurfaceCircleW(wla, {path->GetPoint(n), path->GetRadius()}, color, 16);
 			}
 		}
-
-		wla->Submit(GL_LINES);
 		#endif
 	}
 
 	glLineWidth(1.0f);
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
-	// const auto& pathTypes = pm->GetPathTypes();
 	const auto& pathTraces = pm->GetPathTraces();
 
-	// for (const auto& pair: paths) {
-	// 	const auto typeIt = pathTypes.find(pair.first);
-	// 	const auto traceIt = pathTraces.find(pair.first);
-	// 	if (typeIt == pathTypes.end() || traceIt == pathTraces.end())
-	// 		continue;
-	// 	// this only happens if source-node was equal to target-node
-	// 	if (traceIt->second == nullptr)
-	// 		continue;
-
-	// 	DrawSearchExecution(typeIt->second, traceIt->second, rdb, wla);
 	for (const auto& pathEntity : pathView) {
 		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
 		const auto traceIt = pathTraces.find(entt::to_integral(pathEntity));
@@ -376,8 +347,6 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 				const QTPFS::NodeLayer& nl = pm->GetNodeLayer(md->pathType);
 
 				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathMaxSpeedModSystemComponent>();
-
-				// const float smr = 1.0f / nl.GetMaxRelSpeedMod();
 				const float smr = 1.0f / ( speedModComp.maxRelSpeedMod[nl.GetNodelayer()] );
 				const bool los = (gs->cheatEnabled || gu->spectating);
 
