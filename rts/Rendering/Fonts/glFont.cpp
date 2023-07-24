@@ -217,27 +217,24 @@ void CglFont::GetStats(std::array<size_t, 8>& stats) const {}
 
 
 // helper for GetText{Width,Height}
-template <typename T>
-static inline T SkipColorCodes(const spring::u8string& text, T idx)
+static inline int SkipColorCodes(const spring::u8string& text, int idx)
 {
-	bool stop = false;
-	while (idx < text.size() && !stop) {
+	while (idx < text.size()) {
 		switch (text[idx])
 		{
 		case CglFont::ColorCodeIndicator: {
 			idx += 3 + 1; // RGB
-			stop = true;
-		} break;
+		} continue;
 		case CglFont::ColorCodeIndicatorEx: {
 			idx += 2 * 4 + 1; // RGBA,RGBA
-			stop = true;
-		} break;
+		} continue;
 		default:
-			break;
+			break; // cause next break to trigger and terminate the loop
 		}
+		break;
 	}
 
-	return (std::min(T(text.size()), idx));
+	return (std::min(static_cast<int>(text.size()), idx));
 }
 
 
