@@ -624,7 +624,8 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 
 	if (building) {
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
-		MoveInBuildRange(build.pos, 0.0f);
+		auto* model = build.def->LoadModel();
+		MoveInBuildRange(build.pos, std::max(0.f, model->radius));
 
 		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->terraforming) {
 			building = false;
