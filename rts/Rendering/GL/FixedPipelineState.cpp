@@ -198,7 +198,7 @@ void FixedPipelineState::BindUnbind() const
 		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 			const auto CompareFunc = [this, prev](auto&& state) {
 				using StateType = std::decay_t<decltype(state)>;
-				constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+				constexpr auto db_index = 0 + spring::tuple_type_index_v<StateType, decltype(namedStates)>;
 				if (!dirtyBits[db_index])
 					return;
 				if (state.args != std::get<StateType>(prev->namedStates).args)
@@ -212,7 +212,7 @@ void FixedPipelineState::BindUnbind() const
 		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 			const auto CompareFunc = [this, prev](auto&& state) {
 				using StateType = std::decay_t<decltype(state)>;
-				constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+				constexpr auto db_index = 0 + spring::tuple_type_index_v<StateType, decltype(namedStates)>;
 				if (!dirtyBits[db_index])
 					return;
 				if (state.args != std::get<StateType>(prev->namedStates).args)
@@ -226,7 +226,7 @@ void FixedPipelineState::BindUnbind() const
 	std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 		const auto CompareFunc = [this, prev](auto&& state) {
 			using StateType = std::decay_t<decltype(state)>;
-			constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +tuple_type_index_v<StateType, decltype(binaryStates)>;
+			constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +spring::tuple_type_index_v<StateType, decltype(binaryStates)>;
 			if (!dirtyBits[db_index])
 				return;
 			assert(state.capability == std::get<StateType>(prev->binaryStates).capability);

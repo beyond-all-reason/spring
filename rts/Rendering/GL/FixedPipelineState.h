@@ -10,46 +10,10 @@
 #include <memory>
 #include <bitset>
 
+#include "System/TemplateUtils.hpp"
 #include "System/Log/ILog.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Shaders/Shader.h"
-
-namespace {
-	template<typename Sig>
-	struct signature;
-
-	template<typename R, typename ...Args>
-	struct signature<R(Args...)>
-	{
-		using type = std::tuple<Args...>;
-	};
-	template<
-		typename F,
-		std::enable_if_t<std::is_function<F>::value, bool> = true
-	>
-	auto arguments(const F&) -> typename signature<F>::type;
-	template<
-		typename F,
-		std::enable_if_t<std::is_function<F>::value, bool> = true
-	>
-	auto arguments(const F*) -> typename signature<F>::type;
-
-
-	template <class T, class Tuple>
-	struct tuple_type_index;
-
-	template <class T, class... Types>
-	struct tuple_type_index<T, std::tuple<T, Types...>> {
-		static const std::size_t value = 0;
-	};
-
-	template <class T, class U, class... Types>
-	struct tuple_type_index<T, std::tuple<U, Types...>> {
-		static const std::size_t value = 1 + tuple_type_index<T, std::tuple<Types...>>::value;
-	};
-	template <class T, class Tuple>
-	constexpr size_t tuple_type_index_v = tuple_type_index<T, class Tuple>::value;
-}
 
 namespace GL {
 	#define NAME_GL(name) gl##name
@@ -162,7 +126,7 @@ namespace GL {
 	private:
 		template<typename StateType, typename ... Args>
 		FixedPipelineState& CommonNamedState(const char* funcName, Args&&... args) {
-			static constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+			static constexpr auto db_index = 0 + spring::tuple_type_index_v<StateType, decltype(namedStates)>;
 			dirtyBits.set(db_index, true);
 			std::get<StateType>(namedStates) = {
 				std::make_tuple(args...)
@@ -172,7 +136,7 @@ namespace GL {
 
 		template<typename StateType>
 		FixedPipelineState& CommonBinaryState(const char* funcName, bool enabled) {
-			static constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +tuple_type_index_v<StateType, decltype(binaryStates)>;
+			static constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> + spring::tuple_type_index_v<StateType, decltype(binaryStates)>;
 			dirtyBits.set(db_index, true);
 			std::get<StateType>(binaryStates) = {
 				static_cast<GLboolean>(enabled)
@@ -190,14 +154,14 @@ namespace GL {
 		#define DEFINE_NAMED_STATE(name) struct NAME_STATE(name)\
 		{\
 			using FuncType = std::remove_pointer_t<decltype(NAME_GL(name))>;\
-			using ArgsType = decltype(arguments(*(NAME_GL(name))));\
+			using ArgsType = decltype(spring::arg_types_tuple_t(*(NAME_GL(name))));\
 			inline static const FuncType* func = (NAME_GL(name));\
 			ArgsType  args;\
 		}
 		#define DEFINE_NAMED_STATE_CUSTOM(name, funcName) struct NAME_STATE(name)\
 		{\
 			using FuncType = std::remove_pointer_t<decltype(funcName)>;\
-			using ArgsType = decltype(arguments(*(funcName)));\
+			using ArgsType = decltype(spring::arg_types_tuple_t(*(funcName)));\
 			inline static const FuncType* func = funcName;\
 			ArgsType  args;\
 		}
