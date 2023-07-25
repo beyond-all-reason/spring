@@ -190,7 +190,7 @@ void FixedPipelineState::BindUnbind() const
 	if constexpr(!bind)
 		statesStack.pop();
 
-	static decltype(glEnable)* EnableDisableFunc[] = {&glDisable, &glEnable};
+	static constexpr std::add_pointer_t<decltype(glEnable)> EnableDisableFunc[] = { glDisable, glEnable };
 	assert(statesStack.size() >= 1);
 	if constexpr(bind) {
 		// named
