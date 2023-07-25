@@ -178,7 +178,7 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 		if (found)
 			continue;
 
-		//BindTexture(texRelUnit, GL_TEXTURE_2D, 0u);
+		BindTexture(texRelUnit, GL_TEXTURE_2D, 0u);
 	}
 	glActiveTexture(lastActiveTexture + GL_TEXTURE0); //revert just in case
 
