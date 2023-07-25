@@ -42,7 +42,7 @@ namespace {
 
 void GL::FixedPipelineState::InitStatic()
 {
-	assert(FixedPipelineState::statesStack.empty());
+	assert(statesStack.empty());
 	statesStack.push(FixedPipelineState().InferState());
 	auto ps2 = FixedPipelineState().AlphaToCoverage(true);
 	ps2.Bind();
@@ -51,7 +51,7 @@ void GL::FixedPipelineState::InitStatic()
 
 void GL::FixedPipelineState::KillStatic()
 {
-	assert(FixedPipelineState::statesStack.size() == 1);
+	assert(statesStack.size() == 1);
 	statesStack.pop();
 }
 
@@ -61,6 +61,7 @@ GL::FixedPipelineState::FixedPipelineState()
 		return;
 
 	*this = statesStack.top();
+	this->dirtyBits.reset();
 }
 
 FixedPipelineState& GL::FixedPipelineState::InferState()
@@ -196,8 +197,11 @@ void FixedPipelineState::BindUnbind() const
 		// named
 		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 			const auto CompareFunc = [this, prev](auto&& state) {
-				using T = std::decay_t<decltype(state)>;
-				if (state.args != std::get<T>(prev->namedStates).args)
+				using StateType = std::decay_t<decltype(state)>;
+				constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+				if (!dirtyBits[db_index])
+					return;
+				if (state.args != std::get<StateType>(prev->namedStates).args)
 					std::apply(state.func, state.args);
 			};
 			((CompareFunc(states)), ...);
@@ -207,9 +211,12 @@ void FixedPipelineState::BindUnbind() const
 		// named
 		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 			const auto CompareFunc = [this, prev](auto&& state) {
-				using T = std::decay_t<decltype(state)>;
-				if (state.args != std::get<T>(prev->namedStates).args)
-					std::apply(state.func, std::get<T>(prev->namedStates).args);
+				using StateType = std::decay_t<decltype(state)>;
+				constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+				if (!dirtyBits[db_index])
+					return;
+				if (state.args != std::get<StateType>(prev->namedStates).args)
+					std::apply(state.func, std::get<StateType>(prev->namedStates).args);
 			};
 			((CompareFunc(states)), ...);
 		}, namedStates);
@@ -218,10 +225,13 @@ void FixedPipelineState::BindUnbind() const
 	// binary
 	std::apply([this, prev = &statesStack.top()](auto&& ... states) {
 		const auto CompareFunc = [this, prev](auto&& state) {
-			using T = std::decay_t<decltype(state)>;
-			assert(state.capability == std::get<T>(prev->binaryStates).capability);
-			bool curEn = !(bind ^ static_cast<bool>(                          state.enabled));
-			bool preEn = !(bind ^ static_cast<bool>(std::get<T>(prev->binaryStates).enabled));
+			using StateType = std::decay_t<decltype(state)>;
+			constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +tuple_type_index_v<StateType, decltype(binaryStates)>;
+			if (!dirtyBits[db_index])
+				return;
+			assert(state.capability == std::get<StateType>(prev->binaryStates).capability);
+			bool curEn = !(bind ^ static_cast<bool>(                                  state.enabled));
+			bool preEn = !(bind ^ static_cast<bool>(std::get<StateType>(prev->binaryStates).enabled));
 			if (curEn != preEn) {
 				EnableDisableFunc[curEn](state.capability);
 			}

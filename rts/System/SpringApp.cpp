@@ -251,6 +251,7 @@ bool SpringApp::Init()
 	globalRendering->PostInit();
 	globalRendering->UpdateGLConfigs();
 	globalRendering->UpdateGLGeometry();
+	globalRendering->InitGLOnce();
 	globalRendering->InitGLState();
 
 	CCameraHandler::InitStatic();

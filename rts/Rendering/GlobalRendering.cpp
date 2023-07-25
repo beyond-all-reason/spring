@@ -1654,7 +1654,10 @@ void CGlobalRendering::InitGLState()
 	// this does not accomplish much
 	// SwapBuffers(true, true);
 	LogDisplayMode(sdlWindow);
+}
 
+void CGlobalRendering::InitGLOnce()
+{
 	GL::FixedPipelineState::InitStatic();
 }
 

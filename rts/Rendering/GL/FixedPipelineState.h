@@ -8,6 +8,7 @@
 #include <sstream>
 #include <type_traits>
 #include <memory>
+#include <bitset>
 
 #include "System/Log/ILog.h"
 #include "Rendering/GL/myGL.h"
@@ -32,6 +33,22 @@ namespace {
 		std::enable_if_t<std::is_function<F>::value, bool> = true
 	>
 	auto arguments(const F*) -> typename signature<F>::type;
+
+
+	template <class T, class Tuple>
+	struct tuple_type_index;
+
+	template <class T, class... Types>
+	struct tuple_type_index<T, std::tuple<T, Types...>> {
+		static const std::size_t value = 0;
+	};
+
+	template <class T, class U, class... Types>
+	struct tuple_type_index<T, std::tuple<U, Types...>> {
+		static const std::size_t value = 1 + tuple_type_index<T, std::tuple<Types...>>::value;
+	};
+	template <class T, class Tuple>
+	constexpr size_t tuple_type_index_v = tuple_type_index<T, class Tuple>::value;
 }
 
 namespace GL {
@@ -145,6 +162,8 @@ namespace GL {
 	private:
 		template<typename StateType, typename ... Args>
 		FixedPipelineState& CommonNamedState(const char* funcName, Args&&... args) {
+			static constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
+			dirtyBits[db_index] = 1;
 			std::get<StateType>(namedStates) = {
 				std::make_tuple(args...)
 			};
@@ -153,6 +172,8 @@ namespace GL {
 
 		template<typename StateType>
 		FixedPipelineState& CommonBinaryState(const char* funcName, bool enabled) {
+			static constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +tuple_type_index_v<StateType, decltype(binaryStates)>;
+			dirtyBits[db_index] = 1;
 			std::get<StateType>(binaryStates) = {
 				static_cast<GLboolean>(enabled)
 			};
@@ -268,6 +289,8 @@ namespace GL {
 			NAME_STATE(ClipDistance7),
 			NAME_STATE(ScissorTest)
 		> binaryStates;
+
+		std::bitset<std::tuple_size_v<decltype(namedStates)> + std::tuple_size_v<decltype(binaryStates)>> dirtyBits;
 
 		GLuint lastActiveTexture = ~0u;
 	private:
