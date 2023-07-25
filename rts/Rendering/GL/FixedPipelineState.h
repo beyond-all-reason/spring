@@ -163,7 +163,7 @@ namespace GL {
 		template<typename StateType, typename ... Args>
 		FixedPipelineState& CommonNamedState(const char* funcName, Args&&... args) {
 			static constexpr auto db_index = 0 + tuple_type_index_v<StateType, decltype(namedStates)>;
-			dirtyBits[db_index] = 1;
+			dirtyBits.set(db_index, true);
 			std::get<StateType>(namedStates) = {
 				std::make_tuple(args...)
 			};
@@ -173,7 +173,7 @@ namespace GL {
 		template<typename StateType>
 		FixedPipelineState& CommonBinaryState(const char* funcName, bool enabled) {
 			static constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> +tuple_type_index_v<StateType, decltype(binaryStates)>;
-			dirtyBits[db_index] = 1;
+			dirtyBits.set(db_index, true);
 			std::get<StateType>(binaryStates) = {
 				static_cast<GLboolean>(enabled)
 			};
