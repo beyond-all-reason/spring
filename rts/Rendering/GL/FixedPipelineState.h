@@ -1,216 +1,277 @@
 #pragma once
 
-#include <functional>
 #include <string>
-#include <unordered_map>
 #include <stack>
 #include <vector>
 #include <tuple>
 #include <cstring>
 #include <sstream>
+#include <type_traits>
+#include <memory>
 
 #include "System/Log/ILog.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Shaders/Shader.h"
 
+namespace {
+	template<typename Sig>
+	struct signature;
+
+	template<typename R, typename ...Args>
+	struct signature<R(Args...)>
+	{
+		using type = std::tuple<Args...>;
+	};
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arguments(const F&) -> typename signature<F>::type;
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arguments(const F*) -> typename signature<F>::type;
+}
+
 namespace GL {
-	template<typename GLgetFunc, typename GLparamType, typename ReturnType>
-	static ReturnType glGetT(GLgetFunc glGetFunc, GLenum param) {
-		ReturnType ret;
+	#define NAME_GL(name) gl##name
+	#define NAME_STATE(name) name##State
+	#define SET_NAMED_STATE(name, ...)  CommonNamedState<NAME_STATE(name)>(#name, __VA_ARGS__)
+	#define SET_BINARY_STATE(name, ena) CommonBinaryState<NAME_STATE(name)>(#name, ena)
 
-		constexpr size_t arrSize = sizeof(ret);
-		static std::array<uint8_t, arrSize> arr;
-		arr = {0};
-
-		glGetError();
-		glGetFunc(param, reinterpret_cast<GLparamType*>(arr.data()));
-		assert(glGetError() == GL_NO_ERROR);
-		memcpy(reinterpret_cast<GLparamType*>(&ret), arr.data(), arrSize);
-
-		return ret;
-	}
-
-	template<typename ReturnType = int>
-	static ReturnType glGetIntT(GLenum param) {
-		return (glGetT<decltype(&glGetIntegerv), GLint, ReturnType>(glGetIntegerv, param));
-	}
-
-	template<typename ReturnType = float>
-	static ReturnType glGetFloatT(GLenum param) {
-		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
-	};
-
-	class NamedSingleState {
-	public:
-		template<typename F, typename Args> NamedSingleState(F func, const Args& args)
-			: object{ std::move(new ObjectModel<F, Args>(func, args)) }
-		{}
-
-		NamedSingleState() = delete;
-
-		bool operator !=(const NamedSingleState& rhs) const {
-			return !object->isSame(*rhs.object);
-		}
-		bool operator ==(const NamedSingleState& rhs) const {
-			return object->isSame(*rhs.object);
-		}
-
-		void apply() const {
-			object->apply();
-		}
-
-	private:
-		struct ObjectConcept {
-			virtual ~ObjectConcept() = default;
-			virtual void apply() const = 0;
-			virtual const std::type_info& typeInfo() const = 0;
-			virtual bool isSame(const ObjectConcept& rhs) const = 0;
-		};
-
-		template<typename F, typename T> struct ObjectModel : ObjectConcept {
-			ObjectModel(F func_, const T& args_) :
-				func( func_ ), args( args_ )
-
-			{}
-
-			void apply() const override {
-				std::apply(func, args);
-			}
-			const std::type_info& typeInfo() const override {
-				return typeid(args);
-			}
-			bool isSame(const ObjectConcept& rhs) const override {
-				if (typeInfo() != rhs.typeInfo())
-					return false;
-
-				return args == static_cast<const ObjectModel&>(rhs).args;
-			}
-		private:
-			const F& func;
-			const T& args;
-		};
-
-		std::shared_ptr<ObjectConcept> object;
-	};
-
-	#define DEBUG_PIPELINE_STATE 1
 	class FixedPipelineState {
-	private:
-		//template <typename Result, typename ...Args> using vararg_function = std::function< Result(Args...) >;
-		using onBindUnbindFunc = std::function<void()>;
 	public:
-		FixedPipelineState();
+		static void InitStatic();
+		static void KillStatic();
+		FixedPipelineState() = default;
 		FixedPipelineState(FixedPipelineState&& rh) = default; //move
 		FixedPipelineState(const FixedPipelineState& rh) = default; //copy
 
-		FixedPipelineState& PolygonMode(GLenum mode) { return CommonNamedState(__func__, glPolygonMode, GL_FRONT_AND_BACK, mode); }
+		FixedPipelineState& PolygonMode(GLenum mode) { return SET_NAMED_STATE(PolygonMode, GL_FRONT_AND_BACK, mode); }
 
-		FixedPipelineState& PolygonOffset(GLfloat factor, GLfloat units) { return CommonNamedState(__func__, glPolygonOffset, factor, units); }
-		FixedPipelineState& PolygonOffsetFill(bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_FILL , b); }
-		FixedPipelineState& PolygonOffsetLine(bool b)  { return CommonBinaryState(GL_POLYGON_OFFSET_LINE , b); }
-		FixedPipelineState& PolygonOffsetPoint(bool b) { return CommonBinaryState(GL_POLYGON_OFFSET_POINT, b); }
+		FixedPipelineState& PolygonOffset(GLfloat factor, GLfloat units) { return SET_NAMED_STATE(PolygonOffset, factor, units); }
+		FixedPipelineState& PolygonOffsetFill(bool b) { return SET_BINARY_STATE(PolygonOffsetFill, b); }
+		FixedPipelineState& PolygonOffsetLine(bool b) { return SET_BINARY_STATE(PolygonOffsetLine, b); }
+		FixedPipelineState& PolygonOffsetPoint(bool b) { return SET_BINARY_STATE(PolygonOffsetPoint, b); }
 
-		FixedPipelineState& FrontFace(GLenum mode) { return CommonNamedState(__func__, glFrontFace, mode); }
-		FixedPipelineState& Culling(bool b) { return CommonBinaryState(GL_CULL_FACE_MODE, b); }
-		FixedPipelineState& CullFace(GLenum mode) { return CommonNamedState(__func__, glCullFace, mode); }
+		FixedPipelineState& FrontFace(GLenum mode) { return SET_NAMED_STATE(FrontFace, mode); }
+		FixedPipelineState& Culling(bool b) { return SET_BINARY_STATE(Culling, b); }
+		FixedPipelineState& CullFace(GLenum mode) { return SET_NAMED_STATE(CullFace, mode); }
 
-		FixedPipelineState& DepthMask(bool b) { return CommonNamedState(__func__, glDepthMask, b); }
-		FixedPipelineState& DepthRange(GLfloat n, GLfloat f) { return CommonNamedState(__func__, glDepthRangef, n, f); }
-		FixedPipelineState& DepthClamp(bool b) { return CommonBinaryState(GL_DEPTH_CLAMP, b); }
-		FixedPipelineState& DepthTest(bool b) { return CommonBinaryState(GL_DEPTH_TEST, b); }
-		FixedPipelineState& DepthFunc(GLenum func) { return CommonNamedState(__func__, glDepthFunc, func); }
+		FixedPipelineState& DepthMask(bool b) { return SET_NAMED_STATE(DepthMask, b); }
+		FixedPipelineState& DepthRange(GLfloat n, GLfloat f) { return SET_NAMED_STATE(DepthRangef, n, f); }
+		FixedPipelineState& DepthClamp(bool b) { return SET_BINARY_STATE(DepthClamp, b); }
+		FixedPipelineState& DepthTest(bool b) { return SET_BINARY_STATE(DepthTest, b); }
+		FixedPipelineState& DepthFunc(GLenum func) { return SET_NAMED_STATE(DepthFunc, func); }
 
 		// compat profile only
-		FixedPipelineState& AlphaTest(bool b) { return CommonBinaryState(GL_ALPHA_TEST, b); }
-		FixedPipelineState& AlphaFunc(GLenum func, GLfloat ref) { return CommonNamedState(__func__, glAlphaFunc, func, ref); }
+		FixedPipelineState& AlphaTest(bool b) { return SET_BINARY_STATE(AlphaTest, b); }
+		FixedPipelineState& AlphaFunc(GLenum func, GLfloat ref) { return SET_NAMED_STATE(AlphaFunc, func, ref); }
 
 		// TODO : expand
-		FixedPipelineState& Blending(bool b) { return CommonBinaryState(GL_BLEND, b); }
-		FixedPipelineState& BlendFunc(GLenum sfactor, GLenum dfactor) { return CommonNamedState(__func__, glBlendFunc, sfactor, dfactor); }
-		FixedPipelineState& BlendColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) { return CommonNamedState(__func__, glBlendColor, r, g, b, a); }
+		FixedPipelineState& Blending(bool b) { return SET_BINARY_STATE(Blending, b); }
+		FixedPipelineState& BlendFunc(GLenum sfactor, GLenum dfactor) { return SET_NAMED_STATE(BlendFunc, sfactor, dfactor); }
+		FixedPipelineState& BlendColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) { return SET_NAMED_STATE(BlendColor, r, g, b, a); }
 
-		FixedPipelineState& StencilTest(bool b) { return CommonBinaryState(GL_STENCIL_TEST, b); }
+		// TODO: Add more on stencils
+		FixedPipelineState& StencilTest(bool b) { return SET_BINARY_STATE(StencilTest, b); }
 
-		FixedPipelineState& ColorMask(bool r, bool g, bool b, bool a) { return CommonNamedState(__func__, glColorMask, r, g, b, a); }
+		FixedPipelineState& ColorMask(bool r, bool g, bool b, bool a) { return SET_NAMED_STATE(ColorMask, r, static_cast<GLboolean>(g), static_cast<GLboolean>(b), static_cast<GLboolean>(a)); }
 
-		FixedPipelineState& Multisampling(bool b) { return CommonBinaryState(GL_MULTISAMPLE, b); }
-		FixedPipelineState& AlphaToCoverage(bool b) { return CommonBinaryState(GL_SAMPLE_ALPHA_TO_COVERAGE, b); }
-		FixedPipelineState& AlphaToOne(bool b) { return CommonBinaryState(GL_SAMPLE_ALPHA_TO_ONE, b); }
+		FixedPipelineState& Multisampling(bool b) { return SET_BINARY_STATE(Multisampling, b); }
+		FixedPipelineState& AlphaToCoverage(bool b) { return SET_BINARY_STATE(AlphaToCoverage, b); }
+		FixedPipelineState& AlphaToOne(bool b) { return SET_BINARY_STATE(AlphaToOne, b); }
 
-		FixedPipelineState& PrimitiveRestart(bool b) { return CommonBinaryState(GL_PRIMITIVE_RESTART, b); }
-		FixedPipelineState& PrimitiveRestartIndex(GLuint index) { return CommonNamedState(__func__, glPrimitiveRestartIndex, index); }
+		FixedPipelineState& PrimitiveRestart(bool b) { return SET_BINARY_STATE(PrimitiveRestart, b); }
+		FixedPipelineState& PrimitiveRestartIndex(GLuint index) { return SET_NAMED_STATE(PrimitiveRestartIndex, index); }
 
-		FixedPipelineState& CubemapSeamless(bool b) { return CommonBinaryState(GL_TEXTURE_CUBE_MAP_SEAMLESS, b); }
+		FixedPipelineState& CubemapSeamless(bool b) { return SET_BINARY_STATE(CubemapSeamless, b); }
 
-		FixedPipelineState& PointSize(bool b) { return CommonBinaryState(GL_PROGRAM_POINT_SIZE, b); }
+		FixedPipelineState& PointSize(bool b) { return SET_BINARY_STATE(PointSize, b); }
 
-		FixedPipelineState& ClipDistance(GLenum relClipSp, bool b) { return CommonBinaryState(GL_CLIP_DISTANCE0 + relClipSp, b); }
+		FixedPipelineState& ClipDistance(GLenum relClipSp, bool b) {
+			// LOL workaround
+			switch (relClipSp) {
+			case 0:
+				return SET_BINARY_STATE(ClipDistance0, b);
+			case 1:
+				return SET_BINARY_STATE(ClipDistance1, b);
+			case 2:
+				return SET_BINARY_STATE(ClipDistance2, b);
+			case 3:
+				return SET_BINARY_STATE(ClipDistance3, b);
+			case 4:
+				return SET_BINARY_STATE(ClipDistance4, b);
+			case 5:
+				return SET_BINARY_STATE(ClipDistance5, b);
+			case 6:
+				return SET_BINARY_STATE(ClipDistance6, b);
+			case 7:
+				return SET_BINARY_STATE(ClipDistance7, b);
+			default: {
+				assert(false);
+				return *this;
+			}
 
-		FixedPipelineState& ScissorTest(bool b) { return CommonBinaryState(GL_SCISSOR_TEST, b); }
-		FixedPipelineState& ScissorRect(GLint x, GLint y, GLint w, GLint h) { return CommonNamedState(__func__, glScissor, x, y, w, h); }
+			}
+		}
 
-		FixedPipelineState& Viewport(GLint x, GLint y, GLint w, GLint h) { return CommonNamedState(__func__, glViewport, x, y, w, h); }
+		FixedPipelineState& ScissorTest(bool b) { return SET_BINARY_STATE(ScissorTest, b); }
+		FixedPipelineState& ScissorRect(GLint x, GLint y, GLint w, GLint h) { return SET_NAMED_STATE(Scissor, x, y, w, h); }
 
-		FixedPipelineState& BindTexture(GLenum texRelUnit, GLenum texType, GLuint texID) { return CommonNamedState(__func__, BindTextureProxy, texRelUnit + GL_TEXTURE0, texType, texID); };
+		FixedPipelineState& Viewport(GLint x, GLint y, GLint w, GLint h) { return SET_NAMED_STATE(Viewport, x, y, w, h); }
+
+		FixedPipelineState& BindTexture(GLenum texRelUnit, GLenum texType, GLuint texID) { return SET_NAMED_STATE(BindTexture, texRelUnit + GL_TEXTURE0, texType, texID); };
 		FixedPipelineState& LastActiveTexture(GLenum texRelUnit) { lastActiveTexture = texRelUnit + GL_TEXTURE0; return *this; }
 
 		//FixedPipelineState& BindShader(Shader::IProgramObject* po) {  }
-
-		/// applied in the end
-		FixedPipelineState& OnBind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(true, func)); return *this; };
-		/// applied in the beginning
-		FixedPipelineState& OnUnbind(onBindUnbindFunc func) { customOnBindUnbind.emplace_back(std::make_pair(false, func)); return *this; };
 
 		FixedPipelineState& InferState();
 	public:
 		FixedPipelineState& operator=(const FixedPipelineState& other) = default; //copy
 		FixedPipelineState& operator=(FixedPipelineState&& other) = default; //move
 	public:
-		void Bind() const { BindUnbind(true); }
-		void Unbind() const { BindUnbind(false); }
+		void Bind() const { BindUnbind<true>(); }
+		void Unbind() const { BindUnbind<false>(); }
 	private:
-		void BindUnbind(const bool bind) const;
+		template<bool bind>
+		void BindUnbind() const;
 
 		template <typename... T>
 		inline void DumpState(const std::tuple<T...>& tuple);
-		template <typename... T>
-		inline void HashState(const std::tuple<T...>& tuple);
 	private:
 		static void BindTextureProxy(GLenum texUnit, GLenum texType, GLuint texID) { glActiveTexture(texUnit); glBindTexture(texType, texID); }
 	private:
-		FixedPipelineState& CommonBinaryState(const GLenum state, bool b) {
-			const auto argsTuple = std::make_tuple(state, static_cast<GLboolean>(b));
-			const auto fullTuple = std::tuple_cat(std::make_tuple("EnableDisable"), argsTuple);
-
-			DumpState(fullTuple);
-			HashState(fullTuple);
-
-			binaryStates[state] = b;
+		template<typename StateType, typename ... Args>
+		FixedPipelineState& CommonNamedState(const char* funcName, Args&&... args) {
+			std::get<StateType>(namedStates) = {
+				std::make_tuple(args...)
+			};
 			return *this;
 		}
 
-		template <class F, class ...Args>
-		FixedPipelineState& CommonNamedState(const char* funcName, F func, Args... args) {
-			const auto argsTuple = std::make_tuple(args...);
-			const auto fullTuple = std::tuple_cat(std::make_tuple(funcName), argsTuple);
-
-			DumpState(fullTuple);
-			HashState(fullTuple);
-
-			namedStates.emplace(std::string(funcName), std::move(NamedSingleState(func, argsTuple)));
+		template<typename StateType>
+		FixedPipelineState& CommonBinaryState(const char* funcName, bool enabled) {
+			std::get<StateType>(binaryStates) = {
+				static_cast<GLboolean>(enabled)
+			};
 			return *this;
 		}
-
 	private:
-		std::unordered_map<GLenum, bool> binaryStates;
-		std::unordered_map<std::string, NamedSingleState> namedStates;
+		template<GLenum cap>
+		struct BinaryState {
+			static constexpr auto capability = cap;
+			GLboolean enabled;
+		};
+		/////
+		#define DEFINE_BINARY_STATE(name, cap) using NAME_STATE(name) = BinaryState<cap>; 
+		#define DEFINE_NAMED_STATE(name) struct NAME_STATE(name)\
+		{\
+			using FuncType = std::remove_pointer_t<decltype(NAME_GL(name))>;\
+			using ArgsType = decltype(arguments(*(NAME_GL(name))));\
+			inline static const FuncType* func = (NAME_GL(name));\
+			ArgsType  args;\
+		}
+		#define DEFINE_NAMED_STATE_CUSTOM(name, funcName) struct NAME_STATE(name)\
+		{\
+			using FuncType = std::remove_pointer_t<decltype(funcName)>;\
+			using ArgsType = decltype(arguments(*(funcName)));\
+			inline static const FuncType* func = funcName;\
+			ArgsType  args;\
+		}
+		DEFINE_NAMED_STATE(PolygonMode);
+		DEFINE_NAMED_STATE(PolygonOffset);
+		DEFINE_NAMED_STATE(FrontFace);
+		DEFINE_NAMED_STATE(CullFace);
+		DEFINE_NAMED_STATE(DepthMask);
+		DEFINE_NAMED_STATE(DepthRangef);
+		DEFINE_NAMED_STATE(DepthFunc);
+		DEFINE_NAMED_STATE(AlphaFunc);
+		DEFINE_NAMED_STATE(BlendFunc);
+		DEFINE_NAMED_STATE(BlendColor);
+		DEFINE_NAMED_STATE(ColorMask);
+		DEFINE_NAMED_STATE(PrimitiveRestartIndex);
+		DEFINE_NAMED_STATE(Scissor);
+		DEFINE_NAMED_STATE(Viewport);
+		DEFINE_NAMED_STATE_CUSTOM(BindTexture, BindTextureProxy);
 
-		std::vector<std::pair<bool, onBindUnbindFunc>> customOnBindUnbind;
+		DEFINE_BINARY_STATE(PolygonOffsetFill, GL_POLYGON_OFFSET_FILL);
+		DEFINE_BINARY_STATE(PolygonOffsetLine, GL_POLYGON_OFFSET_LINE);
+		DEFINE_BINARY_STATE(PolygonOffsetPoint, GL_POLYGON_OFFSET_POINT);
+		DEFINE_BINARY_STATE(Culling, GL_CULL_FACE_MODE);
+		DEFINE_BINARY_STATE(DepthClamp, GL_DEPTH_CLAMP);
+		DEFINE_BINARY_STATE(DepthTest, GL_DEPTH_TEST);
+		DEFINE_BINARY_STATE(AlphaTest, GL_ALPHA_TEST);
+		DEFINE_BINARY_STATE(Blending, GL_BLEND);
+		DEFINE_BINARY_STATE(StencilTest, GL_STENCIL_TEST);
+		DEFINE_BINARY_STATE(Multisampling, GL_MULTISAMPLE);
+		DEFINE_BINARY_STATE(AlphaToCoverage, GL_SAMPLE_ALPHA_TO_COVERAGE);
+		DEFINE_BINARY_STATE(AlphaToOne, GL_SAMPLE_ALPHA_TO_ONE);
+		DEFINE_BINARY_STATE(PrimitiveRestart, GL_PRIMITIVE_RESTART);
+		DEFINE_BINARY_STATE(CubemapSeamless, GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		DEFINE_BINARY_STATE(PointSize, GL_PROGRAM_POINT_SIZE);
+		DEFINE_BINARY_STATE(ClipDistance0, GL_CLIP_DISTANCE0 + 0);
+		DEFINE_BINARY_STATE(ClipDistance1, GL_CLIP_DISTANCE0 + 1);
+		DEFINE_BINARY_STATE(ClipDistance2, GL_CLIP_DISTANCE0 + 2);
+		DEFINE_BINARY_STATE(ClipDistance3, GL_CLIP_DISTANCE0 + 3);
+		DEFINE_BINARY_STATE(ClipDistance4, GL_CLIP_DISTANCE0 + 4);
+		DEFINE_BINARY_STATE(ClipDistance5, GL_CLIP_DISTANCE0 + 5);
+		DEFINE_BINARY_STATE(ClipDistance6, GL_CLIP_DISTANCE0 + 6);
+		DEFINE_BINARY_STATE(ClipDistance7, GL_CLIP_DISTANCE0 + 7);
+		DEFINE_BINARY_STATE(ScissorTest, GL_SCISSOR_TEST);
 
-		uint64_t stateHash = 0u;
+#undef DEFINE_NAMED_STATE
+#undef DEFINE_BINARY_STATE
+
+		std::tuple <
+			NAME_STATE(PolygonMode),
+			NAME_STATE(PolygonOffset),
+			NAME_STATE(FrontFace),
+			NAME_STATE(CullFace),
+			NAME_STATE(DepthMask),
+			NAME_STATE(DepthRangef),
+			NAME_STATE(DepthFunc),
+			NAME_STATE(AlphaFunc),
+			NAME_STATE(BlendFunc),
+			NAME_STATE(BlendColor),
+			NAME_STATE(ColorMask),
+			NAME_STATE(PrimitiveRestartIndex),
+			NAME_STATE(Scissor),
+			NAME_STATE(Viewport),
+			NAME_STATE(BindTexture)
+		> namedStates;
+
+		std::tuple <
+			NAME_STATE(PolygonOffsetFill),
+			NAME_STATE(PolygonOffsetLine),
+			NAME_STATE(PolygonOffsetPoint),
+			NAME_STATE(Culling),
+			NAME_STATE(DepthClamp),
+			NAME_STATE(DepthTest),
+			NAME_STATE(AlphaTest),
+			NAME_STATE(Blending),
+			NAME_STATE(StencilTest),
+			NAME_STATE(Multisampling),
+			NAME_STATE(AlphaToCoverage),
+			NAME_STATE(AlphaToOne),
+			NAME_STATE(PrimitiveRestart),
+			NAME_STATE(CubemapSeamless),
+			NAME_STATE(PointSize),
+			NAME_STATE(ClipDistance0),
+			NAME_STATE(ClipDistance1),
+			NAME_STATE(ClipDistance2),
+			NAME_STATE(ClipDistance3),
+			NAME_STATE(ClipDistance4),
+			NAME_STATE(ClipDistance5),
+			NAME_STATE(ClipDistance6),
+			NAME_STATE(ClipDistance7),
+			NAME_STATE(ScissorTest)
+		> binaryStates;
+
 		GLuint lastActiveTexture = ~0u;
 	private:
-		static std::stack<FixedPipelineState, std::vector<FixedPipelineState>> statesChain;
+		static std::stack<FixedPipelineState> statesStack;
 	};
 
 	class ScopedState {
@@ -225,7 +286,7 @@ namespace GL {
 	template<typename ...T>
 	inline void FixedPipelineState::DumpState(const std::tuple<T...>& tuple)
 	{
-	#if (DEBUG_PIPELINE_STATE == 1)
+		/*
 		std::ostringstream ss;
 		ss << "[ ";
 		std::apply([&ss](auto&&... args) {((ss << +args << ", "), ...); }, tuple);
@@ -233,16 +294,7 @@ namespace GL {
 		ss << " ]";
 
 		LOG_L(L_NOTICE, "[FixedPipelineState::DumpState] %s", ss.str().c_str());
-	#endif // (DEBUG_PIPELINE_STATE == 1)
-	}
-
-	template<typename ...T>
-	inline void FixedPipelineState::HashState(const std::tuple<T...>& tuple)
-	{
-		const auto lambda = [this](auto&&... args) -> uint64_t {
-			return ((hashString(reinterpret_cast<const char*>(&args), sizeof(args)) * 65521) + ...);
-		};
-		stateHash += std::apply(lambda, tuple);
+		*/
 	}
 
 }

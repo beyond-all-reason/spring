@@ -9,16 +9,48 @@
 #include "Rendering/GlobalRendering.h"
 
 using namespace GL;
-std::stack<FixedPipelineState, std::vector<FixedPipelineState>> FixedPipelineState::statesChain = {};
+std::stack<FixedPipelineState> FixedPipelineState::statesStack = {};
 
-FixedPipelineState::FixedPipelineState()
-{
-	if (statesChain.empty()) { //default state
-		InferState();
-		statesChain.emplace(*this);
+namespace {
+	template<typename GLgetFunc, typename GLparamType, typename ReturnType>
+	static ReturnType glGetT(GLgetFunc glGetFunc, GLenum param) {
+		ReturnType ret;
+
+		constexpr size_t arrSize = sizeof(ret);
+		static std::array<uint8_t, arrSize> arr;
+		arr = { 0 };
+
+		glGetError();
+		glGetFunc(param, reinterpret_cast<GLparamType*>(arr.data()));
+		assert(glGetError() == GL_NO_ERROR);
+		memcpy(reinterpret_cast<GLparamType*>(&ret), arr.data(), arrSize);
+
+		return ret;
 	}
 
-	*this = statesChain.top(); //copy&paste previous state
+	template<typename ReturnType = int>
+	static ReturnType glGetIntT(GLenum param) {
+		return (glGetT<decltype(&glGetIntegerv), GLint, ReturnType>(glGetIntegerv, param));
+	}
+
+	template<typename ReturnType = float>
+	static ReturnType glGetFloatT(GLenum param) {
+		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
+	};
+};
+
+
+void GL::FixedPipelineState::InitStatic()
+{
+	assert(FixedPipelineState::statesStack.empty());
+	auto ps = FixedPipelineState();
+	statesStack.push(ps.InferState());
+}
+
+void GL::FixedPipelineState::KillStatic()
+{
+	assert(FixedPipelineState::statesStack.size() == 1);
+	statesStack.pop();
 }
 
 FixedPipelineState& GL::FixedPipelineState::InferState()
@@ -101,25 +133,26 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 	{
 		lastActiveTexture = glGetIntT(GL_ACTIVE_TEXTURE) - GL_TEXTURE0;
 	}
+
+	// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTextures.xhtml
+#define MAKE_TEX_QUERY_BIND_PAIR(type) std::make_pair(GL_TEXTURE_BINDING_##type, GL_TEXTURE_##type)
+	static constexpr std::array<std::pair<GLenum, GLenum>, 11> texTypes = {
+		MAKE_TEX_QUERY_BIND_PAIR(1D),
+		MAKE_TEX_QUERY_BIND_PAIR(2D),
+		MAKE_TEX_QUERY_BIND_PAIR(3D),
+		MAKE_TEX_QUERY_BIND_PAIR(1D_ARRAY),
+		MAKE_TEX_QUERY_BIND_PAIR(2D_ARRAY),
+		MAKE_TEX_QUERY_BIND_PAIR(RECTANGLE),
+		MAKE_TEX_QUERY_BIND_PAIR(BUFFER),
+		MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP),
+		MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP_ARRAY),
+		MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE),
+		MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE_ARRAY)
+	};
+#undef MAKE_TEX_QUERY_BIND_PAIR
+
 	for (int texRelUnit = 0; texRelUnit < CGlobalRendering::MAX_TEXTURE_UNITS; ++texRelUnit)
 	{
-		// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glBindTextures.xhtml
-		#define MAKE_TEX_QUERY_BIND_PAIR(type) std::make_pair(GL_TEXTURE_BINDING_##type, GL_TEXTURE_##type)
-		constexpr static std::array<std::pair<GLenum, GLenum>, 11> texTypes = {
-			MAKE_TEX_QUERY_BIND_PAIR(1D),
-			MAKE_TEX_QUERY_BIND_PAIR(2D),
-			MAKE_TEX_QUERY_BIND_PAIR(3D),
-			MAKE_TEX_QUERY_BIND_PAIR(1D_ARRAY),
-			MAKE_TEX_QUERY_BIND_PAIR(2D_ARRAY),
-			MAKE_TEX_QUERY_BIND_PAIR(RECTANGLE),
-			MAKE_TEX_QUERY_BIND_PAIR(BUFFER),
-			MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP),
-			MAKE_TEX_QUERY_BIND_PAIR(CUBE_MAP_ARRAY),
-			MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE),
-			MAKE_TEX_QUERY_BIND_PAIR(2D_MULTISAMPLE_ARRAY)
-		};
-		#undef MAKE_TEX_QUERY_BIND_PAIR
-
 		bool found = false;
 		for (const auto [queryType, bindType] : texTypes) {
 			glActiveTexture(GL_TEXTURE0 + texRelUnit);
@@ -134,15 +167,72 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 		if (found)
 			continue;
 
-		BindTexture(texRelUnit, GL_TEXTURE_2D, 0u);
+		//BindTexture(texRelUnit, GL_TEXTURE_2D, 0u);
 	}
 	glActiveTexture(lastActiveTexture + GL_TEXTURE0); //revert just in case
 
 	return *this;
 }
 
-void FixedPipelineState::BindUnbind(const bool bind) const
+template<bool bind>
+void FixedPipelineState::BindUnbind() const
 {
+	if constexpr(!bind)
+		statesStack.pop();
+
+	static decltype(glEnable)* EnableDisableFunc[] = {&glDisable, &glEnable};
+	assert(statesStack.size() >= 1);
+	if constexpr(bind) {
+		// named
+		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
+			const auto CompareFunc = [this, prev](auto&& state) {
+				using T = std::decay_t<decltype(state)>;
+				if (state.args != std::get<T>(prev->namedStates).args)
+					std::apply(state.func, state.args);
+			};
+			((CompareFunc(states)), ...);
+		}, namedStates);
+	}
+	else {
+		// named
+		std::apply([this, prev = &statesStack.top()](auto&& ... states) {
+			const auto CompareFunc = [this, prev](auto&& state) {
+				using T = std::decay_t<decltype(state)>;
+				if (state.args != std::get<T>(prev->namedStates).args)
+					std::apply(state.func, std::get<T>(prev->namedStates).args);
+			};
+			((CompareFunc(states)), ...);
+		}, namedStates);
+	}
+
+	// binary
+	std::apply([this, prev = &statesStack.top()](auto&& ... states) {
+		const auto CompareFunc = [this, prev](auto&& state) {
+			using T = std::decay_t<decltype(state)>;
+			assert(state.capability == std::get<T>(prev->binaryStates).capability);
+			bool curEn = !(bind ^ static_cast<bool>(                          state.enabled));
+			bool preEn = !(bind ^ static_cast<bool>(std::get<T>(prev->binaryStates).enabled));
+			if (curEn != preEn) {
+				EnableDisableFunc[curEn](state.capability);
+			}
+		};
+		((CompareFunc(states)), ...);
+	}, binaryStates);
+
+
+	if (lastActiveTexture < CGlobalRendering::MAX_TEXTURE_UNITS)
+		glActiveTexture(lastActiveTexture + GL_TEXTURE0);
+	else {
+		if (!bind && !statesStack.empty()) {
+			const auto prevLastActiveTexture = statesStack.top().lastActiveTexture;
+			if (prevLastActiveTexture < CGlobalRendering::MAX_TEXTURE_UNITS)
+				glActiveTexture(prevLastActiveTexture + GL_TEXTURE0);
+		}
+	}
+
+	if constexpr(bind)
+		statesStack.push(*this);
+	/*
 	if (!bind)
 		statesChain.pop();
 
@@ -153,34 +243,34 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 
 	if (bind) {
 		for (const auto& [funcName, namedState] : namedStates) {
-            if (statesChain.empty()) { /*default state*/
+            if (statesChain.empty()) { //default state
                 namedState.apply();
                 continue;
             }
             const auto& prev = statesChain.top().namedStates;
             const auto& prevStateIt = prev.find(funcName);
-            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/
-                /* TODO: do something to save revert state */
+            if (prevStateIt == prev.cend()) { //haven't seen this state in previous states
+                // TODO: do something to save revert state
                 namedState.apply();
                 continue;
             }
-            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/
+            if (prevStateIt->second != namedState) { // previous state's args are different to this state args
                 namedState.apply();
                 continue;
             }
         }
 	} else {
         for (const auto& [funcName, namedState] : namedStates) {
-            if (statesChain.empty()) { /*default state*/
+            if (statesChain.empty()) { // default state
                 continue;
             }
             const auto& prev = statesChain.top().namedStates;
             const auto& prevStateIt = prev.find(funcName);
-            if (prevStateIt == prev.cend()) { /*haven't seen this state in previous states*/
-                /* TODO: do something to save revert state */
+            if (prevStateIt == prev.cend()) { //haven't seen this state in previous states
+                // TODO: do something to save revert state
                 throw std::runtime_error("[FixedPipelineState::BindUnbind] Cannot revert state that has no default value");
             }
-            if (prevStateIt->second != namedState) { /*previous state's args are different to this state args*/
+            if (prevStateIt->second != namedState) { // previous state's args are different to this state args
                 prevStateIt->second.apply();
                 continue;
             }
@@ -191,13 +281,11 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 	const auto& prev = statesChain.top().binaryStates;
 	for (const auto [state, status] : binaryStates) {
 		const auto& prevStateIt = prev.find(state);
-		/*
-		  b, s ==> e
-		  1, 1 ==> 1
-		  0, 1 ==> 0
-		  1, 1 ==> 0
-		  0, 0 ==> 1
-		*/
+		//  b, s ==> e
+		//  1, 1 ==> 1
+		//  0, 1 ==> 0
+		//  1, 1 ==> 0
+		//  0, 0 ==> 1
 		const bool en  =                              !(bind ^ status             )      ;
 		const bool pEn = prevStateIt != prev.cend() ? !(bind ^ prevStateIt->second) : !en;
 
@@ -227,4 +315,5 @@ void FixedPipelineState::BindUnbind(const bool bind) const
 	if (bind) {
 		statesChain.push(*this);
 	}
+	*/
 }

@@ -13,6 +13,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/FixedPipelineState.h"
 #include "Rendering/VK/VkInfo.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
@@ -370,6 +371,7 @@ void CGlobalRendering::PreKill()
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 	RenderBuffer::KillStatic();
 	CShaderHandler::FreeInstance();
+	GL::FixedPipelineState::KillStatic();
 }
 
 
@@ -1652,6 +1654,8 @@ void CGlobalRendering::InitGLState()
 	// this does not accomplish much
 	// SwapBuffers(true, true);
 	LogDisplayMode(sdlWindow);
+
+	GL::FixedPipelineState::InitStatic();
 }
 
 void CGlobalRendering::ToggleMultisampling() const
