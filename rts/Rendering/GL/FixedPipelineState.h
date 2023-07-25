@@ -44,7 +44,7 @@ namespace GL {
 	public:
 		static void InitStatic();
 		static void KillStatic();
-		FixedPipelineState() = default;
+		FixedPipelineState();
 		FixedPipelineState(FixedPipelineState&& rh) = default; //move
 		FixedPipelineState(const FixedPipelineState& rh) = default; //copy
 

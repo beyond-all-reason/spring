@@ -43,14 +43,24 @@ namespace {
 void GL::FixedPipelineState::InitStatic()
 {
 	assert(FixedPipelineState::statesStack.empty());
-	auto ps = FixedPipelineState();
-	statesStack.push(ps.InferState());
+	statesStack.push(FixedPipelineState().InferState());
+	auto ps2 = FixedPipelineState().AlphaToCoverage(true);
+	ps2.Bind();
+	ps2.Unbind();
 }
 
 void GL::FixedPipelineState::KillStatic()
 {
 	assert(FixedPipelineState::statesStack.size() == 1);
 	statesStack.pop();
+}
+
+GL::FixedPipelineState::FixedPipelineState()
+{
+	if unlikely(FixedPipelineState::statesStack.empty())
+		return;
+
+	*this = statesStack.top();
 }
 
 FixedPipelineState& GL::FixedPipelineState::InferState()
