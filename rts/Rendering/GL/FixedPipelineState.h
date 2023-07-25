@@ -20,6 +20,7 @@ namespace GL {
 	#define NAME_STATE(name) name##State
 	#define SET_NAMED_STATE(name, ...)  CommonNamedState<NAME_STATE(name)>(#name, __VA_ARGS__)
 	#define SET_BINARY_STATE(name, ena) CommonBinaryState<NAME_STATE(name)>(#name, ena)
+	#define SET_BINARY_COMPLEX_STATE(name, ...) CommonBinaryState<NAME_STATE(name)>(#name, __VA_ARGS__)
 
 	class FixedPipelineState {
 	public:
@@ -71,32 +72,7 @@ namespace GL {
 
 		FixedPipelineState& PointSize(bool b) { return SET_BINARY_STATE(PointSize, b); }
 
-		FixedPipelineState& ClipDistance(GLenum relClipSp, bool b) {
-			// LOL workaround
-			switch (relClipSp) {
-			case 0:
-				return SET_BINARY_STATE(ClipDistance0, b);
-			case 1:
-				return SET_BINARY_STATE(ClipDistance1, b);
-			case 2:
-				return SET_BINARY_STATE(ClipDistance2, b);
-			case 3:
-				return SET_BINARY_STATE(ClipDistance3, b);
-			case 4:
-				return SET_BINARY_STATE(ClipDistance4, b);
-			case 5:
-				return SET_BINARY_STATE(ClipDistance5, b);
-			case 6:
-				return SET_BINARY_STATE(ClipDistance6, b);
-			case 7:
-				return SET_BINARY_STATE(ClipDistance7, b);
-			default: {
-				assert(false);
-				return *this;
-			}
-
-			}
-		}
+		FixedPipelineState& ClipDistance(GLenum relClipSp, bool b) { return SET_BINARY_COMPLEX_STATE(ClipDistance, GL_CLIP_DISTANCE0 + relClipSp, b); }
 
 		FixedPipelineState& ScissorTest(bool b) { return SET_BINARY_STATE(ScissorTest, b); }
 		FixedPipelineState& ScissorRect(GLint x, GLint y, GLint w, GLint h) { return SET_NAMED_STATE(Scissor, x, y, w, h); }
@@ -143,14 +119,30 @@ namespace GL {
 			};
 			return *this;
 		}
+		template<typename StateType>
+		FixedPipelineState& CommonBinaryState(const char* funcName, GLenum cap, bool enabled) {
+			static_assert(std::is_base_of_v<BinaryComplexState, StateType>, "Invalid dispatch");
+			static constexpr auto db_index = std::tuple_size_v<decltype(namedStates)> + spring::tuple_type_index_v<StateType, decltype(binaryStates)>;
+			dirtyBits.set(db_index, true);
+			std::get<StateType>(binaryStates) = {
+				cap,
+				static_cast<GLboolean>(enabled)
+			};
+			return *this;
+		}
 	private:
 		template<GLenum cap>
 		struct BinaryState {
 			static constexpr auto capability = cap;
 			GLboolean enabled;
 		};
+		struct BinaryComplexState {
+			GLenum capability;
+			GLboolean enabled;
+		};
 		/////
-		#define DEFINE_BINARY_STATE(name, cap) using NAME_STATE(name) = BinaryState<cap>; 
+		#define DEFINE_BINARY_STATE(name, cap) using NAME_STATE(name) = BinaryState<cap>;
+		#define DEFINE_BINARY_COMPLEX_STATE(name) struct NAME_STATE(name) : public BinaryComplexState{};
 		#define DEFINE_NAMED_STATE(name) struct NAME_STATE(name)\
 		{\
 			using FuncType = std::remove_pointer_t<decltype(NAME_GL(name))>;\
@@ -196,14 +188,7 @@ namespace GL {
 		DEFINE_BINARY_STATE(PrimitiveRestart, GL_PRIMITIVE_RESTART);
 		DEFINE_BINARY_STATE(CubemapSeamless, GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		DEFINE_BINARY_STATE(PointSize, GL_PROGRAM_POINT_SIZE);
-		DEFINE_BINARY_STATE(ClipDistance0, GL_CLIP_DISTANCE0 + 0);
-		DEFINE_BINARY_STATE(ClipDistance1, GL_CLIP_DISTANCE0 + 1);
-		DEFINE_BINARY_STATE(ClipDistance2, GL_CLIP_DISTANCE0 + 2);
-		DEFINE_BINARY_STATE(ClipDistance3, GL_CLIP_DISTANCE0 + 3);
-		DEFINE_BINARY_STATE(ClipDistance4, GL_CLIP_DISTANCE0 + 4);
-		DEFINE_BINARY_STATE(ClipDistance5, GL_CLIP_DISTANCE0 + 5);
-		DEFINE_BINARY_STATE(ClipDistance6, GL_CLIP_DISTANCE0 + 6);
-		DEFINE_BINARY_STATE(ClipDistance7, GL_CLIP_DISTANCE0 + 7);
+		DEFINE_BINARY_COMPLEX_STATE(ClipDistance);
 		DEFINE_BINARY_STATE(ScissorTest, GL_SCISSOR_TEST);
 
 #undef DEFINE_NAMED_STATE
@@ -243,14 +228,7 @@ namespace GL {
 			NAME_STATE(PrimitiveRestart),
 			NAME_STATE(CubemapSeamless),
 			NAME_STATE(PointSize),
-			NAME_STATE(ClipDistance0),
-			NAME_STATE(ClipDistance1),
-			NAME_STATE(ClipDistance2),
-			NAME_STATE(ClipDistance3),
-			NAME_STATE(ClipDistance4),
-			NAME_STATE(ClipDistance5),
-			NAME_STATE(ClipDistance6),
-			NAME_STATE(ClipDistance7),
+			NAME_STATE(ClipDistance),
 			NAME_STATE(ScissorTest)
 		> binaryStates;
 
