@@ -408,7 +408,7 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 
 void QTPFSPathDrawer::DrawInMiniMap()
 {
-	auto mct = pm->GetMapDamageTrack();
+	auto mdt = pm->GetMapDamageTrack();
 
 	if (!IsEnabled() || (!gs->cheatEnabled && !gu->spectatingFullView))
 		return;
@@ -428,14 +428,14 @@ void QTPFSPathDrawer::DrawInMiniMap()
 
 	const int blockSize = QTPFS::PathManager::DAMAGE_MAP_BLOCK_SIZE;
 
-	auto width = mct.width;
-	auto height = mct.height;
-	float maxStrength = mct.mapChangeTrackers.size();
+	auto width = mdt.width;
+	auto height = mdt.height;
+	float maxStrength = mdt.mapChangeTrackers.size();
 
 	std::vector<float> mapDamageStrength;
 	mapDamageStrength.resize(width*height, 0.f);
 
-	for (auto& track : mct.mapChangeTrackers) {
+	for (auto& track : mdt.mapChangeTrackers) {
 		for (auto mapQuad: track.damageQueue) {
 			assert(mapQuad < mapDamageStrength.size());
 			mapDamageStrength[mapQuad]++;

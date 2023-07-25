@@ -27,6 +27,18 @@ struct MoveDef {
 	MoveDef& operator = (const MoveDef& moveDef) = delete;
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
+	bool DoRawSearch(
+		const CSolidObject* collider,
+		const float3 rangeMins,
+		const float3 rangeMaxs,
+		const float3 testMoveDir,
+		bool testTerrain,
+		bool testObjects,
+		bool centerOnly,
+		float* minSpeedModPtr,
+		int* maxBlockBitPtr,
+		int thread = 0
+	);
 	bool TestMoveSquareRange(
 		const CSolidObject* collider,
 		const float3 rangeMins,
