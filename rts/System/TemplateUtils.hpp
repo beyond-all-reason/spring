@@ -156,18 +156,18 @@ namespace spring {
 	auto arg_types_tuple_t(const F*) -> typename func_signature<F>::type;
 
 
-	template <class T, class Tuple>
+	template <typename T, typename Tuple>
 	struct tuple_type_index;
 
-	template <class T, class... Types>
+	template <typename T, typename... Types>
 	struct tuple_type_index<T, std::tuple<T, Types...>> {
 		static const std::size_t value = 0;
 	};
 
-	template <class T, class U, class... Types>
+	template <typename T, typename U, typename... Types>
 	struct tuple_type_index<T, std::tuple<U, Types...>> {
 		static const std::size_t value = 1 + tuple_type_index<T, std::tuple<Types...>>::value;
 	};
-	template <class T, class Tuple>
-	constexpr size_t tuple_type_index_v = tuple_type_index<T, class Tuple>::value;
+	template <typename T, typename Tuple>
+	constexpr size_t tuple_type_index_v = tuple_type_index<T, Tuple>::value;
 };
