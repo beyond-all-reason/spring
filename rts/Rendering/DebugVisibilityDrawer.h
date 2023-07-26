@@ -4,13 +4,23 @@
 
 #include <vector>
 
-struct QuadData {
+struct CDebugVisibilityDrawer;
+
+struct VisibleQuadData {
+	void Update();
+	int GetNumQuadsX() const { return numQuadsX; }
+	int GetNumQuadsZ() const { return numQuadsZ; }
+	const std::vector<bool>& GetQuads() const { return quads; }
+
+private:
 	int numQuadsX;
 	int numQuadsZ;
-	std::vector<bool> visibleQuads;
+	std::vector<bool> quads;
+
+	friend CDebugVisibilityDrawer;
 };
 
-struct CDebugVisibilityDrawer;
+inline VisibleQuadData CamVisibleQuads;
 
 class DebugVisibilityDrawer
 {
@@ -21,5 +31,4 @@ public:
 	static void DrawMinimap();
 
 	static CDebugVisibilityDrawer drawer;
-	static QuadData quads;
 };

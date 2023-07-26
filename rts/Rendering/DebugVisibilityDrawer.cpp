@@ -16,31 +16,29 @@ static constexpr float4 CULL_QUAD_COLOR = float4(0.75f, 0.00f, 0.00f, 0.45f);
 static constexpr float HM_SQUARE_SIZE = float(CQuadField::BASE_QUAD_SIZE) / SQUARE_SIZE;
 static constexpr float WM_SQUARE_SIZE = HM_SQUARE_SIZE * SQUARE_SIZE;
 
-QuadData DebugVisibilityDrawer::quads;
-
 struct CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
 	public:
 		void ResetState() {
-			auto& q = DebugVisibilityDrawer::quads;
+			auto& q = CamVisibleQuads;
 			q.numQuadsX = static_cast<size_t>(mapDims.mapx * SQUARE_SIZE / WM_SQUARE_SIZE);
 			q.numQuadsZ = static_cast<size_t>(mapDims.mapy * SQUARE_SIZE / WM_SQUARE_SIZE);
-			q.visibleQuads.resize(q.numQuadsX * q.numQuadsZ);
-			std::fill(q.visibleQuads.begin(), q.visibleQuads.end(), false);
+			q.quads.resize(q.numQuadsX * q.numQuadsZ);
+			std::fill(q.quads.begin(), q.quads.end(), false);
 		}
 		void DrawQuad(int x, int z) {
-			auto& q = DebugVisibilityDrawer::quads;
+			auto& q = CamVisibleQuads;
 			assert(!q.visibleQuads.empty());
 			assert(x < q.numQuadsX);
 			assert(z < q.numQuadsZ);
-			q.visibleQuads[z * q.numQuadsX + x] = true;
+			q.quads[z * q.numQuadsX + x] = true;
 		}
 };
 
 CDebugVisibilityDrawer DebugVisibilityDrawer::drawer = CDebugVisibilityDrawer{};
 
-void DebugVisibilityDrawer::Update() {
-	drawer.ResetState();
-	readMap->GridVisibility(nullptr, &drawer, 1e9, HM_SQUARE_SIZE);
+void VisibleQuadData::Update() {
+	DebugVisibilityDrawer::drawer.ResetState();
+	readMap->GridVisibility(nullptr, &DebugVisibilityDrawer::drawer, 1e9, HM_SQUARE_SIZE);
 }
 
 void DebugVisibilityDrawer::DrawWorld()
@@ -52,10 +50,10 @@ void DebugVisibilityDrawer::DrawWorld()
 	auto& sh = rb.GetShader();
 	rb.AssertSubmission();
 
-	auto& q = quads;
-	for (int z = 0; z < q.numQuadsZ; ++z) {
-		for (int x = 0; x < q.numQuadsX; ++x) {
-			if (!q.visibleQuads[z * q.numQuadsX + x])
+	auto& q = CamVisibleQuads;
+	for (int z = 0; z < q.GetNumQuadsZ(); ++z) {
+		for (int x = 0; x < q.GetNumQuadsX(); ++x) {
+			if (!q.GetQuads()[z * q.GetNumQuadsX() + x])
 				continue;
 
 			AABB aabbPatch = {
@@ -134,10 +132,10 @@ void DebugVisibilityDrawer::DrawMinimap()
 	auto& sh = rb.GetShader();
 	rb.AssertSubmission();
 
-	auto& q = quads;
-	for (int z = 0; z < q.numQuadsZ; ++z) {
-		for (int x = 0; x < q.numQuadsX; ++x) {
-			SColor currCol = SColor(q.visibleQuads[z * q.numQuadsX + x] ? &PASS_QUAD_COLOR.r : &CULL_QUAD_COLOR.r);
+	auto& q = CamVisibleQuads;
+	for (int z = 0; z < q.GetNumQuadsZ(); ++z) {
+		for (int x = 0; x < q.GetNumQuadsX(); ++x) {
+			SColor currCol = SColor(q.GetQuads()[z * q.GetNumQuadsX() + x] ? &PASS_QUAD_COLOR.r : &CULL_QUAD_COLOR.r);
 			
 			AABB aabbPatch = {
 				float3{ (x + 0) * WM_SQUARE_SIZE, 0.0f, (z + 0) * WM_SQUARE_SIZE },

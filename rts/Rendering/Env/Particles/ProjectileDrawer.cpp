@@ -61,7 +61,7 @@ static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
 
 static bool IsInVisibleQuad(const float3& pos) {
 	auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
-	return DebugVisibilityDrawer::quads.visibleQuads[quadId];
+	return CamVisibleQuads.GetQuads()[quadId];
 }
 
 
