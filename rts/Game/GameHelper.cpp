@@ -1225,7 +1225,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		std::vector<float3> nobuildpos;
 	};
 
-	static constexpr int CACHE_VALIDITY_PERIOD[] = {1, 15}; //synced, unsynced
+	/* synced, unsynced. Unsynced is arbitrary, but being 500ms
+	 * seems like a good tradeoff between not evicting cache value
+	 * too quickly and not to stale the state for too long. */
+	static constexpr int CACHE_VALIDITY_PERIOD[] = {1, GAME_SPEED / 2};
+
 	static std::vector<TestUnitBuildSquareCacheItem> testUnitBuildSquareCache;
 	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
 		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
