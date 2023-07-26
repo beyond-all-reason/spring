@@ -217,7 +217,6 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
-	CamVisibleQuads.Update();
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();
