@@ -612,7 +612,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 	// Prevent a division by zero in experience calculations.
 	if (power < 1.0e-3f) {
-		LOG_L(L_WARNING, "Unit %s is really cheap? %f", humanName.c_str(), power);
+		LOG_L(L_WARNING, "Unit '%s' (%s) has really low power? %f", humanName.c_str(), unitName.c_str(), power);
 		LOG_L(L_WARNING, "This can cause a division by zero in experience calculations.");
 		power = 1.0e-3f;
 	}
