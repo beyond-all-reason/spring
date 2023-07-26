@@ -589,8 +589,9 @@ int LuaParser::DirList(lua_State* L)
 
 	const std::string& pat = luaL_optstring(L, 2, "*");
 	const std::string& modes = CFileHandler::AllowModes(luaL_optstring(L, 3, currentParser->accessModes.c_str()), currentParser->accessModes);
+	const bool recursive = luaL_optboolean(L, 4, false);
 
-	LuaUtils::PushStringVector(L, CFileHandler::DirList(dir, pat, modes));
+	LuaUtils::PushStringVector(L, CFileHandler::DirList(dir, pat, modes, recursive));
 	return 1;
 }
 
@@ -606,8 +607,9 @@ int LuaParser::SubDirs(lua_State* L)
 
 	const std::string& pat = luaL_optstring(L, 2, "*");
 	const std::string& modes = CFileHandler::AllowModes(luaL_optstring(L, 3, currentParser->accessModes.c_str()), currentParser->accessModes);
+	const bool recursive = luaL_optboolean(L, 4, false);
 
-	LuaUtils::PushStringVector(L, CFileHandler::SubDirs(dir, pat, modes));
+	LuaUtils::PushStringVector(L, CFileHandler::SubDirs(dir, pat, modes, recursive));
 	return 1;
 }
 

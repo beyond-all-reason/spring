@@ -49,6 +49,8 @@ Lua:
  - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
    of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
    and run in the order they were added, just before that frame's GameFrame call-in.
+ - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
+   matches in subdirs, recursively.
  
 
 Game Setup:

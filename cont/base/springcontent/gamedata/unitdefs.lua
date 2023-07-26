@@ -23,7 +23,7 @@ local TDF = TDFparser or VFS.Include('gamedata/parse_tdf.lua')
 local DownloadBuilds = VFS.Include('gamedata/download_builds.lua')
 
 local system = VFS.Include('gamedata/system.lua')
-VFS.Include('gamedata/VFSUtils.lua')
+VFS.Include('gamedata/VFSUtils.lua') -- for legacy code that might need its contents
 local section = 'unitdefs.lua'
 
 
@@ -48,7 +48,7 @@ end
 --  Load the FBI unitdef files
 --
 
-local fbiFiles = RecursiveFileSearch('units/', '*.fbi') 
+local fbiFiles = VFS.DirList('units/', '*.fbi', nil, true)
 
 
 for _, filename in ipairs(fbiFiles) do
@@ -72,7 +72,7 @@ end
 --
 
 
-local luaFiles = RecursiveFileSearch('units/', '*.lua')
+local luaFiles = VFS.DirList('units/', '*.lua', nil, true)
 
 for _, filename in ipairs(luaFiles) do
   local udEnv = {}
