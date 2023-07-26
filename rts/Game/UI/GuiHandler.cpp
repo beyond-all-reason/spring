@@ -949,23 +949,16 @@ bool CGuiHandler::LayoutCustomIcons(bool useSelectionPage)
 
 void CGuiHandler::GiveCommand(const Command& cmd, bool fromUser)
 {
-	commandsToGive.push_back(std::pair<const Command, bool>(cmd, fromUser));
+	commandsToGive.emplace_back(cmd, fromUser);
 }
 
 
 void CGuiHandler::GiveCommandsNow() {
-	std::vector< std::pair<Command, bool> > commandsToGiveTemp;
-	{
-		commandsToGiveTemp.swap(commandsToGive);
-	}
-
-	for (const std::pair<Command, bool>& i: commandsToGiveTemp) {
-		const Command& cmd = i.first;
-
+	for (const auto& [cmd, fromUser] : commandsToGive) {
 		if (eventHandler.CommandNotify(cmd))
 			continue;
 
-		selectedUnitsHandler.GiveCommand(cmd, i.second);
+		selectedUnitsHandler.GiveCommand(cmd, fromUser);
 
 		if (!gatherMode)
 			continue;
@@ -974,6 +967,7 @@ void CGuiHandler::GiveCommandsNow() {
 			GiveCommand(Command(CMD_GATHERWAIT), false);
 		}
 	}
+	commandsToGive.clear();
 }
 
 
