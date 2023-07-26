@@ -59,12 +59,6 @@ CProjectileDrawer* projectileDrawer = nullptr;
 // ~EventClient)
 static uint8_t projectileDrawerMem[sizeof(CProjectileDrawer)];
 
-static bool IsInVisibleQuad(const float3& pos) {
-	auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
-	return CamVisibleQuads.GetQuads()[quadId];
-}
-
-
 void CProjectileDrawer::InitStatic() {
 	if (projectileDrawer == nullptr)
 		projectileDrawer = new (projectileDrawerMem) CProjectileDrawer();
@@ -610,11 +604,12 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
-	if (!IsInVisibleQuad(pro->pos))
-		return;
 	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
 		return;
 	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
+
+	if (!CamVisibleQuads.isInQuads(pro->pos))
+		return;
 
 	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
 		return;
@@ -662,7 +657,7 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
-	if (!IsInVisibleQuad(p->drawPos))
+	if (!CamVisibleShadowQuads.isInQuads(p->drawPos))
 		return;
 	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();

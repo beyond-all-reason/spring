@@ -714,6 +714,8 @@ void CGame::LoadInterface()
 	auto lock = CLoadLock::GetUniqueLock();
 
 	camHandler->Init();
+	CamVisibleShadowQuads.Init();
+	CamVisibleQuads.Init();
 	mouse->ReloadCursors();
 
 	selectedUnitsHandler.Init(playerHandler.ActivePlayers());
@@ -1405,6 +1407,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	camera->Update();
 	CamVisibleQuads.Update();
 	shadowHandler.Update();
+	CamVisibleShadowQuads.Update();
 	{
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();

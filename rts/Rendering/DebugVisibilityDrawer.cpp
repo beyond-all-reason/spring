@@ -18,27 +18,39 @@ static constexpr float WM_SQUARE_SIZE = HM_SQUARE_SIZE * SQUARE_SIZE;
 
 struct CDebugVisibilityDrawer : public CReadMap::IQuadDrawer {
 	public:
+		CDebugVisibilityDrawer(VisibleQuadData& data) : data{data} {}
 		void ResetState() {
-			auto& q = CamVisibleQuads;
+			auto& q = data;
 			q.numQuadsX = static_cast<size_t>(mapDims.mapx * SQUARE_SIZE / WM_SQUARE_SIZE);
 			q.numQuadsZ = static_cast<size_t>(mapDims.mapy * SQUARE_SIZE / WM_SQUARE_SIZE);
 			q.quads.resize(q.numQuadsX * q.numQuadsZ);
 			std::fill(q.quads.begin(), q.quads.end(), false);
 		}
 		void DrawQuad(int x, int z) {
-			auto& q = CamVisibleQuads;
+			auto& q = data;
 			assert(!q.visibleQuads.empty());
 			assert(x < q.numQuadsX);
 			assert(z < q.numQuadsZ);
 			q.quads[z * q.numQuadsX + x] = true;
 		}
+
+		VisibleQuadData& data;
 };
 
-CDebugVisibilityDrawer DebugVisibilityDrawer::drawer = CDebugVisibilityDrawer{};
+void VisibleQuadData::Init() {
+	CDebugVisibilityDrawer{*this}.ResetState();
+}
 
 void VisibleQuadData::Update() {
-	DebugVisibilityDrawer::drawer.ResetState();
-	readMap->GridVisibility(nullptr, &DebugVisibilityDrawer::drawer, 1e9, HM_SQUARE_SIZE);
+	auto drawer = CDebugVisibilityDrawer{*this};
+	drawer.ResetState();
+	readMap->GridVisibility(nullptr, &drawer, 1e9, HM_SQUARE_SIZE);
+}
+
+bool VisibleQuadData::isInQuads(const float3& pos) {
+	auto quadId = quadField.WorldPosToQuadFieldIdx(pos);
+	assert(!quads.empty());
+	return quads[quadId];
 }
 
 void DebugVisibilityDrawer::DrawWorld()
