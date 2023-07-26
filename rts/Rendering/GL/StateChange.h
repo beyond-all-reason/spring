@@ -1,25 +1,27 @@
-/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+/* This file is part of the Recoil engine (GPL v2 or later), see LICENSE.html */
 
 #pragma once
 
 #include "State.h"
+#include <tuple>
+#include <utility>
 
 namespace GL
 {
 
 namespace Impl
 {
-template<class... ValuesUniqueTypes> class StateChange {
+template<class... UniqueAttributeValueTypes> class StateChange {
 public:
-	inline StateChange(ValuesUniqueTypes... newValues)
+	inline StateChange(UniqueAttributeValueTypes... newValues)
 	{
-		((std::get<ValuesUniqueTypes>(savedValues) = std::get<typename ValuesUniqueTypes::AttributeType>(State::Attributes)), ...);
-		((std::get<typename ValuesUniqueTypes::AttributeType>(State::Attributes) = newValues), ...);
+		((std::get<UniqueAttributeValueTypes>(savedValues) = std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)), ...);
+		((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = newValues), ...);
 	}
 	inline void pop()
 	{
 		if (pushed) {
-			((std::get<typename ValuesUniqueTypes::AttributeType>(State::Attributes) = std::get<ValuesUniqueTypes>(savedValues)), ...);
+			((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = std::get<UniqueAttributeValueTypes>(savedValues)), ...);
 			pushed = false;
 		}
 	}
@@ -29,7 +31,7 @@ public:
 	}
 
 private:
-	std::tuple<ValuesUniqueTypes...> savedValues;
+	std::tuple<UniqueAttributeValueTypes...> savedValues;
 	bool pushed = true;
 };
 }
@@ -37,7 +39,7 @@ private:
 template<class... ArgTypes>
 auto StateChange(ArgTypes&&... args)
 {
-	return Impl::StateChange<ArgTypes...>(args...);
+	return Impl::StateChange<ArgTypes...>(std::forward<ArgTypes>(args)...);
 }
 
 namespace State { using GL::StateChange; }
