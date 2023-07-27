@@ -11,6 +11,8 @@
 #include "NodeLayer.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
+#include "Game/SelectedUnitsHandler.h"
+#include "Sim/Objects/SolidObject.h"
 
 #include "Components/PathSearch.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
@@ -490,17 +492,6 @@ void QTPFS::PathSearch::SmoothPath(IPath* path) const {
 			// all waypoints stopped moving
 			break;
 		}
-	}
-
-	SearchNode* n0 = tgtSearchNode;
-	SearchNode* n1 = tgtSearchNode;
-
-	while (n1 != srcSearchNode) {
-		n0 = n1;
-		n1 = n0->GetPrevNode();
-
-		// reset back-pointers
-		n0->SetPrevNode(NULL);
 	}
 }
 

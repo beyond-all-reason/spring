@@ -113,6 +113,12 @@ public:
 	}
 	unsigned int GetPathId() { return pathID; }
 
+	float GetTurnRadius() {
+		const float absTurnSpeed = std::max(0.0001f, math::fabs(turnRate));
+		const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
+		return std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f);
+	}
+
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;
