@@ -13,7 +13,7 @@ CR_BIND(CCobEngine, )
 CR_REG_METADATA(CCobEngine, (
 	CR_MEMBER(threadInstances),
 	CR_MEMBER(tickAddedThreads),
-
+	CR_MEMBER(tickRemovedThreads),
 	CR_MEMBER(runningThreadIDs),
 	CR_MEMBER(sleepingThreadIDs),
 	// always null/empty when saving

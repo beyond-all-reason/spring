@@ -32,6 +32,7 @@ public:
 
 	size_t Upload(const sol::stack_table& luaTblData, sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> luaStartIndexOpt, sol::optional<int> luaFinishIndexOpt);
 	sol::as_table_t<std::vector<lua_Number>> Download(sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> elemCountOpt, sol::optional<bool> forceGPUReadOpt);
+	void Clear();
 
 	size_t ModelsVBO();
 
@@ -72,8 +73,8 @@ private:
 	void UpdateModelsVBOElementCount();
 	size_t ModelsVBOImpl();
 
-	void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);
-	void InstanceBufferCheck(int attrID, const char* func);
+	inline void InstanceBufferCheck(int attrID, const char* func);
+	inline void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);
 
 	template<typename TObj>
 	static SInstanceData InstanceDataFromGetData(int id, int attrID, uint8_t defTeamID);

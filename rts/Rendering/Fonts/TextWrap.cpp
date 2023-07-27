@@ -33,7 +33,7 @@ static constexpr const char* spaceStringTable[1 + 10] = {
 /*******************************************************************************/
 
 template <typename T>
-static inline int SkipColorCodes(const std::u8string& text, T* pos, SColor* color)
+static inline int SkipColorCodes(const spring::u8string& text, T* pos, SColor* color)
 {
 	int colorFound = 0;
 	while (text[(*pos)] == CTextWrap::ColorCodeIndicator) {
@@ -414,7 +414,7 @@ void CTextWrap::WrapTextConsole(std::list<word>& words, float maxWidth, float ma
 }
 
 
-void CTextWrap::SplitTextInWords(const std::u8string& text, std::list<word>* words, std::list<colorcode>* colorcodes)
+void CTextWrap::SplitTextInWords(const spring::u8string& text, std::list<word>* words, std::list<colorcode>* colorcodes)
 {
 	const unsigned int length = (unsigned int)text.length();
 	const float spaceAdvance = GetGlyph(spaceUTF16).advance;
@@ -558,7 +558,7 @@ void CTextWrap::RemergeColorCodes(std::list<word>* words, std::list<colorcode>& 
 }
 
 
-int CTextWrap::WrapInPlace(std::u8string& text, float _fontSize, float maxWidth, float maxHeight)
+int CTextWrap::WrapInPlace(spring::u8string& text, float _fontSize, float maxWidth, float maxHeight)
 {
 	// TODO make an option to insert '-' for word wrappings (and perhaps try to syllabificate)
 
@@ -610,9 +610,9 @@ int CTextWrap::WrapInPlace(std::u8string& text, float _fontSize, float maxWidth,
 }
 
 
-std::u8string CTextWrap::Wrap(const std::u8string& text, float _fontSize, float maxWidth, float maxHeight)
+spring::u8string CTextWrap::Wrap(const spring::u8string& text, float _fontSize, float maxWidth, float maxHeight)
 {
-	std::u8string out(text);
+	spring::u8string out(text);
 	WrapInPlace(out, _fontSize, maxWidth, maxHeight);
 	return out;
 }

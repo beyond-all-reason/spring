@@ -1,19 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _UNSIGNED_STRING_H
-#define _UNSIGNED_STRING_H
+#pragma once
 
 #include <string>
 
-typedef unsigned char char8_t;
+#if __cplusplus < 202002L
+	using char8_t = unsigned char;
+#endif
 
-namespace std {
-	class u8string : public string {
+namespace spring {
+	class u8string : public std::string {
 	public:
 		// copy ctors
 		//using string::string; // gcc4.8 and newer
-		explicit u8string(const std::string& s) : string(s) {}
-		u8string(const char* c) : string(c) {}
+		explicit u8string(const std::string& s) : std::string(s) {}
+		u8string(const char* c) : std::string(c) {}
 
 		//! this is an important difference, we return an unsigned value here!
 		//! std::string returns a _signed_ one and breaks this way:
@@ -33,14 +34,12 @@ namespace std {
 	//using u8string = basic_string<char8_t>;
 }
 
-static inline const std::u8string& toustring(const std::string& str)
+static inline const spring::u8string& toustring(const std::string& str)
 {
-	return *static_cast<const std::u8string*>(&str);
+	return *reinterpret_cast<const spring::u8string*>(&str);
 }
 
-static inline std::u8string& toustring(std::string& str)
+static inline spring::u8string& toustring(std::string& str)
 {
-	return *static_cast<std::u8string*>(&str);
+	return *reinterpret_cast<spring::u8string*>(&str);
 }
-
-#endif

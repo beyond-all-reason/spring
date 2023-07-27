@@ -13,7 +13,16 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 #include "System/Input/KeyInput.h"
+#include "Sim/Misc/SmoothHeightMesh.h"
+#include "Sim/Misc/ModInfo.h"
 
+namespace {
+	enum HeightTracking : int {
+		Disabled = 0,
+		Terrain,
+		Smooth,
+	};
+}
 
 CONFIG(bool,  CamSpringEnabled).defaultValue(true).headlessValue(false);
 CONFIG(int,   CamSpringScrollSpeed).defaultValue(10);
@@ -24,7 +33,17 @@ CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
 CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
+CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
 
+static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
+	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
+
+	// if the direction is not pointing towards the map we use provided xz plane as heuristic
+	if (newGroundDist <= 0.0f)
+		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallbackPlaneHeight);
+
+	return newGroundDist;
+}
 
 CSpringController::CSpringController()
 	: rot(2.677f, 0.0f, 0.0f)
@@ -34,7 +53,7 @@ CSpringController::CSpringController()
 	, zoomBack(false)
 {
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
 	ConfigUpdate();
 }
 
@@ -54,6 +73,12 @@ void CSpringController::ConfigUpdate()
 	fastScaleMousewheel = configHandler->GetFloat("CamSpringFastScaleMousewheelMove");
 	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
+	trackMapHeight = configHandler->GetInt("CamSpringTrackMapHeightMode");
+
+	if (trackMapHeight == HeightTracking::Smooth && !modInfo.enableSmoothMesh) {
+		LOG_L(L_ERROR, "Smooth mesh disabled");
+		trackMapHeight = HeightTracking::Terrain;
+	}
 }
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
@@ -61,6 +86,28 @@ void CSpringController::ConfigNotify(const std::string & key, const std::string 
 	ConfigUpdate();
 }
 
+void CSpringController::SmoothCamHeight(const float3& prevPos) {
+	if (!pos.IsInBounds()) {
+		return;
+	}
+
+	float3 camPos = GetPos(); // new camera pos with height from previous frame
+	camPos.y = std::max(camPos.y, CGround::GetHeightReal(camPos.x, camPos.z, false) + 5.0f);
+
+	// raycast to ground to simulate camera movement and find new point of focus
+	const float distToGround = CGround::LineGroundCol(camPos, camPos + dir * 150000.0f, false);
+	// FIXME camera focus is now first ground intersection which is not what we want
+	// when there's a hill blocking the view
+	const float3 newGroundPos = camPos + dir * distToGround;
+	if (distToGround > 0.0f && newGroundPos.IsInBounds()) {
+		const float camHeightDiff = (trackMapHeight == HeightTracking::Smooth) ?
+			smoothGround.GetHeight(pos.x, pos.z) - smoothGround.GetHeight(prevPos.x, prevPos.z) :
+			0.0f;
+
+		pos = newGroundPos;
+		curDist = distToGround + (dir * camHeightDiff).Length() * Sign(camHeightDiff);
+	}
+}
 
 void CSpringController::KeyMove(float3 move)
 {
@@ -75,9 +122,28 @@ void CSpringController::KeyMove(float3 move)
 		return;
 	}
 
+	const float3 prevPos = pos;
+
 	move *= 200.0f;
 	const float3 flatForward = (dir * XZVector).ANormalize();
 	pos += (camera->GetRight() * move.x + flatForward * move.y) * pixelSize * 2.0f * scrollSpeed;
+
+	switch (trackMapHeight) {
+	case HeightTracking::Terrain:
+		// this is the default behavior as camera pos is based on:
+		// - 'pos'      point of focus on the ground
+		// - 'curDist'  camera distance
+		break;
+	case HeightTracking::Disabled:
+		// freezing camera height requires raycasting from current
+		// camera position and recalculating
+		// point of focus and distance
+		[[fallthrough]];
+	case HeightTracking::Smooth:
+		SmoothCamHeight(prevPos);
+		break;
+	}
+
 	Update();
 }
 
@@ -168,10 +234,7 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	if (!cursorZoomIn)
 		return 0.25f;
 
-	float curGroundDist = CGround::LineGroundCol(curCamPos, curCamPos + newDir * 150000.0f, false);
-
-	if (curGroundDist <= 0.0f)
-		curGroundDist = CGround::LinePlaneCol(curCamPos, newDir, 150000.0f, readMap->GetCurrAvgHeight());
+	float curGroundDist = DistanceToGround(curCamPos, newDir, pos.y);
 	if (curGroundDist <= 0.0f)
 		return 0.25f;
 
@@ -182,12 +245,8 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	const float3 wantedPos = curCamPos + cursorVec * (1.0f - scaledMode);
 
 	// figure out how far we will end up from the ground at new wanted point
-	float newGroundDist = CGround::LineGroundCol(wantedPos, wantedPos + dir * 150000.0f, false);
-
-	if (newGroundDist <= 0.0f)
-		newGroundDist = CGround::LinePlaneCol(wantedPos, dir, 150000.0f, readMap->GetCurrAvgHeight());
-
-	pos = wantedPos + dir * (curDist = newGroundDist);
+	curDist = DistanceToGround(wantedPos, dir, pos.y);
+	pos = wantedPos + dir * curDist;
 
 	return 0.25f;
 }
@@ -214,16 +273,32 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 	if (!cursorZoomOut)
 		return 0.25f;
 
-	const float zoomInDist = CGround::LineGroundCol(curCamPos, curCamPos + newDir * 150000.0f, false);
+	const float zoomInDist = DistanceToGround(curCamPos, newDir, pos.y);
 
 	if (zoomInDist <= 0.0f)
 		return 0.25f;
 
 	// same logic as ZoomIn, but in opposite direction
-	const float3 zoomedCamPos =    curCamPos + newDir * zoomInDist;
-	const float3 wantedCamPos = zoomedCamPos - newDir * zoomInDist * scaledMode;
+	const float3 cursorVec = newDir * zoomInDist;
 
-	const float newDist = CGround::LineGroundCol(wantedCamPos, wantedCamPos + dir * 150000.0f, false);
+	auto extrapolate_position = [&] (float scale) {
+		const float3 wantedCamPos = curCamPos + cursorVec * (1.0f - scaledMode) * scale;
+		const float newDist = DistanceToGround(wantedCamPos, dir, pos.y);
+		return std::pair{wantedCamPos, newDist};
+	};
+
+	auto [wantedCamPos, newDist] = extrapolate_position(1.0);
+	// don't move above the limit as camera height will be trimmed and the 
+	// transition will not appear smooth
+	if (newDist > maxDist) {
+		// try to get as close as possible to the height limit
+		std::tie(wantedCamPos, newDist) = extrapolate_position(0.5);
+	}
+
+	if (newDist > maxDist) {
+		curDist = curDistPre;
+		return 0.25f;
+	}
 
 	if (newDist > 0.0f)
 		pos = wantedCamPos + dir * (curDist = newDist);
@@ -237,7 +312,7 @@ void CSpringController::Update()
 {
 	pos.ClampInMap();
 
-	pos.y = CGround::GetHeightReal(pos.x, pos.z, false);
+	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
 	rot.x = Clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
 	// camera->SetRot(float3(rot.x, GetAzimuth(), rot.z));

@@ -16,6 +16,10 @@ This is similar to other RTS engines.
 For example, a default Starcraft2 marine has 45 health.
 Specific marines can actually have 55 health (after an upgrade), or 22 health (with 50% difficulty handicap), or 200 health (if they're the special campaign marine Jim Raynor).
 But marines, as a generalized type, have 45 health.
+Note that the **type itself cannot be modified at runtime**, though you can still easily apply a modified value to every unit of a type.
+
+The **set of unit types is static**.
+You **cannot dynamically add new types**, though you **can generate them beforehand**, including via code.
 
 The information about a unit type is usually called a **unit def** (from "definition"), and sometimes the type itself is referred to by "unit def" as well.
 This article will talk about and compare the two ways that unit defs are often dealt with that are often confused.
@@ -160,8 +164,11 @@ VFS is also available, **as a game dev you can expose interfaces for modders** o
 A unitDef is a proxy table with the `__index` meta-method.
 **According to measurements** this makes it somewhat **slower than a plain Lua table**, so it might be worth **caching if a wupget mostly uses a single field** from it.
 
-There is a defs-editing dev mode where you can edit defs.
-This is done by just assigning to a unitDef, which isn't normally possible.
+There is a **defs-editing dev mode where you can edit defs**, toggled via `/editdefs` (requires cheats).
+In this mode, changes are done by just **assigning to a unitDef in Lua code**, which **isn't normally possible**.
+Keep in mind that there is **no standard widget** yet to allow easy editing, and that **editing the def files will do nothing**
+(of course unless you make your editing widget read them, but remember the caveat where the keys and values differ between
+unit defs and `UnitDefs`). This mode is **not usable for game logic** and will desync if used in multiplayer.
 
 There's three **minor differences between `WeaponDefs` and `UnitDefs`/`FeatureDefs`**:
  * `WeaponDefs` are 0-indexed while the others are 1-indexed. Beware of `for i = 1, #WeaponDefs do`, this is incorrect!

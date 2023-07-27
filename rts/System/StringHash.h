@@ -3,6 +3,8 @@
 #ifndef STRING_HASH_H
 #define STRING_HASH_H
 
+#include <cstdint>
+
 [[nodiscard]] uint32_t HashString(const char* s, size_t n);
 [[nodiscard]] static inline uint32_t HashString(const std::string& s) { return (HashString(s.c_str(), s.size())); }
 

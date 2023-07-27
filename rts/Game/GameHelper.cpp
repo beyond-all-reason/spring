@@ -132,7 +132,13 @@ void CGameHelper::DoExplosionDamage(
 
 	// expMod will also be in [0, 1], no negatives
 	// TODO: damage attenuation for underwater units from surface explosions?
-	const float expDistanceMod = (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim);
+
+	// avoid float calculations when not needed, these can introduce
+	// tiny errors where a unit then survives on 0.0001 health
+	const float expDistanceMod = expEdgeEffect == 1.0f || expDist < 1.0f
+		? 1.0f
+		: (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim)
+	;
 	const float modImpulseScale = CalcImpulseScale(damages, expDistanceMod);
 
 	// NOTE: if an explosion occurs right underneath a
@@ -182,7 +188,10 @@ void CGameHelper::DoExplosionDamage(
 
 	assert(expRadius >= expRim);
 
-	const float expDistanceMod = (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim);
+	const float expDistanceMod = expEdgeEffect == 1.0f || expDist < 1.0f
+		? 1.0f
+		: (expRadius + 0.001f - expDist) / (expRadius + 0.001f - expRim)
+	;
 	const float modImpulseScale = CalcImpulseScale(damages, expDistanceMod);
 
 	const float3 impulseDir = (volPos - expPos).SafeNormalize();
@@ -720,7 +729,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 
 				const float dist2D = math::sqrt(sqDist2D);
 				const float rangeMul = (dist2D * weaponDef->proximityPriority + modRange * 0.4f + 100.0f);
-				const float damageMul = weaponDmg->Get(targetUnit->armorType) * targetUnit->curArmorMultiple;
+				const float damageMul = std::max(0.0001f, weaponDmg->Get(targetUnit->armorType) * targetUnit->curArmorMultiple);
 
 				targetPriority *= angleMul;
 				targetPriority *= rangeMul;
@@ -1180,6 +1189,90 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
+	struct TestUnitBuildSquareCacheItem {
+		TestUnitBuildSquareCacheItem(
+			int createFrame_,
+			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
+			CFeature* feature_,
+			CGameHelper::BuildSquareStatus result_,
+			std::vector<float3> canbuildpos_,
+			std::vector<float3> featurepos_,
+			std::vector<float3> nobuildpos_)
+			: createFrame(createFrame_)
+			, key(std::move(key_))
+			, feature(feature_)
+			, result(result_)
+			, canbuildpos(canbuildpos_)
+			, featurepos(featurepos_)
+			, nobuildpos(nobuildpos_)
+		{};
+		TestUnitBuildSquareCacheItem(
+			int createFrame_,
+			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
+			CFeature* feature_,
+			CGameHelper::BuildSquareStatus result_)
+			: createFrame(createFrame_)
+			, key(std::move(key_))
+			, feature(feature_)
+			, result(result_)
+		{};
+		int createFrame;
+		std::tuple<bool, float3, int, int, const UnitDef*> key;
+		CFeature* feature;
+		CGameHelper::BuildSquareStatus result;
+		std::vector<float3> canbuildpos;
+		std::vector<float3> featurepos;
+		std::vector<float3> nobuildpos;
+	};
+
+	/* synced, unsynced. Unsynced is arbitrary, but being 500ms
+	 * seems like a good tradeoff between not evicting cache value
+	 * too quickly and not to stale the state for too long. */
+	static constexpr int CACHE_VALIDITY_PERIOD[] = {1, GAME_SPEED / 2};
+
+	static std::vector<TestUnitBuildSquareCacheItem> testUnitBuildSquareCache;
+	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
+		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
+	});
+
+	auto key = std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyteam, buildInfo.def);
+	const auto it = std::find_if(testUnitBuildSquareCache.begin(), testUnitBuildSquareCache.end(), [&key](const auto& item) {
+		return item.key == key;
+	});
+
+	if (it != testUnitBuildSquareCache.end()) {
+		feature = it->feature;
+
+		if (commands != nullptr) {
+			assert(!synced);
+			*canbuildpos = it->canbuildpos;
+			*featurepos = it->featurepos;
+			*nobuildpos = it->nobuildpos;
+		}
+
+		return it->result;
+	}
+
+	const auto SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
+		if (!commands)
+			testUnitBuildSquareCache.emplace_back(
+				gs->frameNum,
+				std::move(key),
+				feature,
+				result
+			);
+		else
+			testUnitBuildSquareCache.emplace_back(
+				gs->frameNum,
+				std::move(key),
+				feature,
+				result,
+				*canbuildpos,
+				*featurepos,
+				*nobuildpos
+			);
+	};
+
 	feature = nullptr;
 
 	const int xsize = buildInfo.GetXSize();
@@ -1277,10 +1370,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		}
 	} else {
 		// out of map?
-		if (static_cast<unsigned>(x1) > mapDims.mapx || static_cast<unsigned>(x2) > mapDims.mapx)
+		if (static_cast<unsigned>(x1) > mapDims.mapx || static_cast<unsigned>(x2) > mapDims.mapx ||
+			static_cast<unsigned>(z1) > mapDims.mapy || static_cast<unsigned>(z2) > mapDims.mapy) {
+			SaveToCache(BUILDSQUARE_BLOCKED);
 			return BUILDSQUARE_BLOCKED;
-		if (static_cast<unsigned>(z1) > mapDims.mapy || static_cast<unsigned>(z2) > mapDims.mapy)
-			return BUILDSQUARE_BLOCKED;
+		}
 
 		// this can be called in either context
 		for (int z = z1; z < z2; z++) {
@@ -1290,12 +1384,15 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 
 				const BuildSquareStatus sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, allyteam, synced);
 
-				if ((testStatus = std::min(testStatus, sqrStatus)) == BUILDSQUARE_BLOCKED)
+				if ((testStatus = std::min(testStatus, sqrStatus)) == BUILDSQUARE_BLOCKED) {
+					SaveToCache(BUILDSQUARE_BLOCKED);
 					return BUILDSQUARE_BLOCKED;
+				}
 			}
 		}
 	}
 
+	SaveToCache(testStatus);
 	return testStatus;
 }
 

@@ -1439,6 +1439,10 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 
 	ITexMemPool::texMemPool->FreeRaw(buf, xsize * ysize * 4);
 
+	if (opaque) {
+		ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE);
+		assert(ilGetError() == IL_NO_ERROR);
+	}
 
 	const std::string& fsImageExt = FileSystem::GetExtension(filename);
 	const std::string& fsFullPath = dataDirsAccess.LocateFile(filename, FileQueryFlags::WRITE);

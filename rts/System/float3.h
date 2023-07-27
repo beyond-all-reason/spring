@@ -537,7 +537,7 @@ public:
 	float LengthNormalize() {
 		const float len = Length();
 
-		if (likely(len > nrm_eps()))
+		if likely(len > nrm_eps())
 			(*this) *= (1.0f / len);
 
 		return len;
@@ -597,7 +597,7 @@ public:
 	float3& SafeNormalize() {
 		const float sql = SqLength();
 
-		if (likely(sql > nrm_eps()))
+		if likely(sql > nrm_eps())
 			(*this) *= math::isqrt(sql);
 
 		return *this;
@@ -660,7 +660,7 @@ public:
 	float3& SafeANormalize() {
 		const float sql = SqLength();
 
-		if (likely(sql > nrm_eps()))
+		if likely(sql > nrm_eps())
 			(*this) *= math::isqrt(sql);
 
 		return *this;

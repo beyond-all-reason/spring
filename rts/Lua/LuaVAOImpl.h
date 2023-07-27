@@ -33,8 +33,8 @@ public:
 	void AttachInstanceBuffer(const LuaVBOImplSP& luaVBO);
 	void AttachIndexBuffer(const LuaVBOImplSP& luaVBO);
 
-	void DrawArrays(GLenum mode, sol::optional<GLsizei> vertCountOpt, sol::optional<GLint> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt);
-	void DrawElements(GLenum mode, sol::optional<GLsizei> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt);
+	void DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::optional<int> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt);
+	void DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt);
 
 	void ClearSubmission();
 	int AddUnitsToSubmission(int id);
@@ -53,6 +53,13 @@ private:
 	template<typename T>
 	struct DrawCheckType {
 		DrawCheckType() = default;
+		DrawCheckType(T drawCount_, T baseVertex_, T baseIndex_, T instCount_, T baseInstance_)
+			: drawCount{ std::move(drawCount_) }
+			, baseVertex{ std::move(baseVertex_) }
+			, baseIndex{ std::move(baseIndex_) }
+			, instCount{ std::move(instCount_) }
+			, baseInstance{ std::move(baseInstance_) }
+		{};
 		T drawCount;
 		T baseVertex;
 		T baseIndex;

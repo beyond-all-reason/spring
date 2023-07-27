@@ -2068,7 +2068,7 @@ EXPORT(int) InitDirListVFS(const char* path, const char* pattern, const char* mo
 		if (pattern == nullptr) { pattern = "*";          }
 
 		LOG_L(L_DEBUG, "InitDirListVFS: '%s' '%s' '%s'", path, pattern, modes);
-		curFindFiles = CFileHandler::DirList(path, pattern, modes);
+		curFindFiles = CFileHandler::DirList(path, pattern, modes, false);
 		return 0;
 	}
 	UNITSYNC_CATCH_BLOCKS;
@@ -2085,7 +2085,7 @@ EXPORT(int) InitSubDirsVFS(const char* path, const char* pattern, const char* mo
 		if (pattern == nullptr) { pattern = "*";          }
 
 		LOG_L(L_DEBUG, "InitSubDirsVFS: '%s' '%s' '%s'", path, pattern, modes);
-		curFindFiles = CFileHandler::SubDirs(path, pattern, modes);
+		curFindFiles = CFileHandler::SubDirs(path, pattern, modes, false);
 		return 0;
 	}
 	UNITSYNC_CATCH_BLOCKS;

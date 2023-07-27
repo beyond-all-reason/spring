@@ -39,6 +39,7 @@ public:
 
 	bool LoadWAV(const std::string& file, const std::vector<std::uint8_t>& buffer);
 	bool LoadVorbis(const std::string& file, const std::vector<std::uint8_t>& buffer);
+	bool LoadMp3(const std::string& file, const std::vector<std::uint8_t>& buffer);
 	bool Release();
 
 	const std::string& GetFilename() const { return filename; }

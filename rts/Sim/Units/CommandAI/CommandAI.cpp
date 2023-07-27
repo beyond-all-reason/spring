@@ -393,6 +393,11 @@ void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 	if (!curCmdDesc->queueing)
 		nonQueingCommands.erase(curCmdDesc->id);
 
+	const bool boUpdate = (curCmdDesc->id != modCmdDesc.id);
+
+	if (boUpdate)
+		HandleBuildOptionRemoval(curCmdDesc->id);
+
 	// re-insert otherwise (possibly with a different cmdID!)
 	if (!modCmdDesc.queueing)
 		nonQueingCommands.insert(modCmdDesc.id);
@@ -401,6 +406,9 @@ void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 
 	// update
 	possibleCommands[cmdDescIdx] = commandDescriptionCache.GetPtr(std::move(modCmdDesc));
+
+	if (boUpdate)
+		HandleBuildOptionInsertion(possibleCommands[cmdDescIdx]->id);
 
 	selectedUnitsHandler.PossibleCommandChange(owner);
 }
@@ -416,6 +424,8 @@ void CCommandAI::InsertCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 		possibleCommands.insert(possibleCommands.begin() + cmdDescIdx, cmdDescPtr);
 	}
 
+	HandleBuildOptionInsertion(cmdDescPtr->id < 0);
+
 	// NB: cmdDesc is moved into cache, but id remains valid
 	if (!cmdDesc.queueing)
 		nonQueingCommands.insert(cmdDesc.id);
@@ -428,10 +438,14 @@ bool CCommandAI::RemoveCommandDescription(unsigned int cmdDescIdx)
 	if (cmdDescIdx >= possibleCommands.size())
 		return false;
 
-	if (!possibleCommands[cmdDescIdx]->queueing)
-		nonQueingCommands.erase(possibleCommands[cmdDescIdx]->id);
+	const auto* cmdDescPtr = possibleCommands[cmdDescIdx];
 
-	commandDescriptionCache.DecRef(*possibleCommands[cmdDescIdx]);
+	HandleBuildOptionRemoval(cmdDescPtr->id);
+
+	if (!cmdDescPtr->queueing)
+		nonQueingCommands.erase(cmdDescPtr->id);
+
+	commandDescriptionCache.DecRef(*cmdDescPtr);
 	// preserve order
 	possibleCommands.erase(possibleCommands.begin() + cmdDescIdx);
 	selectedUnitsHandler.PossibleCommandChange(owner);
@@ -475,6 +489,50 @@ void CCommandAI::AddCommandDependency(const Command& c) {
 	AddDeathDependence(ref, DEPENDENCE_COMMANDQUE);
 }
 
+
+bool CCommandAI::HandleBuildOptionInsertion(int cmdId)
+{
+	if (cmdId >= 0)
+		return false;
+
+	if (auto* bcai = dynamic_cast<CBuilderCAI*>(this); bcai != nullptr)
+		bcai->buildOptions.insert(cmdId);
+	else if (auto* fcai = dynamic_cast<CFactoryCAI*>(this); fcai != nullptr)
+		fcai->buildOptions.insert(cmdId, 0);
+
+	return true;
+}
+
+bool CCommandAI::HandleBuildOptionRemoval(int cmdId)
+{
+	if (cmdId >= 0)
+		return false;
+
+	if (cmdId < 0) {
+		if (auto* bcai = dynamic_cast<CBuilderCAI*>(this); bcai != nullptr) {
+			// clear the removed unitDef from the construction queue
+			for (size_t i = 0; i < bcai->commandQue.size(); /*NOOP*/) {
+				if (const auto& q = bcai->commandQue[i]; q.GetID() == cmdId)
+					bcai->commandQue.erase(commandQue.begin() + i);
+				else
+					++i;
+			}
+			bcai->buildOptions.erase(cmdId);
+		}
+		else if (auto* fcai = dynamic_cast<CFactoryCAI*>(this); fcai != nullptr) {
+			// clear the removed unitDef from the construction queue
+			for (size_t i = 0; i < fcai->commandQue.size(); /*NOOP*/) {
+				if (const auto& q = fcai->commandQue[i]; q.GetID() == cmdId)
+					fcai->commandQue.erase(commandQue.begin() + i);
+				else
+					++i;
+			}
+			fcai->buildOptions.erase(cmdId);
+		}
+	}
+
+	return true;
+}
 
 bool CCommandAI::IsAttackCapable() const
 {

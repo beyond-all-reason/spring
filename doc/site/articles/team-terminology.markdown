@@ -16,7 +16,7 @@ This article aims to explain Recoil's somewhat confusing terminology behind the 
 What most people would naturally call a team is called an *"allyteam"* in Recoil terminology.
 A *"team"* is a single element of an *"allyteam"*. *Teams* are permanently bound to an *allyteam*.
 
-For example, NATO would be an *allyteam* while USA and UK would be *teams*, because they are separate entities but are in the same alliance.
+For example, NATO would be an *allyteam* while USA and UK would be *teams*, because they are separate entities but are in the same alliance, sharing goals and intel.
 For modders coming from Supreme Commander, the *team* is what SupCom calls an "army".
 
 *Teams* each have their own:
@@ -47,6 +47,8 @@ Control of a *team* is also not permanent.
 *Players* can start controlling a different team (losing control of the previous *team*).
 In particular *players* can also control no team at all, in which case they're just spectators.
 It is up to the game to let *players* change their *team* to a different one (they cannot do so at will), though they can always become a spectator.
+
+To go with the analogy above, if the US Army is a *team* then Patton and Eisenhower are *players*: they both have control over the army (simultaneously with each other), and the army itself is generally unaffected by personal changes in the command staff: it is not bound to its generals, but the generals are bound to the army. 
 
 A *team* can also have no controllers.
 This usually happens when somebody disconnects, but you can have teams that are uncontrolled by design (for example to have a perspective change in a singleplayer mission, or to have rescuable units).

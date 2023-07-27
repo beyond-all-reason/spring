@@ -10,6 +10,8 @@
 
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
+// #include "Game/SelectedUnitsHandler.h"
+// #include "Sim/Objects/SolidObject.h"
 
 // #include <mutex>
 
@@ -126,16 +128,13 @@ IPath::SearchResult IPathFinder::GetPath(
 	int2 goalBlock;
 	goalBlock = {int(pfDef.goalSquareX / BLOCK_SIZE), int(pfDef.goalSquareZ / BLOCK_SIZE)};
 
-
-	// (42, 28) -> (39, 31)
-	// if (mStartBlock.x == 41 && mStartBlock.y == 28
-	// 		&& goalBlock.x == 39 && goalBlock.y == 31
-	// 		&& moveDef.pathType == 44 && BLOCK_SIZE == 16){
 	// if (gs->frameNum == 2251 && BLOCK_SIZE == 16){
 	// 	debugLoggingActive = ThreadPool::GetThreadNum();
-	// 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) [%f:%d] [%d] = %d"
+	// if (owner != nullptr && selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
+	// 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) (%d -> %d) [%f:%d] [%d] = %d"
 	// 			, mStartBlock.x, mStartBlock.y
 	// 			, goalBlock.x, goalBlock.y
+	// 			, mStartBlockIdx, mGoalBlockIdx
 	// 			, pfDef.sqGoalRadius, moveDef.pathType
 	// 			, BLOCK_SIZE, debugLoggingActive);
 	// }
@@ -279,7 +278,8 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 	openBlocks.push(ob);
 
 	// mark starting point as best found position
-	mGoalHeuristic = pfDef.Heuristic(square.x, square.y, BLOCK_SIZE);
+	// mGoalHeuristic = pfDef.Heuristic(square.x, square.y, BLOCK_SIZE);
+	mGoalHeuristic = GetHeuristic(moveDef, pfDef, square);
 
 	enum {
 		RAW = 0,

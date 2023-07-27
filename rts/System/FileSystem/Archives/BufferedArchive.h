@@ -34,6 +34,7 @@ protected:
 		FileBuffer& operator = (const FileBuffer& fb) = delete;
 		FileBuffer& operator = (FileBuffer&& fb) = default;
 
+		uint32_t numAccessed = 0;
 		bool populated = false; // files may be empty (0 bytes)
 		bool exists = false;
 

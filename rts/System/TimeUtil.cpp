@@ -6,33 +6,34 @@
 #include "System/Exceptions.h"
 
 #include <string>
-#include <ctime>
 #include <functional>
+#include <chrono>
 
-#include "lib/fmt/format.h"
 #include "lib/fmt/printf.h"
 
 std::string CTimeUtil::GetCurrentTimeStr(bool utc)
 {
-	struct tm lt;
-	// Get time as long integer
-	__time64_t long_time = GetCurrentTime();
+	//https://stackoverflow.com/a/35157784/9819318
 
-	// Convert to UTC or local time
-#ifdef _WIN32
-	static decltype(_localtime64_s)* convFunc[] = { &_localtime64_s, &_gmtime64_s };
-	convFunc[utc](&lt, &long_time);
-#else
-	static decltype(localtime_r)* convFunc[] = { &localtime_r, &gmtime_r };
-	convFunc[utc](&long_time, &lt);
-#endif
+	auto now = std::chrono::system_clock::now();
+	// get number of milliseconds for the current second
+	// (remainder after division into seconds)
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
 
-	return fmt::sprintf("%04i%02i%02i_%02i%02i%02i",
+	// convert to std::time_t in order to convert to std::tm (broken time)
+	auto timer = std::chrono::system_clock::to_time_t(now);
+
+	// convert to broken time
+	static decltype(std::gmtime)* ConvertFunc[] = { &std::localtime, &std::gmtime };
+	std::tm lt = *ConvertFunc[utc](&timer);
+
+	return fmt::sprintf("%04i%02i%02i_%02i%02i%02i_%03i",
 		lt.tm_year + 1900,
 		lt.tm_mon + 1,
 		lt.tm_mday,
 		lt.tm_hour,
 		lt.tm_min,
-		lt.tm_sec
+		lt.tm_sec,
+		static_cast<int>(ms)
 	);
 }
