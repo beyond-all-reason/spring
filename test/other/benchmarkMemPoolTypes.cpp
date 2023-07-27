@@ -9,10 +9,11 @@
 
 namespace {
 	namespace objsizes {
-		// common structs used in the engine
+		// Allocators' page sizes are set to the largest object in particular category (e.g. Weapons)
+		// These are the page sizes that are commonly used in the engine
 		constexpr size_t micro=64; // CMatrix44f
 		constexpr size_t small=128; // SolidObjectGroundDecal
-		constexpr size_t medium=752; // PlasmaRepulser
+		constexpr size_t medium=752; // CWeapon,PlasmaRepulser
 		constexpr size_t large=1472; // CFeature
 	}
 }
