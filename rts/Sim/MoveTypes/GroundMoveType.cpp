@@ -73,7 +73,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 
 #define MAX_IDLING_SLOWUPDATES     16
 #define IGNORE_OBSTACLES            0
-#define WAIT_FOR_PATH               1
+#define WAIT_FOR_PATH               0
 #define MODEL_TURN_INERTIA          1
 
 #define UNIT_EVENTS_RESERVE			8
@@ -1162,6 +1162,7 @@ void CGroundMoveType::ChangeSpeed(float newWantedSpeed, bool wantReverse, bool f
 
 /*
  * Changes the heading of the owner.
+ * Also updates world position of aim points, and orientation if walking over terrain slopes.
  * FIXME near-duplicate of HoverAirMoveType::UpdateHeading
  */
 void CGroundMoveType::ChangeHeading(short newHeading) {
@@ -1169,12 +1170,6 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 		return;
 	if (owner->GetTransporter() != nullptr)
 		return;
-
-	// if (newHeading == owner->heading) {
-	// 	wantedHeading = newHeading;
-	// 	// turnSpeed = Clamp(turnSpeed * (1 - owner->IsInAir()), -turnRate, turnRate); // this is the side effect from GetDeltaHeading() that needs to be applied here.
-	// 	return;
-	// }
 
 	#if (MODEL_TURN_INERTIA == 0)
 	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate);
@@ -1191,8 +1186,6 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 
 	flatFrontDir = (owner->frontdir * XZVector).Normalize();
 }
-
-
 
 
 bool CGroundMoveType::CanApplyImpulse(const float3& impulse)

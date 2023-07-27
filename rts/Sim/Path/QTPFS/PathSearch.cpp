@@ -248,10 +248,11 @@ void QTPFS::PathSearch::IterateNodes() {
 	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
 		return;
 
-	if (curNode->xmid() < searchRect.x1) return;
-	if (curNode->zmid() < searchRect.z1) return;
-	if (curNode->xmid() > searchRect.x2) return;
-	if (curNode->zmid() > searchRect.z2) return;
+	// this isn't used - only full map is ever given. TODO: remove completely?
+	// if (curNode->xmid() < searchRect.x1) return;
+	// if (curNode->zmid() < searchRect.z1) return;
+	// if (curNode->xmid() > searchRect.x2) return;
+	// if (curNode->zmid() > searchRect.z2) return;
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// remember the node with lowest h-cost in case the search fails to reach tgtNode
@@ -346,9 +347,12 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
+			// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
+			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
-				curNode->GetMoveCost() * gDists[j] +
+				// curNode->GetMoveCost() * gDists[j] +
+				curNodeSanitizedCost * gDists[j] +
 				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
 
