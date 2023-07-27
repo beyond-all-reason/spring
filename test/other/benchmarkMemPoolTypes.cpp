@@ -7,6 +7,16 @@
 #include <cstddef>
 #include <vector>
 
+namespace {
+    namespace objsizes {
+        // common structs used in the engine
+        constexpr size_t micro=64; // CMatrix44f
+        constexpr size_t small=128; // SolidObjectGroundDecal
+        constexpr size_t medium=752; // PlasmaRepulser
+        constexpr size_t large=1472; // CFeature
+    }
+}
+
 template <size_t T>
 struct ArrayData {
 	char Data[T-8];
@@ -38,16 +48,27 @@ static void BenchStaticMemPoolAllocation(benchmark::State& state) {
 	}
 }
 
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<1024, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<1024, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<1024, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<1024, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, objsizes::large>>);
 
-BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, 512>>);
-BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<10240, 1024>>);
-BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, 512>>);
-BENCHMARK(BenchStaticMemPoolAllocation<StaticMemPool<102400, 1024>>);
-
-BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, 256>>);
-BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, 1024>>);
-BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, 256>>);
-BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, 1024>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<512, 16, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::large>>);
 
 template <typename TMempool>
 static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
@@ -74,14 +95,26 @@ static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
 	}
 }
 
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, 512>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, 1024>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, 512>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, 1024>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<1024, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<1024, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<1024, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<1024, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<10240, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<StaticMemPool<102400, objsizes::large>>);
 
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, 256>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, 1024>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, 256>>);
-BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, 1024>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<512, 16, objsizes::large>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, objsizes::micro>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, objsizes::small>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, objsizes::medium>>);
+BENCHMARK(BenchStaticMemPoolAllocationDeallocation<FixedDynMemPool<1024, 32, objsizes::large>>);
 
 BENCHMARK_MAIN();
