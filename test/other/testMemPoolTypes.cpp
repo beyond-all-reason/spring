@@ -49,7 +49,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator when full", "[class][tem
     //REQUIRE(!obj2);
 }
 
-TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator base functionality", "[class][template]",
+TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test bounded allocator base functionality", "[class][template]",
         (StaticMemPool<1024,sizeof(TestData)>),
         (FixedDynMemPool<sizeof(TestData), 1, 1024>))
 {
@@ -79,15 +79,47 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator base functionality", "[c
     REQUIRE(!mempool.can_free());
 }
 
+TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functionality", "[class][template]",
+        (DynMemPool<sizeof(TestData)>))
+{
+    AllocFixture<TestType> inst;
+    const size_t test_size = 1024;
+    auto& mempool = *inst.mempool;
+
+    REQUIRE(mempool.can_alloc());
+
+    std::vector<TestData*> allocated;
+
+    for (size_t i =0; i < test_size; ++i) {
+        REQUIRE(mempool.can_alloc());
+        auto obj = inst.alloc();
+        REQUIRE(mempool.alloced(obj));
+        allocated.push_back(obj);
+    }
+
+    REQUIRE(inst.instanceCounter == test_size);
+
+    REQUIRE(mempool.can_alloc()); // unbounded allocator can always alloc
+
+    for (auto* obj : allocated	) {
+        REQUIRE(mempool.can_free());
+        mempool.free(obj);
+    }
+    REQUIRE(inst.instanceCounter == 0);
+    REQUIRE(!mempool.can_free());
+}
+
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class][template]",
         (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>))
+        (FixedDynMemPool<sizeof(TestData), 1, 1024>),
+        (DynMemPool<sizeof(TestData)>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
+    const size_t test_size = 1024;
 
     std::unordered_map<TestData*, int> allocated;
-    for (size_t i =0; i < mempool.NUM_PAGES(); ++i) {
+    for (size_t i =0; i < test_size; ++i) {
         auto obj = inst.alloc();
         allocated[obj]++;
     }
@@ -97,7 +129,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
         mempool.free(ptr);
     };
 
-    for (size_t i = 0; i < mempool.NUM_PAGES(); ++i) {
+    for (size_t i = 0; i < test_size; ++i) {
         auto obj = inst.alloc();
         REQUIRE(allocated[obj] == 1);
     }
@@ -111,13 +143,15 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
 // obeying the order is not a functional requirement of allocator
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO order", "[class][template]",
         (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>))
+        (FixedDynMemPool<sizeof(TestData), 1, 1024>),
+        (DynMemPool<sizeof(TestData)>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
+	const size_t test_size = 1024;
 
     std::vector<TestData*> allocated;
-    for (size_t i =0; i < mempool.NUM_PAGES(); ++i) {
+    for (size_t i =0; i < test_size; ++i) {
         auto obj = inst.alloc();
         allocated.push_back(obj);
     }
@@ -128,7 +162,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO o
 
     // verify that new elements reuse previous memory
     // in LIFO order
-    for (size_t i = 0; i < mempool.NUM_PAGES(); ++i) {
+    for (size_t i = 0; i < test_size; ++i) {
         auto obj = inst.alloc();
         REQUIRE(obj == allocated[i]);
     }

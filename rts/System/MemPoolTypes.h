@@ -122,6 +122,8 @@ public:
 
 	bool mapped(void* p) const { return (table.find(p) != table.end()); }
 	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data() == p)); }
+	bool can_alloc() const { return true; }
+	bool can_free() const { return indcs.size() < pages.size(); }
 
 	void clear() {
 		pages.clear();
