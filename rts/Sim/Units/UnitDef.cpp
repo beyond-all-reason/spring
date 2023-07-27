@@ -54,7 +54,7 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
 	fastAutoRetargeting = weaponTable.GetBool("fastAutoRetargeting", fastAutoRetargeting);
 
-	// allow weapon to swap muzzles every frame, without waiting for slow update.
+	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
 }
 
