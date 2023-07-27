@@ -120,7 +120,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator's clear method", "[class
         auto obj = inst.alloc();
     }
 
-    mempool.clear(); // might not call destructors
+    mempool.clear(); // current implementations do not call destructors. TODO maybe they should?
 
     for (size_t i =0; i < mempool.NUM_PAGES(); ++i) {
         REQUIRE(mempool.can_alloc());
