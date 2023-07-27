@@ -252,7 +252,7 @@ void CBuilderCAI::PostLoad()
 
 
 
-inline float CBuilderCAI::GetBuildRange(const float targetRadius) const
+float CBuilderCAI::GetBuildRange(const float targetRadius) const
 {
 	// for immobile:
 	// only use `buildDistance + radius` iff radius > buildDistance,

@@ -46,6 +46,9 @@ Lua:
    and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
  - rules params now support the boolean type. Skirmish AI and the rules param selection filter can
    read them via existing numerical interface by using 0 and 1.
+ - add `Spring.GetUnitEffectiveBuildRange(builderID, buildeeDefID)`. Returns the effective build range
+   for building given target, counted from the center of the prospective target's center. Useful for
+   setting move goals manually.
  - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
    of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
    and run in the order they were added, just before that frame's GameFrame call-in.
