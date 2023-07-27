@@ -1571,6 +1571,19 @@ function gadgetHandler:UnitLeftWater(unitID, unitDefID, unitTeam)
   end
 end
 
+function gadgetHandler:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  for _,g in r_ipairs(self.UnitEnteredUnderwaterList) do
+    g:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  end
+end
+
+
+function gadgetHandler:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+  for _,g in r_ipairs(self.UnitLeftUnderwaterList) do
+    g:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+  end
+end
+
 
 function gadgetHandler:UnitEnteredAir(unitID, unitDefID, unitTeam)
   for _,g in r_ipairs(self.UnitEnteredAirList) do

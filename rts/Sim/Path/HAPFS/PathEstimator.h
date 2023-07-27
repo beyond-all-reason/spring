@@ -102,6 +102,8 @@ protected: // IPathFinder impl
 		float3 startPos
 	) override;
 
+	float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const override;
+
 private:
 	void InitEstimator();
 	void InitBlocks();

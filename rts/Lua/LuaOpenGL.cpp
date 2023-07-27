@@ -31,7 +31,6 @@
 #include "LuaShaders.h"
 #include "LuaTextures.h"
 #include "LuaUtils.h"
-#include "LuaMatrix.h"
 #include "LuaVAO.h"
 #include "LuaVBO.h"
 
@@ -484,7 +483,6 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	 	LuaRBOs::PushEntries(L);
 	}
 
-	LuaMatrix::PushEntries(L);
 	LuaVAOs::PushEntries(L);
 	LuaVBOs::PushEntries(L);
 
@@ -4055,7 +4053,7 @@ int LuaOpenGL::GetAtlasTexture(lua_State* L)
 	const std::string subAtlasTexName = luaL_checksstring(L, 2);
 
 	AtlasedTexture atlTex = atlas->GetTexture(subAtlasTexName);
-	if (atlTex == AtlasedTexture())
+	if (atlTex == AtlasedTexture::DefaultAtlasTexture)
 		luaL_error(L, "gl.%s() Invalid atlas named texture specified %s", __func__, subAtlasTexName.c_str());
 
 	lua_pushnumber(L, atlTex.x1);

@@ -17,6 +17,7 @@
 #include "Game/GameSetup.h"
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
+#include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Map/Ground.h"
@@ -76,6 +77,7 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
+#include <type_traits>
 
 
 using std::min;
@@ -118,6 +120,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetGameRulesParam);
 	REGISTER_LUA_CFUNC(GetGameRulesParams);
+
+	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
+	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
 
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOptions);
@@ -190,6 +195,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitHealth);
 	REGISTER_LUA_CFUNC(GetUnitIsDead);
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
+	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
@@ -214,6 +220,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitVelocity);
 	REGISTER_LUA_CFUNC(GetUnitBuildFacing);
 	REGISTER_LUA_CFUNC(GetUnitIsBuilding);
+	REGISTER_LUA_CFUNC(GetUnitWorkerTask);
 	REGISTER_LUA_CFUNC(GetUnitCurrentBuildPower);
 	REGISTER_LUA_CFUNC(GetUnitHarvestStorage);
 	REGISTER_LUA_CFUNC(GetUnitBuildParams);
@@ -669,17 +676,21 @@ static int PushRulesParams(lua_State* L, const char* caller,
 {
 	lua_createtable(L, 0, params.size());
 
-	for (auto& it: params) {
+	for (const auto& it: params) {
 		const std::string& name = it.first;
 		const LuaRulesParams::Param& param = it.second;
 		if (!(param.los & losStatus))
 			continue;
 
-		if (!param.valueString.empty()) {
-			LuaPushNamedString(L, name, param.valueString);
-		} else {
-			LuaPushNamedNumber(L, name, param.valueInt);
-		}
+		std::visit ([L, &name](auto&& value) {
+			using T = std::decay_t <decltype(value)>;
+			if constexpr (std::is_same_v <T, float>)
+				LuaPushNamedNumber(L, name, value);
+			else if constexpr (std::is_same_v <T, bool>)
+				LuaPushNamedBool(L, name, value);
+			else if constexpr (std::is_same_v <T, std::string>)
+				LuaPushNamedString(L, name, value);
+		}, param.value);
 	}
 
 	return 1;
@@ -696,17 +707,20 @@ static int GetRulesParam(lua_State* L, const char* caller, int index,
 		return 0;
 
 	const LuaRulesParams::Param& param = it->second;
+	if (!(param.los & losStatus))
+		return 0;
 
-	if (param.los & losStatus) {
-		if (!param.valueString.empty()) {
-			lua_pushsstring(L, param.valueString);
-		} else {
-			lua_pushnumber(L, param.valueInt);
-		}
-		return 1;
-	}
+	std::visit ([L](auto&& value) {
+		using T = std::decay_t <decltype(value)>;
+		if constexpr (std::is_same_v <T, float>)
+			lua_pushnumber(L, value);
+		else if constexpr (std::is_same_v <T, bool>)
+			lua_pushboolean(L, value);
+		else if constexpr (std::is_same_v <T, std::string>)
+			lua_pushsstring(L, value);
+	}, param.value);
 
-	return 0;
+	return 1;
 }
 
 
@@ -968,6 +982,53 @@ int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
 	return PushRulesParams(L, __func__, team->modParams, losMask);
 }
 
+/***
+ *
+ * @function Spring.GetPlayerRulesParams
+ *
+ * @tparam number playerID
+ *
+ * @treturn {[string] = number,...} rulesParams map with rules names as key and values as values
+ */
+int LuaSyncedRead::GetPlayerRulesParams(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || IsPlayerUnsynced(L, player))
+		return 0;
+
+	int losMask;
+	if (CLuaHandle::GetHandleSynced(L)) {
+		/* We're using GetHandleSynced even though other RulesParams don't,
+		 * because handles don't have the concept of "being a player" while
+		 * they do have the concept of "being a team" via `Script.CallAsTeam`.
+		 * So there is no way to limit their perspective in a good way yet. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+
+	} else if (playerID == gu->myPlayerNum || CLuaHandle::GetHandleFullRead(L) || game->IsGameOver()) {
+		/* The FullRead check is not redundant, for example
+		 * `/specfullview 1` is not synced but has full read. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+
+	} else {
+		/* Currently private rulesparams can only be read by that player, not
+		 * even the other players on their team (commsharing, not allyteam).
+		 * This is purposefully different from how other rules params work as
+		 * perhaps games where you switch teams often enough to warrant Player
+		 * rules params instead of Team may also want some secrecy.
+		 *
+		 * Also, perhaps the 'allied' visibility level could be made to grant
+		 * visibility to the team/allyteam, but that would require some thought
+		 * since normally it means 'different allyteam with dynamic alliance'. */
+		losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+	}
+
+	return PushRulesParams(L, __func__, player->modParams, losMask);
+}
+
 
 static int GetUnitRulesParamLosMask(lua_State* L, const CUnit* unit)
 {
@@ -1084,6 +1145,37 @@ int LuaSyncedRead::GetTeamRulesParam(lua_State* L)
 	}
 
 	return GetRulesParam(L, __func__, 2, team->modParams, losMask);
+}
+
+
+/***
+ *
+ * @function Spring.GetPlayerRulesParam
+ *
+ * @number playerID
+ * @tparam number|string ruleRef the rule index or name
+ *
+ * @treturn nil|number|string value
+ */
+int LuaSyncedRead::GetPlayerRulesParam(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || IsPlayerUnsynced(L, player))
+		return 0;
+
+	int losMask; // see `GetPlayerRulesParams` (plural) above for commentary
+	if (CLuaHandle::GetHandleSynced(L))
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	else if (playerID == gu->myPlayerNum || CLuaHandle::GetHandleFullRead(L) || game->IsGameOver())
+		losMask = LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
+	else
+		losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
+
+	return GetRulesParam(L, __func__, 2, player->modParams, losMask);
 }
 
 
@@ -3817,9 +3909,9 @@ int LuaSyncedRead::GetUnitIsDead(lua_State* L)
  *
  * @function Spring.GetUnitIsStunned
  * @number unitID
- * @treturn nil|bool stunnedOrBuilt true if unit is still being built
- * @treturn bool stunned
- * @treturn bool beingBuilt
+ * @treturn nil|bool stunnedOrBuilt unit is stunned either via EMP or being under construction
+ * @treturn bool stunned unit is stunned via EMP
+ * @treturn bool beingBuilt unit is stunned via being under construction
  */
 int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 {
@@ -3833,6 +3925,24 @@ int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 	return 3;
 }
 
+
+/***
+ *
+ * @function Spring.GetUnitIsBeingBuilt
+ * @number unitID
+ * @treturn bool beingBuilt
+ * @treturn number buildProgress
+ */
+int LuaSyncedRead::GetUnitIsBeingBuilt(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->beingBuilt);
+	lua_pushnumber(L, unit->buildProgress);
+	return 2;
+}
 
 /***
  *
@@ -4111,6 +4221,57 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.GetUnitWorkerTask
+ * @number unitID
+ * @treturn number cmdID of the relevant command
+ * @treturn number ID of the target, if applicable
+ */
+int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto builder = dynamic_cast <const CBuilder*> (unit);
+	if (builder == nullptr)
+		return 0;
+
+	if (builder->curBuild) {
+		lua_pushnumber(L, builder->curBuild->beingBuilt
+			? -builder->curBuild->unitDef->id
+			: CMD_REPAIR
+		);
+		lua_pushnumber(L, builder->curBuild->id);
+		return 2;
+	} else if (builder->curCapture) {
+		lua_pushnumber(L, CMD_CAPTURE);
+		lua_pushnumber(L, builder->curCapture->id);
+		return 2;
+	} else if (builder->curResurrect) {
+		lua_pushnumber(L, CMD_RESURRECT);
+		lua_pushnumber(L, builder->curResurrect->id + unitHandler.MaxUnits());
+		return 2;
+	} else if (builder->curReclaim) {
+		lua_pushnumber(L, CMD_RECLAIM);
+		if (builder->reclaimingUnit) {
+			const auto reclaimee = dynamic_cast <const CUnit*> (builder->curReclaim);
+			assert(reclaimee);
+			lua_pushnumber(L, reclaimee->id);
+		} else {
+			const auto reclaimee = dynamic_cast <const CFeature*> (builder->curReclaim);
+			assert(reclaimee);
+			lua_pushnumber(L, reclaimee->id + unitHandler.MaxUnits());
+		}
+		return 2;
+	} else if (builder->helpTerraform || builder->terraforming) {
+		lua_pushnumber(L, CMD_RESTORE); // FIXME: could also be leveling ground before construction
+		return 1;
+	} else {
+		return 0;
+	}
+}
 
 /***
  *

@@ -56,6 +56,8 @@ class LuaSyncedRead {
 
 		static int GetPlayerInfo(lua_State* L); // no name for synced scripts
 		static int GetPlayerControlledUnit(lua_State* L);
+		static int GetPlayerRulesParam(lua_State* L);
+		static int GetPlayerRulesParams(lua_State* L);
 		static int GetAIInfo(lua_State* L);
 
 		static int GetTeamInfo(lua_State* L);
@@ -103,6 +105,7 @@ class LuaSyncedRead {
 		static int GetUnitHealth(lua_State* L);
 		static int GetUnitIsDead(lua_State* L);
 		static int GetUnitIsStunned(lua_State* L);
+		static int GetUnitIsBeingBuilt(lua_State* L);
 		static int GetUnitResources(lua_State* L);
 		static int GetUnitMetalExtraction(lua_State* L);
 		static int GetUnitExperience(lua_State* L);
@@ -127,6 +130,7 @@ class LuaSyncedRead {
 		static int GetUnitVelocity(lua_State* L);
 		static int GetUnitBuildFacing(lua_State* L);
 		static int GetUnitIsBuilding(lua_State* L);
+		static int GetUnitWorkerTask(lua_State* L);
 		static int GetUnitCurrentBuildPower(lua_State* L);
 		static int GetUnitHarvestStorage(lua_State* L);
 		static int GetUnitBuildParams(lua_State* L);

@@ -75,6 +75,8 @@ CALLIN_LIST = {
 	"UnitLeftAir",
 	"UnitEnteredWater",
 	"UnitLeftWater",
+	"UnitEnteredUnderwater",
+	"UnitLeftUnderwater",
 	"UnitCommand",
 	"UnitHarvestStorageFull",
 

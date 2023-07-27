@@ -45,6 +45,6 @@ endif (MINGW)
 add_definitions(-DNOT_USING_CREG)
 target_link_libraries(demotool
 		${SPRING_MINIZIP_LIBRARY}
-		gflags
+		gflags_nothreads_static
 	)
 add_dependencies(demotool generateVersionFiles)

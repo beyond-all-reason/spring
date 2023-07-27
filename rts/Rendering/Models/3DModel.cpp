@@ -36,6 +36,7 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_IGNORED(original),
 
 	CR_IGNORED(dirty),
+	CR_IGNORED(customDirty),
 	CR_IGNORED(modelSpaceMat),
 	CR_IGNORED(pieceSpaceMat),
 
@@ -430,7 +431,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 	assert(piece != nullptr);
 
 	pos = piece->offset;
-	dir = piece->GetEmitDir();
+	dir = piece->GetEmitDir(); // warning investigated, seems fake
 
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
 

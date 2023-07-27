@@ -8,7 +8,7 @@
 #include "ALShared.h"
 #include "EFX.h"
 #include "System/Sound/IAudioChannel.h"
-#include "OggStream.h"
+#include "MusicStream.h"
 #include "System/Sound/SoundLog.h"
 #include "SoundBuffer.h"
 #include "SoundItem.h"
@@ -289,7 +289,7 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 	Stop();
 
 	if (!curStream.Valid())
-		curStream = std::move(COggStream(id));
+		curStream = std::move(MusicStream(id));
 
 	// OpenAL params
 	curChannel = channel;

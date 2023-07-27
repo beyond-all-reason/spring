@@ -64,7 +64,7 @@ bool LuaVAOs::PushEntries(lua_State* L)
 
 LuaVAOs::~LuaVAOs()
 {
-	for (auto lva : luaVAOs) {
+	for (auto& lva : luaVAOs) {
 		if (lva.expired())
 			continue; //destroyed already
 

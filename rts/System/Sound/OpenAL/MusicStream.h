@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef OGG_STREAM_H
-#define OGG_STREAM_H
+#ifndef MUSIC_STREAM_H
+#define MUSIC_STREAM_H
 
 #include "System/Misc/SpringTime.h"
 
@@ -9,38 +9,34 @@
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 
-#include <string>
-#include <vector>
 #include <array>
+#include <string>
 
 
-class COggStream
+class MusicStream
 {
 public:
-	COggStream(ALuint _source = 0);
-	~COggStream();
+	MusicStream(ALuint _source = 0);
+	~MusicStream();
 
-	COggStream(const COggStream& rhs) = delete;
-	COggStream& operator=(const COggStream& rhs) = delete;
+	MusicStream(const MusicStream& rhs) = delete;
+	MusicStream& operator=(const MusicStream& rhs) = delete;
 
-	COggStream(COggStream&& rhs) noexcept { *this = std::move(rhs); }
-	COggStream& operator=(COggStream&& rhs) noexcept;
+	MusicStream(MusicStream&& rhs) noexcept { *this = std::move(rhs); }
+	MusicStream& operator=(MusicStream&& rhs) noexcept;
 
 	void Play(const std::string& path, float volume);
 	void Stop();
 	void Update();
 
 	float GetPlayTime() const { return (msecsPlayed.toSecsf()); }
-	float GetTotalTime();
+	float GetTotalTime() const { return totalTime; }
 
 	bool TogglePause();
-	bool Valid() const { return (source != 0 && vorbisInfo != nullptr); }
+	bool Valid() const { return source != 0; }
 	bool IsFinished() { return !Valid() || (GetPlayTime() >= GetTotalTime()); }
 
-	const std::vector<std::string>& VorbisTags() const { return vorbisTags; }
-
 private:
-	void DisplayInfo();
 	bool IsPlaying();
 	bool StartPlaying();
 
@@ -55,13 +51,9 @@ private:
 	 */
 	bool UpdateBuffers();
 
-	OggVorbis_File ovFile;
-	vorbis_info* vorbisInfo;
-
-	static constexpr unsigned int BUFFER_SIZE = 512 * 1024; // 512KB
 	static constexpr unsigned int NUM_BUFFERS = 2;
 
-	char* pcmDecodeBuffer;
+	std::vector<uint8_t> pcmDecodeBuffer;
 
 	std::array<ALuint, NUM_BUFFERS> buffers;
 	ALuint source;
@@ -72,9 +64,7 @@ private:
 
 	spring_time msecsPlayed;
 	spring_time lastTick;
-
-	std::vector<std::string> vorbisTags;
-	std::string vendor;
+	float totalTime;
 };
 
-#endif // OGG_STREAM_H
+#endif // MUSIC_STREAM_H

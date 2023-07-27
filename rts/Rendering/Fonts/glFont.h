@@ -102,7 +102,7 @@ public:
 	inline float GetTextWidth(const std::string& text) override;
 	inline float GetTextHeight(const std::string& text, float* descender = nullptr, int* numLines = nullptr);
 
-	static std::deque<std::string> SplitIntoLines(const std::u8string&);
+	static std::deque<std::string> SplitIntoLines(const spring::u8string&);
 
 	const std::string& GetFilePath() const { return fontPath; }
 
@@ -126,9 +126,9 @@ private:
 		RenderStringImpl<10, 10, true >(x, y, scaleX, scaleY, str, cccb);
 	}
 private:
-	void ScanForWantedGlyphs(const std::u8string& str);
-	float GetTextWidth_(const std::u8string& text);
-	float GetTextHeight_(const std::u8string& text, float* descender = nullptr, int* numLines = nullptr);
+	void ScanForWantedGlyphs(const spring::u8string& str);
+	float GetTextWidth_(const spring::u8string& text);
+	float GetTextHeight_(const spring::u8string& text, float* descender = nullptr, int* numLines = nullptr);
 public:
 	static auto GetLoadedFonts() -> const decltype(allFonts)& {
 		return allFonts;

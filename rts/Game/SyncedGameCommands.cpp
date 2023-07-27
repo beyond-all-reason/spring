@@ -591,7 +591,7 @@ void SyncedGameCommands::AddDefaultActionExecutors()
 }
 
 
-static uint8_t sgcSingletonMem[sizeof(SyncedGameCommands)];
+alignas(SyncedGameCommands) static std::byte sgcSingletonMem[sizeof(SyncedGameCommands)];
 
 void SyncedGameCommands::CreateInstance() {
 	SyncedGameCommands*& singleton = GetInstance();

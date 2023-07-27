@@ -183,6 +183,12 @@ bool CPathEstimator::SetStartBlock(
 
 
 
+float CPathEstimator::GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const {
+	return pfDef.Heuristic(square.x, square.y, BLOCK_SIZE) * pathingState->GetMaxSpeedMod(moveDef.pathType);
+}
+
+
+
 IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const CSolidObject* owner,
 	const MoveDef& moveDef,
@@ -394,9 +400,10 @@ bool CPathEstimator::TestBlock(
 	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
 	// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 	// if (printMoveInfo) {
+	// if (owner != nullptr && selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
 	// 	LOG("%s Block Size [%d] infCostVertex = %d,  blockedSearch = %d, peDef.useVerifiedStartBlock = %d, testedBlocks = %d"
 	// 		, __func__, BLOCK_SIZE, (int)infCostVertex, (int)blockedSearch, (int)peDef.useVerifiedStartBlock, testedBlocks);
-	// }}
+	// }
 
 	if (infCostVertex) {
 		// warning: we cannot naively set PATHOPT_BLOCKED here;

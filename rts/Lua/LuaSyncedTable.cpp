@@ -13,29 +13,6 @@ static int SyncTableIndex(lua_State* L);
 static int SyncTableNewIndex(lua_State* L);
 static int SyncTableMetatable(lua_State* L);
 
-
-/******************************************************************************/
-/******************************************************************************/
-
-static bool PushSyncedTable(lua_State* L)
-{
-	HSTR_PUSH(L, "SYNCED");
-	lua_newtable(L); { // the proxy table
-
-		lua_newtable(L); { // the metatable
-			LuaPushNamedCFunc(L, "__index",     SyncTableIndex);
-			LuaPushNamedCFunc(L, "__newindex",  SyncTableNewIndex);
-			LuaPushNamedCFunc(L, "__metatable", SyncTableMetatable);
-		}
-
-		lua_setmetatable(L, -2);
-	}
-	lua_rawset(L, -3);
-
-	return true;
-}
-
-
 /******************************************************************************/
 
 static int SyncTableIndex(lua_State* dstL)
@@ -95,18 +72,18 @@ static int SyncTableMetatable(lua_State* L)
 
 bool LuaSyncedTable::PushEntries(lua_State* L)
 {
-	PushSyncedTable(L);
+	HSTR_PUSH(L, "SYNCED");
+	lua_newtable(L); { // the proxy table
 
-	// backward compability
-	lua_pushliteral(L, "snext");
-		lua_getglobal(L, "next");
-		lua_rawset(L, -3);
-	lua_pushliteral(L, "spairs");
-		lua_getglobal(L, "pairs");
-		lua_rawset(L, -3);
-	lua_pushliteral(L, "sipairs");
-		lua_getglobal(L, "ipairs");
-		lua_rawset(L, -3);
+		lua_newtable(L); { // the metatable
+			LuaPushNamedCFunc(L, "__index",     SyncTableIndex);
+			LuaPushNamedCFunc(L, "__newindex",  SyncTableNewIndex);
+			LuaPushNamedCFunc(L, "__metatable", SyncTableMetatable);
+		}
+
+		lua_setmetatable(L, -2);
+	}
+	lua_rawset(L, -3);
 
 	return true;
 }

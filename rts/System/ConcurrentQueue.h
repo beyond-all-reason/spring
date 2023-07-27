@@ -134,7 +134,7 @@ namespace moodycamel { namespace details {
 // Use a nice trick from this answer: http://stackoverflow.com/a/8438730/21475
 // In order to get a numeric thread ID in a platform-independent way, we use a thread-local
 // static variable's address as a thread identifier :-)
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#if defined(__GNUC__)
 #define MOODYCAMEL_THREADLOCAL __thread
 #elif defined(_MSC_VER)
 #define MOODYCAMEL_THREADLOCAL __declspec(thread)

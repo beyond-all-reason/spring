@@ -58,10 +58,12 @@
 	SETUP_EVENT(UnitLeftRadar,    MANAGED_BIT)
 	SETUP_EVENT(UnitLeftLos,      MANAGED_BIT)
 
-	SETUP_EVENT(UnitEnteredWater, MANAGED_BIT)
-	SETUP_EVENT(UnitEnteredAir,   MANAGED_BIT)
-	SETUP_EVENT(UnitLeftWater,    MANAGED_BIT)
-	SETUP_EVENT(UnitLeftAir,      MANAGED_BIT)
+	SETUP_EVENT(UnitEnteredUnderwater, MANAGED_BIT)
+	SETUP_EVENT(UnitEnteredWater,      MANAGED_BIT)
+	SETUP_EVENT(UnitEnteredAir,        MANAGED_BIT)
+	SETUP_EVENT(UnitLeftUnderwater,    MANAGED_BIT)
+	SETUP_EVENT(UnitLeftWater,         MANAGED_BIT)
+	SETUP_EVENT(UnitLeftAir,           MANAGED_BIT)
 
 	SETUP_EVENT(UnitLoaded,     MANAGED_BIT)
 	SETUP_EVENT(UnitUnloaded,   MANAGED_BIT)
