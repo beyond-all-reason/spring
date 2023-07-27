@@ -8,19 +8,18 @@
 #include <vector>
 
 namespace {
-    namespace objsizes {
-        // common structs used in the engine
-        constexpr size_t micro=64; // CMatrix44f
-        constexpr size_t small=128; // SolidObjectGroundDecal
-        constexpr size_t medium=752; // PlasmaRepulser
-        constexpr size_t large=1472; // CFeature
-    }
+	namespace objsizes {
+		// common structs used in the engine
+		constexpr size_t micro=64; // CMatrix44f
+		constexpr size_t small=128; // SolidObjectGroundDecal
+		constexpr size_t medium=752; // PlasmaRepulser
+		constexpr size_t large=1472; // CFeature
+	}
 }
 
 template <size_t T>
 struct ArrayData {
-	char Data[T-8];
-	size_t idx=0;
+	std::array<char, T> data={};
 };
 
 template <typename TMempool>
@@ -32,7 +31,6 @@ static void BenchStaticMemPoolAllocation(benchmark::State& state) {
 	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-	size_t idx =0;
 	for (auto _ : state) {
 		if (!mempool.can_alloc()) {
 			state.PauseTiming();
@@ -41,7 +39,6 @@ static void BenchStaticMemPoolAllocation(benchmark::State& state) {
 			state.ResumeTiming();
 		}
 		auto* obj = mempool.template alloc<AD>();
-		obj->idx = ++idx;
 		benchmark::DoNotOptimize(obj);
 		allocated.push_back(obj);
 		benchmark::ClobberMemory();
@@ -79,7 +76,6 @@ static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
 	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-	size_t idx =0;
 	for (auto _ : state) {
 		if (!mempool.can_alloc()) {
 			for (auto* obj : allocated) {
@@ -88,7 +84,6 @@ static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
 			allocated.clear();
 		}
 		auto* obj = mempool.template alloc<AD>();
-		obj->idx = ++idx;
 		benchmark::DoNotOptimize(obj);
 		allocated.push_back(obj);
 		benchmark::ClobberMemory();
