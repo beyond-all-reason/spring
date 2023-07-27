@@ -165,39 +165,38 @@ float3 CCannon::CalcWantedDir(const float3& targetVec) const
 	const float DFsq = targetVec.SqLength2D();
 	const float g = gravity;
 	const float v = projectileSpeed;
-	const float dy  = targetVec.y;
+	const float dy = targetVec.y;
 	const float dxz = math::sqrt(DFsq);
 
 	float Vxz = 0.0f;
-	float Vy  = 0.0f;
+	float Vy = 0.0f;
 
 	if (Dsq == 0.0f) {
 		Vy = highTrajectory ? v : -v;
-	} else {
+	}
+	else {
 		// FIXME: temporary safeguards against FP overflow
 		// (introduced by extreme off-map unit positions; the term
 		// DFsq * Dsq * ... * dy should never even approach 1e38)
 		if (Dsq < 1e12f && math::fabs(dy) < 1e6f) {
 			const float vsq = v * v;
-			const float root1 = vsq * vsq + 2.0f * vsq * g*dy - g*g*DFsq;
-
+			const float root1 = vsq * vsq + 2.0f * vsq * g * dy - g * g * DFsq;
 			if (root1 >= 0.0f) {
 				const float root2 = 2.0f * DFsq * Dsq * (vsq + g * dy + (highTrajectory ? -1.0f : 1.0f) * math::sqrt(root1));
-
 				if (root2 >= 0.0f) {
 					Vxz = math::sqrt(root2) / (2.0f * Dsq);
-					Vy = (dxz == 0.0f || Vxz == 0.0f) ? v : (Vxz * dy / dxz  -  dxz * g / (2.0f * Vxz));
+					Vy = (dxz == 0.0f || Vxz == 0.0f) ? v : (Vxz * dy / dxz - dxz * g / (2.0f * Vxz));
 				}
 			}
 		}
 	}
 
 	float3 nextWantedDir;
+	nextWantedDir.x = targetVec.x;
+	nextWantedDir.z = targetVec.z;
+	nextWantedDir.SafeNormalize();
 
 	if (Vxz != 0.0f || Vy != 0.0f) {
-		nextWantedDir.x = targetVec.x;
-		nextWantedDir.z = targetVec.z;
-		nextWantedDir.SafeNormalize();
 
 		nextWantedDir *= Vxz;
 		nextWantedDir.y = Vy;
