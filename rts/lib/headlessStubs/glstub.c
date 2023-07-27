@@ -25,6 +25,8 @@ GLAPI void APIENTRY glFramebufferTexture2DEXT(GLenum target, GLenum attachment, 
 GLAPI void APIENTRY glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
 GLAPI void APIENTRY glFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
 GLAPI void APIENTRY glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
+GLAPI void APIENTRY glFramebufferTextureLayerEXT(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
+
 
 GLAPI void APIENTRY glDrawBuffers(GLsizei n, const GLenum *bufs) {}
 
@@ -264,11 +266,13 @@ GLAPI void APIENTRY glBufferStorage(GLenum target, GLsizeiptr size, const void* 
 GLAPI void APIENTRY glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage) {}
 GLAPI void APIENTRY glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data) {}
 GLAPI void APIENTRY glCopyBufferSubData(GLenum readtarget, GLenum writetarget, GLintptr readoffset, GLintptr writeoffset, GLsizeiptr size) {}
+GLAPI void APIENTRY glClearBufferData(GLenum target, GLenum internalformat, GLenum format, GLenum type, const void* data) {}
 GLAPI void APIENTRY glBindBufferBase(GLenum target, GLuint index, GLuint buffer) {}
 GLAPI void APIENTRY glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size) {}
 GLAPI GLboolean APIENTRY glIsBuffer(GLuint buffer) { return GL_TRUE; }
 GLAPI void APIENTRY glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params) { *params = 0; }
 
+GLAPI void APIENTRY glTexStorage2D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height) {}
 GLAPI void APIENTRY glTexStorage3D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) {}
 
 GLAPI void APIENTRY glGenVertexArrays(GLsizei n, GLuint* arrays) {}
@@ -354,6 +358,12 @@ GLAPI void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level,
                                            GLint xoffset, GLint yoffset,
                                            GLint x, GLint y,
                                            GLsizei width, GLsizei height) {}
+
+GLAPI void APIENTRY glCopyImageSubData(GLuint srcName, GLenum srcTarget,
+                                            GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,
+                                            GLuint dstName, GLenum dstTarget, GLint dstLevel,
+                                            GLint dstX, GLint dstY, GLint dstZ,
+                                            GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth) {}
 
 GLAPI void APIENTRY glDrawBuffer(GLenum mode) {}
 GLAPI void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {}

@@ -1,4 +1,7 @@
+#pragma once
+
 #include <functional>
+#include <tuple>
 
 namespace spring {
 	template<bool...> struct bool_pack;
@@ -54,6 +57,17 @@ namespace spring {
 			f(std::get<I>(t));
 
 		tuple_exec_at<I + 1, FuncT, Tp...>(index - 1, t, f);
+	}
+
+	// https://blog.tartanllama.xyz/exploding-tuples-fold-expressions/
+	template <std::size_t... Idx>
+	auto make_index_dispatcher(std::index_sequence<Idx...>) {
+		return [](auto&& f) { (f(std::integral_constant<std::size_t, Idx>{}), ...); };
+	}
+
+	template <std::size_t N>
+	auto make_index_dispatcher() {
+		return make_index_dispatcher(std::make_index_sequence<N>{});
 	}
 
 	template<typename T>
@@ -121,4 +135,39 @@ namespace spring {
 
 	template<typename T>
 	using return_type_t = typename return_type<T>::type;
+
+	template<typename Sig>
+	struct func_signature;
+
+	template<typename R, typename ...Args>
+	struct func_signature<R(Args...)>
+	{
+		using type = std::tuple<Args...>;
+	};
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arg_types_tuple_t(const F&) -> typename func_signature<F>::type;
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arg_types_tuple_t(const F*) -> typename func_signature<F>::type;
+
+
+	template <typename T, typename Tuple>
+	struct tuple_type_index;
+
+	template <typename T, typename... Types>
+	struct tuple_type_index<T, std::tuple<T, Types...>> {
+		static const std::size_t value = 0;
+	};
+
+	template <typename T, typename U, typename... Types>
+	struct tuple_type_index<T, std::tuple<U, Types...>> {
+		static const std::size_t value = 1 + tuple_type_index<T, std::tuple<Types...>>::value;
+	};
+	template <typename T, typename Tuple>
+	constexpr size_t tuple_type_index_v = tuple_type_index<T, Tuple>::value;
 };

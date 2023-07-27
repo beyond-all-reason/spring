@@ -261,7 +261,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	const char* funcName = "initStatic";
 	const void* funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.initStatic = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.initStatic = (int (CALLING_CONV *)(
 		int interfaceId,
 		const SAIInterfaceCallback* callback
 	)) funcAddr;
@@ -276,7 +276,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "releaseStatic";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.releaseStatic = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.releaseStatic = (int (CALLING_CONV *)(
 	)) funcAddr;
 
 	if (sAIInterfaceLibrary.releaseStatic == nullptr) {
@@ -290,7 +290,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "getLevelOfSupportFor";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV *)(
 		const char*,
 		int
 	)) funcAddr;
@@ -306,7 +306,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "loadSkirmishAILibrary";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.loadSkirmishAILibrary = (const SSkirmishAILibrary* (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.loadSkirmishAILibrary = (const SSkirmishAILibrary* (CALLING_CONV *)(
 		const char* const shortName,
 		const char* const version
 	)) funcAddr;
@@ -320,7 +320,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "unloadSkirmishAILibrary";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.unloadSkirmishAILibrary = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.unloadSkirmishAILibrary = (int (CALLING_CONV *)(
 		const char* const shortName,
 		const char* const version
 	)) funcAddr;
@@ -334,7 +334,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "unloadAllSkirmishAILibraries";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.unloadAllSkirmishAILibraries = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.unloadAllSkirmishAILibraries = (int (CALLING_CONV *)(
 	)) funcAddr;
 
 	if (sAIInterfaceLibrary.unloadAllSkirmishAILibraries == nullptr) {
@@ -344,32 +344,32 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraries = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.listSkirmishAILibraries = (int (CALLING_CONV *)(
 		int interfaceId
 	)) funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfos = (int (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.listSkirmishAILibraryInfos = (int (CALLING_CONV *)(
 		int interfaceId,
 		int aiIndex
 	)) funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfoKey = (const char* (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.listSkirmishAILibraryInfoKey = (const char* (CALLING_CONV *)(
 		int interfaceId,
 		int aiIndex,
 		int infoIndex
 	)) funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfoValue = (const char* (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.listSkirmishAILibraryInfoValue = (const char* (CALLING_CONV *)(
 		int interfaceId,
 		int aiIndex,
 		int infoIndex
 	)) funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryOptions = (const char* (CALLING_CONV_FUNC_POINTER *)(
+	sAIInterfaceLibrary.listSkirmishAILibraryOptions = (const char* (CALLING_CONV *)(
 		int interfaceId,
 		int aiIndex
 	)) funcAddr;

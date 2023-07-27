@@ -93,8 +93,6 @@ DamageArray DynDamageArray::GetDynamicDamages(const float3& startPos, const floa
 			if (dynDamageMin > 0.0f)
 				d = std::max(damages[i] * ddmod, d);
 
-			// to prevent div by 0
-			d = std::max(0.0001f, d);
 			dynDamages.Set(i, d);
 		}
 	} else {
@@ -104,8 +102,6 @@ DamageArray DynDamageArray::GetDynamicDamages(const float3& startPos, const floa
 			if (dynDamageMin > 0.0f)
 				d = std::max(damages[i] * ddmod, d);
 
-			// div by 0
-			d = std::max(0.0001f, d);
 			dynDamages.Set(i, d);
 		}
 	}

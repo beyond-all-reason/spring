@@ -199,33 +199,54 @@ namespace {
 		groupNum = -1;
 	)
 
-	DECLARE_FILTER_EX(RulesParamEquals, 2, unit->modParams.find(param) != unit->modParams.end() &&
-			((wantedValueStr.empty()) ? unit->modParams.find(param)->second.valueInt == wantedValue
-			: unit->modParams.find(param)->second.valueString == wantedValueStr),
-		std::string param;
+	struct RulesParamEquals_Filter : public Filter {
+		std::string paramName;
 		std::string wantedValueStr;
+		float wantedValueNum;
 
-		float wantedValue;
+		RulesParamEquals_Filter()
+			: Filter("RulesParamEquals", 2)
+			, wantedValueNum (0.0f)
+		{ }
+
+		bool ShouldIncludeUnit(const CUnit* unit) const override {
+			const auto it = unit->modParams.find(paramName);
+			if (it == unit->modParams.end())
+				return false;
+
+			const auto& param = it->second;
+			if (!wantedValueStr.empty()) {
+				if (std::holds_alternative <std::string> (param.value))
+					return std::get <std::string> (param.value) == wantedValueStr;
+				else
+					return false;
+			} else {
+				if (std::holds_alternative <float> (param.value))
+					return std::get <float> (param.value) == wantedValueNum;
+				else if (std::holds_alternative <bool> (param.value))
+					return (std::get <bool> (param.value) ? 1.0f : 0.0f) == wantedValueNum;
+				else
+					return false;
+			}
+		}
 
 		void SetParam(int index, const std::string& value) override {
 			switch (index) {
 				case 0: {
-					param = value;
+					paramName = value;
 				} break;
 				case 1: {
 					const char* cstr = value.c_str();
 					char* endNumPos = nullptr;
-					wantedValue = strtof(cstr, &endNumPos);
+					wantedValueNum = strtof(cstr, &endNumPos);
 					if (endNumPos == cstr) wantedValueStr = value;
 				} break;
 			}
-		},
-		wantedValue = 0.0f;
-	)
+		}
+	} RulesParamEquals_filter_instance;
 
 #undef DECLARE_FILTER_EX
 #undef DECLARE_FILTER
-#undef STRTOF
 }
 
 

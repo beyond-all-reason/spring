@@ -4,6 +4,7 @@
 #define _SPRING_HASH_H_
 
 #include "lib/xxhash/xxh3.h"
+#include <cstdint>
 #include <string>
 #include <type_traits>
 #include <memory>

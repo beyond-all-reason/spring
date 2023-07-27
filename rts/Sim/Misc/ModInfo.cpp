@@ -119,6 +119,8 @@ void CModInfo::ResetState()
 		SLuaAllocLimit::MAX_ALLOC_BYTES = SLuaAllocLimit::MAX_ALLOC_BYTES_DEFAULT;
 
 		allowTake = true;
+
+		allowEnginePlayerlist = true;
 	}
 }
 
@@ -168,6 +170,7 @@ void CModInfo::Init(const std::string& modFileName)
 		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
 
 		allowTake = system.GetBool("allowTake", allowTake);
+		allowEnginePlayerlist = system.GetBool("allowEnginePlayerlist", allowEnginePlayerlist);
 	}
 
 	{

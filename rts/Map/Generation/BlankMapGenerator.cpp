@@ -1,7 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "MapGenerator.h"
+#include "BlankMapGenerator.h"
 #include "Map/SMF/SMFFormat.h"
+#include "Map/SMF/SMFReadMap.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
 #include "System/FileSystem/Archives/VirtualArchive.h"
@@ -10,20 +11,61 @@
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
 #include "System/FileSystem/VFSHandler.h"
+#include "System/Log/ILog.h"
 
+#include <string>
 #include <cstring> // strcpy,memset
 #include <sstream>
 
-void CMapGenerator::Generate()
+CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
+	: setup(setup)
+	, mapSize(1, 1)
+	, mapHeight(50)
+{
+	const auto& mapOpts = setup->GetMapOptionsCont();
+
+	for (const auto& mapOpt: mapOpts) {
+		LOG_L(L_WARNING, "[MapGen::%s] mapOpt<%s,%s>", __func__, mapOpt.first.c_str(), mapOpt.second.c_str());
+	}
+	for (const auto& modOpt: setup->GetModOptionsCont()) {
+		LOG_L(L_WARNING, "[MapGen::%s] modOpt<%s,%s>", __func__, modOpt.first.c_str(), modOpt.second.c_str());
+	}
+
+	const std::string* blankMapXStr = mapOpts.try_get("blank_map_x");
+	const std::string* blankMapYStr = mapOpts.try_get("blank_map_y");
+	const std::string* blankMapHeightStr = mapOpts.try_get("blank_map_height");
+
+	if (blankMapXStr != nullptr && blankMapYStr != nullptr) {
+		try {
+			// mapSize coordinates are actually 2x the spring map dimensions
+			// Example: 10x10 map has mapSize = (5, 5)
+			const int blankMapX = std::stoi(*blankMapXStr) / 2;
+			const int blankMapY = std::stoi(*blankMapYStr) / 2;
+		
+			if (blankMapX > 0 && blankMapY > 0)
+				mapSize = int2(blankMapX, blankMapY);
+		
+		} catch (...) {
+			// leaving default value
+		}
+	}
+
+	if (blankMapHeightStr != nullptr) {
+		try {
+			const int blankMapHeight = std::stoi(*blankMapHeightStr);
+
+			mapHeight = blankMapHeight;
+
+		} catch (...) {
+			// leaving default value
+		}
+	}
+}
+
+void CBlankMapGenerator::Generate()
 {
 	// create archive for map
 	CVirtualArchive* archive = virtualArchiveFactory->AddArchive(setup->mapName);
-
-	// create arrays that can be filled by top class
-	const int2 gridSize = GetGridSize();
-
-	heightMap.resize((gridSize.x + 1) * (gridSize.y + 1));
-	metalMap.resize((gridSize.x + 1) * (gridSize.y + 1));
 
 	// generate map and fill archive files
 	GenerateMap();
@@ -38,17 +80,15 @@ void CMapGenerator::Generate()
 	// archive->WriteToFile();
 }
 
-void CMapGenerator::AppendToBuffer(CVirtualFile* file, const void* data, int size)
+void CBlankMapGenerator::GenerateMap()
 {
-	file->buffer.insert(file->buffer.end(), (std::uint8_t*)data, (std::uint8_t*)data + size);
+	mapDescription = "Blank Map";
+
+	startPositions.emplace_back(20, 20);
+	startPositions.emplace_back(500, 500);
 }
 
-void CMapGenerator::SetToBuffer(CVirtualFile* file, const void* data, int size, int position)
-{
-	std::copy((std::uint8_t*)data, (std::uint8_t*)data + size, file->buffer.begin() + position);
-}
-
-void CMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
+void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 {
 	SMFHeader smfHeader;
 	MapTileHeader smfTile;
@@ -57,16 +97,16 @@ void CMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 	//--- Make SMFHeader ---
 	std::strcpy(smfHeader.magic, "spring map file");
 	smfHeader.version = 1;
-	smfHeader.mapid = 0x524d4746 ^ (int)setup->mapSeed;
+	smfHeader.mapid = 0; // just an arbitrary value, could be anything at this point
 
 	//Set settings
-	smfHeader.mapx = GetGridSize().x;
-	smfHeader.mapy = GetGridSize().y;
+	smfHeader.mapx = mapSize.x * CSMFReadMap::bigSquareSize;
+	smfHeader.mapy = mapSize.y * CSMFReadMap::bigSquareSize;
 	smfHeader.squareSize = 8;
 	smfHeader.texelPerSquare = 8;
 	smfHeader.tilesize = 32;
-	smfHeader.minHeight = -100;
-	smfHeader.maxHeight = 0x1000;
+	smfHeader.minHeight = (float) mapHeight;
+	smfHeader.maxHeight = (float) mapHeight;
 
 	constexpr int32_t numSmallTiles = 1; //2087; //32 * 32 * (mapSize.x  / 2) * (mapSize.y / 2);
 	constexpr char smtFileName[] = "generated.smt";
@@ -119,21 +159,11 @@ void CMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 	//--- Update Ptrs and write to buffer ---
 	std::memset(vegmapPtr.data(), 0, vegmapSize);
 
-	const float heightMin = smfHeader.minHeight;
-	const float heightMax = smfHeader.maxHeight;
-	const float heightMul = 65535.0f / (smfHeader.maxHeight - smfHeader.minHeight);
-
 	for (int x = 0; x < heightmapDimensions; x++) {
-		heightmapPtr[x] = int16_t(Clamp(heightMap[x], heightMin, heightMax) - heightMin) * heightMul;
+		heightmapPtr[x] = mapHeight;
 	}
 
 	std::memset(typemapPtr.data(), 0, typemapSize);
-
-	/*for (u32 x = 0; x < smfHeader.mapx; x++) {
-		for (u32 y = 0; y < smfHeader.mapy; y++) {
-			u32 index = tilemapPtr[]
-		}
-	}*/
 
 	std::memset(tilemapPtr.data(), 0, tilemapSize);
 	std::memset(metalmapPtr.data(), 0, metalmapSize);
@@ -157,7 +187,7 @@ void CMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 	AppendToBuffer(fileSMF, smfFeature);
 }
 
-void CMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
+void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 {
 	//Open template mapinfo.lua
 	const std::string luaTemplate = "mapgenerator/mapinfo_template.lua";
@@ -171,7 +201,6 @@ void CMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 	//Make info to put in mapinfo
 	std::stringstream ss;
 	std::string startPosString;
-	const std::vector<int2>& startPositions = GetStartPositions();
 	for (size_t x = 0; x < startPositions.size(); x++) {
 		ss << "[" << x << "] = {startPos = {x = " << startPositions[x].x << ", z = " << startPositions[x].y << "}},";
 	}
@@ -179,72 +208,33 @@ void CMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 
 	//Replace tags in mapinfo.lua
 	luaInfo = StringReplace(luaInfo, "${NAME}", setup->mapName);
-	luaInfo = StringReplace(luaInfo, "${DESCRIPTION}", GetMapDescription());
+	luaInfo = StringReplace(luaInfo, "${DESCRIPTION}", mapDescription);
 	luaInfo = StringReplace(luaInfo, "${START_POSITIONS}", startPosString);
 
 	//Copy to filebuffer
 	fileMapInfo->buffer.assign(luaInfo.begin(), luaInfo.end());
 }
 
-void CMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
+void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 {
-	constexpr int32_t tileSize = 32;
-	constexpr int32_t tileBPP = 3;
-
 	//--- Make TileFileHeader ---
 	TileFileHeader smtHeader;
 	std::strcpy(smtHeader.magic, "spring tilefile");
 	smtHeader.version = 1;
-	smtHeader.numTiles = 1; //32 * 32 * (generator->GetMapSize().x * 32) * (generator->GetMapSize().y * 32);
-	smtHeader.tileSize = tileSize;
+	smtHeader.numTiles = 1; //32 * 32 * (generator->mapSize.x * 32) * (generator->mapSize.y * 32);
+	smtHeader.tileSize = 32;
 	smtHeader.compressionType = 1;
 
-	int32_t tilePos = 0;
-	uint8_t tileData[tileSize * tileSize * tileBPP];
-	int8_t tileDataDXT[SMALL_TILE_SIZE];
+	fileSMT->buffer.resize(sizeof(TileFileHeader) + smtHeader.numTiles * SMALL_TILE_SIZE);
+	std::memcpy(&fileSMT->buffer[0], &smtHeader, sizeof(smtHeader));
+}
 
-	for (int32_t x = 0; x < tileSize; x++) {
-		for (int32_t y = 0; y < tileSize; y++) {
-			tileData[tilePos + 0] = 0;
-			tileData[tilePos + 1] = 0xFF;
-			tileData[tilePos + 2] = 0;
-			tilePos += tileBPP;
-		}
-	}
+void CBlankMapGenerator::AppendToBuffer(CVirtualFile* file, const void* data, int size)
+{
+	file->buffer.insert(file->buffer.end(), (std::uint8_t*)data, (std::uint8_t*)data + size);
+}
 
-	glClearErrors("MapGen", __func__, globalRendering->glDebugErrors);
-	GLuint tileTex;
-	glGenTextures(1, &tileTex);
-	glBindTexture(GL_TEXTURE_2D, tileTex);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, tileSize, tileSize, 0, GL_RGB, GL_UNSIGNED_BYTE, tileData);
-	glGenerateMipmapEXT(GL_TEXTURE_2D);
-
-	int32_t dxtImageOffset =   0;
-	int32_t dxtImageSize   = 512;
-	int32_t writePosition  =   0;
-
-	for (int32_t x = 0; x < 4; x++) {
-		glGetCompressedTexImage(GL_TEXTURE_2D, x, tileDataDXT + dxtImageOffset);
-
-		dxtImageOffset += dxtImageSize;
-		dxtImageSize /= 4;
-	}
-
-	glDeleteTextures(1, &tileTex);
-
-	if (glGetError() != GL_NO_ERROR)
-		throw content_error("Error generating map - texture generation not supported");
-
-	fileSMT->buffer.resize(sizeof(TileFileHeader));
-
-	std::memcpy(&fileSMT->buffer[writePosition], &smtHeader, sizeof(smtHeader));
-	writePosition += sizeof(smtHeader);
-
-	fileSMT->buffer.resize(fileSMT->buffer.size() + smtHeader.numTiles * SMALL_TILE_SIZE);
-
-	for (int32_t x = 0; x < smtHeader.numTiles; x++) {
-		std::memcpy(&fileSMT->buffer[writePosition], tileDataDXT, SMALL_TILE_SIZE);
-		writePosition += SMALL_TILE_SIZE;
-	}
+void CBlankMapGenerator::SetToBuffer(CVirtualFile* file, const void* data, int size, int position)
+{
+	std::copy((std::uint8_t*)data, (std::uint8_t*)data + size, file->buffer.begin() + position);
 }

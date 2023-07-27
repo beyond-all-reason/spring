@@ -37,7 +37,7 @@ local options = {
 	{ -- section
 		key    = 'cheats',
 		name   = 'Cheats',
-		desc   = 'Fine-Grained settings specifying which kind of cheats \nthe AI is allowed to use.',
+		desc   = 'Fine-grained settings specifying which kind of cheats \nthe AI is allowed to use.',
 		type   = 'section',
 	},
 
@@ -50,15 +50,15 @@ local options = {
 
 	{ -- list
 		key     = 'aggressiveness',
-		name    = 'Level Of Aggressivity',
+		name    = 'Level Of Aggression',
 		desc    = 'How aggressive the AI should act.\nkey: aggressiveness',
 		type    = 'list',
 		section = 'performance',
 		def     = 'normal',
 		items   = {
 			{
-				key  = 'deffensive',
-				name = 'Deffensive',
+				key  = 'defensive',
+				name = 'Defensive',
 				desc = 'The AI will hardly ever attack.',
 			},
 			{
@@ -87,9 +87,9 @@ local options = {
 	},
 
 	{ -- number (float)
-		key     = 'resourcebonous',
-		name    = 'Resource Bonous',
-		desc    = 'The AI will get 1+[this-value] times as muhc resources as a normal player.\nkey: resourcebonous',
+		key     = 'resourcebonus',
+		name    = 'Resource Bonus',
+		desc    = 'The AI will get 1+[this-value] times as much resources as a normal player.\nkey: resourcebonus',
 		type    = 'number',
 		section = 'cheats',
 		def     = 0.0,
@@ -103,7 +103,7 @@ local options = {
 	{ -- bool
 		key     = 'maphack',
 		name    = 'Map Hack',
-		desc    = 'Whether the AI can see everything on the map, always, or is bount to LOS & Radar usage.\nkey: maphack',
+		desc    = 'Whether the AI can see everything on the map, always, or is bound to sight & radar usage.\nkey: maphack',
 		type    = 'bool',
 		section = 'cheats',
 		def     = false,
@@ -112,9 +112,9 @@ local options = {
 	{ -- string
 		key     = 'reporturl',
 		name    = 'Report URL',
-		desc    = 'Statistics and learning data will be sent ot this URL every 5 minutes.\nkey: reporturl',
+		desc    = 'Statistics and learning data will be sent to this URL every 5 minutes.\nkey: reporturl',
 		type    = 'string',
-		def     = 'http://myAIStats.myDomain.com/statsReceiver.cgi',
+		def     = 'http://exampleAIStats.exampleDomain.com/statsReceiver.cgi',
 	},
 
 }
