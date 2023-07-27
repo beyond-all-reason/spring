@@ -79,6 +79,35 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator base functionality", "[c
     REQUIRE(!mempool.can_free());
 }
 
+TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class][template]",
+        (StaticMemPool<1024,sizeof(TestData)>),
+        (FixedDynMemPool<sizeof(TestData), 1, 1024>))
+{
+    AllocFixture<TestType> inst;
+    auto& mempool = *inst.mempool;
+
+    std::unordered_map<TestData*, int> allocated;
+    for (size_t i =0; i < mempool.NUM_PAGES(); ++i) {
+        auto obj = inst.alloc();
+        allocated[obj]++;
+    }
+
+    for (auto& pair : allocated) {
+        TestData* ptr = pair.first;
+        mempool.free(ptr);
+    };
+
+    for (size_t i = 0; i < mempool.NUM_PAGES(); ++i) {
+        auto obj = inst.alloc();
+        REQUIRE(allocated[obj] == 1);
+    }
+
+    for (auto& pair : allocated) {
+        TestData* ptr = pair.first;
+        mempool.free(ptr);
+    };
+}
+
 // obeying the order is not a functional requirement of allocator
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO order", "[class][template]",
         (StaticMemPool<1024,sizeof(TestData)>),
