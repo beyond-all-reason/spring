@@ -85,6 +85,8 @@ Sim:
  - damage in unit defs can now be 0 (previously capped at 0.0001)
  - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but keep in mind weapons
    will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
+ - nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius
+   instead of its center. Mobile builders already worked this way.
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.
@@ -183,6 +185,7 @@ Fixes:
    features when looking at certain oblique angles
  - Fix using Set<Any>RulesParam with an incorrect type leaving that param set with a value of 0.
  - Fix COB SetMaxReloadTime receiving a value 10% smaller than it should
+ - Fix builders not placing nanoframes from their maximum range
 
 
 
