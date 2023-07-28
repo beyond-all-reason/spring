@@ -52,7 +52,7 @@ WEAPONTAG(bool, noSelfDamage).defaultValue(false);
 WEAPONTAG(bool, noExplode).defaultValue(false);
 WEAPONTAG(bool, selfExplode).externalName("burnblow").defaultValue(false);
 WEAPONTAG(float, damageAreaOfEffect, damages.damageAreaOfEffect).fallbackName("areaOfEffect").defaultValue(8.0f).scaleValue(0.5f);
-WEAPONTAG(float, edgeEffectiveness, damages.edgeEffectiveness).defaultValue(0.0f).maximumValue(0.999f);
+WEAPONTAG(float, edgeEffectiveness, damages.edgeEffectiveness).defaultValue(0.0f).maximumValue(1.0f);
 WEAPONTAG(float, collisionSize).defaultValue(0.05f);
 
 // Projectile Properties
@@ -369,10 +369,6 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 		const LuaTable dmgTable = wdTable.SubTable("damage");
 		float defDamage = dmgTable.GetFloat("default", 1.0f);
 
-		// avoid division by zeros
-		if (defDamage == 0.0f)
-			defDamage = 1.0f;
-
 		damages.SetDefaultDamage(defDamage);
 		damages.fromDef = true;
 
@@ -386,11 +382,11 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 		dmgs.reserve(32);
 		dmgTable.GetPairs(dmgs);
 
-		for (const auto& pair: dmgs) {
-			const int type = damageArrayHandler.GetTypeFromName(pair.first);
-			if (type == 0)
+		for (const auto& [armorTypeName, damage] : dmgs) {
+			const int armorType = damageArrayHandler.GetTypeFromName(armorTypeName);
+			if (armorType == 0)
 				continue;
-			damages.Set(type, std::max(0.0001f, pair.second));
+			damages.Set(armorType, damage);
 		}
 
 		const float tempsize = 2.0f + std::min(defDamage * 0.0025f, damages.damageAreaOfEffect * 0.1f);

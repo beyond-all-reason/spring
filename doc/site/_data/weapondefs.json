@@ -98,7 +98,7 @@
     },
     "edgeEffectiveness": {
       "defaultValue": 0,
-      "maximumValue": 0.999,
+      "maximumValue": 1,
       "type": "float"
     },
     "collisionSize": {

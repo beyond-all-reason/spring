@@ -107,7 +107,8 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(incomingProjectileIDs),
 
 	CR_MEMBER(weaponAimAdjustPriority),
-	CR_MEMBER(fastAutoRetargeting)
+	CR_MEMBER(fastAutoRetargeting),
+	CR_MEMBER(fastQueryPointUpdate)
 ))
 
 
@@ -185,7 +186,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	muzzleFlareSize(1),
 
 	weaponAimAdjustPriority(1.f),
-	fastAutoRetargeting(false)
+	fastAutoRetargeting(false),
+	fastQueryPointUpdate(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -430,6 +432,11 @@ void CWeapon::UpdateFire()
 	ZoneScoped;
 	if (!CanFire(false, false, false))
 		return;
+
+	if (fastQueryPointUpdate) {
+		UpdateWeaponPieces(false);
+		UpdateWeaponVectors();
+	} 
 
 	if (!TryTarget(currentTargetPos, currentTarget, true))
 		return;

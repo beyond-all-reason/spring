@@ -30,6 +30,7 @@ CR_REG_METADATA(CPlayer, (
 	CR_IGNORED(ping),
 	CR_MEMBER(currentStats),
 	CR_IGNORED(fpsController),
+	CR_MEMBER(modParams),
 	CR_MEMBER(controlledTeams)
 ))
 

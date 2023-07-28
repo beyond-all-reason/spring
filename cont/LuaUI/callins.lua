@@ -59,8 +59,10 @@ CallInsList = {
 	"UnitUnloaded",
 	"UnitHarvestStorageFull",
 
+	"UnitEnteredUnderwater",
 	"UnitEnteredWater",
 	"UnitEnteredAir",
+	"UnitLeftUnderwater",
 	"UnitLeftWater",
 	"UnitLeftAir",
 

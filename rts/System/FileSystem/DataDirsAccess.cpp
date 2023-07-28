@@ -173,14 +173,14 @@ std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(
 
 	// find all subdirectories in the rootDirs
 	for (const std::string& dir: rootDirs) {
-		const std::vector<std::string>& localMainDirs = CFileHandler::SubDirs(dir, pattern, SPRING_VFS_RAW);
+		const std::vector<std::string>& localMainDirs = CFileHandler::SubDirs(dir, pattern, SPRING_VFS_RAW, false);
 		mainDirs.insert(mainDirs.end(), localMainDirs.begin(), localMainDirs.end());
 	}
 	//found.insert(found.end(), mainDirs.begin(), mainDirs.end());
 
 	// and add all subdriectories of these
 	for (const std::string& dir: mainDirs) {
-		const std::vector<std::string>& subDirs = CFileHandler::SubDirs(dir, pattern, SPRING_VFS_RAW);
+		const std::vector<std::string>& subDirs = CFileHandler::SubDirs(dir, pattern, SPRING_VFS_RAW, false);
 		found.insert(found.end(), subDirs.begin(), subDirs.end());
 	}
 
