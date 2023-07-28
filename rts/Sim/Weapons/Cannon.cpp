@@ -81,7 +81,7 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 	const float linCoeff = (projectileSpeedVertical + (gravity * 0.5f) ) / projectileSpeedHorizontal; //(gravity * 0.5f) is factor due to discrete acceleration steps
 	const float qdrCoeff = (gravity * 0.5f) / (projectileSpeedHorizontal * projectileSpeedHorizontal);
 
-	const float groundColCheckDistance = std::max(10.0f, xzTargetDist - projectileSpeedHorizontal * 3.0f); //xzTargetDist - 10.0f
+	const float groundColCheckDistance = std::max(10.0f, 0.9375f * xzTargetDist); //do not check last 1/16 of trajectory for ground collision
 	// CGround::SimTrajectoryGroundColDist(weaponMuzzlePos, launchDir, UpVector * gravity, {projectileSpeed, xzTargetDist - 10.0f})
 	const float groundDist = ((avoidFlags & Collision::NOGROUND) == 0)?
 		CGround::TrajectoryGroundCol(weaponMuzzlePos, targetVec, groundColCheckDistance, linCoeff, qdrCoeff):
