@@ -18,6 +18,8 @@ struct TestData
     uint64_t& counter;
 };
 
+constexpr size_t TEST_ALLOCATOR_SIZE = 1024;
+
 template <typename T>
 struct AllocFixture {
     AllocFixture() : mempool(std::make_unique<T>()) {}
@@ -50,8 +52,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator when full", "[class][tem
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test bounded allocator base functionality", "[class][template]",
-        (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>))
+        (StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
+        (FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
@@ -83,21 +85,20 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functiona
         (DynMemPool<sizeof(TestData)>))
 {
     AllocFixture<TestType> inst;
-    const size_t test_size = 1024;
     auto& mempool = *inst.mempool;
 
     REQUIRE(mempool.can_alloc());
 
     std::vector<TestData*> allocated;
 
-    for (size_t i =0; i < test_size; ++i) {
+    for (size_t i =0; i < TEST_ALLOCATOR_SIZE; ++i) {
         REQUIRE(mempool.can_alloc());
         auto obj = inst.alloc();
         REQUIRE(mempool.alloced(obj));
         allocated.push_back(obj);
     }
 
-    REQUIRE(inst.instanceCounter == test_size);
+    REQUIRE(inst.instanceCounter == TEST_ALLOCATOR_SIZE);
 
     REQUIRE(mempool.can_alloc()); // unbounded allocator can always alloc
 
@@ -110,16 +111,15 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functiona
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class][template]",
-        (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>),
+        (StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
+        (FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>),
         (DynMemPool<sizeof(TestData)>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
-    const size_t test_size = 1024;
 
     std::unordered_map<TestData*, int> allocated;
-    for (size_t i =0; i < test_size; ++i) {
+    for (size_t i =0; i < TEST_ALLOCATOR_SIZE; ++i) {
         auto obj = inst.alloc();
         allocated[obj]++;
     }
@@ -129,7 +129,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
         mempool.free(ptr);
     };
 
-    for (size_t i = 0; i < test_size; ++i) {
+    for (size_t i = 0; i < TEST_ALLOCATOR_SIZE; ++i) {
         auto obj = inst.alloc();
         REQUIRE(allocated[obj] == 1);
     }
@@ -142,16 +142,15 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
 
 // obeying the order is not a functional requirement of allocator
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO order", "[class][template]",
-        (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>),
+        (StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
+        (FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>),
         (DynMemPool<sizeof(TestData)>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
-	const size_t test_size = 1024;
 
     std::vector<TestData*> allocated;
-    for (size_t i =0; i < test_size; ++i) {
+    for (size_t i =0; i < TEST_ALLOCATOR_SIZE; ++i) {
         auto obj = inst.alloc();
         allocated.push_back(obj);
     }
@@ -162,7 +161,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO o
 
     // verify that new elements reuse previous memory
     // in LIFO order
-    for (size_t i = 0; i < test_size; ++i) {
+    for (size_t i = 0; i < TEST_ALLOCATOR_SIZE; ++i) {
         auto obj = inst.alloc();
         REQUIRE(obj == allocated[i]);
     }
@@ -173,8 +172,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO o
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator's clear method", "[class][template]",
-        (StaticMemPool<1024,sizeof(TestData)>),
-        (FixedDynMemPool<sizeof(TestData), 1, 1024>))
+        (StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
+        (FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>))
 {
     AllocFixture<TestType> inst;
     auto& mempool = *inst.mempool;
