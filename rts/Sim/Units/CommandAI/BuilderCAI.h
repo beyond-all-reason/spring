@@ -61,7 +61,7 @@ public:
 
 	bool IsInBuildRange(const CWorldObject* obj) const;
 	bool IsInBuildRange(const float3& pos, const float radius) const;
-	float GetBuildRange(const float targetRadius) const { return (ownerBuilder->buildDistance + targetRadius); };
+	float GetBuildRange(const float targetRadius) const;
 
 public:
 	spring::unordered_set<int> buildOptions;

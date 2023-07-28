@@ -250,6 +250,11 @@ void CBuilderCAI::PostLoad()
 	}
 }
 
+float CBuilderCAI::GetBuildRange(const float targetRadius) const
+{
+	return (ownerBuilder->buildDistance + targetRadius);
+}
+
 bool CBuilderCAI::IsInBuildRange(const CWorldObject* obj) const
 {
 	return IsInBuildRange(obj->pos, obj->radius);
