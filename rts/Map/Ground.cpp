@@ -568,6 +568,8 @@ float CGround::SimTrajectoryGroundColDist(const float3& trajStartPos, const floa
 	return (math::sqrt(pos.SqDistance2D(trajStartPos)));
 }
 
+#include "Rendering/GlobalRendering.h"
+#include "Sim/Misc/GeometricObjects.h"
 float CGround::TrajectoryGroundCol(const float3& trajStartPos, const float3& trajTargetDir, float length, float linCoeff, float qdrCoeff)
 {
 	// trajTargetDir should be the normalized xz-vector from <trajStartPos> to the target
@@ -588,8 +590,19 @@ float CGround::TrajectoryGroundCol(const float3& trajStartPos, const float3& tra
 		const float3 pos = (trajStartPos + dir * dist) + (alt * dist * dist);
 
 		#if 1
-		if (GetApproximateHeight(pos) > pos.y)
+		if (GetApproximateHeight(pos) > pos.y) {
+			if (globalRendering->drawDebugTraceRay) {
+
+			#define go geometricObjects
+
+			// red line pointing to hitPos
+			go->SetColor(go->AddLine(trajStartPos + dir * dist, (trajStartPos + dir * dist) + (alt * dist * dist), 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
+			go->SetColor(go->AddLine(trajStartPos, (trajStartPos + dir * dist) + (alt * dist * dist), 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
+
+			#undef go
+			}
 			return dist;
+		}
 		#else
 		if (GetHeightReal(pos) > pos.y)
 			return dist;

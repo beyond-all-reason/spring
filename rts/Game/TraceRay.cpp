@@ -132,9 +132,9 @@ inline static bool TestTrajectoryConeHelper(
 	bool ret = false;
 
 	CollisionQuery cq;
-	// chord check from muzzle to hitPos
+	// chord check to hitPos
 	const CMatrix44f objTransform = obj->GetTransformMatrix(true);
-	// chord check from muzzle to hitPos
+
 	// use heuristic to choose which chord to check
 	// if projectile is traveling upwards, check from muzzle to position
 	// if projectile is traveling downwards, check from position to target
