@@ -70,19 +70,20 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 	if (targetVec.SqLength2D() == 0.0f)
 		return true;
 
-	// pick launchDir[0] if .x != 0, otherwise launchDir[2]
-
 	const float xzTargetDist = targetVec.LengthNormalize();
 
 	// linear parabolic coefficient is the ratio of vertical velocity to horizontal velocity, with slight adjustment due to acceleration being applied in discrete steps.
 	// quadratic parabolic coefficient is the ratio of gravity to (horizontal velocity)^2
-	const float projectileSpeedHorizontal = projectileSpeed * launchDir.Length2D();
+	const float projectileSpeedHorizontal = std::max(0.001f,projectileSpeed * launchDir.Length2D()); //ensure projectileSpeedHorizontal cannot be zero
 	const float projectileSpeedVertical = projectileSpeed * launchDir.y;
 	const float linCoeff = (projectileSpeedVertical + (gravity * 0.5f) ) / projectileSpeedHorizontal; //(gravity * 0.5f) is factor due to discrete acceleration steps
 	const float qdrCoeff = (gravity * 0.5f) / (projectileSpeedHorizontal * projectileSpeedHorizontal);
 
-	const float groundColCheckDistance = std::max(10.0f, 0.9375f * xzTargetDist); //do not check last 1/16 of trajectory for ground collision
-	// CGround::SimTrajectoryGroundColDist(weaponMuzzlePos, launchDir, UpVector * gravity, {projectileSpeed, xzTargetDist - 10.0f})
+	const float groundColCheckDistance = std::max(10.0f, 0.9375f * xzTargetDist); 
+	// do not check last 1/16 of trajectory for ground collision
+	// as sometimes the approximate ground height calculation can create false positive ground collisions, 
+	// and the prior 10.0f buffer is no longer good enough with the accurate coefficients
+	// TODO: allow this ignore distance to be set on a per-unit basis
 	const float groundDist = ((avoidFlags & Collision::NOGROUND) == 0)?
 		CGround::TrajectoryGroundCol(weaponMuzzlePos, targetVec, groundColCheckDistance, linCoeff, qdrCoeff):
 		-1.0f;

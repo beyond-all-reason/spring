@@ -128,7 +128,7 @@ inline static bool TestTrajectoryConeHelper(
 	// (if object-distance is 0, tstPos == hitPos)
 	const float3 hitVec = tstDir * cvRelDst;
 	const float3 hitPos = (tstPos + hitVec) + (UpVector * (quadratic * cvRelDst * cvRelDst + linear * cvRelDst));
-	const float3 endPos = (tstPos + tstDir * length) + (UpVector * (quadratic * length * length + linear * length)); 
+	float3 endPos = 0.f; 
 	bool ret = false;
 
 	CollisionQuery cq;
@@ -144,6 +144,8 @@ inline static bool TestTrajectoryConeHelper(
 		}
 	}
 	else {
+		//only compute endPos if needed
+		endPos = (tstPos + tstDir * length) + (UpVector * (quadratic * length * length + linear * length));
 		if (CCollisionHandler::DetectHit(obj, objTransform, hitPos, endPos, &cq, true)) {
 			ret = true;
 		}
