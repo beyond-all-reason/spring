@@ -57,14 +57,3 @@ inline void glSetAny(AttribValuesTupleType newValues)
 		(std::get<0>(newValues) == GL_TRUE? glEnable : glDisable)(GLParamName);
 	}
 }
-
-
-// temporary, will be replaced
-inline GLint glTempBindTexture(GLenum target, GLuint textureID) {
-	GLenum query = GL::GetBindingQueryFromTarget(target);
-	assert(query);
-	GLint currentBinding;
-	glGetIntegerv(query, &currentBinding);
-	glBindTexture(target, textureID);
-	return currentBinding;
-}

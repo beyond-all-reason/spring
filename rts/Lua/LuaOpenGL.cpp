@@ -56,7 +56,7 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/GL/glExtra.h"
-#include "Rendering/GL/glHelpers.h"
+#include "Rendering/GL/TexBind.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -3628,9 +3628,8 @@ int LuaOpenGL::GenerateMipmap(lua_State* L)
 	if (tex == nullptr)
 		return 0;
 
-	GLint currentBinding = glTempBindTexture(tex->target, tex->id);
+	auto texBind = GL::TexBind(tex->target, tex->id);
 	glGenerateMipmapEXT(tex->target);
-	glBindTexture(tex->target, currentBinding);
 
 	return 0;
 }

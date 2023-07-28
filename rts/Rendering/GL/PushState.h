@@ -11,9 +11,9 @@ namespace GL
 
 namespace Impl
 {
-template<class... UniqueAttributeValueTypes> class StateChange {
+template<class... UniqueAttributeValueTypes> class PushState {
 public:
-	inline StateChange(UniqueAttributeValueTypes... newValues)
+	inline PushState(UniqueAttributeValueTypes... newValues)
 	{
 		((std::get<UniqueAttributeValueTypes>(savedValues) = std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)), ...);
 		((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = newValues), ...);
@@ -25,7 +25,7 @@ public:
 			pushed = false;
 		}
 	}
-	inline ~StateChange()
+	inline ~PushState()
 	{
 		pop();
 	}
@@ -37,11 +37,9 @@ private:
 }
 
 template<class... ArgTypes>
-auto StateChange(ArgTypes&&... args)
+auto PushState(ArgTypes&&... args)
 {
-	return Impl::StateChange<ArgTypes...>(std::forward<ArgTypes>(args)...);
+	return Impl::PushState<ArgTypes...>(std::forward<ArgTypes>(args)...);
 }
-
-namespace State { using GL::StateChange; }
 
 }

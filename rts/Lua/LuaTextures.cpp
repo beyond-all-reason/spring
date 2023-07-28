@@ -4,7 +4,7 @@
 #include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/GL/glHelpers.h"
+#include "Rendering/GL/TexBind.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
@@ -257,9 +257,8 @@ void LuaTextures::ApplyParams(const Texture& tex) const
 
 void LuaTextures::ChangeParams(const Texture& tex)  const
 {
-	GLint currentBinding = glTempBindTexture(tex.target, tex.id);
+	auto texBind = GL::TexBind(tex.target, tex.id);
 	ApplyParams(tex);
-	glBindTexture(tex.target, currentBinding);
 }
 
 

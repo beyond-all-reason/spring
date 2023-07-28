@@ -33,15 +33,16 @@ auto FuncArgs(const F*) -> typename FuncSignature<F>::type;
 
 namespace Impl
 {
-	template<auto FuncPtr, class... NullPtrFallbackSignature>
+	template<auto FuncPtr, class... FallbackSignature>
 	struct FuncPtrSignatureTpl {
 		using type = FuncSignature<std::remove_pointer_t<std::remove_pointer_t<decltype(FuncPtr)>>>;
 	};
-	template<class... NullPtrFallbackSignature>
-	struct FuncPtrSignatureTpl<nullptr, NullPtrFallbackSignature...> {
-		using type = std::tuple<NullPtrFallbackSignature...>;
+	template<class... FallbackSignature>
+	struct FuncPtrSignatureTpl<nullptr, FallbackSignature...> {
+		using type = std::tuple<FallbackSignature...>;
 	};
 }
 
-template<auto FuncPtr, class... NullPtrFallbackSignature>
-using FuncPtrSignature = typename Impl::FuncPtrSignatureTpl<FuncPtr, NullPtrFallbackSignature...>::type;
+// This particular helper accepts a nullptr, in which case it falls back to a specified default signature
+template<auto FuncPtr, class... FallbackSignature>
+using FuncPtrSignature = typename Impl::FuncPtrSignatureTpl<FuncPtr, FallbackSignature...>::type;

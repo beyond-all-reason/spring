@@ -11,15 +11,15 @@
 
 /*
 	GL::State doesn't represent active GL state.
-	It represents GL state, that was last applied by GL::StateChange objects, or any other object that performs state change via this interface.
+	It represents GL state, that was last applied by GL::PushState objects, or any other object that performs state change via this interface.
 
-	If a state was not set by a StateChange object, it is internally set to Unknown.
-	When a state is Unknown and StateChange object requests it, the state is fetched from GL.
-	When the last existing StateChange object reverts a state, it is set back to Unknown.
-	Setting back to Unknown after the last StateChange object enforces fetch from GL every time the first StateChange object is created,
-		but makes it possible to insert StateChange object in any part of the code without serious restrictions to the whole prior code.
+	If a state was not set by a PushState object, it is internally set to Unknown.
+	When a state is Unknown and PushState object requests it, the state is fetched from GL.
+	When the last existing PushState object reverts a state, it is set back to Unknown.
+	Setting back to Unknown after the last PushState object enforces fetch from GL every time the first PushState object is created,
+		but makes it possible to insert PushState object in any part of the code without serious restrictions to the whole prior code.
 
-	User must make sure that ordinary GL commands that are not tracked do not collide with StateChange object's modifications during its lifetime.
+	User must make sure that ordinary GL commands that are not tracked do not collide with PushState object's modifications during its lifetime.
 */
 
 namespace GL
@@ -80,74 +80,94 @@ private:
 #define ATTRIBUTE_TYPE_DEFS(name, ...) \
 	using ATTRIBUTE(name) = StateAttribute<&(gl##name), __VA_ARGS__>; \
 	using name = UniqueStateAttributeValueType<ATTRIBUTE(name)>;
-#define CAPABILITY_ATTRIBUTE_TYPE_DEFS(name, ...) \
-	using ATTRIBUTE(name) = StateAttribute<nullptr, __VA_ARGS__>; \
+#define CAPABILITY_ATTRIBUTE_TYPE_DEFS(name, glParamName) \
+	using ATTRIBUTE(name) = StateAttribute<nullptr, glParamName>; \
 	using name = UniqueStateAttributeValueType<ATTRIBUTE(name)>;
+#define MULTI_CAPABILITY_ATTRIBUTE_TYPE_DEFS(name, glParamName) \
+	template<GLenum Index> using ATTRIBUTE(name) = StateAttribute<nullptr, glParamName+Index>; \
+	template<GLenum Index> using name = UniqueStateAttributeValueType<ATTRIBUTE(name)<Index>>;
 
 namespace State {
-	ATTRIBUTE_TYPE_DEFS(PolygonMode, GL_POLYGON_MODE);
-	ATTRIBUTE_TYPE_DEFS(PolygonOffset, GL_POLYGON_OFFSET_FACTOR, GL_POLYGON_OFFSET_UNITS);
-	ATTRIBUTE_TYPE_DEFS(FrontFace, GL_FRONT_FACE);
-	ATTRIBUTE_TYPE_DEFS(CullFace, GL_CULL_FACE_MODE);
-	ATTRIBUTE_TYPE_DEFS(DepthMask, GL_DEPTH_WRITEMASK);
-	ATTRIBUTE_TYPE_DEFS(DepthRangef, GL_DEPTH_RANGE);
-	ATTRIBUTE_TYPE_DEFS(DepthFunc, GL_DEPTH_FUNC);
-	ATTRIBUTE_TYPE_DEFS(AlphaFunc, GL_ALPHA_TEST_FUNC, GL_ALPHA_TEST_REF);
-	ATTRIBUTE_TYPE_DEFS(BlendFunc, GL_BLEND_SRC, GL_BLEND_DST);
-	ATTRIBUTE_TYPE_DEFS(BlendColor, GL_BLEND_COLOR);
-	ATTRIBUTE_TYPE_DEFS(ColorMask, GL_COLOR_WRITEMASK);
-	ATTRIBUTE_TYPE_DEFS(PrimitiveRestartIndex, GL_PRIMITIVE_RESTART_INDEX);
-	ATTRIBUTE_TYPE_DEFS(Scissor, GL_SCISSOR_BOX);
-	ATTRIBUTE_TYPE_DEFS(Viewport, GL_VIEWPORT);
-	// todo: BindTexture
+	ATTRIBUTE_TYPE_DEFS            (PolygonMode, GL_POLYGON_MODE);
+	ATTRIBUTE_TYPE_DEFS            (PolygonOffset, GL_POLYGON_OFFSET_FACTOR, GL_POLYGON_OFFSET_UNITS);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PolygonOffsetFill, GL_POLYGON_OFFSET_FILL);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PolygonOffsetLine, GL_POLYGON_OFFSET_LINE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PolygonOffsetPoint, GL_POLYGON_OFFSET_POINT);
 
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(PolygonOffsetFill, GL_POLYGON_OFFSET_FILL);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(PolygonOffsetLine, GL_POLYGON_OFFSET_LINE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(PolygonOffsetPoint, GL_POLYGON_OFFSET_POINT);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(Culling, GL_CULL_FACE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(DepthClamp, GL_DEPTH_CLAMP);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(DepthTest, GL_DEPTH_TEST);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(AlphaTest, GL_ALPHA_TEST);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(Blending, GL_BLEND);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(StencilTest, GL_STENCIL_TEST);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(Multisampling, GL_MULTISAMPLE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(AlphaToCoverage, GL_SAMPLE_ALPHA_TO_COVERAGE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(AlphaToOne, GL_SAMPLE_ALPHA_TO_ONE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(PrimitiveRestart, GL_PRIMITIVE_RESTART);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(CubemapSeamless, GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(PointSize, GL_PROGRAM_POINT_SIZE);
-	CAPABILITY_ATTRIBUTE_TYPE_DEFS(ScissorTest, GL_SCISSOR_TEST);
-	// todo: ClipDistance
+	ATTRIBUTE_TYPE_DEFS            (Viewport, GL_VIEWPORT);
+
+	ATTRIBUTE_TYPE_DEFS            (FrontFace, GL_FRONT_FACE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Culling, GL_CULL_FACE);
+	ATTRIBUTE_TYPE_DEFS            (CullFace, GL_CULL_FACE_MODE);
+	MULTI_CAPABILITY_ATTRIBUTE_TYPE_DEFS (ClipDistance, GL_CLIP_DISTANCE0);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (ScissorTest, GL_SCISSOR_TEST);
+	ATTRIBUTE_TYPE_DEFS            (Scissor, GL_SCISSOR_BOX);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (DepthTest, GL_DEPTH_TEST);
+	ATTRIBUTE_TYPE_DEFS            (DepthFunc, GL_DEPTH_FUNC);
+	ATTRIBUTE_TYPE_DEFS            (DepthRangef, GL_DEPTH_RANGE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (DepthClamp, GL_DEPTH_CLAMP);
+	ATTRIBUTE_TYPE_DEFS            (DepthMask, GL_DEPTH_WRITEMASK);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (StencilTest, GL_STENCIL_TEST);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaTest, GL_ALPHA_TEST);
+	ATTRIBUTE_TYPE_DEFS            (AlphaFunc, GL_ALPHA_TEST_FUNC, GL_ALPHA_TEST_REF);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Blending, GL_BLEND);
+	ATTRIBUTE_TYPE_DEFS            (BlendFunc, GL_BLEND_SRC, GL_BLEND_DST);
+	ATTRIBUTE_TYPE_DEFS            (BlendColor, GL_BLEND_COLOR);
+	ATTRIBUTE_TYPE_DEFS            (ColorMask, GL_COLOR_WRITEMASK);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PrimitiveRestart, GL_PRIMITIVE_RESTART);
+	ATTRIBUTE_TYPE_DEFS            (PrimitiveRestartIndex, GL_PRIMITIVE_RESTART_INDEX);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Multisampling, GL_MULTISAMPLE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToCoverage, GL_SAMPLE_ALPHA_TO_COVERAGE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToOne, GL_SAMPLE_ALPHA_TO_ONE);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (CubemapSeamless, GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PointSize, GL_PROGRAM_POINT_SIZE);
 
 	extern std::tuple<
 		ATTRIBUTE(PolygonMode),
-		ATTRIBUTE(FrontFace),
-		ATTRIBUTE(CullFace),
-		ATTRIBUTE(DepthMask),
-		ATTRIBUTE(DepthRangef),
-		ATTRIBUTE(DepthFunc),
-		ATTRIBUTE(AlphaFunc),
-		ATTRIBUTE(BlendFunc),
-		ATTRIBUTE(PrimitiveRestartIndex),
-		ATTRIBUTE(Scissor),
-		ATTRIBUTE(Viewport),
-
 		ATTRIBUTE(PolygonOffsetFill),
 		ATTRIBUTE(PolygonOffsetLine),
 		ATTRIBUTE(PolygonOffsetPoint),
+		ATTRIBUTE(Viewport),
+		ATTRIBUTE(FrontFace),
 		ATTRIBUTE(Culling),
-		ATTRIBUTE(DepthClamp),
+		ATTRIBUTE(CullFace),
+		ATTRIBUTE(ClipDistance)<0>,
+		ATTRIBUTE(ClipDistance)<1>,
+		ATTRIBUTE(ClipDistance)<2>,
+		ATTRIBUTE(ClipDistance)<3>,
+		ATTRIBUTE(ClipDistance)<4>,
+		ATTRIBUTE(ClipDistance)<5>,
+		ATTRIBUTE(ClipDistance)<6>,
+		ATTRIBUTE(ClipDistance)<7>,
+		ATTRIBUTE(ScissorTest),
+		ATTRIBUTE(Scissor),
 		ATTRIBUTE(DepthTest),
-		ATTRIBUTE(AlphaTest),
-		ATTRIBUTE(Blending),
+		ATTRIBUTE(DepthFunc),
+		ATTRIBUTE(DepthRangef),
+		ATTRIBUTE(DepthClamp),
+		ATTRIBUTE(DepthMask),
 		ATTRIBUTE(StencilTest),
+		ATTRIBUTE(AlphaTest),
+		ATTRIBUTE(AlphaFunc),
+		ATTRIBUTE(Blending),
+		ATTRIBUTE(BlendFunc),
+		ATTRIBUTE(BlendColor),
+		ATTRIBUTE(ColorMask),
+		ATTRIBUTE(PrimitiveRestart),
+		ATTRIBUTE(PrimitiveRestartIndex),
 		ATTRIBUTE(Multisampling),
 		ATTRIBUTE(AlphaToCoverage),
 		ATTRIBUTE(AlphaToOne),
-		ATTRIBUTE(PrimitiveRestart),
 		ATTRIBUTE(CubemapSeamless),
-		ATTRIBUTE(PointSize),
-		ATTRIBUTE(ScissorTest)
+		ATTRIBUTE(PointSize)
 	> Attributes;
 };
 
