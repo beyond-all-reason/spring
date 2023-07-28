@@ -94,6 +94,8 @@ namespace State {
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PolygonOffsetLine, GL_POLYGON_OFFSET_LINE);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PolygonOffsetPoint, GL_POLYGON_OFFSET_POINT);
 
+	ATTRIBUTE_TYPE_DEFS            (LineWidth, GL_LINE_WIDTH);
+
 	ATTRIBUTE_TYPE_DEFS            (Viewport, GL_VIEWPORT);
 
 	ATTRIBUTE_TYPE_DEFS            (FrontFace, GL_FRONT_FACE);
@@ -135,6 +137,7 @@ namespace State {
 		ATTRIBUTE(PolygonOffsetFill),
 		ATTRIBUTE(PolygonOffsetLine),
 		ATTRIBUTE(PolygonOffsetPoint),
+		ATTRIBUTE(LineWidth),
 		ATTRIBUTE(Viewport),
 		ATTRIBUTE(FrontFace),
 		ATTRIBUTE(Culling),

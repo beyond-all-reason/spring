@@ -5,6 +5,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/PushState.h"
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
@@ -18,15 +19,17 @@
 
 #include <cmath>
 
+using namespace GL::State;
+
+
 HUDDrawer* HUDDrawer::GetInstance()
 {
 	static HUDDrawer hud;
 	return &hud;
 }
 
-void HUDDrawer::PushState()
+void HUDDrawer::PushMatrices()
 {
-	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT);
 	glPushMatrix();
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
@@ -36,14 +39,13 @@ void HUDDrawer::PushState()
 		glPushMatrix();
 		glLoadIdentity();
 }
-void HUDDrawer::PopState()
+void HUDDrawer::PopMatrices()
 {
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 	glPopMatrix();
-	glPopAttrib();
 }
 
 void HUDDrawer::DrawModel(const CUnit* unit)
@@ -188,7 +190,6 @@ void HUDDrawer::DrawWeaponStates(const CUnit* unit)
 void HUDDrawer::DrawTargetReticle(const CUnit* unit)
 {
 	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_DEPTH_TEST);
 
 	// draw the reticle in world coordinates
 	glMatrixMode(GL_PROJECTION);
@@ -279,20 +280,25 @@ void HUDDrawer::Draw(const CUnit* unit)
 	if (unit == nullptr || !draw)
 		return;
 
-	PushState();
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	PushMatrices();
 
-		glPushMatrix();
-			DrawUnitDirectionArrow(unit);
-			DrawCameraDirectionArrow(unit);
-		glPopMatrix();
+	auto state = GL::PushState(
+		DepthTest(GL_FALSE),
+		Blending(GL_TRUE),
+		BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-		glEnable(GL_DEPTH_TEST);
+	glPushMatrix();
+		DrawUnitDirectionArrow(unit);
+		DrawCameraDirectionArrow(unit);
+	glPopMatrix();
+
+	{
+		auto state = GL::PushState(DepthTest(GL_TRUE));
 		DrawModel(unit);
-
 		DrawWeaponStates(unit);
-		DrawTargetReticle(unit);
-	PopState();
+	}
+
+	DrawTargetReticle(unit);
+
+	PopMatrices();
 }
