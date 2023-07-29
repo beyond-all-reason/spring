@@ -11,15 +11,15 @@
 
 /*
 	GL::State doesn't represent active GL state.
-	It represents GL state, that was last applied by GL::PushState objects, or any other object that performs state change via this interface.
+	It represents GL state, that was last applied by GL::SubState objects, or any other object that performs state change via this interface.
 
-	If a state was not set by a PushState object, it is internally set to Unknown.
-	When a state is Unknown and PushState object requests it, the state is fetched from GL.
-	When the last existing PushState object reverts a state, it is set back to Unknown.
-	Setting back to Unknown after the last PushState object enforces fetch from GL every time the first PushState object is created,
-		but makes it possible to insert PushState object in any part of the code without serious restrictions to the whole prior code.
+	If a state was not set by a SubState object, it is internally set to Unknown.
+	When a state is Unknown and SubState object requests it, the state is fetched from GL.
+	When the last existing SubState object reverts a state, it is set back to Unknown.
+	Setting back to Unknown after the last SubState object enforces fetch from GL every time the first SubState object is created,
+		but makes it possible to insert SubState object in any part of the code without serious restrictions to the whole prior code.
 
-	User must make sure that ordinary GL commands that are not tracked do not collide with PushState object's modifications during its lifetime.
+	User must make sure that ordinary GL commands that are not tracked do not collide with SubState object's modifications during its lifetime.
 */
 
 namespace GL
