@@ -3,7 +3,9 @@
 #pragma once
 
 #include "State.h"
+#include "System/FuncUtil.h"
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace GL
@@ -11,13 +13,26 @@ namespace GL
 
 namespace Impl
 {
-template<class... UniqueAttributeValueTypes> class PushState {
+template<class... UniqueAttributeValueTypes> class SubState {
+private:
+	using ValuesType = std::tuple<UniqueAttributeValueTypes...>;
+
 public:
-	inline PushState(UniqueAttributeValueTypes... newValues)
+	inline SubState(UniqueAttributeValueTypes... newValues)
 	{
 		((std::get<UniqueAttributeValueTypes>(savedValues) = std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)), ...);
 		((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = newValues), ...);
 	}
+
+	template<class UniqueAttributeValueType, std::enable_if_t<TupleContainsType<ValuesType, UniqueAttributeValueType>, bool> = true>
+	inline const SubState& operator<<(UniqueAttributeValueType newValue) const
+	{
+		if (pushed) {
+			std::get<typename UniqueAttributeValueType::AttributeType>(State::Attributes) = newValue;
+		}
+		return *this;
+	}
+
 	inline void pop()
 	{
 		if (pushed) {
@@ -25,21 +40,22 @@ public:
 			pushed = false;
 		}
 	}
-	inline ~PushState()
+
+	inline ~SubState()
 	{
 		pop();
 	}
 
 private:
-	std::tuple<UniqueAttributeValueTypes...> savedValues;
+	ValuesType savedValues;
 	bool pushed = true;
 };
 }
 
 template<class... ArgTypes>
-auto PushState(ArgTypes&&... args)
+auto SubState(ArgTypes&&... args)
 {
-	return Impl::PushState<ArgTypes...>(std::forward<ArgTypes>(args)...);
+	return Impl::SubState<ArgTypes...>(std::forward<ArgTypes>(args)...);
 }
 
 }

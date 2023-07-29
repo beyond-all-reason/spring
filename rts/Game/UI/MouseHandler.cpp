@@ -25,7 +25,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/GL/PushState.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Units/Unit.h"
@@ -575,7 +575,7 @@ void CMouseHandler::DrawSelectionBox() const
 		{tpLeft , cmdColors.mouseBox},
 	});
 
-	auto state = GL::PushState(
+	auto state = GL::SubState(
 		DepthTest(GL_FALSE),
 		Blending(GL_TRUE),
 		BlendFunc((GLenum)cmdColors.MouseBoxBlendSrc(), (GLenum)cmdColors.MouseBoxBlendDst()),

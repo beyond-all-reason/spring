@@ -46,3 +46,16 @@ namespace Impl
 // This particular helper accepts a nullptr, in which case it falls back to a specified default signature
 template<auto FuncPtr, class... FallbackSignature>
 using FuncPtrSignature = typename Impl::FuncPtrSignatureTpl<FuncPtr, FallbackSignature...>::type;
+
+
+namespace Impl
+{
+	template<class TupleType, class Type>
+	struct TupleContainsType;
+
+	template<class Type, class... TupleElementTypes>
+	struct TupleContainsType<std::tuple<TupleElementTypes...>, Type> : std::disjunction<std::is_same<Type, TupleElementTypes>...> {};
+}
+
+template<class TupleType, class Type>
+constexpr inline bool TupleContainsType = Impl::TupleContainsType<TupleType, Type>::value;

@@ -35,7 +35,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/GL/PushState.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
@@ -1133,7 +1133,7 @@ void CMiniMap::Draw()
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		auto state = GL::PushState(
+		auto state = GL::SubState(
 			DepthTest(GL_FALSE),
 			DepthFunc(GL_LEQUAL),
 			DepthMask(GL_FALSE));

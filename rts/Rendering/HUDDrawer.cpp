@@ -5,7 +5,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/PushState.h"
+#include "Rendering/GL/SubState.h"
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
@@ -282,7 +282,7 @@ void HUDDrawer::Draw(const CUnit* unit)
 
 	PushMatrices();
 
-	auto state = GL::PushState(
+	auto state = GL::SubState(
 		DepthTest(GL_FALSE),
 		Blending(GL_TRUE),
 		BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -292,13 +292,12 @@ void HUDDrawer::Draw(const CUnit* unit)
 		DrawCameraDirectionArrow(unit);
 	glPopMatrix();
 
-	{
-		auto state = GL::PushState(DepthTest(GL_TRUE));
+	state << DepthTest(GL_TRUE);
 		DrawModel(unit);
 		DrawWeaponStates(unit);
-	}
 
-	DrawTargetReticle(unit);
+	state << DepthTest(GL_FALSE);
+		DrawTargetReticle(unit);
 
 	PopMatrices();
 }
