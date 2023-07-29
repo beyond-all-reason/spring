@@ -221,6 +221,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitBuildFacing);
 	REGISTER_LUA_CFUNC(GetUnitIsBuilding);
 	REGISTER_LUA_CFUNC(GetUnitWorkerTask);
+	REGISTER_LUA_CFUNC(GetUnitEffectiveBuildRange);
 	REGISTER_LUA_CFUNC(GetUnitCurrentBuildPower);
 	REGISTER_LUA_CFUNC(GetUnitHarvestStorage);
 	REGISTER_LUA_CFUNC(GetUnitBuildParams);
@@ -4271,6 +4272,42 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 	} else {
 		return 0;
 	}
+}
+
+/***
+ *
+ * @function Spring.GetUnitEffectiveBuildRange
+ * Useful for setting move goals manually.
+ * @number unitID
+ * @number buildeeDefID
+ * @treturn number effectiveBuildRange counted to the center of prospective buildee
+ */
+int LuaSyncedRead::GetUnitEffectiveBuildRange(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto builderCAI = dynamic_cast <const CBuilderCAI*> (unit->commandAI);
+	if (builderCAI == nullptr)
+		return 0;
+
+	const auto buildeeDefID = luaL_checkint(L, 2);
+	const auto unitDef = unitDefHandler->GetUnitDefByID(buildeeDefID);
+	if (unitDef == nullptr)
+		luaL_error(L, "Nonexistent buildeeDefID %d passed to Spring.GetUnitEffectiveBuildRange", (int) buildeeDefID);
+
+	const auto model = unitDef->LoadModel();
+	if (model == nullptr)
+		return 0;
+
+	/* FIXME: this is what BuilderCAI does, but can radius actually
+	 * be negative? Sounds worth asserting otherwise at model load. */
+	const auto radius = std::max(0.f, model->radius);
+
+	const auto effectiveBuildRange = builderCAI->GetBuildRange(radius);
+	lua_pushnumber(L, effectiveBuildRange);
+	return 1;
 }
 
 /***
