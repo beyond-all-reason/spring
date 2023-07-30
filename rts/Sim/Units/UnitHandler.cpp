@@ -11,10 +11,13 @@
 #include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
+#include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
+#include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
@@ -286,6 +289,9 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	if (activeSlowUpdateUnit > std::distance(activeUnits.begin(), it))
 		--activeSlowUpdateUnit;
 
+	assert( Sim::registry.valid(delUnit->entityReference) );
+	Sim::registry.destroy(delUnit->entityReference);
+
 	activeUnits.erase(it);
 
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam,           0), delUnit);
@@ -303,98 +309,8 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 void CUnitHandler::UpdateUnitMoveTypes()
 {
 	SCOPED_TIMER("Sim::Unit::MoveType");
-
-	if (modInfo.forceCollisionAvoidanceSingleThreaded)
-	{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsST");
-		std::size_t len = activeUnits.size();
-		for (std::size_t i=0; i<len; ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			unit->SanityCheck();
-			unit->PreUpdate();
-
-			moveType->UpdatePreCollisionsMt();
-			moveType->UpdatePreCollisions();
-		}
-	} else {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
-		for_mt(0, activeUnits.size(), [this](const int i){
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			unit->SanityCheck();
-			unit->PreUpdate();
-
-			moveType->UpdatePreCollisionsMt();
-		});
-		}
-
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
-		std::size_t len = activeUnits.size();
-		for (std::size_t i=0; i<len; ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdatePreCollisions();
-		}
-		}
-	}
-
-	if (modInfo.forceCollisionsSingleThreaded) {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionST");
-		for (int i = 0; i < activeUnits.size(); ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdateCollisionDetections();
-		}
-		}
-	} else {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionMT");
-		for_mt(0, activeUnits.size(), [this](const int i){
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdateCollisionDetections();
-		}
-		);
-		}
-	}
-
-	{
-	// SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		CUnit* unit = activeUnits[activeUpdateUnit];
-		AMoveType* moveType = unit->moveType;
-
-		moveType->ProcessCollisionEvents();
-	}
-	}
-
-	{
-	SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		CUnit* unit = activeUnits[activeUpdateUnit];
-		AMoveType* moveType = unit->moveType;
-
-		if (moveType->Update())
-			eventHandler.UnitMoved(unit);
-
-		// this unit is not coming back, kill it now without any death
-		// sequence (s.t. deathScriptFinished becomes true immediately)
-		if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-			unit->ForcedKillUnit(nullptr, false, true, false);
-
-		unit->SanityCheck();
-		assert(activeUnits[activeUpdateUnit] == unit);
-	}
-	}
+	GroundMoveSystem::Update();
+	GeneralMoveSystem::Update();
 }
 
 void CUnitHandler::UpdateUnitLosStates()

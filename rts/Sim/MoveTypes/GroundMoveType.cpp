@@ -4,6 +4,7 @@
 
 #include "GroundMoveType.h"
 #include "MoveDefHandler.h"
+#include "Components/MoveTypesComponents.h"
 #include "ExternalAI/EngineOutHandler.h"
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
@@ -14,6 +15,7 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "MoveMath/MoveMath.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/GeometricObjects.h"
@@ -51,6 +53,8 @@ spring::spinlock geometryLock;
 #else
 #define DEBUG_DRAWING_ENABLED false
 #endif
+
+using namespace MoveTypes;
 
 #define LOG_SECTION_GMT "GroundMoveType"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
@@ -441,10 +445,15 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 	killFeatures.reserve(UNIT_EVENTS_RESERVE);
 	killUnits.reserve(UNIT_EVENTS_RESERVE);
 	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
+
+	Sim::registry.emplace_or_replace<GroundMoveType>(owner->entityReference, owner->id);
+	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
 }
 
 CGroundMoveType::~CGroundMoveType()
 {
+	Sim::registry.remove<GroundMoveType>(owner->entityReference);
+
 	if (pathID == 0)
 		return;
 
@@ -1854,6 +1863,8 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			//
 			cwp = pathManager->NextWayPoint(owner, pathID, 0, pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 			nwp = pathManager->NextWayPoint(owner, pathID, 0, cwp, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+
+			wantRepath = false;
 		}
 
 		if (DEBUG_DRAWING_ENABLED) {
@@ -1939,12 +1950,17 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
 			const float3 targetPos = cwp;
 
+			// path manager returns the first point beyond searchRadius, so add a little extra
+			// to the cut off limit to allow for that. 
+			// const float radiusLimit = searchRadius + WAYPOINT_RADIUS*2;
+			// const float3 targetPos = (cwpDistSq <= Square(radiusLimit)) ? cwp : pos + (cwp - pos).SafeNormalize() * radiusLimit;
+
 			// check the rectangle between pos and cwp for obstacles
 			// if still further than SS elmos from waypoint, disallow skipping
 			// note: can somehow cause units to move in circles near obstacles
 			// (mantis3718) if rectangle is too generous in size
 			const bool rangeTest = owner->moveDef->DoRawSearch(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
-			// owner->moveDef->TestMoveSquareRange(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
+			// const bool rangeTest = owner->moveDef->TestMoveSquareRange(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
 			const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 
 			// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)

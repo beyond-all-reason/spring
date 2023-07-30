@@ -2,6 +2,8 @@
 # This list was created using this *nix shell command:
 # > find . -name "*.cpp"" | sort
 add_library(engineSim STATIC
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helper.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Registry.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/Feature.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDefHandler.cpp"
@@ -48,6 +50,8 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/ScriptMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/StaticMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/HoverAirMoveType.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GeneralMoveSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GroundMoveSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObjectDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/WorldObject.cpp"

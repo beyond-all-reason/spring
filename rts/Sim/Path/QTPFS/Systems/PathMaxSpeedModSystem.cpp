@@ -55,20 +55,21 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     
     // TODO: setup at beginning and attach to component - only needs to be done once at the beginning of each sweep.
     // Prepare list of entity IDs for MT section.
-    entt::entity entities[MoveDefHandler::MAX_MOVE_DEFS];
-    int layersToUpdateCount = 0;
-    {
-        layersView.each([&entities, &layersToUpdateCount, &layersView](entt::entity entity){
-                auto layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-                if (layer.updateInProgress)
-                    entities[layersToUpdateCount++] = entity;
-            });
-    }
+    // entt::entity entities[MoveDefHandler::MAX_MOVE_DEFS];
+    // int layersToUpdateCount = 0;
+    // {
+    //     layersView.each([&entities, &layersToUpdateCount, &layersView](entt::entity entity){
+    //             auto layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
+    //             if (layer.updateInProgress)
+    //                 entities[layersToUpdateCount++] = entity;
+    //         });
+    // }
 
     // One thread per layer: get maximum speed mod from the nodes walked thus far.
-    for_mt(0, layersToUpdateCount, [&layersView, &comp, dataChunk, pm, &entities](int idx){
-    // for (int idx = 0; idx < layersToUpdateCount; idx++) {
-        entt::entity entity = entities[idx];
+    // for_mt(0, layersToUpdateCount, [&layersView, &comp, dataChunk, pm, &entities](int idx){
+    for_mt(0, layersView.size(), [&layersView, &comp, dataChunk, pm](int idx){
+        // entt::entity entity = entities[idx];
+        entt::entity entity = layersView.storage<NodeLayerMaxSpeedSweep>()[idx];
         auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
 
         const int idxBeg = ((dataChunk + 0) * layer.updateMaxNodes) / comp.refreshTimeInFrames;
