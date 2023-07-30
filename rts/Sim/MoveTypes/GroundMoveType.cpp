@@ -1829,6 +1829,8 @@ void CGroundMoveType::ReRequestPath(bool forceRequest) {
 }
 
 bool CGroundMoveType::CanSetNextWayPoint(int thread) {
+	ZoneScoped;
+
 	assert(!useRawMovement);
 
 	//LOG("%s activated", __func__);

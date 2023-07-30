@@ -296,6 +296,7 @@ bool MoveDef::DoRawSearch(
 	int* maxBlockBitPtr,
 	int thread
 ) {
+	ZoneScoped;
 	assert(testTerrain || testObjects);
 
 	const int2 startBlock(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE);

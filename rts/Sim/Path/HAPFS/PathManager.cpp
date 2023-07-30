@@ -559,15 +559,6 @@ CPathManager::MultiPath CPathManager::IssuePathRequest(
 	return newPath;
 }
 
-bool CPathManager::PathUpdated(unsigned int pathID) {
-	MultiPath localMultiPath = GetMultiPathMT(pathID);
-	if (!localMultiPath.updated) return false;
-
-	localMultiPath.updated = false;
-	UpdateMultiPathMT(pathID, localMultiPath);
-	return true;
-}
-
 
 // converts part of a med-res path into a max-res path
 void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const

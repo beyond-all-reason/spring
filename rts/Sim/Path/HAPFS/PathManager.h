@@ -153,8 +153,6 @@ public:
 		bool synced
 	) override;
 
-	bool PathUpdated(unsigned int pathID) override;
-
 	/**
 	 * Returns waypoints of the max-resolution path segments.
 	 * @param pathID
