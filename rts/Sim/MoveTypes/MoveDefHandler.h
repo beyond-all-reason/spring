@@ -29,8 +29,8 @@ struct MoveDef {
 
 	bool DoRawSearch(
 		const CSolidObject* collider,
-		const float3 rangeMins,
-		const float3 rangeMaxs,
+		const float3 startPos,
+		const float3 endPos,
 		const float3 testMoveDir,
 		bool testTerrain,
 		bool testObjects,

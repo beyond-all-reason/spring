@@ -1894,7 +1894,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		const float absTurnSpeed = turnRate;
 		const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
 
-		const float turnRadius = std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f);
+		const float turnRadius = std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 2.f) * 1.05f;
 		const float waypointDot = Clamp(waypointDir.dot(flatFrontDir * dirSign), -1.0f, 1.0f);
 
 		#if 1
@@ -1915,7 +1915,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		#endif
 
 		// wp outside turning circle
-		if (currWayPointDist > (turnRadius * 2.0f))
+		if (currWayPointDist > turnRadius)
 			return false;
 
 		#ifdef PATHING_DEBUG
@@ -1961,7 +1961,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			// if still further than SS elmos from waypoint, disallow skipping
 			// note: can somehow cause units to move in circles near obstacles
 			// (mantis3718) if rectangle is too generous in size
-			const bool rangeTest = owner->moveDef->DoRawSearch(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
+			const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, true, nullptr, nullptr, thread);
 			// const bool rangeTest = owner->moveDef->TestMoveSquareRange(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
 			const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 
