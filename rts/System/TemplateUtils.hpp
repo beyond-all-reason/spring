@@ -148,6 +148,22 @@ namespace spring {
 	constexpr inline bool tuple_contains_type_v = tuple_contains_type<TupleType, Type>::value;
 
 
+	template <typename T, typename Tuple>
+	struct tuple_type_index;
+
+	template <typename T, typename... Types>
+	struct tuple_type_index<T, std::tuple<T, Types...>> {
+		static const std::size_t value = 0;
+	};
+
+	template <typename T, typename U, typename... Types>
+	struct tuple_type_index<T, std::tuple<U, Types...>> {
+		static const std::size_t value = 1 + tuple_type_index<T, std::tuple<Types...>>::value;
+	};
+	template <typename T, typename Tuple>
+	constexpr size_t tuple_type_index_v = tuple_type_index<T, Tuple>::value;
+
+
 	template<typename FuncType>
 	struct func_signature;
 
@@ -158,6 +174,13 @@ namespace spring {
 
 	template<typename FuncType>
 	using func_signature_t = typename func_signature<FuncType>::type;
+
+	auto arg_types_tuple_t(const F&) -> typename func_signature<F>::type;
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arg_types_tuple_t(const F*) -> typename func_signature<F>::type;
 
 
 	// This particular helper accepts a nullptr, in which case it falls back to a specified default signature, or just an empty tuple

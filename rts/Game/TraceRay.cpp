@@ -102,6 +102,8 @@ inline static bool TestTrajectoryConeHelper(
 	// cylinder, not an infinitely thin line as safety
 	// measure against friendly-fire damage in tightly
 	// packed unit groups)
+	// 
+	// baseSize is usually hardcoded to 0 in the functions calling this 
 	//
 	// return true iff the world-space point <x, f(x)>
 	// lies on or inside the object's collision volume
@@ -112,6 +114,7 @@ inline static bool TestTrajectoryConeHelper(
 	//   THE TRAJECTORY CURVE MIGHT STILL INTERSECT
 	//   EVEN WHEN <x, f(x)> DOES NOT LIE INSIDE CV
 	//   SO THIS CAN GENERATE FALSE NEGATIVES
+	//   Chord checks should solve this problem. 
 	const CollisionVolume* cv = &obj->collisionVolume;
 
 	const float3 cvRelVec = cv->GetWorldSpacePos(obj) - tstPos;
@@ -125,29 +128,49 @@ inline static bool TestTrajectoryConeHelper(
 	// (if object-distance is 0, tstPos == hitPos)
 	const float3 hitVec = tstDir * cvRelDst;
 	const float3 hitPos = (tstPos + hitVec) + (UpVector * (quadratic * cvRelDst * cvRelDst + linear * cvRelDst));
-
+	float3 endPos = 0.f; 
 	bool ret = false;
 
-	if (obj->GetBlockingMapID() < unitHandler.MaxUnits()) {
-		// first test the muzzle-position, then the impact-position
-		// (if neither is inside obstacle's CV, the weapon can fire)
-		ret = ret || ((cv->GetPointSurfaceDistance(static_cast<const CUnit*>(obj), nullptr, tstPos) - coneSize) <= 0.0f);
-		ret = ret || ((cv->GetPointSurfaceDistance(static_cast<const CUnit*>(obj), nullptr, hitPos) - coneSize) <= 0.0f);
-	} else {
-		ret = ret || ((cv->GetPointSurfaceDistance(static_cast<const CFeature*>(obj), nullptr, tstPos) - coneSize) <= 0.0f);
-		ret = ret || ((cv->GetPointSurfaceDistance(static_cast<const CFeature*>(obj), nullptr, hitPos) - coneSize) <= 0.0f);
+	CollisionQuery cq;
+	// chord check to hitPos
+	const CMatrix44f objTransform = obj->GetTransformMatrix(true);
+
+	// use heuristic to choose which chord to check
+	// if projectile is traveling upwards, check from muzzle to position
+	// if projectile is traveling downwards, check from position to target
+	if ((2 * quadratic * cvRelDst + linear) > 0) {
+		if (CCollisionHandler::DetectHit(obj, objTransform, tstPos, hitPos, &cq, true)) {
+			ret = true;
+		}
+	}
+	else {
+		//only compute endPos if needed
+		endPos = (tstPos + tstDir * length) + (UpVector * (quadratic * length * length + linear * length));
+		if (CCollisionHandler::DetectHit(obj, objTransform, hitPos, endPos, &cq, true)) {
+			ret = true;
+		}
 	}
 
-
 	if (globalRendering->drawDebugTraceRay) {
-		// FIXME? seems to under-estimate gravity near edge of range
-		// (place objects along trajectory of a cannon to visualize)
+
 		#define go geometricObjects
 
 		if (ret) {
-			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 1, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
+			// red line pointing to hitPos
+			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
+			// blue lines showing chord checks
+			if ((2 * quadratic * cvRelDst + linear) > 0) {
+				go->SetColor(go->AddLine(tstPos, hitPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
+			}
+			else {
+				go->SetColor(go->AddLine(hitPos, endPos, 3, 0, GAME_SPEED), 0.0f, 0.0f, 1.0f, 1.0f);
+			}
+			// While using this debug, on SlowUpdate Frames, CWeapon::TryTargetHeading will assume the unit chassis rotates to face the target, 
+			// so the tstPos will not be lined up with any part of the unit. 
+			// resulting in two visible debug lines. One from the weaponmuzzle, one from the rotated weaponmuzzle
 		} else {
-			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 1, GAME_SPEED), 0.0f, 1.0f, 0.0f, 1.0f);
+			// green line pointing to hitPos
+			go->SetColor(go->AddLine(tstPos + hitVec, hitPos, 3, 0, GAME_SPEED), 0.0f, 1.0f, 0.0f, 1.0f);
 		}
 
 		#undef go

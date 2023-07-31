@@ -111,7 +111,7 @@ public:
 	 * @param dir raw directory path, for example "maps/" or "maps",
 	 *   case-insensitive
 	 */
-	std::vector<std::string> GetFilesInDir(const std::string& dir, Section section);
+	std::vector<std::string> GetFilesInDir(const std::string& dir, bool recursive, Section section);
 
 	/**
 	 * Returns all the sub-directories in the given (virtual) directory without
@@ -119,7 +119,7 @@ public:
 	 * @param dir raw directory path, for example "maps/" or "maps",
 	 *   case-insensitive
 	 */
-	std::vector<std::string> GetDirsInDir(const std::string& dir, Section section);
+	std::vector<std::string> GetDirsInDir(const std::string& dir, bool recursive, Section section);
 
 
 	bool HasTempArchive(const std::string& archiveName) const { return (HasArchive(archiveName, GetTempArchiveSection(archiveName))); }

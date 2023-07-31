@@ -46,9 +46,14 @@ Lua:
    and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
  - rules params now support the boolean type. Skirmish AI and the rules param selection filter can
    read them via existing numerical interface by using 0 and 1.
+ - add `Spring.GetUnitEffectiveBuildRange(builderID, buildeeDefID)`. Returns the effective build range
+   for building given target, counted from the center of the prospective target's center. Useful for
+   setting move goals manually.
  - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
    of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
    and run in the order they were added, just before that frame's GameFrame call-in.
+ - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
+   matches in subdirs, recursively.
  
 
 Game Setup:
@@ -82,6 +87,8 @@ Sim:
  - damage in unit defs can now be 0 (previously capped at 0.0001)
  - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but keep in mind weapons
    will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
+ - nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius
+   instead of its center. Mobile builders already worked this way.
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.
@@ -180,6 +187,7 @@ Fixes:
    features when looking at certain oblique angles
  - Fix using Set<Any>RulesParam with an incorrect type leaving that param set with a value of 0.
  - Fix COB SetMaxReloadTime receiving a value 10% smaller than it should
+ - Fix builders not placing nanoframes from their maximum range
 
 
 

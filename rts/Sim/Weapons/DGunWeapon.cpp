@@ -12,7 +12,8 @@ CR_REG_METADATA(CDGunWeapon, )
 
 void CDGunWeapon::FireImpl(const bool scriptCall)
 {
-	float3 dir = wantedDir;
+	float3 dir = currentTargetPos - weaponMuzzlePos;
+	dir.Normalize();
 
 	dir += (gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());
 	dir.Normalize();

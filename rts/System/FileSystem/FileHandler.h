@@ -55,8 +55,8 @@ public:
 	static bool InWriteDir(const std::string& path);
 
 	static std::vector<std::string> FindFiles(const std::string& path, const std::string& pattern);
-	static std::vector<std::string> DirList(const std::string& path, const std::string& pattern, const std::string& modes);
-	static std::vector<std::string> SubDirs(const std::string& path, const std::string& pattern, const std::string& modes);
+	static std::vector<std::string> DirList(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
+	static std::vector<std::string> SubDirs(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
 
 	static std::string AllowModes(const std::string& modes, const std::string& allowed);
 	static std::string ForbidModes(const std::string& modes, const std::string& forbidden);
@@ -69,11 +69,11 @@ protected:
 	virtual bool TryReadFromRawFS(const std::string& fileName);
 	virtual bool TryReadFromVFS(const std::string& fileName, int section);
 
-	static bool InsertRawFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern);
-	static bool InsertVFSFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern, int section);
+	static bool InsertRawFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern, bool recursive);
+	static bool InsertVFSFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern, bool recursive, int section);
 
-	static bool InsertRawDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern);
-	static bool InsertVFSDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, int section);
+	static bool InsertRawDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive);
+	static bool InsertVFSDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive, int section);
 
 	std::string fileName;
 	std::ifstream ifs;
