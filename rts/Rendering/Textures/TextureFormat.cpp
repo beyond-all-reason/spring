@@ -1,18 +1,5 @@
 #include "TextureFormat.h"
 
-const spring::unordered_map<GLenum, GLenum> GL::Impl::TargetToBindingQuery {
-	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D                   },
-	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D                   },
-	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D                   },
-	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY             },
-	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY             },
-	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE            },
-	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP             },
-	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER               },
-	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE       },
-	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
-};
-
 GLenum GL::GetInternalFormatDataFormat(GLenum internalFormat) {
 	GLenum dataFormat;
 	switch (internalFormat) {
@@ -119,4 +106,21 @@ GLenum GL::GetInternalFormatDataType(GLenum internalFormat) {
 		} break;
 	}
 	return dataType;
+}
+
+GLenum GL::GetBindingQueryFromTarget(GLenum target) {
+	switch (target) {
+		case GL_TEXTURE_1D:                   return GL_TEXTURE_BINDING_1D;
+		case GL_TEXTURE_2D:                   return GL_TEXTURE_BINDING_2D;
+		case GL_TEXTURE_3D:                   return GL_TEXTURE_BINDING_3D;
+		case GL_TEXTURE_1D_ARRAY:             return GL_TEXTURE_BINDING_1D_ARRAY;
+		case GL_TEXTURE_2D_ARRAY:             return GL_TEXTURE_BINDING_2D_ARRAY;
+		case GL_TEXTURE_RECTANGLE:            return GL_TEXTURE_BINDING_RECTANGLE;
+		case GL_TEXTURE_CUBE_MAP:             return GL_TEXTURE_BINDING_CUBE_MAP;
+		case GL_TEXTURE_BUFFER:               return GL_TEXTURE_BINDING_BUFFER;
+		case GL_TEXTURE_2D_MULTISAMPLE:       return GL_TEXTURE_BINDING_2D_MULTISAMPLE;
+		case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: return GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY;
+		default: break;
+	}
+	return 0;
 }

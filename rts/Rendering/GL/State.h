@@ -4,7 +4,7 @@
 
 #include "myGL.h"
 #include "glHelpers.h"
-#include "System/FuncUtil.h"
+#include "System/TemplateUtils.hpp"
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -27,7 +27,7 @@ namespace GL
 
 template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamNames> class StateAttribute {
 private:
-	using GLParamsType = FuncPtrSignature<DedicatedGLFuncPtrPtr, GLboolean>;
+	using GLParamsType = spring::func_ptr_signature_t<DedicatedGLFuncPtrPtr, GLboolean>;
 	using StatusType = bool;
 	static constexpr StatusType Unknown = false;
 	static constexpr StatusType WasUnknown = false;
@@ -176,5 +176,7 @@ namespace State {
 
 #undef ATTRIBUTE
 #undef ATTRIBUTE_TYPE_DEFS
+#undef CAPABILITY_ATTRIBUTE_TYPE_DEFS
+#undef MULTI_CAPABILITY_ATTRIBUTE_TYPE_DEFS
 
 }

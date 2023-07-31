@@ -17,13 +17,20 @@
 namespace Impl {
 	static inline bool IsValidLuaTextureTarget(GLenum target) {
 		switch(target) {
-			case GL_TEXTURE_1D_ARRAY:
-			case GL_TEXTURE_RECTANGLE:
-			case GL_TEXTURE_BUFFER:
-			case GL_TEXTURE_2D_MULTISAMPLE_ARRAY: return false;
+			case GL_TEXTURE_1D:
+			case GL_TEXTURE_2D:
+			case GL_TEXTURE_3D:
+			//case GL_TEXTURE_1D_ARRAY:
+			case GL_TEXTURE_2D_ARRAY:
+			//case GL_TEXTURE_RECTANGLE:
+			case GL_TEXTURE_CUBE_MAP:
+			//case GL_TEXTURE_BUFFER:
+			case GL_TEXTURE_2D_MULTISAMPLE:
+			//case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+				return true;
 			default: break;
 		}
-		return true;
+		return false;
 	}
 }
 

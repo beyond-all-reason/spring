@@ -7,7 +7,8 @@
 #include <tuple>
 
 
-// Must pass expectedValuesN to convert from other integer types to GLint
+// Get gl parameter values into a homogenous GL-typed variable (single or array)
+// Must pass expectedValuesN to convert from GLint to other integer types (GLenum, GLsizei and such)
 template<class GLType>
 inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = -1)
 {
@@ -40,21 +41,26 @@ inline void glGetAny<GLdouble>(GLenum paramName, GLdouble* data, const int)
 namespace GL
 {
 
-template<class ResultTupleType, GLenum... GLParamNames>
+template<class ResultTupleType, GLenum GLParamName>
 inline ResultTupleType FetchActiveStateAttribValues()
 {
-	static constexpr GLenum GLParamNameFirst = std::get<0>(std::make_tuple(GLParamNames...));
-	static constexpr GLenum GLParamNameSecond = (sizeof...(GLParamNames) > 1? std::get<sizeof...(GLParamNames)-1>(std::make_tuple(GLParamNames...)) : 0);
-	static constexpr size_t ValuesPerParam = std::tuple_size_v<ResultTupleType>/sizeof...(GLParamNames);
-
 	ResultTupleType resultTuple;
-	glGetAny(GLParamNameFirst, &std::get<0>(resultTuple), ValuesPerParam);
-	if constexpr(GLParamNameSecond) glGetAny(GLParamNameSecond, &std::get<ValuesPerParam-1>(resultTuple), ValuesPerParam);
+	glGetAny(GLParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>);
+	return resultTuple;
+}
+template<class ResultTupleType, GLenum GLFirstParamName, GLenum GLSecondParamName>
+inline ResultTupleType FetchActiveStateAttribValues()
+{
+	ResultTupleType resultTuple;
+	glGetAny(GLFirstParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
+	glGetAny(GLSecondParamName, &std::get<std::tuple_size_v<ResultTupleType>/2-1>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
 	return resultTuple;
 }
 
 }
 
+// Set gl attribute, whether it is capability (glEnable/glDisable) or dedicated, via this single interface
+// Pass DedicatedGLFuncPtrPtr *if* it exists, nullptr if it doesn't
 template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamName, class AttribValuesTupleType>
 inline void glSetAny(AttribValuesTupleType newValues)
 {
@@ -62,7 +68,7 @@ inline void glSetAny(AttribValuesTupleType newValues)
 	{
 		std::apply(*DedicatedGLFuncPtrPtr, newValues);
 	}
-	else
+	else // glEnable/glDisable(attribute)
 	{
 		(std::get<0>(newValues) == GL_TRUE? glEnable : glDisable)(GLParamName...);
 	}

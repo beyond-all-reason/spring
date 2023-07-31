@@ -3,7 +3,7 @@
 #pragma once
 
 #include "State.h"
-#include "System/FuncUtil.h"
+#include "System/TemplateUtils.hpp"
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -24,7 +24,7 @@ public:
 		((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = newValues), ...);
 	}
 
-	template<class UniqueAttributeValueType, std::enable_if_t<TupleContainsType<ValuesType, UniqueAttributeValueType>, bool> = true>
+	template<class UniqueAttributeValueType, std::enable_if_t<spring::tuple_contains_type_v<ValuesType, UniqueAttributeValueType>, bool> = true>
 	inline const SubState& operator<<(UniqueAttributeValueType newValue) const
 	{
 		if (pushed) {

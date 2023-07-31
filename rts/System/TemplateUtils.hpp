@@ -1,4 +1,8 @@
+#pragma once
+
 #include <functional>
+#include <tuple>
+#include <type_traits>
 
 namespace spring {
 	template<bool...> struct bool_pack;
@@ -132,4 +136,40 @@ namespace spring {
 
 	template<typename T>
 	using return_type_t = typename return_type<T>::type;
+	
+
+	template<typename TupleType, typename Type>
+	struct tuple_contains_type;
+
+	template<typename Type, typename... TupleElementTypes>
+	struct tuple_contains_type<std::tuple<TupleElementTypes...>, Type> : std::disjunction<std::is_same<Type, TupleElementTypes>...> {};
+
+	template<typename TupleType, typename Type>
+	constexpr inline bool tuple_contains_type_v = tuple_contains_type<TupleType, Type>::value;
+
+
+	template<typename FuncType>
+	struct func_signature;
+
+	template<typename ReturnType, typename... ArgTypes>
+	struct func_signature<ReturnType(ArgTypes...)> {
+		using type = std::tuple<ArgTypes...>;
+	};
+
+	template<typename FuncType>
+	using func_signature_t = typename func_signature<FuncType>::type;
+
+
+	// This particular helper accepts a nullptr, in which case it falls back to a specified default signature, or just an empty tuple
+	template<auto FuncPtr, typename... FallbackSignature>
+	struct func_ptr_signature {
+		using type = func_signature_t<std::remove_pointer_t<std::remove_pointer_t<decltype(FuncPtr)>>>;
+	};
+	template<typename... FallbackSignature>
+	struct func_ptr_signature<nullptr, FallbackSignature...> {
+		using type = std::tuple<FallbackSignature...>;
+	};
+
+	template<auto FuncPtr, typename... FallbackSignature>
+	using func_ptr_signature_t = typename func_ptr_signature<FuncPtr, FallbackSignature...>::type;
 };
