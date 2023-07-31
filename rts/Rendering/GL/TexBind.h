@@ -8,6 +8,7 @@
 namespace GL
 {
 
+// A texture bind control object, that automatically unbinds texture and restores active tex unit upon destruction
 class TexBind {
 public:
 	inline TexBind(int slot, GLenum target, GLuint textureID)
