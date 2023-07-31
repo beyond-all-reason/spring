@@ -175,6 +175,10 @@ namespace spring {
 	template<typename FuncType>
 	using func_signature_t = typename func_signature<FuncType>::type;
 
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
 	auto arg_types_tuple_t(const F&) -> typename func_signature<F>::type;
 	template<
 		typename F,
