@@ -1260,8 +1260,8 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 	if (!IsFinalized())
 		return noPathPoint;
-	if (!synced)
-		return noPathPoint;
+	// if (!synced)
+	// 	return noPathPoint;
 
 	// dangling ID after a re-request failure or regular deletion
 	// return an error-vector so GMT knows it should stop the unit
@@ -1311,6 +1311,9 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 	unsigned int minPointIdx = livePath->GetNextPointIndex();
 	unsigned int nxtPointIdx = 1;
+
+	if (minPointIdx == livePath->NumPoints() - 1)
+		return noPathPoint;
 
 	for (unsigned int i = (livePath->GetNextPointIndex()); i < (livePath->NumPoints() - 1); i++) {
 		const float radiusSq = (point - livePath->GetPoint(i)).SqLength2D();
