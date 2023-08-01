@@ -462,13 +462,12 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 	killUnits.reserve(UNIT_EVENTS_RESERVE);
 	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
 
-	Sim::registry.emplace_or_replace<GroundMoveType>(owner->entityReference, owner->id);
-	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
+	Connect();
 }
 
 CGroundMoveType::~CGroundMoveType()
 {
-	Sim::registry.remove<GroundMoveType>(owner->entityReference);
+	Disconnect();
 
 	if (pathID == 0)
 		return;
@@ -2733,7 +2732,14 @@ void CGroundMoveType::LeaveTransport()
 	oldPos = owner->pos + UpVector * 0.001f;
 }
 
+void CGroundMoveType::Connect() {
+	Sim::registry.emplace_or_replace<GroundMoveType>(owner->entityReference, owner->id);
+	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
+}
 
+void CGroundMoveType::Disconnect() {
+	Sim::registry.remove<GroundMoveType>(owner->entityReference);
+}
 
 void CGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) { KeepPointingTo(unit->pos, distance, aggressive); }
 void CGroundMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive) {

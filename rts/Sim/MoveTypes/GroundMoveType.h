@@ -54,6 +54,8 @@ public:
 	void TestNewTerrainSquare();
 	bool CanApplyImpulse(const float3&) override;
 	void LeaveTransport() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void InitMemberPtrs(MemberData* memberData);
 	bool SetMemberValue(unsigned int memberHash, void* memberValue) override;

@@ -13,6 +13,7 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 #include "Sim/Units/UnitDef.h"
+
 using namespace MoveTypes;
 
 void GeneralMoveSystem::Init() {}
@@ -25,7 +26,10 @@ void GeneralMoveSystem::Update() {
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;
 
+            #ifndef NDEBUG
             unit->SanityCheck();
+            #endif
+
 			unit->PreUpdate();
 
             if (moveType->Update())
@@ -36,7 +40,9 @@ void GeneralMoveSystem::Update() {
             if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
                 unit->ForcedKillUnit(nullptr, false, true, false);
 
+            #ifndef NDEBUG
             unit->SanityCheck();
+            #endif
         });
 	}
 }
