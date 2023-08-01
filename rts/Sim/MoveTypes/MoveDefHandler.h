@@ -13,6 +13,7 @@
 
 class MoveDefHandler;
 class CSolidObject;
+class CUnit;
 class LuaTable;
 
 
@@ -28,7 +29,7 @@ struct MoveDef {
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
 	bool DoRawSearch(
-		const CSolidObject* collider,
+		const CUnit* collider,
 		const float3 startPos,
 		const float3 endPos,
 		const float3 testMoveDir,

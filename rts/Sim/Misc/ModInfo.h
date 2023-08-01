@@ -188,6 +188,12 @@ public:
 	bool pfForceSingleThreaded;
 	bool pfForceUpdateSingleThreaded;
 
+	/// Minimum delay after unit has made progress to next waypoint before allowing repath
+	int pfRepathDelayInFrames;
+
+	/// Minimum wait time after the the last repath before a unit is permitted to request a new one.
+	int pfRepathMaxRateInFrames;
+
 	float pfRawDistMult;
 	float pfUpdateRate; // remove if Default PFS gets replaced/removed.
 	float pfUpdateRateScale;

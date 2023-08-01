@@ -248,6 +248,10 @@ private:
 	short wantedHeading = 0;
 	short minScriptChangeHeading = 0;       /// minimum required turn-angle before script->ChangeHeading is called
 
+	int wantRepathFrame = std::numeric_limits<int>::min();
+	int lastRepathFrame = std::numeric_limits<int>::min();
+	float bestLastWaypointDist = std::numeric_limits<float>::infinity();
+
 	bool atGoal = true;
 	bool atEndOfPath = true;
 	bool wantRepath = false;

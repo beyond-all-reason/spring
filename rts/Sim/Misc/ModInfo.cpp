@@ -109,6 +109,8 @@ void CModInfo::ResetState()
 		pfUpdateRateScale = 1.f;
 		pfForceSingleThreaded = false;
 		pfForceUpdateSingleThreaded = false;
+		pfRepathDelayInFrames = 60;
+		pfRepathMaxRateInFrames = 150;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
@@ -158,6 +160,8 @@ void CModInfo::Init(const std::string& modFileName)
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
 		pfForceSingleThreaded = system.GetBool("pfForceSingleThreaded", pfForceSingleThreaded);
 		pfForceUpdateSingleThreaded = system.GetBool("pfForceUpdateSingleThreaded", pfForceUpdateSingleThreaded);
+		pfRepathDelayInFrames = Clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
+		pfRepathMaxRateInFrames = Clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 

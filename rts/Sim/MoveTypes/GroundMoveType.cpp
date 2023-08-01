@@ -285,18 +285,34 @@ static void HandleUnitCollisionsAux(
 		case AMoveType::Active: {
 			// collider and collidee are both actively moving and share the same goal position
 			// (i.e. a traffic jam) so ignore current waypoint and go directly to the next one
-			// or just make collider give up if already within footprint radius
-			// Update: don't ignore the waypoint completely because this could cause back
-			// propagation too far and prevent units from being able to path around obstacles.
-			// if (gmtCollidee->GetCurrWayPoint() == gmtCollider->GetNextWayPoint()) {
-			// 	const float tmpGoalRadiusAdd = gmtCollidee->GetOwnerRadius()*2;
-			// 	const float currWaypoinDistSq = gmtCollider->GetCurrWayPoint().SqDistance2D(collider->pos);
-			// 	const float maxSkipDistance = gmtCollider->GetTurnRadius() * 2.0f + tmpGoalRadiusAdd;
-			// 	const float maxSkipDistanceSq = maxSkipDistance*maxSkipDistance;
-			// 	if (currWaypoinDistSq <= maxSkipDistanceSq)
-			// 		gmtCollider->TriggerSkipWayPoint();
-			// 	return;
-			// }
+			// or just make collider give up if already within footprint radius.
+			if (gmtCollidee->GetCurrWayPoint() == gmtCollider->GetNextWayPoint()) {
+				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
+				const float3& nextWaypoint = gmtCollider->GetNextWayPoint();
+
+				const float unitToNextDistSq = nextWaypoint.SqDistance2D(collider->pos);
+				const float currToNextDistSq = nextWaypoint.SqDistance2D(currWaypoint);
+
+				// Switch waypoints if the current waypoint is effectively sending us in the
+				// wrong direction. This can happen as units push each other around. This check
+				// is important to prevent units in a long line back-propagating the next
+				// waypoint, which could cause units to try and cut corners, which could cause
+				// them to be unable to path around obstacles.
+				if (unitToNextDistSq <= currToNextDistSq) {
+					gmtCollider->TriggerSkipWayPoint();
+					return;
+				} else {
+					// if the collidee is touching the waypoint, then also switch to the next
+					// waypoint.
+					const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
+					const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
+
+					if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
+						gmtCollider->TriggerSkipWayPoint();
+						return;
+					}
+				}
+			}
 
 			if (!gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()))
 				return;
@@ -702,7 +718,20 @@ void CGroundMoveType::SlowUpdate()
 			}
 
 			if (wantRepath) {
-				ReRequestPath(true);
+				// When repaths are requested, they are pre-emptive and are made without
+				// confirmation that it is really necessary. Give the unit a chance to
+				// make progress: for example, when it got pushed against a building, but
+				// is otherwise moving on. Pathing is expensive so we really want to keep
+				// repathing to a minimum.
+				float curDist = currWayPoint.SqDistance2D(owner->pos);
+				if (curDist < bestLastWaypointDist) {
+					bestLastWaypointDist = curDist;
+					wantRepathFrame = gs->frameNum;
+				}
+				if (gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
+					&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames){
+					ReRequestPath(true);
+				}
 			}
 		}
 
@@ -1822,10 +1851,15 @@ void CGroundMoveType::ReRequestPath(bool forceRequest) {
 		StopEngine(false);
 		StartEngine(false);
 		wantRepath = false;
+		lastRepathFrame = gs->frameNum;
 		return;
 	}
 
-	wantRepath = true;
+	if (!wantRepath) {
+		wantRepath = true;
+		wantRepathFrame = gs->frameNum;
+		bestLastWaypointDist = std::numeric_limits<float>::infinity();
+	}
 }
 
 bool CGroundMoveType::CanSetNextWayPoint(int thread) {
@@ -1952,17 +1986,9 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
 			const float3 targetPos = cwp;
 
-			// path manager returns the first point beyond searchRadius, so add a little extra
-			// to the cut off limit to allow for that. 
-			// const float radiusLimit = searchRadius + WAYPOINT_RADIUS*2;
-			// const float3 targetPos = (cwpDistSq <= Square(radiusLimit)) ? cwp : pos + (cwp - pos).SafeNormalize() * radiusLimit;
-
-			// check the rectangle between pos and cwp for obstacles
+			// check the between pos and cwp for obstacles
 			// if still further than SS elmos from waypoint, disallow skipping
-			// note: can somehow cause units to move in circles near obstacles
-			// (mantis3718) if rectangle is too generous in size
 			const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, true, nullptr, nullptr, thread);
-			// const bool rangeTest = owner->moveDef->TestMoveSquareRange(owner, float3::min(targetPos, pos), float3::max(targetPos, pos), owner->speed, true, true, true, nullptr, nullptr, thread);
 			const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 
 			// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
