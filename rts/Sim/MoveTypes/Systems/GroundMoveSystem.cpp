@@ -31,9 +31,11 @@ void GroundMoveSystem::Update() {
             CUnit* unit = unitHandler.GetUnit(unitId.value);
 			AMoveType* moveType = unit->moveType;
 
+            #ifndef NDEBUG
 			unit->SanityCheck();
+            #endif
+    
 			unit->PreUpdate();
-
 			moveType->UpdatePreCollisionsMt();
 		});
 	}
@@ -84,7 +86,9 @@ void GroundMoveSystem::Update() {
             if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
                 unit->ForcedKillUnit(nullptr, false, true, false);
 
+            #ifndef NDEBUG
             unit->SanityCheck();
+            #endif
         });
 	}
 }
