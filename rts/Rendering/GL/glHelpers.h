@@ -13,9 +13,10 @@
 template<class GLType>
 inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = -1)
 {
-	GLint ints[expectedValuesN];
+	GLint ints[1024];
+	assert(expectedValuesN > 0 && expectedValuesN < 1024);
 	glGetIntegerv(paramName, ints);
-	std::move(ints, ints+expectedValuesN, data);
+	std::copy(ints, ints+expectedValuesN, data);
 }
 template<>
 inline void glGetAny<GLint>(GLenum paramName, GLint* data, const int)
@@ -84,7 +85,7 @@ inline void glSetAny(AttribValuesTupleType newValues)
 {
 	if constexpr(DedicatedGLFuncPtrPtr)
 	{
-		std::apply(*DedicatedGLFuncPtrPtr, newValues);
+		std::apply(DedicatedGLFuncPtrPtr, newValues);
 	}
 	else // glEnable/glDisable(attribute)
 	{
