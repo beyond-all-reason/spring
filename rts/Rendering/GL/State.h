@@ -41,7 +41,7 @@ public:
 	{
 		return (value.first != Unknown)
 			? value
-			: ValueType(WasUnknown, FetchActiveStateAttribValues<GLParamsType, GLParamNames...>());
+			: ValueType(WasUnknown, FetchEffectualStateAttribValues<GLParamsType>(GLParamNames...));
 	}
 	inline StateAttribute& operator=(const ValueType& newValue)
 	{

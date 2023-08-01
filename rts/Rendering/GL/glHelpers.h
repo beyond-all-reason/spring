@@ -3,6 +3,7 @@
 #pragma once
 
 #include "myGL.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include <algorithm>
 #include <tuple>
 
@@ -41,20 +42,37 @@ inline void glGetAny<GLdouble>(GLenum paramName, GLdouble* data, const int)
 namespace GL
 {
 
-template<class ResultTupleType, GLenum GLParamName>
-inline ResultTupleType FetchActiveStateAttribValues()
+// Fetch value of a single value parameter, not more than that
+template<class ResultType>
+inline ResultType FetchEffectualStateAttribValue(GLenum paramName)
+{
+	ResultType resultValue;
+	glGetAny(paramName, &resultValue, 1);
+	return resultValue;
+}
+
+template<class ResultTupleType>
+inline ResultTupleType FetchEffectualStateAttribValues(GLenum paramName)
 {
 	ResultTupleType resultTuple;
-	glGetAny(GLParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>);
+	glGetAny(paramName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>);
 	return resultTuple;
 }
-template<class ResultTupleType, GLenum GLFirstParamName, GLenum GLSecondParamName>
-inline ResultTupleType FetchActiveStateAttribValues()
+template<class ResultTupleType>
+inline ResultTupleType FetchEffectualStateAttribValues(GLenum firstParamName, GLenum secondParamName)
 {
 	ResultTupleType resultTuple;
-	glGetAny(GLFirstParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
-	glGetAny(GLSecondParamName, &std::get<std::tuple_size_v<ResultTupleType>/2-1>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
+	glGetAny(firstParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
+	glGetAny(secondParamName, &std::get<std::tuple_size_v<ResultTupleType>/2-1>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
 	return resultTuple;
+}
+
+inline GLuint FetchCurrentSlotTextureID(GLenum target) {
+	GLenum query = GL::GetBindingQueryFromTarget(target);
+	assert(query);
+	GLuint currentSlotTextureID;
+	glGetAny(query, &currentSlotTextureID, 1);
+	return currentSlotTextureID;
 }
 
 }
