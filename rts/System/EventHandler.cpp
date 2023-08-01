@@ -541,6 +541,12 @@ void CEventHandler::GameFrame(int gameFrame)
 	ITERATE_EVENTCLIENTLIST(GameFrame, gameFrame);
 }
 
+void CEventHandler::GameFramePost(int gameFrame)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(GameFramePost, gameFrame);
+}
+
 void CEventHandler::GameProgress(int gameFrame)
 {
 	ZoneScoped;
