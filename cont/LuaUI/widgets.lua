@@ -107,6 +107,7 @@ local flexCallIns = {
   'GameOver',
   'GamePaused',
   'GameFrame',
+  'GameFramePost',
   'GameProgress',
   'GameSetup',
   'TeamDied',
@@ -1738,6 +1739,14 @@ end
 function widgetHandler:GameFrame(frameNum)
   for _,w in ipairs(self.GameFrameList) do
     w:GameFrame(frameNum)
+  end
+  return
+end
+
+
+function widgetHandler:GameFramePost(frameNum)
+  for _,w in ipairs(self.GameFramePostList) do
+    w:GameFramePost(frameNum)
   end
   return
 end

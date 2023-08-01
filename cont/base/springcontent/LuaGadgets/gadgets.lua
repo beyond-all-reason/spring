@@ -878,6 +878,12 @@ function gadgetHandler:GameFrame(frameNum)
   end
 end
 
+function gadgetHandler:GameFramePost(frameNum)
+  for _,g in r_ipairs(self.GameFramePostList) do
+    g:GameFramePost(frameNum)
+  end
+end
+
 function gadgetHandler:GamePaused(playerID, paused)
   for _,g in r_ipairs(self.GamePausedList) do
     g:GamePaused(playerID, paused)
