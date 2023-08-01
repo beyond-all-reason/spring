@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <tuple>
+#include <type_traits>
 
 namespace spring {
 	template<bool...> struct bool_pack;
@@ -135,25 +136,16 @@ namespace spring {
 
 	template<typename T>
 	using return_type_t = typename return_type<T>::type;
+	
 
-	template<typename Sig>
-	struct func_signature;
+	template<typename TupleType, typename Type>
+	struct tuple_contains_type;
 
-	template<typename R, typename ...Args>
-	struct func_signature<R(Args...)>
-	{
-		using type = std::tuple<Args...>;
-	};
-	template<
-		typename F,
-		std::enable_if_t<std::is_function<F>::value, bool> = true
-	>
-	auto arg_types_tuple_t(const F&) -> typename func_signature<F>::type;
-	template<
-		typename F,
-		std::enable_if_t<std::is_function<F>::value, bool> = true
-	>
-	auto arg_types_tuple_t(const F*) -> typename func_signature<F>::type;
+	template<typename Type, typename... TupleElementTypes>
+	struct tuple_contains_type<std::tuple<TupleElementTypes...>, Type> : std::disjunction<std::is_same<Type, TupleElementTypes>...> {};
+
+	template<typename TupleType, typename Type>
+	constexpr inline bool tuple_contains_type_v = tuple_contains_type<TupleType, Type>::value;
 
 
 	template <typename T, typename Tuple>
@@ -170,4 +162,41 @@ namespace spring {
 	};
 	template <typename T, typename Tuple>
 	constexpr size_t tuple_type_index_v = tuple_type_index<T, Tuple>::value;
+
+
+	template<typename FuncType>
+	struct func_signature;
+
+	template<typename ReturnType, typename... ArgTypes>
+	struct func_signature<ReturnType(ArgTypes...)> {
+		using type = std::tuple<ArgTypes...>;
+	};
+
+	template<typename FuncType>
+	using func_signature_t = typename func_signature<FuncType>::type;
+
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arg_types_tuple_t(const F&) -> typename func_signature<F>::type;
+	template<
+		typename F,
+		std::enable_if_t<std::is_function<F>::value, bool> = true
+	>
+	auto arg_types_tuple_t(const F*) -> typename func_signature<F>::type;
+
+
+	// This particular helper accepts a nullptr, in which case it falls back to a specified default signature, or just an empty tuple
+	template<auto FuncPtr, typename... FallbackSignature>
+	struct func_ptr_signature {
+		using type = func_signature_t<std::remove_pointer_t<std::remove_pointer_t<decltype(FuncPtr)>>>;
+	};
+	template<typename... FallbackSignature>
+	struct func_ptr_signature<nullptr, FallbackSignature...> {
+		using type = std::tuple<FallbackSignature...>;
+	};
+
+	template<auto FuncPtr, typename... FallbackSignature>
+	using func_ptr_signature_t = typename func_ptr_signature<FuncPtr, FallbackSignature...>::type;
 };

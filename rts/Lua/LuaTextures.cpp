@@ -4,6 +4,7 @@
 #include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/TexBind.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
@@ -13,33 +14,42 @@
 #include "fmt/format.h"
 
 
-const spring::unordered_map<GLenum, GLenum> LuaTextures::Format2Query =
-{
-	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D				   },
-	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D				   },
-	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D				   },
-//	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY			   },
-	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY			   },
-//	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE			   },
-	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP			   },
-//	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER			   },
-	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE	   },
-//	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
-};
+namespace Impl {
+	static inline bool IsValidLuaTextureTarget(GLenum target) {
+		switch(target) {
+			case GL_TEXTURE_1D:
+			case GL_TEXTURE_2D:
+			case GL_TEXTURE_3D:
+			//case GL_TEXTURE_1D_ARRAY:
+			case GL_TEXTURE_2D_ARRAY:
+			//case GL_TEXTURE_RECTANGLE:
+			case GL_TEXTURE_CUBE_MAP:
+			//case GL_TEXTURE_BUFFER:
+			case GL_TEXTURE_2D_MULTISAMPLE:
+			//case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+				return true;
+			default: break;
+		}
+		return false;
+	}
+}
 
 /******************************************************************************/
 /******************************************************************************/
 
 std::string LuaTextures::Create(const Texture& tex)
 {
-	GLint currentBinding = 0;
-
-	if (Format2Query.find(tex.target) == Format2Query.end()) {
+	GLenum query = 0;
+	if (Impl::IsValidLuaTextureTarget(tex.target)) {
+		query = GL::GetBindingQueryFromTarget(tex.target);
+	}
+	if (!query) {
 		LOG_L(L_ERROR, "[LuaTextures::%s] texture-target %d is not supported", __func__, tex.target);
 		return "";
 	}
 
-	glGetIntegerv(Format2Query.find(tex.target)->second, &currentBinding);
+	GLint currentBinding;
+	glGetIntegerv(query, &currentBinding);
 
 	GLuint texID;
 	glGenTextures(1, &texID);
@@ -254,11 +264,8 @@ void LuaTextures::ApplyParams(const Texture& tex) const
 
 void LuaTextures::ChangeParams(const Texture& tex)  const
 {
-	GLint currentBinding = 0;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentBinding);
-	glBindTexture(tex.target, tex.id);
+	auto texBind = GL::TexBind(tex.target, tex.id);
 	ApplyParams(tex);
-	glBindTexture(GL_TEXTURE_2D, currentBinding); // revert the current binding
 }
 
 
