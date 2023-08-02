@@ -270,7 +270,6 @@ private:
 
 	bool IsFinalized() const { return finalized; }
 
-	bool SupportsMultiThreadedRequests() const;
 	void SavePathCacheForPathId(int pathIdToSave) override;
 
 private:

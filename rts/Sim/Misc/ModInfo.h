@@ -185,8 +185,6 @@ public:
 	// PFS
 	/// which pathfinder system (NOP, DEFAULT/legacy, or QT) the mod will use
 	int pathFinderSystem;
-	bool pfForceSingleThreaded;
-	bool pfForceUpdateSingleThreaded;
 
 	/// Minimum delay after unit has made progress to next waypoint before allowing repath
 	int pfRepathDelayInFrames;
@@ -195,7 +193,6 @@ public:
 	int pfRepathMaxRateInFrames;
 
 	float pfRawDistMult;
-	float pfUpdateRate; // remove if Default PFS gets replaced/removed.
 	float pfUpdateRateScale;
 
 	bool enableSmoothMesh;
