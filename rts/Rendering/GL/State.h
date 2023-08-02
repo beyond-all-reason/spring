@@ -132,6 +132,8 @@ namespace State {
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (CubemapSeamless, GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (PointSize, GL_PROGRAM_POINT_SIZE);
 
+	ATTRIBUTE_TYPE_DEFS 		   (ReadBuffer, GL_READ_BUFFER);
+
 	extern std::tuple<
 		ATTRIBUTE(PolygonMode),
 		ATTRIBUTE(PolygonOffsetFill),
@@ -170,7 +172,8 @@ namespace State {
 		ATTRIBUTE(AlphaToCoverage),
 		ATTRIBUTE(AlphaToOne),
 		ATTRIBUTE(CubemapSeamless),
-		ATTRIBUTE(PointSize)
+		ATTRIBUTE(PointSize),
+		ATTRIBUTE(ReadBuffer)
 	> Attributes;
 };
 

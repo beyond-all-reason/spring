@@ -56,10 +56,12 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/GL/TexBind.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Textures/NamedTextures.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
@@ -78,6 +80,9 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Matrix44f.h"
+
+using namespace GL::State;
+
 
 CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
@@ -298,6 +303,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ResetState);
 	REGISTER_LUA_CFUNC(ResetMatrices);
 	REGISTER_LUA_CFUNC(Clear);
+	REGISTER_LUA_CFUNC(ClearBuffer);
 	REGISTER_LUA_CFUNC(SwapBuffers);
 	REGISTER_LUA_CFUNC(Lighting);
 	REGISTER_LUA_CFUNC(ShadeModel);
@@ -458,6 +464,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(Finish);
 
 	REGISTER_LUA_CFUNC(ReadPixels);
+	REGISTER_LUA_CFUNC(ReadAttachmentPixel);
 	REGISTER_LUA_CFUNC(SaveImage);
 
 	if (GLEW_ARB_occlusion_query) {
@@ -4147,6 +4154,52 @@ int LuaOpenGL::Clear(lua_State* L)
 	return 0;
 }
 
+namespace Impl {
+	template<class Type, auto glClearBufferFuncPtrPtr>
+	static inline void ClearBuffer(lua_State* L, GLenum bufferType, GLint drawBuffer) {
+		Type values[4];
+		values[0] = luaL_optnumber(L, 3, 0);
+		values[1] = luaL_optnumber(L, 4, 0);
+		values[2] = luaL_optnumber(L, 5, 0);
+		values[3] = luaL_optnumber(L, 6, 0);
+		(*glClearBufferFuncPtrPtr)(bufferType, drawBuffer, values);
+	}
+}
+
+int LuaOpenGL::ClearBuffer(lua_State* L)
+{
+	CheckDrawingEnabled(L, __func__);
+
+	const GLint drawBufferIndex = luaL_optint(L, 1, 1);
+	const int clearingFunc = luaL_optint(L, 2, 0);
+
+	GLenum bufferType;
+	GLint drawBuffer;
+	if (drawBufferIndex > 0) {
+		bufferType = GL_COLOR;
+		drawBuffer = drawBufferIndex-1;
+	} else { // drawBufferIndex: 0 - depth, -1 - stencil
+		bufferType = (drawBufferIndex == 0? GL_DEPTH : GL_STENCIL);
+		drawBuffer = 0;
+	}
+
+	switch(clearingFunc) {
+	case 0:
+		Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, bufferType, drawBuffer);
+		break;
+	case 1:
+		Impl::ClearBuffer<GLint, &glClearBufferiv>(L, bufferType, drawBuffer);
+		break;
+	case 2:
+		Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, bufferType, drawBuffer);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 int LuaOpenGL::SwapBuffers(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
@@ -5002,35 +5055,6 @@ int LuaOpenGL::Finish(lua_State* L)
 
 /******************************************************************************/
 
-static int PixelFormatSize(GLenum f)
-{
-	switch (f) {
-		case GL_COLOR_INDEX:
-		case GL_STENCIL_INDEX:
-		case GL_DEPTH_COMPONENT:
-		case GL_RED:
-		case GL_GREEN:
-		case GL_BLUE:
-		case GL_ALPHA:
-		case GL_LUMINANCE: {
-			return 1;
-		}
-		case GL_LUMINANCE_ALPHA: {
-			return 2;
-		}
-		case GL_RGB:
-		case GL_BGR: {
-			return 3;
-		}
-		case GL_RGBA:
-		case GL_BGRA: {
-			return 4;
-		}
-	}
-	return -1;
-}
-
-
 static void PushPixelData(lua_State* L, int fSize, const float*& data)
 {
 	if (fSize == 1) {
@@ -5059,8 +5083,8 @@ int LuaOpenGL::ReadPixels(lua_State* L)
 		return 0;
 	}
 
-	int fSize = PixelFormatSize(format);
-	if (fSize < 0) {
+	int fSize = GL::GetPixelFormatSize(format);
+	if (!fSize) {
 		fSize = 4; // good enough?
 	}
 
@@ -5116,6 +5140,50 @@ int LuaOpenGL::ReadPixels(lua_State* L)
 	}
 
 	return 1;
+}
+
+
+namespace Impl {
+	template<class Type>
+	static inline void ReadAttachmentPixel(lua_State* L, GLint x, GLint y, GLenum format, GLenum readType, int fSize) {
+		Type data[fSize];
+		glReadPixels(x, y, 1, 1, format, readType, data);
+		for (int e = 0; e < fSize; e++) {
+			lua_pushnumber(L, data[e]);
+		}
+	}
+}
+
+int LuaOpenGL::ReadAttachmentPixel(lua_State* L)
+{
+	const GLenum attachmentIndex = luaL_optint(L, 1, 1);
+	const GLint x = luaL_checkint(L, 2);
+	const GLint y = luaL_checkint(L, 3);
+	const GLenum internalFormat = luaL_optint(L, 4, GL_RGBA8);
+
+	const GLenum attachment = (attachmentIndex > 0? GL_COLOR_ATTACHMENT0+attachmentIndex-1 : GL_NONE);
+	// attachmentIndex: 0 - depth
+	const GLenum format = GL::GetInternalFormatDataFormat(internalFormat);
+	const GLenum readType = GL::GetInternalFormatUserType(internalFormat);
+
+	const int fSize = GL::GetPixelFormatSize(format);
+	assert(fSize);
+
+	auto state = GL::SubState(ReadBuffer(attachment));
+
+	switch(readType) {
+	case GL_FLOAT:          Impl::ReadAttachmentPixel<GLfloat> (L, x, y, format, readType, fSize); break;
+	case GL_HALF_FLOAT:     Impl::ReadAttachmentPixel<GLhalf>  (L, x, y, format, readType, fSize); break;
+	case GL_INT:            Impl::ReadAttachmentPixel<GLint>   (L, x, y, format, readType, fSize); break;
+	case GL_SHORT:          Impl::ReadAttachmentPixel<GLshort> (L, x, y, format, readType, fSize); break;
+	case GL_BYTE:           Impl::ReadAttachmentPixel<GLbyte>  (L, x, y, format, readType, fSize); break;
+	case GL_UNSIGNED_INT:   Impl::ReadAttachmentPixel<GLuint>  (L, x, y, format, readType, fSize); break;
+	case GL_UNSIGNED_SHORT: Impl::ReadAttachmentPixel<GLushort>(L, x, y, format, readType, fSize); break;
+	case GL_UNSIGNED_BYTE:  Impl::ReadAttachmentPixel<GLubyte> (L, x, y, format, readType, fSize); break;
+	default: break;
+	}
+
+	return fSize;
 }
 
 

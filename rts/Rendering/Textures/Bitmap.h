@@ -42,7 +42,6 @@ public:
 	int32_t GetIntFmt() const;
 	int32_t GetExtFmt() const { return GetExtFmt(channels); }
 	static int32_t GetExtFmt(uint32_t ch);
-	static int32_t ExtFmtToChannels(int32_t extFmt);
 	uint32_t GetDataTypeSize() const;
 
 	/// Load data from a file on the VFS

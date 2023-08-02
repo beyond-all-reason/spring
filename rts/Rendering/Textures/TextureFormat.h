@@ -11,7 +11,12 @@ namespace GL
 
 	GLenum GetInternalFormatDataType(GLenum internalFormat);
 
+	// a convenient data type to store pixel component
+	GLenum GetInternalFormatUserType(GLenum internalFormat);
+
 	GLenum GetBindingQueryFromTarget(GLenum target);
+
+	GLsizei GetPixelFormatSize(GLenum format);
 }
 
 #endif // TEXTURE_FORMAT_H
