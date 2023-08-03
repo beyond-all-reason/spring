@@ -80,6 +80,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Matrix44f.h"
+#include "System/SafeUtil.h"
 
 using namespace GL::State;
 
@@ -4158,10 +4159,10 @@ namespace Impl {
 	template<class Type, auto glClearBufferFuncPtrPtr>
 	static inline void ClearBuffer(lua_State* L, GLenum bufferType, GLint drawBuffer) {
 		Type values[4];
-		values[0] = luaL_optnumber(L, 3, 0);
-		values[1] = luaL_optnumber(L, 4, 0);
-		values[2] = luaL_optnumber(L, 5, 0);
-		values[3] = luaL_optnumber(L, 6, 0);
+		values[0] = spring::SafeCast<Type>(luaL_optnumber(L, 2, 0));
+		values[1] = spring::SafeCast<Type>(luaL_optnumber(L, 3, 0));
+		values[2] = spring::SafeCast<Type>(luaL_optnumber(L, 4, 0));
+		values[3] = spring::SafeCast<Type>(luaL_optnumber(L, 5, 0));
 		(*glClearBufferFuncPtrPtr)(bufferType, drawBuffer, values);
 	}
 }
@@ -4170,30 +4171,58 @@ int LuaOpenGL::ClearBuffer(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
 
-	const GLint drawBufferIndex = luaL_optint(L, 1, 1);
-	const int clearingFunc = luaL_optint(L, 2, 0);
-
 	GLenum bufferType;
-	GLint drawBuffer;
-	if (drawBufferIndex > 0) {
-		bufferType = GL_COLOR;
-		drawBuffer = drawBufferIndex-1;
-	} else { // drawBufferIndex: 0 - depth, -1 - stencil
-		bufferType = (drawBufferIndex == 0? GL_DEPTH : GL_STENCIL);
+	GLenum attachment;
+	GLenum drawBuffer;
+	if (lua_israwstring(L, 1)) {
+		const std::string attachmentStr = lua_tostring(L, 1);
+		assert(attachmentStr == "depth" || attachmentStr == "stencil");
+		if (attachmentStr == "depth") {
+			bufferType = GL_DEPTH;
+			attachment = GL_DEPTH_ATTACHMENT;
+		} else {
+			bufferType = GL_STENCIL;
+			attachment = GL_STENCIL_ATTACHMENT;
+		}
 		drawBuffer = 0;
+	} else {
+		const GLenum slot = luaL_optint(L, 1, 1);
+		assert(slot >= 1);
+		bufferType = GL_COLOR;
+		attachment = GL_COLOR_ATTACHMENT0+slot-1;
+		drawBuffer = slot-1;
 	}
 
-	switch(clearingFunc) {
-	case 0:
-		Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, bufferType, drawBuffer);
-		break;
-	case 1:
-		Impl::ClearBuffer<GLint, &glClearBufferiv>(L, bufferType, drawBuffer);
-		break;
-	case 2:
+	const auto activeLuaFBO = CLuaHandle::GetActiveFBOs(L).GetActiveDrawFBO();
+	const GLenum attachmentInternalFormat = activeLuaFBO? activeLuaFBO->GetAttachmentFormat(attachment) : GL_RGBA8;
+	// if not a Lua FBO, it may be default framebuffer; proceed with a typical format
+
+	switch(attachmentInternalFormat) {
+	case GL_R8UI:
+	case GL_RG8UI:
+	case GL_RGBA8UI:
+	case GL_R16UI:
+	case GL_RG16UI:
+	case GL_RGBA16UI:
+	case GL_RGB10_A2UI:
+	case GL_R32UI:
+	case GL_RG32UI:
+	case GL_RGBA32UI:
 		Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, bufferType, drawBuffer);
 		break;
+	case GL_R8I:
+	case GL_RG8I:
+	case GL_RGBA8I:
+	case GL_R16I:
+	case GL_RG16I:
+	case GL_RGBA16I:
+	case GL_R32I:
+	case GL_RG32I:
+	case GL_RGBA32I:
+		Impl::ClearBuffer<GLint, &glClearBufferiv>(L, bufferType, drawBuffer);
+		break;
 	default:
+		Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, bufferType, drawBuffer);
 		break;
 	}
 
@@ -5156,13 +5185,20 @@ namespace Impl {
 
 int LuaOpenGL::ReadAttachmentPixel(lua_State* L)
 {
-	const GLenum attachmentIndex = luaL_optint(L, 1, 1);
+	GLenum attachment;
+	if (lua_israwstring(L, 1)) {
+		assert(attachmentStr == "depth");
+		attachment = GL_DEPTH_ATTACHMENT;
+	} else {
+		attachment = GL_COLOR_ATTACHMENT0 +luaL_optint(L, 1, 1) -1;
+	}
+
 	const GLint x = luaL_checkint(L, 2);
 	const GLint y = luaL_checkint(L, 3);
-	const GLenum internalFormat = luaL_optint(L, 4, GL_RGBA8);
 
-	const GLenum attachment = (attachmentIndex > 0? GL_COLOR_ATTACHMENT0+attachmentIndex-1 : GL_NONE);
-	// attachmentIndex: 0 - depth
+	const auto activeLuaFBO = CLuaHandle::GetActiveFBOs(L).GetActiveReadFBO();
+	assert(activeLuaFBO);
+	const GLenum internalFormat = activeLuaFBO->GetAttachmentFormat(attachment);
 	const GLenum format = GL::GetInternalFormatDataFormat(internalFormat);
 	const GLenum readType = GL::GetInternalFormatUserType(internalFormat);
 
