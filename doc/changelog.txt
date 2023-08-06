@@ -65,8 +65,24 @@ Sim:
  - edgeEffectiveness can now be 1 (previously capped at 0.999)
  - armor multiplier (aka damageModifier) can now be 0 (previously capped at 0.0001)
  - damage in unit defs can now be 0 (previously capped at 0.0001)
- - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but keep in mind weapons
-   will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
+ - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but
+   keep in mind weapons will still always target enemies and never allies, so avoid using it
+   outside of manually-triggered contexts
+ - Renamed TKPFS to HAPFS. It is HAPFS will modifications and is ready now to take over. It was
+   kept separate initially in case major issues were found, but it is now suitably stable to
+   become the official version of HAPFS (as it was always intended.)
+ - Major rework of QTPFS, so many changes that this diserves its own section.
+ - Added mod option, pfRepathDelayInFrames, which tells GroundMoveType how many frames at least
+   must pass between checks for whether a unit is making enough progress to it's current waypoint
+   or whether a new path should be requested. Defaults to 60 frames (2 seconds.) Adjust to find the
+   right balance between how quickly units can get unstuck and how much CPU power is used. Smaller
+   intervals increase the chance of slow units triggering unnecessary re-pathing requests, but
+   reduces the chance that players may believe a unit is getting stuck and is not handling itsel
+   well.
+ - Added mod option, pfRepathMaxRateInFrames, which tells GroundMoveType the minimum amount of
+   frames that must pass before a unit is allowed to request a new path. By default, it is 150
+   (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
+   processing path requests are not cheap.
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.
