@@ -68,6 +68,8 @@ namespace QTPFS {
 			bool synced
 		) override;
 
+		bool CurrentWaypointIsLast(unsigned int pathID) override;
+
 		void GetPathWayPoints(
 			unsigned int pathID,
 			std::vector<float3>& points,

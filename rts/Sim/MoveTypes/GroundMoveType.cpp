@@ -729,7 +729,11 @@ void CGroundMoveType::SlowUpdate()
 				}
 				if (gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
 					&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames){
-					ReRequestPath(true);
+					if (!lastWaypoint)
+						ReRequestPath(true);
+					else
+						// This is here to stop units from trying forever to reach an goal they can't reach.
+						Fail(false);
 				}
 			}
 		}
@@ -770,6 +774,7 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 
 	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
+	lastWaypoint = false;
 
 	useMainHeading = false;
 	useRawMovement = true;
@@ -810,6 +815,7 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 
 	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
+	lastWaypoint = false;
 
 	useMainHeading = false;
 	useRawMovement = false;
@@ -1830,6 +1836,7 @@ unsigned int CGroundMoveType::GetNewPath()
 	if ((newPathID = pathManager->RequestPath(owner, owner->moveDef, owner->pos, goalPos, goalRadius + extraRadius, true)) != 0) {
 		atGoal = false;
 		atEndOfPath = false;
+		lastWaypoint = false;
 
 		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
@@ -1983,7 +1990,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		{
 			float cwpDistSq = (cwp - pos).SqLength();
 			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
-			const float3 targetPos = cwp;
+			const float3 targetPos = nwp;
 
 			// check the between pos and cwp for obstacles
 			// if still further than SS elmos from waypoint, disallow skipping
@@ -2081,8 +2088,14 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 
 		earlyCurrWayPoint = earlyNextWayPoint;
 		earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		// should prevent delay repaths since 
-		wantRepath = false;
+
+		lastWaypoint = pathManager->CurrentWaypointIsLast(pathID);
+		if (lastWaypoint) {
+			ReRequestPath(false);
+		} else {
+			// should prevent delay repaths since 
+			wantRepath = false;
+		}
 	}
 
 	if (earlyNextWayPoint.x == -1.0f && earlyNextWayPoint.z == -1.0f) {
@@ -2424,7 +2437,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			} else {
 				// never move fully back to oldPos when dealing with yardmaps
 				resultantForces += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
-				// TODO: possible cause of units getting stuck on yardmaps?
 			}
 		}
 

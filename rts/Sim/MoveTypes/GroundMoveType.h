@@ -253,6 +253,7 @@ private:
 	bool atEndOfPath = true;
 	bool wantRepath = false;
 	bool moveFailed = false;
+	bool lastWaypoint = false;
 
 	bool reversing = false;
 	bool idling = false;

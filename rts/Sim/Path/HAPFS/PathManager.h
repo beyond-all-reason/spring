@@ -144,6 +144,10 @@ public:
 		bool synced
 	) override;
 
+	// Isn't used here due to the way waypoints get consumed and then a noPoint
+	// is returned when out of points.
+	bool CurrentWaypointIsLast(unsigned int pathID) override { return false; }
+
 	unsigned int RequestPath(
 		CSolidObject* caller,
 		const MoveDef* moveDef,

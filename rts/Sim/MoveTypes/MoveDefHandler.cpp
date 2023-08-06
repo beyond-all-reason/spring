@@ -370,10 +370,10 @@ bool MoveDef::DoRawSearch(
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects & retTestMove) {
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly](int x, int z) -> bool {
-			const int xmin = int(x / SQUARE_SIZE) - xsizeh * (1 - centerOnly);
-			const int zmin = int(z / SQUARE_SIZE) - zsizeh * (1 - centerOnly);
-			const int xmax = int(x / SQUARE_SIZE) + xsizeh * (1 - centerOnly);
-			const int zmax = int(z / SQUARE_SIZE) + zsizeh * (1 - centerOnly);
+			const int xmin = x - xsizeh * (1 - centerOnly);
+			const int zmin = z - zsizeh * (1 - centerOnly);
+			const int xmax = x + xsizeh * (1 - centerOnly);
+			const int zmax = z + zsizeh * (1 - centerOnly);
 
 			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
 			maxBlockBit = blockBits;

@@ -81,6 +81,8 @@ public:
 		return -OnesVector;
 	}
 
+	virtual bool CurrentWaypointIsLast(unsigned int pathID) { return true; }
+
 
 	/**
 	 * Returns all waypoints of a path. Different segments of a path might

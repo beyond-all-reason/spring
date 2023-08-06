@@ -73,10 +73,12 @@ namespace QTPFS {
 		void SetHash(std::uint64_t hash) { this->hash = hash; }
 		void SetRadius(float radius) { this->radius = radius; }
 		void SetSynced(bool synced) { this->synced = synced; }
+		void SetHasFullPath(bool fullPath) { this->haveFullPath = fullPath; }
 
 		float GetRadius() const { return radius; }
 		std::uint64_t GetHash() const { return hash; }
 		bool IsSynced() const { return synced; }
+		bool IsFullPath() const { return haveFullPath; }
 
 		void SetBoundingBox() {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
@@ -146,6 +148,7 @@ namespace QTPFS {
 		std::uint64_t hash = -1;
 		float radius = 0.f;
 		bool synced = true;
+		bool haveFullPath = true;
 
 		std::vector<float3> points;
 

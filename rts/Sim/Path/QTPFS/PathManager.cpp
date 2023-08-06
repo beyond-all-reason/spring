@@ -1218,11 +1218,6 @@ unsigned int QTPFS::PathManager::RequestPath(
 }
 
 bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
-	// const PathTypeMapIt pathTypeIt = pathTypes.find(pathID);
-
-	// if (pathTypeIt == pathTypes.end())
-	// 	return false;
-
 	// PathCache& pathCache = pathCaches[pathTypeIt->second];
 	// IPath* livePath = pathCache.GetLivePath(pathID);
 
@@ -1252,31 +1247,20 @@ float3 QTPFS::PathManager::NextWayPoint(
 	float, // radius,
 	bool synced
 ) {
-	// in misc since it is called from many points
-	SCOPED_TIMER("Misc::Path::NextWayPoint");
-
-	// const PathTypeMap::const_iterator pathTypeIt = pathTypes.find(pathID);
+	ZoneScoped;
 	const float3 noPathPoint = -XZVector;
 
 	if (!IsFinalized())
 		return noPathPoint;
-	// if (!synced)
-	// 	return noPathPoint;
 
-	// dangling ID after a re-request failure or regular deletion
-	// return an error-vector so GMT knows it should stop the unit
-	// if (pathTypeIt == pathTypes.end())
-	// 	return noPathPoint;
+	entt::entity pathEntity = entt::entity(pathID);
+	if (!registry.valid(pathEntity))
+		return noPathPoint;
 
-	// IPath* tempPath = pathCaches[pathTypeIt->second].GetTempPath(pathID);
-	// IPath* livePath = pathCaches[pathTypeIt->second].GetLivePath(pathID);
-
-	entt::entity pathEntity = (entt::entity)pathID;
-	if (!registry.valid(pathEntity)) { return noPathPoint; }
 	IPath* livePath = registry.try_get<IPath>(pathEntity);
-	if (livePath == nullptr) { return noPathPoint; }
+	if (livePath == nullptr)
+		return noPathPoint;
 
-	// if (tempPath->GetID() != 0) {
 	if (registry.all_of<PathIsTemp>(pathEntity)) {
 		// path-request has not yet been processed (so ID still maps to
 		// a temporary path); just set the unit off toward its target to
@@ -1299,7 +1283,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 		const float3  targetDirec = (targetPoint - sourcePoint).SafeNormalize() * SQUARE_SIZE;
 		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
 	}
-	// if (livePath->GetID() == 0) {
+
 	if (registry.all_of<PathIsDirty>(pathEntity)) {
 		// the request WAS processed but then immediately undone by a
 		// TerrainChange --> MarkDeadPaths event in the same frame as
@@ -1311,9 +1295,6 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 	unsigned int minPointIdx = livePath->GetNextPointIndex();
 	unsigned int nxtPointIdx = 1;
-
-	if (minPointIdx == livePath->NumPoints() - 1)
-		return noPathPoint;
 
 	for (unsigned int i = (livePath->GetNextPointIndex()); i < (livePath->NumPoints() - 1); i++) {
 		const float radiusSq = (point - livePath->GetPoint(i)).SqLength2D();
@@ -1361,28 +1342,32 @@ float3 QTPFS::PathManager::NextWayPoint(
 }
 
 
+bool QTPFS::PathManager::CurrentWaypointIsLast(unsigned int pathID) {
+	entt::entity pathEntity = entt::entity(pathID);
+	if (!registry.valid(pathEntity))
+		return true;
+
+	IPath* livePath = registry.try_get<IPath>(pathEntity);
+	if (livePath == nullptr)
+		return true;
+
+	return ( livePath->GetNextPointIndex() == livePath->NumPoints() - 1 );
+}
+
 
 void QTPFS::PathManager::GetPathWayPoints(
 	unsigned int pathID,
 	std::vector<float3>& points,
 	std::vector<int>& starts
 ) const {
-	// const PathTypeMap::const_iterator pathTypeIt = pathTypes.find(pathID);
-
 	if (!IsFinalized())
 		return;
-	// if (pathTypeIt == pathTypes.end())
-	// 	return;
 
-	// PathCache& pathCache = pathCaches[pathTypeIt->second];
-	// const IPath* path = cache.GetLivePath(pathID);
 	entt::entity pathEntity = (entt::entity)pathID;
 	if (!registry.valid(pathEntity))
 		return;
 
 	const IPath* path = registry.try_get<IPath>(pathEntity);
-
-	// if (path->GetID() == 0)
 	if (path == nullptr)
 		return;
 
