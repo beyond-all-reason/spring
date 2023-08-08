@@ -2463,13 +2463,19 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
 				resultantForces += summedVec;
 
-				float3 waypointMove(summedVec.x, 0.f, summedVec.z);
+				// float3 waypointMove(summedVec.x, 0.f, summedVec.z);
 				// minimal hack to make FollowPath work at all turn-rates
 				// since waypointDir will undergo a (large) discontinuity
-				earlyCurrWayPoint += waypointMove;
-				earlyNextWayPoint += waypointMove;
+				// earlyCurrWayPoint += waypointMove;
+				// earlyNextWayPoint += waypointMove;
 
-				limitSpeedForTurning = 3;
+				// Disabled, due to excessive redirecting of waypoints away from the intended path
+				// because units get stuck for multiple frames, and the offset accumalates over several
+				// frames. It's better for the unit to adjust speed if neccessary for turn rate to allow
+				// the unit to get back on path faster, instead of ping-ponging over the same building
+				// several times.
+
+				limitSpeedForTurning = 2;
 
 				// LOG("%s: moving waypoint1 (%f,%f,%f)->(%f,%f,%f)", __func__
 				// 	, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
@@ -2503,11 +2509,11 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
 			resultantForces += summedVec;
 
-			summedVec.y = 0.f;
-			earlyCurrWayPoint += summedVec;
-			earlyNextWayPoint += summedVec;
+			// summedVec.y = 0.f;
+			// earlyCurrWayPoint += summedVec;
+			// earlyNextWayPoint += summedVec;
 
-			limitSpeedForTurning = 3;
+			limitSpeedForTurning = 2;
 
 			// LOG("%s: moving waypoint2 (%f,%f,%f)->(%f,%f,%f)", __func__
 			// 		, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
@@ -2520,7 +2526,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			// the new speedvector which is constructed from deltaSpeed --> we would simply keep
 			// moving forward through obstacles if not counteracted by this
 			resultantForces += ((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f));
-			// TODO: possible cause of units getting stuck on yardmaps?
 		}
 
 		// same here
