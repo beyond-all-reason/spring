@@ -1171,7 +1171,11 @@ void CGroundMoveType::ChangeSpeed(float newWantedSpeed, bool wantReverse, bool f
 				}
 			}
 
-			if (carefulMode) {
+			// When a waypoint is moved, it is because of a collision with a building. This can
+			// result in the unit having to loop back around, but we need to make sure it doesn't
+			// go too fast looping back around that it crashes right back into the same building
+			// and trigger a looping behaviour.
+			if (limitSpeedForTurning > 0) {
 				const int dirSign = Sign(int(!reversing));
 				short idealHeading = GetHeadingFromVector(waypointDir.x, waypointDir.z);
 				short offset = idealHeading - owner->heading;
@@ -2117,17 +2121,8 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		earlyCurrWayPoint = earlyNextWayPoint;
 		earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
-		if (waypointModified) {
-			waypointModified = false;
-
-			// When a waypoint is moved, it is because of a collision with a building. This can
-			// result in the unit having to loop back around, but we need to make sure it doesn't
-			// go too fast looping back around that it crashes right back into the same building
-			// and trigger a looping behaviour.
-			carefulMode = true;
-		} else {
-			carefulMode = false;
-		}
+		if (limitSpeedForTurning > 0)
+			--limitSpeedForTurning;
 
 		lastWaypoint = pathManager->CurrentWaypointIsLast(pathID);
 		if (lastWaypoint) {
@@ -2227,8 +2222,7 @@ void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 
 	currentSpeed *= (1 - hardStop);
 	wantedSpeed = 0.0f;
-	carefulMode = false;
-	waypointModified = false;
+	limitSpeedForTurning = 0;
 }
 
 /* Called when the unit arrives at its goal. */
@@ -2475,7 +2469,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				earlyCurrWayPoint += waypointMove;
 				earlyNextWayPoint += waypointMove;
 
-				waypointModified = true;
+				limitSpeedForTurning = 3;
 
 				// LOG("%s: moving waypoint1 (%f,%f,%f)->(%f,%f,%f)", __func__
 				// 	, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
@@ -2513,7 +2507,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			earlyCurrWayPoint += summedVec;
 			earlyNextWayPoint += summedVec;
 
-			waypointModified = true;
+			limitSpeedForTurning = 3;
 
 			// LOG("%s: moving waypoint2 (%f,%f,%f)->(%f,%f,%f)", __func__
 			// 		, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z

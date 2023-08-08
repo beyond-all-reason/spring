@@ -248,15 +248,16 @@ private:
 	int wantRepathFrame = std::numeric_limits<int>::min();
 	int lastRepathFrame = std::numeric_limits<int>::min();
 	float bestLastWaypointDist = std::numeric_limits<float>::infinity();
+	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
+	short setHeadingDir = 0;
+	short limitSpeedForTurning = 0;			/// if set, take extra care to prevent overshooting while turning for the next N waypoints.
 
 	bool atGoal = true;
 	bool atEndOfPath = true;
 	bool wantRepath = false;
 	bool moveFailed = false;
 	bool lastWaypoint = false;
-	bool waypointModified = false;
 
-	bool carefulMode = false;				/// if true, take extra care to prevent overshooting while turning.
 	bool reversing = false;
 	bool idling = false;
 	bool pushResistant = false;
@@ -265,8 +266,6 @@ private:
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
 	bool pathingFailed = false;
 	bool pathingArrived = false;
-	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
-	short setHeadingDir = 0;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;
