@@ -77,12 +77,16 @@ Sim:
    or whether a new path should be requested. Defaults to 60 frames (2 seconds.) Adjust to find the
    right balance between how quickly units can get unstuck and how much CPU power is used. Smaller
    intervals increase the chance of slow units triggering unnecessary re-pathing requests, but
-   reduces the chance that players may believe a unit is getting stuck and is not handling itsel
+   reduces the chance that players may believe a unit is getting stuck and is not handling itself
    well.
  - Added mod option, pfRepathMaxRateInFrames, which tells GroundMoveType the minimum amount of
    frames that must pass before a unit is allowed to request a new path. By default, it is 150
    (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
    processing path requests are not cheap.
+
+Sim::QTPFS
+ - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
+   The more intense the colour, the more layers (MoveTypes) that still need to process the change.
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.

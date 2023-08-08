@@ -254,7 +254,9 @@ private:
 	bool wantRepath = false;
 	bool moveFailed = false;
 	bool lastWaypoint = false;
+	bool waypointModified = false;
 
+	bool carefulMode = false;				/// if true, take extra care to prevent overshooting while turning.
 	bool reversing = false;
 	bool idling = false;
 	bool pushResistant = false;
