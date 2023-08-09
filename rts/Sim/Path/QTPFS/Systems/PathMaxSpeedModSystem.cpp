@@ -5,26 +5,24 @@
 #include <cassert>
 #include <limits>
 
-#include "Sim/Path/QTPFS/Components/PathSearch.h"
+#include "Map/ReadMap.h"
+
+#include "Sim/Misc/GlobalSynced.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/Path/IPathManager.h"
+#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
+#include "Sim/Path/QTPFS/NodeLayer.h"
+#include "Sim/Path/QTPFS/PathManager.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
 #include "System/Ecs/EcsMain.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
-
-#include "Sim/Misc/GlobalSynced.h"
-#include "Map/ReadMap.h"
-
-#include "Sim/MoveTypes/MoveDefHandler.h"
-#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/SpringMath.h"
 
-#include "../NodeLayer.h"
-
-#include "Sim/Path/IPathManager.h"
-#include "Sim/Path/QTPFS/PathManager.h"
 
 using namespace SystemGlobals;
 using namespace QTPFS;
@@ -41,34 +39,18 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     // Initialization
     if (frameModulus <= 0) {
         layersView.each([&layersView, pm](entt::entity entity){
-            auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-           // if (layer.requestUpdate) {
+                auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
                 auto& nodeLayer = pm->GetNodeLayer(layer.layerNum);
                 layer.updateCurMaxSpeed = (-std::numeric_limits<float>::infinity());
                 layer.updateMaxNodes = nodeLayer.GetMaxNodesAlloced();
                 layer.updateInProgress = true;
-                // layer.requestUpdate = false;
-           // }
             });
         dataChunk = 0;
     }
     
-    // TODO: setup at beginning and attach to component - only needs to be done once at the beginning of each sweep.
-    // Prepare list of entity IDs for MT section.
-    // entt::entity entities[MoveDefHandler::MAX_MOVE_DEFS];
-    // int layersToUpdateCount = 0;
-    // {
-    //     layersView.each([&entities, &layersToUpdateCount, &layersView](entt::entity entity){
-    //             auto layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
-    //             if (layer.updateInProgress)
-    //                 entities[layersToUpdateCount++] = entity;
-    //         });
-    // }
-
     // One thread per layer: get maximum speed mod from the nodes walked thus far.
     // for_mt(0, layersToUpdateCount, [&layersView, &comp, dataChunk, pm, &entities](int idx){
     for_mt(0, layersView.size(), [&layersView, &comp, dataChunk, pm](int idx){
-        // entt::entity entity = entities[idx];
         entt::entity entity = layersView.storage<NodeLayerMaxSpeedSweep>()[idx];
         auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
 
@@ -98,9 +80,9 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
             comp.maxRelSpeedMod[layer.layerNum] = layer.updateCurMaxSpeed;
             layer.updateInProgress = false;
 
-            // if (layer.layerNum == 2) {
-            //     LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
-            // }
+            if (layer.layerNum == 2) {
+                LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
+            }
             });
 }
 
@@ -113,7 +95,6 @@ void InitLayers() {
         auto& layer = QTPFS::registry.emplace<NodeLayerMaxSpeedSweep>(entity);
         layer.layerNum = counter++;
         layer.updateCurMaxSpeed = 0.f;
-        // layer.requestUpdate = true;
         // LOG("%s: added %x:%x entity", __func__, entt::to_integral(entity), entt::to_version(entity));
     });
 }

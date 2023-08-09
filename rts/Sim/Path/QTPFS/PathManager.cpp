@@ -37,7 +37,7 @@
 #include "System/StringUtil.h"
 
 #include "Components/Path.h"
-#include "Components/PathSearch.h"
+#include "Components/PathMaxSpeedMod.h"
 #include "Systems/PathMaxSpeedModSystem.h"
 #include "Registry.h"
 
@@ -251,8 +251,8 @@ void QTPFS::PathManager::Load() {
 
 	nodeLayerUpdatePriorityOrder.resize(numMoveDefs);
 
-	nodeLayersMapDamageTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE; // + (mapDims.mapx % DAMAGE_MAP_BLOCK_SIZE > 0); -- maps can't be that finely sized!
-	nodeLayersMapDamageTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE; // + (mapDims.mapy % DAMAGE_MAP_BLOCK_SIZE > 0);
+	nodeLayersMapDamageTrack.width = mapDims.mapx / DAMAGE_MAP_BLOCK_SIZE;
+	nodeLayersMapDamageTrack.height = mapDims.mapy / DAMAGE_MAP_BLOCK_SIZE;
 	nodeLayersMapDamageTrack.cellSize = DAMAGE_MAP_BLOCK_SIZE;
 
 	nodeLayersMapDamageTrack.mapChangeTrackers.clear();
@@ -474,8 +474,8 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 			int idx = nl.AllocPoolNode(nullptr, -1, x, z, x + rootSize, z + rootSize);
 			// nl.RegisterNode(nl.GetPoolNode(idx));
 
-			LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
-					, idx, x, z, x + rootSize, z + rootSize);
+			// LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
+			// 		, idx, x, z, x + rootSize, z + rootSize);
 
 			assert(idx == numRootCount);
 			numRootCount++;
@@ -491,16 +491,16 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	uint32_t rootMask = (~0) << rootShift;
 	nl.SetRootMask(rootMask);
 
-	LOG("rootShift = %d, maxDepth = %d", rootShift, rootMask);
-	LOG("%s: %d root nodes allocated (%d x %d) mask: 0x%08x.", __func__
-			, numRootCount, (numRootCount/zRootNodes), zRootNodes, rootMask);
+	// LOG("rootShift = %d, maxDepth = %d", rootShift, rootMask);
+	// LOG("%s: %d root nodes allocated (%d x %d) mask: 0x%08x.", __func__
+	// 		, numRootCount, (numRootCount/zRootNodes), zRootNodes, rootMask);
 
 	for (int i=0; i<numRootCount; ++i) {
 		nl.GetPoolNode(i)->SetNodeNumber(i << rootShift);
-		LOG("check %x (%x) == %x (%x)", i, i << rootShift
-			, (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift
-			, nl.GetPoolNode(i)->GetNodeNumber()
-			);
+		// LOG("%s: check %x (%x) == %x (%x)", __func__, i, i << rootShift
+		// 	, (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift
+		// 	, nl.GetPoolNode(i)->GetNodeNumber()
+		// 	);
 		assert(i == (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift);
 	}
 	nl.SetRootNodeCountAndDimensions(numRootCount, (numRootCount/zRootNodes), zRootNodes, rootSize);
@@ -515,31 +515,13 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle& rect, int currentThread) {
 	const MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 
-	// LOG("%s: Starting update for %d", __func__, layerNum);
-
 	if (!IsFinalized())
 		return;
-
-	// NOTE:
-	//     this is needed for IsBlocked* --> SquareIsBlocked --> IsNonBlocking
-	//     but no point doing it in ExecuteSearch because the IsBlocked* calls
-	//     are only made from NodeLayer::Update and also no point doing it here
-	//     since we are independent of a specific path --> requires redesign
-	//
-	// md->tempOwner = const_cast<CSolidObject*>(path->GetOwner());
 
 	// adjust the borders so we are not left with "rims" of
 	// impassable squares when eg. a structure is reclaimed
 	// SRectangle mr;
 
-	// mr.x1 = std::max((r.x1 - md->xsizeh) - int(QTNode::MinSizeX() >> 1),            0);
-	// mr.z1 = std::max((r.z1 - md->zsizeh) - int(QTNode::MinSizeZ() >> 1),            0);
-	// mr.x2 = std::min((r.x2 + md->xsizeh) + int(QTNode::MinSizeX() >> 1), mapDims.mapx);
-	// mr.z2 = std::min((r.z2 + md->zsizeh) + int(QTNode::MinSizeZ() >> 1), mapDims.mapy);
-	// ur.x1 = mr.x1;
-	// ur.z1 = mr.z1;
-	// ur.x2 = mr.x2;
-	// ur.z2 = mr.z2;
 
 	// TODO expand r to correct size - i.e. size of smallest node that contains the area
 	// TODO: stop r expansion in tessalate - it isn't needed
@@ -689,7 +671,6 @@ void QTPFS::PathManager::Update() {
 			int layerNum = nodeLayerUpdatePriorityOrder[index];
 			int blocksToUpdate = numBlocksToUpdate(layerNum);
 			for (int i = 0; i < blocksToUpdate; ++i) { UpdateNodeLayer(layerNum, rect, curThread); }
-			// UpdateNodeLayerLowRes(layerNum, curThread);
 		});
 
 		// Mark all dirty paths so that they can be recalculated

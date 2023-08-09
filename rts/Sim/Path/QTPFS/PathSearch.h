@@ -7,8 +7,6 @@
 #include <vector>
 
 #include "PathDefines.h"
-// #include "Node.h"
-// #include "NodeHeap.h"
 #include "PathThreads.h"
 
 #include "System/float3.h"

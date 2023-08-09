@@ -20,7 +20,7 @@
 #include "Sim/Path/QTPFS/PathManager.h"
 
 #include "Sim/Path/QTPFS/Components/Path.h"
-#include "Sim/Path/QTPFS/Components/PathSearch.h"
+#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
 #include "Rendering/Fonts/glFont.h"

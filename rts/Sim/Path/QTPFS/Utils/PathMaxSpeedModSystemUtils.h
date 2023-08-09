@@ -3,7 +3,7 @@
 
 #include "Sim/Misc/GlobalSynced.h"
 
-#include "Sim/Path/QTPFS/Components/PathSearch.h"
+#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
 

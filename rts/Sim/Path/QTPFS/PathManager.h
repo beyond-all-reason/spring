@@ -20,6 +20,7 @@ namespace QTPFS {
 	struct QTNode;
 	class PathManager: public IPathManager {
 	public:
+		// must not be larger than the smallest evenly divisible size of maps.
 		static constexpr unsigned int DAMAGE_MAP_BLOCK_SIZE = 16;
 
 		struct MapChangeTrack {

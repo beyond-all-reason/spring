@@ -14,7 +14,7 @@
 
 #include "Registry.h"
 #include "Components/Path.h"
-#include "Components/PathSearch.h"
+#include "Components/PathMaxSpeedMod.h"
 
 #include <tracy/Tracy.hpp>
 

@@ -14,7 +14,7 @@
 #include "Game/SelectedUnitsHandler.h"
 #include "Sim/Objects/SolidObject.h"
 
-#include "Components/PathSearch.h"
+#include "Components/PathMaxSpeedMod.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
 
 #include "Map/ReadMap.h"
