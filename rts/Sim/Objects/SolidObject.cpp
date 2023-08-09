@@ -401,7 +401,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 	// set initial rotation of the object around updir=UpVector first
 	const float3 fDir = GetVectorFromHeading(heading);
 
-	if (likely(1.0f - math::fabs(uDir.y) >= 1e-6f)) {
+	if likely(1.0f - math::fabs(uDir.y) >= 1e-6f) {
 		const float3 norm = float3{ uDir.z, 0.0f, -uDir.x }.Normalize(); //same as UpVector.cross(uDir) to obtain normal vector, which will serve as a rotation axis
 		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
 	}

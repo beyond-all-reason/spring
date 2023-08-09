@@ -30,6 +30,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/Weapon.h"
+#include "System/creg/STL_Tuple.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/FastMath.h"
@@ -134,6 +135,8 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(skidRotSpeed),
 	CR_MEMBER(skidRotAccel),
 
+	CR_MEMBER(resultantForces),
+
 	CR_MEMBER(pathID),
 
 	CR_MEMBER(numIdlingUpdates),
@@ -154,6 +157,14 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(useMainHeading),
 	CR_MEMBER(useRawMovement),
 	CR_MEMBER(pathingFailed),
+	CR_MEMBER(pathingArrived),
+	CR_MEMBER(setHeading),
+	CR_MEMBER(setHeadingDir),
+	CR_MEMBER(collidedFeatures),
+	CR_MEMBER(collidedUnits),
+	CR_MEMBER(killFeatures),
+	CR_MEMBER(killUnits),
+	CR_MEMBER(moveFeatures),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetPreallocContainer)
@@ -637,9 +648,7 @@ bool CGroundMoveType::Update()
 		owner->requestRemoveUnloadTransportId = false;
 	}
 
-	for (auto collision: moveFeatures) {
-		auto collidee = std::get<0>(collision);
-		auto moveVec = std::get<1>(collision);
+	for (const auto& [collidee, moveVec] : moveFeatures) {
 		quadField.RemoveFeature(collidee);
 		collidee->Move(moveVec, true);
 		quadField.AddFeature(collidee);

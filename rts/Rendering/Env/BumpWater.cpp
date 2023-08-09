@@ -333,13 +333,10 @@ void CBumpWater::InitResources(bool loadShader)
 		glBindTexture(target, refractTexture);
 		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		if (GLEW_EXT_texture_edge_clamp) {
-			glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		} else {
-			glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		}
+
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 		glTexImage2D(target, 0, GL_RGBA8, screenTextureX, screenTextureY, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	}
 
@@ -353,8 +350,8 @@ void CBumpWater::InitResources(bool loadShader)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, reflTexSize, reflTexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	}

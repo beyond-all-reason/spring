@@ -57,7 +57,7 @@ static inline void parallel(const std::function<void()>&& f)
 }
 
 template<class F, class G>
-static inline auto parallel_reduce(F&& f, G&& g) -> typename std::result_of<F()>::type
+static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 {
 	return f();
 }
@@ -85,7 +85,7 @@ class ITaskGroup;
 namespace ThreadPool {
 	template<class F, class... Args>
 	static auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_ptr<std::future<typename std::result_of<F(Args...)>::type>>;
+	-> std::shared_ptr<std::future<std::invoke_result_t<F, Args...>>>;
 
 	void AddExtJob(spring::thread&& t);
 	void AddExtJob(std::future<void>&& f);
@@ -222,7 +222,7 @@ template<class F, class... Args>
 class AsyncTask: public ITaskGroup
 {
 public:
-	typedef  typename std::result_of<F(Args...)>::type  return_type;
+	using return_type = std::invoke_result_t<F, Args...>;
 
 	AsyncTask(F f, Args... args) : selfDelete(true) {
 		task = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, std::forward<Args>(args)...));
@@ -777,14 +777,14 @@ static inline void parallel(F&& f)
 
 
 template<class F, class G>
-static inline auto parallel_reduce(F&& f, G&& g) -> typename std::result_of<F()>::type
+static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 {
 	if (!ThreadPool::HasThreads())
 		return f();
 
 	SCOPED_MT_TIMER("ThreadPool::AddTask");
 
-	typedef  typename std::result_of<F()>::type  RetType;
+	using RetType = std::invoke_result_t<F>;
 	// typedef  typename std::shared_ptr< AsyncTask<F> >  TaskType;
 	typedef           std::shared_ptr< std::future<RetType> >  FoldType;
 
@@ -826,9 +826,9 @@ static inline auto parallel_reduce(F&& f, G&& g) -> typename std::result_of<F()>
 namespace ThreadPool {
 	template<class F, class... Args>
 	static inline auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_ptr<std::future<typename std::result_of<F(Args...)>::type>>
+	-> std::shared_ptr<std::future<std::invoke_result_t<F, Args...>>>
 	{
-		typedef typename std::result_of<F(Args...)>::type return_type;
+		using return_type = std::invoke_result_t<F, Args...>;
 
 		if (!ThreadPool::HasThreads()) {
 			// directly process when there are no worker threads

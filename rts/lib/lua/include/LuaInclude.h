@@ -54,6 +54,10 @@ static inline bool lua_israwnumber(lua_State* L, int index)
 	return (lua_type(L, index) == LUA_TNUMBER);
 }
 
+static inline bool lua_israwboolean(lua_State* L, int index)
+{
+	return (lua_type(L, index) == LUA_TBOOLEAN);
+}
 
 static inline bool lua_israwstring(lua_State* L, int index)
 {

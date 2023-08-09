@@ -250,22 +250,10 @@ void CBuilderCAI::PostLoad()
 	}
 }
 
-
-
-inline float CBuilderCAI::GetBuildRange(const float targetRadius) const
+float CBuilderCAI::GetBuildRange(const float targetRadius) const
 {
-	// for immobile:
-	// only use `buildDistance + radius` iff radius > buildDistance,
-	// and so it would be impossible to get in buildrange (collision detection with units/features)
-	//
-	// what does this even mean?? IMMOBILE units cannot "get in range" of anything
-	if (owner->immobile)
-		return (ownerBuilder->buildDistance + std::max(targetRadius - ownerBuilder->buildDistance, 0.0f));
-
 	return (ownerBuilder->buildDistance + targetRadius);
 }
-
-
 
 bool CBuilderCAI::IsInBuildRange(const CWorldObject* obj) const
 {
@@ -622,9 +610,11 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	assert(build.def != nullptr);
 	assert(build.def->id == -c.GetID() && build.def->id != 0);
 
+	auto* model = build.def->LoadModel();
+
 	if (building) {
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
-		MoveInBuildRange(build.pos, 0.0f);
+		MoveInBuildRange(build.pos, std::max(0.f, model->radius));
 
 		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->terraforming) {
 			building = false;
@@ -635,7 +625,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	}
 
 	// keep moving until 3D distance to buildPos is LEQ our buildDistance
-	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), 0.0f, true)) {
+	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), std::max(0.f, model->radius), true)) {
 		if (IsBuildPosBlocked(build)) {
 			StopMoveAndFinishCommand();
 			return;

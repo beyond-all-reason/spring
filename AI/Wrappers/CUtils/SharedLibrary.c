@@ -49,7 +49,7 @@ sharedLib_t sharedLib_load(const char* libFilePath) {
 
 #if defined _WIN32
 	if ((lib = LoadLibrary(libFilePath)) == NULL) {
-		fprintf(stderr, "[SharedLibrary.c::sharedLib_load(%s)] LoadLibrary() error %d\n", libFilePath, GetLastError());
+		fprintf(stderr, "[SharedLibrary.c::sharedLib_load(%s)] LoadLibrary() error %d\n", libFilePath, (int) GetLastError());
 	}
 #else /* defined _WIN32 */
 	if ((lib = dlopen(libFilePath, RTLD_LAZY)) == NULL) {

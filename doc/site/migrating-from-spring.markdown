@@ -164,6 +164,23 @@ function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
 end
 ```
 
+## VFS mapping API
+
+`Spring.MapArchive` and `Spring.UnmapArchive` have been temporarily removed due to sync unsafety.
+In the meantime, use `Spring.UseArchive`. These functions are going to come back at some point,
+but there is no concrete timeline for that yet.
+
+## Iterating synced proxy tables
+
+Functions for iterating synced proxy tables: `snext`, `spairs` and `sipairs` have been removed.
+These have been able to be replaced by the regular `next`, `pairs` and `ipairs` for some time
+already (so the change can be done before migrating):
+```diff
+ local syncedProxyTable = SYNCED.foo
+-for key, value in spairs(syncedProxyTable) do
++for key, value in  pairs(syncedProxyTable) do
+```
+
 ## General
 
 - Paletted image files are no longer accepted. Convert your images not to be paletted.

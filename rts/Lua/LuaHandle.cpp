@@ -53,6 +53,7 @@
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
 
+#include <algorithm>
 #include <string>
 
 
@@ -710,6 +711,30 @@ void CLuaHandle::GamePaused(int playerID, bool paused)
 	RunCallInTraceback(L, cmdStr, 2, 0, traceBack.GetErrFuncIdx(), false);
 }
 
+void CLuaHandle::RunDelayedFunctions(int frameNum)
+{
+	static const LuaHashString cmdStr(__func__);
+
+	const auto currentFrameIterator = delayedCallsByFrame.find(frameNum);
+	if (currentFrameIterator == delayedCallsByFrame.end())
+		return;
+
+	const auto& functions = currentFrameIterator->second;
+	for (const auto& [function, args] : functions) {
+		const LuaUtils::ScopedDebugTraceBack traceBack(L);
+		luaL_checkstack(L, args.size() + 3, __func__); // the +3 is cargo-cult, most other callins do it like that
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, function);
+		luaL_unref(L, LUA_REGISTRYINDEX, function);
+		for (const auto arg : args) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, arg);
+			luaL_unref(L, LUA_REGISTRYINDEX, arg);
+		}
+		RunCallInTraceback(L, cmdStr, (int) args.size(), 0, traceBack.GetErrFuncIdx(), false);
+	}
+
+	delayedCallsByFrame.erase(currentFrameIterator);
+}
 
 /*** Called for every game simulation frame (30 per second).
  *
@@ -725,6 +750,8 @@ void CLuaHandle::GameFrame(int frameNum)
 		delete this;
 		return;
 	}
+
+	RunDelayedFunctions(frameNum);
 
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 4, __func__);
@@ -3611,6 +3638,7 @@ bool CLuaHandle::AddBasicCalls(lua_State* L)
 		HSTR_PUSH_CFUNC(L, "GetGlobal",       CallOutGetGlobal);
 		HSTR_PUSH_CFUNC(L, "GetRegistry",     CallOutGetRegistry);
 		HSTR_PUSH_CFUNC(L, "GetCallInList",   CallOutGetCallInList);
+		HSTR_PUSH_CFUNC(L, "DelayByFrames",   CallOutDelayByFrames);
 		HSTR_PUSH_CFUNC(L, "IsEngineMinVersion", CallOutIsEngineMinVersion);
 		// special team constants
 		HSTR_PUSH_NUMBER(L, "NO_ACCESS_TEAM",  CEventClient::NoAccessTeam);
@@ -3709,6 +3737,29 @@ int CLuaHandle::CallOutIsEngineMinVersion(lua_State* L)
 	return (LuaUtils::IsEngineMinVersion(L));
 }
 
+int CLuaHandle::CallOutDelayByFrames(lua_State* L)
+{
+	int argCount = lua_gettop(L);
+	if (argCount < 2 || !lua_isnumber(L, 1) || !lua_isfunction(L, 2))
+		luaL_error(L, "Incorrect arguments to DelayByFrames(positive number frameDelay, func[, args])");
+
+	const auto frameDelay = lua_tointeger(L, 1);
+	if (frameDelay <= 0)
+		luaL_error(L, "Incorrect arguments to DelayByFrames(positive number frameDelay, func[, args])");
+
+	argCount -= 2;
+
+	std::vector <int> args;
+	args.reserve(argCount);
+	while (argCount--)
+		args.push_back(luaL_ref(L, LUA_REGISTRYINDEX));
+	std::reverse(args.begin(), args.end()); // ref has stack semantics, but pcall expects the last arg at the top
+
+	GetHandle(L)->delayedCallsByFrame[gs->GetLuaSimFrame() + frameDelay]
+		.emplace_back(luaL_ref(L, LUA_REGISTRYINDEX), std::move(args));
+
+	return 0;
+}
 
 int CLuaHandle::CallOutGetCallInList(lua_State* L)
 {

@@ -2838,6 +2838,7 @@ CR_REG_METADATA(CUnit, (
 
 	CR_MEMBER(loadingTransportId),
 	CR_MEMBER(unloadingTransportId),
+	CR_MEMBER(requestRemoveUnloadTransportId),
 	CR_MEMBER(transportCapacityUsed),
 	CR_MEMBER(transportMassUsed),
 

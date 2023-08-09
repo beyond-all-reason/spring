@@ -77,6 +77,7 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
+#include <type_traits>
 
 
 using std::min;
@@ -119,6 +120,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetGameRulesParam);
 	REGISTER_LUA_CFUNC(GetGameRulesParams);
+
+	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
+	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
 
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOptions);
@@ -217,6 +221,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitBuildFacing);
 	REGISTER_LUA_CFUNC(GetUnitIsBuilding);
 	REGISTER_LUA_CFUNC(GetUnitWorkerTask);
+	REGISTER_LUA_CFUNC(GetUnitEffectiveBuildRange);
 	REGISTER_LUA_CFUNC(GetUnitCurrentBuildPower);
 	REGISTER_LUA_CFUNC(GetUnitHarvestStorage);
 	REGISTER_LUA_CFUNC(GetUnitBuildParams);
@@ -672,17 +677,21 @@ static int PushRulesParams(lua_State* L, const char* caller,
 {
 	lua_createtable(L, 0, params.size());
 
-	for (auto& it: params) {
+	for (const auto& it: params) {
 		const std::string& name = it.first;
 		const LuaRulesParams::Param& param = it.second;
 		if (!(param.los & losStatus))
 			continue;
 
-		if (!param.valueString.empty()) {
-			LuaPushNamedString(L, name, param.valueString);
-		} else {
-			LuaPushNamedNumber(L, name, param.valueInt);
-		}
+		std::visit ([L, &name](auto&& value) {
+			using T = std::decay_t <decltype(value)>;
+			if constexpr (std::is_same_v <T, float>)
+				LuaPushNamedNumber(L, name, value);
+			else if constexpr (std::is_same_v <T, bool>)
+				LuaPushNamedBool(L, name, value);
+			else if constexpr (std::is_same_v <T, std::string>)
+				LuaPushNamedString(L, name, value);
+		}, param.value);
 	}
 
 	return 1;
@@ -699,17 +708,20 @@ static int GetRulesParam(lua_State* L, const char* caller, int index,
 		return 0;
 
 	const LuaRulesParams::Param& param = it->second;
+	if (!(param.los & losStatus))
+		return 0;
 
-	if (param.los & losStatus) {
-		if (!param.valueString.empty()) {
-			lua_pushsstring(L, param.valueString);
-		} else {
-			lua_pushnumber(L, param.valueInt);
-		}
-		return 1;
-	}
+	std::visit ([L](auto&& value) {
+		using T = std::decay_t <decltype(value)>;
+		if constexpr (std::is_same_v <T, float>)
+			lua_pushnumber(L, value);
+		else if constexpr (std::is_same_v <T, bool>)
+			lua_pushboolean(L, value);
+		else if constexpr (std::is_same_v <T, std::string>)
+			lua_pushsstring(L, value);
+	}, param.value);
 
-	return 0;
+	return 1;
 }
 
 
@@ -4260,6 +4272,42 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 	} else {
 		return 0;
 	}
+}
+
+/***
+ *
+ * @function Spring.GetUnitEffectiveBuildRange
+ * Useful for setting move goals manually.
+ * @number unitID
+ * @number buildeeDefID
+ * @treturn number effectiveBuildRange counted to the center of prospective buildee
+ */
+int LuaSyncedRead::GetUnitEffectiveBuildRange(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto builderCAI = dynamic_cast <const CBuilderCAI*> (unit->commandAI);
+	if (builderCAI == nullptr)
+		return 0;
+
+	const auto buildeeDefID = luaL_checkint(L, 2);
+	const auto unitDef = unitDefHandler->GetUnitDefByID(buildeeDefID);
+	if (unitDef == nullptr)
+		luaL_error(L, "Nonexistent buildeeDefID %d passed to Spring.GetUnitEffectiveBuildRange", (int) buildeeDefID);
+
+	const auto model = unitDef->LoadModel();
+	if (model == nullptr)
+		return 0;
+
+	/* FIXME: this is what BuilderCAI does, but can radius actually
+	 * be negative? Sounds worth asserting otherwise at model load. */
+	const auto radius = std::max(0.f, model->radius);
+
+	const auto effectiveBuildRange = builderCAI->GetBuildRange(radius);
+	lua_pushnumber(L, effectiveBuildRange);
+	return 1;
 }
 
 /***

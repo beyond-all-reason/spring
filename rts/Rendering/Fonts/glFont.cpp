@@ -200,11 +200,11 @@ void CglFont::SetOutlineColor(const float4* color) {}
 void CglFont::SetColors(const float4* textColor, const float4* outlineColor) {}
 
 float CglFont::GetCharacterWidth(const char32_t c) { return 1.0f; }
-void CglFont::ScanForWantedGlyphs(const std::u8string& str) {}
-float CglFont::GetTextWidth_(const std::u8string& text) { return (text.size() * 1.0f); }
-float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* numLines) { return 1.0f; }
+void CglFont::ScanForWantedGlyphs(const spring::u8string& str) {}
+float CglFont::GetTextWidth_(const spring::u8string& text) { return (text.size() * 1.0f); }
+float CglFont::GetTextHeight_(const spring::u8string& text, float* descender, int* numLines) { return 1.0f; }
 
-std::deque<std::string> CglFont::SplitIntoLines(const std::u8string& text) { return {}; }
+std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text) { return {}; }
 
 void CglFont::GetStats(std::array<size_t, 8>& stats) const {}
 
@@ -214,7 +214,7 @@ void CglFont::GetStats(std::array<size_t, 8>& stats) const {}
 
 // helper for GetText{Width,Height}
 template <typename T>
-static inline T SkipColorCodes(const std::u8string& text, T idx)
+static inline T SkipColorCodes(const spring::u8string& text, T idx)
 {
 	while (idx < text.size() && text[idx] == CglFont::ColorCodeIndicator) {
 		idx += 4;
@@ -226,7 +226,7 @@ static inline T SkipColorCodes(const std::u8string& text, T idx)
 // helper for RenderString*
 template <typename T>
 static inline bool SkipColorCodesAndNewLines(
-	const std::u8string& text,
+	const spring::u8string& text,
 	const CglFont::ColorCodeCallBack& cccb,
 	T* curIndex,
 	T* numLines,
@@ -287,7 +287,7 @@ float CglFont::GetCharacterWidth(const char32_t c)
 	return glyph.advance;
 }
 
-float CglFont::GetTextWidth_(const std::u8string& text)
+float CglFont::GetTextWidth_(const spring::u8string& text)
 {
 	if (text.empty())
 		return 0.0f;
@@ -363,7 +363,7 @@ float CglFont::GetTextWidth_(const std::u8string& text)
 }
 
 
-float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* numLines)
+float CglFont::GetTextHeight_(const spring::u8string& text, float* descender, int* numLines)
 {
 	if (text.empty()) {
 		if (descender != nullptr) *descender = 0.0f;
@@ -430,7 +430,7 @@ float CglFont::GetTextHeight_(const std::u8string& text, float* descender, int* 
 	return h;
 }
 
-void CglFont::ScanForWantedGlyphs(const std::u8string& ustr)
+void CglFont::ScanForWantedGlyphs(const spring::u8string& ustr)
 {
 	static std::vector<char32_t> missingGlyphs;
 	missingGlyphs.clear();
@@ -469,7 +469,7 @@ void CglFont::ScanForWantedGlyphs(const std::u8string& ustr)
 }
 
 
-std::deque<std::string> CglFont::SplitIntoLines(const std::u8string& text)
+std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text)
 {
 	std::deque<std::string> lines;
 	std::deque<std::string> colorCodeStack;
@@ -635,7 +635,7 @@ void CglFont::DrawWorldBuffered()
 template<int shiftXC, int shiftYC, bool outline>
 void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb)
 {
-	const std::u8string& ustr = toustring(str);
+	const spring::u8string& ustr = toustring(str);
 
 	ScanForWantedGlyphs(ustr);
 

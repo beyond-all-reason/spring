@@ -43,8 +43,9 @@ struct UnitDefWeapon {
 
 	float3 mainDir = FwdVector;
 
-	bool fastAutoRetargeting = false;		///< pick new targets as soon as possible, don't wait for slow update
-	float weaponAimAdjustPriority = 1.f;	///< relative importance of picking enemy targets that are in front
+	bool fastAutoRetargeting = false; ///< pick new targets as soon as possible, don't wait for slow update
+	bool fastQueryPointUpdate = false;	///< check in with unitscript to get most current query piece before every friendly fire check, don't wait for slow update
+	float weaponAimAdjustPriority = 1.f;		///< relative importance of picking enemy targets that are in front
 };
 
 

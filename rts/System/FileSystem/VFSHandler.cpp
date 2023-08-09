@@ -521,7 +521,7 @@ std::vector<std::string> CVFSHandler::GetAllArchiveNames() const
 	return ret;
 }
 
-std::vector<std::string> CVFSHandler::GetFilesInDir(const std::string& rawDir, Section section)
+std::vector<std::string> CVFSHandler::GetFilesInDir(const std::string& rawDir, bool recursive, Section section)
 {
 	std::lock_guard<decltype(vfsMutex)> lck(vfsMutex);
 
@@ -562,7 +562,7 @@ std::vector<std::string> CVFSHandler::GetFilesInDir(const std::string& rawDir, S
 		std::string name = std::move(filesBeg->first.substr(dir.length()));
 
 		// do not return files in subfolders
-		if ((name.find('/') != std::string::npos) || (name.find('\\') != std::string::npos))
+		if (!recursive && ((name.find('/') != std::string::npos) || (name.find('\\') != std::string::npos)))
 			continue;
 
 		dirFiles.emplace_back(std::move(name));
@@ -573,7 +573,7 @@ std::vector<std::string> CVFSHandler::GetFilesInDir(const std::string& rawDir, S
 }
 
 
-std::vector<std::string> CVFSHandler::GetDirsInDir(const std::string& rawDir, Section section)
+std::vector<std::string> CVFSHandler::GetDirsInDir(const std::string& rawDir, bool recursive, Section section)
 {
 	std::lock_guard<decltype(vfsMutex)> lck(vfsMutex);
 
@@ -613,7 +613,10 @@ std::vector<std::string> CVFSHandler::GetDirsInDir(const std::string& rawDir, Se
 
 		// strip pathname
 		const std::string& name = filesBeg->first.substr(dir.length());
-		const std::string::size_type slash = name.find_first_of("/\\");
+		const std::string::size_type slash = recursive
+			? name.find_last_of("/\\")
+			: name.find_first_of("/\\")
+		;
 
 		if (slash == std::string::npos)
 			continue;

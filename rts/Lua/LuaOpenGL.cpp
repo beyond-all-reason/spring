@@ -31,7 +31,6 @@
 #include "LuaShaders.h"
 #include "LuaTextures.h"
 #include "LuaUtils.h"
-#include "LuaMatrix.h"
 #include "LuaVAO.h"
 #include "LuaVBO.h"
 
@@ -57,6 +56,7 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/TexBind.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -484,7 +484,6 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	 	LuaRBOs::PushEntries(L);
 	}
 
-	LuaMatrix::PushEntries(L);
 	LuaVAOs::PushEntries(L);
 	LuaVBOs::PushEntries(L);
 
@@ -3629,12 +3628,8 @@ int LuaOpenGL::GenerateMipmap(lua_State* L)
 	if (tex == nullptr)
 		return 0;
 
-	GLint currentBinding;
-	assert(LuaTextures::Format2Query.find(tex->target) != LuaTextures::Format2Query.end());
-	glGetIntegerv(LuaTextures::Format2Query.find(tex->target)->second, &currentBinding);
-	glBindTexture(tex->target, tex->id);
+	auto texBind = GL::TexBind(tex->target, tex->id);
 	glGenerateMipmapEXT(tex->target);
-	glBindTexture(tex->target, currentBinding);
 
 	return 0;
 }
@@ -4055,7 +4050,7 @@ int LuaOpenGL::GetAtlasTexture(lua_State* L)
 	const std::string subAtlasTexName = luaL_checksstring(L, 2);
 
 	AtlasedTexture atlTex = atlas->GetTexture(subAtlasTexName);
-	if (atlTex == AtlasedTexture())
+	if (atlTex == AtlasedTexture::DefaultAtlasTexture)
 		luaL_error(L, "gl.%s() Invalid atlas named texture specified %s", __func__, subAtlasTexName.c_str());
 
 	lua_pushnumber(L, atlTex.x1);

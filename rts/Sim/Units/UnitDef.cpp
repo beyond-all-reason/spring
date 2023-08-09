@@ -53,6 +53,9 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
 	fastAutoRetargeting = weaponTable.GetBool("fastAutoRetargeting", fastAutoRetargeting);
+
+	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
+	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
 }
 
 
@@ -612,7 +615,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 	// Prevent a division by zero in experience calculations.
 	if (power < 1.0e-3f) {
-		LOG_L(L_WARNING, "Unit %s is really cheap? %f", humanName.c_str(), power);
+		LOG_L(L_WARNING, "Unit '%s' (%s) has really low power? %f", humanName.c_str(), unitName.c_str(), power);
 		LOG_L(L_WARNING, "This can cause a division by zero in experience calculations.");
 		power = 1.0e-3f;
 	}

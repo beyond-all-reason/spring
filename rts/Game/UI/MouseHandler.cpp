@@ -25,6 +25,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Units/Unit.h"
@@ -45,6 +46,8 @@
 #include <SDL_mouse.h>
 #include <SDL_events.h>
 #include <SDL_keycode.h>
+
+using namespace GL::State;
 
 
 CONFIG(bool, HardwareCursor).defaultValue(false).description("Sets hardware mouse cursor rendering. If you have a low framerate, your mouse cursor will seem \"laggy\". Setting hardware cursor will render the mouse cursor separately from spring and the mouse will behave normally. Note, not all GPU drivers support it in fullscreen mode!");
@@ -572,20 +575,17 @@ void CMouseHandler::DrawSelectionBox() const
 		{tpLeft , cmdColors.mouseBox},
 	});
 
-	glPushAttrib(GL_ENABLE_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc((GLenum)cmdColors.MouseBoxBlendSrc(), (GLenum)cmdColors.MouseBoxBlendDst());
+	auto state = GL::SubState(
+		DepthTest(GL_FALSE),
+		Blending(GL_TRUE),
+		BlendFunc((GLenum)cmdColors.MouseBoxBlendSrc(), (GLenum)cmdColors.MouseBoxBlendDst()),
+		LineWidth(cmdColors.MouseBoxLineWidth()));
 
-	glLineWidth(cmdColors.MouseBoxLineWidth());
 	sh.Enable();
 
 	rb.DrawArrays(GL_LINE_LOOP);
 
 	sh.Disable();
-	glLineWidth(1.0f);
-
-	glPopAttrib();
 }
 
 int2 CMouseHandler::GetViewMouseCenter() const
