@@ -192,6 +192,7 @@ private:
 	bool OwnerMoved(const short, const float3&, const float3&);
 	bool FollowPath(int thread);
 	bool WantReverse(const float3& wpDir, const float3& ffDir) const;
+	void SetWaypointDir(const float3& cwp, const float3 &opos);
 
 private:
 	GMTDefaultPathController pathController;
