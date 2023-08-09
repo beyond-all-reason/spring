@@ -81,7 +81,6 @@ namespace QTPFS {
 
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
-		const PathCache& GetPathCache(unsigned int pathType) const { return pathCache; }
 		const NodeLayersChangeTrack& GetMapDamageTrack() const { return nodeLayersMapDamageTrack; };
 
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
@@ -136,7 +135,6 @@ namespace QTPFS {
 		bool ExecuteSearch(
 			PathSearch* search,
 			NodeLayer& nodeLayer,
-			PathCache& pathCache,
 			unsigned int pathType
 		);
 

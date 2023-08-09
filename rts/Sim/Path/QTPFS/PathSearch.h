@@ -57,6 +57,10 @@ namespace QTPFS {
 
 			unsigned int GetFrame() const { return searchFrame; }
 
+			size_t GetMemFootPrint() const {
+				return iterations.size() * sizeof(decltype(iterations)::value_type);
+			};
+
 		private:
 			std::vector<Iteration> iterations;
 
@@ -81,7 +85,6 @@ namespace QTPFS {
 	public:
 		PathSearch()
 			: nodeLayer(NULL)
-			, pathCache(NULL)
 			, searchExec(NULL)
 			, hCostMult(0.0f)
 			, haveFullPath(false)
@@ -99,7 +102,6 @@ namespace QTPFS {
 
 		void Initialize(
 			NodeLayer* layer,
-			PathCache* cache,
 			const float3& sourcePoint,
 			const float3& targetPoint,
 			const SRectangle& searchArea
@@ -143,7 +145,6 @@ namespace QTPFS {
 
 		NodeLayer* nodeLayer;
 		int pathType;
-		PathCache* pathCache;
 
 		// not used unless QTPFS_TRACE_PATH_SEARCHES is defined
 		PathSearchTrace::Execution* searchExec;

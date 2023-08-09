@@ -148,11 +148,9 @@ void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::Node
 
 
 void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>& rb) const {
-	const QTPFS::PathCache& pathCache = pm->GetPathCache(md->pathType);
-	const auto pathView = QTPFS::registry.view<QTPFS::IPath>();
-
 	glLineWidth(4.0f);
 
+	const auto pathView = QTPFS::registry.view<QTPFS::IPath>();
 	for (const auto& pathEntity : pathView) {
 		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
 		if (path->GetPathType() == md->pathType)

@@ -79,7 +79,7 @@ namespace QTPFS {
         }
 
         std::size_t GetMemFootPrint() const {
-            std::size_t memFootPrint = sizeof(SparseData);
+            std::size_t memFootPrint = 0;
 
             memFootPrint += sparseIndex.size() * sizeof(typename decltype(sparseIndex)::value_type);
             memFootPrint += denseData.size() * sizeof(typename decltype(denseData)::value_type);
@@ -127,17 +127,17 @@ namespace QTPFS {
 		}
 
         std::size_t GetMemFootPrint() {
-            std::size_t memFootPrint = sizeof(SearchThreadData);
+            std::size_t memFootPrint = 0;
 
             memFootPrint += allSearchedNodes.GetMemFootPrint();
+            memFootPrint += openNodes.size() * sizeof(decltype(openNodes)::value_type);
+            memFootPrint += tmpNodesStore.size() * sizeof(decltype(tmpNodesStore)::value_type);
 
             return memFootPrint;
         }
 	};
 
     struct UpdateThreadData {
-		// std::vector<SpeedModType> curSpeedMods;
-		// std::vector<SpeedBinType> curSpeedBins;
         std::vector<std::uint8_t> maxBlockBits;
         std::vector<INode*> relinkNodeGrid;
         SRectangle areaUpdated;
@@ -182,10 +182,6 @@ namespace QTPFS {
             areaRelinked = areaUpdated;
             areaMaxBlockBits = areaUpdated;
             areaRelinkedInner = areaUpdated;
-            // curSpeedMods.resize(0);
-            // curSpeedMods.shrink_to_fit();
-            // curSpeedBins.resize(0);
-            // curSpeedBins.shrink_to_fit();
             relinkNodeGrid.resize(0);
             relinkNodeGrid.shrink_to_fit();
             maxBlockBits.resize(0);
@@ -193,13 +189,14 @@ namespace QTPFS {
             moveDef = nullptr;
         }
 
-        // std::size_t GetMemFootPrint() {
-        //     std::size_t memFootPrint = sizeof(SearchThreadData);
+        std::size_t GetMemFootPrint() {
+            std::size_t memFootPrint = 0;
 
-        //     memFootPrint += allSearchedNodes.GetMemFootPrint();
+            memFootPrint += maxBlockBits.size()   * sizeof(decltype(maxBlockBits)::value_type);
+            memFootPrint += relinkNodeGrid.size() * sizeof(decltype(relinkNodeGrid)::value_type);
 
-        //     return memFootPrint;
-        // }
+            return memFootPrint;
+        }
     };
 }
 

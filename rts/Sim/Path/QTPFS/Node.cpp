@@ -230,22 +230,6 @@ void QTPFS::QTNode::Init(
 }
 
 
-
-std::uint64_t QTPFS::QTNode::GetMemFootPrint(const NodeLayer& nl) const {
-	std::uint64_t memFootPrint = sizeof(QTNode);
-
-	if (IsLeaf()) {
-		memFootPrint += (neighbours.size() * sizeof(decltype(neighbours)::value_type));
-		// memFootPrint += (netpoints.size() * sizeof(decltype(netpoints)::value_type));
-	} else {
-		for (unsigned int i = 0; i < QTNODE_CHILD_COUNT; i++) {
-			memFootPrint += (nl.GetPoolNode(childBaseIndex + i)->GetMemFootPrint(nl));
-		}
-	}
-
-	return memFootPrint;
-}
-
 std::uint64_t QTPFS::QTNode::GetCheckSum(const NodeLayer& nl) const {
 	std::uint64_t sum = 0;
 

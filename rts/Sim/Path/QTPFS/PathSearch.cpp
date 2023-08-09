@@ -28,7 +28,6 @@
 
 void QTPFS::PathSearch::Initialize(
 	NodeLayer* layer,
-	PathCache* cache,
 	const float3& sourcePoint,
 	const float3& targetPoint,
 	const SRectangle& searchArea
@@ -37,7 +36,6 @@ void QTPFS::PathSearch::Initialize(
 	tgtPoint = targetPoint; tgtPoint.ClampInBounds();
 
 	nodeLayer = layer;
-	pathCache = cache;
 
 	searchRect = searchArea;
 	searchExec = nullptr;

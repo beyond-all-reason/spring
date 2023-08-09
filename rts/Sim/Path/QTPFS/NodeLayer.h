@@ -88,11 +88,6 @@ namespace QTPFS {
 		const INode* GetPoolNode(unsigned int i) const { return &poolNodes[i / POOL_CHUNK_SIZE][i % POOL_CHUNK_SIZE]; }
 		      INode* GetPoolNode(unsigned int i)       { return &poolNodes[i / POOL_CHUNK_SIZE][i % POOL_CHUNK_SIZE]; }
 
-		INode* AllocRootNode(const INode* parent, unsigned int nn,  unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
-			rootNode.Init(parent, nn, x1, z1, x2, z2, -1);
-			return &rootNode;
-		}
-
 		unsigned int AllocPoolNode(const INode* parent, unsigned int nn,  unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2) {
 			unsigned int idx = -1u;
 
@@ -121,36 +116,26 @@ namespace QTPFS {
 			curNode->DeactivateNode();
 		}
 
-
-		// const std::vector<SpeedBinType>& GetOldSpeedBins() const { return oldSpeedBins; }
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
-		// const std::vector<SpeedModType>& GetOldSpeedMods() const { return oldSpeedMods; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
-
-		// std::vector<INode*>& GetNodes() { return nodeGrid; }
-
-		// void RegisterNode(INode* n);
 
 		void SetNumLeafNodes(unsigned int n) { numLeafNodes = n; }
 		unsigned int GetNumLeafNodes() const { return numLeafNodes; }
-
-		// float GetMaxRelSpeedMod() const { return maxRelSpeedMod; }
-		// float GetAvgRelSpeedMod() const { return avgRelSpeedMod; }
 
 		SpeedBinType GetSpeedModBin(float absSpeedMod, float relSpeedMod) const;
 
 		std::uint64_t GetMemFootPrint() const {
 			std::uint64_t memFootPrint = sizeof(NodeLayer);
-			// memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
-			// memFootPrint += (oldSpeedMods.size() * sizeof(SpeedModType));
-			// memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
-			// memFootPrint += (oldSpeedBins.size() * sizeof(SpeedBinType));
-			// memFootPrint += (nodeGrid.size() * sizeof(decltype(nodeGrid)::value_type));
+			memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
+			memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
+
+			memFootPrint += (selectedNodes.size() * sizeof(decltype(selectedNodes)::value_type));
+			memFootPrint += (openNodes.size()     * sizeof(decltype(openNodes)::value_type));
+
 			for (size_t i = 0, n = NUM_POOL_CHUNKS; i < n; i++) {
 				memFootPrint += (poolNodes[i].size() * sizeof(QTNode));
 
-				for (size_t j = poolNodes[i].size(); j > 0; --j) {
-					int32_t nodeIndex = j - 1;
+				for (int32_t nodeIndex = poolNodes[i].size() - 1; nodeIndex >= 0; --nodeIndex) {
 					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbors();
 					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(neighbours)>::value_type);
 					const auto& netPoints = poolNodes[i][nodeIndex].GetNetPoints();
@@ -200,9 +185,6 @@ namespace QTPFS {
 		std::vector<SpeedModType> curSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
 
-		// root lives outside pool s.t. all four children of a given node are always in one chunk
-		QTNode rootNode;
-
 public:
 		static constexpr unsigned int NUM_POOL_CHUNKS = sizeof(poolNodes) / sizeof(poolNodes[0]);
 		static constexpr unsigned int POOL_TOTAL_SIZE = (1024 * 1024) / 2;
@@ -242,9 +224,6 @@ private:
 		int32_t zRootNodes = 0;
 		int32_t rootNodeSize = 0;
 		uint32_t rootMask = 0;
-
-		// unsigned int rootXsize = 0;
-		// unsigned int rootZsize = 0;
 
 		unsigned int xsize = 0;
 		unsigned int zsize = 0;
