@@ -74,7 +74,8 @@ CPathManager::CPathManager()
 	gPathHeatMap.Init(PATH_HEATMAP_XSCALE, PATH_HEATMAP_ZSCALE);
 	pathHeatMap = &gPathHeatMap;
 
-	pathMap.reserve(1024);
+	constexpr size_t initialPathMapSize = 1024;
+	pathMap.reserve(initialPathMapSize);
 
 	// PathNode::nodePos is an ushort2, PathNode::nodeNum is an int
 	// therefore the maximum map size is limited to 64k*64k squares
@@ -118,8 +119,9 @@ void CPathManager::InitStatic()
 	}
 
 	pathFinders = std::move(newPathFinders);
-	// TODO: magic number - reserve one memory page.
-	pathSearches.reserve( 4096 / sizeof(decltype(pathSearches)::value_type) );
+
+	constexpr size_t memoryPageSize = 4096;
+	pathSearches.reserve( memoryPageSize / sizeof(decltype(pathSearches)::value_type) );
 
 	//finalized = true;
 }

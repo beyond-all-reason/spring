@@ -48,14 +48,14 @@ template<class S, class T>
 void ProcessComponents(T&& archive, S&& regSnapshot) {
     regSnapshot.entities(archive);
 
-    Build::serializeComponents(archive, regSnapshot);
-    EnvEconomy::serializeComponents(archive, regSnapshot);
-    FlowEconomy::serializeComponents(archive, regSnapshot);
-    SolidObject::serializeComponents(archive, regSnapshot);
-    SystemGlobals::serializeComponents(archive, regSnapshot);
-    Units::serializeComponents(archive, regSnapshot);
-    UnitEconomy::serializeComponents(archive, regSnapshot);
-    UnitEconomyReport::serializeComponents(archive, regSnapshot);
+    // Build::serializeComponents(archive, regSnapshot);
+    // EnvEconomy::serializeComponents(archive, regSnapshot);
+    // FlowEconomy::serializeComponents(archive, regSnapshot);
+    // SolidObject::serializeComponents(archive, regSnapshot);
+    // SystemGlobals::serializeComponents(archive, regSnapshot);
+    // Units::serializeComponents(archive, regSnapshot);
+    // UnitEconomy::serializeComponents(archive, regSnapshot);
+    // UnitEconomyReport::serializeComponents(archive, regSnapshot);
 }
 
 

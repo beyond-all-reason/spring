@@ -1022,32 +1022,12 @@ bool CGroundMoveType::FollowPath(int thread)
 				}
 				#endif
 				pathingArrived = true;
-			} /*else {
-				#ifdef PATHING_DEBUG
-				if (DEBUG_DRAWING_ENABLED) {
-					bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-						&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-					if (printMoveInfo) {
-						LOG("%s request new path since not at goal", __func__);
-					}
-				}
-				#endif
-				ReRequestPath(false);
-			}*/
+			}
 		}
 
 		// set direction to waypoint AFTER requesting it; should not be a null-vector
 		// do not compare y-components since these usually differ and only x&z matter
 		SetWaypointDir(cwp, opos);
-
-		// float3 waypointVec;
-		// // float3 wpProjDists;
-
-		// if (!epscmp(cwp.x, opos.x, float3::cmp_eps()) || !epscmp(cwp.z, opos.z, float3::cmp_eps())) {
-		// 	waypointVec = (cwp - opos) * XZVector;
-		// 	waypointDir = waypointVec / waypointVec.Length();
-		// 	// wpProjDists = {math::fabs(waypointVec.dot(ffd)), 1.0f, math::fabs(waypointDir.dot(ffd))};
-		// }
 
 		//ASSERT_SYNCED(waypointVec);
 		//ASSERT_SYNCED(waypointDir);
