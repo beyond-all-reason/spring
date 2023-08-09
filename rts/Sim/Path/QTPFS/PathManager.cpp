@@ -449,7 +449,7 @@ void QTPFS::PathManager::InitRootSize(const SRectangle& r) {
 	// Optimal function of QTPFS relies on power of 2 squares. Find the largest 2^x squares that
 	// fit the map. 64 is the smallest as understood by map makers. So use 32 here to detect a map
 	// that falls below that threshold.
-	rootSize = 64;
+	rootSize = QTPFS_BAD_ROOT_NODE_SIZE;
 	int limit = std::min(width, height);
 	for (int factor = rootSize<<1; factor <= limit; factor <<= 1) {
 		if (width % factor == 0 && height % factor == 0)
@@ -460,12 +460,12 @@ void QTPFS::PathManager::InitRootSize(const SRectangle& r) {
 	// Nine Metal Islands has 512x512 nodes in each corner (180MB)
 	// 256x256 (45MB)
 	// Quick Silver has 128x128 nodes in corners (11.25 MB)
-	int maxRootSize = 256;
+	int maxRootSize = QTPFS_MAX_NODE_SIZE;
 	rootSize = rootSize > maxRootSize ? maxRootSize : rootSize;
 	LOG("%s: root node size is set to: %d", __func__, rootSize);
 
-	assert(rootSize != 64);
-	if (rootSize == 64)
+	assert(rootSize != QTPFS_BAD_ROOT_NODE_SIZE);
+	if (rootSize == QTPFS_BAD_ROOT_NODE_SIZE)
 		LOG("%s: Warning! Map width and height are supposed to be multiples of 1024 elmos.", __func__);
 
 	// TODO: reduce max levels based on number of root nodes - find a suitable limit?
@@ -486,7 +486,6 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	for (int z = r.z1; z < r.z2; z += rootSize) {
 		for (int x = r.x1; x < r.x2; x += rootSize) {
 			int idx = nl.AllocPoolNode(nullptr, -1, x, z, x + rootSize, z + rootSize);
-			// nl.RegisterNode(nl.GetPoolNode(idx));
 
 			// LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
 			// 		, idx, x, z, x + rootSize, z + rootSize);
