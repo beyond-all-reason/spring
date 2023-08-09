@@ -1029,9 +1029,6 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	registry.emplace<PathIsTemp>(pathEntity);
 	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
 
-	if (!synced)
-		registry.emplace<PathIsUnsynced>(pathEntity);
-
 	// assert((pathCaches[moveDef->pathType].GetTempPath(newPath->GetID()))->GetID() == 0);
 
 	newSearch->SetID(newPath->GetID());

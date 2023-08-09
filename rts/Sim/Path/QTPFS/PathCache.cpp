@@ -162,13 +162,14 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
 
-		if (registry.any_of<PathIsDirty, PathIsUnsynced>(entity)) continue;
+		if (registry.any_of<PathIsDirty>(entity)) continue;
 
 		// IPath* path = it->second;
 		// IPath* path = &allPaths[*it];
 		// IPath* path = &*it;
 		IPath* path = &pathView.get<IPath>(entity);
 
+		if (path->IsSynced() == false) continue;
 		if (path->GetPathType() != pathType) { continue; }
 
 		// LOG("%s: %x is processing", __func__, (int)entity);
