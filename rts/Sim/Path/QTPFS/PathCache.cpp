@@ -68,14 +68,14 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		// LOG("%s: %x is processing", __func__, (int)entity);
 
-		const float3& pathMins = path->GetBoundingBoxMins();
-		const float3& pathMaxs = path->GetBoundingBoxMaxs();
+		const float2& pathMins = path->GetBoundingBoxMins();
+		const float2& pathMaxs = path->GetBoundingBoxMaxs();
 
 		// if rectangle does not overlap bounding-box, skip this path
 		if ((r.x2 * SQUARE_SIZE) < pathMins.x) { continue; }
-		if ((r.z2 * SQUARE_SIZE) < pathMins.z) { continue; }
+		if ((r.z2 * SQUARE_SIZE) < pathMins.y) { continue; }
 		if ((r.x1 * SQUARE_SIZE) > pathMaxs.x) { continue; }
-		if ((r.z1 * SQUARE_SIZE) > pathMaxs.z) { continue; }
+		if ((r.z1 * SQUARE_SIZE) > pathMaxs.y) { continue; }
 
 		// figure out if <path> has at least one edge crossing <r>
 		// we only care about the segments we have not yet visited

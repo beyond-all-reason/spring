@@ -82,22 +82,45 @@ namespace QTPFS {
 
 		void SetBoundingBox() {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
-			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
+			boundingBoxMins.y = 1e6f; boundingBoxMaxs.y = -1e6f;
 
-			// TODO: do this with SSE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 			for (unsigned int n = 0; n < points.size(); n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
-				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);
+				boundingBoxMins.y = std::min(boundingBoxMins.y, points[n].z);
 				boundingBoxMaxs.x = std::max(boundingBoxMaxs.x, points[n].x);
-				boundingBoxMaxs.z = std::max(boundingBoxMaxs.z, points[n].z);
+				boundingBoxMaxs.y = std::max(boundingBoxMaxs.y, points[n].z);
 			}
 
 			checkPointInBounds(boundingBoxMins);
 			checkPointInBounds(boundingBoxMaxs);
 		}
 
-		const float3& GetBoundingBoxMins() const { return boundingBoxMins; }
-		const float3& GetBoundingBoxMaxs() const { return boundingBoxMaxs; }
+		// This version is only safe if decltype(points)::value_type == float4
+		void SetBoundingBoxSse() {
+			float minResults[4] = { -1e6f, -1e6f, -1e6f, -1e6f };
+			float maxResults[4] = { 1e6f, 1e6f, 1e6f, 1e6f };
+			const int endIdx = points.size();
+
+			// Main loop for finding maximum height values
+			__m128 bestMin = _mm_loadu_ps(minResults);
+			__m128 bestMax = _mm_loadu_ps(maxResults);
+			for (int i = 0; i < endIdx; ++i) {
+				__m128 next = _mm_loadu_ps((float*)&points[i]);
+				bestMin = _mm_min_ps(bestMin, next);
+				bestMax = _mm_max_ps(bestMax, next);
+			}
+			_mm_storeu_ps(minResults, bestMin);
+			_mm_storeu_ps(maxResults, bestMax);
+
+			boundingBoxMins.x = minResults[0]; boundingBoxMaxs.x = maxResults[0];
+			boundingBoxMins.y = minResults[2]; boundingBoxMaxs.y = maxResults[2];
+
+			checkPointInBounds(boundingBoxMins);
+			checkPointInBounds(boundingBoxMaxs);
+		}
+
+		const float2& GetBoundingBoxMins() const { return boundingBoxMins; }
+		const float2& GetBoundingBoxMaxs() const { return boundingBoxMaxs; }
 
 		void SetPoint(unsigned int i, const float3& p) {
 			checkPointInBounds(p);
@@ -110,11 +133,11 @@ namespace QTPFS {
 		const float3& GetSourcePoint() const { return points[                0]; }
 		const float3& GetTargetPoint() const { return points[points.size() - 1]; }
 
-		void checkPointInBounds(const float3& p) {
+		void checkPointInBounds(const float2& p) {
 			assert(p.x >= 0.f);
-			assert(p.z >= 0.f);
+			assert(p.y >= 0.f);
 			assert(p.x / SQUARE_SIZE < mapDims.mapx);
-			assert(p.z / SQUARE_SIZE < mapDims.mapy);
+			assert(p.y / SQUARE_SIZE < mapDims.mapy);
 		}
 
 		void SetOwner(const CSolidObject* o) { owner = o; }
@@ -132,8 +155,6 @@ namespace QTPFS {
 				points[n] = p.GetPoint(n);
 			}
 		}
-
-		// const std::vector<float3>& GetPoints() const { return points; }
 
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
@@ -153,8 +174,8 @@ namespace QTPFS {
 		std::vector<float3> points;
 
 		// corners of the bounding-box containing all our points
-		float3 boundingBoxMins;
-		float3 boundingBoxMaxs;
+		float2 boundingBoxMins;
+		float2 boundingBoxMaxs;
 
 		// object that requested this path (NULL if none)
 		const CSolidObject* owner = nullptr;
