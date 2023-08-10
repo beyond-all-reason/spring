@@ -54,6 +54,8 @@ Lua:
    and run in the order they were added, just before that frame's GameFrame call-in.
  - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
    matches in subdirs, recursively.
+ - `gadget:AllowUnitCreation` now accepts a second return value that controls whether to drop the order.
+   If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
  
 
 Game Setup:
