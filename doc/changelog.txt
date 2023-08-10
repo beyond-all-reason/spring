@@ -104,7 +104,9 @@ Sim:
    frames that must pass before a unit is allowed to request a new path. By default, it is 150
    (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
    processing path requests are not cheap.
-
+ - removed modrules: `system.pfForce[Update]SingleThreaded`. MT has shown itself stable
+ - removed modrule: `system.pathFinderUpdateRate`. The new approach to perf tradeoffs is <FIXME>
+ 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
    The more intense the colour, the more layers (MoveTypes) that still need to process the change.
