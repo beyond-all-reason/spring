@@ -124,14 +124,12 @@ namespace QTPFS {
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
 
 		void IterateNodes();
-		// void IterateNodeNeighbors(const std::vector<INode*>& nxtNodes);
 		void IterateNodeNeighbors(const INode* curNode);
 
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path) const;
 		bool SmoothPathIter(IPath* path) const;
 
-		// const std::uint64_t GenerateHash(std::uint64_t N, std::uint32_t k) const;
 		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
 
 		// global queue: allocated once, re-used by all searches without clear()'s

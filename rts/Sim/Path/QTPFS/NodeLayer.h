@@ -71,13 +71,7 @@ namespace QTPFS {
 				int nextIndex = curNode->GetChildBaseIndex() + offset;
 				curNode = GetPoolNode(nextIndex);
 			}
-			//TODO: need the layer number!!!
-			// LOG("%s: [%d,%d] found %d, registered %d", __func__
-			// 		, x, z
-			// 		, curNode->GetIndex()
-			// 		, nodeGrid[z * xsize + x]->GetIndex()
-			// 		);
-			// assert(curNode == nodeGrid[z * xsize + x]);
+
 			return curNode;
 		}
 		INode* GetNode(unsigned int x, unsigned int z) {

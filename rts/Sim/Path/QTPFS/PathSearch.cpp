@@ -54,9 +54,7 @@ void QTPFS::PathSearch::Initialize(
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	ZoneScoped;
 	searchThreadData = threadData;
-	// searchThreadData->Init(NodeLayer::POOL_TOTAL_SIZE, nodeLayer->GetNumLeafNodes());
 
-	// TODO: do this a little later - after shared map has been checked
 	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
 	openNodes = &searchThreadData->openNodes;
 
@@ -86,7 +84,6 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 }
 
 bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
-	// searchState = searchStateOffset; // starts at NODE_STATE_OFFSET
 	haveFullPath = (srcSearchNode == tgtSearchNode);
 	havePartPath = false;
 
@@ -108,7 +105,6 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	// cached maximum value
 	switch (searchType) {
 		// This guarantees the best path, but overestimates distance costs considerabily.
-		// case PATH_SEARCH_ASTAR:    { hCostMult = 1.0f / nodeLayer->GetMaxRelSpeedMod(); } break;
 		case PATH_SEARCH_ASTAR:
 			hCostMult = 1.0f / ( comp.maxRelSpeedMod[nodeLayer->GetNodelayer()] );
 			break;
@@ -117,21 +113,10 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 			break;
 	}
 
-
 	// if (nodeLayer->GetNodelayer() == 2) {
 	// 	LOG("%s: maxRelSpeedMod = %f, hCostMult = %f", __func__
 	// 			, comp.maxRelSpeedMod[nodeLayer->GetNodelayer()], hCostMult);
 	// }
-
-	// allow the search to start from an impassable node (because single
-	// nodes can represent many terrain squares, some of which can still
-	// be passable and allow a unit to move within a node)
-	// NOTE: we need to make sure such paths do not have infinite cost!
-	// TODO: DO NOT MODIFY SHARED DATA IN MT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// if (srcNode->GetMoveCost() == QTPFS_POSITIVE_INFINITY)
-	// 	srcNode->SetMoveCost(0.0f);
-
-	// TODO: may need to shift to a node counter
 
 	ResetState(srcSearchNode);
 	UpdateNode(srcSearchNode, nullptr, 0);
@@ -153,7 +138,6 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 		haveFullPath = (curSearchNode == tgtSearchNode);
 		if (haveFullPath)
 			searchThreadData->ResetQueue();
-			//(*openNodes).reset();
 	}
 
 	havePartPath = (minSearchNode != srcSearchNode);
@@ -239,14 +223,12 @@ void QTPFS::PathSearch::IterateNodes() {
 		return;
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
-	// nodes don't link to impassible nodes so this can go.
-	// if (curNode->AllSquaresImpassable()) // TODO: special case for first node
-	// 	return;
+
 	// Check if this node has already been processed already
 	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
 		return;
 
-	// this isn't used - only full map is ever given. TODO: remove completely?
+	// this isn't used - only full map is ever given. TODO: remove searchRect completely?
 	// if (curNode->xmid() < searchRect.x1) return;
 	// if (curNode->zmid() < searchRect.z1) return;
 	// if (curNode->xmid() > searchRect.x2) return;

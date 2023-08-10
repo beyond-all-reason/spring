@@ -120,9 +120,11 @@ namespace QTPFS {
         void ResetQueue() { ZoneScoped; while (!openNodes.empty()) openNodes.pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
+            constexpr size_t tmpNodeStoreInitialReserve = 128;
+
             allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
 			allSearchedNodes.Reset(sparseSize);
-            tmpNodesStore.reserve(100); // TODO: magic number
+            tmpNodesStore.reserve(tmpNodeStoreInitialReserve);
             ResetQueue();
 		}
 
