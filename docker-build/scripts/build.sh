@@ -11,8 +11,8 @@ if [ "${DUMMY}" == "1" ]; then
 
     touch "${PUBLISH_DIR}/${bin_name}"
     touch "${PUBLISH_DIR}/${dbg_name}"
-    echo "::set-output name=bin_name::${bin_name}"
-    echo "::set-output name=dbg_name::${dbg_name}"
+    echo "bin_name=${bin_name}" >> "$GITHUB_OUTPUT"
+    echo "dbg_name=${dbg_name}" >> "$GITHUB_OUTPUT"
 
     echo "*** Finished"
 
