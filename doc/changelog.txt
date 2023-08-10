@@ -92,7 +92,7 @@ Sim:
  - Renamed TKPFS to HAPFS. It is HAPFS with modifications and is ready now to take over. It was
    kept separate initially in case major issues were found, but it is now suitably stable to
    become the official version of HAPFS (as it was always intended.)
- - Major rework of QTPFS, so many changes that this diserves its own section.
+ - Major rework of QTPFS, so many changes that this diserves its own section (see Sim::QTPFS)
  - Added mod option, pfRepathDelayInFrames, which tells GroundMoveType how many frames at least
    must pass between checks for whether a unit is making enough progress to it's current waypoint
    or whether a new path should be requested. Defaults to 60 frames (2 seconds.) Adjust to find the
@@ -104,11 +104,49 @@ Sim:
    frames that must pass before a unit is allowed to request a new path. By default, it is 150
    (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
    processing path requests are not cheap.
+ - Fixed: units could sometimes get stuck as they spin/circle around a waypoint when a waypoint is
+   too close to some small/tiny obstacles.
+ - Fixed: units could sometimes consume waypoints that were well ahead of their current position,
+   which increased processing overhead and reduced their ability to navigate obstacles.
+ - Fixed: units were often setting their current and next waypoints to the same waypoint.
+ - Units repath when they are starting to struggle to make progression on their path. Previously
+   they would request a new path upon touching blocking terrain or a building, which may not be
+   necessary and caused a not insignificant impact on CPU usage.
+ - Reduced the amount of corner-cutting units try to do when following a path. This should reduce
+   the difficulty some unit types experience when trying to move through narrow corridoors, or
+   between buildings in bases.
+ - Reduced the difficulty units face when trying to rejoin a path after being routed away due to a
+   collision with a building.
+
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
    The more intense the colour, the more layers (MoveTypes) that still need to process the change.
-
+ - The update system now uses a dirty quad table, so multiple updates in the same area won't
+   trigger unneccesary path data updates.
+ - The update system has been rebalanced to keep up with map updates while minimizing the cost of
+   doing so. It scales up work if the number of updates starts to get larger.
+ - The implementation is now hybrid Quad-Tree. Instead of one root-node, there are now multiple
+   root nodes in a uniform grid across the map. This is primarily to ensure that all quad sub
+   divide into powers of 2, which affords a series of assumptions that allow for optimizations.
+ - This multi-root approach also fixes a problem with the original QTPFS where long maps would
+   subdivide into long and sub-optimal rectangler shapes - like a 1x16 squares for example.
+ - The update system is now multi-threaded.
+ - Pathing requests are now fully multi-threaded. Previously the requests were single threaded,
+   but in a separate thread from the main one.
+ - If a pathing request goal is an unaccesible quad, then the system will try to find the nearest
+   accessible node to search instead.
+ - The node-related data structures have been reworked to require significantly less memory than
+   before. Also, excess data links have been removed.
+ - QTPFS could group related pathing requests made in the same frame to reduce load. Now, all
+   pathing requests can be grouped with any active pathing request. So a request result processed
+   in a previous frame can be used as the answer for one in the current frame if they are
+   travelling from/to the same quads.
+ - Support for unsynced pathing requests added.
+ - No longer saves/loads pathing data to/from disk: with the performance improvements it is faster
+   to recalculate the pathing data on load than to use data saved to disk.
+ - ECS-based system added to monitor changes in maxRelSpeedMod during match, whereas before it was
+   found at the start and then never updated.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.
