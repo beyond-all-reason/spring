@@ -641,19 +641,19 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
  * @number y
  * @number z
  * @number facing
- * @treturn bool whether or not the creation is permitted.
+ * @treturn bool allow, bool dropOrder
  */
-bool CSyncedLuaHandle::AllowUnitCreation(
+std::pair <bool, bool> CSyncedLuaHandle::AllowUnitCreation(
 	const UnitDef* unitDef,
 	const CUnit* builder,
 	const BuildInfo* buildInfo
 ) {
 	LUA_CALL_IN_CHECK(L, true);
-	luaL_checkstack(L, 9, __func__);
+	luaL_checkstack(L, 10, __func__);
 
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
-		return true; // the call is not defined
+		return {true, true}; // the call is not defined
 
 	lua_pushnumber(L, unitDef->id);
 	lua_pushnumber(L, builder->id);
@@ -667,13 +667,14 @@ bool CSyncedLuaHandle::AllowUnitCreation(
 	}
 
 	// call the function
-	if (!RunCallIn(L, cmdStr, (buildInfo != nullptr)? 7 : 3, 1))
-		return true;
+	if (!RunCallIn(L, cmdStr, (buildInfo != nullptr)? 7 : 3, 2))
+		return {true, true};
 
 	// get the results
-	const bool allow = luaL_optboolean(L, -1, true);
-	lua_pop(L, 1);
-	return allow;
+	const bool allow = luaL_optboolean(L, -2, true);
+	const bool  drop = luaL_optboolean(L, -1, true);
+	lua_pop(L, 2);
+	return {allow, drop};
 }
 
 
