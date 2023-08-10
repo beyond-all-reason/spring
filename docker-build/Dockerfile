@@ -1,7 +1,7 @@
-FROM debian:bullseye AS mxe
+FROM ubuntu:18.04 AS mxe
 
-ARG mxe_version=70e31e42f0584fea37aa46a74dcaa6e4eecd4304
-ARG mxe_gcc=gcc13
+ARG mxe_version=02852a7b690aa411ce2a2089deea25a7292a33d6
+ARG mxe_gcc=gcc11
 
 # Install MXE dependencies
 RUN apt-get update;apt-get install -y \
@@ -31,12 +31,11 @@ RUN apt-get update;apt-get install -y \
         patch \
         perl \
         python \
-        python3-mako \
         ruby \
         sed \
         unzip \
         wget \
-        xz-utils 
+        xz-utils
 
 # Install MXE and build cross-compile windows gcc
 RUN cd /; \
@@ -75,10 +74,10 @@ RUN apt-get update -y; \
         pip3 install cmake==$cmake_version; \
         apt purge python3-pip -y; apt auto-remove -y
 
-# GCC-13 PPA (linux-64)
+# GCC-10 PPA (linux-64)
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
     apt update -y; \
-    apt install -y gcc-13 g++-13
+    apt install -y gcc-11 g++-11
 
 # Install Build Dependencies (linux-64)
 RUN apt-get install --fix-missing -y \
