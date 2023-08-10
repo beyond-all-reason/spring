@@ -100,7 +100,7 @@ Sim:
    intervals increase the chance of slow units triggering unnecessary re-pathing requests, but
    reduces the chance that players may believe a unit is getting stuck and is not handling itself
    well.
- - Added mod option, pfRepathMaxRateInFrames, which tells GroundMoveType the minimum amount of
+ - Added modrule, `system.pfRepathMaxRateInFrames`, which tells GroundMoveType the minimum amount of
    frames that must pass before a unit is allowed to request a new path. By default, it is 150
    (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
    processing path requests are not cheap.
