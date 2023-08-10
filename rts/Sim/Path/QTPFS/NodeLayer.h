@@ -166,15 +166,6 @@ namespace QTPFS {
 		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
-		struct areaQueryResults {
-			int openNodeCount = 0;
-			int closedNodeCount = 0;
-			const INode *centralLeafNode = nullptr;
-			uint64_t bestNodeScore = 0;
-		};
-
-		areaQueryResults GetDataForArea(const SRectangle& areaToEncase) const;
-	
 	private:
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;

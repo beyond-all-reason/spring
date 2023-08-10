@@ -35,8 +35,6 @@ unsigned int QTPFS::NodeLayer::NUM_SPEEDMOD_BINS;
 float        QTPFS::NodeLayer::MIN_SPEEDMOD_VALUE;
 float        QTPFS::NodeLayer::MAX_SPEEDMOD_VALUE;
 
-
-
 void QTPFS::NodeLayer::InitStatic() {
 	NUM_SPEEDMOD_BINS  = std::max(  1u, mapInfo->pfs.qtpfs_constants.numSpeedModBins);
 	MIN_SPEEDMOD_VALUE = std::max(0.0f, mapInfo->pfs.qtpfs_constants.minSpeedModVal);
@@ -50,8 +48,9 @@ void QTPFS::NodeLayer::InitStatic() {
 void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 	assert((QTPFS::NodeLayer::NUM_SPEEDMOD_BINS + 1) <= MaxSpeedBinTypeValue());
 
-	openNodes.reserve(200); // TODO: remove magic numbers
-	selectedNodes.reserve(200);
+	constexpr size_t initialNodeReserve = 256;
+	openNodes.reserve(initialNodeReserve);
+	selectedNodes.reserve(initialNodeReserve);
 
 	// pre-count the root
 	numLeafNodes = 1;
@@ -154,86 +153,6 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	}
 
 	return true;
-}
-
-static int2 cornerPoints[] =
-	{ {0, 2}
-	, {1, 2}
-	, {0, 3}
-	, {1, 3}
-	};
-
-QTPFS::NodeLayer::areaQueryResults QTPFS::NodeLayer::GetDataForArea(const SRectangle& areaToSearch) const {
-	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
-	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
-	const int xcentre = (areaToSearch.x2 - areaToSearch.x1) >> 1;
-	const int zcentre = (areaToSearch.z2 - areaToSearch.z1) >> 1;
-	int2 centre(xcentre, zcentre);
-
-	areaQueryResults areaQueryResults;
-	areaQueryResults.bestNodeScore = std::numeric_limits<uint64_t>::max();
-	areaQueryResults.centralLeafNode = nullptr;
-
-	const int rootNodeId = (xmin / rootNodeSize) + (zmin / rootNodeSize)*xRootNodes;
-
-	// call expects area to reside in a single root node.
-	assert( rootNodeId == ((xmax - 1) / rootNodeSize) + ((zmax - 1) / rootNodeSize)*xRootNodes );
-	assert(rootNodeSize*rootNodeSize*2 < (uint32_t)(-1)>>2);
-	assert( rootNodeId < xRootNodes*zRootNodes );
-
-	auto getNodeScore = [centre](const INode* curNode) -> uint64_t {
-		int2 midRef(curNode->xmid(), curNode->zmid());
-		int midDist = centre.distanceSq(midRef);
-		int closestPointDist = midDist;
-		int bestIndex = 0;
-		for (int i = 0; i < 4; ++i) {
-			int2 ref(curNode->point(cornerPoints[i].x), curNode->point(cornerPoints[i].y));
-			int dist = centre.distanceSq(ref);
-			if (dist < closestPointDist) {
-				closestPointDist = dist;
-				bestIndex = i;
-			}
-		}
-		return ((uint64_t)closestPointDist << 32) + ((uint64_t)midDist << 2) + (uint64_t)bestIndex;
-	};
-
-	std::function<int(const INode*)> searchFunction;
-	searchFunction = [this, &areaQueryResults, &searchFunction, getNodeScore, xmin, xmax, zmin, zmax](const INode* curNode) -> int {
-		if (curNode->IsLeaf()) {
-			// smallestNode = std::min(curNode->xsize(), smallestNode);
-			bool nodeOpen = !curNode->AllSquaresImpassable();
-
-			areaQueryResults.closedNodeCount += !nodeOpen;
-			areaQueryResults.openNodeCount += nodeOpen;
-
-			// use node corner closest to centre point.
-			if (nodeOpen) {
-				uint64_t curNodeScore = getNodeScore(curNode);
-				if (curNodeScore < areaQueryResults.bestNodeScore) {
-					areaQueryResults.bestNodeScore = curNodeScore;
-					areaQueryResults.centralLeafNode = curNode;
-				}
-			}
-			return 0;
-		}
-
-		for (int i = 0; i < QTNODE_CHILD_COUNT; ++i) {
-			int childIndex = curNode->GetChildBaseIndex() + i;
-			const INode* childNode = GetPoolNode(childIndex);
-
-			if (xmax <= childNode->xmin()) { continue; }
-			if (xmin >= childNode->xmax()) { continue; }
-			if (zmax <= childNode->zmin()) { continue; }
-			if (zmin >= childNode->zmax()) { continue; }
-
-			searchFunction(childNode);
-		}
-		return 0;
-	};
-
-	searchFunction(GetPoolNode(rootNodeId));
-
-	return areaQueryResults;
 }
 
 
@@ -365,6 +284,13 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 	const int xmin = areaToSearch.x1, xmax = areaToSearch.x2;
 	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
 
+	// The xmin (0), xmax (1), zmin (2), zmax (3) can be accessed by (index.)
+	// The these are the indicies needed to make the 4 corners of a quad.
+	const int2 cornerPoints[] =
+		{ {0, 2}, {1, 2}
+		, {0, 3}, {1, 3}
+		};
+
 	SRectangle rootNodes
 		( xmin / rootNodeSize
 		, zmin / rootNodeSize
@@ -380,7 +306,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 		}
 	}
 
-	auto getNodeScore = [referencePoint](const INode* curNode) -> uint64_t {
+	auto getNodeScore = [referencePoint, &cornerPoints](const INode* curNode) -> uint64_t {
 		int2 midRef(curNode->xmid(), curNode->zmid());
 		int midDist = referencePoint.distanceSq(midRef);
 		int closestPointDist = midDist;
@@ -401,6 +327,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 		tmpNodes.pop_back();
 
 		if (curNode->IsLeaf()) {
+			// Lowest score is better
 			uint64_t curDistScore = getNodeScore(curNode);
 			if (curDistScore < bestDistScore) {
 				bestDistScore = curDistScore;
@@ -428,8 +355,6 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
 	INode* selectedNode = nullptr;
-	// INode* curNode = GetPoolNode(0); // TODO: record width in layer directly !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
-	// int length = curNode->xsize(); // width/height is forced to be the same.
 	int length = rootNodeSize;
 	int iz = (areaToEncase.z1 / length) * xRootNodes;
 	int ix = (areaToEncase.x1 / length);
