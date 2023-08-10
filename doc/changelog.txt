@@ -100,7 +100,7 @@ Sim:
    intervals increase the chance of slow units triggering unnecessary re-pathing requests, but
    reduces the chance that players may believe a unit is getting stuck and is not handling itself
    well.
- - Added mod option, pfRepathMaxRateInFrames, which tells GroundMoveType the minimum amount of
+ - Added modrule, `system.pfRepathMaxRateInFrames`, which tells GroundMoveType the minimum amount of
    frames that must pass before a unit is allowed to request a new path. By default, it is 150
    (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
    processing path requests are not cheap.
@@ -117,7 +117,9 @@ Sim:
    between buildings in bases.
  - Reduced the difficulty units face when trying to rejoin a path after being routed away due to a
    collision with a building.
-
+- removed modrules: `system.pfForce[Update]SingleThreaded`. MT has shown itself stable.
+- removed modrule: `system.pathFinderUpdateRate`. This modrule isn't used any more; instead, a
+  different modrule serves a similar purpose, but uses different values, see: `pfUpdateRateScale`.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
