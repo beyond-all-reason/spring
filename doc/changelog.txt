@@ -89,10 +89,7 @@ Sim:
    will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
  - nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius
    instead of its center. Mobile builders already worked this way.
- - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but
-   keep in mind weapons will still always target enemies and never allies, so avoid using it
-   outside of manually-triggered contexts
- - Renamed TKPFS to HAPFS. It is HAPFS will modifications and is ready now to take over. It was
+ - Renamed TKPFS to HAPFS. It is HAPFS with modifications and is ready now to take over. It was
    kept separate initially in case major issues were found, but it is now suitably stable to
    become the official version of HAPFS (as it was always intended.)
  - Major rework of QTPFS, so many changes that this diserves its own section.
@@ -114,8 +111,9 @@ Sim::QTPFS
 
 
 System:
- - Simulation will use up to ~100% CPU time to catch up.
+ - Simulation can be configured to use up to ~100% CPU time to catch up.
  - Set default min sim speed for commands to 0.1 (previous limit was 0.3.)
+ - EnTT has been added to provide ECS capabilities. Patterns for usage to follow.
 
 UI:
  - Increase the rate at which the traversability view map is updated by x4
