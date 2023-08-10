@@ -49,7 +49,6 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
     }
     
     // One thread per layer: get maximum speed mod from the nodes walked thus far.
-    // for_mt(0, layersToUpdateCount, [&layersView, &comp, dataChunk, pm, &entities](int idx){
     for_mt(0, layersView.size(), [&layersView, &comp, dataChunk, pm](int idx){
         entt::entity entity = layersView.storage<NodeLayerMaxSpeedSweep>()[idx];
         auto& layer = layersView.get<NodeLayerMaxSpeedSweep>(entity);
@@ -80,9 +79,9 @@ void ScanForPathMaxSpeedMod(int frameModulus) {
             comp.maxRelSpeedMod[layer.layerNum] = layer.updateCurMaxSpeed;
             layer.updateInProgress = false;
 
-            if (layer.layerNum == 2) {
-                LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
-            }
+            // if (layer.layerNum == 2) {
+            //     LOG("Finished Search - result is %f", comp.maxRelSpeedMod[layer.layerNum]);
+            // }
             });
 }
 

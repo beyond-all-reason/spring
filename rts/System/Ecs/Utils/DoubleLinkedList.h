@@ -71,6 +71,20 @@ void ForEachInChain(entt::entity head, F&& func) {
     } while (curEntity != head);
 }
 
+template<class T, typename F>
+void BackWalkWithEarlyExit(entt::entity head, F&& func) {
+    auto curEntity = head;
+    do {
+        // LOG("%s: walking chain link %x [head %x]", __func__
+        //         , entt::to_integral(curEntity)
+        //         , entt::to_integral(head));
+        if (!func(curEntity)) { break; }
+
+        auto* chainLink = &registry.get<T>(curEntity);
+        curEntity = chainLink->prev;
+    } while (curEntity != head);
+}
+
 private:
     entt::registry& registry;
 

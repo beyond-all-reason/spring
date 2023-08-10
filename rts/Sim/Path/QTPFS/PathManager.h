@@ -138,6 +138,8 @@ namespace QTPFS {
 			unsigned int pathType
 		);
 
+		unsigned int ExecuteUnsyncedSearch(unsigned int pathId);
+
 		bool IsFinalized() const { return isFinalized; }
 
 	public:
@@ -150,8 +152,6 @@ namespace QTPFS {
 		std::vector<SearchThreadData> searchThreadData;
 		std::vector<UpdateThreadData> updateThreadData;
 		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
-
-		std::vector<entt::entity> pathSearches;
 
 		PathTraceMap pathTraces;
 		SharedPathMap sharedPaths;
@@ -180,6 +180,8 @@ namespace QTPFS {
 		entt::entity systemEntity = entt::null;
 
 		bool isFinalized = false;
+
+		static constexpr size_t INITIAL_PATH_RESERVE = 256;
 	};
 }
 
