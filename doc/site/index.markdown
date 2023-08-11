@@ -7,7 +7,6 @@ permalink: /
 ---
 
 # Design large scale RTS games
-
 {: .fs-9 }
 
 Recoil is a battle tested open-source RTS engine that, allied with a flexible
