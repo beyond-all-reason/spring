@@ -727,14 +727,16 @@ int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
  * This should give better results for camera interpolations
  *
  * @bool[opt=false] lastFrameTime whether to use last frame time instead of last frame start
+ * @bool[opt=false] micros Get a microsecond accurate timer
  * @treturn Timer
  */
 int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 {
+	bool micros = luaL_optboolean(L, 2, false);
 	if (luaL_optboolean(L, 1, false)) {
-		PushTimer(L, game->lastFrameTime, false);
+		PushTimer(L, game->lastFrameTime, micros);
 	} else {
-		PushTimer(L, globalRendering->lastFrameStart, false);
+		PushTimer(L, globalRendering->lastFrameStart, micros);
 	}
 	return 1;
 }
