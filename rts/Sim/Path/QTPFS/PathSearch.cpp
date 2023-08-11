@@ -49,6 +49,9 @@ void QTPFS::PathSearch::Initialize(
 	assert(srcPoint.z / SQUARE_SIZE < mapDims.mapy);
 
 	pathSearchHash = GenerateHash(srcNode, tgtNode);
+	// uint32_t p1 = (srcPoint.y)*mapDims.mapx + (srcPoint.x);
+	// uint32_t p2 = (tgtPoint.y)*mapDims.mapx + (tgtPoint.x);
+	// pathSearchHash = GenerateHash2(p1, p2);
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -674,3 +677,9 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 	return (srcNode->GetNodeNumber() + (tgtNode->GetNodeNumber() * N) + (k * N * N));
 }
 
+const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t p1, uint32_t p2) const {
+	std::uint64_t N = mapDims.mapx * mapDims.mapy;
+	std::uint32_t k = nodeLayer->GetNodelayer();
+
+	return (p1 + (p2 * N) + (k * N * N));
+}

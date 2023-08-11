@@ -709,15 +709,15 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE);
 		path->SetHash(search->GetHash());
 
-		if (path->IsSynced()) {
-			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
-			if (sharedPathsIt == sharedPaths.end()) {
-				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
-				sharedPaths[path->GetHash()] = pathEntity;
-			} else {
-				linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
-			}
-		}
+		// if (path->IsSynced()) {
+		// 	SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+		// 	if (sharedPathsIt == sharedPaths.end()) {
+		// 		registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
+		// 		sharedPaths[path->GetHash()] = pathEntity;
+		// 	} else {
+		// 		linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+		// 	}
+		// }
 	}
 }
 
@@ -790,58 +790,58 @@ bool QTPFS::PathManager::ExecuteSearch(
 
 	assert(path->GetID() == search->GetID());
 
-	bool synced = path->IsSynced();
+	// bool synced = path->IsSynced();
 
-	entt::entity chainHeadEntity = entt::null;
-	if (synced)
-	{
-		SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
-		assert(sharedPathsIt != sharedPaths.end());
+	// entt::entity chainHeadEntity = entt::null;
+	// if (synced)
+	// {
+	// 	SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+	// 	assert(sharedPathsIt != sharedPaths.end());
 
-		chainHeadEntity = sharedPathsIt->second;
-		// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
-		// 		, entt::to_integral(chainHeadEntity), entt::to_integral(pathEntity));
-		if (chainHeadEntity != pathEntity){
-			bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
-			if (pathIsCopyable) {
-				// LOG("%s: pathEntity %x pathIsCopyable = %d", __func__
-				// 		, entt::to_integral(pathEntity), int(pathIsCopyable));
-				auto& headChainPath = registry.get<IPath>(chainHeadEntity);
-				search->SharedFinalize(&headChainPath, path);
-			}
-			return false;
-		}
-	}
+	// 	chainHeadEntity = sharedPathsIt->second;
+	// 	// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
+	// 	// 		, entt::to_integral(chainHeadEntity), entt::to_integral(pathEntity));
+	// 	if (chainHeadEntity != pathEntity){
+	// 		bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
+	// 		if (pathIsCopyable) {
+	// 			// LOG("%s: pathEntity %x pathIsCopyable = %d", __func__
+	// 			// 		, entt::to_integral(pathEntity), int(pathIsCopyable));
+	// 			auto& headChainPath = registry.get<IPath>(chainHeadEntity);
+	// 			search->SharedFinalize(&headChainPath, path);
+	// 		}
+	// 		return false;
+	// 	}
+	// }
 
 	search->InitializeThread(&searchThreadData[currentThread]);
 
 	if (search->Execute(searchStateOffset)) {
 		search->Finalize(path);
 
-		if (chainHeadEntity == pathEntity){
-			ZoneScopedN("Sim::QTPFS::post-check shared path");
+		// if (chainHeadEntity == pathEntity){
+		// 	ZoneScopedN("Sim::QTPFS::post-check shared path");
 
-			// Copy results to all applicable paths. Walk chain backwards and stop early.
-			linkedListHelper.BackWalkWithEarlyExit<SharedPathChain>(chainHeadEntity
-					, [this, path, chainHeadEntity](entt::entity next) {
-				if (next == chainHeadEntity) { return true; }
+		// 	// Copy results to all applicable paths. Walk chain backwards and stop early.
+		// 	linkedListHelper.BackWalkWithEarlyExit<SharedPathChain>(chainHeadEntity
+		// 			, [this, path, chainHeadEntity](entt::entity next) {
+		// 		if (next == chainHeadEntity) { return true; }
 
-				assert(registry.valid(next));
+		// 		assert(registry.valid(next));
 
-				auto* linkedPath = &registry.get<IPath>(next);
-				assert(linkedPath != nullptr);
+		// 		auto* linkedPath = &registry.get<IPath>(next);
+		// 		assert(linkedPath != nullptr);
 				
-				auto* searchRef = registry.try_get<PathSearchRef>(next);
-				if (searchRef == nullptr) { return false; }
+		// 		auto* searchRef = registry.try_get<PathSearchRef>(next);
+		// 		if (searchRef == nullptr) { return false; }
 
-				assert(registry.all_of<PathSearch>(searchRef->value));
-				auto& chainSearch = registry.get<PathSearch>(searchRef->value);
+		// 		assert(registry.all_of<PathSearch>(searchRef->value));
+		// 		auto& chainSearch = registry.get<PathSearch>(searchRef->value);
 
-				chainSearch.SharedFinalize(path, linkedPath);
+		// 		chainSearch.SharedFinalize(path, linkedPath);
 
-				return true;
-			});
-		}
+		// 		return true;
+		// 	});
+		// }
 
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		pathTraces[path->GetID()] = search->GetExecutionTrace();

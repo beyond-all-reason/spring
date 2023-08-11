@@ -131,6 +131,7 @@ namespace QTPFS {
 		bool SmoothPathIter(IPath* path) const;
 
 		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
+		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
 
 		QTPFS::SearchThreadData* searchThreadData;
 
