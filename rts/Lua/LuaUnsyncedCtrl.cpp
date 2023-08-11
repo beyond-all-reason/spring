@@ -4848,74 +4848,54 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 	return 1;
 }
 
-const char * tracyLuaPlot1 = "LuaPlot1";
-const char * tracyLuaPlot2 = "LuaPlot2";
-const char * tracyLuaPlot3 = "LuaPlot3";
-const char * tracyLuaPlot4 = "LuaPlot4";
-const char * tracyLuaPlot5 = "LuaPlot5";
-const char * tracyLuaPlot6 = "LuaPlot6";
-const char * tracyLuaPlot7 = "LuaPlot7";
-const char * tracyLuaPlot8 = "LuaPlot8";
-const char * tracyLuaPlot9 = "LuaPlot9";
+std::set <std::string> tracyLuaPlots;
 
 /*** Initialize a plot in Tracy for use in debugging, up to 9 plots [1-9] may be used
  *
  * @function Spring.LuaTracyPlotConfig
- * @number plotIndex which LuaPlot[1-9] should be initialized
+ * @string plotName which should be initialized
  * @string[opt] plotFormatType "Number"|"Percentage"|"Memory", default "Number"
  * @bool[opt] step stepwise chart, default stepwise
  * @bool[opt] fill color fill, default no fill
- * @number[opt] color unit32 number as RGB color, default white
+ * @number[opt] color unit32 number as BGR color, default white
  * @treturn nil
  */
+
 int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 {
-	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9);
-	const char* plotFormatTypeString = luaL_optstring(L, 2, "");
-	tracy::PlotFormatType plotFormatType = tracy::PlotFormatType::Number;
+    const auto plotName 			= luaL_checkstring(L, 1);
+    const auto plotFormatTypeString = luaL_optstring(L, 2, "");
+    const auto step 				= luaL_optboolean(L, 3, true); // stepwise default
+    const auto fill 				= luaL_optboolean(L, 4, false); // no fill default
+    const uint32_t color 			= luaL_optint(L, 5, 0xFFFFFF); // white default
 
-	if (plotFormatTypeString[0] != 0 ){
-		if (plotFormatTypeString[0] == 'P') plotFormatType = tracy::PlotFormatType::Percentage; // for Perce
-		if (plotFormatTypeString[0] == 'M') plotFormatType = tracy::PlotFormatType::Memory; // for Perce
-	}
-	const bool step = luaL_optboolean(L, 3, true); // stepwise default
-	const bool fill = luaL_optboolean(L, 4, false); // no fill default
-	const uint32_t color = luaL_optint(L, 5, 0xffffff); // white default
-	switch(plotIndex){
-		case 1: TracyPlotConfig(tracyLuaPlot1, plotFormatType, step, fill, color); break;
-		case 2: TracyPlotConfig(tracyLuaPlot2, plotFormatType, step, fill, color); break;
-		case 3: TracyPlotConfig(tracyLuaPlot3, plotFormatType, step, fill, color); break;
-		case 4: TracyPlotConfig(tracyLuaPlot4, plotFormatType, step, fill, color); break;
-		case 5: TracyPlotConfig(tracyLuaPlot5, plotFormatType, step, fill, color); break;
-		case 6: TracyPlotConfig(tracyLuaPlot6, plotFormatType, step, fill, color); break;
-		case 7: TracyPlotConfig(tracyLuaPlot7, plotFormatType, step, fill, color); break;
-		case 8: TracyPlotConfig(tracyLuaPlot8, plotFormatType, step, fill, color); break;
-		case 9: TracyPlotConfig(tracyLuaPlot9, plotFormatType, step, fill, color); break;
-	}
-	return 0;
+    tracy::PlotFormatType plotFormatType;
+    switch (plotFormatTypeString[0]) {
+        case 'p': case 'P': plotFormatType = tracy::PlotFormatType::Percentage; break;
+        case 'm': case 'M': plotFormatType = tracy::PlotFormatType::Memory;     break;
+        default:            plotFormatType = tracy::PlotFormatType::Number;     break;
+    }
+
+    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+    TracyPlotConfig(iterator->c_str(), plotFormatType, step, fill, color);
+    return 0;
 }
+
 
 /*** Update a Tracy Plot with a value
  *
  * @function Spring.LuaTracyPlot
- * @number plotIndex which LuaPlot[1-9] should be updated
+ * @string plotName which LuaPlot should be updated (must have been initialized as per above!)
  * @number plotvalue the number to show on the Tracy plot
  * @treturn nil
  */
 int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
 {
-	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9) ;
-	const float plotValue = luaL_checkfloat(L, 2);	
-	switch(plotIndex){
-		case 1: TracyPlot(tracyLuaPlot1, plotValue); break;
-		case 2: TracyPlot(tracyLuaPlot2, plotValue); break;
-		case 3: TracyPlot(tracyLuaPlot3, plotValue); break;
-		case 4: TracyPlot(tracyLuaPlot4, plotValue); break;
-		case 5: TracyPlot(tracyLuaPlot5, plotValue); break;
-		case 6: TracyPlot(tracyLuaPlot6, plotValue); break;
-		case 7: TracyPlot(tracyLuaPlot7, plotValue); break;
-		case 8: TracyPlot(tracyLuaPlot8, plotValue); break;
-		case 9: TracyPlot(tracyLuaPlot9, plotValue); break;
-	}
-	return 0;
+    const auto plotName  = luaL_checkstring(L, 1);
+    const auto plotValue = luaL_checkfloat(L, 2);
+
+    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+    TracyPlot(iterator->c_str(), plotValue);
+    return 0;
 }
+
