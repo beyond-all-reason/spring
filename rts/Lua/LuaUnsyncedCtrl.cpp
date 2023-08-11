@@ -323,6 +323,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(Yield);
 
+	REGISTER_LUA_CFUNC(LuaTracyPlotConfig);
+	REGISTER_LUA_CFUNC(LuaTracyPlot);
+
 	return true;
 }
 
@@ -4843,4 +4846,59 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 
 	lua_pushboolean(L, true); //hint Lua should keep calling Yield
 	return 1;
+}
+
+const char * tracyLuaPlot1 = "LuaPlot1";
+const char * tracyLuaPlot2 = "LuaPlot2";
+const char * tracyLuaPlot3 = "LuaPlot3";
+const char * tracyLuaPlot4 = "LuaPlot4";
+const char * tracyLuaPlot5 = "LuaPlot5";
+const char * tracyLuaPlot6 = "LuaPlot6";
+const char * tracyLuaPlot7 = "LuaPlot7";
+const char * tracyLuaPlot8 = "LuaPlot8";
+const char * tracyLuaPlot9 = "LuaPlot9";
+
+int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
+{
+	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9);
+	const char* plotFormatTypeString = luaL_optstring(L, 2, "");
+	tracy::PlotFormatType plotFormatType = tracy::PlotFormatType::Number;
+
+	if (plotFormatTypeString[0] != 0 ){
+		if (plotFormatTypeString[0] == 'P') plotFormatType = tracy::PlotFormatType::Percentage; // for Perce
+		if (plotFormatTypeString[0] == 'M') plotFormatType = tracy::PlotFormatType::Memory; // for Perce
+	}
+	const bool step = luaL_optboolean(L, 3, true); // stepwise default
+	const bool fill = luaL_optboolean(L, 4, false); // no fill default
+	const uint32_t color = luaL_optint(L, 5, 0xffffff); // white default
+	switch(plotIndex){
+		case 1: TracyPlotConfig(tracyLuaPlot1, plotFormatType, step, fill, color); break;
+		case 2: TracyPlotConfig(tracyLuaPlot2, plotFormatType, step, fill, color); break;
+		case 3: TracyPlotConfig(tracyLuaPlot3, plotFormatType, step, fill, color); break;
+		case 4: TracyPlotConfig(tracyLuaPlot4, plotFormatType, step, fill, color); break;
+		case 5: TracyPlotConfig(tracyLuaPlot5, plotFormatType, step, fill, color); break;
+		case 6: TracyPlotConfig(tracyLuaPlot6, plotFormatType, step, fill, color); break;
+		case 7: TracyPlotConfig(tracyLuaPlot7, plotFormatType, step, fill, color); break;
+		case 8: TracyPlotConfig(tracyLuaPlot8, plotFormatType, step, fill, color); break;
+		case 9: TracyPlotConfig(tracyLuaPlot9, plotFormatType, step, fill, color); break;
+	}
+	return 0;
+}
+
+int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
+{
+	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9) ;
+	const float plotValue = luaL_checkfloat(L, 2);	
+	switch(plotIndex){
+		case 1: TracyPlot(tracyLuaPlot1, plotValue); break;
+		case 2: TracyPlot(tracyLuaPlot2, plotValue); break;
+		case 3: TracyPlot(tracyLuaPlot3, plotValue); break;
+		case 4: TracyPlot(tracyLuaPlot4, plotValue); break;
+		case 5: TracyPlot(tracyLuaPlot5, plotValue); break;
+		case 6: TracyPlot(tracyLuaPlot6, plotValue); break;
+		case 7: TracyPlot(tracyLuaPlot7, plotValue); break;
+		case 8: TracyPlot(tracyLuaPlot8, plotValue); break;
+		case 9: TracyPlot(tracyLuaPlot9, plotValue); break;
+	}
+	return 0;
 }
