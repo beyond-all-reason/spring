@@ -70,6 +70,32 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	if (xzTargetDist == 0.0f)
 		return true;
 
+	// trajectoryHeight missiles follow a pursuit curve
+	// https://en.wikipedia.org/wiki/Pursuit_curve
+	// however, while the basic case of a pursuit curve has an explicit solution
+	// the case here with a potentially accelerating pursuer has no explicit solution
+	// and the last linear portion of the trajectory needs to be accounted for
+	// The curve can still be stated as a differential equation and approximately solved
+	// I found using a midpoint method to work best
+	// https://en.wikipedia.org/wiki/Midpoint_method
+	//
+	// Following (2D) solution assumes nonzero turnrate
+	// because a zero turnrate will fail to hit the target
+	// 
+	// extraHeight = eH = (dist * trajectoryHeight)
+	// extraHeightTime = eHT = dist / maxSpeed
+	// dr/dt = r'(t,r,y) = (V0 + a * t) * (rt - r)/distance
+	// dy/dt = y'(t,r,y) = (V0 + a * t) * (yt + (eH * (1-t/eHT)) - y)/distance
+	// distance = sqrt( (rt - r)^2 + (yt - y)^2)
+	// velocity capped at maxSpeed
+	// r_n+1 = r_n + h*r'(t+0.5,r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
+	// y_n+1 = y_n + h*y'(t+0.5,r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
+	// 
+	// for midpoint method, we choose h so that we only need to calculate 8 points
+	// of the curved trajectoryheight controlled portion
+	// 
+	// For close targets, impact within 8 frames, just use a TestTrajectoryCone check
+
 	const float   linCoeff = launchDir.y + weaponDef->trajectoryHeight;
 	const float   qdrCoeff = -weaponDef->trajectoryHeight / xzTargetDist;
 	const float groundDist = ((avoidFlags & Collision::NOGROUND) == 0)?
