@@ -56,6 +56,13 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 	WeaponProjectileFactory::LoadProjectile(params);
 }
 
+#include "Rendering/GlobalRendering.h"
+#include "Sim/Misc/GeometricObjects.h"
+
+#include "Sim/Misc/QuadField.h"
+#include "Sim/Misc/CollisionHandler.h"
+#include "Sim/Misc/CollisionVolume.h"
+#include "System/SpringMath.h"
 bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
 	// high-trajectory missiles use parabolic rather than linear ground intersection
@@ -103,7 +110,8 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 
 	const float maxSpeed = weaponDef->projectilespeed;
 	const float pSpeed = weaponDef->startvelocity;
-	const float pAcc = weaponDef->startvelocity;
+	const float pAcc = weaponDef->weaponacceleration;
+	float curspeed = weaponDef->startvelocity;
 	float dist = srcPos.distance(tgtPos);
 	float rt = (tgtPos - srcPos).Length2D();
 	float yt = (tgtPos.y - srcPos.y);
@@ -122,14 +130,16 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	//dist = math::sqrt(math::pow((rt - mdist[0]), 2) + math::pow((yt + eH * (1 - (hstep * 0.5f) / eHT) - mheight[0]), 2));
 	for (int i = 1; i < 8; i++) {
 		dist = math::sqrt(math::pow((rt - mdist[i-1]), 2) + math::pow((yt + eH * (1 - t / eHT) - mheight[i-1]), 2));
-		drdt = (pSpeed + pAcc * t) * (rt - mdist[i-1]) / dist;
-		dydt = (pSpeed + pAcc * t) * (yt + eH * (1 - t / eHT) - mheight[i-1]) / dist;
+		curspeed = std::min((pSpeed + pAcc * t), maxSpeed);
+		drdt = curspeed * (rt - mdist[i-1]) / dist;
+		dydt = curspeed * (yt + eH * (1 - t / eHT) - mheight[i-1]) / dist;
 		rt_est = mdist[i-1] + hstep * drdt;
 		yt_est = mheight[i-1] + hstep * dydt;
 		t = t + hstep;
 		dist = math::sqrt(math::pow((rt - rt_est), 2) + math::pow((yt + eH * (1 - t / eHT) - yt_est), 2));
-		drdt_est = (pSpeed + pAcc * t) * (rt - rt_est) / dist;
-		dydt_est = (pSpeed + pAcc * t) * (yt + eH * (1 - t / eHT) - yt_est) / dist;
+		curspeed = std::min((pSpeed + pAcc * t), maxSpeed);
+		drdt_est = curspeed * (rt - rt_est) / dist;
+		dydt_est = curspeed * (yt + eH * (1 - t / eHT) - yt_est) / dist;
 		mdist[i] = mdist[i-1] + (hstep * 0.5f) * (drdt + drdt_est);
 		mheight[i] = mheight[i-1] + (hstep * 0.5f) * (dydt + dydt_est);
 
@@ -138,6 +148,138 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 		//mdist[i] = mdist[i-1] + hstep * drdt_half;
 		//mheight[i] = mheight[i-1] + hstep * dydt_half;
 	}
+
+	// debug draw
+	if (globalRendering->drawDebugTraceRay) {
+		//launchDir = (tgtPos - srcPos) * XZVector;
+		//launchDir = launchDir.SafeNormalize();
+		for (int i = 1; i < 8; i++) {
+			geometricObjects->SetColor(geometricObjects->AddLine(srcPos + targetVec * mdist[i-1] + UpVector * mheight[i-1], srcPos + targetVec * mdist[i] + UpVector * mheight[i], 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
+		}
+
+	}
+
+	// check for ground collision
+	float gndDst = 0.0f;
+	if ((avoidFlags & Collision::NOGROUND) == 0) {
+		for (int i = 1; i < 8; i++) {
+			gndDst = CGround::LineGroundCol(srcPos + targetVec * mdist[i - 1] + UpVector * mheight[i - 1], srcPos + targetVec * mdist[i] + UpVector * mheight[i]);
+			if (gndDst > 0.0f) {
+				return false;
+			}
+		}
+		// offset terminal location by damageAreaOfEffect, to avoid false positive at very terminal point
+		gndDst = CGround::LineGroundCol(srcPos + targetVec * mdist[7] + UpVector * mheight[7], tgtPos);
+		if ((gndDst > 0.0f) && ((gndDst + damages->damageAreaOfEffect) < tgtPos.distance(srcPos + targetVec * mdist[7] + UpVector * mheight[7]))) {
+			return false;
+		}
+	}
+
+	// check for object collision
+	CollisionQuery cq;
+	QuadFieldQuery qfQuery;
+	quadField.GetQuadsOnRay(qfQuery, srcPos, targetVec, xzTargetDist);
+
+	if (qfQuery.quads->empty())
+		return true;
+
+	const bool scanForAllies = ((avoidFlags & Collision::NOFRIENDLIES) == 0);
+	const bool scanForNeutrals = ((avoidFlags & Collision::NONEUTRALS) == 0);
+	const bool scanForFeatures = ((avoidFlags & Collision::NOFEATURES) == 0);
+	bool checked = false;
+	for (const int quadIdx : *qfQuery.quads) {
+		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
+
+		// friendly units in this quad
+		if (scanForAllies) {
+			for (const CUnit* u : quad.teamUnits[owner->allyteam]) {
+				if (u == owner)
+					continue;
+				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+
+				//chord check here
+				const CollisionVolume* cv = &u->collisionVolume;
+				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
+				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				// chord check to hitPos
+				const CMatrix44f objTransform = u->GetTransformMatrix(true);
+				checked = false;
+				for (int i = 1; i < 8; i++) {
+					if (cvRelDst < mdist[i]) {
+						checked = true;
+						const float delta1 = mdist[i] - mdist[i - 1];
+						const float delta2 = cvRelDst - mdist[i - 1];
+						const float ratio = delta2 / delta1;
+						const float hitheight = mheight[i - 1] + ratio*(mheight[i] - mheight[i - 1]);
+						const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+						if (mheight[i] > mheight[i - 1]) {
+							// do chord check backwards
+							if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
+								return false;
+							}
+						} else {
+							// do chord check forwards
+							if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
+								return false;
+							}
+							
+						}
+
+					}
+				}
+				if (checked == false) {
+					// need to check linear end
+					const float delta1 = xzTargetDist - mdist[7];
+					const float delta2 = cvRelDst - mdist[7];
+					const float ratio = delta2 / delta1;
+					const float hitheight = mheight[7] + ratio * (yt - mheight[7]);
+					const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+					if (yt > mheight[7]) {
+						// do chord check backwards
+						if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
+							return false;
+						}
+					} else {
+						// do chord check forwards
+						if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+
+		/*
+		// neutral units in this quad
+		if (scanForNeutrals) {
+			for (const CUnit* u : quad.units) {
+				if (!u->IsNeutral())
+					continue;
+				if (u == owner)
+					continue;
+				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+
+				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, u))
+					return true;
+			}
+		}
+
+		// features in this quad
+		if (scanForFeatures) {
+			for (const CFeature* f : quad.features) {
+				if (!f->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+
+				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, f))
+					return true;
+			}
+		}
+		*/
+	}
+
+	return true;
 
 	/*
 	std::array<float, 90> posx = {};
@@ -237,6 +379,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	}
 	*/
 
+	/*
 	const float   linCoeff = launchDir.y + weaponDef->trajectoryHeight;
 	const float   qdrCoeff = -weaponDef->trajectoryHeight / xzTargetDist;
 	const float groundDist = ((avoidFlags & Collision::NOGROUND) == 0)?
@@ -247,5 +390,6 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 		return false;
 
 	return (!TraceRay::TestTrajectoryCone(srcPos, targetVec, xzTargetDist, linCoeff, qdrCoeff, 0.0f, owner->allyteam, avoidFlags, owner));
+	*/
 }
 
