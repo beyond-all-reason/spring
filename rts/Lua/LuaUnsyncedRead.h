@@ -130,6 +130,8 @@ class LuaUnsyncedRead {
 		static int GetTimer(lua_State* L);
 		static int GetTimerMicros(lua_State* L);
 		static int GetFrameTimer(lua_State* L);
+		static int GetLastSwapBuffersEnd(lua_State* L);
+		static int GetLastSwapBuffersDuration(lua_State* L);
 		static int DiffTimers(lua_State* L);
 
 		static int GetDrawSeconds(lua_State* L);

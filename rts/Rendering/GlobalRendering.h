@@ -136,6 +136,11 @@ public:
 	spring_time lastFrameStart;
 
 	spring_time lastSwapBuffersEnd;
+	spring_time lastSwapBuffersStart;
+
+	//The duration of the swapbuffers gives us a hint of wether triple buffering is being used
+	//and if the windows Desktop Compositor (DWM) is being enforced 
+	spring_time lastSwapBuffersDuration; 
 
 	/// 0.001f * gu->simFPS, used for rendering
 	float weightedSpeedFactor;

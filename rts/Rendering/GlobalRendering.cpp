@@ -119,6 +119,8 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(lastFrameTime),
 	CR_MEMBER(lastFrameStart),
 	CR_MEMBER(lastSwapBuffersEnd),
+	CR_MEMBER(lastSwapBuffersStart),
+	CR_MEMBER(lastSwapBuffersDuration),
 	CR_MEMBER(weightedSpeedFactor),
 	CR_MEMBER(drawFrame),
 	CR_MEMBER(FPS),
@@ -668,6 +670,8 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 	// exclude debug from SCOPED_TIMER("Misc::SwapBuffers");
 	eventHandler.DbgTimingInfo(TIMING_SWAP, pre, spring_now());
 	globalRendering->lastSwapBuffersEnd = spring_now();
+	globalRendering->lastSwapBuffersStart = pre;
+	globalRendering->lastSwapBuffersDuration = globalRendering->lastSwapBuffersEnd - pre;
 }
 
 void CGlobalRendering::SetGLTimeStamp(uint32_t queryIdx) const
