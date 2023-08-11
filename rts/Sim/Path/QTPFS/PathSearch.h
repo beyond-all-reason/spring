@@ -168,6 +168,7 @@ namespace QTPFS {
 
 		bool haveFullPath;
 		bool havePartPath;
+		bool badGoal;
 	};
 }
 

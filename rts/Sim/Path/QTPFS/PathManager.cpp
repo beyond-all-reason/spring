@@ -1000,7 +1000,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->SetPathType(oldPath->GetPathType());
 
 	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
-	registry.emplace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
+	registry.emplace_or_replace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
 
 	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
 	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);
@@ -1228,7 +1228,11 @@ bool QTPFS::PathManager::CurrentWaypointIsLast(unsigned int pathID) {
 	if (livePath == nullptr)
 		return true;
 
-	return ( livePath->GetNextPointIndex() == livePath->NumPoints() - 1 );
+	// LOG("%s: lastwaypoint=%d, isFullPath=%d", __func__
+	// 		, int(livePath->GetNextPointIndex() == livePath->NumPoints() - 1)
+	// 		, int(livePath->IsFullPath()));
+
+	return ( livePath->GetNextPointIndex() == livePath->NumPoints() - 1 ) && ( !livePath->IsFullPath() );
 }
 
 

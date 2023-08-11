@@ -282,15 +282,28 @@ static void HandleUnitCollisionsAux(
 	// positions of at most TWOPI elmos, use half as threshold
 	// (simply bail if distance between collider and collidee
 	// goal-positions exceeds PI)
-	if (!gmtCollider->IsAtGoalPos(gmtCollidee->goalPos, math::PI))
-		return;
+	// if (!gmtCollider->IsAtGoalPos(gmtCollidee->goalPos, math::PI))
+	// 	return;
 
 	switch (gmtCollidee->progressState) {
 		case AMoveType::Done: {
 			if (collidee->IsMoving() || UNIT_CMD_QUE_SIZE(collidee) != 0)
 				return;
 
-			gmtCollider->TriggerCallArrived();
+			const bool triggerArrived = gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius());
+			if (triggerArrived) {
+				gmtCollider->TriggerCallArrived();
+			} else {
+				// if the collidee is touching the waypoint, then also switch to the next waypoint.
+				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
+				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
+				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
+
+				if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
+					gmtCollider->TriggerSkipWayPoint();
+					return;
+				}
+			}
 		} break;
 
 		case AMoveType::Active: {
@@ -312,23 +325,30 @@ static void HandleUnitCollisionsAux(
 				if (unitToNextDistSq <= currToNextDistSq) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
-				} else {
-					// if the collidee is touching the waypoint, then also switch to the next
-					// waypoint.
-					const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
-					const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
-
-					if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
-						gmtCollider->TriggerSkipWayPoint();
-						return;
-					}
 				}
 			}
 
-			if (!gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()))
-				return;
+			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()) 
+										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius()));
+			if (triggerArrived) {
+				gmtCollider->TriggerCallArrived();
+			} else {
+				// if the collidee is touching the waypoint, then also switch to the next
+				// waypoint.
+				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
+				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
+				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
 
-			gmtCollider->TriggerCallArrived();
+				if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
+					gmtCollider->TriggerSkipWayPoint();
+					return;
+				}
+			}
+
+			// if (!gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()))
+			// 	return;
+
+			// gmtCollider->TriggerCallArrived();
 		} break;
 
 		default: {
@@ -738,11 +758,17 @@ void CGroundMoveType::SlowUpdate()
 				}
 				if (gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
 					&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames){
-					if (!lastWaypoint)
+					if (!lastWaypoint) {
 						ReRequestPath(true);
-					else
+					} else {
 						// This is here to stop units from trying forever to reach an goal they can't reach.
 						Fail(false);
+						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+						// if (printMoveInfo) {
+						// 	LOG("%s: failed to reach final waypoint", __func__);
+						// }
+					}
 				}
 			}
 		}
@@ -1901,8 +1927,10 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		return false;
 	if (!pathController.AllowSetTempGoalPosition(pathID, nextWayPoint))
 		return false;
-	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
-		return true;
+	if (atEndOfPath)
+		return false;
+	// if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
+	// 	return true;
 	
 	const float3& pos = owner->pos;
 		  float3& cwp = earlyCurrWayPoint;
@@ -1940,71 +1968,76 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	float cwpDistSq = (cwp - pos).SqLength();
 	const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 	if (!allowSkip) {
-		// perform a turn-radius check: if the waypoint lies outside
-		// our turning circle, do not skip since we can steer toward
-		// this waypoint and pass it without slowing down
-		// note that the DIAMETER of the turning circle is calculated
-		// to prevent sine-like "snaking" trajectories; units capable
-		// of instant turns *and* high speeds also need special care
-		const int dirSign = Sign(int(!reversing));
 
-		const float absTurnSpeed = turnRate;
-		const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
+		const bool skipRequested = (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f);
+		if (!skipRequested) {
+			// perform a turn-radius check: if the waypoint lies outside
+			// our turning circle, do not skip since we can steer toward
+			// this waypoint and pass it without slowing down
+			// note that the DIAMETER of the turning circle is calculated
+			// to prevent sine-like "snaking" trajectories; units capable
+			// of instant turns *and* high speeds also need special care
+			const int dirSign = Sign(int(!reversing));
 
-		const float turnRadius = std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 2.f) * 1.05f;
-		const float waypointDot = Clamp(waypointDir.dot(flatFrontDir * dirSign), -1.0f, 1.0f);
+			const float absTurnSpeed = turnRate;
+			const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
 
-		#if 1
+			const float turnRadius = std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f) * 2.f;
+			const float waypointDot = Clamp(waypointDir.dot(flatFrontDir * dirSign), -1.0f, 1.0f);
 
-		// #ifdef PATHING_DEBUG
-		// if (DEBUG_DRAWING_ENABLED)
-		// {
-		// 	bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-		// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-		// 	if (printMoveInfo) {
-		// 		LOG("%s absTurnSpeed %f, cwpDistSq=%f, skip=%d", __func__, absTurnSpeed, cwpDistSq, int(allowSkip));
-		// 		LOG("%s turnradius %f = max(%f*%f*%f=%f, %f)", __func__
-		// 				, turnRadius, currentSpeed, framesToTurn, math::INVPI2
-		// 				, (currentSpeed * framesToTurn) * math::INVPI2
-		// 				, currentSpeed * 1.05f);
-		// 		LOG("%s currWayPointDist %f, turn radius = %f", __func__, currWayPointDist, turnRadius);
-		// 	}
-		// }
-		// #endif
+			#if 1
 
-		// wp outside turning circle
-		if (currWayPointDist > turnRadius)
-			return false;
+			// #ifdef PATHING_DEBUG
+			// if (DEBUG_DRAWING_ENABLED)
+			// {
+			// 	bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// 	if (printMoveInfo) {
+			// 		LOG("%s absTurnSpeed %f, cwpDistSq=%f, skip=%d", __func__, absTurnSpeed, cwpDistSq, int(allowSkip));
+			// 		LOG("%s turnradius %f = max(%f*%f*%f=%f, %f)", __func__
+			// 				, turnRadius, currentSpeed, framesToTurn, math::INVPI2
+			// 				, (currentSpeed * framesToTurn) * math::INVPI2
+			// 				, currentSpeed * 1.05f);
+			// 		LOG("%s currWayPointDist %f, turn radius = %f", __func__, currWayPointDist, turnRadius);
+			// 	}
+			// }
+			// #endif
 
-		// #ifdef PATHING_DEBUG
-		// if (DEBUG_DRAWING_ENABLED)
-		// {
-		// 	bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-		// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-		// 	if (printMoveInfo) {
-		// 		LOG("%s currWayPointDist %f, max=%f, wayDot=%f", __func__
-		// 				, currWayPointDist
-		// 				, std::max(SQUARE_SIZE * 1.0f, currentSpeed * 1.05f)
-		// 				, waypointDot);
-		// 	}
-		// }
-		// #endif
+			// wp outside turning circle
+			if (currWayPointDist > turnRadius)
+				return false;
 
-		// wp inside but ~straight ahead and not reached within one tick
-		if (currWayPointDist > std::max(SQUARE_SIZE * 1.0f, currentSpeed * 1.05f) && waypointDot >= 0.995f)
-			return false;
+			// #ifdef PATHING_DEBUG
+			// if (DEBUG_DRAWING_ENABLED)
+			// {
+			// 	bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// 	if (printMoveInfo) {
+			// 		LOG("%s currWayPointDist %f, max=%f, wayDot=%f", __func__
+			// 				, currWayPointDist
+			// 				, std::max(SQUARE_SIZE * 1.0f, currentSpeed * 1.05f)
+			// 				, waypointDot);
+			// 	}
+			// }
+			// #endif
 
-		#else
+			// wp inside but ~straight ahead and not reached within one tick
+			if (currWayPointDist > std::max(SQUARE_SIZE * 1.0f, currentSpeed * 1.05f) && waypointDot >= 0.995f)
+				return false;
 
-		if ((currWayPointDist > std::max(turnRadius * 2.0f, 1.0f * SQUARE_SIZE)) && (waypointDot >= 0.0f))
-			return false;
+			#else
 
-		if ((currWayPointDist > std::max(turnRadius * 1.0f, 1.0f * SQUARE_SIZE)) && (waypointDot <  0.0f))
-			return false;
+			if ((currWayPointDist > std::max(turnRadius * 2.0f, 1.0f * SQUARE_SIZE)) && (waypointDot >= 0.0f))
+				return false;
 
-		if (math::acosf(waypointDot) < ((turnRate / SPRING_CIRCLE_DIVS) * math::TWOPI))
-			return false;
-		#endif
+			if ((currWayPointDist > std::max(turnRadius * 1.0f, 1.0f * SQUARE_SIZE)) && (waypointDot <  0.0f))
+				return false;
+
+			if (math::acosf(waypointDot) < ((turnRate / SPRING_CIRCLE_DIVS) * math::TWOPI))
+				return false;
+			#endif
+
+		}
 
 		const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
 		const float3 targetPos = nwp;
@@ -2075,8 +2108,10 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		if (limitSpeedForTurning > 0)
 			--limitSpeedForTurning;
 
-		lastWaypoint = pathManager->CurrentWaypointIsLast(pathID);
+		lastWaypoint |= pathManager->CurrentWaypointIsLast(pathID);
 		if (lastWaypoint) {
+			// incomplete path and last valid waypoint has been reached. The last waypoint is
+			// always the point that can't be reached.
 			ReRequestPath(false);
 		} else {
 			// Prevent delay repaths because the waypoints have been updated.

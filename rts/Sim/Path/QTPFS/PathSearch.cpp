@@ -55,6 +55,8 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	ZoneScoped;
 	searchThreadData = threadData;
 
+	badGoal = false;
+
 	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
 	openNodes = &searchThreadData->openNodes;
 
@@ -73,7 +75,10 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 			, int2(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE)
 			, searchThreadData->tmpNodesStore
 		);
-		tgtNode = (altTgtNode != nullptr) ? altTgtNode : tgtNode;
+		if (altTgtNode != nullptr) {
+			tgtNode = altTgtNode;
+			badGoal = true;
+		}
 	}
 
 	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
@@ -88,7 +93,7 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	havePartPath = false;
 
 	// early-out
-	if (haveFullPath)
+	if (haveFullPath) 
 		return true;
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
@@ -136,8 +141,9 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 		#endif
 
 		haveFullPath = (curSearchNode == tgtSearchNode);
-		if (haveFullPath)
+		if (haveFullPath){
 			searchThreadData->ResetQueue();
+		}
 	}
 
 	havePartPath = (minSearchNode != srcSearchNode);
@@ -389,12 +395,11 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 	#endif
 
 	path->SetBoundingBox();
-	path->SetHasFullPath(haveFullPath);
+	path->SetHasFullPath(haveFullPath & !badGoal);
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
 	std::deque<float3> points;
-//	std::deque<float3>::const_iterator pointsIt;
 
 	if (srcSearchNode != tgtSearchNode) {
 
@@ -650,32 +655,22 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	assert(dstPath->GetID() != srcPath->GetID());
 	assert(dstPath->NumPoints() == 2);
 
-	// const float3& p0 = srcPath->GetTargetPoint();
-	// const float3& p1 = dstPath->GetTargetPoint();
+	// copy <srcPath> to <dstPath>
+	dstPath->CopyPoints(*srcPath);
+	dstPath->SetSourcePoint(srcPoint);
+	dstPath->SetTargetPoint(tgtPoint);
+	dstPath->SetBoundingBox();
+	dstPath->SetHasFullPath(srcPath->IsFullPath());
 
-	// if (p0.SqDistance(p1) < (SQUARE_SIZE * SQUARE_SIZE)) {
-		// copy <srcPath> to <dstPath>
-		dstPath->CopyPoints(*srcPath);
-		dstPath->SetSourcePoint(srcPoint);
-		dstPath->SetTargetPoint(tgtPoint);
-		dstPath->SetBoundingBox();
+	haveFullPath = srcPath->IsFullPath();
 
-		haveFullPath = true;
-
-		// pathCache->AddLivePath(dstPath);
-		return true;
-	// }
-
-	// return false;
+	return true;
 }
 
 const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const INode* tgtNode) const {
-
 	std::uint64_t N = mapDims.mapx * mapDims.mapy;
 	std::uint32_t k = nodeLayer->GetNodelayer();
 
-	// auto* srcNode = nodeLayer->GetPoolNode(srcSearchNode->GetIndex());
-	// auto* tgtNode = nodeLayer->GetPoolNode(tgtSearchNode->GetIndex()); 
 	return (srcNode->GetNodeNumber() + (tgtNode->GetNodeNumber() * N) + (k * N * N));
 }
 
