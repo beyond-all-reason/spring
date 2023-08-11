@@ -60,6 +60,7 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 #include "Sim/Misc/GeometricObjects.h"
 
 #include "Sim/Misc/QuadField.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/SpringMath.h"
@@ -250,7 +251,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 			}
 		}
 
-		/*
+		
 		// neutral units in this quad
 		if (scanForNeutrals) {
 			for (const CUnit* u : quad.units) {
@@ -261,8 +262,55 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
-				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, u))
-					return true;
+				//chord check here
+				const CollisionVolume* cv = &u->collisionVolume;
+				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
+				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				// chord check to hitPos
+				const CMatrix44f objTransform = u->GetTransformMatrix(true);
+				checked = false;
+				for (int i = 1; i < 8; i++) {
+					if (cvRelDst < mdist[i]) {
+						checked = true;
+						const float delta1 = mdist[i] - mdist[i - 1];
+						const float delta2 = cvRelDst - mdist[i - 1];
+						const float ratio = delta2 / delta1;
+						const float hitheight = mheight[i - 1] + ratio*(mheight[i] - mheight[i - 1]);
+						const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+						if (mheight[i] > mheight[i - 1]) {
+							// do chord check backwards
+							if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
+								return false;
+							}
+						} else {
+							// do chord check forwards
+							if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
+								return false;
+							}
+							
+						}
+
+					}
+				}
+				if (checked == false) {
+					// need to check linear end
+					const float delta1 = xzTargetDist - mdist[7];
+					const float delta2 = cvRelDst - mdist[7];
+					const float ratio = delta2 / delta1;
+					const float hitheight = mheight[7] + ratio * (yt - mheight[7]);
+					const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+					if (yt > mheight[7]) {
+						// do chord check backwards
+						if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
+							return false;
+						}
+					} else {
+						// do chord check forwards
+						if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
+							return false;
+						}
+					}
+				}
 			}
 		}
 
@@ -272,11 +320,59 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				if (!f->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
-				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, f))
-					return true;
+				//chord check here
+				const CollisionVolume* cv = &f->collisionVolume;
+				const float3 cvRelVec = cv->GetWorldSpacePos(f) - srcPos;
+				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				// chord check to hitPos
+				const CMatrix44f objTransform = f->GetTransformMatrix(true);
+				checked = false;
+				for (int i = 1; i < 8; i++) {
+					if (cvRelDst < mdist[i]) {
+						checked = true;
+						const float delta1 = mdist[i] - mdist[i - 1];
+						const float delta2 = cvRelDst - mdist[i - 1];
+						const float ratio = delta2 / delta1;
+						const float hitheight = mheight[i - 1] + ratio * (mheight[i] - mheight[i - 1]);
+						const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+						if (mheight[i] > mheight[i - 1]) {
+							// do chord check backwards
+							if (CCollisionHandler::DetectHit(f, objTransform, srcPos, hitPos, &cq, true)) {
+								return false;
+							}
+						}
+						else {
+							// do chord check forwards
+							if (CCollisionHandler::DetectHit(f, objTransform, hitPos, tgtPos, &cq, true)) {
+								return false;
+							}
+
+						}
+
+					}
+				}
+				if (checked == false) {
+					// need to check linear end
+					const float delta1 = xzTargetDist - mdist[7];
+					const float delta2 = cvRelDst - mdist[7];
+					const float ratio = delta2 / delta1;
+					const float hitheight = mheight[7] + ratio * (yt - mheight[7]);
+					const float3 hitPos = srcPos + targetVec * cvRelDst + UpVector * hitheight;
+					if (yt > mheight[7]) {
+						// do chord check backwards
+						if (CCollisionHandler::DetectHit(f, objTransform, srcPos, hitPos, &cq, true)) {
+							return false;
+						}
+					}
+					else {
+						// do chord check forwards
+						if (CCollisionHandler::DetectHit(f, objTransform, hitPos, tgtPos, &cq, true)) {
+							return false;
+						}
+					}
+				}
 			}
 		}
-		*/
 	}
 
 	return true;
