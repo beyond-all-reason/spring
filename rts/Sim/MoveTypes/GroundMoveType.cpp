@@ -2108,7 +2108,7 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		if (limitSpeedForTurning > 0)
 			--limitSpeedForTurning;
 
-		lastWaypoint |= pathManager->CurrentWaypointIsLast(pathID);
+		lastWaypoint |= pathManager->CurrentWaypointIsUnreachable(pathID);
 		if (lastWaypoint) {
 			// incomplete path and last valid waypoint has been reached. The last waypoint is
 			// always the point that can't be reached.

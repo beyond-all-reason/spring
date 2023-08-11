@@ -81,7 +81,7 @@ public:
 		return -OnesVector;
 	}
 
-	virtual bool CurrentWaypointIsLast(unsigned int pathID) { return true; }
+	virtual bool CurrentWaypointIsUnreachable(unsigned int pathID) { return true; }
 
 
 	/**

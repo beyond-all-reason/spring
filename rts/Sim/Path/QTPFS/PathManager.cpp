@@ -1219,7 +1219,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 }
 
 
-bool QTPFS::PathManager::CurrentWaypointIsLast(unsigned int pathID) {
+bool QTPFS::PathManager::CurrentWaypointIsUnreachable(unsigned int pathID) {
 	entt::entity pathEntity = entt::entity(pathID);
 	if (!registry.valid(pathEntity))
 		return true;

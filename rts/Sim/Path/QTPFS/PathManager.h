@@ -69,7 +69,7 @@ namespace QTPFS {
 			bool synced
 		) override;
 
-		bool CurrentWaypointIsLast(unsigned int pathID) override;
+		bool CurrentWaypointIsUnreachable(unsigned int pathID) override;
 
 		void GetPathWayPoints(
 			unsigned int pathID,
