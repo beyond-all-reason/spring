@@ -4858,7 +4858,7 @@ const char * tracyLuaPlot7 = "LuaPlot7";
 const char * tracyLuaPlot8 = "LuaPlot8";
 const char * tracyLuaPlot9 = "LuaPlot9";
 
-/***
+/*** Initialize a plot in Tracy for use in debugging, up to 9 plots [1-9] may be used
  *
  * @function Spring.LuaTracyPlotConfig
  * @number plotIndex which LuaPlot[1-9] should be initialized
@@ -4895,7 +4895,7 @@ int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Update a Tracy Plot with a value
  *
  * @function Spring.LuaTracyPlot
  * @number plotIndex which LuaPlot[1-9] should be updated
