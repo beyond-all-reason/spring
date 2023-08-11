@@ -24,6 +24,7 @@
 #include "System/float4.h"
 #include "System/type2.h"
 #include "System/UnorderedMap.hpp"
+#include "Rendering/Models/ModelsMemStorage.h"
 
 #include "glStateDebug.h"
 
@@ -165,6 +166,13 @@ struct SInstanceData {
 		, info{ teamIndex, drawFlags, 0, numPieces }	// not updated during the following draw frames
 		, bposeMatOffset { bposeMatOffset_ }			// updated during the following draw frames
 	{}
+
+	// validity check
+	inline operator bool() const {
+		return matOffset != MatricesMemStorage::INVALID_INDEX
+			&& bposeMatOffset != MatricesMemStorage::INVALID_INDEX;
+		// no uniOffset check because defs and models don't have it
+	}
 
 	uint32_t matOffset;
 	uint32_t uniOffset;

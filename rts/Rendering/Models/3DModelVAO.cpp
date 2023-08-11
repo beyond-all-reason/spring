@@ -8,6 +8,7 @@
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Rendering/ModelsDataUploader.h"
+#include "Rendering/GL/glHelpers.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Features/Feature.h"
@@ -270,35 +271,12 @@ void S3DModelVAO::DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboI
 template<typename TObj>
 bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags)
 {
-	const auto matIndex = matrixUploader.GetElemOffset(obj);
-	if (matIndex == MatricesMemStorage::INVALID_INDEX)
-		return false;
-
-	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs and models. Don't check for validity
-
-	uint8_t numPieces = 0;
-	size_t bposeIndex = 0;
-	if constexpr (std::is_same<TObj, S3DModel>::value) {
-		numPieces = static_cast<uint8_t>(obj->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj);
-	}
-	else {
-		numPieces = static_cast<uint8_t>(obj->model->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj->model);
-	}
-
-	if (bposeIndex == MatricesMemStorage::INVALID_INDEX)
+	const SInstanceData instanceData = GetObjectInstanceData(obj, teamID, drawFlags);
+	if (!instanceData)
 		return false;
 
 	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
-	modelInstanceData.emplace_back(SInstanceData(
-		static_cast<uint32_t>(matIndex),
-		teamID,
-		drawFlags,
-		numPieces,
-		static_cast<uint32_t>(uniIndex),
-		static_cast<uint32_t>(bposeIndex)
-	));
+	modelInstanceData.push_back(instanceData);
 
 	return true;
 }
@@ -391,24 +369,10 @@ void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 template<typename TObj>
 bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)
 {
-	std::size_t matIndex = matrixUploader.GetElemOffset(obj);
-	if (matIndex == MatricesMemStorage::INVALID_INDEX)
+	const SInstanceData instanceData = GetObjectInstanceData(obj, teamID, drawFlags);
+	if (!instanceData)
 		return false;
 
-	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs. Don't check for validity
-
-	uint8_t numPieces = 0;
-	size_t bposeIndex = 0;
-	if constexpr (std::is_same<TObj, S3DModel>::value) {
-		numPieces = static_cast<uint8_t>(obj->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj);
-	}
-	else {
-		numPieces = static_cast<uint8_t>(obj->model->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj->model);
-	}
-
-	SInstanceData instanceData(static_cast<uint32_t>(matIndex), teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 	const uint32_t immediateBaseInstanceAbs = INSTANCE_BUFFER_NUM_BATCHED + immediateBaseInstance;
 
 	static SDrawElementsIndirectCommand scmd;

@@ -78,9 +78,11 @@ public:
 		Unbind();
 	}
 
-	// uploads vector of data from 0 to size() - 1 at elemOffset
+	// uploads vector of data from dataOffset to size() - 1 at elemOffset
 	template<typename TData>
-	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
+	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0, size_t dataOffset = 0) {
+		SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data() +sizeof(TData)*dataOffset);
+	}
 	void SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
 
 	GLuint GetId() const {

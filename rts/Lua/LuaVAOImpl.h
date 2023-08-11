@@ -87,8 +87,6 @@ private:
 	template <typename TObj>
 	int AddObjectsToSubmissionImpl(const sol::stack_table& ids);
 	template <typename TObj>
-	void RemoveObjectFromBinImpl(int id);
-	template <typename TObj>
 	SDrawElementsIndirectCommand DrawObjectGetCmdImpl(int id);
 	template <typename TObj>
 	static const SIndexAndCount GetDrawIndicesImpl(int id);
@@ -113,6 +111,9 @@ private:
 
 class LuaVAOImpl::Bins {
 public:
+	inline Bins(std::vector<SDrawElementsIndirectCommand>& submitCmds_)
+	:	submitCmds(submitCmds_) {}
+
 	struct Bin {
 		inline Bin(int modelId) : modelId(modelId) {}
 
@@ -128,11 +129,10 @@ public:
 	std::vector<SInstanceData> instanceData;
 	bool requireInstanceDataUpload = false;
 	size_t firstChangedInstance;
+	std::vector<SDrawElementsIndirectCommand>& submitCmds;
 
 	template <typename TObj>
-	void ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects,
-		sol::optional<size_t> removedCount, sol::optional<size_t> addedCount,
-		std::vector<SDrawElementsIndirectCommand>& submitCmds);
+	void ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
 };
 
 #endif //LUA_VAO_IMPL_H

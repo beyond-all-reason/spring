@@ -11,9 +11,9 @@
 #include "System/SafeUtil.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
+#include "Rendering/GL/glHelpers.h"
 #include "LuaVBOImpl.h"
 #include "Rendering/Models/3DModel.h"
-#include "Rendering/ModelsDataUploader.h"
 #include "System/Log/ILog.h" // temp
 
 #include "LuaUtils.h"
@@ -95,7 +95,7 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 
 void LuaVAOImpl::EnsureBinsInit()
 {
-	if (!bins) bins = std::make_unique<Bins>();
+	if (!bins) bins = std::make_unique<Bins>(submitCmds);
 }
 
 
@@ -195,15 +195,13 @@ int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 }
 
 template<typename TObj>
-void LuaVAOImpl::Bins::ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects,
-	sol::optional<size_t> removedCount, sol::optional<size_t> addedCount,
-	std::vector<SDrawElementsIndirectCommand>& submitCmds)
+void LuaVAOImpl::Bins::ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
 {
 	const size_t removedObjectCount = (removedCount.has_value()? removedCount.value() : removedObjects.size());
 	const size_t addedObjectCount = (addedCount.has_value()? addedCount.value() : addedObjects.size());
 	if (removedObjectCount == 0 && addedObjectCount == 0) return;
 
-	size_t firstChangedBinIndex = -1;
+	size_t firstChangedBinIndex = std::numeric_limits<size_t>::max();
 
 	for (std::size_t i = 1; i <= removedObjectCount; ++i) {
 		lua_Number objIdLua = removedObjects.raw_get<lua_Number>(i);
@@ -267,18 +265,10 @@ void LuaVAOImpl::Bins::ModifyImpl(const sol::stack_table& removedObjects, const 
 
 		objIdToLocalInstance[objId] = bin.objIds.size();
 		bin.objIds.emplace_back(objId);
-		const auto matIndex = matrixUploader.GetElemOffset(obj);
-		const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj);
-		const size_t bposeIndex = matrixUploader.GetElemOffset(model);
-		bin.instanceData.emplace_back(
-			static_cast<uint32_t>(matIndex),
-			static_cast<uint8_t>(obj->team), // initial team id, will not be updated (unreliable: shader must obtain it somehow else, otherwise it will not reflect transfer to another team)
-			static_cast<uint8_t>(0), // no draw flags, they will not be updated
-			static_cast<uint8_t>(model->numPieces),
-			static_cast<uint32_t>(uniIndex),
-			static_cast<uint32_t>(bposeIndex)
-		);
+		bin.instanceData.emplace_back(GetObjectInstanceData(obj, obj->team, obj->drawFlag));
 		++submitCmds[binIndex].instanceCount;
+
+		assert(bin.instanceData.back());
 	}
 
 	assert(bins.size() == submitCmds.size());
@@ -676,7 +666,7 @@ void LuaVAOImpl::Submit()
 void LuaVAOImpl::ModifyUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
 {
 	EnsureBinsInit();
-	bins->ModifyImpl<CUnit>(removedUnits, addedUnits, removedCount, addedCount, submitCmds);
+	bins->ModifyImpl<CUnit>(removedUnits, addedUnits, removedCount, addedCount);
 }
 
 
@@ -692,7 +682,7 @@ void LuaVAOImpl::ModifyUnitBins(const sol::stack_table& removedUnits, const sol:
 void LuaVAOImpl::ModifyFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
 {
 	EnsureBinsInit();
-	bins->ModifyImpl<CFeature>(removedFeatures, addedFeatures, removedCount, addedCount, submitCmds);
+	bins->ModifyImpl<CFeature>(removedFeatures, addedFeatures, removedCount, addedCount);
 }
 
 
@@ -712,7 +702,7 @@ void LuaVAOImpl::SubmitBins()
 
 		instVBO->Bind();
 		const size_t firstChangedInstance = bins->firstChangedInstance;
-		instVBO->SetBufferSubData(firstChangedInstance*sizeof(SInstanceData), (bins->instanceData.size() -firstChangedInstance)*sizeof(SInstanceData), &bins->instanceData[firstChangedInstance]);
+		instVBO->SetBufferSubData(bins->instanceData, firstChangedInstance, firstChangedInstance);
 		instVBO->Unbind();
 
 		bins->requireInstanceDataUpload = false;
