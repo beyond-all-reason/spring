@@ -233,6 +233,8 @@ class CLuaHandle : public CEventClient
 			const std::string* label
 		) override;
 
+		void UpdateTimeOffset(float timeOffset, float drawSimRatio) override;
+
 		void ViewResize() override;
 
 		void SunChanged() override;
