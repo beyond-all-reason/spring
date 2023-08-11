@@ -25,10 +25,9 @@ and [Metal Factions].
 ---
 
 {: .warning }
-
 > Recoil is a recent hard fork of [Spring] from the [105 tree], many references
-> to it might and will be present. Overall most documented Spring API and
-> tutorials are compatible with Recoil since they are based on the [105 tree].
+to it might and will be present. Overall most documented Spring API and
+tutorials are compatible with Recoil since they are based on the [105 tree].
 
 ## Getting started
 
@@ -49,9 +48,8 @@ The latest stable release is `{{site.data.latest_release.name}}` available at:
 {% assign releases = site.data.latest_release.assets | where_exp: "asset", "asset.browser_download_url contains 'minimal-portable'" %}
 
 {% for rel in releases %}
-
 - [`{{rel.name}}`]({{rel.browser_download_url}})
-  {% endfor %}
+{% endfor %}
 
 See the [release page]({{site.data.latest_release.html_url}}) for more options.
 
@@ -87,6 +85,5 @@ owners of this repository before making a change.
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
 [Matrix Room]: https://matrix.to/#/#recoil-rts:matrix.org
 [Spring Wiki]: https://springrts.com/wiki/Main_Page
-
 [Recoil Lua API]: {{site.baseurl}}{% link lua-api.md %}
 [Recoil Github Wiki]: {{site.gh_edit_repository}}/issues
