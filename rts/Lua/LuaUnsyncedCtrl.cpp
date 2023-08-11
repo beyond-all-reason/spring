@@ -4848,6 +4848,8 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 	return 1;
 }
 
+/* NB: strings here are never cleaned up, but the use case assumes
+ * that they live a long time and there's just a handful of them */
 std::set <std::string> tracyLuaPlots;
 
 /*** Initialize a plot in Tracy for use in debugging, up to 9 plots [1-9] may be used
