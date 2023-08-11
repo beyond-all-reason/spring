@@ -4878,6 +4878,16 @@ const char * tracyLuaPlot7 = "LuaPlot7";
 const char * tracyLuaPlot8 = "LuaPlot8";
 const char * tracyLuaPlot9 = "LuaPlot9";
 
+/***
+ *
+ * @function Spring.LuaTracyPlotConfig
+ * @number plotIndex which LuaPlot[1-9] should be initialized
+ * @string[opt] plotFormatType "Number"|"Percentage"|"Memory", default "Number"
+ * @bool[opt] step stepwise chart, default stepwise
+ * @bool[opt] fill color fill, default no fill
+ * @number[opt] color unit32 number as RGB color, default white
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 {
 	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9);
@@ -4905,6 +4915,13 @@ int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function Spring.LuaTracyPlot
+ * @number plotIndex which LuaPlot[1-9] should be updated
+ * @number plotvalue the number to show on the Tracy plot
+ * @treturn nil
+ */
 int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
 {
 	const int plotIndex = std::clamp(luaL_checkint(L, 1), 1, 9) ;
