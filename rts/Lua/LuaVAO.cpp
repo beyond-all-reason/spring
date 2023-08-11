@@ -56,7 +56,10 @@ bool LuaVAOs::PushEntries(lua_State* L)
 
 		"UpdateUnitBins", &LuaVAOImpl::UpdateUnitBins,
 		"UpdateFeatureBins", &LuaVAOImpl::UpdateFeatureBins,
-		"SubmitBins", &LuaVAOImpl::SubmitBins
+		"SubmitBins", sol::overload(
+			sol::resolve<void()>(&LuaVAOImpl::SubmitBins),
+			sol::resolve<void(const sol::function)>(&LuaVAOImpl::SubmitBins)
+		)
 	);
 
 	gl.set("VAO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVAO

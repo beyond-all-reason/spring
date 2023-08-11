@@ -692,17 +692,8 @@ void LuaVAOImpl::UpdateFeatureBins(const sol::stack_table& removedFeatures, cons
 }
 
 
-/***
- *
- * @function VAO:SubmitBins
- * @treturn nil
- */
-void LuaVAOImpl::SubmitBins()
+void LuaVAOImpl::UpdateBinsGPU()
 {
-	EnsureBinsInit();
-
-	CondInitVAO();
-
 	if (bins->requireInstanceDataUpload) {
 		VBO* const instVBO = instLuaVBO->GetVBO();
 
@@ -713,6 +704,51 @@ void LuaVAOImpl::SubmitBins()
 
 		bins->requireInstanceDataUpload = false;
 	}
+}
+
+
+/***
+ *
+ * @function VAO:SubmitBins
+ * @treturn nil
+ */
+void LuaVAOImpl::SubmitBins()
+{
+	EnsureBinsInit();
+	CondInitVAO();
+
+	UpdateBinsGPU();
 
 	Submit();
+}
+
+
+/***
+ *
+ * @function VAO:SubmitBins
+ * @func binPrepFunc
+ * @treturn nil
+ */
+void LuaVAOImpl::SubmitBins(const sol::function binPrepFunc)
+{
+	EnsureBinsInit();
+	CondInitVAO();
+
+	UpdateBinsGPU();
+
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
+
+	vao->Bind();
+
+	auto submitCmdPtr = &submitCmds[0];
+	for (const auto& bin : bins->bins) {
+		binPrepFunc(bin.objIds.front());
+		glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, submitCmdPtr, 1, sizeof(SDrawElementsIndirectCommand));
+		++submitCmdPtr;
+	}
+
+	vao->Unbind();
+
+	glDisable(GL_PRIMITIVE_RESTART);
 }

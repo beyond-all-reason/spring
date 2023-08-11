@@ -55,6 +55,7 @@ public:
 	void UpdateUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
 	void UpdateFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
 	void SubmitBins();
+	void SubmitBins(const sol::function binPrepFunc);
 private:
 	template<typename T>
 	struct DrawCheckType {
@@ -92,6 +93,8 @@ private:
 	static const SIndexAndCount GetDrawIndicesImpl(int id);
 	template <typename TObj>
 	static const SIndexAndCount GetDrawIndicesImpl(const TObj* obj);
+
+	void UpdateBinsGPU();
 private:
 	std::unique_ptr<VAO> vao = nullptr;
 
