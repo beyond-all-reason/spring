@@ -52,8 +52,8 @@ public:
 	void RemoveFromSubmission(int idx);
 	void Submit();
 
-	void ModifyUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
-	void ModifyFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
+	void UpdateUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
+	void UpdateFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
 	void SubmitBins();
 private:
 	template<typename T>
@@ -132,7 +132,7 @@ public:
 	std::vector<SDrawElementsIndirectCommand>& submitCmds;
 
 	template <typename TObj>
-	void ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
+	void UpdateImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
 };
 
 #endif //LUA_VAO_IMPL_H

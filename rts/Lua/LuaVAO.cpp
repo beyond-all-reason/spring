@@ -54,8 +54,8 @@ bool LuaVAOs::PushEntries(lua_State* L)
 		"RemoveFromSubmission", & LuaVAOImpl::RemoveFromSubmission,
 		"Submit", &LuaVAOImpl::Submit,
 
-		"ModifyUnitBins", &LuaVAOImpl::ModifyUnitBins,
-		"ModifyFeatureBins", &LuaVAOImpl::ModifyFeatureBins,
+		"UpdateUnitBins", &LuaVAOImpl::UpdateUnitBins,
+		"UpdateFeatureBins", &LuaVAOImpl::UpdateFeatureBins,
 		"SubmitBins", &LuaVAOImpl::SubmitBins
 	);
 

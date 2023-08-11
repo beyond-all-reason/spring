@@ -194,107 +194,6 @@ int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 	return submitCmds.size() - idsSize;
 }
 
-template<typename TObj>
-void LuaVAOImpl::Bins::ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
-{
-	const size_t removedObjectCount = (removedCount.has_value()? removedCount.value() : removedObjects.size());
-	const size_t addedObjectCount = (addedCount.has_value()? addedCount.value() : addedObjects.size());
-	if (removedObjectCount == 0 && addedObjectCount == 0) return;
-
-	size_t firstChangedBinIndex = std::numeric_limits<size_t>::max();
-
-	for (std::size_t i = 1; i <= removedObjectCount; ++i) {
-		lua_Number objIdLua = removedObjects.raw_get<lua_Number>(i);
-		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
-
-		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
-		const int modelId = obj->model->id;
-		const size_t binIndex = modelIdToBinIndex[modelId];
-		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
-		auto& bin = bins[binIndex];
-
-		if (bin.objIds.size() == 1) {
-			modelIdToBinIndex[bins.back().modelId] = binIndex;
-			modelIdToBinIndex.erase(modelId);
-			objIdToLocalInstance.erase(objId);
-			bins[binIndex] = bins.back();
-			bins.pop_back();
-			submitCmds[binIndex] = submitCmds.back();
-			submitCmds.pop_back();
-			continue;
-		}
-
-		size_t localInstance = objIdToLocalInstance[objId];
-		bin.instanceData[localInstance] = bin.instanceData.back();
-		bin.instanceData.pop_back();
-		objIdToLocalInstance[bin.objIds.back()] = localInstance;
-		objIdToLocalInstance.erase(objId);
-		bin.objIds[localInstance] = bin.objIds.back();
-		bin.objIds.pop_back();
-		--submitCmds[binIndex].instanceCount;
-	}
-
-	for (std::size_t i = 1; i <= addedObjectCount; ++i) {
-		lua_Number objIdLua = addedObjects.raw_get<lua_Number>(i);
-		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
-
-		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
-		const auto model = obj->model;
-		const int modelId = model->id;
-
-		auto binIndexIt = modelIdToBinIndex.find(modelId);
-		size_t binIndex;
-
-		if (binIndexIt == modelIdToBinIndex.end()) {
-			binIndex = bins.size();
-			modelIdToBinIndex[modelId] = binIndex;
-			bins.emplace_back(modelId);
-			submitCmds.emplace_back(
-				model->indxCount,
-				0u,
-				model->indxStart,
-				0u,
-				0u
-			);
-		} else {
-			binIndex = binIndexIt->second;
-		}
-
-		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
-		auto& bin = bins[binIndex];
-
-		objIdToLocalInstance[objId] = bin.objIds.size();
-		bin.objIds.emplace_back(objId);
-		bin.instanceData.emplace_back(GetObjectInstanceData(obj, obj->team, obj->drawFlag));
-		++submitCmds[binIndex].instanceCount;
-
-		assert(bin.instanceData.back());
-	}
-
-	assert(bins.size() == submitCmds.size());
-
-	firstChangedInstance = 0;
-	for (size_t binIndex = 0; binIndex < firstChangedBinIndex; ++binIndex) {
-		firstChangedInstance += bins[binIndex].objIds.size();
-	}
-
-	instanceData.resize(instanceData.size() +addedObjectCount -removedObjectCount);
-	size_t instance = firstChangedInstance;
-	for (size_t binIndex = firstChangedBinIndex; binIndex < bins.size(); ++binIndex) {
-		const auto& localInstanceData = bins[binIndex].instanceData;
-
-		assert(localInstanceData.size() == submitCmds[binIndex].instanceCount);
-
-		std::copy(localInstanceData.begin(), localInstanceData.end(), instanceData.begin()+instance);
-		submitCmds[binIndex].baseInstance = instance;
-		instance += localInstanceData.size();
-	}
-
-	requireInstanceDataUpload = true;
-}
-
-
-template<typename TObj>
 SDrawElementsIndirectCommand LuaVAOImpl::DrawObjectGetCmdImpl(int id)
 {
 	const auto& indexAndCount = LuaVAOImpl::GetDrawIndicesImpl<TObj>(id);
@@ -654,35 +553,142 @@ void LuaVAOImpl::Submit()
 }
 
 
+//***********************************
+// VAO::Bins
+
+template<typename TObj>
+void LuaVAOImpl::Bins::UpdateImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
+{
+	const size_t removedObjectCount = (removedCount.has_value()? removedCount.value() : removedObjects.size());
+	const size_t addedObjectCount = (addedCount.has_value()? addedCount.value() : addedObjects.size());
+	if (removedObjectCount == 0 && addedObjectCount == 0) return;
+
+	size_t firstChangedBinIndex = std::numeric_limits<size_t>::max();
+
+	for (std::size_t i = 1; i <= removedObjectCount; ++i) {
+		lua_Number objIdLua = removedObjects.raw_get<lua_Number>(i);
+		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
+
+		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
+		const int modelId = obj->model->id;
+		const size_t binIndex = modelIdToBinIndex[modelId];
+		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
+		auto& bin = bins[binIndex];
+
+		#define UnorderedErase(vector, index) \
+			(vector)[index] = (vector).back(); \
+			(vector).pop_back()
+		#define UnorderedMapSubstitute(map, subsitutedKey, substitutionKey, val) \
+			(map)[substitutionKey] = val; \
+			(map).erase(subsitutedKey)
+
+		if (bin.objIds.size() == 1) {
+			UnorderedMapSubstitute(modelIdToBinIndex, modelId, bins.back().modelId, binIndex);
+			objIdToLocalInstance.erase(objId);
+			UnorderedErase(bins, binIndex);
+			UnorderedErase(submitCmds, binIndex);
+			continue;
+		}
+
+		const size_t localInstance = objIdToLocalInstance[objId];
+		UnorderedMapSubstitute(objIdToLocalInstance, objId, bin.objIds.back(), localInstance);
+		UnorderedErase(bin.objIds, localInstance);
+		UnorderedErase(bin.instanceData, localInstance);
+		--submitCmds[binIndex].instanceCount;
+
+		#undef UnorderedErase
+		#undef UnorderedMapSubstitute
+	}
+
+	for (std::size_t i = 1; i <= addedObjectCount; ++i) {
+		lua_Number objIdLua = addedObjects.raw_get<lua_Number>(i);
+		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
+
+		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
+		const auto model = obj->model;
+		const int modelId = model->id;
+
+		auto binIndexIt = modelIdToBinIndex.find(modelId);
+		size_t binIndex;
+
+		if (binIndexIt == modelIdToBinIndex.end()) {
+			binIndex = bins.size();
+			modelIdToBinIndex[modelId] = binIndex;
+			bins.emplace_back(modelId);
+			submitCmds.emplace_back(
+				model->indxCount,
+				0u,
+				model->indxStart,
+				0u,
+				0u
+			);
+		} else {
+			binIndex = binIndexIt->second;
+		}
+
+		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
+		auto& bin = bins[binIndex];
+
+		objIdToLocalInstance[objId] = bin.objIds.size();
+		bin.objIds.emplace_back(objId);
+		bin.instanceData.emplace_back(GetObjectInstanceData(obj, obj->team, obj->drawFlag));
+		++submitCmds[binIndex].instanceCount;
+
+		assert(bin.instanceData.back());
+	}
+
+	assert(bins.size() == submitCmds.size());
+
+	firstChangedInstance = 0;
+	for (size_t binIndex = 0; binIndex < firstChangedBinIndex; ++binIndex) {
+		firstChangedInstance += bins[binIndex].objIds.size();
+	}
+
+	instanceData.resize(instanceData.size() +addedObjectCount -removedObjectCount);
+	size_t instance = firstChangedInstance;
+	for (size_t binIndex = firstChangedBinIndex; binIndex < bins.size(); ++binIndex) {
+		const auto& localInstanceData = bins[binIndex].instanceData;
+
+		assert(localInstanceData.size() == submitCmds[binIndex].instanceCount);
+
+		std::copy(localInstanceData.begin(), localInstanceData.end(), instanceData.begin()+instance);
+		submitCmds[binIndex].baseInstance = instance;
+		instance += localInstanceData.size();
+	}
+
+	requireInstanceDataUpload = true;
+}
+
+
 /***
  *
- * @function VAO:ModifyUnitBins
+ * @function VAO:UpdateUnitBins
  * @tparam {number,...} removedUnits
  * @tparam {number,...} addedUnits
  * @number[opt] removedCount
  * @number[opt] addedCount
  * @treturn nil
  */
-void LuaVAOImpl::ModifyUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
+void LuaVAOImpl::UpdateUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
 {
 	EnsureBinsInit();
-	bins->ModifyImpl<CUnit>(removedUnits, addedUnits, removedCount, addedCount);
+	bins->UpdateImpl<CUnit>(removedUnits, addedUnits, removedCount, addedCount);
 }
 
 
 /***
  *
- * @function VAO:ModifyFeatureBins
+ * @function VAO:UpdateFeatureBins
  * @tparam {number,...} removedFeatures
  * @tparam {number,...} addedFeatures
  * @number[opt] removedCount
  * @number[opt] addedCount
  * @treturn nil
  */
-void LuaVAOImpl::ModifyFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
+void LuaVAOImpl::UpdateFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
 {
 	EnsureBinsInit();
-	bins->ModifyImpl<CFeature>(removedFeatures, addedFeatures, removedCount, addedCount);
+	bins->UpdateImpl<CFeature>(removedFeatures, addedFeatures, removedCount, addedCount);
 }
 
 
