@@ -321,6 +321,8 @@ class CEventClient
 		                        const float3* pos1,
 		                        const std::string* label);
 
+		virtual void UpdateTimeOffset(float timeOffset, float drawSimRatio) {}
+
 		virtual void SunChanged();
 
 		virtual void ViewResize();

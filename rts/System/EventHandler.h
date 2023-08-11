@@ -259,6 +259,8 @@ class CEventHandler
 		                const float3* pos0,
 		                const float3* pos1,
 		                const std::string* label);
+		
+		void UpdateTimeOffset(float timeOffset, float drawSimRatio);
 
 		void SunChanged();
 

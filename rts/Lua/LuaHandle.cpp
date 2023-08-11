@@ -3546,6 +3546,31 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 }
 
 
+ *
+ * @function UpdateTimeOffset
+ * @number timeOffset
+ * @number drawSimRatio
+ * @return new timeOffset
+ */
+void CLuaHandle::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return ;
+
+	int args = 2;
+
+	lua_pushnumber(L, timeOffset);
+	lua_pushnumber(L, drawSimRatio);
+
+	// call the routine
+	RunCallIn(L, cmdStr, args, 0);
+	return;
+}
+
+
 /***
  *
  * @function GameSetup

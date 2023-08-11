@@ -943,6 +943,10 @@ bool CEventHandler::MapDrawCmd(
 	return ControlReverseIterateDefTrue(listMapDrawCmd, &CEventClient::MapDrawCmd, playerID, type, pos0, pos1, label);
 }
 
+void CEventHandler::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+{
+	ITERATE_EVENTCLIENTLIST(UpdateTimeOffset, timeOffset, drawSimRatio);
+}
 
 /******************************************************************************/
 /******************************************************************************/

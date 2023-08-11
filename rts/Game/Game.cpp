@@ -1399,6 +1399,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		lastFrameTime = currentTime;
 	}
 
+	eventHandler.UpdateTimeOffset(globalRendering->timeOffset, gu->simFPS * gu->avgFrameTime * 0.001f);
 	if ((currentTime - frameStartTime).toMilliSecsf() >= 1000.0f) {
 		globalRendering->FPS = (numDrawFrames * 1000.0f) / std::max(0.01f, (currentTime - frameStartTime).toMilliSecsf());
 
