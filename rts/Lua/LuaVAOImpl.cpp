@@ -702,7 +702,7 @@ void LuaVAOImpl::SubmitBins()
 
 		instVBO->Bind();
 		const size_t firstChangedInstance = bins->firstChangedInstance;
-		instVBO->SetBufferSubData(bins->instanceData, firstChangedInstance, firstChangedInstance);
+		instVBO->SetBufferSubData(firstChangedInstance*sizeof(SInstanceData), (bins->instanceData.size() -firstChangedInstance)*sizeof(SInstanceData), &bins->instanceData[firstChangedInstance]);
 		instVBO->Unbind();
 
 		bins->requireInstanceDataUpload = false;
