@@ -6,10 +6,12 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "lib/sol2/forward.hpp"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Models/3DModelVAO.h"
+#include "System/UnorderedMap.hpp"
 
 class VAO;
 class VBO;
@@ -17,6 +19,8 @@ class LuaVBOImpl;
 
 class LuaVAOImpl {
 public:
+	class Bins;
+
 	LuaVAOImpl();
 
 	LuaVAOImpl(const LuaVAOImpl& lva) = delete;
@@ -45,10 +49,12 @@ public:
 	int AddUnitDefsToSubmission(const sol::stack_table& ids);
 	int AddFeatureDefsToSubmission(int id);
 	int AddFeatureDefsToSubmission(const sol::stack_table& ids);
-
 	void RemoveFromSubmission(int idx);
-
 	void Submit();
+
+	void ModifyUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
+	void ModifyFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount);
+	void SubmitBins();
 private:
 	template<typename T>
 	struct DrawCheckType {
@@ -73,11 +79,15 @@ private:
 	void CondInitVAO();
 	void CheckDrawPrimitiveType(GLenum mode) const;
 	void AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std::shared_ptr<LuaVBOImpl>& thisLuaVBO, GLenum reqTarget);
+
+	void EnsureBinsInit();
 private:
 	template <typename TObj>
 	int AddObjectsToSubmissionImpl(int id);
 	template <typename TObj>
 	int AddObjectsToSubmissionImpl(const sol::stack_table& ids);
+	template <typename TObj>
+	void RemoveObjectFromBinImpl(int id);
 	template <typename TObj>
 	SDrawElementsIndirectCommand DrawObjectGetCmdImpl(int id);
 	template <typename TObj>
@@ -95,8 +105,34 @@ private:
 	uint32_t oldInstVBOId = 0;
 	uint32_t oldIndxVBOId = 0;
 
+	std::unique_ptr<Bins> bins = nullptr;
+
 	uint32_t baseInstance;
 	std::vector<SDrawElementsIndirectCommand> submitCmds;
+};
+
+class LuaVAOImpl::Bins {
+public:
+	struct Bin {
+		inline Bin(int modelId) : modelId(modelId) {}
+
+		int modelId;
+		std::vector<int> objIds;
+		std::vector<SInstanceData> instanceData;
+	};
+	std::vector<Bin> bins;
+
+	spring::unordered_map<int, size_t> modelIdToBinIndex;
+	spring::unordered_map<int, size_t> objIdToLocalInstance;
+
+	std::vector<SInstanceData> instanceData;
+	bool requireInstanceDataUpload = false;
+	size_t firstChangedInstance;
+
+	template <typename TObj>
+	void ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects,
+		sol::optional<size_t> removedCount, sol::optional<size_t> addedCount,
+		std::vector<SDrawElementsIndirectCommand>& submitCmds);
 };
 
 #endif //LUA_VAO_IMPL_H

@@ -12,6 +12,9 @@
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
 #include "LuaVBOImpl.h"
+#include "Rendering/Models/3DModel.h"
+#include "Rendering/ModelsDataUploader.h"
+#include "System/Log/ILog.h" // temp
 
 #include "LuaUtils.h"
 
@@ -87,6 +90,12 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 			}
 		}
 	}
+}
+
+
+void LuaVAOImpl::EnsureBinsInit()
+{
+	if (!bins) bins = std::make_unique<Bins>();
 }
 
 
@@ -184,6 +193,116 @@ int LuaVAOImpl::AddObjectsToSubmissionImpl(const sol::stack_table& ids)
 
 	return submitCmds.size() - idsSize;
 }
+
+template<typename TObj>
+void LuaVAOImpl::Bins::ModifyImpl(const sol::stack_table& removedObjects, const sol::stack_table& addedObjects,
+	sol::optional<size_t> removedCount, sol::optional<size_t> addedCount,
+	std::vector<SDrawElementsIndirectCommand>& submitCmds)
+{
+	const size_t removedObjectCount = (removedCount.has_value()? removedCount.value() : removedObjects.size());
+	const size_t addedObjectCount = (addedCount.has_value()? addedCount.value() : addedObjects.size());
+	if (removedObjectCount == 0 && addedObjectCount == 0) return;
+
+	size_t firstChangedBinIndex = -1;
+
+	for (std::size_t i = 1; i <= removedObjectCount; ++i) {
+		lua_Number objIdLua = removedObjects.raw_get<lua_Number>(i);
+		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
+
+		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
+		const int modelId = obj->model->id;
+		const size_t binIndex = modelIdToBinIndex[modelId];
+		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
+		auto& bin = bins[binIndex];
+
+		if (bin.objIds.size() == 1) {
+			modelIdToBinIndex[bins.back().modelId] = binIndex;
+			modelIdToBinIndex.erase(modelId);
+			objIdToLocalInstance.erase(objId);
+			bins[binIndex] = bins.back();
+			bins.pop_back();
+			submitCmds[binIndex] = submitCmds.back();
+			submitCmds.pop_back();
+			continue;
+		}
+
+		size_t localInstance = objIdToLocalInstance[objId];
+		bin.instanceData[localInstance] = bin.instanceData.back();
+		bin.instanceData.pop_back();
+		objIdToLocalInstance[bin.objIds.back()] = localInstance;
+		objIdToLocalInstance.erase(objId);
+		bin.objIds[localInstance] = bin.objIds.back();
+		bin.objIds.pop_back();
+		--submitCmds[binIndex].instanceCount;
+	}
+
+	for (std::size_t i = 1; i <= addedObjectCount; ++i) {
+		lua_Number objIdLua = addedObjects.raw_get<lua_Number>(i);
+		const int objId = spring::SafeCast<int, lua_Number>(objIdLua);
+
+		const TObj* obj = LuaUtils::SolIdToObject<TObj>(objId, __func__);
+		const auto model = obj->model;
+		const int modelId = model->id;
+
+		auto binIndexIt = modelIdToBinIndex.find(modelId);
+		size_t binIndex;
+
+		if (binIndexIt == modelIdToBinIndex.end()) {
+			binIndex = bins.size();
+			modelIdToBinIndex[modelId] = binIndex;
+			bins.emplace_back(modelId);
+			submitCmds.emplace_back(
+				model->indxCount,
+				0u,
+				model->indxStart,
+				0u,
+				0u
+			);
+		} else {
+			binIndex = binIndexIt->second;
+		}
+
+		firstChangedBinIndex = std::min(firstChangedBinIndex, binIndex);
+		auto& bin = bins[binIndex];
+
+		objIdToLocalInstance[objId] = bin.objIds.size();
+		bin.objIds.emplace_back(objId);
+		const auto matIndex = matrixUploader.GetElemOffset(obj);
+		const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj);
+		const size_t bposeIndex = matrixUploader.GetElemOffset(model);
+		bin.instanceData.emplace_back(
+			static_cast<uint32_t>(matIndex),
+			static_cast<uint8_t>(obj->team), // initial team id, will not be updated (unreliable: shader must obtain it somehow else, otherwise it will not reflect transfer to another team)
+			static_cast<uint8_t>(0), // no draw flags, they will not be updated
+			static_cast<uint8_t>(model->numPieces),
+			static_cast<uint32_t>(uniIndex),
+			static_cast<uint32_t>(bposeIndex)
+		);
+		++submitCmds[binIndex].instanceCount;
+	}
+
+	assert(bins.size() == submitCmds.size());
+
+	firstChangedInstance = 0;
+	for (size_t binIndex = 0; binIndex < firstChangedBinIndex; ++binIndex) {
+		firstChangedInstance += bins[binIndex].objIds.size();
+	}
+
+	instanceData.resize(instanceData.size() +addedObjectCount -removedObjectCount);
+	size_t instance = firstChangedInstance;
+	for (size_t binIndex = firstChangedBinIndex; binIndex < bins.size(); ++binIndex) {
+		const auto& localInstanceData = bins[binIndex].instanceData;
+
+		assert(localInstanceData.size() == submitCmds[binIndex].instanceCount);
+
+		std::copy(localInstanceData.begin(), localInstanceData.end(), instanceData.begin()+instance);
+		submitCmds[binIndex].baseInstance = instance;
+		instance += localInstanceData.size();
+	}
+
+	requireInstanceDataUpload = true;
+}
+
 
 template<typename TObj>
 SDrawElementsIndirectCommand LuaVAOImpl::DrawObjectGetCmdImpl(int id)
@@ -542,4 +661,62 @@ void LuaVAOImpl::Submit()
 	vao->Unbind();
 
 	glDisable(GL_PRIMITIVE_RESTART);
+}
+
+
+/***
+ *
+ * @function VAO:ModifyUnitBins
+ * @tparam {number,...} removedUnits
+ * @tparam {number,...} addedUnits
+ * @number[opt] removedCount
+ * @number[opt] addedCount
+ * @treturn nil
+ */
+void LuaVAOImpl::ModifyUnitBins(const sol::stack_table& removedUnits, const sol::stack_table& addedUnits, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
+{
+	EnsureBinsInit();
+	bins->ModifyImpl<CUnit>(removedUnits, addedUnits, removedCount, addedCount, submitCmds);
+}
+
+
+/***
+ *
+ * @function VAO:ModifyFeatureBins
+ * @tparam {number,...} removedFeatures
+ * @tparam {number,...} addedFeatures
+ * @number[opt] removedCount
+ * @number[opt] addedCount
+ * @treturn nil
+ */
+void LuaVAOImpl::ModifyFeatureBins(const sol::stack_table& removedFeatures, const sol::stack_table& addedFeatures, sol::optional<size_t> removedCount, sol::optional<size_t> addedCount)
+{
+	EnsureBinsInit();
+	bins->ModifyImpl<CFeature>(removedFeatures, addedFeatures, removedCount, addedCount, submitCmds);
+}
+
+
+/***
+ *
+ * @function VAO:SubmitBins
+ * @treturn nil
+ */
+void LuaVAOImpl::SubmitBins()
+{
+	EnsureBinsInit();
+
+	CondInitVAO();
+
+	if (bins->requireInstanceDataUpload) {
+		VBO* const instVBO = instLuaVBO->GetVBO();
+
+		instVBO->Bind();
+		const size_t firstChangedInstance = bins->firstChangedInstance;
+		instVBO->SetBufferSubData(firstChangedInstance*sizeof(SInstanceData), (bins->instanceData.size() -firstChangedInstance)*sizeof(SInstanceData), &bins->instanceData[firstChangedInstance]);
+		instVBO->Unbind();
+
+		bins->requireInstanceDataUpload = false;
+	}
+
+	Submit();
 }

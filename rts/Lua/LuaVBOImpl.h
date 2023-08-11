@@ -54,6 +54,8 @@ public:
 	void DumpDefinition();
 public:
 	static bool Supported(GLenum target);
+
+	VBO* GetVBO() const { return vbo; }
 private:
 	void AllocGLBuffer(size_t byteSize);
 	void CopyAttrMapToVec();

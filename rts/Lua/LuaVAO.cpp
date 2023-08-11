@@ -52,7 +52,11 @@ bool LuaVAOs::PushEntries(lua_State* L)
 			sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddFeatureDefsToSubmission)
 		),
 		"RemoveFromSubmission", & LuaVAOImpl::RemoveFromSubmission,
-		"Submit", &LuaVAOImpl::Submit
+		"Submit", &LuaVAOImpl::Submit,
+
+		"ModifyUnitBins", &LuaVAOImpl::ModifyUnitBins,
+		"ModifyFeatureBins", &LuaVAOImpl::ModifyFeatureBins,
+		"SubmitBins", &LuaVAOImpl::SubmitBins
 	);
 
 	gl.set("VAO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVAO
