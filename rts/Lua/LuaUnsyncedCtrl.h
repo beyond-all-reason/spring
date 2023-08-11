@@ -203,6 +203,9 @@ class LuaUnsyncedCtrl {
 		static int SetWindowMaximized(lua_State* L);
 
 		static int Yield(lua_State* L);
+
+		static int LuaTracyPlotConfig(lua_State* L);
+		static int LuaTracyPlot(lua_State* L);
 };
 
 #endif /* LUA_UNSYNCED_CTRL_H */
