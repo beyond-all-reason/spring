@@ -86,15 +86,156 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	// extraHeightTime = eHT = dist / maxSpeed
 	// dr/dt = r'(t,r,y) = (V0 + a * t) * (rt - r)/distance
 	// dy/dt = y'(t,r,y) = (V0 + a * t) * (yt + (eH * (1-t/eHT)) - y)/distance
-	// distance = sqrt( (rt - r)^2 + (yt - y)^2)
+	// distance = sqrt( (rt - r)^2 + (yt + (eH * (1-t/eHT)) - y)^2)
 	// velocity capped at maxSpeed
-	// r_n+1 = r_n + h*r'(t+0.5,r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
-	// y_n+1 = y_n + h*y'(t+0.5,r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
+	// r_n+1 = r_n + h*r'(t+(h/2),r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
+	// y_n+1 = y_n + h*y'(t+(h/2),r+(h/2)*r'(t,r,y),y+(h/2)*y'(t,r,y))
 	// 
 	// for midpoint method, we choose h so that we only need to calculate 8 points
 	// of the curved trajectoryheight controlled portion
 	// 
 	// For close targets, impact within 8 frames, just use a TestTrajectoryCone check
+
+	std::array<float, 8> mdist = {}; //distance radially the missile has travelled
+	std::array<float, 8> mheight = {}; //distance vertically the missile has travelled
+	mdist[0] = 0;
+	mheight[0] = 0;
+
+	const float maxSpeed = weaponDef->projectilespeed;
+	const float pSpeed = weaponDef->startvelocity;
+	const float pAcc = weaponDef->startvelocity;
+	float dist = srcPos.distance(tgtPos);
+	float rt = (tgtPos - srcPos).Length2D();
+	float yt = (tgtPos.y - srcPos.y);
+	float eH = (dist * weaponDef->trajectoryHeight);
+	int eHT = int(dist / maxSpeed);
+	float hstep = eHT / 8.0f;
+
+	float drdt = 0.0f;
+	float dydt = 0.0f;
+	float rt_est = 0.0f;
+	float yt_est = 0.0f;
+	float drdt_est = 0.0f;
+	float dydt_est = 0.0f;
+
+	float t = 0.0f;
+	//dist = math::sqrt(math::pow((rt - mdist[0]), 2) + math::pow((yt + eH * (1 - (hstep * 0.5f) / eHT) - mheight[0]), 2));
+	for (int i = 1; i < 8; i++) {
+		dist = math::sqrt(math::pow((rt - mdist[i-1]), 2) + math::pow((yt + eH * (1 - t / eHT) - mheight[i-1]), 2));
+		drdt = (pSpeed + pAcc * t) * (rt - mdist[i-1]) / dist;
+		dydt = (pSpeed + pAcc * t) * (yt + eH * (1 - t / eHT) - mheight[i-1]) / dist;
+		rt_est = mdist[i-1] + hstep * drdt;
+		yt_est = mheight[i-1] + hstep * dydt;
+		t = t + hstep;
+		dist = math::sqrt(math::pow((rt - rt_est), 2) + math::pow((yt + eH * (1 - t / eHT) - yt_est), 2));
+		drdt_est = (pSpeed + pAcc * t) * (rt - rt_est) / dist;
+		dydt_est = (pSpeed + pAcc * t) * (yt + eH * (1 - t / eHT) - yt_est) / dist;
+		mdist[i] = mdist[i-1] + (hstep * 0.5f) * (drdt + drdt_est);
+		mheight[i] = mheight[i-1] + (hstep * 0.5f) * (dydt + dydt_est);
+
+		//float drdt_half = (pSpeed + pAcc * hstep * 0.5f) * (rt - mdist[0]) / dist;
+		//float dydt_half = (pSpeed + pAcc * hstep * 0.5f) * (yt + eH * (1 - (hstep * 0.5f) / eHT) - mheight[0]) / dist;
+		//mdist[i] = mdist[i-1] + hstep * drdt_half;
+		//mheight[i] = mheight[i-1] + hstep * dydt_half;
+	}
+
+	/*
+	std::array<float, 90> posx = {};
+	std::array<float, 90> posy = {};
+	std::array<float, 90> posz = {};
+	posx[0] = srcPos.x;
+	posy[0] = srcPos.y;
+	posz[0] = srcPos.z;
+
+	float pSpeed = weaponDef->startvelocity;
+	float pAcc = weaponDef->startvelocity;
+	const float maxSpeed = weaponDef->projectilespeed;
+	launchDir.y += weaponDef->trajectoryHeight;
+	launchDir = launchDir.SafeNormalize();
+
+	float3 varTargPos = tgtPos;
+	float3 varSrcPos = srcPos;
+	float3 varDir = launchDir;
+	float3 targetDir = (varTargPos - varSrcPos).SafeNormalize();
+	float targetDist = varSrcPos.distance(varTargPos) + 0.1f;
+	float origTargetDist = targetDist;
+
+	float extraHeight = (targetDist * weaponDef->trajectoryHeight);
+	int extraHeightTime = int(std::max(targetDist, maxSpeed) / maxSpeed);
+	float extraHeightDecay = extraHeight / extraHeightTime;
+
+	float horDiff = (varTargPos - varSrcPos).Length2D() + 0.01f;
+	float verDiff = (varTargPos.y - varSrcPos.y) + 0.01f;
+	float dirDiff = math::fabs(targetDir.y - varDir.y);
+	float ratio = math::fabs(verDiff / horDiff);
+
+	float3 targetLeadDir = (varTargPos - varSrcPos).Normalize();
+	float3 targetDirDif = targetDir - varDir;
+
+	for (int i = 0; i < 90; i++) {
+
+		if (srcPos.distance(varSrcPos) > origTargetDist)
+		{
+			posx[i] = tgtPos.x;
+			posy[i] = tgtPos.y;
+			posz[i] = tgtPos.z;
+			continue;
+		}
+		varTargPos = tgtPos;
+		targetDir = (tgtPos - varSrcPos).SafeNormalize();
+		targetDist = varSrcPos.distance(tgtPos) + 0.1f;
+		pSpeed += (weaponDef->weaponacceleration * (pSpeed < maxSpeed));
+		posx[i] = varSrcPos.x;
+		posy[i] = varSrcPos.y;
+		posz[i] = varSrcPos.z;
+
+		if (extraHeightTime > 0) {
+			extraHeight -= extraHeightDecay;
+			--extraHeightTime;
+
+			varTargPos.y += extraHeight;
+
+			std::cout << "LOF Pos = " << varSrcPos.x << " " << varSrcPos.y << " " << varSrcPos.z << std::endl;
+			std::cout << "LOF dir = " << varDir.x << " " << varDir.y << " " << varDir.z << std::endl;
+			std::cout << "LOF targetPos = " << varTargPos.x << " " << varTargPos.y << " " << varTargPos.z << std::endl;
+			std::cout << "LOF targetDir = " << targetDir.x << " " << targetDir.y << " " << targetDir.z << std::endl;
+
+			if (varDir.y <= 0.0f) {
+				horDiff = (varTargPos - varSrcPos).Length2D() + 0.01f;
+				verDiff = (varTargPos.y - varSrcPos.y) + 0.01f;
+				dirDiff = math::fabs(targetDir.y - varDir.y);
+				ratio = math::fabs(verDiff / horDiff);
+
+				varDir.y -= (dirDiff * ratio);
+			}
+			else {
+				varDir.y -= (extraHeightDecay / targetDist);
+			}
+		}
+
+		targetLeadDir = (varTargPos - varSrcPos).Normalize();
+		targetDirDif = targetLeadDir - varDir;
+
+		if (targetDirDif.SqLength() < Square(weaponDef->turnrate)) {
+			varDir = targetLeadDir;
+		}
+		else {
+			targetDirDif = (targetDirDif - (varDir * (targetDirDif.dot(varDir)))).SafeNormalize();
+			varDir = (varDir + (targetDirDif * weaponDef->turnrate)).SafeNormalize();
+		}
+
+		varSrcPos.x = varSrcPos.x + varDir.x * pSpeed;
+		varSrcPos.y = varSrcPos.y + varDir.y * pSpeed;
+		varSrcPos.z = varSrcPos.z + varDir.z * pSpeed;
+
+		// ground collision check here
+		if (((avoidFlags & Collision::NOGROUND) == 0) && (CGround::GetApproximateHeight(varSrcPos) > varSrcPos.y))
+		{
+			return false;
+		}
+		std::cout << i << " " << posx[i] << " " << posy[i] << " " << posz[i] << std::endl;
+	}
+	*/
 
 	const float   linCoeff = launchDir.y + weaponDef->trajectoryHeight;
 	const float   qdrCoeff = -weaponDef->trajectoryHeight / xzTargetDist;
