@@ -54,6 +54,8 @@ Lua:
    and run in the order they were added, just before that frame's GameFrame call-in.
  - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
    matches in subdirs, recursively.
+ - add Bin calls to gl vao: `UpdateUnitBins`,`UpdateFeatureBins`,`SubmitBins`. Performs fully instanced
+   drawing of models.
  
 
 Game Setup:
