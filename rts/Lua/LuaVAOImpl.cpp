@@ -95,6 +95,8 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 
 void LuaVAOImpl::EnsureBinsInit()
 {
+	assert(instLuaVBO->GetAttributeCount() == 1);
+
 	if (!bins) bins = std::make_unique<Bins>(submitCmds);
 }
 
@@ -578,9 +580,9 @@ void LuaVAOImpl::Bins::UpdateImpl(const sol::stack_table& removedObjects, const 
 		#define UnorderedErase(vector, index) \
 			(vector)[index] = (vector).back(); \
 			(vector).pop_back()
-		#define UnorderedMapSubstitute(map, subsitutedKey, substitutionKey, val) \
+		#define UnorderedMapSubstitute(map, substitutedKey, substitutionKey, val) \
 			(map)[substitutionKey] = val; \
-			(map).erase(subsitutedKey)
+			(map).erase(substitutedKey)
 
 		if (bin.objIds.size() == 1) {
 			UnorderedMapSubstitute(modelIdToBinIndex, modelId, bins.back().modelId, binIndex);
@@ -631,7 +633,7 @@ void LuaVAOImpl::Bins::UpdateImpl(const sol::stack_table& removedObjects, const 
 
 		objIdToLocalInstance[objId] = bin.objIds.size();
 		bin.objIds.emplace_back(objId);
-		bin.instanceData.emplace_back(GetObjectInstanceData(obj, obj->team, obj->drawFlag));
+		bin.instanceData.emplace_back(GetObjectInstanceData(obj));
 		++submitCmds[binIndex].instanceCount;
 
 		assert(bin.instanceData.back());

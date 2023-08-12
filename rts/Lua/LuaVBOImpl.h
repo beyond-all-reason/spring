@@ -55,7 +55,8 @@ public:
 public:
 	static bool Supported(GLenum target);
 
-	VBO* GetVBO() const { return vbo; }
+	inline VBO* GetVBO() const { return vbo; }
+	inline size_t GetAttributeCount() const { return (size_t)attributesCount; }
 private:
 	void AllocGLBuffer(size_t byteSize);
 	void CopyAttrMapToVec();

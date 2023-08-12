@@ -119,3 +119,12 @@ inline SInstanceData GetObjectInstanceData(const TObj* obj, uint8_t teamID, uint
 		static_cast<uint32_t>(modelsUniformsStorage.GetObjOffset(obj)),
 		bposeIndex);
 }
+template<class TObj>
+inline SInstanceData GetObjectInstanceData(const TObj* obj)
+{
+	if constexpr(std::is_same_v<TObj, S3DModel>) {
+		return GetObjectInstanceData<TObj>(obj, 0, 0);
+	} else {
+		return GetObjectInstanceData<TObj>(obj, obj->team, obj->drawFlag);
+	}
+}
