@@ -47,7 +47,7 @@ The latest stable release is `{{site.data.latest_release.name}}` available at:
 {% assign releases = site.data.latest_release.assets | where_exp: "asset", "asset.browser_download_url contains 'minimal-portable'" %}
 
 {% for rel in releases %}
-- [{{rel.name}}]({{rel.browser_download_url}})
+- [`{{rel.name}}`]({{rel.browser_download_url}})
 {% endfor %}
 
 See the [release page]({{site.data.latest_release.html_url}}) for more options.
@@ -64,7 +64,10 @@ owners of this repository before making a change.
 ### Thank you to the contributors of Recoil!
 
 <ul class="list-style-none">
-{% for contributor in site.github.contributors %}
+{% assign contributors = site.data.non_coder_contributors | concat: site.github.contributors %}
+{% assign contributors_size = contributors | size %}
+{% assign shuffled_contributors = contributors | sample: contributors_size %}
+{% for contributor in shuffled_contributors %}
   <li class="d-inline-block mr-1">
      <a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="48" height="48" alt="{{ contributor.login }}"></a>
   </li>
