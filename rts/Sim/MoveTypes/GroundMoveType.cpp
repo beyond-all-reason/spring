@@ -740,7 +740,7 @@ void CGroundMoveType::SlowUpdate()
 						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 						// if (printMoveInfo) {
-							LOG("%s: failed by idling too long.", __func__);
+							// LOG("%s: failed by idling too long.", __func__);
 						// }
 					}
 				}
@@ -771,7 +771,7 @@ void CGroundMoveType::SlowUpdate()
 						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 						// if (printMoveInfo) {
-							LOG("%s: failed to reach final waypoint", __func__);
+							// LOG("%s: failed to reach final waypoint", __func__);
 						// }
 					}
 				}
@@ -887,8 +887,6 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw) {
 	LOG_L(L_DEBUG, "[%s] stopping engine for unit %i", __func__, owner->id);
 
-	LOG("%s: stop", __func__);
-
 	if (!atGoal)
 		goalPos = (currWayPoint = Here());
 
@@ -937,7 +935,6 @@ void CGroundMoveType::UpdateObstacleAvoidance() {
 
 bool CGroundMoveType::FollowPath(int thread)
 {
-	//LOG("%s activated (%d)", __func__, owner->team);
 	bool wantReverse = false;
 
 	if (WantToStop()) {
@@ -949,7 +946,6 @@ bool CGroundMoveType::FollowPath(int thread)
 		// SetMainHeading();
 		// ChangeSpeed(0.0f, false);
 		setHeading = 2;
-		//LOG("%s stop", __func__);
 	} else {
 		// ASSERT_SYNCED(currWayPoint);
 		// ASSERT_SYNCED(nextWayPoint);
@@ -1900,8 +1896,6 @@ unsigned int CGroundMoveType::GetNewPath()
 		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
-		LOG("%s: started", __func__);
-
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, currWayPoint);
 	} else {
@@ -2225,7 +2219,6 @@ void CGroundMoveType::Arrived(bool callScript)
 {
 	// can only "arrive" if the engine is active
 	if (progressState == Active) {
-		LOG("%s: Arrived", __func__);
 		StopEngine(callScript);
 
 		if (owner->team == gu->myTeam)
@@ -2254,8 +2247,6 @@ void CGroundMoveType::Fail(bool callScript)
 {
 	assert(!ThreadPool::inMultiThreadedSection);
 	LOG_L(L_DEBUG, "[%s] unit %i failed", __func__, owner->id);
-
-	LOG("[%s] unit %i failed", __func__, owner->id);
 
 	StopEngine(callScript);
 
