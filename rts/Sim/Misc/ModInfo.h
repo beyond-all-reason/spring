@@ -192,6 +192,9 @@ public:
 	/// Minimum wait time after the the last repath before a unit is permitted to request a new one.
 	int pfRepathMaxRateInFrames;
 
+	/// Point at which a region is considered bad for raw path tracing.
+	float pfRawMoveSpeedThreshold;
+
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 

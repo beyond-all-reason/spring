@@ -325,20 +325,21 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 
 	BlockType ret = BLOCK_NONE;
 	if (ThreadPool::inMultiThreadedSection) {
-		ret = CMoveMath::RangeIsBlockedMt(moveDef, xmin, xmax, zmin, zmax, collider, thread);
+		const int tempNum = gs->GetMtTempNum(thread);
+		ret = CMoveMath::RangeIsBlockedMt(moveDef, xmin, xmax, zmin, zmax, collider, thread, tempNum);
 	} else {
-		ret = CMoveMath::RangeIsBlockedSt(moveDef, xmin, xmax, zmin, zmax, collider);
+		const int tempNum = gs->GetTempNum();
+		ret = CMoveMath::RangeIsBlockedSt(moveDef, xmin, xmax, zmin, zmax, collider, tempNum);
 	}
 
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider)
+CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int tempNum)
 {
 	BlockType ret = BLOCK_NONE;
 
 	// footprints are point-symmetric around <xSquare, zSquare>
-	const int tempNum = gs->GetTempNum();
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
 		const int zOffset = z * mapDims.mapx;
 
@@ -364,11 +365,10 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmi
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread)
+
+CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread, int tempNum)
 {
 	BlockType ret = BLOCK_NONE;
-
-	const int tempNum = gs->GetMtTempNum(thread);
 
 	// footprints are point-symmetric around <xSquare, zSquare>
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {

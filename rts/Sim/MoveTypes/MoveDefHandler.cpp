@@ -5,6 +5,7 @@
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
 #include "System/Exceptions.h"
@@ -303,6 +304,7 @@ bool MoveDef::DoRawSearch(
 	const int2 startBlock(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE);
 	const int2 endBlock(endPos.x / SQUARE_SIZE, endPos.z / SQUARE_SIZE);
 	const int2 diffBlk = {std::abs(endBlock.x - startBlock.x), std::abs(endBlock.y - startBlock.y)};
+	const float speedModThreshold = modInfo.pfRawMoveSpeedThreshold;
 
 	const/*expr*/ auto StepFunc = [](const int2& dir, const int2& dif, int2& pos, int2& err) {
 		pos.x += (dir.x * (err.y >= 0));
@@ -358,10 +360,10 @@ bool MoveDef::DoRawSearch(
 	bool retTestMove = true;
 
 	if (testTerrain) {
-		auto test = [this, &minSpeedMod, &testMoveDir2D](int x, int z) -> bool {
+		auto test = [this, &minSpeedMod, &testMoveDir2D, speedModThreshold](int x, int z) -> bool {
 			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
 			minSpeedMod = std::min(minSpeedMod, speedMod);
-			return (speedMod > 0.0f);
+			return (speedMod > speedModThreshold);
 		};
 		retTestMove = walkPath(test);
 	}
@@ -369,13 +371,15 @@ bool MoveDef::DoRawSearch(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects & retTestMove) {
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly](int x, int z) -> bool {
+		const int tempNum = gs->GetMtTempNum(thread);
+
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, tempNum](int x, int z) -> bool {
 			const int xmin = x - xsizeh * (1 - centerOnly);
 			const int zmin = z - zsizeh * (1 - centerOnly);
 			const int xmax = x + xsizeh * (1 - centerOnly);
 			const int zmax = z + zsizeh * (1 - centerOnly);
 
-			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
+			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, collider, thread, tempNum);
 			maxBlockBit = blockBits;
 			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 		};

@@ -727,6 +727,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 
 	auto pathView = registry.view<PathSearch>();
 
+	// TODO: magic number - switch to mod rule and maybe logic to adjust number processed?
 	size_t requestsToProcess = std::min(pathView.size(), size_t(24));
 
 	// execute pending searches collected via

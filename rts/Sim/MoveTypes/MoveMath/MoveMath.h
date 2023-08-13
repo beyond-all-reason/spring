@@ -75,8 +75,8 @@ public:
 	}
 	static BlockType RangeIsBlocked(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread = 0);
 
-	static BlockType RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider);
-	static BlockType RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread);
+	static BlockType RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber);
+	static BlockType RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread, int magicNumber);
 
 	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results);
 
