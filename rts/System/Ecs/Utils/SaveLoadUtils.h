@@ -1,3 +1,5 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 #ifndef SAVE_LOAD_UTILS_H__
 #define SAVE_LOAD_UTILS_H__
 

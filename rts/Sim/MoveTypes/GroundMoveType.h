@@ -121,6 +121,8 @@ public:
 		return std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f);
 	}
 
+	bool IsAtGoal() const override { return atGoal; }
+
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;

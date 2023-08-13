@@ -286,7 +286,7 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 }
 
 bool MoveDef::DoRawSearch(
-	const CUnit* collider,
+	const CSolidObject* collider,
 	const float3 startPos,
 	const float3 endPos,
 	const float3 testMoveDir,

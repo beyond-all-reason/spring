@@ -30,28 +30,40 @@ void QTPFS::PathSearch::Initialize(
 	NodeLayer* layer,
 	const float3& sourcePoint,
 	const float3& targetPoint,
-	const SRectangle& searchArea
+	const SRectangle& searchArea,
+	const CSolidObject* owner
 ) {
 	srcPoint = sourcePoint; srcPoint.ClampInBounds();
 	tgtPoint = targetPoint; tgtPoint.ClampInBounds();
 
+	pathOwner = owner;
 	nodeLayer = layer;
 
 	searchRect = searchArea;
 	searchExec = nullptr;
 
-	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
-	INode* tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
+	const uint32_t srcX = srcPoint.x / SQUARE_SIZE;
+	const uint32_t srcZ = srcPoint.z / SQUARE_SIZE;
+	const uint32_t tgtX = tgtPoint.x / SQUARE_SIZE;
+	const uint32_t tgtZ = tgtPoint.z / SQUARE_SIZE;
+
+	INode* srcNode = nodeLayer->GetNode(srcX, srcZ);
+	INode* tgtNode = nodeLayer->GetNode(tgtX, tgtZ);
 
 	assert(srcPoint.x / SQUARE_SIZE >= 0);
 	assert(srcPoint.z / SQUARE_SIZE >= 0);
 	assert(srcPoint.x / SQUARE_SIZE < mapDims.mapx);
 	assert(srcPoint.z / SQUARE_SIZE < mapDims.mapy);
 
-	pathSearchHash = GenerateHash(srcNode, tgtNode);
-	// uint32_t p1 = (srcPoint.y)*mapDims.mapx + (srcPoint.x);
-	// uint32_t p2 = (tgtPoint.y)*mapDims.mapx + (tgtPoint.x);
-	// pathSearchHash = GenerateHash2(p1, p2);
+	if (//srcNode->xsize() >= QTPFS_SHARE_PATH_SIZE &&
+		srcNode->xsize() > moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())->xsize) {
+
+		pathSearchHash = GenerateHash(srcNode, tgtNode);
+		// uint32_t src = (srcZ >> QTPFS_SHARE_PATH_SHIFT) * (mapDims.mapx >> QTPFS_SHARE_PATH_SHIFT)
+		// 			 + (srcX >> QTPFS_SHARE_PATH_SHIFT);
+		// uint32_t dest = tgtZ * mapDims.mapx + tgtX;
+		// pathSearchHash = GenerateHash2(src, dest);
+	}
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -99,6 +111,15 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	if (haveFullPath) 
 		return true;
 
+	if (rawPathCheck)
+		rawPathCheck = ExecuteRawSearch();
+	if (!rawPathCheck)
+		return ExecutePathSearch();
+	return rawPathCheck;
+}
+
+bool QTPFS::PathSearch::ExecutePathSearch() {
+
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 	searchExec = new PathSearchTrace::Execution(gs->frameNum);
 	#endif
@@ -108,9 +129,6 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	// be as optimistic as possible: assume the remainder of our path will
 	// cover only flat terrain with maximum speed-modifier between nxtPoint
 	// and tgtPoint
-	// this is admissable so long as the map is not LOCALLY changed in such
-	// a way as to increase the maximum speedmod beyond the current layer's
-	// cached maximum value
 	switch (searchType) {
 		// This guarantees the best path, but overestimates distance costs considerabily.
 		case PATH_SEARCH_ASTAR:
@@ -171,6 +189,13 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	return (haveFullPath || havePartPath);
 }
 
+bool QTPFS::PathSearch::ExecuteRawSearch() {
+	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
+			->DoRawSearch( pathOwner, srcPoint, tgtPoint, pathOwner->speed
+						 , true, true, false, nullptr, nullptr, searchThreadData->threadId);
+
+	return haveFullPath;
+}
 
 
 void QTPFS::PathSearch::ResetState(SearchNode* node) {
@@ -390,12 +415,13 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 	// 		, &nodeLayer[path->GetPathType()]
 	// 		, path->GetPathType()
 	// 		);
+	if (!rawPathCheck) {
+		TracePath(path);
 
-	TracePath(path);
-
-	#ifdef QTPFS_SMOOTH_PATHS
-	SmoothPath(path);
-	#endif
+		#ifdef QTPFS_SMOOTH_PATHS
+		SmoothPath(path);
+		#endif
+	}
 
 	path->SetBoundingBox();
 	path->SetHasFullPath(haveFullPath & !badGoal);
@@ -677,9 +703,10 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 	return (srcNode->GetNodeNumber() + (tgtNode->GetNodeNumber() * N) + (k * N * N));
 }
 
-const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t p1, uint32_t p2) const {
-	std::uint64_t N = mapDims.mapx * mapDims.mapy;
+const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
+	std::uint64_t NS = (mapDims.mapx >> QTPFS_SHARE_PATH_SHIFT) * (mapDims.mapy >> QTPFS_SHARE_PATH_SHIFT);
+	std::uint64_t ND = mapDims.mapx * mapDims.mapy;
 	std::uint32_t k = nodeLayer->GetNodelayer();
 
-	return (p1 + (p2 * N) + (k * N * N));
+	return (src + (dest * NS) + (k * NS * ND));
 }

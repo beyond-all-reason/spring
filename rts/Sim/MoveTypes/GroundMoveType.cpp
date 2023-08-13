@@ -311,21 +311,21 @@ static void HandleUnitCollisionsAux(
 			// (i.e. a traffic jam) so ignore current waypoint and go directly to the next one
 			// or just make collider give up if already within footprint radius.
 			if (gmtCollidee->GetCurrWayPoint() == gmtCollider->GetNextWayPoint()) {
-				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
-				const float3& nextWaypoint = gmtCollider->GetNextWayPoint();
+				// const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
+				// const float3& nextWaypoint = gmtCollider->GetNextWayPoint();
 
-				const float unitToNextDistSq = nextWaypoint.SqDistance2D(collider->pos);
-				const float currToNextDistSq = nextWaypoint.SqDistance2D(currWaypoint);
+				// const float unitToNextDistSq = nextWaypoint.SqDistance2D(collider->pos);
+				// const float currToNextDistSq = nextWaypoint.SqDistance2D(currWaypoint);
 
-				// Switch waypoints if the current waypoint is effectively sending us in the
-				// wrong direction. This can happen as units push each other around. This check
-				// is important to prevent units in a long line back-propagating the next
-				// waypoint, which could cause units to try and cut corners, which could cause
-				// them to be unable to path around obstacles.
-				if (unitToNextDistSq <= currToNextDistSq) {
+				// // Switch waypoints if the current waypoint is effectively sending us in the
+				// // wrong direction. This can happen as units push each other around. This check
+				// // is important to prevent units in a long line back-propagating the next
+				// // waypoint, which could cause units to try and cut corners, which could cause
+				// // them to be unable to path around obstacles.
+				// if (unitToNextDistSq <= currToNextDistSq) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
-				}
+				// }
 			}
 
 			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()) 
@@ -737,6 +737,11 @@ void CGroundMoveType::SlowUpdate()
 						// unit probably ended up on a non-traversable
 						// square, or got stuck in a non-moving crowd
 						Fail(false);
+						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+						// if (printMoveInfo) {
+							LOG("%s: failed by idling too long.", __func__);
+						// }
 					}
 				}
 			} else {
@@ -766,7 +771,7 @@ void CGroundMoveType::SlowUpdate()
 						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 						// if (printMoveInfo) {
-						// 	LOG("%s: failed to reach final waypoint", __func__);
+							LOG("%s: failed to reach final waypoint", __func__);
 						// }
 					}
 				}
@@ -881,6 +886,8 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 
 void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw) {
 	LOG_L(L_DEBUG, "[%s] stopping engine for unit %i", __func__, owner->id);
+
+	LOG("%s: stop", __func__);
 
 	if (!atGoal)
 		goalPos = (currWayPoint = Here());
@@ -1893,6 +1900,8 @@ unsigned int CGroundMoveType::GetNewPath()
 		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
+		LOG("%s: started", __func__);
+
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, currWayPoint);
 	} else {
@@ -2216,6 +2225,7 @@ void CGroundMoveType::Arrived(bool callScript)
 {
 	// can only "arrive" if the engine is active
 	if (progressState == Active) {
+		LOG("%s: Arrived", __func__);
 		StopEngine(callScript);
 
 		if (owner->team == gu->myTeam)
@@ -2244,6 +2254,8 @@ void CGroundMoveType::Fail(bool callScript)
 {
 	assert(!ThreadPool::inMultiThreadedSection);
 	LOG_L(L_DEBUG, "[%s] unit %i failed", __func__, owner->id);
+
+	LOG("[%s] unit %i failed", __func__, owner->id);
 
 	StopEngine(callScript);
 

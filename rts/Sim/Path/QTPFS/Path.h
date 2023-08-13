@@ -30,6 +30,7 @@ namespace QTPFS {
 			hash   = other.hash;
 			radius = other.radius;
 			synced = other.synced;
+			haveFullPath = other.haveFullPath;
 			points = other.points;
 
 			boundingBoxMins = other.boundingBoxMins;
@@ -51,6 +52,7 @@ namespace QTPFS {
 			hash   = other.hash;
 			radius = other.radius;
 			synced = other.synced;
+			haveFullPath = other.haveFullPath;
 			points = std::move(other.points);
 
 			boundingBoxMins = other.boundingBoxMins;

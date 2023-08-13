@@ -1,3 +1,5 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 #ifndef ECS_DOUBLE_LINKED_LIST_H_
 #define ECS_DOUBLE_LINKED_LIST_H_
 

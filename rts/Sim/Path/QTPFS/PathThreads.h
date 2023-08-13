@@ -112,9 +112,11 @@ namespace QTPFS {
 		SparseData<SearchNode> allSearchedNodes;
         SearchPriorityQueue openNodes;
         std::vector<INode*> tmpNodesStore;
+        int threadId = 0;
 
-		SearchThreadData(size_t nodeCount)
+		SearchThreadData(size_t nodeCount, int curThreadId)
 			: allSearchedNodes(nodeCount)
+            , threadId(curThreadId)
 			{}
 
         void ResetQueue() { ZoneScoped; while (!openNodes.empty()) openNodes.pop(); }

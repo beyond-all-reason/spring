@@ -1,3 +1,5 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 #ifndef BASE_COMPONENTS_H__
 #define BASE_COMPONENTS_H__
 

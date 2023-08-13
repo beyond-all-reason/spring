@@ -104,7 +104,8 @@ namespace QTPFS {
 			NodeLayer* layer,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea
+			const SRectangle& searchArea,
+			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
 		bool Execute(unsigned int searchStateOffset = 0);
@@ -130,6 +131,9 @@ namespace QTPFS {
 		void SmoothPath(IPath* path) const;
 		bool SmoothPathIter(IPath* path) const;
 
+		bool ExecutePathSearch();
+		bool ExecuteRawSearch();
+
 		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
 		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
 
@@ -141,6 +145,7 @@ namespace QTPFS {
 
 		std::uint64_t pathSearchHash;
 
+		const CSolidObject* pathOwner;
 		NodeLayer* nodeLayer;
 		int pathType;
 
@@ -169,6 +174,9 @@ namespace QTPFS {
 		bool haveFullPath;
 		bool havePartPath;
 		bool badGoal;
+
+public:
+		bool rawPathCheck;
 	};
 }
 

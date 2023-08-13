@@ -125,11 +125,13 @@ namespace QTPFS {
 			const float3& sourcePoint,
 			const float3& targetPoint,
 			const float radius,
-			const bool synced
+			const bool synced,
+			const bool allowRawSearch
 		);
 
 		unsigned int RequeueSearch(
-			IPath* oldPath
+			IPath* oldPath,
+			const bool allowRawSearch
 		);
 
 		bool ExecuteSearch(

@@ -91,6 +91,7 @@ public:
 
 	virtual void SyncWaypoints() {}
 	virtual unsigned int GetPathId() { return 0; }
+	virtual bool IsAtGoal() const { return false; }
 
 public:
 	CUnit* owner;
