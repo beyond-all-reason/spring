@@ -190,6 +190,7 @@ QTPFS::PathManager::~PathManager() {
 	std::for_each(nodeLayersMapDamageTrack.mapChangeTrackers.begin(), nodeLayersMapDamageTrack.mapChangeTrackers.end(), clearTrackers);
 	nodeLayersMapDamageTrack.mapChangeTrackers.clear();
 	sharedPaths.clear();
+	pathRequestQueue.clear();
 
 	// numCurrExecutedSearches.clear();
 	// numPrevExecutedSearches.clear();
@@ -725,18 +726,28 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 void QTPFS::PathManager::ExecuteQueuedSearches() {
 	ZoneScoped;
 
-	auto pathView = registry.view<PathSearch>();
+	auto pathView = registry.group<PathSearch, PathProcess>();
 
-	// TODO: magic number - switch to mod rule and maybe logic to adjust number processed?
-	size_t requestsToProcess = std::min(pathView.size(), size_t(24));
+	const int baseRateLimit = modInfo.qtpfsBaseQueryRateLimit;
+	const int maxRateLimit = modInfo.qtpfsMaxQueryRateLimit;
+	const int clearTargetFrames = modInfo.qtpfsClearQueryTargetFrames;
+	const int avgQueriesNeeded = (pathRequestQueue.size() / clearTargetFrames) + 1;
+	const size_t rateLimit = Clamp(avgQueriesNeeded, baseRateLimit, maxRateLimit);
+
+	size_t requestsToProcess = std::min(pathRequestQueue.size(), rateLimit);
+
+	// LOG("%s: rateLimit=%d pathRequestQueue=%d requestsToProcess=%d", __func__
+	// 		, int(rateLimit), int(pathRequestQueue.size()), int(requestsToProcess));
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	// pathView.each([this](entt::entity entity){ InitializeSearch(entity); });
-
-	std::for_each_n(pathView.begin(), requestsToProcess, [this](entt::entity entity){
+	std::for_each_n(pathRequestQueue.begin(), requestsToProcess, [this](entt::entity entity){
 		InitializeSearch(entity);
+		registry.emplace_or_replace<PathProcess>(entity);
 	});
+	for (size_t i = 0; i < requestsToProcess; ++i) {
+		pathRequestQueue.pop_front();
+	}
 
 	for_mt(0, requestsToProcess/*pathView.size()*/, [this, &pathView](int i){
 		entt::entity pathSearchEntity = pathView.begin()[i];
@@ -966,6 +977,8 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	registry.emplace<PathIsTemp>(pathEntity);
 	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
 
+	pathRequestQueue.emplace_back(searchEntity);
+
 	newSearch->SetID(newPath->GetID());
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(newPath->GetPathType());
@@ -1020,6 +1033,8 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
 	registry.emplace_or_replace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
+
+	pathRequestQueue.emplace_back(searchEntity);
 
 	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
 	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);

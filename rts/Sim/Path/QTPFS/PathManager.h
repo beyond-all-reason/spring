@@ -154,6 +154,7 @@ namespace QTPFS {
 		std::vector<SearchThreadData> searchThreadData;
 		std::vector<UpdateThreadData> updateThreadData;
 		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
+		std::deque<entt::entity> pathRequestQueue;
 
 		PathTraceMap pathTraces;
 		SharedPathMap sharedPaths;

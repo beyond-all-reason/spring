@@ -653,7 +653,6 @@ void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, c
 
 /*
 Removes and return the next waypoint in the multipath corresponding to given id.
-* TODO: get updates via multi-threading (just like QTPFS?)
 */
 float3 CPathManager::NextWayPoint(
 	const CSolidObject* owner,

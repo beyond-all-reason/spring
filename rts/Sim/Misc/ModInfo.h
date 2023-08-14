@@ -195,6 +195,15 @@ public:
 	/// Point at which a region is considered bad for raw path tracing.
 	float pfRawMoveSpeedThreshold;
 
+	/// minimum number of path queries to try and process per frame.
+	int qtpfsBaseQueryRateLimit;
+
+	/// maximum number of path queries to try and process per frame.
+	int qtpfsMaxQueryRateLimit;
+
+	/// target time to deliver all query request within in frames.
+	int qtpfsClearQueryTargetFrames;
+
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 
