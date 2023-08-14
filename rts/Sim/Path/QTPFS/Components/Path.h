@@ -24,7 +24,7 @@ VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
 VOID_COMPONENT(PathIsToBeUpdated);
 VOID_COMPONENT(PathRequeue);
-VOID_COMPONENT(PathProcess);
+VOID_COMPONENT(ProcessPath);
 
 ALIAS_COMPONENT(PathSearchRef, entt::entity);
 

@@ -177,6 +177,8 @@ namespace QTPFS {
 
 public:
 		bool rawPathCheck;
+
+		static constexpr std::uint64_t BAD_HASH = std::numeric_limits<std::uint64_t>::max();
 	};
 }
 

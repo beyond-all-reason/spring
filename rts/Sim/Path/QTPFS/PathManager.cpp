@@ -711,22 +711,22 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE, path->GetOwner());
 		path->SetHash(search->GetHash());
 
-		// if (path->IsSynced()) {
-		// 	SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
-		// 	if (sharedPathsIt == sharedPaths.end()) {
-		// 		registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
-		// 		sharedPaths[path->GetHash()] = pathEntity;
-		// 	} else {
-		// 		linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
-		// 	}
-		// }
+		if (path->IsSynced() && search->GetHash() != PathSearch::BAD_HASH) {
+			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+			if (sharedPathsIt == sharedPaths.end()) {
+				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
+				sharedPaths[path->GetHash()] = pathEntity;
+			} else {
+				linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+			}
+		}
 	}
 }
 
 void QTPFS::PathManager::ExecuteQueuedSearches() {
 	ZoneScoped;
 
-	auto pathView = registry.group<PathSearch, PathProcess>();
+	auto pathView = registry.group<PathSearch, ProcessPath>();
 
 	const int baseRateLimit = modInfo.qtpfsBaseQueryRateLimit;
 	const int maxRateLimit = modInfo.qtpfsMaxQueryRateLimit;
@@ -743,7 +743,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 	// RequestPath and QueueDeadPathSearches
 	std::for_each_n(pathRequestQueue.begin(), requestsToProcess, [this](entt::entity entity){
 		InitializeSearch(entity);
-		registry.emplace_or_replace<PathProcess>(entity);
+		registry.emplace_or_replace<ProcessPath>(entity);
 	});
 	for (size_t i = 0; i < requestsToProcess; ++i) {
 		pathRequestQueue.pop_front();
@@ -777,11 +777,11 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					registry.remove<PathIsDirty>(pathEntity);
 					registry.remove<PathSearchRef>(pathEntity);
 				} else {
-					// if (search->rawPathCheck) {
-					// 	RequeueSearch(path, false);
-					// } else {
+					if (search->rawPathCheck) {
+						RequeueSearch(path, false);
+					} else {
 						DeletePath(path->GetID());
-					// }
+					}
 				}
 			}
 		}
@@ -789,8 +789,6 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		// LOG("%s: delete search %x", __func__, entt::to_integral(pathSearchEntity));
 		registry.destroy(pathSearchEntity);
 	});
-
-
 }
 
 bool QTPFS::PathManager::ExecuteSearch(
