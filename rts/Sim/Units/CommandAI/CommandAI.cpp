@@ -424,7 +424,7 @@ void CCommandAI::InsertCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 		possibleCommands.insert(possibleCommands.begin() + cmdDescIdx, cmdDescPtr);
 	}
 
-	HandleBuildOptionInsertion(cmdDescPtr->id < 0);
+	HandleBuildOptionInsertion(cmdDescPtr->id);
 
 	// NB: cmdDesc is moved into cache, but id remains valid
 	if (!cmdDesc.queueing)
