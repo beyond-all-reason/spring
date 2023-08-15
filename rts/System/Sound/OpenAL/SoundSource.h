@@ -4,6 +4,7 @@
 #define SOUNDSOURCE_H
 
 #include <string>
+#include <memory>
 
 #include <al.h>
 
@@ -25,9 +26,9 @@ class CSoundSource
 public:
 	/// is ready after this
 	CSoundSource();
-	CSoundSource(CSoundSource&& src) { *this = std::move(src); }
+	CSoundSource(CSoundSource&& src);
 	CSoundSource(const CSoundSource& src) = delete;
-	~CSoundSource() { Delete(); }
+	~CSoundSource();
 
 	// sources don't ever need to actually move, just here to satisfy compiler
 	CSoundSource& operator = (CSoundSource&& src) { return *this; }
@@ -46,7 +47,7 @@ public:
 	/// will stop a currently playing sound, if any
 	void Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative = false);
 	void PlayAsync(IAudioChannel* channel, size_t id, float3 pos, float3 velocity, float volume, float priority, bool relative = false);
-	void PlayStream(IAudioChannel* channel, MusicStream* stream, const std::string& file, float volume);
+	void PlayStream(IAudioChannel* channel, const std::string& file, float volume);
 	void StreamStop();
 	void StreamPause();
 	float GetStreamTime();
@@ -95,7 +96,7 @@ private:
 	AsyncSoundItemData asyncPlayItem;
 
 	IAudioChannel* curChannel;
-	MusicStream*   curStream;
+	std::unique_ptr<MusicStream> curStream;
 
 	float curVolume;
 	spring_time loopStop;

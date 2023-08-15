@@ -54,6 +54,15 @@ CSoundSource::CSoundSource()
 	curPlayingItem = {0,  0, 0,  0.0f, 0.0f};
 }
 
+CSoundSource::CSoundSource(CSoundSource&& src)
+{
+	*this = std::move(src);
+}
+
+CSoundSource::~CSoundSource()
+{
+	Delete();
+}
 
 void CSoundSource::Update()
 {
@@ -168,10 +177,7 @@ void CSoundSource::Stop()
 		curPlayingItem = {};
 	}
 
-	if (curStream) {
-		curStream->Stop();
-		curStream = nullptr;
-	}
+	curStream.reset();
 
 	if (curChannel != nullptr) {
 		IAudioChannel* oldChannel = curChannel;
@@ -285,12 +291,14 @@ void CSoundSource::PlayAsync(IAudioChannel* channel, size_t id, float3 pos, floa
 }
 
 
-void CSoundSource::PlayStream(IAudioChannel* channel, MusicStream* stream, const std::string& file, float volume)
+void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, float volume)
 {
 	// stop any current playback
 	Stop();
 
-	curStream = stream;
+	if (!curStream) {
+		curStream = std::make_unique<MusicStream>();
+	}	
 
 	// OpenAL params
 	curChannel = channel;
