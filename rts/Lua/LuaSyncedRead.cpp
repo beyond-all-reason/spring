@@ -4279,8 +4279,8 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
  * @function Spring.GetUnitEffectiveBuildRange
  * Useful for setting move goals manually.
  * @number unitID
- * @number buildeeDefID
- * @treturn number effectiveBuildRange counted to the center of prospective buildee
+ * @number buildeeDefID or nil
+ * @treturn number effectiveBuildRange counted to the center of prospective buildee; buildRange if buildee nil
  */
 int LuaSyncedRead::GetUnitEffectiveBuildRange(lua_State* L)
 {
@@ -4291,6 +4291,26 @@ int LuaSyncedRead::GetUnitEffectiveBuildRange(lua_State* L)
 	const auto builderCAI = dynamic_cast <const CBuilderCAI*> (unit->commandAI);
 	if (builderCAI == nullptr)
 		return 0;
+
+	/* FIXME: there are some cases where a unitDefID does not suffice.
+	 * This function was mostly created as a reactive afterthought so
+	 * does not handle them properly, but accepting `nil` acknowledges
+	 * their existence to some extent:
+	 *
+	 *  - features, for example reclaim. I think ideally a thingID would
+	 *    be the third argument (exclusive with the unitDefID), but this
+	 *    requires the featureID ticket (#717) to be done first.
+	 *
+	 *  - terraform (restore ground). Fourth boolean parameter? Sounds
+	 *    like it's getting a bit bloated, though it's rare and doesn't
+	 *    actually pollute the usual use cases.
+	 *
+	 *  - design question: would featureDefID ever be a sensible thing
+	 *    to use here? I doubt, but it's something to keep in mind. */
+	if (lua_isnoneornil(L, 2)) {
+		lua_pushnumber(L, builderCAI->GetBuildRange(0.0f));
+		return 1;
+	}
 
 	const auto buildeeDefID = luaL_checkint(L, 2);
 	const auto unitDef = unitDefHandler->GetUnitDefByID(buildeeDefID);
