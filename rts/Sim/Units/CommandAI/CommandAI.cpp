@@ -508,27 +508,25 @@ bool CCommandAI::HandleBuildOptionRemoval(int cmdId)
 	if (cmdId >= 0)
 		return false;
 
-	if (cmdId < 0) {
-		if (auto* bcai = dynamic_cast<CBuilderCAI*>(this); bcai != nullptr) {
-			// clear the removed unitDef from the construction queue
-			for (size_t i = 0; i < bcai->commandQue.size(); /*NOOP*/) {
-				if (const auto& q = bcai->commandQue[i]; q.GetID() == cmdId)
-					bcai->commandQue.erase(commandQue.begin() + i);
-				else
-					++i;
-			}
-			bcai->buildOptions.erase(cmdId);
+	if (auto* bcai = dynamic_cast<CBuilderCAI*>(this); bcai != nullptr) {
+		// clear the removed unitDef from the construction queue
+		for (size_t i = 0; i < bcai->commandQue.size(); /*NOOP*/) {
+			if (const auto& q = bcai->commandQue[i]; q.GetID() == cmdId)
+				bcai->commandQue.erase(commandQue.begin() + i);
+			else
+				++i;
 		}
-		else if (auto* fcai = dynamic_cast<CFactoryCAI*>(this); fcai != nullptr) {
-			// clear the removed unitDef from the construction queue
-			for (size_t i = 0; i < fcai->commandQue.size(); /*NOOP*/) {
-				if (const auto& q = fcai->commandQue[i]; q.GetID() == cmdId)
-					fcai->commandQue.erase(commandQue.begin() + i);
-				else
-					++i;
-			}
-			fcai->buildOptions.erase(cmdId);
+		bcai->buildOptions.erase(cmdId);
+	}
+	else if (auto* fcai = dynamic_cast<CFactoryCAI*>(this); fcai != nullptr) {
+		// clear the removed unitDef from the construction queue
+		for (size_t i = 0; i < fcai->commandQue.size(); /*NOOP*/) {
+			if (const auto& q = fcai->commandQue[i]; q.GetID() == cmdId)
+				fcai->commandQue.erase(commandQue.begin() + i);
+			else
+				++i;
 		}
+		fcai->buildOptions.erase(cmdId);
 	}
 
 	return true;
