@@ -719,7 +719,13 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 
 	MoveDef* md = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer());
 	int shift = GetNextBitShift(md->xsize);
+
+	// is the node too small to have multiple units within it?
 	if (nodeSize < (1<<shift)) 
+		return BAD_HASH;
+
+	// is the unit too big to be able to share paths?
+	if ((1<<shift) > QTPFS_SHARE_PATH_MAX_SIZE) 
 		return BAD_HASH;
 
 	uint32_t srcNodeNumber = srcNode->GetNodeNumber();
