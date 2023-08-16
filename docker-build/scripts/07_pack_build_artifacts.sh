@@ -20,13 +20,11 @@ rm -f ../$bin_name
 echo ${bin_name} > /output-data/bin_name
 
 
-if [ "${STRIP_SYMBOLS}" == "1" ]; then
-    cd "${BUILD_DIR}"
-    # touch empty.dbg - was is it good for??
-    DEBUGFILES=$(find ./ -name '*.dbg')
-    tar cvfz $dbg_name ${DEBUGFILES}
-    echo ${dbg_name} > /output-data/dbg_name
-fi
+cd "${BUILD_DIR}"
+# touch empty.dbg - was is it good for??
+DEBUGFILES=$(find ./ -name '*.dbg')
+tar cvfz $dbg_name ${DEBUGFILES}
+echo ${dbg_name} > /output-data/dbg_name
 
 if [ -d /ccache_dbg ]; then
     echo "Packing ccache debug data..."

@@ -32,9 +32,7 @@ echo "---------------------------------"
 . /scripts/04_install.sh
 
 if [ ${PUBLISH_ARTIFACTS} ]; then
-    if [ "${STRIP_SYMBOLS}" == "1" ]; then
-        . /scripts/05_fill_debugsymbol_dir.sh
-    fi
+    . /scripts/05_fill_debugsymbol_dir.sh
     . /scripts/06_fill_build_options_file.sh
     . /scripts/07_pack_build_artifacts.sh
     . /scripts/08_copy_to_publish_dir.sh
