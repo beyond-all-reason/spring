@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-// #undef NDEBUG
+#undef NDEBUG
 
 #include <assert.h>
 
@@ -712,6 +712,7 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		path->SetHash(search->GetHash());
 
 		if (path->IsSynced() && search->GetHash() != PathSearch::BAD_HASH) {
+			assert(!registry.all_of<SharedPathChain>(pathEntity));
 			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
 			if (sharedPathsIt == sharedPaths.end()) {
 				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
@@ -998,6 +999,10 @@ unsigned int QTPFS::PathManager::QueueSearch(
 unsigned int QTPFS::PathManager::RequeueSearch(
 	IPath* oldPath, const bool allowRawSearch
 ) {
+	// If a path request is already in progress then don't create another one.
+	if (registry.all_of<PathSearchRef>(entt::entity(oldPath->GetID())))
+		return (oldPath->GetID());
+
 	// Always create the search object first to ensure pathEntity can never be 0 (which is
 	// considered a non-path)
 	entt::entity searchEntity = registry.create();
@@ -1030,7 +1035,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->rawPathCheck = allowRawSearch;
 
 	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
-	registry.emplace_or_replace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
+	registry.emplace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
 
 	pathRequestQueue.emplace_back(searchEntity);
 
@@ -1066,8 +1071,9 @@ void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
 
 	IPath* path = &registry.get<IPath>(entity);
 	auto iter = sharedPaths.find(path->GetHash());
-	assert(iter != sharedPaths.end());
-	if (iter->second == entity) {
+
+	// case: when entity is at the head of the chain.
+	if (iter != sharedPaths.end() && iter->second == entity) {
 		auto& chain = registry.get<SharedPathChain>(entity);
 		if (chain.next == entity) {
 			sharedPaths.erase(path->GetHash());

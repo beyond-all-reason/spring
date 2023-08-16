@@ -2199,6 +2199,7 @@ void CGroundMoveType::StartEngine(bool callScript) {
 }
 
 void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
+	assert(!ThreadPool::inMultiThreadedSection);
 	if (pathID != 0) {
 		pathManager->DeletePath(pathID);
 		pathID = 0;
