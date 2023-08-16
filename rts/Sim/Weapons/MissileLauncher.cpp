@@ -65,7 +65,7 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 
 bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
-	// high-trajectory missiles use parabolic rather than linear ground intersection
+	// high-trajectory missiles use curved path rather than linear ground intersection
 	if (weaponDef->trajectoryHeight <= 0.0f)
 		return (CWeapon::HaveFreeLineOfFire(srcPos, tgtPos, trg));
 
@@ -100,8 +100,9 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	// r_n+1 = r_n + (h/2)*( r'(t,r,y) + r'(t+h,~r_n+1,~y_n+1)
 	// y_n+1 = y_n + (h/2)*( y'(t,r,y) + y'(t+h,~r_n+1,~y_n+1)
 	// 
-	// for Heun's method, we choose h so that we only need to calculate 8 points
+	// for Heun's method, we choose h so that we only need to calculate 7 points
 	// on the curved trajectoryheight controlled portion
+	// so the final curve can be approximated by 8 straight line segments
 
 	std::array<float, 9> mdist = {}; //distance radially the missile has travelled
 	std::array<float, 9> mheight = {}; //distance vertically the missile has travelled
@@ -137,6 +138,8 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	float t = 0.0f;
 	// perform the Heun's method
 	for (int i = 1; i < 8; i++) {
+		// due to maxSpeed boundary, and parameters of the pursuit curve, dist cannot be zero
+		// but if a divide by zero error does somehow occur here, a zero check can be added
 		dist = math::sqrt(math::pow((rt - mdist[i-1]), 2) + math::pow((yt + eH * (1 - t / eHT) - mheight[i-1]), 2));
 		curspeed = std::min((pSpeed + pAcc * t), maxSpeed);
 		drdt = curspeed * (rt - mdist[i-1]) / dist;
@@ -160,6 +163,10 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	}
 
 	// check for ground collision
+	// might be better to spin this off into TraceRay.cpp 
+	// but the pursuit curve (and the 8 piecewise linear approximation used here) 
+	// that trajectoryheight missiles follow is singularly unique
+	// so no need to spin it off until something else needs this
 	int ii = 1;
 	float delta1 = mdist[ii] - mdist[ii - 1];
 	float delta2 = 0.0f;
@@ -201,7 +208,6 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 	const bool scanForAllies = ((avoidFlags & Collision::NOFRIENDLIES) == 0);
 	const bool scanForNeutrals = ((avoidFlags & Collision::NONEUTRALS) == 0);
 	const bool scanForFeatures = ((avoidFlags & Collision::NOFEATURES) == 0);
-	bool checked = false;
 	for (const int quadIdx : *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
@@ -213,7 +219,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
-				//chord check here
+				// chord check here
 				const CollisionVolume* cv = &u->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
 				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
@@ -256,7 +262,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
-				//chord check here
+				// chord check here
 				const CollisionVolume* cv = &u->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
 				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
@@ -295,7 +301,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				if (!f->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
-				//chord check here
+				// chord check here
 				const CollisionVolume* cv = &f->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(f) - srcPos;
 				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
