@@ -118,6 +118,8 @@ void MusicStream::Play(const std::string& path, float volume)
 	CheckError("[MusicStream::Play][1]");
 
 	if (!StartPlaying()) {
+		LOG_L(L_ERROR, "[MusicStream::Play] Failed to decode: %s",
+			  path.c_str());
 		ReleaseBuffers();
 	} else {
 		stopped = false;
@@ -175,10 +177,10 @@ bool MusicStream::StartPlaying()
 	msecsPlayed = spring_nulltime;
 	lastTick = spring_gettime();
 
-	if (!DecodeStream(buffers[0]))
+	if (!DecodeStream(buffers[0]) || !DecodeStream(buffers[1])) {
+		// streaming very small file is not possible if we use 2 buffers
 		return false;
-	if (!DecodeStream(buffers[1]))
-		return false;
+	}
 
 	alSourceQueueBuffers(source, 2, buffers.data());
 
