@@ -361,8 +361,11 @@ bool MoveDef::DoRawSearch(
 
 	if (testTerrain) {
 		auto test = [this, &minSpeedMod, &testMoveDir2D, speedModThreshold](int x, int z) -> bool {
+			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
+
 			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
 			minSpeedMod = std::min(minSpeedMod, speedMod);
+
 			return (speedMod > speedModThreshold);
 		};
 		retTestMove = walkPath(test);
@@ -374,10 +377,10 @@ bool MoveDef::DoRawSearch(
 		const int tempNum = gs->GetMtTempNum(thread);
 
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, tempNum](int x, int z) -> bool {
-			const int xmin = x - xsizeh * (1 - centerOnly);
-			const int zmin = z - zsizeh * (1 - centerOnly);
-			const int xmax = x + xsizeh * (1 - centerOnly);
-			const int zmax = z + zsizeh * (1 - centerOnly);
+			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
+			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
+			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
+			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapy - 1);
 
 			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, collider, thread, tempNum);
 			maxBlockBit = blockBits;

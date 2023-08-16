@@ -779,7 +779,9 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					registry.remove<PathSearchRef>(pathEntity);
 				} else {
 					if (search->rawPathCheck) {
+						registry.remove<PathSearchRef>(pathEntity);
 						RequeueSearch(path, false);
+						assert(!registry.all_of<SharedPathChain>(pathEntity));
 					} else {
 						DeletePath(path->GetID());
 					}
@@ -912,6 +914,7 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 			assert(path->GetPathType() < moveDefHandler.GetNumMoveDefs());
 			const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(path->GetPathType());
 			RequeueSearch(path, true);
+			assert(!registry.all_of<SharedPathChain>(entity));
 
 			assert(registry.all_of<PathIsToBeUpdated>(entity));
 			registry.remove<PathIsToBeUpdated>(entity);
