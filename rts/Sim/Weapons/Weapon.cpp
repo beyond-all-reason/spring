@@ -689,10 +689,10 @@ bool CWeapon::AutoTarget()
 		if (aimAtBlockedTargets) {
 			SWeaponTarget trg = SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f);
 			float3 trgpos = GetLeadTargetPos(trg);
-			if (!TestTarget(GetLeadTargetPos(trg), trg)) {
+			if (!TestTarget(trgpos, trg)) {
 				continue;
 			}
-			if (!HaveFreeLineOfFire(GetAimFromPos(true),GetLeadTargetPos(trg), trg)) {
+			if (!HaveFreeLineOfFire(GetAimFromPos(true), trgpos, trg)) {
 				if (blockedTargetUnit == nullptr) {
 					blockedTargetUnit = unit;
 				}
