@@ -108,7 +108,8 @@ CR_REG_METADATA(CWeapon, (
 
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
-	CR_MEMBER(fastQueryPointUpdate)
+	CR_MEMBER(fastQueryPointUpdate),
+	CR_MEMBER(aimAtBlockedTargets)
 ))
 
 
@@ -187,7 +188,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
-	fastQueryPointUpdate(false)
+	fastQueryPointUpdate(false),
+	aimAtBlockedTargets(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -557,8 +559,13 @@ bool CWeapon::Attack(const SWeaponTarget& newTarget)
 		case Target_Unit:
 		case Target_Pos:
 		case Target_Intercept: {
-			if (!TryTarget(newTarget))
-				return false;
+			if (aimAtBlockedTargets) {
+				if (!TestTarget(GetLeadTargetPos(newTarget),newTarget))
+					return false;
+			} else {
+				if (!TryTarget(newTarget))
+					return false;
+			}
 
 			SetAttackTarget(newTarget);
 			avoidTarget = false;
@@ -659,6 +666,7 @@ bool CWeapon::AutoTarget()
 
 	CUnit* goodTargetUnit = nullptr;
 	CUnit*  badTargetUnit = nullptr;
+	CUnit*  blockedTargetUnit = nullptr;
 
 	auto& targetPairs = helper->targetPairs;
 
@@ -678,8 +686,22 @@ bool CWeapon::AutoTarget()
 
 		// set isAutoTarget s.t. TestRange result is ignored
 		// (which enables pre-aiming at targets out of range)
-		if (!TryTarget(SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f)))
-			continue;
+		if (aimAtBlockedTargets) {
+			SWeaponTarget trg = SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f);
+			float3 trgpos = GetLeadTargetPos(trg);
+			if (!TestTarget(GetLeadTargetPos(trg), trg)) {
+				continue;
+			}
+			if (!HaveFreeLineOfFire(GetAimFromPos(true),GetLeadTargetPos(trg), trg)) {
+				if (blockedTargetUnit == nullptr) {
+					blockedTargetUnit = unit;
+				}
+				continue;
+			}
+		} else {
+			if (!TryTarget(SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f)))
+				continue;
+		}
 
 		if (unit->IsNeutral() && (owner->fireState < FIRESTATE_FIREATNEUTRAL))
 			continue;
@@ -695,6 +717,10 @@ bool CWeapon::AutoTarget()
 
 	if (goodTargetUnit == nullptr)
 		goodTargetUnit = badTargetUnit;
+
+	// if there is no badTargetUnit, use a blocked unit
+	if (goodTargetUnit == nullptr)
+		goodTargetUnit = blockedTargetUnit;
 
 	if (goodTargetUnit != nullptr) {
 		// pick our new target
