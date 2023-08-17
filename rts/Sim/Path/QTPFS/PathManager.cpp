@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#undef NDEBUG
+// #undef NDEBUG
 
 #include <assert.h>
 
@@ -780,6 +780,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 				} else {
 					if (search->rawPathCheck) {
 						registry.remove<PathSearchRef>(pathEntity);
+						registry.remove<PathIsDirty>(pathEntity);
 						RequeueSearch(path, false);
 						assert(!registry.all_of<SharedPathChain>(pathEntity));
 					} else {
@@ -914,7 +915,6 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 			assert(path->GetPathType() < moveDefHandler.GetNumMoveDefs());
 			const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(path->GetPathType());
 			RequeueSearch(path, true);
-			assert(!registry.all_of<SharedPathChain>(entity));
 
 			assert(registry.all_of<PathIsToBeUpdated>(entity));
 			registry.remove<PathIsToBeUpdated>(entity);
@@ -1002,8 +1002,10 @@ unsigned int QTPFS::PathManager::QueueSearch(
 unsigned int QTPFS::PathManager::RequeueSearch(
 	IPath* oldPath, const bool allowRawSearch
 ) {
+	entt::entity pathEntity = entt::entity(oldPath->GetID());
+
 	// If a path request is already in progress then don't create another one.
-	if (registry.all_of<PathSearchRef>(entt::entity(oldPath->GetID())))
+	if (registry.all_of<PathSearchRef>(pathEntity))
 		return (oldPath->GetID());
 
 	// Always create the search object first to ensure pathEntity can never be 0 (which is
@@ -1013,14 +1015,16 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	assert(oldPath != nullptr);
 	assert(newSearch != nullptr);
 	assert(oldPath->GetID() != 0);
-	assert((entt::entity)oldPath->GetID() != entt::null);
+	assert(pathEntity != entt::null);
 
 	const CSolidObject* obj = oldPath->GetOwner();
 	const float3& pos = (obj != nullptr)? obj->pos: oldPath->GetSourcePoint();
 
 	const auto targetPoint = oldPath->GetTargetPoint();
 
-	oldPath->SetHash(-1);
+	RemovePathFromShared(pathEntity);
+
+	oldPath->SetHash(PathSearch::BAD_HASH);
 	oldPath->SetNextPointIndex(0);
 	oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
@@ -1037,8 +1041,8 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->SetPathType(oldPath->GetPathType());
 	newSearch->rawPathCheck = allowRawSearch;
 
-	registry.emplace_or_replace<PathIsTemp>((entt::entity)oldPath->GetID());
-	registry.emplace<PathSearchRef>(entt::entity(oldPath->GetID()), searchEntity);
+	registry.emplace_or_replace<PathIsTemp>(pathEntity);
+	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
 
 	pathRequestQueue.emplace_back(searchEntity);
 
@@ -1056,7 +1060,7 @@ void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 
 	const PathTraceMapIt pathTraceIt = pathTraces.find(pathID);
 
-	RemovePathFromShared((entt::entity)pathID);
+	RemovePathFromShared(entt::entity(pathID));
 
 	entt::entity entity = entt::entity(pathID);
 	if (registry.valid(entity))
