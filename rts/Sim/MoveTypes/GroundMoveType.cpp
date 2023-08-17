@@ -1082,12 +1082,6 @@ bool CGroundMoveType::FollowPath(int thread)
 			bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 				&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 			if (printMoveInfo) {
-
-				LOG("%s waypointVec (%f,%f,%f)", __func__
-					, static_cast<float>(waypointVec.x)
-					, static_cast<float>(waypointVec.y)
-					, static_cast<float>(waypointVec.z));
-
 				LOG("%s waypointDir (%f,%f,%f)", __func__
 					, static_cast<float>(waypointDir.x)
 					, static_cast<float>(waypointDir.y)

@@ -750,7 +750,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		pathRequestQueue.pop_front();
 	}
 
-	for_mt(0, requestsToProcess/*pathView.size()*/, [this, &pathView](int i){
+	for_mt(0, pathView.size(), [this, &pathView](int i){
 		entt::entity pathSearchEntity = pathView.begin()[i];
         // entt::entity pathSearchEntity = pathView.storage<PathSearch>()[i];
 
@@ -1206,12 +1206,12 @@ float3 QTPFS::PathManager::NextWayPoint(
 		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
 	}
 
-	if (registry.all_of<PathIsDirty>(pathEntity)) {
-		// the request WAS processed but then immediately undone by a
-		// TerrainChange --> MarkDeadPaths event in the same frame as
-		// NextWayPoint (so pathID is only in deadPaths)
-		return point;
-	}
+	// if (registry.all_of<PathIsDirty>(pathEntity)) {
+	// 	// the request WAS processed but then immediately undone by a
+	// 	// TerrainChange --> MarkDeadPaths event in the same frame as
+	// 	// NextWayPoint (so pathID is only in deadPaths)
+	// 	return point;
+	// }
 
 	float minRadiusSq = QTPFS_POSITIVE_INFINITY;
 

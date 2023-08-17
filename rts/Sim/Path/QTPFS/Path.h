@@ -76,11 +76,13 @@ namespace QTPFS {
 		void SetRadius(float radius) { this->radius = radius; }
 		void SetSynced(bool synced) { this->synced = synced; }
 		void SetHasFullPath(bool fullPath) { this->haveFullPath = fullPath; }
+		void SetHasPartialPath(bool partialPath) { this->havePartialPath = partialPath; }
 
 		float GetRadius() const { return radius; }
 		std::uint64_t GetHash() const { return hash; }
 		bool IsSynced() const { return synced; }
 		bool IsFullPath() const { return haveFullPath; }
+		bool IsPartialPath() const { return havePartialPath; }
 
 		void SetBoundingBox() {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
@@ -172,6 +174,7 @@ namespace QTPFS {
 		float radius = 0.f;
 		bool synced = true;
 		bool haveFullPath = true;
+		bool havePartialPath = false;
 
 		std::vector<float3> points;
 

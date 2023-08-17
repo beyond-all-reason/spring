@@ -176,9 +176,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 	havePartPath = (minSearchNode != srcSearchNode);
 
-	// if (srcNode->GetMoveCost() == 0.0f)
-	// 	srcNode->SetMoveCost(QTPFS_POSITIVE_INFINITY);
-
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result
 	// NOTE:
@@ -432,6 +429,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 
 	path->SetBoundingBox();
 	path->SetHasFullPath(haveFullPath & !badGoal);
+	path->SetHasPartialPath(havePartPath);
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
@@ -699,6 +697,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->SetHasFullPath(srcPath->IsFullPath());
 
 	haveFullPath = srcPath->IsFullPath();
+	havePartPath = srcPath->IsPartialPath();
 
 	return true;
 }
