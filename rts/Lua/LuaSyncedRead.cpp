@@ -1462,16 +1462,16 @@ int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
  */
 int LuaSyncedRead::GetAllyTeamStartBox(lua_State* L)
 {
-	const std::vector<AllyTeam>& allyData = CGameSetup::GetAllyStartingData();
-	const unsigned int allyTeam = luaL_checkint(L, 1);
+	const unsigned int allyTeamID = luaL_checkint(L, 1);
 
-	if (allyTeam >= allyData.size())
+	if (!teamHandler.IsValidAllyTeam(allyTeamID))
 		return 0;
 
-	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectLeft;
-	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectTop;
-	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectRight;
-	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectBottom;
+	const AllyTeam& allyTeam = teamHandler.GetAllyTeam(allyTeamID);
+	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectLeft;
+	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectTop;
+	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectRight;
+	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectBottom;
 
 	lua_pushnumber(L, xmin);
 	lua_pushnumber(L, zmin);
