@@ -39,7 +39,9 @@
 
 #include "Components/Path.h"
 #include "Components/PathMaxSpeedMod.h"
+#include "Components/RemoveDeadPaths.h"
 #include "Systems/PathMaxSpeedModSystem.h"
+#include "Systems/RemoveDeadPathsSystem.h"
 #include "Registry.h"
 
 #include <assert.h>
@@ -147,6 +149,7 @@ QTPFS::PathManager::~PathManager() {
 	isFinalized = false;
 
 	PathMaxSpeedModSystem::Shutdown();
+	RemoveDeadPathsSystem::Shutdown();
 
 	// print out anything still left in the registry - there should be nothing
 	registry.each([this](auto entity) {
@@ -294,6 +297,7 @@ void QTPFS::PathManager::Load() {
 
 		InitNodeLayersThreaded(MAP_RECTANGLE);
 		PathMaxSpeedModSystem::Init();
+		RemoveDeadPathsSystem::Init();
 
 		// NOTE:
 		//   should be sufficient in theory, because if either
@@ -1047,13 +1051,22 @@ void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int path
 void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 	assert(!ThreadPool::inMultiThreadedSection);
 
-	const PathTraceMapIt pathTraceIt = pathTraces.find(pathID);
+	if (registry.all_of<SharedPathChain>(entt::entity(pathID))) {
+		if (!registry.all_of<PathDelayedDelete>(entt::entity(pathID))) {
+			registry.emplace<PathDelayedDelete>(entt::entity(pathID), gs->frameNum + GAME_SPEED);
+		}
+	} else {
+		DeletePathEntity(entt::entity(pathID));
+	}
+}
 
-	RemovePathFromShared(entt::entity(pathID));
+void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
+	const PathTraceMapIt pathTraceIt = pathTraces.find(entt::to_integral(pathEntity));
 
-	entt::entity entity = entt::entity(pathID);
-	if (registry.valid(entity))
-		registry.destroy(entity);
+	RemovePathFromShared(pathEntity);
+
+	if (registry.valid(pathEntity))
+		registry.destroy(pathEntity);
 
 	if (pathTraceIt != pathTraces.end()) {
 		delete (pathTraceIt->second);

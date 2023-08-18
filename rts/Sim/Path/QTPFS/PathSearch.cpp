@@ -120,9 +120,8 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 
 	if (rawPathCheck)
 		return ExecuteRawSearch();
-	// if (!rawPathCheck)
+
 	return ExecutePathSearch();
-	// return rawPathCheck;
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {
