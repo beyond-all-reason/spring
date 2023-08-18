@@ -110,10 +110,6 @@ void CModInfo::ResetState()
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
 
-		qtpfsBaseQueryRateLimit = 32;
-		qtpfsMaxQueryRateLimit = 1024;
-		qtpfsClearQueryTargetFrames = 2;
-
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
 
@@ -162,10 +158,6 @@ void CModInfo::Init(const std::string& modFileName)
 		pfRepathDelayInFrames = Clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
 		pfRepathMaxRateInFrames = Clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
-
-		qtpfsBaseQueryRateLimit = std::max(system.GetInt("qtpfsBaseQueryRateLimit", qtpfsBaseQueryRateLimit), 0);
-		qtpfsMaxQueryRateLimit = std::max(system.GetInt("qtpfsMaxQueryRateLimit", qtpfsMaxQueryRateLimit), 1);
-		qtpfsClearQueryTargetFrames = std::max(system.GetInt("qtpfsClearQueryTargetFrames", qtpfsClearQueryTargetFrames), 1);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 

@@ -190,7 +190,6 @@ QTPFS::PathManager::~PathManager() {
 	std::for_each(nodeLayersMapDamageTrack.mapChangeTrackers.begin(), nodeLayersMapDamageTrack.mapChangeTrackers.end(), clearTrackers);
 	nodeLayersMapDamageTrack.mapChangeTrackers.clear();
 	sharedPaths.clear();
-	pathRequestQueue.clear();
 
 	// numCurrExecutedSearches.clear();
 	// numPrevExecutedSearches.clear();
@@ -724,32 +723,25 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 	}
 }
 
+void QTPFS::PathManager::ReadyQueuedSearches() {
+	auto pathView = registry.view<PathSearch>();
+
+	// Go through in reverse order to minimize reshuffling EnTT will do with the grouping.
+	std::for_each(pathView.rbegin(), pathView.rend(), [this](entt::entity entity){
+		InitializeSearch(entity);
+		registry.emplace_or_replace<ProcessPath>(entity);
+	});
+}
+
 void QTPFS::PathManager::ExecuteQueuedSearches() {
 	ZoneScoped;
 
 	auto pathView = registry.group<PathSearch, ProcessPath>();
 
-	const int baseRateLimit = modInfo.qtpfsBaseQueryRateLimit;
-	const int maxRateLimit = modInfo.qtpfsMaxQueryRateLimit;
-	const int clearTargetFrames = modInfo.qtpfsClearQueryTargetFrames;
-	const int avgQueriesNeeded = (pathRequestQueue.size() / clearTargetFrames) + 1;
-	const size_t rateLimit = Clamp(avgQueriesNeeded, baseRateLimit, maxRateLimit);
-
-	size_t requestsToProcess = std::min(pathRequestQueue.size(), rateLimit);
-
-	// LOG("%s: rateLimit=%d pathRequestQueue=%d requestsToProcess=%d", __func__
-	// 		, int(rateLimit), int(pathRequestQueue.size()), int(requestsToProcess));
+	ReadyQueuedSearches();
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
-	std::for_each_n(pathRequestQueue.begin(), requestsToProcess, [this](entt::entity entity){
-		InitializeSearch(entity);
-		registry.emplace_or_replace<ProcessPath>(entity);
-	});
-	for (size_t i = 0; i < requestsToProcess; ++i) {
-		pathRequestQueue.pop_front();
-	}
-
 	for_mt(0, pathView.size(), [this, &pathView](int i){
 		entt::entity pathSearchEntity = pathView.begin()[i];
         // entt::entity pathSearchEntity = pathView.storage<PathSearch>()[i];
@@ -763,8 +755,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		ExecuteSearch(search, nodeLayer, pathType);
 	});
 
-	// for (auto pathSearchEntity : pathView) {
-	std::for_each_n(pathView.begin(), requestsToProcess, [this, &pathView](entt::entity pathSearchEntity){
+	for (auto pathSearchEntity : pathView) {
 		assert(registry.valid(pathSearchEntity));
 		assert(registry.all_of<PathSearch>(pathSearchEntity));
 
@@ -781,8 +772,10 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					if (search->rawPathCheck) {
 						registry.remove<PathSearchRef>(pathEntity);
 						registry.remove<PathIsDirty>(pathEntity);
+
+						// adding a new search doesn't break this loop because new paths do not
+						// have the tag ProcessPath and so don't impact this group view.
 						RequeueSearch(path, false);
-						assert(!registry.all_of<SharedPathChain>(pathEntity));
 					} else {
 						DeletePath(path->GetID());
 					}
@@ -792,7 +785,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 
 		// LOG("%s: delete search %x", __func__, entt::to_integral(pathSearchEntity));
 		registry.destroy(pathSearchEntity);
-	});
+	}
 }
 
 bool QTPFS::PathManager::ExecuteSearch(
@@ -979,8 +972,6 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	registry.emplace<PathIsTemp>(pathEntity);
 	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
 
-	pathRequestQueue.emplace_back(searchEntity);
-
 	newSearch->SetID(newPath->GetID());
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(newPath->GetPathType());
@@ -1043,8 +1034,6 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	registry.emplace_or_replace<PathIsTemp>(pathEntity);
 	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
-
-	pathRequestQueue.emplace_back(searchEntity);
 
 	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
 	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);

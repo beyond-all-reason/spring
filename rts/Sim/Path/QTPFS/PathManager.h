@@ -116,6 +116,7 @@ namespace QTPFS {
 		void InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
 
+		void ReadyQueuedSearches();
 		void ExecuteQueuedSearches();
 		void QueueDeadPathSearches();
 
@@ -154,7 +155,6 @@ namespace QTPFS {
 		std::vector<SearchThreadData> searchThreadData;
 		std::vector<UpdateThreadData> updateThreadData;
 		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
-		std::deque<entt::entity> pathRequestQueue;
 
 		PathTraceMap pathTraces;
 		SharedPathMap sharedPaths;
