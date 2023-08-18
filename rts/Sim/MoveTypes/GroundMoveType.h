@@ -66,7 +66,7 @@ public:
 	bool WantToStop() const { return (pathID == 0 && (!useRawMovement || atEndOfPath)); }
 
 	void TriggerSkipWayPoint() {
-		earlyCurrWayPoint.y = -1.0f;
+		earlyCurrWayPoint.y = -2.0f;
 	}
 	void TriggerCallArrived() {
 		atEndOfPath = true;

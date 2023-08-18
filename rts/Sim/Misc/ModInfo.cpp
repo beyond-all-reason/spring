@@ -110,9 +110,9 @@ void CModInfo::ResetState()
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
 
-		qtpfsBaseQueryRateLimit = 24;
-		qtpfsMaxQueryRateLimit = 100;
-		qtpfsClearQueryTargetFrames = 100;
+		qtpfsBaseQueryRateLimit = 32;
+		qtpfsMaxQueryRateLimit = 1024;
+		qtpfsClearQueryTargetFrames = 2;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;

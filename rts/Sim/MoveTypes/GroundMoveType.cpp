@@ -1926,8 +1926,8 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		return false;
 	if (atEndOfPath)
 		return false;
-	// if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
-	// 	return true;
+	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
+		return true;
 	
 	const float3& pos = owner->pos;
 		  float3& cwp = earlyCurrWayPoint;
@@ -1966,7 +1966,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 	if (!allowSkip) {
 
-		const bool skipRequested = (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f);
+		const bool skipRequested = (earlyCurrWayPoint.y == -2.0f || earlyNextWayPoint.y == -2.0f);
 		if (!skipRequested) {
 			// perform a turn-radius check: if the waypoint lies outside
 			// our turning circle, do not skip since we can steer toward
