@@ -11,6 +11,7 @@
 
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/float4.h"
+#include "System/Color.h"
 #include "lru/LruClockCache.h"
 
 #undef GetCharWidth // winapi.h
@@ -42,8 +43,6 @@ namespace Shader {
 class CglFont : public CTextWrap
 {
 public:
-	using ColorCodeCallBack = std::function<void(float4)>;
-
 	static bool LoadConfigFonts();
 	static bool LoadCustomFonts(const std::string& smallFontFile, const std::string& largeFontFile);
 
@@ -108,23 +107,29 @@ public:
 
 	void GetStats(std::array<size_t, 8>& stats) const;
 
-	static constexpr char8_t ColorCodeIndicator  = 0xFF;
-	static constexpr char8_t ColorResetIndicator = 0x08; // =: '\\b'
+	static constexpr char8_t ColorCodeIndicator   = 0xFF;
+	static constexpr char8_t ColorCodeIndicatorEx = 0xFE;
+	static constexpr char8_t ColorResetIndicator  = 0x08; // =: '\\b'
 private:
 	static const float4* ChooseOutlineColor(const float4& textColor);
 
 	template<int shiftXC, int shiftYC, bool outline>
-	void RenderStringImpl(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb);
+	void RenderStringImpl(float x, float y, float scaleX, float scaleY, const std::string& str);
 
-	void RenderString(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb) {
-		RenderStringImpl<0 , 0 , false>(x, y, scaleX, scaleY, str, cccb);
+	void RenderString(float x, float y, float scaleX, float scaleY, const std::string& str) {
+		RenderStringImpl<0 , 0 , false>(x, y, scaleX, scaleY, str);
 	}
-	void RenderStringOutlined(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb) {
-		RenderStringImpl<0 , 0 , true >(x, y, scaleX, scaleY, str, cccb);
+	void RenderStringOutlined(float x, float y, float scaleX, float scaleY, const std::string& str) {
+		RenderStringImpl<0 , 0 , true >(x, y, scaleX, scaleY, str);
 	}
-	void RenderStringShadow(float x, float y, float scaleX, float scaleY, const std::string& str, const ColorCodeCallBack& cccb) {
-		RenderStringImpl<10, 10, true >(x, y, scaleX, scaleY, str, cccb);
+	void RenderStringShadow(float x, float y, float scaleX, float scaleY, const std::string& str) {
+		RenderStringImpl<10, 10, true >(x, y, scaleX, scaleY, str);
 	}
+	bool SkipColorCodesAndNewLines(
+		const spring::u8string& text,
+		int& curIndex,
+		int& numLines
+	);
 private:
 	void ScanForWantedGlyphs(const spring::u8string& str);
 	float GetTextWidth_(const spring::u8string& text);
