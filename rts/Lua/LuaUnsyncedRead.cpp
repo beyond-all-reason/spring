@@ -835,7 +835,8 @@ int LuaUnsyncedRead::GetWindowDisplayMode(lua_State* L)
 		lua_pushnumber(L, dmode.h);
 		lua_pushnumber(L, SDL_BITSPERPIXEL(dmode.format));
 		lua_pushnumber(L, dmode.refresh_rate);
-		return 4;
+		lua_pushstring(L, SDL_GetPixelFormatName(dmode.format));
+		return 5;
 	}
 	return 0;
 }
