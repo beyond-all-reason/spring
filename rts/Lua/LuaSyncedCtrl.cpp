@@ -136,6 +136,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 
 	REGISTER_LUA_CFUNC(SetAlly);
+	REGISTER_LUA_CFUNC(SetAllyTeamStartBox);
 	REGISTER_LUA_CFUNC(KillTeam);
 	REGISTER_LUA_CFUNC(AssignPlayerToTeam);
 	REGISTER_LUA_CFUNC(GameOver);
@@ -796,6 +797,38 @@ int LuaSyncedCtrl::SetAlly(lua_State* L)
 		return 0;
 
 	teamHandler.SetAlly(firstAllyTeamID, secondAllyTeamID, luaL_checkboolean(L, 3));
+	return 0;
+}
+
+
+/*** Changes the start box position of an allyTeam.
+ *
+ * @function Spring.SetAllyTeamStartBox
+ * @number allyTeamID
+ * @number xMin left start box boundary (elmos)
+ * @number zMin top start box boundary (elmos)
+ * @number xMax right start box boundary (elmos)
+ * @number zMax bottom start box boundary (elmos)
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetAllyTeamStartBox(lua_State* L)
+{
+	const unsigned int allyTeamID = luaL_checkint(L, 1);
+	const float xMin = luaL_checkfloat(L, 2);
+	const float zMin = luaL_checkfloat(L, 3);
+	const float xMax = luaL_checkfloat(L, 4);
+	const float zMax = luaL_checkfloat(L, 5);
+
+	if (!teamHandler.IsValidAllyTeam(allyTeamID)) {
+		return 0;
+	}
+
+	const float startRectLeft   = xMin / (mapDims.mapx * SQUARE_SIZE);
+	const float startRectTop    = zMin / (mapDims.mapy * SQUARE_SIZE);
+	const float startRectRight  = xMax / (mapDims.mapx * SQUARE_SIZE);
+	const float startRectBottom = zMax / (mapDims.mapy * SQUARE_SIZE);
+
+	teamHandler.SetAllyTeamStartBox(allyTeamID, startRectLeft, startRectTop, startRectRight, startRectBottom);
 	return 0;
 }
 

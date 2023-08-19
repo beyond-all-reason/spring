@@ -56,6 +56,8 @@ Lua:
    matches in subdirs, recursively.
  - `gadget:AllowUnitCreation` now accepts a second return value that controls whether to drop the order.
    If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
+ - add `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) -> nil`, allowing to set
+   start box (in elmos) for an ally team.
  
 
 Game Setup:
