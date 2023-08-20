@@ -272,10 +272,11 @@ void CGameSetup::LoadStartPositions(bool withoutMap)
 	LoadStartPositionsFromMap(teamStartingData.size(), [&](MapParser& mapParser, int teamNum) {
 		float3 pos;
 
-		// don't fail when playing with more players than
-		// start positions and we didn't use them anyway
+		// try to parse start position for teamNum, emit a warning if none found but
+		// do not block on this, in case this is explicitly desired so as to let the
+		// game handle the missing startpos
 		if (!mapParser.GetStartPos(teamStartingData[teamNum].teamStartNum, pos)) {
-			throw content_error(mapParser.GetErrorLog());
+			LOG_L(L_WARNING, "%s", mapParser.GetErrorLog().c_str());
 			return false;
 		}
 

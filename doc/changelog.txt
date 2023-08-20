@@ -64,7 +64,11 @@ Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
    blank via 'initBlank' parameter (either 1 or 0) and specifying `blank_map_x`, `blank_map_y`,
    `blank_map_height` map options.
-
+ - Emit a warning instead of immediately failing when MapParser does not find startpos defined in
+   the map config for all teamIDs present in start script. This gives a chance to the game to remedy
+   the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
+   in the corner -- giving an obvious hint that something is amiss and the map is unable to support
+   this number of players by itself without assistance from the game.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
