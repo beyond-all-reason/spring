@@ -63,14 +63,14 @@ CFactory::CFactory()
 	, lastBuildUpdateFrame(-1)
 { }
 
-void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (curBuild != nullptr) {
 		curBuild->KillUnit(nullptr, false, true);
 		curBuild = nullptr;
 	}
 
-	CUnit::KillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
+	CUnit::KillUnit(attacker, selfDestruct, reclaimed);
 }
 
 void CFactory::PreInit(const UnitLoadParams& params)

@@ -239,8 +239,8 @@ public:
 
 public:
 	void KilledScriptFinished(int wreckLevel) { deathScriptFinished = true; delayedWreckLevel = wreckLevel; }
-	void ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence = true);
-	virtual void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence = true);
+	void ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed);
+	virtual void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed);
 	virtual void IncomingMissile(CMissileProjectile* missile);
 
 	void TempHoldFire(int cmdID);
