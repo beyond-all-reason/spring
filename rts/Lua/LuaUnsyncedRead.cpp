@@ -119,6 +119,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetViewGeometry);
 	REGISTER_LUA_CFUNC(GetDualViewGeometry);
 	REGISTER_LUA_CFUNC(GetWindowGeometry);
+	REGISTER_LUA_CFUNC(GetWindowDisplayMode);
 	REGISTER_LUA_CFUNC(GetScreenGeometry);
 	REGISTER_LUA_CFUNC(GetMiniMapGeometry);
 	REGISTER_LUA_CFUNC(GetMiniMapDualScreen);
@@ -816,6 +817,28 @@ int LuaUnsyncedRead::GetWindowGeometry(lua_State* L)
 	lua_pushnumber(L, globalRendering->winBorder[2]);
 	lua_pushnumber(L, globalRendering->winBorder[3]);
 	return 4 + 4;
+}
+
+/*** Get main window display mode
+ *
+ * @function Spring.GetWindowDisplayMode
+ * @treturn number width in px
+ * @treturn number height in px
+ * @treturn number bits per pixel
+ * @treturn number refresh rate in Hz
+ */
+int LuaUnsyncedRead::GetWindowDisplayMode(lua_State* L)
+{
+	SDL_DisplayMode dmode;
+	if (!SDL_GetWindowDisplayMode(globalRendering->GetWindow(), &dmode)) {
+		lua_pushnumber(L, dmode.w);
+		lua_pushnumber(L, dmode.h);
+		lua_pushnumber(L, SDL_BITSPERPIXEL(dmode.format));
+		lua_pushnumber(L, dmode.refresh_rate);
+		lua_pushstring(L, SDL_GetPixelFormatName(dmode.format));
+		return 5;
+	}
+	return 0;
 }
 
 

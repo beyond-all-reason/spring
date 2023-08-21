@@ -631,8 +631,10 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 			return;
 		}
 
-		if (!eventHandler.AllowUnitCreation(build.def, owner, &build)) {
-			StopMoveAndFinishCommand();
+		const auto [allow, drop] = eventHandler.AllowUnitCreation(build.def, owner, &build);
+		if (!allow) {
+			if (drop)
+				StopMoveAndFinishCommand();
 			return;
 		}
 
