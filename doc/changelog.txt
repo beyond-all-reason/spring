@@ -75,7 +75,8 @@ Misc:
  - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
    the built-in `/info` playerlist won't display. Use for anonymous modes
    in conjunction with `Spring.GetPlayerInfo` poisoning.
- 
+ - Add new `/remove` cheat-only command, it removes selected units similar to
+   `/destroy` except no death script is run (so no explosion nor wreckage).
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
