@@ -1,4 +1,3 @@
-source /vulkan-sdk/setup-env.sh
 COMMAND=$1
 shift
 

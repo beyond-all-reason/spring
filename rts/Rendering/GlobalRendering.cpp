@@ -13,7 +13,6 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/VK/VkInfo.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
 #include "System/bitops.h"
@@ -611,8 +610,6 @@ void CGlobalRendering::PostInit() {
 	#ifndef HEADLESS
 	glewExperimental = true;
 	#endif
-
-	//VkInfo::PrintInfo();
 
 	glewInit();
 	// glewInit sets GL_INVALID_ENUM, get rid of it
