@@ -1962,7 +1962,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		}
 	}
 
-	float cwpDistSq = (cwp - pos).SqLength();
+	float cwpDistSq = cwp.SqDistance2D(pos);
 	const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
 	if (!allowSkip) {
 

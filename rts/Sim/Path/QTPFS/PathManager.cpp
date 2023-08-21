@@ -341,7 +341,7 @@ void QTPFS::PathManager::Load() {
 
 		char loadMsg[512] = {'\0'};
 		const char* fmtString = "[PathManager::%s] Complete. Used %u threads for %u node-layers";
-		sprintf(loadMsg, fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
+		snprintf(loadMsg, sizeof(loadMsg), fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
 
 		loadscreen->SetLoadMessage(loadMsg);
 	}
@@ -390,7 +390,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 
 	char loadMsg[512] = {'\0'};
 	const char* fmtString = "[PathManager::%s] using %u threads for %u node-layers";
-	sprintf(loadMsg, fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
+	snprintf(loadMsg, sizeof(loadMsg), fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
 	pmLoadScreen.AddMessage(loadMsg);
 
 	#ifndef NDEBUG
@@ -401,7 +401,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	for_mt(0, nodeLayers.size(), [=,&loadMsg, &rect](const int layerNum){
 		int currentThread = ThreadPool::GetThreadNum();
 		#ifndef NDEBUG
-		sprintf(loadMsg, preFmtStr, layerNum);
+		snprintf(loadMsg, sizeof(loadMsg), preFmtStr, layerNum);
 		pmLoadScreen.AddMessage(loadMsg);
 		#endif
 
@@ -1218,7 +1218,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 	float minRadiusSq = QTPFS_POSITIVE_INFINITY;
 
 	unsigned int minPointIdx = livePath->GetNextPointIndex();
-	unsigned int nxtPointIdx = 1;
+	unsigned int nxtPointIdx = 0;
 
 	for (unsigned int i = (livePath->GetNextPointIndex()); i < (livePath->NumPoints() - 1); i++) {
 		const float radiusSq = (point - livePath->GetPoint(i)).SqLength2D();
@@ -1240,7 +1240,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 		//     and we must fall back to the radius-based closest point
 		if (v0.SqLength() < 0.1f) { nxtPointIdx = i + 1; break; }
 		if (v1.SqLength() < 0.1f) { nxtPointIdx = i + 2; break; }
-		if (v0.dot(v1) <= -0.01f) { nxtPointIdx = i + 1;        }
+		if (v0.dot(v1) <= -0.01f) { nxtPointIdx = i + 1; break; }
 
 		if (radiusSq < minRadiusSq) {
 			minRadiusSq = radiusSq;
@@ -1248,12 +1248,17 @@ float3 QTPFS::PathManager::NextWayPoint(
 		}
 	}
 
+	if ((livePath->GetNextPointIndex() == 0)) {
+		livePath->SetNextPointIndex(nxtPointIdx);
+		return (livePath->GetPoint(livePath->GetNextPointIndex()));
+	}
+
 	// handle a corner-case in which a unit is at the start of its path
 	// and the goal is in front of it, but on the other side of a cliff
 	if ((livePath->GetNextPointIndex() == 0) && (nxtPointIdx == (livePath->NumPoints() - 1)))
 		nxtPointIdx = 1;
 
-	if (minPointIdx < nxtPointIdx) {
+	if (minPointIdx < nxtPointIdx || livePath->GetNextPointIndex() < nxtPointIdx) {
 		// if close enough to at least one waypoint <i>,
 		// switch to the point immediately following it
 		livePath->SetNextPointIndex(nxtPointIdx);
