@@ -340,7 +340,8 @@ struct S3DModel
 	size_t FindPieceOffset(const std::string& name) const;
 
 	S3DModelPiece* GetPiece(size_t i) const { assert(i < pieceObjects.size()); return pieceObjects[i]; }
-	S3DModelPiece* GetRootPiece() const { return (GetPiece(0)); }
+	S3DModelPiece* GetRootPiece() const { return (GetPiece(GetRootPieceIndex())); }
+	size_t GetRootPieceIndex() const { return 0; }
 
 	void AddPiece(S3DModelPiece* p) { pieceObjects.push_back(p); }
 	void DrawStatic() const {
