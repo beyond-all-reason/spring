@@ -258,8 +258,10 @@ class LuaSyncedRead {
 		static int IsUnitInJammer(lua_State* L);
 		static int GetClosestValidPosition(lua_State* L);
 
+		static int GetModelRootPiece(lua_State* L);
 		static int GetModelPieceList(lua_State* L);
 		static int GetModelPieceMap(lua_State* L);
+		static int GetUnitRootPiece(lua_State* L);
 		static int GetUnitPieceMap(lua_State* L);
 		static int GetUnitPieceList(lua_State* L);
 		static int GetUnitPieceInfo(lua_State* L);
@@ -271,6 +273,7 @@ class LuaSyncedRead {
 		static int GetUnitScriptPiece(lua_State* L);
 		static int GetUnitScriptNames(lua_State* L);
 
+		static int GetFeatureRootPiece(lua_State* L);
 		static int GetFeaturePieceMap(lua_State* L);
 		static int GetFeaturePieceList(lua_State* L);
 		static int GetFeaturePieceInfo(lua_State* L);
