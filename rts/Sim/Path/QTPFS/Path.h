@@ -167,7 +167,7 @@ namespace QTPFS {
 		unsigned int pathID = 0;
 		int pathType = 0;
 
-		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
+		unsigned int nextPointIndex = -1; // index of the next waypoint to be visited
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		std::uint64_t hash = -1;

@@ -398,7 +398,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
 	#endif
 
-	for_mt(0, nodeLayers.size(), [=,&loadMsg, &rect](const int layerNum){
+	for_mt(0, nodeLayers.size(), [this,&loadMsg, &rect](const int layerNum){
 		int currentThread = ThreadPool::GetThreadNum();
 		#ifndef NDEBUG
 		snprintf(loadMsg, sizeof(loadMsg), preFmtStr, layerNum);
@@ -1020,7 +1020,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	RemovePathFromShared(pathEntity);
 
 	oldPath->SetHash(PathSearch::BAD_HASH);
-	oldPath->SetNextPointIndex(0);
+	oldPath->SetNextPointIndex(-1);
 	oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
 	// start re-request from the current point
@@ -1208,66 +1208,9 @@ float3 QTPFS::PathManager::NextWayPoint(
 		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
 	}
 
-	// if (registry.all_of<PathIsDirty>(pathEntity)) {
-	// 	// the request WAS processed but then immediately undone by a
-	// 	// TerrainChange --> MarkDeadPaths event in the same frame as
-	// 	// NextWayPoint (so pathID is only in deadPaths)
-	// 	return point;
-	// }
-
-	float minRadiusSq = QTPFS_POSITIVE_INFINITY;
-
-	unsigned int minPointIdx = livePath->GetNextPointIndex();
-	unsigned int nxtPointIdx = 0;
-
-	for (unsigned int i = (livePath->GetNextPointIndex()); i < (livePath->NumPoints() - 1); i++) {
-		const float radiusSq = (point - livePath->GetPoint(i)).SqLength2D();
-
-		// find waypoints <p0> and <p1> such that <point> is
-		// "in front" of p0 and "behind" p1 (ie. in between)
-		//
-		// we do this rather than the radius-based search
-		// since depending on the value of <radius> we may
-		// or may not find a "next" node (even though one
-		// always exists)
-		const float3& p0 = livePath->GetPoint(i    ), v0 = float3(p0.x - point.x, 0.0f, p0.z - point.z);
-		const float3& p1 = livePath->GetPoint(i + 1), v1 = float3(p1.x - point.x, 0.0f, p1.z - point.z);
-
-		// NOTE:
-		//     either v0 or v1 can be a zero-vector (p0 == point or p1 == point)
-		//     in those two cases the dot-product is meaningless so we skip them
-		//     vectors are NOT normalized, so it can happen that NO case matches
-		//     and we must fall back to the radius-based closest point
-		if (v0.SqLength() < 0.1f) { nxtPointIdx = i + 1; break; }
-		if (v1.SqLength() < 0.1f) { nxtPointIdx = i + 2; break; }
-		if (v0.dot(v1) <= -0.01f) { nxtPointIdx = i + 1; break; }
-
-		if (radiusSq < minRadiusSq) {
-			minRadiusSq = radiusSq;
-			minPointIdx = i + 0;
-		}
-	}
-
-	if ((livePath->GetNextPointIndex() == 0)) {
-		livePath->SetNextPointIndex(nxtPointIdx);
-		return (livePath->GetPoint(livePath->GetNextPointIndex()));
-	}
-
-	// handle a corner-case in which a unit is at the start of its path
-	// and the goal is in front of it, but on the other side of a cliff
-	if ((livePath->GetNextPointIndex() == 0) && (nxtPointIdx == (livePath->NumPoints() - 1)))
-		nxtPointIdx = 1;
-
-	if (minPointIdx < nxtPointIdx || livePath->GetNextPointIndex() < nxtPointIdx) {
-		// if close enough to at least one waypoint <i>,
-		// switch to the point immediately following it
-		livePath->SetNextPointIndex(nxtPointIdx);
-	} else {
-		// otherwise just pick the closest point
-		livePath->SetNextPointIndex(minPointIdx);
-	}
-
-	return (livePath->GetPoint(livePath->GetNextPointIndex()));
+	unsigned int nextPointIndex = livePath->GetNextPointIndex() + 1;
+	livePath->SetNextPointIndex(nextPointIndex);
+	return livePath->GetPoint(nextPointIndex);
 }
 
 
