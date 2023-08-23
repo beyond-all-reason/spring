@@ -493,10 +493,14 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 		return;
 	}
 
+    LOG("[Sound::%s] SDL audio device(s): ", __func__);
+    for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
+        LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
+    }
+
 	SDL_AudioSpec desiredSpec;
 	SDL_AudioSpec obtainedSpec;
 
-	desiredSpec.channels = 2;
 	desiredSpec.format = AUDIO_S16SYS;
 	desiredSpec.freq = 44100;
 	desiredSpec.padding = 0;
@@ -504,48 +508,20 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 	desiredSpec.callback = RenderSDLSamples;
 	desiredSpec.userdata = this;
 
-    LOG("[Sound::%s] SDL audio device(s): ", __func__);
-    for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
-        LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
-    }
+	for(int channelsDesired = 2; channelsDesired > 0; channelsDesired--) {
+		desiredSpec.channels = channelsDesired;
 
-	sdlDeviceID = 0;
-
-	// 1.attempt - ask for desiredSpec.channels=2 and allow channel changes. We are happy, when we receive 1 or 2 channels.
-	if (!deviceName.empty()) {
-		LOG("[Sound::%s] opening configured device \"%s\"", __func__, deviceName.c_str());
-		sdlDeviceID = SDL_OpenAudioDevice(deviceName.c_str(), 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-		selectedDeviceName = deviceName;
-	}
-
-	if (sdlDeviceID == 0) {
-		LOG("[Sound::%s] opening default device", __func__);
-		sdlDeviceID = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-		selectedDeviceName = "default";
-	}
-
-	if (sdlDeviceID == 0) {
-		LOG("[Sound::%s] failed to open SDL audio, error:  \"%s\"", __func__, SDL_GetError());
-		SDL_QuitSubSystem(SDL_INIT_AUDIO);
-		return;
-	}
-
-	// 2.attempt: Workaround for SDL bug with some soundcards, returning more channels than we asked for (returned 8 in test case)
-	// (Maybe a third attempt should be taken into consideration: Disallow Channel Changes and ask for 1 channel only)
-	if (obtainedSpec.channels > 2) {
-		LOG("[Sound::%s] SDL returned %d channels, when we asked for %d. Closing previously opened device.", __func__, obtainedSpec.channels, desiredSpec.channels);
-		SDL_CloseAudioDevice(sdlDeviceID);
-		selectedDeviceName = "";
 		sdlDeviceID = 0;
+		selectedDeviceName = "";
 
 		if (!deviceName.empty()) {
-			LOG("[Sound::%s] opening configured device \"%s\" and disallow channel changes", __func__, deviceName.c_str());
+			LOG("[Sound::%s] opening configured device \"%s\"", __func__, deviceName.c_str());
 			sdlDeviceID = SDL_OpenAudioDevice(deviceName.c_str(), 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE & ~SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
 			selectedDeviceName = deviceName;
 		}
 
 		if (sdlDeviceID == 0) {
-			LOG("[Sound::%s] opening default device and disallow channel changes", __func__);
+			LOG("[Sound::%s] opening default device", __func__);
 			sdlDeviceID = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE & ~SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
 			selectedDeviceName = "default";
 		}
@@ -556,8 +532,14 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 			return;
 		}
 
-		LOG("[Sound::%s] opened device \"%s\" with %d channels.", __func__, selectedDeviceName.c_str(), obtainedSpec.channels);
+		if (obtainedSpec.channels == desiredSpec.channels) {
+			break;
+		}
+
+		LOG("[Sound::%s] SDL returned %d channels, when we asked for %d. Closing previously opened device.", __func__, obtainedSpec.channels, desiredSpec.channels);
+		SDL_CloseAudioDevice(sdlDeviceID);
 	}
+
 
 	// needs to be at least 1 or the callback will divide by 0
 	if ((frameSize = obtainedSpec.channels * SDL_AUDIO_BITSIZE(obtainedSpec.format) / 8) <= 0) {
