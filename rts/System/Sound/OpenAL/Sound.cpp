@@ -493,10 +493,10 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 		return;
 	}
 
-    LOG("[Sound::%s] SDL audio device(s): ", __func__);
-    for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
-        LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
-    }
+	LOG("[Sound::%s] SDL audio device(s): ", __func__);
+	for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
+		LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
+	}
 
 	SDL_AudioSpec desiredSpec;
 	SDL_AudioSpec obtainedSpec;
@@ -539,7 +539,6 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 		LOG("[Sound::%s] SDL returned %d channels, when we asked for %d. Closing previously opened device.", __func__, obtainedSpec.channels, desiredSpec.channels);
 		SDL_CloseAudioDevice(sdlDeviceID);
 	}
-
 
 	// needs to be at least 1 or the callback will divide by 0
 	if ((frameSize = obtainedSpec.channels * SDL_AUDIO_BITSIZE(obtainedSpec.format) / 8) <= 0) {
