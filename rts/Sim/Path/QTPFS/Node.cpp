@@ -857,7 +857,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				const unsigned int hmz = zmin() - r.z1;
 				const INode* ngbL = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
 				const INode* ngbT = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
-						INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
+					  INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
 
 				// VERT_TL ngb must be distinct from EDGE_L and EDGE_T ngbs
 				if (ngbC != ngbL && ngbC != ngbT) {
@@ -883,7 +883,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				const unsigned int hmz = zmax() - r.z1;
 				const INode* ngbL = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
 				const INode* ngbB = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
-						INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
+					  INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
 
 				// VERT_BL ngb must be distinct from EDGE_L and EDGE_B ngbs
 				if (ngbC != ngbL && ngbC != ngbB) {
@@ -913,7 +913,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				const unsigned int hmz = zmin() - r.z1;
 				const INode* ngbR = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
 				const INode* ngbT = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx - 1)];
-						INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
+					  INode* ngbC = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
 
 				// VERT_TR ngb must be distinct from EDGE_R and EDGE_T ngbs
 				if (ngbC != ngbR && ngbC != ngbT) {
@@ -941,7 +941,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				const unsigned int hmz = zmax() - r.z1;
 				const INode* ngbR = threadData.relinkNodeGrid[(hmz - 1) * rWidth + (hmx + 0)];
 				const INode* ngbB = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx - 1)];
-						INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
+					  INode* ngbC = threadData.relinkNodeGrid[(hmz + 0) * rWidth + (hmx + 0)];
 
 				// VERT_BR ngb must be distinct from EDGE_R and EDGE_B ngbs
 				if (ngbC != ngbR && ngbC != ngbB) {

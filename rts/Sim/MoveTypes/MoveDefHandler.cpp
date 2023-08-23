@@ -325,8 +325,8 @@ bool MoveDef::DoRawSearch(
 		int2 fwdTestBlk = startBlock;
 		int2 revTestBlk = endBlock;
 
-		int2 prevFwdTestBlk = {-1, -1};
-		int2 prevRevTestBlk = {-1, -1};
+		// int2 prevFwdTestBlk = {-1, -1};
+		// int2 prevRevTestBlk = {-1, -1};
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
 			result = f(fwdTestBlk.x, fwdTestBlk.y) && f(revTestBlk.x, revTestBlk.y);
@@ -336,8 +336,8 @@ bool MoveDef::DoRawSearch(
 			if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
 				break;
 
-			prevFwdTestBlk = fwdTestBlk;
-			prevRevTestBlk = revTestBlk;
+			// prevFwdTestBlk = fwdTestBlk;
+			// prevRevTestBlk = revTestBlk;
 
 			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
 			StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
