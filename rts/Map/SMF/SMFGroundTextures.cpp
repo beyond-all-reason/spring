@@ -536,7 +536,7 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 
 	pbo.Bind();
 	pbo.New(numSqBytes);
-	ExtractSquareTiles(x, y, level, (GLint*) pbo.MapBuffer(0, pbo.GetSize(), access | pbo.mapUnsyncedBit));
+	ExtractSquareTiles(x, y, level, reinterpret_cast<GLint*>(pbo.MapBuffer(0, pbo.GetSize(), access | pbo.mapUnsyncedBit)));
 	pbo.UnmapBuffer();
 
 	glDeleteTextures(1, square->GetTextureIDPtr());
@@ -573,9 +573,11 @@ void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 	square->SetMipLevel(0);
 	assert(!square->HasLuaTexture());
 
+	//skip pbo, makes little sense here
+
 	glGenTextures(1, square->GetTextureIDPtr());
 	glBindTexture(ttarget, square->GetTextureID());
-	//glSpringTexStorage2D(ttarget, 4, GL_RGBA8, smfMap->bigTexSize, smfMap->bigTexSize);
+
 	glTexParameteri(ttarget, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(ttarget, GL_TEXTURE_MAX_LEVEL , 3);
 
@@ -591,11 +593,11 @@ void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 	if (smfMap->GetTexAnisotropyLevel(false) != 0.0f)
 		glTexParameterf(ttarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, smfMap->GetTexAnisotropyLevel(false));
 
-	std::vector<uint8_t> tilesBuffer(smfMap->bigTexSize * smfMap->bigTexSize / 2);
+	std::vector<GLint> tilesBuffer(smfMap->bigTexSize * smfMap->bigTexSize / 2 / sizeof(GLint));
 	for (int level = 0; level <= 3; ++level) {
 		const int mipSqSize = smfMap->bigTexSize >> level;
 		const int numSqBytes = (mipSqSize * mipSqSize) / 2;
-		ExtractSquareTiles(x, y, level, reinterpret_cast<GLint*>(tilesBuffer.data()));
+		ExtractSquareTiles(x, y, level, tilesBuffer.data());
 		glCompressedTexImage2D(ttarget, level, tileTexFormat, mipSqSize, mipSqSize, 0, numSqBytes, tilesBuffer.data());
 	}
 
