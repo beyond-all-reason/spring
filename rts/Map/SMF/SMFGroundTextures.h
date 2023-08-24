@@ -18,16 +18,18 @@ public:
 
 	void DrawUpdate();
 	bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID);
-	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int texMipLevel);
+	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax);
 	void BindSquareTexture(int texSquareX, int texSquareY);
 
 protected:
 	void LoadTiles(CSMFMapFile& file);
 	void LoadSquareTextures(const int mipLevel);
+	void LoadSquareTexturesPersistent();
 	void ConvolveHeightMap(const int mapWidth, const int mipLevel);
 	bool RecompressTilesIfNeeded();
 	void ExtractSquareTiles(const int texSquareX, const int texSquareY, const int mipLevel, GLint* tileBuf) const;
 	void LoadSquareTexture(int x, int y, int level);
+	void LoadSquareTexturePersistent(int x, int y);
 
 	inline bool TexSquareInView(int, int) const;
 
@@ -77,6 +79,8 @@ private:
 
 	unsigned int tileTexFormat = 0;
 	// unsigned int pboUnsyncedBit = 0;
+	bool smfTextureStreaming = false;
+	float smfTextureLodBias = 0.0f;
 };
 
 #endif // _BF_GROUND_TEXTURES_H_
