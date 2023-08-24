@@ -254,7 +254,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	// there are many ways to fiddle with "deathScriptFinished", so a unit may
 	// arrive here not having been properly killed while isDead is still false
 	// make sure we always call Killed; no-op if isDead was already set to true
-	unit->ForcedKillUnit(nullptr, false, true, true);
+	unit->ForcedKillUnit(nullptr, false, true);
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
@@ -309,6 +309,7 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 void CUnitHandler::UpdateUnitMoveTypes()
 {
 	SCOPED_TIMER("Sim::Unit::MoveType");
+
 	GroundMoveSystem::Update();
 	GeneralMoveSystem::Update();
 }

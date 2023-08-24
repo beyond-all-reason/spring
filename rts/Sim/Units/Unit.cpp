@@ -448,15 +448,15 @@ void CUnit::FinishedBuilding(bool postInit)
 }
 
 
-void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (IsCrashing() && !beingBuilt)
 		return;
 
-	ForcedKillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
+	ForcedKillUnit(attacker, selfDestruct, reclaimed);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (isDead)
 		return;
@@ -477,7 +477,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		envResHandler.DelGenerator(this);
 
 	blockHeightChanges = false;
-	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	deathScriptFinished = (reclaimed || beingBuilt);
 
 	if (deathScriptFinished)
 		return;

@@ -56,20 +56,27 @@ Lua:
    matches in subdirs, recursively.
  - `gadget:AllowUnitCreation` now accepts a second return value that controls whether to drop the order.
    If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
+ - add `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) -> nil`, allowing to set
+   start box (in elmos) for an ally team.
  
 
 Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
    blank via 'initBlank' parameter (either 1 or 0) and specifying `blank_map_x`, `blank_map_y`,
    `blank_map_height` map options.
-
+ - Emit a warning instead of immediately failing when MapParser does not find startpos defined in
+   the map config for all teamIDs present in start script. This gives a chance to the game to remedy
+   the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
+   in the corner -- giving an obvious hint that something is amiss and the map is unable to support
+   this number of players by itself without assistance from the game.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
  - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
    the built-in `/info` playerlist won't display. Use for anonymous modes
    in conjunction with `Spring.GetPlayerInfo` poisoning.
- 
+ - Add new `/remove` cheat-only command, it removes selected units similar to
+   `/destroy` except no death script is run (so no explosion nor wreckage).
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
