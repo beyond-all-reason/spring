@@ -133,7 +133,7 @@ public:
 	void ComputeVariance();
 
 	void GenerateIndices();
-	void Upload();
+	void Upload(bool subData);
 	void Draw() const;
 	void DrawBorder() const;
 	void SetSquareTexture(const DrawPass::e& drawPass) const;
@@ -141,8 +141,8 @@ public:
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
 	void UploadVertices();
-	void UploadIndices();
-	void UploadBorderVertices();
+	void UploadIndices(bool subData);
+	void UploadBorderVertices(bool subData);
 
 	void InitMainVAO() const;
 	void InitBorderVAO() const;

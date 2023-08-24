@@ -21,7 +21,7 @@
 
 #include <cmath>
 
-
+CONFIG(bool, ROAMBufferSubData).defaultValue(true).description("Wether to update the index VBOs in place or always allocate new ones");
 
 #define LOG_SECTION_ROAM "RoamMeshDrawer"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ROAM)
@@ -56,6 +56,9 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 	numPatchesX = mapDims.mapx / PATCH_SIZE;
 	numPatchesY = mapDims.mapy / PATCH_SIZE;
 	// assert((numPatchesX == smfReadMap->numBigTexX) && (numPatchesY == smfReadMap->numBigTexY));
+	
+	configHandler->NotifyOnChange(this,{"ROAMBufferSubData"});
+	subData = configHandler->GetBool("ROAMBufferSubData");
 
 	ForceNextTesselation(true, true);
 
@@ -416,7 +419,7 @@ void CRoamMeshDrawer::Update()
 			if (!p.IsVisible(cam) || !p.isChanged)
 				continue;
 
-			p.Upload();
+			p.Upload(subData);
 			actualUploads++;
 		}
 	}
@@ -529,6 +532,12 @@ void CRoamMeshDrawer::DrawInMiniMap()
 
 	globalRendering->drawFrame += 1;
 	#endif
+}
+
+
+void CRoamMeshDrawer::ConfigNotify(const std::string& key, const std::string& value)
+{
+	subData = configHandler->GetBool("ROAMBufferSubData");
 }
 
 

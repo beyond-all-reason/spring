@@ -183,50 +183,61 @@ void Patch::UploadVertices()
 
 namespace {
 	template<typename T>
-	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2, bool subData = true)
 	{
 		if (vec.empty())
 			return false;
 
 		static constexpr auto usage = GL_STREAM_DRAW;
 		bool vboUpdated = false;
-
+		char tracybuf[128];
 		vbo.Bind();
-		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
-			// size the buffer down
-			vbo.Unbind();
-			vbo = VBO{ target, false, false };
-			vbo.Bind();
-			vbo.New(sz, usage, nullptr);
-			vboUpdated = true;
-		}
-		else if (sz > vbo.GetSize()) {
-			// size the buffer up
-			vbo.Resize(sz, usage);
-			vboUpdated = true;
-		}
+		if (subData){
+			if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
+				// size the buffer down
+				vbo.Unbind();
+				vbo = VBO{ target, false, false };
+				vbo.Bind();
+				vbo.New(sz, usage, nullptr);
+				vboUpdated = true;
+				sprintf(tracybuf, "Patch Uploading %d kBytes size down", vec.size()*sizeof(T)/1024);
+			} else if (sz > vbo.GetSize()) {
+				// size the buffer up
+				vbo.Resize(sz, usage);
+				vboUpdated = true;
+				sprintf(tracybuf, "Patch Uploading %d kBytes size up", vec.size()*sizeof(T)/1024);
+			} else {
+				sprintf(tracybuf, "Patch Uploading %d kBytes no change", vec.size()*sizeof(T)/1024);
+			}
 
-		vbo.SetBufferSubData(vec);
+			vbo.SetBufferSubData(vec);
+		} else {
+			vboUpdated = true;
+			sprintf(tracybuf, "Patch Uploading %d kBytes direct", vec.size()*sizeof(T)/1024);
+			vbo.SetBufferData(vec);
+		}
+		TracyMessage(tracybuf, sizeof(tracybuf));
 		vbo.Unbind();
 
 		return vboUpdated;
 	}
 }
 
-void Patch::UploadIndices()
+void Patch::UploadIndices(bool subData = true)
 {
-	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2))
+	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2, subData))
 		InitMainVAO();
 }
 
-void Patch::UploadBorderVertices()
+void Patch::UploadBorderVertices(bool subData = true)
 {
-	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2))
+	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2, subData))
 		InitBorderVAO();
 }
 
 void Patch::InitMainVAO() const
 {
+	ZoneScopedN("Patch::InitMainVAO");
 	mainVAO.Bind();
 
 	indxVBO.Bind();
@@ -247,6 +258,8 @@ void Patch::InitMainVAO() const
 
 void Patch::InitBorderVAO() const
 {
+
+	ZoneScopedN("Patch::InitMainVAO");
 	borderVAO.Bind();
 	borderVBO.Bind();
 
@@ -578,6 +591,7 @@ void Patch::ComputeVariance()
 //
 bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 {
+	ZoneScopedN("Patch::Tessellate");
 	isTesselated = true;
 
 	// Set/Update LOD params (FIXME: wrong height?)
@@ -740,10 +754,11 @@ void Patch::GenerateBorderVertices()
 }
 
 
-void Patch::Upload()
+void Patch::Upload(bool subData = true)
 {
-	UploadIndices();
-	UploadBorderVertices();
+	ZoneScopedN("Patch::Upload");
+	UploadIndices(subData);
+	UploadBorderVertices(subData);
 	isChanged = false;
 }
 
@@ -754,6 +769,7 @@ void Patch::SetSquareTexture(const DrawPass::e& drawPass) const
 
 void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX)
 {
+	ZoneScoped;
 	assert(cam->GetCamType() < CCamera::CAMTYPE_VISCUL);
 
 	const float minHeight = readMap->GetCurrMinHeight() - 100.0f;

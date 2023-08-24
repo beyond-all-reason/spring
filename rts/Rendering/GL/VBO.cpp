@@ -442,6 +442,16 @@ void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
 	assert(!mapped);
 	assert((offset + size) <= bufSize);
 	glBufferSubData(curBoundTarget, offset, size, data);
+	
+}
+
+void VBO::SetBufferData(GLsizeiptr size, const void* data)
+{
+	assert(!mapped);
+	assert((size) <= bufSize);
+	bufSize = size;
+	glBufferData(curBoundTarget, size, data, GL_STATIC_DRAW);
+	
 }
 
 
