@@ -509,13 +509,13 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 	desiredSpec.userdata = this;
 	
 	/* SDL bug: can return devices with >2 channels (3D surround), even if we ask for just 2.
- 	* This causes the 2 "primary" channels to be moved in the 3D space compared to their "normal" state and directional sound is not working anymore.
-  	* Though loudness changes on distance change still work.
- 	* For this reason, the engine rejects such devices down the road. Don't let it get that far and retry instead.
- 	*
- 	* Note that proper support for 3D surround sounds sounds hard, for example as of 2023 counter-strike has very weak support
- 	* for it, apparently noticeably worse than just stereo according to players, despite being in a more relevant genre. */
-	for(int channelDesired : {2, 1}) {
+	 * This causes the 2 "primary" channels to be moved in the 3D space compared to their "normal" state
+	 * and directional sound doesn't work anymore (though volume change with distance still does).
+	 * For this reason, the engine rejects such devices down the road. Don't let it get that far and retry instead.
+	 *
+	 * Note that proper support for 3D surround sounds sounds hard, for example as of 2023 counter-strike has very weak support
+	 * for it, apparently noticeably worse than just stereo according to players, despite being in a more relevant genre. */
+	for (int channelDesired : {2, 1}) {
 		desiredSpec.channels = channelsDesired;
 
 		sdlDeviceID = 0;
