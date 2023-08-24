@@ -515,11 +515,11 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 	 *
 	 * Note that proper support for 3D surround sounds sounds hard, for example as of 2023 counter-strike has very weak support
 	 * for it, apparently noticeably worse than just stereo according to players, despite being in a more relevant genre. */
+	selectedDeviceName = "";
 	for (int channelsDesired : {2, 1}) {
 		desiredSpec.channels = channelsDesired;
 
 		sdlDeviceID = 0;
-		selectedDeviceName = "";
 
 		if (!deviceName.empty()) {
 			LOG("[Sound::%s] opening configured device \"%s\"", __func__, deviceName.c_str());
