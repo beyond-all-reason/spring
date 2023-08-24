@@ -1282,7 +1282,7 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 
 float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 {
-
+	ZoneScoped;
 	float3 unitSpeed = unit->speed * predictMult;
 	float3 dist = unit->pos - weaponMuzzlePos;
 	float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
@@ -1345,6 +1345,7 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 
 float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 {
+	ZoneScoped;
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 
@@ -1486,11 +1487,13 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
+	ZoneScoped;
 	//float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 	float3 lead = unit->speed;
 	if (accurateLeading == true) {
-		float predictTime = GetAccuratePredictedImpactTime(unit);
+		float predictTime = GetPredictedImpactTime(unit->pos); // dummy func for now
+		predictTime = GetAccuratePredictedImpactTime(unit);
 		lead = unit->speed * predictTime * predictMult;
 	} else {
 		float predictTime = GetPredictedImpactTime(unit->pos);
