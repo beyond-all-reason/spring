@@ -509,13 +509,13 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 	desiredSpec.userdata = this;
 	
 	/* SDL bug: can return devices with >2 channels (3D surround), even if we ask for just 2.
- 	* (if tested) This causes the 2 "primary" channels to be moved in the 3D space compared to their "normal" state.
- 	* (if not tested) We are afraid that this risks the 2 "primary" channels to be moved in the 3D space compared to their "normal" state, but this remains to be tested.
+ 	* This causes the 2 "primary" channels to be moved in the 3D space compared to their "normal" state and directional sound is not working anymore.
+  	* Though loudness changes on distance change still work.
  	* For this reason, the engine rejects such devices down the road. Don't let it get that far and retry instead.
  	*
  	* Note that proper support for 3D surround sounds sounds hard, for example as of 2023 counter-strike has very weak support
  	* for it, apparently noticeably worse than just stereo according to players, despite being in a more relevant genre. */
-	for(int channelsDesired = 2; channelsDesired > 0; channelsDesired--) {
+	for(int channelDesired : {2, 1}) {
 		desiredSpec.channels = channelsDesired;
 
 		sdlDeviceID = 0;
@@ -533,18 +533,18 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 			selectedDeviceName = "default";
 		}
 
-		if (sdlDeviceID == 0) {
-			LOG("[Sound::%s] failed to open SDL audio, error:  \"%s\"", __func__, SDL_GetError());
-			SDL_QuitSubSystem(SDL_INIT_AUDIO);
-			return;
-		}
-
 		if (obtainedSpec.channels == desiredSpec.channels) {
 			break;
 		}
 
 		LOG("[Sound::%s] SDL returned %d channels, when we asked for %d. Closing previously opened device.", __func__, obtainedSpec.channels, desiredSpec.channels);
 		SDL_CloseAudioDevice(sdlDeviceID);
+	}
+
+	if (sdlDeviceID == 0) {
+		LOG("[Sound::%s] failed to open SDL audio, error:  \"%s\"", __func__, SDL_GetError());
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+		return;
 	}
 
 	// needs to be at least 1 or the callback will divide by 0
