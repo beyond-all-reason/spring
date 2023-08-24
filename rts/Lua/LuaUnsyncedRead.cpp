@@ -216,6 +216,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTimer);
 	REGISTER_LUA_CFUNC(GetTimerMicros);
 	REGISTER_LUA_CFUNC(GetFrameTimer);
+	REGISTER_LUA_CFUNC(GetLastSwapBuffersEnd);
+	REGISTER_LUA_CFUNC(GetLastSwapBuffersDuration);
 	REGISTER_LUA_CFUNC(DiffTimers);
 
 	REGISTER_LUA_CFUNC(GetDrawSeconds);
@@ -667,18 +669,50 @@ int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
  * This should give better results for camera interpolations
  *
  * @bool[opt=false] lastFrameTime whether to use last frame time instead of last frame start
+ * @bool[opt=false] micros Get a microsecond accurate timer
  * @treturn Timer
  */
 int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 {
+	bool micros = luaL_optboolean(L, 2, false);
 	if (luaL_optboolean(L, 1, false)) {
-		PushTimer(L, game->lastFrameTime, false);
+		PushTimer(L, game->lastFrameTime, micros);
 	} else {
-		PushTimer(L, globalRendering->lastFrameStart, false);
+		PushTimer(L, globalRendering->lastFrameStart, micros);
 	}
 	return 1;
 }
 
+
+/*** Get a timer for  when the last SwapBuffers finished
+ *
+ * @function Spring.GetLastSwapBuffersEnd
+ *
+ * For tracking vsync, and calculating frame and camera offsets.
+ * 
+ * @bool[opt=false] micros Get a microsecond accurate timer
+ * @treturn Timer
+ */
+int LuaUnsyncedRead::GetLastSwapBuffersEnd(lua_State* L)
+{
+	PushTimer(L, globalRendering->lastSwapBuffersEnd, luaL_optboolean(L, 2, false));
+	return 1;
+}
+
+
+/*** Get a timer for how long the last swapbuffers took (in milliseconds)
+ *
+ * @function Spring.GetLastSwapBuffersDuration
+ *
+ * For tracking vsync, and calculating frame and camera offsets.
+ * 
+ * @treturn number
+ */
+int LuaUnsyncedRead::GetLastSwapBuffersDuration(lua_State* L)
+{
+	lua_pushnumber(L, globalRendering->lastSwapBuffersDuration.toMilliSecsf());
+	return 1;
+}
 
 /***
  *

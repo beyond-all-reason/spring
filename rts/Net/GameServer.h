@@ -22,6 +22,9 @@
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
 
+#ifdef _WIN32
+	#include <winsock2.h>
+#endif
 /**
  * "player" number for GameServer-generated messages
  */
@@ -143,6 +146,15 @@ private:
 	void ResignPlayer(int playerNum);
 
 	bool CheckPlayerPassword(const int playerNum, const std::string& pw) const;
+
+	int MakeServerSelectSocketWait();
+	int ServerSelectSocketWait(int microsecs);
+	int CloseServerSelectSocketWait();
+	#ifdef _WIN32
+		SOCKET serverSocket, clientSocket;
+		struct sockaddr_in serverAddr, clientAddr;
+		int clientAddrLen;
+	#endif
 
 	unsigned BindConnection(
 		std::shared_ptr<netcode::CConnection> clientLink,

@@ -555,6 +555,12 @@ void CEventHandler::GameFrame(int gameFrame)
 	ITERATE_EVENTCLIENTLIST(GameFrame, gameFrame);
 }
 
+void CEventHandler::GameFramePost(int gameFrame)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(GameFramePost, gameFrame);
+}
+
 void CEventHandler::GameProgress(int gameFrame)
 {
 	ZoneScoped;
@@ -938,6 +944,10 @@ bool CEventHandler::MapDrawCmd(
 	return ControlReverseIterateDefTrue(listMapDrawCmd, &CEventClient::MapDrawCmd, playerID, type, pos0, pos1, label);
 }
 
+void CEventHandler::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+{
+	ITERATE_EVENTCLIENTLIST(UpdateTimeOffset, timeOffset, drawSimRatio);
+}
 
 /******************************************************************************/
 /******************************************************************************/

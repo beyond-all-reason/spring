@@ -769,6 +769,28 @@ void CLuaHandle::GameFrame(int frameNum)
 	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
 }
 
+/*** Called at the end of every game simulation frame (30 per second).
+ *
+ * @function GameFramePost
+ * @number frame Starts at frame 1
+ */
+void CLuaHandle::GameFramePost(int frameNum)
+{
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 4, __func__);
+
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, frameNum);
+
+	// call the routine
+	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
+}
 
 /*** Called once to deliver the gameID
  *
@@ -3329,6 +3351,31 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 	const bool retval = luaL_optboolean(L, -1, false);
 	lua_pop(L, 1);
 	return retval;
+}
+
+
+ *
+ * @function UpdateTimeOffset
+ * @number timeOffset
+ * @number drawSimRatio
+ * @return new timeOffset
+ */
+void CLuaHandle::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return ;
+
+	int args = 2;
+
+	lua_pushnumber(L, timeOffset);
+	lua_pushnumber(L, drawSimRatio);
+
+	// call the routine
+	RunCallIn(L, cmdStr, args, 0);
+	return;
 }
 
 

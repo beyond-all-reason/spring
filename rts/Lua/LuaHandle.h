@@ -113,6 +113,7 @@ class CLuaHandle : public CEventClient
 		void GameOver(const std::vector<unsigned char>& winningAllyTeams) override;
 		void GamePaused(int playerID, bool paused) override;
 		void GameFrame(int frameNum) override;
+		void GameFramePost(int frameNum) override;
 		void GameID(const unsigned char* gameID, unsigned int numBytes) override;
 
 		void TeamDied(int teamID) override;
@@ -231,6 +232,8 @@ class CLuaHandle : public CEventClient
 			const float3* pos1,
 			const std::string* label
 		) override;
+
+		void UpdateTimeOffset(float timeOffset, float drawSimRatio) override;
 
 		void ViewResize() override;
 

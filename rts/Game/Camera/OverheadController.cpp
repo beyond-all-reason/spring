@@ -108,7 +108,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 	if (move == 0.0f)
 		return;
 
-	camHandler->CameraTransition(0.05f);
+	camHandler->CameraTransition(0.05f); //MouseWheelMove
 
 	const bool moveFast     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
@@ -122,7 +122,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 	if (moveTilt) {
 		angle += (move * tiltSpeed * shiftSpeed * 0.025f) * angleStep;
 		angle = Clamp(angle, 0.01f, math::HALFPI);
-		camHandler->CameraTransition(0.125f);
+		camHandler->CameraTransition(0.125f); //moveTilt
 	} else {
 		const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
 
@@ -173,7 +173,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 		// instant-zoom: turn on the smooth transition and reset the camera tilt
 		if (moveReset) {
 			angle = DEFAULT_ANGLE;
-			camHandler->CameraTransition(1.0f);
+			camHandler->CameraTransition(1.0f); //moveReset
 		} else {
 			changeAltHeight = true;
 		}

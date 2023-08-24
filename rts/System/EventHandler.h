@@ -53,6 +53,7 @@ class CEventHandler
 		void GameOver(const std::vector<unsigned char>& winningAllyTeams);
 		void GamePaused(int playerID, bool paused);
 		void GameFrame(int gameFrame);
+		void GameFramePost(int gameFrame);
 		void GameID(const unsigned char* gameID, unsigned int numBytes);
 
 		void TeamDied(int teamID);
@@ -255,6 +256,8 @@ class CEventHandler
 		                const float3* pos0,
 		                const float3* pos1,
 		                const std::string* label);
+		
+		void UpdateTimeOffset(float timeOffset, float drawSimRatio);
 
 		void SunChanged();
 

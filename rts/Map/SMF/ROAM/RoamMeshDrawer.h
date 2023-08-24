@@ -37,6 +37,7 @@ public:
 
 	void UnsyncedHeightMapUpdate(const SRectangle& rect);
 	void DrawInMiniMap();
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 public:
 	enum {
@@ -87,6 +88,8 @@ private:
 
 	// whether tessellation should be forcibly performed next frame
 	static bool forceNextTesselation[MESH_COUNT];
+
+	bool subData = true;
 
 #ifdef DRAW_DEBUG_IN_MINIMAP
 	std::vector<float3> debugColors;

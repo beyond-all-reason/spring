@@ -447,7 +447,7 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 				return;
 
 			selectedUnitsHandler.AddUnit(sel);
-			camHandler->CameraTransition(0.8f);
+			camHandler->CameraTransition(0.8f); //SelectOne
 
 			if (camHandler->GetCurrentControllerNum() != CCameraHandler::CAMERA_MODE_FIRSTPERSON) {
 				camHandler->GetCurrentController().SetPos(sel->pos);

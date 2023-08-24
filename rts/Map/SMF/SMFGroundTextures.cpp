@@ -31,6 +31,9 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Threading/ThreadPool.h" // for_mt
+#include "System/Config/ConfigHandler.h"
+
+CONFIG(int, SMFMipLevelOverride).defaultValue(0).headlessValue(0).minimumValue(-1).maximumValue(3).description("Forces the mip level of the SMF diffuse texture to be X; preventing excessive reloading of textures. -1 retains old behavior and can save a bit of VRAM");
 
 using std::sprintf;
 
@@ -71,6 +74,15 @@ CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
 	LoadTiles(smfMap->GetMapFile());
 	LoadSquareTextures(3);
 	ConvolveHeightMap(mapDims.mapx, 1);
+
+	//Intentionally only check override after loading, to not have to load all of them at full resolution on launch
+	smfMipLevelOverride = configHandler->GetInt("SMFMipLevelOverride");
+	configHandler->NotifyOnChange(this,{"SMFMipLevelOverride"});
+}
+
+void CSMFGroundTextures::ConfigNotify(const std::string& key, const std::string& value)
+{
+	smfMipLevelOverride = configHandler->GetInt("SMFMipLevelOverride");
 }
 
 void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
@@ -331,10 +343,21 @@ void CSMFGroundTextures::DrawUpdate()
 			}
 
 			if (!TexSquareInView(x, y)) {
-				if ((square->GetMipLevel() < 3) && ((globalRendering->drawFrame - square->GetDrawFrame()) > 120)) {
+				if ((smfMipLevelOverride < -1 ) && 
+					(square->GetMipLevel() < 3) && 
+				   ((globalRendering->drawFrame - square->GetDrawFrame()) > 120)) {
 					// `unload` texture (load lowest mip-map) if
 					// the square wasn't visible for 120 vframes
+					// Note that this only saves a small amount of VRAM, at the cost of having to reload each bigsquaretexture whenever it comes into view.
 					LoadSquareTexture(x, y, 3);
+				}
+				continue;
+			}
+
+			// If any override is requested, then ensure they get set here. 
+			if (smfMipLevelOverride >= 0) {
+				if (square->GetMipLevel() != smfMipLevelOverride){
+					LoadSquareTexture(x, y, smfMipLevelOverride);
 				}
 				continue;
 			}
@@ -383,7 +406,6 @@ void CSMFGroundTextures::DrawUpdate()
 				wantedLevel = 2;
 			else
 				wantedLevel = 3;
-
 			// 16K is an approximation of the Sobel sum required to have a
 			// heightmap that has double the texture area of a flat square
 			if (stretchFactors[y * smfMap->numBigTexX + x] > 16000 && wantedLevel > 0)
@@ -492,6 +514,7 @@ void CSMFGroundTextures::ExtractSquareTiles(
 
 void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 {
+	ZoneScopedN("CSMFGroundTextures::LoadSquareTexture");
 	constexpr GLenum ttarget = GL_TEXTURE_2D;
 	constexpr GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
 

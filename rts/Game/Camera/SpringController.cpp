@@ -212,7 +212,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 			zoomTransTime = ZoomOut(curCamPos, newDir, curDistPre, scaledMove);
 		}
 
-		camHandler->CameraTransition(zoomTransTime);
+		camHandler->CameraTransition(zoomTransTime); //MouseWheelMove
 	}
 
 	Update();

@@ -323,6 +323,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(Yield);
 
+	REGISTER_LUA_CFUNC(LuaTracyPlotConfig);
+	REGISTER_LUA_CFUNC(LuaTracyPlot);
+
 	return true;
 }
 
@@ -4844,3 +4847,57 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 	lua_pushboolean(L, true); //hint Lua should keep calling Yield
 	return 1;
 }
+
+/* NB: strings here are never cleaned up, but the use case assumes
+ * that they live a long time and there's just a handful of them */
+std::set <std::string> tracyLuaPlots;
+
+/*** Initialize a plot in Tracy for use in debugging, up to 9 plots [1-9] may be used
+ *
+ * @function Spring.LuaTracyPlotConfig
+ * @string plotName which should be initialized
+ * @string[opt] plotFormatType "Number"|"Percentage"|"Memory", default "Number"
+ * @bool[opt] step stepwise chart, default stepwise
+ * @bool[opt] fill color fill, default no fill
+ * @number[opt] color unit32 number as BGR color, default white
+ * @treturn nil
+ */
+
+int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
+{
+    const auto plotName 			= luaL_checkstring(L, 1);
+    const auto plotFormatTypeString = luaL_optstring(L, 2, "");
+    const auto step 				= luaL_optboolean(L, 3, true); // stepwise default
+    const auto fill 				= luaL_optboolean(L, 4, false); // no fill default
+    const uint32_t color 			= luaL_optint(L, 5, 0xFFFFFF); // white default
+
+    tracy::PlotFormatType plotFormatType;
+    switch (plotFormatTypeString[0]) {
+        case 'p': case 'P': plotFormatType = tracy::PlotFormatType::Percentage; break;
+        case 'm': case 'M': plotFormatType = tracy::PlotFormatType::Memory;     break;
+        default:            plotFormatType = tracy::PlotFormatType::Number;     break;
+    }
+
+    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+    TracyPlotConfig(iterator->c_str(), plotFormatType, step, fill, color);
+    return 0;
+}
+
+
+/*** Update a Tracy Plot with a value
+ *
+ * @function Spring.LuaTracyPlot
+ * @string plotName which LuaPlot should be updated (must have been initialized as per above!)
+ * @number plotvalue the number to show on the Tracy plot
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
+{
+    const auto plotName  = luaL_checkstring(L, 1);
+    const auto plotValue = luaL_checkfloat(L, 2);
+
+    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+    TracyPlot(iterator->c_str(), plotValue);
+    return 0;
+}
+

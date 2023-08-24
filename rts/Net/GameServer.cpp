@@ -2693,6 +2693,96 @@ std::string CGameServer::SpeedControlToString(int speedCtrl)
 	return desc;
 }
 
+int CGameServer::MakeServerSelectSocketWait(){
+	#ifdef _WIN32
+		#define PORT 61887
+		WSADATA wsa;
+		//SOCKET serverSocket, clientSocket;
+		//struct sockaddr_in serverAddr, clientAddr;
+		clientAddrLen = sizeof(clientAddr);
+
+		// Initialize Winsock
+		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+			//printf("Winsock initialization failed.");
+			return 1;
+		}
+
+		// Create the server socket
+		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+		if (serverSocket == INVALID_SOCKET) {
+			//printf("Failed to create socket.");
+			return 2;
+		}
+
+		// Set up the server address
+		serverAddr.sin_family = AF_INET;
+		serverAddr.sin_addr.s_addr = INADDR_ANY;
+		serverAddr.sin_port = htons(PORT);
+
+		// Bind the socket
+		if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+			//printf("Bind failed.");
+			closesocket(serverSocket);
+			return 3;
+		}
+
+		// Listen for incoming connections
+		if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
+			//printf("Listen failed.");
+			closesocket(serverSocket);
+			return 4;
+		}
+
+		//printf("Server is listening on port %d...\n", PORT);
+		return 0;
+	#else
+		return -1;
+	#endif
+};
+
+int CGameServer::CloseServerSelectSocketWait(){
+	#ifdef _WIN32
+		closesocket(serverSocket);
+	#endif
+	return 0;
+};
+
+int CGameServer::ServerSelectSocketWait(int microsecs){
+	#ifdef _WIN32
+		fd_set readSet;  
+		FD_ZERO(&readSet);
+        FD_SET(serverSocket, &readSet);
+
+		struct timeval timeout;
+        // Set up the timeout
+        timeout.tv_sec = 0;
+        timeout.tv_usec = microsecs; // 1 millisecond
+
+        // Use select to check if there's data to read on the server socket with the timeout
+        int activity = select(0, &readSet, NULL, NULL, &timeout);
+
+        if (activity == SOCKET_ERROR) {
+            //printf("Select error occurred.");
+            return 1;
+        } else if (activity == 0) {
+            // Timeout occurred
+            //printf("Timeout occurred. No data to read.\n");
+        } else {
+            // Accept the incoming connection, nobody should be connect things
+            clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &clientAddrLen);
+            if (clientSocket == INVALID_SOCKET) {
+                //printf("Accept failed.");
+                return 2;
+            }
+            // Read data from the client here, if needed
+            // Close the client socket
+            closesocket(clientSocket);
+        }
+		return 0;
+	#else
+		return -1;
+	#endif
+};
 
 __FORCE_ALIGN_STACK__
 void CGameServer::UpdateLoop()
@@ -2701,16 +2791,43 @@ void CGameServer::UpdateLoop()
 		Threading::SetThreadName("netcode");
 		Threading::SetAffinity(~0);
 
-		while (!quitServer) {
-			spring_msecs(loopSleepTime).sleep(true);
+		int hasServerSelectSocketWait = MakeServerSelectSocketWait();
 
+		while (!quitServer) {
+			int waitedSuccessfully = -1;
+			if (hasServerSelectSocketWait == 0){
+				ZoneScopedN("CGameServer::UpdateLoop::ServerSelectSocketWait");
+				waitedSuccessfully = ServerSelectSocketWait(1000 * loopSleepTime);
+			} 
+			if (waitedSuccessfully != 0){
+				ZoneScopedN("CGameServer::UpdateLoop::SpringSleep");
+				spring_msecs(loopSleepTime).sleep(true);
+			}
+			
+			/*{
+				ZoneScopedN("future.wait_for(6.6666ms)");
+				using namespace std::chrono_literals;
+				auto future = std::async(std::launch::async, []() {return 1;});
+				auto status = future.wait_for(6.6666ms); //60 FPS
+			}*/
+
+			// Periodically, try to use a little bit of a busy wait to sync up to lastSwapBuffersTime
+			// we should consistenty issue sim frames ~5 ms before the last lastSwapBuffersEnd
+			// we need to do this however in Update()!
+
+			//globalRendering->lastSwapBuffersEnd;
+			// we have gu-> though!
+			
 			if (udpListener != nullptr)
 				udpListener->Update();
-
+				
 			std::lock_guard<spring::recursive_mutex> scoped_lock(gameServerMutex);
+		
 			ServerReadNet();
 			Update();
 		}
+		
+		if (hasServerSelectSocketWait == 0) CloseServerSelectSocketWait();
 
 		if (hostif != nullptr)
 			hostif->SendQuit();

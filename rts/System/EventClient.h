@@ -114,6 +114,7 @@ class CEventClient
 		virtual void GameOver(const std::vector<unsigned char>& winningAllyTeams) {}
 		virtual void GamePaused(int playerID, bool paused) {}
 		virtual void GameFrame(int gameFrame) {}
+		virtual void GameFramePost(int gameFrame) {}
 		virtual void GameID(const unsigned char* gameID, unsigned int numBytes) {}
 
 		virtual void TeamDied(int teamID) {}
@@ -317,6 +318,8 @@ class CEventClient
 		                        const float3* pos0,
 		                        const float3* pos1,
 		                        const std::string* label);
+
+		virtual void UpdateTimeOffset(float timeOffset, float drawSimRatio) {}
 
 		virtual void SunChanged();
 
