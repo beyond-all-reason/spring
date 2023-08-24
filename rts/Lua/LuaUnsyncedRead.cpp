@@ -2531,8 +2531,9 @@ int LuaUnsyncedRead::GetMapDrawMode(lua_State* L)
  * @function Spring.GetMapSquareTexture
  * @number texSquareX
  * @number texSquareY
- * @number texMipLevel
+ * @number lodMin
  * @string luaTexName
+ * @number[opt=lodMin] lodMax
  * @treturn nil|bool success
  */
 int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
@@ -2543,8 +2544,9 @@ int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 
 	const int texSquareX = luaL_checkint(L, 1);
 	const int texSquareY = luaL_checkint(L, 2);
-	const int texMipLevel = luaL_checkint(L, 3);
+	const int lodMin = luaL_checkint(L, 3);
 	const std::string& texName = luaL_checkstring(L, 4);
+	const int lodMax = luaL_optinteger(L, 5, lodMin); // should have been in pos 4 instead, but the compatibility is the king
 
 	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
 	CBaseGroundTextures* groundTextures = groundDrawer->GetGroundTextures();
@@ -2577,7 +2579,7 @@ int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 		return 1;
 	}
 
-	lua_pushboolean(L, groundTextures->GetSquareLuaTexture(texSquareX, texSquareY, tid, txs, tys, texMipLevel));
+	lua_pushboolean(L, groundTextures->GetSquareLuaTexture(texSquareX, texSquareY, tid, txs, tys, lodMin, lodMax));
 	return 1;
 }
 
