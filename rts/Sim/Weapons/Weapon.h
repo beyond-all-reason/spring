@@ -110,6 +110,7 @@ protected:
 	void UpdateWeaponVectors();
 	float3 GetLeadVec(const CUnit* unit) const;
 	float GetAccuratePredictedImpactTime(const CUnit* unit) const;
+	float GetSafeInterceptTime(const CUnit* unit, float predictMult) const;
 
 private:
 	void UpdateAim();

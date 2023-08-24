@@ -1275,6 +1275,69 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 //#include<iostream>
 //#include<string>
 
+float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
+{
+
+	float3 unitSpeed = unit->speed * predictMult;
+	float3 dist = unit->pos - weaponMuzzlePos;
+	float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+	float bb = 2 * (dist.dot(unitSpeed));
+	float cc = dist.dot(dist);
+	float temp1 = 4 * aa * cc;
+	float temp2 = (bb * bb);
+	float predictTime = 0.0;
+	// goal here is to return the smallest positive solution to a quadratic formula
+	// while also being numerically stable
+	// We also know c is strictly positive.
+
+	// case 1, aa <0, target speed is less than projectile speed
+	// guaranteed existence of a positive solution
+	if (aa < -1) {
+		// standard quadratic formula
+		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+	}
+	else if (aa <= 0) {
+		// check catastrophic case of aa=0 and bb=0 
+		// target speed equal to projectile speed, and target is moving tangentally
+		if ((std::abs(aa) < (1.0 / (2 ^ 16))) && (std::abs(bb) < (1.0 / (2 ^ 16)))) {
+			return 0.0;
+		}
+		// use Citardauq Formula if aa is small
+		predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
+	}
+	// case 2, aa >0, target speed is greater than projectile speed
+	// no postive solution may exist
+	else if (aa > 0) {
+		// check for imaginary solutions
+		if (temp1 >= temp2) {
+			// this triggers if the target cannot be intercepted
+			// units can get out of range before the slow projectile can hit it
+			return 0.0;
+		}
+
+		// check if fast target is moving away from us
+		if (bb > 0) {
+			return 0.0;
+		}
+		if (aa > 1) {
+			// standard quadratic formula
+			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+		}
+		else {
+			// check catastrophic case of aa=0 and bb=0 
+			// target speed equal to projectile speed, and target is moving tangentally
+			if ((std::abs(aa) < (1.0 / (2 ^ 16))) && (std::abs(bb) < (1.0 / (2 ^ 16)))) {
+				return 0.0;
+			}
+			// use Citardauq Formula if aa is small
+			predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
+		}
+	}
+	
+	return predictTime;
+
+}
+
 float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 {
 	float predictTime = GetPredictedImpactTime(unit->pos);
@@ -1351,7 +1414,7 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 
 				//std::cout << "t1 = " << t1 << std::endl;
 				//std::cout << "dt = " << dt1 << std::endl;
-				if (std::abs(dt1 < 1)) {
+				if (std::abs(dt1) < 1) {
 					// abs(dt1) less than 1 means newton iteration is stable, and can be used
 					t1 = predictTime - (t1 - predictTime) / (dt1 - 1);
 				}
@@ -1370,6 +1433,8 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 			// cannon has no gravity
 			// non-parabolic projectiles are much easier
 			// simple quadratic equation
+			predictTime = GetSafeInterceptTime(unit, predictMult);
+			/*
 			float3 unitSpeed = unit->speed * predictMult;
 			float3 dist = unit->pos - weaponMuzzlePos;
 			float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
@@ -1383,12 +1448,15 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 				return predictTime;
 			}
 			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+			*/
 		}
 	}
 	else {
 
 		// non-parabolic projectiles are much easier
 		// simple quadratic equation
+		predictTime = GetSafeInterceptTime(unit, predictMult);
+		/*
 		float3 unitSpeed = unit->speed * predictMult;
 		float3 dist = unit->pos - weaponMuzzlePos;
 		float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
@@ -1403,6 +1471,7 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 		}
 		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
 		//std::cout << "basic check = " << predictTime << std::endl;
+		*/
 
 	}
 
