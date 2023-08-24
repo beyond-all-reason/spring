@@ -206,17 +206,21 @@ static float getRulesParamFloatValueByName(
 	const char* rulesParamName,
 	float defaultValue
 ) {
-	float value = defaultValue;
 	const std::string key(rulesParamName);
 	const auto it = params.find(key);
-
 	if (it == params.end())
-		return value;
+		return defaultValue;
 
-	if (modParamIsVisible(it->second, losMask))
-		value = it->second.valueInt;
+	const LuaRulesParams::Param& param = it->second;
+	if (!modParamIsVisible(param, losMask))
+		return defaultValue;
 
-	return value;
+	if (std::holds_alternative <std::string> (param.value))
+		return defaultValue;
+	else if (std::holds_alternative <bool> (param.value))
+		return std::get <bool> (param.value) ? 1.0f : 0.0f;
+	else
+		return std::get <float> (param.value);
 }
 
 static const char* getRulesParamStringValueByName(
@@ -225,17 +229,19 @@ static const char* getRulesParamStringValueByName(
 	const char* rulesParamName,
 	const char* defaultValue
 ) {
-	const char* value = defaultValue;
 	const std::string key(rulesParamName);
 	const auto it = params.find(key);
-
 	if (it == params.end())
-		return value;
+		return defaultValue;
 
-	if (modParamIsVisible(it->second, losMask))
-		value = it->second.valueString.c_str();
+	const LuaRulesParams::Param& param = it->second;
+	if (!modParamIsVisible(it->second, losMask))
+		return defaultValue;
 
-	return value;
+	if (!std::holds_alternative <std::string> (param.value))
+		return defaultValue;
+
+	return std::get <std::string> (param.value).c_str();
 }
 
 

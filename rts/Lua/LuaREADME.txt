@@ -19,8 +19,9 @@ The LuaHandleSynced derivatives all use the same mechanism for sync protection.
 2. The synced code can not read from the unsynced code, but may send
    messages to it.
 3. The unsynced code can read from the synced code using the SYNCED proxy table.
-   That table does not allow access to functions. There snext(), spairs(),
-   and sipairs() functions can be used on the SYNCED tables and its sub-tables.
+   That table makes *a copy* of the object on the other side, and only copies
+   numbers, strings, bools and tables (recursively but with the type restriction),
+   in particular this does not allow access to functions.
 
 
 Access Modes

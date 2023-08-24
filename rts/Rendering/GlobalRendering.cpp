@@ -1,6 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 #include <SDL.h>
 
@@ -11,7 +13,6 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/VK/VkInfo.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
 #include "System/bitops.h"
@@ -89,7 +90,7 @@ CONFIG(bool, ForceDisableShaders).deprecated(true);
  *
  * Global instance of CGlobalRendering
  */
-static uint8_t globalRenderingMem[sizeof(CGlobalRendering)];
+alignas(CGlobalRendering) static std::byte globalRenderingMem[sizeof(CGlobalRendering)];
 
 CGlobalRendering* globalRendering = nullptr;
 GlobalRenderingInfo globalRenderingInfo;
@@ -610,8 +611,6 @@ void CGlobalRendering::PostInit() {
 	glewExperimental = true;
 	#endif
 
-	//VkInfo::PrintInfo();
-
 	glewInit();
 	// glewInit sets GL_INVALID_ENUM, get rid of it
 	glGetError();
@@ -956,6 +955,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tFBO extension support     : %i", FBO::IsSupported());
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));
 	LOG("\tATI GPU mem-info support  : %i", glewIsExtensionSupported("GL_ATI_meminfo"));
+	LOG("\tTexture clamping to edge  : %i", glewIsExtensionSupported("GL_EXT_texture_edge_clamp"));
 	LOG("\tNPOT-texture support      : %i (%i)", supportNonPowerOfTwoTex, glewIsExtensionSupported("GL_ARB_texture_non_power_of_two"));
 	LOG("\tS3TC/DXT1 texture support : %i/%i", glewIsExtensionSupported("GL_EXT_texture_compression_s3tc"), glewIsExtensionSupported("GL_EXT_texture_compression_dxt1"));
 	LOG("\ttexture query-LOD support : %i (%i)", supportTextureQueryLOD, glewIsExtensionSupported("GL_ARB_texture_query_lod"));
@@ -988,6 +988,79 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\t");
 	LOG("\tenable AMD-hacks : %i", amdHacks);
 	LOG("\tcompress MIP-maps: %i", compressTextures);
+
+	GLint numberOfTextureFormats = 0;
+	glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numberOfTextureFormats);
+	std::vector<GLint> textureFormats; textureFormats.resize(numberOfTextureFormats);
+	glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, textureFormats.data());
+
+	#define EnumToString(arg) { arg, #arg }
+	std::unordered_map<GLenum, std::string> compressedEnumToString = {
+		EnumToString(GL_COMPRESSED_RED_RGTC1),
+		EnumToString(GL_COMPRESSED_SIGNED_RED_RGTC1),
+		EnumToString(GL_COMPRESSED_RG_RGTC2),
+		EnumToString(GL_COMPRESSED_SIGNED_RG_RGTC2),
+		EnumToString(GL_COMPRESSED_RGBA_BPTC_UNORM),
+		EnumToString(GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM),
+		EnumToString(GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT),
+		EnumToString(GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT),
+		EnumToString(GL_COMPRESSED_RGB8_ETC2),
+		EnumToString(GL_COMPRESSED_SRGB8_ETC2),
+		EnumToString(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+		EnumToString(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+		EnumToString(GL_COMPRESSED_RGBA8_ETC2_EAC),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC),
+		EnumToString(GL_COMPRESSED_R11_EAC),
+		EnumToString(GL_COMPRESSED_SIGNED_R11_EAC),
+		EnumToString(GL_COMPRESSED_RG11_EAC),
+		EnumToString(GL_COMPRESSED_SIGNED_RG11_EAC),
+		EnumToString(GL_COMPRESSED_RGB_S3TC_DXT1_EXT),
+		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT),
+		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT),
+		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_4x4_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_5x4_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_5x5_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_6x5_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_6x6_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x5_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x6_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x8_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x5_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x6_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x8_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x10_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_12x10_KHR),
+		EnumToString(GL_COMPRESSED_RGBA_ASTC_12x12_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR),
+		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR),
+	};
+	#undef EnumToString
+
+	LOG("\tNumber of compressed texture formats: %i", numberOfTextureFormats);
+	std::ostringstream ss;
+	for (auto tf : textureFormats) {
+		auto it = compressedEnumToString.find(tf);
+		if (it != compressedEnumToString.end())
+			ss << it->second << ", ";
+		else
+			ss << "0x" << std::hex << tf << ", ";
+	}
+	ss.seekp(-2, std::ios_base::end);
+	ss << ".";
+	LOG("\tCompressed texture formats: %s", ss.str().c_str());
 }
 
 void CGlobalRendering::LogDisplayMode(SDL_Window* window) const

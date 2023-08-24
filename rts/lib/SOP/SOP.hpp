@@ -89,45 +89,51 @@ struct Setting {
     };
 };
 
+
+#define NV_DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
+NV_DECLARE_HANDLE(NvDRSSessionHandle);
+NV_DECLARE_HANDLE(NvDRSProfileHandle);
+#undef NV_DECLARE_HANDLE
+
 // Definitions for required NvAPI functions
-typedef int (*CreateApplicationT)(int session, int profile, Application* application);
-CreateApplicationT CreateApplication = NULL;
+typedef int (*CreateApplicationT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Application* application);
+CreateApplicationT CreateApplication =  nullptr;
 
-typedef int (*CreateProfileT)(int session, Profile* profileInfo, int* profile);
-CreateProfileT CreateProfile = NULL;
+typedef int (*CreateProfileT)(NvDRSSessionHandle session, Profile* profileInfo, NvDRSProfileHandle* profile);
+CreateProfileT CreateProfile =  nullptr;
 
-typedef int (*CreateSessionT)(int* session);
-CreateSessionT CreateSession = NULL;
+typedef int (*CreateSessionT)(NvDRSSessionHandle* session);
+CreateSessionT CreateSession =  nullptr;
 
-typedef int (*DeleteProfileT)(int session, int profile);
-DeleteProfileT DeleteProfile = NULL;
+typedef int (*DeleteProfileT)(NvDRSSessionHandle session, NvDRSProfileHandle profile);
+DeleteProfileT DeleteProfile =  nullptr;
 
-typedef int (*DestroySessionT)(int session);
-DestroySessionT DestroySession = NULL;
+typedef int (*DestroySessionT)(NvDRSSessionHandle session);
+DestroySessionT DestroySession =  nullptr;
 
-typedef int (*EnumApplicationsT)(int session, int profile, unsigned long startIndex, unsigned long* appCount, Application* application);
-EnumApplicationsT EnumApplications = NULL;
+typedef int (*EnumApplicationsT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, unsigned long startIndex, unsigned long* appCount, Application* application);
+EnumApplicationsT EnumApplications =  nullptr;
 
-typedef int (*FindProfileByNameT)(int session, unsigned short profileName[2048], int* profile);
-FindProfileByNameT FindProfileByName = NULL;
+typedef int (*FindProfileByNameT)(NvDRSSessionHandle session, unsigned short profileName[2048], NvDRSProfileHandle* profile);
+FindProfileByNameT FindProfileByName =  nullptr;
 
-typedef int (*GetProfileInfoT)(int session, int profile, Profile* profileInfo);
-GetProfileInfoT GetProfileInfo = NULL;
+typedef int (*GetProfileInfoT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Profile* profileInfo);
+GetProfileInfoT GetProfileInfo =  nullptr;
 
-typedef int (*LoadSettingsT)(int session);
-LoadSettingsT LoadSettings = NULL;
+typedef int (*LoadSettingsT)(NvDRSSessionHandle session);
+LoadSettingsT LoadSettings =  nullptr;
 
-typedef int (*SaveSettingsT)(int session);
-SaveSettingsT SaveSettings = NULL;
+typedef int (*SaveSettingsT)(NvDRSSessionHandle session);
+SaveSettingsT SaveSettings =  nullptr;
 
-typedef int (*SetSettingT)(int session, int profile, Setting* setting);
-SetSettingT SetSetting = NULL;
+typedef int (*SetSettingT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Setting* setting);
+SetSettingT SetSetting =  nullptr;
 
 typedef int (*InitializeT)();
-InitializeT Initialize = NULL;
+InitializeT Initialize =  nullptr;
 
 typedef int* (*QueryInterfaceT)(unsigned int offset);
-QueryInterfaceT QueryInterface = NULL;
+QueryInterfaceT QueryInterface =  nullptr;
 
 bool CheckForError(int status) {
     if (status != 0) {
@@ -165,21 +171,12 @@ void GetUnicodeString(std::string sourceString, unsigned short (* destinationStr
 }
 
 bool GetProcs() {
-    // Check if this is a 32 bit application
-    if (sizeof(void*) != 4) {
-#if _DEBUG
-        fprintf(stderr, "Only 32 bit applications are supported.");
-#endif
-
-        return false;
-    }
-
-    HMODULE hMod = LoadLibraryA("nvapi.dll");
+    auto hMod = LoadLibraryA("nvapi64.dll");
     
-    // Check if the nvapi.dll is available
-    if (hMod == NULL) {
+    // Check if the nvapi64.dll is available
+    if (hMod ==  nullptr) {
 #if _DEBUG
-        fprintf(stderr, "The nvapi.dll could not be found.");
+        fprintf(stderr, "The nvapi64.dll could not be found.");
 #endif
 
         return false;
@@ -190,7 +187,7 @@ bool GetProcs() {
 
 #define SafeQueryInterface(var, type, value) \
 	var = (type) (*QueryInterface)(value); \
-	if (var == NULL) return false;
+	if (var ==  nullptr) return false;
     // Query the procs with an ID
     // the IDs can be retrieved by parsing the nvapi.lib such that no library has to be linked
     SafeQueryInterface(CreateApplication, CreateApplicationT, 0x4347A9DE);
@@ -209,7 +206,7 @@ bool GetProcs() {
     return true;
 }
 
-bool ContainsApplication(int session, int profile, Profile profileDescriptor, unsigned short applicationName[2048], Application* application) {
+bool ContainsApplication(NvDRSSessionHandle session, NvDRSProfileHandle profile, Profile profileDescriptor, unsigned short applicationName[2048], Application* application) {
     if (profileDescriptor.numOfApps == 0) {
         return false;
     }
@@ -242,8 +239,8 @@ bool ContainsApplication(int session, int profile, Profile profileDescriptor, un
 // the name provided exists.
 bool SOP_CheckProfile(std::string profileNameString) {
     bool result = false;
-    int session = 0;
-    int profile = 0;
+    NvDRSSessionHandle session = 0;
+    NvDRSProfileHandle profile = 0;
     
     // Initialize NvAPI
     if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
@@ -281,8 +278,8 @@ bool SOP_CheckProfile(std::string profileNameString) {
 int SOP_RemoveProfile(std::string profileNameString) {
     int result = SOP_RESULT_NO_CHANGE;
     int status = 0;
-    int session = 0;
-    int profile = 0;
+    NvDRSSessionHandle session = 0;
+    NvDRSProfileHandle profile = 0;
     
     // Initialize NvAPI
     if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
@@ -339,8 +336,8 @@ int SOP_RemoveProfile(std::string profileNameString) {
 int SOP_SetProfile(std::string profileNameString, std::string applicationNameString) {
     int result = SOP_RESULT_NO_CHANGE;
     int status = 0;
-    int session = 0;
-    int profile = 0;
+    NvDRSSessionHandle session = 0;
+    NvDRSProfileHandle profile = 0;
     
     // Initialize NvAPI
     if ((!GetProcs()) || (CheckForError((*Initialize)()))) {

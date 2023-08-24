@@ -99,6 +99,7 @@ CR_REG_METADATA(UniformParamsBuffer, (
 		CR_MEMBER(mouseScreenPos),
 		CR_MEMBER(mouseStatus),
 		CR_MEMBER(mouseUnused),
+		CR_MEMBER(mouseWorldPos),
 
 		CR_MEMBER(teamColor),
 

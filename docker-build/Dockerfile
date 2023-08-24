@@ -1,7 +1,7 @@
-FROM ubuntu:18.04 AS mxe
+FROM debian:bullseye AS mxe
 
-ARG mxe_version=02852a7b690aa411ce2a2089deea25a7292a33d6
-ARG mxe_gcc=gcc11
+ARG mxe_version=70e31e42f0584fea37aa46a74dcaa6e4eecd4304
+ARG mxe_gcc=gcc13
 
 # Install MXE dependencies
 RUN apt-get update;apt-get install -y \
@@ -31,11 +31,12 @@ RUN apt-get update;apt-get install -y \
         patch \
         perl \
         python \
+        python3-mako \
         ruby \
         sed \
         unzip \
         wget \
-        xz-utils
+        xz-utils 
 
 # Install MXE and build cross-compile windows gcc
 RUN cd /; \
@@ -74,10 +75,10 @@ RUN apt-get update -y; \
         pip3 install cmake==$cmake_version; \
         apt purge python3-pip -y; apt auto-remove -y
 
-# GCC-10 PPA (linux-64)
+# GCC-13 PPA (linux-64)
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
     apt update -y; \
-    apt install -y gcc-11 g++-11
+    apt install -y gcc-13 g++-13
 
 # Install Build Dependencies (linux-64)
 RUN apt-get install --fix-missing -y \
@@ -102,13 +103,6 @@ RUN git clone https://github.com/ccache/ccache.git /tmp/ccache/src; \
 ENV CCACHE_DIR=/ccache
 ENV CCACHE_CONFIGPATH=/etc/ccache.conf
 ENV PATH="/usr/lib/ccache:${PATH}"
-
-# Install Vulkan SDK
-RUN apt install wget; \
-	wget -q https://sdk.lunarg.com/sdk/download/latest/linux/vulkan-sdk.tar.gz; \
-	mkdir /vulkan-sdk && tar -xf vulkan-sdk.tar.gz --strip-components=1 -C /vulkan-sdk; \
-	rm -rf vulkan-sdk.tar.gz
-
 
 COPY scripts /scripts
 ENV PATH="/scripts:${PATH}"

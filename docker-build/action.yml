@@ -77,13 +77,13 @@ runs:
           RANDOMNUMB=$(head /dev/random -c 32 | sha1sum | awk '{ print $1 }')
           CACHEKEY+="-${RANDOMNUMB}"
         fi
-        echo "::set-output name=cachekey::$CACHEKEY"
+        echo "cachekey=$CACHEKEY" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Download Cache Data
       if: inputs.use-cache == 'true' && inputs.docker-image == '*'
       id: cache-dl-docker
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /tmp/docker
         key: ${{ steps.get-prim-cache-key.outputs.cachekey }}
@@ -116,7 +116,7 @@ runs:
     - name: Run Docker Build
       run: |
         # Docker args
-        ARGS=(run -v /tmp/ccache:/ccache -v "${{ github.workspace }}/artifacts:/publish")
+        ARGS=(run --name recoilbuilder -v /tmp/ccache:/ccache -v "${{ github.workspace }}/artifacts:/publish")
 
         if [ "${{ inputs.debug-ccache }}" == "true" ]; then
           ARGS+=(-v "${{ github.workspace }}/ccache_dbg:/ccache_dbg" )
@@ -154,6 +154,9 @@ runs:
           echo "tmate debugging enabled. Skipping docker run command. Connect via SSH now..."
         else
           docker "${ARGS[@]}"
+
+          echo "bin_name=$(docker cp recoilbuilder:/output-data/bin_name - | tar -xO)" >> "$GITHUB_OUTPUT"
+          echo "dbg_name=$(docker cp recoilbuilder:/output-data/dbg_name - | tar -xO)" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
       id: docker-run

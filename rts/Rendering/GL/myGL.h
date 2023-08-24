@@ -43,19 +43,6 @@
 	#define GL_INVALID_INDEX -1
 #endif
 
-static const spring::unordered_map<GLenum, GLenum> FormatToQuery {
-	{ GL_TEXTURE_1D                  , GL_TEXTURE_BINDING_1D                   },
-	{ GL_TEXTURE_2D                  , GL_TEXTURE_BINDING_2D                   },
-	{ GL_TEXTURE_3D                  , GL_TEXTURE_BINDING_3D                   },
-	{ GL_TEXTURE_1D_ARRAY            , GL_TEXTURE_BINDING_1D_ARRAY             },
-	{ GL_TEXTURE_2D_ARRAY            , GL_TEXTURE_BINDING_2D_ARRAY             },
-	{ GL_TEXTURE_RECTANGLE           , GL_TEXTURE_BINDING_RECTANGLE            },
-	{ GL_TEXTURE_CUBE_MAP            , GL_TEXTURE_BINDING_CUBE_MAP             },
-	{ GL_TEXTURE_BUFFER              , GL_TEXTURE_BINDING_BUFFER               },
-	{ GL_TEXTURE_2D_MULTISAMPLE      , GL_TEXTURE_BINDING_2D_MULTISAMPLE       },
-	{ GL_TEXTURE_2D_MULTISAMPLE_ARRAY, GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY },
-};
-
 struct TextureParameters {
 	GLint intFmt;
 	GLint sizeX;
@@ -126,6 +113,7 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 void glSaveTexture(const GLuint textureID, const char* filename, int level = 0);
 void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures);
 void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
+void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth);
 void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data);
 bool glSpringBlitImages(
 	GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,

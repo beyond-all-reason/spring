@@ -122,6 +122,8 @@ public:
 
 	bool mapped(void* p) const { return (table.find(p) != table.end()); }
 	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data() == p)); }
+	bool can_alloc() const { return true; }
+	bool can_free() const { return indcs.size() < pages.size(); }
 
 	void clear() {
 		pages.clear();
@@ -251,6 +253,8 @@ public:
 
 	bool mapped(void* ptr) const { return ((page_idx(ptr) < (num_chunks * K)) && (page_mem(page_idx(ptr), sizeof(uint32_t)) == ptr)); }
 	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index, sizeof(uint32_t)) == ptr)); }
+	bool can_alloc() const { return num_chunks < N || !indcs.empty() ; }
+	bool can_free() const { return indcs.size() < (NUM_CHUNKS() * NUM_PAGES()); }
 
 private:
 	// first sizeof(uint32_t) bytes are reserved for index

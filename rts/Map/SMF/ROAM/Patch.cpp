@@ -192,21 +192,17 @@ namespace {
 		bool vboUpdated = false;
 
 		vbo.Bind();
-		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
-			// size the buffer down
+		if (const size_t sz = vec.size() * sizeof(T); (sz > vbo.GetSize() || vbo.GetSize() >= sz * sizeMult)) {
+			// resize/remake the buffer without copying the old buffer content
 			vbo.Unbind();
 			vbo = VBO{ target, false, false };
 			vbo.Bind();
-			vbo.New(sz, usage, nullptr);
+			vbo.New(vec, usage);
 			vboUpdated = true;
 		}
-		else if (sz > vbo.GetSize()) {
-			// size the buffer up
-			vbo.Resize(sz, usage);
-			vboUpdated = true;
+		else {
+			vbo.SetBufferSubData(vec);
 		}
-
-		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
 
 		return vboUpdated;

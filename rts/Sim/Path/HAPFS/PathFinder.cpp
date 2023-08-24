@@ -641,4 +641,8 @@ void CPathFinder::AdjustFoundPath(
 	}
 }
 
+float CPathFinder::GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const {
+	return pfDef.Heuristic(square.x, square.y, BLOCK_SIZE);
+}
+
 }

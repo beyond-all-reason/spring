@@ -136,6 +136,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 
 	REGISTER_LUA_CFUNC(SetAlly);
+	REGISTER_LUA_CFUNC(SetAllyTeamStartBox);
 	REGISTER_LUA_CFUNC(KillTeam);
 	REGISTER_LUA_CFUNC(AssignPlayerToTeam);
 	REGISTER_LUA_CFUNC(GameOver);
@@ -149,6 +150,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetGameRulesParam);
 	REGISTER_LUA_CFUNC(SetTeamRulesParam);
+	REGISTER_LUA_CFUNC(SetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(SetUnitRulesParam);
 	REGISTER_LUA_CFUNC(SetFeatureRulesParam);
 
@@ -190,6 +192,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitBlocking);
 	REGISTER_LUA_CFUNC(SetUnitCrashing);
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
+	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
@@ -798,6 +801,38 @@ int LuaSyncedCtrl::SetAlly(lua_State* L)
 }
 
 
+/*** Changes the start box position of an allyTeam.
+ *
+ * @function Spring.SetAllyTeamStartBox
+ * @number allyTeamID
+ * @number xMin left start box boundary (elmos)
+ * @number zMin top start box boundary (elmos)
+ * @number xMax right start box boundary (elmos)
+ * @number zMax bottom start box boundary (elmos)
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetAllyTeamStartBox(lua_State* L)
+{
+	const unsigned int allyTeamID = luaL_checkint(L, 1);
+	const float xMin = luaL_checkfloat(L, 2);
+	const float zMin = luaL_checkfloat(L, 3);
+	const float xMax = luaL_checkfloat(L, 4);
+	const float zMax = luaL_checkfloat(L, 5);
+
+	if (!teamHandler.IsValidAllyTeam(allyTeamID)) {
+		return 0;
+	}
+
+	const float startRectLeft   = xMin / (mapDims.mapx * SQUARE_SIZE);
+	const float startRectTop    = zMin / (mapDims.mapy * SQUARE_SIZE);
+	const float startRectRight  = xMax / (mapDims.mapx * SQUARE_SIZE);
+	const float startRectBottom = zMax / (mapDims.mapy * SQUARE_SIZE);
+
+	teamHandler.SetAllyTeamStartBox(allyTeamID, startRectLeft, startRectTop, startRectRight, startRectBottom);
+	return 0;
+}
+
+
 /*** Assigns a player to a team.
  *
  * @function Spring.AssignPlayerToTeam
@@ -1266,14 +1301,16 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
 
 	// set the value of the parameter
 	if (lua_israwnumber(L, valIndex)) {
-		param.valueInt = lua_tofloat(L, valIndex);
-		param.valueString.resize(0);
+		param.value.emplace <float> (lua_tofloat(L, valIndex));
+	} else if (lua_israwboolean(L, valIndex)) {
+		param.value.emplace <bool> (lua_toboolean(L, valIndex));
 	} else if (lua_isstring(L, valIndex)) {
-		param.valueString = lua_tostring(L, valIndex);
+		param.value.emplace <std::string> (lua_tostring(L, valIndex));
 	} else if (lua_isnoneornil(L, valIndex)) {
 		params.erase(key);
 		return; //no need to set los if param was erased
 	} else {
+		params.erase(key);
 		luaL_error(L, "Incorrect arguments to %s()", caller);
 	}
 
@@ -1337,6 +1374,28 @@ int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)
 		return 0;
 
 	SetRulesParam(L, __func__, 1, team->modParams);
+	return 0;
+}
+
+/***
+ * @function Spring.SetPlayerRulesParam
+ * @number playerID
+ * @string paramName
+ * @tparam ?number|string paramValue numeric paramValues in quotes will be converted to number.
+ * @tparam[opt] losAccess losAccess
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetPlayerRulesParam(lua_State* L)
+{
+	const int playerID = luaL_checkint(L, 1);
+	if (!playerHandler.IsValidPlayer(playerID))
+		return 0;
+
+	const auto player = playerHandler.Player(playerID);
+	if (player == nullptr || !IsPlayerSynced(player))
+		return 0;
+
+	SetRulesParam(L, __func__, 1, player->modParams);
 	return 0;
 }
 
@@ -2167,7 +2226,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		const unsigned armType = lua_toint(L, index);
 
 		if (armType < damages->GetNumTypes())
-			damages->Set(armType, std::max(value, 0.0001f));
+			damages->Set(armType, value);
 
 		return 0;
 	}
@@ -2214,7 +2273,7 @@ static int SetSingleDynDamagesKey(lua_State* L, DynDamageArray* damages, int ind
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			damages->edgeEffectiveness = std::min(value, 0.999f);
+			damages->edgeEffectiveness = std::min(value, 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			damages->explosionSpeed = value;
@@ -2369,7 +2428,7 @@ int LuaSyncedCtrl::AddUnitExperience(lua_State* L)
  * @function Spring.SetUnitArmored
  * @number unitID
  * @bool[opt] armored
- * @number[opt] armorMultiple Cannot be zero or less, clamped to 0.0001
+ * @number[opt] armorMultiple
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
@@ -2382,8 +2441,7 @@ int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
 	if (lua_isboolean(L, 2))
 		unit->armoredState = lua_toboolean(L, 2);
 
-	// armored multiple of 0 will crash spring
-	unit->armoredMultiple = std::max(0.0001f, luaL_optfloat(L, 3, unit->armoredMultiple));
+	unit->armoredMultiple = luaL_optfloat(L, 3, unit->armoredMultiple);
 
 	if (lua_toboolean(L, 2)) {
 		unit->curArmorMultiple = unit->armoredMultiple;
@@ -2926,6 +2984,42 @@ int LuaSyncedCtrl::SetUnitShieldState(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.SetUnitShieldRechargeDelay
+ * @number unitID
+ * @number[opt] weaponID (optional if the unit only has one shield)
+ * @number[opt] rechargeTime (in seconds; emulates a regular hit if nil)
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitShieldRechargeDelay(lua_State* L)
+{
+	const auto unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	auto shield = static_cast <CPlasmaRepulser*> (unit->shieldWeapon);
+	if (lua_isnumber(L, 2)) {
+		const size_t index = lua_tointeger(L, 2) - LUA_WEAPON_BASE_INDEX;
+		if (index < unit->weapons.size())
+			shield = dynamic_cast <CPlasmaRepulser*> (unit->weapons[index]);
+	}
+	if (shield == nullptr)
+		return 0;
+
+	if (lua_isnumber(L, 3)) {
+		const auto seconds = lua_tofloat(L, 3);
+		const auto frames = static_cast <int> (seconds * GAME_SPEED);
+		shield->SetRechargeDelay(frames, true);
+	} else {
+		/* Note, overwrite set to false on purpose. This is to emulate a regular
+		 * weapon hit. This lets a sophisticated shield handler gadget coexist
+		 * with a basic "emulate hits" gadget without the latter having to care.
+		 * You can put the weaponDef value explicitly if you want to overwrite. */
+		shield->SetRechargeDelay(shield->weaponDef->shieldRechargeDelay, false);
+	}
+
+	return 0;
+}
 
 /***
  * @function Spring.SetUnitFlanking
@@ -6447,7 +6541,7 @@ static int SetSingleDamagesKey(lua_State* L, DamageArray& damages, int index)
 	if (lua_isnumber(L, index)) {
 		const unsigned armType = lua_toint(L, index);
 		if (armType < damages.GetNumTypes())
-			damages.Set(armType, std::max(value, 0.0001f));
+			damages.Set(armType, value);
 		return 0;
 	}
 
@@ -6490,7 +6584,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 					}
 				}
 			} else {
-				damages.SetDefaultDamage(std::max(lua_tofloat(L, index + 1), 0.0001f));
+				damages.SetDefaultDamage(lua_tofloat(L, index + 1));
 			}
 		} break;
 		case hashString("weaponDef"): {
@@ -6515,7 +6609,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 		} break;
 
 		case hashString("edgeEffectiveness"): {
-			params.edgeEffectiveness = lua_tofloat(L, index + 1);
+			params.edgeEffectiveness = std::min(lua_tofloat(L, index + 1), 1.0f);
 		} break;
 		case hashString("explosionSpeed"): {
 			params.explosionSpeed = lua_tofloat(L, index + 1);
@@ -6621,7 +6715,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 
 		params.craterAreaOfEffect = luaL_optfloat(L,  8, 0.0f);
 		params.damageAreaOfEffect = luaL_optfloat(L,  9, 0.0f);
-		params.edgeEffectiveness  = luaL_optfloat(L, 10, 0.0f);
+		params.edgeEffectiveness  = std::min(luaL_optfloat(L, 10, 0.0f), 1.0f);
 		params.explosionSpeed     = luaL_optfloat(L, 11, 0.0f);
 		params.gfxMod             = luaL_optfloat(L, 12, 0.0f);
 

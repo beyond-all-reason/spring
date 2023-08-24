@@ -15,8 +15,8 @@ public:
 	static HUDDrawer* GetInstance();
 
 private:
-	void PushState();
-	void PopState();
+	void PushMatrices();
+	void PopMatrices();
 
 	void DrawModel(const CUnit*);
 	void DrawUnitDirectionArrow(const CUnit*);

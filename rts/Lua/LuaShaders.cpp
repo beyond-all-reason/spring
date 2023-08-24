@@ -11,7 +11,6 @@
 #include "LuaOpenGL.h"
 #include "LuaOpenGLUtils.h"
 #include "LuaUtils.h"
-#include "LuaMatrixImpl.h"
 
 #include "Game/Camera.h"
 #include "System/Log/ILog.h"
@@ -1157,18 +1156,12 @@ int LuaShaders::UniformMatrix(lua_State* L)
 	const int numValues = lua_gettop(L) - 1;
 
 	switch (numValues) {
-		case 1: {
-			const CMatrix44f* mat = nullptr;
+	case 1: {
+			if (!lua_isstring(L, 2))
+				luaL_error(L, "Incorrect arguments to gl.UniformMatrix()");
 
-			if (lua_isstring(L, 2)) {
-				const char* matName = lua_tostring(L, 2);
-				mat = LuaOpenGLUtils::GetNamedMatrix(matName);
-			} else {
-				const auto lmi = sol::stack::check_get<LuaMatrixImpl*>(L, 2);
-				if (lmi) {
-					mat = lmi.value()->GetMatPtr();
-				}
-			}
+			const char* matName = lua_tostring(L, 2);
+			const CMatrix44f* mat = LuaOpenGLUtils::GetNamedMatrix(matName);
 
 			if (mat) {
 				glUniformMatrix4fv(location, 1, GL_FALSE, *mat);

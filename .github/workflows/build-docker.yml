@@ -77,23 +77,24 @@ jobs:
           echo "Build info:"
           echo "Git commit hash: ${{ github.sha }}"
           echo "Repository: ${{ github.repository }}"
+          df -h
         shell: bash
         
       - name: Checkout Source Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get Random Number
         id: get-random-number
         run: |
           number=$(head /dev/random -c 32 | sha1sum | awk '{ print $1 }')
           echo "Generated random number: $number"
-          echo "::set-output name=number::$number"
+          echo "number=${number}" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Download ccache Data
         if: github.event.inputs.use-caches == 'true'
         id: cache-dl
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/ccache_archive
           key: ccache-${{ matrix.config.os }}-${{ steps.get-random-number.outputs.number }}
@@ -104,7 +105,7 @@ jobs:
         id: cache
         run: |
           CACHE_FILENAME="/tmp/ccache_archive/${{ matrix.config.os }}.tgz"
-          echo "::set-output name=cache-filename::${CACHE_FILENAME}"
+          echo "cache-filename=${CACHE_FILENAME}" >> "$GITHUB_OUTPUT"
 
           if [ -f "${CACHE_FILENAME}" ]; then
             echo "Found build ccache: ${CACHE_FILENAME}"
@@ -112,15 +113,16 @@ jobs:
               echo "Deleting ccache: ${CACHE_FILENAME}"
               rm -rf "${CACHE_FILENAME}"
             else
-              echo "::set-output name=cache-hit::true"
+              echo "cache-hit=true" >> "$GITHUB_OUTPUT"
               echo "Extracting..."
               mkdir -p /tmp/ccache
               tar -I pigz -xf "${CACHE_FILENAME}" -C /tmp/ccache
             fi
           else
             echo "Not found ccache data"
-            echo "::set-output name=cache-hit::false"
+            echo "cache-hit=false" >> "$GITHUB_OUTPUT"
           fi
+          df -h
         shell: bash
 
       - name: Build engine via docker
@@ -140,23 +142,26 @@ jobs:
           docker-image: "${{ github.event.inputs.docker-image }}"
 
       - name: Upload Bin as Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.run-docker-build.outputs.bin_name }}
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.bin_name }}
+          if-no-files-found: error
 
       - name: Upload Dbg Artifacts
         if: github.event.inputs.strip-symbols == 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.run-docker-build.outputs.dbg_name }}
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.dbg_name }}
+          if-no-files-found: error
       
       - name: Upload Build Options Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: buildoptions_${{ matrix.config.os }}.txt
           path: ${{ github.workspace }}/artifacts/buildoptions_${{ matrix.config.os }}.txt
+          if-no-files-found: error
 
       - name: Pack ccache Data
         if: github.event.inputs.use-caches == 'true'
@@ -170,8 +175,22 @@ jobs:
           echo "Archived ccache size: $(du -h "${CACHE_FILENAME}" | cut -f1)"
 
       - name: Upload ccache Debug Data
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: github.event.inputs.debug-ccache == 'true'
         with:
           name: ccache_debug_${{ matrix.config.os }}.tgz
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.ccache_dbg }}
+          if-no-files-found: error
+
+      - name: Free Filesystem Space
+        id: freefsspace
+        run: |
+          echo "Filesystem before cleanup:"
+          df -h
+          docker system df
+          echo "Pruning docker images..."
+          docker image prune -a -f
+          echo "Filesystem after cleanup:"
+          df -h
+          docker system df
+        shell: bash

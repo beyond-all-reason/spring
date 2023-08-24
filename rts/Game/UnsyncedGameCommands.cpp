@@ -3422,20 +3422,20 @@ public:
 	}
 };
 
-class DestroyActionExecutor : public IUnsyncedActionExecutor {
+
+class BaseDestroyActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DestroyActionExecutor() : IUnsyncedActionExecutor("Destroy", "Destroys one or multiple units by unit-ID, instantly", true) {
-	}
+	BaseDestroyActionExecutor(const std::string& command, const std::string& description)
+		: IUnsyncedActionExecutor(command, description, true) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		if (selectedUnitsHandler.selectedUnits.empty())
+		if (selectedUnitsHandler.selectedUnits.empty()) {
 			return false;
+		}
 
-		// kill selected units
 		std::stringstream ss;
-		ss << GetCommand();
-
-		for (const int unitID: selectedUnitsHandler.selectedUnits) {
+		ss << action.GetCmd();
+		for (const int unitID : selectedUnitsHandler.selectedUnits) {
 			ss << " " << unitID;
 		}
 
@@ -3445,6 +3445,17 @@ public:
 	}
 };
 
+
+class DestroyActionExecutor : public BaseDestroyActionExecutor {
+public:
+	DestroyActionExecutor() : BaseDestroyActionExecutor("Destroy", "Destroys one or multiple units by unitID immediately") {}
+};
+
+
+class RemoveActionExecutor : public BaseDestroyActionExecutor {
+public:
+	RemoveActionExecutor() : BaseDestroyActionExecutor("Remove", "Removes one or multiple units by unitID immediately, bypassing death sequence") {}
+};
 
 
 class SendActionExecutor : public IUnsyncedActionExecutor {
@@ -4005,6 +4016,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DivByZeroActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<GiveActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DestroyActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<RemoveActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SendActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DumpStateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DumpRNGActionExecutor>());
@@ -4031,7 +4043,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 }
 
 
-static uint8_t ugcSingletonMem[sizeof(UnsyncedGameCommands)];
+alignas(UnsyncedGameCommands) static std::byte ugcSingletonMem[sizeof(UnsyncedGameCommands)];
 
 void UnsyncedGameCommands::CreateInstance() {
 	UnsyncedGameCommands*& singleton = GetInstance();

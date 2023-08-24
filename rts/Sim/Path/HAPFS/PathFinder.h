@@ -76,6 +76,8 @@ protected:
 		const bool synced
 	) override { }
 
+	float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const override;
+
 private:
 	void TestNeighborSquares(
 		const MoveDef& moveDef,

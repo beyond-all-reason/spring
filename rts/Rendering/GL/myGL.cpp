@@ -17,6 +17,7 @@
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/TexBind.h"
 #include "System/Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
@@ -254,12 +255,7 @@ void WorkaroundATIPointSizeBug()
 
 void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
 {
-	GLint currentBinding;
-	const auto it = FormatToQuery.find(target);
-	assert(it != FormatToQuery.end());
-	glGetIntegerv(it->second, &currentBinding);
-
-	glBindTexture(target, textureID);
+	auto texBind = GL::TexBind(target, textureID);
 
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_INTERNAL_FORMAT, &tp.intFmt);
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &tp.sizeX);
@@ -293,8 +289,6 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 				(tp.bpp >> 3);
 		}
 	}
-
-	glBindTexture(target, currentBinding);
 }
 
 void glSaveTexture(const GLuint textureID, const char* filename, int level)
@@ -358,10 +352,9 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 		}
 		for (int level = 0; level < levels; ++level)
 			glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
-
-		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
-		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 	}
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 }
 
 void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
@@ -383,10 +376,9 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 		}
 		for (int level = 0; level < levels; ++level)
 			glTexImage3D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), std::max(depth >> level, 1), 0, format, type, nullptr);
-
-		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
-		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 	}
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 }
 
 

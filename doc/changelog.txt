@@ -16,12 +16,67 @@ Lua:
    The previous method to pass `-1` still works.
  - add `Spring.GetUnitSeismicSignature(unitID) -> number seismicSignature`
  - add `Spring.SetUnitSeismicSignature(unitID, seismicSignature) -> nil`
+ - add `Spring.GetUnitWorkerTask(unitID) -> cmdID, targetID`. Returns a worker's current
+   task, represented via commandID. Note that it differs from `Spring.GetUnitCurrentCommand`
+   in that a unit may be working without having the relevant order in front of the queue,
+   for example via Guard, or alternatively, it may not be working despite having it (for
+   example it's not yet in range). It also resolves Repair vs Build commands.
  - allow shallow recursion in `Spring.TransferUnit`
+ - add `Spring.SelectUnit(unitID, bool append = false) -> nil`, single-unit
+   version of SelectUnit{Array,Map} that doesn't require a table
+ - add `Spring.DeselectUnit(unitID) -> nil`, deselects a unit
+ - add `Spring.SetUnitShieldRechargeDelay(unitID, [weaponNum], [seconds]) -> nil`. Resets a unit's
+   shield regeneration delay. The weapon number is optional if the unit has a single shield. The
+   timer value is also optional, if you leave it nil it will emulate a weapon hit. Note that a
+   weapon hit (both via nil here, and "real" hits) will never decrease the remaining timer, though
+   it can increase it. An explicit numerical value always sets the timer to that many seconds.
+ - add `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID)`. Works very similar
+   to the existing Water callins, but EnteredWater applies when the unit dips its toes in water
+   while EnteredUnderwater applies when the unit is completely submerged.
+ - add `Spring.{Set,Get}PlayerRulesParam(s)`, similar to other rules params. There's currently
+   two visibility levels, public and private. A notable difference is that the private level is
+   only visible to that player, not his allyteam, and not even his (comsharing) team; this is
+   partially for technical reasons and can be changed if need be. Synced and specs see everything.
+ - `Spring.MapArchive` and `Spring.UnmapArchive` have been temporarily removed due to sync safety.
+   They will come back at some point, but there is no timeline yet. Use `Spring.UseArchive` meanwhile.
+ - removed `snext`, `spairs` and `sipairs`. These functions can be replaced by the regular `next`,
+   `pairs`, and `ipairs` respectively with no change in behaviour.
+ - add `Spring.GetUnitIsBeingBuilt(unitID) -> bool beingBuilt, number buildProgress`. Note that this
+   doesn't bring new capability because `buildProgress` was already available from `GetUnitHealth`,
+   and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
+ - rules params now support the boolean type. Skirmish AI and the rules param selection filter can
+   read them via existing numerical interface by using 0 and 1.
+ - add `Spring.GetUnitEffectiveBuildRange(builderID[, buildeeDefID])` -> number. Returns the effective
+   build range for building given target, counted from the center of the prospective target's center.
+   Returns just the build range if buildee is nil. Useful for setting move goals manually.
+ - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
+   of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
+   and run in the order they were added, just before that frame's GameFrame call-in.
+ - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
+   matches in subdirs, recursively.
+ - `gadget:AllowUnitCreation` now accepts a second return value that controls whether to drop the order.
+   If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
+ - add `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) -> nil`, allowing to set
+   start box (in elmos) for an ally team.
  
+
+Game Setup:
+ - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
+   blank via 'initBlank' parameter (either 1 or 0) and specifying `blank_map_x`, `blank_map_y`,
+   `blank_map_height` map options.
+ - Emit a warning instead of immediately failing when MapParser does not find startpos defined in
+   the map config for all teamIDs present in start script. This gives a chance to the game to remedy
+   the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
+   in the corner -- giving an obvious hint that something is amiss and the map is unable to support
+   this number of players by itself without assistance from the game.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
- 
+ - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
+   the built-in `/info` playerlist won't display. Use for anonymous modes
+   in conjunction with `Spring.GetPlayerInfo` poisoning.
+ - Add new `/remove` cheat-only command, it removes selected units similar to
+   `/destroy` except no death script is run (so no explosion nor wreckage).
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
@@ -36,6 +91,13 @@ Sim:
    are impacted by map changes (previously all links were updated.) (TKPFS)
  - Engine-driven formation move commands now try to match units to nearest appropriate move targets
    so as to have units adopt formations without having to run across each other.
+ - edgeEffectiveness can now be 1 (previously capped at 0.999)
+ - armor multiplier (aka damageModifier) can now be 0 (previously capped at 0.0001)
+ - damage in unit defs can now be 0 (previously capped at 0.0001)
+ - damage and armor can also be negative again (like in 0.76b1, so that the target is healed), but keep in mind weapons
+   will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
+ - nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius
+   instead of its center. Mobile builders already worked this way.
 
 System:
  - Simulation will use up to ~100% CPU time to catch up.
@@ -44,7 +106,84 @@ System:
 UI:
  - Increase the rate at which the traversability view map is updated by x4
 
+Unit def files and `UnitDefs` unification:
+
+ The following unit def keys now accept the same spelling as the ones exposed via UnitDefs.
+ The old spelling still works (old → new).
+   * metalUse → metalUpkeep
+   * energyUse → energyUpkeep
+   * buildCostMetal → metalCost
+   * buildCostEnergy → energyCost
+   * unitRestricted → maxThisUnit
+   * name → humanName
+
+ These two also accept a new spelling, and both the old and new spellings are in elmo/frame.
+ However, migrate to the new spellings ASAP because the original spellings will be changed
+ to use elmo/s sometime in the future.
+   ! acceleration → maxAcc
+   ! brakeRate → maxDec
+
+ The following unit def keys now accept a spelling and measurement unit
+ as the one exposed via UnitDefs (old → new). The old spelling still works,
+ and is still in the old unit.
+   * maxVelocity (elmo/frame) → speed (elmo/second)
+   * maxReverseVelocity (elmo/frame) → rSpeed (elmo/second)
+
+ The following UnitDefs keys now accept the same spelling as the ones
+ accepted for unit def files. The old spelling still works (old → new).
+   * tooltip → description
+   * wreckName → corpse
+   * buildpicname → buildPic
+   * canSelfD → canSelfDestruct
+   * selfDCountdown → selfDestructCountdown
+   * losRadius → sightDistance
+   * airLosRadius → airSightDistance
+   * radarRadius → radarDistance
+   * jammerRadius → radarDistanceJam
+   * sonarRadius → sonarDistance
+   * sonarJamRadius → sonarDistanceJam
+   * seismicRadius → seismicDistance
+   * kamikazeDist → kamikazeDistance
+   * targfac → isTargetingUpgrade
+
+ The following keys receive a new unified spelling for both unit defs
+ and UnitDefs (unit def, UnitDefs → unified). Old spellings still work.
+   * losEmitHeight, losHeight → sightEmitHeight
+   * cruiseAlt, wantedHeight → cruiseAltitude
+
+ Added the missing 'radarEmitHeight' to UnitDefs.
+ The unit def file key was also already 'radarEmitHeight'.
+
+ Changes to unit def validity checks:
+   * negative values for health, (reverse) speed, and metal/energy/buildtime
+     now cause the unit def to be rejected, previously each was clamped to 0.1
+   * negative values for acceleration and brake rate now cause the unit def to
+     be rejected, previously the absolute value was taken
+   * values (0; 0.1) now allowed for health and buildtime (0 still prohibited)
+   * values [0; 0.1) now allowed for metal cost (0 now allowed)
+   * undefined metal cost now defaults to 0 instead of 1
+   * undefined health and buildtime now each default to 100 instead of 0.1
+
+ All deprecated UnitDefs keys have been removed, listed below:
+   * techLevel
+   * harvestStorage
+   * extractSquare
+   * minx
+   * canHover
+   * drag
+   * isAirBase
+   * cloakTimeout
+   * miny
+   * minz
+   * maxx
+   * maxy
+   * maxz
+   * midx
+   * midy
+   * midz
+
 Fixes:
+ - Fix direct hits doing X damage sometimes failing to kill an X health target
  - Fix a pathfinding bug where the unit may try to force it's way through obstacles rather than
    walk around them.
  - Fixed issue where Unit Weapon aiming angle checks would recalculate cos(20) every call - it is
@@ -52,8 +191,12 @@ Fixes:
  - Fixed TestMoveSquareRange() so that it only runs the required tests.
  - Fixed issue where units standing still would recalculate their facing direction every frame even
    though they are not moving.
+ - Fix some Lua interfaces being able to set edgeEffectiveness above 1
  - Fix issues where the ground and other visibility features would not render or return expected
    features when looking at certain oblique angles
+ - Fix using Set<Any>RulesParam with an incorrect type leaving that param set with a value of 0.
+ - Fix COB SetMaxReloadTime receiving a value 10% smaller than it should
+ - Fix builders not placing nanoframes from their maximum range
 
 
 
@@ -68,11 +211,20 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
 
  ! Resurrecting units no longer overrides their health to 5%. To get back the old behaviour:
 
+   -- if migrating in steps to 1544
    function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
-     if builderID and Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT then
+     if builderID and (Spring.GetUnitCurrentCommand(builderID) == CMD.RESURRECT or Spring.GetUnitCurrentCommand(builderID) == CMD.GUARD) then
        Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
      end
    end
+
+   -- if migrating to a newer engine with `Spring.GetUnitWorkerTask`
+   function gadget:UnitCreated(unitID, unitDefID, teamID, builderID)
+     if builderID and Spring.GetUnitWorkerTask(builderID) == CMD.RESURRECT then
+       Spring.SetUnitHealth(unitID, Spring.GetUnitHealth(unitID) * 0.05)
+     end
+   end
+
 
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get

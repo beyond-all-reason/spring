@@ -10,7 +10,7 @@
 #include "System/Misc/NonCopyable.h"
 #include "System/Misc/SpringTime.h"
 #include "System/float3.h"
-#include "OggStream.h"
+#include "MusicStream.h"
 
 class IAudioChannel;
 class SoundItem;
@@ -95,7 +95,7 @@ private:
 	AsyncSoundItemData asyncPlayItem;
 
 	IAudioChannel* curChannel;
-	COggStream curStream;
+	MusicStream curStream;
 
 	float curVolume;
 	spring_time loopStop;

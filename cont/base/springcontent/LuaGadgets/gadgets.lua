@@ -1122,11 +1122,12 @@ end
 
 function gadgetHandler:AllowUnitCreation(unitDefID, builderID, builderTeam, x, y, z, facing)
   for _,g in r_ipairs(self.AllowUnitCreationList) do
-    if (not g:AllowUnitCreation(unitDefID, builderID, builderTeam, x, y, z, facing)) then
-      return false
+    local allow, drop = g:AllowUnitCreation(unitDefID, builderID, builderTeam, x, y, z, facing)
+    if not allow then
+      return false, drop
     end
   end
-  return true
+  return true, true
 end
 
 
@@ -1568,6 +1569,19 @@ end
 function gadgetHandler:UnitLeftWater(unitID, unitDefID, unitTeam)
   for _,g in r_ipairs(self.UnitLeftWaterList) do
     g:UnitLeftWater(unitID, unitDefID, unitTeam)
+  end
+end
+
+function gadgetHandler:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  for _,g in r_ipairs(self.UnitEnteredUnderwaterList) do
+    g:UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+  end
+end
+
+
+function gadgetHandler:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+  for _,g in r_ipairs(self.UnitLeftUnderwaterList) do
+    g:UnitLeftUnderwater(unitID, unitDefID, unitTeam)
   end
 end
 

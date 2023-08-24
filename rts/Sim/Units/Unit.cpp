@@ -266,7 +266,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	cost.metal = unitDef->metal;
 	cost.energy = unitDef->energy;
 	buildTime = unitDef->buildTime;
-	armoredMultiple = std::max(0.0001f, unitDef->armoredMultiple); // armored multiple of 0 will crash spring
+	armoredMultiple = unitDef->armoredMultiple;
 	armorType = unitDef->armorType;
 	category = unitDef->category;
 	leaveTracks = unitDef->decalDef.leaveTrackDecals;
@@ -448,15 +448,15 @@ void CUnit::FinishedBuilding(bool postInit)
 }
 
 
-void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (IsCrashing() && !beingBuilt)
 		return;
 
-	ForcedKillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
+	ForcedKillUnit(attacker, selfDestruct, reclaimed);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (isDead)
 		return;
@@ -477,7 +477,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		envResHandler.DelGenerator(this);
 
 	blockHeightChanges = false;
-	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	deathScriptFinished = (reclaimed || beingBuilt);
 
 	if (deathScriptFinished)
 		return;
@@ -1755,8 +1755,9 @@ void CUnit::DependentDied(CObject* o)
 
 void CUnit::UpdatePhysicalState(float eps)
 {
-	const bool inAir   = IsInAir();
-	const bool inWater = IsInWater();
+	const bool inAir      = IsInAir();
+	const bool inWater    = IsInWater();
+	const bool underWater = IsUnderWater();
 
 	CSolidObject::UpdatePhysicalState(eps);
 
@@ -1772,6 +1773,13 @@ void CUnit::UpdatePhysicalState(float eps)
 			eventHandler.UnitEnteredWater(this);
 		} else {
 			eventHandler.UnitLeftWater(this);
+		}
+	}
+	if (IsUnderWater() != underWater) {
+		if (underWater) {
+			eventHandler.UnitLeftUnderwater(this);
+		} else {
+			eventHandler.UnitEnteredUnderwater(this);
 		}
 	}
 }
@@ -2828,6 +2836,7 @@ CR_REG_METADATA(CUnit, (
 
 	CR_MEMBER(loadingTransportId),
 	CR_MEMBER(unloadingTransportId),
+	CR_MEMBER(requestRemoveUnloadTransportId),
 	CR_MEMBER(transportCapacityUsed),
 	CR_MEMBER(transportMassUsed),
 

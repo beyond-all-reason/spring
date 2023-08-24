@@ -35,6 +35,7 @@ class LuaSyncedCtrl
 	private:
 		// all LuaHandleSynced
 		static int SetAlly(lua_State* L);
+		static int SetAllyTeamStartBox(lua_State* L);
 		static int KillTeam(lua_State* L);
 		static int AssignPlayerToTeam(lua_State* L);
 		static int GameOver(lua_State* L);
@@ -51,6 +52,7 @@ class LuaSyncedCtrl
 
 		static int SetGameRulesParam(lua_State* L);
 		static int SetTeamRulesParam(lua_State* L);
+		static int SetPlayerRulesParam(lua_State* L);
 		static int SetUnitRulesParam(lua_State* L);
 		static int SetFeatureRulesParam(lua_State* L);
 
@@ -99,6 +101,7 @@ class LuaSyncedCtrl
 		static int SetUnitBlocking(lua_State* L);
 		static int SetUnitCrashing(lua_State* L);
 		static int SetUnitShieldState(lua_State* L);
+		static int SetUnitShieldRechargeDelay(lua_State* L);
 		static int SetUnitFlanking(lua_State* L);
 		static int SetUnitTravel(lua_State* L);
 		static int SetUnitFuel(lua_State* L);

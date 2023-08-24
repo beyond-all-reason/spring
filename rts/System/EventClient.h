@@ -151,8 +151,10 @@ class CEventClient
 		virtual void UnitLeftRadar(const CUnit* unit, int allyTeam) {}
 		virtual void UnitLeftLos(const CUnit* unit, int allyTeam) {}
 
+		virtual void UnitEnteredUnderwater(const CUnit* unit) {}
 		virtual void UnitEnteredWater(const CUnit* unit) {}
 		virtual void UnitEnteredAir(const CUnit* unit) {}
+		virtual void UnitLeftUnderwater(const CUnit* unit) {}
 		virtual void UnitLeftWater(const CUnit* unit) {}
 		virtual void UnitLeftAir(const CUnit* unit) {}
 
@@ -200,7 +202,7 @@ class CEventClient
 		virtual bool CommandFallback(const CUnit* unit, const Command& cmd) { return false; }
 		virtual bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua) { return true; }
 
-		virtual bool AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo) { return true; }
+		virtual std::pair <bool, bool> AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo) { return {true, true}; }
 		virtual bool AllowUnitTransfer(const CUnit* unit, int newTeam, bool capture) { return true; }
 		virtual bool AllowUnitBuildStep(const CUnit* builder, const CUnit* unit, float part) { return true; }
 		virtual bool AllowUnitCaptureStep(const CUnit* builder, const CUnit* unit, float part) { return true; }

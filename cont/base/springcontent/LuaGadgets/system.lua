@@ -53,9 +53,6 @@ if (System == nil) then
     --  Unsynced Utilities
     --
     SYNCED  = SYNCED,
-    snext   = snext,
-    spairs  = spairs,
-    sipairs = sipairs,
 
     --
     --  Standard libraries

@@ -850,7 +850,7 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 			const LuaTextures& luaTextures = CLuaHandle::GetActiveTextures(reinterpret_cast<lua_State*>(state));
 			const LuaTextures::Texture* luaTexture = luaTextures.GetInfo(*reinterpret_cast<const size_t*>(&data));
 
-			return ReturnHelper(luaTexture->xsize, luaTexture->ysize);
+			return ReturnHelper(luaTexture->xsize, luaTexture->ysize, luaTexture->zsize);
 		} break;
 
 		case LUATEX_LUATEXTUREATLAS: {

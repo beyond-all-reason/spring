@@ -127,6 +127,8 @@ public:
 	std::vector<bool> watchProjectileDefs;  // callin masks for Projectile*
 	std::vector<bool> watchExplosionDefs;   // callin masks for Explosion
 	std::vector<bool> watchAllowTargetDefs; // callin masks for AllowWeapon*Target*
+	decltype(CLuaHandle::delayedCallsByFrame) delayedCallsByFrame;
+
 	void Serialize(creg::ISerializer* s);
 };
 
@@ -140,6 +142,7 @@ CR_REG_METADATA(CLuaStateCollector, (
 	CR_MEMBER(watchProjectileDefs),
 	CR_MEMBER(watchExplosionDefs),
 	CR_MEMBER(watchAllowTargetDefs),
+	CR_MEMBER(delayedCallsByFrame),
 	CR_SERIALIZER(Serialize)
 ))
 
@@ -156,6 +159,11 @@ void CLuaStateCollector::Read(const CSplitLuaHandle* handle) {
 	watchExplosionDefs = handle->syncedLuaHandle.watchExplosionDefs;
 	watchAllowTargetDefs = handle->syncedLuaHandle.watchAllowTargetDefs;
 
+	/* This container only holds indexes to the Lua registry, which is
+	 * saved alongside the rest of the Lua state since it's fundamentally
+	 * just a regular Lua table. So just a shallow copy is sufficient. */
+	delayedCallsByFrame = handle->syncedLuaHandle.delayedCallsByFrame;
+
 	lua_gc(L_GC, LUA_GCCOLLECT, 0);
 }
 
@@ -169,6 +177,7 @@ void CLuaStateCollector::Write(CSplitLuaHandle* handle) {
 	handle->syncedLuaHandle.watchProjectileDefs = watchProjectileDefs;
 	handle->syncedLuaHandle.watchExplosionDefs = watchExplosionDefs;
 	handle->syncedLuaHandle.watchAllowTargetDefs = watchAllowTargetDefs;
+	handle->syncedLuaHandle.delayedCallsByFrame = delayedCallsByFrame;
 }
 
 void CLuaStateCollector::Serialize(creg::ISerializer* s) {

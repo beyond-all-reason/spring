@@ -6,6 +6,7 @@
 #include "PlayerBase.h"
 #include "PlayerStatistics.h"
 #include "Game/FPSUnitController.h"
+#include "Lua/LuaRulesParams.h"
 #include "System/creg/creg_cond.h"
 #include "System/UnorderedSet.hpp"
 
@@ -62,6 +63,8 @@ public:
 
 	PlayerStatistics currentStats;
 	FPSUnitController fpsController;
+
+	LuaRulesParams::Params modParams;
 
 private:
 	spring::unordered_set<int> controlledTeams;
