@@ -118,7 +118,7 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 			if (group->units.empty())
 				return false;
 
-			camHandler->CameraTransition(0.5f);
+			camHandler->CameraTransition(0.5f); //focus
 			camHandler->GetCurrentController().SetPos(group->CalculateCenter());
 
 			return true;
@@ -171,7 +171,7 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 		return false;
 
 	if (selectedUnitsHandler.IsGroupSelected(num)) {
-		camHandler->CameraTransition(0.5f);
+		camHandler->CameraTransition(0.5f); // IsGroupSelected
 		camHandler->GetCurrentController().SetPos(group->CalculateCenter());
 	}
 
