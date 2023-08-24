@@ -20,6 +20,7 @@ public:
 	bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID);
 	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int texMipLevel);
 	void BindSquareTexture(int texSquareX, int texSquareY);
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 protected:
 	void LoadTiles(CSMFMapFile& file);
@@ -77,6 +78,8 @@ private:
 
 	unsigned int tileTexFormat = 0;
 	// unsigned int pboUnsyncedBit = 0;
+
+	int smfMipLevelOverride = 0;
 };
 
 #endif // _BF_GROUND_TEXTURES_H_

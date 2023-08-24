@@ -1,0 +1,80 @@
+    1  cd /media/beherith/VBox_GAs_7.0.6/
+    2  ls
+    3  sudo ./autorun.sh 
+    4  ./autorun.sh 
+    5  sudo su
+    6  su root
+    7  sudo ls
+    8  sudo nano /etc/default/locale
+    9  git
+   10  cd /media/beherith/VBox_GAs_7.0.6/
+   11  ls
+   12  sudo ./autorun.sh 
+   13  sudo ./runasroot.sh 
+   14  ./runasroot.sh 
+   15  ./autorun.sh 
+   16  sudo snap upgrade
+   17  sudo snap 
+   18  sudo update all
+   19  sudo snap update all
+   20  sudo apt-get upgrade
+   21  sudo apt install git
+   22  sudo apt install github desktop
+   23  sudo apt install vscode
+   24  ls
+   25  gh repo clone beyond-all-reason/spring
+   26  sudo apt install gh
+   27  gh repo clone beyond-all-reason/spring
+   28  git clone beyond-all-reason/spring
+   29  git clone https://github.com/beyond-all-reason/spring.git
+   30  cd spring/
+   31  cd docker-build/
+   32  ls
+   33  ./init_container.sh 
+   34  sudo apt-get install docker
+   35  sudo apt-get install docker.io
+   36  sudo apt-get install docker-compose
+   37  ./init_container.sh 
+   38  docker run hello-world
+   39  sudo groupadd docker
+   40  sudo usermod -aG docker beherith
+   41  docker run hello-world
+   42  cd spring/
+   43  cd docker-build/
+   44  ./init_container.sh 
+   45  htop
+   46  sudo apt install byobu htop ncdu
+   47  htop
+   48  cd spring/
+   49  cd docker-build/
+   50  ./init_container.sh 
+   51  cd spring/
+   52  cd docker-build/
+   53  ls
+   54  ./build.sh -p windows-64
+   55  cd ..
+   56* git submodule init && git submodule updatec
+   57  cd docker-build/
+   58  ./build.sh -p windows-64
+   59  ./init_container.sh 
+   60  ./build.sh -p windows-64
+   61  ./build.sh -p linux-64
+   62  ./build.sh -p windows-64
+   63  cd ..
+   64  git submodule update --init --recursive
+   65  cd docker-build/
+   66  ./build.sh -p windows-64
+   67  ls
+   68  cat build.sh 
+   69  cd scripts/
+   70  ls
+   71  cat build.sh 
+   72  ls
+   73  cat 00_setup.sh 
+   74  cat build.sh 
+   75  cd ..
+   76  ls
+   77  ./build.sh -t RELEASE
+   78  ./build.sh -p windows-64 -t RELEASE
+   79  ./build.sh -p windows-64 -t RELEASE -s -o
+   80  history > history.txt
