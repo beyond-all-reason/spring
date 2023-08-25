@@ -1297,15 +1297,17 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 
 	// case 1, aa <0, target speed is less than projectile speed
 	// guaranteed existence of a positive solution
+	// case 1a, aa is a large value, standard quadratic formula works fine
 	if (aa < -1) {
 		// standard quadratic formula
 		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
 	}
+	// case 1b, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
 	else if (aa <= 0) {
 		// check catastrophic case of aa=0 and bb=0 
 		// target speed equal to projectile speed, and target is moving tangentally
-		if ((std::abs(aa) < (1.0 / (2 ^ 16))) && (std::abs(bb) < (1.0 / (2 ^ 16)))) {
-			return 0.0;
+		if ((std::abs(aa) < (std::pow(2, -16))) && (std::abs(bb) < (std::pow(2, -16)))) {
+			return -1.0;
 		}
 		// use Citardauq Formula if aa is small
 		predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
@@ -1313,26 +1315,28 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 	// case 2, aa >0, target speed is greater than projectile speed
 	// no postive solution may exist
 	else if (aa > 0) {
-		// check for imaginary solutions
+		// case 2a, check for imaginary solutions
 		if (temp1 >= temp2) {
 			// this triggers if the target cannot be intercepted
 			// units can get out of range before the slow projectile can hit it
-			return 0.0;
+			return -1.0;
 		}
 
-		// check if fast target is moving away from us
+		// case 2b, check if fast target is moving away from us
 		if (bb > 0) {
-			return 0.0;
+			return -1.0;
 		}
+		// case 2c, aa is a large value, standard quadratic formula works fine
 		if (aa > 1) {
 			// standard quadratic formula
 			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
 		}
+		// case 2d, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
 		else {
 			// check catastrophic case of aa=0 and bb=0 
 			// target speed equal to projectile speed, and target is moving tangentally
-			if ((std::abs(aa) < (1.0 / (2 ^ 16))) && (std::abs(bb) < (1.0 / (2 ^ 16)))) {
-				return 0.0;
+			if ((std::abs(aa) < (1.0 / (std::pow(2, -16)))) && (std::abs(bb) < (std::pow(2, -16)))) {
+				return -1.0;
 			}
 			// use Citardauq Formula if aa is small
 			predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
@@ -1439,7 +1443,10 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 			// cannon has no gravity
 			// non-parabolic projectiles are much easier
 			// simple quadratic equation
-			predictTime = GetSafeInterceptTime(unit, predictMult);
+			const float interceptTime = GetSafeInterceptTime(unit, predictMult);
+			if (interceptTime > 0) {
+				predictTime = interceptTime;
+			}
 			/*
 			float3 unitSpeed = unit->speed * predictMult;
 			float3 dist = unit->pos - weaponMuzzlePos;
@@ -1461,7 +1468,10 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 
 		// non-parabolic projectiles are much easier
 		// simple quadratic equation
-		predictTime = GetSafeInterceptTime(unit, predictMult);
+		const float interceptTime = GetSafeInterceptTime(unit, predictMult);
+		if (interceptTime > 0) {
+			predictTime = interceptTime;
+		}
 		/*
 		float3 unitSpeed = unit->speed * predictMult;
 		float3 dist = unit->pos - weaponMuzzlePos;
