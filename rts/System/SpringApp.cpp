@@ -145,6 +145,7 @@ DEFINE_string   (map,                                      "",    "Specify the m
 DEFINE_string   (menu,                                     "",    "Specify a lua menu archive to be used by spring");
 DEFINE_string   (name,                                     "",    "Set your player name");
 DEFINE_bool     (oldmenu,                                  false, "Start the old menu");
+DEFINE_bool_EX  (onlyLocal,              "only-local",     false, "Force OnlyLocal mode (no network listening sockets)");
 
 
 
@@ -546,6 +547,8 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	}
 
 	CTextureAtlas::SetDebug(FLAGS_textureatlas);
+
+	CGameSetup::forceOnlyLocal = FLAGS_onlyLocal;
 
 	// if this fails, configHandler remains null
 	// logOutput's init depends on configHandler
