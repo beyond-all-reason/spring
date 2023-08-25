@@ -301,7 +301,7 @@ void CKeyBindings::Init()
 	RegisterAction("keyprint");
 	SortRegisteredActions();
 
-	keyChainTimeout = configHandler->GetInt("KeyChainTimeOut");
+	keyChainTimeout = configHandler->GetInt("KeyChainTimeout");
 	configHandler->NotifyOnChange(this, {"KeyChainTimeout"});
 }
 
