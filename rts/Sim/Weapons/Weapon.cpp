@@ -34,6 +34,8 @@
 
 #include <tracy/Tracy.hpp>
 
+constexpr float SAFE_INTERCEPT_EPS = (1.0 / 65536);
+
 CR_BIND_DERIVED_POOL(CWeapon, CObject, , weaponMemPool.allocMem, weaponMemPool.freeMem)
 CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(owner),
@@ -1304,9 +1306,11 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 	}
 	// case 1b, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
 	else if (aa <= 0) {
-		// check catastrophic case of aa=0 and bb=0 
-		// target speed equal to projectile speed, and target is moving tangentally
-		if ((std::abs(aa) < (std::pow(2, -16))) && (std::abs(bb) < (std::pow(2, -16)))) {
+		// check catastrophic case of aa=0 and bb>=0 
+		// target speed equal to projectile speed, and target is moving away
+		// answer is either only a negative number (bb>0) or does not exist (bb=0) 
+		// or very, very large positive number (aa=small and bb>=0)
+		if ((std::abs(aa) < (SAFE_INTERCEPT_EPS)) && (bb > (-SAFE_INTERCEPT_EPS))) {
 			return -1.0;
 		}
 		// use Citardauq Formula if aa is small
@@ -1333,9 +1337,11 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 		}
 		// case 2d, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
 		else {
-			// check catastrophic case of aa=0 and bb=0 
-			// target speed equal to projectile speed, and target is moving tangentally
-			if ((std::abs(aa) < (1.0 / (std::pow(2, -16)))) && (std::abs(bb) < (std::pow(2, -16)))) {
+			// check catastrophic case of aa=0 and bb>=0 
+			// target speed equal to projectile speed, and target is moving away
+			// answer is either only a negative number (bb>0) or does not exist (bb=0) 
+			// or very, very large positive number (aa=small and bb=small)
+			if ((std::abs(aa) < (SAFE_INTERCEPT_EPS)) && (bb > (-SAFE_INTERCEPT_EPS))) {
 				return -1.0;
 			}
 			// use Citardauq Formula if aa is small
