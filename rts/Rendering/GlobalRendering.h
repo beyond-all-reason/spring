@@ -12,6 +12,54 @@
 #include "System/Misc/SpringTime.h"
 #include "System/type2.h"
 
+#ifdef _WIN32
+	#include <windows.h>
+	class DwmApiLoader {
+		public:
+			static DwmApiLoader& getInstance() {
+				static DwmApiLoader instance;
+				return instance;
+			}
+
+			HRESULT DwmFlush() {
+				if (!isLoaded) {
+					dwmapiDll = LoadLibrary("dwmapi.dll");
+					if (dwmapiDll == NULL) {
+						//std::cerr << "Failed to load dwmapi.dll" << std::endl;
+						return E_FAIL;
+					}
+
+					DwmFlushFunc = reinterpret_cast<DwmFlushFuncType>(GetProcAddress(dwmapiDll, "DwmFlush"));
+					if (DwmFlushFunc == NULL) {
+						//std::cerr << "Failed to get address of DwmFlush function" << std::endl;
+						FreeLibrary(dwmapiDll);
+						return E_FAIL;
+					}
+
+					isLoaded = true;
+				}
+
+				return DwmFlushFunc();
+			}
+
+			~DwmApiLoader() {
+				if (isLoaded) {
+					FreeLibrary(dwmapiDll);
+				}
+			}
+
+		private:
+			typedef HRESULT(WINAPI* DwmFlushFuncType)();
+			HMODULE dwmapiDll = NULL;
+			DwmFlushFuncType DwmFlushFunc = NULL;
+			bool isLoaded = false;
+
+			DwmApiLoader() {} // Private constructor to enforce singleton pattern
+			DwmApiLoader(const DwmApiLoader&) = delete; // Disable copy constructor
+			DwmApiLoader& operator=(const DwmApiLoader&) = delete; // Disable assignment operator
+	};
+#endif
+
 struct SDL_version;
 struct SDL_Rect;
 struct SDL_Window;
@@ -369,6 +417,15 @@ public:
 	bool borderless;
 
 	bool underExternalDebug;
+	/**
+	 * @brief Forces Window's desktop compositing before each glSwapWindow
+	 */
+	bool forceDWMFlush;
+
+	#ifdef _WIN32
+		DwmApiLoader& dwmLoader  = DwmApiLoader::getInstance();
+	#endif
+
 public:
 	SDL_Window* sdlWindow;
 	SDL_GLContext glContext;
