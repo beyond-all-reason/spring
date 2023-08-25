@@ -452,9 +452,10 @@ void CShadowHandler::DrawShadowPasses()
 		grassDrawer->DrawShadow();
 	}
 
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0)
+	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0){
+		ZoneScopedN("Draw::World::CreateShadows::Projectiles");
 		projectileDrawer->DrawShadowPassOpaque();
-
+	}
 	if ((shadowGenBits & SHADOWGEN_BIT_MODEL) != 0) {
 		unitDrawer->DrawShadowPass();
 		featureDrawer->DrawShadowPass();
@@ -474,9 +475,10 @@ void CShadowHandler::DrawShadowPasses()
 	// Restore GL_BACK culling, because Lua shadow materials might
 	// have changed culling at their own discretion
 	glCullFace(GL_BACK);
-	if ((shadowGenBits & SHADOWGEN_BIT_MAP) != 0)
+	if ((shadowGenBits & SHADOWGEN_BIT_MAP) != 0){
+		ZoneScopedN("Draw::World::CreateShadows::Terrain");
 		readMap->GetGroundDrawer()->DrawShadowPass();
-
+	}
 	//transparent pass, comes last
 	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
 		projectileDrawer->DrawShadowPassTransparent();

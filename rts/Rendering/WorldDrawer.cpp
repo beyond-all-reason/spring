@@ -209,9 +209,10 @@ void CWorldDrawer::Update(bool newSimFrame)
 	LuaObjectDrawer::Update(numUpdates == 0);
 	readMap->UpdateDraw(numUpdates == 0);
 
-	if (globalRendering->drawGround)
+	if (globalRendering->drawGround) {
+		ZoneScopedN("GroundDrawer::Update");
 		(readMap->GetGroundDrawer())->Update();
-
+	}
 	// XXX: done in CGame, needs to get updated even when !doDrawWorld
 	// (it updates unitdrawpos which is used for maximized minimap too)
 	// unitDrawer->Update();
