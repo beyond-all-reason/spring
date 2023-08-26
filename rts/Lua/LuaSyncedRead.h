@@ -43,6 +43,8 @@ class LuaSyncedRead {
 
 		static int GetHeadingFromVector(lua_State* L);
 		static int GetVectorFromHeading(lua_State* L);
+		static int GetFacingFromHeading(lua_State* L);
+		static int GetHeadingFromFacing(lua_State* L);
 
 		static int GetSideData(lua_State* L);
 

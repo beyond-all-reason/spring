@@ -132,6 +132,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetHeadingFromVector);
 	REGISTER_LUA_CFUNC(GetVectorFromHeading);
+	REGISTER_LUA_CFUNC(GetHeadingFromFacing);
+	REGISTER_LUA_CFUNC(GetFacingFromHeading);
 
 	REGISTER_LUA_CFUNC(GetSideData);
 
@@ -1337,6 +1339,28 @@ int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 	lua_pushnumber(L, vec.x);
 	lua_pushnumber(L, vec.z);
 	return 2;
+}
+
+/***
+ * @function Spring.GetFacingFromHeading
+ * @number heading
+ * @treturn number facing
+ */
+int LuaSyncedRead::GetFacingFromHeading(lua_State* L)
+{
+	lua_pushnumber(L, ::GetFacingFromHeading(luaL_checknumber(L, 1)));
+	return 1;
+}
+
+/***
+ * @function Spring.GetHeadingFromFacing
+ * @number facing
+ * @treturn number heading
+ */
+int LuaSyncedRead::GetHeadingFromFacing(lua_State* L)
+{
+	lua_pushnumber(L, ::GetHeadingFromFacing(luaL_checknumber(L, 1)));
+	return 1;
 }
 
 
