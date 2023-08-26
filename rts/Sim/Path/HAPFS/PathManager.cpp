@@ -161,6 +161,8 @@ CPathManager::~CPathManager()
 	PathFlowMap::FreeInstance(pathFlowMap);
 	IPathFinder::KillStatic();
 	PathingState::KillStatic();
+
+	registry.clear();
 }
 
 

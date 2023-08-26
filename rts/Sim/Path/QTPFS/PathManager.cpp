@@ -161,6 +161,7 @@ QTPFS::PathManager::~PathManager() {
 					, path.GetPathType()
 					, path.GetOwner()
 					);
+			registry.destroy(entity);
 		}
 		if (isSearch) {
 			const PathSearch& search = registry.get<PathSearch>(entity);
