@@ -2,10 +2,12 @@
 
 #include "AAirMoveType.h"
 
+#include "Components/MoveTypesComponents.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
 #include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
@@ -14,6 +16,8 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "System/SpringMath.h"
+
+using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AAirMoveType, AMoveType)
 
@@ -105,6 +109,8 @@ AAirMoveType::AAirMoveType(CUnit* unit): AMoveType(unit)
 		crashExpGenID = guRNG.NextInt(ud->GetCrashExpGenCount());
 		crashExpGenID = ud->GetCrashExpGenID(crashExpGenID);
 	}
+
+	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
 }
 
 

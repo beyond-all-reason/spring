@@ -29,9 +29,10 @@ public:
 
 	void DrawAll() const override;
 	void UpdateExtraTexture(int, int, int, int, unsigned char*) const override;
+	void DrawInMiniMap();
 
 private:
-	void DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes) const;
+	void DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const;
 	void DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) const;
 
 	void GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::NodeLayer& nl, std::vector<const QTPFS::QTNode*>& nodes) const;
@@ -41,7 +42,7 @@ private:
 	void DrawSearchExecution(unsigned int pathType, const QTPFS::PathSearchTrace::Execution* se, TypedRenderBuffer<VA_TYPE_C>& rd) const;
 	void DrawSearchIteration(unsigned int pathType, const std::vector<unsigned int>& nodeIndices, TypedRenderBuffer<VA_TYPE_C>& rd) const;
 	void DrawNode(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rd, const unsigned char* color) const;
-	void DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color) const;
+	void DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color, float sizeAdj) const;
 	void DrawNodeLink(const QTPFS::QTNode* pushedNode, const QTPFS::QTNode* poppedNode, TypedRenderBuffer<VA_TYPE_C>& rb) const;
 
 private:

@@ -38,9 +38,6 @@ void CModInfo::ResetState()
 		maxCollisionPushMultiplier = std::numeric_limits<float>::infinity();
 		unitQuadPositionUpdateRate = 3;
 		groundUnitCollisionAvoidanceUpdateRate = 3;
-
-		forceCollisionsSingleThreaded = false;
-		forceCollisionAvoidanceSingleThreaded = false;
 	}
 	{
 		constructionDecay      = true;
@@ -108,10 +105,10 @@ void CModInfo::ResetState()
 	{
 		pathFinderSystem = NOPFS_TYPE;
 		pfRawDistMult    = 1.25f;
-		pfUpdateRate     = 0.007f;
 		pfUpdateRateScale = 1.f;
-		pfForceSingleThreaded = false;
-		pfForceUpdateSingleThreaded = false;
+		pfRepathDelayInFrames = 60;
+		pfRepathMaxRateInFrames = 150;
+		pfRawMoveSpeedThreshold = 0.f;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
@@ -157,10 +154,10 @@ void CModInfo::Init(const std::string& modFileName)
 
 		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
-		pfUpdateRate = system.GetFloat("pathFinderUpdateRate", pfUpdateRate);
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
-		pfForceSingleThreaded = system.GetBool("pfForceSingleThreaded", pfForceSingleThreaded);
-		pfForceUpdateSingleThreaded = system.GetBool("pfForceUpdateSingleThreaded", pfForceUpdateSingleThreaded);
+		pfRepathDelayInFrames = Clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
+		pfRepathMaxRateInFrames = Clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
+		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
@@ -191,8 +188,6 @@ void CModInfo::Init(const std::string& modFileName)
 		unitQuadPositionUpdateRate = Clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
 		groundUnitCollisionAvoidanceUpdateRate = Clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
 
-		forceCollisionsSingleThreaded = movementTbl.GetBool("forceCollisionsSingleThreaded", forceCollisionsSingleThreaded);
-		forceCollisionAvoidanceSingleThreaded = movementTbl.GetBool("forceCollisionAvoidanceSingleThreaded", forceCollisionAvoidanceSingleThreaded);
 	}
 
 	{

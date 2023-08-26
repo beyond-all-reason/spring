@@ -32,8 +32,7 @@ CR_REG_METADATA(AMoveType, (
 	CR_MEMBER(waterline),
 
 	CR_MEMBER(useHeading),
-	CR_MEMBER(useWantedSpeed),
-	CR_MEMBER(wantRepath)
+	CR_MEMBER(useWantedSpeed)
 ))
 
 

@@ -3,8 +3,10 @@
 
 #include "ScriptMoveType.h"
 
+#include "Components/MoveTypesComponents.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Units/UnitDef.h"
@@ -12,6 +14,8 @@
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
+
+using namespace MoveTypes;
 
 CR_BIND_DERIVED(CScriptMoveType, AMoveType, (nullptr))
 CR_REG_METADATA(CScriptMoveType, (
@@ -52,6 +56,8 @@ CScriptMoveType::CScriptMoveType(CUnit* owner): AMoveType(owner)
 {
 	// use the transformation matrix instead of heading
 	UseHeading(false);
+
+	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
 }
 
 
@@ -61,6 +67,8 @@ CScriptMoveType::~CScriptMoveType()
 	// some point during this script's lifetime
 	// and not reset
 	owner->UnBlock();
+
+	Sim::registry.remove<GeneralMoveType>(owner->entityReference);
 }
 
 

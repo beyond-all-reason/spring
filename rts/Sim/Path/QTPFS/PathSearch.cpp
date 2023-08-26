@@ -1,13 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include <cassert>
 #include <limits>
 
-#include "PathSearch.hpp"
-#include "Path.hpp"
-#include "PathCache.hpp"
-#include "NodeLayer.hpp"
+#include "PathSearch.h"
+#include "Path.h"
+#include "PathCache.h"
+#include "NodeLayer.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/Log/ILog.h"
+#include "Game/SelectedUnitsHandler.h"
+#include "Sim/Objects/SolidObject.h"
+
+#include "Components/PathMaxSpeedMod.h"
+#include "System/Ecs/Utils/SystemGlobalUtils.h"
+
+#include "Map/ReadMap.h"
 
 #ifdef QTPFS_TRACE_PATH_SEARCHES
 #include "Sim/Misc/GlobalSynced.h"
@@ -15,90 +25,155 @@
 
 #include "System/float3.h"
 
-QTPFS::binary_heap<QTPFS::INode*> QTPFS::PathSearch::openNodes;
-
-
+// The bit shift needed for the power of two number that is slightly bigger than the given number.
+int GetNextBitShift(int n)
+{
+    // n = n - 1;
+    // while (n & n - 1) {
+    //     n = n & n - 1;
+    // }
+    // return n << 1;
+    int c = 0;
+	n = (n > 0) ? n - 1 : 0;
+    while (n >>= 1) {
+        c = c << 1;
+    }
+    return c + 1;
+}
 
 void QTPFS::PathSearch::Initialize(
 	NodeLayer* layer,
-	PathCache* cache,
 	const float3& sourcePoint,
 	const float3& targetPoint,
-	const SRectangle& searchArea
+	const SRectangle& searchArea,
+	const CSolidObject* owner
 ) {
 	srcPoint = sourcePoint; srcPoint.ClampInBounds();
 	tgtPoint = targetPoint; tgtPoint.ClampInBounds();
 
+	pathOwner = owner;
 	nodeLayer = layer;
-	pathCache = cache;
 
 	searchRect = searchArea;
 	searchExec = nullptr;
 
-	srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
-	tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
-	curNode = nullptr;
-	nxtNode = nullptr;
-	minNode = srcNode;
+	const uint32_t srcX = srcPoint.x / SQUARE_SIZE;
+	const uint32_t srcZ = srcPoint.z / SQUARE_SIZE;
+	const uint32_t tgtX = tgtPoint.x / SQUARE_SIZE;
+	const uint32_t tgtZ = tgtPoint.z / SQUARE_SIZE;
+
+	INode* srcNode = nodeLayer->GetNode(srcX, srcZ);
+	INode* tgtNode = nodeLayer->GetNode(tgtX, tgtZ);
+
+	assert(srcPoint.x / SQUARE_SIZE >= 0);
+	assert(srcPoint.z / SQUARE_SIZE >= 0);
+	assert(srcPoint.x / SQUARE_SIZE < mapDims.mapx);
+	assert(srcPoint.z / SQUARE_SIZE < mapDims.mapy);
+
+	pathSearchHash = GenerateHash(srcNode, tgtNode);
 }
 
-bool QTPFS::PathSearch::Execute(
-	unsigned int searchStateOffset,
-	unsigned int searchMagicNumber
-) {
-	searchState = searchStateOffset; // starts at NODE_STATE_OFFSET
-	searchMagic = searchMagicNumber; // starts at numTerrainChanges
+void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
+	ZoneScoped;
+	searchThreadData = threadData;
 
-	haveFullPath = (srcNode == tgtNode);
+	badGoal = false;
+
+	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
+	openNodes = &searchThreadData->openNodes;
+
+	INode* srcNode = nodeLayer->GetNode(srcPoint.x / SQUARE_SIZE, srcPoint.z / SQUARE_SIZE);
+	INode* tgtNode = nodeLayer->GetNode(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE);
+
+	if (tgtNode->AllSquaresImpassable()) {
+		// find nearest acceptable node because this will otherwise trigger a full walk of every pathable node.
+		INode* altTgtNode = nodeLayer->GetNearestNodeInArea
+			( SRectangle
+					( std::max(int(tgtNode->xmin()) - 16, 0)
+					, std::max(int(tgtNode->zmin()) - 16, 0)
+					, std::min(int(tgtNode->xmax()) + 16, mapDims.mapx)
+					, std::min(int(tgtNode->zmax()) + 16, mapDims.mapy)
+					)
+			, int2(tgtPoint.x / SQUARE_SIZE, tgtPoint.z / SQUARE_SIZE)
+			, searchThreadData->tmpNodesStore
+		);
+		if (altTgtNode != nullptr) {
+			tgtNode = altTgtNode;
+			badGoal = true;
+		}
+	}
+
+	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
+	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
+	curSearchNode = nullptr;
+	nextSearchNode = nullptr;
+	minSearchNode = srcSearchNode;
+}
+
+bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
+	haveFullPath = (srcSearchNode == tgtSearchNode);
 	havePartPath = false;
 
 	// early-out
-	if (haveFullPath)
+	if (haveFullPath) 
 		return true;
+
+	if (rawPathCheck)
+		return ExecuteRawSearch();
+
+	return ExecutePathSearch();
+}
+
+bool QTPFS::PathSearch::ExecutePathSearch() {
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 	searchExec = new PathSearchTrace::Execution(gs->frameNum);
 	#endif
 
+	auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
+
 	// be as optimistic as possible: assume the remainder of our path will
 	// cover only flat terrain with maximum speed-modifier between nxtPoint
 	// and tgtPoint
-	// this is admissable so long as the map is not LOCALLY changed in such
-	// a way as to increase the maximum speedmod beyond the current layer's
-	// cached maximum value
 	switch (searchType) {
-		case PATH_SEARCH_ASTAR:    { hCostMult = 1.0f / nodeLayer->GetMaxRelSpeedMod(); } break;
-		case PATH_SEARCH_DIJKSTRA: { hCostMult = 0.0f;                                  } break;
+		// This guarantees the best path, but overestimates distance costs considerabily.
+		case PATH_SEARCH_ASTAR:
+			hCostMult = 1.0f / ( comp.maxRelSpeedMod[nodeLayer->GetNodelayer()] );
+			break;
+		case PATH_SEARCH_DIJKSTRA:
+			hCostMult = 0.0f;
+			break;
 	}
 
-	// allow the search to start from an impassable node (because single
-	// nodes can represent many terrain squares, some of which can still
-	// be passable and allow a unit to move within a node)
-	// NOTE: we need to make sure such paths do not have infinite cost!
-	if (srcNode->GetMoveCost() == QTPFS_POSITIVE_INFINITY)
-		srcNode->SetMoveCost(0.0f);
+	// if (nodeLayer->GetNodelayer() == 2) {
+	// 	LOG("%s: maxRelSpeedMod = %f, hCostMult = %f", __func__
+	// 			, comp.maxRelSpeedMod[nodeLayer->GetNodelayer()], hCostMult);
+	// }
 
-	ResetState(srcNode);
-	UpdateNode(srcNode, nullptr, 0);
+	ResetState(srcSearchNode);
+	UpdateNode(srcSearchNode, nullptr, 0);
 
-	while (!openNodes.empty()) {
-		IterateNodes(nodeLayer->GetNodes());
+	// LOG("%s: [%p] Beginning search from %d to %d", __func__
+	// 		, nodeLayer
+	// 		, srcSearchNode->GetIndex()
+	// 		, tgtSearchNode->GetIndex()
+	// 		);
+
+	while (!(*openNodes).empty()) {
+		IterateNodes();
 
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		searchExec->AddIteration(searchIter);
 		searchIter.Clear();
 		#endif
 
-		haveFullPath = (curNode == tgtNode);
-		havePartPath = (minNode != srcNode);
-
-		if (haveFullPath)
-			openNodes.reset();
+		haveFullPath = (curSearchNode == tgtSearchNode);
+		if (haveFullPath){
+			searchThreadData->ResetQueue();
+		}
 	}
 
-	if (srcNode->GetMoveCost() == 0.0f)
-		srcNode->SetMoveCost(QTPFS_POSITIVE_INFINITY);
-
+	havePartPath = (minSearchNode != srcSearchNode);
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result
@@ -107,7 +182,8 @@ bool QTPFS::PathSearch::Execute(
 	//   units will end up spinning in-place over the last
 	//   waypoint (since "atGoal" can never become true)
 	if (!haveFullPath && havePartPath) {
-		tgtNode    = minNode;
+		tgtSearchNode = minSearchNode;
+		auto* minNode = nodeLayer->GetPoolNode(minSearchNode->GetIndex());
 		tgtPoint.x = minNode->xmid() * SQUARE_SIZE;
 		tgtPoint.z = minNode->zmid() * SQUARE_SIZE;
 	}
@@ -116,9 +192,16 @@ bool QTPFS::PathSearch::Execute(
 	return (haveFullPath || havePartPath);
 }
 
+bool QTPFS::PathSearch::ExecuteRawSearch() {
+	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
+			->DoRawSearch( pathOwner, srcPoint, tgtPoint, pathOwner->speed
+						 , true, true, false, nullptr, nullptr, searchThreadData->threadId);
+
+	return haveFullPath;
+}
 
 
-void QTPFS::PathSearch::ResetState(INode* node) {
+void QTPFS::PathSearch::ResetState(SearchNode* node) {
 	// will be copied into srcNode by UpdateNode()
 	netPoints[0] = {srcPoint.x, srcPoint.z};
 
@@ -136,11 +219,11 @@ void QTPFS::PathSearch::ResetState(INode* node) {
 		hCosts[i] = 0.0f;
 	}
 
-	openNodes.reset();
-	openNodes.push(node);
+	searchThreadData->ResetQueue();
+	(*openNodes).emplace(node->GetIndex(), 0.f);
 }
 
-void QTPFS::PathSearch::UpdateNode(INode* nextNode, INode* prevNode, unsigned int netPointIdx) {
+void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx) {
 	// NOTE:
 	//   the heuristic must never over-estimate the distance,
 	//   but this is *impossible* to achieve on a non-regular
@@ -148,50 +231,66 @@ void QTPFS::PathSearch::UpdateNode(INode* nextNode, INode* prevNode, unsigned in
 	//   associated with it --> paths will be "nearly optimal"
 	nextNode->SetPrevNode(prevNode);
 	nextNode->SetPathCosts(gCosts[netPointIdx], hCosts[netPointIdx]);
-	nextNode->SetSearchState(searchState | NODE_STATE_OPEN);
-	nextNode->SetNeighborEdgeTransitionPoint(0, netPoints[netPointIdx]);
+	// nextNode->SetSearchState(searchState | NODE_STATE_OPEN);
+	nextNode->SetNeighborEdgeTransitionPoint(netPoints[netPointIdx]);
 }
 
-void QTPFS::PathSearch::IterateNodes(const std::vector<INode*>& allNodes) {
-	curNode = openNodes.top();
-	curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
-	#ifdef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
-	// in the non-conservative case, this is done from
-	// NodeLayer::ExecNodeNeighborCacheUpdates instead
-	curNode->SetMagicNumber(searchMagic);
-	#endif
+void QTPFS::PathSearch::IterateNodes() {
+	SearchQueueNode curOpenNode = (*openNodes).top();
+	assert(searchThreadData->allSearchedNodes.isSet(curOpenNode.nodeIndex));
+	curSearchNode = &searchThreadData->allSearchedNodes[curOpenNode.nodeIndex];
+	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
+	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
 
-	openNodes.pop();
-	openNodes.check_heap_property(0);
+	(*openNodes).pop();
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
+	{
+	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 	searchIter.SetPoppedNodeIdx(curNode->zmin() * mapDims.mapx + curNode->xmin());
+	}
 	#endif
 
-	if (curNode == tgtNode)
-		return;
-	if (curNode->AllSquaresImpassable())
+	// LOG("%s: continuing search from %d to %d", __func__
+	// 		, curSearchNode->GetIndex()
+	// 		, tgtSearchNode->GetIndex()
+	// 		);
+
+	if (curSearchNode == tgtSearchNode)
 		return;
 
-	if (curNode->xmid() < searchRect.x1) return;
-	if (curNode->zmid() < searchRect.z1) return;
-	if (curNode->xmid() > searchRect.x2) return;
-	if (curNode->zmid() > searchRect.z2) return;
+	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
+
+	// Check if this node has already been processed already
+	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
+		return;
+
+	// this isn't used - only full map is ever given. TODO: remove searchRect completely?
+	// if (curNode->xmid() < searchRect.x1) return;
+	// if (curNode->zmid() < searchRect.z1) return;
+	// if (curNode->xmid() > searchRect.x2) return;
+	// if (curNode->zmid() > searchRect.z2) return;
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// remember the node with lowest h-cost in case the search fails to reach tgtNode
-	if (curNode->GetPathCost(NODE_PATH_COST_H) < minNode->GetPathCost(NODE_PATH_COST_H))
-		minNode = curNode;
+	if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < minSearchNode->GetPathCost(NODE_PATH_COST_H))
+		minSearchNode = curSearchNode;
 	#endif
 
-	IterateNodeNeighbors(curNode->GetNeighbors(allNodes));
+	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
+
+	// IterateNodeNeighbors(curNode->GetNeighbors());
+	IterateNodeNeighbors(curNode);
 }
 
-void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes) {
+// void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes) {
+void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 	// if curNode equals srcNode, this is just the original srcPoint
-	const float2& curPoint2 = curNode->GetNeighborEdgeTransitionPoint(0);
+	// auto *curNode = nodeLayer->GetPoolNode(curSearchNode->GetIndex());
+	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
+	const std::vector<int>& nxtNodes = curNode->GetNeighbors();
 	for (unsigned int i = 0; i < nxtNodes.size(); i++) {
 		// NOTE:
 		//   this uses the actual distance that edges of the final path will cover,
@@ -210,14 +309,27 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		//   in the first case we would explore many more nodes than necessary (CPU
 		//   nightmare), while in the second we would get low-quality paths (player
 		//   nightmare)
-		nxtNode = nxtNodes[i];
+		// auto* nxtNode = nxtNodes[i];
+		auto* nxtNode = nodeLayer->GetPoolNode(nxtNodes[i]);
+		
+		// LOG("%s: target node search from %d to %d", __func__
+		// 		, curNode->GetIndex()
+		// 		, nxtNode->GetIndex()
+		// 		);
 
-		if (nxtNode->AllSquaresImpassable())
-			continue;
+		assert(curNode->GetNeighborRelation(nxtNode) != 0);
+		assert(nxtNode->GetNeighborRelation(curNode) != 0);
 
-		const bool isCurrent = (nxtNode->GetSearchState() >= searchState);
-		const bool isClosed = ((nxtNode->GetSearchState() & 1) == NODE_STATE_CLOSED);
-		const bool isTarget = (nxtNode == tgtNode);
+		// Nodes are no longer linked to impassible nodes.
+		// The removal of this check allows units to try to escape from an "impassible node"
+		// if (nxtNode->AllSquaresImpassable())
+		// 	continue;
+
+		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNode);
+
+		// const bool isCurrent = (nextSearchNode->GetSearchState() >= searchState);
+		// const bool isClosed = ((nextSearchNode->GetSearchState() & 1) == NODE_STATE_CLOSED);
+		const bool isTarget = (nextSearchNode == tgtSearchNode);
 
 		unsigned int netPointIdx = 0;
 
@@ -252,9 +364,12 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
+			// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
+			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
-				curNode->GetPathCost(NODE_PATH_COST_G) +
-				curNode->GetMoveCost() * gDists[j] +
+				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
+				// curNode->GetMoveCost() * gDists[j] +
+				curNodeSanitizedCost * gDists[j] +
 				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
 
@@ -264,60 +379,76 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const std::vector<INode*>& nxtNodes
 		}
 		#endif
 
-		if (!isCurrent) {
-			UpdateNode(nxtNode, curNode, netPointIdx);
+		// if (!isCurrent) {
+		// 	UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
 
-			openNodes.push(nxtNode);
-			openNodes.check_heap_property(0);
+		// 	// (*openNodes).push(nxtNode);
+		// 	(*openNodes).emplace(nextSearchNode->GetIndex(), nextSearchNode->GetHeapPriority());
 
-			#ifdef QTPFS_TRACE_PATH_SEARCHES
-			searchIter.AddPushedNodeIdx(nxtNode->zmin() * mapDims.mapx + nxtNode->xmin());
-			#endif
+		// 	#ifdef QTPFS_TRACE_PATH_SEARCHES
+		// 	searchIter.AddPushedNodeIdx(nxtNode->zmin() * mapDims.mapx + nxtNode->xmin());
+		// 	#endif
 
+		// 	continue;
+		// }
+		if (gCosts[netPointIdx] >= nextSearchNode->GetPathCost(NODE_PATH_COST_G))
 			continue;
-		}
-		if (gCosts[netPointIdx] >= nxtNode->GetPathCost(NODE_PATH_COST_G))
-			continue;
-		if (isClosed)
-			openNodes.push(nxtNode);
 
-		UpdateNode(nxtNode, curNode, netPointIdx);
+		// LOG("%s: adding node (%d) gcost %f < %f [old p:%f]", __func__
+		// 		, nextSearchNode->GetIndex()
+		// 		, gCosts[netPointIdx]
+		// 		, nextSearchNode->GetPathCost(NODE_PATH_COST_G)
+		// 		, nextSearchNode->GetHeapPriority()
+		// 		);
+
+		UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
+		(*openNodes).emplace(nextSearchNode->GetIndex(), nextSearchNode->GetHeapPriority());
 
 		// restore ordering in case nxtNode was already open
 		// (changing the f-cost of an OPEN node messes up the
 		// queue's internal consistency; a pushed node remains
 		// OPEN until it gets popped)
-		openNodes.resort(nxtNode);
-		openNodes.check_heap_property(0);
+		// (*openNodes).resort(nxtNode);
 	}
 }
 
 void QTPFS::PathSearch::Finalize(IPath* path) {
-	TracePath(path);
 
-	#ifdef QTPFS_SMOOTH_PATHS
-	SmoothPath(path);
-	#endif
+	// LOG("%s: [%p : %d] Finialize search.", __func__
+	// 		, &nodeLayer[path->GetPathType()]
+	// 		, path->GetPathType()
+	// 		);
+	if (!rawPathCheck) {
+		TracePath(path);
+
+		#ifdef QTPFS_SMOOTH_PATHS
+		SmoothPath(path);
+		#endif
+	}
 
 	path->SetBoundingBox();
-
-	// path remains in live-cache until DeletePath is called
-	pathCache->AddLivePath(path);
+	path->SetHasFullPath(haveFullPath & !badGoal);
+	path->SetHasPartialPath(havePartPath);
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
 	std::deque<float3> points;
-//	std::deque<float3>::const_iterator pointsIt;
 
-	if (srcNode != tgtNode) {
-		INode* tmpNode = tgtNode;
-		INode* prvNode = tmpNode->GetPrevNode();
+	if (srcSearchNode != tgtSearchNode) {
+
+		const SearchNode* tmpNode = tgtSearchNode;
+		const SearchNode* prvNode = tmpNode->GetPrevNode();
 
 		float3 prvPoint = tgtPoint;
 
-		while ((prvNode != nullptr) && (tmpNode != srcNode)) {
-			const float2& tmpPoint2 = tmpNode->GetNeighborEdgeTransitionPoint(0);
+		while ((prvNode != nullptr) && (tmpNode != srcSearchNode)) {
+			const float2& tmpPoint2 = tmpNode->GetNeighborEdgeTransitionPoint();
 			const float3  tmpPoint  = {tmpPoint2.x, 0.0f, tmpPoint2.y};
+
+			assert(tmpPoint.x >= 0.f);
+			assert(tmpPoint.z >= 0.f);
+			assert(tmpPoint.x / SQUARE_SIZE < mapDims.mapx);
+			assert(tmpPoint.z / SQUARE_SIZE < mapDims.mapy);
 
 			assert(!math::isinf(tmpPoint.x) && !math::isinf(tmpPoint.z));
 			assert(!math::isnan(tmpPoint.x) && !math::isnan(tmpPoint.z));
@@ -326,7 +457,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			//   one exception: tgtPoint can legitimately coincide
 			//   with first transition-point, which we must ignore
 			assert(tmpNode != prvNode);
-			assert(tmpPoint != prvPoint || tmpNode == tgtNode);
+			assert(tmpPoint != prvPoint || tmpNode == tgtSearchNode);
 
 			if (tmpPoint != prvPoint)
 				points.push_front(tmpPoint);
@@ -354,6 +485,14 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	// set waypoints with indices [1, N - 2] (if any)
 	while (!points.empty()) {
 		path->SetPoint((path->NumPoints() - points.size()) - 1, points.front());
+		// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
+		// 		, path->GetHash()
+		// 		, path->GetPathType()
+		// 		, (int)points.size()
+		// 		, points.front().x
+		// 		, points.front().y
+		// 		, points.front().z
+		// 		);
 		points.pop_front();
 	}
 
@@ -366,24 +505,13 @@ void QTPFS::PathSearch::SmoothPath(IPath* path) const {
 	if (path->NumPoints() == 2)
 		return;
 
-	assert(srcNode->GetPrevNode() == NULL);
+	assert(srcSearchNode->GetPrevNode() == NULL);
 
 	for (unsigned int k = 0; k < QTPFS_MAX_SMOOTHING_ITERATIONS; k++) {
 		if (!SmoothPathIter(path)) {
 			// all waypoints stopped moving
 			break;
 		}
-	}
-
-	INode* n0 = tgtNode;
-	INode* n1 = tgtNode;
-
-	while (n1 != srcNode) {
-		n0 = n1;
-		n1 = n0->GetPrevNode();
-
-		// reset back-pointers
-		n0->SetPrevNode(NULL);
 	}
 }
 
@@ -395,19 +523,28 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 	unsigned int ni = path->NumPoints();
 	unsigned int nm = 0;
 
-	INode* n0 = tgtNode;
-	INode* n1 = tgtNode;
+	// SearchNode* srcSearchNode = &searchThreadData->allSearchedNodes[srcNode->GetIndex()];
+	// SearchNode* tgtSearchNode = &searchThreadData->allSearchedNodes[tgtNode->GetIndex()];
 
-	while (n1 != srcNode) {
+	// const int srcIndex = srcNode->GetIndex();
+	// const int tgtIndex = tgtNode->GetIndex();
+
+	SearchNode* n0 = tgtSearchNode;
+	SearchNode* n1 = tgtSearchNode;
+
+	while (n1 != srcSearchNode) {
 		n0 = n1;
 		n1 = n0->GetPrevNode();
 		ni -= 1;
 
-		assert(n1->GetNeighborRelation(n0) != 0);
-		assert(n0->GetNeighborRelation(n1) != 0);
+		INode* nn0 = nodeLayer->GetPoolNode(n0->GetIndex());
+		INode* nn1 = nodeLayer->GetPoolNode(n1->GetIndex());
+
+		assert(nn1->GetNeighborRelation(nn0) != 0);
+		assert(nn0->GetNeighborRelation(nn1) != 0);
 		assert(ni < path->NumPoints());
 
-		const unsigned int ngbRel = n0->GetNeighborRelation(n1);
+		const unsigned int ngbRel = nn0->GetNeighborRelation(nn1);
 
 		const float3 p0 = path->GetPoint(ni    );
 		const float3 p1 = path->GetPoint(ni - 1);
@@ -441,10 +578,10 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 		assert(hEdge || vEdge);
 
 		// establish the x- and z-range within which p1 can be moved
-		const unsigned int xmin = std::max(n1->xmin(), n0->xmin());
-		const unsigned int zmin = std::max(n1->zmin(), n0->zmin());
-		const unsigned int xmax = std::min(n1->xmax(), n0->xmax());
-		const unsigned int zmax = std::min(n1->zmax(), n0->zmax());
+		const unsigned int xmin = std::max(nn1->xmin(), nn0->xmin());
+		const unsigned int zmin = std::max(nn1->zmin(), nn0->zmin());
+		const unsigned int xmax = std::min(nn1->xmax(), nn0->xmax());
+		const unsigned int zmax = std::min(nn1->zmax(), nn0->zmax());
 
 		{
 			// calculate intersection point between ray (p2 - p0) and edge
@@ -456,11 +593,11 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 			//
 			// x- and z-distances to edge between n0 and n1
 			const float dfx = (p2p0.x > 0.0f)?
-				((n0->xmax() * SQUARE_SIZE) - p0.x): // A(x)
-				((n0->xmin() * SQUARE_SIZE) - p0.x); // B(x)
+				((nn0->xmax() * SQUARE_SIZE) - p0.x): // A(x)
+				((nn0->xmin() * SQUARE_SIZE) - p0.x); // B(x)
 			const float dfz = (p2p0.z > 0.0f)?
-				((n0->zmax() * SQUARE_SIZE) - p0.z): // A(z)
-				((n0->zmin() * SQUARE_SIZE) - p0.z); // B(z)
+				((nn0->zmax() * SQUARE_SIZE) - p0.z): // A(z)
+				((nn0->zmin() * SQUARE_SIZE) - p0.z); // B(z)
 
 			const float dx = (math::fabs(p2p0.x) > 0.001f)? p2p0.x: 0.001f;
 			const float dz = (math::fabs(p2p0.z) > 0.001f)? p2p0.z: 0.001f;
@@ -486,6 +623,14 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 
 				assert(!math::isinf(pi.x) && !math::isinf(pi.z));
 				assert(!math::isnan(pi.x) && !math::isnan(pi.z));
+				// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
+				// 		, path->GetHash()
+				// 		, path->GetPathType()
+				// 		, ni - 1
+				// 		, pi.x
+				// 		, pi.y
+				// 		, pi.z
+				// 		);
 				path->SetPoint(ni - 1, pi);
 				continue;
 			}
@@ -519,11 +664,11 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 			const float  dot1 = e1p0.dot(p2e1);
 
 			// if neither end-point is an improvement, skip
-			if (dot > std::max(dot0, dot1))
+			if (dot >= std::max(dot0, dot1))
 				continue;
 
 			if (dot0 > std::max(dot1, dot)) { pi = e0; }
-			if (dot1 > std::max(dot0, dot)) { pi = e1; }
+			if (dot1 >= std::max(dot0, dot)) { pi = e1; }
 
 			nm += ((pi - p1).SqLength2D() > Square(0.05f));
 
@@ -543,24 +688,68 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	assert(dstPath->GetID() != srcPath->GetID());
 	assert(dstPath->NumPoints() == 2);
 
-	const float3& p0 = srcPath->GetTargetPoint();
-	const float3& p1 = dstPath->GetTargetPoint();
+	// copy <srcPath> to <dstPath>
+	dstPath->CopyPoints(*srcPath);
+	dstPath->SetSourcePoint(srcPoint);
+	dstPath->SetTargetPoint(tgtPoint);
+	dstPath->SetBoundingBox();
+	dstPath->SetHasFullPath(srcPath->IsFullPath());
 
-	if (p0.SqDistance(p1) < (SQUARE_SIZE * SQUARE_SIZE)) {
-		// copy <srcPath> to <dstPath>
-		dstPath->CopyPoints(*srcPath);
-		dstPath->SetSourcePoint(srcPoint);
-		dstPath->SetTargetPoint(tgtPoint);
-		dstPath->SetBoundingBox();
+	haveFullPath = srcPath->IsFullPath();
+	havePartPath = srcPath->IsPartialPath();
 
-		pathCache->AddLivePath(dstPath);
-		return true;
+	return true;
+}
+
+unsigned int GetChildId(uint32_t nodeNumber, uint32_t i, uint32_t rootMask) {
+	uint32_t rootId = rootMask & nodeNumber;
+	uint32_t nodeId = ((~rootMask) & nodeNumber);
+	return rootId | ((nodeId << 2) + (i + 1));
+}
+
+const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const INode* tgtNode) const {
+	uint32_t nodeSize = srcNode->xsize();
+
+	if (rawPathCheck)
+		return BAD_HASH;
+	if (nodeSize < QTPFS_SHARE_PATH_MIN_SIZE)
+		return BAD_HASH;
+
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer());
+	int shift = GetNextBitShift(md->xsize);
+
+	// is the node too small to have multiple units within it?
+	if (nodeSize < (1<<shift)) 
+		return BAD_HASH;
+
+	// is the unit too big to be able to share paths?
+	if ((1<<shift) > QTPFS_SHARE_PATH_MAX_SIZE) 
+		return BAD_HASH;
+
+	uint32_t srcNodeNumber = srcNode->GetNodeNumber();
+	uint32_t xoff = srcNode->xmin();
+	uint32_t zoff = srcNode->zmin();
+	uint32_t srcX = srcPoint.x / SQUARE_SIZE;
+	uint32_t srcZ = srcPoint.z / SQUARE_SIZE;
+	while (nodeSize > QTPFS_SHARE_PATH_MAX_SIZE) {
+		// build the rest of the virtual node number
+		bool isRight = srcX >= xoff + (nodeSize >> 1);
+		bool isDown = srcZ >= zoff + (nodeSize >> 1);
+		int offset = 1*(isRight) + 2*(isDown);
+
+		// TODO: sanity check if it isn't possible to go down this many levels?
+		srcNodeNumber = GetChildId(srcNodeNumber, offset, nodeLayer->GetRootMask());
+
+		nodeSize >>= 1;
+		xoff += nodeSize*isRight;
+		zoff += nodeSize*isDown;
 	}
-
-	return false;
+	return GenerateHash2(srcNodeNumber, tgtNode->GetNodeNumber());
 }
 
-const std::uint64_t QTPFS::PathSearch::GetHash(std::uint64_t N, std::uint32_t k) const {
-	return (srcNode->GetNodeNumber() + (tgtNode->GetNodeNumber() * N) + (k * N * N));
-}
+const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
+	std::uint64_t N = mapDims.mapx * mapDims.mapy;
+	std::uint32_t k = nodeLayer->GetNodelayer();
 
+	return (src + (dest * N) + (k * N * N));
+}
