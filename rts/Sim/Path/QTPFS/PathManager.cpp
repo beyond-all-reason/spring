@@ -228,6 +228,11 @@ std::int64_t QTPFS::PathManager::Finalize() {
 void QTPFS::PathManager::InitStatic() {
 	LAYERS_PER_UPDATE = std::max(1u, mapInfo->pfs.qtpfs_constants.layersPerUpdate);
 	MAX_TEAM_SEARCHES = std::max(1u, mapInfo->pfs.qtpfs_constants.maxTeamSearches);
+
+	// Ensure SharedPathChain is assigned a Pool by EnTT to avoid it happening in an MT section
+	{ auto view = registry.view<SharedPathChain>();
+	  if (view.size() > 0) { LOG("%s: SharedPathChain is unexpectedly greater than 0.", __func__); }
+	}
 }
 
 void QTPFS::PathManager::Load() {
@@ -393,17 +398,17 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 	snprintf(loadMsg, sizeof(loadMsg), fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
 	pmLoadScreen.AddMessage(loadMsg);
 
-	#ifndef NDEBUG
-	const char* preFmtStr = "  initializing node-layer %u";
-	const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
-	#endif
+	// #ifndef NDEBUG
+	// const char* preFmtStr = "  initializing node-layer %u";
+	// const char* pstFmtStr = "  initialized node-layer %u (%u MB, %u leafs, ratio %f)";
+	// #endif
 
 	for_mt(0, nodeLayers.size(), [this,&loadMsg, &rect](const int layerNum){
 		int currentThread = ThreadPool::GetThreadNum();
-		#ifndef NDEBUG
-		snprintf(loadMsg, sizeof(loadMsg), preFmtStr, layerNum);
-		pmLoadScreen.AddMessage(loadMsg);
-		#endif
+		// #ifndef NDEBUG
+		// snprintf(loadMsg, sizeof(loadMsg), preFmtStr, layerNum);
+		// pmLoadScreen.AddMessage(loadMsg);
+		// #endif
 
 		NodeLayer& layer = nodeLayers[layerNum];
 
@@ -997,6 +1002,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 unsigned int QTPFS::PathManager::RequeueSearch(
 	IPath* oldPath, const bool allowRawSearch
 ) {
+	assert(!ThreadPool::inMultiThreadedSection);
 	entt::entity pathEntity = entt::entity(oldPath->GetID());
 
 	// If a path request is already in progress then don't create another one.

@@ -10,6 +10,8 @@
 #undef registry
 #endif
 
+#define ENTT_USE_ATOMIC
+
 #include "lib/entt/entt.hpp"
 
 // class EcsMain {

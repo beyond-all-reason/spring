@@ -397,7 +397,7 @@ void CPathManager::DeletePath(unsigned int pathID) {
 	if (pathID == 0)
 		return;
 	{
-		const std::lock_guard<std::mutex> lock(pathMapUpdate);
+		const std::lock_guard<std::mutex> lock(pathMapUpdate); // TODO: remove this? not called in MT sections anymore?
 		const auto pi = pathMap.find(pathID);
 
 		if (pi == pathMap.end())
