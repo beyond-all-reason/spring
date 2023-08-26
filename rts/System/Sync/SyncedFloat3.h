@@ -466,7 +466,7 @@ public:
 	SyncedFloat3& SafeNormalize() {
 
 		const float sql = SqLength();
-		if (likely(sql > float3::nrm_eps())) {
+		if likely(sql > float3::nrm_eps()) {
 			*this *= math::isqrt(sql);
 		}
 
@@ -517,7 +517,7 @@ public:
 	SyncedFloat3& SafeANormalize() {
 
 		const float sql = SqLength();
-		if (likely(sql > float3::nrm_eps())) {
+		if likely(sql > float3::nrm_eps()) {
 			*this *= math::isqrt(sql);
 		}
 

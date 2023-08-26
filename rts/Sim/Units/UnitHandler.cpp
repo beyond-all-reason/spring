@@ -251,7 +251,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	// there are many ways to fiddle with "deathScriptFinished", so a unit may
 	// arrive here not having been properly killed while isDead is still false
 	// make sure we always call Killed; no-op if isDead was already set to true
-	unit->ForcedKillUnit(nullptr, false, true, true);
+	unit->ForcedKillUnit(nullptr, false, true);
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
@@ -389,7 +389,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 		// this unit is not coming back, kill it now without any death
 		// sequence (s.t. deathScriptFinished becomes true immediately)
 		if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-			unit->ForcedKillUnit(nullptr, false, true, false);
+			unit->ForcedKillUnit(nullptr, false, true);
 
 		unit->SanityCheck();
 		assert(activeUnits[activeUpdateUnit] == unit);

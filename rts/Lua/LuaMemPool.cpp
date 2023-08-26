@@ -177,7 +177,7 @@ void* LuaMemPool::Realloc(void* ptr, size_t nsize, size_t osize)
 void LuaMemPool::Free(void* ptr, size_t size)
 {
 	if (!LuaMemPool::enabled) {
-		spring::SafeDelete(ptr);
+		::operator delete(ptr);
 		return;
 	}
 
@@ -208,6 +208,6 @@ void LuaMemPool::LogStats(const char* handle, const char* lctype)
 		avgAllocTimeF,
 		avgAllocTimeE
 	);
-	LOG(msg.c_str());
+	LOG("%s", msg.c_str());
 	allocStats = {};
 }

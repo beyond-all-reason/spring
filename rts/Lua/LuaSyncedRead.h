@@ -43,6 +43,8 @@ class LuaSyncedRead {
 
 		static int GetHeadingFromVector(lua_State* L);
 		static int GetVectorFromHeading(lua_State* L);
+		static int GetFacingFromHeading(lua_State* L);
+		static int GetHeadingFromFacing(lua_State* L);
 
 		static int GetSideData(lua_State* L);
 
@@ -131,6 +133,7 @@ class LuaSyncedRead {
 		static int GetUnitBuildFacing(lua_State* L);
 		static int GetUnitIsBuilding(lua_State* L);
 		static int GetUnitWorkerTask(lua_State* L);
+		static int GetUnitEffectiveBuildRange(lua_State* L);
 		static int GetUnitCurrentBuildPower(lua_State* L);
 		static int GetUnitHarvestStorage(lua_State* L);
 		static int GetUnitBuildParams(lua_State* L);

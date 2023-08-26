@@ -13,10 +13,11 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Threading/ThreadPool.h"
+#include "System/TimeUtil.h"
 
 #undef CreateDirectory
 
-CONFIG(int, ScreenshotCounter).defaultValue(0);
+CONFIG(int, ScreenshotCounter).deprecated(true);
 
 struct FunctionArgs
 {
@@ -40,15 +41,12 @@ void TakeScreenshot(std::string type, unsigned quality)
 	args.y  = globalRendering->winSizeY;
 	args.x += ((4 - (args.x % 4)) * int((args.x % 4) != 0));
 
-	const int shotCounter = configHandler->GetInt("ScreenshotCounter");
-
 	// note: we no longer increment the counter until a "file not found" occurs
 	// since that stalls the thread and might run concurrently with an IL write
-	args.filename.assign("screenshots/screen" + IntToString(shotCounter, "%05d") + "." + type);
+	const std::string curTime = CTimeUtil::GetCurrentTimeStr(true);
+	args.filename.assign("screenshots/screen_" + curTime + "." + type);
 	args.quality = quality;
 	args.pixelbuf.resize(args.x * args.y * 4);
-
-	configHandler->Set("ScreenshotCounter", shotCounter + 1);
 
 	glReadPixels(0, 0, args.x, args.y, GL_RGBA, GL_UNSIGNED_BYTE, &args.pixelbuf[0]);
 

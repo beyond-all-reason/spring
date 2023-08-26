@@ -77,6 +77,7 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
+#include <type_traits>
 
 
 using std::min;
@@ -120,6 +121,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetGameRulesParam);
 	REGISTER_LUA_CFUNC(GetGameRulesParams);
 
+	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
+	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
+
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOptions);
 
@@ -128,6 +132,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetHeadingFromVector);
 	REGISTER_LUA_CFUNC(GetVectorFromHeading);
+	REGISTER_LUA_CFUNC(GetHeadingFromFacing);
+	REGISTER_LUA_CFUNC(GetFacingFromHeading);
 
 	REGISTER_LUA_CFUNC(GetSideData);
 
@@ -217,6 +223,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitBuildFacing);
 	REGISTER_LUA_CFUNC(GetUnitIsBuilding);
 	REGISTER_LUA_CFUNC(GetUnitWorkerTask);
+	REGISTER_LUA_CFUNC(GetUnitEffectiveBuildRange);
 	REGISTER_LUA_CFUNC(GetUnitCurrentBuildPower);
 	REGISTER_LUA_CFUNC(GetUnitHarvestStorage);
 	REGISTER_LUA_CFUNC(GetUnitBuildParams);
@@ -672,17 +679,21 @@ static int PushRulesParams(lua_State* L, const char* caller,
 {
 	lua_createtable(L, 0, params.size());
 
-	for (auto& it: params) {
+	for (const auto& it: params) {
 		const std::string& name = it.first;
 		const LuaRulesParams::Param& param = it.second;
 		if (!(param.los & losStatus))
 			continue;
 
-		if (!param.valueString.empty()) {
-			LuaPushNamedString(L, name, param.valueString);
-		} else {
-			LuaPushNamedNumber(L, name, param.valueInt);
-		}
+		std::visit ([L, &name](auto&& value) {
+			using T = std::decay_t <decltype(value)>;
+			if constexpr (std::is_same_v <T, float>)
+				LuaPushNamedNumber(L, name, value);
+			else if constexpr (std::is_same_v <T, bool>)
+				LuaPushNamedBool(L, name, value);
+			else if constexpr (std::is_same_v <T, std::string>)
+				LuaPushNamedString(L, name, value);
+		}, param.value);
 	}
 
 	return 1;
@@ -699,17 +710,20 @@ static int GetRulesParam(lua_State* L, const char* caller, int index,
 		return 0;
 
 	const LuaRulesParams::Param& param = it->second;
+	if (!(param.los & losStatus))
+		return 0;
 
-	if (param.los & losStatus) {
-		if (!param.valueString.empty()) {
-			lua_pushsstring(L, param.valueString);
-		} else {
-			lua_pushnumber(L, param.valueInt);
-		}
-		return 1;
-	}
+	std::visit ([L](auto&& value) {
+		using T = std::decay_t <decltype(value)>;
+		if constexpr (std::is_same_v <T, float>)
+			lua_pushnumber(L, value);
+		else if constexpr (std::is_same_v <T, bool>)
+			lua_pushboolean(L, value);
+		else if constexpr (std::is_same_v <T, std::string>)
+			lua_pushsstring(L, value);
+	}, param.value);
 
-	return 0;
+	return 1;
 }
 
 
@@ -1327,6 +1341,28 @@ int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 	return 2;
 }
 
+/***
+ * @function Spring.GetFacingFromHeading
+ * @number heading
+ * @treturn number facing
+ */
+int LuaSyncedRead::GetFacingFromHeading(lua_State* L)
+{
+	lua_pushnumber(L, ::GetFacingFromHeading(luaL_checknumber(L, 1)));
+	return 1;
+}
+
+/***
+ * @function Spring.GetHeadingFromFacing
+ * @number facing
+ * @treturn number heading
+ */
+int LuaSyncedRead::GetHeadingFromFacing(lua_State* L)
+{
+	lua_pushnumber(L, ::GetHeadingFromFacing(luaL_checknumber(L, 1)));
+	return 1;
+}
+
 
 /******************************************************************************
  * Sides and Factions
@@ -1450,16 +1486,16 @@ int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
  */
 int LuaSyncedRead::GetAllyTeamStartBox(lua_State* L)
 {
-	const std::vector<AllyTeam>& allyData = CGameSetup::GetAllyStartingData();
-	const unsigned int allyTeam = luaL_checkint(L, 1);
+	const unsigned int allyTeamID = luaL_checkint(L, 1);
 
-	if (allyTeam >= allyData.size())
+	if (!teamHandler.IsValidAllyTeam(allyTeamID))
 		return 0;
 
-	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectLeft;
-	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectTop;
-	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectRight;
-	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectBottom;
+	const AllyTeam& allyTeam = teamHandler.GetAllyTeam(allyTeamID);
+	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectLeft;
+	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectTop;
+	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectRight;
+	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectBottom;
 
 	lua_pushnumber(L, xmin);
 	lua_pushnumber(L, zmin);
@@ -4260,6 +4296,62 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 	} else {
 		return 0;
 	}
+}
+
+/***
+ *
+ * @function Spring.GetUnitEffectiveBuildRange
+ * Useful for setting move goals manually.
+ * @number unitID
+ * @number buildeeDefID or nil
+ * @treturn number effectiveBuildRange counted to the center of prospective buildee; buildRange if buildee nil
+ */
+int LuaSyncedRead::GetUnitEffectiveBuildRange(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto builderCAI = dynamic_cast <const CBuilderCAI*> (unit->commandAI);
+	if (builderCAI == nullptr)
+		return 0;
+
+	/* FIXME: there are some cases where a unitDefID does not suffice.
+	 * This function was mostly created as a reactive afterthought so
+	 * does not handle them properly, but accepting `nil` acknowledges
+	 * their existence to some extent:
+	 *
+	 *  - features, for example reclaim. I think ideally a thingID would
+	 *    be the third argument (exclusive with the unitDefID), but this
+	 *    requires the featureID ticket (#717) to be done first.
+	 *
+	 *  - terraform (restore ground). Fourth boolean parameter? Sounds
+	 *    like it's getting a bit bloated, though it's rare and doesn't
+	 *    actually pollute the usual use cases.
+	 *
+	 *  - design question: would featureDefID ever be a sensible thing
+	 *    to use here? I doubt, but it's something to keep in mind. */
+	if (lua_isnoneornil(L, 2)) {
+		lua_pushnumber(L, builderCAI->GetBuildRange(0.0f));
+		return 1;
+	}
+
+	const auto buildeeDefID = luaL_checkint(L, 2);
+	const auto unitDef = unitDefHandler->GetUnitDefByID(buildeeDefID);
+	if (unitDef == nullptr)
+		luaL_error(L, "Nonexistent buildeeDefID %d passed to Spring.GetUnitEffectiveBuildRange", (int) buildeeDefID);
+
+	const auto model = unitDef->LoadModel();
+	if (model == nullptr)
+		return 0;
+
+	/* FIXME: this is what BuilderCAI does, but can radius actually
+	 * be negative? Sounds worth asserting otherwise at model load. */
+	const auto radius = std::max(0.f, model->radius);
+
+	const auto effectiveBuildRange = builderCAI->GetBuildRange(radius);
+	lua_pushnumber(L, effectiveBuildRange);
+	return 1;
 }
 
 /***

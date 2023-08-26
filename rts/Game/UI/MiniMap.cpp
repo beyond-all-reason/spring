@@ -35,6 +35,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
@@ -49,6 +50,9 @@
 #include "System/Input/KeyInput.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Sound/ISoundChannels.h"
+
+using namespace GL::State;
+
 
 CONFIG(std::string, MiniMapGeometry).defaultValue("2 2 200 200");
 CONFIG(bool, MiniMapFullProxy).defaultValue(true);
@@ -139,8 +143,8 @@ CMiniMap::CMiniMap()
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
 								 bitmap.xsize, bitmap.ysize, 0,
 								 GL_RGBA, GL_UNSIGNED_BYTE, bitmap.GetRawMem());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (unfiltered) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1128,17 +1132,18 @@ void CMiniMap::Draw()
 	{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glPushAttrib(GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_FALSE);
+
+		auto state = GL::SubState(
+			DepthTest(GL_FALSE),
+			DepthFunc(GL_LEQUAL),
+			DepthMask(GL_FALSE));
+
 		glDisable(GL_TEXTURE_2D);
 		glMatrixMode(GL_MODELVIEW);
 
 		if (minimized) {
 			DrawMinimizedButtonQuad();
 			DrawMinimizedButtonLoop();
-			glPopAttrib();
 			glEnable(GL_TEXTURE_2D);
 			return;
 		}
@@ -1148,8 +1153,6 @@ void CMiniMap::Draw()
 			DrawFrame();
 			DrawButtons();
 		}
-
-		glPopAttrib();
 	}
 
 	// draw minimap itself

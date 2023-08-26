@@ -6,6 +6,8 @@ bin_name=spring_bar_$tag_name-minimal-portable.7z
 dbg_name=spring_bar_$tag_name-minimal-symbols.tgz
 ccache_dbg_name=ccache_dbg.tgz
 
+mkdir -p /output-data
+
 cd "${INSTALL_DIR}"
 
 # Compute md5 hashes of all files in archive. We additionally gzip it as gzip adds
@@ -15,22 +17,21 @@ find . -type f ! -name '*.dbg' ! -name files.md5.gz -exec md5sum {} \; | gzip > 
 rm -f ../$bin_name
 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on ../$bin_name ./* -xr\!*.dbg
 # export github output variables
-echo "::set-output name=bin_name::${bin_name}"
+echo ${bin_name} > /output-data/bin_name
 
 
-if [ "${STRIP_SYMBOLS}" == "1" ]; then
-    cd "${BUILD_DIR}"
-    # touch empty.dbg - was is it good for??
-    DEBUGFILES=$(find ./ -name '*.dbg')
-    tar cvfz $dbg_name ${DEBUGFILES}
-    echo "::set-output name=dbg_name::${dbg_name}"
-fi
+cd "${BUILD_DIR}"
+# touch empty.dbg - was is it good for??
+DEBUGFILES=$(find ./ -name '*.dbg')
+tar cvfz $dbg_name ${DEBUGFILES}
+echo ${dbg_name} > /output-data/dbg_name
 
 if [ -d /ccache_dbg ]; then
     echo "Packing ccache debug data..."
 
-    echo "::set-output name=ccache_dbg::${ccache_dbg_name}"
+    echo ${ccache_dbg_name} > /output-data/ccache_dbg_name
     tar cvfz "${PUBLISH_DIR}/${ccache_dbg_name}" -C /ccache_dbg /ccache_dbg > /dev/null 2>&1
 else
+    touch /output-data/ccache_dbg
     echo "No ccache debug data, so skipping packing it..."
 fi

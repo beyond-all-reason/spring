@@ -174,7 +174,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectSMMA(const T* o)
 		if (!wasCustomDirty)
 			continue;
 
-		if (unlikely(!lmp.GetScriptVisible())) {
+		if unlikely(!lmp.GetScriptVisible()) {
 			smma[i + 1] = CMatrix44f::Zero();
 			continue;
 		}

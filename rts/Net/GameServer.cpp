@@ -269,8 +269,12 @@ void CGameServer::Initialize()
 
 	if (!demoReader) {
 		GenerateAndSendGameID();
-		rng.Seed(gameID.intArray[0] ^ gameID.intArray[1] ^ gameID.intArray[2] ^ gameID.intArray[3]);
-		Broadcast(CBaseNetProtocol::Get().SendRandSeed(rng()));
+		if (myGameSetup->fixedRNGSeed == 0) {
+			rng.Seed(gameID.intArray[0] ^ gameID.intArray[1] ^ gameID.intArray[2] ^ gameID.intArray[3]);
+			Broadcast(CBaseNetProtocol::Get().SendRandSeed(rng()));
+		} else {
+			Broadcast(CBaseNetProtocol::Get().SendRandSeed(myGameSetup->fixedRNGSeed));
+		}
 	}
 }
 

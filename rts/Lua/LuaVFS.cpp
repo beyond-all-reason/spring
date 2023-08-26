@@ -99,8 +99,10 @@ bool LuaVFS::PushUnsynced(lua_State* L)
 
 	HSTR_PUSH_CFUNC(L, "UseArchive",     UseArchive);
 	HSTR_PUSH_CFUNC(L, "CompressFolder", CompressFolder);
-	HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
-	HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
+
+	// Removed due to sync unsafety, see commit 0ee88788931f9f0b195eb5f895f1092fde4211c0
+	// HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
+	// HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
 
 	return true;
 }
@@ -278,8 +280,9 @@ int LuaVFS::DirList(lua_State* L, bool synced)
 
 	const std::string& pattern = luaL_optstring(L, 2, "*");
 	const std::string& modes = GetModes(L, 3, synced);
+	const bool recursive = luaL_optboolean(L, 4, false);
 
-	LuaUtils::PushStringVector(L, CFileHandler::DirList(dir, pattern, modes));
+	LuaUtils::PushStringVector(L, CFileHandler::DirList(dir, pattern, modes, recursive));
 	return 1;
 }
 
@@ -308,8 +311,9 @@ int LuaVFS::SubDirs(lua_State* L, bool synced)
 
 	const std::string& pattern = luaL_optstring(L, 2, "*");
 	const std::string& modes = GetModes(L, 3, synced);
+	const bool recursive = luaL_optboolean(L, 4, false);
 
-	LuaUtils::PushStringVector(L, CFileHandler::SubDirs(dir, pattern, modes));
+	LuaUtils::PushStringVector(L, CFileHandler::SubDirs(dir, pattern, modes, recursive));
 	return 1;
 }
 

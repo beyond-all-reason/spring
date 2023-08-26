@@ -19,8 +19,8 @@ struct AtlasedTexture
 {
 	CR_DECLARE_STRUCT(AtlasedTexture)
 
-	AtlasedTexture() = default;
-	AtlasedTexture(const float4& f)
+	explicit AtlasedTexture() = default;
+	explicit AtlasedTexture(const float4& f)
 		: x(f.x)
 		, y(f.y)
 		, z(f.z)
@@ -45,6 +45,8 @@ struct AtlasedTexture
 		struct { float s, t, p, q; };
 		struct { float xstart, ystart, xend, yend; };
 	};
+
+	static const AtlasedTexture DefaultAtlasTexture;
 };
 
 
@@ -226,7 +228,7 @@ protected:
 	// set to true to write finalized texture atlas to disk
 	static inline bool debug = false;
 public:
-	static inline AtlasedTexture dummy = {};
+	static inline AtlasedTexture dummy = AtlasedTexture{};
 };
 
 #endif // TEXTURE_ATLAS_H

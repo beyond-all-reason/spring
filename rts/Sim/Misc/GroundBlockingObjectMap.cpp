@@ -239,7 +239,7 @@ bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* 
 		if (vecIndcs.empty()) {
 			assert(vecCells.size() > 0);
 			ac.SetVecIndx(vecCells.size());
-			vc = &spring::VectorEmplaceBack(vecCells);
+			vc = &vecCells.emplace_back();
 		} else {
 			ac.SetVecIndx(spring::VectorBackPop(vecIndcs));
 			vc = &vecCells[ac.GetVecIndx()];

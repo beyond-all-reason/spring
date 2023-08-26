@@ -22,6 +22,8 @@
 
 CR_BIND(CGameSetup,)
 CR_REG_METADATA(CGameSetup, (
+	CR_IGNORED(initBlank),
+
 	CR_IGNORED(fixedAllies),
 	CR_IGNORED(useLuaGaia),
 	CR_IGNORED(luaDevMode),
@@ -36,7 +38,7 @@ CR_REG_METADATA(CGameSetup, (
 
 	CR_IGNORED(dsMapHash),
 	CR_IGNORED(dsModHash),
-	CR_IGNORED(mapSeed),
+	CR_IGNORED(fixedRNGSeed),
 
 	CR_IGNORED(gameStartDelay),
 
@@ -165,6 +167,8 @@ const std::vector<AllyTeam>& CGameSetup::GetAllyStartingData()
 
 void CGameSetup::ResetState()
 {
+	initBlank = false;
+
 	fixedAllies = true;
 	useLuaGaia = true;
 	luaDevMode = false;
@@ -179,7 +183,7 @@ void CGameSetup::ResetState()
 
 	std::memset(dsMapHash, 0, sizeof(dsMapHash));
 	std::memset(dsModHash, 0, sizeof(dsModHash));
-	mapSeed = 0;
+	fixedRNGSeed = 0;
 
 	gameStartDelay = 0;
 	numDemoPlayers = 0;
@@ -268,10 +272,11 @@ void CGameSetup::LoadStartPositions(bool withoutMap)
 	LoadStartPositionsFromMap(teamStartingData.size(), [&](MapParser& mapParser, int teamNum) {
 		float3 pos;
 
-		// don't fail when playing with more players than
-		// start positions and we didn't use them anyway
+		// try to parse start position for teamNum, emit a warning if none found but
+		// do not block on this, in case this is explicitly desired so as to let the
+		// game handle the missing startpos
 		if (!mapParser.GetStartPos(teamStartingData[teamNum].teamStartNum, pos)) {
-			throw content_error(mapParser.GetErrorLog());
+			LOG_L(L_WARNING, "%s", mapParser.GetErrorLog().c_str());
 			return false;
 		}
 
@@ -307,7 +312,7 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 
 		// expects lines of form team=x rather than team=TEAMx
 		// team field is relocated in RemapTeams
-		for (auto it: file.GetAllValues(section))
+		for (const auto& it: file.GetAllValues(section))
 			playerBase.SetValue(it.first, it.second);
 
 		// do checks for sanity
@@ -580,8 +585,9 @@ bool CGameSetup::Init(const std::string& buf)
 	}
 	#endif
 
-	file.GetTDef(mapSeed, unsigned(0), "GAME\\MapSeed");
+	file.GetDef(initBlank, "0", "GAME\\InitBlank");
 
+	file.GetTDef(fixedRNGSeed, unsigned(0), "GAME\\FixedRNGSeed"); // 0 means use random seed
 	gameID      = file.SGetValueDef("",  "GAME\\GameID");
 	modName     = file.SGetValueDef("",  "GAME\\Gametype");
 	mapName     = file.SGetValueDef("",  "GAME\\MapName");

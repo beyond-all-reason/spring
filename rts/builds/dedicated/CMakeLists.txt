@@ -168,7 +168,7 @@ if    (MINGW)
 	target_link_libraries(engine-dedicated ${WS2_32_LIBRARY} ${IMAGEHLP_LIBRARY} ${IPHLPAPI_LIBRARY} ${WINMM_LIBRARY})
 endif (MINGW)
 if    (MSVC)
-	target_link_libraries(engine-dedicated ${DBGHELP_LIBRARY})
+	target_link_libraries(engine-dedicated ${DBGHELP_LIBRARY} ${IPHLPAPI_LIBRARY})
 endif (MSVC)
 add_dependencies(engine-dedicated generateVersionFiles)
 
