@@ -127,12 +127,10 @@ private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;
 
-	#define SQUARE(x) ((x) * (abs(x)))
-	bool StartSkidding(const float3& vel, const float3& dir) const { return ((SQUARE(vel.dot(dir)) + 0.01f) < (vel.SqLength() * sqSkidSpeedMult)); }
-	bool StopSkidding(const float3& vel, const float3& dir) const { return ((SQUARE(vel.dot(dir)) + 0.01f) >= (vel.SqLength() * sqSkidSpeedMult)); }
+	bool StartSkidding(const float3& vel, const float3& dir) const { return ((SignedSquare(vel.dot(dir)) + 0.01f) < (vel.SqLength() * sqSkidSpeedMult)); }
+	bool StopSkidding(const float3& vel, const float3& dir) const { return ((SignedSquare(vel.dot(dir)) + 0.01f) >= (vel.SqLength() * sqSkidSpeedMult)); }
 	bool StartFlying(const float3& vel, const float3& dir) const { return (vel.dot(dir) > 0.2f); }
 	bool StopFlying(const float3& vel, const float3& dir) const { return (vel.dot(dir) <= 0.2f); }
-	#undef SQUARE
 
 	float Distance2D(CSolidObject* object1, CSolidObject* object2, float marginal = 0.0f);
 
