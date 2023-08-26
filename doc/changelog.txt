@@ -58,6 +58,8 @@ Lua:
    If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
  - add `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) -> nil`, allowing to set
    start box (in elmos) for an ally team.
+ - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
+   Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  
 
 Game Setup:
