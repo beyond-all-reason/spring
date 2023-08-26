@@ -51,7 +51,7 @@ size_t CommonDefHandler::SoundSetDataCount()
 int CommonDefHandler::LoadSoundFile(const std::string& fileName)
 {
 	if (!fileName.empty()) {
-		const std::string soundExt = std::move(FileSystem::GetExtension(fileName));
+		const std::string soundExt = FileSystem::GetExtension(fileName);
 
 		// unlike constructing a CFileHandler this does not read the data
 		// into memory; faster for large files and many small individually

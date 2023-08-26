@@ -83,7 +83,7 @@ std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFileOverride, 
 	const   int fontWidths[] = {configHandler->GetInt("FontOutlineWidth"), configHandler->GetInt("SmallFontOutlineWidth")};
 	const float fontWeights[] = {configHandler->GetFloat("FontOutlineWeight"), configHandler->GetFloat("SmallFontOutlineWeight")};
 
-	return std::move(CglFont::LoadFont(fontFile, fontSizes[smallFont], fontWidths[smallFont], fontWeights[smallFont]));
+	return CglFont::LoadFont(fontFile, fontSizes[smallFont], fontWidths[smallFont], fontWeights[smallFont]);
 }
 
 
@@ -491,7 +491,7 @@ std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text)
 			// inlined colorcode; push to stack if [I,R,G,B] is followed by more text
 			case ColorCodeIndicator: {
 				if ((idx + 3 + 1) < end) {
-					colorCodeStack.emplace_back(std::move(text.substr(idx, 4)));
+					colorCodeStack.emplace_back(text.substr(idx, 4));
 					lines.back() += colorCodeStack.back();
 
 					// compensate for loop-incr
@@ -502,7 +502,7 @@ std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text)
 			// inlined colorcodeEx; push to stack if [I,R,G,B,A,R,G,B,A] is followed by more text
 			case ColorCodeIndicatorEx: {
 				if ((idx + 4 * 2 + 1) < end) {
-					colorCodeStack.emplace_back(std::move(text.substr(idx, 9)));
+					colorCodeStack.emplace_back(text.substr(idx, 9));
 					lines.back() += colorCodeStack.back();
 
 					// compensate for loop-incr

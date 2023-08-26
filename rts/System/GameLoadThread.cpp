@@ -14,7 +14,7 @@
 
 CGameLoadThread::CGameLoadThread(std::function<void()> f)
 {
-	thread = std::move(spring::thread(std::bind(&CGameLoadThread::WrapFunc, this, f)));
+	thread = spring::thread(std::bind(&CGameLoadThread::WrapFunc, this, f));
 }
 
 

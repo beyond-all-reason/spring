@@ -106,7 +106,7 @@ bool CLoadScreen::Init()
 	// Create a thread during the loading that pings the host/server, so it knows that this client is still alive/loading
 	clientNet->KeepUpdating(true);
 
-	netHeartbeatThread = std::move(spring::thread(Threading::CreateNewThread(std::bind(&CNetProtocol::UpdateLoop, clientNet))));
+	netHeartbeatThread = spring::thread(Threading::CreateNewThread(std::bind(&CNetProtocol::UpdateLoop, clientNet)));
 	game = new CGame(mapFileName, modFileName, saveFile);
 
 	CglFont::sync.SetThreadSafety(mtLoading);
@@ -114,7 +114,7 @@ bool CLoadScreen::Init()
 	if (mtLoading) {
 		try {
 			// create the game-loading thread; rebinds primary context to hidden window
-			gameLoadThread = std::move(CGameLoadThread(std::bind(&CGame::Load, game, mapFileName)));
+			gameLoadThread = CGameLoadThread(std::bind(&CGame::Load, game, mapFileName));
 
 			while (!Watchdog::HasThread(WDT_LOAD));
 		} catch (const opengl_error& gle) {
