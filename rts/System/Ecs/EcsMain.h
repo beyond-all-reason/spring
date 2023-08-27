@@ -12,7 +12,7 @@
 
 #define ENTT_USE_ATOMIC
 
-#include "lib/entt/entt.hpp"
+#include "lib/entt/src/entt/entt.hpp"
 
 // class EcsMain {
 // public:
