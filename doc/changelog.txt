@@ -130,9 +130,17 @@ Sim:
    between buildings in bases.
  - Reduced the difficulty units face when trying to rejoin a path after being routed away due to a
    collision with a building.
-- removed modrules: `system.pfForce[Update]SingleThreaded`. MT has shown itself stable.
-- removed modrule: `system.pathFinderUpdateRate`. This modrule isn't used any more; instead, a
-  different modrule serves a similar purpose, but uses different values, see: `pfUpdateRateScale`.
+ - removed modrules: `system.pfForce[Update]SingleThreaded`. MT has shown itself stable.
+ - removed modrule: `system.pathFinderUpdateRate`. This modrule isn't used any more; instead, a
+   different modrule serves a similar purpose, but uses different values, see: `pfUpdateRateScale`.
+ - Added modrule, `system.pfRawMoveSpeedThreshold`, which tells GroundMoveType and QTPFS what
+   minimum speed mod on a given map square to block a raw move trace. By default the value is 0.0,
+   which means only terrain, features, and structures that block movement should be considered.
+   Raising the value will mean that raw move check will fail on technically pathable map squares,
+   which means if unit is asked to cross it, it will resort to using normal path finding, which
+   will likely try to path around those map squares. Think lava, it is very slow to move through,
+   (and it hurts), you don't want units trying to path through lava unless they are trying to get
+   out. This feature is considered experimental.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
