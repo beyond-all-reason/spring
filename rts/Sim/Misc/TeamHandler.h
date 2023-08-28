@@ -107,6 +107,23 @@ public:
 	 */
 	void SetAlly(int allyteamA, int allyteamB, bool allied) { allyTeams[allyteamA].allies[allyteamB] = allied; }
 
+	/**
+	 * @brief set ally team start box
+	 * @param allyteam ally team to edit
+	 * @param startRectLeft left start box boundary (range: [0.0f, 1.0f])
+	 * @param startRectTop top start box boundary (range: [0.0f, 1.0f])
+	 * @param startRectRight right start box boundary (range: [0.0f, 1.0f])
+	 * @param startRectBottom bottom start box boundary (range: [0.0f, 1.0f])
+	 *
+	 * Sets start box for an ally team
+	 */
+	void SetAllyTeamStartBox(int allyteam, float startRectLeft, float startRectTop, float startRectRight, float startRectBottom) {
+		allyTeams[allyteam].startRectLeft   = std::clamp(startRectLeft, 0.0f, 1.0f);
+		allyTeams[allyteam].startRectTop    = std::clamp(startRectTop, 0.0f, 1.0f);
+		allyTeams[allyteam].startRectRight  = std::clamp(startRectRight, 0.0f, 1.0f);
+		allyTeams[allyteam].startRectBottom = std::clamp(startRectBottom, 0.0f, 1.0f);
+	}
+
 	// accessors
 	int GaiaTeamID() const { return gaiaTeamID; }
 	int GaiaAllyTeamID() const { return gaiaAllyTeamID; }

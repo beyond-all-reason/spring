@@ -104,13 +104,6 @@ ENV CCACHE_DIR=/ccache
 ENV CCACHE_CONFIGPATH=/etc/ccache.conf
 ENV PATH="/usr/lib/ccache:${PATH}"
 
-# Install Vulkan SDK
-RUN apt install wget; \
-	wget -q https://sdk.lunarg.com/sdk/download/latest/linux/vulkan-sdk.tar.gz; \
-	mkdir /vulkan-sdk && tar -xf vulkan-sdk.tar.gz --strip-components=1 -C /vulkan-sdk; \
-	rm -rf vulkan-sdk.tar.gz
-
-
 COPY scripts /scripts
 ENV PATH="/scripts:${PATH}"
 

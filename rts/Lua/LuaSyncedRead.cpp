@@ -132,6 +132,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetHeadingFromVector);
 	REGISTER_LUA_CFUNC(GetVectorFromHeading);
+	REGISTER_LUA_CFUNC(GetHeadingFromFacing);
+	REGISTER_LUA_CFUNC(GetFacingFromHeading);
 
 	REGISTER_LUA_CFUNC(GetSideData);
 
@@ -345,8 +347,10 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(IsUnitInJammer);
 	REGISTER_LUA_CFUNC(GetClosestValidPosition);
 
+	REGISTER_LUA_CFUNC(GetModelRootPiece);
 	REGISTER_LUA_CFUNC(GetModelPieceList);
 	REGISTER_LUA_CFUNC(GetModelPieceMap);
+	REGISTER_LUA_CFUNC(GetUnitRootPiece);
 	REGISTER_LUA_CFUNC(GetUnitPieceMap);
 	REGISTER_LUA_CFUNC(GetUnitPieceList);
 	REGISTER_LUA_CFUNC(GetUnitPieceInfo);
@@ -357,6 +361,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitScriptPiece);
 	REGISTER_LUA_CFUNC(GetUnitScriptNames);
 
+	REGISTER_LUA_CFUNC(GetFeatureRootPiece);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMap);
 	REGISTER_LUA_CFUNC(GetFeaturePieceList);
 	REGISTER_LUA_CFUNC(GetFeaturePieceInfo);
@@ -1339,6 +1344,28 @@ int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 	return 2;
 }
 
+/***
+ * @function Spring.GetFacingFromHeading
+ * @number heading
+ * @treturn number facing
+ */
+int LuaSyncedRead::GetFacingFromHeading(lua_State* L)
+{
+	lua_pushnumber(L, ::GetFacingFromHeading(luaL_checknumber(L, 1)));
+	return 1;
+}
+
+/***
+ * @function Spring.GetHeadingFromFacing
+ * @number facing
+ * @treturn number heading
+ */
+int LuaSyncedRead::GetHeadingFromFacing(lua_State* L)
+{
+	lua_pushnumber(L, ::GetHeadingFromFacing(luaL_checknumber(L, 1)));
+	return 1;
+}
+
 
 /******************************************************************************
  * Sides and Factions
@@ -1462,16 +1489,16 @@ int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
  */
 int LuaSyncedRead::GetAllyTeamStartBox(lua_State* L)
 {
-	const std::vector<AllyTeam>& allyData = CGameSetup::GetAllyStartingData();
-	const unsigned int allyTeam = luaL_checkint(L, 1);
+	const unsigned int allyTeamID = luaL_checkint(L, 1);
 
-	if (allyTeam >= allyData.size())
+	if (!teamHandler.IsValidAllyTeam(allyTeamID))
 		return 0;
 
-	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectLeft;
-	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectTop;
-	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyData[allyTeam].startRectRight;
-	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyData[allyTeam].startRectBottom;
+	const AllyTeam& allyTeam = teamHandler.GetAllyTeam(allyTeamID);
+	const float xmin = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectLeft;
+	const float zmin = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectTop;
+	const float xmax = (mapDims.mapx * SQUARE_SIZE) * allyTeam.startRectRight;
+	const float zmax = (mapDims.mapy * SQUARE_SIZE) * allyTeam.startRectBottom;
 
 	lua_pushnumber(L, xmin);
 	lua_pushnumber(L, zmin);
@@ -7551,6 +7578,16 @@ int LuaSyncedRead::GetClosestValidPosition(lua_State* L)
 ******************************************************************************/
 
 
+static int GetModelRootPiece(lua_State* L, const std::string& modelName)
+{
+	const auto model = modelLoader.LoadModel(modelName);
+	if (model == nullptr)
+		return 0;
+
+	lua_pushnumber(L, model->GetRootPieceIndex() + 1);
+	return 1;
+}
+
 static int GetModelPieceMap(lua_State* L, const std::string& modelName)
 {
 	if (modelName.empty())
@@ -7591,6 +7628,15 @@ static int GetModelPieceList(lua_State* L, const std::string& modelName)
 		lua_rawseti(L, -2, i + 1);
 	}
 
+	return 1;
+}
+
+static int GetSolidObjectRootPiece(lua_State* L, const CSolidObject* o)
+{
+	if (o == nullptr)
+		return 0;
+
+	lua_pushnumber(L, o->localModel.GetRoot()->GetLModelPieceIndex() + 1);
 	return 1;
 }
 
@@ -7787,6 +7833,15 @@ static int GetSolidObjectPieceMatrix(lua_State* L, const CSolidObject* o)
 	return 16;
 }
 
+/***
+ *
+ * @function Spring.GetModelRootPiece
+ * @string modelName
+ * @treturn number index of the root piece
+ */
+int LuaSyncedRead::GetModelRootPiece(lua_State* L) {
+	return ::GetModelRootPiece(L, luaL_optsstring(L, 1, ""));
+}
 
 /***
  *
@@ -7809,6 +7864,16 @@ int LuaSyncedRead::GetModelPieceList(lua_State* L) {
 	return ::GetModelPieceList(L, luaL_optsstring(L, 1, ""));
 }
 
+
+/***
+ *
+ * @function Spring.GetUnitRootPiece
+ * @number unitID
+ * @treturn number index of the root piece
+ */
+int LuaSyncedRead::GetUnitRootPiece(lua_State* L) {
+	return (GetSolidObjectRootPiece(L, ParseTypedUnit(L, __func__, 1)));
+}
 
 /***
  *
@@ -7914,6 +7979,15 @@ int LuaSyncedRead::GetUnitPieceMatrix(lua_State* L) {
 	return (GetSolidObjectPieceMatrix(L, ParseTypedUnit(L, __func__, 1)));
 }
 
+/***
+ *
+ * @function Spring.GetFeatureRootPiece
+ * @number featureID
+ * @treturn number index of the root piece
+ */
+int LuaSyncedRead::GetFeatureRootPiece(lua_State* L) {
+	return (GetSolidObjectRootPiece(L, ParseFeature(L, __func__, 1)));
+}
 
 /***
  *

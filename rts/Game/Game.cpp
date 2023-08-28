@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -1018,6 +1019,8 @@ void CGame::KillSimulation()
 	CUnitScriptEngine::KillStatic();
 	CWeaponLoader::KillStatic();
 	CommonDefHandler::KillStatic();
+
+	Sim::ClearRegistry();
 }
 
 

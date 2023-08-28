@@ -72,7 +72,7 @@ void CCommandDescriptionCache::Init()
 	slots.fill(-1u);
 
 	for (SCommandDescription& cd: cache) {
-		cd = std::move(SCommandDescription());
+		cd = SCommandDescription();
 	}
 
 	// generate cache-indices pool, reverse order since GetPtr pops from the back

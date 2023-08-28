@@ -428,7 +428,7 @@ void AILibraryManager::OutputAIInterfacesInfo()
 
 SkirmishAIKey AILibraryManager::ResolveSkirmishAIKey(const SkirmishAIKey& skirmishAIKey) const
 {
-	std::vector<SkirmishAIKey> fittingKeys = std::move(FittingSkirmishAIKeys(skirmishAIKey));
+	std::vector<SkirmishAIKey> fittingKeys = FittingSkirmishAIKeys(skirmishAIKey);
 
 	if (fittingKeys.empty())
 		return SkirmishAIKey();

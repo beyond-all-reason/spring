@@ -640,12 +640,6 @@ private:
 #endif
 
 
-
-
-
-
-
-
 template <template<typename> class TG, typename F>
 struct TaskPool {
 	typedef TG<F> FuncTaskGroup;
@@ -674,12 +668,6 @@ struct TaskPool {
 		return tg;
 	}
 };
-
-
-
-
-
-
 
 
 template <typename F>

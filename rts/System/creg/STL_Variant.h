@@ -27,7 +27,8 @@ namespace {
 		if (N == idx) {
 			using T = std::variant_alternative_t<N, Variant>;
 			T input;
-			std::invoke(func, var, input);
+			std::invoke(func, input);
+			var.template emplace <N> (std::move(input));
 			return;
 		}
 
@@ -50,23 +51,17 @@ namespace creg
 		void Serialize(ISerializer* s, void* instance)
 		{
 			VT& p = *(VT*)instance;
+			const auto SerializeType = [s](auto&& input) {
+				using T = std::decay_t<decltype(input)>;
+				DeduceType<T>::Get()->Serialize(s, static_cast<void*>(&input));
+			};
 			if (s->IsWriting()) {
 				auto index = p.index();
 				s->SerializeInt(&index, sizeof(index));
-
-				const auto SerializeType = [s](auto&& value) {
-					using T = std::decay_t<decltype(value)>;
-					DeduceType<T>::Get()->Serialize(s, static_cast<void*>(&value));
-				};
 				runtime_get(SerializeType, p, index);
 			} else {
 				std::size_t index;
 				s->SerializeInt(&index, sizeof(index));
-				const auto SerializeType = [s](VT& p, auto&& input) {
-					using T = std::decay_t<decltype(input)>;
-					DeduceType<T>::Get()->Serialize(s, static_cast<void*>(&input));
-					p = std::move(input);
-				};
 				runtime_set(SerializeType, p, index);
 			}
 		}

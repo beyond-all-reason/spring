@@ -81,6 +81,8 @@ public:
 		return -OnesVector;
 	}
 
+	virtual bool CurrentWaypointIsUnreachable(unsigned int pathID) { return false; }
+
 
 	/**
 	 * Returns all waypoints of a path. Different segments of a path might
@@ -172,7 +174,6 @@ public:
 
 	virtual int2 GetNumQueuedUpdates() const { return (int2(0, 0)); }
 
-	virtual bool SupportsMultiThreadedRequests() const { return false; }
 	virtual void SavePathCacheForPathId(int pathIdToSave) {};
 };
 

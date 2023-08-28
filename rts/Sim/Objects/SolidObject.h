@@ -10,6 +10,7 @@
 #include "System/bitops.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
+#include "System/Ecs/EcsMain.h"
 #include "System/Misc/BitwiseEnum.h"
 #include "System/Sync/SyncedFloat3.h"
 #include "System/Sync/SyncedPrimitive.h"
@@ -329,6 +330,8 @@ private:
 public:
 	float health = 0.0f;
 	float maxHealth = 1.0f;
+
+	entt::entity entityReference = entt::null;
 
 	///< the physical mass of this object (can be changed by SetMass)
 	float mass = DEFAULT_MASS;

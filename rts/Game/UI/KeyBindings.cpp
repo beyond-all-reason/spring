@@ -301,6 +301,7 @@ void CKeyBindings::Init()
 	RegisterAction("keyprint");
 	SortRegisteredActions();
 
+	keyChainTimeout = configHandler->GetInt("KeyChainTimeout");
 	configHandler->NotifyOnChange(this, {"KeyChainTimeout"});
 }
 
@@ -778,7 +779,7 @@ bool CKeyBindings::RemoveCommandFromList(ActionList& al, const std::string& comm
 
 void CKeyBindings::ConfigNotify(const std::string& key, const std::string& value)
 {
-	keyChainTimeout = atoi(value.c_str());
+	keyChainTimeout = configHandler->GetInt("KeyChainTimeout");
 }
 
 

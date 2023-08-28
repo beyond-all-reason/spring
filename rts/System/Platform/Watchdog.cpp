@@ -39,8 +39,8 @@ namespace Watchdog
 			timer = spring_notime;
 
 			thread = {};
-			threadid = {0};
-			numreg = {0};
+			threadid = 0;
+			numreg = 0;
 		}
 		void ResetThreadControls() {
 			#ifndef _WIN32
@@ -395,7 +395,7 @@ namespace Watchdog
 		hangTimeout = spring_secs(hangTimeoutSecs);
 
 		// start the watchdog thread
-		hangDetectorThread = std::move(spring::thread(&HangDetectorLoop));
+		hangDetectorThread = spring::thread(&HangDetectorLoop);
 
 		LOG("[WatchDog::%s] installed (hang-timeout: %is)", __func__, hangTimeoutSecs);
 	}

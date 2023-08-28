@@ -82,7 +82,7 @@ namespace Threading {
 		std::uint32_t coreMask = 0;
 
 		// without the min(..., 32), `(1 << n)` could overflow
-		const int numCPUs = std::min(CPU_COUNT(cpuSet), 32);
+		const int numCPUs = std::min(CPU_COUNT(&cpusSystem), 32);
 
 		for (int n = numCPUs - 1; n >= 0; --n) {
 			if (CPU_ISSET(n, cpuSet))
@@ -92,17 +92,17 @@ namespace Threading {
 		return coreMask;
 	}
 
-	static void SetWantedCoreAffinityMask(const cpu_set_t* cpuSrcSet, cpu_set_t* cpuDstSet, std::uint32_t coreMask) {
+	static void SetWantedCoreAffinityMask(cpu_set_t* cpuDstSet, std::uint32_t coreMask) {
 		CPU_ZERO(cpuDstSet);
 
-		const int numCPUs = std::min(CPU_COUNT(cpuSrcSet), 32);
+		const int numCPUs = std::min(CPU_COUNT(&cpusSystem), 32);
 
 		for (int n = numCPUs - 1; n >= 0; --n) {
 			if ((coreMask & (1 << n)) != 0)
 				CPU_SET(n, cpuDstSet);
 		}
 
-		CPU_AND(cpuDstSet, cpuDstSet, cpuSrcSet);
+		CPU_AND(cpuDstSet, cpuDstSet, &cpusSystem);
 	}
 	#endif
 
@@ -158,7 +158,7 @@ namespace Threading {
 		cpu_set_t cpusWanted;
 
 		// create wanted mask
-		SetWantedCoreAffinityMask(&cpusSystem, &cpusWanted, coreMask);
+		SetWantedCoreAffinityMask(&cpusWanted, coreMask);
 
 		// set the affinity; return final mask (can differ from wanted)
 		if (sched_setaffinity(0, sizeof(cpu_set_t), &cpusWanted) == 0)

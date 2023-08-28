@@ -728,11 +728,8 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
 			};
 
-		if (modInfo.pfForceUpdateSingleThreaded) {
-			for(int i = 0; i < consumedBlocks.size(); ++i) { updateOffset(i); };
-		} else {
-			for_mt(0, consumedBlocks.size(), updateOffset);
-		}
+
+		for_mt(0, consumedBlocks.size(), updateOffset);
 
 		// for (int n=0; n<consumedBlocks.size(); n++){
 		// 	const SingleBlock sb = consumedBlocks[n];
@@ -759,11 +756,7 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				}
 			};
 
-		if (modInfo.pfForceUpdateSingleThreaded) {
-			updateVertexPathCosts(0);
-		} else {
-			for_mt(0, threadsUsed, updateVertexPathCosts);
-		}
+		for_mt(0, threadsUsed, updateVertexPathCosts);
 	}
 
 	std::for_each(blockIds.begin(), blockIds.end(), [this](int idx){ blockStates.nodeLinksObsoleteFlags[idx] = 0; });

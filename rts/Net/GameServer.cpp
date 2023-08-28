@@ -260,7 +260,7 @@ void CGameServer::Initialize()
 	lastNewFrameTick = spring_gettime();
 	lastBandwidthUpdate = spring_gettime();
 
-	thread = std::move(spring::thread(std::bind(&CGameServer::UpdateLoop, this)));
+	thread = spring::thread(std::bind(&CGameServer::UpdateLoop, this));
 
 	// Something in CGameServer::CGameServer borks the FPU control word
 	// maybe the threading, or something in CNet::InitServer() ??
@@ -865,7 +865,7 @@ void CGameServer::Update()
 		bool hasPlayers = false;
 
 		for (const GameParticipant& p: players) {
-			if (hasPlayers |= (p.clientLink != nullptr))
+			if ((hasPlayers |= (p.clientLink != nullptr)))
 				break;
 		}
 

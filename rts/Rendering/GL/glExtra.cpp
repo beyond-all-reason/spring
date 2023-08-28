@@ -144,9 +144,6 @@ void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
 	rb.AssertSubmission();
 
-	const auto addFunc = [&rb](auto&& vertices, const auto& col) {
-		rb.AddVertex(std::forward<std::vector<VA_TYPE_0>>(vertices));
-	};
 
 	auto vertices = glBallisticCircleImpl(weapon, weaponDef, resolution, center, params);
 	rb.AddVertices(vertices);

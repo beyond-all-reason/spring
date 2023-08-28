@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include "PathManager.h"
 #include "PathingState.h"
 #include "PathConstants.h"
@@ -9,6 +11,8 @@
 #include "PathHeatMap.h"
 #include "PathLog.h"
 #include "PathMemPool.h"
+#include "PathSearch.h"
+#include "Registry.h"
 #include "Map/MapInfo.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Objects/SolidObject.h"
@@ -70,7 +74,8 @@ CPathManager::CPathManager()
 	gPathHeatMap.Init(PATH_HEATMAP_XSCALE, PATH_HEATMAP_ZSCALE);
 	pathHeatMap = &gPathHeatMap;
 
-	pathMap.reserve(1024);
+	constexpr size_t initialPathMapSize = 1024;
+	pathMap.reserve(initialPathMapSize);
 
 	// PathNode::nodePos is an ushort2, PathNode::nodeNum is an int
 	// therefore the maximum map size is limited to 64k*64k squares
@@ -81,7 +86,7 @@ void CPathManager::InitStatic()
 {
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
-	LOG("TK CPathManager::InitStatic: %d threads available (MT requests=%d, MT updates=%d)", pathFinderGroups, SupportsMultiThreadedRequests(), !modInfo.pfForceUpdateSingleThreaded);
+	LOG("TK CPathManager::InitStatic: %d threads available", pathFinderGroups);
 
 	// pathFinders[i] = pfMemPool.alloc<CPathFinder>(true);
 
@@ -115,6 +120,9 @@ void CPathManager::InitStatic()
 
 	pathFinders = std::move(newPathFinders);
 
+	constexpr size_t memoryPageSize = 4096;
+	pathSearches.reserve( memoryPageSize / sizeof(decltype(pathSearches)::value_type) );
+
 	//finalized = true;
 }
 
@@ -139,6 +147,7 @@ CPathManager::~CPathManager()
 	}
 
 	pathFinders.clear();
+	pathSearches.clear();
 
 	if (lowResPEs != nullptr) {
 		::operator delete(lowResPEs);
@@ -152,6 +161,8 @@ CPathManager::~CPathManager()
 	PathFlowMap::FreeInstance(pathFlowMap);
 	IPathFinder::KillStatic();
 	PathingState::KillStatic();
+
+	registry.clear();
 }
 
 
@@ -216,6 +227,7 @@ std::int64_t CPathManager::PostFinalizeRefresh()
 
 void CPathManager::FinalizePath(MultiPath* path, const float3 startPos, const float3 goalPos, const bool cantGetCloser)
 {
+	ZoneScoped;
 	IPath::Path* sp = &path->lowResPath;
 	IPath::Path* ep = &path->maxResPath;
 
@@ -293,7 +305,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 
 	unsigned int bestSearch = -1u; // index
 
-	pfDef->useVerifiedStartBlock = ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
+	pfDef->useVerifiedStartBlock = true; // ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
 
 	{
 		if (heurGoalDist2D <= (MAXRES_SEARCH_DISTANCE * modInfo.pfRawDistMult)) {
@@ -383,6 +395,27 @@ IPath::SearchResult CPathManager::ArrangePath(
 	return bestResult;
 }
 
+void CPathManager::DeletePath(unsigned int pathID) {
+	if (pathID == 0)
+		return;
+	{
+		const std::lock_guard<std::mutex> lock(pathMapUpdate); // TODO: remove this? not called in MT sections anymore?
+		const auto pi = pathMap.find(pathID);
+
+		if (pi == pathMap.end())
+			return;
+
+		pathMap.erase(pi);
+
+		PathSearch* existingSearch = nullptr;
+		auto searchView = registry.view<PathSearch>();
+		searchView.each([&searchView, pathID](entt::entity entity){
+			auto& search = searchView.get<PathSearch>(entity);
+			if (search.pathId == pathID)
+				registry.destroy(entity);
+		});
+	}
+}
 
 /*
 Request a new multipath, store the result and return a handle-id to it.
@@ -395,9 +428,55 @@ unsigned int CPathManager::RequestPath(
 	float goalRadius,
 	bool synced
 ) {
+	unsigned int pathId = 0;
+
 	if (!IsFinalized())
 		return 0;
 
+	if (synced) {
+		assert(!ThreadPool::inMultiThreadedSection);
+
+		PathSearch* existingSearch = nullptr;
+		auto searchView = registry.view<PathSearch>();
+		for ( entt::entity entity : searchView ) {
+			auto& search = searchView.get<PathSearch>(entity);
+			if (search.caller == caller) {
+				existingSearch = &search;
+				break;
+			}
+		}
+
+		MultiPath newPath = MultiPath(moveDef, startPos, goalPos, goalRadius);
+		newPath.searchResult = IPath::SearchResult::Unitialized;
+
+		if (existingSearch == nullptr) {
+			pathId = Store(newPath);
+			entt::entity searchEntity = registry.create();
+			registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
+		}
+		else {
+			MultiPath* curMultiPath = GetMultiPath(existingSearch->pathId);
+			*curMultiPath = std::move(newPath);
+			*existingSearch = std::move(PathSearch(caller, moveDef, startPos, goalPos, goalRadius, pathId));
+		}
+	}
+	else {
+		MultiPath newPath = IssuePathRequest(caller, moveDef, startPos, goalPos, goalRadius, synced);
+		pathId = Store(newPath);
+	}
+
+	return pathId;
+}
+
+CPathManager::MultiPath CPathManager::IssuePathRequest(
+	CSolidObject* caller,
+	const MoveDef* moveDef,
+	float3 startPos,
+	float3 goalPos,
+	float goalRadius,
+	bool synced
+) {
+	ZoneScoped;
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::RequestPath");
 	//SCOPED_MT_TIMER("Misc::Path::RequestPath");
@@ -449,7 +528,7 @@ unsigned int CPathManager::RequestPath(
 	// 	}
 	// }
 
-	unsigned int pathID = 0;
+	// unsigned int pathID = 0;
 
 	if (result != IPath::Error) {
 		if (newPath.maxResPath.path.empty()) {
@@ -470,22 +549,25 @@ unsigned int CPathManager::RequestPath(
 		}
 
 		FinalizePath(&newPath, startPos, goalPos, result == IPath::CantGetCloser);
-		newPath.searchResult = result;
+		// newPath.searchResult = result;
 
-		pathID = Store(newPath);
+		// pathID = Store(newPath);
 	}
+	newPath.searchResult = result;
 
 	// MH Note: for MT approach this will have to go
 	//if (caller != nullptr)
 	//	caller->Block();
 
-	return pathID;
+	// return pathID;
+	return newPath;
 }
 
 
 // converts part of a med-res path into a max-res path
 void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const
 {
+	ZoneScoped;
 	assert(IsFinalized());
 
 	IPath::Path& maxResPath = multiPath.maxResPath;
@@ -531,6 +613,7 @@ void CPathManager::MedRes2MaxRes(MultiPath& multiPath, const float3& startPos, c
 // converts part of a low-res path into a med-res path
 void CPathManager::LowRes2MedRes(MultiPath& multiPath, const float3& startPos, const CSolidObject* owner, bool synced) const
 {
+	ZoneScoped;
 	assert(IsFinalized());
 
 	IPath::Path& medResPath = multiPath.medResPath;
@@ -583,6 +666,7 @@ float3 CPathManager::NextWayPoint(
 ) {
 	// in misc since it is called from many points
 	//SCOPED_TIMER("Misc::Path::NextWayPoint");
+	ZoneScoped;
 
 	const float3 noPathPoint = -XZVector;
 
@@ -595,26 +679,36 @@ float3 CPathManager::NextWayPoint(
 
 	// find corresponding multipath entry
 	MultiPath localMultiPath = GetMultiPathMT(pathID);
-	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
 
-	if (multiPath == nullptr)
+	auto createTempWaypoint = [](const float3& sourcePoint, const float3& targetPoint){
+		const float3  targetDirec = (targetPoint - sourcePoint).SafeNormalize() * SQUARE_SIZE;
+		return float3(sourcePoint.x + targetDirec.x, -1.0f, sourcePoint.z + targetDirec.z);
+	};
+
+	if (localMultiPath.searchResult == IPath::SearchResult::Unitialized) {
+		return createTempWaypoint(callerPos, localMultiPath.peDef.wsGoalPos);
+	}
+	else if (localMultiPath.searchResult == IPath::SearchResult::Error) {
+		return noPathPoint;
+	}
+
+	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
+	if (multiPath->moveDef == nullptr)
 		return noPathPoint;
 
-	// if (DEBUG_DRAWING_ENABLED) {
-	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-	// 		LOG("%s: numRetries=%d", __func__, numRetries);
-	// 	}
-	// }
-
-	if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
-		return (multiPath->finalGoal);
+	// if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
+	// 	return (multiPath->finalGoal);
 
 	IPath::Path& maxResPath = multiPath->maxResPath;
 	IPath::Path& medResPath = multiPath->medResPath;
 	IPath::Path& lowResPath = multiPath->lowResPath;
 
-	if ((callerPos == ZeroVector) && !maxResPath.path.empty())
-		callerPos = maxResPath.path.back();
+	if (callerPos == ZeroVector) {
+		if (owner != nullptr)
+			callerPos = owner->pos;
+		else if (!maxResPath.path.empty())
+			callerPos = maxResPath.path.back();
+	}
 
 	assert(multiPath->peDef.synced == synced);
 
@@ -632,24 +726,36 @@ float3 CPathManager::NextWayPoint(
 	// recursive refinement of its lower-resolution segments
 	// if so, check if the med-res path also needs extending
 	if (extendMaxResPath) {
+		if (synced) {
+			std::lock_guard<std::mutex> lock(pathMapUpdate);
 
-		// if (DEBUG_DRAWING_ENABLED) {
-		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-		// 		LOG("%s extendMaxResPath == true", __func__);
-		// 	}
-		// }
-		//if (multiPath->caller != nullptr)
-		//	multiPath->caller->UnBlock();
+			PathSearch* existingSearch = nullptr;
+			auto searchView = registry.view<PathSearch>();
+			for ( entt::entity entity : searchView ) {
+				auto& search = searchView.get<PathSearch>(entity);
+				if (search.caller == owner) {
+					existingSearch = &search;
+					break;
+				}
+			}
 
-		if (extendMedResPath)
-			LowRes2MedRes(*multiPath, callerPos, owner, synced);
-
-		MedRes2MaxRes(*multiPath, callerPos, owner, synced);
-
-		//if (multiPath->caller != nullptr)
-		//	multiPath->caller->Block();
-
-		FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
+			// if found then a full path search is underway, so don't mess with it.
+			// Or an extension has been requested, but that doesn't need to be done twice in a row.
+			if (existingSearch == nullptr) {
+				entt::entity pathExtendEntity = registry.create();
+				registry.emplace<PathSearch>(pathExtendEntity
+						, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
+						, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
+				registry.emplace<PathExtension>(pathExtendEntity,
+					(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
+			}
+		} else {
+			assert(!ThreadPool::inMultiThreadedSection);
+			if (extendMedResPath)
+				LowRes2MedRes(*multiPath, callerPos, owner, synced);
+			MedRes2MaxRes(*multiPath, callerPos, owner, synced);
+			FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
+		}
 	}
 
 	float3 waypoint = noPathPoint;
@@ -664,28 +770,9 @@ float3 CPathManager::NextWayPoint(
 		// the way to it (ie. a GoalOutOfRange result)
 		// OR we are stuck on an impassable square
 		if (maxResPath.path.empty()) {
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s maxres empty", __func__);
-			// 	}
-			// }
 			if (lowResPath.path.empty() && medResPath.path.empty()) {
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s lowResPath.path.empty() && medResPath.path.empty()", __func__);
-				// 	}
-				// }
-
 				if (multiPath->searchResult == IPath::Ok)
 					waypoint = multiPath->finalGoal;
-
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s waypoint for final goal (%f,%f,%f) [%d]", __func__
-				// 				, waypoint.x, waypoint.y, waypoint.z
-				// 				, multiPath->searchResult);
-				// 	}
-				// }
 
 				// [else]
 				// reached in the CantGetCloser case for any max-res searches
@@ -694,77 +781,78 @@ float3 CPathManager::NextWayPoint(
 				// this so waypoint will have been set to it (during previous
 				// iteration) if we end up here
 			} else {
-				// if (DEBUG_DRAWING_ENABLED) {
-				// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-				// 		LOG("%s calling NextWayPoint again", __func__);
-				// 	}
-				// }
-				waypoint = NextWayPoint(owner, pathID, numRetries + 1, callerPos, radius, synced);
+				if (!synced) {
+					waypoint = NextWayPoint(owner, pathID, numRetries + 1, callerPos, radius, synced);
+					break;
+				}
+				// direct to the nearest lower-res waypoint as a fallback until the path can be expanded.
+				// this creates the next step, so it will be checked very regulary until the path is
+				// extended.
+				if (waypoint == noPathPoint) {
+					auto createTempWaypointFromLowerRes = [&createTempWaypoint, &callerPos, radius](IPath::Path& path) {
+						float3 waypoint = createTempWaypoint(callerPos, path.path.back());
+						if ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != path.pathGoal))
+							path.path.pop_back();
+						return waypoint;
+					};
+
+					if (!medResPath.path.empty()) {
+						waypoint = createTempWaypointFromLowerRes(medResPath);
+					} else
+						waypoint = createTempWaypointFromLowerRes(lowResPath);
+				}
 			}
 
 			break;
 		} else {
-
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s maxres next point (%f,%f,%f)", __func__
-			// 				, maxResPath.path.back().x, maxResPath.path.back().y, maxResPath.path.back().z);
-			// 	}
-			// }
-
-			waypoint = maxResPath.path.back();
+			// y=0 indicates this is not a temporary waypoint
+			waypoint = maxResPath.path.back() * XZVector;
 			maxResPath.path.pop_back();
-
-			// if (DEBUG_DRAWING_ENABLED) {
-			// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-			// 		LOG("%s waypoint (%f,%f,%f)", __func__
-			// 				, waypoint.x, waypoint.y, waypoint.z);
-			// 	}
-			// }
 		}
-		// if (DEBUG_DRAWING_ENABLED) {
-		// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-		// 		LOG("%s callerPos.SqDistance2D(waypoint) [%f] < Square(radius) [%f] && (waypoint != maxResPath.pathGoal) [%d]", __func__
-		// 				, callerPos.SqDistance2D(waypoint)
-		// 				, Square(radius)
-		// 				, (int)(waypoint != maxResPath.pathGoal));
-		// 	}
-		// }
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
 
 	UpdateMultiPathMT(pathID, localMultiPath);
+	return waypoint;
+}
+
+
+CPathManager::MultiPath CPathManager::ExpandCurrentPath(
+		const CSolidObject* owner,
+		unsigned int pathID,
+		unsigned int numRetries,
+		float3 callerPos,
+		float radius,
+		bool extendMedResPath
+) {
+	ZoneScoped;
+	// in misc since it is called from many points
+	//SCOPED_TIMER("Misc::Path::NextWayPoint");
+
+	// find corresponding multipath entry
+	MultiPath localMultiPath = GetMultiPathMT(pathID);
+	MultiPath* multiPath = &localMultiPath;
+
+	if (!IsFinalized())
+		return localMultiPath;
+
+	// This position is used to resolve maxres query start points.
+	// In longer paths, if this isn't updated to the caller's current
+	// position, then the query will produce incorrect results.
+	multiPath->peDef.wsStartPos = callerPos;
 
 	// if (DEBUG_DRAWING_ENABLED) {
 	// 	if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-
-	// 		LOG("Start Position (%f, %f, %f)", localMultiPath.start.x, localMultiPath.start.y, localMultiPath.start.z);
-	// 		LOG("Final  Position (%f, %f, %f)", localMultiPath.finalGoal.x, localMultiPath.finalGoal.y, localMultiPath.finalGoal.z);
-	// 		LOG("Goal Radius %f", radius);
-
-	// 		std::array<IPath::Path*, PATH_ALL_LEVELS> paths;
-	// 		paths[PATH_LOW_RES] = &localMultiPath.lowResPath;
-	// 		paths[PATH_MED_RES] = &localMultiPath.medResPath;
-	// 		paths[PATH_MAX_RES] = &localMultiPath.maxResPath;
-
-	// 		for (int i = 0; i<PATH_ALL_LEVELS; i++){
-	// 			LOG("Path Resolution level %d (cost: %f)", i, paths[i]->pathCost);
-	// 			LOG("Desired Goal (%f, %f, %f)", paths[i]->desiredGoal.x, paths[i]->desiredGoal.y, paths[i]->desiredGoal.z);
-	// 			LOG("Path Goal (%f, %f, %f)", paths[i]->pathGoal.x, paths[i]->pathGoal.y, paths[i]->pathGoal.z);
-				
-	// 			for (int j = 0; j<paths[i]->path.size(); j++){
-	// 				LOG("Path Step %d (%f, %f, %f)", j, paths[i]->path[j].x, paths[i]->path[j].y, paths[i]->path[j].z);
-	// 			}
-	// 			for (int j = 0; j<paths[i]->squares.size(); j++){
-	// 				LOG("Square Step %d (%d, %d)", j, paths[i]->squares[j].x, paths[i]->squares[j].y);
-	// 			}
-	// 		}
+	// 		LOG("%s extendMaxResPath == true", __func__);
 	// 	}
 	// }
+	if (extendMedResPath)
+		LowRes2MedRes(*multiPath, callerPos, owner, false);
 
+	MedRes2MaxRes(*multiPath, callerPos, owner, false);
+	FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
 
-	// y=0 indicates this is not a temporary waypoint
-	// (the default PFS does not queue path-requests) // MH TODO: review
-	return (waypoint * XZVector);
+	localMultiPath.updated = true;
+	return localMultiPath;
 }
 
 
@@ -784,41 +872,82 @@ void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int 
 
 void CPathManager::Update()
 {
-	SCOPED_TIMER("Sim::Path");
-	assert(IsFinalized());
+	{
+		SCOPED_TIMER("Sim::PathUpdates");
+		assert(IsFinalized());
 
-	//pathFlowMap->Update();
-	pathHeatMap->Update();
+		//pathFlowMap->Update();
+		pathHeatMap->Update();
 
-	auto medResPE = &pathingStates[PATH_MED_RES];
-	auto lowResPE = &pathingStates[PATH_LOW_RES];
+		auto medResPE = &pathingStates[PATH_MED_RES];
+		auto lowResPE = &pathingStates[PATH_LOW_RES];
 
-	if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
-		const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
-		const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
-		const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, float(std::numeric_limits<int>::max()));
+		if (gs->frameNum >= frameNumToRefreshPathStateWorkloadRatio) {
+			const auto medResUpdatesCount = std::max(0.01f, float(medResPE->getCountOfUpdates()));
+			const auto lowResUpdatesCount = std::max(0.01f, float(lowResPE->getCountOfUpdates()));
+			const auto ratio = std::min(medResUpdatesCount / lowResUpdatesCount, float(std::numeric_limits<int>::max()));
 
-		if (ratio < 1.f) {
-			highPriorityResPS = lowResPE;
-			lowPriorityResPS = medResPE;
-			const auto invRatio = std::min(1.f / ratio, float(std::numeric_limits<int>::max()));
-			pathStateWorkloadRatio = Clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
-		} else {
-			highPriorityResPS = medResPE;
-			lowPriorityResPS = lowResPE;
-			pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
+			if (ratio < 1.f) {
+				highPriorityResPS = lowResPE;
+				lowPriorityResPS = medResPE;
+				const auto invRatio = std::min(1.f / ratio, float(std::numeric_limits<int>::max()));
+				pathStateWorkloadRatio = Clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
+			} else {
+				highPriorityResPS = medResPE;
+				lowPriorityResPS = lowResPE;
+				pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
+			}
+
+			// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
+			// 		, medResUpdatesCount, lowResUpdatesCount, ratio, pathStateWorkloadRatio);
+
+			frameNumToRefreshPathStateWorkloadRatio = gs->frameNum + GAME_SPEED;
 		}
 
-		// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"
-		// 		, medResUpdatesCount, lowResUpdatesCount, ratio, pathStateWorkloadRatio);
-
-		frameNumToRefreshPathStateWorkloadRatio = gs->frameNum + GAME_SPEED;
+		if (gs->frameNum % pathStateWorkloadRatio)
+			highPriorityResPS->Update();
+		else
+			lowPriorityResPS->Update();
 	}
+	{
+		SCOPED_TIMER("Sim::PathRequests");
 
-	if (gs->frameNum % pathStateWorkloadRatio)
-		highPriorityResPS->Update();
-	else
-		lowPriorityResPS->Update();
+		auto pathSearchView = registry.view<PathSearch>();
+		pathSearches.clear();
+		pathSearches.reserve(pathSearchView.size());
+		auto& entities = pathSearches;
+		pathSearchView.each([&entities](entt::entity entity){ entities.emplace_back(entity); });
+
+		for_mt(0, pathSearchView.size(), [this, &entities, &pathSearchView](int idx){
+			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
+			PathExtension* pathExtend = registry.try_get<PathExtension>( entities[idx] );
+
+			MultiPath newPath = (pathExtend == nullptr) ?
+					IssuePathRequest
+						( pathSearch.caller
+						, pathSearch.moveDef
+						, pathSearch.startPos
+						, pathSearch.goalPos
+						, pathSearch.goalRadius
+						, true)
+					: ExpandCurrentPath
+						( pathSearch.caller
+						, pathSearch.pathId
+						, 0
+						, pathSearch.startPos
+						, pathSearch.goalRadius
+						, pathExtend->pathResToExtend == ExtendPathResType::EXTEND_MED_RES);
+
+			UpdateMultiPathMT(pathSearch.pathId, newPath);
+
+			// LOG("%s: ent = %x, pathId = %d, result = %d, steps = %d", __func__
+			// 		, entt::to_integral(entities[idx]), pathSearch.pathId, newPath.searchResult
+			// 		, (int)newPath.maxResPath.path.size());
+		});
+
+		// Clear out the search entities.
+		pathSearchView.each([](entt::entity ent){ registry.destroy(ent); });
+	}
 }
 
 // used to deposit heat on the heat-map as a unit moves along its path
@@ -948,7 +1077,7 @@ void CPathManager::GetPathWayPoints(
 
 bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) {
 	if (!IsFinalized())
-		return 0.0f;
+		return false;
 
 	if (x >= mapDims.mapx) { return false; }
 	if (z >= mapDims.mapy) { return false; }
@@ -972,7 +1101,7 @@ bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, 
 
 bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) {
 	if (!IsFinalized())
-		return 0.0f;
+		return false;
 
 	if (sizex < 1 || sizex > mapDims.mapx) { return false; }
 	if (sizez < 1 || sizez > mapDims.mapy) { return false; }
@@ -1032,10 +1161,6 @@ int2 CPathManager::GetNumQueuedUpdates() const {
 	}
 
 	return data;
-}
-
-bool CPathManager::SupportsMultiThreadedRequests() const {
-	return !modInfo.pfForceSingleThreaded;
 }
 
 }

@@ -7,7 +7,7 @@
 #include <tuple>
 
 #include "MoveType.h"
-#include "Sim/Path/IPathController.hpp"
+#include "Sim/Path/IPathController.h"
 #include "System/Sync/SyncedFloat3.h"
 
 struct UnitDef;
@@ -54,6 +54,8 @@ public:
 	void TestNewTerrainSquare();
 	bool CanApplyImpulse(const float3&) override;
 	void LeaveTransport() override;
+	void Connect() override;
+	void Disconnect() override;
 
 	void InitMemberPtrs(MemberData* memberData);
 	bool SetMemberValue(unsigned int memberHash, void* memberValue) override;
@@ -64,7 +66,7 @@ public:
 	bool WantToStop() const { return (pathID == 0 && (!useRawMovement || atEndOfPath)); }
 
 	void TriggerSkipWayPoint() {
-		earlyCurrWayPoint.y = -1.0f;
+		earlyCurrWayPoint.y = -2.0f;
 	}
 	void TriggerCallArrived() {
 		atEndOfPath = true;
@@ -99,16 +101,6 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	void DelayedReRequestPath() {
-		earlyCurrWayPoint = currWayPoint;
-		earlyNextWayPoint = nextWayPoint;
-
-		PathRequestType curRepath = wantRepath;
-		wantRepath = PATH_REQUEST_NONE;
-
-		if (curRepath & PATH_REQUEST_UPDATE_FULLPATH) { DoReRequestPath(); }
-		else if (curRepath & PATH_REQUEST_UPDATE_EXISTING) { DoSetNextWaypoint(); }
-	}
 	void SyncWaypoints() {
 		if (moveFailed){
 			Fail(false);
@@ -123,6 +115,14 @@ public:
 	}
 	unsigned int GetPathId() { return pathID; }
 
+	float GetTurnRadius() {
+		const float absTurnSpeed = std::max(0.0001f, math::fabs(turnRate));
+		const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
+		return std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f);
+	}
+
+	bool IsAtGoal() const override { return atGoal; }
+
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;
@@ -136,11 +136,9 @@ private:
 
 	unsigned int GetNewPath();
 
-	void SetNextWayPoint(int thread = 0);
-	bool CanSetNextWayPoint(int thread = 0);
-	void DoSetNextWaypoint();
-	void ReRequestPath(PathRequestType requestType);
-	void DoReRequestPath();
+	void SetNextWayPoint(int thread);
+	bool CanSetNextWayPoint(int thread);
+	void ReRequestPath(bool forceRequest);
 
 	void StartEngine(bool callScript);
 	void StopEngine(bool callScript, bool hardStop = false);
@@ -192,8 +190,9 @@ private:
 	void UpdateOwnerPos(const float3&, const float3&);
 	bool UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw);
 	bool OwnerMoved(const short, const float3&, const float3&);
-	bool FollowPath(int thread = 0);
+	bool FollowPath(int thread);
 	bool WantReverse(const float3& wpDir, const float3& ffDir) const;
+	void SetWaypointDir(const float3& cwp, const float3 &opos);
 
 private:
 	GMTDefaultPathController pathController;
@@ -247,9 +246,18 @@ private:
 	short wantedHeading = 0;
 	short minScriptChangeHeading = 0;       /// minimum required turn-angle before script->ChangeHeading is called
 
+	int wantRepathFrame = std::numeric_limits<int>::min();
+	int lastRepathFrame = std::numeric_limits<int>::min();
+	float bestLastWaypointDist = std::numeric_limits<float>::infinity();
+	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
+	short setHeadingDir = 0;
+	short limitSpeedForTurning = 0;			/// if set, take extra care to prevent overshooting while turning for the next N waypoints.
+
 	bool atGoal = true;
 	bool atEndOfPath = true;
+	bool wantRepath = false;
 	bool moveFailed = false;
+	bool lastWaypoint = false;
 
 	bool reversing = false;
 	bool idling = false;
@@ -259,8 +267,6 @@ private:
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
 	bool pathingFailed = false;
 	bool pathingArrived = false;
-	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
-	short setHeadingDir = 0;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;

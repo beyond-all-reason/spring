@@ -448,15 +448,15 @@ void CUnit::FinishedBuilding(bool postInit)
 }
 
 
-void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (IsCrashing() && !beingBuilt)
 		return;
 
-	ForcedKillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
+	ForcedKillUnit(attacker, selfDestruct, reclaimed);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (isDead)
 		return;
@@ -477,7 +477,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		envResHandler.DelGenerator(this);
 
 	blockHeightChanges = false;
-	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	deathScriptFinished = (reclaimed || beingBuilt);
 
 	if (deathScriptFinished)
 		return;
@@ -607,6 +607,7 @@ void CUnit::EnableScriptMoveType()
 		return;
 
 	prevMoveType = moveType;
+	prevMoveType->Disconnect();
 	moveType = MoveTypeFactory::GetScriptMoveType(this);
 }
 
@@ -618,6 +619,7 @@ void CUnit::DisableScriptMoveType()
 	spring::SafeDestruct(moveType);
 
 	moveType = prevMoveType;
+	moveType->Connect();
 	prevMoveType = nullptr;
 
 	// ensure unit does not try to move back to the
