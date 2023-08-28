@@ -62,7 +62,7 @@ Lua:
    start box (in elmos) for an ally team.
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
- 
+
 
 Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
@@ -141,6 +141,8 @@ Sim:
    will likely try to path around those map squares. Think lava, it is very slow to move through,
    (and it hurts), you don't want units trying to path through lava unless they are trying to get
    out. This feature is considered experimental.
+ - Units will skid if hit with impulses sufficiently large in the direction opposite their
+   movement vector. Previously units would only skid on large impulses that hit their sides.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
@@ -302,11 +304,11 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
    back old behaviour, change `0` to `false`.
-   
+
  ! Spring.GetConfigInt, Spring.GetConfigFloat and Spring.GetConfigString now accept nil
    as the second argument (what to return by default if not set). Previously it was treated
    as 0 (Int and Float) or "" (String). To get back previous behaviour:
- 
+
    local originalGetConfigInt = Spring.GetConfigInt
    Spring.GetConfigInt = function(key, def)
      return originalGetConfigInt(key, def) or 0
@@ -518,8 +520,8 @@ Fixes:
  - Fix piece projectiles (flying parts from dead units) not colliding with units
  - Fix KeyChains not being respected for GuiHandler actions and allow games to
    handle them with new actions argument on KeyPress/KeyRelease
- - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
-   i.e. unplug/replug USB headset or swtich between builtin soundcard to 
+ - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes,
+   i.e. unplug/replug USB headset or swtich between builtin soundcard to
    monitor soundcard (HDMI), seamlessly possible without requiring a program restart
  - Fix keysets bound to duplicate actions when the action line contains
    discrepant comment sections
