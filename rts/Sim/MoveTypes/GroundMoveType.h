@@ -127,7 +127,7 @@ private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
 	float3 Here() const;
 
-  // Start skidding if the angle between the vel and dir vectors is >arccos(2*sqSkidSpeedMult-1)/2
+	// Start skidding if the angle between the vel and dir vectors is >arccos(2*sqSkidSpeedMult-1)/2
 	bool StartSkidding(const float3& vel, const float3& dir) const { return ((SignedSquare(vel.dot(dir)) + 0.01f) < (vel.SqLength() * sqSkidSpeedMult)); }
 	bool StopSkidding(const float3& vel, const float3& dir) const { return ((SignedSquare(vel.dot(dir)) + 0.01f) >= (vel.SqLength() * sqSkidSpeedMult)); }
 	bool StartFlying(const float3& vel, const float3& dir) const { return (vel.dot(dir) > 0.2f); }
