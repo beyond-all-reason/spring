@@ -1297,7 +1297,7 @@ bool CGroundMoveType::CanApplyImpulse(const float3& impulse)
 	skidRotAccel = 0.0f;
 
 	float3 newSpeed = owner->speed + impulse;
-	float3 skidDir = owner->frontdir;
+	float3 skidDir = mix(float3(owner->frontdir), owner->frontdir * -1, reversing);
 
 	// NOTE:
 	//   we no longer delay the skidding-state until owner has "accumulated" an

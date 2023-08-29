@@ -39,6 +39,7 @@ public:
 	// by default, SetVelocity does not set magnitude (for efficiency)
 	// so SetSpeed must be explicitly called to update the w-component
 	float SetSpeed(const float3& v) { return (speed.w = v.Length()); }
+	float SetSpeed(const float s) { return (speed.w = s); }
 
 	void SetRadiusAndHeight(float r, float h) {
 		radius = r;

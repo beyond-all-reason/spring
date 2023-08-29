@@ -1339,7 +1339,7 @@ void CUnit::ApplyImpulse(const float3& impulse) {
 	if (!moveType->CanApplyImpulse(modImpulse))
 		return;
 
-	CSolidObject::ApplyImpulse(modImpulse);
+	CSolidObject::ApplyImpulse(modImpulse, moveType->GetMaxSpeed() * 1.2);
 }
 
 

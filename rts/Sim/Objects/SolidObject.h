@@ -119,6 +119,11 @@ public:
 	virtual void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID) {}
 
 	virtual void ApplyImpulse(const float3& impulse) { SetVelocityAndSpeed(speed + impulse); }
+	virtual void ApplyImpulse(const float3& impulse, float maxSpeed) {
+		float3 newSpeed = speed + impulse;
+		SetVelocity(newSpeed);
+		SetSpeed(std::min(newSpeed.Length(), maxSpeed));
+	}
 
 	virtual void Kill(CUnit* killer, const float3& impulse, bool crushed);
 	virtual int GetBlockingMapID() const { return -1; }
