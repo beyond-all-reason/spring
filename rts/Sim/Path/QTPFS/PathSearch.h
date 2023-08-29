@@ -84,16 +84,17 @@ namespace QTPFS {
 
 	public:
 		PathSearch()
-			: nodeLayer(NULL)
-			, searchExec(NULL)
-			, hCostMult(0.0f)
-			, haveFullPath(false)
-			, havePartPath(false)
-			, openNodes(nullptr)
-			, searchID(0)
+			: searchID(0)
 			, searchTeam(0)
 			, searchType(0)
 			, searchState(0)
+			, openNodes(nullptr)
+			, nodeLayer(nullptr)
+			, searchExec(nullptr)
+			, hCostMult(0.0f)
+			, haveFullPath(false)
+			, havePartPath(false)
+
 			{}
 		PathSearch(unsigned int pathSearchType)
 			: PathSearch()

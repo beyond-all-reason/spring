@@ -34,9 +34,9 @@ public:
 	typedef  typename decltype(bins)::value_type  ObjectBin;
 public:
 	ModelRenderContainer(TObjectSelector objectSelector_)
-		: objectSelector{std::move(objectSelector_)}
-		, numObjs{ 0 }
+		: numObjs{ 0 }
 		, numBins{ 0 }
+		, objectSelector{std::move(objectSelector_)}
 	{
 		bins.reserve(32);
 		Clear();
