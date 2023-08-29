@@ -109,7 +109,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
 	CR_MEMBER(fastQueryPointUpdate),
-	CR_MEMBER(aimAtBlockedTargets)
+	CR_MEMBER(preaimAtBlockedTargets)
 ))
 
 
@@ -189,7 +189,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
 	fastQueryPointUpdate(false),
-	aimAtBlockedTargets(false)
+	preaimAtBlockedTargets(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -559,8 +559,12 @@ bool CWeapon::Attack(const SWeaponTarget& newTarget)
 		case Target_Unit:
 		case Target_Pos:
 		case Target_Intercept: {
-			if (aimAtBlockedTargets) {
-				if (!TestTarget(GetLeadTargetPos(newTarget),newTarget))
+			if (preaimAtBlockedTargets) {
+				// only do TestTarget and TestRange, keep target irregardless of havefreelineoffire check
+				float3 trgpos = GetLeadTargetPos(newTarget);
+				if (!TestTarget(trgpos, newTarget))
+					return false;
+				if (!TestRange(trgpos, newTarget))
 					return false;
 			} else {
 				if (!TryTarget(newTarget))
@@ -681,30 +685,37 @@ bool CWeapon::AutoTarget()
 		// good targets (of higher priority) left in <targets>
 		const bool isBadTarget = (unit->category & badTargetCategory);
 
+		// skip target if it is a bad target and we already have a better bad target category
 		if (isBadTarget && (badTargetUnit != nullptr))
 			continue;
 
-		// set isAutoTarget s.t. TestRange result is ignored
-		// (which enables pre-aiming at targets out of range)
-		if (aimAtBlockedTargets) {
+		// skip target if it is neutral and we are not allowed to fire at neutral
+		if (unit->IsNeutral() && (owner->fireState < FIRESTATE_FIREATNEUTRAL))
+			continue;
+
+		if (preaimAtBlockedTargets) {
 			SWeaponTarget trg = SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f);
 			float3 trgpos = GetLeadTargetPos(trg);
+			// first determine if target is valid
 			if (!TestTarget(trgpos, trg)) {
 				continue;
 			}
+			// isAutoTarget is set, so no need to do TestRange
+			// then check free line of fire
 			if (!HaveFreeLineOfFire(GetAimFromPos(true), trgpos, trg)) {
+				// if no free line of fire, fill blockedTargetUnit if empty
+				// and continue checking other targets
 				if (blockedTargetUnit == nullptr) {
 					blockedTargetUnit = unit;
 				}
 				continue;
 			}
 		} else {
+			// set isAutoTarget s.t. TestRange result is ignored
+			// (which enables pre-aiming at targets out of range)
 			if (!TryTarget(SWeaponTarget(unit, false, autoTargetRangeBoost > 0.0f)))
 				continue;
 		}
-
-		if (unit->IsNeutral() && (owner->fireState < FIRESTATE_FIREATNEUTRAL))
-			continue;
 
 		if (isBadTarget) {
 			badTargetUnit = unit;

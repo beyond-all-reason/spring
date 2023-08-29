@@ -59,7 +59,7 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to aim at targets without a free line of fire
 	// weapon still prioritizes targets with a free line of fire
-	aimAtBlockedTargets = weaponTable.GetBool("aimAtBlockedTargets", aimAtBlockedTargets);
+	preaimAtBlockedTargets = weaponTable.GetBool("preaimAtBlockedTargets", preaimAtBlockedTargets);
 }
 
 
