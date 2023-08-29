@@ -77,7 +77,7 @@ For example, if an explosion spawns 4 particles and `size = "3 i2"`, then they w
 ### Damage (`d`)
 
 The `d` operator multiplies its operand by the "damage" of an explosion.
-For example `d0.1` will net 10 for a 100-damage explosion, and 50 for a 100-damage explosion.
+For example `d0.1` will net 10 for a 100-damage explosion, and 50 for a 500-damage explosion.
 
 Some practical remarks:
  * for regular weapons, this is the "default" damage. Beware if you treat it as the "features" armor class (since they can't have a real armor class)!
