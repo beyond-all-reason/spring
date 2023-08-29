@@ -55,7 +55,7 @@ namespace spring {
             std::apply(storedFunc, storedArgs);
         }
     private:
-        std::tuple<std::decay_t<Args>...> storedArgs;
         FunctionType storedFunc;
+        std::tuple<std::decay_t<Args>...> storedArgs;
     };
 }

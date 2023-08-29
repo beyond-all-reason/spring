@@ -18,10 +18,11 @@ namespace {
 }
 
 OGLDBInfo::OGLDBInfo(const std::string& glRenderer_, const std::string& myOS_)
-	: myOS{ StringToLower(myOS_) }
-	, glRenderer{ StringToLower(glRenderer_) }
+	: glRenderer{ StringToLower(glRenderer_) }
+	, myOS{ StringToLower(myOS_) }
 	, maxVer{0, 0}
 	, id{""}
+	, drv{""}
 {
 	fut = std::async(std::launch::async, [this]() -> bool {
 		try {
