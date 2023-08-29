@@ -127,7 +127,7 @@ float CDecalsDrawerGL4::Decal::GetRating(bool inview_test) const
 	float r = 0.f;
 	r += 10.f * alpha;
 	r += 100.f * (inview_test && InView());
-	r += 1000.f * Clamp((size.x * size.y) * 0.0001f, 0.0f, 1.0f);
+	r += 1000.f * std::clamp((size.x * size.y) * 0.0001f, 0.0f, 1.0f);
 	r += 10000.f * int(type);
 	return r;
 }
@@ -1554,7 +1554,7 @@ void CDecalsDrawerGL4::AddExplosion(float3 pos, float damage, float radius)
 	d.rot    = guRNG.NextFloat() * math::TWOPI;
 	d.size.x = radius * math::SQRT2;
 	d.size.y = d.size.x;
-	d.alpha  = Clamp(damage / 255.0f, 0.75f, 1.0f);
+	d.alpha  = std::clamp(damage / 255.0f, 0.75f, 1.0f);
 	d.SetTexture(IntToString((guRNG.NextInt() & 3) + 1)); // pick one of 4 scar textures
 	d.type  = Decal::EXPLOSION;
 	d.owner = nullptr;

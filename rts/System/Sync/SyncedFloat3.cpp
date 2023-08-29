@@ -21,8 +21,8 @@ void SyncedFloat3::ClampInBounds()
 {
 	assert(float3::maxxpos > 0.0f); // check if initialized
 
-	x = Clamp((float)x, 0.0f, float3::maxxpos);
-	z = Clamp((float)z, 0.0f, float3::maxzpos);
+	x = std::clamp((float)x, 0.0f, float3::maxxpos);
+	z = std::clamp((float)z, 0.0f, float3::maxzpos);
 
 	//return *this;
 }
@@ -32,8 +32,8 @@ void SyncedFloat3::ClampInMap()
 {
 	assert(float3::maxxpos > 0.0f); // check if initialized
 
-	x = Clamp((float)x, 0.0f, float3::maxxpos + 1);
-	z = Clamp((float)z, 0.0f, float3::maxzpos + 1);
+	x = std::clamp((float)x, 0.0f, float3::maxxpos + 1);
+	z = std::clamp((float)z, 0.0f, float3::maxzpos + 1);
 }
 
 #endif // defined(SYNCDEBUG) || defined(SYNCCHECK)

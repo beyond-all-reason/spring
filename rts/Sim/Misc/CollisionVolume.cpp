@@ -280,9 +280,9 @@ float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float
 
 			// calculate the closest surface point
 			float3 pt;
-			pt.x = Clamp(pv.x, -halfAxisScales.x, halfAxisScales.x);
-			pt.y = Clamp(pv.y, -halfAxisScales.y, halfAxisScales.y);
-			pt.z = Clamp(pv.z, -halfAxisScales.z, halfAxisScales.z);
+			pt.x = std::clamp(pv.x, -halfAxisScales.x, halfAxisScales.x);
+			pt.y = std::clamp(pv.y, -halfAxisScales.y, halfAxisScales.y);
+			pt.z = std::clamp(pv.z, -halfAxisScales.z, halfAxisScales.z);
 
 			// float l = std::min(pv.x - pt.x, std::min(pv.y - pt.y, pv.z - pt.z));
 			d = pv.distance(pt);
@@ -408,9 +408,9 @@ float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 		const float invDet = 1.0f / (a11 * a22 - a21 * a12);
 
 		theta += (a12 * d2 - a22 * d1) * invDet;
-		theta = Clamp(theta, 0.0f, math::HALFPI);
+		theta = std::clamp(theta, 0.0f, math::HALFPI);
 		phi += (a21 * d1 - a11 * d2) * invDet;
-		phi = Clamp(phi, 0.0f, math::HALFPI);
+		phi = std::clamp(phi, 0.0f, math::HALFPI);
 	}
 
 	return currDist;

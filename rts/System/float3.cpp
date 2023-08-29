@@ -23,8 +23,8 @@ void float3::ClampInBounds()
 {
 	assert(maxxpos > 0.0f); // check if initialized
 
-	x = Clamp(x, 0.0f, maxxpos);
-	z = Clamp(z, 0.0f, maxzpos);
+	x = std::clamp(x, 0.0f, maxxpos);
+	z = std::clamp(z, 0.0f, maxzpos);
 }
 
 
@@ -40,8 +40,8 @@ void float3::ClampInMap()
 {
 	assert(maxxpos > 0.0f); // check if initialized
 
-	x = Clamp(x, 0.0f, maxxpos + 1);
-	z = Clamp(z, 0.0f, maxzpos + 1);
+	x = std::clamp(x, 0.0f, maxxpos + 1);
+	z = std::clamp(z, 0.0f, maxzpos + 1);
 }
 
 

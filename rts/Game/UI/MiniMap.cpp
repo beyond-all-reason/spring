@@ -458,12 +458,12 @@ void CMiniMap::UpdateGeometry()
 		SetMaximizedGeometry();
 	}
 	else {
-		curDim.x = Clamp(curDim.x, 1, globalRendering->viewSizeX);
-		curDim.y = Clamp(curDim.y, 1, globalRendering->viewSizeY);
+		curDim.x = std::clamp(curDim.x, 1, globalRendering->viewSizeX);
+		curDim.y = std::clamp(curDim.y, 1, globalRendering->viewSizeY);
 
 		curPos.y = std::max(slaveDrawMode ? 0 : buttonSize, curPos.y);
 		curPos.y = std::min(globalRendering->viewSizeY - curDim.y, curPos.y);
-		curPos.x = Clamp(curPos.x, 0, globalRendering->viewSizeX - curDim.x);
+		curPos.x = std::clamp(curPos.x, 0, globalRendering->viewSizeX - curDim.x);
 	}
 
 	{
@@ -821,8 +821,8 @@ float3 CMiniMap::GetMapPosition(int x, int y) const
 	// translate mouse coords orientation and origin to map coords
 	y = y - globalRendering->viewPosY + curDim.y - globalRendering->viewSizeY;
 
-	float sx = Clamp(float(x - tmpPos.x) / curDim.x, 0.0f, 1.0f);
-	float sz = Clamp(float(y + tmpPos.y) / curDim.y, 0.0f, 1.0f);
+	float sx = std::clamp(float(x - tmpPos.x) / curDim.x, 0.0f, 1.0f);
+	float sz = std::clamp(float(y + tmpPos.y) / curDim.y, 0.0f, 1.0f);
 
 	if (flipped) {
 		sx = 1 - sx;

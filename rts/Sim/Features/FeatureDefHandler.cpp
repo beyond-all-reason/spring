@@ -139,7 +139,7 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 	const float maxMass = CSolidObject::MAXIMUM_MASS;
 	const float defMass = (fd.metal * 0.4f) + (fd.health * 0.1f);
 
-	fd.mass = Clamp(fdTable.GetFloat("mass", defMass), minMass, maxMass);
+	fd.mass = std::clamp(fdTable.GetFloat("mass", defMass), minMass, maxMass);
 	fd.crushResistance = fdTable.GetFloat("crushResistance", fd.mass);
 
 	fd.decalDef.Parse(fdTable);

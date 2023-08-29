@@ -278,7 +278,7 @@ std::string CTooltipConsole::MakeGroundString(const float3& pos)
 
 	const int px = pos.x / 16;
 	const int pz = pos.z / 16;
-	const int typeMapIdx = Clamp(pz * mapDims.hmapx + px, 0, mapDims.hmapx * mapDims.hmapy - 1);
+	const int typeMapIdx = std::clamp(pz * mapDims.hmapx + px, 0, mapDims.hmapx * mapDims.hmapy - 1);
 	const unsigned char* typeMap = readMap->GetTypeMapSynced();
 	const CMapInfo::TerrainType* tt = &mapInfo->terrainTypes[typeMap[typeMapIdx]];
 

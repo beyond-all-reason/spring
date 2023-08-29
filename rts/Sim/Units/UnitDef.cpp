@@ -316,7 +316,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	if (buildTime <= 0.0f)
 		throw content_error (unitName + ".buildTime <= 0");
 
-	mass = Clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
+	mass = std::clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 	crushResistance = udTable.GetFloat("crushResistance", mass);
 
 	cobID = udTable.GetInt("cobID", -1);
@@ -378,7 +378,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	collidable = udTable.GetBool("blocking", true);
 	collide = udTable.GetBool("collide", true);
 
-	const float maxSlopeDeg = Clamp(udTable.GetFloat("maxSlope", 0.0f), 0.0f, 89.0f);
+	const float maxSlopeDeg = std::clamp(udTable.GetFloat("maxSlope", 0.0f), 0.0f, 89.0f);
 	const float maxSlopeRad = maxSlopeDeg * math::DEG_TO_RAD;
 
 	// FIXME: kill the magic constant
@@ -503,13 +503,13 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	transportUnloadMethod = udTable.GetInt("transportUnloadMethod" , 0);
 
 	wingDrag     = udTable.GetFloat("wingDrag",     0.07f);  // drag caused by wings
-	wingDrag     = Clamp(wingDrag, 0.0f, 1.0f);
+	wingDrag     = std::clamp(wingDrag, 0.0f, 1.0f);
 	wingAngle    = udTable.GetFloat("wingAngle",    0.08f);  // angle between front and the wing plane
 	frontToSpeed = udTable.GetFloat("frontToSpeed", 0.1f);   // fudge factor for lining up speed and front of plane
 	speedToFront = udTable.GetFloat("speedToFront", 0.07f);  // fudge factor for lining up speed and front of plane
 	myGravity    = udTable.GetFloat("myGravity",    0.4f);   // planes are slower than real airplanes so lower gravity to compensate
 	crashDrag    = udTable.GetFloat("crashDrag",    0.005f); // drag used when crashing
-	crashDrag    = Clamp(crashDrag, 0.0f, 1.0f);
+	crashDrag    = std::clamp(crashDrag, 0.0f, 1.0f);
 
 	maxBank = udTable.GetFloat("maxBank", 0.8f);         // max roll
 	maxPitch = udTable.GetFloat("maxPitch", 0.45f);      // max pitch this plane tries to keep

@@ -48,7 +48,7 @@ void CUnitTracker::IncMode()
 
 void CUnitTracker::SetMode(int mode)
 {
-	trackMode = Clamp(mode, 0, TrackModeCount - 1);
+	trackMode = std::clamp(mode, 0, TrackModeCount - 1);
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
 

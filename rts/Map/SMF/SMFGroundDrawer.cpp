@@ -480,7 +480,7 @@ void CSMFGroundDrawer::SetDetail(int newGroundDetail)
 	const int minGroundDetail = MIN_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
 	const int maxGroundDetail = MAX_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
 
-	configHandler->Set("GroundDetail", groundDetail = Clamp(newGroundDetail, minGroundDetail, maxGroundDetail));
+	configHandler->Set("GroundDetail", groundDetail = std::clamp(newGroundDetail, minGroundDetail, maxGroundDetail));
 	LOG("GroundDetail%s set to %i", ((drawerMode != SMF_MESHDRAWER_ROAM)? "[Bias]": ""), groundDetail);
 }
 

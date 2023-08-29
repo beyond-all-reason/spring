@@ -656,7 +656,7 @@ void QTPFS::PathManager::Update() {
 				constexpr int MIN_BLOCKS_TO_UPDATE = 0;
 				constexpr int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE, MIN_BLOCKS_TO_UPDATE);
 
-				blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
+				blocksToUpdate = std::clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE);
 			
 				// LOG("[%d] blocksToUpdate=%d updatedBlocks=%d [%f]"
 				// 		, layerNum, blocksToUpdate, updatedBlocks, modInfo.pfUpdateRateScale);

@@ -121,7 +121,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 	// from here to the end of the function (smoothed)
 	if (moveTilt) {
 		angle += (move * tiltSpeed * shiftSpeed * 0.025f) * angleStep;
-		angle = Clamp(angle, 0.01f, math::HALFPI);
+		angle = std::clamp(angle, 0.01f, math::HALFPI);
 		camHandler->CameraTransition(0.125f);
 	} else {
 		const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
@@ -184,12 +184,12 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 void COverheadController::Update()
 {
-	pos.x = Clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
-	pos.z = Clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
+	pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
+	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 
-	height = Clamp(height, 60.0f, maxHeight);
-	angle = Clamp(angle, 0.01f, math::HALFPI);
+	height = std::clamp(height, 60.0f, maxHeight);
+	angle = std::clamp(angle, 0.01f, math::HALFPI);
 
 	dir = float3(0.0f, -fastmath::cos(angle), flipped ? fastmath::sin(angle) : -fastmath::sin(angle));
 	pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * height * 2.0f;

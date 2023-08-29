@@ -45,8 +45,8 @@ public:
 
 public:
 	int At(int2 p) const {
-		p.x = Clamp(p.x, 0, size.x - 1);
-		p.y = Clamp(p.y, 0, size.y - 1);
+		p.x = std::clamp(p.x, 0, size.x - 1);
+		p.y = std::clamp(p.y, 0, size.y - 1);
 		return losmap[p.y * size.x + p.x];
 	}
 

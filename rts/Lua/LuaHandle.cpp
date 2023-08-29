@@ -3573,9 +3573,9 @@ void CLuaHandle::CollectGarbage(bool forced)
 	// and OOM exceptions become a concern when catching up
 	// OTOH if gc is tied to sim-speed the increased number of calls can
 	// mean too much time is spent on it, must weigh the per-call period
-	const float gcSpeedFactor = Clamp(gs->speedFactor * (1 - gs->PreSimFrame()) * (1 - gs->paused), 1.0f, 50.0f);
+	const float gcSpeedFactor = std::clamp(gs->speedFactor * (1 - gs->PreSimFrame()) * (1 - gs->paused), 1.0f, 50.0f);
 	const float gcBaseRunTime = smoothstep(10.0f, 100.0f, gcMemFootPrint / 1024);
-	const float gcLoopRunTime = Clamp((gcBaseRunTime * gcRunTimeMult) / gcSpeedFactor, D.gcCtrl.minLoopRunTime, D.gcCtrl.maxLoopRunTime);
+	const float gcLoopRunTime = std::clamp((gcBaseRunTime * gcRunTimeMult) / gcSpeedFactor, D.gcCtrl.minLoopRunTime, D.gcCtrl.maxLoopRunTime);
 
 	const spring_time startTime = spring_gettime();
 	const spring_time   endTime = startTime + spring_msecs(gcLoopRunTime);
@@ -3612,7 +3612,7 @@ void CLuaHandle::CollectGarbage(bool forced)
 
 		gcStepsPerIter -= (avgLoopIterTime > (gcRunTimeMult * 0.150f));
 		gcStepsPerIter += (avgLoopIterTime < (gcRunTimeMult * 0.075f));
-		gcStepsPerIter  = Clamp(gcStepsPerIter, D.gcCtrl.minStepsPerIter, D.gcCtrl.maxStepsPerIter);
+		gcStepsPerIter  = std::clamp(gcStepsPerIter, D.gcCtrl.minStepsPerIter, D.gcCtrl.maxStepsPerIter);
 	}
 
 	eventHandler.DbgTimingInfo(TIMING_GC, startTime, finishTime);

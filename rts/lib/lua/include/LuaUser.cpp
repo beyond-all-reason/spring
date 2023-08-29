@@ -591,7 +591,7 @@ void spring_lua_format(float f, const char* fmt, char* buf)
 	const char* dotPos = strchr(fmt, '.');
 
 	if (dotPos != nullptr)
-		precision = Clamp(atoi(fmt = dotPos + 1), 0, 15);
+		precision = std::clamp(atoi(fmt = dotPos + 1), 0, 15);
 
 
 	// convert the float

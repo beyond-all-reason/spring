@@ -35,8 +35,8 @@ SmoothHeightMesh smoothGround;
 
 static float Interpolate(float x, float y, const int maxx, const int maxy, const float res, const float* heightmap)
 {
-	x = Clamp(x / res, 0.0f, (float)maxx);
-	y = Clamp(y / res, 0.0f, (float)maxy);
+	x = std::clamp(x / res, 0.0f, (float)maxx);
+	y = std::clamp(y / res, 0.0f, (float)maxy);
 	const int sx = std::min((int)x, maxx - 1);
 	const int sy = std::min((int)y, maxy - 1);
 	const float dx = (x - sx);

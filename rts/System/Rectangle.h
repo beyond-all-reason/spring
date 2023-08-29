@@ -49,15 +49,15 @@ struct SRectangle {
 	}
 
 	void ClampPos(int2* pos) const {
-		pos->x = Clamp(pos->x, x1, x2);
-		pos->y = Clamp(pos->y, y1, y2);
+		pos->x = std::clamp(pos->x, x1, x2);
+		pos->y = std::clamp(pos->y, y1, y2);
 	}
 
 	void ClampIn(const SRectangle& rect) {
-		x1 = Clamp(x1, rect.x1, rect.x2);
-		x2 = Clamp(x2, rect.x1, rect.x2);
-		y1 = Clamp(y1, rect.y1, rect.y2);
-		y2 = Clamp(y2, rect.y1, rect.y2);
+		x1 = std::clamp(x1, rect.x1, rect.x2);
+		x2 = std::clamp(x2, rect.x1, rect.x2);
+		y1 = std::clamp(y1, rect.y1, rect.y2);
+		y2 = std::clamp(y2, rect.y1, rect.y2);
 	}
 
 	bool CheckOverlap(const SRectangle& rect) const {

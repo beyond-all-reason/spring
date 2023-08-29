@@ -102,7 +102,7 @@ void CInterceptHandler::Update(bool forced) {
 				}
 			}
 
-			const float3 pMinSepPos = p->pos + p->dir * Clamp(-(pWeaponVec.dot(p->dir)), 0.0f, impactDist);
+			const float3 pMinSepPos = p->pos + p->dir * std::clamp(-(pWeaponVec.dot(p->dir)), 0.0f, impactDist);
 			const float3 pMinSepVec = w->aimFromPos - pMinSepPos;
 
 			if (pMinSepVec.SqLength() < Square(wDef->coverageRange)) {

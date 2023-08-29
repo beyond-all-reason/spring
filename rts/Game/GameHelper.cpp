@@ -93,7 +93,7 @@ float CGameHelper::CalcImpulseScale(const DamageArray& damages, const float expD
 	const float impulseDmgMult = (damages.GetDefault() + damages.impulseBoost);
 	const float rawImpulseScale = damages.impulseFactor * expDistanceMod * impulseDmgMult;
 
-	return Clamp(rawImpulseScale, -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE);
+	return std::clamp(rawImpulseScale, -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE);
 }
 
 void CGameHelper::DoExplosionDamage(
@@ -1028,7 +1028,7 @@ float3 CGameHelper::ClosestBuildPos(
 
 	const int allyTeam = teamHandler.AllyTeam(team);
 	const int rawRadius = static_cast<int>(searchRadius / BUILD_SQUARE_SIZE);
-	const int maxRadius = Clamp(rawRadius, 1, 128);
+	const int maxRadius = std::clamp(rawRadius, 1, 128);
 
 	const auto& offsets = GetSearchOffsetTable(maxRadius);
 
@@ -1139,10 +1139,10 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 	const int px = (pos.x - (xsize * (SQUARE_SIZE >> 1))) / SQUARE_SIZE;
 	const int pz = (pos.z - (zsize * (SQUARE_SIZE >> 1))) / SQUARE_SIZE;
 	// top-left and bottom-right footprint corner (clamped)
-	const int x1 = Clamp(px        , 0, mapDims.mapx);
-	const int z1 = Clamp(pz        , 0, mapDims.mapy);
-	const int x2 = Clamp(x1 + xsize, 0, mapDims.mapx);
-	const int z2 = Clamp(z1 + zsize, 0, mapDims.mapy);
+	const int x1 = std::clamp(px        , 0, mapDims.mapx);
+	const int z1 = std::clamp(pz        , 0, mapDims.mapy);
+	const int x2 = std::clamp(x1 + xsize, 0, mapDims.mapx);
+	const int z2 = std::clamp(z1 + zsize, 0, mapDims.mapy);
 
 	for (int x = x1; x <= x2; x++) {
 		for (int z = z1; z <= z2; z++) {
@@ -1546,7 +1546,7 @@ bool CGameHelper::CheckTerrainConstraints(
 	}
 
 	if (clampedHeight != nullptr)
-		*clampedHeight = Clamp(groundHeight, -maxDepth, -minDepth);
+		*clampedHeight = std::clamp(groundHeight, -maxDepth, -minDepth);
 
 	/* NB: mobiles also have maxHeightDiff, which can have a different
 	 * value compared to moveDef and could be used here (for example,

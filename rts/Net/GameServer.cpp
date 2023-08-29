@@ -892,7 +892,7 @@ void CGameServer::LagProtection()
 			Broadcast(CBaseNetProtocol::Get().SendPlayerInfo(player.id, player.cpuUsage, curPing));
 
 			const float playerCpuUsage = player.cpuUsage;
-			const float correctedCpu   = Clamp(playerCpuUsage, 0.0f, 1.0f);
+			const float correctedCpu   = std::clamp(playerCpuUsage, 0.0f, 1.0f);
 
 			if (player.isReconn && curPing < 2 * GAME_SPEED)
 				player.isReconn = false;
@@ -938,7 +938,7 @@ void CGameServer::LagProtection()
 		// to keep cpu load constant
 		float newSpeed = internalSpeed / refCpuUsage * wantedCpuUsage;
 
-		newSpeed = Clamp(newSpeed, 0.1f, userSpeedFactor);
+		newSpeed = std::clamp(newSpeed, 0.1f, userSpeedFactor);
 		//average to smooth the speed change over time to reduce the impact of cpu spikes in the players
 		newSpeed = (newSpeed + internalSpeed) * 0.5f;
 
@@ -948,7 +948,7 @@ void CGameServer::LagProtection()
 		const float invSimDrawFract = 1.0f - globalConfig.minSimDrawBalance;
 		const float maxSimFrameRate = (1000.0f / gu->avgSimFrameTime) * invSimDrawFract;
 
-		newSpeed = Clamp(newSpeed, 0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
+		newSpeed = std::clamp(newSpeed, 0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
 #endif
 
 		if (newSpeed != internalSpeed)
@@ -3064,7 +3064,7 @@ void CGameServer::InternalSpeedChange(float newSpeed)
 
 void CGameServer::UserSpeedChange(float newSpeed, int player)
 {
-	if (userSpeedFactor == (newSpeed = Clamp(newSpeed, minUserSpeed, maxUserSpeed)))
+	if (userSpeedFactor == (newSpeed = std::clamp(newSpeed, minUserSpeed, maxUserSpeed)))
 		return;
 
 	if (internalSpeed > newSpeed || internalSpeed == userSpeedFactor) // insta-raise speed when not slowed down

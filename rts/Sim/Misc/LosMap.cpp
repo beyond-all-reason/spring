@@ -408,8 +408,8 @@ void CLosMap::AddCircle(SLosInstance* instance, int amount)
 		const unsigned y_ = instance->basePos.y + y;
 
 		if (y_ < size.y) {
-			const unsigned sx = Clamp(instance->basePos.x - width,     0, size.x);
-			const unsigned ex = Clamp(instance->basePos.x + width + 1, 0, size.x);
+			const unsigned sx = std::clamp(instance->basePos.x - width,     0, size.x);
+			const unsigned ex = std::clamp(instance->basePos.x + width + 1, 0, size.x);
 
 			for (unsigned x_ = sx; x_ < ex; ++x_) {
 				losmap[(y_ * size.x) + x_] += amount;
@@ -700,8 +700,8 @@ void CLosMap::SafeLosAdd(SLosInstance* li) const
 		const unsigned y_ = pos.y + y;
 
 		if (y_ < size.y) {
-			const unsigned sx = Clamp(pos.x - width,     0, size.x);
-			const unsigned ex = Clamp(pos.x + width + 1, 0, size.x);
+			const unsigned sx = std::clamp(pos.x - width,     0, size.x);
+			const unsigned ex = std::clamp(pos.x + width + 1, 0, size.x);
 			if (sx == ex)
 				return;
 
