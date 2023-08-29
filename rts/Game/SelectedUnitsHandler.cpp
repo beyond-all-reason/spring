@@ -664,7 +664,7 @@ void CSelectedUnitsHandler::Draw()
 			bool myColor = true;
 			glColor4fv(cmdColors.buildBox);
 
-			for (const auto bi: unitHandler.GetBuilderCAIs()) {
+			for (const auto& bi: unitHandler.GetBuilderCAIs()) {
 				const CBuilderCAI* builderCAI = bi.second;
 				const CUnit* builder = builderCAI->owner;
 
