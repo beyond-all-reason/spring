@@ -716,7 +716,7 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 	// also make sure that we're not locked in close-in/in-range state
 	// loop due to rotates invoked by in-range or out-of-range states
 	if (tryTargetRotate) {
-		const bool canChaseTarget = (!owner->unitDef->stopToAttack) && (owner->moveState != MOVESTATE_HOLDPOS);
+		const bool canChaseTarget = (!owner->unitDef->stopToAttack) && (!tempOrder || (owner->moveState != MOVESTATE_HOLDPOS));
 		const bool targetBehind = (targetMidPosVec.dot(orderTarget->speed) < 0.0f);
 
 		if (canChaseTarget && tryTargetHeading && targetBehind && !owner->unitDef->IsHoveringAirUnit()) {
@@ -766,9 +766,9 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 			goalDiff += orderTarget->pos;
 
 			SetGoal(goalDiff, owner->pos);
+			return;
 		}
 
-		return;
 	}
 
 	// not a temporary order or not on hold-position; close in on target more
