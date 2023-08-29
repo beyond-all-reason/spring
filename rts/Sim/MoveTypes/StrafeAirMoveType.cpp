@@ -186,7 +186,7 @@ static float GetAileronDeflection(
 
 		const float clampedBank = 1.0f;
 		// using this directly does not function well at higher pitch-angles, interplay with GetElevatorDeflection
-		// const float clampedBankAbs = math::fabs(Clamp(absRightDirY - maxBank, -1.0f, 1.0f));
+		// const float clampedBankAbs = math::fabs(std::clamp(absRightDirY - maxBank, -1.0f, 1.0f));
 		// const float clampedBank    = std::max(clampedBankAbs, 0.3f);
 
 		aileron -= (clampedBank * minSpeedMult * (goalBankDif < -maxAileronSpeedf2 && rightdir.y <  maxBank));
@@ -289,7 +289,7 @@ static float GetElevatorDeflection(
 			const float absFrontDirY = math::fabs(frontdir.y);
 			const float clampedPitch = 1.0f;
 			// using this directly does not function well at higher bank-angles
-			// const float clampedPitchAbs = math::fabs(Clamp(absFrontDirY - maxPitch, -1.0f, 1.0f));
+			// const float clampedPitchAbs = math::fabs(std::clamp(absFrontDirY - maxPitch, -1.0f, 1.0f));
 			// const float clampedPitch    = std::max(clampedPitchAbs, 0.3f);
 
 			elevator -= (clampedPitch * (spd.w > 0.8f) * (difHeight < -maxElevatorSpeedf && frontdir.y  > -maxPitch));
@@ -896,7 +896,7 @@ void CStrafeAirMoveType::UpdateTakeOff()
 	const float3 goalDir = (goalPos - pos).Normalize();
 
 	const float yawWeight = maxRudder * spd.y;
-	const float dirWeight = Clamp(goalDir.dot(rightdir), -1.0f, 1.0f);
+	const float dirWeight = std::clamp(goalDir.dot(rightdir), -1.0f, 1.0f);
 	// this tends to alternate between -1 and +1 when goalDir and rightdir are ~orthogonal
 	// const float yawSign = Sign(goalDir.dot(rightdir));
 	const float currentHeight = pos.y - amtGetGroundHeightFuncs[canSubmerge](pos.x, pos.z);
@@ -1056,7 +1056,7 @@ void CStrafeAirMoveType::UpdateAirPhysics(const float4& controlInputs, const flo
 
 	if (owner->UnderFirstPersonControl()) {
 		if ((pos.y - groundHeight) > wantedHeight * 1.2f)
-			throttle = Clamp(throttle, 0.0f, 1.0f - (pos.y - groundHeight - wantedHeight * 1.2f) / wantedHeight);
+			throttle = std::clamp(throttle, 0.0f, 1.0f - (pos.y - groundHeight - wantedHeight * 1.2f) / wantedHeight);
 
 		// check next position given current (unadjusted) pos and speed
 		nextPosInBounds = (pos + spd).IsInBounds();
@@ -1110,7 +1110,7 @@ void CStrafeAirMoveType::UpdateAirPhysics(const float4& controlInputs, const flo
 		owner->Move(spd, true);
 
 	// prevent aircraft from gaining unlimited altitude
-	owner->Move(UpVector * (Clamp(pos.y, groundHeight, readMap->GetCurrMaxHeight() + owner->unitDef->wantedHeight * 5.0f) - pos.y), true);
+	owner->Move(UpVector * (std::clamp(pos.y, groundHeight, readMap->GetCurrMaxHeight() + owner->unitDef->wantedHeight * 5.0f) - pos.y), true);
 
 	// bounce away on ground collisions (including water surface)
 	// NOTE:

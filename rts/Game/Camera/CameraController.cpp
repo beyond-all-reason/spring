@@ -62,7 +62,7 @@ bool CCameraController::SetStateFloat(const StateMap& sm, const std::string& nam
 bool CCameraController::GetUseDistToGroundForIcons() {
 	// dir should already be normalized
 	const float rawDot = UpVector.dot(GetDir());
-	const float absDot = Clamp(math::fabs(rawDot), 0.0f, 1.0f);
+	const float absDot = std::clamp(math::fabs(rawDot), 0.0f, 1.0f);
 
 	// dot< switch: flat angle (typical for first person camera)
 	// dot>=switch: steep angle (typical for overhead camera)

@@ -222,7 +222,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				// chord check here
 				const CollisionVolume* cv = &u->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
-				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				const float  cvRelDst = std::clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
 				const CMatrix44f objTransform = u->GetTransformMatrix(true);
 				for (int i = 1; i < 9; i++) {
 					if (cvRelDst < mdist[i]) {
@@ -265,7 +265,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				// chord check here
 				const CollisionVolume* cv = &u->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(u) - srcPos;
-				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				const float  cvRelDst = std::clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
 				const CMatrix44f objTransform = u->GetTransformMatrix(true);
 				for (int i = 1; i < 9; i++) {
 					if (cvRelDst < mdist[i]) {
@@ -304,7 +304,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtP
 				// chord check here
 				const CollisionVolume* cv = &f->collisionVolume;
 				const float3 cvRelVec = cv->GetWorldSpacePos(f) - srcPos;
-				const float  cvRelDst = Clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
+				const float  cvRelDst = std::clamp(cvRelVec.dot(targetVec), 0.0f, xzTargetDist);
 				const CMatrix44f objTransform = f->GetTransformMatrix(true);
 				for (int i = 1; i < 9; i++) {
 					if (cvRelDst < mdist[i]) {

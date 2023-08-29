@@ -100,7 +100,7 @@ public:
 		if (args.empty()) {
 			gs->godMode = GODMODE_MAX_VAL - gs->godMode;
 		} else {
-			gs->godMode = Clamp(atoi(args.c_str()), 0, int(GODMODE_MAX_VAL));
+			gs->godMode = std::clamp(atoi(args.c_str()), 0, int(GODMODE_MAX_VAL));
 		}
 
 		CLuaUI::UpdateTeams();

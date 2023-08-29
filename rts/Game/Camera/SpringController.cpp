@@ -116,7 +116,7 @@ void CSpringController::KeyMove(float3 move)
 	const bool moveRotate = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RTT];
 
 	if (moveRotate) {
-		rot.x = Clamp(rot.x + move.y, math::PI * 0.51f, math::PI * 0.99f);
+		rot.x = std::clamp(rot.x + move.y, math::PI * 0.51f, math::PI * 0.99f);
 		MoveAzimuth(move.x);
 		Update();
 		return;
@@ -313,12 +313,12 @@ void CSpringController::Update()
 	pos.ClampInMap();
 
 	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
-	rot.x = Clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
+	rot.x = std::clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
 	// camera->SetRot(float3(rot.x, GetAzimuth(), rot.z));
 	dir = CCamera::GetFwdFromRot(this->GetRot());
 
-	curDist = Clamp(curDist, 20.0f, maxDist);
+	curDist = std::clamp(curDist, 20.0f, maxDist);
 	pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * curDist * 2.0f;
 }
 
@@ -350,7 +350,7 @@ float CSpringController::MoveAzimuth(float move)
 	if (lockCardinalDirections)
 		return GetRotationWithCardinalLock(rot.y);
 	if (moveTilt)
-		rot.y = Clamp(rot.y, minRot + 0.02f, maxRot - 0.02f);
+		rot.y = std::clamp(rot.y, minRot + 0.02f, maxRot - 0.02f);
 
 	return rot.y;
 }

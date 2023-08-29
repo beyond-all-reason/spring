@@ -1844,7 +1844,7 @@ int CSyncedLuaHandle::SyncedRandom(lua_State* L)
 				const float diff  = (upper - lower);
 				const float r = gsRNG.NextFloat(); // [0,1], not [0,1) ?
 
-				lua_pushnumber(L, Clamp(lower + int(r * (diff + 1)), lower, upper));
+				lua_pushnumber(L, std::clamp(lower + int(r * (diff + 1)), lower, upper));
 				return 1;
 			}
 		} break;

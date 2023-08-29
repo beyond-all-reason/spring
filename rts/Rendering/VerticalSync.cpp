@@ -50,7 +50,7 @@ void CVerticalSync::ConfigNotify(const std::string& key, const std::string& valu
 void CVerticalSync::Toggle()
 {
 	// no-arg switch, select smallest interval
-	switch (Clamp(SDL_GL_GetSwapInterval(), -1, 1)) {
+	switch (std::clamp(SDL_GL_GetSwapInterval(), -1, 1)) {
 		case -1: { SetInterval( 0); } break;
 		case  0: { SetInterval(+1); } break;
 		case +1: { SetInterval(-1); } break;
@@ -63,7 +63,7 @@ void CVerticalSync::SetInterval(int i)
 {
 	// recursion is already prevented (Set only notifies on changed
 	// values), this just avoids making the SDL calls a second time
-	if ((i = Clamp(i, MAX_ADAPTIVE_INTERVAL, MAX_STANDARD_INTERVAL)) == interval)
+	if ((i = std::clamp(i, MAX_ADAPTIVE_INTERVAL, MAX_STANDARD_INTERVAL)) == interval)
 		return;
 
 	configHandler->Set("VSync", interval = i);

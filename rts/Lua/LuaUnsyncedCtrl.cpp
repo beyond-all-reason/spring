@@ -2600,10 +2600,10 @@ int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
 	if (team == nullptr)
 		return 0;
 
-	team->color[0] = (unsigned char)(Clamp(luaL_checkfloat(L, 2      ), 0.0f, 1.0f) * 255.0f);
-	team->color[1] = (unsigned char)(Clamp(luaL_checkfloat(L, 3      ), 0.0f, 1.0f) * 255.0f);
-	team->color[2] = (unsigned char)(Clamp(luaL_checkfloat(L, 4      ), 0.0f, 1.0f) * 255.0f);
-	team->color[3] = (unsigned char)(Clamp(luaL_optfloat  (L, 5, 1.0f), 0.0f, 1.0f) * 255.0f);
+	team->color[0] = (unsigned char)(std::clamp(luaL_checkfloat(L, 2      ), 0.0f, 1.0f) * 255.0f);
+	team->color[1] = (unsigned char)(std::clamp(luaL_checkfloat(L, 3      ), 0.0f, 1.0f) * 255.0f);
+	team->color[2] = (unsigned char)(std::clamp(luaL_checkfloat(L, 4      ), 0.0f, 1.0f) * 255.0f);
+	team->color[3] = (unsigned char)(std::clamp(luaL_optfloat  (L, 5, 1.0f), 0.0f, 1.0f) * 255.0f);
 	return 0;
 }
 
@@ -3449,7 +3449,7 @@ int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
 
 
 	const char* shareType = lua_tostring(L, 1);
-	const float shareLevel = Clamp(luaL_checkfloat(L, 2), 0.0f, 1.0f);
+	const float shareLevel = std::clamp(luaL_checkfloat(L, 2), 0.0f, 1.0f);
 
 	if (shareType[0] == 'm') {
 		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, shareLevel, teamHandler.Team(gu->myTeam)->resShare.energy));

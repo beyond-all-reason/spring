@@ -95,7 +95,7 @@ void EnvResourceHandler::Update()
 
 		// normalize and clamp s.t. minWindStrength <= strength <= maxWindStrength
 		newWindVec /= newStrength;
-		newWindVec *= (newStrength = Clamp(newStrength, minWindStrength, maxWindStrength));
+		newWindVec *= (newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength));
 
 		// update generators
 		for (const int unitID: allGeneratorIDs) {
@@ -111,7 +111,7 @@ void EnvResourceHandler::Update()
 		curWindStrength = curWindVec.LengthNormalize();
 
 		curWindDir = curWindVec;
-		curWindVec = curWindDir * (curWindStrength = Clamp(curWindStrength, minWindStrength, maxWindStrength));
+		curWindVec = curWindDir * (curWindStrength = std::clamp(curWindStrength, minWindStrength, maxWindStrength));
 
 		for (const int unitID: newGeneratorIDs) {
 			// make newly added generators point in direction of wind

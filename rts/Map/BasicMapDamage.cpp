@@ -95,10 +95,10 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius)
 	e.strength = strength;
 	e.radius = radius;
 	e.ttl = EXPLOSION_LIFETIME;
-	e.x1 = Clamp<int>((pos.x - radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
-	e.x2 = Clamp<int>((pos.x + radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
-	e.y1 = Clamp<int>((pos.z - radius) / SQUARE_SIZE, 1, mapDims.mapym1);
-	e.y2 = Clamp<int>((pos.z + radius) / SQUARE_SIZE, 1, mapDims.mapym1);
+	e.x1 = std::clamp <int> ((pos.x - radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
+	e.x2 = std::clamp <int> ((pos.x + radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
+	e.y1 = std::clamp <int> ((pos.z - radius) / SQUARE_SIZE, 1, mapDims.mapym1);
+	e.y2 = std::clamp <int> ((pos.z + radius) / SQUARE_SIZE, 1, mapDims.mapym1);
 	e.idx = explSquaresPoolIdx;
 
 	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
@@ -135,8 +135,8 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius)
 
 			for (int j = -1; j <= 1; j++) {
 				for (int i = -1; i <= 1; i++) {
-					const int tmz = Clamp((y >> 1) + j, 0, mapDims.hmapy - 1);
-					const int tmx = Clamp((x >> 1) + i, 0, mapDims.hmapx - 1);
+					const int tmz = std::clamp((y >> 1) + j, 0, mapDims.hmapy - 1);
+					const int tmx = std::clamp((x >> 1) + i, 0, mapDims.hmapx - 1);
 					const int tti = typeMap[tmz * mapDims.hmapx + tmx];
 
 					sumRawHardness += (rawHardness[tti] * weightTable[(j + 1) * 3 + (i + 1)]);

@@ -75,7 +75,7 @@ float3 GetVectorFromHAndPExact(const short int heading, const short int pitch)
 float LinePointDist(const float3 l1, const float3 l2, const float3 p)
 {
 	const float3 dir = (l2 - l1).SafeNormalize();
-	const float3 vec = dir * Clamp(dir.dot(p - l1), 0.0f, dir.dot(l2 - l1));
+	const float3 vec = dir * std::clamp(dir.dot(p - l1), 0.0f, dir.dot(l2 - l1));
 	const float3  p2 = p - vec;
 	return (p2.distance(l1));
 }
@@ -95,7 +95,7 @@ float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p)
 		return l1;
 
 	const float pdist = ldir.dot(pdir) / length;
-	const float cdist = Clamp(pdist, 0.0f, length);
+	const float cdist = std::clamp(pdist, 0.0f, length);
 
 	return (l1 + ldir * (cdist / length));
 }
@@ -379,17 +379,17 @@ bool PointInsideQuadrilateral(const float3& p0, const float3& p1, const float3& 
 
 float linearstep(const float edge0, const float edge1, const float value)
 {
-	const float v = Clamp(value, edge0, edge1);
+	const float v = std::clamp(value, edge0, edge1);
 	const float x = (v - edge0) / (edge1 - edge0);
-	const float t = Clamp(x, 0.0f, 1.0f);
+	const float t = std::clamp(x, 0.0f, 1.0f);
 	return t;
 }
 
 float smoothstep(const float edge0, const float edge1, const float value)
 {
-	const float v = Clamp(value, edge0, edge1);
+	const float v = std::clamp(value, edge0, edge1);
 	const float x = (v - edge0) / (edge1 - edge0);
-	const float t = Clamp(x, 0.0f, 1.0f);
+	const float t = std::clamp(x, 0.0f, 1.0f);
 	return (t * t * (3.0f - 2.0f * t));
 }
 

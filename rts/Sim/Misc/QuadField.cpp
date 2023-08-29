@@ -165,15 +165,15 @@ void CQuadField::Kill()
 int2 CQuadField::WorldPosToQuadField(const float3 p) const
 {
 	return int2(
-		Clamp(int(p.x / quadSizeX), 0, numQuadsX - 1),
-		Clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1)
+		std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1),
+		std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1)
 	);
 }
 
 
 int CQuadField::WorldPosToQuadFieldIdx(const float3 p) const
 {
-	return Clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1) * numQuadsX + Clamp(int(p.x / quadSizeX), 0, numQuadsX - 1);
+	return std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1) * numQuadsX + std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1);
 }
 
 
@@ -256,15 +256,15 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 
 	// prevent div0
 	if (noZdir) {
-		int startX = Clamp<int>(start.x * invQuadSize.x, 0, numQuadsX - 1);
-		int finalX = Clamp<int>(   to.x * invQuadSize.x, 0, numQuadsX - 1);
+		int startX = std::clamp <int> (start.x * invQuadSize.x, 0, numQuadsX - 1);
+		int finalX = std::clamp <int> (   to.x * invQuadSize.x, 0, numQuadsX - 1);
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
 
 		assert(finalX < numQuadsX);
 
-		const int row = Clamp<int>(start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
+		const int row = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
 
 		for (unsigned x = startX; x <= finalX; x++) {
 			queryQuads.push_back(row + x);
@@ -282,8 +282,8 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 	if (finalZuc < startZuc)
 		std::swap(startZuc, finalZuc);
 
-	const int startZ = Clamp<int>(startZuc, 0, numQuadsZ - 1);
-	const int finalZ = Clamp<int>(finalZuc, 0, numQuadsZ - 1);
+	const int startZ = std::clamp <int> (startZuc, 0, numQuadsZ - 1);
+	const int finalZ = std::clamp <int> (finalZuc, 0, numQuadsZ - 1);
 
 	assert(finalZ < quadSizeZ);
 
@@ -299,18 +299,18 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 		if ((finalZuc < 0 && z == 0) || (finalZuc >= numQuadsZ && z == finalZ))
 			t1 = ((finalZuc + 1) * quadSizeZ - start.z) * invDirZ;
 
-		t0 = Clamp(t0, 0.0f, length);
-		t1 = Clamp(t1, 0.0f, length);
+		t0 = std::clamp(t0, 0.0f, length);
+		t1 = std::clamp(t1, 0.0f, length);
 
-		unsigned startX = Clamp<int>((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
-		unsigned finalX = Clamp<int>((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned startX = std::clamp <int> ((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned finalX = std::clamp <int> ((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
 
 		assert(finalX < numQuadsX);
 
-		const int row = Clamp(z, 0, numQuadsZ - 1) * numQuadsX;
+		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
 
 		for (unsigned x = startX; x <= finalX; x++) {
 			queryQuads.push_back(row + x);

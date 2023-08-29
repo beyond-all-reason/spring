@@ -784,7 +784,7 @@ float CSMFReadMap::DiffuseSunCoeff(const int x, const int y) const
 {
 	const float3& N = centerNormalsUnsynced[y * mapDims.mapx + x];
 	const float3& L = ISky::GetSky()->GetLight()->GetLightDir();
-	return Clamp(L.dot(N), 0.0f, 1.0f);
+	return std::clamp(L.dot(N), 0.0f, 1.0f);
 }
 
 
@@ -886,8 +886,8 @@ void CSMFReadMap::UpdateShadingTexture()
 int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
 {
 	return int2 {
-		Clamp(hmx, 0, numBigTexX - 1),
-		Clamp(hmz, 0, numBigTexY - 1)
+		std::clamp(hmx, 0, numBigTexX - 1),
+		std::clamp(hmz, 0, numBigTexY - 1)
 	};
 }
 
@@ -936,10 +936,10 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 	const int drawQuadsY = mapDims.mapy / quadSize;
 
 	// clamp the area of quads around the camera to valid range
-	const int sy  = Clamp(cy - drawSquare, 0, drawQuadsY - 1);
-	const int ey  = Clamp(cy + drawSquare, 0, drawQuadsY - 1);
-	const int sxi = Clamp(cx - drawSquare, 0, drawQuadsX - 1);
-	const int exi = Clamp(cx + drawSquare, 0, drawQuadsX - 1);
+	const int sy  = std::clamp(cy - drawSquare, 0, drawQuadsY - 1);
+	const int ey  = std::clamp(cy + drawSquare, 0, drawQuadsY - 1);
+	const int sxi = std::clamp(cx - drawSquare, 0, drawQuadsX - 1);
+	const int exi = std::clamp(cx + drawSquare, 0, drawQuadsX - 1);
 
 	const CCamera::FrustumLine* negLines = cam->GetNegFrustumLines();
 	const CCamera::FrustumLine* posLines = cam->GetPosFrustumLines();
@@ -960,7 +960,7 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 			xtest2 = ((fl.base + fl.dir * ((y * quadSize) + quadSize)));
 
 			xtest = std::min(xtest, xtest2);
-			xtest = Clamp(xtest / quadSize, -1.0f, drawQuadsX * 1.0f + 1.0f);
+			xtest = std::clamp(xtest / quadSize, -1.0f, drawQuadsX * 1.0f + 1.0f);
 
 			// increase lower bound
 			if ((xtest - extraSize) > sx)
@@ -975,7 +975,7 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 			xtest2 = ((fl.base + fl.dir * ((y * quadSize) + quadSize)));
 
 			xtest = std::max(xtest, xtest2);
-			xtest = Clamp(xtest / quadSize, -1.0f, drawQuadsX * 1.0f + 1.0f);
+			xtest = std::clamp(xtest / quadSize, -1.0f, drawQuadsX * 1.0f + 1.0f);
 
 			// decrease upper bound
 			if ((xtest + extraSize) < ex)
@@ -1069,7 +1069,7 @@ void CSMFReadMap::ConfigureTexAnisotropyLevels()
 
 
 bool CSMFReadMap::SetLuaTexture(const MapTextureData& td) {
-	const unsigned int num = Clamp(int(td.num), 0, NUM_SPLAT_DETAIL_NORMALS - 1);
+	const unsigned int num = std::clamp(int(td.num), 0, NUM_SPLAT_DETAIL_NORMALS - 1);
 
 	switch (td.type) {
 		case MAP_BASE_GRASS_TEX: { grassShadingTex.SetLuaTexture(td); } break;

@@ -3746,7 +3746,7 @@ int LuaSyncedRead::GetUnitPosErrorParams(lua_State* L)
 		return 0;
 
 	const int optAllyTeam = luaL_optinteger(L, 2, 0);
-	const int argAllyTeam = Clamp(optAllyTeam, 0, teamHandler.ActiveAllyTeams());
+	const int argAllyTeam = std::clamp(optAllyTeam, 0, teamHandler.ActiveAllyTeams());
 
 	lua_pushnumber(L, unit->posErrorVector.x);
 	lua_pushnumber(L, unit->posErrorVector.y);
@@ -5972,8 +5972,8 @@ int LuaSyncedRead::GetUnitCmdDescs(lua_State* L)
 			endIndex = startIndex;
 		}
 	}
-	startIndex = Clamp(startIndex, 0, lastDesc);
-	endIndex   = Clamp(endIndex  , 0, lastDesc);
+	startIndex = std::clamp(startIndex, 0, lastDesc);
+	endIndex   = std::clamp(endIndex  , 0, lastDesc);
 
 	lua_createtable(L, endIndex - startIndex, 0);
 	int count = 1;
@@ -6905,8 +6905,8 @@ int LuaSyncedRead::GetGroundInfo(lua_State* L)
 	const float x = luaL_checkfloat(L, 1);
 	const float z = luaL_checkfloat(L, 2);
 
-	const int ix = Clamp(x, 0.0f, float3::maxxpos) / (SQUARE_SIZE * 2);
-	const int iz = Clamp(z, 0.0f, float3::maxzpos) / (SQUARE_SIZE * 2);
+	const int ix = std::clamp(x, 0.0f, float3::maxxpos) / (SQUARE_SIZE * 2);
+	const int iz = std::clamp(z, 0.0f, float3::maxzpos) / (SQUARE_SIZE * 2);
 
 	const int maxIndex = (mapDims.hmapx * mapDims.hmapy) - 1;
 	const int sqrIndex = std::min(maxIndex, (mapDims.hmapx * iz) + ix);
@@ -6947,10 +6947,10 @@ static void ParseMapCoords(lua_State* L, const char* caller,
 	}
 
 	// quantize and clamp
-	tx1 = Clamp((int)(fx1 / SQUARE_SIZE), 0, mapDims.mapxm1);
-	tx2 = Clamp((int)(fx2 / SQUARE_SIZE), 0, mapDims.mapxm1);
-	tz1 = Clamp((int)(fz1 / SQUARE_SIZE), 0, mapDims.mapym1);
-	tz2 = Clamp((int)(fz2 / SQUARE_SIZE), 0, mapDims.mapym1);
+	tx1 = std::clamp((int)(fx1 / SQUARE_SIZE), 0, mapDims.mapxm1);
+	tx2 = std::clamp((int)(fx2 / SQUARE_SIZE), 0, mapDims.mapxm1);
+	tz1 = std::clamp((int)(fz1 / SQUARE_SIZE), 0, mapDims.mapym1);
+	tz2 = std::clamp((int)(fz2 / SQUARE_SIZE), 0, mapDims.mapym1);
 }
 
 

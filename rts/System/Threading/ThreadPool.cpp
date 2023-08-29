@@ -456,7 +456,7 @@ static std::uint32_t FindWorkerThreadCore(std::int32_t index, std::uint32_t avai
 void SetThreadCount(int wantedNumThreads)
 {
 	const int curNumThreads = GetNumThreads(); // includes main
-	const int wtdNumThreads = Clamp(wantedNumThreads, 1, GetMaxThreads());
+	const int wtdNumThreads = std::clamp(wantedNumThreads, 1, GetMaxThreads());
 
 	constexpr const char* fmts[] = {
 		"[ThreadPool::%s][1] wanted=%d current=%d maximum=%d (init=%d)",

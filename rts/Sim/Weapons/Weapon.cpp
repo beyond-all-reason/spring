@@ -382,7 +382,7 @@ bool CWeapon::CallAimingScript(bool waitForAim)
 	lastAimedFrame = gs->frameNum;
 
 	const float heading = GetHeadingFromVectorF(wantedDir.x, wantedDir.z);
-	const float pitch = math::asin(Clamp(wantedDir.dot(owner->updir), -1.0f, 1.0f));
+	const float pitch = math::asin(std::clamp(wantedDir.dot(owner->updir), -1.0f, 1.0f));
 
 	// for COB, this sets <angleGood> to AimWeapon's return value when finished
 	// for LUS, there exists a callout to set the <angleGood> member directly

@@ -35,8 +35,8 @@ void PathFlowMap::Init(unsigned int scalex, unsigned int scalez) {
 	fBufferIdx = 0;
 	bBufferIdx = 1;
 
-	xscale = Clamp(int(scalex), 1, mapDims.mapx);
-	zscale = Clamp(int(scalez), 1, mapDims.mapy);
+	xscale = std::clamp(int(scalex), 1, mapDims.mapx);
+	zscale = std::clamp(int(scalez), 1, mapDims.mapy);
 	xsize  = mapDims.mapx / xscale;
 	zsize  = mapDims.mapy / zscale;
 	xfact  = SQUARE_SIZE * xscale;

@@ -57,7 +57,7 @@ void CFPSController::KeyMove(float3 move)
 void CFPSController::MouseMove(float3 move)
 {
 	camera->SetRotY(camera->GetRot().y + mouseScale * move.x);
-	camera->SetRotX(Clamp(camera->GetRot().x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f));
+	camera->SetRotX(std::clamp(camera->GetRot().x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f));
 	dir = camera->GetDir();
 	Update();
 }
@@ -81,14 +81,14 @@ void CFPSController::Update()
 	const float xMax = (float)(mapDims.mapx * SQUARE_SIZE) - margin;
 	const float zMax = (float)(mapDims.mapy * SQUARE_SIZE) - margin;
 
-	pos.x = Clamp(pos.x, xMin, xMax);
-	pos.z = Clamp(pos.z, zMin, zMax);
+	pos.x = std::clamp(pos.x, xMin, xMax);
+	pos.z = std::clamp(pos.z, zMin, zMax);
 
 	const float gndHeight = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 	const float yMin = gndHeight + 5.0f;
 	const float yMax = 9000.0f;
 
-	pos.y = Clamp(pos.y, yMin, yMax);
+	pos.y = std::clamp(pos.y, yMin, yMax);
 	oldHeight = pos.y - gndHeight;
 }
 

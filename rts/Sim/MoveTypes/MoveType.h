@@ -86,7 +86,7 @@ public:
 		return dist;
 	}
 
-	float CalcScriptMoveRate(float speed, float nsteps) const { return Clamp(math::floor((speed / maxSpeed) * nsteps), 0.0f, nsteps - 1.0f); }
+	float CalcScriptMoveRate(float speed, float nsteps) const { return std::clamp(math::floor((speed / maxSpeed) * nsteps), 0.0f, nsteps - 1.0f); }
 	float CalcStaticTurnRadius() const;
 
 	virtual void SyncWaypoints() {}

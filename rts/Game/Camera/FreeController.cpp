@@ -166,7 +166,7 @@ void CFreeController::Update()
 		if (goForward) {
 			const float dist = max(0.1f, diff.Length());
 			const float nomDist = 512.0f;
-			const float speedScale = Clamp(dist / nomDist, 0.25f, 16.0f);
+			const float speedScale = std::clamp(dist / nomDist, 0.25f, 16.0f);
 
 			const float delta = -vel.x * (ft * speedScale);
 			const float newDist = max(trackRadius, (dist + delta));
@@ -229,7 +229,7 @@ void CFreeController::Update()
 
 	// angular clamps
 	if (rot.x >= math::PI || rot.x <= 0.0f) {
-		rot.x = Clamp(rot.x, 0.001f, math::PI - 0.001f);
+		rot.x = std::clamp(rot.x, 0.001f, math::PI - 0.001f);
 		avel.x = 0.0f;
 
 		camera->SetRotX(rot.x);
