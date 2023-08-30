@@ -3680,8 +3680,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 	if ((size_t(inCommand) < commands.size()) && (commands[inCommand].type == CMDTYPE_ICON_BUILDING)) {
 		{
 			// draw build distance for all immobile builders during build commands
-			for (const auto& bi: unitHandler.GetBuilderCAIs()) {
-				const CBuilderCAI* builderCAI = bi.second;
+			for (const auto& [bid, builderCAI]: unitHandler.GetBuilderCAIs()) {
 				const CUnit* builder = builderCAI->owner;
 				const UnitDef* builderDef = builder->unitDef;
 

@@ -1189,58 +1189,12 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
-	struct TestUnitBuildSquareCacheItem {
-		TestUnitBuildSquareCacheItem(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_,
-			std::vector<float3> canbuildpos_,
-			std::vector<float3> featurepos_,
-			std::vector<float3> nobuildpos_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-			, canbuildpos(canbuildpos_)
-			, featurepos(featurepos_)
-			, nobuildpos(nobuildpos_)
-		{};
-		TestUnitBuildSquareCacheItem(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-		{};
-		int createFrame;
-		std::tuple<bool, float3, int, int, const UnitDef*> key;
-		CFeature* feature;
-		CGameHelper::BuildSquareStatus result;
-		std::vector<float3> canbuildpos;
-		std::vector<float3> featurepos;
-		std::vector<float3> nobuildpos;
-	};
+	TestUnitBuildSquareCache::ClearStaleItems(synced);
+	auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
+	bool cacheFound = false;
+	const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
 
-	/* synced, unsynced. Unsynced is arbitrary, but being 500ms
-	 * seems like a good tradeoff between not evicting cache value
-	 * too quickly and not to stale the state for too long. */
-	static constexpr int CACHE_VALIDITY_PERIOD[] = {1, GAME_SPEED / 2};
-
-	static std::vector<TestUnitBuildSquareCacheItem> testUnitBuildSquareCache;
-	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
-		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
-	});
-
-	auto key = std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyteam, buildInfo.def);
-	const auto it = std::find_if(testUnitBuildSquareCache.begin(), testUnitBuildSquareCache.end(), [&key](const auto& item) {
-		return item.key == key;
-	});
-
-	if (it != testUnitBuildSquareCache.end()) {
+	if (cacheFound) {
 		feature = it->feature;
 
 		if (commands != nullptr) {
@@ -1255,14 +1209,14 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 
 	const auto SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
 		if (!commands)
-			testUnitBuildSquareCache.emplace_back(
+			TestUnitBuildSquareCache::SaveToCache(
 				gs->frameNum,
 				std::move(key),
 				feature,
 				result
 			);
 		else
-			testUnitBuildSquareCache.emplace_back(
+			TestUnitBuildSquareCache::SaveToCache(
 				gs->frameNum,
 				std::move(key),
 				feature,
@@ -1523,8 +1477,8 @@ bool CGameHelper::TestBlockSquareForBuildOnly(
  * @return the build Command, or a Command with id 0 if none is found
  */
 Command CGameHelper::GetBuildCommand(const float3& pos, const float3& dir) {
-	for (const auto& pair: unitHandler.GetBuilderCAIs()) {
-		const CUnit* unit = unitHandler.GetUnit(pair.first);
+	for (const auto& [bid, builderCAI] : unitHandler.GetBuilderCAIs()) {
+		const CUnit* unit = unitHandler.GetUnit(bid);
 
 		if (unit->team != gu->myTeam)
 			continue;
@@ -1615,3 +1569,21 @@ bool CGameHelper::CheckTerrainConstraints(
 	return (depthCheck && slopeCheck);
 }
 
+void CGameHelper::TestUnitBuildSquareCache::ClearStaleItems(bool synced)
+{
+	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
+		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
+	});
+}
+
+CGameHelper::TestUnitBuildSquareCache::KeyT CGameHelper::TestUnitBuildSquareCache::GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced)
+{
+	return std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyTeamID, buildInfo.def);
+}
+
+void CGameHelper::TestUnitBuildSquareCache::Invalidate(const KeyT& key)
+{
+	spring::VectorEraseIf(testUnitBuildSquareCache, [&key](const auto& item) {
+		return (key == item.key);
+	});
+}
