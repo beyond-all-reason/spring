@@ -85,7 +85,7 @@ CCommandColors::CCommandColors()
 
 static bool ParseBlendMode(const std::string& word, unsigned int& mode)
 {
-	std::string lower = std::move(StringToLower(word));
+	std::string lower = StringToLower(word);
 
 	switch (hashString(lower.c_str())) {
 		case hashString("zero"               ): { mode = GL_ZERO;                return true; } break;
@@ -187,17 +187,17 @@ bool CCommandColors::LoadConfigFromString(const std::string& cfg)
 	CSimpleParser parser(cfg);
 
 	while (true) {
-		const std::string line = std::move(parser.GetCleanLine());
+		const std::string line = parser.GetCleanLine();
 
 		if (line.empty())
 			break;
 
-		const std::vector<std::string> words = std::move(parser.Tokenize(line, 1));
+		const std::vector<std::string> words = parser.Tokenize(line, 1);
 
 		if (words.size() <= 1)
 			continue;
 
-		const std::string command = std::move(StringToLower(words[0]));
+		const std::string command = StringToLower(words[0]);
 
 		switch (hashString(command.c_str())) {
 			case hashString("alwaysdrawqueue"): {

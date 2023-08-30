@@ -243,11 +243,12 @@ CGlobalRendering::CGlobalRendering()
 	, viewWindowOffsetY(0)
 
 	// dual viewport geometry (DualScreenMode = 1)
+	, dualWindowOffsetY(0)
 	, dualViewPosX(0)
 	, dualViewPosY(0)
 	, dualViewSizeX(0)
 	, dualViewSizeY(0)
-	, dualWindowOffsetY(0)
+
 
 	, winBorder{ 0 }
 

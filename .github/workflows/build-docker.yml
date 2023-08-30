@@ -65,7 +65,11 @@ jobs:
             os: 'linux-64',
             runs-on: 'ubuntu-latest'
           }
-    steps:    
+    steps:  
+      - name: Install pigz
+        run: |
+          sudo apt-get update
+          sudo apt-get install pigz
       - name: Extract Branch Name
         #https://stackoverflow.com/questions/58033366/how-to-get-current-branch-within-github-actions/58034787
         id: extract-branch

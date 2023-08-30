@@ -77,12 +77,12 @@ For example, if an explosion spawns 4 particles and `size = "3 i2"`, then they w
 ### Damage (`d`)
 
 The `d` operator multiplies its operand by the "damage" of an explosion.
-For example `10 d0.1` will net 20 for a 100-damage explosion, and 110 for a 1000-damage explosion.
+For example `d0.1` will net 10 for a 100-damage explosion, and 50 for a 500-damage explosion.
 
 Some practical remarks:
- * for CEG trails, this is the TTL of the projectile. So you can for example make missile trails burn out.
- * for explosions spawned by unit scripts, this defaults to 0 but you can set it to an arbitrary value.
  * for regular weapons, this is the "default" damage. Beware if you treat it as the "features" armor class (since they can't have a real armor class)!
+ * for CEG trails, damage is the TTL of the projectile. So you can for example make missile trails burn out.
+ * for explosions spawned by unit scripts, this defaults to 0 but you can set it to an arbitrary value.
  * existing games prefer to have a separate effect for each similar weapon, so this is quite an uncommon operator, but if made to work could work wonders for consistency.
 
 ## Advanced
@@ -122,7 +122,9 @@ The `m` operator applies the modulo operator to the running value. The `k` opera
 
 ### Power (`p`) and power buffer (`q`)
 
-The `p` operator raises the running value to the operandth power. The `q` operator is similar but takes the power from given buffer. The main use case is probably for getting x² or √x.
+The `p` operator raises the running value to the operandth power. The `q` operator is similar but takes the power from given buffer. The main use case is probably for getting x² or √x. Examples:
+ * `3p4` is 81, since that's 3⁴.
+ * `4y7 3q7` is also 81 (and leaves the 7th buffer slot with the value of 4).
 
 ## Table
 

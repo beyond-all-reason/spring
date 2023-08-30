@@ -6,27 +6,34 @@
 #include <vector>
 
 #include "Sim/Path/IPathManager.h"
-#include "NodeLayer.hpp"
-#include "PathCache.hpp"
-#include "PathSearch.hpp"
+#include "NodeLayer.h"
+#include "PathCache.h"
+#include "PathSearch.h"
 #include "System/UnorderedMap.hpp"
 
 struct MoveDef;
 struct SRectangle;
 class CSolidObject;
 
-#ifdef QTPFS_ENABLE_THREADED_UPDATE
-namespace spring {
-	class mutex;
-	class thread;
-	class condition_variable;
-};
-#endif
 
 namespace QTPFS {
 	struct QTNode;
 	class PathManager: public IPathManager {
 	public:
+		// must not be larger than the smallest evenly divisible size of maps.
+		static constexpr unsigned int DAMAGE_MAP_BLOCK_SIZE = 16;
+
+		struct MapChangeTrack {
+			std::vector<bool> damageMap;
+			std::deque<int> damageQueue;
+		};
+		struct NodeLayersChangeTrack {
+			std::vector<MapChangeTrack> mapChangeTrackers;
+			int width = 0;
+			int height = 0;
+			int cellSize = 0;
+		};
+
 		PathManager();
 		~PathManager();
 
@@ -43,6 +50,7 @@ namespace QTPFS {
 		void Update() override;
 		void UpdatePath(const CSolidObject* owner, unsigned int pathID) override;
 		void DeletePath(unsigned int pathID) override;
+		void DeletePathEntity(entt::entity pathEntity);
 
 		unsigned int RequestPath(
 			CSolidObject* object,
@@ -62,6 +70,8 @@ namespace QTPFS {
 			bool synced
 		) override;
 
+		bool CurrentWaypointIsUnreachable(unsigned int pathID) override;
+
 		void GetPathWayPoints(
 			unsigned int pathID,
 			std::vector<float3>& points,
@@ -72,13 +82,13 @@ namespace QTPFS {
 
 
 		const NodeLayer& GetNodeLayer(unsigned int pathType) const { return nodeLayers[pathType]; }
-		const QTNode* GetNodeTree(unsigned int pathType) const { return nodeTrees[pathType]; }
-		const PathCache& GetPathCache(unsigned int pathType) const { return pathCaches[pathType]; }
+		const NodeLayersChangeTrack& GetMapDamageTrack() const { return nodeLayersMapDamageTrack; };
 
-		const spring::unordered_map<unsigned int, unsigned int>& GetPathTypes() const { return pathTypes; }
 		const spring::unordered_map<unsigned int, PathSearchTrace::Execution*>& GetPathTraces() const { return pathTraces; }
 
 	private:
+		void MapChanged(int x1, int z1, int x2, int z2);
+
 		void ThreadUpdate();
 		void Load();
 
@@ -93,94 +103,89 @@ namespace QTPFS {
 		typedef spring::unordered_map<unsigned int, unsigned int>::iterator PathTypeMapIt;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*> PathTraceMap;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*>::iterator PathTraceMapIt;
-		typedef spring::unordered_map<std::uint64_t, IPath*> SharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, IPath*>::iterator SharedPathMapIt;
+		typedef spring::unordered_map<std::uint64_t, entt::entity> SharedPathMap;
+		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator SharedPathMapIt;
 
-		typedef std::vector<IPathSearch*> PathSearchVect;
-		typedef std::vector<IPathSearch*>::iterator PathSearchVectIt;
-
-		void SpawnSpringThreads(MemberFunc f, const SRectangle& r);
+		typedef std::vector<PathSearch*> PathSearchVect;
+		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
 
 		void InitNodeLayersThreaded(const SRectangle& rect);
-		void UpdateNodeLayersThreaded(const SRectangle& rect);
-		void InitNodeLayersThread(
-			unsigned int threadNum,
-			unsigned int numThreads,
-			const SRectangle& rect
-		);
-		void UpdateNodeLayersThread(
-			unsigned int threadNum,
-			unsigned int numThreads,
-			const SRectangle& rect
-		);
 		void InitNodeLayer(unsigned int layerNum, const SRectangle& r);
-		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r);
+		void InitRootSize(const SRectangle& r);
+		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
 
-		#ifdef QTPFS_STAGGERED_LAYER_UPDATES
-		void QueueNodeLayerUpdates(const SRectangle& r);
-		void ExecQueuedNodeLayerUpdates(unsigned int layerNum, bool flushQueue);
-		#endif
+		void InitializeSearch(entt::entity searchEntity);
+		void RemovePathFromShared(entt::entity entity);
 
-		void ExecuteQueuedSearches(unsigned int pathType);
-		void QueueDeadPathSearches(unsigned int pathType);
+		void ReadyQueuedSearches();
+		void ExecuteQueuedSearches();
+		void QueueDeadPathSearches();
 
 		unsigned int QueueSearch(
-			const IPath* oldPath,
 			const CSolidObject* object,
 			const MoveDef* moveDef,
 			const float3& sourcePoint,
 			const float3& targetPoint,
 			const float radius,
-			const bool synced
+			const bool synced,
+			const bool allowRawSearch
+		);
+
+		unsigned int RequeueSearch(
+			IPath* oldPath,
+			const bool allowRawSearch
 		);
 
 		bool ExecuteSearch(
-			PathSearchVect& searches,
-			PathSearchVectIt& searchesIt,
+			PathSearch* search,
 			NodeLayer& nodeLayer,
-			PathCache& pathCache,
 			unsigned int pathType
 		);
 
-		bool IsFinalized() const { return (!nodeTrees.empty()); }
+		unsigned int ExecuteUnsyncedSearch(unsigned int pathId);
 
+		bool IsFinalized() const { return isFinalized; }
 
-		std::string GetCacheDirName(const std::string& mapCheckSumHexStr, const std::string& modCheckSumHexStr) const;
-		void Serialize(const std::string& cacheFileDir);
-
+	public:
 		static std::vector<NodeLayer> nodeLayers;
-		static std::vector<QTNode*> nodeTrees;
-		static std::vector<PathCache> pathCaches;
-		static std::vector< std::vector<IPathSearch*> > pathSearches;
 
-		spring::unordered_map<unsigned int, unsigned int> pathTypes;
-		spring::unordered_map<unsigned int, PathSearchTrace::Execution*> pathTraces;
+	private:
+		PathCache pathCache;
 
-		// maps "hashes" of executed searches to the found paths
-		spring::unordered_map<std::uint64_t, IPath*> sharedPaths;
+		// per thread data
+		std::vector<SearchThreadData> searchThreadData;
+		std::vector<UpdateThreadData> updateThreadData;
+		std::vector<unsigned char> nodeLayerUpdatePriorityOrder;
 
-		std::vector<unsigned int> numCurrExecutedSearches;
-		std::vector<unsigned int> numPrevExecutedSearches;
+		PathTraceMap pathTraces;
+		SharedPathMap sharedPaths;
+
+		// std::vector<unsigned int> numCurrExecutedSearches;
+		// std::vector<unsigned int> numPrevExecutedSearches;
+
+		NodeLayersChangeTrack nodeLayersMapDamageTrack;
+
+		int deadPathsToUpdatePerFrame = 1;
+		int recalcDeadPathUpdateRateOnFrame = 0;
+		int rootSize = 0;
 
 		static unsigned int LAYERS_PER_UPDATE;
 		static unsigned int MAX_TEAM_SEARCHES;
 
 		unsigned int searchStateOffset;
-		unsigned int numTerrainChanges;
 		unsigned int numPathRequests;
-		unsigned int maxNumLeafNodes;
+
+		std::int32_t refreshDirtyPathRateFrame = QTPFS_LAST_FRAME;
+		std::int32_t updateDirtyPathRate = 0;
+		std::int32_t updateDirtyPathRemainder = 0;
 
 		std::uint32_t pfsCheckSum;
 
-		bool layersInited;
-		bool haveCacheDir;
+		entt::entity systemEntity = entt::null;
 
-		#ifdef QTPFS_ENABLE_THREADED_UPDATE
-		spring::thread updateThread;
-		spring::mutex mutexThreadUpdate;
-		spring::condition_variable condThreadUpdate;
-		spring::condition_variable condThreadUpdated;
-		#endif
+		bool isFinalized = false;
+
+		static constexpr size_t INITIAL_PATH_RESERVE = 256;
 	};
 }
 

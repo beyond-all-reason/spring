@@ -389,7 +389,6 @@ CModelDrawerStateGL4::CModelDrawerStateGL4()
 
 	#define sh shaderHandler
 
-	const GL::LightHandler* lightHandler = CModelDrawerConcept::GetLightHandler();
 	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
 		"ModelShaderGL4-NoShadowStandard",
 		"ModelShaderGL4-ShadowedStandard",

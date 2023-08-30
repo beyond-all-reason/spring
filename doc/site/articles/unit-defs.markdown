@@ -12,10 +12,11 @@ author: sprunk
 By default, all units of a type are the same as far as most traits (for example health) go.
 Units don't necessarily need to fully conform to their type - **most traits can be changed per-unit**.
 
-This is similar to other RTS engines.
+This is **similar to other RTS engines**.
 For example, a default Starcraft2 marine has 45 health.
 Specific marines can actually have 55 health (after an upgrade), or 22 health (with 50% difficulty handicap), or 200 health (if they're the special campaign marine Jim Raynor).
 But marines, as a generalized type, have 45 health.
+It works **essentially the same way in Recoil**.
 Note that the **type itself cannot be modified at runtime**, though you can still easily apply a modified value to every unit of a type.
 
 The **set of unit types is static**.
@@ -104,7 +105,7 @@ In Lua, these are all different keys.
 Calling lowerkeys **makes sure that handling those in post-processing does not become a hassle**.
 Some games put the lowerkeys call inside the individual def files as a convention; you also **don't have to do this at all** if you pay attention and don't expect this to be a problem.
 
-Note that **there are checks** whether a value is defined, **even for the standard ones** (i.e. `if unitDef.health and...`).
+Note that **there are checks** so that calculation only happens if the value is defined, **even for the standard ones** (i.e. `if unitDef.health and...`).
 This is because **while the engine does fill in defaults** (so you don't need to define velocity for buildings, for instance) **it does so at a later point**: so far everything is still **just a regular Lua table**.
 In particular, you can make use of the fact that an entry is not defined and/or fill it with some default calculated by you.
 

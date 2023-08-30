@@ -80,7 +80,7 @@ CPoolArchive::CPoolArchive(const std::string& name): CBufferedArchive(name)
 		FileData& f = files.back();
 		FileStat& s = stats.back();
 
-		f.name = std::move(std::string(c_name, length));
+		f.name = std::string(c_name, length);
 
 		std::memcpy(&f.md5sum, &c_md5sum, sizeof(f.md5sum));
 		std::memset(&f.shasum, 0, sizeof(f.shasum));

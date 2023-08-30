@@ -414,10 +414,9 @@ void LocalModel::UpdateBoundingVolume()
  */
 
 LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
-	: dirty(true)
+	: colvol(piece->GetCollisionVolume())
+	, dirty(true)
 	, customDirty(true)
-
-	, colvol(piece->GetCollisionVolume())
 
 	, scriptSetVisible(true)
 	, blockScriptAnims(false)

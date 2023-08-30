@@ -29,7 +29,7 @@ std::vector<std::uint8_t> ClientData::GetCompressed()
 
 	const std::string& clientData = clientDataStream.str();
 
-	return std::move(zlib::deflate(reinterpret_cast<const std::uint8_t*>(clientData.data()), clientData.size()));
+	return zlib::deflate(reinterpret_cast<const std::uint8_t*>(clientData.data()), clientData.size());
 }
 
 std::string ClientData::GetUncompressed(const std::vector<std::uint8_t>& compressed)

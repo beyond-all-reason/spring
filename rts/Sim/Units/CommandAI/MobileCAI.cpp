@@ -396,7 +396,7 @@ void CMobileCAI::ExecuteMove(Command& c)
 
 	// compare against the moveType's own (possibly extended)
 	// goal radius to determine if we can finish the command
-	if (sqGoalDist < Square(moveType->GetGoalRadius(1.0f))) {
+	if (sqGoalDist < Square(moveType->GetGoalRadius(1.0f)) || moveType->IsAtGoal()) {
 		if (!HasMoreMoveCommands())
 			StopMove();
 

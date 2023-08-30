@@ -107,7 +107,7 @@ void CSound::Init()
 		soundItems.emplace_back();
 	}
 
-	soundThread = std::move(Threading::CreateNewThread(std::bind(&CSound::UpdateThread, this, configHandler->GetInt("MaxSounds"))));
+	soundThread = Threading::CreateNewThread(std::bind(&CSound::UpdateThread, this, configHandler->GetInt("MaxSounds")));
 }
 
 void CSound::Kill()

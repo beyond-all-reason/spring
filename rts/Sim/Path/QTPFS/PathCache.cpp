@@ -1,14 +1,22 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+// #undef NDEBUG
 
 #include <cassert>
 
-#include "PathCache.hpp"
-#include "PathDefines.hpp"
+#include "PathCache.h"
+#include "PathDefines.h"
 
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
+#include "System/Log/ILog.h"
 #include "System/Rectangle.h"
+
+#include "Registry.h"
+#include "Components/Path.h"
+#include "Components/PathMaxSpeedMod.h"
+
+#include <tracy/Tracy.hpp>
 
 static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v, float3& rm) {
 	float3 vScales;
@@ -28,101 +36,9 @@ static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v,
 	#undef CV
 }
 
-
-
-const QTPFS::IPath* QTPFS::PathCache::GetConstPath(unsigned int pathID, unsigned int pathType) const {
-	static IPath path; // dummy
-	const PathMap* map;
-
-	switch (pathType) {
-		case PATH_TYPE_TEMP: { map = &tempPaths; } break;
-		case PATH_TYPE_LIVE: { map = &livePaths; } break;
-		case PATH_TYPE_DEAD: { map = &deadPaths; } break;
-		default:             { map =       NULL; } break;
-	}
-
-	if (map == NULL)
-		return &path;
-
-	const PathMap::const_iterator it = map->find(pathID);
-
-	if (it != map->end()) {
-		return it->second;
-	}
-
-	return &path;
-}
-
-QTPFS::IPath* QTPFS::PathCache::GetPath(unsigned int pathID, unsigned int pathType) {
-	IPath* path = const_cast<IPath*>(GetConstPath(pathID, pathType));
-
-	if (path->GetID() != 0) {
-		numCacheHits[pathType] += 1;
-	} else {
-		numCacheMisses[pathType] += 1;
-	}
-
-	return path;
-}
-
-
-
-void QTPFS::PathCache::AddTempPath(IPath* path) {
-	assert(path->GetID() != 0);
-	assert(path->NumPoints() == 2);
-	assert(tempPaths.find(path->GetID()) == tempPaths.end());
-	assert(livePaths.find(path->GetID()) == livePaths.end());
-
-	tempPaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
-}
-
-void QTPFS::PathCache::AddLivePath(IPath* path) {
-	assert(path->GetID() != 0);
-	assert(path->NumPoints() >= 2);
-
-	assert(tempPaths.find(path->GetID()) != tempPaths.end());
-	assert(livePaths.find(path->GetID()) == livePaths.end());
-	assert(deadPaths.find(path->GetID()) == deadPaths.end());
-
-	// promote a path from temporary- to live-status (no deletion)
-	tempPaths.erase(path->GetID());
-	livePaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
-}
-
-void QTPFS::PathCache::DelPath(unsigned int pathID) {
-	// if pathID is in xPaths, then yPaths and zPaths are guaranteed not
-	// to contain it (*only* exception is that deadPaths briefly overlaps
-	// tempPaths between QueueDeadPathSearches and KillDeadPaths)
-	PathMapIt it;
-
-	if ((it = tempPaths.find(pathID)) != tempPaths.end()) {
-		assert(livePaths.find(pathID) == livePaths.end());
-		assert(deadPaths.find(pathID) == deadPaths.end());
-		delete (it->second);
-		tempPaths.erase(it);
-		return;
-	}
-	if ((it = livePaths.find(pathID)) != livePaths.end()) {
-		assert(deadPaths.find(pathID) == deadPaths.end());
-		delete (it->second);
-		livePaths.erase(it);
-		return;
-	}
-	if ((it = deadPaths.find(pathID)) != deadPaths.end()) {
-		delete (it->second);
-		deadPaths.erase(it);
-	}
-}
-
-
-
-
-bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
-	#ifdef QTPFS_IGNORE_DEAD_PATHS
-	return false;
-	#endif
-
-	if (livePaths.empty())
+bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
+	auto pathView = registry.view<IPath>(/*entt::exclude<PathIsDirty>*/);
+	if (pathView.empty())
 		return false;
 
 	// NOTE: not static, we run in multiple threads
@@ -131,14 +47,26 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
 
 	GetRectangleCollisionVolume(r, rv, rm);
 
+	// LOG("%s: pathType %d has %d entires at start", __func__, pathType, (int)dirtyPaths[pathType].size());
+
 	// "mark" any live path crossing the area of a terrain
 	// deformation, for which some or all of its waypoints
 	// might now be invalid and need to be recomputed
-	std::vector<PathMapIt> livePathIts;
-	livePathIts.reserve(livePaths.size());
 
-	for (PathMapIt it = livePaths.begin(); it != livePaths.end(); ++it) {
-		IPath* path = it->second;
+	// go in reverse so that entries can be removed without impacting the loop.
+	for (auto entity : pathView) {
+		// if (deadPaths.contains(it->first)) continue; // ... so we don't need this
+
+		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
+
+		if (registry.any_of<PathIsDirty>(entity)) continue;
+
+		IPath* path = &pathView.get<IPath>(entity);
+
+		if (path->IsSynced() == false) continue;
+		if (path->GetPathType() != pathType) { continue; }
+
+		// LOG("%s: %x is processing", __func__, (int)entity);
 
 		const float3& pathMins = path->GetBoundingBoxMins();
 		const float3& pathMaxs = path->GetBoundingBoxMaxs();
@@ -180,31 +108,24 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r) {
 				(xRangeInRect && zRangeExRect) ||
 				CCollisionHandler::IntersectBox(&rv, p0 - rm, p1 - rm, NULL);
 
+			// LOG("%s: %x havePointInRect=%d edgeCrossesRect=%d", __func__, (int)entity
+			// 		, (int)havePointInRect, (int)edgeCrossesRect);
+
 			// remember the ID of each path affected by the deformation
 			if (havePointInRect || edgeCrossesRect) {
-				assert(tempPaths.find(path->GetID()) == tempPaths.end());
-				deadPaths.insert(std::pair<unsigned int, IPath*>(path->GetID(), path));
-				livePathIts.push_back(it);
+				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
+				// assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
+				dirtyPaths[pathType].emplace_back(entity);
+
+				// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
 				break;
 			}
 		}
 	}
 
-	for (auto it = livePathIts.begin(); it != livePathIts.end(); ++it) {
-		livePaths.erase(*it);
-	}
+	// LOG("%s: pathType %d has %d entires at end", __func__, pathType, (int)dirtyPaths[pathType].size());
 
 	return true;
 }
 
-void QTPFS::PathCache::KillDeadPaths() {
-	for (PathMap::const_iterator deadPathsIt = deadPaths.begin(); deadPathsIt != deadPaths.end(); ++deadPathsIt) {
-		// NOTE: "!=" because re-requested dead paths go onto the temp-pile
-		assert(tempPaths.find(deadPathsIt->first) != tempPaths.end());
-		assert(livePaths.find(deadPathsIt->first) == livePaths.end());
-		delete (deadPathsIt->second);
-	}
-
-	deadPaths.clear();
-}
 

@@ -55,9 +55,6 @@ public:
 	// relative to a unit's maxspeed (default: inf)
 	float maxCollisionPushMultiplier;
 
-	bool forceCollisionsSingleThreaded;
-	bool forceCollisionAvoidanceSingleThreaded;
-
 	// rate in sim frames that a unit's position in the quad grid is updated (default: 3)
 	// a lower number will increase CPU load, but increase accuracy of collision detection
 	int unitQuadPositionUpdateRate;
@@ -188,11 +185,17 @@ public:
 	// PFS
 	/// which pathfinder system (NOP, DEFAULT/legacy, or QT) the mod will use
 	int pathFinderSystem;
-	bool pfForceSingleThreaded;
-	bool pfForceUpdateSingleThreaded;
+
+	/// Minimum delay after unit has made progress to next waypoint before allowing repath
+	int pfRepathDelayInFrames;
+
+	/// Minimum wait time after the the last repath before a unit is permitted to request a new one.
+	int pfRepathMaxRateInFrames;
+
+	/// Point at which a region is considered bad for raw path tracing.
+	float pfRawMoveSpeedThreshold;
 
 	float pfRawDistMult;
-	float pfUpdateRate; // remove if Default PFS gets replaced/removed.
 	float pfUpdateRateScale;
 
 	bool enableSmoothMesh;

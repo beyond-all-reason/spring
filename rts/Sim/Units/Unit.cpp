@@ -607,6 +607,7 @@ void CUnit::EnableScriptMoveType()
 		return;
 
 	prevMoveType = moveType;
+	prevMoveType->Disconnect();
 	moveType = MoveTypeFactory::GetScriptMoveType(this);
 }
 
@@ -618,6 +619,7 @@ void CUnit::DisableScriptMoveType()
 	spring::SafeDestruct(moveType);
 
 	moveType = prevMoveType;
+	moveType->Connect();
 	prevMoveType = nullptr;
 
 	// ensure unit does not try to move back to the
