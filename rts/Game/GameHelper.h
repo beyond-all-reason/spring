@@ -278,8 +278,8 @@ private:
 		inline static std::vector<TestUnitBuildSquareCache> testUnitBuildSquareCache;
 	};
 
-	// note: size must be a power of two
 	std::array<std::vector<WaitingDamage>, 128> waitingDamages;
+	static_assert (std::has_single_bit(std::tuple_size_v <decltype(waitingDamages)>), "Size is used in bit hax and must be 2^N");
 public:
 	std::vector<int> targetUnitIDs; // GetEnemyUnits{NoLosTest}
 	std::vector<std::pair<float, CUnit*>> targetPairs; // GenerateWeaponTargets
