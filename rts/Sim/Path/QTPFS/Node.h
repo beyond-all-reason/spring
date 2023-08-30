@@ -31,6 +31,11 @@ namespace QTPFS {
 	struct INode {
 			friend SearchNode;
 	public:
+		struct NeighbourPoints {
+			int nodeId;
+			std::array<float2, QTPFS_MAX_NETPOINTS_PER_NODE_EDGE> netpoints;
+		};
+
 		void SetNodeNumber(unsigned int n) { nodeNumber = n; }
 		unsigned int GetNodeNumber() const { return nodeNumber; }
 
@@ -82,11 +87,7 @@ namespace QTPFS {
 		bool Merge(NodeLayer& nl);
 
 		unsigned int GetMaxNumNeighbors() const;
-		unsigned int GetNeighbors(const std::vector<int>&, std::vector<int>&);
 		bool UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData);
-
-		void SetNeighborEdgeTransitionPoint(unsigned int ngbIdx, const float2& point) { netpoints[ngbIdx] = point; }
-		const float2& GetNeighborEdgeTransitionPoint(unsigned int ngbIdx) const { return netpoints[ngbIdx]; }
 
 		unsigned int xmin() const { return _xmin; }
 		unsigned int zmin() const { return _zmin; }
@@ -126,16 +127,11 @@ namespace QTPFS {
 		static unsigned int MinSizeX() { return MIN_SIZE_X; }
 		static unsigned int MinSizeZ() { return MIN_SIZE_Z; }
 
-		const std::vector<int>& GetNeighbors() const {
+		const std::vector<NeighbourPoints>& GetNeighbours() const {
 			return neighbours;
-		}
-		const std::vector<int>& GetNeighbors() { return neighbours; }
-		const std::vector<float2>& GetNetPoints() const {
-			return netpoints;
 		}
 
 		void DeactivateNode() { _xmin = std::numeric_limits<decltype(_xmin)>::max(); }
-
 		bool NodeDeactivated() const { return (_xmin == std::numeric_limits<decltype(_xmin)>::max()); }
 
 	private:
@@ -173,8 +169,7 @@ namespace QTPFS {
 		float moveCostAvg = -1.0f;
 
 		unsigned int childBaseIndex = -1u;
-		std::vector<int> neighbours;
-		std::vector<float2> netpoints;
+		std::vector<NeighbourPoints> neighbours;
 	};
 
 	struct NodeSearched {};
@@ -206,14 +201,12 @@ namespace QTPFS {
 			hCost = QTPFS_POSITIVE_INFINITY;
 			index = other.index;
 			prevNode = other.prevNode;
-			searchState = other.searchState;
+			// searchState = other.searchState;
 			return *this;
 		}
 
-		// void SetNodeNumber(unsigned int n) { nodeNumber = n; }
-		// unsigned int GetNodeNumber() const { return nodeNumber; }
 		float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
-		unsigned int GetSearchState() const { return searchState; }
+		// unsigned int GetSearchState() const { return searchState; }
 
 		bool operator <  (const SearchNode* n) const { return (fCost <  n->fCost); }
 		bool operator >  (const SearchNode* n) const { return (fCost >  n->fCost); }
@@ -229,13 +222,13 @@ namespace QTPFS {
 		SearchNode* GetPrevNode() const { return prevNode; }
 
 		unsigned int GetIndex() const { return index; }
-		void SetSearchState(unsigned int state) { searchState = state; }
+		// void SetSearchState(unsigned int state) { searchState = state; }
 
 		void SetNeighborEdgeTransitionPoint(const float2& point) { selectedNetpoint = point; }
 		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
 
 		unsigned int index = 0;
-		unsigned int searchState = 0;
+		// unsigned int searchState = 0;
 
 		float fCost = QTPFS_POSITIVE_INFINITY;
 		float gCost = QTPFS_POSITIVE_INFINITY;

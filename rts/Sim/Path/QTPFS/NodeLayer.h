@@ -130,10 +130,8 @@ namespace QTPFS {
 				memFootPrint += (poolNodes[i].size() * sizeof(QTNode));
 
 				for (int32_t nodeIndex = poolNodes[i].size() - 1; nodeIndex >= 0; --nodeIndex) {
-					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbors();
+					const auto& neighbours = poolNodes[i][nodeIndex].GetNeighbours();
 					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(neighbours)>::value_type);
-					const auto& netPoints = poolNodes[i][nodeIndex].GetNetPoints();
-					memFootPrint += neighbours.size() * sizeof(std::remove_reference_t<decltype(netPoints)>::value_type);
 				}
 			}
 

@@ -292,7 +292,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
-	const std::vector<int>& nxtNodes = curNode->GetNeighbors();
+	const std::vector<INode::NeighbourPoints>& nxtNodes = curNode->GetNeighbours();
 	for (unsigned int i = 0; i < nxtNodes.size(); i++) {
 		// NOTE:
 		//   this uses the actual distance that edges of the final path will cover,
@@ -311,8 +311,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		//   in the first case we would explore many more nodes than necessary (CPU
 		//   nightmare), while in the second we would get low-quality paths (player
 		//   nightmare)
-		// auto* nxtNode = nxtNodes[i];
-		int nxtNodesId = nxtNodes[i];
+		int nxtNodesId = nxtNodes[i].nodeId;
 		
 		// LOG("%s: target node search from %d to %d", __func__
 		// 		, curNode->GetIndex()
@@ -366,7 +365,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		// not handle; more points means a greater degree
 		// of non-cardinality (but gets expensive quickly)
 		for (unsigned int j = 0; j < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; j++) {
-			netPoints[j] = curNode->GetNeighborEdgeTransitionPoint(1 + i * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE + j);
+			netPoints[j] = nxtNodes[i].netpoints[j];
 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
