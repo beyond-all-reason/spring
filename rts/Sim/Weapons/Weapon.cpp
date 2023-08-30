@@ -190,7 +190,9 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	muzzleFlareSize(1),
 
 	weaponAimAdjustPriority(1.f),
-	fastAutoRetargeting(false)
+	fastAutoRetargeting(false),
+	fastQueryPointUpdate(false),
+	accurateLeading(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
