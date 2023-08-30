@@ -281,7 +281,6 @@ void QTPFS::PathSearch::IterateNodes() {
 
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
-	// IterateNodeNeighbors(curNode->GetNeighbors());
 	IterateNodeNeighbors(curNode);
 }
 
@@ -317,11 +316,6 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		// 		, curNode->GetIndex()
 		// 		, nxtNode->GetIndex()
 		// 		);
-
-		// Nodes are no longer linked to impassible nodes.
-		// The removal of this check allows units to try to escape from an "impassible node"
-		// if (nxtNode->AllSquaresImpassable())
-		// 	continue;
 
 		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNodesId);
 
@@ -369,12 +363,12 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
+
 			// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
 			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
-				curNodeSanitizedCost * gDists[j]; //+
-				// nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
+				curNodeSanitizedCost * gDists[j];
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
 
 			if (isTarget) {
@@ -530,12 +524,6 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 	// or after a small fixed number of iterations
 	unsigned int ni = path->NumPoints();
 	unsigned int nm = 0;
-
-	// SearchNode* srcSearchNode = &searchThreadData->allSearchedNodes[srcNode->GetIndex()];
-	// SearchNode* tgtSearchNode = &searchThreadData->allSearchedNodes[tgtNode->GetIndex()];
-
-	// const int srcIndex = srcNode->GetIndex();
-	// const int tgtIndex = tgtNode->GetIndex();
 
 	SearchNode* n0 = tgtSearchNode;
 	SearchNode* n1 = tgtSearchNode;
