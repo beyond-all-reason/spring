@@ -16,7 +16,7 @@
 #include "System/Cpp11Compat.hpp"
 #include "Rendering/GL/VertexArrayTypes.h"
 
-struct fast_hash : public spring::unary_function<int, size_t>
+struct fast_hash
 {
 	size_t operator()(const int a) const
 	{
