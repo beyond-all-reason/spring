@@ -1278,13 +1278,8 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 	return aimPos;
 }
 
-// debug print includes
-#include<iostream>
-#include<string>
-
 float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 {
-	ZoneScoped;
 	float3 unitSpeed = unit->speed * predictMult;
 	float3 dist = unit->pos - weaponMuzzlePos;
 	float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
@@ -1354,18 +1349,13 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 
 float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 {
-	ZoneScoped;
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 	
-	// just checking for cannon, as that is the only weapontype that follows a parabolic path
-	// trajectoryheight missiles follow a pursuit curve, and usually require target tracking to work correctly
-	// all other weapons 
-	std::cout << "weapon gravity = " << weaponDef->gravityAffected << std::endl;
-	if (weaponDef->type == "Cannon") {
-		//if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
+	// check if the weapon could be affected by gravity 
+	if (weaponDef->gravityAffected) {
+
 		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
-		//std::cout << "weapon gravity = " << gravity << std::endl;
 
 		if (gravity < 0) {
 			// precise target leading
@@ -1408,15 +1398,8 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 			float temp2 = 1.0f;
 			float cc = 1.0f;
 			float deltatime = predictTime;
-			//predictTime = 0.0f;
 			for (int ii = 0; ii < 32; ii++) {
-				//std::cout << "Precision calcs = " << ii << std::endl;
-				//std::cout << "predictMult = " << predictMult << std::endl;
-				//std::cout << "predictTime = " << predictMult << std::endl;
-				//std::cout << "gravity = " << gravity << std::endl;
-				//std::cout << "projectile velocity = " << weaponDef->projectilespeed << std::endl;
-				//std::cout << "dist = " << dist.x << " " << dist.y << " " << dist.z << std::endl;
-				//std::cout << "speed = " << unit->speed.x << " " << unit->speed.y << " " << unit->speed.z << std::endl;
+
 				cc = -ps2 - dist.y * (gravity);
 				temp1 = (dist.dot(dist) * gg);
 				temp2 = (cc * cc);
@@ -1431,13 +1414,11 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 				// secant approximation of df(t_n)
 				dt1 = (t1 - predictTime) / deltatime;
 
-				//std::cout << "t1 = " << t1 << std::endl;
-				//std::cout << "dt = " << dt1 << std::endl;
 				if (std::abs(dt1) < 1) {
 					// abs(dt1) less than 1 means newton iteration is stable, and can be used
 					t1 = predictTime - (t1 - predictTime) / (dt1 - 1);
 				}
-				//std::cout << "P time = " << t1 << std::endl;
+				
 				if (std::abs(t1 - predictTime) < 1) {
 					// we just need a 1 frame tolerance
 					predictTime = t1;
@@ -1449,55 +1430,24 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 				dist = unit->pos + unit->speed * predictMult * predictTime - weaponMuzzlePos;
 			}
 		} else {
-			// cannon has no gravity
-			// non-parabolic projectiles are much easier
-			// simple quadratic equation
+			// weapon has no gravity (either zero map gravity, or myGravity set to zero)
+			// non-parabolic projectiles can be directly calculated
+			// just need to solve the quadratic equation, in a numerically safe way
 			const float interceptTime = GetSafeInterceptTime(unit, predictMult);
 			if (interceptTime > 0) {
 				predictTime = interceptTime;
 			}
-			/*
-			float3 unitSpeed = unit->speed * predictMult;
-			float3 dist = unit->pos - weaponMuzzlePos;
-			float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
-			float bb = 2 * (dist.dot(unitSpeed));
-			float cc = dist.dot(dist);
-			float temp1 = 4 * aa * cc;
-			float temp2 = (bb * bb);
-			if (temp1 >= temp2) {
-				// this triggers if the target cannot be intercepted
-				// units can get out of range before the slow projectile can hit it
-				return predictTime;
-			}
-			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
-			*/
 		}
 	}
 	else {
 
-		// non-parabolic projectiles are much easier
-		// simple quadratic equation
+		// weapon not gravity affected
+		// non-parabolic projectiles can be directly calculated
+		// just need to solve the quadratic equation, in a numerically safe way
 		const float interceptTime = GetSafeInterceptTime(unit, predictMult);
 		if (interceptTime > 0) {
 			predictTime = interceptTime;
 		}
-		/*
-		float3 unitSpeed = unit->speed * predictMult;
-		float3 dist = unit->pos - weaponMuzzlePos;
-		float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
-		float bb = 2 * (dist.dot(unitSpeed));
-		float cc = dist.dot(dist);
-		float temp1 = 4 * aa * cc;
-		float temp2 = (bb * bb);
-		if (temp1 >= temp2) {
-			// this triggers if the target cannot be intercepted
-			// units can get out of range before the slow projectile can hit it
-			return predictTime;
-		}
-		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
-		//std::cout << "basic check = " << predictTime << std::endl;
-		*/
-
 	}
 
 	return predictTime;
@@ -1506,8 +1456,6 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
-	ZoneScoped;
-	//float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
 	float3 lead = unit->speed;
 	if (accurateLeading == true) {
@@ -1518,8 +1466,6 @@ float3 CWeapon::GetLeadVec(const CUnit* unit) const
 		float predictTime = GetPredictedImpactTime(unit->pos);
 		lead = unit->speed * predictTime * predictMult;
 	}
-
-	//float3 lead = unit->speed * predictTime * predictMult;
 
 	if (weaponDef->leadLimit < 0.0f)
 		return lead;
