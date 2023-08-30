@@ -1279,8 +1279,8 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 }
 
 // debug print includes
-//#include<iostream>
-//#include<string>
+#include<iostream>
+#include<string>
 
 float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 {
@@ -1327,7 +1327,7 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 		}
 
 		// case 2b, check if fast target is moving away from us
-		if (bb > 0) {
+		if (bb >= 0) {
 			return -1.0;
 		}
 		// case 2c, aa is a large value, standard quadratic formula works fine
@@ -1337,10 +1337,9 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 		}
 		// case 2d, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
 		else {
-			// check catastrophic case of aa=0 and bb>=0 
-			// target speed equal to projectile speed, and target is moving away
-			// answer is either only a negative number (bb>0) or does not exist (bb=0) 
-			// or very, very large positive number (aa=small and bb=small)
+			// check catastrophic case of aa=very small and bb=very small
+			// target speed nearly equal to projectile speed, and target is moving nearly tangentally
+			// answer is very, very large positive number (aa=small and bb=small)
 			if ((std::abs(aa) < (SAFE_INTERCEPT_EPS)) && (bb > (-SAFE_INTERCEPT_EPS))) {
 				return -1.0;
 			}
@@ -1358,7 +1357,11 @@ float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
 	ZoneScoped;
 	float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
-
+	
+	// just checking for cannon, as that is the only weapontype that follows a parabolic path
+	// trajectoryheight missiles follow a pursuit curve, and usually require target tracking to work correctly
+	// all other weapons 
+	std::cout << "weapon gravity = " << weaponDef->gravityAffected << std::endl;
 	if (weaponDef->type == "Cannon") {
 		//if (weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE) {
 		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
