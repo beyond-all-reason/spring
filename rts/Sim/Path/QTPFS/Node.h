@@ -184,21 +184,23 @@ namespace QTPFS {
 		SearchNode() {}
 
 		SearchNode(INode& srcNode)
-			: nodeNumber(srcNode.nodeNumber)
-			, index(srcNode.index)
+			: index(srcNode.index)
 			, prevNode(nullptr)
 			{}
 
 		SearchNode(INode* srcNode)
-			: nodeNumber(srcNode->nodeNumber)
-			, index(srcNode->index)
+			: index(srcNode->index)
+			, prevNode(nullptr)
+			{}
+
+		SearchNode(int nodeId)
+			: index(nodeId)
 			, prevNode(nullptr)
 			{}
 
 		SearchNode(const SearchNode& other) { operator=(other); }
 
 		SearchNode& operator=(const SearchNode& other) {
-			nodeNumber = other.nodeNumber;
 			fCost = QTPFS_POSITIVE_INFINITY;
 			gCost = QTPFS_POSITIVE_INFINITY;
 			hCost = QTPFS_POSITIVE_INFINITY;
@@ -208,8 +210,8 @@ namespace QTPFS {
 			return *this;
 		}
 
-		void SetNodeNumber(unsigned int n) { nodeNumber = n; }
-		unsigned int GetNodeNumber() const { return nodeNumber; }
+		// void SetNodeNumber(unsigned int n) { nodeNumber = n; }
+		// unsigned int GetNodeNumber() const { return nodeNumber; }
 		float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
 		unsigned int GetSearchState() const { return searchState; }
 
@@ -232,7 +234,6 @@ namespace QTPFS {
 		void SetNeighborEdgeTransitionPoint(const float2& point) { selectedNetpoint = point; }
 		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
 
-		unsigned int nodeNumber = -1u;
 		unsigned int index = 0;
 		unsigned int searchState = 0;
 

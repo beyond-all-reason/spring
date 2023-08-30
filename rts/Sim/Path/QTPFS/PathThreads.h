@@ -51,17 +51,17 @@ namespace QTPFS {
             }
         }
 
-        T& InsertINode(INode *node) {
-            if (node == nullptr) return denseData[0];
-            InsertAtIndex(T(node), node->GetIndex());
-            return operator[](node->GetIndex());
+        T& InsertINode(int nodeId) {
+            if (nodeId < 0) return denseData[0];
+            InsertAtIndex(T(nodeId), nodeId);
+            return operator[](nodeId);
         }
 
-        T& InsertINodeIfNotPresent(INode *node) {
-            if (node == nullptr) return denseData[0];
-            if (sparseIndex[node->GetIndex()] == 0)
-                InsertAtIndex(T(node), node->GetIndex());
-            return operator[](node->GetIndex());
+        T& InsertINodeIfNotPresent(int nodeId) {
+            if (nodeId < 0) return denseData[0];
+            if (sparseIndex[nodeId] == 0)
+                InsertAtIndex(T(nodeId), nodeId);
+            return operator[](nodeId);
         }
 
         auto& operator[](const size_t i) {

@@ -103,8 +103,10 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 		}
 	}
 
-	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
-	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
+	// srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
+	// tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
+	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode->GetIndex());
+	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode->GetIndex());
 	curSearchNode = nullptr;
 	nextSearchNode = nullptr;
 	minSearchNode = srcSearchNode;
@@ -310,26 +312,30 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		//   nightmare), while in the second we would get low-quality paths (player
 		//   nightmare)
 		// auto* nxtNode = nxtNodes[i];
-		auto* nxtNode = nodeLayer->GetPoolNode(nxtNodes[i]);
+		int nxtNodesId = nxtNodes[i];
 		
 		// LOG("%s: target node search from %d to %d", __func__
 		// 		, curNode->GetIndex()
 		// 		, nxtNode->GetIndex()
 		// 		);
 
-		assert(curNode->GetNeighborRelation(nxtNode) != 0);
-		assert(nxtNode->GetNeighborRelation(curNode) != 0);
-
 		// Nodes are no longer linked to impassible nodes.
 		// The removal of this check allows units to try to escape from an "impassible node"
 		// if (nxtNode->AllSquaresImpassable())
 		// 	continue;
 
-		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNode);
+		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNodesId);
 
 		// const bool isCurrent = (nextSearchNode->GetSearchState() >= searchState);
 		// const bool isClosed = ((nextSearchNode->GetSearchState() & 1) == NODE_STATE_CLOSED);
 		const bool isTarget = (nextSearchNode == tgtSearchNode);
+
+		QTPFS::INode *nxtNode = nullptr;
+		if (isTarget) {
+			nxtNode = nodeLayer->GetPoolNode(nxtNodesId);
+			assert(curNode->GetNeighborRelation(nxtNode) != 0);
+			assert(nxtNode->GetNeighborRelation(curNode) != 0);
+		}
 
 		unsigned int netPointIdx = 0;
 
@@ -368,10 +374,13 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
-				// curNode->GetMoveCost() * gDists[j] +
-				curNodeSanitizedCost * gDists[j] +
-				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
+				curNodeSanitizedCost * gDists[j]; //+
+				// nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
+
+			if (isTarget) {
+				gCosts[j] += nxtNode->GetMoveCost() * hDists[j];
+			}
 
 			if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
 				netPointIdx = j;
