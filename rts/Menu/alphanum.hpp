@@ -265,7 +265,7 @@ namespace doj {
 	implement "std::ostream operator<< (std::ostream&, const Ty&)".
 	*/
 	template<class Ty>
-	struct alphanum_less : public spring::binary_function<Ty, Ty, bool> {
+	struct alphanum_less {
 		bool operator()(const Ty& left, const Ty& right) const {
 			return alphanum_comp(left, right) < 0;
 		}
