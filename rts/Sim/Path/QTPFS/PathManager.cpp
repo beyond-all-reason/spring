@@ -717,7 +717,7 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 	if (registry.valid(pathEntity)) {
 		assert(registry.all_of<IPath>(pathEntity));
 		IPath* path = &registry.get<IPath>(pathEntity);
-		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), MAP_RECTANGLE, path->GetOwner());
+		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), path->GetOwner());
 		path->SetHash(search->GetHash());
 
 		if (path->IsSynced() && search->GetHash() != PathSearch::BAD_HASH) {

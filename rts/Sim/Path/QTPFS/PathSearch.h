@@ -105,7 +105,6 @@ namespace QTPFS {
 			NodeLayer* layer,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea,
 			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
@@ -153,8 +152,6 @@ namespace QTPFS {
 		// not used unless QTPFS_TRACE_PATH_SEARCHES is defined
 		PathSearchTrace::Execution* searchExec;
 		PathSearchTrace::Iteration searchIter;
-
-		SRectangle searchRect;
 
 		SearchNode *srcSearchNode, *tgtSearchNode;
 		SearchNode *curSearchNode, *nextSearchNode;

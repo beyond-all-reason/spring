@@ -45,7 +45,6 @@ void QTPFS::PathSearch::Initialize(
 	NodeLayer* layer,
 	const float3& sourcePoint,
 	const float3& targetPoint,
-	const SRectangle& searchArea,
 	const CSolidObject* owner
 ) {
 	srcPoint = sourcePoint; srcPoint.ClampInBounds();
@@ -53,8 +52,6 @@ void QTPFS::PathSearch::Initialize(
 
 	pathOwner = owner;
 	nodeLayer = layer;
-
-	searchRect = searchArea;
 	searchExec = nullptr;
 
 	const uint32_t srcX = srcPoint.x / SQUARE_SIZE;
@@ -264,12 +261,6 @@ void QTPFS::PathSearch::IterateNodes() {
 		return;
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
-
-	// this isn't used - only full map is ever given. TODO: remove searchRect completely?
-	// if (curNode->xmid() < searchRect.x1) return;
-	// if (curNode->zmid() < searchRect.z1) return;
-	// if (curNode->xmid() > searchRect.x2) return;
-	// if (curNode->zmid() > searchRect.z2) return;
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// remember the node with lowest h-cost in case the search fails to reach tgtNode
