@@ -1025,7 +1025,7 @@ void CSound::GenSources(int alMaxSounds)
 	for (int i = 0; i < alMaxSounds; i++) {
 		soundSources.emplace_back();
 
-		if (soundSources[i].IsValid())
+		if (soundSources.back().IsValid())
 			continue;
 
 		soundSources.pop_back();

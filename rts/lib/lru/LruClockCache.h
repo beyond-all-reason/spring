@@ -43,9 +43,9 @@ namespace spring {
 		//				takes a LruKey as key and LruValue as value
 
 		LRUClockCache(CHInt numElements, const decltype(loadData)& readMiss, const decltype(saveData)& writeMiss)
-			: size{ numElements }
-			, loadData{ readMiss }
+			: loadData{ readMiss }
 			, saveData{ writeMiss }
+			, size{ numElements }
 			, ctr{ 0 }
 			, ctrEvict{ numElements >> 1 } // 50% phase difference between eviction and second-chance hands of the "second-chance" CLOCK algorithm
 		{

@@ -25,33 +25,9 @@ class SoundItem
 public:
 	SoundItem() = default;
 	SoundItem(size_t itemID, size_t bufferID, const spring::unordered_map<std::string, std::string>& items);
-	SoundItem(SoundItem&& s) { *this = std::move(s); }
+	SoundItem(SoundItem&& s) = default;
 
-	SoundItem& operator = (SoundItem&& s) {
-		soundItemID = s.soundItemID;
-		soundBufferID = s.soundBufferID;
-
-		name = std::move(s.name);
-
-		gain = s.gain;
-		gainMod = s.gainMod;
-
-		pitch = s.pitch;
-		pitchMod = s.pitchMod;
-		dopplerScale = s.dopplerScale;
-
-		maxDist = s.maxDist;
-		rolloff = s.rolloff;
-
-		priority = s.priority;
-
-		maxConcurrent = s.maxConcurrent;
-		currentlyPlaying = s.currentlyPlaying;
-		loopTime = s.loopTime;
-
-		in3D = s.in3D;
-		return *this;
-	}
+	SoundItem& operator = (SoundItem&& s) = default;
 
 	bool PlayNow();
 	void StopPlay();
@@ -60,7 +36,7 @@ public:
 
 	float MaxDistance() const { return maxDist; }
 	const std::string& Name() const { return name; }
-	const int GetPriority() const { return priority; }
+	int GetPriority() const { return priority; }
 
 	float GetGain() const;
 	float GetPitch() const;

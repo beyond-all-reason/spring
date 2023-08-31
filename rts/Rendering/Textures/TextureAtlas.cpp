@@ -28,11 +28,11 @@ CR_REG_METADATA(AtlasedTexture, (CR_IGNORED(x), CR_IGNORED(y), CR_IGNORED(z), CR
 
 const AtlasedTexture AtlasedTexture::DefaultAtlasTexture = AtlasedTexture{};
 CTextureAtlas::CTextureAtlas(uint32_t allocType_, int32_t atlasSizeX_, int32_t atlasSizeY_, const std::string& name_, bool reloadable_)
-	: name{ name_ }
-	, allocType{ allocType_ }
+	: allocType{ allocType_ }
 	, atlasSizeX{ atlasSizeX_ }
 	, atlasSizeY{ atlasSizeY_ }
 	, reloadable{ reloadable_ }
+	, name{ name_ }
 {
 
 	textures.reserve(256);
@@ -167,7 +167,6 @@ bool CTextureAtlas::CreateTexture()
 		// make spacing between textures black transparent to avoid ugly lines with linear filtering
 		std::memset(data, 0, atlasSize.x * atlasSize.y * 4);
 
-		int iter = 0;
 		for (const MemTex& memTex: memTextures) {
 			const float4 texCoords = atlasAllocator->GetTexCoords(memTex.names[0]);
 			const float4 absCoords = atlasAllocator->GetEntry(memTex.names[0]);

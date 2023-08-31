@@ -325,7 +325,7 @@ void CQuitBox::MouseRelease(int x, int y, int button)
 
 		// save current game state
 		if (save) {
-			const std::string currTimeStr = std::move(CTimeUtil::GetCurrentTimeStr());
+			const std::string currTimeStr = CTimeUtil::GetCurrentTimeStr();
 			const std::string saveFileName = currTimeStr + "_" + modInfo.filename + "_" + gameSetup->mapName;
 
 			game->Save("Saves/" + saveFileName + ".ssf", "");

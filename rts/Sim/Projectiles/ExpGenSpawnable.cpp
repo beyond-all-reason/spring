@@ -38,18 +38,18 @@ std::array<CExpGenSpawnable::SpawnableTuple, 14> CExpGenSpawnable::spawnables = 
 
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	: CWorldObject(pos, spd)
-	, createFrame{0}
-	, rotVal{0}
-	, rotVel{0}
+	, rotVal{ 0 }
+	, rotVel{ 0 }
+	, createFrame{ 0 }
 {
 	assert(projMemPool.alloced(this));
 }
 
 CExpGenSpawnable::CExpGenSpawnable()
 	: CWorldObject()
-	, createFrame{ 0 }
 	, rotVal{ 0 }
 	, rotVel{ 0 }
+	, createFrame{ 0 }
 {
 	assert(projMemPool.alloced(this));
 }

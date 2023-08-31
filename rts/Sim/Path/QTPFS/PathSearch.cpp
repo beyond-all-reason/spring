@@ -103,8 +103,10 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 		}
 	}
 
-	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
-	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
+	// srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
+	// tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
+	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode->GetIndex());
+	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode->GetIndex());
 	curSearchNode = nullptr;
 	nextSearchNode = nullptr;
 	minSearchNode = srcSearchNode;
@@ -279,7 +281,6 @@ void QTPFS::PathSearch::IterateNodes() {
 
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
-	// IterateNodeNeighbors(curNode->GetNeighbors());
 	IterateNodeNeighbors(curNode);
 }
 
@@ -290,7 +291,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
-	const std::vector<int>& nxtNodes = curNode->GetNeighbors();
+	const std::vector<INode::NeighbourPoints>& nxtNodes = curNode->GetNeighbours();
 	for (unsigned int i = 0; i < nxtNodes.size(); i++) {
 		// NOTE:
 		//   this uses the actual distance that edges of the final path will cover,
@@ -309,27 +310,25 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		//   in the first case we would explore many more nodes than necessary (CPU
 		//   nightmare), while in the second we would get low-quality paths (player
 		//   nightmare)
-		// auto* nxtNode = nxtNodes[i];
-		auto* nxtNode = nodeLayer->GetPoolNode(nxtNodes[i]);
+		int nxtNodesId = nxtNodes[i].nodeId;
 		
 		// LOG("%s: target node search from %d to %d", __func__
 		// 		, curNode->GetIndex()
 		// 		, nxtNode->GetIndex()
 		// 		);
 
-		assert(curNode->GetNeighborRelation(nxtNode) != 0);
-		assert(nxtNode->GetNeighborRelation(curNode) != 0);
-
-		// Nodes are no longer linked to impassible nodes.
-		// The removal of this check allows units to try to escape from an "impassible node"
-		// if (nxtNode->AllSquaresImpassable())
-		// 	continue;
-
-		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNode);
+		nextSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(nxtNodesId);
 
 		// const bool isCurrent = (nextSearchNode->GetSearchState() >= searchState);
 		// const bool isClosed = ((nextSearchNode->GetSearchState() & 1) == NODE_STATE_CLOSED);
 		const bool isTarget = (nextSearchNode == tgtSearchNode);
+
+		QTPFS::INode *nxtNode = nullptr;
+		if (isTarget) {
+			nxtNode = nodeLayer->GetPoolNode(nxtNodesId);
+			assert(curNode->GetNeighborRelation(nxtNode) != 0);
+			assert(nxtNode->GetNeighborRelation(curNode) != 0);
+		}
 
 		unsigned int netPointIdx = 0;
 
@@ -360,18 +359,21 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 		// not handle; more points means a greater degree
 		// of non-cardinality (but gets expensive quickly)
 		for (unsigned int j = 0; j < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; j++) {
-			netPoints[j] = curNode->GetNeighborEdgeTransitionPoint(1 + i * QTPFS_MAX_NETPOINTS_PER_NODE_EDGE + j);
+			netPoints[j] = nxtNodes[i].netpoints[j];
 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
+
 			// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
 			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
-				// curNode->GetMoveCost() * gDists[j] +
-				curNodeSanitizedCost * gDists[j] +
-				nxtNode->GetMoveCost() * hDists[j] * int(isTarget);
+				curNodeSanitizedCost * gDists[j];
 			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
+
+			if (isTarget) {
+				gCosts[j] += nxtNode->GetMoveCost() * hDists[j];
+			}
 
 			if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
 				netPointIdx = j;
@@ -522,12 +524,6 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 	// or after a small fixed number of iterations
 	unsigned int ni = path->NumPoints();
 	unsigned int nm = 0;
-
-	// SearchNode* srcSearchNode = &searchThreadData->allSearchedNodes[srcNode->GetIndex()];
-	// SearchNode* tgtSearchNode = &searchThreadData->allSearchedNodes[tgtNode->GetIndex()];
-
-	// const int srcIndex = srcNode->GetIndex();
-	// const int tgtIndex = tgtNode->GetIndex();
 
 	SearchNode* n0 = tgtSearchNode;
 	SearchNode* n1 = tgtSearchNode;

@@ -289,9 +289,6 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	if (activeSlowUpdateUnit > std::distance(activeUnits.begin(), it))
 		--activeSlowUpdateUnit;
 
-	assert( Sim::registry.valid(delUnit->entityReference) );
-	Sim::registry.destroy(delUnit->entityReference);
-
 	activeUnits.erase(it);
 
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam,           0), delUnit);
@@ -301,9 +298,14 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 
 	units[delUnit->id] = nullptr;
 
+	entt::entity delUnitEntity = delUnit->entityReference;
+
 	CSolidObject::SetDeletingRefID(delUnit->id);
 	unitMemPool.free(delUnit);
 	CSolidObject::SetDeletingRefID(-1);
+
+	assert( Sim::registry.valid(delUnitEntity) );
+	Sim::registry.destroy(delUnitEntity);
 }
 
 void CUnitHandler::UpdateUnitMoveTypes()

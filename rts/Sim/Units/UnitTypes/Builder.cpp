@@ -822,6 +822,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	// 'pop' to the correct height over the (un-flattened) terrain on
 	// completion, so put it there to begin with
 	curBuild->moveType->SlowUpdate();
+	CGameHelper::InvalidateUnitBuildSquareCache(buildInfo, -1, true);
 	return true;
 }
 

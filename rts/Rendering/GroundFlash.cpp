@@ -274,15 +274,13 @@ bool CStandardGroundFlash::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 
 CSimpleGroundFlash::CSimpleGroundFlash()
-	: texture(nullptr)
-	, colorMap(nullptr)
-	, agerate(0.0f)
-	, age(0.0f)
+	: sizeGrowth(0.0f)
 	, ttl(0)
-	, sizeGrowth(0.0f)
-{
-
-}
+	, age(0.0f)
+	, agerate(0.0f)
+	, colorMap(nullptr)
+	, texture(nullptr)
+{}
 
 void CSimpleGroundFlash::Serialize(creg::ISerializer* s)
 {
@@ -319,11 +317,6 @@ void CSimpleGroundFlash::Draw()
 
 	unsigned char color[4] = {0, 0, 0, 0};
 	colorMap->GetColor(color, age);
-
-	const float3 p1 = pos + (-side1 - side2) * size;
-	const float3 p2 = pos + ( side1 - side2) * size;
-	const float3 p3 = pos + ( side1 + side2) * size;
-	const float3 p4 = pos + (-side1 + side2) * size;
 
 	std::array<float3, 4> bounds = {
 		(-side1 - side2) * size,
