@@ -27,7 +27,7 @@ namespace QTPFS {
         void Reset(size_t sparseSize) {
             {
                 ZoneScopedN("sparseIndex.assign");
-            sparseIndex.assign(sparseSize, 0);
+                sparseIndex.assign(sparseSize, 0);
             }
             denseData.clear();
             denseData.emplace_back(T()); // 0-th element represents a dummy record.
@@ -42,7 +42,7 @@ namespace QTPFS {
         // end  == first element
 
         void InsertAtIndex(T&& data, int index) {
-            assert(index < sparseIndex.size());
+            assert(size_t(index) < sparseIndex.size());
             if (sparseIndex[index] == 0) {
                 denseData.emplace_back(data);
                 sparseIndex[index] = denseData.size() - 1;
@@ -52,13 +52,13 @@ namespace QTPFS {
         }
 
         T& InsertINode(int nodeId) {
-            if (nodeId < 0) return denseData[0];
+            assert(size_t(nodeId) < sparseIndex.size());
             InsertAtIndex(T(nodeId), nodeId);
             return operator[](nodeId);
         }
 
         T& InsertINodeIfNotPresent(int nodeId) {
-            if (nodeId < 0) return denseData[0];
+            assert(size_t(nodeId) < sparseIndex.size());
             if (sparseIndex[nodeId] == 0)
                 InsertAtIndex(T(nodeId), nodeId);
             return operator[](nodeId);

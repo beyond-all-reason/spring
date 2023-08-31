@@ -103,8 +103,6 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 		}
 	}
 
-	// srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode);
-	// tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode);
 	srcSearchNode = &searchThreadData->allSearchedNodes.InsertINode(srcNode->GetIndex());
 	tgtSearchNode = &searchThreadData->allSearchedNodes.InsertINodeIfNotPresent(tgtNode->GetIndex());
 	curSearchNode = nullptr;
@@ -261,11 +259,11 @@ void QTPFS::PathSearch::IterateNodes() {
 	if (curSearchNode == tgtSearchNode)
 		return;
 
-	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
-
 	// Check if this node has already been processed already
 	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
 		return;
+
+	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 
 	// this isn't used - only full map is ever given. TODO: remove searchRect completely?
 	// if (curNode->xmid() < searchRect.x1) return;
