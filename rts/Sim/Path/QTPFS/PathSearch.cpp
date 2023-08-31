@@ -332,26 +332,26 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 
 		unsigned int netPointIdx = 0;
 
-		#if (QTPFS_MAX_NETPOINTS_PER_NODE_EDGE == 1)
-		/*if (!IntersectEdge(curNode, nxtNode, tgtPoint - curPoint))*/ {
-			// if only one transition-point is allowed per edge,
-			// this will always be the edge's center --> no need
-			// to be fancy (note that this is not always the best
-			// option, it causes local and global sub-optimalities
-			// which SmoothPath can only partially address)
-			netPoints[0] = curNode->GetNeighborEdgeTransitionPoint(1 + i);
+		// #if (QTPFS_MAX_NETPOINTS_PER_NODE_EDGE == 1)
+		// /*if (!IntersectEdge(curNode, nxtNode, tgtPoint - curPoint))*/ {
+		// 	// if only one transition-point is allowed per edge,
+		// 	// this will always be the edge's center --> no need
+		// 	// to be fancy (note that this is not always the best
+		// 	// option, it causes local and global sub-optimalities
+		// 	// which SmoothPath can only partially address)
+		// 	netPoints[0] = curNode->GetNeighborEdgeTransitionPoint(1 + i);
 
-			// cannot use squared-distances because that will bias paths
-			// towards smaller nodes (eg. 1^2 + 1^2 + 1^2 + 1^2 != 4^2)
-			gDists[0] = curPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
-			hDists[0] = tgtPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
-			gCosts[0] =
-				curNode->GetPathCost(NODE_PATH_COST_G) +
-				curNode->GetMoveCost() * gDists[0] +
-				nxtNode->GetMoveCost() * hDists[0] * int(isTarget);
-			hCosts[0] = hDists[0] * hCostMult * int(!isTarget);
-		}
-		#else
+		// 	// cannot use squared-distances because that will bias paths
+		// 	// towards smaller nodes (eg. 1^2 + 1^2 + 1^2 + 1^2 != 4^2)
+		// 	gDists[0] = curPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
+		// 	hDists[0] = tgtPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
+		// 	gCosts[0] =
+		// 		curNode->GetPathCost(NODE_PATH_COST_G) +
+		// 		curNode->GetMoveCost() * gDists[0] +
+		// 		nxtNode->GetMoveCost() * hDists[0] * int(isTarget);
+		// 	hCosts[0] = hDists[0] * hCostMult * int(!isTarget);
+		// }
+		// #else
 		// examine a number of possible transition-points
 		// along the edge between curNode and nxtNode and
 		// pick the one that minimizes g+h
@@ -379,7 +379,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode) {
 				netPointIdx = j;
 			}
 		}
-		#endif
+		// #endif
 
 		// if (!isCurrent) {
 		// 	UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
