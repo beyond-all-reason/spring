@@ -422,6 +422,25 @@ public:
 		};
 	}
 
+
+	/**
+	 * Rotate a vector by the angle between rotationVector and RgtVector.
+	 * The result is only normalized if the input vector and self are normalized.
+	 * @return new vector with the result
+	 */
+	float3 rotate2D(const float3& rotationVector) const {
+		// https://blog.demofox.org/2014/12/27/using-imaginary-numbers-to-rotate-2d-vectors/
+		float nx = x * rotationVector.x - z * rotationVector.z;
+		float nz = x * rotationVector.z + z * rotationVector.x;
+		return float3{ nx, y, nz };
+	}
+
+	/**
+	 * Snaps the vector to the closest world axis.
+	 * @return new vector with the result
+	 */
+	float3 snapToAxis() const;
+
 	/**
 	 * @brief distance between float3s
 	 * @param f float3 to compare against

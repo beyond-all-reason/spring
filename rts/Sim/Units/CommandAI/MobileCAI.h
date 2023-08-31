@@ -104,6 +104,7 @@ protected:
 	int lastBuggerOffTime = -BUGGER_OFF_TTL;
 	int lastIdleCheck = 0;
 	int numNonMovingCalls = 0;
+	int buggerOffAttempts = 0;
 
 	static constexpr int MAX_CLOSE_IN_RETRY_TICKS = 30;
 	static constexpr int BUGGER_OFF_TTL = 200;

@@ -70,3 +70,16 @@ bool float3::equals(const float3& f, const float3& eps) const
 	return (epscmp(x, f.x, eps.x) && epscmp(y, f.y, eps.y) && epscmp(z, f.z, eps.z));
 }
 
+float3 float3::snapToAxis() const {
+		// https://gamedev.stackexchange.com/questions/83601/from-3d-rotation-snap-to-nearest-90-directions/183342#183342
+    float nx = std::abs(x);
+    float ny = std::abs(y);
+    float nz = std::abs(z);
+    if (nx > ny && nx > nz) {
+        return float3(Sign(x), 0, 0);
+    } else if (ny > nx && ny > nz) {
+        return float3(0, Sign(y), 0);
+    } else {
+        return float3(0, 0, Sign(z));
+    }
+	}
