@@ -1034,9 +1034,9 @@ void CMobileCAI::NonMoving()
 	if (buggerOffAttempts > 4) {
 		// previous move commands failed, just try random locations
 		for (int i = 0; i < 16 && !buggerPos.IsInMap(); i++) {
-				buggerVec = gsRNG.NextVector2D();
-				buggerPos = buggerOffPos + buggerVec.Normalize() * buggerOffRadius * 1.5f;
-			}
+			buggerVec = gsRNG.NextVector2D();
+			buggerPos = buggerOffPos + buggerVec.Normalize() * buggerOffRadius * 1.5f;
+		}
 	}
 	else {
 		size_t i = 0;
