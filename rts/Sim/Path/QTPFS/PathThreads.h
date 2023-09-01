@@ -124,8 +124,8 @@ namespace QTPFS {
 		void Init(size_t sparseSize, size_t denseSize) {
             constexpr size_t tmpNodeStoreInitialReserve = 128;
 
-            allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
 			allSearchedNodes.Reset(sparseSize);
+            allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
             tmpNodesStore.reserve(tmpNodeStoreInitialReserve);
             ResetQueue();
 		}
