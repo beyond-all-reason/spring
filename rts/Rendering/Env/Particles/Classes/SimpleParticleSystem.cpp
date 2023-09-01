@@ -143,7 +143,7 @@ void CSimpleParticleSystem::Draw()
 
 			if (math::fabs(p->rotVal) > 0.01f) {
 				for (auto& b : bounds)
-					b = b.rotate(p->rotVal, *fwdDir);
+					b = b.rotate<false>(p->rotVal, *fwdDir);
 			}
 			AddEffectsQuad(
 				{ interPos + bounds[0], texture->xstart, texture->ystart, color },
@@ -178,7 +178,7 @@ void CSimpleParticleSystem::Draw()
 
 		if (math::fabs(p->rotVal) > 0.01f) {
 			for (auto& b : bounds)
-				b = b.rotate(p->rotVal, camera->GetForward());
+				b = b.rotate<false>(p->rotVal, camera->GetForward());
 		}
 		AddEffectsQuad(
 			{ interPos + bounds[0], texture->xstart, texture->ystart, color },

@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <array>
+#include <cmath>
 
 #include "System/BranchPrediction.h"
 #include "lib/streflop/streflop_cond.h"
@@ -384,9 +385,17 @@ public:
 				(x * f.y) - (y * f.x));
 	}
 
+	template<bool synced>
 	float3 rotate(float angle, const float3& axis) const {
-		const float ca = math::cos(angle);
-		const float sa = math::sin(angle);
+		float ca;
+		float sa;
+		if constexpr (synced) {
+			ca = math::cos(angle);
+			sa = math::sin(angle);
+		} else {
+			ca = std::cos(angle);
+			sa = std::sin(angle);
+		}
 
 		//Rodrigues' rotation formula
 		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula

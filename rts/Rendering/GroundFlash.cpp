@@ -327,7 +327,7 @@ void CSimpleGroundFlash::Draw()
 
 	if (math::fabs(rotVal) > 0.01f) {
 		for (auto& b : bounds)
-			b = b.rotate(rotVal, normal);
+			b = b.rotate<false>(rotVal, normal);
 	}
 
 	AddEffectsQuad(
