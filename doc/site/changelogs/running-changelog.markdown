@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Running changelog
-parent: Changelog
+parent: Changelogs
 permalink: changelogs/running-changelog
 author: sprunk
 ---
