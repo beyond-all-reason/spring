@@ -164,6 +164,11 @@ void CExpGenSpawnable::InitSpawnables()
 		spring::tuple_exec_at(i, funcTuple, Functor);
 		spawnables[i] = entry;
 	}
+	// Replace CSimpleParticleSystem implementation with CSphereParticleSpawner
+	#if 0
+		std::get<1>(spawnables[8]) = std::get<1>(spawnables[9]);
+		std::get<2>(spawnables[8]) = std::get<2>(spawnables[9]);
+	#endif
 }
 
 #undef MAKE_FUNCTIONS_TUPLE

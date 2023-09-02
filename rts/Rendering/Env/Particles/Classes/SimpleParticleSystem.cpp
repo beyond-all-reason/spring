@@ -217,11 +217,11 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 	// FIXME: should catch these earlier and for more projectile-types
 	if (colorMap == nullptr) {
 		colorMap = CColorMap::LoadFromFloatVector(std::vector<float>(8, 1.0f));
-		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no color-map specified", __FUNCTION__);
+		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no color-map specified", __func__);
 	}
 	if (texture == nullptr) {
 		texture = &projectileDrawer->textureAtlas->GetTexture("simpleparticle");
-		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no texture specified", __FUNCTION__);
+		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no texture specified", __func__);
 	}
 
 	particles.resize(numParticles);
@@ -289,11 +289,11 @@ void CSphereParticleSpawner::Init(const CUnit* owner, const float3& offset)
 	// FIXME: should catch these earlier and for more projectile-types
 	if (colorMap == nullptr) {
 		colorMap = CColorMap::LoadFromFloatVector(std::vector<float>(8, 1.0f));
-		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no color-map specified", __FUNCTION__);
+		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no color-map specified", __func__);
 	}
 	if (texture == nullptr) {
 		texture = &projectileDrawer->textureAtlas->GetTexture("sphereparticle");
-		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no texture specified", __FUNCTION__);
+		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no texture specified", __func__);
 	}
 
 	for (int i = 0; i < numParticles; i++) {
@@ -302,7 +302,7 @@ void CSphereParticleSpawner::Init(const CUnit* owner, const float3& offset)
 
 		const float3 pspeed = ((up * emitMul.y) * std::cos(ay) - ((right * emitMul.x) * std::cos(az) - (forward * emitMul.z) * std::sin(az)) * std::sin(ay)) * (particleSpeed + (guRNG.NextFloat() * particleSpeedSpread));
 
-		CGenericParticleProjectile* particle = projMemPool.alloc<CGenericParticleProjectile>(owner, pos + offset, pspeed);
+		CGenericParticleProjectile* particle = projMemPool.alloc<CGenericParticleProjectile>(owner, pos + offset, pspeed, this);
 
 		particle->decayrate = 1.0f / (particleLife + guRNG.NextFloat() * particleLifeSpread);
 		particle->life = 0;

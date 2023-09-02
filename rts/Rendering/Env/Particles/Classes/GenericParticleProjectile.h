@@ -17,7 +17,8 @@ public:
 	CGenericParticleProjectile(
 		const CUnit* owner,
 		const float3& pos,
-		const float3& speed
+		const float3& speed,
+		const CProjectile* parent
 	);
 
 	void Serialize(creg::ISerializer* s);
@@ -25,7 +26,7 @@ public:
 	void Draw() override;
 	void Update() override;
 
-	int GetProjectilesCount() const override;
+	int GetProjectilesCount() const override { return 1; }
 
 public:
 	float3 gravity;

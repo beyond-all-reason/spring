@@ -26,7 +26,7 @@ CR_REG_METADATA(CGenericParticleProjectile,(
 ))
 
 
-CGenericParticleProjectile::CGenericParticleProjectile(const CUnit* owner, const float3& pos, const float3& speed)
+CGenericParticleProjectile::CGenericParticleProjectile(const CUnit* owner, const float3& pos, const float3& speed, const CProjectile* parent)
 	: CProjectile(pos, speed, owner, false, false, false)
 
 	, gravity(ZeroVector)
@@ -40,9 +40,16 @@ CGenericParticleProjectile::CGenericParticleProjectile(const CUnit* owner, const
 	, sizeGrowth(0.0f)
 	, sizeMod(0.0f)
 {
-	// set fields from super-classes
-	useAirLos = true;
-	checkCol  = false;
+	useAirLos = parent->useAirLos;
+	checkCol  = parent->checkCol;
+
+	// ugly workaround
+	rotParams = parent->rotParams;
+	rotParams *= float3(math::DEG_TO_RAD / GAME_SPEED, math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED), math::DEG_TO_RAD);
+	UpdateRotation();
+
+	animParams = parent->animParams;
+
 	deleteMe  = false;
 }
 
@@ -69,27 +76,47 @@ void CGenericParticleProjectile::Update()
 
 void CGenericParticleProjectile::Draw()
 {
-	float3 dir1 = camera->GetRight();
-	float3 dir2 = camera->GetUp();
+	UpdateRotation();
+	UpdateAnimParams();
+
+	float3 zdir;
+	float3 ydir;
+	float3 xdir;
 	const bool shadowPass = (camera->GetCamType() == CCamera::CAMTYPE_SHADOW);
 	if (directional && !shadowPass) {
-		float3 dif(pos - camera->GetPos());
-		dif.ANormalize();
-		dir1 = dif.cross(speed).ANormalize();
-		dir2 = dif.cross(dir1);
+		zdir = (pos - camera->GetPos()).SafeANormalize();
+		if (math::fabs(zdir.dot(speed)) < 0.99f) {
+			ydir = zdir.cross(speed).SafeANormalize();
+			xdir = ydir.cross(zdir);
+		}
+		else {
+			zdir = camera->GetForward();
+			xdir = camera->GetRight();
+			ydir = camera->GetUp();
+		}
+	} else {
+		zdir = camera->GetForward();
+		xdir = camera->GetRight();
+		ydir = camera->GetUp();
+	}
+
+	std::array<float3, 4> bounds = {
+		-ydir * size - xdir * size,
+		-ydir * size + xdir * size,
+		 ydir * size + xdir * size,
+		 ydir * size - xdir * size
+	};
+
+	if (math::fabs(rotVal) > 0.01f) {
+		float3::rotate<false>(rotVal, zdir, bounds);
 	}
 
 	unsigned char color[4];
 	colorMap->GetColor(color, life);
 	AddEffectsQuad(
-		{ drawPos + (-dir1 - dir2) * size, texture->xstart, texture->ystart, color },
-		{ drawPos + (-dir1 + dir2) * size, texture->xend,   texture->ystart, color },
-		{ drawPos + ( dir1 + dir2) * size, texture->xend,   texture->yend,   color },
-		{ drawPos + ( dir1 - dir2) * size, texture->xstart, texture->yend,   color }
+		{ drawPos + bounds[0], texture->xstart, texture->ystart, color },
+		{ drawPos + bounds[1], texture->xend,   texture->ystart, color },
+		{ drawPos + bounds[2], texture->xend,   texture->yend,   color },
+		{ drawPos + bounds[3], texture->xstart, texture->yend,   color }
 	);
-}
-
-int CGenericParticleProjectile::GetProjectilesCount() const
-{
-	return 1;
 }

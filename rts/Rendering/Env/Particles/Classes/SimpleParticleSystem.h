@@ -89,6 +89,8 @@ public:
 	void Update() override {}
 	void Init(const CUnit* owner, const float3& offset) override;
 
+	int GetProjectilesCount() const override { return 0; }
+
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 };
 
