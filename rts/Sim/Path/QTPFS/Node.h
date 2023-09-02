@@ -180,17 +180,14 @@ namespace QTPFS {
 
 		SearchNode(INode& srcNode)
 			: index(srcNode.index)
-			, prevNode(nullptr)
 			{}
 
 		SearchNode(INode* srcNode)
 			: index(srcNode->index)
-			, prevNode(nullptr)
 			{}
 
 		SearchNode(int nodeId)
 			: index(nodeId)
-			, prevNode(nullptr)
 			{}
 
 		SearchNode(const SearchNode& other) { operator=(other); }

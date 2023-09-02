@@ -22,8 +22,6 @@ namespace QTPFS {
         std::vector<int> sparseIndex;
         std::vector<T> denseData;
 
-        SparseData(size_t sparseSize) { Reset(sparseSize); }
-
         void Reset(size_t sparseSize) {
             {
                 ZoneScopedN("sparseIndex.assign");
@@ -109,23 +107,36 @@ namespace QTPFS {
     typedef std::priority_queue<SearchQueueNode, std::vector<SearchQueueNode>, std::greater<SearchQueueNode>> SearchPriorityQueue;
 
 	struct SearchThreadData {
-		SparseData<SearchNode> allSearchedNodes;
-        SearchPriorityQueue openNodes;
+
+        static constexpr int SEARCH_FORWARD = 0;
+
+        #ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
+        static constexpr int SEARCH_DIRECTIONS = 2;
+
+        static constexpr int SEARCH_BACKWARD = 1;
+        #else
+        static constexpr int SEARCH_DIRECTIONS = 1;
+        #endif
+
+		SparseData<SearchNode> allSearchedNodes[SEARCH_DIRECTIONS];
+        SearchPriorityQueue openNodes[SEARCH_DIRECTIONS];
         std::vector<INode*> tmpNodesStore;
         int threadId = 0;
 
 		SearchThreadData(size_t nodeCount, int curThreadId)
-			: allSearchedNodes(nodeCount)
-            , threadId(curThreadId)
+			// : allSearchedNodes(nodeCount)
+            /*,*/ : threadId(curThreadId)
 			{}
 
-        void ResetQueue() { ZoneScoped; while (!openNodes.empty()) openNodes.pop(); }
+        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) while (!openNodes[i].empty()) openNodes[i].pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             constexpr size_t tmpNodeStoreInitialReserve = 128;
 
-			allSearchedNodes.Reset(sparseSize);
-            allSearchedNodes.denseData.reserve(denseSize + 1); // +1 for dummy record
+            for (int i=0; i<SEARCH_DIRECTIONS; ++i) {
+                allSearchedNodes[i].Reset(sparseSize);
+                allSearchedNodes[i].denseData.reserve(denseSize + 1); // +1 for dummy record
+            }
             tmpNodesStore.reserve(tmpNodeStoreInitialReserve);
             ResetQueue();
 		}
@@ -133,8 +144,10 @@ namespace QTPFS {
         std::size_t GetMemFootPrint() {
             std::size_t memFootPrint = 0;
 
-            memFootPrint += allSearchedNodes.GetMemFootPrint();
-            memFootPrint += openNodes.size() * sizeof(decltype(openNodes)::value_type);
+            for (int i=0; i<SEARCH_DIRECTIONS; ++i) {
+                memFootPrint += allSearchedNodes[i].GetMemFootPrint();
+                memFootPrint += openNodes[i].size() * sizeof(std::remove_reference_t<decltype(openNodes[0])>::value_type);
+            }
             memFootPrint += tmpNodesStore.size() * sizeof(decltype(tmpNodesStore)::value_type);
 
             return memFootPrint;
