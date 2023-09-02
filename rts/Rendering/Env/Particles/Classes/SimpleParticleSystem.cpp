@@ -2,7 +2,6 @@
 
 #include "SimpleParticleSystem.h"
 
-#include "GenericParticleProjectile.h"
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GlobalRendering.h"
@@ -279,54 +278,3 @@ bool CSimpleParticleSystem::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo
 CR_BIND_DERIVED(CSphereParticleSpawner, CSimpleParticleSystem, )
 
 CR_REG_METADATA(CSphereParticleSpawner, )
-
-void CSphereParticleSpawner::Init(const CUnit* owner, const float3& offset)
-{
-	CProjectile::Init(owner, offset);
-
-	const float3 up = emitVector;
-	const float3 right = up.cross(float3(up.y, up.z, -up.x));
-	const float3 forward = up.cross(right);
-
-	// FIXME: should catch these earlier and for more projectile-types
-	if (colorMap == nullptr) {
-		colorMap = CColorMap::LoadFromFloatVector(std::vector<float>(8, 1.0f));
-		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no color-map specified", __func__);
-	}
-	if (texture == nullptr) {
-		texture = &projectileDrawer->textureAtlas->GetTexture("sphereparticle");
-		LOG_L(L_WARNING, "[CSphereParticleSpawner::%s] no texture specified", __func__);
-	}
-
-	for (int i = 0; i < numParticles; i++) {
-		const float az = guRNG.NextFloat() * math::TWOPI;
-		const float ay = (emitRot + emitRotSpread*guRNG.NextFloat()) * math::DEG_TO_RAD;
-
-		const float3 pspeed = ((up * emitMul.y) * std::cos(ay) - ((right * emitMul.x) * std::cos(az) - (forward * emitMul.z) * std::sin(az)) * std::sin(ay)) * (particleSpeed + (guRNG.NextFloat() * particleSpeedSpread));
-
-		CGenericParticleProjectile* particle = projMemPool.alloc<CGenericParticleProjectile>(owner, pos, pspeed, this);
-
-		particle->decayrate = 1.0f / (particleLife + guRNG.NextFloat() * particleLifeSpread);
-		particle->life = 0;
-		particle->size = particleSize + guRNG.NextFloat() * particleSizeSpread;
-
-		particle->texture = texture;
-		particle->colorMap = colorMap;
-
-		particle->airdrag = airdrag;
-		particle->sizeGrowth = sizeGrowth;
-		particle->sizeMod = sizeMod;
-
-		particle->gravity = gravity;
-		particle->directional = directional;
-
-		particle->SetRadiusAndHeight(particle->size + sizeGrowth * particleLife, 0.0f);
-	}
-
-	deleteMe = true;
-}
-
-bool CSphereParticleSpawner::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
-{
-	return CSimpleParticleSystem::GetMemberInfo(memberInfo);
-}
