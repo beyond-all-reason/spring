@@ -400,7 +400,7 @@ public:
 
 		//Rodrigues' rotation formula
 		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-		for (auto v : iterable) {
+		for (auto& v : iterable) {
 			v = v * ca + axis.cross(v) * sa + axis * axis.dot(v) * (1.0f - ca);
 		}
 	}
