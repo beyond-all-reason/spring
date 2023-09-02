@@ -5,7 +5,6 @@
 
 #include <cassert>
 #include <array>
-#include <cmath>
 
 #include "System/BranchPrediction.h"
 #include "lib/streflop/streflop_cond.h"
@@ -393,8 +392,8 @@ public:
 			ca = math::cos(angle);
 			sa = math::sin(angle);
 		} else {
-			ca = std::cos(angle);
-			sa = std::sin(angle);
+			ca = fastmath::cos(angle);
+			sa = fastmath::sin(angle);
 		}
 
 		//Rodrigues' rotation formula
