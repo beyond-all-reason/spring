@@ -120,8 +120,7 @@ void CHeatCloudProjectile::Draw()
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		for (auto& b : bounds)
-			b = b.rotate<false>(rotVal, camera->GetForward());
+		float3::rotate<false>(rotVal, camera->GetForward(), bounds);
 	}
 	AddEffectsQuad(
 		{ drawPos + bounds[0], texture->xstart, texture->ystart, col },

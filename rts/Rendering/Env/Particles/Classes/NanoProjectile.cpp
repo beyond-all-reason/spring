@@ -89,8 +89,7 @@ void CNanoProjectile::Draw()
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		for (auto& b : bounds)
-			b = b.rotate<false>(rotVal, camera->GetForward());
+		float3::rotate<false>(rotVal, camera->GetForward(), bounds);
 	}
 
 	const auto* gfxt = projectileDrawer->gfxtex;

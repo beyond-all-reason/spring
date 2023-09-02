@@ -103,8 +103,7 @@ void CBitmapMuzzleFlame::Draw()
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		for (auto& b : bounds)
-			b = b.rotate<false>(rotVal, dir);
+		float3::rotate<false>(rotVal, dir, bounds);
 	}
 
 	if (IsValidTexture(sideTexture)) {
