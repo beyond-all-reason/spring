@@ -302,7 +302,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
 	idleTime     = udTable.GetInt("idleTime", 600);
 
-	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f)) * 10000;
+	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f));
 	if (health <= 0.0f)
 		throw content_error (unitName + ".health <= 0");
 
