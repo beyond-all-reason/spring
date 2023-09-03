@@ -282,8 +282,8 @@ namespace Shader {
 		ShaderFlags shaderFlags;
 
 	public:
-		//using UniformStates = std::unordered_map<std::size_t, UniformState, fast_hash>; //nicer for debug
-		using UniformStates = spring::unsynced_map<std::size_t, UniformState, fast_hash>;
+		//using UniformStates = std::unordered_map<std::uint32_t, UniformState, fast_hash>; //nicer for debug
+		using UniformStates = spring::unsynced_map<std::uint32_t, UniformState, fast_hash>;
 		UniformStates uniformStates;
 		spring::unsynced_map<int, LuaMatTexture> luaTextures;
 		spring::unsynced_map<std::string, int> attribLocations;
