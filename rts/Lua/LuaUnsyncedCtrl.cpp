@@ -1237,21 +1237,25 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 ******************************************************************************/
 
 
-/***
+/*** Selects a single unit
  *
  * @function Spring.SelectUnit
- * @number unitID
+ * @number unitID or nil
  * @bool[opt=false] append append to current selection
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
 {
+	if (!luaL_optboolean(L, 2, false))
+		selectedUnitsHandler.ClearSelected();
+
+	if (lua_isnoneornil(L, 1))
+		return 0;
+
 	CUnit* const unit = ParseSelectUnit(L, __func__, 1);
 	if (unit == nullptr)
 		return 0;
 
-	if (!luaL_optboolean(L, 2, false))
-		selectedUnitsHandler.ClearSelected();
 	selectedUnitsHandler.AddUnit(unit);
 
 	return 0;

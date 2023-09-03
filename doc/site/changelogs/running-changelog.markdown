@@ -198,7 +198,8 @@ Use for "anonymous players" modes in conjunction with `Spring.GetPlayerInfo` poi
 
 ### Unit selection
 * added `Spring.DeselectUnit(unitID) → nil`.
-* added `Spring.SelectUnit(unitID, bool append = false) → nil`, a single-unit version of `Spring.SelectUnit{Array,Map}` that doesn't require a table.
+* added `Spring.SelectUnit(unitID[, bool append]]) → nil`, a single-unit version of `Spring.SelectUnit{Array,Map}` that doesn't require a table.
+The unitID can be nil.
 
 ### Root pieces
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
