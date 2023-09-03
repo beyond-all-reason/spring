@@ -525,7 +525,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
 			const SearchNode* tmpNode = bwd.tgtSearchNode;
-			const SearchNode* prvNode = tmpNode->GetPrevNode();
+			const SearchNode* prvNode = (tmpNode != nullptr) ? tmpNode->GetPrevNode() : nullptr;
 
 			float3 prvPoint = bwd.tgtPoint;
 
