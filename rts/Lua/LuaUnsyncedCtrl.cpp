@@ -160,6 +160,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraTarget);
 
 	REGISTER_LUA_CFUNC(DeselectUnit);
+	REGISTER_LUA_CFUNC(DeselectUnitMap);
+	REGISTER_LUA_CFUNC(DeselectUnitArray);
 	REGISTER_LUA_CFUNC(SelectUnit);
 	REGISTER_LUA_CFUNC(SelectUnitMap);
 	REGISTER_LUA_CFUNC(SelectUnitArray);
@@ -1278,63 +1280,75 @@ int LuaUnsyncedCtrl::DeselectUnit(lua_State* L)
 	return 0;
 }
 
-/***
- *
- * @function Spring.SelectUnitArray
- * @tparam {[number],...} unitIDs
- * @bool[opt=false] append append to current selection
- * @treturn nil
- */
-int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
+static int TableSelectionCommonFunc(lua_State* L, int unitIndexInTable, bool isSelect, const char *caller)
 {
 	if (!lua_istable(L, 1))
-		luaL_error(L, "[%s] incorrect arguments", __func__);
+		luaL_error(L, "[%s] 1st argument must be a table", caller);
 
-	// clear the current units, unless the append flag is present
-	if (!luaL_optboolean(L, 2, false))
+	if (isSelect && !luaL_optboolean(L, 2, false))
 		selectedUnitsHandler.ClearSelected();
 
-	constexpr int tableIdx = 1;
-	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-		if (lua_israwnumber(L, -2) && lua_isnumber(L, -1)) {     // avoid 'n'
-			CUnit* unit = ParseSelectUnit(L, __func__, -1); // the value
+	for (lua_pushnil(L); lua_next(L, 1); lua_pop(L, 1)) {
+		if (!lua_israwnumber(L, unitIndexInTable))
+			continue;
 
-			if (unit != nullptr)
-				selectedUnitsHandler.AddUnit(unit);
-		}
+		const auto unit = ParseSelectUnit(L, __func__, unitIndexInTable);
+		if (unit == nullptr)
+			continue;
+
+		isSelect
+			? selectedUnitsHandler.AddUnit(unit)
+			: selectedUnitsHandler.RemoveUnit(unit)
+		;
 	}
 
 	return 0;
 }
 
+/*** Deselects multiple units. Accepts a table with unitIDs as values
+ *
+ * @function Spring.DeselectUnitArray
+ * @tparam {[any] = unitID, ...} unitIDs
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::DeselectUnitArray(lua_State* L)
+{
+	return TableSelectionCommonFunc(L, -1, false, __func__);
+}
 
-/***
+/*** Deselects multiple units. Accepts a table with unitIDs as keys
+ *
+ * @function Spring.DeselectUnitMap
+ * @tparam {[unitID] = any, ...} unitMap where keys are unitIDs
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::DeselectUnitMap(lua_State* L)
+{
+	return TableSelectionCommonFunc(L, -2, false, __func__);
+}
+
+/*** Selects multiple units, or appends to selection. Accepts a table with unitIDs as values
+ *
+ * @function Spring.SelectUnitArray
+ * @tparam {[any] = unitID, ...} unitIDs
+ * @bool[opt=false] append append to current selection
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
+{
+	return TableSelectionCommonFunc(L, -1, true, __func__);
+}
+
+/*** Selects multiple units, or appends to selection. Accepts a table with unitIDs as keys
  *
  * @function Spring.SelectUnitMap
- * @tparam {[number]=any,...} unitMap where keys are unitIDs
+ * @tparam {[unitID] = any, ...} unitMap where keys are unitIDs
  * @bool[opt=false] append append to current selection
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 {
-	if (!lua_istable(L, 1))
-		luaL_error(L, "[%s] incorrect arguments", __func__);
-
-	// clear the current units, unless the append flag is present
-	if (!luaL_optboolean(L, 2, false))
-		selectedUnitsHandler.ClearSelected();
-
-	constexpr int tableIdx = 1;
-	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-		if (lua_israwnumber(L, -2)) {
-			CUnit* unit = ParseSelectUnit(L, __func__, -2); // the key
-
-			if (unit != nullptr)
-				selectedUnitsHandler.AddUnit(unit);
-		}
-	}
-
-	return 0;
+	return TableSelectionCommonFunc(L, -2, true, __func__);
 }
 
 
