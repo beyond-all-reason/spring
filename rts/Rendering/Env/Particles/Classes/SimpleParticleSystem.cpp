@@ -97,7 +97,35 @@ void CSimpleParticleSystem::Draw()
 {
 	UpdateAnimParams();
 
-	std::array<float3, 4> bounds;
+	float3 zdir;
+	float3 ydir;
+	float3 xdir;
+
+	const auto DoParticleDraw = [this](const float3& xdir, const float3& ydir, const float3& zdir, const Particle* p) {
+		const float3 pDrawPos = p->pos + p->speed * globalRendering->timeOffset;
+		const float size = p->size;
+
+		unsigned char color[4];
+		colorMap->GetColor(color, p->life);
+
+		std::array<float3, 4> bounds = {
+			-ydir * size - xdir * size,
+			-ydir * size + xdir * size,
+			 ydir * size + xdir * size,
+			 ydir * size - xdir * size
+		};
+
+		if (math::fabs(p->rotVal) > 0.01f) {
+			float3::rotate<false>(p->rotVal, zdir, bounds);
+		}
+		AddEffectsQuad(
+			{ pDrawPos + bounds[0], texture->xstart, texture->ystart, color },
+			{ pDrawPos + bounds[1], texture->xend,   texture->ystart, color },
+			{ pDrawPos + bounds[2], texture->xend,   texture->yend,   color },
+			{ pDrawPos + bounds[3], texture->xstart, texture->yend,   color }
+		);
+	};
+
 	const bool shadowPass = (camera->GetCamType() == CCamera::CAMTYPE_SHADOW);
 	if (directional && !shadowPass) {
 		for (int i = 0; i < numParticles; i++) {
@@ -106,49 +134,19 @@ void CSimpleParticleSystem::Draw()
 			if (p->life >= 1.0f)
 				continue;
 
-			const float3 zdir = (p->pos - camera->GetPos()).SafeANormalize();
-			      float3 ydir = zdir.cross(p->speed); float yDirLen2 = ydir.SqLength(); ydir.SafeANormalize();
-			const float3 xdir = ydir.cross(zdir);
-
-			const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
-			const float size = p->size;
-
-			unsigned char color[4];
-			colorMap->GetColor(color, p->life);
-
-			const float3* fwdDir = &zdir;
-
-			if (yDirLen2 > 0.001f) {
-				bounds = {
-					-ydir * size - xdir * size,
-					-ydir * size + xdir * size,
-					 ydir * size + xdir * size,
-					 ydir * size - xdir * size
-				};
-			} else {
-				// in this case the particle's coor-system is degenerate
-				const float3 cameraRight = camera->GetRight() * p->size;
-				const float3 cameraUp    = camera->GetUp()    * p->size;
-				fwdDir = &camera->GetForward();
-
-				bounds = {
-					-cameraRight - cameraUp,
-					 cameraRight - cameraUp,
-					 cameraRight + cameraUp,
-					-cameraRight + cameraUp
-				};
+			zdir = (p->pos - camera->GetPos()).SafeANormalize();
+			ydir = zdir.cross(p->speed);
+			if likely(ydir.SqLength() > 0.001f) {
+				ydir.SafeANormalize();
+				xdir = ydir.cross(zdir);
+			}
+			else {
+				zdir = camera->GetForward();
+				xdir = camera->GetRight();
+				ydir = camera->GetUp();
 			}
 
-
-			if (math::fabs(p->rotVal) > 0.01f) {
-				float3::rotate<false>(p->rotVal, *fwdDir, bounds);
-			}
-			AddEffectsQuad(
-				{ interPos + bounds[0], texture->xstart, texture->ystart, color },
-				{ interPos + bounds[1], texture->xend,   texture->ystart, color },
-				{ interPos + bounds[2], texture->xend,   texture->yend,   color },
-				{ interPos + bounds[3], texture->xstart, texture->yend,   color }
-			);
+			DoParticleDraw(xdir, ydir, zdir, p);
 		}
 		return;
 	}
@@ -160,29 +158,11 @@ void CSimpleParticleSystem::Draw()
 		if (p->life >= 1.0f)
 			continue;
 
-		unsigned char color[4];
-		colorMap->GetColor(color, p->life);
-
-		const float3 interPos = p->pos + p->speed * globalRendering->timeOffset;
-		const float3 cameraRight = camera->GetRight() * p->size;
-		const float3 cameraUp    = camera->GetUp()    * p->size;
-
-		bounds = {
-			-cameraRight - cameraUp,
-			 cameraRight - cameraUp,
-			 cameraRight + cameraUp,
-			-cameraRight + cameraUp
-		};
-
-		if (math::fabs(p->rotVal) > 0.01f) {
-			float3::rotate<false>(p->rotVal, camera->GetForward(), bounds);
-		}
-		AddEffectsQuad(
-			{ interPos + bounds[0], texture->xstart, texture->ystart, color },
-			{ interPos + bounds[1], texture->xend,   texture->ystart, color },
-			{ interPos + bounds[2], texture->xend,   texture->yend,   color },
-			{ interPos + bounds[3], texture->xstart, texture->yend,   color }
-		);
+		zdir = camera->GetForward();
+		xdir = camera->GetRight();
+		ydir = camera->GetUp();
+		
+		DoParticleDraw(xdir, ydir, zdir, p);
 	}
 }
 
