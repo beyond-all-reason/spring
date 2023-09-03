@@ -257,7 +257,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetLosViewColors);
 
-	REGISTER_LUA_CFUNC(SetNanoParticleParams);
+	REGISTER_LUA_CFUNC(SetNanoProjectileParams);
 
 	REGISTER_LUA_CFUNC(Reload);
 	REGISTER_LUA_CFUNC(Restart);
@@ -2788,7 +2788,7 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 
 /***
  *
- * @function Spring.SetNanoParticleParams
+ * @function Spring.SetNanoProjectileParams
  * @number[opt=0] rotVal in degrees
  * @number[opt=0] rotVel in degrees
  * @number[opt=0] rotAcc in degrees
@@ -2797,7 +2797,7 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
  * @number[opt=0] rotAccRng in degrees
  * @treturn nil
  */
-int LuaUnsyncedCtrl::SetNanoParticleParams(lua_State* L)
+int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
 {
 	CNanoParticle::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
 	CNanoParticle::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );

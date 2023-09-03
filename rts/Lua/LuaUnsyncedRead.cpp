@@ -200,7 +200,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetLosViewColors);
 
-	REGISTER_LUA_CFUNC(GetNanoParticleParams);
+	REGISTER_LUA_CFUNC(GetNanoProjectileParams);
 
 	REGISTER_LUA_CFUNC(GetCameraNames);
 	REGISTER_LUA_CFUNC(GetCameraState);
@@ -2619,7 +2619,7 @@ int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 
 /***
  *
- * @function Spring.GetNanoParticleParams
+ * @function Spring.GetNanoProjectileParams
  * @treturn number rotVal in degrees
  * @treturn number rotVel in degrees
  * @treturn number rotAcc in degrees
@@ -2627,7 +2627,7 @@ int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
  * @treturn number rotVelRng in degrees
  * @treturn number rotAccRng in degrees
  */
-int LuaUnsyncedRead::GetNanoParticleParams(lua_State* L)
+int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
 {
 	lua_pushnumber(L, CNanoParticle::rotVal0 * (math::RAD_TO_DEG                            ));
 	lua_pushnumber(L, CNanoParticle::rotVel0 * (math::RAD_TO_DEG * GAME_SPEED               ));
