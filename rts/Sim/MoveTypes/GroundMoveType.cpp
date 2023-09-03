@@ -328,7 +328,7 @@ static void HandleUnitCollisionsAux(
 				// }
 			}
 
-			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius()) 
+			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius())
 										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius()));
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
@@ -424,8 +424,20 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 	// for.
 	if ((hAcc == 0.f) && (math::fabs(owner->speed.w) <= 0.012f))
 		return ZeroVector;
-	else
-		return (owner->frontdir * (owner->speed.w * Sign(int(!mt->IsReversing())) + hAcc));
+	else {
+		float vel = owner->speed.w;
+		float maxSpeed = owner->moveType->GetMaxSpeed();
+		if (vel > maxSpeed) {
+			// Once a unit is travelling faster than their maximum speed, their engine power is no longer sufficient to counteract
+			// the drag from air and rolling resistance. So reduce their velocity by these forces until a return to maximum speed.
+			float rollingResistanceCoeff = owner->unitDef->rollingResistanceCoefficient;
+			vel = std::max(maxSpeed,
+				(owner->speed +
+				owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, rollingResistanceCoeff)).Length()
+			);
+		}
+		return (owner->frontdir * (vel * Sign(int(!mt->IsReversing())) + hAcc));
+	}
 }
 
 
@@ -583,17 +595,17 @@ void CGroundMoveType::UpdatePreCollisions()
 	}
 
  	switch (setHeading) {
- 		case 1:
+ 		case 1: // moving
  			ChangeHeading(setHeadingDir);
 			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
  			setHeading = 0;
  			break;
-		case 2:
+		case 2: // stopping
 			SetMainHeading();
 			ChangeSpeed(0.0f, false);
 			setHeading = 0;
 			break;
-		case 3:
+		case 3: // stunned
 			ChangeSpeed(0.0f, false);
 			setHeading = 0;
 			break;
@@ -679,7 +691,7 @@ bool CGroundMoveType::Update()
 	if (owner->GetTransporter() != nullptr) return false;
 	if (owner->IsSkidding()) return false;
 	if (owner->IsFalling()) return false;
-	
+
 	if (resultantForces.SqLength() > 0.f)
 		owner->Move(resultantForces, true);
 
@@ -1075,7 +1087,7 @@ bool CGroundMoveType::FollowPath(int thread)
 		// ChangeSpeed(maxWantedSpeed, wantReverse);
 		setHeading = 1;
 		setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
-		
+
 
 		#ifdef PATHING_DEBUG
 		if (DEBUG_DRAWING_ENABLED) {
@@ -1340,7 +1352,7 @@ void CGroundMoveType::UpdateSkid()
 	const float groundHeight = GetGroundHeight(pos);
 	const float negAltitude = groundHeight - pos.y;
 
-	owner->SetVelocity(spd + owner->GetDragAccelerationVec(float4(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.01f)));
+	owner->SetVelocity(spd + owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, owner->unitDef->groundFrictionCoefficient));
 
 	if (owner->IsFlying()) {
 		const float collImpactSpeed = pos.IsInBounds()?
@@ -1471,7 +1483,7 @@ void CGroundMoveType::UpdateControlledDrop()
 	const float   alt = GetGroundHeight(pos) - pos.y;
 
 	owner->SetVelocity(spd + acc);
-	owner->SetVelocity(spd + owner->GetDragAccelerationVec(float4(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f)));
+	owner->SetVelocity(spd + owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f));
 	owner->SetSpeed(spd);
 	owner->Move(spd, true);
 
@@ -1928,7 +1940,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		return false;
 	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
 		return true;
-	
+
 	const float3& pos = owner->pos;
 		  float3& cwp = earlyCurrWayPoint;
 		  float3& nwp = earlyNextWayPoint;
@@ -2042,7 +2054,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		// check the between pos and cwp for obstacles
 		// if still further than SS elmos from waypoint, disallow skipping
 		const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, true, nullptr, nullptr, thread);
-		
+
 		// {
 		// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 		// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
@@ -2150,7 +2162,7 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 	// this can happen if we crushed a non-blocking feature
 	// and it spawned another feature which we cannot crush
 	// (eg.) --> repath
-	
+
 	ReRequestPath(false);
 	#ifdef PATHING_DEBUG
 	if (DEBUG_DRAWING_ENABLED) {
@@ -2284,7 +2296,7 @@ void CGroundMoveType::HandleObjectCollisions()
 		// stuck on impassable squares
 		const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
 		const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
-		
+
 		if (squareChange || checkAllowed) {
 			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
 			if (requestPath) {

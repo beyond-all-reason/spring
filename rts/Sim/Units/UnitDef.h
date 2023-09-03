@@ -184,6 +184,8 @@ public:
 	bool stopToAttack;
 	float minCollisionSpeed;
 	float slideTolerance;
+	float rollingResistanceCoefficient;
+	float groundFrictionCoefficient;
 	float maxHeightDif;   /// maximum terraform height this building allows
 	float waterline;
 	float minWaterDepth;

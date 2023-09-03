@@ -318,7 +318,7 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 	return mp;
 }
 
-float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
+float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const
 {
 	// KISS: use the cross-sectional area of a sphere, object shapes are complex
 	// this is a massive over-estimation so pretend the radius is in centimeters
@@ -328,9 +328,9 @@ float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
 	//
 	const float3 speedSignVec = float3(Sign(speed.x), Sign(speed.y), Sign(speed.z));
 	const float3 dragScaleVec = float3(
-		IsInAir()    * dragScales.x * (0.5f * params.x * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // air
-		IsInWater()  * dragScales.y * (0.5f * params.y * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // water
-		IsOnGround() * dragScales.z * (                  params.w * (                               mass))  // ground
+		(IsInAir() || IsOnGround()) * dragScales.x * (0.5f * atmosphericDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // air
+		IsInWater()                 * dragScales.y * (0.5f * waterDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // water
+		IsOnGround()                * dragScales.z * (frictionCoeff * mass)  // ground
 	);
 
 	float3 dragAccelVec;

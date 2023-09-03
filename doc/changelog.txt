@@ -143,6 +143,8 @@ Sim:
    out. This feature is considered experimental.
  - Units will skid if hit with impulses sufficiently large in the direction opposite their
    movement vector. Previously units would only skid on large impulses that hit their sides.
+ - New rollingResistanceCoefficient that is used to reduce a unit's speed when exceeding their maximumSpeed.
+ - New groundFrictionCoefficient that is used to reduce a unit's speed when skidding.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
