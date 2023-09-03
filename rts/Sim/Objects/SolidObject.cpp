@@ -406,7 +406,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
 	}
 	else {
-		frontdir = fDir;
+		frontdir = fDir * Sign(uDir.y);
 	}
 	rightdir = (frontdir.cross(uDir)).Normalize();
 	updir = uDir;
