@@ -43,7 +43,7 @@
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/DecalsDrawerGL4.h"
-#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Classes/NanoParticle.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
@@ -200,7 +200,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetLosViewColors);
 
-	REGISTER_LUA_CFUNC(GetNanoProjectileParams);
+	REGISTER_LUA_CFUNC(GetNanoParticleParams);
 
 	REGISTER_LUA_CFUNC(GetCameraNames);
 	REGISTER_LUA_CFUNC(GetCameraState);
@@ -2619,7 +2619,7 @@ int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 
 /***
  *
- * @function Spring.GetNanoProjectileParams
+ * @function Spring.GetNanoParticleParams
  * @treturn number rotVal in degrees
  * @treturn number rotVel in degrees
  * @treturn number rotAcc in degrees
@@ -2627,15 +2627,15 @@ int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
  * @treturn number rotVelRng in degrees
  * @treturn number rotAccRng in degrees
  */
-int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
+int LuaUnsyncedRead::GetNanoParticleParams(lua_State* L)
 {
-	lua_pushnumber(L, CNanoProjectile::rotVal0 * (math::RAD_TO_DEG                            ));
-	lua_pushnumber(L, CNanoProjectile::rotVel0 * (math::RAD_TO_DEG * GAME_SPEED               ));
-	lua_pushnumber(L, CNanoProjectile::rotAcc0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
+	lua_pushnumber(L, CNanoParticle::rotVal0 * (math::RAD_TO_DEG                            ));
+	lua_pushnumber(L, CNanoParticle::rotVel0 * (math::RAD_TO_DEG * GAME_SPEED               ));
+	lua_pushnumber(L, CNanoParticle::rotAcc0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
 
-	lua_pushnumber(L, CNanoProjectile::rotValRng0 * (math::RAD_TO_DEG                            ));
-	lua_pushnumber(L, CNanoProjectile::rotVelRng0 * (math::RAD_TO_DEG * GAME_SPEED               ));
-	lua_pushnumber(L, CNanoProjectile::rotAccRng0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
+	lua_pushnumber(L, CNanoParticle::rotValRng0 * (math::RAD_TO_DEG                            ));
+	lua_pushnumber(L, CNanoParticle::rotVelRng0 * (math::RAD_TO_DEG * GAME_SPEED               ));
+	lua_pushnumber(L, CNanoParticle::rotAccRng0 * (math::RAD_TO_DEG * (GAME_SPEED * GAME_SPEED)));
 
 	return 6;
 }

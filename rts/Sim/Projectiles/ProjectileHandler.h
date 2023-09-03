@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "Rendering/Models/3DModel.h"
-#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/Projectiles/Special/FlyingPiece.h"
 #include "System/float3.h"
 #include "System/FreeListMap.h"
 

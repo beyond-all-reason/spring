@@ -1,18 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GEO_THERM_SMOKE_H
-#define GEO_THERM_SMOKE_H
+#pragma once
 
-#include "SmokeProjectile.h"
+#include "SmokeParticle.h"
 
 class CFeature;
 
-class CGeoThermSmokeProjectile : public CSmokeProjectile
+class CGeoThermSmokeParticle : public CSmokeParticle
 {
-	CR_DECLARE(CGeoThermSmokeProjectile)
+	CR_DECLARE(CGeoThermSmokeParticle)
 public:
-	CGeoThermSmokeProjectile() { }
-	CGeoThermSmokeProjectile(
+	CGeoThermSmokeParticle() { }
+	CGeoThermSmokeParticle(
 		const float3& pos,
 		const float3& spd,
 		int ttl,
@@ -29,5 +28,3 @@ public:
 private:
 	const CFeature* geo;
 };
-
-#endif // GEO_THERM_SMOKE_H

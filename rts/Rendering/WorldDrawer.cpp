@@ -19,7 +19,7 @@
 #include "Rendering/LineDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/SmoothHeightMeshDrawer.h"

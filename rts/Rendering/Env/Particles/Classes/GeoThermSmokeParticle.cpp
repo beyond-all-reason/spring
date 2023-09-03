@@ -1,31 +1,31 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "GeoThermSmokeProjectile.h"
+#include "GeoThermSmokeParticle.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/Wind.h"
 
 
-CR_BIND_DERIVED(CGeoThermSmokeProjectile, CSmokeProjectile, )
+CR_BIND_DERIVED(CGeoThermSmokeParticle, CSmokeParticle, )
 
-CR_REG_METADATA(CGeoThermSmokeProjectile, (
+CR_REG_METADATA(CGeoThermSmokeParticle, (
 	CR_MEMBER(geo)
 ))
 
 
-CGeoThermSmokeProjectile::CGeoThermSmokeProjectile(
+CGeoThermSmokeParticle::CGeoThermSmokeParticle(
 	const float3& pos,
 	const float3& spd,
 	int ttl,
 	const CFeature* geo
 )
-	: CSmokeProjectile(nullptr, pos, spd, ttl, 6, 0.35f, 0.8f)
+	: CSmokeParticle(nullptr, pos, spd, ttl, 6, 0.35f, 0.8f)
 	, geo(geo)
 { }
 
-void CGeoThermSmokeProjectile::Update()
+void CGeoThermSmokeParticle::Update()
 {
 	UpdateDir();
 
@@ -41,10 +41,10 @@ void CGeoThermSmokeProjectile::Update()
 	const float newSpeed = speed.w * (speed.w / curSpeed);
 
 	CWorldObject::SetVelocity((dir = (speed / curSpeed)) * newSpeed);
-	CSmokeProjectile::Update();
+	CSmokeParticle::Update();
 }
 
-void CGeoThermSmokeProjectile::UpdateDir()
+void CGeoThermSmokeParticle::UpdateDir()
 {
 	if (geo == nullptr)
 		return;
@@ -77,10 +77,10 @@ void CGeoThermSmokeProjectile::UpdateDir()
 	SetVelocityAndSpeed(newDir * speed.w);
 }
 
-void CGeoThermSmokeProjectile::GeoThermDestroyed(const CFeature* geo)
+void CGeoThermSmokeParticle::GeoThermDestroyed(const CFeature* geo)
 {
 	for (CProjectile* p: projectileHandler.GetActiveProjectiles(false)) {
-		CGeoThermSmokeProjectile* geoPuff = dynamic_cast<CGeoThermSmokeProjectile*>(p);
+		CGeoThermSmokeParticle* geoPuff = dynamic_cast<CGeoThermSmokeParticle*>(p);
 
 		if (geoPuff == nullptr)
 			continue;

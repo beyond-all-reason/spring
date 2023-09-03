@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef MUZZLE_FLAME_H
-#define MUZZLE_FLAME_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
@@ -26,6 +25,3 @@ private:
 
 	std::vector<float3> randSmokeDir;
 };
-
-
-#endif /* MUZZLE_FLAME_H */

@@ -6,10 +6,10 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
+#include "Rendering/Env/Particles/Classes/BubbleParticle.h"
+#include "Rendering/Env/Particles/Classes/SmokeTrailParticle.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
@@ -142,7 +142,7 @@ void CTorpedoProjectile::Update()
 		if ((--nextBubble) == 0) {
 			nextBubble = 1 + (int) (gsRNG.NextFloat() * 1.5f);
 
-			projMemPool.alloc<CBubbleProjectile>(
+			projMemPool.alloc<CBubbleParticle>(
 				owner(),
 				pos + guRNG.NextVector(),
 				guRNG.NextVector() * 0.1f + UpVector * 0.2f,

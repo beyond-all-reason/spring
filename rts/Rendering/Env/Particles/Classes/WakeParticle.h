@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WAKE_PROJECTILE_H
-#define WAKE_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
@@ -38,5 +37,3 @@ private:
 	float rotation;
 	float rotSpeed;
 };
-
-#endif /* WAKE_PROJECTILE_H */

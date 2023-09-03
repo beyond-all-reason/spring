@@ -11,7 +11,7 @@
 #include "Map/ReadMap.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Features/FeatureDrawer.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/ISky.h"

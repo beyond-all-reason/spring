@@ -1,19 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "BubbleProjectile.h"
+#include "BubbleParticle.h"
 
 #include "Game/Camera.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 
-CR_BIND_DERIVED(CBubbleProjectile, CProjectile, )
+CR_BIND_DERIVED(CBubbleParticle, CProjectile, )
 
-CR_REG_METADATA(CBubbleProjectile, (
+CR_REG_METADATA(CBubbleParticle, (
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(ttl),
 		CR_MEMBER(alpha),
@@ -24,7 +24,7 @@ CR_REG_METADATA(CBubbleProjectile, (
 ))
 
 
-CBubbleProjectile::CBubbleProjectile()
+CBubbleParticle::CBubbleParticle()
 	: ttl(0)
 	, alpha(0.0f)
 	, size(0.0f)
@@ -32,7 +32,7 @@ CBubbleProjectile::CBubbleProjectile()
 	, sizeExpansion(0.0f)
 { }
 
-CBubbleProjectile::CBubbleProjectile(
+CBubbleParticle::CBubbleParticle(
 	CUnit* owner,
 	float3 pos,
 	float3 speed,
@@ -52,7 +52,7 @@ CBubbleProjectile::CBubbleProjectile(
 }
 
 
-void CBubbleProjectile::Update()
+void CBubbleParticle::Update()
 {
 	pos += speed;
 	--ttl;
@@ -75,7 +75,7 @@ void CBubbleProjectile::Update()
 	}
 }
 
-void CBubbleProjectile::Draw()
+void CBubbleParticle::Draw()
 {
 	unsigned char col[4];
 	col[0] = (unsigned char)(255 * alpha);
@@ -95,21 +95,21 @@ void CBubbleProjectile::Draw()
 	#undef bt
 }
 
-int CBubbleProjectile::GetProjectilesCount() const
+int CBubbleParticle::GetProjectilesCount() const
 {
 	return 1;
 }
 
 
-bool CBubbleProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool CBubbleParticle::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_FLOAT(CBubbleProjectile, alpha        )
-	CHECK_MEMBER_INFO_FLOAT(CBubbleProjectile, startSize    )
-	CHECK_MEMBER_INFO_FLOAT(CBubbleProjectile, sizeExpansion)
-	CHECK_MEMBER_INFO_INT  (CBubbleProjectile, ttl          )
+	CHECK_MEMBER_INFO_FLOAT(CBubbleParticle, alpha        )
+	CHECK_MEMBER_INFO_FLOAT(CBubbleParticle, startSize    )
+	CHECK_MEMBER_INFO_FLOAT(CBubbleParticle, sizeExpansion)
+	CHECK_MEMBER_INFO_INT  (CBubbleParticle, ttl          )
 
 	return false;
 }

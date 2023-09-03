@@ -13,7 +13,7 @@
 #include "Map/BaseGroundDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"

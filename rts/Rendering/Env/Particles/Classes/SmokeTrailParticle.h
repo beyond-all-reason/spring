@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SMOKE_TRAIL_PROJECTILE_H
-#define SMOKE_TRAIL_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
@@ -60,5 +59,3 @@ private:
 private:
 	AtlasedTexture* texture;
 };
-
-#endif /* SMOKE_TRAIL_PROJECTILE_H */

@@ -25,12 +25,12 @@
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
+#include "Rendering/Env/Particles/Classes/BubbleParticle.h"
+#include "Rendering/Env/Particles/Classes/HeatCloudParticle.h"
 #include "Rendering/Env/Particles/Classes/MuzzleFlame.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
-#include "Rendering/Env/Particles/Classes/WakeProjectile.h"
-#include "Rendering/Env/Particles/Classes/WreckProjectile.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle.h"
+#include "Rendering/Env/Particles/Classes/WakeParticle.h"
+#include "Rendering/Env/Particles/Classes/WreckParticle.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/UnitTypes/Factory.h"
@@ -509,7 +509,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 		case SFX_BUBBLE: {
 			const float3 pspeed = guRNG.NextVector() * 0.1f;
 
-			projMemPool.alloc<CBubbleProjectile>(
+			projMemPool.alloc<CBubbleParticle>(
 				unit,
 				absPos + guRNG.NextVector() * 2.0f,
 				pspeed + UpVector * 0.2f,
@@ -522,10 +522,10 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 
 		// damaged unit smoke
 		case SFX_WHITE_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f);
+			projMemPool.alloc<CSmokeParticle>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f);
 		} break;
 		case SFX_BLACK_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f);
+			projMemPool.alloc<CSmokeParticle>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f);
 		} break;
 
 		case SFX_VTOL: {
@@ -536,7 +536,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				unit->updir    * scale.y * -math::fabs(relDir.y) +
 				unit->rightdir * scale.x *             relDir.x;
 
-			CHeatCloudProjectile* hc = projMemPool.alloc<CHeatCloudProjectile>(
+			HeatCloudParticle* hc = projMemPool.alloc<HeatCloudParticle>(
 				unit,
 				absPos,
 				speed,
@@ -701,7 +701,7 @@ void CUnitScript::Explode(int piece, int flags)
 
 	// do an explosion at the location first
 	if (!(flags & PF_NoHeatCloud))
-		projMemPool.alloc<CHeatCloudProjectile>(nullptr, absPos, ZeroVector, 30, 30);
+		projMemPool.alloc<HeatCloudParticle>(nullptr, absPos, ZeroVector, 30, 30);
 
 	// If this is true, no stuff should fly off
 	if (flags & PF_NONE)

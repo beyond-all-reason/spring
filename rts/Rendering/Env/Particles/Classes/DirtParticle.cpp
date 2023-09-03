@@ -1,20 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "DirtProjectile.h"
+#include "DirtParticle.h"
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
-CR_BIND_DERIVED(CDirtProjectile, CProjectile, )
+CR_BIND_DERIVED(CDirtParticle, CProjectile, )
 
-CR_REG_METADATA(CDirtProjectile,
+CR_REG_METADATA(CDirtParticle,
 (
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(alpha),
@@ -29,7 +29,7 @@ CR_REG_METADATA(CDirtProjectile,
 ))
 
 
-CDirtProjectile::CDirtProjectile(
+CDirtParticle::CDirtParticle(
 	CUnit* owner,
 	const float3& pos,
 	const float3& speed,
@@ -52,7 +52,7 @@ CDirtProjectile::CDirtProjectile(
 	texture = projectileDrawer->randdotstex;
 }
 
-CDirtProjectile::CDirtProjectile() :
+CDirtParticle::CDirtParticle() :
 	alpha(255.0f),
 	alphaFalloff(10.0f),
 	size(10.0f),
@@ -63,7 +63,7 @@ CDirtProjectile::CDirtProjectile() :
 	texture = projectileDrawer->randdotstex;
 }
 
-void CDirtProjectile::Serialize(creg::ISerializer* s)
+void CDirtParticle::Serialize(creg::ISerializer* s)
 {
 	std::string name;
 	if (s->IsWriting())
@@ -74,7 +74,7 @@ void CDirtProjectile::Serialize(creg::ISerializer* s)
 				: projectileDrawer->textureAtlas->GetTexturePtr(name);
 }
 
-void CDirtProjectile::Update()
+void CDirtParticle::Update()
 {
 	SetVelocityAndSpeed((speed * slowdown) + (UpVector * mygravity));
 	SetPosition(pos + speed);
@@ -86,7 +86,7 @@ void CDirtProjectile::Update()
 	deleteMe |= (alpha <= 0.0f);
 }
 
-void CDirtProjectile::Draw()
+void CDirtParticle::Draw()
 {
 	if (!IsValidTexture(texture))
 		return;
@@ -115,24 +115,24 @@ void CDirtProjectile::Draw()
 	);
 }
 
-int CDirtProjectile::GetProjectilesCount() const
+int CDirtParticle::GetProjectilesCount() const
 {
 	return 1 * IsValidTexture(texture);
 }
 
 
-bool CDirtProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool CDirtParticle::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_FLOAT (CDirtProjectile, alpha        )
-	CHECK_MEMBER_INFO_FLOAT (CDirtProjectile, alphaFalloff )
-	CHECK_MEMBER_INFO_FLOAT (CDirtProjectile, size         )
-	CHECK_MEMBER_INFO_FLOAT (CDirtProjectile, sizeExpansion)
-	CHECK_MEMBER_INFO_FLOAT (CDirtProjectile, slowdown     )
-	CHECK_MEMBER_INFO_FLOAT3(CDirtProjectile, color        )
-	CHECK_MEMBER_INFO_PTR   (CDirtProjectile, texture, projectileDrawer->textureAtlas->GetTexturePtr)
+	CHECK_MEMBER_INFO_FLOAT (CDirtParticle, alpha        )
+	CHECK_MEMBER_INFO_FLOAT (CDirtParticle, alphaFalloff )
+	CHECK_MEMBER_INFO_FLOAT (CDirtParticle, size         )
+	CHECK_MEMBER_INFO_FLOAT (CDirtParticle, sizeExpansion)
+	CHECK_MEMBER_INFO_FLOAT (CDirtParticle, slowdown     )
+	CHECK_MEMBER_INFO_FLOAT3(CDirtParticle, color        )
+	CHECK_MEMBER_INFO_PTR   (CDirtParticle, texture, projectileDrawer->textureAtlas->GetTexturePtr)
 
 	return false;
 }

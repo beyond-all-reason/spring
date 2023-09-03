@@ -1,21 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "SmokeProjectile2.h"
+#include "SmokeParticle2.h"
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
-CR_BIND_DERIVED(CSmokeProjectile2, CProjectile, )
+CR_BIND_DERIVED(CSmokeParticle2, CProjectile, )
 
-CR_REG_METADATA(CSmokeProjectile2,
+CR_REG_METADATA(CSmokeParticle2,
 (
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(color),
@@ -31,7 +31,7 @@ CR_REG_METADATA(CSmokeProjectile2,
 ))
 
 
-CSmokeProjectile2::CSmokeProjectile2():
+CSmokeParticle2::CSmokeParticle2():
 	color(0.5f),
 	age(0.0f),
 	ageSpeed(1.0f),
@@ -45,7 +45,7 @@ CSmokeProjectile2::CSmokeProjectile2():
 	checkCol = false;
 }
 
-CSmokeProjectile2::CSmokeProjectile2(
+CSmokeParticle2::CSmokeParticle2(
 	CUnit* owner,
 	const float3& pos,
 	const float3& wantedPos,
@@ -73,7 +73,7 @@ CSmokeProjectile2::CSmokeProjectile2(
 
 
 
-void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)
+void CSmokeParticle2::Init(const CUnit* owner, const float3& offset)
 {
 	useAirLos |= (offset.y - CGround::GetApproximateHeight(offset.x, offset.z, false) > 10.0f);
 	alwaysVisible |= (owner == nullptr);
@@ -83,7 +83,7 @@ void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)
 	CProjectile::Init(owner, offset);
 }
 
-void CSmokeProjectile2::Update()
+void CSmokeParticle2::Update()
 {
 	wantedPos += speed;
 	wantedPos += (envResHandler.GetCurrentWindVec() * age * 0.05f);
@@ -102,7 +102,7 @@ void CSmokeProjectile2::Update()
 	deleteMe |= (age >= 1.0f);
 }
 
-void CSmokeProjectile2::Draw()
+void CSmokeParticle2::Draw()
 {
 	const float interAge = std::min(1.0f, age + ageSpeed * globalRendering->timeOffset);
 	unsigned char col[4];
@@ -121,8 +121,8 @@ void CSmokeProjectile2::Draw()
 
 	const float3 interPos = pos + (wantedPos + speed * globalRendering->timeOffset - pos) * 0.1f * globalRendering->timeOffset;
 	const float interSize = size + sizeExpansion * globalRendering->timeOffset;
-	const float3 pos1 ((camera->GetRight() - camera->GetUp()) * interSize);
-	const float3 pos2 ((camera->GetRight() + camera->GetUp()) * interSize);
+	const float3 pos1 = (camera->GetRight() - camera->GetUp()) * interSize;
+	const float3 pos2 = (camera->GetRight() + camera->GetUp()) * interSize;
 
 	#define st projectileDrawer->GetSmokeTexture(textureNum)
 	AddEffectsQuad(
@@ -134,24 +134,24 @@ void CSmokeProjectile2::Draw()
 	#undef st
 }
 
-int CSmokeProjectile2::GetProjectilesCount() const
+int CSmokeParticle2::GetProjectilesCount() const
 {
 	return 1;
 }
 
 
-bool CSmokeProjectile2::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool CSmokeParticle2::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, color        )
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, size         )
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, startSize    )
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, sizeExpansion)
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, ageSpeed     )
-	CHECK_MEMBER_INFO_FLOAT (CSmokeProjectile2, glowFalloff  )
-	CHECK_MEMBER_INFO_FLOAT3(CSmokeProjectile2, wantedPos    )
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, color        )
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, size         )
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, startSize    )
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, sizeExpansion)
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, ageSpeed     )
+	CHECK_MEMBER_INFO_FLOAT (CSmokeParticle2, glowFalloff  )
+	CHECK_MEMBER_INFO_FLOAT3(CSmokeParticle2, wantedPos    )
 
 	return false;
 }

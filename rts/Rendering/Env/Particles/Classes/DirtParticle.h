@@ -1,18 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _DIRT_PROJECTILE_H
-#define _DIRT_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
 struct AtlasedTexture;
 
-class CDirtProjectile : public CProjectile
+class CDirtParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CDirtProjectile)
+	CR_DECLARE_DERIVED(CDirtParticle)
 public:
-	CDirtProjectile();
-	CDirtProjectile(
+	CDirtParticle();
+	CDirtParticle(
 		CUnit* owner,
 		const float3& pos,
 		const float3& speed,
@@ -43,4 +42,4 @@ private:
 	AtlasedTexture* texture;
 };
 
-#endif // _DIRT_PROJECTILE_H
+using CDirtProjectile = CDirtParticle;

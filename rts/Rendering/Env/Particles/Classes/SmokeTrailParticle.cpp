@@ -1,12 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "SmokeTrailProjectile.h"
+#include "SmokeTrailParticle.h"
 
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"

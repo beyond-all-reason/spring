@@ -6,16 +6,15 @@
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/Classes/BitmapMuzzleFlame.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/DirtProjectile.h"
-#include "Rendering/Env/Particles/Classes/ExploSpikeProjectile.h"
-#include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
-#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Classes/BubbleParticle.h"
+#include "Rendering/Env/Particles/Classes/DirtParticle.h"
+#include "Rendering/Env/Particles/Classes/ExploSpikeParticle.h"
+#include "Rendering/Env/Particles/Classes/HeatCloudParticle.h"
+#include "Rendering/Env/Particles/Classes/NanoParticle.h"
 #include "Rendering/Env/Particles/Classes/SimpleParticleSystem.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile2.h"
-#include "Rendering/Env/Particles/Classes/SpherePartProjectile.h"
-#include "Rendering/Env/Particles/Classes/TracerProjectile.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle2.h"
+#include "Rendering/Env/Particles/Classes/SpherePartParticle.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/SpringHash.h"
 #include "System/TemplateUtils.hpp"
@@ -34,7 +33,7 @@ CR_REG_METADATA(CExpGenSpawnable, (
 	CR_IGNORED(animProgress)
 ))
 
-std::array<CExpGenSpawnable::SpawnableTuple, 14> CExpGenSpawnable::spawnables = {};
+std::array<CExpGenSpawnable::SpawnableTuple, 13> CExpGenSpawnable::spawnables = {};
 
 CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	: CWorldObject(pos, spd)
@@ -143,14 +142,13 @@ std::make_tuple( \
 	Func<CBitmapMuzzleFlame    >, \
 	Func<CDirtProjectile       >, \
 	Func<CExploSpikeProjectile >, \
-	Func<CHeatCloudProjectile  >, \
+	Func<HeatCloudProjectile   >, \
 	Func<CNanoProjectile       >, \
 	Func<CSimpleParticleSystem >, \
 	Func<CSphereParticleSpawner>, \
 	Func<CSmokeProjectile      >, \
 	Func<CSmokeProjectile2     >, \
-	Func<CSpherePartSpawner    >, \
-	Func<CTracerProjectile     >  \
+	Func<CSpherePartSpawner    >  \
 )
 
 void CExpGenSpawnable::InitSpawnables()

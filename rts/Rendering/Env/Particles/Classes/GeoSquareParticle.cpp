@@ -2,15 +2,15 @@
 
 
 #include "Game/Camera.h"
-#include "GeoSquareProjectile.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "GeoSquareParticle.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 
 
-CR_BIND_DERIVED(CGeoSquareProjectile, CProjectile, )
+CR_BIND_DERIVED(CGeoSquareParticle, CProjectile, )
 
-CR_REG_METADATA(CGeoSquareProjectile,(
+CR_REG_METADATA(CGeoSquareParticle,(
 	CR_MEMBER(p1),
 	CR_MEMBER(p2),
 	CR_MEMBER(v1),
@@ -24,7 +24,7 @@ CR_REG_METADATA(CGeoSquareProjectile,(
 ))
 
 
-CGeoSquareProjectile::CGeoSquareProjectile(const float3& p1, const float3& p2, const float3& v1, const float3& v2, float w1, float w2)
+CGeoSquareParticle::CGeoSquareParticle(const float3& p1, const float3& p2, const float3& v1, const float3& v2, float w1, float w2)
 	: CProjectile((p1 + p2) * 0.5f, ZeroVector, NULL, false, false, false),
 	p1(p1),
 	p2(p2),
@@ -44,7 +44,7 @@ CGeoSquareProjectile::CGeoSquareProjectile(const float3& p1, const float3& p2, c
 }
 
 
-void CGeoSquareProjectile::Draw()
+void CGeoSquareParticle::Draw()
 {
 	unsigned char col[4];
 	col[0] = (unsigned char) (r * a * 255);
@@ -80,11 +80,11 @@ void CGeoSquareProjectile::Draw()
 	}
 }
 
-void CGeoSquareProjectile::Update()
+void CGeoSquareParticle::Update()
 {
 }
 
-int CGeoSquareProjectile::GetProjectilesCount() const
+int CGeoSquareParticle::GetProjectilesCount() const
 {
 	return 1;
 }

@@ -8,9 +8,9 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/GeoThermSmokeProjectile.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Rendering/Env/Particles/Classes/BubbleParticle.h"
+#include "Rendering/Env/Particles/Classes/GeoThermSmokeParticle.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
@@ -90,7 +90,7 @@ CFeature::~CFeature()
 	if (!def->geoThermal)
 		return;
 
-	CGeoThermSmokeProjectile::GeoThermDestroyed(this);
+	CGeoThermSmokeParticle::GeoThermDestroyed(this);
 }
 
 
@@ -606,10 +606,10 @@ bool CFeature::Update()
 	if (smokeTime != 0) {
 		if (!((gs->frameNum + id) & 3) && projectileHandler.GetParticleSaturation() < 0.7f) {
 			if (pos.y < 0.0f) {
-				projMemPool.alloc<CBubbleProjectile>(nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
+				projMemPool.alloc<CBubbleParticle>(nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
 					guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
 			} else {
-				projMemPool.alloc<CSmokeProjectile> (nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
+				projMemPool.alloc<CSmokeParticle> (nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
 					guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
 			}
 		}
@@ -682,7 +682,7 @@ void CFeature::EmitGeoSmoke()
 	const float3 pPos = guRNG.NextVector() * 10.0f + (pos - UpVector * 10.0f);
 	const float3 pSpeed = (guRNG.NextVector() * 0.5f) + (UpVector * 2.0f);
 
-	projMemPool.alloc<CGeoThermSmokeProjectile>(pPos, pSpeed, 50 + guRNG.NextInt(7), this);
+	projMemPool.alloc<CGeoThermSmokeParticle>(pPos, pSpeed, 50 + guRNG.NextInt(7), this);
 }
 
 

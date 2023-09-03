@@ -1,16 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GEO_SQUARE_PROJECTILE_H
-#define GEO_SQUARE_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CGeoSquareProjectile : public CProjectile
+class CGeoSquareParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CGeoSquareProjectile)
+	CR_DECLARE_DERIVED(CGeoSquareParticle)
 public:
-	CGeoSquareProjectile() { }
-	CGeoSquareProjectile(
+	CGeoSquareParticle() { }
+	CGeoSquareParticle(
 		const float3& p1, const float3& p2,
 		const float3& v1, const float3& v2,
 		float w1, float w2
@@ -33,6 +32,3 @@ private:
 	float w1, w2; ///< FIXME what is this?
 	float r, g, b, a; ///< RGBA color
 };
-
-
-#endif /* GEO_SQUARE_PROJECTILE_H */

@@ -17,7 +17,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Classes/NanoParticle.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -664,7 +664,7 @@ void CProjectileHandler::AddNanoParticle(
 		{tColor[0], tColor[1], tColor[2],  tAlpha},
 	};
 
-	projMemPool.alloc<CNanoProjectile>(startPos, dif, int(l), colors[globalRendering->teamNanospray]);
+	projMemPool.alloc<CNanoParticle>(startPos, dif, int(l), colors[globalRendering->teamNanospray]);
 }
 
 void CProjectileHandler::AddNanoParticle(
@@ -702,9 +702,9 @@ void CProjectileHandler::AddNanoParticle(
 	};
 
 	if (!inverse) {
-		projMemPool.alloc<CNanoProjectile>(startPos, dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
+		projMemPool.alloc<CNanoParticle>(startPos, dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
 	} else {
-		projMemPool.alloc<CNanoProjectile>(startPos + dif * len, -dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
+		projMemPool.alloc<CNanoParticle>(startPos + dif * len, -dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
 	}
 }
 

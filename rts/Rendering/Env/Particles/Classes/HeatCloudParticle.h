@@ -1,19 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef HEAT_CLOUD_PROJECTILE_H
-#define HEAT_CLOUD_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
 struct AtlasedTexture;
 
-class CHeatCloudProjectile : public CProjectile
+class HeatCloudParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CHeatCloudProjectile)
+	CR_DECLARE_DERIVED(HeatCloudParticle)
 public:
-	CHeatCloudProjectile();
+	HeatCloudParticle();
 	/// projectile starts at size 0 and ends at size \<size\>
-	CHeatCloudProjectile(
+	HeatCloudParticle(
 		CUnit* owner,
 		const float3& pos,
 		const float3& speed,
@@ -46,4 +45,4 @@ private:
 	AtlasedTexture* texture;
 };
 
-#endif /* HEAT_CLOUD_PROJECTILE_H */
+using HeatCloudProjectile = HeatCloudParticle;

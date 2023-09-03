@@ -56,7 +56,7 @@ protected:
 
 	int createFrame;
 
-	static std::array<SpawnableTuple, 14> spawnables;
+	static std::array<SpawnableTuple, 13> spawnables;
 };
 
 #endif //EXP_GEN_SPAWNABLE_H

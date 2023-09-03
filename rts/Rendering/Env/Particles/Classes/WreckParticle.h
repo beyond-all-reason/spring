@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WRECK_PROJECTILE_H
-#define WRECK_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
@@ -18,5 +17,3 @@ public:
 
 	int GetProjectilesCount() const override;
 };
-
-#endif /* WRECK_PROJECTILE_H */

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SPHERE_PART_PROJECTILE_H
-#define SPHERE_PART_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 
@@ -74,5 +73,3 @@ private:
 	float expansionSpeed;
 	float3 color;
 };
-
-#endif /* SPHERE_PART_PROJECTILE_H */

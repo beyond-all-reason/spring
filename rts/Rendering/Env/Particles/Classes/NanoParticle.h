@@ -1,19 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef NANO_PROJECTILE_H
-#define NANO_PROJECTILE_H
+#pragma once
 
 #include "Sim/Projectiles/Projectile.h"
 #include "System/Color.h"
 
-class CNanoProjectile : public CProjectile
+class CNanoParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CNanoProjectile)
+	CR_DECLARE_DERIVED(CNanoParticle)
 
 public:
-	CNanoProjectile();
-	CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor color);
-	~CNanoProjectile();
+	CNanoParticle();
+	CNanoParticle(float3 pos, float3 speed, int lifeTime, SColor color);
+	~CNanoParticle();
 
 	void Update() override;
 	void Draw() override;
@@ -41,5 +40,4 @@ public:
 	SColor color;
 };
 
-#endif /* NANO_PROJECTILE_H */
-
+using CNanoProjectile = CNanoParticle;

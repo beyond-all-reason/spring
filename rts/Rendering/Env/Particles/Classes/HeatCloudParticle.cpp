@@ -1,19 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "HeatCloudProjectile.h"
+#include "HeatCloudParticle.h"
 
 #include "Game/Camera.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
 
-CR_BIND_DERIVED(CHeatCloudProjectile, CProjectile, )
+CR_BIND_DERIVED(HeatCloudParticle, CProjectile, )
 
-CR_REG_METADATA(CHeatCloudProjectile,
+CR_REG_METADATA(HeatCloudParticle,
 (
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(heat),
@@ -29,7 +29,7 @@ CR_REG_METADATA(CHeatCloudProjectile,
 ))
 
 
-CHeatCloudProjectile::CHeatCloudProjectile()
+HeatCloudParticle::HeatCloudParticle()
 	: heat(0.0f)
 	, maxheat(0.0f)
 	, heatFalloff(0.0f)
@@ -43,7 +43,7 @@ CHeatCloudProjectile::CHeatCloudProjectile()
 	texture = projectileDrawer->heatcloudtex;
 }
 
-CHeatCloudProjectile::CHeatCloudProjectile(
+HeatCloudParticle::HeatCloudParticle(
 	CUnit* owner,
 	const float3& pos,
 	const float3& speed,
@@ -67,7 +67,7 @@ CHeatCloudProjectile::CHeatCloudProjectile(
 	SetRadiusAndHeight(size + sizeGrowth * heat / heatFalloff, 0.0f);
 }
 
-void CHeatCloudProjectile::Serialize(creg::ISerializer* s)
+void HeatCloudParticle::Serialize(creg::ISerializer* s)
 {
 	std::string name;
 	if (s->IsWriting())
@@ -78,7 +78,7 @@ void CHeatCloudProjectile::Serialize(creg::ISerializer* s)
 				: projectileDrawer->textureAtlas->GetTexturePtr(name);
 }
 
-void CHeatCloudProjectile::Update()
+void HeatCloudParticle::Update()
 {
 	pos += speed;
 	heat = std::max(heat - heatFalloff, 0.0f);
@@ -89,12 +89,12 @@ void CHeatCloudProjectile::Update()
 	sizemod *= sizemodmod;
 }
 
-void CHeatCloudProjectile::Init(const CUnit* owner, const float3& offset)
+void HeatCloudParticle::Init(const CUnit* owner, const float3& offset)
 {
 	CProjectile::Init(owner, offset);
 }
 
-void CHeatCloudProjectile::Draw()
+void HeatCloudParticle::Draw()
 {
 	UpdateRotation();
 
@@ -130,25 +130,25 @@ void CHeatCloudProjectile::Draw()
 	);
 }
 
-int CHeatCloudProjectile::GetProjectilesCount() const
+int HeatCloudParticle::GetProjectilesCount() const
 {
 	return 1;
 }
 
 
-bool CHeatCloudProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool HeatCloudParticle::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, heat       )
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, maxheat    )
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, heatFalloff)
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, size       )
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, sizeGrowth )
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, sizemod    )
-	CHECK_MEMBER_INFO_FLOAT (CHeatCloudProjectile, sizemodmod )
-	CHECK_MEMBER_INFO_PTR   (CHeatCloudProjectile, texture, projectileDrawer->textureAtlas->GetTexturePtr)
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, heat       )
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, maxheat    )
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, heatFalloff)
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, size       )
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, sizeGrowth )
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, sizemod    )
+	CHECK_MEMBER_INFO_FLOAT (HeatCloudParticle, sizemodmod )
+	CHECK_MEMBER_INFO_PTR   (HeatCloudParticle, texture, projectileDrawer->textureAtlas->GetTexturePtr)
 
 	return false;
 }

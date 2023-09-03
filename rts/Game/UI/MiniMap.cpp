@@ -30,7 +30,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"

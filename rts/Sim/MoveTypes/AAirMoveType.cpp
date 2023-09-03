@@ -6,7 +6,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle.h"
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
@@ -58,7 +58,7 @@ static inline float HAMTGetMaxGroundHeight(float x, float z) { return std::max(s
 static inline float SAMTGetMaxGroundHeight(float x, float z) { return std::max(smoothGround.GetHeight(x, z), CGround::GetHeightAboveWater(x, z)); }
 
 static inline void AAMTEmitEngineTrail(CUnit* owner, unsigned int) {
-	projMemPool.alloc<CSmokeProjectile>(owner, owner->midPos, guRNG.NextVector() * 0.08f, (100.0f + guRNG.NextFloat() * 50.0f), 5.0f, 0.2f, 0.4f);
+	projMemPool.alloc<CSmokeParticle>(owner, owner->midPos, guRNG.NextVector() * 0.08f, (100.0f + guRNG.NextFloat() * 50.0f), 5.0f, 0.2f, 0.4f);
 }
 static inline void AAMTEmitCustomTrail(CUnit* owner, unsigned int id) {
 	explGenHandler.GenExplosion(id, owner->midPos, owner->frontdir, 1.0f, 0.0f, 1.0f, owner, nullptr);

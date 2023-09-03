@@ -5,12 +5,12 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CBubbleProjectile : public CProjectile
+class CBubbleParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CBubbleProjectile)
+	CR_DECLARE_DERIVED(CBubbleParticle)
 public:
-	CBubbleProjectile();
-	CBubbleProjectile(
+	CBubbleParticle();
+	CBubbleParticle(
 		CUnit* owner,
 		float3 pos,
 		float3 speed,

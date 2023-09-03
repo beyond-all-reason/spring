@@ -1,19 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "ExploSpikeProjectile.h"
+#include "ExploSpikeParticle.h"
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
-CR_BIND_DERIVED(CExploSpikeProjectile, CProjectile, )
+CR_BIND_DERIVED(CExploSpikeParticle, CProjectile, )
 
-CR_REG_METADATA(CExploSpikeProjectile,
+CR_REG_METADATA(CExploSpikeParticle,
 (
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(length),
@@ -25,7 +25,7 @@ CR_REG_METADATA(CExploSpikeProjectile,
 	CR_MEMBER_ENDFLAG(CM_Config)
 ))
 
-CExploSpikeProjectile::CExploSpikeProjectile()
+CExploSpikeParticle::CExploSpikeParticle()
 	: length(0.0f)
 	, width(0.0f)
 	, alpha(0.0f)
@@ -35,7 +35,7 @@ CExploSpikeProjectile::CExploSpikeProjectile()
 {
 }
 
-CExploSpikeProjectile::CExploSpikeProjectile(
+CExploSpikeParticle::CExploSpikeParticle(
 	CUnit* owner,
 	const float3& pos,
 	const float3& spd,
@@ -59,7 +59,7 @@ CExploSpikeProjectile::CExploSpikeProjectile(
 	SetRadiusAndHeight(length + lengthGrowth * alpha / alphaDecay, 0.0f);
 }
 
-void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
+void CExploSpikeParticle::Init(const CUnit* owner, const float3& offset)
 {
 	CProjectile::Init(owner, offset);
 
@@ -69,7 +69,7 @@ void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
 	SetRadiusAndHeight(length + lengthGrowth * alpha / alphaDecay, 0.0f);
 }
 
-void CExploSpikeProjectile::Update()
+void CExploSpikeParticle::Update()
 {
 	pos += speed;
 	length += lengthGrowth;
@@ -78,7 +78,7 @@ void CExploSpikeProjectile::Update()
 	deleteMe |= (alpha <= 0.0f);
 }
 
-void CExploSpikeProjectile::Draw()
+void CExploSpikeParticle::Draw()
 {
 	const float3 dif = (pos - camera->GetPos()).ANormalize();
 	const float3 dir2 = (dif.cross(dir)).ANormalize();
@@ -105,22 +105,22 @@ void CExploSpikeProjectile::Draw()
 
 
 
-int CExploSpikeProjectile::GetProjectilesCount() const
+int CExploSpikeParticle::GetProjectilesCount() const
 {
 	return 1;
 }
 
-bool CExploSpikeProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool CExploSpikeParticle::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_FLOAT (CExploSpikeProjectile, length      )
-	CHECK_MEMBER_INFO_FLOAT (CExploSpikeProjectile, width       )
-	CHECK_MEMBER_INFO_FLOAT (CExploSpikeProjectile, alpha       )
-	CHECK_MEMBER_INFO_FLOAT (CExploSpikeProjectile, alphaDecay  )
-	CHECK_MEMBER_INFO_FLOAT (CExploSpikeProjectile, lengthGrowth)
-	CHECK_MEMBER_INFO_FLOAT3(CExploSpikeProjectile, color       )
+	CHECK_MEMBER_INFO_FLOAT (CExploSpikeParticle, length      )
+	CHECK_MEMBER_INFO_FLOAT (CExploSpikeParticle, width       )
+	CHECK_MEMBER_INFO_FLOAT (CExploSpikeParticle, alpha       )
+	CHECK_MEMBER_INFO_FLOAT (CExploSpikeParticle, alphaDecay  )
+	CHECK_MEMBER_INFO_FLOAT (CExploSpikeParticle, lengthGrowth)
+	CHECK_MEMBER_INFO_FLOAT3(CExploSpikeParticle, color       )
 
 	return false;
 }

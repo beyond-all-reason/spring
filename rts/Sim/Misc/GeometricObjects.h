@@ -10,7 +10,7 @@
 #include "System/UnorderedMap.hpp"
 
 
-class CGeoSquareProjectile;
+class CGeoSquareParticle;
 
 class CGeometricObjects : public spring::noncopyable
 {
@@ -20,7 +20,7 @@ class CGeometricObjects : public spring::noncopyable
 private:
 	struct GeoGroup {
 		CR_DECLARE_STRUCT(GeoGroup)
-		std::vector<CGeoSquareProjectile*> squares;
+		std::vector<CGeoSquareParticle*> squares;
 	};
 
 public:

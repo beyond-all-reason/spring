@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "NanoProjectile.h"
+#include "NanoParticle.h"
 
 #include "Game/Camera.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Colors.h"
@@ -14,9 +14,9 @@
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 
-CR_BIND_DERIVED(CNanoProjectile, CProjectile, )
+CR_BIND_DERIVED(CNanoParticle, CProjectile, )
 
-CR_REG_METADATA(CNanoProjectile,
+CR_REG_METADATA(CNanoParticle,
 (
 	CR_MEMBER(rotAcc),
 	CR_MEMBER(rotVal0x),
@@ -29,7 +29,7 @@ CR_REG_METADATA(CNanoProjectile,
 ))
 
 
-CNanoProjectile::CNanoProjectile()
+CNanoParticle::CNanoParticle()
 {
 	deathFrame = 0;
 	color[0] = color[1] = color[2] = color[3] = 255;
@@ -38,7 +38,7 @@ CNanoProjectile::CNanoProjectile()
 	drawSorted = false;
 }
 
-CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor c)
+CNanoParticle::CNanoParticle(float3 pos, float3 speed, int lifeTime, SColor c)
 	: CProjectile(pos, speed, nullptr, false, false, false)
 	, deathFrame(gs->frameNum + lifeTime)
 	, color(c)
@@ -58,19 +58,19 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 	rotAcc = rotAcc0 + rotAcc0x;
 }
 
-CNanoProjectile::~CNanoProjectile()
+CNanoParticle::~CNanoParticle()
 {
 	projectileHandler.currentNanoParticles -= 1;
 }
 
-void CNanoProjectile::Update()
+void CNanoParticle::Update()
 {
 	pos += speed;
 
 	deleteMe |= (gs->frameNum >= deathFrame);
 }
 
-void CNanoProjectile::Draw()
+void CNanoParticle::Draw()
 {
 	{
 		const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
@@ -101,24 +101,24 @@ void CNanoProjectile::Draw()
 	);
 }
 
-void CNanoProjectile::DrawOnMinimap()
+void CNanoParticle::DrawOnMinimap()
 {
 	AddMiniMapVertices({ pos        , color4::green }, { pos + speed, color4::green });
 }
 
-int CNanoProjectile::GetProjectilesCount() const
+int CNanoParticle::GetProjectilesCount() const
 {
 	return 0; // nano particles use their own counter
 }
 
 
-bool CNanoProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+bool CNanoParticle::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_INT   (CNanoProjectile, deathFrame)
-	CHECK_MEMBER_INFO_SCOLOR(CNanoProjectile, color     )
+	CHECK_MEMBER_INFO_INT   (CNanoParticle, deathFrame)
+	CHECK_MEMBER_INFO_SCOLOR(CNanoParticle, color     )
 
 	return false;
 }

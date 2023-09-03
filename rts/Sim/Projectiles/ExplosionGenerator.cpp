@@ -15,14 +15,14 @@
 #include "Map/Ground.h"
 #include "Rendering/GroundFlash.h"
 #include "Rendering/Env/MapRendering.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/DirtProjectile.h"
-#include "Rendering/Env/Particles/Classes/ExploSpikeProjectile.h"
-#include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile2.h"
-#include "Rendering/Env/Particles/Classes/SpherePartProjectile.h"
-#include "Rendering/Env/Particles/Classes/WakeProjectile.h"
-#include "Rendering/Env/Particles/Classes/WreckProjectile.h"
+#include "Rendering/Env/Particles/Classes/BubbleParticle.h"
+#include "Rendering/Env/Particles/Classes/DirtParticle.h"
+#include "Rendering/Env/Particles/Classes/ExploSpikeParticle.h"
+#include "Rendering/Env/Particles/Classes/HeatCloudParticle.h"
+#include "Rendering/Env/Particles/Classes/SmokeParticle2.h"
+#include "Rendering/Env/Particles/Classes/SpherePartParticle.h"
+#include "Rendering/Env/Particles/Classes/WakeParticle.h"
+#include "Rendering/Env/Particles/Classes/WreckParticle.h"
 
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
@@ -405,7 +405,7 @@ bool CStdExplosionGenerator::Explosion(
 		assert(Threading::IsMainThread());
 	}
 
-	projMemPool.alloc<CHeatCloudProjectile>(owner, npos, UpVector * 0.3f, 8.0f + sqrtDmg * 0.5f, 7 + damage * 2.8f);
+	projMemPool.alloc<HeatCloudParticle>(owner, npos, UpVector * 0.3f, 8.0f + sqrtDmg * 0.5f, 7 + damage * 2.8f);
 
 	if (projectileHandler.GetParticleSaturation() < 1.0f) {
 		// turn off lots of graphic only particles when we have more particles than we want
@@ -435,7 +435,7 @@ bool CStdExplosionGenerator::Explosion(
 			const float time = 40.0f + smokeDamageSQRT * 15.0f;
 			const float mult = 0.8f + guRNG.NextFloat() * 0.7f;
 
-			projMemPool.alloc<CSmokeProjectile2>(owner, pos, pos + dir, speed, time * mult, smokeDamageSQRT * 4.0f, 0.4f, 0.6f);
+			projMemPool.alloc<CSmokeParticle2>(owner, pos, pos + dir, speed, time * mult, smokeDamageSQRT * 4.0f, 0.4f, 0.6f);
 		}
 
 		if (groundExplosion) {
@@ -456,7 +456,7 @@ bool CStdExplosionGenerator::Explosion(
 					pos.z - (0.5f - guRNG.NextFloat()) * (radius * 0.6f)
 				);
 
-				projMemPool.alloc<CDirtProjectile>(owner, npos, explSpeed  * explSpeedMod, 90.0f + damage * 2.0f, 2.0f + sqrtDmg * 1.5f, 0.4f, 0.999f, color);
+				projMemPool.alloc<CDirtParticle>(owner, npos, explSpeed  * explSpeedMod, 90.0f + damage * 2.0f, 2.0f + sqrtDmg * 1.5f, 0.4f, 0.999f, color);
 			}
 		}
 
@@ -475,7 +475,7 @@ bool CStdExplosionGenerator::Explosion(
 					pos.z - (0.5f - guRNG.NextFloat()) * (radius * 0.2f)
 				);
 
-				projMemPool.alloc<CDirtProjectile>(
+				projMemPool.alloc<CDirtParticle>(
 					owner,
 					npos,
 					speed * (0.7f + std::min(30.0f, damage) / GAME_SPEED),
@@ -506,7 +506,7 @@ bool CStdExplosionGenerator::Explosion(
 		}
 		if (uwExplosion) {
 			for (int a = 0, n = (damage * 0.7f); a < n; ++a) {
-				projMemPool.alloc<CBubbleProjectile>(
+				projMemPool.alloc<CBubbleParticle>(
 					owner,
 					pos + guRNG.NextVector() * radius * 0.5f,
 					guRNG.NextVector() * 0.2f + float3(0.0f, 0.2f, 0.0f),
@@ -540,7 +540,7 @@ bool CStdExplosionGenerator::Explosion(
 				if (!airExplosion && !waterExplosion && (explSpeed.y < 0.0f))
 					explSpeed.y = -explSpeed.y;
 
-				projMemPool.alloc<CExploSpikeProjectile>(
+				projMemPool.alloc<CExploSpikeParticle>(
 					owner,
 					pos + explSpeed,
 					explSpeed * (0.9f + guRNG.NextFloat() * 0.4f),
@@ -896,7 +896,7 @@ bool CCustomExplosionGenerator::Load(CExplosionGeneratorHandler* handler, const 
 		spawnTable.SubTable("properties").GetMap(props);
 
 		for (const auto& propIt: props) {
-			SExpGenSpawnableMemberInfo memberInfo = {0, 0, 0, STRING_HASH(std::move(StringToLower(propIt.first))), SExpGenSpawnableMemberInfo::TYPE_INT, nullptr};
+			SExpGenSpawnableMemberInfo memberInfo = {0, 0, 0, STRING_HASH(StringToLower(propIt.first)), SExpGenSpawnableMemberInfo::TYPE_INT, nullptr};
 
 			if (CExpGenSpawnable::GetSpawnableMemberInfo(className, memberInfo)) {
 				ParseExplosionCode(&psi, propIt.second, memberInfo, code);

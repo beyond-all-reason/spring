@@ -50,7 +50,7 @@
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/DecalsDrawerGL4.h"
-#include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Classes/NanoParticle.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/IconHandler.h"
@@ -257,7 +257,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetLosViewColors);
 
-	REGISTER_LUA_CFUNC(SetNanoProjectileParams);
+	REGISTER_LUA_CFUNC(SetNanoParticleParams);
 
 	REGISTER_LUA_CFUNC(Reload);
 	REGISTER_LUA_CFUNC(Restart);
@@ -2788,7 +2788,7 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 
 /***
  *
- * @function Spring.SetNanoProjectileParams
+ * @function Spring.SetNanoParticleParams
  * @number[opt=0] rotVal in degrees
  * @number[opt=0] rotVel in degrees
  * @number[opt=0] rotAcc in degrees
@@ -2797,15 +2797,15 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
  * @number[opt=0] rotAccRng in degrees
  * @treturn nil
  */
-int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
+int LuaUnsyncedCtrl::SetNanoParticleParams(lua_State* L)
 {
-	CNanoProjectile::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
-	CNanoProjectile::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
-	CNanoProjectile::rotAcc0 = luaL_optfloat(L, 3, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+	CNanoParticle::rotVal0 = luaL_optfloat(L, 1, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoParticle::rotVel0 = luaL_optfloat(L, 2, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoParticle::rotAcc0 = luaL_optfloat(L, 3, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
 
-	CNanoProjectile::rotValRng0 = luaL_optfloat(L, 4, 0.0f) * (math::DEG_TO_RAD                            );
-	CNanoProjectile::rotVelRng0 = luaL_optfloat(L, 5, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
-	CNanoProjectile::rotAccRng0 = luaL_optfloat(L, 6, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
+	CNanoParticle::rotValRng0 = luaL_optfloat(L, 4, 0.0f) * (math::DEG_TO_RAD                            );
+	CNanoParticle::rotVelRng0 = luaL_optfloat(L, 5, 0.0f) * (math::DEG_TO_RAD / GAME_SPEED               );
+	CNanoParticle::rotAccRng0 = luaL_optfloat(L, 6, 0.0f) * (math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED));
 
 	return 0;
 }

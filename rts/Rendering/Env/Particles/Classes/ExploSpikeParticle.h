@@ -5,14 +5,14 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CExploSpikeProjectile : public CProjectile
+class CExploSpikeParticle : public CProjectile
 {
-	CR_DECLARE_DERIVED(CExploSpikeProjectile)
+	CR_DECLARE_DERIVED(CExploSpikeParticle)
 
 public:
-	CExploSpikeProjectile();
+	CExploSpikeParticle();
 
-	CExploSpikeProjectile(
+	CExploSpikeParticle(
 		CUnit* owner,
 		const float3& pos,
 		const float3& spd,
@@ -42,5 +42,6 @@ private:
 	float lengthGrowth;
 	float3 color;
 };
+using CExploSpikeProjectile = CExploSpikeParticle; //compat
 
 #endif // EXPLO_SPIKE_PROJECTILE_H

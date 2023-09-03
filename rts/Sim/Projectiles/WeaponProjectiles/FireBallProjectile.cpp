@@ -7,7 +7,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Projectiles/ProjectileDrawer.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
@@ -79,7 +79,7 @@ void CFireBallProjectile::Draw()
 		col[0] = (maxCol - i) * 25;
 		col[1] = (maxCol - i) * 15;
 		col[2] = (maxCol - i) * 10;
-		#define dgt projectileDrawer->dguntex
+		const auto* dgt = projectileDrawer->dguntex;
 		AddEffectsQuad(
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size, dgt->xstart, dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend ,  dgt->ystart, col },
