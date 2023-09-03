@@ -433,7 +433,12 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 			float rollingResistanceCoeff = owner->unitDef->rollingResistanceCoefficient;
 			vel = std::max(maxSpeed,
 				(owner->speed +
-				owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, rollingResistanceCoeff)).Length()
+				owner->GetDragAccelerationVec(
+					mapInfo->atmosphere.fluidDensity,
+					mapInfo->water.fluidDensity,
+					owner->unitDef->atmosphericDragCoefficient,
+					rollingResistanceCoeff
+				)).Length()
 			);
 		}
 		return (owner->frontdir * (vel * Sign(int(!mt->IsReversing())) + hAcc));
@@ -1352,7 +1357,15 @@ void CGroundMoveType::UpdateSkid()
 	const float groundHeight = GetGroundHeight(pos);
 	const float negAltitude = groundHeight - pos.y;
 
-	owner->SetVelocity(spd + owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, owner->unitDef->groundFrictionCoefficient));
+	owner->SetVelocity(
+		spd +
+		owner->GetDragAccelerationVec(
+			mapInfo->atmosphere.fluidDensity,
+			mapInfo->water.fluidDensity,
+			owner->unitDef->atmosphericDragCoefficient,
+			owner->unitDef->groundFrictionCoefficient
+		)
+	);
 
 	if (owner->IsFlying()) {
 		const float collImpactSpeed = pos.IsInBounds()?
@@ -1483,7 +1496,15 @@ void CGroundMoveType::UpdateControlledDrop()
 	const float   alt = GetGroundHeight(pos) - pos.y;
 
 	owner->SetVelocity(spd + acc);
-	owner->SetVelocity(spd + owner->GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f));
+	owner->SetVelocity(
+		spd +
+		owner->GetDragAccelerationVec(
+			mapInfo->atmosphere.fluidDensity,
+			mapInfo->water.fluidDensity,
+			owner->unitDef->atmosphericDragCoefficient,
+			owner->unitDef->groundFrictionCoefficient * 10
+		)
+	);
 	owner->SetSpeed(spd);
 	owner->Move(spd, true);
 

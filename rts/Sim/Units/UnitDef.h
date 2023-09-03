@@ -186,6 +186,7 @@ public:
 	float slideTolerance;
 	float rollingResistanceCoefficient;
 	float groundFrictionCoefficient;
+	float atmosphericDragCoefficient;
 	float maxHeightDif;   /// maximum terraform height this building allows
 	float waterline;
 	float minWaterDepth;
