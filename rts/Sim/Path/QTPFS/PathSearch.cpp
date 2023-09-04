@@ -76,6 +76,7 @@ void QTPFS::PathSearch::Initialize(
 	assert(fwd.srcPoint.z / SQUARE_SIZE < mapDims.mapy);
 
 	pathSearchHash = GenerateHash(srcNode, tgtNode);
+	pathPartialSearchHash = GenerateVirtualHash(srcNode, tgtNode);
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -856,16 +857,58 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 		return BAD_HASH;
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+	uint32_t srcNodeNumber = GenerateVirtualNodeNumber(srcNode, fwd.srcPoint.x / SQUARE_SIZE, fwd.srcPoint.z / SQUARE_SIZE);
 
-	uint32_t srcNodeNumber = srcNode->GetNodeNumber();
-	uint32_t xoff = srcNode->xmin();
-	uint32_t zoff = srcNode->zmin();
-	uint32_t srcX = fwd.srcPoint.x / SQUARE_SIZE;
-	uint32_t srcZ = fwd.srcPoint.z / SQUARE_SIZE;
+	return GenerateHash2(srcNodeNumber, tgtNode->GetNodeNumber());
+}
+
+const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const {
+	uint32_t srcNodeSize = srcNode->xsize();
+	uint32_t tgtNodeSize = tgtNode->xsize();
+
+	if (rawPathCheck)
+		return BAD_HASH;
+	if (srcNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE && tgtNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE)
+		return BAD_HASH;
+	
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer());
+	int shift = GetNextBitShift(md->xsize);
+
+	// is the unit too big to be able to share paths?
+	if ((1<<shift) > QTPFS_SHARE_PATH_MAX_SIZE) 
+		return BAD_HASH;
+
+	int srcX = srcNode->xmid();
+	int srcZ = srcNode->zmid();
+	INode* srcRootNode = nodeLayer->GetRootNode(srcX, srcZ);
+
+	int tgtX = tgtNode->xmid();
+	int tgtZ = tgtNode->zmid();
+	INode* tgtRootNode = nodeLayer->GetRootNode(tgtX, tgtZ);
+
+	std::uint32_t vSrcNodeId = GenerateVirtualNodeNumber(srcRootNode, srcX, srcZ);
+	std::uint32_t vTgtNodeId = GenerateVirtualNodeNumber(tgtRootNode, tgtX, tgtZ);
+
+	return GenerateHash2(vSrcNodeId, vTgtNodeId);
+}
+
+const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
+	std::uint64_t N = mapDims.mapx * mapDims.mapy;
+	std::uint32_t k = nodeLayer->GetNodelayer();
+
+	return (src + (dest * N) + (k * N * N));
+}
+
+const std::uint32_t QTPFS::PathSearch::GenerateVirtualNodeNumber(const INode* startNode, int x, int z) const {
+	uint32_t nodeSize = startNode->xsize();
+	uint32_t srcNodeNumber = startNode->GetNodeNumber();
+	uint32_t xoff = startNode->xmin();
+	uint32_t zoff = startNode->zmin();
+
 	while (nodeSize > QTPFS_SHARE_PATH_MAX_SIZE) {
 		// build the rest of the virtual node number
-		bool isRight = srcX >= xoff + (nodeSize >> 1);
-		bool isDown = srcZ >= zoff + (nodeSize >> 1);
+		bool isRight = x >= xoff + (nodeSize >> 1);
+		bool isDown = z >= zoff + (nodeSize >> 1);
 		int offset = 1*(isRight) + 2*(isDown);
 
 		// TODO: sanity check if it isn't possible to go down this many levels?
@@ -875,12 +918,5 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 		xoff += nodeSize*isRight;
 		zoff += nodeSize*isDown;
 	}
-	return GenerateHash2(srcNodeNumber, tgtNode->GetNodeNumber());
-}
-
-const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
-	std::uint64_t N = mapDims.mapx * mapDims.mapy;
-	std::uint32_t k = nodeLayer->GetNodelayer();
-
-	return (src + (dest * N) + (k * N * N));
+	return srcNodeNumber;
 }
