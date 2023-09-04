@@ -16,6 +16,8 @@ These are the entries which may require special attention when migrating:
 * removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
 You can replace these functions before migrating, and known existing games have already received patches to do so.
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
+* removed the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
+since it had the same behaviour, just different internal implementation. No known game actually used it.
 
 ### Behaviour changes
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
@@ -27,7 +29,7 @@ Check the "def validity checks" section below for details.
 * add `SMFTextureStreaming` boolean springsetting, defaults to false. If true, dynamically load and unload SMF Diffuse textures, which saves VRAM, but worse performance and image quality.
 Previous behaviour was equivalent to `true`, so if you get VRAM issues try changing it.
 * it's now possible to play fixed and random start positions with more teams than the map specifies.
-The extras are considered to start in the (0, 0) corner and it is up to the game to handle this case correctly.
+The extras are considered to start in the (0, 0) corner and it is now up to the game to handle this case correctly.
 * the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
@@ -55,7 +57,7 @@ normal pathing instead - which may still end up taking them through that path).
 
 # Defs unification
 
-Unit defs and `UnitDefs` referring to the same thing under different names and sometimes even different units has always been a point of confusion.
+Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units has always been a point of confusion.
 Some of this has been allieviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
 
 ## New def keys
@@ -75,8 +77,8 @@ changed to use elmo/s sometime in the future.
 * brakeRate → maxDec
 
 The following unit def keys now accept a spelling and measurement unit
-as the one exposed via UnitDefs (old → new). The old spelling still works,
-and is still in the old unit.
+as the one exposed via `UnitDefs` (old → new). The old spelling still works,
+and is still in the old measurement unit.
 * maxVelocity (elmo/frame) → speed (elmo/second)
 * maxReverseVelocity (elmo/frame) → rSpeed (elmo/second)
 
@@ -130,7 +132,9 @@ be rejected; previously the absolute value was taken
 * weapon `edgeEffectiveness` can now be 1 (previously capped at 0.999)
 * unit armor multiplier (aka `damageModifier`) can now be 0 (previously capped at 0.0001)
 * damage in weapon defs can now be 0 (previously capped at 0.0001)
-* damage and armor can also be negative again (so that the target is healed), but keep in mind weapons will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
+* damage and armor can also be negative again (so that the target is healed),
+but keep in mind weapons will still always target enemies and never allies,
+so avoid using it outside of manually-triggered contexts, death explosions, and such
 
 ### Deprecated UnitDefs removal
 
@@ -157,7 +161,7 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 ### Builder behaviour
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
 * fixed builders not placing nanoframes from their maximum range.
-* added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to GetUnitCurrentCommand, but shows what the unit is actually doing,
+* added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to `Spring.GetUnitCurrentCommand`, but shows what the unit is actually doing,
 so will differ when the unit is guarding or out of range. Also resolves Build vs Repair. Only shows worker tasks (i.e. things related to nanolathing).
 * `gadget:AllowUnitCreation` now has two return values. The first one is still a boolean on whether to allow creating the unit (no change here).
 The new second value is a boolean, if the creation was not allowed, whether to drop the order (defaults to true, which is the previous behaviour).
@@ -185,7 +189,7 @@ which is now the minimum (instead of being the final value).
 
 ### FFA support
 * it's now possible to play fixed and random start positions with more teams than the map specifies.
-The extras are considered to start in the (0, 0) corner and it is up to the game to handle this case correctly.
+The extras are considered to start in the (0, 0) corner and it is now up to the game to handle this case correctly.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
 * added `system.allowEnginePlayerlist`, defaults to true. If false, the built-in `/info` playerlist won't display.
