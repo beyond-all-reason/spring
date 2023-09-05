@@ -16,8 +16,6 @@ These are the entries which may require special attention when migrating:
 * removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
 You can replace these functions before migrating, and known existing games have already received patches to do so.
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
-* removed the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
-since it had the same behaviour, just different internal implementation. No known game actually used it.
 
 ### Behaviour changes
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
@@ -33,8 +31,14 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 * the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
+
+### Deprecation
+No changes yet, but these will happen in the future and possibly break things.
+
 * the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
-but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively.
+but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively (which will stay elmo/frame).
+* the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class is scheduled for removal. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
+since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
 
 # QTPFS
 
