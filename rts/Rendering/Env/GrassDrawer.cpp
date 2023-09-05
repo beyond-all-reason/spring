@@ -862,9 +862,9 @@ void CGrassDrawer::CreateGrassBladeTex(unsigned char* buf)
 {
 	float3 redish = float3(0.95f, 0.70f, 0.4f);
 	float3 col = mix(mapInfo->grass.color, redish, 0.1f * grng.NextFloat());
-	col.x = Clamp(col.x, 0.f, 1.f);
-	col.y = Clamp(col.y, 0.f, 1.f);
-	col.z = Clamp(col.z, 0.f, 1.f);
+	col.x = std::clamp(col.x, 0.f, 1.f);
+	col.y = std::clamp(col.y, 0.f, 1.f);
+	col.z = std::clamp(col.z, 0.f, 1.f);
 
 	SColor* img = reinterpret_cast<SColor*>(buf);
 	for (int y=0; y<64; ++y) {

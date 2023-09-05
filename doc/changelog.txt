@@ -1,8 +1,32 @@
+
+
+  v
+
+  Changelogs are now available at https://beyond-all-reason.github.io/spring/changelogs
+  In particular, the running changelog since the last version is at https://beyond-all-reason.github.io/spring/changelogs/running-changelog
+  If you're looking at migrating from upstream Spring 105.0, there is a guide at https://beyond-all-reason.github.io/spring/migrating-from-spring/
+
+  ^
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
-
-
 
 -- BAR105 NEXT ---------------------------------------------------
 

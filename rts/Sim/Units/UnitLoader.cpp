@@ -188,8 +188,8 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 		const int sqSize = math::ceil(math::sqrt((float) numRequestedUnits));
 		const float sqHalfMapSize = sqSize / 2 * 10 * SQUARE_SIZE;
 
-		pos.x = Clamp(pos.x, sqHalfMapSize, float3::maxxpos - sqHalfMapSize - 1);
-		pos.z = Clamp(pos.z, sqHalfMapSize, float3::maxzpos - sqHalfMapSize - 1);
+		pos.x = std::clamp(pos.x, sqHalfMapSize, float3::maxxpos - sqHalfMapSize - 1);
+		pos.z = std::clamp(pos.z, sqHalfMapSize, float3::maxzpos - sqHalfMapSize - 1);
 
 		for (int a = 1; a <= numRequestedUnits; ++a) {
 			Watchdog::ClearTimers(false, true);

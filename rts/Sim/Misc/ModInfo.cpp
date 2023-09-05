@@ -152,16 +152,16 @@ void CModInfo::Init(const std::string& modFileName)
 		// system
 		const LuaTable& system = root.SubTable("system");
 
-		pathFinderSystem = Clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
+		pathFinderSystem = std::clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
-		pfRepathDelayInFrames = Clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
-		pfRepathMaxRateInFrames = Clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
+		pfRepathDelayInFrames = std::clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
+		pfRepathMaxRateInFrames = std::clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
-		quadFieldQuadSizeInElmos = Clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
+		quadFieldQuadSizeInElmos = std::clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
 		// Specify in megabytes: 1 << 20 = (1024 * 1024)
 		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
@@ -185,8 +185,8 @@ void CModInfo::Init(const std::string& modFileName)
 		allowGroundUnitGravity = movementTbl.GetBool("allowGroundUnitGravity", allowGroundUnitGravity);
 		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", (pathFinderSystem == QTPFS_TYPE));
 		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
-		unitQuadPositionUpdateRate = Clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
-		groundUnitCollisionAvoidanceUpdateRate = Clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
+		unitQuadPositionUpdateRate = std::clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
+		groundUnitCollisionAvoidanceUpdateRate = std::clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
 
 	}
 
@@ -287,7 +287,7 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& featureLOS = root.SubTable("featureLOS");
 
 		featureVisibility = featureLOS.GetInt("featureVisibility", FEATURELOS_ALL);
-		featureVisibility = Clamp(featureVisibility, int(FEATURELOS_NONE), int(FEATURELOS_ALL));
+		featureVisibility = std::clamp(featureVisibility, int(FEATURELOS_NONE), int(FEATURELOS_ALL));
 	}
 
 	{

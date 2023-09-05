@@ -357,7 +357,7 @@ void CStarburstProjectile::Draw()
 
 			const float3 interPos = opos - (odir * ((a * 0.5f) + curStep));
 
-			SColor col = lightYellow * Clamp(alpha, 0.0f, 1.0f);
+			SColor col = lightYellow * std::clamp(alpha, 0.0f, 1.0f);
 			col.a = 1;
 
 			AddEffectsQuad(

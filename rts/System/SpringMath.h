@@ -179,7 +179,6 @@ int Round(const float f) _const _warn_unused_result;
 
 template<class T> constexpr T Square(const T x) { return x*x; }
 template<class T> constexpr T SignedSquare(const T x) { return x*std::abs(x); }
-template<class T> constexpr T Clamp(const T v, const T vmin, const T vmax) { return std::min(vmax, std::max(vmin, v)); }
 // NOTE: '>' instead of '>=' s.t. Sign(int(true)) != Sign(int(false)) --> zero is negative!
 template<class T> constexpr T Sign(const T v) { return ((v > T(0)) * T(2) - T(1)); }
 

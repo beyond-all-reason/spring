@@ -41,7 +41,7 @@ void CCannon::UpdateRange(const float val)
 	// speed is too low to reach the *updated* range
 	// note: new range can be zero (!) making range
 	// and height factors irrelevant
-	rangeBoostFactor = Clamp((range = val) / GetRange2D(0.0f, 1.0f, heightBoostFactor), 0.0f, 1.0f);
+	rangeBoostFactor = std::clamp((range = val) / GetRange2D(0.0f, 1.0f, heightBoostFactor), 0.0f, 1.0f);
 
 	// magical (but working) equations with useful properties:
 	// if rangeBoostFactor == 1, then heightBoostFactor == 1
@@ -241,7 +241,7 @@ float CCannon::GetStaticRange2D(const float2& baseConsts, const float2& projCons
 
 	// otherwise need to determine it from scratch as though calling UpdateRange
 	const float wdRangeExclBoost = CalcRange2D({0.0f, 0.7071067f, 100.0f}, projConsts, {1.0f, boostFacts.y});
-	const float wdRangeBoostFact = Clamp(baseConsts.x / wdRangeExclBoost, 0.0f, 1.0f);
+	const float wdRangeBoostFact = std::clamp(baseConsts.x / wdRangeExclBoost, 0.0f, 1.0f);
 
 	float wdHeightBoostFact = boostFacts.y;
 

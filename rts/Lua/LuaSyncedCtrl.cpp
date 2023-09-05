@@ -655,9 +655,9 @@ static int SetWorldObjectVelocity(lua_State* L, CWorldObject* o)
 		return 0;
 
 	float3 speed;
-	speed.x = Clamp(luaL_checkfloat(L, 2), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
-	speed.y = Clamp(luaL_checkfloat(L, 3), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
-	speed.z = Clamp(luaL_checkfloat(L, 4), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
+	speed.x = std::clamp(luaL_checkfloat(L, 2), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
+	speed.y = std::clamp(luaL_checkfloat(L, 3), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
+	speed.z = std::clamp(luaL_checkfloat(L, 4), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
 
 	o->SetVelocityAndSpeed(speed);
 	return 0;
@@ -695,9 +695,9 @@ static int SetSolidObjectPhysicalState(lua_State* L, CSolidObject* o)
 	rot.y = luaL_checknumber(L, 9);
 	rot.z = luaL_checknumber(L, 10);
 
-	drag.x = Clamp(luaL_optnumber(L, 11, drag.x), 0.0f, 1.0f);
-	drag.y = Clamp(luaL_optnumber(L, 12, drag.y), 0.0f, 1.0f);
-	drag.z = Clamp(luaL_optnumber(L, 13, drag.z), 0.0f, 1.0f);
+	drag.x = std::clamp(luaL_optnumber(L, 11, drag.x), 0.0f, 1.0f);
+	drag.y = std::clamp(luaL_optnumber(L, 12, drag.y), 0.0f, 1.0f);
+	drag.z = std::clamp(luaL_optnumber(L, 13, drag.z), 0.0f, 1.0f);
 
 	o->Move(pos, false);
 	o->SetDirVectorsEuler(rot);
@@ -1189,8 +1189,8 @@ int LuaSyncedCtrl::SetTeamShareLevel(lua_State* L)
 	const float value = luaL_checkfloat(L, 3);
 
 	switch (type[0]) {
-		case 'm': { team->resShare.metal  = Clamp(value, 0.0f, 1.0f); } break;
-		case 'e': { team->resShare.energy = Clamp(value, 0.0f, 1.0f); } break;
+		case 'm': { team->resShare.metal  = std::clamp(value, 0.0f, 1.0f); } break;
+		case 'e': { team->resShare.energy = std::clamp(value, 0.0f, 1.0f); } break;
 		default : {                                                   } break;
 	}
 
@@ -2049,7 +2049,7 @@ int LuaSyncedCtrl::SetUnitStockpile(lua_State* L)
 	}
 
 	if (lua_isnumber(L, 3))
-		unit->stockpileWeapon->buildPercent = Clamp(lua_tofloat(L, 3), 0.0f, 1.0f);
+		unit->stockpileWeapon->buildPercent = std::clamp(lua_tofloat(L, 3), 0.0f, 1.0f);
 
 	return 0;
 }
@@ -3422,7 +3422,7 @@ int LuaSyncedCtrl::SetUnitSensorRadius(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const int radius = Clamp(luaL_checkint(L, 3), 0, MAX_UNIT_SENSOR_RADIUS);
+	const int radius = std::clamp(luaL_checkint(L, 3), 0, MAX_UNIT_SENSOR_RADIUS);
 
 	switch (hashString(luaL_checkstring(L, 2))) {
 		case hashString("los"): {
@@ -3486,7 +3486,7 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 	unit->nextPosErrorUpdate = luaL_optint(L, 8, unit->nextPosErrorUpdate);
 
 	if (lua_isnumber(L, 9) && lua_isboolean(L, 10))
-		unit->SetPosErrorBit(Clamp(lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
+		unit->SetPosErrorBit(std::clamp(lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
 
 	return 0;
 }
@@ -3805,9 +3805,9 @@ int LuaSyncedCtrl::AddUnitDamage(lua_State* L)
 	const int paralyze    = luaL_optint(L, 3, 0);
 	const int attackerID  = luaL_optint(L, 4, -1);
 	const int weaponDefID = luaL_optint(L, 5, -1);
-	const float3 impulse  = float3(Clamp(luaL_optfloat(L, 6, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
-	                               Clamp(luaL_optfloat(L, 7, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
-	                               Clamp(luaL_optfloat(L, 8, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE));
+	const float3 impulse  = float3(std::clamp(luaL_optfloat(L, 6, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
+	                               std::clamp(luaL_optfloat(L, 7, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
+	                               std::clamp(luaL_optfloat(L, 8, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE));
 
 	CUnit* attacker = nullptr;
 
@@ -3849,9 +3849,9 @@ int LuaSyncedCtrl::AddUnitImpulse(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const float3 impulse(Clamp(luaL_checkfloat(L, 2), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
-	                     Clamp(luaL_checkfloat(L, 3), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
-	                     Clamp(luaL_checkfloat(L, 4), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE));
+	const float3 impulse(std::clamp(luaL_checkfloat(L, 2), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
+	                     std::clamp(luaL_checkfloat(L, 3), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
+	                     std::clamp(luaL_checkfloat(L, 4), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE));
 
 	unit->ApplyImpulse(impulse);
 	return 0;
@@ -4296,11 +4296,11 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
 	feature->defResources.metal  = std::max(0.0f, luaL_optfloat(L, 6, feature->defResources.metal));
 	feature->defResources.energy = std::max(0.0f, luaL_optfloat(L, 7, feature->defResources.energy));
 
-	feature->resources.metal  = Clamp(luaL_checknumber(L, 2), 0.0f, feature->defResources.metal );
-	feature->resources.energy = Clamp(luaL_checknumber(L, 3), 0.0f, feature->defResources.energy);
+	feature->resources.metal  = std::clamp(luaL_checknumber(L, 2), 0.0f, feature->defResources.metal );
+	feature->resources.energy = std::clamp(luaL_checknumber(L, 3), 0.0f, feature->defResources.energy);
 
-	feature->reclaimTime = Clamp(luaL_optnumber(L, 4, feature->reclaimTime), 1.0f, 1000000.0f);
-	feature->reclaimLeft = Clamp(luaL_optnumber(L, 5, feature->reclaimLeft), 0.0f,       1.0f);
+	feature->reclaimTime = std::clamp(luaL_optnumber(L, 4, feature->reclaimTime), 1.0f, 1000000.0f);
+	feature->reclaimLeft = std::clamp(luaL_optnumber(L, 5, feature->reclaimLeft), 0.0f,       1.0f);
 	return 0;
 }
 
@@ -4344,7 +4344,7 @@ int LuaSyncedCtrl::SetFeatureResurrect(lua_State* L)
 	if (!lua_isnoneornil(L, 3))
 		feature->buildFacing = LuaUtils::ParseFacing(L, __func__, 3);
 
-	feature->resurrectProgress = Clamp(luaL_optnumber(L, 4, feature->resurrectProgress), 0.0f, 1.0f);
+	feature->resurrectProgress = std::clamp(luaL_optnumber(L, 4, feature->resurrectProgress), 0.0f, 1.0f);
 	return 0;
 }
 
@@ -5448,10 +5448,10 @@ static void ParseParams(lua_State* L, const char* caller, float& factor,
 	}
 
 	// quantize and clamp
-	x1 = Clamp((int)(fx1 / resolution), 0, maxX);
-	x2 = Clamp((int)(fx2 / resolution), 0, maxX);
-	z1 = Clamp((int)(fz1 / resolution), 0, maxZ);
-	z2 = Clamp((int)(fz2 / resolution), 0, maxZ);
+	x1 = std::clamp((int)(fx1 / resolution), 0, maxX);
+	x2 = std::clamp((int)(fx2 / resolution), 0, maxX);
+	z1 = std::clamp((int)(fz1 / resolution), 0, maxZ);
+	z2 = std::clamp((int)(fz2 / resolution), 0, maxZ);
 
 }
 

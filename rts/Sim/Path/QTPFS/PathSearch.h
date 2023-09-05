@@ -88,7 +88,6 @@ namespace QTPFS {
 			, searchTeam(0)
 			, searchType(0)
 			, searchState(0)
-			, openNodes(nullptr)
 			, nodeLayer(nullptr)
 			, searchExec(nullptr)
 			, hCostMult(0.0f)
@@ -105,7 +104,6 @@ namespace QTPFS {
 			NodeLayer* layer,
 			const float3& sourcePoint,
 			const float3& targetPoint,
-			const SRectangle& searchArea,
 			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
@@ -122,11 +120,26 @@ namespace QTPFS {
 		int GetPathType() const { return pathType; }
 
 	private:
-		void ResetState(SearchNode* node);
+		struct DirectionalSearchData {
+			DirectionalSearchData()
+				: openNodes(nullptr)
+				, srcSearchNode(nullptr)
+				, tgtSearchNode(nullptr)
+			{}
+
+			// global queue: allocated once, re-used by all searches without clear()'s
+			// this relies on INode::operator< to sort the INode*'s by increasing f-cost
+			SearchPriorityQueue* openNodes;
+
+			SearchNode *srcSearchNode, *tgtSearchNode;
+			float3 srcPoint, tgtPoint;
+		};
+
+		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
 
-		void IterateNodes();
-		void IterateNodeNeighbors(const INode* curNode);
+		void IterateNodes(unsigned int searchDir);
+		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
 
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path) const;
@@ -138,13 +151,13 @@ namespace QTPFS {
 		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
 		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
 
+		const std::uint64_t GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
+		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int x, int z) const;
+
 		QTPFS::SearchThreadData* searchThreadData;
 
-		// global queue: allocated once, re-used by all searches without clear()'s
-		// this relies on INode::operator< to sort the INode*'s by increasing f-cost
-		SearchPriorityQueue* openNodes;
-
 		std::uint64_t pathSearchHash;
+		std::uint64_t pathPartialSearchHash;
 
 		const CSolidObject* pathOwner;
 		NodeLayer* nodeLayer;
@@ -154,14 +167,10 @@ namespace QTPFS {
 		PathSearchTrace::Execution* searchExec;
 		PathSearchTrace::Iteration searchIter;
 
-		SRectangle searchRect;
-
-		SearchNode *srcSearchNode, *tgtSearchNode;
 		SearchNode *curSearchNode, *nextSearchNode;
 		SearchNode *minSearchNode;
 
-		float3 srcPoint;
-		float3 tgtPoint;
+		DirectionalSearchData directionalSearchData[2];
 
 		float2 netPoints[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 

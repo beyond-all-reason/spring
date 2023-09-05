@@ -52,10 +52,10 @@ void CMetalMap::Init(const unsigned char* map, int _sizeX, int _sizeZ, float _me
 
 float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 {
-	x1 = Clamp(x1, 0, sizeX - 1);
-	x2 = Clamp(x2, 0, sizeX - 1);
-	z1 = Clamp(z1, 0, sizeZ - 1);
-	z2 = Clamp(z2, 0, sizeZ - 1);
+	x1 = std::clamp(x1, 0, sizeX - 1);
+	x2 = std::clamp(x2, 0, sizeX - 1);
+	z1 = std::clamp(z1, 0, sizeZ - 1);
+	z2 = std::clamp(z2, 0, sizeZ - 1);
 
 	float metal = 0.0f;
 
@@ -71,8 +71,8 @@ float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 
 float CMetalMap::GetMetalAmount(int x, int z) const
 {
-	x = Clamp(x, 0, sizeX - 1);
-	z = Clamp(z, 0, sizeZ - 1);
+	x = std::clamp(x, 0, sizeX - 1);
+	z = std::clamp(z, 0, sizeZ - 1);
 
 	return distributionMap[(z * sizeX) + x] * metalScale;
 }
@@ -80,10 +80,10 @@ float CMetalMap::GetMetalAmount(int x, int z) const
 
 void CMetalMap::SetMetalAmount(int x, int z, float m)
 {
-	x = Clamp(x, 0, sizeX - 1);
-	z = Clamp(z, 0, sizeZ - 1);
+	x = std::clamp(x, 0, sizeX - 1);
+	z = std::clamp(z, 0, sizeZ - 1);
 
-	distributionMap[(z * sizeX) + x] = (metalScale == 0.0f) ? 0 : Clamp((int)(m / metalScale), 0, 255);
+	distributionMap[(z * sizeX) + x] = (metalScale == 0.0f) ? 0 : std::clamp((int)(m / metalScale), 0, 255);
 
 	eventHandler.MetalMapChanged(x, z);
 }
@@ -91,8 +91,8 @@ void CMetalMap::SetMetalAmount(int x, int z, float m)
 
 float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 {
-	x = Clamp(x, 0, sizeX - 1);
-	z = Clamp(z, 0, sizeZ - 1);
+	x = std::clamp(x, 0, sizeX - 1);
+	z = std::clamp(z, 0, sizeZ - 1);
 
 	const float current = extractionMap[(z * sizeX) + x];
 
@@ -109,8 +109,8 @@ float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 
 void CMetalMap::RemoveExtraction(int x, int z, float depth)
 {
-	x = Clamp(x, 0, sizeX - 1);
-	z = Clamp(z, 0, sizeZ - 1);
+	x = std::clamp(x, 0, sizeX - 1);
+	z = std::clamp(z, 0, sizeZ - 1);
 
 	extractionMap[(z * sizeX) + x] -= depth;
 }
@@ -118,8 +118,8 @@ void CMetalMap::RemoveExtraction(int x, int z, float depth)
 
 int CMetalMap::GetMetalExtraction(int x, int z) const
 {
-	x = Clamp(x, 0, sizeX - 1);
-	z = Clamp(z, 0, sizeZ - 1);
+	x = std::clamp(x, 0, sizeX - 1);
+	z = std::clamp(z, 0, sizeZ - 1);
 
 	return extractionMap[(z * sizeX) + x];
 }

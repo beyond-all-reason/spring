@@ -2975,8 +2975,8 @@ void CGuiHandler::DrawButtons() // Only called by Draw
 	}
 
 	const int mouseIcon   = IconAtPos(mouse->lastx, mouse->lasty);
-	const int buttonStart = Clamp( activePage * iconsPerPage, 0, iconsCount); // activePage can be -1
-	const int buttonEnd   = Clamp(buttonStart + iconsPerPage, 0, iconsCount);
+	const int buttonStart = std::clamp( activePage * iconsPerPage, 0, iconsCount); // activePage can be -1
+	const int buttonEnd   = std::clamp(buttonStart + iconsPerPage, 0, iconsCount);
 
 	for (int ii = buttonStart; ii < buttonEnd; ii++) {
 		const IconInfo& icon = icons.at(ii);

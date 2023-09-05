@@ -493,7 +493,7 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	// SPRING_CIRCLE_DIVS is 65536, but turnRate can be at most
 	// 32767 since it is converted to (signed) shorts in places
-	turnRate = Clamp(ud->turnRate, 1.0f, SPRING_CIRCLE_DIVS * 0.5f - 1.0f);
+	turnRate = std::clamp(ud->turnRate, 1.0f, SPRING_CIRCLE_DIVS * 0.5f - 1.0f);
 	turnAccel = turnRate * mix(0.333f, 0.033f, md->speedModClass == MoveDef::Ship);
 
 	accRate = std::max(0.01f, ud->maxAcc);
@@ -1188,12 +1188,12 @@ void CGroundMoveType::ChangeSpeed(float newWantedSpeed, bool wantReverse, bool f
 				      float turnModSpeed = turnMaxSpeed;
 
 				if (reqTurnAngle != 0.0f)
-					turnModSpeed *= Clamp(maxTurnAngle / reqTurnAngle, 0.1f, 1.0f);
+					turnModSpeed *= std::clamp(maxTurnAngle / reqTurnAngle, 0.1f, 1.0f);
 
 				if (waypointDir.SqLength() > 0.1f) {
 					if (!ud->turnInPlace) {
 						// never let speed drop below TIPSL, but limit TIPSL itself to turnMaxSpeed
-						targetSpeed = Clamp(turnModSpeed, std::min(ud->turnInPlaceSpeedLimit, turnMaxSpeed), turnMaxSpeed);
+						targetSpeed = std::clamp(turnModSpeed, std::min(ud->turnInPlaceSpeedLimit, turnMaxSpeed), turnMaxSpeed);
 					} else {
 						targetSpeed = mix(targetSpeed, turnModSpeed, reqTurnAngle > ud->turnInPlaceAngleLimit);
 					}
@@ -1792,7 +1792,7 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		// for mobile units, avoidance-response is modulated by angle
 		// between avoidee's and avoider's frontdir such that maximal
 		// avoidance occurs when they are anti-parallel
-		const float avoidanceCosAngle = Clamp(avoider->frontdir.dot(avoidee->frontdir), -1.0f, 1.0f);
+		const float avoidanceCosAngle = std::clamp(avoider->frontdir.dot(avoidee->frontdir), -1.0f, 1.0f);
 		const float avoidanceResponse = (1.0f - avoidanceCosAngle * int(avoideeMobile)) + 0.1f;
 		const float avoidanceFallOff  = (1.0f - std::min(1.0f, avoideeDist / (5.0f * avoidanceRadiusSum)));
 
@@ -2013,7 +2013,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 			const float framesToTurn = SPRING_CIRCLE_DIVS / absTurnSpeed;
 
 			const float turnRadius = std::max((currentSpeed * framesToTurn) * math::INVPI2, currentSpeed * 1.05f) * 2.f;
-			const float waypointDot = Clamp(waypointDir.dot(flatFrontDir * dirSign), -1.0f, 1.0f);
+			const float waypointDot = std::clamp(waypointDir.dot(flatFrontDir * dirSign), -1.0f, 1.0f);
 
 			#if 1
 
@@ -2704,8 +2704,8 @@ void CGroundMoveType::HandleUnitCollisions(
  			r2 = s2 / (s1 + s2 + 1.0f);
 
 		// far from a realistic treatment, but works
-		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f) * (allowUCO? (1.0f / colliderRelRadius): 1.0f);
-		// const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
+		const float colliderMassScale = std::clamp(1.0f - r1, 0.01f, 0.99f) * (allowUCO? (1.0f / colliderRelRadius): 1.0f);
+		// const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
 
 		// try to prevent both parties from being pushed onto non-traversable
 		// squares (without resetting their position which stops them dead in
@@ -2795,8 +2795,8 @@ void CGroundMoveType::HandleFeatureCollisions(
  			r1 = s1 / (s1 + s2 + 1.0f),
  			r2 = s2 / (s1 + s2 + 1.0f);
 
-		const float colliderMassScale = Clamp(1.0f - r1, 0.01f, 0.99f);
-		const float collideeMassScale = Clamp(1.0f - r2, 0.01f, 0.99f);
+		const float colliderMassScale = std::clamp(1.0f - r1, 0.01f, 0.99f);
+		const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f);
 
 		resultantForces += colResponseVec * colliderMassScale;
 		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
@@ -3113,7 +3113,7 @@ bool CGroundMoveType::WantReverse(const float3& wpDir, const float3& ffDir) cons
 	const float goalFwdETA = (goalDist / maxSpeed);                              // in frames (simplistic)
 	const float goalRevETA = (goalDist / maxReverseSpeed);                       // in frames (simplistic)
 
-	const float waypointAngle = Clamp(wpDir.dot(owner->frontdir), -1.0f, 0.0f);  // clamp to prevent NaN's; [-1, 0]
+	const float waypointAngle = std::clamp(wpDir.dot(owner->frontdir), -1.0f, 0.0f);  // clamp to prevent NaN's; [-1, 0]
 	const float turnAngleDeg  = math::acosf(waypointAngle) * math::RAD_TO_DEG;   // in degrees; [90.0, 180.0]
 	const float fwdTurnAngle  = (turnAngleDeg / 360.0f) * SPRING_CIRCLE_DIVS;    // in "headings"
 	const float revTurnAngle  = SPRING_MAX_HEADING - fwdTurnAngle;               // 180 deg - angle

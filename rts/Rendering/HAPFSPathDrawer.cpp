@@ -209,7 +209,7 @@ void HAPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 				for (int tx = 0; tx < mapDims.hmapx; ++tx) {
 					const unsigned int texIdx = ((ty * (mapDims.pwr2mapx >> 1)) + tx) * 4 - offset;
 
-					texMem[texIdx + CLegacyInfoTextureHandler::COLOR_R] = Clamp(8 * phm->GetHeatValue(tx << 1, ty << 1), 32, 255);
+					texMem[texIdx + CLegacyInfoTextureHandler::COLOR_R] = std::clamp(8 * phm->GetHeatValue(tx << 1, ty << 1), 32, 255);
 					texMem[texIdx + CLegacyInfoTextureHandler::COLOR_G] = 32;
 					texMem[texIdx + CLegacyInfoTextureHandler::COLOR_B] = 32;
 					texMem[texIdx + CLegacyInfoTextureHandler::COLOR_A] = 255;

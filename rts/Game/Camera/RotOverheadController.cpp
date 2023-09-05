@@ -49,7 +49,7 @@ void CRotOverheadController::MouseMove(float3 move)
 	// use local dir state so CameraHandler can create smooth transition between
 	// current camera rot and desired
 	auto rot = CCamera::GetRotFromDir(dir);
-	rot.x = Clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
+	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
 
 	float new_rot_y = ClampRad(rot.y + mouseScale * move.x + math::PI) - math::PI;
 	float cam_rot_y = camera->GetRot().y;
@@ -88,16 +88,16 @@ void CRotOverheadController::MouseWheelMove(float move)
 void CRotOverheadController::Update()
 {
 	if (clampToMap) {
-		pos.x = Clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
-		pos.z = Clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
+		pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
+		pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	}
 	else {
-		pos.x = Clamp(pos.x, -1.0f * mapDims.mapx * SQUARE_SIZE, 2.0f * mapDims.mapx * SQUARE_SIZE - 0.01f);
-		pos.z = Clamp(pos.z, -1.0f * mapDims.mapy * SQUARE_SIZE, 2.0f * mapDims.mapy * SQUARE_SIZE - 0.01f);
+		pos.x = std::clamp(pos.x, -1.0f * mapDims.mapx * SQUARE_SIZE, 2.0f * mapDims.mapx * SQUARE_SIZE - 0.01f);
+		pos.z = std::clamp(pos.z, -1.0f * mapDims.mapy * SQUARE_SIZE, 2.0f * mapDims.mapy * SQUARE_SIZE - 0.01f);
 	}
 
 	float h = CGround::GetHeightAboveWater(pos.x, pos.z, false);
-	pos.y = Clamp(pos.y, h + 5, 9000.0f);
+	pos.y = std::clamp(pos.y, h + 5, 9000.0f);
 	oldHeight = pos.y - h;
 }
 

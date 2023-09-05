@@ -259,7 +259,7 @@ void LuaTextures::ApplyParams(const Texture& tex) const
 		glTexParameterf(tex.target, GL_TEXTURE_LOD_BIAS, tex.lodBias);
 
 	if (tex.aniso != 0.0f && GLEW_EXT_texture_filter_anisotropic)
-		glTexParameterf(tex.target, GL_TEXTURE_MAX_ANISOTROPY_EXT, Clamp(tex.aniso, 1.0f, globalRendering->maxTexAnisoLvl));
+		glTexParameterf(tex.target, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::clamp(tex.aniso, 1.0f, globalRendering->maxTexAnisoLvl));
 }
 
 void LuaTextures::ChangeParams(const Texture& tex)  const

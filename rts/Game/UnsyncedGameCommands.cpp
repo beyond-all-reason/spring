@@ -1707,7 +1707,7 @@ public:
 			speedCtrl = (speedCtrl == 0) ? 1 : 0;
 		} else {
 			// set value
-			speedCtrl = Clamp(StringToInt(action.GetArgs()), 0, 1);
+			speedCtrl = std::clamp(StringToInt(action.GetArgs()), 0, 1);
 		}
 
 		// constrain to bounds
@@ -1730,7 +1730,7 @@ public:
 		const std::string& args = action.GetArgs();
 
 		if (!args.empty()) {
-			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = Clamp(StringToInt(args), 0, 1)]);
+			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = std::clamp(StringToInt(args), 0, 1)]);
 		} else {
 			LOG("Lua garbage collection rate: %s", strs[game->luaGCControl = 1 - game->luaGCControl]);
 		}
@@ -2946,7 +2946,7 @@ public:
 		if (args.empty())
 			return false;
 
-		globalRendering->minViewRange = Clamp(StringToInt<float>(args), CGlobalRendering::MIN_ZNEAR_DIST, globalRendering->maxViewRange);
+		globalRendering->minViewRange = std::clamp(StringToInt<float>(args), CGlobalRendering::MIN_ZNEAR_DIST, globalRendering->maxViewRange);
 		return true;
 	}
 };
@@ -2962,7 +2962,7 @@ public:
 		if (args.empty())
 			return false;
 
-		globalRendering->maxViewRange = Clamp(StringToInt<float>(args), globalRendering->minViewRange, CGlobalRendering::MAX_VIEW_RANGE);
+		globalRendering->maxViewRange = std::clamp(StringToInt<float>(args), globalRendering->minViewRange, CGlobalRendering::MAX_VIEW_RANGE);
 		return true;
 	}
 };
@@ -3169,13 +3169,13 @@ public:
 		const vector<string> &args = CSimpleParser::Tokenize(action.GetArgs());
 
 		if (args.size() == 2) {
-			const int objType = Clamp(StringToInt(args[0]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
+			const int objType = std::clamp(StringToInt(args[0]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
 			const float lodScale = StringToInt<float>(args[1]);
 
 			LuaObjectDrawer::SetLODScale(objType, lodScale);
 		}
 		else if (args.size() == 3) {
-			const int objType = Clamp(StringToInt(args[1]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
+			const int objType = std::clamp(StringToInt(args[1]), int(LUAOBJ_UNIT), int(LUAOBJ_FEATURE));
 			const float lodScale = StringToInt<float>(args[2]);
 
 			switch (hashString(args[0].c_str())) {

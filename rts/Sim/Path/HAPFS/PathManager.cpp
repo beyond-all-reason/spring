@@ -891,11 +891,11 @@ void CPathManager::Update()
 				highPriorityResPS = lowResPE;
 				lowPriorityResPS = medResPE;
 				const auto invRatio = std::min(1.f / ratio, float(std::numeric_limits<int>::max()));
-				pathStateWorkloadRatio = Clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
+				pathStateWorkloadRatio = std::clamp(int(invRatio + .5f)+1, 1, GAME_SPEED);
 			} else {
 				highPriorityResPS = medResPE;
 				lowPriorityResPS = lowResPE;
-				pathStateWorkloadRatio = Clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
+				pathStateWorkloadRatio = std::clamp(int(ratio + .5f)+1, 1, GAME_SPEED);
 			}
 
 			// LOG("PATH medResUpdatesCount=%f lowResUpdatesCount=%f ratio=%f pathStateWorkloadRatio=%d"

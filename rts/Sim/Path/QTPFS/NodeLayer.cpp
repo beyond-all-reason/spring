@@ -118,8 +118,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const unsigned int recIdx = hmz * xsize + hmx;
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
-			const int chmx = Clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const int chmz = Clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
+			const int chmx = std::clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
+			const int chmz = std::clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
 			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
 			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
 
@@ -138,9 +138,9 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			// const int maxBlockBit = (luBlockBits == NULL)? CMoveMath::SquareIsBlocked(*md, hmx, hmz, NULL): (*luBlockBits)[recIdx];
 
 			#define NL QTPFS::NodeLayer
-			const float tmpAbsSpeedMod = Clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
+			const float tmpAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
 			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
-			const float newRelSpeedMod = Clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
+			const float newRelSpeedMod = std::clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
 			#undef NL
 
 			const SpeedBinType newSpeedModBin = GetSpeedModBin(newAbsSpeedMod, newRelSpeedMod);
@@ -163,7 +163,7 @@ QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float re
 	const SpeedBinType defBin = NUM_SPEEDMOD_BINS * relSpeedMod;
 	const SpeedBinType maxBin = NUM_SPEEDMOD_BINS - 1;
 
-	SpeedBinType speedModBin = Clamp(defBin, static_cast<SpeedBinType>(0), maxBin);
+	SpeedBinType speedModBin = std::clamp(defBin, static_cast<SpeedBinType>(0), maxBin);
 
 	if (absSpeedMod <= MIN_SPEEDMOD_VALUE) { speedModBin = NUM_SPEEDMOD_BINS + 0; }
 	if (absSpeedMod >= MAX_SPEEDMOD_VALUE) { speedModBin = NUM_SPEEDMOD_BINS + 1; }

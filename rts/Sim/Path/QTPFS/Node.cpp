@@ -142,10 +142,10 @@ float2 QTPFS::INode::GetNeighborEdgeTransitionPoint(const INode* ngb, const floa
 		// edges
 		// clamp <pos> (assumed to be inside <this>) to
 		// the shared-edge bounds and ortho-project it
-		case REL_NGB_EDGE_T: { p.x = Clamp(CAST(pos.x / SQUARE_SIZE), minx, maxx) * SQUARE_SIZE; p.y = minz * SQUARE_SIZE; } break;
-		case REL_NGB_EDGE_B: { p.x = Clamp(CAST(pos.x / SQUARE_SIZE), minx, maxx) * SQUARE_SIZE; p.y = maxz * SQUARE_SIZE; } break;
-		case REL_NGB_EDGE_R: { p.y = Clamp(CAST(pos.z / SQUARE_SIZE), minz, maxz) * SQUARE_SIZE; p.x = maxx * SQUARE_SIZE; } break;
-		case REL_NGB_EDGE_L: { p.y = Clamp(CAST(pos.z / SQUARE_SIZE), minz, maxz) * SQUARE_SIZE; p.x = minx * SQUARE_SIZE; } break;
+		case REL_NGB_EDGE_T: { p.x = std::clamp(CAST(pos.x / SQUARE_SIZE), minx, maxx) * SQUARE_SIZE; p.y = minz * SQUARE_SIZE; } break;
+		case REL_NGB_EDGE_B: { p.x = std::clamp(CAST(pos.x / SQUARE_SIZE), minx, maxx) * SQUARE_SIZE; p.y = maxz * SQUARE_SIZE; } break;
+		case REL_NGB_EDGE_R: { p.y = std::clamp(CAST(pos.z / SQUARE_SIZE), minz, maxz) * SQUARE_SIZE; p.x = maxx * SQUARE_SIZE; } break;
+		case REL_NGB_EDGE_L: { p.y = std::clamp(CAST(pos.z / SQUARE_SIZE), minz, maxz) * SQUARE_SIZE; p.x = minx * SQUARE_SIZE; } break;
 
 		// <ngb> had better be an actual neighbor
 		case 0: { assert(false); } break;

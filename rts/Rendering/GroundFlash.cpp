@@ -213,7 +213,7 @@ bool CStandardGroundFlash::Update()
 
 void CStandardGroundFlash::Draw()
 {
-	float iAlpha = Clamp(circleAlpha - (circleAlphaDec * globalRendering->timeOffset), 0.0f, 1.0f);
+	float iAlpha = std::clamp(circleAlpha - (circleAlphaDec * globalRendering->timeOffset), 0.0f, 1.0f);
 
 	const float iSize = circleSize + circleGrowth * globalRendering->timeOffset;
 	const float iAge = flashAge + flashAgeSpeed * globalRendering->timeOffset;
@@ -240,7 +240,7 @@ void CStandardGroundFlash::Draw()
 			iAlpha = flashAlpha * (1.0f - iAge);
 		}
 
-		color.a = Clamp(iAlpha, 0.0f, 1.0f) * 255;
+		color.a = std::clamp(iAlpha, 0.0f, 1.0f) * 255;
 
 		const float3 p1 = pos + (-side1 + side2) * size;
 		const float3 p2 = pos + ( side1 + side2) * size;
@@ -326,8 +326,7 @@ void CSimpleGroundFlash::Draw()
 	};
 
 	if (math::fabs(rotVal) > 0.01f) {
-		for (auto& b : bounds)
-			b = b.rotate(rotVal, normal);
+		float3::rotate<false>(rotVal, normal, bounds);
 	}
 
 	AddEffectsQuad(

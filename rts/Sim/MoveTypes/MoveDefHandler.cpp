@@ -72,7 +72,7 @@ static float DegreesToMaxSlope(float degrees)
 	// PE checksum compatibility between debug and release
 	static constexpr float degToRad = math::DEG_TO_RAD;
 
-	const float deg = Clamp(degrees, 0.0f, 60.0f) * 1.5f;
+	const float deg = std::clamp(degrees, 0.0f, 60.0f) * 1.5f;
 	const float rad = deg * degToRad;
 
 	return (1.0f - math::cos(rad));
@@ -83,7 +83,7 @@ static MoveDef::SpeedModClass ParseSpeedModClass(const std::string& moveDefName,
 	const int speedModClass = moveDefTable.GetInt("speedModClass", -1);
 
 	if (speedModClass != -1)
-		return Clamp(MoveDef::SpeedModClass(speedModClass), MoveDef::Tank, MoveDef::Ship);
+		return std::clamp(MoveDef::SpeedModClass(speedModClass), MoveDef::Tank, MoveDef::Ship);
 
 	// name-based fallbacks
 	if (moveDefName.find( "boat") != string::npos)
@@ -475,7 +475,7 @@ float MoveDef::GetDepthMod(float height) const {
 	const float maxScale = depthModParams[DEPTHMOD_MAX_SCALE];
 
 	const float depth = -height;
-	const float scale = Clamp((a * depth * depth + b * depth + c), minScale, maxScale);
+	const float scale = std::clamp((a * depth * depth + b * depth + c), minScale, maxScale);
 
 	// NOTE:
 	//   <maxScale> is guaranteed to be >= 0.01, so the

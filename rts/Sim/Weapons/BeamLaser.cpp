@@ -60,7 +60,7 @@ void CBeamLaser::SweepFireState::Init(const float3& newTargetPos, const float3& 
 	sweepInitDir = (sweepInitPos - muzzlePos).SafeNormalize();
 	sweepGoalDir = (sweepGoalPos - muzzlePos).SafeNormalize();
 
-	sweepStartAngle = math::acosf(Clamp(sweepInitDir.dot(sweepGoalDir), -1.0f, 1.0f));
+	sweepStartAngle = math::acosf(std::clamp(sweepInitDir.dot(sweepGoalDir), -1.0f, 1.0f));
 	sweepFiring = true;
 }
 
@@ -69,10 +69,10 @@ float CBeamLaser::SweepFireState::GetTargetDist2D() const {
 		return sweepGoalDst;
 
 	const float sweepCurAngleCos = sweepCurrDir.dot(sweepGoalDir);
-	const float sweepCurAngleRad = math::acosf(Clamp(sweepCurAngleCos, -1.0f, 1.0f));
+	const float sweepCurAngleRad = math::acosf(std::clamp(sweepCurAngleCos, -1.0f, 1.0f));
 
 	// goes from 1 to 0 as the angular difference decreases during the sweep
-	const float sweepAngleAlpha = (Clamp(sweepCurAngleRad / sweepStartAngle, 0.0f, 1.0f));
+	const float sweepAngleAlpha = (std::clamp(sweepCurAngleRad / sweepStartAngle, 0.0f, 1.0f));
 
 	// get the linearly-interpolated beam length for this point of the sweep
 	return (mix(sweepInitDst, sweepGoalDst, 1.0f - sweepAngleAlpha));
@@ -360,8 +360,8 @@ void CBeamLaser::FireInternal(float3 curDir)
 			pparams.pos = curPos;
 			pparams.end = hitPos;
 			pparams.ttl = weaponDef->beamLaserTTL;
-			pparams.startAlpha = Clamp(startAlpha * baseAlpha, 0.0f, 255.0f);
-			pparams.endAlpha = Clamp(endAlpha * baseAlpha, 0.0f, 255.0f);
+			pparams.startAlpha = std::clamp(startAlpha * baseAlpha, 0.0f, 255.0f);
+			pparams.endAlpha = std::clamp(endAlpha * baseAlpha, 0.0f, 255.0f);
 
 			WeaponProjectileFactory::LoadProjectile(pparams);
 		}

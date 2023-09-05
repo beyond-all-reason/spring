@@ -252,7 +252,7 @@ float CGame::GetNetMessageProcessingTimeLimit() const
 	const float minDrawFPS   =         globalConfig.minSimDrawBalance  * 1000.0f / std::max(0.01f, gu->avgDrawFrameTime);
 	const float simDrawRatio = maxSimFPS / minDrawFPS;
 
-	return Clamp(simDrawRatio * gu->avgSimFrameTime, 5.0f, 1000.0f / globalConfig.minDrawFPS);
+	return std::clamp(simDrawRatio * gu->avgSimFrameTime, 5.0f, 1000.0f / globalConfig.minDrawFPS);
 }
 
 void CGame::ClientReadNet()
@@ -1045,8 +1045,8 @@ void CGame::ClientReadNet()
 				CTeam* srcTeam = teamHandler.Team(srcTeamID);
 				CTeam* dstTeam = teamHandler.Team(dstTeamID);
 
-				const float metalShare  = Clamp(*reinterpret_cast<const float*>(&inbuf[4]), 0.0f, srcTeam->res.metal);
-				const float energyShare = Clamp(*reinterpret_cast<const float*>(&inbuf[8]), 0.0f, srcTeam->res.energy);
+				const float metalShare  = std::clamp(*reinterpret_cast<const float*>(&inbuf[4]), 0.0f, srcTeam->res.metal);
+				const float energyShare = std::clamp(*reinterpret_cast<const float*>(&inbuf[8]), 0.0f, srcTeam->res.energy);
 
 				if (metalShare > 0.0f) {
 					if (eventHandler.AllowResourceTransfer(srcTeamID, dstTeamID, "m", metalShare)) {
