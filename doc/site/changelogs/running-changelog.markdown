@@ -216,11 +216,14 @@ These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
 * added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
 
+### Colored text
+* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
+* added the `Game.textColorCodes` table, containing the constants `Color` (`/255`), `ColorAndOutline` (the newly added `/254`), and `Reset` (`\008`).
+
 ### Miscellaneous additions
 * add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
 * added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
 Note that EnteredWater happens when the unit dips its toes into the water while EnteredUnderwater is when it becomes completely submerged.
-* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
 * add new `/remove` cheat-only command, it removes selected units similar to `/destroy` except the units are just removed (no wreck, no death explosion).
 * added new startscript entry: `FixedRNGSeed`. Defaults to 0 which means to generate a random seed for synced RNG (current behaviour).
 Otherwise, given value is used as the seed. Use for reproducible runs (benchmarks, mission cutscenes...).
