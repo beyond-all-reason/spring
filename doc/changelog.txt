@@ -54,9 +54,9 @@ Lua:
    and run in the order they were added, just before that frame's GameFrame call-in.
  - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
    matches in subdirs, recursively.
- - add `gl.ClearBuffer(slot, r,g,b,a)`. slot can be 1..currentDrawBuffersN or "depth"|"stencil".
+ - add `gl.ClearBuffer(slot, r,g,b,a)`. slot can be "color0" to "color15", "depth" or "stencil".
    Clears only specified drawBuffer within multi-target FBO and correctly clears integer textures.
- - add `gl.ReadAttachmentPixel(slot, x,y)`. slot can be 1..currentAttachmentsN or "depth".
+ - add `gl.ReadAttachmentPixel(slot, x,y)`. slot can be "color0" to "color15" or "depth".
    Reads a single pixel of a specified attachment with respect to its underlying type, correctly works
    for integer textures.
  
