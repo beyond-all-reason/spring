@@ -4174,23 +4174,26 @@ int LuaOpenGL::ClearBuffer(lua_State* L)
 	GLenum bufferType;
 	GLenum attachment;
 	GLenum drawBuffer;
-	if (lua_israwstring(L, 1)) {
-		const std::string attachmentStr = lua_tostring(L, 1);
-		assert(attachmentStr == "depth" || attachmentStr == "stencil");
-		if (attachmentStr == "depth") {
-			bufferType = GL_DEPTH;
-			attachment = GL_DEPTH_ATTACHMENT;
-		} else {
-			bufferType = GL_STENCIL;
-			attachment = GL_STENCIL_ATTACHMENT;
-		}
-		drawBuffer = 0;
-	} else {
-		const GLenum slot = luaL_optint(L, 1, 1);
-		assert(slot >= 1);
-		bufferType = GL_COLOR;
-		attachment = GL_COLOR_ATTACHMENT0+slot-1;
-		drawBuffer = slot-1;
+	switch(hashString(luaL_checkstring(L, 1))) {
+		case hashString("color0"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT0;  drawBuffer = 0; } break;
+		case hashString("color1"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT1;  drawBuffer = 1; } break;
+		case hashString("color2"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT2;  drawBuffer = 2; } break;
+		case hashString("color3"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT3;  drawBuffer = 3; } break;
+		case hashString("color4"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT4;  drawBuffer = 4; } break;
+		case hashString("color5"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT5;  drawBuffer = 5; } break;
+		case hashString("color6"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT6;  drawBuffer = 6; } break;
+		case hashString("color7"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT7;  drawBuffer = 7; } break;
+		case hashString("color8"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT8;  drawBuffer = 8; } break;
+		case hashString("color9"):  { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT9;  drawBuffer = 9; } break;
+		case hashString("color10"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT10; drawBuffer = 10; } break;
+		case hashString("color11"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT11; drawBuffer = 11; } break;
+		case hashString("color12"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT12; drawBuffer = 12; } break;
+		case hashString("color13"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT13; drawBuffer = 13; } break;
+		case hashString("color14"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT14; drawBuffer = 14; } break;
+		case hashString("color15"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT15; drawBuffer = 15; } break;
+		case hashString("depth"):   { bufferType = GL_DEPTH;   attachment = GL_DEPTH_ATTACHMENT;   drawBuffer = 0; } break;
+		case hashString("stencil"): { bufferType = GL_STENCIL; attachment = GL_STENCIL_ATTACHMENT; drawBuffer = 0; } break;
+		default: assert(false);
 	}
 
 	const auto activeLuaFBO = CLuaHandle::GetActiveFBOs(L).GetActiveDrawFBO();
@@ -5186,11 +5189,25 @@ namespace Impl {
 int LuaOpenGL::ReadAttachmentPixel(lua_State* L)
 {
 	GLenum attachment;
-	if (lua_israwstring(L, 1)) {
-		assert(attachmentStr == "depth");
-		attachment = GL_DEPTH_ATTACHMENT;
-	} else {
-		attachment = GL_COLOR_ATTACHMENT0 +luaL_optint(L, 1, 1) -1;
+	switch(hashString(luaL_checkstring(L, 1))) {
+		case hashString("color0"):  { attachment = GL_COLOR_ATTACHMENT0; } break;
+		case hashString("color1"):  { attachment = GL_COLOR_ATTACHMENT1; } break;
+		case hashString("color2"):  { attachment = GL_COLOR_ATTACHMENT2; } break;
+		case hashString("color3"):  { attachment = GL_COLOR_ATTACHMENT3; } break;
+		case hashString("color4"):  { attachment = GL_COLOR_ATTACHMENT4; } break;
+		case hashString("color5"):  { attachment = GL_COLOR_ATTACHMENT5; } break;
+		case hashString("color6"):  { attachment = GL_COLOR_ATTACHMENT6; } break;
+		case hashString("color7"):  { attachment = GL_COLOR_ATTACHMENT7; } break;
+		case hashString("color8"):  { attachment = GL_COLOR_ATTACHMENT8; } break;
+		case hashString("color9"):  { attachment = GL_COLOR_ATTACHMENT9; } break;
+		case hashString("color10"): { attachment = GL_COLOR_ATTACHMENT10; } break;
+		case hashString("color11"): { attachment = GL_COLOR_ATTACHMENT11; } break;
+		case hashString("color12"): { attachment = GL_COLOR_ATTACHMENT12; } break;
+		case hashString("color13"): { attachment = GL_COLOR_ATTACHMENT13; } break;
+		case hashString("color14"): { attachment = GL_COLOR_ATTACHMENT14; } break;
+		case hashString("color15"): { attachment = GL_COLOR_ATTACHMENT15; } break;
+		case hashString("depth"):   { attachment = GL_DEPTH_ATTACHMENT; } break;
+		default: assert(false);
 	}
 
 	const GLint x = luaL_checkint(L, 2);
