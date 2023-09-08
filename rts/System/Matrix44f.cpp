@@ -66,11 +66,8 @@ bool CMatrix44f::IsOrthoNormal() const
 
 bool CMatrix44f::IsIdentity() const
 {
-	constexpr float4 x = {1.0f, 0.0f, 0.0f, 0.0f};
-	constexpr float4 y = {0.0f, 1.0f, 0.0f, 0.0f};
-	constexpr float4 z = {0.0f, 0.0f, 1.0f, 0.0f};
-	constexpr float4 w = {0.0f, 0.0f, 0.0f, 1.0f};
-	return (col[0] == x && col[1] == y && col[2] == z && col[3] == w);
+	static constexpr CMatrix44f IDENTITY = CMatrix44f();
+	return (*this) == IDENTITY;
 }
 
 
@@ -373,23 +370,14 @@ bool CMatrix44f::operator!=(const CMatrix44f& rhs) const
 #else
 	//alignof guarantees 16 byte alignment required by SSE2
 	// goodbye strict alignment rule :(
-	const __m128i m0c1 = _mm_load_si128(reinterpret_cast<const __m128i*>(&md[0][0]));
-	const __m128i m0c2 = _mm_load_si128(reinterpret_cast<const __m128i*>(&md[1][0]));
-	const __m128i m0c3 = _mm_load_si128(reinterpret_cast<const __m128i*>(&md[2][0]));
-	const __m128i m0c4 = _mm_load_si128(reinterpret_cast<const __m128i*>(&md[3][0]));
-
-	const __m128i m1c1 = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[0][0]));
-	const __m128i m1c2 = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[1][0]));
-	const __m128i m1c3 = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[2][0]));
-	const __m128i m1c4 = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[3][0]));
-
 	static constexpr uint16_t BINEQ = 0xFFFF;
 
-	return
-		static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(m0c1, m1c1))) != BINEQ ||
-		static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(m0c2, m1c2))) != BINEQ ||
-		static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(m0c3, m1c3))) != BINEQ ||
-		static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(m0c4, m1c4))) != BINEQ;
+	for (size_t i = 0; i < 4; ++i) {
+		const __m128i l = _mm_load_si128(reinterpret_cast<const __m128i*>(&    md[i][0]));
+		const __m128i r = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[i][0]));
+		if (static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(l, r))) != BINEQ)
+			return false;
+	}
 #endif
 }
 

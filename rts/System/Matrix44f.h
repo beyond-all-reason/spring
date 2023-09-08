@@ -15,10 +15,10 @@ public:
 	CR_DECLARE_STRUCT(CMatrix44f)
 
 	// identity
-	CMatrix44f() : m{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} {};
+	constexpr CMatrix44f() : m{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f} {};
 	CMatrix44f(const CMatrix44f& mat);
 
-	CMatrix44f(
+	constexpr CMatrix44f(
 		const float  m0, const float  m1, const float  m2, const float  m3,
 		const float  m4, const float  m5, const float  m6, const float  m7,
 		const float  m8, const float  m9, const float m10, const float m11,
@@ -121,7 +121,7 @@ public:
 		);
 		return z;
 	}
-	static CMatrix44f Identity() { return {}; }
+	static constexpr CMatrix44f Identity() { return {}; }
 	static CMatrix44f PerspProj(float aspect, float thfov, float zn, float zf);
 	static CMatrix44f PerspProj(float l, float r, float b, float t, float zn, float zf);
 	static CMatrix44f OrthoProj(float l, float r, float b, float t, float zn, float zf);
