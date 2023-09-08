@@ -360,16 +360,14 @@ static inline void MatrixMatrixMultiplySSE(const CMatrix44f& m1, const CMatrix44
 	_mm_store_ps(&mout->md[3][0], moutc4);
 }
 
-bool CMatrix44f::operator!=(const CMatrix44f& rhs) const
+bool CMatrix44f::operator==(const CMatrix44f& rhs) const
 {
 	if (this == &rhs)
-		return false;
+		return true;
 
 #if 0
-	return (std::memcmp(this, &rhs, sizeof(CMatrix44f)) != 0);
+	return (std::memcmp(this, &rhs, sizeof(CMatrix44f)) == 0);
 #else
-	//alignof guarantees 16 byte alignment required by SSE2
-	// goodbye strict alignment rule :(
 	static constexpr uint16_t BINEQ = 0xFFFF;
 
 	for (size_t i = 0; i < 4; ++i) {
@@ -378,6 +376,7 @@ bool CMatrix44f::operator!=(const CMatrix44f& rhs) const
 		if (static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(l, r))) != BINEQ)
 			return false;
 	}
+	return true;
 #endif
 }
 
