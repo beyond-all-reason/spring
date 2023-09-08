@@ -332,14 +332,14 @@ void ITexMemPool::Kill()
 }
 
 
-static bool IsValidImageType(int type) {
-	// this is a minimal list of file formats that (should) be available at all platforms
-	static constexpr int typeList[] = {
-		IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR
-	};
-
-	return std::find(std::cbegin(typeList), std::cend(typeList), type) != std::cend(typeList);
-}
+// static bool IsValidImageType(int type) {
+// 	// this is a minimal list of file formats that (should) be available at all platforms
+// 	static constexpr int typeList[] = {
+// 		IL_PNG, IL_JPG, IL_TGA, IL_DDS, IL_BMP, IL_TIF, IL_HDR, IL_EXR
+// 	};
+//
+// 	return std::find(std::cbegin(typeList), std::cend(typeList), type) != std::cend(typeList);
+// }
 
 static bool IsValidImageFormat(int format) {
 	static constexpr int formatList[] = {
@@ -1203,7 +1203,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 			currFormat = ilGetInteger(IL_IMAGE_FORMAT);
 			isValid = (isLoaded && IsValidImageFormat(currFormat));
 			dataType = ilGetInteger(IL_IMAGE_TYPE);
-			auto bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
+			// auto bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
 
 			// want to keep the format RGB* no matter the source swizzle
 			switch (currFormat)

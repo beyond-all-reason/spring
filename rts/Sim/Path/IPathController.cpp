@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#include "IPathController.hpp"
+#include "IPathController.h"
 #include "Sim/Units/Unit.h"
 #include "System/SpringMath.h"
 
@@ -90,7 +90,7 @@ short GMTDefaultPathController::GetDeltaHeading(
 
 	// less realistic to nullify speed in air, but saves headaches
 	// (high-turnrate units leaving the ground do not behave well)
-	return (*curTurnSpeedPtr = Clamp(curTurnSpeed * (1 - owner->IsInAir()), -maxTurnSpeed, maxTurnSpeed));
+	return (*curTurnSpeedPtr = std::clamp(curTurnSpeed * (1 - owner->IsInAir()), -maxTurnSpeed, maxTurnSpeed));
 }
 
 bool GMTDefaultPathController::IgnoreTerrain(const MoveDef& md, const float3& pos) const {

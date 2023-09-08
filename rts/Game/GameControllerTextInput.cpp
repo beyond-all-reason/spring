@@ -101,7 +101,7 @@ int GameControllerTextInput::SetInputText(const std::string& utf8Text) {
 
 	const std::string text = ignoreNextChar ? utf8Text.substr(utf8::NextChar(utf8Text, 0)) : utf8Text;
 
-	userInput.insert(writingPos = Clamp<int>(writingPos, 0, userInput.length()), text);
+	userInput.insert(writingPos = std::clamp <int> (writingPos, 0, userInput.length()), text);
 	editText = "";
 
 	writingPos += text.length();

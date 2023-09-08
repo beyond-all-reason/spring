@@ -2975,8 +2975,8 @@ void CGuiHandler::DrawButtons() // Only called by Draw
 	}
 
 	const int mouseIcon   = IconAtPos(mouse->lastx, mouse->lasty);
-	const int buttonStart = Clamp( activePage * iconsPerPage, 0, iconsCount); // activePage can be -1
-	const int buttonEnd   = Clamp(buttonStart + iconsPerPage, 0, iconsCount);
+	const int buttonStart = std::clamp( activePage * iconsPerPage, 0, iconsCount); // activePage can be -1
+	const int buttonEnd   = std::clamp(buttonStart + iconsPerPage, 0, iconsCount);
 
 	for (int ii = buttonStart; ii < buttonEnd; ii++) {
 		const IconInfo& icon = icons.at(ii);
@@ -3680,8 +3680,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 	if ((size_t(inCommand) < commands.size()) && (commands[inCommand].type == CMDTYPE_ICON_BUILDING)) {
 		{
 			// draw build distance for all immobile builders during build commands
-			for (const auto bi: unitHandler.GetBuilderCAIs()) {
-				const CBuilderCAI* builderCAI = bi.second;
+			for (const auto& [bid, builderCAI]: unitHandler.GetBuilderCAIs()) {
 				const CUnit* builder = builderCAI->owner;
 				const UnitDef* builderDef = builder->unitDef;
 

@@ -284,7 +284,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 			resources.metal  = std::min(resources.metal, defResources.metal);
 			resources.energy = std::min(resources.energy, defResources.energy);
 
-			reclaimLeft = Clamp(reclaimLeft + step, 0.0f, 1.0f);
+			reclaimLeft = std::clamp(reclaimLeft + step, 0.0f, 1.0f);
 
 			if (reclaimLeft >= 1.0f) {
 				// feature can start being reclaimed again

@@ -458,12 +458,12 @@ void CMiniMap::UpdateGeometry()
 		SetMaximizedGeometry();
 	}
 	else {
-		curDim.x = Clamp(curDim.x, 1, globalRendering->viewSizeX);
-		curDim.y = Clamp(curDim.y, 1, globalRendering->viewSizeY);
+		curDim.x = std::clamp(curDim.x, 1, globalRendering->viewSizeX);
+		curDim.y = std::clamp(curDim.y, 1, globalRendering->viewSizeY);
 
 		curPos.y = std::max(slaveDrawMode ? 0 : buttonSize, curPos.y);
 		curPos.y = std::min(globalRendering->viewSizeY - curDim.y, curPos.y);
-		curPos.x = Clamp(curPos.x, 0, globalRendering->viewSizeX - curDim.x);
+		curPos.x = std::clamp(curPos.x, 0, globalRendering->viewSizeX - curDim.x);
 	}
 
 	{
@@ -821,8 +821,8 @@ float3 CMiniMap::GetMapPosition(int x, int y) const
 	// translate mouse coords orientation and origin to map coords
 	y = y - globalRendering->viewPosY + curDim.y - globalRendering->viewSizeY;
 
-	float sx = Clamp(float(x - tmpPos.x) / curDim.x, 0.0f, 1.0f);
-	float sz = Clamp(float(y + tmpPos.y) / curDim.y, 0.0f, 1.0f);
+	float sx = std::clamp(float(x - tmpPos.x) / curDim.x, 0.0f, 1.0f);
+	float sz = std::clamp(float(y + tmpPos.y) / curDim.y, 0.0f, 1.0f);
 
 	if (flipped) {
 		sx = 1 - sx;
@@ -918,20 +918,20 @@ std::string CMiniMap::GetTooltip(int x, int y)
 			return "Minimize map";
 	}
 
-	const std::string buildTip = std::move(guihandler->GetBuildTooltip());
+	const std::string buildTip = guihandler->GetBuildTooltip();
 	if (!buildTip.empty())
 		return buildTip;
 
 	const float3 wpos = GetMapPosition(x, y);
 	const CUnit* unit = GetSelectUnit(wpos);
 	if (unit != nullptr)
-		return (std::move(CTooltipConsole::MakeUnitString(unit)));
+		return CTooltipConsole::MakeUnitString(unit);
 
-	const std::string selTip = std::move(selectedUnitsHandler.GetTooltip());
+	const std::string selTip = selectedUnitsHandler.GetTooltip();
 	if (!selTip.empty())
 		return selTip;
 
-	return (std::move(CTooltipConsole::MakeGroundString({wpos.x, CGround::GetHeightReal(wpos.x, wpos.z, false), wpos.z})));
+	return CTooltipConsole::MakeGroundString({wpos.x, CGround::GetHeightReal(wpos.x, wpos.z, false), wpos.z});
 }
 
 

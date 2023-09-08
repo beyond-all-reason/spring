@@ -384,7 +384,7 @@ static bool CanReceiveTracks(const float3& pos)
 	// calculate typemap-index
 	const int tmz = pos.z / (SQUARE_SIZE * 2);
 	const int tmx = pos.x / (SQUARE_SIZE * 2);
-	const int tmi = Clamp(tmz * mapDims.hmapx + tmx, 0, mapDims.hmapx * mapDims.hmapy - 1);
+	const int tmi = std::clamp(tmz * mapDims.hmapx + tmx, 0, mapDims.hmapx * mapDims.hmapy - 1);
 
 	const uint8_t* typeMap = readMap->GetTypeMapSynced();
 	const uint8_t  typeNum = typeMap[tmi];

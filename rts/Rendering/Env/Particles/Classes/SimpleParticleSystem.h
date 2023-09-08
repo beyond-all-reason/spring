@@ -75,21 +75,16 @@ protected:
 };
 
 /**
- * Same behaviour as CSimpleParticleSystem but spawns the particles
- * as independant objects
- */
-class CSphereParticleSpawner : public CSimpleParticleSystem
-{
+* old CSphereParticleSpawner (it used to spawns the particles as independant CProjectile objects)
+* has proven to be slower
+*/
+class CSphereParticleSpawner : public CSimpleParticleSystem {
 	CR_DECLARE_DERIVED(CSphereParticleSpawner)
-
 public:
 	CSphereParticleSpawner() {}
-
-	void Draw() override {}
-	void Update() override {}
-	void Init(const CUnit* owner, const float3& offset) override;
-
-	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
+	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo) {
+		return CSimpleParticleSystem::GetMemberInfo(memberInfo);
+	}
 };
 
 #endif // SIMPLE_PARTICLE_SYSTEM_H

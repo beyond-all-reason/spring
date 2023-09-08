@@ -1,8 +1,32 @@
+
+
+  v
+
+  Changelogs are now available at https://beyond-all-reason.github.io/spring/changelogs
+  In particular, the running changelog since the last version is at https://beyond-all-reason.github.io/spring/changelogs/running-changelog
+  If you're looking at migrating from upstream Spring 105.0, there is a guide at https://beyond-all-reason.github.io/spring/migrating-from-spring/
+
+  ^
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Spring changelog
 (since 85.0 a "!" prefix indicates backward compatibility broke)
 (numbers in brackets normally mean the mantis ticket ID)
-
-
 
 -- BAR105 NEXT ---------------------------------------------------
 
@@ -41,22 +65,30 @@ Lua:
    They will come back at some point, but there is no timeline yet. Use `Spring.UseArchive` meanwhile.
  - removed `snext`, `spairs` and `sipairs`. These functions can be replaced by the regular `next`,
    `pairs`, and `ipairs` respectively with no change in behaviour.
+ - add `Spring.GetModelRootPiece(modelName)` -> number pieceID, returns the root piece of a model.
+   Similarly `Spring.Get{Unit,Feature}RootPiece(thingID)` returns it for a live unit or feature.
  - add `Spring.GetUnitIsBeingBuilt(unitID) -> bool beingBuilt, number buildProgress`. Note that this
    doesn't bring new capability because `buildProgress` was already available from `GetUnitHealth`,
    and `beingBuilt` from `GetUnitIsStunned`, but as you can see it wasn't terribly convenient/intuitive.
  - rules params now support the boolean type. Skirmish AI and the rules param selection filter can
    read them via existing numerical interface by using 0 and 1.
- - add `Spring.GetUnitEffectiveBuildRange(builderID, buildeeDefID)`. Returns the effective build range
-   for building given target, counted from the center of the prospective target's center. Useful for
-   setting move goals manually.
+ - add `Spring.GetUnitEffectiveBuildRange(builderID[, buildeeDefID])` -> number. Returns the effective
+   build range for building given target, counted from the center of the prospective target's center.
+   Returns just the build range if buildee is nil. Useful for setting move goals manually.
  - add `Script.DelayByFrames(frameDelay, function, args...)`. Runs `function(args...)` after a delay
    of the specified number of frames (at least 1). Multiple functions can be queued onto the same frame
    and run in the order they were added, just before that frame's GameFrame call-in.
  - add a new 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, controls whether to also return
    matches in subdirs, recursively.
- - add `gl.ClearBuffer(slot, r,g,b,a)`. slot can be "color0" to "color15", "depth" or "stencil".
+ - `gadget:AllowUnitCreation` now accepts a second return value that controls whether to drop the order.
+   If set to false, the builder or factory will keep retrying. Defaults to true (drops order; current behavior).
+ - add `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) -> nil`, allowing to set
+   start box (in elmos) for an ally team.
+ - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
+   Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
+ - add `gl.ClearBuffer(slot, r,g,b,a)`. `slot` can be "color0" to "color15", "depth" or "stencil".
    Clears only specified drawBuffer within multi-target FBO and correctly clears integer textures.
- - add `gl.ReadAttachmentPixel(slot, x,y)`. slot can be "color0" to "color15" or "depth".
+ - add `gl.ReadAttachmentPixel(slot, x,y)`. `slot` can be "color0" to "color15" or "depth".
    Reads a single pixel of a specified attachment with respect to its underlying type, correctly works
    for integer textures.
  
@@ -65,14 +97,19 @@ Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
    blank via 'initBlank' parameter (either 1 or 0) and specifying `blank_map_x`, `blank_map_y`,
    `blank_map_height` map options.
-
+ - Emit a warning instead of immediately failing when MapParser does not find startpos defined in
+   the map config for all teamIDs present in start script. This gives a chance to the game to remedy
+   the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
+   in the corner -- giving an obvious hint that something is amiss and the map is unable to support
+   this number of players by itself without assistance from the game.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
  - add `system.allowEnginePlayerlist` modrule, defaults to true. If false,
    the built-in `/info` playerlist won't display. Use for anonymous modes
    in conjunction with `Spring.GetPlayerInfo` poisoning.
- 
+ - Add new `/remove` cheat-only command, it removes selected units similar to
+   `/destroy` except no death script is run (so no explosion nor wreckage).
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
@@ -94,10 +131,79 @@ Sim:
    will still always target enemies and never allies, so avoid using it outside of manually-triggered contexts
  - nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius
    instead of its center. Mobile builders already worked this way.
+ - Renamed TKPFS to HAPFS. It is HAPFS with modifications and is ready now to take over. It was
+   kept separate initially in case major issues were found, but it is now suitably stable to
+   become the official version of HAPFS (as it was always intended.)
+ - Major rework of QTPFS, so many changes that this diserves its own section (see Sim::QTPFS)
+ - Added mod option, pfRepathDelayInFrames, which tells GroundMoveType how many frames at least
+   must pass between checks for whether a unit is making enough progress to it's current waypoint
+   or whether a new path should be requested. Defaults to 60 frames (2 seconds.) Adjust to find the
+   right balance between how quickly units can get unstuck and how much CPU power is used. Smaller
+   intervals increase the chance of slow units triggering unnecessary re-pathing requests, but
+   reduces the chance that players may believe a unit is getting stuck and is not handling itself
+   well.
+ - Added modrule, `system.pfRepathMaxRateInFrames`, which tells GroundMoveType the minimum amount of
+   frames that must pass before a unit is allowed to request a new path. By default, it is 150
+   (5 seconds.) This is mostly for rate limiting and prevent excessive CPU wastage, because
+   processing path requests are not cheap.
+ - Fixed: units could sometimes get stuck as they spin/circle around a waypoint when a waypoint is
+   too close to some small/tiny obstacles.
+ - Fixed: units could sometimes consume waypoints that were well ahead of their current position,
+   which increased processing overhead and reduced their ability to navigate obstacles.
+ - Fixed: units were often setting their current and next waypoints to the same waypoint.
+ - Units repath when they are starting to struggle to make progression on their path. Previously
+   they would request a new path upon touching blocking terrain or a building, which may not be
+   necessary and caused a not insignificant impact on CPU usage.
+ - Reduced the amount of corner-cutting units try to do when following a path. This should reduce
+   the difficulty some unit types experience when trying to move through narrow corridoors, or
+   between buildings in bases.
+ - Reduced the difficulty units face when trying to rejoin a path after being routed away due to a
+   collision with a building.
+ - removed modrules: `system.pfForce[Update]SingleThreaded`. MT has shown itself stable.
+ - removed modrule: `system.pathFinderUpdateRate`. This modrule isn't used any more; instead, a
+   different modrule serves a similar purpose, but uses different values, see: `pfUpdateRateScale`.
+ - Added modrule, `system.pfRawMoveSpeedThreshold`, which tells GroundMoveType and QTPFS what
+   minimum speed mod on a given map square to block a raw move trace. By default the value is 0.0,
+   which means only terrain, features, and structures that block movement should be considered.
+   Raising the value will mean that raw move check will fail on technically pathable map squares,
+   which means if unit is asked to cross it, it will resort to using normal path finding, which
+   will likely try to path around those map squares. Think lava, it is very slow to move through,
+   (and it hurts), you don't want units trying to path through lava unless they are trying to get
+   out. This feature is considered experimental.
+
+Sim::QTPFS
+ - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
+   The more intense the colour, the more layers (MoveTypes) that still need to process the change.
+ - The update system now uses a dirty quad table, so multiple updates in the same area won't
+   trigger unneccesary path data updates.
+ - The update system has been rebalanced to keep up with map updates while minimizing the cost of
+   doing so. It scales up work if the number of updates starts to get larger.
+ - The implementation is now hybrid Quad-Tree. Instead of one root-node, there are now multiple
+   root nodes in a uniform grid across the map. This is primarily to ensure that all quad sub
+   divide into powers of 2, which affords a series of assumptions that allow for optimizations.
+ - This multi-root approach also fixes a problem with the original QTPFS where long maps would
+   subdivide into long and sub-optimal rectangler shapes - like a 1x16 squares for example.
+ - The update system is now multi-threaded.
+ - Pathing requests are now fully multi-threaded. Previously the requests were single threaded,
+   but in a separate thread from the main one.
+ - If a pathing request goal is an unaccesible quad, then the system will try to find the nearest
+   accessible node to search instead.
+ - The node-related data structures have been reworked to require significantly less memory than
+   before. Also, excess data links have been removed.
+ - QTPFS could group related pathing requests made in the same frame to reduce load. Now, all
+   pathing requests can be grouped with any active pathing request. So a request result processed
+   in a previous frame can be used as the answer for one in the current frame if they are
+   travelling from/to the same quads.
+ - Support for unsynced pathing requests added.
+ - No longer saves/loads pathing data to/from disk: with the performance improvements it is faster
+   to recalculate the pathing data on load than to use data saved to disk.
+ - ECS-based system added to monitor changes in maxRelSpeedMod during match, whereas before it was
+   found at the start and then never updated.
 
 System:
- - Simulation will use up to ~100% CPU time to catch up.
+ - Simulation can be configured to use up to ~100% CPU time to catch up.
  - Set default min sim speed for commands to 0.1 (previous limit was 0.3.)
+ - EnTT has been added to provide ECS capabilities. Patterns for usage to follow.
 
 UI:
  - Increase the rate at which the traversability view map is updated by x4

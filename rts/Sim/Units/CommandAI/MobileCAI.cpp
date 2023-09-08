@@ -396,7 +396,7 @@ void CMobileCAI::ExecuteMove(Command& c)
 
 	// compare against the moveType's own (possibly extended)
 	// goal radius to determine if we can finish the command
-	if (sqGoalDist < Square(moveType->GetGoalRadius(1.0f))) {
+	if (sqGoalDist < Square(moveType->GetGoalRadius(1.0f)) || moveType->IsAtGoal()) {
 		if (!HasMoreMoveCommands())
 			StopMove();
 
@@ -1228,7 +1228,7 @@ void CMobileCAI::StartSlowGuard(float speed) {
 void CMobileCAI::CalculateCancelDistance()
 {
 	// clamp it a bit because the units don't have to turn at max speed
-	cancelDistance = Clamp(Square(owner->moveType->CalcStaticTurnRadius() + (SQUARE_SIZE << 1)), 1024.0f, 2048.0f);
+	cancelDistance = std::clamp(Square(owner->moveType->CalcStaticTurnRadius() + (SQUARE_SIZE << 1)), 1024.0f, 2048.0f);
 }
 
 
@@ -1541,12 +1541,12 @@ bool CMobileCAI::FindEmptySpot(const CUnit* unloadee, const float3& center, floa
 	const UnitDef* unitDef = owner->unitDef;
 
 	const float sqSpreadDiv = (spread * spread) / 100.0f;
-	const float maxAttempts = Clamp(sqSpreadDiv, 100.0f, 1000.0f);
+	const float maxAttempts = std::clamp(sqSpreadDiv, 100.0f, 1000.0f);
 
 	// radius is the size of the command unloading-zone (e.g. dragged by player);
 	// spread is the *minimum* distance between any pair of unloaded units which
 	// also has to respect radius
-	spread = Clamp(spread, 1.0f * SQUARE_SIZE, radius);
+	spread = std::clamp(spread, 1.0f * SQUARE_SIZE, radius);
 
 	// more attempts for larger unloading zones
 	for (int a = 0; a < maxAttempts; ++a) {

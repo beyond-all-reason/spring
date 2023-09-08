@@ -328,7 +328,7 @@ void CCamera::UpdateViewRange()
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, trPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, brPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, blPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = Clamp(wantedViewRange, CGlobalRendering::MIN_ZNEAR_DIST, CGlobalRendering::MAX_VIEW_RANGE);
+	wantedViewRange = std::clamp(wantedViewRange, CGlobalRendering::MIN_ZNEAR_DIST, CGlobalRendering::MAX_VIEW_RANGE);
 	#endif
 
 	frustum.scales.z = std::max(wantedViewRange * ZFAR_ZNEAR_FACTOR, globalRendering->minViewRange);
@@ -718,14 +718,14 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 
 	float2 move;
 	// must be float, ints don't save the sign in case of 0 and we need it for copysign()
-	float2 distToEdge = {Clamp(mouse->lastx, 0, windowW) * 1.0f, Clamp(mouseY, 0, viewH) * 1.0f};
+	float2 distToEdge = {std::clamp(mouse->lastx, 0, windowW) * 1.0f, std::clamp(mouseY, 0, viewH) * 1.0f};
 
 	if (((windowW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((windowW - 1) - distToEdge.x);
 	if (((viewH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((viewH - 1) - distToEdge.y);
 
 	if (edgeMoveDynamic) {
-		move.x = Clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
-		move.y = Clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
+		move.x = std::clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
+		move.y = std::clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
 	} else {
 		move.x = int(std::abs(distToEdge.x) < border.x);
 		move.y = int(std::abs(distToEdge.y) < border.y);

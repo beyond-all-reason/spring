@@ -186,7 +186,7 @@ int LuaRBOs::CreateRBO(lua_State* L)
 		{
 			lua_getfield(L, tableIdx, "samples");
 
-			// not Clamp(lua_tonumber(L, -1), 2, globalRendering->msaaLevel);
+			// not std::clamp(lua_tonumber(L, -1), 2, globalRendering->msaaLevel);
 			// AA sample count has to equal the default FB or blitting breaks
 			if (lua_isnumber(L, -1))
 				rbo.samples = globalRendering->msaaLevel;

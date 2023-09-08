@@ -187,7 +187,7 @@ void CSolidObject::UpdateVoidState(bool set)
 
 void CSolidObject::SetMass(float newMass)
 {
-	mass = Clamp(newMass, MINIMUM_MASS, MAXIMUM_MASS);
+	mass = std::clamp(newMass, MINIMUM_MASS, MAXIMUM_MASS);
 }
 
 
@@ -312,8 +312,8 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 
 	mp.x = (int(position.x + SQUARE_SIZE / 2) / SQUARE_SIZE) - (xsize / 2);
 	mp.y = (int(position.z + SQUARE_SIZE / 2) / SQUARE_SIZE) - (zsize / 2);
-	mp.x = Clamp(mp.x, 0, mapDims.mapx - xsize);
-	mp.y = Clamp(mp.y, 0, mapDims.mapy - zsize);
+	mp.x = std::clamp(mp.x, 0, mapDims.mapx - xsize);
+	mp.y = std::clamp(mp.y, 0, mapDims.mapy - zsize);
 
 	return mp;
 }
@@ -355,9 +355,9 @@ float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
 	dragAccelVec /= mass;
 
 	// limit the acceleration
-	dragAccelVec.x = Clamp(dragAccelVec.x, -math::fabs(speed.x), math::fabs(speed.x));
-	dragAccelVec.y = Clamp(dragAccelVec.y, -math::fabs(speed.y), math::fabs(speed.y));
-	dragAccelVec.z = Clamp(dragAccelVec.z, -math::fabs(speed.z), math::fabs(speed.z));
+	dragAccelVec.x = std::clamp(dragAccelVec.x, -math::fabs(speed.x), math::fabs(speed.x));
+	dragAccelVec.y = std::clamp(dragAccelVec.y, -math::fabs(speed.y), math::fabs(speed.y));
+	dragAccelVec.z = std::clamp(dragAccelVec.z, -math::fabs(speed.z), math::fabs(speed.z));
 
 	return dragAccelVec;
 }
@@ -406,7 +406,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
 	}
 	else {
-		frontdir = fDir;
+		frontdir = fDir * Sign(uDir.y);
 	}
 	rightdir = (frontdir.cross(uDir)).Normalize();
 	updir = uDir;

@@ -28,8 +28,8 @@ namespace QTPFS {
 	enum {
 		NODE_IDX_TL = 0,
 		NODE_IDX_TR = 1,
-		NODE_IDX_BR = 2,
-		NODE_IDX_BL = 3,
+		NODE_IDX_BL = 2,
+		NODE_IDX_BR = 3,
 	};
 	enum {
 		NODE_PATH_COST_F = 0,

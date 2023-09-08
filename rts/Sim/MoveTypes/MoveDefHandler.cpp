@@ -5,6 +5,8 @@
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/ModInfo.h"
+#include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
 #include "System/Exceptions.h"
 #include "System/CRC.h"
@@ -70,7 +72,7 @@ static float DegreesToMaxSlope(float degrees)
 	// PE checksum compatibility between debug and release
 	static constexpr float degToRad = math::DEG_TO_RAD;
 
-	const float deg = Clamp(degrees, 0.0f, 60.0f) * 1.5f;
+	const float deg = std::clamp(degrees, 0.0f, 60.0f) * 1.5f;
 	const float rad = deg * degToRad;
 
 	return (1.0f - math::cos(rad));
@@ -81,7 +83,7 @@ static MoveDef::SpeedModClass ParseSpeedModClass(const std::string& moveDefName,
 	const int speedModClass = moveDefTable.GetInt("speedModClass", -1);
 
 	if (speedModClass != -1)
-		return Clamp(MoveDef::SpeedModClass(speedModClass), MoveDef::Tank, MoveDef::Ship);
+		return std::clamp(MoveDef::SpeedModClass(speedModClass), MoveDef::Tank, MoveDef::Ship);
 
 	// name-based fallbacks
 	if (moveDefName.find( "boat") != string::npos)
@@ -284,6 +286,115 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	assert((zsize & 1) == 1);
 }
 
+bool MoveDef::DoRawSearch(
+	const CSolidObject* collider,
+	const float3 startPos,
+	const float3 endPos,
+	const float3 testMoveDir,
+	bool testTerrain,
+	bool testObjects,
+	bool centerOnly,
+	float* minSpeedModPtr,
+	int* maxBlockBitPtr,
+	int thread
+) {
+	ZoneScoped;
+	assert(testTerrain || testObjects);
+
+	const int2 startBlock(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE);
+	const int2 endBlock(endPos.x / SQUARE_SIZE, endPos.z / SQUARE_SIZE);
+	const int2 diffBlk = {std::abs(endBlock.x - startBlock.x), std::abs(endBlock.y - startBlock.y)};
+	const float speedModThreshold = modInfo.pfRawMoveSpeedThreshold;
+
+	const/*expr*/ auto StepFunc = [](const int2& dir, const int2& dif, int2& pos, int2& err) {
+		pos.x += (dir.x * (err.y >= 0));
+		pos.y += (dir.y * (err.y <= 0));
+		err.x -= (dif.y * (err.y >= 0));
+		err.x += (dif.x * (err.y <= 0));
+	};
+
+	auto walkPath = [startBlock, endBlock, diffBlk, &StepFunc](auto& f) -> bool {
+		bool result = true;
+
+		const int2 fwdStepDir = int2{(endBlock.x > startBlock.x), (endBlock.y > startBlock.y)} * 2 - int2{1, 1};
+		const int2 revStepDir = int2{(startBlock.x > endBlock.x), (startBlock.y > endBlock.y)} * 2 - int2{1, 1};
+
+		int2 blkStepCtr = {diffBlk.x + diffBlk.y, diffBlk.x + diffBlk.y};
+		int2 fwdStepErr = {diffBlk.x - diffBlk.y, diffBlk.x - diffBlk.y};
+		int2 revStepErr = fwdStepErr;
+		int2 fwdTestBlk = startBlock;
+		int2 revTestBlk = endBlock;
+
+		// int2 prevFwdTestBlk = {-1, -1};
+		// int2 prevRevTestBlk = {-1, -1};
+
+		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
+			result = f(fwdTestBlk.x, fwdTestBlk.y) && f(revTestBlk.x, revTestBlk.y);
+			if (!result) { break; }
+
+			// NOTE: for odd-length paths, center square is tested twice
+			if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
+				break;
+
+			// prevFwdTestBlk = fwdTestBlk;
+			// prevRevTestBlk = revTestBlk;
+
+			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
+			StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
+
+			// skip if exactly crossing a vertex (in either direction)
+			blkStepCtr.x -= (fwdStepErr.y == 0);
+			blkStepCtr.y -= (revStepErr.y == 0);
+			fwdStepErr.y  = fwdStepErr.x;
+			revStepErr.y  = revStepErr.x;
+		}
+
+		return result;
+	};
+
+	const float3 testMoveDir2D = (testMoveDir * XZVector).SafeNormalize2D();
+
+	float minSpeedMod = std::numeric_limits<float>::max();
+	int   maxBlockBit = CMoveMath::BLOCK_NONE;
+
+	bool retTestMove = true;
+
+	if (testTerrain) {
+		auto test = [this, &minSpeedMod, &testMoveDir2D, speedModThreshold](int x, int z) -> bool {
+			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
+
+			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
+			minSpeedMod = std::min(minSpeedMod, speedMod);
+
+			return (speedMod > speedModThreshold);
+		};
+		retTestMove = walkPath(test);
+	}
+
+	// GetPosSpeedMod only checks *one* square of terrain
+	// (heightmap/slopemap/typemap), not the blocking-map
+	if (testObjects & retTestMove) {
+		const int tempNum = gs->GetMtTempNum(thread);
+
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, tempNum](int x, int z) -> bool {
+			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
+			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
+			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
+			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapy - 1);
+
+			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, collider, thread, tempNum);
+			maxBlockBit = blockBits;
+			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+		};
+		retTestMove = walkPath(test);
+	}
+
+	// don't use std::min or |= because the ptr values might be garbage
+	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
+	if (maxBlockBitPtr != nullptr) *maxBlockBitPtr = maxBlockBit;
+	return retTestMove;
+}
+
 
 bool MoveDef::TestMoveSquareRange(
 	const CSolidObject* collider,
@@ -364,7 +475,7 @@ float MoveDef::GetDepthMod(float height) const {
 	const float maxScale = depthModParams[DEPTHMOD_MAX_SCALE];
 
 	const float depth = -height;
-	const float scale = Clamp((a * depth * depth + b * depth + c), minScale, maxScale);
+	const float scale = std::clamp((a * depth * depth + b * depth + c), minScale, maxScale);
 
 	// NOTE:
 	//   <maxScale> is guaranteed to be >= 0.01, so the

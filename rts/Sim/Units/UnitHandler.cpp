@@ -11,10 +11,13 @@
 #include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
+#include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
+#include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
@@ -251,7 +254,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	// there are many ways to fiddle with "deathScriptFinished", so a unit may
 	// arrive here not having been properly killed while isDead is still false
 	// make sure we always call Killed; no-op if isDead was already set to true
-	unit->ForcedKillUnit(nullptr, false, true, true);
+	unit->ForcedKillUnit(nullptr, false, true);
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
@@ -295,106 +298,22 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 
 	units[delUnit->id] = nullptr;
 
+	entt::entity delUnitEntity = delUnit->entityReference;
+
 	CSolidObject::SetDeletingRefID(delUnit->id);
 	unitMemPool.free(delUnit);
 	CSolidObject::SetDeletingRefID(-1);
+
+	assert( Sim::registry.valid(delUnitEntity) );
+	Sim::registry.destroy(delUnitEntity);
 }
 
 void CUnitHandler::UpdateUnitMoveTypes()
 {
 	SCOPED_TIMER("Sim::Unit::MoveType");
 
-	if (modInfo.forceCollisionAvoidanceSingleThreaded)
-	{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsST");
-		std::size_t len = activeUnits.size();
-		for (std::size_t i=0; i<len; ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			unit->SanityCheck();
-			unit->PreUpdate();
-
-			moveType->UpdatePreCollisionsMt();
-			moveType->UpdatePreCollisions();
-		}
-	} else {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
-		for_mt(0, activeUnits.size(), [this](const int i){
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			unit->SanityCheck();
-			unit->PreUpdate();
-
-			moveType->UpdatePreCollisionsMt();
-		});
-		}
-
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
-		std::size_t len = activeUnits.size();
-		for (std::size_t i=0; i<len; ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdatePreCollisions();
-		}
-		}
-	}
-
-	if (modInfo.forceCollisionsSingleThreaded) {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionST");
-		for (int i = 0; i < activeUnits.size(); ++i) {
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdateCollisionDetections();
-		}
-		}
-	} else {
-		{
-		SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionMT");
-		for_mt(0, activeUnits.size(), [this](const int i){
-			CUnit* unit = activeUnits[i];
-			AMoveType* moveType = unit->moveType;
-
-			moveType->UpdateCollisionDetections();
-		}
-		);
-		}
-	}
-
-	{
-	// SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		CUnit* unit = activeUnits[activeUpdateUnit];
-		AMoveType* moveType = unit->moveType;
-
-		moveType->ProcessCollisionEvents();
-	}
-	}
-
-	{
-	SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		CUnit* unit = activeUnits[activeUpdateUnit];
-		AMoveType* moveType = unit->moveType;
-
-		if (moveType->Update())
-			eventHandler.UnitMoved(unit);
-
-		// this unit is not coming back, kill it now without any death
-		// sequence (s.t. deathScriptFinished becomes true immediately)
-		if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-			unit->ForcedKillUnit(nullptr, false, true, false);
-
-		unit->SanityCheck();
-		assert(activeUnits[activeUpdateUnit] == unit);
-	}
-	}
+	GroundMoveSystem::Update();
+	GeneralMoveSystem::Update();
 }
 
 void CUnitHandler::UpdateUnitLosStates()
@@ -409,6 +328,8 @@ void CUnitHandler::UpdateUnitLosStates()
 
 void CUnitHandler::SlowUpdateUnits()
 {
+	SCOPED_TIMER("Sim::Unit::SlowUpdate");
+
 	assert(activeSlowUpdateUnit >= 0);
 
 	// reset the iterator every <UNIT_SLOWUPDATE_RATE> frames
@@ -423,9 +344,6 @@ void CUnitHandler::SlowUpdateUnits()
 
 	activeSlowUpdateUnit = idxEnd;
 
-	{
-	SCOPED_TIMER("Sim::Unit::SlowUpdate");
-
 	// stagger the SlowUpdate's
 	for (size_t i = idxBeg; i<idxEnd; ++i) {
 		CUnit* unit = activeUnits[i];
@@ -435,98 +353,6 @@ void CUnitHandler::SlowUpdateUnits()
 		unit->SlowUpdateWeapons();
 		unit->localModel.UpdateBoundingVolume();
 		unit->SanityCheck();
-	}
-	}
-	// some paths are requested at slow rate
-	UpdateUnitPathing(idxBeg, idxEnd);
-}
-
-void CUnitHandler::UpdateUnitPathing(const size_t idxBeg, const size_t idxEnd)
-{
-	SCOPED_TIMER("Sim::Unit::RequestPath");
-
-	std::vector<CUnit*> unitsToMove;
-	unitsToMove.reserve(activeUnits.size());
-
-	GetUnitsWithPathRequests(unitsToMove, idxBeg, idxEnd);
-
-	if (pathManager->SupportsMultiThreadedRequests())
-		MultiThreadPathRequests(unitsToMove);
-	else
-		SingleThreadPathRequests(unitsToMove);
-}
-
-void CUnitHandler::GetUnitsWithPathRequests(std::vector<CUnit*>& unitsToMove, const size_t idxBeg, const size_t idxEnd)
-{
-	for (size_t i = 0; i<idxBeg; ++i)
-	{
-		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_IMMEDIATE))
-			unitsToMove.push_back(unit);
-	}
-	for (size_t i = idxBeg; i<idxEnd; ++i)
-	{
-		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_DELAYED|PATH_REQUEST_TIMING_IMMEDIATE))
-			unitsToMove.push_back(unit);
-	}
-	for (size_t i = idxEnd; i<activeUnits.size(); ++i)
-	{
-		CUnit* unit = activeUnits[i];
-		if (unit->moveType->WantsReRequestPath() & (PATH_REQUEST_TIMING_IMMEDIATE))
-			unitsToMove.push_back(unit);
-	}
-}
-
-void CUnitHandler::MultiThreadPathRequests(std::vector<CUnit*>& unitsToMove)
-{
-	size_t unitsToMoveCount = unitsToMove.size();
-
-	// Carry out the pathing requests without heatmap updates.
-	for_mt(0, unitsToMoveCount, [&unitsToMove](const int i){
-		CUnit* unit = unitsToMove[i];
-		unit->moveType->DelayedReRequestPath();
-	});
-
-	// update cache
-	for (size_t i = 0; i<unitsToMoveCount; ++i){
-		CUnit* unit = unitsToMove[i];
-		auto pathId = unit->moveType->GetPathId();
-		if (pathId > 0)
-			pathManager->SavePathCacheForPathId(pathId);
-	}
-
-	// Update Heatmaps for moved units.
-	for (size_t i = 0; i<unitsToMoveCount; ++i){
-		CUnit* unit = unitsToMove[i];
-		auto pathId = unit->moveType->GetPathId();
-		if (pathId > 0)
-			pathManager->UpdatePath(unit, pathId);
-	}
-
-	for (size_t i = 0; i<unitsToMoveCount; ++i){
-		CUnit* unit = unitsToMove[i];
-		unit->moveType->SyncWaypoints();
-	}
-}
-
-void CUnitHandler::SingleThreadPathRequests(std::vector<CUnit*>& unitsToMove)
-{
-	size_t unitsToMoveCount = unitsToMove.size();
-
-	for (size_t i = 0; i<unitsToMoveCount; ++i){
-		CUnit* unit = unitsToMove[i];
-		unit->moveType->DelayedReRequestPath();
-
-		// Update heatmap inline with request to keep as close as possible to the original
-		// behaviour.
-		auto pathId = unit->moveType->GetPathId();
-		if (pathId > 0)
-			pathManager->UpdatePath(unit, pathId);
-
-		unit->moveType->SyncWaypoints();
-
-		// update cache is still done inside the ST pathing
 	}
 }
 

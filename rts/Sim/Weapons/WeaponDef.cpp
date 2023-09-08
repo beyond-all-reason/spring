@@ -333,8 +333,8 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 
 		switch (hashString(type.c_str())) {
 			case hashString("Melee"): {
-				targetBorder = Clamp(wdTable.GetFloat("targetBorder", 1.0f), -1.0f, 1.0f);
-				cylinderTargeting = Clamp(wdTable.GetFloat("cylinderTargeting", wdTable.GetFloat("cylinderTargetting", 1.0f)), 0.0f, 128.0f);
+				targetBorder = std::clamp(wdTable.GetFloat("targetBorder", 1.0f), -1.0f, 1.0f);
+				cylinderTargeting = std::clamp(wdTable.GetFloat("cylinderTargeting", wdTable.GetFloat("cylinderTargetting", 1.0f)), 0.0f, 128.0f);
 			} break;
 
 			//TODO move to lua (for all other weapons this tag is named `duration` and has a different default)

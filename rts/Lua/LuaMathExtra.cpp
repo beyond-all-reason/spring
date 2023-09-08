@@ -75,7 +75,7 @@ int LuaMathExtra::clamp(lua_State* L) {
 	const lua_Number lbound = luaL_checknumber_noassert(L, 2);
 	const lua_Number ubound = luaL_checknumber_noassert(L, 3);
 
-	lua_pushnumber(L, Clamp(luaL_checknumber_noassert(L, 1), lbound, ubound));
+	lua_pushnumber(L, std::clamp(luaL_checknumber_noassert(L, 1), lbound, ubound));
 	return 1;
 }
 
@@ -133,7 +133,7 @@ int LuaMathExtra::round(lua_State* L) {
 		// Spring's Lua interpreter uses 32-bit floats,
 		// therefore max. accuracy is ~7 decimal digits
 		const int i = std::min(7, int(sizeof(POWERS_OF_TEN) / sizeof(float)) - 1);
-		const int n = Clamp(luaL_checkint(L, 2), 0, i);
+		const int n = std::clamp(luaL_checkint(L, 2), 0, i);
 
 		const lua_Number xinteg = math::floor(x);
 		const lua_Number xfract = x - xinteg;

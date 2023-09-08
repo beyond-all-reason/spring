@@ -100,7 +100,7 @@ public:
 		if (args.empty()) {
 			gs->godMode = GODMODE_MAX_VAL - gs->godMode;
 		} else {
-			gs->godMode = Clamp(atoi(args.c_str()), 0, int(GODMODE_MAX_VAL));
+			gs->godMode = std::clamp(atoi(args.c_str()), 0, int(GODMODE_MAX_VAL));
 		}
 
 		CLuaUI::UpdateTeams();
@@ -195,33 +195,45 @@ public:
 };
 
 
-class DestroyActionExecutor : public ISyncedActionExecutor {
+class BaseDestroyActionExecutor : public ISyncedActionExecutor {
 public:
-	DestroyActionExecutor() : ISyncedActionExecutor("Destroy", "Destroys one or multiple units by unit-ID, instantly", true) {
-	}
+	BaseDestroyActionExecutor(const std::string& command, const std::string& description, bool runDeathScript)
+		: ISyncedActionExecutor(command, description, true), runDeathScript(runDeathScript) {}
 
-	bool Execute(const SyncedAction& action) const final {
-		std::stringstream argsStream(action.GetArgs());
-		LOG("Killing units: %s", action.GetArgs().c_str());
+	bool Execute(const SyncedAction& action) const {
+		const std::vector<std::string>& args = CSimpleParser::Tokenize(action.GetArgs(), 0);
+		if (args.size() == 0) {
+			LOG_L(L_WARNING, "not enough arguments (\"/%s <unitID:int...>\")", this->GetCommand().c_str());
+			return false;
+		}
 
-		unsigned int unitId;
-		do {
-			argsStream >> unitId;
-
-			if (!argsStream)
-				break;
-
-			CUnit* unit = unitHandler.GetUnit(unitId);
+		LOG("[%s] unitIDs: %s", this->GetCommand().c_str(), action.GetArgs().c_str());
+		for (const auto& it : args) {
+			int unitId = StringToInt<int>(it);
+			CUnit *unit = unitHandler.GetUnit(unitId);
 
 			if (unit != nullptr) {
-				unit->KillUnit(nullptr, false, false);
+				unit->KillUnit(nullptr, false, !this->runDeathScript);
 			} else {
-				LOG("Wrong unitID: %i", unitId);
+				LOG("[%s] Wrong unitID: %i", this->GetCommand().c_str(), unitId);
 			}
-		} while (true);
+		}
 
 		return true;
 	}
+private:
+	bool runDeathScript;
+};
+
+class DestroyActionExecutor : public BaseDestroyActionExecutor {
+public:
+	DestroyActionExecutor() : BaseDestroyActionExecutor("Destroy", "Destroys one or multiple units by unitID immediately", true) {}
+};
+
+
+class RemoveActionExecutor : public BaseDestroyActionExecutor {
+public:
+	RemoveActionExecutor() : BaseDestroyActionExecutor("Remove", "Removes one or multiple units by unitID immediately, bypassing death sequence", false) {}
 };
 
 
@@ -575,6 +587,7 @@ void SyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<NoCostActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<GiveActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DestroyActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<RemoveActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<NoSpectatorChatActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ReloadCobActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ReloadCegsActionExecutor>());

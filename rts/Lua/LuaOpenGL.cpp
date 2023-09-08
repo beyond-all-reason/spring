@@ -1217,7 +1217,7 @@ int LuaOpenGL::GetViewRange(lua_State* L)
 	constexpr int minCamType = CCamera::CAMTYPE_PLAYER;
 	constexpr int maxCamType = CCamera::CAMTYPE_ACTIVE;
 
-	const CCamera* cam = CCameraHandler::GetCamera(Clamp(luaL_optint(L, 1, CCamera::CAMTYPE_ACTIVE), minCamType, maxCamType));
+	const CCamera* cam = CCameraHandler::GetCamera(std::clamp(luaL_optint(L, 1, CCamera::CAMTYPE_ACTIVE), minCamType, maxCamType));
 
 	lua_pushnumber(L, cam->GetNearPlaneDist());
 	lua_pushnumber(L, cam->GetFarPlaneDist());
@@ -3422,7 +3422,7 @@ int LuaOpenGL::CreateTexture(lua_State* L)
 				uint32_t strHash = hashString(lua_tostring(L, -2));
 				switch (strHash) {
 					case hashString("samples"): {
-						// not Clamp(lua_tonumber(L, -1), 2, globalRendering->msaaLevel);
+						// not std::clamp(lua_tonumber(L, -1), 2, globalRendering->msaaLevel);
 						// AA sample count has to equal the default FB or blitting breaks
 						tex.samples = globalRendering->msaaLevel;
 					} break;

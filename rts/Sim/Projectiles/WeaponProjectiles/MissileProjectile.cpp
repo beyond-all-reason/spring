@@ -161,10 +161,34 @@ void CMissileProjectile::Update()
 					const float dirDiff = math::fabs(targetDir.y - dir.y);
 					const float ratio = math::fabs(verDiff / horDiff);
 
-					dir.y -= (dirDiff * ratio);
+					// tilt missile up if
+					// 1. missile is pointing below target
+					// 2. AND missile height is below target
+					// This compensates for high wobble zero turnrate missiles aiming at high elevations
+					// Prevents these missiles from quickly turing directly downwards if wobble 
+					// causes them to undershoot their elevated target 
+					if (((targetDir.y - dir.y) > 0.0f) && ((targetPos.y - extraHeight - pos.y) > 0.0f)) {
+						dir.y += (dirDiff * ratio);
+					}
+					else {
+						dir.y -= (dirDiff * ratio);
+					}
+
 				} else {
 					// missile is still ascending
-					dir.y -= (extraHeightDecay / targetDist);
+					
+					// tilt missile up if
+					// 1. missile is pointing below target
+					// 2. AND missile height is below target
+					// This compensates for high wobble zero turnrate missiles aiming at high elevations
+					// Lets these missiles continue ascending to an elevated target
+					// even if wobble causes them to temporarily undershoot their elevated target 
+					if ( ((targetDir.y - dir.y) > 0.0f) && ((targetPos.y - extraHeight - pos.y) > 0.0f) ) {
+						dir.y += (extraHeightDecay / targetDist);
+					}
+					else {
+						dir.y -= (extraHeightDecay / targetDist);
+					}
 				}
 			}
 

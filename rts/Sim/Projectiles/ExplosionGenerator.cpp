@@ -830,7 +830,7 @@ void CCustomExplosionGenerator::ParseExplosionCode(
 			code.append(1, opcode);
 			code.append((char*) &v, ((char*) &v) + sizeof(v));
 		} else {
-			const int v = Clamp(int(strtol(&script[p], &endp, 10)), 0, 16);
+			const int v = std::clamp(int(strtol(&script[p], &endp, 10)), 0, 16);
 
 			p += (endp - &script[p]);
 

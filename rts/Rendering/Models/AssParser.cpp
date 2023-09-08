@@ -373,14 +373,14 @@ void CAssParser::PreProcessFileBuffer(std::vector<unsigned char>& fileBuffer)
 		return;
 
 	for (size_t i = 0, n = fileBuffer.size(); i < n; ) {
-		matchGroups = std::move(std::cmatch{});
+		matchGroups = std::cmatch{};
 
 		if (!std::regex_search(beg + i, matchGroups, nodePattern))
 			break;
 
-		const std::string   id = std::move(matchGroups[1].str());
-		const std::string name = std::move(matchGroups[2].str());
-		const std::string type = std::move(matchGroups[3].str());
+		const std::string   id = matchGroups[1].str();
+		const std::string name = matchGroups[2].str();
+		const std::string type = matchGroups[3].str();
 
 		assert(matchGroups[0].first  >= beg && matchGroups[0].first  < end);
 		assert(matchGroups[0].second >= beg && matchGroups[0].second < end);
@@ -1225,7 +1225,7 @@ void CAssParser::BuildPieceHierarchy(S3DModel* model, ModelPieceMap& pieceMap, c
 // Iterate over the model and calculate its overall dimensions
 void CAssParser::CalculateModelDimensions(S3DModel* model, S3DModelPiece* piece)
 {
-	const CMatrix44f scaleRotMat = std::move(piece->ComposeTransform(ZeroVector, ZeroVector, piece->scales));
+	const CMatrix44f scaleRotMat = piece->ComposeTransform(ZeroVector, ZeroVector, piece->scales);
 
 	// cannot set this until parent relations are known, so either here or in BuildPieceHierarchy()
 	piece->goffset = scaleRotMat.Mul(piece->offset) + ((piece->parent != nullptr)? piece->parent->goffset: ZeroVector);

@@ -42,7 +42,7 @@ inline static bool TestConeHelper(
 
 	const float3 cvRelVec = cv->GetWorldSpacePos(obj) - tstPos;
 
-	const float  cvRelDst = Clamp(cvRelVec.dot(tstDir), 0.0f, length);
+	const float  cvRelDst = std::clamp(cvRelVec.dot(tstDir), 0.0f, length);
 	const float  coneSize = cvRelDst * spread + 1.0f;
 
 	// theoretical impact position assuming no spread
@@ -119,7 +119,7 @@ inline static bool TestTrajectoryConeHelper(
 
 	const float3 cvRelVec = cv->GetWorldSpacePos(obj) - tstPos;
 
-	const float  cvRelDst = Clamp(cvRelVec.dot(tstDir), 0.0f, length);
+	const float  cvRelDst = std::clamp(cvRelVec.dot(tstDir), 0.0f, length);
 	const float  coneSize = cvRelDst * spread + baseSize;
 
 	// theoretical impact position assuming no spread

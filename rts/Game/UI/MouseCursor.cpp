@@ -22,8 +22,8 @@
 #include "System/FileSystem/SimpleParser.h"
 
 CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
-	: hotSpot(hs)
-	, name(name_)
+	: name(name_)
+	, hotSpot(hs)
 {
 	frames.reserve(8);
 	images.reserve(8);
@@ -115,7 +115,7 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 	const std::array<std::pair<std::string, int>, 3> commandsMap = {{{"frame", 0}, {"hotspot", 1}, {"lastframe", 2}}};
 		  spring::unsynced_map<std::string, int>     imageIdxMap;
 
-	for (std::string line = std::move(specParser.GetCleanLine()); !line.empty(); line = std::move(specParser.GetCleanLine())) {
+	for (std::string line = specParser.GetCleanLine(); !line.empty(); line = specParser.GetCleanLine()) {
 		const std::vector<std::string>& words = specParser.Tokenize(line, 2);
 		const std::string& command = StringToLower(words[0]);
 

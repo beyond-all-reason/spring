@@ -384,9 +384,38 @@ public:
 				(x * f.y) - (y * f.x));
 	}
 
+	template<bool synced, typename Iterable>
+	static void rotate(float angle, const float3& axis, Iterable& iterable) {
+		static_assert(std::is_same_v<std::decay_t<decltype(*std::begin(iterable))>, float3>);
+		float ca;
+		float sa;
+		if constexpr (synced) {
+			ca = math::cos(angle);
+			sa = math::sin(angle);
+		}
+		else {
+			ca = fastmath::cos(angle);
+			sa = fastmath::sin(angle);
+		}
+
+		//Rodrigues' rotation formula
+		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+		for (auto& v : iterable) {
+			v = v * ca + axis.cross(v) * sa + axis * axis.dot(v) * (1.0f - ca);
+		}
+	}
+
+	template<bool synced>
 	float3 rotate(float angle, const float3& axis) const {
-		const float ca = math::cos(angle);
-		const float sa = math::sin(angle);
+		float ca;
+		float sa;
+		if constexpr (synced) {
+			ca = math::cos(angle);
+			sa = math::sin(angle);
+		} else {
+			ca = fastmath::cos(angle);
+			sa = fastmath::sin(angle);
+		}
 
 		//Rodrigues' rotation formula
 		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula

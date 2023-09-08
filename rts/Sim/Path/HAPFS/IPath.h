@@ -13,7 +13,8 @@ namespace IPath {
 		Ok,
 		CantGetCloser,
 		GoalOutOfRange,
-		Error
+		Error,
+		Unitialized
 	};
 
 	typedef std::vector<float3> path_list_type;

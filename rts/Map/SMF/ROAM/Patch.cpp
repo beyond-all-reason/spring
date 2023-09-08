@@ -183,7 +183,7 @@ void Patch::UploadVertices()
 
 namespace {
 	template<typename T>
-	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeMult = 2)
+	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeUpMult, size_t sizeDownMult)
 	{
 		if (vec.empty())
 			return false;
@@ -192,20 +192,14 @@ namespace {
 		bool vboUpdated = false;
 
 		vbo.Bind();
-		if (const size_t sz = vec.size() * sizeof(T); vbo.GetSize() >= sz * sizeMult) {
-			// size the buffer down
+		if (const size_t sz = vec.size() * sizeof(T); (sz > vbo.GetSize() || vbo.GetSize() >= sz * sizeDownMult)) {
+			// resize/remake the buffer without copying the old buffer content
 			vbo.Unbind();
 			vbo = VBO{ target, false, false };
 			vbo.Bind();
-			vbo.New(sz, usage, nullptr);
+			vbo.New(sz * sizeUpMult, usage, nullptr);
 			vboUpdated = true;
 		}
-		else if (sz > vbo.GetSize()) {
-			// size the buffer up
-			vbo.Resize(sz, usage);
-			vboUpdated = true;
-		}
-
 		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
 
@@ -215,13 +209,13 @@ namespace {
 
 void Patch::UploadIndices()
 {
-	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2))
+	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2, 8))
 		InitMainVAO();
 }
 
 void Patch::UploadBorderVertices()
 {
-	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2))
+	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2, 8))
 		InitBorderVAO();
 }
 

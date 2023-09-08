@@ -36,6 +36,8 @@ class LuaUnsyncedCtrl {
 		static int SetCameraTarget(lua_State* L);
 
 		static int DeselectUnit(lua_State* L);
+		static int DeselectUnitMap(lua_State* L);
+		static int DeselectUnitArray(lua_State* L);
 		static int SelectUnit(lua_State* L);
 		static int SelectUnitMap(lua_State* L);
 		static int SelectUnitArray(lua_State* L);

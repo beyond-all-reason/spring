@@ -12,6 +12,8 @@
 #include "Sim/Units/Unit.h"
 #include "System/Platform/Threading.h"
 
+#include <tracy/Tracy.hpp>
+
 bool CMoveMath::noHoverWaterMove = false;
 float CMoveMath::waterDamageCost = 0.0f;
 
@@ -323,20 +325,21 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(const MoveDef& moveDef, int xmin,
 
 	BlockType ret = BLOCK_NONE;
 	if (ThreadPool::inMultiThreadedSection) {
-		ret = CMoveMath::RangeIsBlockedMt(moveDef, xmin, xmax, zmin, zmax, collider, thread);
+		const int tempNum = gs->GetMtTempNum(thread);
+		ret = CMoveMath::RangeIsBlockedMt(moveDef, xmin, xmax, zmin, zmax, collider, thread, tempNum);
 	} else {
-		ret = CMoveMath::RangeIsBlockedSt(moveDef, xmin, xmax, zmin, zmax, collider);
+		const int tempNum = gs->GetTempNum();
+		ret = CMoveMath::RangeIsBlockedSt(moveDef, xmin, xmax, zmin, zmax, collider, tempNum);
 	}
 
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider)
+CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int tempNum)
 {
 	BlockType ret = BLOCK_NONE;
 
 	// footprints are point-symmetric around <xSquare, zSquare>
-	const int tempNum = gs->GetTempNum();
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
 		const int zOffset = z * mapDims.mapx;
 
@@ -362,11 +365,10 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(const MoveDef& moveDef, int xmi
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread)
+
+CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread, int tempNum)
 {
 	BlockType ret = BLOCK_NONE;
-
-	const int tempNum = gs->GetMtTempNum(thread);
 
 	// footprints are point-symmetric around <xSquare, zSquare>
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
@@ -392,5 +394,31 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(const MoveDef& moveDef, int xmi
 	}
 
 	return ret;
+}
+
+void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results)
+{
+	results.resize(areaToSample.GetArea(), 0);
+
+	int curIndex = 0;
+	for (int z = areaToSample.z1; z < areaToSample.z2; ++z) {
+		const int zOffset = z * mapDims.mapx;
+
+		for (int x = areaToSample.x1; x < areaToSample.x2; ++x) {
+			const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zOffset + x);
+			BlockType ret = BLOCK_NONE;
+
+			for (size_t i = 0, n = cell.size(); i < n; i++) {
+				CSolidObject* collidee = cell[i];
+
+				ret |= ObjectBlockType(moveDef, collidee, collider);
+
+				if ((ret & BLOCK_STRUCTURE) != 0)
+					break;
+			}
+
+			results[curIndex++] = ret;
+		}
+	}
 }
 

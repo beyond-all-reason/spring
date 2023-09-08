@@ -24,3 +24,6 @@
 [submodule "rts/lib/gflags"]
 	path = rts/lib/gflags
 	url = https://github.com/gflags/gflags
+[submodule "rts/lib/entt"]
+	path = rts/lib/entt
+	url = https://github.com/skypjack/entt

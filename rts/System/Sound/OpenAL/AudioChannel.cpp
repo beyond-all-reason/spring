@@ -48,6 +48,9 @@ void AudioChannel::Enable(bool newState)
 
 void AudioChannel::SoundSourceFinished(CSoundSource* sndSource)
 {
+	// FIXME broken queue
+	// we don't want to play from the queue if we're about to shut down or
+	// if we're called from StreamPlay() -> SoundSource::Stop() context
 	if (curStreamSrc == sndSource) {
 		if (!streamQueue.empty()) {
 			StreamPlay(streamQueue.front(), false);

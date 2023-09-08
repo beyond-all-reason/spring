@@ -13,6 +13,7 @@
 
 class MoveDefHandler;
 class CSolidObject;
+class CUnit;
 class LuaTable;
 
 
@@ -27,6 +28,18 @@ struct MoveDef {
 	MoveDef& operator = (const MoveDef& moveDef) = delete;
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
+	bool DoRawSearch(
+		const CSolidObject* collider,
+		const float3 startPos,
+		const float3 endPos,
+		const float3 testMoveDir,
+		bool testTerrain,
+		bool testObjects,
+		bool centerOnly,
+		float* minSpeedModPtr,
+		int* maxBlockBitPtr,
+		int thread = 0
+	);
 	bool TestMoveSquareRange(
 		const CSolidObject* collider,
 		const float3 rangeMins,
@@ -160,6 +173,8 @@ class MoveDefHandler
 {
 	CR_DECLARE_STRUCT(MoveDefHandler)
 public:
+	constexpr static size_t MAX_MOVE_DEFS = 256;
+
 	void Init(LuaParser* defsParser);
 	void Kill() {
 		nameMap.clear(); // never iterated
@@ -168,14 +183,14 @@ public:
 		mdChecksum = 0;
 	}
 
-	MoveDef* GetMoveDefByPathType(unsigned int pathType) { return &moveDefs[pathType]; }
+	MoveDef* GetMoveDefByPathType(unsigned int pathType) { assert(pathType < mdCounter); return &moveDefs[pathType]; }
 	MoveDef* GetMoveDefByName(const std::string& name);
 
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
 private:
-	std::array<MoveDef, 256> moveDefs;
+	std::array<MoveDef, MAX_MOVE_DEFS> moveDefs;
 	spring::unordered_map<unsigned int, int> nameMap;
 
 	unsigned int mdCounter = 0;

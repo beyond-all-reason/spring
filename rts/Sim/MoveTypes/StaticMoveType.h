@@ -10,10 +10,7 @@ class CStaticMoveType : public AMoveType
 	CR_DECLARE_DERIVED(CStaticMoveType)
 
 public:
-	CStaticMoveType(CUnit* unit) : AMoveType(unit) {
-		useWantedSpeed[false] = false;
-		useWantedSpeed[ true] = false;
-	}
+	CStaticMoveType(CUnit* unit);
 
 	void* GetPreallocContainer() { return owner; }  // creg
 

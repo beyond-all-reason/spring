@@ -107,7 +107,7 @@ void CSound::Init()
 		soundItems.emplace_back();
 	}
 
-	soundThread = std::move(Threading::CreateNewThread(std::bind(&CSound::UpdateThread, this, configHandler->GetInt("MaxSounds"))));
+	soundThread = Threading::CreateNewThread(std::bind(&CSound::UpdateThread, this, configHandler->GetInt("MaxSounds")));
 }
 
 void CSound::Kill()
@@ -493,34 +493,52 @@ void CSound::OpenLoopbackDevice(const std::string& deviceName)
 		return;
 	}
 
+	LOG("[Sound::%s] SDL audio device(s): ", __func__);
+	for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
+		LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
+	}
+
 	SDL_AudioSpec desiredSpec;
 	SDL_AudioSpec obtainedSpec;
 
-	desiredSpec.channels = 2;
 	desiredSpec.format = AUDIO_S16SYS;
 	desiredSpec.freq = 44100;
 	desiredSpec.padding = 0;
 	desiredSpec.samples = 4096;
 	desiredSpec.callback = RenderSDLSamples;
 	desiredSpec.userdata = this;
+	
+	/* SDL bug: can return devices with >2 channels (3D surround), even if we ask for just 2.
+	 * This causes the 2 "primary" channels to be moved in the 3D space compared to their "normal" state
+	 * and directional sound doesn't work anymore (though volume change with distance still does).
+	 * For this reason, the engine rejects such devices down the road. Don't let it get that far and retry instead.
+	 *
+	 * Note that proper support for 3D surround sounds sounds hard, for example as of 2023 counter-strike has very weak support
+	 * for it, apparently noticeably worse than just stereo according to players, despite being in a more relevant genre. */
+	selectedDeviceName = "";
+	for (int channelsDesired : {2, 1}) {
+		desiredSpec.channels = channelsDesired;
 
-    LOG("[Sound::%s] SDL audio device(s): ", __func__);
-    for (int i = 0, n = SDL_GetNumAudioDevices(0); i < n; ++i) {
-        LOG("[Sound::%s]  * \"%d\" \"%s\"", __func__, i, SDL_GetAudioDeviceName(i, 0));
-    }
+		sdlDeviceID = 0;
 
-	sdlDeviceID = 0;
+		if (!deviceName.empty()) {
+			LOG("[Sound::%s] opening configured device \"%s\"", __func__, deviceName.c_str());
+			sdlDeviceID = SDL_OpenAudioDevice(deviceName.c_str(), 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE & ~SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+			selectedDeviceName = deviceName;
+		}
 
-	if (!deviceName.empty()) {
-		LOG("[Sound::%s] opening configured device \"%s\"", __func__, deviceName.c_str());
-		sdlDeviceID = SDL_OpenAudioDevice(deviceName.c_str(), 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-		selectedDeviceName = deviceName;
-	}
+		if (sdlDeviceID == 0) {
+			LOG("[Sound::%s] opening default device", __func__);
+			sdlDeviceID = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE & ~SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+			selectedDeviceName = "default";
+		}
 
-	if (sdlDeviceID == 0) {
-		LOG("[Sound::%s] opening default device", __func__);
-		sdlDeviceID = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-		selectedDeviceName = "default";
+		if (obtainedSpec.channels == desiredSpec.channels) {
+			break;
+		}
+
+		LOG("[Sound::%s] SDL returned %d channels, when we asked for %d. Closing previously opened device.", __func__, obtainedSpec.channels, desiredSpec.channels);
+		SDL_CloseAudioDevice(sdlDeviceID);
 	}
 
 	if (sdlDeviceID == 0) {
@@ -1025,7 +1043,7 @@ void CSound::GenSources(int alMaxSounds)
 	for (int i = 0; i < alMaxSounds; i++) {
 		soundSources.emplace_back();
 
-		if (soundSources[i].IsValid())
+		if (soundSources.back().IsValid())
 			continue;
 
 		soundSources.pop_back();

@@ -93,7 +93,7 @@ float CGameHelper::CalcImpulseScale(const DamageArray& damages, const float expD
 	const float impulseDmgMult = (damages.GetDefault() + damages.impulseBoost);
 	const float rawImpulseScale = damages.impulseFactor * expDistanceMod * impulseDmgMult;
 
-	return Clamp(rawImpulseScale, -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE);
+	return std::clamp(rawImpulseScale, -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE);
 }
 
 void CGameHelper::DoExplosionDamage(
@@ -1028,7 +1028,7 @@ float3 CGameHelper::ClosestBuildPos(
 
 	const int allyTeam = teamHandler.AllyTeam(team);
 	const int rawRadius = static_cast<int>(searchRadius / BUILD_SQUARE_SIZE);
-	const int maxRadius = Clamp(rawRadius, 1, 128);
+	const int maxRadius = std::clamp(rawRadius, 1, 128);
 
 	const auto& offsets = GetSearchOffsetTable(maxRadius);
 
@@ -1139,10 +1139,10 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 	const int px = (pos.x - (xsize * (SQUARE_SIZE >> 1))) / SQUARE_SIZE;
 	const int pz = (pos.z - (zsize * (SQUARE_SIZE >> 1))) / SQUARE_SIZE;
 	// top-left and bottom-right footprint corner (clamped)
-	const int x1 = Clamp(px        , 0, mapDims.mapx);
-	const int z1 = Clamp(pz        , 0, mapDims.mapy);
-	const int x2 = Clamp(x1 + xsize, 0, mapDims.mapx);
-	const int z2 = Clamp(z1 + zsize, 0, mapDims.mapy);
+	const int x1 = std::clamp(px        , 0, mapDims.mapx);
+	const int z1 = std::clamp(pz        , 0, mapDims.mapy);
+	const int x2 = std::clamp(x1 + xsize, 0, mapDims.mapx);
+	const int z2 = std::clamp(z1 + zsize, 0, mapDims.mapy);
 
 	for (int x = x1; x <= x2; x++) {
 		for (int z = z1; z <= z2; z++) {
@@ -1189,58 +1189,12 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
-	struct TestUnitBuildSquareCacheItem {
-		TestUnitBuildSquareCacheItem(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_,
-			std::vector<float3> canbuildpos_,
-			std::vector<float3> featurepos_,
-			std::vector<float3> nobuildpos_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-			, canbuildpos(canbuildpos_)
-			, featurepos(featurepos_)
-			, nobuildpos(nobuildpos_)
-		{};
-		TestUnitBuildSquareCacheItem(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-		{};
-		int createFrame;
-		std::tuple<bool, float3, int, int, const UnitDef*> key;
-		CFeature* feature;
-		CGameHelper::BuildSquareStatus result;
-		std::vector<float3> canbuildpos;
-		std::vector<float3> featurepos;
-		std::vector<float3> nobuildpos;
-	};
+	TestUnitBuildSquareCache::ClearStaleItems(synced);
+	auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
+	bool cacheFound = false;
+	const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
 
-	/* synced, unsynced. Unsynced is arbitrary, but being 500ms
-	 * seems like a good tradeoff between not evicting cache value
-	 * too quickly and not to stale the state for too long. */
-	static constexpr int CACHE_VALIDITY_PERIOD[] = {1, GAME_SPEED / 2};
-
-	static std::vector<TestUnitBuildSquareCacheItem> testUnitBuildSquareCache;
-	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
-		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
-	});
-
-	auto key = std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyteam, buildInfo.def);
-	const auto it = std::find_if(testUnitBuildSquareCache.begin(), testUnitBuildSquareCache.end(), [&key](const auto& item) {
-		return item.key == key;
-	});
-
-	if (it != testUnitBuildSquareCache.end()) {
+	if (cacheFound) {
 		feature = it->feature;
 
 		if (commands != nullptr) {
@@ -1255,14 +1209,14 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 
 	const auto SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
 		if (!commands)
-			testUnitBuildSquareCache.emplace_back(
+			TestUnitBuildSquareCache::SaveToCache(
 				gs->frameNum,
 				std::move(key),
 				feature,
 				result
 			);
 		else
-			testUnitBuildSquareCache.emplace_back(
+			TestUnitBuildSquareCache::SaveToCache(
 				gs->frameNum,
 				std::move(key),
 				feature,
@@ -1523,8 +1477,8 @@ bool CGameHelper::TestBlockSquareForBuildOnly(
  * @return the build Command, or a Command with id 0 if none is found
  */
 Command CGameHelper::GetBuildCommand(const float3& pos, const float3& dir) {
-	for (const auto& pair: unitHandler.GetBuilderCAIs()) {
-		const CUnit* unit = unitHandler.GetUnit(pair.first);
+	for (const auto& [bid, builderCAI] : unitHandler.GetBuilderCAIs()) {
+		const CUnit* unit = unitHandler.GetUnit(bid);
 
 		if (unit->team != gu->myTeam)
 			continue;
@@ -1592,7 +1546,7 @@ bool CGameHelper::CheckTerrainConstraints(
 	}
 
 	if (clampedHeight != nullptr)
-		*clampedHeight = Clamp(groundHeight, -maxDepth, -minDepth);
+		*clampedHeight = std::clamp(groundHeight, -maxDepth, -minDepth);
 
 	/* NB: mobiles also have maxHeightDiff, which can have a different
 	 * value compared to moveDef and could be used here (for example,
@@ -1615,3 +1569,21 @@ bool CGameHelper::CheckTerrainConstraints(
 	return (depthCheck && slopeCheck);
 }
 
+void CGameHelper::TestUnitBuildSquareCache::ClearStaleItems(bool synced)
+{
+	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
+		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
+	});
+}
+
+CGameHelper::TestUnitBuildSquareCache::KeyT CGameHelper::TestUnitBuildSquareCache::GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced)
+{
+	return std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyTeamID, buildInfo.def);
+}
+
+void CGameHelper::TestUnitBuildSquareCache::Invalidate(const KeyT& key)
+{
+	spring::VectorEraseIf(testUnitBuildSquareCache, [&key](const auto& item) {
+		return (key == item.key);
+	});
+}

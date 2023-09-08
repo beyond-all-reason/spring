@@ -41,16 +41,23 @@ struct SRectangle {
 			x2 >= rect.x2 && y2 >= rect.y2;
 	}
 
+	//rect inside *this
+	bool Inside(const SRectangle& rect) const {
+		return
+			x1 <= rect.x1 && y1 <= rect.y1 &&
+			x2 >= rect.x2 && y2 >= rect.y2;
+	}
+
 	void ClampPos(int2* pos) const {
-		pos->x = Clamp(pos->x, x1, x2);
-		pos->y = Clamp(pos->y, y1, y2);
+		pos->x = std::clamp(pos->x, x1, x2);
+		pos->y = std::clamp(pos->y, y1, y2);
 	}
 
 	void ClampIn(const SRectangle& rect) {
-		x1 = Clamp(x1, rect.x1, rect.x2);
-		x2 = Clamp(x2, rect.x1, rect.x2);
-		y1 = Clamp(y1, rect.y1, rect.y2);
-		y2 = Clamp(y2, rect.y1, rect.y2);
+		x1 = std::clamp(x1, rect.x1, rect.x2);
+		x2 = std::clamp(x2, rect.x1, rect.x2);
+		y1 = std::clamp(y1, rect.y1, rect.y2);
+		y2 = std::clamp(y2, rect.y1, rect.y2);
 	}
 
 	bool CheckOverlap(const SRectangle& rect) const {
@@ -70,6 +77,55 @@ struct SRectangle {
 		return x1 == other.x1 && z1 == other.z1 && x2 == other.x2 && z2 == other.z2;
 	}
 
+	// TODO: version without return?
+
+	SRectangle operator / (int divisor) const {
+		return SRectangle(
+			x1 / divisor, z1 / divisor, x2 / divisor, z2 / divisor
+		);
+	}
+
+	SRectangle& operator += (const SRectangle& other) {
+		x1 += other.x1; x2 += other.x2;
+		z1 += other.z1; z2 += other.z2;
+		return *this;
+	}
+
+	SRectangle operator + (const SRectangle& other) const {
+		// SRectangle ret(*this);
+		// return ret += other;
+		return SRectangle(
+			x1 + other.x1, z1 + other.z1, x2 + other.x2, z2 + other.z2
+		);
+	}
+
+	SRectangle& operator -= (const SRectangle& other) {
+		x1 -= other.x1; x2 -= other.x2;
+		z1 -= other.z1; z2 -= other.z2;
+		return *this;
+	}
+
+	SRectangle operator - (const SRectangle& other) const {
+		// SRectangle ret(*this);
+		// return ret -= other;
+		return SRectangle(
+			x1 - other.x1, z1 - other.z1, x2 - other.x2, z2 - other.z2
+		);
+	}
+
+	SRectangle& operator >>= (uint32_t shift) {
+		x1 >>= shift; x2 >>= shift; z1 >>= shift; z2 >>= shift;
+		return *this;
+	}
+
+	SRectangle operator >> (uint32_t shift) const {
+		// SRectangle ret(*this);
+		// return ret >>= shift;
+		return SRectangle(
+			x1 >> shift, z1 >> shift, x2 >> shift, z2 >> shift
+		);
+	}
+
 	template<typename T>
 	SRectangle operator* (const T v) const {
 		return SRectangle(
@@ -79,22 +135,27 @@ struct SRectangle {
 	}
 
 	union {
-		int x1;
-		int left;
-	};
-	union {
-		int z1;
-		int y1;
-		int top;
-	};
-	union {
-		int x2;
-		int right;
-	};
-	union {
-		int z2;
-		int y2;
-		int bottom;
+		struct {
+			union {
+				int x1;
+				int left;
+			};
+			union {
+				int z1;
+				int y1;
+				int top;
+			};
+			union {
+				int x2;
+				int right;
+			};
+			union {
+				int z2;
+				int y2;
+				int bottom;
+			};
+		};
+		std::array<int, 4> points;
 	};
 };
 

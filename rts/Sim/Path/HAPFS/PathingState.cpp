@@ -653,7 +653,7 @@ void PathingState::Update()
 		const int MIN_BLOCKS_TO_UPDATE = 1;
 		const int MAX_BLOCKS_TO_UPDATE = std::max<int>(BLOCKS_TO_UPDATE >> 1, MIN_BLOCKS_TO_UPDATE);
 
-		blocksToUpdate = Clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
+		blocksToUpdate = std::clamp(progressiveUpdates, MIN_BLOCKS_TO_UPDATE, MAX_BLOCKS_TO_UPDATE) * numMoveDefs;
 	
 		// LOG("[%d] blocksToUpdate=%d progressiveUpdates=%d [%f]"
 		// 		, BLOCK_SIZE, blocksToUpdate, progressiveUpdates, modInfo.pfUpdateRateScale);
@@ -728,11 +728,8 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
 			};
 
-		if (modInfo.pfForceUpdateSingleThreaded) {
-			for(int i = 0; i < consumedBlocks.size(); ++i) { updateOffset(i); };
-		} else {
-			for_mt(0, consumedBlocks.size(), updateOffset);
-		}
+
+		for_mt(0, consumedBlocks.size(), updateOffset);
 
 		// for (int n=0; n<consumedBlocks.size(); n++){
 		// 	const SingleBlock sb = consumedBlocks[n];
@@ -759,11 +756,7 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				}
 			};
 
-		if (modInfo.pfForceUpdateSingleThreaded) {
-			updateVertexPathCosts(0);
-		} else {
-			for_mt(0, threadsUsed, updateVertexPathCosts);
-		}
+		for_mt(0, threadsUsed, updateVertexPathCosts);
 	}
 
 	std::for_each(blockIds.begin(), blockIds.end(), [this](int idx){ blockStates.nodeLinksObsoleteFlags[idx] = 0; });
@@ -784,10 +777,10 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	const int upperZ = int(z2 / BLOCK_SIZE) + 0;
 
 	// find the upper and lower corner of the rectangular area
-	const int startX = Clamp(lowerX, 0, int(mapDimensionsInBlocks.x - 1));
-	const int endX   = Clamp(upperX, 0, int(mapDimensionsInBlocks.x - 1));
-	const int startZ = Clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
-	const int endZ   = Clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
+	const int startX = std::clamp(lowerX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int endX   = std::clamp(upperX, 0, int(mapDimensionsInBlocks.x - 1));
+	const int startZ = std::clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
+	const int endZ   = std::clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
 
 	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 

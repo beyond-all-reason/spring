@@ -163,7 +163,7 @@ void CLosTableHelper::GenerateForLosSize(size_t losSize)
 	if (!table.empty())
 		return;
 
-	table = std::move(GetLosRays(losSize));
+	table = GetLosRays(losSize);
 }
 
 
@@ -181,13 +181,13 @@ void CLosTableHelper::GenerateForLosSize(size_t losSize)
  */
 CLosTableHelper::LosTable CLosTableHelper::GetLosRays(const int radius)
 {
-	std::vector<int2> circlePoints = std::move(GetCircleSurface(radius));
+	std::vector<int2> circlePoints = GetCircleSurface(radius);
 
 	LosTable losRays;
 	losRays.reserve(2 * circlePoints.size()); // twice cause of AddMissing()
 
 	for (const int2& p: circlePoints) {
-		losRays.emplace_back(std::move(GetRay(p.x, p.y)));
+		losRays.emplace_back(GetRay(p.x, p.y));
 	}
 
 	AddMissing(losRays, circlePoints, radius);
@@ -253,7 +253,7 @@ void CLosTableHelper::AddMissing(LosTable& losRays, const std::vector<int2>& cir
 			const int2 t2(p.y, a);
 
 			if (!getpixel(t1)) {
-				losRays.emplace_back(std::move(GetRay(t1.x, t1.y)));
+				losRays.emplace_back(GetRay(t1.x, t1.y));
 
 				for (int2& p_: losRays.back()) {
 					setpixel(p_);
@@ -261,7 +261,7 @@ void CLosTableHelper::AddMissing(LosTable& losRays, const std::vector<int2>& cir
 			}
 			// (0, radius) is a mirror of (radius, 0) so don't add it
 			if (!getpixel(t2) && t2 != int2(0, radius)) {
-				losRays.emplace_back(std::move(GetRay(t2.x, t2.y)));
+				losRays.emplace_back(GetRay(t2.x, t2.y));
 
 				for (int2& p_: losRays.back()) {
 					setpixel(p_);
@@ -408,8 +408,8 @@ void CLosMap::AddCircle(SLosInstance* instance, int amount)
 		const unsigned y_ = instance->basePos.y + y;
 
 		if (y_ < size.y) {
-			const unsigned sx = Clamp(instance->basePos.x - width,     0, size.x);
-			const unsigned ex = Clamp(instance->basePos.x + width + 1, 0, size.x);
+			const unsigned sx = std::clamp(instance->basePos.x - width,     0, size.x);
+			const unsigned ex = std::clamp(instance->basePos.x + width + 1, 0, size.x);
 
 			for (unsigned x_ = sx; x_ < ex; ++x_) {
 				losmap[(y_ * size.x) + x_] += amount;
@@ -700,8 +700,8 @@ void CLosMap::SafeLosAdd(SLosInstance* li) const
 		const unsigned y_ = pos.y + y;
 
 		if (y_ < size.y) {
-			const unsigned sx = Clamp(pos.x - width,     0, size.x);
-			const unsigned ex = Clamp(pos.x + width + 1, 0, size.x);
+			const unsigned sx = std::clamp(pos.x - width,     0, size.x);
+			const unsigned ex = std::clamp(pos.x + width + 1, 0, size.x);
 			if (sx == ex)
 				return;
 

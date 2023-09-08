@@ -256,10 +256,24 @@ bool CEventHandler::AllowCommand(const CUnit* unit, const Command& cmd, int play
 }
 
 
-bool CEventHandler::AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo)
+std::pair <bool, bool> CEventHandler::AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo)
 {
 	ZoneScoped;
-	return ControlIterateDefTrue(listAllowUnitCreation, &CEventClient::AllowUnitCreation, unitDef, builder, buildInfo);
+
+	bool allow = true;
+	bool drop = true;
+
+	for (size_t i = 0; i < listAllowUnitCreation.size(); ) {
+		const auto ec = listAllowUnitCreation[i];
+		const auto [a, d] = ec->AllowUnitCreation(unitDef, builder, buildInfo);
+		allow &= a;
+		drop  &= d;
+
+		// the call-in may remove itself from the list
+		i += (i < listAllowUnitCreation.size() && ec == listAllowUnitCreation[i]);
+	}
+
+	return {allow, drop};
 }
 
 bool CEventHandler::AllowUnitTransfer(const CUnit* unit, int newTeam, bool capture)
@@ -732,7 +746,7 @@ template<typename T, typename F, typename... A> std::string ControlReverseIterat
 	for (size_t i = 0; i < list.size(); i++) {
 		CEventClient* ec = list[list.size() - 1 - i];
 
-		std::string str = std::move((ec->*func)(std::forward<A>(args)...));
+		std::string str = (ec->*func)(std::forward<A>(args)...);
 
 		if (str.empty())
 			continue;

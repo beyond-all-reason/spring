@@ -321,7 +321,7 @@ namespace Shader {
 
 	UniformState* IProgramObject::GetNewUniformState(const char* name)
 	{
-		const size_t hash = hashString(name);
+		const auto hash = hashString(name);
 		const auto it = uniformStates.emplace(hash, UniformState{name});
 
 		UniformState* us = &(it.first->second);

@@ -1,8 +1,11 @@
+// #undef NDEBUG
+
 #include <limits>
 #include <memory>
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/UI/MiniMap.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -10,11 +13,15 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 
-#include "Sim/Path/QTPFS/Path.hpp"
-#include "Sim/Path/QTPFS/Node.hpp"
-#include "Sim/Path/QTPFS/NodeLayer.hpp"
-#include "Sim/Path/QTPFS/PathCache.hpp"
-#include "Sim/Path/QTPFS/PathManager.hpp"
+#include "Sim/Path/QTPFS/Path.h"
+#include "Sim/Path/QTPFS/Node.h"
+#include "Sim/Path/QTPFS/NodeLayer.h"
+#include "Sim/Path/QTPFS/PathCache.h"
+#include "Sim/Path/QTPFS/PathManager.h"
+
+#include "Sim/Path/QTPFS/Components/Path.h"
+#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
+#include "Sim/Path/QTPFS/Registry.h"
 
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
@@ -59,7 +66,11 @@ void QTPFSPathDrawer::DrawAll() const {
 	visibleNodes.clear();
 	visibleNodes.reserve(256);
 
-	GetVisibleNodes(pm->GetNodeTree(md->pathType), pm->GetNodeLayer(md->pathType), visibleNodes);
+	auto& nodeLayer = pm->GetNodeLayer(md->pathType);
+	for (int i = 0; i < nodeLayer.GetRootNodeCount(); ++i){
+		auto curRootNode = nodeLayer.GetPoolNode(i);
+		GetVisibleNodes(curRootNode, nodeLayer, visibleNodes);
+	}
 
 	if (!visibleNodes.empty()) {
 		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
@@ -67,7 +78,7 @@ void QTPFSPathDrawer::DrawAll() const {
 
 		sh.Enable();
 
-		DrawNodes(rb, visibleNodes);
+		DrawNodes(rb, visibleNodes, nodeLayer);
 		DrawPaths(md, rb);
 
 		sh.Disable();
@@ -79,9 +90,9 @@ void QTPFSPathDrawer::DrawAll() const {
 	glPopAttrib();
 }
 
-void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes) const {
+void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
 	for (const QTPFS::QTNode* node: nodes) {
-		DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0]);
+		DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
 	}
 
 	glLineWidth(2.0f);
@@ -106,6 +117,8 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
 		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
+		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetIndex(), "%d"));
 	}
 
 	font->DrawWorldBuffered();
@@ -134,52 +147,47 @@ void QTPFSPathDrawer::GetVisibleNodes(const QTPFS::QTNode* nt, const QTPFS::Node
 }
 
 
-
 void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>& rb) const {
-	const QTPFS::PathCache& pathCache = pm->GetPathCache(md->pathType);
-	const QTPFS::PathCache::PathMap& paths = pathCache.GetLivePaths();
-
 	glLineWidth(4.0f);
 
-	{
-		for (const auto& pair: paths) {
-			DrawPath(pair.second, rb);
-		}
+	const auto pathView = QTPFS::registry.view<QTPFS::IPath>();
+	for (const auto& pathEntity : pathView) {
+		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
+		if (path->GetPathType() == md->pathType)
+			DrawPath(path, rb);
 	}
 
 	{
 		#ifdef QTPFS_DRAW_WAYPOINT_GROUND_CIRCLES
-		constexpr float4 color = {0.0f, 0.0f, 1.0f, 1.0f};
+		constexpr SColor color = {0.0f, 0.0f, 1.0f, 1.0f};
 
-		for (const auto& pair: paths) {
-			const QTPFS::IPath* path = pair.second;
+		for (const auto& pathEntity : pathView) {
+			const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
 
 			for (unsigned int n = 0; n < path->NumPoints(); n++) {
-				glSurfaceCircleW(wla, {path->GetPoint(n), path->GetRadius()}, color, 16);
+				glSurfaceCircle(path->GetPoint(n), path->GetRadius(), color, 16);
+				// glSurfaceCircleW(wla, {path->GetPoint(n), path->GetRadius()}, color, 16);
 			}
 		}
-
-		wla->Submit(GL_LINES);
 		#endif
 	}
 
 	glLineWidth(1.0f);
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
-	const auto& pathTypes = pm->GetPathTypes();
 	const auto& pathTraces = pm->GetPathTraces();
 
-	for (const auto& pair: paths) {
-		const auto typeIt = pathTypes.find(pair.first);
-		const auto traceIt = pathTraces.find(pair.first);
+	for (const auto& pathEntity : pathView) {
+		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
+		const auto traceIt = pathTraces.find(entt::to_integral(pathEntity));
 
-		if (typeIt == pathTypes.end() || traceIt == pathTraces.end())
+		if (traceIt == pathTraces.end())
 			continue;
 		// this only happens if source-node was equal to target-node
 		if (traceIt->second == nullptr)
 			continue;
 
-		DrawSearchExecution(typeIt->second, traceIt->second, rdb, wla);
+		DrawSearchExecution(path->GetPathType(), traceIt->second, rb);
 	}
 	#endif
 }
@@ -188,6 +196,11 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 	for (unsigned int n = 0; n < path->NumPoints() - 1; n++) {
 		float3 p0 = path->GetPoint(n + 0);
 		float3 p1 = path->GetPoint(n + 1);
+
+		assert(p1.x >= 0.f);
+		assert(p1.z >= 0.f);
+		assert(p1.x / SQUARE_SIZE < mapDims.mapx);
+		assert(p1.z / SQUARE_SIZE < mapDims.mapy);
 
 		if (!camera->InView(p0) && !camera->InView(p1))
 			continue;
@@ -284,11 +297,11 @@ void QTPFSPathDrawer::DrawNode(const QTPFS::QTNode* node, TypedRenderBuffer<VA_T
 	);
 }
 
-void QTPFSPathDrawer::DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color) const {
-	const float3 v0 = float3(xminw, CGround::GetHeightReal(xminw, zminw, false) + 4.0f, zminw);
-	const float3 v1 = float3(xmaxw, CGround::GetHeightReal(xmaxw, zminw, false) + 4.0f, zminw);
-	const float3 v2 = float3(xmaxw, CGround::GetHeightReal(xmaxw, zmaxw, false) + 4.0f, zmaxw);
-	const float3 v3 = float3(xminw, CGround::GetHeightReal(xminw, zmaxw, false) + 4.0f, zmaxw);
+void QTPFSPathDrawer::DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color, float sizeAdj) const {
+	const float3 v0 = float3(xminw - sizeAdj, CGround::GetHeightReal(xminw, zminw, false) + 4.0f, zminw - sizeAdj);
+	const float3 v1 = float3(xmaxw + sizeAdj, CGround::GetHeightReal(xmaxw, zminw, false) + 4.0f, zminw - sizeAdj);
+	const float3 v2 = float3(xmaxw + sizeAdj, CGround::GetHeightReal(xmaxw, zmaxw, false) + 4.0f, zmaxw + sizeAdj);
+	const float3 v3 = float3(xminw - sizeAdj, CGround::GetHeightReal(xminw, zmaxw, false) + 4.0f, zmaxw + sizeAdj);
 
 	rb.AddVertex({v0, color});
 	rb.AddVertex({v1, color});
@@ -332,7 +345,8 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 			if (md != nullptr) {
 				const QTPFS::NodeLayer& nl = pm->GetNodeLayer(md->pathType);
 
-				const float smr = 1.0f / nl.GetMaxRelSpeedMod();
+				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathMaxSpeedModSystemComponent>();
+				const float smr = 1.0f / ( speedModComp.maxRelSpeedMod[nl.GetNodelayer()] );
 				const bool los = (gs->cheatEnabled || gu->spectating);
 
 				for (int ty = starty; ty < endy; ++ty) {
@@ -390,4 +404,58 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 #else
 void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int offset, unsigned char* texMem) const {}
 #endif
+
+void QTPFSPathDrawer::DrawInMiniMap()
+{
+	auto mdt = pm->GetMapDamageTrack();
+
+	if (!IsEnabled() || (!gs->cheatEnabled && !gu->spectatingFullView))
+		return;
+
+	glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
+		minimap->ApplyConstraintsMatrix();
+	glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		glTranslatef3(UpVector);
+		glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
+
+	glDisable(GL_TEXTURE_2D);
+
+	const int blockSize = QTPFS::PathManager::DAMAGE_MAP_BLOCK_SIZE;
+
+	auto width = mdt.width;
+	auto height = mdt.height;
+	float maxStrength = mdt.mapChangeTrackers.size();
+
+	std::vector<float> mapDamageStrength;
+	mapDamageStrength.resize(width*height, 0.f);
+
+	for (auto& track : mdt.mapChangeTrackers) {
+		for (auto mapQuad: track.damageQueue) {
+			assert(mapQuad < mapDamageStrength.size());
+			mapDamageStrength[mapQuad]++;
+		}
+	}
+
+	for (int i = 0; i < mapDamageStrength.size(); ++i) {
+		if (mapDamageStrength[i] == 0.f) { continue; }
+		const int blockIdxX = (i % width) * blockSize;
+		const int blockIdxY = (i / width) * blockSize;
+		const float drawStrength = 0.2f + 0.55f*(mapDamageStrength[i] / maxStrength);
+		glColor4f(1.0f, 1.0f, 0.0f, drawStrength);
+		glRectf(blockIdxX, blockIdxY, blockIdxX + blockSize, blockIdxY + blockSize);
+	}
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable(GL_TEXTURE_2D);
+
+	glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+}
 

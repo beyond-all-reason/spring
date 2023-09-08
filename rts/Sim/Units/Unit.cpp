@@ -275,13 +275,13 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 
 	// sensor parameters
-	realLosRadius    = Clamp(int(unitDef->losRadius)    , 0, MAX_UNIT_SENSOR_RADIUS);
-	realAirLosRadius = Clamp(int(unitDef->airLosRadius) , 0, MAX_UNIT_SENSOR_RADIUS);
-	radarRadius      = Clamp(    unitDef->radarRadius   , 0, MAX_UNIT_SENSOR_RADIUS);
-	sonarRadius      = Clamp(    unitDef->sonarRadius   , 0, MAX_UNIT_SENSOR_RADIUS);
-	jammerRadius     = Clamp(    unitDef->jammerRadius  , 0, MAX_UNIT_SENSOR_RADIUS);
-	sonarJamRadius   = Clamp(    unitDef->sonarJamRadius, 0, MAX_UNIT_SENSOR_RADIUS);
-	seismicRadius    = Clamp(    unitDef->seismicRadius , 0, MAX_UNIT_SENSOR_RADIUS);
+	realLosRadius    = std::clamp(int(unitDef->losRadius)    , 0, MAX_UNIT_SENSOR_RADIUS);
+	realAirLosRadius = std::clamp(int(unitDef->airLosRadius) , 0, MAX_UNIT_SENSOR_RADIUS);
+	radarRadius      = std::clamp(    unitDef->radarRadius   , 0, MAX_UNIT_SENSOR_RADIUS);
+	sonarRadius      = std::clamp(    unitDef->sonarRadius   , 0, MAX_UNIT_SENSOR_RADIUS);
+	jammerRadius     = std::clamp(    unitDef->jammerRadius  , 0, MAX_UNIT_SENSOR_RADIUS);
+	sonarJamRadius   = std::clamp(    unitDef->sonarJamRadius, 0, MAX_UNIT_SENSOR_RADIUS);
+	seismicRadius    = std::clamp(    unitDef->seismicRadius , 0, MAX_UNIT_SENSOR_RADIUS);
 	seismicSignature = unitDef->seismicSignature;
 
 	stealth = unitDef->stealth;
@@ -448,15 +448,15 @@ void CUnit::FinishedBuilding(bool postInit)
 }
 
 
-void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (IsCrashing() && !beingBuilt)
 		return;
 
-	ForcedKillUnit(attacker, selfDestruct, reclaimed, showDeathSequence);
+	ForcedKillUnit(attacker, selfDestruct, reclaimed);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, bool showDeathSequence)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
 	if (isDead)
 		return;
@@ -477,7 +477,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, b
 		envResHandler.DelGenerator(this);
 
 	blockHeightChanges = false;
-	deathScriptFinished = (!showDeathSequence || reclaimed || beingBuilt);
+	deathScriptFinished = (reclaimed || beingBuilt);
 
 	if (deathScriptFinished)
 		return;
@@ -607,6 +607,7 @@ void CUnit::EnableScriptMoveType()
 		return;
 
 	prevMoveType = moveType;
+	prevMoveType->Disconnect();
 	moveType = MoveTypeFactory::GetScriptMoveType(this);
 }
 
@@ -618,6 +619,7 @@ void CUnit::DisableScriptMoveType()
 	spring::SafeDestruct(moveType);
 
 	moveType = prevMoveType;
+	moveType->Connect();
 	prevMoveType = nullptr;
 
 	// ensure unit does not try to move back to the
@@ -1182,8 +1184,8 @@ void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& base
 		// real damage
 		if (baseDamage > 0.0f) {
 			// do not log overkill damage, so nukes etc do not inflate values
-			AddUnitDamageStats(attacker, Clamp(maxHealth - health, 0.0f, baseDamage), true);
-			AddUnitDamageStats(this, Clamp(maxHealth - health, 0.0f, baseDamage), false);
+			AddUnitDamageStats(attacker, std::clamp(maxHealth - health, 0.0f, baseDamage), true);
+			AddUnitDamageStats(this, std::clamp(maxHealth - health, 0.0f, baseDamage), false);
 
 			health -= baseDamage;
 		} else {
@@ -1212,7 +1214,7 @@ void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& base
 
 		if (baseDamage > 0.0f) {
 			// clamp the dealt paralysis-damage to [0, maxParalysisDamage]
-			baseDamage = Clamp(baseDamage, 0.0f, maxParalysisDamage);
+			baseDamage = std::clamp(baseDamage, 0.0f, maxParalysisDamage);
 
 			// no attacker gains experience from a stunned target
 			experienceMod *= (1 - IsStunned());
@@ -2641,7 +2643,7 @@ bool CUnit::DetachUnitCore(CUnit* unit)
 
 		transportCapacityUsed -= unit->xsize / SPRING_FOOTPRINT_SCALE;
 		transportMassUsed -= unit->mass;
-		mass = Clamp(mass - unit->mass, CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
+		mass = std::clamp(mass - unit->mass, CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 
 		tu = transportedUnits.back();
 		transportedUnits.pop_back();

@@ -27,6 +27,7 @@ class CProjectile: public CExpGenSpawnable
 	CR_DECLARE_DERIVED(CProjectile)
 
 public:
+	friend class CGenericParticleProjectile;
 	CProjectile();
 	CProjectile(
 		const float3& pos,
