@@ -6,7 +6,7 @@ permalink: changelogs/changelog-105-1354
 author: sprunk
 ---
 
-The changelog since release 105-1214 **until release 105-1354**, which happened in October 2022.
+The changelog since release 105-1214 **until release 105-1354**, which happened in November 2022.
 
 ## Caveats
 * Ctrl and Alt as camera movement modifiers were unhardcoded and turned into bindings. The engine binds them same as before by default, but if you wipe bindings and handle them on your own then you may want to handle rebinding them.
