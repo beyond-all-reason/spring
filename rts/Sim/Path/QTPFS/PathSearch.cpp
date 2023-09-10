@@ -52,11 +52,9 @@ void QTPFS::PathSearch::Initialize(
 	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds();
 	fwd.tgtPoint = targetPoint; fwd.tgtPoint.ClampInBounds();
 
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 	bwd.srcPoint = fwd.tgtPoint;
 	bwd.tgtPoint = fwd.srcPoint;
-	#endif
 
 	pathOwner = owner;
 	nodeLayer = layer;
@@ -117,13 +115,11 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	fwd.srcSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD].InsertINode(srcNode->GetIndex());
 	fwd.tgtSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD].InsertINodeIfNotPresent(tgtNode->GetIndex());
 
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
 	// note src and tgt are swapped when searching backwards.
 	bwd.srcSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD].InsertINode(tgtNode->GetIndex());
 	bwd.tgtSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD].InsertINodeIfNotPresent(srcNode->GetIndex());
-	#endif
 
 	for (int i=0; i<SearchThreadData::SEARCH_DIRECTIONS; ++i) {
 		auto& data = directionalSearchData[i];
@@ -234,14 +230,11 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	ResetState(fwd.srcSearchNode, fwd);
 	UpdateNode(fwd.srcSearchNode, nullptr, 0);
 
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
+
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 	auto& bwdSearchNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD];
 	ResetState(bwd.srcSearchNode, bwd);
 	UpdateNode(bwd.srcSearchNode, nullptr, 0);
-	#else
-		bwdPathConnected = true;
-	#endif
 	
 	bool reverseEarlyDrop = false;
 	bool continueSearching = !(*fwd.openNodes).empty();
@@ -265,7 +258,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			searchIter.Clear();
 			#endif
 
-		#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 			{
 				auto& otherNodes = bwdSearchNodes;
 				fwdPathConnected = (otherNodes.isSet(curSearchNode->GetIndex()))
@@ -353,10 +345,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			}
 			searchThreadData->ResetQueue();
 		}
-		#else
-			haveFullPath = (curSearchNode == fwd.tgtSearchNode);
-		}
-		#endif
+
 
 		if (haveFullPath){
 			searchThreadData->ResetQueue();
@@ -366,8 +355,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		else
 			continueSearching = !(*fwd.openNodes).empty() || !(*bwd.openNodes).empty();
 	}
-
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 
 	// Sanity check the path is properly connected. Partial searches can fail this check.
 	if (doPartialSearch) {
@@ -385,7 +372,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			return false;
 		}
 	}
-	#endif
 
 	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode);
 
@@ -477,24 +463,16 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	// 		, tgtSearchNode->GetIndex()
 	// 		);
 
-	#ifndef QTPFS_ENABLE_BIRECTIONAL_SEARCH
-		if (curSearchNode == searchData.tgtSearchNode)
-			return;
-	#else
-		// Check if we've linked up with the other search
-		auto& otherNodes = searchThreadData->allSearchedNodes[1 - searchDir];
-		if (otherNodes.isSet(curSearchNode->GetIndex())){
-			auto &otherNode = otherNodes[curSearchNode->GetIndex()];
 
-			// Check whether it has been processed yet
-			if (otherNode.GetPrevNode() != nullptr)
-				return;
-			
-			// Check whether the node isan early cancel (for reverse search, incomplete partial-paths)
-			// if (otherNode.GetNeighborEdgeTransitionPoint().x == -1.f)
-			// 	return;
-		}
-	#endif
+	// Check if we've linked up with the other search
+	auto& otherNodes = searchThreadData->allSearchedNodes[1 - searchDir];
+	if (otherNodes.isSet(curSearchNode->GetIndex())){
+		auto &otherNode = otherNodes[curSearchNode->GetIndex()];
+
+		// Check whether it has been processed yet
+		if (otherNode.GetPrevNode() != nullptr)
+			return;
+	}
 
 	// Check if this node has already been processed already
 	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
@@ -504,17 +482,11 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 	if (searchDir == SearchThreadData::SEARCH_FORWARD) {
-	#endif
-
-	// remember the node with lowest h-cost in case the search fails to reach tgtNode
-	if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < searchData.minSearchNode->GetPathCost(NODE_PATH_COST_H))
-		searchData.minSearchNode = curSearchNode;
-
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
+		// remember the node with lowest h-cost in case the search fails to reach tgtNode
+		if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < searchData.minSearchNode->GetPathCost(NODE_PATH_COST_H))
+			searchData.minSearchNode = curSearchNode;
 	}
-	#endif
 
 	#endif
 
@@ -681,16 +653,10 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	std::deque<TracePoint> points;
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
-	
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
 	if (fwd.srcSearchNode != fwd.tgtSearchNode || bwd.srcSearchNode != bwd.tgtSearchNode) {
-	#else
-	if (fwd.srcSearchNode != fwd.tgtSearchNode) {
-	#endif
 
-	#ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
 		// Got to transfer reserve search results back to forward search results
 		// if (haveFullPath)
 		{
@@ -741,7 +707,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				prvNode = tmpNode->GetPrevNode();
 			}
 		}
-	#endif
 
 		const SearchNode* tmpNode = fwd.tgtSearchNode;
 		const SearchNode* prvNode = tmpNode->GetPrevNode();
