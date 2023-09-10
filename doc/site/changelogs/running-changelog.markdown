@@ -35,6 +35,7 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
 * the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
 but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively.
+* manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
 
 # QTPFS
 
