@@ -16,8 +16,6 @@ These are the entries which may require special attention when migrating:
 * removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
 You can replace these functions before migrating, and known existing games have already received patches to do so.
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
-* removed the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
-since it had the same behaviour, just different internal implementation. No known game actually used it.
 
 ### Behaviour changes
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
@@ -33,9 +31,15 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 * the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
-* the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
-but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively.
 * manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
+
+### Deprecation
+No changes yet, but these will happen in the future and possibly break things.
+
+* the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
+but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively (which will stay elmo/frame).
+* the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class is scheduled for removal. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
+since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
 
 # QTPFS
 
@@ -205,16 +209,22 @@ Use for "anonymous players" modes in conjunction with `Spring.GetPlayerInfo` poi
 * added `Spring.DeselectUnit(unitID) → nil`.
 * added `Spring.SelectUnit(unitID[, bool append]]) → nil`, a single-unit version of `Spring.SelectUnit{Array,Map}` that doesn't require a table.
 The unitID can be nil.
+* added `Spring.DeselectUnitArray({[any] = unitID, [any] = unitID, ...}) → nil` and `Spring.DeselectUnitMap({[unitID] = any, [unitID] = any, ...}) → nil`.
+These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.SelectUnitMap`.
+* the table in `Spring.SelectUnitArray` can now have arbitrary keys. Previously they had to be numbers, but the table did not actually have to be an array.
 
 ### Root pieces
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
 * added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
 
+### Colored text
+* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
+* added the `Game.textColorCodes` table, containing the constants `Color` (`/255`), `ColorAndOutline` (the newly added `/254`), and `Reset` (`\008`).
+
 ### Miscellaneous additions
 * add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
 * added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
 Note that EnteredWater happens when the unit dips its toes into the water while EnteredUnderwater is when it becomes completely submerged.
-* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
 * add new `/remove` cheat-only command, it removes selected units similar to `/destroy` except the units are just removed (no wreck, no death explosion).
 * added new startscript entry: `FixedRNGSeed`. Defaults to 0 which means to generate a random seed for synced RNG (current behaviour).
 Otherwise, given value is used as the seed. Use for reproducible runs (benchmarks, mission cutscenes...).

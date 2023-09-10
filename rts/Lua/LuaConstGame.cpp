@@ -11,6 +11,7 @@
 #include "Map/MapInfo.h"
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
+#include "Rendering/Fonts/glFont.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
@@ -301,6 +302,15 @@ bool LuaConstGame::PushEntries(lua_State* L)
 			LuaPushNamedNumber(L, "HitNothing", CScriptMoveType::HitNothing);
 			LuaPushNamedNumber(L, "HitGround" , CScriptMoveType::HitGround );
 			LuaPushNamedNumber(L, "HitLimit"  , CScriptMoveType::HitLimit  );
+		lua_rawset(L, -3);
+	}
+	{
+		// inline color-codes for text fonts
+		lua_pushliteral(L, "textColorCodes");
+		lua_createtable(L, 0, 3);
+			LuaPushNamedChar(L, "Color"          , CglFont::ColorCodeIndicator  );
+			LuaPushNamedChar(L, "ColorAndOutline", CglFont::ColorCodeIndicatorEx);
+			LuaPushNamedChar(L, "Reset"          , CglFont::ColorResetIndicator );
 		lua_rawset(L, -3);
 	}
 

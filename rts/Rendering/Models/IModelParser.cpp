@@ -232,7 +232,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 
 void CModelLoader::LogErrors()
 {
-	assert(Threading::IsMainThread());
+	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	if (errors.empty())
 		return;

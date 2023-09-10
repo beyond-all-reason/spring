@@ -33,7 +33,7 @@ need to add
 [`gl.Color`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Text)
 in front of
 [`gl.Text`](https://beyond-all-reason.github.io/spring/ldoc/modules/OpenGL.html#gl.Color)
-calls.
+calls. Alternatively, you can add inline colour codes (`\255\rrr\ggg\bbb`).
 
 ### Spring.Marker usage
 
@@ -215,6 +215,8 @@ but if someone needs it it could be arranged.
 which made clouds move across the sky. You cannot easily get back
 previous behaviour, though you can probably achieve something similar
 by rendering moving clouds yourself.
-- The deprecated `Game.allowTeamColors`, whose value was always `true`, has been removed.
+- The deprecated `Game.allowTeamColors`, whose value was always `true`, has been removed. Note that this inverts logic if you used it like a bool.
+- The default `/screenshot` format was changed to PNG. Check any automated processing you do on these.
+- Screenshots and replay demo files now have a different filename format, with an UTC timestamp. Check any automated file parsing you might have.
 
 [Spring.Marker]: https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedCtrl.html#Markers

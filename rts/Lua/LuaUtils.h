@@ -272,6 +272,13 @@ static inline void LuaPushNamedNumber(lua_State* L, const string& key, lua_Numbe
 }
 
 
+static inline void LuaPushNamedChar(lua_State* L, char const *name, char value)
+{
+	lua_pushstring(L, name);
+	lua_pushlstring(L, &value, 1);
+	lua_rawset(L, -3);
+}
+
 static inline void LuaPushNamedString(lua_State* L, const string& key, const string& value)
 {
 	lua_pushsstring(L, key);

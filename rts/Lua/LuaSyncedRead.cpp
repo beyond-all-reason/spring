@@ -3860,9 +3860,13 @@ int LuaSyncedRead::GetUnitAllyTeam(lua_State* L)
 }
 
 
-/***
+/*** Checks if a unit is neutral (NOT Gaia!)
  *
  * @function Spring.GetUnitNeutral
+ *
+ * Note that a "neutral" unit can belong to any ally-team (ally, enemy, Gaia).
+ * To check if a unit is Gaia, check its owner team.
+ *
  * @number unitID
  * @treturn nil|bool
  */
@@ -4019,8 +4023,8 @@ int LuaSyncedRead::GetUnitMetalExtraction(lua_State* L)
  *
  * @function Spring.GetUnitExperience
  * @number unitID
- * @treturn nil|number
- * @treturn number 0.0 - 1.0 as experience approaches infinity
+ * @treturn number XP [0.0; +∞)
+ * @treturn number limXP [0.0; 1.0) as experience approaches infinity
  */
 int LuaSyncedRead::GetUnitExperience(lua_State* L)
 {
@@ -4220,10 +4224,14 @@ int LuaSyncedRead::GetUnitBuildFacing(lua_State* L)
 }
 
 
-/***
+/*** Checks whether a unit is currently building another (NOT for checking if it's a structure)
  *
  * @function Spring.GetUnitIsBuilding
+ *
+ * Works for both mobile builders and factories.
+ *
  * @number unitID
+ * @treturn number buildeeUnitID or nil
  */
 int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 {
@@ -4249,12 +4257,24 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Checks a builder's current task
  *
  * @function Spring.GetUnitWorkerTask
+ *
+ * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
+ * because you can have a command at the front of the queue and not be doing it (for example because
+ * the target is still too far away), and on the other hand you can also be doing a task despite not
+ * having it in front of the queue (for example you're Guarding another builder who does). Also, it
+ * resolves the Repair command into either actual repair, or construction assist (in which case it
+ * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
+ * custom commands).
+ *
+ * The possible commands returned are repair, reclaim, resurrect, capture, restore,
+ * and build commands (negative buildee unitDefID).
+ *
  * @number unitID
  * @treturn number cmdID of the relevant command
- * @treturn number ID of the target, if applicable
+ * @treturn number targetID if applicable (all except RESTORE)
  */
 int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 {
@@ -7187,7 +7207,7 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 }
 
 
-/***
+/*** Snaps a position to the building grid
  *
  * @function Spring.Pos2BuildPos
  * @number unitDefID
