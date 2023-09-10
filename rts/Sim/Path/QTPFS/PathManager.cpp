@@ -194,6 +194,7 @@ QTPFS::PathManager::~PathManager() {
 	std::for_each(nodeLayersMapDamageTrack.mapChangeTrackers.begin(), nodeLayersMapDamageTrack.mapChangeTrackers.end(), clearTrackers);
 	nodeLayersMapDamageTrack.mapChangeTrackers.clear();
 	sharedPaths.clear();
+	partialSharedPaths.clear();
 
 	// numCurrExecutedSearches.clear();
 	// numPrevExecutedSearches.clear();
@@ -233,6 +234,9 @@ void QTPFS::PathManager::InitStatic() {
 	// Ensure SharedPathChain is assigned a Pool by EnTT to avoid it happening in an MT section
 	{ auto view = registry.view<SharedPathChain>();
 	  if (view.size() > 0) { LOG("%s: SharedPathChain is unexpectedly greater than 0.", __func__); }
+	}
+	{ auto view = registry.view<PartialSharedPathChain>();
+	  if (view.size() > 0) { LOG("%s: PartialSharedPathChain is unexpectedly greater than 0.", __func__); }
 	}
 }
 
@@ -365,6 +369,7 @@ std::uint64_t QTPFS::PathManager::GetMemFootPrint() const {
 
 	memFootPrint += pathTraces.size() * sizeof(decltype(pathTraces)::value_type);
 	memFootPrint += sharedPaths.size() * sizeof(decltype(sharedPaths)::value_type);
+	memFootPrint += partialSharedPaths.size() * sizeof(decltype(partialSharedPaths)::value_type);
 
 	memFootPrint += sizeof(nodeLayersMapDamageTrack);
 	memFootPrint += nodeLayersMapDamageTrack.mapChangeTrackers.size()
@@ -687,6 +692,7 @@ void QTPFS::PathManager::Update() {
 
 				registry.emplace<PathIsDirty>(pathEntity);
 				RemovePathFromShared(pathEntity);
+				RemovePathFromPartialShared(pathEntity);
 				pathsMarkedDirty++;
 			}
 			layerDirtyPaths.clear();
@@ -708,6 +714,10 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 	ZoneScoped;
 	assert(registry.all_of<PathSearch>(searchEntity));
 	PathSearch* search = &registry.get<PathSearch>(searchEntity);
+
+	if (search->initialized)
+		return;
+
 	int pathType = search->GetPathType();
 
 	assert(pathType < nodeLayers.size());
@@ -719,18 +729,38 @@ void QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		IPath* path = &registry.get<IPath>(pathEntity);
 		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), path->GetOwner());
 		path->SetHash(search->GetHash());
+		path->SetVirtualHash(search->GetPartialSearchHash());
 
-		if (path->IsSynced() && search->GetHash() != PathSearch::BAD_HASH) {
-			assert(!registry.all_of<SharedPathChain>(pathEntity));
-			SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
-			if (sharedPathsIt == sharedPaths.end()) {
-				registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
-				sharedPaths[path->GetHash()] = pathEntity;
-			} else {
-				linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+		// LOG("%s: search vhash %x%x", __func__, int(search->GetPartialSearchHash() >> 32), int(search->GetPartialSearchHash() & 32));
+		// LOG("%s: path vhash %x%x", __func__, int(path->GetVirtualHash() >> 32), int(path->GetVirtualHash() & 32));
+		// assert(search->GetPartialSearchHash() == path->GetVirtualHash());
+
+		if (path->IsSynced()) {
+			if (search->GetHash() != PathSearch::BAD_HASH) {
+				assert(!registry.all_of<SharedPathChain>(pathEntity));
+				SharedPathMap::iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+				if (sharedPathsIt == sharedPaths.end()) {
+					registry.emplace<SharedPathChain>(pathEntity, pathEntity, pathEntity);
+					sharedPaths[path->GetHash()] = pathEntity;
+				} else {
+					linkedListHelper.InsertChain<SharedPathChain>(sharedPaths[path->GetHash()], pathEntity);
+				}
+			}
+			if (search->GetPartialSearchHash() != PathSearch::BAD_HASH) {
+				assert(path->GetVirtualHash() != PathSearch::BAD_HASH);
+				assert(!registry.all_of<PartialSharedPathChain>(pathEntity));
+				PartialSharedPathMap::iterator partialSharedPathsIt = partialSharedPaths.find(path->GetVirtualHash());
+				if (partialSharedPathsIt == partialSharedPaths.end()) {
+					registry.emplace<PartialSharedPathChain>(pathEntity, pathEntity, pathEntity);
+					partialSharedPaths[path->GetVirtualHash()] = pathEntity;
+				} else {
+					linkedListHelper.InsertChain<PartialSharedPathChain>(partialSharedPaths[path->GetVirtualHash()], pathEntity);
+				}
 			}
 		}
 	}
+
+	search->initialized = true;
 }
 
 void QTPFS::PathManager::ReadyQueuedSearches() {
@@ -778,6 +808,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					registry.remove<PathIsTemp>(pathEntity);
 					registry.remove<PathIsDirty>(pathEntity);
 					registry.remove<PathSearchRef>(pathEntity);
+					// LOG("%s: %x - path found", __func__, entt::to_integral(pathEntity));
 				} else {
 					if (search->rawPathCheck) {
 						registry.remove<PathSearchRef>(pathEntity);
@@ -785,8 +816,20 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 
 						// adding a new search doesn't break this loop because new paths do not
 						// have the tag ProcessPath and so don't impact this group view.
-						RequeueSearch(path, false);
-					} else {
+						RequeueSearch(path, false, true);
+						// LOG("%s: %x - raw path check failed", __func__, entt::to_integral(pathEntity));
+					} else if (search->partialPathWait) {
+						// nothing to do - it will be rerun next frame
+						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
+						continue;
+					} else if (search->rejectPartialSearch) {
+						// search->rejectPartialSearch = false;
+						// RemovePathFromPartialShared(pathEntity);
+						RequeueSearch(path, false, false);
+						// LOG("%s: %x - partial search failed", __func__, entt::to_integral(pathEntity));
+					}
+					else {
+						// LOG("%s: %x - search failed", __func__, entt::to_integral(pathEntity));
 						DeletePath(path->GetID());
 					}
 				}
@@ -825,30 +868,61 @@ bool QTPFS::PathManager::ExecuteSearch(
 	bool synced = path->IsSynced();
 
 	entt::entity chainHeadEntity = entt::null;
+	entt::entity partialChainHeadEntity = entt::null;
 	if (synced)
 	{
-		SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
-		if (sharedPathsIt != sharedPaths.end()) {
-			chainHeadEntity = sharedPathsIt->second;
-			// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
-			// 		, entt::to_integral(chainHeadEntity), entt::to_integral(pathEntity));
-			if (chainHeadEntity != pathEntity){
-				bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
-				if (pathIsCopyable) {
-					// LOG("%s: pathEntity %x pathIsCopyable = %d", __func__
-					// 		, entt::to_integral(pathEntity), int(pathIsCopyable));
-					auto& headChainPath = registry.get<IPath>(chainHeadEntity);
-					search->SharedFinalize(&headChainPath, path);
+		if (search->allowPartialSearch)
+		{
+			PartialSharedPathMap::const_iterator partialSharedPathsIt = partialSharedPaths.find(path->GetVirtualHash());
+			if (partialSharedPathsIt != partialSharedPaths.end()) {
+				assert(path->GetVirtualHash() != PathSearch::BAD_HASH);
+				partialChainHeadEntity = partialSharedPathsIt->second;
+				if (partialChainHeadEntity != pathEntity) {
+					bool pathIsCopyable = !registry.all_of<PathSearchRef>(partialChainHeadEntity);
+					if (!pathIsCopyable) {
+						search->partialPathWait = true;
+						return false;
+					}
+					
+					// proceed with the search.
+					search->partialPathWait = false;
+					search->doPartialSearch = true;
 				}
-				return false;
+			}
+		}
+		{
+			SharedPathMap::const_iterator sharedPathsIt = sharedPaths.find(path->GetHash());
+			if (sharedPathsIt != sharedPaths.end()) {
+				chainHeadEntity = sharedPathsIt->second;
+				// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
+				// 		, entt::to_integral(chainHeadEntity), entt::to_integral(pathEntity));
+				if (chainHeadEntity != pathEntity){
+					assert(partialChainHeadEntity != pathEntity);
+					bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
+					if (pathIsCopyable) {
+						// LOG("%s: pathEntity %x pathIsCopyable = %d", __func__
+						// 		, entt::to_integral(pathEntity), int(pathIsCopyable));
+						auto& headChainPath = registry.get<IPath>(chainHeadEntity);
+						search->SharedFinalize(&headChainPath, path);
+					}
+					return false;
+				}
 			}
 		}
 	}
 
 	search->InitializeThread(&searchThreadData[currentThread]);
 
+	if (search->doPartialSearch) {
+		auto* path = &registry.get<IPath>(partialChainHeadEntity);
+		search->LoadPartialPath(path);
+	}
+
 	if (search->Execute(searchStateOffset)) {
 		search->Finalize(path);
+
+		if (search->rejectPartialSearch)
+			return false;
 
 		if (chainHeadEntity == pathEntity){
 			ZoneScopedN("Sim::QTPFS::post-check shared path");
@@ -917,7 +991,7 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 
 			assert(path->GetPathType() < moveDefHandler.GetNumMoveDefs());
 			const MoveDef* moveDef = moveDefHandler.GetMoveDefByPathType(path->GetPathType());
-			RequeueSearch(path, true);
+			RequeueSearch(path, true, false);
 
 			assert(registry.all_of<PathIsToBeUpdated>(entity));
 			registry.remove<PathIsToBeUpdated>(entity);
@@ -986,6 +1060,8 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(newPath->GetPathType());
 	newSearch->rawPathCheck = allowRawSearch;
+	newSearch->allowPartialSearch = !allowRawSearch;
+	newSearch->initialized = false;
 
 	// LOG("%s: %s (%x) %d -> %d ", __func__
 	// 		, unit != nullptr ? unit->unitDef->name.c_str() : "non-unit"
@@ -1001,7 +1077,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 }
 
 unsigned int QTPFS::PathManager::RequeueSearch(
-	IPath* oldPath, const bool allowRawSearch
+	IPath* oldPath, const bool allowRawSearch, const bool allowPartialSearch
 ) {
 	assert(!ThreadPool::inMultiThreadedSection);
 	entt::entity pathEntity = entt::entity(oldPath->GetID());
@@ -1025,6 +1101,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	const auto targetPoint = oldPath->GetTargetPoint();
 
 	RemovePathFromShared(pathEntity);
+	RemovePathFromPartialShared(pathEntity);
 
 	oldPath->SetHash(PathSearch::BAD_HASH);
 	oldPath->SetNextPointIndex(-1);
@@ -1042,6 +1119,8 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(oldPath->GetPathType());
 	newSearch->rawPathCheck = allowRawSearch;
+	newSearch->initialized = false;
+	newSearch->allowPartialSearch = allowPartialSearch;
 
 	registry.emplace_or_replace<PathIsTemp>(pathEntity);
 	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
@@ -1058,12 +1137,16 @@ void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int path
 void QTPFS::PathManager::DeletePath(unsigned int pathID) {
 	assert(!ThreadPool::inMultiThreadedSection);
 
-	if (registry.all_of<SharedPathChain>(entt::entity(pathID))) {
-		if (!registry.all_of<PathDelayedDelete>(entt::entity(pathID))) {
-			registry.emplace<PathDelayedDelete>(entt::entity(pathID), gs->frameNum + GAME_SPEED);
+	entt::entity pathEntity = entt::entity(pathID);
+
+	if (!registry.valid(pathEntity)) return;
+
+	if (registry.all_of<SharedPathChain>(pathEntity)) {
+		if (!registry.all_of<PathDelayedDelete>(pathEntity)) {
+			registry.emplace<PathDelayedDelete>(pathEntity, gs->frameNum + GAME_SPEED);
 		}
 	} else {
-		DeletePathEntity(entt::entity(pathID));
+		DeletePathEntity(pathEntity);
 	}
 }
 
@@ -1071,9 +1154,10 @@ void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
 	const PathTraceMapIt pathTraceIt = pathTraces.find(entt::to_integral(pathEntity));
 
 	RemovePathFromShared(pathEntity);
+	RemovePathFromPartialShared(pathEntity);
 
-	if (registry.valid(pathEntity))
-		registry.destroy(pathEntity);
+	// if (registry.valid(pathEntity)) - check is already done.
+	registry.destroy(pathEntity);
 
 	if (pathTraceIt != pathTraces.end()) {
 		delete (pathTraceIt->second);
@@ -1082,7 +1166,7 @@ void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
 }
 
 void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
-	if (!registry.valid(entity)) return;
+	// if (!registry.valid(entity)) return;
 	if (!registry.all_of<SharedPathChain>(entity)) return;
 
 	IPath* path = &registry.get<IPath>(entity);
@@ -1099,6 +1183,27 @@ void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
 	}
 
 	linkedListHelper.RemoveChain<SharedPathChain>(entity);
+}
+
+void QTPFS::PathManager::RemovePathFromPartialShared(entt::entity entity) {
+	// if (!registry.valid(entity)) return;
+	if (!registry.all_of<PartialSharedPathChain>(entity)) return;
+
+	IPath* path = &registry.get<IPath>(entity);
+	auto iter = partialSharedPaths.find(path->GetVirtualHash());
+
+	// case: when entity is at the head of the chain.
+	if (iter != partialSharedPaths.end() && iter->second == entity) {
+		assert(path->GetVirtualHash() != PathSearch::BAD_HASH);
+		auto& chain = registry.get<PartialSharedPathChain>(entity);
+		if (chain.next == entity) {
+			partialSharedPaths.erase(path->GetVirtualHash());
+		} else {
+			partialSharedPaths[path->GetVirtualHash()] = chain.next;
+		}
+	}
+
+	linkedListHelper.RemoveChain<PartialSharedPathChain>(entity);
 }
 
 unsigned int QTPFS::PathManager::RequestPath(

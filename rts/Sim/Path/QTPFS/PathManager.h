@@ -118,6 +118,7 @@ namespace QTPFS {
 
 		void InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
+		void RemovePathFromPartialShared(entt::entity entity);
 
 		void ReadyQueuedSearches();
 		void ExecuteQueuedSearches();
@@ -135,7 +136,8 @@ namespace QTPFS {
 
 		unsigned int RequeueSearch(
 			IPath* oldPath,
-			const bool allowRawSearch
+			const bool allowRawSearch,
+			const bool allowPartialSearch
 		);
 
 		bool ExecuteSearch(
@@ -161,6 +163,7 @@ namespace QTPFS {
 
 		PathTraceMap pathTraces;
 		SharedPathMap sharedPaths;
+		PartialSharedPathMap partialSharedPaths;
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;

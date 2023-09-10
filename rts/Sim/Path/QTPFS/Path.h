@@ -16,6 +16,11 @@ class CSolidObject;
 
 namespace QTPFS {
 	struct IPath {
+		struct PathNodeData {
+			uint32_t nodeId;
+			float2 netPoint;
+		};
+
 		IPath() {}
 		IPath(const IPath& other) { *this = other; }
 		IPath& operator = (const IPath& other) {
@@ -28,10 +33,12 @@ namespace QTPFS {
 			numPathUpdates = other.numPathUpdates;
 
 			hash   = other.hash;
+			virtualHash = other.virtualHash;
 			radius = other.radius;
 			synced = other.synced;
 			haveFullPath = other.haveFullPath;
 			points = other.points;
+			nodes = other.nodes;
 
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
@@ -50,10 +57,12 @@ namespace QTPFS {
 			numPathUpdates = other.numPathUpdates;
 
 			hash   = other.hash;
+			virtualHash = other.virtualHash;
 			radius = other.radius;
 			synced = other.synced;
 			haveFullPath = other.haveFullPath;
 			points = std::move(other.points);
+			nodes = other.nodes;
 
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
@@ -62,7 +71,7 @@ namespace QTPFS {
 
 			return *this;
 		}
-		~IPath() { points.clear(); }
+		~IPath() { points.clear(); nodes.clear(); }
 
 		void SetID(unsigned int pathID) { this->pathID = pathID; }
 		unsigned int GetID() const { return pathID; }
@@ -73,6 +82,7 @@ namespace QTPFS {
 		unsigned int GetNumPathUpdates() const { return numPathUpdates; }
 
 		void SetHash(std::uint64_t hash) { this->hash = hash; }
+		void SetVirtualHash(std::uint64_t virtualHash) { this->virtualHash = virtualHash; }
 		void SetRadius(float radius) { this->radius = radius; }
 		void SetSynced(bool synced) { this->synced = synced; }
 		void SetHasFullPath(bool fullPath) { this->haveFullPath = fullPath; }
@@ -80,6 +90,7 @@ namespace QTPFS {
 
 		float GetRadius() const { return radius; }
 		std::uint64_t GetHash() const { return hash; }
+		std::uint64_t GetVirtualHash() const { return virtualHash; }
 		bool IsSynced() const { return synced; }
 		bool IsFullPath() const { return haveFullPath; }
 		bool IsPartialPath() const { return havePartialPath; }
@@ -132,6 +143,12 @@ namespace QTPFS {
 		}
 		const float3& GetPoint(unsigned int i) const { return points[std::min(i, NumPoints() - 1)]; }
 
+		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint) {
+			nodes[i].netPoint = netpoint;
+			nodes[i].nodeId = nodeId;
+		}
+		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
+
 		void SetSourcePoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[                0] = p; }
 		void SetTargetPoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[points.size() - 1] = p; }
 		const float3& GetSourcePoint() const { return points[                0]; }
@@ -159,9 +176,20 @@ namespace QTPFS {
 				points[n] = p.GetPoint(n);
 			}
 		}
+		void AllocNodes(unsigned int n) {
+			nodes.clear();
+			nodes.resize(n);
+		}
 
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
+
+		void SetSrcReverseNodeForPartPath(uint32_t nodeId, float2&& netpoint) {
+			srcReverseNodeForPartPath = { nodeId, netpoint };
+		}
+		const PathNodeData& GetSrcReverseNodeForPartPath() { return srcReverseNodeForPartPath; }
+
+		const std::vector<PathNodeData>& GetNodeList() const { return nodes; };
 
 	private:
 		unsigned int pathID = 0;
@@ -171,12 +199,15 @@ namespace QTPFS {
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		std::uint64_t hash = -1;
+		std::uint64_t virtualHash = -1;
 		float radius = 0.f;
 		bool synced = true;
 		bool haveFullPath = true;
 		bool havePartialPath = false;
 
 		std::vector<float3> points;
+		std::vector<PathNodeData> nodes;
+		PathNodeData srcReverseNodeForPartPath;	// used for early out on partial searches for incomplete paths.
 
 		// corners of the bounding-box containing all our points
 		float3 boundingBoxMins;

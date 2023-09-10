@@ -107,12 +107,14 @@ namespace QTPFS {
 			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
+		void LoadPartialPath(IPath* path);
 		bool Execute(unsigned int searchStateOffset = 0);
 		void Finalize(IPath* path);
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }
 
 		const std::uint64_t GetHash() const { return pathSearchHash; };
+		const std::uint64_t GetPartialSearchHash() const { return pathPartialSearchHash; };
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
@@ -125,6 +127,7 @@ namespace QTPFS {
 				: openNodes(nullptr)
 				, srcSearchNode(nullptr)
 				, tgtSearchNode(nullptr)
+				, minSearchNode(nullptr)
 			{}
 
 			// global queue: allocated once, re-used by all searches without clear()'s
@@ -133,6 +136,7 @@ namespace QTPFS {
 
 			SearchNode *srcSearchNode, *tgtSearchNode;
 			float3 srcPoint, tgtPoint;
+			SearchNode *minSearchNode;
 		};
 
 		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
@@ -168,7 +172,6 @@ namespace QTPFS {
 		PathSearchTrace::Iteration searchIter;
 
 		SearchNode *curSearchNode, *nextSearchNode;
-		SearchNode *minSearchNode;
 
 		DirectionalSearchData directionalSearchData[2];
 
@@ -187,6 +190,15 @@ namespace QTPFS {
 
 public:
 		bool rawPathCheck;
+		bool partialPathWait;
+		bool doPartialSearch;
+		bool rejectPartialSearch;
+		bool allowPartialSearch;
+		bool partialCopyIsPartial;
+		bool initialized;
+
+		bool fwdPathConnected = false;
+		bool bwdPathConnected = false;
 
 		static constexpr std::uint64_t BAD_HASH = std::numeric_limits<std::uint64_t>::max();
 	};

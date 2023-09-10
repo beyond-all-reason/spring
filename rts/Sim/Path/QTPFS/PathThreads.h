@@ -128,7 +128,9 @@ namespace QTPFS {
             /*,*/ : threadId(curThreadId)
 			{}
 
-        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) while (!openNodes[i].empty()) openNodes[i].pop(); }
+        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) ResetQueue(i); }
+
+        void ResetQueue(int i) { ZoneScoped; while (!openNodes[i].empty()) openNodes[i].pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             constexpr size_t tmpNodeStoreInitialReserve = 128;
