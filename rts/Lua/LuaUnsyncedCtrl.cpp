@@ -3520,8 +3520,6 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 
 	const char* type = lua_tostring(L, 2);
 	if (type[0] == 'u') {
-		// update the selection, and clear the unit command queues
-		selectedUnitsHandler.GiveCommand(Command(CMD_STOP), false);
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
 		selectedUnitsHandler.ClearSelected();
 		return 0;

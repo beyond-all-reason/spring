@@ -31,6 +31,7 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 * the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
+* manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
 
 ### Deprecation
 No changes yet, but these will happen in the future and possibly break things.

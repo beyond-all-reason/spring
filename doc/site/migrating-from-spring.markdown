@@ -89,6 +89,17 @@ Instead use the second return value, e.g.:
 + local counts, unitDefsCount = Spring.GetSelectedUnitsCounts()
 ```
 
+## Stop command on manual share
+Manually shared units no longer receive the Stop command.
+Replicate the previous behaviour via the `UnitGiven` callin:
+```lua
+function wupget:UnitGiven(unitID, unitDefID, newTeam)
+	if newTeam == Spring.GetMyTeamID() then -- if doing in unsynced
+		Spring.GiveOrderToUnit(unitID, CMD.STOP, 0, 0)
+	end
+end
+```
+
 ## Defs
 
 - Hovercraft and ships brought out of water no longer forced to be upright.
