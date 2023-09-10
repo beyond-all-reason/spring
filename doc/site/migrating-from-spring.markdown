@@ -94,9 +94,9 @@ Manually shared units no longer receive the Stop command.
 Replicate the previous behaviour via the `UnitGiven` callin:
 ```lua
 function wupget:UnitGiven(unitID, unitDefID, newTeam)
-	if newTeam == Spring.GetMyTeamID() then -- if unsynced
-    Spring.GiveOrderToUnit(unitID, CMD.STOP, 0, 0)
-  end
+	if newTeam == Spring.GetMyTeamID() then -- if doing in unsynced
+		Spring.GiveOrderToUnit(unitID, CMD.STOP, 0, 0)
+	end
 end
 ```
 
