@@ -2643,7 +2643,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  *
  * @function Spring.ReplaceMouseCursor
  * @string oldFileName
- * @string newFileName 
+ * @string newFileName
  * @bool[opt=false] hotSpotTopLeft
  * @treturn ?nil|bool assigned
  */
@@ -3506,9 +3506,8 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 
 	const char* type = lua_tostring(L, 2);
 	if (type[0] == 'u') {
-		// update the selection, and clear the unit command queues
-		selectedUnitsHandler.GiveCommand(Command(CMD_STOP), false);
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
+		// update the selection
 		selectedUnitsHandler.ClearSelected();
 		return 0;
 	}
@@ -3539,7 +3538,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
  * @number x
  * @number y
  * @number z
- * @treturn nil 
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {
