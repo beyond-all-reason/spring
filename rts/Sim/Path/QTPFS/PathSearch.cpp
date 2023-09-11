@@ -150,7 +150,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, prevNodeId, node.netPoint);
 				prevNodeId = node.nodeId;
 			} else {
-				// mark node being on an incomplete route a won't link back to forward src.
+				// mark node being on an incomplete route and won't link back to forward src.
 				// used by reverse partial search to drop out early.
 				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, badPrevNodeId, node.netPoint);
 				badPrevNodeId = node.nodeId;
@@ -299,6 +299,10 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 					if (!reverseEarlyDrop) {
 						bwdPathConnected = (otherNodes[curSearchNode->GetIndex()].GetPrevNode() != nullptr);
 						haveFullPath = isFullSearch ? bwdPathConnected : bwdPathConnected & fwdPathConnected;
+					} else {
+						// move the target node so that the full reverse path can be traced later.
+						bwd.tgtSearchNode = curSearchNode;
+						partialReverseTrace = true;
 					}
 				}
 			}
@@ -340,6 +344,18 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 					fwd.tgtSearchNode = curSearchNode;
 					fwd.minSearchNode = curSearchNode;
 					assert(curSearchNode->GetPrevNode() != nullptr);
+
+					// Now do the same for the reverse search. This will mean it has a complete
+					// reverse path to share if it becomes the primary partial path.
+					if (partialReverseTrace) {
+						curSearchNode = &fwdSearchNodes[bwd.tgtSearchNode->GetIndex()];
+						while (curSearchNode->GetPrevNode() != nullptr) {
+							curSearchNode = curSearchNode->GetPrevNode();
+						}
+						curSearchNode = &bwdSearchNodes[curSearchNode->GetIndex()];
+						bwd.tgtSearchNode = curSearchNode;
+						assert(curSearchNode->GetPrevNode() != nullptr);
+					}
 				}
 			}
 			searchThreadData->ResetQueue();

@@ -196,6 +196,7 @@ public:
 		bool allowPartialSearch;
 		bool partialCopyIsPartial;
 		bool initialized;
+		bool partialReverseTrace = false;
 
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
