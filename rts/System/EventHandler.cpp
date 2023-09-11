@@ -330,6 +330,12 @@ bool CEventHandler::AllowUnitKamikaze(const CUnit* unit, const CUnit* target, bo
 	return ControlIterateDefTrue(listAllowUnitKamikaze, &CEventClient::AllowUnitKamikaze, unit, target, allowed);
 }
 
+bool CEventHandler::AllowUnitChase(const CUnit* unit, const CUnit* target)
+{
+	ZoneScoped;
+	return ControlIterateDefTrue(listAllowUnitChase, &CEventClient::AllowUnitChase, unit, target);
+}
+
 
 bool CEventHandler::AllowFeatureCreation(const FeatureDef* featureDef, int allyTeamID, const float3& pos)
 {

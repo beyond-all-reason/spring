@@ -168,3 +168,5 @@ Spring.VC.VC.opendb
 toolchain
 compile_commands.json
 build-*
+/dev_engine/AI
+/rts/lib/entt

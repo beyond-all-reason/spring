@@ -64,6 +64,7 @@ class CSyncedLuaHandle : public CLuaHandle
 		bool AllowUnitCloak(const CUnit* unit, const CUnit* enemy) override;
 		bool AllowUnitDecloak(const CUnit* unit, const CSolidObject* object, const CWeapon* weapon) override;
 		bool AllowUnitKamikaze(const CUnit* unit, const CUnit* target, bool allowed) override;
+		bool AllowUnitChase(const CUnit* unit, const CUnit* target) override;
 		bool AllowFeatureCreation(const FeatureDef* featureDef, int allyTeamID, const float3& pos) override;
 		bool AllowFeatureBuildStep(const CUnit* builder, const CFeature* feature, float part) override;
 		bool AllowResourceLevel(int teamID, const std::string& type, float level) override;
