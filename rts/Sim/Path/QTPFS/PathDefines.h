@@ -30,6 +30,7 @@
 
 #define QTPFS_SHARE_PATH_MIN_SIZE 2
 #define QTPFS_SHARE_PATH_MAX_SIZE 16
+#define QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE 32
 
 namespace QTPFS {
     constexpr int SEARCH_DIRS = 2;

@@ -156,7 +156,7 @@ namespace QTPFS {
 		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
 
 		const std::uint64_t GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int x, int z) const;
+		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
 		QTPFS::SearchThreadData* searchThreadData;
 

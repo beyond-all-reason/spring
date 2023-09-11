@@ -246,7 +246,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	// 		, tgtSearchNode->GetIndex()
 	// 		);
 
-	// while (!(*fwd.openNodes).empty()) {
 	while (continueSearching) {
 
 		if (!(*fwd.openNodes).empty() && !fwdPathConnected) {
@@ -266,7 +265,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			}
 			if (fwdPathConnected) {
 				// in a partial copy scenario, target node needs to be brought forward to guaranatee
-				// a forwrad path can be built.
+				// a forward path can be built.
 				if (partialCopyIsPartial && !haveFullPath)
 					fwd.tgtSearchNode = curSearchNode;
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
@@ -357,7 +356,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	}
 
 	// Sanity check the path is properly connected. Partial searches can fail this check.
-	if (doPartialSearch) {
+	// This is only needed if the reverse search has nodes to contribute to the final path.
+	if (doPartialSearch && bwd.tgtSearchNode != nullptr) {
 		const SearchNode* curNode = &fwdSearchNodes[bwd.tgtSearchNode->GetIndex()];
 		while (curNode != nullptr) {
 			if (curNode->GetIndex() == fwd.srcSearchNode->GetIndex())
@@ -1017,7 +1017,7 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 		return BAD_HASH;
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
-	uint32_t srcNodeNumber = GenerateVirtualNodeNumber(srcNode, fwd.srcPoint.x / SQUARE_SIZE, fwd.srcPoint.z / SQUARE_SIZE);
+	uint32_t srcNodeNumber = GenerateVirtualNodeNumber(srcNode, QTPFS_SHARE_PATH_MAX_SIZE, fwd.srcPoint.x / SQUARE_SIZE, fwd.srcPoint.z / SQUARE_SIZE);
 
 	return GenerateHash2(srcNodeNumber, tgtNode->GetNodeNumber());
 }
@@ -1028,14 +1028,14 @@ const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode,
 
 	if (rawPathCheck)
 		return BAD_HASH;
-	if (srcNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE && tgtNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE)
-		return BAD_HASH;
+	// if (srcNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE && tgtNodeSize >= QTPFS_SHARE_PATH_MAX_SIZE)
+	// 	return BAD_HASH;
 	
 	MoveDef* md = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer());
 	int shift = GetNextBitShift(md->xsize);
 
 	// is the unit too big to be able to share paths?
-	if ((1<<shift) > QTPFS_SHARE_PATH_MAX_SIZE) 
+	if ((1<<shift) > QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE) 
 		return BAD_HASH;
 
 	int srcX = srcNode->xmid();
@@ -1046,8 +1046,8 @@ const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode,
 	int tgtZ = tgtNode->zmid();
 	INode* tgtRootNode = nodeLayer->GetRootNode(tgtX, tgtZ);
 
-	std::uint32_t vSrcNodeId = GenerateVirtualNodeNumber(srcRootNode, srcX, srcZ);
-	std::uint32_t vTgtNodeId = GenerateVirtualNodeNumber(tgtRootNode, tgtX, tgtZ);
+	std::uint32_t vSrcNodeId = GenerateVirtualNodeNumber(srcRootNode, QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE, srcX, srcZ);
+	std::uint32_t vTgtNodeId = GenerateVirtualNodeNumber(tgtRootNode, QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE, tgtX, tgtZ);
 
 	return GenerateHash2(vSrcNodeId, vTgtNodeId);
 }
@@ -1059,13 +1059,13 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest
 	return (src + (dest * N) + (k * N * N));
 }
 
-const std::uint32_t QTPFS::PathSearch::GenerateVirtualNodeNumber(const INode* startNode, int x, int z) const {
+const std::uint32_t QTPFS::PathSearch::GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const {
 	uint32_t nodeSize = startNode->xsize();
 	uint32_t srcNodeNumber = startNode->GetNodeNumber();
 	uint32_t xoff = startNode->xmin();
 	uint32_t zoff = startNode->zmin();
 
-	while (nodeSize > QTPFS_SHARE_PATH_MAX_SIZE) {
+	while (nodeSize > nodeMaxSize) {
 		// build the rest of the virtual node number
 		bool isRight = x >= xoff + (nodeSize >> 1);
 		bool isDown = z >= zoff + (nodeSize >> 1);
