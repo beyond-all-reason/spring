@@ -487,6 +487,9 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	// 		, tgtSearchNode->GetIndex()
 	// 		);
 
+	// Check if this node has already been processed already
+	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
+		return;
 
 	// Check if we've linked up with the other search
 	auto& otherNodes = searchThreadData->allSearchedNodes[1 - searchDir];
@@ -497,10 +500,6 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 		if (otherNode.GetPrevNode() != nullptr)
 			return;
 	}
-
-	// Check if this node has already been processed already
-	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
-		return;
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 
