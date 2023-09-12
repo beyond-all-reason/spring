@@ -248,6 +248,24 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 	while (continueSearching) {
 
+		// Remove any out-of-date node entries in the queue.
+		for (int i = 0; i < QTPFS::SEARCH_DIRS; ++i) {
+			DirectionalSearchData& searchData = directionalSearchData[i];
+
+			while (!(*searchData.openNodes).empty()) {
+				SearchQueueNode curOpenNode = (*searchData.openNodes).top();
+				assert(searchThreadData->allSearchedNodes[i].isSet(curOpenNode.nodeIndex));
+				curSearchNode = &searchThreadData->allSearchedNodes[i][curOpenNode.nodeIndex];
+				
+				// Check if this node entity is valid
+				if (curOpenNode.heapPriority <= curSearchNode->GetHeapPriority())
+					break;
+
+				// remove the entry
+				(*searchData.openNodes).pop();
+			}
+		}
+
 		if (!(*fwd.openNodes).empty() && !fwdPathConnected) {
 			IterateNodes(SearchThreadData::SEARCH_FORWARD);
 			// LOG("%s: search [%d] fwd node %d", __func__, GetID(), curSearchNode->GetIndex());
@@ -468,12 +486,9 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
 	SearchQueueNode curOpenNode = (*searchData.openNodes).top();
-	assert(searchThreadData->allSearchedNodes[searchDir].isSet(curOpenNode.nodeIndex));
-	curSearchNode = &searchThreadData->allSearchedNodes[searchDir][curOpenNode.nodeIndex];
-	// curSearchNode->SetSearchState(searchState | NODE_STATE_CLOSED);
-	// curNode->SetSearchState(searchState | NODE_STATE_CLOSED);
-
 	(*searchData.openNodes).pop();
+
+	curSearchNode = &searchThreadData->allSearchedNodes[searchDir][curOpenNode.nodeIndex];
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 	{
@@ -487,10 +502,6 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	// 		, tgtSearchNode->GetIndex()
 	// 		);
 
-	// Check if this node has already been processed already
-	if (curSearchNode->GetHeapPriority() < curOpenNode.heapPriority)
-		return;
-
 	// Check if we've linked up with the other search
 	auto& otherNodes = searchThreadData->allSearchedNodes[1 - searchDir];
 	if (otherNodes.isSet(curSearchNode->GetIndex())){
@@ -500,8 +511,6 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 		if (otherNode.GetPrevNode() != nullptr)
 			return;
 	}
-
-	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 
@@ -515,14 +524,13 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
+	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 	IterateNodeNeighbors(curNode, searchDir);
 }
 
 void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int searchDir) {
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
-	// if curNode equals srcNode, this is just the original srcPoint
-	// auto *curNode = nodeLayer->GetPoolNode(curSearchNode->GetIndex());
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
@@ -554,8 +562,6 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 
 		nextSearchNode = &searchThreadData->allSearchedNodes[searchDir].InsertINodeIfNotPresent(nxtNodesId);
 
-		// const bool isCurrent = (nextSearchNode->GetSearchState() >= searchState);
-		// const bool isClosed = ((nextSearchNode->GetSearchState() & 1) == NODE_STATE_CLOSED);
 		const bool isTarget = (nextSearchNode == searchData.tgtSearchNode);
 
 		QTPFS::INode *nxtNode = nullptr;
@@ -640,12 +646,6 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 
 		UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
 		(*searchData.openNodes).emplace(nextSearchNode->GetIndex(), nextSearchNode->GetHeapPriority());
-
-		// restore ordering in case nxtNode was already open
-		// (changing the f-cost of an OPEN node messes up the
-		// queue's internal consistency; a pushed node remains
-		// OPEN until it gets popped)
-		// (*openNodes).resort(nxtNode);
 	}
 }
 
