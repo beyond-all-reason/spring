@@ -261,7 +261,9 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				auto& otherNodes = bwdSearchNodes;
 				fwdPathConnected = (otherNodes.isSet(curSearchNode->GetIndex()))
 							&& (otherNodes[curSearchNode->GetIndex()].GetPrevNode() != nullptr);
-				haveFullPath = isFullSearch ? fwdPathConnected : bwdPathConnected & fwdPathConnected;
+				bool otherPathVisitedNode = (otherNodes.isSet(curSearchNode->GetIndex()))
+							&& (otherNodes[curSearchNode->GetIndex()].GetPathCost(NODE_PATH_COST_H) != std::numeric_limits<float>::infinity());
+				haveFullPath = (isFullSearch || otherPathVisitedNode) ? fwdPathConnected : bwdPathConnected & fwdPathConnected;
 			}
 			if (fwdPathConnected) {
 				// in a partial copy scenario, target node needs to be brought forward to guaranatee
@@ -298,7 +300,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 					reverseEarlyDrop = (partialCopyIsPartial) && (otherNodes[curSearchNode->GetIndex()].GetNeighborEdgeTransitionPoint().x == -1.f);
 					if (!reverseEarlyDrop) {
 						bwdPathConnected = (otherNodes[curSearchNode->GetIndex()].GetPrevNode() != nullptr);
-						haveFullPath = isFullSearch ? bwdPathConnected : bwdPathConnected & fwdPathConnected;
+						bool otherPathVisitedNode = (otherNodes[curSearchNode->GetIndex()].GetPathCost(NODE_PATH_COST_H) != std::numeric_limits<float>::infinity());
+						haveFullPath = (isFullSearch || otherPathVisitedNode) ? bwdPathConnected : bwdPathConnected & fwdPathConnected;
 					} else {
 						// move the target node so that the full reverse path can be traced later.
 						bwd.tgtSearchNode = curSearchNode;
@@ -311,22 +314,22 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			if (haveFullPath){
 				fwd.tgtSearchNode = &fwdSearchNodes[curSearchNode->GetIndex()];
 
-				// make sure the last node using the correct waypoint position
+				// make sure the last node is using the correct waypoint position
 				const float2& lastTransitionPoint = bwdSearchNodes[curSearchNode->GetIndex()].GetNeighborEdgeTransitionPoint();
 				fwd.tgtSearchNode->SetNeighborEdgeTransitionPoint(lastTransitionPoint);
 
 				if (bwd.tgtSearchNode != curSearchNode)
 					bwd.tgtSearchNode = curSearchNode->GetPrevNode();
 
-				// Ensure that the back link forward is present on the node where back stops.
-				// This allows partial search validation check to make an assumption.
-				// bwd.tgtSearchNode == null if the reverse search start node is on the partial shared path.
-				// If it is null then the forward search has to the full route now and nothing is needed from
-				// the reverse search.
-				if (doPartialSearch && bwd.tgtSearchNode != nullptr) {
-					auto& fwdSearchNode = fwdSearchNodes.InsertINodeIfNotPresent(bwd.tgtSearchNode->GetIndex());
-					fwdSearchNode.SetPrevNode(fwd.tgtSearchNode);
-				}
+				// // Ensure that the back link forward is present on the node where back stops.
+				// // This allows partial search validation check to make an assumption.
+				// // bwd.tgtSearchNode == null if the reverse search start node is on the partial shared path.
+				// // If it is null then the forward search has to the full route now and nothing is needed from
+				// // the reverse search.
+				// if (doPartialSearch && bwd.tgtSearchNode != nullptr) {
+				// 	auto& fwdSearchNode = fwdSearchNodes.InsertINodeIfNotPresent(bwd.tgtSearchNode->GetIndex());
+				// 	fwdSearchNode.SetPrevNode(fwd.tgtSearchNode);
+				// }
 			}
 		}
 		if (!haveFullPath && ((*bwd.openNodes).empty() || bwdPathConnected) && fwdPathConnected) {
@@ -1064,6 +1067,10 @@ const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode,
 
 	std::uint32_t vSrcNodeId = GenerateVirtualNodeNumber(srcRootNode, QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE, srcX, srcZ);
 	std::uint32_t vTgtNodeId = GenerateVirtualNodeNumber(tgtRootNode, QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE, tgtX, tgtZ);
+
+	// Within same cell is too close?
+	// if (vSrcNodeId == vTgtNodeId)
+	// 	return BAD_HASH;
 
 	return GenerateHash2(vSrcNodeId, vTgtNodeId);
 }
