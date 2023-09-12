@@ -321,15 +321,20 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				if (bwd.tgtSearchNode != curSearchNode)
 					bwd.tgtSearchNode = curSearchNode->GetPrevNode();
 
-				// // Ensure that the back link forward is present on the node where back stops.
-				// // This allows partial search validation check to make an assumption.
-				// // bwd.tgtSearchNode == null if the reverse search start node is on the partial shared path.
-				// // If it is null then the forward search has to the full route now and nothing is needed from
-				// // the reverse search.
-				// if (doPartialSearch && bwd.tgtSearchNode != nullptr) {
-				// 	auto& fwdSearchNode = fwdSearchNodes.InsertINodeIfNotPresent(bwd.tgtSearchNode->GetIndex());
-				// 	fwdSearchNode.SetPrevNode(fwd.tgtSearchNode);
-				// }
+				// Ensure that the back link forward is present on the node where back stops.
+				// This allows partial search validation check to make an assumption.
+				// bwd.tgtSearchNode == null if the reverse search start node is on the partial shared path.
+				// If it is null then the forward search has to the full route now and nothing is needed from
+				// the reverse search.
+				// This is also needed to ensure that certain partial paths can correctly resolve, without a
+				// raw-move like shirt circuit occuring.
+				if (doPartialSearch && bwd.tgtSearchNode != nullptr) {
+					auto& fwdSearchNode = fwdSearchNodes.InsertINodeIfNotPresent(bwd.tgtSearchNode->GetIndex());
+
+					// Don't allow an infinite loop to occur. Without this check, it can happen.
+					if (fwd.tgtSearchNode->GetPrevNode() != &fwdSearchNode)
+						fwdSearchNode.SetPrevNode(fwd.tgtSearchNode);
+				}
 			}
 		}
 		if (!haveFullPath && ((*bwd.openNodes).empty() || bwdPathConnected) && fwdPathConnected) {
