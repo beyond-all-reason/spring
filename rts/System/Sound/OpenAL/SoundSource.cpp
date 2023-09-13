@@ -31,16 +31,23 @@ float CSoundSource::globalPitch = 1.0f;
 // reduce the rolloff when the camera is height above the ground (so we still hear something in tab mode or far zoom)
 float CSoundSource::heightRolloffModifier = 1.0f;
 
+void CSoundSource::swap(CSoundSource& r)
+{
+	std::swap(id, r.id);
+	std::swap(curChannel, r.curChannel);
+	std::swap(curStream, r.curStream);
+	std::swap(curVolume, r.curVolume);
+	std::swap(loopStop, r.loopStop);
+	std::swap(in3D, r.in3D);
+	std::swap(efxEnabled, r.efxEnabled);
+	std::swap(efxUpdates, r.efxUpdates);
+	std::swap(curHeightRolloffModifier, r.curHeightRolloffModifier);
+	
+	std::swap(curPlayingItem, r.curPlayingItem);
+	std::swap(asyncPlayItem, r.asyncPlayItem);
+}
 
 CSoundSource::CSoundSource()
-	: curChannel(nullptr)
-	, curStream(nullptr)
-	, curVolume(1.0f)
-	, loopStop(1e9)
-	, in3D(false)
-	, efxEnabled(false)
-	, efxUpdates(0)
-	, curHeightRolloffModifier(1.0f)
 {
 	alGenSources(1, &id);
 
@@ -50,13 +57,17 @@ CSoundSource::CSoundSource()
 		alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 		CheckError("CSoundSource::CSoundSource");
 	}
-
-	curPlayingItem = {0,  0, 0,  0.0f, 0.0f};
 }
+
 
 CSoundSource::CSoundSource(CSoundSource&& src)
 {
-	*this = std::move(src);
+	this->swap(src);
+}
+
+CSoundSource& CSoundSource::operator = (CSoundSource&& src) {
+	this->swap(src);
+	return *this;
 }
 
 CSoundSource::~CSoundSource()
