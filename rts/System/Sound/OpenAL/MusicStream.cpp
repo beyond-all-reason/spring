@@ -21,7 +21,6 @@ MusicStream::MusicStream()
 	, lastTick(spring_nulltime)
 	, totalTime(0.0f)
 {
-	std::fill(buffers.begin(), buffers.end(), 0);
 }
 
 MusicStream::~MusicStream()
