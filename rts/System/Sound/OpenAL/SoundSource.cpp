@@ -62,6 +62,7 @@ CSoundSource::CSoundSource()
 
 CSoundSource::CSoundSource(CSoundSource&& src)
 {
+	// can't use naive/default move because `id` member has to be unique
 	this->swap(src);
 }
 
