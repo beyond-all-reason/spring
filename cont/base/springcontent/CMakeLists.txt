@@ -49,6 +49,7 @@ list(APPEND FILES
 	gamedata/resources_map.lua
 	gamedata/sounds.lua
 	gamedata/icontypes.lua
+	anims/cursornormal_0.bmp
 	anims/cursortime_0.png
 	anims/cursordwatch_2.png
 	anims/cursordwatch.txt
