@@ -33,6 +33,7 @@ public:
 	void Init();
 	void Kill();
 
+	void DrawPreprocess();
 	void Draw(bool drawReflection, bool drawRefraction = false);
 	void DrawProjectilesMiniMap();
 	void DrawGroundFlashes();
@@ -128,16 +129,19 @@ public:
 private:
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
+	static void AddProjectileContainer(std::vector<CProjectile*>& cont, const CProjectile* projectile);
+	static void DelProjectileContainer(std::vector<CProjectile*>& cont, const CProjectile* projectile);
+
 	void DrawProjectiles(int modelType, bool drawReflection, bool drawRefraction);
 	void DrawProjectilesShadow(int modelType);
 	void DrawFlyingPieces(int modelType) const;
 
 	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
-	static void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
+	void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
 
 	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
 
-	static void DrawProjectileShadow(CProjectile* projectile);
+	void DrawProjectileShadow(CProjectile* projectile);
 	static bool DrawProjectileModel(const CProjectile* projectile);
 
 	void UpdatePerlin();
@@ -162,6 +166,10 @@ private:
 
 	std::vector<const AtlasedTexture*> smokeTextures;
 
+	/// projectiles draw bits for the current drawFrame: 0 - player, 1 - refr, 2 - refl, 3 - shadow; [0] - modelless - [1] - model
+	std::vector<bool> drawBits[2];
+	/// projectiles with a model
+	std::vector<CProjectile*> modelProjectiles;
 	/// projectiles without a model, e.g. nano-particles
 	std::vector<CProjectile*> modellessProjectiles;
 	/// projectiles with a model

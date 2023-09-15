@@ -47,7 +47,6 @@ public:
 		CCamera* cam = GetActiveCamera(); SetActiveCamera(camType); return cam;
 	}
 
-
 	void Init();
 	void Kill();
 	void InitControllers();

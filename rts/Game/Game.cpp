@@ -1490,6 +1490,7 @@ bool CGame::Draw() {
 	{
 		minimap->Update();
 
+		worldDrawer.PreDraw();
 		// note: neither this call nor DrawWorld can be made conditional on minimap->GetMaximized()
 		// minimap never covers entire screen when maximized unless map aspect-ratio matches screen
 		// (unlikely); the minimap update also depends on GenerateIBLTextures for unbinding its FBO

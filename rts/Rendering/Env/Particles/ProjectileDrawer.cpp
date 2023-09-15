@@ -263,9 +263,12 @@ void CProjectileDrawer::Init() {
 		perlinFB.Unbind();
 	}
 
-
+	modelProjectiles.reserve(MAX_PROJECTILES);
 	modellessProjectiles.reserve(projectileHandler.maxParticles + projectileHandler.maxNanoParticles);
 	for (auto& mr : modelRenderers) { mr.Clear(); }
+
+	drawBits[false].resize(4 * modellessProjectiles.capacity());
+	drawBits[ true].resize(4 * modelProjectiles.capacity());
 
 	LoadWeaponTextures();
 
@@ -334,6 +337,7 @@ void CProjectileDrawer::Kill() {
 	smokeTextures.clear();
 
 	modellessProjectiles.clear();
+	modelProjectiles.clear();
 	sortedProjectiles.clear();
 	unsortedProjectiles.clear();
 
@@ -603,25 +607,16 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
-	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
+	const size_t passIndex = 1 * drawReflection + 2 * drawRefraction;
 
-	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
-		return;
-
-
-	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
-		return;
-	// removed this to fix AMD particle drawing
-	//if (drawReflection && !CModelDrawerHelper::ObjectVisibleReflection(pro->drawPos, camera->GetPos(), pro->GetDrawRadius()))
-	//	return;
-
-	const CCamera* cam = CCameraHandler::GetActiveCamera();
-	if (!cam->InView(pro->drawPos, pro->GetDrawRadius()))
+	if (!drawBits[pro->model != nullptr][4 * pro->GetRenderIndex() + passIndex])
 		return;
 
 	// no-op if no model
-	DrawProjectileModel(pro);
+	if (DrawProjectileModel(pro))
+		return;
 
+	const CCamera* cam = CCameraHandler::GetActiveCamera();
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
 
 	if (drawSorted && pro->drawSorted) {
@@ -655,22 +650,14 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
-	if (CanDrawProjectile(p, p->GetAllyteamID())) {
-		const CCamera* cam = CCameraHandler::GetActiveCamera();
-		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
-			return;
+	if (!drawBits[p->model != nullptr][4 * p->GetRenderIndex() + 3])
+		return;
 
-		if (!p->castShadow)
-			return;
+	if (DrawProjectileModel(p))
+		return;
 
-		// if this returns false, then projectile is
-		// neither weapon nor piece, or has no model
-		if (DrawProjectileModel(p))
-			return;
-
-		// don't need to z-sort in the shadow pass
-		p->Draw();
-	}
+	// don't need to z-sort in the shadow pass
+	p->Draw();
 }
 
 
@@ -1181,35 +1168,95 @@ void CProjectileDrawer::GenerateNoiseTex(unsigned int tex)
 }
 
 
+void CProjectileDrawer::AddProjectileContainer(std::vector<CProjectile*>& cont, const CProjectile* projectile)
+{
+	assert(cont.size() <= cont.capacity());
+
+	const_cast<CProjectile*>(projectile)->SetRenderIndex(cont.size());
+	cont.push_back(const_cast<CProjectile*>(projectile));
+}
 
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
 	if (p->model != nullptr) {
 		modelRenderers[MDL_TYPE(p)].AddObject(p);
+		AddProjectileContainer(modelProjectiles, p);
 		return;
 	}
 
-	const_cast<CProjectile*>(p)->SetRenderIndex(modellessProjectiles.size());
-	modellessProjectiles.push_back(const_cast<CProjectile*>(p));
+	AddProjectileContainer(modellessProjectiles, p);
+}
+
+void CProjectileDrawer::DelProjectileContainer(std::vector<CProjectile*>& cont, const CProjectile* projectile)
+{
+	const unsigned int idx = projectile->GetRenderIndex();
+
+	if (idx >= cont.size()) {
+		assert(false);
+		return;
+	}
+
+	cont[idx] = cont.back();
+	cont[idx]->SetRenderIndex(idx);
+	cont.pop_back();
+}
+
+void CProjectileDrawer::DrawPreprocess()
+{
+	const auto LaunchFunc = [this](const auto& cont, auto& result, int chunkSize) {
+		const CCamera* cameras[] = {
+			CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER),
+			CCameraHandler::GetCamera(CCamera::CAMTYPE_UWREFL),
+			CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW)
+		};
+
+		const auto ProcessingFunc = [this, &cont, &result, &cameras](int i) {
+			auto* pro = cont[i];
+			pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
+
+			bool b = CanDrawProjectile(pro, pro->GetAllyteamID());
+
+			result[4 * i + 0] = b;
+			result[4 * i + 1] = b;
+			result[4 * i + 2] = b;
+			result[4 * i + 3] = b;
+
+			if (!b)
+				return;
+
+			//refraction check
+			result[4 * i + 1] = pro->drawPos.y > pro->GetDrawRadius();
+
+			// removed this to fix AMD particle drawing
+			// result[4 * i + 2] = CModelDrawerHelper::ObjectVisibleReflection(pro->drawPos, camera->GetPos(), pro->GetDrawRadius()))
+
+			result[4 * i + 3] = pro->castShadow;
+
+			// player cam
+			result[4 * i + 0] = result[4 * i + 0] && cameras[0]->InView(pro->drawPos, pro->GetDrawRadius());
+			// refr pass, just &&= the previos state as we deal with the same camera
+			result[4 * i + 1] = result[4 * i + 1] && result[4 * i + 0];
+			// refl pass / cam
+			result[4 * i + 2] = result[4 * i + 2] && cameras[1]->InView(pro->drawPos, pro->GetDrawRadius());
+			// shadow pass / cam
+			result[4 * i + 3] = result[4 * i + 3] && cameras[2]->InView(pro->drawPos, pro->GetDrawRadius());
+		};
+
+		for_mt_chunk(0, cont.size(), ProcessingFunc, chunkSize);
+	};
+
+	LaunchFunc(modelProjectiles    , drawBits[ true], -512);
+	LaunchFunc(modellessProjectiles, drawBits[false], -512);
 }
 
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
 	if (p->model != nullptr) {
 		modelRenderers[MDL_TYPE(p)].DelObject(p);
+		DelProjectileContainer(modelProjectiles, p);
 		return;
 	}
 
-	const unsigned int idx = p->GetRenderIndex();
-
-	if (idx >= modellessProjectiles.size()) {
-		assert(false);
-		return;
-	}
-
-	modellessProjectiles[idx] = modellessProjectiles.back();
-	modellessProjectiles[idx]->SetRenderIndex(idx);
-
-	modellessProjectiles.pop_back();
+	DelProjectileContainer(modellessProjectiles, p);
 }
 

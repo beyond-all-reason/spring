@@ -66,7 +66,7 @@ public:
 		if (speed.w <= 0.0f)
 			return;
 
-		dir = speed / speed.w;
+		dir = static_cast<float3>(speed) / speed.w;
 	}
 
 	void SetDirectionAndSpeed(const float3& _dir, float _spd) {

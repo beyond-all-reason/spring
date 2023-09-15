@@ -237,6 +237,11 @@ void CWorldDrawer::Update(bool newSimFrame)
 	numUpdates += 1;
 }
 
+void CWorldDrawer::PreDraw() const
+{
+	projectileDrawer->DrawPreprocess();
+}
+
 
 
 void CWorldDrawer::GenerateIBLTextures() const

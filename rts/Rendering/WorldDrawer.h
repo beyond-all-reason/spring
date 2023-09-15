@@ -11,6 +11,7 @@ public:
 	void Kill();
 
 	void Update(bool newSimFrame);
+	void PreDraw() const;
 	void Draw() const;
 
 	void GenerateIBLTextures() const;
