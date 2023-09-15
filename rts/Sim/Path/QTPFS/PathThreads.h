@@ -71,7 +71,7 @@ namespace QTPFS {
             return denseData[sparseIndex[i]];
         }
 
-        bool isSet(size_t i) {
+        bool isSet(size_t i) const {
             assert(i < sparseIndex.size());
             return (sparseIndex[i] != 0);
         }

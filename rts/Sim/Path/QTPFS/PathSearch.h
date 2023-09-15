@@ -149,6 +149,11 @@ namespace QTPFS {
 		void SmoothPath(IPath* path) const;
 		bool SmoothPathIter(IPath* path) const;
 
+		void InitStartingSearchNodes();
+		void UpdateHcostMult();
+		void RemoveOutdatedOpenNodesFromQueue();
+		bool IsNodeActive(const SearchNode& curSearchNode) const;
+
 		bool ExecutePathSearch();
 		bool ExecuteRawSearch();
 
@@ -183,6 +188,8 @@ namespace QTPFS {
 		float hCosts[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 
 		float hCostMult;
+
+		// float2 searchTransitionPoint;
 
 		bool haveFullPath;
 		bool havePartPath;
