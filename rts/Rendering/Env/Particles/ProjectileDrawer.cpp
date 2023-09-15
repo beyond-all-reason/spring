@@ -36,6 +36,7 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
+#include "System/Threading/ThreadPool.h"
 #include <tuple>
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
@@ -768,9 +769,9 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
 	if (wantDrawOrder)
-		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+		parallel_sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
 	else
-		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+		parallel_sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
 
 	for (auto p : sortedProjectiles) {
 		p->Draw();
