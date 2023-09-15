@@ -14,9 +14,9 @@
 struct S3DModelPiece;
 
 
-struct FlyingPiece {
+struct FlyingPieceShattered {
 public:
-	FlyingPiece(
+	FlyingPieceShattered(
 		const S3DModelPiece* _piece,
 		const CMatrix44f& _pieceMatrix,
 		const float3 pos,
@@ -27,7 +27,7 @@ public:
 
 	bool Update();
 	static void BeginDraw();
-	void Draw(const FlyingPiece* prev) const;
+	void Draw(const FlyingPieceShattered* prev) const;
 	static void EndDraw();
 	uint32_t GetDrawCallCount() const { return static_cast<uint32_t>(splitterParts.size()); }
 
@@ -37,7 +37,7 @@ public:
 	const float&  GetRadius() const { return drawRadius; }
 
 	// used for sorting to reduce gl state changes
-	bool operator< (const FlyingPiece& fp) const {
+	bool operator< (const FlyingPieceShattered& fp) const {
 		if (texture != fp.texture)
 			return (texture < fp.texture);
 		if (piece != fp.piece)
@@ -57,7 +57,7 @@ private:
 
 private:
 	inline void InitCommon(const float3 _pos, const float3 _speed, const float _radius, int _team, int _texture);
-	void CheckDrawStateChange(const FlyingPiece* prev) const;
+	void CheckDrawStateChange(const FlyingPieceShattered* prev) const;
 	float3 GetDragFactors() const;
 	CMatrix44f GetMatrixOf(const SplitterData& cp, const float3 dragFactors) const;
 

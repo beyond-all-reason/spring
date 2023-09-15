@@ -31,7 +31,7 @@ bool IModelDrawerState::SetTeamColor(int team, float alpha) const
 	if (!teamHandler.IsValidTeam(team))
 		return false;
 
-	// should be an assert, but projectiles (+FlyingPiece) would trigger it
+	// should be an assert, but projectiles (+FlyingPieceShattered) would trigger it
 	if (shadowHandler.InShadowPass())
 		return false;
 

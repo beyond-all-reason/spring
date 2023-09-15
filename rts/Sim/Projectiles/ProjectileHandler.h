@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "Rendering/Models/3DModel.h"
-#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/Env/Particles/Classes/FlyingPieceShattered.h"
 #include "System/float3.h"
 #include "System/FreeListMap.h"
 
@@ -22,8 +22,8 @@ class CPlasmaRepulser;
 class CGroundFlash;
 struct UnitDef;
 
-typedef std::vector<CGroundFlash*> GroundFlashContainer;
-typedef std::vector<FlyingPiece> FlyingPieceContainer;
+using GroundFlashContainer = std::vector<CGroundFlash*>;
+using FlyingPieceShatteredContainer = std::vector<FlyingPieceShattered> ;
 
 class CProjectileHandler
 {
@@ -89,8 +89,8 @@ public:
 	mutable int frameProjectileCounts[2] = {0, 0};
 
 	// flying pieces (unsynced) are sorted from time to time to reduce GL state changes
-	std::array<                bool, MODELTYPE_CNT> resortFlyingPieces{};
-	std::array<FlyingPieceContainer, MODELTYPE_CNT> flyingPieces{};
+	std::array<                         bool, MODELTYPE_CNT> resortFlyingPieces{};
+	std::array<FlyingPieceShatteredContainer, MODELTYPE_CNT> flyingPiecesShattered{};
 
 	// unsynced
 	GroundFlashContainer groundFlashes;

@@ -34,7 +34,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/BubbleProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/DirtProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/ExploSpikeProjectile.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/FlyingPiece.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/FlyingPieceShattered.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/GeoSquareProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/GeoThermSmokeProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/NanoProjectile.cpp"

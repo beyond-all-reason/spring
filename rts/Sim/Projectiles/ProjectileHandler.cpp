@@ -45,7 +45,7 @@ CONFIG(int, MaxNanoParticles).defaultValue(2000).headlessValue(0).minimumValue(0
 CR_BIND(CProjectileHandler, )
 CR_REG_METADATA(CProjectileHandler, (
 	CR_MEMBER(projectiles),
-	CR_MEMBER_UN(flyingPieces),
+	CR_MEMBER_UN(flyingPiecesShattered),
 	CR_MEMBER_UN(groundFlashes),
 	CR_MEMBER_UN(resortFlyingPieces),
 
@@ -81,8 +81,8 @@ void CProjectileHandler::Init()
 	projMemPool.reserve(1024);
 
 	for (int modelType = 0; modelType < MODELTYPE_CNT; ++modelType) {
-		flyingPieces[modelType].clear();
-		flyingPieces[modelType].reserve(1000);
+		flyingPiecesShattered[modelType].clear();
+		flyingPiecesShattered[modelType].reserve(1000);
 	}
 
 	projectiles[true ].SeedFreeKeys(0, 1 << 14, true); //seed only synced free ids.
@@ -121,7 +121,7 @@ void CProjectileHandler::Kill()
 	}
 
 	{
-		for (auto& fpc: flyingPieces) {
+		for (auto& fpc: flyingPiecesShattered) {
 			fpc.clear();
 		}
 	}
@@ -318,7 +318,7 @@ void CProjectileHandler::Update()
 
 		// flying pieces; sort these every now and then
 		for (int modelType = 0; modelType < MODELTYPE_CNT; ++modelType) {
-			auto& fpc = flyingPieces[modelType];
+			auto& fpc = flyingPiecesShattered[modelType];
 
 			UPDATE_REF_CONTAINER(fpc);
 
@@ -627,7 +627,7 @@ void CProjectileHandler::AddFlyingPiece(
 	const float2 pieceParams,
 	const int2 renderParams
 ) {
-	flyingPieces[modelType].emplace_back(piece, m, pos, speed, pieceParams, renderParams);
+	flyingPiecesShattered[modelType].emplace_back(piece, m, pos, speed, pieceParams, renderParams);
 	resortFlyingPieces[modelType] = true;
 }
 
@@ -737,7 +737,7 @@ int CProjectileHandler::GetCurrentParticles() const
 	frameProjectileCounts[false] = projectiles[false].size();
 
 	int partCount = frameCurrentParticles;
-	for (const auto& c: flyingPieces) {
+	for (const auto& c: flyingPiecesShattered) {
 		for (const auto& fp: c) {
 			partCount += fp.GetDrawCallCount();
 		}

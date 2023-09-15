@@ -19,7 +19,7 @@ class CSolidObject;
 class CTextureAtlas;
 struct AtlasedTexture;
 class CGroundFlash;
-struct FlyingPiece;
+struct FlyingPieceShattered;
 class LuaTable;
 
 

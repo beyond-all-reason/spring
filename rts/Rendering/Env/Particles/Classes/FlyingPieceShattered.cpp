@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "FlyingPiece.h"
+#include "FlyingPieceShattered.h"
 
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
@@ -21,7 +21,7 @@ static const float EXPLOSION_SPEED = 2.f;
 /// NEW S3O,ASSIMP,... IMPLEMENTATION
 ///
 
-FlyingPiece::FlyingPiece(
+FlyingPieceShattered::FlyingPieceShattered(
 	const S3DModelPiece* _piece,
 	const CMatrix44f& _pieceMatrix,
 	const float3 pos,
@@ -57,7 +57,7 @@ FlyingPiece::FlyingPiece(
 }
 
 
-void FlyingPiece::InitCommon(const float3 _pos, const float3 _speed, const float _radius, int _team, int _texture)
+void FlyingPieceShattered::InitCommon(const float3 _pos, const float3 _speed, const float _radius, int _team, int _texture)
 {
 	pos   = _pos;
 	speed = _speed;
@@ -70,7 +70,7 @@ void FlyingPiece::InitCommon(const float3 _pos, const float3 _speed, const float
 }
 
 
-bool FlyingPiece::Update()
+bool FlyingPieceShattered::Update()
 {
 	if (splitterParts.empty())
 		return false;
@@ -98,7 +98,7 @@ bool FlyingPiece::Update()
 	return false;
 }
 
-float3 FlyingPiece::GetDragFactors() const
+float3 FlyingPieceShattered::GetDragFactors() const
 {
 	// We started with a naive (iterative) method like this:
 	//  pos   += speed;
@@ -162,7 +162,7 @@ float3 FlyingPiece::GetDragFactors() const
 }
 
 
-CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFactors) const
+CMatrix44f FlyingPieceShattered::GetMatrixOf(const SplitterData& cp, const float3 dragFactors) const
 {
 	const float3 interPos = cp.speed * dragFactors.x + UpVector * mapInfo->map.gravity * dragFactors.y;
 	const float4& rot = cp.rotationAxisAndSpeed;
@@ -175,10 +175,8 @@ CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFac
 }
 
 
-void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
+void FlyingPieceShattered::CheckDrawStateChange(const FlyingPieceShattered* prev) const
 {
-	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
-
 	const auto thisModelType = piece->GetParentModel()->type;
 
 	if (prev == nullptr) {
@@ -200,13 +198,13 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 }
 
 
-void FlyingPiece::BeginDraw()
+void FlyingPieceShattered::BeginDraw()
 {
 	glDisable(GL_CULL_FACE);
 	S3DModelHelpers::BindLegacyAttrVBOs();
 }
 
-void FlyingPiece::EndDraw()
+void FlyingPieceShattered::EndDraw()
 {
 	glEnable(GL_CULL_FACE);
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
@@ -215,7 +213,7 @@ void FlyingPiece::EndDraw()
 }
 
 
-void FlyingPiece::Draw(const FlyingPiece* prev) const
+void FlyingPieceShattered::Draw(const FlyingPieceShattered* prev) const
 {
 	CheckDrawStateChange(prev);
 

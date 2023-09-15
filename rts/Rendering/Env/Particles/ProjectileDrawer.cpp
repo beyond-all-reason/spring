@@ -25,7 +25,7 @@
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
-#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/Env/Particles/Classes/FlyingPieceShattered.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -724,15 +724,16 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 
 void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 {
-	const FlyingPieceContainer& container = projectileHandler.flyingPieces[modelType];
+	const FlyingPieceShatteredContainer& container = projectileHandler.flyingPiecesShattered[modelType];
 
 	if (container.empty())
 		return;
 
-	FlyingPiece::BeginDraw();
+	FlyingPieceShattered::BeginDraw();
+	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
-	const FlyingPiece* last = nullptr;
-	for (const FlyingPiece& fp: container) {
+	const FlyingPieceShattered* last = nullptr;
+	for (const FlyingPieceShattered& fp: container) {
 		const bool noLosTst = gu->spectatingFullView || teamHandler.AlliedTeams(gu->myTeam, fp.GetTeam());
 		const bool inAirLos = noLosTst || losHandler->InAirLos(fp.GetPos(), gu->myAllyTeam);
 
@@ -746,7 +747,7 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 		last = &fp;
 	}
 
-	FlyingPiece::EndDraw();
+	FlyingPieceShattered::EndDraw();
 }
 
 
