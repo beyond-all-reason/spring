@@ -764,35 +764,33 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	unsortedProjectiles.clear();
 
 	{
-		{
-			ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
-			unitDrawer->SetupOpaqueDrawing(false);
+		ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
+		unitDrawer->SetupOpaqueDrawing(false);
 
-			for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-				CModelDrawerHelper::PushModelRenderState(modelType);
-				DrawProjectiles(modelType, drawReflection, drawRefraction);
-				CModelDrawerHelper::PopModelRenderState(modelType);
-			}
-
-			unitDrawer->ResetOpaqueDrawing(false);
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
+			CModelDrawerHelper::PushModelRenderState(modelType);
+			DrawProjectiles(modelType, drawReflection, drawRefraction);
+			CModelDrawerHelper::PopModelRenderState(modelType);
 		}
 
-		// note: model-less projectiles are NOT drawn by this call but
-		// only z-sorted (if the projectiles indicate they want to be)
-		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
+		unitDrawer->ResetOpaqueDrawing(false);
+	}
 
-		if (wantDrawOrder)
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
-		else
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+	// note: model-less projectiles are NOT drawn by this call but
+	// only z-sorted (if the projectiles indicate they want to be)
+	DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
-		for (auto p : sortedProjectiles) {
-			p->Draw();
-		}
+	if (wantDrawOrder)
+		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+	else
+		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
 
-		for (auto p : unsortedProjectiles) {
-			p->Draw();
-		}
+	for (auto p : sortedProjectiles) {
+		p->Draw();
+	}
+
+	for (auto p : unsortedProjectiles) {
+		p->Draw();
 	}
 
 	glEnable(GL_BLEND);
