@@ -93,14 +93,13 @@ void CExploSpikeProjectile::Draw()
 	const float3 l = (dir * length) + (lengthGrowth * globalRendering->timeOffset);
 	const float3 w = dir2 * width;
 
-	#define let projectileDrawer->laserendtex
+	const auto* let = projectileDrawer->laserendtex;
 	AddEffectsQuad(
 		{ drawPos - l - w, let->xstart, let->ystart, col },
 		{ drawPos + l - w, let->xend,   let->ystart, col },
 		{ drawPos + l + w, let->xend,   let->yend,   col },
 		{ drawPos - l + w, let->xstart, let->yend,   col }
 	);
-	#undef let
 }
 
 

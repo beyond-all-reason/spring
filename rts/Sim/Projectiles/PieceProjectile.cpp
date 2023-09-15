@@ -267,6 +267,7 @@ void CPieceProjectile::Draw()
 
 	static const SColor lightOrange(1.f, 0.78f, 0.59f, 0.2f);
 
+	const auto* cam = camera;
 	for (unsigned int age = 0; age < NUM_TRAIL_PARTS; ++age) {
 		const float3 interPos = fireTrailPoints[age].pos;
 		const float size = fireTrailPoints[age].size;
@@ -277,10 +278,10 @@ void CPieceProjectile::Draw()
 
 		const auto eft = projectileDrawer->explofadetex;
 		AddEffectsQuad(
-			{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xstart, eft->ystart, col },
-			{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xend,   eft->ystart, col },
-			{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xend,   eft->yend,   col },
-			{ interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xstart, eft->yend,   col }
+			{ interPos - cam->GetRight() * drawsize - cam->GetUp() * drawsize, eft->xstart, eft->ystart, col },
+			{ interPos + cam->GetRight() * drawsize - cam->GetUp() * drawsize, eft->xend,   eft->ystart, col },
+			{ interPos + cam->GetRight() * drawsize + cam->GetUp() * drawsize, eft->xend,   eft->yend,   col },
+			{ interPos - cam->GetRight() * drawsize + cam->GetUp() * drawsize, eft->xstart, eft->yend,   col }
 		);
 	}
 }

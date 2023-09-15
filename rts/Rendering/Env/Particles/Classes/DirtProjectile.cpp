@@ -107,11 +107,12 @@ void CDirtProjectile::Draw()
 	const float interSize = size + globalRendering->timeOffset * sizeExpansion;
 	const float texx = texture->xstart + (texture->xend - texture->xstart) * ((1.0f - partAbove) * 0.5f);
 
+	const auto* cam = camera;
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * interSize - camera->GetUp() * interSize * partAbove, texx,          texture->ystart, col },
-		{ drawPos - camera->GetRight() * interSize + camera->GetUp() * interSize,             texture->xend, texture->ystart, col },
-		{ drawPos + camera->GetRight() * interSize + camera->GetUp() * interSize,             texture->xend, texture->yend,   col },
-		{ drawPos + camera->GetRight() * interSize - camera->GetUp() * interSize * partAbove, texx,          texture->yend,   col }
+		{ drawPos - cam->GetRight() * interSize - cam->GetUp() * interSize * partAbove, texx,          texture->ystart, col },
+		{ drawPos - cam->GetRight() * interSize + cam->GetUp() * interSize,             texture->xend, texture->ystart, col },
+		{ drawPos + cam->GetRight() * interSize + cam->GetUp() * interSize,             texture->xend, texture->yend,   col },
+		{ drawPos + cam->GetRight() * interSize - cam->GetUp() * interSize * partAbove, texx,          texture->yend,   col }
 	);
 }
 

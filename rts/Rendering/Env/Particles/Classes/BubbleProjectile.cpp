@@ -85,14 +85,14 @@ void CBubbleProjectile::Draw()
 
 	const float interSize = size + sizeExpansion * globalRendering->timeOffset;
 
-	#define bt projectileDrawer->bubbletex
+	const auto* cam = camera;
+	const auto* bt = projectileDrawer->bubbletex;
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * interSize - camera->GetUp() * interSize, bt->xstart, bt->ystart, col },
-		{ drawPos + camera->GetRight() * interSize - camera->GetUp() * interSize, bt->xend,   bt->ystart, col },
-		{ drawPos + camera->GetRight() * interSize + camera->GetUp() * interSize, bt->xend,   bt->yend,   col },
-		{ drawPos - camera->GetRight() * interSize + camera->GetUp() * interSize, bt->xstart, bt->yend,   col }
+		{ drawPos - cam->GetRight() * interSize - cam->GetUp() * interSize, bt->xstart, bt->ystart, col },
+		{ drawPos + cam->GetRight() * interSize - cam->GetUp() * interSize, bt->xend,   bt->ystart, col },
+		{ drawPos + cam->GetRight() * interSize + cam->GetUp() * interSize, bt->xend,   bt->yend,   col },
+		{ drawPos - cam->GetRight() * interSize + cam->GetUp() * interSize, bt->xstart, bt->yend,   col }
 	);
-	#undef bt
 }
 
 int CBubbleProjectile::GetProjectilesCount() const

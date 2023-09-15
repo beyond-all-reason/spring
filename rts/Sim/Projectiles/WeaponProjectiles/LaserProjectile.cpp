@@ -197,6 +197,8 @@ void CLaserProjectile::Draw()
 
 	const float size = weaponDef->visuals.thickness;
 	const float coresize = size * weaponDef->visuals.corethickness;
+	const auto* t1 = weaponDef->visuals.texture1;
+	const auto* t2 = weaponDef->visuals.texture2;
 
 	if (camDist < weaponDef->visuals.lodDistance) {
 		const float3 pos2 = drawPos - (dir * curLength);
@@ -204,55 +206,55 @@ void CLaserProjectile::Draw()
 		float texEndOffset;
 		if (checkCol) { // expanding or contracting?
 			texStartOffset = 0.0f;
-			texEndOffset   = (1.0f - (curLength / maxLength)) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
+			texEndOffset   = (1.0f - (curLength / maxLength)) * (t1->xstart - t1->xend);
 		} else {
-			texStartOffset = (-1.0f + (curLength / maxLength) + ((float)stayTime * (speedf / maxLength))) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
-			texEndOffset   = ((float)stayTime * (speedf / maxLength)) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
+			texStartOffset = (-1.0f + (curLength / maxLength) + ((float)stayTime * (speedf / maxLength))) * (t1->xstart - t1->xend);
+			texEndOffset   = ((float)stayTime * (speedf / maxLength)) * (t1->xstart - t1->xend);
 		}
 
 		if (validTextures[2]) {
 			AddEffectsQuad(
-				{ drawPos - (dir1 * size) - (dir2 * size),        weaponDef->visuals.texture2->xstart, weaponDef->visuals.texture2->ystart, col },
-				{ drawPos - (dir1 * size),                        midtexx,                             weaponDef->visuals.texture2->ystart, col },
-				{ drawPos + (dir1 * size),                        midtexx,                             weaponDef->visuals.texture2->yend  , col },
-				{ drawPos + (dir1 * size) - (dir2 * size),        weaponDef->visuals.texture2->xstart, weaponDef->visuals.texture2->yend  , col }
+				{ drawPos - (dir1 * size) - (dir2 * size),        t2->xstart, t2->ystart, col },
+				{ drawPos - (dir1 * size),                        midtexx,    t2->ystart, col },
+				{ drawPos + (dir1 * size),                        midtexx,    t2->yend  , col },
+				{ drawPos + (dir1 * size) - (dir2 * size),        t2->xstart, t2->yend  , col }
 			);
 
 			AddEffectsQuad(
-				{ drawPos - (dir1 * coresize) - (dir2 * coresize), weaponDef->visuals.texture2->xstart, weaponDef->visuals.texture2->ystart, col2 },
-				{ drawPos - (dir1 * coresize),                     midtexx,                             weaponDef->visuals.texture2->ystart, col2 },
-				{ drawPos + (dir1 * coresize),                     midtexx,                             weaponDef->visuals.texture2->yend  , col2 },
-				{ drawPos + (dir1 * coresize) - (dir2 * coresize), weaponDef->visuals.texture2->xstart, weaponDef->visuals.texture2->yend  , col2 }
+				{ drawPos - (dir1 * coresize) - (dir2 * coresize), t2->xstart, t2->ystart, col2 },
+				{ drawPos - (dir1 * coresize),                     midtexx,    t2->ystart, col2 },
+				{ drawPos + (dir1 * coresize),                     midtexx,    t2->yend  , col2 },
+				{ drawPos + (dir1 * coresize) - (dir2 * coresize), t2->xstart, t2->yend  , col2 }
 			);
 		}
 		if (validTextures[1]) {
 			AddEffectsQuad(
-				{ drawPos - (dir1 * size),     weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->ystart, col },
-				{ pos2    - (dir1 * size),     weaponDef->visuals.texture1->xend   + texEndOffset  , weaponDef->visuals.texture1->ystart, col },
-				{ pos2    + (dir1 * size),     weaponDef->visuals.texture1->xend   + texEndOffset  , weaponDef->visuals.texture1->yend  , col },
-				{ drawPos + (dir1 * size),     weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->yend  , col }
+				{ drawPos - (dir1 * size),     t1->xstart + texStartOffset, t1->ystart, col },
+				{ pos2    - (dir1 * size),     t1->xend   + texEndOffset  , t1->ystart, col },
+				{ pos2    + (dir1 * size),     t1->xend   + texEndOffset  , t1->yend  , col },
+				{ drawPos + (dir1 * size),     t1->xstart + texStartOffset, t1->yend  , col }
 			);
 
 			AddEffectsQuad(
-				{ drawPos - (dir1 * coresize), weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->ystart, col2 },
-				{ pos2    - (dir1 * coresize), weaponDef->visuals.texture1->xend   + texEndOffset  , weaponDef->visuals.texture1->ystart, col2 },
-				{ pos2    + (dir1 * coresize), weaponDef->visuals.texture1->xend   + texEndOffset  , weaponDef->visuals.texture1->yend  , col2 },
-				{ drawPos + (dir1 * coresize), weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->yend  , col2 }
+				{ drawPos - (dir1 * coresize), t1->xstart + texStartOffset, t1->ystart, col2 },
+				{ pos2    - (dir1 * coresize), t1->xend   + texEndOffset  , t1->ystart, col2 },
+				{ pos2    + (dir1 * coresize), t1->xend   + texEndOffset  , t1->yend  , col2 },
+				{ drawPos + (dir1 * coresize), t1->xstart + texStartOffset, t1->yend  , col2 }
 			);
 		}
 		if (validTextures[2]) {
 			AddEffectsQuad(
-				{ pos2 - (dir1 * size),                         midtexx,                           weaponDef->visuals.texture2->ystart, col },
-				{ pos2 - (dir1 * size) + (dir2 * size),         weaponDef->visuals.texture2->xend, weaponDef->visuals.texture2->ystart, col },
-				{ pos2 + (dir1 * size) + (dir2 * size),         weaponDef->visuals.texture2->xend, weaponDef->visuals.texture2->yend  , col },
-				{ pos2 + (dir1 * size),                         midtexx,                           weaponDef->visuals.texture2->yend  , col }
+				{ pos2 - (dir1 * size),                         midtexx,  t2->ystart, col },
+				{ pos2 - (dir1 * size) + (dir2 * size),         t2->xend, t2->ystart, col },
+				{ pos2 + (dir1 * size) + (dir2 * size),         t2->xend, t2->yend  , col },
+				{ pos2 + (dir1 * size),                         midtexx,  t2->yend  , col }
 			);
 
 			AddEffectsQuad(
-				{ pos2 - (dir1 * coresize),                     midtexx,                           weaponDef->visuals.texture2->ystart, col2 },
-				{ pos2 - (dir1 * coresize) + (dir2 * coresize), weaponDef->visuals.texture2->xend, weaponDef->visuals.texture2->ystart, col2 },
-				{ pos2 + (dir1 * coresize) + (dir2 * coresize), weaponDef->visuals.texture2->xend, weaponDef->visuals.texture2->yend  , col2 },
-				{ pos2 + (dir1 * coresize),                     midtexx,                           weaponDef->visuals.texture2->yend  , col2 }
+				{ pos2 - (dir1 * coresize),                     midtexx,  t2->ystart, col2 },
+				{ pos2 - (dir1 * coresize) + (dir2 * coresize), t2->xend, t2->ystart, col2 },
+				{ pos2 + (dir1 * coresize) + (dir2 * coresize), t2->xend, t2->yend  , col2 },
+				{ pos2 + (dir1 * coresize),                     midtexx,  t2->yend  , col2 }
 			);
 		}
 	} else {
@@ -263,24 +265,24 @@ void CLaserProjectile::Draw()
 
 		if (checkCol) { // expanding or contracting?
 			texStartOffset = 0;
-			texEndOffset   = (1.0f - (curLength / maxLength)) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
+			texEndOffset   = (1.0f - (curLength / maxLength)) * (t1->xstart - t1->xend);
 		} else {
-			texStartOffset = (-1.0f + (curLength / maxLength) + ((float)stayTime * (speedf / maxLength))) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
-			texEndOffset   = ((float)stayTime * (speedf / maxLength)) * (weaponDef->visuals.texture1->xstart - weaponDef->visuals.texture1->xend);
+			texStartOffset = (-1.0f + (curLength / maxLength) + ((float)stayTime * (speedf / maxLength))) * (t1->xstart - t1->xend);
+			texEndOffset   = ((float)stayTime * (speedf / maxLength)) * (t1->xstart - t1->xend);
 		}
 		if (validTextures[1]) {
 			AddEffectsQuad(
-				{ pos1 - (dir1 * size),     weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->ystart, col },
-				{ pos2 - (dir1 * size),     weaponDef->visuals.texture1->xend +     texEndOffset, weaponDef->visuals.texture1->ystart, col },
-				{ pos2 + (dir1 * size),     weaponDef->visuals.texture1->xend +     texEndOffset, weaponDef->visuals.texture1->yend  , col },
-				{ pos1 + (dir1 * size),     weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->yend  , col }
+				{ pos1 - (dir1 * size),     t1->xstart + texStartOffset, t1->ystart, col },
+				{ pos2 - (dir1 * size),     t1->xend +     texEndOffset, t1->ystart, col },
+				{ pos2 + (dir1 * size),     t1->xend +     texEndOffset, t1->yend  , col },
+				{ pos1 + (dir1 * size),     t1->xstart + texStartOffset, t1->yend  , col }
 			);
 
 			AddEffectsQuad(
-				{ pos1 - (dir1 * coresize), weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->ystart, col2 },
-				{ pos2 - (dir1 * coresize), weaponDef->visuals.texture1->xend +     texEndOffset, weaponDef->visuals.texture1->ystart, col2 },
-				{ pos2 + (dir1 * coresize), weaponDef->visuals.texture1->xend +     texEndOffset, weaponDef->visuals.texture1->yend  , col2 },
-				{ pos1 + (dir1 * coresize), weaponDef->visuals.texture1->xstart + texStartOffset, weaponDef->visuals.texture1->yend  , col2 }
+				{ pos1 - (dir1 * coresize), t1->xstart + texStartOffset, t1->ystart, col2 },
+				{ pos2 - (dir1 * coresize), t1->xend +     texEndOffset, t1->ystart, col2 },
+				{ pos2 + (dir1 * coresize), t1->xend +     texEndOffset, t1->yend  , col2 },
+				{ pos1 + (dir1 * coresize), t1->xstart + texStartOffset, t1->yend  , col2 }
 			);
 		}
 	}

@@ -339,6 +339,7 @@ void CStarburstProjectile::Draw()
 	const SColor lightRed(255, 180, 180, 1);
 
 	unsigned int partNum = curTracerPart;
+	const auto* cam = camera;
 
 	if (validTextures[3])
 	for (unsigned int a = 0; a < NUM_TRACER_PARTS; ++a) {
@@ -361,10 +362,10 @@ void CStarburstProjectile::Draw()
 			col.a = 1;
 
 			AddEffectsQuad(
-				{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, wt3->xstart, wt3->ystart, col },
-				{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, wt3->xend,   wt3->ystart, col },
-				{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, wt3->xend,   wt3->yend,   col },
-				{ interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, wt3->xstart, wt3->yend,   col }
+				{ interPos - cam->GetRight() * drawsize - cam->GetUp() * drawsize, wt3->xstart, wt3->ystart, col },
+				{ interPos + cam->GetRight() * drawsize - cam->GetUp() * drawsize, wt3->xend,   wt3->ystart, col },
+				{ interPos + cam->GetRight() * drawsize + cam->GetUp() * drawsize, wt3->xend,   wt3->yend,   col },
+				{ interPos - cam->GetRight() * drawsize + cam->GetUp() * drawsize, wt3->xstart, wt3->yend,   col }
 			);
 		}
 
@@ -377,10 +378,10 @@ void CStarburstProjectile::Draw()
 
 	if (validTextures[1]) {
 		AddEffectsQuad(
-			{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, wt1->xstart, wt1->ystart, lightRed },
-			{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, wt1->xend,   wt1->ystart, lightRed },
-			{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, wt1->xend,   wt1->yend,   lightRed },
-			{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, wt1->xstart, wt1->yend,   lightRed }
+			{ drawPos - cam->GetRight() * fsize - cam->GetUp() * fsize, wt1->xstart, wt1->ystart, lightRed },
+			{ drawPos + cam->GetRight() * fsize - cam->GetUp() * fsize, wt1->xend,   wt1->ystart, lightRed },
+			{ drawPos + cam->GetRight() * fsize + cam->GetUp() * fsize, wt1->xend,   wt1->yend,   lightRed },
+			{ drawPos - cam->GetRight() * fsize + cam->GetUp() * fsize, wt1->xstart, wt1->yend,   lightRed }
 		);
 	}
 }

@@ -94,14 +94,13 @@ void CWakeProjectile::Draw()
 	const float3 dir1 = float3(std::cos(interRot), 0, std::sin(interRot)) * interSize;
 	const float3 dir2 = dir1.cross(UpVector);
 
-	#define wt projectileDrawer->waketex
+	const auto* wt = projectileDrawer->waketex;
 	AddEffectsQuad(
 		{ drawPos + dir1 + dir2, wt->xstart, wt->ystart, col },
 		{ drawPos - dir1 + dir2, wt->xend,   wt->ystart, col },
 		{ drawPos - dir1 - dir2, wt->xend,   wt->yend,   col },
 		{ drawPos + dir1 - dir2, wt->xstart, wt->yend,   col }
 	);
-	#undef wt
 }
 
 int CWakeProjectile::GetProjectilesCount() const

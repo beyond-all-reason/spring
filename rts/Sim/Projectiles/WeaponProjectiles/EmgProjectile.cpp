@@ -71,12 +71,13 @@ void CEmgProjectile::Draw()
 		(uint8_t)(color.z * intensity * 255),
 		(uint8_t)(          intensity * 255)
 	};
-
+	const auto* cam = camera;
+	const auto* t1 = weaponDef->visuals.texture1;
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
-		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
+		{ drawPos - cam->GetRight() * drawRadius - cam->GetUp() * drawRadius, t1->xstart, t1->ystart, col },
+		{ drawPos + cam->GetRight() * drawRadius - cam->GetUp() * drawRadius, t1->xend,   t1->ystart, col },
+		{ drawPos + cam->GetRight() * drawRadius + cam->GetUp() * drawRadius, t1->xend,   t1->yend,   col },
+		{ drawPos - cam->GetRight() * drawRadius + cam->GetUp() * drawRadius, t1->xstart, t1->yend,   col }
 	);
 }
 

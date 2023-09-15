@@ -78,11 +78,13 @@ void CFlameProjectile::Draw()
 	unsigned char col[4];
 	weaponDef->visuals.colorMap->GetColor(col, curTime);
 
+	const auto* cam = camera;
+	const auto* t1 = weaponDef->visuals.texture1;
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
-		{ drawPos - camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
+		{ drawPos - cam->GetRight() * radius - cam->GetUp() * radius, t1->xstart, t1->ystart, col },
+		{ drawPos + cam->GetRight() * radius - cam->GetUp() * radius, t1->xend,   t1->ystart, col },
+		{ drawPos + cam->GetRight() * radius + cam->GetUp() * radius, t1->xend,   t1->yend,   col },
+		{ drawPos - cam->GetRight() * radius + cam->GetUp() * radius, t1->xstart, t1->yend,   col }
 	);
 }
 

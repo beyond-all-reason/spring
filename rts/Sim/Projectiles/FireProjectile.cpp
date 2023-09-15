@@ -145,6 +145,7 @@ void CFireProjectile::Draw()
 	col[3] = 1;
 	uint8_t col2[4];
 
+	const auto* et = projectileDrawer->explotex;
 	for (const SubParticle& pi: subParticles2) {
 		const float  age = pi.age + ageSpeed * globalRendering->timeOffset;
 		const float size = pi.maxSize * age;
@@ -163,10 +164,10 @@ void CFireProjectile::Draw()
 		col[2] = (uint8_t) ((1 - age) * 255);
 
 		AddEffectsQuad(
-			{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
-			{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
-			{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
-			{ interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend,   col }
+			{ interPos - dir1 - dir2, et->xstart, et->ystart, col },
+			{ interPos + dir1 - dir2, et->xend,   et->ystart, col },
+			{ interPos + dir1 + dir2, et->xend,   et->yend,   col },
+			{ interPos - dir1 + dir2, et->xstart, et->yend,   col }
 		);
 	}
 	for (const SubParticle& pi: subParticles) {
@@ -191,10 +192,10 @@ void CFireProjectile::Draw()
 			col[3] = 1;
 
 			AddEffectsQuad(
-				{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
-				{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
-				{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
-				{ interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend,   col }
+				{ interPos - dir1 - dir2, et->xstart, et->ystart, col },
+				{ interPos + dir1 - dir2, et->xend,   et->ystart, col },
+				{ interPos + dir1 + dir2, et->xend,   et->yend,   col },
+				{ interPos - dir1 + dir2, et->xstart, et->yend,   col }
 			);
 		}
 

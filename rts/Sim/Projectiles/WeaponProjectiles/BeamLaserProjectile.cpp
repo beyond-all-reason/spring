@@ -117,9 +117,10 @@ void CBeamLaserProjectile::Draw()
 	const float3& pos1 = startPos;
 	const float3& pos2 = targetPos;
 
-	#define WT1 weaponDef->visuals.texture1
-	#define WT2 weaponDef->visuals.texture2
-	#define WT3 weaponDef->visuals.texture3
+	const auto* WT1 = weaponDef->visuals.texture1;
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT3 = weaponDef->visuals.texture3;
+	const auto* cam = camera;
 
 	if (playerCamDistSq < Square(1000.0f)) {
 		if (validTextures[2]) {
@@ -188,23 +189,19 @@ void CBeamLaserProjectile::Draw()
 	// draw flare
 	if (validTextures[3]) {
 		AddEffectsQuad(
-			{ pos1 - camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->ystart, edgeColStart },
-			{ pos1 + camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->ystart, edgeColStart },
-			{ pos1 + camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->yend,   edgeColStart },
-			{ pos1 - camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->yend,   edgeColStart }
+			{ pos1 - cam->GetRight() * flareEdgeSize - cam->GetUp() * flareEdgeSize, WT3->xstart, WT3->ystart, edgeColStart },
+			{ pos1 + cam->GetRight() * flareEdgeSize - cam->GetUp() * flareEdgeSize, WT3->xend,   WT3->ystart, edgeColStart },
+			{ pos1 + cam->GetRight() * flareEdgeSize + cam->GetUp() * flareEdgeSize, WT3->xend,   WT3->yend,   edgeColStart },
+			{ pos1 - cam->GetRight() * flareEdgeSize + cam->GetUp() * flareEdgeSize, WT3->xstart, WT3->yend,   edgeColStart }
 		);
 
 		AddEffectsQuad(
-			{ pos1 - camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xstart, WT3->ystart, coreColStart },
-			{ pos1 + camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xend,   WT3->ystart, coreColStart },
-			{ pos1 + camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xend,   WT3->yend,   coreColStart },
-			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
+			{ pos1 - cam->GetRight() * flareCoreSize - cam->GetUp() * flareCoreSize, WT3->xstart, WT3->ystart, coreColStart },
+			{ pos1 + cam->GetRight() * flareCoreSize - cam->GetUp() * flareCoreSize, WT3->xend,   WT3->ystart, coreColStart },
+			{ pos1 + cam->GetRight() * flareCoreSize + cam->GetUp() * flareCoreSize, WT3->xend,   WT3->yend,   coreColStart },
+			{ pos1 - cam->GetRight() * flareCoreSize + cam->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
 		);
 	}
-
-	#undef WT3
-	#undef WT2
-	#undef WT1
 }
 
 void CBeamLaserProjectile::DrawOnMinimap()

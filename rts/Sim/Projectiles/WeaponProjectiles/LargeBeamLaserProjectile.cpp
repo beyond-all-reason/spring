@@ -116,8 +116,8 @@ void CLargeBeamLaserProjectile::Draw()
 	// note: beamTileMaxDst can be negative, in which case we want numBeamTiles to equal zero
 	const float numBeamTiles = std::floor(((std::max(beamTileMinDst, beamTileMaxDst) - beamTileMinDst) / tilelength) + 0.5f);
 
-	#define WT2 weaponDef->visuals.texture2
-	#define WT4 weaponDef->visuals.texture4
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT4 = weaponDef->visuals.texture4;
 
 	if (validTextures[1]) {
 		AtlasedTexture tex = beamtex;
@@ -278,27 +278,25 @@ void CLargeBeamLaserProjectile::Draw()
 		);
 	}
 
+	const auto* cam = camera;
 	if (validTextures[4]) {
 		// draw flare (moved slightly along the camera direction)
-		pos1 = startPos - (camera->GetDir() * 3.0f);
+		pos1 = startPos - (cam->GetDir() * 3.0f);
 
 		AddEffectsQuad(
-			{ pos1 - (camera->GetRight() * flareEdgeSize) - (camera->GetUp() * flareEdgeSize), WT4->xstart, WT4->ystart, edgeColStart },
-			{ pos1 + (camera->GetRight() * flareEdgeSize) - (camera->GetUp() * flareEdgeSize), WT4->xend  , WT4->ystart, edgeColStart },
-			{ pos1 + (camera->GetRight() * flareEdgeSize) + (camera->GetUp() * flareEdgeSize), WT4->xend  , WT4->yend  , edgeColStart },
-			{ pos1 - (camera->GetRight() * flareEdgeSize) + (camera->GetUp() * flareEdgeSize), WT4->xstart, WT4->yend  , edgeColStart }
+			{ pos1 - (cam->GetRight() * flareEdgeSize) - (cam->GetUp() * flareEdgeSize), WT4->xstart, WT4->ystart, edgeColStart },
+			{ pos1 + (cam->GetRight() * flareEdgeSize) - (cam->GetUp() * flareEdgeSize), WT4->xend  , WT4->ystart, edgeColStart },
+			{ pos1 + (cam->GetRight() * flareEdgeSize) + (cam->GetUp() * flareEdgeSize), WT4->xend  , WT4->yend  , edgeColStart },
+			{ pos1 - (cam->GetRight() * flareEdgeSize) + (cam->GetUp() * flareEdgeSize), WT4->xstart, WT4->yend  , edgeColStart }
 		);
 
 		AddEffectsQuad(
-			{ pos1 - (camera->GetRight() * flareCoreSize) - (camera->GetUp() * flareCoreSize), WT4->xstart, WT4->ystart, coreColStart },
-			{ pos1 + (camera->GetRight() * flareCoreSize) - (camera->GetUp() * flareCoreSize), WT4->xend  , WT4->ystart, coreColStart },
-			{ pos1 + (camera->GetRight() * flareCoreSize) + (camera->GetUp() * flareCoreSize), WT4->xend  , WT4->yend  , coreColStart },
-			{ pos1 - (camera->GetRight() * flareCoreSize) + (camera->GetUp() * flareCoreSize), WT4->xstart, WT4->yend  , coreColStart }
+			{ pos1 - (cam->GetRight() * flareCoreSize) - (cam->GetUp() * flareCoreSize), WT4->xstart, WT4->ystart, coreColStart },
+			{ pos1 + (cam->GetRight() * flareCoreSize) - (cam->GetUp() * flareCoreSize), WT4->xend  , WT4->ystart, coreColStart },
+			{ pos1 + (cam->GetRight() * flareCoreSize) + (cam->GetUp() * flareCoreSize), WT4->xend  , WT4->yend  , coreColStart },
+			{ pos1 - (cam->GetRight() * flareCoreSize) + (cam->GetUp() * flareCoreSize), WT4->xstart, WT4->yend  , coreColStart }
 		);
 	}
-
-#undef WT4
-#undef WT2
 }
 
 void CLargeBeamLaserProjectile::DrawOnMinimap()

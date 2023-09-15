@@ -368,11 +368,14 @@ void CMissileProjectile::Draw()
 	const SColor lightYellow(255, 210, 180, 1);
 	const float fsize = radius * 0.4f;
 
+	const auto* cam = camera;
+	const auto* t1 = weaponDef->visuals.texture1;
+
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   lightYellow },
-		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   lightYellow }
+		{ drawPos - cam->GetRight() * fsize - cam->GetUp() * fsize, t1->xstart, t1->ystart, lightYellow },
+		{ drawPos + cam->GetRight() * fsize - cam->GetUp() * fsize, t1->xend,   t1->ystart, lightYellow },
+		{ drawPos + cam->GetRight() * fsize + cam->GetUp() * fsize, t1->xend,   t1->yend,   lightYellow },
+		{ drawPos - cam->GetRight() * fsize + cam->GetUp() * fsize, t1->xstart, t1->yend,   lightYellow }
 	);
 }
 

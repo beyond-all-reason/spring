@@ -106,17 +106,16 @@ void CSmokeProjectile::Draw()
 	//float ymod=(int(frame/6))/16.0f;
 
 	const float interSize = size + (sizeExpansion * globalRendering->timeOffset);
-	const float3 pos1 ((camera->GetRight() - camera->GetUp()) * interSize);
-	const float3 pos2 ((camera->GetRight() + camera->GetUp()) * interSize);
+	const float3 pos1 = (camera->GetRight() - camera->GetUp()) * interSize;
+	const float3 pos2 = (camera->GetRight() + camera->GetUp()) * interSize;
 
-	#define st projectileDrawer->GetSmokeTexture(textureNum)
+	const auto* st = projectileDrawer->GetSmokeTexture(textureNum);
 	AddEffectsQuad(
 		{ drawPos - pos2, st->xstart, st->ystart, col },
 		{ drawPos + pos1, st->xend,   st->ystart, col },
 		{ drawPos + pos2, st->xend,   st->yend,   col },
 		{ drawPos - pos1, st->xstart, st->yend,   col }
 	);
-	#undef st
 }
 
 int CSmokeProjectile::GetProjectilesCount() const

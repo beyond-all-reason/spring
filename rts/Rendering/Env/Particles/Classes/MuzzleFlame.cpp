@@ -55,8 +55,12 @@ void CMuzzleFlame::Draw()
 	float alpha = std::max(0.0f, 1 - (age / (4 + size * 30)));
 	float modAge = fastmath::apxsqrt(static_cast<float>(age + 2));
 
+	const auto* cam = camera;
+	const auto* mft = projectileDrawer->muzzleflametex;
+
 	for (int a = 0; a < numSmoke; ++a) { //! CAUTION: loop count must match EnlargeArrays above
 		const int tex = a % projectileDrawer->NumSmokeTextures();
+		const auto* st = projectileDrawer->GetSmokeTexture(tex);
 		// float xmod = 0.125f + (float(int(tex % 6))) / 16.0f;
 		// float ymod =                (int(tex / 6))  / 16.0f;
 
@@ -69,14 +73,12 @@ void CMuzzleFlame::Draw()
 		col[2] = (unsigned char) (180 * alpha * fade);
 		col[3] = (unsigned char) (255 * alpha * fade);
 
-		#define st projectileDrawer->GetSmokeTexture(tex)
 		AddEffectsQuad(
-			{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, st->xstart, st->ystart, col },
-			{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, st->xend,   st->ystart, col },
-			{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, st->xend,   st->yend,   col },
-			{ interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, st->xstart, st->yend,   col }
+			{ interPos - cam->GetRight() * drawsize - cam->GetUp() * drawsize, st->xstart, st->ystart, col },
+			{ interPos + cam->GetRight() * drawsize - cam->GetUp() * drawsize, st->xend,   st->ystart, col },
+			{ interPos + cam->GetRight() * drawsize + cam->GetUp() * drawsize, st->xend,   st->yend,   col },
+			{ interPos - cam->GetRight() * drawsize + cam->GetUp() * drawsize, st->xstart, st->yend,   col }
 		);
-		#undef st
 
 		if (fade < 1.0f) {
 			float ifade = 1.0f - fade;
@@ -85,14 +87,13 @@ void CMuzzleFlame::Draw()
 			col[2] = (unsigned char) (ifade * 255);
 			col[3] = (unsigned char) (1);
 
-			#define mft projectileDrawer->muzzleflametex
+
 			AddEffectsQuad(
-				{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, mft->xstart, mft->ystart, col },
-				{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, mft->xend,   mft->ystart, col },
-				{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, mft->xend,   mft->yend,   col },
-				{ interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, mft->xstart, mft->yend,   col }
+				{ interPos - cam->GetRight() * drawsize - cam->GetUp() * drawsize, mft->xstart, mft->ystart, col },
+				{ interPos + cam->GetRight() * drawsize - cam->GetUp() * drawsize, mft->xend,   mft->ystart, col },
+				{ interPos + cam->GetRight() * drawsize + cam->GetUp() * drawsize, mft->xend,   mft->yend,   col },
+				{ interPos - cam->GetRight() * drawsize + cam->GetUp() * drawsize, mft->xstart, mft->yend,   col }
 			);
-			#undef mft
 		}
 	}
 }

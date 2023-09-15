@@ -120,18 +120,17 @@ void CFlareProjectile::Draw()
 	col[2] = (unsigned char) (alpha * 0.2f) * 255;
 	col[3] = 1;
 
-	//! CAUTION: loop count must match EnlargeArrays above
+	const auto* cam = camera;
+	const auto* fpt = projectileDrawer->flareprojectiletex;
 	for (int a = 0; a < numSubProjs; ++a) {
 		const float3 interPos = subProjPos[a] + subProjVel[a] * globalRendering->timeOffset;
 
-		#define fpt projectileDrawer->flareprojectiletex
 		AddEffectsQuad(
-			{ interPos - camera->GetRight() * rad - camera->GetUp() * rad, fpt->xstart, fpt->ystart, col },
-			{ interPos + camera->GetRight() * rad - camera->GetUp() * rad, fpt->xend,   fpt->ystart, col },
-			{ interPos + camera->GetRight() * rad + camera->GetUp() * rad, fpt->xend,   fpt->yend,   col },
-			{ interPos - camera->GetRight() * rad + camera->GetUp() * rad, fpt->xstart, fpt->yend,   col }
+			{ interPos - cam->GetRight() * rad - cam->GetUp() * rad, fpt->xstart, fpt->ystart, col },
+			{ interPos + cam->GetRight() * rad - cam->GetUp() * rad, fpt->xend,   fpt->ystart, col },
+			{ interPos + cam->GetRight() * rad + cam->GetUp() * rad, fpt->xend,   fpt->yend,   col },
+			{ interPos - cam->GetRight() * rad + cam->GetUp() * rad, fpt->xstart, fpt->yend,   col }
 		);
-		#undef fpt
 	}
 }
 
