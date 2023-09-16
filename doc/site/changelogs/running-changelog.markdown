@@ -222,6 +222,9 @@ These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.
 * added the `Game.textColorCodes` table, containing the constants `Color` (`/255`), `ColorAndOutline` (the newly added `/254`), and `Reset` (`\008`).
 
 ### Miscellaneous additions
+* add `Spring.IsPosInMap(x, z) → bool inPlayArea, bool inMap`. Currently, both of the returned values are the same and just check whether the position
+is in the map's rectangle. Perhaps in the future, or if a game overrides the function, there will be cases of limited play area (think SupCom singleplayer
+map extension; 0 A.D. circular maps; or just an external decoration area).
 * add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
 * added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
 Note that EnteredWater happens when the unit dips its toes into the water while EnteredUnderwater is when it becomes completely submerged.
