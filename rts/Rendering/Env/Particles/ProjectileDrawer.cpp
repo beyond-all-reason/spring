@@ -39,6 +39,9 @@
 #include "System/Threading/ThreadPool.h"
 #include <tuple>
 
+#include "taskflow/taskflow.hpp"
+#include "taskflow/algorithm/sort.hpp"
+
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
 
@@ -738,6 +741,17 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 	FlyingPieceShattered::EndDraw();
 }
 
+namespace {
+	tf::Executor executor(std::max(int(std::thread::hardware_concurrency()) - 3, 1));
+
+	template<typename Iter, typename Pred>
+	void tfSort(Iter begin, Iter end, Pred pred) {
+		tf::Taskflow taskflow;
+
+		taskflow.sort(begin, end, pred, 1024);
+		executor.run(taskflow).wait();
+	}
+}
 
 void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
@@ -768,11 +782,17 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	// only z-sorted (if the projectiles indicate they want to be)
 	DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
+#if 1
 	if (wantDrawOrder)
-		parallel_sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+		tfSort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
 	else
-		parallel_sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
-
+		tfSort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+#else
+	if (wantDrawOrder)
+		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
+	else
+		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
+#endif
 	for (auto p : sortedProjectiles) {
 		p->Draw();
 	}
