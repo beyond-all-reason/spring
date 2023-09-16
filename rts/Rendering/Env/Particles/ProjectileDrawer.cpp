@@ -41,6 +41,7 @@
 
 #include "taskflow/taskflow.hpp"
 #include "taskflow/algorithm/sort.hpp"
+#include "taskflow/algorithm/for_each.hpp"
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
@@ -742,13 +743,19 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 }
 
 namespace {
-	tf::Executor executor(std::max(int(std::thread::hardware_concurrency()) - 3, 1));
+	tf::Executor executor(std::thread::hardware_concurrency());
 
 	template<typename Iter, typename Pred>
 	void tfSort(Iter begin, Iter end, Pred pred) {
 		tf::Taskflow taskflow;
 
 		taskflow.sort(begin, end, pred, 1024);
+		executor.run(taskflow).wait();
+	}
+	template<typename Func>
+	void tfForEachIndex(int b, int e, int s, Func func, int chunk) {
+		tf::Taskflow taskflow;
+		taskflow.for_each_index(b, e, s, func, tf::StaticPartitioner(std::abs(chunk)));
 		executor.run(taskflow).wait();
 	}
 }
@@ -1263,11 +1270,15 @@ void CProjectileDrawer::DrawPreprocess()
 			result[4 * i + 3] = result[4 * i + 3] && cameras[2]->InView(pro->drawPos, pro->GetDrawRadius());
 		};
 
+#if 0
 		for_mt_chunk(0, cont.size(), ProcessingFunc, chunkSize);
+#else
+		tfForEachIndex(0, cont.size(), 1, ProcessingFunc, chunkSize);
+#endif
 	};
 
-	LaunchFunc(modelProjectiles    , drawBits[ true], -512);
-	LaunchFunc(modellessProjectiles, drawBits[false], -512);
+	LaunchFunc(modelProjectiles    , drawBits[ true], -1024);
+	LaunchFunc(modellessProjectiles, drawBits[false], -1024);
 }
 
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
