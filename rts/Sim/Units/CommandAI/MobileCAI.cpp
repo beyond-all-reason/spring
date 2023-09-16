@@ -1027,9 +1027,9 @@ void CMobileCAI::NonMoving()
 	if (((owner->pos - buggerOffPos) * XZVector).SqLength() >= Square(targetDistance))
 		return;
 
-	float3 buggerVec = ZeroVector;
 	float3 buggerPos = -OnesVector;
-	float3 buggerDirection = ZeroVector;
+	float3 buggerVec;
+	float3 buggerDirection;
 
 	if (buggerOffAttempts > 4) {
 		// previous move commands failed, just try random locations
