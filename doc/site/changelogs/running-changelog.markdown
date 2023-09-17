@@ -236,6 +236,7 @@ The weapon number is optional if the unit has a single shield. The timer value i
 Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
 An explicit numerical value always sets the timer to that many seconds.
 * added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
+* added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 

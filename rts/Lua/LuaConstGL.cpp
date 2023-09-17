@@ -103,6 +103,24 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(ONE_MINUS_DST_COLOR);
 	PUSH_GL(SRC_ALPHA_SATURATE);
 
+
+	/***
+	 * BlendEquation
+	 * @section blendequation
+	 *
+	 * @table GL
+	 * @number FUNC_ADD
+	 * @number FUNC_SUBTRACT
+	 * @number FUNC_REVERSE_SUBTRACT
+	 * @number MIN
+	 * @number MAX
+	 */
+	PUSH_GL(FUNC_ADD);
+	PUSH_GL(FUNC_SUBTRACT);
+	PUSH_GL(FUNC_REVERSE_SUBTRACT);
+	PUSH_GL(MIN);
+	PUSH_GL(MAX);
+
 /***
  * AlphaFunction and DepthFunction
  * @section alphadepth
