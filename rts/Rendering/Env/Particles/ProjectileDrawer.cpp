@@ -26,6 +26,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPieceShattered.h"
+#include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -760,17 +761,20 @@ namespace {
 		executor.run(taskflow).wait();
 	}
 
-	void tfDrawParallel(const std::vector<CProjectile*> sorted, const std::vector<CProjectile*> unsorted) {
-		auto DrawFunctor = [](CProjectile* proj) { proj->Draw(); };
-		tf::Taskflow taskflow;
-		tf::Task t1 = taskflow.emplace([&taskflow, &DrawFunctor, &sorted]() {
+	void tfDrawParallel(const std::vector<CProjectile*>& sorted, const std::vector<CProjectile*>& unsorted) {
+		auto DrawFunctor = [](CProjectile* proj) {
+			proj->Draw();
+		};
+		{
+			tf::Taskflow taskflow;
 			taskflow.for_each(sorted.begin(), sorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
-		});
-		tf::Task t2 = taskflow.emplace([&taskflow, &DrawFunctor, &unsorted]() {
+			executor.run(taskflow).wait();
+		}
+		{
+			tf::Taskflow taskflow;
 			taskflow.for_each(unsorted.begin(), unsorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
-		});
-		t1.precede(t2);
-		executor.run(taskflow).wait();
+			executor.run(taskflow).wait();
+		}
 	}
 }
 
