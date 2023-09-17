@@ -663,6 +663,7 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 
 	// don't need to z-sort in the shadow pass
 	p->Draw();
+	p->ApplyEffectQuads();
 }
 
 
@@ -758,6 +759,19 @@ namespace {
 		taskflow.for_each_index(b, e, s, func, tf::StaticPartitioner(std::abs(chunk)));
 		executor.run(taskflow).wait();
 	}
+
+	void tfDrawParallel(const std::vector<CProjectile*> sorted, const std::vector<CProjectile*> unsorted) {
+		auto DrawFunctor = [](CProjectile* proj) { proj->Draw(); };
+		tf::Taskflow taskflow;
+		tf::Task t1 = taskflow.emplace([&taskflow, &DrawFunctor, &sorted]() {
+			taskflow.for_each(sorted.begin(), sorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
+		});
+		tf::Task t2 = taskflow.emplace([&taskflow, &DrawFunctor, &unsorted]() {
+			taskflow.for_each(unsorted.begin(), unsorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
+		});
+		t1.precede(t2);
+		executor.run(taskflow).wait();
+	}
 }
 
 void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
@@ -800,12 +814,14 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	else
 		std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
 #endif
+
+	tfDrawParallel(sortedProjectiles, unsortedProjectiles);
 	for (auto p : sortedProjectiles) {
-		p->Draw();
+		p->ApplyEffectQuads();
 	}
 
 	for (auto p : unsortedProjectiles) {
-		p->Draw();
+		p->ApplyEffectQuads();
 	}
 
 	glEnable(GL_BLEND);
@@ -1053,6 +1069,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 		}
 
 		gf->Draw();
+		gf->ApplyEffectQuads();
 	}
 
 	rb.DrawElements(GL_TRIANGLES);

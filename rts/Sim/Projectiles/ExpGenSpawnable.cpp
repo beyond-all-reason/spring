@@ -1,3 +1,4 @@
+#include "ExpGenSpawnable.h"
 #include <limits>
 
 #include "ExpGenSpawnableMemberInfo.h"
@@ -200,7 +201,7 @@ CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 	return std::get<2>(spawnables[spawnableID])();
 }
 
-void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const
+void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl)
 {
 	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
@@ -211,17 +212,34 @@ void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr
 		((maxT = std::max(maxT, arg.t)), ...);
 	}, tl, tr, br, bl);
 
-	auto& rb = GetPrimaryRenderBuffer();
-
 	const auto uvInfo = float4{ minS, minT, maxS - minS, maxT - minT };
 	const auto animInfo = float3{ animParams.x, animParams.y, animProgress };
 	constexpr float layer = 0.0f; //for future texture arrays
 
-	//pos, uvw, uvmm, col
-	rb.AddQuadTriangles(
-		{ tl.pos, float3{ tl.s, tl.t, layer }, uvInfo, animInfo, tl.c },
-		{ tr.pos, float3{ tr.s, tr.t, layer }, uvInfo, animInfo, tr.c },
-		{ br.pos, float3{ br.s, br.t, layer }, uvInfo, animInfo, br.c },
-		{ bl.pos, float3{ bl.s, bl.t, layer }, uvInfo, animInfo, bl.c }
-	);
+	if (projQuads.size() == projQuads.capacity())
+		projQuads.reserve(projQuads.size() + 4); //do lean reservation
+
+	projQuads.emplace_back(tl.pos, float3{ tl.s, tl.t, layer }, uvInfo, animInfo, tl.c);
+	projQuads.emplace_back(tr.pos, float3{ tr.s, tr.t, layer }, uvInfo, animInfo, tr.c);
+	projQuads.emplace_back(br.pos, float3{ br.s, br.t, layer }, uvInfo, animInfo, br.c);
+	projQuads.emplace_back(bl.pos, float3{ bl.s, bl.t, layer }, uvInfo, animInfo, bl.c);
+}
+
+void CExpGenSpawnable::ApplyEffectQuads()
+{
+	assert(Threading::IsMainThread());
+	if (projQuads.empty())
+		return;
+
+	auto& rb = GetPrimaryRenderBuffer();
+
+	for (size_t i = 0; i < projQuads.size(); i += 4) {
+		rb.AddQuadTriangles(
+			std::move(projQuads[i + 0]),
+			std::move(projQuads[i + 1]),
+			std::move(projQuads[i + 2]),
+			std::move(projQuads[i + 3])
+		);
+	}
+	projQuads.clear();
 }

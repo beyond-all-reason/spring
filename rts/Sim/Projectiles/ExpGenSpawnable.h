@@ -5,11 +5,13 @@
 
 #include <memory>
 #include <array>
+#include <vector>
 #include <tuple>
 
 #include "Sim/Objects/WorldObject.h"
 #include "System/Threading/ThreadPool.h"
 #include "Rendering/GL/RenderBuffersFwd.h"
+#include "Rendering/GL/VertexArrayTypes.h"
 
 struct SExpGenSpawnableMemberInfo;
 class CUnit;
@@ -35,6 +37,8 @@ public:
 	//Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
 	static TypedRenderBuffer<VA_TYPE_PROJ>& GetPrimaryRenderBuffer();
+
+	void ApplyEffectQuads();
 protected:
 	CExpGenSpawnable();
 
@@ -42,7 +46,8 @@ protected:
 	void UpdateRotation();
 	void UpdateAnimParams();
 
-	void AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const;
+	std::vector<VA_TYPE_PROJ> projQuads{0};
+	void AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl);
 
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 
