@@ -149,8 +149,8 @@ namespace QTPFS {
 		}
 		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
 
-		void SetSourcePoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[                0] = p; }
-		void SetTargetPoint(const float3& p) { checkPointInBounds(p); assert(points.size() >= 2); points[points.size() - 1] = p; }
+		void SetSourcePoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[                0] = p; }
+		void SetTargetPoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[points.size() - 1] = p; }
 		const float3& GetSourcePoint() const { return points[                0]; }
 		const float3& GetTargetPoint() const { return points[points.size() - 1]; }
 

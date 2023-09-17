@@ -189,7 +189,8 @@ namespace QTPFS {
 
 		float hCostMult;
 
-		// float2 searchTransitionPoint;
+		int fwdStepIndex = 0;
+		int bwdStepIndex = 0;
 
 		bool haveFullPath;
 		bool havePartPath;
@@ -201,7 +202,7 @@ public:
 		bool doPartialSearch;
 		bool rejectPartialSearch;
 		bool allowPartialSearch;
-		bool partialCopyIsPartial;
+		bool searchEarlyDrop;
 		bool initialized;
 		bool partialReverseTrace = false;
 

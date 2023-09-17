@@ -202,6 +202,9 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		assert(p1.x / SQUARE_SIZE < mapDims.mapx);
 		assert(p1.z / SQUARE_SIZE < mapDims.mapy);
 
+		assert(p0 != float3());
+		assert(p1 != float3());
+
 		if (!camera->InView(p0) && !camera->InView(p1))
 			continue;
 
