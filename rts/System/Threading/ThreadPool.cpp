@@ -29,16 +29,7 @@
 
 #define USE_TASK_STATS_TRACKING
 
-// not in mingwlibs
-// #define USE_BOOST_LOCKFREE_QUEUE
-
-#ifdef USE_BOOST_LOCKFREE_QUEUE
-#include <boost/lockfree/queue.hpp>
-#else
 #include "System/ConcurrentQueue.h"
-#endif
-
-
 
 #ifndef UNIT_TEST
 CONFIG(int, WorkerThreadCount).defaultValue(-1).safemodeValue(0).minimumValue(-1).description("Number of workers (including the main thread!) used by ThreadPool.");
@@ -67,11 +58,7 @@ bool ThreadPool::inMultiThreadedSection;
 // global [idx = 0] and smaller per-thread [idx > 0] queues; the latter are
 // for tasks that want to execute on specific threads, e.g. parallel_reduce
 // note: std::shared_ptr<T> can not be made atomic, queues must store T*'s
-#ifdef USE_BOOST_LOCKFREE_QUEUE
-static std::array<boost::lockfree::queue<ITaskGroup*>, ThreadPool::MAX_THREADS> taskQueues[2];
-#else
 static std::array<moodycamel::ConcurrentQueue<ITaskGroup*>, ThreadPool::MAX_THREADS> taskQueues[2];
-#endif
 
 static std::vector<void*> workerThreads[2];
 static std::array<bool, ThreadPool::MAX_THREADS> exitFlags;
@@ -146,11 +133,7 @@ static bool DoTask(int tid, bool async)
 	for (int idx = 0; idx <= tid; idx += std::max(tid, 1)) {
 		auto& queue = taskQueues[async][idx];
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
-		if (queue.pop(tg)) {
-		#else
 		if (queue.try_dequeue(tg)) {
-		#endif
 			// inform other workers when there is global work to do
 			// waking is an expensive kernel-syscall, so better shift this
 			// cost to the workers too (the main thread only wakes when ALL
@@ -176,11 +159,7 @@ static bool DoTask(int tid, bool async)
 			#endif
 		}
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
-		while (queue.pop(tg)) {
-		#else
 		while (queue.try_dequeue(tg)) {
-		#endif
 			assert(!async || tg->IsAsyncTask());
 
 			#ifdef USE_TASK_STATS_TRACKING
@@ -312,11 +291,7 @@ void PushTaskGroup(ITaskGroup* taskGroup)
 
 	taskGroup->SetTimeStamp(spring_now());
 
-	#ifdef USE_BOOST_LOCKFREE_QUEUE
-	while (!queue.push(taskGroup));
-	#else
 	while (!queue.enqueue(taskGroup));
-	#endif
 
 	#if 1
 	// AsyncTask's do not care about wakeup-latency as much
@@ -404,13 +379,8 @@ static void KillThreads(int wantedNumThreads, int curNumThreads)
 	for (int i = curNumThreads - 1; i >= wantedNumThreads && i > 0; --i) {
 		ITaskGroup* tg = nullptr;
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
-		while (taskQueues[false][i].pop(tg));
-		while (taskQueues[ true][i].pop(tg));
-		#else
 		while (taskQueues[false][i].try_dequeue(tg));
 		while (taskQueues[ true][i].try_dequeue(tg));
-		#endif
 	}
 
 	assert((wantedNumThreads != 0) || workerThreads[false].empty());
@@ -474,11 +444,6 @@ void SetThreadCount(int wantedNumThreads)
 
 	if (workerThreads[false].empty()) {
 		assert(workerThreads[true].empty());
-
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
-		taskQueues[false][0].reserve(1024);
-		taskQueues[ true][0].reserve(1024);
-		#endif
 
 		#ifdef USE_TASK_STATS_TRACKING
 		for (bool async: {false, true}) {
