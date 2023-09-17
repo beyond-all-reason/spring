@@ -65,19 +65,7 @@ static spring::signal newTasksSignal[2];
 
 static _threadlocal int threadnum(0);
 
-#ifndef UNITSYNC
-// if enabled, allows OpenGL calls from ThreadPool tasks
-// so certain logic (e.g. loading models) can be written
-// without forcing GL code to run within the main thread
-// this is highly experimental, use at own risk
-static bool glThreadSupport = false;
-#endif
-
-
-
 std::atomic_uint ITaskGroup::lastId(0);
-
-
 
 namespace ThreadPool {
 
@@ -318,31 +306,11 @@ void NotifyWorkerThreads(bool force, bool async)
 
 static void SpawnThreads(int wantedNumThreads, int curNumThreads)
 {
-#ifndef UNITSYNC
-	if (glThreadSupport) {
-		try {
-			for (int i = curNumThreads; i < wantedNumThreads; ++i) {
-				exitFlags[i] = false;
+	for (int i = curNumThreads; i < wantedNumThreads; ++i) {
+		exitFlags[i] = false;
 
-				workerThreads[false].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i, false)));
-				workerThreads[ true].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i,  true)));
-			}
-		} catch (const opengl_error&) {
-			// shared gl context creation failed
-			ThreadPool::SetThreadCount(0);
-
-			glThreadSupport = false;
-			curNumThreads = ThreadPool::GetNumThreads();
-		}
-	} else
-#endif
-	{
-		for (int i = curNumThreads; i < wantedNumThreads; ++i) {
-			exitFlags[i] = false;
-
-			workerThreads[false].push_back(new spring::thread(std::bind(&WorkerLoop, i, false)));
-			workerThreads[ true].push_back(new spring::thread(std::bind(&WorkerLoop, i,  true)));
-		}
+		workerThreads[false].push_back(new spring::thread(std::bind(&WorkerLoop, i, false)));
+		workerThreads[ true].push_back(new spring::thread(std::bind(&WorkerLoop, i,  true)));
 	}
 }
 
@@ -358,16 +326,8 @@ static void KillThreads(int wantedNumThreads, int curNumThreads)
 		assert(!workerThreads[false].empty());
 		assert(!workerThreads[ true].empty());
 
-	#ifndef UNITSYNC
-		if (glThreadSupport) {
-			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[false].back()); th->join(); delete th; }
-			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[ true].back()); th->join(); delete th; }
-		} else
-	#endif
-		{
-			{ auto th = reinterpret_cast<spring::thread*>(workerThreads[false].back()); th->join(); delete th; }
-			{ auto th = reinterpret_cast<spring::thread*>(workerThreads[ true].back()); th->join(); delete th; }
-		}
+		{ auto th = reinterpret_cast<spring::thread*>(workerThreads[false].back()); th->join(); delete th; }
+		{ auto th = reinterpret_cast<spring::thread*>(workerThreads[ true].back()); th->join(); delete th; }
 
 		workerThreads[false].pop_back();
 		workerThreads[ true].pop_back();
