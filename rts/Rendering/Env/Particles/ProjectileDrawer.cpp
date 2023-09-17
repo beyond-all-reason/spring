@@ -745,20 +745,18 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 }
 
 namespace {
-	tf::Executor executor(std::thread::hardware_concurrency());
-
 	template<typename Iter, typename Pred>
 	void tfSort(Iter begin, Iter end, Pred pred) {
 		tf::Taskflow taskflow;
 
 		taskflow.sort(begin, end, pred, 1024);
-		executor.run(taskflow).wait();
+		ThreadPool::executor->run(taskflow).wait();
 	}
 	template<typename Func>
 	void tfForEachIndex(int b, int e, int s, Func func, int chunk) {
 		tf::Taskflow taskflow;
 		taskflow.for_each_index(b, e, s, func, tf::StaticPartitioner(std::abs(chunk)));
-		executor.run(taskflow).wait();
+		ThreadPool::executor->run(taskflow).wait();
 	}
 
 	void tfDrawParallel(const std::vector<CProjectile*>& sorted, const std::vector<CProjectile*>& unsorted) {
@@ -769,7 +767,7 @@ namespace {
 		tf::Task t1 = taskflow.for_each(sorted.begin(), sorted.end(), DrawFunctor);
 		tf::Task t2 = taskflow.for_each(unsorted.begin(), unsorted.end(), DrawFunctor);
 		t1.precede(t2);
-		executor.run(taskflow).wait();
+		ThreadPool::executor->run(taskflow).wait();
 	}
 }
 

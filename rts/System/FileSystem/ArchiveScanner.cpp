@@ -958,7 +958,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	std::vector<std::shared_ptr<std::future<void>>> tasks;
+	std::vector<std::future<void>> tasks;
 	tasks.reserve(fileNames.size());
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
@@ -971,9 +971,9 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
 	}
 
-	const auto erasePredicate = [](decltype(tasks)::value_type item) {
+	const auto erasePredicate = [](const decltype(tasks)::value_type& item) {
 		using namespace std::chrono_literals;
-		return item->wait_for(0us) == std::future_status::ready;
+		return item.wait_for(0us) == std::future_status::ready;
 	};
 
 	while (!tasks.empty()) {

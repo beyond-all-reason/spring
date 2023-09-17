@@ -952,7 +952,6 @@ void SpringApp::Kill(bool fromRun)
 	killedCount += 1;
 
 	LOG("[SpringApp::%s][1] fromRun=%d", __func__, fromRun);
-	ThreadPool::SetThreadCount(0);
 	LOG("[SpringApp::%s][2]", __func__);
 	LuaVFSDownload::Free(true);
 
@@ -1009,7 +1008,7 @@ void SpringApp::Kill(bool fromRun)
 	// also gets rid of configHandler
 	FileSystemInitializer::Cleanup();
 	DataDirLocater::FreeInstance();
-	ThreadPool::ClearExtJobs();
+	ThreadPool::SetThreadCount(0);
 
 	LOG("[SpringApp::%s][8]", __func__);
 	Watchdog::DeregisterThread(WDT_MAIN);
