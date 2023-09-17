@@ -765,16 +765,11 @@ namespace {
 		auto DrawFunctor = [](CProjectile* proj) {
 			proj->Draw();
 		};
-		{
-			tf::Taskflow taskflow;
-			taskflow.for_each(sorted.begin(), sorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
-			executor.run(taskflow).wait();
-		}
-		{
-			tf::Taskflow taskflow;
-			taskflow.for_each(unsorted.begin(), unsorted.end(), DrawFunctor, tf::StaticPartitioner(1024));
-			executor.run(taskflow).wait();
-		}
+		tf::Taskflow taskflow;
+		tf::Task t1 = taskflow.for_each(sorted.begin(), sorted.end(), DrawFunctor);
+		tf::Task t2 = taskflow.for_each(unsorted.begin(), unsorted.end(), DrawFunctor);
+		t1.precede(t2);
+		executor.run(taskflow).wait();
 	}
 }
 
