@@ -362,14 +362,6 @@ endif(MSVC)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 
-
-### our custom OpenMP replacement
-option(THREADPOOL "Enable ThreadPools" TRUE)
-if (THREADPOOL)
-	add_definitions(-DTHREADPOOL)
-endif(THREADPOOL)
-
-
 ### warnings
 if(NOT MSVC)
 	### SigNan

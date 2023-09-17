@@ -1,68 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _THREADPOOL_H
-#define _THREADPOOL_H
-
-#ifndef THREADPOOL
-#include  <functional>
-#include "System/Threading/SpringThreading.h"
-
-namespace ThreadPool {
-	template<class F, class... Args>
-	static inline void Enqueue(F&& f, Args&&... args)
-	{
-		f(args ...);
-	}
-
-	static inline void AddExtJob(spring::thread&& t) { t.join(); }
-	static inline void AddExtJob(std::future<void>&& f) { f.get(); }
-	static inline void ClearExtJobs() {}
-
-	static inline void SetMaximumThreadCount() {}
-	static inline void SetDefaultThreadCount() {}
-	static inline void SetThreadCount(int num) {}
-	static inline int GetThreadNum() { return 0; }
-	static inline int GetMaxThreads() { return 1; }
-	static inline int GetNumThreads() { return 1; }
-	static inline void NotifyWorkerThreads(bool force, bool async) {}
-	static inline bool HasThreads() { return false; }
-
-	static constexpr int MAX_THREADS = 1;
-}
-
-template <typename F>
-static inline void for_mt(int start, int end, int step, F&& f)
-{
-	for (int i = start; i < end; i += step) {
-		f(i);
-	}
-}
-
-template <typename F>
-static inline void for_mt(int start, int end, F&& f)
-{
-	for_mt(start, end, 1, std::move(f));
-}
-
-template <typename F>
-static inline void for_mt_chunk(int b, int e, F&& f, int chunkSize = 0)
-{
-	for_mt(b, e, f);
-}
-
-
-static inline void parallel(const std::function<void()>&& f)
-{
-	f();
-}
-
-template<class F, class G>
-static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
-{
-	return f();
-}
-
-#else
+#pragma once
 
 #include "System/TimeProfiler.h"
 #include "System/Platform/Threading.h"
@@ -852,7 +790,3 @@ namespace ThreadPool {
 		return fut;
 	}
 }
-
-#endif
-#endif
-
