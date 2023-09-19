@@ -372,7 +372,7 @@ void CUnitScript::StopSpin(int piece, int axis, float decel)
 
 void CUnitScript::Turn(int piece, int axis, float speed, float destination)
 {
-	AddAnim(ATurn, piece, axis, std::max(speed, -speed), destination, 0);
+	AddAnim(ATurn, piece, axis, std::max(speed, -speed), ClampRad(destination), 0);
 }
 
 
@@ -406,7 +406,7 @@ void CUnitScript::TurnNow(int piece, int axis, float destination)
 		ShowUnitScriptError("[US::TurnNow] invalid script piece index");
 		return;
 	}
-	destination = math::fmod(destination, math::TWOPI);
+	destination = ClampRad(destination);
 
 	LocalModelPiece* p = pieces[piece];
 
