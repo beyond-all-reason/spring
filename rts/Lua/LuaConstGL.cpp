@@ -98,23 +98,16 @@ bool LuaConstGL::PushEntries(lua_State* L)
  * @number DST_COLOR
  * @number ONE_MINUS_DST_COLOR
  * @number SRC_ALPHA_SATURATE
+ * @number FUNC_ADD
+ * @number FUNC_SUBTRACT
+ * @number FUNC_REVERSE_SUBTRACT
+ * @number MIN
+ * @number MAX
  */
 	PUSH_GL(DST_COLOR);
 	PUSH_GL(ONE_MINUS_DST_COLOR);
 	PUSH_GL(SRC_ALPHA_SATURATE);
 
-
-	/***
-	 * BlendEquation
-	 * @section blendequation
-	 *
-	 * @table GL
-	 * @number FUNC_ADD
-	 * @number FUNC_SUBTRACT
-	 * @number FUNC_REVERSE_SUBTRACT
-	 * @number MIN
-	 * @number MAX
-	 */
 	PUSH_GL(FUNC_ADD);
 	PUSH_GL(FUNC_SUBTRACT);
 	PUSH_GL(FUNC_REVERSE_SUBTRACT);
