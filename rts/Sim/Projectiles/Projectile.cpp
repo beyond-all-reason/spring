@@ -35,14 +35,12 @@ CR_REG_METADATA(CProjectile,
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(castShadow),
 		CR_MEMBER(dir),
-		CR_MEMBER(drawOrder),
 	CR_MEMBER_ENDFLAG(CM_Config),
 
 	CR_MEMBER(drawPos),
 
 	CR_MEMBER(myrange),
 	CR_MEMBER(mygravity),
-	CR_IGNORED(sortDist),
 	CR_MEMBER(sortDistOffset),
 
 	CR_MEMBER(validTextures),
@@ -182,7 +180,6 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 	CHECK_MEMBER_INFO_BOOL(CProjectile, castShadow)
 	CHECK_MEMBER_INFO_FLOAT3(CProjectile, dir)
-	CHECK_MEMBER_INFO_INT(CProjectile, drawOrder)
 
 	return false;
 }

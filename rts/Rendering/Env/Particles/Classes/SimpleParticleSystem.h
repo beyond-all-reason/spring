@@ -16,6 +16,7 @@ class CSimpleParticleSystem : public CProjectile
 	CR_DECLARE_SUB(Particle)
 
 public:
+	friend class CSimpleParticleSystemCollection;
 	CSimpleParticleSystem();
 	virtual ~CSimpleParticleSystem() { particles.clear(); }
 
@@ -81,10 +82,82 @@ protected:
 class CSphereParticleSpawner : public CSimpleParticleSystem {
 	CR_DECLARE_DERIVED(CSphereParticleSpawner)
 public:
-	CSphereParticleSpawner() {}
-	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo) {
-		return CSimpleParticleSystem::GetMemberInfo(memberInfo);
-	}
+	CSphereParticleSpawner();
+
+	void Draw() override;
+	void Update() override;
+	int GetProjectilesCount() const override;
+	void Init(const CUnit* owner, const float3& offset) override;
+
+	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
+private:
+	void GenerateParticles(const float3& pos);
 };
+
+class CSimpleParticleSystemCollection
+{
+public:
+	void Update();
+	void Draw(bool drawRefraction);
+	void DrawShadow();
+	void PreDraw();
+	void DrawOnMinimap();
+	void Add(CSimpleParticleSystem& p, float3 offset); // TODO use thinner CSimpleParticleSystem
+	size_t NumParticles() const { return d.size(); }
+private:
+	void CheckDead();	
+	void Erase(int idx);	
+	void UpdateAnimParams(int idx);
+	
+	// update data
+	struct Data {
+		// update data
+		float3 pos;
+		float3 speed;
+	
+		float rotVal;
+		float rotVel;
+		float rotParams; // rotParams.y; //rot accel
+	
+		float life;
+		float decayrate;
+		
+		float size;
+		float sizeGrowth;
+		float sizeMod;
+		
+		float3 gravity;
+		float airdrag;
+		
+		bool visible;
+		bool visibleShadow;
+		bool visibleRefraction;
+		bool visibleReflection;
+		int allyTeam;
+		
+		float drawRadius;
+		int drawOrder;
+		
+		bool directional;
+		
+		// draw data
+		bool castShadow;
+		bool alwaysVisible;
+		
+		CColorMap* colorMap;
+		std::array<unsigned char, 4> color;
+		float3 interPos;
+		
+		std::array<float3, 4> bounds;
+		AtlasedTexture* texture;
+		
+		float3 anims;
+		float aprogress;
+		int createFrame;
+	};
+	std::vector<Data> d;
+};
+
+extern CSimpleParticleSystemCollection simpleParticleSystem;
 
 #endif // SIMPLE_PARTICLE_SYSTEM_H

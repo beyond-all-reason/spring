@@ -23,6 +23,8 @@
 #include <iterator>
 #include <algorithm>
 #include <type_traits>
+#include <span>
+#include <numeric>
 
 template <typename T>
 class TypedRenderBuffer;
@@ -372,6 +374,7 @@ public:
 	~TypedRenderBuffer() override {
 		verts = {};
 		indcs = {};
+		dataOrder = {};
 		vbo = {};
 		ebo = {};
 	}
@@ -382,6 +385,7 @@ public:
 		// clear
 		verts.clear();
 		indcs.clear();
+		dataOrder.clear();
 
 		vboStartIndex = 0;
 		eboStartIndex = 0;
@@ -428,6 +432,7 @@ public:
 
 		std::swap(verts, rhs.verts);
 		std::swap(indcs, rhs.indcs);
+		std::swap(dataOrder, rhs.dataOrder);
 
 		vboStartIndex = rhs.vboStartIndex;
 		eboStartIndex = rhs.eboStartIndex;
@@ -530,6 +535,21 @@ public:
 		static_assert(N == 4);
 		AddQuadTrianglesImpl(vs[0], vs[1], vs[2], vs[3]);
 	}
+	
+	void AddQuadOrder(uint64_t order) {
+		dataOrder.push_back(order);
+	}
+	
+	void SetSortMode(bool mode) {
+		sortMode = mode;
+	}
+	
+	bool GetSortMode() const { return sortMode; }
+	
+	// modifies values of array index in render buffer
+	// uses orderVector to apply new order
+	void ReorderQuadIndexBuffer();
+	
 	void AddQuadTriangles(VertType&& tl, VertType&& tr, VertType&& br, VertType&& bl) { AddQuadTrianglesImpl(tl, tr, br, bl); }
 	void AddQuadTriangles(const VertType& tl, const VertType& tr, const VertType& br, const VertType& bl) { AddQuadTrianglesImpl(std::move(tl), std::move(tr), std::move(br), std::move(bl)); }
 
@@ -759,6 +779,7 @@ private:
 
 	std::vector<VertType> verts;
 	std::vector<IndcType> indcs;
+	std::vector<uint64_t> dataOrder;
 
 	size_t vboStartIndex = 0;
 	size_t eboStartIndex = 0;
@@ -768,6 +789,8 @@ private:
 
 	bool readOnly = false;
 	bool optimizeForStreaming = true;
+	
+	bool sortMode = false;
 
 	inline static RenderBufferShader<T> shader;
 
@@ -1002,6 +1025,48 @@ inline void TypedRenderBuffer<T>::InitVAO() const
 	for (const AttributeDef& ad : T::attributeDefs) {
 		glDisableVertexAttribArray(ad.index);
 	}
+}
+
+
+template <typename T>
+void TypedRenderBuffer<T>::ReorderQuadIndexBuffer()
+{
+	ZoneScopedN("ProjectileDrawer::ReorderQuadIndexBuffer");
+	if (dataOrder.empty()) {
+		return;
+	}
+	
+	auto& indcs = this->GetIndcs();
+	
+	const size_t numQuads = dataOrder.size();
+	const size_t numPoints = numQuads*6; // each quad is 6 indices
+	if (indcs.size() < numPoints) {
+		// less order data than quads, shouldn't happen
+		assert(false);
+		dataOrder.clear();
+		return;
+	}	
+	
+	auto arrayBufferIndices = std::span(indcs.end() - numPoints, numPoints); // get only last added quads
+	
+	std::vector<uint32_t> newDrawOrderIndices;
+	newDrawOrderIndices.resize(numQuads);
+	
+	// sort newDrawOrderIndices by values in dataOrder
+	std::iota(newDrawOrderIndices.begin(), newDrawOrderIndices.end(), 0); 
+	std::sort(newDrawOrderIndices.begin(), newDrawOrderIndices.end(), [&](const auto& l, const auto& r) {
+		return dataOrder[l] < dataOrder[r];
+	});
+	
+	// apply new order to array buffer
+	uint32_t baseIndex = 0;
+	for (auto& i : newDrawOrderIndices) {		
+		for (int j =0; j < 6 ; ++ j) {
+			arrayBufferIndices[baseIndex*6+j] += (i*4) - (baseIndex*4);
+		}
+		++baseIndex;
+	}
+	dataOrder.clear();
 }
 
 //member template specializations

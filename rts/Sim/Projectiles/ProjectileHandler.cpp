@@ -18,6 +18,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Classes/SimpleParticleSystem.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -326,6 +327,8 @@ void CProjectileHandler::Update()
 				std::stable_sort(fpc.begin(), fpc.end());
 			}
 		}
+		
+		simpleParticleSystem.Update();
 	}
 
 	// precache part of particles count calculation that else becomes very heavy
@@ -743,6 +746,7 @@ int CProjectileHandler::GetCurrentParticles() const
 		}
 	}
 	partCount += groundFlashes.size();
+	partCount += simpleParticleSystem.NumParticles();
 	return partCount;
 }
 

@@ -26,6 +26,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/Env/Particles/Classes/SimpleParticleSystem.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -37,17 +38,10 @@
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
 #include <tuple>
+#include <span>
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
-
-static bool CProjectileDrawOrderSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::make_tuple(p2->drawOrder, p1->GetSortDist(), p1) > std::make_tuple(p1->drawOrder, p2->GetSortDist(), p2);
-}
-
-static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::make_tuple(p1->GetSortDist(), p1) > std::make_tuple(p2->GetSortDist(), p2);
-};
 
 
 CProjectileDrawer* projectileDrawer = nullptr;
@@ -56,7 +50,6 @@ CProjectileDrawer* projectileDrawer = nullptr;
 // scope might happen after ~EventHandler (referenced by
 // ~EventClient)
 alignas(CProjectileDrawer) static std::byte projectileDrawerMem[sizeof(CProjectileDrawer)];
-
 
 void CProjectileDrawer::InitStatic() {
 	if (projectileDrawer == nullptr)
@@ -334,7 +327,6 @@ void CProjectileDrawer::Kill() {
 	smokeTextures.clear();
 
 	modellessProjectiles.clear();
-	sortedProjectiles.clear();
 	unsortedProjectiles.clear();
 
 	perlinFB.Kill();
@@ -625,7 +617,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
 
 	if (drawSorted && pro->drawSorted) {
-		sortedProjectiles.emplace_back(pro);
+		pro->Draw();
 	} else {
 		unsortedProjectiles.emplace_back(pro);
 	}
@@ -636,6 +628,7 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 
 void CProjectileDrawer::DrawProjectilesShadow(int modelType)
 {
+	ZoneScopedN("Draw::Projectiles::Shadow");
 	const auto& mdlRenderer = modelRenderers[modelType];
 	// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
@@ -677,6 +670,7 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 
 void CProjectileDrawer::DrawProjectilesMiniMap()
 {
+	ZoneScopedN("Draw::Projectiles::Minimap");
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		const auto& mdlRenderer = modelRenderers[modelType];
 		// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
@@ -701,6 +695,8 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 			p->DrawOnMinimap();
 		}
 	}
+	
+	simpleParticleSystem.DrawOnMinimap();
 
 	auto& sh = TypedRenderBuffer<VA_TYPE_C>::GetShader();
 
@@ -724,6 +720,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 
 void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 {
+	ZoneScopedN("Draw::Projectiles::Flying");
 	const FlyingPieceContainer& container = projectileHandler.flyingPieces[modelType];
 
 	if (container.empty())
@@ -750,7 +747,7 @@ void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 }
 
 
-void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
+void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {	
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
 	glDisable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
@@ -759,8 +756,9 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	ISky::GetSky()->SetupFog();
 
 
-	sortedProjectiles.clear();
 	unsortedProjectiles.clear();
+
+	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	{
 		{
@@ -776,18 +774,21 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 			unitDrawer->ResetOpaqueDrawing(false);
 		}
 
-		// note: model-less projectiles are NOT drawn by this call but
+		rb.SetSortMode(drawSorted);
+		
+		// NOTE: orderless projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
 		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
 
-		if (wantDrawOrder)
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
-		else
-			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
-
-		for (auto p : sortedProjectiles) {
-			p->Draw();
+		{
+			ZoneScopedN("Draw::Projectiles::DrawSPS");
+			simpleParticleSystem.Draw(drawRefraction);
 		}
+		
+		// quads from sorted projectiles are in the buffer.
+		// now apply drawing order onto index buffer
+		rb.ReorderQuadIndexBuffer();
+		rb.SetSortMode(false);
 
 		for (auto p : unsortedProjectiles) {
 			p->Draw();
@@ -797,11 +798,11 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 	glEnable(GL_BLEND);
 	glDisable(GL_FOG);
 
-	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
 
 	if (rb.ShouldSubmit()) {
+		ZoneScopedN("ProjectileDrawer::Submit1");		
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		/*
 		glEnable(GL_TEXTURE_2D);
@@ -872,6 +873,10 @@ void CProjectileDrawer::DrawShadowPassTransparent()
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles
+		
+	simpleParticleSystem.PreDraw();
+	simpleParticleSystem.DrawShadow();
+	
 	DrawProjectilesSetShadow(modellessProjectiles);
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();

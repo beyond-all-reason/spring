@@ -18,9 +18,6 @@ class CExpGenSpawnable : public CWorldObject
 {
 	CR_DECLARE(CExpGenSpawnable)
 public:
-	using AllocFunc = CExpGenSpawnable*(*)();
-	using GetMemberInfoFunc = bool(*)(SExpGenSpawnableMemberInfo&);
-	using SpawnableTuple = std::tuple<std::string, GetMemberInfoFunc, AllocFunc>;
 
 	CExpGenSpawnable(const float3& pos, const float3& spd);
 
@@ -35,6 +32,10 @@ public:
 	//Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
 	static TypedRenderBuffer<VA_TYPE_PROJ>& GetPrimaryRenderBuffer();
+	
+	int drawOrder = 0;
+	float sortDist = 0.0f;
+	
 protected:
 	CExpGenSpawnable();
 
@@ -55,8 +56,6 @@ protected:
 	float rotVel;
 
 	int createFrame;
-
-	static std::array<SpawnableTuple, 14> spawnables;
 };
 
 #endif //EXP_GEN_SPAWNABLE_H

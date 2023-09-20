@@ -167,8 +167,7 @@ private:
 	/// projectiles with a model
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
-	/// used to render particle effects in back-to-front order
-	std::vector<CProjectile*> sortedProjectiles;
+    /// projectiles rendered last
 	std::vector<CProjectile*> unsortedProjectiles;
 
 	bool drawSorted = true;
