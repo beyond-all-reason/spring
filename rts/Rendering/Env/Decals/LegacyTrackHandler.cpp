@@ -70,9 +70,6 @@ void LegacyTrackHandler::LoadDecalShaders()
 	#define sh shaderHandler
 	decalShaders.resize(DECAL_SHADER_LAST, nullptr);
 
-	if (!globalRendering->haveGLSL)
-		return;
-
 	// SM3 maps have no baked lighting, so decals blend differently
 	const bool haveShadingTexture = (readMap->GetShadingTexture() != 0);
 
@@ -110,11 +107,9 @@ void LegacyTrackHandler::LoadDecalShaders()
 
 void LegacyTrackHandler::SunChanged()
 {
-	if (globalRendering->haveGLSL) {
-		decalShaders[DECAL_SHADER_GLSL]->Enable();
-		decalShaders[DECAL_SHADER_GLSL]->SetUniform1f(7, sunLighting->groundShadowDensity);
-		decalShaders[DECAL_SHADER_GLSL]->Disable();
-	}
+	decalShaders[DECAL_SHADER_GLSL]->Enable();
+	decalShaders[DECAL_SHADER_GLSL]->SetUniform1f(7, sunLighting->groundShadowDensity);
+	decalShaders[DECAL_SHADER_GLSL]->Disable();
 }
 
 

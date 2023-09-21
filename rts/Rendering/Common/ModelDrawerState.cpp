@@ -162,7 +162,7 @@ CModelDrawerStateGLSL::~CModelDrawerStateGLSL()
 	shaderHandler->ReleaseProgramObjects(PO_CLASS);
 }
 
-bool CModelDrawerStateGLSL::CanEnable() const { return globalRendering->haveGLSL && CModelDrawerConcept::UseAdvShading(); }
+bool CModelDrawerStateGLSL::CanEnable() const { return CModelDrawerConcept::UseAdvShading(); }
 bool CModelDrawerStateGLSL::CanDrawDeferred() const { return CModelDrawerConcept::DeferredAllowed(); }
 
 bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const

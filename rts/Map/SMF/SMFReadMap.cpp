@@ -644,11 +644,7 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 {
-	// Update VertexNormalsTexture (not used by ARB shaders)
-	if (!globalRendering->haveGLSL)
-		return;
 	// texture space is [0 .. mapDims.mapx] x [0 .. mapDims.mapy] (NPOT; vertex-aligned)
-
 	float3* vvn = &visVertexNormals[0];
 
 	// a heightmap update over (x1, y1) - (x2, y2) implies the
@@ -856,7 +852,7 @@ void CSMFReadMap::UpdateShadingTexture()
 
 	// shading texture no longer has much use (minimap etc), limit its updaterate
 	//FIXME make configurable or FPS-dependent?
-	const int update_rate = (globalRendering->haveGLSL ? 64*64 : 64*128);
+	static constexpr int update_rate = 64*64;
 
 	if (shadingTexUpdateProgress >= pixels) {
 		if (shadingTexUpdateNeeded) {

@@ -253,7 +253,7 @@ void LuaOpenGL::Init()
 {
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-	canUseShaders = (globalRendering->haveGLSL && configHandler->GetBool("LuaShaders"));
+	canUseShaders = configHandler->GetBool("LuaShaders");
 
 	deprecatedGLWarnLevel = configHandler->GetInt("DeprecatedGLWarnLevel");
 	if (deprecatedGLWarnLevel == 1)
@@ -265,9 +265,6 @@ void LuaOpenGL::Init()
 void LuaOpenGL::Free()
 {
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-
-	if (!globalRendering->haveGLSL)
-		return;
 
 	for (const OcclusionQuery* q: occlusionQueries) {
 		glDeleteQueries(1, &q->id);
@@ -342,10 +339,8 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(LineWidth);
 	REGISTER_LUA_CFUNC(PointSize);
-	if (globalRendering->haveGLSL) {
-		REGISTER_LUA_CFUNC(PointSprite);
-		REGISTER_LUA_CFUNC(PointParameter);
-	}
+	REGISTER_LUA_CFUNC(PointSprite);
+	REGISTER_LUA_CFUNC(PointParameter);
 
 	REGISTER_LUA_CFUNC(Texture);
 	REGISTER_LUA_CFUNC(CreateTexture);
@@ -556,16 +551,13 @@ void LuaOpenGL::ResetGLState()
 	glLineWidth(1.0f);
 	glPointSize(1.0f);
 
-	if (globalRendering->haveGLSL)
-		glDisable(GL_POINT_SPRITE);
+	glDisable(GL_POINT_SPRITE);
 
-	if (globalRendering->haveGLSL) {
-		GLfloat atten[3] = { 1.0f, 0.0f, 0.0f };
-		glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, atten);
-		glPointParameterf(GL_POINT_SIZE_MIN, 0.0f);
-		glPointParameterf(GL_POINT_SIZE_MAX, 1.0e9f); // FIXME?
-		glPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE, 1.0f);
-	}
+	GLfloat atten[3] = { 1.0f, 0.0f, 0.0f };
+	glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, atten);
+	glPointParameterf(GL_POINT_SIZE_MIN, 0.0f);
+	glPointParameterf(GL_POINT_SIZE_MAX, 1.0e9f); // FIXME?
+	glPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE, 1.0f);
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	const float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };

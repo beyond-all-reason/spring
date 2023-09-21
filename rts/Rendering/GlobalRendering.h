@@ -212,7 +212,6 @@ public:
 	float aspectRatio;
 
 	int forceDisablePersistentMapping;
-	int forceDisableShaders;
 	int forceDisableGL4;
 	int forceCoreContext;
 	int forceSwapBuffers;
@@ -329,7 +328,6 @@ public:
 	/**
 	 * Shader capabilities
 	 */
-	bool haveGLSL;
 	bool haveGL4;
 
 	/**
