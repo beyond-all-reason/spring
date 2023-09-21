@@ -202,6 +202,8 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(fullScreen),
 	CR_IGNORED(borderless),
 
+	CR_IGNORED(underExternalDebug),
+
 	CR_IGNORED(sdlWindow),
 	CR_IGNORED(glContext),
 
@@ -327,6 +329,7 @@ CGlobalRendering::CGlobalRendering()
 	, dualScreenMiniMapOnLeft(false)
 	, fullScreen(configHandler->GetBool("Fullscreen"))
 	, borderless(configHandler->GetBool("WindowBorderless"))
+	, underExternalDebug(false)
 	, sdlWindow{nullptr}
 	, glContext{nullptr}
 	, glTimerQueries{0}
@@ -698,14 +701,33 @@ uint64_t CGlobalRendering::CalcGLDeltaTime(uint32_t queryIdx0, uint32_t queryIdx
 }
 
 
-void CGlobalRendering::CheckGLExtensions() const
+void CGlobalRendering::CheckGLExtensions()
 {
+	#ifndef HEADLESS
+	// detect RenderDoc
+	{
+		constexpr GLenum GL_DEBUG_TOOL_EXT = 0x6789;
+		constexpr GLenum GL_DEBUG_TOOL_NAME_EXT = 0x678A;
+		constexpr GLenum GL_DEBUG_TOOL_PURPOSE_EXT = 0x678B;
+		// For OpenGL:
+		// if GL_EXT_debug_tool is present (see https://renderdoc.org/debug_tool.txt)
+		if (glIsEnabled(GL_DEBUG_TOOL_EXT)) {
+			auto debugStr = reinterpret_cast<const char*>(glGetString(GL_DEBUG_TOOL_NAME_EXT));
+			LOG("[GR::%s] Detected external GL debug tool %s, enabling compatibility mode", __func__, debugStr);
+			underExternalDebug = true;
+		}
+	}
+	#endif
+
+	if (underExternalDebug)
+		return;
+
 	char extMsg[ 128] = {0};
 	char errMsg[2048] = {0};
 	char* ptr = &extMsg[0];
 
 	if (!GLEW_ARB_multitexture       ) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " multitexture ");
-	//if (!GLEW_ARB_texture_env_combine) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_env_combine ");
+	if (!GLEW_ARB_texture_env_combine) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_env_combine ");
 	if (!GLEW_ARB_texture_compression) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_compression ");
 
 	if (extMsg[0] == 0)
@@ -731,6 +753,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	bool haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
 	haveGLSL &= static_cast<bool>(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
 	haveGLSL &= static_cast<bool>(GLEW_VERSION_2_0); // we want OpenGL 2.0 core functions
+	haveGLSL |= underExternalDebug;
 
 	#ifndef HEADLESS
 	if (!haveGLSL)
