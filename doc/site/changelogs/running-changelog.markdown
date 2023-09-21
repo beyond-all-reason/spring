@@ -255,3 +255,4 @@ The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 * fixed being unable to drag-select units with `/specfullview 0`
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
 * fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.
+* removed old FFP renderer of features and units. It's deprecated because all recent engines mandate the minimal GLSL shader support, therefore the change should be transparent to the players and game developers.
