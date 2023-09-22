@@ -62,8 +62,8 @@ normal pathing instead - which may still end up taking them through that path).
 
 # Defs unification
 
-Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units has always been a point of confusion.
-Some of this has been allieviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
+Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units of measurement has always been a point of confusion.
+Some of this has been alleviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
 
 ## New def keys
 The following unit def keys now accept the same spelling as the ones exposed via `UnitDefs`.
@@ -219,7 +219,7 @@ These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.
 
 ### Colored text
 * added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
-* added the `Game.textColorCodes` table, containing the constants `Color` (`/255`), `ColorAndOutline` (the newly added `/254`), and `Reset` (`\008`).
+* added the `Game.textColorCodes` table, containing the constants `Color` (`\255`), `ColorAndOutline` (the newly added `\254`), and `Reset` (`\008`).
 
 ### Miscellaneous additions
 * add `Spring.IsPosInMap(x, z) → bool inPlayArea, bool inMap`. Currently, both of the returned values are the same and just check whether the position
