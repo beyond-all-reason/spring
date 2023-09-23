@@ -81,6 +81,7 @@ public:
 	}
 };
 
+inline SResourcePack operator * (SResourcePack pack, float scale) { return pack *= scale; }
 
 struct SResourceOrder {
 	SResourcePack use;

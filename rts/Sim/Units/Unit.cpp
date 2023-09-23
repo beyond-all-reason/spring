@@ -1889,34 +1889,25 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		if (beingBuilt) {
 			// build
 			const float step = std::min(amount / buildTime, 1.0f - buildProgress);
-			const float metalCostStep  = cost.metal  * step;
-			const float energyCostStep = cost.energy * step;
+			const auto resourceUse = cost * step;
 
-			if (builderTeam->res.metal < metalCostStep || builderTeam->res.energy < energyCostStep) {
-				// update the energy and metal required counts
-				builderTeam->resPull.metal  += metalCostStep;
-				builderTeam->resPull.energy += energyCostStep;
+			if (!builderTeam->HaveResources(resourceUse)) {
+				builderTeam->resPull += resourceUse;
 				return false;
 			}
 
 			if (!eventHandler.AllowUnitBuildStep(builder, this, step))
 				return false;
 
-			if (builder->UseMetal(metalCostStep)) {
-				// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
-				// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
-				if (builder->UseEnergy(energyCostStep)) {
-					health += (maxHealth * step);
-					health = std::min(health, maxHealth);
-					buildProgress += step;
+			/* Note, eventHandler.AllowUnitBuildStep() may have
+			 * changed stored resources. That is fine though. */
+			if (builder->UseResources(resourceUse)) {
+				health += (maxHealth * step);
+				health = std::min(health, maxHealth);
 
-					if (buildProgress >= 1.0f) {
-						FinishedBuilding(false);
-					}
-				} else {
-					// refund already-deducted metal if *energy* cost cannot be
-					builder->UseMetal(-metalCostStep);
-				}
+				buildProgress += step;
+				if (buildProgress >= 1.0f)
+					FinishedBuilding(false);
 			}
 
 			return true;
