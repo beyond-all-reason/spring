@@ -4837,6 +4837,13 @@ int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
  *
  * Should be called after each widget/unsynced gadget is loaded in widget/gadget handler. Use it to draw screen updates and process windows events.
  *
+ * @usage#
+ * local wantYield = Spring.Yield and Spring.Yield() -- nil check: not present in synced
+ * for wupget in pairs(wupgetsToLoad) do
+ *   loadWupget(wupget)
+ *   wantYield = wantYield and Spring.Yield()
+ * end
+ *
  * @number sleep time in milliseconds.
  * @treturn bool when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.
  */
