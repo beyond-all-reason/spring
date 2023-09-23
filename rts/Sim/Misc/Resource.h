@@ -19,6 +19,7 @@ struct SResourcePack {
 
 public:
 	SResourcePack() : res1(0.0f), res2(0.0f) {}
+	SResourcePack(const float v) : metal(v), energy(v) {}
 	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
 	CR_DECLARE_STRUCT(SResourcePack)
 
@@ -27,6 +28,12 @@ public:
 			if (res[i] != 0.0f) return false;
 		}
 		return true;
+	}
+	SResourcePack& cap_at (const SResourcePack &cap) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = std::min(res[i], cap.res[i]);
+
+		return *this;
 	}
 
 	decltype(std::begin(res)) begin() { return std::begin(res); }
@@ -54,8 +61,32 @@ public:
 
 	SResourcePack operator+(const SResourcePack& other) const {
 		SResourcePack out = *this;
+		out += other;
+		return out;
+	}
+	SResourcePack operator-(const SResourcePack& other) const {
+		SResourcePack out = *this;
+		out -= other;
+		return out;
+	}
+	SResourcePack operator*(const SResourcePack& other) const {
+		SResourcePack out = *this;
+		out *= other;
+		return out;
+	}
+	SResourcePack operator*(float scale) const {
+		SResourcePack out = *this;
+		out *= scale;
+		return out;
+	}
+
+	SResourcePack operator/(const SResourcePack& other) const {
+		SResourcePack out = *this;
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			out[i] += other.res[i];
+			if (!other.res[i])
+				out.res[i] = 1.0f;
+			else
+				out.res[i] /= other.res[i];
 		}
 		return out;
 	}
@@ -72,11 +103,24 @@ public:
 		}
 		return *this;
 	}
+	SResourcePack& operator*=(const SResourcePack& other) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] *= other.res[i];
+
+		return *this;
+	}
 
 	SResourcePack& operator*=(float scale) {
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			res[i] *= scale;
 		}
+		return *this;
+	}
+
+	SResourcePack& operator=(float value) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = value;
+
 		return *this;
 	}
 };

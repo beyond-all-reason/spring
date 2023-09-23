@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Sim/Misc/CollisionVolume.h"
+#include "Sim/Misc/Resource.h"
 #include <System/creg/STL_Map.h>
 
 struct S3DModel;
@@ -56,8 +57,7 @@ public:
 	int xsize;
 	int zsize;
 
-	float metal;
-	float energy;
+	SResourcePack cost;
 	float health;
 	float mass;
 	float crushResistance;

@@ -172,11 +172,8 @@ void CBeamLaser::UpdateSweep()
 	if (reloadStatus > gs->frameNum)
 		return;
 
-	if (teamHandler.Team(owner->team)->res.metal < weaponDef->metalcost) { return; }
-	if (teamHandler.Team(owner->team)->res.energy < weaponDef->energycost) { return; }
-
-	owner->UseEnergy(weaponDef->energycost / salvoSize);
-	owner->UseMetal(weaponDef->metalcost / salvoSize);
+	if (!teamHandler.Team(owner->team)->UseResources(weaponDef->cost))
+		return;
 
 	FireInternal(sweepFireState.GetSweepCurrDir());
 

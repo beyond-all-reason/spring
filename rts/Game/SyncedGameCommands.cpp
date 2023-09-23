@@ -493,10 +493,10 @@ public:
 		const std::string& args = action.GetArgs();
 
 		const int team = playerHandler.Player(action.GetPlayerID())->team;
-		const int amount = (args.empty())? 1000: std::atoi(args.c_str());
+		const float amount = (args.empty())? 1000: std::max(0, std::atoi(args.c_str()));
+		const SResourcePack resources(amount);
 
-		teamHandler.Team(team)->AddMetal(std::max(0, amount));
-		teamHandler.Team(team)->AddEnergy(std::max(0, amount));
+		teamHandler.Team(team)->AddResources(resources);
 		return true;
 	}
 };
