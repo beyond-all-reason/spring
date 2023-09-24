@@ -211,7 +211,7 @@ local function TryAction(actionMap, cmd, optLine, optWords, isRepeat, release, a
 end
 
 
-function actionHandler:KeyAction(press, _, _, isRepeat, actions)
+function actionHandler:KeyAction(press, _, _, isRepeat, _, actions)
   if (not(actions and next(actions))) then return false end
 
   local actionSet
