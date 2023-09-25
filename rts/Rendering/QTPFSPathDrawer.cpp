@@ -20,7 +20,7 @@
 #include "Sim/Path/QTPFS/PathManager.h"
 
 #include "Sim/Path/QTPFS/Components/Path.h"
-#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
+#include "Sim/Path/QTPFS/Components/PathSpeedModInfo.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
 #include "Rendering/Fonts/glFont.h"
@@ -348,8 +348,8 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 			if (md != nullptr) {
 				const QTPFS::NodeLayer& nl = pm->GetNodeLayer(md->pathType);
 
-				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathMaxSpeedModSystemComponent>();
-				const float smr = 1.0f / ( speedModComp.maxRelSpeedMod[nl.GetNodelayer()] );
+				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathSpeedModInfoSystemComponent>();
+				const float smr = 1.0f / ( speedModComp.relSpeedModinfos[nl.GetNodelayer()].max );
 				const bool los = (gs->cheatEnabled || gu->spectating);
 
 				for (int ty = starty; ty < endy; ++ty) {

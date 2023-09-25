@@ -16,7 +16,7 @@
 #include "PathDefines.h"
 #include "PathManager.h"
 
-#include "Utils/PathMaxSpeedModSystemUtils.h"
+#include "Utils/PathSpeedModInfoSystemUtils.h"
 
 #include "Game/GameSetup.h"
 #include "Game/LoadScreen.h"
@@ -38,9 +38,9 @@
 #include "System/StringUtil.h"
 
 #include "Components/Path.h"
-#include "Components/PathMaxSpeedMod.h"
+#include "Components/PathSpeedModInfo.h"
 #include "Components/RemoveDeadPaths.h"
-#include "Systems/PathMaxSpeedModSystem.h"
+#include "Systems/PathSpeedModInfoSystem.h"
 #include "Systems/RemoveDeadPathsSystem.h"
 #include "Registry.h"
 
@@ -148,7 +148,7 @@ QTPFS::PathManager::PathManager() {
 QTPFS::PathManager::~PathManager() {
 	isFinalized = false;
 
-	PathMaxSpeedModSystem::Shutdown();
+	PathSpeedModInfoSystem::Shutdown();
 	RemoveDeadPathsSystem::Shutdown();
 
 	// print out anything still left in the registry - there should be nothing
@@ -306,7 +306,7 @@ void QTPFS::PathManager::Load() {
 		sha512::dump_digest(modCheckSum, modCheckSumHex);
 
 		InitNodeLayersThreaded(MAP_RECTANGLE);
-		PathMaxSpeedModSystem::Init();
+		PathSpeedModInfoSystem::Init();
 		RemoveDeadPathsSystem::Init();
 
 		// NOTE:

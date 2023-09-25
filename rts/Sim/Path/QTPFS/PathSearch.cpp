@@ -14,7 +14,7 @@
 #include "Game/SelectedUnitsHandler.h"
 #include "Sim/Objects/SolidObject.h"
 
-#include "Components/PathMaxSpeedMod.h"
+#include "Components/PathSpeedModInfo.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
 
 #include "Map/ReadMap.h"
@@ -209,7 +209,7 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 }
 
 void QTPFS::PathSearch::UpdateHcostMult() {
-	auto& comp = systemGlobals.GetSystemComponent<PathMaxSpeedModSystemComponent>();
+	auto& comp = systemGlobals.GetSystemComponent<PathSpeedModInfoSystemComponent>();
 
 	// be as optimistic as possible: assume the remainder of our path will
 	// cover only flat terrain with maximum speed-modifier between nxtPoint
@@ -217,7 +217,12 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 	switch (searchType) {
 		// This guarantees the best path, but underestimates distance costs considerabily.
 		case PATH_SEARCH_ASTAR:
-			hCostMult = 1.0f / ( comp.maxRelSpeedMod[nodeLayer->GetNodelayer()] );
+			{
+				const float maxSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].max;
+				const float meanSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].mean;
+				const float chosenSpeedMod = maxSpeedMod - (maxSpeedMod - meanSpeedMod) * 0.25f;
+				hCostMult = 1.0f / chosenSpeedMod;
+			}
 			break;
 		case PATH_SEARCH_DIJKSTRA:
 			hCostMult = 0.0f;
