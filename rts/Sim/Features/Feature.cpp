@@ -270,25 +270,20 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		if (reclaimLeft <= 0.0f)
 			return false;
 
-		const CTeam* builderTeam = teamHandler.Team(builder->team);
+		const auto builderTeam = teamHandler.Team(builder->team);
 
 		// Work out how much to try to put back, based on the speed this unit would reclaim at.
 		const float step = amount / reclaimTime;
 
 		// Work out how much that will cost
-		const float metalUse  = step * defResources.metal;
-		const float energyUse = step * defResources.energy;
-		const bool canExecRepair = (builderTeam->res.metal >= metalUse && builderTeam->res.energy >= energyUse);
+		const auto resourceUse = defResources * step;
+		const bool canExecRepair = builderTeam->HaveResources(resourceUse);
 		const bool repairAllowed = !canExecRepair ? false : eventHandler.AllowFeatureBuildStep(builder, this, step);
 
 		if (repairAllowed) {
-			builder->UseMetal(metalUse);
-			builder->UseEnergy(energyUse);
-
-			resources.metal  += metalUse;
-			resources.energy += energyUse;
-			resources.metal  = std::min(resources.metal, defResources.metal);
-			resources.energy = std::min(resources.energy, defResources.energy);
+			builder->UseResources(resourceUse);
+			resources += resourceUse;
+			resources.cap_at(defResources);
 
 			reclaimLeft = std::clamp(reclaimLeft + step, 0.0f, 1.0f);
 
@@ -304,9 +299,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 			return true;
 		}
 
-		// update the energy and metal required counts
-		teamHandler.Team(builder->team)->resPull.energy += energyUse;
-		teamHandler.Team(builder->team)->resPull.metal  += metalUse;
+		builderTeam->resPull += resourceUse;
 		return false;
 	}
 

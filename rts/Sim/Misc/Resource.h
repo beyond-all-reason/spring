@@ -30,6 +30,13 @@ public:
 		return true;
 	}
 
+	SResourcePack& cap_at (const SResourcePack &cap) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = std::min(res[i], cap.res[i]);
+
+		return *this;
+	}
+
 	decltype(std::begin(res)) begin() { return std::begin(res); }
 	decltype(std::end(res)) end() { return std::end(res); }
 
