@@ -188,11 +188,14 @@ class LuaUnsyncedCtrl {
 
 		static int CreateDecal(lua_State* L);
 		static int DestroyDecal(lua_State* L);
-		static int SetDecalPos(lua_State* L);
-		static int SetDecalSize(lua_State* L);
+
+		static int SetDecalPosAndDims(lua_State* L);
+		static int SetDecalQuadPosAndHeight(lua_State* L);
 		static int SetDecalRotation(lua_State* L);
 		static int SetDecalTexture(lua_State* L);
 		static int SetDecalAlpha(lua_State* L);
+		static int SetDecalNormal(lua_State* L);
+		static int SetDecalCreationFrame(lua_State* L);
 
 		static int SDLSetTextInputRect(lua_State* L);
 		static int SDLStartTextInput(lua_State* L);

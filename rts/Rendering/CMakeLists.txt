@@ -28,8 +28,6 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/SunLighting.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/WaterRendering.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Decals/GroundDecalHandler.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Decals/DecalsDrawerGL4.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Decals/LegacyTrackHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/ProjectileDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/BitmapMuzzleFlame.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/BubbleProjectile.cpp"

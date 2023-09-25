@@ -861,7 +861,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_INT("highTrajectoryType", ud.highTrajectoryType);
 
 	ADD_BOOL( "leaveTracks",   ud.decalDef.leaveTrackDecals);
-	ADD_INT(  "trackType",     ud.decalDef.trackDecalType);
+	//ADD_INT(  "trackType",     ud.decalDef.trackDecalType);
 	ADD_FLOAT("trackWidth",    ud.decalDef.trackDecalWidth);
 	ADD_FLOAT("trackOffset",   ud.decalDef.trackDecalOffset);
 	ADD_FLOAT("trackStrength", ud.decalDef.trackDecalStrength);

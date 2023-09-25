@@ -2,7 +2,6 @@
 
 #include "IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/GroundDecalHandler.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
@@ -20,24 +19,13 @@ static IGroundDecalDrawer* GetInstance()
 {
 	IGroundDecalDrawer* instance = &nullDecalDrawer;
 	if (!IGroundDecalDrawer::GetDrawDecals()) {
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "off");
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "null");
 		return instance;
 	}
 
-#if 0
-	try {
-		instance = new CDecalsDrawerGL4();
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "GL4");
-	} catch(const unsupported_error& ex) {
-		LOG_L(L_ERROR, "IGroundDecalDrawer loading failed: %s", ex.what());
-	} catch(const opengl_error& ex) {
-		LOG_L(L_ERROR, "IGroundDecalDrawer loading failed: %s", ex.what());
-	}
-#endif
-
 	if (instance == &nullDecalDrawer) {
 		instance = new CGroundDecalHandler();
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "Legacy");
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "standard");
 	}
 
 	return instance;

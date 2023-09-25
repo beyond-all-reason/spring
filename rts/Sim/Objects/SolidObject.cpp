@@ -58,8 +58,6 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(selectionVolume), // unsynced, could also be ignored
 	CR_MEMBER(hitModelPieces),
 
-	CR_IGNORED(groundDecal), // loaded from render*Created
-
 	CR_MEMBER(frontdir),
 	CR_MEMBER(rightdir),
 	CR_MEMBER(updir),

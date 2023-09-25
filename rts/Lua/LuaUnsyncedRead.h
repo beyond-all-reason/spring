@@ -202,11 +202,15 @@ class LuaUnsyncedRead {
 		static int GetLogSections(lua_State* L);
 
 		static int GetAllDecals(lua_State* L);
-		static int GetDecalPos(lua_State* L);
-		static int GetDecalSize(lua_State* L);
+		static int GetDecalMiddlePos(lua_State* L);
+		static int GetDecalQuadPos(lua_State* L);
+		static int GetDecalSizeAndHeight(lua_State* L);
 		static int GetDecalRotation(lua_State* L);
 		static int GetDecalTexture(lua_State* L);
+		static int GetDecalTextures(lua_State* L);
 		static int GetDecalAlpha(lua_State* L);
+		static int GetDecalNormal(lua_State* L);
+		static int GetDecalCreationFrame(lua_State* L);
 		static int GetDecalType(lua_State* L);
 		static int GetDecalOwner(lua_State* L);
 
