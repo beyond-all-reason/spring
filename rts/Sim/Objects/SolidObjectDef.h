@@ -28,7 +28,7 @@ public:
 	float groundDecalDecaySpeed;
 
 	bool leaveTrackDecals;
-	int trackDecalType;
+	//int trackDecalType;
 	float trackDecalWidth;
 	float trackDecalOffset;
 	float trackDecalStrength;

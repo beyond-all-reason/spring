@@ -156,7 +156,7 @@ public:
 	int2 GetSize() const;
 	std::string GetName() const { return name; }
 
-	unsigned int GetTexID() const { return atlasTexID; }
+	uint32_t GetTexID() const { return atlasTexID; }
 	const uint32_t GetTexTarget() const;
 
 	void BindTexture();

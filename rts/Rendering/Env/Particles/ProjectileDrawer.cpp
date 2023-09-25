@@ -8,6 +8,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/LoadScreen.h"
 #include "Lua/LuaParser.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
@@ -348,70 +349,7 @@ void CProjectileDrawer::Kill() {
 	fxShaders = { nullptr };
 	fsShadowShader = nullptr;
 
-	if (depthFBO) {
-		if (depthFBO->IsValid()) {
-			depthFBO->Bind();
-			depthFBO->DetachAll();
-			depthFBO->Unbind();
-		}
-		depthFBO->Kill();
-		spring::SafeDelete(depthFBO);
-	}
-
-	if (depthTexture > 0u) {
-		glDeleteTextures(1, &depthTexture);
-		depthTexture = 0u;
-	}
-
 	configHandler->Set("SoftParticles", wantSoften);
-}
-
-void CProjectileDrawer::ViewResize()
-{
-	if (!CheckSoftenExt())
-		return;
-
-	if (depthTexture != 0u) {
-		glDeleteTextures(1, &depthTexture);
-		depthTexture = 0u;
-	}
-	glGenTextures(1, &depthTexture);
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, depthTexture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //might break something else
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-	GLint depthFormat = static_cast<GLint>(CGlobalRendering::DepthBitsToFormat(globalRendering->supportDepthBufferBitDepth));
-	glTexImage2D(GL_TEXTURE_2D, 0, depthFormat, globalRendering->viewSizeX, globalRendering->viewSizeY, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	if (depthFBO) {
-		if (depthFBO->IsValid()) {
-			depthFBO->Bind();
-			depthFBO->DetachAll();
-			depthFBO->Unbind();
-		}
-		depthFBO->Kill();
-		spring::SafeDelete(depthFBO); //probably redundant
-	}
-
-	depthFBO = new FBO(); //probably redundant
-	depthFBO->Init(false);
-
-	depthFBO->Bind();
-	depthFBO->AttachTexture(depthTexture, GL_TEXTURE_2D, GL_DEPTH_ATTACHMENT_EXT);
-	glDrawBuffer(GL_NONE);
-	depthFBO->CheckStatus("PROJECTILE-DRAWER-DEPTHFBO");
-	depthFBO->Unbind();
 }
 
 bool CProjectileDrawer::CheckSoftenExt()
@@ -420,28 +358,6 @@ bool CProjectileDrawer::CheckSoftenExt()
 		FBO::IsSupported() &&
 		GLEW_EXT_framebuffer_blit; //eval once
 	return result;
-}
-
-void CProjectileDrawer::CopyDepthBufferToTexture()
-{
-	if (lastDrawFrame == globalRendering->drawFrame) //copy once per draw frame
-		return;
-
-#if 1
-	//no need to touch glViewport
-	const std::array<int, 4> srcScreenRect = { globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewPosX + globalRendering->viewSizeX, globalRendering->viewPosY + globalRendering->viewSizeY };
-	const std::array<int, 4> dstScreenRect = { 0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY };
-
-	FBO::Blit(-1, depthFBO->GetId(), srcScreenRect, dstScreenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-#else
-	GLint activeTex;
-	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTex);
-	glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, globalRendering->viewPosX, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
-	glActiveTexture(activeTex);
-#endif
-
-	lastDrawFrame = globalRendering->drawFrame;
 }
 
 void CProjectileDrawer::ParseAtlasTextures(
@@ -827,8 +743,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
 
 		if (needSoften) {
-			CopyDepthBufferToTexture();
-			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
+			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture());
 		}
 
 		fxShaders[needSoften]->Enable();
@@ -1008,8 +923,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	if (needSoften) {
-		CopyDepthBufferToTexture();
-		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture());
 	}
 
 	fxShaders[needSoften]->Enable();

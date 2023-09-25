@@ -6,7 +6,6 @@
 #include "Rendering/UnitDefImage.h"
 #include "Game/GlobalUnsynced.h"
 
-struct SolidObjectGroundDecal;
 struct S3DModel;
 class CUnitDrawer;
 struct UnitDef;
@@ -26,7 +25,6 @@ public:
 	const S3DModel* GetModel() const;
 	void PostLoad();
 public:
-	SolidObjectGroundDecal* decal; //FIXME defined in legacy decal handler with a lot legacy stuff
 	std::string modelName;
 
 	float3 pos;

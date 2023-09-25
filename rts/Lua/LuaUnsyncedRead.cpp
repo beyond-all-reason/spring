@@ -42,7 +42,6 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -4532,11 +4531,8 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
  */
 int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto& decals = decalsGl4->GetAllDecals();
+	/*
+	const auto& decals = groundDecals->GetAllDecals();
 
 	int i = 1;
 	lua_createtable(L, decals.size(), 0);
@@ -4547,6 +4543,9 @@ int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 		lua_pushnumber(L, d.GetIdx());
 		lua_rawseti(L, -2, i++);
 	}
+	*/
+	//static_assert(false);
+	assert(false);
 
 	return 1;
 }
@@ -4562,14 +4561,15 @@ int LuaUnsyncedRead::GetAllDecals(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalPos(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
+	/*
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
 	lua_pushnumber(L, decal.pos.x);
 	lua_pushnumber(L, decal.pos.y);
 	lua_pushnumber(L, decal.pos.z);
+	*/
+	//static_assert(false);
+	assert(false);
+
 	return 3;
 }
 
@@ -4583,13 +4583,12 @@ int LuaUnsyncedRead::GetDecalPos(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalSize(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//lua_pushnumber(L, decal.size.x);
+	//lua_pushnumber(L, decal.size.y);
+	//static_assert(false);
+	assert(false);
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.size.x);
-	lua_pushnumber(L, decal.size.y);
 	return 2;
 }
 
@@ -4602,12 +4601,11 @@ int LuaUnsyncedRead::GetDecalSize(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//lua_pushnumber(L, decal.rot);
+	//static_assert(false);
+	assert(false);
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.rot);
 	return 1;
 }
 
@@ -4620,12 +4618,11 @@ int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//lua_pushsstring(L, decal.GetTexture());
+	//static_assert(false);
+	assert(false);
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushsstring(L, decal.GetTexture());
 	return 1;
 }
 
@@ -4638,12 +4635,11 @@ int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//lua_pushnumber(L, decal.alpha);
+	//static_assert(false);
+	assert(false);
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.alpha);
 	return 1;
 }
 
@@ -4656,24 +4652,23 @@ int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
+	//if (decal.owner == nullptr)
+	//	return 0;
+	//
+	////XXX: I know, not very fast, but you cannot dynamic_cast a void* back to a CUnit*
+	////     also it's not called very often and so doesn't matter
+	//for (const CUnit* u: unitHandler.GetActiveUnits()) {
+	//	if (u != decal.owner)
+	//		continue;
+	//
+	//	lua_pushnumber(L, u->id);
+	//	return 1;
+	//}
+	//static_assert(false);
+	assert(false);
 
-	if (decal.owner == nullptr)
-		return 0;
-
-	//XXX: I know, not very fast, but you cannot dynamic_cast a void* back to a CUnit*
-	//     also it's not called very often and so doesn't matter
-	for (const CUnit* u: unitHandler.GetActiveUnits()) {
-		if (u != decal.owner)
-			continue;
-
-		lua_pushnumber(L, u->id);
-		return 1;
-	}
 
 	return 0;
 }
@@ -4687,11 +4682,8 @@ int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
  */
 int LuaUnsyncedRead::GetDecalType(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
+	/*
+	const auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
 	switch (decal.type) {
 		case CDecalsDrawerGL4::Decal::EXPLOSION: {
 			lua_pushliteral(L, "explosion");
@@ -4706,6 +4698,10 @@ int LuaUnsyncedRead::GetDecalType(lua_State* L)
 			lua_pushliteral(L, "unknown");
 		}
 	}
+	*/
+	//static_assert(false);
+	assert(false);
+
 	return 1;
 }
 

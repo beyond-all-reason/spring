@@ -49,7 +49,6 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
@@ -4453,11 +4452,7 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
  */
 int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const int idx = decalsGl4->CreateLuaDecal();
+	const int idx = groundDecals->CreateLuaDecal();
 	if (idx > 0) {
 		lua_pushnumber(L, idx);
 		return 1;
@@ -4474,12 +4469,10 @@ int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
  */
 int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.Free();
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal->Free();
+	//static_assert(false);
+	assert(false);
 	return 0;
 }
 
@@ -4495,17 +4488,16 @@ int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
 	const float3 newPos(luaL_checkfloat(L, 2),
 	luaL_checkfloat(L, 3),
 	luaL_checkfloat(L, 4));
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.pos = newPos;
-	lua_pushboolean(L, decal.InvalidateExtents());
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal.pos = newPos;
+	//lua_pushboolean(L, decal.InvalidateExtents());
+	//static_assert(false);
+	assert(false);
+
 	return 1;
 }
 
@@ -4520,15 +4512,14 @@ int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
 	const float2 newSize(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.size = newSize;
-	lua_pushboolean(L, decal.InvalidateExtents());
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal.size = newSize;
+	//lua_pushboolean(L, decal.InvalidateExtents());
+	//static_assert(false);
+	assert(false);
+
 	return 1;
 }
 
@@ -4542,13 +4533,12 @@ int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal.rot = luaL_checkfloat(L, 2);
+	//lua_pushboolean(L, decal.InvalidateExtents());
+	//static_assert(false);
+	assert(false);
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.rot = luaL_checkfloat(L, 2);
-	lua_pushboolean(L, decal.InvalidateExtents());
 	return 1;
 }
 
@@ -4562,13 +4552,12 @@ int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal.SetTexture(luaL_checksstring(L, 2));
+	//decal.Invalidate();
+	//static_assert(false);
+	assert(false);
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.SetTexture(luaL_checksstring(L, 2));
-	decal.Invalidate();
 	return 0;
 }
 
@@ -4582,13 +4571,13 @@ int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
+	//decal.alpha = luaL_checkfloat(L, 2);
+	//decal.Invalidate();
+	//static_assert(false);
+	assert(false);
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.alpha = luaL_checkfloat(L, 2);
-	decal.Invalidate();
+
 	return 0;
 }
 

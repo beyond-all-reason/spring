@@ -12,6 +12,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelRenderContainer.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "System/EventClient.h"
 #include "System/UnorderedSet.hpp"
 
@@ -46,16 +47,13 @@ public:
 	bool WantsEvent(const std::string& eventName) {
 		return
 			(eventName == "RenderProjectileCreated") ||
-			(eventName == "RenderProjectileDestroyed") ||
-			(eventName == "ViewResize");
+			(eventName == "RenderProjectileDestroyed");
 	}
 	bool GetFullRead() const { return true; }
 	int GetReadAllyTeam() const { return AllAccessTeam; }
 
 	void RenderProjectileCreated(const CProjectile* projectile);
 	void RenderProjectileDestroyed(const CProjectile* projectile);
-
-	void ViewResize() override;
 
 	unsigned int NumSmokeTextures() const { return (smokeTextures.size()); }
 
@@ -70,8 +68,7 @@ public:
 		return
 			CheckSoftenExt() &&
 			fxShaders[1] && fxShaders[1]->IsValid() &&
-			depthTexture != 0u &&
-			depthFBO && depthFBO->IsValid();
+			depthBufferCopy->IsValid();
 	};
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }
@@ -79,8 +76,6 @@ public:
 
 	int EnableDrawOrder(int b) { return wantDrawOrder = b; }
 	int ToggleDrawOrder() { return EnableDrawOrder((wantDrawOrder + 1) % 2); }
-
-	void CopyDepthBufferToTexture();
 
 	const AtlasedTexture* GetSmokeTexture(unsigned int i) const { return smokeTextures[i]; }
 
@@ -173,12 +168,8 @@ private:
 
 	bool drawSorted = true;
 
-	GLuint depthTexture = 0u;
-	FBO* depthFBO = nullptr;
 	std::array<Shader::IProgramObject*, 2> fxShaders = { nullptr };
 	Shader::IProgramObject* fsShadowShader = nullptr;
-
-	uint32_t lastDrawFrame = 0; //normal, reflection
 
 	constexpr static int WANT_SOFTEN_COUNT = 2;
 	int wantSoften = 0;

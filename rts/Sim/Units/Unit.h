@@ -38,7 +38,6 @@ class DamageArray;
 class DynDamageArray;
 struct SolidObjectDef;
 struct UnitDef;
-struct UnitTrackStruct;
 struct UnitLoadParams;
 struct SLosInstance;
 
@@ -562,7 +561,6 @@ public:
 
 	float iconRadius = 0.0f;
 
-	UnitTrackStruct* myTrack = nullptr;
 	icon::CIconData* myIcon = nullptr;
 
 	bool drawIcon = true;

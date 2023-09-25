@@ -18,6 +18,23 @@ void* spring::AllocateAlignedMemory(size_t size, size_t alignment)
 #endif
 }
 
+void* spring::ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment)
+{
+#ifdef _WIN32
+    return _aligned_realloc(ptr, size, alignment);
+#else
+    ptr = realloc(ptr, size);
+    if (reinterpret_cast<std::uintptr_t>(ptr) % alignment == 0)
+        return ptr;
+
+    // bad luck
+    void* newPtr = nullptr;
+    posix_memalign(&newPtr, alignment, size);
+    memcpy(ptr, newPtr, size);
+    return newPtr;
+#endif
+}
+
 void spring::FreeAlignedMemory(void* ptr)
 {
     if (ptr)

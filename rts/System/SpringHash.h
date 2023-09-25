@@ -10,53 +10,53 @@
 #include <memory>
 
 namespace spring {
-	static inline std::uint32_t LiteHash(const void* p, unsigned size, std::uint32_t cs0 = 0) {
+	static inline uint32_t LiteHash(const void* p, unsigned size, uint32_t cs0 = 0) {
 		return static_cast<uint32_t>(XXH3_64bits_withSeed(p, static_cast<size_t>(size), static_cast<XXH64_hash_t>(cs0)));
 	}
 
 	template<typename T>
-	static inline std::uint32_t LiteHash(const T& p, std::uint32_t cs0 = 0) { return LiteHash(std::addressof(p), sizeof(T), cs0); }
+	static inline uint32_t LiteHash(const T& p, uint32_t cs0 = 0) { return LiteHash(std::addressof(p), sizeof(T), cs0); }
 
 	template<typename T>
-	static inline std::uint32_t LiteHash(const T* p, std::uint32_t cs0 = 0) { return LiteHash(p, sizeof(T), cs0); }
+	static inline uint32_t LiteHash(const T* p, uint32_t cs0 = 0) { return LiteHash(p, sizeof(T), cs0); }
 
 
 	template<typename T>
 	struct synced_hash {
-		std::uint32_t operator()(const T& s) const;
+		uint32_t operator()(const T& s) const;
 	};
 
 	template<>
-	struct synced_hash<std::int64_t> {
+	struct synced_hash<int64_t> {
 	public:
-		std::uint32_t operator()(const std::int64_t& i) const
+		uint32_t operator()(const int64_t& i) const
 		{
-			return static_cast<std::uint32_t>(i) ^ static_cast<std::uint32_t>(i >> 32);
+			return static_cast<uint32_t>(i) ^ static_cast<uint32_t>(i >> 32);
 		}
 	};
 
 	template<>
-	struct synced_hash<std::uint64_t> {
+	struct synced_hash<uint64_t> {
 	public:
-		std::uint32_t operator()(const std::int64_t& i) const
+		uint32_t operator()(const int64_t& i) const
 		{
-			return static_cast<std::uint32_t>(i) ^ static_cast<std::uint32_t>(i >> 32);
+			return static_cast<uint32_t>(i) ^ static_cast<uint32_t>(i >> 32);
 		}
 	};
 
 	template<>
 	struct synced_hash<std::string> {
 	public:
-		std::uint32_t operator()(const std::string& s) const
+		uint32_t operator()(const std::string& s) const
 		{
-			return LiteHash(s.data(), static_cast<std::uint32_t>(s.size()), 0);
+			return LiteHash(s.data(), static_cast<uint32_t>(s.size()), 0);
 		}
 	};
 
 	template<typename T1, typename T2>
 	struct synced_hash<std::pair<T1, T2>> {
 	public:
-		std::uint32_t operator()(const std::pair<T1, T2>& p) const
+		uint32_t operator()(const std::pair<T1, T2>& p) const
 		{
 			synced_hash<T1> h1;
 			synced_hash<T2> h2;
@@ -68,7 +68,7 @@ namespace spring {
 	template<typename T>
 	inline uint32_t synced_hash<T>::operator()(const T& s) const {
 		if constexpr (std::is_integral<T>::value && sizeof(T) <= sizeof(uint32_t)) {
-			return static_cast<std::uint32_t>(s);
+			return static_cast<uint32_t>(s);
 		}
 		else {
 			static_assert(std::has_unique_object_representations<T>::value, "synced_hash not auto-implemented for this type");

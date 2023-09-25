@@ -3581,6 +3581,10 @@ public:
 			projectileDrawer->textureAtlas->ReloadTextures();
 			projectileDrawer->groundFXAtlas->ReloadTextures();
 		};
+		auto decalFunc = []() {
+			LOG("Reloading Decal textures");
+			groundDecals->ReloadTextures();
+		};
 
 		std::array argsExec = {
 			ArgTuple(hashString("lua") , false, luaFunc),
@@ -3589,6 +3593,8 @@ public:
 			ArgTuple(hashString("smf") , false, smfFunc),
 			ArgTuple(hashString("cegs"), false, cegFunc),
 			ArgTuple(hashString("ceg") , false, cegFunc),
+			ArgTuple(hashString("decal")  , false, decalFunc),
+			ArgTuple(hashString("decals") , false, decalFunc),
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);

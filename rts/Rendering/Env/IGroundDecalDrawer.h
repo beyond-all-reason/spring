@@ -1,11 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef IGROUND_DECAL_DRAWER_H
-#define IGROUND_DECAL_DRAWER_H
+#pragma once
+
+#include "Decals/GroundDecal.h"
 
 class CSolidObject;
 class GhostSolidObject;
-
 
 class IGroundDecalDrawer
 {
@@ -18,14 +18,22 @@ public:
 	static IGroundDecalDrawer* singleton;
 
 public:
+	virtual void ReloadTextures() = 0;
+
 	virtual void Draw() = 0;
 
-	virtual void AddSolidObject(CSolidObject* object) = 0;
-	virtual void ForceRemoveSolidObject(CSolidObject* object) = 0;
+	virtual size_t CreateLuaDecal() = 0;
+	virtual GroundDecal* GetDecalByIdx(size_t idx) = 0;
+
+	const std::vector<GroundDecal>& GetPermanentDecals() const { return permanentDecals; }
+	const std::vector<GroundDecal>& GetTemporaryDecals() const { return temporaryDecals; }
+
+	virtual void AddSolidObject(const CSolidObject* object) = 0;
+	virtual void ForceRemoveSolidObject(const CSolidObject* object) = 0;
 
 	//FIXME move to eventhandler?
-	virtual void GhostDestroyed(GhostSolidObject* gb) = 0;
-	virtual void GhostCreated(CSolidObject* object, GhostSolidObject* gb) = 0;
+	virtual void GhostDestroyed(const GhostSolidObject* gb) = 0;
+	virtual void GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) = 0;
 
 public:
 	virtual ~IGroundDecalDrawer() {}
@@ -34,6 +42,8 @@ protected:
 	virtual void OnDecalLevelChanged() = 0;
 
 protected:
+	std::vector<GroundDecal> permanentDecals;
+	std::vector<GroundDecal> temporaryDecals;
 	static int decalLevel;
 };
 
@@ -42,18 +52,21 @@ protected:
 class NullGroundDecalDrawer: public IGroundDecalDrawer
 {
 public:
+	void ReloadTextures() override {}
+
 	void Draw() override {}
 
-	void AddSolidObject(CSolidObject* object) override {}
-	void ForceRemoveSolidObject(CSolidObject* object) override {}
+	void AddSolidObject(const CSolidObject* object) override {}
+	void ForceRemoveSolidObject(const CSolidObject* object) override {}
 
-	void GhostDestroyed(GhostSolidObject* gb) override {}
-	void GhostCreated(CSolidObject* object, GhostSolidObject* gb) override {}
+	void GhostDestroyed(const GhostSolidObject* gb) override {}
+	void GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) override {}
 
 	void OnDecalLevelChanged() override {}
+
+	size_t CreateLuaDecal() override { return 0; };
+	GroundDecal* GetDecalByIdx(size_t idx) override { return nullptr; }
 };
 
 
 #define groundDecals IGroundDecalDrawer::singleton
-
-#endif // IGROUND_DECAL_DRAWER_H
