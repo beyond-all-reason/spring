@@ -195,6 +195,9 @@ public:
 	/// Point at which a region is considered bad for raw path tracing.
 	float pfRawMoveSpeedThreshold;
 
+	/// Increases Hcost in QTPFS pathing. 0.0 = no increase, 1.0 = increase to the mean move cost, 2.0 increase to max move cost.
+	float pfHcostMult;
+
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 

@@ -10,6 +10,7 @@
 #include "PathCache.h"
 #include "NodeLayer.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/Log/ILog.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Sim/Objects/SolidObject.h"
@@ -220,7 +221,7 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 			{
 				const float maxSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].max;
 				const float meanSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].mean;
-				const float chosenSpeedMod = maxSpeedMod - (maxSpeedMod - meanSpeedMod) * 0.25f;
+				const float chosenSpeedMod = maxSpeedMod - (maxSpeedMod - meanSpeedMod) * modInfo.pfHcostMult;
 				hCostMult = 1.0f / chosenSpeedMod;
 			}
 			break;
