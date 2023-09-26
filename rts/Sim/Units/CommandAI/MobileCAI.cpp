@@ -74,7 +74,6 @@ CR_REG_METADATA(CMobileCAI, (
 	CR_MEMBER(lastCommandFrame),
 	CR_MEMBER(lastCloseInTry),
 	CR_MEMBER(lastBuggerOffTime),
-	CR_MEMBER(numNonMovingCalls),
 	CR_MEMBER(lastIdleCheck),
 
 	CR_PREALLOC(GetPreallocContainer)
@@ -998,12 +997,11 @@ void CMobileCAI::BuggerOff(const float3& pos, float radius)
 		return;
 	}
 
-	if (lastBuggerOffTime <= (gs->frameNum - BUGGER_OFF_TTL)) {
+	if (buggerOffPos != pos) {
 		buggerOffAttempts = 0;
 	}
 
 	lastBuggerOffTime = gs->frameNum;
-	// numNonMovingCalls = 0;
 
 	buggerOffPos = pos;
 	buggerOffRadius = radius;
@@ -1011,86 +1009,51 @@ void CMobileCAI::BuggerOff(const float3& pos, float radius)
 
 void CMobileCAI::NonMoving()
 {
-	// wait one SlowUpdate for more commands to enter the queue
-	// (so the bugger-off dir can be chosen more intelligently)
-	if (!commandQue.empty() && (++numNonMovingCalls) <= 1)
-		return;
-
 	if (owner->UsingScriptMoveType())
 		return;
 
 	if (lastBuggerOffTime <= (gs->frameNum - BUGGER_OFF_TTL))
 		return;
 
-	// increase the target distance if continuing to fail to clear
-	float targetDistance = buggerOffRadius + owner->radius*(1 + 0.3*buggerOffAttempts);
-	if (((owner->pos - buggerOffPos) * XZVector).SqLength() >= Square(targetDistance))
+	if (((owner->pos - buggerOffPos) * XZVector).SqLength() >= Square(buggerOffRadius + owner->radius * 1.4f))
 		return;
 
 	float3 buggerPos = -OnesVector;
 	float3 buggerVec;
 	float3 buggerDirection;
 
-	if (buggerOffAttempts > 4) {
-		// previous move commands failed, just try random locations
+	// increase the target distance if continuing to fail to clear
+	float targetDistance = buggerOffRadius + owner->radius * (1.0f + 0.4f * buggerOffAttempts);
+
+	if (buggerOffAttempts < 4) {
+		// head in the opposite direction of the center. since the buggeroff is a circle,
+		// this is the shortest distance out. future optimization would be to make rectangular buggerOffs
+		buggerVec = buggerOffPos - owner->pos;
+		buggerDirection = buggerVec;
+		buggerDirection = -(buggerDirection.Normalize2D());
+		if (buggerDirection == buggerVec) {
+			// unit was directly on top of buggerOffPos, so zero length direction
+			buggerDirection = RgtVector;
+		}
+		// if closest position isn't acceptable, then search rotations for better positions
+		constexpr float3 rotation45deg = {0.7071067811865475, 0, 0.7071067811865475};
+		for (int i = 0; i < 10; i++) {
+			buggerPos = buggerOffPos + buggerDirection * targetDistance;
+			if (owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) && buggerPos.IsInMap()) {
+				break;
+			}
+			if (i == 0) {
+				// everything is on a grid anyways, just search 45 degree rotations from nearest axis
+				buggerDirection = buggerDirection.snapToAxis();
+			} else {
+				buggerDirection = buggerDirection.rotate2D(rotation45deg);
+			}
+		}
+	}	else {
+		// previous bugger off attempts failed, just try random locations
 		for (int i = 0; i < 16 && !buggerPos.IsInMap(); i++) {
 			buggerVec = gsRNG.NextVector2D();
-			buggerPos = buggerOffPos + buggerVec.Normalize() * buggerOffRadius * 1.5f;
-		}
-	}
-	else {
-		size_t i = 0;
-		size_t j = 0;
-
-		for (i =     0; (i < commandQue.size() && !commandQue[i].IsMoveCommand()); i++) {}
-		for (j = i + 1; (j < commandQue.size() && !commandQue[j].IsMoveCommand()); j++) {}
-
-		// if the next command is a move command, should move towards it
-		if (i < commandQue.size() && j < commandQue.size()) {
-			buggerDirection = (commandQue[j].GetPos(0) - commandQue[i].GetPos(0)).Normalize2D();
-
-			// move perpendicular to the next build command, so that unit doesnt move onto it
-			if (commandQue[j].IsBuildCommand()) {
-				buggerDirection = float3(buggerDirection.z, 0, -buggerDirection.x);
-			}
-
-			buggerPos = buggerOffPos + (buggerDirection * (targetDistance));
-			if (!owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) || !buggerPos.IsInMap()) {
-				buggerPos = -OnesVector;
-			}
-			if (commandQue[j].IsBuildCommand()) {
-				// try the other side
-				buggerPos = buggerOffPos + (-buggerDirection * (targetDistance));
-				if (!owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) || !buggerPos.IsInMap()) {
-					buggerPos = -OnesVector;
-				}
-			}
-		}
-
-		if (buggerPos.x == -1.0f) {
-			// head in the opposite direction of the center. since the buggeroff is a circle,
-			// this is the shortest distance out. future optimization would be to make rectangular buggerOffs
-			buggerVec = buggerOffPos - owner->pos;
-			buggerDirection = buggerVec;
-			buggerDirection = -(buggerDirection).Normalize2D();
-			if (buggerDirection == buggerVec) {
-				// unit was directly on top of buggerOffPos, so zero length direction
-				buggerDirection = RgtVector;
-			}
-			// if closest position isn't acceptable, then search rotations for better positions
-			constexpr float3 rotation45deg = {0.7071067811865475, 0, 0.7071067811865475};
-			for (int i = 0; i < 10; i++) {
-				buggerPos = buggerOffPos + (buggerDirection * (targetDistance));
-				if (owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) && buggerPos.IsInMap()) {
-					break;
-				}
-				if (i == 0) {
-					// everything is on a grid anyways, just search 45 degree rotations from nearest axis
-					buggerDirection = buggerDirection.snapToAxis();
-				} else {
-					buggerDirection = buggerDirection.rotate2D(rotation45deg);
-				}
-			}
+			buggerPos = buggerOffPos + buggerVec.Normalize() * (buggerOffRadius + owner->radius * 2.0f);
 		}
 	}
 
@@ -1100,7 +1063,6 @@ void CMobileCAI::NonMoving()
 	commandQue.push_front(c);
 
 	buggerOffAttempts++;
-	numNonMovingCalls = 0;
 }
 
 void CMobileCAI::FinishCommand()
