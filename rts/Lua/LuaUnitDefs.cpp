@@ -689,8 +689,8 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("metalMake",      ud.metalMake);
 	ADD_FLOAT("makesMetal",     ud.makesMetal);
 	ADD_FLOAT("energyMake",     ud.energyMake);
-	ADD_FLOAT("metalCost",      ud.metal);
-	ADD_FLOAT("energyCost",     ud.energy);
+	ADD_FLOAT("metalCost",      ud.cost.metal);
+	ADD_FLOAT("energyCost",     ud.cost.energy);
 	ADD_FLOAT("buildTime",      ud.buildTime);
 	ADD_FLOAT("buildeeBuildRadius", ud.buildeeBuildRadius);
 	ADD_FLOAT("extractsMetal",  ud.extractsMetal);

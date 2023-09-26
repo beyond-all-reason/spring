@@ -265,8 +265,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	power = unitDef->power;
 	maxHealth = unitDef->health;
 	health = beingBuilt? 0.1f: unitDef->health;
-	cost.metal = unitDef->metal;
-	cost.energy = unitDef->energy;
+	cost = unitDef->cost;
 	buildTime = unitDef->buildTime;
 	armoredMultiple = unitDef->armoredMultiple;
 	armorType = unitDef->armorType;

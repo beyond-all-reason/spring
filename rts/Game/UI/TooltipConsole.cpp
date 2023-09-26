@@ -348,7 +348,7 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		health           += unit->health * healthScale;
 		maxHealth        += unit->maxHealth * healthScale;
 		experience        = (experience * (count - 1) + unit->experience) / count;
-		cost             += decoyDef->metal + (decoyDef->energy / 60.0f);
+		cost             += decoyDef->cost.metal + (decoyDef->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, decoyDef->maxWeaponRange);
 		metalMake        += metalMake_;
 		metalUse         += metalUse_;

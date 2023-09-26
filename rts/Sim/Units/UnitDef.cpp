@@ -243,8 +243,7 @@ UnitDef::UnitDef()
 	, showNanoSpray(false)
 	, nanoColor(ZeroVector)
 	, maxThisUnit(0)
-	, realMetalCost(0.0f)
-	, realEnergyCost(0.0f)
+	, realCost(0.0f)
 	, realMetalUpkeep(0.0f)
 	, realEnergyUpkeep(0.0f)
 	, realBuildTime(0.0f)
@@ -305,12 +304,12 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	if (health <= 0.0f)
 		throw content_error (unitName + ".health <= 0");
 
-	metal  = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
-	if (metal < 0.0f)
+	cost.metal = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
+	if (cost.metal < 0.0f)
 		throw content_error (unitName + ".metalCost < 0");
 
-	energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
-	if (energy < 0.0f)
+	cost.energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
+	if (cost.energy < 0.0f)
 		throw content_error (unitName + ".energyCost < 0");
 
 	buildTime = udTable.GetFloat("buildTime", 100.0f);
@@ -319,7 +318,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 	buildeeBuildRadius = udTable.GetFloat("buildeeBuildRadius", -1.f);
 
-	mass = std::clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
+	mass = std::clamp(udTable.GetFloat("mass", cost.metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 	crushResistance = udTable.GetFloat("crushResistance", mass);
 
 	cobID = udTable.GetInt("cobID", -1);
@@ -614,7 +613,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		LOG_L(L_ERROR, "Couldn't find WeaponDef NOWEAPON and selfDestructAs for %s is missing!", unitName.c_str());
 	}
 
-	power = udTable.GetFloat("power", (metal + (energy / 60.0f)));
+	power = udTable.GetFloat("power", (cost.metal + (cost.energy / 60.0f)));
 
 	// Prevent a division by zero in experience calculations.
 	if (power < 1.0e-3f) {
@@ -840,20 +839,17 @@ void UnitDef::SetNoCost(bool noCost)
 {
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
-		realMetalCost    = metal;
-		realEnergyCost   = energy;
+		realCost         = cost;
 		realMetalUpkeep  = metalUpkeep;
 		realEnergyUpkeep = energyUpkeep;
 		realBuildTime    = buildTime;
 
-		metal        =  1.0f;
-		energy       =  1.0f;
+		cost         =  1.0f;
 		buildTime    = 10.0f;
 		metalUpkeep  =  0.0f;
 		energyUpkeep =  0.0f;
 	} else {
-		metal        = realMetalCost;
-		energy       = realEnergyCost;
+		cost         = realCost;
 		buildTime    = realBuildTime;
 		metalUpkeep  = realMetalUpkeep;
 		energyUpkeep = realEnergyUpkeep;

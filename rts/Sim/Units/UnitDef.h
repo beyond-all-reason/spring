@@ -385,8 +385,7 @@ private:
 	void ParseWeaponsTable(const LuaTable& weaponsTable);
 	void CreateYardMap(std::string&& yardMapStr);
 
-	float realMetalCost;
-	float realEnergyCost;
+	SResourcePack realCost;
 	float realMetalUpkeep;
 	float realEnergyUpkeep;
 	float realBuildTime;

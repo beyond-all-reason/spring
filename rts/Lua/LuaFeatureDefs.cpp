@@ -349,8 +349,8 @@ static bool InitParamMap()
 	ADD_STRING("name",     fd.name);
 	ADD_STRING("tooltip",  fd.description);
 
-	ADD_FLOAT("metal",       fd.metal);
-	ADD_FLOAT("energy",      fd.energy);
+	ADD_FLOAT("metal",       fd.cost.metal);
+	ADD_FLOAT("energy",      fd.cost.energy);
 	ADD_FLOAT("maxHealth",   fd.health);
 	ADD_FLOAT("reclaimTime", fd.reclaimTime);
 

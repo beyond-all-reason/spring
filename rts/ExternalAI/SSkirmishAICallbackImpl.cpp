@@ -2493,11 +2493,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getMakesResource(int skirmishAIId,
 EXPORT(float) skirmishAiCallback_UnitDef_getCost(int skirmishAIId, int unitDefId, int resourceId) {
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return ud->metal;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return ud->energy;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return ud->cost[resourceId];
 
 	return 0.0f;
 }
@@ -4065,11 +4062,8 @@ EXPORT(float) skirmishAiCallback_FeatureDef_getContainedResource(int skirmishAII
 
 	const FeatureDef* fd = getFeatureDefById(skirmishAIId, featureDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return fd->metal;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return fd->energy;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return fd->cost[resourceId];
 
 	return 0.0f;
 }

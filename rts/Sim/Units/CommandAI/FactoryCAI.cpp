@@ -38,10 +38,10 @@ static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled
 	}
 
 	tooltip += (ud->humanName + " - " + ud->tooltip);
-	tooltip += ("\nHealth "      + FloatToString(ud->health,    "%.0f"));
-	tooltip += ("\nMetal cost "  + FloatToString(ud->metal,     "%.0f"));
-	tooltip += ("\nEnergy cost " + FloatToString(ud->energy,    "%.0f"));
-	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime, "%.0f"));
+	tooltip += ("\nHealth "      + FloatToString(ud->health,      "%.0f"));
+	tooltip += ("\nMetal cost "  + FloatToString(ud->cost.metal,  "%.0f"));
+	tooltip += ("\nEnergy cost " + FloatToString(ud->cost.energy, "%.0f"));
+	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime,   "%.0f"));
 
 	return tooltip;
 }

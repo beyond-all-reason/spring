@@ -162,8 +162,8 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	maxHealth = def->health;
 	reclaimTime = def->reclaimTime;
 
-	defResources = {def->metal, def->energy};
-	resources = {def->metal, def->energy};
+	defResources = def->cost;
+	resources = def->cost;
 
 	crushResistance = def->crushResistance;
 
