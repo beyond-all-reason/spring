@@ -130,8 +130,7 @@ CUnit::~CUnit()
 	if (activated && unitDef->targfac)
 		losHandler->IncreaseAllyTeamRadarErrorSize(allyteam);
 
-	SetMetalStorage(0);
-	SetEnergyStorage(0);
+	SetStorage(0.0f);
 
 	// not all unit deletions run through KillUnit(),
 	// but we always want to call this for ourselves
@@ -301,8 +300,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	useHighTrajectory = (unitDef->highTrajectoryType == 1);
 
-	harvestStorage.metal  = unitDef->harvestMetalStorage;
-	harvestStorage.energy = unitDef->harvestEnergyStorage;
+	harvestStorage = unitDef->harvestStorage;
 
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
@@ -422,9 +420,7 @@ void CUnit::FinishedBuilding(bool postInit)
 	if (unitDef->activateWhenBuilt)
 		Activate();
 
-	SetMetalStorage(unitDef->metalStorage);
-	SetEnergyStorage(unitDef->energyStorage);
-
+	SetStorage(unitDef->storage);
 
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
@@ -1974,8 +1970,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		// turn reclaimee into nanoframe (even living units)
 		if ((modInfo.reclaimUnitMethod == 0) && !beingBuilt) {
 			beingBuilt = true;
-			SetMetalStorage(0);
-			SetEnergyStorage(0);
+			SetStorage(0.0f);
 
 			// make sure neighbor extractors update
 			CExtractorBuilding* extractor = dynamic_cast<CExtractorBuilding*>(this);
@@ -2006,22 +2001,6 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 //////////////////////////////////////////////////////////////////////
 //
-
-void CUnit::SetMetalStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.metal -= storage.metal;
-	storage.metal = newStorage;
-	teamHandler.Team(team)->resStorage.metal += storage.metal;
-}
-
-
-void CUnit::SetEnergyStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.energy -= storage.energy;
-	storage.energy = newStorage;
-	teamHandler.Team(team)->resStorage.energy += storage.energy;
-}
-
 
 bool CUnit::AllowedReclaim(CUnit* builder) const
 {

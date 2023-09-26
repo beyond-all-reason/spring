@@ -697,11 +697,11 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("extractRange",   ud.extractRange);
 	ADD_FLOAT("windGenerator",  ud.windGenerator);
 	ADD_FLOAT("tidalGenerator", ud.tidalGenerator);
-	ADD_FLOAT("metalStorage",   ud.metalStorage);
-	ADD_FLOAT("energyStorage",  ud.energyStorage);
+	ADD_FLOAT("metalStorage",   ud.storage.metal);
+	ADD_FLOAT("energyStorage",  ud.storage.energy);
 
-	ADD_FLOAT("harvestMetalStorage", ud.harvestMetalStorage);
-	ADD_FLOAT("harvestEnergyStorage", ud.harvestEnergyStorage);
+	ADD_FLOAT("harvestMetalStorage",  ud.harvestStorage.metal);
+	ADD_FLOAT("harvestEnergyStorage", ud.harvestStorage.energy);
 
 	ADD_FLOAT("power", ud.power);
 

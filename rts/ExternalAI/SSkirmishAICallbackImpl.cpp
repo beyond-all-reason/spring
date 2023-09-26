@@ -2538,11 +2538,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getTidalResourceGenerator(int skirmishA
 EXPORT(float) skirmishAiCallback_UnitDef_getStorage(int skirmishAIId, int unitDefId, int resourceId) {
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return ud->metalStorage;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return ud->energyStorage;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return ud->storage[resourceId];
 
 	return 0.0f;
 }

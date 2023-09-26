@@ -126,10 +126,8 @@ public:
 	float extractRange;
 	float windGenerator;
 	float tidalGenerator;
-	float metalStorage;
-	float energyStorage;
-	float harvestMetalStorage;
-	float harvestEnergyStorage;
+	SResourcePack storage;
+	SResourcePack harvestStorage;
 
 	float autoHeal;     ///< amount autohealed
 	float idleAutoHeal; ///< amount autohealed only during idling
