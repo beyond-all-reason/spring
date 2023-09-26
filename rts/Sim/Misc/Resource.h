@@ -80,6 +80,22 @@ public:
 		}
 		return *this;
 	}
+	SResourcePack& operator*=(const SResourcePack& other) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] *= other.res[i];
+
+		return *this;
+	}
+	SResourcePack& operator/=(const SResourcePack& other) {
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			if (!other[i])
+				res[i] = 1.0f;
+			else
+				res[i] /= other[i];
+		}
+
+		return *this;
+	}
 
 	SResourcePack& operator*=(float scale) {
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
@@ -90,6 +106,8 @@ public:
 };
 
 inline SResourcePack operator * (SResourcePack pack, float scale) { return pack *= scale; }
+inline SResourcePack operator * (SResourcePack lhs, const SResourcePack& rhs) { return lhs *= rhs; }
+inline SResourcePack operator / (SResourcePack lhs, const SResourcePack& rhs) { return lhs /= rhs; }
 
 struct SResourceOrder {
 	SResourcePack use;

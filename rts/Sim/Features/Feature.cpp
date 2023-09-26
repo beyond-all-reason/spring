@@ -324,9 +324,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	// stop the last bit giving too much resource
 	const float reclaimLeftTemp = std::max(0.0f, reclaimLeft - step);
 	const float fractionReclaimed = oldReclaimLeft - reclaimLeftTemp;
-	const float metalFraction  = std::min(defResources.metal  * fractionReclaimed, resources.metal);
-	const float energyFraction = std::min(defResources.energy * fractionReclaimed, resources.energy);
-	const float energyUseScaled = metalFraction * modInfo.reclaimFeatureEnergyCostFactor;
+	const auto resourceFraction = (defResources * fractionReclaimed).cap_at(resources);
+	const float energyUseScaled = resourceFraction.metal * modInfo.reclaimFeatureEnergyCostFactor;
 
 	SResourceOrder order;
 	order.quantum    = false;
@@ -336,13 +335,11 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 
 	if (reclaimLeftTemp == 0.0f) {
 		// always give remaining resources at the end
-		order.add.metal  = resources.metal;
-		order.add.energy = resources.energy;
+		order.add = resources;
 	}
 	else if (modInfo.reclaimMethod == 0) {
 		// Gradual reclaim
-		order.add.metal  = metalFraction;
-		order.add.energy = energyFraction;
+		order.add = resourceFraction;
 	}
 	else if (modInfo.reclaimMethod == 1) {
 		// All-at-end method
@@ -357,8 +354,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		const int numChunks = oldChunk - newChunk;
 
 		if (numChunks != 0) {
-			order.add.metal  = std::min(numChunks * defResources.metal  * chunkSize, resources.metal);
-			order.add.energy = std::min(numChunks * defResources.energy * chunkSize, resources.energy);
+			order.add = defResources * (numChunks * chunkSize);
+			order.add.cap_at(resources);
 		}
 	}
 
@@ -422,8 +419,7 @@ void CFeature::DoDamage(
 			// if a partially reclaimed corpse got blasted,
 			// ensure its wreck is not worth the full amount
 			// (which might be more than the amount remaining)
-			deathFeature->resources.metal  *= (defResources.metal  != 0.0f) ? resources.metal  / defResources.metal  : 1.0f;
-			deathFeature->resources.energy *= (defResources.energy != 0.0f) ? resources.energy / defResources.energy : 1.0f;
+			deathFeature->resources *= resources / defResources;
 		}
 
 		featureHandler.DeleteFeature(this);
