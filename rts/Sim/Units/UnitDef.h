@@ -115,11 +115,9 @@ public:
 
 	const UnitDef* decoyDef;
 
-	float metalUpkeep;
-	float energyUpkeep;
-	float metalMake;		///< metal will always be created
+	SResourcePack upkeep;
+	SResourcePack resourceMake; ///< will always be created
 	float makesMetal;		///< metal will be created when unit is on and enough energy can be drained
-	float energyMake;
 	float buildTime;
 	float buildeeBuildRadius; ///< if >= 0.f, override default radius to use for the buildee in build distance calculations.
 	float extractsMetal;
@@ -384,8 +382,7 @@ private:
 	void CreateYardMap(std::string&& yardMapStr);
 
 	SResourcePack realCost;
-	float realMetalUpkeep;
-	float realEnergyUpkeep;
+	SResourcePack realUpkeep;
 	float realBuildTime;
 };
 

@@ -993,17 +993,17 @@ void CUnit::SlowUpdate()
 	if (activated && UseResources(resourcesCondUse))
 		AddResources(resourcesCondMake);
 
-	AddMetal(unitDef->metalMake * 0.5f);
+	AddResources(unitDef->resourceMake * 0.5f);
 
 	if (activated) {
-		if (UseEnergy(unitDef->energyUpkeep * 0.5f)) {
+		if (UseEnergy(unitDef->upkeep.energy * 0.5f)) {
 			AddMetal(unitDef->makesMetal * 0.5f);
 
 			if (unitDef->extractsMetal > 0.0f)
 				AddMetal(metalExtract * 0.5f);
 		}
 
-		UseMetal(unitDef->metalUpkeep * 0.5f);
+		UseMetal(unitDef->upkeep.metal * 0.5f);
 
 		if (unitDef->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > unitDef->windGenerator) {
@@ -1015,7 +1015,7 @@ void CUnit::SlowUpdate()
 	}
 
 	// FIXME: tidal part should be under "if (activated)"?
-	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
+	AddEnergy((unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
 
 
 	if (health < maxHealth) {

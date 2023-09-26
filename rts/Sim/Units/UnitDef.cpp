@@ -66,11 +66,9 @@ UnitDef::UnitDef()
 	: SolidObjectDef()
 	, cobID(-1)
 	, decoyDef(nullptr)
-	, metalUpkeep(0.0f)
-	, energyUpkeep(0.0f)
-	, metalMake(0.0f)
+	, upkeep(0.0f)
+	, resourceMake(0.0f)
 	, makesMetal(0.0f)
-	, energyMake(0.0f)
 	, buildTime(0.0f)
 	, buildeeBuildRadius(-1.f)
 	, extractsMetal(0.0f)
@@ -242,8 +240,7 @@ UnitDef::UnitDef()
 	, nanoColor(ZeroVector)
 	, maxThisUnit(0)
 	, realCost(0.0f)
-	, realMetalUpkeep(0.0f)
-	, realEnergyUpkeep(0.0f)
+	, realUpkeep(0.0f)
 	, realBuildTime(0.0f)
 {
 	memset(&modelCEGTags[0], 0, sizeof(modelCEGTags));
@@ -292,11 +289,15 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	windGenerator  = udTable.GetFloat("windGenerator",  0.0f);
 	tidalGenerator = udTable.GetFloat("tidalGenerator", 0.0f);
 
-	metalUpkeep  = udTable.GetFloat("metalUpkeep",  udTable.GetFloat("metalUse",  0.0f));
-	energyUpkeep = udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f));
-	metalMake    = udTable.GetFloat("metalMake",  0.0f);
+	upkeep =
+		{ udTable.GetFloat( "metalUpkeep", udTable.GetFloat( "metalUse", 0.0f))
+		, udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f))
+	};
+	resourceMake =
+		{ udTable.GetFloat( "metalMake", 0.0f)
+		, udTable.GetFloat("energyMake", 0.0f)
+	};
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
-	energyMake   = udTable.GetFloat("energyMake", 0.0f);
 
 	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
 	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
@@ -842,19 +843,16 @@ void UnitDef::SetNoCost(bool noCost)
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
 		realCost         = cost;
-		realMetalUpkeep  = metalUpkeep;
-		realEnergyUpkeep = energyUpkeep;
+		realUpkeep       = upkeep;
 		realBuildTime    = buildTime;
 
 		cost         =  1.0f;
 		buildTime    = 10.0f;
-		metalUpkeep  =  0.0f;
-		energyUpkeep =  0.0f;
+		upkeep       =  0.0f;
 	} else {
 		cost         = realCost;
 		buildTime    = realBuildTime;
-		metalUpkeep  = realMetalUpkeep;
-		energyUpkeep = realEnergyUpkeep;
+		upkeep       = realUpkeep;
 	}
 }
 

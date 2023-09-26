@@ -579,7 +579,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_DEPRECATED_FUNCTION("type", ud, ReturnEmptyString);
 	ADD_DEPRECATED_FUNCTION("maxSlope", ud, ReturnMinusOne);
 
-	ADD_FLOAT("totalEnergyOut", ud.energyMake);
+	ADD_FLOAT("totalEnergyOut", ud.resourceMake.energy);
 
 	ADD_FUNCTION("modCategories",      ud.categoryString,  CategorySetFromString);
 	ADD_FUNCTION("springCategories",   ud.category,        CategorySetFromBits);
@@ -684,11 +684,11 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_INT("maxThisUnit", ud.maxThisUnit);
 
-	ADD_FLOAT("metalUpkeep",    ud.metalUpkeep);
-	ADD_FLOAT("energyUpkeep",   ud.energyUpkeep);
-	ADD_FLOAT("metalMake",      ud.metalMake);
+	ADD_FLOAT("metalUpkeep",    ud.upkeep.metal);
+	ADD_FLOAT("energyUpkeep",   ud.upkeep.energy);
+	ADD_FLOAT("metalMake",      ud.resourceMake.metal);
+	ADD_FLOAT("energyMake",     ud.resourceMake.energy);
 	ADD_FLOAT("makesMetal",     ud.makesMetal);
-	ADD_FLOAT("energyMake",     ud.energyMake);
 	ADD_FLOAT("metalCost",      ud.cost.metal);
 	ADD_FLOAT("energyCost",     ud.cost.energy);
 	ADD_FLOAT("buildTime",      ud.buildTime);

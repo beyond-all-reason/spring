@@ -2458,11 +2458,8 @@ EXPORT(const char*) skirmishAiCallback_UnitDef_getHumanName(int skirmishAIId, in
 EXPORT(float) skirmishAiCallback_UnitDef_getUpkeep(int skirmishAIId, int unitDefId, int resourceId) {
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return ud->metalUpkeep;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return ud->energyUpkeep;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return ud->upkeep[resourceId];
 
 	return 0.0f;
 }
@@ -2470,11 +2467,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getUpkeep(int skirmishAIId, int unitDef
 EXPORT(float) skirmishAiCallback_UnitDef_getResourceMake(int skirmishAIId, int unitDefId, int resourceId) {
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return ud->metalMake;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return ud->energyMake;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return ud->resourceMake[resourceId];
 
 	return 0.0f;
 }

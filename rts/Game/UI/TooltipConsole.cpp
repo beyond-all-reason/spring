@@ -121,8 +121,8 @@ static void GetDecoyResources(const CUnit* unit,
 	if (ud == nullptr)
 		return;
 
-	mMake += ud->metalMake;
-	eMake += ud->energyMake;
+	mMake += ud->resourceMake.metal;
+	eMake += ud->resourceMake.energy;
 	eMake += (ud->tidalGenerator * envResHandler.GetCurrentTidalStrength() * (ud->tidalGenerator > 0.0f));
 
 	bool active = ud->activateWhenBuilt;
@@ -137,7 +137,7 @@ static void GetDecoyResources(const CUnit* unit,
 				mMake += unit->metalExtract * (ud->extractsMetal / rd->extractsMetal);
 			}
 		}
-		mUse += ud->metalUpkeep;
+		mUse += ud->upkeep.metal;
 
 		if (ud->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > ud->windGenerator) {
@@ -146,7 +146,7 @@ static void GetDecoyResources(const CUnit* unit,
 				eMake += envResHandler.GetCurrentWindStrength();
 			}
 		}
-		eUse += ud->energyUpkeep;
+		eUse += ud->upkeep.energy;
 	}
 }
 
