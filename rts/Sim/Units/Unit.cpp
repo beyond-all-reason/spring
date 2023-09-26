@@ -996,19 +996,11 @@ void CUnit::SlowUpdate()
 
 
 	// FIXME: scriptMakeMetal ...?
-	AddMetal(resourcesUncondMake.metal);
-	AddEnergy(resourcesUncondMake.energy);
-	UseMetal(resourcesUncondUse.metal);
-	UseEnergy(resourcesUncondUse.energy);
+	AddResources(resourcesUncondMake);
+	UseResources(resourcesUncondUse);
 
-	if (activated) {
-		if (UseMetal(resourcesCondUse.metal))
-			AddEnergy(resourcesCondMake.energy);
-
-		if (UseEnergy(resourcesCondUse.energy))
-			AddMetal(resourcesCondMake.metal);
-
-	}
+	if (activated && UseResources(resourcesCondUse))
+		AddResources(resourcesCondMake);
 
 	AddMetal(unitDef->metalMake * 0.5f);
 
