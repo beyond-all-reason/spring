@@ -19,6 +19,7 @@ struct SResourcePack {
 
 public:
 	SResourcePack() : res1(0.0f), res2(0.0f) {}
+	SResourcePack(const float value) : metal(value), energy(value) {}
 	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
 	CR_DECLARE_STRUCT(SResourcePack)
 

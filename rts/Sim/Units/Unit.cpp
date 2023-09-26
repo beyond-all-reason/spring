@@ -810,17 +810,13 @@ void CUnit::TransporteeKilled(const CObject* o)
 
 void CUnit::UpdateResources()
 {
-	resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
-	resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
-	resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
-	resourcesUse.energy  = resourcesUseI.energy  + resourcesUseOld.energy;
+	resourcesMake = resourcesMakeI + resourcesMakeOld;
+	resourcesUse  = resourcesUseI  + resourcesUseOld;
 
-	resourcesMakeOld.metal  = resourcesMakeI.metal;
-	resourcesUseOld.metal   = resourcesUseI.metal;
-	resourcesMakeOld.energy = resourcesMakeI.energy;
-	resourcesUseOld.energy  = resourcesUseI.energy;
+	resourcesMakeOld = resourcesMakeI;
+	resourcesUseOld  = resourcesUseI;
 
-	resourcesMakeI.metal = resourcesUseI.metal = resourcesMakeI.energy = resourcesUseI.energy = 0.0f;
+	resourcesMakeI = resourcesUseI = 0.0f;
 }
 
 void CUnit::SetLosStatus(int at, unsigned short newStatus)
@@ -1477,11 +1473,8 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 	}
 
 	if (!beingBuilt) {
-		teamHandler.Team(oldteam)->resStorage.metal  -= storage.metal;
-		teamHandler.Team(oldteam)->resStorage.energy -= storage.energy;
-
-		teamHandler.Team(newteam)->resStorage.metal  += storage.metal;
-		teamHandler.Team(newteam)->resStorage.energy += storage.energy;
+		teamHandler.Team(oldteam)->resStorage -= storage;
+		teamHandler.Team(newteam)->resStorage += storage;
 	}
 
 
