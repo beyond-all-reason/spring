@@ -4482,11 +4482,8 @@ EXPORT(int) skirmishAiCallback_WeaponDef_getFlightTime(int skirmishAIId, int wea
 EXPORT(float) skirmishAiCallback_WeaponDef_getCost(int skirmishAIId, int weaponDefId, int resourceId) {
 	const WeaponDef* wd = getWeaponDefById(skirmishAIId, weaponDefId);
 
-	if (resourceId == resourceHandler->GetMetalId())
-		return wd->metalcost;
-
-	if (resourceId == resourceHandler->GetEnergyId())
-		return wd->energycost;
+	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
+		return wd->cost[resourceId];
 
 	return 0.0f;
 }

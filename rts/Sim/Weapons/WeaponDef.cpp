@@ -133,8 +133,8 @@ WEAPONTAG(float, sizeGrowth).defaultValue(0.5f);
 WEAPONDUMMYTAG(float, flameGfxTime);
 
 // Eco
-WEAPONTAG(float, metalcost).externalName("metalPerShot").defaultValue(0.0f);
-WEAPONTAG(float, energycost).externalName("energyPerShot").defaultValue(0.0f);
+WEAPONDUMMYTAG(float,  metalPerShot);
+WEAPONDUMMYTAG(float, energyPerShot);
 
 // Other Properties
 WEAPONTAG(float, fireStarter).defaultValue(0.0f).minimumValue(0.0f).scaleValue(0.01f) // max value that makes engine sense is 100%, but Lua gadgets may make use of higher ones
@@ -322,6 +322,11 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 	collisionFlags |= (Collision::NONONTARGETS * (!wdTable.GetBool("collideNonTarget",  true)));
 	collisionFlags |= (Collision::NOGROUND     * (!wdTable.GetBool("collideGround",     true)));
 	collisionFlags |= (Collision::NOCLOAKED    * (!wdTable.GetBool("collideCloaked",    true)));
+
+	cost =
+		{ wdTable.GetFloat( "metalPerShot", 0.0f)
+		, wdTable.GetFloat("energyPerShot", 0.0f)
+	};
 
 	//FIXME defaults depend on other tags
 	{

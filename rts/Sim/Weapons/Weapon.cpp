@@ -442,9 +442,7 @@ void CWeapon::UpdateFire()
 		return;
 
 	// pre-check if we got enough resources (so CobBlockShot gets only called when really possible to shoot)
-	const SResourcePack shotRes = {weaponDef->metalcost, weaponDef->energycost};
-
-	if (!weaponDef->stockpile && !owner->HaveResources(shotRes))
+	if (!weaponDef->stockpile && !owner->HaveResources(weaponDef->cost))
 		return;
 
 	if (CobBlockShot())
@@ -453,15 +451,14 @@ void CWeapon::UpdateFire()
 	if (!weaponDef->stockpile) {
 		// use resource for shoot
 		CTeam* ownerTeam = teamHandler.Team(owner->team);
-		if (!owner->UseResources(shotRes)) {
+		if (!owner->UseResources(weaponDef->cost)) {
 			// not enough resource, update pull (needs factor cause called each ::Update() and not at reloadtime!)
 			const int minPeriod = std::max(1, int(reloadTime / owner->reloadSpeed));
 			const float averageFactor = 1.0f / minPeriod;
-			ownerTeam->resPull.energy += (averageFactor * weaponDef->energycost);
-			ownerTeam->resPull.metal  += (averageFactor * weaponDef->metalcost);
+			ownerTeam->resPull += weaponDef->cost * averageFactor;
 			return;
 		}
-		ownerTeam->resPull += shotRes;
+		ownerTeam->resPull += weaponDef->cost;
 	} else {
 		const int oldCount = numStockpiled;
 		numStockpiled--;
@@ -490,7 +487,7 @@ bool CWeapon::UpdateStockpile()
 	if (numStockpileQued > 0) {
 		const float p = 1.0f / weaponDef->stockpileTime;
 
-		if (owner->UseResources({weaponDef->metalcost * p, weaponDef->energycost * p}))
+		if (owner->UseResources(weaponDef->cost * p))
 			buildPercent += p;
 
 		if (buildPercent >= 1) {
