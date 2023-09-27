@@ -27,3 +27,6 @@
 [submodule "rts/lib/entt"]
 	path = rts/lib/entt
 	url = https://github.com/skypjack/entt
+[submodule "rts/lib/RmlUi"]
+	path = rts/lib/RmlUi
+	url = https://github.com/mikke89/RmlUi.git
