@@ -27,6 +27,7 @@ list(APPEND engineHeadlessLibraries ${engineCommonLibraries})
 list(APPEND engineHeadlessLibraries no-sound)
 list(APPEND engineHeadlessLibraries engineSim)
 list(APPEND engineHeadlessLibraries pr-downloader)
+list(APPEND engineHeadlessLibraries RmlCore)
 
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/assimp/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
