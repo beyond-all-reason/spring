@@ -30,3 +30,6 @@
 [submodule "rts/lib/cereal"]
 	path = rts/lib/cereal
 	url = https://github.com/USCiLab/cereal.git
+[submodule "rts/lib/RmlUi"]
+	path = rts/lib/RmlUi
+	url = https://github.com/mikke89/RmlUi.git
