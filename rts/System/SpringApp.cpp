@@ -6,6 +6,9 @@
 #include <iostream>
 #include <chrono>
 
+// Include before other headers that define a bunch of macros that break stuff.
+#include <RmlUi/Core.h>
+
 #include <SDL.h>
 #include <System/GflagsExt.h>
 
@@ -217,6 +220,17 @@ SpringApp::~SpringApp()
 	spring_clock::PopTickRate();
 }
 
+class DummyRmlUiSpringSystemInterface : public Rml::SystemInterface {
+public:
+	double GetElapsedTime() override {
+		return 0.0;
+	}
+
+private:
+	std::chrono::steady_clock::time_point start;
+};
+
+static DummyRmlUiSpringSystemInterface dummyRmlUiSpringSystemInterface;
 
 /**
  * @brief Initializes the SpringApp instance
@@ -241,6 +255,9 @@ bool SpringApp::Init()
 	// Install Watchdog (must happen after time epoch is set)
 	Watchdog::Install();
 	Watchdog::RegisterThread(WDT_MAIN, true);
+
+	// A dummy call to basic RmlUi function to verify that all is linking correctly.
+	Rml::SetSystemInterface(&dummyRmlUiSpringSystemInterface);
 
 	// Create Window
 	if (!InitWindow(("Spring " + SpringVersion::GetSync()).c_str())) {
