@@ -1,18 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GAME_HELPER_H
-#define GAME_HELPER_H
+#pragma once
 
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/EventClient.h"
 #include "System/float3.h"
 #include "System/float4.h"
 #include "System/type2.h"
 
 #include <array>
 #include <vector>
+#include <memory>
 
 class CUnit;
 class CWeapon;
@@ -150,6 +151,7 @@ public:
 	static size_t GenerateWeaponTargets(const CWeapon* weapon, const CUnit* avoidUnit, std::vector<std::pair<float, CUnit*>>& targets);
 
 	void Init();
+	void Kill();
 	void Update();
 
 	static float CalcImpulseScale(const DamageArray& damages, const float expDistanceMod);
@@ -198,6 +200,23 @@ private:
 
 		DamageArray damage;
 		float3 impulse;
+	};
+	template<bool synced>
+	class TestUnitBuildSquareCacheEventsListener : public CEventClient {
+	public:
+		TestUnitBuildSquareCacheEventsListener();
+		~TestUnitBuildSquareCacheEventsListener() override;
+
+		bool WantsEvent(const std::string& eventName) override {
+			return
+				(eventName == "FeatureDestroyed") ||
+				(eventName == "FeatureMoved");
+		}
+		bool GetFullRead() const override { return synced; }
+		//int GetReadAllyTeam() const override { return AllAccessTeam; }
+
+		void FeatureDestroyed(const CFeature* feature) override { TestUnitBuildSquareCache::Invalidate(feature); }
+		void FeatureMoved(const CFeature* feature, const float3& oldpos) override { TestUnitBuildSquareCache::Invalidate(feature); }
 	};
 	struct TestUnitBuildSquareCache {
 		TestUnitBuildSquareCache(
@@ -261,6 +280,7 @@ private:
 			);
 		}
 		static void Invalidate(const KeyT& key);
+		static void Invalidate(const CFeature* feature);
 
 		int createFrame;
 		std::tuple<bool, float3, int, int, const UnitDef*> key;
@@ -280,11 +300,12 @@ private:
 
 	std::array<std::vector<WaitingDamage>, 128> waitingDamages;
 	static_assert (std::has_single_bit(std::tuple_size_v <decltype(waitingDamages)>), "Size is used in bit hax and must be 2^N");
+
+	std::unique_ptr<TestUnitBuildSquareCacheEventsListener< true>>   syncedCacheListener;
+	std::unique_ptr<TestUnitBuildSquareCacheEventsListener<false>> unsyncedCacheListener;
 public:
 	std::vector<int> targetUnitIDs; // GetEnemyUnits{NoLosTest}
 	std::vector<std::pair<float, CUnit*>> targetPairs; // GenerateWeaponTargets
 };
 
 extern CGameHelper* helper;
-
-#endif // GAME_HELPER_H
