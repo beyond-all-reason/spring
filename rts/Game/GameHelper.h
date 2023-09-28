@@ -12,6 +12,7 @@
 #include "System/type2.h"
 
 #include <array>
+#include <bit>
 #include <vector>
 #include <memory>
 
