@@ -296,7 +296,7 @@ private:
 		 * too quickly and not to stale the state for too long. */
 		static constexpr int CACHE_VALIDITY_PERIOD[] = { 1, GAME_SPEED / 5 };
 
-		inline static std::vector<TestUnitBuildSquareCache> testUnitBuildSquareCache;
+		static std::vector<TestUnitBuildSquareCache> testUnitBuildSquareCache;
 	};
 
 	std::array<std::vector<WaitingDamage>, 128> waitingDamages;
