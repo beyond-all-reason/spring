@@ -42,7 +42,7 @@
 
 static CGameHelper gGameHelper;
 CGameHelper* helper = &gGameHelper;
-
+std::vector<CGameHelper::TestUnitBuildSquareCache> CGameHelper::TestUnitBuildSquareCache::testUnitBuildSquareCache;
 
 void CGameHelper::Init()
 {
