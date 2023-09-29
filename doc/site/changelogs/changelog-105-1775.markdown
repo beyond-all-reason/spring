@@ -14,6 +14,7 @@ The changelog since release 105-1544 **until release 105-1775**, which happened 
 * remove the deprecated `Game.allowTeamColors` entry that was always `true`.
 * PNG is now the default `/screenshot` format.
 * new Recoil icons and loadscreens.
+* Due to the introduction of skinning/bones (see below), the maximum number of pieces per model is limited by 254 pieces
 * unit shader changes required related to skinning and bones. This requires updates of code that calls `vbo:ModelsVBO()` such that you'd replace:
  ```
  layout (location = 5) in uint pieceIndex;
