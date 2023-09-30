@@ -4,8 +4,6 @@
 #define LUA_UTILS_H
 
 #include <string>
-#include <vector>
-#include <unordered_map>
 
 #include "lib/fmt/printf.h"
 
@@ -79,21 +77,6 @@ class LuaUtils {
 		};
 
 	public:
-		struct DataDump {
-			int type;
-			std::string str;
-			float num;
-			bool bol;
-			std::vector<std::pair<DataDump, DataDump> > table;
-		};
-		struct ShallowDataDump {
-			int type;
-			union {
-				std::string *str;
-				float num;
-				bool bol;
-			} data;
-		};
 		// 0 and positive numbers are teams (not allyTeams)
 		enum UnitAllegiance {
 			AllUnits = -1,
@@ -102,11 +85,22 @@ class LuaUtils {
 			EnemyUnits = -4
 		};
 
-	public:
+// The functions below are not used anymore for anything in the engine.
+// There are left behind here disabled for archival purposes.
+#if 0
+		struct DataDump {
+			int type;
+			std::string str;
+			float num;
+			bool bol;
+			std::vector<std::pair<DataDump, DataDump> > table;
+		};
+
 		// Backups lua data into a c++ vector and restores it from it
 		static int exportedDataSize; //< performance stat
 		static int Backup(std::vector<DataDump> &backup, lua_State* src, int count);
 		static int Restore(const std::vector<DataDump> &backup, lua_State* dst);
+#endif
 
 		// Copies lua data between 2 lua_States
 		static int CopyData(lua_State* dst, lua_State* src, int count);
