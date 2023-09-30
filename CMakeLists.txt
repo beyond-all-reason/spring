@@ -281,7 +281,6 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2)
-find_package(SDL2_image)
 
 find_package_static(DevIL)
 if    (PREFER_STATIC_LIBS)

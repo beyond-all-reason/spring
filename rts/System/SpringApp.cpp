@@ -8,9 +8,7 @@
 
 // Include before other headers that define a bunch of macros that break stuff.
 #include <RmlUi/Core.h>
-#include <RmlUi/Debugger.h>
 #include <Rml/Backends/RmlUi_Backend.h>
-Rml::Context* context;
 
 #include <SDL.h>
 #include <System/GflagsExt.h>
@@ -221,18 +219,6 @@ SpringApp::~SpringApp()
 	spring_clock::PopTickRate();
 }
 
-class DummyRmlUiSpringSystemInterface : public Rml::SystemInterface {
-public:
-	double GetElapsedTime() override {
-		return spring_gettime().toMilliSecsf();
-	}
-
-private:
-	std::chrono::steady_clock::time_point start;
-};
-
-static DummyRmlUiSpringSystemInterface dummyRmlUiSpringSystemInterface;
-
 /**
  * @brief Initializes the SpringApp instance
  * @return whether initialization was successful
@@ -256,9 +242,6 @@ bool SpringApp::Init()
 	// Install Watchdog (must happen after time epoch is set)
 	Watchdog::Install();
 	Watchdog::RegisterThread(WDT_MAIN, true);
-
-	// A dummy call to basic RmlUi function to verify that all is linking correctly.
-	// Rml::SetSystemInterface(&dummyRmlUiSpringSystemInterface);
 
 	// Create Window
 	if (!InitWindow(("Spring " + SpringVersion::GetSync()).c_str())) {
@@ -299,6 +282,11 @@ bool SpringApp::Init()
 	// GUIs
 	#ifndef HEADLESS
 	agui::gui = new agui::Gui();
+	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext());
+	Rml::Initialise();
+	Rml::LoadFontFace("/home/mike/.local/share/BeyondAllReason/fonts/FreeSansBold.otf",true);
+	RmlGui::CreateOverlayContext();
+
 
 	#endif
 	keyCodes.Reset();
@@ -311,18 +299,6 @@ bool SpringApp::Init()
 	// Lua socket restrictions
 	CLuaSocketRestrictions::InitStatic();
 	LuaVFSDownload::Init();
-	Backend::Initialize(globalRendering->GetWindow(), globalRendering->GetContext());
-	Rml::SetSystemInterface(Backend::GetSystemInterface());
-	Rml::SetRenderInterface(Backend::GetRenderInterface());
-	Rml::Initialise();
-	context = Rml::CreateContext("default", Rml::Vector2i(1500, 1500));
-	Rml::LoadFontFace("/home/mike/.local/share/BeyondAllReason/fonts/FreeSansBold.otf",true);
-	Rml::Debugger::Initialise(context);
-	Rml::ElementDocument* document = context->LoadDocument("/home/mike/software/spring/rts/Rml/assets/demo.rml");
-	if (document)
-		document->Show();
-		else exit(1);
-
 
 
 
@@ -881,13 +857,12 @@ bool SpringApp::Update()
 	// sic; Update can set the controller to null
 	retc = (        activeController == nullptr || activeController->Update());
 
+	RmlGui::Update();
 	auto lock = CLoadLock::GetUniqueLock();
 	swap = (retc && activeController != nullptr && activeController->Draw());
 	#endif
 
-Backend::BeginFrame();
-context->Render();
-Backend::PresentFrame();
+	RmlGui::RenderFrame();
 	// always swap by default, not doing so can upset some drivers
 	globalRendering->SwapBuffers(swap, false);
 	return retc;
@@ -913,7 +888,6 @@ int SpringApp::Run()
 			spring::exitCode = spring::EXIT_CODE_NOINIT;
 
 		while (!gu->globalQuit) {
-			context->Update();
 			Watchdog::ClearTimer(WDT_MAIN);
 			input.PushEvents();
 

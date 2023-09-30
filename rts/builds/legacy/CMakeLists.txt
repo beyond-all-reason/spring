@@ -15,8 +15,6 @@ set(engineLibraries ${SDL2_LIBRARY})
 if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
 	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
 endif()
-find_package(SDL2_image REQUIRED)
-set(APPEND engineLibraries "SDL2_image::SDL2_image")
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL REQUIRED)
@@ -77,7 +75,7 @@ include_directories(${engineIncludes})
 
 ### Build the executable
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
-target_link_libraries(engine-legacy ${engineLibraries} SDL2_image::SDL2_image)
+target_link_libraries(engine-legacy ${engineLibraries})
 
 
 ### Install the executable
