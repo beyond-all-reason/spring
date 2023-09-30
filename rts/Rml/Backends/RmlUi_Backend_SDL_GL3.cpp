@@ -29,50 +29,46 @@
 #include "RmlUi_Backend.h"
 #include "RmlUi_Platform_SDL.h"
 #include "RmlUi_Renderer_GL3.h"
-#include <RmlUi/Core/Context.h>
-#include <RmlUi/Core/Core.h>
-#include <RmlUi/Core/FileInterface.h>
+#include <RmlUi/Core.h>
+#include <RmlUi/Debugger.h>
 #include <RmlUi/Core/Profiling.h>
 #include <SDL.h>
-#include <SDL_image.h>
+#include "Rendering/GL/myGL.h"
+#include "Rendering/Textures/Bitmap.h"
+
+// #include "System/FileSystem/ArchiveScanner.h"
+// #include "System/FileSystem/DataDirLocater.h"
+#include "System/FileSystem/DataDirsAccess.h"
+// #include "System/FileSystem/FileHandler.h"
+// #include "System/FileSystem/FileSystem.h"
+// #include "System/FileSystem/FileSystemInitializer.h"
 
 #if defined RMLUI_PLATFORM_EMSCRIPTEN
-	#include <emscripten.h>
+#include <emscripten.h>
 #else
-	#if !(SDL_VIDEO_RENDER_OGL)
-		#error "Only the OpenGL SDL backend is supported."
-	#endif
+#if !(SDL_VIDEO_RENDER_OGL)
+#error "Only the OpenGL SDL backend is supported."
+#endif
 #endif
 
 /**
-    Custom render interface example for the SDL/GL3 backend.
+		Custom render interface example for the SDL/GL3 backend.
 
-    Overloads the OpenGL3 render interface to load textures through SDL_image's built-in texture loading functionality.
+		Overloads the OpenGL3 render interface to load textures through SDL_image's built-in texture loading functionality.
  */
-class RenderInterface_GL3_SDL : public RenderInterface_GL3 {
+class RenderInterface_GL3_SDL : public RenderInterface_GL3
+{
 public:
 	RenderInterface_GL3_SDL() {}
 
-	bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) override
+	bool LoadTexture(Rml::TextureHandle &texture_handle, Rml::Vector2i &texture_dimensions, const Rml::String &source) override
 	{
-		Rml::FileInterface* file_interface = Rml::GetFileInterface();
-		Rml::FileHandle file_handle = file_interface->Open(source);
-		if (!file_handle)
+		CBitmap bmp;
+		if (!bmp.Load(source))
+		{
 			return false;
-
-		file_interface->Seek(file_handle, 0, SEEK_END);
-		const size_t buffer_size = file_interface->Tell(file_handle);
-		file_interface->Seek(file_handle, 0, SEEK_SET);
-
-		using Rml::byte;
-		Rml::UniquePtr<byte[]> buffer(new byte[buffer_size]);
-		file_interface->Read(buffer.get(), buffer_size, file_handle);
-		file_interface->Close(file_handle);
-
-		const size_t i = source.rfind('.');
-		Rml::String extension = (i == Rml::String::npos ? Rml::String() : source.substr(i + 1));
-
-		SDL_Surface* surface = IMG_LoadTyped_RW(SDL_RWFromMem(buffer.get(), int(buffer_size)), 1, extension.c_str());
+		}
+		SDL_Surface *surface = bmp.CreateSDLSurface();
 
 		bool success = false;
 		if (surface)
@@ -85,7 +81,7 @@ public:
 				SDL_SetSurfaceAlphaMod(surface, SDL_ALPHA_OPAQUE);
 				SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
 
-				SDL_Surface* new_surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, 32, SDL_PIXELFORMAT_RGBA32);
+				SDL_Surface *new_surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, 32, SDL_PIXELFORMAT_RGBA32);
 				if (!new_surface)
 					return false;
 
@@ -96,7 +92,7 @@ public:
 				surface = new_surface;
 			}
 
-			success = RenderInterface_GL3::GenerateTexture(texture_handle, (const Rml::byte*)surface->pixels, texture_dimensions);
+			success = RenderInterface_GL3::GenerateTexture(texture_handle, (const Rml::byte *)surface->pixels, texture_dimensions);
 			SDL_FreeSurface(surface);
 		}
 
@@ -104,80 +100,59 @@ public:
 	}
 };
 
-/**
-    Global data used by this backend.
+class VFSFileInterface : public Rml::FileInterface
+{
+public:
+	VFSFileInterface() {}
+	Rml::FileHandle Open(const Rml::String &path)
+	{
+		const std::string &fsFullPath = dataDirsAccess.LocateFile(path);
+		return (Rml::FileHandle)std::fopen(fsFullPath.c_str(), "rb");
+	}
 
-    Lifetime governed by the calls to Backend::Initialize() and Backend::Shutdown().
+	void Close(Rml::FileHandle file)
+	{
+		fclose((FILE *)file);
+	}
+
+	size_t Read(void *buffer, size_t size, Rml::FileHandle file)
+	{
+		return fread(buffer, 1, size, (FILE *)file);
+	}
+
+	bool Seek(Rml::FileHandle file, long offset, int origin)
+	{
+		return fseek((FILE *)file, offset, origin) == 0;
+	}
+
+	size_t Tell(Rml::FileHandle file)
+	{
+		return ftell((FILE *)file);
+	};
+};
+
+/**
+		Global data used by this backend.
+
+		Lifetime governed by the calls to Backend::Initialize() and Backend::Shutdown().
  */
-struct BackendData {
+struct BackendData
+{
 	SystemInterface_SDL system_interface;
 	RenderInterface_GL3_SDL render_interface;
+	VFSFileInterface file_interface;
 
-	SDL_Window* window = nullptr;
+	SDL_Window *window = nullptr;
 	SDL_GLContext glcontext = nullptr;
+	std::vector<Rml::Context *> contexts;
 
 	bool running = true;
 };
 static Rml::UniquePtr<BackendData> data;
 
-bool Backend::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext) {
+bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext)
+{
 	RMLUI_ASSERT(!data);
-
-// 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER) != 0)
-// 		return false;
-
-	// Submit click events when focusing the window.
-	// SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
-
-#if defined RMLUI_PLATFORM_EMSCRIPTEN
-	// GLES 3.0 (WebGL 2.0)
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#else
-	// GL 3.3 Core
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-#endif
-
-	// Request stencil buffer of at least 8-bit size to supporting clipping on transformed elements.
-	// SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	// SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-// 	// Enable linear filtering and MSAA for better-looking visuals, especially when transforms are applied.
-	// SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-	// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
-
-// 	const Uint32 window_flags = (SDL_WINDOW_OPENGL | (allow_resize ? SDL_WINDOW_RESIZABLE : 0));
-
-	// SDL_Window* window = SDL_CreateWindow(window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, window_flags);
-// 	if (!window)
-// 	{
-// 		// Try again on low-quality settings.
-// 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-// 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
-// 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-// 		window = SDL_CreateWindow(window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, window_flags);
-// 		if (!window)
-// 		{
-// 			fprintf(stderr, "SDL error on create window: %s\n", SDL_GetError());
-// 			return false;
-// 		}
-// 	}
-
-	// SDL_GLContext glcontext = SDL_GL_CreateContext(target_window);
-	// SDL_GL_MakeCurrent(target_window, glcontext);
-// 	SDL_GL_SetSwapInterval(1);
-
-// 	if (!RmlGL3::Initialize())
-// 	{
-// 		fprintf(stderr, "Could not initialize OpenGL");
-// 		return false;
-// 	}
 
 	data = Rml::MakeUnique<BackendData>();
 
@@ -191,13 +166,17 @@ bool Backend::Initialize(SDL_Window* target_window, SDL_GLContext target_glconte
 	data->window = target_window;
 	data->glcontext = target_glcontext;
 
+	// Rml::SetFileInterface(&data->file_interface);
+	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
+	Rml::SetRenderInterface(RmlGui::GetRenderInterface());
+
 	data->system_interface.SetWindow(target_window);
-	data->render_interface.SetViewport(1500,1500);
+	data->render_interface.SetViewport(1500, 1500);
 
 	return true;
 }
 
-void Backend::Shutdown()
+void RmlGui::Shutdown()
 {
 	RMLUI_ASSERT(data);
 
@@ -209,19 +188,19 @@ void Backend::Shutdown()
 	// SDL_Quit();
 }
 
-Rml::SystemInterface* Backend::GetSystemInterface()
+Rml::SystemInterface *RmlGui::GetSystemInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->system_interface;
 }
 
-Rml::RenderInterface* Backend::GetRenderInterface()
+Rml::RenderInterface *RmlGui::GetRenderInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->render_interface;
 }
 
-bool Backend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback, bool power_save)
+bool RmlGui::ProcessEvents(Rml::Context *context, KeyDownCallback key_down_callback, bool power_save)
 {
 	RMLUI_ASSERT(data && context);
 
@@ -300,14 +279,59 @@ bool Backend::ProcessEvents(Rml::Context* context, KeyDownCallback key_down_call
 	return result;
 }
 
-void Backend::RequestExit()
+void RmlGui::RequestExit()
 {
 	RMLUI_ASSERT(data);
 
 	data->running = false;
 }
 
-void Backend::BeginFrame()
+void RmlGui::CreateContext()
+{
+	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(1500, 1500));
+	Rml::Debugger::Initialise(context);
+	RmlGui::AddContext(context);
+}
+
+void RmlGui::CreateOverlayContext()
+{
+	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(1500, 1500));
+	Rml::Debugger::Initialise(context);
+	RmlGui::AddContext(context);
+	Rml::ElementDocument *document = context->LoadDocument("assets/demo.rml");
+	if (document)
+		document->Show();
+}
+void RmlGui::AddContext(Rml::Context *context)
+{
+	data->contexts.push_back(context);
+}
+
+void RmlGui::Update()
+{
+	RMLUI_ASSERT(data);
+	// TODO: define if headless?
+	for (auto &context : data->contexts)
+	{
+		context->Update();
+	}
+}
+
+void RmlGui::RenderFrame()
+{
+	RMLUI_ASSERT(data);
+
+#ifndef HEADLESS
+	RmlGui::BeginFrame();
+	for (auto &context : data->contexts)
+	{
+		context->Render();
+	}
+	RmlGui::PresentFrame();
+#endif
+}
+
+void RmlGui::BeginFrame()
 {
 	RMLUI_ASSERT(data);
 
@@ -315,7 +339,7 @@ void Backend::BeginFrame()
 	data->render_interface.BeginFrame();
 }
 
-void Backend::PresentFrame()
+void RmlGui::PresentFrame()
 {
 	RMLUI_ASSERT(data);
 
