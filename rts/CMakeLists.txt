@@ -139,6 +139,7 @@ add_subdirectory(Lua)
 add_subdirectory(ExternalAI)
 add_subdirectory(Rendering)
 add_subdirectory(aGui)
+add_subdirectory(Rml)
 add_subdirectory(Menu)
 add_subdirectory(Map)
 add_subdirectory(Net)
@@ -152,6 +153,7 @@ make_global_var(engineSources
 		${sources_engine_Map}
 		${sources_engine_Rendering}
 		${sources_engine_aGui}
+		${sources_engine_Rml}
 		${sources_engine_Menu}
 		${sources_engine_System}
 		${sources_engine_ExternalAI}
