@@ -45,7 +45,7 @@ using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifie
     starting point and copy relevant parts into the main loop of your application. On the other hand, the underlying platform and renderer used by the
     backend are intended to be re-usable as is.
  */
-namespace Backend {
+namespace RmlGui {
 
 // Initializes the backend, including the custom system and render interfaces, and opens a window for rendering the RmlUi context.
 bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext);
@@ -63,11 +63,18 @@ bool ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback = nu
 // Request application closure during the next event processing call.
 void RequestExit();
 
+void Update();
+
+void RenderFrame();
+void CreateContext();
+void CreateOverlayContext();
+void AddContext(Rml::Context *context);
+
 // Prepares the render state to accept rendering commands from RmlUi, call before rendering the RmlUi context.
 void BeginFrame();
 // Presents the rendered frame to the screen, call after rendering the RmlUi context.
 void PresentFrame();
 
-} // namespace Backend
+}
 
 #endif
