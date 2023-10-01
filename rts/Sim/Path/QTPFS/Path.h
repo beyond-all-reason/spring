@@ -190,11 +190,6 @@ namespace QTPFS {
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
 
-		void SetSrcReverseNodeForPartPath(uint32_t nodeId, float2&& netpoint) {
-			srcReverseNodeForPartPath = { nodeId, netpoint };
-		}
-		const PathNodeData& GetSrcReverseNodeForPartPath() { return srcReverseNodeForPartPath; }
-
 		const std::vector<PathNodeData>& GetNodeList() const { return nodes; };
 
 		void SetSearchTime(spring_time time) { searchTime = time; }
@@ -225,7 +220,6 @@ namespace QTPFS {
 
 		std::vector<float3> points;
 		std::vector<PathNodeData> nodes;
-		PathNodeData srcReverseNodeForPartPath;	// used for early out on partial searches for incomplete paths.
 
 		// corners of the bounding-box containing all our points
 		float3 boundingBoxMins;

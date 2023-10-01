@@ -177,13 +177,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 		});
 	}
 
-	// if (!path->IsFullPath()) {
-	// 	const IPath::PathNodeData& node = path->GetSrcReverseNodeForPartPath();
-	// 	addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, -1, node.netPoint);
-	// }
-
 	searchEarlyDrop = false;
-	// searchEarlyDrop = !path->IsFullPath();
 }
 
 bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
@@ -829,12 +823,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		// 		, nodeId, point.x, point.y, point.z);
 		points.pop_front();
 	}
-
-	// if (!haveFullPath) {
-	// 	// Add a node for the reverse path, so that partial-share can early stop when
-	// 	// there is no full path.
-	// 	path->SetSrcReverseNodeForPartPath(bwd.srcSearchNode->GetIndex(), float2(-1.f, -1.f));
-	// }
 
 	// set the first (0) and last (N - 1) waypoint
 	path->SetSourcePoint(fwd.srcPoint);
