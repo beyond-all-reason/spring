@@ -166,7 +166,7 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 	data->window = target_window;
 	data->glcontext = target_glcontext;
 
-	// Rml::SetFileInterface(&data->file_interface);
+	Rml::SetFileInterface(&data->file_interface);
 	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
 	Rml::SetRenderInterface(RmlGui::GetRenderInterface());
 
@@ -298,7 +298,7 @@ void RmlGui::CreateOverlayContext()
 	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(1500, 1500));
 	Rml::Debugger::Initialise(context);
 	RmlGui::AddContext(context);
-	Rml::ElementDocument *document = context->LoadDocument("assets/demo.rml");
+	Rml::ElementDocument *document = context->LoadDocument("RmlUi/demo/demo.rml");
 	if (document)
 		document->Show();
 }
