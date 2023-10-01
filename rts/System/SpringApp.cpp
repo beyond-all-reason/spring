@@ -284,7 +284,7 @@ bool SpringApp::Init()
 	agui::gui = new agui::Gui();
 	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext());
 	Rml::Initialise();
-	Rml::LoadFontFace("/home/mike/.local/share/BeyondAllReason/fonts/FreeSansBold.otf",true);
+	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	RmlGui::CreateOverlayContext();
 
 
