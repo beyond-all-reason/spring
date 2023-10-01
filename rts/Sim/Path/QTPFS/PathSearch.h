@@ -146,7 +146,7 @@ namespace QTPFS {
 		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
 
 		void TracePath(IPath* path);
-		void SmoothPath(IPath* path) const;
+		void SmoothPath(IPath* path);
 		bool SmoothPathIter(IPath* path) const;
 
 		void InitStartingSearchNodes();
@@ -165,7 +165,15 @@ namespace QTPFS {
 
 		QTPFS::SearchThreadData* searchThreadData;
 
+		// Identifies the layer, target quad and source quad for a search query so that similar
+		// searches can be combined.
 		std::uint64_t pathSearchHash;
+
+		// Similar to hash, but the target quad and source quad numbers may not relate to actual
+		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
+		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
+		// start and/or end in different, but close, quads. This is used to handle partially-
+		// shared path searches.
 		std::uint64_t pathPartialSearchHash;
 
 		const CSolidObject* pathOwner;

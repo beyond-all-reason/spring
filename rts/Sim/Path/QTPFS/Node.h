@@ -224,7 +224,7 @@ namespace QTPFS {
 		void SetNeighborEdgeTransitionPoint(const float2& point) { selectedNetpoint = point; }
 		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
 
-		uint32_t GetStepIndex() { return stepIndex; }
+		uint32_t GetStepIndex() const { return stepIndex; }
 		void SetStepIndex(uint32_t idx) { stepIndex = idx; }
 
 		unsigned int index = 0;

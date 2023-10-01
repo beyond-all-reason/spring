@@ -44,6 +44,8 @@ void ScanForPathSpeedModInfo(int frameModulus) {
                 layer.updateCurMaxSpeed = (-std::numeric_limits<float>::infinity());
                 layer.updateMaxNodes = nodeLayer.GetMaxNodesAlloced();
                 layer.updateInProgress = true;
+                layer.updateCurSumSpeed = 0.f;
+                layer.updateNumLeafNodes = 0.f;
             });
         dataChunk = 0;
     }

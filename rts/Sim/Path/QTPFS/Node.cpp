@@ -645,7 +645,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 	int newNeighbors = 0;
 
-	constexpr size_t maxNumberOfNeighbours = QTPFS_MAX_NODE_SIZE*4;
+	constexpr size_t maxNumberOfNeighbours = QTPFS_MAX_NODE_SIZE*4 + 4;
 	std::array<INode*, maxNumberOfNeighbours> neighborCache;
 
 	// if (gs->frameNum > -1 && nodeLayer == 2)
@@ -908,6 +908,8 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 			}
 		}
 		#endif
+
+		assert(newNeighbors < maxNumberOfNeighbours);
 
 		maxNgbs = neighbours.size() + newNeighbors;
 		neighbours.reserve(maxNgbs);

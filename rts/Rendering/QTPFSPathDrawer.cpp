@@ -36,6 +36,7 @@ static std::vector<const QTPFS::QTNode*> visibleNodes;
 
 static constexpr unsigned char LINK_COLOR[4] = {1 * 255, 0 * 255, 1 * 255, 1 * 128};
 static constexpr unsigned char PATH_COLOR[4] = {0 * 255, 0 * 255, 1 * 255, 1 * 255};
+static constexpr unsigned char BAD_PATH_COLOR[4] = {1 * 255, 0 * 255, 0 * 255, 1 * 255};
 static constexpr unsigned char NODE_COLORS[3][4] = {
 	{1 * 255, 0 * 255, 0 * 255, 1 * 255}, // red --> blocked
 	{0 * 255, 1 * 255, 0 * 255, 1 * 255}, // green --> passable
@@ -211,8 +212,13 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
 		p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
 
-		rb.AddVertex({p0, PATH_COLOR});
-		rb.AddVertex({p1, PATH_COLOR});
+		if (path->GetSearchTime().toMilliSecsi() < 10LL) {
+			rb.AddVertex({p0, PATH_COLOR});
+			rb.AddVertex({p1, PATH_COLOR});
+		} else {
+			rb.AddVertex({p0, BAD_PATH_COLOR});
+			rb.AddVertex({p1, BAD_PATH_COLOR});
+		}
 	}
 
 	rb.Submit(GL_LINES);

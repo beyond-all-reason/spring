@@ -528,6 +528,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 		assert(i == (nl.GetPoolNode(i)->GetNodeNumber() & rootMask) >> rootShift);
 	}
 	nl.SetRootNodeCountAndDimensions(numRootCount, (numRootCount/zRootNodes), zRootNodes, rootSize);
+	assert((numRootCount/zRootNodes)*zRootNodes == numRootCount);
 }
 
 
@@ -848,6 +849,8 @@ bool QTPFS::PathManager::ExecuteSearch(
 ) {
 	ZoneScoped;
 
+	BasicTimer searchTimer(0);
+
 	entt::entity pathEntity = (entt::entity)search->GetID();
 	if (!registry.valid(pathEntity))
 		return false;
@@ -953,6 +956,8 @@ bool QTPFS::PathManager::ExecuteSearch(
 		pathTraces[path->GetID()] = search->GetExecutionTrace();
 		#endif
 	}
+
+	path->SetSearchTime(searchTimer.GetDuration());
 
 	return true;
 }

@@ -12,6 +12,8 @@
 
 #include "Map/ReadMap.h"
 
+#include "System/TimeProfiler.h"
+
 class CSolidObject;
 
 namespace QTPFS {
@@ -44,6 +46,7 @@ namespace QTPFS {
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
 			owner = other.owner;
+			searchTime = other.searchTime;
 			return *this;
 		}
 		IPath(IPath&& other) { *this = std::move(other); }
@@ -68,6 +71,7 @@ namespace QTPFS {
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
 			owner = other.owner;
+			searchTime = other.searchTime;
 
 			return *this;
 		}
@@ -191,6 +195,10 @@ namespace QTPFS {
 
 		const std::vector<PathNodeData>& GetNodeList() const { return nodes; };
 
+		void SetSearchTime(spring_time time) { searchTime = time; }
+
+		spring_time GetSearchTime() const { return searchTime; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
@@ -198,7 +206,15 @@ namespace QTPFS {
 		unsigned int nextPointIndex = -1; // index of the next waypoint to be visited
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
+		// Identifies the layer, target quad and source quad for a search query so that similar
+		// searches can be combined.
 		std::uint64_t hash = -1;
+
+		// Similar to hash, but the target quad and source quad numbers may not relate to actual
+		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
+		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
+		// start and/or end in different, but close, quads. This is used to handle partially-
+		// shared path searches.
 		std::uint64_t virtualHash = -1;
 		float radius = 0.f;
 		bool synced = true;
@@ -215,6 +231,8 @@ namespace QTPFS {
 
 		// object that requested this path (NULL if none)
 		const CSolidObject* owner = nullptr;
+
+		spring_time searchTime;
 	};
 }
 

@@ -133,6 +133,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 }
 
 void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
+	ZoneScoped;
 	auto& nodes = path->GetNodeList();
 
 	auto addNode = [this](uint32_t dir, uint32_t nodeId, uint32_t prevNodeId, const float2& netPoint, uint32_t stepIndex){
@@ -144,24 +145,27 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 		searchNode.SetStepIndex(stepIndex);
 	};
 
+	uint32_t badNodeCount = 0;
 	{
 		uint32_t stepIndex = 1;
 		uint32_t prevNodeId = -1;
 		uint32_t badPrevNodeId = -1;
-		std::for_each(nodes.begin(), nodes.end(), [&addNode, &prevNodeId, &badPrevNodeId, &stepIndex](const IPath::PathNodeData& node){
+		std::for_each(nodes.begin(), nodes.end(), [&addNode, &prevNodeId, &badPrevNodeId, &stepIndex, &badNodeCount](const IPath::PathNodeData& node){
 			if (node.netPoint.x != -1.f) {
 				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, prevNodeId, node.netPoint, stepIndex++);
 				prevNodeId = node.nodeId;
 			} else {
 				// mark node being on an incomplete route and won't link back to forward src.
-				// used by reverse partial search to drop out early.
-				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, badPrevNodeId, node.netPoint, 0);
+				// used by reverse partial search to drop out early. Set stepindex to non-zero so
+				// it can't be confused with a genuine search step.
+				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, badPrevNodeId, node.netPoint, 999);
 				badPrevNodeId = node.nodeId;
+				badNodeCount++;
 			}
 		});
 	}
 	{
-		uint32_t stepIndex = nodes.size();
+		uint32_t stepIndex = nodes.size() - badNodeCount;
 		float2 prevNetPoint;
 		uint32_t prevNodeId = -1;
 		std::for_each(nodes.rbegin(), nodes.rend(), [&addNode, &prevNodeId, &prevNetPoint, &stepIndex](const IPath::PathNodeData& node){
@@ -178,7 +182,8 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 	// 	addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, -1, node.netPoint);
 	// }
 
-	searchEarlyDrop = !path->IsFullPath();
+	searchEarlyDrop = false;
+	// searchEarlyDrop = !path->IsFullPath();
 }
 
 bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
@@ -216,7 +221,10 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 	// cover only flat terrain with maximum speed-modifier between nxtPoint
 	// and tgtPoint
 	switch (searchType) {
-		// This guarantees the best path, but underestimates distance costs considerabily.
+		// This, by default, guarantees the best path, but underestimates distance costs considerabily.
+		// Searching more quads than neccessary is an impact to performance. So a slight increase to the
+		// hcost can be applied to help. Care needs to be taken because if it goes too far, then
+		// performance can drop further instead as the search shifts to best-first-search.
 		case PATH_SEARCH_ASTAR:
 			{
 				const float maxSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].max;
@@ -259,6 +267,7 @@ bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {
+	ZoneScoped;
 
 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 	searchExec = new PathSearchTrace::Execution(gs->frameNum);
@@ -322,6 +331,10 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				fwdPathConnected = IsNodeActive(bwdNode);
 				if (fwdPathConnected){
 					fwdStepIndex = curSearchNode->GetStepIndex();
+
+					// If step Index is 0, then a full path was found. This can happen for partial
+					// searches, if the partial path isn't actually close enough.
+					if (curSearchNode->GetStepIndex() == 0) { isFullSearch = true; }
 					fwd.tgtSearchNode = curSearchNode;
 					searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 				}
@@ -351,10 +364,16 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 			if (fwdSearchNodes.isSet(curSearchNode->GetIndex())) {
 				SearchNode& fwdNode = fwdSearchNodes[curSearchNode->GetIndex()];
-				bwdPathConnected = IsNodeActive(fwdNode);
+				
 				searchEarlyDrop = nodeIsEarlyDrop(fwdNode);
+				if (!searchEarlyDrop)
+					bwdPathConnected = IsNodeActive(fwdNode);
 				if (bwdPathConnected || searchEarlyDrop) {
 					bwdStepIndex = curSearchNode->GetStepIndex();
+
+					// If step Index is 0, then a full path was found. This can happen for partial
+					// searches, if the partial path isn't actually close enough.
+					if (curSearchNode->GetStepIndex() == 0) { isFullSearch = true; }
 					bwd.tgtSearchNode = curSearchNode;
 					searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 				}
@@ -380,11 +399,12 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		reverseTrace(SearchThreadData::SEARCH_BACKWARD);
 	} else if (doPartialSearch) {
 		// Sanity check the path is properly connected. Partial searches can fail this check.
-		if (haveFullPath && bwd.tgtSearchNode != nullptr) {
+		// If a partial search found a full path instead of connecting to the partial path, then
+		// isFullSearch is set to true and a check isn't needed.
+		if (haveFullPath && !isFullSearch) {
 			if (fwdStepIndex > bwdStepIndex){
 				rejectPartialSearch = true;
-				LOG("%s: rejecting partial path.", __func__);
-				// assert(false);
+				// LOG("%s: rejecting partial path.", __func__);
 				return false;
 			}
 		}
@@ -415,6 +435,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 
 bool QTPFS::PathSearch::ExecuteRawSearch() {
+	ZoneScoped;
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
 	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
@@ -459,6 +480,7 @@ void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, u
 }
 
 void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
+	ZoneScoped;
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
 	SearchQueueNode curOpenNode = (*searchData.openNodes).top();
@@ -635,6 +657,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 }
 
 void QTPFS::PathSearch::Finalize(IPath* path) {
+	ZoneScoped;
 
 	// LOG("%s: [%p : %d] Finialize search.", __func__
 	// 		, &nodeLayer[path->GetPathType()]
@@ -826,14 +849,25 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	assert(fwd.tgtPoint != float3());
 }
 
-void QTPFS::PathSearch::SmoothPath(IPath* path) const {
+void QTPFS::PathSearch::SmoothPath(IPath* path) {
 	if (path->NumPoints() == 2)
 		return;
 
-	#ifndef NDEBUG
-		auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
-		assert(fwd.srcSearchNode->GetPrevNode() == NULL);
-	#endif
+	// this isnt going to work, the backward path isnt copied over to the forward;
+	// maybe consider clearing out the data and writing in simple nodes?;
+
+	// auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+	// auto& fwdSearchNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD];
+	
+	// auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
+	// auto& bwdSearchNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD];
+
+	// // Now that the forward/backward paths have been traced, correct the target node for the
+	// // forward search so that the smooth path processes the full path.
+	// fwd.tgtSearchNode = &fwdSearchNodes[bwd.srcSearchNode->GetIndex()];
+
+	assert(fwd.srcSearchNode->GetPrevNode() == nullptr);
+	assert(fwd.tgtSearchNode->GetPrevNode() != nullptr);
 
 	for (unsigned int k = 0; k < QTPFS_MAX_SMOOTHING_ITERATIONS; k++) {
 		if (!SmoothPathIter(path)) {
