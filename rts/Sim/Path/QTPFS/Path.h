@@ -21,6 +21,7 @@ namespace QTPFS {
 		struct PathNodeData {
 			uint32_t nodeId;
 			float2 netPoint;
+			int pathPointIndex = -1;
 		};
 
 		IPath() {}
@@ -147,9 +148,10 @@ namespace QTPFS {
 		}
 		const float3& GetPoint(unsigned int i) const { return points[std::min(i, NumPoints() - 1)]; }
 
-		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint) {
+		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint, int pointIdx) {
 			nodes[i].netPoint = netpoint;
 			nodes[i].nodeId = nodeId;
+			nodes[i].pathPointIndex = pointIdx;
 		}
 		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
 

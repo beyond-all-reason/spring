@@ -814,24 +814,19 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	int pointIndex = 1;
 	int nodeIndex = 0;
 	while (!points.empty()) {
+		int nodePointIndex = -1;
 		float3& point   = points.front().point;
 		uint32_t nodeId = points.front().nodeId;
+
 		if ( (nodeId & ONLY_NODE_ID_MASK) == 0 ){
 			assert(point != float3());
+			nodePointIndex = pointIndex;
 			path->SetPoint(pointIndex++, point);
 			// LOG("%s: setting point (%f, %f, %f)", __func__, point.x, point.y, point.z);
 		}
+		path->SetNode(nodeIndex++, nodeId & ~ONLY_NODE_ID_MASK, float2(point.x, point.z), nodePointIndex);
 		// LOG("%s: tgtNode=%d point (%f, %f, %f)", __func__
 		// 		, nodeId, point.x, point.y, point.z);
-		path->SetNode(nodeIndex++, nodeId & ~ONLY_NODE_ID_MASK, float2(point.x, point.z));
-		// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
-		// 		, path->GetHash()
-		// 		, path->GetPathType()
-		// 		, (int)points.size()
-		// 		, points.front().x
-		// 		, points.front().y
-		// 		, points.front().z
-		// 		);
 		points.pop_front();
 	}
 
@@ -853,22 +848,6 @@ void QTPFS::PathSearch::SmoothPath(IPath* path) {
 	if (path->NumPoints() == 2)
 		return;
 
-	// this isnt going to work, the backward path isnt copied over to the forward;
-	// maybe consider clearing out the data and writing in simple nodes?;
-
-	// auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
-	// auto& fwdSearchNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD];
-	
-	// auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
-	// auto& bwdSearchNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD];
-
-	// // Now that the forward/backward paths have been traced, correct the target node for the
-	// // forward search so that the smooth path processes the full path.
-	// fwd.tgtSearchNode = &fwdSearchNodes[bwd.srcSearchNode->GetIndex()];
-
-	assert(fwd.srcSearchNode->GetPrevNode() == nullptr);
-	assert(fwd.tgtSearchNode->GetPrevNode() != nullptr);
-
 	for (unsigned int k = 0; k < QTPFS_MAX_SMOOTHING_ITERATIONS; k++) {
 		if (!SmoothPathIter(path)) {
 			// all waypoints stopped moving
@@ -877,7 +856,7 @@ void QTPFS::PathSearch::SmoothPath(IPath* path) {
 	}
 }
 
-bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
+bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 	// smooth in reverse order (target to source)
 	//
 	// should terminate when waypoints stop moving,
@@ -887,16 +866,34 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) const {
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
-	SearchNode* n0 = fwd.tgtSearchNode;
-	SearchNode* n1 = fwd.tgtSearchNode;
+	auto& nodePath = path->GetNodeList();
+	auto getNextNodeIndex = [&nodePath](int i){
+		while (--i >= 0) {
+			const IPath::PathNodeData* node = &nodePath[i];
+			if (node->pathPointIndex > -1)
+				break;
+		}
+		return i;
+	};
 
-	while (n1 != fwd.srcSearchNode) {
-		n0 = n1;
-		n1 = n0->GetPrevNode();
+	int nodeIdx = getNextNodeIndex(nodePath.size());
+	assert(nodeIdx > -1);
+
+	const IPath::PathNodeData* n1 = &nodePath[nodeIdx];
+	INode* nn0 = nodeLayer->GetPoolNode(n1->nodeId);
+	INode* nn1 = nn0;
+
+	for (; ni > 0;) {
+		nodeIdx = getNextNodeIndex(nodeIdx);
+		if (nodeIdx < 0)
+			break;
+
+		n1 = &nodePath[nodeIdx];
+
+		nn0 = nn1;
+		nn1 = nodeLayer->GetPoolNode(n1->nodeId);
+
 		ni -= 1;
-
-		INode* nn0 = nodeLayer->GetPoolNode(n0->GetIndex());
-		INode* nn1 = nodeLayer->GetPoolNode(n1->GetIndex());
 
 		assert(nn1->GetNeighborRelation(nn0) != 0);
 		assert(nn0->GetNeighborRelation(nn1) != 0);

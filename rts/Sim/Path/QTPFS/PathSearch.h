@@ -147,7 +147,7 @@ namespace QTPFS {
 
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path);
-		bool SmoothPathIter(IPath* path) const;
+		bool SmoothPathIter(IPath* path);
 
 		void InitStartingSearchNodes();
 		void UpdateHcostMult();
