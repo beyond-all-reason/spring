@@ -166,6 +166,7 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 ### Builder behaviour
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
 * fixed builders not placing nanoframes from their maximum range.
+* units vacating a build area (aka "bugger off") will now try to use the fastest route out.
 * added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to `Spring.GetUnitCurrentCommand`, but shows what the unit is actually doing,
 so will differ when the unit is guarding or out of range. Also resolves Build vs Repair. Only shows worker tasks (i.e. things related to nanolathing).
 * `gadget:AllowUnitCreation` now has two return values. The first one is still a boolean on whether to allow creating the unit (no change here).
@@ -251,6 +252,9 @@ The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 * fix `DGun` weapon type projectile direction (previously shot at an angle that would be valid from the `AimFromWeapon` piece and not the `QueryWeapon` piece)
 
 ### Miscellaneous fixes
+* fixed basecontent initial commander spawn gadget.
+* fixed basecontent action handler key press/release events.
+* fixed skirmish AI API getTeamResourcePull (used to return max storage instead).
 * `Spring.SetSunDirection` no longer causes broken shadows if you pass an unnormalized vector.
 * fixed being unable to drag-select units with `/specfullview 0`
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
