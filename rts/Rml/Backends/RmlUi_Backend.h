@@ -34,6 +34,7 @@
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
+#include "lib/sol2/sol.hpp"
 
 using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
@@ -48,7 +49,7 @@ using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifie
 namespace RmlGui {
 
 // Initializes the backend, including the custom system and render interfaces, and opens a window for rendering the RmlUi context.
-bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext);
+bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, lua_State* lua_state, int winX, int winY);
 // Closes the window and release all resources owned by the backend, including the system and render interfaces.
 void Shutdown();
 
@@ -60,6 +61,8 @@ Rml::RenderInterface* GetRenderInterface();
 // Polls and processes events from the current platform, and applies any relevant events to the provided RmlUi context and the key down callback.
 // @return False to indicate that the application should be closed.
 bool ProcessEvents(Rml::Context* context, KeyDownCallback key_down_callback = nullptr, bool power_save = false);
+bool ProcessEvent(const SDL_Event& event);
+bool ProcessMouseEvent(const SDL_Event& event);
 // Request application closure during the next event processing call.
 void RequestExit();
 
