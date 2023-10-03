@@ -30,11 +30,15 @@
 #include "RmlUi_Platform_SDL.h"
 #include "RmlUi_Renderer_GL3.h"
 #include <RmlUi/Core.h>
+#include <RmlUi/Lua.h>
 #include <RmlUi/Debugger.h>
 #include <RmlUi/Core/Profiling.h>
 #include <SDL.h>
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Lua/LuaUI.h"
+#include "RmlSolLua.h"
+#include <functional>
 
 // #include "System/FileSystem/ArchiveScanner.h"
 // #include "System/FileSystem/DataDirLocater.h"
@@ -42,6 +46,7 @@
 // #include "System/FileSystem/FileHandler.h"
 // #include "System/FileSystem/FileSystem.h"
 // #include "System/FileSystem/FileSystemInitializer.h"
+#include "System/Input/InputHandler.h"
 
 #if defined RMLUI_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
@@ -145,13 +150,15 @@ struct BackendData
 	SDL_Window *window = nullptr;
 	SDL_GLContext glcontext = nullptr;
 	std::vector<Rml::Context *> contexts;
+	InputHandler::SignalType::connection_type inputCon;
 
 	bool running = true;
 };
 static Rml::UniquePtr<BackendData> data;
 
-bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext)
+bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, lua_State *lua_state, int winX, int winY)
 {
+	sol::state_view lua(lua_state);
 	RMLUI_ASSERT(!data);
 
 	data = Rml::MakeUnique<BackendData>();
@@ -171,8 +178,30 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 	Rml::SetRenderInterface(RmlGui::GetRenderInterface());
 
 	data->system_interface.SetWindow(target_window);
-	data->render_interface.SetViewport(1500, 1500);
+	// int w = 0;
+	// int h = 0;
+	// SDL_Renderer* renderer = SDL_GetRenderer(target_window);
+	// if (renderer == NULL) {
+	// 	const char* errmessage = SDL_GetError();
+	// 	LOG_L(L_FATAL, "[SpringApp::%s] renderer get error: %s", __func__, errmessage);
+	// }
+	// int errcode = SDL_GetRendererOutputSize(renderer, &w, &h);
+	// if (errcode < 0) {
+	// 	const char* errmessage = SDL_GetError();
+	// 	LOG_L(L_FATAL, "[SpringApp::%s] renderer output size error: %s", __func__, errmessage);
+	// }
+	data->render_interface.SetViewport(winX, winY);
 
+	Rml::Initialise();
+	// bool ok = CLuaRml::LoadHandler();
+	// if (!ok) {
+	// 	exit(1);
+	// }
+	// Rml::Lua::Interpreter::LoadFile(Rml::String("luainvaders/lua/start.lua"));
+
+	Rml::SolLua::Initialise(&lua);
+	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
+	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
 	return true;
 }
 
@@ -198,6 +227,50 @@ Rml::RenderInterface *RmlGui::GetRenderInterface()
 {
 	RMLUI_ASSERT(data);
 	return &data->render_interface;
+}
+
+bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
+{
+	SDL_Event ev(event);
+	if (data == NULL || data->contexts.size() < 1)
+		return false;
+	return RmlSDL::InputEventHandler(data->contexts[0], ev);
+}
+
+bool RmlGui::ProcessEvent(const SDL_Event &event)
+{
+	SDL_Event ev(event);
+	switch (ev.type)
+	{
+	case SDL_WINDOWEVENT:
+	{
+		switch (ev.window.event)
+		{
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+		{
+			Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
+			data->render_interface.SetViewport(dimensions.x, dimensions.y);
+		}
+		break;
+		}
+		if (data != NULL && data->contexts.size() > 0)
+			RmlSDL::InputEventHandler(data->contexts[0], ev);
+	}
+	break;
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEWHEEL:
+		break; // handled by ProcessMouseEvent
+	case SDL_KEYDOWN:
+	default:
+	{
+		if (data != NULL && data->contexts.size() > 0)
+			RmlSDL::InputEventHandler(data->contexts[0], ev);
+	}
+	break;
+	}
+	return false;
 }
 
 bool RmlGui::ProcessEvents(Rml::Context *context, KeyDownCallback key_down_callback, bool power_save)

@@ -26,6 +26,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/MainDefines.h"
 #include "System/SafeUtil.h"
+#include <Rml/Backends/RmlUi_Backend.h>
 
 #include <functional>
 
@@ -68,6 +69,9 @@ IMouseInput::~IMouseInput()
 
 bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 {
+	if (!mouse->ButtonPressed() && !RmlGui::ProcessMouseEvent(event)) {
+		return false;
+	}
 	switch (event.type) {
 		case SDL_MOUSEMOTION: {
 			mousepos = int2(event.motion.x, event.motion.y);
