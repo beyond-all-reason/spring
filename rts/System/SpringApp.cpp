@@ -282,10 +282,6 @@ bool SpringApp::Init()
 	// GUIs
 	#ifndef HEADLESS
 	agui::gui = new agui::Gui();
-	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext());
-	Rml::Initialise();
-	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
-	RmlGui::CreateOverlayContext();
 
 
 	#endif
@@ -857,12 +853,10 @@ bool SpringApp::Update()
 	// sic; Update can set the controller to null
 	retc = (        activeController == nullptr || activeController->Update());
 
-	RmlGui::Update();
 	auto lock = CLoadLock::GetUniqueLock();
 	swap = (retc && activeController != nullptr && activeController->Draw());
 	#endif
 
-	RmlGui::RenderFrame();
 	// always swap by default, not doing so can upset some drivers
 	globalRendering->SwapBuffers(swap, false);
 	return retc;
