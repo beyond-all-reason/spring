@@ -216,6 +216,13 @@ These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
 * added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
 
+### Graphical Lua interfaces
+* addded `gl.ClearBuffer(slot, r,g,b,a) → nil`. `slot` can be "color0" to "color15", "depth", or "stencil".
+Clears only the specified drawBuffer within multi-target FBO and correctly clears integer textures.
+* addded `gl.ReadAttachmentPixel(slot, x,y) → attachmentPixel`. `slot` can be "color0" to "color15" or "depth".
+Reads a single pixel of a specified attachment with respect to its underlying type, correctly works for integer textures.
+* added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
+
 ### Miscellaneous additions
 * add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
 * added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
@@ -231,7 +238,6 @@ Multiple functions can be queued onto the same frame and run in the order they w
 The weapon number is optional if the unit has a single shield. The timer value is also optional: if you leave it nil it will emulate a weapon hit.
 Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
 An explicit numerical value always sets the timer to that many seconds.
-* added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 
