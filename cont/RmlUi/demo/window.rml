@@ -2,8 +2,31 @@
 <head>
 	<link type="text/rcss" href="rml.rcss"/>
 	<link type="text/rcss" href="invader.rcss"/>
+	<script>
+	local doc = nil
+	local function gf(_,frame)
+		doc:GetElementById("p3").inner_rml = "Frame: " .. frame
+	end
+
+	function buttonPress(document)
+		document:GetElementById("p2").inner_rml = "pressed button"
+		local units = Spring.GetSelectedUnits()
+		for _,u in pairs(units) do
+			Spring.GiveOrderToUnit( u, CMD.SELFD, {}, 0)
+		end
+	end
+
+	function testing(document)
+		Spring.Echo("test")
+		doc = document
+		-- this add requires modification to widgetHandler until adding interface is worked out
+		-- widgetHandler.addWidget({GameFrame = gf, whInfo = {name="rmlui test"}})
+		document:GetElementById("p1").inner_rml = "Game Name: " .. Spring.GetGameName()
+		document:GetElementById("p2").inner_rml = "Player Name: " .. Spring.GetPlayerInfo(0)
+	end
+	</script>
 </head>
-<body class="window">
+<body class="window" onload="testing(document)">
 	<div id="title_bar">
 		<handle move_target="#document">
 			<div id="icon"></div>
@@ -12,6 +35,10 @@
 	</div>
 	<div id="window">
 		<div id="content">
+		<p id="p1"></p>
+		<p id="p2"></p>
+		<p id="p3"></p>
+		<button onclick="buttonPress(document)">Self-D</button>
 		</div>
 	</div>
 	<handle size_target="#document" style="position: absolute; width: 16dp; height: 16dp; bottom: 0px; right: 0px; cursor: resize;"></handle>

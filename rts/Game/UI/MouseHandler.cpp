@@ -307,6 +307,8 @@ void CMouseHandler::MousePress(int x, int y, int button)
 	bp.dir      = (dir = GetCursorCameraDir(x, y));
 	bp.movement = 0;
 
+	pressedBitMask |= 1 << button;
+
 	if (activeReceiver != nullptr && activeReceiver->MousePress(x, y, button))
 		return;
 
@@ -463,6 +465,7 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 	dir = GetCursorCameraDir(x, y);
 
 	buttons[button].pressed = false;
+	pressedBitMask &= ~(1 << button);
 
 	if (inMapDrawer != nullptr && inMapDrawer->IsDrawMode()) {
 		inMapDrawer->MouseRelease(x, y, button);
@@ -543,6 +546,10 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 	}
 }
 
+bool CMouseHandler::ButtonPressed()
+{
+	return pressedBitMask > 0;
+}
 
 void CMouseHandler::MouseWheel(float delta)
 {
