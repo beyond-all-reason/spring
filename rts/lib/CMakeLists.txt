@@ -96,4 +96,6 @@ add_subdirectory(tracy)
 find_freetype_hack() # hack to find different named freetype.dll
 find_package_static(Freetype REQUIRED)
 
+# option(BUILD_LUA_BINDINGS "RmlUI lua " TRUE)
 add_subdirectory(RmlUi)
+add_subdirectory(RmlSolLua)

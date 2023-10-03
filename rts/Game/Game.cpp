@@ -2,6 +2,7 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <Rml/Backends/RmlUi_Backend.h>
 #include "Game.h"
 #include "Camera.h"
 #include "CameraHandler.h"
@@ -128,6 +129,7 @@
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
 
+#include <RmlUi/Core.h>
 #include "System/Misc/TracyDefs.h"
 
 
@@ -507,6 +509,9 @@ void CGame::Load(const std::string& mapFileName)
 			forcedQuit = true;
 		}
 	}
+
+	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), luaUI->GetLuaState(), globalRendering->winSizeX, globalRendering->winSizeY);
+	RmlGui::CreateOverlayContext();
 
 	Watchdog::DeregisterThread(WDT_LOAD);
 	AddTimedJobs();
@@ -1295,7 +1300,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	globalRendering->lastFrameStart = currentTime;
 	// Update the interpolation coefficient (globalRendering->timeOffset)
 	if (!gs->paused && !IsSimLagging() && !gs->PreSimFrame() && !videoCapturing->AllowRecord()) {
-		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS; 
+		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS;
 		globalRendering->lastTimeOffset = globalRendering->timeOffset;
 		globalRendering->timeOffset = (currentTime - lastFrameTime).toMilliSecsf() * globalRendering->weightedSpeedFactor;
 
@@ -1315,36 +1320,36 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		float CTO = globalRendering->timeOffset;
 
 		// This mode forces a strict time step of 0.5 simframes per draw frames. Only useful for testing @ 60hz
-		if (SmoothTimeOffset == -1) { 
+		if (SmoothTimeOffset == -1) {
 			if (newSimFrame) {
-				if (LTO > (1.0f - drawsimratio * strictness)) 
+				if (LTO > (1.0f - drawsimratio * strictness))
 					globalRendering->timeOffset = drawsimratio;
-				else 
+				else
 					globalRendering->timeOffset = 0.0f;
 			} else {
-				if (LTO > drawsimratio * strictness) 
+				if (LTO > drawsimratio * strictness)
 					globalRendering->timeOffset = std::fmin(LTO + drawsimratio * strictness, 1.0f);
 				else
 					globalRendering->timeOffset = std::fmin(drawsimratio * strictness, 1.0f);
 			}
 		}
 
-		// This mode tries to correct for the wrongly calculated timeOffset adaptively, 
-		// while trying to maintain a smooth interpolation rate 
+		// This mode tries to correct for the wrongly calculated timeOffset adaptively,
+		// while trying to maintain a smooth interpolation rate
 		// As frame rates dip below 45fps, this method is only marginally better than old method
 		// But that is heavily dependent on wether the load is sim or draw based.
 		// TODO: the camera smoothing still seems to take sim load into account heavily. So large sim loads jitter the camera quite a bit when moving
 		if (SmoothTimeOffset > 0){
 
-			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was. 
+			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was.
 			drawsimratio = std::fmin(drawsimratio, 1.0);  // Clamp it otherwise we will accumulate delay when < 30 FPS
 			float oldCTO = globalRendering->timeOffset;
 			float newCTO = globalRendering->timeOffset;
 
-			if (newSimFrame) { 
-				// newsimframe is a special case, as our new time offset is kind of wrong. 
+			if (newSimFrame) {
+				// newsimframe is a special case, as our new time offset is kind of wrong.
 				// What we want to know is when the last draw happened, and at what offset.
-				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0, 
+				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0,
 				// irrespective of the time spent in sim.
 				// If the last draw frame didnt happend on time, and had a large CTO, then we need to 'carry over' some time offset
 
@@ -1355,7 +1360,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 				}
 			}
 			else {
-				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit. 
+				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit.
 				// Otherwise, the sim frame is also calculated into the offset, making things jittery
 				if ((CTO - LTO < (drawsimratio) * strictness)) {
 					newCTO = std::fmin(LTO + drawsimratio * strictness, 1.3f);
@@ -1467,6 +1472,7 @@ bool CGame::Draw() {
 	if (UpdateUnsynced(currentTimePreUpdate))
 		return false;
 
+	RmlGui::Update();
 	const spring_time currentTimePreDraw = spring_gettime();
 
 	SCOPED_SPECIAL_TIMER("Draw");
@@ -1561,6 +1567,7 @@ bool CGame::Draw() {
 
 	glEnable(GL_DEPTH_TEST);
 	glLoadIdentity();
+	RmlGui::RenderFrame();
 
 	if (videoCapturing->AllowRecord()) {
 		videoCapturing->SetLastFrameTime(globalRendering->lastFrameTime = 1000.0f / GAME_SPEED);
@@ -1714,7 +1721,7 @@ void CGame::SimFrame() {
 
 	// note: starts at -1, first actual frame is 0
 	gs->frameNum += 1;
-	lastFrameTime = spring_gettime(); 
+	lastFrameTime = spring_gettime();
 	// This is not very ideal, as the timeoffset of each new draw frame is also calculated from this
 	// with a strange side effect: if the timeOffset was a high number, like 0.9, then this will force the next draw frame to have an offset of 0.0x
 	// What this means, is that in the case where we have frames to spare, and and over rendering, then the following can happen at 60hz:
@@ -1724,7 +1731,7 @@ void CGame::SimFrame() {
 	// drawframe timeoffset ~ 1.0 (1 extra draw!)
 	// simframe
 	// drawframe timeoffset ~ 0.0 // THIS is the problematic case, as visually, this frame is 'near identical' to the previously drawn one!
-	// simframe 
+	// simframe
 	// drawframe timeoffset ~ 0.0
 	// drawframe timeoffset ~ 0.5
 	// simframe
