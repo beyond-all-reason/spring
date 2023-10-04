@@ -25,6 +25,12 @@ enum ModelShaderProgram {
 	MODEL_SHADER_COUNT             = 4,
 };
 
+enum ModelDrawerTypes {
+	MODEL_DRAWER_GLSL = 0, // standard-shader path (GLSL)
+	MODEL_DRAWER_GL4  = 1, // GL4-shader path (GLSL)
+	MODEL_DRAWER_CNT  = 2
+};
+
 enum ShaderCameraModes {
 	NORMAL_CAMERA = 0,
 	REFLCT_CAMERA = 1,
@@ -113,7 +119,7 @@ public:
 	void SetupAlphaDrawing(bool deferredPass) const;
 	void ResetAlphaDrawing(bool deferredPass) const;
 public:
-	inline static std::array<IModelDrawerState*, MODEL_SHADER_COUNT> modelDrawerStates = {};
+	inline static std::array<IModelDrawerState*, ModelDrawerTypes::MODEL_DRAWER_CNT> modelDrawerStates = {};
 public:
 	/// <summary>
 	/// .x := regular unit alpha
@@ -138,31 +144,6 @@ public:
 	bool IsLegacy() const override { return true; }
 protected:
 	inline static const std::string PO_CLASS = "[ModelDrawer]";
-};
-
-class CModelDrawerStateFFP final : public CModelDrawerStateLegacy {
-public:
-	CModelDrawerStateFFP();
-	~CModelDrawerStateFFP() override;
-public:
-	// caps functions
-	bool CanEnable() const override { return true; }
-	bool CanDrawDeferred() const override { return false; }
-
-	bool SetTeamColor(int team, float alpha) const override;
-
-	void Enable(bool deferredPass, bool alphaPass) const override;
-	void Disable(bool deferredPass) const override;
-private:
-	void SetNanoColor(const float4& color) const override;
-
-	void EnableTextures() const override;
-	void DisableTextures() const override;
-private:
-	static void SetupBasicS3OTexture0();
-	static void SetupBasicS3OTexture1();
-	static void CleanupBasicS3OTexture1();
-	static void CleanupBasicS3OTexture0();
 };
 
 class CModelDrawerStateGLSL final : public CModelDrawerStateLegacy {

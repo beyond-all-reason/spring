@@ -1763,10 +1763,6 @@ int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
-	// SMF_RENDER_STATE_LUA only accepts GLSL shaders
-	if (!globalRendering->haveGLSL)
-		return 0;
-
 	const LuaShaders& shaders = CLuaHandle::GetActiveShaders(L);
 
 	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
@@ -3520,8 +3516,6 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 
 	const char* type = lua_tostring(L, 2);
 	if (type[0] == 'u') {
-		// update the selection, and clear the unit command queues
-		selectedUnitsHandler.GiveCommand(Command(CMD_STOP), false);
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
 		selectedUnitsHandler.ClearSelected();
 		return 0;
@@ -4842,6 +4836,13 @@ int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
  * @function Spring.Yield
  *
  * Should be called after each widget/unsynced gadget is loaded in widget/gadget handler. Use it to draw screen updates and process windows events.
+ *
+ * @usage#
+ * local wantYield = Spring.Yield and Spring.Yield() -- nil check: not present in synced
+ * for wupget in pairs(wupgetsToLoad) do
+ *   loadWupget(wupget)
+ *   wantYield = wantYield and Spring.Yield()
+ * end
  *
  * @number sleep time in milliseconds.
  * @treturn bool when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.

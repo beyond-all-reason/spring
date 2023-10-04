@@ -418,8 +418,7 @@ bool CProjectileDrawer::CheckSoftenExt()
 {
 	static bool result =
 		FBO::IsSupported() &&
-		GLEW_EXT_framebuffer_blit &&
-		globalRendering->haveGLSL; //eval once
+		GLEW_EXT_framebuffer_blit; //eval once
 	return result;
 }
 

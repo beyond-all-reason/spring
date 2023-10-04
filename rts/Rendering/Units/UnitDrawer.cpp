@@ -128,7 +128,6 @@ void CUnitDrawer::InitStatic()
 
 	CUnitDrawerHelper::LoadUnitExplosionGenerators();
 
-	CUnitDrawer::InitInstance<CUnitDrawerFFP >(MODEL_DRAWER_FFP );
 	CUnitDrawer::InitInstance<CUnitDrawerGLSL>(MODEL_DRAWER_GLSL);
 	CUnitDrawer::InitInstance<CUnitDrawerGL4 >(MODEL_DRAWER_GL4 );
 

@@ -57,7 +57,7 @@ public:
 
 	void MakeCurrentContext(bool clear) const;
 
-	void CheckGLExtensions() const;
+	void CheckGLExtensions();
 	void SetGLSupportFlags();
 	void QueryVersionInfo(char (&sdlVersionStr)[64], char (&glVidMemStr)[64]);
 	void QueryGLMaxVals();
@@ -212,7 +212,6 @@ public:
 	float aspectRatio;
 
 	int forceDisablePersistentMapping;
-	int forceDisableShaders;
 	int forceDisableGL4;
 	int forceCoreContext;
 	int forceSwapBuffers;
@@ -329,7 +328,6 @@ public:
 	/**
 	 * Shader capabilities
 	 */
-	bool haveGLSL;
 	bool haveGL4;
 
 	/**
@@ -365,6 +363,7 @@ public:
 	bool fullScreen;
 	bool borderless;
 
+	bool underExternalDebug;
 public:
 	SDL_Window* sdlWindow;
 	SDL_GLContext glContext;

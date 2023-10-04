@@ -98,8 +98,6 @@ protected:
 	void DrawFeatureModel(const CFeature* feature, bool noLuaCall) const override;
 };
 
-class CFeatureDrawerFFP  final : public CFeatureDrawerLegacy {};
-class CFeatureDrawerARB  final : public CFeatureDrawerLegacy {};
 class CFeatureDrawerGLSL final : public CFeatureDrawerLegacy {};
 
 //TODO remove CFeatureDrawerLegacy inheritance

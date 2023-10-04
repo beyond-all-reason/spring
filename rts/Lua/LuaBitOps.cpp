@@ -22,7 +22,7 @@ const int mask = 0x00FFFFFF; // 2^24
  * 24 bits because only the 24 bits of the mantissa can be easily used in a 32 bit float
  * bitshift functions (<<, >> equivalent)
  *
- *     -- left shit
+ *     -- left shift
  *     local function lsh(value,shift)
  *         return (value*(2^shift)) % 2^24
  *     end

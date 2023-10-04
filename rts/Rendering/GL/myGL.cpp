@@ -238,8 +238,6 @@ void WorkaroundATIPointSizeBug()
 {
 	if (!globalRendering->amdHacks)
 		return;
-	if (!globalRendering->haveGLSL)
-		return;
 
 	GLboolean pointSpritesEnabled = false;
 	glGetBooleanv(GL_POINT_SPRITE, &pointSpritesEnabled);

@@ -42,7 +42,7 @@
 
 static CGameHelper gGameHelper;
 CGameHelper* helper = &gGameHelper;
-
+std::vector<CGameHelper::TestUnitBuildSquareCache> CGameHelper::TestUnitBuildSquareCache::testUnitBuildSquareCache;
 
 void CGameHelper::Init()
 {
@@ -50,6 +50,14 @@ void CGameHelper::Init()
 		wdVec.clear();
 		wdVec.reserve(32);
 	}
+	  syncedCacheListener = std::make_unique<TestUnitBuildSquareCacheEventsListener< true>>();
+	unsyncedCacheListener = std::make_unique<TestUnitBuildSquareCacheEventsListener<false>>();
+}
+
+void CGameHelper::Kill()
+{
+	  syncedCacheListener = nullptr;
+	unsyncedCacheListener = nullptr;
 }
 
 void CGameHelper::Update()
@@ -1586,4 +1594,24 @@ void CGameHelper::TestUnitBuildSquareCache::Invalidate(const KeyT& key)
 	spring::VectorEraseIf(testUnitBuildSquareCache, [&key](const auto& item) {
 		return (key == item.key);
 	});
+}
+
+void CGameHelper::TestUnitBuildSquareCache::Invalidate(const CFeature* feature)
+{
+	spring::VectorEraseAllIf(testUnitBuildSquareCache, [feature](const auto& item) {
+		return item.feature == feature;
+	});
+}
+
+template<bool synced>
+CGameHelper::TestUnitBuildSquareCacheEventsListener<synced>::TestUnitBuildSquareCacheEventsListener()
+	: CEventClient("[TestUnitBuildSquareCacheEventsListener(" + std::to_string(synced) + ")]", 1000, synced)
+{
+	eventHandler.AddClient(this);
+}
+
+template<bool synced>
+CGameHelper::TestUnitBuildSquareCacheEventsListener<synced>::~TestUnitBuildSquareCacheEventsListener()
+{
+	eventHandler.RemoveClient(this);
 }

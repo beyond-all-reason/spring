@@ -321,6 +321,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileName);
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
+	REGISTER_LUA_CFUNC(IsPosInMap);
 	REGISTER_LUA_CFUNC(GetGroundHeight);
 	REGISTER_LUA_CFUNC(GetGroundOrigHeight);
 	REGISTER_LUA_CFUNC(GetGroundNormal);
@@ -6840,6 +6841,47 @@ int LuaSyncedRead::GetProjectileName(lua_State* L)
  * @section ground
 ******************************************************************************/
 
+
+/***
+ *
+ * @function Spring.IsPosInMap
+ * @number x
+ * @number z
+ * @treturn boolean inPlayArea whether the position is in the active play area
+ * @treturn boolean inMap whether the position is in the full map area (currently this is the same as above)
+ */
+int LuaSyncedRead::IsPosInMap(lua_State* L)
+{
+	const float x = luaL_checkfloat(L, 1);
+	const float z = luaL_checkfloat(L, 2);
+
+	const float mapX = mapDims.mapx * SQUARE_SIZE;
+	const float mapZ = mapDims.mapy * SQUARE_SIZE;
+
+	const bool inMap
+		=  x >= 0
+		&& z >= 0
+		&& x <= mapX
+		&& z <= mapZ
+	;
+
+	/* Currently, the engine does not support limiting
+	 * the active play area natively, but it would be
+	 * a good feature to have, so let's be future-proof.
+	 *
+	 * This would be things like:
+	 *  - dynamically expanding map. Primarily for single
+	 *    player missions (think Supcom) but not necessarily.
+	 *  - circular maps, think 0 A.D. (where the technical map
+	 *    stays a square but corners are outside the play area).
+	 *  - just a decoration / flavor area outside the map proper.
+	 */
+	const bool inPlayArea = inMap;
+
+	lua_pushboolean(L, inPlayArea);
+	lua_pushboolean(L, inMap);
+	return 2;
+}
 
 /***
  *

@@ -1568,9 +1568,9 @@ EXPORT(float) skirmishAiCallback_Game_getTeamResourcePull(int skirmishAIId, int 
 
 	if (teamHandler.AlliedTeams(AI_TEAM_IDS[skirmishAIId], otherTeamId) || skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		if (resourceId == resourceHandler->GetMetalId()) {
-			res = teamHandler.Team(otherTeamId)->resStorage.metal;
+			res = teamHandler.Team(otherTeamId)->resPrevPull.metal;
 		} else if (resourceId == resourceHandler->GetEnergyId()) {
-			res = teamHandler.Team(otherTeamId)->resStorage.energy;
+			res = teamHandler.Team(otherTeamId)->resPrevPull.energy;
 		}
 	}
 

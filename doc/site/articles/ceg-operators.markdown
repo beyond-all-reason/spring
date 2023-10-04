@@ -60,7 +60,7 @@ So, `3 r4` gives a value between 3 and 7.
 In that case, also use the offset. A common idiom is to use, for example, `-15 r30` to roll ±15.
  * the value is distributed uniformly, but with some knowledge of statistics you could tweak it by stacking rolls.
 For example `r6` produces a flat uniform distribution, `r3 r3` a sort of triangle, and `r2 r2 r2` something smoother still.
-In practice this seems very underused though, and you can't make it nonsymmetrical via this basic method,
+In practice this seems very underused though, and you can't make the distribution asymmetrical via this basic method,
 though you can via the more advanced ones below.
 
 ### Index (`i`)
@@ -107,7 +107,7 @@ The `s` operator treats its operand as an amplitude and the current running valu
 For example `3 s2` is about 0.28, because that's `2 * sin(3 radians)`.
 
  * only really makes sense with sources of unpredictability such as `r`, `i`, or `d`.
- * there is no separate cosinus operator, but you can make a ghetto cosinus via `cos(x) = sin(π/4 + x)`.
+ * there is no separate cosinus operator, but you can make a ghetto cosinus via `cos(x) = sin(π/2 + x)`, i.e. just do `1.57 sX` instead of just `sX`.
  * good for making circular or spherical volumetric effects (for non-volumetric there's basic spread parameters like `emitRot`).
 
 ### Sawtooth/modulo (`m`) and discretize (`k`)
