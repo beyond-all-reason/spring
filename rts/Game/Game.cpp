@@ -295,6 +295,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	RmlGui::Shutdown();
 	helper->Kill();
 	KillLua(true);
 	KillMisc();
@@ -506,9 +507,6 @@ void CGame::Load(const std::string& mapFileName)
 			forcedQuit = true;
 		}
 	}
-
-	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), luaUI->GetLuaState(), globalRendering->winSizeX, globalRendering->winSizeY);
-	RmlGui::CreateOverlayContext();
 
 	Watchdog::DeregisterThread(WDT_LOAD);
 	AddTimedJobs();
@@ -824,6 +822,7 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Disable();
 		GameSetupDrawer::Enable();
 	}
+	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), globalRendering->winSizeX, globalRendering->winSizeY);
 }
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
