@@ -2,6 +2,7 @@
 
 #include "GuiHandler.h"
 
+#include <Rml/Backends/RmlUi_Backend.h>
 #include "CommandColors.h"
 #include "KeyBindings.h"
 #include "KeyCodes.h"
@@ -168,6 +169,7 @@ bool CGuiHandler::EnableLuaUI(bool enableCommand)
 		}
 	}
 
+	RmlGui::Reload();
 	CLuaUI::ReloadHandler();
 
 	if (luaUI != nullptr) {
