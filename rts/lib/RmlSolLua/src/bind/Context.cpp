@@ -151,10 +151,15 @@ namespace Rml::SolLua
 			"UnloadDocument", &Rml::Context::UnloadDocument,
 			"Update", &Rml::Context::Update,
 			"OpenDataModel", &datamodel::openDataModel,
+			"RemoveDataModel", &Rml::Context::RemoveDataModel,
 			"ProcessMouseMove", &Rml::Context::ProcessMouseMove,
 			"ProcessMouseButtonDown", &Rml::Context::ProcessMouseButtonDown,
 			"ProcessMouseButtonUp", &Rml::Context::ProcessMouseButtonUp,
 			// "ProcessMouseWheel", &Rml::Context::ProcessMouseWheel,
+			"ProcessMouseWheel", sol::overload(
+			static_cast<bool(Rml::Context::*)(float, int)>(&Rml::Context::ProcessMouseWheel),
+			static_cast<bool(Rml::Context::*)(Vector2f, int)>(&Rml::Context::ProcessMouseWheel)
+		),
 			"ProcessMouseLeave", &Rml::Context::ProcessMouseLeave,
 			"IsMouseInteracting", &Rml::Context::IsMouseInteracting,
 			"ProcessKeyDown", &Rml::Context::ProcessKeyDown,

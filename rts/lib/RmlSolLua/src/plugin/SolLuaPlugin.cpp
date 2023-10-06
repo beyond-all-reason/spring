@@ -34,7 +34,7 @@ namespace Rml::SolLua
 
 	void SolLuaPlugin::OnShutdown()
 	{
-		m_lua_state.collect_garbage();
+		// m_lua_state.collect_garbage();
 		delete this;
 	}
 
