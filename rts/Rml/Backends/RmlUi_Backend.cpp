@@ -38,7 +38,9 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Lua/LuaUI.h"
 #include "RmlSolLua.h"
+#include "System/FileSystem/FileHandler.h"
 #include <functional>
+#include <tracy/Tracy.hpp>
 
 // #include "System/FileSystem/ArchiveScanner.h"
 // #include "System/FileSystem/DataDirLocater.h"
@@ -111,28 +113,53 @@ public:
 	VFSFileInterface() {}
 	Rml::FileHandle Open(const Rml::String &path)
 	{
-		const std::string &fsFullPath = dataDirsAccess.LocateFile(path);
-		return (Rml::FileHandle)std::fopen(fsFullPath.c_str(), "rb");
+		// LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s", __func__, path.c_str());
+		// TODO: luaui makes the second one SPRING_VFS_MOD
+		const std::string mode = (CLuaHandle::GetDevMode()) ? SPRING_VFS_RAW_FIRST : SPRING_VFS_RAW_FIRST;
+		CFileHandler *fh = new CFileHandler(path, mode);
+		if (!fh->FileExists())
+		{
+			delete fh;
+			return (Rml::FileHandle) nullptr;
+		}
+		return (Rml::FileHandle)fh;
 	}
 
 	void Close(Rml::FileHandle file)
 	{
-		fclose((FILE *)file);
+		((CFileHandler *)file)->Close();
+		delete (CFileHandler *)file;
 	}
 
 	size_t Read(void *buffer, size_t size, Rml::FileHandle file)
 	{
-		return fread(buffer, 1, size, (FILE *)file);
+		return ((CFileHandler *)file)->Read(buffer, size);
 	}
 
 	bool Seek(Rml::FileHandle file, long offset, int origin)
 	{
-		return fseek((FILE *)file, offset, origin) == 0;
+		std::ios_base::seekdir seekdir;
+		switch (origin)
+		{
+		case SEEK_CUR:
+			seekdir = std::ios_base::cur;
+			break;
+		case SEEK_END:
+			seekdir = std::ios_base::end;
+			break;
+		case SEEK_SET:
+		default:
+			seekdir = std::ios_base::beg;
+			break;
+		}
+		((CFileHandler *)file)->Seek(offset, seekdir);
+		// TODO: need to detect seek failure and then return false?
+		return true;
 	}
 
 	size_t Tell(Rml::FileHandle file)
 	{
-		return ftell((FILE *)file);
+		return ((CFileHandler *)file)->GetPos();
 	};
 };
 
@@ -152,15 +179,16 @@ struct BackendData
 	std::vector<Rml::Context *> contexts;
 	InputHandler::SignalType::connection_type inputCon;
 
-	bool running = true;
+	// make atomic_bool?
+	bool initialized = false;
+	bool debuggerAttached = false;
+	int winX = 1;
+	int winY = 1;
 };
 static Rml::UniquePtr<BackendData> data;
 
-bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, lua_State *lua_state, int winX, int winY)
+bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, int winX, int winY)
 {
-	sol::state_view lua(lua_state);
-	RMLUI_ASSERT(!data);
-
 	data = Rml::MakeUnique<BackendData>();
 
 	if (!data->render_interface)
@@ -191,6 +219,8 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 	// 	LOG_L(L_FATAL, "[SpringApp::%s] renderer output size error: %s", __func__, errmessage);
 	// }
 	data->render_interface.SetViewport(winX, winY);
+	data->winX = winX;
+	data->winY = winY;
 
 	Rml::Initialise();
 	// bool ok = CLuaRml::LoadHandler();
@@ -199,46 +229,158 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 	// }
 	// Rml::Lua::Interpreter::LoadFile(Rml::String("luainvaders/lua/start.lua"));
 
-	Rml::SolLua::Initialise(&lua);
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
+	RmlGui::CreateOverlayContext();
+	data->initialized = true;
+	return true;
+}
+
+bool RmlGui::InitializeLua(lua_State *lua_state)
+{
+	sol::state_view lua(lua_state);
+	Rml::SolLua::Initialise(&lua);
 	return true;
 }
 
 void RmlGui::Shutdown()
 {
-	RMLUI_ASSERT(data);
+	data->initialized = false;
 
 	// SDL_GL_DeleteContext(data->glcontext);
 	// SDL_DestroyWindow(data->window);
 
+	Rml::Shutdown();
 	// data.reset();
 
 	// SDL_Quit();
 }
 
+void RmlGui::Reload()
+{
+	LOG_L(L_FATAL, "[SpringApp::%s] reloading: ", __func__);
+	SDL_Window *window = data->window;
+	SDL_GLContext glcontext = data->glcontext;
+	int winX = data->winX;
+	int winY = data->winY;
+	RmlGui::Shutdown();
+	RmlGui::Initialize(window, glcontext, winX, winY);
+	// RmlGui::CreateOverlayContext();
+}
+
+void RmlGui::ToggleDebugger()
+{
+	if (data->debuggerAttached)
+	{
+		Rml::Debugger::Initialise(data->contexts[0]);
+		Rml::Debugger::SetVisible(true);
+	}
+	else
+	{
+		Rml::Debugger::Shutdown();
+	}
+	data->debuggerAttached = !data->debuggerAttached;
+}
+
 Rml::SystemInterface *RmlGui::GetSystemInterface()
 {
-	RMLUI_ASSERT(data);
 	return &data->system_interface;
 }
 
 Rml::RenderInterface *RmlGui::GetRenderInterface()
 {
-	RMLUI_ASSERT(data);
 	return &data->render_interface;
+}
+
+void RmlGui::RequestExit()
+{
+	// data->running = false;
+}
+
+void RmlGui::CreateContext()
+{
+	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(data->winX, data->winY));
+	Rml::Debugger::Initialise(context);
+	RmlGui::AddContext(context);
+}
+
+void RmlGui::CreateOverlayContext()
+{
+	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(data->winX, data->winY));
+	// Rml::Debugger::Initialise(context);
+	RmlGui::AddContext(context);
+	// Rml::Debugger::SetVisible(true);
+	// Rml::ElementDocument *document = context->LoadDocument("RmlUi/demo/demo.rml");
+	// if (document)
+	// 	document->Show();
+}
+void RmlGui::AddContext(Rml::Context *context)
+{
+	data->contexts.push_back(context);
+}
+
+void RmlGui::Update()
+{
+	ZoneScopedN("RmlGui Update");
+	if (!data->initialized)
+	{
+		return;
+	}
+	// TODO: define if headless?
+	for (auto &context : data->contexts)
+	{
+		context->Update();
+	}
+}
+
+void RmlGui::RenderFrame()
+{
+	ZoneScopedN("RmlGui Draw");
+	if (!data->initialized)
+	{
+		return;
+	}
+
+#ifndef HEADLESS
+	RmlGui::BeginFrame();
+	for (auto &context : data->contexts)
+	{
+		context->Render();
+	}
+	RmlGui::PresentFrame();
+#endif
+}
+
+void RmlGui::BeginFrame()
+{
+	// data->render_interface.Clear();
+	data->render_interface.BeginFrame();
+}
+
+void RmlGui::PresentFrame()
+{
+
+	data->render_interface.EndFrame();
+	// SDL_GL_SwapWindow(data->window);
+
+	// Optional, used to mark frames during performance profiling.
+	RMLUI_FrameMark;
 }
 
 bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 {
 	SDL_Event ev(event);
-	if (data == NULL || data->contexts.size() < 1)
+	if (data == NULL || data->contexts.size() < 1 || !data->initialized)
 		return false;
 	return RmlSDL::InputEventHandler(data->contexts[0], ev);
 }
 
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
+	if (!data->initialized)
+	{
+		return false;
+	}
 	SDL_Event ev(event);
 	switch (ev.type)
 	{
@@ -250,6 +392,8 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 		{
 			Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
 			data->render_interface.SetViewport(dimensions.x, dimensions.y);
+			data->winX = dimensions.x;
+			data->winY = dimensions.y;
 		}
 		break;
 		}
@@ -271,154 +415,4 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 	break;
 	}
 	return false;
-}
-
-bool RmlGui::ProcessEvents(Rml::Context *context, KeyDownCallback key_down_callback, bool power_save)
-{
-	RMLUI_ASSERT(data && context);
-
-#if defined RMLUI_PLATFORM_EMSCRIPTEN
-
-	// Ideally we would hand over control of the main loop to emscripten:
-	//
-	//  // Hand over control of the main loop to the WebAssembly runtime.
-	//  emscripten_set_main_loop_arg(EventLoopIteration, (void*)user_data_handle, 0, true);
-	//
-	// The above is the recommended approach. However, as we don't control the main loop here we have to make due with another approach. Instead, use
-	// Asyncify to yield by sleeping.
-	// Important: Must be linked with option -sASYNCIFY
-	emscripten_sleep(1);
-
-#endif
-
-	bool result = data->running;
-	data->running = true;
-
-	SDL_Event ev;
-	int has_event = 0;
-	if (power_save)
-		has_event = SDL_WaitEventTimeout(&ev, static_cast<int>(Rml::Math::Min(context->GetNextUpdateDelay(), (double)10.0) * 1000));
-	else
-		has_event = SDL_PollEvent(&ev);
-	while (has_event)
-	{
-		switch (ev.type)
-		{
-		case SDL_QUIT:
-		{
-			result = false;
-		}
-		break;
-		case SDL_KEYDOWN:
-		{
-			const Rml::Input::KeyIdentifier key = RmlSDL::ConvertKey(ev.key.keysym.sym);
-			const int key_modifier = RmlSDL::GetKeyModifierState();
-			const float native_dp_ratio = 1.f;
-
-			// See if we have any global shortcuts that take priority over the context.
-			if (key_down_callback && !key_down_callback(context, key, key_modifier, native_dp_ratio, true))
-				break;
-			// Otherwise, hand the event over to the context by calling the input handler as normal.
-			if (!RmlSDL::InputEventHandler(context, ev))
-				break;
-			// The key was not consumed by the context either, try keyboard shortcuts of lower priority.
-			if (key_down_callback && !key_down_callback(context, key, key_modifier, native_dp_ratio, false))
-				break;
-		}
-		break;
-		case SDL_WINDOWEVENT:
-		{
-			switch (ev.window.event)
-			{
-			case SDL_WINDOWEVENT_SIZE_CHANGED:
-			{
-				Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
-				data->render_interface.SetViewport(dimensions.x, dimensions.y);
-			}
-			break;
-			}
-			RmlSDL::InputEventHandler(context, ev);
-		}
-		break;
-		default:
-		{
-			RmlSDL::InputEventHandler(context, ev);
-		}
-		break;
-		}
-		has_event = SDL_PollEvent(&ev);
-	}
-
-	return result;
-}
-
-void RmlGui::RequestExit()
-{
-	RMLUI_ASSERT(data);
-
-	data->running = false;
-}
-
-void RmlGui::CreateContext()
-{
-	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(1500, 1500));
-	Rml::Debugger::Initialise(context);
-	RmlGui::AddContext(context);
-}
-
-void RmlGui::CreateOverlayContext()
-{
-	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(1500, 1500));
-	Rml::Debugger::Initialise(context);
-	RmlGui::AddContext(context);
-	Rml::ElementDocument *document = context->LoadDocument("RmlUi/demo/demo.rml");
-	if (document)
-		document->Show();
-}
-void RmlGui::AddContext(Rml::Context *context)
-{
-	data->contexts.push_back(context);
-}
-
-void RmlGui::Update()
-{
-	RMLUI_ASSERT(data);
-	// TODO: define if headless?
-	for (auto &context : data->contexts)
-	{
-		context->Update();
-	}
-}
-
-void RmlGui::RenderFrame()
-{
-	RMLUI_ASSERT(data);
-
-#ifndef HEADLESS
-	RmlGui::BeginFrame();
-	for (auto &context : data->contexts)
-	{
-		context->Render();
-	}
-	RmlGui::PresentFrame();
-#endif
-}
-
-void RmlGui::BeginFrame()
-{
-	RMLUI_ASSERT(data);
-
-	// data->render_interface.Clear();
-	data->render_interface.BeginFrame();
-}
-
-void RmlGui::PresentFrame()
-{
-	RMLUI_ASSERT(data);
-
-	data->render_interface.EndFrame();
-	// SDL_GL_SwapWindow(data->window);
-
-	// Optional, used to mark frames during performance profiling.
-	RMLUI_FrameMark;
 }
