@@ -78,8 +78,10 @@ void QTPFS::PathSearch::Initialize(
 	pathPartialSearchHash = GenerateVirtualHash(srcNode, tgtNode);
 
 	doPartialSearch = false;
-	partialPathWait = false;
+	pathRequestWaiting = false;
 	rejectPartialSearch = false;
+
+	fwdNodesSearched = 0;
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -122,10 +124,16 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	bwd.srcSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD].InsertINode(tgtNode->GetIndex());
 	bwd.tgtSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD].InsertINodeIfNotPresent(srcNode->GetIndex());
 
+	assert(fwd.srcSearchNode != nullptr);
+	assert(bwd.srcSearchNode != nullptr);
+
 	for (int i=0; i<SearchThreadData::SEARCH_DIRECTIONS; ++i) {
 		auto& data = directionalSearchData[i];
 		data.openNodes = &searchThreadData->openNodes[i];
 		data.minSearchNode = data.srcSearchNode;
+
+		while (!data.openNodes->empty())
+			data.openNodes->pop();
 	}
 	curSearchNode = nullptr;
 	nextSearchNode = nullptr;
@@ -157,7 +165,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 			} else {
 				// mark node being on an incomplete route and won't link back to forward src.
 				// used by reverse partial search to drop out early. Set stepindex to non-zero so
-				// it can't be confused with a genuine search step.
+				// it can't be confused with a genuine search step by the forward searcher.
 				addNode(SearchThreadData::SEARCH_FORWARD, node.nodeId, badPrevNodeId, node.netPoint, 999);
 				badPrevNodeId = node.nodeId;
 				badNodeCount++;
@@ -174,6 +182,8 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 				prevNodeId = node.nodeId;
 				prevNetPoint = node.netPoint;
 			}
+			// we don't need to set incomplete route step indicies becasue the reverse path
+			// explicitly doesn't capture the step index if it hits an early drop out.
 		});
 	}
 
@@ -306,10 +316,13 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		fwd.minSearchNode = fwd.tgtSearchNode;
 	};
 
+	assert(fwd.srcSearchNode != nullptr);
+
 	while (continueSearching) {
 		RemoveOutdatedOpenNodesFromQueue();
 
 		if (!(*fwd.openNodes).empty()) {
+			fwdNodesSearched++;
 			IterateNodes(SearchThreadData::SEARCH_FORWARD);
 
 			assert(curSearchNode->GetNeighborEdgeTransitionPoint().x != 0.f
@@ -335,6 +348,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 				haveFullPath = (isFullSearch) ? fwdPathConnected : bwdPathConnected & fwdPathConnected;
 				if (haveFullPath){
+					assert(!searchEarlyDrop);
 					fwd.tgtSearchNode = curSearchNode->GetPrevNode();
 					bwd.tgtSearchNode = &bwdNode;
 
@@ -360,20 +374,24 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				SearchNode& fwdNode = fwdSearchNodes[curSearchNode->GetIndex()];
 				
 				searchEarlyDrop = nodeIsEarlyDrop(fwdNode);
-				if (!searchEarlyDrop)
+				if (!searchEarlyDrop) {
 					bwdPathConnected = IsNodeActive(fwdNode);
-				if (bwdPathConnected || searchEarlyDrop) {
+				}
+				if (bwdPathConnected) {
 					bwdStepIndex = curSearchNode->GetStepIndex();
 
 					// If step Index is 0, then a full path was found. This can happen for partial
 					// searches, if the partial path isn't actually close enough.
 					if (curSearchNode->GetStepIndex() == 0) { isFullSearch = true; }
+				}
+				if (bwdPathConnected || searchEarlyDrop) {
 					bwd.tgtSearchNode = curSearchNode;
 					searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 				}
 
 				haveFullPath = (isFullSearch) ? bwdPathConnected : bwdPathConnected & fwdPathConnected;
 				if (haveFullPath) {
+					assert(!searchEarlyDrop);
 					bwd.tgtSearchNode = curSearchNode->GetPrevNode();
 					fwd.tgtSearchNode = &fwdNode;
 
@@ -384,8 +402,19 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			}
 		}
 
-		continueSearching = !(*fwd.openNodes).empty() || !(*bwd.openNodes).empty();
+		// stop if forward search is done, even if reverse search can continue. If forward search
+		// is done, then no path can be found and we have the nearest node if one is present.
+		// Reverse search will have to make do with what is has established for the sake of faster
+		// earlier drop out checks in related partial-shared searches. We can't stop if reverse
+		// search is done because we need the nearest node, which can only be found by the forward
+		// search.
+		if (isFullSearch)
+			continueSearching = !(*fwd.openNodes).empty();
+		else 
+			continueSearching = (fwdPathConnected) ? !(*bwd.openNodes).empty() : !(*fwd.openNodes).empty();
 	}
+
+	assert(fwd.srcSearchNode != nullptr);
 
 	if (searchEarlyDrop) {
 		// move forward only needed for incomplete partial searches.
@@ -395,8 +424,17 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		// Sanity check the path is properly connected. Partial searches can fail this check.
 		// If a partial search found a full path instead of connecting to the partial path, then
 		// isFullSearch is set to true and a check isn't needed.
-		if (haveFullPath && !isFullSearch) {
-			if (fwdStepIndex > bwdStepIndex){
+		if (haveFullPath) {
+			if (!isFullSearch) {
+				if (fwdStepIndex > bwdStepIndex){
+					rejectPartialSearch = true;
+					// LOG("%s: rejecting partial path.", __func__);
+					return false;
+				}
+			}
+		} else {
+			// if the partial path could not connect the reverse path, then we need to reject.
+			if (fwdPathConnected && !bwdPathConnected) {
 				rejectPartialSearch = true;
 				// LOG("%s: rejecting partial path.", __func__);
 				return false;
@@ -667,7 +705,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 
 	path->SetBoundingBox();
 	path->SetHasFullPath(haveFullPath & !badGoal);
-	path->SetHasPartialPath(havePartPath);
+	path->SetHasPartialPath(havePartPath | (haveFullPath & badGoal));
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
@@ -1035,10 +1073,13 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 
 	// copy <srcPath> to <dstPath>
 	dstPath->CopyPoints(*srcPath);
+	dstPath->CopyNodes(*srcPath);
 	dstPath->SetSourcePoint(fwd.srcPoint);
 	dstPath->SetTargetPoint(fwd.tgtPoint);
 	dstPath->SetBoundingBox();
 	dstPath->SetHasFullPath(srcPath->IsFullPath());
+	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
+	dstPath->SetSearchTime(srcPath->GetSearchTime());
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();

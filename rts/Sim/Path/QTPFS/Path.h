@@ -186,6 +186,13 @@ namespace QTPFS {
 			nodes.clear();
 			nodes.resize(n);
 		}
+		void CopyNodes(const IPath& p) {
+			AllocNodes(p.nodes.size());
+
+			for (unsigned int n = 0; n < p.nodes.size(); n++) {
+				nodes[n] = p.GetNode(n);
+			}
+		}
 
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }

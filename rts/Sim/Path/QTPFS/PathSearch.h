@@ -200,13 +200,15 @@ namespace QTPFS {
 		int fwdStepIndex = 0;
 		int bwdStepIndex = 0;
 
+		size_t fwdNodesSearched = 0;
+
 		bool haveFullPath;
 		bool havePartPath;
 		bool badGoal;
 
 public:
 		bool rawPathCheck;
-		bool partialPathWait;
+		bool pathRequestWaiting;
 		bool doPartialSearch;
 		bool rejectPartialSearch;
 		bool allowPartialSearch;

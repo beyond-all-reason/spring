@@ -157,18 +157,10 @@ QTPFS::PathManager::~PathManager() {
 		bool isSearch = registry.all_of<PathSearch>(entity);
 		if (isPath) {
 			const IPath& path = registry.get<IPath>(entity);
-			LOG("path [%x] type=%d, owner=%p", entt::to_integral(entity)
-					, path.GetPathType()
-					, path.GetOwner()
-					);
 			registry.destroy(entity);
 		}
 		if (isSearch) {
 			const PathSearch& search = registry.get<PathSearch>(entity);
-			LOG("search [%x] type=%d, id=%x", entt::to_integral(entity)
-					, search.GetPathType()
-					, search.GetID()
-					);
 			registry.destroy(entity);
 		}
 	});
@@ -231,12 +223,32 @@ void QTPFS::PathManager::InitStatic() {
 	LAYERS_PER_UPDATE = std::max(1u, mapInfo->pfs.qtpfs_constants.layersPerUpdate);
 	MAX_TEAM_SEARCHES = std::max(1u, mapInfo->pfs.qtpfs_constants.maxTeamSearches);
 
-	// Ensure SharedPathChain is assigned a Pool by EnTT to avoid it happening in an MT section
+	// Ensure SharedPathChain is assigned a Pool by EnTT to avoid it happening in an MT section,
+	// which would cause a potential race condition. Failure to do this can cause seemingly random
+	// memory-related errors to occur.
 	{ auto view = registry.view<SharedPathChain>();
 	  if (view.size() > 0) { LOG("%s: SharedPathChain is unexpectedly greater than 0.", __func__); }
 	}
 	{ auto view = registry.view<PartialSharedPathChain>();
 	  if (view.size() > 0) { LOG("%s: PartialSharedPathChain is unexpectedly greater than 0.", __func__); }
+	}
+	{ auto view = registry.view<IPath>();
+	  if (view.size() > 0) { LOG("%s: IPath is unexpectedly greater than 0.", __func__); }
+	}
+	// Views are created in multi-threaded sections, but they are referenced and I haven't determined
+	// yet whether that is safe in EnTT so creating views here to ensure everything is initialized
+	// prior to being used.
+	{ auto view = registry.view<PathIsTemp>();
+	  if (view.size() > 0) { LOG("%s: PathIsTemp is unexpectedly greater than 0.", __func__); }
+	}
+	{ auto view = registry.view<PathIsDirty>();
+	  if (view.size() > 0) { LOG("%s: PathIsDirty is unexpectedly greater than 0.", __func__); }
+	}
+	{ auto view = registry.view<PathSpeedModInfoSystemComponent>();
+	  if (view.size() > 0) { LOG("%s: PathSpeedModInfoSystemComponent is unexpectedly greater than 0.", __func__); }
+	}
+	{ auto view = registry.view<PathSearchRef>();
+	  if (view.size() > 0) { LOG("%s: PathSearchRef is unexpectedly greater than 0.", __func__); }
 	}
 }
 
@@ -796,6 +808,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		ExecuteSearch(search, nodeLayer, pathType);
 	});
 
+	// TODO: make a function?
 	for (auto pathSearchEntity : pathView) {
 		assert(registry.valid(pathSearchEntity));
 		assert(registry.all_of<PathSearch>(pathSearchEntity));
@@ -819,19 +832,17 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 						// have the tag ProcessPath and so don't impact this group view.
 						RequeueSearch(path, false, true);
 						// LOG("%s: %x - raw path check failed", __func__, entt::to_integral(pathEntity));
-					} else if (search->partialPathWait) {
+					} else if (search->pathRequestWaiting) {
 						// nothing to do - it will be rerun next frame
 						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
 						continue;
 					} else if (search->rejectPartialSearch) {
-						// search->rejectPartialSearch = false;
-						// RemovePathFromPartialShared(pathEntity);
+						registry.remove<PathSearchRef>(pathEntity);
 						RequeueSearch(path, false, false);
-						// LOG("%s: %x - partial search failed", __func__, entt::to_integral(pathEntity));
 					}
 					else {
 						// LOG("%s: %x - search failed", __func__, entt::to_integral(pathEntity));
-						DeletePath(path->GetID());
+						DeletePathEntity(pathEntity);
 					}
 				}
 			}
@@ -872,6 +883,8 @@ bool QTPFS::PathManager::ExecuteSearch(
 
 	entt::entity chainHeadEntity = entt::null;
 	entt::entity partialChainHeadEntity = entt::null;
+
+	// TODO: make a function?
 	if (synced)
 	{
 		if (search->allowPartialSearch)
@@ -883,12 +896,12 @@ bool QTPFS::PathManager::ExecuteSearch(
 				if (partialChainHeadEntity != pathEntity) {
 					bool pathIsCopyable = !registry.all_of<PathSearchRef>(partialChainHeadEntity);
 					if (!pathIsCopyable) {
-						search->partialPathWait = true;
+						search->pathRequestWaiting = true;
 						return false;
 					}
 					
 					// proceed with the search.
-					search->partialPathWait = false;
+					search->pathRequestWaiting = false;
 					search->doPartialSearch = true;
 				}
 			}
@@ -907,6 +920,10 @@ bool QTPFS::PathManager::ExecuteSearch(
 						// 		, entt::to_integral(pathEntity), int(pathIsCopyable));
 						auto& headChainPath = registry.get<IPath>(chainHeadEntity);
 						search->SharedFinalize(&headChainPath, path);
+						search->pathRequestWaiting = false;
+					}
+					else {
+						search->pathRequestWaiting = true;
 					}
 					return false;
 				}
@@ -923,34 +940,6 @@ bool QTPFS::PathManager::ExecuteSearch(
 
 	if (search->Execute(searchStateOffset)) {
 		search->Finalize(path);
-
-		if (search->rejectPartialSearch)
-			return false;
-
-		if (chainHeadEntity == pathEntity){
-			ZoneScopedN("Sim::QTPFS::post-check shared path");
-
-			// Copy results to all applicable paths. Walk chain backwards and stop early.
-			linkedListHelper.BackWalkWithEarlyExit<SharedPathChain>(chainHeadEntity
-					, [this, path, chainHeadEntity](entt::entity next) {
-				if (next == chainHeadEntity) { return true; }
-
-				assert(registry.valid(next));
-
-				auto* linkedPath = &registry.get<IPath>(next);
-				assert(linkedPath != nullptr);
-				
-				auto* searchRef = registry.try_get<PathSearchRef>(next);
-				if (searchRef == nullptr) { return false; }
-
-				assert(registry.all_of<PathSearch>(searchRef->value));
-				auto& chainSearch = registry.get<PathSearch>(searchRef->value);
-
-				chainSearch.SharedFinalize(path, linkedPath);
-
-				return true;
-			});
-		}
 
 		#ifdef QTPFS_TRACE_PATH_SEARCHES
 		pathTraces[path->GetID()] = search->GetExecutionTrace();
@@ -1254,7 +1243,7 @@ unsigned int QTPFS::PathManager::ExecuteUnsyncedSearch(unsigned int pathId){
 				registry.remove<PathIsDirty>(pathEntity);
 				registry.remove<PathSearchRef>(pathEntity);
 			} else {
-				DeletePath(path->GetID());
+				DeletePathEntity(pathEntity);
 				pathId = 0;
 			}
 		}
