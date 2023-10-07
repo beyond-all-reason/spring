@@ -292,6 +292,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	helper->Kill();
 	KillLua(true);
 	KillMisc();
 	KillRendering();

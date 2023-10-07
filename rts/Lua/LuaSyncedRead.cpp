@@ -321,6 +321,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileName);
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
+	REGISTER_LUA_CFUNC(IsPosInMap);
 	REGISTER_LUA_CFUNC(GetGroundHeight);
 	REGISTER_LUA_CFUNC(GetGroundOrigHeight);
 	REGISTER_LUA_CFUNC(GetGroundNormal);
@@ -3860,9 +3861,13 @@ int LuaSyncedRead::GetUnitAllyTeam(lua_State* L)
 }
 
 
-/***
+/*** Checks if a unit is neutral (NOT Gaia!)
  *
  * @function Spring.GetUnitNeutral
+ *
+ * Note that a "neutral" unit can belong to any ally-team (ally, enemy, Gaia).
+ * To check if a unit is Gaia, check its owner team.
+ *
  * @number unitID
  * @treturn nil|bool
  */
@@ -4019,8 +4024,8 @@ int LuaSyncedRead::GetUnitMetalExtraction(lua_State* L)
  *
  * @function Spring.GetUnitExperience
  * @number unitID
- * @treturn nil|number
- * @treturn number 0.0 - 1.0 as experience approaches infinity
+ * @treturn number XP [0.0; +∞)
+ * @treturn number limXP [0.0; 1.0) as experience approaches infinity
  */
 int LuaSyncedRead::GetUnitExperience(lua_State* L)
 {
@@ -4220,10 +4225,14 @@ int LuaSyncedRead::GetUnitBuildFacing(lua_State* L)
 }
 
 
-/***
+/*** Checks whether a unit is currently building another (NOT for checking if it's a structure)
  *
  * @function Spring.GetUnitIsBuilding
+ *
+ * Works for both mobile builders and factories.
+ *
  * @number unitID
+ * @treturn number buildeeUnitID or nil
  */
 int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 {
@@ -4249,12 +4258,24 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Checks a builder's current task
  *
  * @function Spring.GetUnitWorkerTask
+ *
+ * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
+ * because you can have a command at the front of the queue and not be doing it (for example because
+ * the target is still too far away), and on the other hand you can also be doing a task despite not
+ * having it in front of the queue (for example you're Guarding another builder who does). Also, it
+ * resolves the Repair command into either actual repair, or construction assist (in which case it
+ * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
+ * custom commands).
+ *
+ * The possible commands returned are repair, reclaim, resurrect, capture, restore,
+ * and build commands (negative buildee unitDefID).
+ *
  * @number unitID
  * @treturn number cmdID of the relevant command
- * @treturn number ID of the target, if applicable
+ * @treturn number targetID if applicable (all except RESTORE)
  */
 int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 {
@@ -6823,6 +6844,47 @@ int LuaSyncedRead::GetProjectileName(lua_State* L)
 
 /***
  *
+ * @function Spring.IsPosInMap
+ * @number x
+ * @number z
+ * @treturn boolean inPlayArea whether the position is in the active play area
+ * @treturn boolean inMap whether the position is in the full map area (currently this is the same as above)
+ */
+int LuaSyncedRead::IsPosInMap(lua_State* L)
+{
+	const float x = luaL_checkfloat(L, 1);
+	const float z = luaL_checkfloat(L, 2);
+
+	const float mapX = mapDims.mapx * SQUARE_SIZE;
+	const float mapZ = mapDims.mapy * SQUARE_SIZE;
+
+	const bool inMap
+		=  x >= 0
+		&& z >= 0
+		&& x <= mapX
+		&& z <= mapZ
+	;
+
+	/* Currently, the engine does not support limiting
+	 * the active play area natively, but it would be
+	 * a good feature to have, so let's be future-proof.
+	 *
+	 * This would be things like:
+	 *  - dynamically expanding map. Primarily for single
+	 *    player missions (think Supcom) but not necessarily.
+	 *  - circular maps, think 0 A.D. (where the technical map
+	 *    stays a square but corners are outside the play area).
+	 *  - just a decoration / flavor area outside the map proper.
+	 */
+	const bool inPlayArea = inMap;
+
+	lua_pushboolean(L, inPlayArea);
+	lua_pushboolean(L, inMap);
+	return 2;
+}
+
+/***
+ *
  * @function Spring.GetGroundHeight
  * @number x
  * @number z
@@ -7187,7 +7249,7 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 }
 
 
-/***
+/*** Snaps a position to the building grid
  *
  * @function Spring.Pos2BuildPos
  * @number unitDefID

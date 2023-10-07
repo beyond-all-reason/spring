@@ -63,7 +63,6 @@ set(FILES
 	anims/cursorreclamate_6.bmp
 	anims/cursorcapture_1.bmp
 	anims/cursorreclamate_8.bmp
-	anims/cursornormal_0.bmp
 	anims/cursorunload_7.bmp
 	anims/cursorrepair_5.bmp
 	anims/cursorrevive_1.bmp

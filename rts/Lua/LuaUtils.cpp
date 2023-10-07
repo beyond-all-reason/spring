@@ -34,7 +34,6 @@
 
 
 static const int maxDepth = 16;
-int LuaUtils::exportedDataSize = 0;
 
 Json::Value LuaUtils::LuaStackDumper::root  = {};
 
@@ -179,6 +178,12 @@ int LuaUtils::CopyData(lua_State* dst, lua_State* src, int count)
 /******************************************************************************/
 /******************************************************************************/
 
+// The functions below are not used anymore for anything in the engine.
+// There are left behind here disabled for archival purposes.
+#if 0
+
+int LuaUtils::exportedDataSize = 0;
+
 static bool BackupData(LuaUtils::DataDump& d, lua_State* src, int index, int depth);
 static bool RestoreData(const LuaUtils::DataDump& d, lua_State* dst, int depth);
 static bool BackupTable(LuaUtils::DataDump& d, lua_State* src, int index, int depth);
@@ -309,6 +314,7 @@ int LuaUtils::Restore(const std::vector<LuaUtils::DataDump>& backup, lua_State* 
 	return count;
 }
 
+#endif
 
 /******************************************************************************/
 /******************************************************************************/
