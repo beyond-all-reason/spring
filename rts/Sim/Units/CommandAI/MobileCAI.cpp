@@ -1009,7 +1009,7 @@ void CMobileCAI::BuggerOff(const float3& pos, float radius)
 
 void CMobileCAI::NonMoving()
 {
-	if (owner->moveType == nullptr)
+	if (owner->moveDef == nullptr)
 		return;
 
 	if (owner->UsingScriptMoveType())
