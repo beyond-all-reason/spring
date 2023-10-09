@@ -209,6 +209,7 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 void QTPFS::PathSearch::InitStartingSearchNodes() {
 	fwdPathConnected = false;
 	bwdPathConnected = false;
+	fwdAreaSearchLimit = mapDims.mapx * mapDims.mapy;
 	searchThreadData->ResetQueue();
 
 	for (int i = 0; i < QTPFS::SEARCH_DIRS; ++i) {
@@ -270,6 +271,26 @@ bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
 		|| (curSearchNode.GetPathCost(NODE_PATH_COST_H) != std::numeric_limits<float>::infinity());
 }
 
+void QTPFS::PathSearch::SetForwardSearchLimit() {
+	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
+
+	static const float maxRelativeMapAreaToSearch = (1.f/16.f);
+	static const float areaToSearchScale = (1.f/8.f);
+
+	float maxMapLength = std::max(mapDims.mapx, mapDims.mapy);
+	float maxSearchArea = mapDims.mapx*mapDims.mapy*maxRelativeMapAreaToSearch;
+	float dist = 0.f;
+
+	if (hCostMult != 0.f) {
+		dist = bwd.minSearchNode->GetPathCost(NODE_PATH_COST_H) / (hCostMult * 8.f);
+	}
+	else {
+		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/8.f;
+	}
+	fwdAreaSearchLimit = std::clamp(dist*dist*areaToSearchScale, 100.f, maxSearchArea);
+}
+
 bool QTPFS::PathSearch::ExecutePathSearch() {
 	ZoneScoped;
 
@@ -324,6 +345,11 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		if (!(*fwd.openNodes).empty()) {
 			fwdNodesSearched++;
 			IterateNodes(SearchThreadData::SEARCH_FORWARD);
+
+			// Search area limits are only used when the reverse search has determined that the
+			// goal is not reachable.
+			if (fwd.areaSearched >= fwdAreaSearchLimit)
+				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 
 			assert(curSearchNode->GetNeighborEdgeTransitionPoint().x != 0.f
 				|| curSearchNode->GetNeighborEdgeTransitionPoint().y != 0.f);
@@ -400,6 +426,10 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 					searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 				}
 			}
+			// Limit forward search to avoid excessively costly searches when the path cannot be
+			// joined. This should be okay for partial searches as well.
+			if ((*bwd.openNodes).empty())
+				SetForwardSearchLimit();
 		}
 
 		// stop if forward search is done, even if reverse search can continue. If forward search
@@ -555,6 +585,15 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
+
+	if (curSearchNode->visited == 0){
+		searchData.areaSearched += curNode->area();
+
+		// curSearchNode isn't otherwise edited in this loop. Maybe there's a better way without
+		// needing a cache writeback?
+		curSearchNode->visited++;
+	}
+
 	IterateNodeNeighbors(curNode, searchDir);
 }
 
