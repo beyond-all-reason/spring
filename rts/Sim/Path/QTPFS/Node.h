@@ -239,8 +239,7 @@ namespace QTPFS {
 
 		float2 selectedNetpoint;
 
-		uint16_t stepIndex = 0;
-		uint16_t visited = 0;
+		uint32_t stepIndex = 0;
 	};
 }
 

@@ -275,8 +275,9 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
-	static const float maxRelativeMapAreaToSearch = (1.f/16.f);
-	static const float areaToSearchScale = (1.f/8.f);
+	constexpr float maxRelativeMapAreaToSearch = (1.f/16.f);
+	constexpr float areaToSearchScale = (1.f/8.f);
+	constexpr float scaleForNodeRevisits = 1.1f;
 
 	float maxMapLength = std::max(mapDims.mapx, mapDims.mapy);
 	float maxSearchArea = mapDims.mapx*mapDims.mapy*maxRelativeMapAreaToSearch;
@@ -288,7 +289,7 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	else {
 		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/8.f;
 	}
-	fwdAreaSearchLimit = std::clamp(dist*dist*areaToSearchScale, 100.f, maxSearchArea);
+	fwdAreaSearchLimit = std::clamp(dist*dist*areaToSearchScale, 100.f, maxSearchArea) * scaleForNodeRevisits;
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {
@@ -343,7 +344,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		RemoveOutdatedOpenNodesFromQueue();
 
 		if (!(*fwd.openNodes).empty()) {
-			fwdNodesSearched++;
+			// fwdNodesSearched++;
 			IterateNodes(SearchThreadData::SEARCH_FORWARD);
 
 			// Search area limits are only used when the reverse search has determined that the
@@ -585,14 +586,7 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
-
-	if (curSearchNode->visited == 0){
-		searchData.areaSearched += curNode->area();
-
-		// curSearchNode isn't otherwise edited in this loop. Maybe there's a better way without
-		// needing a cache writeback?
-		curSearchNode->visited++;
-	}
+	searchData.areaSearched += curNode->area();
 
 	IterateNodeNeighbors(curNode, searchDir);
 }
