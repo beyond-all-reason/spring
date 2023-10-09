@@ -81,14 +81,11 @@ option(TRACY_PROFILE_MEMORY "Profile memory allocations" OFF)
 
 add_subdirectory(tracy)
 
-# TODO(p2004): Enabling tracy for RmlUi is at the momemnt broken and waits for
-#              resolution upstream https://github.com/mikke89/RmlUi/issues/516.
-# if (TRACY_ENABLE)
-# 	set(ENABLE_TRACY_PROFILING ON CACHE BOOL "Enable RmlUi tracy profiling")
-# 	# Place the include directories for tracy in TRACY_INCLUDE_DIR as that's
-# 	# what RmlUi expects to be set in their FindTracy.cmake
-# 	get_target_property(TRACY_INCLUDE_DIR TracyClient INCLUDE_DIRECTORIES)
-# endif()
+if (TRACY_ENABLE)
+	option(RMLUI_TRACY_PROFILING "Enable RmlUi profiling with Tracy." ON)
+	# We have our own memory profiling, never enable RmlUi one.
+	set(RMLUI_TRACY_MEMORY_PROFILING OFF CACHE BOOL "Enable RmlUi tracy profiling")
+endif()
 
 # We resolve freetype here to make sure RmlUi find_package picks the same
 # correct version as picked by the engine.
