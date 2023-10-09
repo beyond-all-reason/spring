@@ -428,7 +428,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			}
 			// Limit forward search to avoid excessively costly searches when the path cannot be
 			// joined. This should be okay for partial searches as well.
-			if ((*bwd.openNodes).empty())
+			if ((*bwd.openNodes).empty() && !bwdPathConnected)
 				SetForwardSearchLimit();
 		}
 
