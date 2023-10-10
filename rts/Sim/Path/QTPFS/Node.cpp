@@ -645,6 +645,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 
 	int newNeighbors = 0;
 
+	// number of size-1 quad neighbours around the 4 edges + 4 corners. 
 	constexpr size_t maxNumberOfNeighbours = QTPFS_MAX_NODE_SIZE*4 + 4;
 	std::array<INode*, maxNumberOfNeighbours> neighborCache;
 
