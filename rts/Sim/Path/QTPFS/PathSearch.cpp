@@ -232,8 +232,9 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 		// performance can drop further instead as the search shifts to best-first-search.
 		case PATH_SEARCH_ASTAR:
 			{
-				const float maxSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].max;
-				const float meanSpeedMod = comp.relSpeedModinfos[nodeLayer->GetNodelayer()].mean;
+				const auto& speedModInfo = comp.relSpeedModinfos[nodeLayer->GetNodelayer()];
+				const float maxSpeedMod = speedModInfo.max;
+				const float meanSpeedMod = speedModInfo.mean;
 				const float chosenSpeedMod = maxSpeedMod - (maxSpeedMod - meanSpeedMod) * modInfo.pfHcostMult;
 				hCostMult = 1.0f / chosenSpeedMod;
 			}
