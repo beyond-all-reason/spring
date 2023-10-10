@@ -276,8 +276,21 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
+	/* These values have been chosen by testing and anlysis. They give a reasonable starting point
+	 * balancing performance gains against the chance that a poor path will result. I suspect these
+	 * can be improved, but this will need further stress testing.
+	 * 
+	 * TODO: make into mod rules so that games can calibrate them.
+	 */
+	// Maximum area of the map to search.
 	constexpr float maxRelativeMapAreaToSearch = (1.f/16.f);
+
+	// How wide to spread as distance increases.
 	constexpr float areaToSearchScale = (1.f/8.f);
+
+	// Nodes soemtimes get revisited, so increase the resultant area to compensate.
+	// We don't keep track of whether a node has been visited before because that would incur an
+	// otherwise unneccessary cache write-back for every node visited.
 	constexpr float scaleForNodeRevisits = 1.1f;
 
 	float maxMapLength = std::max(mapDims.mapx, mapDims.mapy);
