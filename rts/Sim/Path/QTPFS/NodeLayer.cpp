@@ -64,7 +64,7 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 		nodeIndcs.clear();
 		nodeIndcs.resize(POOL_TOTAL_SIZE);
 
-		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; });
+		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; assert((size_t)(&i - &nodeIndcs[0]) < nodeIndcs.size()); });
 		std::reverse(nodeIndcs.begin(), nodeIndcs.end());
 	}
 

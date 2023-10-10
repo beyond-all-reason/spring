@@ -740,7 +740,7 @@ void CGroundMoveType::SlowUpdate()
 						// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 						// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 						// if (printMoveInfo) {
-							// LOG("%s: failed by idling too long.", __func__);
+						// 	LOG("%s: failed by idling too long.", __func__);
 						// }
 					}
 				}

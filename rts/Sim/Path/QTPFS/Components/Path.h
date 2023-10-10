@@ -20,6 +20,16 @@ struct SharedPathChain {
     entt::entity next{entt::null};
 };
 
+struct PartialSharedPathChain {
+	PartialSharedPathChain() {}
+
+	PartialSharedPathChain(entt::entity initPrev, entt::entity initNext)
+		: prev(initPrev), next(initNext) {}
+
+    entt::entity prev{entt::null};
+    entt::entity next{entt::null};
+};
+
 VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
 VOID_COMPONENT(PathIsToBeUpdated);

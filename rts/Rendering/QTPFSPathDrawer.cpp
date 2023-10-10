@@ -20,7 +20,7 @@
 #include "Sim/Path/QTPFS/PathManager.h"
 
 #include "Sim/Path/QTPFS/Components/Path.h"
-#include "Sim/Path/QTPFS/Components/PathMaxSpeedMod.h"
+#include "Sim/Path/QTPFS/Components/PathSpeedModInfo.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
 #include "Rendering/Fonts/glFont.h"
@@ -36,6 +36,7 @@ static std::vector<const QTPFS::QTNode*> visibleNodes;
 
 static constexpr unsigned char LINK_COLOR[4] = {1 * 255, 0 * 255, 1 * 255, 1 * 128};
 static constexpr unsigned char PATH_COLOR[4] = {0 * 255, 0 * 255, 1 * 255, 1 * 255};
+static constexpr unsigned char BAD_PATH_COLOR[4] = {1 * 255, 0 * 255, 0 * 255, 1 * 255};
 static constexpr unsigned char NODE_COLORS[3][4] = {
 	{1 * 255, 0 * 255, 0 * 255, 1 * 255}, // red --> blocked
 	{0 * 255, 1 * 255, 0 * 255, 1 * 255}, // green --> passable
@@ -116,9 +117,9 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
-		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		// font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
 		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
-		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetIndex(), "%d"));
+		font->glWorldPrint(pos, 5.0f, IntToString(node->GetIndex(), "%d"));
 	}
 
 	font->DrawWorldBuffered();
@@ -202,14 +203,22 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		assert(p1.x / SQUARE_SIZE < mapDims.mapx);
 		assert(p1.z / SQUARE_SIZE < mapDims.mapy);
 
+		assert(p0 != float3());
+		assert(p1 != float3());
+
 		if (!camera->InView(p0) && !camera->InView(p1))
 			continue;
 
 		p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
 		p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
 
-		rb.AddVertex({p0, PATH_COLOR});
-		rb.AddVertex({p1, PATH_COLOR});
+		if (path->GetSearchTime().toMilliSecsi() < 10LL) {
+			rb.AddVertex({p0, PATH_COLOR});
+			rb.AddVertex({p1, PATH_COLOR});
+		} else {
+			rb.AddVertex({p0, BAD_PATH_COLOR});
+			rb.AddVertex({p1, BAD_PATH_COLOR});
+		}
 	}
 
 	rb.Submit(GL_LINES);
@@ -345,8 +354,8 @@ void QTPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 			if (md != nullptr) {
 				const QTPFS::NodeLayer& nl = pm->GetNodeLayer(md->pathType);
 
-				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathMaxSpeedModSystemComponent>();
-				const float smr = 1.0f / ( speedModComp.maxRelSpeedMod[nl.GetNodelayer()] );
+				auto& speedModComp = QTPFS::systemGlobals.GetSystemComponent<QTPFS::PathSpeedModInfoSystemComponent>();
+				const float smr = 1.0f / ( speedModComp.relSpeedModinfos[nl.GetNodelayer()].max );
 				const bool los = (gs->cheatEnabled || gu->spectating);
 
 				for (int ty = starty; ty < endy; ++ty) {

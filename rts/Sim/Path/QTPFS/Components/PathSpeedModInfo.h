@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef QTPFS_SYSTEMS_PATH_MAX_SPEED_MOD_H__
-#define QTPFS_SYSTEMS_PATH_MAX_SPEED_MOD_H__
+#ifndef QTPFS_SYSTEMS_PATH_SPEED_MOD_INFO_H__
+#define QTPFS_SYSTEMS_PATH_SPEED_MOD_INFO_H__
 
 #include <deque>
 #include <vector>
@@ -14,19 +14,28 @@ namespace QTPFS {
 
 class INode;
 
-struct NodeLayerMaxSpeedSweep {
+struct NodeLayerSpeedInfoSweep {
 	static constexpr std::size_t page_size = MoveDefHandler::MAX_MOVE_DEFS;
+
 	int updateMaxNodes = 0;
 	float updateCurMaxSpeed = 0.f;
+	float updateCurSumSpeed = 0.f;
+	float updateNumLeafNodes = 0.f;
 	int layerNum = -1;
 	bool updateInProgress = false;
 };
 
 constexpr int NEXT_FRAME_NEVER = std::numeric_limits<decltype(NEXT_FRAME_NEVER)>::max();
 
-struct PathMaxSpeedModSystemComponent {
+struct PathSpeedModInfo {
+	float mean;
+	float max;
+};
+
+struct PathSpeedModInfoSystemComponent {
 	static constexpr std::size_t page_size = 1;
-	std::array<float, MoveDefHandler::MAX_MOVE_DEFS> maxRelSpeedMod;
+
+	std::array<PathSpeedModInfo, MoveDefHandler::MAX_MOVE_DEFS> relSpeedModinfos;
 	int refreshTimeInFrames = 0;
 	int startRefreshOnFrame = 0;
 	int refeshDelayInFrames = 0;

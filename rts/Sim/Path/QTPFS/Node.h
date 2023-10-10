@@ -224,10 +224,13 @@ namespace QTPFS {
 		void SetNeighborEdgeTransitionPoint(const float2& point) { selectedNetpoint = point; }
 		const float2& GetNeighborEdgeTransitionPoint() const { return selectedNetpoint; }
 
+		uint32_t GetStepIndex() const { return stepIndex; }
+		void SetStepIndex(uint32_t idx) { stepIndex = idx; }
+
 		unsigned int index = 0;
 		// unsigned int searchState = 0;
 
-		float fCost = QTPFS_POSITIVE_INFINITY;
+		float fCost = QTPFS_POSITIVE_INFINITY; // TODO: drop this as it is only a derived field?
 		float gCost = QTPFS_POSITIVE_INFINITY;
 		float hCost = QTPFS_POSITIVE_INFINITY;
 
@@ -235,6 +238,8 @@ namespace QTPFS {
 		SearchNode* prevNode = nullptr;
 
 		float2 selectedNetpoint;
+
+		uint32_t stepIndex = 0;
 	};
 }
 

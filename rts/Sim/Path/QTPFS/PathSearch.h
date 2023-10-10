@@ -107,12 +107,14 @@ namespace QTPFS {
 			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
+		void LoadPartialPath(IPath* path);
 		bool Execute(unsigned int searchStateOffset = 0);
 		void Finalize(IPath* path);
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }
 
 		const std::uint64_t GetHash() const { return pathSearchHash; };
+		const std::uint64_t GetPartialSearchHash() const { return pathPartialSearchHash; };
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
@@ -125,6 +127,8 @@ namespace QTPFS {
 				: openNodes(nullptr)
 				, srcSearchNode(nullptr)
 				, tgtSearchNode(nullptr)
+				, minSearchNode(nullptr)
+				, areaSearched(0)
 			{}
 
 			// global queue: allocated once, re-used by all searches without clear()'s
@@ -133,6 +137,8 @@ namespace QTPFS {
 
 			SearchNode *srcSearchNode, *tgtSearchNode;
 			float3 srcPoint, tgtPoint;
+			SearchNode *minSearchNode;
+			int areaSearched;
 		};
 
 		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
@@ -142,21 +148,36 @@ namespace QTPFS {
 		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
 
 		void TracePath(IPath* path);
-		void SmoothPath(IPath* path) const;
-		bool SmoothPathIter(IPath* path) const;
+		void SmoothPath(IPath* path);
+		bool SmoothPathIter(IPath* path);
+
+		void InitStartingSearchNodes();
+		void UpdateHcostMult();
+		void RemoveOutdatedOpenNodesFromQueue();
+		bool IsNodeActive(const SearchNode& curSearchNode) const;
 
 		bool ExecutePathSearch();
 		bool ExecuteRawSearch();
+
+		void SetForwardSearchLimit();
 
 		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
 		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
 
 		const std::uint64_t GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int x, int z) const;
+		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
 		QTPFS::SearchThreadData* searchThreadData;
 
+		// Identifies the layer, target quad and source quad for a search query so that similar
+		// searches can be combined.
 		std::uint64_t pathSearchHash;
+
+		// Similar to hash, but the target quad and source quad numbers may not relate to actual
+		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
+		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
+		// start and/or end in different, but close, quads. This is used to handle partially-
+		// shared path searches.
 		std::uint64_t pathPartialSearchHash;
 
 		const CSolidObject* pathOwner;
@@ -168,7 +189,6 @@ namespace QTPFS {
 		PathSearchTrace::Iteration searchIter;
 
 		SearchNode *curSearchNode, *nextSearchNode;
-		SearchNode *minSearchNode;
 
 		DirectionalSearchData directionalSearchData[2];
 
@@ -181,12 +201,29 @@ namespace QTPFS {
 
 		float hCostMult;
 
+		int fwdStepIndex = 0;
+		int bwdStepIndex = 0;
+
+		int fwdAreaSearchLimit = 0;
+
+		size_t fwdNodesSearched = 0;
+
 		bool haveFullPath;
 		bool havePartPath;
 		bool badGoal;
 
 public:
 		bool rawPathCheck;
+		bool pathRequestWaiting;
+		bool doPartialSearch;
+		bool rejectPartialSearch;
+		bool allowPartialSearch;
+		bool searchEarlyDrop;
+		bool initialized;
+		bool partialReverseTrace = false;
+
+		bool fwdPathConnected = false;
+		bool bwdPathConnected = false;
 
 		static constexpr std::uint64_t BAD_HASH = std::numeric_limits<std::uint64_t>::max();
 	};
