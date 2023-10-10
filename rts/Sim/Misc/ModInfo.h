@@ -195,7 +195,16 @@ public:
 	/// Point at which a region is considered bad for raw path tracing.
 	float pfRawMoveSpeedThreshold;
 
-	/// Increases Hcost in QTPFS pathing. 0.0 = no increase, 1.0 = increase to the mean move cost, 2.0 increase to max move cost.
+	/// Increase the strength of distance to the goal when considering the next optimal quad to
+	/// check during QTPFS path searching. The base strength is considered for the quad with least move cost, which
+	/// gives a weak pull. Increase the strength to encourage the QTPFS to more strongly favour
+	/// checking quads nearer the goal rather than on the current shortest path - which may be
+	/// going in the wrong direction. Be careful though, if it is too strong then the pathing
+	/// system will likely produce poor paths that tend to hug walls and obstacles instead of
+	/// cutting past them on approach.
+	/// The increase strength is measured against the difference between the min move cost
+	/// and the mean of all quad move costs. Typically a value near 0 is best.
+	/// 0.0 = no increase, 1.0 = increase to the mean move cost, 2.0 increase to max move cost.
 	float pfHcostMult;
 
 	float pfRawDistMult;
