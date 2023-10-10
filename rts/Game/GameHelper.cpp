@@ -1197,43 +1197,48 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
-	TestUnitBuildSquareCache::ClearStaleItems(synced);
-	auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
-	bool cacheFound = false;
-	const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
+	assert(!ThreadPool::inMultiThreadedSection);
+	std::function<void(CGameHelper::BuildSquareStatus)> SaveToCache = [](CGameHelper::BuildSquareStatus result) {};
 
-	if (cacheFound) {
-		feature = it->feature;
+	if (!synced) {
+		TestUnitBuildSquareCache::ClearStaleItems(synced);
+		auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
+		bool cacheFound = false;
+		const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
 
-		if (commands != nullptr) {
-			assert(!synced);
-			*canbuildpos = it->canbuildpos;
-			*featurepos = it->featurepos;
-			*nobuildpos = it->nobuildpos;
+		if (cacheFound) {
+			feature = it->feature;
+
+			if (commands != nullptr) {
+				assert(!synced);
+				*canbuildpos = it->canbuildpos;
+				*featurepos = it->featurepos;
+				*nobuildpos = it->nobuildpos;
+			}
+
+			return it->result;
 		}
 
-		return it->result;
+		SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
+			if (!commands)
+				TestUnitBuildSquareCache::SaveToCache(
+					gs->frameNum,
+					std::move(key),
+					feature,
+					result
+				);
+			else
+				TestUnitBuildSquareCache::SaveToCache(
+					gs->frameNum,
+					std::move(key),
+					feature,
+					result,
+					*canbuildpos,
+					*featurepos,
+					*nobuildpos
+				);
+		};
 	}
-
-	const auto SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
-		if (!commands)
-			TestUnitBuildSquareCache::SaveToCache(
-				gs->frameNum,
-				std::move(key),
-				feature,
-				result
-			);
-		else
-			TestUnitBuildSquareCache::SaveToCache(
-				gs->frameNum,
-				std::move(key),
-				feature,
-				result,
-				*canbuildpos,
-				*featurepos,
-				*nobuildpos
-			);
-	};
 
 	feature = nullptr;
 
