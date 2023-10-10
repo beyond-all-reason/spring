@@ -298,10 +298,10 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	float dist = 0.f;
 
 	if (hCostMult != 0.f) {
-		dist = bwd.minSearchNode->GetPathCost(NODE_PATH_COST_H) / (hCostMult * 8.f);
+		dist = bwd.minSearchNode->GetPathCost(NODE_PATH_COST_H) / (hCostMult * SQUARE_SIZE);
 	}
 	else {
-		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/8.f;
+		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/SQUARE_SIZE;
 	}
 	fwdAreaSearchLimit = std::clamp(dist*dist*areaToSearchScale, 100.f, maxSearchArea) * scaleForNodeRevisits;
 }
