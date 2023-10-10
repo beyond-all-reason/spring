@@ -108,8 +108,6 @@ namespace QTPFS {
 			nodeIndcs.push_back(nodeIndex);
 			auto* curNode = GetPoolNode(nodeIndex);
 			curNode->DeactivateNode();
-			if (curNode->AllSquaresImpassable())
-				;
 		}
 
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
