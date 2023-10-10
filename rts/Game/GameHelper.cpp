@@ -1200,6 +1200,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	assert(!ThreadPool::inMultiThreadedSection);
 	std::function<void(CGameHelper::BuildSquareStatus)> SaveToCache = [](CGameHelper::BuildSquareStatus result) {};
 
+	// This cache is causing a desync, so for the moment (until the cause can be determined and
+	// resolved), don't use it in synced code.
 	if (!synced) {
 		TestUnitBuildSquareCache::ClearStaleItems(synced);
 		auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
