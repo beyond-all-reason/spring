@@ -44,7 +44,7 @@ namespace Sync {
 	static inline void Assert(const void* p, unsigned size, const char* msg) {
 		AssertDebugger(p, size, msg);
 #ifdef SYNCCHECK
-		// assert(CSyncChecker::InSyncedCode());
+		assert(CSyncChecker::InSyncedCode());
 		CSyncChecker::Sync(p, size);
 	#ifdef TRACE_SYNC
 		unsigned int crc = CSyncChecker::GetChecksum();
