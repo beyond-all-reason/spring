@@ -57,6 +57,8 @@ This is mostly for rate limiting and prevent excessive CPU wastage, because proc
 regardless of distance etc. Defaults to 0, which means units will not try to raw-move into unpathable terrain (e.g. typemapped lava, cliffs, water). You can set it to some positive
 value to make them avoid pathable but very slow terrain (for example if you set it to 0.2 then they will not raw-move across terrain where they move at 20% speed or less, and will use
 normal pathing instead - which may still end up taking them through that path).
+* added modrule, `system.pfHcostMult`, a float value between 0 and 2, defaults to 0.2. Controls how aggressively the pathing search prioritizes nodes going in the direction of the goal.
+Higher values mean pathing is cheaper, but can start producing degenerate paths where the unit goes straight at the goal and then has to hug a wall.
 * removed modrules: `system.pfForceUpdateSingleThreaded` and `system.pfForceSingleThreaded`. Multithreading has shown itself stable.
 * removed modrule: `system.pathFinderUpdateRate`, since `system.pfUpdateRateScale` now serves the same general role but has different units.
 
@@ -251,11 +253,16 @@ The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 * fix `MissileLauncher` weapons with high `trajectoryHeight`, zero `turnRate` and high `wobble` having an unstable trajectory and prematurely falling down when firing onto higher elevations
 * fix `DGun` weapon type projectile direction (previously shot at an angle that would be valid from the `AimFromWeapon` piece and not the `QueryWeapon` piece)
 
+### Basecontent fixes
+* moved the `cursornormal` cursor from the "Spring cursors" archive to basecontent. The significance
+of this is that `modinfo.lua` is now sufficient for an archive to be a valid Recoil game that doesn't crash.
+* fixed the initial spawn gadget.
+* fixed action handler key press/release events.
+
 ### Miscellaneous fixes
-* fixed basecontent initial commander spawn gadget.
-* fixed basecontent action handler key press/release events.
 * fixed skirmish AI API getTeamResourcePull (used to return max storage instead).
 * `Spring.SetSunDirection` no longer causes broken shadows if you pass an unnormalized vector.
-* fixed being unable to drag-select units with `/specfullview 0`
+* fixed being unable to drag-select units with `/specfullview 0`.
+* fixed weirdly-boned Assimp (`.dae`) models being loaded incorrectly.
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
 * fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.
