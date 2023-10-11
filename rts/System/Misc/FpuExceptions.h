@@ -3,7 +3,9 @@
 #ifndef FPU_EXCEPTIONS_H__
 #define FPU_EXCEPTIONS_H__
 
-// This code can be used to trap FPU/SSE exceptions on Windows.
+/* This code can be used to trap FPU/SSE exceptions on Windows.
+ * It's not actually referenced in the binary but is there just
+ * in case it's needed for debugging in the future. */
 
 /*
 To invoke:
