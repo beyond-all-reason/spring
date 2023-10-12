@@ -59,7 +59,7 @@ public:
 	unsigned int CreateTexture(float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false, uint32_t texID = 0) const;
 	unsigned int CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, true)); }
 	unsigned int CreateAnisoTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, false)); }
-	unsigned int CreateDDSTexture(unsigned int texID = 0, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) const;
+	unsigned int CreateDDSTexture(unsigned int texID = 0, bool mipnear = false, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) const;
 
 	void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue);
 	void ReplaceAlpha(float a = 1.0f);
