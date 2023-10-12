@@ -86,7 +86,7 @@ void CS3OTextureHandler::Reload()
 			if (texData.invertAxis)
 				bitmap.ReverseYAxis();
 
-			uint32_t newTexId = bitmap.CreateTexture(0.0f, 0.0f, true, texData.texID);
+			uint32_t newTexId = bitmap.CreateMipMapTexture(0.0f, 0.0f, 0, texData.texID);
 			assert(newTexId == texData.texID);
 		}
 	}

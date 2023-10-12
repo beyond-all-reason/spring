@@ -730,6 +730,7 @@ void CGlobalRendering::CheckGLExtensions()
 	if (!GLEW_ARB_texture_compression) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_compression ");
 	if (!GLEW_ARB_texture_float)       ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_float ");
 	if (!GLEW_ARB_texture_non_power_of_two) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_non_power_of_two ");
+	if (!GLEW_ARB_framebuffer_object)       ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " framebuffer_object ");
 
 	if (extMsg[0] == 0)
 		return;

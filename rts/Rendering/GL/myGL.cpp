@@ -404,9 +404,10 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 }
 
 
-void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data)
+void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data, int32_t levels)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
 	if (globalRendering->compressTextures) {
 		switch (internalFormat) {
 			case 4:
@@ -421,25 +422,25 @@ void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei wid
 		}
 	}
 
-	// create mipmapped texture
+	// the number of required levels was not specified, assume the request for
+	// mipmapped texture, determine the number of levels
+	if (levels <= 0)
+		levels = std::bit_width(static_cast<uint32_t>(std::max(width , height)));
 
-	if (IS_GL_FUNCTION_AVAILABLE(glGenerateMipmap)) {
-		// newest method
-		glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data);
-		if (globalRendering->amdHacks) {
-			glEnable(target);
-			glGenerateMipmap(target);
-			glDisable(target);
-		} else {
-			glGenerateMipmap(target);
-		}
-	} else if (GLEW_VERSION_1_4) {
-		// This required GL-1.4
-		// instead of using glu, we rely on glTexImage2D to create the Mipmaps.
-		glTexParameteri(target, GL_GENERATE_MIPMAP, GL_TRUE);
-		glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data);
+	// cannot use glTexStorage2D/glSpringTexStorage2D as they don't support GL_COMPRESSED textures
+	glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data);
+	for (int level = 1; level < levels; ++level)
+		glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
+
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
+
+	if (globalRendering->amdHacks) {
+		glEnable(target);
+		glGenerateMipmap(target);
+		glDisable(target);
 	} else {
-		gluBuild2DMipmaps(target, internalFormat, width, height, format, type, data);
+		glGenerateMipmap(target);
 	}
 }
 
