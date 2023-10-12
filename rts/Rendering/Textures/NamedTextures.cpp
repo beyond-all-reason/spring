@@ -164,6 +164,7 @@ namespace CNamedTextures {
 		bool aniso   = false;
 		bool invert  = false;
 		bool greyed  = false;
+		bool mipnear = false;
 		bool tint    = false;
 		float tintColor[3];
 		bool resize  = false;
@@ -182,6 +183,7 @@ namespace CNamedTextures {
 				else if (ch == 'g') { greyed  = true; }
 				else if (ch == 'c') { clamped = true; }
 				else if (ch == 'b') { border  = true; }
+				else if (ch == 'm') { mipnear = true; }
 				else if (ch == 't') {
 					const char* cstr = filename.c_str() + p + 1;
 					const char* start = cstr;
@@ -233,15 +235,32 @@ namespace CNamedTextures {
 			return false;
 		}
 
+		const bool needMipMaps = (!(nearest || linear)) || mipnear;
+
+		TextureCreationParams tcp;
+		tcp.texID = texID;
+		tcp.linearMipMapFilter = !mipnear;
+		tcp.linearTextureFilter = !nearest;
+		tcp.reqNumLevels = needMipMaps ? 0 : 1;
+		if (aniso)
+			tcp.aniso = globalRendering->maxTexAnisoLvl;
+
 		if (bitmap.compressed) {
-			texID = bitmap.CreateDDSTexture(texID);
+			texID = bitmap.CreateDDSTexture(tcp);
 		} else {
 			if (resize) bitmap = bitmap.CreateRescaled(resizeDimensions.x,resizeDimensions.y);
 			if (invert) bitmap.InvertColors();
 			if (greyed) bitmap.MakeGrayScale();
 			if (tint)   bitmap.Tint(tintColor);
 
-			// make the texture
+			// verify if still broken
+			if (globalRendering->amdHacks && nearest) {
+				bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
+			}
+
+			texID = bitmap.CreateTexture(tcp);
+
+			// specify extra params
 			glBindTexture(GL_TEXTURE_2D, texID);
 
 			if (clamped) {
@@ -249,36 +268,12 @@ namespace CNamedTextures {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			}
 
-			if (nearest || linear) {
-				if (border) {
-					GLfloat white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-					glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
-				}
-
-				if (nearest) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				} else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				}
-
-				// verify if still broken
-				if (globalRendering->amdHacks && nearest) {
-					bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
-				}
-
-				glTexImage2D(GL_TEXTURE_2D, 0, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, int(border), bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-			} else {
-				//! MIPMAPPING (default)
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-				glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
+			if (border) {
+				GLfloat white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+				glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
 			}
 
-			if (aniso && GLEW_EXT_texture_filter_anisotropic)
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalRendering->maxTexAnisoLvl);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 		texInfo.id    = texID;

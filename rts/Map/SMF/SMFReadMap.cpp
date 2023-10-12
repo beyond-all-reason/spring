@@ -276,7 +276,7 @@ void CSMFReadMap::CreateSplatDetailTextures()
 			splatDetailTexBM.AllocDummy(SColor(127, 127, 127, 127));
 		}
 
-		splatDetailTex.SetRawTexID(splatDetailTexBM.CreateTexture(texAnisotropyLevels[true], 0.0f, true));
+		splatDetailTex.SetRawTexID(splatDetailTexBM.CreateMipMapTexture(texAnisotropyLevels[true], 0.0f, 0));
 		splatDetailTex.SetRawSize(int2(splatDetailTexBM.xsize, splatDetailTexBM.ysize));
 	}
 
@@ -288,7 +288,7 @@ void CSMFReadMap::CreateSplatDetailTextures()
 			splatDistrTexBM.AllocDummy(SColor(255, 0, 0, 0));
 		}
 
-		splatDistrTex.SetRawTexID(splatDistrTexBM.CreateTexture(texAnisotropyLevels[true], 0.0f, true));
+		splatDistrTex.SetRawTexID(splatDistrTexBM.CreateMipMapTexture(texAnisotropyLevels[true], 0.0f, 0));
 		splatDistrTex.SetRawSize(int2(splatDistrTexBM.xsize, splatDistrTexBM.ysize));
 	}
 
@@ -310,7 +310,7 @@ void CSMFReadMap::CreateSplatDetailTextures()
 			splatDetailNormalTextureBM.GetRawMem()[3] = 127; // Alpha is diffuse as in old-style detail textures
 		}
 
-		splatNormalTextures[i].SetRawTexID(splatDetailNormalTextureBM.CreateTexture(texAnisotropyLevels[true], 0.0f, true));
+		splatNormalTextures[i].SetRawTexID(splatDetailNormalTextureBM.CreateMipMapTexture(texAnisotropyLevels[true], 0.0f, 0));
 		splatNormalTextures[i].SetRawSize(int2(splatDetailNormalTextureBM.xsize, splatDetailNormalTextureBM.ysize));
 	}
 
@@ -344,7 +344,7 @@ void CSMFReadMap::CreateDetailTex()
 		detailTexBM.AllocDummy({127, 127, 127, 0});
 	}
 
-	detailTex.SetRawTexID(detailTexBM.CreateTexture(texAnisotropyLevels[false], 0.0f, true));
+	detailTex.SetRawTexID(detailTexBM.CreateMipMapTexture(texAnisotropyLevels[false], 0.0f, 0));
 	detailTex.SetRawSize(int2(detailTexBM.xsize, detailTexBM.ysize));
 }
 
@@ -832,33 +832,40 @@ void CSMFReadMap::SunChanged()
 void CSMFReadMap::ReloadTextures()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto reloadTextureFunc = [](const std::string& texName, MapTexture& mt, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) {
+	const auto ReloadTextureFunc = [](const std::string& texName, MapTexture& mt, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) {
 		/// perhaps *mt.GetIDPtr() == 0 should not be reloaded
 
 		CBitmap bm;
 		if (bm.Load(texName)) {
-			uint32_t newTexID = bm.CreateTexture(aniso, lodBias, mipmaps, *mt.GetIDPtr());
+			TextureCreationParams tcp;
+			tcp.texID = *mt.GetIDPtr();
+			tcp.aniso = aniso;
+			tcp.lodBias = lodBias;
+			tcp.reqNumLevels = mipmaps ? 0 : 1;
+
+			uint32_t newTexID = bm.CreateTexture(tcp);
+
 			mt.SetRawTexID(newTexID);
 			mt.SetRawSize(int2(bm.xsize, bm.ysize));
 		}
 	};
 
-	reloadTextureFunc(mapInfo->smf.grassShadingTexName  , grassShadingTex, 0.0f                      , 0.0f, true);
-	reloadTextureFunc(mapInfo->smf.detailTexName        , detailTex      , texAnisotropyLevels[false], 0.0f, true);
-	reloadTextureFunc(mapInfo->smf.minimapTexName       , minimapTex);
-	reloadTextureFunc(mapInfo->smf.specularTexName      , specularTex);
-	reloadTextureFunc(mapInfo->smf.blendNormalsTexName  , blendNormalsTex);
-	reloadTextureFunc(mapInfo->smf.splatDistrTexName    , splatDistrTex  , texAnisotropyLevels[true] , 0.0f, true);
-	reloadTextureFunc(mapInfo->smf.splatDetailTexName   , splatDetailTex , texAnisotropyLevels[true] , 0.0f, true);
-	reloadTextureFunc(mapInfo->smf.skyReflectModTexName , skyReflectModTex);
-	reloadTextureFunc(mapInfo->smf.lightEmissionTexName , lightEmissionTex);
-	reloadTextureFunc(mapInfo->smf.parallaxHeightTexName, parallaxHeightTex);
+	ReloadTextureFunc(mapInfo->smf.grassShadingTexName  , grassShadingTex, 0.0f                      , 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.detailTexName        , detailTex      , texAnisotropyLevels[false], 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.minimapTexName       , minimapTex                                             );
+	ReloadTextureFunc(mapInfo->smf.specularTexName      , specularTex                                            );
+	ReloadTextureFunc(mapInfo->smf.blendNormalsTexName  , blendNormalsTex                                        );
+	ReloadTextureFunc(mapInfo->smf.splatDistrTexName    , splatDistrTex  , texAnisotropyLevels[true] , 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.splatDetailTexName   , splatDetailTex , texAnisotropyLevels[true] , 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.skyReflectModTexName , skyReflectModTex                                       );
+	ReloadTextureFunc(mapInfo->smf.lightEmissionTexName , lightEmissionTex                                       );
+	ReloadTextureFunc(mapInfo->smf.parallaxHeightTexName, parallaxHeightTex                                      );
 
 	for (size_t i = 0; i < mapInfo->smf.splatDetailNormalTexNames.size(); i++) {
 		if (i == NUM_SPLAT_DETAIL_NORMALS)
 			break;
 
-		reloadTextureFunc(mapInfo->smf.splatDetailNormalTexNames[i], splatNormalTextures[i], texAnisotropyLevels[true], 0.0f, true);
+		ReloadTextureFunc(mapInfo->smf.splatDetailNormalTexNames[i], splatNormalTextures[i], texAnisotropyLevels[true], 0.0f, true);
 	}
 }
 

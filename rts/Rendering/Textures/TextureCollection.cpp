@@ -151,7 +151,7 @@ void CTextureCollection::Reload()
 		if (!bitmap.Load(texturePaths[i]))
 			continue; //skip missing texture files
 
-		const auto texID = bitmap.CreateTexture(0.0f, 0.0f, true, textureIDs[i]);
+		const auto texID = bitmap.CreateMipMapTexture(0.0f, 0.0f, 0, textureIDs[i]);
 		if (texID != textureIDs[i]) {
 			assert(false); //logic error, should never reach that point
 			glDeleteTextures(1, &textureIDs[i]);

@@ -102,7 +102,7 @@ void CDynWater::InitResources(bool loadShader)
 	if (!std::has_single_bit <uint32_t> (foam.xsize) || !std::has_single_bit <uint32_t> (foam.ysize))
 		foam.CreateRescaled(std::bit_ceil <uint32_t> (foam.xsize), std::bit_ceil <uint32_t> (foam.ysize));
 
-	foamTex = foam.CreateTexture(0.0f, 0.0f, true);
+	foamTex = foam.CreateMipMapTexture(0.0f, 0.0f, 0);
 
 
 	if (ProgramStringIsNative(GL_VERTEX_PROGRAM_ARB, "ARB/waterDyn.vp")) {
