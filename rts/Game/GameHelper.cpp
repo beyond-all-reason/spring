@@ -1202,7 +1202,10 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 
 	// This cache is causing a desync, so for the moment (until the cause can be determined and
 	// resolved), don't use it in synced code.
-	if (!synced) {
+	// This is causing F2 - traversibility crashes and it is also causes a masssive fps drop when trying to
+	// place a geothermal over a vent. Disabled for now - until we decide how to proceed.
+	// if (!synced) {
+	if (false) {
 		TestUnitBuildSquareCache::ClearStaleItems(synced);
 		auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
 		bool cacheFound = false;
