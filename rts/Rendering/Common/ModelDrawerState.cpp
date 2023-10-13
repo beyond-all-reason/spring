@@ -94,8 +94,8 @@ void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 
 CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 {
-	if (!CanEnable())
-		return;
+	// if (!CanEnable())
+	// 	return;
 
 	#define sh shaderHandler
 
