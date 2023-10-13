@@ -3006,15 +3006,15 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
  		//   relies on assumption that PFS will not search if start-sqr
  		//   is blocked, so too fragile
 		//
-		if (!pathController.IgnoreTerrain(*owner->moveDef, owner->pos) && !owner->moveDef->TestMoveSquare(owner, owner->pos, owner->speed, true, false, true)) {
+		if (!pathController.IgnoreTerrain(*owner->moveDef, owner->pos) && !owner->moveDef->TestMoveSquare(owner, owner->pos, owner->speed, true, true, true)) {
 			bool updatePos = false;
 
 			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
-				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos + owner->rightdir * n, owner->speed, true, false, true))) {
+				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos + owner->rightdir * n, owner->speed, true, true, true))) {
 					owner->Move(owner->pos + owner->rightdir * n, false);
 					break;
 				}
-				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos - owner->rightdir * n, owner->speed, true, false, true))) {
+				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos - owner->rightdir * n, owner->speed, true, true, true))) {
 					owner->Move(owner->pos - owner->rightdir * n, false);
 					break;
 				}
