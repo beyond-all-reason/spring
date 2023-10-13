@@ -94,8 +94,8 @@ void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 
 CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 {
-	// if (!CanEnable())
-	// 	return;
+	if (!CanEnable())
+		return;
 
 	#define sh shaderHandler
 
@@ -181,6 +181,9 @@ bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
 
 void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 {
+	if (!CanEnable())
+		return;
+
 	// body of former EnableCommon();
 	CModelDrawerHelper::PushTransform(camera);
 	CModelDrawerHelper::EnableTexturesCommon();
