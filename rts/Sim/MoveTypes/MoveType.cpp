@@ -5,6 +5,8 @@
 
 #include "MoveType.h"
 #include "Map/Ground.h"
+#include "Components/MoveTypesComponents.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
@@ -14,6 +16,8 @@
 #include "System/SpringHash.h"
 
 #include "System/TimeProfiler.h"
+
+using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AMoveType, CObject)
 CR_REG_METADATA(AMoveType, (
@@ -163,4 +167,12 @@ bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
 	}
 
 	return false;
+}
+
+void AMoveType::Connect() {
+	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
+}
+
+void AMoveType::Disconnect() {
+	Sim::registry.remove<GeneralMoveType>(owner->entityReference);
 }

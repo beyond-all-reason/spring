@@ -65,7 +65,7 @@ void GroundMoveSystem::Update() {
         });
     }
 	{
-        // SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
+        SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
         view.each([](GroundMoveType& unitId){
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;
