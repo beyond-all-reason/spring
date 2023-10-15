@@ -42,7 +42,6 @@
 
 static CGameHelper gGameHelper;
 CGameHelper* helper = &gGameHelper;
-std::vector<CGameHelper::TestUnitBuildSquareCache> CGameHelper::TestUnitBuildSquareCache::testUnitBuildSquareCache;
 
 void CGameHelper::Init()
 {
@@ -50,14 +49,10 @@ void CGameHelper::Init()
 		wdVec.clear();
 		wdVec.reserve(32);
 	}
-	  syncedCacheListener = std::make_unique<TestUnitBuildSquareCacheEventsListener< true>>();
-	unsyncedCacheListener = std::make_unique<TestUnitBuildSquareCacheEventsListener<false>>();
 }
 
 void CGameHelper::Kill()
 {
-	  syncedCacheListener = nullptr;
-	unsyncedCacheListener = nullptr;
 }
 
 void CGameHelper::Update()
@@ -1197,54 +1192,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
-	assert(!ThreadPool::inMultiThreadedSection);
-	std::function<void(CGameHelper::BuildSquareStatus)> SaveToCache = [](CGameHelper::BuildSquareStatus result) {};
-
-	// This cache is causing a desync, so for the moment (until the cause can be determined and
-	// resolved), don't use it in synced code.
-	// This is causing F2 - traversibility crashes and it is also causes a masssive fps drop when trying to
-	// place a geothermal over a vent. Disabled for now - until we decide how to proceed.
-	// if (!synced) {
-	if (false) {
-		TestUnitBuildSquareCache::ClearStaleItems(synced);
-		auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
-		bool cacheFound = false;
-		const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
-
-		if (cacheFound) {
-			feature = it->feature;
-
-			if (commands != nullptr) {
-				assert(!synced);
-				*canbuildpos = it->canbuildpos;
-				*featurepos = it->featurepos;
-				*nobuildpos = it->nobuildpos;
-			}
-
-			return it->result;
-		}
-
-		SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
-			if (!commands)
-				TestUnitBuildSquareCache::SaveToCache(
-					gs->frameNum,
-					std::move(key),
-					feature,
-					result
-				);
-			else
-				TestUnitBuildSquareCache::SaveToCache(
-					gs->frameNum,
-					std::move(key),
-					feature,
-					result,
-					*canbuildpos,
-					*featurepos,
-					*nobuildpos
-				);
-		};
-	}
-
 	feature = nullptr;
 
 	const int xsize = buildInfo.GetXSize();
@@ -1344,7 +1291,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		// out of map?
 		if (static_cast<unsigned>(x1) > mapDims.mapx || static_cast<unsigned>(x2) > mapDims.mapx ||
 			static_cast<unsigned>(z1) > mapDims.mapy || static_cast<unsigned>(z2) > mapDims.mapy) {
-			SaveToCache(BUILDSQUARE_BLOCKED);
 			return BUILDSQUARE_BLOCKED;
 		}
 
@@ -1357,14 +1303,12 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 				const BuildSquareStatus sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, allyteam, synced);
 
 				if ((testStatus = std::min(testStatus, sqrStatus)) == BUILDSQUARE_BLOCKED) {
-					SaveToCache(BUILDSQUARE_BLOCKED);
 					return BUILDSQUARE_BLOCKED;
 				}
 			}
 		}
 	}
 
-	SaveToCache(testStatus);
 	return testStatus;
 }
 
@@ -1585,43 +1529,4 @@ bool CGameHelper::CheckTerrainConstraints(
 	depthCheck &= (groundHeight <= -minDepth);
 
 	return (depthCheck && slopeCheck);
-}
-
-void CGameHelper::TestUnitBuildSquareCache::ClearStaleItems(bool synced)
-{
-	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
-		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
-	});
-}
-
-CGameHelper::TestUnitBuildSquareCache::KeyT CGameHelper::TestUnitBuildSquareCache::GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced)
-{
-	return std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyTeamID, buildInfo.def);
-}
-
-void CGameHelper::TestUnitBuildSquareCache::Invalidate(const KeyT& key)
-{
-	spring::VectorEraseIf(testUnitBuildSquareCache, [&key](const auto& item) {
-		return (key == item.key);
-	});
-}
-
-void CGameHelper::TestUnitBuildSquareCache::Invalidate(const CFeature* feature)
-{
-	spring::VectorEraseAllIf(testUnitBuildSquareCache, [feature](const auto& item) {
-		return item.feature == feature;
-	});
-}
-
-template<bool synced>
-CGameHelper::TestUnitBuildSquareCacheEventsListener<synced>::TestUnitBuildSquareCacheEventsListener()
-	: CEventClient("[TestUnitBuildSquareCacheEventsListener(" + std::to_string(synced) + ")]", 1000, synced)
-{
-	eventHandler.AddClient(this);
-}
-
-template<bool synced>
-CGameHelper::TestUnitBuildSquareCacheEventsListener<synced>::~TestUnitBuildSquareCacheEventsListener()
-{
-	eventHandler.RemoveClient(this);
 }
