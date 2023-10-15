@@ -490,7 +490,7 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
  *   Possible values for logLevel are:
  *    "debug"   | LOG.DEBUG
  *    "info"    | LOG.INFO
- *    "notice"  | LOG.NOTICE (engine default) (new in Version 97)
+ *    "notice"  | LOG.NOTICE (engine default)
  *    "warning" | LOG.WARNING
  *    "error"   | LOG.ERROR
  *    "fatal"   | LOG.FATAL
