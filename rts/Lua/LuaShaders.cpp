@@ -1091,12 +1091,12 @@ static bool GLUniformArray(lua_State* L, UniformFunc uf, ParseArrayFunc pf)
 #endif
 
 
-/*** Sets the an array of uniform values at the locationID for the currently active shader. Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}. In 104.0 the maximum length of the uniforms table increased from 32 entries to 1024.
+/*** Sets the an array of uniform values at the locationID for the currently active shader. Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}.
  *
  * @function gl.UniformArray
  * @number locationID
  * @number type
- * @tparam table uniforms
+ * @tparam table uniforms Array up to 1024 elements
  * @treturn nil
  */
 int LuaShaders::UniformArray(lua_State* L)

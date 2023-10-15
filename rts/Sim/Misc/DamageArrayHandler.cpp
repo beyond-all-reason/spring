@@ -45,11 +45,7 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 		LOG("[%s] number of ArmorDefs: " _STPF_, __FUNCTION__, armorDefKeys.size());
 
 		// expects the following structure, subtables must be in array-format:
-		//
 		// {"tanks" = {[1] = "supertank", [2] = "megatank"}, "infantry" = {[1] = "dude"}, ...}
-		//
-		// the old (pre-95.0) <key, value> subtable definitions are no longer supported!
-		//
 		for (unsigned int armorDefIdx = 1; armorDefIdx < armorDefKeys.size(); armorDefIdx++) {
 			const std::string armorDefName = StringToLower(armorDefKeys[armorDefIdx]);
 
