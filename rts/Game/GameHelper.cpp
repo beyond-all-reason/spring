@@ -1338,8 +1338,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 
 
 	BuildSquareStatus ret = BUILDSQUARE_OPEN;
-	const int yardxpos = unsigned(pos.x + (SQUARE_SIZE >> 1)) / SQUARE_SIZE;
-	const int yardypos = unsigned(pos.z + (SQUARE_SIZE >> 1)) / SQUARE_SIZE;
+	const int yardxpos = unsigned(pos.x) / SQUARE_SIZE;
+	const int yardypos = unsigned(pos.z) / SQUARE_SIZE;
 
 	CSolidObject* so = groundBlockingObjectMap.GroundBlocked(yardxpos, yardypos);
 
