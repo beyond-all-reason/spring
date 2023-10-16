@@ -166,6 +166,8 @@ Sim:
    will likely try to path around those map squares. Think lava, it is very slow to move through,
    (and it hurts), you don't want units trying to path through lava unless they are trying to get
    out. This feature is considered experimental.
+ - Change the default behaviour of builders to not build on top of a blocking unit if they can't
+   immediately do something about it.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
