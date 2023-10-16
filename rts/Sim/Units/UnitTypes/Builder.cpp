@@ -769,7 +769,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 				if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
 					return false;
 			}
-		} break;
+		} return false;
 
 		case CGameHelper::BUILDSQUARE_RECLAIMABLE:
 			// caller should handle this
