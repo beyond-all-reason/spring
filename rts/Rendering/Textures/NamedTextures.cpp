@@ -217,7 +217,7 @@ namespace CNamedTextures {
 		CBitmap bitmap;
 		TexInfo texInfo;
 
-		if (!bitmap.Load(filename, 1.0f, 4u, 0u)) {
+		if (!bitmap.Load(filename, 1.0f, 0u, 0u)) {
 			LOG_L(L_WARNING, "Couldn't find texture \"%s\"!", filename.c_str());
 			GenInsertTex(texName, texInfo, false, false, true, false);
 			return false;

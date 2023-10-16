@@ -1322,7 +1322,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 		return false;
 	}
 
-	if (!hasAlpha || forceReplaceAlpha)
+	if (channels == 4 && (!hasAlpha || forceReplaceAlpha))
 		ReplaceAlpha(defaultAlpha);
 
 	return true;
