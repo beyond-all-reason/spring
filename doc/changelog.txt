@@ -197,6 +197,14 @@ Sim::QTPFS
    to recalculate the pathing data on load than to use data saved to disk.
  - ECS-based system added to monitor changes in maxRelSpeedMod during match, whereas before it was
    found at the start and then never updated.
+ - Use Bi-directional searching to half the search time for long distance pathing requests. Note,
+   this is a lazy bi-directional search - it is fast rather than trying to find the perfect link
+   between the forward and reverse searches.
+ - If the reverse search fails, then a limit is now set on the forward search to cut down the time
+   spent searching for the nearest route.
+ - Searches are not only able to perform full-path sharing (i.e. same target/src quads), but also
+   partial-path sharing. This means when the start/end quads are near another searches star/end
+   quads, the path can be used to cut down search times by trying to link up to an existing route.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.
