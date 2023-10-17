@@ -1239,6 +1239,28 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		}
 	}
 
+	// Units update their positions on slow update. Synced code must avoid building and trapping
+	// units - so check that all nearby mobile units have correctly accurate positions up to date.
+	if (synced)
+	{
+		// buffer should be the maximum distance given by the movetype using the formula:
+		// maxspeed * modInfo.unitQuadPositionUpdateRate + footStep + 1
+		// +1 on end is a safety buffer against rounding issues with square placement.
+		// placeholder values are given here for the moment.
+		// TODO: switch out for a value determined by the above formula
+		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + 10 + 1;
+		const float3 min((x1 - bufferSize) * SQUARE_SIZE, 0.f, (z1 - bufferSize) * SQUARE_SIZE);
+		const float3 max((x2 + bufferSize) * SQUARE_SIZE, 0.f, (z2 + bufferSize) * SQUARE_SIZE);
+
+		QuadFieldQuery qfQuery;
+		qfQuery.threadOwner = threadOwner;
+		quadField.GetUnitsExact(qfQuery, min, max);
+		for (const CUnit* unit: *qfQuery.units) {
+			if (unit->moveDef != nullptr) 
+				unit->moveType->UpdateGroundBlockMap();
+		}
+	}
+
 	if (commands != nullptr) {
 		// this is only called in unsynced context (ShowUnitBuildSquare)
 		assert(!synced);
