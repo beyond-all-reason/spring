@@ -78,6 +78,21 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
+	UpdateGroundBlockMap();
+}
+
+void AMoveType::UpdateCollisionMap()
+{
+	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
+		return;
+
+	if (owner->pos != oldCollisionUpdatePos){
+		oldCollisionUpdatePos = owner->pos;
+		quadField.MovedUnit(owner);
+	}
+}
+
+void AMoveType::UpdateGroundBlockMap() {
 	if (owner->pos != oldSlowUpdatePos) {
 		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
 
@@ -93,17 +108,6 @@ void AMoveType::SlowUpdate()
 				}
 			}
 		}
-	}
-}
-
-void AMoveType::UpdateCollisionMap()
-{
-	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
-		return;
-
-	if (owner->pos != oldCollisionUpdatePos){
-		oldCollisionUpdatePos = owner->pos;
-		quadField.MovedUnit(owner);
 	}
 }
 

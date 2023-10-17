@@ -54,6 +54,7 @@ public:
 	virtual bool Update() = 0;
 	virtual void SlowUpdate();
 	void UpdateCollisionMap();
+	void UpdateGroundBlockMap();
 
 	virtual void UpdatePreCollisionsMt() {};
 	virtual void UpdatePreCollisions() {};
