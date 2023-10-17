@@ -170,6 +170,8 @@ Sim:
    immediately do something about it.
  - Synced build checks now ensure nearby units have accurate ground block information declared to
    avoid fast units running into an otherwise clear area and getting trapped inside building.
+ - Ground moving units can't step into the inside of static objects.
+ - Ground units cannot push each other into the inside of static objects.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
