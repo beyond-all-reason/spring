@@ -238,6 +238,8 @@ private:
 	float skidRotSpeed = 0.0f;              /// rotational speed when skidding (radians / (GAME_SPEED frames))
 	float skidRotAccel = 0.0f;              /// rotational acceleration when skidding (radians / (GAME_SPEED frames^2))
 
+	float3 forceFromMovingCollidees;
+	float3 forceFromStaticCollidees;
 	float3 resultantForces;
 
 	unsigned int pathID = 0;

@@ -136,6 +136,8 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(skidRotAccel),
 
 	CR_MEMBER(resultantForces),
+	CR_MEMBER(forceFromMovingCollidees),
+	CR_MEMBER(forceFromStaticCollidees),
 
 	CR_MEMBER(pathID),
 
@@ -2263,39 +2265,57 @@ void CGroundMoveType::HandleObjectCollisions()
 
 	// handle collisions for even-numbered objects on even-numbered frames and vv.
 	// (temporal resolution is still high enough to not compromise accuracy much?)
-	if (!collider->beingBuilt) {
-		const UnitDef* colliderUD = collider->unitDef;
-		const MoveDef* colliderMD = collider->moveDef;
+	if (collider->beingBuilt)
+		return;
 
-		resultantForces *= 0.f;
+	const UnitDef* colliderUD = collider->unitDef;
+	const MoveDef* colliderMD = collider->moveDef;
 
-		// NOTE:
-		//   use the collider's MoveDef footprint as radius since it is
-		//   always mobile (its UnitDef footprint size may be different)
-		const float colliderFootPrintRadius = colliderMD->CalcFootPrintMaxInteriorRadius(); // ~= CalcFootPrintMinExteriorRadius(0.75f)
-		const float colliderAxisStretchFact = colliderMD->CalcFootPrintAxisStretchFactor();
+	resultantForces *= 0.f;
+	forceFromMovingCollidees *= 0.f;
+	forceFromStaticCollidees *= 0.f;
 
-		HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
-		HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
+	// NOTE:
+	//   use the collider's MoveDef footprint as radius since it is
+	//   always mobile (its UnitDef footprint size may be different)
+	const float colliderFootPrintRadius = colliderMD->CalcFootPrintMaxInteriorRadius(); // ~= CalcFootPrintMinExteriorRadius(0.75f)
+	const float colliderAxisStretchFact = colliderMD->CalcFootPrintAxisStretchFactor();
 
-		// blocked square collision (very performance hungry, process only every 2nd game frame)
-		// dangerous: reduces effective square-size from 8 to 4, but many ground units can move
-		// at speeds greater than half the effective square-size per frame so this risks getting
-		// stuck on impassable squares
-		const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
-		const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
-		
-		if (squareChange || checkAllowed) {
-			const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
-			if (requestPath) {
-				ReRequestPath(false);
-			}
+	HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
+	HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
+
+	// blocked square collision (very performance hungry, process only every 2nd game frame)
+	// dangerous: reduces effective square-size from 8 to 4, but many ground units can move
+	// at speeds greater than half the effective square-size per frame so this risks getting
+	// stuck on impassable squares
+	const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
+	const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
+	
+	if (squareChange || checkAllowed) {
+		const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
+		if (requestPath) {
+			ReRequestPath(false);
 		}
-
-		bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed*modInfo.maxCollisionPushMultiplier);
-		if (sanitizeForces)
-			(resultantForces.Normalize()) *= maxSpeed;
 	}
+
+	auto isSquareBlocked = [colliderMD, collider, curThread](const float3&& pos, const float3& dir) {
+		// separate calls because terrain is only checked for in the centre square, while
+		// static objects are checked for in the whole footprint.
+		return !colliderMD->TestMoveSquare(collider, pos, dir, true, false, true, nullptr, nullptr, curThread)
+				|| !colliderMD->TestMoveSquare(collider, pos, dir, false, true, false, nullptr, nullptr, curThread);
+	};
+
+	// Try to apply all collision forces, but if that will collide with static parts of the map,
+	// then only apply forces from static objects/terrain. This prevent units from pushing each
+	// other into buildings far enough that the pathing systems can't get them out again.
+	resultantForces = forceFromStaticCollidees + forceFromMovingCollidees;
+	bool blocked = isSquareBlocked(collider->pos + resultantForces, resultantForces);
+	if (blocked)
+		resultantForces = forceFromStaticCollidees;
+
+	bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed*modInfo.maxCollisionPushMultiplier);
+	if (sanitizeForces)
+		(resultantForces.Normalize()) *= maxSpeed;
 }
 
 bool CGroundMoveType::HandleStaticObjectCollision(
@@ -2351,6 +2371,10 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		float3 sqrSumPosition; // .y is always 0
 		float2 sqrPenDistance; // .x = sum, .y = count
 
+		float deepestPenDistance = 0.f;
+		float allCollisionSqrCount = 0.f;
+		float3 allCollisionSqrSumPosition;
+
 		const float3 rightDir2D = (rgt * XZVector).SafeNormalize();
 		const float3 speedDir2D = (vel * XZVector).SafeNormalize();
 
@@ -2402,15 +2426,19 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				const float3 squarePos = float3(xabs * SQUARE_SIZE + (SQUARE_SIZE >> 1), pos.y, zabs * SQUARE_SIZE + (SQUARE_SIZE >> 1));
 				const float3 squareVec = pos - squarePos;
 
-				// ignore squares behind us (relative to velocity vector)
-				if (squareVec.dot(vel) > 0.0f)
-					continue;
-
 				// RHS magic constant is the radius of a square (sqrt(2*(SQUARE_SIZE>>1)*(SQUARE_SIZE>>1)))
 				const float  squareColRadiusSum = colliderRadius + 5.656854249492381f;
 				const float   squareSepDistance = squareVec.Length2D() + 0.1f;
 				const float   squarePenDistance = std::min(squareSepDistance - squareColRadiusSum, 0.0f);
 				// const float  squareColSlideSign = -Sign(squarePos.dot(rightDir2D) - pos.dot(rightDir2D));
+
+				deepestPenDistance = std::min(deepestPenDistance, squarePenDistance);
+				allCollisionSqrSumPosition += (squarePos * XZVector);
+				allCollisionSqrCount++;
+
+				// ignore squares behind us (relative to velocity vector)
+				if (squareVec.dot(vel) > 0.0f)
+					continue;
 
 				// this tends to cancel out too much on average
 				// strafeVec += (rightDir2D * sqColSlideSign);
@@ -2421,6 +2449,16 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			}
 		}
 
+		// This pushes units directly away form static objects so they don't intersect.
+		if (allCollisionSqrCount > 0.f) {
+			allCollisionSqrSumPosition *= (1.0f / allCollisionSqrCount);
+			const float pushSpeed = std::min(-deepestPenDistance, maxSpeed);
+			const float3 pushOutVec = ((pos - allCollisionSqrSumPosition) * XZVector).SafeNormalize() * pushSpeed;
+
+			forceFromStaticCollidees += pushOutVec;
+		}
+
+		// This directs units to left/right around the static object.
 		if (sqrPenDistance.y > 0.0f) {
 			sqrSumPosition *= (1.0f / sqrPenDistance.y);
 			sqrPenDistance *= (1.0f / sqrPenDistance.y);
@@ -2442,8 +2480,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			summedVec = strafeVec + bounceVec;
 
 			// if checkTerrain is true, test only the center square
-			if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
-				resultantForces += summedVec;
+			//if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
+				forceFromStaticCollidees += summedVec;
 
 				// float3 waypointMove(summedVec.x, 0.f, summedVec.z);
 				// minimal hack to make FollowPath work at all turn-rates
@@ -2462,10 +2500,10 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				// LOG("%s: moving waypoint1 (%f,%f,%f)->(%f,%f,%f)", __func__
 				// 	, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
 				// 	, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
-			} else {
-				// never move fully back to oldPos when dealing with yardmaps
-				resultantForces += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
-			}
+			// } else {
+			// 	// never move fully back to oldPos when dealing with yardmaps
+			// 	forceFromStaticCollidees += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
+			// }
 		}
 
 		// note:
@@ -2488,8 +2526,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		bounceVec = (separationVector /  sepDistance) * bounceScale;
 		summedVec = strafeVec + bounceVec;
 
-		if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
-			resultantForces += summedVec;
+		// if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
+			forceFromStaticCollidees += summedVec;
 
 			// summedVec.y = 0.f;
 			// earlyCurrWayPoint += summedVec;
@@ -2500,15 +2538,15 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			// LOG("%s: moving waypoint2 (%f,%f,%f)->(%f,%f,%f)", __func__
 			// 		, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
 			// 		, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
-		} else {
+		// } else {
 			// move back to previous-frame position
 			// ChangeSpeed calculates speedMod without checking squares for *structure* blockage
 			// (so that a unit can free itself if it ends up within the footprint of a structure)
 			// this means deltaSpeed will be non-zero if stuck on an impassable square and hence
 			// the new speedvector which is constructed from deltaSpeed --> we would simply keep
 			// moving forward through obstacles if not counteracted by this
-			resultantForces += ((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f));
-		}
+		// 	forceFromStaticCollidees += ((oldPos - pos) + summedVec * 0.25f * (collider->frontdir.dot(separationVector) < 0.25f));
+		// }
 
 		// same here
 		return (canRequestPath && (penDistance < 0.0f));
@@ -2689,8 +2727,8 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		const bool moveCollider = ((pushCollider || !pushCollidee) && colliderMobile);
 
-		if (moveCollider && colliderMD->TestMoveSquare(collider, collider->pos + colliderMoveVec, colliderMoveVec, true, true, false, nullptr, nullptr, curThread))
-			resultantForces += colliderMoveVec;
+		if (moveCollider)
+			forceFromMovingCollidees += colliderMoveVec;
 	}
 }
 
@@ -2765,7 +2803,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float colliderMassScale = std::clamp(1.0f - r1, 0.01f, 0.99f);
 		const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f);
 
-		resultantForces += colResponseVec * colliderMassScale;
+		forceFromMovingCollidees += colResponseVec * colliderMassScale;
 		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
 	}
 }
@@ -2993,6 +3031,27 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		owner->SetVelocityAndSpeed(newSpeedVector);
 		owner->Move(owner->speed, true);
 
+		auto isSquareOpen = [this](float3 pos) {
+			// separate calls because terrain is only checked for in the centre square, while
+			// static objects are checked for in the whole footprint.
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
+					&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		};
+
+		auto isTerrainSquareOpen = [this](float3 pos) {
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true);
+		};
+
+		auto isObjectsSquareOpen = [this](float3 pos) {
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		};
+
+		// Used to limit how much units are allowed to slide along walls. Helps getting around
+		// corners, but stops them going too fast by sliding too far.
+		auto isCloseEnough = [this](float3 pos) {
+			return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
+		};
+
 		// NOTE:
 		//   does not check for structure blockage, coldet handles that
 		//   entering of impassable terrain is *also* handled by coldet
@@ -3006,17 +3065,34 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
  		//   relies on assumption that PFS will not search if start-sqr
  		//   is blocked, so too fragile
 		//
-		if (!pathController.IgnoreTerrain(*owner->moveDef, owner->pos) && !owner->moveDef->TestMoveSquare(owner, owner->pos, owner->speed, true, true, true)) {
+		// TODO: look to move as much of this to MT to improve perf. Then make sure the inner loop
+		// doesn't make too many pointless calls to isSquareOpen().
+		bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*owner->moveDef, owner->pos)
+									&& !isTerrainSquareOpen(owner->pos);
+		bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(owner->pos);
+		if (isSquareBlocked) {
 			bool updatePos = false;
 
+			// This attempts to slide units around obstructions. The effect is reduced around
+			// static objects to prevent units sliding too fast around straight edges, which would
+			// look weird.
 			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
-				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos + owner->rightdir * n, owner->speed, true, true, true))) {
-					owner->Move(owner->pos + owner->rightdir * n, false);
-					break;
+				float3 posToTest = owner->pos + owner->rightdir * n;
+				if (isTerrainSquareBlocked || isCloseEnough(posToTest)) {
+					updatePos = isSquareOpen(posToTest);
+					if (updatePos) {
+						owner->Move(posToTest, false);
+						break;
+					}
 				}
-				if (!updatePos && (updatePos = owner->moveDef->TestMoveSquare(owner, owner->pos - owner->rightdir * n, owner->speed, true, true, true))) {
-					owner->Move(owner->pos - owner->rightdir * n, false);
-					break;
+
+				posToTest = owner->pos - owner->rightdir * n;
+				if (isTerrainSquareBlocked || isCloseEnough(posToTest)) {
+					updatePos = isSquareOpen(posToTest);
+					if (updatePos) {
+						owner->Move(posToTest, false);
+						break;
+					}
 				}
 			}
 
