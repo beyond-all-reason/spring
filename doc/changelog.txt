@@ -168,6 +168,8 @@ Sim:
    out. This feature is considered experimental.
  - Change the default behaviour of builders to not build on top of a blocking unit if they can't
    immediately do something about it.
+ - Synced build checks now ensure nearby units have accurate ground block information declared to
+   avoid fast units running into an otherwise clear area and getting trapped inside building.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
