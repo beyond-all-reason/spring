@@ -487,19 +487,17 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		}
 	}
 
-	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode);
+	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode) | (badGoal & haveFullPath);
+	haveFullPath = (badGoal == true) ? false : haveFullPath;
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result
 	// NOTE:
-	//   should adjust GMT::goalPos accordingly, otherwise
-	//   units will end up spinning in-place over the last
-	//   waypoint (since "atGoal" can never become true)
+	//   movement code has handles special cases where the last waypoint isn't reachable so there
+	//   is no need to change the target point anymore.
 	if (!haveFullPath && havePartPath) {
 		fwd.tgtSearchNode = fwd.minSearchNode;
 		auto* minNode = nodeLayer->GetPoolNode(fwd.minSearchNode->GetIndex());
-		fwd.tgtPoint.x = minNode->xmid() * SQUARE_SIZE;
-		fwd.tgtPoint.z = minNode->zmid() * SQUARE_SIZE;
 
 		// used to trace a bad path to give partial searches a chance of an early out
 		// in reverse searches.
@@ -751,8 +749,8 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 	}
 
 	path->SetBoundingBox();
-	path->SetHasFullPath(haveFullPath & !badGoal);
-	path->SetHasPartialPath(havePartPath | (haveFullPath & badGoal));
+	path->SetHasFullPath(haveFullPath);
+	path->SetHasPartialPath(havePartPath);
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
@@ -767,7 +765,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
-	//if (fwd.srcSearchNode != fwd.tgtSearchNode || bwd.srcSearchNode != bwd.tgtSearchNode)
 	{
 		// Only a bad path will be associated with the reverse path
 		if (!haveFullPath)
@@ -806,7 +803,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				//   one exception: tgtPoint can legitimately coincide
 				//   with first transition-point, which we must ignore
 				assert(tmpNode != prvNode);
-
 				assert(prvPoint != float3());
 
 				// This check is not helpful. In bigger maps this triggers for points on small (1x1) quads
@@ -850,7 +846,6 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			//   one exception: tgtPoint can legitimately coincide
 			//   with first transition-point, which we must ignore
 			assert(tmpNode != prvNode);
-
 			assert(tmpPoint != float3());
 
 			// assert(tmpPoint != prvPoint || tmpNode == fwd.tgtSearchNode || doPartialSearch);
@@ -873,6 +868,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			prvNode = tmpNode->GetPrevNode();
 		}
 
+		// ensure the starting quad is shared with other path searches.
 		if (tmpNode != nullptr) {
 			points.emplace_front(float3(), tmpNode->GetIndex() | ONLY_NODE_ID_MASK);
 			// LOG("%s: [%d] tgtNode=%d point ", __func__, SearchThreadData::SEARCH_FORWARD

@@ -2038,24 +2038,28 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 		}
 
-		const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
-		const float3 targetPos = nwp;
+		// The last waypoint on a bad path will never pass a range check so don't try.
+		bool doRangeCheck = !pathManager->NextWayPointIsUnreachable(pathID);
+		if (doRangeCheck) {
+			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
+			const float3 targetPos = nwp;
 
-		// check the between pos and cwp for obstacles
-		// if still further than SS elmos from waypoint, disallow skipping
-		const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, true, nullptr, nullptr, thread);
-		
-		// {
-		// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-		// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-		// if (printMoveInfo)
-		// 	LOG("%s: test move square (%f,%f)->(%f,%f) = %f (range=%d skip=%d)", __func__
-		// 			, pos.x, pos.z, targetPos.x, targetPos.z, math::sqrtf(cwpDistSq)
-		// 			, int(rangeTest), int(allowSkip));
-		// }
+			// check the between pos and cwp for obstacles
+			// if still further than SS elmos from waypoint, disallow skipping
+			const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, true, nullptr, nullptr, thread);
+			
+			// {
+			// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// if (printMoveInfo)
+			// 	LOG("%s: test move square (%f,%f)->(%f,%f) = %f (range=%d skip=%d)", __func__
+			// 			, pos.x, pos.z, targetPos.x, targetPos.z, math::sqrtf(cwpDistSq)
+			// 			, int(rangeTest), int(allowSkip));
+			// }
 
-		if (!rangeTest)
-			return false;
+			if (!rangeTest)
+				return false;
+		}
 	}
 
 	{
@@ -2333,7 +2337,9 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 	// while being built, units that overlap their factory yardmap should not be moved at all
 	assert(!collider->beingBuilt);
 
-	if (checkTerrain && (!collider->IsMoving() || collider->IsInAir()))
+	// Even units standing still can be pushed into terrain and so need to be able to be pushed
+	// back out.
+	if (checkTerrain && (/*!collider->IsMoving() ||*/ collider->IsInAir()))
 		return false;
 
 	// for factories, check if collidee's position is behind us (which means we are likely exiting)
@@ -3071,6 +3077,10 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 									&& !isTerrainSquareOpen(owner->pos);
 		bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(owner->pos);
 		if (isSquareBlocked) {
+			// Sometimes now collisions won't happen due to this code preventing that.
+			// so units need to be able to get themselves out of stuck situations. So adding
+			// a rerequest path check here.
+			ReRequestPath(false);
 			bool updatePos = false;
 
 			// This attempts to slide units around obstructions. The effect is reduced around

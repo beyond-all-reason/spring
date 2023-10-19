@@ -71,6 +71,7 @@ namespace QTPFS {
 		) override;
 
 		bool CurrentWaypointIsUnreachable(unsigned int pathID) override;
+		bool NextWayPointIsUnreachable(unsigned int pathID) override;
 
 		void GetPathWayPoints(
 			unsigned int pathID,

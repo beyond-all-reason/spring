@@ -82,6 +82,7 @@ public:
 	}
 
 	virtual bool CurrentWaypointIsUnreachable(unsigned int pathID) { return false; }
+	virtual bool NextWayPointIsUnreachable(unsigned int pathID) { return false; }
 
 
 	/**

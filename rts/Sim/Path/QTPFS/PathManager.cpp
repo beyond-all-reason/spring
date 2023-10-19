@@ -1315,7 +1315,12 @@ float3 QTPFS::PathManager::NextWayPoint(
 	}
 
 	unsigned int nextPointIndex = livePath->GetNextPointIndex() + 1;
-	livePath->SetNextPointIndex(nextPointIndex);
+	unsigned int lastPointIndex = livePath->NumPoints() - 1;
+	if (nextPointIndex > lastPointIndex) {
+		nextPointIndex = lastPointIndex;
+	} else {
+		livePath->SetNextPointIndex(nextPointIndex);
+	}
 	return livePath->GetPoint(nextPointIndex);
 }
 
@@ -1334,6 +1339,22 @@ bool QTPFS::PathManager::CurrentWaypointIsUnreachable(unsigned int pathID) {
 	// 		, int(livePath->IsFullPath()));
 
 	return ( livePath->GetNextPointIndex() == livePath->NumPoints() - 1 ) && ( !livePath->IsFullPath() );
+}
+
+
+bool QTPFS::PathManager::NextWayPointIsUnreachable(unsigned int pathID) {
+	entt::entity pathEntity = entt::entity(pathID);
+	if (!registry.valid(pathEntity))
+		return true;
+
+	IPath* livePath = registry.try_get<IPath>(pathEntity);
+	if (livePath == nullptr)
+		return true;
+
+	unsigned int lastWaypoint = livePath->NumPoints() - 1;
+	unsigned int nextWaypoint = livePath->GetNextPointIndex() + 1;
+
+	return ( nextWaypoint >= lastWaypoint ) && ( !livePath->IsFullPath() );
 }
 
 
