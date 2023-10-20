@@ -2302,20 +2302,26 @@ void CGroundMoveType::HandleObjectCollisions()
 		}
 	}
 
-	auto isSquareBlocked = [colliderMD, collider, curThread](const float3&& pos, const float3& dir) {
-		// separate calls because terrain is only checked for in the centre square, while
-		// static objects are checked for in the whole footprint.
-		return !colliderMD->TestMoveSquare(collider, pos, dir, true, false, true, nullptr, nullptr, curThread)
-				|| !colliderMD->TestMoveSquare(collider, pos, dir, false, true, false, nullptr, nullptr, curThread);
+	auto canAssignForce = [colliderMD, collider, curThread](const float3& force) {
+		constexpr float3 ZeroVector = float3();
+
+		if (force.same(ZeroVector))
+			return false;
+
+		float3 pos = collider->pos + force;
+		return colliderMD->TestMoveSquare(collider, pos, force, true, true, true, nullptr, nullptr, curThread);
 	};
 
 	// Try to apply all collision forces, but if that will collide with static parts of the map,
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
 	// other into buildings far enough that the pathing systems can't get them out again.
-	resultantForces = forceFromStaticCollidees + forceFromMovingCollidees;
-	bool blocked = isSquareBlocked(collider->pos + resultantForces, resultantForces);
-	if (blocked)
-		resultantForces = forceFromStaticCollidees;
+	float3 tryForce = forceFromStaticCollidees + forceFromMovingCollidees;
+	if (!canAssignForce(tryForce)) {
+		tryForce = forceFromStaticCollidees;
+		if (!canAssignForce(tryForce))
+			return;
+	}
+	resultantForces = tryForce;
 
 	bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed*modInfo.maxCollisionPushMultiplier);
 	if (sanitizeForces)
@@ -2339,7 +2345,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 	// Even units standing still can be pushed into terrain and so need to be able to be pushed
 	// back out.
-	if (checkTerrain && (/*!collider->IsMoving() ||*/ collider->IsInAir()))
+	if (checkTerrain && (!collider->IsMoving() || collider->IsInAir()))
 		return false;
 
 	// for factories, check if collidee's position is behind us (which means we are likely exiting)
@@ -3040,8 +3046,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		auto isSquareOpen = [this](float3 pos) {
 			// separate calls because terrain is only checked for in the centre square, while
 			// static objects are checked for in the whole footprint.
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
-					&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, true, true);
 		};
 
 		auto isTerrainSquareOpen = [this](float3 pos) {
@@ -3049,7 +3054,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		};
 
 		auto isObjectsSquareOpen = [this](float3 pos) {
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, true);
 		};
 
 		// Used to limit how much units are allowed to slide along walls. Helps getting around
@@ -3080,7 +3085,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// Sometimes now collisions won't happen due to this code preventing that.
 			// so units need to be able to get themselves out of stuck situations. So adding
 			// a rerequest path check here.
-			ReRequestPath(false);
+			// ReRequestPath(false);
 			bool updatePos = false;
 
 			// This attempts to slide units around obstructions. The effect is reduced around
@@ -3088,7 +3093,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// look weird.
 			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
 				float3 posToTest = owner->pos + owner->rightdir * n;
-				if (isTerrainSquareBlocked || isCloseEnough(posToTest)) {
+				if (/*isTerrainSquareBlocked ||*/ isCloseEnough(posToTest)) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
@@ -3097,7 +3102,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 				}
 
 				posToTest = owner->pos - owner->rightdir * n;
-				if (isTerrainSquareBlocked || isCloseEnough(posToTest)) {
+				if (/*isTerrainSquareBlocked ||*/ isCloseEnough(posToTest)) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
