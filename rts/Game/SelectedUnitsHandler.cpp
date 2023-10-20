@@ -991,6 +991,12 @@ void CSelectedUnitsHandler::SetCommandPage(int page)
 
 void CSelectedUnitsHandler::SendCommand(const Command& c)
 {
+	SendSelect();
+	clientNet->Send(CBaseNetProtocol::Get().SendCommand(gu->myPlayerNum, c.GetID(), c.GetTimeOut(), c.GetOpts(), c.GetNumParams(), c.GetParams()));
+}
+
+void CSelectedUnitsHandler::SendSelect()
+{
 	if (selectionChanged) {
 		// send new selection; first gather unit IDs
 		selectedUnitIDs.clear();
@@ -1001,8 +1007,6 @@ void CSelectedUnitsHandler::SendCommand(const Command& c)
 		clientNet->Send(CBaseNetProtocol::Get().SendSelect(gu->myPlayerNum, selectedUnitIDs));
 		selectionChanged = false;
 	}
-
-	clientNet->Send(CBaseNetProtocol::Get().SendCommand(gu->myPlayerNum, c.GetID(), c.GetTimeOut(), c.GetOpts(), c.GetNumParams(), c.GetParams()));
 }
 
 
