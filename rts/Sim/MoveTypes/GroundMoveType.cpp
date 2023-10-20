@@ -763,8 +763,12 @@ void CGroundMoveType::SlowUpdate()
 					bestLastWaypointDist = curDist;
 					wantRepathFrame = gs->frameNum;
 				}
-				if (gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
-					&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames){
+
+				bool timeForRepath = gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
+									&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames;
+
+				// can't request a new path while the unit is stuck in terrain/static objects
+				if (timeForRepath && !insideStatic){
 					if (!lastWaypoint) {
 						ReRequestPath(true);
 					} else {
@@ -2295,7 +2299,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
 	const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
 	
-	if (squareChange || checkAllowed) {
+	if ((squareChange || checkAllowed) && owner->IsMoving()) {
 		const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
 		if (requestPath) {
 			ReRequestPath(false);
@@ -2303,14 +2307,16 @@ void CGroundMoveType::HandleObjectCollisions()
 	}
 
 	auto canAssignForce = [colliderMD, collider, curThread](const float3& force) {
-		constexpr float3 ZeroVector = float3();
-
 		if (force.same(ZeroVector))
 			return false;
 
 		float3 pos = collider->pos + force;
 		return colliderMD->TestMoveSquare(collider, pos, force, true, true, true, nullptr, nullptr, curThread);
 	};
+
+	// Determine whether the unit is inside terrain/static object. Hold off re-requesting paths
+	// while a unit is inside such an area because the pathing may fail.
+	insideStatic = !forceFromStaticCollidees.same(ZeroVector);
 
 	// Try to apply all collision forces, but if that will collide with static parts of the map,
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
@@ -2345,7 +2351,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 	// Even units standing still can be pushed into terrain and so need to be able to be pushed
 	// back out.
-	if (checkTerrain && (!collider->IsMoving() || collider->IsInAir()))
+	if (checkTerrain && (/*!collider->IsMoving() ||*/ collider->IsInAir()))
 		return false;
 
 	// for factories, check if collidee's position is behind us (which means we are likely exiting)
@@ -2375,6 +2381,9 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 	const float3& vel = collider->speed;
 	const float3& rgt = collider->rightdir;
 
+	// RHS magic constant is the radius of a square (sqrt(2*(SQUARE_SIZE>>1)*(SQUARE_SIZE>>1)))
+	constexpr float squareRadius = 5.656854249492381f;
+
 	float3 strafeVec;
 	float3 bounceVec;
 	float3 summedVec;
@@ -2401,6 +2410,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		//   lateral (non-obstructing) bounces
 		const int xsh = colliderMD->xsizeh * (checkYardMap || (checkTerrain && colliderMD->allowTerrainCollisions));
 		const int zsh = colliderMD->zsizeh * (checkYardMap || (checkTerrain && colliderMD->allowTerrainCollisions));
+		const int intersectSize = colliderMD->xsize;
 
 		const int xmin = std::min(-1, -xsh), xmax = std::max(1, xsh);
 		const int zmin = std::min(-1, -zsh), zmax = std::max(1, zsh);
@@ -2432,21 +2442,23 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 				if ( checkTerrain &&  (CMoveMath::GetPosSpeedMod(*colliderMD, xabs, zabs, speedDir2D) > 0.01f))
 					continue;
-				if (!checkTerrain && ((CMoveMath::SquareIsBlocked(*colliderMD, xabs, zabs, collider) & CMoveMath::BLOCK_STRUCTURE) == 0))
+				if ( checkYardMap && ((CMoveMath::SquareIsBlocked(*colliderMD, xabs, zabs, collider) & CMoveMath::BLOCK_STRUCTURE) == 0))
 					continue;
 
 				const float3 squarePos = float3(xabs * SQUARE_SIZE + (SQUARE_SIZE >> 1), pos.y, zabs * SQUARE_SIZE + (SQUARE_SIZE >> 1));
 				const float3 squareVec = pos - squarePos;
 
-				// RHS magic constant is the radius of a square (sqrt(2*(SQUARE_SIZE>>1)*(SQUARE_SIZE>>1)))
-				const float  squareColRadiusSum = colliderRadius + 5.656854249492381f;
+				
+				const float  squareColRadiusSum = colliderRadius + squareRadius;
 				const float   squareSepDistance = squareVec.Length2D() + 0.1f;
 				const float   squarePenDistance = std::min(squareSepDistance - squareColRadiusSum, 0.0f);
 				// const float  squareColSlideSign = -Sign(squarePos.dot(rightDir2D) - pos.dot(rightDir2D));
 
-				deepestPenDistance = std::min(deepestPenDistance, squarePenDistance);
-				allCollisionSqrSumPosition += (squarePos * XZVector);
-				allCollisionSqrCount++;
+				if (intersectSize > 1) {
+					deepestPenDistance = std::min(deepestPenDistance, squarePenDistance);
+					allCollisionSqrSumPosition += (squarePos * XZVector);
+					allCollisionSqrCount++;
+				}
 
 				// ignore squares behind us (relative to velocity vector)
 				if (squareVec.dot(vel) > 0.0f)
@@ -2471,7 +2483,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		}
 
 		// This directs units to left/right around the static object.
-		if (sqrPenDistance.y > 0.0f) {
+		if (sqrPenDistance.y > 0.0f && -deepestPenDistance <= squareRadius*2) {
 			sqrSumPosition *= (1.0f / sqrPenDistance.y);
 			sqrPenDistance *= (1.0f / sqrPenDistance.y);
 
@@ -3057,11 +3069,11 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, true);
 		};
 
-		// Used to limit how much units are allowed to slide along walls. Helps getting around
-		// corners, but stops them going too fast by sliding too far.
-		auto isCloseEnough = [this](float3 pos) {
-			return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
-		};
+		// // Used to limit how much units are allowed to slide along walls. Helps getting around
+		// // corners, but stops them going too fast by sliding too far.
+		// auto isCloseEnough = [this](float3 pos) {
+		// 	return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
+		// };
 
 		// NOTE:
 		//   does not check for structure blockage, coldet handles that
@@ -3093,22 +3105,22 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// look weird.
 			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
 				float3 posToTest = owner->pos + owner->rightdir * n;
-				if (/*isTerrainSquareBlocked ||*/ isCloseEnough(posToTest)) {
+				// if (/*isTerrainSquareBlocked || isCloseEnough(posToTest)*/) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
 						break;
 					}
-				}
+				// }
 
 				posToTest = owner->pos - owner->rightdir * n;
-				if (/*isTerrainSquareBlocked ||*/ isCloseEnough(posToTest)) {
+				// if (/*isTerrainSquareBlocked || isCloseEnough(posToTest)*/) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
 						break;
 					}
-				}
+				// }
 			}
 
 			if (!updatePos)
