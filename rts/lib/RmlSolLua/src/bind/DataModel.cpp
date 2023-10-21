@@ -15,8 +15,13 @@ namespace Rml::SolLua
 
 		void dataModelSet(SolLuaDataModel& self, const std::string& name, sol::object value, sol::this_state s)
 		{
-			self.Handle.DirtyVariable(name);
 			self.Table.set(name, value);
+			self.Handle.DirtyVariable(name);
+		}
+
+		void dataModelSetDirty(SolLuaDataModel& self, const std::string& name)
+		{
+			self.Handle.DirtyVariable(name);
 		}
 	}
 
@@ -25,7 +30,8 @@ namespace Rml::SolLua
 
 		lua.new_usertype<SolLuaDataModel>("SolLuaDataModel", sol::no_constructor,
 			sol::meta_function::index, &functions::dataModelGet,
-			sol::meta_function::new_index, &functions::dataModelSet
+			sol::meta_function::new_index, &functions::dataModelSet,
+			"__SetDirty", &functions::dataModelSetDirty
 		);
 
 	}
