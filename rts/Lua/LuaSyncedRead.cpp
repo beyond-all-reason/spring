@@ -2053,6 +2053,7 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
  *
  * @function Spring.GetPlayerInfo
  * @number playerID
+ * @bool[opt=true] getPlayerOpts whether to return custom player options
  * @treturn nil|string name
  * @treturn bool active
  * @treturn bool spectator
@@ -2062,7 +2063,9 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
  * @treturn number cpuUsage
  * @treturn string country
  * @treturn number rank
- * @treturn {[string]=string} customPlayerKeys
+ * @treturn bool hasSkirmishAIsInTeam
+ * @treturn {[string]=string} playerOpts when playerOpts is true
+ * @treturn bool desynced
  */
 int LuaSyncedRead::GetPlayerInfo(lua_State* L)
 {
