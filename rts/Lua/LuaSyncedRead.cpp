@@ -1691,13 +1691,15 @@ int LuaSyncedRead::GetPlayerList(lua_State* L)
  *
  * @function Spring.GetTeamInfo
  * @number teamID
+ * @bool[opt=true] getTeamKeys whether to return the customTeamKeys table
  * @treturn nil|number teamID
  * @treturn number leader
  * @treturn number isDead
+ * @treturn number hasAI
  * @treturn string side
  * @treturn number allyTeam
  * @treturn number incomeMultiplier
- * @treturn {[string]=string,...} customTeamKeys
+ * @treturn {[string]=string,...} customTeamKeys when getTeamKeys is true, otherwise nil
  */
 int LuaSyncedRead::GetTeamInfo(lua_State* L)
 {
