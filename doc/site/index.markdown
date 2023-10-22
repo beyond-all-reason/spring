@@ -58,7 +58,7 @@ See [Development](development.markdown) for guides on how to build and
 develop Recoil.
 
 When contributing to this repository, please first discuss the change you wish
-to make via [GitHub issues], our [Matrix Room] or any other method with the
+to make via [GitHub issues], our [Discord server] or any other method with the
 owners of this repository before making a change.
 
 ### Thank you to the contributors of Recoil!
@@ -82,7 +82,7 @@ owners of this repository before making a change.
 [Metal Factions]: https://metalfactions.pt
 [TA Prime]: https://www.fluidplay.co/tap.html
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
-[Matrix Room]: https://matrix.to/#/#recoil-rts:matrix.org
+[Discord server]: https://discord.gg/GUpRg6Wz3e
 [Spring Wiki]: https://springrts.com/wiki/Main_Page
 [Recoil Lua API]: {{site.baseurl}}{% link lua-api.md %}
 [Recoil Github Wiki]: {{site.gh_edit_repository}}/issues
