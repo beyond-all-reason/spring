@@ -79,7 +79,7 @@ namespace Rml::SolLua
 
 		// Get our table object.
 		// Get the pointer as a string for use with holding onto the object.
-		auto table = object->as<sol::table>();
+		sol::table table = object->as<sol::table>();
 		std::string tablestr = std::to_string(reinterpret_cast<intptr_t>(table.pointer()));
 
 		// Accessing by name.
@@ -91,25 +91,25 @@ namespace Rml::SolLua
 				return DataVariable{};
 
 			// Hold a reference to it and return the pointer.
-			auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(address.index), e);
+			auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + address.name, e);
 			return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
 		}
 		// Accessing by index.
 		else
 		{
 			// See if we have a key with the index.
-			auto has_index = table.get<sol::object>(address.index);
+			auto has_index = table.get<sol::object>(address.index+1);
 			if (has_index.get_type() != sol::type::lua_nil)
 			{
-				auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(address.index), has_index);
+				auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(address.index+1), has_index);
 				return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
 			}
 
 			// Iterate through the entries and grab the nth entry.
-			int idx = 0;
+			int idx = 1;
 			for (auto& [k, v] : table.pairs())
 			{
-				if (idx == address.index)
+				if (idx == address.index+1)
 				{
 					auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(idx), v);
 					return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
