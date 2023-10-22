@@ -3052,8 +3052,9 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		owner->SetVelocityAndSpeed(newSpeedVector);
 		owner->Move(owner->speed, true);
 
+		// The series of test done here will benefit from using the same cached results.
 		MoveDef* md = owner->moveDef;
-		int tempNum = gs->GetTempNum(); // 
+		int tempNum = gs->GetTempNum();
 
 		auto isSquareOpen = [this, tempNum](float3 pos) {
 			// separate calls because terrain is only checked for in the centre square, while
@@ -3099,7 +3100,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// Sometimes now collisions won't happen due to this code preventing that.
 			// so units need to be able to get themselves out of stuck situations. So adding
 			// a rerequest path check here.
-			// ReRequestPath(false);
+			ReRequestPath(false);
 			bool updatePos = false;
 
 			const int startingSquare = (owner->pos.z / SQUARE_SIZE)*mapDims.mapx + owner->pos.x / SQUARE_SIZE;

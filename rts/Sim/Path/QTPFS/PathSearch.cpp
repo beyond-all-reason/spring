@@ -209,7 +209,7 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 void QTPFS::PathSearch::InitStartingSearchNodes() {
 	fwdPathConnected = false;
 	bwdPathConnected = false;
-	fwdAreaSearchLimit = mapDims.mapx * mapDims.mapy;
+	fwdAreaSearchLimit = std::numeric_limits<int>::max();
 	searchThreadData->ResetQueue();
 
 	for (int i = 0; i < QTPFS::SEARCH_DIRS; ++i) {
@@ -487,8 +487,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		}
 	}
 
-	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode) | (badGoal & haveFullPath);
-	haveFullPath = (badGoal == true) ? false : haveFullPath;
+	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode);
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result
@@ -749,6 +748,14 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 	}
 
 	path->SetBoundingBox();
+
+	// Bad path is a special path where we did a full path to the nearest good node instead of
+	// doing an exhaustive search to find a route to node we know cannot be found. This means
+	// we need to adjust the search results to reflect that - i.e. it shouldn't look like a fully
+	// successful path request.
+	havePartPath |= (badGoal & haveFullPath);
+	haveFullPath = (badGoal == true) ? false : haveFullPath;
+
 	path->SetHasFullPath(haveFullPath);
 	path->SetHasPartialPath(havePartPath);
 }
