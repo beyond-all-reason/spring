@@ -198,6 +198,15 @@ namespace Rml::SolLua
 			"GetActivePseudoClasses", &Rml::Element::GetActivePseudoClasses,
 			"IsPointWithinElement", &Rml::Element::IsPointWithinElement,
 			"ProcessDefaultAction", &Rml::Element::ProcessDefaultAction,
+			"GetValue",[](Rml::Element& self) {
+				if (self.GetTagName() == "input") {
+					return dynamic_cast<Rml::ElementFormControlInput*>(&self)->GetValue();
+				}else if (self.GetTagName() == "textarea") {
+					return dynamic_cast<Rml::ElementFormControlTextArea*>(&self)->GetValue();
+				}
+				return std::string();
+			},
+			"GetChild", [](Rml::Element& self, int index) { return self.GetChild(index); },
 
 			// G+S
 			"class_name", sol::property(&Rml::Element::GetClassNames, &Rml::Element::SetClassNames),

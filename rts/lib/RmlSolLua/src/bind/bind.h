@@ -2,6 +2,7 @@
 
 #include <RmlUi/Core.h>
 #include <sol2/sol.hpp>
+#include "../TranslationTable.h"
 
 #include <type_traits>
 
@@ -195,7 +196,7 @@ namespace Rml::SolLua
 	void bind_element_derived(sol::state_view& lua);
 	void bind_element_form(sol::state_view& lua);
 	void bind_event(sol::state_view& lua);
-	void bind_global(sol::state_view& lua);
+	void bind_global(sol::state_view& lua, TranslationTable* translationTable);
 	void bind_log(sol::state_view& lua);
 	void bind_vector(sol::state_view& lua);
 	void bind_convert(sol::state_view& lua);
