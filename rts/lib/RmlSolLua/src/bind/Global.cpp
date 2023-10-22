@@ -46,7 +46,7 @@ namespace Rml::SolLua
 
 	#define _ENUM(N) lua["RmlKeyIdentifier"][#N] = Rml::Input::KI_##N
 
-	void bind_global(sol::state_view& lua)
+	void bind_global(sol::state_view& lua, TranslationTable* translationTable)
 	{
 
 		// We can't make this into an enum.
@@ -251,7 +251,7 @@ namespace Rml::SolLua
 			{ "Target", Rml::DefaultActionPhase::Target },
 			{ "TargetAndBubble", Rml::DefaultActionPhase::TargetAndBubble }
 		});
-		
+
 		struct rmlui {};
 
 		auto g = lua.new_usertype<rmlui>("rmlui",
@@ -266,6 +266,12 @@ namespace Rml::SolLua
 			//--
 			"GetContext", sol::resolve<Rml::Context* (const Rml::String&)>(&Rml::GetContext),
 			"RegisterEventType", sol::overload(&functions::registerEventType4, &functions::registerEventType3),
+			"AddTranslationString", [translationTable](const Rml::String& key, const Rml::String& translation, sol::this_state s) {
+				return translationTable->addTranslation(key, translation);
+			},
+			"ClearTranslations", [translationTable](sol::this_state s) {
+				return translationTable->clear();
+			},
 
 			// G
 			"contexts", sol::readonly_property(&getIndexedTable<Rml::Context, &functions::getContext, &functions::getMaxContexts>),

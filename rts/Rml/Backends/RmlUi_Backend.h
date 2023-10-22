@@ -35,6 +35,7 @@
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
 #include "lib/sol2/sol.hpp"
+#include "Rml/Backends/RmlUi_Platform_SDL.h"
 
 using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
@@ -62,6 +63,7 @@ Rml::RenderInterface* GetRenderInterface();
 
 bool ProcessEvent(const SDL_Event& event);
 bool ProcessMouseEvent(const SDL_Event& event);
+bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
 // Request application closure during the next event processing call.
 void RequestExit();
 void ToggleDebugger();

@@ -59,9 +59,9 @@ namespace Rml::SolLua
 		/// <returns>A const reference to the Lua environment identifier.</returns>
 		const Rml::String& GetLuaEnvironmentIdentifier() const { return m_lua_env_identifier; }
 
+		sol::environment m_environment;
 	protected:
 		sol::state_view m_state;
-		sol::environment m_environment;
 		Rml::String m_lua_env_identifier;
 	};
 
