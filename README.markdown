@@ -6,7 +6,7 @@
 
 Recoil is a fork and continuation of an RTS [engine](https://github.com/spring/spring) version 105.0
 
-Visit our [Discord](https://discord.gg/GUpRg6Wz3e) or [Matrix](https://matrix.to/#/#beyond-all-reason-engine:matrix.org) for help, suggestions, bugs, community forum and everything Recoil related.
+Visit our [Discord](https://discord.gg/GUpRg6Wz3e) for help, suggestions, bugs, community forum and everything Recoil related.
 
 ### Installation
 
