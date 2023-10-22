@@ -5,7 +5,6 @@
 
 #include <memory>
 
-
 namespace Rml::SolLua
 {
 
@@ -14,28 +13,29 @@ namespace Rml::SolLua
 		/// <summary>
 		/// Return a SolLuaDocument.
 		/// </summary>
-		auto getDocumentBypass(Rml::Context& self, int idx)
+		auto getDocumentBypass(Rml::Context &self, int idx)
 		{
 			auto document = self.GetDocument(idx);
-			auto result = dynamic_cast<SolLuaDocument*>(document);
+			auto result = dynamic_cast<SolLuaDocument *>(document);
 			return result;
 		}
 
 		/// <summary>
 		/// Return a SolLuaDocument.
 		/// </summary>
-		auto getDocumentBypassString(Rml::Context& self, const Rml::String& name)
+		auto getDocumentBypassString(Rml::Context &self, const Rml::String &name)
 		{
 			auto document = self.GetDocument(name);
-			return dynamic_cast<SolLuaDocument*>(document);
+			return dynamic_cast<SolLuaDocument *>(document);
 		}
 
 		/// <summary>
 		/// Helper function to fill the indexed table with data.
 		/// </summary>
-		auto getDocument(Rml::Context& self)
+		auto getDocument(Rml::Context &self)
 		{
-			std::function<SolLuaDocument* (int)> result = [&self](int idx) -> auto { return getDocumentBypass(self, idx); };
+			std::function<SolLuaDocument *(int)> result = [&self](int idx) -> auto
+			{ return getDocumentBypass(self, idx); };
 			return result;
 		}
 	}
@@ -47,30 +47,38 @@ namespace Rml::SolLua
 		/// </summary>
 		/// <param name="data">The data model container.</param>
 		/// <param name="table">The table to bind.</param>
-		void bindTable(SolLuaDataModel* data, sol::table& table)
+		void bindTable(SolLuaDataModel *data, sol::table &table)
 		{
-			for (auto& [key, value] : table)
+			for (auto &[key, value] : table)
 			{
-				auto skey = key.as<std::string>();
+				std::string skey;
+				if (key.is<int>())
+				{
+					skey = std::to_string(key.as<int>());
+				}
+				else
+				{
+					skey = key.as<std::string>();
+				}
 				auto it = data->ObjectList.insert_or_assign(skey, value);
 
 				if (value.get_type() == sol::type::function)
 				{
 					data->Constructor.BindEventCallback(skey,
-						[skey, cb = sol::protected_function{ value }, state = sol::state_view{ table.lua_state() }](Rml::DataModelHandle, Rml::Event& event, const Rml::VariantList& varlist)
-						{
-							if (cb.valid())
-							{
-								std::vector<sol::object> args;
-								for (const auto& variant : varlist)
-								{
-									args.push_back(makeObjectFromVariant(&variant, state));
-								}
-								auto pfr = cb(event, sol::as_args(args));
-								if (!pfr.valid())
-									ErrorHandler(cb.lua_state(), std::move(pfr));
-							}
-						});
+																							[skey, cb = sol::protected_function{value}, state = sol::state_view{table.lua_state()}](Rml::DataModelHandle, Rml::Event &event, const Rml::VariantList &varlist)
+																							{
+																								if (cb.valid())
+																								{
+																									std::vector<sol::object> args;
+																									for (const auto &variant : varlist)
+																									{
+																										args.push_back(makeObjectFromVariant(&variant, state));
+																									}
+																									auto pfr = cb(event, sol::as_args(args));
+																									if (!pfr.valid())
+																										ErrorHandler(cb.lua_state(), std::move(pfr));
+																								}
+																							});
 				}
 				else
 				{
@@ -87,20 +95,20 @@ namespace Rml::SolLua
 		/// <param name="model">The table to bind as the data model.</param>
 		/// <param name="s">Lua state.</param>
 		/// <returns>A unique pointer to a Sol Lua Data Model.</returns>
-		std::unique_ptr<SolLuaDataModel> openDataModel(Rml::Context& self, const Rml::String& name, sol::object model, sol::this_state s)
+		sol::table openDataModel(Rml::Context &self, const Rml::String &name, sol::object model, sol::this_state s)
 		{
-			sol::state_view lua{ s };
+			sol::state_view lua{s};
 
 			// Create data model.
 			auto constructor = self.CreateDataModel(name);
-			auto data = std::make_unique<SolLuaDataModel>(lua);
+			auto data = std::make_shared<SolLuaDataModel>(lua);
 
 			// Already created?  Get existing.
 			if (!constructor)
 			{
 				constructor = self.GetDataModel(name);
-				if (!constructor)
-					return data;
+				 if (!constructor)
+				 	return sol::lua_nil;
 			}
 
 			data->Constructor = constructor;
@@ -114,18 +122,35 @@ namespace Rml::SolLua
 				datamodel::bindTable(data.get(), data->Table);
 			}
 
-			return data;
+			auto obj_table = lua.create_table_with();
+
+			sol::table obj_metatable = lua.create_table_with();
+			obj_metatable[sol::meta_function::new_index] = [data](sol::object t, const std::string &name, sol::object value, sol::this_state s)
+			{
+				data->Table.set(name, value);
+				data->ObjectList.insert_or_assign(name, value);
+				data->Handle.DirtyVariable(name);
+			};
+
+			obj_metatable[sol::meta_function::index] = [data](sol::object t, const std::string &name, sol::this_state s)
+			{
+				return data->Table.get<sol::object>(name);
+			};
+
+			obj_table[sol::metatable_key] = obj_metatable;
+
+			return obj_table;
 		}
 	}
 
 	namespace element
 	{
-		auto getElementAtPoint1(Rml::Context& self, Rml::Vector2f point)
+		auto getElementAtPoint1(Rml::Context &self, Rml::Vector2f point)
 		{
 			return self.GetElementAtPoint(point);
 		}
 
-		auto getElementAtPoint2(Rml::Context& self, Rml::Vector2f point, Rml::Element& ignore)
+		auto getElementAtPoint2(Rml::Context &self, Rml::Vector2f point, Rml::Element &ignore)
 		{
 			return self.GetElementAtPoint(point, &ignore);
 		}
@@ -135,59 +160,64 @@ namespace Rml::SolLua
 	/// Binds the Rml::Context class to Lua.
 	/// </summary>
 	/// <param name="lua">The Lua state to bind into.</param>
-	void bind_context(sol::state_view& lua)
+	void bind_context(sol::state_view &lua)
 	{
-		lua.new_usertype<Rml::Context>("Context", sol::no_constructor,
-			// M
-			"AddEventListener", &Rml::Context::AddEventListener,
-			"CreateDocument", [](Rml::Context& self) { return self.CreateDocument(); },
-			"LoadDocument", [](Rml::Context& self, const Rml::String& document) {
+		lua.new_usertype<Rml::Context>(
+				"Context", sol::no_constructor,
+				// M
+				"AddEventListener", &Rml::Context::AddEventListener,
+				"CreateDocument", [](Rml::Context &self)
+				{ return self.CreateDocument(); },
+				"LoadDocument", [](Rml::Context &self, const Rml::String &document, sol::object w, sol::this_environment e, sol::this_state s)
+				{
 				auto doc = self.LoadDocument(document);
-				return dynamic_cast<SolLuaDocument*>(doc);
-			},
-			"GetDocument", &document::getDocumentBypassString,
-			"Render", &Rml::Context::Render,
-			"UnloadAllDocuments", &Rml::Context::UnloadAllDocuments,
-			"UnloadDocument", &Rml::Context::UnloadDocument,
-			"Update", &Rml::Context::Update,
-			"OpenDataModel", &datamodel::openDataModel,
-			"RemoveDataModel", &Rml::Context::RemoveDataModel,
-			"ProcessMouseMove", &Rml::Context::ProcessMouseMove,
-			"ProcessMouseButtonDown", &Rml::Context::ProcessMouseButtonDown,
-			"ProcessMouseButtonUp", &Rml::Context::ProcessMouseButtonUp,
-			// "ProcessMouseWheel", &Rml::Context::ProcessMouseWheel,
-			"ProcessMouseWheel", sol::overload(
-			static_cast<bool(Rml::Context::*)(float, int)>(&Rml::Context::ProcessMouseWheel),
-			static_cast<bool(Rml::Context::*)(Vector2f, int)>(&Rml::Context::ProcessMouseWheel)
-		),
-			"ProcessMouseLeave", &Rml::Context::ProcessMouseLeave,
-			"IsMouseInteracting", &Rml::Context::IsMouseInteracting,
-			"ProcessKeyDown", &Rml::Context::ProcessKeyDown,
-			"ProcessKeyUp", &Rml::Context::ProcessKeyUp,
-			"ProcessTextInput", sol::resolve<bool(const Rml::String&)>(&Rml::Context::ProcessTextInput),
-			//--
-			"EnableMouseCursor", &Rml::Context::EnableMouseCursor,
-			"ActivateTheme", &Rml::Context::ActivateTheme,
-			"IsThemeActive", &Rml::Context::IsThemeActive,
-			"GetElementAtPoint", sol::overload(&element::getElementAtPoint1, &element::getElementAtPoint2),
-			"PullDocumentToFront", &Rml::Context::PullDocumentToFront,
-			"PushDocumentToBack", &Rml::Context::PushDocumentToBack,
-			"UnfocusDocument", &Rml::Context::UnfocusDocument,
-			// RemoveEventListener
+				auto env = dynamic_cast<SolLuaDocument*>(doc)->GetLuaEnvironment();
+				// sol::environment env(s,sol::create);
+				// env[sol::metatable_key] = e.env;
+				// sol::state_view state(s);
+				// sol::environment env(state, sol::create, state.globals());
+				env["widget"] = w;
+				// dynamic_cast<SolLuaDocument*>(doc)->m_environment = env;
+				return dynamic_cast<SolLuaDocument*>(doc); },
+				"GetDocument", &document::getDocumentBypassString,
+				"Render", &Rml::Context::Render,
+				"UnloadAllDocuments", &Rml::Context::UnloadAllDocuments,
+				"UnloadDocument", &Rml::Context::UnloadDocument,
+				"Update", &Rml::Context::Update,
+				"OpenDataModel", &datamodel::openDataModel,
+				"RemoveDataModel", &Rml::Context::RemoveDataModel,
+				"ProcessMouseMove", &Rml::Context::ProcessMouseMove,
+				"ProcessMouseButtonDown", &Rml::Context::ProcessMouseButtonDown,
+				"ProcessMouseButtonUp", &Rml::Context::ProcessMouseButtonUp,
+				// "ProcessMouseWheel", &Rml::Context::ProcessMouseWheel,
+				"ProcessMouseWheel", sol::overload(static_cast<bool (Rml::Context::*)(float, int)>(&Rml::Context::ProcessMouseWheel), static_cast<bool (Rml::Context::*)(Vector2f, int)>(&Rml::Context::ProcessMouseWheel)),
+				"ProcessMouseLeave", &Rml::Context::ProcessMouseLeave,
+				"IsMouseInteracting", &Rml::Context::IsMouseInteracting,
+				"ProcessKeyDown", &Rml::Context::ProcessKeyDown,
+				"ProcessKeyUp", &Rml::Context::ProcessKeyUp,
+				"ProcessTextInput", sol::resolve<bool(const Rml::String &)>(&Rml::Context::ProcessTextInput),
+				//--
+				"EnableMouseCursor", &Rml::Context::EnableMouseCursor,
+				"ActivateTheme", &Rml::Context::ActivateTheme,
+				"IsThemeActive", &Rml::Context::IsThemeActive,
+				"GetElementAtPoint", sol::overload(&element::getElementAtPoint1, &element::getElementAtPoint2),
+				"PullDocumentToFront", &Rml::Context::PullDocumentToFront,
+				"PushDocumentToBack", &Rml::Context::PushDocumentToBack,
+				"UnfocusDocument", &Rml::Context::UnfocusDocument,
+				// RemoveEventListener
 
-			// G+S
-			"dimensions", sol::property(&Rml::Context::GetDimensions, &Rml::Context::SetDimensions),
-			"dp_ratio", sol::property(&Rml::Context::GetDensityIndependentPixelRatio, &Rml::Context::SetDensityIndependentPixelRatio),
-			//--
-			"clip_region", sol::property(&Rml::Context::GetActiveClipRegion, &Rml::Context::SetActiveClipRegion),
+				// G+S
+				"dimensions", sol::property(&Rml::Context::GetDimensions, &Rml::Context::SetDimensions),
+				"dp_ratio", sol::property(&Rml::Context::GetDensityIndependentPixelRatio, &Rml::Context::SetDensityIndependentPixelRatio),
+				//--
+				"clip_region", sol::property(&Rml::Context::GetActiveClipRegion, &Rml::Context::SetActiveClipRegion),
 
-			// G
-			"documents", sol::readonly_property(&getIndexedTable<SolLuaDocument, Rml::Context, &document::getDocument, &Rml::Context::GetNumDocuments>),
-			"focus_element", sol::readonly_property(&Rml::Context::GetFocusElement),
-			"hover_element", sol::readonly_property(&Rml::Context::GetHoverElement),
-			"name", sol::readonly_property(&Rml::Context::GetName),
-			"root_element", sol::readonly_property(&Rml::Context::GetRootElement)
-		);
+				// G
+				"documents", sol::readonly_property(&getIndexedTable<SolLuaDocument, Rml::Context, &document::getDocument, &Rml::Context::GetNumDocuments>),
+				"focus_element", sol::readonly_property(&Rml::Context::GetFocusElement),
+				"hover_element", sol::readonly_property(&Rml::Context::GetHoverElement),
+				"name", sol::readonly_property(&Rml::Context::GetName),
+				"root_element", sol::readonly_property(&Rml::Context::GetRootElement));
 	}
 
 } // end namespace Rml::SolLua
