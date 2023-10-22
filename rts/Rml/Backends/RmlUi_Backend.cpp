@@ -49,14 +49,8 @@
 // #include "System/FileSystem/FileSystem.h"
 // #include "System/FileSystem/FileSystemInitializer.h"
 #include "System/Input/InputHandler.h"
-
-#if defined RMLUI_PLATFORM_EMSCRIPTEN
-#include <emscripten.h>
-#else
-#if !(SDL_VIDEO_RENDER_OGL)
-#error "Only the OpenGL SDL backend is supported."
-#endif
-#endif
+#include "Rml/RmlInputReceiver.h"
+#include "Game/UI/MouseHandler.h"
 
 /**
 		Custom render interface example for the SDL/GL3 backend.
@@ -178,6 +172,7 @@ struct BackendData
 	SDL_GLContext glcontext = nullptr;
 	std::vector<Rml::Context *> contexts;
 	InputHandler::SignalType::connection_type inputCon;
+	CRmlInputReceiver inputReceiver;
 
 	// make atomic_bool?
 	bool initialized = false;
@@ -239,7 +234,8 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 bool RmlGui::InitializeLua(lua_State *lua_state)
 {
 	sol::state_view lua(lua_state);
-	Rml::SolLua::Initialise(&lua);
+	Rml::SolLua::SolLuaPlugin* slp = Rml::SolLua::Initialise(&lua);
+	data->system_interface.SetTranslationTable(&slp->translationTable);
 	return true;
 }
 
@@ -371,10 +367,37 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 {
 	SDL_Event ev(event);
 	if (data == NULL || data->contexts.size() < 1 || !data->initialized)
-		return false;
-	return RmlSDL::InputEventHandler(data->contexts[0], ev);
+	{
+		return true;
+	}
+	switch (ev.type)
+	{
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEWHEEL:
+	{
+		bool handled = RmlSDL::InputEventHandler(data->contexts[0], ev);
+		data->inputReceiver.setActive(!handled);
+		return handled;
+	}
+	default:
+	{
+		data->inputReceiver.setActive(false);
+		return true;
+	}
+	}
 }
 
+bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
+{
+	if (!data->initialized)
+	{
+		return false;
+	}
+	return false;
+	// RmlSDL::InputEventHandler(data->contexts[0], ev);
+}
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
 	if (!data->initialized)
