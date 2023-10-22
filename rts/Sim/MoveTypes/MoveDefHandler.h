@@ -65,6 +65,11 @@ struct MoveDef {
 	) const {
 		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects, centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
 	}
+	bool TestMovePositionForObjects(
+		const CSolidObject* collider,
+		const float3 testMovePos,
+		const int magicNum
+	) const;
 
 	// aircraft and buildings defer to UnitDef::floatOnWater
 	bool FloatOnWater() const { return (speedModClass == MoveDef::Hover || speedModClass == MoveDef::Ship); }

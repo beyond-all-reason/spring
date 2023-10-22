@@ -3052,19 +3052,24 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		owner->SetVelocityAndSpeed(newSpeedVector);
 		owner->Move(owner->speed, true);
 
-		auto isSquareOpen = [this](float3 pos) {
+		MoveDef* md = owner->moveDef;
+		int tempNum = gs->GetTempNum(); // 
+
+		auto isSquareOpen = [this, tempNum](float3 pos) {
 			// separate calls because terrain is only checked for in the centre square, while
 			// static objects are checked for in the whole footprint.
 			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
-					&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+					&& owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum); 
+					//&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
 		};
 
 		auto isTerrainSquareOpen = [this](float3 pos) {
 			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true);
 		};
 
-		auto isObjectsSquareOpen = [this](float3 pos) {
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		auto isObjectsSquareOpen = [this, tempNum](float3 pos) {
+			return owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum);
+			//return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
 		};
 
 		// // Used to limit how much units are allowed to slide along walls. Helps getting around
@@ -3086,9 +3091,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
  		//   relies on assumption that PFS will not search if start-sqr
  		//   is blocked, so too fragile
 		//
-		// TODO: look to move as much of this to MT to improve perf. Then make sure the inner loop
-		// doesn't make too many pointless calls to isSquareOpen().
-		bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*owner->moveDef, owner->pos)
+		// TODO: look to move as much of this to MT to improve perf.
+		bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*md, owner->pos)
 									&& !isTerrainSquareOpen(owner->pos);
 		bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(owner->pos);
 		if (isSquareBlocked) {

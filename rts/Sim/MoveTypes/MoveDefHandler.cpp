@@ -448,6 +448,22 @@ bool MoveDef::TestMoveSquareRange(
 	return retTestMove;
 }
 
+bool MoveDef::TestMovePositionForObjects(
+	const CSolidObject* collider,
+	const float3 testMovePos,
+	const int magicNum
+) const {
+	const int xmin = int(testMovePos.x / SQUARE_SIZE) - xsizeh;
+	const int zmin = int(testMovePos.z / SQUARE_SIZE) - zsizeh;
+	const int xmax = int(testMovePos.x / SQUARE_SIZE) + xsizeh;
+	const int zmax = int(testMovePos.z / SQUARE_SIZE) + zsizeh;
+
+	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedHashedSt(*this, xmin, xmax, zmin, zmax, collider, magicNum);
+
+	return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+}
+
+
 
 
 float MoveDef::CalcFootPrintMinExteriorRadius(float scale) const { return ((math::sqrt((xsize * xsize + zsize * zsize)) * 0.5f * SQUARE_SIZE) * scale); }
