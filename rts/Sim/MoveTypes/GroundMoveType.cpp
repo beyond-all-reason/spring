@@ -768,7 +768,7 @@ void CGroundMoveType::SlowUpdate()
 									&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames;
 
 				// can't request a new path while the unit is stuck in terrain/static objects
-				if (timeForRepath && !insideStatic){
+				if (timeForRepath){
 					if (!lastWaypoint) {
 						ReRequestPath(true);
 					} else {
@@ -2311,12 +2311,9 @@ void CGroundMoveType::HandleObjectCollisions()
 			return false;
 
 		float3 pos = collider->pos + force;
-		return colliderMD->TestMoveSquare(collider, pos, force, true, true, true, nullptr, nullptr, curThread);
+		return colliderMD->TestMoveSquare(collider, pos, force, true, false, true, nullptr, nullptr, curThread)
+				&& colliderMD->TestMoveSquare(collider, pos, force, false, true, false, nullptr, nullptr, curThread);
 	};
-
-	// Determine whether the unit is inside terrain/static object. Hold off re-requesting paths
-	// while a unit is inside such an area because the pathing may fail.
-	insideStatic = !forceFromStaticCollidees.same(ZeroVector);
 
 	// Try to apply all collision forces, but if that will collide with static parts of the map,
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
@@ -3058,7 +3055,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		auto isSquareOpen = [this](float3 pos) {
 			// separate calls because terrain is only checked for in the centre square, while
 			// static objects are checked for in the whole footprint.
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, true, true);
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
+					&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
 		};
 
 		auto isTerrainSquareOpen = [this](float3 pos) {
@@ -3066,7 +3064,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		};
 
 		auto isObjectsSquareOpen = [this](float3 pos) {
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, true);
+			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
 		};
 
 		// // Used to limit how much units are allowed to slide along walls. Helps getting around
@@ -3100,27 +3098,28 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// ReRequestPath(false);
 			bool updatePos = false;
 
-			// This attempts to slide units around obstructions. The effect is reduced around
-			// static objects to prevent units sliding too fast around straight edges, which would
-			// look weird.
+			const int startingSquare = (owner->pos.z / SQUARE_SIZE)*mapDims.mapx + owner->pos.x / SQUARE_SIZE;
+
 			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
 				float3 posToTest = owner->pos + owner->rightdir * n;
-				// if (/*isTerrainSquareBlocked || isCloseEnough(posToTest)*/) {
+				int curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
+				if (curSquare != startingSquare) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
 						break;
 					}
-				// }
+				}
 
 				posToTest = owner->pos - owner->rightdir * n;
-				// if (/*isTerrainSquareBlocked || isCloseEnough(posToTest)*/) {
+				curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
+				if (curSquare != startingSquare) {
 					updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
 						break;
 					}
-				// }
+				}
 			}
 
 			if (!updatePos)

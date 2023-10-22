@@ -271,7 +271,6 @@ private:
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
 	bool pathingFailed = false;
 	bool pathingArrived = false;
-	bool insideStatic = false;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;
