@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include "../RmlSolLua.h"
-
 #include <RmlUi/Lua/Header.h>
 #include <RmlUi/Core/Plugin.h>
 #include <RmlUi/Core/Platform.h>
 #include <sol2/sol.hpp>
+#include "../TranslationTable.h"
 
 #include <memory>
 
@@ -25,6 +24,7 @@ namespace Rml::SolLua
         SolLuaPlugin(sol::state_view lua_state);
         SolLuaPlugin(sol::state_view lua_state, const Rml::String& lua_environment_identifier);
 
+        TranslationTable translationTable;
     private:
         int GetEventClasses() override;
 

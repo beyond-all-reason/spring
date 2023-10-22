@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <RmlUi/Core.h>
+#include "plugin/SolLuaPlugin.h"
 
 #ifdef RMLUILUA_API
     #undef RMLUILUA_API
@@ -32,7 +33,7 @@ namespace Rml::SolLua
     /// Initializes RmlSolLua using the supplied Lua state.
     /// </summary>
     /// <param name="state">The Lua state to initialize into.</param>
-    RMLUILUA_API void Initialise(sol::state_view* state);
+    RMLUILUA_API SolLuaPlugin* Initialise(sol::state_view* state);
 
     /// <summary>
     /// Initializes RmlSolLua using the supplied Lua state.
@@ -40,13 +41,13 @@ namespace Rml::SolLua
     /// </summary>
     /// <param name="state">The Lua state to initialize into.</param>
     /// <param name="lua_environment_identifier">The Lua variable name that is set to the document's id.</param>
-    RMLUILUA_API void Initialise(sol::state_view* state, const Rml::String& lua_environment_identifier);
+    RMLUILUA_API SolLuaPlugin* Initialise(sol::state_view* state, const Rml::String& lua_environment_identifier);
 
     /// <summary>
     /// Initializes RmlSolLua using the supplied Lua state.
     /// </summary>
     /// <param name="state">The Lua state to initialize into.</param>
-    RMLUILUA_API void Initialize(sol::state_view* state);
+    RMLUILUA_API SolLuaPlugin* Initialize(sol::state_view* state);
 
     /// <summary>
     /// Initializes RmlSolLua using the supplied Lua state.
@@ -54,12 +55,12 @@ namespace Rml::SolLua
     /// </summary>
     /// <param name="state">The Lua state to initialize into.</param>
     /// <param name="lua_environment_identifier">The Lua variable name that is set to the document's id.</param>
-    RMLUILUA_API void Initialize(sol::state_view* state, const Rml::String& lua_environment_identifier);
+    RMLUILUA_API SolLuaPlugin* Initialize(sol::state_view* state, const Rml::String& lua_environment_identifier);
 
     /// <summary>
     /// Registers RmlSolLua into the specified Lua state.
     /// </summary>
     /// <param name="state">The Lua state to register into.</param>
-    RMLUILUA_API void RegisterLua(sol::state_view* state);
+    RMLUILUA_API void RegisterLua(sol::state_view* state, SolLuaPlugin* slp);
 
 } // end namespace Rml::SolLua
