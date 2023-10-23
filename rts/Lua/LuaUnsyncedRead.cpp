@@ -988,8 +988,6 @@ int LuaUnsyncedRead::GetSelectionBox(lua_State* L)
 	const auto bottomLeft = camera->CalcViewPortCoordinates(bl);
 	const auto topRight   = camera->CalcViewPortCoordinates(tr);
 
-	lua_createtable(L, 4, 0);
-
 	lua_pushnumber(L, bottomLeft.x);
 	lua_pushnumber(L, topRight.y);
 	lua_pushnumber(L, topRight.x);
