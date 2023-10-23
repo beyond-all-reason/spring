@@ -17,6 +17,13 @@ struct MoveUpdateSystemComponent {
 	static constexpr std::size_t page_size = 1;
 };
 
+template<class Archive, class Snapshot>
+void serializeComponents(Archive &archive, Snapshot &snapshot) {
+    snapshot.template component
+        < GeneralMoveType, GroundMoveType
+        >(archive);
+}
+
 }
 
 #endif

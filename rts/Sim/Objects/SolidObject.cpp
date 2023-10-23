@@ -20,6 +20,7 @@ CR_REG_METADATA(CSolidObject,
 (
 	CR_MEMBER(health),
 	CR_MEMBER(maxHealth),
+	CR_MEMBER(entityReference),
 
 	CR_MEMBER(mass),
 	CR_MEMBER(crushResistance),
