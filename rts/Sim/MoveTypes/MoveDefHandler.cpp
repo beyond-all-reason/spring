@@ -458,7 +458,7 @@ bool MoveDef::TestMovePositionForObjects(
 	const int xmax = int(testMovePos.x / SQUARE_SIZE) + xsizeh;
 	const int zmax = int(testMovePos.z / SQUARE_SIZE) + zsizeh;
 
-	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedHashedSt(*this, xmin, xmax, zmin, zmax, collider, magicNum);
+	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(*this, xmin, xmax, zmin, zmax, collider, magicNum);
 
 	return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 }
