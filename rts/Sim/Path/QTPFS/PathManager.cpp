@@ -128,8 +128,6 @@ namespace QTPFS {
 
 	unsigned int PathManager::LAYERS_PER_UPDATE;
 	unsigned int PathManager::MAX_TEAM_SEARCHES;
-
-	std::vector<NodeLayer> PathManager::nodeLayers;
 }
 
 QTPFS::PathManager::PathManager() {

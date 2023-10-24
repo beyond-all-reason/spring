@@ -152,7 +152,7 @@ namespace QTPFS {
 		bool IsFinalized() const { return isFinalized; }
 
 	public:
-		static std::vector<NodeLayer> nodeLayers;
+		std::vector<NodeLayer> nodeLayers;
 
 	private:
 		PathCache pathCache;
