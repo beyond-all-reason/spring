@@ -74,6 +74,7 @@ CR_REG_METADATA(CMobileCAI, (
 	CR_MEMBER(lastCommandFrame),
 	CR_MEMBER(lastCloseInTry),
 	CR_MEMBER(lastBuggerOffTime),
+	CR_MEMBER(buggerOffAttempts),
 	CR_MEMBER(lastIdleCheck),
 
 	CR_PREALLOC(GetPreallocContainer)
