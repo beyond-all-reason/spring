@@ -4,7 +4,6 @@
 #define DATA_DIR_LOCATER_H
 
 #include <string>
-#include <array>
 #include <vector>
 
 struct DataDir
@@ -60,7 +59,7 @@ public:
 	std::string GetWriteDirPath() const;
 
 	std::vector<std::string> GetDataDirPaths() const;
-	std::array<std::string, 5> GetDataDirRoots() const;
+	std::vector<std::string> GetDataDirRoots() const;
 
 	/**
 	 * Returns whether isolation-mode is enabled.

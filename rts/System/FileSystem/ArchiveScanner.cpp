@@ -443,7 +443,7 @@ void CArchiveScanner::ScanAllDirs()
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 
 	const std::vector<std::string>& dataDirPaths = dataDirLocater.GetDataDirPaths();
-	const std::array<std::string, 5>& dataDirRoots = dataDirLocater.GetDataDirRoots();
+	const std::vector<std::string>& dataDirRoots = dataDirLocater.GetDataDirRoots();
 
 	std::vector<std::string> scanDirs;
 	scanDirs.reserve(dataDirPaths.size() * dataDirRoots.size());
