@@ -2701,55 +2701,54 @@ void CGroundMoveType::HandleUnitCollisions(
 			continue;
 		}
 
-
-		const float colliderRelRadius = colliderParams.y / (colliderParams.y + collideeParams.y);
-		const float collideeRelRadius = collideeParams.y / (colliderParams.y + collideeParams.y);
-		const float collisionRadiusSum = allowUCO?
-			(colliderParams.y * colliderRelRadius + collideeParams.y * collideeRelRadius):
-			(colliderParams.y                     + collideeParams.y                    );
-
-		const float  sepDistance = separationVect.Length() + 0.1f;
-		const float  penDistance = std::max(collisionRadiusSum - sepDistance, 1.0f);
-		const float  sepResponse = std::min(SQUARE_SIZE * 2.0f, penDistance * 0.5f);
-
-		const float3 sepDirection   = separationVect / sepDistance;
-		const float3 colResponseVec = sepDirection * XZVector * sepResponse;
-
-		const float
-			m1 = collider->mass,
-			m2 = collidee->mass,
-			v1 = std::max(1.0f, colliderParams.x),
-			v2 = std::max(1.0f, collideeParams.x),
-			c1 = 1.0f + (1.0f - math::fabs(collider->frontdir.dot(-sepDirection))) * 5.0f,
-			c2 = 1.0f + (1.0f - math::fabs(collidee->frontdir.dot( sepDirection))) * 5.0f,
-			// weighted momenta
-			s1 = m1 * v1 * c1,
-			s2 = m2 * v2 * c2,
-			// relative momenta
- 			r1 = s1 / (s1 + s2 + 1.0f),
- 			r2 = s2 / (s1 + s2 + 1.0f);
-
-		// far from a realistic treatment, but works
-		const float colliderMassScale = std::clamp(1.0f - r1, 0.01f, 0.99f) * (allowUCO? (1.0f / colliderRelRadius): 1.0f);
-		// const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
-
-		// try to prevent both parties from being pushed onto non-traversable
-		// squares (without resetting their position which stops them dead in
-		// their tracks and undoes previous legitimate pushes made this frame)
-		//
-		// if pushCollider and pushCollidee are both false (eg. if each party
-		// is pushResistant), treat the collision as regular and push both to
-		// avoid deadlocks
-		const float colliderSlideSign = Sign( separationVect.dot(collider->rightdir));
-
-		const float3 colliderPushVec  =  colResponseVec * colliderMassScale; // * int(!ignoreCollidee);
-		const float3 colliderSlideVec = collider->rightdir * colliderSlideSign * (1.0f / penDistance) * r2;
-		const float3 colliderMoveVec  = colliderPushVec + colliderSlideVec;
-
 		const bool moveCollider = ((pushCollider || !pushCollidee) && colliderMobile);
+		if (moveCollider) {
+			const float colliderRelRadius = colliderParams.y / (colliderParams.y + collideeParams.y);
+			const float collideeRelRadius = collideeParams.y / (colliderParams.y + collideeParams.y);
+			const float collisionRadiusSum = allowUCO?
+				(colliderParams.y * colliderRelRadius + collideeParams.y * collideeRelRadius):
+				(colliderParams.y                     + collideeParams.y                    );
 
-		if (moveCollider)
+			const float  sepDistance = separationVect.Length() + 0.1f;
+			const float  penDistance = std::max(collisionRadiusSum - sepDistance, 1.0f);
+			const float  sepResponse = std::min(SQUARE_SIZE * 2.0f, penDistance * 0.5f);
+
+			const float3 sepDirection   = separationVect / sepDistance;
+			const float3 colResponseVec = sepDirection * XZVector * sepResponse;
+
+			const float
+				m1 = collider->mass,
+				m2 = collidee->mass,
+				v1 = std::max(1.0f, colliderParams.x),
+				v2 = std::max(1.0f, collideeParams.x),
+				c1 = 1.0f + (1.0f - math::fabs(collider->frontdir.dot(-sepDirection))) * 5.0f,
+				c2 = 1.0f + (1.0f - math::fabs(collidee->frontdir.dot( sepDirection))) * 5.0f,
+				// weighted momenta
+				s1 = m1 * v1 * c1,
+				s2 = m2 * v2 * c2,
+				// relative momenta
+				r1 = s1 / (s1 + s2 + 1.0f),
+				r2 = s2 / (s1 + s2 + 1.0f);
+
+			// far from a realistic treatment, but works
+			const float colliderMassScale = std::clamp(1.0f - r1, 0.01f, 0.99f) * (allowUCO? (1.0f / colliderRelRadius): 1.0f);
+			// const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f) * (allowUCO? (1.0f / collideeRelRadius): 1.0f);
+
+			// try to prevent both parties from being pushed onto non-traversable
+			// squares (without resetting their position which stops them dead in
+			// their tracks and undoes previous legitimate pushes made this frame)
+			//
+			// if pushCollider and pushCollidee are both false (eg. if each party
+			// is pushResistant), treat the collision as regular and push both to
+			// avoid deadlocks
+			const float colliderSlideSign = Sign( separationVect.dot(collider->rightdir));
+
+			const float3 colliderPushVec  =  colResponseVec * colliderMassScale; // * int(!ignoreCollidee);
+			const float3 colliderSlideVec = collider->rightdir * colliderSlideSign * (1.0f / penDistance) * r2;
+			const float3 colliderMoveVec  = colliderPushVec + colliderSlideVec;
+
 			forceFromMovingCollidees += colliderMoveVec;
+		}
 	}
 }
 
