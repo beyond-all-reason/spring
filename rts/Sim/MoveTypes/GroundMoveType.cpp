@@ -3047,6 +3047,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		return;
 
 	if (!newSpeedVector.same(ZeroVector)) {
+		float3 prevPos = owner->pos;
+
 		// use the simplest possible Euler integration
 		owner->SetVelocityAndSpeed(newSpeedVector);
 		owner->Move(owner->speed, true);
@@ -3101,33 +3103,38 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// a rerequest path check here.
 			ReRequestPath(false);
 			bool updatePos = false;
+			float maxDist = maxSpeed;
+			float maxDistSq = maxDist*maxDist;
 
 			const int startingSquare = (owner->pos.z / SQUARE_SIZE)*mapDims.mapx + owner->pos.x / SQUARE_SIZE;
 
-			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
-				float3 posToTest = owner->pos + owner->rightdir * n;
+			auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, maxDistSq, maxDist](float3&& posToTest){
+				float3 posDir = posToTest - prevPos;
+				if (posDir.SqLength2D() > maxDistSq)
+					posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
 				int curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
 				if (curSquare != startingSquare) {
-					updatePos = isSquareOpen(posToTest);
+					bool updatePos = isSquareOpen(posToTest);
 					if (updatePos) {
 						owner->Move(posToTest, false);
-						break;
+						return true;
 					}
 				}
+				return false;
+			};
 
-				posToTest = owner->pos - owner->rightdir * n;
-				curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
-				if (curSquare != startingSquare) {
-					updatePos = isSquareOpen(posToTest);
-					if (updatePos) {
-						owner->Move(posToTest, false);
-						break;
-					}
-				}
+			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
+				updatePos = tryToMove(owner->pos + owner->rightdir * n);
+				if (updatePos)
+					break;
+
+				updatePos = tryToMove(owner->pos - owner->rightdir * n);
+				if (updatePos)
+					break;
 			}
 
 			if (!updatePos)
-				owner->Move((owner->pos - newSpeedVector), false);
+				owner->Move(prevPos, false);
 		}
 
 		// NOTE:
