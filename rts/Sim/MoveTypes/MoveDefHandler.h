@@ -68,7 +68,8 @@ struct MoveDef {
 	bool TestMovePositionForObjects(
 		const CSolidObject* collider,
 		const float3 testMovePos,
-		const int magicNum
+		int magicNum,
+		int thread
 	) const;
 
 	// aircraft and buildings defer to UnitDef::floatOnWater

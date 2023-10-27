@@ -189,6 +189,7 @@ private:
 	void AdjustPosToWaterLine();
 	bool UpdateDirectControl();
 	void UpdateOwnerAccelAndHeading();
+	void UpdatePos(const float3&, float3& resultantMove, int thread);
 	void UpdateOwnerPos(const float3&, const float3&);
 	bool UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw);
 	bool OwnerMoved(const short, const float3&, const float3&);
@@ -271,6 +272,8 @@ private:
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
 	bool pathingFailed = false;
 	bool pathingArrived = false;
+	bool positionStuck = false;
+	bool movedAtLeastOnce = false;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;
