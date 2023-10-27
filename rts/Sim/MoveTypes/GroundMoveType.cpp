@@ -161,7 +161,6 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(pathingFailed),
 	CR_MEMBER(pathingArrived),
 	CR_MEMBER(positionStuck),
-	CR_MEMBER(movedAtLeastOnce),
 	CR_MEMBER(setHeading),
 	CR_MEMBER(setHeadingDir),
 	CR_MEMBER(collidedFeatures),
@@ -684,8 +683,8 @@ bool CGroundMoveType::Update()
 	if (owner->IsSkidding()) return false;
 	if (owner->IsFalling()) return false;
 	
-	// if (resultantForces.SqLength() > 0.f)
-	// 	owner->Move(resultantForces, true);
+	if (resultantForces.SqLength() > 0.f)
+		owner->Move(resultantForces, true);
 
 	AdjustPosToWaterLine();
 
@@ -2201,11 +2200,6 @@ void CGroundMoveType::StartEngine(bool callScript) {
 			// makes no sense to call this unless we have a new path
 			owner->script->StartMoving(reversing);
 		}
-
-		if (!movedAtLeastOnce) {
-			positionStuck = !owner->moveDef->TestMoveSquare(owner, owner->pos, owner->pos, false, true, false);
-			movedAtLeastOnce = true;
-		}
 	}
 }
 
@@ -2481,17 +2475,23 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			}
 		}
 
-		// This pushes units directly away form static objects so they don't intersect.
+		// This pushes units directly away from static objects so they don't intersect.
 		if (allCollisionSqrCount > 0.f) {
 			allCollisionSqrSumPosition *= (1.0f / allCollisionSqrCount);
 			const float pushSpeed = std::min(-deepestPenDistance, maxSpeed);
 			const float3 pushOutVec = ((pos - allCollisionSqrSumPosition) * XZVector).SafeNormalize() * pushSpeed;
 
 			forceFromStaticCollidees += pushOutVec;
+
+			if (checkYardMap)
+				positionStuck = true;
 		}
 
 		// This directs units to left/right around the static object.
 		if (sqrPenDistance.y > 0.0f && -deepestPenDistance <= squareRadius*2) {
+			if (checkYardMap)
+				positionStuck = true;
+
 			sqrSumPosition *= (1.0f / sqrPenDistance.y);
 			sqrPenDistance *= (1.0f / sqrPenDistance.y);
 
@@ -3133,7 +3133,7 @@ void CGroundMoveType::UpdatePos(const float3& moveDir, float3& resultantMove, in
 void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3& newSpeedVector) {
 	const float oldSpeed = oldSpeedVector.dot(flatFrontDir);
 	const float newSpeed = newSpeedVector.dot(flatFrontDir);
-	const float3 moveRequest = newSpeedVector + resultantForces;
+	const float3 moveRequest = newSpeedVector;
 
 	// if being built, the nanoframe might not be exactly on
 	// the ground and would jitter from gravity acting on it
