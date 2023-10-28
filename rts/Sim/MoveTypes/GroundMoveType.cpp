@@ -27,6 +27,7 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/CommandAI/MobileCAI.h"
 #include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/Weapon.h"
@@ -161,6 +162,7 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(pathingFailed),
 	CR_MEMBER(pathingArrived),
 	CR_MEMBER(positionStuck),
+	CR_MEMBER(forceStaticObjectCheck),
 	CR_MEMBER(setHeading),
 	CR_MEMBER(setHeadingDir),
 	CR_MEMBER(collidedFeatures),
@@ -2200,6 +2202,11 @@ void CGroundMoveType::StartEngine(bool callScript) {
 			// makes no sense to call this unless we have a new path
 			owner->script->StartMoving(reversing);
 		}
+
+		// Due to how push resistant units work, they can trap units when they stop moving.
+		// Have units check they are not trapped when beginning to move is any push resistant units
+		// are used by the game.
+		forceStaticObjectCheck = (unitDefHandler->NumPushResistantUnitDefs() > 0);
 	}
 }
 
@@ -2307,14 +2314,19 @@ void CGroundMoveType::HandleObjectCollisions()
 		}
 	}
 
-	auto canAssignForce = [colliderMD, collider, curThread](const float3& force) {
-		if (force.same(ZeroVector))
-			return false;
+	if (forceStaticObjectCheck) {
+		positionStuck = !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, false, true, false, nullptr, nullptr, curThread);
+		forceStaticObjectCheck = false;
+	}
 
-		float3 pos = collider->pos + force;
-		return colliderMD->TestMoveSquare(collider, pos, force, true, false, true, nullptr, nullptr, curThread)
-				&& colliderMD->TestMoveSquare(collider, pos, force, false, true, false, nullptr, nullptr, curThread);
-	};
+	// auto canAssignForce = [colliderMD, collider, curThread](const float3& force) {
+	// 	if (force.same(ZeroVector))
+	// 		return false;
+
+	// 	float3 pos = collider->pos + force;
+	// 	return colliderMD->TestMoveSquare(collider, pos, force, true, false, true, nullptr, nullptr, curThread)
+	// 			&& colliderMD->TestMoveSquare(collider, pos, force, false, true, false, nullptr, nullptr, curThread);
+	// };
 
 	// Try to apply all collision forces, but if that will collide with static parts of the map,
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
@@ -2394,9 +2406,9 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		float3 sqrSumPosition; // .y is always 0
 		float2 sqrPenDistance; // .x = sum, .y = count
 
-		float deepestPenDistance = 0.f;
-		float allCollisionSqrCount = 0.f;
-		float3 allCollisionSqrSumPosition;
+		float intersectDistance = 0.f;
+		float intersectSqrCount = 0.f;
+		float3 intersectSqrSumPosition;
 
 		const float3 rightDir2D = (rgt * XZVector).SafeNormalize();
 		const float3 speedDir2D = (vel * XZVector).SafeNormalize();
@@ -2404,6 +2416,14 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 		const int xmid = (pos.x + vel.x) / SQUARE_SIZE;
 		const int zmid = (pos.z + vel.z) / SQUARE_SIZE;
+
+		const int xsquare = (pos.x / SQUARE_SIZE);
+		const int zsquare = (pos.z / SQUARE_SIZE);
+
+		const int realMinX = xsquare + (-colliderMD->xsizeh);
+		const int realMinZ = zsquare + (-colliderMD->zsizeh);
+		const int realMaxX = xsquare +   colliderMD->xsizeh ;
+		const int realMaxZ = zsquare +   colliderMD->zsizeh ;
 
 		// mantis{3614,4217}
 		//   we cannot nicely bounce off terrain when checking only the center square
@@ -2456,10 +2476,14 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				const float   squarePenDistance = std::min(squareSepDistance - squareColRadiusSum, 0.0f);
 				// const float  squareColSlideSign = -Sign(squarePos.dot(rightDir2D) - pos.dot(rightDir2D));
 
-				if (intersectSize > 1) {
-					deepestPenDistance = std::min(deepestPenDistance, squarePenDistance);
-					allCollisionSqrSumPosition += (squarePos * XZVector);
-					allCollisionSqrCount++;
+				if (x >= realMinX && x <= realMaxX && z >= realMinZ && z <= realMaxZ){
+					if (intersectSize > 1) {
+						intersectDistance = std::min(intersectDistance, squarePenDistance);
+						intersectSqrSumPosition += (squarePos * XZVector);
+						intersectSqrCount++;
+					}
+					if (checkYardMap && !positionStuck)
+						positionStuck = true;
 				}
 
 				// ignore squares behind us (relative to velocity vector)
@@ -2476,22 +2500,16 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		}
 
 		// This pushes units directly away from static objects so they don't intersect.
-		if (allCollisionSqrCount > 0.f) {
-			allCollisionSqrSumPosition *= (1.0f / allCollisionSqrCount);
-			const float pushSpeed = std::min(-deepestPenDistance, maxSpeed);
-			const float3 pushOutVec = ((pos - allCollisionSqrSumPosition) * XZVector).SafeNormalize() * pushSpeed;
+		if (intersectSqrCount > 0.f) {
+			intersectSqrSumPosition *= (1.0f / intersectSqrCount);
+			const float pushSpeed = std::min(-intersectDistance, maxSpeed);
+			const float3 pushOutVec = ((pos - intersectSqrSumPosition) * XZVector).SafeNormalize() * pushSpeed;
 
 			forceFromStaticCollidees += pushOutVec;
-
-			if (checkYardMap)
-				positionStuck = true;
 		}
 
 		// This directs units to left/right around the static object.
-		if (sqrPenDistance.y > 0.0f && -deepestPenDistance <= squareRadius*2) {
-			if (checkYardMap)
-				positionStuck = true;
-
+		if (sqrPenDistance.y > 0.0f /*&& -deepestPenDistance <= squareRadius*2*/) {
 			sqrSumPosition *= (1.0f / sqrPenDistance.y);
 			sqrPenDistance *= (1.0f / sqrPenDistance.y);
 

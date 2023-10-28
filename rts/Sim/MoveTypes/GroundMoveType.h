@@ -273,6 +273,7 @@ private:
 	bool pathingFailed = false;
 	bool pathingArrived = false;
 	bool positionStuck = false;
+	bool forceStaticObjectCheck = false;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;
