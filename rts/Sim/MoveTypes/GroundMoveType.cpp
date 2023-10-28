@@ -498,6 +498,8 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 	killUnits.reserve(UNIT_EVENTS_RESERVE);
 	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
 
+	forceStaticObjectCheck = true;
+
 	Connect();
 }
 
@@ -2206,7 +2208,8 @@ void CGroundMoveType::StartEngine(bool callScript) {
 		// Due to how push resistant units work, they can trap units when they stop moving.
 		// Have units check they are not trapped when beginning to move is any push resistant units
 		// are used by the game.
-		forceStaticObjectCheck = (unitDefHandler->NumPushResistantUnitDefs() > 0);
+		if (!forceStaticObjectCheck)
+			forceStaticObjectCheck = (unitDefHandler->NumPushResistantUnitDefs() > 0);
 	}
 }
 
