@@ -363,7 +363,7 @@ void QTPFS::PathManager::Load() {
 		const char* fmtString = "[PathManager::%s] Complete. Used %u threads for %u node-layers";
 		snprintf(loadMsg, sizeof(loadMsg), fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
 
-		loadscreen->SetLoadMessage(loadMsg);
+		pmLoadScreen.AddMessage(loadMsg);
 	}
 }
 
