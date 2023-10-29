@@ -116,23 +116,13 @@ template<class U>
 concept Unsigned = std::is_unsigned<U>::value;
 
 /**
- * @brief constexpr Count number of bits in the unsigned number
- * @param x unsigned number
- */
-template<Unsigned U>
-constexpr U NumberOfBits(U x)
-{
-	return x <= 1 ? 0 : 1 + NumberOfBits((x + 1) >> 1);
-}
-
-/**
  * @brief constexpr check if the unsigned number is PO2
  * @param x unsigned number
  */
 template<Unsigned U>
 constexpr bool IsPowerOfTwo(U x)
 {
-	return x == U(1) << NumberOfBits(x);
+	return x != 0 && (x & (x - 1)) == 0;
 }
 
 /**
