@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef MEMPOOL_TYPES_H
-#define MEMPOOL_TYPES_H
+#pragma once
 
 #include <cassert>
 #include <cstring> // memset
@@ -13,29 +12,52 @@
 #include <memory>
 #include <tuple>
 
-#include "smmalloc/smmalloc.h"
+#include "buddy_alloc/buddy_alloc.h"
 
 #include "System/UnorderedMap.hpp"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
+#include "System/Threading/WrappedSync.h"
 #include "System/Log/ILog.h"
+#include "System/bitops.h"
+#include "System/SpringMath.h"
 
-template<uint32_t NumBuckets, size_t BucketSize> struct PassThroughPool {
+template<size_t ArenaSize, size_t AllocationAlignment, size_t MaxAllocationSize> struct PassThroughPool {
 public:
 	PassThroughPool() {
-		space = _sm_allocator_create(NumBuckets, BucketSize);
+		static_assert(IsPowerOfTwo(ArenaSize), "ArenaSize is not PO2");
+		/* You need space for the metadata and for the arena */
+		buddyMetadata.resize(buddy_sizeof(ArenaSize));
+		buddyArena.resize(ArenaSize);
+		buddy = buddy_init_alignment(buddyMetadata.data(), buddyArena.data(), ArenaSize, AllocationAlignment);
+		assert(buddy);
 	}
 	~PassThroughPool() {
-		_sm_allocator_destroy(space); //checks space != nullptr internally
+		assert(buddy_is_empty(buddy));
+		buddy = nullptr;
+		buddyMetadata.clear();
+		buddyArena.clear();
 	}
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 	void* allocMem(size_t size) {
-		return _sm_malloc(space, size, BUCKET_STEP);
+		size = AlignUp(size, AllocationAlignment);
+		if (size > MaxAllocationSize)
+			return std::malloc(size);
+
+		void* ptr = nullptr;
+		{
+			auto lock = mutex.GetScopedLock();
+			ptr = buddy_malloc(buddy, size);
+		}
+		if (ptr)
+			return ptr;
+
+		return std::malloc(size);
 	}
 
 	template<typename T> void free(T*& p) {
@@ -45,20 +67,60 @@ public:
 		freeMem(m);
 	}
 	void freeMem(void* p) {
-		_sm_free(space, p);
+		if (!isAllocInternal(p)) {
+			std::free(p);
+			return;
+		}
+
+		auto lock = mutex.GetScopedLock();
+		buddy_free(buddy, p);
 	}
 
 	void* reAllocMem(void* p, size_t size) {
-		return _sm_realloc(space, p, size, BUCKET_STEP);
+		size = AlignUp(size, AllocationAlignment);
+		if(!isAllocInternal(p))
+			return std::realloc(p, size);
+
+		const auto FallBackAlloc = [this](void* p, size_t size) {
+			void* np = std::malloc(size);
+			auto pd = reinterpret_cast<std::uintptr_t>(p) - reinterpret_cast<std::uintptr_t>(buddyArena.data());
+			std::memcpy(np, p, std::min(size, buddyArena.size() - static_cast<size_t>(pd)));
+
+			auto lock = mutex.GetScopedLock();
+			buddy_free(buddy, p);
+
+			return np;
+		};
+
+		if (size > MaxAllocationSize) {
+			// previous allocation is from the pool, but the new one is too big
+			return FallBackAlloc(p, size);
+		}
+
+		{
+			auto lock = mutex.GetScopedLock();
+			if (void* ptr = buddy_realloc(buddy, p, size); ptr)
+				return ptr;
+		}
+		// realloc failed to re-allocate memory (buddy pool is full)
+		return FallBackAlloc(p, size);
 	}
 
 	bool isAllocInternal(void* p) const {
-		return (space->GetBucketIndex(p) != -1);
+		if (reinterpret_cast<uint8_t*>(p) < buddyArena.data())
+			return false;
+
+		auto pd = reinterpret_cast<std::uintptr_t>(p) - reinterpret_cast<std::uintptr_t>(buddyArena.data());
+		return pd < buddyArena.size();
 	}
+
+	void SetThreadSafety(bool b) { mutex.SetThreadSafety(b); }
+
 private:
-	static constexpr size_t BUCKET_STEP = 16;
-	static constexpr size_t INTERNAL_ALLOC_SIZE = BUCKET_STEP * NumBuckets;
-	sm_allocator space = nullptr;
+	spring::WrappedSyncSpinLock mutex;
+	std::vector<uint8_t> buddyArena;
+	std::vector<uint8_t> buddyMetadata;
+	buddy* buddy = nullptr;
 };
 
 template<size_t S> struct DynMemPool {
@@ -528,6 +590,3 @@ inline void StablePosAllocator<T>::Free(size_t firstElem, size_t numElems, const
 
 	myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 }
-
-#endif
-

@@ -50,9 +50,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 ### libcpuid
 list(APPEND engineCommonLibraries "cpuid")
 
-### smmalloc
-list(APPEND engineCommonLibraries "smmalloc")
-
 ### Assemble common libraries
 add_subdirectory(System/Sound)
 if    (NO_SOUND)

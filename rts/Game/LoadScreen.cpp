@@ -111,6 +111,7 @@ bool CLoadScreen::Init()
 
 	CglFont::sync.SetThreadSafety(mtLoading);
 	CLoadLock::SetThreadSafety(mtLoading);
+	LuaMemPool::GetSharedPtr()->SetThreadSafety(mtLoading);
 	if (mtLoading) {
 		try {
 			// create the game-loading thread; rebinds primary context to hidden window
@@ -123,6 +124,7 @@ bool CLoadScreen::Init()
 			mtLoading = false;
 			CglFont::sync.SetThreadSafety(false);
 			CLoadLock::SetThreadSafety(false);
+			LuaMemPool::GetSharedPtr()->SetThreadSafety(false);
 		}
 	}
 
@@ -161,6 +163,7 @@ void CLoadScreen::Kill()
 
 	CFontTexture::sync.SetThreadSafety(false);
 	CLoadLock::SetThreadSafety(false);
+	LuaMemPool::GetSharedPtr()->SetThreadSafety(false);
 	// set last time and forever
 	globalRendering->MakeCurrentContext(false);
 	globalRendering->ToggleMultisampling();
