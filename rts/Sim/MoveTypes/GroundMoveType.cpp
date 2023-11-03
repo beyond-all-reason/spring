@@ -739,7 +739,15 @@ void CGroundMoveType::SlowUpdate()
 					LOG_L(L_DEBUG, "[%s] unit %i has pathID %i but %i ETA failures", __func__, owner->id, pathID, numIdlingUpdates);
 
 					if (numIdlingSlowUpdates < MAX_IDLING_SLOWUPDATES) {
-						ReRequestPath(true);
+						// avoid spamming rerequest paths if the unit is making progress.
+						if (idling) {
+							// Unit may have got stuck in
+							// 1) a wreck that has spawned
+							// 2) a push-resistant unit that stopped moving
+							// 3) an amphibious unit has just emerged from water right underneath a strcuture.
+							forceStaticObjectCheck = true;
+							ReRequestPath(true);
+						}
 					} else {
 						// unit probably ended up on a non-traversable
 						// square, or got stuck in a non-moving crowd
