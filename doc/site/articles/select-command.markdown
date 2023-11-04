@@ -84,6 +84,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
   Keep only units that currently have a **Guard** order.
 
+### `Patrolling`
+
+  Keep only units that currently have a **Patrol** order.
+
 ### `IdMatches_<string>`
 
   Keep only units whose internal name (unitDef name) matches `<string>` **exactly**.
