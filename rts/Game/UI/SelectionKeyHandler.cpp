@@ -12,7 +12,9 @@
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/CategoryHandler.h"
+#include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/CommandAI/CommandQueue.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -124,7 +126,12 @@ namespace {
 	DECLARE_FILTER(Idle, unit->commandAI->commandQue.empty())
 	DECLARE_FILTER(Waiting, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_WAIT))
 	DECLARE_FILTER(Guarding, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_GUARD))
-	DECLARE_FILTER(Patrolling, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_PATROL))
+  DECLARE_FILTER(Patrolling, !unit->commandAI->commandQue.empty() && (
+                     (unit->commandAI->commandQue.size() == 1 && unit->commandAI->commandQue.at(0).GetID() == CMD_PATROL) ||
+                     (unit->commandAI->commandQue.size() == 2 && unit->commandAI->commandQue.at(1).GetID() == CMD_PATROL) ||
+                     (unit->commandAI->commandQue.size() == 3 && unit->commandAI->commandQue.at(2).GetID() == CMD_PATROL) ||
+                     unit->commandAI->commandQue.at(3).GetID() == CMD_PATROL
+                   ))
 	DECLARE_FILTER(InHotkeyGroup, unit->GetGroup() != nullptr)
 	DECLARE_FILTER(Radar, (unit->radarRadius > 0 || unit->sonarRadius > 0))
 	DECLARE_FILTER(Jammer, (unit->jammerRadius > 0))
