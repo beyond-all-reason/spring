@@ -4,6 +4,7 @@
 #define SELECTION_KEY_HANDLER_H
 
 #include <vector>
+#include <unordered_set>
 
 #include "InputReceiver.h"
 
@@ -35,6 +36,7 @@ private:
 	int selectNumber = 0;
 
 	std::vector<CUnit*> selection;
+	std::unordered_set<std::string> idMatchesSet;
 };
 
 extern CSelectionKeyHandler selectionKeys;

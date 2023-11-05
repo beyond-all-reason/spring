@@ -18,6 +18,7 @@ You can replace these functions before migrating, and known existing games have 
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
 
 ### Behaviour changes
+* The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
 * QTPFS had a major overhaul, with multiple modrule changes and behaviour changes. See the section below.
 * many invalid def entries now cause the unit to be rejected; on the other hand, many (in particular, metal cost and weapon damage) can now be 0. Watch out for division by 0!
