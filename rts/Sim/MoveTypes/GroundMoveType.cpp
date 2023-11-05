@@ -2132,8 +2132,12 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		// Not sure this actually does anything.
 		pathController.SetTempGoalPosition(pathID, earlyNextWayPoint);
 
-		earlyCurrWayPoint = earlyNextWayPoint;
-		earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		int32_t update = 1;
+		if (update-- > 0) {
+			earlyCurrWayPoint = earlyNextWayPoint;
+			earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+			update += (earlyCurrWayPoint.y == (-1.f) & earlyNextWayPoint.y != (-1.f));
+		}
 
 		if (limitSpeedForTurning > 0)
 			--limitSpeedForTurning;
