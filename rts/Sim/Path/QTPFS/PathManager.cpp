@@ -787,9 +787,9 @@ void QTPFS::PathManager::ReadyQueuedSearches() {
 void QTPFS::PathManager::ExecuteQueuedSearches() {
 	ZoneScoped;
 
-	auto pathView = registry.group<PathSearch, ProcessPath>();
-
 	ReadyQueuedSearches();
+
+	auto pathView = registry.group<PathSearch, ProcessPath>();
 
 	// execute pending searches collected via
 	// RequestPath and QueueDeadPathSearches
