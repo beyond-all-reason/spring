@@ -3181,11 +3181,15 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 	if (owner->beingBuilt)
 		return;
 
+	if (!oldSpeedVector.same(newSpeedVector)) {
+		owner->SetVelocityAndSpeed(newSpeedVector);
+	}
+
 	if (!moveRequest.same(ZeroVector)) {
 		const float3 prevPos = owner->pos;
 
 		// use the simplest possible Euler integration
-		owner->SetVelocityAndSpeed(newSpeedVector);
+		// owner->SetVelocityAndSpeed(newSpeedVector);
 		// owner->Move(owner->speed, true);
 		owner->Move(moveRequest, true);
 
