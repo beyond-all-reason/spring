@@ -949,7 +949,8 @@ void CGroundMoveType::UpdateObstacleAvoidance() {
 	const float3&  ffd = flatFrontDir;
 	auto wantReverse = WantReverse(waypointDir, ffd);
 	const float3  rawWantedDir = waypointDir * Sign(int(!wantReverse));
-	const float3& modWantedDir = GetObstacleAvoidanceDir(mix(ffd, rawWantedDir, !atGoal));
+
+	GetObstacleAvoidanceDir(mix(ffd, rawWantedDir, !atGoal));
 }
 
 bool CGroundMoveType::FollowPath(int thread)
@@ -1671,11 +1672,18 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		return flatFrontDir;
 
 	// Speed-optimizer. Reduces the times this system is run.
-	if ((gs->frameNum + owner->id) % modInfo.groundUnitCollisionAvoidanceUpdateRate)
+	if ((gs->frameNum + owner->id) % modInfo.groundUnitCollisionAvoidanceUpdateRate) {
+		if (!avoidingUnits)
+			lastAvoidanceDir = desiredDir;
+
 		return lastAvoidanceDir;
+	}
 
 	float3 avoidanceVec = ZeroVector;
 	float3 avoidanceDir = desiredDir;
+
+	if (avoidingUnits)
+		avoidingUnits = false;
 
 	lastAvoidanceDir = desiredDir;
 
@@ -1795,8 +1803,10 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 
 		avoidanceDir = avoider->rightdir * AVOIDER_DIR_WEIGHT * avoiderTurnSign;
 		avoidanceVec += (avoidanceDir * avoidanceResponse * avoidanceFallOff * avoideeMassScale);
-	}
 
+		if (!avoidingUnits)
+			avoidingUnits = true;
+	}
 
 	// use a weighted combination of the desired- and the avoidance-directions
 	// also linearly smooth it using the vector calculated the previous frame

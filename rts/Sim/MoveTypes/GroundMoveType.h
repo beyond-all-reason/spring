@@ -274,6 +274,7 @@ private:
 	bool pathingArrived = false;
 	bool positionStuck = false;
 	bool forceStaticObjectCheck = false;
+	bool avoidingUnits = false;
 
 	std::vector<CFeature*> collidedFeatures;
 	std::vector<CUnit*> collidedUnits;
