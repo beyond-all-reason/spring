@@ -86,7 +86,7 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
 ### `Patrolling`
 
-  Keep only units that currently have a **Patrol** order.
+  Keep only units that have a **Patrol** order early in the queue (first 4 commands).
 
 ### `IdMatches_<string>`
 
