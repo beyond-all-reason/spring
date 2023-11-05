@@ -163,6 +163,7 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(pathingArrived),
 	CR_MEMBER(positionStuck),
 	CR_MEMBER(forceStaticObjectCheck),
+	CR_MEMBER(avoidingUnits),
 	CR_MEMBER(setHeading),
 	CR_MEMBER(setHeadingDir),
 	CR_MEMBER(collidedFeatures),
@@ -2133,10 +2134,10 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		pathController.SetTempGoalPosition(pathID, earlyNextWayPoint);
 
 		int32_t update = 1;
-		if (update-- > 0) {
+		while (update-- > 0) {
 			earlyCurrWayPoint = earlyNextWayPoint;
 			earlyNextWayPoint = pathManager->NextWayPoint(owner, pathID, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-			update += (earlyCurrWayPoint.y == (-1.f) & earlyNextWayPoint.y != (-1.f));
+			update += (earlyCurrWayPoint.y == (-1.f) && earlyNextWayPoint.y != (-1.f));
 		}
 
 		if (limitSpeedForTurning > 0)
