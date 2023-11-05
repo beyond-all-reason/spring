@@ -427,7 +427,7 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 	// is because speed.w and currentSpeed are calculated differently
 	// and that causes  a slight variation that we need to compensate
 	// for.
-	if ((hAcc == 0.f) && (math::fabs(owner->speed.w) <= 0.012f))
+	if ((hAcc == 0.f) && (math::fabs(owner->speed.w) <= 0.013f))
 		return ZeroVector;
 	else
 		return (owner->frontdir * (owner->speed.w * Sign(int(!mt->IsReversing())) + hAcc));
