@@ -244,6 +244,8 @@ private:
 	float3 resultantForces;
 
 	unsigned int pathID = 0;
+	unsigned int nextPathId = 0;
+	unsigned int deletePathId = 0;
 
 	unsigned int numIdlingUpdates = 0;      /// {in, de}creased every Update if idling is true/false and pathId != 0
 	unsigned int numIdlingSlowUpdates = 0;  /// {in, de}creased every SlowUpdate if idling is true/false and pathId != 0

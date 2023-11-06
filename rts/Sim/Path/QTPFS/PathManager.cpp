@@ -1096,7 +1096,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	RemovePathFromPartialShared(pathEntity);
 
 	oldPath->SetHash(PathSearch::BAD_HASH);
-	oldPath->SetNextPointIndex(-1);
+	oldPath->SetNextPointIndex(0);
 	oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
 	// start re-request from the current point
@@ -1314,6 +1314,34 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 	unsigned int nextPointIndex = livePath->GetNextPointIndex() + 1;
 	unsigned int lastPointIndex = livePath->NumPoints() - 1;
+
+	// If this is the first call then we may need to jump a bit further in the path if the unit
+	// managed to travel past the first point in the time it took to make the route. 
+	if (nextPointIndex == 1)  {
+		constexpr float invSin45deg = 1.42f; // to account for a square's diagonal being longer.
+		constexpr float squareRadius = SQUARE_SIZE*SQUARE_SIZE*invSin45deg;
+		for (unsigned int i = (livePath->GetNextPointIndex()); i < lastPointIndex; i++) {
+			// find waypoints <p0> and <p1> such that <point> is
+			// "in front" of p0 and "behind" p1 (ie. in between)
+			//
+			// we do this rather than the radius-based search
+			// since depending on the value of <radius> we may
+			// or may not find a "next" node (even though one
+			// always exists)
+			const float3& p0 = livePath->GetPoint(i    ), v0 = float3(p0.x - point.x, 0.0f, p0.z - point.z);
+			const float3& p1 = livePath->GetPoint(i + 1), v1 = float3(p1.x - point.x, 0.0f, p1.z - point.z);
+
+			// NOTE:
+			//     either v0 or v1 can be a zero-vector (p0 == point or p1 == point)
+			//     in those two cases the dot-product is meaningless so we skip them
+			//     vectors are NOT normalized, so it can happen that NO case matches
+			//     and we must fall back to assuming waypoint 1 is best.
+			if (v0.SqLength() < squareRadius) { nextPointIndex = i + 1; break; }
+			if (v1.SqLength() < squareRadius) { nextPointIndex = i + 2; break; }
+			if (v0.dot(v1) <= -0.01f)         { nextPointIndex = i + 1; break; }
+		}
+	}
+
 	if (nextPointIndex > lastPointIndex) {
 		nextPointIndex = lastPointIndex;
 	} else {

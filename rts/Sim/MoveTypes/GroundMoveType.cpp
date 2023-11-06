@@ -585,6 +585,13 @@ void CGroundMoveType::UpdatePreCollisions()
 
 	SyncWaypoints();
 
+	// The mt section may have noticed the new path was ready and switched over to it. If so then
+	// delete the old path, which has to be done in an ST section.
+	if (deletePathId != 0) {
+		pathManager->DeletePath(deletePathId);
+		deletePathId = 0;
+	}
+
 	if (pathingArrived) {
 		Arrived(false);
 		pathingArrived = false;
@@ -934,6 +941,23 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 void CGroundMoveType::UpdatePreCollisionsMt() {
 	earlyCurrWayPoint = currWayPoint;
 	earlyNextWayPoint = nextWayPoint;
+
+	// Check wether the new path is ready.
+	if (nextPathId != 0) {
+		float3 tempWaypoint = pathManager->NextWayPoint(owner, nextPathId, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+
+		// a non-temp answer tells us that the new path is ready to be used.
+		if (tempWaypoint.y != (-1.f)) {
+			// switch straight over to the new path
+			earlyCurrWayPoint = tempWaypoint;
+			earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+
+			// can't delete the path in an MT section
+			deletePathId = pathID;
+			pathID = nextPathId;
+			nextPathId = 0;
+		}
+	}
 
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
@@ -1936,7 +1960,7 @@ unsigned int CGroundMoveType::GetNewPath()
 void CGroundMoveType::ReRequestPath(bool forceRequest) {
 	if (forceRequest) {
 		assert(!ThreadPool::inMultiThreadedSection);
-		StopEngine(false);
+		// StopEngine(false);
 		StartEngine(false);
 		wantRepath = false;
 		lastRepathFrame = gs->frameNum;
@@ -1952,6 +1976,19 @@ void CGroundMoveType::ReRequestPath(bool forceRequest) {
 
 bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	ZoneScoped;
+
+	{
+		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+		if (printMoveInfo) {
+			LOG("[%s] pathID=%d, check=%d, atEndOfPath=%d, cwp.y=%f, nwp.y=%f", __func__
+			, pathID
+			, int(pathController.AllowSetTempGoalPosition(pathID, nextWayPoint))
+			, int(atEndOfPath)
+			, earlyCurrWayPoint.y
+			, earlyNextWayPoint.y);
+		}
+	}
 
 	if (pathID == 0)
 		return false;
@@ -1979,6 +2016,17 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		currWayPointDist = cwp.distance2D(pos);
 		SetWaypointDir(cwp, pos);
 		wantRepath = false;
+	}
+
+	{
+		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+		if (printMoveInfo) {
+			LOG("[%s] current waypoint (%f, %f, %f) nextwaypoint (%f, %f, %f) waypointDir (%f, %f, %f)", __func__
+			, cwp.x, cwp.y, cwp.z
+			, nwp.x, nwp.y, nwp.z
+			, waypointDir.x, waypointDir.y, waypointDir.z);
+		}
 	}
 
 	if (DEBUG_DRAWING_ENABLED) {
@@ -2222,9 +2270,15 @@ float3 CGroundMoveType::Here() const
 void CGroundMoveType::StartEngine(bool callScript) {
 	if (pathID == 0)
 		pathID = GetNewPath();
+	else {
+		if (nextPathId != 0) {
+			pathManager->DeletePath(nextPathId);
+		}
+		nextPathId = GetNewPath();
+	}
 
 	if (pathID != 0) {
-		pathManager->UpdatePath(owner, pathID);
+		// pathManager->UpdatePath(owner, pathID);
 
 		if (callScript) {
 			// makes no sense to call this unless we have a new path
@@ -2241,9 +2295,15 @@ void CGroundMoveType::StartEngine(bool callScript) {
 
 void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 	assert(!ThreadPool::inMultiThreadedSection);
-	if (pathID != 0) {
-		pathManager->DeletePath(pathID);
-		pathID = 0;
+	if (pathID != 0 || nextPathId != 0) {
+		if (pathID != 0) {
+			pathManager->DeletePath(pathID);
+			pathID = 0;
+		}
+		if (nextPathId != 0) {
+			pathManager->DeletePath(nextPathId);
+			nextPathId = 0;
+		}
 
 		if (callScript)
 			owner->script->StopMoving();
