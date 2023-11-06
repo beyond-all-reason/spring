@@ -1977,19 +1977,6 @@ void CGroundMoveType::ReRequestPath(bool forceRequest) {
 bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	ZoneScoped;
 
-	{
-		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-		if (printMoveInfo) {
-			LOG("[%s] pathID=%d, check=%d, atEndOfPath=%d, cwp.y=%f, nwp.y=%f", __func__
-			, pathID
-			, int(pathController.AllowSetTempGoalPosition(pathID, nextWayPoint))
-			, int(atEndOfPath)
-			, earlyCurrWayPoint.y
-			, earlyNextWayPoint.y);
-		}
-	}
-
 	if (pathID == 0)
 		return false;
 	if (!pathController.AllowSetTempGoalPosition(pathID, nextWayPoint))
@@ -2016,17 +2003,6 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		currWayPointDist = cwp.distance2D(pos);
 		SetWaypointDir(cwp, pos);
 		wantRepath = false;
-	}
-
-	{
-		bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
-			&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-		if (printMoveInfo) {
-			LOG("[%s] current waypoint (%f, %f, %f) nextwaypoint (%f, %f, %f) waypointDir (%f, %f, %f)", __func__
-			, cwp.x, cwp.y, cwp.z
-			, nwp.x, nwp.y, nwp.z
-			, waypointDir.x, waypointDir.y, waypointDir.z);
-		}
 	}
 
 	if (DEBUG_DRAWING_ENABLED) {
