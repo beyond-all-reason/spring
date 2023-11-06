@@ -817,6 +817,11 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 			IPath* path = registry.try_get<IPath>(pathEntity);
 			if (path != nullptr) {
 				if (search->PathWasFound()) {
+					// inform the movement system that the path has been changed.
+					if (registry.all_of<PathUpdatedCounterIncrease>(pathEntity)) {
+						path->SetNumPathUpdates(path->GetNumPathUpdates() + 1);
+						registry.remove<PathUpdatedCounterIncrease>(pathEntity);
+					}
 					registry.remove<PathIsTemp>(pathEntity);
 					registry.remove<PathIsDirty>(pathEntity);
 					registry.remove<PathSearchRef>(pathEntity);
@@ -987,6 +992,7 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 
 			assert(registry.all_of<PathIsToBeUpdated>(entity));
 			registry.remove<PathIsToBeUpdated>(entity);
+			registry.emplace_or_replace<PathUpdatedCounterIncrease>(entity);
 		});
 	}
 }
@@ -1097,7 +1103,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	oldPath->SetHash(PathSearch::BAD_HASH);
 	oldPath->SetNextPointIndex(0);
-	oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
+	// oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
 	// start re-request from the current point
 	// along the path, not the original source
