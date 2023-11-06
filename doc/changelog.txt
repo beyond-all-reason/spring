@@ -177,6 +177,11 @@ Sim:
    move then the pushing unit can get stuck between them and an adjacent blocker.
  - Fixed: pushResistant units trigger pathing updates on start/stop moving. There's no point doing
    so while moving because the ground block type gets ignored.
+ - Units will now turn to their desired direction every frame, rather than on every
+   modInfo.groundUnitCollisionAvoidanceUpdateRate frames.
+ - Units given new paths will now switch to a new non-temp waypoint in 1 frame rather than 2.
+   Units have a next and current waypoint, so if next is non-temp, but current is then it will make
+   current <- next, and grab the next waypoint.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
