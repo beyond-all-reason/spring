@@ -212,13 +212,13 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
 		p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
 
-		if (path->GetSearchTime().toMilliSecsi() < 10LL) {
+		// if (path->GetSearchTime().toMilliSecsi() < 10LL) {
 			rb.AddVertex({p0, PATH_COLOR});
 			rb.AddVertex({p1, PATH_COLOR});
-		} else {
-			rb.AddVertex({p0, BAD_PATH_COLOR});
-			rb.AddVertex({p1, BAD_PATH_COLOR});
-		}
+		// } else {
+		// 	rb.AddVertex({p0, BAD_PATH_COLOR});
+		// 	rb.AddVertex({p1, BAD_PATH_COLOR});
+		// }
 	}
 
 	rb.Submit(GL_LINES);
