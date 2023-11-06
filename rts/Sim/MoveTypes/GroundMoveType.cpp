@@ -745,7 +745,10 @@ void CGroundMoveType::SlowUpdate()
 							// Unit may have got stuck in
 							// 1) a wreck that has spawned
 							// 2) a push-resistant unit that stopped moving
-							// 3) an amphibious unit has just emerged from water right underneath a strcuture.
+							// 3) an amphibious unit has just emerged from water right underneath a structure.
+							// 4) a push-resistant unit/building was spawned or teleported on top of us via lua
+							// 5) a stopped unit we were inside of was newly made push-resistant via lua
+							// 6) our movedef changed into one of a different size / crushStrength via lua
 							forceStaticObjectCheck = true;
 							ReRequestPath(true);
 						}
