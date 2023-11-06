@@ -179,6 +179,7 @@ i.e. the same way engine measures build distance. Useful for setting the goal ra
 This doesn't solve all known cases yet (doesn't handle features, or terraform) which are pending a solution; for now, the function returns just the build range if `buildeeDefID` is nil.
 * added `Spring.GetUnitIsBeingBuilt(unitID) → bool beingBuilt, number buildProgress`. Note that this doesn't bring new _capability_ because `buildProgress` was already available
 from the 5th return of `Spring.GetUnitHealth`, and `beingBuilt` from the 3rd return of `Spring.GetUnitIsStunned`, but it wasn't terribly convenient or intuitive.
+* fixed it being possible to place a unit that requires a geothermal vent anywhere.
 
 ### Rules params
 * added player rules params. Controlled by the new interfaces: `Spring.SetPlayerRulesParam`, `GetPlayerRulesParam` and `GetPlayerRulesParams`,
