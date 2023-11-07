@@ -782,7 +782,10 @@ void CGroundMoveType::SlowUpdate()
 				// make progress: for example, when it got pushed against a building, but
 				// is otherwise moving on. Pathing is expensive so we really want to keep
 				// repathing to a minimum.
-				float curDist = currWayPoint.SqDistance2D(owner->pos);
+				// Resolution distance checks kept to 1/10th of an Elmo to reduce the
+				// amount of time a unit can spend making insignificant progress, every
+				// SlowUpdate.
+				float curDist = math::floorf(currWayPoint.distance2D(owner->pos) * 10.f);
 				if (curDist < bestLastWaypointDist) {
 					bestLastWaypointDist = curDist;
 					wantRepathFrame = gs->frameNum;
@@ -956,6 +959,7 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 			deletePathId = pathID;
 			pathID = nextPathId;
 			nextPathId = 0;
+			wantRepath = false;
 		}
 	}
 
