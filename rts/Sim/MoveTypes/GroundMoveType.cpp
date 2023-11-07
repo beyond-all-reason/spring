@@ -2397,7 +2397,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
 	// other into buildings far enough that the pathing systems can't get them out again.
 	float3 tryForce = forceFromStaticCollidees + forceFromMovingCollidees;
-	UpdatePos(tryForce, resultantForces, curThread);
+	UpdatePos(owner, tryForce, resultantForces, curThread);
 	// if (!canAssignForce(tryForce)) {
 	// 	tryForce = forceFromStaticCollidees;
 	// 	if (!positionStuck && !canAssignForce(tryForce))
@@ -3129,36 +3129,36 @@ bool CGroundMoveType::UpdateDirectControl()
 }
 
 
-void CGroundMoveType::UpdatePos(const float3& moveDir, float3& resultantMove, int thread) {
-	const float3 prevPos = owner->pos;
-	const float3 newPos = owner->pos + moveDir;
+void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, int thread) const {
+	const float3 prevPos = unit->pos;
+	const float3 newPos = unit->pos + moveDir;
 	resultantMove = moveDir;
 
 	// The series of test done here will benefit from using the same cached results.
-	MoveDef* md = owner->moveDef;
+	MoveDef* md = unit->moveDef;
 	int tempNum = gs->GetMtTempNum(thread);
 
-	auto isSquareOpen = [this, tempNum, thread](float3 pos) {
+	auto isSquareOpen = [unit, tempNum, thread](float3 pos) {
 		// separate calls because terrain is only checked for in the centre square, while
 		// static objects are checked for in the whole footprint.
-		return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true, nullptr, nullptr, thread)
-				&& owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, thread); 
-				//&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		return unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
+				&& unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread); 
+				//&& unit->moveDef->TestMoveSquare(unit, pos, unit->speed, false, true, false);
 	};
 
-	auto isTerrainSquareOpen = [this, thread](float3 pos) {
-		return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true, nullptr, nullptr, thread);
+	auto isTerrainSquareOpen = [unit, thread](float3 pos) {
+		return unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread);
 	};
 
-	auto isObjectsSquareOpen = [this, tempNum, thread](float3 pos) {
-		return owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, thread);
-		//return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+	auto isObjectsSquareOpen = [unit, tempNum, thread](float3 pos) {
+		return unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread);
+		//return unit->moveDef->TestMoveSquare(unit, pos, unit->speed, false, true, false);
 	};
 
 	// // Used to limit how much units are allowed to slide along walls. Helps getting around
 	// // corners, but stops them going too fast by sliding too far.
 	// auto isCloseEnough = [this](float3 pos) {
-	// 	return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
+	// 	return pos.SqDistance2D(unit->pos) <= (maxSpeed*maxSpeed);
 	// };
 
 	// NOTE:
@@ -3202,14 +3202,14 @@ void CGroundMoveType::UpdatePos(const float3& moveDir, float3& resultantMove, in
 		};
 
 		for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
-			updatePos = tryToMove(owner->rightdir * n);
+			updatePos = tryToMove(unit->rightdir * n);
 			if (updatePos) { break; }
-			updatePos = tryToMove(owner->rightdir * n);
+			updatePos = tryToMove(unit->rightdir * n);
 			if (updatePos) { break; }
 		}
 
 		if (!updatePos)
-			resultantForces = ZeroVector;
+			resultantMove = ZeroVector;
 	}
 }
 
@@ -3230,104 +3230,128 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 	}
 
 	if (!moveRequest.same(ZeroVector)) {
-		const float3 prevPos = owner->pos;
+		float3 resultantVel;
+		UpdatePos(owner, moveRequest, resultantVel, 0);
 
-		// use the simplest possible Euler integration
-		// owner->SetVelocityAndSpeed(newSpeedVector);
-		// owner->Move(owner->speed, true);
-		owner->Move(moveRequest, true);
-
-		// The series of test done here will benefit from using the same cached results.
-		MoveDef* md = owner->moveDef;
-		int tempNum = gs->GetTempNum();
-
-		auto isSquareOpen = [this, tempNum](float3 pos) {
-			// separate calls because terrain is only checked for in the centre square, while
-			// static objects are checked for in the whole footprint.
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
-					&& owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, 0); 
-					//&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
-		};
-
-		auto isTerrainSquareOpen = [this](float3 pos) {
-			return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true);
-		};
-
-		auto isObjectsSquareOpen = [this, tempNum](float3 pos) {
-			return owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, 0);
-			//return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
-		};
-
-		// // Used to limit how much units are allowed to slide along walls. Helps getting around
-		// // corners, but stops them going too fast by sliding too far.
-		// auto isCloseEnough = [this](float3 pos) {
-		// 	return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
-		// };
-
-		// NOTE:
-		//   does not check for structure blockage, coldet handles that
-		//   entering of impassable terrain is *also* handled by coldet
-		//
-		//   the loop below tries to evade "corner" squares that would
-		//   block us from initiating motion and is needed for when we
-		//   are not *currently* moving but want to get underway to our
-		//   first waypoint (HSOC coldet won't help then)
-		//
- 		//   allowing movement through blocked squares when pathID != 0
- 		//   relies on assumption that PFS will not search if start-sqr
- 		//   is blocked, so too fragile
-		//
-		// TODO: look to move as much of this to MT to improve perf.
-		bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*md, owner->pos)
-									&& !isTerrainSquareOpen(owner->pos);
-		bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(owner->pos);
-		if (isSquareBlocked) {
-			// Sometimes now collisions won't happen due to this code preventing that.
+		bool isMoveColliding = !resultantVel.same(moveRequest);
+		if (isMoveColliding) {
+			// Sometimes now regular collisions won't happen due to this code preventing that.
 			// so units need to be able to get themselves out of stuck situations. So adding
 			// a rerequest path check here.
 			ReRequestPath(false);
-			bool updatePos = false;
-			float maxDist = maxSpeed;
-			float maxDistSq = maxDist*maxDist;
+		}
 
-			const int startingSquare = (owner->pos.z / SQUARE_SIZE)*mapDims.mapx + owner->pos.x / SQUARE_SIZE;
-
-			auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, maxDistSq, maxDist](float3&& posToTest){
-				// float3 posDir = posToTest - prevPos;
-				// if (posDir.SqLength2D() > maxDistSq)
-				// 	posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
-				int curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
-				if (curSquare != startingSquare) {
-					bool updatePos = isSquareOpen(posToTest);
-					if (updatePos) {
-						owner->Move(posToTest, false);
-						return true;
-					}
-				}
-				return false;
-			};
-
-			for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
-				updatePos = tryToMove(owner->pos + owner->rightdir * n);
-				if (updatePos)
-					break;
-
-				updatePos = tryToMove(owner->pos - owner->rightdir * n);
-				if (updatePos)
-					break;
+		bool isThereAnOpenSquare = !resultantVel.same(ZeroVector);
+		if (isThereAnOpenSquare){
+			owner->Move(resultantVel, true);
+			if (positionStuck) {
+				positionStuck = false;
 			}
+		} else if (positionStuck) {
+			// Unit is stuck an the an open square could not be found. Just allow the unit to move
+			// so that it gets unstuck eventually. Hopefully this won't look silly in practice, but
+			// it is better than a unit being permanently stuck on something.
+			owner->Move(moveRequest, true);
+		}
 
-			if (!positionStuck){
-				if (!updatePos){
-					// give up and move back
-					owner->Move(prevPos, false);
-				}
-			} else {
-				if (updatePos)
-					positionStuck = false;
-			}
-		} else if (positionStuck)
-			positionStuck = false;
+		// const float3 prevPos = owner->pos;
+
+		// // use the simplest possible Euler integration
+		// // owner->SetVelocityAndSpeed(newSpeedVector);
+		// // owner->Move(owner->speed, true);
+		// owner->Move(moveRequest, true);
+
+		// // The series of test done here will benefit from using the same cached results.
+		// MoveDef* md = owner->moveDef;
+		// int tempNum = gs->GetTempNum();
+
+		// auto isSquareOpen = [this, tempNum](float3 pos) {
+		// 	// separate calls because terrain is only checked for in the centre square, while
+		// 	// static objects are checked for in the whole footprint.
+		// 	return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true)
+		// 			&& owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, 0); 
+		// 			//&& owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		// };
+
+		// auto isTerrainSquareOpen = [this](float3 pos) {
+		// 	return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, true, false, true);
+		// };
+
+		// auto isObjectsSquareOpen = [this, tempNum](float3 pos) {
+		// 	return owner->moveDef->TestMovePositionForObjects(owner, pos, tempNum, 0);
+		// 	//return owner->moveDef->TestMoveSquare(owner, pos, owner->speed, false, true, false);
+		// };
+
+		// // // Used to limit how much units are allowed to slide along walls. Helps getting around
+		// // // corners, but stops them going too fast by sliding too far.
+		// // auto isCloseEnough = [this](float3 pos) {
+		// // 	return pos.SqDistance2D(owner->pos) <= (maxSpeed*maxSpeed);
+		// // };
+
+		// // NOTE:
+		// //   does not check for structure blockage, coldet handles that
+		// //   entering of impassable terrain is *also* handled by coldet
+		// //
+		// //   the loop below tries to evade "corner" squares that would
+		// //   block us from initiating motion and is needed for when we
+		// //   are not *currently* moving but want to get underway to our
+		// //   first waypoint (HSOC coldet won't help then)
+		// //
+ 		// //   allowing movement through blocked squares when pathID != 0
+ 		// //   relies on assumption that PFS will not search if start-sqr
+ 		// //   is blocked, so too fragile
+		// //
+		// // TODO: look to move as much of this to MT to improve perf.
+		// bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*md, owner->pos)
+		// 							&& !isTerrainSquareOpen(owner->pos);
+		// bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(owner->pos);
+		// if (isSquareBlocked) {
+		// 	// Sometimes now collisions won't happen due to this code preventing that.
+		// 	// so units need to be able to get themselves out of stuck situations. So adding
+		// 	// a rerequest path check here.
+		// 	ReRequestPath(false);
+		// 	bool updatePos = false;
+		// 	float maxDist = maxSpeed;
+		// 	float maxDistSq = maxDist*maxDist;
+
+		// 	const int startingSquare = (owner->pos.z / SQUARE_SIZE)*mapDims.mapx + owner->pos.x / SQUARE_SIZE;
+
+		// 	auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, maxDistSq, maxDist](float3&& posToTest){
+		// 		// float3 posDir = posToTest - prevPos;
+		// 		// if (posDir.SqLength2D() > maxDistSq)
+		// 		// 	posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
+		// 		int curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
+		// 		if (curSquare != startingSquare) {
+		// 			bool updatePos = isSquareOpen(posToTest);
+		// 			if (updatePos) {
+		// 				owner->Move(posToTest, false);
+		// 				return true;
+		// 			}
+		// 		}
+		// 		return false;
+		// 	};
+
+		// 	for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
+		// 		updatePos = tryToMove(owner->pos + owner->rightdir * n);
+		// 		if (updatePos)
+		// 			break;
+
+		// 		updatePos = tryToMove(owner->pos - owner->rightdir * n);
+		// 		if (updatePos)
+		// 			break;
+		// 	}
+
+		// 	if (!positionStuck){
+		// 		if (!updatePos){
+		// 			// give up and move back
+		// 			owner->Move(prevPos, false);
+		// 		}
+		// 	} else {
+		// 		if (updatePos)
+		// 			positionStuck = false;
+		// 	}
+		// } else if (positionStuck)
+		// 	positionStuck = false;
 
 		// NOTE:
 		//   this can fail when gravity is allowed (a unit catching air

@@ -189,7 +189,7 @@ private:
 	void AdjustPosToWaterLine();
 	bool UpdateDirectControl();
 	void UpdateOwnerAccelAndHeading();
-	void UpdatePos(const float3&, float3& resultantMove, int thread);
+	void UpdatePos(const CUnit* unit, const float3&, float3& resultantMove, int thread) const;
 	void UpdateOwnerPos(const float3&, const float3&);
 	bool UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw);
 	bool OwnerMoved(const short, const float3&, const float3&);
