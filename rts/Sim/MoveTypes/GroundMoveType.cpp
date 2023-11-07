@@ -785,17 +785,31 @@ void CGroundMoveType::SlowUpdate()
 				// Resolution distance checks kept to 1/10th of an Elmo to reduce the
 				// amount of time a unit can spend making insignificant progress, every
 				// SlowUpdate.
-				float curDist = math::floorf(currWayPoint.distance2D(owner->pos) * 10.f);
+				float curDist = math::floorf(currWayPoint.distance2D(owner->pos) * 10.f) / 10.f;
 				if (curDist < bestLastWaypointDist) {
 					bestLastWaypointDist = curDist;
 					wantRepathFrame = gs->frameNum;
 				}
 
+				// lastWaypoint typically retries a repath and most likely won;t get closer, so
+				// in this case, don't wait around making the unit try to run inot an obstacle for
+				// longer than absolutely necessary.
 				bool timeForRepath = gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
-									&& gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames;
+									&& (gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames || lastWaypoint);
 
 				// can't request a new path while the unit is stuck in terrain/static objects
 				if (timeForRepath){
+					if (lastWaypoint) {
+						bestLastWaypointDist *= (1.f / SQUARE_SIZE);
+						if (bestLastWaypointDist < bestReattemptedLastWaypointDist) {
+							// Give a bad path another try, in case we can get closer.
+							lastWaypoint = false;
+							bestReattemptedLastWaypointDist = bestLastWaypointDist;
+						}
+						else {
+							bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
+						}
+					}
 					if (!lastWaypoint) {
 						ReRequestPath(true);
 					} else {
@@ -913,6 +927,8 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	// unless they come to a full stop first
 	ReRequestPath(true);
 
+	bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
+
 	if (owner->team == gu->myTeam)
 		Channels::General->PlayRandomSample(owner->unitDef->sounds.activate, owner);
 }
@@ -954,12 +970,14 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 			// switch straight over to the new path
 			earlyCurrWayPoint = tempWaypoint;
 			earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+			lastWaypoint = false;
 
 			// can't delete the path in an MT section
 			deletePathId = pathID;
 			pathID = nextPathId;
 			nextPathId = 0;
 			wantRepath = false;
+			
 		}
 	}
 
@@ -2174,14 +2192,14 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		if (limitSpeedForTurning > 0)
 			--limitSpeedForTurning;
 
+		// Prevent delay repaths because the waypoints have been updated.
+		wantRepath = false;
+
 		lastWaypoint |= pathManager->CurrentWaypointIsUnreachable(pathID);
 		if (lastWaypoint) {
 			// incomplete path and last valid waypoint has been reached. The last waypoint is
 			// always the point that can't be reached.
-			ReRequestPath(false);
-		} else {
-			// Prevent delay repaths because the waypoints have been updated.
-			wantRepath = false;
+			ReRequestPath(false); //
 		}
 	}
 
@@ -2294,6 +2312,7 @@ void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 	currentSpeed *= (1 - hardStop);
 	wantedSpeed = 0.0f;
 	limitSpeedForTurning = 0;
+	bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
 }
 
 /* Called when the unit arrives at its goal. */
@@ -2384,7 +2403,8 @@ void CGroundMoveType::HandleObjectCollisions()
 	}
 
 	if (forceStaticObjectCheck) {
-		positionStuck = !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, false, true, false, nullptr, nullptr, curThread);
+		positionStuck |= !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, true, false, true, nullptr, nullptr, curThread);
+		positionStuck |= !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, false, true, false, nullptr, nullptr, curThread);
 		forceStaticObjectCheck = false;
 	}
 

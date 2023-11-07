@@ -256,6 +256,7 @@ private:
 	int wantRepathFrame = std::numeric_limits<int>::min();
 	int lastRepathFrame = std::numeric_limits<int>::min();
 	float bestLastWaypointDist = std::numeric_limits<float>::infinity();
+	float bestReattemptedLastWaypointDist = std::numeric_limits<float>::infinity();
 	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
 	short setHeadingDir = 0;
 	short limitSpeedForTurning = 0;			/// if set, take extra care to prevent overshooting while turning for the next N waypoints.
