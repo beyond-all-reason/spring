@@ -36,24 +36,10 @@
 
 SystemInterface_SDL::SystemInterface_SDL()
 {
-	cursor_default = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	cursor_move = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-	cursor_pointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-	cursor_resize = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-	cursor_cross = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
-	cursor_text = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-	cursor_unavailable = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
 }
 
 SystemInterface_SDL::~SystemInterface_SDL()
 {
-	SDL_FreeCursor(cursor_default);
-	SDL_FreeCursor(cursor_move);
-	SDL_FreeCursor(cursor_pointer);
-	SDL_FreeCursor(cursor_resize);
-	SDL_FreeCursor(cursor_cross);
-	SDL_FreeCursor(cursor_text);
-	SDL_FreeCursor(cursor_unavailable);
 }
 
 void SystemInterface_SDL::SetWindow(SDL_Window *in_window)
@@ -80,18 +66,15 @@ int SystemInterface_SDL::TranslateString(Rml::String &translated, const Rml::Str
 	return 1;
 }
 
-bool LogMessage(Rml::Log::Type type, const Rml::String &message)
+bool SystemInterface_SDL::LogMessage(Rml::Log::Type type, const Rml::String &message)
 {
-	const char *fmtStr = "[LUA:Rml] %s";
+	const char *fmtStr = "[Lua:Rml] %s";
 	const char *logStr = message.c_str();
 	switch (type)
 	{
-	case Rml::Log::LT_INFO:
-	{
-		LOG_L(L_INFO, fmtStr, logStr);
-	}
-	break;
+
 	case Rml::Log::LT_ASSERT:
+	case Rml::Log::LT_DEBUG:
 	{
 		LOG_L(L_DEBUG, fmtStr, logStr);
 	}
@@ -106,19 +89,23 @@ bool LogMessage(Rml::Log::Type type, const Rml::String &message)
 		LOG_L(L_WARNING, fmtStr, logStr);
 	}
 	break;
+
+	case Rml::Log::LT_INFO:
+	default:
+	{
+		LOG_L(L_INFO, fmtStr, logStr);
+	}
+	break;
 	}
 	return true;
 }
 
 void SystemInterface_SDL::SetMouseCursor(const Rml::String &cursor_name)
 {
-	SDL_Cursor *cursor = nullptr;
-
 	if (cursor_name.empty() || cursor_name == "arrow")
 		mouse->ChangeCursor("cursornormal");
 	else
 		mouse->ChangeCursor(cursor_name);
-
 }
 
 void SystemInterface_SDL::SetClipboardText(const Rml::String &text_utf8)
@@ -131,6 +118,24 @@ void SystemInterface_SDL::GetClipboardText(Rml::String &text)
 	char *raw_text = SDL_GetClipboardText();
 	text = Rml::String(raw_text);
 	SDL_free(raw_text);
+}
+
+bool RmlSDL::EventKeyDown(Rml::Context *context, Rml::Input::KeyIdentifier key)
+{
+	bool result = context->ProcessKeyDown(key, GetKeyModifierState());
+	if (key == Rml::Input::KI_RETURN || key == Rml::Input::KI_NUMPADENTER)
+		result &= context->ProcessTextInput('\n');
+	return result;
+}
+
+bool RmlSDL::EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key)
+{
+	return context->ProcessKeyUp(key, GetKeyModifierState());
+}
+
+bool RmlSDL::EventTextInput(Rml::Context *context, const std::string& text)
+{
+	return context->ProcessTextInput(Rml::String(text));
 }
 
 bool RmlSDL::InputEventHandler(Rml::Context *context, SDL_Event &ev)
