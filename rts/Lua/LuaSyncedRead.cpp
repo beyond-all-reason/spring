@@ -5696,10 +5696,39 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 	return 3 + numParams;
 }
 
-/***
+
+/*** Parameters for command options
+ *
+ * @table cmdOpts
+ *
+ * @number coded
+ * @bool alt
+ * @bool ctrl
+ * @bool shift
+ * @bool right
+ * @bool meta
+ * @bool internal
+ */
+
+/*** Command
+ *
+ * @table cmd
+ *
+ * @number id
+ * @tparam {number,...} params
+ * @tparam cmdOpts cmdOpts
+ */
+
+
+/*** Get the number or list of comands for a unit
  *
  * @function Spring.GetUnitCommands
+ *
+ * Same as Spring.GetCommandQueue
+ *
  * @number unitID
+ * @number count when 0 returns the number of commands in the units queue, when -1 returns all commands, number of commands to return otherwise
+ * @treturn {cmd,...} commands
  */
 int LuaSyncedRead::GetUnitCommands(lua_State* L)
 {
@@ -5870,10 +5899,15 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 }
 
 
-/***
+/*** Get the number or list of comands for a unit
  *
  * @function Spring.GetCommandQueue
+ *
+ * Same as Spring.GetUnitCommands
+ *
  * @number unitID
+ * @number count when 0 returns the number of commands in the units queue, when -1 returns all commands, number of commands to return otherwise
+ * @treturn number|{cmd,...} commands
  */
 int LuaSyncedRead::GetCommandQueue(lua_State* L)
 {
