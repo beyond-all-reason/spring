@@ -48,7 +48,7 @@ public:
 	}
 
 	static bool CanLoadHandler() { return true; }
-	static bool ReloadHandler() { return (RmlGui::Reload(), FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
 	static bool LoadFreeHandler() { return (LoadHandler() || FreeHandler()); }
 
 	static bool LoadHandler();
