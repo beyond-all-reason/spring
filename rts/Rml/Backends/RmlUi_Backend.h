@@ -63,7 +63,11 @@ Rml::RenderInterface* GetRenderInterface();
 
 bool ProcessEvent(const SDL_Event& event);
 bool ProcessMouseEvent(const SDL_Event& event);
+
 bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
+bool ProcessKeyReleased(int keyCode, int scanCode);
+bool ProcessTextInput(const std::string& text);
+
 // Request application closure during the next event processing call.
 void RequestExit();
 void ToggleDebugger();

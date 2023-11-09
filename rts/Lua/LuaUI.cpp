@@ -163,7 +163,7 @@ CLuaUI::CLuaUI()
 		KillLua();
 		return;
 	}
-	RmlGui::InitializeLua(L);
+	InitializeRmlUi();
 
 	lua_settop(L, 0);
 	if (!LoadCode(L, std::move(code), file)) {

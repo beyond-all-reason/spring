@@ -8,12 +8,16 @@
 namespace Rml::SolLua
 {
 
-	sol::protected_function_result ErrorHandler(lua_State*, sol::protected_function_result pfr)
+	sol::protected_function_result ErrorHandler(lua_State* l, sol::protected_function_result pfr)
 	{
 		if (!pfr.valid())
 		{
 			sol::error err = pfr;
-			Rml::Log::Message(Rml::Log::LT_ERROR, "[LUA][ERROR] %s", err.what());
+			Rml::Log::Message(Rml::Log::LT_ERROR, "[Lua] %s", err.what());
+			// sol::state_view lua(l);
+			// auto handle = lua["__HandleError"];
+			// sol::protected_function pf = handle;
+			// pf();
 		}
 		return pfr;
 	}
