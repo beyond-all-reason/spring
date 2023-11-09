@@ -107,9 +107,8 @@ public:
 	VFSFileInterface() {}
 	Rml::FileHandle Open(const Rml::String &path)
 	{
-		// LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s", __func__, path.c_str());
-		// TODO: luaui makes the second one SPRING_VFS_MOD
-		const std::string mode = (CLuaHandle::GetDevMode()) ? SPRING_VFS_RAW_FIRST : SPRING_VFS_RAW_FIRST;
+		// LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s %d", __func__, path.c_str(), CLuaHandle::GetDevMode());
+		const std::string mode = SPRING_VFS_RAW_FIRST;
 		CFileHandler *fh = new CFileHandler(path, mode);
 		if (!fh->FileExists())
 		{
@@ -179,6 +178,7 @@ struct BackendData
 	bool debuggerAttached = false;
 	int winX = 1;
 	int winY = 1;
+	lua_State *ls;
 };
 static Rml::UniquePtr<BackendData> data;
 
@@ -201,28 +201,11 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 	Rml::SetRenderInterface(RmlGui::GetRenderInterface());
 
 	data->system_interface.SetWindow(target_window);
-	// int w = 0;
-	// int h = 0;
-	// SDL_Renderer* renderer = SDL_GetRenderer(target_window);
-	// if (renderer == NULL) {
-	// 	const char* errmessage = SDL_GetError();
-	// 	LOG_L(L_FATAL, "[SpringApp::%s] renderer get error: %s", __func__, errmessage);
-	// }
-	// int errcode = SDL_GetRendererOutputSize(renderer, &w, &h);
-	// if (errcode < 0) {
-	// 	const char* errmessage = SDL_GetError();
-	// 	LOG_L(L_FATAL, "[SpringApp::%s] renderer output size error: %s", __func__, errmessage);
-	// }
 	data->render_interface.SetViewport(winX, winY);
 	data->winX = winX;
 	data->winY = winY;
 
 	Rml::Initialise();
-	// bool ok = CLuaRml::LoadHandler();
-	// if (!ok) {
-	// 	exit(1);
-	// }
-	// Rml::Lua::Interpreter::LoadFile(Rml::String("luainvaders/lua/start.lua"));
 
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
@@ -234,7 +217,8 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 bool RmlGui::InitializeLua(lua_State *lua_state)
 {
 	sol::state_view lua(lua_state);
-	Rml::SolLua::SolLuaPlugin* slp = Rml::SolLua::Initialise(&lua);
+	data->ls = lua_state;
+	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua);
 	data->system_interface.SetTranslationTable(&slp->translationTable);
 	return true;
 }
@@ -245,7 +229,6 @@ void RmlGui::Shutdown()
 
 	// SDL_GL_DeleteContext(data->glcontext);
 	// SDL_DestroyWindow(data->window);
-
 	Rml::Shutdown();
 	// data.reset();
 
@@ -296,7 +279,7 @@ void RmlGui::RequestExit()
 void RmlGui::CreateContext()
 {
 	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(data->winX, data->winY));
-	Rml::Debugger::Initialise(context);
+	// Rml::Debugger::Initialise(context);
 	RmlGui::AddContext(context);
 }
 
@@ -378,6 +361,14 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 	case SDL_MOUSEWHEEL:
 	{
 		bool handled = RmlSDL::InputEventHandler(data->contexts[0], ev);
+		if (handled && ev.type == SDL_MOUSEBUTTONDOWN)
+		{
+			Rml::Element *el = data->contexts[0]->GetFocusElement();
+			if (el)
+			{
+				el->Blur();
+			}
+		}
 		data->inputReceiver.setActive(!handled);
 		return handled;
 	}
@@ -395,9 +386,38 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 	{
 		return false;
 	}
-	return false;
-	// RmlSDL::InputEventHandler(data->contexts[0], ev);
+	auto kc =  RmlSDL::ConvertKey(keyCode);
+	// if (kc == Rml::Input::KI_ESCAPE)
+	// {
+	// 	Rml::Element *el = data->contexts[0]->GetFocusElement();
+	// 	if (el)
+	// 	{
+	// 		el->Blur();
+	// 	}
+	// 	return false;
+	// }
+
+	return !RmlSDL::EventKeyDown(data->contexts[0], kc);
 }
+
+bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
+{
+	if (!data->initialized)
+	{
+		return false;
+	}
+	return !RmlSDL::EventKeyUp(data->contexts[0], RmlSDL::ConvertKey(keyCode));
+}
+
+bool RmlGui::ProcessTextInput(const std::string &text)
+{
+	if (!data->initialized)
+	{
+		return false;
+	}
+	return !RmlSDL::EventTextInput(data->contexts[0], text);
+}
+
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
 	if (!data->initialized)
@@ -428,8 +448,10 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
 	case SDL_MOUSEWHEEL:
-		break; // handled by ProcessMouseEvent
 	case SDL_KEYDOWN:
+	case SDL_KEYUP:
+	case SDL_TEXTINPUT:
+		break; // handled elsewhere
 	default:
 	{
 		if (data != NULL && data->contexts.size() > 0)
