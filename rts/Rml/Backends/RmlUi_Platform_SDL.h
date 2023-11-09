@@ -46,6 +46,7 @@ public:
 	void SetWindow(SDL_Window *window);
 
 	int TranslateString(Rml::String &translated, const Rml::String &input) override;
+	virtual bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
 
 	// -- Inherited from Rml::SystemInterface  --
 
@@ -61,13 +62,6 @@ public:
 private:
 	SDL_Window *window = nullptr;
 
-	SDL_Cursor *cursor_default = nullptr;
-	SDL_Cursor *cursor_move = nullptr;
-	SDL_Cursor *cursor_pointer = nullptr;
-	SDL_Cursor *cursor_resize = nullptr;
-	SDL_Cursor *cursor_cross = nullptr;
-	SDL_Cursor *cursor_text = nullptr;
-	SDL_Cursor *cursor_unavailable = nullptr;
 	TranslationTable *translationTable = nullptr;
 };
 
@@ -77,6 +71,9 @@ namespace RmlSDL
 	// Applies input on the context based on the given SDL event.
 	// @return True if the event is still propagating, false if it was handled by the context.
 	bool InputEventHandler(Rml::Context *context, SDL_Event &ev);
+	bool EventKeyDown(Rml::Context *context, Rml::Input::KeyIdentifier key);
+	bool EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key);
+	bool EventTextInput(Rml::Context *context, const std::string& text);
 
 	// Converts the SDL key to RmlUi key.
 	Rml::Input::KeyIdentifier ConvertKey(int sdl_key);

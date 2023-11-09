@@ -74,7 +74,7 @@ namespace Rml::SolLua
 			}
 			else
 			{
-				Log::Message(Log::LT_ERROR, "[LUA][ERROR] A function wasn't returned for the event listener.");
+				Log::Message(Log::LT_ERROR, "[Lua] A function wasn't returned for the event listener.");
 			}
 		}
 	}
@@ -106,8 +106,9 @@ namespace Rml::SolLua
 
 			// Call the event!
 			auto result = m_func.call(event, m_element, document);
-			if (!result.valid())
+			if (!result.valid()){
 				ErrorHandler(m_func.lua_state(), std::move(result));
+			}
 		}
 	}
 

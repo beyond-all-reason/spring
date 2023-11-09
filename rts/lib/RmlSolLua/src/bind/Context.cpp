@@ -107,8 +107,8 @@ namespace Rml::SolLua
 			if (!constructor)
 			{
 				constructor = self.GetDataModel(name);
-				 if (!constructor)
-				 	return sol::lua_nil;
+				if (!constructor)
+					return sol::lua_nil;
 			}
 
 			data->Constructor = constructor;
@@ -171,12 +171,16 @@ namespace Rml::SolLua
 				"LoadDocument", [](Rml::Context &self, const Rml::String &document, sol::object w, sol::this_environment e, sol::this_state s)
 				{
 				auto doc = self.LoadDocument(document);
+				if (doc == nullptr) {
+					return (SolLuaDocument*) nullptr;
+				}
 				auto env = dynamic_cast<SolLuaDocument*>(doc)->GetLuaEnvironment();
-				// sol::environment env(s,sol::create);
+				// sol::environment envi(e);
 				// env[sol::metatable_key] = e.env;
-				// sol::state_view state(s);
 				// sol::environment env(state, sol::create, state.globals());
 				env["widget"] = w;
+				// env["__HandleError"] = envi["__HandleError"];
+
 				// dynamic_cast<SolLuaDocument*>(doc)->m_environment = env;
 				return dynamic_cast<SolLuaDocument*>(doc); },
 				"GetDocument", &document::getDocumentBypassString,
