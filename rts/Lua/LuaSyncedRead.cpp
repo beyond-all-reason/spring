@@ -5161,10 +5161,15 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Checks a weapon's target
  *
+ * Note that this doesn't need to reflect the unit's Attack orders or such, and that weapons can aim individually unless slaved.
  * @function Spring.GetUnitWeaponTarget
  * @number unitID
+ * @number weaponNum
+ * @treturn number targetType (0: none, 1: unit, 2: position, 3: projectile)
+ * @treturn boolean isUserTarget
+ * @return target (depending on type, 0: nil, 1: unitID, 2: table {x, y, z}, 3: projectileID) 
  */
 int LuaSyncedRead::GetUnitWeaponTarget(lua_State* L)
 {
