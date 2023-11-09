@@ -5720,7 +5720,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  */
 
 
-/*** Get the number or list of comands for a unit
+/*** Get the number or list of commands for a unit
  *
  * @function Spring.GetUnitCommands
  *
@@ -5728,7 +5728,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  *
  * @number unitID
  * @number count when 0 returns the number of commands in the units queue, when -1 returns all commands, number of commands to return otherwise
- * @treturn {cmd,...} commands
+ * @treturn number|{cmd,...} commands
  */
 int LuaSyncedRead::GetUnitCommands(lua_State* L)
 {
@@ -5899,7 +5899,7 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 }
 
 
-/*** Get the number or list of comands for a unit
+/*** Get the number or list of commands for a unit
  *
  * @function Spring.GetCommandQueue
  *
