@@ -70,7 +70,7 @@ namespace RmlSDL
 
 	// Applies input on the context based on the given SDL event.
 	// @return True if the event is still propagating, false if it was handled by the context.
-	bool InputEventHandler(Rml::Context *context, SDL_Event &ev);
+	bool InputEventHandler(Rml::Context *context, const SDL_Event &ev);
 	bool EventKeyDown(Rml::Context *context, Rml::Input::KeyIdentifier key);
 	bool EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key);
 	bool EventTextInput(Rml::Context *context, const std::string& text);
