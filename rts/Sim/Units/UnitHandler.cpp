@@ -85,6 +85,9 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 
 
 void CUnitHandler::Init() {
+	GroundMoveSystem::Init();
+	GeneralMoveSystem::Init();
+
 	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
 	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");
 	static_assert(sizeof(CBuilder) >= sizeof(CExtractorBuilding), "");

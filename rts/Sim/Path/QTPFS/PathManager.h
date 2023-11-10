@@ -71,6 +71,7 @@ namespace QTPFS {
 		) override;
 
 		bool CurrentWaypointIsUnreachable(unsigned int pathID) override;
+		bool NextWayPointIsUnreachable(unsigned int pathID) override;
 
 		void GetPathWayPoints(
 			unsigned int pathID,
@@ -118,6 +119,7 @@ namespace QTPFS {
 
 		void InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
+		void RemovePathFromPartialShared(entt::entity entity);
 
 		void ReadyQueuedSearches();
 		void ExecuteQueuedSearches();
@@ -135,7 +137,8 @@ namespace QTPFS {
 
 		unsigned int RequeueSearch(
 			IPath* oldPath,
-			const bool allowRawSearch
+			const bool allowRawSearch,
+			const bool allowPartialSearch
 		);
 
 		bool ExecuteSearch(
@@ -149,7 +152,7 @@ namespace QTPFS {
 		bool IsFinalized() const { return isFinalized; }
 
 	public:
-		static std::vector<NodeLayer> nodeLayers;
+		std::vector<NodeLayer> nodeLayers;
 
 	private:
 		PathCache pathCache;
@@ -161,6 +164,7 @@ namespace QTPFS {
 
 		PathTraceMap pathTraces;
 		SharedPathMap sharedPaths;
+		PartialSharedPathMap partialSharedPaths;
 
 		// std::vector<unsigned int> numCurrExecutedSearches;
 		// std::vector<unsigned int> numPrevExecutedSearches;

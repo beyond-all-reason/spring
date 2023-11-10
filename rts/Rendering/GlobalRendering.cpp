@@ -157,7 +157,6 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(aspectRatio),
 
 	CR_IGNORED(forceDisablePersistentMapping),
-	CR_IGNORED(forceDisableShaders),
 	CR_IGNORED(forceDisableGL4),
 	CR_IGNORED(forceCoreContext),
 	CR_IGNORED(forceSwapBuffers),
@@ -187,7 +186,6 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(supportClipSpaceControl),
 	CR_IGNORED(supportSeamlessCubeMaps),
 	CR_IGNORED(supportFragDepthLayout),
-	CR_IGNORED(haveGLSL),
 	CR_IGNORED(haveGL4),
 	CR_IGNORED(glslMaxVaryings),
 	CR_IGNORED(glslMaxAttributes),
@@ -203,6 +201,8 @@ CR_REG_METADATA(CGlobalRendering, (
 
 	CR_IGNORED(fullScreen),
 	CR_IGNORED(borderless),
+
+	CR_IGNORED(underExternalDebug),
 
 	CR_IGNORED(sdlWindow),
 	CR_IGNORED(glContext),
@@ -269,7 +269,6 @@ CGlobalRendering::CGlobalRendering()
 	, maxViewRange(MAX_VIEW_RANGE * 0.5f)
 	, aspectRatio(1.0f)
 
-	, forceDisableShaders(/*configHandler->GetInt("ForceDisableShaders")*/ false)
 	, forceDisableGL4(configHandler->GetInt("ForceDisableGL4"))
 	, forceCoreContext(configHandler->GetInt("ForceCoreContext"))
 	, forceSwapBuffers(configHandler->GetInt("ForceSwapBuffers"))
@@ -314,7 +313,6 @@ CGlobalRendering::CGlobalRendering()
 	, supportClipSpaceControl(false)
 	, supportSeamlessCubeMaps(false)
 	, supportFragDepthLayout(false)
-	, haveGLSL(false)
 	, haveGL4(false)
 
 	, glslMaxVaryings(0)
@@ -331,6 +329,7 @@ CGlobalRendering::CGlobalRendering()
 	, dualScreenMiniMapOnLeft(false)
 	, fullScreen(configHandler->GetBool("Fullscreen"))
 	, borderless(configHandler->GetBool("WindowBorderless"))
+	, underExternalDebug(false)
 	, sdlWindow{nullptr}
 	, glContext{nullptr}
 	, glTimerQueries{0}
@@ -702,8 +701,27 @@ uint64_t CGlobalRendering::CalcGLDeltaTime(uint32_t queryIdx0, uint32_t queryIdx
 }
 
 
-void CGlobalRendering::CheckGLExtensions() const
+void CGlobalRendering::CheckGLExtensions()
 {
+	#ifndef HEADLESS
+	// detect RenderDoc
+	{
+		constexpr GLenum GL_DEBUG_TOOL_EXT = 0x6789;
+		constexpr GLenum GL_DEBUG_TOOL_NAME_EXT = 0x678A;
+		constexpr GLenum GL_DEBUG_TOOL_PURPOSE_EXT = 0x678B;
+		// For OpenGL:
+		// if GL_EXT_debug_tool is present (see https://renderdoc.org/debug_tool.txt)
+		if (glIsEnabled(GL_DEBUG_TOOL_EXT)) {
+			auto debugStr = reinterpret_cast<const char*>(glGetString(GL_DEBUG_TOOL_NAME_EXT));
+			LOG("[GR::%s] Detected external GL debug tool %s, enabling compatibility mode", __func__, debugStr);
+			underExternalDebug = true;
+		}
+	}
+	#endif
+
+	if (underExternalDebug)
+		return;
+
 	char extMsg[ 128] = {0};
 	char errMsg[2048] = {0};
 	char* ptr = &extMsg[0];
@@ -732,17 +750,15 @@ void CGlobalRendering::SetGLSupportFlags()
 	const std::string& glRenderer = StringToLower(globalRenderingInfo.glRenderer);
 	const std::string& glVersion = StringToLower(globalRenderingInfo.glVersion);
 
-	haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
+	bool haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
 	haveGLSL &= static_cast<bool>(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader);
 	haveGLSL &= static_cast<bool>(GLEW_VERSION_2_0); // we want OpenGL 2.0 core functions
+	haveGLSL |= underExternalDebug;
 
 	#ifndef HEADLESS
 	if (!haveGLSL)
 		throw unsupported_error("OpenGL shaders not supported, aborting");
 	#endif
-
-	// useful if a GPU claims to support GL4 and shaders but crashes (Intels...)
-	haveGLSL &= !forceDisableShaders;
 
 	haveAMD    = (  glVendor.find(   "ati ") != std::string::npos) || (  glVendor.find("amd ") != std::string::npos) ||
 				 (glRenderer.find("radeon ") != std::string::npos) || (glRenderer.find("amd ") != std::string::npos); //it's amazing how inconsistent AMD detection can be
@@ -951,7 +967,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tSDL driver  : %s", globalRenderingInfo.sdlDriverName);
 	LOG("\t");
 	LOG("\tInitialized OpenGL Context: %i.%i (%s)", globalRenderingInfo.glContextVersion.x, globalRenderingInfo.glContextVersion.y, globalRenderingInfo.glContextIsCore ? "Core" : "Compat");
-	LOG("\tGLSL shader support       : %i", haveGLSL);
+	LOG("\tGLSL shader support       : %i", true);
 	LOG("\tGL4 support               : %i", haveGL4);
 	LOG("\tFBO extension support     : %i", FBO::IsSupported());
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));

@@ -128,7 +128,6 @@ void CUnitDrawer::InitStatic()
 
 	CUnitDrawerHelper::LoadUnitExplosionGenerators();
 
-	CUnitDrawer::InitInstance<CUnitDrawerFFP >(MODEL_DRAWER_FFP );
 	CUnitDrawer::InitInstance<CUnitDrawerGLSL>(MODEL_DRAWER_GLSL);
 	CUnitDrawer::InitInstance<CUnitDrawerGL4 >(MODEL_DRAWER_GL4 );
 
@@ -1157,7 +1156,33 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	std::vector<float3> featureSquares; // occupied squares
 	std::vector<float3> illegalSquares; // non-buildable squares
 
+	struct BuildCache {
+		uint64_t key;
+		int createFrame;
+		bool canBuild;
+		std::vector<float3> buildableSquares; // buildable squares
+		std::vector<float3> featureSquares; // occupied squares
+		std::vector<float3> illegalSquares; // non-buildable squares
+	};
+
+	static std::vector<BuildCache> buildCache;
+
 	const float3& pos = buildInfo.pos;
+
+	uint64_t hashKey = spring::LiteHash(pos);
+	hashKey = spring::hash_combine(spring::LiteHash(buildInfo.buildFacing), hashKey);
+	/*
+	for (const auto& cmd : commands) {
+		const BuildInfo bc(cmd);
+		spring::hash_combine(spring::LiteHash(bc), hash);
+	}
+	*/
+
+	// the chosen number here is arbitrary, feel free to fine balance.
+	static constexpr int CACHE_VALIDITY_PERIOD = GAME_SPEED / 5;
+	spring::VectorEraseAllIf(buildCache, [](const BuildCache& bc) {
+		return gs->frameNum - bc.createFrame >= CACHE_VALIDITY_PERIOD;
+	});
 
 	const int x1 = pos.x - (buildInfo.GetXSize() * 0.5f * SQUARE_SIZE);
 	const int x2 = x1 + (buildInfo.GetXSize() * SQUARE_SIZE);
@@ -1167,16 +1192,36 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 	bool canBuild;
 
-	canBuild = !!CGameHelper::TestUnitBuildSquare(
-		buildInfo,
-		feature,
-		-1,
-		false,
-		&buildableSquares,
-		&featureSquares,
-		&illegalSquares,
-		&commands
-	);
+	const auto it = std::find_if(buildCache.begin(), buildCache.end(), [hashKey](const BuildCache& bc) {
+		return bc.key == hashKey;
+	});
+	if (it != buildCache.end()) {
+		buildableSquares.assign(it->buildableSquares.begin(), it->buildableSquares.end());
+		featureSquares.assign(it->featureSquares.begin(), it->featureSquares.end());
+		illegalSquares.assign(it->illegalSquares.begin(), it->illegalSquares.end());
+		canBuild = it->canBuild;
+	}
+	else {
+		canBuild = !!CGameHelper::TestUnitBuildSquare(
+			buildInfo,
+			feature,
+			-1,
+			false,
+			&buildableSquares,
+			&featureSquares,
+			&illegalSquares,
+			&commands
+		);
+		buildCache.emplace_back();
+		auto& buildCacheItem = buildCache.back();
+
+		buildCacheItem.key = hashKey;
+		buildCacheItem.canBuild = canBuild;
+		buildCacheItem.createFrame = gs->frameNum;
+		buildCacheItem.buildableSquares.assign(buildableSquares.begin(), buildableSquares.end());
+		buildCacheItem.featureSquares.assign(featureSquares.begin(), featureSquares.end());
+		buildCacheItem.illegalSquares.assign(illegalSquares.begin(), illegalSquares.end());
+	}
 
 	static constexpr std::array<float, 4> buildColorT  = { 0.0f, 0.9f, 0.0f, 0.7f };
 	static constexpr std::array<float, 4> buildColorF  = { 0.9f, 0.8f, 0.0f, 0.7f };

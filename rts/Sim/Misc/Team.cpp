@@ -192,7 +192,7 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 
 bool CTeam::UseResources(const SResourcePack& amount)
 {
-	if (!(res >= amount))
+	if (!HaveResources(amount))
 		return false;
 
 	res -= amount;

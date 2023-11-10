@@ -18,7 +18,12 @@ CR_REG_METADATA(CStaticMoveType, (
 CStaticMoveType::CStaticMoveType(CUnit* unit) : AMoveType(unit) {
 	useWantedSpeed[false] = false;
 	useWantedSpeed[ true] = false;
-	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
+
+	// creg
+	if (unit == nullptr)
+		return;
+
+	Sim::registry.emplace_or_replace<GeneralMoveType>(unit->entityReference, unit->id);
 }
 
 void CStaticMoveType::SlowUpdate()

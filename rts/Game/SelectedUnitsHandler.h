@@ -53,6 +53,7 @@ public:
 	std::string GetTooltip();
 	void SetCommandPage(int page);
 	void SendCommand(const Command& c);
+	void SendSelect();
 	void SendCommandsToUnits(const std::vector<int>& unitIDs, const std::vector<Command>& commands, bool pairwise = false);
 
 	bool CommandsChanged() const { return possibleCommandsChanged; }

@@ -52,10 +52,14 @@ CR_REG_METADATA(CScriptMoveType, (
 ))
 
 
-CScriptMoveType::CScriptMoveType(CUnit* owner): AMoveType(owner)
+CScriptMoveType::CScriptMoveType(CUnit* unit): AMoveType(unit)
 {
 	// use the transformation matrix instead of heading
 	UseHeading(false);
+
+	// creg
+	if (unit == nullptr)
+		return;
 
 	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
 }

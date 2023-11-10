@@ -71,7 +71,7 @@ namespace QTPFS {
             return denseData[sparseIndex[i]];
         }
 
-        bool isSet(size_t i) {
+        bool isSet(size_t i) const {
             assert(i < sparseIndex.size());
             return (sparseIndex[i] != 0);
         }
@@ -109,14 +109,8 @@ namespace QTPFS {
 	struct SearchThreadData {
 
         static constexpr int SEARCH_FORWARD = 0;
-
-        #ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
-        static constexpr int SEARCH_DIRECTIONS = 2;
-
         static constexpr int SEARCH_BACKWARD = 1;
-        #else
-        static constexpr int SEARCH_DIRECTIONS = 1;
-        #endif
+        static constexpr int SEARCH_DIRECTIONS = 2;
 
 		SparseData<SearchNode> allSearchedNodes[SEARCH_DIRECTIONS];
         SearchPriorityQueue openNodes[SEARCH_DIRECTIONS];
@@ -128,7 +122,9 @@ namespace QTPFS {
             /*,*/ : threadId(curThreadId)
 			{}
 
-        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) while (!openNodes[i].empty()) openNodes[i].pop(); }
+        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) ResetQueue(i); }
+
+        void ResetQueue(int i) { ZoneScoped; while (!openNodes[i].empty()) openNodes[i].pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             constexpr size_t tmpNodeStoreInitialReserve = 128;

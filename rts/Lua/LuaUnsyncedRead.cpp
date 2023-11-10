@@ -971,10 +971,12 @@ int LuaUnsyncedRead::GetMiniMapDualScreen(lua_State* L)
  *
  * Returns nil when selection box is inactive
  *
- * @treturn ?nil|number bottomLeftX
- * @treturn ?nil|number topRightX
- * @treturn ?nil|number topRightY
- * @treturn ?nil|number bottomLeftY
+ * @treturn ?nil|number left
+ * @treturn ?nil|number top
+ * @treturn ?nil|number right
+ * @treturn ?nil|number bottom
+ *
+ * @see Spring.GetUnitsInScreenRectangle
  */
 int LuaUnsyncedRead::GetSelectionBox(lua_State* L)
 {
@@ -987,8 +989,6 @@ int LuaUnsyncedRead::GetSelectionBox(lua_State* L)
 
 	const auto bottomLeft = camera->CalcViewPortCoordinates(bl);
 	const auto topRight   = camera->CalcViewPortCoordinates(tr);
-
-	lua_createtable(L, 4, 0);
 
 	lua_pushnumber(L, bottomLeft.x);
 	lua_pushnumber(L, topRight.y);

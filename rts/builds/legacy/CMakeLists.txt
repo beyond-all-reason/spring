@@ -69,6 +69,7 @@ list(APPEND engineLibraries pr-downloader)
 list(APPEND engineIncludes ${OPENAL_INCLUDE_DIR})
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
+list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
 
 include_directories(${engineIncludes})
 

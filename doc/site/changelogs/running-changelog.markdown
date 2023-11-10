@@ -16,8 +16,6 @@ These are the entries which may require special attention when migrating:
 * removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
 You can replace these functions before migrating, and known existing games have already received patches to do so.
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
-* removed the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
-since it had the same behaviour, just different internal implementation. No known game actually used it.
 
 ### Behaviour changes
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
@@ -33,8 +31,15 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 * the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
+* manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
+
+### Deprecation
+No changes yet, but these will happen in the future and possibly break things.
+
 * the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
-but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively.
+but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively (which will stay elmo/frame).
+* the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class is scheduled for removal. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
+since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
 
 # QTPFS
 
@@ -52,13 +57,15 @@ This is mostly for rate limiting and prevent excessive CPU wastage, because proc
 regardless of distance etc. Defaults to 0, which means units will not try to raw-move into unpathable terrain (e.g. typemapped lava, cliffs, water). You can set it to some positive
 value to make them avoid pathable but very slow terrain (for example if you set it to 0.2 then they will not raw-move across terrain where they move at 20% speed or less, and will use
 normal pathing instead - which may still end up taking them through that path).
+* added modrule, `system.pfHcostMult`, a float value between 0 and 2, defaults to 0.2. Controls how aggressively the pathing search prioritizes nodes going in the direction of the goal.
+Higher values mean pathing is cheaper, but can start producing degenerate paths where the unit goes straight at the goal and then has to hug a wall.
 * removed modrules: `system.pfForceUpdateSingleThreaded` and `system.pfForceSingleThreaded`. Multithreading has shown itself stable.
 * removed modrule: `system.pathFinderUpdateRate`, since `system.pfUpdateRateScale` now serves the same general role but has different units.
 
 # Defs unification
 
-Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units has always been a point of confusion.
-Some of this has been allieviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
+Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units of measurement has always been a point of confusion.
+Some of this has been alleviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
 
 ## New def keys
 The following unit def keys now accept the same spelling as the ones exposed via `UnitDefs`.
@@ -161,6 +168,7 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 ### Builder behaviour
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
 * fixed builders not placing nanoframes from their maximum range.
+* units vacating a build area (aka "bugger off") will now try to use the fastest route out.
 * added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to `Spring.GetUnitCurrentCommand`, but shows what the unit is actually doing,
 so will differ when the unit is guarding or out of range. Also resolves Build vs Repair. Only shows worker tasks (i.e. things related to nanolathing).
 * `gadget:AllowUnitCreation` now has two return values. The first one is still a boolean on whether to allow creating the unit (no change here).
@@ -171,6 +179,7 @@ i.e. the same way engine measures build distance. Useful for setting the goal ra
 This doesn't solve all known cases yet (doesn't handle features, or terraform) which are pending a solution; for now, the function returns just the build range if `buildeeDefID` is nil.
 * added `Spring.GetUnitIsBeingBuilt(unitID) → bool beingBuilt, number buildProgress`. Note that this doesn't bring new _capability_ because `buildProgress` was already available
 from the 5th return of `Spring.GetUnitHealth`, and `beingBuilt` from the 3rd return of `Spring.GetUnitIsStunned`, but it wasn't terribly convenient or intuitive.
+* fixed it being possible to place a unit that requires a geothermal vent anywhere.
 
 ### Rules params
 * added player rules params. Controlled by the new interfaces: `Spring.SetPlayerRulesParam`, `GetPlayerRulesParam` and `GetPlayerRulesParams`,
@@ -204,16 +213,25 @@ Use for "anonymous players" modes in conjunction with `Spring.GetPlayerInfo` poi
 * added `Spring.DeselectUnit(unitID) → nil`.
 * added `Spring.SelectUnit(unitID[, bool append]]) → nil`, a single-unit version of `Spring.SelectUnit{Array,Map}` that doesn't require a table.
 The unitID can be nil.
+* added `Spring.DeselectUnitArray({[any] = unitID, [any] = unitID, ...}) → nil` and `Spring.DeselectUnitMap({[unitID] = any, [unitID] = any, ...}) → nil`.
+These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.SelectUnitMap`.
+* the table in `Spring.SelectUnitArray` can now have arbitrary keys. Previously they had to be numbers, but the table did not actually have to be an array.
 
 ### Root pieces
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
 * added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
 
+### Colored text
+* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
+* added the `Game.textColorCodes` table, containing the constants `Color` (`\255`), `ColorAndOutline` (the newly added `\254`), and `Reset` (`\008`).
+
 ### Miscellaneous additions
+* add `Spring.IsPosInMap(x, z) → bool inPlayArea, bool inMap`. Currently, both of the returned values are the same and just check whether the position
+is in the map's rectangle. Perhaps in the future, or if a game overrides the function, there will be cases of limited play area (think SupCom singleplayer
+map extension; 0 A.D. circular maps; or just an external decoration area).
 * add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
 * added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
 Note that EnteredWater happens when the unit dips its toes into the water while EnteredUnderwater is when it becomes completely submerged.
-* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
 * add new `/remove` cheat-only command, it removes selected units similar to `/destroy` except the units are just removed (no wreck, no death explosion).
 * added new startscript entry: `FixedRNGSeed`. Defaults to 0 which means to generate a random seed for synced RNG (current behaviour).
 Otherwise, given value is used as the seed. Use for reproducible runs (benchmarks, mission cutscenes...).
@@ -225,6 +243,7 @@ The weapon number is optional if the unit has a single shield. The timer value i
 Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
 An explicit numerical value always sets the timer to that many seconds.
 * added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
+* added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 
@@ -235,8 +254,16 @@ The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
 * fix `MissileLauncher` weapons with high `trajectoryHeight`, zero `turnRate` and high `wobble` having an unstable trajectory and prematurely falling down when firing onto higher elevations
 * fix `DGun` weapon type projectile direction (previously shot at an angle that would be valid from the `AimFromWeapon` piece and not the `QueryWeapon` piece)
 
+### Basecontent fixes
+* moved the `cursornormal` cursor from the "Spring cursors" archive to basecontent. The significance
+of this is that `modinfo.lua` is now sufficient for an archive to be a valid Recoil game that doesn't crash.
+* fixed the initial spawn gadget.
+* fixed action handler key press/release events.
+
 ### Miscellaneous fixes
+* fixed skirmish AI API getTeamResourcePull (used to return max storage instead).
 * `Spring.SetSunDirection` no longer causes broken shadows if you pass an unnormalized vector.
-* fixed being unable to drag-select units with `/specfullview 0`
+* fixed being unable to drag-select units with `/specfullview 0`.
+* fixed weirdly-boned Assimp (`.dae`) models being loaded incorrectly.
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
 * fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.

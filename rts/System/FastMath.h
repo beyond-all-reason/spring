@@ -36,7 +36,7 @@ namespace fastmath {
 	float apxsqrt2(float x) _const;
 	float sin(float x) _const;
 	float cos(float x) _const;
-	template<typename T> float floor(const T& f) _const;
+	template<typename T> T floor(T f) _const;
 
 	/****************** Square root functions ******************/
 
@@ -198,13 +198,21 @@ namespace fastmath {
 	/**
 	* @brief fast version of std::floor
 	*
-	* Like 2-3x faster than glibc ones.
-	* Note: The results differ at the end of the 32bit precision range.
+	* About 2x faster than glibc ones.
+	*
+	* Unlike std::floor, this one returns the different (positive)
+	* result for negative float zero input (0.0f).
 	*/
 	template<typename T>
-	inline float floor(const T& f)
+	inline T floor(T f)
 	{
-		return (f >= 0) ? int(f) : int(f+0.000001f)-1;
+		//return (f >= 0) ? int(f) : int(f+0.000001f)-1;
+		// it's about the same performance as the former code above,
+		// but without arbitratry number shenanigans
+		// Perf comparison:
+		// https://quick-bench.com/q/rwmaN33UJ4cTEViBGqQYuVgyyOc
+		T truncX = static_cast<T>(static_cast<int>(f));
+		return truncX - static_cast<T>(truncX > f);
 	}
 }
 

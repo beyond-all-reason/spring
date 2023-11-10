@@ -5,6 +5,8 @@
 
 #include "MoveType.h"
 #include "Map/Ground.h"
+#include "Components/MoveTypesComponents.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
@@ -14,6 +16,8 @@
 #include "System/SpringHash.h"
 
 #include "System/TimeProfiler.h"
+
+using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AMoveType, CObject)
 CR_REG_METADATA(AMoveType, (
@@ -74,6 +78,21 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
+	UpdateGroundBlockMap();
+}
+
+void AMoveType::UpdateCollisionMap()
+{
+	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
+		return;
+
+	if (owner->pos != oldCollisionUpdatePos){
+		oldCollisionUpdatePos = owner->pos;
+		quadField.MovedUnit(owner);
+	}
+}
+
+void AMoveType::UpdateGroundBlockMap() {
 	if (owner->pos != oldSlowUpdatePos) {
 		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
 
@@ -89,17 +108,6 @@ void AMoveType::SlowUpdate()
 				}
 			}
 		}
-	}
-}
-
-void AMoveType::UpdateCollisionMap()
-{
-	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
-		return;
-
-	if (owner->pos != oldCollisionUpdatePos){
-		oldCollisionUpdatePos = owner->pos;
-		quadField.MovedUnit(owner);
 	}
 }
 
@@ -163,4 +171,12 @@ bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
 	}
 
 	return false;
+}
+
+void AMoveType::Connect() {
+	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
+}
+
+void AMoveType::Disconnect() {
+	Sim::registry.remove<GeneralMoveType>(owner->entityReference);
 }

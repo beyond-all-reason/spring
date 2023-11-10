@@ -200,7 +200,7 @@ static void CopyShaderState_Uniforms(GLuint newProgID, GLuint oldProgID, Shader:
 			continue;
 
 		// try to find old data for the uniform either in the old shader itself or in our own state tracker
-		const size_t hash = hashString(name);
+		const auto hash = hashString(name);
 		const auto hashIt = uniformStates->find(hash);
 
 		Shader::UniformState* oldUniformState = nullptr;

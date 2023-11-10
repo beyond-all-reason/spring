@@ -20,6 +20,7 @@ CR_REG_METADATA(CSolidObject,
 (
 	CR_MEMBER(health),
 	CR_MEMBER(maxHealth),
+	CR_MEMBER(entityReference),
 
 	CR_MEMBER(mass),
 	CR_MEMBER(crushResistance),
@@ -310,8 +311,8 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 {
 	int2 mp;
 
-	mp.x = (int(position.x + SQUARE_SIZE / 2) / SQUARE_SIZE) - (xsize / 2);
-	mp.y = (int(position.z + SQUARE_SIZE / 2) / SQUARE_SIZE) - (zsize / 2);
+	mp.x = (int(position.x /*+ SQUARE_SIZE / 2*/) / SQUARE_SIZE) - (xsize / 2);
+	mp.y = (int(position.z /*+ SQUARE_SIZE / 2*/) / SQUARE_SIZE) - (zsize / 2);
 	mp.x = std::clamp(mp.x, 0, mapDims.mapx - xsize);
 	mp.y = std::clamp(mp.y, 0, mapDims.mapy - zsize);
 
@@ -406,7 +407,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
 	}
 	else {
-		frontdir = fDir;
+		frontdir = fDir * Sign(uDir.y);
 	}
 	rightdir = (frontdir.cross(uDir)).Normalize();
 	updir = uDir;

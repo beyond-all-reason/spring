@@ -769,7 +769,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 				if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
 					return false;
 			}
-		} break;
+		} return false;
 
 		case CGameHelper::BUILDSQUARE_RECLAIMABLE:
 			// caller should handle this
@@ -822,7 +822,6 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	// 'pop' to the correct height over the (un-flattened) terrain on
 	// completion, so put it there to begin with
 	curBuild->moveType->SlowUpdate();
-	CGameHelper::InvalidateUnitBuildSquareCache(buildInfo, -1, true);
 	return true;
 }
 

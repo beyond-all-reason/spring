@@ -1,18 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GAME_HELPER_H
-#define GAME_HELPER_H
+#pragma once
 
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/EventClient.h"
 #include "System/float3.h"
 #include "System/float4.h"
 #include "System/type2.h"
 
 #include <array>
+#include <bit>
 #include <vector>
+#include <memory>
 
 class CUnit;
 class CWeapon;
@@ -117,10 +119,6 @@ public:
 		const std::vector<Command>* commands = nullptr,
 		int threadOwner = 0
 	);
-	static inline void InvalidateUnitBuildSquareCache(const BuildInfo& bi, int allyTeamID, bool synced) {
-		auto key = TestUnitBuildSquareCache::GetCacheKey(bi, allyTeamID, synced);
-		TestUnitBuildSquareCache::Invalidate(key);
-	}
 
 	static float GetBuildHeight(const float3& pos, const UnitDef* unitdef, bool synced = true);
 	static Command GetBuildCommand(const float3& pos, const float3& dir);
@@ -150,6 +148,7 @@ public:
 	static size_t GenerateWeaponTargets(const CWeapon* weapon, const CUnit* avoidUnit, std::vector<std::pair<float, CUnit*>>& targets);
 
 	void Init();
+	void Kill();
 	void Update();
 
 	static float CalcImpulseScale(const DamageArray& damages, const float expDistanceMod);
@@ -199,92 +198,13 @@ private:
 		DamageArray damage;
 		float3 impulse;
 	};
-	struct TestUnitBuildSquareCache {
-		TestUnitBuildSquareCache(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_,
-			std::vector<float3> canbuildpos_,
-			std::vector<float3> featurepos_,
-			std::vector<float3> nobuildpos_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-			, canbuildpos(canbuildpos_)
-			, featurepos(featurepos_)
-			, nobuildpos(nobuildpos_)
-		{};
-		TestUnitBuildSquareCache(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-		{};
-
-		static void ClearStaleItems(bool synced);
-
-		using KeyT = std::tuple<bool, float3, int, int, const UnitDef*>;
-		static KeyT GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced);
-		static inline std::vector<TestUnitBuildSquareCache>::iterator GetCacheItem(const KeyT& key, bool& found) {
-			auto it = std::find_if(testUnitBuildSquareCache.begin(), testUnitBuildSquareCache.end(), [&key](const auto& item) {
-				return item.key == key;
-			});
-			found = (it != testUnitBuildSquareCache.end());
-			return it;
-		}
-		static inline void SaveToCache(int frame, KeyT&& key, CFeature* f, CGameHelper::BuildSquareStatus bss) {
-			testUnitBuildSquareCache.emplace_back(
-				frame,
-				std::move(key),
-				f,
-				bss
-			);
-		}
-		static inline void SaveToCache(int frame, KeyT&& key, CFeature* f, CGameHelper::BuildSquareStatus bss
-			, const std::vector<float3>& canbuildpos
-			, const std::vector<float3>& featurepos
-			, const std::vector<float3>& nobuildpos) {
-			testUnitBuildSquareCache.emplace_back(
-				frame,
-				std::move(key),
-				f,
-				bss,
-				canbuildpos,
-				featurepos,
-				nobuildpos
-			);
-		}
-		static void Invalidate(const KeyT& key);
-
-		int createFrame;
-		std::tuple<bool, float3, int, int, const UnitDef*> key;
-		CFeature* feature;
-		CGameHelper::BuildSquareStatus result;
-		std::vector<float3> canbuildpos;
-		std::vector<float3> featurepos;
-		std::vector<float3> nobuildpos;
-
-		/* synced, unsynced. Unsynced is arbitrary, but being 166ms
-		 * seems like a good tradeoff between not evicting cache value
-		 * too quickly and not to stale the state for too long. */
-		static constexpr int CACHE_VALIDITY_PERIOD[] = { 1, GAME_SPEED / 5 };
-
-		inline static std::vector<TestUnitBuildSquareCache> testUnitBuildSquareCache;
-	};
-
+	
 	std::array<std::vector<WaitingDamage>, 128> waitingDamages;
 	static_assert (std::has_single_bit(std::tuple_size_v <decltype(waitingDamages)>), "Size is used in bit hax and must be 2^N");
+
 public:
 	std::vector<int> targetUnitIDs; // GetEnemyUnits{NoLosTest}
 	std::vector<std::pair<float, CUnit*>> targetPairs; // GenerateWeaponTargets
 };
 
 extern CGameHelper* helper;
-
-#endif // GAME_HELPER_H

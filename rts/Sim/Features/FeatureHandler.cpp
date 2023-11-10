@@ -7,6 +7,7 @@
 #include "FeatureMemPool.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Units/CommandAI/BuilderCAI.h"
 #include "System/creg/STL_Set.h"
@@ -106,6 +107,7 @@ CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
 
 	// calls back into AddFeature
 	feature->Initialize(params);
+	feature->entityReference = Sim::registry.create();
 	return feature;
 }
 
@@ -214,6 +216,8 @@ bool CFeatureHandler::UpdateFeature(CFeature* feature)
 	assert(feature->inUpdateQue);
 
 	if (feature->deleteMe) {
+		Sim::registry.destroy(feature->entityReference);
+
 		eventHandler.RenderFeatureDestroyed(feature);
 		eventHandler.FeatureDestroyed(feature);
 

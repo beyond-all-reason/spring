@@ -6,6 +6,7 @@
 
 #include "Sim/Ecs/Registry.h"
 #include "Sim/MoveTypes/Components/MoveTypesComponents.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 
@@ -16,7 +17,9 @@
 
 using namespace MoveTypes;
 
-void GeneralMoveSystem::Init() {}
+void GeneralMoveSystem::Init() {
+    CMoveMath::InitRangeIsBlockedHashes();
+}
 
 void GeneralMoveSystem::Update() {
     auto view = Sim::registry.view<GeneralMoveType>();

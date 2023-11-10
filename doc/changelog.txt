@@ -105,6 +105,7 @@ Misc:
    in conjunction with `Spring.GetPlayerInfo` poisoning.
  - Add new `/remove` cheat-only command, it removes selected units similar to
    `/destroy` except no death script is run (so no explosion nor wreckage).
+ - Units no longer clear command queue when shared. This can be implemented gameside with UnitGiven callin.
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
@@ -165,6 +166,22 @@ Sim:
    will likely try to path around those map squares. Think lava, it is very slow to move through,
    (and it hurts), you don't want units trying to path through lava unless they are trying to get
    out. This feature is considered experimental.
+ - Change the default behaviour of builders to not build on top of a blocking unit if they can't
+   immediately do something about it.
+ - Synced build checks now ensure nearby units have accurate ground block information declared to
+   avoid fast units running into an otherwise clear area and getting trapped inside building.
+ - Ground moving units can't step into the inside of static objects.
+ - Ground units cannot push each other into the inside of static objects.
+ - Collision forces applied to ground units will allow them to slide along edges of terrain and
+   structures to ensure that units can be moved when pushed against these blockers. If they don't
+   move then the pushing unit can get stuck between them and an adjacent blocker.
+ - Fixed: pushResistant units trigger pathing updates on start/stop moving. There's no point doing
+   so while moving because the ground block type gets ignored.
+ - Units will now turn to their desired direction every frame, rather than on every
+   modInfo.groundUnitCollisionAvoidanceUpdateRate frames.
+ - Units given new paths will now switch to a new non-temp waypoint in 1 frame rather than 2.
+   Units have a next and current waypoint, so if next is non-temp, but current is then it will make
+   current <- next, and grab the next waypoint.
  - Units will skid if hit with impulses sufficiently large in the direction opposite their
    movement vector. Previously units would only skid on large impulses that hit their sides.
  - New rollingResistanceCoefficient unitdef that is used to reduce a unit's speed when exceeding their maximumSpeed.
@@ -199,6 +216,14 @@ Sim::QTPFS
    to recalculate the pathing data on load than to use data saved to disk.
  - ECS-based system added to monitor changes in maxRelSpeedMod during match, whereas before it was
    found at the start and then never updated.
+ - Use Bi-directional searching to half the search time for long distance pathing requests. Note,
+   this is a lazy bi-directional search - it is fast rather than trying to find the perfect link
+   between the forward and reverse searches.
+ - If the reverse search fails, then a limit is now set on the forward search to cut down the time
+   spent searching for the nearest route.
+ - Searches are not only able to perform full-path sharing (i.e. same target/src quads), but also
+   partial-path sharing. This means when the start/end quads are near another searches star/end
+   quads, the path can be used to cut down search times by trying to link up to an existing route.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.

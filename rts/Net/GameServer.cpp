@@ -929,7 +929,14 @@ void CGameServer::LagProtection()
 		//internalSpeed holds the current speed the sim is running
 		//refCpuUsage holds the highest cpu if curSpeedCtrl == 0 or median if curSpeedCtrl == 1
 
-		// aim for 60% cpu usage if median is used as reference and 75% cpu usage if max is the reference
+		/* We don't actually aim to maintain the average sim FPS. We want to keep each frame sim time
+		 * under the nominal average. For example at 30 sim FPS, we want to keep all frames under ~33ms.
+		 * But frames have some distribution in how long they run, which isn't entirely predictable on
+		 * engine side (especially due to unequal load distribution in gameside Lua). And these long and
+		 * short frames don't cancel each other out nicely - you get stuttering and miss draw frames.
+		 * This means that we will necessarily have some idle time because the average frame time is now
+		 * lower than the nominal sim FPS, i.e. the ideal CPU% to aim at is less than 100%. The constants
+		 * below have been determined empirically. The max is of course higher than the median. */
 		float wantedCpuUsage = (curSpeedCtrl == 1) ?  0.60f : 0.75f;
 
 		//the following line can actually make it go faster than wanted normal speed ( userSpeedFactor )

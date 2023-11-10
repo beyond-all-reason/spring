@@ -64,7 +64,7 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 		nodeIndcs.clear();
 		nodeIndcs.resize(POOL_TOTAL_SIZE);
 
-		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; });
+		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; assert((size_t)(&i - &nodeIndcs[0]) < nodeIndcs.size()); });
 		std::reverse(nodeIndcs.begin(), nodeIndcs.end());
 	}
 
@@ -286,7 +286,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 
 	// The xmin (0), xmax (1), zmin (2), zmax (3) can be accessed by (index.)
 	// The these are the indicies needed to make the 4 corners of a quad.
-	const int2 cornerPoints[] =
+	constexpr int2 cornerPoints[] =
 		{ {0, 2}, {1, 2}
 		, {0, 3}, {1, 3}
 		};

@@ -292,6 +292,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	helper->Kill();
 	KillLua(true);
 	KillMisc();
 	KillRendering();
@@ -1736,8 +1737,8 @@ void CGame::SimFrame() {
 		readMap->Update();
 		smoothGround.UpdateSmoothMesh();
 		mapDamage->Update();
-		pathManager->Update();
 		unitHandler.Update();
+		pathManager->Update();
 		projectileHandler.Update();
 		featureHandler.Update();
 		{

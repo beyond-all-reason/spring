@@ -43,13 +43,16 @@
 static CGameHelper gGameHelper;
 CGameHelper* helper = &gGameHelper;
 
-
 void CGameHelper::Init()
 {
 	for (auto& wdVec: waitingDamages) {
 		wdVec.clear();
 		wdVec.reserve(32);
 	}
+}
+
+void CGameHelper::Kill()
+{
 }
 
 void CGameHelper::Update()
@@ -1189,44 +1192,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
-	TestUnitBuildSquareCache::ClearStaleItems(synced);
-	auto key = TestUnitBuildSquareCache::GetCacheKey(buildInfo, allyteam, synced);
-	bool cacheFound = false;
-	const auto it = TestUnitBuildSquareCache::GetCacheItem(key, cacheFound);
-
-	if (cacheFound) {
-		feature = it->feature;
-
-		if (commands != nullptr) {
-			assert(!synced);
-			*canbuildpos = it->canbuildpos;
-			*featurepos = it->featurepos;
-			*nobuildpos = it->nobuildpos;
-		}
-
-		return it->result;
-	}
-
-	const auto SaveToCache = [&](CGameHelper::BuildSquareStatus result) {
-		if (!commands)
-			TestUnitBuildSquareCache::SaveToCache(
-				gs->frameNum,
-				std::move(key),
-				feature,
-				result
-			);
-		else
-			TestUnitBuildSquareCache::SaveToCache(
-				gs->frameNum,
-				std::move(key),
-				feature,
-				result,
-				*canbuildpos,
-				*featurepos,
-				*nobuildpos
-			);
-	};
-
 	feature = nullptr;
 
 	const int xsize = buildInfo.GetXSize();
@@ -1271,6 +1236,28 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 				testStatus = BUILDSQUARE_OPEN;
 				break;
 			}
+		}
+	}
+
+	// Units update their positions on slow update. Synced code must avoid building and trapping
+	// units - so check that all nearby mobile units have correctly accurate positions up to date.
+	if (synced)
+	{
+		// buffer should be the maximum distance given by the movetype using the formula:
+		// maxspeed * modInfo.unitQuadPositionUpdateRate + footStep + 1
+		// +1 on end is a safety buffer against rounding issues with square placement.
+		// placeholder values are given here for the moment.
+		// TODO: switch out for a value determined by the above formula
+		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + 10 + 1;
+		const float3 min((x1 - bufferSize) * SQUARE_SIZE, 0.f, (z1 - bufferSize) * SQUARE_SIZE);
+		const float3 max((x2 + bufferSize) * SQUARE_SIZE, 0.f, (z2 + bufferSize) * SQUARE_SIZE);
+
+		QuadFieldQuery qfQuery;
+		qfQuery.threadOwner = threadOwner;
+		quadField.GetUnitsExact(qfQuery, min, max);
+		for (const CUnit* unit: *qfQuery.units) {
+			if (unit->moveDef != nullptr) 
+				unit->moveType->UpdateGroundBlockMap();
 		}
 	}
 
@@ -1326,7 +1313,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 		// out of map?
 		if (static_cast<unsigned>(x1) > mapDims.mapx || static_cast<unsigned>(x2) > mapDims.mapx ||
 			static_cast<unsigned>(z1) > mapDims.mapy || static_cast<unsigned>(z2) > mapDims.mapy) {
-			SaveToCache(BUILDSQUARE_BLOCKED);
 			return BUILDSQUARE_BLOCKED;
 		}
 
@@ -1339,14 +1325,12 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 				const BuildSquareStatus sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, allyteam, synced);
 
 				if ((testStatus = std::min(testStatus, sqrStatus)) == BUILDSQUARE_BLOCKED) {
-					SaveToCache(BUILDSQUARE_BLOCKED);
 					return BUILDSQUARE_BLOCKED;
 				}
 			}
 		}
 	}
 
-	SaveToCache(testStatus);
 	return testStatus;
 }
 
@@ -1376,8 +1360,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 
 
 	BuildSquareStatus ret = BUILDSQUARE_OPEN;
-	const int yardxpos = unsigned(pos.x + (SQUARE_SIZE >> 1)) / SQUARE_SIZE;
-	const int yardypos = unsigned(pos.z + (SQUARE_SIZE >> 1)) / SQUARE_SIZE;
+	const int yardxpos = unsigned(pos.x) / SQUARE_SIZE;
+	const int yardypos = unsigned(pos.z) / SQUARE_SIZE;
 
 	CSolidObject* so = groundBlockingObjectMap.GroundBlocked(yardxpos, yardypos);
 
@@ -1567,23 +1551,4 @@ bool CGameHelper::CheckTerrainConstraints(
 	depthCheck &= (groundHeight <= -minDepth);
 
 	return (depthCheck && slopeCheck);
-}
-
-void CGameHelper::TestUnitBuildSquareCache::ClearStaleItems(bool synced)
-{
-	spring::VectorEraseAllIf(testUnitBuildSquareCache, [synced](const auto& item) {
-		return gs->frameNum - item.createFrame >= CACHE_VALIDITY_PERIOD[synced];
-	});
-}
-
-CGameHelper::TestUnitBuildSquareCache::KeyT CGameHelper::TestUnitBuildSquareCache::GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced)
-{
-	return std::make_tuple(synced, buildInfo.pos, buildInfo.buildFacing, allyTeamID, buildInfo.def);
-}
-
-void CGameHelper::TestUnitBuildSquareCache::Invalidate(const KeyT& key)
-{
-	spring::VectorEraseIf(testUnitBuildSquareCache, [&key](const auto& item) {
-		return (key == item.key);
-	});
 }

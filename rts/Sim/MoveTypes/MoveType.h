@@ -29,8 +29,8 @@ public:
 	virtual void StopMoving(bool callScript = false, bool hardStop = false, bool cancelRaw = false) = 0;
 	virtual bool CanApplyImpulse(const float3&) { return false; }
 	virtual void LeaveTransport() {}
-	virtual void Connect() {}
-	virtual void Disconnect() {}
+	virtual void Connect();
+	virtual void Disconnect();
 
 	// generic setter for Lua-writable values
 	virtual bool SetMemberValue(unsigned int memberHash, void* memberValue);
@@ -54,6 +54,7 @@ public:
 	virtual bool Update() = 0;
 	virtual void SlowUpdate();
 	void UpdateCollisionMap();
+	void UpdateGroundBlockMap();
 
 	virtual void UpdatePreCollisionsMt() {};
 	virtual void UpdatePreCollisions() {};

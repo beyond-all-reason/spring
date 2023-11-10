@@ -144,8 +144,17 @@ inline int2 IdxToCoord(unsigned x, unsigned array_width)
 
 inline float ClampRad(float f)
 {
+	// handle a special case of f==-0.0f, it can be elliminated by adding 0.0f
+	f += 0.0f;
+	// fmod is not good here because it calculates the remainder, but we need the arithmetic modulus
+	/*
 	f  = math::fmod(f, math::TWOPI);
 	f += (math::TWOPI * (f < 0.0f));
+	*/
+	f = f - math::TWOPI * math::floor(f / math::TWOPI);
+
+	// there should be no negative zeros (-0.0f) or negatives in general
+	assert(!std::signbit(f));
 	return f;
 }
 
@@ -172,7 +181,7 @@ inline float3 GetRadAngleToward(float3 v1, float3 v2) {
 
 inline bool RadsAreEqual(const float f1, const float f2)
 {
-	return (math::fmod(f1 - f2, math::TWOPI) == 0.0f);
+	return ClampRad(f1 - f2) == 0.0f;
 }
 
 inline float GetRadFromXY(const float dx, const float dy)
