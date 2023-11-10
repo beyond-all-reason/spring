@@ -201,7 +201,6 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
-	// RmlGui::CreateOverlayContext();
 	data->initialized = true;
 	return true;
 }
@@ -240,7 +239,6 @@ void RmlGui::Reload()
 	int winY = data->winY;
 	RmlGui::Shutdown();
 	RmlGui::Initialize(window, glcontext, winX, winY);
-	// RmlGui::CreateOverlayContext();
 }
 
 void RmlGui::ToggleDebugger(int contextIndex)
@@ -276,7 +274,7 @@ void createContext(const std::string &name)
 
 void RmlGui::CreateContext(const std::string &name)
 {
-	createContext("overlay");
+	createContext(name);
 }
 
 void RmlGui::AddContext(Rml::Context *context)
@@ -329,6 +327,36 @@ void RmlGui::PresentFrame()
 	RMLUI_FrameMark;
 }
 
+bool processContextMouseEvent(Rml::Context *context, const SDL_Event &event)
+{
+	switch (event.type)
+	{
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEWHEEL:
+	{
+		bool handled = !RmlSDL::InputEventHandler(context, event);
+		if (!handled && event.type == SDL_MOUSEBUTTONDOWN)
+		{
+			Rml::Element *el = context->GetFocusElement();
+			if (el)
+			{
+				el->Blur();
+			}
+		}
+		data->inputReceiver.setActive(handled);
+		return handled;
+	}
+	default:
+	{
+		data->inputReceiver.setActive(false);
+		return false;
+	}
+	}
+	return false;
+}
+
 /*
 	Return true if the event was handled by rmlui
 */
@@ -341,34 +369,7 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 	bool result = false;
 	for (auto &context : data->contexts)
 	{
-		SDL_Event ev(event);
-		switch (ev.type)
-		{
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEWHEEL:
-		{
-			bool handled = !RmlSDL::InputEventHandler(context, ev);
-			if (!handled && ev.type == SDL_MOUSEBUTTONDOWN)
-			{
-				Rml::Element *el = context->GetFocusElement();
-				if (el)
-				{
-					el->Blur();
-				}
-			}
-			data->inputReceiver.setActive(handled);
-			result |= handled;
-			break;
-		}
-		default:
-		{
-			data->inputReceiver.setActive(false);
-			result |= false;
-			break;
-		}
-		}
+		result |= processContextMouseEvent(context, event);
 	}
 	return result;
 }
@@ -429,6 +430,43 @@ bool RmlGui::ProcessTextInput(const std::string &text)
 	return result;
 }
 
+bool processContextEvent(Rml::Context *context, const SDL_Event &event)
+{
+	switch (event.type)
+	{
+	case SDL_WINDOWEVENT:
+	{
+		switch (event.window.event)
+		{
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+		{
+			Rml::Vector2i dimensions(event.window.data1, event.window.data2);
+			data->render_interface.SetViewport(dimensions.x, dimensions.y);
+			data->winX = dimensions.x;
+			data->winY = dimensions.y;
+		}
+		break;
+		}
+		RmlSDL::InputEventHandler(context, event);
+	}
+	break;
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEWHEEL:
+	case SDL_KEYDOWN:
+	case SDL_KEYUP:
+	case SDL_TEXTINPUT:
+		break; // handled elsewhere
+	default:
+	{
+		RmlSDL::InputEventHandler(context, event);
+	}
+	break;
+	}
+	return false;
+}
+
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
 	if (!data->initialized || data->contexts.size() < 1)
@@ -437,39 +475,7 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 	}
 	for (auto &context : data->contexts)
 	{
-		SDL_Event ev(event);
-		switch (ev.type)
-		{
-		case SDL_WINDOWEVENT:
-		{
-			switch (ev.window.event)
-			{
-			case SDL_WINDOWEVENT_SIZE_CHANGED:
-			{
-				Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
-				data->render_interface.SetViewport(dimensions.x, dimensions.y);
-				data->winX = dimensions.x;
-				data->winY = dimensions.y;
-			}
-			break;
-			}
-			RmlSDL::InputEventHandler(context, ev);
-		}
-		break;
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEWHEEL:
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-		case SDL_TEXTINPUT:
-			break; // handled elsewhere
-		default:
-		{
-			RmlSDL::InputEventHandler(context, ev);
-		}
-		break;
-		}
+		processContextEvent(context, event);
 	}
 	return false;
 }
