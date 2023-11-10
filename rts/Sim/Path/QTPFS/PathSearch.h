@@ -150,6 +150,8 @@ namespace QTPFS {
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path);
 		bool SmoothPathIter(IPath* path);
+		void SmoothSharedPath(IPath* path);
+		int SmoothPathPoints(const INode* nn0, const INode* nn1, const float3& p0, const float3& p1, const float3& p2, float3& result) const;
 
 		void InitStartingSearchNodes();
 		void UpdateHcostMult();

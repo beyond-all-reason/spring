@@ -1344,7 +1344,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 			//     and we must fall back to assuming waypoint 1 is best.
 			if (v0.SqLength() < squareRadius) { nextPointIndex = i + 1; break; }
 			if (v1.SqLength() < squareRadius) { nextPointIndex = i + 2; break; }
-			if (v0.dot(v1) <= -0.01f)         { nextPointIndex = i + 1; break; }
+			if (v0.dot(v1) <= -0.f)           { nextPointIndex = i + 1; break; }
 		}
 	}
 

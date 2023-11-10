@@ -853,7 +853,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			//   one exception: tgtPoint can legitimately coincide
 			//   with first transition-point, which we must ignore
 			assert(tmpNode != prvNode);
-			assert(tmpPoint != float3());
+			assert(tmpPoint != ZeroVector);
 
 			// assert(tmpPoint != prvPoint || tmpNode == fwd.tgtSearchNode || doPartialSearch);
 
@@ -877,7 +877,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 		// ensure the starting quad is shared with other path searches.
 		if (tmpNode != nullptr) {
-			points.emplace_front(float3(), tmpNode->GetIndex() | ONLY_NODE_ID_MASK);
+			points.emplace_front(float3(), tmpNode->GetIndex() | ONLY_NODE_ID_MASK); // ID THIS THE ISSUE?
 			// LOG("%s: [%d] tgtNode=%d point ", __func__, SearchThreadData::SEARCH_FORWARD
 			// 		, tmpNode->GetIndex());
 			nodesWithoutPoints++;
@@ -901,10 +901,14 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		uint32_t nodeId = points.front().nodeId;
 
 		if ( (nodeId & ONLY_NODE_ID_MASK) == 0 ){
-			assert(point != float3());
+			assert(point != ZeroVector);
 			nodePointIndex = pointIndex;
 			path->SetPoint(pointIndex++, point);
-			// LOG("%s: setting point (%f, %f, %f)", __func__, point.x, point.y, point.z);
+		// { bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+		// 					&& (selectedUnitsHandler.selectedUnits.find(path->GetOwner()->id) != selectedUnitsHandler.selectedUnits.end());
+		// 	if (printMoveInfo) {
+		// 		LOG("%s: setting point %d (%f, %f, %f)", __func__, nodePointIndex, point.x, point.y, point.z);
+		// 	}}
 		}
 		path->SetNode(nodeIndex++, nodeId & ~ONLY_NODE_ID_MASK, float2(point.x, point.z), nodePointIndex);
 		// LOG("%s: tgtNode=%d point (%f, %f, %f)", __func__
@@ -916,8 +920,8 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	path->SetSourcePoint(fwd.srcPoint);
 	path->SetTargetPoint(fwd.tgtPoint);
 
-	assert(fwd.srcPoint != float3());
-	assert(fwd.tgtPoint != float3());
+	assert(fwd.srcPoint != ZeroVector);
+	assert(fwd.tgtPoint != ZeroVector);
 }
 
 void QTPFS::PathSearch::SmoothPath(IPath* path) {
@@ -944,7 +948,7 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 
 	auto& nodePath = path->GetNodeList();
 	auto getNextNodeIndex = [&nodePath](int i){
-		while (--i >= 0) {
+		while (--i > 0) {
 			const IPath::PathNodeData* node = &nodePath[i];
 			if (node->pathPointIndex > -1)
 				break;
@@ -955,15 +959,17 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 	int nodeIdx = getNextNodeIndex(nodePath.size());
 	assert(nodeIdx > -1);
 
-	const IPath::PathNodeData* n1 = &nodePath[nodeIdx];
+	IPath::PathNodeData* n1 = &nodePath[nodeIdx];
+	IPath::PathNodeData* n0 = n1;
 	INode* nn0 = nodeLayer->GetPoolNode(n1->nodeId);
 	INode* nn1 = nn0;
 
-	for (; ni > 0;) {
+	for (; ni > 1;) {
 		nodeIdx = getNextNodeIndex(nodeIdx);
 		if (nodeIdx < 0)
 			break;
 
+		n0 = n1;
 		n1 = &nodePath[nodeIdx];
 
 		nn0 = nn1;
@@ -981,137 +987,193 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 		const float3 p1 = path->GetPoint(ni - 1);
 		const float3 p2 = path->GetPoint(ni - 2);
 
-		float3 pi = ZeroVector;
-
-		// check if we can reduce the angle between segments
-		// p0-p1 and p1-p2 (ideally to zero degrees, making
-		// p0-p2 a straight line) without causing either of
-		// the segments to cross into other nodes
-		//
-		// p1 always lies on the node to the right and/or to
-		// the bottom of the shared edge between p0 and p2,
-		// and we move it along the edge-dimension (x or z)
-		// between [xmin, xmax] or [zmin, zmax]
-		const float3 p1p0 = (p1 - p0).SafeNormalize();
-		const float3 p2p1 = (p2 - p1).SafeNormalize();
-		const float3 p2p0 = (p2 - p0).SafeNormalize();
-		const float   dot = p1p0.dot(p2p1);
-
-		// if segments are already nearly parallel, skip
-		if (dot >= 0.995f)
-			continue;
-
-		// figure out if p1 is on a horizontal or a vertical edge
-		// (if both of these are true, it is in fact in a corner)
-		const bool hEdge = (((ngbRel & REL_NGB_EDGE_T) != 0) || ((ngbRel & REL_NGB_EDGE_B) != 0));
-		const bool vEdge = (((ngbRel & REL_NGB_EDGE_L) != 0) || ((ngbRel & REL_NGB_EDGE_R) != 0));
-
-		assert(hEdge || vEdge);
-
-		// establish the x- and z-range within which p1 can be moved
-		const unsigned int xmin = std::max(nn1->xmin(), nn0->xmin());
-		const unsigned int zmin = std::max(nn1->zmin(), nn0->zmin());
-		const unsigned int xmax = std::min(nn1->xmax(), nn0->xmax());
-		const unsigned int zmax = std::min(nn1->zmax(), nn0->zmax());
-
-		{
-			// calculate intersection point between ray (p2 - p0) and edge
-			// if pi lies between bounds, use that and move to next triplet
-			//
-			// cases:
-			//     A) p0-p1-p2 (p2p0.xz >= 0 -- p0 in n0, p2 in n1)
-			//     B) p2-p1-p0 (p2p0.xz <= 0 -- p2 in n1, p0 in n0)
-			//
-			// x- and z-distances to edge between n0 and n1
-			const float dfx = (p2p0.x > 0.0f)?
-				((nn0->xmax() * SQUARE_SIZE) - p0.x): // A(x)
-				((nn0->xmin() * SQUARE_SIZE) - p0.x); // B(x)
-			const float dfz = (p2p0.z > 0.0f)?
-				((nn0->zmax() * SQUARE_SIZE) - p0.z): // A(z)
-				((nn0->zmin() * SQUARE_SIZE) - p0.z); // B(z)
-
-			const float dx = (math::fabs(p2p0.x) > 0.001f)? p2p0.x: 0.001f;
-			const float dz = (math::fabs(p2p0.z) > 0.001f)? p2p0.z: 0.001f;
-			const float tx = dfx / dx;
-			const float tz = dfz / dz;
-
-			bool ok = true;
-
-			if (hEdge) {
-				pi.x = p0.x + p2p0.x * tz;
-				pi.z = p1.z;
-			}
-			if (vEdge) {
-				pi.x = p1.x;
-				pi.z = p0.z + p2p0.z * tx;
-			}
-
-			ok = ok && (pi.x >= (xmin * SQUARE_SIZE) && pi.x <= (xmax * SQUARE_SIZE));
-			ok = ok && (pi.z >= (zmin * SQUARE_SIZE) && pi.z <= (zmax * SQUARE_SIZE));
-
-			if (ok) {
-				nm += ((pi - p1).SqLength2D() > Square(0.05f));
-
-				assert(!math::isinf(pi.x) && !math::isinf(pi.z));
-				assert(!math::isnan(pi.x) && !math::isnan(pi.z));
-				// LOG("%s: %" PRIx64  " [t:%d] added point %d (%f,%f,%f) ", __func__
-				// 		, path->GetHash()
-				// 		, path->GetPathType()
-				// 		, ni - 1
-				// 		, pi.x
-				// 		, pi.y
-				// 		, pi.z
-				// 		);
+		float3 pi;
+		if (SmoothPathPoints(nn0, nn1, p0, p1, p2, pi)) {
+			nm++;
+			if (pi == p0 || pi == p2) {
+				// the point is effectively removed.
+				path->RemovePoint(ni - 1);
+				// empty point reference
+				n0->pathPointIndex = -1;
+			} else {
 				path->SetPoint(ni - 1, pi);
-				continue;
 			}
-		}
-
-		if (hEdge != vEdge) {
-			// get the edge end-points
-			float3 e0 = p1;
-			float3 e1 = p1;
-
-			if (hEdge) {
-				e0.x = xmin * SQUARE_SIZE;
-				e1.x = xmax * SQUARE_SIZE;
-			}
-			if (vEdge) {
-				e0.z = zmin * SQUARE_SIZE;
-				e1.z = zmax * SQUARE_SIZE;
-			}
-
-			// figure out what the angle between p0-p1 and p1-p2
-			// would be after substituting the edge-ends for p1
-			// (we want dot-products as close to 1 as possible)
-			//
-			// p0-e0-p2
-			const float3 e0p0 = (e0 - p0).SafeNormalize();
-			const float3 p2e0 = (p2 - e0).SafeNormalize();
-			const float  dot0 = e0p0.dot(p2e0);
-			// p0-e1-p2
-			const float3 e1p0 = (e1 - p0).SafeNormalize();
-			const float3 p2e1 = (p2 - e1).SafeNormalize();
-			const float  dot1 = e1p0.dot(p2e1);
-
-			// if neither end-point is an improvement, skip
-			if (dot >= std::max(dot0, dot1))
-				continue;
-
-			if (dot0 > std::max(dot1, dot)) { pi = e0; }
-			if (dot1 >= std::max(dot0, dot)) { pi = e1; }
-
-			nm += ((pi - p1).SqLength2D() > Square(0.05f));
-
-			assert(!math::isinf(pi.x) && !math::isinf(pi.z));
-			assert(!math::isnan(pi.x) && !math::isnan(pi.z));
-			path->SetPoint(ni - 1, pi);
 		}
 	}
 
 	return (nm != 0);
 }
 
+// Only smooths the beginning of the path.
+void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
+	// No smoothing can be done on 2 points.
+	if (path->NumPoints() <= 2)
+		return;
+
+	auto& nodePath = path->GetNodeList();
+
+	auto getNextNodeIndex = [&nodePath](int i){
+		auto last = nodePath.size() - 1;
+		while (++i < last) {
+			const IPath::PathNodeData* node = &nodePath[i];
+			if (node->pathPointIndex > -1)
+				break;
+		}
+		return i;
+	};
+
+	auto smoothPoint = [this, path, &nodePath, &getNextNodeIndex](unsigned int pi) {
+		int nodeIndex1 = getNextNodeIndex(-1);
+		int nodeIndex0 = getNextNodeIndex(nodeIndex1);
+
+		const IPath::PathNodeData* n0 = &nodePath[nodeIndex0];
+		const IPath::PathNodeData* n1 = &nodePath[nodeIndex1];
+
+		assert(n0->pathPointIndex > -1);
+
+		INode* nn0 = nodeLayer->GetPoolNode(n0->nodeId);
+		INode* nn1 = nodeLayer->GetPoolNode(n1->nodeId);
+
+		assert(nn1->GetNeighborRelation(nn0) != 0);
+		assert(nn0->GetNeighborRelation(nn1) != 0);
+
+		const float3 p0 = path->GetPoint(pi    );
+		const float3 p1 = path->GetPoint(pi - 1);
+		const float3 p2 = path->GetPoint(pi - 2);
+
+		float3 newPoint;
+		int nm = SmoothPathPoints(nn0, nn1, p0, p1, p2, newPoint);
+		if (nm > 0) {
+			// update node;
+			path->SetPoint(pi - 1, newPoint);
+		}
+	};
+
+	// First three points are indicies: 0, 1, 2
+	smoothPoint(2);
+}
+
+int QTPFS::PathSearch::SmoothPathPoints(const INode* nn0, const INode* nn1, const float3& p0, const float3& p1, const float3& p2, float3& result) const {
+	float3 pi = ZeroVector;
+
+	const unsigned int ngbRel = nn0->GetNeighborRelation(nn1);
+
+	// check if we can reduce the angle between segments
+	// p0-p1 and p1-p2 (ideally to zero degrees, making
+	// p0-p2 a straight line) without causing either of
+	// the segments to cross into other nodes
+	//
+	// p1 always lies on the node to the right and/or to
+	// the bottom of the shared edge between p0 and p2,
+	// and we move it along the edge-dimension (x or z)
+	// between [xmin, xmax] or [zmin, zmax]
+	const float3 p1p0 = (p1 - p0).SafeNormalize();
+	const float3 p2p1 = (p2 - p1).SafeNormalize();
+	const float3 p2p0 = (p2 - p0).SafeNormalize();
+	const float   dot = p1p0.dot(p2p1);
+
+	// if segments are already nearly parallel, skip
+	if (dot >= 0.995f)
+		return 0;
+
+	// figure out if p1 is on a horizontal or a vertical edge
+	// (if both of these are true, it is in fact in a corner)
+	const bool hEdge = (((ngbRel & REL_NGB_EDGE_T) != 0) || ((ngbRel & REL_NGB_EDGE_B) != 0));
+	const bool vEdge = (((ngbRel & REL_NGB_EDGE_L) != 0) || ((ngbRel & REL_NGB_EDGE_R) != 0));
+
+	assert(hEdge || vEdge);
+
+	// establish the x- and z-range within which p1 can be moved
+	const unsigned int xmin = std::max(nn1->xmin(), nn0->xmin());
+	const unsigned int zmin = std::max(nn1->zmin(), nn0->zmin());
+	const unsigned int xmax = std::min(nn1->xmax(), nn0->xmax());
+	const unsigned int zmax = std::min(nn1->zmax(), nn0->zmax());
+
+	{
+		// calculate intersection point between ray (p2 - p0) and edge
+		// if pi lies between bounds, use that and move to next triplet
+		//
+		// cases:
+		//     A) p0-p1-p2 (p2p0.xz >= 0 -- p0 in n0, p2 in n1)
+		//     B) p2-p1-p0 (p2p0.xz <= 0 -- p2 in n1, p0 in n0)
+		//
+		// x- and z-distances to edge between n0 and n1
+		const float dfx = (p2p0.x > 0.0f)?
+			((nn0->xmax() * SQUARE_SIZE) - p0.x): // A(x)
+			((nn0->xmin() * SQUARE_SIZE) - p0.x); // B(x)
+		const float dfz = (p2p0.z > 0.0f)?
+			((nn0->zmax() * SQUARE_SIZE) - p0.z): // A(z)
+			((nn0->zmin() * SQUARE_SIZE) - p0.z); // B(z)
+
+		const float dx = (math::fabs(p2p0.x) > 0.001f)? p2p0.x: 0.001f;
+		const float dz = (math::fabs(p2p0.z) > 0.001f)? p2p0.z: 0.001f;
+		const float tx = dfx / dx;
+		const float tz = dfz / dz;
+
+		bool ok = true;
+
+		if (hEdge) {
+			pi.x = p0.x + p2p0.x * tz;
+			pi.z = p1.z;
+		}
+		if (vEdge) {
+			pi.x = p1.x;
+			pi.z = p0.z + p2p0.z * tx;
+		}
+
+		ok = ok && (pi.x >= (xmin * SQUARE_SIZE) && pi.x <= (xmax * SQUARE_SIZE));
+		ok = ok && (pi.z >= (zmin * SQUARE_SIZE) && pi.z <= (zmax * SQUARE_SIZE));
+
+		if (ok) {
+			assert(!math::isinf(pi.x) && !math::isinf(pi.z));
+			assert(!math::isnan(pi.x) && !math::isnan(pi.z));
+
+			result = pi;
+			return ((pi - p1).SqLength2D() > Square(0.05f));
+		}
+	}
+
+	if (hEdge != vEdge) {
+		// get the edge end-points
+		float3 e0 = p1;
+		float3 e1 = p1;
+
+		if (hEdge) {
+			e0.x = xmin * SQUARE_SIZE;
+			e1.x = xmax * SQUARE_SIZE;
+		}
+		if (vEdge) {
+			e0.z = zmin * SQUARE_SIZE;
+			e1.z = zmax * SQUARE_SIZE;
+		}
+
+		// figure out what the angle between p0-p1 and p1-p2
+		// would be after substituting the edge-ends for p1
+		// (we want dot-products as close to 1 as possible)
+		//
+		// p0-e0-p2
+		const float3 e0p0 = (e0 - p0).SafeNormalize();
+		const float3 p2e0 = (p2 - e0).SafeNormalize();
+		const float  dot0 = e0p0.dot(p2e0);
+		// p0-e1-p2
+		const float3 e1p0 = (e1 - p0).SafeNormalize();
+		const float3 p2e1 = (p2 - e1).SafeNormalize();
+		const float  dot1 = e1p0.dot(p2e1);
+
+		// if neither end-point is an improvement, skip
+		if (dot >= std::max(dot0, dot1))
+			return 0;
+
+		if (dot0 > std::max(dot1, dot)) { pi = e0; }
+		if (dot1 >= std::max(dot0, dot)) { pi = e1; }
+
+		assert(!math::isinf(pi.x) && !math::isinf(pi.z));
+		assert(!math::isnan(pi.x) && !math::isnan(pi.z));
+		result = pi;
+		return ((pi - p1).SqLength2D() > Square(0.05f));
+	}
+	return 0;
+}
 
 
 bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
@@ -1133,6 +1195,8 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();
+
+	SmoothSharedPath(dstPath);
 
 	return true;
 }

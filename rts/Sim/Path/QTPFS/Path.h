@@ -148,6 +148,12 @@ namespace QTPFS {
 		}
 		const float3& GetPoint(unsigned int i) const { return points[std::min(i, NumPoints() - 1)]; }
 
+		void RemovePoint(unsigned int index) {
+			unsigned int start = std::min(index, NumPoints() - 1), end = NumPoints() - 1;
+			for (unsigned int i = start; i < end; ++i) { points[i] = points[i+1]; }
+			points.pop_back();
+		}
+
 		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint, int pointIdx) {
 			nodes[i].netPoint = netpoint;
 			nodes[i].nodeId = nodeId;
@@ -197,7 +203,7 @@ namespace QTPFS {
 		void SetPathType(int newPathType) { assert(pathType < moveDefHandler.GetNumMoveDefs()); pathType = newPathType; }
 		int GetPathType() const { return pathType; }
 
-		const std::vector<PathNodeData>& GetNodeList() const { return nodes; };
+		std::vector<PathNodeData>& GetNodeList() { return nodes; };
 
 		void SetSearchTime(spring_time time) { searchTime = time; }
 
