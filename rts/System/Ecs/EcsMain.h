@@ -7,7 +7,6 @@
 #ifdef cast
 #define RESTORE_LUA_MACROS
 #undef cast
-// #undef registry
 #endif
 
 #define ENTT_USE_ATOMIC
@@ -56,7 +55,6 @@
 // from llimits.h
 #define cast(t, exp)	((t)(exp))
 // from lstate.h
-// #define registry(L)	(&G(L)->l_registry)
 #undef RESTORE_LUA_MACROS
 #endif
 
