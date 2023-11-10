@@ -464,6 +464,7 @@ bool processContextEvent(Rml::Context *context, const SDL_Event &event)
 	}
 	break;
 	}
+	// these events are not captured, and should continue propogating
 	return false;
 }
 
@@ -473,9 +474,10 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 	{
 		return false;
 	}
+	bool result = false;
 	for (auto &context : data->contexts)
 	{
-		processContextEvent(context, event);
+		result |= processContextEvent(context, event);
 	}
-	return false;
+	return result;
 }
