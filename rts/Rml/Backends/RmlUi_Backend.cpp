@@ -42,21 +42,13 @@
 #include <functional>
 #include <tracy/Tracy.hpp>
 
-// #include "System/FileSystem/ArchiveScanner.h"
-// #include "System/FileSystem/DataDirLocater.h"
 #include "System/FileSystem/DataDirsAccess.h"
-// #include "System/FileSystem/FileHandler.h"
-// #include "System/FileSystem/FileSystem.h"
-// #include "System/FileSystem/FileSystemInitializer.h"
 #include "System/Input/InputHandler.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Game/UI/MouseHandler.h"
 
-/**
-		Custom render interface example for the SDL/GL3 backend.
+void createContext(const std::string &name);
 
-		Overloads the OpenGL3 render interface to load textures through SDL_image's built-in texture loading functionality.
- */
 class RenderInterface_GL3_SDL : public RenderInterface_GL3
 {
 public:
@@ -209,7 +201,7 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
-	RmlGui::CreateOverlayContext();
+	// RmlGui::CreateOverlayContext();
 	data->initialized = true;
 	return true;
 }
@@ -218,7 +210,7 @@ bool RmlGui::InitializeLua(lua_State *lua_state)
 {
 	sol::state_view lua(lua_state);
 	data->ls = lua_state;
-	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua);
+	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua, createContext);
 	data->system_interface.SetTranslationTable(&slp->translationTable);
 	return true;
 }
@@ -237,6 +229,10 @@ void RmlGui::Shutdown()
 
 void RmlGui::Reload()
 {
+	if (!data->initialized)
+	{
+		return;
+	}
 	LOG_L(L_FATAL, "[SpringApp::%s] reloading: ", __func__);
 	SDL_Window *window = data->window;
 	SDL_GLContext glcontext = data->glcontext;
@@ -276,23 +272,23 @@ void RmlGui::RequestExit()
 	// data->running = false;
 }
 
-void RmlGui::CreateContext()
+void createContext(const std::string &name)
 {
-	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(data->winX, data->winY));
+	Rml::Context *context = Rml::CreateContext(name, Rml::Vector2i(data->winX, data->winY));
 	// Rml::Debugger::Initialise(context);
 	RmlGui::AddContext(context);
 }
 
+void RmlGui::CreateContext(const std::string &name)
+{
+	createContext(name);
+}
+
 void RmlGui::CreateOverlayContext()
 {
-	Rml::Context *context = Rml::CreateContext("overlay", Rml::Vector2i(data->winX, data->winY));
-	// Rml::Debugger::Initialise(context);
-	RmlGui::AddContext(context);
-	// Rml::Debugger::SetVisible(true);
-	// Rml::ElementDocument *document = context->LoadDocument("RmlUi/demo/demo.rml");
-	// if (document)
-	// 	document->Show();
+	createContext("overlay");
 }
+
 void RmlGui::AddContext(Rml::Context *context)
 {
 	data->contexts.push_back(context);
@@ -301,21 +297,22 @@ void RmlGui::AddContext(Rml::Context *context)
 void RmlGui::Update()
 {
 	ZoneScopedN("RmlGui Update");
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return;
 	}
-	// TODO: define if headless?
+#ifndef HEADLESS
 	for (auto &context : data->contexts)
 	{
 		context->Update();
 	}
+#endif
 }
 
 void RmlGui::RenderFrame()
 {
 	ZoneScopedN("RmlGui Draw");
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return;
 	}
@@ -338,20 +335,19 @@ void RmlGui::BeginFrame()
 
 void RmlGui::PresentFrame()
 {
-
 	data->render_interface.EndFrame();
-	// SDL_GL_SwapWindow(data->window);
-
-	// Optional, used to mark frames during performance profiling.
 	RMLUI_FrameMark;
 }
 
+/*
+	Return true if the event was handled by rmlui
+*/
 bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 {
 	SDL_Event ev(event);
 	if (data == NULL || data->contexts.size() < 1 || !data->initialized)
 	{
-		return true;
+		return false;
 	}
 	switch (ev.type)
 	{
@@ -360,8 +356,8 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 	case SDL_MOUSEBUTTONUP:
 	case SDL_MOUSEWHEEL:
 	{
-		bool handled = RmlSDL::InputEventHandler(data->contexts[0], ev);
-		if (handled && ev.type == SDL_MOUSEBUTTONDOWN)
+		bool handled = !RmlSDL::InputEventHandler(data->contexts[0], ev);
+		if (!handled && ev.type == SDL_MOUSEBUTTONDOWN)
 		{
 			Rml::Element *el = data->contexts[0]->GetFocusElement();
 			if (el)
@@ -369,24 +365,27 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 				el->Blur();
 			}
 		}
-		data->inputReceiver.setActive(!handled);
+		data->inputReceiver.setActive(handled);
 		return handled;
 	}
 	default:
 	{
 		data->inputReceiver.setActive(false);
-		return true;
+		return false;
 	}
 	}
 }
 
+/*
+	Return true if the event was handled by rmlui
+*/
 bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return false;
 	}
-	auto kc =  RmlSDL::ConvertKey(keyCode);
+	auto kc = RmlSDL::ConvertKey(keyCode);
 	// if (kc == Rml::Input::KI_ESCAPE)
 	// {
 	// 	Rml::Element *el = data->contexts[0]->GetFocusElement();
@@ -402,7 +401,7 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 {
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return false;
 	}
@@ -411,7 +410,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 
 bool RmlGui::ProcessTextInput(const std::string &text)
 {
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return false;
 	}
@@ -420,7 +419,7 @@ bool RmlGui::ProcessTextInput(const std::string &text)
 
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
-	if (!data->initialized)
+	if (!data->initialized || data->contexts.size() < 1)
 	{
 		return false;
 	}
