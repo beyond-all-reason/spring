@@ -243,11 +243,11 @@ void RmlGui::Reload()
 	// RmlGui::CreateOverlayContext();
 }
 
-void RmlGui::ToggleDebugger()
+void RmlGui::ToggleDebugger(int contextIndex)
 {
 	if (data->debuggerAttached)
 	{
-		Rml::Debugger::Initialise(data->contexts[0]);
+		Rml::Debugger::Initialise(data->contexts[contextIndex]);
 		Rml::Debugger::SetVisible(true);
 	}
 	else
@@ -334,36 +334,43 @@ void RmlGui::PresentFrame()
 */
 bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 {
-	SDL_Event ev(event);
 	if (data == NULL || data->contexts.size() < 1 || !data->initialized)
 	{
 		return false;
 	}
-	switch (ev.type)
+	bool result = false;
+	for (auto &context : data->contexts)
 	{
-	case SDL_MOUSEMOTION:
-	case SDL_MOUSEBUTTONDOWN:
-	case SDL_MOUSEBUTTONUP:
-	case SDL_MOUSEWHEEL:
-	{
-		bool handled = !RmlSDL::InputEventHandler(data->contexts[0], ev);
-		if (!handled && ev.type == SDL_MOUSEBUTTONDOWN)
+		SDL_Event ev(event);
+		switch (ev.type)
 		{
-			Rml::Element *el = data->contexts[0]->GetFocusElement();
-			if (el)
+		case SDL_MOUSEMOTION:
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEWHEEL:
+		{
+			bool handled = !RmlSDL::InputEventHandler(context, ev);
+			if (!handled && ev.type == SDL_MOUSEBUTTONDOWN)
 			{
-				el->Blur();
+				Rml::Element *el = context->GetFocusElement();
+				if (el)
+				{
+					el->Blur();
+				}
 			}
+			data->inputReceiver.setActive(handled);
+			result |= handled;
+			break;
 		}
-		data->inputReceiver.setActive(handled);
-		return handled;
+		default:
+		{
+			data->inputReceiver.setActive(false);
+			result |= false;
+			break;
+		}
+		}
 	}
-	default:
-	{
-		data->inputReceiver.setActive(false);
-		return false;
-	}
-	}
+	return result;
 }
 
 /*
@@ -375,18 +382,23 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 	{
 		return false;
 	}
-	auto kc = RmlSDL::ConvertKey(keyCode);
-	// if (kc == Rml::Input::KI_ESCAPE)
-	// {
-	// 	Rml::Element *el = data->contexts[0]->GetFocusElement();
-	// 	if (el)
-	// 	{
-	// 		el->Blur();
-	// 	}
-	// 	return false;
-	// }
+	bool result = false;
+	for (auto &context : data->contexts)
+	{
+		auto kc = RmlSDL::ConvertKey(keyCode);
+		// if (kc == Rml::Input::KI_ESCAPE)
+		// {
+		// 	Rml::Element *el = context->GetFocusElement();
+		// 	if (el)
+		// 	{
+		// 		el->Blur();
+		// 	}
+		// 	return false;
+		// }
 
-	return !RmlSDL::EventKeyDown(data->contexts[0], kc);
+		result |= !RmlSDL::EventKeyDown(context, kc);
+	}
+	return result;
 }
 
 bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
@@ -395,7 +407,12 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 	{
 		return false;
 	}
-	return !RmlSDL::EventKeyUp(data->contexts[0], RmlSDL::ConvertKey(keyCode));
+	bool result = false;
+	for (auto &context : data->contexts)
+	{
+		result |= !RmlSDL::EventKeyUp(context, RmlSDL::ConvertKey(keyCode));
+	}
+	return result;
 }
 
 bool RmlGui::ProcessTextInput(const std::string &text)
@@ -404,7 +421,12 @@ bool RmlGui::ProcessTextInput(const std::string &text)
 	{
 		return false;
 	}
-	return !RmlSDL::EventTextInput(data->contexts[0], text);
+	bool result = false;
+	for (auto &context : data->contexts)
+	{
+		result |= !RmlSDL::EventTextInput(context, text);
+	}
+	return result;
 }
 
 bool RmlGui::ProcessEvent(const SDL_Event &event)
@@ -413,40 +435,41 @@ bool RmlGui::ProcessEvent(const SDL_Event &event)
 	{
 		return false;
 	}
-	SDL_Event ev(event);
-	switch (ev.type)
+	for (auto &context : data->contexts)
 	{
-	case SDL_WINDOWEVENT:
-	{
-		switch (ev.window.event)
+		SDL_Event ev(event);
+		switch (ev.type)
 		{
-		case SDL_WINDOWEVENT_SIZE_CHANGED:
+		case SDL_WINDOWEVENT:
 		{
-			Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
-			data->render_interface.SetViewport(dimensions.x, dimensions.y);
-			data->winX = dimensions.x;
-			data->winY = dimensions.y;
+			switch (ev.window.event)
+			{
+			case SDL_WINDOWEVENT_SIZE_CHANGED:
+			{
+				Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
+				data->render_interface.SetViewport(dimensions.x, dimensions.y);
+				data->winX = dimensions.x;
+				data->winY = dimensions.y;
+			}
+			break;
+			}
+			RmlSDL::InputEventHandler(context, ev);
+		}
+		break;
+		case SDL_MOUSEMOTION:
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEWHEEL:
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+		case SDL_TEXTINPUT:
+			break; // handled elsewhere
+		default:
+		{
+			RmlSDL::InputEventHandler(context, ev);
 		}
 		break;
 		}
-		if (data != NULL && data->contexts.size() > 0)
-			RmlSDL::InputEventHandler(data->contexts[0], ev);
-	}
-	break;
-	case SDL_MOUSEMOTION:
-	case SDL_MOUSEBUTTONDOWN:
-	case SDL_MOUSEBUTTONUP:
-	case SDL_MOUSEWHEEL:
-	case SDL_KEYDOWN:
-	case SDL_KEYUP:
-	case SDL_TEXTINPUT:
-		break; // handled elsewhere
-	default:
-	{
-		if (data != NULL && data->contexts.size() > 0)
-			RmlSDL::InputEventHandler(data->contexts[0], ev);
-	}
-	break;
 	}
 	return false;
 }
