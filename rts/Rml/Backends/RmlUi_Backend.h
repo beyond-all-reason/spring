@@ -57,7 +57,7 @@ bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
 bool ProcessKeyReleased(int keyCode, int scanCode);
 bool ProcessTextInput(const std::string& text);
 
-void ToggleDebugger();
+void ToggleDebugger(int contextIndex);
 
 void Update();
 void RenderFrame();
