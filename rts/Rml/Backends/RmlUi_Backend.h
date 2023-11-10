@@ -63,7 +63,6 @@ void Update();
 void RenderFrame();
 
 void CreateContext(const std::string& name);
-void CreateOverlayContext();
 void AddContext(Rml::Context *context);
 
 void BeginFrame();
