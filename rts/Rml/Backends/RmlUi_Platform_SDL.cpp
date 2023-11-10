@@ -133,12 +133,12 @@ bool RmlSDL::EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key)
 	return context->ProcessKeyUp(key, GetKeyModifierState());
 }
 
-bool RmlSDL::EventTextInput(Rml::Context *context, const std::string& text)
+bool RmlSDL::EventTextInput(Rml::Context *context, const std::string &text)
 {
 	return context->ProcessTextInput(Rml::String(text));
 }
 
-bool RmlSDL::InputEventHandler(Rml::Context *context, SDL_Event &ev)
+bool RmlSDL::InputEventHandler(Rml::Context *context, const SDL_Event &ev)
 {
 	bool result = true;
 
