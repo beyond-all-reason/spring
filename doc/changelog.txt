@@ -86,6 +86,7 @@ Lua:
    start box (in elmos) for an ally team.
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
+ - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
 
 
 Game Setup:
