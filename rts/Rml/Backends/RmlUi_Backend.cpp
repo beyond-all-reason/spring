@@ -267,11 +267,6 @@ Rml::RenderInterface *RmlGui::GetRenderInterface()
 	return &data->render_interface;
 }
 
-void RmlGui::RequestExit()
-{
-	// data->running = false;
-}
-
 void createContext(const std::string &name)
 {
 	Rml::Context *context = Rml::CreateContext(name, Rml::Vector2i(data->winX, data->winY));
@@ -280,11 +275,6 @@ void createContext(const std::string &name)
 }
 
 void RmlGui::CreateContext(const std::string &name)
-{
-	createContext(name);
-}
-
-void RmlGui::CreateOverlayContext()
 {
 	createContext("overlay");
 }
