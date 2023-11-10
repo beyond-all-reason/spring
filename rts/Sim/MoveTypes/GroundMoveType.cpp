@@ -3207,14 +3207,14 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		float maxDist = maxSpeed;
 		float maxDistSq = maxDist*maxDist;
 
-		const int startingSquare = (newPos.z / SQUARE_SIZE)*mapDims.mapx + newPos.x / SQUARE_SIZE;
+		const unsigned int startingSquare = int(newPos.z / SQUARE_SIZE)*mapDims.mapx + int(newPos.x / SQUARE_SIZE);
 
 		auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, &resultantMove, maxDistSq, maxDist, &newPos](float3&& posOffset){
 			float3 posToTest = newPos + posOffset;
 			// float3 posDir = posToTest - prevPos;
 			// if (posDir.SqLength2D() > maxDistSq)
 			// 	posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
-			int curSquare = (posToTest.z / SQUARE_SIZE)*mapDims.mapx + posToTest.x / SQUARE_SIZE;
+			unsigned int curSquare = int(posToTest.z / SQUARE_SIZE)*mapDims.mapx + int(posToTest.x / SQUARE_SIZE);
 			if (curSquare != startingSquare) {
 				bool updatePos = isSquareOpen(posToTest);
 				if (updatePos) {
@@ -3225,10 +3225,10 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			return false;
 		};
 
-		for (unsigned int n = 1; n <= SQUARE_SIZE; n++) {
+		for (int n = 1; n <= SQUARE_SIZE; n++) {
 			updatePos = tryToMove(unit->rightdir * n);
 			if (updatePos) { break; }
-			updatePos = tryToMove(unit->rightdir * n);
+			updatePos = tryToMove(unit->rightdir * -n);
 			if (updatePos) { break; }
 		}
 
