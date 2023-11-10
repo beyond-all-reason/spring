@@ -69,7 +69,7 @@ IMouseInput::~IMouseInput()
 
 bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 {
-	if (!mouse->ButtonPressed() && !RmlGui::ProcessMouseEvent(event)) {
+	if (!mouse->ButtonPressed() && RmlGui::ProcessMouseEvent(event)) {
 		return false;
 	}
 	switch (event.type) {
