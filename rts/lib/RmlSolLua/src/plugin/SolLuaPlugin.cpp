@@ -9,13 +9,13 @@
 namespace Rml::SolLua
 {
 
-	SolLuaPlugin::SolLuaPlugin(sol::state_view lua_state)
-		: m_lua_state{ lua_state }
+	SolLuaPlugin::SolLuaPlugin(sol::state_view lua_state, void (*contextCreator)(const std::string& name))
+		: m_lua_state{ lua_state }, createContext{contextCreator}
 	{
 	}
 
-	SolLuaPlugin::SolLuaPlugin(sol::state_view lua_state, const Rml::String& lua_environment_identifier)
-		: m_lua_state{ lua_state }, m_lua_env_identifier{ lua_environment_identifier }
+	SolLuaPlugin::SolLuaPlugin(sol::state_view lua_state, void (*contextCreator)(const std::string& name), const Rml::String& lua_environment_identifier)
+		: m_lua_state{ lua_state }, createContext{contextCreator}, m_lua_env_identifier{ lua_environment_identifier }
 	{
 	}
 
