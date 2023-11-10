@@ -14,7 +14,6 @@ public:
 
 	bool IsAbove(int x, int y) { return rml_active; };
 	void setActive(bool active) { rml_active = active; };
-	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) { return RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat); }
 
 private:
 	bool rml_active;

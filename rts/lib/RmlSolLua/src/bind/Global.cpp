@@ -46,14 +46,14 @@ namespace Rml::SolLua
 
 	#define _ENUM(N) t[#N] = Rml::Input::KI_##N
 
-	void bind_global(sol::state_view& lua, TranslationTable* translationTable)
+	void bind_global(sol::state_view& lua, TranslationTable* translationTable, void (*createContext)(const std::string& name))
 	{
 
 		struct rmlui {};
 
 		auto g = lua.new_usertype<rmlui>("rmlui",
 			// M
-			"CreateContext", &Rml::CreateContext,
+			"CreateContext", createContext,
 			"LoadFontFace", sol::overload(
 				&functions::loadFontFace1,
 				&functions::loadFontFace2,
