@@ -772,6 +772,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
+	if (fwd.srcSearchNode->GetIndex() != bwd.srcSearchNode->GetIndex())
 	{
 		// Only a bad path will be associated with the reverse path
 		if (!haveFullPath)
