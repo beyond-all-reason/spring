@@ -965,7 +965,8 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 	INode* nn0 = nodeLayer->GetPoolNode(n1->nodeId);
 	INode* nn1 = nn0;
 
-	for (; ni > 1;) {
+	// Three points are needed to smooth a path entry.
+	for (; ni > 2;) {
 		nodeIdx = getNextNodeIndex(nodeIdx);
 		if (nodeIdx < 0)
 			break;
