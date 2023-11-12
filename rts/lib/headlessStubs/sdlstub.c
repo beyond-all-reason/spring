@@ -363,6 +363,23 @@ extern DECLSPEC void SDLCALL SDL_StartTextInput(void) {
 extern DECLSPEC void SDLCALL SDL_StopTextInput(void) {
 }
 
+extern DECLSPEC int SDLCALL SDL_CaptureMouse(SDL_bool capture) {
+	return 0;
+}
+
+extern DECLSPEC int SDLCALL SDL_SetSurfaceAlphaMod(SDL_Surface* surface, Uint8 alpha) {
+	return 0;
+}
+extern DECLSPEC int SDLCALL SDL_SetSurfaceBlendMode(SDL_Surface* surface, SDL_BlendMode mode) {
+	return 0;
+}
+extern DECLSPEC SDL_Surface* SDLCALL SDL_CreateRGBSurfaceWithFormat(Uint32 flags, int width, int height, int depth, Uint32 format) {
+	return NULL;
+}
+extern DECLSPEC int SDLCALL SDL_UpperBlit(SDL_Surface* src, const SDL_Rect* srcrect, SDL_Surface* dst, SDL_Rect* dstrect) {
+	return 0;
+}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

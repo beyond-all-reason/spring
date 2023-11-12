@@ -93,6 +93,16 @@ endif()
 find_freetype_hack() # hack to find different named freetype.dll
 find_package_static(Freetype REQUIRED)
 
-# option(BUILD_LUA_BINDINGS "RmlUI lua " TRUE)
+# lunasvg does not expect number constants to be floats, so we undo this cmake flag for its compilation
+string(REPLACE "-fsingle-precision-constant" "" NEW_CMAKE_FLAGS ${CMAKE_CXX_FLAGS})
+set(SAVED_CMAKE_FLAGS ${CMAKE_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS ${NEW_CMAKE_FLAGS})
+set(SAVED_BUILD_LIBS ${BUILD_SHARED_LIBS})
+option(BUILD_SHARED_LIBS "" ON)
+add_subdirectory(lunasvg)
+set(CMAKE_CXX_FLAGS ${SAVED_CMAKE_FLAGS})
+
+option(ENABLE_SVG_PLUGIN "RmlUi with SVG support" ON)
 add_subdirectory(RmlUi)
+
 add_subdirectory(RmlSolLua)
