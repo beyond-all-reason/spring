@@ -3819,8 +3819,7 @@ int CLuaHandle::CallOutUpdateCallIn(lua_State* L)
 
 void CLuaHandle::InitializeRmlUi()
 {
-	RmlGui::InitializeLua(L);
-	rmlui = true;
+	rmlui = RmlGui::InitializeLua(L);
 }
 
 /******************************************************************************/
