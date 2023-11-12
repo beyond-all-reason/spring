@@ -33,6 +33,7 @@
 #include <RmlUi/Core/SystemInterface.h>
 #include <SDL.h>
 #include <System/Log/ILog.h>
+#include <System/Misc/SpringTime.h>
 
 SystemInterface_SDL::SystemInterface_SDL()
 {
@@ -49,9 +50,7 @@ void SystemInterface_SDL::SetWindow(SDL_Window *in_window)
 
 double SystemInterface_SDL::GetElapsedTime()
 {
-	static const Uint64 start = SDL_GetPerformanceCounter();
-	static const double frequency = double(SDL_GetPerformanceFrequency());
-	return double(SDL_GetPerformanceCounter() - start) / frequency;
+	return spring_gettime().toSecsf();
 }
 
 int SystemInterface_SDL::TranslateString(Rml::String &translated, const Rml::String &input)

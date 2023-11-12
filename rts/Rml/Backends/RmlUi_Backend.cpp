@@ -29,6 +29,7 @@
 #include "RmlUi_Backend.h"
 #include "RmlUi_Platform_SDL.h"
 #include "RmlUi_Renderer_GL3.h"
+#include "RmlUi_Renderer_Headless.h"
 #include <RmlUi/Core.h>
 #include <RmlUi/Lua.h>
 #include <RmlUi/Debugger.h>
@@ -156,7 +157,11 @@ public:
 struct BackendData
 {
 	SystemInterface_SDL system_interface;
+#ifndef HEADLESS
 	RenderInterface_GL3_SDL render_interface;
+#else
+	RenderInterface_Headless render_interface;
+#endif
 	VFSFileInterface file_interface;
 
 	SDL_Window *window = nullptr;
