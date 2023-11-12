@@ -43,7 +43,7 @@ public:
 	 * @param pathID
 	 *     The path-id returned by RequestPath.
 	 */
-	virtual void DeletePath(unsigned int pathID) {}
+	virtual void DeletePath(unsigned int pathID, bool force = false) {}
 
 	/**
 	 * Returns the next waypoint of the path.

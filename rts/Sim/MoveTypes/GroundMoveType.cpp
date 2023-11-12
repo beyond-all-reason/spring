@@ -511,7 +511,7 @@ CGroundMoveType::~CGroundMoveType()
 	if (pathID == 0)
 		return;
 
-	pathManager->DeletePath(pathID);
+	pathManager->DeletePath(pathID, true);
 }
 
 void CGroundMoveType::PostLoad()
@@ -897,6 +897,16 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 
 	// set the new goal
 	goalPos = moveGoalPos * XZVector;
+
+	float mapx = mapDims.mapx * SQUARE_SIZE;
+	float mapz = mapDims.mapy * SQUARE_SIZE;
+
+	// Sanitize the move command.
+	if (goalPos.x < 0.f)  { goalPos.x = 0.f; }
+	if (goalPos.z < 0.f)  { goalPos.z = 0.f; }
+	if (goalPos.x > mapx) { goalPos.x = mapx; }
+	if (goalPos.z > mapz) { goalPos.z = mapz; }
+
 	goalRadius = moveGoalRadius;
 	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(nullptr, moveGoalPos, ZeroVector, true, true));
 

@@ -395,7 +395,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	return bestResult;
 }
 
-void CPathManager::DeletePath(unsigned int pathID) {
+void CPathManager::DeletePath(unsigned int pathID, bool /* force ignored*/) {
 	if (pathID == 0)
 		return;
 	{

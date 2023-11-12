@@ -22,6 +22,10 @@ namespace QTPFS {
 			uint32_t nodeId;
 			float2 netPoint;
 			int pathPointIndex = -1;
+			int xmin = 0;
+			int zmin = 0;
+			int xmax = 0;
+			int zmax = 0;
 		};
 
 		IPath() {}
@@ -40,6 +44,8 @@ namespace QTPFS {
 			radius = other.radius;
 			synced = other.synced;
 			haveFullPath = other.haveFullPath;
+			havePartialPath = other.havePartialPath;
+			boundingBoxOverride = other.boundingBoxOverride;
 			points = other.points;
 			nodes = other.nodes;
 
@@ -65,8 +71,10 @@ namespace QTPFS {
 			radius = other.radius;
 			synced = other.synced;
 			haveFullPath = other.haveFullPath;
+			havePartialPath = other.havePartialPath;
+			boundingBoxOverride = other.boundingBoxOverride;
 			points = std::move(other.points);
-			nodes = other.nodes;
+			nodes = std::move(other.nodes);
 
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
@@ -111,9 +119,23 @@ namespace QTPFS {
 				boundingBoxMaxs.z = std::max(boundingBoxMaxs.z, points[n].z);
 			}
 
+			boundingBoxOverride = false;
+
 			checkPointInBounds(boundingBoxMins);
 			checkPointInBounds(boundingBoxMaxs);
 		}
+
+		void SetBoundingBox(float3 mins, float3 maxs) {
+			boundingBoxMins = mins;
+			boundingBoxMaxs = maxs;
+
+			boundingBoxOverride = true;
+
+			checkPointInBounds(boundingBoxMins);
+			checkPointInBounds(boundingBoxMaxs);
+		}
+
+		bool IsBoundingBoxOverriden() const { return boundingBoxOverride; }
 
 		// // This version is only safe if decltype(points)::value_type == float4
 		// void SetBoundingBoxSse() {
@@ -159,6 +181,12 @@ namespace QTPFS {
 			nodes[i].nodeId = nodeId;
 			nodes[i].pathPointIndex = pointIdx;
 		}
+		void SetNodeBoundary(unsigned int i, int xmin, int zmin, int xmax, int zmax) {
+			nodes[i].xmin = xmin;
+			nodes[i].zmin = zmin;
+			nodes[i].xmax = xmax;
+			nodes[i].zmax = zmax;
+		}
 		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
 
 		void SetSourcePoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[                0] = p; }
@@ -169,8 +197,8 @@ namespace QTPFS {
 		void checkPointInBounds(const float3& p) {
 			assert(p.x >= 0.f);
 			assert(p.z >= 0.f);
-			assert(p.x / SQUARE_SIZE < mapDims.mapx);
-			assert(p.z / SQUARE_SIZE < mapDims.mapy);
+			assert(p.x / SQUARE_SIZE <= mapDims.mapx);
+			assert(p.z / SQUARE_SIZE <= mapDims.mapy);
 		}
 
 		void SetOwner(const CSolidObject* o) { owner = o; }
@@ -230,6 +258,7 @@ namespace QTPFS {
 		bool synced = true;
 		bool haveFullPath = true;
 		bool havePartialPath = false;
+		bool boundingBoxOverride = false;
 
 		std::vector<float3> points;
 		std::vector<PathNodeData> nodes;

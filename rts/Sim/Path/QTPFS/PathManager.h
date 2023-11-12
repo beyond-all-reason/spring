@@ -49,7 +49,7 @@ namespace QTPFS {
 		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) override;
 		void Update() override;
 		void UpdatePath(const CSolidObject* owner, unsigned int pathID) override;
-		void DeletePath(unsigned int pathID) override;
+		void DeletePath(unsigned int pathID, bool force = false) override;
 		void DeletePathEntity(entt::entity pathEntity);
 
 		unsigned int RequestPath(
@@ -117,7 +117,7 @@ namespace QTPFS {
 		void InitRootSize(const SRectangle& r);
 		void UpdateNodeLayer(unsigned int layerNum, const SRectangle& r, int currentThread);
 
-		void InitializeSearch(entt::entity searchEntity);
+		bool InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
 		void RemovePathFromPartialShared(entt::entity entity);
 

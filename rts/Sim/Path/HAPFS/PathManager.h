@@ -120,7 +120,7 @@ public:
 	void RemoveCacheFiles() override;
 	void Update() override;
 	void UpdatePath(const CSolidObject*, unsigned int) override;
-	void DeletePath(unsigned int pathID) override;// {
+	void DeletePath(unsigned int pathID, bool force = false) override;// {
 	// 	if (pathID == 0)
 	// 		return;
 	// 	{

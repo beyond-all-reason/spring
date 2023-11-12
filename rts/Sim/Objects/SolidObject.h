@@ -327,6 +327,7 @@ private:
 
 	float3 GetMidPos() const { return (GetObjectSpacePos(relMidPos)); }
 	float3 GetAimPos() const { return (GetObjectSpacePos(relAimPos)); }
+
 public:
 	float health = 0.0f;
 	float maxHealth = 1.0f;
@@ -431,6 +432,7 @@ public:
 
 	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
 	uint8_t previousDrawFlag = DrawFlags::SO_NODRAW_FLAG;
+	bool objectUsable = true;
 
 	/**
 	 * @brief mod controlled parameters
