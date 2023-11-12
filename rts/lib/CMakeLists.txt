@@ -106,6 +106,7 @@ set(SAVED_BUILD_LIBS ${BUILD_SHARED_LIBS})
 option(BUILD_SHARED_LIBS "" ON)
 add_subdirectory(lunasvg)
 set(CMAKE_CXX_FLAGS ${SAVED_CMAKE_FLAGS})
+set(BUILD_SHARED_LIBS OFF)
 
 option(ENABLE_SVG_PLUGIN "RmlUi with SVG support" ON)
 add_subdirectory(RmlUi)
