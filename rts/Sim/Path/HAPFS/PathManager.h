@@ -301,7 +301,6 @@ private:
 	CPathFinder* maxResPFs;
 
 	std::vector<IPathFinder*> pathFinders;
-	std::vector<entt::entity> pathSearches;
 };
 
 }
