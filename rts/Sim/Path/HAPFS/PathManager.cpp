@@ -455,6 +455,7 @@ unsigned int CPathManager::RequestPath(
 			registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
 		}
 		else {
+			pathId = existingSearch->pathId;
 			MultiPath* curMultiPath = GetMultiPath(existingSearch->pathId);
 			*curMultiPath = std::move(newPath);
 			*existingSearch = std::move(PathSearch(caller, moveDef, startPos, goalPos, goalRadius, pathId));
