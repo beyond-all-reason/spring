@@ -2125,8 +2125,14 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 		}
 
+		// Check if the unit has overshot the current waypoint and on route to the next waypoint.
+		const float3& p0 = earlyCurrWayPoint, v0 = float3(p0.x - pos.x, 0.0f, p0.z - pos.z);
+		const float3& p1 = earlyNextWayPoint, v1 = float3(p1.x - pos.x, 0.0f, p1.z - pos.z);
+		bool unitIsBetweenWaypoints = (v0.dot(v1) <= -0.f);
+
 		// The last waypoint on a bad path will never pass a range check so don't try.
-		bool doRangeCheck = !pathManager->NextWayPointIsUnreachable(pathID);
+		bool doRangeCheck = !pathManager->NextWayPointIsUnreachable(pathID)
+						 && !unitIsBetweenWaypoints;
 		if (doRangeCheck) {
 			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
 			const float3 targetPos = nwp;
