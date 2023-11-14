@@ -876,8 +876,11 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 						// LOG("%s: %x - raw path check failed", __func__, entt::to_integral(pathEntity));
 					} else if (search->pathRequestWaiting) {
 						// nothing to do - it will be rerun next frame
+						// Because anything can happen to pathing states between now and the next
+						// call for path requests, so this should be resubmitted to garuantee the
+						// safety checks are performed.
 						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
-						continue;
+						RequeueSearch(path, false, true);
 					} else if (search->rejectPartialSearch) {
 						registry.remove<PathSearchRef>(pathEntity);
 						RequeueSearch(path, false, false);
