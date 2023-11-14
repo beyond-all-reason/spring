@@ -129,6 +129,11 @@ void MoveDefHandler::Init(LuaParser* defsParser)
 		moveDefs[mdCounter] = {moveDefTable};
 		nameMap[hashString(moveDefs[mdCounter].name.c_str())] = (moveDefs[mdCounter].pathType = moveDefID);
 
+		largestSize = std::max(largestSize, moveDefs[mdCounter].xsize);
+		largestSize = std::max(largestSize, moveDefs[mdCounter].zsize);
+		largestSizeH = std::max(largestSizeH, moveDefs[mdCounter].xsizeh);
+		largestSizeH = std::max(largestSizeH, moveDefs[mdCounter].zsizeh);
+
 		crc << moveDefs[mdCounter++].CalcCheckSum();
 	}
 

@@ -195,12 +195,18 @@ public:
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
+	int GetLargestFootPrintXSize() { return largestSize; };
+	int GetLargestFootPrintSizeH() { return largestSizeH; };
+
 private:
 	std::array<MoveDef, MAX_MOVE_DEFS> moveDefs;
 	spring::unordered_map<unsigned int, int> nameMap;
 
 	unsigned int mdCounter = 0;
 	unsigned int mdChecksum = 0;
+
+	int largestSize = 0;
+	int largestSizeH = 0;
 };
 
 extern MoveDefHandler moveDefHandler;

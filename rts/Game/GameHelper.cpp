@@ -1244,11 +1244,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	if (synced)
 	{
 		// buffer should be the maximum distance given by the movetype using the formula:
-		// maxspeed * modInfo.unitQuadPositionUpdateRate + footStep + 1
+		// maxspeed * modInfo.unitQuadPositionUpdateRate + half footStep + 1
 		// +1 on end is a safety buffer against rounding issues with square placement.
 		// placeholder values are given here for the moment.
-		// TODO: switch out for a value determined by the above formula
-		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + 10 + 1;
+		const int largestMoveTypSizeH = moveDefHandler.GetLargestFootPrintSizeH() + 1;
+		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + largestMoveTypSizeH + 1;
 		const float3 min((x1 - bufferSize) * SQUARE_SIZE, 0.f, (z1 - bufferSize) * SQUARE_SIZE);
 		const float3 max((x2 + bufferSize) * SQUARE_SIZE, 0.f, (z2 + bufferSize) * SQUARE_SIZE);
 
