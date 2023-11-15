@@ -3,6 +3,7 @@
 
 #include <SDL_scancode.h>
 
+#include "Game/UI/KeyBindings.h"
 #include "ScanCodes.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
@@ -24,18 +25,44 @@ int CScanCodes::GetNormalizedSymbol(int sym)
 }
 
 
+unsigned char CScanCodes::ToModifier(const int code)
+{
+	switch (code) {
+		case SDL_SCANCODE_LALT:
+		case SDL_SCANCODE_RALT:
+			return CKeySet::KS_ALT;
+		case SDL_SCANCODE_LCTRL:
+		case SDL_SCANCODE_RCTRL:
+			return CKeySet::KS_CTRL;
+		case SDL_SCANCODE_LSHIFT:
+		case SDL_SCANCODE_RSHIFT:
+			return CKeySet::KS_SHIFT;
+		case SDL_SCANCODE_LGUI:
+		case SDL_SCANCODE_RGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return CKeySet::KS_META;
+			}
+	}
+
+	return 0;
+}
+
+
 bool CScanCodes::IsModifier(int code) const
 {
 	switch (code) {
 		case SDL_SCANCODE_LALT:
 		case SDL_SCANCODE_LCTRL:
-		case SDL_SCANCODE_LGUI:
 		case SDL_SCANCODE_LSHIFT:
 		case SDL_SCANCODE_RALT:
 		case SDL_SCANCODE_RCTRL:
-		case SDL_SCANCODE_RGUI:
 		case SDL_SCANCODE_RSHIFT:
 			return true;
+		case SDL_SCANCODE_LGUI:
+		case SDL_SCANCODE_RGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return true;
+			}
 	}
 	return false;
 }
@@ -50,6 +77,18 @@ void CScanCodes::Reset()
 
 	printableCodes.clear();
 	printableCodes.reserve(64);
+
+	// None is a special case we reserve for pure modifier keysets,
+	// e.g. Alt+Ctrl+sc_none
+	//
+	// Reason is that pure modifier keysets make it simpler to disambiguate all
+	// combinations of modifiers+keys, i.e. all these should be equal internally:
+	//
+	// Alt+ctrl == Ctrl+alt == Alt+Ctrl+sc_none == Ctrl+Alt+sc_none
+	//
+	// Users can still define their keysets without none, we perform the
+	// sanitization internally
+	AddPair("sc_none",      -1);
 
 	AddPair("sc_backspace", SDL_SCANCODE_BACKSPACE);
 	AddPair("sc_tab",       SDL_SCANCODE_TAB);

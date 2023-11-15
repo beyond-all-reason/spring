@@ -394,7 +394,11 @@ const ActionList & CKeyBindings::GetActionList(const CKeySet& ks, bool forceAny)
 {
 	static ActionList empty;
 
-	if (ks.Key() < 0)
+	const int key = ks.Key();
+
+	// We use -1 for 'none' when matching pure modifier keysets
+	// 0 == SDLK_UNKNOWN == SDL_SCAN_UNKNOWN
+	if (key < -1 || key == 0)
 		return empty;
 
 	const auto & bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
