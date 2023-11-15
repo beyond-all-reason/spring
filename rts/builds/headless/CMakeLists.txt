@@ -36,7 +36,6 @@ include_directories(${ENGINE_SRC_ROOT_DIR}/lib/assimp/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/RmlSolLua/src)
-include_directories(${ENGINE_SRC_ROOT_DIR}/lib/lunasvg/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
 
 ### Build the executable
