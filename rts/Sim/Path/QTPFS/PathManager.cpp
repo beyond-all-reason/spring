@@ -876,11 +876,8 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 						// LOG("%s: %x - raw path check failed", __func__, entt::to_integral(pathEntity));
 					} else if (search->pathRequestWaiting) {
 						// nothing to do - it will be rerun next frame
-						// Because anything can happen to pathing states between now and the next
-						// call for path requests, so this should be resubmitted to garuantee the
-						// safety checks are performed.
 						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
-						RequeueSearch(path, false, true);
+						continue;
 					} else if (search->rejectPartialSearch) {
 						registry.remove<PathSearchRef>(pathEntity);
 						RequeueSearch(path, false, false);
@@ -940,6 +937,11 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// TODO: make a function?
 	if (synced)
 	{
+		// Always clear incase the situation has changed since the last frame, if a partial search
+		// was intended, but not carried out. For example, a full-path share wait.
+		if (search->doPartialSearch)
+			search->doPartialSearch = false;
+
 		if (search->allowPartialSearch)
 		{
 			PartialSharedPathMap::const_iterator partialSharedPathsIt = partialSharedPaths.find(path->GetVirtualHash());
