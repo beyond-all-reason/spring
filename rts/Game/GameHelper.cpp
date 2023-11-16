@@ -895,6 +895,50 @@ void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, boo
 	::BuggerOffImpl(pos, radius, spherical, forced, teamId, testPredicate);
 }
 
+// version of bugger off that takes into account the unit's movedef footprint, which is what gets
+// used to check for square testing for building other units.
+void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, bool forced, int teamId, const CUnit* excludeUnit)
+{
+	const int bufferSize = (moveDefHandler.GetLargestFootPrintSizeH() + 1) * SQUARE_SIZE;
+	const float3 min((mins.x - bufferSize), 0.f, (mins.z - bufferSize));
+	const float3 max((maxs.x + bufferSize), 0.f, (maxs.z + bufferSize));
+
+	const float3 baseBufferOffLengths = (maxs - mins) * 0.5f;
+	const float3 centreOfBuggerOff = mins + baseBufferOffLengths;
+	const float baseBuggerOffRadius = baseBufferOffLengths.Length2D() + SQUARE_SIZE;
+
+	// copy on purpose since BuggerOff can call risky stuff
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, min, max);
+	const int allyTeamId = teamHandler.AllyTeam(teamId);
+
+	for (CUnit* u : *qfQuery.units) {
+		if (u->moveDef == nullptr) { continue; }
+
+		const float footPrintX = (u->moveDef->xsizeh+1)*SQUARE_SIZE;
+		const float footPrintZ = (u->moveDef->zsizeh+1)*SQUARE_SIZE;
+
+		if (u->pos.x + footPrintX < mins.x) { continue; }
+		if (u->pos.z + footPrintZ < mins.z) { continue; }
+		if (u->pos.x - footPrintX > maxs.x) { continue; }
+		if (u->pos.z - footPrintZ > maxs.z) { continue; }
+
+		if (u == excludeUnit)
+			continue;
+
+		// don't send BuggerOff commands to enemy units
+		if (!teamHandler.Ally(u->allyteam, allyTeamId) && !teamHandler.Ally(allyTeamId, u->allyteam))
+			continue;
+		if (!forced && (u->moveType->IsPushResistant() || u->UsingScriptMoveType()))
+			continue;
+
+		const float footPrintRadius = math::sqrtf(footPrintX*footPrintX + footPrintZ*footPrintZ);
+		const float buggerOffRadius = baseBuggerOffRadius + footPrintRadius;
+
+		u->commandAI->BuggerOff(centreOfBuggerOff, buggerOffRadius);
+	}
+}
+
 void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit, const std::vector<const UnitDef*> excludeUnitDefs)
 {
 	const auto testPredicate = [excludeUnit, &excludeUnitDefs](const CUnit* u) {
