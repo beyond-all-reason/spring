@@ -306,8 +306,13 @@ bool MoveDef::DoRawSearch(
 	ZoneScoped;
 	assert(testTerrain || testObjects);
 
+	// if the endPos sits on a cross section, shift the pos slightly to pick the most appropriate
+	// block. If perfectly aligned with starPos then don't shift because the blocks will align.
+	const float upDir    = (startPos.z == endPos.z) ? 0 : 1 - float(startPos.z < endPos.z) * 2.f;
+	const float rightDir = (startPos.x == endPos.x) ? 0 : 1 - float(startPos.x < endPos.x) * 2.f;
+
 	const int2 startBlock(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE);
-	const int2 endBlock(endPos.x / SQUARE_SIZE, endPos.z / SQUARE_SIZE);
+	const int2 endBlock((endPos.x + rightDir) / SQUARE_SIZE, (endPos.z + upDir) / SQUARE_SIZE);
 	const int2 diffBlk = {std::abs(endBlock.x - startBlock.x), std::abs(endBlock.y - startBlock.y)};
 	const float speedModThreshold = modInfo.pfRawMoveSpeedThreshold;
 
