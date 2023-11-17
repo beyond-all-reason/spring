@@ -5756,10 +5756,13 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Get the number or list of commands for a factory
  *
  * @function Spring.GetFactoryCommands
+ *
  * @number unitID
+ * @number count when 0 returns the number of commands in the units queue, when -1 returns all commands, number of commands to return otherwise
+ * @treturn number|{cmd,...} commands
  */
 int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 {
@@ -5867,10 +5870,12 @@ static void PackFactoryCounts(lua_State* L,
 }
 
 
-/***
+/*** Gets the build queue of a factory
  *
  * @function Spring.GetFactoryCounts
  * @number unitID
+ * @number[opt=-1] count then number of commands to retrieve, when -1 all
+ * @bool[opt=false] addCmds if commands other than buildunit are retrieved
  */
 int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 {
