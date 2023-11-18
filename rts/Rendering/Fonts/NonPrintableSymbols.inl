@@ -645,5 +645,5 @@ std::vector<char32_t> CFontTexture::nonPrintableRanges = {
 	55239,
 	55242,
 	55292,
-	std::numeric_limits<uint32_t>::max()
+	std::numeric_limits<char32_t>::max()
 };

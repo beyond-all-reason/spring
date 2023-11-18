@@ -628,7 +628,7 @@ CFontTexture::~CFontTexture()
 void CFontTexture::InitFonts()
 {
 #ifndef HEADLESS
-	maxFontTries = configHandler ? configHandler->GetInt("MaxFontTries") : std::numeric_limits<int>::max();
+	maxFontTries = configHandler ? configHandler->GetInt("MaxFontTries") : 5;
 #endif
 }
 
