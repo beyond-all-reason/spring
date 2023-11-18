@@ -221,6 +221,13 @@ These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.
 * added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
 * added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
 
+### Graphical Lua interfaces
+* added `gl.ClearBuffer(slot, r,g,b,a) → nil`. `slot` can be "color0" to "color15", "depth", or "stencil".
+Clears only the specified drawBuffer within multi-target FBO and correctly clears integer textures.
+* added `gl.ReadAttachmentPixel(slot, x,y) → attachmentPixel`. `slot` can be "color0" to "color15" or "depth".
+Reads a single pixel of a specified attachment with respect to its underlying type, correctly works for integer textures.
+* added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
+
 ### Colored text
 * added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
 * added the `Game.textColorCodes` table, containing the constants `Color` (`\255`), `ColorAndOutline` (the newly added `\254`), and `Reset` (`\008`).
@@ -242,7 +249,6 @@ Multiple functions can be queued onto the same frame and run in the order they w
 The weapon number is optional if the unit has a single shield. The timer value is also optional: if you leave it nil it will emulate a weapon hit.
 Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
 An explicit numerical value always sets the timer to that many seconds.
-* added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
 * added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
