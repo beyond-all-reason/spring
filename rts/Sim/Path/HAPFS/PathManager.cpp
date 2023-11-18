@@ -692,7 +692,7 @@ float3 CPathManager::NextWayPoint(
 	}
 
 	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
-	if (multiPath->moveDef == nullptr)
+	if (!multiPath || multiPath->moveDef == nullptr)
 		return noPathPoint;
 
 	// if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
