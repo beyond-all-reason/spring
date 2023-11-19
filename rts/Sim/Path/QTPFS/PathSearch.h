@@ -215,13 +215,13 @@ namespace QTPFS {
 		bool badGoal;
 
 public:
-		bool rawPathCheck;
-		bool pathRequestWaiting;
-		bool doPartialSearch;
-		bool rejectPartialSearch;
-		bool allowPartialSearch;
-		bool searchEarlyDrop;
-		bool initialized;
+		bool rawPathCheck = false;
+		bool pathRequestWaiting = false;
+		bool doPartialSearch = false;
+		bool rejectPartialSearch = false;
+		bool allowPartialSearch = false;
+		bool searchEarlyDrop = false;
+		bool initialized = false;
 		bool partialReverseTrace = false;
 
 		bool fwdPathConnected = false;

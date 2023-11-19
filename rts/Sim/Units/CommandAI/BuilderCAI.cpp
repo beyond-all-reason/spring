@@ -667,18 +667,19 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		}
 
 		if (!inWaitStance) {
-			const float buildeeRadius = GetBuildOptionRadius(build.def, c.GetID());
-			const float fpSqRadius = (build.def->xsize * build.def->xsize + build.def->zsize * build.def->zsize);
-			const float fpRadius = (math::sqrt(fpSqRadius) * 0.5f) * SQUARE_SIZE;
+			const float xhalf = build.def->xsize * 0.5f * SQUARE_SIZE;
+			const float zhalf = build.def->zsize * 0.5f * SQUARE_SIZE;
+			const float3 mins{build.pos.x - xhalf, 0.f, build.pos.z - zhalf};
+			const float3 maxs{build.pos.x + xhalf, 0.f, build.pos.z + zhalf};
 
 			// tell everything within the radius of the soon-to-be buildee
 			// to get out of the way; using the model radius is not correct
 			// because this can be shorter than half the footprint diagonal
-			// exclude owner iff it is outside the buildee footprint
+			// exclude owner if it is outside the buildee footprint
 			if (!build.FootPrintOverlap(owner->pos, owner->GetFootPrint(SQUARE_SIZE * 0.5f)))
-				CGameHelper::BuggerOff(build.pos, std::max(buildeeRadius, fpRadius), false, true, owner->team, owner);
+				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, owner);
 			else
-				CGameHelper::BuggerOff(build.pos, std::max(buildeeRadius, fpRadius), false, true, owner->team, nullptr);
+				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, nullptr);
 
 			NonMoving();
 			return;

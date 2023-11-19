@@ -121,7 +121,6 @@ void CPathManager::InitStatic()
 	pathFinders = std::move(newPathFinders);
 
 	constexpr size_t memoryPageSize = 4096;
-	pathSearches.reserve( memoryPageSize / sizeof(decltype(pathSearches)::value_type) );
 
 	//finalized = true;
 }
@@ -147,7 +146,6 @@ CPathManager::~CPathManager()
 	}
 
 	pathFinders.clear();
-	pathSearches.clear();
 
 	if (lowResPEs != nullptr) {
 		::operator delete(lowResPEs);
@@ -395,7 +393,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	return bestResult;
 }
 
-void CPathManager::DeletePath(unsigned int pathID) {
+void CPathManager::DeletePath(unsigned int pathID, bool /* force ignored*/) {
 	if (pathID == 0)
 		return;
 	{
@@ -455,6 +453,7 @@ unsigned int CPathManager::RequestPath(
 			registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
 		}
 		else {
+			pathId = existingSearch->pathId;
 			MultiPath* curMultiPath = GetMultiPath(existingSearch->pathId);
 			*curMultiPath = std::move(newPath);
 			*existingSearch = std::move(PathSearch(caller, moveDef, startPos, goalPos, goalRadius, pathId));
@@ -913,14 +912,11 @@ void CPathManager::Update()
 		SCOPED_TIMER("Sim::PathRequests");
 
 		auto pathSearchView = registry.view<PathSearch>();
-		pathSearches.clear();
-		pathSearches.reserve(pathSearchView.size());
-		auto& entities = pathSearches;
-		pathSearchView.each([&entities](entt::entity entity){ entities.emplace_back(entity); });
+		for_mt(0, pathSearchView.size(), [this, &pathSearchView](int idx){
+			entt::entity searchEntity = pathSearchView.begin()[idx];
 
-		for_mt(0, pathSearchView.size(), [this, &entities, &pathSearchView](int idx){
-			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
-			PathExtension* pathExtend = registry.try_get<PathExtension>( entities[idx] );
+			PathSearch& pathSearch = pathSearchView.get<PathSearch>( searchEntity );
+			PathExtension* pathExtend = registry.try_get<PathExtension>( searchEntity );
 
 			MultiPath newPath = (pathExtend == nullptr) ?
 					IssuePathRequest

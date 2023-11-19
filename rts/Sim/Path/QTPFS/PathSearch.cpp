@@ -53,6 +53,8 @@ void QTPFS::PathSearch::Initialize(
 	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds();
 	fwd.tgtPoint = targetPoint; fwd.tgtPoint.ClampInBounds();
 
+	assert(	fwd.srcPoint.x != 0.f || fwd.srcPoint.z != 0.f );
+
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 	bwd.srcPoint = fwd.tgtPoint;
 	bwd.tgtPoint = fwd.srcPoint;
@@ -137,12 +139,16 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	}
 	curSearchNode = nullptr;
 	nextSearchNode = nullptr;
-	// minSearchNode = fwd.srcSearchNode;
 }
+
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
 
 void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 	ZoneScoped;
 	auto& nodes = path->GetNodeList();
+
+	searchEarlyDrop = false;
 
 	auto addNode = [this](uint32_t dir, uint32_t nodeId, uint32_t prevNodeId, const float2& netPoint, uint32_t stepIndex){
 		auto& searchNodes = searchThreadData->allSearchedNodes[dir];
@@ -151,6 +157,21 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 		searchNode.SetPrevNode(prevSearchNode);
 		searchNode.SetNeighborEdgeTransitionPoint(netPoint);
 		searchNode.SetStepIndex(stepIndex);
+		auto* curNode = nodeLayer->GetPoolNode(nodeId);
+		searchNode.xmin = curNode->xmin();
+		searchNode.xmax = curNode->xmax();
+		searchNode.zmin = curNode->zmin();
+		searchNode.zmax = curNode->zmax();
+
+		#ifndef NDEBUG
+		if (prevNodeId != -1) {
+			INode* nn0 = nodeLayer->GetPoolNode(prevNodeId);
+			INode* nn1 = nodeLayer->GetPoolNode(nodeId);
+
+			assert(nn1->GetNeighborRelation(nn0) != 0);
+			assert(nn0->GetNeighborRelation(nn1) != 0);
+		}
+		#endif
 	};
 
 	uint32_t badNodeCount = 0;
@@ -186,9 +207,9 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 			// explicitly doesn't capture the step index if it hits an early drop out.
 		});
 	}
-
-	searchEarlyDrop = false;
 }
+
+// #pragma GCC pop_options
 
 bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
@@ -389,7 +410,10 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 				haveFullPath = (isFullSearch) ? fwdPathConnected : bwdPathConnected & fwdPathConnected;
 				if (haveFullPath){
-					assert(!searchEarlyDrop);
+					if (searchEarlyDrop) {
+						// Turns out that there was a path after all.
+						searchEarlyDrop = false;
+					}
 					fwd.tgtSearchNode = curSearchNode->GetPrevNode();
 					bwd.tgtSearchNode = &bwdNode;
 
@@ -462,8 +486,11 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	assert(fwd.srcSearchNode != nullptr);
 
 	if (searchEarlyDrop) {
-		// move forward only needed for incomplete partial searches.
-		reverseTrace(SearchThreadData::SEARCH_FORWARD);
+		// move forward only needed for incomplete partial searches,
+		// but only if forward was able to find the partially shared path.
+		if (fwdPathConnected) {
+			reverseTrace(SearchThreadData::SEARCH_FORWARD);
+		}
 		reverseTrace(SearchThreadData::SEARCH_BACKWARD);
 	} else if (doPartialSearch) {
 		// Sanity check the path is properly connected. Partial searches can fail this check.
@@ -598,6 +625,11 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 
 	auto* curNode = nodeLayer->GetPoolNode(curOpenNode.nodeIndex);
 	searchData.areaSearched += curNode->area();
+
+	curSearchNode->xmin = curNode->xmin();
+	curSearchNode->xmax = curNode->xmax();
+	curSearchNode->zmin = curNode->zmin();
+	curSearchNode->zmax = curNode->zmax();
 
 	IterateNodeNeighbors(curNode, searchDir);
 }
@@ -745,9 +777,16 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		#ifdef QTPFS_SMOOTH_PATHS
 		SmoothPath(path);
 		#endif
+	} else {
+		auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+
+		path->AllocPoints(2);
+		path->SetSourcePoint(fwd.srcPoint);
+		path->SetTargetPoint(fwd.tgtPoint);
 	}
 
-	path->SetBoundingBox();
+	if (!path->IsBoundingBoxOverriden())
+		path->SetBoundingBox();
 
 	// Bad path is a special path where we did a full path to the nearest good node instead of
 	// doing an exhaustive search to find a route to node we know cannot be found. This means
@@ -765,6 +804,10 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	struct TracePoint{
 		float3 point;
 		uint32_t nodeId;
+		int xmin;
+		int zmin;
+		int xmax;
+		int zmax;
 	};
 	std::deque<TracePoint> points;
 	int nodesWithoutPoints = 0;
@@ -772,6 +815,10 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
+	float3 boundaryMins(std::numeric_limits<float>::infinity(), 0.f, std::numeric_limits<float>::infinity());
+	float3 boundaryMaxs(-1.f, 0.f, -1.f);
+
+	if (fwd.srcSearchNode->GetIndex() != bwd.srcSearchNode->GetIndex())
 	{
 		// Only a bad path will be associated with the reverse path
 		if (!haveFullPath)
@@ -780,8 +827,15 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			while (tmpNode != nullptr) {
 				// reverse path didn't connect so record each point as bad for early drop out
 				// for other partial searches.
-				points.emplace_back(float3(-1.f, 0.f, -1.f), tmpNode->GetIndex() | ONLY_NODE_ID_MASK);
+				points.emplace_back(float3(-1.f, 0.f, -1.f)
+						, tmpNode->GetIndex() | ONLY_NODE_ID_MASK
+						, tmpNode->xmin, tmpNode->zmin
+						, tmpNode->xmax, tmpNode->zmax);
 				nodesWithoutPoints++;
+				boundaryMins.x = std::min(boundaryMins.x, float(tmpNode->xmin*SQUARE_SIZE));
+				boundaryMins.z = std::min(boundaryMins.z, float(tmpNode->zmin*SQUARE_SIZE));
+				boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
+				boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
 
 				tmpNode = tmpNode->GetPrevNode();
 			}
@@ -810,13 +864,31 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				//   one exception: tgtPoint can legitimately coincide
 				//   with first transition-point, which we must ignore
 				assert(tmpNode != prvNode);
+				#ifndef NDEBUG
+				if (prvNode != nullptr) {
+					assert(tmpNode->GetIndex() != prvNode->GetIndex());
+
+					INode* nn0 = nodeLayer->GetPoolNode(prvNode->GetIndex());
+					INode* nn1 = nodeLayer->GetPoolNode(tmpNode->GetIndex());
+
+					assert(nn1->GetNeighborRelation(nn0) != 0);
+					assert(nn0->GetNeighborRelation(nn1) != 0);
+				}
+				#endif
 				assert(prvPoint != float3());
 
 				// This check is not helpful. In bigger maps this triggers for points on small (1x1) quads
 				// assert(tmpPoint != prvPoint || tmpNode == fwd.tgtSearchNode);
 
-				points.emplace_back(prvPoint, tmpNode->GetIndex() | (ONLY_NODE_ID_MASK * int(tmpPoint == prvPoint)));
+				points.emplace_back(prvPoint
+						, tmpNode->GetIndex() | (ONLY_NODE_ID_MASK * int(tmpPoint == prvPoint))
+						, tmpNode->xmin, tmpNode->zmin
+						, tmpNode->xmax, tmpNode->zmax);
 				nodesWithoutPoints += int(tmpPoint == prvPoint);
+				boundaryMins.x = std::min(boundaryMins.x, float(tmpNode->xmin*SQUARE_SIZE));
+				boundaryMins.z = std::min(boundaryMins.z, float(tmpNode->zmin*SQUARE_SIZE));
+				boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
+				boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
 				// LOG("%s: [%d] nxtNode=%d point (%f, %f, %f) [onlyNode=%d]", __func__, SearchThreadData::SEARCH_BACKWARD
 				// 		, tmpNode->GetIndex(), prvPoint.x, prvPoint.y, prvPoint.z, int(tmpPoint == prvPoint));
 
@@ -853,12 +925,30 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			//   one exception: tgtPoint can legitimately coincide
 			//   with first transition-point, which we must ignore
 			assert(tmpNode != prvNode);
+			#ifndef NDEBUG
+			if (prvNode != nullptr) {
+				assert(tmpNode->GetIndex() != prvNode->GetIndex());
+
+				INode* nn0 = nodeLayer->GetPoolNode(prvNode->GetIndex());
+				INode* nn1 = nodeLayer->GetPoolNode(tmpNode->GetIndex());
+
+				assert(nn1->GetNeighborRelation(nn0) != 0);
+				assert(nn0->GetNeighborRelation(nn1) != 0);
+			}
+			#endif
 			assert(tmpPoint != ZeroVector);
 
 			// assert(tmpPoint != prvPoint || tmpNode == fwd.tgtSearchNode || doPartialSearch);
 
-			points.emplace_front(tmpPoint, tmpNode->GetIndex() | (ONLY_NODE_ID_MASK * int(tmpPoint == prvPoint)));
+			points.emplace_front(tmpPoint
+					, tmpNode->GetIndex() | (ONLY_NODE_ID_MASK * int(tmpPoint == prvPoint))
+					, tmpNode->xmin, tmpNode->zmin
+					, tmpNode->xmax, tmpNode->zmax);
 			nodesWithoutPoints += int(tmpPoint == prvPoint);
+			boundaryMins.x = std::min(boundaryMins.x, float(tmpNode->xmin*SQUARE_SIZE));
+			boundaryMins.z = std::min(boundaryMins.z, float(tmpNode->zmin*SQUARE_SIZE));
+			boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
+			boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
 			// LOG("%s: [%d] nxtNode=%d point (%f, %f, %f) [onlyNode=%d]", __func__, SearchThreadData::SEARCH_FORWARD
 			// 		, tmpNode->GetIndex(), tmpPoint.x, tmpPoint.y, tmpPoint.z, int(tmpPoint == prvPoint));
 
@@ -877,10 +967,29 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 		// ensure the starting quad is shared with other path searches.
 		if (tmpNode != nullptr) {
-			points.emplace_front(float3(), tmpNode->GetIndex() | ONLY_NODE_ID_MASK); // ID THIS THE ISSUE?
+			points.emplace_front(float3()
+					, tmpNode->GetIndex() | ONLY_NODE_ID_MASK
+					, tmpNode->xmin, tmpNode->zmin
+					, tmpNode->xmax, tmpNode->zmax);
 			// LOG("%s: [%d] tgtNode=%d point ", __func__, SearchThreadData::SEARCH_FORWARD
 			// 		, tmpNode->GetIndex());
 			nodesWithoutPoints++;
+			boundaryMins.x = std::min(boundaryMins.x, float(tmpNode->xmin*SQUARE_SIZE));
+			boundaryMins.z = std::min(boundaryMins.z, float(tmpNode->zmin*SQUARE_SIZE));
+			boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
+			boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
+
+			#ifndef NDEBUG
+			if (prvNode != nullptr) {
+				assert(tmpNode->GetIndex() != prvNode->GetIndex());
+
+				INode* nn0 = nodeLayer->GetPoolNode(prvNode->GetIndex());
+				INode* nn1 = nodeLayer->GetPoolNode(tmpNode->GetIndex());
+
+				assert(nn1->GetNeighborRelation(nn0) != 0);
+				assert(nn0->GetNeighborRelation(nn1) != 0);
+			}
+			#endif
 		}
 	}
 
@@ -888,6 +997,8 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	if (!points.empty()) {
 		path->AllocPoints(points.size() + 2 + (-nodesWithoutPoints));
 		path->AllocNodes(points.size());
+
+		path->SetBoundingBox(boundaryMins, boundaryMaxs);
 	} else {
 		assert(path->NumPoints() == 2);
 	}
@@ -897,8 +1008,9 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	int nodeIndex = 0;
 	while (!points.empty()) {
 		int nodePointIndex = -1;
-		float3& point   = points.front().point;
-		uint32_t nodeId = points.front().nodeId;
+		TracePoint& curPoint = points.front();
+		float3& point   = curPoint.point;
+		uint32_t nodeId = curPoint.nodeId;
 
 		if ( (nodeId & ONLY_NODE_ID_MASK) == 0 ){
 			assert(point != ZeroVector);
@@ -910,7 +1022,25 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		// 		LOG("%s: setting point %d (%f, %f, %f)", __func__, nodePointIndex, point.x, point.y, point.z);
 		// 	}}
 		}
-		path->SetNode(nodeIndex++, nodeId & ~ONLY_NODE_ID_MASK, float2(point.x, point.z), nodePointIndex);
+		#ifndef NDEBUG
+		if (nodeIndex > 0) {
+			assert(path->GetNode(nodeIndex - 1).nodeId != (nodeId & ~ONLY_NODE_ID_MASK));
+
+			bool bothBadNodes = (point.x == (-1.f) && path->GetNode(nodeIndex - 1).netPoint.x == (-1.f));
+			bool bothGoodNodes = (point.x != (-1.f) && path->GetNode(nodeIndex - 1).netPoint.x != (-1.f));
+
+			if (bothBadNodes || bothGoodNodes) {
+				INode* nn0 = nodeLayer->GetPoolNode(path->GetNode(nodeIndex - 1).nodeId);
+				INode* nn1 = nodeLayer->GetPoolNode((nodeId & ~ONLY_NODE_ID_MASK));
+
+				assert(nn1->GetNeighborRelation(nn0) != 0);
+				assert(nn0->GetNeighborRelation(nn1) != 0);
+			}
+		}
+		#endif
+		path->SetNode(nodeIndex, nodeId & ~ONLY_NODE_ID_MASK, float2(point.x, point.z), nodePointIndex);
+		path->SetNodeBoundary(nodeIndex, curPoint.xmin, curPoint.zmin, curPoint.xmax, curPoint.zmax);
+		nodeIndex++;
 		// LOG("%s: tgtNode=%d point (%f, %f, %f)", __func__
 		// 		, nodeId, point.x, point.y, point.z);
 		points.pop_front();
@@ -964,7 +1094,8 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 	INode* nn0 = nodeLayer->GetPoolNode(n1->nodeId);
 	INode* nn1 = nn0;
 
-	for (; ni > 1;) {
+	// Three points are needed to smooth a path entry.
+	for (; ni > 2;) {
 		nodeIdx = getNextNodeIndex(nodeIdx);
 		if (nodeIdx < 0)
 			break;
@@ -1012,6 +1143,8 @@ void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
 
 	auto& nodePath = path->GetNodeList();
 
+	assert(nodePath.size() > 1);
+
 	auto getNextNodeIndex = [&nodePath](int i){
 		auto last = nodePath.size() - 1;
 		while (++i < last) {
@@ -1022,35 +1155,35 @@ void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
 		return i;
 	};
 
-	auto smoothPoint = [this, path, &nodePath, &getNextNodeIndex](unsigned int pi) {
-		int nodeIndex1 = getNextNodeIndex(-1);
-		int nodeIndex0 = getNextNodeIndex(nodeIndex1);
-
-		const IPath::PathNodeData* n0 = &nodePath[nodeIndex0];
-		const IPath::PathNodeData* n1 = &nodePath[nodeIndex1];
-
-		assert(n0->pathPointIndex > -1);
-
-		INode* nn0 = nodeLayer->GetPoolNode(n0->nodeId);
-		INode* nn1 = nodeLayer->GetPoolNode(n1->nodeId);
-
-		assert(nn1->GetNeighborRelation(nn0) != 0);
-		assert(nn0->GetNeighborRelation(nn1) != 0);
-
-		const float3 p0 = path->GetPoint(pi    );
-		const float3 p1 = path->GetPoint(pi - 1);
-		const float3 p2 = path->GetPoint(pi - 2);
-
-		float3 newPoint;
-		int nm = SmoothPathPoints(nn0, nn1, p0, p1, p2, newPoint);
-		if (nm > 0) {
-			// update node;
-			path->SetPoint(pi - 1, newPoint);
-		}
-	};
-
 	// First three points are indicies: 0, 1, 2
-	smoothPoint(2);
+	int pi = 2;
+	int nodeIndex1 = 0;
+	int nodeIndex0 = getNextNodeIndex(nodeIndex1);
+
+	assert(nodeIndex0 > -1);
+	assert(nodeIndex0 < nodePath.size());
+
+	const IPath::PathNodeData* n0 = &nodePath[nodeIndex0];
+	const IPath::PathNodeData* n1 = &nodePath[nodeIndex1];
+
+	assert(n0->pathPointIndex > -1);
+
+	INode* nn0 = nodeLayer->GetPoolNode(n0->nodeId);
+	INode* nn1 = nodeLayer->GetPoolNode(n1->nodeId);
+
+	assert(nn1->GetNeighborRelation(nn0) != 0);
+	assert(nn0->GetNeighborRelation(nn1) != 0);
+
+	const float3 p0 = path->GetPoint(pi    );
+	const float3 p1 = path->GetPoint(pi - 1);
+	const float3 p2 = path->GetPoint(pi - 2);
+
+	float3 newPoint;
+	int nm = SmoothPathPoints(nn0, nn1, p0, p1, p2, newPoint);
+	if (nm > 0) {
+		// update node;
+		path->SetPoint(pi - 1, newPoint);
+	}
 }
 
 int QTPFS::PathSearch::SmoothPathPoints(const INode* nn0, const INode* nn1, const float3& p0, const float3& p1, const float3& p2, float3& result) const {
@@ -1188,7 +1321,13 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->CopyNodes(*srcPath);
 	dstPath->SetSourcePoint(fwd.srcPoint);
 	dstPath->SetTargetPoint(fwd.tgtPoint);
-	dstPath->SetBoundingBox();
+	if (srcPath->IsBoundingBoxOverriden()) {
+		const float3& mins = srcPath->GetBoundingBoxMins();
+		const float3& maxs = srcPath->GetBoundingBoxMaxs();
+		dstPath->SetBoundingBox(mins, maxs);
+	} else {
+		dstPath->SetBoundingBox();
+	}
 	dstPath->SetHasFullPath(srcPath->IsFullPath());
 	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
 	dstPath->SetSearchTime(srcPath->GetSearchTime());
