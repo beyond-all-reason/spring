@@ -169,6 +169,7 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
 * fixed builders not placing nanoframes from their maximum range.
 * units vacating a build area (aka "bugger off") will now try to use the fastest route out.
+* bugger off now applies correctly to units sitting outside the area, but with a large enough footprint to block construction.
 * added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to `Spring.GetUnitCurrentCommand`, but shows what the unit is actually doing,
 so will differ when the unit is guarding or out of range. Also resolves Build vs Repair. Only shows worker tasks (i.e. things related to nanolathing).
 * `gadget:AllowUnitCreation` now has two return values. The first one is still a boolean on whether to allow creating the unit (no change here).
@@ -242,6 +243,7 @@ Multiple functions can be queued onto the same frame and run in the order they w
 The weapon number is optional if the unit has a single shield. The timer value is also optional: if you leave it nil it will emulate a weapon hit.
 Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
 An explicit numerical value always sets the timer to that many seconds.
+* added `MaxFontTries` numerical springsetting, defaults to 5. Represents the maximum number of attempts to search for a glyph replacement when rendering text (lower = foreign glyphs may fail to render, higher = searching for foreign glyphs can lag the game). The search is optimized to look in the "best" places so the chance of finding the glyph does not increase linearly alongside search time.
 * added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
 * added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
