@@ -31,8 +31,9 @@ CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 		LOG_L(L_WARNING, "[MapGen::%s] modOpt<%s,%s>", __func__, modOpt.first.c_str(), modOpt.second.c_str());
 	}
 
-	const std::string* blankMapXStr = mapOpts.try_get("blank_map_x");
-	const std::string* blankMapYStr = mapOpts.try_get("blank_map_y");
+	// `new_map` are legacy keys; see the comment at InitBlank in GameSetup
+	const std::string* blankMapXStr = mapOpts.try_get("blank_map_x") ?: mapOpts.try_get("new_map_x");
+	const std::string* blankMapYStr = mapOpts.try_get("blank_map_y") ?: mapOpts.try_get("new_map_y");
 	const std::string* blankMapHeightStr = mapOpts.try_get("blank_map_height");
 
 	if (blankMapXStr != nullptr && blankMapYStr != nullptr) {
