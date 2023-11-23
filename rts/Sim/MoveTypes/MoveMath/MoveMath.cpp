@@ -247,6 +247,11 @@ bool CMoveMath::IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* col
 	if (colliderIsSub)
 		return (!collidee->IsUnderWater() && !collideeIsSub);
 
+	// we don't have height information here so everything above and below water is going to be
+	// considered blocking when the unit moveDef is amphibious.
+	if (colliderMD.followGround)
+		return false;
+
 	return (collidee->IsUnderWater() || collideeIsSub);
 }
 
