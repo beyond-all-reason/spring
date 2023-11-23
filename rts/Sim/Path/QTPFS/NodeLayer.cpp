@@ -118,8 +118,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const unsigned int recIdx = hmz * xsize + hmx;
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
-			const int chmx = std::clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const int chmz = std::clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
+			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
+			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
 			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
 			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
 

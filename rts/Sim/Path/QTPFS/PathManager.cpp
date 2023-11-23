@@ -587,6 +587,16 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 	assert(re.x2 >= r.x2);
 	assert(re.z2 >= r.z2); // TODO: re can be dropped?
 
+	// { bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1);
+	// 	if (printMoveInfo) {
+	// 		for (const int unitID: selectedUnitsHandler.selectedUnits) {
+	// 			printMoveInfo = unitHandler.GetUnit(unitID)->moveDef->pathType == layerNum;
+	// 		}
+	// 		if (printMoveInfo){
+	// 		LOG("%s re (%d) [%d,%d][%d,%d]", __func__
+	// 				, layerNum, re.x1, re.z1, re.x2, re.z2);
+	// 		}}}
+
 	updateThreadData[currentThread].InitUpdate(r, *containingNode, *md, currentThread);
 	const bool needTesselation = nodeLayers[layerNum].Update(updateThreadData[currentThread]);
 
