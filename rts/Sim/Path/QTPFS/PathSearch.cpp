@@ -1001,6 +1001,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		path->SetBoundingBox(boundaryMins, boundaryMaxs);
 	} else {
 		assert(path->NumPoints() == 2);
+		assert(path->GetNodeList().size() == 0);
 	}
 
 	// set waypoints with indices [1, N - 2] (if any)
@@ -1093,9 +1094,10 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 	IPath::PathNodeData* n0 = n1;
 	INode* nn0 = nodeLayer->GetPoolNode(n1->nodeId);
 	INode* nn1 = nn0;
+	constexpr int firstNode = 2;
 
 	// Three points are needed to smooth a path entry.
-	for (; ni > 2;) {
+	for (; ni > firstNode;) {
 		nodeIdx = getNextNodeIndex(nodeIdx);
 		if (nodeIdx < 0)
 			break;
@@ -1121,7 +1123,8 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 		float3 pi;
 		if (SmoothPathPoints(nn0, nn1, p0, p1, p2, pi)) {
 			nm++;
-			if (pi == p0 || pi == p2) {
+			// Don't allow the first point to remove nodes or points.
+			if (ni > firstNode && (pi == p0 || pi == p2)) {
 				// the point is effectively removed.
 				path->RemovePoint(ni - 1);
 				// empty point reference

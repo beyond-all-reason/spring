@@ -1114,6 +1114,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newPath->SetRadius(radius);
 	newPath->SetSynced(synced);
 	newPath->AllocPoints(2);
+	newPath->AllocNodes(0);
 	newPath->SetOwner(object);
 	newPath->SetSourcePoint(sourcePoint);
 	newPath->SetTargetPoint(targetPoint);
@@ -1183,6 +1184,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	// start re-request from the current point
 	// along the path, not the original source
 	oldPath->AllocPoints(2);
+	oldPath->AllocNodes(0);
 	oldPath->SetSourcePoint(pos);
 	oldPath->SetTargetPoint(targetPoint);
 
@@ -1196,7 +1198,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->allowPartialSearch = allowPartialSearch;
 
 	registry.emplace_or_replace<PathIsTemp>(pathEntity);
-	registry.emplace<PathSearchRef>(pathEntity, searchEntity);
+	registry.emplace_or_replace<PathSearchRef>(pathEntity, searchEntity);
 
 	assert(	oldPath->GetSourcePoint().x != 0.f || oldPath->GetSourcePoint().z != 0.f );
 
