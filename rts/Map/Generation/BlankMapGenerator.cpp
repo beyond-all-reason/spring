@@ -21,6 +21,7 @@ CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 	: setup(setup)
 	, mapSize(1, 1)
 	, mapHeight(50)
+	, mapColor(0x00, 0xFF, 0x00)
 {
 	const auto& mapOpts = setup->GetMapOptionsCont();
 
@@ -60,6 +61,17 @@ CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 		} catch (...) {
 			// leaving default value
 		}
+	}
+
+	const auto blankMapR = mapOpts.try_get("blank_map_color_r");
+	const auto blankMapG = mapOpts.try_get("blank_map_color_g");
+	const auto blankMapB = mapOpts.try_get("blank_map_color_b");
+	if (blankMapR && blankMapG && blankMapB) {
+		try {
+			std::get <0> (mapColor) = std::stoi(*blankMapR);
+			std::get <1> (mapColor) = std::stoi(*blankMapG);
+			std::get <2> (mapColor) = std::stoi(*blankMapB);
+		} catch (...) { }
 	}
 }
 
@@ -233,9 +245,9 @@ void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 	int32_t tilePos = 0;
 	for (int32_t x = 0; x < TILE_SIZE; x++) {
 		for (int32_t y = 0; y < TILE_SIZE; y++) {
-			tileData[tilePos++] = 0;
-			tileData[tilePos++] = 0xFF;
-			tileData[tilePos++] = 0;
+			tileData[tilePos++] = std::get <0> (mapColor);
+			tileData[tilePos++] = std::get <1> (mapColor);
+			tileData[tilePos++] = std::get <2> (mapColor);
 		}
 	}
 
