@@ -120,6 +120,7 @@ namespace QTPFS {
 		bool InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
 		void RemovePathFromPartialShared(entt::entity entity);
+		void RemovePathSearch(entt::entity pathEntity);
 
 		void ReadyQueuedSearches();
 		void ExecuteQueuedSearches();

@@ -347,8 +347,6 @@ void QTPFS::PathManager::Load() {
 		while (threads-- > 0) {
 			searchThreadData.emplace_back(SearchThreadData(maxAllocedNodes, threads));
 		}
-
-		pmLoadScreen.Kill();
 	}
 
 	{
@@ -364,6 +362,7 @@ void QTPFS::PathManager::Load() {
 		snprintf(loadMsg, sizeof(loadMsg), fmtString, __func__, ThreadPool::GetNumThreads(), nodeLayers.size());
 
 		pmLoadScreen.AddMessage(loadMsg);
+		pmLoadScreen.Kill();
 	}
 }
 
@@ -901,7 +900,8 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		}
 
 		// LOG("%s: delete search %x", __func__, entt::to_integral(pathSearchEntity));
-		registry.destroy(pathSearchEntity);
+		if (registry.valid(pathSearchEntity))
+			registry.destroy(pathSearchEntity);
 	}
 }
 
@@ -1225,6 +1225,7 @@ void QTPFS::PathManager::DeletePath(unsigned int pathID, bool force) {
 		if (!registry.all_of<PathDelayedDelete>(pathEntity)) {
 			registry.emplace<PathDelayedDelete>(pathEntity, gs->frameNum + GAME_SPEED);
 		}
+		RemovePathSearch(pathEntity);
 	} else {
 		DeletePathEntity(pathEntity);
 	}
@@ -1237,6 +1238,8 @@ void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
 	RemovePathFromPartialShared(pathEntity);
 
 	// if (registry.valid(pathEntity)) - check is already done.
+	RemovePathSearch(pathEntity);
+
 	registry.destroy(pathEntity);
 
 	if (pathTraceIt != pathTraces.end()) {
@@ -1278,12 +1281,27 @@ void QTPFS::PathManager::RemovePathFromPartialShared(entt::entity entity) {
 		auto& chain = registry.get<PartialSharedPathChain>(entity);
 		if (chain.next == entity) {
 			partialSharedPaths.erase(path->GetVirtualHash());
+			if (int(entity) == 0x7140010c)
+				LOG("%s: path %x partial deleted", __func__, int(entity));
 		} else {
 			partialSharedPaths[path->GetVirtualHash()] = chain.next;
+			if (int(entity) == 0x7140010c)
+				LOG("%s: path %x partial head is now %x", __func__, int(entity), int(chain.next));
+			if (int(chain.next) == 0x7140010c)
+				LOG("%s: path %x is now on partial head", __func__, int(chain.next));
 		}
 	}
 
 	linkedListHelper.RemoveChain<PartialSharedPathChain>(entity);
+}
+
+void QTPFS::PathManager::RemovePathSearch(entt::entity pathEntity) {
+	auto search = registry.try_get<PathSearchRef>(pathEntity);
+	if (search != nullptr) {
+		entt::entity searchId = search->value;
+		if (registry.valid(searchId))
+			registry.destroy(searchId);
+	}
 }
 
 unsigned int QTPFS::PathManager::RequestPath(
