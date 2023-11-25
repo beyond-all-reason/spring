@@ -40,6 +40,8 @@ No changes yet, but these will happen in the future and possibly break things.
 but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively (which will stay elmo/frame).
 * the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class is scheduled for removal. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
 since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
+* there are now explicit facilities for generating a blank map (see below). Existing "random" map generator (that always produced a blank map) stays as-is,
+but may be repurposed into a "real" random map generator sometime in the future (not immediately planned though).
 
 # QTPFS
 
@@ -248,6 +250,11 @@ An explicit numerical value always sets the timer to that many seconds.
 * added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
+
+### Blank map generation
+* new way to specify blank map colour: `blank_map_color_{r,g,b}`, number 0-255.
+* a new start-script entry, `InitBlank` (at root level). Alias for existing `MapSeed`.
+* new built-in mapoptions, `blank_map_x` and `blank_map_y`, aliases for existing `new_map_x/y`.
 
 ### Weapon fixes
 * fix `Cannon` type weapons aiming at the (0, 0) corner of the world if they can't find a physical firing solution due to target leading
