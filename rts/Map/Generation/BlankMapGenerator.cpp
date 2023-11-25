@@ -218,16 +218,60 @@ void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 
 void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 {
+	constexpr int32_t TILE_SIZE = 32;
+	constexpr int32_t TILE_BPP = 3;
+
 	//--- Make TileFileHeader ---
 	TileFileHeader smtHeader;
 	std::strcpy(smtHeader.magic, "spring tilefile");
 	smtHeader.version = 1;
 	smtHeader.numTiles = 1; //32 * 32 * (generator->mapSize.x * 32) * (generator->mapSize.y * 32);
-	smtHeader.tileSize = 32;
+	smtHeader.tileSize = TILE_SIZE;
 	smtHeader.compressionType = 1;
 
-	fileSMT->buffer.resize(sizeof(TileFileHeader) + smtHeader.numTiles * SMALL_TILE_SIZE);
-	std::memcpy(&fileSMT->buffer[0], &smtHeader, sizeof(smtHeader));
+	uint8_t tileData[TILE_SIZE * TILE_SIZE * 3];
+	int32_t tilePos = 0;
+	for (int32_t x = 0; x < TILE_SIZE; x++) {
+		for (int32_t y = 0; y < TILE_SIZE; y++) {
+			tileData[tilePos++] = 0;
+			tileData[tilePos++] = 0xFF;
+			tileData[tilePos++] = 0;
+		}
+	}
+
+	glClearErrors("MapGen", __func__, globalRendering->glDebugErrors);
+	GLuint tileTex;
+	glGenTextures(1, &tileTex);
+	glBindTexture(GL_TEXTURE_2D, tileTex);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, TILE_SIZE, TILE_SIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, tileData);
+	glGenerateMipmapEXT(GL_TEXTURE_2D);
+
+	int32_t dxtImageOffset = 0;
+	int32_t dxtImageSize = 512;
+	int8_t tileDataDXT[SMALL_TILE_SIZE];
+	for (int32_t i = 0; i < 4; i++) {
+		glGetCompressedTexImage(GL_TEXTURE_2D, i, tileDataDXT + dxtImageOffset);
+
+		dxtImageOffset += dxtImageSize;
+		dxtImageSize /= 4;
+	}
+
+	glDeleteTextures(1, &tileTex);
+
+	if (glGetError() != GL_NO_ERROR)
+		throw content_error("Error generating map - texture generation not supported");
+
+	int32_t writePosition = 0;
+	fileSMT->buffer.resize(sizeof smtHeader + smtHeader.numTiles * SMALL_TILE_SIZE);
+
+	std::memcpy(fileSMT->buffer.data() + writePosition, &smtHeader, sizeof smtHeader);
+	writePosition += sizeof smtHeader;
+
+	for (int32_t i = 0; i < smtHeader.numTiles; ++i) {
+		std::memcpy(fileSMT->buffer.data() + writePosition, tileDataDXT, SMALL_TILE_SIZE);
+		writePosition += SMALL_TILE_SIZE;
+	}
 }
 
 void CBlankMapGenerator::AppendToBuffer(CVirtualFile* file, const void* data, int size)
