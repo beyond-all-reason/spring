@@ -37,6 +37,8 @@ private:
 	int mapHeight;
 	std::string mapDescription;
 	std::vector<int2> startPositions;
+
+	std::tuple <uint8_t, uint8_t, uint8_t> mapColor;
 };
 
 #endif // _BLANK_MAP_GENERATOR_H_
