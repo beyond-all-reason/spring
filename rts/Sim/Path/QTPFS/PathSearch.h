@@ -113,8 +113,8 @@ namespace QTPFS {
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }
 
-		const std::uint64_t GetHash() const { return pathSearchHash; };
-		const std::uint64_t GetPartialSearchHash() const { return pathPartialSearchHash; };
+		const PathHashType GetHash() const { return pathSearchHash; };
+		const PathHashType GetPartialSearchHash() const { return pathPartialSearchHash; };
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
@@ -163,24 +163,24 @@ namespace QTPFS {
 
 		void SetForwardSearchLimit();
 
-		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
+		const PathHashType GenerateHash(const INode* srcNode, const INode* tgtNode) const;
+		const PathHashType GenerateHash2(uint32_t p1, uint32_t p2) const;
 
-		const std::uint64_t GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
+		const PathHashType GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
 		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
 		QTPFS::SearchThreadData* searchThreadData;
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
 		// searches can be combined.
-		std::uint64_t pathSearchHash;
+		PathHashType pathSearchHash;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
 		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.
-		std::uint64_t pathPartialSearchHash;
+		PathHashType pathPartialSearchHash;
 
 		const CSolidObject* pathOwner;
 		NodeLayer* nodeLayer;
@@ -226,8 +226,6 @@ public:
 
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
-
-		static constexpr std::uint64_t BAD_HASH = std::numeric_limits<std::uint64_t>::max();
 	};
 }
 

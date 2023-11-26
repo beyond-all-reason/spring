@@ -104,10 +104,10 @@ namespace QTPFS {
 		typedef spring::unordered_map<unsigned int, unsigned int>::iterator PathTypeMapIt;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*> PathTraceMap;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*>::iterator PathTraceMapIt;
-		typedef spring::unordered_map<std::uint64_t, entt::entity> SharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator SharedPathMapIt;
-		typedef spring::unordered_map<std::uint64_t, entt::entity> PartialSharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator PartialSharedPathMapIt;
+		typedef spring::unordered_map<PathHashType, entt::entity> SharedPathMap;
+		typedef spring::unordered_map<PathHashType, entt::entity>::iterator SharedPathMapIt;
+		typedef spring::unordered_map<PathHashType, entt::entity> PartialSharedPathMap;
+		typedef spring::unordered_map<PathHashType, entt::entity>::iterator PartialSharedPathMapIt;
 
 		typedef std::vector<PathSearch*> PathSearchVect;
 		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;

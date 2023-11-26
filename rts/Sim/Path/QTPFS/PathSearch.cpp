@@ -148,6 +148,8 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 	ZoneScoped;
 	auto& nodes = path->GetNodeList();
 
+	assert(path->GetPathType() == pathType);
+
 	searchEarlyDrop = false;
 
 	auto addNode = [this](uint32_t dir, uint32_t nodeId, uint32_t prevNodeId, const float2& netPoint, uint32_t stepIndex){
@@ -1171,6 +1173,9 @@ void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
 
 	assert(n0->pathPointIndex > -1);
 
+	assert(n0->nodeId < nodeLayer->GetMaxNodesAlloced());
+	assert(n1->nodeId < nodeLayer->GetMaxNodesAlloced());
+
 	INode* nn0 = nodeLayer->GetPoolNode(n0->nodeId);
 	INode* nn1 = nodeLayer->GetPoolNode(n1->nodeId);
 
@@ -1349,7 +1354,7 @@ unsigned int GetChildId(uint32_t nodeNumber, uint32_t i, uint32_t rootMask) {
 	return rootId | ((nodeId << 2) + (i + 1));
 }
 
-const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const INode* tgtNode) const {
+const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash(const INode* srcNode, const INode* tgtNode) const {
 	uint32_t nodeSize = srcNode->xsize();
 
 	if (rawPathCheck)
@@ -1376,7 +1381,7 @@ const std::uint64_t QTPFS::PathSearch::GenerateHash(const INode* srcNode, const 
 	return GenerateHash2(srcNodeNumber, tgtNode->GetNodeNumber());
 }
 
-const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const {
+const QTPFS::PathHashType QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const {
 	uint32_t srcNodeSize = srcNode->xsize();
 	uint32_t tgtNodeSize = tgtNode->xsize();
 
@@ -1410,11 +1415,11 @@ const std::uint64_t QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode,
 	return GenerateHash2(vSrcNodeId, vTgtNodeId);
 }
 
-const std::uint64_t QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
-	std::uint64_t N = mapDims.mapx * mapDims.mapy;
-	std::uint32_t k = nodeLayer->GetNodelayer();
+const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
+	std::uint64_t k = nodeLayer->GetNodelayer();
+	PathHashType result(std::uint64_t(src) + ((std::uint64_t(dest) << 32)), k);
 
-	return (src + (dest * N) + (k * N * N));
+	return result;
 }
 
 const std::uint32_t QTPFS::PathSearch::GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const {

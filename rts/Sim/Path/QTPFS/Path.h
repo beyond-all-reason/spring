@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "PathDefines.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
 #include "System/float3.h"
@@ -94,16 +95,16 @@ namespace QTPFS {
 		unsigned int GetNextPointIndex() const { return nextPointIndex; }
 		unsigned int GetNumPathUpdates() const { return numPathUpdates; }
 
-		void SetHash(std::uint64_t hash) { this->hash = hash; }
-		void SetVirtualHash(std::uint64_t virtualHash) { this->virtualHash = virtualHash; }
+		void SetHash(PathHashType hash) { this->hash = hash; }
+		void SetVirtualHash(PathHashType virtualHash) { this->virtualHash = virtualHash; }
 		void SetRadius(float radius) { this->radius = radius; }
 		void SetSynced(bool synced) { this->synced = synced; }
 		void SetHasFullPath(bool fullPath) { this->haveFullPath = fullPath; }
 		void SetHasPartialPath(bool partialPath) { this->havePartialPath = partialPath; }
 
 		float GetRadius() const { return radius; }
-		std::uint64_t GetHash() const { return hash; }
-		std::uint64_t GetVirtualHash() const { return virtualHash; }
+		PathHashType GetHash() const { return hash; }
+		PathHashType GetVirtualHash() const { return virtualHash; }
 		bool IsSynced() const { return synced; }
 		bool IsFullPath() const { return haveFullPath; }
 		bool IsPartialPath() const { return havePartialPath; }
@@ -246,14 +247,14 @@ namespace QTPFS {
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
 		// searches can be combined.
-		std::uint64_t hash = -1;
+		PathHashType hash = BAD_HASH;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
 		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.
-		std::uint64_t virtualHash = -1;
+		PathHashType virtualHash = BAD_HASH;
 		float radius = 0.f;
 		bool synced = true;
 		bool haveFullPath = true;
