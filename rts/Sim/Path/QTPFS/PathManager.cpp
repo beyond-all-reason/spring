@@ -887,7 +887,9 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					} else if (search->pathRequestWaiting) {
 						// nothing to do - it will be rerun next frame
 						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
-						continue;
+						// continue;
+						registry.remove<PathSearchRef>(pathEntity);
+						RequeueSearch(path, false, search->allowPartialSearch);
 					} else if (search->rejectPartialSearch) {
 						registry.remove<PathSearchRef>(pathEntity);
 						RequeueSearch(path, false, false);
