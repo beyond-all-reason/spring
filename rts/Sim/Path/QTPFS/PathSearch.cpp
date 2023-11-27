@@ -42,6 +42,13 @@ int GetNextBitShift(int n)
     return c + 1;
 }
 
+void CopyNodeBoundaries(QTPFS::SearchNode& dest, const QTPFS::INode& src) {
+	dest.xmin = src.xmin();
+	dest.zmin = src.zmin();
+	dest.xmax = src.xmax();
+	dest.zmax = src.zmax();
+}
+
 void QTPFS::PathSearch::Initialize(
 	NodeLayer* layer,
 	const float3& sourcePoint,
@@ -159,11 +166,9 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 		searchNode.SetPrevNode(prevSearchNode);
 		searchNode.SetNeighborEdgeTransitionPoint(netPoint);
 		searchNode.SetStepIndex(stepIndex);
+
 		auto* curNode = nodeLayer->GetPoolNode(nodeId);
-		searchNode.xmin = curNode->xmin();
-		searchNode.xmax = curNode->xmax();
-		searchNode.zmin = curNode->zmin();
-		searchNode.zmax = curNode->zmax();
+		CopyNodeBoundaries(searchNode, *curNode);
 
 		#ifndef NDEBUG
 		if (prevNodeId != -1) {
@@ -239,6 +244,9 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 		auto& data = directionalSearchData[i];
 		ResetState(data.srcSearchNode, data);
 		UpdateNode(data.srcSearchNode, nullptr, 0);
+
+		auto* curNode = nodeLayer->GetPoolNode(data.srcSearchNode->GetIndex());
+		CopyNodeBoundaries(*data.srcSearchNode, *curNode);
 	}
 }
 
@@ -375,6 +383,13 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		fwd.minSearchNode = fwd.tgtSearchNode;
 	};
 
+	auto copyNodeBoundary = [this](SearchNode& dest) {
+		if (!(dest.xmax > 0 || dest.zmax > 0)) {
+			auto* curNode = nodeLayer->GetPoolNode(dest.GetIndex());
+			CopyNodeBoundaries(dest, *curNode);
+		}
+	};
+
 	assert(fwd.srcSearchNode != nullptr);
 
 	while (continueSearching) {
@@ -402,6 +417,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				fwdPathConnected = IsNodeActive(bwdNode);
 				if (fwdPathConnected){
 					fwdStepIndex = curSearchNode->GetStepIndex();
+					copyNodeBoundary(bwdNode);
 
 					// If step Index is 0, then a full path was found. This can happen for partial
 					// searches, if the partial path isn't actually close enough.
@@ -446,6 +462,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				}
 				if (bwdPathConnected) {
 					bwdStepIndex = curSearchNode->GetStepIndex();
+					copyNodeBoundary(fwdNode);
 
 					// If step Index is 0, then a full path was found. This can happen for partial
 					// searches, if the partial path isn't actually close enough.
