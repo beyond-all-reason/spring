@@ -2437,20 +2437,17 @@ void CGroundMoveType::HandleObjectCollisions()
 	// then only apply forces from static objects/terrain. This prevent units from pushing each
 	// other into buildings far enough that the pathing systems can't get them out again.
 	float3 tryForce = forceFromStaticCollidees + forceFromMovingCollidees;
+	float maxPushForceSq = maxSpeed*maxSpeed*modInfo.maxCollisionPushMultiplier;
+	if (tryForce.SqLength() > maxPushForceSq)
+		(tryForce.Normalize()) *= maxSpeed;
+
 	UpdatePos(owner, tryForce, resultantForces, curThread);
-	// if (!canAssignForce(tryForce)) {
-	// 	tryForce = forceFromStaticCollidees;
-	// 	if (!positionStuck && !canAssignForce(tryForce))
-	// 		return;
-	// }
-	// resultantForces = tryForce;
+
 	if (resultantForces.same(ZeroVector) && positionStuck){
 		resultantForces = forceFromStaticCollidees;
+		if (resultantForces.SqLength() > maxPushForceSq)
+			(resultantForces.Normalize()) *= maxSpeed;
 	}
-
-	bool sanitizeForces = (resultantForces.SqLength() > maxSpeed*maxSpeed*modInfo.maxCollisionPushMultiplier);
-	if (sanitizeForces)
-		(resultantForces.Normalize()) *= maxSpeed;
 }
 
 bool CGroundMoveType::HandleStaticObjectCollision(
