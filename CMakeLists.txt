@@ -491,6 +491,11 @@ else  (MSVC)
 	if (CMAKE_COMPILER_IS_GNUCXX)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsingle-precision-constant -frounding-math")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
+	# Later versions of GCC use dwarf-5, but our tools are not yet ready to support that.
+	# Once out tools are ready then we can remove these two lines.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-3")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -gdwarf-3")
+
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IEEE_FP_FLAG} -pipe -fno-strict-aliasing ${VISIBILITY_HIDDEN} ${VISIBILITY_INLINES_HIDDEN}")
 	if (UNIX)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
