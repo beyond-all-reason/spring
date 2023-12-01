@@ -3171,7 +3171,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	const float3 newPos = unit->pos + moveDir;
 	resultantMove = moveDir;
 
-	// The series of test done here will benefit from using the same cached results.
+	// The series of tests done here will benefit from using the same cached results.
 	MoveDef* md = unit->moveDef;
 	int tempNum = gs->GetMtTempNum(thread);
 
@@ -3223,7 +3223,9 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		const unsigned int startingSquare = int(newPos.z / SQUARE_SIZE)*mapDims.mapx + int(newPos.x / SQUARE_SIZE);
 
 		auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, &resultantMove, maxDistSq, maxDist, &newPos](float3&& posOffset){
-			float3 posToTest = newPos + posOffset;
+			// units are moved in relation to their previous position.
+			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
+			float3 posToTest = prevPos + offsetFromPrev;
 			// float3 posDir = posToTest - prevPos;
 			// if (posDir.SqLength2D() > maxDistSq)
 			// 	posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
@@ -3231,7 +3233,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			if (curSquare != startingSquare) {
 				bool updatePos = isSquareOpen(posToTest);
 				if (updatePos) {
-					resultantMove = posOffset;
+					resultantMove = offsetFromPrev;
 					return true;
 				}
 			}

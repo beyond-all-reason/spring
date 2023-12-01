@@ -1124,6 +1124,8 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 		n0 = n1;
 		n1 = &nodePath[nodeIdx];
 
+		assert(n1->nodeId < nodeLayer->GetMaxNodesAlloced());
+
 		nn0 = nn1;
 		nn1 = nodeLayer->GetPoolNode(n1->nodeId);
 

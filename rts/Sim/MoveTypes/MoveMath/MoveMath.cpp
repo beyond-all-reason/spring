@@ -447,7 +447,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedSt(const MoveDef& moveDef, i
 					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(moveDef, collidee, collider)).first;
 				}
 
-				ret = blockMapResult->second;
+				ret |= blockMapResult->second;
 
 				if ((ret & BLOCK_STRUCTURE) == 0)
 					continue;
@@ -500,7 +500,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(const MoveDef& moveDef, i
 					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(moveDef, collidee, collider)).first;
 				}
 
-				ret = blockMapResult->second;
+				ret |= blockMapResult->second;
 
 				if ((ret & BLOCK_STRUCTURE) == 0)
 					continue;
