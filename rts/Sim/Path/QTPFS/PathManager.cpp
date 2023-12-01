@@ -895,7 +895,9 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 					}
 					else {
 						// LOG("%s: %x - search failed", __func__, entt::to_integral(pathEntity));
-						DeletePathEntity(pathEntity);
+						// Don't invalid the path, now, give the unit the chance to escape from
+						// being stuck inside something.
+						// DeletePathEntity(pathEntity);
 					}
 				}
 			}

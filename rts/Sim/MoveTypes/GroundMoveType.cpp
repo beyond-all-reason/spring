@@ -546,7 +546,7 @@ bool CGroundMoveType::OwnerMoved(const short oldHeading, const float3& posDif, c
 		// (eg. to maneuver around an obstacle), do not consider it
 		// as "idling"
 		idling = true;
-		idling &= (currWayPoint.y != -1.0f && nextWayPoint.y != -1.0f);
+		idling &= !atGoal;
 		idling &= (std::abs(owner->heading - oldHeading) < turnRate);
 
 		return false;
