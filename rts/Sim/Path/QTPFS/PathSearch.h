@@ -121,6 +121,8 @@ namespace QTPFS {
 		void SetPathType(int newPathType) { pathType = newPathType; }
 		int GetPathType() const { return pathType; }
 
+		void SetGoalDistance(float dist) { goalDistance = dist; }
+
 	private:
 		struct DirectionalSearchData {
 			DirectionalSearchData()
@@ -202,6 +204,8 @@ namespace QTPFS {
 		float hCosts[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 
 		float hCostMult;
+		float goalDistance = 0.f;
+		float adjustedGoalDistance;
 
 		int fwdStepIndex = 0;
 		int bwdStepIndex = 0;
@@ -226,6 +230,7 @@ public:
 
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
+		bool useFwdPathOnly = false;
 	};
 }
 

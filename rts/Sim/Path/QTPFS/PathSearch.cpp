@@ -274,6 +274,8 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 			hCostMult = 0.0f;
 			break;
 	}
+
+	adjustedGoalDistance = goalDistance * hCostMult;
 }
 
 void QTPFS::PathSearch::RemoveOutdatedOpenNodesFromQueue() {
@@ -439,6 +441,12 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 					bwd.tgtPoint = float3(searchTransitionPoint.x, 0.f, searchTransitionPoint.y);
 					searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 				}
+			} else if (curSearchNode->GetPathCost(NODE_PATH_COST_H) <= adjustedGoalDistance) {
+				// if the forward search has got close enough to the goal, then we don't need the
+				// reverse search.
+				useFwdPathOnly = true;
+				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
+				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 			}
 		}
 
@@ -639,6 +647,9 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	}
 
 	#endif
+
+	if (curSearchNode->GetPathCost(NODE_PATH_COST_H) <= adjustedGoalDistance)
+		return;
 
 	assert(curSearchNode->GetIndex() == curOpenNode.nodeIndex);
 
@@ -859,7 +870,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				tmpNode = tmpNode->GetPrevNode();
 			}
 		}
-		else {
+		else if (!useFwdPathOnly) {
 			const SearchNode* tmpNode = bwd.tgtSearchNode;
 			const SearchNode* prvNode = nullptr;
 

@@ -805,7 +805,6 @@ bool QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 }
 
 void QTPFS::PathManager::ReadyQueuedSearches() {
-
 	{
 		auto pathView = registry.view<PathSearch>();
 
@@ -1129,6 +1128,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newSearch->SetID(newPath->GetID());
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(newPath->GetPathType());
+	newSearch->SetGoalDistance(newPath->GetRadius());
 	newSearch->rawPathCheck = allowRawSearch;
 	newSearch->allowPartialSearch = !allowRawSearch;
 	newSearch->initialized = false;
@@ -1196,6 +1196,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	auto object = oldPath->GetOwner();
 	newSearch->SetTeam((object != nullptr)? object->team: teamHandler.ActiveTeams());
 	newSearch->SetPathType(oldPath->GetPathType());
+	newSearch->SetGoalDistance(oldPath->GetRadius());
 	newSearch->rawPathCheck = allowRawSearch;
 	newSearch->initialized = false;
 	newSearch->allowPartialSearch = allowPartialSearch;
