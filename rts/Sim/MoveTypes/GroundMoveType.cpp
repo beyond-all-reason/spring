@@ -2441,7 +2441,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	if (tryForce.SqLength() > maxPushForceSq)
 		(tryForce.Normalize()) *= maxSpeed;
 
-	UpdatePos(owner, tryForce, resultantForces, curThread);
+	UpdatePos(owner, tryForce, resultantForces, maxPushForceSq, curThread);
 
 	if (resultantForces.same(ZeroVector) && positionStuck){
 		resultantForces = forceFromStaticCollidees;
@@ -3166,10 +3166,13 @@ bool CGroundMoveType::UpdateDirectControl()
 }
 
 
-void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, int thread) const {
+void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, float maxDisplacementSq, int thread) const {
 	const float3 prevPos = unit->pos;
 	const float3 newPos = unit->pos + moveDir;
 	resultantMove = moveDir;
+
+	if (maxDisplacementSq < 0.f)
+		maxDisplacementSq = MAX_DISPLACEMENT_DEFAULT;
 
 	// The series of tests done here will benefit from using the same cached results.
 	MoveDef* md = unit->moveDef;
@@ -3222,9 +3225,15 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 		const unsigned int startingSquare = int(newPos.z / SQUARE_SIZE)*mapDims.mapx + int(newPos.x / SQUARE_SIZE);
 
-		auto tryToMove = [this, &isSquareOpen, &prevPos, &startingSquare, &resultantMove, maxDistSq, maxDist, &newPos](float3&& posOffset){
+		auto tryToMove =
+				[this, &isSquareOpen, &prevPos, &startingSquare, &resultantMove, maxDistSq, maxDist, &newPos, maxDisplacementSq]
+				(float3&& posOffset)
+			{
 			// units are moved in relation to their previous position.
 			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
+			if (offsetFromPrev.SqLength2D() > maxDisplacementSq) {
+				offsetFromPrev.SafeNormalize2D() *= maxDisplacementSq;
+			}
 			float3 posToTest = prevPos + offsetFromPrev;
 			// float3 posDir = posToTest - prevPos;
 			// if (posDir.SqLength2D() > maxDistSq)
@@ -3270,7 +3279,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 
 	if (!moveRequest.same(ZeroVector)) {
 		float3 resultantVel;
-		UpdatePos(owner, moveRequest, resultantVel, 0);
+		UpdatePos(owner, moveRequest, resultantVel, -1.f, 0);
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
