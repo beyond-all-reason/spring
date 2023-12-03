@@ -327,9 +327,10 @@ void QTPFS::PathManager::Load() {
 		//   make it depend on the tesselation code specifics
 		// FIXME:
 		//   assumption is invalid now (Lua inits before we do)
-		pfsCheckSum =
-			((mapCheckSum[0] << 24) | (mapCheckSum[1] << 16) | (mapCheckSum[2] << 8) | (mapCheckSum[3] << 0)) ^
-			((modCheckSum[0] << 24) | (modCheckSum[1] << 16) | (modCheckSum[2] << 8) | (modCheckSum[3] << 0));
+		pfsCheckSum = 0;
+		// temporary measure until the false-positives around map files is solved.
+			// ((mapCheckSum[0] << 24) | (mapCheckSum[1] << 16) | (mapCheckSum[2] << 8) | (mapCheckSum[3] << 0)) ^
+			// ((modCheckSum[0] << 24) | (modCheckSum[1] << 16) | (modCheckSum[2] << 8) | (modCheckSum[3] << 0));
 
 		for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
 			auto& nodeLayer = nodeLayers[layerNum];
