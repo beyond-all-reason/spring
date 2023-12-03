@@ -53,7 +53,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 16;
+constexpr static int INTERNAL_VER = 17;
 
 
 /*
@@ -966,10 +966,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		const auto& fileName = fileNames[i];
 		      auto& fileHash = fileHashes[i];
 
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
+		auto ComputeHashesTask = [&ar](const std::string& fileName, sha512::raw_digest& fileHash) -> void {
 			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
 		};
-		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
+		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, std::cref(fileName), std::ref(fileHash)));
 	}
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
@@ -989,7 +989,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
 			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
 		};
-		ComputeHashesTask();
+		ComputeHashesTask(std::cref(fileName), std::ref(fileHash));
 	});
 #endif
 
@@ -998,9 +998,11 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), archiveInfo.checksum);
+		sha512::raw_digest nameDigest = {};
+		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), nameDigest.data());
 
 		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
+			archiveInfo.checksum[j] ^= nameDigest   [j];
 			archiveInfo.checksum[j] ^= fileHashes[i][j];
 		}
 

@@ -17,12 +17,13 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 }
 
 
-CZipArchive::CZipArchive(const std::string& archiveName): CBufferedArchive(archiveName)
+CZipArchive::CZipArchive(const std::string& name)
+	: CBufferedArchive(name, true)
 {
 	std::lock_guard<spring::mutex> lck(archiveLock);
 
-	if ((zip = unzOpen(archiveName.c_str())) == nullptr) {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\"", __func__, archiveName.c_str());
+	if ((zip = unzOpen(name.c_str())) == nullptr) {
+		LOG_L(L_ERROR, "[%s] error opening \"%s\"", __func__, name.c_str());
 		return;
 	}
 

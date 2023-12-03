@@ -13,7 +13,7 @@
 class CBufferedArchive : public IArchive
 {
 public:
-	CBufferedArchive(const std::string& name, bool cached = true): IArchive(name) {
+	CBufferedArchive(const std::string& name, bool cached): IArchive(name) {
 		noCache = !cached;
 	}
 

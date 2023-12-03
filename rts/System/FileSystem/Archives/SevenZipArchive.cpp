@@ -136,7 +136,7 @@ static inline const char* GetSystemErrorStr(WRes wres)
 }
 
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
-	: CBufferedArchive(name, false)
+	: CBufferedArchive(name, true)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
