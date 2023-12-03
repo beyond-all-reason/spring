@@ -315,19 +315,21 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	 * 
 	 * TODO: make into mod rules so that games can calibrate them.
 	 */
-	// Maximum area of the map to search.
+	// min/max area of the map to search.
 	constexpr float maxRelativeMapAreaToSearch = (1.f/16.f);
-
-	// How wide to spread as distance increases.
-	constexpr float areaToSearchScale = (1.f/8.f);
+	constexpr float maxActualMapAreaToSearch = (64.f*64.f*32.f); // 32 1x1 map segments
+	constexpr float minActualMapAreaToSearch = (64.f*64.f*0.25f); // quarter of a 1x1 map.
 
 	// Nodes soemtimes get revisited, so increase the resultant area to compensate.
 	// We don't keep track of whether a node has been visited before because that would incur an
 	// otherwise unneccessary cache write-back for every node visited.
 	constexpr float scaleForNodeRevisits = 1.1f;
 
-	float maxMapLength = std::max(mapDims.mapx, mapDims.mapy);
-	float maxSearchArea = mapDims.mapx*mapDims.mapy*maxRelativeMapAreaToSearch;
+	const float minMapArea = minActualMapAreaToSearch;
+	const float maxMapArea = std::min(mapDims.mapSquares * maxRelativeMapAreaToSearch, maxActualMapAreaToSearch);
+
+	// this last modifier determines when we hit the max search area.
+	const float maxMapLength = sqrtf(mapDims.mapx * mapDims.mapy) * 0.5f;
 	float dist = 0.f;
 
 	if (hCostMult != 0.f) {
@@ -336,7 +338,8 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	else {
 		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/SQUARE_SIZE;
 	}
-	fwdAreaSearchLimit = std::clamp(dist*dist*areaToSearchScale, 100.f, maxSearchArea) * scaleForNodeRevisits;
+	const float interp = std::clamp(dist / maxMapLength, 0.f, 1.f);
+	fwdAreaSearchLimit = mix(minMapArea, maxMapArea, interp) * scaleForNodeRevisits;
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {
