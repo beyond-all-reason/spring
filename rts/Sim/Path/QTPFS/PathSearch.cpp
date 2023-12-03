@@ -317,10 +317,11 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	 */
 	// min/max area of the map to search.
 	constexpr float maxRelativeMapAreaToSearch = (1.f/16.f);
-	constexpr float maxActualMapAreaToSearch = (64.f*64.f*32.f); // 32 1x1 map segments
+	constexpr float maxActualMapAreaToSearch = (64.f*64.f*32.f); // 32 1x1 map segments (half the 1/16th of a 32x32 map)
+	constexpr float maxDistLimit = 1448.f; // approx limit of a 16x16 map on the diagonal i.e. half of a 32x32
 	constexpr float minActualMapAreaToSearch = (64.f*64.f*0.25f); // quarter of a 1x1 map.
 
-	// Nodes soemtimes get revisited, so increase the resultant area to compensate.
+	// Nodes sometimes get revisited, so increase the resultant area to compensate.
 	// We don't keep track of whether a node has been visited before because that would incur an
 	// otherwise unneccessary cache write-back for every node visited.
 	constexpr float scaleForNodeRevisits = 1.1f;
@@ -328,8 +329,10 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	const float minMapArea = minActualMapAreaToSearch;
 	const float maxMapArea = std::min(mapDims.mapSquares * maxRelativeMapAreaToSearch, maxActualMapAreaToSearch);
 
-	// this last modifier determines when we hit the max search area.
-	const float maxMapLength = sqrtf(mapDims.mapx * mapDims.mapy) * 0.5f;
+	// This last modifier determines when we hit the max search area. Needs to be limited because
+	// the max search area is limited and larger maps would perform search worse if their larger
+	// lengths were used to determine the max search area.
+	const float maxMapLength = std::min(maxDistLimit, sqrtf(mapDims.mapx * mapDims.mapy) * 0.5f);
 	float dist = 0.f;
 
 	if (hCostMult != 0.f) {
