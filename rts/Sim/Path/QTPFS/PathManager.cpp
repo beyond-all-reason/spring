@@ -1355,7 +1355,9 @@ unsigned int QTPFS::PathManager::ExecuteUnsyncedSearch(unsigned int pathId){
 			}
 		}
 	}
-	registry.destroy(pathSearchEntity);
+
+	if (registry.valid(pathSearchEntity))
+		registry.destroy(pathSearchEntity);
 
 	return pathId;
 }
