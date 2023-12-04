@@ -224,6 +224,7 @@ public:
 		bool doPartialSearch = false;
 		bool rejectPartialSearch = false;
 		bool allowPartialSearch = false;
+		bool expectIncompletePartialSearch = false;
 		bool searchEarlyDrop = false;
 		bool initialized = false;
 		bool partialReverseTrace = false;

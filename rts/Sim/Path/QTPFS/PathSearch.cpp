@@ -214,6 +214,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 			// explicitly doesn't capture the step index if it hits an early drop out.
 		});
 	}
+	expectIncompletePartialSearch = (badNodeCount > 0);
 }
 
 // #pragma GCC pop_options
@@ -454,6 +455,9 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 			}
+			// We're done with the forward path and we expect the reverse path to fail so stop it right there.
+			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch)
+				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 		}
 
 		if (!(*bwd.openNodes).empty()) {
