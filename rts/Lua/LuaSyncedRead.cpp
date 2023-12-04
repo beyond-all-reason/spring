@@ -4287,34 +4287,9 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
-/*** Checks a builder's current task
- *
- * @function Spring.GetUnitWorkerTask
- *
- * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
- * because you can have a command at the front of the queue and not be doing it (for example because
- * the target is still too far away), and on the other hand you can also be doing a task despite not
- * having it in front of the queue (for example you're Guarding another builder who does). Also, it
- * resolves the Repair command into either actual repair, or construction assist (in which case it
- * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
- * custom commands).
- *
- * The possible commands returned are repair, reclaim, resurrect, capture, restore,
- * and build commands (negative buildee unitDefID).
- *
- * @number unitID
- * @treturn number cmdID of the relevant command
- * @treturn number targetID if applicable (all except RESTORE)
- */
-int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+static int GetBuilderWorkerTask(lua_State* L, const CBuilder *builder)
 {
-	const auto unit = ParseInLosUnit(L, __func__, 1);
-	if (unit == nullptr)
-		return 0;
-
-	const auto builder = dynamic_cast <const CBuilder*> (unit);
-	if (builder == nullptr)
-		return 0;
+	assert(builder != nullptr);
 
 	if (builder->curBuild) {
 		lua_pushnumber(L, builder->curBuild->beingBuilt
@@ -4349,6 +4324,56 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 	} else {
 		return 0;
 	}
+}
+
+static int GetFactoryWorkerTask(lua_State* L, const CFactory *factory)
+{
+	assert(factory != nullptr);
+
+	if (factory->curBuild) {
+		lua_pushnumber(L, factory->curBuild->beingBuilt
+			? -factory->curBuild->unitDef->id
+			: CMD_REPAIR // fullHealthFactory
+		);
+		lua_pushnumber(L, factory->curBuild->id);
+		return 2;
+	} else {
+		return 0;
+	}
+}
+
+/*** Checks a builder's current task
+ *
+ * @function Spring.GetUnitWorkerTask
+ *
+ * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
+ * because you can have a command at the front of the queue and not be doing it (for example because
+ * the target is still too far away), and on the other hand you can also be doing a task despite not
+ * having it in front of the queue (for example you're Guarding another builder who does). Also, it
+ * resolves the Repair command into either actual repair, or construction assist (in which case it
+ * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
+ * custom commands).
+ *
+ * The possible commands returned are repair, reclaim, resurrect, capture, restore,
+ * and build commands (negative buildee unitDefID).
+ *
+ * @number unitID
+ * @treturn number cmdID of the relevant command
+ * @treturn number targetID if applicable (all except RESTORE)
+ */
+int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	// perhaps this should be some sort of virtual function of CUnit?
+	if (const auto builder = dynamic_cast <const CBuilder *> (unit); builder)
+		return GetBuilderWorkerTask(L, builder);
+	if (const auto factory = dynamic_cast <const CFactory *> (unit); factory)
+		return GetFactoryWorkerTask(L, factory);
+
+	return 0;
 }
 
 /***
