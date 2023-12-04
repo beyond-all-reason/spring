@@ -158,6 +158,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTeamRulesParams);
 	REGISTER_LUA_CFUNC(GetTeamStatsHistory);
 	REGISTER_LUA_CFUNC(GetTeamLuaAI);
+	REGISTER_LUA_CFUNC(GetTeamMaxUnits);
 
 	REGISTER_LUA_CFUNC(GetAllyTeamInfo);
 	REGISTER_LUA_CFUNC(AreTeamsAllied);
@@ -2051,6 +2052,31 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
 	return 1;
 }
 
+
+/*** Returns a team's unit cap.
+ *
+ * Also returns the current unit count for readable teams as the 2nd value.
+ *
+ * @function Spring.GetTeamMaxUnits
+ * @number teamID
+ * @treturn number maxUnits
+ * @treturn number? currentUnits
+ */
+int LuaSyncedRead::GetTeamMaxUnits(lua_State* L)
+{
+	const auto team = ParseTeam(L, __func__, 1);
+	if (team == nullptr)
+		return 0;
+
+	lua_pushnumber(L, team->GetMaxUnits());
+
+	if (LuaUtils::IsAlliedTeam(L, team->teamNum))
+		lua_pushnumber(L, team->GetNumUnits());
+	else
+		lua_pushnil(L);
+
+	return 2;
+}
 
 /***
  *
