@@ -27,6 +27,7 @@
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
+#include "System/Threading/ThreadPool.h"
 
 #include "Sim/Path/HAPFS/PathGlobal.h"
 
@@ -380,9 +381,18 @@ void CUnitHandler::UpdateUnits()
 
 void CUnitHandler::UpdateUnitWeapons()
 {
-	SCOPED_TIMER("Sim::Unit::Weapon");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		activeUnits[activeUpdateUnit]->UpdateWeapons();
+	{
+		SCOPED_TIMER("Sim::Unit::UpdateWeaponVectors");
+		for_mt(0, activeUnits.size(), [&](const int idx) {
+			auto unit = activeUnits[idx];
+			unit->UpdateWeaponVectors();
+		});
+	}
+	{
+		SCOPED_TIMER("Sim::Unit::Weapon");
+		for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
+			activeUnits[activeUpdateUnit]->UpdateWeapons();
+		}
 	}
 }
 
