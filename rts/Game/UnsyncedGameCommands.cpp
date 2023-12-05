@@ -1548,6 +1548,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		bool enabled = !globalRendering->glDebug;
+		int tmpStackTrace = -1;
 		uint32_t msgSrceIdx = 0;
 		uint32_t msgTypeIdx = 0;
 		uint32_t msgSevrIdx = 0;
@@ -1556,15 +1557,18 @@ public:
 
 		if (args.size() > 0)
 			enabled = StringToBool(args[0]);
-
 		if (args.size() > 1)
-			msgSrceIdx = StringToInt(args[1]);
+			tmpStackTrace = StringToInt(args[1]);
+
 		if (args.size() > 2)
-			msgTypeIdx = StringToInt(args[2]);
+			msgSrceIdx = StringToInt(args[2]);
 		if (args.size() > 3)
-			msgSevrIdx = StringToInt(args[3]);
+			msgTypeIdx = StringToInt(args[3]);
+		if (args.size() > 4)
+			msgSevrIdx = StringToInt(args[4]);
 
 		globalRendering->glDebug = enabled;
+		globalRendering->glDebugTmpStackTrace = tmpStackTrace;
 		globalRendering->ToggleGLDebugOutput(msgSrceIdx, msgTypeIdx, msgSevrIdx);
 
 		return true;

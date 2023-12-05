@@ -257,6 +257,7 @@ public:
 	bool drawDebugCubeMap;
 
 	bool glDebug;
+	int glDebugTmpStackTrace;
 	bool glDebugErrors;
 
 	/**

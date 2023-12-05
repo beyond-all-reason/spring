@@ -111,6 +111,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(drawDebugCubeMap),
 
 	CR_MEMBER(glDebug),
+	CR_MEMBER(glDebugTmpStackTrace),
 	CR_MEMBER(glDebugErrors),
 
 	CR_MEMBER(timeOffset),
@@ -291,6 +292,7 @@ CGlobalRendering::CGlobalRendering()
 	, drawDebugCubeMap(false)
 
 	, glDebug(configHandler->GetBool("DebugGL"))
+	, glDebugTmpStackTrace(-1)
 	, glDebugErrors(false)
 
 	, teamNanospray(configHandler->GetBool("TeamNanoSpray"))
@@ -1951,14 +1953,17 @@ bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int
 		const char* msgTypeStr = glDebugMessageTypeName(msgTypeEnums[msgTypeIdx %= msgTypeEnums.size()]);
 		const char* msgSevrStr = glDebugMessageSeverityName(msgSevrEnums[msgSevrIdx %= msgSevrEnums.size()]);
 
-		const static bool dbgTraces = configHandler->GetBool("DebugGLStacktraces");
+		static const bool dbgTraces = configHandler->GetBool("DebugGLStacktraces");
+		static bool dbgTracesActive = dbgTraces;
+		if (glDebugTmpStackTrace != -1)
+			dbgTracesActive = static_cast<bool>(glDebugTmpStackTrace);
 		// install OpenGL debug message callback; typecast is a workaround
 		// for #4510 (change in callback function signature with GLEW 1.11)
 		// use SYNCHRONOUS output, we want our callback to run in the same
 		// thread as the bugged GL call (for proper stacktraces)
 		// CB userParam is const, but has to be specified sans qualifiers
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback((GLDEBUGPROC)&glDebugMessageCallbackFunc, (void*)&dbgTraces);
+		glDebugMessageCallback((GLDEBUGPROC)&glDebugMessageCallbackFunc, (void*)&dbgTracesActive);
 		glDebugMessageControl(msgSrceEnums[msgSrceIdx], msgTypeEnums[msgTypeIdx], msgSevrEnums[msgSevrIdx], 0, nullptr, GL_TRUE);
 
 		LOG("[GR::%s] OpenGL debug-message callback enabled (source=%s type=%s severity=%s)", __func__, msgSrceStr, msgTypeStr, msgSevrStr);
@@ -1969,7 +1974,7 @@ bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int
 
 		LOG("[GR::%s] OpenGL debug-message callback disabled", __func__);
 	}
-	configHandler->Set("DebugGL", globalRendering->glDebug);
+	//configHandler->Set("DebugGL", globalRendering->glDebug);
 #endif
 	return true;
 }

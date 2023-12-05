@@ -171,7 +171,7 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 	DWORD64 dwModAddr =  0;
 	DWORD machineType =  0;
 
-	const bool wdThread = (hThread != INVALID_HANDLE_VALUE);
+	const bool wdThread = Threading::IsWatchDogThread(); // used to be (hThread != INVALID_HANDLE_VALUE);
 
 	bool aiLibFound = false;
 	bool glLibFound = false;
