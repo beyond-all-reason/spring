@@ -3943,13 +3943,19 @@ int LuaSyncedRead::GetUnitIsDead(lua_State* L)
 }
 
 
-/***
+/*** Checks whether a unit is disabled and can't act
+ *
+ * The first return value is a simple OR of the following ones,
+ * any of those conditions is sufficient to disable the unit.
+ *
+ * Note that EMP and being transported are mechanically the same and thus lumped together.
+ * Use other callouts to differentiate them if you need to.
  *
  * @function Spring.GetUnitIsStunned
  * @number unitID
- * @treturn nil|bool stunnedOrBuilt unit is stunned either via EMP or being under construction
- * @treturn bool stunned unit is stunned via EMP
- * @treturn bool beingBuilt unit is stunned via being under construction
+ * @treturn nil|bool stunnedOrBuilt unit is disabled
+ * @treturn bool stunned unit is either stunned via EMP or being transported by a non-fireplatform
+ * @treturn bool beingBuilt unit is under construction
  */
 int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 {
