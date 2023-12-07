@@ -114,21 +114,71 @@ void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 }
 
 
-void CUnitScriptEngine::Tick(int deltaTime)
+void CUnitScriptEngine::Tick(int deltaTime, int gameframe)
 {
-	cobEngine->Tick(deltaTime);
+	if (gameframe > 300) {
+		Tick_mt(deltaTime);
 
-	// tick all (COB or LUS) script instances that have registered themselves as animating
-	for (size_t i = 0; i < animating.size(); ) {
-		currentScript = animating[i];
+	}
+	else {
+		cobEngine->Tick(deltaTime);
+		{
+			ZoneScoped;
+			// tick all (COB or LUS) script instances that have registered themselves as animating
+			for (size_t i = 0; i < animating.size(); ) {
+				currentScript = animating[i];
 
-		if (!currentScript->Tick(deltaTime)) {
-			animating[i] = animating.back();
-			animating.pop_back();
-			continue;
+				if (!currentScript->Tick(deltaTime)) {
+					animating[i] = animating.back();
+					animating.pop_back();
+					continue;
+				}
+
+				i++;
+			}
 		}
 
-		i++;
+		currentScript = nullptr;
+	
+	}
+	#ifdef ANIMATION_MT
+	#else
+
+	#endif
+}
+
+
+
+void CUnitScriptEngine::Tick_mt(int deltaTime)
+{
+	cobEngine->Tick(deltaTime);
+	{
+		{
+			//ZoneScopedN("CUnitScriptEngine::Tick_st");
+			SCOPED_TIMER("Sim::Script::Tick_mt");
+			for_mt(0, animating.size(), [&](const int idx) {
+				auto mtCurrentScript = animating[idx];
+				mtCurrentScript->Tick_mt(deltaTime);
+			});
+
+				
+		}
+		{
+			ZoneScopedN("CUnitScriptEngine::Tick_st");
+			// tick all (COB or LUS) script instances that have registered themselves as animating
+			for (size_t i = 0; i < animating.size(); ) {
+				currentScript = animating[i];
+
+				//static AnimContainerType doneAnims[AMove + 1]; uh oh, here we are supposed to pre-alloc this one :/
+				if (!currentScript->Tick_st(deltaTime)) {
+					animating[i] = animating.back();
+					animating.pop_back();
+					continue;
+				}
+
+				i++;
+			}
+		}
 	}
 
 	currentScript = nullptr;
