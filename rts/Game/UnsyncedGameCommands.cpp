@@ -875,7 +875,7 @@ public:
 			clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
 		}
 
-		LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
+		LOG("Skirmish AI controlling team %i is being %sed ...", teamToKillId, actionName.c_str());
 
 		return true;
 	}
@@ -966,7 +966,7 @@ public:
 			return WrongSyntax();
 		}
 		if (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr) {
-			LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
+			LOG_L(L_WARNING, "Team to control: there is already an AI being created for team: %i", teamToControlId);
 			return WrongSyntax();
 		}
 
