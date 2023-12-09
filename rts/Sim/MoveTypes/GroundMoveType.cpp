@@ -1731,7 +1731,7 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 
 	// obstacle-avoidance only needs to run if the unit wants to move
 	if (WantToStop())
-		return flatFrontDir;
+		return lastAvoidanceDir = flatFrontDir;
 
 	// Speed-optimizer. Reduces the times this system is run.
 	if ((gs->frameNum + owner->id) % modInfo.groundUnitCollisionAvoidanceUpdateRate) {
