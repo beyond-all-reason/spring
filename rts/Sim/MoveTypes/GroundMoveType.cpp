@@ -1083,6 +1083,8 @@ bool CGroundMoveType::FollowPath(int thread)
 			atGoal |= ((curGoalDistSq <= spdGoalDistSq) && !reversing && (ffd.dot(goalPos - opos) > 0.0f && ffd.dot(goalPos - (opos + ovel)) <= 0.0f));
 			atGoal |= ((curGoalDistSq <= spdGoalDistSq) &&  reversing && (ffd.dot(goalPos - opos) < 0.0f && ffd.dot(goalPos - (opos + ovel)) >= 0.0f));
 
+			atEndOfPath |= atGoal;
+
 			#ifdef PATHING_DEBUG
 			if (DEBUG_DRAWING_ENABLED) {
 				bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
