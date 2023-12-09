@@ -849,6 +849,23 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		ExecuteSearch(search, nodeLayer, pathType);
 	});
 
+	auto completePath = [this](entt::entity pathEntity, IPath* path){
+		// inform the movement system that the path has been changed.
+		if (registry.all_of<PathUpdatedCounterIncrease>(pathEntity)) {
+			path->SetNumPathUpdates(path->GetNumPathUpdates() + 1);
+			registry.remove<PathUpdatedCounterIncrease>(pathEntity);
+		}
+		registry.remove<PathIsTemp>(pathEntity);
+		registry.remove<PathIsDirty>(pathEntity);
+		registry.remove<PathSearchRef>(pathEntity);
+
+		// If the node data wasn't recorded, then the path isn't shareable.
+		if (!path->IsBoundingBoxOverriden()) {
+			RemovePathFromShared(pathEntity);
+			RemovePathFromPartialShared(pathEntity);
+		}
+	};
+
 	// TODO: make a function?
 	for (auto pathSearchEntity : pathView) {
 		assert(registry.valid(pathSearchEntity));
@@ -860,20 +877,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 			IPath* path = registry.try_get<IPath>(pathEntity);
 			if (path != nullptr) {
 				if (search->PathWasFound()) {
-					// inform the movement system that the path has been changed.
-					if (registry.all_of<PathUpdatedCounterIncrease>(pathEntity)) {
-						path->SetNumPathUpdates(path->GetNumPathUpdates() + 1);
-						registry.remove<PathUpdatedCounterIncrease>(pathEntity);
-					}
-					registry.remove<PathIsTemp>(pathEntity);
-					registry.remove<PathIsDirty>(pathEntity);
-					registry.remove<PathSearchRef>(pathEntity);
-
-					// If the node data wasn't recorded, then the path isn't shareable.
-					if (!path->IsBoundingBoxOverriden()) {
-						RemovePathFromShared(pathEntity);
-						RemovePathFromPartialShared(pathEntity);
-					}
+					completePath(pathEntity, path);
 					// LOG("%s: %x - path found", __func__, entt::to_integral(pathEntity));
 				} else {
 					if (search->rawPathCheck) {
@@ -899,6 +903,8 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 						// Don't invalid the path, now, give the unit the chance to escape from
 						// being stuck inside something.
 						// DeletePathEntity(pathEntity);
+						path->SetBoundingBox();
+						completePath(pathEntity, path);
 					}
 				}
 			}
