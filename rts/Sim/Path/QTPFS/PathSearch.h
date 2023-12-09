@@ -130,7 +130,6 @@ namespace QTPFS {
 				, srcSearchNode(nullptr)
 				, tgtSearchNode(nullptr)
 				, minSearchNode(nullptr)
-				, areaSearched(0)
 			{}
 
 			// global queue: allocated once, re-used by all searches without clear()'s
@@ -140,7 +139,6 @@ namespace QTPFS {
 			SearchNode *srcSearchNode, *tgtSearchNode;
 			float3 srcPoint, tgtPoint;
 			SearchNode *minSearchNode;
-			int areaSearched;
 		};
 
 		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
@@ -157,7 +155,7 @@ namespace QTPFS {
 
 		void InitStartingSearchNodes();
 		void UpdateHcostMult();
-		void RemoveOutdatedOpenNodesFromQueue();
+		void RemoveOutdatedOpenNodesFromQueue(int searchDir);
 		bool IsNodeActive(const SearchNode& curSearchNode) const;
 
 		bool ExecutePathSearch();
@@ -210,7 +208,7 @@ namespace QTPFS {
 		int fwdStepIndex = 0;
 		int bwdStepIndex = 0;
 
-		int fwdAreaSearchLimit = 0;
+		int fwdNodeSearchLimit = 0;
 
 		size_t fwdNodesSearched = 0;
 
