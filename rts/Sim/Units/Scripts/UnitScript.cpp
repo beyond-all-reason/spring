@@ -238,42 +238,22 @@ bool CUnitScript::Tick(int deltaTime)
 
 #ifdef ANIMATION_MT
 	/**
-	 * @brief The multithreaded first half of this Tick function first does the heavy lifting of calculating all
+	 * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of calculating all
 			  new piece positions according to the animations
 	 */
-
 	bool CUnitScript::Tick_mt(int deltaTime)
 	{
 		ZoneScoped;
 		// vector of indexes of finished animations,
-		// so we can get rid of them in constant time
-		//static AnimContainerType doneAnims[AMove + 1];
-		//AnimContainerType doneAnims = *doneAnimPtr;
-		// tick-functions; these never change address
-		//static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+		// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+		// AnimContainerType doneAnimsMT[AMove + 1];
 		constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
 		{
 			for (int animType = ATurn; animType <= AMove; animType++) {
-				//TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
 				TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
 			}
 		}
 		return true;
-		// Tell listeners to unblock, and remove finished animations from the unit/script.
-		/*
-		{
-			ZoneScopedN("CUnitScript::Tick::AnimFinished");
-			for (int animType = ATurn; animType <= AMove; animType++) {
-				for (AnimInfo& ai : doneAnims[animType]) {
-					AnimFinished((AnimType)animType, ai.piece, ai.axis);
-				}
-
-				doneAnims[animType].clear();
-			}
-		}
-
-		return (HaveAnimations());
-		*/
 	}
 
 	/**
@@ -290,21 +270,11 @@ bool CUnitScript::Tick(int deltaTime)
 	{
 		ZoneScoped;
 		// vector of indexes of finished animations,
-		// so we can get rid of them in constant time
-		//static AnimContainerType doneAnims[AMove + 1];
-		// tick-functions; these never change address
-		/*
-		static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = {&CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim};
-		{
-			ZoneScopedN("CUnitScript::Tick::TickAnims");
-			for (int animType = ATurn; animType <= AMove; animType++) {
-				TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
-			}
-		}*/
+		// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+		// AnimContainerType doneAnimsMT[AMove + 1];
 
 		// Tell listeners to unblock, and remove finished animations from the unit/script.
 		{
-			ZoneScopedN("CUnitScript::Tick::AnimFinished");
 			for (int animType = ATurn; animType <= AMove; animType++) {
 				for (AnimInfo& ai : doneAnimsMT[animType]) {
 					AnimFinished((AnimType)animType, ai.piece, ai.axis);
@@ -313,7 +283,6 @@ bool CUnitScript::Tick(int deltaTime)
 				doneAnimsMT[animType].clear();
 			}
 		}
-
 		return (HaveAnimations());
 	}
 
