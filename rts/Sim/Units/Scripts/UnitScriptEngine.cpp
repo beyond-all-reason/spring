@@ -13,6 +13,10 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
+#include "System/Config/ConfigHandler.h"
+
+
+CONFIG(int, AnimationMT).defaultValue(1).safemodeValue(0).minimumValue(0);
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -114,37 +118,37 @@ void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 }
 
 
-void CUnitScriptEngine::Tick(int deltaTime, int gameframe)
+void CUnitScriptEngine::Tick(int deltaTime)
 {
-	if (gameframe > 300) {
-		Tick_mt(deltaTime);
-
-	}
-	else {
-		cobEngine->Tick(deltaTime);
-		{
-			ZoneScoped;
-			// tick all (COB or LUS) script instances that have registered themselves as animating
-			for (size_t i = 0; i < animating.size(); ) {
-				currentScript = animating[i];
-
-				if (!currentScript->Tick(deltaTime)) {
-					animating[i] = animating.back();
-					animating.pop_back();
-					continue;
-				}
-
-				i++;
-			}
+	#ifdef ANIMATION_MT
+		int animation_mt = configHandler->GetInt("AnimationMT");
+		if (animation_mt == 1) {
+			Tick_mt(deltaTime);
+			return;
 		}
 
-		currentScript = nullptr;
-	
-	}
-	#ifdef ANIMATION_MT
-	#else
-
 	#endif
+		{
+			cobEngine->Tick(deltaTime);
+			{
+				ZoneScoped;
+				// tick all (COB or LUS) script instances that have registered themselves as animating
+				for (size_t i = 0; i < animating.size(); ) {
+					currentScript = animating[i];
+
+					if (!currentScript->Tick(deltaTime)) {
+						animating[i] = animating.back();
+						animating.pop_back();
+						continue;
+					}
+
+					i++;
+				}
+			}
+
+			currentScript = nullptr;
+	
+		}
 }
 
 

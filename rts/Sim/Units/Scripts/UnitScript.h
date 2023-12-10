@@ -114,8 +114,10 @@ public:
 	const CUnit* GetUnit() const { return unit; }
 
 	bool Tick(int tickRate);
-	bool Tick_mt(int tickRate);
-	bool Tick_st(int tickRate);
+	#ifdef ANIMATION_MT
+		bool Tick_mt(int tickRate);
+		bool Tick_st(int tickRate);
+	#endif
 	// note: must copy-and-set here (LMP dirty flag, etc)
 	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 pos = lmp.GetPosition(); const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate); lmp.SetPosition(pos); return ret; }
 	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate         ); lmp.SetRotation(rot); return ret; }

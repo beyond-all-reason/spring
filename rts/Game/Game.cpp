@@ -1743,7 +1743,7 @@ void CGame::SimFrame() {
 		featureHandler.Update();
 		{
 			SCOPED_TIMER("Sim::Script");
-			unitScriptEngine->Tick(33,gs->frameNum);
+			unitScriptEngine->Tick(33);
 		}
 		envResHandler.Update();
 		losHandler->Update();
