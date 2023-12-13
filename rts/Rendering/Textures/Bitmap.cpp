@@ -1446,48 +1446,16 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 	if (logged)
 		LOG("[CBitmap::%s] saving \"%s\" to \"%s\" (IL_VERSION=%d IL_UNICODE=%d)", __func__, filename.c_str(), fsFullPath.c_str(), IL_VERSION, sizeof(ILchar) != 1);
 
-	if (sizeof(void*) >= 4) {
-		#if 0
-		// NOTE: all Windows buildbot libIL's crash in ilSaveF (!)
-		std::vector<ILchar> ilFullPath(fsFullPath.begin(), fsFullPath.end());
+	const ILchar* p = (sizeof(ILchar) != 1)?
+		reinterpret_cast<const ILchar*>(ilFullPath.data()):
+		reinterpret_cast<const ILchar*>(fsFullPath.data());
 
-		// null-terminate; vectors are not strings
-		ilFullPath.push_back(0);
-
-		// IL might be unicode-aware in which case it uses wchar_t{*} strings
-		// should not even be necessary because ASCII and UTFx are compatible
-		switch (sizeof(ILchar)) {
-			case (sizeof( char  )): {                                                                                                     } break;
-			case (sizeof(wchar_t)): { std::mbstowcs(reinterpret_cast<wchar_t*>(ilFullPath.data()), fsFullPath.data(), fsFullPath.size()); } break;
-			default: { assert(false); } break;
-		}
-		#endif
-
-		const ILchar* p = (sizeof(ILchar) != 1)?
-			reinterpret_cast<const ILchar*>(ilFullPath.data()):
-			reinterpret_cast<const ILchar*>(fsFullPath.data());
-
-		switch (int(fsImageExt[0])) {
-			case 'b': case 'B': { success = ilSave(IL_BMP, p); } break;
-			case 'j': case 'J': { success = ilSave(IL_JPG, p); } break;
-			case 'p': case 'P': { success = ilSave(IL_PNG, p); } break;
-			case 't': case 'T': { success = ilSave(IL_TGA, p); } break;
-			case 'd': case 'D': { success = ilSave(IL_DDS, p); } break;
-		}
-	} else {
-		FILE* file = fopen(fsFullPath.c_str(), "wb");
-
-		if (file != nullptr) {
-			switch (int(fsImageExt[0])) {
-				case 'b': case 'B': { success = ilSaveF(IL_BMP, file); } break;
-				case 'j': case 'J': { success = ilSaveF(IL_JPG, file); } break;
-				case 'p': case 'P': { success = ilSaveF(IL_PNG, file); } break;
-				case 't': case 'T': { success = ilSaveF(IL_TGA, file); } break;
-				case 'd': case 'D': { success = ilSaveF(IL_DDS, file); } break;
-			}
-
-			fclose(file);
-		}
+	switch (int(fsImageExt[0])) {
+		case 'b': case 'B': { success = ilSave(IL_BMP, p); } break;
+		case 'j': case 'J': { success = ilSave(IL_JPG, p); } break;
+		case 'p': case 'P': { success = ilSave(IL_PNG, p); } break;
+		case 't': case 'T': { success = ilSave(IL_TGA, p); } break;
+		case 'd': case 'D': { success = ilSave(IL_DDS, p); } break;
 	}
 
 	if (logged) {
