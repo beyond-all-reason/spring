@@ -508,10 +508,13 @@ CGroundMoveType::~CGroundMoveType()
 {
 	Disconnect();
 
-	if (pathID == 0)
-		return;
+	if (nextPathId != 0) {
+		pathManager->DeletePath(nextPathId, true);
+	}
 
-	pathManager->DeletePath(pathID, true);
+	if (pathID != 0) {
+		pathManager->DeletePath(pathID, true);
+	}
 }
 
 void CGroundMoveType::PostLoad()
