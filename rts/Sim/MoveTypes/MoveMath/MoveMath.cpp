@@ -53,10 +53,11 @@ float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsign
 	if (xSquare >= mapDims.mapx || zSquare >= mapDims.mapy)
 		return 0.0f;
 
+	const int accurateSquare = xSquare + (zSquare * mapDims.mapx);
 	const int square = (xSquare >> 1) + ((zSquare >> 1) * mapDims.hmapx);
 	const int squareTerrType = readMap->GetTypeMapSynced()[square];
 
-	const float height  = readMap->GetMIPHeightMapSynced(1)[square];
+	const float height = readMap->GetMaxHeightMapSynced()[accurateSquare];
 	const float slope   = readMap->GetSlopeMapSynced()[square];
 
 	const CMapInfo::TerrainType& tt = mapInfo->terrainTypes[squareTerrType];
@@ -77,10 +78,11 @@ float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsign
 	if (xSquare >= mapDims.mapx || zSquare >= mapDims.mapy)
 		return 0.0f;
 
+	const int accurateSquare = xSquare + (zSquare * mapDims.mapx);
 	const int square = (xSquare >> 1) + ((zSquare >> 1) * mapDims.hmapx);
 	const int squareTerrType = readMap->GetTypeMapSynced()[square];
 
-	const float height = readMap->GetMIPHeightMapSynced(1)[square];
+	const float height = readMap->GetMaxHeightMapSynced()[accurateSquare];
 	const float slope  = readMap->GetSlopeMapSynced()[square];
 
 	const CMapInfo::TerrainType& tt = mapInfo->terrainTypes[squareTerrType];

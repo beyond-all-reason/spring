@@ -113,6 +113,7 @@ MapDimensions mapDims;
 std::vector<float> CReadMap::mapFileHeightMap;
 std::vector<float> CReadMap::originalHeightMap;
 std::vector<float> CReadMap::centerHeightMap;
+std::vector<float> CReadMap::maxHeightMap;
 std::array<std::vector<float>, CReadMap::numHeightMipMaps - 1> CReadMap::mipCenterHeightMaps;
 
 std::vector<float3> CReadMap::visVertexNormals;
@@ -312,6 +313,7 @@ void CReadMap::Initialize()
 			((  mapDims.mapx      * mapDims.mapy    * 2     * sizeof(float3))        / 1024) +   // centerNormals{Synced, Unsynced}
 			((( mapDims.mapxp1)   * mapDims.mapyp1          * sizeof(float3))        / 1024) +   // VisVertexNormals
 			((  mapDims.mapx      * mapDims.mapy            * sizeof(float))         / 1024) +   // centerHeightMap
+			((  mapDims.mapx      * mapDims.mapy            * sizeof(float))         / 1024) +   // maxHeightMap
 			((  mapDims.hmapx     * mapDims.hmapy           * sizeof(float))         / 1024) +   // slopeMap
 			((  mapDims.hmapx     * mapDims.hmapy           * sizeof(uint8_t))       / 1024) +   // typeMap
 			((  mapDims.hmapx     * mapDims.hmapy           * sizeof(float))         / 1024) +   // MetalMap::extractionMap
@@ -342,6 +344,8 @@ void CReadMap::Initialize()
 	centerNormals2D.resize(mapDims.mapx * mapDims.mapy);
 	centerHeightMap.clear();
 	centerHeightMap.resize(mapDims.mapx * mapDims.mapy);
+	maxHeightMap.clear();
+	maxHeightMap.resize(mapDims.mapx * mapDims.mapy);
 
 	mipPointerHeightMaps.fill(nullptr);
 	mipPointerHeightMaps[0] = &centerHeightMap[0];
@@ -605,12 +609,17 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) co
 			const int idxBL = (y + 1) * mapDims.mapxp1 + x + 0;
 			const int idxBR = (y + 1) * mapDims.mapxp1 + x + 1;
 
+			const int index = y * mapDims.mapx + x;
 			const float height =
 				heightmapSynced[idxTL] +
 				heightmapSynced[idxTR] +
 				heightmapSynced[idxBL] +
 				heightmapSynced[idxBR];
-			centerHeightMap[y * mapDims.mapx + x] = height * 0.25f;
+			centerHeightMap[index] = height * 0.25f;
+			maxHeightMap[index] = std::max
+					( std::max(heightmapSynced[idxTL], heightmapSynced[idxTR])
+					, std::max(heightmapSynced[idxBL], heightmapSynced[idxBR])
+					);
 		}
 	}, -256);
 }
