@@ -285,7 +285,7 @@ void QTPFS::PathSearch::RemoveOutdatedOpenNodesFromQueue(int searchDir) {
 
 	while (!(*searchData.openNodes).empty()) {
 		SearchQueueNode curOpenNode = (*searchData.openNodes).top();
-		assert(searchThreadData->allSearchedNodes[i].isSet(curOpenNode.nodeIndex));
+		assert(searchThreadData->allSearchedNodes[searchDir].isSet(curOpenNode.nodeIndex));
 		curSearchNode = &searchThreadData->allSearchedNodes[searchDir][curOpenNode.nodeIndex];
 		
 		// Check if this node entity is valid
