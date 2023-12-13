@@ -323,6 +323,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
 	REGISTER_LUA_CFUNC(IsPosInMap);
+	REGISTER_LUA_CFUNC(GetWaterPlaneLevel);
+	REGISTER_LUA_CFUNC(GetWaterLevel);
 	REGISTER_LUA_CFUNC(GetGroundHeight);
 	REGISTER_LUA_CFUNC(GetGroundOrigHeight);
 	REGISTER_LUA_CFUNC(GetGroundNormal);
@@ -6974,6 +6976,39 @@ int LuaSyncedRead::GetGroundHeight(lua_State* L)
 	const float x = luaL_checkfloat(L, 1);
 	const float z = luaL_checkfloat(L, 2);
 	lua_pushnumber(L, CGround::GetHeightReal(x, z, CLuaHandle::GetHandleSynced(L)));
+	return 1;
+}
+
+/*** Get water plane height
+ *
+ * Water may at some point become shaped (rivers etc) but for now it is always a flat plane.
+ * Use this function instead of GetWaterLevel to denote you are relying on that assumption.
+ *
+ * @see Spring.GetWaterLevel
+ * @function Spring.GetWaterPlaneLevel
+ * @treturn number waterPlaneLevel
+ */
+int LuaSyncedRead::GetWaterPlaneLevel(lua_State* L)
+{
+	lua_pushnumber(L, CGround::GetWaterPlaneLevel());
+	return 1;
+}
+
+/*** Get water level in a specific position
+ *
+ * Water is currently a flat plane, so this returns the same value regardless of XZ.
+ * However water may become more dynamic at some point so by using this you are future-proof.
+ *
+ * @function Spring.GetWaterLevel
+ * @number x
+ * @number z
+ * @treturn number waterLevel
+ */
+int LuaSyncedRead::GetWaterLevel(lua_State* L)
+{
+	const float x = luaL_checkfloat(L, 1);
+	const float z = luaL_checkfloat(L, 2);
+	lua_pushnumber(L, CGround::GetWaterLevel(x, z));
 	return 1;
 }
 
