@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <RmlUi/Core.h>
-#include "plugin/SolLuaPlugin.h"
+#include "SolLuaPlugin.h"
 
 #ifdef RMLUILUA_API
     #undef RMLUILUA_API

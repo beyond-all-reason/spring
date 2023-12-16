@@ -34,7 +34,7 @@
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
 #include "Game/UI/MouseHandler.h"
-#include "lib/RmlSolLua/src/TranslationTable.h"
+#include <RmlSolLua/TranslationTable.h>
 
 class SystemInterface_SDL : public Rml::SystemInterface
 {
