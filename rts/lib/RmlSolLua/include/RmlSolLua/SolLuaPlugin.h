@@ -7,7 +7,7 @@
 #include <RmlUi/Core/Plugin.h>
 #include <RmlUi/Core/Platform.h>
 #include <sol2/sol.hpp>
-#include "../TranslationTable.h"
+#include "TranslationTable.h"
 
 #include <memory>
 
