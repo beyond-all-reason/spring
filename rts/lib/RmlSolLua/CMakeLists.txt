@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.13)
 
 project ("RmlSolLua")
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 # Add source to this project's executable.
 add_library (RmlSolLua STATIC)
@@ -41,6 +41,13 @@ target_sources (RmlSolLua
 		"include/RmlSolLua/SolLuaPlugin.h"
 		"include/RmlSolLua/TranslationTable.h"
 )
+
+# We hit C1128 in Visual Studio 17.8.3 without this.
+if (MSVC)
+	set_source_files_properties("src/bind/Element.cpp"
+		PROPERTIES COMPILE_FLAGS "/bigobj"
+	)
+endif()
 
 target_link_libraries(RmlSolLua
 	PUBLIC
