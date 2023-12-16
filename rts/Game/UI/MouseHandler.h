@@ -118,7 +118,7 @@ public:
 	bool wasLocked = false;
 	bool offscreen = false;
 	bool mmbScroll = false;
-	uint pressedBitMask = 0;
+	uint32_t pressedBitMask = 0;
 
 private:
 	bool hideCursor = true;
