@@ -1,4 +1,4 @@
-﻿#include "RmlSolLua.h"
+﻿#include "RmlSolLua/RmlSolLua.h"
 
 #include <sol2/sol.hpp>
 #include <RmlUi/Core.h>
