@@ -10,11 +10,8 @@ set (CMAKE_CXX_STANDARD 17)
 # Add source to this project's executable.
 add_library (RmlSolLua STATIC)
 
-find_library (RmlCore NAMES RmlUi RmlCore)
-
 target_sources (RmlSolLua
 	PRIVATE
-		"src/RmlSolLua.h"
 		"src/RmlSolLua.cpp"
 		"src/bind/bind.cpp"
 		"src/bind/bind.h"
@@ -39,19 +36,21 @@ target_sources (RmlSolLua
 		"src/plugin/SolLuaInstancer.cpp"
 		"src/plugin/SolLuaInstancer.h"
 		"src/plugin/SolLuaPlugin.cpp"
-		"src/plugin/SolLuaPlugin.h"
 	PUBLIC
-		"src/RmlSolLua.h"
+		"include/RmlSolLua/RmlSolLua.h"
+		"include/RmlSolLua/SolLuaPlugin.h"
+		"include/RmlSolLua/TranslationTable.h"
+)
+
+target_link_libraries(RmlSolLua
+	PUBLIC
+		RmlCore
+		lua
 )
 
 target_include_directories (RmlSolLua
 	PRIVATE
 		${PROJECT_SOURCE_DIR}/src/
-		${PROJECT_SOURCE_DIR}/include/
-		../RmlUi/Include/
-		../
-		../lua/include
-
 	PUBLIC
 		${PROJECT_SOURCE_DIR}/include/
 )

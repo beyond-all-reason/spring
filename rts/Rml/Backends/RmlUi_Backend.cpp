@@ -38,7 +38,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Lua/LuaUI.h"
-#include "RmlSolLua.h"
+#include <RmlSolLua/RmlSolLua.h>
 #include "System/FileSystem/FileHandler.h"
 #include <functional>
 #include <tracy/Tracy.hpp>
