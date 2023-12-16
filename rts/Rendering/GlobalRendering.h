@@ -313,7 +313,6 @@ public:
 	 *
 	 * Especially some ATI cards report that they support NPOTs, but don't (or just very limited).
 	 */
-	bool supportNonPowerOfTwoTex;
 	bool supportTextureQueryLOD;
 
 	bool supportMSAAFrameBuffer;
