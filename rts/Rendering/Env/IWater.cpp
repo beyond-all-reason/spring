@@ -58,7 +58,7 @@ void IWater::SetWater(int rendererMode)
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
 		true,
 		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
-		GLEW_ARB_fragment_program && GLEW_ARB_texture_float && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
+		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
 		GLEW_ARB_fragment_program && GLEW_ARB_texture_rectangle,
 		GLEW_ARB_shading_language_100 && GLEW_ARB_fragment_shader && GLEW_ARB_vertex_shader,
 	};

@@ -241,11 +241,6 @@ namespace CNamedTextures {
 			if (greyed) bitmap.MakeGrayScale();
 			if (tint)   bitmap.Tint(tintColor);
 
-			const bool isPowerOfTwo
-				=  std::has_single_bit <uint32_t> (bitmap.xsize)
-				&& std::has_single_bit <uint32_t> (bitmap.ysize)
-			;
-
 			// make the texture
 			glBindTexture(GL_TEXTURE_2D, texID);
 
@@ -268,9 +263,10 @@ namespace CNamedTextures {
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				}
 
-				//! Note: NPOTs + nearest filtering seems broken on ATIs
-				if (!isPowerOfTwo && (!GLEW_ARB_texture_non_power_of_two || (globalRendering->amdHacks && nearest)))
-					bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t> (bitmap.xsize), std::bit_ceil <uint32_t> (bitmap.ysize));
+				// verify if still broken
+				if (globalRendering->amdHacks && nearest) {
+					bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
+				}
 
 				glTexImage2D(GL_TEXTURE_2D, 0, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, int(border), bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			} else {
@@ -278,12 +274,7 @@ namespace CNamedTextures {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-				if (isPowerOfTwo || GLEW_ARB_texture_non_power_of_two) {
-					glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				} else {
-					//! glu auto resizes to next POT
-					gluBuild2DMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				}
+				glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			}
 
 			if (aniso && GLEW_EXT_texture_filter_anisotropic)

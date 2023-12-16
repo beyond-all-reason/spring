@@ -1687,15 +1687,6 @@ uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32
 	if (GetMemSize() == 0)
 		return 0;
 
-	// jcnossen: Some drivers return "2.0" as a version string,
-	// but switch to software rendering for non-power-of-two textures.
-	// GL_ARB_texture_non_power_of_two indicates that the hardware will actually support it.
-	const bool isPowerOfTwo = std::has_single_bit <uint32_t> (xsize) && std::has_single_bit <uint32_t> (ysize);
-	if (!globalRendering->supportNonPowerOfTwoTex && !isPowerOfTwo) {
-		CBitmap bm = CreateRescaled(std::bit_ceil <uint32_t> (xsize), std::bit_ceil <uint32_t> (ysize));
-		return bm.CreateTexture(aniso, mipmaps);
-	}
-
 	if (texID == 0)
 		glGenTextures(1, &texID);
 

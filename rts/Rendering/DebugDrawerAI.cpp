@@ -10,7 +10,6 @@
 #include "Sim/Misc/TeamHandler.h"
 
 #include <algorithm>
-#include <bit>
 
 static constexpr float3 GRAPH_MIN_SCALE( 1e9,  1e9, 0.0f);
 static constexpr float3 GRAPH_MAX_SCALE(-1e9, -1e9, 0.0f);
@@ -379,10 +378,6 @@ void DebugDrawerAI::TexSet::Clear() {
 }
 
 int DebugDrawerAI::TexSet::AddTexture(const float* data, int w, int h) {
-	const bool isPowerOfTwo = std::has_single_bit <uint32_t> (w) && std::has_single_bit <uint32_t> (h);
-	if (!globalRendering->supportNonPowerOfTwoTex && !isPowerOfTwo)
-		return 0;
-
 	textures.emplace(curTexHandle, TexSet::Texture(w, h, data));
 	return (curTexHandle++);
 }

@@ -1,6 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <bit>
 #include <cstring> // mem{set,cpy}
 
 #include "xsimd/xsimd.hpp"
@@ -378,9 +377,6 @@ void CSMFReadMap::CreateNormalTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
-
-	if (!globalRendering->supportNonPowerOfTwoTex)
-		normalsTex.SetRawSize(int2(std::bit_ceil <uint32_t> (mapDims.mapxp1), std::bit_ceil <uint32_t> (mapDims.mapyp1)));
 
 	glGenTextures(1, normalsTex.GetIDPtr());
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
