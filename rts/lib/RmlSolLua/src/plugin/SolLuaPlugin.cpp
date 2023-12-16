@@ -1,4 +1,4 @@
-﻿#include "SolLuaPlugin.h"
+﻿#include <RmlSolLua/SolLuaPlugin.h>
 
 #include "SolLuaInstancer.h"
 

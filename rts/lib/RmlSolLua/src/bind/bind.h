@@ -2,7 +2,7 @@
 
 #include <RmlUi/Core.h>
 #include <sol2/sol.hpp>
-#include "../TranslationTable.h"
+#include "RmlSolLua/TranslationTable.h"
 
 #include <type_traits>
 
