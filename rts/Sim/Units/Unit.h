@@ -195,7 +195,6 @@ public:
 	void UpdateLosStatus(int allyTeam);
 
 	void UpdateWeapons();
-	void UpdateWeaponVectors();
 
 	void SlowUpdateWeapons();
 	void SlowUpdateKamikaze(bool scanForTargets);

@@ -663,24 +663,12 @@ void CUnit::Update()
 	outOfMapTime *= (!pos.IsInBounds());
 }
 
-void CUnit::UpdateWeaponVectors()
+void CUnit::UpdateWeapons()
 {
 	ZoneScoped;
 	if (!CanUpdateWeapons())
 		return;
-	for (CWeapon* w : weapons) {
-		w->UpdateWeaponVectors();
-	}
-}
 
-void CUnit::UpdateWeapons()
-{
-	ZoneScoped;
-	{
-		ZoneScopedN("CanUpdateWeapons");
-		if (!CanUpdateWeapons())
-			return;
-	}
 	for (CWeapon* w: weapons) {
 		w->Update();
 	}
