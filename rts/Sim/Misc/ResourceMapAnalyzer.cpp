@@ -53,7 +53,7 @@ CResourceMapAnalyzer::CResourceMapAnalyzer(int resourceId)
 	, doubleRadius(0)
 {
 	if (CACHE_BASE.empty())
-		CACHE_BASE = dataDirsAccess.LocateDir(FileSystem::GetCacheDir() + "/analyzedResourceMaps/", FileQueryFlags::WRITE | FileQueryFlags::CREATE_DIRS);
+		CACHE_BASE = dataDirsAccess.LocateDir(FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() + "analyzedResourceMaps" + FileSystemAbstraction::GetNativePathSeparator(), FileQueryFlags::WRITE | FileQueryFlags::CREATE_DIRS);
 }
 
 
