@@ -270,9 +270,11 @@ private:
 
 
 
-// fixed-size version
-template<size_t N, size_t S> struct StaticMemPool {
+// fixed-size version.
+template<size_t N, size_t S, size_t Alignment = alignof(std::max_align_t)> struct StaticMemPool {
 public:
+	static_assert(S % Alignment == 0, "The size of element must be multiple of Alignmment");
+
 	StaticMemPool() { clear(); }
 
 	void* allocMem(size_t size) {
@@ -295,6 +297,7 @@ public:
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
+		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 
@@ -343,13 +346,16 @@ public:
 	}
 
 private:
-	std::array<std::array<uint8_t, S>, N> pages;
+	alignas(Alignment) std::array<std::array<uint8_t, S>, N> pages;
 	std::array<size_t, N> indcs;
 
 	size_t used_page_count = 0;
 	size_t free_page_count = 0; // indcs[fpc-1] is the last recycled page
 	size_t curr_page_index = 0;
 };
+
+template<size_t N, class T>
+using StaticMemPoolT = StaticMemPool<N, sizeof(T), alignof(T)>;
 
 
 // dynamic memory allocator operating with stable index positions

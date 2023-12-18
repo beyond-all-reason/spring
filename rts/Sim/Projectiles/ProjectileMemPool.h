@@ -9,10 +9,11 @@
 
 #include "Sim/Projectiles/WeaponProjectiles/StarburstProjectile.h"
 
-static constexpr size_t PMP_S = AlignUp(sizeof(CStarburstProjectile), 4); //biggest in size
+static constexpr size_t PMP_ALIGN = 8;
+static constexpr size_t PMP_S = AlignUp(sizeof(CStarburstProjectile), PMP_ALIGN); //biggest in size
 
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
-typedef StaticMemPool<MAX_PROJECTILES, PMP_S> ProjMemPool;
+typedef StaticMemPool<MAX_PROJECTILES, PMP_S, PMP_ALIGN> ProjMemPool;
 #else
 typedef FixedDynMemPool<PMP_S, MAX_PROJECTILES / 2000, MAX_PROJECTILES / 64> ProjMemPool;
 #endif
