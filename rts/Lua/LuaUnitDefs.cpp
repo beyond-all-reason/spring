@@ -692,6 +692,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FLOAT("metalCost",      ud.metal);
 	ADD_FLOAT("energyCost",     ud.energy);
 	ADD_FLOAT("buildTime",      ud.buildTime);
+	ADD_FLOAT("buildeeBuildRadius", ud.buildeeBuildRadius);
 	ADD_FLOAT("extractsMetal",  ud.extractsMetal);
 	ADD_FLOAT("extractRange",   ud.extractRange);
 	ADD_FLOAT("windGenerator",  ud.windGenerator);

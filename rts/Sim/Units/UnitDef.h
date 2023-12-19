@@ -121,6 +121,7 @@ public:
 	float makesMetal;		///< metal will be created when unit is on and enough energy can be drained
 	float energyMake;
 	float buildTime;
+	float buildeeBuildRadius; ///< if >= 0.f, override default radius to use for the buildee in build distance calculations.
 	float extractsMetal;
 	float extractRange;
 	float windGenerator;

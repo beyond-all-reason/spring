@@ -610,11 +610,15 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	assert(build.def != nullptr);
 	assert(build.def->id == -c.GetID() && build.def->id != 0);
 
-	auto* model = build.def->LoadModel();
+	float objRadius = build.def->buildeeBuildRadius;
+	if (objRadius < 0.f) {
+		auto* model = build.def->LoadModel();
+		objRadius = std::max(0.f, model->radius);
+	}
 
 	if (building) {
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
-		MoveInBuildRange(build.pos, std::max(0.f, model->radius));
+		MoveInBuildRange(build.pos, objRadius);
 
 		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->terraforming) {
 			building = false;
@@ -625,7 +629,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	}
 
 	// keep moving until 3D distance to buildPos is LEQ our buildDistance
-	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), std::max(0.f, model->radius), true)) {
+	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), objRadius, true)) {
 		if (IsBuildPosBlocked(build)) {
 			StopMoveAndFinishCommand();
 			return;
