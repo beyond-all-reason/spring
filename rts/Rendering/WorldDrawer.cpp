@@ -269,12 +269,6 @@ void CWorldDrawer::GenerateIBLTextures() const
 		SCOPED_TIMER("Draw::World::UpdateShadingTex");
 		readMap->UpdateShadingTexture();
 	}
-
-	if (FBO::IsSupported())
-		FBO::Unbind();
-
-	// restore the normal active camera's VP
-	camera->LoadViewport();
 }
 
 void CWorldDrawer::ResetMVPMatrices() const

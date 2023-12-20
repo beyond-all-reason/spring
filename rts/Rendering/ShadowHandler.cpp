@@ -424,9 +424,11 @@ bool CShadowHandler::InitFBOAndTextures()
 	EnableColorOutput(true);
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	EnableColorOutput(false);
 
 	smOpaqFBO.Unbind();
+
+	// revert to FBO = 0 default
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 	return status;
 }
