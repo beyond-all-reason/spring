@@ -223,7 +223,8 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	if (isAdv) {
 		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
-		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
+		if (shadowHandler.ShadowsLoaded())
+			currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
 	}
 
 	// already on the MV stack at this point
