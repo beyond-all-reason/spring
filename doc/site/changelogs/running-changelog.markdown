@@ -169,6 +169,8 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 
 ### Builder behaviour
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
+* added `buildeeBuildRadius` unit def entry, the radius for the purposes of being built (placing the nanoframe and then nanolathing).
+Negative values make it use the model radius (this is the default). Set to zero to require builders to reach the center.
 * fixed builders not placing nanoframes from their maximum range.
 * units vacating a build area (aka "bugger off") will now try to use the fastest route out.
 * bugger off now applies correctly to units sitting outside the area, but with a large enough footprint to block construction.
@@ -270,6 +272,7 @@ of this is that `modinfo.lua` is now sufficient for an archive to be a valid Rec
 * fixed action handler key press/release events.
 
 ### Miscellaneous fixes
+* fixed hovercraft/ship movement types being able to encroach onto land across sheer cliffs.
 * fixed skirmish AI API getTeamResourcePull (used to return max storage instead).
 * `Spring.SetSunDirection` no longer causes broken shadows if you pass an unnormalized vector.
 * fixed being unable to drag-select units with `/specfullview 0`.
