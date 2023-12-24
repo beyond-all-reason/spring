@@ -38,8 +38,8 @@ void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
 	//
 	//   (the ID --> index map is never changed at runtime!)
 	for (uint32_t offsetID = 0; offsetID < numIDs; offsetID++) {
-		freeIDs.insert(std::pair<uint32_t, uint32_t>(baseID + offsetID, newIDs[offsetID]));
-		poolIDs.insert(std::pair<uint32_t, uint32_t>(newIDs[offsetID], baseID + offsetID));
+		freeIDs.emplace(baseID + offsetID, newIDs[offsetID]);
+		poolIDs.emplace(newIDs[offsetID], baseID + offsetID);
 	}
 }
 
@@ -115,7 +115,7 @@ bool SimObjectIDPool::RecycleID(uint32_t uid) {
 		return false;
 
 	tempIDs.erase(idx);
-	freeIDs.insert(std::pair<uint32_t, uint32_t>(idx, uid));
+	freeIDs.emplace(idx, uid);
 	return true;
 }
 
