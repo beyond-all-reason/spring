@@ -97,6 +97,8 @@ Game Setup:
    the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
    in the corner -- giving an obvious hint that something is amiss and the map is unable to support
    this number of players by itself without assistance from the game.
+ - Prevent StartPosSelecter from trying to process mouse clicks while the match is still loading. This
+   was able to cause the game to crash on the loading screens.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
