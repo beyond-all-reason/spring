@@ -248,6 +248,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetRadiusAndHeight(model);
 	UpdateMidAndAimPos();
 
+	buildeeRadius = (unitDef->buildeeBuildRadius >= 0.f) ? unitDef->buildeeBuildRadius : radius;
+
 	unitHandler.AddUnit(this);
 	quadField.MovedUnit(this);
 

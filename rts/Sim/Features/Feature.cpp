@@ -213,6 +213,9 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 		} break;
 	}
 
+	// TODO: support custom buildee radii.
+	buildeeRadius = radius;
+
 	UpdateMidAndAimPos();
 	UpdateTransformAndPhysState();
 

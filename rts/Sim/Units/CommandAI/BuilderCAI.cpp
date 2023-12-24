@@ -257,7 +257,7 @@ float CBuilderCAI::GetBuildRange(const float targetRadius) const
 
 bool CBuilderCAI::IsInBuildRange(const CWorldObject* obj) const
 {
-	return IsInBuildRange(obj->pos, obj->radius);
+	return IsInBuildRange(obj->pos, obj->buildeeRadius);
 }
 
 bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) const
@@ -272,7 +272,7 @@ bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) co
 
 inline bool CBuilderCAI::MoveInBuildRange(const CWorldObject* obj, const bool checkMoveTypeForFailed)
 {
-	return MoveInBuildRange(obj->pos, obj->radius, checkMoveTypeForFailed);
+	return MoveInBuildRange(obj->pos, obj->buildeeRadius, checkMoveTypeForFailed);
 }
 
 bool CBuilderCAI::MoveInBuildRange(const float3& objPos, float objRadius, const bool checkMoveTypeForFailed)
@@ -738,7 +738,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 
 		if (tempOrder && owner->moveState <= MOVESTATE_MANEUVER) {
 			// limit how far away we go when not roaming
-			if (LinePointDist(commandPos1, commandPos2, unit->pos) > std::max(500.0f, GetBuildRange(unit->radius))) {
+			if (LinePointDist(commandPos1, commandPos2, unit->pos) > std::max(500.0f, GetBuildRange(unit->buildeeRadius))) {
 				StopMoveAndFinishCommand();
 				return;
 			}
@@ -935,7 +935,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		return;
 
 	const float3 pos    = guardee->pos;
-	const float  radius = (guardee->immobile) ? guardee->radius : guardee->radius * 0.8f; // in case of mobile units reduce radius a bit
+	const float  radius = (guardee->immobile) ? guardee->buildeeRadius : guardee->buildeeRadius * 0.8f; // in case of mobile units reduce radius a bit
 
 	if (MoveInBuildRange(pos, radius)) {
 		StartSlowGuard(guardee->moveType->GetMaxSpeed());
@@ -1800,7 +1800,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 			const float dist = f3SqDist(unit->pos, owner->pos);
 
 			if ((dist < bestDist) || !haveEnemy) {
-				if (owner->immobile && ((dist - unit->radius) > owner->maxRange))
+				if (owner->immobile && ((dist - unit->buildeeRadius) > owner->maxRange))
 					continue;
 
 				bestUnit = unit;
