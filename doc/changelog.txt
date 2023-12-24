@@ -182,6 +182,13 @@ Sim:
  - Units given new paths will now switch to a new non-temp waypoint in 1 frame rather than 2.
    Units have a next and current waypoint, so if next is non-temp, but current is then it will make
    current <- next, and grab the next waypoint.
+ - Assumes that a unit's default buildeeRadius will be the model's radius when figuring out the
+   correct distance at which to start a new unit construction. Previously it was assumed 0.
+ - unit defs have a new parameter, buildeeBuildRadius, which overrides the engine default assumption
+   about the radius of an unit to use for build commands.
+ - Units and features now have a field, buildeeRadius, which defaults to the unit's model's radius,
+   (but for units can be overriden by their buildeeBuildRadius unitDef parameter.) This field is used
+   instead of radius for build, capture, repair, reclaim, and ressurect commands.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
