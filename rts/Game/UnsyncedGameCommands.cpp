@@ -3606,6 +3606,11 @@ public:
 				projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
 				projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
 			}),
+			ArgTuple(hashString("3do"), false, []() {
+				LOG("Dumping 3do atlas textures");
+				glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+				glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
+			}),
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
