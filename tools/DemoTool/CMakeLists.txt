@@ -15,6 +15,15 @@ include_directories(${gflags_BINARY_DIR}/include)
 
 add_definitions(-DTOOLS)
 
+set(WIN_SRC "")
+set(WIN_LIB "")
+
+if    (WIN32)
+	list(APPEND WIN_SRC "${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp")
+
+	list(APPEND WIN_LIB "iphlpapi")
+endif (WIN32)
+
 set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/Game/GameVersion.cpp
 	${ENGINE_SRC_ROOT_DIR}/Game/Players/PlayerStatistics.cpp
@@ -23,6 +32,9 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystem.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystemAbstraction.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/GZFileHandler.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/Platform/Misc.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/CRC.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/Sync/SHA512.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/StringUtil.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Net/RawPacket.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoReader.cpp
@@ -37,7 +49,9 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
 )
 
-add_executable(demotool EXCLUDE_FROM_ALL DemoTool.cpp ${demoToolSpringSources})
+list(APPEND demoToolSpringSources ${WIN_SRC})
+
+add_executable(demotool EXCLUDE_FROM_ALL DemoTool ${demoToolSpringSources})
 if (MINGW)
 	# To enable console output/force a console window to open
 	set_target_properties(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
@@ -46,5 +60,7 @@ add_definitions(-DNOT_USING_CREG)
 target_link_libraries(demotool
 		${SPRING_MINIZIP_LIBRARY}
 		gflags_nothreads_static
+		7zip
+		${WIN_LIB}
 	)
 add_dependencies(demotool generateVersionFiles)
