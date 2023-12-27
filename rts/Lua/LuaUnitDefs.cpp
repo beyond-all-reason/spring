@@ -289,7 +289,7 @@ static int SafeIconType(lua_State* L, const void* data)
 static int CustomParamsTable(lua_State* L, const void* data)
 {
 	const spring::unordered_map<std::string, std::string>& params = *((const spring::unordered_map<std::string, std::string>*)data);
-	lua_createtable(L, /*narr=*/0, /*nrec=*/params.size());
+	lua_createtable(L, 0, params.size());
 
 	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
@@ -305,7 +305,7 @@ static int BuildOptions(lua_State* L, const void* data)
 	const spring::unordered_map<int, std::string>& buildOptions = *((const spring::unordered_map<int, std::string>*)data);
 	const spring::unordered_map<std::string, int>& unitDefIDsMap = unitDefHandler->GetUnitDefIDs();
 
-	lua_createtable(L, /*narr=*/buildOptions.size(), /*nrec=*/0);
+	lua_createtable(L, buildOptions.size(), 0);
 	int count = 0;
 
 	for (const auto& buildOption: buildOptions) {
@@ -325,7 +325,7 @@ static int BuildOptions(lua_State* L, const void* data)
 static inline int BuildCategorySet(lua_State* L, const vector<string>& cats)
 {
 	const int count = (int)cats.size();
-	lua_createtable(L, /*narr*/0, /*nrec*/count);
+	lua_createtable(L, 0, count);
 	for (int i = 0; i < count; i++) {
 		lua_pushsstring(L, cats[i]);
 		lua_pushboolean(L, true);
@@ -357,15 +357,19 @@ static int WeaponsTable(lua_State* L, const void* data)
 {
 	const auto& udWeapons = *reinterpret_cast<const decltype(UnitDef::weapons)*>(data);
 
-	lua_createtable(L, /*narr=*/udWeapons.size() + LUA_WEAPON_BASE_INDEX,
-			/*nrec=*/0);
+	// When LUA_WEAPON_BASE_INDEX is not 1, lua will resort to using the hash
+	// part to index table keys as we're no longer adding keys to the table
+	// following the sequence 1 to N for any N.
+	lua_createtable(L, 
+			LUA_WEAPON_BASE_INDEX == 1 ? udWeapons.size() : 0,
+			LUA_WEAPON_BASE_INDEX == 1 ? 0 : udWeapons.size());
 
 	for (size_t i = 0; i < udWeapons.size() && udWeapons[i].def != nullptr; i++) {
 		const UnitDefWeapon& udw = udWeapons[i];
 		const WeaponDef* wd = udw.def;
 
 		lua_pushnumber(L, i + LUA_WEAPON_BASE_INDEX);
-		lua_createtable(L, /*narr=*/0, /*nrec=*/10); {
+		lua_createtable(L, 0, 10); {
 			HSTR_PUSH_NUMBER(L, "weaponDef",   wd->id);
 			HSTR_PUSH_NUMBER(L, "slavedTo",    udw.slavedTo - 1 + LUA_WEAPON_BASE_INDEX);
 			HSTR_PUSH_NUMBER(L, "maxAngleDif", udw.maxMainDirAngleDif);
@@ -398,8 +402,7 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 
 	for (int i = 0; i < soundCount; i++) {
 		lua_pushnumber(L, i + 1);
-		lua_createtable(L, /*narr=*/0,
-				/*nrec=*/CLuaHandle::GetHandleSynced(L) ? 2 : 3);
+		lua_createtable(L, 0, CLuaHandle::GetHandleSynced(L) ? 2 : 3);
 		const GuiSoundSetData& sound = soundSet.GetSoundData(i);
 		HSTR_PUSH_STRING(L, "name",   sound.name);
 		HSTR_PUSH_NUMBER(L, "volume", sound.volume);
@@ -415,7 +418,7 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 static int SoundsTable(lua_State* L, const void* data) {
 	const UnitDef::SoundStruct& sounds = *((const UnitDef::SoundStruct*) data);
 
-	lua_createtable(L, /*narr=*/0, /*nrec=*/10);
+	lua_createtable(L, 0, 10);
 	PushGuiSoundSet(L, "select",      sounds.select);
 	PushGuiSoundSet(L, "ok",          sounds.ok);
 	PushGuiSoundSet(L, "arrived",     sounds.arrived);

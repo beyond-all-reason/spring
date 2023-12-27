@@ -108,7 +108,7 @@ static int PushCallHandler(lua_State* L, int luaInstance, const string& name)
 	int* ptr = (int*) lua_newuserdata(L, sizeof(int));
 	*ptr = luaInstance;
 	{ // create metatable of the userdata
-		lua_createtable(L, /*narr=*/0, /*nrec=*/3); {
+		lua_createtable(L, 0, 3); {
 			lua_pushliteral(L, "__index");
 			lua_pushvalue(L, -3); //userdata
 			lua_pushcclosure(L,  IndexHook, 1);
