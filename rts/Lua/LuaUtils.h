@@ -216,8 +216,7 @@ static void PushObjectDefProxyTable(
 	const ObjectDefType* def
 ) {
 	lua_pushnumber(L, def->id);
-	// the proxy table
-	lua_createtable(L, 0, iterFuncsSize); {
+	lua_createtable(L, 0, iterFuncsSize); { // the proxy table
 
 		lua_createtable(L, 0, indxFuncsSize); // the metatable
 
