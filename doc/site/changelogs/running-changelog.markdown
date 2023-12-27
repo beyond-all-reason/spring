@@ -252,6 +252,7 @@ An explicit numerical value always sets the timer to that many seconds.
 * added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
 * added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
 The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
+* added `/dumpatlas 3do`.
 
 ### Blank map generation
 * new way to specify blank map colour: `blank_map_color_{r,g,b}`, number 0-255.
@@ -279,3 +280,5 @@ of this is that `modinfo.lua` is now sufficient for an archive to be a valid Rec
 * fixed weirdly-boned Assimp (`.dae`) models being loaded incorrectly.
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
 * fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.
+* fix clicking during loadscreen sometimes registering as startbox placement later.
+* fix `Spring.MoveCtrl.SetMoveDef` not working with numerical movedef IDs.
