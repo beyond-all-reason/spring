@@ -216,9 +216,10 @@ static void PushObjectDefProxyTable(
 	const ObjectDefType* def
 ) {
 	lua_pushnumber(L, def->id);
-	lua_newtable(L); { // the proxy table
+	// the proxy table
+	lua_createtable(L, /*narr=*/0, /*nrec=*/iterFuncsSize); {
 
-		lua_newtable(L); // the metatable
+		lua_createtable(L, /*narr=*/0, /*nrec=*/indxFuncsSize); // the metatable
 
 		for (size_t n = 0; n < indxFuncsSize; n++) {
 			indxOpers[n].Push(L);

@@ -259,7 +259,7 @@ void CLuaUI::UpdateTeams()
 
 bool CLuaUI::LoadCFunctions(lua_State* L)
 {
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/0, /*nrec=*/1);
 
 	REGISTER_LUA_CFUNC(SetShockFrontFactors);
 

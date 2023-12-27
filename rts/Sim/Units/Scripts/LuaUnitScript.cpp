@@ -978,7 +978,7 @@ bool CLuaUnitScript::PushEntries(lua_State* L)
 	}
 
 	lua_pushstring(L, "UnitScript");
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/0, /*nrec=*/25);
 
 	REGISTER_LUA_CFUNC(CreateScript);
 	REGISTER_LUA_CFUNC(UpdateCallIn);

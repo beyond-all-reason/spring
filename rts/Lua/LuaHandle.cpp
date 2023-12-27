@@ -2275,7 +2275,7 @@ void CLuaHandle::ViewResize()
 
 	const int winPosY_bl = globalRendering->screenSizeY - globalRendering->winSizeY - globalRendering->winPosY; //! origin BOTTOMLEFT
 
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/0, /*nrec=*/16);
 	LuaPushNamedNumber(L, "screenSizeX", globalRendering->screenSizeX);
 	LuaPushNamedNumber(L, "screenSizeY", globalRendering->screenSizeY);
 	LuaPushNamedNumber(L, "screenPosX", globalRendering->screenPosX);
@@ -3355,7 +3355,7 @@ bool CLuaHandle::GameSetup(const string& state, bool& ready,
 	lua_pushsstring(L, state);
 	lua_pushboolean(L, ready);
 
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/playerStates.size(), /*nrec=*/0);
 
 	for (const auto& playerState: playerStates) {
 		lua_pushsstring(L, playerState.second);
@@ -3624,7 +3624,7 @@ void CLuaHandle::CollectGarbage(bool forced)
 bool CLuaHandle::AddBasicCalls(lua_State* L)
 {
 	HSTR_PUSH(L, "Script");
-	lua_newtable(L); {
+	lua_createtable(L, /*narr=*/0, /*nrec=*/17); {
 		HSTR_PUSH_CFUNC(L, "Kill",            KillActiveHandle);
 		HSTR_PUSH_CFUNC(L, "UpdateCallIn",    CallOutUpdateCallIn);
 		HSTR_PUSH_CFUNC(L, "GetName",         CallOutGetName);
@@ -3768,7 +3768,7 @@ int CLuaHandle::CallOutGetCallInList(lua_State* L)
 	lua_createtable(L, 0, eventList.size());
 	for (const auto& event : eventList) {
 		lua_pushsstring(L, event);
-		lua_newtable(L); {
+		lua_createtable(L, /*narr=*/0, /*nrec=*/2); {
 			lua_pushliteral(L, "unsynced");
 			lua_pushboolean(L, eventHandler.IsUnsynced(event));
 			lua_rawset(L, -3);

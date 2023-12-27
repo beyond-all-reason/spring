@@ -289,7 +289,7 @@ static int SafeIconType(lua_State* L, const void* data)
 static int CustomParamsTable(lua_State* L, const void* data)
 {
 	const spring::unordered_map<std::string, std::string>& params = *((const spring::unordered_map<std::string, std::string>*)data);
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/0, /*nrec=*/params.size());
 
 	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
@@ -305,7 +305,7 @@ static int BuildOptions(lua_State* L, const void* data)
 	const spring::unordered_map<int, std::string>& buildOptions = *((const spring::unordered_map<int, std::string>*)data);
 	const spring::unordered_map<std::string, int>& unitDefIDsMap = unitDefHandler->GetUnitDefIDs();
 
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/buildOptions.size(), /*nrec=*/0);
 	int count = 0;
 
 	for (const auto& buildOption: buildOptions) {
@@ -324,8 +324,8 @@ static int BuildOptions(lua_State* L, const void* data)
 
 static inline int BuildCategorySet(lua_State* L, const vector<string>& cats)
 {
-	lua_newtable(L);
 	const int count = (int)cats.size();
+	lua_createtable(L, /*narr*/0, /*nrec*/count);
 	for (int i = 0; i < count; i++) {
 		lua_pushsstring(L, cats[i]);
 		lua_pushboolean(L, true);
@@ -357,14 +357,15 @@ static int WeaponsTable(lua_State* L, const void* data)
 {
 	const auto& udWeapons = *reinterpret_cast<const decltype(UnitDef::weapons)*>(data);
 
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/udWeapons.size() + LUA_WEAPON_BASE_INDEX,
+			/*nrec=*/0);
 
 	for (size_t i = 0; i < udWeapons.size() && udWeapons[i].def != nullptr; i++) {
 		const UnitDefWeapon& udw = udWeapons[i];
 		const WeaponDef* wd = udw.def;
 
 		lua_pushnumber(L, i + LUA_WEAPON_BASE_INDEX);
-		lua_newtable(L); {
+		lua_createtable(L, /*narr=*/0, /*nrec=*/10); {
 			HSTR_PUSH_NUMBER(L, "weaponDef",   wd->id);
 			HSTR_PUSH_NUMBER(L, "slavedTo",    udw.slavedTo - 1 + LUA_WEAPON_BASE_INDEX);
 			HSTR_PUSH_NUMBER(L, "maxAngleDif", udw.maxMainDirAngleDif);
@@ -397,7 +398,8 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 
 	for (int i = 0; i < soundCount; i++) {
 		lua_pushnumber(L, i + 1);
-		lua_newtable(L);
+		lua_createtable(L, /*narr=*/0,
+				/*nrec=*/CLuaHandle::GetHandleSynced(L) ? 2 : 3);
 		const GuiSoundSetData& sound = soundSet.GetSoundData(i);
 		HSTR_PUSH_STRING(L, "name",   sound.name);
 		HSTR_PUSH_NUMBER(L, "volume", sound.volume);
@@ -413,7 +415,7 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 static int SoundsTable(lua_State* L, const void* data) {
 	const UnitDef::SoundStruct& sounds = *((const UnitDef::SoundStruct*) data);
 
-	lua_newtable(L);
+	lua_createtable(L, /*narr=*/0, /*nrec=*/10);
 	PushGuiSoundSet(L, "select",      sounds.select);
 	PushGuiSoundSet(L, "ok",          sounds.ok);
 	PushGuiSoundSet(L, "arrived",     sounds.arrived);
