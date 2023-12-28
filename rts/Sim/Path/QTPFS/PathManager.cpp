@@ -1127,8 +1127,8 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newPath->AllocPoints(2);
 	newPath->AllocNodes(0);
 	newPath->SetOwner(object);
-	newPath->SetSourcePoint(sourcePoint);
-	newPath->SetTargetPoint(targetPoint);
+	newPath->SetSourcePoint(sourcePoint.cClampInMap());
+	newPath->SetTargetPoint(targetPoint.cClampInMap());
 	newPath->SetPathType(moveDef->pathType);
 
 	registry.emplace<PathIsTemp>(pathEntity);
