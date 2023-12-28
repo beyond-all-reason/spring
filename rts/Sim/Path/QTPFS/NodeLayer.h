@@ -49,15 +49,11 @@ namespace QTPFS {
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
 			ZoneScoped;
-			const INode* curNode = GetPoolNode(0);
-			int length = curNode->xsize(); // width/height is forced to be the same.
-			// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
-			// int ix = (x / length) + (int(x % length > 0));
-			int iz = (z / length) * xRootNodes;
-			int ix = (x / length);
+			int iz = (z / rootNodeSize) * xRootNodes;
+			int ix = (x / rootNodeSize);
 			int i = iz + ix;
 
-			curNode = GetPoolNode(i);
+			const INode* curNode = GetPoolNode(i);
 
 			assert (curNode->xmin() <= x);
 			assert (curNode->xmax() >= x);
