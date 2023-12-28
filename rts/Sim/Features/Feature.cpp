@@ -18,6 +18,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/Utils/UnitTrapCheckUtils.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "Sim/Units/UnitDef.h"
@@ -235,6 +236,8 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	ChangeTeam(team);
 	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, def->collidable);
 	Block();
+
+	MoveTypes::RegisterFeatureForUnitTrapCheck(this);
 
 	eventHandler.RenderFeaturePreCreated(this);
 	// allow Spring.SetFeatureBlocking to be called from gadget:FeatureCreated

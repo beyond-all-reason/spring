@@ -122,6 +122,7 @@ public:
 	}
 
 	bool IsAtGoal() const override { return atGoal; }
+	void OwnerMayBeStuck() { forceStaticObjectCheck = true; };
 
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);

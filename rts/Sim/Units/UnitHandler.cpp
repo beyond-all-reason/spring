@@ -18,6 +18,7 @@
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
 #include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
+#include "Sim/MoveTypes/Systems/UnitTrapCheckSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
@@ -87,6 +88,7 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 void CUnitHandler::Init() {
 	GroundMoveSystem::Init();
 	GeneralMoveSystem::Init();
+	UnitTrapCheckSystem::Init();
 
 	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
 	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");

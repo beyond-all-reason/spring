@@ -53,6 +53,8 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/HoverAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GeneralMoveSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GroundMoveSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/UnitTrapCheckSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Utils/UnitTrapCheckUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObjectDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/WorldObject.cpp"

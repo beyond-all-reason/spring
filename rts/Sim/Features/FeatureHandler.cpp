@@ -104,10 +104,10 @@ CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
 		return nullptr;
 
 	CFeature* feature = featureMemPool.alloc<CFeature>();
+	feature->entityReference = Sim::registry.create();
 
 	// calls back into AddFeature
 	feature->Initialize(params);
-	feature->entityReference = Sim::registry.create();
 	return feature;
 }
 
