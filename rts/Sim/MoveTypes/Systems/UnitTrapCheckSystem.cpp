@@ -25,11 +25,11 @@ using namespace MoveTypes;
 void UnitTrapCheckSystem::Init() {
     auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
 
-    std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
-        list.reserve(YardmapTrapCheckSystemSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
-    });
+    // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
+    //     list.reserve(YardmapTrapCheckSystemSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
+    // });
 
-    Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
+    //Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
 }
 
 void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* collidee, int curThread) {
@@ -37,24 +37,34 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
     const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + largestMoveTypSizeH + 1;
 
     const int2& pos = collidee->mapPos;
-    const int xmin = pos.x                   + (-bufferSize);
-	const int zmin = pos.y                   + (-bufferSize);
-	const int xmax = pos.x + collidee->xsize +   bufferSize;
-	const int zmax = pos.y + collidee->zsize +   bufferSize;
+    const int xmin = pos.x;
+	const int zmin = pos.y;
+	const int xmax = pos.x + collidee->xsize;
+	const int zmax = pos.y + collidee->zsize;
 
-    const float3 min(xmin * SQUARE_SIZE, 0.f, zmin * SQUARE_SIZE);
-    const float3 max(xmax * SQUARE_SIZE, 0.f, zmax * SQUARE_SIZE);
+    const float3 min((xmin - bufferSize) * SQUARE_SIZE, 0.f, (zmin - bufferSize) * SQUARE_SIZE);
+    const float3 max((xmax + bufferSize) * SQUARE_SIZE, 0.f, (zmax + bufferSize) * SQUARE_SIZE);
 
     QuadFieldQuery qfQuery;
     qfQuery.threadOwner = curThread;
-    quadField.GetUnitsExact(qfQuery, min, max);
+    quadField.GetUnitsExact(qfQuery, min.cClampInMap(), max.cClampInMap());
     for (const CUnit* unit: *qfQuery.units) {
-        if (unit->moveDef == nullptr || unit->moveType == nullptr)
+        MoveDef *moveDef = unit->moveDef;
+        if (moveDef == nullptr || unit->moveType == nullptr)
             continue;
-        
+
         auto unitMoveType = dynamic_cast<CGroundMoveType*>(unit->moveType);
         if (unitMoveType == nullptr)
             continue;
+
+        // Filter out units that will not overlap the collision area.
+        int squareX = int(unit->pos.x) / SQUARE_SIZE;
+        int squareZ = int(unit->pos.z) / SQUARE_SIZE;
+
+        if ((squareX - moveDef->xsizeh) > xmax) continue;
+        if ((squareZ - moveDef->zsizeh) > zmax) continue;
+        if ((squareX + moveDef->xsizeh) < xmin) continue;
+        if ((squareZ + moveDef->zsizeh) < zmin) continue;
         
         // curList.emplace_back(unit);
 
@@ -68,9 +78,9 @@ void UnitTrapCheckSystem::Update() {
 
     auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemSystemComponent>();
 
-    std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
-        list.clear();
-    });
+    // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
+    //     list.clear();
+    // });
 
     auto view = Sim::registry.view<UnitTrapCheck>();
     for_mt(0, view.size(), [&comp, &view](int index){
@@ -86,6 +96,8 @@ void UnitTrapCheckSystem::Update() {
 
         TagUnitsThatMayBeStuck(curList, object, curThread);
     });
+
+    view.each([](entt::entity entity){ Sim::registry.remove<UnitTrapCheck>(entity); });
 }
 
 void UnitTrapCheckSystem::Shutdown() {}

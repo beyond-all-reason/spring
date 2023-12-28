@@ -319,6 +319,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 	GroundMoveSystem::Update();
 	GeneralMoveSystem::Update();
+	UnitTrapCheckSystem::Update();
 }
 
 void CUnitHandler::UpdateUnitLosStates()
