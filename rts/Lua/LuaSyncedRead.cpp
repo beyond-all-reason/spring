@@ -212,6 +212,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitPosErrorParams);
 	REGISTER_LUA_CFUNC(GetUnitHeight);
 	REGISTER_LUA_CFUNC(GetUnitRadius);
+	REGISTER_LUA_CFUNC(GetUnitBuildeeRadius);
 	REGISTER_LUA_CFUNC(GetUnitMass);
 	REGISTER_LUA_CFUNC(GetUnitPosition);
 	REGISTER_LUA_CFUNC(GetUnitBasePosition);
@@ -4080,6 +4081,23 @@ int LuaSyncedRead::GetUnitRadius(lua_State* L)
 		return 0;
 
 	lua_pushnumber(L, unit->radius);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetUnitBuildeeRadius
+ * @description Gets the unit's radius for when targeted by build, repair, reclaim-type commands. 
+ * @number unitID
+ * @treturn nil|number
+ */
+int LuaSyncedRead::GetUnitBuildeeRadius(lua_State* L)
+{
+	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->buildeeRadius);
 	return 1;
 }
 
