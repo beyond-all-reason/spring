@@ -17,10 +17,8 @@
 #include "Sim/Units/UnitHandler.h"
 
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
-// #include "System/EventHandler.h"
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
-// #include "Sim/Units/UnitDef.h"
 
 using namespace MoveTypes;
 
@@ -66,7 +64,7 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
 }
 
 void UnitTrapCheckSystem::Update() {
-    SCOPED_TIMER("ECS::RemoveDeadPathsSystem::Update");
+    SCOPED_TIMER("ECS::UnitTrapCheckSystem::Update");
 
     auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemSystemComponent>();
 
