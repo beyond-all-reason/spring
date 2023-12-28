@@ -194,6 +194,8 @@ Sim:
  - New system added to allow units near to a recently created wreck (or feature) to immediately check
    for being stuck. The standard fall-back checks for catching stuck units take too long when units
    are getting stuck in wrecks in the thick of battle.
+ - Added [S|G]etUnitBuildeeRadius to allow game devs to configure the radius used in build-type
+   commands when a unit is the target of such commands.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
