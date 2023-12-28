@@ -190,7 +190,10 @@ Sim:
    about the radius of an unit to use for build commands.
  - Units and features now have a field, buildeeRadius, which defaults to the unit's model's radius,
    (but for units can be overriden by their buildeeBuildRadius unitDef parameter.) This field is used
-   instead of radius for build, capture, repair, reclaim, and ressurect commands.
+   instead of radius for build, capture, repair, reclaim, guard and ressurect commands.
+ - New system added to allow units near to a recently created wreck (or feature) to immediately check
+   for being stuck. The standard fall-back checks for catching stuck units take too long when units
+   are getting stuck in wrecks in the thick of battle.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
