@@ -393,7 +393,10 @@ void CWorldDrawer::DrawAlphaObjects() const
 		SCOPED_TIMER("Draw::World::Water");
 
 		const auto& water = IWater::GetWater();
-		water->UpdateWater(game);
+		{
+			ZoneScopedN("Draw::World::Water::UpdateWater");
+			water->UpdateWater(game);
+		}
 		water->Draw();
 		eventHandler.DrawWaterPost();
 	}
