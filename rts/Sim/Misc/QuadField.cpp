@@ -602,8 +602,8 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& mins, const fl
 {
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
-	GetQuadsRectangle(qfQuery, mins, maxs);
 	qfQuery.threadOwner = curThread;
+	GetQuadsRectangle(qfQuery, mins, maxs);
 	const int tempNum = gs->GetMtTempNum(curThread);
 	qfq.units = tempUnits[curThread].ReserveVector();
 
