@@ -37,8 +37,8 @@ template <typename T>
 	};
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator when full", "[class][template]",
-		(StaticMemPool<1,sizeof(TestData)>),
-		(FixedDynMemPool<sizeof(TestData), 1, 1>))
+		(StaticMemPoolT<1,TestData>),
+		(FixedDynMemPoolT<1, 1, TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
@@ -52,8 +52,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator when full", "[class][tem
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test bounded allocator base functionality", "[class][template]",
-		(StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
-		(FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>))
+		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
+		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
@@ -111,8 +111,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functiona
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class][template]",
-		(StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
-		(FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>),
+		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
+		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>),
 		(DynMemPool<sizeof(TestData)>))
 {
 	AllocFixture<TestType> inst;
@@ -142,8 +142,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
 
 // obeying the order is not a functional requirement of allocator
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO order", "[class][template]",
-		(StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
-		(FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>),
+		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
+		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>),
 		(DynMemPool<sizeof(TestData)>))
 {
 	AllocFixture<TestType> inst;
@@ -172,8 +172,8 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO o
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test allocator's clear method", "[class][template]",
-		(StaticMemPool<TEST_ALLOCATOR_SIZE,sizeof(TestData)>),
-		(FixedDynMemPool<sizeof(TestData), 1, TEST_ALLOCATOR_SIZE>))
+		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
+		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
