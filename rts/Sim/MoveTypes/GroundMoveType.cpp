@@ -990,7 +990,6 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 			pathID = nextPathId;
 			nextPathId = 0;
 			wantRepath = false;
-			
 		}
 	}
 
@@ -1120,6 +1119,10 @@ bool CGroundMoveType::FollowPath(int thread)
 			numIdlingUpdates -= ((numIdlingUpdates >                  0) * (1 - idling));
 			numIdlingUpdates += ((numIdlingUpdates < SPRING_MAX_HEADING) *      idling );
 		}
+
+		// An updated path must be re-evaluated.
+		if (atEndOfPath && !atGoal)
+			atEndOfPath = !pathManager->PathUpdated(pathID);
 
 		// atEndOfPath never becomes true when useRawMovement, except via StopMoving
 		if (!atEndOfPath && !useRawMovement) {
@@ -2038,6 +2041,8 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		currWayPointDist = cwp.distance2D(pos);
 		SetWaypointDir(cwp, pos);
 		wantRepath = false;
+	
+		pathManager->ClearPathUpdated(pathID);
 	}
 
 	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)

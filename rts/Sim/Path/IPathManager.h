@@ -32,6 +32,7 @@ public:
 	 * (by re-requesting affected paths without changing their ID's)
 	 */
 	virtual bool PathUpdated(unsigned int pathID) { return false; }
+	virtual void ClearPathUpdated(unsigned int pathID) {}
 
 	virtual void RemoveCacheFiles() {}
 	virtual void Update() {}

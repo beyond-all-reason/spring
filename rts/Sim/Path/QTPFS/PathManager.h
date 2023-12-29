@@ -45,6 +45,7 @@ namespace QTPFS {
 		std::int64_t Finalize() override;
 
 		bool PathUpdated(unsigned int pathID) override;
+		void ClearPathUpdated(unsigned int pathID) override;
 
 		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) override;
 		void Update() override;

@@ -1376,13 +1376,19 @@ bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
 	if (livePath == nullptr)
 		return false;
 
-	if (livePath->GetNumPathUpdates() == 0)
-		return false;
-
-	livePath->SetNumPathUpdates(0);
-	return true;
+	return (livePath->GetNumPathUpdates() > 0);
 }
 
+void QTPFS::PathManager::ClearPathUpdated(unsigned int pathID) {
+	entt::entity pathEntity = (entt::entity)pathID;
+	if (!registry.valid(pathEntity)) { return; }
+	IPath* livePath = registry.try_get<IPath>(pathEntity);
+
+	if (livePath == nullptr)
+		return;
+
+	livePath->SetNumPathUpdates(0);
+}
 
 
 float3 QTPFS::PathManager::NextWayPoint(
