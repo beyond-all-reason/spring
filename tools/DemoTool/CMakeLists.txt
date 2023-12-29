@@ -32,6 +32,7 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/Game/GameVersion.cpp
 	${ENGINE_SRC_ROOT_DIR}/Game/Players/PlayerStatistics.cpp
 	${ENGINE_SRC_ROOT_DIR}/Sim/Misc/TeamStatistics.cpp
+	${ENGINE_SRC_ROOT_DIR}/Net/Protocol/NetStructs.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileHandler.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystem.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystemAbstraction.cpp
@@ -50,7 +51,10 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogSinkHandler.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogUtil.c
 	${ENGINE_SRC_ROOT_DIR}/System/Log/ConsoleSink.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
+	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c	
+	${ENGINE_SRC_ROOT_DIR}/System/creg/Serializer.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/creg/VarTypes.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/creg/creg.cpp
 )
 
 list(APPEND demoToolSpringSources ${PLATFORM_SRCS})
@@ -60,7 +64,7 @@ if (MINGW)
 	# To enable console output/force a console window to open
 	set_target_properties(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
 endif (MINGW)
-add_definitions(-DNOT_USING_CREG)
+#add_definitions(-DNOT_USING_CREG)
 target_link_libraries(demotool
 		${SPRING_MINIZIP_LIBRARY}
 		gflags_nothreads_static

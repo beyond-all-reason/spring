@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <span>
 
 #include <string>
 #include <vector>
@@ -74,6 +75,13 @@ public:
 
 
 	// packing operations
+	RawPacket& operator << (std::span<const uint8_t> s) {
+		assert((s.size() + pos) <= length);
+		memcpy(GetWritingPos(), s.data(), s.size());
+		pos += s.size();
+		return *this;
+	}
+
 	template <typename T>
 	RawPacket& operator << (const T& t) {
 		constexpr uint32_t size = sizeof(T);
