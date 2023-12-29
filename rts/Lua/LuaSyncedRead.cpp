@@ -4087,7 +4087,7 @@ int LuaSyncedRead::GetUnitRadius(lua_State* L)
 /***
  *
  * @function Spring.GetUnitBuildeeRadius
- * @description Gets the unit's radius for when targeted by build, repair, reclaim-type commands. 
+ * Gets the unit's radius for when targeted by build, repair, reclaim-type commands.
  * @number unitID
  * @treturn nil|number
  */

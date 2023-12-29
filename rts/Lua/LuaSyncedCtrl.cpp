@@ -3261,9 +3261,9 @@ int LuaSyncedCtrl::SetUnitRadiusAndHeight(lua_State* L)
 
 /***
  * @function Spring.SetUnitBuildeeRadius
- * @description Sets the unit's radius for when targeted by build, repair, reclaim-type commands. 
+ * Sets the unit's radius for when targeted by build, repair, reclaim-type commands.
  * @number unitID
- * @number build radius for when targeted by build, repair, reclaim-type commands. 
+ * @number build radius for when targeted by build, repair, reclaim-type commands.
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitBuildeeRadius(lua_State* L)
