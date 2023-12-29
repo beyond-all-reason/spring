@@ -802,8 +802,8 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
 		path->AllocPoints(2);
-		path->SetSourcePoint(fwd.srcPoint);
-		path->SetTargetPoint(fwd.tgtPoint);
+		path->SetSourcePoint({fwd.srcPoint.x, 0.f, fwd.srcPoint.z});
+		path->SetTargetPoint({fwd.tgtPoint.x, 0.f, fwd.tgtPoint.z});
 	}
 
 	if (!path->IsBoundingBoxOverriden())
