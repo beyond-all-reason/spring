@@ -15,7 +15,7 @@ static constexpr size_t PMP_S = AlignUp(sizeof(CStarburstProjectile), PMP_ALIGN)
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
 typedef StaticMemPool<MAX_PROJECTILES, PMP_S, PMP_ALIGN> ProjMemPool;
 #else
-typedef FixedDynMemPool<PMP_S, MAX_PROJECTILES / 2000, MAX_PROJECTILES / 64> ProjMemPool;
+typedef FixedDynMemPool<PMP_S, MAX_PROJECTILES / 2000, MAX_PROJECTILES / 64, PMP_ALIGN> ProjMemPool;
 #endif
 
 extern ProjMemPool projMemPool;

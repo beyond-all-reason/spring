@@ -10,7 +10,7 @@
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
 typedef StaticMemPoolT<MAX_FEATURES, CFeature> FeatureMemPool;
 #else
-typedef FixedDynMemPool<sizeof(CFeature), MAX_FEATURES / 1000, MAX_FEATURES / 32> FeatureMemPool;
+typedef FixedDynMemPoolT<MAX_FEATURES / 1000, MAX_FEATURES / 32, CFeature> FeatureMemPool;
 #endif
 
 extern FeatureMemPool featureMemPool;

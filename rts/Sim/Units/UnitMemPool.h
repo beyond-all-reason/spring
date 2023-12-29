@@ -11,7 +11,7 @@
 // CBuilder is (currently) the largest derived unit-type
 typedef StaticMemPoolT<MAX_UNITS, CBuilder> UnitMemPool;
 #else
-typedef FixedDynMemPool<sizeof(CBuilder), MAX_UNITS / 1000, MAX_UNITS / 32> UnitMemPool;
+typedef FixedDynMemPoolT<MAX_UNITS / 1000, MAX_UNITS / 32, CBuilder> UnitMemPool;
 #endif
 
 extern UnitMemPool unitMemPool;
