@@ -2020,8 +2020,6 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		return false;
 	if (atEndOfPath)
 		return false;
-	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
-		return true;
 	
 	const float3& pos = owner->pos;
 		  float3& cwp = earlyCurrWayPoint;
@@ -2041,6 +2039,9 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		SetWaypointDir(cwp, pos);
 		wantRepath = false;
 	}
+
+	if (earlyCurrWayPoint.y == -1.0f || earlyNextWayPoint.y == -1.0f)
+		return true;
 
 	if (DEBUG_DRAWING_ENABLED) {
 		if (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()) {
