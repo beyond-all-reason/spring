@@ -69,7 +69,11 @@ IMouseInput::~IMouseInput()
 
 bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 {
-	if (!mouse->ButtonPressed() && RmlGui::ProcessMouseEvent(event)) {
+	/* Only want to give a mouse event to RmlUI if the mouse isn't currently performing a drag.
+	 * Otherwise box selections get stuck when the mouse goes over an Rml element. */
+	const bool mousePressed = mouse->ButtonPressed();
+
+	if (!mousePressed && RmlGui::ProcessMouseEvent(event)) {
 		return false;
 	}
 	switch (event.type) {
