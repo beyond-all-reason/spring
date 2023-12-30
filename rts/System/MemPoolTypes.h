@@ -32,6 +32,7 @@ public:
 	}
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
+		static_assert(BUCKET_STEP >= alignof(T), "Can't allocate memory with alignment greater than BUCKET_STEP");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 	void* allocMem(size_t size) {
@@ -100,7 +101,7 @@ public:
 		const auto iter = table.find(m);
 		const auto pair = std::pair<void*, size_t>{iter->first, iter->second};
 
-		std::memset(pages[pair.second].data(), 0, PAGE_SIZE());
+		std::memset(pages[pair.second].data, 0, PAGE_SIZE());
 
 		indcs.push_back(pair.second);
 		table.erase(pair.first);
@@ -124,7 +125,7 @@ public:
 	size_t freed_size() const { return (indcs.size() * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
 
 	bool mapped(void* p) const { return (table.find(p) != table.end()); }
-	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data() == p)); }
+	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data == p)); }
 	bool can_alloc() const { return true; }
 	bool can_free() const { return indcs.size() < pages.size(); }
 
