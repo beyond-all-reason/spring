@@ -45,7 +45,6 @@
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-#include "System/MemPoolTypes.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
@@ -822,7 +821,7 @@ void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 	// just in case
 	if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
 		return;
-	
+
 	decal.alpha = 0.0f;
 	decalsUpdateList.SetUpdate(doIt->second);
 	decalOwners.erase(doIt);

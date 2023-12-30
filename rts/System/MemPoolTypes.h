@@ -4,6 +4,7 @@
 #define MEMPOOL_TYPES_H
 
 #include <cassert>
+#include <cstddef>
 #include <cstring> // memset
 #include <cmath>
 #include <array>
@@ -11,7 +12,6 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <tuple>
 
 #include "smmalloc/smmalloc.h"
 
@@ -19,7 +19,6 @@
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
 #include "System/Platform/Threading.h"
-#include "System/Threading/SpringThreading.h"
 #include "System/Log/ILog.h"
 
 template<uint32_t NumBuckets, size_t BucketSize> struct PassThroughPool {
@@ -62,10 +61,14 @@ private:
 	sm_allocator space = nullptr;
 };
 
-template<size_t S, size_t Alignment = alignof(std::max_align_t)> struct DynMemPool {
-public:
-	static_assert(S % Alignment == 0, "The size of element must be multiple of Alignment");
+// Helper to infer the memory alignment and size from a set of types.
+template <class ...T>
+struct TypesMem {
+    alignas(std::max({alignof(T)...})) uint8_t data[std::max({sizeof(T)...})];
+};
 
+template<size_t S, size_t Alignment> struct DynMemPool {
+public:
 	void* allocMem(size_t size) {
 		assert(size <= PAGE_SIZE());
 		uint8_t* m = nullptr;
@@ -155,19 +158,17 @@ private:
 	size_t curr_page_index = 0;
 };
 
-template<class T>
-using DynMemPoolT = DynMemPool<sizeof(T), alignof(T)>;
-
+// Helper to infer the DynMemPool pool parameters from a types.
+template<class ...T>
+using DynMemPoolT = DynMemPool<sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
 
 // fixed-size dynamic version
 // page size per chunk, number of chunks, number of pages per chunk
 // at most <N * K> simultaneous allocations can be made from a pool
 // of size NxK, each of which consumes S bytes (N chunks with every
 // chunk consuming S * K bytes) excluding overhead
-template<size_t S, size_t N, size_t K, size_t Alignment = alignof(std::max_align_t)> struct FixedDynMemPool {
+template<size_t S, size_t N, size_t K, size_t Alignment> struct FixedDynMemPool {
 public:
-	static_assert(S % Alignment == 0, "The size of element must be multiple of Alignment");
-
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
 		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
@@ -276,15 +277,13 @@ private:
 	size_t page_index = 0;
 };
 
-template<size_t N, size_t K, class T>
-using FixedDynMemPoolT = FixedDynMemPool<sizeof(T), N, K, alignof(T)>;
-
+// Helper to infer the FixedDynMemPool pool parameters from a types.
+template<size_t N, size_t K, class ...T>
+using FixedDynMemPoolT = FixedDynMemPool<sizeof(TypesMem<T...>), N, K, alignof(TypesMem<T...>)>;
 
 // fixed-size version.
-template<size_t N, size_t S, size_t Alignment = alignof(std::max_align_t)> struct StaticMemPool {
+template<size_t N, size_t S, size_t Alignment> struct StaticMemPool {
 public:
-	static_assert(S % Alignment == 0, "The size of element must be multiple of Alignmment");
-
 	StaticMemPool() { clear(); }
 
 	void* allocMem(size_t size) {
@@ -364,8 +363,9 @@ private:
 	size_t curr_page_index = 0;
 };
 
-template<size_t N, class T>
-using StaticMemPoolT = StaticMemPool<N, sizeof(T), alignof(T)>;
+// Helper to infer the StaticMemPool pool parameters from a types.
+template<size_t N, class ...T>
+using StaticMemPoolT = StaticMemPool<N, sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
 
 
 // dynamic memory allocator operating with stable index positions
