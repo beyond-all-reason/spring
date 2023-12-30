@@ -61,8 +61,10 @@ private:
 	sm_allocator space = nullptr;
 };
 
-template<size_t S> struct DynMemPool {
+template<size_t S, size_t Alignment = alignof(std::max_align_t)> struct DynMemPool {
 public:
+	static_assert(S % Alignment == 0, "The size of element must be multiple of Alignment");
+
 	void* allocMem(size_t size) {
 		assert(size <= PAGE_SIZE());
 		uint8_t* m = nullptr;
@@ -78,7 +80,7 @@ public:
 			i = spring::VectorBackPop(indcs);
 		}
 
-		m = pages[curr_page_index = i].data();
+		m = pages[curr_page_index = i].data;
 
 		table.emplace(m, i);
 		return m;
@@ -87,6 +89,7 @@ public:
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
+		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 
@@ -138,7 +141,11 @@ public:
 	}
 
 private:
-	std::deque<std::array<uint8_t, S>> pages;
+	struct page {
+		alignas(Alignment) uint8_t data[S];
+	};
+
+	std::deque<page> pages;
 	std::vector<size_t> indcs;
 
 	// <pointer, page index> (non-intrusive)
@@ -147,6 +154,8 @@ private:
 	size_t curr_page_index = 0;
 };
 
+template<class T>
+using DynMemPoolT = DynMemPool<sizeof(T), alignof(T)>;
 
 
 // fixed-size dynamic version

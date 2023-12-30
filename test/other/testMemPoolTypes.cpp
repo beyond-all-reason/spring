@@ -82,7 +82,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test bounded allocator base functionali
 }
 
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functionality", "[class][template]",
-		(DynMemPool<sizeof(TestData)>))
+		(DynMemPoolT<TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
@@ -113,7 +113,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test unbounded allocator base functiona
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class][template]",
 		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
 		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>),
-		(DynMemPool<sizeof(TestData)>))
+		(DynMemPoolT<TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
@@ -144,7 +144,7 @@ TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory", "[class
 TEMPLATE_TEST_CASE_METHOD(AllocFixture, "test reuse allocator's memory in LIFO order", "[class][template]",
 		(StaticMemPoolT<TEST_ALLOCATOR_SIZE, TestData>),
 		(FixedDynMemPoolT<1, TEST_ALLOCATOR_SIZE, TestData>),
-		(DynMemPool<sizeof(TestData)>))
+		(DynMemPoolT<TestData>))
 {
 	AllocFixture<TestType> inst;
 	auto& mempool = *inst.mempool;
