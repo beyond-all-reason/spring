@@ -119,6 +119,7 @@ void CUnitScriptEngine::Tick(int deltaTime)
 	cobEngine->Tick(deltaTime);
 
 	// tick all (COB or LUS) script instances that have registered themselves as animating
+	ZoneScopedN("Sim::Script::Animation");
 	for (size_t i = 0; i < animating.size(); ) {
 		currentScript = animating[i];
 

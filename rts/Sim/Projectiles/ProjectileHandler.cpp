@@ -329,17 +329,20 @@ void CProjectileHandler::Update()
 	}
 
 	// precache part of particles count calculation that else becomes very heavy
-	frameCurrentParticles = 0;
+	{
+		ZoneScopedN("ProjectileHandler::CountParticles");
+		frameCurrentParticles = 0;
 
-	for (const CProjectile* p: projectiles[ true]) {
-		frameCurrentParticles += p->GetProjectilesCount();
-	}
-	for (const CProjectile* p: projectiles[false]) {
-		frameCurrentParticles += p->GetProjectilesCount();
-	}
+		for (const CProjectile* p : projectiles[true]) {
+			frameCurrentParticles += p->GetProjectilesCount();
+		}
+		for (const CProjectile* p : projectiles[false]) {
+			frameCurrentParticles += p->GetProjectilesCount();
+		}
 
-	frameProjectileCounts[ true] = projectiles[ true].size();
-	frameProjectileCounts[false] = projectiles[false].size();
+		frameProjectileCounts[true] = projectiles[true].size();
+		frameProjectileCounts[false] = projectiles[false].size();
+	}
 }
 
 void CProjectileHandler::AddProjectile(CProjectile* p)

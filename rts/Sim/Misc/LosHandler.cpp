@@ -809,8 +809,11 @@ void CLosHandler::Update()
 		}
 		#else
 		// all at once
-		for (CUnit* u: activeUnits) {
-			lt->UpdateUnit(u, false);
+		{
+			ZoneScopedN("Sim::Los::UpdateLosTypeMT");
+			for (CUnit* u : activeUnits) {
+				lt->UpdateUnit(u, false);
+			}
 		}
 		#endif
 
@@ -822,6 +825,7 @@ void CLosHandler::Update()
 void CLosHandler::UpdateHeightMapSynced(SRectangle rect)
 {
 	for (ILosType* lt: losTypes) {
+		ZoneScopedN("LosHandler::UpdateHeightMapSynced");
 		lt->UpdateHeightMapSynced(rect);
 	}
 }
