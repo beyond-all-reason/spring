@@ -22,10 +22,12 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Misc/QuadField.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -56,7 +58,6 @@ CProjectileDrawer* projectileDrawer = nullptr;
 // scope might happen after ~EventHandler (referenced by
 // ~EventClient)
 alignas(CProjectileDrawer) static std::byte projectileDrawerMem[sizeof(CProjectileDrawer)];
-
 
 void CProjectileDrawer::InitStatic() {
 	if (projectileDrawer == nullptr)
@@ -602,11 +603,12 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection, bool drawRefraction)
 {
-	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
-
 	if (!CanDrawProjectile(pro, pro->GetAllyteamID()))
 		return;
+	pro->drawPos = pro->GetDrawPos(globalRendering->timeOffset);
 
+	if (!CamVisibleQuads.isInQuads(pro->pos))
+		return;
 
 	if (drawRefraction && (pro->drawPos.y > pro->GetDrawRadius()) /*!pro->IsInWater()*/)
 		return;
@@ -654,12 +656,15 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 {
+	if (!CamVisibleShadowQuads.isInQuads(p->drawPos))
+		return;
 	if (CanDrawProjectile(p, p->GetAllyteamID())) {
 		const CCamera* cam = CCameraHandler::GetActiveCamera();
-		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
-			return;
 
 		if (!p->castShadow)
+			return;
+
+		if (!cam->InView(p->drawPos, p->GetDrawRadius()))
 			return;
 
 		// if this returns false, then projectile is

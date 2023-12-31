@@ -49,6 +49,7 @@
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/NamedTextures.h"
+#include "Rendering/DebugVisibilityDrawer.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaHandle.h"
 #include "Lua/LuaInputReceiver.h"
@@ -717,6 +718,8 @@ void CGame::LoadInterface()
 	auto lock = CLoadLock::GetUniqueLock();
 
 	camHandler->Init();
+	CamVisibleShadowQuads.Init();
+	CamVisibleQuads.Init();
 	mouse->ReloadCursors();
 
 	selectedUnitsHandler.Init(playerHandler.ActivePlayers());
@@ -1408,7 +1411,9 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		unitTracker.SetCam();
 
 	camera->Update();
+	CamVisibleQuads.Update();
 	shadowHandler.Update();
+	CamVisibleShadowQuads.Update();
 	{
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();
