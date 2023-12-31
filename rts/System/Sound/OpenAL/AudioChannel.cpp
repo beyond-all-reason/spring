@@ -17,7 +17,6 @@
 extern spring::recursive_mutex soundMutex;
 
 
-
 void AudioChannel::SetVolume(float newVolume)
 {
 	volume = std::max(newVolume, 0.0f);

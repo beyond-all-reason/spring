@@ -22,6 +22,7 @@
 class CFileHandler
 {
 public:
+	CFileHandler() { Close(); }
 	CFileHandler(const char* fileName, const char* modes = SPRING_VFS_RAW_FIRST);
 	CFileHandler(const std::string& fileName, const std::string& modes = SPRING_VFS_RAW_FIRST);
 	virtual ~CFileHandler() { Close(); }
@@ -63,7 +64,6 @@ public:
 
 
 protected:
-	CFileHandler() { Close(); } // for CGZFileHandler
 
 	virtual bool TryReadFromPWD(const std::string& fileName);
 	virtual bool TryReadFromRawFS(const std::string& fileName);
