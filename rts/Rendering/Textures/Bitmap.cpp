@@ -630,8 +630,6 @@ void TBitmapAction<T, ch>::Renormalize(const float3& newCol)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 {
-	SCOPED_TIMER("Bitmap::Blur");
-
 	// We use an axis-separated blur algorithm. Applies blurkernel in both the x
 	// and y dimensions. This 3x1 blur kernel is equivalent to a 3x3 kernel in
 	// both the x and y dimensions.
@@ -642,8 +640,12 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 
 	// Two temporaries are required in order to perform axis separated gaussian
-	// blur with additional weighting from the source pixel. See the comment block
-	// below.
+	// blur with an additional weight from the source pixel specified by `weight`.
+	// The first blur pass, when dimension == 0, applies blur in the x
+	// dimension on bitmaps[0] and saves the result to bitmaps[1]. The second blur
+	// pass, when dimension == 1, applies blur in the y dimension on bitmaps[1]
+	// and saves the result in bitmaps[2]. Additionally, the second blur pass adds
+	// an additional `weight` from bitmaps[0] to the final result in bitmaps[2].
 	CBitmap tmp(nullptr, bmp->xsize, bmp->ysize, bmp->channels, bmp->dataType);
 	CBitmap tmp2(nullptr, bmp->xsize, bmp->ysize, bmp->channels, bmp->dataType);
 
@@ -688,14 +690,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 							fragment += (blurkernel[i] * srcChannel);
 						}
 
-						// The original blur algorithm is not a gaussian blur, as it weights
-						// the source pixel more heavily by `weight`. To replicate the
-						// same effect with axis-separated gaussian blur, we use two
-						// temporaries for each complete blur pass. bitmaps[1] stores the
-						// result of blurring bitmaps[0] in the x-axis and bitmap[2] the
-						// result of blurring bitmaps[1] in the y-axis. Finally, at the end
-						// of the blur pass we add the additional weight from the source
-						// pixel in bitmap[0] to the final result in bitmap[2].
 						if (dimension == 1) {
 							auto& srcChannel = static_cast<ThisType>(actions[0].get())->GetRef(yBaseOffset + x, a);
 
