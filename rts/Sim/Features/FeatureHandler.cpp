@@ -38,12 +38,12 @@ void CFeatureHandler::Init() {
 	featureMemPool.reserve(128);
 
 	idPool.Clear();
-	idPool.Expand(0, MAX_FEATURES);
+	idPool.Expand(FEATURE_BASE_ID, MAX_FEATURES);
 }
 
 void CFeatureHandler::Kill() {
 	for (const int featureID: activeFeatureIDs) {
-		featureMemPool.free(features[featureID]);
+		featureMemPool.free(features[featureID - FEATURE_BASE_ID]);
 	}
 
 	// do not clear in ctor because creg-loaded objects would be wiped out
@@ -116,11 +116,11 @@ void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 {
 	idPool.AssignID(feature);
 
-	assert(feature->id < features.size());
-	assert(features[feature->id] == nullptr);
+	assert(IsValidFeatureID(feature->id));
+	assert(features[feature->id - FEATURE_BASE_ID] == nullptr);
 
 	activeFeatureIDs.insert(feature->id);
-	features[feature->id] = feature;
+	features[feature->id - FEATURE_BASE_ID] = feature;
 }
 
 
@@ -204,7 +204,8 @@ bool CFeatureHandler::TryFreeFeatureID(int id)
 		return false;
 	}
 
-	assert(features[id] == nullptr);
+	assert(IsValidFeatureID(id));
+	assert(features[id - FEATURE_BASE_ID] == nullptr);
 	idPool.FreeID(id, true);
 
 	return true;
@@ -224,7 +225,7 @@ bool CFeatureHandler::UpdateFeature(CFeature* feature)
 		deletedFeatureIDs.push_back(feature->id);
 		activeFeatureIDs.erase(feature->id);
 
-		features[feature->id] = nullptr;
+		features[feature->id - FEATURE_BASE_ID] = nullptr;
 
 		// ID must match parameter for object commands, just use this
 		CSolidObject::SetDeletingRefID(feature->GetBlockingMapID());

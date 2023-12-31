@@ -51,7 +51,7 @@ public:
 
 	CFeature* LoadFeature(const FeatureLoadParams& params);
 	CFeature* CreateWreckage(const FeatureLoadParams& params);
-	CFeature* GetFeature(unsigned int id) { return ((id < features.size())? features[id]: nullptr); }
+	CFeature* GetFeature(int id) { return IsValidFeatureID(id) ? features[id - FEATURE_BASE_ID] : nullptr; }
 
 	void Update();
 
@@ -68,13 +68,14 @@ public:
 	const spring::unordered_set<int>& GetActiveFeatureIDs() const { return activeFeatureIDs; }
 
 private:
+	inline bool IsValidFeatureID(int id) const { return (id - FEATURE_BASE_ID >= 0 && id - FEATURE_BASE_ID < features.size()); }
 	bool CanAddFeature(int id) const {
 		// do we want to be assigned a random ID and are any left in pool?
 		if (id < 0)
 			return true;
 		// is this ID not already in use *and* has it been recycled by pool?
-		if (id < features.size())
-			return (features[id] == nullptr && idPool.HasID(id));
+		if (id - FEATURE_BASE_ID < features.size())
+			return (features[id - FEATURE_BASE_ID] == nullptr && idPool.HasID(id));
 		// AddFeature will not make new room for us
 		return false;
 	}
@@ -88,6 +89,8 @@ private:
 	std::vector<int> deletedFeatureIDs;
 	std::vector<CFeature*> features;
 	std::vector<CFeature*> updateFeatures;
+
+	static constexpr auto FEATURE_BASE_ID = MAX_UNITS;
 };
 
 extern CFeatureHandler featureHandler;
