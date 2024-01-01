@@ -472,6 +472,7 @@ void CUnitDrawerLegacy::DrawUnitIcons() const
 
 void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 {
+	ZoneScopedN("DrawUnitIconsScreen");
 	if (game->hideInterface && modelDrawerData->iconHideWithUI)
 		return;
 
@@ -498,7 +499,7 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 		if (units.empty())
 			continue;
 
-		icon->BindTexture();
+		bool hasVisibleIcons = false;
 
 		for (const CUnit* unit : units)
 		{
@@ -547,8 +548,13 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 			const float x1 = (pos.x + offset) / globalRendering->viewSizeX;
 			const float y1 = (pos.y - offset) / globalRendering->viewSizeY;
 
-			if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
+			if (x1 < 0 || x0 > 1 || y0 < 0 || y1 > 1) // This was previously &&, if any of these are true, then the icon is not drawn.
 				continue; // don't try to draw when totally outside the screen
+
+			if (hasVisibleIcons == false) {
+				hasVisibleIcons = true;
+				icon->BindTexture();
+			}
 
 			rb.AddQuadTriangles(
 				{ x0, y0, 0.0f, 0.0f, color },
@@ -557,8 +563,10 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 				{ x0, y1, 0.0f, 1.0f, color }
 			);
 		}
-
-		rb.Submit(GL_TRIANGLES);
+		
+		if (hasVisibleIcons) {
+			rb.Submit(GL_TRIANGLES);
+		}
 	}
 
 	sh.SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f);
