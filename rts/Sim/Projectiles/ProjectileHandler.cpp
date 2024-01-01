@@ -341,7 +341,7 @@ void CProjectileHandler::Update()
 
 	// precache part of particles count calculation that else becomes very heavy
 	{
-		ZoneScopedN("ProjectileHandler::CountParticles");
+		ZoneScopedNC("ProjectileHandler::CountParticles", tracy::Color::Goldenrod);
 		frameCurrentParticles = 0;
 
 		for (const CProjectile* p : projectiles[true]) {

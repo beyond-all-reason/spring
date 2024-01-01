@@ -1265,7 +1265,7 @@ void CMiniMap::DrawMinimizedButtonLoop() const
 
 void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall)
 {
-	ZoneScopedN("MiniMap::DrawForReal");
+	ZoneScopedNC("MiniMap::DrawForReal", tracy::Color::Goldenrod);
 	if (minimized)
 		return;
 
