@@ -31,7 +31,7 @@ CPathTexture::CPathTexture()
 , forcedUnitDef(-1)
 , lastUsage(spring_gettime())
 {
-	texSize = int2(mapDims.hmapx, mapDims.hmapy);
+	texSize = int2(mapDims.mapx, mapDims.mapy);
 	texChannels = 4;
 
 	glGenTextures(1, &texture);
@@ -208,7 +208,7 @@ void CPathTexture::Update()
 	}
 
 	// spread update across time
-	constexpr int TEX_SIZE_TO_UPDATE_EACH_FRAME = 128*128;
+	constexpr int TEX_SIZE_TO_UPDATE_EACH_FRAME = 256*256;
 	if (updateProcess >= texSize.y) updateProcess = 0;
 
 	int start = updateProcess;
@@ -228,7 +228,7 @@ void CPathTexture::Update()
 		for_mt(start, updateProcess, [&](const int y) {
 			int currentThread = ThreadPool::GetThreadNum();
 			for (int x = 0; x < texSize.x; ++x) {
-				const float3 pos = float3(x << 1, 0.0f, y << 1) * SQUARE_SIZE;
+				const float3 pos = float3(x, 0.0f, y) * SQUARE_SIZE;
 				const int idx = y * texSize.x + x;
 
 				BuildSquareStatus status = FREE;
@@ -253,7 +253,7 @@ void CPathTexture::Update()
 	} else if (md != nullptr) {
 		for_mt(start, updateProcess, [&](const int y) {
 			for (int x = 0; x < texSize.x; ++x) {
-				const int2 sq = int2(x << 1, y << 1);
+				const int2 sq = int2(x, y);
 				const int idx = y * texSize.x + x;
 
 				float scale = 1.0f;
