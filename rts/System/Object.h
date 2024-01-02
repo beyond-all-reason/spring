@@ -5,9 +5,8 @@
 
 #include <atomic>
 #include <functional>
+#include <type_traits>
 #include <vector>
-#include <array>
-#include <limits>
 
 #include "ObjectDependenceTypes.h"
 #include "System/creg/creg_cond.h"
@@ -83,26 +82,27 @@ public:
 	bool detached;
 
 protected:
-	using DependencyIdxMap = std::array<size_t, DependenceType::DEPENDENCE_COUNT>;
+	const TSyncSafeSet& GetListeners(const DependenceType dep) {
+		const auto it = listenersDepTbl.find(dep);
 
-	inline static const TSyncSafeSet& GetListenGeneric(DependencyIdxMap& idxmap, TDependenceMap& depmap, const DependenceType dep) {
-		assert(dep >= DependenceType::DEPENDENCE_ATTACKER && dep < DependenceType::DEPENDENCE_COUNT);
-
-		const size_t& idx = idxmap[dep];
-
-		if (idx == INVALID_DEP_INDX) {
-			depmap.emplace_back();
-			idxmap[dep] = depmap.size() - 1;
-			return depmap.back();
+		if (it == listenersDepTbl.end()) {
+			listeners.emplace_back();
+			listenersDepTbl[dep] = listeners.size() - 1;
+			return (listeners.back());
 		}
 
-		return depmap[idx];
-	}
-	const TSyncSafeSet& GetListeners(const DependenceType dep) {
-		return GetListenGeneric(listenersDepTbl, listeners, dep);
+		return (listeners[it->second]);
 	}
 	const TSyncSafeSet& GetListening(const DependenceType dep) {
-		return GetListenGeneric(listeningDepTbl, listening, dep);
+		const auto it = listeningDepTbl.find(dep);
+
+		if (it == listeningDepTbl.end()) {
+			listening.emplace_back();
+			listeningDepTbl[dep] = listening.size() - 1;
+			return (listening.back());
+		}
+
+		return (listening[it->second]);
 	}
 
 	const TDependenceMap& GetAllListeners() const { return listeners; }
@@ -126,9 +126,8 @@ protected:
 	template<size_t N> void FilterListening(const TObjFilterPred& fp, std::array<int, N>& ids) const { FilterDepObjects(listening, fp, ids); }
 
 protected:
-	static constexpr size_t INVALID_DEP_INDX = std::numeric_limits<size_t>::max();
-	DependencyIdxMap listenersDepTbl; // maps dependence-type to index into listeners
-	DependencyIdxMap listeningDepTbl; // maps dependence-type to index into listening
+	spring::unordered_map<std::underlying_type_t<DependenceType>, size_t> listenersDepTbl; // maps dependence-type to index into listeners
+	spring::unordered_map<std::underlying_type_t<DependenceType>, size_t> listeningDepTbl; // maps dependence-type to index into listening
 
 	TDependenceMap listeners;
 	TDependenceMap listening;

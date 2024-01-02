@@ -1,6 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
 
 #include "System/Object.h"
 #include "System/ContainerUtil.h"
@@ -47,9 +46,6 @@ CObject::CObject() : detached(false)
 	sync_id = ++cur_sync_id;
 
 	assert((sync_id + 1) > sync_id); // check for overflow
-
-	std::fill(listenersDepTbl.begin(), listenersDepTbl.end(), INVALID_DEP_INDX);
-	std::fill(listeningDepTbl.begin(), listeningDepTbl.end(), INVALID_DEP_INDX);
 }
 
 
@@ -58,41 +54,43 @@ CObject::~CObject()
 	assert(!detached);
 	detached = true;
 
-	for (size_t i = 0; i < listenersDepTbl.size(); ++i) {
-		const size_t& idx1 = listenersDepTbl[i];
-
-		if (idx1 == INVALID_DEP_INDX)
+	// NB: listenersDepTbl must be iterated sequentially
+	// due to the presence of obj->DependentDied(this);
+	// the order of iteration becomes undefined in case
+	// "unsynced" dependencies like DEPENDENCE_SELECTED
+	// are present in listenersDepTbl
+	for (std::underlying_type_t<DependenceType> dt = DEPENDENCE_ATTACKER, cnt = 0; dt < DEPENDENCE_COUNT && cnt < listenersDepTbl.size(); ++dt) {
+		const auto it = listenersDepTbl.find(dt);
+		if (it == listenersDepTbl.end())
 			continue;
 
-		assert(idx1 < listeners.size());
+		++cnt;
 
-		for (CObject* obj: listeners[idx1]) {
+		assert(it->second < listeners.size());
+
+		for (CObject* obj: listeners[it->second]) {
 			obj->DependentDied(this);
 
-			const size_t& idx2 = obj->listeningDepTbl[i];
+			const auto jt = obj->listeningDepTbl.find(it->first);
 
-			if (idx2 == INVALID_DEP_INDX)
+			if (jt == obj->listeningDepTbl.end())
 				continue;
 
-			VectorEraseSorted(obj->listening[idx2], this);
+			VectorEraseSorted(obj->listening[ jt->second ], this);
 		}
 	}
 
-	for (size_t i = 0; i < listeningDepTbl.size(); ++i) {
-		const size_t& idx1 = listeningDepTbl[i];
+	for (const auto& p: listeningDepTbl) {
+		assert(p.first >= DEPENDENCE_ATTACKER && p.first < DEPENDENCE_COUNT);
+		assert(p.second < listening.size());
 
-		if (idx1 == INVALID_DEP_INDX)
-			continue;
+		for (CObject* obj: listening[p.second]) {
+			const auto jt = obj->listenersDepTbl.find(p.first);
 
-		assert(idx1 < listening.size());
-
-		for (CObject* obj: listening[idx1]) {
-			const size_t& idx2 = obj->listenersDepTbl[i];
-
-			if (idx2 == INVALID_DEP_INDX)
+			if (jt == obj->listenersDepTbl.end())
 				continue;
 
-			VectorEraseSorted(obj->listeners[idx2], this);
+			VectorEraseSorted(obj->listeners[ jt->second ], this);
 		}
 	}
 }
@@ -118,13 +116,15 @@ void CObject::AddDeathDependence(CObject* obj, DependenceType dep)
 
 void CObject::DeleteDeathDependence(CObject* obj, DependenceType dep)
 {
-	assert(dep >= DependenceType::DEPENDENCE_ATTACKER && dep < DependenceType::DEPENDENCE_COUNT);
 	assert(!detached);
 
 	if (detached || obj->detached)
 		return;
 
-	if (const size_t& idx =      listeningDepTbl[dep]; idx != INVALID_DEP_INDX) VectorEraseSorted(     listening[idx],  obj);
-	if (const size_t& idx = obj->listenersDepTbl[dep]; idx != INVALID_DEP_INDX) VectorEraseSorted(obj->listeners[idx], this);
+	const auto it =      listeningDepTbl.find(dep);
+	const auto jt = obj->listenersDepTbl.find(dep);
+
+	if (it !=      listeningDepTbl.end()) VectorEraseSorted(     listening[ it->second ],  obj);
+	if (jt != obj->listenersDepTbl.end()) VectorEraseSorted(obj->listeners[ jt->second ], this);
 }
 

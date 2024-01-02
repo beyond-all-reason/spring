@@ -9,7 +9,7 @@
 // AddDeathDependence / DeleteDeathDependence calls in order not to risk a crash. With dependence types this can never happen, i.e.
 // DeleteDeathDependence(object, DEPENDENCE_ATTACKER) can be called a hundred times without any risk of losing some other type of dependence.
 // Dependence types also makes it easy to detect deletion of non-existent dependence types, and output a warning for debugging purposes.
-enum DependenceType {
+enum DependenceType : uint8_t {
 	DEPENDENCE_ATTACKER,
 	DEPENDENCE_BUILD,
 	DEPENDENCE_BUILDER,
