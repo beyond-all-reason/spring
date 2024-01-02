@@ -91,6 +91,7 @@ void QTPFS::PathSearch::Initialize(
 	rejectPartialSearch = false;
 
 	fwdNodesSearched = 0;
+	bwdNodesSearched = 0;
 }
 
 void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
@@ -437,12 +438,20 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			RemoveOutdatedOpenNodesFromQueue(SearchThreadData::SEARCH_FORWARD);
 
 			// We're done with the forward path and we expect the reverse path to fail so stop it right there.
-			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch)
-				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
+			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch){
+				SetForwardSearchLimit();
+			// 	searchEarlyDrop = true;
+			// 	//bwd.tgtSearchNode = curSearchNode; - nearest node not saved currently.
+			// 	searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
+			}
 		}
 
 		if (!(*bwd.openNodes).empty()) {
+			bwdNodesSearched++;
 			IterateNodes(SearchThreadData::SEARCH_BACKWARD);
+
+			if (bwdNodesSearched >= fwdNodeSearchLimit)
+				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 
 			assert(curSearchNode->GetNeighborEdgeTransitionPoint().x != 0.f
 				|| curSearchNode->GetNeighborEdgeTransitionPoint().y != 0.f);
@@ -520,7 +529,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			if (!isFullSearch) {
 				if (fwdStepIndex > bwdStepIndex){
 					rejectPartialSearch = true;
-					// LOG("%s: rejecting partial path.", __func__);
+					// LOG("%s: rejecting partial path 1 (search %x)", __func__, this->GetID());
 					return false;
 				}
 			}
@@ -528,7 +537,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			// if the partial path could not connect the reverse path, then we need to reject.
 			if (fwdPathConnected && !bwdPathConnected) {
 				rejectPartialSearch = true;
-				// LOG("%s: rejecting partial path.", __func__);
+				// LOG("%s: rejecting partial path 2 (search %x)", __func__, this->GetID());
 				return false;
 			}
 		}
@@ -584,7 +593,6 @@ void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchDat
 		hCosts[i] = 0.0f;
 	}
 
-	// searchThreadData->ResetQueue();
 	(*searchData.openNodes).emplace(node->GetIndex(), 0.f);
 }
 

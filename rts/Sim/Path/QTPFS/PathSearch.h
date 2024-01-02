@@ -211,6 +211,7 @@ namespace QTPFS {
 		int fwdNodeSearchLimit = 0;
 
 		size_t fwdNodesSearched = 0;
+		size_t bwdNodesSearched = 0;
 
 		bool haveFullPath;
 		bool havePartPath;
