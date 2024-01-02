@@ -1915,7 +1915,7 @@ void CMiniMap::DrawUnitRanges() const
 
 void CMiniMap::DrawWorldStuff() const
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	ZoneScoped;
 	glPushMatrix();
 
 	if (flipped) {
