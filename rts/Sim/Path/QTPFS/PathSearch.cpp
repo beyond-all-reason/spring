@@ -640,11 +640,9 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 
-	if (searchDir == SearchThreadData::SEARCH_FORWARD) {
-		// remember the node with lowest h-cost in case the search fails to reach tgtNode
-		if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < searchData.minSearchNode->GetPathCost(NODE_PATH_COST_H))
-			searchData.minSearchNode = curSearchNode;
-	}
+	// remember the node with lowest h-cost in case the search fails to reach tgtNode
+	if (curSearchNode->GetPathCost(NODE_PATH_COST_H) < searchData.minSearchNode->GetPathCost(NODE_PATH_COST_H))
+		searchData.minSearchNode = curSearchNode;
 
 	#endif
 
