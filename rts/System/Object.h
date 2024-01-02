@@ -6,6 +6,8 @@
 #include <atomic>
 #include <functional>
 #include <vector>
+#include <array>
+#include <limits>
 
 #include "ObjectDependenceTypes.h"
 #include "System/creg/creg_cond.h"
@@ -81,27 +83,26 @@ public:
 	bool detached;
 
 protected:
-	const TSyncSafeSet& GetListeners(const DependenceType dep) {
-		const auto it = listenersDepTbl.find(dep);
+	using DependencyIdxMap = std::array<size_t, DependenceType::DEPENDENCE_COUNT>;
 
-		if (it == listenersDepTbl.end()) {
-			listeners.emplace_back();
-			listenersDepTbl[dep] = listeners.size() - 1;
-			return (listeners.back());
+	inline static const TSyncSafeSet& GetListenGeneric(DependencyIdxMap& idxmap, TDependenceMap& depmap, const DependenceType dep) {
+		assert(dep >= DependenceType::DEPENDENCE_ATTACKER && dep < DependenceType::DEPENDENCE_COUNT);
+
+		const size_t& idx = idxmap[dep];
+
+		if (idx == INVALID_DEP_INDX) {
+			depmap.emplace_back();
+			idxmap[dep] = depmap.size() - 1;
+			return depmap.back();
 		}
 
-		return (listeners[it->second]);
+		return depmap[idx];
+	}
+	const TSyncSafeSet& GetListeners(const DependenceType dep) {
+		return GetListenGeneric(listenersDepTbl, listeners, dep);
 	}
 	const TSyncSafeSet& GetListening(const DependenceType dep) {
-		const auto it = listeningDepTbl.find(dep);
-
-		if (it == listeningDepTbl.end()) {
-			listening.emplace_back();
-			listeningDepTbl[dep] = listening.size() - 1;
-			return (listening.back());
-		}
-
-		return (listening[it->second]);
+		return GetListenGeneric(listeningDepTbl, listening, dep);
 	}
 
 	const TDependenceMap& GetAllListeners() const { return listeners; }
@@ -125,8 +126,9 @@ protected:
 	template<size_t N> void FilterListening(const TObjFilterPred& fp, std::array<int, N>& ids) const { FilterDepObjects(listening, fp, ids); }
 
 protected:
-	spring::unordered_map<int, size_t> listenersDepTbl; // maps dependence-type to index into listeners
-	spring::unordered_map<int, size_t> listeningDepTbl; // maps dependence-type to index into listening
+	static constexpr size_t INVALID_DEP_INDX = std::numeric_limits<size_t>::max();
+	DependencyIdxMap listenersDepTbl; // maps dependence-type to index into listeners
+	DependencyIdxMap listeningDepTbl; // maps dependence-type to index into listening
 
 	TDependenceMap listeners;
 	TDependenceMap listening;
