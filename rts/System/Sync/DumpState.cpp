@@ -30,6 +30,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Units/UnitTypes/Builder.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Map/ReadMap.h"
@@ -86,6 +87,12 @@ namespace {
 		}
 
 		return str.str();
+	}
+
+	inline std::string DumpSolidObjectID(const CSolidObject* so) {
+		std::string s = so ? std::to_string(so->id) : "(nullptr)";
+		s.append("\n");
+		return s;
 	}
 }
 
@@ -169,6 +176,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	#define DUMP_UNIT_WEAPON_DATA
 	#define DUMP_UNIT_COMMANDAI_DATA
 	#define DUMP_UNIT_MOVETYPE_DATA
+	#define DUMP_UNIT_BUILDER_DATA
 	#define DUMP_UNIT_SCRIPT_DATA
 	#define DUMP_FEATURE_DATA
 	#define DUMP_PROJECTILE_DATA
@@ -297,6 +305,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\tphysicalState: " << u->physicalState << "\n";
 		file << "\t\t\tfireState: " << u->fireState << ", moveState: " << u->moveState << "\n";
 		file << "\t\t\tpieces: " << pieces.size() << "\n";
+		file << "\t\t\tinBuildStance " << u->inBuildStance << "\n";
 
 		#ifdef DUMP_UNIT_PIECE_DATA
 		for (const LocalModelPiece& lmp: pieces) {
@@ -370,8 +379,31 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\t\tcurrWayPoint: " << TapFloats(gmt->GetCurrWayPoint());
 			file << "\t\t\t\t\tnextWayPoint: " << TapFloats(gmt->GetNextWayPoint());
 		}
-
 		#endif
+
+		#ifdef DUMP_UNIT_BUILDER_DATA
+		if (const CBuilder* b = dynamic_cast<const CBuilder*>(u); b != nullptr) {
+			file << "\t\t\tThe unit is CBuilder:\n";
+			file << "\t\t\t\tcurResurrect: " << DumpSolidObjectID(b->curResurrect);
+			file << "\t\t\t\tlastResurrected: " << b->lastResurrected << "\n";
+			file << "\t\t\t\tcurBuild: " << DumpSolidObjectID(b->curBuild);
+			file << "\t\t\t\tcurCapture: " << DumpSolidObjectID(b->curCapture);
+			file << "\t\t\t\tcurReclaim: " << DumpSolidObjectID(b->curReclaim);
+			file << "\t\t\t\treclaimingUnit: " << (b->reclaimingUnit ? 1 : 0) << "\n";
+			file << "\t\t\t\thelpTerraform: " << DumpSolidObjectID(b->helpTerraform);
+			file << "\t\t\t\tterraforming: " << (b->terraforming ? 1 : 0) << "\n";
+			file << "\t\t\t\tterraformHelp: " << TapFloats(b->terraformHelp);
+			file << "\t\t\t\tmyTerraformLeft: " << TapFloats(b->myTerraformLeft);
+			file << "\t\t\t\tterraformType: " << std::to_string(b->terraformType) << "\n";
+			file << "\t\t\t\ttx1,tx2,tz1,tz2: " << b->tx1 << "," << b->tx2 << "," << b->tz1 << "," << b->tz2 << "\n";
+			file << "\t\t\t\tterraformCenter: " << TapFloats(b->terraformCenter);
+			file << "\t\t\t\tterraformRadius: " << TapFloats(b->terraformRadius);
+		}
+		#endif
+	}
+	file << "\tunitsToBeRemoved: " << unitHandler.GetUnitsToBeRemoved().size() << "\n";
+	for (auto* u : unitHandler.GetUnitsToBeRemoved()) {
+		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 	}
 	#endif
 	#ifdef DUMP_UNIT_SCRIPT_DATA
