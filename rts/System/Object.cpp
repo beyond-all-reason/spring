@@ -56,9 +56,10 @@ CObject::~CObject()
 
 	// NB: listenersDepTbl must be iterated sequentially
 	// due to the presence of obj->DependentDied(this);
-	// the order of iteration becomes undefined in case
-	// "unsynced" dependencies like DEPENDENCE_SELECTED
+	// The order of naive iteration becomes undefined in
+	// case "unsynced" dependencies like DEPENDENCE_SELECTED
 	// are present in listenersDepTbl
+	// Ex: can't use `for (const auto& p : listenersDepTbl) {}`
 	for (std::underlying_type_t<DependenceType> dt = DEPENDENCE_ATTACKER, cnt = 0; dt < DEPENDENCE_COUNT && cnt < listenersDepTbl.size(); ++dt) {
 		const auto it = listenersDepTbl.find(dt);
 		if (it == listenersDepTbl.end())
