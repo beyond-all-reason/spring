@@ -676,14 +676,28 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 
 void CProjectileDrawer::DrawProjectilesMiniMap()
 {
-	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
-		const auto& mdlRenderer = modelRenderers[modelType];
-		// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::ModelProjectiles");
+		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
+			const auto& mdlRenderer = modelRenderers[modelType];
+			// const auto& projBinKeys = mdlRenderer.GetObjectBinKeys();
 
-		for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-			const auto& projectileBin = mdlRenderer.GetObjectBin(i);
+			for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
+				const auto& projectileBin = mdlRenderer.GetObjectBin(i);
 
-			for (CProjectile* p: projectileBin) {
+				for (CProjectile* p : projectileBin) {
+					if (!CanDrawProjectile(p, p->GetAllyteamID()))
+						continue;
+
+					p->DrawOnMinimap();
+				}
+			}
+		}
+	}
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::ModellessProjectiles");
+		if (!modellessProjectiles.empty()) {
+			for (CProjectile* p : modellessProjectiles) {
 				if (!CanDrawProjectile(p, p->GetAllyteamID()))
 					continue;
 
@@ -692,14 +706,6 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		}
 	}
 
-	if (!modellessProjectiles.empty()) {
-		for (CProjectile* p: modellessProjectiles) {
-			if (!CanDrawProjectile(p, p->GetAllyteamID()))
-				continue;
-
-			p->DrawOnMinimap();
-		}
-	}
 
 	auto& sh = TypedRenderBuffer<VA_TYPE_C>::GetShader();
 
@@ -713,8 +719,14 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		glDisable(GL_PROGRAM_POINT_SIZE);
 
 	sh.Enable();
-	CProjectile::GetMiniMapLinesRB().DrawArrays(GL_LINES);
-	CProjectile::GetMiniMapPointsRB().DrawArrays(GL_POINTS);
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::MiniMapLinesRB");
+		CProjectile::GetMiniMapLinesRB().DrawArrays(GL_LINES);
+	}
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::MiniMapPointsRB");
+		CProjectile::GetMiniMapPointsRB().DrawArrays(GL_POINTS);
+	}
 	sh.Disable();
 
 	if (pntsz)
@@ -855,6 +867,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 void CProjectileDrawer::DrawShadowPassOpaque()
 {
+	ZoneScoped;
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_PROJECTILE);
 
 	glPushAttrib(GL_ENABLE_BIT);
@@ -873,6 +886,7 @@ void CProjectileDrawer::DrawShadowPassOpaque()
 
 void CProjectileDrawer::DrawShadowPassTransparent()
 {
+	ZoneScoped;
 	// Method #1 here: https://wickedengine.net/2018/01/18/easy-transparent-shadow-maps/
 
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere

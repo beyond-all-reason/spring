@@ -1871,6 +1871,7 @@ void CMiniMap::DrawUnitRanges() const
 
 void CMiniMap::DrawWorldStuff() const
 {
+	ZoneScoped;
 	glPushMatrix();
 
 	if (flipped) {
