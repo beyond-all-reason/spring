@@ -57,8 +57,8 @@ void QTPFS::PathSearch::Initialize(
 ) {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
-	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds();
-	fwd.tgtPoint = targetPoint; fwd.tgtPoint.ClampInBounds();
+	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds(); fwd.srcPoint.y = 0.f;
+	fwd.tgtPoint = targetPoint; fwd.tgtPoint.ClampInBounds(); fwd.tgtPoint.y = 0.f;
 
 	assert(	fwd.srcPoint.x != 0.f || fwd.srcPoint.z != 0.f );
 
@@ -560,6 +560,9 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	}
 	#endif
 
+	// LOG("%s: search %x result(%d||%d) nodes searched (%d, %d)", __func__, this->GetID()
+	// 		, int(haveFullPath), int(havePartPath), int(fwdNodesSearched), int(bwdNodesSearched));
+
 	return (haveFullPath || havePartPath);
 }
 
@@ -1042,6 +1045,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 		if ( (nodeId & ONLY_NODE_ID_MASK) == 0 ){
 			assert(point != ZeroVector);
+			assert(point.y == 0.f);
 			nodePointIndex = pointIndex;
 			path->SetPoint(pointIndex++, point);
 		// { bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
