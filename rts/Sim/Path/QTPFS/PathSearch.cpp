@@ -383,13 +383,18 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 	assert(fwd.srcSearchNode != nullptr);
 
+	fwdNodeSearchLimit = 2048;
+
 	while (continueSearching) {
 		if (!(*fwd.openNodes).empty()) {
 			fwdNodesSearched++;
 			IterateNodes(SearchThreadData::SEARCH_FORWARD);
 
 			// Search area limits are only used when the reverse search has determined that the
-			// goal is not reachable.
+			// goal is not reachable. UPDATE: not anymore, they are now always in effect due to
+			// several scenarios that impact performance.
+			// 1. Maps with huge islands.
+			// 2. Players wall off the map in PvE modes, create huge artifical islands.
 			if (fwdNodesSearched >= fwdNodeSearchLimit)
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 
@@ -441,7 +446,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch){
 				SetForwardSearchLimit();
 			// 	searchEarlyDrop = true;
-			// 	//bwd.tgtSearchNode = curSearchNode; - nearest node not saved currently.
+			// 	//bwd.tgtSearchNode = curSearchNode;
 			// 	searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 			}
 		}
@@ -552,7 +557,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	//   is no need to change the target point anymore.
 	if (!haveFullPath && havePartPath) {
 		fwd.tgtSearchNode = fwd.minSearchNode;
-		auto* minNode = nodeLayer->GetPoolNode(fwd.minSearchNode->GetIndex());
 
 		// used to trace a bad path to give partial searches a chance of an early out
 		// in reverse searches.
@@ -813,6 +817,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		path->AllocPoints(2);
 		path->SetSourcePoint({fwd.srcPoint.x, 0.f, fwd.srcPoint.z});
 		path->SetTargetPoint({fwd.tgtPoint.x, 0.f, fwd.tgtPoint.z});
+		path->SetRepathTriggerIndex(0);
 	}
 
 	if (!path->IsBoundingBoxOverriden())
@@ -838,6 +843,8 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		int zmin;
 		int xmax;
 		int zmax;
+		float dist = 0.f;
+		uint32_t index = 0;
 	};
 	std::deque<TracePoint> points;
 	int nodesWithoutPoints = 0;
@@ -1030,6 +1037,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 		path->SetBoundingBox(boundaryMins, boundaryMaxs);
 	} else {
+		path->AllocPoints(2);
 		assert(path->NumPoints() == 2);
 		assert(path->GetNodeList().size() == 0);
 	}
@@ -1037,17 +1045,25 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	// set waypoints with indices [1, N - 2] (if any)
 	int pointIndex = 1;
 	int nodeIndex = 0;
-	while (!points.empty()) {
+	float pathDist = 0.f;
+	float3 lastPoint(fwd.srcPoint);
+
+	for (TracePoint& curPoint : points) {
 		int nodePointIndex = -1;
-		TracePoint& curPoint = points.front();
 		float3& point   = curPoint.point;
 		uint32_t nodeId = curPoint.nodeId;
 
 		if ( (nodeId & ONLY_NODE_ID_MASK) == 0 ){
 			assert(point != ZeroVector);
 			assert(point.y == 0.f);
+			pathDist += point.distance2D(lastPoint);
+			curPoint.dist = pathDist;
+			curPoint.index = pointIndex;
+
 			nodePointIndex = pointIndex;
 			path->SetPoint(pointIndex++, point);
+
+			lastPoint = point;
 		// { bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 		// 					&& (selectedUnitsHandler.selectedUnits.find(path->GetOwner()->id) != selectedUnitsHandler.selectedUnits.end());
 		// 	if (printMoveInfo) {
@@ -1075,12 +1091,42 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 		nodeIndex++;
 		// LOG("%s: tgtNode=%d point (%f, %f, %f)", __func__
 		// 		, nodeId, point.x, point.y, point.z);
-		points.pop_front();
+	}
+	
+	uint32_t repathIndex = 0;
+	if (!haveFullPath) {
+		constexpr float MIN_REPATH_LENGTH = 500.f;
+		bool pathIsBigEnoughForRepath = (pathDist >= MIN_REPATH_LENGTH);
+
+		// This may result in a short path still not finding an index, but that's fine:
+		// it isn't supposed to be perfect. It is more a helper.
+		if (pathIsBigEnoughForRepath) {
+			float halfWay = pathDist * 0.5f;
+			float maxDist = pathDist - (MIN_REPATH_LENGTH/4);
+			float minDist = (MIN_REPATH_LENGTH/4);
+
+			for (auto it = points.rbegin(); it != points.rend(); ++it) {
+				TracePoint& curPoint = *it;
+
+				if ( (curPoint.nodeId & ONLY_NODE_ID_MASK) != 0 )
+					continue;
+				if (curPoint.dist > maxDist) // too close to end
+					continue;
+				if (curPoint.dist < minDist) // too close to beginning
+					break;
+				if (repathIndex != 0 && curPoint.dist < halfWay) // try to get point close to the middle.
+					break;
+
+				repathIndex = curPoint.index;
+			}
+		}
 	}
 
 	// set the first (0) and last (N - 1) waypoint
 	path->SetSourcePoint(fwd.srcPoint);
 	path->SetTargetPoint(fwd.tgtPoint);
+
+	path->SetRepathTriggerIndex(repathIndex);
 
 	assert(fwd.srcPoint != ZeroVector);
 	assert(fwd.tgtPoint != ZeroVector);
@@ -1370,6 +1416,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->SetHasFullPath(srcPath->IsFullPath());
 	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
 	dstPath->SetSearchTime(srcPath->GetSearchTime());
+	dstPath->SetRepathTriggerIndex(srcPath->GetRepathTriggerIndex());
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();

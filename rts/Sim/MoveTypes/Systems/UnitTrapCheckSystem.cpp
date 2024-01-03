@@ -100,4 +100,6 @@ void UnitTrapCheckSystem::Update() {
     view.each([](entt::entity entity){ Sim::registry.remove<UnitTrapCheck>(entity); });
 }
 
-void UnitTrapCheckSystem::Shutdown() {}
+void UnitTrapCheckSystem::Shutdown() {
+    // systemUtils.OnUpdate().disconnect<&UnitTrapCheckSystem::Update>();
+}

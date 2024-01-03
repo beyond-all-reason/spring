@@ -42,6 +42,7 @@
 #include "Components/RemoveDeadPaths.h"
 #include "Systems/PathSpeedModInfoSystem.h"
 #include "Systems/RemoveDeadPathsSystem.h"
+#include "Systems/RequeuePathsSystem.h"
 #include "Registry.h"
 
 #include <assert.h>
@@ -318,6 +319,7 @@ void QTPFS::PathManager::Load() {
 		InitNodeLayersThreaded(MAP_RECTANGLE);
 		PathSpeedModInfoSystem::Init();
 		RemoveDeadPathsSystem::Init();
+		RequeuePathsSystem::Init();
 
 		// NOTE:
 		//   should be sufficient in theory, because if either
@@ -853,6 +855,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		// inform the movement system that the path has been changed.
 		if (registry.all_of<PathUpdatedCounterIncrease>(pathEntity)) {
 			path->SetNumPathUpdates(path->GetNumPathUpdates() + 1);
+			path->SetNextPointIndex(0);
 			registry.remove<PathUpdatedCounterIncrease>(pathEntity);
 		}
 		registry.remove<PathIsTemp>(pathEntity);
@@ -1100,6 +1103,9 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	assert(!registry.all_of<IPath>(pathEntity));
 	IPath* newPath = &(registry.emplace<IPath>(pathEntity));
 
+	// Every path gets one. It gets changed in a multi-threaded section, so we can't add them on demand.
+	registry.emplace<PathRequeueSearch>(pathEntity, false);
+
 	entt::entity searchEntity = registry.create();
 	PathSearch* newSearch = &registry.emplace<PathSearch>(searchEntity, PATH_SEARCH_ASTAR);
 
@@ -1184,21 +1190,18 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	const CSolidObject* obj = oldPath->GetOwner();
 	const float3& pos = (obj != nullptr)? obj->pos: oldPath->GetSourcePoint();
 
-	const auto targetPoint = oldPath->GetTargetPoint();
-
 	RemovePathFromShared(pathEntity);
 	RemovePathFromPartialShared(pathEntity);
 
 	oldPath->SetHash(QTPFS::BAD_HASH);
-	oldPath->SetNextPointIndex(0);
+	// oldPath->SetNextPointIndex(0); - don't clear, will mess up activate units.
 	// oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
 	// start re-request from the current point
 	// along the path, not the original source
-	oldPath->AllocPoints(2);
+	// oldPath->AllocPoints(2); - don't clear, will mess up activate units.
 	oldPath->AllocNodes(0);
 	oldPath->SetSourcePoint(pos);
-	oldPath->SetTargetPoint(targetPoint);
 
 	newSearch->SetID(oldPath->GetID());
 
@@ -1470,6 +1473,14 @@ float3 QTPFS::PathManager::NextWayPoint(
 	} else {
 		livePath->SetNextPointIndex(nextPointIndex);
 	}
+
+	if (livePath->GetRepathTriggerIndex() > 0 && nextPointIndex >= livePath->GetRepathTriggerIndex()) {
+		// Request an update to the path.
+		assert(registry.all_of<PathRequeueSearch>(pathEntity));
+		registry.get<PathRequeueSearch>(pathEntity).value = true;
+		livePath->ClearGetRepathTriggerIndex();
+	}
+
 	return livePath->GetPoint(nextPointIndex);
 }
 

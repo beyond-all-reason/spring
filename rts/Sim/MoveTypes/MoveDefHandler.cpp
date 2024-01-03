@@ -405,7 +405,6 @@ bool MoveDef::DoRawSearch(
 	return retTestMove;
 }
 
-
 bool MoveDef::TestMoveSquareRange(
 	const CSolidObject* collider,
 	const float3 rangeMins,

@@ -137,12 +137,14 @@ namespace QTPFS {
 			const bool allowRawSearch
 		);
 
+	public:
 		unsigned int RequeueSearch(
 			IPath* oldPath,
 			const bool allowRawSearch,
 			const bool allowPartialSearch
 		);
 
+	private:
 		bool ExecuteSearch(
 			PathSearch* search,
 			NodeLayer& nodeLayer,

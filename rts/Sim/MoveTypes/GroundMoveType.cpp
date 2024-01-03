@@ -3194,7 +3194,6 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		// static objects are checked for in the whole footprint.
 		return unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
 				&& unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread); 
-				//&& unit->moveDef->TestMoveSquare(unit, pos, unit->speed, false, true, false);
 	};
 
 	auto isTerrainSquareOpen = [unit, thread](float3 pos) {
@@ -3203,7 +3202,6 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	auto isObjectsSquareOpen = [unit, tempNum, thread](float3 pos) {
 		return unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread);
-		//return unit->moveDef->TestMoveSquare(unit, pos, unit->speed, false, true, false);
 	};
 
 	// // Used to limit how much units are allowed to slide along walls. Helps getting around

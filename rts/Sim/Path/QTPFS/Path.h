@@ -53,6 +53,8 @@ namespace QTPFS {
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
+			repathAtPointIndex = other.repathAtPointIndex;
+
 			owner = other.owner;
 			searchTime = other.searchTime;
 			return *this;
@@ -79,6 +81,8 @@ namespace QTPFS {
 
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
+
+			repathAtPointIndex = other.repathAtPointIndex;
 
 			owner = other.owner;
 			searchTime = other.searchTime;
@@ -175,6 +179,7 @@ namespace QTPFS {
 			unsigned int start = std::min(index, NumPoints() - 1), end = NumPoints() - 1;
 			for (unsigned int i = start; i < end; ++i) { points[i] = points[i+1]; }
 			points.pop_back();
+			if (index < repathAtPointIndex) repathAtPointIndex--;
 		}
 
 		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint, int pointIdx) {
@@ -238,11 +243,18 @@ namespace QTPFS {
 
 		spring_time GetSearchTime() const { return searchTime; }
 
+		// Incomplete paths need to be rebuilt from time to time as the owner makes progress.
+		unsigned int GetRepathTriggerIndex() const { return repathAtPointIndex; }
+		void SetRepathTriggerIndex(unsigned int index) { repathAtPointIndex = index; }
+
+		void ClearGetRepathTriggerIndex() { repathAtPointIndex = 0; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
 
 		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
+		unsigned int repathAtPointIndex = -1; // minimum index of the waypoint to trigger a repath. -1 == off.
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
