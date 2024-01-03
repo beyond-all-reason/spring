@@ -18,7 +18,7 @@
 
 //CONFIG(bool, UseVBO).defaultValue(true).safemodeValue(false);
 CONFIG(bool, UseVBO).deprecated(true);
-CONFIG(bool, UsePBO).defaultValue(true).safemodeValue(false).headlessValue(false);
+CONFIG(bool, UsePBO).deprecated(true);
 
 
 /**
