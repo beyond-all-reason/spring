@@ -386,7 +386,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 	assert(fwd.srcSearchNode != nullptr);
 
-	fwdNodeSearchLimit = 2048;
+	// max nodes is split between forward and reverse search.
+	fwdNodeSearchLimit = modInfo.qtMaxNodesSearched>>1;
 
 	while (continueSearching) {
 		if (!(*fwd.openNodes).empty()) {
@@ -1139,15 +1140,15 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	
 	uint32_t repathIndex = 0;
 	if (!haveFullPath) {
-		constexpr float MIN_REPATH_LENGTH = 1000.f;
-		bool pathIsBigEnoughForRepath = (pathDist >= MIN_REPATH_LENGTH);
+		const float minRepathLength = modInfo.qtRefreshPathMinDist;
+		bool pathIsBigEnoughForRepath = (pathDist >= minRepathLength);
 
 		// This may result in a short path still not finding an index, but that's fine:
 		// it isn't supposed to be perfect. It is more a helper.
 		if (pathIsBigEnoughForRepath) {
 			float halfWay = pathDist * 0.5f;
-			float maxDist = pathDist - (MIN_REPATH_LENGTH/4);
-			float minDist = (MIN_REPATH_LENGTH/4);
+			float maxDist = pathDist - (minRepathLength/4);
+			float minDist = (minRepathLength/4);
 
 			for (auto it = points.rbegin(); it != points.rend(); ++it) {
 				TracePoint& curPoint = *it;

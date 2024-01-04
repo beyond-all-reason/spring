@@ -110,6 +110,8 @@ void CModInfo::ResetState()
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
 		pfHcostMult = 0.2f;
+		qtMaxNodesSearched = 4096;
+		qtRefreshPathMinDist = 1000.f;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
@@ -160,6 +162,8 @@ void CModInfo::Init(const std::string& modFileName)
 		pfRepathMaxRateInFrames = std::clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
 		pfHcostMult = std::clamp(system.GetFloat("pfHcostMult", pfHcostMult), 0.0f, 2.0f);
+		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 128);
+		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 

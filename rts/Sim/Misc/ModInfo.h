@@ -207,6 +207,18 @@ public:
 	/// 0.0 = no increase, 1.0 = increase to the mean move cost, 2.0 increase to max move cost.
 	float pfHcostMult;
 
+	/// Limits how many nodes the QTPFS pathing system is permitted to search. A smaller number
+	/// improves CPU performance, but a larger number will resolve longer paths better, without
+	/// needing to refresh the path.
+	int qtMaxNodesSearched;
+
+	/// Minimum size, in elmos, an incomplete path has to be to allow the path to be refreshed.
+	/// Once the path is smaller than this distance then the system assumes the path cannot be
+	/// improved further. A larger number reduces CPU usage, but also increses the chance that
+	/// a unit will become trapped in a complex terrain/base setup even if there's a route that
+	/// would bring the unit nearer to the goal.
+	float qtRefreshPathMinDist;
+
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 
