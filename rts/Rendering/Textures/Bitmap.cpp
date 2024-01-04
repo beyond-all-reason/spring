@@ -52,13 +52,13 @@ public:
 	virtual size_t AllocIdxRaw(size_t size) = 0;
 
 	uint8_t* Alloc(size_t size) {
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		return (AllocRaw(size));
 	}
 	virtual uint8_t* AllocRaw(size_t size) = 0;
 
 	void Free(uint8_t* mem, size_t size) {
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		FreeRaw(mem, size);
 	}
 	virtual void FreeRaw(uint8_t* mem, size_t size) = 0;
@@ -198,7 +198,7 @@ public:
 		if (size <= Size())
 			return;
 
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 
 		if (memArray.empty()) {
 			freeList.reserve(32);
@@ -219,7 +219,7 @@ public:
 		if (freeList.empty())
 			return false;
 
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		return (DefragRaw());
 	}
 
@@ -1206,7 +1206,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 
 	{
-		std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+		std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 		// do not preserve the image origin since IL does not
 		// vertically flip DDS images by default, unlike nv_dds
@@ -1353,7 +1353,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 	}
 
 	{
-		std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+		std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 		ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
 		ilEnable(IL_ORIGIN_SET);
@@ -1400,11 +1400,11 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 	if (GetMemSize() == 0)
 		return false;
 
-
-	std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
-
+	// operator= acquires ITexMemPool's mutex internally
 	CBitmap flippedCopy = *this;
 	flippedCopy.ReverseYAxis();
+
+	std::unique_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 	// clear any previous errors
 	while (ilGetError() != IL_NO_ERROR);
@@ -1429,8 +1429,6 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 
 	ilTexImage(xsize, ysize, 1, channels, Channels2Formats[channels], dataType, flippedCopy.GetRawMem());
 	assert(ilGetError() == IL_NO_ERROR);
-
-	flippedCopy = {};
 
 	if (dontSaveAlpha && (channels == 2 || channels == 4)) {
 		ilConvertImage(Channels2Formats[channels - 1], dataType);
@@ -1468,6 +1466,9 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 
 	ilDeleteImages(1, &imageID);
 	ilDisable(IL_ORIGIN_SET);
+
+	lck.unlock(); //unlock explicitly because Free(flippedCopy) is locking the same mutex
+
 	return success;
 }
 
@@ -1504,7 +1505,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 	if (GetMemSize() == 0 || channels != 4)
 		return false;
 
-	std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+	std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 	// seems IL_ORIGIN_SET only works in ilLoad and not in ilTexImage nor in ilSaveImage
 	// so we need to flip the image ourselves
