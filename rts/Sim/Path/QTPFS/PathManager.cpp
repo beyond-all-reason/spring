@@ -769,7 +769,7 @@ bool QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		assert(registry.all_of<IPath>(pathEntity));
 		IPath* path = &registry.get<IPath>(pathEntity);
 		assert(path->GetPathType() == pathType);
-		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetTargetPoint(), path->GetOwner());
+		search->Initialize(&nodeLayer, path->GetSourcePoint(), path->GetGoalPosition(), path->GetOwner());
 		path->SetHash(search->GetHash());
 		path->SetVirtualHash(search->GetPartialSearchHash());
 
@@ -1135,6 +1135,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newPath->SetOwner(object);
 	newPath->SetSourcePoint(sourcePoint.cClampInBounds());
 	newPath->SetTargetPoint(targetPoint.cClampInBounds());
+	newPath->SetGoalPosition(newPath->GetTargetPoint());
 	newPath->SetPathType(moveDef->pathType);
 
 	registry.emplace<PathIsTemp>(pathEntity);

@@ -9,6 +9,7 @@
 #include "Path.h"
 #include "PathCache.h"
 #include "NodeLayer.h"
+#include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/ModInfo.h"
 #include "System/Log/ILog.h"
@@ -59,6 +60,8 @@ void QTPFS::PathSearch::Initialize(
 
 	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds(); fwd.srcPoint.y = 0.f;
 	fwd.tgtPoint = targetPoint; fwd.tgtPoint.ClampInBounds(); fwd.tgtPoint.y = 0.f;
+
+	goalPos = fwd.tgtPoint;
 
 	assert(	fwd.srcPoint.x != 0.f || fwd.srcPoint.z != 0.f );
 
@@ -561,6 +564,12 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		// used to trace a bad path to give partial searches a chance of an early out
 		// in reverse searches.
 		bwd.tgtSearchNode = bwd.minSearchNode;
+
+		// Final position needs to be the closest point on the last quad to the goal.
+		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*fwd.tgtSearchNode, goalPos);
+	} else if (badGoal) {
+		// Starting nodw for the reverse search is the nearest node to the goalPos.
+		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
 	}
 	#endif
 
@@ -817,6 +826,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		path->AllocPoints(2);
 		path->SetSourcePoint({fwd.srcPoint.x, 0.f, fwd.srcPoint.z});
 		path->SetTargetPoint({fwd.tgtPoint.x, 0.f, fwd.tgtPoint.z});
+		path->SetGoalPosition(path->GetTargetPoint());
 		path->SetRepathTriggerIndex(0);
 	}
 
@@ -832,6 +842,40 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 
 	path->SetHasFullPath(haveFullPath);
 	path->SetHasPartialPath(havePartPath);
+}
+
+static void GetRectangleCollisionVolume(const QTPFS::SearchNode& node, CollisionVolume& v, float3& rm) {
+	float3 vScales;
+
+	// rectangle dimensions (WS)
+	vScales.x = ((node.xmax - node.xmin) * SQUARE_SIZE);
+	vScales.z = ((node.zmax - node.zmin) * SQUARE_SIZE);
+	vScales.y = 1.0f;
+
+	// rectangle mid-point (WS)
+	rm.x = ((node.xmax + node.xmin) * SQUARE_SIZE) >> 1;
+	rm.z = ((node.zmax + node.zmin) * SQUARE_SIZE) >> 1;
+	rm.y = 0.0f;
+
+	#define CV CollisionVolume
+	v.InitShape(vScales, ZeroVector, CV::COLVOL_TYPE_BOX, CV::COLVOL_HITTEST_CONT, CV::COLVOL_AXIS_Y);
+	#undef CV
+}
+
+float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& node, const float3& goalPos) const {
+	CollisionVolume rv;
+	CollisionQuery cq;
+	float3 rm;
+	GetRectangleCollisionVolume(node, rv, rm);
+
+	const float2& lastPoint2 = node.GetNeighborEdgeTransitionPoint();
+	const float3 lastPoint({lastPoint2.x, 0.f, lastPoint2.y});
+
+	bool collide = CCollisionHandler::IntersectBox(&rv, goalPos - rm, lastPoint - rm, &cq);
+
+	assert(collide);
+
+	return cq.GetHitPos() + rm;
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
@@ -1032,7 +1076,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 
 	// if source equals target, we need only two points
 	if (!points.empty()) {
-		path->AllocPoints(points.size() + 2 + (-nodesWithoutPoints));
+		path->AllocPoints(points.size() + (-nodesWithoutPoints) + 2);
 		path->AllocNodes(points.size());
 
 		path->SetBoundingBox(boundaryMins, boundaryMaxs);
@@ -1095,7 +1139,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	
 	uint32_t repathIndex = 0;
 	if (!haveFullPath) {
-		constexpr float MIN_REPATH_LENGTH = 500.f;
+		constexpr float MIN_REPATH_LENGTH = 1000.f;
 		bool pathIsBigEnoughForRepath = (pathDist >= MIN_REPATH_LENGTH);
 
 		// This may result in a short path still not finding an index, but that's fine:
@@ -1125,7 +1169,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 	// set the first (0) and last (N - 1) waypoint
 	path->SetSourcePoint(fwd.srcPoint);
 	path->SetTargetPoint(fwd.tgtPoint);
-
+	path->SetGoalPosition(goalPos);
 	path->SetRepathTriggerIndex(repathIndex);
 
 	assert(fwd.srcPoint != ZeroVector);
@@ -1405,7 +1449,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->CopyPoints(*srcPath);
 	dstPath->CopyNodes(*srcPath);
 	dstPath->SetSourcePoint(fwd.srcPoint);
-	dstPath->SetTargetPoint(fwd.tgtPoint);
+	dstPath->SetTargetPoint(srcPath->GetTargetPoint());
 	if (srcPath->IsBoundingBoxOverriden()) {
 		const float3& mins = srcPath->GetBoundingBoxMins();
 		const float3& maxs = srcPath->GetBoundingBoxMaxs();
@@ -1417,6 +1461,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
 	dstPath->SetSearchTime(srcPath->GetSearchTime());
 	dstPath->SetRepathTriggerIndex(srcPath->GetRepathTriggerIndex());
+	dstPath->SetGoalPosition(srcPath->GetGoalPosition());
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();

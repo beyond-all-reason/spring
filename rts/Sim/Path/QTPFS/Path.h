@@ -54,6 +54,7 @@ namespace QTPFS {
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
 			repathAtPointIndex = other.repathAtPointIndex;
+			goalPosition = other.goalPosition;
 
 			owner = other.owner;
 			searchTime = other.searchTime;
@@ -83,6 +84,7 @@ namespace QTPFS {
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
 			repathAtPointIndex = other.repathAtPointIndex;
+			goalPosition = other.goalPosition;
 
 			owner = other.owner;
 			searchTime = other.searchTime;
@@ -249,12 +251,15 @@ namespace QTPFS {
 
 		void ClearGetRepathTriggerIndex() { repathAtPointIndex = 0; }
 
+		float3 GetGoalPosition() const { return goalPosition; }
+		void SetGoalPosition(float3 point) { goalPosition = point; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
 
 		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
-		unsigned int repathAtPointIndex = -1; // minimum index of the waypoint to trigger a repath. -1 == off.
+		unsigned int repathAtPointIndex = 0; // minimum index of the waypoint to trigger a repath. -1 == off.
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
@@ -279,6 +284,9 @@ namespace QTPFS {
 		// corners of the bounding-box containing all our points
 		float3 boundingBoxMins;
 		float3 boundingBoxMaxs;
+
+		// Used for incomplete paths to allow repathing attempts to the real goal.
+		float3 goalPosition;
 
 		// object that requested this path (NULL if none)
 		const CSolidObject* owner = nullptr;

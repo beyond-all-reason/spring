@@ -2142,9 +2142,9 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		// bool unitIsBetweenWaypoints = (v0.dot(v1) <= -0.f);
 
 		// The last waypoint on a bad path will never pass a range check so don't try.
-		bool doRangeCheck = !pathManager->NextWayPointIsUnreachable(pathID);
+		//bool doRangeCheck = !pathManager->NextWayPointIsUnreachable(pathID);
 						// && !unitIsBetweenWaypoints;
-		if (doRangeCheck) {
+		//if (doRangeCheck) {
 			const float searchRadius = std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f);
 			const float3 targetPos = nwp;
 
@@ -2163,7 +2163,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 			if (!rangeTest)
 				return false;
-		}
+		//}
 	}
 
 	{
@@ -2202,7 +2202,7 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 			bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 				&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
 			if (printMoveInfo) {
-				LOG("%s setting next waypoint", __func__);
+				LOG("%s setting next waypoint (%d:%d)", __func__, owner->id, owner->moveDef->pathType);
 			}
 		}
 		#endif
@@ -2222,11 +2222,11 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		// Prevent delay repaths because the waypoints have been updated.
 		wantRepath = false;
 
-		lastWaypoint |= pathManager->CurrentWaypointIsUnreachable(pathID);
+		lastWaypoint |= (earlyCurrWayPoint.same(earlyNextWayPoint) && pathManager->CurrentWaypointIsUnreachable(pathID));
 		if (lastWaypoint) {
-			// incomplete path and last valid waypoint has been reached. The last waypoint is
-			// always the point that can't be reached.
-			ReRequestPath(false); //
+			// incomplete path and last valid waypoint has been reached.
+			// ReRequestPath(false);
+			pathingFailed = true;
 		}
 	}
 

@@ -147,6 +147,8 @@ namespace QTPFS {
 		void IterateNodes(unsigned int searchDir);
 		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
 
+		float3 FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& node, const float3& goalPos) const;
+
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path);
 		bool SmoothPathIter(IPath* path);
@@ -195,6 +197,7 @@ namespace QTPFS {
 		DirectionalSearchData directionalSearchData[2];
 
 		float2 netPoints[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
+		float3 goalPos;
 
 		float gDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 		float hDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
