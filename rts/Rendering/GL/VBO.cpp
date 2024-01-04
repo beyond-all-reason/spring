@@ -400,10 +400,10 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 			#endif
 			} break;
 		case GL_READ_WRITE:
-			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | mapUnsyncedBit;
+			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
 			break;
 		case GL_READ_ONLY:
-			access = GL_MAP_READ_BIT | mapUnsyncedBit;
+			access = GL_MAP_READ_BIT;
 			break;
 		default: break;
 	}
