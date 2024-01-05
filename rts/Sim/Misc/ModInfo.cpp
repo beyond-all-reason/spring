@@ -110,7 +110,7 @@ void CModInfo::ResetState()
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
 		pfHcostMult = 0.2f;
-		qtMaxNodesSearched = 4096;
+		qtMaxNodesSearched = 8192;
 		qtRefreshPathMinDist = 1000.f;
 
 		enableSmoothMesh = true;
