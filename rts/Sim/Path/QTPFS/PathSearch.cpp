@@ -551,7 +551,12 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		}
 	}
 
-	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode);
+	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode)
+				// Normally now, we would count this as a part path to avoid units smashing against
+				// walls because elsewhere the pathing cannot fail, but as units can be trapped then
+				// allow them to force their movement. The path manager forces paths incase the unit
+				// is trapped in a wreck or something.
+				|| (!nodeLayer->GetPoolNode(fwd.srcSearchNode->GetIndex())->AllSquaresImpassable());
 
 	#ifdef QTPFS_SUPPORT_PARTIAL_SEARCHES
 	// adjust the target-point if we only got a partial result

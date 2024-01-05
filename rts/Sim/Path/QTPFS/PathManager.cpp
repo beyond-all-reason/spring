@@ -1196,12 +1196,12 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	RemovePathFromPartialShared(pathEntity);
 
 	oldPath->SetHash(QTPFS::BAD_HASH);
-	// oldPath->SetNextPointIndex(0); - don't clear, will mess up activate units.
+	// oldPath->SetNextPointIndex(0); - don't clear, will mess up active units.
 	// oldPath->SetNumPathUpdates(oldPath->GetNumPathUpdates() + 1);
 
 	// start re-request from the current point
 	// along the path, not the original source
-	// oldPath->AllocPoints(2); - don't clear, will mess up activate units.
+	// oldPath->AllocPoints(2); - don't clear, will mess up active units.
 	oldPath->AllocNodes(0);
 	oldPath->SetSourcePoint(pos);
 
