@@ -741,10 +741,12 @@ float3 CPathManager::NextWayPoint(
 			// if found then a full path search is underway, so don't mess with it.
 			// Or an extension has been requested, but that doesn't need to be done twice in a row.
 			if (existingSearch == nullptr) {
+				// try to look further ahead for the start point.
+				float3 startPos = (!maxResPath.path.empty()) ? maxResPath.path.back() : callerPos;
 				entt::entity pathExtendEntity = registry.create();
 				registry.emplace<PathSearch>(pathExtendEntity
 						, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
-						, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
+						, owner->moveDef, startPos, multiPath->peDef.wsGoalPos, radius, pathID);
 				registry.emplace<PathExtension>(pathExtendEntity,
 					(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
 			}
