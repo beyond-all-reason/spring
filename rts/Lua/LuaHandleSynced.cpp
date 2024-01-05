@@ -92,6 +92,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 	//LUA_OPEN_LIB(L, luaopen_os);
 	//LUA_OPEN_LIB(L, luaopen_package);
 	//LUA_OPEN_LIB(L, luaopen_debug);
+	EnactDevMode();
 
 	// delete some dangerous functions
 	lua_pushnil(L); lua_setglobal(L, "dofile");
@@ -159,6 +160,20 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 	lua_settop(L, 0);
 	eventHandler.AddClient(this);
 	return true;
+}
+
+void CUnsyncedLuaHandle::EnactDevMode() const
+{
+	if (devMode) {
+		LUA_OPEN_LIB(L, luaopen_debug);
+		lua_getglobal(L, LUA_DBLIBNAME); {
+			//LuaPushNamedNil(L, "setupvalue"); //example
+		}
+		lua_pop(L, 1); // debug
+	}
+	else {
+		LUA_UNLOAD_LIB(L, LUA_DBLIBNAME);
+	}
 }
 
 
@@ -436,6 +451,7 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	//SPRING_LUA_OPEN_LIB(L, luaopen_os);
 	//SPRING_LUA_OPEN_LIB(L, luaopen_package);
 	//SPRING_LUA_OPEN_LIB(L, luaopen_debug);
+	EnactDevMode();
 
 	lua_getglobal(L, "next");
 	origNextRef = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -535,6 +551,19 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	return true;
 }
 
+void CSyncedLuaHandle::EnactDevMode() const
+{
+	if (devMode) {
+		SPRING_LUA_OPEN_LIB(L, luaopen_debug);
+		lua_getglobal(L, LUA_DBLIBNAME); {
+			//LuaPushNamedNil(L, "setupvalue"); //example
+		}
+		lua_pop(L, 1); // debug
+	}
+	else {
+		LUA_UNLOAD_LIB(L, LUA_DBLIBNAME);
+	}
+}
 
 //
 // Call-Ins

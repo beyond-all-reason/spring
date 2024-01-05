@@ -2141,6 +2141,23 @@ bool CLuaHandle::RecvLuaMsg(const string& msg, int playerID)
 
 /******************************************************************************/
 
+void CLuaHandle::SetDevMode(bool value)
+{
+	if (value == devMode)
+		return;
+
+	devMode = value;
+
+	for (const auto* lcd : LUAHANDLE_CONTEXTS) {
+		for (const auto* lc : *lcd) {
+			if (!lc || !lc->owner)
+				continue;
+
+			lc->owner->EnactDevMode();
+		}
+	}
+}
+
 void CLuaHandle::HandleLuaMsg(int playerID, int script, int mode, const std::vector<std::uint8_t>& data)
 {
 	std::string msg;
