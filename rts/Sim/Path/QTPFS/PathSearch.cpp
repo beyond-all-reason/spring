@@ -242,7 +242,9 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 void QTPFS::PathSearch::InitStartingSearchNodes() {
 	fwdPathConnected = false;
 	bwdPathConnected = false;
-	fwdNodeSearchLimit = std::numeric_limits<int>::max();
+
+	// max nodes is split between forward and reverse search.
+	fwdNodeSearchLimit = synced ? (modInfo.qtMaxNodesSearched>>1) : std::numeric_limits<int>::max();
 	searchThreadData->ResetQueue();
 
 	for (int i = 0; i < QTPFS::SEARCH_DIRS; ++i) {
@@ -385,9 +387,6 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	};
 
 	assert(fwd.srcSearchNode != nullptr);
-
-	// max nodes is split between forward and reverse search.
-	fwdNodeSearchLimit = modInfo.qtMaxNodesSearched>>1;
 
 	while (continueSearching) {
 		if (!(*fwd.openNodes).empty()) {

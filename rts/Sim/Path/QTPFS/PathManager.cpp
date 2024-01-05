@@ -1148,6 +1148,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	newSearch->rawPathCheck = allowRawSearch;
 	newSearch->allowPartialSearch = !allowRawSearch;
 	newSearch->initialized = false;
+	newSearch->synced = synced;
 
 	// LOG("%s: %s (%x) %d -> %d ", __func__
 	// 		, unit != nullptr ? unit->unitDef->name.c_str() : "non-unit"
@@ -1213,6 +1214,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->rawPathCheck = allowRawSearch;
 	newSearch->initialized = false;
 	newSearch->allowPartialSearch = allowPartialSearch;
+	newSearch->synced = oldPath->IsSynced();
 
 	registry.emplace_or_replace<PathIsTemp>(pathEntity);
 	registry.emplace_or_replace<PathSearchRef>(pathEntity, searchEntity);

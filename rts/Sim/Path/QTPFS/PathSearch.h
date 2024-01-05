@@ -222,6 +222,7 @@ namespace QTPFS {
 
 public:
 		bool rawPathCheck = false;
+		bool synced = false;
 		bool pathRequestWaiting = false;
 		bool doPartialSearch = false;
 		bool rejectPartialSearch = false;
