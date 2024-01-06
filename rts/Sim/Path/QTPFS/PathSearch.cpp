@@ -852,17 +852,20 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 	path->SetHasPartialPath(havePartPath);
 }
 
-static void GetRectangleCollisionVolume(const QTPFS::SearchNode& node, CollisionVolume& v, float3& rm) {
+void QTPFS::PathSearch::GetRectangleCollisionVolume(const QTPFS::SearchNode& snode, CollisionVolume& v, float3& rm) const {
 	float3 vScales;
+	
+	// We cannot guarantee that the searchNode has been loaded with the quad dimensions.
+	const INode* node = nodeLayer->GetPoolNode(snode.GetIndex());
 
 	// rectangle dimensions (WS)
-	vScales.x = ((node.xmax - node.xmin) * SQUARE_SIZE);
-	vScales.z = ((node.zmax - node.zmin) * SQUARE_SIZE);
+	vScales.x = ((node->xmax() - node->xmin()) * SQUARE_SIZE);
+	vScales.z = ((node->zmax() - node->zmin()) * SQUARE_SIZE);
 	vScales.y = 1.0f;
 
 	// rectangle mid-point (WS)
-	rm.x = ((node.xmax + node.xmin) * SQUARE_SIZE) >> 1;
-	rm.z = ((node.zmax + node.zmin) * SQUARE_SIZE) >> 1;
+	rm.x = ((node->xmax() + node->xmin()) * SQUARE_SIZE) >> 1;
+	rm.z = ((node->zmax() + node->zmin()) * SQUARE_SIZE) >> 1;
 	rm.y = 0.0f;
 
 	#define CV CollisionVolume

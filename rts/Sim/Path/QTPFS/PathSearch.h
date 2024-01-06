@@ -11,6 +11,8 @@
 
 #include "System/float3.h"
 
+struct CollisionVolume;
+
 namespace QTPFS {
 	struct IPath;
 	struct NodeLayer;
@@ -164,6 +166,8 @@ namespace QTPFS {
 		bool ExecuteRawSearch();
 
 		void SetForwardSearchLimit();
+
+		void GetRectangleCollisionVolume(const SearchNode& snode, CollisionVolume& v, float3& rm) const;
 
 		const PathHashType GenerateHash(const INode* srcNode, const INode* tgtNode) const;
 		const PathHashType GenerateHash2(uint32_t p1, uint32_t p2) const;
