@@ -2670,6 +2670,8 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 		if (isCalledFromSynced)
 			continue;
 
+		/* `unitHandler.GetUnitsByTeam` returns units in creation order,
+		 * which would reveal some extra information if passed unchanged. */
 		spring::random_shuffle(unitIDs.begin() + lastOfsset, unitIDs.end(), guRNG);
 		lastOfsset = unitIDs.size();
 	}
