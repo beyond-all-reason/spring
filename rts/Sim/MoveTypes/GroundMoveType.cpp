@@ -732,6 +732,19 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 
 void CGroundMoveType::SlowUpdate()
 {
+
+	// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+	// 	&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+	// if (printMoveInfo) {
+	// 	LOG("%s: unit selected=%d pathType=%d atEndOfPath=%d atGoal=%d currWayPoint=(%f,%f,%f) nextWayPoint=(%f,%f,%f) goal=(%f,%f,%f) pos=(%f,%f,%f)"
+	// 			, __func__
+	// 			, owner->id, owner->moveDef->pathType, int(atEndOfPath), int(atGoal)
+	// 			, float(currWayPoint.x), float(currWayPoint.y), float(currWayPoint.z)
+	// 			, float(nextWayPoint.x), float(nextWayPoint.y), float(nextWayPoint.z)
+	// 			, goalPos.x, goalPos.y, goalPos.z
+	// 			, owner->pos.x, owner->pos.y, owner->pos.z);
+	// }
+
 	if (owner->GetTransporter() != nullptr) {
 		if (progressState == Active)
 			StopEngine(false);

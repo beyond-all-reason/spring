@@ -1460,7 +1460,11 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->CopyPoints(*srcPath);
 	dstPath->CopyNodes(*srcPath);
 	dstPath->SetSourcePoint(fwd.srcPoint);
-	dstPath->SetTargetPoint(srcPath->GetTargetPoint());
+	if (srcPath->IsFullPath())
+		dstPath->SetTargetPoint(fwd.tgtPoint);
+	else
+		dstPath->SetTargetPoint(srcPath->GetTargetPoint());
+
 	if (srcPath->IsBoundingBoxOverriden()) {
 		const float3& mins = srcPath->GetBoundingBoxMins();
 		const float3& maxs = srcPath->GetBoundingBoxMaxs();
@@ -1472,7 +1476,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
 	dstPath->SetSearchTime(srcPath->GetSearchTime());
 	dstPath->SetRepathTriggerIndex(srcPath->GetRepathTriggerIndex());
-	dstPath->SetGoalPosition(srcPath->GetGoalPosition());
+	dstPath->SetGoalPosition(fwd.tgtPoint);
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();
