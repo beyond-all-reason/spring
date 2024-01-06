@@ -721,6 +721,9 @@ float3 CPathManager::NextWayPoint(
 	// position, then the query will produce incorrect results.
 	multiPath->peDef.wsStartPos = callerPos;
 
+	// check whether the max-res path needs extending through
+	// recursive refinement of its lower-resolution segments
+	// if so, check if the med-res path also needs extending
 	if (extendMaxResPath && (!synced)) {
 		assert(!ThreadPool::inMultiThreadedSection);
 		if (extendMedResPath)
