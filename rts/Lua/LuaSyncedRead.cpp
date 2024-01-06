@@ -2653,9 +2653,9 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 	// sort the ID's so duplicates can be skipped
 	spring::VectorSortUnique(gtuObjectIDs);
 
-	lua_createtable(L, 0, 0);
-
-	unsigned int unitCount = 1;
+	std::vector<int> unitIDs;
+	size_t lastOfsset = 0;
+	bool isCalledFromSynced = CLuaHandle::GetHandleSynced(L);
 
 	for (const int unitDefID: gtuObjectIDs) {
 		for (const CUnit* unit: unitHandler.GetUnitsByTeam(teamID)) {
@@ -2663,10 +2663,22 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 				continue;
 
 			if (unit->unitDef->id == unitDefID || (!allied && unit->unitDef->decoyDef && unit->unitDef->decoyDef->id == unitDefID)) {
-				lua_pushnumber(L, unit->id);
-				lua_rawseti(L, -2, unitCount++);
+				unitIDs.emplace_back(unit->id);
 			}
 		}
+
+		if (isCalledFromSynced)
+			continue;
+
+		spring::random_shuffle(unitIDs.begin() + lastOfsset, unitIDs.end(), guRNG);
+		lastOfsset = unitIDs.size();
+	}
+
+	lua_createtable(L, unitIDs.size(), 0);
+
+	for (int i = 0; i < unitIDs.size(); ++i) {
+		lua_pushnumber(L, unitIDs[i]);
+		lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
