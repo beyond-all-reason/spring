@@ -112,12 +112,13 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 
 	if (tgtNode->AllSquaresImpassable()) {
 		// find nearest acceptable node because this will otherwise trigger a full walk of every pathable node.
+		int searchWidth = std::max(int(goalDistance)/SQUARE_SIZE, 16);
 		INode* altTgtNode = nodeLayer->GetNearestNodeInArea
 			( SRectangle
-					( std::max(int(tgtNode->xmin()) - 16, 0)
-					, std::max(int(tgtNode->zmin()) - 16, 0)
-					, std::min(int(tgtNode->xmax()) + 16, mapDims.mapx)
-					, std::min(int(tgtNode->zmax()) + 16, mapDims.mapy)
+					( std::max(int(tgtNode->xmin()) - searchWidth, 0)
+					, std::max(int(tgtNode->zmin()) - searchWidth, 0)
+					, std::min(int(tgtNode->xmax()) + searchWidth, mapDims.mapx)
+					, std::min(int(tgtNode->zmax()) + searchWidth, mapDims.mapy)
 					)
 			, int2(fwd.tgtPoint.x / SQUARE_SIZE, fwd.tgtPoint.z / SQUARE_SIZE)
 			, searchThreadData->tmpNodesStore
@@ -1170,6 +1171,9 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				if (curPoint.dist < minDist) // too close to beginning
 					break;
 				if (repathIndex != 0 && curPoint.dist < halfWay) // try to get point close to the middle.
+					break;
+				// prevent a repath being triggered immediately when the first two points are taken immediately.
+				if (curPoint.index <= 2)
 					break;
 
 				repathIndex = curPoint.index;
