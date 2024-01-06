@@ -329,8 +329,11 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/SQUARE_SIZE;
 	}
 
-	const float interp = std::clamp(dist / 1000.f, 0.f, 1.f);
-	fwdNodeSearchLimit = mix(64, 1024, interp);
+	int limit = modInfo.qtMaxNodesSearched>>1;
+	float maxDist = modInfo.qtMaxNodesSearched;
+
+	const float interp = std::clamp(dist / maxDist, 0.f, 1.f);
+	fwdNodeSearchLimit = mix(128, limit, interp);
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {
