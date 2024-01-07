@@ -311,6 +311,11 @@ bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
 		|| (curSearchNode.GetPathCost(NODE_PATH_COST_H) != std::numeric_limits<float>::infinity());
 }
 
+static float CircularEaseOut(float t) {
+	// Only using 0-1 range, the sqrt is too intense early on.
+	return /*math::sqrt(*/ 1 - (t-1)*(t-1); //);
+}
+
 void QTPFS::PathSearch::SetForwardSearchLimit() {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
@@ -330,11 +335,13 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/SQUARE_SIZE;
 	}
 
-	int limit = modInfo.qtMaxNodesSearched>>1;
-	float maxDist = modInfo.qtMaxNodesSearched;
+	constexpr int minNodesSearched = 256;
+
+	const int limit = modInfo.qtMaxNodesSearched>>1;
+	const float maxDist = modInfo.qtMaxNodesSearched;
 
 	const float interp = std::clamp(dist / maxDist, 0.f, 1.f);
-	fwdNodeSearchLimit = mix(128, limit, interp);
+	fwdNodeSearchLimit = std::max(minNodesSearched, int(limit * CircularEaseOut(interp)));
 }
 
 bool QTPFS::PathSearch::ExecutePathSearch() {

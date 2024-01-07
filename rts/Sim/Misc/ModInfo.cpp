@@ -162,7 +162,7 @@ void CModInfo::Init(const std::string& modFileName)
 		pfRepathMaxRateInFrames = std::clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
 		pfHcostMult = std::clamp(system.GetFloat("pfHcostMult", pfHcostMult), 0.0f, 2.0f);
-		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 128);
+		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 1024);
 		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
