@@ -820,7 +820,7 @@ void QTPFS::PathManager::ReadyQueuedSearches() {
 	{
 		auto pathView = registry.view<PathSearch>();
 
-		// Any requests that cannot be processed should be removed. We can't do that with ther r*
+		// Any requests that cannot be processed should be removed. We can't do that with the r*
 		// iterators becasue that will break them.
 		std::for_each(pathView.begin(), pathView.end(), [this](entt::entity entity){
 			if (!registry.all_of<ProcessPath>(entity))
@@ -1221,7 +1221,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 
 	assert(	oldPath->GetSourcePoint().x != 0.f || oldPath->GetSourcePoint().z != 0.f );
 
-	// LOG("%s: [%d] (%f,%f) -> (%f,%f)", __func__, oldPath->GetPathType()
+	// LOG("%s: [p%x:s%x] (%f,%f) -> (%f,%f)", __func__, oldPath->GetID(), entt::to_integral(searchEntity)
 	// 		, pos.x, pos.z, targetPoint.x, targetPoint.z);
 
 	return (oldPath->GetID());
