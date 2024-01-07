@@ -313,7 +313,7 @@ bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
 
 static float CircularEaseOut(float t) {
 	// Only using 0-1 range, the sqrt is too intense early on.
-	return /*math::sqrt(*/ 1 - (t-1)*(t-1); //);
+	return /*math::sqrt(*/ 1 - Square(t-1); //);
 }
 
 void QTPFS::PathSearch::SetForwardSearchLimit() {
