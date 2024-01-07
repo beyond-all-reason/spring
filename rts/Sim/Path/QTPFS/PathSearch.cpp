@@ -329,10 +329,10 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	float dist = 0.f;
 
 	if (hCostMult != 0.f) {
-		dist = bwd.minSearchNode->GetPathCost(NODE_PATH_COST_H) / (hCostMult * SQUARE_SIZE);
+		dist = bwd.minSearchNode->GetPathCost(NODE_PATH_COST_H) / hCostMult;
 	}
 	else {
-		dist = fwd.tgtPoint.distance2D(fwd.srcPoint)/SQUARE_SIZE;
+		dist = fwd.tgtPoint.distance2D(fwd.srcPoint);
 	}
 
 	constexpr int minNodesSearched = 256;
