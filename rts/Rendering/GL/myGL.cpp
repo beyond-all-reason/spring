@@ -347,7 +347,7 @@ void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
 
 void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
 {
-	if (levels < 0)
+	if (levels <= 0)
 		levels = std::floor(math::log2(static_cast<float>(argmax(width, height)))) + 1;
 
 	if (GLEW_ARB_texture_storage) {
@@ -371,7 +371,7 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 
 void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
 {
-	if (levels < 0)
+	if (levels <= 0)
 		levels = std::floor(math::log2(static_cast<float>(argmax(width, height, depth)))) + 1;
 
 	if (GLEW_ARB_texture_storage) {

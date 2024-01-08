@@ -356,6 +356,7 @@ bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, 
 	glBlitFramebufferEXT(srcRect[0], srcRect[1], srcRect[2], srcRect[3], dstRect[0], dstRect[1], dstRect[2], dstRect[3], mask, filter);
 
 	// required call
+	// Calling glBindFramebuffer with target set to GL_FRAMEBUFFER binds framebuffer to both the read and draw framebuffer targets.
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
 
 	return true;
