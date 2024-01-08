@@ -111,7 +111,7 @@ void CModInfo::ResetState()
 		pfRawMoveSpeedThreshold = 0.f;
 		pfHcostMult = 0.2f;
 		qtMaxNodesSearched = 8192;
-		qtRefreshPathMinDist = 1000.f;
+		qtRefreshPathMinDist = 2000.f;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
