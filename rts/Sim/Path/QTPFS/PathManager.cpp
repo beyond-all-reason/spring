@@ -507,6 +507,9 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 		for (int x = r.x1; x < r.x2; x += rootSize) {
 			int idx = nl.AllocPoolNode(nullptr, -1, x, z, x + rootSize, z + rootSize);
 
+			// Keep the counters balanced.
+			nl.IncreaseOpenNodeCounter();
+
 			// LOG("%s: %d root node [%d,%d:%d,%d] allocated.", __func__
 			// 		, idx, x, z, x + rootSize, z + rootSize);
 
@@ -515,6 +518,8 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 		}
 		zRootNodes++;
 	}
+
+	nl.SetNumLeafNodes(numRootCount);
 	
 	// Root Mask is the part of the node number reserved for root nodes.
 	// This limits the maximum number of levels of nodes we can create unique, position ids for.
@@ -611,6 +616,12 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 		auto& nodeLayer = nodeLayers[layerNum];
 
 		containingNode->PreTesselate(nodeLayers[layerNum], re, ur, 0, &updateThreadData[currentThread]);
+		#ifndef NDEBUG
+		{
+			auto& nl = nodeLayers[layerNum];
+			assert(nl.GetNumOpenNodes() + nl.GetNumClosedNodes() == nl.GetNumLeafNodes());
+		}
+		#endif
 
 		pathCache.SetLayerPathCount(layerNum, INITIAL_PATH_RESERVE);
 		pathCache.MarkDeadPaths(re, layerNum);

@@ -106,6 +106,15 @@ namespace QTPFS {
 			curNode->DeactivateNode();
 		}
 
+		void DecreaseOpenNodeCounter() { assert(numOpenNodes > 0); numOpenNodes -= (numOpenNodes > 0); }
+		void DecreaseClosedNodeCounter() { assert(numClosedNodes > 0); numClosedNodes -= (numClosedNodes > 0); }
+
+		void IncreaseOpenNodeCounter() { numOpenNodes++; }
+		void IncreaseClosedNodeCounter() { numClosedNodes++; }
+
+		unsigned int GetNumOpenNodes() { return numOpenNodes; }
+		unsigned int GetNumClosedNodes() { return numClosedNodes; }
+
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
@@ -196,6 +205,8 @@ private:
 		unsigned int layerNumber = 0;
 		unsigned int numLeafNodes = 0;
 		unsigned int updateCounter = 0;
+		unsigned int numOpenNodes = 0;
+		unsigned int numClosedNodes = 0;
 
 		int32_t maxNodesAlloced = 0;
 		int32_t numRootNodes = 0;

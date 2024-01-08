@@ -316,14 +316,27 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	neighbours.clear();
 	// netpoints.clear();
 
+	if (AllSquaresImpassable()) {
+		nl.DecreaseClosedNodeCounter();
+	} else {
+		nl.DecreaseOpenNodeCounter();
+	}
+
 	nl.SetNumLeafNodes(nl.GetNumLeafNodes() + (4 - 1));
 	assert(!IsLeaf());
 	return true;
 }
 
 bool QTPFS::QTNode::Merge(NodeLayer& nl) {
-	if (IsLeaf())
+	if (IsLeaf()) {
+		if (AllSquaresImpassable()) {
+			nl.DecreaseClosedNodeCounter();
+		} else {
+			nl.DecreaseOpenNodeCounter();
+		}
+
 		return false;
+	}
 
 	neighbours.clear();
 	// netpoints.clear();
@@ -479,7 +492,7 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 
 bool QTPFS::QTNode::UpdateMoveCost(
 	const UpdateThreadData* threadData,
-	const NodeLayer& nl,
+	NodeLayer& nl,
 	const SRectangle& r,
 	unsigned int& numNewBinSquares,
 	unsigned int& numDifBinSquares,
@@ -559,6 +572,12 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		} else {
 			moveCostAvg = QTPFS_POSITIVE_INFINITY;
 		}
+	}
+
+	if (AllSquaresImpassable()) {
+		nl.IncreaseClosedNodeCounter();
+	} else {
+		nl.IncreaseOpenNodeCounter();
 	}
 
 	// Impassable squares don't impact search performance, but the larger they are the bigger the
