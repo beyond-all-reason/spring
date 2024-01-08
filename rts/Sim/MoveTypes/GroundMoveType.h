@@ -208,6 +208,7 @@ private:
 
 	float3 earlyCurrWayPoint;
 	float3 earlyNextWayPoint;
+	float3 escapeWaypoint;
 
 	float3 waypointDir;
 	float3 flatFrontDir;

@@ -95,6 +95,8 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 #define MEMBER_CHARPTR_HASH(memberName) spring::LiteHash(memberName, strlen(memberName),     0)
 #define MEMBER_LITERAL_HASH(memberName) spring::LiteHash(memberName, sizeof(memberName) - 1, 0)
 
+constexpr float3 ESCAPE_WAYPOINT_OFF({0.f, -1.f, 0.f});
+
 CR_BIND_DERIVED(CGroundMoveType, AMoveType, (nullptr))
 CR_REG_METADATA(CGroundMoveType, (
 	CR_IGNORED(pathController),
@@ -455,6 +457,7 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	currWayPoint(ZeroVector),
 	nextWayPoint(ZeroVector),
+	escapeWaypoint(ESCAPE_WAYPOINT_OFF),
 
 	flatFrontDir(FwdVector),
 	lastAvoidanceDir(ZeroVector),
@@ -2077,8 +2080,10 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 	float cwpDistSq = cwp.SqDistance2D(pos);
 	const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
-	if (!allowSkip) {
-
+	if (allowSkip) {
+		// getting this close to a waypoint come mean we are on a tight corner.
+		escapeWaypoint = cwp;
+	} else {
 		const bool skipRequested = (earlyCurrWayPoint.y == -2.0f || earlyNextWayPoint.y == -2.0f);
 		if (!skipRequested) {
 			// perform a turn-radius check: if the waypoint lies outside
@@ -2351,6 +2356,7 @@ void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 	currentSpeed *= (1 - hardStop);
 	wantedSpeed = 0.0f;
 	limitSpeedForTurning = 0;
+	escapeWaypoint = ESCAPE_WAYPOINT_OFF;
 	bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
 }
 
@@ -3300,7 +3306,21 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 
 	if (!moveRequest.same(ZeroVector)) {
 		float3 resultantVel;
-		UpdatePos(owner, moveRequest, resultantVel, -1.f, 0);
+		bool limitDisplacment = true;
+		float maxDisplacementSq = -1.f;
+
+		if (escapeWaypoint.y != -1.f) {
+			// If we need to make an effort to get away/around a waypoint then
+			// we release the speed limit while we are close to it.
+			limitDisplacment = (escapeWaypoint.distance2D(owner->pos) > SQUARE_SIZE);
+			if (limitDisplacment)
+				escapeWaypoint = ESCAPE_WAYPOINT_OFF;
+		}
+		if (limitDisplacment) {
+			maxDisplacementSq = Square(std::min(maxSpeed*0.5f, float(SQUARE_SIZE)));
+		}
+
+		UpdatePos(owner, moveRequest, resultantVel, maxDisplacementSq, 0);
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
