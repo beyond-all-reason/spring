@@ -103,7 +103,9 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 
 	badGoal = false;
 
-	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumLeafNodes());
+	// add 2 just in case the start and end nodes are closed. They can escape those nodes and check
+	// all the open nodes. No more is required because nodes don't link themselves to closed nodes.
+	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumOpenNodes() + 2);
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
