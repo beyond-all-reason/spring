@@ -212,6 +212,11 @@ public:
 	/// needing to refresh the path.
 	int qtMaxNodesSearched;
 
+	/// Limits how many nodes the QTPFS pathing system is permitted to search, like
+	/// qtMaxNodesSearched, except that it calculated based off a relative to walkable nodes
+	/// in the map. The larger of this and qtMaxNodesSearched will be used.
+	float qtMaxNodesSearchedRelativeToMapOpenNodes;
+
 	/// Minimum size, in elmos, an incomplete path has to be to allow the path to be refreshed.
 	/// Once the path is smaller than this distance then the system assumes the path cannot be
 	/// improved further. A larger number reduces CPU usage, but also increses the chance that

@@ -112,6 +112,7 @@ void CModInfo::ResetState()
 		pfHcostMult = 0.2f;
 		qtMaxNodesSearched = 8192;
 		qtRefreshPathMinDist = 2000.f;
+		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
@@ -164,6 +165,7 @@ void CModInfo::Init(const std::string& modFileName)
 		pfHcostMult = std::clamp(system.GetFloat("pfHcostMult", pfHcostMult), 0.0f, 2.0f);
 		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 1024);
 		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
+		qtMaxNodesSearchedRelativeToMapOpenNodes = std::max(system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes), 0.0f);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 
