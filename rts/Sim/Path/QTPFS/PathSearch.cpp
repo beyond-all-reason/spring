@@ -555,7 +555,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			}
 		} else {
 			// if the partial path could not connect the reverse path, then we need to reject.
-			if (fwdPathConnected && !bwdPathConnected) {
+			if (fwdPathConnected && !bwdPathConnected && !expectIncompletePartialSearch) {
 				haveFullPath = havePartPath = false;
 				rejectPartialSearch = true;
 				// LOG("%s: rejecting partial path 2 (search %x)", __func__, this->GetID());
