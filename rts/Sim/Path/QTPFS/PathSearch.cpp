@@ -247,7 +247,15 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 	bwdPathConnected = false;
 
 	// max nodes is split between forward and reverse search.
-	fwdNodeSearchLimit = synced ? (modInfo.qtMaxNodesSearched>>1) : std::numeric_limits<int>::max();
+	if (synced){
+		int limitedBasedOnMap = nodeLayer->GetNumOpenNodes() * modInfo.qtMaxNodesSearchedRelativeToMapOpenNodes;
+		fwdNodeSearchLimit = std::max(modInfo.qtMaxNodesSearched>>1, limitedBasedOnMap>>1);
+		// LOG("%s: Choosing fwdNodeSearchLimit as %d from (%d vs %d)", __func__
+		// 		, fwdNodeSearchLimit, modInfo.qtMaxNodesSearched>>1, limitedBasedOnMap>>1);
+	} else {
+		fwdNodeSearchLimit = std::numeric_limits<int>::max();
+	}
+
 	searchThreadData->ResetQueue();
 
 	for (int i = 0; i < QTPFS::SEARCH_DIRS; ++i) {
