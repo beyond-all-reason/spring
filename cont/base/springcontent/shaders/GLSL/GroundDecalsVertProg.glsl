@@ -19,6 +19,7 @@ out vec4 vuvMain;
 out vec4 vuvNorm;
 out vec4 midPoint;
 out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
+out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
 noperspective out vec2 screenUV;
 
 #define posTL vPosT.xy
@@ -94,9 +95,10 @@ vec3 GetFragmentNormal(vec2 wxz) {
 	return normal;
 }
 
-mat2 GetRotMat2D(float a){
-	float ca = cos(a);
-	float sa = sin(a);
+mat2 GetRotMat2D(){
+	//return mat2(1.0);
+	float ca = misc2.y;
+	float sa = misc2.x;
     return mat2(ca, -sa,
                 sa,  ca);
 }
@@ -161,7 +163,9 @@ void main() {
 
 	vec3 worldPos = vec3(0.0);
 
-	mat2 rotMat = GetRotMat2D(info.z);
+	misc2.x = sin(info.z);
+	misc2.y = cos(info.z);
+	mat2 rotMat = GetRotMat2D();
 
 	vPosT = posT;
 	vPosB = posB;

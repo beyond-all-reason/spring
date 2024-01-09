@@ -30,7 +30,9 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
+#include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
@@ -89,7 +91,7 @@ CGroundDecalHandler::~CGroundDecalHandler()
 
 static auto LoadTexture(const std::string& name, bool mainTex)
 {
-	std::string fileName = name;
+	std::string fileName = StringToLower(name);
 
 	if (FileSystem::GetExtension(fileName).empty())
 		fileName += ".bmp";
@@ -189,17 +191,21 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 	buildingDecalTextures.AddTexBlank("%FB_MAIN%", 32, 32, SColor(255,   0,   0, 255));
 	buildingDecalTextures.AddTexBlank("%FB_NORM%", 32, 32, SColor(128, 128, 255, 128));
 
-	for (const UnitDef& unitDef : unitDefHandler->GetUnitDefsVec()) {
-		const SolidObjectDecalDef& decalDef = unitDef.decalDef;
+	auto ProcessDefs = [this](const auto& defsVector) {
+		for (const SolidObjectDef& soDef : defsVector) {
+			const SolidObjectDecalDef& decalDef = soDef.decalDef;
 
-		if (!decalDef.useGroundDecal)
-			continue;
-		if (buildingDecalTextures.TextureExists(decalDef.groundDecalTypeName))
-			continue;
+			if (!decalDef.useGroundDecal)
+				continue;
+			if (buildingDecalTextures.TextureExists(decalDef.groundDecalTypeName))
+				continue;
 
-		AddTexToCollection(                   (decalDef.groundDecalTypeName), true );
-		AddTexToCollection(GetExtraTextureName(decalDef.groundDecalTypeName), false);
-	}
+			AddTexToCollection(                   (decalDef.groundDecalTypeName), true );
+			AddTexToCollection(GetExtraTextureName(decalDef.groundDecalTypeName), false);
+		}
+	};
+	ProcessDefs(featureDefHandler->GetFeatureDefsVec());
+	ProcessDefs(unitDefHandler->GetUnitDefsVec());
 }
 
 
@@ -353,7 +359,7 @@ void CGroundDecalHandler::LoadDecalShaders() {
 	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
 
-	decalShader->SetUniform("curAdjustedFrame", gs->frameNum + globalRendering->timeOffset);
+	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	const auto& identityMat = CMatrix44f::Identity();
 	decalShader->SetUniformMatrix4x4("shadowMatrix", false, &identityMat.m[0]);
 
@@ -617,7 +623,7 @@ void CGroundDecalHandler::Draw()
 
 	decalShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
 	decalShader->Enable();
-	decalShader->SetUniform("curAdjustedFrame", gs->frameNum + globalRendering->timeOffset);
+	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
 
@@ -635,7 +641,7 @@ void CGroundDecalHandler::Draw()
 
 		vaoPerm.Bind();
 		for (size_t i = 1; i < permanentDecals.size(); ++i) {
-			const auto permanentDecal = permanentDecals[i];
+			const auto& permanentDecal = permanentDecals[i];
 			if (permanentDecal.texID0 == texID0 && permanentDecal.texID1 == texID1) {
 				numInstance += 1;
 				continue;
@@ -770,7 +776,12 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 	});
 
 	if (pdIt != permanentDecals.end()) {
-		pdIt->alpha = 0.0f;
+		const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+
+		pdIt->alphaFalloff = object->GetDef()->decalDef.groundDecalDecaySpeed / GAME_SPEED;
+		pdIt->createFrameMin = createFrame;
+		pdIt->createFrameMax = createFrame;
+
 		decalOwners.erase(object);
 		permNeedsUpdate = true;
 		return;

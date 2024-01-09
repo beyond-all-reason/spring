@@ -26,6 +26,7 @@ in vec4 vuvMain;
 in vec4 vuvNorm;
 in vec4 midPoint;
 in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
+in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
 noperspective in vec2 screenUV;
 
 out vec4 fragColor;
@@ -134,6 +135,44 @@ vec4 GetWorldPos(vec2 texCoord, float sampledDepth) {
 	return pos;
 }
 
+vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
+	#define px (p.x)
+	#define py (p.y)
+	#define pz (p.z)
+
+	#define yx (newUpDir.x)
+	#define yy (newUpDir.y)
+	#define yz (newUpDir.z)
+
+	#define nx (rotAxis.x)
+	#define ny (rotAxis.y)
+	#define nz (rotAxis.z)
+
+	vec3 cm = vec3(
+		yy,
+		sqrt(yx * yx + yz * yz),
+		(nx * px + ny * py + nz * pz)* (1.0 - yy)
+	);
+
+	return vec3(
+		dot(cm, vec3(px, (ny * pz - nz * py), nx)),
+		dot(cm, vec3(py, (nz * px - nx * pz), ny)),
+		dot(cm, vec3(pz, (nx * py - ny * px), nz))
+	);
+
+	#undef px
+	#undef py
+	#undef pz
+
+	#undef yx
+	#undef yy
+	#undef yz
+
+	#undef nx
+	#undef ny
+	#undef nz
+}
+
 const vec3 all0 = vec3(0.0);
 const vec3 all1 = vec3(1.0);
 void main() {
@@ -221,24 +260,19 @@ void main() {
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
-	vec3 wp_dx = dFdx(worldPos.xyz);
-	vec3 wp_dy = dFdy(worldPos.xyz);
-	vec2 uv_dx = dFdx(uv.xy);
-	vec2 uv_dy = dFdy(uv.xy);
+	vec3 T = vec3(misc2.y, 0.0, misc2.x); //tangent if N was (0,1,0)
 
-	vec3 T = -normalize(wp_dx * uv_dy.t - wp_dy * uv_dx.t);
-	//vec3 B = normalize( -wp_dx * uv_dy.s + wp_dy * uv_dx.s );
+	if (1.0 - N.y > 0.01) {
+		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
+		vec3 rotAxis = normalize(vec3(N.z, 0.0, -N.x));
+		T = RotateByNormalVector(T, N, rotAxis);
+	}
+
 	vec3 B = cross(N, T);
-
-	//vec3 T = normalize(cross(N, vec3(-1.0, 0.0, 0.0)));
-	//vec3 T = normalize();
-
-	//vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 
 	//vec3 decalNormal = normalize(mix(N, normalize(TBN * NORM2SNORM(normVal.xyz)), alpha));
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
-	//decalNormal = N;
 
 	fragColor.rgb = mainCol.rgb * (max(dot(sunDir, decalNormal), 0.0) + groundAmbientColor.rgb) * GetShadowColor(worldPos.xyz);
 	fragColor.rgb += BlackBody(normVal.w * t) * glow;
@@ -252,41 +286,21 @@ void main() {
 		fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
 	}
 
+	//fragColor = vec4(relUV.yyy, 1.0);
 
 	//fragColor.rbg = vec3(mainCol.aaa);
 	//fragColor.a = 1.0;
 	//fragColor = mainCol;
 
-	//fragColor = vec4(decalNormal, 1.0);
+	//fragColor = vec4(decalNormal.zzz, 1.0);
+	//fragColor = vec4(decalNormal.xxx, 1.0);
+	//fragColor = vec4(NORM2SNORM(normVal.xyz).xxx, 1.0);
 	//fragColor = vec4(N, 1.0);
-
+	//fragColor = vec4(T, 1.0);
 
 	//fragColor = vec4(heightCol, 1);
 	//fragColor = vec4(alpha, alpha, alpha, 1.0);
 	//fragColor = vec4(uv.x, uv.x, uv.x, 1.0);
 	//float x = mod(uv.x * misc.w / misc.z * 1.0, (uvBL.x + uvTL.x) * 0.5);
 	//fragColor = vec4(x, x, x, 1.0);
-	/*
-	vec4 vertexShadowPos = shadowMatrix * vertexPos;
-	vertexShadowPos.xy += vec2(0.5);
-
-	float shadowCoeff = mix(1.0, shadow2DProj(shadowTex, vertexShadowPos).r, shadowDensity);
-
-	vec4 shadeInt;
-	vec4 decalInt;
-	vec4 shadeCol;
-
-	#if (HAVE_SHADING_TEX == 1)
-	shadeInt = texture2D(shadeTex, gl_TexCoord[1].st);
-	#else
-	shadeInt = vec4(1.0, 1.0, 1.0, 1.0);
-	#endif
-
-	decalInt = texture2D(decalTex, gl_TexCoord[0].st);
-	shadeCol = mix(groundAmbientColor, shadeInt, shadowCoeff * shadeInt.a);
-
-	gl_FragColor = decalInt * shadeCol;
-	gl_FragColor.a = decalInt.a * gl_Color.a;
-	*/
-	//fragColor = vec4(0.25, 0.25, 0.25, 1.0);
 }
