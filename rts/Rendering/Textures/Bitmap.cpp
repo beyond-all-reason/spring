@@ -1094,7 +1094,7 @@ uint32_t CBitmap::GetDataTypeSize(uint32_t glType)
 
 int32_t CBitmap::GetExtFmt(uint32_t ch)
 {
-	constexpr std::array<uint32_t, 5> extFormats = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
+	static constexpr std::array extFormats = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
 	return extFormats[ch];
 }
 
