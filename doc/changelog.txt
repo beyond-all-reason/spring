@@ -236,11 +236,13 @@ Sim::QTPFS
  - Searches are not only able to perform full-path sharing (i.e. same target/src quads), but also
    partial-path sharing. This means when the start/end quads are near another searches star/end
    quads, the path can be used to cut down search times by trying to link up to an existing route.
- - QTPFS can be configured to limit the numebr of nodes searched with `system.qtMaxNodesSearched`
  - QTPFS will automatically attempt to repath incomplete paths as progress is made to try and
    improve the pathing result and get the unit closer to the goal.
  - New modrule, `system.qtRefreshPathMinDist`, can be used to configure the minimum size a path
    has to be in order to be eligible for an automatic incomplete path repath.
+ - New modrule. `system.qtMaxNodesSearched`, can be used to limit the number of nodes searched.
+ - New modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number
+   of nodes searche relative to the number of pathable quads on the map.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.
