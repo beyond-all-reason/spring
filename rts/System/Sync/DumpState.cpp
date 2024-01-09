@@ -11,6 +11,7 @@
 
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/GameVersion.h"
 #include "Net/GameServer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
@@ -147,6 +148,8 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "maxFrame: " << gMaxFrameNum << "\n";
 			file << "randSeed: " << gsRNG.GetLastSeed() << "\n";
 			file << "initSeed: " << gsRNG.GetInitSeed() << "\n";
+			file << "  gameID: " << gameSetup->gameID << "\n";
+			file << " syncVer: " << SpringVersion::GetSync() << "\n";
 		}
 
 		LOG("[%s] using dump-file \"%s\"", __func__, name.c_str());
