@@ -564,12 +564,18 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				}
 			}
 		} else {
-			// if the partial path could not connect the reverse path, then we need to reject.
-			if (fwdPathConnected && !bwdPathConnected && !expectIncompletePartialSearch) {
-				haveFullPath = havePartPath = false;
-				rejectPartialSearch = true;
-				// LOG("%s: rejecting partial path 2 (search %x)", __func__, this->GetID());
-				return false;
+			if (fwdPathConnected) {
+				// if the partial path could not connect the reverse path, then we need to reject.
+				if (!bwdPathConnected && !expectIncompletePartialSearch) {
+					haveFullPath = havePartPath = false;
+					rejectPartialSearch = true;
+					// LOG("%s: rejecting partial path 2 (search %x)", __func__, this->GetID());
+					return false;
+				}
+
+				// Connected part path needs to be walked. It is done if searchEarlyDrop == true,
+				// but it also needs to be done if the backward search didn't connect.
+				reverseTrace(SearchThreadData::SEARCH_FORWARD);
 			}
 		}
 	}
