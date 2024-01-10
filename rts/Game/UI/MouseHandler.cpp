@@ -39,6 +39,7 @@
 #include "System/StringUtil.h"
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 
 #include <algorithm>
 
@@ -272,6 +273,10 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 	if (game != nullptr && !game->IsGameOver())
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mousePixels += movedPixels;
 
+	if (!ButtonPressed() && RmlGui::ProcessMouseMove(x, lasty, dx, dy, activeButtonIdx)) {
+		return;
+	}
+
 	if (activeReceiver != nullptr)
 		activeReceiver->MouseMove(x, lasty, dx, dy, activeButtonIdx);
 
@@ -297,7 +302,12 @@ void CMouseHandler::MousePress(int x, int y, int button)
 	if (game != nullptr && !game->IsGameOver())
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mouseClicks++;
 
-	ButtonPressEvt& bp = buttons[activeButtonIdx = button];
+	if (RmlGui::ProcessMousePress(x, y, button)) {
+		return;
+	}
+
+	activeButtonIdx = button;
+	ButtonPressEvt& bp = buttons[activeButtonIdx];
 	bp.chorded  = (buttons[SDL_BUTTON_LEFT].pressed || buttons[SDL_BUTTON_RIGHT].pressed);
 	bp.pressed  = true;
 	bp.time     = gu->gameTime;
@@ -367,6 +377,10 @@ bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, 
 {
 	if (activeReceiver != nullptr)
 		return false;
+
+	if (RmlGui::IsActive()) {
+		return false;
+	}
 
 	if (gu->fpsMode)
 		return false;
@@ -472,6 +486,10 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 		return;
 	}
 
+	if (RmlGui::ProcessMouseRelease(x, y, button)) {
+		return;
+	}
+
 	if (activeReceiver != nullptr) {
 		activeReceiver->MouseRelease(x, y, button);
 
@@ -553,6 +571,10 @@ bool CMouseHandler::ButtonPressed()
 
 void CMouseHandler::MouseWheel(float delta)
 {
+	if (RmlGui::ProcessMouseWheel(delta)) {
+		return;
+	}
+
 	if (eventHandler.MouseWheel(delta > 0.0f, delta))
 		return;
 

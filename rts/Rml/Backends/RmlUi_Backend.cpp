@@ -179,6 +179,11 @@ struct BackendData
 };
 static Rml::UniquePtr<BackendData> data;
 
+bool RmlInitialized()
+{
+	return data && data->initialized;
+}
+
 bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, int winX, int winY)
 {
 	data = Rml::MakeUnique<BackendData>();
@@ -212,7 +217,8 @@ bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontex
 
 bool RmlGui::InitializeLua(lua_State *lua_state)
 {
-	if (!data || !data->initialized) {
+	if (!RmlInitialized())
+	{
 		return false;
 	}
 	sol::state_view lua(lua_state);
@@ -224,7 +230,8 @@ bool RmlGui::InitializeLua(lua_State *lua_state)
 
 void RmlGui::Shutdown()
 {
-	if (!data || !data->initialized) {
+	if (!RmlInitialized())
+	{
 		return;
 	}
 	data->initialized = false;
@@ -239,7 +246,7 @@ void RmlGui::Shutdown()
 
 void RmlGui::Reload()
 {
-	if (!data->initialized)
+	if (!RmlInitialized())
 	{
 		return;
 	}
@@ -276,6 +283,15 @@ Rml::RenderInterface *RmlGui::GetRenderInterface()
 	return &data->render_interface;
 }
 
+bool RmlGui::IsActive()
+{
+	if (!RmlInitialized())
+	{
+		return false;
+	}
+	return data->inputReceiver.IsAbove(0, 0);
+}
+
 void createContext(const std::string &name)
 {
 	Rml::Context *context = Rml::CreateContext(name, Rml::Vector2i(data->winX, data->winY));
@@ -296,7 +312,7 @@ void RmlGui::AddContext(Rml::Context *context)
 void RmlGui::Update()
 {
 	ZoneScopedN("RmlGui Update");
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return;
 	}
@@ -311,7 +327,7 @@ void RmlGui::Update()
 void RmlGui::RenderFrame()
 {
 	ZoneScopedN("RmlGui Draw");
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return;
 	}
@@ -338,17 +354,39 @@ void RmlGui::PresentFrame()
 	RMLUI_FrameMark;
 }
 
-bool processContextMouseEvent(Rml::Context *context, const SDL_Event &event)
+/*
+	Return true if the event was handled by rmlui
+*/
+bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 {
-	switch (event.type)
+	if (!RmlInitialized())
 	{
-	case SDL_MOUSEMOTION:
-	case SDL_MOUSEBUTTONDOWN:
-	case SDL_MOUSEBUTTONUP:
-	case SDL_MOUSEWHEEL:
+		return false;
+	}
+	bool result = false;
+	for (auto &context : data->contexts)
 	{
-		bool handled = !RmlSDL::InputEventHandler(context, event);
-		if (!handled && event.type == SDL_MOUSEBUTTONDOWN)
+		result |= !RmlSDL::EventMouseMove(context, x, y);
+	}
+	data->inputReceiver.setActive(result);
+	return result;
+}
+
+/*
+	Return true if the event was handled by rmlui
+*/
+bool RmlGui::ProcessMousePress(int x, int y, int button)
+{
+	if (!RmlInitialized())
+	{
+		return false;
+	}
+	bool result = false;
+	for (auto &context : data->contexts)
+	{
+		bool handled = !RmlSDL::EventMousePress(context, x, y, button);
+		result |= handled;
+		if (!handled)
 		{
 			Rml::Element *el = context->GetFocusElement();
 			if (el)
@@ -356,29 +394,42 @@ bool processContextMouseEvent(Rml::Context *context, const SDL_Event &event)
 				el->Blur();
 			}
 		}
-		return handled;
 	}
-	default:
-	{
-		return false;
-	}
-	}
-	return false;
+	data->inputReceiver.setActive(result);
+	return result;
 }
 
 /*
 	Return true if the event was handled by rmlui
 */
-bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
+bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 {
-	if (data == NULL || data->contexts.empty() || !data->initialized)
+	if (!RmlInitialized())
 	{
 		return false;
 	}
 	bool result = false;
 	for (auto &context : data->contexts)
 	{
-		result |= processContextMouseEvent(context, event);
+		result |= !RmlSDL::EventMouseRelease(context, x, y, button);
+	}
+	data->inputReceiver.setActive(result);
+	return result;
+}
+
+/*
+	Return true if the event was handled by rmlui
+*/
+bool RmlGui::ProcessMouseWheel(float delta)
+{
+	if (!RmlInitialized())
+	{
+		return false;
+	}
+	bool result = false;
+	for (auto &context : data->contexts)
+	{
+		result |= !RmlSDL::EventMouseWheel(context, delta);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -389,7 +440,7 @@ bool RmlGui::ProcessMouseEvent(const SDL_Event &event)
 */
 bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return false;
 	}
@@ -404,7 +455,7 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 {
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return false;
 	}
@@ -418,7 +469,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 
 bool RmlGui::ProcessTextInput(const std::string &text)
 {
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return false;
 	}
@@ -470,7 +521,7 @@ bool processContextEvent(Rml::Context *context, const SDL_Event &event)
 
 bool RmlGui::ProcessEvent(const SDL_Event &event)
 {
-	if (!data->initialized || data->contexts.empty())
+	if (!RmlInitialized())
 	{
 		return false;
 	}

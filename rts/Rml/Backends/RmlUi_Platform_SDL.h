@@ -74,6 +74,10 @@ namespace RmlSDL
 	bool EventKeyDown(Rml::Context *context, Rml::Input::KeyIdentifier key);
 	bool EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key);
 	bool EventTextInput(Rml::Context *context, const std::string& text);
+	bool EventMouseMove(Rml::Context *context, Sint32 x, Sint32 y);
+	bool EventMousePress(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button);
+	bool EventMouseRelease(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button);
+	bool EventMouseWheel(Rml::Context *context, float delta);
 
 	// Converts the SDL key to RmlUi key.
 	Rml::Input::KeyIdentifier ConvertKey(int sdl_key);

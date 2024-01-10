@@ -137,6 +137,22 @@ bool RmlSDL::EventTextInput(Rml::Context *context, const std::string &text)
 	return context->ProcessTextInput(Rml::String(text));
 }
 
+bool RmlSDL::EventMouseMove(Rml::Context *context, Sint32 x, Sint32 y) {
+	return context->ProcessMouseMove(x,y, GetKeyModifierState());
+}
+
+bool RmlSDL::EventMousePress(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button) {
+	return context->ProcessMouseButtonDown(ConvertMouseButton(button), GetKeyModifierState());
+};
+
+bool RmlSDL::EventMouseRelease(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button) {
+	return context->ProcessMouseButtonUp(ConvertMouseButton(button), GetKeyModifierState());
+};
+
+bool RmlSDL::EventMouseWheel(Rml::Context *context, float delta) {
+	return context->ProcessMouseWheel(-delta, GetKeyModifierState());
+};
+
 bool RmlSDL::InputEventHandler(Rml::Context *context, const SDL_Event &ev)
 {
 	bool result = true;

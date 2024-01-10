@@ -37,36 +37,41 @@
 #include "lib/sol2/sol.hpp"
 #include "Rml/Backends/RmlUi_Platform_SDL.h"
 
-using KeyDownCallback = bool (*)(Rml::Context* context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
+using KeyDownCallback = bool (*)(Rml::Context *context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
-namespace RmlGui {
+namespace RmlGui
+{
 
-bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX, int winY);
-bool InitializeLua(lua_State* lua_state);
+	bool Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, int winX, int winY);
+	bool InitializeLua(lua_State *lua_state);
 
-void Shutdown();
-void Reload();
+	void Shutdown();
+	void Reload();
 
-Rml::SystemInterface* GetSystemInterface();
-Rml::RenderInterface* GetRenderInterface();
+	Rml::SystemInterface *GetSystemInterface();
+	Rml::RenderInterface *GetRenderInterface();
 
-bool ProcessEvent(const SDL_Event& event);
-bool ProcessMouseEvent(const SDL_Event& event);
+	bool ProcessEvent(const SDL_Event &event);
 
-bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
-bool ProcessKeyReleased(int keyCode, int scanCode);
-bool ProcessTextInput(const std::string& text);
+	bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
+	bool ProcessKeyReleased(int keyCode, int scanCode);
+	bool ProcessTextInput(const std::string &text);
+	bool ProcessMouseMove(int x, int y, int dx, int dy, int button);
+	bool ProcessMousePress(int x, int y, int button);
+	bool ProcessMouseRelease(int x, int y, int button);
+	bool ProcessMouseWheel(float delta);
 
-void ToggleDebugger(int contextIndex);
+	void ToggleDebugger(int contextIndex);
+	bool IsActive();
 
-void Update();
-void RenderFrame();
+	void Update();
+	void RenderFrame();
 
-void CreateContext(const std::string& name);
-void AddContext(Rml::Context *context);
+	void CreateContext(const std::string &name);
+	void AddContext(Rml::Context *context);
 
-void BeginFrame();
-void PresentFrame();
+	void BeginFrame();
+	void PresentFrame();
 
 }
 

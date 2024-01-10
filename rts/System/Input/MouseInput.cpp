@@ -73,9 +73,6 @@ bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 	 * Otherwise box selections get stuck when the mouse goes over an Rml element. */
 	const bool mousePressed = mouse->ButtonPressed();
 
-	if (!mousePressed && RmlGui::ProcessMouseEvent(event)) {
-		return false;
-	}
 	switch (event.type) {
 		case SDL_MOUSEMOTION: {
 			mousepos = int2(event.motion.x, event.motion.y);
