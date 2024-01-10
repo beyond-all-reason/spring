@@ -126,6 +126,7 @@ namespace State {
 	ATTRIBUTE_TYPE_DEFS            (PrimitiveRestartIndex, GL_PRIMITIVE_RESTART_INDEX);
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Multisampling, GL_MULTISAMPLE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (SampleShading, GL_SAMPLE_SHADING);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToCoverage, GL_SAMPLE_ALPHA_TO_COVERAGE);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToOne, GL_SAMPLE_ALPHA_TO_ONE);
 
@@ -167,6 +168,7 @@ namespace State {
 		ATTRIBUTE(PrimitiveRestart),
 		ATTRIBUTE(PrimitiveRestartIndex),
 		ATTRIBUTE(Multisampling),
+		ATTRIBUTE(SampleShading),
 		ATTRIBUTE(AlphaToCoverage),
 		ATTRIBUTE(AlphaToOne),
 		ATTRIBUTE(CubemapSeamless),
