@@ -20,13 +20,13 @@ uniform mat4 shadowMatrix;
 
 uniform float curAdjustedFrame;
 
-in vec4 vPosT;
-in vec4 vPosB;
-in vec4 vuvMain;
-in vec4 vuvNorm;
-in vec4 midPoint;
-in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
-in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
+flat in vec4 vPosT;
+flat in vec4 vPosB;
+flat in vec4 vuvMain;
+flat in vec4 vuvNorm;
+flat in vec4 midPoint;
+flat in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
+flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
 noperspective in vec2 screenUV;
 
 out vec4 fragColor;

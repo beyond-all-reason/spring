@@ -13,13 +13,13 @@ uniform sampler2D groundNormalTex;
 uniform vec4 mapDims; //mapxy; 1.0 / mapxy
 uniform float curAdjustedFrame;
 
-out vec4 vPosT;
-out vec4 vPosB;
-out vec4 vuvMain;
-out vec4 vuvNorm;
-out vec4 midPoint;
-out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
-out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
+flat out vec4 vPosT;
+flat out vec4 vPosB;
+flat out vec4 vuvMain;
+flat out vec4 vuvNorm;
+flat out vec4 midPoint;
+flat out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
+flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
 noperspective out vec2 screenUV;
 
 #define posTL vPosT.xy
