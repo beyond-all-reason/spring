@@ -46,36 +46,53 @@ void DefType::AddTagMetaData(const DefTagMetaData* data)
 	}
 
 	tagMetaData[tagMetaDataCnt++] = data;
-}
 
+	const std::string internalKey = StringToLower(data->GetInternalName());
+	if (auto it = tagMetaDataByInternalName.find(internalKey);
+			it == tagMetaDataByInternalName.end()) {
+		tagMetaDataByInternalName[internalKey] = data;
+	}
 
-const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key)
-{
-	const auto tend = tagMetaData.begin() + tagMetaDataCnt;
-	const auto pred = [&](const DefTagMetaData* md) { return (key == md->GetInternalName()); };
-	const auto iter = std::find_if(tagMetaData.begin(), tend, pred);
-
-	return ((iter == tend)? nullptr: *iter);
-}
-
-
-const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key)
-{
-	const std::string lkey = StringToLower(key);
-
-	for (unsigned int i = 0; i < tagMetaDataCnt; i++) {
-		const DefTagMetaData* md = tagMetaData[i];
-
-		if (md->GetExternalName().IsSet()) {
-			if (lkey == StringToLower(md->GetExternalName().Get()))
-				return md;
-		} else {
-			if (lkey == StringToLower(md->GetInternalName()))
-				return md;
+	if (const auto& externalName = data->GetExternalName(); externalName.IsSet()) {
+		const std::string externalKey = StringToLower(externalName.Get());
+		if (auto it = tagMetaDataByExternalName.find(externalKey);
+				it == tagMetaDataByExternalName.end()) {
+			tagMetaDataByExternalName[externalKey] = data;
 		}
+	}
+	if (const auto& fallbackName = data->GetFallbackName(); fallbackName.IsSet()) {
+		const std::string fallbackKey = StringToLower(fallbackName.Get());
+		if (auto it = tagMetaDataByFallbackName.find(fallbackKey);
+				it == tagMetaDataByFallbackName.end()) {
+			tagMetaDataByFallbackName[fallbackKey] = data;
+		}
+	}
+}
 
-		if (lkey == StringToLower(md->GetFallbackName().Get()))
-			return md;
+
+const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key) {
+	const std::string lkey = StringToLower(key);
+	if (auto it = tagMetaDataByInternalName.find(lkey);
+			it != tagMetaDataByInternalName.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+
+const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key) {
+	const std::string lkey = StringToLower(key);
+	if (auto it = tagMetaDataByExternalName.find(lkey);
+			it != tagMetaDataByExternalName.end()) {
+		return it->second;
+	}
+	if (auto it = tagMetaDataByInternalName.find(lkey);
+			it != tagMetaDataByInternalName.end()) {
+		return it->second;
+	}
+	if (auto it = tagMetaDataByFallbackName.find(lkey);
+			it != tagMetaDataByFallbackName.end()) {
+		return it->second;
 	}
 
 	return nullptr;
