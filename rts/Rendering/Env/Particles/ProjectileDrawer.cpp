@@ -270,6 +270,8 @@ void CProjectileDrawer::Init() {
 
 	LoadWeaponTextures();
 
+	depthBufferCopy->AddConsumer(false, this);
+
 	{
 		fsShadowShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader shadow");
 
@@ -320,7 +322,7 @@ void CProjectileDrawer::Init() {
 
 		fxShader->Validate();
 	}
-	ViewResize();
+
 	EnableSoften(configHandler->GetInt("SoftParticles"));
 }
 
@@ -348,6 +350,8 @@ void CProjectileDrawer::Kill() {
 	shaderHandler->ReleaseProgramObjects("[ProjectileDrawer::VFS]");
 	fxShaders = { nullptr };
 	fsShadowShader = nullptr;
+
+	depthBufferCopy->DelConsumer(false, this);
 
 	configHandler->Set("SoftParticles", wantSoften);
 }
@@ -743,7 +747,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
 
 		if (needSoften) {
-			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture());
+			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture(false));
 		}
 
 		fxShaders[needSoften]->Enable();
@@ -923,7 +927,7 @@ void CProjectileDrawer::DrawGroundFlashes()
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 
 	if (needSoften) {
-		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture());
+		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture(false));
 	}
 
 	fxShaders[needSoften]->Enable();

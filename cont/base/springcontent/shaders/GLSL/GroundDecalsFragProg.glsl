@@ -1,6 +1,9 @@
-#version 130
+#ifdef HAVE_MULTISAMPLING
+	uniform sampler2DMS depthTex;
+#else
+	uniform sampler2D   depthTex;
+#endif
 
-uniform sampler2D depthTex;
 uniform sampler2D decalMainTex;
 uniform sampler2D decalNormTex;
 
@@ -11,6 +14,8 @@ uniform vec4 mapDims; //mapxy; 1.0 / mapxy
 uniform vec4 groundAmbientColor; // + groundShadowDensity
 uniform vec3 groundDiffuseColor;
 uniform vec3 sunDir;
+
+uniform vec2 screenSizeInverse; // 1/X, 1/Y
 
 #ifdef HAVE_SHADOWS
 uniform sampler2DShadow shadowTex;
@@ -27,7 +32,6 @@ flat in vec4 vuvNorm;
 flat in vec4 midPoint;
 flat in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
 flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-noperspective in vec2 screenUV;
 
 out vec4 fragColor;
 
@@ -49,7 +53,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200051
+#line 200057
 
 vec3 GetTriangleBarycentric(vec2 p, vec2 p0, vec2 p1, vec2 p2) {
 	vec2 v0 = p2 - p0;
@@ -176,8 +180,13 @@ vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
 const vec3 all0 = vec3(0.0);
 const vec3 all1 = vec3(1.0);
 void main() {
-	float depthZO = texture(depthTex, screenUV).x;
-	vec4 worldPos = GetWorldPos(screenUV, depthZO);
+	#ifdef HAVE_MULTISAMPLING
+		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+	#else
+		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy),           0).x;
+	#endif
+
+	vec4 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);

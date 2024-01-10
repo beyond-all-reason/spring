@@ -49,6 +49,7 @@
 #include "System/FileSystem/FileSystem.h"
 
 CONFIG(int, GroundScarAlphaFade).deprecated(true);
+CONFIG(bool, HighQualityDecals).defaultValue(false).description("Forces MSAA processing of decals. Improves decals quality, but may ruin the performance.");
 
 CGroundDecalHandler::CGroundDecalHandler()
 	: CEventClient("[CGroundDecalHandler]", 314159, false)
@@ -65,10 +66,14 @@ CGroundDecalHandler::CGroundDecalHandler()
 	eventHandler.AddClient(this);
 	CExplosionCreator::AddExplosionListener(this);
 
+	configHandler->NotifyOnChange(this, { "HighQualityDecals" });
+	highQuality = configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0);
+	depthBufferCopy->AddConsumer(highQuality, this);	
+
 	smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
 
 	GenerateAtlasTexture();
-	LoadDecalShaders();
+	ReloadDecalShaders();
 
 	instTmpVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
@@ -83,6 +88,10 @@ CGroundDecalHandler::~CGroundDecalHandler()
 {
 	CExplosionCreator::RemoveExplosionListener(this);
 	eventHandler.RemoveClient(this);
+	configHandler->RemoveObserver(this);
+
+	depthBufferCopy->DelConsumer(highQuality, this);
+
 
 	shaderHandler->ReleaseProgramObjects("[GroundDecalHandler]");
 	decalShader = nullptr;
@@ -204,7 +213,7 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 			AddTexToCollection(GetExtraTextureName(decalDef.groundDecalTypeName), false);
 		}
 	};
-	ProcessDefs(featureDefHandler->GetFeatureDefsVec());
+	//ProcessDefs(featureDefHandler->GetFeatureDefsVec());
 	ProcessDefs(unitDefHandler->GetUnitDefsVec());
 }
 
@@ -296,6 +305,11 @@ void CGroundDecalHandler::UnbindVertexAtrribs()
 	}
 }
 
+uint32_t CGroundDecalHandler::GetDepthBufferTextureTarget() const
+{
+	return highQuality ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+}
+
 void CGroundDecalHandler::GenerateAtlasTexture() {
 	atlas = std::make_unique<CTextureAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, "DecalTextures", true);
 
@@ -322,13 +336,20 @@ void CGroundDecalHandler::GenerateAtlasTexture() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void CGroundDecalHandler::LoadDecalShaders() {
+void CGroundDecalHandler::ReloadDecalShaders() {
+	if (shaderHandler->ReleaseProgramObjects("[GroundDecalHandler]"))
+		decalShader = nullptr;
+
+	const std::string ver = highQuality ? "#version 400 compatibility\n" : "#version 130\n";
+
 	decalShader = shaderHandler->CreateProgramObject("[GroundDecalHandler]", "DecalShaderGLSL");
 
-	decalShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/GroundDecalsVertProg.glsl", "", GL_VERTEX_SHADER));
-	decalShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/GroundDecalsFragProg.glsl", "", GL_FRAGMENT_SHADER));
+	decalShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/GroundDecalsVertProg.glsl",  "", GL_VERTEX_SHADER));
+	decalShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/GroundDecalsFragProg.glsl", ver, GL_FRAGMENT_SHADER));
+
 	decalShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);
 	decalShader->SetFlag("HAVE_SHADOWS", true);
+	decalShader->SetFlag("HAVE_MULTISAMPLING", highQuality);
 
 	decalShader->BindAttribLocation("posT"       , 0);
 	decalShader->BindAttribLocation("posB"       , 1);
@@ -360,6 +381,10 @@ void CGroundDecalHandler::LoadDecalShaders() {
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
 
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
+	decalShader->SetUniform("screenSizeInverse",
+		1.0f / globalRendering->viewSizeX,
+		1.0f / globalRendering->viewSizeY
+	);
 	const auto& identityMat = CMatrix44f::Identity();
 	decalShader->SetUniformMatrix4x4("shadowMatrix", false, &identityMat.m[0]);
 
@@ -386,8 +411,7 @@ void CGroundDecalHandler::BindCommonTextures()
 	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
 
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture());
-
+	glBindTexture(GetDepthBufferTextureTarget(), depthBufferCopy->GetDepthBufferTexture(highQuality));
 
 	const CSMFReadMap* smfMap = smfDrawer->GetReadMap();
 	glActiveTexture(GL_TEXTURE5);
@@ -399,22 +423,6 @@ void CGroundDecalHandler::BindCommonTextures()
 		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
-	/*
-	if (infoTextureHandler->IsEnabled()) {
-		glActiveTexture(GL_TEXTURE3);
-		glEnable(GL_TEXTURE_2D);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_ADD_SIGNED_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA_ARB, GL_PREVIOUS_ARB);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-
-		glMultiTexCoord4f(GL_TEXTURE3_ARB, 1.0f,1.0f,1.0f,1.0f); // workaround a nvidia bug with TexGen
-		SetTexGen(1.0f / (mapDims.pwr2mapx * SQUARE_SIZE), 1.0f / (mapDims.pwr2mapy * SQUARE_SIZE), 0, 0);
-
-		glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());
-	}
-	*/
 
 	glActiveTexture(GL_TEXTURE0);
 }
@@ -434,7 +442,7 @@ void CGroundDecalHandler::UnbindTextures()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GetDepthBufferTextureTarget(), 0);
 
 	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -611,6 +619,7 @@ void CGroundDecalHandler::Draw()
 	using namespace GL::State;
 
 	auto state = GL::SubState(
+		SampleShading(highQuality ? GL_TRUE : GL_FALSE),
 		Blending(GL_TRUE),
 		BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
 		DepthMask(GL_FALSE),
@@ -1084,6 +1093,15 @@ void CGroundDecalHandler::SunChanged()
 	decalShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 }
 
+void CGroundDecalHandler::ViewResize()
+{
+	auto enToken = decalShader->EnableScoped();
+	decalShader->SetUniform("screenSizeInverse",
+		1.0f / globalRendering->viewSizeX,
+		1.0f / globalRendering->viewSizeY
+	);
+}
+
 void CGroundDecalHandler::GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) { RemoveSolidObject(object, gb); }
 //void CGroundDecalHandler::FeatureMoved(const CFeature* feature, const float3& oldpos) { AddSolidObject(feature); }
 
@@ -1092,6 +1110,19 @@ void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 		return;
 
 	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
+}
+
+void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string& value)
+{
+	if (key != "HighQualityDecals")
+		return;
+
+	if (bool newHQ = configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0); highQuality != newHQ) {
+		depthBufferCopy->DelConsumer(highQuality, this);
+		depthBufferCopy->AddConsumer(      newHQ, this);
+		highQuality = newHQ;
+		ReloadDecalShaders();
+	}
 }
 
 void CGroundDecalHandler::RenderUnitCreated(const CUnit* unit, int cloaked) {

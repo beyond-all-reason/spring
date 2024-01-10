@@ -53,8 +53,12 @@ public:
 			|| (eventName == "UnitLoaded")
 			|| (eventName == "UnitUnloaded")
 			|| (eventName == "GameFrame")
-			|| (eventName == "SunChanged");
+			|| (eventName == "SunChanged")
+			|| (eventName == "ViewResize");
 	}
+
+	void ConfigNotify(const std::string& key, const std::string& value);
+
 	bool GetFullRead() const override { return true; }
 	int GetReadAllyTeam() const override { return AllAccessTeam; }
 
@@ -70,6 +74,7 @@ public:
 	void GameFrame(int frameNum) override;
 
 	void SunChanged() override;
+	void ViewResize() override;
 
 	// IExplosionListener
 	void ExplosionOccurred(const CExplosionParams& event) override;
@@ -91,8 +96,10 @@ private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
 
+	uint32_t GetDepthBufferTextureTarget() const;
+
 	void GenerateAtlasTexture();
-	void LoadDecalShaders();
+	void ReloadDecalShaders();
 
 	void AddTexToCollection(const std::string& name, bool mainTex);
 	void AddTexToAtlas(const std::string& name, bool mainTex);
@@ -139,6 +146,7 @@ private:
 	spring::unordered_map<DecalOwner, uint32_t, DecalOwnerHash, DecalOwnerEqualsTo> decalOwners; // for tracks, aoplates and ghosts
 	std::array<std::pair<float, float>, MAX_UNITS> unitMinMaxHeights; // for tracks
 
+	bool highQuality = false;
 	bool tmpNeedsUpdate = false;
 	bool permNeedsUpdate = false;
 

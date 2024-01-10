@@ -1039,7 +1039,7 @@ void CMiniMap::Update()
 void CMiniMap::ResizeTextureCache()
 {
 	minimapTexSize = curDim;
-	multisampledFBO = (fbo.GetMaxSamples() > 1);
+	multisampledFBO = (FBO::GetMaxSamples() > 1);
 
 	if (multisampledFBO) {
 		// multisampled FBO we are render to

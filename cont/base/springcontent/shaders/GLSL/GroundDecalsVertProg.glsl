@@ -20,7 +20,6 @@ flat out vec4 vuvNorm;
 flat out vec4 midPoint;
 flat out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
 flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-noperspective out vec2 screenUV;
 
 #define posTL vPosT.xy
 #define posTR vPosT.zw
@@ -155,7 +154,6 @@ void main() {
 	if (alphaMax <= 0.0f) {
 		vPosT = vec4(0.0);
 		vPosB = vec4(0.0);
-		screenUV = vec2(0.0);
 		gl_Position = vec4(2.0, 2.0, 2.0, 1.0); //place outside of [-1;1]^3 NDC, basically cull out from the further rendering
 		return;
 	}
@@ -233,6 +231,4 @@ void main() {
 	}
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(worldPos, 1.0);
-
-	screenUV = SNORM2NORM(gl_Position.xy / gl_Position.w);
 }

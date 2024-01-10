@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <array>
 #include <cstdint>
 
+#include "System/UnorderedSet.hpp"
 #include "System/EventClient.h"
 
 class FBO;
@@ -15,6 +17,9 @@ public:
 	static void Init();
 	static void Kill();
 
+	void AddConsumer(bool ms, const void* p);
+	void DelConsumer(bool ms, const void* p);
+
 	bool WantsEvent(const std::string& eventName) override {
 		return
 			(eventName == "ViewResize");
@@ -22,13 +27,16 @@ public:
 
 	void ViewResize() override;
 
-	bool IsValid() const;
+	bool IsValid(bool ms) const;
 
 	void MakeDepthBufferCopy() const;
-	uint32_t GetDepthBufferTexture() const { return depthTexture; }
+	uint32_t GetDepthBufferTexture(bool ms) const { return depthTextures[ms]; }
 private:
-	uint32_t depthTexture = 0u;
-	std::unique_ptr<FBO> depthFBO = nullptr;
+	void RecreateTextureAndFBO(bool ms);
+
+	std::array<spring::unordered_set<uintptr_t>, 2> references = {};
+	std::array<uint32_t, 2> depthTextures = {};
+	std::array<std::unique_ptr<FBO>, 2> depthFBOs = {};
 };
 
 extern std::unique_ptr<DepthBufferCopy> depthBufferCopy;

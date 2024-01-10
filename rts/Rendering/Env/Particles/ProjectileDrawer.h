@@ -68,7 +68,7 @@ public:
 		return
 			CheckSoftenExt() &&
 			fxShaders[1] && fxShaders[1]->IsValid() &&
-			depthBufferCopy->IsValid();
+			depthBufferCopy->IsValid(false);
 	};
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }

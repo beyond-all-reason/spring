@@ -197,8 +197,8 @@ void CWorldDrawer::Kill()
 	textureHandlerS3O.Kill();
 
 	readMap->KillGroundDrawer();
-	DepthBufferCopy::Kill();
 	IGroundDecalDrawer::FreeInstance();
+	DepthBufferCopy::Kill();
 	LuaObjectDrawer::Kill();
 	SmoothHeightMeshDrawer::FreeInstance();
 
