@@ -213,7 +213,7 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 			AddTexToCollection(GetExtraTextureName(decalDef.groundDecalTypeName), false);
 		}
 	};
-	//ProcessDefs(featureDefHandler->GetFeatureDefsVec());
+	ProcessDefs(featureDefHandler->GetFeatureDefsVec());
 	ProcessDefs(unitDefHandler->GetUnitDefsVec());
 }
 
