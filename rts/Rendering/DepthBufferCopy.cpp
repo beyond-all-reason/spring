@@ -39,7 +39,7 @@ void DepthBufferCopy::Kill()
 void DepthBufferCopy::AddConsumer(bool ms, const void* p)
 {
 	if (references[ms].empty())
-		RecreateTextureAndFBO(ms);
+		CreateTextureAndFBO(ms);
 
 	references[ms].emplace(reinterpret_cast<uintptr_t>(p));
 }
@@ -52,23 +52,7 @@ void DepthBufferCopy::DelConsumer(bool ms, const void* p)
 	if (!references[ms].empty())
 		return;
 
-	auto& depthFBO = depthFBOs[ms];
-	auto& depthTexture = depthTextures[ms];
-
-	if (depthFBO) {
-		if (depthFBO->IsValid()) {
-			depthFBO->Bind();
-			depthFBO->DetachAll();
-			depthFBO->Unbind();
-		}
-		depthFBO->Kill();
-		depthFBO = nullptr;
-	}
-
-	if (depthTexture > 0u) {
-		glDeleteTextures(1, &depthTexture);
-		depthTexture = 0u;
-	}
+	DestroyTextureAndFBO(ms);
 }
 
 void DepthBufferCopy::ViewResize()
@@ -108,17 +92,36 @@ void DepthBufferCopy::MakeDepthBufferCopy() const
 	}
 }
 
-void DepthBufferCopy::RecreateTextureAndFBO(bool ms)
+void DepthBufferCopy::DestroyTextureAndFBO(bool ms)
+{
+	auto& depthFBO = depthFBOs[ms];
+	auto& depthTexture = depthTextures[ms];
+
+	assert(depthFBO);
+	if (depthFBO) {
+		if (depthFBO->IsValid()) {
+			depthFBO->Bind();
+			depthFBO->DetachAll();
+			depthFBO->Unbind();
+		}
+		depthFBO->Kill();
+		depthFBO = nullptr;
+	}
+
+	assert(depthTexture);
+	if (depthTexture) {
+		glDeleteTextures(1, &depthTexture);
+		depthTexture = 0u;
+	}
+}
+
+void DepthBufferCopy::CreateTextureAndFBO(bool ms)
 {
 	auto& depthTexture = depthTextures[ms];
 	auto& depthFBO     = depthFBOs[ms];
 	const auto target = ms ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
-	if (depthTexture != 0u) {
-		glDeleteTextures(1, &depthTexture);
-		depthTexture = 0u;
-	}
-
+	assert(depthTexture == 0);
 	glGenTextures(1, &depthTexture);
 
 	glEnable(target);
@@ -142,17 +145,8 @@ void DepthBufferCopy::RecreateTextureAndFBO(bool ms)
 	glBindTexture(target, 0);
 	glDisable(target);
 
-	if (depthFBO) {
-		if (depthFBO->IsValid()) {
-			depthFBO->Bind();
-			depthFBO->DetachAll();
-			depthFBO->Unbind();
-		}
-		depthFBO->Kill();
-		depthFBO = nullptr; //probably redundant
-	}
-
-	depthFBO = std::make_unique<FBO>(true); //probably redundant
+	assert(depthFBO == nullptr);
+	depthFBO = std::make_unique<FBO>(true);
 	depthFBO->Init(false);
 
 	depthFBO->Bind();

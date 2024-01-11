@@ -306,6 +306,7 @@ void main() {
 	//fragColor = vec4(NORM2SNORM(normVal.xyz).xxx, 1.0);
 	//fragColor = vec4(N, 1.0);
 	//fragColor = vec4(T, 1.0);
+	//fragColor = vec4(decalNormal, 1.0);
 
 	//fragColor = vec4(heightCol, 1);
 	//fragColor = vec4(alpha, alpha, alpha, 1.0);

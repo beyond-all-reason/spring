@@ -102,7 +102,7 @@ public:
 	CTextureAtlas& operator= (const CTextureAtlas&) = delete;
 
 	// add a texture from a memory pointer
-	size_t AddTexFromMem(std::string name, int xsize, int ysize, TextureType texType, void* data);
+	size_t AddTexFromMem(std::string name, int xsize, int ysize, TextureType texType, const void* data);
 	// add a texture from a file
 	size_t AddTexFromFile(std::string name, const std::string& file);
 	// add a blank texture

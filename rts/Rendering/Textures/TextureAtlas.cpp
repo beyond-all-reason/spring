@@ -90,7 +90,7 @@ size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureT
 	return (memTextures.size() - 1);
 }
 
-size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, TextureType texType, void* data)
+size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, TextureType texType, const void* data)
 {
 	const size_t texIdx = AddTex(std::move(texName), xsize, ysize, texType);
 

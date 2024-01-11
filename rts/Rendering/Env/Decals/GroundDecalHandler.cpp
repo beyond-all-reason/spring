@@ -148,7 +148,7 @@ static inline std::string GetExtraTextureName(const std::string& mainTex) {
 
 void CGroundDecalHandler::AddTexToCollection(const std::string& name, bool mainTex) {
 	try {
-		auto [bm, dims, fn] = LoadTexture(name, mainTex);
+		const auto& [bm, dims, fn] = LoadTexture(name, mainTex);
 		buildingDecalTextures.AddTexFromBitmap(name, fn, bm);
 	}
 	catch (const content_error& err) {
@@ -158,7 +158,7 @@ void CGroundDecalHandler::AddTexToCollection(const std::string& name, bool mainT
 
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
 	try {
-		auto [bm, dims, fn] = LoadTexture(name, mainTex);
+		const auto& [bm, dims, fn] = LoadTexture(name, mainTex);
 		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	catch (const content_error& err) {
@@ -169,7 +169,7 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex) {
 	if (!filename.empty())
 	try {
-		auto [bm, dims, fn] = LoadTexture(filename, mainTex);
+		const auto& [bm, dims, fn] = LoadTexture(filename, mainTex);
 		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
 		return;
 	}
@@ -179,7 +179,7 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::stri
 
 	if (!filenameAlt.empty())
 	try {
-		auto [bm, dims, fn] = LoadTexture(filenameAlt, mainTex);
+		const auto& [bm, dims, fn] = LoadTexture(filenameAlt, mainTex);
 		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	catch (const content_error& err) {
@@ -229,7 +229,7 @@ void CGroundDecalHandler::AddGroundScarTextures()
 
 	const LuaTable scarsTable = resourcesParser.GetRoot().SubTable("graphics").SubTable("scars");
 
-	for (int i = 1; i <= scarsTable.GetLength(); ++i) {
+	for (int N = scarsTable.GetLength(), i = 1; i <= N; ++i) {
 		const std::string mainTexFileName = scarsTable.GetString(i, "");
 		const std::string normTexFileName = mainTexFileName.empty() ? "" : GetExtraTextureName(mainTexFileName);
 		const std::string mainTexFileNameAlt = scarMainTextures[(i - 1) % scarMainTextures.size()];
@@ -265,11 +265,11 @@ void CGroundDecalHandler::AddFallbackTextures()
 		return std::make_tuple(bm, int2(bm.xsize, bm.ysize));
 	};
 	{
-		auto [bm, dims] = CreateFallBack(SColor(255,   0,   0, 255)); // RGB + alpha
+		const auto& [bm, dims] = CreateFallBack(SColor(255,   0,   0, 255)); // RGB + alpha
 		atlas->AddTexFromMem("%FB_MAIN%", dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	{
-		auto [bm, dims] = CreateFallBack(SColor(128, 128, 255, 128)); // normal + glow
+		const auto& [bm, dims] = CreateFallBack(SColor(128, 128, 255, 128)); // normal + glow
 		atlas->AddTexFromMem("%FB_NORM%", dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 }

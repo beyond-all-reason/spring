@@ -32,7 +32,12 @@ public:
 	void MakeDepthBufferCopy() const;
 	uint32_t GetDepthBufferTexture(bool ms) const { return depthTextures[ms]; }
 private:
-	void RecreateTextureAndFBO(bool ms);
+	void DestroyTextureAndFBO(bool ms);
+	void CreateTextureAndFBO(bool ms);
+	void RecreateTextureAndFBO(bool ms) {
+		DestroyTextureAndFBO(ms);
+		CreateTextureAndFBO(ms);
+	}
 
 	std::array<spring::unordered_set<uintptr_t>, 2> references = {};
 	std::array<uint32_t, 2> depthTextures = {};
