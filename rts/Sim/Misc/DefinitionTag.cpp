@@ -47,23 +47,20 @@ void DefType::AddTagMetaData(const DefTagMetaData* data)
 
 	tagMetaData[tagMetaDataCnt++] = data;
 
-	const std::string internalKey = StringToLower(data->GetInternalName());
-	if (auto it = tagMetaDataByInternalName.find(internalKey);
-			it == tagMetaDataByInternalName.end()) {
+	if (const std::string internalKey = StringToLower(data->GetInternalName());
+			!tagMetaDataByInternalName.contains(internalKey)) {
 		tagMetaDataByInternalName[internalKey] = data;
 	}
 
 	if (const auto& externalName = data->GetExternalName(); externalName.IsSet()) {
-		const std::string externalKey = StringToLower(externalName.Get());
-		if (auto it = tagMetaDataByExternalName.find(externalKey);
-				it == tagMetaDataByExternalName.end()) {
+		if (const std::string externalKey = StringToLower(externalName.Get());
+				!tagMetaDataByExternalName.contains(externalKey)) {
 			tagMetaDataByExternalName[externalKey] = data;
 		}
 	}
 	if (const auto& fallbackName = data->GetFallbackName(); fallbackName.IsSet()) {
-		const std::string fallbackKey = StringToLower(fallbackName.Get());
-		if (auto it = tagMetaDataByFallbackName.find(fallbackKey);
-				it == tagMetaDataByFallbackName.end()) {
+		if (const std::string fallbackKey = StringToLower(fallbackName.Get());
+				!tagMetaDataByFallbackName.contains(fallbackKey)) {
 			tagMetaDataByFallbackName[fallbackKey] = data;
 		}
 	}
