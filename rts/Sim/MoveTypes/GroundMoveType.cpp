@@ -2317,6 +2317,12 @@ void CGroundMoveType::StartEngine(bool callScript) {
 			pathManager->DeletePath(nextPathId);
 		}
 		nextPathId = GetNewPath();
+
+		// This can happen if the current path has not been resolved yet and the pathing system has
+		// decided to optimize by updating the existing search request.
+		if (nextPathId == pathID) {
+			nextPathId = 0;
+		}
 	}
 
 	if (pathID != 0) {
