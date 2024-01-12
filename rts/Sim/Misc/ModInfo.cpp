@@ -109,7 +109,7 @@ void CModInfo::ResetState()
 		pfRepathDelayInFrames = 60;
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
-		pfHcostMult = 0.2f;
+		pfHcostMult = 0.0f;
 		qtMaxNodesSearched = 8192;
 		qtRefreshPathMinDist = 2000.f;
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
