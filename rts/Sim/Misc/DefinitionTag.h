@@ -183,12 +183,6 @@ public:
 	const DefTagMetaData* GetData() const { return data; }
 	operator T() const { return data->GetData(); }
 
-	// Implementation note: although not strictly required, calling asReference at
-	// the beggining of the fluent chain means that BuiltDefTag only needs a
-	// single constructor which accepts DefTagBuilder by reference (as opposed to
-	// multiple constructors).
-	DefTagBuilder& asReference() { return *this; }
-
 	// Finalizes all the customizations of the metadata for this deftag.
 	// Equivalent to .build() calls in fluent builders.
 	//
@@ -197,9 +191,9 @@ public:
 	void AddTag();
 
 #define MAKE_CHAIN_METHOD(property, type) \
-	DefTagBuilder& property(type const& x) { \
+	DefTagBuilder&& property(type const& x) && { \
 		data->property = x; \
-		return *this; \
+		return std::move(*this); \
 	}
 
 	typedef T (*TagFunc)(T x);
@@ -249,7 +243,7 @@ class BuiltDefTag
 {
 public:
 	template <typename T>
-	BuiltDefTag(DefTagBuilder<T>& builder) {
+	BuiltDefTag(DefTagBuilder<T>&& builder) {
 		builder.AddTag();
 	}
 };
@@ -381,7 +375,7 @@ void DefTagBuilder<T>::AddTag() {
 		} \
 	} static MACRO_CONCAT(do_once_,name); \
 	static BuiltDefTag deftag_##Defs##name = Defs. \
-			AllocateTag<T>(#name).asReference()
+			AllocateTag<T>(#name)
 
 #define tagFunction(fname) \
 	tagFunctionPtr(&tagFnc_##fname).tagFunctionStr(tagFncStr_##fname)
@@ -399,7 +393,7 @@ void DefTagBuilder<T>::AddTag() {
 
 #define DUMMYTAG(Defs, T, name) \
 	static BuiltDefTag MACRO_CONCAT(deftag_,__LINE__) = Defs. \
-			AllocateTag<T>(#name).asReference()
+			AllocateTag<T>(#name)
 
 #define TAGFUNCTION(name, T, function) \
 	static T tagFnc_##name(T x) { \
