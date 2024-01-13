@@ -461,6 +461,14 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 				// if the forward search has got close enough to the goal, then we don't need the
 				// reverse search.
 				useFwdPathOnly = true;
+
+				// Technically it is a full path.
+				haveFullPath = true;
+				fwd.tgtSearchNode = curSearchNode;
+
+				// It turns out that the goal isn't bad any more.
+				badGoal = false;
+
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
 			}
