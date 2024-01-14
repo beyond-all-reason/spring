@@ -282,10 +282,7 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 		case PATH_SEARCH_ASTAR:
 			{
 				const auto& speedModInfo = comp.relSpeedModinfos[nodeLayer->GetNodelayer()];
-				const float maxSpeedMod = speedModInfo.max;
-				const float meanSpeedMod = speedModInfo.mean;
-				const float chosenSpeedMod = maxSpeedMod - (maxSpeedMod - meanSpeedMod) * modInfo.pfHcostMult;
-				hCostMult = 1.0f / chosenSpeedMod;
+				hCostMult = 1.0f / speedModInfo.max;
 			}
 			break;
 		case PATH_SEARCH_DIJKSTRA:
@@ -728,6 +725,9 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
+	// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
+	const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
+
 	const std::vector<INode::NeighbourPoints>& nxtNodes = curNode->GetNeighbours();
 	for (unsigned int i = 0; i < nxtNodes.size(); i++) {
 		// NOTE:
@@ -802,8 +802,6 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 			hDists[j] = searchData.tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
 
-			// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
-			const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 			gCosts[j] =
 				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
 				curNodeSanitizedCost * gDists[j];
@@ -813,9 +811,9 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 				gCosts[j] += nxtNode->GetMoveCost() * hDists[j];
 			}
 
-			if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
-				netPointIdx = j;
-			}
+			// if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
+			// 	netPointIdx = j;
+			// }
 		}
 		// LOG("%s: [%d] nxtNode=%d gd=%f, hd=%f, gc=%f, hc=%f, fc=%f", __func__, searchDir, nxtNodesId
 		// 		, gDists[netPointIdx], hDists[netPointIdx], gCosts[netPointIdx], hCosts[netPointIdx]
