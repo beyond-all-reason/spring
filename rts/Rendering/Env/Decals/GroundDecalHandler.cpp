@@ -365,7 +365,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 
 	decalShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);
 	decalShader->SetFlag("HAVE_SHADOWS", true);
-	decalShader->SetFlag("HAVE_MULTISAMPLING", highQuality);
+	decalShader->SetFlag("HIGH_QUALITY", highQuality);
 
 	decalShader->BindAttribLocation("posT"       , 0);
 	decalShader->BindAttribLocation("posB"       , 1);
@@ -395,6 +395,8 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetUniform("shadowColorTex", 7);
 	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
+	decalShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
+
 
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	decalShader->SetUniform("screenSizeInverse",
@@ -947,7 +949,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 		.createFrameMin = oldDecal.createFrameMax,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
-		.uvTraveledDistance = posL.Distance(posR),
+		.uvTraveledDistance = /*posL.Distance(posR)*/ oldDecal.posTL.Distance(oldDecal.posTR),
 		.id = GroundDecal::GetNextId()
 	});
 

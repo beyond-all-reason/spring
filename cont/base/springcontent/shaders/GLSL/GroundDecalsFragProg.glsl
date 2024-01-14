@@ -1,4 +1,4 @@
-#ifdef HAVE_MULTISAMPLING
+#ifdef HIGH_QUALITY
 	uniform sampler2DMS depthTex;
 #else
 	uniform sampler2D   depthTex;
@@ -32,6 +32,7 @@ flat in vec4 vuvNorm;
 flat in vec4 midPoint;
 flat in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
 flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
+flat in vec3 avgGroundNormal;
 
 out vec4 fragColor;
 
@@ -108,13 +109,87 @@ vec3 GetFragmentNormal(vec2 wxz) {
 	return normal;
 }
 
-vec3 GetShadowColor(vec3 worldPos) {
+// Shadow mapping functions (HighQ)
+
+//const float goldenAngle = PI * (3.0 - sqrt(5.0));
+const float goldenAngle = 2.3999632297286533222315555066336;
+//const float PI = acos(0.0) * 2.0;
+const float PI = 3.1415926535897932384626433832795;
+
+// http://blog.marmakoide.org/?p=1
+vec2 SpiralSNorm(int i, int N) {
+	float theta = float(i) * goldenAngle;
+	float r = sqrt(float(i)) / sqrt(float(N));
+	return vec2 (r * cos(theta), r * sin(theta));
+}
+
+float hash12L(vec2 p) {
+	const float HASHSCALE1 = 0.1031;
+	vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);
+	p3 += dot(p3, p3.yzx + 19.19);
+	return fract((p3.x + p3.y) * p3.z);
+}
+// Derivatives of light-space depth with respect to texture2D coordinates
+vec2 DepthGradient(vec3 xyz) {
+	vec2 dZduv = vec2(0.0, 0.0);
+
+	vec3 dUVZdx = dFdx(xyz);
+	vec3 dUVZdy = dFdy(xyz);
+
+	dZduv.x  = dUVZdy.y * dUVZdx.z;
+	dZduv.x -= dUVZdx.y * dUVZdy.z;
+
+	dZduv.y  = dUVZdx.x * dUVZdy.z;
+	dZduv.y -= dUVZdy.x * dUVZdx.z;
+
+	float det = (dUVZdx.x * dUVZdy.y) - (dUVZdx.y * dUVZdy.x);
+
+	return dZduv / det;
+}
+
+float BiasedZ(float z0, vec2 dZduv, vec2 offset) {
+	//return z0 + dot(dZduv, offset);
+	return z0;
+}
+
+vec3 GetShadowColor(vec3 worldPos, float NdotL) {
 #ifdef HAVE_SHADOWS
 	vec4 shadowPos = shadowMatrix * vec4(worldPos, 1.0);
 	shadowPos.xy += vec2(0.5);
+	shadowPos /= shadowPos.w;
 
 	vec3 shadowColor = texture(shadowColorTex, shadowPos.xy).rgb;
-	return mix(vec3(1.0), textureProj(shadowTex, shadowPos) * shadowColor, groundAmbientColor.w);
+	#ifndef HIGH_QUALITY
+		float shadowFactor = texture(shadowTex, shadowPos.xyz);
+	#else
+		const int shadowSamples = 3;
+		const float samplingRandomness = 0.4;
+		const float samplingDistance = 1.0;
+
+		vec2 dZduv = DepthGradient(shadowPos.xyz);
+
+		float rndRotAngle = NORM2SNORM(hash12L(gl_FragCoord.xy)) * PI / 2.0 * samplingRandomness;
+
+		vec2 vSinCos = vec2(sin(rndRotAngle), cos(rndRotAngle));
+		mat2 rotMat = mat2(vSinCos.y, -vSinCos.x, vSinCos.x, vSinCos.y);
+
+		vec2 filterSize = vec2(samplingDistance / vec2(textureSize(shadowTex, 0)));
+
+		float shadowFactor = 0.0;
+		for (int i = 0; i < shadowSamples; ++i) {
+			// SpiralSNorm return low discrepancy sampling vec2
+			vec2 offset = (rotMat * SpiralSNorm( i, shadowSamples )) * filterSize;
+
+			vec3 shadowSamplingCoord = vec3(shadowPos.xy, 0.0) + vec3(offset, BiasedZ(shadowPos.z, dZduv, offset));
+			shadowSamplingCoord.xy += offset;
+
+			shadowFactor += texture(shadowTex, shadowSamplingCoord);
+		}
+		shadowFactor /= float(shadowSamples);
+	#endif
+	shadowFactor = min(shadowFactor, smoothstep(0.0, 0.35, NdotL));
+
+	return mix(vec3(1.0), shadowFactor * shadowColor, groundAmbientColor.w);
 #else
 	return vec3(1.0);
 #endif
@@ -195,7 +270,8 @@ void main() {
 
 	float u = 1.0;
 	if (misc.z > 0.0) {
-		u = distance((posTL + posBL) * 0.5, (posBR + posTR) * 0.5) / misc.z;
+		//u = distance((posTL + posBL) * 0.5, (posBR + posTR) * 0.5) / misc.z;
+		u = distance(posTL, posTR) / misc.z;
 	}
 
 	vec4 relUV;
@@ -219,8 +295,8 @@ void main() {
 	}
 
 	if (disc) {
-		fragColor = vec4(0.0);
-		return;
+		//fragColor = vec4(0.0);
+		//return;
 		//discard;
 	}
 
@@ -283,17 +359,22 @@ void main() {
 	//vec3 decalNormal = normalize(mix(N, normalize(TBN * NORM2SNORM(normVal.xyz)), alpha));
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
 
-	fragColor.rgb = mainCol.rgb * (max(dot(sunDir, decalNormal), 0.0) + groundAmbientColor.rgb) * GetShadowColor(worldPos.xyz);
+	fragColor.rgb = mainCol.rgb * (max(dot(sunDir, decalNormal), 0.0) + groundAmbientColor.rgb) * GetShadowColor(worldPos.xyz, dot(sunDir, N));
 	fragColor.rgb += BlackBody(normVal.w * t) * glow;
 
 	// alpha
 	fragColor.a = mainCol.a;
 	fragColor.a *= alpha;
+	fragColor   *= max(pow(dot(avgGroundNormal, N), 4.0), 0.0);
 	//fragColor.a *= pow(max(0.0, N.y), 2);
 
 	if (misc.z == 0.0) {
-		fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
+		//fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
 	}
+
+	//fragColor = vec4(1,0,0,1);
+
+	//fragColor = vec4(GetShadowColor(worldPos.xyz, dot(sunDir, N)), 1.0);
 
 	//fragColor = vec4(relUV.yyy, 1.0);
 

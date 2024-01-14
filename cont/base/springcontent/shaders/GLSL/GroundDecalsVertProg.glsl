@@ -20,6 +20,7 @@ flat out vec4 vuvNorm;
 flat out vec4 midPoint;
 flat out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
 flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
+flat out vec3 avgGroundNormal;
 
 #define posTL vPosT.xy
 #define posTR vPosT.zw
@@ -197,7 +198,7 @@ void main() {
 	worldPos.xz += testResults.w * posBL;
 
 	#if 1
-	vec3 avgGroundNormal = normalize(
+	avgGroundNormal = normalize(
 		GetFragmentNormal(midPoint.xz) +
 		GetFragmentNormal(posTL) +
 		GetFragmentNormal(posTR) +
@@ -205,7 +206,7 @@ void main() {
 		GetFragmentNormal(posBL)
 	);
 	#else
-	vec3 avgGroundNormal = GetFragmentNormal(midPoint.xz);
+	avgGroundNormal = GetFragmentNormal(midPoint.xz);
 	#endif
 
 	// mid-point height
@@ -213,17 +214,17 @@ void main() {
 
 	// effect's height
 	misc.y = info.w;
-	
+
 	// store uvWrapDistance
 	misc.z = uvParams.x;
-	
+
 	// store traveled distance
 	misc.w = uvParams.y;
 
 	worldPos.y = midPoint.y + relPos.y * misc.y;
 
 	// do not rotate almost vertical cubes
-	if (1.0 - avgGroundNormal.y > 0.1) {
+	if (false && 1.0 - avgGroundNormal.y > 0.1) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
 		vec3 rotAxis = normalize(vec3(avgGroundNormal.z, 0.0, -avgGroundNormal.x));
 		// rotate the cube (through its vertices) to align with the terrain normal
