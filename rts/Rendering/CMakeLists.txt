@@ -113,6 +113,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TextureFormat.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TextureCollection.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TextureAtlas.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/TextureRenderAtlas.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/nv_dds.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/QuadtreeAtlasAlloc.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Textures/RowAtlasAlloc.cpp"

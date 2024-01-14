@@ -58,7 +58,7 @@ public:
 	enum TextureType {
 		RGBA32
 	};
-	enum {
+	enum AllocatorType {
 		ATLAS_ALLOC_LEGACY   = 0,
 		ATLAS_ALLOC_QUADTREE = 1,
 		ATLAS_ALLOC_ROW      = 2,
