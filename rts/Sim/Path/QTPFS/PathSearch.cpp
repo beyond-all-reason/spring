@@ -612,11 +612,14 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	} else if (badGoal) {
 		// Starting nodw for the reverse search is the nearest node to the goalPos.
 		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
+	} else if (useFwdPathOnly) {
+		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*fwd.tgtSearchNode, goalPos);
 	}
 	#endif
 
-	// LOG("%s: search %x result(%d||%d) nodes searched (%d, %d)", __func__, this->GetID()
-	// 		, int(haveFullPath), int(havePartPath), int(fwdNodesSearched), int(bwdNodesSearched));
+	// LOG("%s: search %x result(%d||%d) nodes searched (%d, %d) free nodes (%i)", __func__, this->GetID()
+	// 		, int(haveFullPath), int(havePartPath), int(fwdNodesSearched), int(bwdNodesSearched)
+	// 		, nodeLayer->GetNumOpenNodes());
 
 	return (haveFullPath || havePartPath);
 }
