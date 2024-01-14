@@ -1626,7 +1626,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 
 
 #ifndef HEADLESS
-unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const
+uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const
 {
 	if (compressed)
 		return CreateDDSTexture(texID, aniso, lodBias, mipmaps);
@@ -1685,7 +1685,7 @@ static void HandleDDSMipmap(GLenum target, bool mipmaps, int num_mipmaps)
 	}
 }
 
-unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lodBias, bool mipmaps) const
+uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, bool mipmaps) const
 {
 	glPushAttrib(GL_TEXTURE_BIT);
 
@@ -1760,11 +1760,11 @@ unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lo
 }
 #else  // !HEADLESS
 
-unsigned int CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const {
+uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const {
 	return 0;
 }
 
-unsigned int CBitmap::CreateDDSTexture(unsigned int texID, float aniso, float lodBias, bool mipmaps) const {
+uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, bool mipmaps) const {
 	return 0;
 }
 #endif // !HEADLESS

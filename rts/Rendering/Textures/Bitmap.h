@@ -53,16 +53,16 @@ public:
 	/// Load data from a gray-scale file on the VFS
 	bool LoadGrayscale(std::string const& filename);
 
-	bool Save(const std::string& filename, bool dontSaveAlpha, bool logged = false, unsigned quality = 80) const;
+	bool Save(const std::string& filename, bool dontSaveAlpha, bool logged = false, uint32_t quality = 80) const;
 	bool SaveGrayScale(const std::string& filename) const;
 	bool SaveFloat(const std::string& filename) const;
 
 	bool Empty() const { return (memIdx == size_t(-1)); } // implies size=0
 
-	unsigned int CreateTexture(float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false, uint32_t texID = 0) const;
-	unsigned int CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, true)); }
-	unsigned int CreateAnisoTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, false)); }
-	unsigned int CreateDDSTexture(unsigned int texID = 0, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) const;
+	uint32_t CreateTexture(float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false, uint32_t texID = 0) const;
+	uint32_t CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, true)); }
+	uint32_t CreateAnisoTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, false)); }
+	uint32_t CreateDDSTexture(uint32_t texID = 0, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) const;
 
 	void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue);
 	void ReplaceAlpha(float a = 1.0f);

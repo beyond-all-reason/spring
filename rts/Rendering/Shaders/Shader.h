@@ -115,7 +115,7 @@ namespace Shader {
 		ShaderEnabledToken& operator=(const ShaderEnabledToken& rhs) = delete;
 
 		~ShaderEnabledToken();
-
+	private:
 		IProgramObject* prog = nullptr;
 	};
 
