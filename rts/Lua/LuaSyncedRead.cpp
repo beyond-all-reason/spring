@@ -6960,7 +6960,9 @@ int LuaSyncedRead::IsPosInMap(lua_State* L)
 	return 2;
 }
 
-/***
+/*** Get ground height
+ *
+ * On sea, this returns the negative depth of the seafloor
  *
  * @function Spring.GetGroundHeight
  * @number x
@@ -6976,7 +6978,9 @@ int LuaSyncedRead::GetGroundHeight(lua_State* L)
 }
 
 
-/***
+/*** Get ground height as it was at game start
+ *
+ * Returns the original height before the ground got deformed
  *
  * @function Spring.GetGroundOrigHeight
  * @number x
