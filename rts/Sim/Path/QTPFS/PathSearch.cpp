@@ -373,6 +373,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	bool isFullSearch = !doPartialSearch;
 	int dirThatFinishedTheSearch = 0;
 
+	disallowNodeRevisit = modInfo.qtLowerQualityPaths;
+
 	auto nodeIsTemp = [](const SearchNode& curSearchNode) {
 		return (curSearchNode.GetPathCost(NODE_PATH_COST_H) == std::numeric_limits<float>::infinity());
 	};
@@ -759,6 +761,10 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		// Don't process the node we just came from. We can't improve on the route by doubling back on ourselves.
 		if (curSearchNode->GetPrevNode() == nextSearchNode)
 			continue;
+
+		if (disallowNodeRevisit)
+			if (nextSearchNode->GetPathCost(NODE_PATH_COST_G) != QTPFS_POSITIVE_INFINITY)
+				continue;
 
 		const bool isTarget = (nextSearchNode == searchData.tgtSearchNode);
 		QTPFS::INode *nxtNode = nullptr;

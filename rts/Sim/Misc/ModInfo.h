@@ -212,6 +212,9 @@ public:
 	/// would bring the unit nearer to the goal.
 	float qtRefreshPathMinDist;
 
+	/// Enable to reduce CPU usage, but also reduce quality of resultant paths.
+	bool qtLowerQualityPaths;
+
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 
