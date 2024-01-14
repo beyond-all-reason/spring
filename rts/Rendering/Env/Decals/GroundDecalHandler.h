@@ -11,7 +11,7 @@
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
-#include "Rendering/Textures/TextureCollection.h"
+#include "Rendering/Textures/TextureRenderAtlas.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
 #include "Sim/Misc/GlobalConstants.h"
@@ -36,6 +36,7 @@ public:
 
 	void OnDecalLevelChanged() override {}
 private:
+	void BindGroundAtlasTextures();
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
@@ -98,10 +99,10 @@ private:
 
 	uint32_t GetDepthBufferTextureTarget() const;
 
-	void GenerateAtlasTexture();
+	void GenerateAtlasTextures();
 	void ReloadDecalShaders();
 
-	void AddTexToCollection(const std::string& name, bool mainTex);
+	void AddTexToGroundAtlas(const std::string& name, bool mainTex);
 	void AddTexToAtlas(const std::string& name, bool mainTex);
 	void AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex);
 
@@ -119,7 +120,8 @@ private:
 	size_t maxUniqueScars;
 
 	std::unique_ptr<CTextureAtlas> atlas;
-	CTextureCollection buildingDecalTextures;
+	std::unique_ptr<TextureRenderAtlas> groundDecalAtlasMain;
+	std::unique_ptr<TextureRenderAtlas> groundDecalAtlasNorm;
 
 	Shader::IProgramObject* decalShader;
 

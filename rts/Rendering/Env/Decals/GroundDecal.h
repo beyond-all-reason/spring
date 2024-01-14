@@ -33,8 +33,6 @@ public:
 
 	// not sent to the shader
 	uint32_t id;
-	uint32_t texID0;
-	uint32_t texID1;
 public:
 	static uint32_t GetNextId() { nextId = (nextId % GroundDecal::ID_WRAPAROUND) + 1; return nextId; }
 	static inline uint32_t nextId = 0; // 0 in fact is reserved and never used

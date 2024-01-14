@@ -72,7 +72,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 
 	smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
 
-	GenerateAtlasTexture();
+	GenerateAtlasTextures();
 	ReloadDecalShaders();
 
 	instTmpVBO = VBO(GL_ARRAY_BUFFER, false, false);
@@ -96,9 +96,11 @@ CGroundDecalHandler::~CGroundDecalHandler()
 	shaderHandler->ReleaseProgramObjects("[GroundDecalHandler]");
 	decalShader = nullptr;
 	atlas = nullptr;
+	groundDecalAtlasMain = nullptr;
+	groundDecalAtlasNorm = nullptr;
 }
 
-static auto LoadTexture(const std::string& name, bool mainTex)
+static auto LoadTexture(const std::string& name, bool convertDecalBitmap)
 {
 	std::string fileName = StringToLower(name);
 
@@ -117,7 +119,7 @@ static auto LoadTexture(const std::string& name, bool mainTex)
 	if (!bm.Load(fullName))
 		throw content_error("Could not load ground decal \"" + fileName + "\"");
 
-	if (mainTex && FileSystem::GetExtension(fullName) == "bmp") {
+	if (convertDecalBitmap && FileSystem::GetExtension(fullName) == "bmp") {
 		// bitmaps don't have an alpha channel
 		// so use: red := brightness & green := alpha
 		auto* rmem = bm.GetRawMem();
@@ -138,7 +140,7 @@ static auto LoadTexture(const std::string& name, bool mainTex)
 	}
 	// non BMP scar textures doesn't follow the above historic convention, so keep them as is
 
-	return std::make_tuple(bm, int2(bm.xsize, bm.ysize), fullName);
+	return std::make_tuple(bm, fullName);
 }
 
 static inline std::string GetExtraTextureName(const std::string& mainTex) {
@@ -146,10 +148,11 @@ static inline std::string GetExtraTextureName(const std::string& mainTex) {
 	return mainTex.substr(0, dotPos) + "_normal" + (dotPos == string::npos ? "" : mainTex.substr(dotPos));
 }
 
-void CGroundDecalHandler::AddTexToCollection(const std::string& name, bool mainTex) {
+void CGroundDecalHandler::AddTexToGroundAtlas(const std::string& name, bool mainTex) {
 	try {
-		const auto& [bm, dims, fn] = LoadTexture(name, mainTex);
-		buildingDecalTextures.AddTexFromBitmap(name, fn, bm);
+		const auto& [bm, fn] = LoadTexture(name, mainTex);
+		const auto& groundDecalAtlas = (mainTex ? groundDecalAtlasMain : groundDecalAtlasNorm);
+		groundDecalAtlas->AddTexFromBitmap(name, bm);
 	}
 	catch (const content_error& err) {
 		LOG_L(L_ERROR, "%s", err.what());
@@ -158,8 +161,8 @@ void CGroundDecalHandler::AddTexToCollection(const std::string& name, bool mainT
 
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
 	try {
-		const auto& [bm, dims, fn] = LoadTexture(name, mainTex);
-		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
+		const auto& [bm, fn] = LoadTexture(name, mainTex);
+		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	catch (const content_error& err) {
 		LOG_L(L_ERROR, "%s", err.what());
@@ -169,8 +172,8 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex) {
 	if (!filename.empty())
 	try {
-		const auto& [bm, dims, fn] = LoadTexture(filename, mainTex);
-		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
+		const auto& [bm, fn] = LoadTexture(filename, mainTex);
+		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
 		return;
 	}
 	catch (const content_error& err) {
@@ -179,8 +182,8 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::stri
 
 	if (!filenameAlt.empty())
 	try {
-		const auto& [bm, dims, fn] = LoadTexture(filenameAlt, mainTex);
-		atlas->AddTexFromMem(name, dims.x, dims.y, CTextureAtlas::RGBA32, bm.GetRawMem());
+		const auto& [bm, fn] = LoadTexture(filenameAlt, mainTex);
+		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	catch (const content_error& err) {
 		LOG_L(L_ERROR, "%s", err.what());
@@ -197,24 +200,31 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 		return bm.CreateTexture();
 	};
 
-	buildingDecalTextures.AddTexBlank("%FB_MAIN%", 32, 32, SColor(255,   0,   0, 255));
-	buildingDecalTextures.AddTexBlank("%FB_NORM%", 32, 32, SColor(128, 128, 255, 128));
-
 	auto ProcessDefs = [this](const auto& defsVector) {
 		for (const SolidObjectDef& soDef : defsVector) {
 			const SolidObjectDecalDef& decalDef = soDef.decalDef;
 
 			if (!decalDef.useGroundDecal)
 				continue;
-			if (buildingDecalTextures.TextureExists(decalDef.groundDecalTypeName))
+
+			if (decalDef.groundDecalTypeName.empty())
 				continue;
 
-			AddTexToCollection(                   (decalDef.groundDecalTypeName), true );
-			AddTexToCollection(GetExtraTextureName(decalDef.groundDecalTypeName), false);
+			AddTexToGroundAtlas(                   (decalDef.groundDecalTypeName), true );
+			AddTexToGroundAtlas(GetExtraTextureName(decalDef.groundDecalTypeName), false);
 		}
 	};
 	ProcessDefs(featureDefHandler->GetFeatureDefsVec());
 	ProcessDefs(unitDefHandler->GetUnitDefsVec());
+
+	{
+		const auto minDim = std::max(groundDecalAtlasMain->GetMinDim(), 32);
+		groundDecalAtlasMain->AddTex("%FB_MAIN%", minDim, minDim, SColor(255,   0,   0, 255));
+	}
+	{
+		const auto minDim = std::max(groundDecalAtlasNorm->GetMinDim(), 32);
+		groundDecalAtlasNorm->AddTex("%FB_NORM%", minDim, minDim, SColor(128, 128, 255, 128));
+	}
 }
 
 
@@ -310,8 +320,10 @@ uint32_t CGroundDecalHandler::GetDepthBufferTextureTarget() const
 	return highQuality ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 }
 
-void CGroundDecalHandler::GenerateAtlasTexture() {
+void CGroundDecalHandler::GenerateAtlasTextures() {
 	atlas = std::make_unique<CTextureAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, "DecalTextures", true);
+	groundDecalAtlasMain = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
+	groundDecalAtlasNorm = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
 
 	// often represented by compressed textures, cannot be added to the atlas
 	AddBuildingDecalTextures();
@@ -320,7 +332,11 @@ void CGroundDecalHandler::GenerateAtlasTexture() {
 	AddGroundTrackTextures();
 	AddFallbackTextures();
 
-	bool b = atlas->Finalize();
+	bool b =
+		groundDecalAtlasMain->Finalize() &&
+		groundDecalAtlasNorm->Finalize() &&
+		atlas->Finalize();
+
 	//atlas->DumpTexture("CGroundDecalHandler.bmp");
 	assert(b);
 
@@ -391,6 +407,15 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->Disable();
 
 	decalShader->Validate();
+}
+
+void CGroundDecalHandler::BindGroundAtlasTextures()
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(groundDecalAtlasMain->GetTexTarget(), groundDecalAtlasMain->GetTexID());
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(groundDecalAtlasNorm->GetTexTarget(), groundDecalAtlasNorm->GetTexID());
 }
 
 void CGroundDecalHandler::BindAtlasTextures()
@@ -526,9 +551,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
-		.id = GroundDecal::GetNextId(),
-		.texID0 = 0,
-		.texID1 = 0
+		.id = GroundDecal::GetNextId()
 	});
 
 	decalIdToTmpDecalsVecPos[decal.id] = temporaryDecals.size() - 1;
@@ -539,7 +562,13 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 void CGroundDecalHandler::ReloadTextures()
 {
 	atlas->ReloadTextures();
-	buildingDecalTextures.Reload();
+	{
+		groundDecalAtlasMain = nullptr;
+		groundDecalAtlasNorm = nullptr;
+		groundDecalAtlasMain = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
+		groundDecalAtlasNorm = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
+		AddBuildingDecalTextures();
+	}
 }
 
 void CGroundDecalHandler::Draw()
@@ -639,42 +668,10 @@ void CGroundDecalHandler::Draw()
 
 
 	if (!permanentDecals.empty()) {
-		GLsizei numInstance = 1;
-		GLuint baseInstance = 0;
-		uint32_t texID0 = permanentDecals[0].texID0;
-		uint32_t texID1 = permanentDecals[0].texID1;
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texID0);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texID1);
+		BindGroundAtlasTextures();
 
 		vaoPerm.Bind();
-		for (size_t i = 1; i < permanentDecals.size(); ++i) {
-			const auto& permanentDecal = permanentDecals[i];
-			if (permanentDecal.texID0 == texID0 && permanentDecal.texID1 == texID1) {
-				numInstance += 1;
-				continue;
-			}
-
-			glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 36, numInstance, baseInstance);
-			baseInstance += numInstance;
-
-			numInstance = 1;
-
-			if (permanentDecal.texID0 != texID0) {
-				texID0 = permanentDecal.texID0;
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, texID0);
-			}
-			if (permanentDecal.texID1 != texID1) {
-				texID1 = permanentDecal.texID1;
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, texID1);
-			}
-		}
-		if (numInstance > 0)
-			glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 36, numInstance, baseInstance);
-
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, permanentDecals.size());
 		vaoPerm.Unbind();
 	}
 
@@ -701,9 +698,6 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 
 	if (decalOwners.contains(object))
 		return; // already added
-
-	const auto texID0 = buildingDecalTextures.GetTextureID(                   (decalDef.groundDecalTypeName), "%FB_MAIN%");
-	const auto texID1 = buildingDecalTextures.GetTextureID(GetExtraTextureName(decalDef.groundDecalTypeName), "%FB_NORM%");
 
 	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
 
@@ -734,8 +728,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.posTR = posTR,
 		.posBR = posBR,
 		.posBL = posBL,
-		.texMainOffsets = AtlasedTexture(float4(0.0f, 0.0f, 1.0f, 1.0f)),
-		.texNormOffsets = AtlasedTexture(float4(0.0f, 0.0f, 1.0f, 1.0f)),
+		.texMainOffsets = groundDecalAtlasMain->GetTexture(                   (decalDef.groundDecalTypeName), "%FB_MAIN%"),
+		.texNormOffsets = groundDecalAtlasNorm->GetTexture(GetExtraTextureName(decalDef.groundDecalTypeName), "%FB_NORM%"),
 		.alpha = 1.0f,
 		.alphaFalloff = 0.0f,
 		.rot = 0.0f,
@@ -744,16 +738,11 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
-		.id = GroundDecal::GetNextId(),
-		.texID0 = texID0,
-		.texID1 = texID1
+		.id = GroundDecal::GetNextId()
 	});
 
 	decalOwners[object] = decal.id;
 
-	std::sort(permanentDecals.begin(), permanentDecals.end(), [](const GroundDecal& lhs, const GroundDecal& rhs) {
-		return std::make_pair(lhs.texID0, lhs.texID1) < std::make_pair(rhs.texID0, rhs.texID1);
-	});
 	permNeedsUpdate = true;
 }
 
