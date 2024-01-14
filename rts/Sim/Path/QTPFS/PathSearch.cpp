@@ -1516,7 +1516,7 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	dstPath->SetHasPartialPath(srcPath->IsPartialPath());
 	dstPath->SetSearchTime(srcPath->GetSearchTime());
 	dstPath->SetRepathTriggerIndex(srcPath->GetRepathTriggerIndex());
-	dstPath->SetGoalPosition(fwd.tgtPoint);
+	dstPath->SetGoalPosition(goalPos);
 
 	haveFullPath = srcPath->IsFullPath();
 	havePartPath = srcPath->IsPartialPath();
