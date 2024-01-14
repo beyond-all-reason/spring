@@ -15,8 +15,8 @@ public:
 		atlasSize = {256, 256};
 	}
 
-	virtual bool Allocate();
-	virtual int GetMaxMipMaps() { return 0; }
+	bool Allocate() override;
+	int GetMaxMipMaps() override;
 
 private:
 	struct Row {

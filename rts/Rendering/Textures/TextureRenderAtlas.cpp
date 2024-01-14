@@ -1,7 +1,6 @@
 #include "TextureRenderAtlas.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "LegacyAtlasAlloc.h"
 #include "QuadtreeAtlasAlloc.h"
@@ -15,9 +14,40 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 #include "fmt/format.h"
+
+namespace {
+static constexpr const char* vsTRA = R"(
+#version 150
+
+in vec2 pos;
+in vec2 uv;
+
+out vec2 vUV;
+
+void main() {
+	vUV  = uv;
+	gl_Position = vec4(pos, 0.0, 1.0);
+}
+)";
+
+static constexpr const char* fsTRA = R"(
+#version 150
+
+uniform sampler2D tex;
+uniform float lod;
+
+in vec2 vUV;
+out vec4 outColor;
+
+void main() {
+	outColor = textureLod(tex, vUV, lod);
+}
+)";
+};
 
 CTextureRenderAtlas::CTextureRenderAtlas(
 	CTextureAtlas::AllocatorType allocType_,
@@ -28,7 +58,6 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 	)
 	: atlasSizeX(atlasSizeX_)
 	, atlasSizeY(atlasSizeY_)
-	, minDim(std::numeric_limits<int>::max())
 	, allocType(allocType_)
 	, glInternalType(glInternalType_)
 	, atlasName(atlasName_)
@@ -47,10 +76,32 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 
 	atlasAllocator->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
+
+	if (shaderRef == 0) {
+		shader = shaderHandler->CreateProgramObject("[TextureRenderAtlas]", "TextureRenderAtlas");
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject(vsTRA, "", GL_VERTEX_SHADER));
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject(fsTRA, "", GL_FRAGMENT_SHADER));
+		shader->BindAttribLocation("pos", 0);
+		shader->BindAttribLocation("uv", 1);
+		shader->Link();
+
+		shader->Enable();
+		shader->SetUniform("tex", 0);
+		shader->SetUniform("lod", 0.0f);
+		shader->Disable();
+		shader->Validate();
+	}
+
+	shaderRef++;
 }
 
 CTextureRenderAtlas::~CTextureRenderAtlas()
 {
+	shaderRef--;
+
+	if (shaderRef == 0)
+		shaderHandler->ReleaseProgramObjects("[TextureRenderAtlas]");
+
 	for (auto& [_, tID] : nameToTexID) {
 		if (tID) {
 			glDeleteTextures(1, &tID);
@@ -108,7 +159,6 @@ bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBi
 {
 	atlasAllocator->AddEntry(name, int2{ bm.xsize, bm.ysize });
 	nameToTexID[name] = bm.CreateMipMapTexture();
-	minDim = std::min({ minDim, bm.xsize, bm.ysize });
 
 	return true;
 }
@@ -161,7 +211,7 @@ uint32_t CTextureRenderAtlas::GetTexTarget() const
 
 int CTextureRenderAtlas::GetMinDim() const
 {
-	return (minDim < std::numeric_limits<int>::max()) ? minDim : 1;
+	return atlasAllocator->GetMinDim();
 }
 
 bool CTextureRenderAtlas::Finalize()
@@ -199,10 +249,6 @@ bool CTextureRenderAtlas::Finalize()
 		);
 
 		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
-		auto& sh = rb.GetShader();
-
-		glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
-		glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
 
 		FBO fbo;
 		fbo.Init(false);
@@ -220,7 +266,8 @@ bool CTextureRenderAtlas::Finalize()
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-			auto shEnToken = sh.EnableScoped();
+			auto shEnToken = shader->EnableScoped();
+			shader->SetUniform("lod", static_cast<float>(level));
 			// draw
 			for (auto& [name, entry] : atlasAllocator->GetEntries()) {
 				const auto tc = atlasAllocator->GetTexCoords(name);
@@ -249,9 +296,6 @@ bool CTextureRenderAtlas::Finalize()
 		fbo.DetachAll();
 		FBO::Unbind();
 		globalRendering->LoadViewport();
-
-		/*glMatrixMode(GL_PROJECTION);*/ glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);      glPopMatrix();
 	}
 
 	if (!finalized)
@@ -264,7 +308,7 @@ bool CTextureRenderAtlas::Finalize()
 		}
 	}
 
-	//DumpAtlas();
+	DumpAtlas();
 
 	return true;
 }
@@ -278,7 +322,7 @@ bool CTextureRenderAtlas::DumpAtlas() const
 		return false;
 
 	int levels = std::bit_width(static_cast<uint32_t>(GetMinDim()));
-	levels = std::max(levels, std::min(atlasAllocator->GetMaxMipMaps(), 1));
+	levels = std::min(levels, std::max(atlasAllocator->GetMaxMipMaps(), 1));
 
 	for (uint32_t level = 0; level < levels; ++level) {
 		glSaveTexture(texID, fmt::format("{}_{}.png", atlasName, level).c_str(), level);

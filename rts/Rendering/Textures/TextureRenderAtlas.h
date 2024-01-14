@@ -12,6 +12,9 @@
 #include "System/UnorderedMap.hpp"
 
 class CBitmap;
+namespace Shader {
+	struct IProgramObject;
+}
 
 class CTextureRenderAtlas {
 public:
@@ -43,12 +46,13 @@ private:
 	spring::unordered_map<std::string, uint32_t> nameToTexID;
 	int atlasSizeX;
 	int atlasSizeY;
-	int minDim;
 	CTextureAtlas::AllocatorType allocType;
 	uint32_t glInternalType;
 	uint32_t texID;
 	std::unique_ptr<IAtlasAllocator> atlasAllocator;
 	std::string atlasName;
+	static inline size_t shaderRef = 0;
+	static inline Shader::IProgramObject* shader = nullptr;
 	bool finalized;
 public:
 	static inline AtlasedTexture dummy = AtlasedTexture{};

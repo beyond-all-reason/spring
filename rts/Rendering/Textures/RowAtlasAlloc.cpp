@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <bit>
 
 // texture spacing in the atlas (in pixels)
 static constexpr int ATLAS_PADDING = 1;
@@ -134,6 +135,11 @@ bool CRowAtlasAlloc::Allocate()
 	}
 
 	return success;
+}
+
+int CRowAtlasAlloc::GetMaxMipMaps()
+{
+	return std::bit_width(static_cast<uint32_t>(GetMinDim()));
 }
 
 

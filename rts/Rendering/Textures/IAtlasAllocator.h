@@ -4,12 +4,12 @@
 #define IATLAS_ALLOC_H
 
 #include <string>
+#include <limits>
 
 #include "System/float4.h"
 #include "System/type2.h"
 #include "System/UnorderedMap.hpp"
 #include "System/StringHash.h"
-
 
 
 class IAtlasAllocator
@@ -43,6 +43,7 @@ public:
 public:
 	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
 	{
+		minDim = std::min({ minDim, size.x, size.y });
 		entries[name] = SAtlasEntry(size, name, data);
 	}
 
@@ -77,15 +78,17 @@ public:
 
 	bool contains(const std::string& name) const
 	{
-		return (entries.find(name) != entries.end());
+		return entries.contains(name);
 	}
 
 	//! note: it doesn't clear the atlas! it only clears the entry db!
 	void clear()
 	{
+		minDim = std::numeric_limits<int>::max();
 		entries.clear();
 	}
 
+	int GetMinDim() const { return minDim < std::numeric_limits<int>::max() ? minDim : 1; }
 
 	int2 GetMaxSize() const { return maxsize; }
 	int2 GetAtlasSize() const { return atlasSize; }
@@ -95,6 +98,7 @@ protected:
 
 	int2 atlasSize;
 	int2 maxsize = {2048, 2048};
+	int minDim = std::numeric_limits<int>::max();
 
 	bool npot = false;
 };

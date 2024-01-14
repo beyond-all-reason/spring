@@ -5,6 +5,7 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <bit>
 
 
 // texture spacing in the atlas (in pixels)
@@ -162,4 +163,9 @@ bool CLegacyAtlasAlloc::Allocate()
 		atlasSize = max;
 
 	return success;
+}
+
+int CLegacyAtlasAlloc::GetMaxMipMaps()
+{
+	return std::bit_width(static_cast<uint32_t>(GetMinDim()));
 }

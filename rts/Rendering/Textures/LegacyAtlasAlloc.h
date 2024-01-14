@@ -9,8 +9,8 @@
 class CLegacyAtlasAlloc : public IAtlasAllocator
 {
 public:
-	virtual bool Allocate();
-	virtual int GetMaxMipMaps() { return 0; }
+	bool Allocate() override;
+	int GetMaxMipMaps() override;
 
 private:
 	bool IncreaseSize();
