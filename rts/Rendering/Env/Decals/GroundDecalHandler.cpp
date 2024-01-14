@@ -322,8 +322,8 @@ uint32_t CGroundDecalHandler::GetDepthBufferTextureTarget() const
 
 void CGroundDecalHandler::GenerateAtlasTextures() {
 	atlas = std::make_unique<CTextureAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, "DecalTextures", true);
-	groundDecalAtlasMain = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
-	groundDecalAtlasNorm = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
+	groundDecalAtlasMain = std::make_unique<CTextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
+	groundDecalAtlasNorm = std::make_unique<CTextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
 
 	// often represented by compressed textures, cannot be added to the atlas
 	AddBuildingDecalTextures();
@@ -565,8 +565,8 @@ void CGroundDecalHandler::ReloadTextures()
 	{
 		groundDecalAtlasMain = nullptr;
 		groundDecalAtlasNorm = nullptr;
-		groundDecalAtlasMain = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
-		groundDecalAtlasNorm = std::make_unique<TextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
+		groundDecalAtlasMain = std::make_unique<CTextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsMain");
+		groundDecalAtlasNorm = std::make_unique<CTextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_QUADTREE, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
 		AddBuildingDecalTextures();
 	}
 }

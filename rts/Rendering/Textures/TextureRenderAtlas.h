@@ -13,12 +13,12 @@
 
 class CBitmap;
 
-class TextureRenderAtlas {
+class CTextureRenderAtlas {
 public:
-	TextureRenderAtlas(CTextureAtlas::AllocatorType allocType, int atlasSizeX, int atlasSizeY, uint32_t glInternalType = /*GL_RGBA8*/0x8058, const std::string& atlasName = "");
-	~TextureRenderAtlas();
-	TextureRenderAtlas(const TextureRenderAtlas&) = delete;
-	TextureRenderAtlas(TextureRenderAtlas&&) = default;
+	CTextureRenderAtlas(CTextureAtlas::AllocatorType allocType, int atlasSizeX, int atlasSizeY, uint32_t glInternalType = /*GL_RGBA8*/0x8058, const std::string& atlasName = "");
+	~CTextureRenderAtlas();
+	CTextureRenderAtlas(const CTextureRenderAtlas&) = delete;
+	CTextureRenderAtlas(CTextureRenderAtlas&&) = default;
 
 	bool TextureExists(const std::string& texName);
 	bool TextureExists(const std::string& texName, const std::string& texBackupName);

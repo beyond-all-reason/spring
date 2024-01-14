@@ -19,7 +19,7 @@
 #include "System/StringUtil.h"
 #include "fmt/format.h"
 
-TextureRenderAtlas::TextureRenderAtlas(
+CTextureRenderAtlas::CTextureRenderAtlas(
 	CTextureAtlas::AllocatorType allocType_,
 	int atlasSizeX_,
 	int atlasSizeY_,
@@ -49,7 +49,7 @@ TextureRenderAtlas::TextureRenderAtlas(
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 }
 
-TextureRenderAtlas::~TextureRenderAtlas()
+CTextureRenderAtlas::~CTextureRenderAtlas()
 {
 	for (auto& [_, tID] : nameToTexID) {
 		if (tID) {
@@ -64,17 +64,17 @@ TextureRenderAtlas::~TextureRenderAtlas()
 	}
 }
 
-bool TextureRenderAtlas::TextureExists(const std::string& texName)
+bool CTextureRenderAtlas::TextureExists(const std::string& texName)
 {
 	return finalized && nameToTexID.contains(texName);
 }
 
-bool TextureRenderAtlas::TextureExists(const std::string& texName, const std::string& texBackupName)
+bool CTextureRenderAtlas::TextureExists(const std::string& texName, const std::string& texBackupName)
 {
 	return finalized && (nameToTexID.contains(texName) || nameToTexID.contains(texBackupName));
 }
 
-bool TextureRenderAtlas::AddTexFromFile(const std::string& name, const std::string& file)
+bool CTextureRenderAtlas::AddTexFromFile(const std::string& name, const std::string& file)
 {
 	if (finalized)
 		return false;
@@ -92,7 +92,7 @@ bool TextureRenderAtlas::AddTexFromFile(const std::string& name, const std::stri
 	return AddTexFromBitmapRaw(name, bm);
 }
 
-bool TextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitmap& bm)
+bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitmap& bm)
 {
 	if (finalized)
 		return false;
@@ -104,7 +104,7 @@ bool TextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitmap
 }
 
 
-bool TextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm)
+bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm)
 {
 	atlasAllocator->AddEntry(name, int2{ bm.xsize, bm.ysize });
 	nameToTexID[name] = bm.CreateMipMapTexture();
@@ -114,7 +114,7 @@ bool TextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBit
 }
 
 
-bool TextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, const SColor& color)
+bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, const SColor& color)
 {
 	if (finalized)
 		return false;
@@ -129,7 +129,7 @@ bool TextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, c
 	return AddTexFromBitmapRaw(name, bm);
 }
 
-AtlasedTexture TextureRenderAtlas::GetTexture(const std::string& texName)
+AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 {
 	if (!finalized)
 		return dummy;
@@ -140,7 +140,7 @@ AtlasedTexture TextureRenderAtlas::GetTexture(const std::string& texName)
 	return AtlasedTexture(atlasAllocator->GetTexCoords(texName));
 }
 
-AtlasedTexture TextureRenderAtlas::GetTexture(const std::string& texName, const std::string& texBackupName)
+AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const std::string& texBackupName)
 {
 	if (!finalized)
 		return dummy;
@@ -154,17 +154,17 @@ AtlasedTexture TextureRenderAtlas::GetTexture(const std::string& texName, const 
 	return GetTexture(texBackupName);
 }
 
-uint32_t TextureRenderAtlas::GetTexTarget() const
+uint32_t CTextureRenderAtlas::GetTexTarget() const
 {
 	return GL_TEXTURE_2D;
 }
 
-int TextureRenderAtlas::GetMinDim() const
+int CTextureRenderAtlas::GetMinDim() const
 {
 	return (minDim < std::numeric_limits<int>::max()) ? minDim : 1;
 }
 
-bool TextureRenderAtlas::Finalize()
+bool CTextureRenderAtlas::Finalize()
 {
 	if (finalized)
 		return false;
@@ -269,7 +269,7 @@ bool TextureRenderAtlas::Finalize()
 	return true;
 }
 
-bool TextureRenderAtlas::DumpAtlas() const
+bool CTextureRenderAtlas::DumpAtlas() const
 {
 	if (!finalized)
 		return false;

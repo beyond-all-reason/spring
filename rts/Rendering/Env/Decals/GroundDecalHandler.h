@@ -120,8 +120,8 @@ private:
 	size_t maxUniqueScars;
 
 	std::unique_ptr<CTextureAtlas> atlas;
-	std::unique_ptr<TextureRenderAtlas> groundDecalAtlasMain;
-	std::unique_ptr<TextureRenderAtlas> groundDecalAtlasNorm;
+	std::unique_ptr<CTextureRenderAtlas> groundDecalAtlasMain;
+	std::unique_ptr<CTextureRenderAtlas> groundDecalAtlasNorm;
 
 	Shader::IProgramObject* decalShader;
 
