@@ -39,6 +39,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "Sim/MoveTypes/MoveType.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
@@ -844,7 +845,7 @@ static inline bool CanReceiveTracks(const float3& pos)
 	return mapInfo->terrainTypes[typeNum].receiveTracks;
 }
 
-void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
+void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool forceEval)
 {
 	if (!GetDrawDecals())
 		return;
@@ -921,12 +922,16 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 	mm.first  = std::min(mm.first , decalHeight);
 	mm.second = std::max(mm.second, decalHeight);
 
-	if (createFrameInt % TRACKS_UPDATE_RATE != 0)
+	if (!forceEval && createFrameInt % TRACKS_UPDATE_RATE != 0)
 		return;
 
 	const size_t vecPos = decalIdToTmpDecalsVecPos[decalID];
 	assert(vecPos < temporaryDecals.size());
 	GroundDecal& oldDecal = temporaryDecals[vecPos];
+
+	// just updated
+	if (oldDecal.createFrameMax == createFrame)
+		return;
 
 	// check if the unit is standing still
 	if (oldDecal.createFrameMax + TRACKS_UPDATE_RATE < createFrame) {
@@ -940,6 +945,9 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 
 	const float2 dirO = (posR      - posL).SafeNormalize();
 	const float2 dirN = (decalPos2 - posR).SafeNormalize();
+
+	if (dirN.Dot(dirN) < 0.25)
+		return;
 
 	if (dirO.Dot(dirN) >= 0.9999f && oldDecal.forcedNormal.dot(unit->updir) >= 0.99f) {
 		oldDecal.posTR = decalPos2 - wc;
@@ -970,7 +978,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 		.createFrameMin = oldDecal.createFrameMax,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
-		.uvTraveledDistance = /*posL.Distance(posR)*/ oldDecal.posTL.Distance(oldDecal.posTR),
+		.uvTraveledDistance = oldDecal.uvTraveledDistance + posL.Distance(posR)/*oldDecal.posTL.Distance(oldDecal.posTR)*/,
 		.forcedNormal = float4{ unit->updir, 0.0f },
 		.id = GroundDecal::GetNextId()
 	});
@@ -1038,6 +1046,24 @@ void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
 
 void CGroundDecalHandler::GameFrame(int frameNum)
 {
+	for (const auto& [owner, decalID] : decalOwners) {
+		if (!std::holds_alternative<const CSolidObject*>(owner))
+			continue;
+
+		const CUnit* unit = dynamic_cast<const CUnit*>(std::get<const CSolidObject*>(owner));
+		if (unit == nullptr)
+			continue;
+
+		if (unit->moveType == nullptr)
+			continue;
+
+		if (unit->moveType->progressState == AMoveType::ProgressState::Active)
+			continue;
+
+		// will be called several times before it's erased from decalOwners
+		AddTrack(unit, unit->pos, true);
+	}
+
 	/*
 	const auto UpdateDecalsVector = [frameNum, this](std::vector<GroundDecal>& groundDecalsVec) -> bool {
 		if (groundDecalsVec.empty())

@@ -271,8 +271,8 @@ void main() {
 
 	float u = 1.0;
 	if (misc.z > 0.0) {
-		//u = distance((vPosTL + vPosBL) * 0.5, (vPosBR + vPosTR) * 0.5) / misc.z;
-		u = distance(vPosTL, vPosTR) / misc.z;
+		u = distance((vPosTL + vPosBL) * 0.5, (vPosBR + vPosTR) * 0.5) / misc.z;
+		//u = distance(vPosTL, vPosTR) / misc.z;
 	}
 
 	vec4 relUV;

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <limits>
 
 #include "GroundDecal.h"
@@ -107,7 +108,7 @@ private:
 	void AddTexToAtlas(const std::string& name, bool mainTex);
 	void AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex);
 
-	void AddTrack(const CUnit* unit, const float3& newPos);
+	void AddTrack(const CUnit* unit, const float3& newPos, bool forceEval = false);
 
 	void RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb);
 
@@ -126,27 +127,8 @@ private:
 
 	Shader::IProgramObject* decalShader;
 
-	union DecalOwner {
-		DecalOwner(const CSolidObject* so_) : so(so_) {};
-		DecalOwner(const GhostSolidObject* gso_) : gso(gso_) {};
-		const CSolidObject* so;
-		const GhostSolidObject* gso;
-		const void* ptr;
-	};
-	struct DecalOwnerHash {
-		uint32_t operator()(const auto& s) const {
-			static spring::synced_hash<std::uintptr_t> h;
-			return h(reinterpret_cast<std::uintptr_t>(s.ptr));
-		};
-	};
-	struct DecalOwnerEqualsTo {
-		bool operator()(const DecalOwner& lhs, const DecalOwner& rhs) const
-		{
-			return reinterpret_cast<std::uintptr_t>(lhs.ptr) == reinterpret_cast<std::uintptr_t>(rhs.ptr);
-		}
-	};
-
-	spring::unordered_map<DecalOwner, uint32_t, DecalOwnerHash, DecalOwnerEqualsTo> decalOwners; // for tracks, aoplates and ghosts
+	using DecalOwner = std::variant<const CSolidObject*, const GhostSolidObject*>;
+	spring::unordered_map<DecalOwner, uint32_t, std::hash<DecalOwner>> decalOwners; // for tracks, aoplates and ghosts
 	std::array<std::pair<float, float>, MAX_UNITS> unitMinMaxHeights; // for tracks
 
 	bool highQuality = false;
