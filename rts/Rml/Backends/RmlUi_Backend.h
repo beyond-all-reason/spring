@@ -36,6 +36,7 @@
 #include <SDL.h>
 #include "lib/sol2/sol.hpp"
 #include "Rml/Backends/RmlUi_Platform_SDL.h"
+#include "RmlUi/Core/Context.h"
 
 using KeyDownCallback = bool (*)(Rml::Context *context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
@@ -67,8 +68,8 @@ namespace RmlGui
 	void Update();
 	void RenderFrame();
 
-	void CreateContext(const std::string &name);
 	void AddContext(Rml::Context *context);
+	void RemoveContext(Rml::Context *context);
 
 	void BeginFrame();
 	void PresentFrame();
