@@ -73,14 +73,6 @@ vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     return vec3(s, t, q);
 }
 
-vec3 GetTriangleBarycentricBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
-    float s1 = dot(cross(p0, p1), p2);
-    float s2 = dot(cross(p , p1), p2);
-    float s3 = dot(cross(p0, p ), p2);
-    float s4 = dot(cross(p0, p1), p );
-    return vec3(s2, s3, s4) / s1;
-}
-
 // https://www.shadertoy.com/view/MslSDl
 vec3 BlackBody(float t)
 {

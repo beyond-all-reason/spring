@@ -155,9 +155,6 @@ void main() {
 	misc2.x = sin(info.z);
 	misc2.y = cos(info.z);
 
-	misc2.x = sin(0.0);
-    misc2.y = cos(0.0);
-
 	midPoint.xz = (posT.xy + posT.zw + posB.xy + posB.zw) * 0.25;
 	// mid-point height
 	midPoint.y = HeightAtWorldPos(midPoint.xz);
