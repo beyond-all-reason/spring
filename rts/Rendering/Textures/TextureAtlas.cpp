@@ -295,6 +295,9 @@ void CTextureAtlas::ReloadTextures()
 
 void CTextureAtlas::DumpTexture(const char* newFileName) const
 {
+	if (!initialized)
+		return;
+
 	std::string filename = newFileName ? newFileName : name.c_str();
 	filename += ".png";
 

@@ -19,6 +19,7 @@ public:
 
 public:
 	virtual void ReloadTextures() = 0;
+	virtual void DumpAtlasTextures() = 0;
 
 	virtual void Draw() = 0;
 
@@ -53,6 +54,7 @@ class NullGroundDecalDrawer: public IGroundDecalDrawer
 {
 public:
 	void ReloadTextures() override {}
+	void DumpAtlasTextures() override {}
 
 	void Draw() override {}
 

@@ -584,6 +584,13 @@ void CGroundDecalHandler::ReloadTextures()
 	}
 }
 
+void CGroundDecalHandler::DumpAtlasTextures()
+{
+	atlas->DumpTexture("Decals.png");
+	groundDecalAtlasMain->DumpTexture();
+	groundDecalAtlasNorm->DumpTexture();
+}
+
 void CGroundDecalHandler::Draw()
 {
 	if (!GetDrawDecals())

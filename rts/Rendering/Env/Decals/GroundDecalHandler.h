@@ -82,6 +82,7 @@ public:
 
 	// IGroundDecalDrawer
 	void ReloadTextures() override;
+	void DumpAtlasTextures() override;
 
 	void Draw() override;
 
