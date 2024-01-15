@@ -49,6 +49,7 @@
 #include "Game/UI/MouseHandler.h"
 
 void createContext(const std::string &name);
+bool removeContext(const std::string& name);
 
 class RenderInterface_GL3_SDL : public RenderInterface_GL3
 {
@@ -149,6 +150,34 @@ public:
 	};
 };
 
+class PassThroughPlugin : public Rml::Plugin
+{
+	void (*onContextCreate)(Rml::Context*);
+	void (*onContextDestroy)(Rml::Context*);
+
+	public:
+		PassThroughPlugin(void (*onContextCreate)(Rml::Context*), void (*onContextDestroy)(Rml::Context*))
+			: onContextCreate{onContextCreate}, onContextDestroy{onContextDestroy}
+		{
+		}
+
+		int GetEventClasses() override
+		{
+			return EVT_BASIC;
+		}
+
+		void OnInitialise() override {};
+		void OnShutdown() override {};
+		void OnContextCreate(Rml::Context* context) override
+		{
+			onContextCreate(context);
+		};
+		void OnContextDestroy(Rml::Context* context) override
+		{
+			onContextDestroy(context);
+		};
+};
+
 /**
 		Global data used by this backend.
 
@@ -176,6 +205,8 @@ struct BackendData
 	int winX = 1;
 	int winY = 1;
 	lua_State *ls;
+
+	Rml::UniquePtr<PassThroughPlugin> plugin;
 };
 static Rml::UniquePtr<BackendData> data;
 
@@ -223,7 +254,10 @@ bool RmlGui::InitializeLua(lua_State *lua_state)
 	}
 	sol::state_view lua(lua_state);
 	data->ls = lua_state;
-	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua, createContext);
+	data->plugin = Rml::MakeUnique<PassThroughPlugin>(AddContext,RemoveContext);
+	Rml::RegisterPlugin(data->plugin.get());
+
+	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua);
 	data->system_interface.SetTranslationTable(&slp->translationTable);
 	return true;
 }
@@ -292,22 +326,17 @@ bool RmlGui::IsActive()
 	return data->inputReceiver.IsAbove(0, 0);
 }
 
-void createContext(const std::string &name)
-{
-	Rml::Context *context = Rml::CreateContext(name, Rml::Vector2i(data->winX, data->winY));
-	// Rml::Debugger::Initialise(context);
-	RmlGui::AddContext(context);
-}
-
-void RmlGui::CreateContext(const std::string &name)
-{
-	createContext(name);
-}
-
 void RmlGui::AddContext(Rml::Context *context)
 {
+	context->SetDimensions({data->winX, data->winY});
 	data->contexts.push_back(context);
 }
+
+void RmlGui::RemoveContext(Rml::Context *context)
+{
+	data->contexts.erase(std::ranges::find(data->contexts, context));
+}
+
 
 void RmlGui::Update()
 {
