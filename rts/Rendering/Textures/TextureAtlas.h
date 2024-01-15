@@ -159,6 +159,9 @@ public:
 	uint32_t GetTexID() const { return atlasTexID; }
 	const uint32_t GetTexTarget() const;
 
+	int GetNumTexLevels() const;
+	void SetMaxTexLevel(int maxLevels);
+
 	void BindTexture();
 	void SetFreeTexture(bool b) { freeTexture = b; }
 	void SetName(const std::string& s) { name = s; }

@@ -8,10 +8,6 @@
 #include <set>
 #include <bit>
 
-// texture spacing in the atlas (in pixels)
-static constexpr int ATLAS_PADDING = 1;
-
-
 inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	// sort by large to small
@@ -111,9 +107,11 @@ bool CRowAtlasAlloc::Allocate()
 	}
 	std::stable_sort(memtextures.begin(), memtextures.end(), CRowAtlasAlloc::CompareTex);
 
+	int padding = 1 << GetNumTexLevels();
+
 	// find space for them
 	for (auto& curtex: memtextures) {
-		Row* row = FindRow(curtex->size.x + ATLAS_PADDING, curtex->size.y + ATLAS_PADDING);
+		Row* row = FindRow(curtex->size.x + padding, curtex->size.y + padding);
 
 		if (row == nullptr) {
 			success = false;
@@ -125,7 +123,7 @@ bool CRowAtlasAlloc::Allocate()
 		curtex->texCoords.x2 = row->width + curtex->size.x;
 		curtex->texCoords.y2 = row->position + curtex->size.y;
 
-		row->width += (curtex->size.x + ATLAS_PADDING);
+		row->width += (curtex->size.x + padding);
 	}
 
 	if (npot) {
@@ -137,9 +135,12 @@ bool CRowAtlasAlloc::Allocate()
 	return success;
 }
 
-int CRowAtlasAlloc::GetMaxMipMaps()
+int CRowAtlasAlloc::GetNumTexLevels() const
 {
-	return std::bit_width(static_cast<uint32_t>(GetMinDim()));
+	return std::min(
+		std::bit_width(static_cast<uint32_t>(GetMinDim())),
+		numLevels
+	);
 }
 
 

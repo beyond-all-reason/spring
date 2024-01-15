@@ -7,11 +7,6 @@
 #include <set>
 #include <bit>
 
-
-// texture spacing in the atlas (in pixels)
-static constexpr int TEXMARGIN = 2;
-
-
 inline bool CLegacyAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	// sort by large to small
@@ -58,9 +53,6 @@ bool CLegacyAtlasAlloc::IncreaseSize()
 
 bool CLegacyAtlasAlloc::Allocate()
 {
-	atlasSize.x = 32;
-	atlasSize.y = 32;
-
 	std::vector<SAtlasEntry*> memtextures;
 	memtextures.reserve(entries.size());
 
@@ -84,6 +76,8 @@ bool CLegacyAtlasAlloc::Allocate()
 	std::list<int2> nextSub;
 	std::list<int2> thisSub;
 
+	int padding = 1 << GetNumTexLevels();
+
 	for (int a = 0; a < static_cast<int>(memtextures.size()); ++a) {
 		SAtlasEntry* curtex = memtextures[a];
 
@@ -92,7 +86,7 @@ bool CLegacyAtlasAlloc::Allocate()
 			if (thisSub.empty()) {
 				if (nextSub.empty()) {
 					cur.y = max.y;
-					max.y += curtex->size.y + TEXMARGIN;
+					max.y += curtex->size.y + padding;
 
 					if (max.y > atlasSize.y) {
 						if (IncreaseSize()) {
@@ -115,7 +109,7 @@ bool CLegacyAtlasAlloc::Allocate()
 				}
 			}
 
-			if ((thisSub.front().x + curtex->size.x + TEXMARGIN) > atlasSize.x) {
+			if ((thisSub.front().x + curtex->size.x + padding) > atlasSize.x) {
 				thisSub.clear();
 				continue;
 			}
@@ -131,16 +125,16 @@ bool CLegacyAtlasAlloc::Allocate()
 			curtex->texCoords.x2 = thisSub.front().x + curtex->size.x - 1;
 			curtex->texCoords.y2 = thisSub.front().y + curtex->size.y - 1;
 
-			cur.x = thisSub.front().x + curtex->size.x + TEXMARGIN;
+			cur.x = thisSub.front().x + curtex->size.x + padding;
 			max.x = std::max(max.x, cur.x);
 
 			done = true;
 
-			if ((thisSub.front().y + curtex->size.y + TEXMARGIN) < max.y) {
-				nextSub.push_back(int2(thisSub.front().x + TEXMARGIN, thisSub.front().y + curtex->size.y + TEXMARGIN));
+			if ((thisSub.front().y + curtex->size.y + padding) < max.y) {
+				nextSub.push_back(int2(thisSub.front().x + padding, thisSub.front().y + curtex->size.y + padding));
 			}
 
-			thisSub.front().x += (curtex->size.x + TEXMARGIN);
+			thisSub.front().x += (curtex->size.x + padding);
 
 			while (thisSub.size() > 1 && thisSub.front().x >= (++thisSub.begin())->x) {
 				(++thisSub.begin())->x = thisSub.front().x;
@@ -165,7 +159,10 @@ bool CLegacyAtlasAlloc::Allocate()
 	return success;
 }
 
-int CLegacyAtlasAlloc::GetMaxMipMaps()
+int CLegacyAtlasAlloc::GetNumTexLevels() const
 {
-	return std::bit_width(static_cast<uint32_t>(GetMinDim()));
+	return std::min(
+		std::bit_width(static_cast<uint32_t>(GetMinDim())),
+		numLevels
+	);
 }

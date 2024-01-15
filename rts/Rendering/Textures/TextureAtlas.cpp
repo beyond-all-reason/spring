@@ -146,10 +146,20 @@ const uint32_t CTextureAtlas::GetTexTarget() const
 	return GL_TEXTURE_2D; // just constant for now
 }
 
+int CTextureAtlas::GetNumTexLevels() const
+{
+	return atlasAllocator->GetNumTexLevels();
+}
+
+void CTextureAtlas::SetMaxTexLevel(int maxLevels)
+{
+	atlasAllocator->SetMaxTexLevel(maxLevels);
+}
+
 bool CTextureAtlas::CreateTexture()
 {
 	const int2 atlasSize = atlasAllocator->GetAtlasSize();
-	const int maxMipMaps = atlasAllocator->GetMaxMipMaps();
+	const int numLevels = atlasAllocator->GetNumTexLevels();
 
 	// ATI drivers like to *crash* in glTexImage if x=0 or y=0
 	if (atlasSize.x <= 0 || atlasSize.y <= 0) {
@@ -203,11 +213,11 @@ bool CTextureAtlas::CreateTexture()
 
 	glBindTexture(GL_TEXTURE_2D, atlasTexID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (maxMipMaps > 0) ? GL_LINEAR_MIPMAP_NEAREST : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (numLevels > 1) ? GL_LINEAR_MIPMAP_NEAREST : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  maxMipMaps);
-	if (maxMipMaps > 0) {
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
+	if (numLevels > 1) {
 		glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, atlasSize.x, atlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, pbo.GetPtr()); //FIXME disable texcompression, PBO
 	} else {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, atlasSize.x, atlasSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pbo.GetPtr());

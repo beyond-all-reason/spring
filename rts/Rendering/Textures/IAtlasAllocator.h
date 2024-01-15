@@ -38,8 +38,8 @@ public:
 
 public:
 	virtual bool Allocate() = 0;
-	virtual int GetMaxMipMaps() = 0;
-
+	virtual int GetNumTexLevels() const = 0;
+	void SetMaxTexLevel(int maxLevels) { numLevels = maxLevels; };
 public:
 	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
 	{
@@ -98,6 +98,7 @@ protected:
 
 	int2 atlasSize;
 	int2 maxsize = {2048, 2048};
+	int numLevels = std::numeric_limits<int>::max();
 	int minDim = std::numeric_limits<int>::max();
 
 	bool npot = false;

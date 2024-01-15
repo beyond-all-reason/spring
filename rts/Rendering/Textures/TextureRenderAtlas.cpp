@@ -21,7 +21,7 @@
 
 namespace {
 static constexpr const char* vsTRA = R"(
-#version 150
+#version 130
 
 in vec2 pos;
 in vec2 uv;
@@ -35,7 +35,7 @@ void main() {
 )";
 
 static constexpr const char* fsTRA = R"(
-#version 150
+#version 130
 
 uniform sampler2D tex;
 uniform float lod;
@@ -214,6 +214,16 @@ int CTextureRenderAtlas::GetMinDim() const
 	return atlasAllocator->GetMinDim();
 }
 
+int CTextureRenderAtlas::GetNumTexLevels() const
+{
+	return atlasAllocator->GetNumTexLevels();
+}
+
+void CTextureRenderAtlas::SetMaxTexLevel(int maxLevels)
+{
+	atlasAllocator->SetMaxTexLevel(maxLevels);
+}
+
 bool CTextureRenderAtlas::Finalize()
 {
 	if (finalized)
@@ -225,8 +235,7 @@ bool CTextureRenderAtlas::Finalize()
 	if (!atlasAllocator->Allocate())
 		return false;
 
-	int levels = std::bit_width(static_cast<uint32_t>(GetMinDim()));
-	levels = std::min(levels, std::max(atlasAllocator->GetMaxMipMaps(), 1));
+	int levels = atlasAllocator->GetNumTexLevels();
 
 	const auto as = atlasAllocator->GetAtlasSize();
 	{
@@ -314,12 +323,12 @@ bool CTextureRenderAtlas::Finalize()
 		}
 	}
 
-	DumpAtlas();
+	//DumpTexture();
 
 	return true;
 }
 
-bool CTextureRenderAtlas::DumpAtlas() const
+bool CTextureRenderAtlas::DumpTexture() const
 {
 	if (!finalized)
 		return false;
@@ -327,8 +336,7 @@ bool CTextureRenderAtlas::DumpAtlas() const
 	if (texID == 0)
 		return false;
 
-	int levels = std::bit_width(static_cast<uint32_t>(GetMinDim()));
-	levels = std::min(levels, std::max(atlasAllocator->GetMaxMipMaps(), 1));
+	int levels = atlasAllocator->GetNumTexLevels();
 
 	for (uint32_t level = 0; level < levels; ++level) {
 		glSaveTexture(texID, fmt::format("{}_{}.png", atlasName, level).c_str(), level);

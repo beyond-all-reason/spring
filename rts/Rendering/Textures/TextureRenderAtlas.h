@@ -36,10 +36,12 @@ public:
 	uint32_t GetTexTarget() const;
 	uint32_t GetTexID() const { return texID; }
 	int GetMinDim() const;
+	int GetNumTexLevels() const;
+	void SetMaxTexLevel(int maxLevels);
 
 	bool Finalize();
 
-	bool DumpAtlas() const;
+	bool DumpTexture() const;
 private:
 	bool AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm);
 

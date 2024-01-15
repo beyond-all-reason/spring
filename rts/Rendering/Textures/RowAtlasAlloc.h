@@ -13,10 +13,11 @@ class CRowAtlasAlloc : public IAtlasAllocator
 public:
 	CRowAtlasAlloc() {
 		atlasSize = {256, 256};
+		numLevels = 1;
 	}
 
 	bool Allocate() override;
-	int GetMaxMipMaps() override;
+	int GetNumTexLevels() const override;
 
 private:
 	struct Row {
