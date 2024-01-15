@@ -10,6 +10,7 @@
 #include "System/type2.h"
 #include "System/UnorderedMap.hpp"
 #include "System/StringHash.h"
+#include "System/SpringMath.h"
 
 
 class IAtlasAllocator
@@ -43,7 +44,7 @@ public:
 public:
 	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
 	{
-		minDim = std::min({ minDim, size.x, size.y });
+		minDim = argmin(minDim, size.x, size.y);
 		entries[name] = SAtlasEntry(size, name, data);
 	}
 

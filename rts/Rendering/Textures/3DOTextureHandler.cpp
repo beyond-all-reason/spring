@@ -140,7 +140,7 @@ void C3DOTextureHandler::Init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (numLevels > 1) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
 
 		if (numLevels > 0) {
 			glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data()); //FIXME disable texcompression
