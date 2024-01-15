@@ -25,21 +25,19 @@ uniform mat4 shadowMatrix;
 
 uniform float curAdjustedFrame;
 
-flat in vec4 vPosT;
-flat in vec4 vPosB;
+flat in vec3 vPosTL;
+flat in vec3 vPosTR;
+flat in vec3 vPosBL;
+flat in vec3 vPosBR;
+
 flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
 flat in vec4 midPoint;
-flat in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left
+     in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
 flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat in vec3 avgGroundNormal;
+flat in vec3 groundNormal;
 
 out vec4 fragColor;
-
-#define posTL vPosT.xy
-#define posTR vPosT.zw
-#define posBR vPosB.xy
-#define posBL vPosB.zw
 
 #define uvMainTL vuvMain.xy
 #define uvMainTR vuvMain.zy
@@ -54,25 +52,33 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200057
+#line 200055
 
-vec3 GetTriangleBarycentric(vec2 p, vec2 p0, vec2 p1, vec2 p2) {
-	vec2 v0 = p2 - p0;
-	vec2 v1 = p1 - p0;
-	vec2 v2 = p  - p0;
+vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
+    vec3 v0 = p2 - p0;
+    vec3 v1 = p1 - p0;
+    vec3 v2 = p - p0;
 
-	float dot00 = dot(v0, v0);
-	float dot01 = dot(v0, v1);
-	float dot02 = dot(v0, v2);
-	float dot11 = dot(v1, v1);
-	float dot12 = dot(v1, v2);
+    float dot00 = dot(v0, v0);
+    float dot01 = dot(v0, v1);
+    float dot02 = dot(v0, v2);
+    float dot11 = dot(v1, v1);
+    float dot12 = dot(v1, v2);
 
-	float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
 
-	float s = (dot11 * dot02 - dot01 * dot12) * invDenom;
-	float t = (dot00 * dot12 - dot01 * dot02) * invDenom;
-	float q = 1.0 - s - t;
-	return vec3(s,t,q);
+    float s = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    float t = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    float q = 1.0 - s - t;
+    return vec3(s, t, q);
+}
+
+vec3 GetTriangleBarycentricBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
+    float s1 = dot(cross(p0, p1), p2);
+    float s2 = dot(cross(p , p1), p2);
+    float s3 = dot(cross(p0, p ), p2);
+    float s4 = dot(cross(p0, p1), p );
+    return vec3(s2, s3, s4) / s1;
 }
 
 // https://www.shadertoy.com/view/MslSDl
@@ -104,7 +110,7 @@ vec3 BlackBody(float t)
 
 vec3 GetFragmentNormal(vec2 wxz) {
 	vec3 normal;
-	normal.xz = texture2D(groundNormalTex, wxz * mapDims.zw).ra;
+	normal.xz = texture(groundNormalTex, wxz * mapDims.zw).ra;
 	normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
 	return normal;
 }
@@ -197,7 +203,7 @@ vec3 GetShadowColor(vec3 worldPos, float NdotL) {
 
 
 // Calculate out of the fragment in screen space the view space position.
-vec4 GetWorldPos(vec2 texCoord, float sampledDepth) {
+vec3 GetWorldPos(vec2 texCoord, float sampledDepth) {
 	vec4 projPosition = vec4(0.0, 0.0, 0.0, 1.0);
 
 	//texture space [0;1] to NDC space [-1;1]
@@ -209,9 +215,8 @@ vec4 GetWorldPos(vec2 texCoord, float sampledDepth) {
 	#endif
 
 	vec4 pos = gl_ModelViewProjectionMatrixInverse * projPosition;
-	pos /= pos.w;
 
-	return pos;
+	return pos.xyz / pos.w;
 }
 
 vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
@@ -261,7 +266,11 @@ void main() {
 		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy),           0).x;
 	#endif
 
-	vec4 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
+	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
+
+	// figure out why this is wrong
+	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, groundNormal) * groundNormal;
+	//worldPosProj = worldPos;
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
@@ -270,14 +279,14 @@ void main() {
 
 	float u = 1.0;
 	if (misc.z > 0.0) {
-		//u = distance((posTL + posBL) * 0.5, (posBR + posTR) * 0.5) / misc.z;
-		u = distance(posTL, posTR) / misc.z;
+		//u = distance((vPosTL + vPosBL) * 0.5, (vPosBR + vPosTR) * 0.5) / misc.z;
+		u = distance(vPosTL, vPosTR) / misc.z;
 	}
 
 	vec4 relUV;
 	bool disc = true;
 	{
-		vec3 bc = GetTriangleBarycentric(worldPos.xz, posBL, posTL, posTR);
+		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosBL, vPosTL, vPosTR);
 		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
 			disc = false;
 			//uv = bc.x * uvBL + bc.y * uvTL + bc.z * uvTR;
@@ -286,7 +295,7 @@ void main() {
 	}
 	if (disc)
 	{
-		vec3 bc = GetTriangleBarycentric(worldPos.xz, posTR, posBR, posBL);
+		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosTR, vPosBR, vPosBL);
 		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
 			disc = false;
 			//uv = bc.x * uvTR + bc.y * uvBR + bc.z * uvBL;
@@ -295,8 +304,8 @@ void main() {
 	}
 
 	if (disc) {
-		//fragColor = vec4(0.0);
-		//return;
+		fragColor = vec4(0.0);
+		return;
 		//discard;
 	}
 
@@ -330,15 +339,14 @@ void main() {
 	float alpha = clamp(misc.x, 0.0, 1.0);
 
 	// overglow
-	glow += smoothstep(0.9, 1.0, glow) * 0.02 * abs(sin(0.08 * curAdjustedFrame));
+	glow += smoothstep(0.75, 1.0, glow) * 0.1 * abs(sin(0.02 * curAdjustedFrame));
 
 	// distance based glow adjustment
 	float relDistance = distance(worldPos.xz, midPoint.xz) / midPoint.w;
-	glow *= 1.0 - smoothstep(0.1, 0.9, relDistance);
+	relDistance = smoothstep(0.9, 0.1, relDistance);
+	glow *= relDistance * relDistance * relDistance;
 
-	//glow = 1.0;
-	float t = mix(500.0, 4000.0, glow);
-
+	float t = mix(500.0, 2600.0, glow);
 
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
@@ -365,14 +373,15 @@ void main() {
 	// alpha
 	fragColor.a = mainCol.a;
 	fragColor.a *= alpha;
-	fragColor   *= max(pow(dot(avgGroundNormal, N), 4.0), 0.0);
+	fragColor   *= max(dot(groundNormal, N), 0.0);
 	//fragColor.a *= pow(max(0.0, N.y), 2);
 
 	if (misc.z == 0.0) {
 		//fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
 	}
 
-	//fragColor = vec4(1,0,0,1);
+	//fragColor = vec4(alpha);
+	//fragColor = vec4(relUV.yyy, 1.0);
 
 	//fragColor = vec4(GetShadowColor(worldPos.xyz, dot(sunDir, N)), 1.0);
 

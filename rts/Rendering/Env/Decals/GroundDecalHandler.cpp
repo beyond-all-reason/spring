@@ -301,10 +301,10 @@ void CGroundDecalHandler::BindVertexAtrribs()
 	glVertexAttribPointer(3, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, texNormOffsets));
 	// alpha, alphaFalloff, rot, height
 	glVertexAttribPointer(4, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, alpha));
-	// createFrameMin, createFrameMax
-	glVertexAttribIPointer(5, 2, GL_UNSIGNED_INT, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, createFrameMin));
-	// uvWrapDistance
-	glVertexAttribPointer(6, 2, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, uvWrapDistance));
+	// createFrameMin, createFrameMax, uvWrapDistance, uvTraveledDistance
+	glVertexAttribPointer(5, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, createFrameMin));
+	// forcedNormal
+	glVertexAttribPointer(6, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, forcedNormal));
 }
 
 void CGroundDecalHandler::UnbindVertexAtrribs()
@@ -321,10 +321,15 @@ uint32_t CGroundDecalHandler::GetDepthBufferTextureTarget() const
 }
 
 static constexpr CTextureAtlas::AllocatorType defAllocType = CTextureAtlas::ATLAS_ALLOC_LEGACY;
+static constexpr int defNumLevels = 4;
 void CGroundDecalHandler::GenerateAtlasTextures() {
 	atlas = std::make_unique<CTextureAtlas>(defAllocType, 0, 0, "DecalTextures", true);
 	groundDecalAtlasMain = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsMain");
 	groundDecalAtlasNorm = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
+
+	atlas->SetMaxTexLevel(defNumLevels);
+	groundDecalAtlasMain->SetMaxTexLevel(defNumLevels);
+	groundDecalAtlasNorm->SetMaxTexLevel(defNumLevels);
 
 	// often represented by compressed textures, cannot be added to the atlas
 	AddBuildingDecalTextures();
@@ -368,13 +373,13 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetFlag("HAVE_SHADOWS", true);
 	decalShader->SetFlag("HIGH_QUALITY", highQuality);
 
-	decalShader->BindAttribLocation("posT"       , 0);
-	decalShader->BindAttribLocation("posB"       , 1);
-	decalShader->BindAttribLocation("uvMain"     , 2);
-	decalShader->BindAttribLocation("uvNorm"     , 3);
-	decalShader->BindAttribLocation("info"       , 4);
-	decalShader->BindAttribLocation("createFrame", 5);
-	decalShader->BindAttribLocation("uvParams"   , 6);
+	decalShader->BindAttribLocation("posT"        , 0);
+	decalShader->BindAttribLocation("posB"        , 1);
+	decalShader->BindAttribLocation("uvMain"      , 2);
+	decalShader->BindAttribLocation("uvNorm"      , 3);
+	decalShader->BindAttribLocation("info"        , 4);
+	decalShader->BindAttribLocation("createParams", 5);
+	decalShader->BindAttribLocation("forcedNormal", 6);
 
 	decalShader->Link();
 
@@ -537,7 +542,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	const auto mainName = IntToString(scarIdx, "mainscar_%i");
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
-	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	const auto& decal = temporaryDecals.emplace_back(GroundDecal{
 		.posTL = posTL,
@@ -554,6 +559,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
+		.forcedNormal = float4{},
 		.id = GroundDecal::GetNextId()
 	});
 
@@ -565,12 +571,16 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 void CGroundDecalHandler::ReloadTextures()
 {
 	atlas->ReloadTextures();
+	atlas->SetMaxTexLevel(defNumLevels);
 	{
 		groundDecalAtlasMain = nullptr;
 		groundDecalAtlasNorm = nullptr;
 		groundDecalAtlasMain = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsMain");
 		groundDecalAtlasNorm = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
 		AddBuildingDecalTextures();
+
+		groundDecalAtlasMain->SetMaxTexLevel(defNumLevels);
+		groundDecalAtlasNorm->SetMaxTexLevel(defNumLevels);
 	}
 }
 
@@ -702,7 +712,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	if (decalOwners.contains(object))
 		return; // already added
 
-	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	int sizex = decalDef.groundDecalSizeX * SQUARE_SIZE;
 	int sizey = decalDef.groundDecalSizeY * SQUARE_SIZE;
@@ -741,6 +751,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
+		.forcedNormal = float4{},
 		.id = GroundDecal::GetNextId()
 	});
 
@@ -860,7 +871,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 		unit->rightdir.z * decalDef.trackDecalWidth * 0.5f
 	);
 
-	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+	const auto createFrameInt = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+	const auto createFrame = static_cast<float>(createFrameInt);
 	const uint32_t decalID = decalOwners[unit];
 	if (decalID == 0) {
 		// new decal
@@ -885,6 +897,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 			.createFrameMax = createFrame,
 			.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
 			.uvTraveledDistance = 0.0f,
+			.forcedNormal = float4{ unit->updir, 0.0f },
 			.id = GroundDecal::GetNextId()
 		});
 
@@ -901,7 +914,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 	mm.first  = std::min(mm.first , decalHeight);
 	mm.second = std::max(mm.second, decalHeight);
 
-	if (createFrame % TRACKS_UPDATE_RATE != 0)
+	if (createFrameInt % TRACKS_UPDATE_RATE != 0)
 		return;
 
 	const size_t vecPos = decalIdToTmpDecalsVecPos[decalID];
@@ -921,7 +934,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 	const float2 dirO = (posR      - posL).SafeNormalize();
 	const float2 dirN = (decalPos2 - posR).SafeNormalize();
 
-	if (dirO.Dot(dirN) >= 0.9999f) {
+	if (dirO.Dot(dirN) >= 0.9999f && oldDecal.forcedNormal.dot(unit->updir) >= 0.99f) {
 		oldDecal.posTR = decalPos2 - wc;
 		oldDecal.posBR = decalPos2 + wc;
 		oldDecal.createFrameMax = createFrame;
@@ -951,6 +964,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos)
 		.createFrameMax = createFrame,
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
 		.uvTraveledDistance = /*posL.Distance(posR)*/ oldDecal.posTL.Distance(oldDecal.posTR),
+		.forcedNormal = float4{ unit->updir, 0.0f },
 		.id = GroundDecal::GetNextId()
 	});
 

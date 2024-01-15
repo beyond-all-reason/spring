@@ -5,27 +5,25 @@ in vec4 posB; //posBR, posBL
 in vec4 uvMain; // L, T, R, B
 in vec4 uvNorm; // L, T, R, B
 in vec4 info; // alpha, alphaFalloff, rot, height
-in uvec2 createFrame; //min, max (left, right) side
-in vec2 uvParams; // .x - uvWrapDistance, .y - traveled distance - used for tracks,
+in vec4 createParams; //min, max (left, right) side, .z - uvWrapDistance, .w - traveled distance - used for tracks
+in vec4 forcedNormal; // .xyz - forcedNormal, .w - unused
 
 uniform sampler2D heightTex;
 uniform sampler2D groundNormalTex;
 uniform vec4 mapDims; //mapxy; 1.0 / mapxy
 uniform float curAdjustedFrame;
 
-flat out vec4 vPosT;
-flat out vec4 vPosB;
+flat out vec3 vPosTL;
+flat out vec3 vPosTR;
+flat out vec3 vPosBL;
+flat out vec3 vPosBR;
+
 flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
 flat out vec4 midPoint;
-flat out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset
+     out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
 flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat out vec3 avgGroundNormal;
-
-#define posTL vPosT.xy
-#define posTR vPosT.zw
-#define posBR vPosB.xy
-#define posBL vPosB.zw
+flat out vec3 groundNormal;
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
@@ -90,17 +88,9 @@ float HeightAtWorldPos(vec2 wxz) {
 
 vec3 GetFragmentNormal(vec2 wxz) {
 	vec3 normal;
-	normal.xz = texture2D(groundNormalTex, wxz * mapDims.zw).ra;
+	normal.xz = texture(groundNormalTex, wxz * mapDims.zw).ra;
 	normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
 	return normal;
-}
-
-mat2 GetRotMat2D(){
-	//return mat2(1.0);
-	float ca = misc2.y;
-	float sa = misc2.x;
-    return mat2(ca, -sa,
-                sa,  ca);
 }
 
 // see the engine's rotateByUpVector()
@@ -147,40 +137,72 @@ void main() {
 	vec3 relPos = CUBE_VERT[gl_VertexID];
 
 	// alpha
-	float thisVertexCreateFrame = mix(float(createFrame.x), float(createFrame.y), float(relPos.x) > 0.0);
+	float thisVertexCreateFrame = mix(createParams.x, createParams.y, float(relPos.x) > 0.0);
 	misc.x         = info.x - (curAdjustedFrame - thisVertexCreateFrame) * info.y;
-	float alphaMax = info.x - (curAdjustedFrame -  float(createFrame.y)) * info.y;
+	float alphaMax = info.x - (curAdjustedFrame -        createParams.y) * info.y;
 
 	#if 1
 	if (alphaMax <= 0.0f) {
-		vPosT = vec4(0.0);
-		vPosB = vec4(0.0);
+		vPosTL = vec3(0);
+		vPosTR = vec3(0);
+		vPosBL = vec3(0);
+		vPosBR = vec3(0);
 		gl_Position = vec4(2.0, 2.0, 2.0, 1.0); //place outside of [-1;1]^3 NDC, basically cull out from the further rendering
 		return;
 	}
 	#endif
 
-	vec3 worldPos = vec3(0.0);
-
 	misc2.x = sin(info.z);
 	misc2.y = cos(info.z);
-	mat2 rotMat = GetRotMat2D();
 
-	vPosT = posT;
-	vPosB = posB;
+	misc2.x = sin(0.0);
+    misc2.y = cos(0.0);
 
-	midPoint.xz = (posTL + posTR + posBR + posBL) * 0.25;
+	midPoint.xz = (posT.xy + posT.zw + posB.xy + posB.zw) * 0.25;
+	// mid-point height
+	midPoint.y = HeightAtWorldPos(midPoint.xz);
+	// max flat distance from the center
+	midPoint.w =                 distance(midPoint.xz, posT.xy);
+	midPoint.w = max(midPoint.w, distance(midPoint.xz, posT.zq));
+	midPoint.w = max(midPoint.w, distance(midPoint.xz, posB.xy));
+	midPoint.w = max(midPoint.w, distance(midPoint.xz, posB.zw));
 
-	posTL = midPoint.xz + rotMat * (posTL - midPoint.xz);
-	posTR = midPoint.xz + rotMat * (posTR - midPoint.xz);
-	posBR = midPoint.xz + rotMat * (posBR - midPoint.xz);
-	posBL = midPoint.xz + rotMat * (posBL - midPoint.xz);
+	// groundNormal
+	if (dot(forcedNormal.xyz, forcedNormal.xyz) == 0.0) {
+		groundNormal = GetFragmentNormal(midPoint.xz);
+	} else {
+		groundNormal = forcedNormal.xyz;
+	}
+	/*
+	groundNormal = normalize(
+		GetFragmentNormal(posT.xy) +
+		GetFragmentNormal(posT.zq) +
+		GetFragmentNormal(posB.xy) +
+		GetFragmentNormal(posB.zw)
+	);
+	*/
 
-	// max flat distance
-	midPoint.w =                 distance(midPoint.xz, posTL);
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posTR));
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posBR));
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posBL));
+	// get default orthonormal system
+	vec3 xDir = vec3( misc2.y, 0.0, misc2.x);
+	vec3 zDir = vec3(-misc2.x, 0.0, misc2.y);
+
+	// don't rotate almost vertical cubes
+	if (1.0 - groundNormal.y > 0.05) {
+		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
+		vec3 rotAxis = normalize(vec3(groundNormal.z, 0.0, -groundNormal.x));
+		xDir = RotateByNormalVector(xDir, groundNormal, rotAxis);
+		zDir = normalize(cross(xDir, groundNormal));
+	}
+
+	// orthonormal system
+	mat3 ONS = mat3(xDir, groundNormal, zDir);
+	//ONS = mat3(1);
+
+	// absolute world coords, already rotated in all possible ways
+	vPosTL = ONS * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosTR = ONS * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBR = ONS * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBL = ONS * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
 
 	vuvMain = uvMain;
 	vuvNorm = uvNorm;
@@ -192,44 +214,22 @@ void main() {
 		float(all( equal(vec2(-1.0,  1.0), relPos.xz) ))
 	);
 
-	worldPos.xz += testResults.x * posTL;
-	worldPos.xz += testResults.y * posTR;
-	worldPos.xz += testResults.z * posBR;
-	worldPos.xz += testResults.w * posBL;
-
-	#if 1
-	avgGroundNormal = normalize(
-		GetFragmentNormal(midPoint.xz) +
-		GetFragmentNormal(posTL) +
-		GetFragmentNormal(posTR) +
-		GetFragmentNormal(posBR) +
-		GetFragmentNormal(posBL)
-	);
-	#else
-	avgGroundNormal = GetFragmentNormal(midPoint.xz);
-	#endif
-
-	// mid-point height
-	midPoint.y = HeightAtWorldPos(midPoint.xz);
+	vec3 worldPos = vec3(0);
+	worldPos.xyz += testResults.x * vPosTL;
+	worldPos.xyz += testResults.y * vPosTR;
+	worldPos.xyz += testResults.z * vPosBR;
+	worldPos.xyz += testResults.w * vPosBL;
 
 	// effect's height
 	misc.y = info.w;
 
 	// store uvWrapDistance
-	misc.z = uvParams.x;
+	misc.z = createParams.z;
 
 	// store traveled distance
-	misc.w = uvParams.y;
+	misc.w = createParams.w;
 
-	worldPos.y = midPoint.y + relPos.y * misc.y;
-
-	// do not rotate almost vertical cubes
-	if (false && 1.0 - avgGroundNormal.y > 0.1) {
-		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
-		vec3 rotAxis = normalize(vec3(avgGroundNormal.z, 0.0, -avgGroundNormal.x));
-		// rotate the cube (through its vertices) to align with the terrain normal
-		worldPos = midPoint.xyz + RotateByNormalVector(worldPos - midPoint.xyz, avgGroundNormal, rotAxis);
-	}
+	worldPos += relPos.y * misc.y * groundNormal;
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(worldPos, 1.0);
 }

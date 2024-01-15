@@ -26,10 +26,12 @@ public:
 	float rot;
 	float height;
 
-	uint32_t createFrameMin;
-	uint32_t createFrameMax;
+	float createFrameMin;
+	float createFrameMax;
 	float uvWrapDistance;
 	float uvTraveledDistance;
+
+	float4 forcedNormal;
 
 	// not sent to the shader
 	uint32_t id;
