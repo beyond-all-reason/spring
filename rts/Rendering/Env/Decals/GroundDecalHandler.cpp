@@ -373,6 +373,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetFlag("DEPTH_CLIP01", globalRendering->supportClipSpaceControl);
 	decalShader->SetFlag("HAVE_SHADOWS", true);
 	decalShader->SetFlag("HIGH_QUALITY", highQuality);
+	decalShader->SetFlag("HAVE_INFOTEX", true);
 
 	decalShader->BindAttribLocation("posT"        , 0);
 	decalShader->BindAttribLocation("posB"        , 1);
@@ -391,6 +392,14 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 		1.0f / (mapDims.mapx * SQUARE_SIZE),
 		1.0f / (mapDims.mapy * SQUARE_SIZE)
 	);
+	decalShader->SetUniform("mapDimsPO2",
+		static_cast<float>(mapDims.pwr2mapx * SQUARE_SIZE),
+		static_cast<float>(mapDims.pwr2mapy * SQUARE_SIZE),
+		1.0f / (mapDims.pwr2mapx * SQUARE_SIZE),
+		1.0f / (mapDims.pwr2mapy * SQUARE_SIZE)
+	);
+
+
 	decalShader->SetUniform("decalMainTex", 0);
 	decalShader->SetUniform("decalNormTex", 1);
 	decalShader->SetUniform("shadeTex", 2);
@@ -400,10 +409,8 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetUniform("groundNormalTex", 5);
 	decalShader->SetUniform("shadowTex", 6);
 	decalShader->SetUniform("shadowColorTex", 7);
-	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
-	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
-	decalShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
-
+	decalShader->SetUniform("miniMapTex", 8);
+	decalShader->SetUniform("infoTex", 9);
 
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	decalShader->SetUniform("screenSizeInverse",
@@ -412,8 +419,10 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	);
 	const auto& identityMat = CMatrix44f::Identity();
 	decalShader->SetUniformMatrix4x4("shadowMatrix", false, &identityMat.m[0]);
+	//decalShader->SetUniform("cameraDir", 0.0f, 1.0f, 0.0f);
 
 	decalShader->Disable();
+	SunChanged();
 
 	decalShader->Validate();
 }
@@ -458,6 +467,12 @@ void CGroundDecalHandler::BindCommonTextures()
 		glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
 
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_2D, smfMap->GetMiniMapTexture());
+
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());
+
 	glActiveTexture(GL_TEXTURE0);
 }
 
@@ -487,6 +502,12 @@ void CGroundDecalHandler::UnbindTextures()
 		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 }
@@ -681,7 +702,11 @@ void CGroundDecalHandler::Draw()
 	BindCommonTextures();
 
 	decalShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
+	decalShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
 	decalShader->Enable();
+
+	//decalShader->SetUniform("cameraDir", camera->GetDir().x, camera->GetDir().y, camera->GetDir().z);
+	decalShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
@@ -945,7 +970,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	const float2 dirO = (posR      - posL).SafeNormalize();
 	const float2 dirN = (decalPos2 - posR).SafeNormalize();
 
-	if (dirN.Dot(dirN) < 0.25)
+	// dirN was ~zero
+	if (dirN.Dot(dirN) < 0.25f)
 		return;
 
 	if (dirO.Dot(dirN) >= 0.9999f && oldDecal.forcedNormal.dot(unit->updir) >= 0.99f) {
@@ -1128,6 +1154,7 @@ void CGroundDecalHandler::SunChanged()
 	auto enToken = decalShader->EnableScoped();
 	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
+	//decalShader->SetUniform("groundSpecularColor", sunLighting->groundSpecularColor.x, sunLighting->groundSpecularColor.y, sunLighting->groundSpecularColor.z);
 	decalShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 }
 

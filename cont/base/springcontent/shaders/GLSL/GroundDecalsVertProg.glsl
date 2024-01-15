@@ -73,7 +73,7 @@ const vec3 CUBE_VERT[36] = vec3[36](
 	vec3(-1.0f,  1.0f, -1.0f)
 );
 
-#line 100075
+#line 100076
 
 const vec2 HM_TEXEL = vec2(8.0, 8.0);
 float HeightAtWorldPos(vec2 wxz) {

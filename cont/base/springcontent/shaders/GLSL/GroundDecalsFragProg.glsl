@@ -8,11 +8,17 @@ uniform sampler2D decalMainTex;
 uniform sampler2D decalNormTex;
 
 uniform sampler2D groundNormalTex;
+uniform sampler2D miniMapTex;
+uniform sampler2D infoTex;
 
 uniform vec4 mapDims; //mapxy; 1.0 / mapxy
+uniform vec4 mapDimsPO2; //mapxyPO2; 1.0 / mapxyPO2
+uniform float infoTexIntensityMul;
 
 uniform vec4 groundAmbientColor; // + groundShadowDensity
 uniform vec3 groundDiffuseColor;
+//uniform vec3 groundSpecularColor;
+//uniform vec3 cameraDir;
 uniform vec3 sunDir;
 
 uniform vec2 screenSizeInverse; // 1/X, 1/Y
@@ -52,7 +58,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200055
+#line 200061
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -342,6 +348,8 @@ void main() {
 
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
+	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0f).rgb;
+	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, 0.6);
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
@@ -359,7 +367,22 @@ void main() {
 	//vec3 decalNormal = normalize(mix(N, normalize(TBN * NORM2SNORM(normVal.xyz)), alpha));
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
 
-	fragColor.rgb = mainCol.rgb * (max(dot(sunDir, decalNormal), 0.0) + groundAmbientColor.rgb) * GetShadowColor(worldPos.xyz, dot(sunDir, N));
+	vec3 diffuseTerm = max(dot(sunDir, decalNormal), 0.0) * groundDiffuseColor;
+
+	#ifdef HAVE_INFOTEX
+	{
+		mainCol.rgb += texture(infoTex, worldPos.xz * mapDimsPO2.zw).rgb * infoTexIntensityMul;
+		mainCol.rgb -= (vec3(0.5, 0.5, 0.5) * float(infoTexIntensityMul == 1.0));
+	}
+	#endif
+
+	//vec3 reflectDir = reflect(sunDir, decalNormal);
+	//vec3 specularTerm = groundSpecularColor * 2.0 * clamp(pow(max(dot(reflectDir, cameraDir), 0.0), 5.0), 0.0, 1.0);
+
+	//vec3 lightCol = (specularTerm + diffuseTerm) * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
+	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
+
+	fragColor.rgb = mainCol.rgb * lightCol;
 	fragColor.rgb += BlackBody(normVal.w * t) * glow;
 
 	// alpha
@@ -368,10 +391,11 @@ void main() {
 	fragColor   *= max(dot(groundNormal, N), 0.0);
 	//fragColor.a *= pow(max(0.0, N.y), 2);
 
-	if (misc.z == 0.0) {
-		//fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
-	}
+	//if (misc.z == 0.0) {
+	//	fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
+	//}
 
+	//fragColor = vec4(, 1.0);
 	//fragColor = vec4(alpha);
 	//fragColor = vec4(relUV.yyy, 1.0);
 
