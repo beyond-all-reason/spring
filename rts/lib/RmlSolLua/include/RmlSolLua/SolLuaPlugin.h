@@ -21,11 +21,10 @@ namespace Rml::SolLua
     class RMLUILUA_API SolLuaPlugin : public Plugin
     {
     public:
-        SolLuaPlugin(sol::state_view lua_state, void (*contextCreator)(const std::string& name));
-        SolLuaPlugin(sol::state_view lua_state, void (*contextCreator)(const std::string& name), const Rml::String& lua_environment_identifier);
+        SolLuaPlugin(sol::state_view lua_state);
+        SolLuaPlugin(sol::state_view lua_state, const Rml::String& lua_environment_identifier);
 
         TranslationTable translationTable;
-        void (*createContext)(const std::string& name);
     private:
         int GetEventClasses() override;
 
@@ -34,8 +33,6 @@ namespace Rml::SolLua
 
         std::unique_ptr<SolLuaDocumentElementInstancer> document_element_instancer;
         std::unique_ptr<SolLuaEventListenerInstancer> event_listener_instancer;
-        void OnElementCreate(Element* element);
-        void OnElementDestroy(Element* element);
 
         sol::state_view m_lua_state;
         Rml::String m_lua_env_identifier;

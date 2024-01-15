@@ -6,6 +6,8 @@
 
 #include <type_traits>
 
+#include "RmlSolLua/SolLuaPlugin.h"
+
 
 #ifndef RMLUI_NO_THIRDPARTY_CONTAINERS
 template <typename Key, typename Value>
@@ -196,7 +198,7 @@ namespace Rml::SolLua
 	void bind_element_derived(sol::state_view& lua);
 	void bind_element_form(sol::state_view& lua);
 	void bind_event(sol::state_view& lua);
-	void bind_global(sol::state_view& lua, TranslationTable* translationTable, void (*createContext)(const std::string& name));
+	void bind_global(sol::state_view& lua, SolLuaPlugin *slp);
 	void bind_log(sol::state_view& lua);
 	void bind_vector(sol::state_view& lua);
 	void bind_convert(sol::state_view& lua);
