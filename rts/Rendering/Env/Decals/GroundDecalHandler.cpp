@@ -686,8 +686,6 @@ void CGroundDecalHandler::Draw()
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
 
-
-
 	if (!permanentDecals.empty()) {
 		BindGroundAtlasTextures();
 
@@ -695,11 +693,12 @@ void CGroundDecalHandler::Draw()
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, permanentDecals.size());
 		vaoPerm.Unbind();
 	}
-
-	BindAtlasTextures();
-	vaoTmp.Bind();
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, temporaryDecals.size());
-	vaoTmp.Unbind();
+	{
+		BindAtlasTextures();
+		vaoTmp.Bind();
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, temporaryDecals.size());
+		vaoTmp.Unbind();
+	}
 
 	decalShader->Disable();
 
