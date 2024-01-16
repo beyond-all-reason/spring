@@ -29,6 +29,8 @@ public:
 	virtual void MouseMove(int x, int y, int dx, int dy, int button) {}
 	virtual void MouseRelease(int x, int y, int button) {}
 	virtual bool IsAbove(int x, int y) { return false; }
+	virtual bool HandlesCursorIcon() { return  false; }
+
 	virtual void Draw() {}
 	virtual std::string GetTooltip(int x, int y) { return "No tooltip defined"; }
 
