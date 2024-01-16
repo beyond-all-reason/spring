@@ -49,6 +49,7 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
+#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
@@ -2744,6 +2745,10 @@ int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
 {
+	// ignore lua requests to control cursor when mouse is over RmlUI element
+	if (RmlGui::IsActive())
+		return 0;
+
 	const std::string& cursorName = luaL_checkstring(L, 1);
 	const float cursorScale = luaL_optfloat(L, 2, 1.0f);
 

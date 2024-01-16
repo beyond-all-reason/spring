@@ -26,156 +26,169 @@
  *
  */
 
+#include <functional>
+#include <SDL.h>
+#include <RmlSolLua/RmlSolLua.h>
+#include <RmlUi/Core.h>
+#include <RmlUi/Debugger.h>
+#include <RmlUi/Core/Profiling.h>
+#include <tracy/Tracy.hpp>
+
 #include "RmlUi_Backend.h"
 #include "RmlUi_Platform_SDL.h"
 #include "RmlUi_Renderer_GL3.h"
-#include "RmlUi_Renderer_Headless.h"
-#include <RmlUi/Core.h>
-#include <RmlUi/Lua.h>
-#include <RmlUi/Debugger.h>
-#include <RmlUi/Core/Profiling.h>
-#include <SDL.h>
-#include "Rendering/GL/myGL.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Lua/LuaUI.h"
-#include <RmlSolLua/RmlSolLua.h>
-#include "System/FileSystem/FileHandler.h"
-#include <functional>
-#include <tracy/Tracy.hpp>
-
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/Input/InputHandler.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
-#include "Game/UI/MouseHandler.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/Input/InputHandler.h"
 
-void createContext(const std::string &name);
+using CtxMutex = std::recursive_mutex;
+using CtxLockGuard = std::lock_guard<CtxMutex>;
+
+void createContext(const std::string& name);
 bool removeContext(const std::string& name);
 
 class RenderInterface_GL3_SDL : public RenderInterface_GL3
 {
 public:
-	RenderInterface_GL3_SDL() {}
+    RenderInterface_GL3_SDL()
+    {
+    }
 
-	bool LoadTexture(Rml::TextureHandle &texture_handle, Rml::Vector2i &texture_dimensions, const Rml::String &source) override
-	{
-		CBitmap bmp;
-		if (!bmp.Load(source))
-		{
-			return false;
-		}
-		SDL_Surface *surface = bmp.CreateSDLSurface();
+    bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions,
+                     const Rml::String& source) override
+    {
+        CBitmap bmp;
+        if (!bmp.Load(source))
+        {
+            return false;
+        }
+        SDL_Surface* surface = bmp.CreateSDLSurface();
 
-		bool success = false;
-		if (surface)
-		{
-			texture_dimensions.x = surface->w;
-			texture_dimensions.y = surface->h;
+        bool success = false;
+        if (surface)
+        {
+            texture_dimensions.x = surface->w;
+            texture_dimensions.y = surface->h;
 
-			if (surface->format->format != SDL_PIXELFORMAT_RGBA32)
-			{
-				SDL_SetSurfaceAlphaMod(surface, SDL_ALPHA_OPAQUE);
-				SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
+            if (surface->format->format != SDL_PIXELFORMAT_RGBA32)
+            {
+                SDL_SetSurfaceAlphaMod(surface, SDL_ALPHA_OPAQUE);
+                SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
 
-				SDL_Surface *new_surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, 32, SDL_PIXELFORMAT_RGBA32);
-				if (!new_surface)
-					return false;
+                SDL_Surface* new_surface = SDL_CreateRGBSurfaceWithFormat(
+                    0, surface->w, surface->h, 32, SDL_PIXELFORMAT_RGBA32);
+                if (!new_surface)
+                    return false;
 
-				if (SDL_BlitSurface(surface, 0, new_surface, 0) != 0)
-					return false;
+                if (SDL_BlitSurface(surface, 0, new_surface, 0) != 0)
+                    return false;
 
-				SDL_FreeSurface(surface);
-				surface = new_surface;
-			}
+                SDL_FreeSurface(surface);
+                surface = new_surface;
+            }
 
-			success = RenderInterface_GL3::GenerateTexture(texture_handle, (const Rml::byte *)surface->pixels, texture_dimensions);
-			SDL_FreeSurface(surface);
-		}
+            success = RenderInterface_GL3::GenerateTexture(texture_handle, (const Rml::byte*)surface->pixels,
+                                                           texture_dimensions);
+            SDL_FreeSurface(surface);
+        }
 
-		return success;
-	}
+        return success;
+    }
 };
 
 class VFSFileInterface : public Rml::FileInterface
 {
 public:
-	VFSFileInterface() {}
-	Rml::FileHandle Open(const Rml::String &path)
-	{
-		// LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s %d", __func__, path.c_str(), CLuaHandle::GetDevMode());
-		const std::string mode = SPRING_VFS_RAW_FIRST;
-		CFileHandler *fh = new CFileHandler(path, mode);
-		if (!fh->FileExists())
-		{
-			delete fh;
-			return (Rml::FileHandle) nullptr;
-		}
-		return (Rml::FileHandle)fh;
-	}
+    VFSFileInterface()
+    {
+    }
 
-	void Close(Rml::FileHandle file)
-	{
-		((CFileHandler *)file)->Close();
-		delete (CFileHandler *)file;
-	}
+    Rml::FileHandle Open(const Rml::String& path)
+    {
+        // LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s %d", __func__, path.c_str(), CLuaHandle::GetDevMode());
+        const std::string mode = SPRING_VFS_RAW_FIRST;
+        CFileHandler* fh = new CFileHandler(path, mode);
+        if (!fh->FileExists())
+        {
+            delete fh;
+            return (Rml::FileHandle)nullptr;
+        }
+        return (Rml::FileHandle)fh;
+    }
 
-	size_t Read(void *buffer, size_t size, Rml::FileHandle file)
-	{
-		return ((CFileHandler *)file)->Read(buffer, size);
-	}
+    void Close(Rml::FileHandle file)
+    {
+        ((CFileHandler*)file)->Close();
+        delete (CFileHandler*)file;
+    }
 
-	bool Seek(Rml::FileHandle file, long offset, int origin)
-	{
-		std::ios_base::seekdir seekdir;
-		switch (origin)
-		{
-		case SEEK_CUR:
-			seekdir = std::ios_base::cur;
-			break;
-		case SEEK_END:
-			seekdir = std::ios_base::end;
-			break;
-		case SEEK_SET:
-		default:
-			seekdir = std::ios_base::beg;
-			break;
-		}
-		((CFileHandler *)file)->Seek(offset, seekdir);
-		// TODO: need to detect seek failure and then return false?
-		return true;
-	}
+    size_t Read(void* buffer, size_t size, Rml::FileHandle file)
+    {
+        return ((CFileHandler*)file)->Read(buffer, size);
+    }
 
-	size_t Tell(Rml::FileHandle file)
-	{
-		return ((CFileHandler *)file)->GetPos();
-	};
+    bool Seek(Rml::FileHandle file, long offset, int origin)
+    {
+        std::ios_base::seekdir seekdir;
+        switch (origin)
+        {
+        case SEEK_CUR:
+            seekdir = std::ios_base::cur;
+            break;
+        case SEEK_END:
+            seekdir = std::ios_base::end;
+            break;
+        case SEEK_SET:
+        default:
+            seekdir = std::ios_base::beg;
+            break;
+        }
+        ((CFileHandler*)file)->Seek(offset, seekdir);
+        // TODO: need to detect seek failure and then return false?
+        return true;
+    }
+
+    size_t Tell(Rml::FileHandle file)
+    {
+        return ((CFileHandler*)file)->GetPos();
+    };
 };
 
 class PassThroughPlugin : public Rml::Plugin
 {
-	void (*onContextCreate)(Rml::Context*);
-	void (*onContextDestroy)(Rml::Context*);
+    void (*onContextCreate)(Rml::Context*);
+    void (*onContextDestroy)(Rml::Context*);
 
-	public:
-		PassThroughPlugin(void (*onContextCreate)(Rml::Context*), void (*onContextDestroy)(Rml::Context*))
-			: onContextCreate{onContextCreate}, onContextDestroy{onContextDestroy}
-		{
-		}
+public:
+    PassThroughPlugin(void (*onContextCreate)(Rml::Context*), void (*onContextDestroy)(Rml::Context*))
+        : onContextCreate{onContextCreate}, onContextDestroy{onContextDestroy}
+    {
+    }
 
-		int GetEventClasses() override
-		{
-			return EVT_BASIC;
-		}
+    int GetEventClasses() override
+    {
+        return EVT_BASIC;
+    }
 
-		void OnInitialise() override {};
-		void OnShutdown() override {};
-		void OnContextCreate(Rml::Context* context) override
-		{
-			onContextCreate(context);
-		};
-		void OnContextDestroy(Rml::Context* context) override
-		{
-			onContextDestroy(context);
-		};
+    void OnInitialise() override
+    {
+    };
+
+    void OnShutdown() override
+    {
+    };
+
+    void OnContextCreate(Rml::Context* context) override
+    {
+        onContextCreate(context);
+    };
+
+    void OnContextDestroy(Rml::Context* context) override
+    {
+        onContextDestroy(context);
+    };
 };
 
 /**
@@ -185,202 +198,214 @@ class PassThroughPlugin : public Rml::Plugin
  */
 struct BackendData
 {
-	SystemInterface_SDL system_interface;
+    SystemInterface_SDL system_interface;
 #ifndef HEADLESS
-	RenderInterface_GL3_SDL render_interface;
+    RenderInterface_GL3_SDL render_interface;
 #else
 	RenderInterface_Headless render_interface;
 #endif
-	VFSFileInterface file_interface;
+    VFSFileInterface file_interface;
 
-	SDL_Window *window = nullptr;
-	SDL_GLContext glcontext = nullptr;
-	std::vector<Rml::Context *> contexts;
-	InputHandler::SignalType::connection_type inputCon;
-	CRmlInputReceiver inputReceiver;
+    SDL_Window* window = nullptr;
+    SDL_GLContext glcontext = nullptr;
+    std::vector<Rml::Context*> contexts;
+    InputHandler::SignalType::connection_type inputCon;
+    CRmlInputReceiver inputReceiver;
 
-	// make atomic_bool?
-	bool initialized = false;
-	bool debuggerAttached = false;
-	int winX = 1;
-	int winY = 1;
-	lua_State *ls;
+    // make atomic_bool?
+    bool initialized = false;
+    bool debuggerAttached = false;
+    int winX = 1;
+    int winY = 1;
+    lua_State* ls;
 
-	Rml::UniquePtr<PassThroughPlugin> plugin;
+    Rml::UniquePtr<PassThroughPlugin> plugin;
+    CtxMutex contextMutex;
 };
+
 static Rml::UniquePtr<BackendData> data;
 
 bool RmlInitialized()
 {
-	return data && data->initialized;
+    return data && data->initialized;
 }
 
-bool RmlGui::Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, int winX, int winY)
+bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX, int winY)
 {
-	data = Rml::MakeUnique<BackendData>();
+    data = Rml::MakeUnique<BackendData>();
 
-	if (!data->render_interface)
-	{
-		data.reset();
-		fprintf(stderr, "Could not initialize OpenGL3 render interface.");
-		return false;
-	}
+    if (!data->render_interface)
+    {
+        data.reset();
+        fprintf(stderr, "Could not initialize OpenGL3 render interface.");
+        return false;
+    }
 
-	data->window = target_window;
-	data->glcontext = target_glcontext;
+    data->window = target_window;
+    data->glcontext = target_glcontext;
 
-	Rml::SetFileInterface(&data->file_interface);
-	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
-	Rml::SetRenderInterface(RmlGui::GetRenderInterface());
+    Rml::SetFileInterface(&data->file_interface);
+    Rml::SetSystemInterface(RmlGui::GetSystemInterface());
+    Rml::SetRenderInterface(RmlGui::GetRenderInterface());
 
-	data->system_interface.SetWindow(target_window);
-	data->render_interface.SetViewport(winX, winY);
-	data->winX = winX;
-	data->winY = winY;
+    data->system_interface.SetWindow(target_window);
+    data->render_interface.SetViewport(winX, winY);
+    data->winX = winX;
+    data->winY = winY;
 
-	Rml::Initialise();
+    Rml::Initialise();
 
-	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
-	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
-	data->initialized = true;
-	return true;
+    Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
+    data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
+    data->initialized = true;
+    return true;
 }
 
-bool RmlGui::InitializeLua(lua_State *lua_state)
+bool RmlGui::InitializeLua(lua_State* lua_state)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	sol::state_view lua(lua_state);
-	data->ls = lua_state;
-	data->plugin = Rml::MakeUnique<PassThroughPlugin>(AddContext,RemoveContext);
-	Rml::RegisterPlugin(data->plugin.get());
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    sol::state_view lua(lua_state);
+    data->ls = lua_state;
+    data->plugin = Rml::MakeUnique<PassThroughPlugin>(AddContext, RemoveContext);
+    Rml::RegisterPlugin(data->plugin.get());
 
-	Rml::SolLua::SolLuaPlugin *slp = Rml::SolLua::Initialise(&lua);
-	data->system_interface.SetTranslationTable(&slp->translationTable);
-	return true;
+    Rml::SolLua::SolLuaPlugin* slp = Rml::SolLua::Initialise(&lua);
+    data->system_interface.SetTranslationTable(&slp->translationTable);
+    return true;
 }
 
 void RmlGui::Shutdown()
 {
-	if (!RmlInitialized())
-	{
-		return;
-	}
-	data->initialized = false;
+    if (!RmlInitialized())
+    {
+        return;
+    }
+    data->initialized = false;
 
-	// SDL_GL_DeleteContext(data->glcontext);
-	// SDL_DestroyWindow(data->window);
-	Rml::Shutdown();
-	// data.reset();
-
-	// SDL_Quit();
+    // removes all contexts
+    Rml::Shutdown();
 }
 
 void RmlGui::Reload()
 {
-	if (!RmlInitialized())
-	{
-		return;
-	}
-	LOG_L(L_FATAL, "[SpringApp::%s] reloading: ", __func__);
-	SDL_Window *window = data->window;
-	SDL_GLContext glcontext = data->glcontext;
-	int winX = data->winX;
-	int winY = data->winY;
-	RmlGui::Shutdown();
-	RmlGui::Initialize(window, glcontext, winX, winY);
+    if (!RmlInitialized())
+    {
+        return;
+    }
+    LOG_L(L_FATAL, "[SpringApp::%s] reloading: ", __func__);
+    SDL_Window* window = data->window;
+    SDL_GLContext glcontext = data->glcontext;
+    int winX = data->winX;
+    int winY = data->winY;
+    RmlGui::Shutdown();
+    RmlGui::Initialize(window, glcontext, winX, winY);
 }
 
 void RmlGui::ToggleDebugger(int contextIndex)
 {
-	if (data->debuggerAttached)
-	{
-		Rml::Debugger::Initialise(data->contexts[contextIndex]);
-		Rml::Debugger::SetVisible(true);
-	}
-	else
-	{
-		Rml::Debugger::Shutdown();
-	}
-	data->debuggerAttached = !data->debuggerAttached;
+    if (data->debuggerAttached)
+    {
+        // TODO: Ensure thread safety somehow if needed
+        Rml::Debugger::Initialise(data->contexts[contextIndex]);
+        Rml::Debugger::SetVisible(true);
+    }
+    else
+    {
+        Rml::Debugger::Shutdown();
+    }
+    data->debuggerAttached = !data->debuggerAttached;
 }
 
-Rml::SystemInterface *RmlGui::GetSystemInterface()
+Rml::SystemInterface* RmlGui::GetSystemInterface()
 {
-	return &data->system_interface;
+    return &data->system_interface;
 }
 
-Rml::RenderInterface *RmlGui::GetRenderInterface()
+Rml::RenderInterface* RmlGui::GetRenderInterface()
 {
-	return &data->render_interface;
+    return &data->render_interface;
 }
 
 bool RmlGui::IsActive()
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	return data->inputReceiver.IsAbove(0, 0);
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    return data->inputReceiver.IsAbove();
 }
 
-void RmlGui::AddContext(Rml::Context *context)
+
+CInputReceiver* RmlGui::GetInputReceiver()
 {
-	context->SetDimensions({data->winX, data->winY});
-	data->contexts.push_back(context);
+    if (!RmlInitialized())
+    {
+        return nullptr;
+    }
+    return &data->inputReceiver;
 }
 
-void RmlGui::RemoveContext(Rml::Context *context)
+
+void RmlGui::AddContext(Rml::Context* context)
 {
-	data->contexts.erase(std::ranges::find(data->contexts, context));
+    CtxLockGuard lock(data->contextMutex);
+    context->SetDimensions({data->winX, data->winY});
+    data->contexts.push_back(context);
+}
+
+void RmlGui::RemoveContext(Rml::Context* context)
+{
+    CtxLockGuard lock(data->contextMutex);
+    data->contexts.erase(std::ranges::find(data->contexts, context));
 }
 
 
 void RmlGui::Update()
 {
-	ZoneScopedN("RmlGui Update");
-	if (!RmlInitialized())
-	{
-		return;
-	}
+    ZoneScopedN("RmlGui Update");
+    if (!RmlInitialized())
+    {
+        return;
+    }
 #ifndef HEADLESS
-	for (auto &context : data->contexts)
-	{
-		context->Update();
-	}
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        context->Update();
+    }
 #endif
 }
 
 void RmlGui::RenderFrame()
 {
-	ZoneScopedN("RmlGui Draw");
-	if (!RmlInitialized())
-	{
-		return;
-	}
+    ZoneScopedN("RmlGui Draw");
+    if (!RmlInitialized())
+    {
+        return;
+    }
 
 #ifndef HEADLESS
-	RmlGui::BeginFrame();
-	for (auto &context : data->contexts)
-	{
-		context->Render();
-	}
-	RmlGui::PresentFrame();
+    RmlGui::BeginFrame();
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        context->Render();
+    }
+    RmlGui::PresentFrame();
 #endif
 }
 
 void RmlGui::BeginFrame()
 {
-	// data->render_interface.Clear();
-	data->render_interface.BeginFrame();
+    // data->render_interface.Clear();
+    data->render_interface.BeginFrame();
 }
 
 void RmlGui::PresentFrame()
 {
-	data->render_interface.EndFrame();
-	RMLUI_FrameMark;
+    data->render_interface.EndFrame();
+    RMLUI_FrameMark;
 }
 
 /*
@@ -388,17 +413,17 @@ void RmlGui::PresentFrame()
 */
 bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= !RmlSDL::EventMouseMove(context, x, y);
-	}
-	data->inputReceiver.setActive(result);
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= !RmlSDL::EventMouseMove(context, x, y);
+    }
+    data->inputReceiver.setActive(result);
+    return result;
 }
 
 /*
@@ -406,26 +431,26 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 */
 bool RmlGui::ProcessMousePress(int x, int y, int button)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		bool handled = !RmlSDL::EventMousePress(context, x, y, button);
-		result |= handled;
-		if (!handled)
-		{
-			Rml::Element *el = context->GetFocusElement();
-			if (el)
-			{
-				el->Blur();
-			}
-		}
-	}
-	data->inputReceiver.setActive(result);
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        bool handled = !RmlSDL::EventMousePress(context, x, y, button);
+        result |= handled;
+        if (!handled)
+        {
+            Rml::Element* el = context->GetFocusElement();
+            if (el)
+            {
+                el->Blur();
+            }
+        }
+    }
+    data->inputReceiver.setActive(result);
+    return result;
 }
 
 /*
@@ -433,17 +458,17 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 */
 bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= !RmlSDL::EventMouseRelease(context, x, y, button);
-	}
-	data->inputReceiver.setActive(result);
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= !RmlSDL::EventMouseRelease(context, x, y, button);
+    }
+    data->inputReceiver.setActive(result);
+    return result;
 }
 
 /*
@@ -451,17 +476,17 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 */
 bool RmlGui::ProcessMouseWheel(float delta)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= !RmlSDL::EventMouseWheel(context, delta);
-	}
-	data->inputReceiver.setActive(result);
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= !RmlSDL::EventMouseWheel(context, delta);
+    }
+    data->inputReceiver.setActive(result);
+    return result;
 }
 
 /*
@@ -469,95 +494,95 @@ bool RmlGui::ProcessMouseWheel(float delta)
 */
 bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		auto kc = RmlSDL::ConvertKey(keyCode);
-		result |= !RmlSDL::EventKeyDown(context, kc);
-	}
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        auto kc = RmlSDL::ConvertKey(keyCode);
+        result |= !RmlSDL::EventKeyDown(context, kc);
+    }
+    return result;
 }
 
 bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= !RmlSDL::EventKeyUp(context, RmlSDL::ConvertKey(keyCode));
-	}
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= !RmlSDL::EventKeyUp(context, RmlSDL::ConvertKey(keyCode));
+    }
+    return result;
 }
 
-bool RmlGui::ProcessTextInput(const std::string &text)
+bool RmlGui::ProcessTextInput(const std::string& text)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= !RmlSDL::EventTextInput(context, text);
-	}
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= !RmlSDL::EventTextInput(context, text);
+    }
+    return result;
 }
 
-bool processContextEvent(Rml::Context *context, const SDL_Event &event)
+bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 {
-	switch (event.type)
-	{
-	case SDL_WINDOWEVENT:
-	{
-		switch (event.window.event)
-		{
-		case SDL_WINDOWEVENT_SIZE_CHANGED:
-		{
-			Rml::Vector2i dimensions(event.window.data1, event.window.data2);
-			data->render_interface.SetViewport(dimensions.x, dimensions.y);
-			data->winX = dimensions.x;
-			data->winY = dimensions.y;
-		}
-		break;
-		}
-		RmlSDL::InputEventHandler(context, event);
-	}
-	break;
-	case SDL_MOUSEMOTION:
-	case SDL_MOUSEBUTTONDOWN:
-	case SDL_MOUSEBUTTONUP:
-	case SDL_MOUSEWHEEL:
-	case SDL_KEYDOWN:
-	case SDL_KEYUP:
-	case SDL_TEXTINPUT:
-		break; // handled elsewhere
-	default:
-	{
-		RmlSDL::InputEventHandler(context, event);
-	}
-	break;
-	}
-	// these events are not captured, and should continue propogating
-	return false;
+    switch (event.type)
+    {
+    case SDL_WINDOWEVENT:
+        {
+            switch (event.window.event)
+            {
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+                {
+                    Rml::Vector2i dimensions(event.window.data1, event.window.data2);
+                    data->render_interface.SetViewport(dimensions.x, dimensions.y);
+                    data->winX = dimensions.x;
+                    data->winY = dimensions.y;
+                }
+                break;
+            }
+            RmlSDL::InputEventHandler(context, event);
+        }
+        break;
+    case SDL_MOUSEMOTION:
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP:
+    case SDL_MOUSEWHEEL:
+    case SDL_KEYDOWN:
+    case SDL_KEYUP:
+    case SDL_TEXTINPUT:
+        break; // handled elsewhere
+    default:
+        {
+            RmlSDL::InputEventHandler(context, event);
+        }
+        break;
+    }
+    // these events are not captured, and should continue propogating
+    return false;
 }
 
-bool RmlGui::ProcessEvent(const SDL_Event &event)
+bool RmlGui::ProcessEvent(const SDL_Event& event)
 {
-	if (!RmlInitialized())
-	{
-		return false;
-	}
-	bool result = false;
-	for (auto &context : data->contexts)
-	{
-		result |= processContextEvent(context, event);
-	}
-	return result;
+    if (!RmlInitialized())
+    {
+        return false;
+    }
+    bool result = false;
+    for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
+    {
+        result |= processContextEvent(context, event);
+    }
+    return result;
 }
