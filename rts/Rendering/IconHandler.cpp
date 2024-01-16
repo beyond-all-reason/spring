@@ -59,7 +59,6 @@ bool CIconHandler::LoadIcons(const std::string& filename)
 	iconTypes.GetKeys(iconNames);
 
 	dummyIconData[ SAFETY_DATA_IDX] = {};
-	//dummyIconData[DEFAULT_DATA_IDX] = {"default", GetDefaultTexture(), 1.0f, 1.0f, false, false, DEFAULT_TEX_SIZE_X, DEFAULT_TEX_SIZE_Y, 0.0f, 0.0f, 1.0f, 1.0f};
 	dummyIconData[DEFAULT_DATA_IDX] = { "default", GetDefaultTexture(), 1.0f, 1.0f, false, false, 0.0f, 0.0f, 1.0f, 1.0f };
 
 
@@ -106,8 +105,6 @@ bool CIconHandler::AddIcon(
 	}
 
 	unsigned int texID = 0;
-	//unsigned int xsize = 0;
-	//unsigned int ysize = 0;
 
 	bool ownTexture = true;
 
@@ -155,7 +152,6 @@ bool CIconHandler::AddIcon(
 		FreeIcon(iconName);
 
 	// data must be constructed first since CIcon's ctor will Ref() it
-	//iconData[numIcons] = { iconName, texID,  size, distance, radAdj, ownTexture, xsize, ysize, u0, v0, u1, v1 };
 	iconData[numIcons] = {iconName, texID,  size, distance, radAdj, ownTexture, u0, v0, u1, v1};
 	// indices 0 and 1 are reserved
 	iconMap[iconName] = CIcon(ICON_DATA_OFFSET + numIcons++);
@@ -326,16 +322,12 @@ CIconData::CIconData(
 	float _distance,
 	bool radAdj,
 	bool ownTex,
-	//unsigned int _xsize,
-	//unsigned int _ysize,
 	float _u0, float _v0, float _u1, float _v1
 )
 	: name(_name)
 	, refCount(0)
 
 	, texID(_texID)
-	//, xsize(_xsize)
-	//, ysize(_ysize)
 
 	, size(_size)
 	, distance(_distance)
@@ -372,8 +364,6 @@ void CIconData::CopyData(const CIconData* iconData)
 	distance     = iconData->distance;
 	distSqr      = iconData->distSqr;
 	radiusAdjust = iconData->radiusAdjust;
-	//xsize        = iconData->xsize;
-	//ysize        = iconData->ysize;
 	u0			 = iconData->u0;
 	v0			 = iconData->v0;
 	u1			 = iconData->u1;

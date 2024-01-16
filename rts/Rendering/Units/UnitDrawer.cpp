@@ -59,7 +59,7 @@ CONFIG(float, UnitIconFadeVanish).defaultValue(1000.0f).minimumValue(1.0f).maxim
 CONFIG(float, UnitTransparency).defaultValue(0.7f).description("Transparency of Ghosted units");
 CONFIG(bool, UnitIconsAsUI).defaultValue(false).description("Draw unit icons like it is an UI element and not like unit's LOD.");
 CONFIG(bool, UnitIconsHideWithUI).defaultValue(false).description("Hide unit icons when UI is hidden.");
-CONFIG(int, UnitIconAtlas).defaultValue(0).description("Use New Atlassed submission of icons?");
+CONFIG(float, UnitIconCameraMinY).defaultValue(-0.5f).description("The lowest camera Y direction above which unit icons are drawn based on camera distance");
 CONFIG(int, FastIcons).defaultValue(0).description("Be faster at drawing minimap");
 
 CONFIG(int, MaxDynamicModelLights)
@@ -297,169 +297,96 @@ void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 
 	static constexpr uint8_t defaultColor[4] = { 255, 255, 255, 255 };
 
-	unsigned int lastTexID = 0;
-	unsigned int fastIcons = configHandler->GetInt("FastIcons");
-	if (fastIcons > 0) {
-		bool useSimpleColors = minimap->UseSimpleColors();
-		const uint8_t* myTeamIconColor = minimap->GetMyTeamIconColor();
+	// We keep the last requested texture ID to only bind it if there were icons drawn with it
+	unsigned int lastTextureID = 0;
 
-		if (!minimap->UseUnitIcons())
-			icon::iconHandler.GetDefaultIconData()->BindTexture();
+	bool useSimpleColors = minimap->UseSimpleColors();
+	const uint8_t* myTeamIconColor = minimap->GetMyTeamIconColor();
 
-		for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon()) {
+	if (!minimap->UseUnitIcons())
+		icon::iconHandler.GetDefaultIconData()->BindTexture();
 
-			if (icon == nullptr)
-				continue;
-			if (units.empty())
-				continue;
+	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon()) {
 
-			if (minimap->UseUnitIcons()) {
-				icon->BindTexture();
+		if (icon == nullptr)
+			continue;
+		if (units.empty())
+			continue;
+
+		if (minimap->UseUnitIcons() && lastTextureID != icon->GetTextureID()) {
+			if (rb.ShouldSubmit()) {
+				glBindTexture(GL_TEXTURE_2D, lastTextureID);
+				rb.Submit(GL_TRIANGLES);
 			}
+			lastTextureID = icon->GetTextureID();
+		}
 
-			for (const CUnit* unit : units) {
-				assert(unit->myIcon == icon);
-				if (unit->noMinimap)
-					continue;
-				if (unit->myIcon == nullptr)
-					continue;
-				if (!unit->drawIcon)
-					continue;
-				if (unit->IsInVoid())
-					continue;
+		for (const CUnit* unit : units) {
+			assert(unit->myIcon == icon);
+			if (unit->noMinimap)
+				continue;
+			if (unit->myIcon == nullptr)
+				continue;
+			if (!unit->drawIcon)
+				continue;
+			if (unit->IsInVoid())
+				continue;
 
-				const uint8_t* color = &defaultColor[0];
+			const uint8_t* color = &defaultColor[0];
 
-				if (!unit->isSelected) {
-					if (useSimpleColors) {
-						if (unit->team == gu->myTeam) {
-							color = minimap->GetMyTeamIconColor();
-						}
-						else if (teamHandler.Ally(gu->myAllyTeam, unit->allyteam)) {
-							color = minimap->GetAllyTeamIconColor();
-						}
-						else {
-							color = minimap->GetEnemyTeamIconColor();
-						}
+			if (!unit->isSelected) {
+				if (useSimpleColors) {
+					if (unit->team == gu->myTeam) {
+						color = minimap->GetMyTeamIconColor();
+					}
+					else if (teamHandler.Ally(gu->myAllyTeam, unit->allyteam)) {
+						color = minimap->GetAllyTeamIconColor();
 					}
 					else {
-						color = teamHandler.Team(unit->team)->color;
+						color = minimap->GetEnemyTeamIconColor();
 					}
 				}
-
-				const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
-				const float3& iconPos = (!gu->spectatingFullView) ?
-					unit->GetObjDrawErrorPos(gu->myAllyTeam) :
-					unit->GetObjDrawMidPos();
-
-				const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
-				const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
-
-				float x0 = iconPos.x - iconSizeX;
-				float x1 = iconPos.x + iconSizeX;
-				float y0 = iconPos.z - iconSizeY;
-				float y1 = iconPos.z + iconSizeY;
-
-				if (minimap->GetFlipped()) {
-					x0 = mapDims.mapx * SQUARE_SIZE - x0;
-					x1 = mapDims.mapx * SQUARE_SIZE - x1;
-					y0 = mapDims.mapy * SQUARE_SIZE - y0;
-					y1 = mapDims.mapy * SQUARE_SIZE - y1;
-					std::swap(x0, x1);
-					std::swap(y0, y1);
+				else {
+					color = teamHandler.Team(unit->team)->color;
 				}
-
-				rb.AddQuadTriangles(
-					{ x0, y0, icon->u0, icon->v0, color },
-					{ x1, y0, icon->u1, icon->v0, color },
-					{ x1, y1, icon->u1, icon->v1, color },
-					{ x0, y1, icon->u0, icon->v1, color }
-				);
 			}
 
-			rb.Submit(GL_TRIANGLES);
+			const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
+			const float3& iconPos = (!gu->spectatingFullView) ?
+				unit->GetObjDrawErrorPos(gu->myAllyTeam) :
+				unit->GetObjDrawMidPos();
+
+			const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
+			const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
+
+			float x0 = iconPos.x - iconSizeX;
+			float x1 = iconPos.x + iconSizeX;
+			float y0 = iconPos.z - iconSizeY;
+			float y1 = iconPos.z + iconSizeY;
+
+			if (minimap->GetFlipped()) {
+				x0 = mapDims.mapx * SQUARE_SIZE - x0;
+				x1 = mapDims.mapx * SQUARE_SIZE - x1;
+				y0 = mapDims.mapy * SQUARE_SIZE - y0;
+				y1 = mapDims.mapy * SQUARE_SIZE - y1;
+				std::swap(x0, x1);
+				std::swap(y0, y1);
+			}
+
+			rb.AddQuadTriangles(
+				{ x0, y0, icon->u0, icon->v0, color },
+				{ x1, y0, icon->u1, icon->v0, color },
+				{ x1, y1, icon->u1, icon->v1, color },
+				{ x0, y1, icon->u0, icon->v1, color }
+			);
 		}
+
 	}
-	else {
-
-		if (!minimap->UseUnitIcons())
-			icon::iconHandler.GetDefaultIconData()->BindTexture();
-
-		for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon()) {
-
-			if (icon == nullptr)
-				continue;
-			if (units.empty())
-				continue;
-
-			if (minimap->UseUnitIcons()) {
-				icon->BindTexture();
-			}
-
-			for (const CUnit* unit : units) {
-				assert(unit->myIcon == icon);
-				if (unit->noMinimap)
-					continue;
-				if (unit->myIcon == nullptr)
-					continue;
-				if (!unit->drawIcon)
-					continue;
-				if (unit->IsInVoid())
-					continue;
-
-				const uint8_t* color = &defaultColor[0];
-
-				if (!unit->isSelected) {
-					if (minimap->UseSimpleColors()) {
-						if (unit->team == gu->myTeam) {
-							color = minimap->GetMyTeamIconColor();
-						}
-						else if (teamHandler.Ally(gu->myAllyTeam, unit->allyteam)) {
-							color = minimap->GetAllyTeamIconColor();
-						}
-						else {
-							color = minimap->GetEnemyTeamIconColor();
-						}
-					}
-					else {
-						color = teamHandler.Team(unit->team)->color;
-					}
-				}
-
-				const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
-				const float3& iconPos = (!gu->spectatingFullView) ?
-					unit->GetObjDrawErrorPos(gu->myAllyTeam) :
-					unit->GetObjDrawMidPos();
-
-				const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
-				const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
-
-				float x0 = iconPos.x - iconSizeX;
-				float x1 = iconPos.x + iconSizeX;
-				float y0 = iconPos.z - iconSizeY;
-				float y1 = iconPos.z + iconSizeY;
-
-				if (minimap->GetFlipped()) {
-					x0 = mapDims.mapx * SQUARE_SIZE - x0;
-					x1 = mapDims.mapx * SQUARE_SIZE - x1;
-					y0 = mapDims.mapy * SQUARE_SIZE - y0;
-					y1 = mapDims.mapy * SQUARE_SIZE - y1;
-					std::swap(x0, x1);
-					std::swap(y0, y1);
-				}
-
-				rb.AddQuadTriangles(
-					{ x0, y0, icon->u0, icon->v0, color },
-					{ x1, y0, icon->u1, icon->v0, color },
-					{ x1, y1, icon->u1, icon->v1, color },
-					{ x0, y1, icon->u0, icon->v1, color }
-				);
-			}
-
-			rb.Submit(GL_TRIANGLES);
-		}
+	if (rb.ShouldSubmit()) {
+		glBindTexture(GL_TEXTURE_2D, lastTextureID);
+		rb.Submit(GL_TRIANGLES);
 	}
-
+	
 	sh.SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f);
 	sh.Disable();
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -579,215 +506,111 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 	sh.Enable();
 	sh.SetUniform("alphaCtrl", 0.05f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.05
 
+
+	const float3 camDir = camera->GetDir();
+	// We are going to clamp camDir.y at -0.5, then re-normalize it. 
+	const float unitIconCameraMinY = configHandler->GetFloat("UnitIconCameraMinY");
+
+	// This is 0 if we should be using individual unit-camera distances, and 1 if we should be using a global map-camera distance
+	const float unitIconCameraFlatDistMix = std::clamp( (unitIconCameraMinY - camDir.y) * 10.0f, 0.0f, 1.0f);
+
+	//LOG("DrawUnitIconsScreen: unitIconCameraFlatDistMix=%.3f unitIconCameraMinY=%.3f iconZoomDist=%.1f", unitIconCameraFlatDistMix, unitIconCameraMinY, modelDrawerData->iconZoomDist);
+
 	const auto allyTeam = gu->myAllyTeam;
-	int icnt = 0;
-
-	int unitIconAtlas = configHandler->GetInt("UnitIconAtlas");
-
 
 	const float ivsx = 1.0f / globalRendering->viewSizeX;
 	const float ivsy = 1.0f / globalRendering->viewSizeY;	
 	
-	if ((unitIconAtlas & 1) > 0) {
-		//LOG_L(L_INFO, "zoomdist = %.3f fadevanish = %.3f", modelDrawerData->iconZoomDist, modelDrawerData->iconFadeVanish);
-		unsigned int lastTextureID = 0;
+	unsigned int lastTextureID = 0;
 
-		for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
-		{
-			if (icon == nullptr)
-				continue;
-			if (units.empty())
-				continue;
+	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
+	{
+		if (icon == nullptr)
+			continue;
+		if (units.empty())
+			continue;
 
-			// When we are switching to a different texture, check if we have undrawn stuff with the previous texture.
-			if (icon->GetTextureID() != lastTextureID) {
-				//LOG_L(L_INFO, "TexSwap %s %i %i submitprev=%i", icon->GetName(), icon->GetTextureID(), icnt, rb.ShouldSubmit());
-				if (rb.ShouldSubmit()) {
-					// only bind the previous texture ID if we actually added stuff to our rb
-					glBindTexture(GL_TEXTURE_2D, lastTextureID);
-					rb.Submit(GL_TRIANGLES);
-				}
-				lastTextureID = icon->GetTextureID();
-				//icon->BindTexture();
+		// When we are switching to a different texture, check if we have undrawn stuff with the previous texture.
+		if (icon->GetTextureID() != lastTextureID) {
+			if (rb.ShouldSubmit()) {
+				// only bind the previous texture ID if we actually added stuff to our rb
+				glBindTexture(GL_TEXTURE_2D, lastTextureID);
+				rb.Submit(GL_TRIANGLES);
 			}
-
-			icnt++;
-			int ucnt = 0;
-			for (const CUnit* unit : units)
-			{
-				ucnt++;
-				SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
-				if (!unit->drawIcon)
-					//color = color4::red;
-					continue;
-
-				const bool canSee = gu->spectatingFullView || (unit->losStatus[gu->myAllyTeam] && (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS) == (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS));
-				if (!canSee)
-					//color = color4::yellow;
-					continue;
-
-				assert(unit->myIcon == icon);
-				// iconUnits should not never contain void-space units, see UpdateUnitIconState
-				assert(!unit->IsInVoid());
-
-				// drawMidPos is auto-calculated now; can wobble on its own as pieces move
-				float3 pos = (!gu->spectatingFullView) ?
-					unit->GetObjDrawErrorPos(gu->myAllyTeam) :
-					unit->GetObjDrawMidPos();
-
-				pos = camera->CalcViewPortCoordinates(pos);
-				if (pos.z > 1.0f || pos.z < 0.0f)
-					//color = color4::green;
-					continue;
-
-				// use white for selected units
-
-				float unitRadiusMult = icon->GetSize();
-				if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-					unitRadiusMult *= (unit->radius / icon->GetRadiusScale());
-				unitRadiusMult = unitRadiusMult * 0.75f + 0.25f;
-
-
-				//LOG_L(L_INFO, "%i/%i unitRadiusMult = %.3f  IsIcon = %i zoomdist = %.3f fadevanish = %.3f", icnt,ucnt, unitRadiusMult, unit->GetIsIcon(), modelDrawerData->iconZoomDist, modelDrawerData->iconFadeVanish);
-				// fade icons away in high zoom in levels
-
-				float unitCameraDistance = (unit->pos - camera->GetPos()).SqLength();
-
-				if (!unit->GetIsIcon()) {
-					if (unitCameraDistance < modelDrawerData->iconFadeVanish * unitRadiusMult)
-						continue;
-					//color = color4::white;
-					else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && unitCameraDistance < modelDrawerData->iconFadeStart * unitRadiusMult)
-						// alpha range [64, 255], since icons is unrecognisable with alpha < 64
-						color.a = 64 + 191.0f * (unitCameraDistance / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
-				}
-
-				// calculate the vertices
-				const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
-
-				const float x0 = (pos.x - offset) * ivsx;
-				const float y0 = (pos.y + offset) * ivsy;
-				const float x1 = (pos.x + offset) * ivsx;
-				const float y1 = (pos.y - offset) * ivsy;
-
-				if ((unitIconAtlas & 2) > 0) {
-					if (x1 < 0 || x0 > 1 || y0 < 0 || y1 > 1)
-						continue; // don't try to draw when totally outside the screen
-				}else {
-
-					if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
-						continue; // don't try to draw when totally outside the screen
-				}
-
-				rb.AddQuadTriangles(
-					{ x0, y0, icon->u0, icon->v0, color },
-					{ x1, y0, icon->u1, icon->v0, color },
-					{ x1, y1, icon->u1, icon->v1, color },
-					{ x0, y1, icon->u0, icon->v1, color }
-				);
-			}
-
+			lastTextureID = icon->GetTextureID();
 		}
 
-		if (rb.ShouldSubmit()) {
-			glBindTexture(GL_TEXTURE_2D, lastTextureID);
-			rb.Submit(GL_TRIANGLES);
-		}
-	}
-	else {
 	
-		unsigned int lastTextureID = 0;
-
-		for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
+		for (const CUnit* unit : units)
 		{
-			if (icon == nullptr)
+			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
+			if (!unit->drawIcon)
 				continue;
-			if (units.empty())
+
+			const bool canSee = gu->spectatingFullView || (unit->losStatus[gu->myAllyTeam] && (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS) == (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS));
+			if (!canSee)
 				continue;
 
-			icon->BindTexture();
+			assert(unit->myIcon == icon);
+			// iconUnits should not never contain void-space units, see UpdateUnitIconState
+			assert(!unit->IsInVoid());
 
-			icnt++;
-			int ucnt = 0;
-			for (const CUnit* unit : units)
-			{
-				ucnt++;
-				SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
-				if (!unit->drawIcon)
-					//color = color4::red;
+			// drawMidPos is auto-calculated now; can wobble on its own as pieces move
+			float3 pos = (!gu->spectatingFullView) ?
+				unit->GetObjDrawErrorPos(gu->myAllyTeam) :
+				unit->GetObjDrawMidPos();
+
+			pos = camera->CalcViewPortCoordinates(pos);
+			if (pos.z > 1.0f || pos.z < 0.0f)
+				continue;
+
+			// use white for selected units
+
+			float unitRadiusMult = icon->GetSize();
+			if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
+				unitRadiusMult *= (unit->radius / icon->GetRadiusScale());
+			unitRadiusMult = unitRadiusMult * 0.75f + 0.25f;
+
+			// calculate the vertices
+			const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
+
+			const float x0 = (pos.x - offset) * ivsx;
+			const float y0 = (pos.y + offset) * ivsy;
+			const float x1 = (pos.x + offset) * ivsx;
+			const float y1 = (pos.y - offset) * ivsy;
+
+			if (x1 < 0 || x0 > 1 || y0 < 0 || y1 > 1)
+					continue; // don't try to draw when totally outside the screen
+
+			if (!unit->GetIsIcon()) {
+				float weightedUnitIconDistance = unitIconCameraFlatDistMix * modelDrawerData->iconZoomDist;
+				if (unitIconCameraFlatDistMix < 1.0f)
+					weightedUnitIconDistance += (1.0f - unitIconCameraFlatDistMix) * ((unit->pos - camera->GetPos()).Length());
+
+				if (weightedUnitIconDistance < modelDrawerData->iconFadeVanish * unitRadiusMult)
 					continue;
-
-				const bool canSee = gu->spectatingFullView || (unit->losStatus[gu->myAllyTeam] && (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS) == (LOS_INLOS | LOS_CONTRADAR | LOS_PREVLOS));
-				if (!canSee)
-					//color = color4::yellow;
-					continue;
-
-				assert(unit->myIcon == icon);
-				// iconUnits should not never contain void-space units, see UpdateUnitIconState
-				assert(!unit->IsInVoid());
-
-				// drawMidPos is auto-calculated now; can wobble on its own as pieces move
-				float3 pos = (!gu->spectatingFullView) ?
-					unit->GetObjDrawErrorPos(gu->myAllyTeam) :
-					unit->GetObjDrawMidPos();
-
-				pos = camera->CalcViewPortCoordinates(pos);
-				if (pos.z > 1.0f || pos.z < 0.0f)
-					//color = color4::green;
-					continue;
-
-				// use white for selected units
-
-				float unitRadiusMult = icon->GetSize();
-				if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-					unitRadiusMult *= (unit->radius / icon->GetRadiusScale());
-				unitRadiusMult = unitRadiusMult * 0.75f + 0.25f;
-
-
-				//LOG_L(L_INFO, "%i/%i unitRadiusMult = %.3f  IsIcon = %i zoomdist = %.3f fadevanish = %.3f", icnt,ucnt, unitRadiusMult, unit->GetIsIcon(), modelDrawerData->iconZoomDist, modelDrawerData->iconFadeVanish);
-				// fade icons away in high zoom in levels
-
-				float unitCameraDistance = (unit->pos - camera->GetPos()).SqLength();
-
-				if (!unit->GetIsIcon()) {
-					if (unitCameraDistance < modelDrawerData->iconFadeVanish * unitRadiusMult)
-						continue;
-					//color = color4::white;
-					else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && unitCameraDistance < modelDrawerData->iconFadeStart * unitRadiusMult)
-						// alpha range [64, 255], since icons is unrecognisable with alpha < 64
-						color.a = 64 + 191.0f * (unitCameraDistance / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
-				}
-
-				// calculate the vertices
-				const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
-
-				const float x0 = (pos.x - offset) * ivsx;
-				const float y0 = (pos.y + offset) * ivsy;
-				const float x1 = (pos.x + offset) * ivsx;
-				const float y1 = (pos.y - offset) * ivsy;
-
-
-				if ((unitIconAtlas & 2) > 0) {
-					if (x1 < 0 || x0 > 1 || y0 < 0 || y1 > 1)
-						continue; // don't try to draw when totally outside the screen
-				}
-				else {
-
-					if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
-						continue; // don't try to draw when totally outside the screen
-				}
-
-				rb.AddQuadTriangles(
-					{ x0, y0, icon->u0, icon->v0, color },
-					{ x1, y0, icon->u1, icon->v0, color },
-					{ x1, y1, icon->u1, icon->v1, color },
-					{ x0, y1, icon->u0, icon->v1, color }
-				);
+				else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && weightedUnitIconDistance < modelDrawerData->iconFadeStart * unitRadiusMult)
+					// alpha range [64, 255], since icons is unrecognisable with alpha < 64
+					color.a = 64 + 191.0f * (weightedUnitIconDistance / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
 			}
-			rb.Submit(GL_TRIANGLES);
+
+
+			rb.AddQuadTriangles(
+				{ x0, y0, icon->u0, icon->v0, color },
+				{ x1, y0, icon->u1, icon->v0, color },
+				{ x1, y1, icon->u1, icon->v1, color },
+				{ x0, y1, icon->u0, icon->v1, color }
+			);
 		}
 
 	}
+
+	if (rb.ShouldSubmit()) {
+		glBindTexture(GL_TEXTURE_2D, lastTextureID);
+		rb.Submit(GL_TRIANGLES);
+	}
+	
+	
 
 	sh.SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f);
 	sh.Disable();

@@ -23,8 +23,6 @@ namespace icon {
 				float distance,
 				bool radiusAdjust,
 				bool ownTexture,
-				//unsigned int xsize,
-				//unsigned int ysize,
 				float u0, float v0, float u1, float v1
 			);
 			~CIconData();
@@ -35,8 +33,6 @@ namespace icon {
 				std::swap(refCount, id.refCount);
 				std::swap(texID, id.texID);
 
-				//xsize = id.xsize;
-				//ysize = id.ysize;
 
 				size = id.size;
 				distance = id.distance;
@@ -94,8 +90,6 @@ namespace icon {
 
 			int refCount = 123456;
 			unsigned int texID = 0;
-			//int xsize = 1;
-			//int ysize = 1;
 
 			float size = 1.0f;
 			float distance = 1.0f;
