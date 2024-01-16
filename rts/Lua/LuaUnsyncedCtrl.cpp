@@ -4872,13 +4872,13 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
  * that they live a long time and there's just a handful of them */
 std::set <std::string> tracyLuaPlots;
 
-/*** Initialize a plot in Tracy for use in debugging, up to 9 plots [1-9] may be used
+/*** Initialize a plot in Tracy for use in debugging or profiling
  *
  * @function Spring.LuaTracyPlotConfig
  * @string plotName which should be initialized
  * @string[opt] plotFormatType "Number"|"Percentage"|"Memory", default "Number"
- * @bool[opt] step stepwise chart, default stepwise
- * @bool[opt] fill color fill, default no fill
+ * @bool[opt] step stepwise chart, default true is stepwise
+ * @bool[opt] fill color fill, default false is no fill
  * @number[opt] color unit32 number as BGR color, default white
  * @treturn nil
  */
@@ -4907,7 +4907,7 @@ int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 /*** Update a Tracy Plot with a value
  *
  * @function Spring.LuaTracyPlot
- * @string plotName which LuaPlot should be updated (must have been initialized as per above!)
+ * @string plotName which LuaPlot should be updated (must have been initialized via LuaTracyPlotConfig)
  * @number plotvalue the number to show on the Tracy plot
  * @treturn nil
  */
