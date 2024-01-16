@@ -212,6 +212,9 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetLogSectionFilterLevel);
 
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, LuaTracyPlotConfig);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, LuaTracyPlot);
+
 	return true;
 }
 
