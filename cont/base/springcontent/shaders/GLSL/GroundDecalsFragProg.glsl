@@ -108,7 +108,7 @@ vec3 BlackBody(float t)
 
 vec3 GetFragmentNormal(vec2 wxz) {
 	vec3 normal;
-	normal.xz = texture(groundNormalTex, wxz * mapDims.zw).ra;
+	normal.xz = textureLod(groundNormalTex, wxz * mapDims.zw, 0.0).ra;
 	normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
 	return normal;
 }
@@ -340,16 +340,19 @@ void main() {
 	glow += smoothstep(0.75, 1.0, glow) * 0.1 * abs(sin(0.02 * curAdjustedFrame));
 
 	// distance based glow adjustment
-	float relDistance = distance(worldPos.xz, midPoint.xz) / midPoint.w;
+	float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
+	//float relDistance = distance(worldPos.xz, midPoint.xz) / midPoint.w;
 	relDistance = smoothstep(0.9, 0.1, relDistance);
-	glow *= relDistance * relDistance * relDistance;
+	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
 
 	float t = mix(500.0, 2600.0, glow);
 
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0f).rgb;
-	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, 0.6);
+	float scarMixRate = mix(0.8, 0.2, alpha);
+	float mdMixRate = mix(scarMixRate, 0.0, float(misc.z > 0));
+	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, mdMixRate);
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
@@ -388,7 +391,7 @@ void main() {
 	// alpha
 	fragColor.a = mainCol.a;
 	fragColor.a *= alpha;
-	fragColor   *= max(dot(groundNormal, N), 0.0);
+	fragColor   *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is artisitic choice
 	//fragColor.a *= pow(max(0.0, N.y), 2);
 
 	//if (misc.z == 0.0) {

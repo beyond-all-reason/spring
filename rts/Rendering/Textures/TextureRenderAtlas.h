@@ -21,7 +21,10 @@ public:
 	CTextureRenderAtlas(CTextureAtlas::AllocatorType allocType, int atlasSizeX, int atlasSizeY, uint32_t glInternalType = /*GL_RGBA8*/0x8058, const std::string& atlasName = "");
 	~CTextureRenderAtlas();
 	CTextureRenderAtlas(const CTextureRenderAtlas&) = delete;
-	CTextureRenderAtlas(CTextureRenderAtlas&&) = default;
+	CTextureRenderAtlas(CTextureRenderAtlas&&) noexcept = default;
+
+	CTextureRenderAtlas& operator=(const CTextureRenderAtlas&) = delete;
+	CTextureRenderAtlas& operator=(CTextureRenderAtlas&&) noexcept = default;
 
 	bool TextureExists(const std::string& texName);
 	bool TextureExists(const std::string& texName, const std::string& texBackupName);

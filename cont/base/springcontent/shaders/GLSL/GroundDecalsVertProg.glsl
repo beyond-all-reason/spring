@@ -88,7 +88,7 @@ float HeightAtWorldPos(vec2 wxz) {
 
 vec3 GetFragmentNormal(vec2 wxz) {
 	vec3 normal;
-	normal.xz = texture(groundNormalTex, wxz * mapDims.zw).ra;
+	normal.xz = textureLod(groundNormalTex, wxz * mapDims.zw, 0.0).ra;
 	normal.y  = sqrt(1.0 - dot(normal.xz, normal.xz));
 	return normal;
 }
@@ -158,11 +158,10 @@ void main() {
 	midPoint.xz = (posT.xy + posT.zw + posB.xy + posB.zw) * 0.25;
 	// mid-point height
 	midPoint.y = HeightAtWorldPos(midPoint.xz);
-	// max flat distance from the center
-	midPoint.w =                 distance(midPoint.xz, posT.xy);
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posT.zq));
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posB.xy));
-	midPoint.w = max(midPoint.w, distance(midPoint.xz, posB.zw));
+	// flat distance from the center (only relevant for the explosion cube)
+	midPoint.w = distance(midPoint.xz, posT.xy);
+	// the actual check is in 3D space, so go from half diagonal in 2D to radius in 3D --> sqrt(3/2)
+	midPoint.w *= 1.22474;
 
 	// groundNormal
 	if (dot(forcedNormal.xyz, forcedNormal.xyz) == 0.0) {
