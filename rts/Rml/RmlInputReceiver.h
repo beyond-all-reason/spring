@@ -4,7 +4,7 @@
 #define RMLINPUT_H
 
 #include "Game/UI/InputReceiver.h"
-#include "Rml/Backends/RmlUi_Backend.h"
+#include "Backends/RmlUi_Backend.h"
 
 class CRmlInputReceiver : public CInputReceiver
 {
@@ -13,16 +13,24 @@ public:
 	~CRmlInputReceiver() = default;
 
 	/**
-	IsAbove is used for determining which cursor icon should be displayed. This is tracked in ProcessMouse functions when RmlUi handles
-	the event	and that state is true if rml is capturing the mouse.
+		IsAbove is used for determining which part of the game is interacting with the mouse.
+		<br/><br/>
+		Unlike the other implementations of this function, tracking of this state is handled enirely by the RmlUI ProcessMouse functions.
+		<br/><br/>
+		This means that the x and y parameters are completely ignored
+
+		@param x ignored, the "IsAbove" state is handled elsewhere
+		@param y ignored, this "IsAbove" state is handled elsewhere
+		@return If the mouse is interacting with any RmlUI elements
 	*/
-	bool IsAbove(int x, int y) { return rml_active; };
+	bool IsAbove(int x = 0, int y = 0) { return rml_active; };
+	bool HandlesCursorIcon() override { return true; };
 	void setActive(bool active) { rml_active = active; };
 
-	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) { return RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat); }
-	void MouseMove(int x, int y, int dx, int dy, int button) { RmlGui::ProcessMouseMove(x, y, dx, dy, button); }
-	bool MousePress(int x, int y, int button) { return RmlGui::ProcessMousePress(x, y, button); }
-	void MouseRelease(int x, int y, int button) { RmlGui::ProcessMouseRelease(x, y, button); }
+	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) { return RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat); };
+	void MouseMove(int x, int y, int dx, int dy, int button) { RmlGui::ProcessMouseMove(x, y, dx, dy, button); };
+	bool MousePress(int x, int y, int button) { return RmlGui::ProcessMousePress(x, y, button); };
+	void MouseRelease(int x, int y, int button) { RmlGui::ProcessMouseRelease(x, y, button); };
 
 private:
 	bool rml_active;

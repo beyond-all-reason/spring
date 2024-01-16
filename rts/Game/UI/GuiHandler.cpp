@@ -2,10 +2,8 @@
 
 #include "GuiHandler.h"
 
-#include <Rml/Backends/RmlUi_Backend.h>
 #include "CommandColors.h"
 #include "KeyBindings.h"
-#include "KeyCodes.h"
 #include "MiniMap.h"
 #include "MouseHandler.h"
 #include "Game/Camera.h"
@@ -14,48 +12,45 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/TraceRay.h"
-#include "Lua/LuaConfig.h"
-#include "Lua/LuaTextures.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaRules.h"
+#include "Lua/LuaTextures.h"
 #include "Lua/LuaUI.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
-#include "Rendering/Fonts/glFont.h"
 #include "Rendering/IconHandler.h"
-#include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/NamedTextures.h"
+#include "Rendering/Units/UnitDrawer.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/LosHandler.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
-#include "Sim/Units/CommandAI/BuilderCAI.h"
-#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
-#include "Sim/Units/UnitLoader.h"
-#include "Sim/Weapons/WeaponDefHandler.h"
+#include "Sim/Units/CommandAI/BuilderCAI.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Weapons/Weapon.h"
-#include "System/Config/ConfigHandler.h"
+#include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/EventHandler.h"
-#include "System/GlobalConfig.h"
-#include "System/Log/ILog.h"
 #include "System/SpringMath.h"
+#include "System/StringUtil.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
-#include "System/StringUtil.h"
-#include "System/Input/KeyInput.h"
-#include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
+#include "System/Input/KeyInput.h"
+#include "System/Log/ILog.h"
+#include "System/Sound/ISound.h"
+#include "System/Sound/ISoundChannels.h"
 
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
+
 
 CONFIG(bool, MiniMapMarker).defaultValue(true).headlessValue(false);
 CONFIG(bool, InvertQueueKey).defaultValue(false);
@@ -1050,9 +1045,16 @@ void CGuiHandler::SetCursorIcon() const
 	if (!game->hideInterface && !mouse->offscreen)
 		ir = GetReceiverAt(mouse->lastx, mouse->lasty);
 
-	if ((ir != nullptr) && (ir != minimap)) {
-		mouse->ChangeCursor(newCursor, cursorScale);
-		return;
+	if (ir != nullptr)
+	{
+		// mouse cursor icon is being handled elsewhere
+		if (ir->HandlesCursorIcon())
+			return;
+
+		if (ir != minimap) {
+			mouse->ChangeCursor(newCursor, cursorScale);
+			return;
+		}
 	}
 
 	if (ir == minimap)
