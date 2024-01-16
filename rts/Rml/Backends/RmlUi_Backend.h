@@ -34,9 +34,9 @@
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
+
+#include "Game/UI/InputReceiver.h"
 #include "lib/sol2/sol.hpp"
-#include "Rml/Backends/RmlUi_Platform_SDL.h"
-#include "RmlUi/Core/Context.h"
 
 using KeyDownCallback = bool (*)(Rml::Context *context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
@@ -64,6 +64,7 @@ namespace RmlGui
 
 	void ToggleDebugger(int contextIndex);
 	bool IsActive();
+	CInputReceiver* GetInputReceiver();
 
 	void Update();
 	void RenderFrame();

@@ -9,9 +9,9 @@ namespace Rml::SolLua
 	{
 		auto createContext(const Rml::String& name)
 		{
-			// Janky, but less jank than before at least
-			// context will be resized right away, use 1080p dimensions
-			return Rml::CreateContext(name, Rml::Vector2i(1920, 1080));
+			// context will be resized right away by other code
+			// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
+			return Rml::CreateContext(name, {0, 0});
 		}
 
 		auto getContext()
