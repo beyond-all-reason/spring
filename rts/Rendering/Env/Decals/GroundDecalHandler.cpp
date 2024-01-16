@@ -24,6 +24,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/VertexArray.h"
+#include "Rendering/GL/TexBind.h"
 #include "Rendering/GL/SubState.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Shaders/ShaderHandler.h"
@@ -57,8 +58,8 @@ CGroundDecalHandler::CGroundDecalHandler()
 	, maxUniqueScars{ 0 }
 	, atlas{ nullptr }
 	, decalShader{ nullptr }
-	, tmpNeedsUpdate{ true }
-	, permNeedsUpdate{ true }
+	, tempDecalUpdateList{ }
+	, permDecalUpdateList{ }
 	, smfDrawer { nullptr }
 {
 	if (!GetDrawDecals())
@@ -79,8 +80,10 @@ CGroundDecalHandler::CGroundDecalHandler()
 	instTmpVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
 	temporaryDecals.reserve(decalLevel * 16384);
-	tmpUpdateIndicator.reserve(temporaryDecals.capacity());
+	tempDecalUpdateList.Reserve(temporaryDecals.capacity());
+
 	permanentDecals.reserve(8192);
+	permDecalUpdateList.Reserve(permanentDecals.capacity());
 
 	GroundDecal::nextId = 0u;
 }
@@ -160,7 +163,8 @@ void CGroundDecalHandler::AddTexToGroundAtlas(const std::string& name, bool main
 	}
 }
 
-void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
+void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex) {
+	if (!filename.empty())
 	try {
 		const auto& [bm, fn] = LoadTexture(name, mainTex);
 		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
@@ -169,28 +173,6 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, bool mainTex) {
 		LOG_L(L_ERROR, "%s", err.what());
 	}
 }
-
-void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex) {
-	if (!filename.empty())
-	try {
-		const auto& [bm, fn] = LoadTexture(filename, mainTex);
-		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
-		return;
-	}
-	catch (const content_error& err) {
-		LOG_L(L_ERROR, "%s", err.what());
-	}
-
-	if (!filenameAlt.empty())
-	try {
-		const auto& [bm, fn] = LoadTexture(filenameAlt, mainTex);
-		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
-	}
-	catch (const content_error& err) {
-		LOG_L(L_ERROR, "%s", err.what());
-	}
-}
-
 
 void CGroundDecalHandler::AddBuildingDecalTextures()
 {
@@ -236,20 +218,42 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		LOG_L(L_ERROR, "Failed to load resources: %s", resourcesParser.GetErrorLog().c_str());
 	}
 
-	const std::vector<std::string> scarMainTextures = CFileHandler::FindFiles("bitmaps/scars/", "scar?.*");
-
 	const LuaTable scarsTable = resourcesParser.GetRoot().SubTable("graphics").SubTable("scars");
+	const int scarTblSize = scarsTable.GetLength();
 
-	for (int N = scarsTable.GetLength(), i = 1; i <= N; ++i) {
+	maxUniqueScars = 0;
+	for (int i = 1; i <= scarTblSize; ++i) {
 		const std::string mainTexFileName = scarsTable.GetString(i, "");
 		const std::string normTexFileName = mainTexFileName.empty() ? "" : GetExtraTextureName(mainTexFileName);
-		const std::string mainTexFileNameAlt = scarMainTextures[(i - 1) % scarMainTextures.size()];
-		const std::string normTexFileNameAlt = GetExtraTextureName(mainTexFileNameAlt);
 		const auto mainName = IntToString(i, "mainscar_%i");
 		const auto normName = IntToString(i, "normscar_%i");
 
-		AddTexToAtlas(mainName, mainTexFileName, mainTexFileNameAlt, true );
-		AddTexToAtlas(normName, normTexFileName, normTexFileNameAlt, false);
+		AddTexToAtlas(mainName, mainTexFileName,  true);
+		AddTexToAtlas(normName, normTexFileName, false);
+
+		// check if loaded for real
+		maxUniqueScars += atlas->TextureExists(mainName);
+	}
+
+	if (maxUniqueScars == scarTblSize)
+		return;
+
+	const size_t scarsDeficit = static_cast<size_t>(scarTblSize - maxUniqueScars);
+
+	const std::vector<std::string> scarMainTextures = CFileHandler::FindFiles("bitmaps/scars/", "scar?.*");
+	const size_t scarsExtraNum = scarMainTextures.size();
+
+	for (size_t i = 0; i < std::min(scarsDeficit, scarsExtraNum); ++i) {
+		const std::string mainTexFileName = scarMainTextures[i];
+		const std::string normTexFileName = GetExtraTextureName(mainTexFileName);
+		const auto mainName = IntToString(maxUniqueScars + 1, "mainscar_%i");
+		const auto normName = IntToString(maxUniqueScars + 1, "normscar_%i");
+
+		AddTexToAtlas(mainName, mainTexFileName,  true);
+		AddTexToAtlas(normName, normTexFileName, false);
+
+		// check if loaded for real
+		maxUniqueScars += atlas->TextureExists(mainName);
 	}
 }
 
@@ -261,8 +265,8 @@ void CGroundDecalHandler::AddGroundTrackTextures()
 		const auto normName = mainName + "_norm";
 		const std::string normTexFileName = GetExtraTextureName(mainTexFileName);
 
-		AddTexToAtlas(mainName, mainTexFileName, "",  true);
-		AddTexToAtlas(normName, normTexFileName, "", false);
+		AddTexToAtlas(mainName, mainTexFileName,  true);
+		AddTexToAtlas(normName, normTexFileName, false);
 	}
 }
 
@@ -332,7 +336,7 @@ void CGroundDecalHandler::GenerateAtlasTextures() {
 	groundDecalAtlasMain->SetMaxTexLevel(defNumLevels);
 	groundDecalAtlasNorm->SetMaxTexLevel(defNumLevels);
 
-	// often represented by compressed textures, cannot be added to the atlas
+	// often represented by compressed textures, cannot be added to the regular atlas
 	AddBuildingDecalTextures();
 
 	AddGroundScarTextures();
@@ -347,16 +351,10 @@ void CGroundDecalHandler::GenerateAtlasTextures() {
 	//atlas->DumpTexture("CGroundDecalHandler.bmp");
 	assert(b);
 
-	for (int i = 1; /*NOOP*/; ++i) {
-		if (!atlas->TextureExists(IntToString(i, "mainscar_%i"))) {
-			maxUniqueScars = i - 1;
-			break;
-		}
+	if (atlas->GetNumTexLevels() > 1) {
+		auto texBind = GL::TexBind(GL_TEXTURE_2D, atlas->GetTexID());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	}
-
-	glBindTexture(GL_TEXTURE_2D, atlas->GetTexID());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void CGroundDecalHandler::ReloadDecalShaders() {
@@ -528,13 +526,15 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	if (!GetDrawDecals())
 		return;
 
+	if (maxUniqueScars == 0)
+		return;
+
 	const float altitude = pos.y - CGround::GetHeightReal(pos.x, pos.z, false);
 	const float3 groundNormal = CGround::GetNormal(pos.x, pos.z, false);
 
 	// no decals for below-ground explosions
-	if (altitude <= -1.0f)
-		return;
-	if (altitude >= radius)
+	// also no decals if they are too high in the air
+	if (math::fabs(altitude) >= radius)
 		return;
 
 	pos.y -= altitude;
@@ -586,24 +586,16 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	});
 
 	decalIdToTmpDecalsVecPos[decal.id] = temporaryDecals.size() - 1;
-	tmpUpdateIndicator.emplace_back(true);
-	tmpNeedsUpdate = true;
+	tempDecalUpdateList.EmplaceBackUpdate();
 }
 
 void CGroundDecalHandler::ReloadTextures()
 {
-	atlas->ReloadTextures();
-	atlas->SetMaxTexLevel(defNumLevels);
-	{
-		groundDecalAtlasMain = nullptr;
-		groundDecalAtlasNorm = nullptr;
-		groundDecalAtlasMain = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsMain");
-		groundDecalAtlasNorm = std::make_unique<CTextureRenderAtlas>(defAllocType, 0, 0, GL_RGBA8, "BuildingDecalsNorm");
-		AddBuildingDecalTextures();
-
-		groundDecalAtlasMain->SetMaxTexLevel(defNumLevels);
-		groundDecalAtlasNorm->SetMaxTexLevel(defNumLevels);
-	}
+	// can't use {atlas}->ReloadTextures() here as all textures come from memory
+	atlas = nullptr;
+	groundDecalAtlasMain = nullptr;
+	groundDecalAtlasNorm = nullptr;
+	GenerateAtlasTextures();
 }
 
 void CGroundDecalHandler::DumpAtlasTextures()
@@ -635,8 +627,7 @@ void CGroundDecalHandler::Draw()
 
 		UnbindVertexAtrribs();
 		instTmpVBO.Unbind();
-		std::fill(tmpUpdateIndicator.begin(), tmpUpdateIndicator.end(), true);
-		tmpNeedsUpdate = true;
+		tempDecalUpdateList.SetNeedUpdateAll();
 	}
 
 	if (instPermVBO.GetSize() < permanentDecals.size() * sizeof(GroundDecal)) {
@@ -649,42 +640,33 @@ void CGroundDecalHandler::Draw()
 		vaoPerm.Unbind();
 		UnbindVertexAtrribs();
 		instPermVBO.Unbind();
-		permNeedsUpdate = true;
+		permDecalUpdateList.SetNeedUpdateAll();
 	}
 
-	if (tmpNeedsUpdate) {
+	if (tempDecalUpdateList.NeedUpdate()) {
 		instTmpVBO.Bind();
-		const auto stt = tmpUpdateIndicator.begin();
-		const auto fin = tmpUpdateIndicator.end();
 
-		auto beg = tmpUpdateIndicator.begin();
-		auto end = tmpUpdateIndicator.end();
-
-		static const auto dirtyPred = [](bool d) -> bool { return d; };
-
-		while (beg != fin) {
-			beg = std::find_if    (beg, fin, dirtyPred);
-			end = std::find_if_not(beg, fin, dirtyPred);
-			if (beg != fin) {
-				const uint32_t offs = static_cast<uint32_t>(std::distance(stt, beg));
-				const uint32_t size = static_cast<uint32_t>(std::distance(beg, end));
-
-				instTmpVBO.SetBufferSubData(offs * sizeof(GroundDecal), size * sizeof(GroundDecal), temporaryDecals.data() + offs/* in element */);
-
-				std::fill(beg, end, false);
-			}
-
-			beg = end;
+		for (auto itPair = tempDecalUpdateList.GetNext(); itPair.has_value(); itPair = tempDecalUpdateList.GetNext(itPair)) {
+			auto offSize = tempDecalUpdateList.GetOffsetAndSize(itPair.value());
+			GLintptr byteOffset = offSize.first  * sizeof(GroundDecal);
+			GLintptr byteSize   = offSize.second * sizeof(GroundDecal);
+			instTmpVBO.SetBufferSubData(byteOffset, byteSize, temporaryDecals.data() + offSize.first/* in elements */);
 		}
-		tmpNeedsUpdate = false;
 		instTmpVBO.Unbind();
+		tempDecalUpdateList.ResetNeedUpdateAll();
 	}
 
-	if (permNeedsUpdate) {
+	if (permDecalUpdateList.NeedUpdate()) {
 		instPermVBO.Bind();
-		instPermVBO.SetBufferSubData(permanentDecals);
+
+		for (auto itPair = permDecalUpdateList.GetNext(); itPair.has_value(); itPair = permDecalUpdateList.GetNext(itPair)) {
+			auto offSize = permDecalUpdateList.GetOffsetAndSize(itPair.value());
+			GLintptr byteOffset = offSize.first * sizeof(GroundDecal);
+			GLintptr byteSize = offSize.second * sizeof(GroundDecal);
+			instPermVBO.SetBufferSubData(byteOffset, byteSize, permanentDecals.data() + offSize.first/* in elements */);
+		}
+		permDecalUpdateList.ResetNeedUpdateAll();
 		instPermVBO.Unbind();
-		permNeedsUpdate = false;
 	}
 
 	using namespace GL::State;
@@ -718,7 +700,7 @@ void CGroundDecalHandler::Draw()
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, permanentDecals.size());
 		vaoPerm.Unbind();
 	}
-	{
+	if (!temporaryDecals.empty()) {
 		BindAtlasTextures();
 		vaoTmp.Bind();
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, temporaryDecals.size());
@@ -786,10 +768,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.forcedNormal = float4{},
 		.id = GroundDecal::GetNextId()
 	});
-
+	permDecalUpdateList.EmplaceBackUpdate();
 	decalOwners[object] = decal.id;
-
-	permNeedsUpdate = true;
 }
 
 void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb)
@@ -819,18 +799,20 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 		return (permanentDecal.id == decalID);
 	});
 
-	if (pdIt != permanentDecals.end()) {
-		const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
-
-		pdIt->alphaFalloff = object->GetDef()->decalDef.groundDecalDecaySpeed / GAME_SPEED;
-		pdIt->createFrameMin = createFrame;
-		pdIt->createFrameMax = createFrame;
-
-		decalOwners.erase(object);
-		permNeedsUpdate = true;
+	if (pdIt == permanentDecals.end()) {
+		LOG_L(L_ERROR, "[%s] Invalid decal id = %u", __func__, decalID);
 		return;
 	}
-	LOG_L(L_ERROR, "[%s] Invalid decal id = %u", __func__, decalID);
+
+	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+
+	pdIt->alphaFalloff = object->GetDef()->decalDef.groundDecalDecaySpeed / GAME_SPEED;
+	pdIt->createFrameMin = createFrame;
+	pdIt->createFrameMax = createFrame;
+
+	permDecalUpdateList.SetUpdate(std::distance(permanentDecals.begin(), pdIt));
+
+	decalOwners.erase(object);
 }
 
 /**
@@ -937,8 +919,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		mm = MINMAX_HEIGHT_INIT;
 
 		decalIdToTmpDecalsVecPos[newDecal.id] = temporaryDecals.size() - 1;
-		tmpUpdateIndicator.emplace_back(true);
-		tmpNeedsUpdate = true;
+		tempDecalUpdateList.EmplaceBackUpdate();
 		return;
 	}
 
@@ -983,8 +964,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
 		oldDecal.height = std::max(mm.second - midPointHeight, midPointHeight - mm.first) + 1.0f;
 
-		tmpUpdateIndicator[vecPos] = true;
-		tmpNeedsUpdate = true;
+		tempDecalUpdateList.SetUpdate(vecPos);
 		return;
 	}
 
@@ -1015,8 +995,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	decalOwners[unit] = newDecal.id;
 
 	decalIdToTmpDecalsVecPos[newDecal.id] = temporaryDecals.size() - 1;
-	tmpUpdateIndicator.emplace_back(true);
-	tmpNeedsUpdate = true;
+	tempDecalUpdateList.EmplaceBackUpdate();
 }
 
 void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
@@ -1063,9 +1042,7 @@ void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
 			decalIdToTmpDecalsVecPos[temporaryDecals[i].id] = i;
 		}
 
-		tmpUpdateIndicator.resize(temporaryDecals.size());
-		std::fill(tmpUpdateIndicator.begin(), tmpUpdateIndicator.end(), true);
-		tmpNeedsUpdate = true;
+		tempDecalUpdateList.Resize(temporaryDecals.size());
 	}
 };
 
@@ -1206,3 +1183,56 @@ void CGroundDecalHandler::UnitLoaded(const CUnit* unit, const CUnit* transport) 
 void CGroundDecalHandler::UnitUnloaded(const CUnit* unit, const CUnit* transport) { AddSolidObject(unit); }
 
 void CGroundDecalHandler::UnitMoved(const CUnit* unit) { AddTrack(unit, unit->pos); }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CGroundDecalHandler::DecalUpdateList::SetNeedUpdateAll()
+{
+	std::fill(updateList.begin(), updateList.end(), true);
+	changed = true;
+}
+
+void CGroundDecalHandler::DecalUpdateList::ResetNeedUpdateAll()
+{
+	std::fill(updateList.begin(), updateList.end(), false);
+	changed = false;
+}
+
+void CGroundDecalHandler::DecalUpdateList::SetUpdate(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
+{
+	std::fill(it.first, it.second, true);
+	changed = true;
+}
+
+void CGroundDecalHandler::DecalUpdateList::SetUpdate(size_t offset)
+{
+	assert(offset < updateList.size());
+	updateList[offset] = true;
+	changed = true;
+}
+
+void CGroundDecalHandler::DecalUpdateList::EmplaceBackUpdate()
+{
+	updateList.emplace_back(true);
+	changed = true;
+}
+
+std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair> CGroundDecalHandler::DecalUpdateList::GetNext(const std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair>& prev)
+{
+	auto beg = prev.has_value() ? prev.value().second : updateList.begin();
+	     beg = std::find(beg, updateList.end(),  true);
+	auto end = std::find(beg, updateList.end(), false);
+
+	if (beg == end)
+		return std::nullopt;
+
+	return std::make_optional(std::make_pair(beg, end));
+}
+
+std::pair<size_t, size_t> CGroundDecalHandler::DecalUpdateList::GetOffsetAndSize(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
+{
+	return std::make_pair(
+		std::distance(updateList.begin(), it.first ),
+		std::distance(it.first          , it.second)
+	);
+}

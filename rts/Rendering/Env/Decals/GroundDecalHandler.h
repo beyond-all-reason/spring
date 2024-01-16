@@ -7,6 +7,7 @@
 #include <tuple>
 #include <variant>
 #include <limits>
+#include <optional>
 
 #include "GroundDecal.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
@@ -31,6 +32,35 @@ namespace Shader {
 
 class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, public IExplosionListener
 {
+public:
+	class DecalUpdateList {
+	public:
+		using IteratorPair = std::pair<std::vector<bool>::iterator, std::vector<bool>::iterator>;
+	public:
+		DecalUpdateList()
+			: updateList()
+			, changed(true)
+		{}
+
+		void Resize(size_t newSize) { updateList.resize(newSize); SetNeedUpdateAll(); }
+		void Reserve(size_t reservedSize) { updateList.reserve(reservedSize); }
+
+		void SetUpdate(const IteratorPair& it);
+		void SetUpdate(size_t offset);
+
+		void SetNeedUpdateAll();
+		void ResetNeedUpdateAll();
+
+		void EmplaceBackUpdate();
+
+		bool NeedUpdate() const { return changed; }
+
+		std::optional<IteratorPair> GetNext(const std::optional<IteratorPair>& prev = std::nullopt);
+		std::pair<size_t, size_t> GetOffsetAndSize(const IteratorPair& it);
+	private:
+		std::vector<bool> updateList;
+		bool changed;
+	};
 public:
 	CGroundDecalHandler();
 	~CGroundDecalHandler();
@@ -105,8 +135,7 @@ private:
 	void ReloadDecalShaders();
 
 	void AddTexToGroundAtlas(const std::string& name, bool mainTex);
-	void AddTexToAtlas(const std::string& name, bool mainTex);
-	void AddTexToAtlas(const std::string& name, const std::string& filename, const std::string& filenameAlt, bool mainTex);
+	void AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex);
 
 	void AddTrack(const CUnit* unit, const float3& newPos, bool forceEval = false);
 
@@ -131,12 +160,10 @@ private:
 	spring::unordered_map<DecalOwner, uint32_t, std::hash<DecalOwner>> decalOwners; // for tracks, aoplates and ghosts
 	std::array<std::pair<float, float>, MAX_UNITS> unitMinMaxHeights; // for tracks
 
-	bool highQuality = false;
-	bool tmpNeedsUpdate = false;
-	bool permNeedsUpdate = false;
+	DecalUpdateList tempDecalUpdateList;
+	DecalUpdateList permDecalUpdateList;
 
 	spring::unordered_map<uint32_t, size_t> decalIdToTmpDecalsVecPos;
-	std::vector<bool> tmpUpdateIndicator;
 
 	VBO instTmpVBO;
 	VBO instPermVBO;
@@ -144,6 +171,8 @@ private:
 	VAO vaoPerm;
 
 	CSMFGroundDrawer* smfDrawer;
+
+	bool highQuality = false;
 
 	static constexpr uint32_t TRACKS_UPDATE_RATE = 4u;
 	static constexpr std::pair<float, float> MINMAX_HEIGHT_INIT = std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest());

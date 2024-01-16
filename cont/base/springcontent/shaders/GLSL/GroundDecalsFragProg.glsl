@@ -392,6 +392,8 @@ void main() {
 	fragColor.a = mainCol.a;
 	fragColor.a *= alpha;
 	fragColor   *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is artisitic choice
+
+	//fragColor =  vec4(texture(decalMainTex, uv.xy).rgb, 1.0);
 	//fragColor.a *= pow(max(0.0, N.y), 2);
 
 	//if (misc.z == 0.0) {
