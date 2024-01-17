@@ -98,7 +98,7 @@ public:
 	void RenderUnitDestroyed(const CUnit*) override;
 	void RenderFeatureCreated(const CFeature* feature) override;
 	void RenderFeatureDestroyed(const CFeature* feature) override;
-	//void FeatureMoved(const CFeature* feature, const float3& oldpos) override;
+	void FeatureMoved(const CFeature* feature, const float3& oldpos) override;
 	void UnitMoved(const CUnit* unit) override;
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitUnloaded(const CUnit* unit, const CUnit* transport) override;
@@ -142,6 +142,7 @@ private:
 	void RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb);
 
 	void UpdateTemporaryDecalsVector(int frameNum);
+	void UpdatePermanentDecalsVector(int frameNum);
 
 	void AddBuildingDecalTextures();
 	void AddGroundScarTextures();
@@ -158,12 +159,11 @@ private:
 
 	using DecalOwner = std::variant<const CSolidObject*, const GhostSolidObject*>;
 	spring::unordered_map<DecalOwner, uint32_t, std::hash<DecalOwner>> decalOwners; // for tracks, aoplates and ghosts
+	spring::unordered_map<uint32_t, size_t> decalIdToTmpDecalsVecPos; // for tracks
 	std::array<std::pair<float, float>, MAX_UNITS> unitMinMaxHeights; // for tracks
 
 	DecalUpdateList tempDecalUpdateList;
 	DecalUpdateList permDecalUpdateList;
-
-	spring::unordered_map<uint32_t, size_t> decalIdToTmpDecalsVecPos;
 
 	VBO instTmpVBO;
 	VBO instPermVBO;

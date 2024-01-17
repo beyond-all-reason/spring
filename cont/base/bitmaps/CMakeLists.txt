@@ -14,7 +14,8 @@ set(FILES
 	bitmaps/armsilo1.bmp
 	bitmaps/birch1.bmp
 	bitmaps/button.bmp
-	bitmaps/scars/scar5.png
+	bitmaps/scars/scar6.png
+#	bitmaps/scars/scar5.png
 #	bitmaps/scars/scar2.bmp
 #	bitmaps/scars/scar4.bmp
 #	bitmaps/scars/scar1.bmp

@@ -348,7 +348,6 @@ void CGroundDecalHandler::GenerateAtlasTextures() {
 		groundDecalAtlasNorm->Finalize() &&
 		atlas->Finalize();
 
-	//atlas->DumpTexture("CGroundDecalHandler.bmp");
 	assert(b);
 
 	if (atlas->GetNumTexLevels() > 1) {
@@ -417,7 +416,6 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	);
 	const auto& identityMat = CMatrix44f::Identity();
 	decalShader->SetUniformMatrix4x4("shadowMatrix", false, &identityMat.m[0]);
-	//decalShader->SetUniform("cameraDir", 0.0f, 1.0f, 0.0f);
 
 	decalShader->Disable();
 	SunChanged();
@@ -596,6 +594,7 @@ void CGroundDecalHandler::ReloadTextures()
 	groundDecalAtlasMain = nullptr;
 	groundDecalAtlasNorm = nullptr;
 	GenerateAtlasTextures();
+	//TODO: add UV coordinates recalculation for existing decals
 }
 
 void CGroundDecalHandler::DumpAtlasTextures()
@@ -723,6 +722,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	if (!decalDef.useGroundDecal || decalDef.groundDecalTypeName.empty())
 		return;
 
+	static_assert(false, "Error down below");
 	if (decalOwners.contains(object))
 		return; // already added
 
@@ -822,8 +822,6 @@ void CGroundDecalHandler::ForceRemoveSolidObject(const CSolidObject* object)
 {
 	RemoveSolidObject(object, nullptr);
 }
-
-//void CGroundDecalHandler::UnitMoved(const CUnit* unit) { /*AddDecal(unit, unit->pos);*/ }
 
 void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 	/*
@@ -1025,26 +1023,92 @@ void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
 
 	// resort if number of expired items > 25.0%
 	static constexpr float RESORT_THRESHOLD = 1.0f / 4.0f;
+	if (static_cast<float>(temporaryDecals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
+		return;
 
-	if (static_cast<float>(temporaryDecals.size()) / static_cast<float>(numToDelete) > RESORT_THRESHOLD) {
-		// group all expired items towards the end of the vector
-		auto partIt = std::stable_partition(temporaryDecals.begin(), temporaryDecals.end(), [](const auto& item) {
-			return item.IsValid();
-			});
-		// erase irrelevant items
-		for (auto it = partIt; it < temporaryDecals.end(); ++it) {
-			decalIdToTmpDecalsVecPos.erase(it->id);
-		}
-		// remove expired decals
-		temporaryDecals.resize(temporaryDecals.size() - numToDelete);
-		// update relevant items
-		for (size_t i = 0; i < temporaryDecals.size(); ++i) {
-			decalIdToTmpDecalsVecPos[temporaryDecals[i].id] = i;
-		}
+	// group all expired items towards the end of the vector
+	auto partIt = std::stable_partition(temporaryDecals.begin(), temporaryDecals.end(), [](const auto& item) {
+		return item.IsValid();
+	});
 
-		tempDecalUpdateList.Resize(temporaryDecals.size());
+	// erase irrelevant items
+	for (auto it = partIt; it < temporaryDecals.end(); ++it) {
+		for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); ++doIt) {
+			if (doIt->second == it->id) {
+				decalOwners.erase(doIt);
+				break;
+			}
+		}
+		decalIdToTmpDecalsVecPos.erase(it->id);
 	}
-};
+
+	// remove expired decals
+	temporaryDecals.resize(temporaryDecals.size() - numToDelete);
+
+	// update relevant items
+	for (size_t i = 0; i < temporaryDecals.size(); ++i) {
+		decalIdToTmpDecalsVecPos[temporaryDecals[i].id] = i;
+	}
+
+	tempDecalUpdateList.Resize(temporaryDecals.size());
+}
+void CGroundDecalHandler::UpdatePermanentDecalsVector(int frameNum)
+{
+	if (permanentDecals.empty())
+		return;
+
+	// only bother with the following code, if number of items is big enough
+	if (permanentDecals.size() < permanentDecals.capacity() >> 6)
+		return;
+
+	size_t numToDelete = 0;
+	for (auto& decal : permanentDecals) {
+		if (!decal.IsValid()) {
+			numToDelete++;
+			continue;
+		}
+		const auto targetExpirationFrame = static_cast<int>(decal.alpha / decal.alphaFalloff);
+		if (frameNum - decal.createFrameMax > targetExpirationFrame) {
+			decal.MarkInvalid();
+			numToDelete++;
+		}
+	}
+
+	if (numToDelete == 0)
+		return;
+
+	// resort if number of expired items > 25.0%
+	static constexpr float RESORT_THRESHOLD = 1.0f / 4.0f;
+
+	if (static_cast<float>(permanentDecals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
+		return;
+
+	// group all expired items towards the end of the vector
+	auto partIt = std::stable_partition(permanentDecals.begin(), permanentDecals.end(), [](const auto& item) {
+		return item.IsValid();
+	});
+
+	// erase irrelevant items
+	for (auto it = partIt; it < permanentDecals.end(); ++it) {
+		for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); ++doIt) {
+			if (doIt->second == it->id) {
+				decalOwners.erase(doIt);
+				break;
+			}
+		}
+	}
+
+	// remove expired decals
+	permanentDecals.resize(permanentDecals.size() - numToDelete);
+
+	// update relevant items
+	for (size_t i = 0; i < permanentDecals.size(); ++i) {
+		decalIdToTmpDecalsVecPos[permanentDecals[i].id] = i;
+	}
+
+	permDecalUpdateList.Resize(permanentDecals.size());
+}
+;
 
 void CGroundDecalHandler::GameFrame(int frameNum)
 {
@@ -1062,65 +1126,16 @@ void CGroundDecalHandler::GameFrame(int frameNum)
 		if (unit->moveType->progressState == AMoveType::ProgressState::Active)
 			continue;
 
-		// will be called several times before it's erased from decalOwners
+		// call this one for stopped units, as AddTrack() is only called natively for moving units
+		// This will be called several times before it's erased from decalOwners, not a big deal
 		AddTrack(unit, unit->pos, true);
 	}
-
-	/*
-	const auto UpdateDecalsVector = [frameNum, this](std::vector<GroundDecal>& groundDecalsVec) -> bool {
-		if (groundDecalsVec.empty())
-			return false;
-
-		// only bother with the following code, if number of items is big enough
-		if (groundDecalsVec.size() < groundDecalsVec.capacity() >> 6)
-			return false;
-
-		size_t numToDelete = 0;
-		for (auto& decal : groundDecalsVec) {
-			if (!decal.IsValid()) {
-				numToDelete++;
-				continue;
-			}
-			if (frameNum - decal.createFrame > static_cast<int>(decal.alpha / decal.alphaFalloff)) {
-				decal.MarkInvalid();
-				numToDelete++;
-			}
-		}
-
-		if (numToDelete == 0)
-			return false;
-
-		// resort if number of expired items > 25.0%
-		static constexpr float RESORT_THRESHOLD = 1.0f / 4.0f;
-
-		if (static_cast<float>(groundDecalsVec.size()) / static_cast<float>(numToDelete) > RESORT_THRESHOLD) {
-			// group all expired items towards the end of the vector
-			auto partIt = std::stable_partition(groundDecalsVec.begin(), groundDecalsVec.end(), [](const auto& item) {
-				return item.IsValid();
-			});
-			// erase irrelevant items
-			for (auto it = partIt; it < groundDecalsVec.end(); ++it) {
-				decalIdToTmpDecalsVecPos.erase(it->id);
-			}
-			// remove expired decals
-			groundDecalsVec.resize(groundDecalsVec.size() - numToDelete);
-			// update relevant items
-			for (size_t i = 0; i < groundDecalsVec.size(); ++i) {
-				decalIdToTmpDecalsVecPos[groundDecalsVec[i].id] = i;
-			}
-
-			return true;
-		}
-		return false;
-	};
-	*/
 
 	if (frameNum % 16 ==  0) {
 		UpdateTemporaryDecalsVector(frameNum);
 	}
 	if (frameNum % 16 == 15) {
-		// FIXME
-		//UpdateDecalsVector(permanentDecals);
+		UpdatePermanentDecalsVector(frameNum);
 	}
 
 
@@ -1131,7 +1146,6 @@ void CGroundDecalHandler::SunChanged()
 	auto enToken = decalShader->EnableScoped();
 	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
-	//decalShader->SetUniform("groundSpecularColor", sunLighting->groundSpecularColor.x, sunLighting->groundSpecularColor.y, sunLighting->groundSpecularColor.z);
 	decalShader->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 }
 
@@ -1145,7 +1159,7 @@ void CGroundDecalHandler::ViewResize()
 }
 
 void CGroundDecalHandler::GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) { RemoveSolidObject(object, gb); }
-//void CGroundDecalHandler::FeatureMoved(const CFeature* feature, const float3& oldpos) { AddSolidObject(feature); }
+
 
 void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 	if ((event.weaponDef != nullptr) && !event.weaponDef->visuals.explosionScar)
@@ -1177,6 +1191,7 @@ void CGroundDecalHandler::RenderUnitDestroyed(const CUnit* unit) {
 
 void CGroundDecalHandler::RenderFeatureCreated(const CFeature* feature) { AddSolidObject(feature); }
 void CGroundDecalHandler::RenderFeatureDestroyed(const CFeature* feature) { RemoveSolidObject(feature, nullptr); }
+void CGroundDecalHandler::FeatureMoved(const CFeature* feature, const float3& oldpos) { MoveSolidObject(feature, feature->pos); }
 
 // FIXME: Add a RenderUnitLoaded event
 void CGroundDecalHandler::UnitLoaded(const CUnit* unit, const CUnit* transport) { ForceRemoveSolidObject(unit); }
