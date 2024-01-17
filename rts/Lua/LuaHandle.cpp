@@ -769,7 +769,7 @@ void CLuaHandle::GameFrame(int frameNum)
 	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
 }
 
-/*** Called at the end of every game simulation frame (30 per second).
+/*** Called at the end of every game simulation frame
  *
  * @function GameFramePost
  * @number frame Starts at frame 1
