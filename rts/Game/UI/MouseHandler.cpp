@@ -393,7 +393,7 @@ bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, 
 	if (activeReceiver != nullptr)
 		return false;
 
-	if (RmlGui::IsActive()) {
+	if (RmlGui::IsMouseInteractingWith()) {
 		return false;
 	}
 
@@ -722,6 +722,13 @@ std::string CMouseHandler::GetCurrentTooltip() const
 void CMouseHandler::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// Rml is very polite about asking for changes to the cursor
+	// so let's make sure it's not ignored!
+	if (RmlGui::IsMouseInteractingWith())
+		// if the cursor string is empty, then Rml is cedeing control of it
+		if (auto& rmlCursor = RmlGui::GetMouseCursor(); !rmlCursor.empty())
+			queuedCursorName = rmlCursor;
+
 	SetCursor(queuedCursorName);
 
 	if (!hideCursor) {

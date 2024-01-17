@@ -81,7 +81,7 @@ CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 		return luaInputReceiver;
 
 	// check RmlUI second
-	if (RmlGui::IsActive())
+	if (RmlGui::IsMouseInteractingWith())
 		return RmlGui::GetInputReceiver();
 
 	for (CInputReceiver* recv: GetReceivers()) {
