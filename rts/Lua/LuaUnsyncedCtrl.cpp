@@ -2745,10 +2745,6 @@ int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
 {
-	// ignore lua requests to control cursor when mouse is over RmlUI element
-	if (RmlGui::IsActive())
-		return 0;
-
 	const std::string& cursorName = luaL_checkstring(L, 1);
 	const float cursorScale = luaL_optfloat(L, 2, 1.0f);
 

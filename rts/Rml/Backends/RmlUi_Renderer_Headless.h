@@ -1,3 +1,6 @@
+#ifndef RMLUI_RENDERER_HEADLESS_H
+#define RMLUI_RENDERER_HEADLESS_H
+
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
 
@@ -31,3 +34,5 @@ public:
 	void EndFrame(){};
 	void SetViewport(int x, int y){};
 };
+
+#endif // RMLUI_RENDERER_HEADLESS_H
