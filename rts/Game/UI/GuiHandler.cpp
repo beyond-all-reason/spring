@@ -1074,16 +1074,9 @@ void CGuiHandler::SetCursorIcon() const
 	if (!game->hideInterface && !mouse->offscreen)
 		ir = GetReceiverAt(mouse->lastx, mouse->lasty);
 
-	if (ir != nullptr)
-	{
-		// mouse cursor icon is being handled elsewhere
-		if (ir->HandlesCursorIcon())
-			return;
-
-		if (ir != minimap) {
-			mouse->ChangeCursor(newCursor, cursorScale);
-			return;
-		}
+	if ((ir != nullptr) && (ir != minimap)) {
+		mouse->ChangeCursor(newCursor, cursorScale);
+		return;
 	}
 
 	if (ir == minimap)

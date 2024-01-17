@@ -35,7 +35,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "RmlUi_Backend.h"
-#include "RmlUi_Platform_SDL.h"
+#include "RmlUi_Platform_RTS.h"
 #include "RmlUi_Renderer_GL3.h"
 #include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -52,9 +52,7 @@ bool removeContext(const std::string& name);
 class RenderInterface_GL3_SDL : public RenderInterface_GL3
 {
 public:
-    RenderInterface_GL3_SDL()
-    {
-    }
+    RenderInterface_GL3_SDL() {}
 
     bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions,
                      const Rml::String& source) override
@@ -101,9 +99,7 @@ public:
 class VFSFileInterface : public Rml::FileInterface
 {
 public:
-    VFSFileInterface()
-    {
-    }
+    VFSFileInterface() {}
 
     Rml::FileHandle Open(const Rml::String& path)
     {
@@ -163,22 +159,15 @@ class PassThroughPlugin : public Rml::Plugin
 
 public:
     PassThroughPlugin(void (*onContextCreate)(Rml::Context*), void (*onContextDestroy)(Rml::Context*))
-        : onContextCreate{onContextCreate}, onContextDestroy{onContextDestroy}
-    {
-    }
+        : onContextCreate{onContextCreate}, onContextDestroy{onContextDestroy} {}
 
     int GetEventClasses() override
     {
         return EVT_BASIC;
     }
 
-    void OnInitialise() override
-    {
-    };
-
-    void OnShutdown() override
-    {
-    };
+    void OnInitialise() override {};
+    void OnShutdown() override {};
 
     void OnContextCreate(Rml::Context* context) override
     {
@@ -198,7 +187,7 @@ public:
  */
 struct BackendData
 {
-    SystemInterface_SDL system_interface;
+    SystemInterface_RTS system_interface;
 #ifndef HEADLESS
     RenderInterface_GL3_SDL render_interface;
 #else
@@ -248,7 +237,6 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
     Rml::SetSystemInterface(RmlGui::GetSystemInterface());
     Rml::SetRenderInterface(RmlGui::GetRenderInterface());
 
-    data->system_interface.SetWindow(target_window);
     data->render_interface.SetViewport(winX, winY);
     data->winX = winX;
     data->winY = winY;
@@ -329,7 +317,7 @@ Rml::RenderInterface* RmlGui::GetRenderInterface()
     return &data->render_interface;
 }
 
-bool RmlGui::IsActive()
+bool RmlGui::IsMouseInteractingWith()
 {
     if (!RmlInitialized())
     {
@@ -338,6 +326,14 @@ bool RmlGui::IsActive()
     return data->inputReceiver.IsAbove();
 }
 
+const std::string& RmlGui::GetMouseCursor()
+{
+    if (!RmlInitialized())
+    {
+        return "";
+    }
+    return data->system_interface.GetMouseCursor();
+}
 
 CInputReceiver* RmlGui::GetInputReceiver()
 {
@@ -420,7 +416,7 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlSDL::EventMouseMove(context, x, y);
+        result |= !RmlRTS::EventMouseMove(context, x, y);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -438,7 +434,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        bool handled = !RmlSDL::EventMousePress(context, x, y, button);
+        bool handled = !RmlRTS::EventMousePress(context, x, y, button);
         result |= handled;
         if (!handled)
         {
@@ -465,7 +461,7 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlSDL::EventMouseRelease(context, x, y, button);
+        result |= !RmlRTS::EventMouseRelease(context, x, y, button);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -483,7 +479,7 @@ bool RmlGui::ProcessMouseWheel(float delta)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlSDL::EventMouseWheel(context, delta);
+        result |= !RmlRTS::EventMouseWheel(context, delta);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -501,8 +497,8 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        auto kc = RmlSDL::ConvertKey(keyCode);
-        result |= !RmlSDL::EventKeyDown(context, kc);
+        auto kc = RmlRTS::ConvertKey(keyCode);
+        result |= !RmlRTS::EventKeyDown(context, kc);
     }
     return result;
 }
@@ -516,7 +512,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlSDL::EventKeyUp(context, RmlSDL::ConvertKey(keyCode));
+        result |= !RmlRTS::EventKeyUp(context, RmlRTS::ConvertKey(keyCode));
     }
     return result;
 }
@@ -530,7 +526,7 @@ bool RmlGui::ProcessTextInput(const std::string& text)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlSDL::EventTextInput(context, text);
+        result |= !RmlRTS::EventTextInput(context, text);
     }
     return result;
 }
@@ -552,7 +548,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
                 }
                 break;
             }
-            RmlSDL::InputEventHandler(context, event);
+            RmlRTS::InputEventHandler(context, event);
         }
         break;
     case SDL_MOUSEMOTION:
@@ -565,7 +561,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
         break; // handled elsewhere
     default:
         {
-            RmlSDL::InputEventHandler(context, event);
+            RmlRTS::InputEventHandler(context, event);
         }
         break;
     }

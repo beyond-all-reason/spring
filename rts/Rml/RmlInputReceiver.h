@@ -15,16 +15,16 @@ public:
 	/**
 		IsAbove is used for determining which part of the game is interacting with the mouse.
 		<br/><br/>
-		Unlike the other implementations of this function, tracking of this state is handled enirely by the RmlUI ProcessMouse functions.
+		Unlike the other implementations of this function, tracking of this
+		state is handled enirely by the RmlUI ProcessMouse functions.
 		<br/><br/>
-		This means that the x and y parameters are completely ignored
+		This results in the x and y parameters here being completely ignored
 
 		@param x ignored, the "IsAbove" state is handled elsewhere
 		@param y ignored, this "IsAbove" state is handled elsewhere
 		@return If the mouse is interacting with any RmlUI elements
 	*/
 	bool IsAbove(int x = 0, int y = 0) { return rml_active; };
-	bool HandlesCursorIcon() override { return true; };
 	void setActive(bool active) { rml_active = active; };
 
 	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) { return RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat); };

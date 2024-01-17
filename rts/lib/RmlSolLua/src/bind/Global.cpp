@@ -9,8 +9,9 @@ namespace Rml::SolLua
 	{
 		auto createContext(const Rml::String& name)
 		{
-			// context will be resized right away by other code
-			// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
+			// Janky, but less jank than before at least
+			// context will be resized right away
+			// send {0, 0} in for now to avoid triggering a resize event
 			return Rml::CreateContext(name, {0, 0});
 		}
 
