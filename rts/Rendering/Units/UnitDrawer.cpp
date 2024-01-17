@@ -59,7 +59,7 @@ CONFIG(float, UnitIconFadeVanish).defaultValue(1000.0f).minimumValue(1.0f).maxim
 CONFIG(float, UnitTransparency).defaultValue(0.7f).description("Transparency of Ghosted units");
 CONFIG(bool, UnitIconsAsUI).defaultValue(false).description("Draw unit icons like it is an UI element and not like unit's LOD.");
 CONFIG(bool, UnitIconsHideWithUI).defaultValue(false).description("Hide unit icons when UI is hidden.");
-CONFIG(float, UnitIconCameraMinY).defaultValue(-0.5f).description("The lowest camera Y direction above which unit icons are drawn based on camera distance");
+CONFIG(float, UnitIconCameraMinAngleY).defaultValue(-30.0f).description("The lowest camera Y direction above which unit icons are drawn based on camera distance");
 CONFIG(int, FastIcons).defaultValue(0).description("Be faster at drawing minimap");
 
 CONFIG(int, MaxDynamicModelLights)
@@ -508,13 +508,15 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 
 
 	const float3 camDir = camera->GetDir();
-	// We are going to clamp camDir.y at -0.5, then re-normalize it. 
-	const float unitIconCameraMinY = configHandler->GetFloat("UnitIconCameraMinY");
+
+	// Grab the minimum camera tilt, below which we use global map-camera distance, above which we use  individual unit-camera distances
+	const float unitIconCameraMinAngleY = std::sin(configHandler->GetFloat("UnitIconCameraMinAngleY") * math::DEG_TO_RAD);
 
 	// This is 0 if we should be using individual unit-camera distances, and 1 if we should be using a global map-camera distance
-	const float unitIconCameraFlatDistMix = std::clamp( (unitIconCameraMinY - camDir.y) * 10.0f, 0.0f, 1.0f);
+	// We soften this transition with the 10.0f multiplier
+	const float unitIconCameraFlatDistMix = std::clamp( (unitIconCameraMinAngleY - camDir.y) * 10.0f, 0.0f, 1.0f);
 
-	//LOG("DrawUnitIconsScreen: unitIconCameraFlatDistMix=%.3f unitIconCameraMinY=%.3f iconZoomDist=%.1f", unitIconCameraFlatDistMix, unitIconCameraMinY, modelDrawerData->iconZoomDist);
+	//LOG("DrawUnitIconsScreen: unitIconCameraFlatDistMix=%.3f unitIconCameraMinAngleY=%.3f iconZoomDist=%.1f", unitIconCameraFlatDistMix, unitIconCameraMinY, modelDrawerData->iconZoomDist);
 
 	const auto allyTeam = gu->myAllyTeam;
 

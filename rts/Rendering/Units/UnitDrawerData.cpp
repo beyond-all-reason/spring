@@ -171,8 +171,8 @@ void CUnitDrawerData::Update()
 
 	const float3 camPos = (camHandler->GetCurrentController()).GetPos();
 	float3 camDir = (camHandler->GetCurrentController()).GetDir();
-	// We are going to clamp camDir.y at -0.5, then re-normalize it. 
-	camDir.y = std::min(configHandler->GetFloat("UnitIconCameraMinY"), camDir.y);
+	// We are going to clamp camDir.y at UnitIconCameraMinAngleY, then re-normalize it. 
+	camDir.y = std::min(std::sin(configHandler->GetFloat("UnitIconCameraMinAngleY") * math::DEG_TO_RAD), camDir.y);
 	camDir = camDir.SafeNormalize();
 
 	float dist = CGround::LineGroundCol(camPos, camDir * 150000.0f, false);

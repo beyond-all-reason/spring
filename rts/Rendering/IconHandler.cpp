@@ -71,10 +71,10 @@ bool CIconHandler::LoadIcons(const std::string& filename)
 			iconTable.GetFloat ("size",         1.0f),
 			iconTable.GetFloat ("distance",     1.0f),
 			iconTable.GetBool  ("radiusAdjust", false),
-			iconTable.GetFloat ("u0",			0.0f),
-			iconTable.GetFloat ("v0",			0.0f),
-			iconTable.GetFloat ("u1",			1.0f),
-			iconTable.GetFloat ("v1",			1.0f)
+			iconTable.GetFloat ("u0",           0.0f),
+			iconTable.GetFloat ("v0",           0.0f),
+			iconTable.GetFloat ("u1",           1.0f),
+			iconTable.GetFloat ("v1",           1.0f)
 		);
 	}
 
@@ -106,11 +106,7 @@ bool CIconHandler::AddIcon(
 
 	unsigned int texID = 0;
 
-	bool ownTexture = true;
-
 	try {
-
-		ownTexture = false;
 		if (!texName.empty()) {
 			const auto it = iconTexNameToTexID.find(texName);
 
@@ -152,7 +148,7 @@ bool CIconHandler::AddIcon(
 		FreeIcon(iconName);
 
 	// data must be constructed first since CIcon's ctor will Ref() it
-	iconData[numIcons] = {iconName, texID,  size, distance, radAdj, ownTexture, u0, v0, u1, v1};
+	iconData[numIcons] = {iconName, texID,  size, distance, radAdj, false, u0, v0, u1, v1};
 	// indices 0 and 1 are reserved
 	iconMap[iconName] = CIcon(ICON_DATA_OFFSET + numIcons++);
 
