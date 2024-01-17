@@ -4872,10 +4872,10 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
  * that they live a long time and there's just a handful of them */
 std::set <std::string> tracyLuaPlots;
 
-/*** Initialize a plot in Tracy for use in debugging or profiling
+/*** Configure custom appearence for a Tracy plot for use in debugging or profiling
  *
  * @function Spring.LuaTracyPlotConfig
- * @string plotName which should be initialized
+ * @string plotName which should be customized 
  * @string[opt] plotFormatType "Number"|"Percentage"|"Memory", default "Number"
  * @bool[opt] step stepwise chart, default true is stepwise
  * @bool[opt] fill color fill, default false is no fill
@@ -4885,39 +4885,39 @@ std::set <std::string> tracyLuaPlots;
 
 int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 {
-    const auto plotName 			= luaL_checkstring(L, 1);
-    const auto plotFormatTypeString = luaL_optstring(L, 2, "");
-    const auto step 				= luaL_optboolean(L, 3, true); // stepwise default
-    const auto fill 				= luaL_optboolean(L, 4, false); // no fill default
-    const uint32_t color 			= luaL_optint(L, 5, 0xFFFFFF); // white default
+	const auto plotName             = luaL_checkstring(L, 1);
+	const auto plotFormatTypeString = luaL_optstring(L, 2, "");
+	const auto step                 = luaL_optboolean(L, 3, true); // stepwise default
+	const auto fill                 = luaL_optboolean(L, 4, false); // no fill default
+	const uint32_t color            = luaL_optint(L, 5, 0xFFFFFF); // white default
 
-    tracy::PlotFormatType plotFormatType;
-    switch (plotFormatTypeString[0]) {
-        case 'p': case 'P': plotFormatType = tracy::PlotFormatType::Percentage; break;
-        case 'm': case 'M': plotFormatType = tracy::PlotFormatType::Memory;     break;
-        default:            plotFormatType = tracy::PlotFormatType::Number;     break;
-    }
+	tracy::PlotFormatType plotFormatType;
+	switch (plotFormatTypeString[0]) {
+		case 'p': case 'P': plotFormatType = tracy::PlotFormatType::Percentage; break;
+		case 'm': case 'M': plotFormatType = tracy::PlotFormatType::Memory;     break;
+		default:            plotFormatType = tracy::PlotFormatType::Number;     break;
+	}
 
-    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
-    TracyPlotConfig(iterator->c_str(), plotFormatType, step, fill, color);
-    return 0;
+	const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+	TracyPlotConfig(iterator->c_str(), plotFormatType, step, fill, color);
+	return 0;
 }
 
 
 /*** Update a Tracy Plot with a value
  *
  * @function Spring.LuaTracyPlot
- * @string plotName which LuaPlot should be updated (must have been initialized via LuaTracyPlotConfig)
+ * @string plotName which LuaPlot should be updated
  * @number plotvalue the number to show on the Tracy plot
  * @treturn nil
  */
 int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
 {
-    const auto plotName  = luaL_checkstring(L, 1);
-    const auto plotValue = luaL_checkfloat(L, 2);
+	const auto plotName  = luaL_checkstring(L, 1);
+	const auto plotValue = luaL_checkfloat(L, 2);
 
-    const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
-    TracyPlot(iterator->c_str(), plotValue);
-    return 0;
+	const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
+	TracyPlot(iterator->c_str(), plotValue);
+	return 0;
 }
 
