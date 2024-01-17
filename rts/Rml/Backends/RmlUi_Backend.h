@@ -29,16 +29,12 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
-#include <RmlUi/Core/Input.h>
-#include <RmlUi/Core/RenderInterface.h>
-#include <RmlUi/Core/SystemInterface.h>
+#include <RmlUI/Core.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
 
 #include "Game/UI/InputReceiver.h"
 #include "lib/sol2/sol.hpp"
-
-using KeyDownCallback = bool (*)(Rml::Context *context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
 
 namespace RmlGui
 {
@@ -63,7 +59,8 @@ namespace RmlGui
 	bool ProcessMouseWheel(float delta);
 
 	void ToggleDebugger(int contextIndex);
-	bool IsActive();
+	bool IsMouseInteractingWith();
+	const std::string& GetMouseCursor();
 	CInputReceiver* GetInputReceiver();
 
 	void Update();

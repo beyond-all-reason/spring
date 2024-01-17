@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUI_BACKENDS_PLATFORM_SDL_H
-#define RMLUI_BACKENDS_PLATFORM_SDL_H
+#ifndef RMLUI_BACKENDS_PLATFORM_RTS_H
+#define RMLUI_BACKENDS_PLATFORM_RTS_H
 
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
@@ -36,19 +36,15 @@
 #include "Game/UI/MouseHandler.h"
 #include <RmlSolLua/TranslationTable.h>
 
-class SystemInterface_SDL : public Rml::SystemInterface
+class SystemInterface_RTS : public Rml::SystemInterface
 {
 public:
-	SystemInterface_SDL();
-	~SystemInterface_SDL();
-
-	// Optionally, provide or change the window to be used for setting the mouse cursors.
-	void SetWindow(SDL_Window *window);
-
-	int TranslateString(Rml::String &translated, const Rml::String &input) override;
-	virtual bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
+	SystemInterface_RTS();
+	~SystemInterface_RTS();
 
 	// -- Inherited from Rml::SystemInterface  --
+	int TranslateString(Rml::String &translated, const Rml::String &input) override;
+	bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
 
 	double GetElapsedTime() override;
 
@@ -57,15 +53,16 @@ public:
 	void SetClipboardText(const Rml::String &text) override;
 	void GetClipboardText(Rml::String &text) override;
 
-	void SetTranslationTable(TranslationTable *tt) { translationTable = tt; };
+	//  Hooks for RTS engine
+	const Rml::String& GetMouseCursor();
+	void SetTranslationTable(TranslationTable *tt);;
 
 private:
-	SDL_Window *window = nullptr;
-
 	TranslationTable *translationTable = nullptr;
+	Rml::String mouseCursor;
 };
 
-namespace RmlSDL
+namespace RmlRTS
 {
 
 	// Applies input on the context based on the given SDL event.
@@ -88,6 +85,6 @@ namespace RmlSDL
 	// Returns the active RmlUi key modifier state.
 	int GetKeyModifierState();
 
-} // namespace RmlSDL
+} // namespace RmlRTS
 
 #endif
