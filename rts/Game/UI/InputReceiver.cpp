@@ -69,13 +69,13 @@ void CInputReceiver::DrawReceivers()
 
 CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 {
-	// check lua first
-	if (luaInputReceiver != nullptr && luaInputReceiver->IsAbove(x, y))
-		return luaInputReceiver;
-
-	// check RmlUI second
+	// check RmlUI first
 	if (RmlGui::IsMouseInteractingWith())
 		return RmlGui::GetInputReceiver();
+
+	// check lua second
+	if (luaInputReceiver != nullptr && luaInputReceiver->IsAbove(x, y))
+		return luaInputReceiver;
 
 	for (CInputReceiver* recv: GetReceivers()) {
 		if (recv == nullptr)
