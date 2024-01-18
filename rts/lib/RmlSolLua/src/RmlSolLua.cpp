@@ -9,24 +9,24 @@
 namespace Rml::SolLua
 {
 
-    SolLuaPlugin* Initialise(sol::state_view* state, void (*contextCreator)(const std::string& name))
+    SolLuaPlugin* Initialise(sol::state_view* state)
     {
         SolLuaPlugin* slp;
         if (state != nullptr)
         {
-            slp = new SolLuaPlugin(*state, contextCreator);
+            slp = new SolLuaPlugin(*state);
             ::Rml::RegisterPlugin(slp);
             RegisterLua(state, slp);
         }
         return slp;
     }
 
-    SolLuaPlugin* Initialise(sol::state_view* state, void (*contextCreator)(const std::string& name), const Rml::String& lua_environment_identifier)
+    SolLuaPlugin* Initialise(sol::state_view* state, const Rml::String& lua_environment_identifier)
     {
         SolLuaPlugin* slp;
         if (state != nullptr)
         {
-            slp = new SolLuaPlugin(*state, contextCreator, lua_environment_identifier);
+            slp = new SolLuaPlugin(*state, lua_environment_identifier);
             ::Rml::RegisterPlugin(slp);
             RegisterLua(state, slp);
         }
@@ -43,7 +43,7 @@ namespace Rml::SolLua
         bind_element_form(*state);
         bind_document(*state);
         bind_event(*state);
-        bind_global(*state, &slp->translationTable, slp->createContext);
+        bind_global(*state, slp);
         bind_log(*state);
         bind_vector(*state);
         bind_convert(*state);

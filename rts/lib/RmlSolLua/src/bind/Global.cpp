@@ -1,4 +1,5 @@
 #include "bind.h"
+#include "RmlSolLua/SolLuaPlugin.h"
 
 
 namespace Rml::SolLua
@@ -6,6 +7,13 @@ namespace Rml::SolLua
 
 	namespace functions
 	{
+		auto createContext(const Rml::String& name)
+		{
+			// context will be resized right away by other code
+			// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
+			return Rml::CreateContext(name, {0, 0});
+		}
+
 		auto getContext()
 		{
 			std::function<Rml::Context* (int)> result = [](int idx) { return Rml::GetContext(idx); };
@@ -46,14 +54,16 @@ namespace Rml::SolLua
 
 	#define _ENUM(N) t[#N] = Rml::Input::KI_##N
 
-	void bind_global(sol::state_view& lua, TranslationTable* translationTable, void (*createContext)(const std::string& name))
+	void bind_global(sol::state_view& lua, SolLuaPlugin* slp)
 	{
 
 		struct rmlui {};
+		auto translationTable = &slp->translationTable;
 
 		auto g = lua.new_usertype<rmlui>("rmlui",
 			// M
-			"CreateContext", createContext,
+			"CreateContext", functions::createContext,
+			"RemoveContext", sol::resolve<bool (const Rml::String&)>(&Rml::RemoveContext),
 			"LoadFontFace", sol::overload(
 				&functions::loadFontFace1,
 				&functions::loadFontFace2,

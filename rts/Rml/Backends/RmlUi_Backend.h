@@ -1,5 +1,7 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 /*
- * This source file is part of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is dervied from the source code of RmlUi, the HTML/CSS Interface Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
@@ -29,15 +31,11 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
-#include <RmlUi/Core/Input.h>
-#include <RmlUi/Core/RenderInterface.h>
-#include <RmlUi/Core/SystemInterface.h>
-#include <RmlUi/Core/Types.h>
+#include <RmlUi/Core.h>
 #include <SDL.h>
-#include "lib/sol2/sol.hpp"
-#include "Rml/Backends/RmlUi_Platform_SDL.h"
 
-using KeyDownCallback = bool (*)(Rml::Context *context, Rml::Input::KeyIdentifier key, int key_modifier, float native_dp_ratio, bool priority);
+#include "Game/UI/InputReceiver.h"
+#include "lib/sol2/sol.hpp"
 
 namespace RmlGui
 {
@@ -62,13 +60,15 @@ namespace RmlGui
 	bool ProcessMouseWheel(float delta);
 
 	void ToggleDebugger(int contextIndex);
-	bool IsActive();
+	bool IsMouseInteractingWith();
+	const std::string& GetMouseCursor();
+	CInputReceiver* GetInputReceiver();
 
 	void Update();
 	void RenderFrame();
 
-	void CreateContext(const std::string &name);
 	void AddContext(Rml::Context *context);
+	void RemoveContext(Rml::Context *context);
 
 	void BeginFrame();
 	void PresentFrame();
