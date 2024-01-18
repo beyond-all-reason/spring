@@ -119,7 +119,7 @@ namespace QTPFS {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
 			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
 
-			const unsigned int begin = (nextPointIndex > 0U) ? nextPointIndex - 1U : 0U;
+			const unsigned int begin = (nextPointIndex >= 2U) ? nextPointIndex - 2U : 0U;
 			const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
 
 			for (unsigned int n = begin; n < end; n++) {
