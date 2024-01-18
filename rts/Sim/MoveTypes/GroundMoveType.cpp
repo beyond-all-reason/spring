@@ -3270,17 +3270,16 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 		bool updatePos = false;
 		const float speed = moveDir.Length2D();
-		float maxDisplacement = speed;
 
 		auto tryToMove =
-				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove, &newPos, maxDisplacement]
-				(float3 posOffset)
+				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove, &newPos]
+				(float3 posOffset, float maxDisplacement = 0.f)
 			{
 			// units are moved in relation to their previous position.
 			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
-			// if (!checkCorner && offsetFromPrev.SqLength2D() > (maxDisplacement*maxDisplacement)) {
-			// 	offsetFromPrev.SafeNormalize2D() *= maxDisplacement;
-			// }
+			if ((maxDisplacement > 0.f) && offsetFromPrev.SqLength2D() > (maxDisplacement*maxDisplacement)) {
+				offsetFromPrev.SafeNormalize2D() *= maxDisplacement;
+			}
 			float3 posToTest = prevPos + offsetFromPrev;
 			int curSquare = int(posToTest.z / SQUARE_SIZE)*mapDims.mapx + int(posToTest.x / SQUARE_SIZE);
 			if (curSquare != newPosStartSquare) {
@@ -3293,13 +3292,12 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			return false;
 		};
 
-		float side = 0.f;
 		int n = 0;
 		for (n = 1; n <= SQUARE_SIZE; n++) {
 			updatePos = tryToMove(unit->rightdir * n);
-			if (updatePos) { side = 1.f; break; }
+			if (updatePos) { break; }
 			updatePos = tryToMove(unit->rightdir * -n);
-			if (updatePos) { side = -1.f; break; }
+			if (updatePos) { break; }
 		}
 
 		if (!updatePos)
@@ -3310,18 +3308,19 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			const int2 fullDiffSquare = openSquare - prevSquare;
 			if (fullDiffSquare.x != 0 && fullDiffSquare.y != 0) {
 				// axis-aligned slide to avoid clipping around corners and potentially into traps.
-				int facing = GetFacingFromHeading(unit->heading);
-				constexpr float3 vecs[4] =
-					{ { 0.f, 0.f,  1.f}
-					, { 1.f, 0.f,  0.f}
-					, { 0.f, 0.f, -1.f}
-					, {-1.f, 0.f,  0.f}
+				unsigned int facing = GetFacingFromHeading(unit->heading);
+				constexpr float3 vecs[2] =
+					{ { 0.f, 0.f, 1.f}
+					, { 1.f, 0.f, 0.f}
 				};
-				const float3 aaRightDir = vecs[(facing - 1) % 4];
+				const float3 aaRightDir = vecs[(facing - 1) % 2];
 
-				const float displacement = (facing % 2 == 0) ? resultantMove.x : resultantMove.y;
-				const float3 offset = aaRightDir * std::min(displacement, speed) * side;
+				const float displacement = (facing % 2 == 0) ? resultantMove.x : resultantMove.z;
+				const float side = 1.f - (2.f * (displacement < 0.f));
+				const float3 offset = aaRightDir * std::min(displacement*side, speed) * side;
 				const float3 posToTest = prevPos + offset;
+
+				updatePos = isSquareOpen(posToTest);
 
 			// 	{bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 			// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
@@ -3332,32 +3331,29 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			// 				, float(unit->frontdir.x), float(unit->frontdir.y), float(unit->frontdir.z), int(unit->heading), facing
 			// 				, aaRightDir.x, aaRightDir.y, aaRightDir.z
 			// 				, displacement);
-			// 		LOG("%s: unit %d: resultantVec=(%f,%f,%f) prevPos=(%f,%f,%f) offset=(%f,%f,%f) posToTest=(%f,%f,%f)"
+			// 		LOG("%s: unit %d: resultantVec=(%f,%f,%f) prevPos=(%f,%f,%f) offset=(%f,%f,%f) posToTest=(%f,%f,%f) result=%d"
 			// 				, __func__, owner->id
 			// 				, resultantMove.x, resultantMove.y, resultantMove.z
 			// 				, prevPos.x, prevPos.y, prevPos.z
 			// 				, offset.x, offset.y, offset.z
-			// 				, posToTest.x, posToTest.y, posToTest.z);
+			// 				, posToTest.x, posToTest.y, posToTest.z
+			// 				, int(updatePos));
 			// 	}}
 
-				updatePos = isSquareOpen(posToTest);
 				if (updatePos) {
 					resultantMove = offset;
 				} else {
 					resultantMove = ZeroVector;
 				}
-			} //else if (checkCorner && n > speed) {
-				float3 offset = unit->rightdir * speed * side;
-				updatePos = tryToMove(offset);
-				if (updatePos) {
-					resultantMove = offset;
-				} else {
+			} else if (n > speed) {
+				updatePos = tryToMove(resultantMove, speed);
+				if (!updatePos)
 					resultantMove = ZeroVector;
-				}
-		//	}
+			}
 		}
 	}
 }
+
 
 void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3& newSpeedVector) {
 	const float oldSpeed = oldSpeedVector.dot(flatFrontDir);
