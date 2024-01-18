@@ -762,19 +762,20 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		if (curSearchNode->GetPrevNode() == nextSearchNode)
 			continue;
 
-		if (disallowNodeRevisit) {
-			bool alreadyVisited = (nextSearchNode->GetPathCost(NODE_PATH_COST_G) != QTPFS_POSITIVE_INFINITY);
+		// if (disallowNodeRevisit) {
+		// 	bool alreadyVisited = (nextSearchNode->GetPathCost(NODE_PATH_COST_G) != QTPFS_POSITIVE_INFINITY);
+		// 	constexpr bool improvingStart = false;
 
-			// The start of a path should look good, a unit that starts off by moving in the wrong
-			// direction will look weird and will break commands like guard, which regaularly ask
-			// for path updates. This also cleans up the last bit around the goal due to the
-			// reverse search, which is an added bonus.
-			bool improvingStart = (nextSearchNode == searchData.srcSearchNode)
-								|| (nextSearchNode->GetPrevNode() == searchData.srcSearchNode);
-			if (alreadyVisited && !improvingStart) {
-				continue;
-			}
-		}
+		// // 	// The start of a path should look good, a unit that starts off by moving in the wrong
+		// // 	// direction will look weird and will break commands like guard, which regaularly ask
+		// // 	// for path updates. This also cleans up the last bit around the goal due to the
+		// // 	// reverse search, which is an added bonus.
+		// // 	bool improvingStart = (nextSearchNode == searchData.srcSearchNode)
+		// // 						|| (nextSearchNode->GetPrevNode() == searchData.srcSearchNode);
+		// 	if (alreadyVisited && !improvingStart) {
+		// 		continue;
+		// 	}
+		// }
 
 		const bool isTarget = (nextSearchNode == searchData.tgtSearchNode);
 		QTPFS::INode *nxtNode = nullptr;

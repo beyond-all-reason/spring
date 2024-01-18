@@ -743,6 +743,16 @@ void QTPFS::PathManager::Update() {
 
 					// The path may still be fine for owner, even if it can't be shared any more.
 					auto& path = registry.get<IPath>(pathEntity);
+
+					if (dirtyPathDetail.autoRepathTrigger > 0) {
+						// Rather than repath immediately we can defer the repath until the unit
+						// gets closer to the damaged area.
+						unsigned int currRepathTrigger = path.GetRepathTriggerIndex();
+						if (currRepathTrigger == 0 || currRepathTrigger > dirtyPathDetail.autoRepathTrigger) {
+							path.SetRepathTriggerIndex(dirtyPathDetail.autoRepathTrigger);
+							path.SetBoundingBox();
+						}
+					}
 					if (path.IsBoundingBoxOverriden())
 						path.SetBoundingBox();
 				//}
@@ -1227,7 +1237,6 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->allowPartialSearch = allowPartialSearch;
 	newSearch->synced = oldPath->IsSynced();
 
-	registry.emplace_or_replace<PathIsTemp>(pathEntity);
 	registry.emplace_or_replace<PathSearchRef>(pathEntity, searchEntity);
 
 	assert(	oldPath->GetSourcePoint().x != 0.f || oldPath->GetSourcePoint().z != 0.f );

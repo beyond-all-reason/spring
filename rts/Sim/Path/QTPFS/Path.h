@@ -119,7 +119,10 @@ namespace QTPFS {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
 			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
 
-			for (unsigned int n = 0; n < points.size(); n++) {
+			const unsigned int begin = (nextPointIndex > 0U) ? nextPointIndex - 1U : 0U;
+			const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
+
+			for (unsigned int n = begin; n < end; n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
 				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);
 				boundingBoxMaxs.x = std::max(boundingBoxMaxs.x, points[n].x);
@@ -259,7 +262,7 @@ namespace QTPFS {
 		int pathType = 0;
 
 		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
-		unsigned int repathAtPointIndex = 0; // minimum index of the waypoint to trigger a repath. -1 == off.
+		unsigned int repathAtPointIndex = 0; // minimum index of the waypoint to trigger a repath.
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		// Identifies the layer, target quad and source quad for a search query so that similar

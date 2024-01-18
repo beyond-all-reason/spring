@@ -30,9 +30,15 @@ void RequeuePathsSystem::Update()
     for (auto pathEntity : view) {
         bool &requeueSearch = view.get<PathRequeueSearch>(pathEntity).value;
         if (requeueSearch) {
+            requeueSearch = false;
+
+            // The path is already scheduled to be requeued.
+            bool dirtyPath = registry.any_of<PathIsDirty>(pathEntity);
+            if (dirtyPath) { continue; }
+
             pm->RequeueSearch(&registry.get<IPath>(pathEntity), true, false);
             registry.emplace_or_replace<PathUpdatedCounterIncrease>(pathEntity);
-            requeueSearch = false;
+            
         }
     }
 }
