@@ -2079,7 +2079,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	}
 
 	float cwpDistSq = cwp.SqDistance2D(pos);
-	const bool allowSkip = (cwpDistSq <= Square(SQUARE_SIZE));
+	const bool allowSkip = (cwpDistSq < Square(SQUARE_SIZE));
 	if (allowSkip) {
 		// getting this close to a waypoint come mean we are on a tight corner.
 		escapeWaypoint = cwp;
