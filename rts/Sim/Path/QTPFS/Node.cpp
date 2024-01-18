@@ -291,6 +291,8 @@ bool QTPFS::QTNode::CanSplit(unsigned int depth, bool forced) const {
 	return true;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	if (!CanSplit(depth, forced))
@@ -326,6 +328,8 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	assert(!IsLeaf());
 	return true;
 }
+
+#pragma GCC pop_options
 
 bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 	if (IsLeaf()) {
@@ -441,6 +445,8 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 #endif
 
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData) {
 	unsigned int numNewBinSquares = 0; // nr. of squares in <r> that changed bin after deformation
@@ -489,6 +495,9 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 		}
 	}
 }
+
+#pragma GCC pop_options
+
 
 bool QTPFS::QTNode::UpdateMoveCost(
 	const UpdateThreadData* threadData,
