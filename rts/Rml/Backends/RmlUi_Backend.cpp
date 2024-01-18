@@ -1,5 +1,7 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 /*
- * This source file is part of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is dervied from the source code of RmlUi, the HTML/CSS Interface Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
@@ -35,7 +37,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "RmlUi_Backend.h"
-#include "RmlUi_Platform_RTS.h"
+#include "RmlUi_SystemInterface.h"
 #include "RmlUi_Renderer_GL3.h"
 #include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -187,7 +189,7 @@ public:
  */
 struct BackendData
 {
-    SystemInterface_RTS system_interface;
+    RmlSystemInterface system_interface;
 #ifndef HEADLESS
     RenderInterface_GL3_SDL render_interface;
 #else
@@ -416,7 +418,7 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlRTS::EventMouseMove(context, x, y);
+        result |= !RmlSDLSpring::EventMouseMove(context, x, y);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -434,7 +436,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        bool handled = !RmlRTS::EventMousePress(context, x, y, button);
+        bool handled = !RmlSDLSpring::EventMousePress(context, x, y, button);
         result |= handled;
         if (!handled)
         {
@@ -461,7 +463,7 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlRTS::EventMouseRelease(context, x, y, button);
+        result |= !RmlSDLSpring::EventMouseRelease(context, x, y, button);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -479,7 +481,7 @@ bool RmlGui::ProcessMouseWheel(float delta)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlRTS::EventMouseWheel(context, delta);
+        result |= !RmlSDLSpring::EventMouseWheel(context, delta);
     }
     data->inputReceiver.setActive(result);
     return result;
@@ -497,8 +499,8 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        auto kc = RmlRTS::ConvertKey(keyCode);
-        result |= !RmlRTS::EventKeyDown(context, kc);
+        auto kc = RmlSDLSpring::ConvertKey(keyCode);
+        result |= !RmlSDLSpring::EventKeyDown(context, kc);
     }
     return result;
 }
@@ -512,7 +514,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlRTS::EventKeyUp(context, RmlRTS::ConvertKey(keyCode));
+        result |= !RmlSDLSpring::EventKeyUp(context, RmlSDLSpring::ConvertKey(keyCode));
     }
     return result;
 }
@@ -526,7 +528,7 @@ bool RmlGui::ProcessTextInput(const std::string& text)
     bool result = false;
     for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts)
     {
-        result |= !RmlRTS::EventTextInput(context, text);
+        result |= !RmlSDLSpring::EventTextInput(context, text);
     }
     return result;
 }
@@ -548,7 +550,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
                 }
                 break;
             }
-            RmlRTS::InputEventHandler(context, event);
+            RmlSDLSpring::InputEventHandler(context, event);
         }
         break;
     case SDL_MOUSEMOTION:
@@ -561,7 +563,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
         break; // handled elsewhere
     default:
         {
-            RmlRTS::InputEventHandler(context, event);
+            RmlSDLSpring::InputEventHandler(context, event);
         }
         break;
     }
