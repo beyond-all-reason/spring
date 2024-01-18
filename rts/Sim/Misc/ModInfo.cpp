@@ -112,7 +112,7 @@ void CModInfo::ResetState()
 		qtMaxNodesSearched = 8192;
 		qtRefreshPathMinDist = 2000.f;
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
-		qtLowerQualityPaths = true;
+		qtLowerQualityPaths = false;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
