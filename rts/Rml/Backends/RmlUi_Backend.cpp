@@ -332,7 +332,8 @@ const std::string& RmlGui::GetMouseCursor()
 {
     if (!RmlInitialized())
     {
-        return "";
+				static std::string empty = "";
+				return empty;
     }
     return data->system_interface.GetMouseCursor();
 }
