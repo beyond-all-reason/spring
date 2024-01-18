@@ -1,5 +1,7 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 /*
- * This source file is part of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is dervied from the source code of RmlUi, the HTML/CSS Interface Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
@@ -26,24 +28,32 @@
  *
  */
 
-#ifndef RMLUI_BACKENDS_PLATFORM_RTS_H
-#define RMLUI_BACKENDS_PLATFORM_RTS_H
+#ifndef RMLUI_SYSTEMINTERFACE_H
+#define RMLUI_SYSTEMINTERFACE_H
+
 
 #include <RmlUi/Core/Input.h>
+
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
 #include "Game/UI/MouseHandler.h"
 #include <RmlSolLua/TranslationTable.h>
 
-class SystemInterface_RTS : public Rml::SystemInterface
+class RmlSystemInterface : public Rml::SystemInterface
 {
 public:
-	SystemInterface_RTS();
-	~SystemInterface_RTS();
+	RmlSystemInterface();
+	~RmlSystemInterface();
 
 	// -- Inherited from Rml::SystemInterface  --
-	int TranslateString(Rml::String &translated, const Rml::String &input) override;
+	/**
+	 * @brief Call back for any raw text (CDATA in the XML spec) inside the *.rml files.
+	 * @param translatedOut
+	 * @param input
+	 * @return
+	 */
+	int TranslateString(Rml::String &translatedOut, const Rml::String &input) override;
 	bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
 
 	double GetElapsedTime() override;
@@ -53,7 +63,7 @@ public:
 	void SetClipboardText(const Rml::String &text) override;
 	void GetClipboardText(Rml::String &text) override;
 
-	//  Hooks for RTS engine
+	//  Hooks for Spring engine
 	const Rml::String& GetMouseCursor();
 	void SetTranslationTable(TranslationTable *tt);;
 
@@ -62,7 +72,8 @@ private:
 	Rml::String mouseCursor;
 };
 
-namespace RmlRTS
+// not named "Rml" or "RmlSDL" to avoid name collision with the original Rml lib files
+namespace RmlSDLSpring
 {
 
 	// Applies input on the context based on the given SDL event.
@@ -85,6 +96,5 @@ namespace RmlRTS
 	// Returns the active RmlUi key modifier state.
 	int GetKeyModifierState();
 
-} // namespace RmlRTS
-
-#endif
+} // namespace RmlSDLSpring
+#endif // RMLUI_SYSTEMINTERFACE_H
