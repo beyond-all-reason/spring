@@ -1,5 +1,7 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 /*
- * This source file is part of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is dervied from the source code of RmlUi, the HTML/CSS Interface Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
