@@ -95,8 +95,6 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_GMT)
 #define MEMBER_CHARPTR_HASH(memberName) spring::LiteHash(memberName, strlen(memberName),     0)
 #define MEMBER_LITERAL_HASH(memberName) spring::LiteHash(memberName, sizeof(memberName) - 1, 0)
 
-constexpr float3 ESCAPE_WAYPOINT_OFF({0.f, -1.f, 0.f});
-
 CR_BIND_DERIVED(CGroundMoveType, AMoveType, (nullptr))
 CR_REG_METADATA(CGroundMoveType, (
 	CR_IGNORED(pathController),
@@ -457,7 +455,6 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	currWayPoint(ZeroVector),
 	nextWayPoint(ZeroVector),
-	escapeWaypoint(ESCAPE_WAYPOINT_OFF),
 
 	flatFrontDir(FwdVector),
 	lastAvoidanceDir(ZeroVector),
@@ -2080,10 +2077,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 	float cwpDistSq = cwp.SqDistance2D(pos);
 	const bool allowSkip = (cwpDistSq < Square(SQUARE_SIZE));
-	if (allowSkip) {
-		// getting this close to a waypoint come mean we are on a tight corner.
-		escapeWaypoint = cwp;
-	} else {
+	if (!allowSkip) {
 		const bool skipRequested = (earlyCurrWayPoint.y == -2.0f || earlyNextWayPoint.y == -2.0f);
 		if (!skipRequested) {
 			// perform a turn-radius check: if the waypoint lies outside
@@ -2362,7 +2356,6 @@ void CGroundMoveType::StopEngine(bool callScript, bool hardStop) {
 	currentSpeed *= (1 - hardStop);
 	wantedSpeed = 0.0f;
 	limitSpeedForTurning = 0;
-	escapeWaypoint = ESCAPE_WAYPOINT_OFF;
 	bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
 }
 
@@ -2476,7 +2469,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	if (tryForce.SqLength() > maxPushForceSq)
 		(tryForce.Normalize()) *= maxSpeed;
 
-	UpdatePos(owner, tryForce, resultantForces, false, curThread);
+	UpdatePos(owner, tryForce, resultantForces, curThread);
 
 	if (resultantForces.same(ZeroVector) && positionStuck){
 		resultantForces = forceFromStaticCollidees;
@@ -3201,7 +3194,7 @@ bool CGroundMoveType::UpdateDirectControl()
 }
 
 
-void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, bool checkCorner, int thread) const {
+void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, int thread) const {
 	const float3 prevPos = unit->pos;
 	const float3 newPos = unit->pos + moveDir;
 	resultantMove = moveDir;
@@ -3292,8 +3285,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			return false;
 		};
 
-		int n = 0;
-		for (n = 1; n <= SQUARE_SIZE; n++) {
+		for (int n = 1; n <= SQUARE_SIZE; n++) {
 			updatePos = tryToMove(unit->rightdir * n);
 			if (updatePos) { break; }
 			updatePos = tryToMove(unit->rightdir * -n);
@@ -3308,16 +3300,16 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			const int2 fullDiffSquare = openSquare - prevSquare;
 			if (fullDiffSquare.x != 0 && fullDiffSquare.y != 0) {
 				// axis-aligned slide to avoid clipping around corners and potentially into traps.
-				unsigned int facing = GetFacingFromHeading(unit->heading);
+				const unsigned int facing = GetFacingFromHeading(unit->heading);
 				constexpr float3 vecs[2] =
 					{ { 0.f, 0.f, 1.f}
 					, { 1.f, 0.f, 0.f}
 				};
-				const float3 aaRightDir = vecs[(facing - 1) % 2];
+				const float3 aaSlideAxis = vecs[(facing - 1) % 2];
 
 				const float displacement = (facing % 2 == 0) ? resultantMove.x : resultantMove.z;
 				const float side = 1.f - (2.f * (displacement < 0.f));
-				const float3 offset = aaRightDir * std::min(displacement*side, speed) * side;
+				const float3 offset = aaSlideAxis * std::min(displacement*side, speed) * side;
 				const float3 posToTest = prevPos + offset;
 
 				updatePos = isSquareOpen(posToTest);
@@ -3329,7 +3321,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			// 		LOG("%s: unit %d: facing(%f,%f,%f) [%d:%d] right(%f,%f,%f) disp=%f"
 			// 				, __func__, owner->id
 			// 				, float(unit->frontdir.x), float(unit->frontdir.y), float(unit->frontdir.z), int(unit->heading), facing
-			// 				, aaRightDir.x, aaRightDir.y, aaRightDir.z
+			// 				, aaSlideAxis.x, aaSlideAxis.y, aaSlideAxis.z
 			// 				, displacement);
 			// 		LOG("%s: unit %d: resultantVec=(%f,%f,%f) prevPos=(%f,%f,%f) offset=(%f,%f,%f) posToTest=(%f,%f,%f) result=%d"
 			// 				, __func__, owner->id
@@ -3345,7 +3337,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 				} else {
 					resultantMove = ZeroVector;
 				}
-			} else if (n > speed) {
+			} else if (resultantMove.SqLength2D() > speed*speed) {
 				updatePos = tryToMove(resultantMove, speed);
 				if (!updatePos)
 					resultantMove = ZeroVector;
@@ -3376,18 +3368,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		bool limitDisplacment = true;
 		float maxDisplacementSq = -1.f;
 
-		if (escapeWaypoint.y != -1.f) {
-			// If we need to make an effort to get away/around a waypoint then
-			// we release the speed limit while we are close to it.
-			limitDisplacment = (escapeWaypoint.distance2D(owner->pos) > SQUARE_SIZE);
-			if (limitDisplacment)
-				escapeWaypoint = ESCAPE_WAYPOINT_OFF;
-		}
-		// if (limitDisplacment) {
-		// 	maxDisplacementSq = Square(std::min(maxSpeed*0.5f, float(SQUARE_SIZE)));
-		// }
-
-		UpdatePos(owner, moveRequest, resultantVel, limitDisplacment, 0);
+		UpdatePos(owner, moveRequest, resultantVel, 0);
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
