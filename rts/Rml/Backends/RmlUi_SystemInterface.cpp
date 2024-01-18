@@ -1,5 +1,7 @@
+/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+
 /*
- * This source file is part of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is dervied from the source code of RmlUi, the HTML/CSS Interface Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
@@ -26,7 +28,7 @@
  *
  */
 
-#include "RmlUi_Platform_RTS.h"
+#include "RmlUi_SystemInterface.h"
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
@@ -34,16 +36,16 @@
 #include <System/Log/ILog.h>
 #include <System/Misc/SpringTime.h>
 
-SystemInterface_RTS::SystemInterface_RTS() {}
+RmlSystemInterface::RmlSystemInterface() {}
 
-SystemInterface_RTS::~SystemInterface_RTS() {}
+RmlSystemInterface::~RmlSystemInterface() {}
 
-double SystemInterface_RTS::GetElapsedTime()
+double RmlSystemInterface::GetElapsedTime()
 {
     return spring_gettime().toSecsf();
 }
 
-int SystemInterface_RTS::TranslateString(Rml::String& translated, const Rml::String& input)
+int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
 {
     if (!translationTable || !translationTable->exists(input))
     {
@@ -55,7 +57,7 @@ int SystemInterface_RTS::TranslateString(Rml::String& translated, const Rml::Str
     return 1;
 }
 
-bool SystemInterface_RTS::LogMessage(Rml::Log::Type type, const Rml::String& message)
+bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
 {
     const char* fmtStr = "[Lua:Rml] %s";
     const char* logStr = message.c_str();
@@ -88,34 +90,34 @@ bool SystemInterface_RTS::LogMessage(Rml::Log::Type type, const Rml::String& mes
     return true;
 }
 
-void SystemInterface_RTS::SetMouseCursor(const Rml::String& cursor_name)
+void RmlSystemInterface::SetMouseCursor(const Rml::String& cursor_name)
 {
     mouseCursor = cursor_name;
 }
 
-const Rml::String& SystemInterface_RTS::GetMouseCursor()
+const Rml::String& RmlSystemInterface::GetMouseCursor()
 {
     return mouseCursor;
 }
 
-void SystemInterface_RTS::SetClipboardText(const Rml::String& text_utf8)
+void RmlSystemInterface::SetClipboardText(const Rml::String& text_utf8)
 {
     SDL_SetClipboardText(text_utf8.c_str());
 }
 
-void SystemInterface_RTS::GetClipboardText(Rml::String& text)
+void RmlSystemInterface::GetClipboardText(Rml::String& text)
 {
     char* raw_text = SDL_GetClipboardText();
     text = Rml::String(raw_text);
     SDL_free(raw_text);
 }
 
-void SystemInterface_RTS::SetTranslationTable(TranslationTable* tt)
+void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
 {
     translationTable = tt;
 }
 
-bool RmlRTS::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
+bool RmlSDLSpring::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
 {
     bool result = context->ProcessKeyDown(key, GetKeyModifierState());
     if (key == Rml::Input::KI_RETURN || key == Rml::Input::KI_NUMPADENTER)
@@ -123,37 +125,37 @@ bool RmlRTS::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
     return result;
 }
 
-bool RmlRTS::EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key)
+bool RmlSDLSpring::EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key)
 {
     return context->ProcessKeyUp(key, GetKeyModifierState());
 }
 
-bool RmlRTS::EventTextInput(Rml::Context* context, const std::string& text)
+bool RmlSDLSpring::EventTextInput(Rml::Context* context, const std::string& text)
 {
     return context->ProcessTextInput(Rml::String(text));
 }
 
-bool RmlRTS::EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y)
+bool RmlSDLSpring::EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y)
 {
     return context->ProcessMouseMove(x, y, GetKeyModifierState());
 }
 
-bool RmlRTS::EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
+bool RmlSDLSpring::EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
 {
     return context->ProcessMouseButtonDown(ConvertMouseButton(button), GetKeyModifierState());
 };
 
-bool RmlRTS::EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
+bool RmlSDLSpring::EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
 {
     return context->ProcessMouseButtonUp(ConvertMouseButton(button), GetKeyModifierState());
 };
 
-bool RmlRTS::EventMouseWheel(Rml::Context* context, float delta)
+bool RmlSDLSpring::EventMouseWheel(Rml::Context* context, float delta)
 {
     return context->ProcessMouseWheel(-delta, GetKeyModifierState());
 };
 
-bool RmlRTS::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
+bool RmlSDLSpring::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
 {
     bool result = true;
 
@@ -207,7 +209,7 @@ bool RmlRTS::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
     return result;
 }
 
-Rml::Input::KeyIdentifier RmlRTS::ConvertKey(int sdlkey)
+Rml::Input::KeyIdentifier RmlSDLSpring::ConvertKey(int sdlkey)
 {
     // clang-format off
     switch (sdlkey)
@@ -332,7 +334,7 @@ Rml::Input::KeyIdentifier RmlRTS::ConvertKey(int sdlkey)
     return Rml::Input::KI_UNKNOWN;
 }
 
-int RmlRTS::ConvertMouseButton(int button)
+int RmlSDLSpring::ConvertMouseButton(int button)
 {
     switch (button)
     {
@@ -347,7 +349,7 @@ int RmlRTS::ConvertMouseButton(int button)
     }
 }
 
-int RmlRTS::GetKeyModifierState()
+int RmlSDLSpring::GetKeyModifierState()
 {
     SDL_Keymod sdl_mods = SDL_GetModState();
 
