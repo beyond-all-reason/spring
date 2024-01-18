@@ -2192,6 +2192,17 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 		//
 		// atEndOfPath |= (currWayPoint == nextWayPoint);
 		atEndOfPath |= (curGoalDistSq <= minGoalDistSq);
+
+		if (!atEndOfPath) {
+			lastWaypoint |= (earlyCurrWayPoint.same(earlyNextWayPoint)
+						&& pathManager->CurrentWaypointIsUnreachable(pathID)
+						&& (cwpDistSq <= minGoalDistSq));
+			if (lastWaypoint) {
+				// incomplete path and last valid waypoint has been reached.
+				pathingFailed = true;
+				return false;
+			}
+		}
 	}
 
 	if (atEndOfPath) {
@@ -2232,13 +2243,6 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 
 		// Prevent delay repaths because the waypoints have been updated.
 		wantRepath = false;
-
-		lastWaypoint |= (earlyCurrWayPoint.same(earlyNextWayPoint) && pathManager->CurrentWaypointIsUnreachable(pathID));
-		if (lastWaypoint) {
-			// incomplete path and last valid waypoint has been reached.
-			// ReRequestPath(false);
-			pathingFailed = true;
-		}
 	}
 
 	if (earlyNextWayPoint.x == -1.0f && earlyNextWayPoint.z == -1.0f) {
