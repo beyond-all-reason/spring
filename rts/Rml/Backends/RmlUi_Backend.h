@@ -31,8 +31,7 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
-#include <RmlUI/Core.h>
-#include <RmlUi/Core/Types.h>
+#include <RmlUi/Core.h>
 #include <SDL.h>
 
 #include "Game/UI/InputReceiver.h"
