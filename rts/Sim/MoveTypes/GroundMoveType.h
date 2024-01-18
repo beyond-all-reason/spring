@@ -190,7 +190,7 @@ private:
 	void AdjustPosToWaterLine();
 	bool UpdateDirectControl();
 	void UpdateOwnerAccelAndHeading();
-	void UpdatePos(const CUnit* unit, const float3&, float3& resultantMove, float maxDisplacementSq, int thread) const;
+	void UpdatePos(const CUnit* unit, const float3&, float3& resultantMove, bool checkCorner, int thread) const;
 	void UpdateOwnerPos(const float3&, const float3&);
 	bool UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw);
 	bool OwnerMoved(const short, const float3&, const float3&);
@@ -199,8 +199,6 @@ private:
 	void SetWaypointDir(const float3& cwp, const float3 &opos);
 
 private:
-	static constexpr float MAX_DISPLACEMENT_DEFAULT = std::numeric_limits<float>::infinity();
-
 	GMTDefaultPathController pathController;
 
 	SyncedFloat3 currWayPoint;

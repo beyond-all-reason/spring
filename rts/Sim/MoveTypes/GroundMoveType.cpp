@@ -2476,7 +2476,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	if (tryForce.SqLength() > maxPushForceSq)
 		(tryForce.Normalize()) *= maxSpeed;
 
-	UpdatePos(owner, tryForce, resultantForces, maxPushForceSq, curThread);
+	UpdatePos(owner, tryForce, resultantForces, false, curThread);
 
 	if (resultantForces.same(ZeroVector) && positionStuck){
 		resultantForces = forceFromStaticCollidees;
@@ -3201,39 +3201,58 @@ bool CGroundMoveType::UpdateDirectControl()
 }
 
 
-void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, float maxDisplacementSq, int thread) const {
+void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3& resultantMove, bool checkCorner, int thread) const {
 	const float3 prevPos = unit->pos;
 	const float3 newPos = unit->pos + moveDir;
 	resultantMove = moveDir;
-
-	if (maxDisplacementSq < 0.f)
-		maxDisplacementSq = MAX_DISPLACEMENT_DEFAULT;
 
 	// The series of tests done here will benefit from using the same cached results.
 	MoveDef* md = unit->moveDef;
 	int tempNum = gs->GetMtTempNum(thread);
 
-	auto isSquareOpen = [unit, tempNum, thread](float3 pos) {
+	auto isSquareOpen = [this, md, unit, tempNum, thread](float3 pos) {
 		// separate calls because terrain is only checked for in the centre square, while
 		// static objects are checked for in the whole footprint.
-		return unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
+		return ( pathController.IgnoreTerrain(*md, pos) ||
+				 unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
+			   )
 				&& unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread); 
 	};
 
-	auto isTerrainSquareOpen = [unit, thread](float3 pos) {
-		return unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread);
+	auto toMapSquare = [](float3 pos) {
+		return int2({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)});
 	};
 
-	auto isObjectsSquareOpen = [unit, tempNum, thread](float3 pos) {
-		return unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread);
+	auto toSquareId = [](int2 square) {
+		return (square.y * mapDims.mapx) + square.x;
 	};
 
-	// // Used to limit how much units are allowed to slide along walls. Helps getting around
-	// // corners, but stops them going too fast by sliding too far.
-	// auto isCloseEnough = [this](float3 pos) {
-	// 	return pos.SqDistance2D(unit->pos) <= (maxSpeed*maxSpeed);
-	// };
+	auto toPosition = [](int2 square) {
+		return float3({float(square.x * SQUARE_SIZE + 1), 0.f, float(square.y * SQUARE_SIZE + 1)});
+	};
 
+	const int2 prevSquare = toMapSquare(prevPos);
+	const int2 newSquare = toMapSquare(newPos);
+	const int newPosStartSquare = toSquareId(newSquare);
+	if (toSquareId(prevSquare) == newPosStartSquare) { return; }
+
+	bool isSquareBlocked = !isSquareOpen(newPos);
+	if (!isSquareBlocked) {
+		const int2 fullDiffSquare = newSquare - prevSquare;
+		if (fullDiffSquare.x != 0 && fullDiffSquare.y != 0) {
+
+			const int2 diffSquare{1 - (2 * (fullDiffSquare.x < 0)), 1 - (2 * (fullDiffSquare.y < 0))};
+
+			// We have a diagonal move. Make sure the unit cannot press through a corner.
+			const int2 checkSqrX({newSquare.x - diffSquare.x, newSquare.y});
+			const int2 checkSqrY({newSquare.x, newSquare.y - diffSquare.y});
+
+			isSquareBlocked = !isSquareOpen(toPosition(checkSqrX)) && !isSquareOpen(toPosition(checkSqrY));
+			if (isSquareBlocked)
+				resultantMove = ZeroVector;
+		}
+	}
+	else {
 	// NOTE:
 	//   does not check for structure blockage, coldet handles that
 	//   entering of impassable terrain is *also* handled by coldet
@@ -3248,31 +3267,23 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	//   is blocked, so too fragile
 	//
 	// TODO: look to move as much of this to MT to improve perf.
-	bool isTerrainSquareBlocked = !pathController.IgnoreTerrain(*md, newPos)
-								&& !isTerrainSquareOpen(newPos);
-	bool isSquareBlocked = isTerrainSquareBlocked || !isObjectsSquareOpen(newPos);
-	if (isSquareBlocked) {
-		bool updatePos = false;
-		float maxDist = maxSpeed;
-		float maxDistSq = maxDist*maxDist;
 
-		const unsigned int startingSquare = int(newPos.z / SQUARE_SIZE)*mapDims.mapx + int(newPos.x / SQUARE_SIZE);
+		bool updatePos = false;
+		const float speed = moveDir.Length2D();
+		float maxDisplacement = speed;
 
 		auto tryToMove =
-				[this, &isSquareOpen, &prevPos, &startingSquare, &resultantMove, maxDistSq, maxDist, &newPos, maxDisplacementSq]
-				(float3&& posOffset)
+				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove, &newPos, maxDisplacement]
+				(float3&& posOffset, bool checkCorner)
 			{
 			// units are moved in relation to their previous position.
 			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
-			if (offsetFromPrev.SqLength2D() > maxDisplacementSq) {
-				offsetFromPrev.SafeNormalize2D() *= maxDisplacementSq;
+			if (!checkCorner && offsetFromPrev.SqLength2D() > (maxDisplacement*maxDisplacement)) {
+				offsetFromPrev.SafeNormalize2D() *= maxDisplacement;
 			}
 			float3 posToTest = prevPos + offsetFromPrev;
-			// float3 posDir = posToTest - prevPos;
-			// if (posDir.SqLength2D() > maxDistSq)
-			// 	posToTest = prevPos + posDir.SafeNormalize2D() * maxDist;
-			unsigned int curSquare = int(posToTest.z / SQUARE_SIZE)*mapDims.mapx + int(posToTest.x / SQUARE_SIZE);
-			if (curSquare != startingSquare) {
+			int curSquare = int(posToTest.z / SQUARE_SIZE)*mapDims.mapx + int(posToTest.x / SQUARE_SIZE);
+			if (curSquare != newPosStartSquare) {
 				bool updatePos = isSquareOpen(posToTest);
 				if (updatePos) {
 					resultantMove = offsetFromPrev;
@@ -3282,15 +3293,69 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			return false;
 		};
 
-		for (int n = 1; n <= SQUARE_SIZE; n++) {
-			updatePos = tryToMove(unit->rightdir * n);
-			if (updatePos) { break; }
-			updatePos = tryToMove(unit->rightdir * -n);
-			if (updatePos) { break; }
+		float side = 0.f;
+		int n = 0;
+		for (n = 1; n <= SQUARE_SIZE; n++) {
+			updatePos = tryToMove(unit->rightdir * n, checkCorner);
+			if (updatePos) { side = 1.f; break; }
+			updatePos = tryToMove(unit->rightdir * -n, checkCorner);
+			if (updatePos) { side = -1.f; break; }
 		}
 
 		if (!updatePos)
 			resultantMove = ZeroVector;
+		else {
+			const float3 openPos = prevPos + resultantMove;
+			const int2 openSquare = toMapSquare(openPos);
+			const int2 fullDiffSquare = openSquare - prevSquare;
+			if (fullDiffSquare.x != 0 && fullDiffSquare.y != 0) {
+				// axis-aligned slide to avoid clipping arounf corners and potentially into traps.
+				int facing = GetFacingFromHeading(unit->heading);
+				constexpr float3 vecs[4] =
+					{ { 0.f, 0.f,  1.f}
+					, { 1.f, 0.f,  0.f}
+					, { 0.f, 0.f, -1.f}
+					, {-1.f, 0.f,  0.f}
+				};
+				const float3 aaRightDir = vecs[(facing - 1) % 4];
+
+				const float displacement = (facing % 2 == 0) ? resultantMove.x : resultantMove.y;
+				const float3 offset = aaRightDir * std::min(displacement, speed) * side;
+				const float3 posToTest = prevPos + offset;
+
+			// 	{bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
+			// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
+			// //		bool printMoveInfo = unit->id == 23064 && gs->frameNum >= 6250 && gs->frameNum < 6268;
+			// 	if (printMoveInfo) {
+			// 		LOG("%s: unit %d: facing(%f,%f,%f) [%d:%d] right(%f,%f,%f) disp=%f"
+			// 				, __func__, owner->id
+			// 				, float(unit->frontdir.x), float(unit->frontdir.y), float(unit->frontdir.z), int(unit->heading), facing
+			// 				, aaRightDir.x, aaRightDir.y, aaRightDir.z
+			// 				, displacement);
+			// 		LOG("%s: unit %d: resultantVec=(%f,%f,%f) prevPos=(%f,%f,%f) offset=(%f,%f,%f) posToTest=(%f,%f,%f)"
+			// 				, __func__, owner->id
+			// 				, resultantMove.x, resultantMove.y, resultantMove.z
+			// 				, prevPos.x, prevPos.y, prevPos.z
+			// 				, offset.x, offset.y, offset.z
+			// 				, posToTest.x, posToTest.y, posToTest.z);
+			// 	}}
+
+				updatePos = isSquareOpen(posToTest);
+				if (updatePos) {
+					resultantMove = offset;
+				} else {
+					resultantMove = ZeroVector;
+				}
+			} else if (checkCorner && n > speed) {
+				SyncedFloat3 offset = unit->rightdir * speed * side;
+				updatePos = tryToMove(offset, true);
+				if (updatePos) {
+					resultantMove = offset;
+				} else {
+					resultantMove = ZeroVector;
+				}
+			}
+		}
 	}
 }
 
@@ -3322,11 +3387,11 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			if (limitDisplacment)
 				escapeWaypoint = ESCAPE_WAYPOINT_OFF;
 		}
-		if (limitDisplacment) {
-			maxDisplacementSq = Square(std::min(maxSpeed*0.5f, float(SQUARE_SIZE)));
-		}
+		// if (limitDisplacment) {
+		// 	maxDisplacementSq = Square(std::min(maxSpeed*0.5f, float(SQUARE_SIZE)));
+		// }
 
-		UpdatePos(owner, moveRequest, resultantVel, maxDisplacementSq, 0);
+		UpdatePos(owner, moveRequest, resultantVel, limitDisplacment, 0);
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
