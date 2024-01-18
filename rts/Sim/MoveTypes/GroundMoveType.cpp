@@ -3274,13 +3274,13 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 		auto tryToMove =
 				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove, &newPos, maxDisplacement]
-				(float3&& posOffset, bool checkCorner)
+				(float3 posOffset)
 			{
 			// units are moved in relation to their previous position.
 			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
-			if (!checkCorner && offsetFromPrev.SqLength2D() > (maxDisplacement*maxDisplacement)) {
-				offsetFromPrev.SafeNormalize2D() *= maxDisplacement;
-			}
+			// if (!checkCorner && offsetFromPrev.SqLength2D() > (maxDisplacement*maxDisplacement)) {
+			// 	offsetFromPrev.SafeNormalize2D() *= maxDisplacement;
+			// }
 			float3 posToTest = prevPos + offsetFromPrev;
 			int curSquare = int(posToTest.z / SQUARE_SIZE)*mapDims.mapx + int(posToTest.x / SQUARE_SIZE);
 			if (curSquare != newPosStartSquare) {
@@ -3296,9 +3296,9 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		float side = 0.f;
 		int n = 0;
 		for (n = 1; n <= SQUARE_SIZE; n++) {
-			updatePos = tryToMove(unit->rightdir * n, checkCorner);
+			updatePos = tryToMove(unit->rightdir * n);
 			if (updatePos) { side = 1.f; break; }
-			updatePos = tryToMove(unit->rightdir * -n, checkCorner);
+			updatePos = tryToMove(unit->rightdir * -n);
 			if (updatePos) { side = -1.f; break; }
 		}
 
@@ -3309,7 +3309,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 			const int2 openSquare = toMapSquare(openPos);
 			const int2 fullDiffSquare = openSquare - prevSquare;
 			if (fullDiffSquare.x != 0 && fullDiffSquare.y != 0) {
-				// axis-aligned slide to avoid clipping arounf corners and potentially into traps.
+				// axis-aligned slide to avoid clipping around corners and potentially into traps.
 				int facing = GetFacingFromHeading(unit->heading);
 				constexpr float3 vecs[4] =
 					{ { 0.f, 0.f,  1.f}
@@ -3346,15 +3346,15 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 				} else {
 					resultantMove = ZeroVector;
 				}
-			} else if (checkCorner && n > speed) {
-				SyncedFloat3 offset = unit->rightdir * speed * side;
-				updatePos = tryToMove(offset, true);
+			} //else if (checkCorner && n > speed) {
+				float3 offset = unit->rightdir * speed * side;
+				updatePos = tryToMove(offset);
 				if (updatePos) {
 					resultantMove = offset;
 				} else {
 					resultantMove = ZeroVector;
 				}
-			}
+		//	}
 		}
 	}
 }
