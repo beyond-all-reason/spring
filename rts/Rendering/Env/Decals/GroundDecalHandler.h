@@ -165,9 +165,9 @@ private:
 	DecalUpdateList tempDecalUpdateList;
 	DecalUpdateList permDecalUpdateList;
 
-	VBO instTmpVBO;
+	VBO instTempVBO;
 	VBO instPermVBO;
-	VAO vaoTmp;
+	VAO vaoTemp;
 	VAO vaoPerm;
 
 	CSMFGroundDrawer* smfDrawer;

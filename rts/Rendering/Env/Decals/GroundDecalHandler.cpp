@@ -77,7 +77,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 	GenerateAtlasTextures();
 	ReloadDecalShaders();
 
-	instTmpVBO = VBO(GL_ARRAY_BUFFER, false, false);
+	instTempVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
 	temporaryDecals.reserve(decalLevel * 16384);
 	tempDecalUpdateList.Reserve(temporaryDecals.capacity());
@@ -166,7 +166,7 @@ void CGroundDecalHandler::AddTexToGroundAtlas(const std::string& name, bool main
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex) {
 	if (!filename.empty())
 	try {
-		const auto& [bm, fn] = LoadTexture(name, mainTex);
+		const auto& [bm, fn] = LoadTexture(filename, mainTex);
 		atlas->AddTexFromMem(name, bm.xsize, bm.ysize, CTextureAtlas::RGBA32, bm.GetRawMem());
 	}
 	catch (const content_error& err) {
@@ -232,7 +232,8 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		AddTexToAtlas(normName, normTexFileName, false);
 
 		// check if loaded for real
-		maxUniqueScars += atlas->TextureExists(mainName);
+		// can't use atlas->TextureExists() as it's only populated after Finalize()
+		maxUniqueScars += atlas->GetAllocator()->contains(mainName);
 	}
 
 	if (maxUniqueScars == scarTblSize)
@@ -253,7 +254,8 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		AddTexToAtlas(normName, normTexFileName, false);
 
 		// check if loaded for real
-		maxUniqueScars += atlas->TextureExists(mainName);
+		// can't use atlas->TextureExists() as it's only populated after Finalize()
+		maxUniqueScars += atlas->GetAllocator()->contains(mainName);
 	}
 }
 
@@ -615,17 +617,17 @@ void CGroundDecalHandler::Draw()
 	if (temporaryDecals.empty() && permanentDecals.empty())
 		return;
 
-	if (instTmpVBO.GetSize() < temporaryDecals.size() * sizeof(GroundDecal)) {
-		vaoTmp.Bind();
+	if (instTempVBO.GetSize() < temporaryDecals.size() * sizeof(GroundDecal)) {
+		vaoTemp.Bind();
 
-		instTmpVBO.Bind();
-		instTmpVBO.New(temporaryDecals.capacity() * sizeof(GroundDecal), GL_STREAM_DRAW);
+		instTempVBO.Bind();
+		instTempVBO.New(temporaryDecals.capacity() * sizeof(GroundDecal), GL_STREAM_DRAW);
 		BindVertexAtrribs();
 
-		vaoTmp.Unbind();
+		vaoTemp.Unbind();
 
 		UnbindVertexAtrribs();
-		instTmpVBO.Unbind();
+		instTempVBO.Unbind();
 		tempDecalUpdateList.SetNeedUpdateAll();
 	}
 
@@ -643,15 +645,15 @@ void CGroundDecalHandler::Draw()
 	}
 
 	if (tempDecalUpdateList.NeedUpdate()) {
-		instTmpVBO.Bind();
+		instTempVBO.Bind();
 
 		for (auto itPair = tempDecalUpdateList.GetNext(); itPair.has_value(); itPair = tempDecalUpdateList.GetNext(itPair)) {
 			auto offSize = tempDecalUpdateList.GetOffsetAndSize(itPair.value());
 			GLintptr byteOffset = offSize.first  * sizeof(GroundDecal);
 			GLintptr byteSize   = offSize.second * sizeof(GroundDecal);
-			instTmpVBO.SetBufferSubData(byteOffset, byteSize, temporaryDecals.data() + offSize.first/* in elements */);
+			instTempVBO.SetBufferSubData(byteOffset, byteSize, temporaryDecals.data() + offSize.first/* in elements */);
 		}
-		instTmpVBO.Unbind();
+		instTempVBO.Unbind();
 		tempDecalUpdateList.ResetNeedUpdateAll();
 	}
 
@@ -701,9 +703,9 @@ void CGroundDecalHandler::Draw()
 	}
 	if (!temporaryDecals.empty()) {
 		BindAtlasTextures();
-		vaoTmp.Bind();
+		vaoTemp.Bind();
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, temporaryDecals.size());
-		vaoTmp.Unbind();
+		vaoTemp.Unbind();
 	}
 
 	decalShader->Disable();
@@ -722,7 +724,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	if (!decalDef.useGroundDecal || decalDef.groundDecalTypeName.empty())
 		return;
 
-	static_assert(false, "Error down below");
+	//static_assert(false, "Error down below");
 	if (decalOwners.contains(object))
 		return; // already added
 
