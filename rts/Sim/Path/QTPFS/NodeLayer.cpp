@@ -120,7 +120,6 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
 			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
-			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
 			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
@@ -137,9 +136,13 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			//   
 			// const int maxBlockBit = (luBlockBits == NULL)? CMoveMath::SquareIsBlocked(*md, hmx, hmz, NULL): (*luBlockBits)[recIdx];
 
+			float newAbsSpeedMod = 0.f;
+
 			#define NL QTPFS::NodeLayer
-			const float tmpAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
-			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
+			if ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0) {
+				const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
+				newAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
+			}
 			const float newRelSpeedMod = std::clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
 			#undef NL
 
