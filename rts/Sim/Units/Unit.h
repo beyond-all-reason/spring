@@ -283,9 +283,8 @@ public:
 	static float GetExpGrade() { return expGrade; }
 
 	static float ExperienceScale(const float limExperience, const float experienceWeight) {
-		// limExperience ranges from 0.0 to 0.9999..., experienceWeight
-		// should be in [0, 1] and have no effect on accuracy when zero
-		return (1.0f - (limExperience * experienceWeight));
+		// limExperience ranges from 0.0 to 0.9999...
+		return std::max(0.0f, 1.0f - (limExperience * experienceWeight));
 	}
 
 public:
