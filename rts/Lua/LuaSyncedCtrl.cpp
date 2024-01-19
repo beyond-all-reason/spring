@@ -6416,6 +6416,9 @@ int LuaSyncedCtrl::UnitAttach(lua_State* L)
 	if (transportee == nullptr)
 		return 0;
 
+	if (transporter == transportee)
+		return 0;
+
 	int piece = luaL_checkint(L, 3) - 1;
 	const auto& pieces = transporter->localModel.pieces;
 
