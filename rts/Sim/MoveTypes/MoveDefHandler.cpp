@@ -384,15 +384,55 @@ bool MoveDef::DoRawSearch(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects & retTestMove) {
-		const int tempNum = gs->GetMtTempNum(thread);
+		int tempNum = gs->GetMtTempNum(thread);
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, tempNum](int x, int z) -> bool {
+		// Copy over only what is needed for the collision detection.
+		CSolidObject virtualObject;
+		virtualObject.height = collider->height;
+		virtualObject.pos = collider->pos;
+
+		float lastPosY = collider->pos.y;
+		bool lastInWater = (collider->pos.y < 0.f);
+		bool lastUnderWater = (collider->pos.y + collider->height < 0.f);
+		if (lastInWater)
+			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+
+		MoveDef *md = collider->moveDef;
+		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > collider->height));
+
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &lastPosY ,&lastInWater, &lastUnderWater](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
 			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapy - 1);
 
-			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, collider, thread, tempNum);
+			// Height affects whether units in water collide or not, so the new y positions need
+			// to be considered or else we will get incorrect results.
+			if (isSubmersible){
+				virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[z * mapDims.mapx + x];
+				if (lastPosY != virtualObject.pos.y) {
+					bool underWater = (virtualObject.pos.y + virtualObject.height < 0.f);
+					bool inWater = (virtualObject.pos.y < 0.f);
+
+					// Switch between underwater or not impacts what you will collide with, so that
+					// means the current letter id (tempNum) is invlaid.
+					if (lastUnderWater != underWater) {
+						tempNum = gs->GetMtTempNum(thread);
+						lastUnderWater != underWater;
+					}
+					if (lastInWater != inWater) {
+						if (inWater)
+							virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+						else
+							virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+
+						lastInWater = inWater;
+					}
+					lastPosY = virtualObject.pos.y;
+				}
+			}
+
+			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
 			maxBlockBit = blockBits;
 			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 		};

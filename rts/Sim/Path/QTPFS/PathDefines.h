@@ -26,7 +26,7 @@
 
 #define QTPFS_LAST_FRAME (std::numeric_limits<int>::max())
 
-#define QTPFS_MAX_NODE_SIZE 256
+#define QTPFS_MAX_NODE_SIZE 128
 #define QTPFS_BAD_ROOT_NODE_SIZE 64
 
 #define QTPFS_SHARE_PATH_MIN_SIZE 2

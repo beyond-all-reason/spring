@@ -24,9 +24,11 @@ inline int __bsfd (int mask)
 #include "Node.h"
 
 #include "Map/MapInfo.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/SpringMath.h"
 
 #include <tracy/Tracy.hpp>
@@ -85,10 +87,69 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	const SRectangle& r = threadData.areaUpdated;
 	const MoveDef* md = threadData.moveDef;
 
-	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
-
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
+
+	const float unitHeight = md->zsize * SQUARE_SIZE;
+
+	// // Reserved this flag from BlockTypes
+	// constexpr uint8_t TAG_UNDERWATER = 0x80;
+	// constexpr uint8_t TAG_INWATER = 0x40;
+	bool isSubmersible = (md->isSubmarine ||
+						 (modInfo.qtAccurateAmphibiousPathing && md->followGround && md->depth > unitHeight));
+	// bool isLandCollision = true;
+	// int underWaterSquareCount = 0;
+	// int inPartialWaterSquareCount = 0;
+	// int landSquareCount = 0;
+	CSolidObject virtualObject;
+
+	// // pre-fill threadData.maxBlockBits with water tag
+	// if (isSubmersible) {
+	// 	// Without an actual height value, we will go by the step size. Collisions are done by a
+	// 	// unit's radius field, which is a rough approximation of the step size.
+	// 	const float unitHeight = md->zsize * SQUARE_SIZE;
+	// 	float highestpoint = -std::numeric_limits<float>::infinity();
+
+	// 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
+	// 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
+	// 			const unsigned int sqrIdx = hmz * xsize + hmx;
+	// 			const float groundHeight = readMap->GetMaxHeightMapSynced()[sqrIdx];
+	// 			if (groundHeight > highestpoint)
+	// 				highestpoint = groundHeight;
+
+	// 			const int x = hmx - blockRect.x1;
+	// 			const int z = hmz - blockRect.z1;
+	// 			if (groundHeight + unitHeight < 0.f) {
+	// 				blockBits[z * blockRect.GetWidth() + x] = TAG_UNDERWATER;
+	// 				underWaterSquareCount++;
+	// 			} else if (groundHeight < 0.f) {
+	// 				blockBits[z * blockRect.GetWidth() + x] = TAG_INWATER;
+	// 				inPartialWaterSquareCount++;
+	// 			} else {
+	// 				blockBits[z * blockRect.GetWidth() + x] = 0;
+	// 				landSquareCount++;
+	// 			}
+	// 		}
+	// 	}
+
+	// 	if (underWaterSquareCount > 0 && inPartialWaterSquareCount > 0) {
+	// 		// now do a double pass
+	// 	} else {
+	// 		// otherwise we can proceed as normal, but need to 
+	// 		if (underWaterSquareCount != 0)
+	// 			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+			
+	// 		virtualObject.pos.y = highestpoint;
+	// 		virtualObject.height = unitHeight;
+	// 	}
+	// }
+
+	if (isSubmersible) {
+		// Without an actual height value, we will go by the step size. Collisions are done by a
+		// unit's radius field, which is a rough approximation of the step size.
+		virtualObject.height = unitHeight;
+	} else
+		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
 
 	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
 		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
@@ -110,6 +171,27 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 		return ret;
 	};
 
+	// Collisions around above/below water units is messy in the engine and trying to pass flags
+	// down through the multiple function calls will make it even messier. Creating a querying
+	// based on a virtual object, which can then be moved per query may be the simplest approach.
+	// We can't flood fill collision data like normal because the squares that collide can change
+	// as the unit's centre square's height changes.
+	auto submersibleRangeIsBlocked = [this, &virtualObject, &threadData](const MoveDef& md, int chmx, int chmz, unsigned int recIdx){
+		const int xmin = (chmx - md.xsizeh);
+		const int zmin = (chmz - md.zsizeh);
+		const int xmax = (chmx + md.xsizeh);
+		const int zmax = (chmz + md.zsizeh);
+		
+		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[recIdx];
+		
+		if (virtualObject.pos.y < 0.f)
+			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+		else
+			virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+		
+		return CMoveMath::RangeIsBlocked(md, xmin, xmax, zmin, zmax, &virtualObject, threadData.threadId);
+	};
+
 	// divide speed-modifiers into bins
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
@@ -120,7 +202,9 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
 			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
-			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
+
+			int maxBlockBit = (!isSubmersible) ? rangeIsBlocked(*md, chmx, chmz)
+											  : submersibleRangeIsBlocked(*md, chmx, chmz, recIdx);
 
 			// NOTE:
 			//   movetype code checks ONLY the *CENTER* square of a unit's footprint
