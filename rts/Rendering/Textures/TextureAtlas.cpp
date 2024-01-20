@@ -26,7 +26,7 @@ CR_BIND(AtlasedTexture, )
 CR_REG_METADATA(AtlasedTexture, (CR_IGNORED(x), CR_IGNORED(y), CR_IGNORED(z), CR_IGNORED(w)))
 
 
-const AtlasedTexture AtlasedTexture::DefaultAtlasTexture = AtlasedTexture{};
+const AtlasedTexture& AtlasedTexture::DefaultAtlasTexture = AtlasedTexture{};
 CTextureAtlas::CTextureAtlas(uint32_t allocType_, int32_t atlasSizeX_, int32_t atlasSizeY_, const std::string& name_, bool reloadable_)
 	: allocType{ allocType_ }
 	, atlasSizeX{ atlasSizeX_ }
@@ -310,7 +310,7 @@ AtlasedTexture& CTextureAtlas::GetTexture(const std::string& name)
 	if (TextureExists(name))
 		return textures[StringToLower(name)];
 
-	return CTextureAtlas::dummy;
+	return const_cast<AtlasedTexture&>(AtlasedTexture::DefaultAtlasTexture);
 }
 
 
@@ -322,7 +322,7 @@ AtlasedTexture& CTextureAtlas::GetTextureWithBackup(const std::string& name, con
 	if (TextureExists(backupName))
 		return textures[StringToLower(backupName)];
 
-	return CTextureAtlas::dummy;
+	return const_cast<AtlasedTexture&>(AtlasedTexture::DefaultAtlasTexture);
 }
 
 std::string CTextureAtlas::GetTextureName(AtlasedTexture* tex)

@@ -189,7 +189,7 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 bool CProjectile::IsValidTexture(const AtlasedTexture* tex)
 {
-	return tex && tex != &CTextureAtlas::dummy;
+	return tex && (*tex != AtlasedTexture::DefaultAtlasTexture);
 }
 
 void CProjectile::AddMiniMapVertices(VA_TYPE_C&& v1, VA_TYPE_C&& v2)

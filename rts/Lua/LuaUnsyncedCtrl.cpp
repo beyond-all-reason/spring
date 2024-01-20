@@ -308,11 +308,12 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(CreateDecal);
 	REGISTER_LUA_CFUNC(DestroyDecal);
-	REGISTER_LUA_CFUNC(SetDecalPos);
-	REGISTER_LUA_CFUNC(SetDecalSize);
+	REGISTER_LUA_CFUNC(SetDecalPosAndDims);
+	REGISTER_LUA_CFUNC(SetDecalQuadPosAndHeight);
 	REGISTER_LUA_CFUNC(SetDecalRotation);
 	REGISTER_LUA_CFUNC(SetDecalTexture);
 	REGISTER_LUA_CFUNC(SetDecalAlpha);
+	REGISTER_LUA_CFUNC(SetDecalNormal);
 
 	REGISTER_LUA_CFUNC(SDLSetTextInputRect);
 	REGISTER_LUA_CFUNC(SDLStartTextInput);
@@ -4448,13 +4449,13 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 /***
  *
  * @function Spring.CreateDecal
- * @treturn nil|number decalIndex
+ * @treturn nil|number decalID
  */
 int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 {
-	const int idx = groundDecals->CreateLuaDecal();
-	if (idx > 0) {
-		lua_pushnumber(L, idx);
+	const uint32_t id = groundDecals->CreateLuaDecal();
+	if (id > 0) {
+		lua_pushnumber(L, id);
 		return 1;
 	}
 	return 0;
@@ -4464,81 +4465,115 @@ int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 /***
  *
  * @function Spring.DestroyDecal
- * @number decalIndex
- * @treturn nil
+ * @number decalID
+ * @treturn bool delSuccess
  */
 int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
 {
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal->Free();
-	//static_assert(false);
-	assert(false);
-	return 0;
+	lua_pushboolean(L, groundDecals->DeleteLuaDecal(luaL_checkint(L, 1)));
+	return 1;
 }
 
 
 /***
  *
- * @function Spring.SetDecalPos
- * @number decalIndex
+ * @function Spring.SetDecalPosAndDims
+ * @number decalID
  * @number posX
- * @number posY
  * @number posZ
+ * @number sizeX
+ * @number sizeZ
+ * @number projCubeHeight
  * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
+int LuaUnsyncedCtrl::SetDecalPosAndDims(lua_State* L)
 {
-	const float3 newPos(luaL_checkfloat(L, 2),
-	luaL_checkfloat(L, 3),
-	luaL_checkfloat(L, 4));
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal.pos = newPos;
-	//lua_pushboolean(L, decal.InvalidateExtents());
-	//static_assert(false);
-	assert(false);
+	const float2 midPointCurr = (decal->posTL + decal->posTR + decal->posBR + decal->posBL) * 0.25f;
 
+	const float2 midPoint {
+		luaL_optfloat(L, 2, midPointCurr.x),
+		luaL_optfloat(L, 3, midPointCurr.y)
+	};
+
+	const float sizex = luaL_optfloat(L, 4, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f);
+	const float sizez = luaL_optfloat(L, 5, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f);
+
+	const auto posTL = midPoint + float2(-sizex, -sizez);
+	const auto posTR = midPoint + float2( sizex, -sizez);
+	const auto posBR = midPoint + float2( sizex,  sizez);
+	const auto posBL = midPoint + float2(-sizex,  sizez);
+
+	decal->posTL = posTL;
+	decal->posTR = posTR;
+	decal->posBR = posBR;
+	decal->posBL = posBL;
+	decal->height = luaL_optfloat(L, 6, math::sqrt(sizex * sizex + sizez * sizez));
+
+	lua_pushboolean(L, true);
 	return 1;
 }
-
 
 /***
  *
- * @function Spring.SetDecalSize
- * @number decalIndex
- * @number sizeX
- * @number sizeY
+ * @function Spring.SetDecalQuadPosAndHeight
+ * @number decalID
+ * @number posTL.x
+ * @number posTL.z
+ * @number posTR.x
+ * @number posTR.z
+ * @number posBR.x
+ * @number posBR.z
+ * @number posBL.x
+ * @number posBL.z
+ * @number boundingCubeHeight
  * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
+int LuaUnsyncedCtrl::SetDecalQuadPosAndHeight(lua_State* L)
 {
-	const float2 newSize(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal.size = newSize;
-	//lua_pushboolean(L, decal.InvalidateExtents());
-	//static_assert(false);
-	assert(false);
+	decal->posTL = float2{ luaL_optfloat(L, 2, decal->posTL.x), luaL_optfloat(L, 3, decal->posTL.y) };
+	decal->posTR = float2{ luaL_optfloat(L, 4, decal->posTR.x), luaL_optfloat(L, 5, decal->posTR.y) };
+	decal->posBR = float2{ luaL_optfloat(L, 6, decal->posBR.x), luaL_optfloat(L, 7, decal->posBR.y) };
+	decal->posBL = float2{ luaL_optfloat(L, 8, decal->posBL.x), luaL_optfloat(L, 9, decal->posBL.y) };
 
+	const float sizex = (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f;
+	const float sizez = (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f;
+
+	decal->height = luaL_optfloat(L, 10, math::sqrt(sizex * sizex + sizez * sizez));
+
+	lua_pushboolean(L, true);
 	return 1;
 }
-
 
 /***
  *
  * @function Spring.SetDecalRotation
- * @number decalIndex
+ * @number decalID
  * @number rot in radians
- * @treturn nil|bool decalSet
+ * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
 {
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal.rot = luaL_checkfloat(L, 2);
-	//lua_pushboolean(L, decal.InvalidateExtents());
-	//static_assert(false);
-	assert(false);
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
+	decal->rot = luaL_optfloat(L, 2, guRNG.NextFloat() * math::TWOPI);
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 
@@ -4546,39 +4581,68 @@ int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
 /***
  *
  * @function Spring.SetDecalTexture
- * @number decalIndex
+ * @number decalID
  * @string textureName
+ * @bool isMainTex
  * @treturn nil|bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
 {
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal.SetTexture(luaL_checksstring(L, 2));
-	//decal.Invalidate();
-	//static_assert(false);
-	assert(false);
-
-	return 0;
+	lua_pushboolean(L,
+		groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), luaL_optboolean(L, 3, false))
+	);
+	return 1;
 }
 
 
 /***
  *
  * @function Spring.SetDecalAlpha
- * @number decalIndex
+ * @number decalID
  * @number alpha
- * @treturn nil|bool decalSet
+ * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 {
-	auto decal = groundDecals->GetDecalByIdx(luaL_checkint(L, 1));
-	//decal.alpha = luaL_checkfloat(L, 2);
-	//decal.Invalidate();
-	//static_assert(false);
-	assert(false);
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
+	decal->alpha = luaL_checkfloat(L, 2);
 
-	return 0;
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetDecalNormal
+ * @number decalID
+ * @number normalX
+ * @number normalY
+ * @number normalZ
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetDecalNormal(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const float3 forcedNormal {
+		luaL_optfloat(L, 2, 0.0f),
+		luaL_optfloat(L, 3, 0.0f),
+		luaL_optfloat(L, 4, 0.0f)
+	};
+
+	decal->forcedNormal = forcedNormal;
+
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 

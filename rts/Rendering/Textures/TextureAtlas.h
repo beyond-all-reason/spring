@@ -33,11 +33,15 @@ struct AtlasedTexture
 	AtlasedTexture(const AtlasedTexture& f) { *this = f; }
 	AtlasedTexture& operator= (const AtlasedTexture& f) = default;
 */
-	bool operator==(const AtlasedTexture& rhs) {
+	bool operator==(const AtlasedTexture& rhs) const {
+		if (this == &rhs)
+			return true;
+
 		float4 f0(x    , y    , z    , w    );
 		float4 f1(rhs.x, rhs.y, rhs.z, rhs.w);
 		return f0 == f1;
 	}
+	bool operator!=(const AtlasedTexture& rhs) const { return !(*this == rhs); }
 
 	union {
 		struct { float x, y, z, w; };
@@ -46,7 +50,7 @@ struct AtlasedTexture
 		struct { float xstart, ystart, xend, yend; };
 	};
 
-	static const AtlasedTexture DefaultAtlasTexture;
+	static const AtlasedTexture& DefaultAtlasTexture;
 };
 
 
@@ -230,8 +234,6 @@ protected:
 
 	// set to true to write finalized texture atlas to disk
 	static inline bool debug = false;
-public:
-	static inline AtlasedTexture dummy = AtlasedTexture{};
 };
 
 #endif // TEXTURE_ATLAS_H

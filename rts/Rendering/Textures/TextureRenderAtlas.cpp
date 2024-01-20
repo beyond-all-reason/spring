@@ -182,10 +182,10 @@ bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, 
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 {
 	if (!finalized)
-		return dummy;
+		return AtlasedTexture::DefaultAtlasTexture;
 
 	if (!nameToTexID.contains(texName))
-		return dummy;
+		return AtlasedTexture::DefaultAtlasTexture;
 
 	return AtlasedTexture(atlasAllocator->GetTexCoords(texName));
 }
@@ -193,13 +193,13 @@ AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const std::string& texBackupName)
 {
 	if (!finalized)
-		return dummy;
+		return AtlasedTexture::DefaultAtlasTexture;
 
 	if (nameToTexID.contains(texName))
 		return AtlasedTexture(atlasAllocator->GetTexCoords(texName));
 
 	if (texBackupName.empty())
-		return dummy;
+		return AtlasedTexture::DefaultAtlasTexture;
 
 	return GetTexture(texBackupName);
 }

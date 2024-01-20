@@ -122,8 +122,13 @@ public:
 	void GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) override;
 	void GhostDestroyed(const GhostSolidObject* gb) override;
 
-	size_t CreateLuaDecal() override { return 0; };
-	GroundDecal* GetDecalByIdx(size_t idx) override { return nullptr; };
+	uint32_t CreateLuaDecal() override;
+	bool DeleteLuaDecal(uint32_t id) override;
+	      GroundDecal* GetDecalById(uint32_t id)       override;
+	const GroundDecal* GetDecalById(uint32_t id) const override;
+	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override;
+	const std::string& GetDecalTexture(uint32_t id, bool mainTex) const override;
+	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();

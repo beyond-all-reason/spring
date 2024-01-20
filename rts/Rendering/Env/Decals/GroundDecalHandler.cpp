@@ -730,7 +730,7 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 		return;
 	}
 
-	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
+	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	decayingDecal.alphaFalloff = object->GetDef()->decalDef.groundDecalDecaySpeed / GAME_SPEED;
 	decayingDecal.createFrameMin = createFrame;
@@ -762,6 +762,122 @@ void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 	decal.alpha = 0.0f;
 	decalsUpdateList.SetUpdate(doIt->second);
 	decalOwners.erase(doIt);
+}
+
+uint32_t CGroundDecalHandler::CreateLuaDecal()
+{
+	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
+
+	const auto& decal = decals.emplace_back(GroundDecal{
+		.posTL = float2{},
+		.posTR = float2{},
+		.posBR = float2{},
+		.posBL = float2{},
+		.texMainOffsets = atlasMain->GetTexture("%FB_MAIN%"),
+		.texNormOffsets = atlasNorm->GetTexture("%FB_NORM%"),
+		.alpha = 1.0f,
+		.alphaFalloff = 0.0f,
+		.rot = 0.0f,
+		.height = 0.0f,
+		.createFrameMin = createFrame,
+		.createFrameMax = createFrame,
+		.uvWrapDistance = 0.0f,
+		.uvTraveledDistance = 0.0f,
+		.forcedNormal = float3{},
+		.visMult = 1.0f,
+		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_LUA, .id = GroundDecal::GetNextId() }
+	});
+	decalsUpdateList.EmplaceBackUpdate();
+	idToPos.emplace(decal.info.id, decals.size() - 1);
+
+	return decal.info.id;
+}
+
+bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
+{
+	auto it = idToPos.find(id);
+	if (it == idToPos.end())
+		return false;
+
+	auto& decal = decals.at(it->second);
+	if (decal.info.type != GroundDecal::Type::DECAL_LUA)
+		return false;
+
+	decal.alpha = 0.0f;
+	decalsUpdateList.SetUpdate(it->second);
+	idToPos.erase(it); // the decal itself will be removed on the next compaction
+	return true;
+}
+
+GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id)
+{
+	auto it = idToPos.find(id);
+	if (it == idToPos.end())
+		return nullptr;
+
+	decalsUpdateList.SetUpdate(it->second);
+	return &decals.at(it->second);
+}
+
+const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
+{
+	auto it = idToPos.find(id);
+	if (it == idToPos.end())
+		return nullptr;
+
+	return &decals.at(it->second);
+}
+
+bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex)
+{
+	auto it = idToPos.find(id);
+	if (it == idToPos.end())
+		return false;
+
+	auto& decal = decals.at(it->second);
+	const auto& atlas  = mainTex ? atlasMain : atlasNorm;
+	      auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
+
+	const AtlasedTexture newOffset = atlas->GetTexture(texName);
+	if (newOffset == AtlasedTexture::DefaultAtlasTexture)
+		return false;
+
+	offset = newOffset;
+	return true;
+}
+
+const std::string& CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) const
+{
+	auto it = idToPos.find(id);
+	if (it == idToPos.end())
+		return "";
+
+	const auto& decal = decals.at(it->second);
+	const auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
+	const auto& atlas = mainTex ? atlasMain : atlasNorm;
+
+	for (auto& [name, _] : atlas->GetAllocator()->GetEntries()) {
+		const auto at = atlas->GetTexture(name);
+		if (at == offset)
+			return name;
+	}
+
+	return "";
+}
+
+const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) const
+{
+	for (const auto& [owner, pos] : decalOwners) {
+		if (!std::holds_alternative<const CSolidObject*>(owner))
+			continue;
+
+		if (id != decals.at(pos).info.id)
+			continue;
+
+		return std::get<const CSolidObject*>(owner);
+	}
+
+	return nullptr;
 }
 
 static inline bool CanReceiveTracks(const float3& pos)
