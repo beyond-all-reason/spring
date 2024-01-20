@@ -144,12 +144,29 @@ private:
 	void UpdateTemporaryDecalsVector(int frameNum);
 	void UpdatePermanentDecalsVector(int frameNum);
 
+	void UpdateDecalsVisibility();
+
 	void AddBuildingDecalTextures();
 	void AddGroundScarTextures();
 	void AddGroundTrackTextures();
 	void AddFallbackTextures();
 private:
-	size_t maxUniqueScars;
+	struct UnitMinMaxHeight {
+		UnitMinMaxHeight()
+			: min(std::numeric_limits<float>::max()   )
+			, max(std::numeric_limits<float>::lowest())
+		{}
+		float min;
+		float max;
+	};
+	enum class DecalType : uint8_t {
+		DECAL_PLATE,
+		DECAL_EXPLOSION,
+		DECAL_TRACK,
+		DECAL_LUA
+	};
+
+	int maxUniqueScars;
 
 	std::unique_ptr<CTextureAtlas> atlas;
 	std::unique_ptr<CTextureRenderAtlas> groundDecalAtlasMain;
@@ -158,12 +175,13 @@ private:
 	Shader::IProgramObject* decalShader;
 
 	using DecalOwner = std::variant<const CSolidObject*, const GhostSolidObject*>;
-	spring::unordered_map<DecalOwner, uint32_t, std::hash<DecalOwner>> decalOwners; // for tracks, aoplates and ghosts
-	spring::unordered_map<uint32_t, size_t> decalIdToTmpDecalsVecPos; // for tracks
-	std::array<std::pair<float, float>, MAX_UNITS> unitMinMaxHeights; // for tracks
+	using DecalPosType = std::tuple<size_t, DecalType>;
+	spring::unordered_map<DecalOwner, DecalPosType, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
+	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
 
 	DecalUpdateList tempDecalUpdateList;
 	DecalUpdateList permDecalUpdateList;
+	DecalUpdateList  luaDecalUpdateList;
 
 	VBO instTempVBO;
 	VBO instPermVBO;
@@ -172,8 +190,8 @@ private:
 
 	CSMFGroundDrawer* smfDrawer;
 
+	int lastProcessedGameFrame;
 	bool highQuality = false;
 
 	static constexpr uint32_t TRACKS_UPDATE_RATE = 4u;
-	static constexpr std::pair<float, float> MINMAX_HEIGHT_INIT = std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest());
 };

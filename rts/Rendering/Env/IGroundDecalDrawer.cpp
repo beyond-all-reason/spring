@@ -38,6 +38,7 @@ void IGroundDecalDrawer::Init()
 
 	FreeInstance();
 	singleton = GetInstance();
+	nextId = 0;
 }
 
 

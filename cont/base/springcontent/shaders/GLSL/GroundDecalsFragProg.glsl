@@ -400,7 +400,7 @@ void main() {
 	//	fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
 	//}
 
-	//fragColor = vec4(, 1.0);
+	//fragColor = vec4(1, 0, 0, 1);
 	//fragColor = vec4(alpha);
 	//fragColor = vec4(relUV.yyy, 1.0);
 

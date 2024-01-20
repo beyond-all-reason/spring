@@ -31,12 +31,6 @@ public:
 	float uvWrapDistance;
 	float uvTraveledDistance;
 
-	float4 forcedNormal;
-
-	// not sent to the shader
-	uint32_t id;
-public:
-	static uint32_t GetNextId() { nextId = (nextId % GroundDecal::ID_WRAPAROUND) + 1; return nextId; }
-	static inline uint32_t nextId = 0; // 0 in fact is reserved and never used
-	static constexpr uint32_t ID_WRAPAROUND = 1 << 20;
+	float3 forcedNormal;
+	float visMult;
 };

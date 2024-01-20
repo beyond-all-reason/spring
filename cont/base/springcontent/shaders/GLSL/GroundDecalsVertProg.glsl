@@ -6,7 +6,7 @@ in vec4 uvMain; // L, T, R, B
 in vec4 uvNorm; // L, T, R, B
 in vec4 info; // alpha, alphaFalloff, rot, height
 in vec4 createParams; //min, max (left, right) side, .z - uvWrapDistance, .w - traveled distance - used for tracks
-in vec4 forcedNormal; // .xyz - forcedNormal, .w - unused
+in vec4 forcedNormalAndAlphaMult; // .xyz - forcedNormal, .w - unused
 
 uniform sampler2D heightTex;
 uniform sampler2D groundNormalTex;
@@ -140,6 +140,7 @@ void main() {
 	float thisVertexCreateFrame = mix(createParams.x, createParams.y, float(relPos.x) > 0.0);
 	misc.x         = info.x - (curAdjustedFrame - thisVertexCreateFrame) * info.y;
 	float alphaMax = info.x - (curAdjustedFrame -        createParams.y) * info.y;
+	alphaMax *= forcedNormalAndAlphaMult.w;
 
 	#if 1
 	if (alphaMax <= 0.0f) {
@@ -164,10 +165,10 @@ void main() {
 	midPoint.w *= 1.22474;
 
 	// groundNormal
-	if (dot(forcedNormal.xyz, forcedNormal.xyz) == 0.0) {
+	if (dot(forcedNormalAndAlphaMult.xyz, forcedNormalAndAlphaMult.xyz) == 0.0) {
 		groundNormal = GetFragmentNormal(midPoint.xz);
 	} else {
-		groundNormal = forcedNormal.xyz;
+		groundNormal = forcedNormalAndAlphaMult.xyz;
 	}
 	/*
 	groundNormal = normalize(
