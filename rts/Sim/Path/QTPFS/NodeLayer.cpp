@@ -92,57 +92,9 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 	const float unitHeight = md->zsize * SQUARE_SIZE;
 
-	// // Reserved this flag from BlockTypes
-	// constexpr uint8_t TAG_UNDERWATER = 0x80;
-	// constexpr uint8_t TAG_INWATER = 0x40;
 	bool isSubmersible = (md->isSubmarine ||
 						 (modInfo.qtAccurateAmphibiousPathing && md->followGround && md->depth > unitHeight));
-	// bool isLandCollision = true;
-	// int underWaterSquareCount = 0;
-	// int inPartialWaterSquareCount = 0;
-	// int landSquareCount = 0;
 	CSolidObject virtualObject;
-
-	// // pre-fill threadData.maxBlockBits with water tag
-	// if (isSubmersible) {
-	// 	// Without an actual height value, we will go by the step size. Collisions are done by a
-	// 	// unit's radius field, which is a rough approximation of the step size.
-	// 	const float unitHeight = md->zsize * SQUARE_SIZE;
-	// 	float highestpoint = -std::numeric_limits<float>::infinity();
-
-	// 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
-	// 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
-	// 			const unsigned int sqrIdx = hmz * xsize + hmx;
-	// 			const float groundHeight = readMap->GetMaxHeightMapSynced()[sqrIdx];
-	// 			if (groundHeight > highestpoint)
-	// 				highestpoint = groundHeight;
-
-	// 			const int x = hmx - blockRect.x1;
-	// 			const int z = hmz - blockRect.z1;
-	// 			if (groundHeight + unitHeight < 0.f) {
-	// 				blockBits[z * blockRect.GetWidth() + x] = TAG_UNDERWATER;
-	// 				underWaterSquareCount++;
-	// 			} else if (groundHeight < 0.f) {
-	// 				blockBits[z * blockRect.GetWidth() + x] = TAG_INWATER;
-	// 				inPartialWaterSquareCount++;
-	// 			} else {
-	// 				blockBits[z * blockRect.GetWidth() + x] = 0;
-	// 				landSquareCount++;
-	// 			}
-	// 		}
-	// 	}
-
-	// 	if (underWaterSquareCount > 0 && inPartialWaterSquareCount > 0) {
-	// 		// now do a double pass
-	// 	} else {
-	// 		// otherwise we can proceed as normal, but need to 
-	// 		if (underWaterSquareCount != 0)
-	// 			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-			
-	// 		virtualObject.pos.y = highestpoint;
-	// 		virtualObject.height = unitHeight;
-	// 	}
-	// }
 
 	if (isSubmersible) {
 		// Without an actual height value, we will go by the step size. Collisions are done by a
