@@ -42,10 +42,6 @@ public:
 protected:
 	virtual void OnDecalLevelChanged() = 0;
 protected:
-	static uint32_t GetNextId() { nextId = (nextId % ID_WRAPAROUND) + 1; return nextId; }
-	static inline uint32_t nextId = 0; // 0 in fact is reserved and never used
-	static constexpr uint32_t ID_WRAPAROUND = 1 << 20;
-protected:
 	std::vector<GroundDecal> permanentDecals;
 	std::vector<GroundDecal> temporaryDecals;
 	std::vector<GroundDecal> luaDecals;

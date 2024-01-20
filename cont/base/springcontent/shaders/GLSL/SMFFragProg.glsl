@@ -435,9 +435,6 @@ void main() {
 	// gl_FragDepth = gl_FragCoord.z / gl_FragCoord.w;
 #else
 	fragColor.rgb = mix(gl_Fog.color.rgb, fragColor.rgb, fogFactor);
-	//	vec4 vertexShadowPos = shadowMat * vertexWorldPos;
-	//		vertexShadowPos.xy += vec2(0.5);
-	//fragColor.rgb = shadow2DProj(shadowTex, vertexShadowPos).rrr;
 #endif
 }
 

@@ -989,7 +989,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.alpha = oldDecal.alpha,
 		.alphaFalloff = oldDecal.alphaFalloff,
 		.rot = 0.0f,
-		.height = 0.0f, //set later
+		.height = oldDecal.height, //also set later
 		.createFrameMin = oldDecal.createFrameMax,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
@@ -1000,7 +1000,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 	const float2 midPointDist = (newDecal.posTL + newDecal.posTR + newDecal.posBR + newDecal.posBL) * 0.25f;
 	const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
-	newDecal.height = std::max(mm.max - midPointHeight, midPointHeight - mm.min) + 1.0f;
+	newDecal.height = std::max(newDecal.height, std::max(mm.max - midPointHeight, midPointHeight - mm.min)) + 1.0f;
+	mm = {};
 
 	// replace the old entry
 	decalOwners[unit] = std::make_tuple(temporaryDecals.size() - 1, DecalType::DECAL_TRACK);
