@@ -4479,11 +4479,11 @@ int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
  *
  * @function Spring.SetDecalPosAndDims
  * @number decalID
- * @number posX
- * @number posZ
- * @number sizeX
- * @number sizeZ
- * @number projCubeHeight
+ * @number[opt=currMidPosX] midPosX
+ * @number[opt=currMidPosZ] midPosZ
+ * @number[opt=currSizeX] sizeX
+ * @number[opt=currSizeZ] sizeZ
+ * @number[opt=calculateProjCubeHeight] projCubeHeight
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalPosAndDims(lua_State* L)
@@ -4523,15 +4523,15 @@ int LuaUnsyncedCtrl::SetDecalPosAndDims(lua_State* L)
  *
  * @function Spring.SetDecalQuadPosAndHeight
  * @number decalID
- * @number posTL.x
- * @number posTL.z
- * @number posTR.x
- * @number posTR.z
- * @number posBR.x
- * @number posBR.z
- * @number posBL.x
- * @number posBL.z
- * @number boundingCubeHeight
+ * @number[opt=currPosTL.x] posTL.x
+ * @number[opt=currPosTL.z] posTL.z
+ * @number[opt=currPosTR.x] posTR.x
+ * @number[opt=currPosTR.z] posTR.z
+ * @number[opt=currPosBR.x] posBR.x
+ * @number[opt=currPosBR.z] posBR.z
+ * @number[opt=currPosBL.x] posBL.x
+ * @number[opt=currPosBL.z] posBL.z
+ * @number[opt=calculateProjCubeHeight] projCubeHeight
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalQuadPosAndHeight(lua_State* L)
@@ -4560,7 +4560,7 @@ int LuaUnsyncedCtrl::SetDecalQuadPosAndHeight(lua_State* L)
  *
  * @function Spring.SetDecalRotation
  * @number decalID
- * @number rot in radians
+ * @number[opt=random] rot in radians
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
@@ -4583,7 +4583,7 @@ int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
  * @function Spring.SetDecalTexture
  * @number decalID
  * @string textureName
- * @bool isMainTex
+ * @bool[opt=true] isMainTex
  * @treturn nil|bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
@@ -4619,10 +4619,12 @@ int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
 /***
  *
  * @function Spring.SetDecalNormal
+ * Sets projection cube normal to orient in 3D space.
+ * In case the normal (0,0,0) then normal is picked from the terrain
  * @number decalID
- * @number normalX
- * @number normalY
- * @number normalZ
+ * @number[opt=0] normalX
+ * @number[opt=0] normalY
+ * @number[opt=0] normalZ
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetDecalNormal(lua_State* L)
@@ -4633,11 +4635,12 @@ int LuaUnsyncedCtrl::SetDecalNormal(lua_State* L)
 		return 1;
 	}
 
-	const float3 forcedNormal {
+	float3 forcedNormal{
 		luaL_optfloat(L, 2, 0.0f),
 		luaL_optfloat(L, 3, 0.0f),
 		luaL_optfloat(L, 4, 0.0f)
 	};
+	forcedNormal.SafeNormalize();
 
 	decal->forcedNormal = forcedNormal;
 

@@ -207,6 +207,7 @@ class LuaUnsyncedRead {
 		static int GetDecalRotation(lua_State* L);
 		static int GetDecalTexture(lua_State* L);
 		static int GetDecalAlpha(lua_State* L);
+		static int GetDecalNormal(lua_State* L);
 		static int GetDecalType(lua_State* L);
 		static int GetDecalOwner(lua_State* L);
 

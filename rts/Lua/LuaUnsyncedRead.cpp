@@ -287,6 +287,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetDecalRotation);
 	REGISTER_LUA_CFUNC(GetDecalTexture);
 	REGISTER_LUA_CFUNC(GetDecalAlpha);
+	REGISTER_LUA_CFUNC(GetDecalNormal);
 	REGISTER_LUA_CFUNC(GetDecalOwner);
 	REGISTER_LUA_CFUNC(GetDecalType);
 
@@ -4688,6 +4689,28 @@ int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
 	return 2;
 }
 
+/***
+ *
+ * @function Spring.GetDecalNormal
+ * @number decalID
+ * @treturn nil|number normal.x
+ * @treturn number normal.y
+ * @treturn number normal.z
+ */
+int LuaUnsyncedRead::GetDecalNormal(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->forcedNormal.x);
+	lua_pushnumber(L, decal->forcedNormal.y);
+	lua_pushnumber(L, decal->forcedNormal.z);
+
+	return 3;
+}
+
 
 /***
  *
@@ -4714,7 +4737,7 @@ int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
  *
  * @function Spring.GetDecalType
  * @number decalID
- * @treturn nil|string type "explosion"|"building"|"lua"|"track"|"unknown"
+ * @treturn nil|string type "explosion"|"plate"|"lua"|"track"|"unknown"
  */
 int LuaUnsyncedRead::GetDecalType(lua_State* L)
 {
@@ -4726,7 +4749,7 @@ int LuaUnsyncedRead::GetDecalType(lua_State* L)
 	switch (decal->info.type)
 	{
 	case GroundDecal::Type::DECAL_PLATE:
-		lua_pushliteral(L, "building");
+		lua_pushliteral(L, "plate");
 		break;
 	case GroundDecal::Type::DECAL_EXPLOSION:
 		lua_pushliteral(L, "explosion");

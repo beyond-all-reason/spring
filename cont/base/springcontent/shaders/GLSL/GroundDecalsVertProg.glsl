@@ -6,7 +6,7 @@ in vec4 uvMain; // L, T, R, B
 in vec4 uvNorm; // L, T, R, B
 in vec4 info; // alpha, alphaFalloff, rot, height
 in vec4 createParams; //min, max (left, right) side, .z - uvWrapDistance, .w - traveled distance - used for tracks
-in vec4 forcedNormalAndAlphaMult; // .xyz - forcedNormal, .w - unused
+in vec4 forcedNormalAndAlphaMult; // .xyz - forcedNormal, .w - alphaVisMult
 
 uniform sampler2D heightTex;
 uniform sampler2D groundNormalTex;
