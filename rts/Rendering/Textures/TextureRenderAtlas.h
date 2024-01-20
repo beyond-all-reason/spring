@@ -42,7 +42,10 @@ public:
 	int GetNumTexLevels() const;
 	void SetMaxTexLevel(int maxLevels);
 
+	const IAtlasAllocator* GetAllocator() const { return atlasAllocator.get(); }
+
 	bool Finalize();
+	bool IsValid() const { return finalized && texID != 0; }
 
 	bool DumpTexture() const;
 private:

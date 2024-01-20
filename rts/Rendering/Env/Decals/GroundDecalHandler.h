@@ -67,7 +67,6 @@ public:
 
 	void OnDecalLevelChanged() override {}
 private:
-	void BindGroundAtlasTextures();
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
@@ -134,8 +133,7 @@ private:
 	void GenerateAtlasTextures();
 	void ReloadDecalShaders();
 
-	void AddTexToGroundAtlas(const std::string& name, bool mainTex);
-	void AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex);
+	void AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex, bool convertOldBMP);
 
 	void AddTrack(const CUnit* unit, const float3& newPos, bool forceEval = false);
 
@@ -168,9 +166,8 @@ private:
 
 	int maxUniqueScars;
 
-	std::unique_ptr<CTextureAtlas> atlas;
-	std::unique_ptr<CTextureRenderAtlas> groundDecalAtlasMain;
-	std::unique_ptr<CTextureRenderAtlas> groundDecalAtlasNorm;
+	std::unique_ptr<CTextureRenderAtlas> atlasMain;
+	std::unique_ptr<CTextureRenderAtlas> atlasNorm;
 
 	Shader::IProgramObject* decalShader;
 
