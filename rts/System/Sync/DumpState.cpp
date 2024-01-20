@@ -412,6 +412,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	#ifdef DUMP_UNIT_SCRIPT_DATA
 	{
 		file << "\tCobEngine:\n";
+		file << "\t\tcurrentTime: " << cobEngine->GetCurrTime();
 		file << "\t\tCobThreads: " << cobEngine->GetThreadInstances().size() << "\n";
 		for (const auto& [tid, thread] : cobEngine->GetThreadInstances()) {
 			auto ownerID = thread.cobInst->GetUnit() ? thread.cobInst->GetUnit()->id : -1;

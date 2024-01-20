@@ -81,7 +81,6 @@ public:
 	bool RemoveThread(int threadID);
 	int AddThread(CCobThread&& thread);
 	int GenThreadID() { return (threadCounter++); }
-	int GetCurrentTime() const { return currentTime; }
 
 	void QueueAddThread(CCobThread&& thread) { tickAddedThreads.emplace_back(std::move(thread)); }
 	void QueueRemoveThread(int threadID) { tickRemovedThreads.emplace_back(threadID); }
