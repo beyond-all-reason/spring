@@ -59,8 +59,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 	, atlasMain{ nullptr }
 	, atlasNorm{ nullptr }
 	, decalShader{ nullptr }
-	, tempDecalUpdateList{ }
-	, permDecalUpdateList{ }
+	, decalsUpdateList{ }
 	, smfDrawer { nullptr }
 	, lastProcessedGameFrame{ std::numeric_limits<int>::lowest() }
 {
@@ -79,16 +78,11 @@ CGroundDecalHandler::CGroundDecalHandler()
 	GenerateAtlasTextures();
 	ReloadDecalShaders();
 
-	instTempVBO = VBO(GL_ARRAY_BUFFER, false, false);
+	instVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
-	temporaryDecals.reserve(decalLevel * 16384);
-	tempDecalUpdateList.Reserve(temporaryDecals.capacity());
-
-	permanentDecals.reserve(8192);
-	permDecalUpdateList.Reserve(permanentDecals.capacity());
-
-	luaDecals.reserve(8192);
-	luaDecalUpdateList.Reserve(luaDecals.capacity());
+	decals.reserve(decalLevel * 16384);
+	decalsUpdateList.Reserve(decals.capacity());
+	GroundDecal::nextId = 0;
 }
 
 CGroundDecalHandler::~CGroundDecalHandler()
@@ -323,11 +317,11 @@ void CGroundDecalHandler::GenerateAtlasTextures() {
 	AddFallbackTextures();
 
 	if (!atlasMain->Finalize()) {
-		LOG_L(L_ERROR, "Could not finalize %s texture atlas. Use fewer/smaller textures.");
+		LOG_L(L_ERROR, "Could not finalize %s texture atlas. Use fewer/smaller textures.", atlasMain->GetAtlasName().c_str());
 	}
 
 	if (!atlasNorm->Finalize()) {
-		LOG_L(L_ERROR, "Could not finalize %s texture atlas. Use fewer/smaller textures.");
+		LOG_L(L_ERROR, "Could not finalize %s texture atlas. Use fewer/smaller textures.", atlasNorm->GetAtlasName().c_str());
 	}
 }
 
@@ -522,7 +516,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
-	const auto& decal = temporaryDecals.emplace_back(GroundDecal{
+	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
 		.posTR = posTR,
 		.posBR = posBR,
@@ -538,10 +532,12 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
-		.visMult = 1.0f
+		.visMult = 1.0f,
+		.info = GroundDecal::TypeID{ .type = GroundDecal::Type::DECAL_EXPLOSION, .id = GroundDecal::GetNextId() }
 	});
 
-	tempDecalUpdateList.EmplaceBackUpdate();
+	idToPos.emplace(decal.info.id, decals.size() - 1);
+	decalsUpdateList.EmplaceBackUpdate();
 }
 
 void CGroundDecalHandler::ReloadTextures()
@@ -567,64 +563,40 @@ void CGroundDecalHandler::Draw()
 	if (!smfDrawer->UseAdvShading())
 		return;
 
-	if (temporaryDecals.empty() && permanentDecals.empty())
+	if (decals.empty())
+		return;
+
+	if (!atlasMain->IsValid() || !atlasNorm->IsValid())
 		return;
 
 	UpdateDecalsVisibility();
 
-	if (instTempVBO.GetSize() < temporaryDecals.size() * sizeof(GroundDecal)) {
-		vaoTemp.Bind();
+	if (instVBO.GetSize() < decals.size() * sizeof(GroundDecal)) {
+		vao.Bind();
 
-		instTempVBO.Bind();
-		instTempVBO.New(temporaryDecals.capacity() * sizeof(GroundDecal), GL_STREAM_DRAW);
+		instVBO.Bind();
+		instVBO.New(decals.capacity() * sizeof(GroundDecal), GL_STREAM_DRAW);
 		BindVertexAtrribs();
 
-		vaoTemp.Unbind();
+		vao.Unbind();
 
 		UnbindVertexAtrribs();
-		instTempVBO.Unbind();
-		tempDecalUpdateList.SetNeedUpdateAll();
+		instVBO.Unbind();
+		decalsUpdateList.SetNeedUpdateAll();
 	}
 
-	if (instPermVBO.GetSize() < permanentDecals.size() * sizeof(GroundDecal)) {
-		vaoPerm.Bind();
+	if (decalsUpdateList.NeedUpdate()) {
+		instVBO.Bind();
 
-		instPermVBO.Bind();
-		instPermVBO.New(permanentDecals.capacity() * sizeof(GroundDecal), GL_STREAM_DRAW);
-		BindVertexAtrribs();
-
-		vaoPerm.Unbind();
-		UnbindVertexAtrribs();
-		instPermVBO.Unbind();
-		permDecalUpdateList.SetNeedUpdateAll();
-	}
-
-	if (tempDecalUpdateList.NeedUpdate()) {
-		instTempVBO.Bind();
-
-		for (auto itPair = tempDecalUpdateList.GetNext(); itPair.has_value(); itPair = tempDecalUpdateList.GetNext(itPair)) {
-			auto offSize = tempDecalUpdateList.GetOffsetAndSize(itPair.value());
+		for (auto itPair = decalsUpdateList.GetNext(); itPair.has_value(); itPair = decalsUpdateList.GetNext(itPair)) {
+			auto offSize = decalsUpdateList.GetOffsetAndSize(itPair.value());
 			GLintptr byteOffset = offSize.first  * sizeof(GroundDecal);
 			GLintptr byteSize   = offSize.second * sizeof(GroundDecal);
-			instTempVBO.SetBufferSubData(byteOffset, byteSize, temporaryDecals.data() + offSize.first/* in elements */);
+			instVBO.SetBufferSubData(byteOffset, byteSize, decals.data() + offSize.first/* in elements */);
 		}
 
-		instTempVBO.Unbind();
-		tempDecalUpdateList.ResetNeedUpdateAll();
-	}
-
-	if (permDecalUpdateList.NeedUpdate()) {
-		instPermVBO.Bind();
-
-		for (auto itPair = permDecalUpdateList.GetNext(); itPair.has_value(); itPair = permDecalUpdateList.GetNext(itPair)) {
-			auto offSize = permDecalUpdateList.GetOffsetAndSize(itPair.value());
-			GLintptr byteOffset = offSize.first * sizeof(GroundDecal);
-			GLintptr byteSize = offSize.second * sizeof(GroundDecal);
-			instPermVBO.SetBufferSubData(byteOffset, byteSize, permanentDecals.data() + offSize.first/* in elements */);
-		}
-
-		instPermVBO.Unbind();
-		permDecalUpdateList.ResetNeedUpdateAll();
+		instVBO.Unbind();
+		decalsUpdateList.ResetNeedUpdateAll();
 	}
 
 	using namespace GL::State;
@@ -651,16 +623,10 @@ void CGroundDecalHandler::Draw()
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
 
-	if (!permanentDecals.empty()) {
-		vaoPerm.Bind();
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, permanentDecals.size());
-		vaoPerm.Unbind();
-	}
-
-	if (!temporaryDecals.empty()) {
-		vaoTemp.Bind();
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, temporaryDecals.size());
-		vaoTemp.Unbind();
+	if (!decals.empty()) {
+		vao.Bind();
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, decals.size());
+		vao.Unbind();
 	}
 
 	decalShader->Disable();
@@ -704,17 +670,17 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	if (const auto doIt = decalOwners.find(object); doIt != decalOwners.end()) {
-		auto& decal = permanentDecals.at(std::get<size_t>(doIt->second));
+		auto& decal = decals.at(doIt->second);
 		decal.posTL = posTL;
 		decal.posTR = posTR;
 		decal.posBR = posBR;
 		decal.posBL = posBL;
 		decal.height = height;
-		permDecalUpdateList.SetUpdate(std::get<size_t>(doIt->second));
+		decalsUpdateList.SetUpdate(doIt->second);
 		return;
 	}
 
-	const auto& decal = permanentDecals.emplace_back(GroundDecal{
+	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
 		.posTR = posTR,
 		.posBR = posBR,
@@ -730,10 +696,13 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
-		.visMult = 1.0f
+		.visMult = 1.0f,
+		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_PLATE, .id = GroundDecal::GetNextId() }
 	});
-	permDecalUpdateList.EmplaceBackUpdate();
-	decalOwners.emplace(object, std::make_tuple(permanentDecals.size() - 1, DecalType::DECAL_PLATE));
+
+	decalsUpdateList.EmplaceBackUpdate();
+	idToPos.emplace(decal.info.id, decals.size() - 1);
+	decalOwners.emplace(object, decals.size() - 1);
 }
 
 void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb)
@@ -753,13 +722,13 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 		return;
 	}
 
+	auto& decayingDecal = decals.at(doIt->second);
+
 	// we only care about DECAL_PLATE decals below
-	if (std::get<DecalType>(doIt->second) != DecalType::DECAL_PLATE) {		
+	if (decayingDecal.info.type != GroundDecal::Type::DECAL_PLATE) {
 		decalOwners.erase(doIt);
 		return;
 	}
-
-	auto& decayingDecal = permanentDecals.at(std::get<size_t>(doIt->second));
 
 	const auto createFrame = static_cast<uint32_t>(std::max(gs->frameNum, 0));
 
@@ -767,7 +736,7 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 	decayingDecal.createFrameMin = createFrame;
 	decayingDecal.createFrameMax = createFrame;
 
-	permDecalUpdateList.SetUpdate(std::get<size_t>(doIt->second));
+	decalsUpdateList.SetUpdate(doIt->second);
 
 	decalOwners.erase(doIt);
 }
@@ -785,13 +754,13 @@ void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 	if (doIt == decalOwners.end())
 		return;
 
+	auto& decal = decals.at(doIt->second);
 	// just in case
-	if (std::get<DecalType>(doIt->second) != DecalType::DECAL_PLATE)
+	if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
 		return;
 	
-	auto& decal = permanentDecals.at(std::get<size_t>(doIt->second));
 	decal.alpha = 0.0f;
-	permDecalUpdateList.SetUpdate(std::get<size_t>(doIt->second));
+	decalsUpdateList.SetUpdate(doIt->second);
 	decalOwners.erase(doIt);
 }
 
@@ -857,7 +826,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 		const float alphaDecay = 1.0f / trackLifeTime;
 
-		const auto& newDecal = temporaryDecals.emplace_back(GroundDecal{
+		const auto& decal = decals.emplace_back(GroundDecal{
 			.posTL = decalPos2 - wc,
 			.posTR = decalPos2 - wc,
 			.posBR = decalPos2 + wc,
@@ -873,13 +842,16 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
 			.uvTraveledDistance = 0.0f,
 			.forcedNormal = float3{unit->updir},
-			.visMult = 1.0f
+			.visMult = 1.0f,
+			.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_TRACK, .id = GroundDecal::GetNextId() }
 		});
 
-		decalOwners.emplace(unit, std::make_tuple(temporaryDecals.size() - 1, DecalType::DECAL_TRACK));
 		mm = {};
 
-		tempDecalUpdateList.EmplaceBackUpdate();
+		decalOwners.emplace(unit, decals.size() - 1);
+		idToPos.emplace(decal.info.id, decals.size() - 1);
+		decalsUpdateList.EmplaceBackUpdate();
+
 		return;
 	}
 
@@ -890,7 +862,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	if (!forceEval && createFrameInt % TRACKS_UPDATE_RATE != 0)
 		return;
 
-	GroundDecal& oldDecal = temporaryDecals.at(std::get<size_t>(doIt->second));
+	GroundDecal& oldDecal = decals.at(doIt->second);
 
 	// just updated
 	if (oldDecal.createFrameMax == createFrame)
@@ -923,12 +895,12 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
 		oldDecal.height = std::max(mm.max - midPointHeight, midPointHeight - mm.min) + 1.0f;
 
-		tempDecalUpdateList.SetUpdate(std::get<size_t>(doIt->second));
+		decalsUpdateList.SetUpdate(doIt->second);
 		return;
 	}
 
 	// new decal, starting where the previous ended
-	auto& newDecal = temporaryDecals.emplace_back(GroundDecal{
+	auto& newDecal = decals.emplace_back(GroundDecal{
 		.posTL = oldDecal.posTR,
 		.posTR = decalPos2 - wc,
 		.posBR = decalPos2 + wc,
@@ -944,7 +916,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
 		.uvTraveledDistance = oldDecal.uvTraveledDistance + posL.Distance(posR)/*oldDecal.posTL.Distance(oldDecal.posTR)*/,
 		.forcedNormal = float3{ unit->updir },
-		.visMult = 1.0f
+		.visMult = 1.0f,
+		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_TRACK, .id = GroundDecal::GetNextId() }
 	});
 
 	const float2 midPointDist = (newDecal.posTL + newDecal.posTR + newDecal.posBR + newDecal.posBL) * 0.25f;
@@ -953,21 +926,23 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	mm = {};
 
 	// replace the old entry
-	decalOwners[unit] = std::make_tuple(temporaryDecals.size() - 1, DecalType::DECAL_TRACK);
-	tempDecalUpdateList.EmplaceBackUpdate();
+	decalOwners[unit] = decals.size() - 1;
+
+	idToPos.emplace(newDecal.info.id, decals.size() - 1);
+	decalsUpdateList.EmplaceBackUpdate();
 }
 
-void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
+void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 {
-	if (temporaryDecals.empty())
+	if (decals.empty())
 		return;
 
 	// only bother with the following code, if number of items is big enough
-	if (temporaryDecals.size() < temporaryDecals.capacity() >> 6)
+	if (decals.size() < decals.capacity() >> 6)
 		return;
 
 	size_t numToDelete = 0;
-	for (auto& decal : temporaryDecals) {
+	for (auto& decal : decals) {
 		if (!decal.IsValid()) {
 			numToDelete++;
 			continue;
@@ -984,90 +959,40 @@ void CGroundDecalHandler::UpdateTemporaryDecalsVector(int frameNum)
 
 	// resort if number of expired items > 25.0%
 	static constexpr float RESORT_THRESHOLD = 1.0f / 4.0f;
-	if (static_cast<float>(temporaryDecals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
+	if (static_cast<float>(decals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
 		return;
 
 	// Remove owners of expired items
 	for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); /*NOOP*/) {
-		if (const auto type = std::get<DecalType>(doIt->second); type != DecalType::DECAL_TRACK)
-			continue;
-
-		if (temporaryDecals[std::get<size_t>(doIt->second)].IsValid())
+		if (decals[doIt->second].IsValid())
 			doIt = decalOwners.erase(doIt);
 		else
 			doIt++;
 	}
 
 	// group all expired items towards the end of the vector
-	auto partIt = std::stable_partition(temporaryDecals.begin(), temporaryDecals.end(), [](const auto& item) {
-		return item.IsValid();
+	// Lua items are not considered expired
+	auto partIt = std::stable_partition(decals.begin(), decals.end(), [](const GroundDecal& decal) {
+		return decal.IsValid() || decal.info.type == GroundDecal::Type::DECAL_LUA;
 	});
 
 	// remove expired decals
-	temporaryDecals.resize(temporaryDecals.size() - numToDelete);
+	decals.resize(decals.size() - numToDelete);
+	decalsUpdateList.Resize(decals.size());
 
-	tempDecalUpdateList.Resize(temporaryDecals.size());
-}
-void CGroundDecalHandler::UpdatePermanentDecalsVector(int frameNum)
-{
-	if (permanentDecals.empty())
-		return;
-
-	// only bother with the following code, if number of items is big enough
-	if (permanentDecals.size() < permanentDecals.capacity() >> 6)
-		return;
-
-	size_t numToDelete = 0;
-	for (auto& decal : permanentDecals) {
-		if (!decal.IsValid()) {
-			numToDelete++;
-			continue;
-		}
-		const auto targetExpirationFrame = static_cast<int>(decal.alpha / decal.alphaFalloff);
-		if (frameNum - decal.createFrameMax > targetExpirationFrame) {
-			decal.MarkInvalid();
-			numToDelete++;
-		}
+	idToPos.clear();
+	for (size_t i = 0; i < decals.size(); ++i) {
+		idToPos.emplace(decals[i].info.id, i);
 	}
-
-	if (numToDelete == 0)
-		return;
-
-	// resort if number of expired items > 25.0%
-	static constexpr float RESORT_THRESHOLD = 1.0f / 4.0f;
-
-	if (static_cast<float>(permanentDecals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
-		return;
-
-	// Remove owners of expired items
-	for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); /*NOOP*/) {
-		if (const auto type = std::get<DecalType>(doIt->second); type != DecalType::DECAL_PLATE)
-			continue;
-
-		if (permanentDecals[std::get<size_t>(doIt->second)].IsValid())
-			doIt = decalOwners.erase(doIt);
-		else
-			doIt++;
-	}
-
-	// group all expired items towards the end of the vector
-	auto partIt = std::stable_partition(permanentDecals.begin(), permanentDecals.end(), [](const auto& item) {
-		return item.IsValid();
-	});
-
-	// remove expired decals
-	permanentDecals.resize(permanentDecals.size() - numToDelete);
-
-	permDecalUpdateList.Resize(permanentDecals.size());
 }
 
 void CGroundDecalHandler::UpdateDecalsVisibility()
 {
 	for (const auto& [owner, posType] : decalOwners) {
-		if (std::get<DecalType>(posType) != DecalType::DECAL_PLATE)
-			continue;
+		auto& decal = decals.at(posType);
 
-		auto& decal = permanentDecals.at(std::get<size_t>(posType));
+		if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
+			continue;
 
 		if (std::holds_alternative<const CSolidObject*>(owner)) {
 			const auto* so = std::get<const CSolidObject*>(owner);
@@ -1096,7 +1021,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 
 			if (math::fabs(wantedMult - decal.visMult) > 0.05f) {
 				decal.visMult = wantedMult;
-				permDecalUpdateList.SetUpdate(std::get<size_t>(posType));
+				decalsUpdateList.SetUpdate(posType);
 			}
 		}
 		else /* const GhostSolidObject* */ {
@@ -1127,12 +1052,8 @@ void CGroundDecalHandler::GameFrame(int frameNum)
 	}
 
 	if (frameNum % 16 ==  0) {
-		UpdateTemporaryDecalsVector(frameNum);
+		CompactDecalsVector(frameNum);
 	}
-	if (frameNum % 16 == 15) {
-		UpdatePermanentDecalsVector(frameNum);
-	}
-	// luaDecals are updates solely by Lua
 }
 
 void CGroundDecalHandler::SunChanged()

@@ -139,8 +139,7 @@ private:
 
 	void RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb);
 
-	void UpdateTemporaryDecalsVector(int frameNum);
-	void UpdatePermanentDecalsVector(int frameNum);
+	void CompactDecalsVector(int frameNum);
 
 	void UpdateDecalsVisibility();
 
@@ -157,12 +156,6 @@ private:
 		float min;
 		float max;
 	};
-	enum class DecalType : uint8_t {
-		DECAL_PLATE,
-		DECAL_EXPLOSION,
-		DECAL_TRACK,
-		DECAL_LUA
-	};
 
 	int maxUniqueScars;
 
@@ -172,18 +165,14 @@ private:
 	Shader::IProgramObject* decalShader;
 
 	using DecalOwner = std::variant<const CSolidObject*, const GhostSolidObject*>;
-	using DecalPosType = std::tuple<size_t, DecalType>;
-	spring::unordered_map<DecalOwner, DecalPosType, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
+	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
 	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
+	spring::unordered_map<uint32_t, size_t> idToPos;
 
-	DecalUpdateList tempDecalUpdateList;
-	DecalUpdateList permDecalUpdateList;
-	DecalUpdateList  luaDecalUpdateList;
+	DecalUpdateList decalsUpdateList;
 
-	VBO instTempVBO;
-	VBO instPermVBO;
-	VAO vaoTemp;
-	VAO vaoPerm;
+	VBO instVBO;
+	VAO vao;
 
 	CSMFGroundDrawer* smfDrawer;
 

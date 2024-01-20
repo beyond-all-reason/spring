@@ -43,6 +43,7 @@ public:
 	void SetMaxTexLevel(int maxLevels);
 
 	const IAtlasAllocator* GetAllocator() const { return atlasAllocator.get(); }
+	const std::string& GetAtlasName() const { return atlasName; }
 
 	bool Finalize();
 	bool IsValid() const { return finalized && texID != 0; }

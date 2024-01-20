@@ -26,9 +26,6 @@ public:
 	virtual size_t CreateLuaDecal() = 0;
 	virtual GroundDecal* GetDecalByIdx(size_t idx) = 0;
 
-	const std::vector<GroundDecal>& GetPermanentDecals() const { return permanentDecals; }
-	const std::vector<GroundDecal>& GetTemporaryDecals() const { return temporaryDecals; }
-
 	virtual void AddSolidObject(const CSolidObject* object) = 0;
 	virtual void ForceRemoveSolidObject(const CSolidObject* object) = 0;
 
@@ -42,9 +39,7 @@ public:
 protected:
 	virtual void OnDecalLevelChanged() = 0;
 protected:
-	std::vector<GroundDecal> permanentDecals;
-	std::vector<GroundDecal> temporaryDecals;
-	std::vector<GroundDecal> luaDecals;
+	std::vector<GroundDecal> decals;
 	static int decalLevel;
 };
 
