@@ -1233,7 +1233,9 @@ public:
 class GroupActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Manage control groups", false, {
-			{"<n>", "Select group <n>"},
+			{"<n>", "Select group <n>, also focuses on second call (deprecated)"},
+			{"select <n>", "Select group <n>"},
+			{"focus <n>", "Focus camera on group <n>"},
 			{"set <n>", "Set current selected units as group <n>"},
 			{"add <n>", "Add current selected units to group <n>"},
 			{"unset", "Deassign control group for currently selected units"},
