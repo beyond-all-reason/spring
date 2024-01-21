@@ -215,17 +215,6 @@ public:
 	/// Enable to reduce CPU usage, but also reduce quality of resultant paths.
 	bool qtLowerQualityPaths;
 
-	/// Uses more CPU, but more accurately determines where amphibious can path. By default the
-	/// system has to assume obstructions under and on the water will block them, which technically
-	/// incorrect if an amphibious unit is deep underwater. Enabling this option means QTPFS will
-	/// use the unit's step size as an estimated height to give a more accurate impression of where
-	/// amphibious unit can go. If this doesn't match the unit's radius*2, then there will be
-	/// inaccuracies anyway - but as long as the moveDef's step results in a size that is bigger
-	/// the unit's radius then the results will be better than without this option enabled;
-	/// otherwise it may be better to leave this off - because false positives will get the unit
-	/// trapped near shores. 
-	bool qtAccurateAmphibiousPathing;
-
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 
