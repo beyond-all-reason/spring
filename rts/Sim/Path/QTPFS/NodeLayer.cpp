@@ -29,6 +29,7 @@ inline int __bsfd (int mask)
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Objects/SolidObject.h"
+#include "Sim/Objects/VirtualObject.h"
 #include "System/SpringMath.h"
 
 #include <tracy/Tracy.hpp>
@@ -95,10 +96,10 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	int lastInWater = -2;
 	bool isSubmersible = (md->isSubmarine ||
 						 (md->followGround && md->depth > md->height));
-	CSolidObject virtualObject;
+	CSolidObject &virtualObject = virtualObjects[threadData.threadId];
 
 	if (isSubmersible) {
-		virtualObject.moveDef = const_cast<MoveDef*>(md); 
+		virtualObject.moveDef = const_cast<MoveDef*>(md);
 	} else
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
 

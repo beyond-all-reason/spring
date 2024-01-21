@@ -6,6 +6,7 @@
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/ModInfo.h"
+#include "Sim/Objects/VirtualObject.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
 #include "System/Exceptions.h"
@@ -392,13 +393,14 @@ bool MoveDef::DoRawSearch(
 		MoveDef *md = collider->moveDef;
 
 		// Copy over only what is needed for the collision detection.
-		CSolidObject virtualObject;
+		CSolidObject &virtualObject = virtualObjects[thread];
 		virtualObject.moveDef = md;
-		virtualObject.pos = collider->pos;
+		virtualObject.pos = startPos;
+		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[startBlock.y * mapDims.mapx + startBlock.x];
 
-		float lastPosY = collider->pos.y;
-		bool lastInWater = (collider->pos.y < 0.f);
-		bool lastUnderWater = (collider->pos.y + md->height < 0.f);
+		float lastPosY = virtualObject.pos.y;
+		bool lastInWater = (virtualObject.pos.y < 0.f);
+		bool lastUnderWater = (virtualObject.pos.y + md->height < 0.f);
 		if (lastInWater)
 			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
 
