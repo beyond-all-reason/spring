@@ -3,6 +3,8 @@
 #ifndef UNIT_TRACKER_H
 #define UNIT_TRACKER_H
 
+#include <vector>
+
 #include "System/float3.h"
 #include "System/UnorderedSet.hpp"
 
@@ -11,7 +13,7 @@ class CUnit;
 class CUnitTracker
 {
 public:
-	void Track();
+	void Track(const std::vector<int>& unitIDs = {});
 	void Disable();
 	bool Enabled() const { return enabled; }
 

@@ -55,14 +55,23 @@ void CUnitTracker::SetMode(int mode)
 
 /******************************************************************************/
 
-void CUnitTracker::Track()
+void CUnitTracker::Track(const std::vector<int>& unitIDs)
 {
-	const auto& units = selectedUnitsHandler.selectedUnits;
+	if (!unitIDs.empty())
+		selectedUnitsHandler.ClearSelected();
+
+	for (int unitID : unitIDs) {
+		CUnit* unit = unitHandler.GetUnit(unitID);
+		if (unit)
+			selectedUnitsHandler.AddUnit(unit);
+	}
+
+	const auto& su = selectedUnitsHandler.selectedUnits;
 
 	CleanTrackGroup();
 
 	if (trackedUnitIDs.empty()) {
-		if (units.empty()) {
+		if (su.empty()) {
 			Disable();
 		} else {
 			MakeTrackGroup();
@@ -73,7 +82,7 @@ void CUnitTracker::Track()
 		return;
 	}
 
-	if (!units.empty())
+	if (!su.empty())
 		MakeTrackGroup();
 
 	if (trackedUnitIDs.find(trackUnit) == trackedUnitIDs.end()) {
@@ -104,7 +113,6 @@ void CUnitTracker::MakeTrackGroup()
 		trackedUnitIDs.insert(unitID);
 	}
 }
-
 
 void CUnitTracker::CleanTrackGroup()
 {

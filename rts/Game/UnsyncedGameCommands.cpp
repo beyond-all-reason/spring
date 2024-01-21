@@ -1375,15 +1375,31 @@ public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
 			"Start/stop following the selected unit(s) with the camera", false, {
 			{"", "Toggles tracking"},
-			{"<on|off>", "Set tracking <on|off>"},
+			{"<on|off>", "Set tracking <on|off> <unitID1> <unitID..N>"},
 			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 		bool enableTracking = unitTracker.Enabled();
-		InverseOrSetBool(enableTracking, action.GetArgs());
+		std::vector<int> unitIDs = {};
+
+		switch (args.size())
+		{
+			case 0:
+				InverseOrSetBool(enableTracking, ""); break;
+			case 1:
+				InverseOrSetBool(enableTracking, args.at(0)); break;
+			default: {
+				InverseOrSetBool(enableTracking, args.at(0));
+				if (enableTracking) {
+					for (size_t i = 1; i < args.size(); ++i)
+						unitIDs.emplace_back(StringToInt(args.at(i)));
+				}
+			} break;
+		}
 
 		if (enableTracking)
-			unitTracker.Track();
+			unitTracker.Track(unitIDs);
 		else
 			unitTracker.Disable();
 
