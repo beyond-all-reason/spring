@@ -865,6 +865,17 @@ const std::string& CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTe
 	return "";
 }
 
+const std::vector<std::string> CGroundDecalHandler::GetDecalTextures(bool mainTex) const
+{
+	const auto& atlas = mainTex ? atlasMain : atlasNorm;
+	std::vector<std::string> ret;
+	for (auto& [name, _] : atlas->GetAllocator()->GetEntries()) {
+		ret.emplace_back(name);
+	}
+	std::sort(ret.begin(), ret.end());
+	return ret;
+}
+
 const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) const
 {
 	for (const auto& [owner, pos] : decalOwners) {

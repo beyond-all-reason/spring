@@ -314,6 +314,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetDecalTexture);
 	REGISTER_LUA_CFUNC(SetDecalAlpha);
 	REGISTER_LUA_CFUNC(SetDecalNormal);
+	REGISTER_LUA_CFUNC(SetDecalCreationFrame);
 
 	REGISTER_LUA_CFUNC(SDLSetTextInputRect);
 	REGISTER_LUA_CFUNC(SDLStartTextInput);
@@ -4643,6 +4644,29 @@ int LuaUnsyncedCtrl::SetDecalNormal(lua_State* L)
 	forcedNormal.SafeNormalize();
 
 	decal->forcedNormal = forcedNormal;
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetDecalCreationFrame
+ * @number decalID
+ * @number[opt=currCreationFrameMin] creationFrameMin
+ * @number[opt=currCreationFrameMax] creationFrameMax
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetDecalCreationFrame(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->createFrameMin = luaL_optfloat(L, 2, decal->createFrameMin);
+	decal->createFrameMax = luaL_optfloat(L, 3, decal->createFrameMax);
 
 	lua_pushboolean(L, true);
 	return 1;
