@@ -28,6 +28,20 @@ const char* CUnitTracker::modeNames[TrackModeCount] = {
 	"Extents"
 };
 
+bool IsInvalidUnitForSelection(int unitID) {
+	CUnit* u = unitHandler.GetUnit(unitID);
+	if (!u)
+		return true;
+
+	const bool canSeeAndSelect =
+		(losHandler->GetGlobalLOS(u->allyteam) ||
+		(gu->spectating && gu->spectatingFullView) ||
+		(u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0) &&
+		selectedUnitsHandler.CanISelectTeam(gu->GetMyPlayer(), u->team);
+
+	return !canSeeAndSelect;
+};
+
 
 void CUnitTracker::Disable()
 {
@@ -60,19 +74,6 @@ void CUnitTracker::SetMode(int mode)
 
 void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
-	static const auto IsInvalidUnitForSelection = [](int unitID) {
-		CUnit* u = unitHandler.GetUnit(unitID);
-		if (!u)
-			return true;
-
-		const bool canSelectThisUnit =
-			(gu->spectating && gu->spectatingFullSelect && gu->spectatingFullView) ||
-			losHandler->GetGlobalLOS(u->allyteam) ||
-			(u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0;
-
-		return !canSelectThisUnit;
-	};
-
 	spring::VectorEraseAllIf(unitIDs, IsInvalidUnitForSelection);
 
 	if (!unitIDs.empty())
@@ -132,16 +133,16 @@ void CUnitTracker::MakeTrackGroup()
 
 void CUnitTracker::CleanTrackGroup()
 {
-	deadUnitIDs.clear();
-	deadUnitIDs.reserve(trackedUnitIDs.size());
+	invalidUnitIDs.clear();
+	invalidUnitIDs.reserve(trackedUnitIDs.size());
 
 	for (const int unitID: trackedUnitIDs) {
-		if (unitHandler.GetUnitUnsafe(unitID) == nullptr)
-			deadUnitIDs.push_back(unitID);
+		if (IsInvalidUnitForSelection(unitID))
+			invalidUnitIDs.push_back(unitID);
 	}
 
-	for (const int deadUnitID: deadUnitIDs) {
-		trackedUnitIDs.erase(deadUnitID);
+	for (const int invalidUnitID : invalidUnitIDs) {
+		trackedUnitIDs.erase(invalidUnitID);
 	}
 
 	if (trackedUnitIDs.empty()) {

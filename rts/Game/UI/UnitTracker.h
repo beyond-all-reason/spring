@@ -56,7 +56,7 @@ protected:
 	float3 oldCamPos = {500.0f, 500.0f, 500.0f};
 
 	spring::unordered_set<int> trackedUnitIDs;
-	std::vector<int> deadUnitIDs;
+	std::vector<int> invalidUnitIDs;
 	
 	static const char* modeNames[TrackModeCount];
 };
