@@ -518,9 +518,11 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(const MoveDef& moveDef, i
 	return ret;
 }
 
-// TODO: keep track of per unit answers for peformance improvement?
-void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results)
+void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread)
 {
+	spring::unordered_map<CSolidObject*, CMoveMath::BlockType>& blockMap = blockMaps[thread];
+	blockMap.clear();
+
 	results.resize(areaToSample.GetArea(), 0);
 
 	int curIndex = 0;
@@ -534,7 +536,12 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 			for (size_t i = 0, n = cell.size(); i < n; i++) {
 				CSolidObject* collidee = cell[i];
 
-				ret |= ObjectBlockType(moveDef, collidee, collider);
+				auto blockMapResult = blockMap.find(collidee);
+				if (blockMapResult == blockMap.end()) {
+					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(moveDef, collidee, collider)).first;
+				}
+
+				ret |= blockMapResult->second;
 
 				if ((ret & BLOCK_STRUCTURE) != 0)
 					break;

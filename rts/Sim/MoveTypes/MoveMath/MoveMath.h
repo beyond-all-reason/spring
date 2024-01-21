@@ -83,7 +83,7 @@ public:
 	static BlockType RangeIsBlockedHashedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber);
 	static BlockType RangeIsBlockedHashedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber, int thread);
 
-	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results);
+	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread);
 
 public:
 	static bool noHoverWaterMove;
