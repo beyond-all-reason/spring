@@ -11,7 +11,7 @@
 #include "System/float3.h"
 #include "System/Misc/SpringTime.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 // defined in X11/X.h
 #undef KeyPress
 #undef KeyRelease
