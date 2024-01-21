@@ -273,9 +273,12 @@ bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const CSolidObject* 
 	// steep slopes *through* obstacles, either higher
 	// up or lower down
 	//
-	if ((collider->pos.y + math::fabs(collider->height)) < collidee->pos.y)
+	float colliderHeight = (collider->moveDef != nullptr) ? collider->moveDef->height : math::fabs(collider->height);
+	if ((collider->pos.y + colliderHeight) < collidee->pos.y)
 		return (collider->IsInWater() && collidee->IsInWater());
-	if ((collidee->pos.y + math::fabs(collidee->height)) < collider->pos.y)
+
+	float collideeHeight = (collidee->moveDef != nullptr) ? collidee->moveDef->height : math::fabs(collidee->height);
+	if ((collidee->pos.y + collideeHeight) < collider->pos.y)
 		return (collider->IsInWater() && collidee->IsInWater());
 
 	return false;

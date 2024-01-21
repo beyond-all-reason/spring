@@ -90,16 +90,12 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
 
-	const float unitHeight = md->zsize * SQUARE_SIZE;
-
 	bool isSubmersible = (md->isSubmarine ||
-						 (modInfo.qtAccurateAmphibiousPathing && md->followGround && md->depth > unitHeight));
+						 (md->followGround && md->depth > md->height));
 	CSolidObject virtualObject;
 
 	if (isSubmersible) {
-		// Without an actual height value, we will go by the step size. Collisions are done by a
-		// unit's radius field, which is a rough approximation of the step size.
-		virtualObject.height = unitHeight;
+		virtualObject.moveDef = const_cast<MoveDef*>(md); 
 	} else
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
 

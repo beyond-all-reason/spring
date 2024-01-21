@@ -289,6 +289,9 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	zsizeh = zsize >> 1;
 	assert((xsize & 1) == 1);
 	assert((zsize & 1) == 1);
+
+	int defaultHeight = xsize * SQUARE_SIZE;
+	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
 }
 
 bool MoveDef::DoRawSearch(
@@ -386,19 +389,21 @@ bool MoveDef::DoRawSearch(
 	if (testObjects & retTestMove) {
 		int tempNum = gs->GetMtTempNum(thread);
 
+		MoveDef *md = collider->moveDef;
+
 		// Copy over only what is needed for the collision detection.
 		CSolidObject virtualObject;
-		virtualObject.height = collider->height;
+		virtualObject.moveDef = md;
 		virtualObject.pos = collider->pos;
 
 		float lastPosY = collider->pos.y;
 		bool lastInWater = (collider->pos.y < 0.f);
-		bool lastUnderWater = (collider->pos.y + collider->height < 0.f);
+		bool lastUnderWater = (collider->pos.y + md->height < 0.f);
 		if (lastInWater)
 			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
 
-		MoveDef *md = collider->moveDef;
-		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > collider->height));
+
+		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
 
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &lastPosY ,&lastInWater, &lastUnderWater](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
@@ -411,7 +416,7 @@ bool MoveDef::DoRawSearch(
 			if (isSubmersible){
 				virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[z * mapDims.mapx + x];
 				if (lastPosY != virtualObject.pos.y) {
-					bool underWater = (virtualObject.pos.y + virtualObject.height < 0.f);
+					bool underWater = (virtualObject.pos.y + md->height < 0.f);
 					bool inWater = (virtualObject.pos.y < 0.f);
 
 					// Switch between underwater or not impacts what you will collide with, so that

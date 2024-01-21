@@ -133,6 +133,7 @@ struct MoveDef {
 	/// controls movement and (un-)loading constraints
 	float depth = 0.0f;
 	float depthModParams[DEPTHMOD_NUM_PARAMS];
+	float height = 0.0f;
 	float maxSlope = 1.0f;
 	float slopeMod = 0.0f;
 	float crushStrength = 0.0f;
