@@ -1375,7 +1375,7 @@ public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
 			"Start/stop following the selected unit(s) with the camera", false, {
 			{"", "Toggles tracking"},
-			{"<on|off>", "Set tracking <on|off> <unitID1> <unitID..N>"},
+			{"<on|off>", "Set tracking <on|off> <unitID unitID ...>"},
 			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
@@ -1399,7 +1399,7 @@ public:
 		}
 
 		if (enableTracking)
-			unitTracker.Track(unitIDs);
+			unitTracker.Track(std::move(unitIDs));
 		else
 			unitTracker.Disable();
 

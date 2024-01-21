@@ -6,9 +6,12 @@
 #include "Game/CameraHandler.h"
 #include "Game/Camera.h"
 #include "Game/SelectedUnitsHandler.h"
+#include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/Config/ConfigHandler.h"
@@ -55,15 +58,28 @@ void CUnitTracker::SetMode(int mode)
 
 /******************************************************************************/
 
-void CUnitTracker::Track(const std::vector<int>& unitIDs)
+void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
+	static const auto IsInvalidUnitForSelection = [](int unitID) {
+		CUnit* u = unitHandler.GetUnit(unitID);
+		if (!u)
+			return true;
+
+		const bool canSelectThisUnit =
+			(gu->spectating && gu->spectatingFullSelect && gu->spectatingFullView) ||
+			losHandler->GetGlobalLOS(u->allyteam) ||
+			(u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0;
+
+		return !canSelectThisUnit;
+	};
+
+	spring::VectorEraseAllIf(unitIDs, IsInvalidUnitForSelection);
+
 	if (!unitIDs.empty())
 		selectedUnitsHandler.ClearSelected();
 
 	for (int unitID : unitIDs) {
-		CUnit* unit = unitHandler.GetUnit(unitID);
-		if (unit)
-			selectedUnitsHandler.AddUnit(unit);
+		selectedUnitsHandler.AddUnit(unitHandler.GetUnit(unitID));
 	}
 
 	const auto& su = selectedUnitsHandler.selectedUnits;

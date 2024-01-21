@@ -13,7 +13,7 @@ class CUnit;
 class CUnitTracker
 {
 public:
-	void Track(const std::vector<int>& unitIDs = {});
+	void Track(std::vector<int>&& unitIDs = {});
 	void Disable();
 	bool Enabled() const { return enabled; }
 
