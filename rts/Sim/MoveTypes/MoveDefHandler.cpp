@@ -291,8 +291,16 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	assert((xsize & 1) == 1);
 	assert((zsize & 1) == 1);
 
-	int defaultHeight = xsize * SQUARE_SIZE;
+	int defaultHeight = xsize * (SQUARE_SIZE >> isSubmarine);
+	int defaultWaterline = std::numeric_limits<int>::max();
+	if (isSubmarine) {
+		defaultWaterline = xsize * SQUARE_SIZE; 
+	} else if (speedModClass == MoveDef::Ship) {
+		defaultWaterline = 1;
+	}
+
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
+	waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
 }
 
 bool MoveDef::DoRawSearch(
@@ -392,22 +400,25 @@ bool MoveDef::DoRawSearch(
 
 		MoveDef *md = collider->moveDef;
 
+		const float startingMapHeight = readMap->GetMaxHeightMapSynced()[startBlock.y * mapDims.mapx + startBlock.x];
+
 		// Copy over only what is needed for the collision detection.
 		CSolidObject &virtualObject = virtualObjects[thread];
 		virtualObject.moveDef = md;
 		virtualObject.pos = startPos;
-		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[startBlock.y * mapDims.mapx + startBlock.x];
+		virtualObject.pos.y = std::max(startingMapHeight, -md->waterline);
 
 		float lastPosY = virtualObject.pos.y;
+		bool lastWaterCollisions = ((startingMapHeight + md->height) < 0.f || startingMapHeight < -md->waterline);
 		bool lastInWater = (virtualObject.pos.y < 0.f);
-		bool lastUnderWater = (virtualObject.pos.y + md->height < 0.f);
 		if (lastInWater)
 			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-
+		else
+			virtualObject.ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
 
 		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &lastPosY ,&lastInWater, &lastUnderWater](int x, int z) -> bool {
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &lastPosY, &lastInWater, &lastWaterCollisions](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
@@ -416,32 +427,33 @@ bool MoveDef::DoRawSearch(
 			// Height affects whether units in water collide or not, so the new y positions need
 			// to be considered or else we will get incorrect results.
 			if (isSubmersible){
-				virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[z * mapDims.mapx + x];
-				if (lastPosY != virtualObject.pos.y) {
-					bool underWater = (virtualObject.pos.y + md->height < 0.f);
-					bool inWater = (virtualObject.pos.y < 0.f);
+				const float mapHeight = readMap->GetMaxHeightMapSynced()[z * mapDims.mapx + x];
+				virtualObject.pos.y = std::max(mapHeight, -md->waterline);
 
-					// Switch between underwater or not impacts what you will collide with, so that
-					// means the current letter id (tempNum) is invlaid.
-					if (lastUnderWater != underWater) {
+				bool inWater = (virtualObject.pos.y < 0.f);
+
+				// either something can be above or below the unit.
+				const bool waterCollisions = ((mapHeight + md->height) < 0.f || mapHeight < -md->waterline);
+				if (waterCollisions || waterCollisions != lastWaterCollisions) {
+					if (mapHeight != lastPosY) {
 						tempNum = gs->GetMtTempNum(thread);
-						lastUnderWater != underWater;
+						lastPosY = mapHeight;
 					}
-					if (lastInWater != inWater) {
-						if (inWater)
-							virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-						else
-							virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+					lastWaterCollisions = waterCollisions;
+				}
 
-						lastInWater = inWater;
-					}
-					lastPosY = virtualObject.pos.y;
+				if (lastInWater != inWater) {
+					if (inWater)
+						virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+					else
+						virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+
+					lastInWater = inWater;
 				}
 			}
 
 			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
 			maxBlockBit = blockBits;
-			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 		};
 		retTestMove = walkPath(test);
 	}
@@ -466,10 +478,13 @@ bool MoveDef::TestMoveSquareRange(
 ) const {
 	assert(testTerrain || testObjects);
 
-	const int xmin = int(rangeMins.x / SQUARE_SIZE) - xsizeh * (1 - centerOnly);
-	const int zmin = int(rangeMins.z / SQUARE_SIZE) - zsizeh * (1 - centerOnly);
-	const int xmax = int(rangeMaxs.x / SQUARE_SIZE) + xsizeh * (1 - centerOnly);
-	const int zmax = int(rangeMaxs.z / SQUARE_SIZE) + zsizeh * (1 - centerOnly);
+	const int xmid = int(rangeMins.x / SQUARE_SIZE);
+	const int zmid = int(rangeMins.z / SQUARE_SIZE);
+
+	const int xmin = xmid - xsizeh * (1 - centerOnly);
+	const int zmin = zmid - zsizeh * (1 - centerOnly);
+	const int xmax = xmid + xsizeh * (1 - centerOnly);
+	const int zmax = zmid + zsizeh * (1 - centerOnly);
 
 	const float3 testMoveDir2D = (testMoveDir * XZVector).SafeNormalize2D();
 
@@ -510,10 +525,13 @@ bool MoveDef::TestMovePositionForObjects(
 	int magicNum,
 	int thread
 ) const {
-	const int xmin = int(testMovePos.x / SQUARE_SIZE) - xsizeh;
-	const int zmin = int(testMovePos.z / SQUARE_SIZE) - zsizeh;
-	const int xmax = int(testMovePos.x / SQUARE_SIZE) + xsizeh;
-	const int zmax = int(testMovePos.z / SQUARE_SIZE) + zsizeh;
+	const int xmid = int(testMovePos.x / SQUARE_SIZE);
+	const int zmid = int(testMovePos.z / SQUARE_SIZE);
+
+	const int xmin = xmid - xsizeh;
+	const int zmin = zmid - zsizeh;
+	const int xmax = xmid + xsizeh;
+	const int zmax = zmid + zsizeh;
 
 	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(*this, xmin, xmax, zmin, zmax, collider, magicNum, thread);
 

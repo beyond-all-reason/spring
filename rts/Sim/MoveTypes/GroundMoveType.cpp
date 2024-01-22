@@ -22,6 +22,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Objects/VirtualObject.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -3138,9 +3139,11 @@ const float3& CGroundMoveType::GetGroundNormal(const float3& p) const
 
 float CGroundMoveType::GetGroundHeight(const float3& p) const
 {
+	MoveDef *md = owner->moveDef;
+
 	// in [minHeight, maxHeight]
 	const float gh = CGround::GetHeightReal(p.x, p.z);
-	const float wh = -waterline * (gh <= 0.0f);
+	const float wh = -md->waterline * (gh <= 0.0f);
 
 	// in [-waterline, maxHeight], note that waterline
 	// can be much deeper than ground in shallow water
@@ -3159,7 +3162,8 @@ void CGroundMoveType::AdjustPosToWaterLine()
 
 	if (modInfo.allowGroundUnitGravity) {
 		if (owner->FloatOnWater()) {
-			owner->Move(UpVector * (std::max(CGround::GetHeightReal(owner->pos.x, owner->pos.z),   -waterline) - owner->pos.y), true);
+			MoveDef *md = owner->moveDef;
+			owner->Move(UpVector * (std::max(CGround::GetHeightReal(owner->pos.x, owner->pos.z), -md->waterline) - owner->pos.y), true);
 		} else {
 			owner->Move(UpVector * (std::max(CGround::GetHeightReal(owner->pos.x, owner->pos.z), owner->pos.y) - owner->pos.y), true);
 		}
@@ -3207,14 +3211,10 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	MoveDef* md = unit->moveDef;
 	int tempNum = gs->GetMtTempNum(thread);
 
-	auto isSquareOpen = [this, md, unit, tempNum, thread](float3 pos) {
-		// separate calls because terrain is only checked for in the centre square, while
-		// static objects are checked for in the whole footprint.
-		return ( pathController.IgnoreTerrain(*md, pos) ||
-				 unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
-			   )
-				&& unit->moveDef->TestMovePositionForObjects(unit, pos, tempNum, thread); 
-	};
+	CSolidObject &virtualObject = virtualObjects[thread];
+	virtualObject.id = unit->id;
+	virtualObject.moveDef = unit->moveDef;
+	bool lastUnderWater = (virtualObject.pos.y + md->height < 0.f);
 
 	auto toMapSquare = [](float3 pos) {
 		return int2({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)});
@@ -3222,6 +3222,28 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	auto toSquareId = [](int2 square) {
 		return (square.y * mapDims.mapx) + square.x;
+	};
+
+	auto isSquareOpen = [this, md, unit, &tempNum, thread, &toMapSquare, &toSquareId, &virtualObject, &lastUnderWater](float3 pos) {
+		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[toSquareId(toMapSquare(pos))];
+		if (virtualObject.pos.y < 0.f)
+			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+		else
+			virtualObject.ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+		bool underWater = (virtualObject.pos.y + md->height < 0.f);
+		if (lastUnderWater != underWater) {
+			tempNum = gs->GetMtTempNum(thread);
+			lastUnderWater = underWater;
+		}
+
+		// separate calls because terrain is only checked for in the centre square, while
+		// static objects are checked for in the whole footprint.
+		bool result = ( pathController.IgnoreTerrain(*md, pos) ||
+				 unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
+			   )
+				&& unit->moveDef->TestMovePositionForObjects(&virtualObject, pos, tempNum, thread);
+
+		return result;
 	};
 
 	auto toPosition = [](int2 square) {

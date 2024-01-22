@@ -92,7 +92,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	auto &blockBits = threadData.maxBlockBits;
 
 	int tempNum = 0;
-	int lastUnderWater = -2; // just needs to be something a boolean won't be converted into.
+	float lastPosY = std::numeric_limits<float>::infinity();
+	int lastWaterCollisions = -2; // just needs to be something a boolean won't be converted into.
 	int lastInWater = -2;
 	bool isSubmersible = (md->isSubmarine ||
 						 (md->followGround && md->depth > md->height));
@@ -128,20 +129,26 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// based on a virtual object, which can then be moved per query may be the simplest approach.
 	// We can't flood fill collision data like normal because the squares that collide can change
 	// as the unit's centre square's height changes.
-	auto submersibleRangeIsBlocked = [this, &virtualObject, &lastUnderWater, &lastInWater, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz, unsigned int recIdx){
+	auto submersibleRangeIsBlocked = [this, &virtualObject, &lastPosY, &lastInWater, &lastWaterCollisions, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz, unsigned int recIdx){
 		const int xmin = (chmx - md.xsizeh);
 		const int zmin = (chmz - md.zsizeh);
 		const int xmax = (chmx + md.xsizeh);
 		const int zmax = (chmz + md.zsizeh);
-		
-		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[recIdx];
 
-		const int underWater = (virtualObject.pos.y + virtualObject.moveDef->height) < 0.f;
-		if (underWater != lastUnderWater) {
-			tempNum = gs->GetMtTempNum(threadData.threadId);
-			lastUnderWater = underWater;
+		const float mapHeight = readMap->GetMaxHeightMapSynced()[recIdx];
+		virtualObject.pos.y = std::max(mapHeight, -md.waterline);
+
+		// either something can be above or below the unit.
+
+		const bool waterCollisions = ((mapHeight + md.height) < 0.f || mapHeight < -md.waterline);
+		if (waterCollisions || waterCollisions != lastWaterCollisions) {
+			if (mapHeight != lastPosY) {
+				tempNum = gs->GetMtTempNum(threadData.threadId);
+				lastPosY = mapHeight;
+			}
+			lastWaterCollisions = waterCollisions;
 		}
-		
+
 		const int inWater = (virtualObject.pos.y < 0.f);
 		if (inWater != lastInWater) {
 			if (inWater)
