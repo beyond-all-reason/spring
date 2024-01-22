@@ -141,35 +141,18 @@ static bool CopyPushTable(lua_State* dst, lua_State* src, int index, int depth, 
 bool LuaUtils::ExecuteCodeAndPrint(lua_State* L, std::string&& code)
 {
 	// turn the return values into the table
-	const std::string luaCode = fmt::format("return function() return {{ {} }} end", code);
+	const std::string luaCode = fmt::format("return {{ {} }}", code);
 
 	int top = lua_gettop(L);
 
-	int error = 0;
-	error = luaL_loadstring(L, luaCode.c_str());
-	if (error != 0) {
-		LOG_L(L_ERROR, "[%s][1]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
+	if (auto err = luaL_loadstring(L, luaCode.c_str()); err != 0) {
+		LOG_L(L_ERROR, "[%s][1]: error(%i) = %s", __func__, err, lua_tostring(L, -1));
 		lua_pop(L, 1);
 		return false;
 	}
 
-	// put the anonymous function into Lua
-	error = lua_pcall(L, 0, LUA_MULTRET, 0);
-	if (error != 0) {
-		LOG_L(L_ERROR, "[%s][2]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
-		lua_pop(L, 1);
-		return false;
-	}
-
-	// execute the anonymous function above
-	error = lua_pcall(L, 0, LUA_MULTRET, 0);
-	if (error != 0) {
-		LOG_L(L_ERROR, "[%s][2]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
-		lua_pop(L, 1);
-		return false;
-	}
-
-	if (lua_gettop(L) - top != 1) {
+	if (auto err = lua_pcall(L, 0, LUA_MULTRET, 0); err != 0) {
+		LOG_L(L_ERROR, "[%s][2]: error(%i) = %s", __func__, err, lua_tostring(L, -1));
 		lua_pop(L, 1);
 		return false;
 	}
