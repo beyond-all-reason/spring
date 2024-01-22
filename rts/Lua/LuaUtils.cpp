@@ -35,7 +35,7 @@
 
 static const int maxDepth = 16;
 
-Json::Value LuaUtils::LuaStackDumper::root  = {};
+Json::Value LuaUtils::LuaPrinterJSON::root  = {};
 
 /******************************************************************************/
 /******************************************************************************/
@@ -138,6 +138,48 @@ static bool CopyPushTable(lua_State* dst, lua_State* src, int index, int depth, 
 	return true;
 }
 
+bool LuaUtils::ExecuteCodeAndPrint(lua_State* L, std::string&& code)
+{
+	// turn the return values into the table
+	const std::string luaCode = fmt::format("return function() return {{ {} }} end", code);
+
+	int top = lua_gettop(L);
+
+	int error = 0;
+	error = luaL_loadstring(L, luaCode.c_str());
+	if (error != 0) {
+		LOG_L(L_ERROR, "[%s][1]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
+		lua_pop(L, 1);
+		return false;
+	}
+
+	// put the anonymous function into Lua
+	error = lua_pcall(L, 0, LUA_MULTRET, 0);
+	if (error != 0) {
+		LOG_L(L_ERROR, "[%s][2]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
+		lua_pop(L, 1);
+		return false;
+	}
+
+	// execute the anonymous function above
+	error = lua_pcall(L, 0, LUA_MULTRET, 0);
+	if (error != 0) {
+		LOG_L(L_ERROR, "[%s][2]: error(%i) = %s", __func__, error, lua_tostring(L, -1));
+		lua_pop(L, 1);
+		return false;
+	}
+
+	if (lua_gettop(L) - top != 1) {
+		lua_pop(L, 1);
+		return false;
+	}
+
+	LuaPrinterJSON lp;
+	lp.PrintStackItem(L, -1, 3);
+
+	lua_pop(L, 1);
+	return true;
+}
 
 int LuaUtils::CopyData(lua_State* dst, lua_State* src, int count)
 {
@@ -1455,7 +1497,26 @@ void LuaUtils::PushCommandDesc(lua_State* L, const SCommandDescription& cd)
 	lua_settable(L, -3);
 }
 
-void LuaUtils::LuaStackDumper::PrintStack(lua_State* L, int parseDepth)
+bool LuaUtils::LuaPrinterJSON::PrintStackItem(lua_State* L, int idx, int parseDepth)
+{
+	currPtr = &root;
+
+	int n = lua_gettop(L);
+	if (idx < 0)
+		idx = n + idx + 1;
+
+	if (idx > n)
+		return false;
+
+	ParseLuaItem(L, idx, false, parseDepth);
+
+	PrintBuffer();
+
+	currPtr = nullptr;
+	root = {};
+}
+
+void LuaUtils::LuaPrinterJSON::PrintStack(lua_State* L, int parseDepth)
 {
 	currPtr = &root;
 
@@ -1474,7 +1535,7 @@ void LuaUtils::LuaStackDumper::PrintStack(lua_State* L, int parseDepth)
 	root = {};
 }
 
-void LuaUtils::LuaStackDumper::ParseTable(lua_State* L, int i, int parseDepth)
+void LuaUtils::LuaPrinterJSON::ParseTable(lua_State* L, int i, int parseDepth)
 {
 	static const auto isSeq = [](lua_State* L, int i) {
 		// stack = [..]
@@ -1550,7 +1611,7 @@ void LuaUtils::LuaStackDumper::ParseTable(lua_State* L, int i, int parseDepth)
 	}
 }
 
-void LuaUtils::LuaStackDumper::ParseLuaItem(lua_State* L, int i, bool asKey, int parseDepth)
+void LuaUtils::LuaPrinterJSON::ParseLuaItem(lua_State* L, int i, bool asKey, int parseDepth)
 {
 	static const auto GetFnName = [](lua_State* L, int i) -> std::string {
 		std::string fnName;
@@ -1656,7 +1717,7 @@ void LuaUtils::LuaStackDumper::ParseLuaItem(lua_State* L, int i, bool asKey, int
 	}
 }
 
-void LuaUtils::LuaStackDumper::PrintBuffer()
+void LuaUtils::LuaPrinterJSON::PrintBuffer()
 {
 	Json::StyledWriter writer;
 	LOG("[%s()]\n%s", __FUNCTION__, writer.write(root).c_str());
