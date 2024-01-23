@@ -41,7 +41,9 @@ flat in vec4 vuvNorm;
 flat in vec4 midPoint;
      in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
 flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat in vec3 groundNormal;
+flat in vec4 misc3; // groundNormal.xyz, decayRate
+
+#define groundNormal misc3.xyz
 
 out vec4 fragColor;
 
@@ -333,8 +335,11 @@ void main() {
 	}
 	*/
 
-	float glow  = clamp(misc.x, 1.0, 2.0) - 1.0;
 	float alpha = clamp(misc.x, 0.0, 1.0);
+
+	// glow is from 1.1 to 1.0 as capped by the engine
+	// transform to 0 - 1
+	float glow = smoothstep(1.0, 1.1, misc.x);
 
 	// overglow
 	glow += smoothstep(0.75, 1.0, glow) * 0.1 * abs(sin(0.02 * curAdjustedFrame));
@@ -345,13 +350,13 @@ void main() {
 	relDistance = smoothstep(0.9, 0.1, relDistance);
 	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
 
-	float t = mix(500.0, 2600.0, glow);
+	float t = mix(1.0, 3500.0, glow);
 
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0f).rgb;
-	float scarMixRate = mix(0.8, 0.2, alpha);
-	float mdMixRate = mix(scarMixRate, 0.0, float(misc.z > 0));
+	float scarMixRate = mix(0.9, 0.3, alpha * mainCol.a);
+	float mdMixRate = mix(0.0, scarMixRate, float(misc3.w > 0)); //only apply scarMixRate for decaying decals
 	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, mdMixRate);
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
@@ -392,6 +397,9 @@ void main() {
 	fragColor.a = mainCol.a;
 	fragColor.a *= alpha;
 	fragColor   *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is artisitic choice
+	//fragColor = vec4(vec3(max(dot(sunDir, decalNormal), 0.0)), 1.0);
+	//fragColor = vec4(normVal.xyz, 1.0);
+	//fragColor = vec4(N, 1.0);
 
 	//fragColor =  vec4(texture(decalMainTex, uv.xy).rgb, 1.0);
 	//fragColor.a *= pow(max(0.0, N.y), 2);

@@ -501,8 +501,9 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		damage = 400.0f + std::sqrt(damage - 400.0f);
 
 	const int ttl = std::clamp(decalLevel * damage * 3.0f, 15.0f, decalLevel * 1800.0f);
-	float alpha = std::clamp(2.0f * damage / 255.0f, 0.20f, 2.0f);
-	float alphaDecay = alpha / ttl;
+	float alpha = std::clamp(2.0f * damage / 255.0f, 0.2f, 1.1f); // cap min alpha and glow
+	float alphaDecay = 1.0f / ttl;
+
 	float size = radius * math::SQRT2;
 
 	const float2 posTL = { pos.x - size, pos.z - size };

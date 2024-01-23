@@ -23,7 +23,9 @@ flat out vec4 vuvNorm;
 flat out vec4 midPoint;
      out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
 flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat out vec3 groundNormal;
+flat out vec4 misc3; // groundNormal.xyz, decayRate
+
+#define groundNormal misc3.xyz
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
@@ -141,6 +143,7 @@ void main() {
 	misc.x         = info.x - (curAdjustedFrame - thisVertexCreateFrame) * info.y;
 	float alphaMax = info.x - (curAdjustedFrame -        createParams.y) * info.y;
 	alphaMax *= forcedNormalAndAlphaMult.w;
+	misc3.w = info.y;
 
 	#if 1
 	if (alphaMax <= 0.0f) {
