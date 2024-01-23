@@ -543,11 +543,36 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 
 void CGroundDecalHandler::ReloadTextures()
 {
+	struct AtlasedTextureHash {
+		uint32_t operator()(const AtlasedTexture& at) const {
+			return spring::LiteHash(&at, sizeof(at));
+		}
+	};
+
+	spring::unordered_map<AtlasedTexture, std::string, AtlasedTextureHash> subTexToNameMain;
+	spring::unordered_map<AtlasedTexture, std::string, AtlasedTextureHash> subTexToNameNorm;
+
+	for (const auto& [name, ae] : atlasMain->GetAllocator()->GetEntries()) {
+		subTexToNameMain.emplace(atlasMain->GetTexture(name), name);
+	}
+	for (const auto& [name, ae] : atlasNorm->GetAllocator()->GetEntries()) {
+		subTexToNameNorm.emplace(atlasNorm->GetTexture(name), name);
+	}
+
 	// can't use {atlas}->ReloadTextures() here as all textures come from memory
 	atlasMain = nullptr;
 	atlasNorm = nullptr;
 	GenerateAtlasTextures();
-	//TODO: add UV coordinates recalculation for existing decals
+
+	for (auto& decal : decals) {
+		if (auto it = subTexToNameMain.find(decal.texMainOffsets); it != subTexToNameMain.end()) {
+			decal.texMainOffsets = atlasMain->GetTexture(it->second, "%FB_MAIN%");
+		}
+		if (auto it = subTexToNameNorm.find(decal.texNormOffsets); it != subTexToNameNorm.end()) {
+			decal.texNormOffsets = atlasMain->GetTexture(it->second, "%FB_NORM%");
+		}
+	}
+	decalsUpdateList.SetNeedUpdateAll();
 }
 
 void CGroundDecalHandler::DumpAtlasTextures()
