@@ -2076,7 +2076,9 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 	}
 
 	float cwpDistSq = cwp.SqDistance2D(pos);
-	const bool allowSkip = (cwpDistSq < Square(SQUARE_SIZE));
+	// -1 to avoid units checking for corners to rotate slightly and fail to escape when at max
+	// distance for allowSkip. The slide/corner checks are done upto 8 elmos.
+	const bool allowSkip = (cwpDistSq < Square(SQUARE_SIZE - 1));
 	if (!allowSkip) {
 		const bool skipRequested = (earlyCurrWayPoint.y == -2.0f || earlyNextWayPoint.y == -2.0f);
 		if (!skipRequested) {

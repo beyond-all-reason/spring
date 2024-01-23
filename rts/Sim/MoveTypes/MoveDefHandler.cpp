@@ -6,7 +6,6 @@
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/ModInfo.h"
-#include "Sim/Objects/VirtualObject.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
 #include "System/Exceptions.h"

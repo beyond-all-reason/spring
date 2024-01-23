@@ -29,7 +29,6 @@ inline int __bsfd (int mask)
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Objects/SolidObject.h"
-#include "Sim/Objects/VirtualObject.h"
 #include "System/SpringMath.h"
 
 #include <tracy/Tracy.hpp>
