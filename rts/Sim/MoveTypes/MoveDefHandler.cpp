@@ -291,7 +291,11 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	assert((xsize & 1) == 1);
 	assert((zsize & 1) == 1);
 
-	int defaultHeight = xsize * (SQUARE_SIZE >> isSubmarine);
+	int defaultHeight = xsize * SQUARE_SIZE;
+	if (speedModClass != MoveDef::KBot) {
+		defaultHeight >>= 1;
+	}
+
 	int defaultWaterline = std::numeric_limits<int>::max();
 	if (isSubmarine) {
 		defaultWaterline = xsize * SQUARE_SIZE; 
