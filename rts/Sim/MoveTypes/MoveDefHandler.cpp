@@ -404,25 +404,17 @@ bool MoveDef::DoRawSearch(
 
 		MoveDef *md = collider->moveDef;
 
-		const float startingMapHeight = readMap->GetMaxHeightMapSynced()[startBlock.y * mapDims.mapx + startBlock.x];
-
-		// Copy over only what is needed for the collision detection.
-		CSolidObject &virtualObject = virtualObjects[thread];
-		virtualObject.moveDef = md;
-		virtualObject.pos = startPos;
-		virtualObject.pos.y = std::max(startingMapHeight, -md->waterline);
-
-		float lastPosY = virtualObject.pos.y;
-		bool lastWaterCollisions = ((startingMapHeight + md->height) < 0.f || startingMapHeight < -md->waterline);
-		bool lastInWater = (virtualObject.pos.y < 0.f);
-		if (lastInWater)
-			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-		else
-			virtualObject.ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-
+		MoveTypes::CheckCollisionQuery virtualObject(collider);
+		MoveDefs::CollisionQueryStateTrack queryState;
+		
 		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
+		if (isSubmersible) {
+			InitCheckCollisionQuery(virtualObject, queryState);
+		} else {
+			virtualObject.DisableHeightChecks();
+		}
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &lastPosY, &lastInWater, &lastWaterCollisions](int x, int z) -> bool {
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
@@ -431,32 +423,12 @@ bool MoveDef::DoRawSearch(
 			// Height affects whether units in water collide or not, so the new y positions need
 			// to be considered or else we will get incorrect results.
 			if (isSubmersible){
-				const float mapHeight = readMap->GetMaxHeightMapSynced()[z * mapDims.mapx + x];
-				virtualObject.pos.y = std::max(mapHeight, -md->waterline);
-
-				bool inWater = (virtualObject.pos.y < 0.f);
-
-				// either something can be above or below the unit.
-				const bool waterCollisions = ((mapHeight + md->height) < 0.f || mapHeight < -md->waterline);
-				if (waterCollisions || waterCollisions != lastWaterCollisions) {
-					if (mapHeight != lastPosY) {
-						tempNum = gs->GetMtTempNum(thread);
-						lastPosY = mapHeight;
-					}
-					lastWaterCollisions = waterCollisions;
-				}
-
-				if (lastInWater != inWater) {
-					if (inWater)
-						virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-					else
-						virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-
-					lastInWater = inWater;
-				}
+				UpdateCheckCollisionQuery(virtualObject, queryState, {x, z});
+				if (queryState.refreshCollisionCache)
+					tempNum = gs->GetMtTempNum(thread);
 			}
 
-			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
+			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
 			maxBlockBit = blockBits;
 			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 		};
@@ -467,6 +439,48 @@ bool MoveDef::DoRawSearch(
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
 	if (maxBlockBitPtr != nullptr) *maxBlockBitPtr = maxBlockBit;
 	return retTestMove;
+}
+
+void MoveDef::InitCheckCollisionQuery
+	( MoveTypes::CheckCollisionQuery& collider
+	, MoveDefs::CollisionQueryStateTrack& state
+) const {
+	const int2 pos(collider.pos.x / SQUARE_SIZE, collider.pos.z / SQUARE_SIZE);
+
+	UpdateCheckCollisionQuery(collider, state, pos);
+
+	state.refreshCollisionCache = false;
+}
+
+void MoveDef::UpdateCheckCollisionQuery
+	( MoveTypes::CheckCollisionQuery& collider
+	, MoveDefs::CollisionQueryStateTrack& state
+	, const int2 pos
+) const {
+	state.refreshCollisionCache = false;
+
+	const MoveDef* md = collider.moveDef;
+	const float mapHeight = readMap->GetMaxHeightMapSynced()[pos.y * mapDims.mapx + pos.x];
+	collider.pos.y = std::max(mapHeight, -collider.moveDef->waterline);
+
+	const bool waterCollisions = ((mapHeight + md->height) < 0.f || mapHeight < -md->waterline);
+	if (waterCollisions || waterCollisions != state.lastWaterCollisions) {
+		if (mapHeight != state.lastPosY) {
+			state.refreshCollisionCache = true;
+			state.lastPosY = mapHeight;
+		}
+		state.lastWaterCollisions = waterCollisions;
+	}
+
+	bool inWater = (collider.pos.y < 0.f);
+	if (state.lastInWater != inWater) {
+		if (inWater)
+			collider.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+		else
+			collider.ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+
+		state.lastInWater = inWater;
+	}
 }
 
 bool MoveDef::TestMoveSquareRange(
@@ -525,7 +539,7 @@ bool MoveDef::TestMoveSquareRange(
 }
 
 bool MoveDef::TestMovePositionForObjects(
-	const CSolidObject* collider,
+	const MoveTypes::CheckCollisionQuery* collider,
 	const float3 testMovePos,
 	int magicNum,
 	int thread
@@ -538,7 +552,7 @@ bool MoveDef::TestMovePositionForObjects(
 	const int xmax = xmid + xsizeh;
 	const int zmax = zmid + zsizeh;
 
-	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(*this, xmin, xmax, zmin, zmax, collider, magicNum, thread);
+	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(xmin, xmax, zmin, zmax, collider, magicNum, thread);
 
 	return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 }

@@ -22,7 +22,6 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Objects/VirtualObject.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -3211,10 +3210,14 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	MoveDef* md = unit->moveDef;
 	int tempNum = gs->GetMtTempNum(thread);
 
-	CSolidObject &virtualObject = virtualObjects[thread];
-	virtualObject.id = unit->id;
-	virtualObject.moveDef = unit->moveDef;
-	bool lastUnderWater = (virtualObject.pos.y + md->height < 0.f);
+	MoveTypes::CheckCollisionQuery virtualObject(unit);
+	MoveDefs::CollisionQueryStateTrack queryState;
+	const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
+	if (isSubmersible) {
+		md->InitCheckCollisionQuery(virtualObject, queryState);
+	} else {
+		virtualObject.DisableHeightChecks();
+	}
 
 	auto toMapSquare = [](float3 pos) {
 		return int2({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)});
@@ -3224,16 +3227,11 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		return (square.y * mapDims.mapx) + square.x;
 	};
 
-	auto isSquareOpen = [this, md, unit, &tempNum, thread, &toMapSquare, &toSquareId, &virtualObject, &lastUnderWater](float3 pos) {
-		virtualObject.pos.y = readMap->GetMaxHeightMapSynced()[toSquareId(toMapSquare(pos))];
-		if (virtualObject.pos.y < 0.f)
-			virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-		else
-			virtualObject.ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-		bool underWater = (virtualObject.pos.y + md->height < 0.f);
-		if (lastUnderWater != underWater) {
-			tempNum = gs->GetMtTempNum(thread);
-			lastUnderWater = underWater;
+	auto isSquareOpen = [this, md, unit, &tempNum, thread, &toMapSquare, &virtualObject, &queryState, &isSubmersible](float3 pos) {
+		if (isSubmersible){
+			md->UpdateCheckCollisionQuery(virtualObject, queryState, toMapSquare(pos));
+			if (queryState.refreshCollisionCache)
+				tempNum = gs->GetMtTempNum(thread);
 		}
 
 		// separate calls because terrain is only checked for in the centre square, while

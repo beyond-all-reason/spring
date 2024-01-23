@@ -4,6 +4,7 @@
 #define MOVEDEF_HANDLER_H
 
 #include <array>
+#include <limits>
 #include <string>
 
 #include "System/float3.h"
@@ -16,6 +17,18 @@ class CSolidObject;
 class CUnit;
 class LuaTable;
 
+namespace MoveTypes {
+	class CheckCollisionQuery;
+}
+
+namespace MoveDefs {
+	struct CollisionQueryStateTrack {
+		float lastPosY = std::numeric_limits<float>::infinity();
+		int lastInWater = -2;
+		int lastWaterCollisions = -2;
+		bool refreshCollisionCache = false;
+	};
+}
 
 struct MoveDef {
 	CR_DECLARE_STRUCT(MoveDef)
@@ -40,6 +53,8 @@ struct MoveDef {
 		int* maxBlockBitPtr,
 		int thread = 0
 	);
+	void InitCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state) const;
+	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
 		const CSolidObject* collider,
 		const float3 rangeMins,
@@ -66,7 +81,7 @@ struct MoveDef {
 		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects, centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
 	}
 	bool TestMovePositionForObjects(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery* collider,
 		const float3 testMovePos,
 		int magicNum,
 		int thread

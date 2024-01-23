@@ -92,17 +92,16 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	auto &blockBits = threadData.maxBlockBits;
 
 	int tempNum = 0;
-	float lastPosY = std::numeric_limits<float>::infinity();
-	int lastWaterCollisions = -2; // just needs to be something a boolean won't be converted into.
-	int lastInWater = -2;
+
+	MoveTypes::CheckCollisionQuery virtualObject(md);
+	MoveDefs::CollisionQueryStateTrack queryState;
 	bool isSubmersible = (md->isSubmarine ||
 						 (md->followGround && md->depth > md->height));
-	CSolidObject &virtualObject = virtualObjects[threadData.threadId];
-
 	if (isSubmersible) {
-		virtualObject.moveDef = const_cast<MoveDef*>(md);
-	} else
+		md->InitCheckCollisionQuery(virtualObject, queryState);
+	} else {
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
+	}
 
 	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
 		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
@@ -129,36 +128,17 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// based on a virtual object, which can then be moved per query may be the simplest approach.
 	// We can't flood fill collision data like normal because the squares that collide can change
 	// as the unit's centre square's height changes.
-	auto submersibleRangeIsBlocked = [this, &virtualObject, &lastPosY, &lastInWater, &lastWaterCollisions, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz, unsigned int recIdx){
+	auto submersibleRangeIsBlocked = [this, &virtualObject, &queryState, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz){
 		const int xmin = (chmx - md.xsizeh);
 		const int zmin = (chmz - md.zsizeh);
 		const int xmax = (chmx + md.xsizeh);
 		const int zmax = (chmz + md.zsizeh);
 
-		const float mapHeight = readMap->GetMaxHeightMapSynced()[recIdx];
-		virtualObject.pos.y = std::max(mapHeight, -md.waterline);
-
-		// either something can be above or below the unit.
-
-		const bool waterCollisions = ((mapHeight + md.height) < 0.f || mapHeight < -md.waterline);
-		if (waterCollisions || waterCollisions != lastWaterCollisions) {
-			if (mapHeight != lastPosY) {
-				tempNum = gs->GetMtTempNum(threadData.threadId);
-				lastPosY = mapHeight;
-			}
-			lastWaterCollisions = waterCollisions;
-		}
-
-		const int inWater = (virtualObject.pos.y < 0.f);
-		if (inWater != lastInWater) {
-			if (inWater)
-				virtualObject.SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-			else
-				virtualObject.ClearCollidableStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
-			lastInWater = inWater;
-		}
+		md.UpdateCheckCollisionQuery(virtualObject, queryState, {chmx, chmz});
+		if (queryState.refreshCollisionCache)
+			tempNum = gs->GetMtTempNum(threadData.threadId);
 		
-		return CMoveMath::RangeIsBlockedHashedMt(md, xmin, xmax, zmin, zmax, &virtualObject, tempNum, threadData.threadId);
+		return CMoveMath::RangeIsBlockedHashedMt(xmin, xmax, zmin, zmax, &virtualObject, tempNum, threadData.threadId);
 	};
 
 	// divide speed-modifiers into bins
@@ -173,7 +153,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
 
 			int maxBlockBit = (!isSubmersible) ? rangeIsBlocked(*md, chmx, chmz)
-											  : submersibleRangeIsBlocked(*md, chmx, chmz, recIdx);
+											  : submersibleRangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
 			//   movetype code checks ONLY the *CENTER* square of a unit's footprint

@@ -57,7 +57,6 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Utils/UnitTrapCheckUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObjectDef.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/VirtualObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/WorldObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Node.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/NodeLayer.cpp"
