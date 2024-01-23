@@ -342,7 +342,7 @@ void main() {
 	float glow = smoothstep(1.0, 1.1, misc.x);
 
 	// overglow
-	glow += smoothstep(0.75, 1.0, glow) * 0.1 * abs(sin(0.02 * curAdjustedFrame));
+	glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
 
 	// distance based glow adjustment
 	float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
