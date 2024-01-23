@@ -3291,8 +3291,8 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		const float speed = moveDir.Length2D();
 
 		auto tryToMove =
-				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove, &newPos]
-				(float3 posOffset, float maxDisplacement = 0.f)
+				[this, &isSquareOpen, &prevPos, &newPosStartSquare, &resultantMove]
+				(const float3& newPos, float3 posOffset, float maxDisplacement = 0.f)
 			{
 			// units are moved in relation to their previous position.
 			float3 offsetFromPrev = (newPos + posOffset) - prevPos;
@@ -3312,9 +3312,9 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		};
 
 		for (int n = 1; n <= SQUARE_SIZE; n++) {
-			updatePos = tryToMove(unit->rightdir * n);
+			updatePos = tryToMove(newPos, unit->rightdir * n);
 			if (updatePos) { break; }
-			updatePos = tryToMove(unit->rightdir * -n);
+			updatePos = tryToMove(newPos, unit->rightdir * -n);
 			if (updatePos) { break; }
 		}
 
@@ -3342,7 +3342,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 			// 	{bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
 			// 		&& (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-			// //		bool printMoveInfo = unit->id == 23064 && gs->frameNum >= 6250 && gs->frameNum < 6268;
+			// {	bool printMoveInfo = (unit->id == 19432);
 			// 	if (printMoveInfo) {
 			// 		LOG("%s: unit %d: facing(%f,%f,%f) [%d:%d] right(%f,%f,%f) disp=%f"
 			// 				, __func__, owner->id
@@ -3364,7 +3364,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 					resultantMove = ZeroVector;
 				}
 			} else if (resultantMove.SqLength2D() > speed*speed) {
-				updatePos = tryToMove(resultantMove, speed);
+				updatePos = tryToMove(prevPos, resultantMove, speed);
 				if (!updatePos)
 					resultantMove = ZeroVector;
 			}
