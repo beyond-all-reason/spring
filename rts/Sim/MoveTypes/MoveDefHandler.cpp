@@ -454,6 +454,7 @@ bool MoveDef::DoRawSearch(
 
 			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(*this, xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
 			maxBlockBit = blockBits;
+			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 		};
 		retTestMove = walkPath(test);
 	}
