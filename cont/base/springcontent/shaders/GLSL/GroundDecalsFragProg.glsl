@@ -355,7 +355,7 @@ void main() {
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0f).rgb;
-	float scarMixRate = mix(0.9, 0.3, alpha * mainCol.a);
+	float scarMixRate = mix(1.0, 0.2, NORM2SNORM(alpha) * mainCol.a); //accelerate alpha for diffuse
 	float mdMixRate = mix(0.0, scarMixRate, float(misc3.w > 0)); //only apply scarMixRate for decaying decals
 	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, mdMixRate);
 

@@ -203,6 +203,10 @@ void CGroundDecalHandler::AddGroundScarTextures()
 	maxUniqueScars = 0;
 	for (int i = 1; i <= scarTblSize; ++i) {
 		const std::string mainTexFileName = scarsTable.GetString(i, "");
+
+		if (mainTexFileName.find("_normal") != std::string::npos)
+			continue;
+
 		const std::string normTexFileName = mainTexFileName.empty() ? "" : GetExtraTextureName(mainTexFileName);
 		const auto mainName = IntToString(i, "mainscar_%i");
 		const auto normName = IntToString(i, "normscar_%i");
@@ -569,7 +573,7 @@ void CGroundDecalHandler::ReloadTextures()
 			decal.texMainOffsets = atlasMain->GetTexture(it->second, "%FB_MAIN%");
 		}
 		if (auto it = subTexToNameNorm.find(decal.texNormOffsets); it != subTexToNameNorm.end()) {
-			decal.texNormOffsets = atlasMain->GetTexture(it->second, "%FB_NORM%");
+			decal.texNormOffsets = atlasNorm->GetTexture(it->second, "%FB_NORM%");
 		}
 	}
 	decalsUpdateList.SetNeedUpdateAll();
