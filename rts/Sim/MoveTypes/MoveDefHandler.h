@@ -53,7 +53,6 @@ struct MoveDef {
 		int* maxBlockBitPtr,
 		int thread = 0
 	);
-	void InitCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state) const;
 	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
 		const CSolidObject* collider,

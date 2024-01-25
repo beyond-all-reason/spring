@@ -399,7 +399,7 @@ bool MoveDef::DoRawSearch(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects & retTestMove) {
-		int tempNum = gs->GetMtTempNum(thread);
+		int tempNum = 0;
 
 		MoveDef *md = collider->moveDef;
 
@@ -407,11 +407,8 @@ bool MoveDef::DoRawSearch(
 		MoveDefs::CollisionQueryStateTrack queryState;
 		
 		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
-		if (isSubmersible) {
-			InitCheckCollisionQuery(virtualObject, queryState);
-		} else {
+		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
-		}
 
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
@@ -438,17 +435,6 @@ bool MoveDef::DoRawSearch(
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
 	if (maxBlockBitPtr != nullptr) *maxBlockBitPtr = maxBlockBit;
 	return retTestMove;
-}
-
-void MoveDef::InitCheckCollisionQuery
-	( MoveTypes::CheckCollisionQuery& collider
-	, MoveDefs::CollisionQueryStateTrack& state
-) const {
-	const int2 pos(collider.pos.x / SQUARE_SIZE, collider.pos.z / SQUARE_SIZE);
-
-	UpdateCheckCollisionQuery(collider, state, pos);
-
-	state.refreshCollisionCache = false;
 }
 
 void MoveDef::UpdateCheckCollisionQuery

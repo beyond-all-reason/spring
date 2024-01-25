@@ -96,9 +96,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	MoveDefs::CollisionQueryStateTrack queryState;
 	bool isSubmersible = (md->isSubmarine ||
 						 (md->followGround && md->depth > md->height));
-	if (isSubmersible) {
-		md->InitCheckCollisionQuery(virtualObject, queryState);
-	} else {
+	if (!isSubmersible) {
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
 	}
 
