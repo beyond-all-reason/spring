@@ -119,6 +119,8 @@ namespace State {
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Blending, GL_BLEND);
 	ATTRIBUTE_TYPE_DEFS            (BlendFunc, GL_BLEND_SRC, GL_BLEND_DST);
+	ATTRIBUTE_TYPE_DEFS            (BlendEquation, GL_BLEND_EQUATION_RGB);
+	ATTRIBUTE_TYPE_DEFS            (BlendEquationSeparate, GL_BLEND_EQUATION_RGB, GL_BLEND_EQUATION_ALPHA);
 	ATTRIBUTE_TYPE_DEFS            (BlendColor, GL_BLEND_COLOR);
 	ATTRIBUTE_TYPE_DEFS            (ColorMask, GL_COLOR_WRITEMASK);
 
@@ -163,6 +165,8 @@ namespace State {
 		ATTRIBUTE(AlphaFunc),
 		ATTRIBUTE(Blending),
 		ATTRIBUTE(BlendFunc),
+		ATTRIBUTE(BlendEquation),
+		ATTRIBUTE(BlendEquationSeparate),
 		ATTRIBUTE(BlendColor),
 		ATTRIBUTE(ColorMask),
 		ATTRIBUTE(PrimitiveRestart),

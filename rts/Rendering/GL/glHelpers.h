@@ -81,11 +81,14 @@ inline GLuint FetchCurrentSlotTextureID(GLenum target) {
 // Set gl attribute, whether it is capability (glEnable/glDisable) or dedicated, via this single interface
 // Pass DedicatedGLFuncPtrPtr *if* it exists, nullptr if it doesn't
 template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamName, class AttribValuesTupleType>
-inline void glSetAny(AttribValuesTupleType newValues)
+inline void glSetAny(AttribValuesTupleType&& newValues)
 {
 	if constexpr(DedicatedGLFuncPtrPtr)
 	{
-		std::apply(DedicatedGLFuncPtrPtr, newValues);
+		static auto HelperFunc = [](auto&& ... p) {
+			(*DedicatedGLFuncPtrPtr)(p...);
+		};
+		std::apply(HelperFunc, std::forward<AttribValuesTupleType>(newValues));
 	}
 	else // glEnable/glDisable(attribute)
 	{
