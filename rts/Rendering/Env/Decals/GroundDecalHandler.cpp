@@ -598,6 +598,26 @@ void CGroundDecalHandler::ReloadTextures()
 	atlasNorm = nullptr;
 	GenerateAtlasTextures();
 
+	// update scar subtexture names to match possibly a new number of maxUniqueScars
+	for (auto& [at, name] : subTexToNameMain) {
+		static constexpr std::string_view nameToFind = "mainscar_";
+		auto it = name.find(nameToFind);
+		if (it == std::string::npos)
+			continue;
+
+		int oldScarID = StringToInt(name.substr(nameToFind.length()));
+		name = IntToString(1 + (oldScarID - 1) % maxUniqueScars, "mainscar_%i");
+	}
+	for (auto& [at, name] : subTexToNameNorm) {
+		static constexpr std::string_view nameToFind = "normscar_";
+		auto it = name.find(nameToFind);
+		if (it == std::string::npos)
+			continue;
+
+		int oldScarID = StringToInt(name.substr(nameToFind.length()));
+		name = IntToString(1 + (oldScarID - 1) % maxUniqueScars, "normscar_%i");
+	}
+
 	for (auto& decal : decals) {
 		if (auto it = subTexToNameMain.find(decal.texMainOffsets); it != subTexToNameMain.end()) {
 			decal.texMainOffsets = atlasMain->GetTexture(it->second, "%FB_MAIN%");
