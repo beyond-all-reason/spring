@@ -929,11 +929,14 @@ float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& 
 	CollisionVolume rv;
 	CollisionQuery cq;
 	float3 rm;
-	GetRectangleCollisionVolume(node, rv, rm);
 
 	const float2& lastPoint2 = node.GetNeighborEdgeTransitionPoint();
-	const float3 lastPoint({lastPoint2.x, 0.f, lastPoint2.y});
+	if (lastPoint2 == float2(goalPos.x, goalPos.z)) {
+		return goalPos;
+	}
 
+	const float3 lastPoint({lastPoint2.x, 0.f, lastPoint2.y});
+	GetRectangleCollisionVolume(node, rv, rm);
 	bool collide = CCollisionHandler::IntersectBox(&rv, goalPos - rm, lastPoint - rm, &cq);
 
 	assert(collide);
