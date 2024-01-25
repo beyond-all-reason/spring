@@ -399,17 +399,15 @@ bool MoveDef::DoRawSearch(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects & retTestMove) {
-		int tempNum = 0;
+		int tempNum = gs->GetMtTempNum(thread);
 
 		MoveDef *md = collider->moveDef;
 
 		MoveTypes::CheckCollisionQuery virtualObject(collider);
 		MoveDefs::CollisionQueryStateTrack queryState;
-		
-		const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
-		if (!isSubmersible)
-			virtualObject.DisableHeightChecks();
-
+		const bool isSubmersible = (md->isSubmarine ||
+								   (md->followGround && md->depth > md->height));
+	
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);

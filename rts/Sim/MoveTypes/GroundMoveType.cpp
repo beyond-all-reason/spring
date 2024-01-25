@@ -3210,13 +3210,12 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	// The series of tests done here will benefit from using the same cached results.
 	MoveDef* md = unit->moveDef;
-	int tempNum = 0;
+	int tempNum = gs->GetMtTempNum(thread);
 
 	MoveTypes::CheckCollisionQuery virtualObject(unit);
 	MoveDefs::CollisionQueryStateTrack queryState;
-	const bool isSubmersible = (md->isSubmarine || (md->followGround && md->depth > md->height));
-	if (!isSubmersible)
-		virtualObject.DisableHeightChecks();
+	const bool isSubmersible = (md->isSubmarine ||
+							   (md->followGround && md->depth > md->height));
 
 	auto toMapSquare = [](float3 pos) {
 		return int2({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)});
