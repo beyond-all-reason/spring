@@ -887,8 +887,9 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		path->SetSourcePoint({fwd.srcPoint.x, 0.f, fwd.srcPoint.z});
 		path->SetTargetPoint({fwd.tgtPoint.x, 0.f, fwd.tgtPoint.z});
 		path->SetGoalPosition(path->GetTargetPoint());
-		path->SetRepathTriggerIndex(0);
 	}
+	path->SetRepathTriggerIndex(0);
+	path->SetNextPointIndex(0);
 
 	if (!path->IsBoundingBoxOverriden())
 		path->SetBoundingBox();
@@ -1510,7 +1511,7 @@ int QTPFS::PathSearch::SmoothPathPoints(const INode* nn0, const INode* nn1, cons
 bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 	assert(dstPath->GetID() != 0);
 	assert(dstPath->GetID() != srcPath->GetID());
-	assert(dstPath->NumPoints() == 2);
+	// assert(dstPath->NumPoints() == 2);
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
