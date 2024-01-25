@@ -127,7 +127,7 @@ public:
 	      GroundDecal* GetDecalById(uint32_t id)       override;
 	const GroundDecal* GetDecalById(uint32_t id) const override;
 	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override;
-	const std::string& GetDecalTexture(uint32_t id, bool mainTex) const override;
+	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
 private:

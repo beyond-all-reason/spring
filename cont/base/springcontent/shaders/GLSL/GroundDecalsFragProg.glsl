@@ -391,11 +391,11 @@ void main() {
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
-	fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	//fragColor.rgb += BlackBody(normVal.w * t) * glow;
 
 	// alpha
 	fragColor.a = mainCol.a;
-	fragColor.a *= alpha;
+	fragColor.a *= alpha * 10.0;
 	fragColor   *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is artisitic choice
 	//fragColor = vec4(vec3(max(dot(sunDir, decalNormal), 0.0)), 1.0);
 	//fragColor = vec4(normVal.xyz, 1.0);

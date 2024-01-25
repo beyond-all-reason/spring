@@ -23,9 +23,9 @@
 #include "Rendering/Env/SunLighting.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/GL/VertexArray.h"
 #include "Rendering/GL/TexBind.h"
 #include "Rendering/GL/SubState.h"
+#include "Rendering/GL/glHelpers.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
@@ -43,6 +43,7 @@
 #include "Sim/MoveTypes/MoveType.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
+#include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/MemPoolTypes.h"
 #include "System/SpringMath.h"
@@ -264,7 +265,7 @@ void CGroundDecalHandler::AddFallbackTextures()
 	}
 	{
 		const auto minDim = std::max(atlasNorm->GetMinDim(), 32);
-		atlasNorm->AddTex("%FB_NORM%", minDim, minDim, SColor(128, 128, 255, 128));
+		atlasNorm->AddTex("%FB_NORM%", minDim, minDim, SColor(128, 128, 255,   0));
 	}
 }
 
@@ -514,6 +515,35 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	const float2 posTR = { pos.x + size, pos.z - size };
 	const float2 posBR = { pos.x + size, pos.z + size };
 	const float2 posBL = { pos.x - size, pos.z + size };
+
+	const SRectangle newRect(
+		math::floor(posTL.x),
+		math::floor(posTL.y),
+		math::ceil(posBR.x),
+		math::ceil(posBR.y)
+	);
+
+	for (const auto& decal : decals) {
+		if (decal.info.type != GroundDecal::Type::DECAL_EXPLOSION)
+			continue;
+
+		const float oldRad = 0.5f * (decal.posBR.x - decal.posTL.x) / math::SQRT2;
+
+		if (radius > oldRad * 0.8f)
+			continue;
+
+		const SRectangle oldRect(
+			math::floor(decal.posTL.x),
+			math::floor(decal.posTL.y),
+			math::ceil(decal.posBR.x),
+			math::ceil(decal.posBR.y)
+		);
+
+		if (oldRect.Inside(newRect)) {
+			alpha = std::max(alpha, decal.alpha);
+			alphaDecay = std::min(alphaDecay, decal.alphaFalloff);
+		}
+	}
 
 	const int scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
 	const auto mainName = IntToString(scarIdx, "mainscar_%i");
@@ -876,7 +906,7 @@ bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texNam
 	return true;
 }
 
-const std::string& CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) const
+std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) const
 {
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())

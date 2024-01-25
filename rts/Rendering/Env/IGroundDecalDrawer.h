@@ -28,7 +28,7 @@ public:
 	virtual       GroundDecal* GetDecalById(uint32_t id)       = 0;
 	virtual const GroundDecal* GetDecalById(uint32_t id) const = 0;
 	virtual bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) = 0;
-	virtual const std::string& GetDecalTexture(uint32_t id, bool mainTex) const = 0;
+	virtual std::string GetDecalTexture(uint32_t id, bool mainTex) const = 0;
 	virtual const std::vector<std::string> GetDecalTextures(bool mainTex) const = 0;
 	virtual const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const = 0;
 
@@ -73,7 +73,7 @@ public:
 	      GroundDecal* GetDecalById(uint32_t id)       override { return nullptr; }
 	const GroundDecal* GetDecalById(uint32_t id) const override { return nullptr; }
 	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override { return false; }
-	const std::string& GetDecalTexture(uint32_t id, bool mainTex) const override { return ""; }
+	std::string GetDecalTexture(uint32_t id, bool mainTex) const override { return ""; }
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override { return {}; }
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override { return nullptr; }
 };
