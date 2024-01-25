@@ -407,7 +407,9 @@ bool MoveDef::DoRawSearch(
 		MoveDefs::CollisionQueryStateTrack queryState;
 		const bool isSubmersible = (md->isSubmarine ||
 								   (md->followGround && md->depth > md->height));
-	
+		if (!isSubmersible)
+			virtualObject.DisableHeightChecks();
+
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);

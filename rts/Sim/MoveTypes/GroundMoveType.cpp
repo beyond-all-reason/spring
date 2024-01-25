@@ -3216,6 +3216,8 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	MoveDefs::CollisionQueryStateTrack queryState;
 	const bool isSubmersible = (md->isSubmarine ||
 							   (md->followGround && md->depth > md->height));
+	if (!isSubmersible)
+		virtualObject.DisableHeightChecks();
 
 	auto toMapSquare = [](float3 pos) {
 		return int2({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)});
