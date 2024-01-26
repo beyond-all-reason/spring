@@ -111,6 +111,8 @@
 #undef CreateDirectory
 #undef Yield
 
+#include <tracy/Tracy.hpp>
+#include <common/TracyQueue.hpp>
 
 /******************************************************************************
  * Callouts to set state
