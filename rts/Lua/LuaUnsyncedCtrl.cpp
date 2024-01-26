@@ -4870,7 +4870,7 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 
 /* NB: strings here are never cleaned up, but the use case assumes
  * that they live a long time and there's just a handful of them */
-std::set <std::string> tracyLuaPlots;
+std::set <std::string, std::less<>> tracyLuaPlots;
 
 /*** Configure custom appearence for a Tracy plot for use in debugging or profiling
  *
@@ -4898,8 +4898,11 @@ int LuaUnsyncedCtrl::LuaTracyPlotConfig(lua_State* L)
 		default:            plotFormatType = tracy::PlotFormatType::Number;     break;
 	}
 
-	const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
-	TracyPlotConfig(iterator->c_str(), plotFormatType, step, fill, color);
+	auto plot = tracyLuaPlots.find(plotName);
+	if (plot == tracyLuaPlots.end())
+		plot = tracyLuaPlots.emplace(plotName).first;
+
+	TracyPlotConfig(plot->c_str(), plotFormatType, step, fill, color);
 	return 0;
 }
 
@@ -4916,8 +4919,11 @@ int LuaUnsyncedCtrl::LuaTracyPlot(lua_State* L)
 	const auto plotName  = luaL_checkstring(L, 1);
 	const auto plotValue = luaL_checkfloat(L, 2);
 
-	const auto [iterator, inserted] = tracyLuaPlots.emplace(plotName);
-	TracyPlot(iterator->c_str(), plotValue);
+	auto plot = tracyLuaPlots.find(plotName);
+	if (plot == tracyLuaPlots.end())
+		plot = tracyLuaPlots.emplace(plotName).first;
+
+	TracyPlot(plot->c_str(), plotValue);
 	return 0;
 }
 
