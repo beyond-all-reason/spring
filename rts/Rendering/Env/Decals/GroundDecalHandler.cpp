@@ -271,7 +271,7 @@ void CGroundDecalHandler::AddFallbackTextures()
 
 void CGroundDecalHandler::BindVertexAtrribs()
 {
-	for (int i = 0; i <= 6; ++i) {
+	for (int i = 0; i <= 7; ++i) {
 		glEnableVertexAttribArray(i);
 		glVertexAttribDivisor(i, 1);
 	}
@@ -290,11 +290,13 @@ void CGroundDecalHandler::BindVertexAtrribs()
 	glVertexAttribPointer(5, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, createFrameMin));
 	// forcedNormal, visMult
 	glVertexAttribPointer(6, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, forcedNormal));
+	// type & id (packed)
+	glVertexAttribIPointer(7, 1, GL_UNSIGNED_INT, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, info));
 }
 
 void CGroundDecalHandler::UnbindVertexAtrribs()
 {
-	for (int i = 0; i <= 6; ++i) {
+	for (int i = 0; i <= 7; ++i) {
 		glDisableVertexAttribArray(i);
 		glVertexAttribDivisor(i, 0);
 	}
@@ -353,6 +355,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->BindAttribLocation("info"                    , 4);
 	decalShader->BindAttribLocation("createParams"            , 5);
 	decalShader->BindAttribLocation("forcedNormalAndAlphaMult", 6);
+	decalShader->BindAttribLocation("typeAndId"               , 7);
 
 	decalShader->Link();
 
@@ -485,7 +488,6 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		return;
 
 	const float altitude = pos.y - CGround::GetHeightReal(pos.x, pos.z, false);
-	const float3 groundNormal = CGround::GetNormal(pos.x, pos.z, false);
 
 	// no decals for below-ground explosions
 	// also no decals if they are too high in the air
@@ -506,7 +508,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		damage = 400.0f + std::sqrt(damage - 400.0f);
 
 	const int ttl = std::clamp(decalLevel * damage * 3.0f, 15.0f, decalLevel * 1800.0f);
-	float alpha = std::clamp(2.0f * damage / 255.0f, 0.2f, 1.1f); // cap min alpha and glow
+	float alpha = std::clamp(2.0f * damage / 255.0f, 0.8f, 1.05f); // cap min alpha and glow
 	float alphaDecay = 1.0f / ttl;
 
 	float size = radius * math::SQRT2;
@@ -515,35 +517,6 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	const float2 posTR = { pos.x + size, pos.z - size };
 	const float2 posBR = { pos.x + size, pos.z + size };
 	const float2 posBL = { pos.x - size, pos.z + size };
-
-	const SRectangle newRect(
-		math::floor(posTL.x),
-		math::floor(posTL.y),
-		math::ceil(posBR.x),
-		math::ceil(posBR.y)
-	);
-
-	for (const auto& decal : decals) {
-		if (decal.info.type != GroundDecal::Type::DECAL_EXPLOSION)
-			continue;
-
-		const float oldRad = 0.5f * (decal.posBR.x - decal.posTL.x) / math::SQRT2;
-
-		if (radius > oldRad * 0.8f)
-			continue;
-
-		const SRectangle oldRect(
-			math::floor(decal.posTL.x),
-			math::floor(decal.posTL.y),
-			math::ceil(decal.posBR.x),
-			math::ceil(decal.posBR.y)
-		);
-
-		if (oldRect.Inside(newRect)) {
-			alpha = std::max(alpha, decal.alpha);
-			alphaDecay = std::min(alphaDecay, decal.alphaFalloff);
-		}
-	}
 
 	const int scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
 	const auto mainName = IntToString(scarIdx, "mainscar_%i");

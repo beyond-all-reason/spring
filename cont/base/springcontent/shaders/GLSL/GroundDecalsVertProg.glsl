@@ -7,6 +7,7 @@ in vec4 uvNorm; // L, T, R, B
 in vec4 info; // alpha, alphaFalloff, rot, height
 in vec4 createParams; //min, max (left, right) side, .z - uvWrapDistance, .w - traveled distance - used for tracks
 in vec4 forcedNormalAndAlphaMult; // .xyz - forcedNormal, .w - alphaVisMult
+in uint typeAndId; // { type:8; id:24; }
 
 uniform sampler2D heightTex;
 uniform sampler2D groundNormalTex;
@@ -22,57 +23,57 @@ flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
 flat out vec4 midPoint;
      out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
-flat out vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat out vec4 misc3; // groundNormal.xyz, decayRate
+flat out vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
+flat out vec3 xDir;
 
-#define groundNormal misc3.xyz
+#define groundNormal misc2.xyz
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
 const vec3 CUBE_VERT[36] = vec3[36](
 	//RIGHT
-	vec3( 1.0f, -1.0f, -1.0f),
-	vec3( 1.0f, -1.0f,  1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3( 1.0f,  1.0f, -1.0f),
-	vec3( 1.0f, -1.0f, -1.0f),
+	vec3( 1.0, -1.0, -1.0),
+	vec3( 1.0, -1.0,  1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3( 1.0,  1.0, -1.0),
+	vec3( 1.0, -1.0, -1.0),
 	//LEFT
-	vec3(-1.0f, -1.0f,  1.0f),
-	vec3(-1.0f, -1.0f, -1.0f),
-	vec3(-1.0f,  1.0f, -1.0f),
-	vec3(-1.0f,  1.0f, -1.0f),
-	vec3(-1.0f,  1.0f,  1.0f),
-	vec3(-1.0f, -1.0f,  1.0f),
+	vec3(-1.0, -1.0,  1.0),
+	vec3(-1.0, -1.0, -1.0),
+	vec3(-1.0,  1.0, -1.0),
+	vec3(-1.0,  1.0, -1.0),
+	vec3(-1.0,  1.0,  1.0),
+	vec3(-1.0, -1.0,  1.0),
 	//TOP
-	vec3(-1.0f,  1.0f, -1.0f),
-	vec3( 1.0f,  1.0f, -1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3(-1.0f,  1.0f,  1.0f),
-	vec3(-1.0f,  1.0f, -1.0f),
+	vec3(-1.0,  1.0, -1.0),
+	vec3( 1.0,  1.0, -1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3(-1.0,  1.0,  1.0),
+	vec3(-1.0,  1.0, -1.0),
 	//BOTTOM
-	vec3(-1.0f, -1.0f, -1.0f),
-	vec3(-1.0f, -1.0f,  1.0f),
-	vec3( 1.0f, -1.0f, -1.0f),
-	vec3( 1.0f, -1.0f, -1.0f),
-	vec3(-1.0f, -1.0f,  1.0f),
-	vec3( 1.0f, -1.0f,  1.0f),
+	vec3(-1.0, -1.0, -1.0),
+	vec3(-1.0, -1.0,  1.0),
+	vec3( 1.0, -1.0, -1.0),
+	vec3( 1.0, -1.0, -1.0),
+	vec3(-1.0, -1.0,  1.0),
+	vec3( 1.0, -1.0,  1.0),
 	//FRONT
-	vec3(-1.0f, -1.0f,  1.0f),
-	vec3(-1.0f,  1.0f,  1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3( 1.0f,  1.0f,  1.0f),
-	vec3( 1.0f, -1.0f,  1.0f),
-	vec3(-1.0f, -1.0f,  1.0f),
+	vec3(-1.0, -1.0,  1.0),
+	vec3(-1.0,  1.0,  1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3( 1.0,  1.0,  1.0),
+	vec3( 1.0, -1.0,  1.0),
+	vec3(-1.0, -1.0,  1.0),
 	//BACK
-	vec3(-1.0f,  1.0f, -1.0f),
-	vec3(-1.0f, -1.0f, -1.0f),
-	vec3( 1.0f, -1.0f, -1.0f),
-	vec3( 1.0f, -1.0f, -1.0f),
-	vec3( 1.0f,  1.0f, -1.0f),
-	vec3(-1.0f,  1.0f, -1.0f)
+	vec3(-1.0,  1.0, -1.0),
+	vec3(-1.0, -1.0, -1.0),
+	vec3( 1.0, -1.0, -1.0),
+	vec3( 1.0, -1.0, -1.0),
+	vec3( 1.0,  1.0, -1.0),
+	vec3(-1.0,  1.0, -1.0)
 );
 
 #line 100076
@@ -143,10 +144,11 @@ void main() {
 	misc.x         = info.x - (curAdjustedFrame - thisVertexCreateFrame) * info.y;
 	float alphaMax = info.x - (curAdjustedFrame -        createParams.y) * info.y;
 	alphaMax *= forcedNormalAndAlphaMult.w;
-	misc3.w = info.y;
+
+	misc2.w = float(typeAndId & 0xFu); //copy type only, don't care about ID
 
 	#if 1
-	if (alphaMax <= 0.0f) {
+	if (alphaMax <= 0.0) {
 		vPosTL = vec3(0);
 		vPosTR = vec3(0);
 		vPosBL = vec3(0);
@@ -156,8 +158,8 @@ void main() {
 	}
 	#endif
 
-	misc2.x = sin(info.z);
-	misc2.y = cos(info.z);
+	float sa = sin(info.z);
+	float ca = cos(info.z);
 
 	midPoint.xz = (posT.xy + posT.zw + posB.xy + posB.zw) * 0.25;
 	// mid-point height
@@ -173,18 +175,10 @@ void main() {
 	} else {
 		groundNormal = forcedNormalAndAlphaMult.xyz;
 	}
-	/*
-	groundNormal = normalize(
-		GetFragmentNormal(posT.xy) +
-		GetFragmentNormal(posT.zq) +
-		GetFragmentNormal(posB.xy) +
-		GetFragmentNormal(posB.zw)
-	);
-	*/
 
-	// get default orthonormal system
-	vec3 xDir = vec3( misc2.y, 0.0, misc2.x);
-	vec3 zDir = vec3(-misc2.x, 0.0, misc2.y);
+	// get 2D orthonormal system
+	     xDir = vec3( ca, 0.0, sa);
+	vec3 zDir = vec3(-sa, 0.0, ca);
 
 	// don't rotate almost vertical cubes
 	if (1.0 - groundNormal.y > 0.05) {

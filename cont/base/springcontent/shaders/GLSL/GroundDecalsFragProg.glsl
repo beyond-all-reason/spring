@@ -40,10 +40,10 @@ flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
 flat in vec4 midPoint;
      in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
-flat in vec4 misc2; //misc2.x - sin(rot), misc2.y - cos(rot);
-flat in vec4 misc3; // groundNormal.xyz, decayRate
+flat in vec4 misc2; // groundNormal.xyz, decayRate
+flat in vec3 xDir;
 
-#define groundNormal misc3.xyz
+#define groundNormal misc2.xyz
 
 out vec4 fragColor;
 
@@ -337,9 +337,9 @@ void main() {
 
 	float alpha = clamp(misc.x, 0.0, 1.0);
 
-	// glow is from 1.1 to 1.0 as capped by the engine
+	// glow is from 1.05 to 1.0 as capped by the engine
 	// transform to 0 - 1
-	float glow = smoothstep(1.0, 1.1, misc.x);
+	float glow = smoothstep(1.0, 1.05, misc.x);
 
 	// overglow
 	glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
@@ -352,51 +352,44 @@ void main() {
 
 	float t = mix(1.0, 3500.0, glow);
 
+	const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
+
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
-	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0f).rgb;
-	float scarMixRate = mix(1.0, 0.2, NORM2SNORM(alpha) * mainCol.a); //accelerate alpha for diffuse
-	float mdMixRate = mix(0.0, scarMixRate, float(misc3.w > 0)); //only apply scarMixRate for decaying decals
-	mainCol.rgb = mix(mainCol.rgb, mapDiffuse.rgb, mdMixRate);
+	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0).rgb;
+	vec3 mapDecalMix = mix(mainCol.rgb, mapDiffuse.rgb, smoothstep(0.0, 0.6, dot(mainCol.rgb, LUMA)));
+	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == 1.0)); //only apply mapDecalMix for explosions (misc2.w == 1.0)
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
-	vec3 T = vec3(misc2.y, 0.0, misc2.x); //tangent if N was (0,1,0)
+	#if 0
+	// Expensive processing
+	vec3 T = xDir; //tangent if N was (0,1,0)
 
 	if (1.0 - N.y > 0.01) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
 		vec3 rotAxis = normalize(vec3(N.z, 0.0, -N.x));
 		T = RotateByNormalVector(T, N, rotAxis);
 	}
-
-	vec3 B = cross(N, T);
-	mat3 TBN = mat3(T, B, N);
-
-	//vec3 decalNormal = normalize(mix(N, normalize(TBN * NORM2SNORM(normVal.xyz)), alpha));
-	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
-
-	vec3 diffuseTerm = max(dot(sunDir, decalNormal), 0.0) * groundDiffuseColor;
-
-	#ifdef HAVE_INFOTEX
-	{
-		mainCol.rgb += texture(infoTex, worldPos.xz * mapDimsPO2.zw).rgb * infoTexIntensityMul;
-		mainCol.rgb -= (vec3(0.5, 0.5, 0.5) * float(infoTexIntensityMul == 1.0));
-	}
+	#else
+	// Cheaper Gramm-Schmidt
+	vec3 T = normalize(xDir - N * dot(xDir,  N) );
 	#endif
 
-	//vec3 reflectDir = reflect(sunDir, decalNormal);
-	//vec3 specularTerm = groundSpecularColor * 2.0 * clamp(pow(max(dot(reflectDir, cameraDir), 0.0), 5.0), 0.0, 1.0);
+	vec3 B = normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
 
-	//vec3 lightCol = (specularTerm + diffuseTerm) * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
+	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
+	vec3 diffuseTerm = max(dot(sunDir, decalNormal), 0.0) * groundDiffuseColor;
+
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
-	//fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	fragColor.rgb += BlackBody(normVal.w * t) * glow;
 
-	// alpha
-	fragColor.a = mainCol.a;
-	fragColor.a *= alpha * 10.0;
-	fragColor   *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is artisitic choice
+	// artistic adjustments
+	fragColor.a = mainCol.a * alpha;
+	fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
 	//fragColor = vec4(vec3(max(dot(sunDir, decalNormal), 0.0)), 1.0);
 	//fragColor = vec4(normVal.xyz, 1.0);
 	//fragColor = vec4(N, 1.0);
