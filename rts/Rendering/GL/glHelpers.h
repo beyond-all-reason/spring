@@ -86,7 +86,7 @@ inline void glSetAny(AttribValuesTupleType&& newValues)
 	if constexpr(DedicatedGLFuncPtrPtr)
 	{
 		static auto HelperFunc = [](auto&& ... p) {
-			(*DedicatedGLFuncPtrPtr)(p...);
+			(*DedicatedGLFuncPtrPtr)(std::forward<decltype(p)>(p)...);
 		};
 		std::apply(HelperFunc, std::forward<AttribValuesTupleType>(newValues));
 	}

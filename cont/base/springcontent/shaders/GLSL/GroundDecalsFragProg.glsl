@@ -350,7 +350,7 @@ void main() {
 	relDistance = smoothstep(0.9, 0.1, relDistance);
 	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
 
-	float t = mix(1.0, 3500.0, glow);
+	float t = mix(1.0, 3700.0, glow);
 
 	const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
 
@@ -373,7 +373,7 @@ void main() {
 	}
 	#else
 	// Cheaper Gramm-Schmidt
-	vec3 T = normalize(xDir - N * dot(xDir,  N) );
+	vec3 T = normalize(xDir - N * dot(xDir,  N));
 	#endif
 
 	vec3 B = normalize(cross(N, T));
