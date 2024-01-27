@@ -292,8 +292,9 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
                                      const Command& newCmd)
 {
 	const auto boi = buildOptions.find(newCmd.GetID());
+	auto buildCount = GetCountMultiplierFromOptions(newCmd.GetOpts());
 	if (boi != buildOptions.end()) {
-		boi->second++;
+		boi->second += buildCount;
 		UpdateIconName(newCmd.GetID(), boi->second);
 	}
 	if (!commandQue.empty() && (it == commandQue.begin())) {
@@ -301,7 +302,8 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 		CFactory* fac = static_cast<CFactory*>(owner);
 		fac->StopBuild();
 	}
-	commandQue.insert(it, newCmd);
+	while (buildCount--)
+		it = commandQue.insert(it, newCmd);
 }
 
 
