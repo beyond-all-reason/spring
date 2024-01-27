@@ -51,51 +51,22 @@ using CtxLockGuard = std::lock_guard<CtxMutex>;
 void createContext(const std::string& name);
 bool removeContext(const std::string& name);
 
-class RenderInterface_GL3_SDL : public RenderInterface_GL3
-{
+class RenderInterface_GL3_SDL : public RenderInterface_GL3 {
 public:
-    RenderInterface_GL3_SDL() {}
+  RenderInterface_GL3_SDL() {}
 
-    bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions,
-                     const Rml::String& source) override
-    {
-        CBitmap bmp;
-        if (!bmp.Load(source))
-        {
-            return false;
-        }
-        SDL_Surface* surface = bmp.CreateSDLSurface();
-
-        bool success = false;
-        if (surface)
-        {
-            texture_dimensions.x = surface->w;
-            texture_dimensions.y = surface->h;
-
-            if (surface->format->format != SDL_PIXELFORMAT_RGBA32)
-            {
-                SDL_SetSurfaceAlphaMod(surface, SDL_ALPHA_OPAQUE);
-                SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
-
-                SDL_Surface* new_surface = SDL_CreateRGBSurfaceWithFormat(
-                    0, surface->w, surface->h, 32, SDL_PIXELFORMAT_RGBA32);
-                if (!new_surface)
-                    return false;
-
-                if (SDL_BlitSurface(surface, 0, new_surface, 0) != 0)
-                    return false;
-
-                SDL_FreeSurface(surface);
-                surface = new_surface;
-            }
-
-            success = RenderInterface_GL3::GenerateTexture(texture_handle, (const Rml::byte*)surface->pixels,
-                                                           texture_dimensions);
-            SDL_FreeSurface(surface);
-        }
-
-        return success;
+  bool LoadTexture(Rml::TextureHandle &texture_handle,
+                   Rml::Vector2i &texture_dimensions,
+                   const Rml::String &source) override {
+    CBitmap bmp;
+    if (!bmp.Load(source)) {
+      return false;
     }
+    texture_dimensions.x = bmp.xsize;
+    texture_dimensions.y = bmp.ysize;
+    texture_handle = bmp.CreateTexture();
+    return texture_handle != 0;
+  }
 };
 
 class VFSFileInterface : public Rml::FileInterface
