@@ -833,6 +833,11 @@ float3 CWeapon::GetTargetBorderPos(
 	tmpColVol.SetBoundingRadius();
 	tmpColVol.SetUseContHitTest(false);
 
+	// the DetectHit() code below clearly indicates it should go
+	// CCollisionHandler::Collision() branch so force it explicitly
+	tmpColVol.SetDefaultToPieceTree(false);
+	tmpColVol.SetIgnoreHits(false);
+
 	// our weapon muzzle is inside the target unit's volume (FIXME: use aimFromPos?)
 	if (CCollisionHandler::DetectHit(targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, ZeroVector, nullptr))
 		return (targetBorderPos = weaponMuzzlePos);
@@ -843,6 +848,8 @@ float3 CWeapon::GetTargetBorderPos(
 	// this either increases or decreases the length of <targetVec> but does
 	// not change its direction
 	tmpColVol.SetUseContHitTest(true);
+	tmpColVol.SetDefaultToPieceTree(targetUnit->collisionVolume.DefaultToPieceTree());
+	tmpColVol.SetIgnoreHits(targetUnit->collisionVolume.IgnoreHits());
 
 	// make the ray-segment long enough so it can reach the far side of the
 	// scaled collision volume (helps to ensure a ray-intersection is found)
