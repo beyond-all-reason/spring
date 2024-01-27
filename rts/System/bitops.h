@@ -14,6 +14,8 @@
 #include <intrin.h>
 #endif
 
+#include <type_traits>
+
 /**
  * @brief Next power of 2
  * @param x The number to be rounded
@@ -110,7 +112,18 @@ static inline unsigned bits_ffs(unsigned int x)
 #endif
 }
 
+template<class U>
+concept Unsigned = std::is_unsigned<U>::value;
 
+/**
+ * @brief constexpr check if the unsigned number is PO2
+ * @param x unsigned number
+ */
+template<Unsigned U>
+constexpr bool IsPowerOfTwo(U x)
+{
+	return x != 0 && (x & (x - 1)) == 0;
+}
 
 /**
  * @brief Make even number macro
