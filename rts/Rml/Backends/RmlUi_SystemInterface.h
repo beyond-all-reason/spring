@@ -34,11 +34,11 @@
 
 #include <RmlUi/Core/Input.h>
 
+#include "Game/UI/MouseHandler.h"
+#include <RmlSolLua/TranslationTable.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
-#include "Game/UI/MouseHandler.h"
-#include <RmlSolLua/TranslationTable.h>
 
 class RmlSystemInterface : public Rml::SystemInterface
 {
@@ -53,22 +53,22 @@ public:
 	 * @param input
 	 * @return
 	 */
-	int TranslateString(Rml::String &translatedOut, const Rml::String &input) override;
+	int TranslateString(Rml::String& translatedOut, const Rml::String& input) override;
 	bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
 
 	double GetElapsedTime() override;
 
-	void SetMouseCursor(const Rml::String &cursor_name) override;
+	void SetMouseCursor(const Rml::String& cursor_name) override;
 
-	void SetClipboardText(const Rml::String &text) override;
-	void GetClipboardText(Rml::String &text) override;
+	void SetClipboardText(const Rml::String& text) override;
+	void GetClipboardText(Rml::String& text) override;
 
 	//  Hooks for Spring engine
 	const Rml::String& GetMouseCursor();
-	void SetTranslationTable(TranslationTable *tt);;
+	void SetTranslationTable(TranslationTable* tt);
 
 private:
-	TranslationTable *translationTable = nullptr;
+	TranslationTable* translationTable = nullptr;
 	Rml::String mouseCursor;
 };
 
@@ -78,14 +78,14 @@ namespace RmlSDLSpring
 
 	// Applies input on the context based on the given SDL event.
 	// @return True if the event is still propagating, false if it was handled by the context.
-	bool InputEventHandler(Rml::Context *context, const SDL_Event &ev);
-	bool EventKeyDown(Rml::Context *context, Rml::Input::KeyIdentifier key);
-	bool EventKeyUp(Rml::Context *context, Rml::Input::KeyIdentifier key);
-	bool EventTextInput(Rml::Context *context, const std::string& text);
-	bool EventMouseMove(Rml::Context *context, Sint32 x, Sint32 y);
-	bool EventMousePress(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button);
-	bool EventMouseRelease(Rml::Context *context, Sint32 x, Sint32 y, Sint32 button);
-	bool EventMouseWheel(Rml::Context *context, float delta);
+	bool InputEventHandler(Rml::Context* context, const SDL_Event& ev);
+	bool EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key);
+	bool EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key);
+	bool EventTextInput(Rml::Context* context, const std::string& text);
+	bool EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y);
+	bool EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
+	bool EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
+	bool EventMouseWheel(Rml::Context* context, float delta);
 
 	// Converts the SDL key to RmlUi key.
 	Rml::Input::KeyIdentifier ConvertKey(int sdl_key);
@@ -96,5 +96,5 @@ namespace RmlSDLSpring
 	// Returns the active RmlUi key modifier state.
 	int GetKeyModifierState();
 
-} // namespace RmlSDLSpring
-#endif // RMLUI_SYSTEMINTERFACE_H
+}  // namespace RmlSDLSpring
+#endif  // RMLUI_SYSTEMINTERFACE_H
