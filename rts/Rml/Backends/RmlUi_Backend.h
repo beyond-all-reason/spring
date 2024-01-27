@@ -39,21 +39,20 @@
 
 namespace RmlGui
 {
-
-	bool Initialize(SDL_Window *target_window, SDL_GLContext target_glcontext, int winX, int winY);
-	bool InitializeLua(lua_State *lua_state);
+	bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX, int winY);
+	bool InitializeLua(lua_State* lua_state);
 
 	void Shutdown();
 	void Reload();
 
-	Rml::SystemInterface *GetSystemInterface();
-	Rml::RenderInterface *GetRenderInterface();
+	Rml::SystemInterface* GetSystemInterface();
+	Rml::RenderInterface* GetRenderInterface();
 
-	bool ProcessEvent(const SDL_Event &event);
+	bool ProcessEvent(const SDL_Event& event);
 
 	bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
 	bool ProcessKeyReleased(int keyCode, int scanCode);
-	bool ProcessTextInput(const std::string &text);
+	bool ProcessTextInput(const std::string& text);
 	bool ProcessMouseMove(int x, int y, int dx, int dy, int button);
 	bool ProcessMousePress(int x, int y, int button);
 	bool ProcessMouseRelease(int x, int y, int button);
@@ -67,12 +66,12 @@ namespace RmlGui
 	void Update();
 	void RenderFrame();
 
-	void AddContext(Rml::Context *context);
-	void RemoveContext(Rml::Context *context);
+	void AddContext(Rml::Context* context);
+	void RemoveContext(Rml::Context* context);
 
 	void BeginFrame();
 	void PresentFrame();
 
-}
+}  // namespace RmlGui
 
 #endif
