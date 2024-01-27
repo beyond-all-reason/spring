@@ -399,14 +399,12 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 				iter->second->SetParam(i, ReadToken(selectString));
 			}
 
-			auto ui = selection.begin();
-
-			while (ui != selection.end()) {
-				if (iter->second->ShouldIncludeUnit(*ui) ^ _not) {
-					++ui;
+			for (size_t idx = 0; idx < selection.size(); /*NOOP*/) {
+				if (iter->second->ShouldIncludeUnit(selection[idx]) ^ _not) {
+					++idx;
 				} else {
 					// erase, order is not relevant
-					*ui = selection.back();
+					selection[idx] = selection.back();
 					selection.pop_back();
 				}
 			}
