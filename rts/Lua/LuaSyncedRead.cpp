@@ -4215,6 +4215,8 @@ int LuaSyncedRead::GetUnitDirection(lua_State* L)
  *
  * @function Spring.GetUnitHeading
  * @number unitID
+ * @bool[opt=false] convertToRadians
+ * @treturn heading
  */
 int LuaSyncedRead::GetUnitHeading(lua_State* L)
 {
@@ -4222,7 +4224,12 @@ int LuaSyncedRead::GetUnitHeading(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	lua_pushnumber(L, unit->heading);
+	float heading = unit->heading;
+	if (luaL_optboolean(L, 1, false)) {
+		heading = ClampRad(math::PI / 32768.0f * heading);
+	}
+
+	lua_pushnumber(L, heading);
 	return 1;
 }
 
