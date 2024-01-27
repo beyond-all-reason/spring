@@ -588,9 +588,19 @@ void CProjectileDrawer::DrawProjectiles(int modelType, bool drawReflection, bool
 
 void CProjectileDrawer::DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction)
 {
+	mutex.SetThreadSafety(false);
 	for (CProjectile* p: projectiles) {
 		DrawProjectileNow(p, drawReflection, drawRefraction);
 	}
+}
+
+void CProjectileDrawer::DrawProjectilesSetMT(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction)
+{
+	mutex.SetThreadSafety(true);
+	for_mt(0, projectiles.size(), [&projectiles, this, drawReflection, drawRefraction](int i) {
+		CProjectile* p = projectiles.at(i);
+		DrawProjectileNow(p, drawReflection, drawRefraction);
+	});
 }
 
 bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
@@ -619,10 +629,12 @@ void CProjectileDrawer::DrawProjectileNow(CProjectile* pro, bool drawReflection,
 		return;
 
 	// no-op if no model
-	DrawProjectileModel(pro);
+	if (DrawProjectileModel(pro))
+		return;
 
 	pro->SetSortDist(cam->ProjectedDistance(pro->pos));
 
+	auto lock = mutex.GetScopedLock();
 	if (drawSorted && pro->drawSorted) {
 		sortedProjectiles.emplace_back(pro);
 	} else {
@@ -650,6 +662,14 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 	for (CProjectile* p: projectiles) {
 		DrawProjectileShadow(p);
 	}
+}
+
+void CProjectileDrawer::DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles)
+{
+	for_mt(0, projectiles.size(), [&projectiles](int i) {
+		CProjectile* p = projectiles.at(i);
+		DrawProjectileShadow(p);
+	});
 }
 
 void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
@@ -779,8 +799,8 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
 		{
-			ZoneScopedN("ProjectileDrawer::ModellessProjectiles");
-			DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
+			ZoneScopedN("ProjectileDrawer::ModellessProjectilesMT");
+			DrawProjectilesSetMT(modellessProjectiles, drawReflection, drawRefraction);
 		}
 		if (wantDrawOrder)
 			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
@@ -855,6 +875,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 void CProjectileDrawer::DrawShadowPassOpaque()
 {
+	ZoneScopedN("ProjectileDrawer::ShadowPassOpaque");
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_PROJECTILE);
 
 	glPushAttrib(GL_ENABLE_BIT);
@@ -873,12 +894,13 @@ void CProjectileDrawer::DrawShadowPassOpaque()
 
 void CProjectileDrawer::DrawShadowPassTransparent()
 {
+	ZoneScopedN("ProjectileDrawer::ShadowPassTransparent");
 	// Method #1 here: https://wickedengine.net/2018/01/18/easy-transparent-shadow-maps/
 
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles
-	DrawProjectilesSetShadow(modellessProjectiles);
+	DrawProjectilesSetShadowMT(modellessProjectiles);
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 	if (!rb.ShouldSubmit())

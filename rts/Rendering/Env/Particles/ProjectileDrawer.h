@@ -133,7 +133,9 @@ private:
 	void DrawFlyingPieces(int modelType) const;
 
 	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
+	void DrawProjectilesSetMT(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
 	static void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
+	static void DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles);
 
 	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
 
@@ -170,6 +172,8 @@ private:
 	/// used to render particle effects in back-to-front order
 	std::vector<CProjectile*> sortedProjectiles;
 	std::vector<CProjectile*> unsortedProjectiles;
+
+	spring::WrappedSyncSpinLock mutex;
 
 	bool drawSorted = true;
 
