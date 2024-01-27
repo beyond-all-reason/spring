@@ -4870,8 +4870,12 @@ int LuaUnsyncedCtrl::Yield(lua_State* L)
 	return 1;
 }
 
-/* NB: strings here are never cleaned up, but the use case assumes
- * that they live a long time and there's just a handful of them */
+/* Tracy seems to want unique, unchanging strings to be passed to
+ * its API, so we need to immanentize the ephemeral Lua strings
+ * and store them.
+ *
+ * NB: strings here are never cleaned up, but the use case assumes
+ * that they live a long time and there's just a handful of them. */
 std::set <std::string, std::less<>> tracyLuaPlots;
 
 /*** Configure custom appearence for a Tracy plot for use in debugging or profiling
