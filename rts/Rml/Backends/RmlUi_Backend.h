@@ -65,6 +65,7 @@ namespace RmlGui
 	bool IsMouseInteractingWith();
 	const std::string& GetMouseCursor();
 	CInputReceiver* GetInputReceiver();
+	lua_State* GetLuaState();
 
 	void Update();
 	void RenderFrame();
