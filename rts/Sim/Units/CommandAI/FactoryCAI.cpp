@@ -141,6 +141,14 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 }
 
 
+static constexpr int GetCountMultiplierFromOptions(int opts)
+{
+	// The choice of keys and their associated multipliers are from OTA.
+	int ret = 1;
+	if (opts &   SHIFT_KEY) ret *=  5;
+	if (opts & CONTROL_KEY) ret *= 20;
+	return ret;
+}
 
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
@@ -224,10 +232,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	}
 
 	int& numQueued = boi->second;
-	int numItems = 1;
-
-	if (c.GetOpts() & SHIFT_KEY)   { numItems *= 5; }
-	if (c.GetOpts() & CONTROL_KEY) { numItems *= 20; }
+	int numItems = GetCountMultiplierFromOptions(c.GetOpts());
 
 	if (c.GetOpts() & RIGHT_MOUSE_KEY) {
 		numQueued -= numItems;
