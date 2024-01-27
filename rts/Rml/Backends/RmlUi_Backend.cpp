@@ -41,6 +41,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/Elements/ElementLuaTexture.h"
+#include "Rml/Elements/ElementLuaTexture.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Spring.h"
 #include "RmlUi_SystemInterface.h"
