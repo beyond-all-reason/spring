@@ -3,6 +3,7 @@
 #include "ISound.h"
 
 #include <cstring> //memset
+#include <array>
 
 #ifndef   NO_SOUND
 #include "OpenAL/Sound.h"
@@ -41,12 +42,12 @@ CONFIG(float, snd_airAbsorption).defaultValue(0.1f);
 CONFIG(std::string, snd_device).defaultValue("").description("Sets the used output device. See \"Available Devices\" section in infolog.txt.");
 
 
-
 #ifndef NO_SOUND
-alignas(AudioChannel) static std::byte audioChannelMem[ChannelType::CHANNEL_COUNT][sizeof(AudioChannel)];
+using SelAudioChannel = AudioChannel;
 #else
-alignas(NullAudioChannel) static std::byte audioChannelMem[ChannelType::CHANNEL_COUNT][sizeof(NullAudioChannel)];
+using SelAudioChannel = NullAudioChannel;
 #endif
+alignas(SelAudioChannel) static std::array<std::array<std::byte, sizeof(SelAudioChannel)>, ChannelType::CHANNEL_COUNT> audioChannelMem;
 
 
 ISound* ISound::singleton = nullptr;
@@ -56,7 +57,7 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 #ifndef NO_SOUND
 	if (!IsNullAudio() && !forceNullSound) {
 		for (size_t i = 0; i < Channels.size(); ++i) {
-			Channels[i] = new (audioChannelMem[i]) AudioChannel();
+			Channels[i] = new (audioChannelMem[i].data()) AudioChannel();
 		}
 
 		if (!reload) {
@@ -92,7 +93,7 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 		}
 
 		for (size_t i = 0; i < Channels.size(); ++i) {
-			Channels[i] = new (audioChannelMem[i]) NullAudioChannel();
+			Channels[i] = new (audioChannelMem[i].data()) NullAudioChannel();
 		}
 	}
 }
@@ -108,7 +109,7 @@ void ISound::Shutdown(bool reload)
 
 	for (size_t i = 0; i < Channels.size(); ++i) {
 		spring::SafeDestruct(Channels[i]);
-		std::memset(audioChannelMem[i], 0, sizeof(audioChannelMem[i]));
+		std::memset(audioChannelMem[i].data(), 0, audioChannelMem[i].size());
 	}
 }
 
