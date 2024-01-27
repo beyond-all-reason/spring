@@ -22,7 +22,7 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 #include "Game/GlobalUnsynced.h"
 
@@ -194,7 +194,7 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	curBuildDef = nullptr;
 
 	if (losStatus[gu->myAllyTeam] & LOS_INLOS) {
-		Channels::General->PlayRandomSample(unitDef->sounds.build, buildPos);
+		Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(unitDef->sounds.build, buildPos);
 	}
 }
 

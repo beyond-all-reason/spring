@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include <functional>
 
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/Sound/SoundLog.h"
 #include "SoundSource.h"
 #include "SoundBuffer.h"
@@ -81,13 +81,13 @@ void CSound::Init()
 		canLoadDefs = false;
 	}
 	{
-		Channels::General->SetVolume(configHandler->GetInt("snd_volgeneral") * 0.01f);
-		Channels::UnitReply->SetVolume(configHandler->GetInt("snd_volunitreply") * 0.01f);
-		Channels::UnitReply->SetMaxConcurrent(1);
-		Channels::UnitReply->SetMaxEmits(1);
-		Channels::Battle->SetVolume(configHandler->GetInt("snd_volbattle") * 0.01f);
-		Channels::UserInterface->SetVolume(configHandler->GetInt("snd_volui") * 0.01f);
-		Channels::BGMusic->SetVolume(configHandler->GetInt("snd_volmusic") * 0.01f);
+		Channels[ChannelType::CHANNEL_GENERAL  ]->SetVolume(configHandler->GetInt("snd_volgeneral") * 0.01f);
+		Channels[ChannelType::CHANNEL_UNITREPLY]->SetVolume(configHandler->GetInt("snd_volunitreply") * 0.01f);
+		Channels[ChannelType::CHANNEL_UNITREPLY]->SetMaxConcurrent(1);
+		Channels[ChannelType::CHANNEL_UNITREPLY]->SetMaxEmits(1);
+		Channels[ChannelType::CHANNEL_BATTLE   ]->SetVolume(configHandler->GetInt("snd_volbattle") * 0.01f);
+		Channels[ChannelType::CHANNEL_UI       ]->SetVolume(configHandler->GetInt("snd_volui") * 0.01f);
+		Channels[ChannelType::CHANNEL_BGMUSIC  ]->SetVolume(configHandler->GetInt("snd_volmusic") * 0.01f);
 	}
 	{
 		SoundBuffer::Initialise();
@@ -303,19 +303,19 @@ void CSound::ConfigNotify(const std::string& key, const std::string& value)
 		} break;
 
 		case hashString("snd_volgeneral"): {
-			Channels::General->SetVolume(std::atoi(value.c_str()) * 0.01f);
+			Channels[ChannelType::CHANNEL_GENERAL]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 		case hashString("snd_volunitreply"): {
-			Channels::UnitReply->SetVolume(std::atoi(value.c_str()) * 0.01f);
+			Channels[ChannelType::CHANNEL_UNITREPLY]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 		case hashString("snd_volbattle"): {
-			Channels::Battle->SetVolume(std::atoi(value.c_str()) * 0.01f);
+			Channels[ChannelType::CHANNEL_BATTLE]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 		case hashString("snd_volui"): {
-			Channels::UserInterface->SetVolume(std::atoi(value.c_str()) * 0.01f);
+			Channels[ChannelType::CHANNEL_UI]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 		case hashString("snd_volmusic"): {
-			Channels::BGMusic->SetVolume(std::atoi(value.c_str()) * 0.01f);
+			Channels[ChannelType::CHANNEL_BGMUSIC]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 
 		case hashString("PitchAdjust"): {
@@ -992,10 +992,10 @@ size_t CSound::LoadSoundBuffer(const std::string& path)
 
 void CSound::NewFrame()
 {
-	Channels::General->UpdateFrame();
-	Channels::Battle->UpdateFrame();
-	Channels::UnitReply->UpdateFrame();
-	Channels::UserInterface->UpdateFrame();
+	Channels[ChannelType::CHANNEL_GENERAL]->UpdateFrame();
+	Channels[ChannelType::CHANNEL_BATTLE]->UpdateFrame();
+	Channels[ChannelType::CHANNEL_UNITREPLY]->UpdateFrame();
+	Channels[ChannelType::CHANNEL_UI]->UpdateFrame();
 }
 
 

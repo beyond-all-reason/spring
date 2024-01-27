@@ -37,7 +37,7 @@
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
 #include "System/SpringMath.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 
 static CGameHelper gGameHelper;
@@ -339,7 +339,7 @@ void CGameHelper::Explosion(const CExplosionParams& params) {
 		if (soundID <= 0)
 			return;
 
-		Channels::Battle->PlaySample(soundID, params.pos, soundSet.getVolume(soundNum));
+		Channels[ChannelType::CHANNEL_BATTLE]->PlaySample(soundID, params.pos, soundSet.getVolume(soundNum));
 	}
 }
 
