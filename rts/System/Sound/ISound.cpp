@@ -37,6 +37,7 @@ CONFIG(int, snd_volunitreply).defaultValue(100).minimumValue(0).maximumValue(200
 CONFIG(int, snd_volbattle).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"battle\" sound channel.");
 CONFIG(int, snd_volui).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"ui\" sound channel.");
 CONFIG(int, snd_volmusic).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"music\" sound channel.");
+CONFIG(int, snd_volambient).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"ambient\" sound channel.");
 CONFIG(float, snd_airAbsorption).defaultValue(0.1f);
 
 CONFIG(std::string, snd_device).defaultValue("").description("Sets the used output device. See \"Available Devices\" section in infolog.txt.");

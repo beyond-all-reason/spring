@@ -50,7 +50,7 @@ spring::recursive_mutex soundMutex;
 
 CSound::CSound()
 {
-	configHandler->NotifyOnChange(this, {"snd_volmaster", "snd_eaxpreset", "snd_filter", "UseEFX", "snd_volgeneral", "snd_volunitreply", "snd_volbattle", "snd_volui", "snd_volmusic", "PitchAdjust"});
+	configHandler->NotifyOnChange(this, {"snd_volmaster", "snd_eaxpreset", "snd_filter", "UseEFX", "snd_volgeneral", "snd_volunitreply", "snd_volbattle", "snd_volui", "snd_volmusic", "snd_volambient", "PitchAdjust"});
 }
 
 CSound::~CSound()
@@ -88,6 +88,7 @@ void CSound::Init()
 		Channels[ChannelType::CHANNEL_BATTLE   ]->SetVolume(configHandler->GetInt("snd_volbattle") * 0.01f);
 		Channels[ChannelType::CHANNEL_UI       ]->SetVolume(configHandler->GetInt("snd_volui") * 0.01f);
 		Channels[ChannelType::CHANNEL_BGMUSIC  ]->SetVolume(configHandler->GetInt("snd_volmusic") * 0.01f);
+		Channels[ChannelType::CHANNEL_AMBIENT  ]->SetVolume(configHandler->GetInt("snd_volambient") * 0.01f);
 	}
 	{
 		SoundBuffer::Initialise();
@@ -316,6 +317,9 @@ void CSound::ConfigNotify(const std::string& key, const std::string& value)
 		} break;
 		case hashString("snd_volmusic"): {
 			Channels[ChannelType::CHANNEL_BGMUSIC]->SetVolume(std::atoi(value.c_str()) * 0.01f);
+		} break;
+		case hashString("snd_volambient"): {
+			Channels[ChannelType::CHANNEL_AMBIENT]->SetVolume(std::atoi(value.c_str()) * 0.01f);
 		} break;
 
 		case hashString("PitchAdjust"): {
