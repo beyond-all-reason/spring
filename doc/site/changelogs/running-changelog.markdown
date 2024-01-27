@@ -16,6 +16,7 @@ These are the entries which may require special attention when migrating:
 * removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
 You can replace these functions before migrating, and known existing games have already received patches to do so.
 * removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
+* removed LuaUI's access to `Script.LuaRules` and `Script.LuaGaia`.
 
 ### Behaviour changes
 * failure to load a model now results in a crash. This avoids a potential desync down the road.
@@ -32,6 +33,7 @@ The extras are considered to start in the (0, 0) corner and it is now up to the 
 * `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
 Use the `TeamChanged` call-in to make a replacement if you want it to be public.
 * manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
+* `DumpGameStateOnDesync` springsetting is now enabled by default
 
 ### Deprecation
 No changes yet, but these will happen in the future and possibly break things.
@@ -42,6 +44,7 @@ but if you prefer not to have to add processing later you might want to change t
 since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
 * there are now explicit facilities for generating a blank map (see below). Existing "random" map generator (that always produced a blank map) stays as-is,
 but may be repurposed into a "real" random map generator sometime in the future (not immediately planned though).
+* `UsePBO` springsetting is now deprecated. It already did nothing though.
 
 # QTPFS
 
@@ -59,8 +62,11 @@ This is mostly for rate limiting and prevent excessive CPU wastage, because proc
 regardless of distance etc. Defaults to 0, which means units will not try to raw-move into unpathable terrain (e.g. typemapped lava, cliffs, water). You can set it to some positive
 value to make them avoid pathable but very slow terrain (for example if you set it to 0.2 then they will not raw-move across terrain where they move at 20% speed or less, and will use
 normal pathing instead - which may still end up taking them through that path).
+* added modrule, `system.qtMaxNodesSearched`, can be used to limit the number of nodes searched.
+* added modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number of nodes searche relative to the number of pathable quads on the map.
 * added modrule, `system.pfHcostMult`, a float value between 0 and 2, defaults to 0.2. Controls how aggressively the pathing search prioritizes nodes going in the direction of the goal.
 Higher values mean pathing is cheaper, but can start producing degenerate paths where the unit goes straight at the goal and then has to hug a wall.
+* added modrule, `system.qtRefreshPathMinDist`, can be used to configure the minimum size a path has to be in order to be eligible for an automatic incomplete path repath.
 * removed modrules: `system.pfForceUpdateSingleThreaded` and `system.pfForceSingleThreaded`. Multithreading has shown itself stable.
 * removed modrule: `system.pathFinderUpdateRate`, since `system.pfUpdateRateScale` now serves the same general role but has different units.
 
@@ -171,6 +177,7 @@ All deprecated UnitDefs keys (who returned zero and produced a warning) have bee
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
 * added `buildeeBuildRadius` unit def entry, the radius for the purposes of being built (placing the nanoframe and then nanolathing).
 Negative values make it use the model radius (this is the default). Set to zero to require builders to reach the center.
+* added `Spring.Get/SetUnitBuildeeRadius(unitID)` for controlling the above dynamically.
 * fixed builders not placing nanoframes from their maximum range.
 * units vacating a build area (aka "bugger off") will now try to use the fastest route out.
 * bugger off now applies correctly to units sitting outside the area, but with a large enough footprint to block construction.
@@ -281,4 +288,5 @@ of this is that `modinfo.lua` is now sufficient for an archive to be a valid Rec
 * fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
 * fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.
 * fix clicking during loadscreen sometimes registering as startbox placement later.
+* fix a crash on self-attach via `Spring.UnitAttach`.
 * fix `Spring.MoveCtrl.SetMoveDef` not working with numerical movedef IDs.
