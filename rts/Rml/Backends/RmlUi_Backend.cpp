@@ -40,6 +40,8 @@
 #include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
+#include "Rml/Elements/ElementLuaTexture.h"
+#include "Rml/Elements/ElementLuaTexture.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Spring.h"
 #include "RmlUi_SystemInterface.h"
@@ -115,6 +117,8 @@ struct BackendData {
 	Rml::UniquePtr<PassThroughPlugin> plugin;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 	CtxMutex contextMutex;
+
+    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -151,6 +155,9 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
 	data->initialized = true;
+
+	data->element_lua_texture = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
+	Rml::Factory::RegisterElementInstancer("texture", data->element_lua_texture.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
@@ -461,4 +468,14 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 		result |= processContextEvent(context, event);
 	}
 	return result;
+}
+
+lua_State* RmlGui::GetLuaState()
+{
+    if (!RmlInitialized())
+    {
+        return nullptr;
+    }
+
+    return data->ls;
 }
