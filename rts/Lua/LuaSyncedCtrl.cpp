@@ -5179,7 +5179,7 @@ int LuaSyncedCtrl::UnitFinishCommand(lua_State* L)
  * @number unitID
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn bool unitOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -5215,7 +5215,7 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
  * @tparam {[number]=table,...} unitMap table with unitIDs as keys
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -5258,7 +5258,7 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @tparam {number,...} unitIDs
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
