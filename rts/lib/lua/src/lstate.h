@@ -21,7 +21,7 @@ struct lua_longjmp;  /* defined in ldo.c */
 #define gt(L)	(&L->l_gt)
 
 /* registry */
-#define lregistry(L)	(&G(L)->l_registry)
+#define registry(L)	(&G(L)->l_registry)
 
 
 /* extra stack space to handle TM calls and some other extras */
