@@ -300,6 +300,8 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 		defaultWaterline = xsize * SQUARE_SIZE; 
 	} else if (speedModClass == MoveDef::Ship) {
 		defaultWaterline = 1;
+	} else if (speedModClass == MoveDef::Hover) {
+		defaultWaterline = 0;
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));

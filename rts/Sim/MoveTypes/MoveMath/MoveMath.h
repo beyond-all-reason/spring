@@ -23,8 +23,7 @@ namespace MoveTypes {
 		{}
 
 		CheckCollisionQuery(const MoveDef* refMoveDef)
-			: unit(nullptr)
-			, moveDef(refMoveDef)
+			: moveDef(refMoveDef)
 		{}
 
 		bool    HasPhysicalStateBit(unsigned int bit) const { return ((physicalState & bit) != 0); }
