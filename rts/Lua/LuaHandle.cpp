@@ -23,6 +23,7 @@
 #include "Game/UI/KeySet.h"
 #include "Game/UI/MiniMap.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -173,7 +174,7 @@ void CLuaHandle::KillLua(bool inFreeHandler)
 		Shutdown();
 
 	if(rmlui) {
-		RmlGui::Reload();
+		RmlGui::RemoveLua();
 	}
 
 	// 3. delete the lua_State
@@ -1125,7 +1126,7 @@ void CLuaHandle::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
  * @number unitID
  * @number unitDefID
  * @number newTeam
- * @number oldTeam 
+ * @number oldTeam
  */
 void CLuaHandle::UnitGiven(const CUnit* unit, int oldTeam, int newTeam)
 {
