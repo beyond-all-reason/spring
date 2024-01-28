@@ -3228,8 +3228,16 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	};
 
 	auto isSquareOpen = [this, md, unit, &tempNum, thread, &toMapSquare, &virtualObject, &queryState, &isSubmersible](float3 pos) {
+		int2 checkSquare = toMapSquare(pos);
+		if ( checkSquare.x < 0
+			|| checkSquare.y < 0
+			|| checkSquare.x >= mapDims.mapx
+			|| checkSquare.y >= mapDims.mapy) {
+				return false;
+			}
+		
 		if (isSubmersible){
-			md->UpdateCheckCollisionQuery(virtualObject, queryState, toMapSquare(pos));
+			md->UpdateCheckCollisionQuery(virtualObject, queryState, checkSquare);
 			if (queryState.refreshCollisionCache)
 				tempNum = gs->GetMtTempNum(thread);
 		}
