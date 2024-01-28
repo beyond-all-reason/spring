@@ -4665,7 +4665,7 @@ int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
 int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
 {
 	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
-	lua_pushsstring(L, texName.c_str());
+	lua_pushsstring(L, texName);
 
 	return 1;
 }
