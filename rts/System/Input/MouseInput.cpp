@@ -69,8 +69,6 @@ IMouseInput::~IMouseInput()
 
 bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 {
-	const bool mousePressed = mouse->ButtonPressed();
-
 	switch (event.type) {
 		case SDL_MOUSEMOTION: {
 			mousepos = int2(event.motion.x, event.motion.y);
