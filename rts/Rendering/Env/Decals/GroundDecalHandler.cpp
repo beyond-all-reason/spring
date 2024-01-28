@@ -21,6 +21,7 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
+#include "Rendering/Env/WaterRendering.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/TexBind.h"
@@ -347,6 +348,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetFlag("HAVE_SHADOWS", true);
 	decalShader->SetFlag("HIGH_QUALITY", highQuality);
 	decalShader->SetFlag("HAVE_INFOTEX", true);
+	decalShader->SetFlag("SMF_WATER_ABSORPTION", true);
 
 	decalShader->BindAttribLocation("posT"                    , 0);
 	decalShader->BindAttribLocation("posB"                    , 1);
@@ -382,6 +384,10 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetUniform("shadowTex"      , 6);
 	decalShader->SetUniform("shadowColorTex" , 7);
 	decalShader->SetUniform("infoTex"        , 8);
+
+	decalShader->SetUniform("waterMinColor", 0.0f, 0.0f, 0.0f);
+	decalShader->SetUniform("waterBaseColor", 0.0f, 0.0f, 0.0f);
+	decalShader->SetUniform("waterAbsorbColor", 0.0f, 0.0f, 0.0f);
 
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);
 	decalShader->SetUniform("screenSizeInverse",
@@ -667,9 +673,18 @@ void CGroundDecalHandler::Draw()
 	BindCommonTextures();
 	BindAtlasTextures();
 
+	const bool visWater = smfDrawer->GetReadMap()->HasVisibleWater();
+
 	decalShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
 	decalShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
+	decalShader->SetFlag("SMF_WATER_ABSORPTION", visWater);
 	decalShader->Enable();
+
+	if (visWater) {
+		decalShader->SetUniform("waterMinColor", waterRendering->minColor.x, waterRendering->minColor.y, waterRendering->minColor.z);
+		decalShader->SetUniform("waterBaseColor", waterRendering->baseColor.x, waterRendering->baseColor.y, waterRendering->baseColor.z);
+		decalShader->SetUniform("waterAbsorbColor", waterRendering->absorb.x, waterRendering->absorb.y, waterRendering->absorb.z);
+	}
 
 	decalShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
 	decalShader->SetUniform("curAdjustedFrame", std::max(gs->frameNum, 0) + globalRendering->timeOffset);

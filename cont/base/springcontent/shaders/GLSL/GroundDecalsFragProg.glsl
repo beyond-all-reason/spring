@@ -17,8 +17,13 @@ uniform float infoTexIntensityMul;
 
 uniform vec4 groundAmbientColor; // + groundShadowDensity
 uniform vec3 groundDiffuseColor;
-//uniform vec3 groundSpecularColor;
-//uniform vec3 cameraDir;
+
+#ifdef SMF_WATER_ABSORPTION
+uniform vec3 waterMinColor;
+uniform vec3 waterBaseColor;
+uniform vec3 waterAbsorbColor;
+#endif
+
 uniform vec3 sunDir;
 
 uniform vec2 screenSizeInverse; // 1/X, 1/Y
@@ -60,7 +65,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200061
+#line 200068
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -257,6 +262,10 @@ vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
 	#undef nz
 }
 
+const float SMF_INTENSITY_MULT = 210.0 / 255.0;
+const float SMF_SHALLOW_WATER_DEPTH     = 10.0;
+const float SMF_SHALLOW_WATER_DEPTH_INV = 1.0 / SMF_SHALLOW_WATER_DEPTH;
+
 const vec3 all0 = vec3(0.0);
 const vec3 all1 = vec3(1.0);
 void main() {
@@ -349,6 +358,7 @@ void main() {
 	//float relDistance = distance(worldPos.xz, midPoint.xz) / midPoint.w;
 	relDistance = smoothstep(0.9, 0.1, relDistance);
 	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
+	glow *= smoothstep(-SMF_SHALLOW_WATER_DEPTH, 0.0, worldPos.y);
 
 	float t = mix(1.0, 3700.0, glow);
 
@@ -380,12 +390,41 @@ void main() {
 	mat3 TBN = mat3(T, B, N);
 
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
-	vec3 diffuseTerm = max(dot(sunDir, decalNormal), 0.0) * groundDiffuseColor;
+	float NdotL = max(dot(sunDir, decalNormal), 0.0);
+	vec3 diffuseTerm = NdotL * groundDiffuseColor;
 
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
 	fragColor.rgb += BlackBody(normVal.w * t) * glow;
+
+	// adaptation from SMFFragProg.glsl
+	#ifdef SMF_WATER_ABSORPTION
+	if (worldPos.y <= 0.0) {
+		vec3 waterShadeInt = waterBaseColor;
+
+		float waterShadeAlpha  = -worldPos.y * SMF_SHALLOW_WATER_DEPTH_INV;
+		float waterShadeDecay  = 0.2 + (waterShadeAlpha * 0.1);
+		float vertexStepHeight = min(1023.0, -worldPos.y);
+		float waterLightInt    = min(NdotL * 2.0 + 0.4, 1.0);
+
+		// vertex below shallow water depth --> alpha=1
+		// vertex above shallow water depth --> alpha=waterShadeAlpha
+		waterShadeAlpha = min(1.0, waterShadeAlpha + float(worldPos.y <= -SMF_SHALLOW_WATER_DEPTH));
+
+		waterShadeInt -= (waterAbsorbColor * vertexStepHeight);
+		waterShadeInt  = max(waterMinColor, waterShadeInt);
+		waterShadeInt *= vec3(SMF_INTENSITY_MULT * waterLightInt);
+
+		// make shadowed areas darker over deeper water
+		waterShadeInt *= (1.0 - waterShadeDecay);
+
+		// if depth is greater than _SHALLOW_ depth, select waterShadeInt
+		// otherwise interpolate between groundShadeInt and waterShadeInt
+		// (both are already cosine-weighted)
+		fragColor.rgb = mix(fragColor.rgb, waterShadeInt, waterShadeAlpha);
+	}
+	#endif
 
 	// artistic adjustments
 	fragColor.a = mainCol.a * alpha;
