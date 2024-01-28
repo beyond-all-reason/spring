@@ -3,6 +3,7 @@
 #ifndef ECS_MAIN_H__
 #define ECS_MAIN_H__
 
+#define ENTT_USE_ATOMIC
 
 #include "lib/entt/src/entt/entt.hpp"
 

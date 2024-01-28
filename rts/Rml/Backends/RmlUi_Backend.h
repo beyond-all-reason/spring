@@ -35,7 +35,9 @@
 #include <SDL.h>
 
 #include "Game/UI/InputReceiver.h"
+#include "lib/lua/mask_lua_macros.h"
 #include "lib/sol2/sol.hpp"
+#include "lib/lua/restore_lua_macros.h"
 
 namespace RmlGui
 {
