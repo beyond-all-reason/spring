@@ -940,9 +940,8 @@ float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& 
 	GetRectangleCollisionVolume(node, rv, rm);
 	bool collide = CCollisionHandler::IntersectBox(&rv, goalPos - rm, lastPoint - rm, &cq);
 
-	assert(collide);
-
-	return cq.GetHitPos() + rm;
+	// No collision means the nearest point was really the nearest point. We can't do better.
+	return (collide) ? cq.GetHitPos() + rm : lastPoint;
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
